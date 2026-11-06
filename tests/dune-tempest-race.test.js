@@ -12,6 +12,9 @@ import { createRace, startRace, stepRace, racePosition, sprintGaps, gapChargeWar
 import { chooseBranchByLateral, createCourseRuntime, placeCourseCar } from '../src/course-race.ts';
 import * as courseStep from '../src/course-race-step.ts';
 import { chooseCourseNextEdge } from '../src/course-ai-standings.ts';
+import { readFileSync } from 'node:fs';
+import { recordTrackId, recordTrackIds, parseRecordTrackId } from '../src/record-layout.ts';
+import { recordGhost, validGhost, GHOST_RATE } from '../src/ghost.ts';
 
 const groundLength = graph.groundRoute.reduce((sum, id) => sum + routeLength(graph, id), 0);
 const AIR = 'canyon-air-crossing';
@@ -404,4 +407,74 @@ test('pulsed need: no-warning fuel crosses, margin covers the measured usage, a 
   assert.equal(exact.race.course.rejections, 0);
   const starved = run(() => full.used / 2);
   assert.equal(starved.race.player.falls, 1, 'half the measured usage: falls into the gap');
+});
+
+// ---- Task 7: topology-keyed results without Ghost (Q4) ----
+const KEY = 'dune-tempest@t1l1';
+const memory = () => {
+  const store = new Map();
+  globalThis.localStorage = { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) };
+  return store;
+};
+const syntheticTrace = time => Array.from({ length: Math.floor(time * GHOST_RATE) + 1 }, (_, i) => [Math.min(DUNE_TEMPEST_TRACK.length, i * DUNE_TEMPEST_TRACK.length / (time * GHOST_RATE)), 0, 0]);
+async function settleDune(race, trace) {
+  const { settleRace } = await import('../src/race-results.ts');
+  const { loadSessionProgress } = await import('../src/session-progress.ts');
+  const { createGhostStore } = await import('../src/ghost-store.ts');
+  const progress = loadSessionProgress(['coast']), ghosts = createGhostStore();
+  const settled = settleRace(race, { series: { sprintSeries: null, cup: null, stunt: null }, progress, ghosts, daily: null, trace });
+  return { settled, ghosts };
+}
+
+test('Dune records live under one topology-keyed id', () => {
+  assert.equal(recordTrackId(DUNE_TEMPEST_ID), KEY);
+  assert.deepEqual(recordTrackIds(DUNE_TEMPEST_ID), [KEY]);
+  assert.deepEqual(parseRecordTrackId(KEY), { trackId: DUNE_TEMPEST_ID, layout: 1 });
+  assert.equal(parseRecordTrackId('dune-tempest@t2l1'), null);
+  assert.equal(recordTrackId('coast'), 'coast@4', 'classic ids unchanged');
+});
+
+test('a finished Dune race settles history and a topology-keyed best; no Ghost, medals, stars, unlocks or NEXT', async () => {
+  const store = memory();
+  try {
+    const samples = [];
+    const { race } = botRace(60, PATHS[0], { trace: r => recordGhost(samples, r) });
+    assert.equal(race.phase, 'finished');
+    const { settled, ghosts } = await settleDune(race, samples);
+    const time = race.result.time;
+    assert.equal(settled.record, true);
+    assert.equal(settled.next, null, 'not in the campaign: no NEXT');
+    assert.deepEqual(settled.medals, []);
+    assert.deepEqual([...store.keys()].sort(), ['skyline-rush-best-tracks', 'skyline-rush-history', 'skyline-rush-unlocked']);
+    const read = k => JSON.parse(store.get(k));
+    assert.deepEqual(Object.keys(read('skyline-rush-best-tracks')), [KEY]);
+    assert.equal(read('skyline-rush-best-tracks')[KEY], race.elapsed);
+    assert.deepEqual(read('skyline-rush-history').map(r => r.track), [DUNE_TEMPEST_ID]);
+    assert.deepEqual(read('skyline-rush-unlocked'), ['coast']);
+    assert.equal(ghosts.classic(DUNE_TEMPEST_ID), null, 'a real Dune trace saves no Ghost');
+    assert.ok(time > 0);
+  } finally { delete globalThis.localStorage; }
+});
+
+test('a 600-sample trace never validates or saves a Ghost on a graph-runtime id', async () => {
+  const store = memory();
+  try {
+    const time = 60, trace = syntheticTrace(time);
+    assert.equal(trace.length, 601);
+    assert.equal(validGhost({ time, samples: trace }, DUNE_TEMPEST_ID), false, 'graph-runtime ids never hold a Ghost');
+    const race = Object.assign(createRace(DUNE_TEMPEST_ID), { phase: 'finished', elapsed: time,
+      result: { position: 1, time, score: 900, stars: 3, collisions: 0, nearMisses: 0, perfectLines: 9, nitroChain: 3, success: true } });
+    const { ghosts } = await settleDune(race, trace);
+    assert.equal(store.get('skyline-rush-ghosts'), undefined, 'no Ghost key written');
+    assert.equal(ghosts.classic(DUNE_TEMPEST_ID), null);
+    assert.equal(store.get('skyline-rush-stars'), undefined);
+    assert.equal(store.get('skyline-rush-medals'), undefined);
+  } finally { delete globalThis.localStorage; }
+});
+
+test('firestore.rules accepts the Dune topology-keyed best', () => {
+  const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  const listed = [...rules.match(/function bestIds\(\) \{[^}]*\}/)[0].matchAll(/'([^']+)'/g)].map(m => m[1]);
+  assert.ok(listed.includes(KEY));
+  assert.match(rules, new RegExp(`validBest\\(bests, '${KEY}'\\)`));
 });

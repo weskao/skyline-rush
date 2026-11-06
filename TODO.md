@@ -227,6 +227,21 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
       `used × 1.5 ≤ need` fails); export the constants from `game.js` when it has line headroom.
       BOOST (+3 fuel/s while thrusting) is not in the need.
 
+- [x] Task 7 — Dune results under the topology-keyed id, Ghost never valid on a graph-runtime id (Q4).
+  `src/ghost.ts` `validGhost` returns false for `isCourseRuntime(trackId)` (one line; covers save, load
+  and replay, and Skyfall when it joins `COURSE_RUNTIMES`). Settlement is the existing Frostbite gated
+  path (`isUpcomingTrack`): history + best only. Already in place, no change: `recordTrackId('dune-tempest')
+  === 'dune-tempest@t1l1'` (Task 1 `COURSE_TRACKS`) and `firestore.rules` `bestIds()`/`validBest` (Task 4);
+  `firestore.rules` untouched (close to the 1000-expression limit). New tests in
+  `tests/dune-tempest-race.test.js`.
+  - RED: `node --test tests/dune-tempest-race.test.js` → 20 pass / 2 fail, both `AssertionError`:
+    finished race keys `[best-tracks, ghosts, history, unlocked]` !== `[best-tracks, history, unlocked]`;
+    `validGhost(600-sample trace, 'dune-tempest')` true !== false. The record-id and `firestore.rules`
+    assertions were already green before this task (Task 1 / Task 4).
+  - GREEN: same file 22/22; `npm test` 2059 tests, 2056 pass / 0 fail / 3 skipped; `npm run typecheck`
+    clean; `src/game.js` still 580. `firestore-rules.test.js` 3/3 on the local emulators (Java 21,
+    `npx --offline firebase-tools@15.34.1 emulators:exec`; the Playwright half of `test:cloud` not run).
+
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 
 - **Branch CI:** `feature/playable-frostbite-canyon` `fb0b8564`, run `42195029806` — every job green. **PASS**
