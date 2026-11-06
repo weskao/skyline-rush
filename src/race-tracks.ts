@@ -7,7 +7,7 @@ import type { TrackConfig } from './game-types.ts';
 // the World Tour BOOST/NITRO median. Every other track keeps the defaults bit-for-bit.
 const BOOST_ODDS = [0.4, 0.7, 0.8, 0.9] as const; // charge 40%, nitro 30%, slipstream 10%, risk 10%, mystery 10% (unchanged)
 export const RACE_TRACKS: Record<string, TrackConfig> = {
-  coast: { // fixedRings: the original gate line (x 2.5); every other ring is low enough to take from the road
+  coast: { // fixedRings: the original gate heights (8 m, then road height 3 m) on any lane
     name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, layoutVersion: 4, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS, introRivals: true, // the first, easiest map
     sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
   },

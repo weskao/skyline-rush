@@ -979,13 +979,14 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
   assert.notDeepEqual(createRace('coast').rings, createRace('neon').rings);
 });
 
-// Coast keeps its gate line: every ring at x 2.5, altitude 8 and road-height 3 alternating by ring.
-test('coast keeps its gate line at x 2.5, alternating altitude 8 and road-height 3', () => {
-  // One ring per slot (a row's first lane, a train's first ring); the single slots keep the gate line, by slot index.
+// Coast keeps its gate heights: altitude 8 and road-height 3 alternating by ring, each on a lane (user, 2026-11-07:
+// no longer always lane 3).
+test('coast keeps its gate heights, alternating altitude 8 and road-height 3, on any lane', () => {
+  // One ring per slot (a row's first lane, a train's first ring); the single slots keep the gate heights, by slot index.
   const slots = createRace('coast').rings.filter(ring => !(ring.row && ring.x !== -7.5) && !ring.train);
   slots.forEach((ring, i) => {
     if (ring.row || ring.train !== undefined) return;
-    assert.equal(ring.x, 2.5, `ring ${i} @${ring.distance}`);
+    assert.ok(LANES.includes(ring.x), `ring ${i} @${ring.distance} x ${ring.x}`);
     assert.equal(ring.altitude, i % 2 ? 3 : 8, `ring ${i} alternates`);
   });
 });

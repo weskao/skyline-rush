@@ -17,7 +17,7 @@ import { bankItem, activateItem, tickItemCooldown, ringsForItemRule } from './ac
 import { decorateBonusGates, collectBonusGate, applyEMPPulse, recoveryRetention, bonusScore } from './bonus-gates.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
 import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
-import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts';
+import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts'; import { spawnCatchUp } from './catch-up-items.ts';
 import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
@@ -253,7 +253,7 @@ export function stepRace(race, input, dt) {
     return;
   }
   if (race.phase !== 'racing') return;
-  streamEndless(race);
+  streamEndless(race); spawnCatchUp(race);
   race.elapsed += dt;
   const car = race.player;
   const previousScore = car.score;
