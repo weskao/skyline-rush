@@ -20,23 +20,7 @@ test('first visit chooses Low for constrained device, explains it in either lang
   await expect(banner).toBeHidden();
   await expect(page.locator('[data-vfx="quality"]')).toHaveValue('low');
 });
-test('saved manual High takes precedence and suppresses automatic downgrade notice',async({page})=>{
-  await constrained(page);
-  await page.addInitScript(()=>localStorage.setItem('skyline-rush-vfx',
-    JSON.stringify({quality:'high',preset:'extreme',enabled:true})));
-  await page.goto('/');
-  await expect(page.locator('[data-vfx="quality"]')).toHaveValue('high');
-  await expect(page.locator('#performance-notice')).toBeHidden();
-});
-test('high-capability fresh visitor keeps full graphics and sees no performance notice',async({page})=>{
-  await page.addInitScript(()=>{
-    Object.defineProperty(navigator,'hardwareConcurrency',{configurable:true,get:()=>12});
-    Object.defineProperty(navigator,'deviceMemory',{configurable:true,get:()=>16});
-  });
-  await page.goto('/');
-  await expect(page.locator('[data-vfx="quality"]')).toHaveValue('high');
-  await expect(page.locator('#performance-notice')).toBeHidden();
-});
+// The decisions (saved manual High wins; a high-capability visitor keeps High) are tests/device-quality.test.js.
 // The notice floats over the toolbar's panels (it once blocked every click in them on 4-core CI runners), so opening
 // any panel puts it away: the reader is already in the settings it points to.
 const panels = {
