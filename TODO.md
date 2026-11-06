@@ -25,6 +25,32 @@ unchanged; no per-frame DOM queries/allocations beyond one attribute write on ch
 
 ## Garage Wave 3 branch-specific source notes (preserved from economy branch)
 
+## 2026-11-06 — Edge-docked race HUD (`feature/compact-race-hud`)
+
+Repro: on a phone in landscape, the RACING progress panel, the ROAD/FLIGHT MODE panel and the VEHICLE CONTACT toast
+stacked into a ~180 px block centred over the road; desktop/tablet/fold showed the same centred toast and a large mode
+panel. Accepted layout (user choice "邊緣停靠"): slim progress strip in the top bar, one-line ROAD/FLIGHT chip and
+collision chip docked at an edge, never on the road view.
+
+- [x] RED: `tests/race-hud-overlap-browser.spec.js` asserts `.progress-bar`, `.mode-indicator` (racing) and
+  `.impact-report` (impact) stay clear of the road rectangle, and the bar/chip are ≤ 44 px tall; failed on all 7
+  viewports (desktop, tablet, portrait, small phone, landscape, vertical fold, horizontal fold) before the change.
+- [x] GREEN: progress bar moved out of the transformed `.race-progress` (mode rows stay there); mode and collision chips
+  docked by `createRoadSafeFeedback` (layout-change events only, no per-frame measuring). Short landscape: icon + budget
+  chip; the collision chip yields when every edge is HUD (red vignette + red speed readout show the hit).
+- [x] Phone leaderboard (user choice "鄰近三行" + moved off the main view): RED in the same spec — `.leaderboard` covered
+  the road (844x390 at 150–280 × 82–204; 390x844 at 262–367 × 102–262; vertical fold) and was 122–160 px tall with 8
+  rows; a nearby-rows test (1st → YOU,2,3; last → 6,7,YOU) and a Controls-panel test (hand right, Buttons, size L,
+  NITRO cluster dragged onto the board; 844x390 + 390x844) failed with `.leaderboard × control:*`. GREEN: phones
+  (short landscape, portrait ≤ 760 px) show the car ahead, YOU and the car behind (`data-near`, set on rank change
+  only), no panel, 42 px tall, ending before the road column; desktop/tablet keep 8 rows (asserted). The board and
+  progress bar yield to a control the player places over them; hand/size/custom-layout changes now re-run placement.
+- [x] Pre-existing, exposed by the slower spec: once GO! cleared, the en collision chip (121 px) found no edge column
+  at 390/320 px wide and yielded (HEAD passed only because its check ran during GO!). Opt-in `sky` fallback in
+  `pickPeripheralSlot` (unit test RED→GREEN; default still no central fallback) + narrower compact chip ≤ 370 px; the
+  callout now also avoids a visible collision chip. Spec 22/22 with `--repeat-each 2`; `npm test` 1885 pass / 0 fail.
+- [ ] Full browser suite, layout gate, real-device iPhone/fold check, exact-HEAD CI.
+
 ## 2026-11-06 — Wave 3 integration completion (`feature/wave3-garage-integration-20261105`)
 
 Preflight SHAs (2026-11-06): develop `ca592105` → integrated `17c94d74`; Economy `6f0b662e`, Store `51a90571`,
