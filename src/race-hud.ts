@@ -262,7 +262,7 @@ export function createRaceHud(options: HudOptions) {
   function updateStatus(race: HudRace, car: HudRace, input: HudInput, impactAge: number): void {
     const length = race.length;
     let status = L[`phase.${race.phase}`]!;
-    if (race.endless) status = t('mode.endlessHud', { lives: Math.max(0, 5 - car.collisions), next: Math.floor(car.distance / 1000) + 1 });
+    if (race.endless && race.mode === 'endless') status = t('mode.endlessHud', { lives: Math.max(0, 5 - car.collisions), next: Math.floor(car.distance / 1000) + 1 });
     else if (race.phase === 'racing' && race.mode === 'classic' && car.distance >= length - 500) {
       const { ahead, behind } = sprintGaps(race);
       status = `${L['hud.final']}${ahead !== null ? ` · +${Math.round(ahead)} m` : ''}${behind !== null ? ` · −${Math.round(behind)} m` : ''}`;
