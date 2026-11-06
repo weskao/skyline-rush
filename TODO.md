@@ -1,5 +1,20 @@
 ## Garage Wave 3 branch-specific source notes (preserved from economy branch)
 
+## 2026-11-06 — Edge-docked race HUD (`feature/compact-race-hud`)
+
+Repro: on a phone in landscape, the RACING progress panel, the ROAD/FLIGHT MODE panel and the VEHICLE CONTACT toast
+stacked into a ~180 px block centred over the road; desktop/tablet/fold showed the same centred toast and a large mode
+panel. Accepted layout (user choice "邊緣停靠"): slim progress strip in the top bar, one-line ROAD/FLIGHT chip and
+collision chip docked at an edge, never on the road view.
+
+- [x] RED: `tests/race-hud-overlap-browser.spec.js` asserts `.progress-bar`, `.mode-indicator` (racing) and
+  `.impact-report` (impact) stay clear of the road rectangle, and the bar/chip are ≤ 44 px tall; failed on all 7
+  viewports (desktop, tablet, portrait, small phone, landscape, vertical fold, horizontal fold) before the change.
+- [x] GREEN: progress bar moved out of the transformed `.race-progress` (mode rows stay there); mode and collision chips
+  docked by `createRoadSafeFeedback` (layout-change events only, no per-frame measuring). Short landscape: icon + budget
+  chip; the collision chip yields when every edge is HUD (red vignette + red speed readout show the hit).
+- [ ] Full browser suite, layout gate, real-device iPhone/fold check, exact-HEAD CI.
+
 ## 2026-11-06 — Wave 3 integration completion (`feature/wave3-garage-integration-20261105`)
 
 Preflight SHAs (2026-11-06): develop `ca592105` → integrated `17c94d74`; Economy `6f0b662e`, Store `51a90571`,
