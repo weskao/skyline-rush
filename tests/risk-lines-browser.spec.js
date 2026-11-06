@@ -9,10 +9,11 @@ const choose = (page, rule, value) => page.locator(`[data-race-rule="${rule}"]`)
   select.dispatchEvent(new Event('change', { bubbles: true }));
 }, value);
 
+// Desktop en is dropped: its assertions are viewport- and locale-independent (phone en keeps the wiring).
 for (const [name, viewport, hasTouch] of [
   ['desktop', { width: 1440, height: 900 }, false],
   ['phone', { width: 390, height: 844 }, true],
-]) for (const locale of ['en', 'zh-TW']) test.describe(`Risk lines ${name} ${locale}`, () => {
+]) for (const locale of ['en', 'zh-TW']) if (name !== 'desktop' || locale !== 'en') test.describe(`Risk lines ${name} ${locale}`, () => {
   test.use({ viewport, hasTouch });
   test('practice can switch the risky lines off, and Hard keeps them on', async ({ gameplayPage: page }) => {
     const errors = [];
