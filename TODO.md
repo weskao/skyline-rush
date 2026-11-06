@@ -1,3 +1,28 @@
+## 2026-11-07 — Minimap player marker (`feature/minimap-player-marker`, based on `origin/develop` `55821906`)
+
+Symptom: the player's dot on `.race-route-map` was the same shape as the 7 rival dots, hard to find at a glance.
+Acceptance: player marker clearly different in shape, size and colour at 1440×900, 390×844 and 844×390; map box
+unchanged; no per-frame DOM queries/allocations beyond one attribute write on change; CSS-only pulse that honours
+`prefers-reduced-motion`.
+
+- [x] Design: `g.route-player-pointer` (aria-hidden, no `data-racer`, drawn last) = cyan arrow rotated along the route
+  (`translate(x y) rotate(deg)`, whole degrees, written only on change) + white halo pulsing via CSS keyframes
+  (`route-player-pulse`; `animation:none` under reduced motion). The 8 `[data-racer]` circles are unchanged.
+  CSS lives below the NITRO marker, so the `main-ui-contract.json` cssBlob is untouched.
+- [x] RED→GREEN unit: `tests/route-map.test.js` (pointer exists, last child, not a racer, follows YOU, writes nothing on
+  an unchanged frame, hidden with YOU) failed on old code with "exactly one player pointer" / `reading 'attrs'`, passes now.
+- [x] RED→GREEN browser: `tests/legacy-minimap-browser.spec.js` "player minimap marker …" ×3 viewports + reduced-motion
+  test failed (4/4, pointer not found) against a build of the old `route-map.ts`; 13/13 pass on the new build
+  (`PLAYWRIGHT_PORT=5320`).
+- [x] `npm test` 1900 pass / 0 fail / 3 skipped; `npm run typecheck` exit 0; `npm run build` PASS.
+- [x] Real WebGL screenshots reviewed (desktop coast + canyon, phone portrait 390×844 and landscape 844×390, 5 s into
+  a race): arrow clearly visible on light and dark map palettes; annotated composite built with the player circled blue
+  (Telegram send via `/screenshot-mark-send` follows the commit).
+- [x] Related browser specs (responsive, race-hud-overlap, eight-car-grid, main-ui-parity, world-tour, i18n,
+  mode-coverage, circuit, race-feedback-visibility): 194 passed, 0 failed (`PLAYWRIGHT_PORT=5320`, 20.7 min, on the
+  `npm run build` dist of the final code).
+- [ ] Not checked: other seven maps' palettes by screenshot (only coast/canyon), real touch hardware, exact-HEAD CI.
+
 ## Garage Wave 3 branch-specific source notes (preserved from economy branch)
 
 ## 2026-11-06 — Edge-docked race HUD (`feature/compact-race-hud`)
