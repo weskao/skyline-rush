@@ -2,10 +2,15 @@ import { reactive } from 'vue';
 import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { createGarageSkinSession } from './garage-skin-session.ts';
+import { createGarageEconomyState } from './garage-economy-state.ts';
 import { browserSkinPickStorage, rememberSkinPick, restoreSkinPicks } from './garage-skin-preference.ts';
 
 let accountId = 'guest';
 const session = createGarageSkinSession(accountId, Date.now);
+// Shared, fail-closed Economy read state. Cosmetics trials are not ownership.
+const economy = createGarageEconomyState();
+economy.setAccount(accountId);
+export const garageEconomySnapshot = economy.snapshot;
 // Free-to-try is a temporary feature flag, NEVER a purchase or a cloud entitlement.
 declare const __GARAGE_SKIN_TRIAL__: boolean;
 const trialMode = typeof __GARAGE_SKIN_TRIAL__ === 'undefined' || __GARAGE_SKIN_TRIAL__;
@@ -58,6 +63,7 @@ export function setGarageSkinAccount(nextId: string | null): void {
   accountId = id;
   clearExpiryTimer();
   session.setAccount(id);
+  economy.setAccount(id);
   session.setTrial({ enabled: trialMode, expiresAt: trialMode ? freeTrialExpiry : 0 });
   restorePicks();
   publish();

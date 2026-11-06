@@ -156,3 +156,14 @@ test('all bonus gates render with existing warmed materials and bounded pools', 
     }
   }
 });
+
+test('four solo Stunt/Checkpoint gates include score-pad even if the source rolled Mystery', () => {
+  const authored = ['charge', 'nitro', 'slipstream', 'mystery'].map((type, i) =>
+    ({ distance: 110 + i * 200, x: 2.5, altitude: 5, radius: 4.8, type, group: 0 }));
+  for (const mode of ['stunt', 'checkpoint']) {
+    const decorated = decorateBonusGates(authored, { mode, rivals: 0, bonusGates: true });
+    assert.deepEqual(decorated.map(gate => gate.type), ['speed-pad', 'air-pad', 'recovery-pad', 'score-pad']);
+    assert.deepEqual(decorated.map(gate => gate.distance), authored.map(gate => gate.distance));
+  }
+  assert.equal(decorateBonusGates(authored, { mode: 'custom', rivals: 3, itemRules: 'all' }).at(-1).type, 'mystery');
+});
