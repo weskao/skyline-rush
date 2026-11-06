@@ -60,7 +60,9 @@ export function advanceMeasuredCourseTravel(graph: CourseGraph, state: CourseTra
   const frame = sampleRoute(graph, next.id, localS), off = delta(motion.toPosition, frame.point);
   const lateral = dot(off, frame.right), altitude = dot(off, frame.up);
   if (Math.abs(dot(off, frame.forward)) > 0.25 || Math.abs(lateral) > frame.width / 2 ||
-      (next.mode === 'ground' && (altitude < -2 || altitude > 5))) return state;
+      // Authorized flight may cross onto a ground edge up to the gate band, like the in-edge rule.
+      (next.mode === 'ground' && (altitude < -2 ||
+        altitude > (motion.flightAuthorized ? motion.gateHeight?.maxHeight ?? 5 : 5)))) return state;
   // Gate sweep in the incoming node frame, so a kink cannot swing an outer/inner lateral behind the plane.
   const end = sampleRoute(graph, edge.id, length), f = end.forward, r = end.right, u = end.up;
   const crossed = advanceSignedGate(graph, state, {

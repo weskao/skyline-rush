@@ -70,6 +70,15 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
   - Two existing tests entered the synthetic 58°-climb `air` edge with `toPosition [0,0,-51]` (1 m
     along the ground continuation, 0.47 m off the claimed 1 m air station); their input pose is now
     `sampleRoute(graph,'air',1).point`. Assertions unchanged.
+- [x] Task 3 prerequisite — authorized flight across a ground junction (Review Focus 2).
+  `src/course-measured-motion.ts` rejected altitude > 5 m on a ground next edge even with
+  `flightAuthorized`, while the in-edge path allows it. Now an authorized car may cross a node onto
+  a ground edge up to the gate band's `maxHeight` (default 5 m); unauthorized stays capped at 5 m and
+  the existing 20 m case (band 13.2 m) stays rejected.
+  - RED: `node --test tests/course-measured-junctions.test.js` → 4 pass / 2 fail (assertions):
+    authorized 9 m rejected at all 15 Dune and 9 Skyfall ground junctions.
+  - GREEN: same file 6/6; with `course-measured-motion`, `-fleet`, `course-signed-gates`,
+    `course-fleet`, `legacy-race-replay` 96/96 (replay 47/47).
 
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 

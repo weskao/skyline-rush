@@ -65,4 +65,17 @@ for (const graph of [DUNE, SKYFALL]) {
       assert.equal(advanceMeasuredCourseTravel(graph, high.state, high.motion), high.state, `${a.id} → ${b.id} altitude 20`);
     }
   });
+
+  test(`${graph.id}: authorized flight crosses a ground junction inside the gate band; unauthorized does not`, () => {
+    const failures = [];
+    for (const [a, b] of junctions(graph).filter(([, b]) => b.mode === 'ground')) {
+      const { state, motion } = crossing(graph, a, b, 0, 1.5, 9);
+      const next = advanceMeasuredCourseTravel(graph, state, motion);
+      if (next === state || next.currentEdgeId !== b.id || Math.abs(next.altitude - 9) > 1e-6)
+        failures.push(`${a.id} → ${b.id} authorized 9 m: ${next === state ? 'rejected' : `altitude ${next.altitude}`}`);
+      if (advanceMeasuredCourseTravel(graph, state, { ...motion, flightAuthorized: false }) !== state)
+        failures.push(`${a.id} → ${b.id} unauthorized 9 m accepted`);
+    }
+    assert.deepEqual(failures, []);
+  });
 }
