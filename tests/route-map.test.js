@@ -37,3 +37,57 @@ test('Alpine and Cosmic mark real uphill and downhill stretches on the cached ro
     assert.deepEqual(routeElevationCues(id),[],id+' does not need an elevated mini-map overlay');
   }
 });
+
+// Minimal SVG DOM: createRouteMap only needs element creation, attributes and append.
+class FakeNode {
+  constructor(tag) { this.tag = tag; this.attrs = {}; this.children = []; this.writes = 0; this.textContent = ''; }
+  setAttribute(key, value) { this.attrs[key] = String(value); this.writes++; }
+  getAttribute(key) { return key in this.attrs ? this.attrs[key] : null; }
+  append(...nodes) { this.children.push(...nodes); }
+  get firstChild() { return this.children[0] ?? null; }
+  remove() {}
+  find(cls) { return [...this.children, ...this.children.flatMap(c => c.find?.(cls) ?? [])].filter(n => (n.attrs.class ?? '').split(' ').includes(cls)); }
+}
+async function withFakeDom(run) {
+  const original = globalThis.document;
+  globalThis.document = { createElementNS: (_ns, tag) => new FakeNode(tag) };
+  try { return await run(); } finally { globalThis.document = original; }
+}
+
+test('live minimap gives the player a heading pointer that no rival has', async () => {
+  const { createRouteMap } = await import('../src/route-map.ts');
+  await withFakeDom(() => {
+    const { element } = createRouteMap('coast', { live: true });
+    const markers = element.children.filter(n => 'data-racer' in n.attrs);
+    assert.equal(markers.length, 8, 'the eight data-racer markers are unchanged');
+    const [pointer, ...extra] = element.find('route-player-pointer');
+    assert.ok(pointer && !extra.length, 'exactly one player pointer');
+    assert.equal(pointer.tag, 'g');
+    assert.equal(pointer.attrs['aria-hidden'], 'true');
+    assert.ok(!('data-racer' in pointer.attrs), 'the pointer is not a racer marker');
+    assert.equal(pointer.find('route-player-halo').length, 1);
+    assert.equal(pointer.find('route-player-arrow').length, 1);
+    assert.strictEqual(element.children.at(-1), pointer, 'drawn last so no rival covers the player');
+    assert.equal(createRouteMap('coast').element.find('route-player-pointer').length, 0, 'static previews have no player');
+  });
+});
+
+test('player pointer follows the YOU marker, points along the route and only writes on change', async () => {
+  const { createRouteMap } = await import('../src/route-map.ts');
+  await withFakeDom(() => {
+    const { element, updateDrivers } = createRouteMap('coast', { live: true });
+    const pointer = element.find('route-player-pointer')[0];
+    const you = element.children.find(n => n.attrs['data-racer'] === 'YOU');
+    const drivers = [{ id: 'YOU', distance: 300, x: 0 }, { id: 'NOVA', distance: 320, x: 0 }];
+    updateDrivers(drivers);
+    const a = routeMarker('coast', 300), b = routeMarker('coast', 310);
+    const heading = Math.round(Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI + 90);
+    assert.equal(pointer.attrs.transform, `translate(${you.attrs.cx} ${you.attrs.cy}) rotate(${heading})`);
+    assert.equal(pointer.attrs.visibility, 'visible');
+    const writes = pointer.writes;
+    updateDrivers(drivers);
+    assert.equal(pointer.writes, writes, 'unchanged frames write no attributes');
+    updateDrivers([{ id: 'NOVA', distance: 320, x: 0 }]);
+    assert.equal(pointer.attrs.visibility, 'hidden', 'hidden with the YOU marker');
+  });
+});

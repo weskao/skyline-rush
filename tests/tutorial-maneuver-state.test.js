@@ -79,3 +79,37 @@ test('BARREL ROLL must not reuse a landing from before the latest roll', () => {
   state.update({ ...car, altitude: 2, trick: { done: true } }, 1 / 60);
   assert.equal(state.update({ ...car, trickPayout: { nitro: .25, hard: false } }, 1 / 60), false);
 });
+
+test('a missed AIR→ROAD CHAIN names its cause so the coach can say what to fix', () => {
+  const car = fresh(), dt = 1 / 60;
+  const attempt = (flight, landing) => {
+    const state = createTutorialManeuverState('airChain', car);
+    state.update({ ...car, altitude: 2, thrusting: true, ...flight }, dt);
+    state.update({ ...car, landing }, dt);
+    return [state.phase, state.reason];
+  };
+  assert.deepEqual(attempt({ poweredFlightTime: .6 }, { chain: false, speed: 3 }), ['retry', 'noBoost']);
+  assert.deepEqual(attempt({ flightBoosted: true, poweredFlightTime: .2 }, { chain: false, speed: 3 }), ['retry', 'short']);
+  assert.deepEqual(attempt({ flightBoosted: true, poweredFlightTime: .6 }, { chain: false, speed: 15 }), ['retry', 'hard']);
+  assert.deepEqual(attempt({ flightBoosted: true, poweredFlightTime: .6 }, { chain: false, speed: 3 }), ['retry', 'slow']);
+  const ok = createTutorialManeuverState('airChain', car);
+  ok.update({ ...car, altitude: 2, thrusting: true, flightBoosted: true, poweredFlightTime: .6 }, dt);
+  assert.equal(ok.update({ ...car, landing: { chain: true, speed: 3 } }, dt), true);
+  assert.equal(ok.reason, null, 'a success carries no failure reason');
+});
+
+test('a missed BARREL ROLL names whether the spin never started, landed early or landed hard', () => {
+  const car = fresh(), dt = 1 / 60;
+  const noRoll = createTutorialManeuverState('barrelRoll', car);
+  noRoll.update({ ...car, altitude: 3 }, dt);
+  noRoll.update({ ...car, landing: { speed: 2 } }, dt);
+  assert.deepEqual([noRoll.phase, noRoll.reason], ['retry', 'noRoll']);
+  const early = createTutorialManeuverState('barrelRoll', car);
+  early.update({ ...car, altitude: 3, trick: { done: false } }, dt);
+  early.update({ ...car, landing: { speed: 2 } }, dt);
+  assert.deepEqual([early.phase, early.reason], ['retry', 'early']);
+  const hard = createTutorialManeuverState('barrelRoll', car);
+  hard.update({ ...car, altitude: 3, trick: { done: true } }, dt);
+  hard.update({ ...car, landing: { speed: 12 }, trickPayout: { nitro: 0, hard: true } }, dt);
+  assert.deepEqual([hard.phase, hard.reason], ['retry', 'hard']);
+});
