@@ -1,13 +1,17 @@
+import { CHAIN_HARD_LANDING, CHAIN_POWERED_SECONDS } from './air-chain.ts';
+
 /** Observe engine outcomes only. No mutation of the race, controls, or car. */
 export type ManeuverLesson = 'airChain' | 'barrelRoll' | 'nitro';
 export type ManeuverPhase = 'ready' | 'airborne' | 'flicked' | 'rolling' | 'readyToLand' | 'sprinting' | 'retry';
+/** Why the last attempt missed, so the coach can name the fix. */
+export type RetryReason = 'noBoost' | 'short' | 'hard' | 'slow' | 'noRoll' | 'early';
 export interface ManeuverSnapshot {
   altitude: number;
   thrusting: boolean;
   flightBoosted: boolean;
   poweredFlightTime: number;
   flick: { dir: number; time: number } | null;
-  landing: { chain?: boolean } | null;
+  landing: { chain?: boolean; speed?: number } | null;
   trick: { done: boolean } | null;
   trickPayout: { nitro: number; hard: boolean } | null;
   nitroUses: number;
@@ -18,6 +22,8 @@ const NITRO_OBSERVE_SECONDS = 1.6;
 const NITRO_SPEED_GAIN = 5;
 export function createTutorialManeuverState(kind: ManeuverLesson, initial: ManeuverSnapshot) {
   let phase: ManeuverPhase = 'ready';
+  let reason: RetryReason | null = null;
+  let boosted = false;
   let lastLanding = initial.landing;
   let lastPayout = initial.trickPayout;
   let lastFlick = initial.flick;
@@ -29,6 +35,7 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
   let startSpeed = initial.speed, peakSpeed = initial.speed;
   return {
     get phase() { return phase; },
+    get reason() { return phase === 'retry' ? reason : null; },
     get progress() {
       if (kind === 'nitro') return Math.min(1, sprintSeconds / NITRO_OBSERVE_SECONDS);
       return kind === 'airChain' ? (airborne ? 0.5 : 0) : (rolling ? 0.5 : 0);
@@ -37,17 +44,18 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
       if (!Number.isFinite(dt) || dt <= 0 || dt > 0.1) return false;
       if (kind === 'airChain') {
         if (car.altitude > 0 && car.thrusting) attemptedFlight = true;
+        if (car.flightBoosted) boosted = true; // the engine clears it on touchdown
         // The engine awards the chain only after 0.4s of powered flight. Do not tell
         // the learner to release FLY before that actual engine threshold is met.
-        if (car.altitude > 0 && car.thrusting && car.flightBoosted && car.poweredFlightTime >= 0.4) {
+        if (car.altitude > 0 && car.thrusting && car.flightBoosted && car.poweredFlightTime >= CHAIN_POWERED_SECONDS) {
           airborne = true;
           phase = 'airborne';
         }
         if (car.landing && car.landing !== lastLanding) {
           const earned = airborne && car.landing.chain === true;
-          airborne = false;
+          reason = !boosted ? 'noBoost' : !airborne ? 'short' : (car.landing.speed ?? 0) >= CHAIN_HARD_LANDING ? 'hard' : 'slow';
           phase = !earned && attemptedFlight ? 'retry' : 'ready';
-          attemptedFlight = false;
+          airborne = attemptedFlight = boosted = false;
           lastLanding = car.landing;
           return earned;
         }
@@ -68,6 +76,7 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
         if (car.trickPayout && car.trickPayout !== lastPayout) {
           const earned = rolling && car.landing !== null && car.landing !== lastLanding &&
             car.trickPayout.nitro > 0 && !car.trickPayout.hard;
+          reason = car.trickPayout.hard ? 'hard' : 'noRoll';
           rolling = false;
           phase = !earned && attemptedFlight ? 'retry' : 'ready';
           attemptedFlight = false;
@@ -76,6 +85,7 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
           return earned;
         }
         if (car.landing && car.landing !== lastLanding) {
+          reason = rolling ? 'early' : 'noRoll'; // a roll still spinning at touchdown pays nothing
           rolling = false;
           phase = attemptedFlight ? 'retry' : 'ready';
           attemptedFlight = false;
