@@ -115,7 +115,7 @@ export function skinView(id: unknown, profile: SkinProfile, session: SkinSession
   return { id: skin.id, category: skin.category, state, owned, canEquip: !equipped && (owned || trial), canPreview: true };
 }
 
-// Source artwork is 3x (WebP for existing effects; 288-unit SVG for the four Airflow variants). All cards display at 1x CSS size.
+// Source artwork is native 3x (WebP for existing effects; transparent PNG for four Airflow variants). All cards display at 1x CSS size.
 export function skinArtwork(id: unknown, baseUrl: string) {
   const skin = findSkin(id);
   if (!skin) return null;
@@ -124,7 +124,7 @@ export function skinArtwork(id: unknown, baseUrl: string) {
   const candidateRasterId = 'candidateRasterId' in skin ? skin.candidateRasterId : undefined;
   const hasRaster = typeof candidateRasterId === 'string';
   const src = hasRaster
-    ? `${base}feature-assets/garage-vfx-skins/raster/${candidateRasterId}@3x.${skin.category === 'airflow' ? 'svg' : 'webp'}`
+    ? `${base}feature-assets/garage-vfx-skins/raster/${candidateRasterId}@3x.${skin.category === 'airflow' ? 'png' : 'webp'}`
     : fallback;
   return { src, fallback, cssSize: SKIN_PREVIEW_UI.cardCssSize, candidateRasterId, hasRaster };
 }

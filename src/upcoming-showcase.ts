@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { makeCar, CAR_STYLES } from './car-model.js';
 import { createAeroVFX } from './aero-vfx.js';
-import { showcaseCameraPose, type CameraPose } from './track-preview.ts';
+import { previewPlayer, showcaseCameraPose, type CameraPose } from './track-preview.ts';
 import { vfxSettings, type VfxSettings } from './vfx-settings.ts';
 import type { PaintPreset } from './appearance.ts';
 import type { UpcomingTrackId } from './upcoming-tracks.ts';
@@ -111,9 +111,11 @@ export function createUpcomingShowcase(
     const grounded = settings.enabled && settings.airflow;
     stage.environment.update(time, settings.quality, calm, grounded);
     const player = stage.cars[0]!;
-    player.position.set(0, grounded ? .06 : 1.66 + (calm ? 0 : Math.sin(time * 1.1) * .12), 0);
+    // Reuse the same shared Roadster ground/hover behavior as classic home tracks.
+    const vehiclePose = previewPlayer(stage.id, driver, time, calm, grounded);
+    player.position.set(0, vehiclePose.altitude + (grounded ? .06 : 0), 0);
     player.rotation.z = calm ? 0 : Math.sin(time * .85) * .022;
-    player.userData.jets.visible = !grounded && !calm;
+    player.userData.jets.visible = vehiclePose.thrusting;
     player.userData.wing.position.y = player.userData.wing.userData.restY
       + (grounded ? 0 : player.userData.wing.userData.lift);
     for (const wheel of player.userData.wheels)
@@ -130,7 +132,7 @@ export function createUpcomingShowcase(
     camera.lookAt(pose.lookSide, pose.lookHeight, -pose.lookAhead);
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld(true);
-    driver.altitude = grounded ? 0 : 1.6;
+    driver.altitude = vehiclePose.altitude;
     const dt = Number.isFinite(previousTime) ? Math.max(0, Math.min(.05, time - previousTime)) : 1 / 60;
     previousTime = time;
     stage.aero.update(previewRace, dt, origin, { ...settings, airflow: true }, calm, null, true);

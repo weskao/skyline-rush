@@ -59,6 +59,7 @@ for (const [name, viewport, hasTouch, locale] of [
     await page.locator('#world').screenshot({ path: `artifacts/circuit/${name}-seam.png` });
     await page.keyboard.press('Escape');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');
+    expect(errors, 'settleRace/phaseUI must not throw after pause-to-finish').toEqual([]);
     await expect(page.locator('#overlay-title')).toHaveText(locale === 'en' ? 'Circuit complete' : '環道賽完成');
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-mode-history-v1')).at(-1).lapCount)).toBe(lapCount);
     await expect(page.locator('#race-overlay')).toBeVisible();

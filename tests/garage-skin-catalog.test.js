@@ -113,22 +113,27 @@ test('every original 3x VFX equipment image has a distinct genuine catalog entry
 });
 
 // Four unique source icons (288x288) rather than one shared category SVG.
-test('all airflow skins resolve to four distinct native 3x SVG artworks', async () => {
+test('all airflow skins resolve to four distinct native 3x transparent PNG artworks', async () => {
   const { readFileSync, existsSync } = await import('node:fs');
-  const ids=['airflow-basic','airflow-slipstream','airflow-vortex','airflow-prism'];
-  const sources=new Set();
-  for(const id of ids){
-    const image=skinArtwork(id,'/skyline-rush/');
-    assert.equal(image.hasRaster,true);
-    assert.equal(image.cssSize,96);
-    assert.equal(image.candidateRasterId,id);
-    assert.match(image.src,/airflow-[a-z]+@3x\.svg$/);
+  const ids = ['airflow-basic', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism'];
+  const sources = new Set();
+  for (const id of ids) {
+    const image = skinArtwork(id, '/skyline-rush/');
+    assert.equal(image.hasRaster, true);
+    assert.equal(image.cssSize, 96);
+    assert.equal(image.candidateRasterId, id);
+    assert.match(image.src, /airflow-[a-z]+@3x\.png$/);
     sources.add(image.src);
-    const source = new URL(`../public/feature-assets/garage-vfx-skins/raster/${id}@3x.svg`, import.meta.url);
-    assert.equal(existsSync(source), true, `missing SVG: ${id}`);
-    const svg=readFileSync(source,'utf8');
-    assert.match(svg, /<svg\b[^>]*width="288"[^>]*height="288"[^>]*viewBox="0 0 288 288"/);
-    assert.ok(svg.includes('<path'), `missing custom path shapes: ${id}`);
+    const source = new URL(`../public/feature-assets/garage-vfx-skins/raster/${id}@3x.png`, import.meta.url);
+    assert.ok(existsSync(source), `missing PNG: ${id}`);
+    const png = readFileSync(source);
+    assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+    assert.equal(png.readUInt32BE(16), 288);
+    assert.equal(png.readUInt32BE(20), 288);
+    assert.equal(png[25], 3, 'indexed transparent PNG');
+    assert.ok(png.includes(Buffer.from('tRNS')), 'transparency palette required');
+    const fallback = new URL(`../public/feature-assets/garage-vfx-skins/raster/${id}@3x.svg`, import.meta.url);
+    assert.ok(existsSync(fallback), 'preserve the SVG fallback');
   }
-  assert.equal(sources.size,4);
+  assert.equal(sources.size, 4);
 });

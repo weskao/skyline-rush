@@ -1,5 +1,26 @@
 import { test, expect } from './helpers/test.js';
 
+test('Garage Studio bloom does not wash out the dark background', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high', enabled: true, comfortable: false })));
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-studio-open').click();
+  await page.locator('[data-garage-angle="front"]').click();
+  await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame', 'true');
+  const shot = await page.locator('#garage-preview #world').screenshot();
+  const background = await page.evaluate(async b64 => {
+    const image = await createImageBitmap(await (await fetch(`data:image/png;base64,${b64}`)).blob());
+    const canvas = new OffscreenCanvas(image.width, image.height), context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0);
+    const data = context.getImageData(Math.floor(image.width * .35), Math.floor(image.height * .15), Math.floor(image.width * .3), Math.floor(image.height * .15)).data;
+    let sum = 0;
+    for (let i = 0; i < data.length; i += 4) sum += data[i] + data[i + 1] + data[i + 2];
+    return sum / (data.length / 4) / 3;
+  }, shot.toString('base64'));
+  expect(background).toBeLessThan(60);
+});
+
 // Real SwiftShader WebGL is rendered here. rAF cadence is an environment-dependent
 // browser-frame proxy, NOT a mobile GPU timing or a thermal/battery benchmark.
 for (const quality of ['low', 'medium', 'high']) {
