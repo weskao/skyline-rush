@@ -37,7 +37,7 @@ test('Custom total field 2–8 and solo remain isolated', () => {
 
 test('Easy, Normal, Hard produce ordered AI pace without affecting player state', () => {
   const distances = ['easy', 'normal', 'hard'].map(difficulty => {
-    const race = createRace('coast', { mode: 'custom', rivals: 1, difficulty, traffic: 'off' });
+    const race = createRace('aurora', { mode: 'custom', rivals: 1, difficulty, traffic: 'off' }); // Coast and Neon are opening maps: Easy = Normal there
     race.phase = 'racing';
     for (let frame = 0; frame < 500; frame++) stepRace(race, {}, 1 / 60);
     assert.equal(race.player.distance, 0);
