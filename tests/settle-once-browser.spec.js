@@ -24,8 +24,9 @@ async function finish(page, mode) {
 }
 
 test.use({ viewport: { width: 1440, height: 900 } });
-// Circuit needs real driven laps (a teleport never counts one); tests/race-results.test.js covers its settle-once per mode.
-for (const mode of ['classic', 'time', 'gauntlet', 'checkpoint', 'stunt', 'custom', 'elimination', 'endless']) {
+// Classic and Endless are the two storage writers (skyline-rush-history, mode-history-v1); the UI paths below are mode-independent,
+// and tests/race-results.test.js ("10C: every re-render of a finished race ... once, per mode") covers settle-once for every other mode.
+for (const mode of ['classic', 'endless']) {
   test(`${mode}: one finish writes its result once, whatever follows`, async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));

@@ -1,4 +1,83 @@
+## 2026-11-07 — Minimap player marker (`feature/minimap-player-marker`, based on `origin/develop` `55821906`)
+
+Symptom: the player's dot on `.race-route-map` was the same shape as the 7 rival dots, hard to find at a glance.
+Acceptance: player marker clearly different in shape, size and colour at 1440×900, 390×844 and 844×390; map box
+unchanged; no per-frame DOM queries/allocations beyond one attribute write on change; CSS-only pulse that honours
+`prefers-reduced-motion`.
+
+- [x] Design: `g.route-player-pointer` (aria-hidden, no `data-racer`, drawn last) = cyan arrow rotated along the route
+  (`translate(x y) rotate(deg)`, whole degrees, written only on change) + white halo pulsing via CSS keyframes
+  (`route-player-pulse`; `animation:none` under reduced motion). The 8 `[data-racer]` circles are unchanged.
+  CSS lives below the NITRO marker, so the `main-ui-contract.json` cssBlob is untouched.
+- [x] RED→GREEN unit: `tests/route-map.test.js` (pointer exists, last child, not a racer, follows YOU, writes nothing on
+  an unchanged frame, hidden with YOU) failed on old code with "exactly one player pointer" / `reading 'attrs'`, passes now.
+- [x] RED→GREEN browser: `tests/legacy-minimap-browser.spec.js` "player minimap marker …" ×3 viewports + reduced-motion
+  test failed (4/4, pointer not found) against a build of the old `route-map.ts`; 13/13 pass on the new build
+  (`PLAYWRIGHT_PORT=5320`).
+- [x] `npm test` 1900 pass / 0 fail / 3 skipped; `npm run typecheck` exit 0; `npm run build` PASS.
+- [x] Real WebGL screenshots reviewed (desktop coast + canyon, phone portrait 390×844 and landscape 844×390, 5 s into
+  a race): arrow clearly visible on light and dark map palettes; annotated composite built with the player circled blue
+  (Telegram send via `/screenshot-mark-send` follows the commit).
+- [x] Related browser specs (responsive, race-hud-overlap, eight-car-grid, main-ui-parity, world-tour, i18n,
+  mode-coverage, circuit, race-feedback-visibility): 194 passed, 0 failed (`PLAYWRIGHT_PORT=5320`, 20.7 min, on the
+  `npm run build` dist of the final code).
+- [ ] Not checked: other seven maps' palettes by screenshot (only coast/canyon), real touch hardware, exact-HEAD CI.
+
+## 2026-11-07 — Ring lane variety (`feature/ring-variety`)
+
+Root cause: Coast pinned every gate to x 2.5 (lane 3); other tracks drew x uniformly in ±7 m, so lanes 2/3 took
+~74% of rings, and trains were limited to lanes 2/3. Fix in `src/ring-layout.ts`: each ring line picks a lane
+(uniform over four, keeping the previous lane 65%), trains follow their slot's lane; Coast keeps its 8 m / 3 m heights.
+
+- [x] RED `tests/ring-variety.test.js` (Coast lanes `0/0/100/0`) → GREEN; lanes now ~22–29% each on every track.
+- [x] Ease guard over 12 seeds (`node scripts/ring-variety.mjs 12`): bot ring take within 2 pts and NITRO/min within
+  ~4% of the pre-change baseline on all ten tracks; trains/rows per race unchanged.
+- [x] Seed-coupled tests updated: Coast gate line (heights, any lane), train lanes (tracks any lane, Endless middle),
+  World Tour layout hashes re-locked, risk-line payout tests use the 8-car grid. `npm test` 1890 / 0 fail.
+- [x] Authored sequences protected (user choice: rule + guard): `.claude/rules/ring-layout.md` (ask before changing)
+  and `tests/ring-authored-sequences.test.js` (Spiral/Cosmic hoops, Gauntlet hoops, shortcut reward line over 5
+  seeds); mutation check: moving `spiral-hoop-1` 10 m turns it RED. `npm test` 1893 / 0 fail.
+- [x] Catch-up items (user, 2026-11-07; design `docs/superpowers/specs/2026-11-07-catch-up-items-design.md`):
+  `src/catch-up-items.ts`, Classic (not Daily) + Cup, player-only, ≥ 150 m behind → on, < 50 m → off, one item per
+  12–6 s, ≤ 12 per race, added 950–1030 m ahead (past the 900 m draw range). RED (module missing) → GREEN
+  `tests/catch-up-items.test.js` 8/8; race state stays structuredClone-able (RNG derived per try, not stored).
+  `npm test` 1901 / 0 fail. Simulated weak driver: 0–3 items per race, finish time ±0.5 s (mild by design).
+- [x] Browser: the full `npm run test:browser` run lost its server after ~594 tests (396 ERR_CONNECTION_REFUSED). Each
+  of the 56 other failures was rerun alone on this branch and on the `develop` base `475517fe`: 2 were ours
+  (`item-feedback:27`, an outer-lane miss clamped back into the ring; `handoff:143`, a steer-less pilot vs rings in other
+  lanes) plus `ring-rows` expecting a middle-lane train; test setups fixed, assertions unchanged. Every other spec passes
+  alone (79 + Garage 46). Stress (`--repeat-each=8 --workers=4 --retries=0`, ring-rows + handoff + item-feedback):
+  7/40 fail on this branch and 7/40 on the `develop` base — a load flake already on `develop`, not caused by this change.
+- [ ] Real WebGL screenshots of edge-lane rings, trains and catch-up items reviewed by eye.
+- [ ] Exact-HEAD full CI after merge to `develop` (needs user approval).
+
 ## Garage Wave 3 branch-specific source notes (preserved from economy branch)
+
+## 2026-11-06 — Edge-docked race HUD (`feature/compact-race-hud`)
+
+Repro: on a phone in landscape, the RACING progress panel, the ROAD/FLIGHT MODE panel and the VEHICLE CONTACT toast
+stacked into a ~180 px block centred over the road; desktop/tablet/fold showed the same centred toast and a large mode
+panel. Accepted layout (user choice "邊緣停靠"): slim progress strip in the top bar, one-line ROAD/FLIGHT chip and
+collision chip docked at an edge, never on the road view.
+
+- [x] RED: `tests/race-hud-overlap-browser.spec.js` asserts `.progress-bar`, `.mode-indicator` (racing) and
+  `.impact-report` (impact) stay clear of the road rectangle, and the bar/chip are ≤ 44 px tall; failed on all 7
+  viewports (desktop, tablet, portrait, small phone, landscape, vertical fold, horizontal fold) before the change.
+- [x] GREEN: progress bar moved out of the transformed `.race-progress` (mode rows stay there); mode and collision chips
+  docked by `createRoadSafeFeedback` (layout-change events only, no per-frame measuring). Short landscape: icon + budget
+  chip; the collision chip yields when every edge is HUD (red vignette + red speed readout show the hit).
+- [x] Phone leaderboard (user choice "鄰近三行" + moved off the main view): RED in the same spec — `.leaderboard` covered
+  the road (844x390 at 150–280 × 82–204; 390x844 at 262–367 × 102–262; vertical fold) and was 122–160 px tall with 8
+  rows; a nearby-rows test (1st → YOU,2,3; last → 6,7,YOU) and a Controls-panel test (hand right, Buttons, size L,
+  NITRO cluster dragged onto the board; 844x390 + 390x844) failed with `.leaderboard × control:*`. GREEN: phones
+  (short landscape, portrait ≤ 760 px) show the car ahead, YOU and the car behind (`data-near`, set on rank change
+  only), no panel, 42 px tall, ending before the road column; desktop/tablet keep 8 rows (asserted). The board and
+  progress bar yield to a control the player places over them; hand/size/custom-layout changes now re-run placement.
+- [x] Pre-existing, exposed by the slower spec: once GO! cleared, the en collision chip (121 px) found no edge column
+  at 390/320 px wide and yielded (HEAD passed only because its check ran during GO!). Opt-in `sky` fallback in
+  `pickPeripheralSlot` (unit test RED→GREEN; default still no central fallback) + narrower compact chip ≤ 370 px; the
+  callout now also avoids a visible collision chip. Spec 22/22 with `--repeat-each 2`; `npm test` 1885 pass / 0 fail.
+- [ ] Full browser suite, layout gate, real-device iPhone/fold check, exact-HEAD CI.
 
 ## 2026-11-06 — Wave 3 integration completion (`feature/wave3-garage-integration-20261105`)
 

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createRace, stepRace } from '../src/game.js';
 import { createCallouts } from '../src/callouts.ts';
 import { setLocale } from '../src/i18n.ts';
+import { CHAIN_HARD_LANDING } from '../src/air-chain.ts';
 
 function preparedRace() {
   const race = createRace();
@@ -69,7 +70,7 @@ test('Phase 1: ordinary flight, hard landing and very short flight do not award 
   hard.player.nitro = 1;
   advance(hard, 0.85, { fly: true, nitro: true });
   hard.player.altitude = 0.01;
-  hard.player.verticalSpeed = -12;
+  hard.player.verticalSpeed = -(CHAIN_HARD_LANDING + 1); // user, 2026-11-07: the chain limit was relaxed from 11 m/s
   stepRace(hard, {}, 1 / 60);
   assert.equal(hard.player.altitude, 0);
   assert.notEqual(hard.player.landing.chain, true);

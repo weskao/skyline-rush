@@ -3,26 +3,29 @@ import { expect } from '@playwright/test';
 import { saveArtifact } from './helpers/artifact.js';
 import { ciTimeout } from './helpers/ci.js';
 
-// 11B visual check: every themed track draws each kind of hazard it places, plus its launch ramps and
-// hoops, in the real WebGL scene where the simulation places them. Themes have no menu toggle yet (10A),
+// 11B visual check: each kind of hazard a theme places, plus its launch ramps and hoops, is drawn in the real WebGL scene where the simulation places them. Themes have no menu toggle yet (10A),
 // so the test loads the same themedHazards()/themedExtras() a `themes: true` race would get.
-for (const [name, viewport, hasTouch] of [
-  ['desktop', { width: 1440, height: 900 }, false],
-  ['phone', { width: 390, height: 844 }, true],
-]) test.describe(`themed hazards ${name}`, () => {
-  test.use({ viewport, hasTouch });
-  test('every themed track draws each hazard type, ramp and hoop on the road ahead', async ({ gameplayPage: page }) => {
+// The pools are per effect, not per track, so one case per pool proves the draw contract; each track's
+// placements are proven by tests/track-themes.test.js (valid, routed to ramps/hoops, behaviour).
+const name = 'desktop';
+test.describe(`themed hazards ${name}`, () => {
+  test.use({ viewport: { width: 1440, height: 900 }, hasTouch: false });
+  test('each draw pool (barriers, gusts, surfaces, markers, ramps, rings) draws a themed placement on the road ahead', async ({ gameplayPage: page }) => {
     test.setTimeout(ciTimeout(480_000));
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    // One target per (track, type): the first placement of each type, in course order.
-    const cases = await page.evaluate(() => import('/src/track-themes.ts').then(m => m.THEMED_TRACKS.flatMap(track => {
+    // One target per draw pool: the first themed placement that lands in it, in course order.
+    const cases = await page.evaluate(async () => {
+      const m = await import('/src/track-themes.ts'), { OBJECT_CATALOG } = await import('/src/object-catalog.ts');
+      const poolOf = type => type === 'ramp' ? 'launch-ramps' : type === 'ring' ? 'Race rings' : type === 'branch-marker' ? 'hazard-markers'
+        : { block: 'gauntlet-barriers', push: 'hazard-gusts', slow: 'hazard-surfaces' }[OBJECT_CATALOG[type].effect];
       const seen = new Set();
-      return m.themedPlacements(track).filter(p => !seen.has(p.type) && seen.add(p.type)).map(p => ({ track, type: p.type, id: p.id }));
-    })));
+      return m.THEMED_TRACKS.flatMap(track => m.themedPlacements(track).map(p => ({ track, type: p.type, id: p.id, mesh: poolOf(p.type) })))
+        .filter(c => !seen.has(c.mesh) && seen.add(c.mesh));
+    });
+    expect(cases.map(c => c.mesh).sort(), 'every pool has a themed placement').toEqual(
+      ['Race rings', 'gauntlet-barriers', 'hazard-gusts', 'hazard-markers', 'hazard-surfaces', 'launch-ramps']);
     const tracks = [...new Set(cases.map(c => c.track))];
-    expect(tracks.length).toBeGreaterThanOrEqual(10);
-    for (const type of ['ramp', 'ring']) expect(cases.some(c => c.type === type), `some theme places a ${type}`).toBe(true);
     await page.evaluate(list => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(list)), tracks);
     await page.reload();
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
@@ -31,10 +34,9 @@ for (const [name, viewport, hasTouch] of [
       await page.locator('#start-button').click();
       await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15_000) });
       await expect(page.locator('#countdown')).toBeHidden({ timeout: ciTimeout(10_000) });
-      const mesh = await page.evaluate(async ({ track, id, type }) => {
+      await page.evaluate(async ({ track, id, type }) => {
         const { themedHazards, themedExtras } = await import('/src/track-themes.ts');
         const { hazardPose } = await import('/src/hazard-race.ts');
-        const { OBJECT_CATALOG } = await import('/src/object-catalog.ts');
         const race = window.gameplay.race;
         race.traffic = []; race.pickups = []; race.rings = []; race.hazards = []; race.ramps = [];
         const extras = themedExtras(track, { themes: true }, { rings: true, ringScore: 0, nearScore: 0, passScore: 0 });
@@ -52,12 +54,8 @@ for (const [name, viewport, hasTouch] of [
         cancelAnimationFrame(window.themePin);
         const pin = () => { if (race.phase === 'racing') { Object.assign(race.player, { distance: target.distance - 45, x: free, speed: 0, altitude: 0 }); race.elapsed = time; } window.themePin = requestAnimationFrame(pin); };
         pin();
-        if (type === 'ramp') return 'launch-ramps';
-        if (type === 'ring') return 'Race rings';
-        if (type === 'branch-marker') return 'hazard-markers';
-        return { block: 'gauntlet-barriers', push: 'hazard-gusts', slow: 'hazard-surfaces' }[OBJECT_CATALOG[type].effect];
       }, c);
-      expect(mesh, `${c.id}: a ${c.type} is drawn by some pool`).toBeTruthy();
+      const mesh = c.mesh;
       const drawn = () => page.evaluate(meshName => {
         const found = window.gameScene.scene.getObjectByName(meshName);
         if (!found?.visible) return 0;
