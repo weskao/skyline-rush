@@ -58,3 +58,16 @@ test('several broken rules yield one violation each', () => {
   const v = checkGlb(summary({ triangles: 1e9, bytes: 1e9, usedMaterials: ['probe_paint'] }), entry);
   assert.equal(v.length, 3);
 });
+
+test('production shape: createModelCache({ baseUrl }) loads the committed probe via the default manifest and Meshopt', async () => {
+  const { createModelCache } = await import('../src/asset-model-loader.ts');
+  const { readFileSync } = await import('node:fs');
+  const glb = readFileSync(new URL('../public/models/pipeline-probe/pipeline-probe.glb', import.meta.url));
+  const urls = [];
+  const fetch = async (url) => { urls.push(url); return new Response(glb); };
+  const handle = await createModelCache({ baseUrl: '/skyline-rush/', fetch }).load('pipeline-probe');
+  assert.equal(handle.kind, 'model', `got ${JSON.stringify(handle)}`);
+  assert.deepEqual(urls, ['/skyline-rush/models/pipeline-probe/pipeline-probe.glb']);
+  assert.ok(handle.instance().getObjectByName('wheel_rr'));
+  handle.release();
+});

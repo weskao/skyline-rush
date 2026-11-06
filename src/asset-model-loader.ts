@@ -4,7 +4,7 @@ import type { Material, Mesh, Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
-import { modelUrl } from './model-manifest.ts';
+import { MODEL_MANIFEST, modelUrl } from './model-manifest.ts';
 import type { FallbackKey, ModelManifestEntry, ModelQuality } from './model-manifest.ts';
 
 export type FallbackReason =
@@ -95,7 +95,7 @@ function inspect(scene: Object3D, entry: ModelManifestEntry): Loaded {
 }
 
 export function createModelCache(options: ModelCacheOptions): ModelCache {
-  const { baseUrl, manifest = {}, timeoutMs = 15000, loadMeshopt = defaultLoadMeshopt } = options;
+  const { baseUrl, manifest = MODEL_MANIFEST, timeoutMs = 15000, loadMeshopt = defaultLoadMeshopt } = options;
   const doFetch = options.fetch ?? ((url, init) => globalThis.fetch(url, init));
   const slots = new Map<string, Slot>();
   let meshopt: Promise<unknown> | undefined;
