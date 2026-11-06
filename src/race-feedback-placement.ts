@@ -40,6 +40,8 @@ export function pickPeripheralSlot(viewport: Size, size: Size, obstacles: Feedba
 const SELECTORS = '.brand, .toolbar, .aero-tools, .airflow-hud, .race-progress, .progress-bar, .mode-indicator, .position-stat, .speedometer, .flight-telemetry, #nitro-status, .leaderboard, .race-route-map, .impact-report, #touch-controls [data-control], .touch-pad, #tutorial-coach';
 const visible = (el: HTMLElement): boolean => !el.hidden && !!el.getClientRects().length &&
   getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
+// The countdown hides the telemetry footer (speed, mode chip, flight stats) with visibility only; its boxes stay reserved for GO.
+const reserved = (el: HTMLElement): boolean => visible(el) || (!el.hidden && !!el.getClientRects().length && !!el.closest('.telemetry'));
 const rect = (box: DOMRect): FeedbackRect => ({ left: box.left, right: box.right, top: box.top, bottom: box.bottom });
 
 /** `mode` (ROAD/FLIGHT chip) and `impact` (collision chip) dock at an edge too; both have a fixed CSS size, so text updates never re-place them. */
@@ -68,7 +70,7 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement, 
         const area = visible(el) ? rect(el.getBoundingClientRect()) : null;
         if (area && controls.some(control => visible(control) && overlap(area, rect(control.getBoundingClientRect())))) el.style.visibility = 'hidden';
       }
-      const obstacles = blocks.filter(el => el !== impact && el !== mode && visible(el)).map(el => rect(el.getBoundingClientRect()));
+      const obstacles = blocks.filter(el => el !== impact && el !== mode && reserved(el)).map(el => rect(el.getBoundingClientRect()));
       const segments = (window as Window & { getWindowSegments?: () => DOMRect[] }).getWindowSegments?.();
       if (segments?.length === 2) {
         const [a, b] = segments.map(rect);
@@ -108,8 +110,8 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement, 
       const score = document.getElementById('style-score');
       // Persistent mode chip first (beside the flight stats), then transient chips around it.
       const flight = document.querySelector<HTMLElement>('.flight-telemetry');
-      // The countdown hides the telemetry footer (visibility only): place the chip anyway, so GO reveals it in a clear slot rather than at its CSS default.
-      const modeBox = mode && !mode.hidden && mode.getClientRects().length ? place(mode, 'right', (flight && visible(flight) ? flight.getBoundingClientRect().top : viewport.height * .6) - 40) : null;
+      // Placed during the countdown too, so GO reveals the chip in a clear slot rather than at its CSS default.
+      const modeBox = mode && reserved(mode) ? place(mode, 'right', (flight && reserved(flight) ? flight.getBoundingClientRect().top : viewport.height * .6) - 40) : null;
       if (modeBox) obstacles.push(modeBox);
       // The collision chip never shares the screen with a callout or warning.
       const impactBox = impact && !impact.hidden ? place(impact, 'left', viewport.height * .43, [], true) : null;
