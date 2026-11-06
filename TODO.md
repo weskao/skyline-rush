@@ -94,6 +94,23 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
     step 3.0/1.5/0.75 m (Δ to Σ `routeLength(groundRoute)` < 0.001 m), 0 rejections, identical edge
     sequence = `groundRoute`; cost 1.9–5.8 µs per car step. `npm test` 2028 pass / 0 fail /
     3 skipped (replay 47/47); `npm run typecheck:ts` clean.
+- [x] Task 4 — Dune race spec and registry, readiness unchanged (`preview`).
+  `src/courses/dune-tempest-race.ts` (`DUNE_TEMPEST_RACE`, `DUNE_TEMPEST_TRACK`; length =
+  `Math.floor(Σ routeLength(groundRoute))` = 13,930, seed 13013, no sections/traffic, topology
+  `course-graph-runtime` v1); gate band −6…22 from `DUNE_TEMPEST_GATES`; `noRoad['canyon-air-crossing']`
+  = complement of `solidRoadIntervals` (`[60, 983.306]`); `recoveryEdge` = `canyon-switchbacks`;
+  nine hazards at `atFraction × routeLength`. `src/course-runtimes.ts` registry; `COURSE_TRACKS`
+  = Frostbite + runtimes, `raceTrack` resolves it, `assertTrackMode` adds
+  `'<Name> is a gated classic sprint'` (Frostbite message unchanged). Not in `RACE_TRACKS`.
+  - RED (stub module, empty spec, length 0): `node --test tests/dune-tempest-race.test.js` → 0 pass /
+    4 fail, all assertions (length `0` vs `13930`; gate band `{-2,5}` vs `{-6,22}`; hazards `0` vs `9`;
+    registry entry `undefined`).
+  - GREEN: same file 4/4; with `frostbite-race`, `coming-soon-release`, `course-junction-tangents`,
+    `course-measured-junctions`, `legacy-race-replay` 78/78 (replay 47/47); `typecheck:ts` clean.
+  - Full `npm test`: 2035 tests, 1 fail = `firestore.rules accepts exactly the versioned Classic best
+    ids` (registering Dune in `COURSE_TRACKS` adds `dune-tempest@t1l1`); added it to
+    `firestore.rules` `bestIds()` + `validBest` (spec §9). Re-run: `firestore-rules`, `record-layout`,
+    `cloud-progress`, `race-results`, `dune-tempest-race` 69 pass / 0 fail / 3 skipped.
 
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 
