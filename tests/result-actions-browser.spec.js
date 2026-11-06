@@ -75,6 +75,16 @@ for (const [name, viewport, hasTouch] of [
 
   test('a podium finish offers NEXT straight into the newly unlocked track', async ({ gameplayPage: page }) => {
     await finishRace(page);
+    const trophy = page.locator('#result-stats .result-trophy-art');
+    await expect(trophy).toBeVisible();
+    await expect(trophy).toHaveAttribute('src', /trophy-gold@3x\.png$/);
+    await expect(trophy).toHaveJSProperty('naturalWidth', 288);
+    await expect(trophy).toHaveJSProperty('naturalHeight', 288);
+    await expect(trophy).toHaveAttribute('width', '96');
+    await expect(trophy).toHaveAttribute('height', '96');
+    // The .52s reward-podium-reveal scales the art in; judge its settled 1x size, not a mid-animation frame.
+    await expect.poll(async () => (await trophy.boundingBox()).width).toBe(96);
+    await expect(page.locator('#result-stats')).toContainText('Placement badge (display only)');
     const next = page.locator('#next-button');
     await expect(next).toBeVisible();
     await expect(next).toContainText('Neon Downtown');
@@ -96,6 +106,7 @@ for (const [name, viewport, hasTouch] of [
   test('NEXT stays hidden when the next track is still locked', async ({ gameplayPage: page }) => {
     await finishRace(page, { rivalsFirst: true });
     await expect(page.locator('#result-stats')).toContainText('4');
+    await expect(page.locator('#result-stats .result-trophy-art')).toHaveCount(0);
     await expect(page.locator('#next-button')).toBeHidden();
   });
 

@@ -1,6 +1,8 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
+import { riskRules } from '../src/risk-lines.ts';
+import { RISK_RING_RADIUS } from '../src/ring-layout.ts';
 
 const choose = (page, rule, value) => page.locator(`[data-race-rule="${rule}"]`).evaluate((select, next) => {
   select.value = next;
@@ -29,7 +31,12 @@ for (const [name, viewport, hasTouch] of [
     await choose(page, 'difficulty', 'hard');
     await expect.poll(() => page.evaluate(() => window.gameplay.race.config.difficulty)).toBe('hard');
     expect(await page.evaluate(() => window.gameplay.race.config.riskLines)).toBeUndefined();
-    expect(await page.evaluate(() => window.gameplay.race.rings.some(ring => ring.type === 'risk'))).toBe(true);
+    // A fresh race may roll no risk rings. Assert the active Hard scoring contract and any rolled geometry.
+    const hardConfig = await page.evaluate(() => window.gameplay.race.config);
+    expect(riskRules(hardConfig)).toEqual({ rings: true, ringScore: 750, nearScore: 450, passScore: 150 });
+    const rings = await page.evaluate(() => window.gameplay.race.rings.map(({ type, radius }) => ({ type, radius })));
+    expect(rings.length).toBeGreaterThan(0);
+    expect(rings.every(ring => ring.type !== 'risk' || ring.radius === RISK_RING_RADIUS)).toBe(true);
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
     expect(errors).toEqual([]);

@@ -33,6 +33,11 @@ maps and existing tracks, real desktop/mobile WebGL screenshots and exact-HEAD
 FULL CI. Unverified interactions or race physics remain explicitly pending.
 A "→ Read `docs/<file>`" line names a situation: open that file only then, follow it exactly.
 
+**No personal paths in files.** This repo is public: never write a user-specific absolute path
+(`/Users/<name>/…`, `/home/<name>/…`, `C:\Users\<name>\…`) into any committed file (code, docs,
+specs, configs, tests, logs). Use repo-relative paths, `$HOME`/`~`, or a placeholder such as
+`<repo>`.
+
 ## Workflow (every feature and bug fix)
 
 Follow `docs/regression-first-workflow.md`: trace the shared root cause; failing test (RED) →
@@ -55,11 +60,25 @@ without explicit user approval.
 For any Blender, GLB/PBR, 3D asset, rendering-quality or Three.js r180 → r186 work:
 first read `docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md`
 and `docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md`.
+For repeatable checks across Mac mini, MacBook Pro or other devices, use the self-contained
+`docs/designs/3d-pipeline/phase0-multi-device-acceptance.md` (E01–E15, device alias,
+actual live MCP evidence and per-device reports). Never reuse another device's PASS.
+**Public repo security:** all per-device reports and device names belong ONLY in the
+`.gitignore`-excluded `docs/designs/3d-pipeline/audits/` directory; after a device
+actually passes, write only its general model (e.g. Mac mini) to the LOCAL report
+and ignored `audits/device-status.md`. Do not commit/push machine identifiers,
+paths, serials, MCP configs, raw logs or any per-device pass results.
 **Mandatory Phase 0 before implementation:** run
 `docs/designs/3d-pipeline/toolchain-environment-preflight.md` on the user's Mac;
-check actual Blender addon + live MCP transport, user-global Skills, Claude/Codex scopes,
-Node and glTF Transform. Report PASS/FAIL/NOT VERIFIED; remote GitHub cannot validate
-local installation. Global Skills belong under `~/.claude/skills`, not in this repo.
+check actual Blender addon + live MCP transport, Skills (project `blender-image-to-3d`,
+global `threejs-*`), Claude/Codex scopes, Node and glTF Transform. Report
+PASS/FAIL/NOT VERIFIED; remote GitHub cannot validate local installation.
+**3D tooling scope (HARD RULE):** Skills may stay global (`~/.claude/skills`, e.g. the
+`threejs-*` set); `blender-image-to-3d` stays in `.claude/skills/`. Everything else for 3D
+models (Blender, GLB/glTF, textures) — every MCP server, plugin, CLI or npm package —
+installs ONLY in this project: MCP in project `.mcp.json` / `.codex/config.toml`, packages
+as exact-pinned `devDependencies`. Never use user-scope MCP or a global npm/uv install;
+remove any global copy found. Commit no credentials.
 Three.js r186.1 is the *planned* target; until verified migration, obey currently
 installed r180 APIs. Read `docs/designs/3d-pipeline/threejs-r180-r186-migration.md`
 and scoped `.claude/rules/3d-asset-pipeline.md` when applicable. Never change
