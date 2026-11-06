@@ -1,3 +1,41 @@
+## CourseGraph runtime (Dune → Skyfall)
+
+Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
+`docs/superpowers/plans/2026-11-06-course-graph-runtime.md`, branch `feature/course-graph-runtime`.
+
+- [x] Task 1A — Dune tangent-continuous junctions (Q9). `src/courses/dune-tempest-junctions.ts`
+  gives every node one horizontal tangent (mean of its edge-end headings); each edge end gets two
+  collinear points along it, then three points easing (quintic) back onto the authored curve before
+  the first authored control ≥ 80 m from the node (blend = 0.8 × that chord). Controls nearer than
+  80 m are replaced (only `canyon-switchbacks`' last control, 50 m from `merge2`). Node positions,
+  edge ids, endpoints, checkpoints, split/merge structure, hazard fractions and the flight pad
+  definitions (60 m takeoff, 105 m landing) are unchanged; hairpin apex indices now point at the
+  same authored apex points (2/6/10/14 → 7/11/15/19).
+  - RED: `node --test tests/course-junction-tangents.test.js` → 1 pass / 2 fail: 16 of 16
+    junctions over 1° (max `dune-s-bends → dune-crest-cut` 90.04°, `canyon-approach →
+    canyon-air-crossing` 70.08°); `DUNE_JUNCTION_BLEND_METERS` missing (assertion, not an import
+    error).
+  - GREEN: same file 3/3 (every junction 0.00°); `npm test` 2012 pass / 0 fail / 3 skipped
+    (incl. `legacy-race-replay`); typecheck ts / vue / js clean; `npm run build` green.
+  - Measured (shared `routeLength`, metres, old → new): ground route 13,713.604 → 13,823.896;
+    `winding-wadi` 1,240.109 → 1,241.496 vs `dune-crest-cut` 917.508 → 954.821;
+    `canyon-switchbacks` 3,553.549 → 3,603.531 vs `canyon-air-crossing` 1,088.306 → 1,113.241;
+    `natural-arch-pass` 1,045.355 → 1,055.109 vs `dry-wash-cut` 743.096 → 763.573.
+    Flight solid road `[0, 60]` + `[983.306, 1088.306]` → `[0, 60]` + `[1008.241, 1113.241]`
+    (gap 923.3 → 948.2 m). Raw main control polyline 13,484.1 → 13,600.4 (test bound 13,500 ± 120).
+    Max in-edge turn rate (2 m steps) stays ≤ the existing hairpin peak (8.5°/m).
+  - No test hard-coded a Dune length, total or hazard metre value, so no literal changed; the
+    plan's 13,713.6 / 983.3 / 1,088.3 figures are superseded by the values above. The home card
+    still shows the static planned `length: 13500` (`src/upcoming-tracks.ts`), not the graph.
+  - Route SVG `public/track-teasers/dune-tempest-route.svg` is a hand-authored schematic (no
+    generator; `f8c359d5`), unchanged. The home Coming Soon preview
+    (`src/upcoming-scenes/dune-tempest.ts`) does not read the graph, so its check is a regression
+    check only.
+  - Real WebGL (production build, headless Chrome, hardware GPU via ANGLE Metal): desktop
+    1440×900 and phone 390×844 touch DPR 3, Dune card selected, Start `COMING SOON`, 0 page errors;
+    preview road continuous, unchanged by this task (no graph junction is drawn there). The graph
+    race road / scenery chunks are not rendered anywhere yet (Task 9). Physical device: NOT VERIFIED.
+
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 
 - **Branch CI:** `feature/playable-frostbite-canyon` `fb0b8564`, run `42195029806` — every job green. **PASS**
