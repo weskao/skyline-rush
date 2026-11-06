@@ -1959,3 +1959,11 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
   .upcoming-scene img { top: 8%; right: 2%; width: min(51vw, 520px); opacity: .5; }
   .intro #start-button { width: 190px; min-width: 190px; max-width: 190px; }
 }
+
+/* Live minimap: the player is an arrow pointing along the route inside a pulsing halo, so it
+   stands out from the seven rival dots on every map palette. Pulse is CSS-only. */
+.race-route-map .route-player-pointer { pointer-events:none; }
+.race-route-map .route-player-arrow { fill:#09e5ff; stroke:#09172b; stroke-width:1.4px; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+.race-route-map .route-player-halo { fill:none; stroke:#fff; stroke-width:1.6px; vector-effect:non-scaling-stroke; transform-box:fill-box; transform-origin:center; animation:route-player-pulse 1.6s ease-out infinite; }
+@keyframes route-player-pulse { from { transform:scale(.7); opacity:.95; } to { transform:scale(1.5); opacity:0; } }
+@media (prefers-reduced-motion:reduce) { .race-route-map .route-player-halo { animation:none; opacity:.85; } }
