@@ -16,7 +16,7 @@ export interface CourseRaceSpec {
 }
 export interface CoursePose { readonly point: number[]; readonly forward: number[]; readonly right: number[]; readonly up: number[] } // length 3, overwritten in place
 export interface CourseKinematics { readonly distance: number; readonly x: number; readonly altitude: number }
-export interface CourseCar { travel: CourseTravel; edgeStart: number; last: CourseKinematics;
+export interface CourseCar { travel: CourseTravel; edgeStart: number; readonly last: { distance: number; x: number; altitude: number };
   readonly pose: CoursePose; finishFraction: number | null }
 export interface CourseRuntime { readonly spec: CourseRaceSpec; readonly cars: Map<string, CourseCar>;
   rejections: number; standings: CourseStanding[] }
@@ -36,6 +36,12 @@ function inNoRoad(spec: CourseRaceSpec, edgeId: string, s: number): boolean {
   if (gaps) for (const [from, to] of gaps) if (s >= from && s < to) return true;
   return false;
 }
+// The signed gate rejects a sweep starting within 1e-6 m of the node plane, so a car is never left
+// closer than this to a node; a clamp in metres, not rounding (lateral·curvature < 0.5 keeps it > 1e-6).
+const NODE_CLEARANCE = 1e-4;
+const copyLast = (car: CourseCar, k: CourseKinematics): void => {
+  car.last.distance = k.distance; car.last.x = k.x; car.last.altitude = k.altitude;
+};
 const solidFlight = (spec: CourseRaceSpec, edgeId: string, s: number): boolean =>
   edgeById(spec.graph, edgeId).mode === 'flight' && !inNoRoad(spec, edgeId, s);
 
@@ -76,10 +82,10 @@ export function createCourseRuntime(spec: CourseRaceSpec, grid: readonly { id: s
 /** Recovery / test placement: odometer `kinematics.distance` sits at `localS` on `edgeId`. */
 export function placeCourseCar(rt: CourseRuntime, id: string, edgeId: string, localS: number, kinematics: CourseKinematics): void {
   const car = carOf(rt, id), graph = rt.spec.graph, edge = edgeById(graph, edgeId);
-  car.travel = { currentEdgeId: edgeId, localS, lateral: kinematics.x, altitude: kinematics.altitude,
-    nextCheckpoint: checkpointsBefore(graph, edge.to), finished: false };
+  car.travel = { currentEdgeId: edgeId, localS: Math.min(localS, routeLength(graph, edgeId) - NODE_CLEARANCE),
+    lateral: kinematics.x, altitude: kinematics.altitude, nextCheckpoint: checkpointsBefore(graph, edge.to), finished: false };
   car.edgeStart = kinematics.distance - localS;
-  car.last = kinematics;
+  copyLast(car, kinematics);
   car.finishFraction = null;
   writePose(graph, car);
 }
@@ -93,7 +99,7 @@ const motion = { edgeId: '', fromS: 0, toS: 0, fromPosition: from as CoursePoint
 /**
  * Advance one car from its stored pose to the host's new odometer/lane/altitude as a measured
  * sweep. A step reaching the edge end crosses the node plane (checkpoint/finish) and continues
- * the remainder on `chooseEdge(node)` in the same sweep. `now` is kept as `last`: pass a snapshot.
+ * the remainder on `chooseEdge(node)` in the same sweep. `now` is copied into `last` (alias-safe).
  */
 export function stepCourseCar(rt: CourseRuntime, id: string, now: CourseKinematics, maxStepMetres: number,
   chooseEdge: (nodeId: string) => string | null): CourseStepEvent {
@@ -103,12 +109,13 @@ export function stepCourseCar(rt: CourseRuntime, id: string, now: CourseKinemati
   const node = target >= length ? edgeById(graph, travel.currentEdgeId).to : null;
   const atFinish = node === graph.finish, nextId = node && !atFinish ? chooseEdge(node) : null;
   if (node && !atFinish && !nextId) { rt.rejections++; return 'rejected'; }
-  const destEdge = nextId ?? travel.currentEdgeId, destS = nextId ? target - length : target;
+  const toS = node ? target : Math.min(target, length - NODE_CLEARANCE);
+  const destEdge = nextId ?? travel.currentEdgeId, destS = nextId ? target - length : toS;
   let end: CourseRouteFrame | null = null;
   if (atFinish) placeOnFrame(to, end = sampleRoute(graph, destEdge, length), target - length, now.x, now.altitude);
   else placeOnFrame(to, sampleRoute(graph, destEdge, destS), 0, now.x, now.altitude);
   for (let i = 0; i < 3; i++) from[i] = car.pose.point[i];
-  motion.edgeId = travel.currentEdgeId; motion.fromS = travel.localS; motion.toS = target;
+  motion.edgeId = travel.currentEdgeId; motion.fromS = travel.localS; motion.toS = toS;
   motion.maxStepMetres = maxStepMetres; motion.nextEdgeId = nextId ?? undefined; motion.gateHeight = spec.gateHeight;
   // Physics state only (§5.2): airborne, or on a solid-road interval of a flight edge at either end of the sweep.
   motion.flightAuthorized = now.altitude > 0 || solidFlight(spec, travel.currentEdgeId, travel.localS) ||
@@ -122,7 +129,7 @@ export function stepCourseCar(rt: CourseRuntime, id: string, now: CourseKinemati
   }
   if (nextId) car.edgeStart += length;
   car.travel = next;
-  car.last = now;
+  copyLast(car, now);
   writePose(graph, car);
   return next.finished ? 'finished' : nextId ? 'crossed' : 'moved';
 }

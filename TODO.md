@@ -111,6 +111,18 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
     ids` (registering Dune in `COURSE_TRACKS` adds `dune-tempest@t1l1`); added it to
     `firestore.rules` `bestIds()` + `validBest` (spec §9). Re-run: `firestore-rules`, `record-layout`,
     `cloud-progress`, `race-results`, `dune-tempest-race` 69 pass / 0 fail / 3 skipped.
+- [x] Task 3 carry-over (review rulings) — `src/course-race.ts`. (a) No dead window before a
+  node: an in-edge target (and a `placeCourseCar` station) is clamped to ≤ `length − 1e-4` m
+  (`NODE_CLEARANCE`, a clamp, not rounding; `edgeStart` keeps the exact odometer, so the next
+  crossing's overflow is unchanged). The shared gate rejects a sweep starting within 1e-6 m of the
+  plane, so a car stopped in `[length − 1e-6, length)` was frozen forever. (b) `car.last` is a
+  preallocated per-car object; `stepCourseCar` / `placeCourseCar` copy the three fields
+  (alias-safe, no allocation).
+  - RED: `node --test tests/course-race.test.js` → 8 pass / 2 fail (assertions): step from
+    `length − 5e-7` across the node `'rejected'` vs `'crossed'`; `car.last` after mutating the
+    passed object `{ distance: 999, x: -9, altitude: 7 }` vs `{ distance: 25.5, x: 1, altitude: 0 }`.
+  - GREEN: same file 10/10; with `course-measured-motion`, `course-measured-junctions`,
+    `dune-tempest-race`, `legacy-race-replay` 78/78 (replay 47/47); `typecheck:ts` clean.
 
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 

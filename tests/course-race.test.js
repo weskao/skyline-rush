@@ -143,3 +143,39 @@ test('flight edge: the takeoff pad authorizes a grounded car; the gap is reporte
   assert.equal(courseNoRoadAt(rt, 'YOU'), true);
   assert.equal(rt.rejections, 0);
 });
+
+test('no dead window before a node: a car stopped within 1e-6 m of the plane still crosses it', () => {
+  const length = routeLength(DUNE, 'sunset-start');
+  // Reached by an in-edge step whose odometer lands in [length − 1e-6, length).
+  const stepped = createCourseRuntime(SPEC, GRID);
+  placeCourseCar(stepped, 'YOU', 'sunset-start', length - 1, { distance: 5000, x: 4, altitude: 0 });
+  assert.equal(stepCourseCar(stepped, 'YOU', { distance: 5001 - 5e-7, x: 4, altitude: 0 }, MAX_STEP, groundEdgeFrom), 'moved');
+  assert.equal(stepCourseCar(stepped, 'YOU', { distance: 5002.5, x: 4, altitude: 0 }, MAX_STEP, groundEdgeFrom), 'crossed');
+  // Placed there directly (recovery / test placement).
+  const placed = createCourseRuntime(SPEC, GRID);
+  placeCourseCar(placed, 'YOU', 'sunset-start', length - 5e-7, { distance: 5000, x: 4, altitude: 0 });
+  assert.equal(stepCourseCar(placed, 'YOU', { distance: 5001.5, x: 4, altitude: 0 }, MAX_STEP, groundEdgeFrom), 'crossed');
+  for (const rt of [stepped, placed]) {
+    const travel = rt.cars.get('YOU').travel;
+    assert.equal(travel.currentEdgeId, 'dune-s-bends');
+    assert.equal(travel.nextCheckpoint, 1);
+    assert.equal(rt.rejections, 0);
+  }
+  // The odometer mapping is untouched by the clamp: overflow lands 1.5 m (resp. 1.5 − 5e-7 m) into the next edge.
+  assert.ok(Math.abs(stepped.cars.get('YOU').travel.localS - 1.5) < 1e-9);
+  assert.ok(Math.abs(placed.cars.get('YOU').travel.localS - (1.5 - 5e-7)) < 1e-9);
+});
+
+test('car.last is a per-car copy: mutating the caller object after a step changes nothing', () => {
+  const rt = createCourseRuntime(SPEC, GRID), car = rt.cars.get('YOU'), last = car.last;
+  const now = { distance: 25.5, x: 1, altitude: 0 };
+  assert.equal(stepCourseCar(rt, 'YOU', now, MAX_STEP, groundEdgeFrom), 'moved');
+  now.distance = 999; now.x = -9; now.altitude = 7;
+  assert.deepEqual({ ...car.last }, { distance: 25.5, x: 1, altitude: 0 });
+  assert.equal(car.last, last, 'preallocated object reused, not replaced');
+  const placed = { distance: 400, x: 2, altitude: 0 };
+  placeCourseCar(rt, 'YOU', 'sunset-start', 400, placed);
+  placed.x = 8;
+  assert.deepEqual({ ...car.last }, { distance: 400, x: 2, altitude: 0 });
+  assert.equal(car.last, last);
+});
