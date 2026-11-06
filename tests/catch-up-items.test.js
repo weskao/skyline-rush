@@ -5,8 +5,9 @@ import { rivalCollects } from '../src/rival-items.ts';
 import { spawnCatchUp, CATCH_UP } from '../src/catch-up-items.ts';
 import { ROW_ALTITUDE } from '../src/ring-layout.ts';
 
-// User, 2026-11-07: a player well behind the leader in Classic or Cup finds a few extra catch-up rings ahead,
-// appearing beyond the draw range like any other ring (docs/superpowers/specs/2026-11-07-catch-up-items-design.md).
+// User, 2026-11-07: a player well behind the leader in Classic or Cup finds only extra rings ahead,
+// weighted NITRO 60%, charge 20%, slipstream 20%, beyond the normal draw range
+// (docs/superpowers/specs/2026-11-07-catch-up-items-design.md).
 const racing = (id, options) => { const race = createRace(id, options); startRace(race); race.phase = 'racing'; race.countdown = 0; return race; };
 const extras = race => [...race.rings, ...race.pickups].filter(item => item.catchUp);
 // Holds the leader `gap` m ahead while the player drives at 60 m/s, calling the spawner every 0.1 s.
