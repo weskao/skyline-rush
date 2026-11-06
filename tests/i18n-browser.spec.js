@@ -466,7 +466,9 @@ const introLines = page => page.locator('#intro').evaluate(intro => {
   const range = document.createRange();
   const lines = [];
   for (const el of intro.querySelectorAll('*')) {
-    if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+    // The fixed showcase camera dock is nested in #intro but not in its scroll flow;
+    // its placement is covered by showcase-camera-browser.spec.js.
+    if (el.closest('.showcase-camera-dock') || !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
     for (const node of el.childNodes) {
       if (node.nodeType !== 3 || !node.textContent.trim()) continue;
       range.selectNodeContents(node);

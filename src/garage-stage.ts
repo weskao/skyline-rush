@@ -47,7 +47,8 @@ export function createGarageStage(environment: THREE.Texture) {
   poseCar(true);
   const flightBounds = new THREE.Box3().setFromObject(car);
   poseCar(false);
-  const flightHalf = flightBounds.max.clone().sub(carCenter).max(carCenter.clone().sub(flightBounds.min));
+  const flightCenter = flightBounds.getCenter(new THREE.Vector3());
+  const flightHalf = flightBounds.getSize(new THREE.Vector3()).multiplyScalar(.53); // 6% roll/hover headroom
   // Studio uses the SAME Aero implementation and shader resources as live racing.
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
@@ -109,7 +110,7 @@ export function createGarageStage(environment: THREE.Texture) {
     car.rotation.z = flying && !reducedMotion ? Math.sin(time * .9) * .035 : 0;
     poseCar(flying, wingTilt);
     previewDriver.altitude = flying ? 2 : 0;
-    look.copy(carCenter);
+    look.copy(flying ? flightCenter : carCenter);
     look.y += hover;
     const distance = garageFramedDistance(camera.aspect, state.zoom, flying ? flightHalf : carHalf, yaw, state.pitch);
     // Zoomed-out views (up to ~44 m, top view) keep the car and trail clear of the fog.

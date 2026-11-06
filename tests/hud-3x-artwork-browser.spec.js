@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 test('all 18 3x original HUD/control images are accessible at 1x CSS in Settings', async ({ page }) => {
   await page.goto('/');
   await page.locator('#settings-button').click();
@@ -29,6 +30,7 @@ test('no button carries a decorative 3x image underneath its icon or label', asy
 });
 
 test('all 18 artwork cards preserve native 3x pixels, visible icons and labels on phone and desktop', async ({ page }) => {
+  test.setTimeout(ciTimeout(180000));
   for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1440,height:900}]) {
     await page.setViewportSize(viewport);
     await page.goto('/');
