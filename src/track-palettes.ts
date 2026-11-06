@@ -9,6 +9,8 @@ export const TRACK_PALETTES = {
   aurora: { top: '#051b31', horizon: '#337064', fog: '#234d5b', rock: '#9cb9c7', road: '#293d50', ground: '#b3cad3', rail: '#78ffd1', sun: '#b9ddff', warmth: 0 },
   spiral: { top: '#050b25', horizon: '#55348c', fog: '#302657', rock: '#29345b', road: '#111827', ground: '#161d49', rail: '#00e5ff', sun: '#a855f7', warmth: 0 },
   'harbor-circuit': { top: '#477d98', horizon: '#e6c6a1', fog: '#a4c0bd', rock: '#587b70', road: '#263941', ground: '#537d70', rail: '#eea966', sun: '#ffe3ba', warmth: .35 },
+  // Same night palette as the Frostbite showroom: cobalt fog, moonlight, cyan crystal glow.
+  'frostbite-canyon': { top: '#071433', horizon: '#1d4f7a', fog: '#24476e', rock: '#8fb0cc', road: '#4d6b91', ground: '#bcd4ee', rail: '#3fe3ff', sun: '#7fb6ff', warmth: 0 },
   ...WORLD_THEMES,
 };
 
