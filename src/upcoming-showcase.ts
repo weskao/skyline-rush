@@ -4,7 +4,7 @@ import { createAeroVFX } from './aero-vfx.js';
 import { previewPlayer, showcaseCameraPose, type CameraPose } from './track-preview.ts';
 import { vfxSettings, type VfxSettings } from './vfx-settings.ts';
 import type { PaintPreset } from './appearance.ts';
-import type { UpcomingTrackId } from './upcoming-tracks.ts';
+import type { PreviewTrackId } from './upcoming-tracks.ts';
 
 export type UpcomingEnvironment = {
   group: THREE.Group;
@@ -18,7 +18,7 @@ export type UpcomingEnvironment = {
 };
 export type UpcomingEnvironmentFactory = (scene: THREE.Scene) => UpcomingEnvironment;
 type Stage = {
-  id: UpcomingTrackId;
+  id: PreviewTrackId;
   scene: THREE.Scene;
   environment: UpcomingEnvironment;
   cars: THREE.Group[];
@@ -27,7 +27,7 @@ type Stage = {
 
 /** A scene host, not a renderer: uses the game's camera, composer and frame clock. */
 export function createUpcomingShowcase(
-  factories: Partial<Record<UpcomingTrackId, UpcomingEnvironmentFactory>>,
+  factories: Partial<Record<PreviewTrackId, UpcomingEnvironmentFactory>>,
   environmentTexture: THREE.Texture,
 ) {
   let stage: Stage | null = null;
@@ -74,7 +74,7 @@ export function createUpcomingShowcase(
     car.userData.lightColor.fromArray(next.light);
   }
 
-  function setTrack(id: UpcomingTrackId | null): boolean {
+  function setTrack(id: PreviewTrackId | null): boolean {
     if (stage?.id === id) return true;
     disposeStage();
     const factory = id && factories[id];
@@ -140,7 +140,7 @@ export function createUpcomingShowcase(
 
   return {
     get scene(): THREE.Scene | null { return stage?.scene ?? null; },
-    get activeTrack(): UpcomingTrackId | null { return stage?.id ?? null; },
+    get activeTrack(): PreviewTrackId | null { return stage?.id ?? null; },
     setTrack, setPaint, update,
     dispose(): void { disposeStage(); },
   };
