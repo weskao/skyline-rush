@@ -51,10 +51,9 @@ export function createRaceObjective(config: ObjectiveConfig = {}): RaceObjective
 
 // Pure completion query. An Elimination win is determined by knockout rules, not route length.
 // A Checkpoint timeout is distinguishable from a physically completed course.
-export function raceCompletion(race: ObjectiveRace): RaceCompletion {
+// `routeEnd` defaults to the 1D rule; a graph course passes its FINISH-gate crossing instead (course-race-step.ts).
+export function raceCompletion(race: ObjectiveRace, routeEnd = race.player.distance >= race.length): RaceCompletion {
   const objective = race.objective ?? createRaceObjective(race.config ?? { mode: race.mode });
-  const distance = race.player.distance;
-  const routeEnd = distance >= race.length;
   switch (objective.type) {
     case 'valid-laps':
       return { done: race.circuit?.player.finishTime != null, reason: race.circuit?.player.finishTime != null ? 'route' : null };

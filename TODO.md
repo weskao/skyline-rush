@@ -123,6 +123,42 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
     passed object `{ distance: 999, x: -9, altitude: 7 }` vs `{ distance: 25.5, x: 1, altitude: 0 }`.
   - GREEN: same file 10/10; with `course-measured-motion`, `course-measured-junctions`,
     `dune-tempest-race`, `legacy-race-replay` 78/78 (replay 47/47); `typecheck:ts` clean.
+- [x] Task 5 — engine wiring H1–H5, H7 and Dune START → FINISH. `src/course-race-step.ts` (glue):
+  `attachCourse` (H1, from `createRace`; registry ids only, empties `rings`/`pickups`/`traffic`/
+  `hazards`/`sections`), `stepCourseCars` (H2, once per frame after the rival loop: player branch by
+  `chooseBranchByLateral` with a 2.5 m deadband, rivals `chooseCourseNextEdge(…, i + 1, false,
+  seed)` ground-only, rival `finishTime = elapsed − dt + dt · finishFraction`, standings),
+  `carGap` (H3; `null` for another branch or a car past FINISH — every caller reads `null` as no
+  interaction: draft, player contact, `bumpCars`, AI blockers), `progressGap` (H4 rubber band and
+  `sprintGaps`; remaining metres to FINISH via `courseRemaining`), `courseFinished` (H5: rival
+  finish, player completion via `raceCompletion(race, routeEnd)`). `racePosition` uses
+  `race.course.standings` (H7). Each legacy branch is the replaced expression verbatim.
+  `src/race-finish.js`: the completion/result block moved out of `game.js` (598 → 580 lines,
+  ceiling lowered to 580). Step bound `|Δodometer|·(1 + |x|·curvature) + |Δx| + |Δaltitude| +
+  0.01`; `stepCourseCar` adds `|x|·|Δright| + |altitude|·|Δup|` of the sampled frames because the
+  shared LUT frame turns in steps (without it: VEGA rejected 4× in the first 3.2 s, a 0.897 m step
+  at x 2.5 measured 0.9206 m vs bound 0.9099 m).
+  - RED (stub module exporting the five names): `node --test tests/course-race-step.test.js
+    tests/dune-tempest-race.test.js` → 5 pass / 7 fail, all `AssertionError` (`carGap` `null` vs
+    the `physicalGap` value; `src/race-finish.js exists`; `createRace attaches race.course` ×5).
+  - GREEN: same files 12/12 (22/22 with `course-race`); `legacy-race-replay` 47/47;
+    `module-size`, `legacy-js-names`, `game`, `race-standings`, `race-objectives`,
+    `frostbite-race` 127/127; `npm test` 2042 pass / 0 fail / 3 skipped; `npm run typecheck` clean.
+  - Measured bot (throttle + BOOST, x held per path, 60 Hz): 139.16 s ground route
+    (`winding-wadi`/`natural-arch-pass`), 136.30 s `winding-wadi`/`dry-wash-cut`, 136.35 s
+    `dune-crest-cut`/`natural-arch-pass`, 133.48 s `dune-crest-cut`/`dry-wash-cut`; position 1,
+    0 rejections, cp1..cp4 in order. 30/60/120 Hz: 139.276 / 139.159 / 139.102 s (spread ≤ 0.17 s on
+    all four paths) → tolerance 0.5 s. Window asserted 120–330 s: the planned 150 s floor is below
+    every measured path (deviation, flagged for review). Idle player: rivals finish 159.5–199.9 s on
+    both ground alternates, never `canyon-air-crossing`, 0 rejections; `racePosition` 8.
+  - Parallel branches (Review Focus 3): player on `winding-wadi` and NOVA on `dune-crest-cut` at
+    equal odometer (and 8 m ahead): 0 collisions, draft time 0, NOVA not knocked; NOVA/ORBIT
+    rival-vs-rival not bumped. Same-edge controls do collide and draft.
+  - Cost: `stepCourseCars` ≈ 19–21 µs per frame for 8 cars; whole `stepRace` Dune 27.6–33.5 µs vs
+    Frostbite 27.8–32.0 µs per frame (Node, 60 Hz bot).
+  - Not done here (later tasks): gap fall / rejected-sweep recovery (H6, Task 6) — a rejected car
+    is counted but not recovered; player taking `canyon-air-crossing` before Task 6 has no gap
+    physics; rendering/camera (H8/H9); readiness stays `preview`.
 
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 

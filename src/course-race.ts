@@ -100,6 +100,9 @@ const motion = { edgeId: '', fromS: 0, toS: 0, fromPosition: from as CoursePoint
  * Advance one car from its stored pose to the host's new odometer/lane/altitude as a measured
  * sweep. A step reaching the edge end crosses the node plane (checkpoint/finish) and continues
  * the remainder on `chooseEdge(node)` in the same sweep. `now` is copied into `last` (alias-safe).
+ * `maxStepMetres` is the host's envelope; the turn of the sampled road frame under the lane/height lever is added
+ * here, because the shared arc-length LUT frame turns in steps (a short step across a LUT boundary at x = 2.5 m
+ * swings 1 cm more than `distance · (1 + |x| · curvature)`).
  */
 export function stepCourseCar(rt: CourseRuntime, id: string, now: CourseKinematics, maxStepMetres: number,
   chooseEdge: (nodeId: string) => string | null): CourseStepEvent {
@@ -111,12 +114,14 @@ export function stepCourseCar(rt: CourseRuntime, id: string, now: CourseKinemati
   if (node && !atFinish && !nextId) { rt.rejections++; return 'rejected'; }
   const toS = node ? target : Math.min(target, length - NODE_CLEARANCE);
   const destEdge = nextId ?? travel.currentEdgeId, destS = nextId ? target - length : toS;
-  let end: CourseRouteFrame | null = null;
-  if (atFinish) placeOnFrame(to, end = sampleRoute(graph, destEdge, length), target - length, now.x, now.altitude);
-  else placeOnFrame(to, sampleRoute(graph, destEdge, destS), 0, now.x, now.altitude);
+  const f = sampleRoute(graph, destEdge, atFinish ? length : destS), end = atFinish ? f : null;
+  placeOnFrame(to, f, atFinish ? target - length : 0, now.x, now.altitude);
+  let turnR = 0, turnU = 0;
+  for (let i = 0; i < 3; i++) { turnR += (f.right[i] - car.pose.right[i]) ** 2; turnU += (f.up[i] - car.pose.up[i]) ** 2; }
   for (let i = 0; i < 3; i++) from[i] = car.pose.point[i];
   motion.edgeId = travel.currentEdgeId; motion.fromS = travel.localS; motion.toS = toS;
-  motion.maxStepMetres = maxStepMetres; motion.nextEdgeId = nextId ?? undefined; motion.gateHeight = spec.gateHeight;
+  motion.maxStepMetres = maxStepMetres + Math.abs(now.x) * Math.sqrt(turnR) + Math.abs(now.altitude) * Math.sqrt(turnU);
+  motion.nextEdgeId = nextId ?? undefined; motion.gateHeight = spec.gateHeight;
   // Physics state only (§5.2): airborne, or on a solid-road interval of a flight edge at either end of the sweep.
   motion.flightAuthorized = now.altitude > 0 || solidFlight(spec, travel.currentEdgeId, travel.localS) ||
     solidFlight(spec, destEdge, destS);
@@ -163,6 +168,26 @@ export function courseCarGap(rt: CourseRuntime, from: string, to: string): numbe
   if (ea.to === eb.from) return routeLength(graph, ea.id) - a.localS + b.localS;
   if (eb.to === ea.from) return -(routeLength(graph, eb.id) - b.localS + a.localS);
   return null;
+}
+
+// Shortest physical metres from a node to FINISH; memo per graph, never invalidated (the graph is immutable).
+const toFinishMemo = new WeakMap<CourseGraph, Map<string, number>>();
+function toFinish(graph: CourseGraph, node: string): number {
+  let memo = toFinishMemo.get(graph);
+  if (!memo) toFinishMemo.set(graph, memo = new Map());
+  let best = memo.get(node);
+  if (best === undefined) {
+    best = node === graph.finish ? 0 : Infinity;
+    for (const e of graph.edges) if (e.from === node) best = Math.min(best, routeLength(graph, e.id) + toFinish(graph, e.to));
+    memo.set(node, best);
+  }
+  return best;
+}
+/** Metres left to FINISH (rest of the current edge + shortest onward path); 0 once finished. Orders like the standings. */
+export function courseRemaining(rt: CourseRuntime, id: string): number {
+  const travel = carOf(rt, id).travel, graph = rt.spec.graph;
+  if (travel.finished) return 0;
+  return routeLength(graph, travel.currentEdgeId) - travel.localS + toFinish(graph, edgeById(graph, travel.currentEdgeId).to);
 }
 
 /** Graph standings (§7): checkpoints first, then physical metres to the next mandatory target. */
