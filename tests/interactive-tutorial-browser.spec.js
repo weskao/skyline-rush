@@ -20,16 +20,24 @@ const keyStep = async (page, key, next) => {
 
 // DRIFT needs >= 162 km/h to hold and bleeds speed, so the 1 s payout needs ~173 km/h on entry; the brake lesson
 // hands over at crawl speed (lessons keep the player's speed), so wait for auto-throttle.
-const driftReady = page => page.waitForFunction(() => Number(document.querySelector('#speed')?.textContent) >= 180, null, { polling: 'raf' });
+const driftReady = (page, kmh = 180) => page.waitForFunction(kmh => Number(document.querySelector('#speed')?.textContent) >= kmh, kmh, { polling: 'raf' });
 // The coach progress bar reaches the next whole step once the drift lasts 1 s (the first payout tier).
 const driftCharged = page => page.waitForFunction(() => Number(document.querySelector('#tutorial-progress')?.value) >= 5, null, { polling: 'raf' });
+// From the centre a held left drift hits the rail 1.18 s after steering starts, and the crash cancels it unpaid:
+// ~0.15 s of slack past the 1 s payout. Brake first from a high speed so steering starts with the drift (brake alone
+// costs 35 m/s² per second of lag), and let go inside the page on the frame the bar fills, since a Node → CDP round
+// trip on a loaded runner outlasts that slack.
 const keyboardDrift = async page => {
-  await driftReady(page);
-  await page.keyboard.down('a');
+  await driftReady(page, 280);
   await page.keyboard.down('s');
-  await driftCharged(page);
-  await page.keyboard.up('s');
+  await page.keyboard.down('a');
+  await page.waitForFunction(() => {
+    if (Number(document.querySelector('#tutorial-progress')?.value) < 5) return false;
+    for (const code of ['KeyA', 'KeyS']) window.dispatchEvent(new KeyboardEvent('keyup', { code }));
+    return true;
+  }, null, { polling: 'raf' });
   await page.keyboard.up('a');
+  await page.keyboard.up('s');
   await step(page, 'fly');
 };
 
@@ -53,10 +61,14 @@ const keyboardRoll = async page => {
   );
   await page.keyboard.up('Space');
   await page.keyboard.down('a');
-  await page.waitForFunction(
-    () => document.querySelector('#tutorial-instruction')?.textContent?.includes('First airborne steering press detected'),
-    null, { polling: 'raf' },
-  );
+  // A roll needs the opposite press within TRICK_FLICK_WINDOW (0.3 s) of the first: switch keys inside the page on
+  // the frame the coach confirms the first press, since a Node → CDP round trip on a loaded runner outlasts it.
+  await page.waitForFunction(() => {
+    if (!document.querySelector('#tutorial-instruction')?.textContent?.includes('First airborne steering press detected')) return false;
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyA' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyD' }));
+    return true;
+  }, null, { polling: 'raf' });
   await page.keyboard.up('a');
   await page.keyboard.down('d');
   await page.waitForFunction(
