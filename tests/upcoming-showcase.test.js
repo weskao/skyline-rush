@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createUpcomingShowcase } from '../src/upcoming-showcase.ts';
+import { previewPlayer } from '../src/track-preview.ts';
 
 const id = 'dune-tempest';
 
@@ -41,4 +42,40 @@ test('showcase shares a Three.js scene and disposes old environment on track cha
   assert.deepEqual(released, ['dune', 'monsoon']);
   showcase.dispose();
   assert.deepEqual(released, ['dune', 'monsoon'], 'no double-disposal');
+});
+
+test('every upcoming map reuses the shared Roadster AIRFLOW ground/hover pose and camera', () => {
+  const ids = [
+    'dune-tempest', 'monsoon-ruins', 'skyfall-archipelago',
+    'volcanic-crown', 'stormline-megacity', 'frostbite-canyon',
+  ];
+  const factories = Object.fromEntries(ids.map(id => [id, scene => {
+    const group = new THREE.Group();
+    scene.add(group);
+    return { group, update() {}, dispose() {} };
+  }]));
+  const showcase = createUpcomingShowcase(factories, new THREE.Texture());
+  const camera = new THREE.PerspectiveCamera(50, 16 / 9, .1, 2000);
+
+  for (const id of ids) {
+    assert.equal(showcase.setTrack(id), true);
+    const cars = showcase.scene.children.filter(child => child.userData?.jets);
+    assert.equal(cars.length, 4, id + ' uses the same shared four-car presentation');
+    const player = cars[0];
+
+    showcase.update(camera, 3, { quality: 'low', view: 'drive', enabled: true, airflow: false }, false);
+    const expectedHover = previewPlayer(id, {}, 3, false, false);
+    assert.ok(Math.abs(player.position.y - expectedHover.altitude) < 1e-6, id + ' hovering pose');
+    assert.equal(player.userData.jets.visible, true, id + ' hovering jets');
+    assert.equal(camera.fov, 50);
+
+    showcase.update(camera, 3.1, { quality: 'low', view: 'drive', enabled: true, airflow: true }, false);
+    assert.ok(Math.abs(player.position.y - .06) < 1e-6, id + ' grounded wheel clearance');
+    assert.equal(player.userData.jets.visible, false, id + ' landing hides hover jets');
+
+    showcase.update(camera, 3.2, { quality: 'low', view: 'drive', enabled: true, airflow: false }, true);
+    assert.ok(Math.abs(player.position.y - 1.6) < 1e-6, id + ' Reduced Motion hover is still present');
+    assert.equal(player.userData.jets.visible, false, id + ' Reduced Motion disables jets');
+  }
+  showcase.dispose();
 });

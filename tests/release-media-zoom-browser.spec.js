@@ -2,10 +2,10 @@ import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { recentReleases, NOTES_SEEN_KEY } from '../src/release-notes.ts';
 
-// Tapping a What's New picture or clip shows all of it, uncropped and on screen, on desktops, tablets and phones.
+// Tapping a What's New picture or clip shows all of it, uncropped and on screen, on desktops and phones.
 // Escape, the close button or a tap anywhere on a picture (outside the clip, for a clip) closes only the enlarged view and hands focus back.
-const DEVICES = [['desktop', 1440, 900, false], ['tablet portrait', 820, 1180, true], ['tablet landscape', 1180, 820, true],
-  ['phone portrait', 390, 844, true], ['phone landscape', 844, 390, true]];
+// The viewer CSS has no viewport media query (only height <= 420 hides the hero), so tablets add nothing over phones.
+const DEVICES = [['desktop', 1440, 900, false], ['phone portrait', 390, 844, true], ['phone landscape', 844, 390, true]];
 // A two-frame 1×1 animated GIF (red, then blue, looping), served in place of a highlight image.
 const GIF = Buffer.from('474946383961010001008000' + '00ff00000000ff' + '21ff0b4e45545343415045322e300301000000'
   + '21f904040a0000002c000000000100010000020244010021f904040a0000002c00000000010001000002024c0100' + '3b', 'hex');
@@ -20,8 +20,10 @@ async function openNotes(page, gameplayURL, patch = '') {
   page.on('pageerror', error => errors.push(String(error)));
   await page.goto(gameplayURL);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator('#whats-new-open').click();
-  await expect(page.locator('#whats-new-screen')).toBeVisible();
+  const notes = page.locator('#whats-new-screen');
+  // First visits already open the release dialog; never click through that modal backdrop.
+  if (!(await notes.isVisible())) await page.locator('#whats-new-open').click();
+  await expect(notes).toBeVisible();
   // Upcoming notes lead the tabs without pictures or a clip: read the newest release that has both.
   const [newest] = recentReleases(), media = recentReleases().find(release => release.video && release.highlights.some(item => item.image));
   if (!patch && media && media !== newest) await page.locator(`#whats-new-screen [role="tab"][data-version="${media.version}"]`).click();
@@ -44,6 +46,24 @@ const watchFades = page => page.evaluate(() => {
   };
 });
 const fades = page => page.evaluate(() => window.viewerFades.splice(0));
+
+// Shift key plus a synthetic pointerdown: no layout or pointer-type dependence, so one phone proves it.
+test.describe('phone portrait focus ring', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  // Chromium keeps matching :focus-visible for scripted focus after a key press, which is how iOS shows a ring after a tap.
+  test('a ring appears for the keyboard only, on any dialog button', async ({ page, gameplayURL }) => {
+    await openNotes(page, gameplayURL);
+    const next = page.locator('#release-continue');
+    const ring = () => next.evaluate(el => { el.focus(); return getComputedStyle(el).outlineStyle; });
+    await page.keyboard.press('Shift');
+    expect(await ring(), 'keyboard focus shows a ring').not.toBe('none');
+    await page.evaluate(() => document.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })));
+    expect(await ring(), 'script focus after a tap shows none').toBe('none');
+    await page.keyboard.press('Shift');
+    expect(await ring(), 'the keyboard brings the ring back').not.toBe('none');
+  });
+});
 
 for (const [device, width, height, touch] of DEVICES) test.describe(device, () => {
   test.use({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
@@ -88,7 +108,8 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
 
   // The enlarged view, the notes panel behind it and the picture or clip that gets focus back never draw a focus ring.
   // A tap closes it on touch screens (as on iPhone) and Escape elsewhere; both leave the notes panel without a ring.
-  test('no focus ring shows on the enlarged view, the notes panel or the button focus returns to', async ({ page, gameplayURL }) => {
+  // Phone landscape differs only by skipping the hero opener; the tap path is the phone portrait row.
+  if (device !== 'phone landscape') test('no focus ring shows on the enlarged view, the notes panel or the button focus returns to', async ({ page, gameplayURL }) => {
     await openNotes(page, gameplayURL);
     const ring = locator => locator.evaluate(el => getComputedStyle(el).outlineStyle);
     const viewer = page.locator('#release-media-viewer'), panel = page.locator('#release-panel');
@@ -105,19 +126,6 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
       await panel.focus();
       expect(await ring(panel), 'notes panel').toBe('none');
     }
-  });
-
-  // Chromium keeps matching :focus-visible for scripted focus after a key press, which is how iOS shows a ring after a tap.
-  test('a ring appears for the keyboard only, on any dialog button', async ({ page, gameplayURL }) => {
-    await openNotes(page, gameplayURL);
-    const next = page.locator('#release-continue');
-    const ring = () => next.evaluate(el => { el.focus(); return getComputedStyle(el).outlineStyle; });
-    await page.keyboard.press('Shift');
-    expect(await ring(), 'keyboard focus shows a ring').not.toBe('none');
-    await page.evaluate(() => document.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })));
-    expect(await ring(), 'script focus after a tap shows none').toBe('none');
-    await page.keyboard.press('Shift');
-    expect(await ring(), 'the keyboard brings the ring back').not.toBe('none');
   });
 
   test('the hero clip plays inline with an enlarge button on its corner, and its clip opens whole and carries on playing', async ({ page, gameplayURL }) => {
@@ -165,7 +173,7 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
 });
 
 test.describe('hero picture and animated pictures', () => {
-  for (const [device, width, height, touch] of [DEVICES[0], DEVICES[3]]) test(`${device}: the hero picture and an animated highlight open whole`, async ({ browser, gameplayURL }) => {
+  for (const [device, width, height, touch] of [DEVICES[0], DEVICES[1]]) test(`${device}: the hero picture and an animated highlight open whole`, async ({ browser, gameplayURL }) => {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
     // A bare page has no What's New record, so the notes would already be open on load and cover their opener.
     await page.addInitScript(key => localStorage.setItem(key, '999.0.0'), NOTES_SEEN_KEY);

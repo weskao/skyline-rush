@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "stage": 2,
+  "branch": "feature/epic-multiroute-longform-tracks",
+  "format": "JPEG",
+  "status": "concept-only",
+  "source": "AI-generated Stage 2 overview crop, resampled 3x for visibility (not native 3x detail)",
+  "topology": "point-to-point",
+  "tracks": [
+    {
+      "id": "frostbite-canyon",
+      "zh": "極地冰原峽谷",
+      "en": "Frostbite Canyon",
+      "distanceTargetKm": 13.8,
+      "finishTimeTarget": "3:20–4:40",
+      "topology": "point-to-point",
+      "laps": 0,
+      "finishCondition": "ordered-gates-and-distinct-finish",
+      "views": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/frostbite-canyon/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial-branch",
+          "file": "source-concept-jpeg/frostbite-canyon/concept-view-02.jpg"
+        }
+      ],
+      "route": "route-schematics/frostbite-canyon.svg",
+      "environment": "冰河裂隙、露天峽谷、可駕駛雪原；冰橋飛越",
+      "weather": "ice powder, cold fog, snow gusts",
+      "notes": "以斷裂冰谷和冰橋交錯為特色，避免重複現有高山鐵道／極光道路"
+    },
+    {
+      "id": "abyssal-ruins",
+      "zh": "深海遺跡城",
+      "en": "Abyssal Ruins",
+      "distanceTargetKm": 15.2,
+      "finishTimeTarget": "3:45–5:00",
+      "topology": "point-to-point",
+      "laps": 0,
+      "finishCondition": "ordered-gates-and-distinct-finish",
+      "views": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/abyssal-ruins/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial-branch",
+          "file": "source-concept-jpeg/abyssal-ruins/concept-view-02.jpg"
+        }
+      ],
+      "route": "route-schematics/abyssal-ruins.svg",
+      "environment": "透明海底道路、珊瑚峽谷、沉沒古都；上層穹頂岔路",
+      "weather": "caustics, bubbles, distant fish schools",
+      "notes": "先實作視覺化深海環境，不擴張至真正潛水或水壓物理"
+    },
+    {
+      "id": "windspire-highlands",
+      "zh": "風之高原",
+      "en": "Windspire Highlands",
+      "distanceTargetKm": 14.5,
+      "finishTimeTarget": "3:25–4:45",
+      "topology": "point-to-point",
+      "laps": 0,
+      "finishCondition": "ordered-gates-and-distinct-finish",
+      "views": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/windspire-highlands/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial-branch",
+          "file": "source-concept-jpeg/windspire-highlands/concept-view-02.jpg"
+        }
+      ],
+      "route": "route-schematics/windspire-highlands.svg",
+      "environment": "開闊草坡、自然無標線路面、石橋與風車；跨谷飛行",
+      "weather": "wind gusts, grass debris, cloud shadows",
+      "notes": "地面風路安全可通過，風場機制必須預告並公平平衡"
+    },
+    {
+      "id": "crystal-stardust-valley",
+      "zh": "水晶星塵谷",
+      "en": "Crystal Stardust Valley",
+      "distanceTargetKm": 13.6,
+      "finishTimeTarget": "3:20–4:40",
+      "topology": "point-to-point",
+      "laps": 0,
+      "finishCondition": "ordered-gates-and-distinct-finish",
+      "views": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/crystal-stardust-valley/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial-branch",
+          "file": "source-concept-jpeg/crystal-stardust-valley/concept-view-02.jpg"
+        }
+      ],
+      "route": "route-schematics/crystal-stardust-valley.svg",
+      "environment": "紫藍晶洞、稜鏡岩柱、晶橋、自然谷底彎道",
+      "weather": "glowing dust, refracted beams, soft fog",
+      "notes": "強調明亮晶體但不得以強光、反射或大量 Bloom 遮擋彎道"
+    },
+    {
+      "id": "chrono-rift",
+      "zh": "時空斷層",
+      "en": "Chrono Rift",
+      "distanceTargetKm": 16,
+      "finishTimeTarget": "3:50–5:00",
+      "topology": "point-to-point",
+      "laps": 0,
+      "finishCondition": "ordered-gates-and-distinct-finish",
+      "views": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/chrono-rift/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial-branch",
+          "file": "source-concept-jpeg/chrono-rift/concept-view-02.jpg"
+        }
+      ],
+      "route": "route-schematics/chrono-rift.svg",
+      "environment": "斷裂空中遺跡、巨型時空環、石橋、上下層支路",
+      "weather": "temporal afterimages, aurora-like clouds, portal particles",
+      "notes": "時間環是視覺導引，不實作真正時間倒流或傳送作弊"
+    }
+  ]
+}

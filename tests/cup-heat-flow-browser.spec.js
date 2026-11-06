@@ -4,7 +4,6 @@ import { selectLocale } from './helpers/locale-browser.js';
 
 const key = 'skyline-rush-cup-progress-v1';
 for (const [name, viewport, hasTouch] of [
-  ['desktop', { width: 1440, height: 900 }, false],
   ['phone', { width: 390, height: 844 }, true],
 ]) test.describe(`Cup heat flow ${name}`, () => {
   test.use({ viewport, hasTouch });

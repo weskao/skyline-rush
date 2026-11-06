@@ -29,4 +29,5 @@ export const RACE_STREAMS = Object.freeze({
   items: 'active-items',
   ringShapes: 'ring-shapes',
   pickupRuns: 'pickup-runs',
+  catchUp: 'catch-up',
 });

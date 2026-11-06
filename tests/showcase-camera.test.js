@@ -58,3 +58,37 @@ test('portrait and landscape preview distances stay appropriate for the home sho
     assert.ok(portrait.cameraBack >= landscape.cameraBack, id);
   }
 });
+
+const bearing = pose => Math.atan2(pose.cameraSide, pose.cameraBack) * 180 / Math.PI;
+const wrap = degrees => ((degrees + 540) % 360) - 180;
+
+test('fixed views sit at their own bearing around the car; drive stays behind it', () => {
+  const { showcaseCameraPose: pose } = camera;
+  for (const id of [...Object.keys(RACE_TRACKS), 'future-track']) {
+    for (const portrait of [false, true]) {
+      for (const [view, expected] of Object.entries({ rear: 0, right: 90, front: 180, left: -90 })) {
+        const gap = Math.abs(wrap(bearing(pose(id, view, 0, portrait)) - expected));
+        assert.ok(gap < 1e-6, `${id}/${view}/portrait ${portrait}: bearing off by ${gap}°`);
+      }
+      assert.ok(Math.abs(bearing(pose(id, 'drive', 0, portrait))) < 90, `${id}/drive/portrait ${portrait}`);
+    }
+  }
+});
+
+test('orbit turns at a steady .18 rad/s on a constant 9 m radius, a full 360° within 40 s', () => {
+  const { showcaseCameraPose: pose } = camera;
+  const perStep = .25 * .18 * 180 / Math.PI;
+  for (const id of [...Object.keys(RACE_TRACKS), 'future-track']) {
+    for (const portrait of [false, true]) {
+      let turned = 0, previous = bearing(pose(id, 'orbit', 0, portrait));
+      for (let step = 1; step <= 160; step++) { // 0.25 s samples over 40 s
+        const p = pose(id, 'orbit', step * .25, portrait), now = bearing(p), delta = wrap(now - previous);
+        assert.ok(Math.abs(delta - perStep) < 1e-6, `${id}/portrait ${portrait}: step ${step} turned ${delta}°`);
+        assert.ok(Math.abs(Math.hypot(p.cameraSide, p.cameraBack) - 9) < 1e-9, `${id}/portrait ${portrait}: radius at step ${step}`);
+        turned += delta;
+        previous = now;
+      }
+      assert.ok(turned >= 360, `${id}/portrait ${portrait}: turned ${turned.toFixed(0)}°`);
+    }
+  }
+});
