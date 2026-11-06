@@ -36,12 +36,14 @@ const keysOnCue = (page, cue, edges) => page.evaluate(({ cue, edges }) => new Pr
 }), { cue, edges });
 // The brake lesson's held key can slow the car, so wait for auto-throttle to reach a drift that outlasts 1 s.
 const driftReady = page => page.waitForFunction(kmh => Number(document.querySelector('#speed')?.textContent) >= kmh, DRIFT_ENTRY_KMH, { polling: 'raf' });
+// The coach progress bar reaches the next whole step once the drift lasts 1 s (the first payout tier).
+const DRIFT_CHARGED = { selector: '#tutorial-progress', prop: 'value', min: 5 };
+const driftCharged = page => page.waitForFunction(min => Number(document.querySelector('#tutorial-progress')?.value) >= min, DRIFT_CHARGED.min, { polling: 'raf' });
 const keyboardDrift = async page => {
   await driftReady(page);
   // Sent together: steering alone drifts the car toward the rail, braking alone sheds the entry speed.
   await Promise.all([page.keyboard.down('a'), page.keyboard.down('s')]);
-  // The coach progress bar reaches the next whole step once the drift lasts 1 s (the first payout tier).
-  await keysOnCue(page, { selector: '#tutorial-progress', prop: 'value', min: 5 }, [['keyup', 'KeyS'], ['keyup', 'KeyA']]);
+  await keysOnCue(page, DRIFT_CHARGED, [['keyup', 'KeyS'], ['keyup', 'KeyA']]);
   await page.keyboard.up('s');
   await page.keyboard.up('a');
   await step(page, 'fly');
