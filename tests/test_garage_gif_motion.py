@@ -17,10 +17,11 @@ class GarageAnimationTests(unittest.TestCase):
     def setUpClass(cls):
         cls.assets = {name: (category, path) for category, name, path in garage.sources()}
 
-    def test_all_thirty_nine_icons_have_distinct_art_direction(self):
-        self.assertEqual(len(self.assets), 39)
+    def test_all_twenty_five_icons_have_distinct_art_direction(self):
+        # Badges, rarities and Store cart/star/tag are a pure sweep, drawn in CSS instead.
+        self.assertEqual(len(self.assets), 25)
         self.assertEqual(set(self.assets), set(garage.PROFILES))
-        self.assertEqual(len({p[0] for p in garage.PROFILES.values()}), 39)
+        self.assertEqual(len({p[0] for p in garage.PROFILES.values()}), 25)
 
     def test_every_first_frame_preserves_untouched_source(self):
         for name, (category, path) in self.assets.items():
@@ -28,21 +29,6 @@ class GarageAnimationTests(unittest.TestCase):
                 original = garage.load(path)
                 first = garage.animate(original, category, name, 0, path)
                 np.testing.assert_array_equal(np.asarray(first), np.asarray(original))
-
-    def test_badges_and_rarities_preserve_shape_and_transparency(self):
-        for name, (category, path) in self.assets.items():
-            if category != 'badges-rarity':
-                continue
-            with self.subTest(name=name):
-                original = garage.load(path)
-                moving = garage.animate(original, category, name, 8, path)
-                np.testing.assert_array_equal(
-                    np.asarray(moving.getchannel('A')),
-                    np.asarray(original.getchannel('A')),
-                )
-                self.assertGreater(np.count_nonzero(
-                    np.any(np.asarray(original)[:, :, :3] !=
-                           np.asarray(moving)[:, :, :3], axis=2)), 5)
 
     def test_nozzle_stays_still_and_flame_animates(self):
         for name, (category, path) in self.assets.items():

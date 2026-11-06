@@ -37,8 +37,10 @@ test('safe 3x reference cards never crop image or caption on desktop and phone',
     await expect(cards).toHaveCount(6);
     for (const card of await cards.all()) {
       await card.scrollIntoViewIfNeeded();
-      // Lazy art swaps to its GIF once visible; measure only after it settled (browser-test-stability.md).
-      await expect.poll(() => card.locator('img').evaluate(img => [img.dataset.animationActive, img.naturalWidth]), { message: 'store GIF attached and decoded' }).toEqual(['true', 216]);
+      // Box/bundle/collection swap to their GIF once visible; cart/star/tag keep the original under a CSS sweep.
+      // Measure only after it settled (browser-test-stability.md).
+      const gif = /^store-(box|bundle|collection)$/.test(await card.getAttribute('data-art'));
+      await expect.poll(() => card.locator('img').evaluate(img => [img.dataset.animationActive, img.naturalWidth]), { message: 'store art settled' }).toEqual([String(gif), 216]);
       const v = await card.evaluate(node => {
         const outer = node.getBoundingClientRect(), art = node.querySelector('img').getBoundingClientRect();
         const frame = node.querySelector('.garage-badge-art-frame').getBoundingClientRect();

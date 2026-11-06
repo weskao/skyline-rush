@@ -92,7 +92,6 @@ test('eleven original 3x badge/rarity artworks appear in a non-entitlement showc
 });
 
 test('badge reference art falls back to visible accessible label if the 3x image fails', async ({ page }) => {
-  await page.route('**/feature-assets/garage-animated/badge-equipped@3x.gif', route => route.abort());
   await page.route('**/feature-assets/garage-vfx-skins/raster/badge-equipped@3x.png', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
@@ -106,7 +105,6 @@ test('badge reference art falls back to visible accessible label if the 3x image
 });
 
 test('failed badge artwork remains accessible and localized in Traditional Chinese', async ({ page }) => {
-  await page.route('**/feature-assets/garage-animated/badge-equipped@3x.gif', route => route.abort());
   await page.route('**/feature-assets/garage-vfx-skins/raster/badge-equipped@3x.png', route => route.abort());
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
@@ -193,8 +191,9 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     const colors = [];
     for (const tile of await tiles.all()) {
       await tile.scrollIntoViewIfNeeded();
-      // Lazy art loads once scrolled in, then swaps to its GIF; decode() on that moving src throws, so poll the size (browser-test-stability.md).
-      await expect.poll(() => tile.locator('img').evaluate(img => [img.dataset.animationActive, img.naturalWidth, img.naturalHeight]), { message: 'badge GIF attached and decoded at 3x' }).toEqual(['true', 216, 216]);
+      // Lazy art loads once scrolled in; poll the size, never decode() a pending src (browser-test-stability.md).
+      // Badges are a pure CSS sweep over the original art, so no GIF attaches.
+      await expect.poll(() => tile.locator('img').evaluate(img => [img.dataset.animationActive, img.naturalWidth, img.naturalHeight]), { message: 'badge 3x art decoded, no GIF' }).toEqual(['false', 216, 216]);
       const info = await tile.evaluate(figure => {
         const img = figure.querySelector('img');
         const frame = figure.querySelector('.garage-badge-art-frame');
@@ -322,11 +321,12 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       await expect(tile).toHaveAttribute('data-artwork-restored', 'true');
       const image = tile.locator('img');
       await expect(image).toHaveAttribute('data-static-src', new RegExp(`${id}@3x\\.webp$`));
-      await expect(image).toHaveAttribute('src', new RegExp(`garage-animated/${id}@3x\\.gif$`));
+      await expect(image).toHaveAttribute('data-animation-active', 'false');
+      await expect(tile.locator('.garage-art-sweep')).toHaveCount(1);
+      await expect(image).toHaveJSProperty('naturalWidth', 216); // lazy src loaded before decode()
       const result = await tile.evaluate(async figure => {
         const img = figure.querySelector('img');
         await img.decode();
-        // Original native 3x source has full quality; GIF is palette-compressed.
         const original = new Image();
         original.src = img.dataset.staticSrc;
         await original.decode();

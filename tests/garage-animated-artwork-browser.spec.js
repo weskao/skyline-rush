@@ -6,18 +6,21 @@ for (const pageName of ['home', 'studio']) {
     await page.locator('#garage-button').click();
     if (pageName === 'studio') await page.locator('#garage-studio-open').click();
     await expect(page.locator('#garage-preview #world')).toBeVisible();
-    for (const [selector, name, px] of [
-      ['[data-skin="thruster-basic"] .garage-vfx-art img', 'thruster-basic', 288],
-      ['#garage-vfx-art-badges .garage-badge-art-frame img', 'badge-equipped', 216],
-    ]) {
-      const image = page.locator(selector).first();
-      await image.scrollIntoViewIfNeeded();
-      await expect(image).toHaveAttribute('data-animation-active', 'true');
-      await expect(image).toHaveAttribute('src', new RegExp('garage-animated/' + name + '@3x\\.gif$'));
-      await expect(image).toHaveJSProperty('naturalWidth', px);
-      await expect(image).toHaveJSProperty('naturalHeight', px);
-      await expect(image).toHaveAttribute('data-static-src', /raster\//);
-    }
+    const image = page.locator('[data-skin="thruster-basic"] .garage-vfx-art img').first();
+    await image.scrollIntoViewIfNeeded();
+    await expect(image).toHaveAttribute('data-animation-active', 'true');
+    await expect(image).toHaveAttribute('src', /garage-animated\/thruster-basic@3x\.gif$/);
+    await expect(image).toHaveJSProperty('naturalWidth', 288);
+    await expect(image).toHaveJSProperty('naturalHeight', 288);
+    await expect(image).toHaveAttribute('data-static-src', /raster\//);
+    // A badge is a pure specular sweep: original 3x art stays, CSS draws the light.
+    const badge = page.locator('#garage-vfx-art-badges [data-badge-art="badge-equipped"]');
+    await badge.scrollIntoViewIfNeeded();
+    await expect(badge.locator('img')).toHaveAttribute('data-animation-active', 'false');
+    await expect(badge.locator('img')).toHaveAttribute('src', /raster\/badge-equipped@3x\.(png|webp)$/);
+    await expect(badge.locator('img')).toHaveJSProperty('naturalWidth', 216);
+    await expect.poll(() => badge.locator('.garage-art-sweep').evaluate(el =>
+      getComputedStyle(el, '::after').animationDuration)).toBe('6.8s');
     await expect(page.locator('#garage-preview #world')).toBeVisible();
   });
 }
@@ -58,24 +61,34 @@ test('failed GIF falls back to source WebP without changing equipped state', asy
   await expect(skin).toHaveAttribute('data-owned', 'false');
 });
 
-test('all 39 Garage, badge and Store cards map to their own source-art GIFs on Home and Studio', async ({ page }) => {
+test('25 part-motion cards map to their own GIFs; 14 sweep cards share one CSS sweep on Home and Studio', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-art-source-garage-store-readiness summary').click();
   const readCards = async () => {
     const skin = await page.locator('#garage-vfx-catalog [data-skin]').evaluateAll(cards =>
-      cards.map(card => ({ id: card.dataset.skin, src: card.querySelector('img')?.dataset.animatedSrc })));
+      cards.map(card => ({ id: card.dataset.skin, src: card.querySelector('img')?.dataset.animatedSrc,
+        sweep: card.querySelector('.garage-art-sweep') && getComputedStyle(card.querySelector('.garage-art-sweep'), '::after').animationDuration })));
     const badges = await page.locator('#garage-vfx-art-badges [data-badge-art]').evaluateAll(cards =>
-      cards.map(card => ({ id: card.dataset.badgeArt, src: card.querySelector('img')?.dataset.animatedSrc })));
+      cards.map(card => ({ id: card.dataset.badgeArt, src: card.querySelector('img')?.dataset.animatedSrc,
+        sweep: card.querySelector('.garage-art-sweep') && getComputedStyle(card.querySelector('.garage-art-sweep'), '::after').animationDuration })));
     const store = await page.locator('#garage-art-source-garage-store-readiness [data-wave3-asset]').evaluateAll(cards =>
-      cards.map(card => ({ id: card.dataset.wave3Asset, src: card.querySelector('img')?.dataset.animatedSrc })));
+      cards.map(card => ({ id: card.dataset.wave3Asset, src: card.querySelector('img')?.dataset.animatedSrc,
+        sweep: card.querySelector('.garage-art-sweep') && getComputedStyle(card.querySelector('.garage-art-sweep'), '::after').animationDuration })));
     expect([skin.length, badges.length, store.length]).toEqual([22, 11, 6]);
     const combined = [...skin, ...badges, ...store];
     expect(new Set(combined.map(item => item.id)).size).toBe(39);
+    const swept = /^(badge-|rarity-)|^store-(cart|star|tag)$/;
     for (const item of combined) {
-      expect(item.src, `Missing independent original-art motion for ${item.id}`)
-        .toMatch(new RegExp(`garage-animated/${item.id}@3x\\.gif$`));
+      if (swept.test(item.id)) {
+        expect(item.src, `${item.id} is a CSS sweep, not a GIF`).toBeUndefined();
+        expect(item.sweep, `${item.id} sweep cycle`).toBe('6.8s');
+      } else {
+        expect(item.src, `Missing independent original-art motion for ${item.id}`)
+          .toMatch(new RegExp(`garage-animated/${item.id}@3x\\.gif$`));
+      }
     }
+    expect(combined.filter(item => item.src).length).toBe(25);
   };
   await readCards();
   await page.locator('#garage-studio-open').click();

@@ -45,7 +45,6 @@ test('Store supports zh-TW and prevents keyboard or mouse purchases', async ({ p
 });
 
 test('Store falls back to original source artwork when independent PNG is unavailable', async ({ page }) => {
-  await page.route('**/garage-animated/store-tag@3x.gif', route => route.abort()); // so the static PNG -> WebP chain is what runs
   await page.route('**/store-tag@3x.png', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();

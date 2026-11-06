@@ -49,23 +49,9 @@ PROFILES = {
     'launch-flare-red': ('flare-shock', 0.77),
     'launch-flare-ring': ('flare-orbit', 0.69),
     'launch-flare-white': ('flare-nova', 0.58),
-    'badge-equipped': ('metal-edge', 0.53),
-    'badge-favorite': ('metal-heart', 0.44),
-    'badge-limited': ('metal-seal', 0.50),
-    'badge-locked': ('metal-lock', 0.38),
-    'badge-new': ('metal-ribbon', 0.62),
-    'badge-trial': ('metal-hourglass', 0.40),
-    'rarity-common': ('rarity-satin', 0.28),
-    'rarity-rare': ('rarity-gem', 0.42),
-    'rarity-epic': ('rarity-prism', 0.56),
-    'rarity-legendary': ('rarity-gold', 0.63),
-    'rarity-mythic': ('rarity-aurora', 0.69),
     'store-box': ('hinged-crate', 1.0),
     'store-bundle': ('ribbon-bow', 0.72),
-    'store-cart': ('cart-specular', 0.66),
     'store-collection': ('collection-fan', 0.64),
-    'store-star': ('featured-facet', 0.78),
-    'store-tag': ('tag-metal', 0.56),
 }
 
 
@@ -74,8 +60,7 @@ def sources():
     found = []
     for category, pattern in [
         ('thruster', 'thruster-*.webp'), ('nitro-trail', 'trail-*.webp'),
-        ('launch-flare', 'flare-*.webp'), ('badges-rarity', 'badge-*.webp'),
-        ('badges-rarity', 'rarity-*.webp'),
+        ('launch-flare', 'flare-*.webp'),
     ]:
         for path in sorted(raster.glob(pattern)):
             name = path.name.split('@')[0]
@@ -90,8 +75,9 @@ def sources():
         found.append(('airflow', path.name.split('@')[0], path))
     for category in ('nitro-trail', 'launch-flare'):
         found.append((category, category + '-basic', VFX / (category + '.svg')))
-    for path in sorted(STORE.glob('store-*.webp')):
-        found.append(('store-concept', path.name.split('@')[0], path))
+    # Only Store art with a moving part; cart/star/tag get the CSS sweep in GarageArtworkTile.vue.
+    for name in ('store-box', 'store-bundle', 'store-collection'):
+        found.append(('store-concept', name, STORE / f'{name}@3x.webp'))
     return sorted(found, key=lambda x: x[1])
 
 
@@ -253,33 +239,6 @@ def color_flow(source, style, strength, step, category):
     return Image.fromarray(np.clip(rgba, 0, 255).astype('uint8'), 'RGBA')
 
 
-def metal_reflection(source, style, strength, step):
-    """A slow moving material highlight; geometry and opacity never change."""
-    if step == 0:
-        return source.copy()
-    a, x, y, light, chroma = field_arrays(source)
-    t = 2 * math.pi * step / FRAMES
-    # Each emblem gets its own sweep angle, cadence and material response.
-    modes = {
-        'metal-edge': (1.0, -.45, 1.0), 'metal-heart': (.65, .95, .72),
-        'metal-seal': (1.2, .20, .95), 'metal-lock': (.75, -.10, .60),
-        'metal-ribbon': (-1.0, .40, 1.18), 'metal-hourglass': (.55, -.85, .60),
-        'rarity-satin': (.80, -.40, .55), 'rarity-gem': (-.90, .70, .78),
-        'rarity-prism': (1.1, .85, 1.10), 'rarity-gold': (-.90, -.80, 1.18),
-        'rarity-aurora': (1.0, .22, 1.28),
-    }
-    dx, dy, cadence = modes[style]
-    progression = .5 + .38 * math.sin(t)
-    envelope = (1 - math.cos(t)) / 2
-    dist = dx * (x - .5) + dy * (y - .5) - (progression - .5)
-    specular = np.exp(-((dist / .11) ** 2)) * strength * envelope * cadence
-    # Respect dark recesses; don't paint white stripes over the icon silhouette.
-    material = (a[:, :, 3] > 15) & (light > 62)
-    gain = 1 + .32 * specular
-    a[:, :, :3] = np.where(material[:, :, None], np.clip(a[:, :, :3] * gain[:, :, None], 0, 255), a[:, :, :3])
-    return Image.fromarray(a.astype('uint8'), 'RGBA')
-
-
 def polygon_mask(size, points, blur=0):
     mask = Image.new('L', size, 0)
     d = ImageDraw.Draw(mask)
@@ -327,10 +286,7 @@ def animate_store(source, style, strength, step):
         # Lift just the upper collectible card, not the UI tile.
         card = polygon_mask(source.size, [(.35,.17),(.74,.19),(.80,.48),(.49,.60),(.31,.44)], .5)
         return subtle_part_motion(source, card, step, dy=round(-2.3 * openness))
-    # Cart: metallic rim, featured-star: faceted specular, tag: edge shimmer.
-    style_map = {'cart-specular': 'metal-edge', 'featured-facet': 'rarity-gold',
-                 'tag-metal': 'metal-ribbon'}
-    return metal_reflection(source, style_map[style], strength, step)
+    raise ValueError(f'Unknown Store motion: {style}')
 
 
 def animate(source, category, name, step, path=None):
@@ -341,8 +297,6 @@ def animate(source, category, name, step, path=None):
         return animate_airflow(path, name, step)
     if category in ('thruster', 'nitro-trail', 'launch-flare'):
         return color_flow(source, style, strength, step, category)
-    if category == 'badges-rarity':
-        return metal_reflection(source, style, strength, step)
     return animate_store(source, style, strength, step)
 
 
@@ -373,7 +327,7 @@ def palettize(frame, palette):
 
 def render(category, name, source_path):
     source = load(source_path)
-    expected = 216 if category in ('badges-rarity', 'store-concept') else 288
+    expected = 216 if category == 'store-concept' else 288
     if source.size != (expected, expected):
         raise ValueError(f'{source_path}: expected {expected}x{expected}; got {source.size}')
     if not np.any(np.asarray(source)[:, :, 3] == 0):
@@ -410,8 +364,8 @@ def main():
     args = parser.parse_args()
     assets = sources()
     names = {name for _, name, _ in assets}
-    if len(assets) != 39 or names != set(PROFILES):
-        raise AssertionError(f'39 individually designed, present sources required; missing={set(PROFILES)-names}; extra={names-set(PROFILES)}')
+    if len(assets) != 25 or names != set(PROFILES):
+        raise AssertionError(f'25 individually designed, present sources required; missing={set(PROFILES)-names}; extra={names-set(PROFILES)}')
     result = [render(cat, name, path) for cat, name, path in assets
               if args.only is None or name == args.only]
     if not result:

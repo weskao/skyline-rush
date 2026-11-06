@@ -7,9 +7,12 @@ const props = withDefaults(defineProps<{ id: string; label: string; src: string;
 const hues: Record<Tone, number> = {
   cyan: 189, magenta: 312, gold: 42, slate: 214, azure: 207, amber: 32, red: 354,
 };
-const animatedSrc = computed(() => /^(badge-|rarity-|store-)/.test(props.id)
+// Real part motion (lid, bow, cards) needs a GIF; a pure specular sweep is drawn in CSS below.
+const animatedSrc = computed(() => /^store-(box|bundle|collection)$/.test(props.id)
   ? `${import.meta.env.BASE_URL}feature-assets/garage-animated/${props.id}@3x.gif` : '');
+const sweep = computed(() => /^(badge-|rarity-)|^store-(cart|star|tag)$/.test(props.id));
 const colors = computed(() => ({
+  '--sweep-mask': sweep.value ? `url("${props.src}")` : 'none',
   '--badge-hue': String(hues[props.tone]),
   '--art-width': props.size + 'px',
   '--art-height': (props.imageHeight ?? props.size) + 'px',
@@ -23,6 +26,7 @@ const colors = computed(() => ({
     <div class="garage-badge-art-frame">
       <GarageArtworkImage :src="src" :size="size" :height="imageHeight" :image-id="id"
         :alt="label" :animated-src="animatedSrc" :fallback-text="label" :fallback-src="fallbackSrc" />
+      <span v-if="sweep" class="garage-art-sweep" aria-hidden="true"></span>
     </div>
     <figcaption>{{ label }}</figcaption>
   </figure>
@@ -53,6 +57,26 @@ const colors = computed(() => ({
   object-fit: contain; object-position: center; image-rendering: auto;
   filter: drop-shadow(0 0 5px hsl(var(--badge-hue) 90% 65% / .28));
 }
+/* Specular sweep clipped to the icon's own alpha. Same direction (left → right, -23° like
+   .garage-paint-sheen) and same 6.8s cycle on every swept icon; transform-only animation. */
+.garage-art-sweep {
+  position: absolute; inset: 8px; overflow: hidden; pointer-events: none;
+  -webkit-mask: var(--sweep-mask) center / contain no-repeat; mask: var(--sweep-mask) center / contain no-repeat;
+}
+.garage-art-sweep::after {
+  content: ''; position: absolute; top: -50%; bottom: -50%; left: 0; width: 42%;
+  transform: translate3d(-160%, 0, 0) skewX(-23deg); will-change: transform;
+  background: linear-gradient(90deg, transparent, #ffffff14 25%, #ffffffc8 50%, #ffffff14 75%, transparent);
+  mix-blend-mode: screen; animation: garage-art-sweep 6.8s ease-in-out infinite;
+}
+/* ~2s travel, ~1s across the icon itself; the rest of the cycle is rest. */
+@keyframes garage-art-sweep {
+  0%, 55% { transform: translate3d(-160%, 0, 0) skewX(-23deg); }
+  85%, 100% { transform: translate3d(300%, 0, 0) skewX(-23deg); }
+}
+:global(body[data-vfx-quality="low"]) .garage-art-sweep,
+:global(body[data-vfx-enabled="false"]) .garage-art-sweep,
+:global(body.vfx-comfort) .garage-art-sweep { display: none; }
 .garage-badge-card figcaption {
   width: 100%; min-height: 30px; margin: 0; padding: 0;
   color: #dfebff; text-align: center; font-size: clamp(11px, 1.3vw, 13px);
@@ -60,5 +84,6 @@ const colors = computed(() => ({
 }
 @media (prefers-reduced-motion: reduce) {
   .garage-badge-card * { animation: none !important; transition: none !important; }
+  .garage-art-sweep { display: none; }
 }
 </style>
