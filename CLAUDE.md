@@ -10,6 +10,27 @@ browser support. Prefer small changes with deterministic unit tests + browser re
 File-scoped rules live in `.claude/rules/` and load only with the files they cover (UI
 architecture, module size, artwork, tracks, touch, Garage, tutorial, release notes, CI,
 branches). A rule that only matters for certain files goes there with `paths:`, not here.
+
+
+## Shared six-course presentation and controls (mandatory for new courses)
+
+For Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline
+Megacity, Frostbite Canyon and future courses, **read
+`.claude/rules/playable-course-shared-template.md` before editing** map scenes,
+home selection, gameplay, `world.js`, AIRFLOW or Garage/Studio controls.
+
+Use the existing horizontal touch/mouse/trackpad carousel, one live `#world`
+Three.js preview, common Roadster/rival poses, shared camera dock, paint/VFX,
+and the same Garage Home ↔ Preview Studio controls. Do not add per-map swipe,
+AIRFLOW, car, Garage, Studio or renderer systems. Home AIRFLOW ON means the
+showcase car is grounded; OFF means hovering with jets. This is separate from
+the in-race FLY input. Preserve actual 3D road contact, 50° FOV and responsive
+camera composition; keep all future cards Coming Soon until physical playable
+race acceptance, not just preview or FULL CI success.
+
+Run the cross-course regression matrix in the scoped rule, including all six
+maps and existing tracks, real desktop/mobile WebGL screenshots and exact-HEAD
+FULL CI. Unverified interactions or race physics remain explicitly pending.
 A "→ Read `docs/<file>`" line names a situation: open that file only then, follow it exactly.
 
 **No personal paths in files.** This repo is public: never write a user-specific absolute path
@@ -24,6 +45,11 @@ minimal fix (GREEN); regression-check affected tracks, vehicles, locales and inp
 `make verify`; inspect real WebGL / touch screenshots when behavior or rendering changed; then
 check the full GitHub `quality-gate` for the exact HEAD commit. Track evidence in `TODO.md`.
 CI, manual visual confirmation and RED evidence are separate gates; one never proves another.
+For CourseGraph geometry tests, compare equivalent **physical arc-length** fractions,
+not equal fractions of an authored scalar-distance parameter. Compare float-derived
+bank/frame values with tight explicit tolerances, never strict equality of results
+from different floating-point expression orders. Do not round/quantize production
+metres, coordinates, road contact, signed checkpoints, collisions or flight gaps.
 
 Merge-ready only when the latest `develop` is integrated, required checks are green and the
 user-visible symptoms were retested. Never merge into `develop`/`main`, open a PR or deploy
