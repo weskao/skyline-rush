@@ -1,4 +1,5 @@
 import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
+import { earnsAirChain } from './air-chain.ts';
 import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 export { RING_RADIUS, RISK_RING_RADIUS, ITEMS_PER_CAR, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
@@ -402,8 +403,7 @@ export function stepRace(race, input, dt) {
   if (car.altitude > 0) car.drift = null; // taking off loses the drift build-up
   if (previousAltitude > 0 && car.altitude === 0) {
     // Reward an earned, controlled NITRO/BOOST-to-flight-to-road transition once per landing.
-    const chain = car.poweredFlightTime >= 0.4 && car.flightBoosted &&
-      Math.abs(car.verticalSpeed) < TRICK_HARD_LANDING && car.speed >= DRIFT_MIN_SPEED && race.modifier !== 'no-flight';
+    const chain = earnsAirChain(car, DRIFT_MIN_SPEED) && race.modifier !== 'no-flight';
     car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: car.distance, x: car.x, chain };
     if (chain) car.miniBoost = Math.max(car.miniBoost, 1.2);
     car.poweredFlightTime = 0;
