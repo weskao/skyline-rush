@@ -1,8 +1,9 @@
 # CourseGraph race runtime: Dune Tempest, then Skyfall Archipelago — design
 
 **Date:** 2026-11-06 · **Branch:** `feature/course-graph-runtime` (cut from
-`origin/feature/epic-multiroute-longform-tracks` at `0c951d49`) · **Status:** design, docs only;
-no product code on this branch yet.
+`origin/feature/epic-multiroute-longform-tracks` at `0c951d49`) · **Status:** design approved;
+open questions Q1–Q9 decided by the user on 2026-11-07 (section 17). No product code on this branch
+yet.
 
 **Plan:** `docs/superpowers/plans/2026-11-06-course-graph-runtime.md`
 
@@ -259,7 +260,8 @@ same commit that adds the hook calls, and lowers the ceiling to the new count.
   frames, so wheel contact, gates and the visible surface share one frame. Skyfall needs Q5 first.
 - **Junction kinks (F1):** the centreline is continuous but the heading jumps at nodes; a car at
   lateral offset is drawn up to `2|x|·sin(kink/2)` off its previous pose across one frame. The
-  runtime fix (Task 2 of the plan) keeps the car's road-frame lateral; the visual snap is Q9.
+  runtime fix (Task 2 of the plan) keeps the car's road-frame lateral; Q9 is decided as smoothing
+  the map tangents (≤ 1° heading change at every junction), which removes the visual snap.
 - **Scenery host:** `createCourseRaceScene(scene)` keeps chunks for the edges within the window
   around each of the eight cars, builds the hidden shader sample for every chunk material at track
   load (`warmupShaders` rule), disposes unique GPU resources on eviction and track change, and never
@@ -339,7 +341,7 @@ Run after Dune and again after Skyfall:
 | Gate band rejects legal flight (F3) | Course band covers the engine envelope; rejection counter asserted 0. |
 | Ceilings block the change (F6) | Extraction in the same commit; ceilings ratcheted down. |
 | Parallel 1D courses conflict in shared files | Merge only after Stormline/Volcanic/Monsoon; rebase-free merge of the epic before final CI. |
-| Skyfall road/physics mismatch (F4) | Decide Q5 before Phase 2 code. |
+| Skyfall road/physics mismatch (F4) | Q5 decided: Skyfall renders from the shared `sampleRoute` (plan Task 12). |
 | Allocation pressure on phones | Measured budget §12; allocation-free variants only on evidence. |
 | 13.7–16 km races hide late-race bugs | Full-length bot runs in unit tests; real START → FINISH in browser. |
 
@@ -350,27 +352,40 @@ Which `game.js` block is extracted; branch-choice deadband; the exact path-adjac
 chunk window size per quality tier; the 30/60/120 Hz finish-time tolerance (recorded in the test);
 bench harness shape.
 
-## 17. Open questions for the user
+## 17. Decisions on Q1–Q9 (user, 2026-11-07)
 
-- **Q1 Dune's flight edge in Phase 1?** Recommended: yes — Dune's R1 needs `canyon-air-crossing`
-  driven, and Skyfall then reuses the same gap mechanic. Alternative: Phase 1 locks the player to
-  ground edges at `split2` and Dune stays below `ready` until Phase 2.
-- **Q2 Lateral range.** Keep `ROAD_LIMIT` ±10.2 m on 24–60 m wide roads (recommended for this work;
-  Dune off-road zones then unused), or per-edge half-width (touches the core clamp, rail and lane
-  logic).
-- **Q3 Rings / pickups / traffic** on graph courses. Recommended: none in this work (NITRO still
-  comes from drift, slipstream, tricks, landing chains); a follow-up places them by `(edgeId,
-  localS)`.
-- **Q4 Ghost.** Recommended: no Ghost save/replay on graph-runtime courses until samples carry
-  edge ids (a schema change).
-- **Q5 Skyfall sampler.** Render Skyfall's road from the shared `sampleRoute` (one sampler, loses
-  authored bank), or give the shared frame an optional bank from the map so physics matches the
-  banked render. Either touches map-owned or shared code; needed before Phase 2.
-- **Q6 Skyfall gate band** (none authored): engine envelope −2…13.2 m (recommended) or an authored
-  band from the map owner.
-- **Q7 Fork telegraphing.** Diverging road only (recommended minimum) or a HUD fork arrow / signs
-  (new strings, en + zh-TW).
-- **Q8 Rivals on flight edges.** Recommended: ground-only AI in this work; AI flight later.
-- **Q9 Authored junction kinks** (90° Dune `dune-s-bends` → `dune-crest-cut`; up to 47° Skyfall).
-  Smooth the map tangents (map-owned data, changes geometry and art alignment) or accept a heading
-  snap at nodes.
+All nine are settled; none blocks implementation any more. Q1–Q4 and Q6–Q8 follow this document's
+recommendation; Q5 and Q9 had no recommendation and were chosen by the user. Where an earlier
+section says "(Qn)", this table is the answer.
+
+| # | Question | Decision | Consequence for the build |
+|---|---|---|---|
+| Q1 | Dune's flight edge `canyon-air-crossing` in Phase 1? | **Yes** | Phase 1 ships the gap mechanic (plan Task 6); Skyfall reuses it. Dune can reach `ready` without waiting for Phase 2. |
+| Q2 | Lateral range | **Keep `ROAD_LIMIT` ±10.2 m** on the 24–60 m wide roads | No change to the core clamp, rail or lane logic; Dune off-road zones stay unused in this work. |
+| Q3 | Rings / pickups / traffic on graph courses | **None in this work** | NITRO comes from drift, slipstream, tricks and landing chains; a follow-up places them by `(edgeId, localS)`. |
+| Q4 | Ghost | **No Ghost save/replay** on graph-runtime courses | Until samples carry edge ids (a schema change, separate work). |
+| Q5 | Skyfall sampler | **Render Skyfall's road from the shared `sampleRoute`** | One sampler for road mesh, car pose, camera, gates and AI (contract rule). Only Skyfall's map code changes (`src/courses/skyfall-world.ts` and its road builder); the shared `course-route-frame` / `course-graph` stay untouched. The authored bank (up to ±0.12 rad) is dropped; `skyfallPhysicalDistance` becomes the identity, so gaps are stored directly in graph metres. Re-inspect Skyfall's home 3D preview and race road in real WebGL. |
+| Q6 | Skyfall gate band | **Engine envelope −2…13.2 m** | No authored band needed from the map owner. |
+| Q7 | Fork telegraphing | **Diverging road only** | No HUD fork arrow, signs or new strings. |
+| Q8 | Rivals on flight edges | **Ground-only AI** in this work | Rivals never select a flight edge; AI flight is later work. |
+| Q9 | Authored junction kinks (90° Dune `dune-s-bends` → `dune-crest-cut`; up to 47° Skyfall) | **Smooth the map tangents** | Map-owned graph data for Dune and Skyfall is edited so every junction is tangent-continuous (see below). Plan Task 2's runtime fix still lands, as defence for any remaining small kink. |
+
+**Q9 acceptance (both maps):**
+
+- For every connected edge pair `a → b`, the heading of `sampleRoute(a, length(a))` and of
+  `sampleRoute(b, 0)` differ by **≤ 1°** (measured in a test over both `PLAYABLE_COURSE_GRAPH`s,
+  explicit tolerance, physical arc length).
+- Node positions, checkpoints, the split / merge structure, flight gaps and edge ids are unchanged;
+  only tangent / control-point data near nodes moves. How to smooth (matched control points,
+  shared node tangents, or a short blend span) is the builder's call.
+- Edge lengths change slightly. Tests that hard-code lengths, hazard positions or route totals
+  (e.g. `tests/dune-tempest-graph.test.js`, `tests/dune-tempest-course.test.js`, Skyfall graph
+  tests, the runbook's branch-length table) are **updated to the new measured values in the same
+  commit**, with the reason in the commit message; assertions are not loosened.
+- Hazards and gates stay at the same **physical fraction** of their edge; re-check that no hazard
+  lands inside a junction blend span.
+- Everything drawn from the graph is re-verified in real desktop and phone WebGL: the race road,
+  scenery chunks, the home Coming Soon 3D preview (`UPCOMING_ENVIRONMENTS`), and the route SVG
+  `public/track-teasers/<id>-route.svg` if it is derived from the graph. The teaser JPEG is a
+  static image and does not change.
+- Stormline, Volcanic, Monsoon and Frostbite graphs are **not** touched by this work.

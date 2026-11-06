@@ -74,6 +74,23 @@ installed API), `node:test` (`npm test` = `node --test tests/*.test.js`), Playwr
 - [ ] **Step 2: Capture the fixture on `0c951d49`** (no source change yet): run a one-off `RECORD_REPLAY=1 node --test tests/legacy-race-replay.test.js` that writes the JSON. Then run without the env var. Expected: PASS. Also confirm it is sensitive: temporarily change `MAX_SPEED` locally → expected FAIL on every key; revert (do not commit the change).
 - [ ] **Step 3: Commit** `test(course-runtime): characterize legacy race replays before graph wiring`.
 
+### Task 1A: Tangent-continuous junctions for Dune (Q9 decided: smooth the map)
+
+**Files:**
+- Modify: Dune graph data (`src/courses/dune-tempest-graph.ts` / `src/courses/dune-tempest.ts`, tangent / control-point data near nodes only)
+- Create: `tests/course-junction-tangents.test.js`
+- Update (new measured values, same commit): `tests/dune-tempest-graph.test.js`, `tests/dune-tempest-course.test.js` and any other Dune test that hard-codes lengths, hazard positions or route totals
+
+**Interfaces:**
+- Produces: Dune `PLAYABLE_COURSE_GRAPH` with unchanged node ids / positions, edge ids, checkpoints, split/merge structure and flight gaps; only tangents near nodes change.
+
+- [ ] **Step 1: Write the failing test.** For every connected pair `a → b` in Dune's `PLAYABLE_COURSE_GRAPH`: heading of `sampleRoute(a, length(a))` vs `sampleRoute(b, 0)` ≤ 1°. Also assert node positions and edge-id sets equal the `0c951d49` values.
+- [ ] **Step 2: Run** `node --test tests/course-junction-tangents.test.js`. Expected: FAIL (`dune-s-bends → dune-crest-cut` ≈ 90°).
+- [ ] **Step 3: Smooth** the tangents (method is the builder's call; spec §17). Keep hazards and gates at the same physical fraction of their edge; none may fall inside a blend span. Update hard-coded Dune lengths / totals to the new measured values; never loosen an assertion.
+- [ ] **Step 4: Run** `npm test`. Expected: PASS, including Task 1's replay guard (no 1D track changes).
+- [ ] **Step 5: Real WebGL check** of Dune's home Coming Soon 3D preview and route SVG (if graph-derived) on desktop and phone; record in `TODO.md`.
+- [ ] **Step 6: Commit** `fix(dune): tangent-continuous junctions (Q9)`.
+
 ### Task 2: Junction crossings at lateral offset (`course-measured-motion.ts`)
 
 **Files:**
@@ -192,7 +209,7 @@ export function courseFinished(race: object, car: object): boolean;       // H5;
 - [ ] **Step 4: Run** `npm test`, `npm run typecheck`. Expected: PASS, Task 1 hashes unchanged, module-size green.
 - [ ] **Step 5: Commit** `feat(course-runtime): dispatch graph courses through the shared race loop`.
 
-### Task 6: Hazards, flight gap, recovery (Dune) — scope per open question Q1
+### Task 6: Hazards, flight gap, recovery (Dune) — Q1 decided: flight edge ships in Phase 1
 
 **Files:**
 - Modify: `src/course-race.ts` (`recoverCourseCar`), `src/course-race-step.ts` (H6, hazard sweep, `courseGapWarning`)
@@ -208,7 +225,7 @@ export function courseFinished(race: object, car: object): boolean;       // H5;
   - Recovery frame collects no gate/hazard/score even when the recovery point is inside a hazard sweep window.
   - A hazard at `atFraction × routeLength` on the player's edge within `collisionRadiusMeters` laterally → `collisions` +1 with `impact.kind === 'barrier'`; the same hazard on the parallel branch → no contact. Rivals' x moves to `safePassSide` within `aiPreviewMeters`.
   - `courseGapWarning` non-null within 300 m before the gap when fuel < the computed need.
-  - Rivals never select `canyon-air-crossing` (per Q8 default).
+  - Rivals never select `canyon-air-crossing` (Q8 decided: ground-only AI).
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement** using existing `dropCar` semantics and `GAP_SLOWDOWN`; `isClear` rejects slots within 4.4 m of another car on that edge or inside a hazard footprint.
 - [ ] **Step 4: Run** `npm test`. Expected: PASS.
@@ -275,11 +292,12 @@ export function courseFinished(race: object, car: object): boolean;       // H5;
 
 ## Phase 2 — Skyfall Archipelago (flight edges)
 
-### Task 12: One road frame for Skyfall (blocked on Q5)
+### Task 12: One road frame and smooth junctions for Skyfall (Q5, Q9 decided)
 
-**Files:** per Q5 — either `src/courses/skyfall-world.ts` (build road from shared `sampleRoute`) or `src/course-route-frame.ts` + `src/course-graph.ts` (optional authored bank on `CourseEdge`).
-**Test:** `tests/skyfall-road-contact.test.js`
+**Files:** `src/courses/skyfall-world.ts` and its road builder (render the road from the shared `sampleRoute`; drop the authored bank; `skyfallPhysicalDistance` becomes the identity); Skyfall graph data in `src/courses/skyfall-course-graph.ts` / `src/courses/skyfall-archipelago.ts` (Q9 tangent smoothing). Do **not** modify `src/course-route-frame.ts` or `src/course-graph.ts`.
+**Test:** `tests/skyfall-road-contact.test.js`; extend `tests/course-junction-tangents.test.js` (from Task 1A) to Skyfall.
 
+- [ ] **Step 0: Q9 for Skyfall.** Add Skyfall's `PLAYABLE_COURSE_GRAPH` to `tests/course-junction-tangents.test.js` (RED: up to 47° today), smooth the tangents per spec §17, update hard-coded Skyfall lengths / gap positions to the new measured values in the same commit (assertions not loosened), run until GREEN. Commit `fix(skyfall): tangent-continuous junctions (Q9)`.
 - [ ] **Step 1: Failing test:** for every Skyfall edge at physical fractions 0, 0.1 … 1.0 and lateral {−10.2, 0, +10.2}: rendered road surface point vs physics pose point ≤ 0.05 m, normals within 1°. Expected today: FAIL (bank ≈ 1.2 m at the edge).
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement** the chosen option; existing `tests/skyfall-*.test.js` and `tests/course-route-vertical-frame.test.js` keep passing (no weakening).
