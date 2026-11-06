@@ -273,3 +273,39 @@ test('a Custom, Time Attack or Cup finish leaves Garage paints, achievements and
     assert.deepEqual(progress.stars, {}, `${mode} finish earns no Classic stars`);
   }
 });
+
+test('a real Checkpoint, Gauntlet or Stunt settlement adopts its own personal medals and leaves Career untouched', () => {
+  const gates = [{ passed: true, missed: false }, { passed: true, missed: false }];
+  const stunt = () => ({ duration: 120, elapsed: 0, score: 0, heats: 0, maxCombo: 0, airTime: 0, trackId: 'coast' });
+  const cases = [
+    ['checkpoint', { checkpoint: { passed: 2, missed: 0, gates } }, ['checkpoint-clean']],
+    ['gauntlet', { hazards: [{ passed: true, hit: false }] }, ['gauntlet-clear']],
+    ['stunt', { styleAttack: { maxCombo: 0, airTime: 9, longestFlight: 9, maxAerialCombo: 3 } }, ['long-flight', 'aerial-combo']],
+  ];
+  for (const [mode, extra, ids] of cases) {
+    const store = new Map(); // each mode starts from an empty ledger
+    globalThis.localStorage = { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, value), removeItem: key => store.delete(key) };
+    const progress = loadSessionProgress(['coast']);
+    const race = classic({ success: true, time: 119.95, score: 100, endReason: 'timer' }, { mode, config: { mode, duration: 120 }, ...extra });
+    const { settlement } = settle(race, { progress, series: { sprintSeries: null, cup: null, stunt: mode === 'stunt' ? stunt() : null } });
+    assert.deepEqual(settlement.challengeMedals, ids, `${mode} awards its own medal set`);
+    assert.deepEqual(Object.keys(progress.challengeMedals.awards), ids, `${mode} stores exactly that set`);
+    assert.deepEqual(progress.medals, {}, `${mode} leaves the Career medals empty`);
+  }
+});
+
+const trackIds = Object.keys(RACE_TRACKS);
+const podium = trackId => classic({ position: 1 }, { trackId });
+
+test('NEXT stays hidden once every track was already unlocked', () => {
+  const progress = loadSessionProgress(trackIds);
+  assert.equal(settle(podium('coast'), { progress }).settlement.next, null);
+});
+
+test('NEXT appears for the final unlock and hides on the last track', () => {
+  const [last, beforeLast] = [trackIds.at(-1), trackIds.at(-2)];
+  const progress = loadSessionProgress(trackIds.slice(0, -1));
+  assert.equal(settle(podium(beforeLast), { progress }).settlement.next, last);
+  assert.ok(progress.unlocked.has(last), 'the final track is unlocked by that podium');
+  assert.equal(settle(podium(last), { progress }).settlement.next, null);
+});
