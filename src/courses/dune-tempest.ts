@@ -50,7 +50,8 @@ function edge(id: string, from: NodeId, to: NodeId, role: Edge['role'],
   };
 }
 
-const authoredEdges: Edge[] = [
+/** Pre-Q9 authored edges (control points as drawn); racing uses the smoothed `edges`. */
+export const DUNE_TEMPEST_AUTHORED_EDGES: readonly Edge[] = [
   edge('sunset-start', 'start', 'cp1', 'main', 'sand-road', 42, 1,
     [[180, 8, -280], [530, 11, -650], [600, 8, -1000]]),
   edge('dune-s-bends', 'cp1', 'split1', 'main', 'sand-road', 32, 1,
@@ -92,7 +93,7 @@ const authoredEdges: Edge[] = [
 
 // Q9: junctions are made tangent-continuous; only control points near nodes change.
 const junctions = smoothDuneJunctions({ id: 'dune-tempest', topologyVersion: 1, nodes,
-  edges: authoredEdges, checkpoints: ['cp1', 'cp2', 'cp3', 'cp4'] });
+  edges: DUNE_TEMPEST_AUTHORED_EDGES, checkpoints: ['cp1', 'cp2', 'cp3', 'cp4'] });
 const edges = junctions.edges;
 /** Authored-arc metres of each edge's start / end junction blend (keep hazards outside). */
 export const DUNE_JUNCTION_BLEND_METERS = junctions.blendMeters;
@@ -101,7 +102,7 @@ export const DUNE_JUNCTION_BLEND_METERS = junctions.blendMeters;
 const switchbacks = (list: readonly Edge[]) => list.find(e => e.id === 'canyon-switchbacks')!.controlPoints;
 const hairpins = [2, 6, 10, 14].map((authoredIndex, index) => ({
   id: 'canyon-hairpin-' + (index + 1), edgeId: 'canyon-switchbacks',
-  apexControlIndex: switchbacks(edges).indexOf(switchbacks(authoredEdges)[authoredIndex]),
+  apexControlIndex: switchbacks(edges).indexOf(switchbacks(DUNE_TEMPEST_AUTHORED_EDGES)[authoredIndex]),
   signLeadMeters: 150, suggestedSpeedMps: 32,
 }));
 

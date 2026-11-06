@@ -4,29 +4,43 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
 `docs/superpowers/plans/2026-11-06-course-graph-runtime.md`, branch `feature/course-graph-runtime`.
 
 - [x] Task 1A — Dune tangent-continuous junctions (Q9). `src/courses/dune-tempest-junctions.ts`
-  gives every node one horizontal tangent (mean of its edge-end headings); each edge end gets two
-  collinear points along it, then three points easing (quintic) back onto the authored curve before
-  the first authored control ≥ 80 m from the node (blend = 0.8 × that chord). Controls nearer than
-  80 m are replaced (only `canyon-switchbacks`' last control, 50 m from `merge2`). Node positions,
-  edge ids, endpoints, checkpoints, split/merge structure, hazard fractions and the flight pad
-  definitions (60 m takeoff, 105 m landing) are unchanged; hairpin apex indices now point at the
-  same authored apex points (2/6/10/14 → 7/11/15/19).
-  - RED: `node --test tests/course-junction-tangents.test.js` → 1 pass / 2 fail: 16 of 16
+  gives every node one horizontal tangent: a node touched by the flight edge (`split2`, `merge2`)
+  takes `canyon-air-crossing`'s authored heading, every other node the mean of its edge-end
+  headings. `canyon-air-crossing` is left exactly as authored (pads, gap and climb unchanged); the
+  ground side absorbs the split2/merge2 kink. Each ground edge end gets two collinear points along
+  the node tangent, then rejoins the authored curve before the first authored control ≥ 80 m from
+  the node (blend = 0.8 × that chord): three quintic-eased points, or nine points on a cubic
+  Hermite when that end must turn more than 60° (`canyon-switchbacks` head, `canyon-approach`
+  tail). Controls nearer than 80 m are replaced (only `canyon-switchbacks`' last control, 50 m from
+  `merge2`). Node positions, edge ids, endpoints, checkpoints, split/merge structure and hazard
+  fractions are unchanged; hairpin apex indices point at the same authored apex points
+  (2/6/10/14 → 13/17/21/25).
+  - Round 0 RED: `node --test tests/course-junction-tangents.test.js` → 1 pass / 2 fail: 16 of 16
     junctions over 1° (max `dune-s-bends → dune-crest-cut` 90.04°, `canyon-approach →
     canyon-air-crossing` 70.08°); `DUNE_JUNCTION_BLEND_METERS` missing (assertion, not an import
-    error).
-  - GREEN: same file 3/3 (every junction 0.00°); `npm test` 2012 pass / 0 fail / 3 skipped
-    (incl. `legacy-race-replay`); typecheck ts / vue / js clean; `npm run build` green.
-  - Measured (shared `routeLength`, metres, old → new): ground route 13,713.604 → 13,823.896;
-    `winding-wadi` 1,240.109 → 1,241.496 vs `dune-crest-cut` 917.508 → 954.821;
-    `canyon-switchbacks` 3,553.549 → 3,603.531 vs `canyon-air-crossing` 1,088.306 → 1,113.241;
+    error). GREEN 3/3 at `85dd3c9c`.
+  - Fix round 1 (review I1/I2/M2): `85dd3c9c` bent the flight pads (takeoff peak 5.29°/m at 5 m
+    chords, radius ≈ 10.8 m < 12 m half-width) and grew the flight gap 923.3 → 948.2 m. New
+    assertions (5 m chords from s = 0 on the shared `sampleRoute`): gap 923.3 ± 5 m; takeoff
+    60 m and landing 105 m pad peak ≤ 1.0°/m; every edge peak ≤ min(3.63°/m, road half-width
+    radius). RED on `85dd3c9c`: gap 948.2 m; `canyon-air-crossing` 4.116 / 5.286 / 3.76°/m at
+    s = 30 / 35 / 40 m. GREEN: same file 5/5 (junctions 0.00°, gap 923.3 m,
+    takeoff / landing pad peaks 0.280 / 0.073°/m = authored).
+    The merge2 join/landing-grade tests now sample the road (5 m chords, same 35° / 40° / 0.12
+    thresholds); the hairpin test judges the authored apex and its authored neighbours.
+  - Measured (shared `routeLength`, metres, pre-Q9 `0c951d49` → now): ground route 13,713.604 →
+    13,930.524; `winding-wadi` 1,240.109 → 1,241.496 vs `dune-crest-cut` 917.508 → 954.821;
+    `canyon-switchbacks` 3,553.549 → 3,671.973 vs `canyon-air-crossing` 1,088.306 (unchanged);
     `natural-arch-pass` 1,045.355 → 1,055.109 vs `dry-wash-cut` 743.096 → 763.573.
-    Flight solid road `[0, 60]` + `[983.306, 1088.306]` → `[0, 60]` + `[1008.241, 1113.241]`
-    (gap 923.3 → 948.2 m). Raw main control polyline 13,484.1 → 13,600.4 (test bound 13,500 ± 120).
-    Max in-edge turn rate (2 m steps) stays ≤ the existing hairpin peak (8.5°/m).
-  - No test hard-coded a Dune length, total or hazard metre value, so no literal changed; the
-    plan's 13,713.6 / 983.3 / 1,088.3 figures are superseded by the values above. The home card
-    still shows the static planned `length: 13500` (`src/upcoming-tracks.ts`), not the graph.
+    Flight solid road `[0, 60]` + `[983.306, 1088.306]` (unchanged; gap 923.3 m).
+    Raw main control polyline 13,484.1 → 13,716.3; its test nominal moved 13,500 → 13,716
+    (same ± 120 m).
+  - Curvature caveat: the 3.63°/m bound is met at the stated 5 m-chord phase only. The authored
+    hairpin itself peaks at 3.816°/m and `stone-ring-corridor` at 3.626°/m (> its 3.37°/m
+    half-width limit) when the 5 m grid is shifted; both unchanged by smoothing (now 3.810 /
+    3.545°/m worst phase).
+  - The home card still shows the static planned `length: 13500` (`src/upcoming-tracks.ts`), not
+    the graph.
   - Route SVG `public/track-teasers/dune-tempest-route.svg` is a hand-authored schematic (no
     generator; `f8c359d5`), unchanged. The home Coming Soon preview
     (`src/upcoming-scenes/dune-tempest.ts`) does not read the graph, so its check is a regression

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { routeLength, sampleRoute } from '../src/course-route-frame.ts';
-import { PLAYABLE_COURSE_GRAPH as dune } from '../src/courses/dune-tempest-runtime-adapter.ts';
+import { PLAYABLE_COURSE_GRAPH as dune, DUNE_TEMPEST_RUNTIME_METADATA as duneMeta }
+  from '../src/courses/dune-tempest-runtime-adapter.ts';
 import * as duneCourse from '../src/courses/dune-tempest.ts';
 
 // Spec §17 Q9: every junction is tangent-continuous; only tangent data near nodes may move.
@@ -67,4 +68,39 @@ test('Dune hazards keep their edge fraction and stay outside every junction blen
     assert.ok(at - hazard.collisionRadiusMeters > head * 1.1, hazard.id + ' clear of start blend');
     assert.ok(at + hazard.collisionRadiusMeters < length - tail * 1.1, hazard.id + ' clear of end blend');
   }
+});
+
+// Curvature is read at a stated resolution: 5 m chords on the shared sampleRoute.
+const CHORD_METRES = 5;
+const DEG = 180 / Math.PI;
+const turnRates = (graph, edgeId) => {
+  const length = routeLength(graph, edgeId), points = [];
+  for (let s = 0; s <= length; s += CHORD_METRES) points.push([s, sampleRoute(graph, edgeId, s).point]);
+  const chord = (a, b) => Math.atan2(b[0] - a[0], -(b[2] - a[2]));
+  return points.slice(1, -1).map(([s, p], i) => ({
+    s, degPerMetre: headingDelta(chord(points[i][1], p), chord(p, points[i + 2][1])) / CHORD_METRES,
+  }));
+};
+const peak = rates => Math.max(0, ...rates.map(r => r.degPerMetre));
+
+test('Dune: flight gap length and both flight pads stay as authored (gap 923.3 ± 5 m, pads <= 1°/m)', () => {
+  const [flight] = duneMeta.flightShortcuts;
+  const [takeoff, landing] = flight.solidRoadIntervals;
+  const gap = landing[0] - takeoff[1];
+  assert.ok(Math.abs(gap - 923.3) <= 5, 'flight gap ' + gap.toFixed(1) + ' m');
+  const rates = turnRates(dune, flight.edgeId);
+  const takeoffPeak = peak(rates.filter(r => r.s <= takeoff[1]));
+  const landingPeak = peak(rates.filter(r => r.s >= landing[0]));
+  assert.ok(takeoffPeak <= 1, 'takeoff pad peak ' + takeoffPeak.toFixed(2) + '°/m');
+  assert.ok(landingPeak <= 1, 'landing pad peak ' + landingPeak.toFixed(2) + '°/m');
+});
+
+test('Dune: no edge turns tighter than the pre-smoothing peak (3.63°/m) or its road half-width', () => {
+  const COURSE_PEAK_DEG_PER_METRE = 3.63; // 0c951d49 canyon-switchbacks hairpin at 5 m chords
+  const tight = dune.edges.flatMap(edge => {
+    const limit = Math.min(COURSE_PEAK_DEG_PER_METRE, DEG / (edge.width / 2));
+    return turnRates(dune, edge.id).filter(r => !(r.degPerMetre <= limit))
+      .map(r => ({ edge: edge.id, s: r.s, degPerMetre: +r.degPerMetre.toFixed(3), limit: +limit.toFixed(3) }));
+  });
+  assert.deepEqual(tight, []);
 });
