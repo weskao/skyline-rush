@@ -1,9 +1,9 @@
-# Catch-up rings and NITRO pickups — design (2026-11-07)
+# Catch-up rings — design (2026-11-07)
 
 ## Intent
 
-User: in Classic on Tokyo Afterdark, about 300 m behind the leader is when help is needed most. A few extra rings and
-NITRO pickups should appear ahead of the trailing player, naturally, so they can catch up, never popping in abruptly.
+User: in Classic on Tokyo Afterdark, about 300 m behind the leader is when help is needed most. A few extra
+catch-up rings should appear ahead of the trailing player, naturally, so they can catch up, never popping in abruptly.
 
 ## Scope (user decisions)
 
@@ -17,8 +17,8 @@ NITRO pickups should appear ahead of the trailing player, naturally, so they can
   items per race.
 - **Natural appearance:** items are added 950–1030 m ahead of the player, beyond the 900 m draw range
   (`effects.js`), so they come into view exactly like every other ring. No new effect, sound or HUD callout.
-- **Items:** half rings (charge 40% / nitro 40% / slipstream 20%) at road-reachable 2.5 m, half NITRO cans on the road,
-  on the player's lane or a neighbouring one. Single items, never a wall.
+- **Items:** all catch-up items are rings at road-reachable 2.5 m: nitro 60%, charge 20%, slipstream 20%. Rings are
+  on the player's lane or a neighbouring one. Single items, never a wall; no catch-up cans.
 - **Placement guards:** never inside or within 40 m of a road section (tunnel, gap, shortcut, spiral…), never within
   25 m of an existing ring or pickup, never past `length − 100` m. A blocked spot is skipped, not moved.
 
