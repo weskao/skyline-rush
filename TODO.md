@@ -3,6 +3,30 @@
 Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
 `docs/superpowers/plans/2026-11-06-course-graph-runtime.md`, branch `feature/course-graph-runtime`.
 
+### Handoff state — 2026-11-07
+
+- Done and reviewed (unit level only): plan Tasks 1, 1A, 2–7 at `6a6ca618`. Spec Q1–Q9 are decided
+  in §17. Legacy replay guard `tests/legacy-race-replay.test.js` 47/47; `src/game.js` at its
+  580-line ceiling. Browser, `make verify`, WebGL screenshots, `[full-regression]` CI: NOT VERIFIED.
+- Next: plan Task 8 (not started; no code written). Then Tasks 9–11 (Dune acceptance gate), then
+  Skyfall Tasks 12–15. Branch CI on `6a6ca618` is the focused gate only.
+- Rulings that bind later tasks:
+  - Task 8 must also switch `race-hud.ts:309` HUD standings and the `world.js` ~546 (H8) gap
+    gate from 1D odometers to the graph standings / `carGap` (or 3D distance), and snap the
+    camera on graph recovery (world.js snaps only for Frostbite today).
+  - The track-switch browser case (Dune → Coast → Dune) lives in Task 9's browser spec.
+  - Task 11 merges the latest epic first; acceptance pushes carry `[full-regression]`.
+  - Bot finish window floor 120 s (measured 133.5–139.2 s); the rival-finish assertion runs in
+    a player-idle race; the 2 µm pre-node clamp is not quantization.
+- Deferred minors (fix or re-check in the named task):
+  - Task 10 perf: per-frame chooser closures and the finishTimes record in
+    `course-race-step.ts`; `recordGhost` still samples every frame on graph races (discarded).
+  - Skyfall: hazard preview is current-edge only; the gap need ignores BOOST / low-gravity /
+    shortcut; `firestore.rules` is near the 1000-expression limit (one more `validBest`).
+  - The home card shows a static 13.5 KM against the measured 13.93 km.
+  - No direct load/replay test with a seeded `dune-tempest@t1l1` Ghost; `progressGap` on parallel
+    branches at an equal odometer is not pinned; rock-c hazard sits 79 m from hairpin-1's apex.
+
 - [x] Task 1A — Dune tangent-continuous junctions (Q9). `src/courses/dune-tempest-junctions.ts`
   gives every node one horizontal tangent: a node touched by the flight edge (`split2`, `merge2`)
   takes `canyon-air-crossing`'s authored heading, every other node the mean of its edge-end
