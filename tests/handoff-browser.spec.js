@@ -158,7 +158,7 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
     });
     observer.observe(meter, { attributes: true, attributeFilter: ['aria-valuenow'] });
   });
-  // Ring types re-roll every race, so pin Coast's own layout seed (as tests/ring-rows-browser.spec.js does): its first
+  // Ring types re-roll every race, so pin Coast's own layout seed (as tests/ring-rows.test.js does): its first
   // group is four gates, the last a full-width row. Pinned before the mode tab, which builds the race.
   const { RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO } = await page.evaluate(async () => {
     (await import('/src/game.js')).setLayoutSeed();
