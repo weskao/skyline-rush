@@ -1,0 +1,38 @@
+name: Store PNG assets (manual branch-only generation)
+on:
+  push:
+    branches:
+      - feature/garage-store-readiness
+
+permissions:
+  contents: read
+
+jobs:
+  render-store-assets:
+    if: contains(github.event.head_commit.message, '[render-store-png]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/garage-store-readiness
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/render-store-png.mjs
+      - name: Verify independent PNG source pixels, margins, and alpha
+        run: node --test tests/garage-store-png.test.js
+      - name: Commit verified PNGs to Store branch only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/feature-assets/garage-store-readiness/raster/*@3x.png
+          if ! git diff --cached --quiet; then
+            git commit -m "assets(store): publish verified transparent 3x Store PNG artwork"
+            git push origin HEAD:refs/heads/feature/garage-store-readiness
+          fi

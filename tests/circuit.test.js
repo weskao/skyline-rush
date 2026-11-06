@@ -188,3 +188,15 @@ test('backwards progress and recovery invalidate ordered sectors, while hovering
   assert.equal(race.circuit.player.completed, 1);
   assert.equal(race.circuit.player.finishTime, null);
 });
+
+test('eighth-place Circuit finish records valid laps instead of breaking phaseUI settlement', () => {
+  const data = new Map(), storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  const race = createRace(id, { mode: 'circuit', laps: 1 });
+  race.phase = 'racing'; race.rings = []; race.pickups = [];
+  while (race.phase === 'racing' && race.elapsed < 220) stepRace(race, { throttle: true }, .05);
+  assert.equal(race.phase, 'finished');
+  assert.equal(race.circuit.player.lapTimes.length, 1);
+  race.result.position = 8; // A valid eight-car finish; the old 4-car validator threw here.
+  assert.doesNotThrow(() => recordModeRace(race, storage));
+  assert.equal(loadModeHistory(storage).at(-1).position, 8);
+});

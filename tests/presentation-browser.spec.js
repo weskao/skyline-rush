@@ -1,6 +1,7 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { RACE_TRACKS } from '../src/game.js';
+import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 
 const open = async page => {
   await page.goto('/');
