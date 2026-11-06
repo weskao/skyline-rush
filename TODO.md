@@ -12,7 +12,12 @@ Root cause: Coast pinned every gate to x 2.5 (lane 3); other tracks drew x unifo
 - [x] Authored sequences protected (user choice: rule + guard): `.claude/rules/ring-layout.md` (ask before changing)
   and `tests/ring-authored-sequences.test.js` (Spiral/Cosmic hoops, Gauntlet hoops, shortcut reward line over 5
   seeds); mutation check: moving `spiral-hoop-1` 10 m turns it RED. `npm test` 1893 / 0 fail.
-- [ ] `npm run test:browser` desktop + mobile; real WebGL screenshots of edge-lane rings and trains.
+- [x] Catch-up items (user, 2026-11-07; design `docs/superpowers/specs/2026-11-07-catch-up-items-design.md`):
+  `src/catch-up-items.ts`, Classic (not Daily) + Cup, player-only, ≥ 150 m behind → on, < 50 m → off, one item per
+  12–6 s, ≤ 12 per race, added 950–1030 m ahead (past the 900 m draw range). RED (module missing) → GREEN
+  `tests/catch-up-items.test.js` 8/8; race state stays structuredClone-able (RNG derived per try, not stored).
+  `npm test` 1901 / 0 fail. Simulated weak driver: 0–3 items per race, finish time ±0.5 s (mild by design).
+- [ ] `npm run test:browser` desktop + mobile; real WebGL screenshots of edge-lane rings, trains and catch-up items.
 - [ ] Exact-HEAD full CI after merge to `develop` (needs user approval).
 
 ## Garage Wave 3 branch-specific source notes (preserved from economy branch)

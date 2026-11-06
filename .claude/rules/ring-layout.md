@@ -6,6 +6,7 @@ paths:
   - "src/track-themes*.ts"
   - "src/gauntlet-course.ts"
   - "src/endless-highway.ts"
+  - "src/catch-up-items.ts"
   - "tests/ring-*.test.js"
   - "tests/pickup-economy.test.js"
   - "scripts/ring-variety.mjs"
@@ -34,3 +35,8 @@ Never move, remove, thin out or randomize an authored sequence as a side effect 
 work. **Before changing one on purpose, ask the user with `AskUserQuestion`** (zh-TW, first option
 "(Recommended)"). Then update `tests/ring-authored-sequences.test.js`, which locks them across re-rolled seeds,
 in the same commit. Never weaken that test to make a change pass.
+
+**Catch-up items** (`src/catch-up-items.ts`) are added while racing, never at race start: Classic (not Daily) and
+Cup only, player-only, beyond the 900 m draw range, never near sections or other items. Keep them out of start
+layouts, rival takes and PERFECT LINE groups (`tests/catch-up-items.test.js`; design:
+`docs/superpowers/specs/2026-11-07-catch-up-items-design.md`).
