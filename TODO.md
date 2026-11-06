@@ -18,8 +18,9 @@ unchanged; no per-frame DOM queries/allocations beyond one attribute write on ch
 - [x] Real WebGL screenshots reviewed (desktop coast + canyon, phone portrait 390×844 and landscape 844×390, 5 s into
   a race): arrow clearly visible on light and dark map palettes; annotated composite built with the player circled blue
   (Telegram send via `/screenshot-mark-send` follows the commit).
-- [ ] Related browser specs (responsive, race-hud-overlap, eight-car-grid, main-ui-parity, world-tour, i18n,
-  mode-coverage, circuit, race-feedback-visibility) were still running at commit time — result NOT yet recorded.
+- [x] Related browser specs (responsive, race-hud-overlap, eight-car-grid, main-ui-parity, world-tour, i18n,
+  mode-coverage, circuit, race-feedback-visibility): 194 passed, 0 failed (`PLAYWRIGHT_PORT=5320`, 20.7 min, on the
+  `npm run build` dist of the final code).
 - [ ] Not checked: other seven maps' palettes by screenshot (only coast/canyon), real touch hardware, exact-HEAD CI.
 
 ## Garage Wave 3 branch-specific source notes (preserved from economy branch)
