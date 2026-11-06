@@ -7,7 +7,9 @@ import { ciTimeout } from './helpers/ci.js';
 // both locales. The callout and the collision report never show together (callouts wait out the report).
 // The fold sizes inject the Viewport Segments API exactly as tests/foldable-layout-browser.spec.js does.
 const MIN_GAP = 2;
-const HUD = ['.brand', '.route-heading', '.toolbar', '.aero-tools', '.airflow-hud', '.race-progress', '.mode-indicator',
+const COMPACT_HEIGHT = 44;
+const LEADERBOARD_PHONE_HEIGHT = 50;
+const HUD = ['.brand', '.route-heading', '.toolbar', '.aero-tools', '.airflow-hud', '.race-progress', '.progress-bar', '.mode-indicator',
   '.position-stat', '.speedometer', '.flight-telemetry', '#nitro-status', '.event-callout', '.leaderboard',
   '.race-route-map', '.impact-report', '#touch-controls [data-control]'];
 // The pause panel is meant to cover the HUD; it must only stay clear of the top-bar controls and language picker.
@@ -118,15 +120,36 @@ for (const viewport of VIEWPORTS) {
         const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
         // The callout stays off the road view: the same centre rectangle pickPeripheralSlot (src/race-feedback-placement.ts) avoids.
         const road = { left: viewport.width * 0.325, right: viewport.width * 0.675, top: viewport.height * 0.2, bottom: viewport.height * 0.72 };
-        const calloutArgs = { ...args, keep: ['.event-callout'], clearOf: { '.event-callout': road } };
+        // The progress bar (.progress-bar; mode rows stay in .race-progress) and ROAD/FLIGHT mode chip dock at the edges too (persistent blocks must never sit on the road view).
+        // Phones show only the three nearby leaderboard rows, docked beside POSITION off the road view; desktop and tablet keep all eight.
+        const phone = viewport.touch && (viewport.width <= 760 || viewport.height <= 500);
+        const calloutArgs = { ...args, keep: ['.event-callout'], clearOf: { '.event-callout': road, '.progress-bar': road, '.mode-indicator': road, ...(phone ? { '.leaderboard': road } : {}) } };
         for (const pair of await page.evaluate(collisions, calloutArgs)) failures.push(`${locale}/${hud}/racing: ${pair}`);
+        // Compact, not a panel: the slim progress bar and the one-line mode chip each stay at most COMPACT_HEIGHT px tall.
+        for (const [selector, height] of await page.evaluate(selectors => selectors.map(selector => {
+          const element = document.querySelector(selector);
+          return [selector, element && element.getClientRects().length ? element.getBoundingClientRect().height : Infinity];
+        }), ['.progress-bar', '.mode-indicator'])) if (!(height <= COMPACT_HEIGHT)) failures.push(`${locale}/${hud}/racing: ${selector} ${height.toFixed(0)}px tall`);
+        const board = await page.evaluate(() => {
+          const element = document.querySelector('.leaderboard');
+          if (!element.getClientRects().length || getComputedStyle(element).visibility === 'hidden') return null;
+          const rows = [...element.querySelectorAll('.racer')].filter(row => row.getClientRects().length);
+          return { height: element.getBoundingClientRect().height, rows: rows.length, player: rows.some(row => row.classList.contains('is-player')) };
+        });
+        if (board && phone && !(board.height <= LEADERBOARD_PHONE_HEIGHT && board.rows === 3 && board.player))
+          failures.push(`${locale}/${hud}/racing: phone leaderboard ${board.height.toFixed(0)}px tall, ${board.rows} rows, player ${board.player}`);
+        if (board && !phone && board.rows !== 8) failures.push(`${locale}/${hud}/racing: leaderboard shows ${board.rows} of 8 rows`);
         // A vehicle hit's report: the same record game.js writes in its collision handler.
         await page.evaluate(() => {
           const { race } = window.gameplay, car = race.player;
           car.impact = { kind: 'vehicle', intensity: 1, side: 1, speedLost: 8, x: car.x, altitude: 0, distance: car.distance, time: race.elapsed };
         });
-        await expect(page.locator('#impact-report')).toBeVisible({ timeout: ciTimeout(5_000) });
-        for (const pair of await page.evaluate(collisions, { ...args, keep: ['.impact-report'] })) failures.push(`${locale}/${hud}/impact: ${pair}`);
+        await expect(page.locator('#impact-report')).not.toHaveAttribute('hidden', '', { timeout: ciTimeout(5_000) });
+        // The collision chip docks at an edge like the callout, never centred over the road. Only a short landscape, whose edges
+        // are all HUD, may have it yield (style.visibility hidden); the red collision vignette and speed readout still show the hit.
+        const yielded = await page.locator('#impact-report').evaluate(element => element.style.visibility === 'hidden');
+        if (yielded && viewport.height > 500) failures.push(`${locale}/${hud}/impact: chip yielded on a ${viewport.width}x${viewport.height} screen`);
+        for (const pair of await page.evaluate(collisions, { ...args, keep: yielded ? [] : ['.impact-report'], clearOf: { '.impact-report': road } })) failures.push(`${locale}/${hud}/impact: ${pair}`);
         await page.locator('#pause-button').click();
         await expect(page.locator(PAUSE_PANEL)).toBeVisible();
         for (const pair of await page.evaluate(collisions, args)) failures.push(`${locale}/${hud}/paused: ${pair}`);
@@ -168,3 +191,66 @@ test.describe('callout raised during GO! 390x844', () => {
     expect(result).toEqual({ telemetryHidden: true, placedOverTelemetry: true, overlapsAfterGo: false });
   });
 });
+
+// Phones keep the three nearby rows whatever the player's rank: first shows YOU and the two behind, last the two ahead and YOU.
+test.describe('phone leaderboard nearby rows 844x390', () => {
+  test.use({ viewport: { width: 844, height: 390 }, hasTouch: true });
+
+  test('first and last place keep three rows that include YOU', async ({ gameplayPage: page }) => {
+    await page.locator('#start-button').click();
+    await expect.poll(() => page.evaluate(() => window.gameplay.race.phase), { timeout: ciTimeout(20_000) }).toBe('racing');
+    const rows = () => page.evaluate(() => [...document.querySelectorAll('.leaderboard .racer')]
+      .filter(row => row.getClientRects().length).map(row => row.classList.contains('is-player') ? 'YOU' : row.children[0].textContent));
+    await page.evaluate(() => { const { race } = window.gameplay; race.player.distance = Math.max(...race.rivals.map(rival => rival.distance)) + 500; });
+    await expect.poll(rows).toEqual(['YOU', '2', '3']);
+    await page.evaluate(() => { const { race } = window.gameplay; race.player.distance = Math.min(...race.rivals.map(rival => rival.distance)) - 500; });
+    await expect.poll(rows).toEqual(['6', '7', 'YOU']);
+  });
+});
+
+// The Controls panel moves the touch controls (steering mode, hand, size, a custom drag): the leaderboard, progress bar,
+// mode chip and collision chip must stay off every visible control and the slide pad afterwards.
+const EDGE_HUD = ['.leaderboard', '.progress-bar', '.mode-indicator', '.impact-report'];
+for (const { width, height, hud } of [{ width: 844, height: 390, hud: 'hybrid' }, { width: 390, height: 844, hud: 'competitive' }]) {
+  test.describe(`touch controls moved by the Controls panel ${width}x${height}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: true });
+
+    test('edge HUD stays clear of controls after hand, steering, size and layout changes', async ({ gameplayPage: page, context }) => {
+      test.setTimeout(ciTimeout(120_000));
+      await page.evaluate(setup => sessionStorage.setItem('hud-overlap-setup', JSON.stringify(setup)), { locale: 'en', hud });
+      await page.reload();
+      if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+      await page.locator('#start-button').click();
+      await expect.poll(() => page.evaluate(() => window.gameplay.race.phase), { timeout: ciTimeout(20_000) }).toBe('racing');
+      await expect(page.locator('.leaderboard')).toBeVisible();
+      const target = await page.locator('.leaderboard').boundingBox();
+      await page.locator('#pause-button').click();
+      await page.locator('#controls-button').click();
+      await page.locator('[data-controls="mode"][value="buttons"]').check();
+      await page.locator('[data-controls="hand"][value="right"]').check();
+      await page.locator('[data-controls="size"][value="L"]').check();
+      await page.locator('#layout-edit').click();
+      // Drag the action cluster's NITRO button onto the leaderboard's spot.
+      const session = await context.newCDPSession(page);
+      const nitro = await page.locator('[data-control="nitro"]').boundingBox();
+      const touch = (type, points) => session.send('Input.dispatchTouchEvent', { type, touchPoints: points });
+      await touch('touchStart', [{ id: 1, x: nitro.x + nitro.width / 2, y: nitro.y + nitro.height / 2 }]);
+      await touch('touchMove', [{ id: 1, x: target.x + target.width / 2, y: target.y + target.height / 2 }]);
+      await touch('touchEnd', []);
+      await page.locator('#layout-done').click();
+      await page.keyboard.press('p');
+      await expect.poll(() => page.evaluate(() => window.gameplay.race.phase), { timeout: ciTimeout(10_000) }).toBe('racing');
+      await expect(page.locator('#touch-controls')).toHaveAttribute('data-hand', 'right');
+      await expect(page.locator('#touch-controls')).toHaveAttribute('data-size', 'L');
+      await page.evaluate(() => {
+        const { race } = window.gameplay, car = race.player;
+        car.impact = { kind: 'vehicle', intensity: 1, side: 1, speedLost: 8, x: car.x, altitude: 0, distance: car.distance, time: race.elapsed };
+      });
+      await expect(page.locator('#impact-report')).not.toHaveAttribute('hidden', '', { timeout: ciTimeout(5_000) });
+      const yielded = await page.locator('#impact-report').evaluate(element => element.style.visibility === 'hidden');
+      const pairs = await page.evaluate(collisions, { hud: [...EDGE_HUD, '#touch-controls [data-control]', '.touch-pad'], pausePanel: PAUSE_PANEL,
+        pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP, keep: yielded ? [] : ['.impact-report'] });
+      expect(pairs.filter(pair => EDGE_HUD.some(selector => pair.startsWith(`${selector} ×`) || pair.includes(`× ${selector} `)))).toEqual([]);
+    });
+  });
+}

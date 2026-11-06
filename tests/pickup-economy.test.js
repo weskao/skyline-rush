@@ -37,9 +37,12 @@ test('median picks the middle value, or the mean of the two middle values', () =
 // Re-locked for the user's 2026-11-03 medium increase (5 slots per car, more 6-ring trains down a middle lane, mostly
 // on the road). Train-layout hashes before it: aurora dfbdee2481a1067c, taipei 7e3e494aeb87c4da, tokyo 1b414b5f6ef56db9,
 // alpine 4d9a65bf5d0b8de7, coastal 1bdfb51a66d090c9, cosmic 9999583aa5be70d4.
+// Re-locked for the user's 2026-11-07 lane variety (ring lines and trains on all four lanes; tests/ring-variety.test.js
+// holds collecting near the old ease). Middle-lane hashes before it: aurora 4c8e2977913671d9, taipei a1fcaaf6829fc7ab,
+// tokyo 0e0c60b082ae64d6, alpine 3baaf86d05a6687d, coastal 59c8c7f6d245f3b0, cosmic 95e09bd6901f2a9d.
 const LOCKED_LAYOUTS = {
-  aurora: '4c8e2977913671d9', taipei: 'a1fcaaf6829fc7ab', tokyo: '0e0c60b082ae64d6',
-  alpine: '3baaf86d05a6687d', coastal: '59c8c7f6d245f3b0', cosmic: '95e09bd6901f2a9d',
+  aurora: 'accf48d891104502', taipei: 'c8a0656396c290d7', tokyo: 'd1963910b490325b',
+  alpine: 'edf1cb0bf8ec882a', coastal: 'fbbf0b518e3cba3b', cosmic: '02405104894581e8',
 };
 test('AC3: Aurora and the World Tour keep their (scaled) ring and pickup layout', () => {
   for (const [id, hash] of Object.entries(LOCKED_LAYOUTS)) assert.equal(layoutHash(id), hash, id);
@@ -95,11 +98,12 @@ test('AC2b: Sky Spiral and Circuit bring the first NITRO forward without droppin
   }
 });
 
-// Stage 2 adds full-width rows across all lanes; every other Coast gate stays on the classic line
-// (the slot-by-slot alternation is locked in tests/game.test.js).
-test('Coast keeps its classic gate line and alternates high and road-height rings', () => {
+// Stage 2 adds full-width rows across all lanes; every other Coast gate keeps the classic heights on a lane, which
+// moves between all four since the user's 2026-11-07 variety pass (the slot-by-slot alternation is locked in
+// tests/game.test.js).
+test('Coast keeps its classic gate heights on every lane and alternates high and road-height rings', () => {
   const rings = createRace('coast').rings.filter(r => !r.row && r.train === undefined); // the gate line, not rows or trains
-  assert.ok(rings.every(r => r.x === 2.5));
+  assert.deepEqual(new Set(rings.map(r => r.x)), new Set([-7.5, -2.5, 2.5, 7.5]));
   assert.deepEqual(new Set(rings.map(r => r.altitude)), new Set([8, 3]));
 });
 

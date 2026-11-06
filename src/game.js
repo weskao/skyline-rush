@@ -17,7 +17,7 @@ import { bankItem, activateItem, tickItemCooldown, ringsForItemRule } from './ac
 import { decorateBonusGates, collectBonusGate, applyEMPPulse, recoveryRetention, bonusScore } from './bonus-gates.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
 import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
-import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts';
+import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts'; import { spawnCatchUp } from './catch-up-items.ts';
 import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
@@ -257,11 +257,11 @@ export function stepRace(race, input, dt) {
   if (!Number.isFinite(dt) || dt <= 0 || dt > 0.1) return;
   if (race.phase === 'countdown') {
     race.countdown = Math.max(0, race.countdown - dt);
-    if (race.countdown < 0.00001) race.phase = 'racing';
+    if (race.countdown < 0.00001) { race.phase = 'racing'; for (const car of [race.player, ...race.rivals]) car.speed = Math.max(car.speed, 20); } // GO rolls the grid just past FLY's 18 m/s takeoff, so input answers at once
     return;
   }
   if (race.phase !== 'racing') return;
-  streamEndless(race);
+  streamEndless(race); spawnCatchUp(race);
   race.elapsed += dt;
   const car = race.player;
   const previousScore = car.score;

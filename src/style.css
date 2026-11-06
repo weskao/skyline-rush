@@ -1934,6 +1934,11 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 @media (max-width: 760px) and (min-height: 501px) { .tutorial-guide { top: 56%; } .tutorial-guide svg { width: 40px; height: 40px; } } /* below the phone coach card */
 @media (max-height: 500px) and (orientation: landscape) { .tutorial-guide { top: 48%; left: 72%; } }
 @media (prefers-reduced-motion: reduce) { .tutorial-guide svg { animation: none; opacity: 1; } }
+/* Paused practice: the coach keeps its full lesson and progress (Exit is its only button) and the shared
+   pause screen starts below it on phones, right of it in landscape; neither covers the other. */
+body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* an open language/VFX list opens over the coach (12) */
+@media (max-width: 760px) and (min-height: 501px) { body[data-tutorial] .race-overlay { top: max(calc(var(--safe-top) + 190px), calc(var(--tutorial-coach-bottom, 0px) + 8px)); align-items: start; overflow: auto; } body[data-tutorial] .overlay-route { display: none; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 4px 0 6px; } body[data-tutorial] .overlay-content > p { margin-bottom: 12px; } }
+@media (max-height: 500px) and (orientation: landscape) { body[data-tutorial] .race-overlay { justify-items: end; } body[data-tutorial] .overlay-content { width: calc(50vw - 36px); margin-right: 12px; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 6px 0 8px; } } /* right of the left-half coach */
 
 /* Display-only 3x results artwork; no reward entitlement. */
 .result-trophy-art{display:inline-block;max-width:96px;vertical-align:middle;object-fit:contain;animation:reward-podium-reveal .52s ease-out both}
@@ -1967,3 +1972,84 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 .race-route-map .route-player-halo { fill:none; stroke:#fff; stroke-width:1.6px; vector-effect:non-scaling-stroke; transform-box:fill-box; transform-origin:center; animation:route-player-pulse 1.6s ease-out infinite; }
 @keyframes route-player-pulse { from { transform:scale(.7); opacity:.95; } to { transform:scale(1.5); opacity:0; } }
 @media (prefers-reduced-motion:reduce) { .race-route-map .route-player-halo { animation:none; opacity:.85; } }
+
+/* Edge-docked race HUD: nothing persistent sits on the road view. The progress bar is a slim strip in the top bar (the
+   .race-progress container stays put as the anchor of mode rows); the ROAD/FLIGHT chip and the collision chip are one-line
+   chips that src/race-feedback-placement.ts docks at an edge on layout changes only. Guard: tests/race-hud-overlap-browser.spec.js. */
+.race-progress { padding: 0; background: none; border: 0; }
+.progress-bar {
+  position: fixed; z-index: 3; top: calc(46px + var(--safe-top)); left: 50%; transform: translateX(-50%);
+  width: clamp(140px, calc(100vw - 800px), 300px); padding: 4px 8px 5px; box-sizing: border-box;
+  background: rgb(7 23 42 / .45); border-radius: 6px; pointer-events: none;
+}
+.progress-bar .progress-labels { font-size: 8px; letter-spacing: .6px; white-space: nowrap; gap: 6px; }
+.progress-bar .progress-track { margin-top: 5px; }
+.progress-bar .finish-flag { width: 6px; height: 6px; top: -2px; }
+@media (hover: none) and (pointer: coarse) and (min-width: 761px) { .progress-bar { top: calc(25px + var(--safe-top)); width: 250px; } }
+/* Short landscape: between the wordmark and the toolbar (345px wide, 12px in), like the callout's top-bar slot. */
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  .progress-bar { top: calc(25px + var(--safe-top)); left: calc(239px + var(--safe-left)); right: calc(367px + var(--safe-right)); width: auto; transform: none; }
+}
+@media (pointer: coarse) and (max-height: 500px) and (max-width: 760px) and (orientation: landscape) {
+  .progress-bar { top: calc(31px + var(--safe-top)); left: calc(187px + var(--safe-left)); right: calc(357px + var(--safe-right)); }
+}
+/* Portrait: the top bar is full, so the strip takes the row under it, left of AIRFLOW/VFX (140px wide, 16px in). */
+@media (max-width: 760px) and (min-height: 501px) {
+  body .progress-bar { top: calc(70px + var(--safe-top)); left: calc(23px + var(--safe-left)); right: calc(166px + var(--safe-right)); width: auto; transform: none; padding: 3px 8px 4px; }
+  .progress-bar .progress-labels { line-height: 1.2; }
+  body[data-phase="paused"] .progress-bar { visibility: hidden; } /* the pause panel says where you are; the wider pause toolbar needs the row */
+}
+body[data-fold-axis="vertical"] .progress-bar { right: calc(100vw - var(--fold-pane-left-end) + 10px); }
+
+body:not([data-phase="ready"]) .mode-indicator[data-peripheral] {
+  position: fixed; z-index: 3; top: calc(8px + var(--safe-top)); right: max(12px, var(--safe-right)); bottom: auto; left: auto;
+  transform: none; margin: 0; box-sizing: border-box; width: 176px; height: 30px; min-width: 0; padding: 0 9px;
+  display: flex; flex-direction: row; align-items: center; gap: 6px; border-radius: 15px; box-shadow: none;
+  background: rgb(7 23 42 / .6);
+}
+.mode-indicator[data-peripheral] .mode-heading { display: contents; }
+.mode-indicator[data-peripheral] .mode-icon { display: flex; } /* phones hid it in the old panel; in the chip it is the mode label */
+.mode-indicator[data-peripheral] .mode-icon svg { width: 15px; height: 15px; }
+/* The icon already says ROAD or FLIGHT; the label stays for screen readers. */
+.mode-indicator[data-peripheral] #flight-mode { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.mode-indicator[data-peripheral] .mode-key { display: none; }
+.mode-indicator[data-peripheral] #flight-state { order: 1; flex: 1; min-width: 0; font-size: 15px; line-height: 20px; letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mode-indicator[data-peripheral] #flight-budget { order: 2; margin-left: 0; font-size: 10px; }
+/* No edge strip fits the worded chip (small phones): icon and budget only, like short landscape, instead of covering a HUD block. */
+body:not([data-phase="ready"]) .mode-indicator[data-peripheral][data-compact="true"] { width: 66px; padding: 0 8px; }
+.mode-indicator[data-peripheral][data-compact="true"] #flight-state { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+.impact-report[data-peripheral] {
+  transform: none; right: auto; margin: 0; gap: 7px; padding: 5px 10px; border-radius: 15px;
+  background: rgb(42 25 32 / .82); box-shadow: none;
+}
+.impact-report[data-peripheral] .impact-icon svg { width: 16px; height: 16px; }
+.impact-report[data-peripheral] > div { gap: 2px; }
+.impact-report[data-peripheral] strong { font-size: 15px; }
+.impact-report[data-peripheral] div > span { font-size: 8px; letter-spacing: .3px; }
+.impact-report[data-peripheral][data-compact="true"] :is(div > span, .impact-icon) { display: none; }
+.impact-report[data-peripheral][data-compact="true"] strong { font-size: 13px; }
+/* Short landscape has no free edge strip wide enough for words: the chip shows the ROAD/FLIGHT icon and flight budget only. */
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  body:not([data-phase="ready"]) .mode-indicator[data-peripheral] { width: 66px; padding: 0 8px; }
+  .mode-indicator[data-peripheral] #flight-state { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+.collision #speed { color: #ff9b93; } /* the hit stays readable at the speed readout when a short landscape's collision chip yields */
+
+/* Phone leaderboard: three nearby rows (car ahead, YOU, car behind; src/race-hud.ts marks them data-near on a rank change)
+   with no panel, docked beside POSITION off the road view (x 32.5-67.5%, y 20-72%). POSITION already shows the rank.
+   Width ends 4px short of the road column for each left offset the short-landscape rules above give it (150 / 166 / 130px).
+   Desktop and tablets keep all rows. Guard: tests/race-hud-overlap-browser.spec.js. */
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape), (max-width: 760px) and (min-height: 501px) {
+  #leaderboard { align-self: flex-start; padding: 0; background: none; border: 0; text-shadow: 0 1px 2px #071426, 0 0 8px rgb(7 20 38 / .9); }
+  #leaderboard .racer { height: 14px; min-height: 14px; font-size: 8px; border-bottom: 0; }
+  #leaderboard .racer:not([data-near]) { display: none; }
+}
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) { #leaderboard { width: min(110px, calc(32.5vw - 154px)); } }
+@media (pointer: coarse) and (max-height: 380px) and (orientation: landscape) { #leaderboard { width: min(110px, calc(32.5vw - 170px)); } }
+@media (pointer: coarse) and (max-width: 760px) and (max-height: 500px) { #leaderboard { width: min(110px, calc(32.5vw - 134px)); } }
+/* A 320px portrait's only free strip for the collision chip is the ~103px sky gap between POSITION and the leaderboard. */
+@media (max-width: 370px) {
+  .impact-report[data-peripheral][data-compact="true"] { padding: 4px 7px; }
+  .impact-report[data-peripheral][data-compact="true"] strong { font-size: 11px; letter-spacing: 0; }
+}

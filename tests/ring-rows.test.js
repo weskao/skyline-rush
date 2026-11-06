@@ -12,7 +12,7 @@ import { TRAIN_SPACING } from '../src/ring-layout.ts';
 // "too many, too bunched".
 // User, 2026-11-03: more rings and pickups (a medium step), most of the new rings as trains on the road down a middle
 // lane (x -2.5 / 2.5), so driving straight collects ring after ring; still no walls and no dense scatter.
-const MID_LANES = [-2.5, 2.5];
+const MID_LANES = [-2.5, 2.5], ROW_LANES = [-7.5, -2.5, 2.5, 7.5];
 const rowsOf = rings => {
   const rows = new Map();
   for (const ring of rings) if (ring.row) rows.set(ring.distance, [...(rows.get(ring.distance) ?? []), ring]);
@@ -55,7 +55,8 @@ test('a train is consecutive rings down one lane, its own PERFECT LINE group, cl
   for (const [id, race] of RACES) {
     for (const train of trainsOf(race.rings)) {
       assert.equal(train.length, 6, id);
-      assert.ok(MID_LANES.includes(train[0].x), `${id} train @${train[0].distance} on lane x ${train[0].x}`);
+      // User, 2026-11-07: a track train runs down any lane; Endless keeps its middle-lane train.
+      assert.ok((race.mode === 'endless' ? MID_LANES : ROW_LANES).includes(train[0].x), `${id} train @${train[0].distance} on lane x ${train[0].x}`);
       assert.ok(train.every((r, i) => r.x === train[0].x && r.altitude === train[0].altitude && r.groupSize === 6 &&
         r.distance === train[0].distance + i * TRAIN_SPACING), `${id} train @${train[0].distance}`);
     }

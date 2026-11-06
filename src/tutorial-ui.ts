@@ -2,6 +2,7 @@ import { nextTick } from 'vue';
 import { updateCoachView } from './tutorial-coach-state.ts';
 import { t } from './i18n.ts';
 import { TUTORIAL_STEPS } from './interactive-tutorial.ts';
+import { trackProgressBottom } from './hud-progress-offset.ts';
 
 interface TutorialSnapshot {
   index: number;
@@ -28,9 +29,8 @@ const PHASE_COPY: Readonly<Record<string, string>> = {
   'barrelRoll/rolling': 'tutorial.barrelRollRolling', 'barrelRoll/flicked': 'tutorial.barrelRollFlicked',
 };
 /** Which coach line to show: a failed attempt names its reason, a cleared lesson celebrates before the next. */
-export function tutorialInstructionKey(step: string | null, phase: string, reason: string | null | undefined, paused: boolean, done: boolean): string {
+export function tutorialInstructionKey(step: string | null, phase: string, reason: string | null | undefined, done: boolean): string {
   if (done) return 'tutorial.completedCopy';
-  if (paused) return 'tutorial.paused';
   if (phase === 'cleared') return 'tutorial.cleared';
   if (phase === 'retry' && reason) return reason === 'missed' ? 'tutorial.gateMissed' : `tutorial.${step}Retry.${reason}`;
   return PHASE_COPY[`${step}/${phase}`] ?? 'tutorial.' + step;
@@ -56,6 +56,7 @@ export function setupTutorialUI({
   const progress = document.querySelector<HTMLProgressElement>('#tutorial-progress')!;
   let tutorialView = '';
   // blur(): a focused button would otherwise re-fire on the Space/Enter keys the lessons use.
+  trackProgressBottom($('#tutorial-coach'), document.documentElement, '--tutorial-coach-bottom');
   $('#tutorial-skip-step').addEventListener('click', event => { (event.currentTarget as HTMLElement).blur(); getTutorial()?.skip?.(); });
   function renderTutorial(force = false): void {
     const tutorial = getTutorial();
@@ -81,9 +82,7 @@ export function setupTutorialUI({
         total: TUTORIAL_STEPS.length,
         action: t(step === 'land' ? 'tutorial.landTitle' : step === 'airChain' || step === 'barrelRoll' || step === 'drift' ? 'tutorial.' + step + 'Title' : 'keymap.' + step),
       }),
-      instruction: t(tutorialInstructionKey(step, phase, tutorial.coachReason, race.phase === 'paused', done)),
-      pauseText: t(race.phase === 'paused' ? 'tutorial.resume' : 'tutorial.pause'),
-      pauseHidden: done,
+      instruction: t(tutorialInstructionKey(step, phase, tutorial.coachReason, done)), // paused: the pause screen says so
       completeActionsHidden: !done,
       assistHidden: done,
       hintKeys: done || touch ? '' : keys ?? '',

@@ -30,17 +30,17 @@ test('default difficulty keeps today\'s risk-line rewards, so Classic and Daily 
   const classic = payouts({});
   assert.ok(classic.risky > 0);
   assert.ok(classic.ringPay >= 150 + RISK_SCORE);
-  assert.deepEqual(payouts({ mode: 'custom' }).ringPay, classic.ringPay);
+  assert.deepEqual(payouts({ mode: 'custom', rivals: 7 }).ringPay, classic.ringPay);
   assert.deepEqual(createRace('coast', 'double-traffic').rings, createRace('coast').rings);
   assert.equal(normalizeRaceConfig({}).riskLines, undefined);
 });
 
 test('harder Custom races pay more for aerial risk rings and close ground passes', () => {
-  const normal = payouts({ mode: 'custom', difficulty: 'normal' });
-  const hard = payouts({ mode: 'custom', difficulty: 'hard' });
+  const normal = payouts({ mode: 'custom', rivals: 7, difficulty: 'normal' });
+  const hard = payouts({ mode: 'custom', rivals: 7, difficulty: 'hard' });
   assert.ok(hard.ringPay > normal.ringPay, `risk ring ${hard.ringPay} > ${normal.ringPay}`);
   assert.ok(hard.nearPay > normal.nearPay, `near pass ${hard.nearPay} > ${normal.nearPay}`);
-  assert.deepEqual(payouts({ mode: 'custom', difficulty: 'easy' }).ringPay, normal.ringPay, 'easy never pays less than today');
+  assert.deepEqual(payouts({ mode: 'custom', rivals: 7, difficulty: 'easy' }).ringPay, normal.ringPay, 'easy never pays less than today');
 });
 
 test('Hard Custom pays the exact scaled risk-line values; Normal and Off keep their own', () => {
