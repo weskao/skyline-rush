@@ -91,6 +91,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
         return {type:image.currentSrc, size:[canvas.width,canvas.height], bounds:[left,top,right,bottom],
           display:[a.width,a.height], imageInside:a.left>=b.left&&a.right<=b.right&&a.top>=b.top&&a.bottom<=b.bottom,
           captionBelow:c.top>=b.bottom+4, frameInside:b.left>=button.getBoundingClientRect().left&&b.right<=button.getBoundingClientRect().right,
+          fitsViewport: button.getBoundingClientRect().width <= innerWidth,
           vividFraction: vivid / Math.max(visible, 1), paletteBins: palette.size};
       });
       expect(metrics.type).toMatch(/@3x\.png$/);
@@ -103,6 +104,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
       expect(metrics.imageInside).toBe(true);
       expect(metrics.captionBelow).toBe(true);
       expect(metrics.frameInside).toBe(true);
+      expect(metrics.fitsViewport).toBe(true);
       expect(metrics.vividFraction, `${id}: retain bright, saturated illustrated artwork`).toBeGreaterThan(0.30);
       expect(metrics.paletteBins, `${id}: keep rich 3D materials and lighting`).toBeGreaterThan(450);
     }
@@ -143,6 +145,12 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
     await gallery.locator('summary').click();
     const cards=gallery.locator('button[data-wave3-asset]');
     await expect(cards).toHaveCount(8);
+    const firstArt=gallery.locator('.garage-source-grid img').first();
+    await firstArt.scrollIntoViewIfNeeded();
+    await expect(firstArt).toHaveAttribute('width','96');
+    await expect(firstArt).toHaveAttribute('height','96');
+    await expect(firstArt).toHaveJSProperty('naturalWidth',288);
+    await expect(gallery).not.toContainText(/buy now|purchase|claim reward|立即購買|立即領取/i);
     const picked=cards.nth(1), id=await picked.getAttribute('data-wave3-asset');
     await picked.click();
     await expect(picked).toHaveAttribute('aria-pressed','true');
