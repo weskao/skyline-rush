@@ -3614,6 +3614,21 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Exact-HEAD FULL GitHub Actions must run all 13 Browser, all five World Tour, Unit/Typecheck/Build, cloud-save and quality-gate, not merely Focused PASS; capture job logs and fix any regressions.
 - [ ] Wire the new helpers into the authoritative existing `game.js` / RaceFactory / `world.js` runtime with trusted physics world poses, route-aware AI steering, signed gates, 3D colliders, actual recovery and results; preserve legacy gameplay.
 - [ ] 5 source branches remain read-only candidates pending their own exact-HEAD FULL CI, 3–5 minute / 8-car tests, 30/60/120 FPS, Reduced Motion, GPU disposal and real mobile/desktop WebGL versus both concept JPEGs. Coming Soon stays enabled.
+### Dune Tempest gate geometry — 2026-11-04
+- [x] Map-owned directional crossing check with semantic RED→GREEN (4/4 isolated focused assertions), wrong edge/reverse/oblique/high-altitude/teleport rejection and standalone strict typecheck.
+- [ ] Connect ordered crossing progression through shared CourseGraph runtime with per-car edge/localS and valid movement substeps; prove aerial/landing/recovery in real game.
+- [ ] Complete 8-car, 3–5 minute, 30/60/120 Hz, Low/Medium/High/Reduced Motion and streaming/disposal acceptance with actual desktop/mobile WebGL captures.
+- [ ] Complete local npm test/typecheck/build/make verify plus full exact-HEAD CI; historical focused results are not equivalent to all Browser/World Tour shards.
+
+### Dune Tempest playable course — 2026-11-04 additional TDD / code checkpoint
+- [x] Export the original 12 nodes/14 edges/11 main edges, three independent splits and all four checkpoints through `DUNE_TEMPEST_GRAPH` in the shared CourseGraph field contract; keep Stage 1 Coming Soon protection.
+- [x] Map-owned geometry from *injected shared arc-length frames*: seam-safe ground road/shoulder mesh, deterministic dune mesh, flight takeoff/landing pads with no fake bridge, footprint-aware hazard positions, bounded weather budgets.
+- [x] Native Three.js chunk factory with real native terrain, hazard footprints, giant stone arches, deterministic dust, Low/Medium/High geometry budgets, Reduced Motion updates and explicit GPU resource disposal; **factory exists but not yet connected to the playable game runtime**.
+- [x] Map-owned 120 m AI avoidance/braking hints, off-road warning/recovery candidate (shared collision must validate), directional gates and landing envelope metadata.
+- [x] Local isolated TDD evidence: 14/14 graph/geometry/safety assertions passed after observed semantic RED runs; standalone strict TypeScript 5.8.3 passed for three pure helpers, Three.js chunk syntax parsed. Do not confuse isolated tests with whole-project verification.
+- [ ] Shared integration of `sampleRoute`, `advanceSignedGate`, eight-car fleet/AI, flight physics, terrain/obstacle collision, safe recovery, standing, results, records and UI into the existing `game.js`, `world.js`, RaceFactory.
+- [ ] Actual drivable road/landing and 3–5-minute full-race trials with 30/60/120 FPS, mobile/desktop WebGL screenshots vs two concept JPEGs, real draw-call/triangle/p50-p95 frame measurements, and disposal/context restoration.
+- [ ] Exact-final-HEAD FULL CI success including Browser/World Tour shards and Cloud-save; local full `npm test`, typecheck, build, `make verify` still unavailable without a repository clone and Node modules.
 ## 2026-11-04 — Preview-only Coming Soon fail-closed access (Frostbite working branch)
 
 - [x] Add explicit default-preview readiness to the shared Coming Soon catalog. Only approved `playable` cards with real race runtime can START under `make dev-unlocked`; concept-only or development cards never can, even with an accidental runtime registration. Frostbite remains dev-only; all production Coming Soon cards remain disabled.
@@ -3677,3 +3692,13 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Run `npm test`, `npm run build`, `make verify`; inspect the latest **exact-HEAD FULL** GitHub CI (all required Browser/World Tour shards, Unit/Typecheck/Build, Cloud-save, Quality Gate). Fix real failures and preserve existing behavior.
 - [ ] Capture real desktop/mobile WebGL frames for all six preview courses, AIRFLOW ON/OFF, camera views, touch swipe and Garage/Studio. Measure actual road/wheel contact, visual parity, Reduced Motion, frame timing and GPU disposal; these are not proved by UI tests.
 - [ ] Separately connect actual six-course CourseGraph physics, branching, flight/landing, 8-car AI, collision, checkpoints, recovery, results/ghost and start/finish. UI/template parity does **not** authorize race registration or remove Coming Soon.
+### Dune Tempest canyon-floor TDD (2026-11-05)
+- [x] RED (2/3 expected assertions fail on stub) → GREEN (3/3 pass) locally with Node 22 type stripping; standalone strict TypeScript passes for the pure chasm mesh builder.
+- [x] Connect a deterministic, seam-safe native canyon-floor mesh to flight-edge visual chunk without creating a solid flying road. GPU geometry/material disposal remains in existing chunk lifecycle.
+- [ ] Real WebGL screenshots, app runtime/flight/collision integration, full project verify and exact-final-HEAD FULL CI still required. This is visual geometry only, not approved terrain contact.
+
+### Dune merge2 road continuity — 2026-11-05
+- [x] Found a 144-degree main-branch tangent reversal at merge2. Map-owned TDD: isolated merge tangent test observed semantic RED then GREEN; widen the canyon hairpin and align exit with stone-ring-corridor. Checkpoint order and 3 branch topology unchanged.
+- [ ] Verify real shared-arc-length road mesh, vehicle and 8-car transitions with the map selected in playable runtime. Latest exact-HEAD FULL CI / screenshots still pending; isolated control-point math is not a real driving run.
+- [x] Adjust stone-ring-corridor first approach control so both canyon ground and aerial landing branches meet merge2 within 40°; isolated numeric RED→GREEN observed for previous 64° aerial join.
+- [ ] Measure actual landing grip/clearance, physical flight, FPS and render parity in shared runtime; no real race proof from geometric contract tests.
