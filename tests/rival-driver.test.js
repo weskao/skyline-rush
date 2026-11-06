@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, MAX_SPEED, RIVAL_NITRO_CHARGES, SLIPSTREAM_TIME, SLIPSTREAM_NITRO } from '../src/game.js';
-import { driveRival, rivalBaseCap, RIVAL_SKILL } from '../src/rival-driver.ts';
+import { driveRival, rivalBaseCap, rivalSkill, RIVAL_SKILL } from '../src/rival-driver.ts';
 import { BOOST_CAP_BONUS, NITRO_CAP_BONUS, SLIPSTREAM_CAP_BONUS, BOOST_DRAIN } from '../src/drive-rules.ts';
 import { avoidObstacles } from '../src/car-collisions.js';
 import { botInput } from '../scripts/pickup-economy.mjs';
@@ -10,7 +10,7 @@ import { botInput } from '../scripts/pickup-economy.mjs';
 // NITRO / BOOST / SLIPSTREAM numbers and fuel); difficulty only changes how well they drive.
 const DIFFICULTIES = ['easy', 'normal', 'hard'];
 function bare(difficulty) {
-  const race = createRace('coast', { mode: 'custom', rivals: 7, difficulty, traffic: 'off' });
+  const race = createRace('aurora', { mode: 'custom', rivals: 7, difficulty, traffic: 'off' });
   startRace(race); race.phase = 'racing'; race.elapsed = 20;
   Object.assign(race, { rings: [], pickups: [], props: [] });
   Object.assign(race.player, { distance: 0, x: 7.5 });
@@ -109,4 +109,26 @@ test('a fast rival sees a slow car beyond the old 80 m and changes lane in time'
   const x = rival.x;
   avoidObstacles(race, rival, rival.pace, 1 / 60);
   assert.notEqual(rival.x, x, 'starts moving 120 m out at NITRO speed');
+});
+
+// User, 2026-11-07: Normal felt too hard, and on the first two maps a new player should mostly finish top three.
+// Coast and Neon (TrackConfig.introRivals) give Easy and Normal rivals the gentler 'intro' skill; Hard keeps its own.
+test('on an opening map Easy and Normal rivals drive at intro skill: slower and no BOOST; Hard is unchanged', () => {
+  const intro = RIVAL_SKILL.intro;
+  for (let slot = 0; slot < 7; slot++) {
+    assert.ok(rivalBaseCap(intro, slot) < rivalBaseCap(RIVAL_SKILL.easy, slot), `intro below Easy elsewhere, slot ${slot}`);
+  }
+  for (const trackId of ['coast', 'neon']) {
+    for (const difficulty of ['easy', 'normal']) {
+      const race = createRace(trackId, { mode: 'custom', rivals: 7, difficulty });
+      assert.equal(rivalSkill(race), intro, `${trackId} ${difficulty}`);
+      const rival = race.rivals[6];
+      Object.assign(rival, { speed: 80, fuel: 100, distance: 2000, x: -2.5 });
+      race.phase = 'racing';
+      for (let i = 0; i < 60; i++) driveRival(race, rival, 6, 0, 1 / 60);
+      assert.equal(rival.boosting, false, `${trackId} ${difficulty}: no BOOST on a full tank`);
+    }
+    assert.equal(rivalSkill(createRace(trackId, { mode: 'custom', rivals: 7, difficulty: 'hard' })), RIVAL_SKILL.hard);
+  }
+  assert.equal(rivalSkill(createRace('canyon', { mode: 'classic' })), RIVAL_SKILL.normal, 'the third map is plain Normal');
 });

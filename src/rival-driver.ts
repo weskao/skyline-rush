@@ -3,7 +3,7 @@ import { MAX_SPEED, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCE
   type Slipstream } from './drive-rules.ts';
 import { NITRO_MAX } from './ring-layout.ts';
 import { physicalGap } from './circuit-track.ts';
-import { rivalWantsNitro, type RivalNitroState } from './rival-items.ts';
+import { rivalWantsNitro, rivalLevel, type RivalNitroState } from './rival-items.ts';
 
 // How a rival drives (user, 2026-11-07): by the player's own rules — the same caps, acceleration, fuel and
 // NITRO and SLIPSTREAM, and no charge at the start. Difficulty is skill only: how close to the cap a rival holds
@@ -16,9 +16,11 @@ export interface RivalSkill {
   laneShift: number; // m/s sideways when avoiding or seeking (car-collisions.js); the player steers up to 9
 }
 // Tuned with the scripted player bot (scripts/rival-balance.mjs) to the user's 2026-11-07 "challenging" target.
+// 'intro' is Easy and Normal on an opening map (TrackConfig.introRivals): a new player mostly finishes on the podium.
 export const RIVAL_SKILL: Readonly<Record<string, RivalSkill>> = {
+  intro: { pace: 0.92, spread: 0.012, boostOn: 101, boostOff: 100, smart: false, laneShift: 6 },
   easy: { pace: 0.93, spread: 0.012, boostOn: 80, boostOff: 50, smart: false, laneShift: 6 },
-  normal: { pace: 1, spread: 0.006, boostOn: 40, boostOff: 20, smart: true, laneShift: 8 },
+  normal: { pace: 0.98, spread: 0.006, boostOn: 40, boostOff: 20, smart: true, laneShift: 8 },
   hard: { pace: 1, spread: 0.003, boostOn: 30, boostOff: 10, smart: true, laneShift: 9 },
 };
 const SLOTS = 7; // the full grid's rivals; slot 6 is the fastest
@@ -34,7 +36,7 @@ export interface DriveRace {
   player: Car; traffic: readonly Car[]; rivals: readonly Car[];
 }
 
-export const rivalSkill = (race: Pick<DriveRace, 'config'>): RivalSkill => RIVAL_SKILL[race.config.difficulty ?? ''] ?? RIVAL_SKILL.normal!;
+export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill => RIVAL_SKILL[rivalLevel(race)] ?? RIVAL_SKILL.normal!;
 /** The rival's throttle cap before BOOST or NITRO: never above the player's MAX_SPEED. */
 export const rivalBaseCap = (skill: RivalSkill, slot: number): number => MAX_SPEED * Math.min(1, skill.pace - skill.spread * (SLOTS - 1 - slot));
 

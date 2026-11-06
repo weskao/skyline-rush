@@ -1,6 +1,7 @@
 import { RACE_DRIVER_IDS } from './race-grid.ts';
 import { NITRO_MAX, NITRO_PICKUPS, RING_NITRO } from './ring-layout.ts';
 import { NITRO_CAP_BONUS } from './drive-rules.ts';
+import { RACE_TRACKS } from './race-tracks.ts';
 
 // Stage 2 (user, 2026-11-02): a ring or pickup taken by any car is gone this long, then back for everyone.
 export const ITEM_RESPAWN = 2.5; // s
@@ -13,7 +14,13 @@ interface RingItem extends Collectible { type: string; radius: number; row?: boo
 /** What the renderer shows when a rival collects (`effects.js`). */
 export interface RivalTake { time: number; distance: number; x: number; altitude: number; kind: string }
 export interface RivalCollector { x: number; altitude: number; distance: number; nitro: number; itemTakes: number; lastTake: RivalTake | null }
-interface CollectRace { elapsed: number; config: { difficulty?: string }; pickups: PickupItem[]; rings: RingItem[] }
+interface CollectRace { trackId: string; elapsed: number; config: { difficulty?: string }; pickups: PickupItem[]; rings: RingItem[] }
+
+/** The rivals' skill level: the race's difficulty, except Easy and Normal on an opening map (user, 2026-11-07) are 'intro'. */
+export function rivalLevel(race: { trackId: string; config: { difficulty?: string } }): string {
+  const level = race.config.difficulty ?? 'normal';
+  return level !== 'hard' && RACE_TRACKS[race.trackId]?.introRivals ? 'intro' : level;
+}
 
 const gone = (item: Collectible, now: number): boolean => item.downUntil !== undefined && item.downUntil > now;
 // Index of the first item (sorted by distance) beyond d.
@@ -62,9 +69,10 @@ export const RIVAL_HOP_PERIOD: Readonly<Record<string, number>> = { NOVA: 13, OR
 // Rivals go after the nearest reachable NITRO item ahead by changing lane: `seekX` only replaces their home lane
 // as avoidObstacles' wish (car-collisions.js), so a blocked line still wins and nothing is driven through.
 // Every difficulty seeks (user, 2026-11-07); skill sets how far ahead it looks and how far sideways it will go.
-const SEEK: Readonly<Record<string, { ahead: number; reach: number }>> = {
+export const RIVAL_SEEK: Readonly<Record<string, { ahead: number; reach: number }>> = {
+  intro: { ahead: 0, reach: 0 }, // takes only what lies on its line
   easy: { ahead: 100, reach: 5 }, // the next lane over only
-  normal: { ahead: 160, reach: 10 }, // two lanes (10 m) at the AI's 6 m/s lane shift take ~125 m at race pace
+  normal: { ahead: 100, reach: 5 }, // the next lane over (user 2026-11-07: Normal a little easier; was two lanes)
   hard: { ahead: 160, reach: Infinity },
 };
 type Seeker = RivalCollector & { seekX?: number };
@@ -77,7 +85,7 @@ function nextWanted<T extends Collectible>(items: readonly T[], rival: Seeker, n
 }
 export function rivalSeek(race: CollectRace, rival: Seeker): void {
   rival.seekX = undefined;
-  const seek = SEEK[race.config.difficulty ?? ''] ?? SEEK.normal!;
+  const seek = RIVAL_SEEK[rivalLevel(race)] ?? RIVAL_SEEK.normal!;
   const pickup = nextWanted(race.pickups, rival, race.elapsed, seek, (p, alt) => p.tier !== 'overcharge' && !!NITRO_PICKUPS[p.tier] && Math.abs(p.altitude - alt) < 1.8);
   // A full-width ring row is already on every lane: no lane change for it.
   const ring = nextWanted(race.rings, rival, race.elapsed, seek, (r, alt) => !r.row && !!RING_NITRO[r.type] && Math.abs(r.altitude - alt) < r.radius);

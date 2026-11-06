@@ -75,7 +75,7 @@ test('accelerating, coasting, braking and steering respect road and speed limits
 
 test('thrusters require speed, lift the car, spend fuel and land on release', () => {
   const race = racing();
-  Object.assign(race, { pickups: [], rings: [] }); // a charge row on the road would refill fuel
+  Object.assign(race, { pickups: [], rings: [], rivals: [] }); // a charge row would refill fuel; a slower rival ahead would be rear-ended
   race.player.speed = 0; // stopped below takeoff speed (GO itself launches the grid rolling)
   advance(race, 1, { fly: true });
   assert.equal(race.player.altitude, 0);
@@ -170,7 +170,7 @@ test('fresh races reset progress, fuel, collision count and opponents', () => {
 
 test('ground boost spends charge instead of recharging while the accelerator is held', () => {
   const race = racing();
-  Object.assign(race, { pickups: [], rings: [] }); // a charge row on the road would refill fuel
+  Object.assign(race, { pickups: [], rings: [], rivals: [] }); // a charge row would refill fuel; a slower rival ahead would be rear-ended
   advance(race, 4, { throttle: true });
   advance(race, 5, { throttle: true, boost: true });
   assert.ok(race.player.fuel < 60, `Boost left ${race.player.fuel}% charge`);
