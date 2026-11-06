@@ -93,6 +93,11 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
 **8 actual files:** `mission-race@3x.webp`, `mission-time@3x.webp`, `mission-drift@3x.webp`, `mission-combo@3x.webp`, `trophy-bronze@3x.webp`, `trophy-silver@3x.webp`, `trophy-gold@3x.webp`, `trophy-platinum@3x.webp` (all **288×288 physical pixels**; set **96×96 CSS px** on use, e.g. `<img width="96" height="96">` plus `width:96px;height:96px;object-fit:contain`). Use `import.meta.env.BASE_URL` when copying approved assets into `public/feature-assets/garage-rewards-and-missions/raster/` to ensure GitHub Pages subpath support. Do **not** resize the original images to 1×: only the rendered CSS box is 1×. The PNG originals/source archive remain in ChatGPT File Library, not the Git branch.
 
 **Next implementer's mandatory sequence:** (1) Sync latest `develop` only when branch dependencies/gates permit (never treat historical `main` instructions as the current integration target); (2) inspect the actual 8 WebPs and existing icons, reject glow halos / baked fake balances / illegible cutouts and select only suitable files; (3) fetch `origin/feature/3x-ui-materials` and copy approved Git blobs from `docs/designs/3x-asset-library/webp/garage-rewards-and-missions/` to runtime public path; (4) write RED BDD/tests for 1× layout, missing-image text fallback, en/zh-TW, verified-only rewards (no fake/pending payout), account isolation and retry idempotency; (5) implement Vue 3/TS at 96 CSS px and verify build/CI/WebGL and accessibility. Image existence does **not** approve settlement, create credits, make missions functional, or satisfy the rest of Wave 3.
+## 2026-11-04 — Skyfall browser CI regression (#41803628752)
+
+- [x] RED (remote exact-HEAD `ec89c654`): Browser shard 4 failed the mobile upcoming-track swipe because the pointer-down position hits the visible intro instead of the WebGL canvas; shard 9 tried to select an option on the deliberately hidden native locale select. Quality Gate failed as a consequence.
+- [ ] GREEN: confirm the canvas-hit assertion and upcoming swipe test, plus the shared visible-language-picker helper and CTA localization test, on the changed HEAD in real Playwright.
+- [ ] Complete `make verify`, inspect mobile interaction, and require exact-HEAD full `quality-gate` PASS before merge. No manual-device acceptance claimed.
 ## Vehicle movement jitter and drift yaw — 2026-11-04
 
 **Branch:** `fix/vehicle-motion-jitter` (from `develop` b05ff1fa). Player-visible issue: left/right movement stutters at variable render rates, especially NITRO/FLY/takeoff/landing; initiating/releasing drift snaps the visual yaw 25°.
@@ -3670,6 +3675,42 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 
 - [x] TDD RED: at 2 m sampling across 2900/4900 m the valley terrain jumps ~16m; six ground wet-zone endpoints jump 0.055m water depth. Keep the same authored plateau/depth values but apply smooth entry/exit ramps using the common terrain/contact APIs.
 - [ ] Verify new seam and contact tests, full Unit/Browser/World Tour/Quality Gate at exact final HEAD. Capture real rendered Ford and valley screenshots; no visual acceptance until actual WebGL evidence exists.
+
+---
+
+## 2026-11-04 — Skyfall playable map-owned streaming / contact
+
+**Only writable branch:** `feature/playable-skyfall-archipelago`. The shared source `feature/epic-multiroute-longform-tracks` at `679dd6b8` had Browser and World Tour failures and no exact-HEAD green FULL gate at inspection. **No merge or map activation.**
+
+- [x] Add deterministic road-contact boundary regression for all ten edges (`dbcf8f35`); extracted original function produced RED for negative progress.
+- [x] Reject non-finite, before-start and after-end arc-length contact without synthesizing road outside an edge (`1f7702a8`). Eight extracted-function boundary cases produced GREEN, **not** full repository verification.
+- [x] Author world regression assertions for all-edge streamed scene, eight simultaneous car foci, geometry release and deterministic Reduced Motion waterfall (`822c9076`).
+- [x] Implement map-owned 420 m, disposable per-edge road/island/obstacle rendering with `setFocus([{ edgeId, localS }, ...])`, junction lookahead, deterministic island placement, bounded cloud ocean and waterfall animation (`c5b5836`). **Not yet wired to shared runtime.**
+- [x] Update `docs/designs/new-tracks/skyfall-playable-handoff.md` with the new API and honest pending gates.
+- [ ] Confirm exact-HEAD `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, Playwright and `make verify`. Full remote CI requested with this documentation commit; results are pending and may include pre-existing non-Skyfall Browser / World Tour failures.
+- [ ] Integrate shared CourseGraph simulation, signed ordered checkpoint crossing, physical flight/landing/recovery, 8-car edge/altitude-aware AI and actual player/camera/rival focus updates. Preserve legacy races and disabled Coming Soon start.
+- [ ] Record actual desktop 1440×900 and mobile 390×844 ground and flight WebGL screenshots against both JPEGs, quality-tier/Reduced Motion checks, GPU cleanup and performance evidence. No art similarity or gameplay acceptance claimed before evidence.
+
+- [x] **2026-11-04 Skyfall follow-up:** Test-first join streaming assertion `6d0b9535` for next/previous branch visibility at 300 m from a split/merge; request produced queued CI run `41793013459`, with RED execution **not yet observed** at the time of the correction.
+- [x] Expand map-owned `.setFocus()` split/merge prefetch threshold from 210 m to the full 420 m chunk; preserve current per-edge 420 m chunks, quality tiers and disconnected flight gaps. Do not count code change as tested.
+- [ ] Verify final-head `npm test`, typecheck, production build and mandatory FULL Browser / World Tour CI, including the new regression; run local `make verify` and obtain real desktop/mobile WebGL/30/60/120 FPS/8-car evidence before map acceptance.
+- [ ] Skyfall source concept JPEGs inspected: bottom sections include unrelated adjacent-course imagery; match only Skyfall content in upper sections and do not claim any real-WebGL screenshot comparison yet.
+
+- [x] Add 3D road-frame-aligned Skyfall landing guide strips on physically supported pavement after each air gap; never create road mesh in the gap. Guide geometry/material are chunk-owned and disposed on unload. Tests authored before code (`d9ef292c`, `6d4a61a2`); **RED outcome not observed** due to queued Actions.
+- [ ] Verify guide visibility, non-occlusion and contact parity in genuine 1440×900 and 390×844 WebGL screenshots for all three split/merge pairs; confirm quality tiers and reduced-motion on real hardware.
+
+## 2026-11-04 — Skyfall continued map-owned implementation (exact HEAD evidence pending)
+
+- [x] **Branch only:** `feature/playable-skyfall-archipelago`; integration `feature/epic-multiroute-longform-tracks` remains read-only. No PR, deployment, release activation, reset or force push.
+- [x] `6d0b9535` stream-join test → `6b8febf9` map-only full-420m split/merge prefetch; RED execution not observed because Actions cancelled old runs. Unit tests later passed at HEAD `74aa6c91` (run 41793905332), but that FULL run was subsequently cancelled.
+- [x] `d9ef292c` landing marking test → `74aa6c91` supported-ground luminous landing strips, chunk-owned and disposable. Does not create road in flight-only gaps or fake contact.
+- [x] **CI symptom reproduced:** run 41793905332 Browser shard 5 failed `tests/start-button-label-browser.spec.js` at en-US 320×640 (`label.clipped === true`), while 73 other shard tests passed. `3d0b0c22` overrides earlier `white-space:nowrap` with `white-space:normal` on the existing two-line Start label style. GREEN browser evidence for this correction remains pending.
+- [x] `4b4f3d80` test first: require all ground/air graph-join tangents within 48°. Source geometry arithmetic revealed ~69.4° at `a-air -> midway-one`. `c550ee77` adjusts the final aerial control point; independently calculated new heading discontinuity ~5.3°. Real race steering/landing remains unverified.
+- [x] `f634799b` test first: low-tier island terrace below rendered road. `f904ab05` aligns inverted hanging rock's wide top with the grass terrace ~10m below the actual sampled road rather than covering it.
+- [x] `4fb4baff` test first: four ordered 3D checkpoint markers on all quality tiers. `4164b960` adds non-collision overhead rings to existing Skyfall scene. **Visual markers do not implement signed checkpoint crossing, collision, AI or recovery.**
+- [ ] Observe actual RED→GREEN logs for new regression cases (test-only workflow runs were cancelled by later commits), final-HEAD `npm test`, typecheck, build, `make verify`, Browser/World Tour shards all running and FULL `quality-gate` green. Never equate CI workflow success with FULL when any required shard is skipped.
+- [ ] Capture actual 1440×900 and 390×844 WebGL screenshots at ground, split, flight gap, landing and checkpoints; compare both verified JPEGs excluding the lower unrelated-map strips, and record quality-tier/Reduced Motion/FPS/draw-call/p50/p95 evidence. No genuine captures recorded here.
+- [ ] Shared-system integration blocker: canonical CourseGraph runtime, signed gates, physics/altitude collision, eight graph-aware AI rivals, player/camera/rival streaming focus, safe recovery, 20 completed 3–5-minute race timing samples and explicit rollout approval. Integration source latest run 41795278514 was focused (Browser and World Tour skipped), so it is not source exact-HEAD FULL CI accepted for merge. Keep Coming Soon until accepted.
 
 ## 2026-11-04 — Preview-only Coming Soon fail-closed access (Frostbite working branch)
 
