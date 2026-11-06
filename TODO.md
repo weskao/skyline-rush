@@ -1,3 +1,17 @@
+## 2026-11-07 — Ring lane variety (`feature/ring-variety`)
+
+Root cause: Coast pinned every gate to x 2.5 (lane 3); other tracks drew x uniformly in ±7 m, so lanes 2/3 took
+~74% of rings, and trains were limited to lanes 2/3. Fix in `src/ring-layout.ts`: each ring line picks a lane
+(uniform over four, keeping the previous lane 65%), trains follow their slot's lane; Coast keeps its 8 m / 3 m heights.
+
+- [x] RED `tests/ring-variety.test.js` (Coast lanes `0/0/100/0`) → GREEN; lanes now ~22–29% each on every track.
+- [x] Ease guard over 12 seeds (`node scripts/ring-variety.mjs 12`): bot ring take within 2 pts and NITRO/min within
+  ~4% of the pre-change baseline on all ten tracks; trains/rows per race unchanged.
+- [x] Seed-coupled tests updated: Coast gate line (heights, any lane), train lanes (tracks any lane, Endless middle),
+  World Tour layout hashes re-locked, risk-line payout tests use the 8-car grid. `npm test` 1890 / 0 fail.
+- [ ] `npm run test:browser` desktop + mobile; real WebGL screenshots of edge-lane rings and trains.
+- [ ] Exact-HEAD full CI after merge to `develop` (needs user approval).
+
 ## Garage Wave 3 branch-specific source notes (preserved from economy branch)
 
 ## 2026-11-06 — Wave 3 integration completion (`feature/wave3-garage-integration-20261105`)
