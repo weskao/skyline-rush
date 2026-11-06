@@ -74,9 +74,10 @@ const colors = computed(() => ({
   0%, 55% { transform: translate3d(-160%, 0, 0) skewX(-23deg); }
   85%, 100% { transform: translate3d(300%, 0, 0) skewX(-23deg); }
 }
-:global(body[data-vfx-quality="low"]) .garage-art-sweep,
-:global(body[data-vfx-enabled="false"]) .garage-art-sweep,
-:global(body.vfx-comfort) .garage-art-sweep { display: none; }
+/* No :global() here: scoped CSS drops the selector after it and would hide <body>. */
+body[data-vfx-quality="low"] .garage-art-sweep,
+body[data-vfx-enabled="false"] .garage-art-sweep,
+body.vfx-comfort .garage-art-sweep { display: none; }
 .garage-badge-card figcaption {
   width: 100%; min-height: 30px; margin: 0; padding: 0;
   color: #dfebff; text-align: center; font-size: clamp(11px, 1.3vw, 13px);

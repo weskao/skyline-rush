@@ -3674,8 +3674,10 @@ Original WebP/SVG masters, live 3D car rendering, ownership rules and the static
 - [x] The generator, manifest, workflow and tests are now 25 GIFs across 5 categories. The node test asserts that the swept GIFs are absent, that there is one `garage-art-sweep 6.8s` declaration, and that the mask and skew are present.
 - [x] Local evidence: `node --test tests/garage-animated-artwork.test.js` 5/5, Python motion tests 8 OK, `npm run typecheck` and `npm run build` green. Seeked screenshots at 4.4/4.8/5.2 s show the sweep crossing the icon in about 1 s.
 - [x] Added a GPT production brief for replacing the remaining 25 procedural GIFs, with an apply procedure that retires the generator and workflow in the same commit: `docs/designs/garage-animated-gifs/gpt-gif-prompts.md`.
-- [ ] GPT-authored GIFs: not produced yet. The CI workflow `garage-animated-gifs.yml` still regenerates the procedural set until the brief's step 4 runs.
-- [ ] Exact-HEAD full GitHub CI with `[full-regression]`, plus manual review on real devices and Safari.
+- [x] GPT pushed 25 repaired GIFs up to `6af15b02`, all marked `profile: gpt-authored`. Local evidence: the brief check prints `25/25`, the Python GIF tests pass 13 OK, and `npm test` passes 1889/0.
+- [ ] Retire the generator, `tests/test_garage_gif_motion.py` and `garage-animated-gifs.yml` once a human confirms that the 25 GIFs are final authentic frames (rule step 5). Until then, any change to the generator re-renders and overwrites them.
+- [x] **Bug fixed (full CI run 42232699577 on `6af15b02`):** the sweep rule `:global(body[data-vfx-quality="low"]) .garage-art-sweep` compiled under Vue scoped CSS to `body[data-vfx-quality=low]{display:none}`. That hid the whole app on VFX Low, VFX off and comfort mode. It failed the browser specs `garage-paint-collection` (low), `responsive-focus` Event Lab (low) and `airflow-wake`. The fix uses plain `body[...] .garage-art-sweep` (scoped attribute on the sweep). The guard `tests/vue-scoped-global-selector.test.js` was RED with 3 offenders before the fix and is GREEN after. Locally, the Garage paint/VFX/animated specs pass 34/34 and responsive-focus + airflow-wake pass 15/15. `airflow-wake` was not reproduced RED locally.
+- [ ] Exact-HEAD full GitHub CI with `[full-regression]` on the fix commit, plus manual review on real devices and Safari.
 
 ## 2026-11-05 — measured physical CourseGraph step (opt-in)
 
