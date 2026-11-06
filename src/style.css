@@ -1934,6 +1934,11 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 @media (max-width: 760px) and (min-height: 501px) { .tutorial-guide { top: 56%; } .tutorial-guide svg { width: 40px; height: 40px; } } /* below the phone coach card */
 @media (max-height: 500px) and (orientation: landscape) { .tutorial-guide { top: 48%; left: 72%; } }
 @media (prefers-reduced-motion: reduce) { .tutorial-guide svg { animation: none; opacity: 1; } }
+/* Paused practice: the shared pause screen carries the message, so the coach folds to its title and Exit
+   and the screen starts below it on phones; neither covers the other. */
+body[data-tutorial][data-phase="paused"] .tutorial-coach :is(progress, .tutorial-copy) { display: none; }
+@media (max-width: 760px) and (min-height: 501px) { body[data-tutorial] .race-overlay { top: calc(var(--safe-top) + 190px); } }
+@media (max-height: 500px) and (orientation: landscape) { body[data-tutorial] .race-overlay { justify-items: end; } body[data-tutorial] .overlay-content { width: calc(50vw - 36px); margin-right: 12px; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 6px 0 8px; } } /* right of the left-half coach */
 
 /* Display-only 3x results artwork; no reward entitlement. */
 .result-trophy-art{display:inline-block;max-width:96px;vertical-align:middle;object-fit:contain;animation:reward-podium-reveal .52s ease-out both}
