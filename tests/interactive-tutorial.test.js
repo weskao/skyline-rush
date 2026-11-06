@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, stepRace } from '../src/game.js';
 import { createInteractiveTutorial, prepareTutorialInput } from '../src/interactive-tutorial.ts';
+import { DRIFT_ENTRY_KMH } from './helpers/tutorial-practice.js';
 
 const DT = 1 / 60;
 function tick(session, action = {}, dt = DT) {
@@ -334,6 +335,24 @@ test('neutral tutorial controls do not pull left and wrong-step steering still o
   const settledX = car.x;
   for (let frame = 0; frame < 100; frame++) advance();
   assert.ok(Math.abs(car.x - settledX) < 0.001, 'once steering settles, the car must not auto-center');
+});
+
+test('the keyboard practice drift entry speed outlasts the first payout tier before the rail', () => {
+  const session = createInteractiveTutorial(), car = session.race.player;
+  for (const action of [{ throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true }]) perform(session, action);
+  assert.equal(session.step, 'drift');
+  // The browser spec holds BRAKE until it sees the lesson, then waits for auto-throttle to reach the entry speed.
+  while (car.speed * 3.6 >= DRIFT_ENTRY_KMH) tick(session, { brake: true });
+  while (car.speed * 3.6 < DRIFT_ENTRY_KMH) tick(session);
+  let frames = 0;
+  while (!(car.drift?.time >= 1)) {
+    tick(session, { brake: true, steer: -1 });
+    assert.ok(++frames < 90, 'the drift ended below DRIFT_MIN_SPEED before the first payout tier');
+  }
+  // Six frames (0.1 s) of runner latency between the charged progress bar and the BRAKE release.
+  for (let i = 0; i < 6; i++) tick(session, { brake: true, steer: -1 });
+  tick(session);
+  assert.equal(session.step, 'fly', 'a held one-way drift still pays before it reaches the rail');
 });
 
 test('drift cannot complete without a real payout and must not reward a crash', () => {

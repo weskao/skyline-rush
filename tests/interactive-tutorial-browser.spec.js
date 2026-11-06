@@ -1,6 +1,7 @@
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { DRIFT_ENTRY_KMH } from './helpers/tutorial-practice.js';
 
 const coach = page => page.locator('#tutorial-coach');
 const step = (page, name) => expect(coach(page)).toHaveAttribute('data-step', name);
@@ -18,51 +19,53 @@ const keyStep = async (page, key, next) => {
   await page.keyboard.up(key);
 };
 
-// DRIFT needs >= 162 km/h on entry; the brake lesson's held key can slow the car, so wait for auto-throttle.
-const driftReady = page => page.waitForFunction(() => Number(document.querySelector('#speed')?.textContent) >= 170, null, { polling: 'raf' });
-// The coach progress bar reaches the next whole step once the drift lasts 1 s (the first payout tier).
-const driftCharged = page => page.waitForFunction(() => Number(document.querySelector('#tutorial-progress')?.value) >= 5, null, { polling: 'raf' });
+// Engine-judged lessons leave fractions of a second of game time: the 0.3 s flick window, the height for a soft
+// landing, 0.2 s before a held drift reaches the rail. One harness round trip under CI load took 17 frames
+// (0.38 s), so the page sends each time-critical key edge on the frame its cue appears. Opening presses stay
+// real keyboard input, and the engine still judges every lesson.
+const keysOnCue = (page, cue, edges) => page.evaluate(({ cue, edges }) => new Promise(resolve => {
+  const ready = () => typeof cue === 'string'
+    ? document.querySelector('#tutorial-instruction')?.textContent?.includes(cue)
+    : Number(document.querySelector(cue.selector)?.[cue.prop ?? 'textContent']) >= cue.min;
+  const poll = () => {
+    if (!ready()) return requestAnimationFrame(poll);
+    for (const [type, code] of edges) dispatchEvent(new KeyboardEvent(type, { code }));
+    resolve();
+  };
+  poll();
+}), { cue, edges });
+// The brake lesson's held key can slow the car, so wait for auto-throttle to reach a drift that outlasts 1 s.
+const driftReady = page => page.waitForFunction(kmh => Number(document.querySelector('#speed')?.textContent) >= kmh, DRIFT_ENTRY_KMH, { polling: 'raf' });
 const keyboardDrift = async page => {
   await driftReady(page);
-  await page.keyboard.down('a');
-  await page.keyboard.down('s');
-  await driftCharged(page);
+  // Sent together: steering alone drifts the car toward the rail, braking alone sheds the entry speed.
+  await Promise.all([page.keyboard.down('a'), page.keyboard.down('s')]);
+  // The coach progress bar reaches the next whole step once the drift lasts 1 s (the first payout tier).
+  await keysOnCue(page, { selector: '#tutorial-progress', prop: 'value', min: 5 }, [['keyup', 'KeyS'], ['keyup', 'KeyA']]);
   await page.keyboard.up('s');
   await page.keyboard.up('a');
   await step(page, 'fly');
 };
 
 const keyboardChain = async page => {
-  await page.keyboard.down('Space');
-  await page.keyboard.down('Shift');
-  await expect(page.locator('#tutorial-instruction')).toContainText('Powered flight detected');
-  await page.keyboard.up('Shift');
+  await Promise.all([page.keyboard.down('Space'), page.keyboard.down('Shift')]);
+  // Release FLY and BOOST once the chain is earned; holding thrust climbs into a hard landing.
+  await keysOnCue(page, 'Powered flight detected', [['keyup', 'Space'], ['keyup', 'ShiftLeft']]);
   await page.keyboard.up('Space');
+  await page.keyboard.up('Shift');
   await step(page, 'barrelRoll');
 };
 const keyboardRoll = async page => {
   await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
   await page.keyboard.down('Space');
-  // Release FLY at a safe height before the steering flick. The real engine
-  // allows a roll while gliding; holding thrust through Playwright assertions
-  // can lift the car too high for a soft landing on slow WebGL runners.
-  await page.waitForFunction(
-    () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
-    null, { polling: 'raf' },
-  );
+  // Release FLY at a safe height before the steering flick: the engine allows a roll while gliding.
+  await keysOnCue(page, { selector: '#altitude', min: 1.5 }, [['keyup', 'Space']]);
   await page.keyboard.up('Space');
   await page.keyboard.down('a');
-  await page.waitForFunction(
-    () => document.querySelector('#tutorial-instruction')?.textContent?.includes('First airborne steering press detected'),
-    null, { polling: 'raf' },
-  );
+  await keysOnCue(page, 'First airborne steering press detected', [['keyup', 'KeyA'], ['keydown', 'KeyD']]);
   await page.keyboard.up('a');
-  await page.keyboard.down('d');
-  await page.waitForFunction(
-    () => document.querySelector('#tutorial-instruction')?.textContent?.includes('BARREL ROLL spinning'),
-    null, { polling: 'raf' },
-  );
-  await page.keyboard.up('d');
+  // Release RIGHT once spinning: held steering carries the car into the rail as it lands.
+  await keysOnCue(page, 'BARREL ROLL spinning', [['keyup', 'KeyD']]);
   await step(page, 'nitro');
 };
 
