@@ -108,7 +108,8 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement, 
       const score = document.getElementById('style-score');
       // Persistent mode chip first (beside the flight stats), then transient chips around it.
       const flight = document.querySelector<HTMLElement>('.flight-telemetry');
-      const modeBox = mode && visible(mode) ? place(mode, 'right', (flight && visible(flight) ? flight.getBoundingClientRect().top : viewport.height * .6) - 40) : null;
+      // The countdown hides the telemetry footer (visibility only): place the chip anyway, so GO reveals it in a clear slot rather than at its CSS default.
+      const modeBox = mode && !mode.hidden && mode.getClientRects().length ? place(mode, 'right', (flight && visible(flight) ? flight.getBoundingClientRect().top : viewport.height * .6) - 40) : null;
       if (modeBox) obstacles.push(modeBox);
       // The collision chip never shares the screen with a callout or warning.
       const impactBox = impact && !impact.hidden ? place(impact, 'left', viewport.height * .43, [], true) : null;

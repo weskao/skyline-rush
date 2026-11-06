@@ -1990,7 +1990,7 @@ body[data-fold-axis="vertical"] .progress-bar { right: calc(100vw - var(--fold-p
 
 body:not([data-phase="ready"]) .mode-indicator[data-peripheral] {
   position: fixed; z-index: 3; top: calc(8px + var(--safe-top)); right: max(12px, var(--safe-right)); bottom: auto; left: auto;
-  transform: none; margin: 0; box-sizing: border-box; width: 150px; height: 30px; min-width: 0; padding: 0 9px;
+  transform: none; margin: 0; box-sizing: border-box; width: 176px; height: 30px; min-width: 0; padding: 0 9px;
   display: flex; flex-direction: row; align-items: center; gap: 6px; border-radius: 15px; box-shadow: none;
   background: rgb(7 23 42 / .6);
 }
@@ -2000,8 +2000,11 @@ body:not([data-phase="ready"]) .mode-indicator[data-peripheral] {
 /* The icon already says ROAD or FLIGHT; the label stays for screen readers. */
 .mode-indicator[data-peripheral] #flight-mode { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .mode-indicator[data-peripheral] .mode-key { display: none; }
-.mode-indicator[data-peripheral] #flight-state { order: 1; flex: 1; min-width: 0; font-size: 15px; letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mode-indicator[data-peripheral] #flight-state { order: 1; flex: 1; min-width: 0; font-size: 15px; line-height: 20px; letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mode-indicator[data-peripheral] #flight-budget { order: 2; margin-left: 0; font-size: 10px; }
+/* No edge strip fits the worded chip (small phones): icon and budget only, like short landscape, instead of covering a HUD block. */
+body:not([data-phase="ready"]) .mode-indicator[data-peripheral][data-compact="true"] { width: 66px; padding: 0 8px; }
+.mode-indicator[data-peripheral][data-compact="true"] #flight-state { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
 .impact-report[data-peripheral] {
   transform: none; right: auto; margin: 0; gap: 7px; padding: 5px 10px; border-radius: 15px;
