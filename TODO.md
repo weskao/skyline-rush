@@ -105,7 +105,59 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
     - [x] D7 `make verify` (unit, build, browser, World Tour long-run) green at `30f42322`: exit 0, 1,622 unit tests passed / 0 failed / 3 skipped, browser stage 1,000 passed / 6 skipped / 0 failed, World Tour stage 328 passed. Run under `caffeinate` (an idle-sleeping machine makes World Tour specs time out at ~15 min, which is not an r186 failure).
     - [x] D8 Own screenshots reviewed side by side against D3 (Garage paint and glass first: `RoomEnvironment` changed in r183). Reviewed and approved by the owner on 2026-11-06; screenshots stay in gitignored `audits/`.
     - [x] D9 Each physical phone: `make perf-phone`, only for phones used for QA. Owner reported a real-phone run as fine on 2026-11-06 (not re-run by an agent); numbers stay in gitignored `audits/`.
-- [ ] **Phase 2:** Build reproducible Blender Python/MCP → editable .blend → PBR/UV/LOD → GLB → glTF Transform/Meshopt/KTX2 pipeline; before downloading or using external assets, verify their sources, licenses and available disk space; implement asynchronous GLTFLoader with renderer reuse, startup warmup, ownership, subpath URLs and procedural fallback.
+- [x] **Phase 2:** Build reproducible Blender Python/MCP → editable .blend → PBR/UV/LOD → GLB → glTF Transform/Meshopt/KTX2 pipeline; before downloading or using external assets, verify their sources, licenses and available disk space; implement asynchronous GLTFLoader with renderer reuse, startup warmup, ownership, subpath URLs and procedural fallback.
+  Evidence ledger, 2026-11-06 (plan Task 3; contract `docs/designs/3d-pipeline/phase2-model-contracts.md`).
+  - **Owner decisions (2026-11-06):**
+    - MVP asset `pipeline-probe`, built entirely from a project Python script: no external source and no third-party license.
+    - Exposure: Garage only, behind `?model=probe`. Production keeps the procedural car.
+    - Decoders: Meshopt only. KTX2 and Draco stay out until an asset needs them.
+    - Adapter: of two candidate adapters, the owner kept A (`b66a0e9d`). The alternative, `879f5040` on `feature/3d-phase2-probe-adapter`, stays unmerged.
+    - Lifecycle checks: of two copies, the owner kept the separate spec on `feature/3d-phase2-probe-tests`.
+  - **By project (committed once):**
+    - [x] Contract and RED tests.
+      - Files: the contract doc, typed stubs `src/model-manifest.ts` and `src/asset-model-loader.ts`, `tests/model-manifest.test.js`, `tests/model-asset-loader.test.js`, `tests/model-fixtures.js`.
+      - RED: 33 of 35 new tests failed on assertions or the stub rejecting, not on import errors. The other 1886 tests passed; `typecheck:ts` was clean.
+    - [x] GREEN manifest validation and async model cache (`b5c8733d`). The `manifest` option defaults to `MODEL_MANIFEST` (`69a37d12`, test written first). Contract coverage:
+      - one GLTFLoader backend; Meshopt loaded only when the entry asks for it, at most once
+      - dedupe, per-caller cancellation, timeout
+      - ref-counted disposal exactly once
+      - exact node and material names
+      - fallback reasons
+      - `BASE_URL` subpath and low LOD
+    - [x] Blender → `.blend` → GLB → glTF Transform pipeline (`e782a6b6`).
+      - Steps: `assets-src/pipeline-probe/build.py` → `scripts/assets/export-glb.mjs` → `optimize-glb.mjs` (meshopt; flatten, join, palette, simplify, instance and prune all off, so named nodes, pivots and materials survive) → `check-glb.mjs`.
+      - The integrity test was RED first. Blender path comes from `BLENDER_BIN` with the `/Applications` default.
+      - Packaged probe: 6536 B, 264 triangles, 5 draws, no textures. `check-glb` PASS; sha256 and size match the manifest.
+    - [x] Garage `?model=probe` adapter A (`b66a0e9d`, `src/garage-model.ts`). Covers Garage Home and the Studio; `world.js` and `garage-stage.ts` get only hooks. Without the query nothing changes: the GLB is not requested and the loader lives only in a lazy chunk, with no loader code in the entry chunk.
+    - [x] Lifecycle spec `68f8e669`: no `compileAsync` or new shader programs while racing; the probe loads under the `/skyline-rush/` base; a 404 falls back with no console error.
+    - [x] Fallback `console.warn` fix `fd36761b`. The 404 test failed on `b66a0e9d` (0 warnings), then passed (exactly 1 warning).
+    - [x] Merged as `ae402e3b`. On that commit:
+      - `npm test`: 1936 pass / 0 fail / 3 skipped (1939 total).
+      - `npm run typecheck`: exit 0.
+    - [x] Focused Playwright after `node scripts/build-garage-browser.mjs`:
+      - On `b66a0e9d`: A's spec plus the Garage camera-dock, inspection-mode and home-pose specs, 20 passed.
+      - On the probe-tests branch: lifecycle spec plus A's spec, 10/10.
+    - [x] `make verify` (unit, build, browser, World Tour) on `ae402e3b`, in a clean worktree. It exited 2 after the browser stage, so World Tour did not run.
+      - Typecheck: ok. Unit: 1939 tests, 1936 pass, 0 fail, 3 skipped.
+      - Browser: 1005 passed, 9 failed, 6 skipped in 2.8 h, at load average 35–46. The failures:
+        - item-feedback ×3
+        - motion air tricks desktop
+        - responsive-focus 390×844
+        - `garage-home-pose` 1440×900 (screenshot timeout)
+        - interactive-tutorial ×2: NITRO practice timed out; first-visit expected `barrelRoll` and got `airChain`
+        - high-speed-vfx Wave 2 (timeout)
+      - World Tour, run separately (`npx playwright test --config=playwright.world-tour.config.js`): 328 passed, 0 failed, 0 skipped in 9.2 min, exit 0. `.last-run.json` says `passed`.
+      - The 9 failed tests, re-run alone with `--retries=0` at load average ~14: all passed, 17 of 17 including their other viewport projects, in 2.2 min. They count as load flakes, not regressions.
+    - [x] Real WebGL captures (probe loaded, forced-404 fallback, production; 1440×900, 390×844, 844×390) were checked by an agent and sent with `/screenshot-mark-send`. The fallback matches production with no error overlay. Owner reviewed and approved all five on 2026-11-06.
+    - [x] Exact-HEAD full `quality-gate` CI on `ae402e3b`: `full_regression` run [42241645684](https://github.com/weskao/skyline-rush/actions/runs/42241645684) succeeded. Passed: unit-tests, all 13 browser shards, all 5 World Tour shards, cloud-save and `quality-gate`. Skipped: deploy, release and merge jobs.
+  - **By device (repeat per machine; results stay in gitignored `audits/`, generic model only):**
+    - [x] External assets: none used, so the source, license and download checks did not apply.
+    - [x] Blender is present in `/Applications`, so `BLENDER_BIN` is not needed. `node scripts/install-gltf-transform.mjs` printed `E13 PASS`.
+    - [x] Blender MCP:
+      - The project `.mcp.json` Blender server connects (`claude mcp get blender`).
+      - Codex lists it in `codex mcp list` (listing only, no live call from Codex).
+      - The live read-only `get_scene_info` (E14) returned real scene data, confirmed by two sessions on two different scenes.
+    - N/A `toktx` (KTX2): not needed with Meshopt only.
 - [ ] **Phase 3:** Upgrade Roadster 2 model in existing Garage Studio using reference-led real 3D meshes for front, rear, four VFX thrusters, active wing, separate wheel pivots and paints; preserve current physics, collisions, NITRO/FLY/BOOST and existing Roadster branch work. Obtain real WebGL screenshots and visual approval.
 - [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
 - [ ] **All phases:** TDD RED→GREEN, renderer version/texture and animation checks, 10-track/5-new-track matrix as available, desktop/mobile Low/Medium/High (Ultra only after profiling), memory/draw/triangle/frame-time p50/p95, real-device QA, `make verify` and exact-HEAD FULL `quality-gate`. No PR, develop/main merge, release or deployment without approval.
