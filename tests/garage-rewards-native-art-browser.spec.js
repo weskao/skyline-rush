@@ -18,21 +18,7 @@ test('actual Garage mission cards and source icons preserve native 3x alpha on m
       await expect(img).toHaveAttribute('height', '96');
       await expect(img).toHaveJSProperty('naturalWidth', 288);
       await expect(img).toHaveJSProperty('naturalHeight', 288);
-      expect(await img.evaluate(image => {
-        const canvas = document.createElement('canvas');
-        canvas.width = canvas.height = 288;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(image, 0, 0);
-        const pixels = ctx.getImageData(0, 0, 288, 288).data;
-        let left = 288, top = 288, right = -1, bottom = -1;
-        for (let y = 0; y < 288; y++) for (let x = 0; x < 288; x++) {
-          if (pixels[(y * 288 + x) * 4 + 3] > 16) {
-            left = Math.min(left, x); top = Math.min(top, y);
-            right = Math.max(right, x); bottom = Math.max(bottom, y);
-          }
-        }
-        return Math.min(left, top, 287 - right, 287 - bottom);
-      })).toBeGreaterThanOrEqual(20);
+      // Alpha margins (>= 20 px) are asserted on the PNG files in tests/rewards-visual-contract.test.js.
     }
   }
 });
