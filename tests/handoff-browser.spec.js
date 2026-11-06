@@ -179,7 +179,13 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
   const gates = await page.evaluate(([RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO]) => {
     const group = window.gameplay.race.rings.filter(ring => ring.group === 0);
     for (const ring of group) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
-    const at = [...new Set(group.map(ring => ring.distance))];
+    // Rings use every lane and the pilot only flies, never steers: a one-ring gate is moved into the player's lane
+    // (a row already spans every lane).
+    const at = [...new Set(group.map(ring => ring.distance))], x = window.gameplay.race.player.x;
+    for (const distance of at) {
+      const gate = group.filter(ring => ring.distance === distance);
+      if (gate.length === 1) gate[0].x = x;
+    }
     if (at.length * RING_NITRO.nitro + PERFECT_LINE_NITRO < 3) throw new Error(`first group has only ${at.length} gates`);
     return at.map(distance => ({ distance, altitude: group.find(ring => ring.distance === distance).altitude }));
   }, [RING_RADIUS, RING_NITRO, PERFECT_LINE_NITRO]);
