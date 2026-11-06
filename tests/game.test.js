@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_CHARGES, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME, TRICK_FLICK_WINDOW, TRICK_ROLL_TIME, TRICK_HARD_LANDING, TRICK_NITRO, NITRO_FUEL_BONUS, GLIDE_FUEL_REGEN, GAP_WARN_DISTANCE, gapChargeWarning, LANES, SHORTCUT_TOLERANCE, SHORTCUT_HALF_WIDTH, SHORTCUT_CAP_BONUS, SHORTCUT_PYLON_OFFSET, shortcutPylons } from '../src/game.js';
+import { createRace, startRace, stepRace, racePosition, sprintGaps, RACE_LENGTH, RACE_TRACKS, TUNNEL_CEILING, ROAD_LIMIT, MAX_SPEED, NITRO_MAX, DRIFT_MIN_SPEED, RING_RADIUS, RISK_RING_RADIUS, RISK_SCORE, MYSTERY_EFFECTS, mysteryEffect, SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, RUBBER_BAND_MAX, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_BONUS, RIVAL_NITRO_TIME, TRICK_FLICK_WINDOW, TRICK_ROLL_TIME, TRICK_HARD_LANDING, TRICK_NITRO, NITRO_FUEL_BONUS, GLIDE_FUEL_REGEN, GAP_WARN_DISTANCE, gapChargeWarning, LANES, SHORTCUT_TOLERANCE, SHORTCUT_HALF_WIDTH, SHORTCUT_CAP_BONUS, SHORTCUT_PYLON_OFFSET, shortcutPylons } from '../src/game.js';
 import { hazardX } from '../src/hazards.ts';
+import { rivalBaseCap, RIVAL_SKILL } from '../src/rival-driver.ts';
+import { BOOST_CAP_BONUS, NITRO_CAP_BONUS } from '../src/drive-rules.ts';
 
 function advance(race, seconds, input = {}) {
   for (let frame = 0; frame < Math.ceil(seconds * 60); frame++) stepRace(race, input, 1 / 60);
@@ -73,7 +75,7 @@ test('accelerating, coasting, braking and steering respect road and speed limits
 
 test('thrusters require speed, lift the car, spend fuel and land on release', () => {
   const race = racing();
-  Object.assign(race, { pickups: [], rings: [] }); // a charge row on the road would refill fuel
+  Object.assign(race, { pickups: [], rings: [], rivals: [] }); // a charge row would refill fuel; a slower rival ahead would be rear-ended
   race.player.speed = 0; // stopped below takeoff speed (GO itself launches the grid rolling)
   advance(race, 1, { fly: true });
   assert.equal(race.player.altitude, 0);
@@ -168,7 +170,7 @@ test('fresh races reset progress, fuel, collision count and opponents', () => {
 
 test('ground boost spends charge instead of recharging while the accelerator is held', () => {
   const race = racing();
-  Object.assign(race, { pickups: [], rings: [] }); // a charge row on the road would refill fuel
+  Object.assign(race, { pickups: [], rings: [], rivals: [] }); // a charge row would refill fuel; a slower rival ahead would be rear-ended
   advance(race, 4, { throttle: true });
   advance(race, 5, { throttle: true, boost: true });
   assert.ok(race.player.fuel < 60, `Boost left ${race.player.fuel}% charge`);
@@ -1179,7 +1181,7 @@ function drafting(speed, leadSpeed, kind = 'traffic') {
   Object.assign(race, { rivals: [], pickups: [], rings: [] });
   Object.assign(race.player, { distance: 100, x: 2.5, speed });
   const lead = { x: 2.5, distance: 106, speed: leadSpeed, altitude: 0 };
-  if (kind === 'rival') race.rivals = [{ ...lead, name: 'NOVA', nitro: 0, nitroTime: 0, finishTime: null }];
+  if (kind === 'rival') race.rivals = [{ ...lead, name: 'NOVA', nitro: 0, nitroTime: 0, finishTime: null, fuel: 100, slipstream: { time: 0, active: false, paid: false } }];
   else race.traffic = [lead];
   return race;
 }
@@ -1220,49 +1222,56 @@ test('slipstream needs the same lane and a draft-range gap', () => {
   }
 });
 
-test('rival nitro fires by personality and respects its charge budget', () => {
-  // No items: rivals collecting NITRO (stage 2, tests/rival-items.test.js) would change the charge counts this checks.
-  const fresh = () => { const race = racing(); race.player.effects.ghost = 99; Object.assign(race, { rings: [], pickups: [] }); return race; };
+test('Easy rival nitro fires by personality and respects its charge budget', () => {
+  // Rivals start empty (user, 2026-11-07): each gets two charges here. No items, which would change the counts, and
+  // Easy, the difficulty that keeps personality timing (Normal and Hard fire on a clear lane, tests/rival-driver.test.js).
+  const CHARGES = 2;
+  const fresh = () => {
+    const race = createRace('coast', { mode: 'custom', rivals: 7, difficulty: 'easy' });
+    startRace(race); race.phase = 'racing'; race.player.effects.ghost = 99; Object.assign(race, { rings: [], pickups: [] });
+    for (const rival of race.rivals) rival.nitro = CHARGES;
+    return race;
+  };
   const [nova, orbit, apex] = [0, 1, 2];
   const step = race => stepRace(race, {}, 1 / 60);
   const early = fresh();
   step(early);
-  assert.ok(early.rivals.every(rival => rival.nitro === RIVAL_NITRO_CHARGES));
+  assert.ok(early.rivals.every(rival => rival.nitro === CHARGES));
   const novaRace = fresh(); // NOVA: steady, fixed schedule
   novaRace.elapsed = RIVAL_NITRO_NOVA_FIRST + 0.1;
   step(novaRace);
-  assert.equal(novaRace.rivals[nova].nitro, RIVAL_NITRO_CHARGES - 1);
-  assert.ok(novaRace.rivals[orbit].nitro === RIVAL_NITRO_CHARGES || novaRace.rivals[orbit].altitude > 2);
+  assert.equal(novaRace.rivals[nova].nitro, CHARGES - 1);
+  assert.ok(novaRace.rivals[orbit].nitro === CHARGES || novaRace.rivals[orbit].altitude > 2);
   const orbitRace = fresh(); // ORBIT: only while flying
   orbitRace.elapsed = 0.1;
   step(orbitRace);
-  assert.equal(orbitRace.rivals[orbit].nitro, RIVAL_NITRO_CHARGES);
+  assert.equal(orbitRace.rivals[orbit].nitro, CHARGES);
   orbitRace.elapsed = 2.8;
   step(orbitRace); // in the air but too slow: no wasted charge
-  assert.equal(orbitRace.rivals[orbit].nitro, RIVAL_NITRO_CHARGES);
+  assert.equal(orbitRace.rivals[orbit].nitro, CHARGES);
   orbitRace.rivals[orbit].speed = 73;
   step(orbitRace);
   step(orbitRace);
   assert.ok(orbitRace.rivals[orbit].altitude > 2);
-  assert.equal(orbitRace.rivals[orbit].nitro, RIVAL_NITRO_CHARGES - 1);
+  assert.equal(orbitRace.rivals[orbit].nitro, CHARGES - 1);
   advance(orbitRace, RIVAL_NITRO_TIME + 0.2); // still airborne when it ends (hop is ~2.7 s) but the same hop never fires twice
-  assert.equal(orbitRace.rivals[orbit].nitro, RIVAL_NITRO_CHARGES - 1);
-  const apexRace = fresh(); // APEX: saves it for the last quarter
+  assert.equal(orbitRace.rivals[orbit].nitro, CHARGES - 1);
+  const apexRace = fresh(), cap = rivalBaseCap(RIVAL_SKILL.easy, apex); // APEX: saves it for the last quarter
   apexRace.rivals[apex].distance = RACE_LENGTH * 0.7;
   step(apexRace);
-  assert.equal(apexRace.rivals[apex].nitro, RIVAL_NITRO_CHARGES);
-  apexRace.rivals[apex].distance = RACE_LENGTH * 0.76;
-  apexRace.rivals[apex].speed = 76;
-  const before = apexRace.rivals[apex].speed;
+  assert.equal(apexRace.rivals[apex].nitro, CHARGES);
+  Object.assign(apexRace.rivals[apex], { distance: RACE_LENGTH * 0.76, speed: cap, fuel: 0 });
   advance(apexRace, 2);
-  assert.ok(apexRace.rivals[apex].speed > 76 + 3 && apexRace.rivals[apex].speed <= 76 + RIVAL_NITRO_BONUS + 1e-9, `${before} -> ${apexRace.rivals[apex].speed}`);
+  const surge = apexRace.rivals[apex].speed;
+  assert.ok(surge > cap + 3 && surge <= cap + RIVAL_NITRO_BONUS + 1e-9, `${cap} -> ${surge}`);
+  assert.equal(RIVAL_NITRO_BONUS, NITRO_CAP_BONUS, 'the player\'s NITRO bonus');
   advance(apexRace, 8); // both charges burn, then nothing is left
   assert.equal(apexRace.rivals[apex].nitro, 0);
   assert.equal(apexRace.rivals[apex].nitroTime, 0);
-  assert.ok(apexRace.rivals[apex].speed <= 76 + 1e-9);
+  assert.ok(apexRace.rivals[apex].speed <= cap + BOOST_CAP_BONUS + 1e-9, 'back to the throttle, or BOOST once its tank refills');
 });
 
-test('rubber-banding stays within a few percent: leaders ease off, stragglers speed up', () => {
+test('rubber-banding stays within a few percent and only eases leaders off: stragglers are never sped up', () => {
   const gain = playerDistance => {
     const race = racing();
     race.player.effects.ghost = 99;
@@ -1274,9 +1283,10 @@ test('rubber-banding stays within a few percent: leaders ease off, stragglers sp
   const neutral = gain(1000);
   const ahead = gain(0); // rival 1000 m ahead of the player
   const behind = gain(2000); // rival 1000 m behind
+  const near = gain(1100); // rival 100 m behind: no band either way
   assert.ok(ahead < neutral && ahead >= neutral * (1 - RUBBER_BAND_MAX) - 1e-9, `${ahead} vs ${neutral}`);
-  assert.ok(behind > neutral, `${behind} vs ${neutral}`);
-  assert.ok(behind / ahead <= (1 + RUBBER_BAND_MAX) / (1 - RUBBER_BAND_MAX) + 1e-9, `${behind} vs ${ahead}`); // neutral drifts into the band itself once it pulls 50 m clear
+  assert.equal(behind, near, 'a big deficit buys no extra speed (user, 2026-11-07)');
+  assert.ok(behind >= neutral, `${behind} vs ${neutral}`); // neutral drifts into the band itself once it pulls 50 m clear
   assert.ok(RUBBER_BAND_MAX <= 0.06);
 });
 
@@ -1658,6 +1668,7 @@ test('rivals and traffic change lane around a Tokyo train instead of driving thr
   advance(race, 3.1);
   const rival = race.rivals[0], traffic = race.traffic[0];
   race.rivals = [rival]; rival.x = rival.homeX = 7.5;
+  Object.assign(race, { rings: [], pickups: [] }); // every difficulty seeks items now: nothing to pull it off its lane
   // The player trails both in the far-left lane: close enough that traffic is not recycled ahead.
   const trail = () => Object.assign(race.player, { distance: Math.min(rival.distance, traffic.distance) - 30, x: -7.5, speed: 0 });
   Object.assign(rival, { distance: train.from - 120, speed: 70 });
