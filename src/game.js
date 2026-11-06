@@ -2,7 +2,7 @@ import { prepareEndless, streamEndless, finishEndless } from './endless-highway.
 import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 export { RING_RADIUS, RISK_RING_RADIUS, ITEMS_PER_CAR, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
-import { attachCourse, stepCourseCars, carGap, progressGap, courseFinished } from './course-race-step.ts'; import { finishRace } from './race-finish.js';
+import { attachCourse, stepCoursePlayer, stepCourseCars, carGap, progressGap, courseFinished, courseGapWarning } from './course-race-step.ts'; import { finishRace } from './race-finish.js';
 import { hitProp, clearOf, avoidObstacles, knock, aiRetention, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
 import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
@@ -417,7 +417,7 @@ export function stepRace(race, input, dt) {
   const previousDistance = car.distance;
   const previousContacts = car.collisions + car.falls;
   car.distance += car.speed * dt;
-  const gapNow = race.trackId === 'spiral' ? skyGapAt(car.distance) : car.section === 'gap';
+  const gapNow = race.course ? stepCoursePlayer(race, dt, contact) : race.trackId === 'spiral' ? skyGapAt(car.distance) : car.section === 'gap'; // H2+H6 player: graph step, gap fall, hazards
   if (gapNow && car.altitude < GAP_CLEARANCE && !(race.trackId === 'spiral' && car.altitude > 0 && car.verticalSpeed > 0)) {
     const gapEnd = race.trackId === 'spiral' ? SKY_JUMPS.find(j => car.distance >= j.gapFrom && car.distance < j.gapTo)?.gapTo : section.to;
     dropCar(car, (gapEnd ?? section.to) + GAP_RESPAWN, section.from, race.elapsed, GAP_SLOWDOWN);
@@ -460,7 +460,7 @@ export function stepRace(race, input, dt) {
       rival.finishTime = race.elapsed - dt + Math.max(0, race.length - before) / rival.pace;
     }
   });
-  stepCourseCars(race, dt); // H2: graph poses, gates and rival finish from this frame's odometers
+  stepCourseCars(race, dt); // H2 rivals: graph poses, gates, hazards and finish from this frame's odometers
   const { rivals, traffic } = race;
   for (let i = 0; i < rivals.length; i++) {
     for (let j = i + 1; j < rivals.length; j++) bumpCars(race, rivals[i], rivals[j]);
@@ -571,7 +571,7 @@ export function stepRace(race, input, dt) {
 
 // The next broken bridge within warning range when the charge left cannot thrust across it at the current speed.
 export function gapChargeWarning(race) {
-  if (race.trackId === 'spiral') return null; // its launch ramps throw the car across
+  if (race.course) return courseGapWarning(race); if (race.trackId === 'spiral') return null; // its launch ramps throw the car across
   const car = race.player;
   const gap = race.sections.find(s => s.type === 'gap' && s.to > car.distance && s.from - car.distance <= GAP_WARN_DISTANCE);
   if (!gap) return null;

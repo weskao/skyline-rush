@@ -26,7 +26,7 @@ export const DUNE_TEMPEST_RACE: CourseRaceSpec = {
   recoveryEdge: Object.fromEntries(meta.flightShortcuts.map(f => [f.edgeId, f.recoveryEdgeId])),
   hazards: meta.hazards.map((h): CourseHazard => ({
     id: h.id, edgeId: h.edgeId, localS: h.atFraction * routeLength(graph, h.edgeId),
-    lateral: h.lateralMeters, radius: h.collisionRadiusMeters, safePassSide: h.safePassSide,
+    lateral: h.lateralMeters, radius: h.collisionRadiusMeters, safePassSide: h.safePassSide, aiPreview: h.aiPreviewMeters,
   })),
 };
 

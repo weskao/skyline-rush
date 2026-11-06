@@ -1,4 +1,4 @@
-import { carGap } from './course-race-step.ts';
+import { carGap, courseHazardBlockers } from './course-race-step.ts';
 import { ROAD_LIMIT } from './game.js';
 import { hazardReach, hazardTouch, nudge } from './hazard-race.ts';
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -59,6 +59,7 @@ export function avoidObstacles(race, other, pace, dt) {
     const reach = hazardReach(h); // covers a moving hazard's whole sweep; 0 = a trigger, never steered around
     if (reach) blockers.push(h.x - reach, h.x + reach);
   }
+  if (race.course && altitude < BARRIER_HEIGHT) courseHazardBlockers(race, other, blockers); // graph hazards: steer to the safe side
   let target = other.seekX ?? other.homeX ?? other.x; // seekX: a Hard rival's item lane (rival-items.ts), only while free
   if (!laneFree(target)) {
     target = other.x; // nowhere free: hold the line rather than swerve into something else

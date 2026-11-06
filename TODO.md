@@ -160,6 +160,53 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
     is counted but not recovered; player taking `canyon-air-crossing` before Task 6 has no gap
     physics; rendering/camera (H8/H9); readiness stays `preview`.
 
+- [x] Task 6 — Dune flight gap, hazards and recovery on the graph runtime (Q1: the flight edge ships in
+  Phase 1). `src/course-race.ts`: `recoverCourseCar(rt, id, isClear)` → the flight edge's recovery edge
+  (else the car's own ground edge) at the first clear slot 5…65 m, odometer = the edge-start (split)
+  odometer, never ahead of it; `CourseHazard.aiPreview`. `src/course-race-step.ts`:
+  `stepCoursePlayer` (H2 + H6 for the player, called at game.js `gapNow` right after its odometer
+  integration; returns `false`, so the legacy 1D drop never runs on a course): over a no-road
+  interval below `GAP_CLEARANCE`, or on a rejected sweep, `dropCar` (× `GAP_SLOWDOWN`, grace,
+  `falls`/`fall`) and re-seat through `placeCourseCar` — that frame sweeps no gate, hazard or score;
+  else the hazard sweep (`contact(race, 'barrier', …, 0.7, 0.6)`, below 2.4 m, within the hazard
+  radius laterally, across at most one node). `stepCourseCars` now steps rivals only: rejected →
+  re-seated, hazard hit → `knock`. `courseHazardBlockers` (one line in `car-collisions.js`
+  `avoidObstacles`): within `aiPreview` ahead on the rival's edge the unsafe side is blocked to the
+  road edge, so the rival takes `safePassSide`. `courseGapWarning`: next gap within
+  `GAP_WARN_DISTANCE` on the player's edge, else on the branch its lane picks; `gapChargeWarning`
+  dispatches to it. `isClear` rejects slots within 4.4 m of another car on that edge or inside a
+  hazard's ±radius. game.js: 4 existing lines edited (import, `gapNow`, H2 comment,
+  `gapChargeWarning`), still 580.
+  - Step bound (Task 5 review carry-over): `maxStepMetres` now uses `player.speed·dt` /
+    `rival.pace·dt` instead of `|Δodometer|`. Confirmed nothing changes `player.speed` between its
+    integration and the step (the step now runs right after it) nor `rival.pace` between
+    `rival.distance += rival.pace·dt` and H2 (avoidance/deck/aiImpacts/rivalCollects touch x,
+    altitude and speed, not pace).
+  - RED: `node --test tests/dune-tempest-race.test.js` → 9 pass / 7 fail, all `AssertionError`:
+    `aiPreview` undefined !== 120; no-FLY run "fell once" (null); FLY-pulse 8-path finish 116.65 s
+    (no gap physics yet); recovery frame `falls` 0 !== 1; hazard `collisions` 0 !== 1;
+    "course-race-step exports courseGapWarning" ('undefined' vs 'function'); odometer jump
+    "player jump rejected" 0 !== 1 (the old `|Δodometer|` bound accepted a +50 m rewrite).
+    `rivals never select the flight edge` was already green (Q8 from Task 5).
+  - GREEN: same file 16/16; `tests/course-race.test.js` 11/11 (new `recoverCourseCar` unit test,
+    written after the implementation); `legacy-race-replay` + `module-size` + `course-race-step`
+    52/52 (replay 47/47); `npm test` 2053 tests, 2050 pass / 0 fail / 3 skipped;
+    `npm run typecheck` clean.
+  - Measured FLY-pulse bot (vertical-speed P-controller holding ~2.5 m, BOOST off on
+    `canyon-approach` and the flight edge), 60 Hz: 116.653 / 113.792 / 114.226 / 111.365 s on the
+    four air paths (30/120 Hz within 0.07 s), 0 falls, 0 rejections, lowest altitude over the gap
+    2.38 m, landing localS 1057–1061 on the [983.3, 1088.3] pad, tank 100 → ≥ 87. Air window
+    100–330 s (below the shortest measured air path, above one skipping the 1,088 m edge).
+    Ground paths unchanged in the 120–330 s window, 0 rejections.
+  - Cost: `stepRace` on Dune, min of 8 runs, 45.7 µs/frame at `caee7bf1` vs 46.7 µs now (host load
+    average 33–68, so within noise; recovery allocates only on the rare recovery frame).
+  - Open: on Dune's 923 m gap the shared need formula (`FLY_DRAIN · gap / speed`, continuous
+    thrust) exceeds 100 below ~138 m/s, so `courseGapWarning` is non-null before the gap at any
+    reachable speed even with a full tank, although pulsed FLY crosses with ≥ 87 left. Product call
+    whether the graph warning should use the hover duty instead. Camera snap on recovery is Task 8
+    (world.js only snaps for Frostbite). Rival hazard knock at the parallel branch is covered by the
+    same sweep (edge-matched), not by a separate test.
+
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 
 - **Branch CI:** `feature/playable-frostbite-canyon` `fb0b8564`, run `42195029806` — every job green. **PASS**

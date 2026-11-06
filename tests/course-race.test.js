@@ -4,7 +4,7 @@ import { routeLength, sampleRoute } from '../src/course-route-frame.ts';
 import { PLAYABLE_COURSE_GRAPH as DUNE } from '../src/courses/dune-tempest-runtime-adapter.ts';
 import {
   chooseBranchByLateral, courseCarGap, courseNoRoadAt, createCourseRuntime, placeCourseCar,
-  rankCourseRuntime, stepCourseCar,
+  rankCourseRuntime, recoverCourseCar, stepCourseCar,
 } from '../src/course-race.ts';
 
 const SPEC = { graph: DUNE, gateHeight: { minHeight: -6, maxHeight: 22 }, noRoad: {}, recoveryEdge: {}, hazards: [] };
@@ -178,4 +178,17 @@ test('car.last is a per-car copy: mutating the caller object after a step change
   placed.x = 8;
   assert.deepEqual({ ...car.last }, { distance: 400, x: 2, altitude: 0 });
   assert.equal(car.last, last);
+});
+
+test('recoverCourseCar: flight edge → its recovery edge, ground → its own edge, first clear slot, split odometer', () => {
+  const air = 'canyon-air-crossing', rt = createCourseRuntime({ ...SPEC, recoveryEdge: { [air]: 'canyon-switchbacks' } }, GRID);
+  placeCourseCar(rt, 'YOU', air, 400, { distance: 6400, x: 3, altitude: 0 });
+  const tried = [];
+  const seat = recoverCourseCar(rt, 'YOU', (edge, s) => { tried.push([edge, s]); return s >= 15; });
+  assert.deepEqual(seat, { edgeId: 'canyon-switchbacks', localS: 15, odometer: 6000 });
+  assert.deepEqual(tried, [['canyon-switchbacks', 5], ['canyon-switchbacks', 10], ['canyon-switchbacks', 15]]);
+  placeCourseCar(rt, 'R1', 'winding-wadi', 700, { distance: 2645, x: 0, altitude: 0 });
+  assert.deepEqual(recoverCourseCar(rt, 'R1', () => true), { edgeId: 'winding-wadi', localS: 5, odometer: 1945 });
+  assert.equal(recoverCourseCar(rt, 'R1', () => false), null, 'no clear slot in 5…65 m');
+  assert.equal(rt.rejections, 0);
 });

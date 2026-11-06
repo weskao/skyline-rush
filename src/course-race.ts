@@ -7,7 +7,7 @@ import type { GateHeightBand } from './course-signed-gates.ts';
 import { rankCourseFleet, type CourseStanding } from './course-ai-standings.ts';
 
 export interface CourseHazard { readonly id: string; readonly edgeId: string; readonly localS: number;
-  readonly lateral: number; readonly radius: number; readonly safePassSide: 'left' | 'right' }
+  readonly lateral: number; readonly radius: number; readonly safePassSide: 'left' | 'right'; readonly aiPreview: number }
 export interface CourseRaceSpec {
   readonly graph: CourseGraph; readonly gateHeight: GateHeightBand;
   readonly noRoad: Readonly<Record<string, readonly (readonly [number, number])[]>>; // graph metres
@@ -88,6 +88,19 @@ export function placeCourseCar(rt: CourseRuntime, id: string, edgeId: string, lo
   copyLast(car, kinematics);
   car.finishFraction = null;
   writePose(graph, car);
+}
+
+/**
+ * §8 recovery seat for a car that fell into a flight gap or had a sweep rejected: the flight edge's recovery edge (both
+ * leave the same split node), else the start of its own ground edge, at the first slot 5…65 m in that `isClear` accepts.
+ * The odometer is the edge-start (split) odometer: a recovery never credits progress. Re-seat with `placeCourseCar`.
+ */
+export function recoverCourseCar(rt: CourseRuntime, id: string, isClear: (edgeId: string, localS: number) => boolean):
+  { edgeId: string; localS: number; odometer: number } | null {
+  const car = carOf(rt, id), current = car.travel.currentEdgeId;
+  const edgeId = edgeById(rt.spec.graph, current).mode === 'flight' ? rt.spec.recoveryEdge[current] : current;
+  for (let localS = 5; localS <= 65; localS += 5) if (isClear(edgeId, localS)) return { edgeId, localS, odometer: car.edgeStart };
+  return null;
 }
 
 // Reused per step (no allocation); the shared modules read but never retain the motion.

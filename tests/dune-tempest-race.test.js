@@ -8,8 +8,10 @@ import { routeLength } from '../src/course-route-frame.ts';
 import { RACE_TRACKS, COURSE_TRACKS, raceTrack, assertTrackMode } from '../src/race-tracks.ts';
 import { FROSTBITE_ID, FROSTBITE_TRACK } from '../src/courses/frostbite-race.ts';
 import { upcomingReadiness } from '../src/upcoming-tracks.ts';
-import { createRace, startRace, stepRace, racePosition, sprintGaps } from '../src/game.js';
-import { chooseBranchByLateral, placeCourseCar } from '../src/course-race.ts';
+import { createRace, startRace, stepRace, racePosition, sprintGaps, gapChargeWarning } from '../src/game.js';
+import { chooseBranchByLateral, createCourseRuntime, placeCourseCar } from '../src/course-race.ts';
+import * as courseStep from '../src/course-race-step.ts';
+import { chooseCourseNextEdge } from '../src/course-ai-standings.ts';
 
 const groundLength = graph.groundRoute.reduce((sum, id) => sum + routeLength(graph, id), 0);
 const AIR = 'canyon-air-crossing';
@@ -54,6 +56,7 @@ test('Dune hazards sit at physical arc length (fraction x routeLength)', () => {
     assert.equal(spec.lateral, h.lateralMeters);
     assert.equal(spec.radius, h.collisionRadiusMeters);
     assert.equal(spec.safePassSide, h.safePassSide);
+    assert.equal(spec.aiPreview, h.aiPreviewMeters);
   }
 });
 
@@ -80,22 +83,28 @@ test('registry: Dune is a gated course runtime, Frostbite unchanged, never in RA
 const PLAYER_DEADBAND = 2.5;
 const courseOf = race => { assert.ok(race.course, 'createRace attaches race.course'); return race.course; };
 const laneFor = (incoming, edge) => [0, -5, 5].find(x => chooseBranchByLateral(graph, incoming, x, PLAYER_DEADBAND) === edge);
-const pathEdges = (first, third) => ['sunset-start', 'dune-s-bends', first, 'rock-gate-descent', 'canyon-approach',
-  'canyon-switchbacks', 'stone-ring-corridor', 'sandstorm-climb', third, 'stone-ring-outlet', 'finish-sprint'];
+const pathEdges = (first, third, second = 'canyon-switchbacks') => ['sunset-start', 'dune-s-bends', first, 'rock-gate-descent',
+  'canyon-approach', second, 'stone-ring-corridor', 'sandstorm-climb', third, 'stone-ring-outlet', 'finish-sprint'];
 const PATHS = [['winding-wadi', 'natural-arch-pass'], ['winding-wadi', 'dry-wash-cut'],
   ['dune-crest-cut', 'natural-arch-pass'], ['dune-crest-cut', 'dry-wash-cut']];
 
-// Throttle + BOOST bot holding x on the side of its chosen branch before split1/split3 and centred elsewhere,
-// so split2 takes the ground route (the flight edge needs Task 6's gap physics).
-function botRace(hz, [first, third]) {
+// Throttle + BOOST bot holding x on the side of its chosen branch before split1/split2/split3 and centred elsewhere.
+// Toward the flight edge it drops BOOST on canyon-approach (the tank refills on the ground) and, on the flight edge,
+// pulses FLY with a vertical-speed P-controller holding ~2.5 m until the gap ends, then glides onto the landing pad.
+const gapEnd = () => DUNE_TEMPEST_RACE.noRoad[AIR][0][1];
+function botRace(hz, [first, third], { second = 'canyon-switchbacks', pilot = true, trace = null } = {}) {
   const race = createRace(DUNE_TEMPEST_ID), dt = 1 / hz;
   startRace(race);
   while (race.phase === 'countdown') stepRace(race, {}, dt);
   const you = courseOf(race).cars.get('YOU'), edges = [you.travel.currentEdgeId], checkpoints = [0];
-  const lane = { 'dune-s-bends': laneFor('dune-s-bends', first), 'sandstorm-climb': laneFor('sandstorm-climb', third) };
+  const lane = { 'dune-s-bends': laneFor('dune-s-bends', first), 'canyon-approach': laneFor('canyon-approach', second),
+    'sandstorm-climb': laneFor('sandstorm-climb', third) };
   for (let i = 0; race.phase === 'racing' && i < hz * 400; i++) {
-    race.player.x = lane[you.travel.currentEdgeId] ?? 0;
-    stepRace(race, { throttle: true, boost: true }, dt);
+    const edge = you.travel.currentEdgeId, air = edge === AIR, p = race.player;
+    p.x = lane[edge] ?? 0;
+    const fly = pilot && air && you.travel.localS < gapEnd() && p.verticalSpeed < Math.min(7, 3 * (2.5 - p.altitude));
+    stepRace(race, { throttle: true, boost: !(second === AIR && (edge === 'canyon-approach' || air)), fly }, dt);
+    trace?.(race, you);
     if (edges.at(-1) !== you.travel.currentEdgeId) edges.push(you.travel.currentEdgeId);
     if (checkpoints.at(-1) !== you.travel.nextCheckpoint) checkpoints.push(you.travel.nextCheckpoint);
   }
@@ -190,4 +199,168 @@ test('cars on parallel branches never contact, draft or bump; the same edge stil
   stepRace(race, {}, 1 / 60);
   assert.equal(nova.cooldown, 0);
   assert.equal(orbit.cooldown, 0);
+});
+
+// ---- Task 6: flight gap, hazards and recovery (Q1: the flight edge ships in Phase 1) ----
+const SWITCHBACKS = 'canyon-switchbacks';
+const raceAt = () => { const race = createRace(DUNE_TEMPEST_ID); race.phase = 'racing'; return race; };
+const seat = (race, car, id, edge, s, odometer, extra = {}) => {
+  Object.assign(car, { distance: odometer, x: 0, speed: 60, ...extra });
+  if (car !== race.player) car.homeX = car.x;
+  placeCourseCar(courseOf(race), id, edge, s, { distance: odometer, x: car.x, altitude: car.altitude || 0 });
+};
+
+test('no FLY on the flight edge: falls in the gap, recovered on canyon-switchbacks, never ahead of split2', () => {
+  let split2 = null, before = null, at = null;
+  const { race } = botRace(60, PATHS[0], { second: AIR, pilot: false, trace: (r, you) => {
+    if (you.travel.currentEdgeId === AIR && split2 === null) split2 = you.edgeStart;
+    if (r.player.falls === 1 && at === null) at = { ...you.travel, distance: r.player.distance, speed: r.player.speed,
+      fall: r.player.fall, elapsed: r.elapsed, score: r.player.score };
+    if (r.player.falls === 0) before = { speed: r.player.speed, nextCheckpoint: you.travel.nextCheckpoint, score: r.player.score };
+  } });
+  assert.ok(split2 !== null, 'took the flight edge');
+  assert.ok(at, 'fell once');
+  assert.equal(at.currentEdgeId, SWITCHBACKS);
+  assert.ok(at.localS >= 5 && at.localS <= 65, `recovery slot ${at.localS}`);
+  assert.equal(at.nextCheckpoint, before.nextCheckpoint, 'checkpoints unchanged');
+  assert.ok(at.distance <= split2 + 1e-9, `odometer ${at.distance} not ahead of split2 ${split2}`);
+  assert.equal(at.fall.time, at.elapsed);
+  assert.ok(Math.abs(at.speed - 0.4 * before.speed) <= 0.4 * 60 / 60, `speed ${at.speed} vs 0.4 x ${before.speed}`);
+  assert.ok(at.score <= before.score, 'no score in the recovery frame');
+  assert.equal(race.course.rejections, 0);
+  assert.equal(race.phase, 'finished', 'finishes via canyon-switchbacks after the fall');
+});
+
+// Measured with the FLY-pulse controller (no physics change) at 60 Hz: 116.653 s winding-wadi/natural-arch-pass, 113.792 s
+// winding-wadi/dry-wash-cut, 114.226 s dune-crest-cut/natural-arch-pass, 111.365 s dune-crest-cut/dry-wash-cut (30 / 120 Hz
+// within 0.07 s); lowest altitude over the gap 2.38 m, landing at localS 1057–1061 on the [983.3, 1088.3] pad, tank 100 →
+// ≥ 87 over the crossing. The air floor sits below the shortest measured air path and above one that skipped the
+// 1,088 m flight edge (~11 s); the ground paths keep BOT_MIN.
+const AIR_BOT_MIN = 100;
+test('a FLY-pulse bot crosses the gap, lands on the pad and finishes: all 8 paths, rejections 0', () => {
+  const landingTo = routeLength(graph, AIR);
+  for (const [first, third] of PATHS) for (const second of [SWITCHBACKS, AIR]) {
+    let landing = null, lowInGap = Infinity;
+    const { race, edges, checkpoints } = botRace(60, [first, third], { second, trace: (r, you) => {
+      const { currentEdgeId: edge, localS: s } = you.travel, p = r.player;
+      if (edge !== AIR) return;
+      if (s >= 60 && s < gapEnd()) lowInGap = Math.min(lowInGap, p.altitude);
+      if (landing === null && p.landing && p.landing.time === r.elapsed) landing = s;
+    } });
+    const label = `${first}/${second}/${third}`;
+    assert.equal(race.phase, 'finished', label);
+    assert.deepEqual(edges, pathEdges(first, third, second), label);
+    assert.deepEqual(checkpoints, [0, 1, 2, 3, 4], label);
+    assert.equal(race.course.rejections, 0, label);
+    assert.equal(race.player.falls, 0, label);
+    if (second === AIR) {
+      assert.ok(lowInGap >= 1, `${label}: lowest altitude over the gap ${lowInGap}`);
+      assert.ok(landing !== null && landing >= gapEnd() && landing <= landingTo, `${label}: landed at ${landing}`);
+    }
+    const min = second === AIR ? AIR_BOT_MIN : BOT_MIN;
+    assert.ok(race.result.time >= min && race.result.time <= BOT_MAX, `${label} finish ${race.result.time}s`);
+  }
+});
+
+// Review Focus 4: the frame of a recovery collects no gate, hazard or score, even with a hazard between the
+// recovery edge's start and the recovery slot (inside a naive prev→new sweep window).
+test('the recovery frame collects no gate, hazard or score sweep', () => {
+  const race = raceAt(), probe = { id: 'probe', edgeId: SWITCHBACKS, localS: 2.5, lateral: 0, radius: 2, safePassSide: 'left', aiPreview: 120 };
+  const grid = [race.player, ...race.rivals].map((car, i) => ({ id: i ? car.id : 'YOU', distance: car.distance, x: car.x }));
+  race.course = createCourseRuntime({ ...DUNE_TEMPEST_RACE, hazards: [...DUNE_TEMPEST_RACE.hazards, probe] }, grid);
+  const split2 = 6000, you = race.course.cars.get('YOU');
+  seat(race, race.player, 'YOU', AIR, 59.5, split2 + 59.5); // on the takeoff pad; this frame's 1 m step enters the gap
+  const { nextCheckpoint } = you.travel, { score, collisions } = race.player;
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.player.falls, 1);
+  assert.equal(race.player.fall.time, race.elapsed);
+  assert.deepEqual([you.travel.currentEdgeId, you.travel.localS], [SWITCHBACKS, 5], 'seated at the first clear slot, not stepped');
+  assert.equal(you.travel.nextCheckpoint, nextCheckpoint, 'no gate');
+  assert.equal(race.player.collisions, collisions, 'no hazard');
+  assert.ok(race.player.score <= score, 'no score');
+  assert.ok(race.player.distance <= split2);
+  assert.equal(race.course.rejections, 0);
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.player.collisions, collisions, 'the probe behind the slot is never swept');
+});
+
+test('a course hazard hits the player on its own edge only; rivals steer to its safe side within aiPreview', () => {
+  const rock = DUNE_TEMPEST_RACE.hazards.find(h => h.id === 'rock-b'); // winding-wadi, x = 10, r = 5, pass left
+  const sBends = routeLength(graph, 'sunset-start') + routeLength(graph, 'dune-s-bends');
+  const drive = edge => {
+    const race = raceAt();
+    seat(race, race.player, 'YOU', edge, rock.localS - 20, sBends + rock.localS - 20, { x: rock.lateral - 1 });
+    for (let i = 0; i < 40; i++) { race.player.x = rock.lateral - 1; stepRace(race, { throttle: true }, 1 / 60); }
+    return race.player;
+  };
+  const hit = drive('winding-wadi');
+  assert.equal(hit.collisions, 1);
+  assert.equal(hit.impact.kind, 'barrier');
+  assert.equal(drive('dune-crest-cut').collisions, 0, 'parallel branch: no contact');
+
+  const fall = DUNE_TEMPEST_RACE.hazards.find(h => h.id === 'fall-a'); // rock-gate-descent, x = -9, r = 4, pass right
+  const descent = sBends + routeLength(graph, 'winding-wadi');
+  const race = raceAt(), [nova] = race.rivals, novaCar = courseOf(race).cars.get(nova.id);
+  seat(race, nova, nova.id, 'rock-gate-descent', fall.localS - fall.aiPreview - 30, descent + fall.localS - fall.aiPreview - 30, { x: fall.lateral });
+  let xAtPreview = null;
+  while (novaCar.travel.localS < fall.localS) {
+    stepRace(race, {}, 1 / 60);
+    if (xAtPreview === null && fall.localS - novaCar.travel.localS <= fall.aiPreview) xAtPreview = nova.x;
+  }
+  assert.equal(xAtPreview, fall.lateral, 'holds its lane until the hazard is within aiPreview');
+  assert.ok(nova.x > fall.lateral + fall.radius, `passes on the safe (right, +x) side: x ${nova.x}`);
+  assert.equal(nova.cooldown, 0, 'not knocked');
+
+  // No room to steer: a rival seated 3 m before it in its footprint is knocked.
+  const late = raceAt(), [orbit] = late.rivals;
+  seat(late, orbit, orbit.id, 'rock-gate-descent', fall.localS - 3, descent + fall.localS - 3, { x: fall.lateral });
+  for (let i = 0; i < 10; i++) stepRace(late, {}, 1 / 60);
+  assert.ok(orbit.cooldown > 0, 'rival knocked by the hazard');
+});
+
+test('courseGapWarning: within 300 m before the gap on the lane toward the flight edge, when fuel < need', () => {
+  assert.equal(typeof courseStep.courseGapWarning, 'function', 'course-race-step exports courseGapWarning');
+  const { courseGapWarning } = courseStep;
+  const approach = routeLength(graph, 'canyon-approach'), race = raceAt(), [from] = DUNE_TEMPEST_RACE.noRoad[AIR][0];
+  const toward = laneFor('canyon-approach', AIR), split2 = 5000;
+  seat(race, race.player, 'YOU', 'canyon-approach', approach - 200, split2 - 200, { x: toward, fuel: 5 });
+  const warning = courseGapWarning(race);
+  assert.ok(warning, 'warned 260 m before the gap');
+  assert.ok(Math.abs(warning.from - (split2 + from)) < 1e-9, `gap odometer ${warning.from}`);
+  assert.ok(warning.need > 5);
+  assert.deepEqual(gapChargeWarning(race), warning, 'game.js dispatches to the graph warning');
+  race.player.fuel = warning.need + 1;
+  assert.equal(courseGapWarning(race), null, 'enough charge');
+  race.player.fuel = 5; race.player.x = 0;
+  assert.equal(courseGapWarning(race), null, 'ground lane: no gap ahead');
+  seat(race, race.player, 'YOU', 'canyon-approach', approach - 300, split2 - 300, { x: toward, fuel: 5 });
+  assert.equal(courseGapWarning(race), null, '360 m before the gap: out of range');
+  seat(race, race.player, 'YOU', AIR, 30, split2 + 30, { fuel: 5 });
+  assert.ok(courseGapWarning(race), 'on the takeoff pad');
+});
+
+test('rivals never select the flight edge at split2 (Q8 ground-only AI)', () => {
+  for (let seed = 0; seed < 200; seed++) for (let driver = 1; driver <= 7; driver++)
+    assert.notEqual(chooseCourseNextEdge(graph, 'split2', driver, false, seed), AIR, `seed ${seed} driver ${driver}`);
+});
+
+// Carried from the Task 5 review: the step bound comes from speed·dt (pace·dt for rivals), not the odometer delta,
+// so an odometer rewrite (e.g. dropCar setting `distance`) is rejected and the car is re-seated, never silently accepted.
+test('a non-physical odometer jump is rejected and the car re-seated through placeCourseCar', () => {
+  const race = raceAt(), you = courseOf(race).cars.get('YOU'), [nova] = race.rivals;
+  for (let i = 0; i < 120; i++) stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.course.rejections, 0);
+  race.player.distance += 50;
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.course.rejections, 1, 'player jump rejected');
+  assert.equal(you.travel.currentEdgeId, 'sunset-start');
+  assert.ok(you.travel.localS >= 5 && you.travel.localS <= 65, `re-seated at ${you.travel.localS}`);
+  assert.ok(Math.abs(you.edgeStart + you.travel.localS - race.player.distance) < 1e-9, 'odometer and travel agree');
+  nova.distance += 50;
+  stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.course.rejections, 2, 'rival jump rejected');
+  const novaCar = race.course.cars.get(nova.id);
+  assert.ok(Math.abs(novaCar.edgeStart + novaCar.travel.localS - nova.distance) < 1e-9);
+  for (let i = 0; i < 60; i++) stepRace(race, { throttle: true }, 1 / 60);
+  assert.equal(race.course.rejections, 2, 'both keep stepping after recovery');
 });
