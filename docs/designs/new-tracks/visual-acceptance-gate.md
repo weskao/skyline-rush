@@ -4,6 +4,14 @@
 **Branch:** `feature/epic-multiroute-longform-tracks`; source branch `develop` merged on 2026-11-02.
 **Scope:** Stage 1 [JPEG gallery](README.md) + [10 vector view references](concept-manifest.json), Stage 2 [JPEG gallery](stage-2/README.md) + [Stage 2 manifest](stage-2/concept-manifest.json). This document is a **scene direction and QA contract**, not an instruction to turn 2D concept art into a static 3D backdrop.
 
+## Stage 1 animated 3D homepage — P0 before full playable tracks
+
+**User-confirmed requirement (2026-11-03):** The five initial proposed Stage 1 Coming Soon tracks must show **real animated Three.js showrooms on the homepage**, matching existing real 3D vehicle, hover/jets, scenery depth, moving environment and camera conventions. A static JPEG hero overlay or photo plane is not acceptable. Two existing JPEG concept views per map remain **art-direction references** and compact thumbnails only.
+
+**Binding home stage:** [Animated Three.js homepage spec](../../superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) · [six GPT scene/renderer implementation prompts](../../superpowers/prompts/2026-11-03-six-chat-home-preview-implementation.md) · [TDD execution plan](../../superpowers/plans/2026-11-03-six-chat-home-preview-integration.md). Homepage showroom **does not make the full track playable**: Coming Soon selection remains preview-only with disabled bilingual Start, and no upcoming ID enters RaceFactory or the unlock/gameplay registry.
+
+**Separate acceptance:** 5 individually animated **true 3D** environments + 5 unique scene landmarks and ground/air branch designs, shared real player/rival models, single existing WebGL renderer/composer, reduced-motion/quality tier support, actual time-separated WebGL screenshots (desktop/phone) vs both JPEG views, old-track regression and exact-HEAD CI. **None of this is marked as verified solely by this document.**
+
 ## Hard constraints — BEFORE starting any new track
 
 1. **Preserve the actual reference files:** for Stage 1, consult `source-concept-jpeg/<id>/concept-view-01.jpg` (ground) and `concept-view-02.jpg` (aerial) **and** `concept-art/<id>-point-to-point-storyboard.svg` and `route-schematics/<id>.svg`; for Stage 2, consult `stage-2/source-concept-jpeg/<id>/concept-view-{01,02}.jpg`, `stage-2/route-schematics/<id>.svg`. Verify files exist at the implementation commit. No fake image paths.
