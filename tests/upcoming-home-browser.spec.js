@@ -40,6 +40,14 @@ test('all six preview cards retain their original selection flow and cannot STAR
   await expect(page.locator('#start-button span')).toHaveText('LOCKED');
 });
 
+test('the Stage 2 preview URL opens the Frostbite card as Coming Soon with Start disabled', async ({ page }) => {
+  await page.goto('/?stage2-preview=frostbite-canyon&shot=p02');
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+  await expect(page.locator('[data-upcoming-track="frostbite-canyon"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#start-button')).toBeDisabled();
+  await expect(page.locator('#start-button span')).toHaveText('COMING SOON');
+});
+
 test('CTA copy is translated without resizing its hit target', async ({ page }) => {
   await page.locator('[data-upcoming-track="dune-tempest"]').click();
   const button = page.locator('#start-button');

@@ -1,7 +1,7 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
 import { MEDALS, HISTORY_LIMIT } from './history.ts';
 import { MODE_NAMES } from './cloud-mode-bests.ts';
-import { isModeTrack } from './race-tracks.ts';
+import { COURSE_TRACKS, isModeTrack } from './race-tracks.ts';
 import { validCircuitRecord } from './circuit-records.ts';
 import type { LapTime } from './circuit-laps.ts';
 import { validStars } from './history-stats.ts';
@@ -30,9 +30,9 @@ const validInt = (v: unknown): v is number =>
 const date = (v: unknown): string | null =>
   typeof v === 'string' && Number.isFinite(Date.parse(v)) ? new Date(v).toISOString() : null;
 const track = (id: unknown): id is string =>
-  typeof id === 'string' && Object.hasOwn(RACE_TRACKS, id);
+  typeof id === 'string' && (Object.hasOwn(RACE_TRACKS, id) || Object.hasOwn(COURSE_TRACKS, id));
 // Classic bests: every id each track has had, bare through its current `<track>@<layout>` (old ids stay).
-const bestIds = Object.keys(RACE_TRACKS).flatMap(recordTrackIds);
+const bestIds = [...Object.keys(RACE_TRACKS), ...Object.keys(COURSE_TRACKS)].flatMap(recordTrackIds); // course sprints: topology-keyed
 const layoutOf = (run: RawRecord) => runLayout(run) > 1 ? { layout: runLayout(run) } : {};
 const raceFields = ['collisions', 'nearMisses', 'rings', 'perfectLines', 'nitroUses', 'longestCombo', 'score', 'fuelOuts', 'gapFalls', 'distance'] as const;
 

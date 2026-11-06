@@ -1,4 +1,4 @@
-import { RACE_TRACKS } from './race-tracks.ts';
+import { COURSE_TRACKS, RACE_TRACKS } from './race-tracks.ts';
 import { CIRCUIT_ID, CIRCUIT_TRACK } from './circuit-track.ts';
 
 // One source of truth for which ring/pickup layout a timed record was set on. A layout change makes
@@ -21,14 +21,25 @@ export function raceLayout(trackId: string, config?: unknown): number {
   return Math.max(layoutVersion(trackId), ...cup.map(layoutVersion));
 }
 
-/** Storage id for a record: bare for layout 1, `<track>@<layout>` after a layout change. */
+// CourseGraph sprints key every record by graph topology and layout, `<track>@t<topology>l<layout>`: a re-authored
+// graph or ring layout gets a fresh id, so times from another route never compete.
+function courseRecordId(trackId: unknown): string | null {
+  const course = typeof trackId === 'string' && Object.hasOwn(COURSE_TRACKS, trackId) ? COURSE_TRACKS[trackId] : null;
+  return course && `${trackId}@t${course.topologyVersion}l${course.layoutVersion ?? 1}`;
+}
+
+/** Storage id for a record: bare for layout 1, `<track>@<layout>` after a layout change; topology-keyed for course sprints. */
 export function recordTrackId(trackId: string, config?: unknown): string {
+  const course = courseRecordId(trackId);
+  if (course) return course;
   const layout = raceLayout(trackId, config);
   return layout > 1 ? `${trackId}@${layout}` : trackId;
 }
 
 /** Every record id a track has had: bare (layout 1) through its current layout. Older ones stay readable. */
 export function recordTrackIds(trackId: string): string[] {
+  const course = courseRecordId(trackId);
+  if (course) return [course];
   return Array.from({ length: layoutVersion(trackId) }, (_, i) => i ? `${trackId}@${i + 1}` : trackId);
 }
 
@@ -36,6 +47,8 @@ export function recordTrackIds(trackId: string): string[] {
 export function parseRecordTrackId(id: unknown, config?: unknown): { trackId: string; layout: number } | null {
   if (typeof id !== 'string') return null;
   const [trackId, version, ...rest] = id.split('@');
+  const course = courseRecordId(trackId);
+  if (course) return id === course ? { trackId, layout: COURSE_TRACKS[trackId].layoutVersion ?? 1 } : null;
   if (version === undefined) return trackId ? { trackId, layout: 1 } : null;
   const layout = Number(version);
   return !rest.length && trackId && layout > 1 && layout <= raceLayout(trackId, config) && String(layout) === version ? { trackId, layout } : null;
