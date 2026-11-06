@@ -4,6 +4,7 @@ import { parsePerformanceEvidence } from '../src/performance-evidence.ts';
 
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { brightness } from './helpers/frame-brightness.js';
 
 // Phase 5 real WebGL screenshot/interaction evidence. This is not an AI render
 // and software WebGL snapshots are not physical-device/thermal benchmarks.
@@ -45,6 +46,8 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
     const route = page.locator('#race-route-map svg.route-overview');
     await expect(route).toHaveCount(1);
     await expect(route.locator('[data-racer]')).toHaveCount(8);
+    // A NaN-poisoned frame is near-black; the classic courses check the same in world-tour-browser.spec.js.
+    if (viewport.width === 1440) await expect.poll(() => brightness(page), `${id} frame is not black`).toBeGreaterThan(30);
     const before = await route.evaluate(el => { window.__phase5Route = el; return el.querySelectorAll('*').length; });
     await page.waitForTimeout(1700); // Give the software-WebGL rolling sample a nonzero interval.
     expect(await route.evaluate(el => el === window.__phase5Route)).toBe(true);
