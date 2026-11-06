@@ -8,6 +8,15 @@
 - [x] Tests: `tests/stormline-megacity-race.test.js` 9/9 (RED via a stub module 7/7 failing → GREEN), `tests/access-build.test.js` (gated sprints never in the catalog, dev enterable, production not), `tests/upcoming-unlock-access.test.js`, `tests/coming-soon-release.test.js`, `tests/track-palettes.test.js` updated for the new playable/palette entry. Real WebGL `tests/stormline-megacity-race-browser.spec.js` desktop 1440×900 + phone 390×844: card → START → 4 ground stops + all 3 fork corridors → FINISH → topology-keyed save → real Retry click, no page errors, no mid-race shader compiles. Release-build guard in `tests/upcoming-home-browser.spec.js`: a stale remembered `stormline-megacity` is neither restored nor startable by Enter (GREEN; RED under a mutation opening Stormline in production).
 - [ ] Known limits: authored hazards are hidden, not collidable (the 1D engine has no matching colliders); `rivalPace` not tuned; no minimap CSS theme or `track-preview` hero entry; gamepad input does not exist in the game (no bypass path); `firestore.rules` deploy + `npm run test:cloud`, real-device performance and human visual sign-off pending.
 
+## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
+
+- **Branch CI:** `feature/playable-frostbite-canyon` `fb0b8564`, run `42195029806` — every job green. **PASS**
+- **Epic merge:** `9f6ba4be` = `git merge --no-ff origin/feature/playable-frostbite-canyon` `[full-regression]` into `feature/epic-multiroute-longform-tracks`; local `npm test` + `npm run build` green before push. **PASS**
+- **Epic exact-HEAD full CI:** run `42207155521` on `9f6ba4be` — 22 success, 4 skipped (path-gated), 0 failed, `quality-gate` success. **PASS**
+- **Other `playable-*` handoff docs merged into epic** (docs-only, `--no-ff`; `TODO.md` conflicts resolved keep-both, 0 lines dropped): `a08cd5cb` dune-tempest, `560020bc` monsoon-ruins, `0f566f38` skyfall-archipelago, `28acdd85` stormline-megacity, `036a6c52` volcanic-crown. Local `npm test` 1962 pass / 0 fail / 3 skipped, `npm run build` green. **PASS**
+- **Real WebGL / human visual sign-off of the Frostbite race on epic:** not re-run after the merge (branch evidence above in this file). **NOT VERIFIED**
+- **Real-device performance, `firestore.rules` deploy + `npm run test:cloud`:** unchanged from the Frostbite pending list below. **NOT VERIFIED**
+
 ## Stage 2 Track 06 — Frostbite Canyon graph, gated live preview and cover — 2026-11-03
 
 **Branch:** `feature/playable-frostbite-canyon`, created from `feature/epic-multiroute-longform-tracks` `a47c9cae`.
@@ -103,6 +112,18 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
 **8 actual files:** `mission-race@3x.webp`, `mission-time@3x.webp`, `mission-drift@3x.webp`, `mission-combo@3x.webp`, `trophy-bronze@3x.webp`, `trophy-silver@3x.webp`, `trophy-gold@3x.webp`, `trophy-platinum@3x.webp` (all **288×288 physical pixels**; set **96×96 CSS px** on use, e.g. `<img width="96" height="96">` plus `width:96px;height:96px;object-fit:contain`). Use `import.meta.env.BASE_URL` when copying approved assets into `public/feature-assets/garage-rewards-and-missions/raster/` to ensure GitHub Pages subpath support. Do **not** resize the original images to 1×: only the rendered CSS box is 1×. The PNG originals/source archive remain in ChatGPT File Library, not the Git branch.
 
 **Next implementer's mandatory sequence:** (1) Sync latest `develop` only when branch dependencies/gates permit (never treat historical `main` instructions as the current integration target); (2) inspect the actual 8 WebPs and existing icons, reject glow halos / baked fake balances / illegible cutouts and select only suitable files; (3) fetch `origin/feature/3x-ui-materials` and copy approved Git blobs from `docs/designs/3x-asset-library/webp/garage-rewards-and-missions/` to runtime public path; (4) write RED BDD/tests for 1× layout, missing-image text fallback, en/zh-TW, verified-only rewards (no fake/pending payout), account isolation and retry idempotency; (5) implement Vue 3/TS at 96 CSS px and verify build/CI/WebGL and accessibility. Image existence does **not** approve settlement, create credits, make missions functional, or satisfy the rest of Wave 3.
+## 2026-11-04 — Skyfall browser CI regression (#41803628752)
+
+- [x] RED (remote exact-HEAD `ec89c654`): Browser shard 4 failed the mobile upcoming-track swipe because the pointer-down position hits the visible intro instead of the WebGL canvas; shard 9 tried to select an option on the deliberately hidden native locale select. Quality Gate failed as a consequence.
+- [ ] GREEN: confirm the canvas-hit assertion and upcoming swipe test, plus the shared visible-language-picker helper and CTA localization test, on the changed HEAD in real Playwright.
+- [ ] Complete `make verify`, inspect mobile interaction, and require exact-HEAD full `quality-gate` PASS before merge. No manual-device acceptance claimed.
+
+## 2026-11-04 — Playable Volcanic Crown scoped sweep validation (feature branch only)
+
+- [x] Source `679dd6b8` exact-HEAD FULL CI gate checked: Browser/World Tour failures or pending => **no merge into Volcanic**.
+- [x] TDD test committed first (`d8018084`) for endpoint tunneling, timed rockfall and 30/60/120 Hz; missing API confirmed by source inspection. **Runtime RED log still pending**.
+- [ ] Verify `volcanicObstacleSweptContact` against its new test with runtime RED→GREEN evidence and run `npm test`, typecheck, build, `make verify`.
+- [ ] Verify final exact-HEAD full CI (including Browser/World Tour/Quality Gate), actual WebGL desktop/mobile frames and shared runtime integration. Keep Volcanic `COMING SOON` until all gameplay and visual gates pass.
 ## Vehicle movement jitter and drift yaw — 2026-11-04
 
 **Branch:** `fix/vehicle-motion-jitter` (from `develop` b05ff1fa). Player-visible issue: left/right movement stutters at variable render rates, especially NITRO/FLY/takeoff/landing; initiating/releasing drift snaps the visual yaw 25°.
@@ -379,6 +400,23 @@ Data access is enforced by `firestore.rules` (owner-only `get`/`delete`, no `lis
 - [ ] API key still restricted (no restriction removed during debugging); no new keys or secrets in the diff.
 - [ ] Any new Firestore collection ships with owner-only rules, write validation and a rules test.
 - [ ] No high/critical `npm audit` advisories in production dependencies.
+## Monsoon Ruins full-course module — 2026-11-03
+
+Branch: `feature/playable-monsoon-ruins`; integration owner: `feature/epic-multiroute-longform-tracks`. Source references: two real Monsoon JPEGs, route SVG and visual acceptance gate. Separate start/finish; homepage remains Coming Soon.
+
+- [x] Read AGENTS/CLAUDE, regression-first rules, World Tour, vehicle contact, showcase and CI guidance. Inspect both concept JPEGs and route schematic.
+- [x] Add map-specific 12.5 km geometry and three genuine ground/air route edges, terrain/props, mutable weather visuals, surface hints, physical arc-length edge samples, checkpoints and recovery helpers.
+- [x] Add focused route/obstacle/scene tests before and during implementation. The first RED Actions runs were cancelled by branch concurrency; **RED execution evidence remains pending**.
+- [x] Keep shared Registry/World/Game/AI/HUD untouched; keep Coming Soon and no PR/merge/deploy.
+- [ ] Focused `node --test tests/monsoon-ruins-*.test.js` observed GREEN for exact HEAD.
+- [ ] `npm test`, `npm run typecheck`, `npm run build`, browser + World Tour + `make verify` observed GREEN; record actual output.
+- [ ] Exact-HEAD **full** GitHub Actions `quality-gate` passed (focused feature CI is insufficient).
+- [ ] Integration branch: signed world-space gate crossings, physically consistent road/car/AI/props, start/finish and 8-car full-play races.
+- [ ] Repeatable actual WebGL screenshots: guardian temple, two hairpins, river valley, waterfall, airborne stone bridge, visible solid obstacles at desktop 1440×900 and phone 390×844.
+- [ ] Visual comparison against both JPEGs: six acceptance categories, Low/Medium/High, Reduced Motion, mobile/desktop visibility and GPU cleanup; measured 3–5-minute target.
+- [ ] Explicit human visual and device acceptance.
+
+Integration contract and precise pending gates: `docs/designs/new-tracks/monsoon-ruins-playable-handoff.md`.
 
 ---
 
@@ -3624,6 +3662,124 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Exact-HEAD FULL GitHub Actions must run all 13 Browser, all five World Tour, Unit/Typecheck/Build, cloud-save and quality-gate, not merely Focused PASS; capture job logs and fix any regressions.
 - [ ] Wire the new helpers into the authoritative existing `game.js` / RaceFactory / `world.js` runtime with trusted physics world poses, route-aware AI steering, signed gates, 3D colliders, actual recovery and results; preserve legacy gameplay.
 - [ ] 5 source branches remain read-only candidates pending their own exact-HEAD FULL CI, 3–5 minute / 8-car tests, 30/60/120 FPS, Reduced Motion, GPU disposal and real mobile/desktop WebGL versus both concept JPEGs. Coming Soon stays enabled.
+### Dune Tempest gate geometry — 2026-11-04
+- [x] Map-owned directional crossing check with semantic RED→GREEN (4/4 isolated focused assertions), wrong edge/reverse/oblique/high-altitude/teleport rejection and standalone strict typecheck.
+- [ ] Connect ordered crossing progression through shared CourseGraph runtime with per-car edge/localS and valid movement substeps; prove aerial/landing/recovery in real game.
+- [ ] Complete 8-car, 3–5 minute, 30/60/120 Hz, Low/Medium/High/Reduced Motion and streaming/disposal acceptance with actual desktop/mobile WebGL captures.
+- [ ] Complete local npm test/typecheck/build/make verify plus full exact-HEAD CI; historical focused results are not equivalent to all Browser/World Tour shards.
+
+### Dune Tempest playable course — 2026-11-04 additional TDD / code checkpoint
+- [x] Export the original 12 nodes/14 edges/11 main edges, three independent splits and all four checkpoints through `DUNE_TEMPEST_GRAPH` in the shared CourseGraph field contract; keep Stage 1 Coming Soon protection.
+- [x] Map-owned geometry from *injected shared arc-length frames*: seam-safe ground road/shoulder mesh, deterministic dune mesh, flight takeoff/landing pads with no fake bridge, footprint-aware hazard positions, bounded weather budgets.
+- [x] Native Three.js chunk factory with real native terrain, hazard footprints, giant stone arches, deterministic dust, Low/Medium/High geometry budgets, Reduced Motion updates and explicit GPU resource disposal; **factory exists but not yet connected to the playable game runtime**.
+- [x] Map-owned 120 m AI avoidance/braking hints, off-road warning/recovery candidate (shared collision must validate), directional gates and landing envelope metadata.
+- [x] Local isolated TDD evidence: 14/14 graph/geometry/safety assertions passed after observed semantic RED runs; standalone strict TypeScript 5.8.3 passed for three pure helpers, Three.js chunk syntax parsed. Do not confuse isolated tests with whole-project verification.
+- [ ] Shared integration of `sampleRoute`, `advanceSignedGate`, eight-car fleet/AI, flight physics, terrain/obstacle collision, safe recovery, standing, results, records and UI into the existing `game.js`, `world.js`, RaceFactory.
+- [ ] Actual drivable road/landing and 3–5-minute full-race trials with 30/60/120 FPS, mobile/desktop WebGL screenshots vs two concept JPEGs, real draw-call/triangle/p50-p95 frame measurements, and disposal/context restoration.
+- [ ] Exact-final-HEAD FULL CI success including Browser/World Tour shards and Cloud-save; local full `npm test`, typecheck, build, `make verify` still unavailable without a repository clone and Node modules.
+
+## Monsoon Ruins — map-only physical consistency (2026-11-04)
+
+- [x] Add deterministic regression tests for diagonal swept obstacle contact and ford water/contact surface consistency. Initial RED reproduced against exact prior function / fixed old 0.06 m water plane; GitHub test-only commit `ecadc8cb95ef2d4e76c2bdb915d5324fa3bb14bb`.
+- [x] Implement map-only closest-point swept obstacle contact and ford mesh water height driven by `monsoonWetContact`. Preserve the existing river-ford arc-length fix and all route-edge contracts.
+- [ ] Confirm both new tests and all existing suites on exact final HEAD; full browser/World Tour must execute, not skip.
+- [ ] Capture six real WebGL ground/ford/temple/falls/skybridge/landing views at desktop and phone sizes; inspect both original concept JPEGs.
+- [ ] Complete shared CourseGraph player/rival/AI integration, physical landing/recovery and checkpoint controller, measured 8-car 3–5-minute runs, and 30/60/120 FPS device evidence in read-only integration owner. Do not unlock Coming Soon from this branch.
+
+## Monsoon Ruins — continued TDD (2026-11-04)
+
+- [x] Reproduce RED for fixed-per-chunk foliage/rain density (100m+150m costs 2× a 250m chunk), and ~20m landmark viaduct offset; add deterministic scene regression tests and map-local fixes. Remote tests on final HEAD are still required.
+- [x] Address existing 844×390 Start long-label regression in this branch without changing button dimensions; reuse existing Browser regression spec and preserve Coming Soon locking. RED: FULL CI run 41793715525 browser shard 1.
+- [ ] Confirm latest exact-HEAD full Browser/World Tour/Unit/Cloud/Quality Gate; verify responsive layout gate and real WebGL screenshots (desktop + mobile) before marking either change visually accepted.
+
+## Monsoon Ruins — terrain height/contact parity (2026-11-04)
+
+- [x] RED source inspection: guardian temple base 11.14 m below raised terrain, waterfall basin 12.80 m below, representative forest tree roots 8.72 m below authored ground. Introduce a map-owned deterministic height sampler, reuse it for mesh vertices and prop placement, add scene tests.
+- [ ] Run exact-HEAD unit/Typecheck/build, WebGL visuals for elevated valley and real landing, complete shared-course integration and 8-car race evidence before marking terrain contacts physically accepted.
+
+## Monsoon Ruins — wet-ground and valley seam regression (2026-11-04)
+
+- [x] TDD RED: at 2 m sampling across 2900/4900 m the valley terrain jumps ~16m; six ground wet-zone endpoints jump 0.055m water depth. Keep the same authored plateau/depth values but apply smooth entry/exit ramps using the common terrain/contact APIs.
+- [ ] Verify new seam and contact tests, full Unit/Browser/World Tour/Quality Gate at exact final HEAD. Capture real rendered Ford and valley screenshots; no visual acceptance until actual WebGL evidence exists.
+
+---
+
+## 2026-11-04 — Skyfall playable map-owned streaming / contact
+
+**Only writable branch:** `feature/playable-skyfall-archipelago`. The shared source `feature/epic-multiroute-longform-tracks` at `679dd6b8` had Browser and World Tour failures and no exact-HEAD green FULL gate at inspection. **No merge or map activation.**
+
+- [x] Add deterministic road-contact boundary regression for all ten edges (`dbcf8f35`); extracted original function produced RED for negative progress.
+- [x] Reject non-finite, before-start and after-end arc-length contact without synthesizing road outside an edge (`1f7702a8`). Eight extracted-function boundary cases produced GREEN, **not** full repository verification.
+- [x] Author world regression assertions for all-edge streamed scene, eight simultaneous car foci, geometry release and deterministic Reduced Motion waterfall (`822c9076`).
+- [x] Implement map-owned 420 m, disposable per-edge road/island/obstacle rendering with `setFocus([{ edgeId, localS }, ...])`, junction lookahead, deterministic island placement, bounded cloud ocean and waterfall animation (`c5b5836`). **Not yet wired to shared runtime.**
+- [x] Update `docs/designs/new-tracks/skyfall-playable-handoff.md` with the new API and honest pending gates.
+- [ ] Confirm exact-HEAD `npm run typecheck`, `npm test`, `npm run build`, `npm run test:layout`, Playwright and `make verify`. Full remote CI requested with this documentation commit; results are pending and may include pre-existing non-Skyfall Browser / World Tour failures.
+- [ ] Integrate shared CourseGraph simulation, signed ordered checkpoint crossing, physical flight/landing/recovery, 8-car edge/altitude-aware AI and actual player/camera/rival focus updates. Preserve legacy races and disabled Coming Soon start.
+- [ ] Record actual desktop 1440×900 and mobile 390×844 ground and flight WebGL screenshots against both JPEGs, quality-tier/Reduced Motion checks, GPU cleanup and performance evidence. No art similarity or gameplay acceptance claimed before evidence.
+
+- [x] **2026-11-04 Skyfall follow-up:** Test-first join streaming assertion `6d0b9535` for next/previous branch visibility at 300 m from a split/merge; request produced queued CI run `41793013459`, with RED execution **not yet observed** at the time of the correction.
+- [x] Expand map-owned `.setFocus()` split/merge prefetch threshold from 210 m to the full 420 m chunk; preserve current per-edge 420 m chunks, quality tiers and disconnected flight gaps. Do not count code change as tested.
+- [ ] Verify final-head `npm test`, typecheck, production build and mandatory FULL Browser / World Tour CI, including the new regression; run local `make verify` and obtain real desktop/mobile WebGL/30/60/120 FPS/8-car evidence before map acceptance.
+- [ ] Skyfall source concept JPEGs inspected: bottom sections include unrelated adjacent-course imagery; match only Skyfall content in upper sections and do not claim any real-WebGL screenshot comparison yet.
+
+- [x] Add 3D road-frame-aligned Skyfall landing guide strips on physically supported pavement after each air gap; never create road mesh in the gap. Guide geometry/material are chunk-owned and disposed on unload. Tests authored before code (`d9ef292c`, `6d4a61a2`); **RED outcome not observed** due to queued Actions.
+- [ ] Verify guide visibility, non-occlusion and contact parity in genuine 1440×900 and 390×844 WebGL screenshots for all three split/merge pairs; confirm quality tiers and reduced-motion on real hardware.
+
+## 2026-11-04 — Skyfall continued map-owned implementation (exact HEAD evidence pending)
+
+- [x] **Branch only:** `feature/playable-skyfall-archipelago`; integration `feature/epic-multiroute-longform-tracks` remains read-only. No PR, deployment, release activation, reset or force push.
+- [x] `6d0b9535` stream-join test → `6b8febf9` map-only full-420m split/merge prefetch; RED execution not observed because Actions cancelled old runs. Unit tests later passed at HEAD `74aa6c91` (run 41793905332), but that FULL run was subsequently cancelled.
+- [x] `d9ef292c` landing marking test → `74aa6c91` supported-ground luminous landing strips, chunk-owned and disposable. Does not create road in flight-only gaps or fake contact.
+- [x] **CI symptom reproduced:** run 41793905332 Browser shard 5 failed `tests/start-button-label-browser.spec.js` at en-US 320×640 (`label.clipped === true`), while 73 other shard tests passed. `3d0b0c22` overrides earlier `white-space:nowrap` with `white-space:normal` on the existing two-line Start label style. GREEN browser evidence for this correction remains pending.
+- [x] `4b4f3d80` test first: require all ground/air graph-join tangents within 48°. Source geometry arithmetic revealed ~69.4° at `a-air -> midway-one`. `c550ee77` adjusts the final aerial control point; independently calculated new heading discontinuity ~5.3°. Real race steering/landing remains unverified.
+- [x] `f634799b` test first: low-tier island terrace below rendered road. `f904ab05` aligns inverted hanging rock's wide top with the grass terrace ~10m below the actual sampled road rather than covering it.
+- [x] `4fb4baff` test first: four ordered 3D checkpoint markers on all quality tiers. `4164b960` adds non-collision overhead rings to existing Skyfall scene. **Visual markers do not implement signed checkpoint crossing, collision, AI or recovery.**
+- [ ] Observe actual RED→GREEN logs for new regression cases (test-only workflow runs were cancelled by later commits), final-HEAD `npm test`, typecheck, build, `make verify`, Browser/World Tour shards all running and FULL `quality-gate` green. Never equate CI workflow success with FULL when any required shard is skipped.
+- [ ] Capture actual 1440×900 and 390×844 WebGL screenshots at ground, split, flight gap, landing and checkpoints; compare both verified JPEGs excluding the lower unrelated-map strips, and record quality-tier/Reduced Motion/FPS/draw-call/p50/p95 evidence. No genuine captures recorded here.
+- [ ] Shared-system integration blocker: canonical CourseGraph runtime, signed gates, physics/altitude collision, eight graph-aware AI rivals, player/camera/rival streaming focus, safe recovery, 20 completed 3–5-minute race timing samples and explicit rollout approval. Integration source latest run 41795278514 was focused (Browser and World Tour skipped), so it is not source exact-HEAD FULL CI accepted for merge. Keep Coming Soon until accepted.
+
+## 2026-11-04 — Volcanic Crown lateral swept collision follow-up
+
+- [x] RED test committed first at `1fdee9c902bebd9b134c8f652814d616613ddac3` (`tests/playable-volcanic-crown-sweep.test.js`), covering a one-frame lateral crossing of `crack-01` at 30/60/120 Hz and unrelated-edge exclusion.
+- [x] Isolated unmodified production sweep with an equivalent fissure contact shape; at 60 and 120 Hz, endpoint-only sampling returned no hit (RED). **This is not an npm/CI test run.**
+- [x] Change the map-local swept contact sampling density to use total route-frame displacement in metres plus the existing 60-Hz time bound. No changes to the shared damage/physics engine, Coming Soon, or other branches.
+- [ ] Observe RED on test-only GitHub run 41793046568 (queued when inspected); distinguish that evidence from the isolated reproduction.
+- [ ] Verify final code HEAD: `npm test`, typecheck, build, full Browser/World Tour, `make verify`, full CI and real desktop/mobile WebGL.
+- [ ] Compare actual WebGL with the original volcanic ground/air JPEGs; note the original JPEGs themselves show a narrow lower strip of unrelated adjoining artwork, which must NOT become terrain/track content.
+- [ ] Shared CourseGraph/Race runtime and 8-car playable integration, 20 measured races and phone GPU/FPS evidence remain owned by later integration gates.
+
+## 2026-11-04 — Volcanic Crown shared route-mode compatibility
+- [x] Added test first: `vent-risk` has a physical basalt road and must use canonical `ground` mode; `CourseGraph` accepts only `ground | flight`. Initial test-only SHA `7c115982492242902b65d07ab289a48b43e20ee1`.
+- [x] Isolated data-contract RED observed: authored `vent-risk` mode was `risk`; expected `ground`. **GitHub unit RED pending; this was not `npm test`.**
+- [x] Retain the same alternate edge ID, control points, road mesh, hazardous fissure and split/rejoin. Rename only the semantic mode to `ground` and keep distinct geometry assertion in the existing topology test.
+- [ ] Exact-final-HEAD full regression, browser/World Tour, physical road drive and shared CourseGraph adapter remain separate gates.
+
+## 2026-11-04 — Volcanic Crown visible launch / landing pads
+- [x] Added test first at `6d951b7feac130ac99a14c8d97b316e745b86dcf` for ground-truth pad position and permanent emissive edge markings on two flight alternatives × Low/Medium/High with Reduced Motion.
+- [x] Added a restrained emissive basalt landing material and two geometry-based cyan edge strips per pad; all are oriented by `sampleVolcanicRoute` world frame and disposable with their chunk. No second renderer, loop or visual-only physics pose.
+- [ ] Observed `npm test` RED/GREEN, exact final-HEAD FULL CI, desktop/mobile rendered WebGL review, GPU/draw-call budgets and game landing acceptance remain required. The structural no-marking check was RED, but is not equivalent to a full test execution.
+
+
+## 2026-11-04 — Volcanic Crown map-owned completion ledger (only feature/playable-volcanic-crown)
+
+- [x] TDD-first sloped obstacle regression tests, then fix shared world-frame disc contact and warning orientation: implementation `23b4596b`. Isolated original/corrected contact functions reproduced RED/GREEN on matching sloped-plane stubs; **not an npm suite run**.
+- [x] TDD-first Low/Medium physical road mesh deviation test, then selective >=24-row tessellation on ground-2/ground-6 hairpins: `756cf21b`. Independent sampling measured original Low worst ~0.979 m and proposed 24-row ~0.256 m; real WebGL tire contact remains unverified.
+- [x] TDD-first flight-rejoin tangent test; adjust only penultimate flight control points `6bf01fb1` without damaging mainline hairpins or checkpoints.
+- [x] TDD-first canonical CourseGraph data contract export `f90ec9c8`; shared runtime continues to own motion/physics/checkpoint authority.
+- [x] TDD-first AI collision warning/passing corridor descriptors `1029e5e9`; same obstacle pose source, no parallel eight-car engine.
+- [x] TDD-first lava UV continuity test `adc8aab8`; UVs now follow absolute route arc-length across neighboring 240 m chunks.
+- [x] TDD-first directional checkpoint/finish frame metadata `c8365ac0`; no separate finish controller.
+- [x] TDD-first active-vent visual/collision parity `096628cb`; inactive mesh hidden, warning ring still visible.
+- [x] TDD-first Low/Medium/High light-intensity persistence `9b276419`; Reduced Motion stops pulsing without removing visibility.
+- [x] Fresh isolated source-geometry review at `9b27641951c880e083bba3d669156336720467c0`: ~15,964.2 m authored main ground route, 10 ground edges + three alternative edges, 12 authored obstacles with no range/road-width validation violations, flight landing approaches ~0.50° and ~0.096° to ground continuation. This is **NOT actual driving, Typecheck, WebGL or full CI**.
+- [ ] Observe test-only GitHub RED job outputs; commits were superseded/cancelled as the active branch progressed, so these must not be described as witnessed npm RED.
+- [ ] Run focused `node --test tests/playable-volcanic-crown*.test.js`, `npm test`, `npm run typecheck`, `npm run build`, `make verify` against exact final HEAD, record all logs and repair any real failures.
+- [ ] Require exact-HEAD FULL CI with every relevant Unit, Cloud Save, Browser (all shards), World Tour (all shards), and Quality Gate result confirmed PASS. Workflow-level Success with Browser/World Tour skipped does not qualify.
+- [ ] Produce real 1440×900 desktop and 390×844 mobile WebGL captures in a real race across ground, both hairpins, crater, arch, lava gorge, timed rockfall, flight and landing; compare against both original JPEG references, not source-art fragments.
+- [ ] Verify actual 8-car shared CourseGraph/RaceFactory integration, sweeps/landings, signed forward checkpoint gates, recovery, results and 20+ complete races with measured median 3–5 minutes; this requires the **read-only** `feature/epic-multiroute-longform-tracks` integration owner's work. Do not register the course for play or remove Coming Soon on this map branch.
+- [ ] Measure 30/60/120 Hz full simulation contact outcomes, Low/Medium/High and Reduced Motion real-GPU p50/p95, bounded particle/draw-call budgets, resource disposal, and physical road/body clearance on mobile.
+- [ ] No PR, deployment, changes to develop/main/integration/siblings, reset or force push.
+
 ## 2026-11-04 — Preview-only Coming Soon fail-closed access (Frostbite working branch)
 
 - [x] Add explicit default-preview readiness to the shared Coming Soon catalog. Only approved `playable` cards with real race runtime can START under `make dev-unlocked`; concept-only or development cards never can, even with an accidental runtime registration. Frostbite remains dev-only; all production Coming Soon cards remain disabled.
@@ -3687,3 +3843,19 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Run `npm test`, `npm run build`, `make verify`; inspect the latest **exact-HEAD FULL** GitHub CI (all required Browser/World Tour shards, Unit/Typecheck/Build, Cloud-save, Quality Gate). Fix real failures and preserve existing behavior.
 - [ ] Capture real desktop/mobile WebGL frames for all six preview courses, AIRFLOW ON/OFF, camera views, touch swipe and Garage/Studio. Measure actual road/wheel contact, visual parity, Reduced Motion, frame timing and GPU disposal; these are not proved by UI tests.
 - [ ] Separately connect actual six-course CourseGraph physics, branching, flight/landing, 8-car AI, collision, checkpoints, recovery, results/ghost and start/finish. UI/template parity does **not** authorize race registration or remove Coming Soon.
+### Dune Tempest canyon-floor TDD (2026-11-05)
+- [x] RED (2/3 expected assertions fail on stub) → GREEN (3/3 pass) locally with Node 22 type stripping; standalone strict TypeScript passes for the pure chasm mesh builder.
+- [x] Connect a deterministic, seam-safe native canyon-floor mesh to flight-edge visual chunk without creating a solid flying road. GPU geometry/material disposal remains in existing chunk lifecycle.
+- [ ] Real WebGL screenshots, app runtime/flight/collision integration, full project verify and exact-final-HEAD FULL CI still required. This is visual geometry only, not approved terrain contact.
+
+### Dune merge2 road continuity — 2026-11-05
+- [x] Found a 144-degree main-branch tangent reversal at merge2. Map-owned TDD: isolated merge tangent test observed semantic RED then GREEN; widen the canyon hairpin and align exit with stone-ring-corridor. Checkpoint order and 3 branch topology unchanged.
+- [ ] Verify real shared-arc-length road mesh, vehicle and 8-car transitions with the map selected in playable runtime. Latest exact-HEAD FULL CI / screenshots still pending; isolated control-point math is not a real driving run.
+- [x] Adjust stone-ring-corridor first approach control so both canyon ground and aerial landing branches meet merge2 within 40°; isolated numeric RED→GREEN observed for previous 64° aerial join.
+- [ ] Measure actual landing grip/clearance, physical flight, FPS and render parity in shared runtime; no real race proof from geometric contract tests.
+
+## Monsoon Ruins — road shoulder / water contact continuity (2026-11-05)
+
+- [x] RED reproduced from `monsoonTerrainOffset` at 8 distances and both roadside boundaries (7–55 cm height mismatch) and the original scene's dry-section puddle placement.
+- [x] New deterministic road-shoulder and puddle/physics tests. Terrain's first column now equals the +0.07 m road lift; puddle locations and elevations derive from `monsoonWetContact`.
+- [ ] Run `npm test`, `npm run typecheck`, `npm run build`, `make verify`, real WebGL desktop/mobile captures and exact-HEAD FULL CI. User-visible scene clearance and performance not accepted until direct evidence exists.
