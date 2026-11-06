@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, RACE_TRACKS, ROAD_LIMIT, ITEMS_PER_CAR, stepRace, startRace, setLayoutSeed } from '../src/game.js';
 import { rivalCollects, rivalSeek } from '../src/rival-items.ts';
-import { RING_POOL_CAPACITY } from '../src/effects.js';
+import { Scene } from 'three';
+import { RING_POOL_CAPACITY, createEffects } from '../src/effects.js';
+import { drawnMarkers } from '../src/marker-pool.js';
 import { TRAIN_SPACING } from '../src/ring-layout.ts';
 
 // User, 2026-11-02: a few ring slots become trains (consecutive rings on the road or in the air) or a full-width row
@@ -10,7 +12,7 @@ import { TRAIN_SPACING } from '../src/ring-layout.ts';
 // "too many, too bunched".
 // User, 2026-11-03: more rings and pickups (a medium step), most of the new rings as trains on the road down a middle
 // lane (x -2.5 / 2.5), so driving straight collects ring after ring; still no walls and no dense scatter.
-const MID_LANES = [-2.5, 2.5];
+const MID_LANES = [-2.5, 2.5], ROW_LANES = [-7.5, -2.5, 2.5, 7.5];
 const rowsOf = rings => {
   const rows = new Map();
   for (const ring of rings) if (ring.row) rows.set(ring.distance, [...(rows.get(ring.distance) ?? []), ring]);
@@ -53,7 +55,8 @@ test('a train is consecutive rings down one lane, its own PERFECT LINE group, cl
   for (const [id, race] of RACES) {
     for (const train of trainsOf(race.rings)) {
       assert.equal(train.length, 6, id);
-      assert.ok(MID_LANES.includes(train[0].x), `${id} train @${train[0].distance} on lane x ${train[0].x}`);
+      // User, 2026-11-07: a track train runs down any lane; Endless keeps its middle-lane train.
+      assert.ok((race.mode === 'endless' ? MID_LANES : ROW_LANES).includes(train[0].x), `${id} train @${train[0].distance} on lane x ${train[0].x}`);
       assert.ok(train.every((r, i) => r.x === train[0].x && r.altitude === train[0].altitude && r.groupSize === 6 &&
         r.distance === train[0].distance + i * TRAIN_SPACING), `${id} train @${train[0].distance}`);
     }
@@ -146,5 +149,24 @@ test('the ring pool draws every ring of one colour in the densest 900 m view', (
       for (const r of rings) if (r.distance > from.distance && r.distance <= from.distance + 900) counts[r.type] = (counts[r.type] ?? 0) + 1;
       for (const [type, n] of Object.entries(counts)) assert.ok(n <= RING_POOL_CAPACITY, `${id} ${JSON.stringify(config)} ${type}: ${n}`);
     }
+  }
+});
+
+test('every ring ahead of a full-width row is drawn where it scores, headless', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene(), effects = createEffects(scene, () => 0);
+  t.after(() => effects.dispose());
+  const group = scene.getObjectByName('Race rings');
+  for (const id of Object.keys(RACE_TRACKS)) {
+    const race = createRace(id);
+    const row = rowsOf(race.rings)[0];
+    if (!row) continue;
+    race.phase = 'racing';
+    race.player.distance = row[0].distance - 60;
+    effects.update(race, 1 / 60, 0, false, true);
+    const d = race.player.distance, ahead = race.rings.filter(r => !r.hit && !(r.downUntil > race.elapsed) && r.distance > d && r.distance <= d + 900);
+    assert.ok(ahead.filter(r => r.row).length >= 4, `${id}: the full-width row is ahead`);
+    assert.equal(drawnMarkers(group).length, ahead.length, `${id}: every ring ahead is drawn`);
   }
 });

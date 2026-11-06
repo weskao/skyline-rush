@@ -8,7 +8,7 @@ export const ITEM_RESPAWN = 2.5; // s
 // User 2026-11-07: rivals start without NITRO and take as many items as they reach, like the player. The per-race
 // take caps (Easy 2 / Normal 4 / Hard 6 since 2026-11-03) are gone: skill, not a cap, sets the difficulty.
 
-interface Collectible { distance: number; x: number; altitude: number; downUntil?: number }
+interface Collectible { distance: number; x: number; altitude: number; downUntil?: number; catchUp?: boolean }
 interface PickupItem extends Collectible { tier: string }
 interface RingItem extends Collectible { type: string; radius: number; row?: boolean }
 /** What the renderer shows when a rival collects (`effects.js`). */
@@ -42,12 +42,12 @@ function take(race: CollectRace, rival: RivalCollector, item: Collectible, amoun
 export function rivalCollects(race: CollectRace, rival: RivalCollector, before: number): void {
   const altitude = rival.altitude || 0;
   for (let i = firstAfter(race.pickups, before); i < race.pickups.length && race.pickups[i]!.distance <= rival.distance; i++) {
-    const p = race.pickups[i]!, amount = p.tier === 'overcharge' ? 0 : NITRO_PICKUPS[p.tier] ?? 0;
+    const p = race.pickups[i]!, amount = p.tier === 'overcharge' || p.catchUp ? 0 : NITRO_PICKUPS[p.tier] ?? 0; // catch-up items are the player's
     if (amount && !gone(p, race.elapsed) && Math.abs(p.x - rival.x) < 1.7 && Math.abs(p.altitude - altitude) < 1.8) take(race, rival, p, amount, p.tier);
   }
   let rowTaken = NaN; // a full-width ring row pays once per car
   for (let i = firstAfter(race.rings, before); i < race.rings.length && race.rings[i]!.distance <= rival.distance; i++) {
-    const r = race.rings[i]!, amount = RING_NITRO[r.type] ?? 0;
+    const r = race.rings[i]!, amount = r.catchUp ? 0 : RING_NITRO[r.type] ?? 0;
     if (amount && !gone(r, race.elapsed) && !(r.row && r.distance === rowTaken) && Math.hypot(r.x - rival.x, r.altitude - altitude) < r.radius) {
       take(race, rival, r, amount, r.type);
       if (r.row) rowTaken = r.distance;
@@ -79,7 +79,7 @@ type Seeker = RivalCollector & { seekX?: number };
 function nextWanted<T extends Collectible>(items: readonly T[], rival: Seeker, now: number, seek: { ahead: number; reach: number }, wanted: (item: T, altitude: number) => boolean): T | undefined {
   const altitude = rival.altitude || 0;
   for (let i = firstAfter(items, rival.distance); i < items.length && items[i]!.distance <= rival.distance + seek.ahead; i++) {
-    if (!gone(items[i]!, now) && Math.abs(items[i]!.x - rival.x) <= seek.reach && wanted(items[i]!, altitude)) return items[i];
+    if (!gone(items[i]!, now) && !items[i]!.catchUp && Math.abs(items[i]!.x - rival.x) <= seek.reach && wanted(items[i]!, altitude)) return items[i];
   }
   return undefined;
 }

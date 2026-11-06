@@ -176,7 +176,7 @@ Every race has 5 ring slots per car on the grid (a solo run 5, a full eight-car 
 
 ### Rivals, slipstream and the final sprint
 
-Staying right behind a rival or traffic car for 1.5 s gives +6 m/s of speed cap and +0.25 NITRO (leave the draft to re-arm). Rivals use NITRO too, two charges each, by personality: NOVA fires steadily from 8 s then every 18 s, ORBIT fires while flying, APEX surges from 75% of the race. Light rubber-banding (at most ±4% speed beyond 50 m) keeps the race tense. In the last 500 m the race music speeds up to 115% and the status line shows the gaps to the nearest rival ahead and behind (`FINAL 500 M · +N m · −N m`).
+Staying right behind a rival or traffic car for 1.5 s gives +6 m/s of speed cap and +0.25 NITRO (leave the draft to re-arm). Rivals use NITRO too, two charges each, by personality: NOVA fires steadily from 8 s then every 18 s, ORBIT fires while flying, APEX surges from 75% of the race. Light rubber-banding (at most ±4% speed beyond 50 m) keeps the race tense. In Classic (not the daily challenge) and Cup, a player 150 m or more behind the leader also finds a few extra rings and NITRO cans further up the road, appearing in the distance like any other ring, until they are back within 50 m. In the last 500 m the race music speeds up to 115% and the status line shows the gaps to the nearest rival ahead and behind (`FINAL 500 M · +N m · −N m`).
 
 ### Saved data
 
@@ -278,6 +278,8 @@ The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.
 - `scripts/capture-og-images.mjs`: captures the English and zh-TW cover images and the zh-TW README screenshots from the real app.
 - `scripts/pickup-economy.mjs`: a scripted bot drives every track and prints NITRO per minute, BOOST share, fuel run-outs and the first NITRO time; `tests/pickup-economy.test.js` locks the ring/pickup layouts.
 - `scripts/rival-balance.mjs`: an expert bot (BOOSTs, flies for rings) and a beginner bot (neither) race seven rivals on every track and difficulty; prints the fastest rival's margin and the bot's place.
+
+- `scripts/ring-variety.mjs`: over re-rolled race seeds, prints each track's ring lane spread, ground share, trains and rows per race, and the bot's ring take and NITRO rate; `tests/ring-variety.test.js` keeps every lane in use without making rings harder to collect.
 - `scripts/ci-shards.mjs`: `plan` gives each CI shard its Playwright `--test-list`, packing tests by duration so every shard finishes at about the same time; `refresh <run-id>` rewrites `tests/ci-durations.json` from a CI run's logs after the suites change a lot.
 - `src/App.vue`, `src/icons.js`: the Vue 3 UI shell (start screen, HUD, panels, touch controls) and its shared SVG icons; rendered once with no reactive state.
 - `src/main.js`, `src/style.css`: mounts `App.vue`, wires the screen controllers and runs the race lifecycle (start, pause, restart, results) and the frame loop.
