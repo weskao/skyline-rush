@@ -522,6 +522,8 @@ export function createWorld(canvas) {
   let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null;
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
   let sizeKey = '', warmupPending = true, garageWarmupPending = true;
+  // Phase 2 QA only: ?model=probe shows the pipeline GLB in the Garage Studio; without it the loader is never imported.
+  const modelProbe = new URLSearchParams(location.search).get('model') === 'probe' ? import('./garage-model-probe.ts').then(m => m.createGarageModelProbe(renderer, camera, import.meta.env.BASE_URL)) : null;
   const restoreWarmup = () => { warmupPending = garageWarmupPending = true; };
   canvas.addEventListener('webglcontextrestored', restoreWarmup);
   function resize() {
@@ -587,7 +589,7 @@ export function createWorld(canvas) {
     });
   }
   return {
-    resize, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); }, setGaragePose(pose) { garagePose = pose; },
+    resize, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { const toggled = !!garageCamera !== !!snapshot; if (toggled) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; if (toggled) void modelProbe?.then(probe => snapshot ? probe.enter(garageStage, visual.quality) : probe.leave()); }, setCosmeticSkins(ids) { aero.setSkins(ids); }, setGaragePose(pose) { garagePose = pose; },
     setGarageSkinPreview(ids, home = false) { garagePreviewSkins = ids; garageHomePreview = home && !garageCamera; garageStage?.setSkins(ids); if (garageHomePreview) aero.setSkins(ids); }, inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : aero.inspectCosmetics(); },
         inspectGarageStudio() { if (garageStage && garageCamera) return garageStage.inspectBounds(camera); if (!garageHomePreview) return null; const { minX, maxX, minY, maxY } = projectedCarBounds(camera.position, smoothLook); return { minX, maxX, minY, maxY, inFrame: minX > -.94 && maxX < .94 && minY > -.94 && maxY < .94 }; }, // Home: QA reads how much of the showroom the car fills
     previewAppearance(paint) {

@@ -32,8 +32,10 @@ export function createGarageStage(environment: THREE.Texture) {
   const paintSweep = createGaragePaintSweep(finish);
   car.position.y = 0.06;
   scene.add(car);
+  let model: THREE.Object3D | null = null; // ?model=probe GLB shown in place of the procedural body
+  const bodyParts: THREE.Object3D[] = []; // procedural parts the model hides, restored on swap-back
   function poseCar(flying: boolean, tilt = 0) {
-    car.userData.jets.visible = flying;
+    car.userData.jets.visible = flying && !model;
     poseWing(car.userData.wing, tilt, flying ? 1 : 0);
     for (const wheel of car.userData.wheels)
       wheel.rotation.z = flying ? Math.sign(wheel.position.x) * Math.PI / 2.6 : 0;
@@ -198,6 +200,13 @@ export function createGarageStage(environment: THREE.Texture) {
   }
   return {
     scene, update, inspectBounds, setPaint, dispose,
+    setModel(next: THREE.Object3D | null) {
+      if (model) { car.remove(model); for (const part of bodyParts.splice(0)) part.visible = true; }
+      model = next;
+      if (!next) return;
+      for (const part of car.children) if (part !== aero.group && part.visible) { part.visible = false; bodyParts.push(part); }
+      car.add(next);
+    },
     inspectCosmetics() { return aero.inspectCosmetics(); },
     setSkins(ids: Partial<Record<SkinCategory, SkinId>>) { aero.setSkins(ids); },
     configureVFX(settings: VfxSettings) { previewSettings = { ...settings, airflow: settings.enabled }; },
