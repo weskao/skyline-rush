@@ -32,7 +32,7 @@ test('Garage store concepts animate each original gift box while retaining origi
   await expect(box).toHaveAttribute('data-animation-active', 'true');
   await expect(box).toHaveAttribute('src', /garage-animated\/store-box@3x\.gif$/);
   await expect(box).toHaveJSProperty('naturalWidth', 216);
-  await expect(box).toHaveAttribute('data-static-src', /garage-store-readiness\/raster\/store-box@3x\.webp$/);
+  await expect(box).toHaveAttribute('data-static-src', /garage-store-readiness\/raster\/store-box@3x\.png$/);
 });
 
 test('reduced-motion displays untouched original static assets, never animating GIF', async ({ page }) => {

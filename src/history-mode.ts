@@ -1,4 +1,5 @@
 import { isModeTrack } from './race-tracks.ts';
+import { RACE_DRIVER_IDS } from './race-grid.ts';
 import { circuitLaps } from './circuit-track.ts';
 import { validCircuitTimes, validCircuitRecord, circuitLapKey } from './circuit-records.ts';
 import { stuntMedal } from './stunt-attack.ts';
@@ -46,7 +47,7 @@ export const validModeHistoryRun = (raw: unknown): raw is ModeHistoryRun => {
     (run.mode !== 'circuit' || validCircuitRecord(run)) &&
     (run.score === undefined || (numberFinite(run.score) && run.score >= 0)) &&
     (run.position === undefined || (numberFinite(run.position) && Number.isInteger(run.position) &&
-      run.position >= 0 && run.position <= 8));
+      run.position >= 0 && run.position <= RACE_DRIVER_IDS.length));
 };
 export function loadModeHistory(storage?: HistoryStorage): ModeHistoryRun[] {
   const saved = read(MODE_HISTORY_KEY, storage);
@@ -111,7 +112,7 @@ export function recordModeRace(race: ModeRace, storage?: HistoryStorage, now = n
       result.success === false ||
       race.mode === 'circuit' && !validCircuitTimes(race.config, result.time, result.lapTimes) ||
       (result.position !== undefined && (!Number.isInteger(result.position) ||
-        result.position < 1 || result.position > 8)) ||
+        result.position < 1 || result.position > RACE_DRIVER_IDS.length)) ||
       (result.score !== undefined && (!numberFinite(result.score) || result.score < 0)) ||
       (race.mode === 'stunt' && !numberFinite(result.score)))
     throw new TypeError('A finished practice race with valid result and track is required');

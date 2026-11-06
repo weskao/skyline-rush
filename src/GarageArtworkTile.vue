@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 type Tone = 'cyan' | 'magenta' | 'gold' | 'slate' | 'azure' | 'amber' | 'red';
-const props = withDefaults(defineProps<{ id: string; label: string; src: string; tone?: Tone; restored?: boolean; size?: number; imageHeight?: number }>(),
+const props = withDefaults(defineProps<{ id: string; label: string; src: string; tone?: Tone; restored?: boolean; size?: number; imageHeight?: number; fallbackSrc?: string }>(),
   { tone: 'cyan', restored: false, size: 72 });
 const hues: Record<Tone, number> = {
   cyan: 189, magenta: 312, gold: 42, slate: 214, azure: 207, amber: 32, red: 354,
@@ -22,7 +22,7 @@ const colors = computed(() => ({
     :data-artwork-restored="String(restored)" :data-art="id" :style="colors">
     <div class="garage-badge-art-frame">
       <GarageArtworkImage :src="src" :size="size" :height="imageHeight" :image-id="id"
-        :alt="label" :animated-src="animatedSrc" :fallback-text="label" />
+        :alt="label" :animated-src="animatedSrc" :fallback-text="label" :fallback-src="fallbackSrc" />
     </div>
     <figcaption>{{ label }}</figcaption>
   </figure>

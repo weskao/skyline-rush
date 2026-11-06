@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
 import { GARAGE_SKINS, SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
-import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, selectedGarageSkins } from './garage-skin-runtime.ts';
+import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, selectedGarageSkins, currentGarageSkins } from './garage-skin-runtime.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
@@ -30,8 +31,9 @@ const badgeNames: Record<(typeof badgeArt)[number], readonly [string, string]> =
 };
 const badgeLabel = (id: (typeof badgeArt)[number], locale: string): string =>
   badgeNames[id][locale === 'zh-TW' ? 1 : 0];
+const nativePngBadges = new Set(['badge-equipped', 'badge-favorite', 'badge-limited']);
 const badgeSrc = (id: string) =>
-  `${import.meta.env.BASE_URL}feature-assets/garage-vfx-skins/raster/${id}@3x.webp`;
+  `${import.meta.env.BASE_URL}feature-assets/garage-vfx-skins/raster/${id}@3x.${nativePngBadges.has(id) ? 'png' : 'webp'}`;
 const badgeTone: Record<(typeof badgeArt)[number], 'cyan' | 'magenta' | 'gold' | 'slate' | 'azure' | 'amber' | 'red'> = {
   'badge-equipped': 'cyan', 'badge-favorite': 'magenta', 'badge-limited': 'gold',
   'badge-locked': 'slate', 'badge-new': 'amber', 'badge-trial': 'gold',
@@ -46,6 +48,20 @@ const categoryNames: Record<SkinCategory, { en: string; 'zh-TW': string }> = {
   'launch-flare': { en: 'Launch flare', 'zh-TW': '起跑閃焰' },
 };
 const entries = GARAGE_SKINS.map(skin => ({ ...skin, artwork: skinArtwork(skin.id, import.meta.env.BASE_URL)! }));
+// This live selection strip uses the same artwork and session as the actual 3D Garage preview.
+// A preview is never treated as ownership or a permanent equipment grant.
+const liveLoadout = computed(() => {
+  void garageSkinState.revision;
+  const equipped = currentGarageSkins();
+  const previewed = selectedGarageSkins();
+  return SKIN_CATEGORIES.map(category => {
+    const entry = entries.find(skin => skin.id === previewed[category])!;
+    return {
+      category, id: entry.id, name: entry.name, artwork: entry.artwork,
+      equipped: equipped[category], owned: garageSkinEntry(entry.id)?.owned === true,
+    };
+  });
+});
 const categoryHue: Record<SkinCategory, number> = { thruster: 191, airflow: 202, 'nitro-trail': 44, 'launch-flare': 300 };
 const airflowHue: Partial<Record<SkinId, number>> = {
   'airflow-basic': 192, 'airflow-slipstream': 210, 'airflow-vortex': 280, 'airflow-prism': 312,
@@ -57,6 +73,8 @@ const isPreviewActive = (id: SkinId, category: SkinCategory) => {
   void garageSkinState.revision;
   return selectedGarageSkins()[category] === id;
 };
+const isPreviewOnly = (id: SkinId, category: SkinCategory) =>
+  isPreviewActive(id, category) && view(id)?.state !== 'equipped';
 const statusText = (id: SkinId, locale: string) => {
   const state = view(id)?.state ?? 'locked';
   return ({ en: { trial: 'Free trial', equipped: 'Equipped', owned: 'Owned', locked: 'Locked' },
@@ -71,12 +89,38 @@ const statusText = (id: SkinId, locale: string) => {
     aria-labelledby="garage-vfx-catalog-heading">
     <h3 id="garage-vfx-catalog-heading">{{ locale === 'zh-TW' ? '外觀特效收藏' : 'VFX collection' }}</h3>
     <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '點選卡片可預覽，按「試用」暫時裝備。重新載入後仍會記住你在此帳號最後的選擇，但這不是擁有權；試用結束後會還原為預設。' : 'Select a card to preview, then Try to equip temporarily. Your last pick is remembered on reload for this account, but it is not ownership; it returns to default when the trial ends.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
+    <section id="garage-vfx-live-loadout" class="garage-vfx-live-loadout" :aria-label="locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance'">
+      <h4>{{ locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance' }}</h4>
+      <ul class="garage-vfx-loadout-grid">
+        <li v-for="item in liveLoadout" :key="item.category" class="garage-vfx-loadout-tile"
+          :data-loadout-category="item.category" :data-preview-skin="item.id"
+          :data-equipped-skin="item.equipped" :data-preview-only="String(item.id !== item.equipped)"
+          :data-owned="String(item.owned)">
+          <span class="garage-loadout-art">
+            <GarageArtworkImage :src="item.artwork.src"
+              :fallback-src="item.artwork.hasRaster ? item.artwork.fallback : ''"
+              :size="item.artwork.cssSize" alt="" loading="eager"
+              :fallback-text="categoryNames[item.category][locale === 'zh-TW' ? 'zh-TW' : 'en']" />
+          </span>
+          <strong>{{ categoryNames[item.category][locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
+          <span class="garage-loadout-name">{{ item.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</span>
+          <small class="garage-loadout-status" aria-live="polite">{{
+            item.id !== item.equipped
+              ? (locale === 'zh-TW' ? '預覽中' : 'Previewing')
+              : !item.owned
+                ? (locale === 'zh-TW' ? '試用中' : 'Trial active')
+                : (locale === 'zh-TW' ? '已裝備' : 'Equipped')
+          }}</small>
+        </li>
+      </ul>
+    </section>
     <div v-for="category in SKIN_CATEGORIES" :key="category" class="garage-vfx-category">
       <h4>{{ categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</h4>
       <ul>
         <li v-for="skin in entries.filter(entry => entry.category === category)" :key="skin.id"
           :data-skin="skin.id" :data-state="view(skin.id)?.state" :data-owned="String(view(skin.id)?.owned ?? false)"
           :data-preview-active="String(isPreviewActive(skin.id, skin.category))"
+          :data-preview-only="String(isPreviewOnly(skin.id, skin.category))"
           class="garage-skin-card" :style="{ '--card-hue': skinHue(skin.id, skin.category) }">
           <!-- Native full-surface Preview control; Equip/Try is its sibling, not nested. -->
           <button class="garage-skin-preview-hitarea" type="button"
@@ -91,6 +135,7 @@ const statusText = (id: SkinId, locale: string) => {
             </span>
             <strong>{{ skin.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
             <small class="garage-skin-status">{{ statusText(skin.id, locale) }}</small>
+            <small class="garage-skin-preview-label" :aria-hidden="!isPreviewOnly(skin.id, skin.category)">{{ locale === 'zh-TW' ? '預覽中' : 'Previewing' }}</small>
           </button>
           <div class="garage-vfx-actions">
             <button class="garage-skin-action" type="button" :disabled="!view(skin.id)?.canEquip"
@@ -117,6 +162,39 @@ const statusText = (id: SkinId, locale: string) => {
 <style scoped>
 .garage-vfx-catalog { border-top: 1px solid #35536a; margin-top: 14px; padding-top: 10px; }
 .garage-vfx-catalog h3 { margin: 0 0 6px; font-size: 15px; }
+.garage-vfx-live-loadout {
+  padding: 10px 8px; border: 1px solid #467a93; border-radius: 12px;
+  background: linear-gradient(160deg, #162d43, #0c1c2e 82%);
+}
+.garage-vfx-live-loadout h4 { margin: 0 0 8px; font-size: 13px; color: #e2f8ff; }
+.garage-vfx-loadout-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 138px), 1fr));
+  gap: 8px; padding: 0; margin: 0; list-style: none;
+}
+.garage-vfx-loadout-tile {
+  display: flex; flex-direction: column; align-items: center; min-width: 0;
+  gap: 4px; padding: 8px 4px; box-sizing: border-box; text-align: center;
+  border: 1px solid #315875; border-radius: 10px;
+  background: radial-gradient(ellipse at center 30%, #26719c28, transparent 70%), #102438;
+}
+.garage-loadout-art {
+  width: 104px; height: 104px; max-width: 100%; padding: 4px; box-sizing: border-box;
+  display: grid; place-items: center; position: relative;
+  border-radius: 10px; background: radial-gradient(circle, #36a6c02b, transparent 76%);
+}
+.garage-loadout-art :deep(.artwork-img) { object-fit: contain; max-width: 100%; max-height: 100%; }
+.garage-vfx-loadout-tile strong { color: #e8faff; font-size: 12px; line-height: 1.25; }
+.garage-loadout-name { font-size: 11px; line-height: 1.3; color: #d3e7f4; overflow-wrap: anywhere; }
+.garage-loadout-status { font-size: 11px; font-weight: 750; color: #83f0da; }
+.garage-vfx-loadout-tile[data-preview-only="true"] {
+  border-color: #76e8ff; box-shadow: inset 0 0 12px #30caff2d, 0 0 9px #31c6f73d;
+}
+.garage-vfx-loadout-tile[data-preview-only="true"] .garage-loadout-status { color: #bcecff; }
+.garage-vfx-loadout-tile[data-preview-only="true"] .garage-loadout-art::after {
+  content: ''; position: absolute; inset: 8px; border-radius: 50%;
+  border: 1px solid #8feaff9e; pointer-events: none;
+  animation: garage-vfx-preview-pulse 2.6s ease-in-out infinite;
+}
 .garage-vfx-message { font-size: 12px; line-height: 1.45; color: #c2d4e3; margin: 6px 0 10px; }
 .garage-vfx-category { margin: 12px 0; }
 .garage-vfx-category h4 { font-size: 13px; margin: 0 0 6px; }
@@ -143,7 +221,7 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-skin-preview-hitarea {
   position: relative; z-index: 1; flex: 1; width: 100%; min-height: 0;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  border: 0; border-radius: inherit; padding: 12px 8px 8px; color: inherit;
+  border: 0; border-radius: inherit; padding: 12px 4px 8px; color: inherit;
   text-align: center; background: transparent; cursor: pointer; touch-action: manipulation;
 }
 /* Press feedback belongs to the whole card, never a dimmed box around its upper part. */
@@ -153,7 +231,8 @@ const statusText = (id: SkinId, locale: string) => {
   outline: 3px solid #74ebff; outline-offset: 3px;
 }
 .garage-vfx-art {
-  position: relative; width: 112px; height: 112px; max-width: 100%; box-sizing: border-box;
+  position: relative;
+  width: 112px; height: 112px; max-width: 100%; box-sizing: border-box;
   padding: 8px; display: grid; place-items: center; border-radius: 13px;
   background: radial-gradient(circle, hsl(var(--card-hue) 74% 44% / .19), transparent 73%);
   pointer-events: none;
@@ -162,11 +241,29 @@ const statusText = (id: SkinId, locale: string) => {
   max-width: 100%; max-height: 100%; object-fit: contain;
   filter: drop-shadow(0 0 5px hsl(var(--card-hue) 85% 64% / .34));
 }
+.garage-vfx-art::after {
+  content: ''; position: absolute; inset: 9px; border-radius: 50%;
+  border: 1px solid hsl(var(--card-hue) 95% 74% / .8);
+  box-shadow: 0 0 13px hsl(var(--card-hue) 100% 67% / .35);
+  opacity: 0; pointer-events: none;
+}
+.garage-skin-card[data-preview-only="true"] .garage-vfx-art::after {
+  animation: garage-vfx-preview-pulse 2.6s ease-in-out infinite;
+}
+@keyframes garage-vfx-preview-pulse {
+  0%, 100% { opacity: .15; transform: scale(.94); }
+  50% { opacity: .55; transform: scale(1.05); }
+}
 .garage-vfx-fallback { color: #c4e7f0; font-size: 12px; overflow-wrap: anywhere; }
 .garage-skin-card strong {
   min-height: 35px; font-size: 12px; line-height: 1.5; color: #ecf6ff;
   font-weight: 750; overflow-wrap: anywhere; pointer-events: none;
 }
+.garage-skin-preview-label {
+  display: block; min-height: 15px; font-size: 11px; font-weight: 750;
+  color: #bdefff; opacity: 0; pointer-events: none;
+}
+.garage-skin-card[data-preview-only="true"] .garage-skin-preview-label { opacity: 1; }
 .garage-skin-status {
   font-size: 11px; min-height: 19px; padding: 1px 7px; border-radius: 999px;
   background: hsl(var(--card-hue) 82% 54% / .13);
@@ -221,6 +318,7 @@ const statusText = (id: SkinId, locale: string) => {
 }
 .garage-art-showcase { min-width: 0; }
 .garage-art-showcase h4 { margin-bottom: 10px; }
-@media (max-height: 420px) and (orientation: landscape) { .garage-vfx-category ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (prefers-reduced-motion: reduce) { .garage-vfx-catalog * { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce), (prefers-reduced-data: reduce) {
+  .garage-vfx-catalog *, .garage-vfx-catalog *::after { animation: none !important; transition: none !important; }
+}
 </style>

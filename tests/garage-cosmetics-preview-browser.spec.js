@@ -105,7 +105,7 @@ test('four airflow appearances have distinct 3x image sources and live car rende
   for(const [mode,id] of ['airflow-basic','airflow-slipstream','airflow-vortex','airflow-prism'].entries()){
     const card=page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
     const img=card.locator('img');
-    await expect(img).toHaveAttribute('data-static-src',new RegExp(`raster/${id}@3x\\.svg$`));
+    await expect(img).toHaveAttribute('data-static-src',new RegExp(`raster/${id}@3x\\.png$`));
     await img.scrollIntoViewIfNeeded();
     await expect(img).toHaveAttribute('src',new RegExp(`garage-animated/${id}@3x\\.gif$`));
     await expect(img).toHaveJSProperty('naturalWidth',288);
