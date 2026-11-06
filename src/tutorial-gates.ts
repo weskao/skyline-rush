@@ -9,15 +9,17 @@ export interface GateRing {
 }
 export const isGateStep = (step: string | null | undefined): step is GateStep =>
   step === 'left' || step === 'right' || step === 'brake' || step === 'boost';
-// ~2 s at practice speed: time to read the cue, well inside the 900 m ring draw window.
+// At least 110 m and ~2.4 s ahead at the car's own speed: time to read the cue,
+// well inside the 900 m ring draw window even at top speed.
 export const GATE_AHEAD = 110;
+const GATE_SECONDS = 2.4;
 // Lane gates sit on the outer lane: the car has to steer past x = ±3.4 to pass one.
 const LANE_X: Record<'left' | 'right', number> = { left: -7.5, right: 7.5 };
 // Existing ring colours: cyan lanes, red brake row, purple boost row.
 const GATE_TYPE: Record<GateStep, string> = { left: 'charge', right: 'charge', brake: 'risk', boost: 'slipstream' };
 
-export function placeGate(step: GateStep, carDistance: number): GateRing[] {
-  const at = carDistance + GATE_AHEAD, type = GATE_TYPE[step];
+export function placeGate(step: GateStep, carDistance: number, carSpeed = 0): GateRing[] {
+  const at = carDistance + Math.max(GATE_AHEAD, carSpeed * GATE_SECONDS), type = GATE_TYPE[step];
   const rings = step === 'left' || step === 'right'
     ? [{ distance: at, x: LANE_X[step], altitude: ROW_ALTITUDE, radius: RING_RADIUS, type }]
     : ringRow(at, type);

@@ -52,8 +52,6 @@ export interface TutorialCoachView {
   step: string;
   title: string;
   instruction: string;
-  pauseText: string;
-  pauseHidden: boolean;
   completeActionsHidden: boolean;
   assistHidden: boolean;
   hintKeys: string;
