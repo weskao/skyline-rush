@@ -1,4 +1,4 @@
-import { createRace, startRace } from './game.js';
+import { createRace, startRace, DRIFT_MIN_SPEED, DRIFT_BLEED } from './game.js';
 import { createTutorialManeuverState, type ManeuverSnapshot } from './tutorial-maneuver-state.ts';
 import { isGateStep, placeGate, judgeGate, gateGuide, type GateRing } from './tutorial-gates.ts';
 import type { EndlessState } from './endless-highway.ts';
@@ -15,9 +15,11 @@ export const CLEARED_SECONDS = 0.8;
 // Only these lessons ask for a sustained 0.4 s hold; the rest complete on a real engine event.
 const HELD_STEPS: readonly string[] = ['throttle', 'fly'];
 const BRAKE_CRAWL = 25; // m/s: a held brake still reaches the gate in a few seconds
+// m/s: a drift ends below DRIFT_MIN_SPEED, so it must start fast enough to outlast its bleed to the 1 s payout.
+const DRIFT_ENTRY = DRIFT_MIN_SPEED + DRIFT_BLEED * 1;
 
 export function prepareTutorialInput(input: TutorialInput, step: TutorialStep | string): TutorialInput {
-  if (!['throttle', 'brake'].includes(step) && !input.brake) input.throttle = true;
+  if (step !== 'throttle' && !input.brake) input.throttle = true;
   input.laneAssist = false;
   return input;
 }
@@ -51,8 +53,8 @@ export function createInteractiveTutorial() {
 
   function prepare() {
     const step = TUTORIAL_STEPS[index];
-    if (index === 0) car.x = car.steering = 0;
-    car.speed = step === 'throttle' ? 0 : step === 'drift' ? 65 : 45;
+    // Speed is the player's own from the standing start on: a lesson snap read as a sudden jump.
+    if (index === 0) car.x = car.steering = car.speed = 0;
     car.fuel = 100;
     car.exhausted = false;
     car.flyBuffer = 0;
@@ -75,7 +77,7 @@ export function createInteractiveTutorial() {
     }
     rings.length = 0;
     gate = retryReason = null;
-    if (isGateStep(step)) rings.push(...(gate = placeGate(step, car.distance)));
+    if (isGateStep(step)) rings.push(...(gate = placeGate(step, car.distance, car.speed)));
     drifted = false;
     maneuver = step === 'airChain' || step === 'barrelRoll' || step === 'nitro'
       ? createTutorialManeuverState(step, snapshot()) : null;
@@ -121,10 +123,10 @@ export function createInteractiveTutorial() {
       const step = TUTORIAL_STEPS[index]!;
       // Practice-only supply: the air chain lesson never runs out of FLY, BOOST or NITRO.
       if (step === 'airChain') { car.fuel = 100; car.exhausted = false; car.nitro = Math.max(car.nitro, 1); }
-      // Keep the braking exercise rolling toward its gate: a held brake crawls through, a released one resumes.
-      if (step === 'brake' && car.speed < (car.braking ? BRAKE_CRAWL : 20)) car.speed = car.braking ? BRAKE_CRAWL : 45;
+      // Keep the braking exercise rolling toward its gate: a held brake crawls through, a released one re-accelerates.
+      if (step === 'brake' && car.braking && car.speed < BRAKE_CRAWL) car.speed = BRAKE_CRAWL;
       // A miss re-arms a fresh gate ahead.
-      if (isGateStep(step) && !gate) rings.push(...(gate = placeGate(step, car.distance)));
+      if (isGateStep(step) && !gate) rings.push(...(gate = placeGate(step, car.distance, car.speed)));
       // Display-only: the praise stays up briefly, but input during it still counts toward the next lesson.
       if (celebrate > 0) celebrate -= Math.min(dt, .05);
       let valid = false;
@@ -132,8 +134,10 @@ export function createInteractiveTutorial() {
       else if (isGateStep(step)) valid = judgeGateStep(step);
       else if (step === 'drift') {
         valid = ((car as unknown as { driftPayout: { nitro: number } | null }).driftPayout?.nitro ?? 0) >= 0.15 && car.miniBoost > 0;
-        if (car.drift) drifted = true;
+        if (car.drift) { drifted = true; if (retryReason === 'slow') retryReason = null; }
         else if (drifted && !valid) { drifted = false; retryReason = 'short'; } // released before the first payout tier
+        // Lessons keep the player's speed, so a drift tried at crawl speed only brakes: say why.
+        else if (!valid && controls.brake && controls.steer && car.altitude === 0 && car.speed < DRIFT_ENTRY) retryReason = 'slow';
       }
       else if (step === 'fly') valid = controls.fly === true && car.altitude > 1;
       else if (step === 'land') valid = !controls.fly && car.altitude < .15;

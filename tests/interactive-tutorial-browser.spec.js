@@ -18,8 +18,9 @@ const keyStep = async (page, key, next) => {
   await page.keyboard.up(key);
 };
 
-// DRIFT needs >= 162 km/h on entry; the brake lesson's held key can slow the car, so wait for auto-throttle.
-const driftReady = page => page.waitForFunction(() => Number(document.querySelector('#speed')?.textContent) >= 170, null, { polling: 'raf' });
+// DRIFT needs >= 162 km/h to hold and bleeds speed, so the 1 s payout needs ~173 km/h on entry; the brake lesson
+// hands over at crawl speed (lessons keep the player's speed), so wait for auto-throttle.
+const driftReady = page => page.waitForFunction(() => Number(document.querySelector('#speed')?.textContent) >= 180, null, { polling: 'raf' });
 // The coach progress bar reaches the next whole step once the drift lasts 1 s (the first payout tier).
 const driftCharged = page => page.waitForFunction(() => Number(document.querySelector('#tutorial-progress')?.value) >= 5, null, { polling: 'raf' });
 const keyboardDrift = async page => {
