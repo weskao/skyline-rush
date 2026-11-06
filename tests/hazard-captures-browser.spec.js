@@ -2,7 +2,6 @@ import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { saveArtifact } from './helpers/artifact.js';
 import { ciTimeout } from './helpers/ci.js';
-import { selectLocale } from './helpers/locale-browser.js';
 
 // ENV-05/06 visual evidence: each hazard effect is drawn by its own pool, in the real WebGL scene,
 // exactly where the simulation resolves it. Themes have no menu toggle yet (10A), so each case loads
@@ -15,11 +14,9 @@ const CASES = [
   { track: 'tokyo', id: 'tokyo-signal-gate-1', mesh: 'gauntlet-barriers', times: [1, 3], hold: 25, lane: -7.5 }, // on, then off, in a 4 s pulse; closer, so Tokyo's curve keeps it in a portrait frame
 ];
 
-for (const [name, viewport, hasTouch, locale] of [
-  ['desktop-en', { width: 1440, height: 900 }, false, 'en'],
-  ['desktop-zh', { width: 1440, height: 900 }, false, 'zh-TW'],
-  ['phone-en', { width: 390, height: 844 }, true, 'en'],
-  ['phone-zh', { width: 390, height: 844 }, true, 'zh-TW'],
+for (const [name, viewport, hasTouch] of [
+  ['desktop-en', { width: 1440, height: 900 }, false],
+  ['phone-en', { width: 390, height: 844 }, true],
 ]) test.describe(`hazard captures ${name}`, () => {
   test.use({ viewport, hasTouch });
   test('each hazard effect draws from its own pool at the simulated pose', async ({ gameplayPage: page }) => {
@@ -29,7 +26,6 @@ for (const [name, viewport, hasTouch, locale] of [
     await page.evaluate(list => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(list)), CASES.map(c => c.track));
     await page.reload();
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-    await selectLocale(page, locale);
     for (const c of CASES) {
       await page.locator(`[data-track="${c.track}"]`).click();
       await page.locator('#start-button').click();

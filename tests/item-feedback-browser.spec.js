@@ -36,11 +36,12 @@ for (const [name, viewport, hasTouch] of [
     await page.waitForFunction(() => window.gameScene.scene.getObjectByName('Item beams').children.some(beam => beam.visible));
     await page.screenshot({ path: `test-results/item-feedback-beam-${name}.png` });
     expect(await programs(page), 'no shader compiled for the beams mid-race').toBe(before);
-    // Miss: pass the ring well outside its radius.
+    // Miss: pass the ring well outside its radius, toward the road centre: rings use every lane, and an outer-lane
+    // ring's far side is past ROAD_LIMIT, which would clamp the car back into the ring.
     await page.evaluate(() => {
       const race = window.gameplay.race, ring = race.rings.find(ring => ring.type === 'mystery' && !ring.hit);
       window.missed = ring;
-      Object.assign(race.player, { distance: ring.distance - .5, x: ring.x + ring.radius + 3, altitude: ring.altitude, verticalSpeed: 0, speed: 50 });
+      Object.assign(race.player, { distance: ring.distance - .5, x: ring.x - Math.sign(ring.x || 1) * (ring.radius + 3), altitude: ring.altitude, verticalSpeed: 0, speed: 50 });
     });
     await page.waitForFunction(() => window.gameplay.race.player.distance > window.missed.distance + 5);
     expect(await page.evaluate(() => [window.missed.hit ?? false, window.gameplay.race.player.heldItem])).toEqual([false, null]);

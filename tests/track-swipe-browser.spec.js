@@ -201,38 +201,47 @@ test(`desktop trackpad scroll (${deliverMs}ms delivery): completed animation nev
   const [, second] = await trackOrder(page);
   // Cover native ms tokens as well as the production bundle's minified seconds.
   if (deliverMs === 210) await page.evaluate(() => document.documentElement.style.setProperty('--dur-base', '240ms'));
-  // Observe the exact microtask where the selected track changes. The outgoing
-  // snapshot MUST already be entirely off-screen even before the layer is removed.
+  // commitSwipe selects the track first (software WebGL can delay animation frames), then slides the snapshots.
+  // So the departing track must stay off-screen from the slide's end until the snapshot layer is removed:
+  // sample every frame from the animation's `finished` (our reaction runs before commitSwipe's own await).
   await page.evaluate(targetTrack => {
-    window.__swipeHandoff = null;
+    window.__swipeFrames = [];
     window.__swipeDurations = [];
+    window.__selectedAtSlide = null;
+    const selectedId = () => document.querySelector('[data-track][aria-pressed="true"]')?.dataset.track;
     const animate = Element.prototype.animate;
     Element.prototype.animate = function (frames, options) {
       const animation = animate.call(this, frames, options);
-      if (this.id === 'track-swipe-scenes') window.__swipeDurations.push(animation.effect.getTiming().duration);
+      if (this.id !== 'track-swipe-scenes') return animation;
+      window.__swipeDurations.push(animation.effect.getTiming().duration);
+      window.__selectedAtSlide = selectedId() === targetTrack; // the last animation is the commit slide; late wheel delivery may snap back first
+      animation.finished.then(() => {
+        if (selectedId() !== targetTrack) return; // a snap-back is not the commit
+        const sample = () => {
+          const canvases = document.querySelectorAll('#track-swipe-scenes canvas');
+          if (canvases.length !== 2 || window.__swipeFrames.length >= 120) return;
+          const outgoing = canvases[0].getBoundingClientRect();
+          const incoming = canvases[1].getBoundingClientRect();
+          window.__swipeFrames.push({ outgoingRight: outgoing.right, incomingLeft: incoming.left, incomingRight: incoming.right });
+          requestAnimationFrame(sample);
+        };
+        sample();
+      }, () => {});
       return animation;
     };
-    // Watch all track selections, not a hard-coded track ID. Different modes
-    // and saved progress may start with different tracks.
-    new MutationObserver(() => {
-      if (window.__swipeHandoff) return;
-      const selected = document.querySelector('[data-track][aria-pressed="true"]')?.dataset.track;
-      if (selected !== targetTrack) return;
-      const canvases = document.querySelectorAll('#track-swipe-scenes canvas');
-      if (canvases.length !== 2) return;
-      const outgoing = canvases[0].getBoundingClientRect();
-      const incoming = canvases[1].getBoundingClientRect();
-      window.__swipeHandoff = { outgoingRight: outgoing.right, incomingLeft: incoming.left, incomingRight: incoming.right };
-    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
   }, second);
   await trackpadSwipe(page, 30, 8, { deliverMs }); // delayed delivery must keep the snapshot handoff intact
   expect(await page.evaluate(() => window.__swipeDurations), 'production slide keeps its 240ms motion token').toContain(240);
   await expect.poll(() => selected(page)).toBe(second);
-  await expect.poll(() => page.evaluate(() => window.__swipeHandoff)).not.toBeNull();
-  const seen = await page.evaluate(() => window.__swipeHandoff);
-  expect(seen.outgoingRight, 'old track must not reappear after snap animation finishes').toBeLessThanOrEqual(1);
-  expect(seen.incomingLeft).toBeLessThanOrEqual(1);
-  expect(seen.incomingRight).toBeGreaterThanOrEqual(1439);
+  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+  expect(await page.evaluate(() => window.__selectedAtSlide), 'the choice is committed before the slide starts').toBe(true);
+  const frames = await page.evaluate(() => window.__swipeFrames);
+  expect(frames.length, 'frames sampled between the slide ending and the layer being removed').toBeGreaterThan(0);
+  for (const seen of frames) {
+    expect(seen.outgoingRight, 'old track must not reappear after snap animation finishes').toBeLessThanOrEqual(1);
+    expect(seen.incomingLeft).toBeLessThanOrEqual(1);
+    expect(seen.incomingRight).toBeGreaterThanOrEqual(1439);
+  }
   await page.screenshot({ path: info.outputPath('trackpad-handoff.png') });
 });
 }
@@ -294,4 +303,47 @@ test('desktop: a short drag snaps the joined previews back without changing trac
   await page.mouse.up();
   await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
   expect(await selected(page)).toBe(first);
+});
+
+test('desktop: existing preview wheel scroll enters and leaves live Coming Soon scenes', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-track="cosmic"]').click();
+  await trackpadSwipe(page, 30, 6);
+  await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#start-button')).toBeDisabled();
+  await expect(page.locator('#world')).toBeVisible();
+  await expect(page.locator('#upcoming-scene')).toBeHidden();
+  await page.waitForTimeout(450);
+  await trackpadSwipe(page, 30, 6);
+  await expect(page.locator('[data-upcoming-track="monsoon-ruins"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.waitForTimeout(450);
+  await trackpadSwipe(page, -30, 6);
+  await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.waitForTimeout(450);
+  await trackpadSwipe(page, -30, 6);
+  await expect(page.locator('[data-track="cosmic"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-upcoming-track][aria-pressed="true"]')).toHaveCount(0);
+});
+
+test.describe('phone upcoming preview swipe', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  test('uses existing canvas drag to switch between future and playable scenes', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('[data-upcoming-track="dune-tempest"]').click();
+    // The visible intro is a scrollable overlay; touch gestures there belong to the
+    // form, not the WebGL canvas. Airflow exposes the same preview swipe surface.
+    await page.locator('#airflow-toggle').tap();
+    await expect.poll(() => page.evaluate(() => document.elementFromPoint(320, 560)?.id)).toBe('world');
+    await touchSwipe(page, 320, 90, 560);
+    await expect(page.locator('[data-upcoming-track="monsoon-ruins"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#start-button')).toBeDisabled();
+    // The choice is committed before the slide; a swipe started while it still runs is ignored (swipeBusy).
+    await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+    await touchSwipe(page, 70, 300, 560);
+    await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+    await touchSwipe(page, 70, 300, 560);
+    await expect(page.locator('[data-track="cosmic"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#upcoming-scene')).toBeHidden();
+  });
 });

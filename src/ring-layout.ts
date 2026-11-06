@@ -53,8 +53,10 @@ function assignGroups(gates: RaceRing[][], trains: RaceRing[][], random: () => n
 // User, 2026-11-02: a few ring slots become a run of consecutive rings (on the road or in the air) or a full-width row
 // any car on the road passes. Shapes roll on their own stream, so every slot keeps its position and type roll.
 const ROW_LANES = [-7.5, -2.5, 2.5, 7.5]; // game.js LANES (this module sits below game.js)
-// User, 2026-11-03: trains run down a middle lane (lane 2 or 3), mostly on the road, so driving straight chains them.
+// User, 2026-11-03: trains run mostly on the road, so driving straight chains them. Endless keeps them on a middle lane
+// (lane 2 or 3); on a track a train runs down its slot's lane, any of the four (user, 2026-11-07).
 export const TRAIN_LANES = [-2.5, 2.5];
+const LINE_STAY = 0.65; // odds a ring keeps the previous ring's lane
 const TRAIN_AIR_ODDS = 0.2;
 // Lanes 5 m apart, radius 4.8: anywhere on the road (x ±10.2) from the surface up to about 6.4 m passes one ring.
 export const ROW_ALTITUDE = 2.5;
@@ -84,7 +86,7 @@ function shapeSlots(slots: RaceRing[], track: TrackConfig, seed: number, avoid: 
     else if (roll < ROW_ODDS && clear(d, d)) gates.push(ringRow(d, slot.type));
     // A train also keeps SHAPE_CLEARANCE from the previous one: chains, not a bunch (Circuit has a slot every 45 m).
     else if (roll < ROW_ODDS + TRAIN_ODDS && clear(d, d + span) && d > (trains.at(-1)?.at(-1)?.distance ?? -Infinity) + SHAPE_CLEARANCE) {
-      trains.push(ringTrain(d, slot.x < 0 ? TRAIN_LANES[0]! : TRAIN_LANES[1]!, air));
+      trains.push(ringTrain(d, slot.x, air));
     } else gates.push([slot]);
   });
   return { gates, trains };
@@ -97,21 +99,22 @@ export function spreadDistances(count: number, from: number, to: number, random:
 }
 
 // `count` ring slots from the 'rings' stream of `seed` (the track seed unless a race re-rolls it), a few shaped into
-// trains or rows clear of sections and the hoops at `avoid`. Coast keeps its gate line (x 2.5, altitudes from
-// ringAltitudes); other tracks scatter x and altitude. Optional per-track ringOdds / openingNitroRings tune one track.
+// trains or rows clear of sections and the hoops at `avoid`. Every ring sits on a lane; fixedRings (Coast) keeps
+// its gate heights from ringAltitudes, other tracks scatter altitude. Optional per-track ringOdds / openingNitroRings tune one track.
 export function createRings(track: TrackConfig, riskLines = true, count = ITEMS_PER_CAR, seed = track.seed, avoid: readonly number[] = []): RaceRing[] {
   const random = seededRng(seed, RACE_STREAMS.rings);
   const [charge, nitro, slip, risk] = track.ringOdds ?? RING_ODDS;
   const inTunnel = (distance: number) => track.sections.some(s => s.type === 'tunnel' && distance >= s.from && distance < s.to);
+  let lane = 0;
   const rings = spreadDistances(count, RING_START, track.length - 100, random).map((distance, slot) => {
     const roll = random();
     let type = roll < charge ? 'charge' : roll < nitro ? 'nitro' : roll < slip ? 'slipstream' : roll < risk ? 'risk' : 'mystery';
-    let x = 2.5;
+    // User, 2026-11-07: a ring line holds its lane for about three rings, then moves to any of the four lanes (it sat
+    // in one lane on some maps). Both draws every slot, so the stream never shifts.
+    const stay = random() < LINE_STAY, pick = ROW_LANES[Math.floor(random() * ROW_LANES.length)]!;
+    const x = lane = slot > 0 && stay ? lane : pick;
     let altitude = track.ringAltitudes?.[slot % track.ringAltitudes.length] ?? 8;
-    if (!track.fixedRings) {
-      x = Math.round((random() * 2 - 1) * 70) / 10;
-      altitude = type === 'risk' ? 10 : Math.round((3 + random() * 6) * 10) / 10;
-    }
+    if (!track.fixedRings) altitude = type === 'risk' ? 10 : Math.round((3 + random() * 6) * 10) / 10;
     if (slot < (track.openingNitroRings ?? 0)) type = 'nitro'; // after the rolls: the stream and positions stay the same
     if (inTunnel(distance)) { // the car cannot climb in a tunnel, so a 'risk' ring there would be free
       altitude = LOW_ALTITUDE;
