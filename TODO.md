@@ -98,6 +98,13 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
 - [x] RED (remote exact-HEAD `ec89c654`): Browser shard 4 failed the mobile upcoming-track swipe because the pointer-down position hits the visible intro instead of the WebGL canvas; shard 9 tried to select an option on the deliberately hidden native locale select. Quality Gate failed as a consequence.
 - [ ] GREEN: confirm the canvas-hit assertion and upcoming swipe test, plus the shared visible-language-picker helper and CTA localization test, on the changed HEAD in real Playwright.
 - [ ] Complete `make verify`, inspect mobile interaction, and require exact-HEAD full `quality-gate` PASS before merge. No manual-device acceptance claimed.
+
+## 2026-11-04 — Playable Volcanic Crown scoped sweep validation (feature branch only)
+
+- [x] Source `679dd6b8` exact-HEAD FULL CI gate checked: Browser/World Tour failures or pending => **no merge into Volcanic**.
+- [x] TDD test committed first (`d8018084`) for endpoint tunneling, timed rockfall and 30/60/120 Hz; missing API confirmed by source inspection. **Runtime RED log still pending**.
+- [ ] Verify `volcanicObstacleSweptContact` against its new test with runtime RED→GREEN evidence and run `npm test`, typecheck, build, `make verify`.
+- [ ] Verify final exact-HEAD full CI (including Browser/World Tour/Quality Gate), actual WebGL desktop/mobile frames and shared runtime integration. Keep Volcanic `COMING SOON` until all gameplay and visual gates pass.
 ## Vehicle movement jitter and drift yaw — 2026-11-04
 
 **Branch:** `fix/vehicle-motion-jitter` (from `develop` b05ff1fa). Player-visible issue: left/right movement stutters at variable render rates, especially NITRO/FLY/takeoff/landing; initiating/releasing drift snaps the visual yaw 25°.
@@ -3711,6 +3718,48 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Observe actual RED→GREEN logs for new regression cases (test-only workflow runs were cancelled by later commits), final-HEAD `npm test`, typecheck, build, `make verify`, Browser/World Tour shards all running and FULL `quality-gate` green. Never equate CI workflow success with FULL when any required shard is skipped.
 - [ ] Capture actual 1440×900 and 390×844 WebGL screenshots at ground, split, flight gap, landing and checkpoints; compare both verified JPEGs excluding the lower unrelated-map strips, and record quality-tier/Reduced Motion/FPS/draw-call/p50/p95 evidence. No genuine captures recorded here.
 - [ ] Shared-system integration blocker: canonical CourseGraph runtime, signed gates, physics/altitude collision, eight graph-aware AI rivals, player/camera/rival streaming focus, safe recovery, 20 completed 3–5-minute race timing samples and explicit rollout approval. Integration source latest run 41795278514 was focused (Browser and World Tour skipped), so it is not source exact-HEAD FULL CI accepted for merge. Keep Coming Soon until accepted.
+
+## 2026-11-04 — Volcanic Crown lateral swept collision follow-up
+
+- [x] RED test committed first at `1fdee9c902bebd9b134c8f652814d616613ddac3` (`tests/playable-volcanic-crown-sweep.test.js`), covering a one-frame lateral crossing of `crack-01` at 30/60/120 Hz and unrelated-edge exclusion.
+- [x] Isolated unmodified production sweep with an equivalent fissure contact shape; at 60 and 120 Hz, endpoint-only sampling returned no hit (RED). **This is not an npm/CI test run.**
+- [x] Change the map-local swept contact sampling density to use total route-frame displacement in metres plus the existing 60-Hz time bound. No changes to the shared damage/physics engine, Coming Soon, or other branches.
+- [ ] Observe RED on test-only GitHub run 41793046568 (queued when inspected); distinguish that evidence from the isolated reproduction.
+- [ ] Verify final code HEAD: `npm test`, typecheck, build, full Browser/World Tour, `make verify`, full CI and real desktop/mobile WebGL.
+- [ ] Compare actual WebGL with the original volcanic ground/air JPEGs; note the original JPEGs themselves show a narrow lower strip of unrelated adjoining artwork, which must NOT become terrain/track content.
+- [ ] Shared CourseGraph/Race runtime and 8-car playable integration, 20 measured races and phone GPU/FPS evidence remain owned by later integration gates.
+
+## 2026-11-04 — Volcanic Crown shared route-mode compatibility
+- [x] Added test first: `vent-risk` has a physical basalt road and must use canonical `ground` mode; `CourseGraph` accepts only `ground | flight`. Initial test-only SHA `7c115982492242902b65d07ab289a48b43e20ee1`.
+- [x] Isolated data-contract RED observed: authored `vent-risk` mode was `risk`; expected `ground`. **GitHub unit RED pending; this was not `npm test`.**
+- [x] Retain the same alternate edge ID, control points, road mesh, hazardous fissure and split/rejoin. Rename only the semantic mode to `ground` and keep distinct geometry assertion in the existing topology test.
+- [ ] Exact-final-HEAD full regression, browser/World Tour, physical road drive and shared CourseGraph adapter remain separate gates.
+
+## 2026-11-04 — Volcanic Crown visible launch / landing pads
+- [x] Added test first at `6d951b7feac130ac99a14c8d97b316e745b86dcf` for ground-truth pad position and permanent emissive edge markings on two flight alternatives × Low/Medium/High with Reduced Motion.
+- [x] Added a restrained emissive basalt landing material and two geometry-based cyan edge strips per pad; all are oriented by `sampleVolcanicRoute` world frame and disposable with their chunk. No second renderer, loop or visual-only physics pose.
+- [ ] Observed `npm test` RED/GREEN, exact final-HEAD FULL CI, desktop/mobile rendered WebGL review, GPU/draw-call budgets and game landing acceptance remain required. The structural no-marking check was RED, but is not equivalent to a full test execution.
+
+
+## 2026-11-04 — Volcanic Crown map-owned completion ledger (only feature/playable-volcanic-crown)
+
+- [x] TDD-first sloped obstacle regression tests, then fix shared world-frame disc contact and warning orientation: implementation `23b4596b`. Isolated original/corrected contact functions reproduced RED/GREEN on matching sloped-plane stubs; **not an npm suite run**.
+- [x] TDD-first Low/Medium physical road mesh deviation test, then selective >=24-row tessellation on ground-2/ground-6 hairpins: `756cf21b`. Independent sampling measured original Low worst ~0.979 m and proposed 24-row ~0.256 m; real WebGL tire contact remains unverified.
+- [x] TDD-first flight-rejoin tangent test; adjust only penultimate flight control points `6bf01fb1` without damaging mainline hairpins or checkpoints.
+- [x] TDD-first canonical CourseGraph data contract export `f90ec9c8`; shared runtime continues to own motion/physics/checkpoint authority.
+- [x] TDD-first AI collision warning/passing corridor descriptors `1029e5e9`; same obstacle pose source, no parallel eight-car engine.
+- [x] TDD-first lava UV continuity test `adc8aab8`; UVs now follow absolute route arc-length across neighboring 240 m chunks.
+- [x] TDD-first directional checkpoint/finish frame metadata `c8365ac0`; no separate finish controller.
+- [x] TDD-first active-vent visual/collision parity `096628cb`; inactive mesh hidden, warning ring still visible.
+- [x] TDD-first Low/Medium/High light-intensity persistence `9b276419`; Reduced Motion stops pulsing without removing visibility.
+- [x] Fresh isolated source-geometry review at `9b27641951c880e083bba3d669156336720467c0`: ~15,964.2 m authored main ground route, 10 ground edges + three alternative edges, 12 authored obstacles with no range/road-width validation violations, flight landing approaches ~0.50° and ~0.096° to ground continuation. This is **NOT actual driving, Typecheck, WebGL or full CI**.
+- [ ] Observe test-only GitHub RED job outputs; commits were superseded/cancelled as the active branch progressed, so these must not be described as witnessed npm RED.
+- [ ] Run focused `node --test tests/playable-volcanic-crown*.test.js`, `npm test`, `npm run typecheck`, `npm run build`, `make verify` against exact final HEAD, record all logs and repair any real failures.
+- [ ] Require exact-HEAD FULL CI with every relevant Unit, Cloud Save, Browser (all shards), World Tour (all shards), and Quality Gate result confirmed PASS. Workflow-level Success with Browser/World Tour skipped does not qualify.
+- [ ] Produce real 1440×900 desktop and 390×844 mobile WebGL captures in a real race across ground, both hairpins, crater, arch, lava gorge, timed rockfall, flight and landing; compare against both original JPEG references, not source-art fragments.
+- [ ] Verify actual 8-car shared CourseGraph/RaceFactory integration, sweeps/landings, signed forward checkpoint gates, recovery, results and 20+ complete races with measured median 3–5 minutes; this requires the **read-only** `feature/epic-multiroute-longform-tracks` integration owner's work. Do not register the course for play or remove Coming Soon on this map branch.
+- [ ] Measure 30/60/120 Hz full simulation contact outcomes, Low/Medium/High and Reduced Motion real-GPU p50/p95, bounded particle/draw-call budgets, resource disposal, and physical road/body clearance on mobile.
+- [ ] No PR, deployment, changes to develop/main/integration/siblings, reset or force push.
 
 ## 2026-11-04 — Preview-only Coming Soon fail-closed access (Frostbite working branch)
 
