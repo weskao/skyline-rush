@@ -38,6 +38,18 @@ A "→ Read `docs/<file>`" line names a situation: open that file only then, fol
 specs, configs, tests, logs). Use repo-relative paths, `$HOME`/`~`, or a placeholder such as
 `<repo>`.
 
+## Animated image / GIF production (mandatory)
+
+Before creating or replacing animated Garage/HUD/Store/VFX art, **read
+`.claude/rules/animated-image-production.md` and `.claude/rules/raster-artwork.md`**.
+Use the source-locked per-item motion template, genuine object/energy motion,
+3× native canvas, transparent sprite-sheet workflow, shared-palette GIF export,
+frame/alpha/size verification and six-frame visual contact sheets. Never
+substitute generic overlays or procedural placeholder GIFs for original art.
+Do not retire the old Garage GIF generator or update a GIF manifest profile to
+`gpt-authored` until all 25 authentic replacement GIFs are committed and verified.
+Keep all reference sources intact. Follow exact-HEAD tests/CI and human review.
+
 ## Workflow (every feature and bug fix)
 
 Follow `docs/regression-first-workflow.md`: trace the shared root cause; failing test (RED) →
