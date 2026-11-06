@@ -152,6 +152,9 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
   async function commitSwipe(button: HTMLButtonElement, step: number): Promise<void> {
     swipe = null; swipeTarget = null; swipeBusy = true;
     const prepared = prepareSwipeScenes(step);
+    // Commit the choice before the transition: software WebGL can delay animation frames in CI.
+    button.click();
+    showSwipeChip('done', getSelectedTrackId());
     if (prepared && !calmMotion()) {
       const from = swipeScenes.style.transform || (step > 0 ? 'translateX(0px)' : 'translateX(-100vw)');
       const to = step > 0 ? 'translateX(-100vw)' : 'translateX(0px)';

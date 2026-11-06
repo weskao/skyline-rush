@@ -9,7 +9,7 @@ export interface CourseRoadOptions {
   to?: number;
   /** Extra half-width beyond the drivable edge (shoulder/terrain skirt), metres. */
   margin?: number;
-  /** Vertical offset from the contact surface (negative for skirts/under-decks). */
+  /** Offset along sampled road-surface up (negative for skirts/under-decks). */
   lift?: number;
 }
 
@@ -29,9 +29,9 @@ export function courseRoadGeometry(graph: CourseGraph, edgeId: string, options: 
     const f = sampleRoute(graph, edgeId, s), half = f.width / 2 + margin;
     for (let side = 0; side < 2; side++) {
       const sign = side ? 1 : -1, o = i * 6 + side * 3;
-      positions[o] = f.point[0] + f.right[0] * half * sign;
-      positions[o + 1] = f.point[1] + f.right[1] * half * sign + lift;
-      positions[o + 2] = f.point[2] + f.right[2] * half * sign;
+      positions[o] = f.point[0] + f.right[0] * half * sign + f.up[0] * lift;
+      positions[o + 1] = f.point[1] + f.right[1] * half * sign + f.up[1] * lift;
+      positions[o + 2] = f.point[2] + f.right[2] * half * sign + f.up[2] * lift;
       uvs[i * 4 + side * 2] = side;
       uvs[i * 4 + side * 2 + 1] = s / (half * 2);
     }

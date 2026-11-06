@@ -140,7 +140,6 @@ test.describe('touch controls', () => {
 
 });
 
-// The app re-rolls rings per race (race-factory.ts setLayoutSeed): the dev build lets the test pin and read the live layout.
 gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire once per press', async ({ gameplayPage: page }) => {
   gameplayTest.setTimeout(ciTimeout(90000));
   await page.locator('#controls-button').click();
