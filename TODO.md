@@ -221,6 +221,11 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
     - "Warned-against fuel fails to cross" cannot hold by design: the margin warns before the
       crossing is impossible (fuel in [12.6, 23.55) still crosses with this bot). The test instead
       covers: no warning ⇒ crosses, margin ≥ 1.5 × measured usage, a tank at half the usage falls.
+    - [ ] Pending: the 1.5 margin is chosen, not measured against human pulsing — tune it after a
+      real-device playtest of the Dune gap; keep the `used × 1.5 ≤ need` assertion.
+    - [ ] Pending: the thrust 19 / glide 7 mirror has no exact drift guard (only drift that breaks
+      `used × 1.5 ≤ need` fails); export the constants from `game.js` when it has line headroom.
+      BOOST (+3 fuel/s while thrusting) is not in the need.
 
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 
