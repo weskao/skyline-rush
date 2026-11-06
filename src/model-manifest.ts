@@ -20,7 +20,7 @@ export interface ModelManifestEntry {
   budgets: { triangles: number; bytes: number; textureMaxPx: number };
 }
 
-// RED stub: placeholder hashes/versions until the pipeline (scripts/assets/) produces the probe.
+// Hashes/bytes come from `node scripts/assets/check-glb.mjs <id>` and shasum of the committed sources.
 export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
   'pipeline-probe': {
     id: 'pipeline-probe',
@@ -28,12 +28,22 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     source: {
       master: 'assets-src/pipeline-probe/pipeline-probe.blend',
       script: 'assets-src/pipeline-probe/build.py',
-      masterSha256: '0'.repeat(64),
-      scriptSha256: '0'.repeat(64),
+      masterSha256: '1594bc47c301126057f64b561a1e29fa7a3a50a1f851d8f06852081e947a690a',
+      scriptSha256: '43d130746da94b691a4a05ae55d2d462b5f8ca18753b31866afa00e4d7d64824',
     },
-    glb: { sha256: '0'.repeat(64), bytes: 1 },
+    glb: { sha256: '4de02c9162f0825b3788efffb7d94c5c954f0bde6787484b303e9f791ab6757d', bytes: 6536 },
     license: { id: 'owned', creator: 'Skyline Rush project' },
-    provenance: { blender: '0.0', exporter: '0.0', gltfTransform: '4.5.1', commands: ['TBD'] },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        '$BLENDER_BIN --background --factory-startup --python assets-src/pipeline-probe/build.py',
+        'node scripts/assets/export-glb.mjs pipeline-probe',
+        'node scripts/assets/optimize-glb.mjs pipeline-probe',
+        'node scripts/assets/check-glb.mjs pipeline-probe --promote',
+      ],
+    },
     nodes: ['probe_body', 'wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr'],
     materials: ['probe_paint', 'probe_tire'],
     lods: [],
