@@ -64,7 +64,7 @@ jobs:
           PY
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.12'
+          node-version: '22'
           cache: npm
       - name: Install and run full unit / production build gates
         run: |
