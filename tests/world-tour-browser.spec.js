@@ -1,23 +1,14 @@
 import { selectLocale } from './helpers/locale-browser.js';
 import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
+import { brightness } from './helpers/frame-brightness.js';
 const ids = Object.keys(RACE_TRACKS);
 const newIds = ['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic'];
+const classicIds = ids.filter(id => !newIds.includes(id));
 const seed = page => page.addInitScript(ids => {
   localStorage.setItem('skyline-rush-unlocked', JSON.stringify(ids));
   localStorage.setItem('skyline-rush-music', 'off');
 }, ids);
-// Mean RGB of the rendered canvas; a NaN-poisoned frame comes back near-black.
-const brightness = async page => page.evaluate(async b64 => {
-  const image = await createImageBitmap(await (await fetch(`data:image/png;base64,${b64}`)).blob());
-  const context = new OffscreenCanvas(image.width, image.height).getContext('2d');
-  context.drawImage(image, 0, 0);
-  const data = context.getImageData(0, 0, image.width, image.height).data;
-  let sum = 0;
-  for (let i = 0; i < data.length; i += 4) sum += data[i] + data[i + 1] + data[i + 2];
-  return sum / (data.length / 4) / 3;
-}, (await page.locator('#world').screenshot()).toString('base64'));
-
 test('ten full-route previews and bilingual names are available without exposing shortcuts', async ({ page }) => {
   await seed(page);
   await page.goto('/');
@@ -37,8 +28,9 @@ test('ten full-route previews and bilingual names are available without exposing
   await expect(page.locator('[data-track="taipei"] strong')).toHaveText('Taipei Heritage');
   await expect(page.locator('#track-length')).toHaveText('5 KM SPRINT');
 });
-// Every course, not just the tour: the flat road in world.js needs WebGL, so only a real frame can check it.
-for (const id of ids) test(`course ${id} renders a lit scene and exposes racer HUD markers`, async ({page}) => {
+// The classic courses: the flat road in world.js needs WebGL, so only a real frame can check it. The tour courses are covered by
+// phase5-world-tour-browser.spec.js (same race start, frame brightness at 1440x900).
+for (const id of classicIds) test(`course ${id} renders a lit scene and exposes racer HUD markers`, async ({page}) => {
   await seed(page);
   const errors=[];
   page.on('pageerror', e => errors.push(e.message));

@@ -1,14 +1,14 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 
-// ITEM-03: the magnet's pickup reach is visible mid-race without compiling a new shader.
+// ITEM-03: the magnet's pickup reach is visible mid-race without compiling a new shader. Ring visibility and position are
+// unit-tested in tests/effects.test.js; one WebGL run keeps the shader-program guard.
 for (const [name, viewport, hasTouch] of [
   ['desktop', { width: 1440, height: 900 }, false],
-  ['phone', { width: 390, height: 844 }, true],
 ]) test.describe(`magnet radius ${name}`, () => {
   test.use({ viewport, hasTouch });
 
-  for (const trackId of ['coast', 'tokyo']) test(`${trackId}: the ring follows the car while the magnet runs`, async ({ gameplayPage: page }) => {
+  for (const trackId of ['coast']) test(`${trackId}: the ring follows the car while the magnet runs`, async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.evaluate(id => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', id])), trackId);
