@@ -3827,6 +3827,8 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 
 ## 2026-11-05 — six-course shared preview, AIRFLOW, Garage/Studio parity
 
+- Playable runbook (order, per-course prompts, merge gates): `docs/six-course-playable-runbook.md`.
+
 - [x] Read and documented the existing shared six-map home selection/swipe, AIRFLOW (ON=ground / OFF=hover), same Roadster/3 rivals, camera views, Garage Home and Preview Studio. New scoped rule: `.claude/rules/playable-course-shared-template.md`; link in `CLAUDE.md`.
 - [x] Updated the common `src/upcoming-showcase.ts` to derive Roadster vertical hover/ground/jet pose from the existing `previewPlayer` used on classic tracks; no extra map-specific controller or renderer, no change to Coming Soon.
 - [ ] Validate `tests/shared-course-template-browser.spec.js`: six consecutive horizontal carousel selections and six-course AIRFLOW/Garage/Studio interaction regressions. New `tests/upcoming-showcase.test.js` verifies shared 3D vehicle pose for every upcoming environment. Tests are authored but **not locally run**; no test-first RED or GREEN is claimed for this current revision.
