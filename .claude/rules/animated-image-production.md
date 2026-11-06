@@ -11,7 +11,7 @@ paths:
 
 # Animated artwork production: reusable source-locked template
 
-This is the reusable template for **future animated UI art**, not permission to replace original artwork with generic effects. Read `.claude/rules/raster-artwork.md` first, and preserve its 3x source, native-1x CSS layout, no clipping and accessibility requirements. For the current 25 Garage items, the item-by-item art directions in `docs/designs/garage-gpt-gif-production-brief.md` take priority over illustrative examples below.
+This is the reusable template for **future animated UI art**, not permission to replace original artwork with generic effects. Read `.claude/rules/raster-artwork.md` first, and preserve its 3x source, native-1x CSS layout, no clipping and accessibility requirements. For the current 25 Garage items, the item-by-item art directions in `docs/designs/garage-animated-gifs/gpt-gif-prompts.md` take priority over illustrative examples below.
 
 ## Source and creative acceptance (every new item)
 
