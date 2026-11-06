@@ -49,6 +49,14 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement, 
   const blocks = [...document.querySelectorAll<HTMLElement>(SELECTORS)];
   const yielding = blocks.filter(el => el.matches('.leaderboard, .progress-bar'));
   const controls = blocks.filter(el => el.matches('#touch-controls [data-control], .touch-pad'));
+  // POSITION widens for 1.2 s on every place change (its ↑/↓ arrow): measure it with the arrow shown, so a chip docked beside it stays clear.
+  const placeArrow = document.getElementById('position-change');
+  const box = (el: HTMLElement): FeedbackRect => {
+    if (!placeArrow?.hidden || !el.contains(placeArrow)) return rect(el.getBoundingClientRect());
+    const text = placeArrow.textContent;
+    Object.assign(placeArrow, { hidden: false, textContent: '↓' });
+    try { return rect(el.getBoundingClientRect()); } finally { Object.assign(placeArrow, { hidden: true, textContent: text }); }
+  };
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';
   document.body.append(probe);
@@ -70,7 +78,7 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement, 
         const area = visible(el) ? rect(el.getBoundingClientRect()) : null;
         if (area && controls.some(control => visible(control) && overlap(area, rect(control.getBoundingClientRect())))) el.style.visibility = 'hidden';
       }
-      const obstacles = blocks.filter(el => el !== impact && el !== mode && visible(el)).map(el => rect(el.getBoundingClientRect()));
+      const obstacles = blocks.filter(el => el !== impact && el !== mode && visible(el)).map(box);
       const segments = (window as Window & { getWindowSegments?: () => DOMRect[] }).getWindowSegments?.();
       if (segments?.length === 2) {
         const [a, b] = segments.map(rect);
