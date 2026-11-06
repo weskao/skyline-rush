@@ -34,10 +34,12 @@ for (const [device, options] of [['desktop', {}], ['phone', { viewport: { width:
     expect(Math.abs(await offCentre(page, id))).toBeLessThan(2);
   });
 
-  test('End race keeps the last playable track centered even with future cards after it', async ({ page }) => {
+  test('End race keeps the last playable track centred before six preview-only cards', async ({ page }) => {
     const id = tracks.at(-1);
     await raceThenLeave(page, id, 'end');
     await expect.poll(async () => Math.abs(await offCentre(page, id))).toBeLessThan(2);
+    await expect(page.locator('[data-upcoming-track]')).toHaveCount(6);
+    await expect(page.locator('button[data-upcoming-track][aria-pressed="false"]')).toHaveCount(6);
   });
 
   test('Clicking a track focuses it and scrolls it to the row centre', async ({ page }) => {

@@ -112,7 +112,7 @@ test.describe('touch controls', () => {
     await page.locator('#layout-done').click();
     await page.locator('#controls-button').click();
     await page.locator('#layout-reset').click();
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape)).toEqual({});
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape)).toEqual({});
   });
   test('edited touch buttons remain inside notched-screen safe areas', async ({ page, context }) => {
     await open(page);
@@ -140,7 +140,6 @@ test.describe('touch controls', () => {
 
 });
 
-// The app re-rolls rings per race (race-factory.ts setLayoutSeed): the dev build lets the test pin and read the live layout.
 gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire once per press', async ({ gameplayPage: page }) => {
   gameplayTest.setTimeout(ciTimeout(90000));
   await page.locator('#controls-button').click();

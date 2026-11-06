@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { featureSlug, isWorktreeUnlockedAlias, assertUpcomingEntryGuard } from '../scripts/dev-feature.mjs';
 
 const USAGE = /Usage: make dev-feature <name>\nExample: make dev-feature world-tour-landmark-boost-polish/;
@@ -47,4 +48,14 @@ test('feature server rejects stale runtime-only entry but allows preview-only br
     /lacks readiness approval/);
   assert.doesNotThrow(() => assertUpcomingEntryGuard('export const availableTracks = () => [];'));
   assert.doesNotThrow(() => assertUpcomingEntryGuard("import { upcomingReadiness } from '../upcoming-tracks.ts'; export const isUpcomingEnterable = id => upcomingReadiness(id) === 'playable';"));
+});
+
+test('feature worktrees require local TypeScript unlock policy and do not bypass Coming Soon', () => {
+  const source = readFileSync(new URL('../scripts/dev-feature.mjs', import.meta.url), 'utf8');
+  assert.match(source, /src', 'access', 'dev-unlocked\.ts'/);
+  assert.match(source, /isWorktreeUnlockedAlias\(alias, worktree\)/);
+  assert.match(source, /upcoming-tracks\.ts/);
+  assert.match(source, /assertUpcomingEntryGuard\(source\)/);
+  assert.match(source, /upcomingReadiness/);
+  assert.doesNotMatch(source, /endsWith\([^\n]*dev-unlocked\.js/);
 });

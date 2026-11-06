@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 import { UPCOMING_ENVIRONMENTS } from '../src/upcoming-scenes/index.ts';
 
-test('each Coming Soon concept can mount real 3D scenery and be disposed', () => {
+test('all six Coming Soon concepts can mount native 3D scenery and be disposed', () => {
+  // Every Coming Soon card has a real, preview-only 3D scene, including Frostbite.
   assert.deepEqual(Object.keys(UPCOMING_ENVIRONMENTS).sort(), Object.keys(UPCOMING_TRACKS).sort());
   for (const id of Object.keys(UPCOMING_TRACKS)) {
     const scene = new THREE.Scene();

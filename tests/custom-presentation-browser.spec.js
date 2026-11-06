@@ -77,7 +77,7 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('[data-track="neon"]').click();
     await expect(page.locator('#race-visual-preset')).toHaveValue('track');
     await page.locator('button[data-race-mode="classic"]').click();
-    expect(await page.evaluate(() => window.gameplay.race.session.presentation.visualPreset)).toBe('track');
+    await expect.poll(() => page.evaluate(() => window.gameplay.race.session.presentation.visualPreset)).toBe('track');
     expect(errors).toEqual([]);
   });
 });

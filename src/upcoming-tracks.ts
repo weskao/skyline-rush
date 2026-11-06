@@ -25,6 +25,7 @@ export const UPCOMING_TRACKS = Object.freeze({
   'frostbite-canyon': STAGE2_TRACKS['frostbite-canyon'],
 } as const);
 
+// Covers are not race runtimes. Release promotion is separate from branch integration.
 export type UpcomingTrackId = keyof typeof UPCOMING_TRACKS;
 /** Any Coming Soon card; entry is independently gated by readiness and build mode. */
 export type PreviewTrackId = UpcomingTrackId;

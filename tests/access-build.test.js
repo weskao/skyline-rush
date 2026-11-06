@@ -57,3 +57,10 @@ test('all unlocked Make entrypoints use the same dev-only Vite access policy', (
   assert.match(cfg.resolve.alias['@progression-access'], /access\/dev-unlocked\.ts$/);
   assert.throws(() => unlockedConfig({ command: 'build', mode: 'production' }), /development-server only/);
 });
+
+test('Garage paint entitlement comes from the build-selected access module, never a hard-wired production import', () => {
+  const garage = readFileSync(new URL('../src/garage-ui.ts', import.meta.url), 'utf8');
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.ok(!garage.includes('access/production'));
+  assert.match(main, /setupGarageUI\(\{[\s\S]*availablePaints/);
+});

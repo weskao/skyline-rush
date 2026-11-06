@@ -170,7 +170,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     const upcoming = upcomingSelection ? upcomingTrackInfo(upcomingSelection) : null;
     const name = upcomingSelection ? upcomingTrackName(upcomingSelection, getLocale()) : trackName(race.trackId, getLocale());
     startButton.disabled = Boolean(upcoming) || (!daily && (!canRace(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < cupCount())));
-    const labelKey = upcoming ? 'track.comingSoon' : startButton.disabled ? 'track.unavailable' : 'start.race';
+    const labelKey = upcoming ? 'track.comingSoon' : startButton.disabled ? 'track.locked' : 'start.race';
     const actionLabel = startButton.querySelector<HTMLElement>('span')!;
     actionLabel.dataset.i18n = labelKey;
     actionLabel.textContent = t(labelKey);
@@ -308,8 +308,15 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
   if (upcomingSelection) requestAnimationFrame(showTracks); // the shared WebGL world exists only after bootstrap
 
+  // Card previews animate only while scrolled into view.
+  const previewObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) (entry.target as HTMLElement).dataset.visible = String(entry.isIntersecting);
+  }, { root: $('.track-select') });
+  document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
+
   return {
     recreate: eventLab.recreate,
+    disconnectPreviews: (): void => previewObserver.disconnect(),
     selectedRace, canRace,
     selectedMode: (): string => selectedMode,
     isUpcomingSelected: (): boolean => Boolean(upcomingSelection),

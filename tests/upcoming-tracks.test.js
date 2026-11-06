@@ -17,6 +17,8 @@ test('only the six planning tracks (Stage 1 five + Frostbite Canyon) appear as s
     assert.ok(item.names.en.length > 0 && item.names['zh-TW'].length > 0);
     assert.ok(item.image.endsWith('.jpg'));
   }
+  assert.equal(isUpcomingTrack('frostbite-canyon'), true, 'Stage 2 card is on home since 0.30.0');
+  assert.equal(RACE_TRACKS['frostbite-canyon'], undefined, 'Stage 2 concept map cannot enter playable RaceFactory');
 });
 
 test('coming-soon never becomes playable through an unlock save or another game mode', () => {

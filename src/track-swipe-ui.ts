@@ -165,6 +165,9 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
       swipeScenes.style.transform = to;
       animation.cancel();
     }
+    // Select only once the outgoing snapshot is off-screen: selecting earlier flashes the old track at the handoff.
+    button.click();
+    showSwipeChip('done', getSelectedTrackId());
     // Wait for the live WebGL scene to reflect the new track before uncovering it.
     if (prepared) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     clearSwipeScenes();
