@@ -73,7 +73,7 @@ export function createRaceHud(options: HudOptions) {
   nitroHud.innerHTML = `<span id="nitro-status">${t('hud.nitroCount', { n: 0 })}</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="${t('hud.nitroAria')}" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
   $('.fuel-stat').append(nitroHud);
   // Include the dynamically inserted NITRO status in the initial collision geometry.
-  const feedbackPlacement = createRoadSafeFeedback(eventCallout, ui['driving-message']!);
+  const feedbackPlacement = createRoadSafeFeedback(eventCallout, ui['driving-message']!, $<HTMLElement>('#impact-report'), $<HTMLElement>('.mode-indicator'));
   const nitroSegments = [...nitroHud.querySelectorAll<HTMLElement>('.nitro-segment')];
   const nitroStatus = $('#nitro-status');
   const nitroMeter = $('#nitro-meter');
@@ -345,10 +345,12 @@ export function createRaceHud(options: HudOptions) {
     setHudText(ui['climb-rate']!, `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`);
     ui['height-indicator']!.style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
     updateBoostAndFeedback(race, car, nitroActive, flying, calm);
+    const impactWasHidden = ui['impact-report']!.hidden;
     setHudHidden(ui['impact-report']!, race.phase !== 'racing' || impactAge > 1.1);
     if (!ui['impact-report']!.hidden) {
       setHudText(ui['impact-title']!, L[car.impact.kind === 'barrier' ? 'hud.barrier' : 'hud.vehicle']!);
       setHudText(ui['impact-loss']!, String(Math.round(car.impact.speedLost * 3.6)));
+      if (impactWasHidden) feedbackPlacement.refresh(); // event-driven: measured once per hit, never per frame
     }
     updateTouchButtons(race, input, tap);
     options.updatePadHint(race.phase, race.elapsed);

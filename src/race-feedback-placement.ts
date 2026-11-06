@@ -35,18 +35,20 @@ export function pickPeripheralSlot(viewport: Size, size: Size, obstacles: Feedba
   return best && { left: best.left, top: best.top };
 }
 
-const SELECTORS = '.brand, .toolbar, .aero-tools, .airflow-hud, .race-progress, .mode-indicator, .position-stat, .speedometer, .flight-telemetry, #nitro-status, .leaderboard, .race-route-map, .impact-report, #touch-controls [data-control], .touch-pad, #tutorial-coach';
+const SELECTORS = '.brand, .toolbar, .aero-tools, .airflow-hud, .race-progress, .progress-bar, .mode-indicator, .position-stat, .speedometer, .flight-telemetry, #nitro-status, .leaderboard, .race-route-map, .impact-report, #touch-controls [data-control], .touch-pad, #tutorial-coach';
 const visible = (el: HTMLElement): boolean => !el.hidden && !!el.getClientRects().length &&
   getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
 const rect = (box: DOMRect): FeedbackRect => ({ left: box.left, right: box.right, top: box.top, bottom: box.bottom });
 
-export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement) {
+/** `mode` (ROAD/FLIGHT chip) and `impact` (collision chip) dock at an edge too; both have a fixed CSS size, so text updates never re-place them. */
+export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement, impact?: HTMLElement, mode?: HTMLElement) {
   const blocks = [...document.querySelectorAll<HTMLElement>(SELECTORS)];
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';
   document.body.append(probe);
   chip.dataset.peripheral = 'true';
   warning.dataset.peripheral = 'true';
+  for (const el of [impact, mode]) if (el) el.dataset.peripheral = 'true';
   let placing = false;
   const refresh = (): void => {
     if (placing) return;
@@ -56,7 +58,7 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement) 
       const insets = { top: parseFloat(safe.paddingTop) || 0, right: parseFloat(safe.paddingRight) || 0,
         bottom: parseFloat(safe.paddingBottom) || 0, left: parseFloat(safe.paddingLeft) || 0 };
       const viewport = { width: innerWidth, height: innerHeight };
-      const obstacles = blocks.filter(visible).map(el => rect(el.getBoundingClientRect()));
+      const obstacles = blocks.filter(el => el !== impact && el !== mode && visible(el)).map(el => rect(el.getBoundingClientRect()));
       const segments = (window as Window & { getWindowSegments?: () => DOMRect[] }).getWindowSegments?.();
       if (segments?.length === 2) {
         const [a, b] = segments.map(rect);
@@ -76,8 +78,8 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement) 
           size = el.getBoundingClientRect();
           slot = pickPeripheralSlot(viewport, size, [...obstacles, ...extra], { preferred, targetY, insets });
         }
-        if (!slot && el === warning) {
-          // Actionable warnings still appear when every HUD-safe strip is occupied.
+        if (!slot && (el === warning || el === mode)) {
+          // Warnings and the flight state still appear when every HUD-safe strip is occupied.
           slot = pickPeripheralSlot(viewport, size, [], { preferred, targetY, insets });
         }
         if (!slot) {
@@ -94,6 +96,12 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement) 
       const fuel = document.querySelector<HTMLElement>('.fuel-stat');
       const nitro = document.getElementById('nitro-status');
       const score = document.getElementById('style-score');
+      // Persistent mode chip first (beside the flight stats), then transient chips around it.
+      const flight = document.querySelector<HTMLElement>('.flight-telemetry');
+      const modeBox = mode && visible(mode) ? place(mode, 'right', (flight && visible(flight) ? flight.getBoundingClientRect().top : viewport.height * .6) - 40) : null;
+      if (modeBox) obstacles.push(modeBox);
+      // The collision chip never shares the screen with a callout or warning.
+      if (impact && !impact.hidden) place(impact, 'left', viewport.height * .43);
       const warningBox = place(warning, 'right', (fuel?.getBoundingClientRect().top ?? viewport.height * .55) - 35);
       const nitroReward = chip.dataset.kind === 'nitro' || chip.dataset.kind === 'refill';
       place(chip, nitroReward ? 'right' : 'left', ((nitroReward ? nitro : score)?.getBoundingClientRect().top ?? viewport.height * .43) + 10,

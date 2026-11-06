@@ -7,7 +7,8 @@ import { ciTimeout } from './helpers/ci.js';
 // both locales. The callout and the collision report never show together (callouts wait out the report).
 // The fold sizes inject the Viewport Segments API exactly as tests/foldable-layout-browser.spec.js does.
 const MIN_GAP = 2;
-const HUD = ['.brand', '.route-heading', '.toolbar', '.aero-tools', '.airflow-hud', '.race-progress', '.mode-indicator',
+const COMPACT_HEIGHT = 44;
+const HUD = ['.brand', '.route-heading', '.toolbar', '.aero-tools', '.airflow-hud', '.race-progress', '.progress-bar', '.mode-indicator',
   '.position-stat', '.speedometer', '.flight-telemetry', '#nitro-status', '.event-callout', '.leaderboard',
   '.race-route-map', '.impact-report', '#touch-controls [data-control]'];
 // The pause panel is meant to cover the HUD; it must only stay clear of the top-bar controls and language picker.
@@ -118,15 +119,25 @@ for (const viewport of VIEWPORTS) {
         const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
         // The callout stays off the road view: the same centre rectangle pickPeripheralSlot (src/race-feedback-placement.ts) avoids.
         const road = { left: viewport.width * 0.325, right: viewport.width * 0.675, top: viewport.height * 0.2, bottom: viewport.height * 0.72 };
-        const calloutArgs = { ...args, keep: ['.event-callout'], clearOf: { '.event-callout': road } };
+        // The progress bar (.progress-bar; mode rows stay in .race-progress) and ROAD/FLIGHT mode chip dock at the edges too (persistent blocks must never sit on the road view).
+        const calloutArgs = { ...args, keep: ['.event-callout'], clearOf: { '.event-callout': road, '.progress-bar': road, '.mode-indicator': road } };
         for (const pair of await page.evaluate(collisions, calloutArgs)) failures.push(`${locale}/${hud}/racing: ${pair}`);
+        // Compact, not a panel: the slim progress bar and the one-line mode chip each stay at most COMPACT_HEIGHT px tall.
+        for (const [selector, height] of await page.evaluate(selectors => selectors.map(selector => {
+          const element = document.querySelector(selector);
+          return [selector, element && element.getClientRects().length ? element.getBoundingClientRect().height : Infinity];
+        }), ['.progress-bar', '.mode-indicator'])) if (!(height <= COMPACT_HEIGHT)) failures.push(`${locale}/${hud}/racing: ${selector} ${height.toFixed(0)}px tall`);
         // A vehicle hit's report: the same record game.js writes in its collision handler.
         await page.evaluate(() => {
           const { race } = window.gameplay, car = race.player;
           car.impact = { kind: 'vehicle', intensity: 1, side: 1, speedLost: 8, x: car.x, altitude: 0, distance: car.distance, time: race.elapsed };
         });
-        await expect(page.locator('#impact-report')).toBeVisible({ timeout: ciTimeout(5_000) });
-        for (const pair of await page.evaluate(collisions, { ...args, keep: ['.impact-report'] })) failures.push(`${locale}/${hud}/impact: ${pair}`);
+        await expect(page.locator('#impact-report')).not.toHaveAttribute('hidden', '', { timeout: ciTimeout(5_000) });
+        // The collision chip docks at an edge like the callout, never centred over the road. Only a short landscape, whose edges
+        // are all HUD, may have it yield (style.visibility hidden); the red collision vignette and speed readout still show the hit.
+        const yielded = await page.locator('#impact-report').evaluate(element => element.style.visibility === 'hidden');
+        if (yielded && viewport.height > 500) failures.push(`${locale}/${hud}/impact: chip yielded on a ${viewport.width}x${viewport.height} screen`);
+        for (const pair of await page.evaluate(collisions, { ...args, keep: yielded ? [] : ['.impact-report'], clearOf: { '.impact-report': road } })) failures.push(`${locale}/${hud}/impact: ${pair}`);
         await page.locator('#pause-button').click();
         await expect(page.locator(PAUSE_PANEL)).toBeVisible();
         for (const pair of await page.evaluate(collisions, args)) failures.push(`${locale}/${hud}/paused: ${pair}`);
