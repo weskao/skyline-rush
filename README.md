@@ -278,6 +278,7 @@ The link-preview image is `public/og-image.jpeg`, a copy of `public/og-image.en.
 - `scripts/capture-og-images.mjs`: captures the English and zh-TW cover images and the zh-TW README screenshots from the real app.
 - `scripts/pickup-economy.mjs`: a scripted bot drives every track and prints NITRO per minute, BOOST share, fuel run-outs and the first NITRO time; `tests/pickup-economy.test.js` locks the ring/pickup layouts.
 - `scripts/ring-variety.mjs`: over re-rolled race seeds, prints each track's ring lane spread, ground share, trains and rows per race, and the bot's ring take and NITRO rate; `tests/ring-variety.test.js` keeps every lane in use without making rings harder to collect.
+- `scripts/rival-balance.mjs`: an expert bot (BOOSTs, flies for rings) and a beginner bot (neither) race seven rivals on every track and difficulty; prints the fastest rival's margin and the bot's place.
 - `scripts/ci-shards.mjs`: `plan` gives each CI shard its Playwright `--test-list`, packing tests by duration so every shard finishes at about the same time; `refresh <run-id>` rewrites `tests/ci-durations.json` from a CI run's logs after the suites change a lot.
 - `src/App.vue`, `src/icons.js`: the Vue 3 UI shell (start screen, HUD, panels, touch controls) and its shared SVG icons; rendered once with no reactive state.
 - `src/main.js`, `src/style.css`: mounts `App.vue`, wires the screen controllers and runs the race lifecycle (start, pause, restart, results) and the frame loop.
