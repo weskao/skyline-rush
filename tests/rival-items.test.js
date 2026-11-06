@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { rivalWantsNitro, rivalCollects, RIVAL_NITRO_CHARGES, ITEM_RESPAWN, EASY_RIVAL_TAKES } from '../src/rival-items.ts';
+import { rivalWantsNitro, rivalCollects, RIVAL_NITRO_CHARGES, ITEM_RESPAWN } from '../src/rival-items.ts';
 import { createRace, startRace, stepRace, NITRO_MAX, NITRO_PICKUPS } from '../src/game.js';
 import { measureEconomy } from '../scripts/pickup-economy.mjs';
 
 test('R2: rival NITRO timing lives in its own module, not in game.js', () => {
   const game = readFileSync(new URL('../src/game.js', import.meta.url), 'utf8');
   assert.doesNotMatch(game, /function rivalWantsNitro/);
-  assert.equal(RIVAL_NITRO_CHARGES, 2);
+  assert.equal(RIVAL_NITRO_CHARGES, 0, 'no NITRO at the start, like the player (user, 2026-11-07)');
   const nova = { name: 'NOVA', nitro: 2, nitroUses: 0, nitroHop: -1, altitude: 0, speed: 0, distance: 0 };
   assert.equal(rivalWantsNitro({ elapsed: 7.9, length: 5000 }, nova, 0), false);
   assert.equal(rivalWantsNitro({ elapsed: 8, length: 5000 }, nova, 0), true);
@@ -72,28 +72,21 @@ test('R4: NITRO timing counts charges already fired, so extra charges keep each 
   assert.equal(rivalWantsNitro({ elapsed: 26, length: 5000 }, nova, 0), true);
 });
 
-// AC3 (rewritten, user 2026-11-02): Easy rivals take a little, never nothing, and never more than EASY_RIVAL_TAKES each.
-test('AC3: Easy rivals take at most EASY_RIVAL_TAKES items each per race, and some take one', () => {
+// AC3 (rewritten, user 2026-11-07): no per-race take cap on any difficulty; skill sets how much a rival collects.
+test('AC3: rivals on every difficulty take items, and Hard rivals take more than Easy ones', () => {
   for (const id of ['coast', 'neon', 'tokyo']) {
-    const takes = measureEconomy(id, { mode: 'custom', rivals: 7, difficulty: 'easy' }, 600, { rivals: true }).rivalTakes;
-    assert.ok(takes.every(n => n <= EASY_RIVAL_TAKES), `${id} ${takes}`);
-    assert.ok(takes.some(n => n > 0), `${id} Easy rivals still take a little`);
+    const total = difficulty => measureEconomy(id, { mode: 'custom', rivals: 7, difficulty }, 600, { rivals: true }).rivalTakes.reduce((a, b) => a + b, 0);
+    const easy = total('easy'), hard = total('hard');
+    assert.ok(easy > 0, `${id} Easy rivals take some`);
+    assert.ok(hard > easy, `${id} Hard ${hard} > Easy ${easy}`);
   }
 });
 
-test('R4: Normal rivals only take what lies on their line: collecting never steers them', () => {
-  const race = createRace('coast');
-  startRace(race); race.phase = 'racing'; race.traffic = [];
-  for (let i = 0; i < 60 * 30; i++) {
-    stepRace(race, { throttle: true }, 1 / 60);
-    for (const r of race.rivals) assert.equal(r.seekX, undefined, r.name);
-  }
-  assert.ok(race.rivals.some(r => r.itemTakes > 0), 'Normal rivals collect on their line');
-});
-
-// R5 (user, 2026-11-02): Hard rivals change lane to reach an item, through the same avoidance as every AI car.
-function seekRace(difficulty, props = []) {
-  const race = createRace('coast', { mode: 'custom', rivals: 7, difficulty, traffic: 'off' });
+// R5 (user 2026-11-02, every difficulty since 2026-11-07): rivals change lane to reach an item, through the same
+// avoidance as every AI car. Skill sets the reach: Easy and Normal the next lane only, Hard the whole road; Normal on
+// an opening map (introRivals) keeps its line.
+function seekRace(difficulty, props = [], trackId = 'tokyo') {
+  const race = createRace(trackId, { mode: 'custom', rivals: 7, difficulty, traffic: 'off' });
   startRace(race); race.phase = 'racing'; race.elapsed = 13; race.props = props; // NOVA's hop cycle restarts: on the road for 6 s
   race.rivals.forEach((r, i) => Object.assign(r, { distance: 3000 + i * 300, x: -7.5, homeX: -7.5, altitude: 0, speed: 60, cooldown: 0 }));
   const rival = race.rivals[0];
@@ -103,15 +96,35 @@ function seekRace(difficulty, props = []) {
 }
 const drive = (race, seconds) => { for (let i = 0; i < seconds * 60; i++) stepRace(race, {}, 1 / 60); };
 
-test('R5: a Hard rival changes lane to take an item ahead; a Normal rival keeps its lane', () => {
+test('R5: a Hard rival changes two lanes to take an item ahead; Normal and Easy only reach into the next lane', () => {
   const hard = seekRace('hard');
   drive(hard.race, 3);
   assert.equal(hard.rival.itemTakes, 1, 'Hard goes for it');
   drive(hard.race, 3);
   assert.equal(hard.rival.x, -7.5, 'and returns to its lane after');
-  const normal = seekRace('normal');
-  drive(normal.race, 3);
-  assert.equal(normal.rival.itemTakes, 0, 'Normal does not steer for items');
+  for (const difficulty of ['normal', 'easy']) {
+    const far = seekRace(difficulty);
+    drive(far.race, 3);
+    assert.equal(far.rival.itemTakes, 0, `two lanes is too far for ${difficulty}`);
+    const near = seekRace(difficulty);
+    near.item.x = -2.5;
+    drive(near.race, 3);
+    assert.equal(near.rival.itemTakes, 1, `${difficulty}: the next lane over is not`);
+  }
+});
+
+test('R5: on an opening map Easy and Normal rivals keep their line; Hard still seeks there', () => {
+  for (const trackId of ['coast', 'neon']) for (const difficulty of ['easy', 'normal']) {
+    const near = seekRace(difficulty, [], trackId);
+    near.item.x = -2.5;
+    drive(near.race, 3);
+    assert.equal(near.rival.itemTakes, 0, `${trackId}: ${difficulty} does not change lane for an item`);
+  }
+  for (const trackId of ['coast', 'neon']) {
+    const hard = seekRace('hard', [], trackId);
+    drive(hard.race, 3);
+    assert.equal(hard.rival.itemTakes, 1, `${trackId}: Hard does`);
+  }
 });
 
 test('R5: seeking never drives a Hard rival through a solid obstacle', () => {
