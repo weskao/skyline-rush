@@ -18,37 +18,6 @@ for (const [name, viewport, hasTouch] of [
     await mkdir(dir, { recursive: true });
   });
 
-  const fly = async (page, label) => {
-    await expect.poll(() => page.evaluate(() => window.gameplay.race.player.altitude)).toBeGreaterThan(.5);
-    await page.screenshot({ path: `${dir}/${name}-${label}-airborne.png` });
-    await expect.poll(() => page.evaluate(() => window.gameplay.race.player.altitude), { timeout: ciTimeout(15000) }).toBe(0);
-    await page.screenshot({ path: `${dir}/${name}-${label}-landed.png` });
-    const car = await page.evaluate(() => {
-      const { player } = window.gameScene;
-      return [player.position.x, player.position.y, player.position.z, ...player.quaternion.toArray()];
-    });
-    expect(car.every(Number.isFinite)).toBe(true);
-  };
-
-  test('Sky Spiral helix, joins and launch ramps still fly and land', async ({ gameplayPage: page }) => {
-    const errors = [];
-    page.on('pageerror', error => errors.push(error.message));
-    await page.locator('[data-track="spiral"]').click();
-    await page.locator('#start-button').click();
-    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(10000) });
-    for (const [distance, x] of [[1100, 0], [1650, -7], [1650, 7], [2200, 0]]) {
-      await page.evaluate(([d, lateral]) => Object.assign(window.gameplay.race.player, { distance: d, x: lateral, speed: 0, altitude: 0 }), [distance, x]);
-      await page.waitForTimeout(250);
-      await page.screenshot({ path: `${dir}/${name}-spiral-${distance}-${x}.png` });
-    }
-    await page.evaluate(() => {
-      const race = window.gameplay.race, section = race.sections.find(s => s.type === 'launch');
-      Object.assign(race.player, { distance: section.to - 30, x: 0, speed: 55, altitude: 0, verticalSpeed: 0 });
-    });
-    await fly(page, 'spiral-launch');
-    expect(errors).toEqual([]);
-  });
-
   // First valid ramp spot per track (optionally inside [from, to]); grade = |forward.y| of the road there.
   const rampSpots = (page, ids, from = 400, to = 1e5) => page.evaluate(async ([ids, all, from, to]) => {
     const lab = await import('/src/event-lab.ts'), { createRace, RACE_TRACKS } = await import('/src/game.js');

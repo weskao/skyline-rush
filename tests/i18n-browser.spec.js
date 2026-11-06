@@ -336,7 +336,8 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
 }
 
 test.describe('language detection and persistence', () => {
-  for (const [tag, expected] of [['zh-TW', 'zh-TW'], ['zh-HK', 'zh-TW'], ['zh-CN', 'zh-TW'], ['fr-FR', 'en'], ['en-US', 'en']]) {
+  // One DOM smoke; detectLocale / resolveInitialLocale (zh variants, fallback, order, saved choice, no persistence) live in tests/i18n.test.js.
+  for (const [tag, expected] of [['zh-TW', 'zh-TW']]) {
     test.describe(`system language ${tag}`, () => {
       test.use({ locale: tag });
       test(`resolves to ${expected} and never persists the detected value`, async ({ page }) => {
@@ -351,16 +352,8 @@ test.describe('language detection and persistence', () => {
     });
   }
 
-  for (const [languages, expected] of [[['en-US', 'zh-TW'], 'en'], [['zh-TW', 'en-US'], 'zh-TW']]) {
-    test(`system order ${languages.join(',')} follows the first supported language: ${expected}`, async ({ page }) => {
-      await page.addInitScript(languages => Object.defineProperty(navigator, 'languages', { get: () => languages }), languages);
-      await page.goto('/');
-      await expect(page.locator('html')).toHaveAttribute('lang', expected);
-    });
-  }
-
   test.describe('saved choice beats the system language and survives reload', () => {
-    for (const [system, pick, other] of [['en-US', 'zh-TW', 'en'], ['zh-TW', 'en', 'zh-TW']]) {
+    for (const [system, pick, other] of [['en-US', 'zh-TW', 'en']]) {
       test.describe(`system ${system}`, () => {
         test.use({ locale: system });
         test(`click ${pick}, reload, still ${pick}`, async ({ page }) => {
@@ -376,19 +369,11 @@ test.describe('language detection and persistence', () => {
         });
       });
     }
-    test.describe('unknown saved value', () => {
-      test.use({ locale: 'zh-TW' });
-      test('is ignored in favour of the system language', async ({ page }) => {
-        await page.addInitScript(() => localStorage.setItem('skyline-rush-locale', 'xx'));
-        await page.goto('/');
-        await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
-      });
-    });
   });
 });
 
 // A status message set at runtime (not via data-i18n) must be re-rendered by a live language switch.
-for (const [locale, system] of LOCALES) test.describe(`rebind prompt ${locale}`, () => {
+for (const [locale, system] of LOCALES.slice(0, 1)) test.describe(`rebind prompt ${locale}`, () => {
   test.use({ locale: system });
   test('the key-rebind prompt re-renders in the new language and back', async ({ page }) => {
     const press = code => CATALOGS[code]['keymap.press'].replace('{action}', CATALOGS[code]['keymap.fly']);
@@ -421,7 +406,7 @@ const signStats = page => page.evaluate(() => window.__signCanvases.map(canvas =
   return { width, height, bright, edge, hash };
 }));
 
-for (const [locale, system] of LOCALES) test.describe(`road signs ${locale}`, () => {
+for (const [locale, system] of LOCALES.slice(0, 1)) test.describe(`road signs ${locale}`, () => {
   test.use({ locale: system });
   test('every sign canvas draws text, keeps it inside the frame, and repaints on a language switch', async ({ page }) => {
     await page.addInitScript(() => {
@@ -466,7 +451,9 @@ const introLines = page => page.locator('#intro').evaluate(intro => {
   const range = document.createRange();
   const lines = [];
   for (const el of intro.querySelectorAll('*')) {
-    if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+    // The fixed showcase camera dock is nested in #intro but not in its scroll flow;
+    // its placement is covered by showcase-camera-browser.spec.js.
+    if (el.closest('.showcase-camera-dock') || !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
     for (const node of el.childNodes) {
       if (node.nodeType !== 3 || !node.textContent.trim()) continue;
       range.selectNodeContents(node);

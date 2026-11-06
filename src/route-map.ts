@@ -15,6 +15,10 @@ const overpassCache = new Map<string, string>();
 const racers = RACE_DRIVER_IDS;
 interface GradeCue extends RoutePoint { distance: number; direction: 'up' | 'down' }
 const gradeCache = new Map<string, GradeCue[]>();
+// Write only when the value changed: the live map updates every frame.
+const setIfChanged = (node: SVGElement, name: string, value: string): void => {
+  if (node.getAttribute(name) !== value) node.setAttribute(name, value);
+};
 const clamp = (x: number): number => Math.max(0, Math.min(1, Number.isFinite(x) ? x : 0));
 const svg = (tag: string, attrs: Record<string, string | number> = {}): SVGElement => {
   const node = document.createElementNS(NS, tag);
@@ -127,12 +131,19 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
     element.append(marker);
     markers.set(id, marker);
   }
+  // The player is a rotating arrow plus a pulsing halo (CSS only) drawn above every rival dot.
+  const pointer = live ? svg('g', { class: 'route-player-pointer', 'aria-hidden': 'true' }) : undefined;
+  if (pointer) {
+    pointer.append(svg('circle', { r: 7, class: 'route-player-halo' }),
+      svg('path', { d: 'M0,-9 L5.5,3 L0,.5 L-5.5,3 Z', class: 'route-player-arrow' }));
+    element.append(pointer);
+  }
   const updateDrivers = (drivers: readonly RouteDriver[]): void => {
     const active = new Set(drivers.map(driver => driver.id));
     for (const [id, marker] of markers) {
-      const visible = active.has(id);
-      if (marker.getAttribute('visibility') !== (visible ? 'visible' : 'hidden')) marker.setAttribute('visibility', visible ? 'visible' : 'hidden');
+      setIfChanged(marker, 'visibility', active.has(id) ? 'visible' : 'hidden');
     }
+    if (pointer) setIfChanged(pointer, 'visibility', active.has('YOU') ? 'visible' : 'hidden');
     for (const driver of drivers) {
       const marker = markers.get(driver.id);
       if (!marker) continue;
@@ -144,8 +155,10 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
       const x = (point.x - dy / length * side).toFixed(2), y = (point.y + dx / length * side).toFixed(2);
       // Avoid forcing SVG layout/style work on frames whose tiny marker
       // movement is still subpixel at the current map size.
-      if (marker.getAttribute('cx') !== x) marker.setAttribute('cx', x);
-      if (marker.getAttribute('cy') !== y) marker.setAttribute('cy', y);
+      setIfChanged(marker, 'cx', x);
+      setIfChanged(marker, 'cy', y);
+      // Arrow tip points along the route; whole degrees keep it from rewriting every frame.
+      if (pointer && driver.id === 'YOU') setIfChanged(pointer, 'transform', `translate(${x} ${y}) rotate(${Math.round(Math.atan2(dy, dx) * 180 / Math.PI + 90)})`);
     }
   };
   if (live) updateDrivers(racers.map(id => ({ id, distance: 0 })));

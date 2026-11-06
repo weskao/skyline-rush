@@ -3,6 +3,14 @@
 **Planning branch:** `feature/epic-multiroute-longform-tracks`  
 **Decision (2026-11-02):** **All five NEW tracks are POINT-TO-POINT, with one START and one separate FINISH.** No lap counting or loop-race variant on these five; existing ten sprint tracks retain the same single-finish mental model. Harbor Circuit remains a distinct mode.
 
+## Stage 1 animated 3D homepage — P0 before full playable tracks
+
+**User-confirmed requirement (2026-11-03):** The five initial proposed Stage 1 Coming Soon tracks must show **real animated Three.js showrooms on the homepage**, matching existing real 3D vehicle, hover/jets, scenery depth, moving environment and camera conventions. A static JPEG hero overlay or photo plane is not acceptable. Two existing JPEG concept views per map remain **art-direction references** and compact thumbnails only.
+
+**Binding home stage:** [Animated Three.js homepage spec](../../superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) · [six GPT scene/renderer implementation prompts](../../superpowers/prompts/2026-11-03-six-chat-home-preview-implementation.md) · [TDD execution plan](../../superpowers/plans/2026-11-03-six-chat-home-preview-integration.md). Homepage showroom **does not make the full track playable**: Coming Soon selection remains preview-only with disabled bilingual Start, and no upcoming ID enters RaceFactory or the unlock/gameplay registry.
+
+**Separate acceptance:** 5 individually animated **true 3D** environments + 5 unique scene landmarks and ground/air branch designs, shared real player/rival models, single existing WebGL renderer/composer, reduced-motion/quality tier support, actual time-separated WebGL screenshots (desktop/phone) vs both JPEG views, old-track regression and exact-HEAD CI. **None of this is marked as verified solely by this document.**
+
 ## Mandatory implementation fidelity gate
 
 Before implementing any Stage 1 or Stage 2 track, follow [**Concept JPEG → real WebGL visual acceptance**](visual-acceptance-gate.md). All **20 committed JPEG scene references** (10 Stage 1 and 10 Stage 2) are moodboards and camera/scene anchors, not actual game captures. Review both views using deterministic race/camera settings, document the six visual categories and any approved deviations, and preserve point-to-point START/FINISH. Stage 2 JPEGs are resampled for reference viewing, not true original 3× texture assets.

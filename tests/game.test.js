@@ -42,6 +42,22 @@ test('starting requires a countdown and countdown holds every racer on the grid'
   assert.equal(race.phase, 'racing');
 });
 
+test('GO launches every racer rolling, so FLY and BOOST answer the moment GO shows', () => {
+  for (const input of [{ fly: true }, { fly: true, throttle: true }]) {
+    const race = createRace();
+    startRace(race);
+    while (race.phase === 'countdown') stepRace(race, {}, 1 / 60);
+    assert.ok(race.rivals.every(rival => rival.speed > 0), 'rivals launch with the player');
+    advance(race, 0.1, input);
+    assert.ok(race.player.altitude > 0, `FLY lifts off within 0.1 s of GO: ${JSON.stringify(input)}`);
+  }
+  const boosted = createRace(); startRace(boosted);
+  while (boosted.phase === 'countdown') stepRace(boosted, {}, 1 / 60);
+  const before = boosted.player.speed;
+  advance(boosted, 0.1, { boost: true });
+  assert.ok(boosted.player.boosting && boosted.player.speed > before);
+});
+
 test('accelerating, coasting, braking and steering respect road and speed limits', () => {
   const race = racing();
   advance(race, 8, { throttle: true, steer: 1 });
@@ -58,6 +74,7 @@ test('accelerating, coasting, braking and steering respect road and speed limits
 test('thrusters require speed, lift the car, spend fuel and land on release', () => {
   const race = racing();
   Object.assign(race, { pickups: [], rings: [] }); // a charge row on the road would refill fuel
+  race.player.speed = 0; // stopped below takeoff speed (GO itself launches the grid rolling)
   advance(race, 1, { fly: true });
   assert.equal(race.player.altitude, 0);
   assert.equal(race.player.fuel, 100);
@@ -187,7 +204,7 @@ test('steering eases in, reverses promptly and recenters when released', () => {
 test('close ground overtakes award charge once, chain within five seconds and reset on contact', () => {
   const race = racing();
   race.rivals = [];
-  Object.assign(race.player, { speed: 70, fuel: 50 });
+  Object.assign(race.player, { speed: 70, fuel: 50, distance: 0 });
   const traffic = { x: race.player.x + 2.5, distance: -4, speed: 20 };
   race.traffic = [traffic];
   stepRace(race, { boost: true }, 1 / 60);
@@ -960,13 +977,14 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
   assert.notDeepEqual(createRace('coast').rings, createRace('neon').rings);
 });
 
-// Coast keeps its gate line: every ring at x 2.5, altitude 8 and road-height 3 alternating by ring.
-test('coast keeps its gate line at x 2.5, alternating altitude 8 and road-height 3', () => {
-  // One ring per slot (a row's first lane, a train's first ring); the single slots keep the gate line, by slot index.
+// Coast keeps its gate heights: altitude 8 and road-height 3 alternating by ring, each on a lane (user, 2026-11-07:
+// no longer always lane 3).
+test('coast keeps its gate heights, alternating altitude 8 and road-height 3, on any lane', () => {
+  // One ring per slot (a row's first lane, a train's first ring); the single slots keep the gate heights, by slot index.
   const slots = createRace('coast').rings.filter(ring => !(ring.row && ring.x !== -7.5) && !ring.train);
   slots.forEach((ring, i) => {
     if (ring.row || ring.train !== undefined) return;
-    assert.equal(ring.x, 2.5, `ring ${i} @${ring.distance}`);
+    assert.ok(LANES.includes(ring.x), `ring ${i} @${ring.distance} x ${ring.x}`);
     assert.equal(ring.altitude, i % 2 ? 3 : 8, `ring ${i} alternates`);
   });
 });
