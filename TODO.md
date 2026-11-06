@@ -200,12 +200,27 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
     Ground paths unchanged in the 120–330 s window, 0 rejections.
   - Cost: `stepRace` on Dune, min of 8 runs, 45.7 µs/frame at `caee7bf1` vs 46.7 µs now (host load
     average 33–68, so within noise; recovery allocates only on the rare recovery frame).
-  - Open: on Dune's 923 m gap the shared need formula (`FLY_DRAIN · gap / speed`, continuous
-    thrust) exceeds 100 below ~138 m/s, so `courseGapWarning` is non-null before the gap at any
-    reachable speed even with a full tank, although pulsed FLY crosses with ≥ 87 left. Product call
-    whether the graph warning should use the hover duty instead. Camera snap on recovery is Task 8
-    (world.js only snaps for Frostbite). Rival hazard knock at the parallel branch is covered by the
-    same sweep (edge-matched), not by a separate test.
+  - Open: camera snap on recovery is Task 8 (world.js only snaps for Frostbite). Rival hazard knock at
+    the parallel branch is covered by the same sweep (edge-matched), not by a separate test.
+  - Follow-up (user decision 2026-11-07): gap-charge need from pulsed FLY usage, graph path only.
+    The legacy formula (`FLY_DRAIN · gap / speed` + lift, continuous thrust) gave 163.4 at 88 m/s
+    (141.8 BOOST, 123.4 NITRO), so every Dune air approach showed "NEED 164% CHARGE" with any fuel,
+    while the pulse bot uses ~13. `courseGapWarning` now uses need = 1.5 × hover burn × gap seconds
+    + `GAP_LIFT_RESERVE` below `GAP_CLEARANCE`. Hover burn comes from the engine physics: thrust duty
+    7 / (19 + 7) (thrust 19 m/s², released-FLY glide 7 m/s², inline literals in `stepRace`, mirrored
+    in `course-race-step.ts`) × `FLY_DRAIN` − (1 − duty) × `GLIDE_FUEL_REGEN` ≈ 1.115 fuel/s.
+    Legacy `gapChargeWarning` is unchanged (replay 47/47).
+    - RED: `node --test --test-name-pattern='pulsed|88 m/s' tests/dune-tempest-race.test.js` →
+      0 pass / 2 fail, both `AssertionError`: "a full tank crosses with pulsed FLY" (warning
+      non-null at fuel 100, 88 m/s, 300 m before the gap); `assert.ok(full.need <= 100)`.
+    - GREEN: `tests/dune-tempest-race.test.js` 18/18.
+    - Measured: need 300 m before the gap 23.55 / 21.14 / 19.09 at 88 / 102 / 118 m/s. Pulse bot
+      at 88 m/s: 12.58 used (100 → 87.42); 12.58 × 1.5 = 18.87 ≤ 23.55. Entering with exactly the
+      need (23.55, no warning shown) it crosses with 10.97 left, 0 falls, 0 rejections; with 6.5
+      it runs dry and falls.
+    - "Warned-against fuel fails to cross" cannot hold by design: the margin warns before the
+      crossing is impossible (fuel in [12.6, 23.55) still crosses with this bot). The test instead
+      covers: no warning ⇒ crosses, margin ≥ 1.5 × measured usage, a tank at half the usage falls.
 
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 

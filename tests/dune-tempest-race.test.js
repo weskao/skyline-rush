@@ -364,3 +364,44 @@ test('a non-physical odometer jump is rejected and the car re-seated through pla
   for (let i = 0; i < 60; i++) stepRace(race, { throttle: true }, 1 / 60);
   assert.equal(race.course.rejections, 2, 'both keep stepping after recovery');
 });
+
+// ---- Task 6 follow-up: the graph gap-charge need comes from pulsed-FLY usage, not continuous thrust ----
+test('courseGapWarning at 88 m/s, 300 m before the gap: full tank → null; below the pulsed need → warned, need ≤ 100', () => {
+  const approach = routeLength(graph, 'canyon-approach'), [from] = DUNE_TEMPEST_RACE.noRoad[AIR][0], split2 = 5000;
+  const race = raceAt(), at = approach - (300 - from);
+  seat(race, race.player, 'YOU', 'canyon-approach', at, split2 - (approach - at), { x: laneFor('canyon-approach', AIR), speed: 88, fuel: 100 });
+  assert.equal(courseStep.courseGapWarning(race), null, 'a full tank crosses with pulsed FLY');
+  race.player.fuel = 0;
+  const { need } = courseStep.courseGapWarning(race);
+  assert.ok(need <= 100, `pulsed need ${need} is reachable`);
+  race.player.fuel = need - 0.01;
+  assert.ok(courseStep.courseGapWarning(race), 'just below the need: warned');
+  race.player.fuel = need;
+  assert.equal(courseStep.courseGapWarning(race), null, 'at the need: no warning');
+});
+
+// The warning's promise: with exactly the need it reports at the top of the flight edge (no warning shown), the scripted
+// pulse bot crosses; the need covers the measured usage with its stated margin; with half the measured usage it falls.
+test('pulsed need: no-warning fuel crosses, margin covers the measured usage, a starved tank falls', () => {
+  const run = fuelAt => {
+    let need = null, entry = null, low = Infinity;
+    const { race } = botRace(60, PATHS[0], { second: AIR, trace: (r, you) => {
+      if (you.travel.currentEdgeId !== AIR) return;
+      if (need === null) {
+        r.player.fuel = 0; need = courseStep.courseGapWarning(r).need;
+        r.player.fuel = entry = fuelAt(need);
+      }
+      low = Math.min(low, r.player.fuel);
+    } });
+    return { race, need, used: entry - low };
+  };
+  const full = run(() => 100);
+  assert.equal(full.race.player.falls, 0);
+  assert.ok(full.need <= 100);
+  assert.ok(full.used * 1.5 <= full.need + 1e-9, `measured ${full.used} × 1.5 margin ≤ need ${full.need}`);
+  const exact = run(need => need);
+  assert.equal(exact.race.player.falls, 0, `crosses with exactly the need ${exact.need}`);
+  assert.equal(exact.race.course.rejections, 0);
+  const starved = run(() => full.used / 2);
+  assert.equal(starved.race.player.falls, 1, 'half the measured usage: falls into the gap');
+});

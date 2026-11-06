@@ -9,7 +9,7 @@ import { chooseBranchByLateral, courseCarGap, courseNoRoadAt, courseRemaining, c
 import { dropCar, type FallingCar } from './road-falls.ts';
 import { knock } from './car-collisions.js';
 // Read only inside functions, so the game.js ↔ course-race-step.ts import cycle cannot hit the TDZ.
-import { FLY_DRAIN, GAP_CLEARANCE, GAP_LIFT_RESERVE, GAP_SLOWDOWN, GAP_WARN_DISTANCE } from './game.js';
+import { FLY_DRAIN, GAP_CLEARANCE, GAP_LIFT_RESERVE, GAP_SLOWDOWN, GAP_WARN_DISTANCE, GLIDE_FUEL_REGEN } from './game.js';
 
 interface Car { distance: number; id?: string }
 interface RaceCar extends Car { x: number; altitude: number; finishTime?: number | null }
@@ -131,18 +131,29 @@ export function courseHazardBlockers(race: CourseRef, car: Car, out: number[]): 
   }
 }
 
+// Pulsed FLY hover (§11), the engine's stepRace physics: thrust adds FLY_THRUST m/s² while burning FLY_DRAIN; released FLY
+// glides at GLIDE_GRAVITY m/s² regaining GLIDE_FUEL_REGEN. Holding height needs thrust duty g / (a + g) = 7/26, so the net
+// burn is duty·FLY_DRAIN − (1 − duty)·GLIDE_FUEL_REGEN ≈ 1.12 fuel/s (not the continuous FLY_DRAIN of 1D bridges).
+const FLY_THRUST = 19, GLIDE_GRAVITY = 7; // m/s², inline literals in game.js stepRace (no line headroom to export them)
+const PULSE_MARGIN = 1.5; // × the hover burn: covers pulse overshoot and a less even rhythm than the scripted bot's
+const pulsedBurn = (): number => {
+  const duty = GLIDE_GRAVITY / (FLY_THRUST + GLIDE_GRAVITY);
+  return duty * FLY_DRAIN - (1 - duty) * GLIDE_FUEL_REGEN;
+};
+
 /** First no-road interval on `edgeId` (starting `offset` m past the player's edge start) not yet passed at `s`. */
 function gapWarning(race: CourseHost, edgeId: string | null, offset: number, s: number): { from: number; need: number } | null | undefined {
   const car = race.player, rt = race.course!;
   for (const [from, to] of (edgeId && rt.spec.noRoad[edgeId]) || []) {
     if (offset + to <= s) continue;
     if (offset + from - s > GAP_WARN_DISTANCE) return undefined;
-    const need = FLY_DRAIN * (offset + to - Math.max(s, offset + from)) / Math.max(car.speed, 18) + (car.altitude >= GAP_CLEARANCE ? 0 : GAP_LIFT_RESERVE);
+    const seconds = (offset + to - Math.max(s, offset + from)) / Math.max(car.speed, 18);
+    const need = PULSE_MARGIN * pulsedBurn() * seconds + (car.altitude >= GAP_CLEARANCE ? 0 : GAP_LIFT_RESERVE);
     return car.fuel < need ? { from: rt.cars.get(PLAYER_ID)!.edgeStart + offset + from, need } : null;
   }
   return undefined;
 }
-/** §11 gapChargeWarning on the graph: the next gap within GAP_WARN_DISTANCE on the player's edge, else on the branch its lane picks. */
+/** §11 gapChargeWarning on the graph (need from pulsed FLY): the next gap within GAP_WARN_DISTANCE on the player's edge, else on the branch its lane picks. */
 export function courseGapWarning(race: CourseHost): { from: number; need: number } | null {
   const rt = race.course!, { travel } = rt.cars.get(PLAYER_ID)!, graph = rt.spec.graph;
   if (travel.finished) return null;
