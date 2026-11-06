@@ -105,6 +105,7 @@ test('keyboard practice requires real actions, completes all ten steps and prese
   await keyStep(page, 'e', 'complete');
   await expect(page.locator('#tutorial-retry')).toBeVisible();
   await expect(page.locator('#tutorial-done')).toHaveText('Back to game');
+  await expect(page.locator('#tutorial-exit')).toBeHidden(); // Back to game already leaves practice
   // Completion must not freeze the world: the race stays live as a free cruise and a banner confirms the finish.
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await expect(page.locator('.tutorial-celebration')).toContainText('Free drive');
@@ -150,7 +151,7 @@ test('practice restores a paused race and uses the current custom throttle key',
   await page.locator('#tutorial-open').click();
   await expect(page.locator('#tutorial-input')).toContainText('Z');
   await keyStep(page, 'z', 'left');
-  await page.locator('#tutorial-pause').click();
+  await page.locator('#pause-button').click();
   await page.keyboard.down('a');
   await page.waitForTimeout(650);
   await page.keyboard.up('a');
@@ -169,9 +170,9 @@ test('the gate arrow points the way and Skip step moves on by a real click', asy
   await step(page, 'left');
   await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'left');
   await expect(page.locator('#tutorial-instruction')).toContainText('gate');
-  await page.locator('#tutorial-pause').click();
+  await page.locator('#pause-button').click();
   await expect(skip).toBeHidden();
-  await page.locator('#tutorial-pause').click();
+  await page.locator('#resume-button').click();
   await expect(skip).toBeVisible();
   await skip.click();
   await step(page, 'right');
@@ -181,13 +182,75 @@ test('the gate arrow points the way and Skip step moves on by a real click', asy
 
 test('switching language updates the active and paused lesson immediately', async ({ page }) => {
   await begin(page);
-  await page.locator('#tutorial-pause').click();
+  await page.locator('#pause-button').click();
   await selectLocale(page,'zh-TW');
   await expect(page.locator('#tutorial-title')).toContainText('油門');
-  await expect(page.locator('#tutorial-instruction')).toHaveText('練習已暫停。準備好後按繼續；暫停時的操作不會計入。');
-  await expect(page.locator('#tutorial-pause')).toHaveText('繼續');
+  await expect(page.locator('#overlay-copy')).toHaveText('練習已暫停，暫停時的操作不會計入。按下方按鈕繼續練習。');
   await selectLocale(page,'en');
-  await expect(page.locator('#tutorial-pause')).toHaveText('Resume');
+  await expect(page.locator('#overlay-copy')).toContainText('Practice is paused');
+});
+
+test('the coach offers one control per action: no second pause, no second exit after completion', async ({ page }) => {
+  await begin(page);
+  const actions = page.locator('#tutorial-coach button:visible');
+  await expect(actions).toHaveText(['Skip step', 'Exit']); // pausing is the top bar's ⏸ (Esc), as in every race
+  await expect(page.locator('#pause-button')).toBeVisible();
+  await expect(page.locator('#tutorial-pause')).toHaveCount(0); // settled: removed from the coach markup
+});
+
+// The full coach and the pause screen's title, copy and resume button never overlap, all inside the pause screen's
+// visible box (it scrolls, so a button past its bottom edge is hidden from the player).
+const pauseLayoutClear = page => page.evaluate(() => {
+  const coach = document.querySelector('#tutorial-coach').getBoundingClientRect();
+  const box = document.querySelector('#race-overlay').getBoundingClientRect();
+  return [...document.querySelectorAll('#overlay-title, #overlay-copy, #resume-button')].every(el => {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.bottom <= Math.min(innerHeight, box.bottom) && r.right <= innerWidth && (r.top >= coach.bottom || r.bottom <= coach.top || r.left >= coach.right || r.right <= coach.left);
+  });
+});
+for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 844, height: 390 }, { width: 750, height: 342 }]) {
+  test.describe(`paused practice ${viewport.width}x${viewport.height}`, () => {
+    test.use({ viewport, hasTouch: true, isMobile: true });
+    test('the pause screen is readable beside the full coach', async ({ page }) => {
+      await begin(page);
+      for (const next of ['left', 'right', 'brake', 'drift']) {
+        await page.locator('#tutorial-skip-step').tap();
+        await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', next);
+      }
+      await page.locator('#pause-button').tap();
+      await selectLocale(page, 'zh-TW'); // the drift lesson in zh-TW is the tallest coach card
+      await expect(page.locator('#race-overlay')).toBeVisible();
+      // Paused, the coach keeps its lesson and progress; Exit is its only button.
+      for (const id of ['#tutorial-title', '#tutorial-progress', '#tutorial-instruction']) await expect(page.locator(id)).toBeVisible();
+      await expect(page.locator('#tutorial-coach button:visible')).toHaveText(['退出']);
+      await expect.poll(() => pauseLayoutClear(page)).toBe(true);
+      await page.locator('#resume-button').tap();
+      await expect(page.locator('#tutorial-instruction')).toBeVisible();
+      await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
+    });
+  });
+}
+
+test('paused practice shows the pause screen and how to resume, including the auto-pause on leaving the tab', async ({ page }) => {
+  await begin(page);
+  const overlay = page.locator('#race-overlay'), resume = page.locator('#resume-button');
+  await page.locator('#pause-button').click();
+  await expect(overlay).toBeVisible();
+  await expect(page.locator('#overlay-copy')).toContainText('Practice is paused');
+  await expect(resume).toBeVisible();
+  await expect(page.locator('#again-button')).toBeHidden(); // "Race again" has no meaning inside practice
+  await expect(page.locator('#tutorial-title')).toBeVisible();
+  await expect.poll(() => pauseLayoutClear(page)).toBe(true);
+  await resume.click();
+  await expect(overlay).toBeHidden();
+  await expect(page.locator('#race-status')).toHaveText('RACING');
+  // Switching tab/app auto-pauses: coming back must show the same pause screen, not a frozen road.
+  await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+  await expect(overlay).toBeVisible();
+  await expect(resume).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(overlay).toBeHidden();
+  await expect(page.locator('#race-status')).toHaveText('RACING');
 });
 
 test.describe('first visit without storage', () => {
@@ -410,10 +473,11 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       // landing before the coach can advance to the next lesson.
       await step(page, 'nitro');
       await gesture(button('nitro'),'complete');
-      const box=await page.locator('#tutorial-exit').boundingBox();
+      await expect(page.locator('#tutorial-exit')).toBeHidden(); // completed practice leaves through Back to game
+      const box=await page.locator('#tutorial-done').boundingBox();
       expect(box.width).toBeGreaterThanOrEqual(44);
       expect(box.height).toBeGreaterThanOrEqual(44);
-      await page.locator('#tutorial-exit').tap();
+      await page.locator('#tutorial-done').tap();
       await expect(coach(page)).toBeHidden();
       expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).mode)).toBe(mode);
       if(custom) {

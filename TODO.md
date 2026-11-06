@@ -23,6 +23,34 @@ unchanged; no per-frame DOM queries/allocations beyond one attribute write on ch
   `npm run build` dist of the final code).
 - [ ] Not checked: other seven maps' palettes by screenshot (only coast/canyon), real touch hardware, exact-HEAD CI.
 
+## 2026-11-07 — Ring lane variety (`feature/ring-variety`)
+
+Root cause: Coast pinned every gate to x 2.5 (lane 3); other tracks drew x uniformly in ±7 m, so lanes 2/3 took
+~74% of rings, and trains were limited to lanes 2/3. Fix in `src/ring-layout.ts`: each ring line picks a lane
+(uniform over four, keeping the previous lane 65%), trains follow their slot's lane; Coast keeps its 8 m / 3 m heights.
+
+- [x] RED `tests/ring-variety.test.js` (Coast lanes `0/0/100/0`) → GREEN; lanes now ~22–29% each on every track.
+- [x] Ease guard over 12 seeds (`node scripts/ring-variety.mjs 12`): bot ring take within 2 pts and NITRO/min within
+  ~4% of the pre-change baseline on all ten tracks; trains/rows per race unchanged.
+- [x] Seed-coupled tests updated: Coast gate line (heights, any lane), train lanes (tracks any lane, Endless middle),
+  World Tour layout hashes re-locked, risk-line payout tests use the 8-car grid. `npm test` 1890 / 0 fail.
+- [x] Authored sequences protected (user choice: rule + guard): `.claude/rules/ring-layout.md` (ask before changing)
+  and `tests/ring-authored-sequences.test.js` (Spiral/Cosmic hoops, Gauntlet hoops, shortcut reward line over 5
+  seeds); mutation check: moving `spiral-hoop-1` 10 m turns it RED. `npm test` 1893 / 0 fail.
+- [x] Catch-up items (user, 2026-11-07; design `docs/superpowers/specs/2026-11-07-catch-up-items-design.md`):
+  `src/catch-up-items.ts`, Classic (not Daily) + Cup, player-only, ≥ 150 m behind → on, < 50 m → off, one item per
+  12–6 s, ≤ 12 per race, added 950–1030 m ahead (past the 900 m draw range). RED (module missing) → GREEN
+  `tests/catch-up-items.test.js` 8/8; race state stays structuredClone-able (RNG derived per try, not stored).
+  `npm test` 1901 / 0 fail. Simulated weak driver: 0–3 items per race, finish time ±0.5 s (mild by design).
+- [x] Browser: the full `npm run test:browser` run lost its server after ~594 tests (396 ERR_CONNECTION_REFUSED). Each
+  of the 56 other failures was rerun alone on this branch and on the `develop` base `475517fe`: 2 were ours
+  (`item-feedback:27`, an outer-lane miss clamped back into the ring; `handoff:143`, a steer-less pilot vs rings in other
+  lanes) plus `ring-rows` expecting a middle-lane train; test setups fixed, assertions unchanged. Every other spec passes
+  alone (79 + Garage 46). Stress (`--repeat-each=8 --workers=4 --retries=0`, ring-rows + handoff + item-feedback):
+  7/40 fail on this branch and 7/40 on the `develop` base — a load flake already on `develop`, not caused by this change.
+- [ ] Real WebGL screenshots of edge-lane rings, trains and catch-up items reviewed by eye.
+- [ ] Exact-HEAD full CI after merge to `develop` (needs user approval).
+
 ## Garage Wave 3 branch-specific source notes (preserved from economy branch)
 
 ## 2026-11-06 — Edge-docked race HUD (`feature/compact-race-hud`)

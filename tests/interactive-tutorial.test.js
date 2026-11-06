@@ -1,19 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, stepRace } from '../src/game.js';
-import { createInteractiveTutorial, prepareTutorialInput } from '../src/interactive-tutorial.ts';
+import { createRace, stepRace, DRIFT_MIN_SPEED } from '../src/game.js';
+import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from '../src/interactive-tutorial.ts';
 import { DRIFT_ENTRY_KMH } from './helpers/tutorial-practice.js';
 
 const DT = 1 / 60;
 function tick(session, action = {}, dt = DT) {
   const input = { ...action };
-  if (!['throttle', 'brake'].includes(session.step)) input.throttle = true;
+  if (session.step !== 'throttle' && !(session.step === 'brake' && input.brake)) input.throttle = true;
+  const before = session.race.player.speed, index = session.index;
   stepRace(session.race, input, dt);
   session.update(input, dt);
+  session.onTick?.(before, index);
 }
 function performDrift(session) {
   const start = session.index;
   const car = session.race.player;
+  // The brake lesson hands over at crawl speed: like a player, pick speed back up (the old
+  // 65 m/s lesson start) so the 2 s hold below outlasts the drift's speed bleed.
+  for (let i = 0; i < 600 && car.speed < 65; i++) tick(session);
+  assert.ok(car.speed >= 65 && car.speed > DRIFT_MIN_SPEED);
   // Earlier one-way steering may leave the car on a rail; drive back to centre first.
   for (let i = 0; i < 300 && Math.abs(car.x) > 1; i++) tick(session, { steer: -Math.sign(car.x) });
   assert.equal(session.index, start, 'steering alone is not drifting');
@@ -370,4 +376,30 @@ test('drift cannot complete without a real payout and must not reward a crash', 
   tick(session);
   assert.equal(session.step, 'drift', 'less than one second earns no payout');
   performDrift(session);
+});
+
+test('practice speed only changes through the driving physics, never a lesson snap', () => {
+  const session = createInteractiveTutorial();
+  const car = session.race.player;
+  let worst = { jump: 0 };
+  // One tick of full throttle + NITRO is well under 2 m/s; a snap to a lesson speed is ~30 m/s.
+  // Watched where the controller sets speed: lesson changes and the brake crawl (rail knocks are physics).
+  session.onTick = (before, index) => {
+    if (index === session.index && session.step !== 'brake') return;
+    const jump = Math.abs(car.speed - before);
+    if (jump > worst.jump) worst = { jump, from: TUTORIAL_STEPS[index], to: session.step, before, after: car.speed };
+  };
+  perform(session, { throttle: true });
+  assert.ok(worst.jump < 2, `throttle → left jumped ${JSON.stringify(worst)}`);
+  assert.ok(car.speed < 20, 'the first lesson clears from a standing start');
+  for (const action of [{ steer: -1 }, { steer: 1 }]) perform(session, action);
+  // Released brake while crawling short of the gate: the car accelerates back up instead of snapping to cruise.
+  assert.equal(session.step, 'brake');
+  for (let i = 0; i < 100; i++) tick(session, { brake: true });
+  assert.equal(session.step, 'brake', 'still short of the red gate');
+  assert.ok(car.speed < 30, 'the held brake crawls');
+  for (let i = 0; i < 30; i++) tick(session);
+  perform(session, { brake: true });
+  for (const action of [{ fly: true }, { fly: false }, { boost: true }]) perform(session, action); // drift runs first
+  assert.ok(worst.jump < 2, `lesson flow jumped ${JSON.stringify(worst)}`);
 });
