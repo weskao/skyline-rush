@@ -100,8 +100,10 @@ Reference = the file to load from the branch (render `.svg` at the canvas size f
    image or any other asset.
 3. In `public/feature-assets/garage-animated/manifest.json`, keep all 25 entries and their `name`, `category`,
    `source`, `file`, `width` and `height`. Update `size` (exact byte size), `frames` (frame count) and `fps` (`1000 / duration`),
-   and set `profile` to `"gpt-authored"`.
-4. Retire the procedural generator in the same commit, because its CI workflow re-renders and auto-commits the GIFs and would overwrite yours:
+   and set `profile` to `"gpt-authored"` only for a GIF whose real frames you have generated and checked. Never mark an unfinished item.
+4. Keep the procedural generator, its test and its workflow until ALL 25 GIFs are `gpt-authored` and verified.
+   The workflow only re-renders when those three files change, so committing GIFs alone is safe.
+   Remove them only in the commit that completes the 25th GIF:
    - delete `scripts/generate-garage-gifs.py`, `tests/test_garage_gif_motion.py` and `.github/workflows/garage-animated-gifs.yml`;
    - in `tests/garage-animated-artwork.test.js`, delete only the test whose title starts with
      `'every item has its own source-driven motion recipe'` (it reads the deleted script). Leave every other test untouched.
@@ -116,7 +118,8 @@ Reference = the file to load from the branch (render `.svg` at the canvas size f
    from PIL import Image, ImageSequence
    items = json.loads(Path('public/feature-assets/garage-animated/manifest.json').read_text())
    assert len(items) == 25
-   for it in items:
+   done = [it for it in items if it.get('profile') == 'gpt-authored']
+   for it in done:
        path = Path(it['file']); gif = Image.open(path); n = it['name']; w = it['width']
        margin = 20 if w == 216 else 12
        assert gif.format == 'GIF' and gif.size == (w, w), n
@@ -126,11 +129,12 @@ Reference = the file to load from the branch (render `.svg` at the canvas size f
            a = np.asarray(frame.convert('RGBA'))[:, :, 3]
            ys, xs = np.nonzero(a > 16)
            assert min(xs.min(), ys.min(), w - 1 - xs.max(), w - 1 - ys.max()) >= margin, f'{n}: margin'
-   print('OK: 25 GIFs pass the contract')
+   print(f'OK: {len(done)}/25 gpt-authored GIFs pass the contract')
    PY
    ```
-6. Commit and push to the same branch:
-   `git add -A && git commit -m "assets(garage): replace 25 procedural GIFs with GPT-authored animations [full-regression]" && git push origin feature/garage-preview-animated-gifs`.
-   If you work in batches, retire the generator (step 4) in the FIRST commit.
+6. Commit and push to the same branch, for example:
+   `git add -A && git commit -m "assets(garage): GPT-authored <batch> GIFs [full-regression]" && git push origin feature/garage-preview-animated-gifs`.
+   If you work in batches, each batch commit holds only its GIFs and their manifest entries, and the generator stays in place.
+   Do step 4 (remove the generator) only in the final commit, once all 25 are done and the check prints `25/25`.
 7. Report: each file with its byte size and frame count, a 6-frame contact sheet per GIF on `#0f1c33`, and the
    verification output. List any item you could not finish, with the reason.
