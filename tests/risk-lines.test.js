@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, RISK_SCORE } from '../src/game.js';
 import { normalizeRaceConfig, rulesSignature } from '../src/race-config.ts';
+import { riskRules } from '../src/risk-lines.ts';
 
 const ready = race => { startRace(race); race.phase = 'racing'; race.countdown = 0; return race; };
 // Score one risk-ring pickup and one close ground pass for a given race.
@@ -40,6 +41,12 @@ test('harder Custom races pay more for aerial risk rings and close ground passes
   assert.ok(hard.ringPay > normal.ringPay, `risk ring ${hard.ringPay} > ${normal.ringPay}`);
   assert.ok(hard.nearPay > normal.nearPay, `near pass ${hard.nearPay} > ${normal.nearPay}`);
   assert.deepEqual(payouts({ mode: 'custom', difficulty: 'easy' }).ringPay, normal.ringPay, 'easy never pays less than today');
+});
+
+test('Hard Custom pays the exact scaled risk-line values; Normal and Off keep their own', () => {
+  assert.deepEqual(riskRules(normalizeRaceConfig({ mode: 'custom', difficulty: 'hard' })), { rings: true, ringScore: 750, nearScore: 450, passScore: 150 });
+  assert.deepEqual(riskRules(normalizeRaceConfig({ mode: 'custom', difficulty: 'normal' })), { rings: true, ringScore: 500, nearScore: 300, passScore: 150 });
+  assert.deepEqual(riskRules(normalizeRaceConfig({ mode: 'custom', riskLines: 'off' })), { rings: false, ringScore: 0, nearScore: 0, passScore: 0 });
 });
 
 test('practice can switch risk lines and their scoring off without moving any other ring', () => {
