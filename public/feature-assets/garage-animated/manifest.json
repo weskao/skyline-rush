@@ -9,7 +9,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "airflow-prism",
@@ -21,7 +21,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "airflow-slipstream",
@@ -33,7 +33,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "airflow-vortex",
@@ -45,7 +45,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "launch-flare-basic",
@@ -57,7 +57,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "launch-flare-blue",
@@ -69,7 +69,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "launch-flare-cyan",
@@ -81,7 +81,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "launch-flare-gold",
@@ -89,11 +89,11 @@
     "profile": "gpt-authored",
     "source": "public/feature-assets/garage-vfx-skins/raster/flare-gold@3x.webp",
     "file": "public/feature-assets/garage-animated/launch-flare-gold@3x.gif",
-    "size": 566501,
+    "size": 566502,
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "launch-flare-magenta",
@@ -105,7 +105,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "launch-flare-pulse",
@@ -117,7 +117,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "launch-flare-red",
@@ -129,7 +129,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "launch-flare-ring",
@@ -141,7 +141,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "launch-flare-white",
@@ -153,7 +153,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "nitro-trail-basic",
@@ -165,7 +165,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "nitro-trail-cyan",
@@ -177,7 +177,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "nitro-trail-gold",
@@ -189,7 +189,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "nitro-trail-purple",
@@ -201,7 +201,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "nitro-trail-red",
@@ -213,7 +213,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "store-box",
@@ -221,11 +221,11 @@
     "profile": "gpt-authored",
     "source": "public/feature-assets/garage-store-readiness/raster/store-box@3x.webp",
     "file": "public/feature-assets/garage-animated/store-box@3x.gif",
-    "size": 289829,
+    "size": 288405,
     "width": 216,
     "height": 216,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "store-bundle",
@@ -237,7 +237,7 @@
     "width": 216,
     "height": 216,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "store-collection",
@@ -245,11 +245,11 @@
     "profile": "gpt-authored",
     "source": "public/feature-assets/garage-store-readiness/raster/store-collection@3x.webp",
     "file": "public/feature-assets/garage-animated/store-collection@3x.gif",
-    "size": 256655,
+    "size": 256580,
     "width": 216,
     "height": 216,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "thruster-basic",
@@ -261,7 +261,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "thruster-ion",
@@ -273,7 +273,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "thruster-plasma",
@@ -285,7 +285,7 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   },
   {
     "name": "thruster-void",
@@ -297,6 +297,6 @@
     "width": 288,
     "height": 288,
     "frames": 20,
-    "fps": 20.0
+    "fps": 20
   }
 ]
