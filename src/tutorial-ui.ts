@@ -2,6 +2,7 @@ import { nextTick } from 'vue';
 import { updateCoachView } from './tutorial-coach-state.ts';
 import { t } from './i18n.ts';
 import { TUTORIAL_STEPS } from './interactive-tutorial.ts';
+import { trackProgressBottom } from './hud-progress-offset.ts';
 
 interface TutorialSnapshot {
   index: number;
@@ -55,6 +56,7 @@ export function setupTutorialUI({
   const progress = document.querySelector<HTMLProgressElement>('#tutorial-progress')!;
   let tutorialView = '';
   // blur(): a focused button would otherwise re-fire on the Space/Enter keys the lessons use.
+  trackProgressBottom($('#tutorial-coach'), document.documentElement, '--tutorial-coach-bottom');
   $('#tutorial-skip-step').addEventListener('click', event => { (event.currentTarget as HTMLElement).blur(); getTutorial()?.skip?.(); });
   function renderTutorial(force = false): void {
     const tutorial = getTutorial();

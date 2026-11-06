@@ -194,27 +194,35 @@ test('the coach offers one control per action: no second pause, no second exit a
   await expect(page.locator('#tutorial-pause')).toHaveCount(0); // settled: removed from the coach markup
 });
 
-// The folded coach and the pause screen's title, copy and resume button never overlap, all on screen.
+// The full coach and the pause screen's title, copy and resume button never overlap, all inside the pause screen's
+// visible box (it scrolls, so a button past its bottom edge is hidden from the player).
 const pauseLayoutClear = page => page.evaluate(() => {
   const coach = document.querySelector('#tutorial-coach').getBoundingClientRect();
+  const box = document.querySelector('#race-overlay').getBoundingClientRect();
   return [...document.querySelectorAll('#overlay-title, #overlay-copy, #resume-button')].every(el => {
     const r = el.getBoundingClientRect();
-    return r.width > 0 && r.bottom <= innerHeight && r.right <= innerWidth && (r.top >= coach.bottom || r.bottom <= coach.top || r.left >= coach.right || r.right <= coach.left);
+    return r.width > 0 && r.bottom <= Math.min(innerHeight, box.bottom) && r.right <= innerWidth && (r.top >= coach.bottom || r.bottom <= coach.top || r.left >= coach.right || r.right <= coach.left);
   });
 });
 for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 844, height: 390 }, { width: 750, height: 342 }]) {
   test.describe(`paused practice ${viewport.width}x${viewport.height}`, () => {
     test.use({ viewport, hasTouch: true, isMobile: true });
-    test('the pause screen is readable beside the folded coach', async ({ page }) => {
+    test('the pause screen is readable beside the full coach', async ({ page }) => {
       await begin(page);
+      for (const next of ['left', 'right', 'brake', 'drift']) {
+        await page.locator('#tutorial-skip-step').tap();
+        await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', next);
+      }
       await page.locator('#pause-button').tap();
+      await selectLocale(page, 'zh-TW'); // the drift lesson in zh-TW is the tallest coach card
       await expect(page.locator('#race-overlay')).toBeVisible();
-      await expect(page.locator('#tutorial-instruction')).toBeHidden(); // folded: the pause screen carries the message
-      await expect(page.locator('#tutorial-exit')).toBeVisible();
+      // Paused, the coach keeps its lesson and progress; Exit is its only button.
+      for (const id of ['#tutorial-title', '#tutorial-progress', '#tutorial-instruction']) await expect(page.locator(id)).toBeVisible();
+      await expect(page.locator('#tutorial-coach button:visible')).toHaveText(['退出']);
       await expect.poll(() => pauseLayoutClear(page)).toBe(true);
       await page.locator('#resume-button').tap();
       await expect(page.locator('#tutorial-instruction')).toBeVisible();
-      await expect(page.locator('#race-status')).toHaveText('RACING');
+      await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     });
   });
 }
