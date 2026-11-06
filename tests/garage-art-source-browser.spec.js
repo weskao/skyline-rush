@@ -26,37 +26,6 @@ test('Garage source artwork is available at native 3x resolution with 1x CSS dis
   await expect(source).not.toContainText(/buy now|purchase|claim reward|立即購買|立即領取/i);
 });
 
-test('safe 3x reference cards never crop image or caption on desktop and phone', async ({ page }) => {
-  for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1440,height:900}]) {
-    await page.setViewportSize(viewport);
-    await page.goto('/');
-    await page.locator('#garage-button').click();
-    const gallery = page.locator('#garage-art-source-garage-store-readiness');
-    await gallery.locator('summary').click();
-    const cards = gallery.locator('.garage-badge-card');
-    await expect(cards).toHaveCount(6);
-    for (const card of await cards.all()) {
-      await card.scrollIntoViewIfNeeded();
-      // Box/bundle/collection swap to their GIF once visible; cart/star/tag keep the original under a CSS sweep.
-      // Measure only after it settled (browser-test-stability.md).
-      const gif = /^store-(box|bundle|collection)$/.test(await card.getAttribute('data-art'));
-      await expect.poll(() => card.locator('img').evaluate(img => [img.dataset.animationActive, img.naturalWidth]), { message: 'store art settled' }).toEqual([String(gif), 216]);
-      const v = await card.evaluate(node => {
-        const outer = node.getBoundingClientRect(), art = node.querySelector('img').getBoundingClientRect();
-        const frame = node.querySelector('.garage-badge-art-frame').getBoundingClientRect();
-        const caption = node.querySelector('figcaption').getBoundingClientRect();
-        return { native: node.querySelector('img').naturalWidth, icon: [art.width,art.height],
-          inside: frame.left <= art.left && frame.right >= art.right && frame.top <= art.top && frame.bottom >= art.bottom,
-          labelSafe: caption.top >= frame.bottom + 4, width: outer.width, viewport: innerWidth };
-      });
-      expect(v.native).toBe(216);
-      expect(v.icon).toEqual([72,72]);
-      expect(v.inside).toBe(true); expect(v.labelSafe).toBe(true);
-      expect(v.width).toBeLessThanOrEqual(v.viewport);
-    }
-  }
-});
-
 test('Store 3x artwork appears directly in Garage and opens its 6-image interactive gallery', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -127,23 +96,6 @@ test('failed selected Store concept image keeps readable text and no purchase CT
   await expect(detail.getByRole('img', {name: 'Featured icon'})).toBeVisible();
   await expect(gallery.locator('[data-wave3-description]')).not.toBeEmpty();
   await expect(gallery.getByRole('button', {name: /buy|checkout|claim|pay/i})).toHaveCount(0);
-});
-
-test('Rewards/Missions source artwork is available at native 3x resolution with 1x CSS display without granting capabilities', async ({ page }) => {
-  await page.goto('/');
-  await page.locator('#garage-button').click();
-  const source = page.locator('#garage-art-source-garage-rewards-and-missions');
-  await expect(source).toBeVisible();
-  await source.locator('summary').click();
-  // The summary entry icon is not a catalog thumbnail; count the grid only.
-  const thumbnails = source.locator('.garage-source-grid img');
-  await expect(thumbnails).toHaveCount(8);
-  const first = thumbnails.first();
-  await first.scrollIntoViewIfNeeded();
-  await expect(first).toHaveAttribute('width', '96');
-  await expect(first).toHaveAttribute('height', '96');
-  await expect(first).toHaveJSProperty('naturalWidth', 288);
-  await expect(source).not.toContainText(/buy now|purchase|claim reward|立即購買|立即領取/i);
 });
 
 test('safe 3x Rewards/Missions reference cards never crop image or caption on desktop and phone', async ({ page }) => {

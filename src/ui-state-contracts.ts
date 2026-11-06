@@ -52,14 +52,15 @@ export interface TutorialCoachView {
   step: string;
   title: string;
   instruction: string;
-  pauseText: string;
-  pauseHidden: boolean;
   completeActionsHidden: boolean;
   assistHidden: boolean;
   hintKeys: string;
   hintText: string;
   /** Non-empty only after the last lesson: the free-cruise celebration subtitle. */
   celebration: string;
+  /** Direction of the practice target gate ('left' | 'right' | 'ahead'), '' when none is out. */
+  guide: string;
+  skipHidden: boolean;
 }
 export interface ControlPanelsView {
   settingsOpen: boolean;

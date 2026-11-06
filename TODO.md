@@ -1,4 +1,83 @@
+## 2026-11-07 — Minimap player marker (`feature/minimap-player-marker`, based on `origin/develop` `55821906`)
+
+Symptom: the player's dot on `.race-route-map` was the same shape as the 7 rival dots, hard to find at a glance.
+Acceptance: player marker clearly different in shape, size and colour at 1440×900, 390×844 and 844×390; map box
+unchanged; no per-frame DOM queries/allocations beyond one attribute write on change; CSS-only pulse that honours
+`prefers-reduced-motion`.
+
+- [x] Design: `g.route-player-pointer` (aria-hidden, no `data-racer`, drawn last) = cyan arrow rotated along the route
+  (`translate(x y) rotate(deg)`, whole degrees, written only on change) + white halo pulsing via CSS keyframes
+  (`route-player-pulse`; `animation:none` under reduced motion). The 8 `[data-racer]` circles are unchanged.
+  CSS lives below the NITRO marker, so the `main-ui-contract.json` cssBlob is untouched.
+- [x] RED→GREEN unit: `tests/route-map.test.js` (pointer exists, last child, not a racer, follows YOU, writes nothing on
+  an unchanged frame, hidden with YOU) failed on old code with "exactly one player pointer" / `reading 'attrs'`, passes now.
+- [x] RED→GREEN browser: `tests/legacy-minimap-browser.spec.js` "player minimap marker …" ×3 viewports + reduced-motion
+  test failed (4/4, pointer not found) against a build of the old `route-map.ts`; 13/13 pass on the new build
+  (`PLAYWRIGHT_PORT=5320`).
+- [x] `npm test` 1900 pass / 0 fail / 3 skipped; `npm run typecheck` exit 0; `npm run build` PASS.
+- [x] Real WebGL screenshots reviewed (desktop coast + canyon, phone portrait 390×844 and landscape 844×390, 5 s into
+  a race): arrow clearly visible on light and dark map palettes; annotated composite built with the player circled blue
+  (Telegram send via `/screenshot-mark-send` follows the commit).
+- [x] Related browser specs (responsive, race-hud-overlap, eight-car-grid, main-ui-parity, world-tour, i18n,
+  mode-coverage, circuit, race-feedback-visibility): 194 passed, 0 failed (`PLAYWRIGHT_PORT=5320`, 20.7 min, on the
+  `npm run build` dist of the final code).
+- [ ] Not checked: other seven maps' palettes by screenshot (only coast/canyon), real touch hardware, exact-HEAD CI.
+
+## 2026-11-07 — Ring lane variety (`feature/ring-variety`)
+
+Root cause: Coast pinned every gate to x 2.5 (lane 3); other tracks drew x uniformly in ±7 m, so lanes 2/3 took
+~74% of rings, and trains were limited to lanes 2/3. Fix in `src/ring-layout.ts`: each ring line picks a lane
+(uniform over four, keeping the previous lane 65%), trains follow their slot's lane; Coast keeps its 8 m / 3 m heights.
+
+- [x] RED `tests/ring-variety.test.js` (Coast lanes `0/0/100/0`) → GREEN; lanes now ~22–29% each on every track.
+- [x] Ease guard over 12 seeds (`node scripts/ring-variety.mjs 12`): bot ring take within 2 pts and NITRO/min within
+  ~4% of the pre-change baseline on all ten tracks; trains/rows per race unchanged.
+- [x] Seed-coupled tests updated: Coast gate line (heights, any lane), train lanes (tracks any lane, Endless middle),
+  World Tour layout hashes re-locked, risk-line payout tests use the 8-car grid. `npm test` 1890 / 0 fail.
+- [x] Authored sequences protected (user choice: rule + guard): `.claude/rules/ring-layout.md` (ask before changing)
+  and `tests/ring-authored-sequences.test.js` (Spiral/Cosmic hoops, Gauntlet hoops, shortcut reward line over 5
+  seeds); mutation check: moving `spiral-hoop-1` 10 m turns it RED. `npm test` 1893 / 0 fail.
+- [x] Catch-up items (user, 2026-11-07; design `docs/superpowers/specs/2026-11-07-catch-up-items-design.md`):
+  `src/catch-up-items.ts`, Classic (not Daily) + Cup, player-only, ≥ 150 m behind → on, < 50 m → off, one item per
+  12–6 s, ≤ 12 per race, added 950–1030 m ahead (past the 900 m draw range). RED (module missing) → GREEN
+  `tests/catch-up-items.test.js` 8/8; race state stays structuredClone-able (RNG derived per try, not stored).
+  `npm test` 1901 / 0 fail. Simulated weak driver: 0–3 items per race, finish time ±0.5 s (mild by design).
+- [x] Browser: the full `npm run test:browser` run lost its server after ~594 tests (396 ERR_CONNECTION_REFUSED). Each
+  of the 56 other failures was rerun alone on this branch and on the `develop` base `475517fe`: 2 were ours
+  (`item-feedback:27`, an outer-lane miss clamped back into the ring; `handoff:143`, a steer-less pilot vs rings in other
+  lanes) plus `ring-rows` expecting a middle-lane train; test setups fixed, assertions unchanged. Every other spec passes
+  alone (79 + Garage 46). Stress (`--repeat-each=8 --workers=4 --retries=0`, ring-rows + handoff + item-feedback):
+  7/40 fail on this branch and 7/40 on the `develop` base — a load flake already on `develop`, not caused by this change.
+- [ ] Real WebGL screenshots of edge-lane rings, trains and catch-up items reviewed by eye.
+- [ ] Exact-HEAD full CI after merge to `develop` (needs user approval).
+
 ## Garage Wave 3 branch-specific source notes (preserved from economy branch)
+
+## 2026-11-06 — Edge-docked race HUD (`feature/compact-race-hud`)
+
+Repro: on a phone in landscape, the RACING progress panel, the ROAD/FLIGHT MODE panel and the VEHICLE CONTACT toast
+stacked into a ~180 px block centred over the road; desktop/tablet/fold showed the same centred toast and a large mode
+panel. Accepted layout (user choice "邊緣停靠"): slim progress strip in the top bar, one-line ROAD/FLIGHT chip and
+collision chip docked at an edge, never on the road view.
+
+- [x] RED: `tests/race-hud-overlap-browser.spec.js` asserts `.progress-bar`, `.mode-indicator` (racing) and
+  `.impact-report` (impact) stay clear of the road rectangle, and the bar/chip are ≤ 44 px tall; failed on all 7
+  viewports (desktop, tablet, portrait, small phone, landscape, vertical fold, horizontal fold) before the change.
+- [x] GREEN: progress bar moved out of the transformed `.race-progress` (mode rows stay there); mode and collision chips
+  docked by `createRoadSafeFeedback` (layout-change events only, no per-frame measuring). Short landscape: icon + budget
+  chip; the collision chip yields when every edge is HUD (red vignette + red speed readout show the hit).
+- [x] Phone leaderboard (user choice "鄰近三行" + moved off the main view): RED in the same spec — `.leaderboard` covered
+  the road (844x390 at 150–280 × 82–204; 390x844 at 262–367 × 102–262; vertical fold) and was 122–160 px tall with 8
+  rows; a nearby-rows test (1st → YOU,2,3; last → 6,7,YOU) and a Controls-panel test (hand right, Buttons, size L,
+  NITRO cluster dragged onto the board; 844x390 + 390x844) failed with `.leaderboard × control:*`. GREEN: phones
+  (short landscape, portrait ≤ 760 px) show the car ahead, YOU and the car behind (`data-near`, set on rank change
+  only), no panel, 42 px tall, ending before the road column; desktop/tablet keep 8 rows (asserted). The board and
+  progress bar yield to a control the player places over them; hand/size/custom-layout changes now re-run placement.
+- [x] Pre-existing, exposed by the slower spec: once GO! cleared, the en collision chip (121 px) found no edge column
+  at 390/320 px wide and yielded (HEAD passed only because its check ran during GO!). Opt-in `sky` fallback in
+  `pickPeripheralSlot` (unit test RED→GREEN; default still no central fallback) + narrower compact chip ≤ 370 px; the
+  callout now also avoids a visible collision chip. Spec 22/22 with `--repeat-each 2`; `npm test` 1885 pass / 0 fail.
+- [ ] Full browser suite, layout gate, real-device iPhone/fold check, exact-HEAD CI.
 
 ## 2026-11-06 — Wave 3 integration completion (`feature/wave3-garage-integration-20261105`)
 
@@ -76,7 +155,7 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
 ## AI-assisted 3D visual fidelity pipeline / Three.js r186.1 — 2026-11-04
 
 **Branch:** `feature/3d-visual-fidelity-pipeline` (created from develop `b8ae6a19`).
-**Status:** r180 baseline and migration preparation underway; dependency migration, new assets and game modifications **NOT DONE**.
+**Status:** r180 baseline captured and the r186.1 upgrade landed (D8 visual review and D9 phones open); new assets and game modifications **NOT DONE**.
 **Spec:** [3D design](docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md) ·
 [Implementation plan](docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) ·
 [Phase 0 preflight](docs/designs/3d-pipeline/toolchain-environment-preflight.md) ·
@@ -84,25 +163,27 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
 [Per-task files, by-project vs by-device](docs/designs/3d-pipeline/phases/README.md).
 
 - [x] **Phase 0 (highest priority):** On the actual Mac at `~/Documents/Workspace/skyline-rush`, run read-only environment checks: Blender binary/version, enabled addon, live Blender MCP scene query, global Claude Code Skills `blender-image-to-3d` and `threejs-*`, user-scoped Claude MCP and optional Codex MCP, Node >=22.20, uvx, project Three.js/types and glTF Transform. Record PASS/FAIL/NOT VERIFIED with sanitized output; repair missing pieces and recheck. **User-reported installed ≠ verified.** Globally installed tools belong in home agent paths, not the repository.
-- [ ] **Phase 0 cross-device acceptance (separate .md):** On each target device, independently execute the by-device items of [E01–E14 standalone validation and AI prompt](docs/designs/3d-pipeline/phase0-multi-device-acceptance.md); by-project items are done once ([split](docs/designs/3d-pipeline/phases/README.md)). Device-specific results and evidence must stay **LOCAL ONLY** in gitignored `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md` (never commit/push). Once all required checks pass, store only the generic product model such as `Mac mini` in the local report and ignored `audits/device-status.md`. Keep actual commands, versions, live MCP output and READY/BLOCKED status out of public TODO.md. No device's PASS substitutes for another's; this public checkbox covers documentation, not actual verification.
-- [ ] **Phase 1:** Baseline r180 screenshots/performance/RED tests; upgrade `three` to 0.186.1 and align `@types/three`, npm lockfile, import APIs and typecheck scripts (currently hardcoded r180); keep WebGLRenderer, existing composer and shader/NaN safeguards; full regression and exact-HEAD CI.
+- [x] **Phase 0 cross-device acceptance (separate .md):** On each target device, independently execute the by-device items of [E01–E14 standalone validation and AI prompt](docs/designs/3d-pipeline/phase0-multi-device-acceptance.md); by-project items are done once ([split](docs/designs/3d-pipeline/phases/README.md)). Device-specific results and evidence must stay **LOCAL ONLY** in gitignored `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md` (never commit/push). Once all required checks pass, store only the generic product model such as `Mac mini` in the local report and ignored `audits/device-status.md`. Keep actual commands, versions, live MCP output and READY/BLOCKED status out of public TODO.md. No device's PASS substitutes for another's; this public checkbox covers documentation, not actual verification.
+  Documentation is complete (E01–E14 spec and AI prompt). Every target device runs it locally and keeps its result only in the gitignored `audits/`; a device that has not run it yet is not verified by this box. Owner decision 2026-11-06: the only target device is the MacBook Pro class; any device added later repeats E01–E14 before use.
+- [x] **Phase 1:** Baseline r180 screenshots/performance/RED tests; upgrade `three` to 0.186.1 and align `@types/three`, npm lockfile, import APIs and typecheck scripts (currently hardcoded r180); keep WebGLRenderer, existing composer and shader/NaN safeguards; full regression and exact-HEAD CI. Done for the MacBook Pro class (D1–D9 below); other devices repeat the by-device steps. Exact-HEAD full CI (workflow_dispatch, all shards and `quality-gate` success): `4b5843a9`, run 42190734590.
   - **By project — done once, the result lives in git/CI and does not depend on the device:**
     - [x] Task 1 RED contract + capture tooling (`67fc5218`): `node --test tests/three-version-contract.test.js` fails 4/4 at r180; see `tests/three-baseline-browser.spec.js` and the [baseline procedure](docs/designs/3d-pipeline/r180-baseline.md). Garage preview metrics capture corrected and Studio views added; device evidence remains local.
-    - [ ] Task 2 upgrade: `three` 0.186.1 + `@types/three` 0.186.0 exact-pinned, lockfile, dynamic types installs removed from `typecheck:ts`/`typecheck:vue`; contract test GREEN; `npm run typecheck`, `npm test`, `npm run build` (all deterministic from the lockfile). Run `python3 scripts/three-pipeline/phase1_project_check.py` (P0 rebase pull, P1 `npm ci`, P2 contract test, P3 typecheck, P4 `npm test`, P5 build; `--steps P2,P3` for a subset). AI agents may execute it directly without asking: it never commits or pushes, and stops at the first FAIL.
-      Project check P0–P5 passed locally after the upgrade (1,588 unit tests passed, 3 skipped); commit and exact-HEAD CI remain pending. `vue-tsc` is pinned in devDependencies rather than installed during typecheck.
-    - [ ] Fix any r186 API breakage found by a device run below (`RoomEnvironment` in `src/world.js`, `updateWorldMatrix` in `effects.js`/`aero-vfx.js`/`world-tour-batching.ts`); one shared fix, never a per-device workaround.
-      Studio bloom was visibly washed out after the upgrade. The real-WebGL background check failed before calibrating Studio bloom and passed afterward; broader visual comparisons and regression checks are pending.
-    - [ ] Commit, then the full exact-HEAD `quality-gate` CI run; record SHA and run ID here (no device identifiers).
+    - [x] Task 2 upgrade: `three` 0.186.1 + `@types/three` 0.186.0 exact-pinned, lockfile, dynamic types installs removed from `typecheck:ts`/`typecheck:vue`; contract test GREEN; `npm run typecheck`, `npm test`, `npm run build` (all deterministic from the lockfile). Run `python3 scripts/three-pipeline/phase1_project_check.py` (P0 rebase pull, P1 `npm ci`, P2 contract test, P3 typecheck, P4 `npm test`, P5 build; `--steps P2,P3` for a subset). AI agents may execute it directly without asking: it never commits or pushes, and stops at the first FAIL.
+      Project check P0–P5 passed locally after the upgrade (1,588 unit tests passed, 3 skipped). `vue-tsc` is pinned in devDependencies rather than installed during typecheck. Full CI on `886f7d3e` (run 42149772669) completed `success`.
+    - [x] Fix any r186 API breakage found by a device run below (`RoomEnvironment` in `src/world.js`, `updateWorldMatrix` in `effects.js`/`aero-vfx.js`/`world-tour-batching.ts`); one shared fix, never a per-device workaround.
+      Only one fix was needed: Studio bloom was visibly washed out after the upgrade, so `bloom.strength` in the Garage Studio branch of `src/world.js` went 0.12 → 0.01. The real-WebGL background check failed before it and passed afterward. `effects.js`, `aero-vfx.js` and `world-tour-batching.ts` needed no change. Captures taken before this fix are obsolete; the visual side-by-side review (D8) is still pending.
+    - [x] Commit, then the full exact-HEAD `quality-gate` CI run; record SHA and run ID here (no device identifiers).
+      Full gate (all browser, World Tour, unit and cloud-save shards) green on `30f42322`, run 42155574000. The following docs-only commit `f2646871` passed run 42166546637 with the suites skipped by design (parent was green). Manual full-regression run 42190734590 on `4b5843a9` (all browser, World Tour, unit and cloud-save shards) completed `success`, `quality-gate` green.
   - **By device — repeat on every device; nothing transfers between them (GPU, browser and `node_modules` differ). Results LOCAL ONLY in the gitignored `audits/` report, generic model name only.** D1–D7 run as one command, `python3 scripts/three-pipeline/phase1_device_check.py --alias "<generic model>"` (`--steps D4,D5` for a subset, `--npm-ci` for a real reinstall; `--self-test` checks the script itself); D8 and D9 stay manual:
-    - [ ] D1 Clean install: `npm ci`, then `npm ls three @types/three` shows 0.186.1 / 0.186.0 (Phase 0 E10 recheck).
-    - [ ] D2 Browser launch sanity: a bare Playwright `chromium.launch({ channel: 'chrome' })` succeeds before any spec is judged.
-    - [ ] D3 Own r180 baseline: capture it from the pre-upgrade commit `68675409` in a worktree (`make perf BASE=68675409`, plus the `THREE_BASELINE=1 LABEL=r180` spec there). Another device's evidence is not a baseline for this device.
-    - [ ] D4 `tests/shader-warmup-browser.spec.js` + `tests/black-frame-browser.spec.js` pass at r186.
-    - [ ] D5 r186 capture, phone and desktop viewport (`THREE_BASELINE=1 LABEL=r186`), compared with D3: geometries and programs equal, textures exactly +1 (r186's shared DFG lookup texture, `getDFGLUT()` in `WebGLRenderer.js`; any other delta is a real change); draw calls and triangles within ±10 % (they vary with live traffic); no page or console errors.
-    - [ ] D6 `make perf VIEWPORT=desktop RATE=6 ROUNDS=3`: p50/p95 no worse than D3.
-    - [ ] D7 `make verify` (unit, build, browser, World Tour long-run) green.
-    - [ ] D8 Own screenshots reviewed side by side against D3 (Garage paint and glass first: `RoomEnvironment` changed in r183).
-    - [ ] D9 Each physical phone: `make perf-phone`, only for phones used for QA.
+    - [x] D1 Clean install: `npm ci`, then `npm ls three @types/three` shows 0.186.1 / 0.186.0 (Phase 0 E10 recheck). Verified locally: `npm ci` passed in the project check (P1), installed versions re-confirmed afterwards; evidence in gitignored `audits/`.
+    - [x] D2 Browser launch sanity: a bare Playwright `chromium.launch({ channel: 'chrome' })` succeeds before any spec is judged. Verified locally.
+    - [x] D3 Own r180 baseline: capture it from the pre-upgrade commit `68675409` in a worktree (`make perf BASE=68675409`, plus the `THREE_BASELINE=1 LABEL=r180` spec there). Another device's evidence is not a baseline for this device.
+    - [x] D4 `tests/shader-warmup-browser.spec.js` + `tests/black-frame-browser.spec.js` pass at r186 (part of the D7 browser stage, 0 failed).
+    - [x] D5 r186 capture, phone and desktop viewport (`THREE_BASELINE=1 LABEL=r186`), compared with D3: geometries and programs equal, textures exactly +1 (r186's shared DFG lookup texture, `getDFGLUT()` in `WebGLRenderer.js`; any other delta is a real change); draw calls and triangles within ±10 % (they vary with live traffic); no page or console errors. Verified locally: geometries and programs equal, textures +1, no page or console errors.
+    - [x] D6 `make perf VIEWPORT=desktop RATE=6 ROUNDS=3`: p50/p95 no worse than D3. Verified locally (median of 3 rounds, no worse than D3).
+    - [x] D7 `make verify` (unit, build, browser, World Tour long-run) green at `30f42322`: exit 0, 1,622 unit tests passed / 0 failed / 3 skipped, browser stage 1,000 passed / 6 skipped / 0 failed, World Tour stage 328 passed. Run under `caffeinate` (an idle-sleeping machine makes World Tour specs time out at ~15 min, which is not an r186 failure).
+    - [x] D8 Own screenshots reviewed side by side against D3 (Garage paint and glass first: `RoomEnvironment` changed in r183). Reviewed and approved by the owner on 2026-11-06; screenshots stay in gitignored `audits/`.
+    - [x] D9 Each physical phone: `make perf-phone`, only for phones used for QA. Owner reported a real-phone run as fine on 2026-11-06 (not re-run by an agent); numbers stay in gitignored `audits/`.
 - [ ] **Phase 2:** Build reproducible Blender Python/MCP → editable .blend → PBR/UV/LOD → GLB → glTF Transform/Meshopt/KTX2 pipeline; before downloading or using external assets, verify their sources, licenses and available disk space; implement asynchronous GLTFLoader with renderer reuse, startup warmup, ownership, subpath URLs and procedural fallback.
 - [ ] **Phase 3:** Upgrade Roadster 2 model in existing Garage Studio using reference-led real 3D meshes for front, rear, four VFX thrusters, active wing, separate wheel pivots and paints; preserve current physics, collisions, NITRO/FLY/BOOST and existing Roadster branch work. Obtain real WebGL screenshots and visual approval.
 - [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
