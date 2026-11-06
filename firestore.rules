@@ -10,7 +10,8 @@ service cloud.firestore {
     return trackIds().concat(['coast@2', 'coast@3', 'neon@2', 'neon@3', 'canyon@2', 'canyon@3', 'spiral@2', 'spiral@3',
       'aurora@2', 'taipei@2', 'tokyo@2', 'alpine@2', 'coastal@2', 'cosmic@2',
       'coast@4', 'neon@4', 'canyon@4', 'spiral@4',
-      'aurora@3', 'taipei@3', 'tokyo@3', 'alpine@3', 'coastal@3', 'cosmic@3']);
+      'aurora@3', 'taipei@3', 'tokyo@3', 'alpine@3', 'coastal@3', 'cosmic@3',
+      'frostbite-canyon@t1l1']); // CourseGraph sprints: `<track>@t<topology>l<layout>`
   }
 
   // Rules stop at 1000 evaluated expressions per write, and each map lookup counts: the old keys().hasAny([id])
@@ -55,7 +56,8 @@ service cloud.firestore {
       && validBest(bests, 'canyon@4') && validBest(bests, 'spiral@4')
       && validBest(bests, 'aurora@3') && validBest(bests, 'taipei@3')
       && validBest(bests, 'tokyo@3') && validBest(bests, 'alpine@3')
-      && validBest(bests, 'coastal@3') && validBest(bests, 'cosmic@3');
+      && validBest(bests, 'coastal@3') && validBest(bests, 'cosmic@3')
+      && validBest(bests, 'frostbite-canyon@t1l1');
   }
 
   function validMedals(medals) {

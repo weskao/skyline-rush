@@ -3,7 +3,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { featureSlug } from '../scripts/dev-feature.mjs';
+import { featureSlug, isWorktreeUnlockedAlias, assertUpcomingEntryGuard } from '../scripts/dev-feature.mjs';
 
 const USAGE = /Usage: make dev-feature <name>\nExample: make dev-feature world-tour-landmark-boost-polish/;
 const root = path.resolve(import.meta.dirname, '..');
@@ -35,12 +35,27 @@ test('cli takes one positional name and does not read FEATURE', () => {
   }
 });
 
+test('feature server accepts only its own TypeScript dev-unlocked module', () => {
+  const worktree = path.join(root, '.claude', 'worktrees', 'test-preview');
+  assert.equal(isWorktreeUnlockedAlias(path.join(worktree, 'src', 'access', 'dev-unlocked.ts'), worktree), true);
+  assert.equal(isWorktreeUnlockedAlias(path.join(worktree, 'src', 'access', 'dev-unlocked.js'), worktree), false);
+  assert.equal(isWorktreeUnlockedAlias(path.join(root, 'src', 'access', 'dev-unlocked.ts'), worktree), false);
+  assert.equal(isWorktreeUnlockedAlias('src/access/dev-unlocked.ts', worktree), false);
+});
+
+test('feature server rejects stale runtime-only entry but allows preview-only branches', () => {
+  assert.throws(() => assertUpcomingEntryGuard('export const isUpcomingEnterable = id => raceTrack(id) != null;'),
+    /lacks readiness approval/);
+  assert.doesNotThrow(() => assertUpcomingEntryGuard('export const availableTracks = () => [];'));
+  assert.doesNotThrow(() => assertUpcomingEntryGuard("import { upcomingReadiness } from '../upcoming-tracks.ts'; export const isUpcomingEnterable = id => upcomingReadiness(id) === 'playable';"));
+});
+
 test('feature worktrees require local TypeScript unlock policy and do not bypass Coming Soon', () => {
   const source = readFileSync(new URL('../scripts/dev-feature.mjs', import.meta.url), 'utf8');
   assert.match(source, /src', 'access', 'dev-unlocked\.ts'/);
-  assert.match(source, /alias !== expected/);
+  assert.match(source, /isWorktreeUnlockedAlias\(alias, worktree\)/);
   assert.match(source, /upcoming-tracks\.ts/);
-  assert.match(source, /isUpcomingTrack/);
+  assert.match(source, /assertUpcomingEntryGuard\(source\)/);
   assert.match(source, /upcomingReadiness/);
   assert.doesNotMatch(source, /endsWith\([^\n]*dev-unlocked\.js/);
 });

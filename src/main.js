@@ -38,7 +38,7 @@ import { trackPressedButtons } from './pressed-buttons.ts';
 import { setupHistoryDialog } from './history-dialog-ui.ts';
 import { setupPhotoUI } from './photo-ui.ts';
 import { saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, formatDate } from './i18n.ts';
-import { availableTracks, availablePaints } from '@progression-access';
+import { availableTracks, availablePaints, isUpcomingEnterable } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.ts';
 import { trackDropdown } from './dropdown.ts';
 import { setupTrackSwipeUI } from './track-swipe-ui.ts';
@@ -51,7 +51,8 @@ import { resultView, setupResultScreen } from './result-screen.ts';
 import { createRaceHud } from './race-hud.ts';
 import { setupItemUI } from './item-ui.ts';
 import { setupRaceSelectUI } from './race-select-ui.ts';
-import { isCoverOnly } from './upcoming-tracks.ts';
+import { isUpcomingTrack } from './upcoming-tracks.ts';
+const isUpcomingBlocked = id => isUpcomingTrack(id) && !isUpcomingEnterable(id); // the build's access module decides
 import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 import { setupCupRecovery } from './cup-recovery-ui.ts';
@@ -196,7 +197,7 @@ const raceSelect = setupRaceSelectUI({
   refreshPhase: () => phaseUI(),
   clearControls: () => controls.clear(),
   cueUi: () => sound.cue('ui'),
-  reducedMotion, showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false,
+  reducedMotion, showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false, isUpcomingEnterable,
 });
 const { centerSelectedTrack, selectedRace, cupCount } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
@@ -282,7 +283,7 @@ setupRaceNavigation({ phase: () => race.phase, pause, clearControls: () => contr
 const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
 
 function start() {
-  if (raceSelect.isUpcomingSelected() || isCoverOnly(race.trackId)) return; // preview selection cannot START, including Daily/unlocked
+  if (raceSelect.isUpcomingSelected() || isUpcomingBlocked(race.trackId)) return; // preview selection cannot START, including Daily/unlocked
   if (tutorial) return;
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
@@ -303,7 +304,7 @@ function start() {
 }
 
 function restart(trackId = race.trackId) {
-  if (raceSelect.isUpcomingSelected() || isCoverOnly(trackId)) return;
+  if (raceSelect.isUpcomingSelected() || isUpcomingBlocked(trackId)) return;
   if (tutorial) { beginTutorial(); return; }
   if (!world || (!daily && !raceSelect.canRace(trackId))) return;
   if (contextLost) { location.reload(); return; }

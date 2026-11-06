@@ -5,10 +5,10 @@ import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { UI } from '../src/locales/ui.ts';
 import { UPCOMING_TRACKS, isUpcomingTrack, homeTrackStatus } from '../src/upcoming-tracks.ts';
 
-const ids = ['dune-tempest', 'monsoon-ruins', 'skyfall-archipelago', 'volcanic-crown', 'stormline-megacity'];
+const ids = ['dune-tempest', 'monsoon-ruins', 'skyfall-archipelago', 'volcanic-crown', 'stormline-megacity', 'frostbite-canyon'];
 
-test('the five Stage 1 planning tracks plus Stage 2 Frostbite Canyon appear as selectable coming-soon home cards', () => {
-  assert.deepEqual(Object.keys(UPCOMING_TRACKS), [...ids, 'frostbite-canyon']);
+test('only the six planning tracks (Stage 1 five + Frostbite Canyon) appear as selectable coming-soon home cards', () => {
+  assert.deepEqual(Object.keys(UPCOMING_TRACKS), ids);
   for (const id of ids) {
     assert.equal(isUpcomingTrack(id), true);
     assert.equal(RACE_TRACKS[id], undefined, 'concept maps cannot enter playable RaceFactory');

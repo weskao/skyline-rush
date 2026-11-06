@@ -37,11 +37,13 @@ export function botInput(race, bot) {
   const wantAir = !!target && target.altitude > reach && target.distance - at < car.speed * 2.5 && !tunnelNear;
   bot.climb = wantAir && (bot.climb ? car.fuel > CLIMB_OFF : car.fuel >= CLIMB_ON);
   bot.boost = bot.boost ? car.fuel > BOOST_OFF : car.fuel >= BOOST_ON;
-  const dx = clearLane(race, target ? target.x : car.x) - car.x;
+  // On a span (Frostbite Rift) leaving the corridor is a fall: hold its line and height like a gap.
+  const span = car.span && race.sections.find(s => s.span && at >= s.from && at < s.to);
+  const dx = (span ? span.x : clearLane(race, target ? target.x : car.x)) - car.x;
   return {
     throttle: true, laneAssist: true,
     steer: Math.abs(dx) < 0.2 ? 0 : Math.max(-1, Math.min(1, dx * 0.6)),
-    fly: (gapNear && car.altitude < GAP_HEIGHT) || (bot.climb && car.altitude < target.altitude - 0.5),
+    fly: (gapNear && car.altitude < GAP_HEIGHT) || (span && car.altitude < span.altitude) || (bot.climb && car.altitude < target.altitude - 0.5),
     boost: bot.boost,
     nitro: car.nitro >= 1 && car.nitroTime === 0,
   };

@@ -1,6 +1,7 @@
 import { raceTrack } from './race-tracks.ts';
 import { CIRCUIT_ID, circuitFrame } from './circuit-track.ts';
 import { skyFrame, skyPoint, type Vec3, type SkyPoint } from './sky-track.ts';
+import { FROSTBITE_ID, frostbiteFrame, frostbiteObjectSpan } from './courses/frostbite-race.ts';
 
 interface OverviewPoint { distance: number; x: number; y: number }
 
@@ -26,6 +27,7 @@ export function trackPoint(trackId: string, distance: number, extended = false):
   const track = raceTrack(trackId);
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   if (trackId === CIRCUIT_ID) return circuitFrame(distance).point;
+  if (trackId === FROSTBITE_ID) return frostbiteFrame(distance).point; // point-to-point: no endless extension
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
   if (trackId === 'spiral') return skyPoint(s, extended);
   const profile = profiles[trackId];
@@ -33,10 +35,12 @@ export function trackPoint(trackId: string, distance: number, extended = false):
   return { x: classicRoadCenter(s), y: 0, z: -s };
 }
 
-export function trackFrame(trackId: string, distance: number, extended = false) {
+/** `span`: the car flies the Frostbite Rift span (`car.span`); other tracks ignore it. */
+export function trackFrame(trackId: string, distance: number, extended = false, span = false) {
   const track = raceTrack(trackId);
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   if (trackId === CIRCUIT_ID) return circuitFrame(distance);
+  if (trackId === FROSTBITE_ID) return frostbiteFrame(distance, span);
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
   if (trackId === 'spiral') return skyFrame(s, extended);
   const a = trackPoint(trackId, s - 0.5, extended);
@@ -49,9 +53,10 @@ export function trackFrame(trackId: string, distance: number, extended = false) 
 
 /** Convert game-distance, lane and altitude to camera-relative 3D coordinates. */
 export function trackLocalPosition(trackId: string, distance: number, lateral = 0, altitude = 0, origin = 0, extended = false): Vec3 {
-  const point = trackPoint(trackId, distance, extended);
+  const span = trackId === FROSTBITE_ID && frostbiteObjectSpan(distance, lateral, altitude);
+  const frame = span ? frostbiteFrame(distance, true) : trackFrame(trackId, distance, extended);
+  const point = span ? frame.point : trackPoint(trackId, distance, extended);
   const home = trackPoint(trackId, origin, extended);
-  const frame = trackFrame(trackId, distance, extended);
   return [
     point.x - home.x + frame.right[0] * lateral + frame.up[0] * altitude,
     point.y - home.y + frame.right[1] * lateral + frame.up[1] * altitude,
@@ -110,4 +115,21 @@ export function trackOverview(trackId: string, count = 128): OverviewPoint[] {
   // World Tour paths keep a world-geometry projection with nonuniform
   // schematic fit, so all ten courses are readable in the same small HUD.
   return mapFit(points,'world-tour');
+}
+
+const MAX_LOOK_TURN = 22 * Math.PI / 180; // above every pre-Frostbite track's bend over 65 m (Sky Spiral 21.2°)
+const turnBetween = (trackId: string, from: number, to: number, extended: boolean): number => {
+  const f = trackFrame(trackId, from, extended).forward, g = trackFrame(trackId, to, extended).forward;
+  return Math.acos(clamp(f[0] * g[0] + f[1] * g[1] + f[2] * g[2], -1, 1));
+};
+/** Chase-camera look-ahead in metres: `reach`, shortened where the road turns more than 22° before it (hairpins). */
+export function lookAheadDistance(trackId: string, distance: number, reach: number, extended = false): number {
+  let ahead = reach;
+  // Turn grows ~linearly with arc on a bend, so a few proportional steps settle under the cap.
+  for (let i = 0; i < 4; i++) {
+    const turn = turnBetween(trackId, distance, distance + ahead, extended);
+    if (turn <= MAX_LOOK_TURN) break;
+    ahead *= MAX_LOOK_TURN / turn * .98;
+  }
+  return ahead;
 }
