@@ -42,20 +42,40 @@ jobs:
           from PIL import Image
           files = json.loads(Path('public/feature-assets/garage-animated/manifest.json').read_text())
           assert len(files) == 25
+          from PIL import ImageSequence
+          import numpy as np
           assert len({item['name'] for item in files}) == 25
           assert len({item['category'] for item in files}) == 5
           for item in files:
               gif = Image.open(item['file'])
-              assert gif.n_frames >= 4 and gif.info['loop'] == 0 and item['frames'] == 16
+              assert gif.n_frames == 20 and gif.info['loop'] == 0 and item['frames'] == 20
+              assert item['fps'] == 20 and item['profile'] == 'gpt-authored'
+              assert Path(item['file']).stat().st_size < 900000
               assert gif.size == (item['width'], item['height'])
               assert item['size'] == Path(item['file']).stat().st_size
+              for frame in ImageSequence.Iterator(gif):
+                  assert frame.info['duration'] == 50
+                  a = np.asarray(frame.convert('RGBA'))[:,:,3]
+                  ys,xs=np.where(a > 16)
+                  assert len(xs) > 0
+                  m = 20 if item['width'] == 216 else 12
+                  assert min(xs.min(),ys.min(),item['width']-1-xs.max(),item['height']-1-ys.max()) >= m
           print('Verified source-linked GIFs:', len(files))
           PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12'
+          cache: npm
+      - name: Install and run full unit / production build gates
+        run: |
+          npm ci
+          npm test
+          npm run build
       - name: Commit generated binaries to the sole authorized branch
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/feature-assets/garage-animated/
+          git add public/feature-assets/garage-animated/ docs/designs/garage-animated-gifs/qa-contact-sheets/
           if ! git diff --cached --quiet; then
             git commit -m 'assets: commit 25 original-art Garage animations'
             git push origin HEAD:feature/garage-preview-animated-gifs

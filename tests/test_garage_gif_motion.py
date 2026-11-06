@@ -13,6 +13,10 @@ spec.loader.exec_module(garage)
 
 
 class GarageAnimationTests(unittest.TestCase):
+    def test_approved_gif_timing_contract(self):
+        self.assertEqual(garage.FRAMES, 20)
+        self.assertEqual(garage.DURATION_MS, 50)
+
     @classmethod
     def setUpClass(cls):
         cls.assets = {name: (category, path) for category, name, path in garage.sources()}

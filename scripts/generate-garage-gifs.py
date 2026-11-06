@@ -21,8 +21,8 @@ ROOT = Path(__file__).resolve().parents[1]
 VFX = ROOT / 'public/feature-assets/garage-vfx-skins'
 STORE = ROOT / 'public/feature-assets/garage-store-readiness/raster'
 OUTPUT = ROOT / 'public/feature-assets/garage-animated'
-FRAMES = 16
-DURATION_MS = 80  # 12.5 FPS; smooth and power-conscious on mobile
+FRAMES = 20
+DURATION_MS = 50  # 20 FPS; exact-20-frame source-authored animation contract
 
 # One explicit art-direction recipe per checked-in icon. All movement paths follow
 # the source's geometry, never a generic screen-space scaling/twinkle.
@@ -305,7 +305,9 @@ def palette_for(frames):
     width, height = frames[0].size
     swatches = Image.new("RGB", (width, height * len(frames)))
     for i, frame in enumerate(frames):
-        swatches.paste(frame.convert("RGB"), (0, i * height))
+        card = Image.new("RGBA", frame.size, (15, 28, 51, 255))
+        card.alpha_composite(frame)
+        swatches.paste(card.convert("RGB"), (0, i * height))
     return swatches.quantize(colors=190, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
 
 
@@ -315,8 +317,9 @@ def palettize(frame, palette):
     # obvious checkerboard halo over dark Garage cards; avoid that artifact.
     # Keep the substantial original flame/glow, omit only faint matte fringes.
     visible = rgba[:, :, 3] >= 96
-    quantized = Image.fromarray(rgba[:, :, :3], 'RGB').quantize(
-        palette=palette, dither=Image.Dither.NONE)
+    matte = Image.new("RGBA", frame.size, (15, 28, 51, 255))
+    matte.alpha_composite(frame)
+    quantized = matte.convert("RGB").quantize(palette=palette, dither=Image.Dither.NONE)
     indices = np.asarray(quantized, dtype=np.uint8) + 1
     indices[~visible] = 0
     indexed = Image.fromarray(indices, 'P')
@@ -349,10 +352,33 @@ def render(category, name, source_path):
                           for f in ImageSequence.Iterator(gif))
         if differences < 3:
             raise AssertionError(f'{name}: animated material is not visibly distinct')
+    # Six-frame review sheet uses the actual authored RGBA frames, not simulated ones.
+    contact_dir = ROOT / 'docs/designs/garage-animated-gifs/qa-contact-sheets'
+    contact_dir.mkdir(parents=True, exist_ok=True)
+    contact = Image.new('RGB', (expected * 3, expected * 2), (15, 28, 51))
+    for sample_index, frame_index in enumerate((0, 4, 8, 12, 16, 19)):
+        backdrop = Image.new('RGBA', (expected, expected), (15, 28, 51, 255))
+        backdrop.alpha_composite(originals[frame_index])
+        contact.paste(backdrop.convert('RGB'), ((sample_index % 3) * expected,
+                                                (sample_index // 3) * expected))
+    contact.save(contact_dir / f'{name}.png', optimize=True)
+    # Every individual frame has a safe, transparent source-aligned margin.
+    inset = 20 if expected == 216 else 12
+    with Image.open(dest) as check:
+        if check.n_frames != FRAMES:
+            raise AssertionError(f'{name}: expected {FRAMES} frames, got {check.n_frames}')
+        for step, image in enumerate(ImageSequence.Iterator(check)):
+            if image.info.get('duration') != DURATION_MS:
+                raise AssertionError(f'{name}: frame {step} duration invalid')
+            alpha = np.asarray(image.convert('RGBA').getchannel('A'))
+            ys, xs = np.where(alpha > 16)
+            if not len(xs) or min(xs.min(), ys.min(), expected - 1 - xs.max(),
+                                  expected - 1 - ys.max()) < inset:
+                raise AssertionError(f'{name}: unsafe transparent margin frame {step}')
     size = dest.stat().st_size
-    if size > 1_000_000:
+    if size >= 900_000:
         raise AssertionError(f'{name}: excessive decode/download footprint: {size}')
-    return dict(name=name, category=category, profile=PROFILES[name][0],
+    return dict(name=name, category=category, profile="gpt-authored",
                 source=source_path.relative_to(ROOT).as_posix(),
                 file=dest.relative_to(ROOT).as_posix(), size=size,
                 width=expected, height=expected, frames=FRAMES, fps=1000 / DURATION_MS)
