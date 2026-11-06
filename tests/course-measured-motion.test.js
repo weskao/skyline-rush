@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCourseTravel, courseTravelPosition } from '../src/course-travel.ts';
-import { routeLength } from '../src/course-route-frame.ts';
+import { routeLength, sampleRoute } from '../src/course-route-frame.ts';
 
 const { advanceMeasuredCourseTravel } = await import('../src/course-measured-motion.ts').catch(() => ({}));
 const n = (id, kind, at) => ({ id, kind, at });
@@ -65,7 +65,7 @@ test('wrong direction, disconnected branch, unauthorized flight, and finish skip
 });
 test('authorized aerial route preserves physical world altitude, then lands into the checkpoint',()=>{
   const s={...createCourseTravel(graph),localS:48};
-  const entered=advanceMeasuredCourseTravel(graph,s,motion(s,51,{toPosition:[0,0,-51],nextEdgeId:'air',flightAuthorized:true}));
+  const entered=advanceMeasuredCourseTravel(graph,s,motion(s,51,{toPosition:sampleRoute(graph,'air',1).point,nextEdgeId:'air',flightAuthorized:true}));
   assert.equal(entered.currentEdgeId,'air');
   const inAir={...entered,localS:routeLength(graph,'air')/2};
   const climbed=advanceMeasuredCourseTravel(graph,inAir,motion(inAir,inAir.localS+3,{flightAuthorized:true,maxStepMetres:4}));

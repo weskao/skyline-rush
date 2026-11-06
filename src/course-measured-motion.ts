@@ -44,23 +44,34 @@ export function advanceMeasuredCourseTravel(graph: CourseGraph, state: CourseTra
   }
 
   const node = graph.nodes.find(candidate => candidate.id === edge.to);
-  if (node?.id === graph.finish && motion.nextEdgeId) return state;
+  if (node?.id === graph.finish) {
+    if (motion.nextEdgeId) return state;
+    const crossed = advanceSignedGate(graph, state, {
+      edgeId: edge.id, fromS: motion.fromS, toS: motion.toS,
+      fromPosition: motion.fromPosition, toPosition: motion.toPosition, maxStepMetres: motion.maxStepMetres,
+    }, motion.gateHeight);
+    return crossed === state ? state : { ...state, ...crossed, localS: length };
+  }
   const next = graph.edges.find(candidate => candidate.id === motion.nextEdgeId);
-  if (node?.id !== graph.finish && (!next || next.from !== node?.id || (next.mode === 'flight' && !motion.flightAuthorized))) return state;
-  const crossed = advanceSignedGate(graph, state, {
-    edgeId: edge.id, fromS: motion.fromS, toS: motion.toS,
-    fromPosition: motion.fromPosition, toPosition: motion.toPosition,
-    maxStepMetres: motion.maxStepMetres,
-    ...(node?.id === graph.finish ? {} : { nextEdgeId: next!.id }),
-  }, motion.gateHeight);
-  if (crossed === state) return state;
-  if (crossed.finished) return { ...state, ...crossed, localS: length };
-  const entry = sampleRoute(graph, next!.id, 0), displacement = delta(motion.toPosition, entry.point);
-  const consumedS = Math.max(0, dot(displacement, entry.forward));
-  if (consumedS > motion.maxStepMetres + 1e-6 || consumedS >= routeLength(graph, next!.id)) return state;
-  const frame = sampleRoute(graph, next!.id, consumedS), off = delta(motion.toPosition, frame.point);
+  if (!next || next.from !== node?.id || (next.mode === 'flight' && !motion.flightAuthorized)) return state;
+  // Odometer overflow is the arc distance on the next edge; the measured pose must sit on its road frame there.
+  const localS = motion.toS - length;
+  if (localS >= routeLength(graph, next.id)) return state;
+  const frame = sampleRoute(graph, next.id, localS), off = delta(motion.toPosition, frame.point);
   const lateral = dot(off, frame.right), altitude = dot(off, frame.up);
   if (Math.abs(dot(off, frame.forward)) > 0.25 || Math.abs(lateral) > frame.width / 2 ||
-      (next!.mode === 'ground' && (altitude < -2 || altitude > 5))) return state;
-  return { ...state, ...crossed, localS: consumedS, lateral, altitude };
+      (next.mode === 'ground' && (altitude < -2 || altitude > 5))) return state;
+  // Gate sweep in the incoming node frame, so a kink cannot swing an outer/inner lateral behind the plane.
+  const end = sampleRoute(graph, edge.id, length), f = end.forward, r = end.right, u = end.up;
+  const crossed = advanceSignedGate(graph, state, {
+    edgeId: edge.id, fromS: motion.fromS, toS: motion.toS, fromPosition: motion.fromPosition,
+    toPosition: [
+      end.point[0] + f[0] * localS + r[0] * lateral + u[0] * altitude,
+      end.point[1] + f[1] * localS + r[1] * lateral + u[1] * altitude,
+      end.point[2] + f[2] * localS + r[2] * lateral + u[2] * altitude,
+    ],
+    maxStepMetres: motion.maxStepMetres, nextEdgeId: next.id,
+  }, motion.gateHeight);
+  if (crossed === state) return state;
+  return { ...state, ...crossed, localS, lateral, altitude };
 }

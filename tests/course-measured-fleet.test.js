@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCourseTravel, courseTravelPosition } from '../src/course-travel.ts';
-import { routeLength } from '../src/course-route-frame.ts';
+import { routeLength, sampleRoute } from '../src/course-route-frame.ts';
 const { advanceMeasuredCourseFleet } = await import('../src/course-measured-fleet.ts').catch(()=>({}));
 const n=(id,kind,at)=>({id,kind,at});
 const e=(id,from,to,points,mode='ground')=>({id,from,to,points,width:24,mode});
@@ -50,9 +50,9 @@ test('cars independently cross a physically signed checkpoint, while others stay
 });
 test('a missing flight authorization cannot drive an AI car through an aerial fork',()=>{
   const cars=create().map((c,i)=>i===0?{...c,travel:{...c.travel,localS:48}}:c);
-  const unauthorized=advanceMeasuredCourseFleet(graph,cars,[move(cars[0],51,{toPosition:[0,0,-51],nextEdgeId:'air'})]);
+  const unauthorized=advanceMeasuredCourseFleet(graph,cars,[move(cars[0],51,{toPosition:sampleRoute(graph,'air',1).point,nextEdgeId:'air'})]);
   assert.equal(unauthorized,cars);
-  const authorized=advanceMeasuredCourseFleet(graph,cars,[move(cars[0],51,{toPosition:[0,0,-51],nextEdgeId:'air',flightAuthorized:true})]);
+  const authorized=advanceMeasuredCourseFleet(graph,cars,[move(cars[0],51,{toPosition:sampleRoute(graph,'air',1).point,nextEdgeId:'air',flightAuthorized:true})]);
   assert.equal(authorized[0].travel.currentEdgeId,'air');
   assert.equal(authorized[1].travel.localS,0);
 });

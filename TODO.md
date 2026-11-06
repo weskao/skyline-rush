@@ -49,6 +49,27 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
     1440×900 and phone 390×844 touch DPR 3, Dune card selected, Start `COMING SOON`, 0 page errors;
     preview road continuous, unchanged by this task (no graph junction is drawn there). The graph
     race road / scenery chunks are not rendered anywhere yet (Task 9). Physical device: NOT VERIFIED.
+- [x] Task 2 — junction crossings at lateral offset (`src/course-measured-motion.ts`). After a node
+  crossing, `localS` = odometer overflow (`toS − length`) and lateral/altitude are measured from the
+  pose on `sampleRoute(next, overflow)` (same 0.25 m forward, half-width and ground −2…5 m rules),
+  instead of re-projecting the world point onto the next edge's entry tangent. The signed gate gets
+  that road-frame pose expressed in the incoming edge's node frame, so a kink cannot swing an inner
+  lateral behind the gate plane; gate plane, direction, width, height band, order and the real 3D
+  step bound are unchanged. `MeasuredCourseMotion` and the function signature are unchanged.
+  - RED: `node --test tests/course-measured-junctions.test.js` → 2 pass / 2 fail (assertions).
+    83 of 252 cases: Dune 5 (all `canyon-approach → canyon-air-crossing`: localS 3.092 / 2.908 at
+    overflow 3, lateral off by up to 9.5e-5 m; Task 1A left every other Dune junction at 0.00°);
+    Skyfall 78 (32 rejected — inner-side ±10 m at `approach → a-ground/a-air`,
+    `a-ground → midway-one`, `a-air → midway-one`, `midway-one → b-ground/b-air`,
+    `b-ground/b-air → midway-two`, `midway-two → c-ground/c-air`, `c-ground/c-air → descent` — and
+    46 accepted with lateral off by 1e-6…3e-5 m or localS 2.999). Negative cases (reverse sweep,
+    wrong next edge, skipped checkpoint, 20 m altitude) already rejected.
+  - GREEN: same file 4/4; with `course-measured-motion`, `-fleet`, `course-signed-gates`,
+    `course-fleet`, `dune-tempest-runtime-adapter`, `legacy-race-replay` 102/102 (replay 47/47);
+    `npm test` 2018 pass / 0 fail / 3 skipped; `npm run typecheck:ts` clean.
+  - Two existing tests entered the synthetic 58°-climb `air` edge with `toPosition [0,0,-51]` (1 m
+    along the ground continuation, 0.47 m off the claimed 1 m air station); their input pose is now
+    `sampleRoute(graph,'air',1).point`. Assertions unchanged.
 
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 
