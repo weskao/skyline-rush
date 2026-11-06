@@ -6,6 +6,6 @@ import { reactive } from 'vue';
 export const coachView = reactive<TutorialCoachView>({
   visible: false, step: '', title: '', instruction: '', pauseText: '',
   pauseHidden: false, completeActionsHidden: true, assistHidden: false,
-  hintKeys: '', hintText: '', celebration: '',
+  hintKeys: '', hintText: '', celebration: '', guide: '', skipHidden: true,
 });
 export function updateCoachView(fields: Partial<TutorialCoachView>) { Object.assign(coachView, fields); }

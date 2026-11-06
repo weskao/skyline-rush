@@ -1925,6 +1925,15 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
   .tutorial-celebration-badge, .tutorial-celebration-badge svg, .tutorial-coach[data-step="complete"] { animation: none; }
   .tutorial-celebration i { display: none; }
 }
+/* Practice gate arrow: three chevrons sweep toward the target gate (left / right / ahead). */
+.tutorial-guide { position: fixed; z-index: 11; top: 44%; left: 50%; display: flex; gap: 2px; pointer-events: none; transform: translate(-50%, -50%); filter: drop-shadow(0 0 10px rgb(150 227 255 / .8)); }
+.tutorial-guide[data-dir="left"] { transform: translate(-50%, -50%) rotate(180deg); }
+.tutorial-guide[data-dir="ahead"] { transform: translate(-50%, -50%) rotate(-90deg); }
+.tutorial-guide svg { width: 52px; height: 52px; fill: none; stroke: #96e3ff; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; opacity: .25; animation: guide-sweep 1s ease-in-out calc(var(--n) * .16s) infinite; }
+@keyframes guide-sweep { 40% { opacity: 1; transform: translateX(8px) scale(1.15); } }
+@media (max-width: 760px) and (min-height: 501px) { .tutorial-guide { top: 56%; } .tutorial-guide svg { width: 40px; height: 40px; } } /* below the phone coach card */
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-guide { top: 48%; left: 72%; } }
+@media (prefers-reduced-motion: reduce) { .tutorial-guide svg { animation: none; opacity: 1; } }
 
 /* Display-only 3x results artwork; no reward entitlement. */
 .result-trophy-art{display:inline-block;max-width:96px;vertical-align:middle;object-fit:contain;animation:reward-podium-reveal .52s ease-out both}

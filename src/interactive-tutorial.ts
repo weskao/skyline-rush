@@ -1,5 +1,7 @@
 import { createRace, startRace } from './game.js';
 import { createTutorialManeuverState, type ManeuverSnapshot } from './tutorial-maneuver-state.ts';
+import { isGateStep, placeGate, judgeGate, gateGuide, type GateRing } from './tutorial-gates.ts';
+import type { EndlessState } from './endless-highway.ts';
 
 export const TUTORIAL_STEPS = Object.freeze(['throttle', 'left', 'right', 'brake', 'drift', 'fly', 'land', 'boost', 'airChain', 'barrelRoll', 'nitro'] as const);
 export type TutorialStep = typeof TUTORIAL_STEPS[number];
@@ -7,6 +9,12 @@ export interface TutorialInput {
   throttle?: boolean; brake?: boolean; laneAssist?: boolean; steer?: number;
   fly?: boolean; boost?: boolean; nitro?: boolean;
 }
+
+// Success feedback stays on screen this long after a lesson clears.
+export const CLEARED_SECONDS = 0.8;
+// Only these lessons ask for a sustained 0.4 s hold; the rest complete on a real engine event.
+const HELD_STEPS: readonly string[] = ['throttle', 'fly'];
+const BRAKE_CRAWL = 25; // m/s: a held brake still reaches the gate in a few seconds
 
 export function prepareTutorialInput(input: TutorialInput, step: TutorialStep | string): TutorialInput {
   if (!['throttle', 'brake'].includes(step) && !input.brake) input.throttle = true;
@@ -22,13 +30,17 @@ export function createInteractiveTutorial() {
     config: { mode: 'free'; traffic: 'off'; items: false; collision: 'relaxed' }
   ) => ReturnType<typeof createRace>;
   const race = tutorialRace('coast', { mode: 'free', traffic: 'off', items: false, collision: 'relaxed' });
-  race.objective = Object.freeze({ type: 'no-auto-finish' as const }); // update() loops the road; a lesson never ends the run
-  race.rings = [];
+  race.objective = Object.freeze({ type: 'no-auto-finish' as const }); // a lesson never ends the run
+  // The Endless Highway road without its encounters: the practice road never runs out.
+  (race as typeof race & { endless?: EndlessState }).endless = { chunk: 0, milestones: 0, practice: true };
+  race.sections.length = 0;
+  const rings = race.rings = [] as GateRing[] as typeof race.rings;
   race.rivals = [];
   race.traffic = [];
   startRace(race);
   const car = race.player;
-  let index = 0, held = 0, previousSpeed = 0, previousElapsed = race.elapsed;
+  let index = 0, held = 0, previousElapsed = race.elapsed, celebrate = 0, skipRequested = false;
+  let gate: GateRing[] | null = null, retryReason: string | null = null, drifted = false;
   let maneuver: ReturnType<typeof createTutorialManeuverState> | null = null;
   const snapshot = (): ManeuverSnapshot => ({
     altitude: car.altitude, thrusting: car.thrusting, flightBoosted: car.flightBoosted,
@@ -44,7 +56,7 @@ export function createInteractiveTutorial() {
     car.fuel = 100;
     car.exhausted = false;
     car.flyBuffer = 0;
-    if (TUTORIAL_STEPS[index - 1] !== 'drift') car.nitro = step === 'nitro' ? 1 : 0;
+    if (TUTORIAL_STEPS[index - 1] !== 'drift') car.nitro = step === 'nitro' || step === 'airChain' ? 1 : 0;
     car.nitroTime = 0;
     car.nitroHeld = false;
     if (TUTORIAL_STEPS[index - 1] !== 'drift') car.miniBoost = 0;
@@ -61,44 +73,70 @@ export function createInteractiveTutorial() {
       // it fabricates a new input edge when the key remains pressed.
       car.flick = null;
     }
-    previousSpeed = car.speed;
+    rings.length = 0;
+    gate = retryReason = null;
+    if (isGateStep(step)) rings.push(...(gate = placeGate(step, car.distance)));
+    drifted = false;
     maneuver = step === 'airChain' || step === 'barrelRoll' || step === 'nitro'
       ? createTutorialManeuverState(step, snapshot()) : null;
     held = 0;
   }
   prepare();
+  function advance(cleared: boolean): void {
+    index++;
+    if (index < TUTORIAL_STEPS.length) prepare();
+    else rings.length = 0;
+    celebrate = cleared && index < TUTORIAL_STEPS.length ? CLEARED_SECONDS : 0;
+  }
+  function judgeGateStep(step: string): boolean {
+    if (!isGateStep(step) || !gate || car.distance < gate[0]!.distance) return false;
+    const result = judgeGate(step, gate, car);
+    rings.length = 0;
+    gate = null;
+    if (result === 'pass') return true;
+    retryReason = result;
+    return false;
+  }
 
   return {
     race,
     get index() { return index; },
     get step() { return TUTORIAL_STEPS[index] ?? null; },
     get progress() { return index === TUTORIAL_STEPS.length ? 1 : TUTORIAL_STEPS[index] === 'drift' ? Math.min(1, ((car as unknown as { drift: { time: number } | null }).drift?.time ?? 0) / 1) : maneuver?.progress ?? Math.min(1, held / .4); },
-    get coachPhase() { return maneuver?.phase ?? 'ready'; },
+    get coachPhase() {
+      const phase = maneuver?.phase ?? (retryReason ? 'retry' : 'ready');
+      return celebrate > 0 && phase === 'ready' ? 'cleared' : phase; // a live cue (airborne, retry) wins over the praise
+    },
+    get coachReason() { return maneuver ? maneuver.reason : retryReason; },
+    get guide() { return gate ? gateGuide(gate, car.x) : ''; },
+    /** Applied on the next racing tick, so completion still flows through update(). */
+    skip(): void { if (index < TUTORIAL_STEPS.length) skipRequested = true; },
     get complete() { return index === TUTORIAL_STEPS.length; },
     update(input: unknown, dt: number): void {
       if (race.phase !== 'racing' || !Number.isFinite(dt) || dt <= 0 || race.elapsed <= previousElapsed) return;
       previousElapsed = race.elapsed;
       const controls: TutorialInput = input && typeof input === 'object' ? input as TutorialInput : {};
-      const step = TUTORIAL_STEPS[index];
-      if (car.distance >= race.length - 100) {
-        car.distance = car.x = 0;
-        car.speed = step === 'throttle' ? 0 : 45;
-        previousSpeed = car.speed;
-        held = 0;
-        return;
-      }
-      if (index === TUTORIAL_STEPS.length) return; // finished: a free cruise that only loops the road
-      // Keep the braking exercise rolling while the learner reads its instructions.
-      if (step === 'brake' && !car.braking && car.speed < 20) car.speed = 45;
+      if (index === TUTORIAL_STEPS.length) return; // finished: a free cruise on the endless road
+      if (skipRequested) { skipRequested = false; advance(false); return; }
+      const step = TUTORIAL_STEPS[index]!;
+      // Practice-only supply: the air chain lesson never runs out of FLY, BOOST or NITRO.
+      if (step === 'airChain') { car.fuel = 100; car.exhausted = false; car.nitro = Math.max(car.nitro, 1); }
+      // Keep the braking exercise rolling toward its gate: a held brake crawls through, a released one resumes.
+      if (step === 'brake' && car.speed < (car.braking ? BRAKE_CRAWL : 20)) car.speed = car.braking ? BRAKE_CRAWL : 45;
+      // A miss re-arms a fresh gate ahead.
+      if (isGateStep(step) && !gate) rings.push(...(gate = placeGate(step, car.distance)));
+      // Display-only: the praise stays up briefly, but input during it still counts toward the next lesson.
+      if (celebrate > 0) celebrate -= Math.min(dt, .05);
       let valid = false;
       if (step === 'throttle') valid = controls.throttle === true && car.speed > 5;
-      else if (step === 'left') valid = typeof controls.steer === 'number' && Number.isFinite(controls.steer) && controls.steer < 0 && car.steering < 0;
-      else if (step === 'right') valid = typeof controls.steer === 'number' && Number.isFinite(controls.steer) && controls.steer > 0 && car.steering > 0;
-      else if (step === 'brake') valid = controls.brake === true && car.braking && car.speed < previousSpeed;
-      else if (step === 'drift') valid = ((car as unknown as { driftPayout: { nitro: number } | null }).driftPayout?.nitro ?? 0) >= 0.15 && car.miniBoost > 0;
+      else if (isGateStep(step)) valid = judgeGateStep(step);
+      else if (step === 'drift') {
+        valid = ((car as unknown as { driftPayout: { nitro: number } | null }).driftPayout?.nitro ?? 0) >= 0.15 && car.miniBoost > 0;
+        if (car.drift) drifted = true;
+        else if (drifted && !valid) { drifted = false; retryReason = 'short'; } // released before the first payout tier
+      }
       else if (step === 'fly') valid = controls.fly === true && car.altitude > 1;
       else if (step === 'land') valid = !controls.fly && car.altitude < .15;
-      else if (step === 'boost') valid = controls.boost === true && car.boosting;
       else if (step === 'airChain' || step === 'barrelRoll' || step === 'nitro') {
         valid = maneuver!.update(snapshot(), dt);
         if (step === 'nitro' && maneuver!.phase === 'retry' && !controls.nitro && car.nitroTime <= 0) {
@@ -108,12 +146,8 @@ export function createInteractiveTutorial() {
           maneuver = createTutorialManeuverState('nitro', snapshot());
         }
       }
-      previousSpeed = car.speed;
       held = valid ? held + Math.min(dt, .05) : 0;
-      if (valid && (held >= .4 || step === 'drift' || step === 'land' || step === 'airChain' || step === 'barrelRoll' || step === 'nitro')) {
-        index++;
-        if (index < TUTORIAL_STEPS.length) prepare();
-      }
+      if (valid && (held >= .4 || !HELD_STEPS.includes(step))) advance(true);
     },
   };
 }

@@ -140,40 +140,44 @@ test('holding steering across an earned AIR→ROAD landing never fabricates a ne
   assert.equal(car.flick, null, 'still holding left cannot be interpreted as a new press');
 });
 
-test('wrong actions reset a sustained lesson and repeated evaluation cannot fabricate driving', () => {
+test('missing a target gate names the miss, re-arms a gate ahead and never advances', () => {
   const session = createInteractiveTutorial();
-  for (let i = 0; i < 120; i++) tick(session);
-  assert.equal(session.index, 0);
   perform(session, { throttle: true });
-  for (let i = 0; i < 12; i++) tick(session, { steer: -1 });
-  assert.ok(session.progress > 0 && session.progress < 1);
-  tick(session, { steer: 1 });
-  assert.equal(session.progress, 0);
-  for (let i = 0; i < 60; i++) tick(session, { steer: 1 });
   assert.equal(session.step, 'left');
+  const car = session.race.player;
+  const gate = session.race.rings[0];
+  assert.ok(gate.x < 0 && gate.distance > car.distance, 'a left-lane gate waits ahead');
+  assert.equal(session.guide, 'left', 'the HUD arrow points at the gate');
+  for (let i = 0; i < 600 && car.distance <= gate.distance; i++) tick(session, { steer: 1 });
+  assert.equal(session.step, 'left', 'driving past on the wrong side is not the lesson');
+  assert.equal(session.coachPhase, 'retry');
+  assert.equal(session.coachReason, 'missed');
+  tick(session, { steer: 1 });
+  assert.ok(session.race.rings[0].distance > car.distance, 'a fresh gate is armed ahead');
   for (let i = 0; i < 100; i++) session.update({ steer: -1 }, DT);
-  assert.equal(session.progress, 0);
+  assert.equal(session.step, 'left', 'repeated evaluation without simulated driving cannot pass a gate');
   perform(session, { steer: -1 });
 });
 
 test('pausing and invalid time or input cannot advance the tutorial', () => {
   const session = createInteractiveTutorial();
-  perform(session, { throttle: true });
+  const car = session.race.player;
   session.race.phase = 'paused';
-  for (let i = 0; i < 120; i++) tick(session, { steer: -1 });
-  assert.equal(session.step, 'left');
+  for (let i = 0; i < 120; i++) tick(session, { throttle: true });
+  assert.equal(session.step, 'throttle');
   assert.equal(session.progress, 0);
   session.race.phase = 'racing';
   for (const dt of [0, -1, NaN, Infinity]) {
-    session.update({ steer: -1 }, dt);
+    session.update({ throttle: true }, dt);
     assert.equal(session.progress, 0);
   }
-  for (const input of [null, undefined, false, 4, 'left', { steer: NaN }]) {
+  for (const input of [null, undefined, false, 4, 'throttle', { throttle: 'yes' }]) {
     stepRace(session.race, {}, DT);
     session.update(input, DT);
   }
-  assert.equal(session.index, 1);
-  tick(session, { steer: -1 }, .1);
+  assert.equal(session.index, 0);
+  car.speed = 10;
+  tick(session, { throttle: true }, .1);
   assert.ok(session.progress > 0 && session.progress <= .125 + 1e-9, 'a stalled frame contributes at most 50 ms');
 });
 
@@ -214,7 +218,7 @@ test('NITRO activation alone does not finish practice; sprint and steering stay 
   assert.equal(session.race.phase, 'racing', 'simulation remains live until UI acknowledges completion');
 });
 
-test('a completed practice keeps a live, player-steered free cruise that loops the road', () => {
+test('a completed practice keeps a live, player-steered free cruise on a road that never ends', () => {
   const session = createInteractiveTutorial();
   for (const action of [
     { throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true },
@@ -232,9 +236,13 @@ test('a completed practice keeps a live, player-steered free cruise that loops t
   for (let i = 0; i < 20; i++) tick(session, { steer: 1 });
   assert.ok(car.steering > 0, 'the player still steers during the free cruise');
   car.distance = session.race.length - 50;
+  for (let i = 0; i < 120; i++) tick(session);
+  assert.ok(car.distance > session.race.length, 'the endless road carries on past the old track end');
+  assert.equal(session.race.traffic.length + session.race.pickups.length + session.race.rings.length, 0,
+    'practice borrows the endless road without its traffic, pickups or rings');
+  car.collisions = 9;
   tick(session);
-  assert.ok(car.distance < 100, 'the free cruise loops the road instead of stranding at its end');
-  assert.equal(session.race.phase, 'racing');
+  assert.equal(session.race.phase, 'racing', 'the Endless collision limit never ends practice');
   assert.equal(session.race.result, null);
   assert.equal(session.complete, true);
 });
@@ -265,15 +273,12 @@ test('an interrupted NITRO lesson refills only after release and remains player-
   assert.equal(car.nitroUses, previousUses + 2, 'second attempt must consume a real charge');
 });
 
-test('reaching the road end recovers the same lesson without advancing or stranding the car', () => {
+test('passing the old track length keeps the lesson and the car where they are', () => {
   const session = createInteractiveTutorial();
+  assert.equal(session.race.endless?.practice, true);
   session.race.player.distance = session.race.length;
-  session.race.phase = 'paused';
   tick(session, { throttle: true });
-  assert.equal(session.race.player.distance, session.race.length);
-  session.race.phase = 'racing';
-  tick(session, { throttle: true });
-  assert.equal(session.race.player.distance, 0);
+  assert.ok(session.race.player.distance >= session.race.length, 'no teleport back to the start');
   assert.equal(session.step, 'throttle');
   perform(session, { throttle: true });
   const distance = session.race.player.distance;
@@ -302,7 +307,7 @@ test('the steering lesson preserves the car position and steering when advancing
   const session = createInteractiveTutorial();
   perform(session, { throttle: true });
   let before = null;
-  for (let frame = 0; frame < 120 && session.step === 'left'; frame++) {
+  for (let frame = 0; frame < 400 && session.step === 'left'; frame++) {
     tick(session, { steer: -1 });
     if (session.step === 'left') before = { x: session.race.player.x, steering: session.race.player.steering };
   }
