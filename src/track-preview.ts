@@ -29,7 +29,7 @@ export const HERO_PREVIEWS: Readonly<Record<string, HeroPreview>> = Object.freez
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 6 },
   cosmic: { distance: 3700, landmark: 'cosmic-gate', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
-  // Stage 2 Frostbite home art direction (the playable registry remains unchanged).
+  // Cyan crystal sentinels stand 350 m ahead on the left (frozen-basin 1150 m), on the open basin floor.
   'frostbite-canyon': { distance: 800, landmark: 'crystal-sentinels', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 6 },
 });

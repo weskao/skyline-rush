@@ -6,6 +6,7 @@ import { createWorldTourScene, WORLD_THEMES } from '../src/world-tour-scene.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 import { createAeroVFX } from '../src/aero-vfx.js';
+import { createUpcomingEnvironment as createFrostbite } from '../src/upcoming-scenes/frostbite-canyon.ts';
 
 // GLSL pow(x, y) is undefined for x < 0; interpolated varyings overshoot [0,1] by an ulp at triangle edges,
 // and the resulting NaN pixel is spread by the bloom blur into a full black frame.
@@ -17,10 +18,11 @@ test('every VFX shader clamps pow() bases so edge pixels cannot produce NaN blac
   scene.add(vehicle);
   createEffects(scene, () => 0);
   createAeroVFX(scene, vehicle);
-  const skyCourse = new Scene();
+  const skyCourse = new Scene(), frostbite = new Scene();
   createSkyScene(skyCourse).update(400, 'high');
+  createFrostbite(frostbite);
   const shaders = new Set();
-  for (const root of [scene, skyCourse]) root.traverse(object => { if (object.material?.isShaderMaterial) shaders.add(object.material.fragmentShader); });
+  for (const root of [scene, skyCourse, frostbite]) root.traverse(object => { if (object.material?.isShaderMaterial) shaders.add(object.material.fragmentShader); });
   assert.ok(shaders.size >= 5);
   const unguarded = [...shaders].flatMap(source => source.split(/\bpow\(/).slice(1)).filter(arg => !/^(max\(0\.,|clamp\()/.test(arg));
   assert.deepEqual(unguarded.map(arg => `pow(${arg.slice(0, 30)}`), []);
@@ -68,6 +70,9 @@ test('every lit mesh in the 3D courses has unit normals and non-degenerate insta
     assert.deepEqual(litFaults(tour), [], id);
   }
   assert.deepEqual(litFaults(sky), [], 'spiral');
+  const frostbite = new Scene();
+  createFrostbite(frostbite).setShot('p02');
+  assert.deepEqual(litFaults(frostbite), [], 'frostbite showroom');
 });
 
 test('Sky Spiral owns a sky backdrop that appears with the course and hides with it', () => {
