@@ -460,12 +460,12 @@ function phaseUI() {
   ui['restart-button'].hidden = ready;
   if (ready) queueMicrotask(maybeShowReleaseNotes);
   if (tutorial) {
-    ui['race-overlay'].hidden = true;
+    ui['race-overlay'].hidden = phase !== 'paused'; // the shared pause screen shows how to resume
     ui['controls-button'].disabled = true;
     ui['restart-button'].hidden = true;
     ui['pause-button'].disabled = tutorial.complete;
   }
-  ui['assist-button'].disabled = !!tutorial;
+  ui['assist-button'].disabled = ui['again-button'].hidden = !!tutorial; // "Race again" means nothing in practice
   $('#photo-open').hidden = !!tutorial || phase !== 'paused' || race.mode !== 'free';
   if (phase === 'paused') {
     $('#new-best').hidden = true;
@@ -504,7 +504,7 @@ function phaseText() {
   ui['pause-button'].setAttribute('aria-label', t(phase === 'paused' ? 'resume.aria' : 'pause.aria'));
   if (phase === 'paused') {
     ui['overlay-title'].textContent = t('overlay.pausedTitle');
-    ui['overlay-copy'].textContent = t('overlay.pausedCopy');
+    ui['overlay-copy'].textContent = t(tutorial ? 'tutorial.paused' : 'overlay.pausedCopy');
   }
   if (phase !== 'finished' || lastResult?.race !== race) return;
   resultCounts = renderResult(resultView(race, lastResult));
@@ -620,6 +620,7 @@ function beginTutorial() {
   $('#tutorial-done').dataset.i18n = raceAfterTutorial ? 'start.race' : 'tutorial.done';
   applyI18n($('#tutorial-coach'));
   tutorial = createInteractiveTutorial(); race = tutorial.race;
+  race.phase = 'countdown'; // the same 3-2-1 → GO as a race, so equipped Launch Flare charges and bursts here too
   touchUI.applyControls(false);
   goUntil = 0; hud.resetMemory(); hud.forgetFlightMode();
   document.body.dataset.tutorial = 'active';
@@ -653,7 +654,6 @@ const { renderTutorial, resetTutorialView } = setupTutorialUI({
 });
 for (const id of ['guide-practice', 'tutorial-open', 'tutorial-retry']) $(`#${id}`).addEventListener('click', beginTutorial);
 for (const id of ['tutorial-exit', 'tutorial-done']) $(`#${id}`).addEventListener('click', endTutorial);
-$('#tutorial-pause').addEventListener('click', () => { pause(); renderTutorial(true); });
 window.addEventListener('resize', () => { if (tutorial) renderTutorial(true); });
 const { closeGuide, hasSeenGuide } = setupGuideUI({
   beforeOpen: () => {
