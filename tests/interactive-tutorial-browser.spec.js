@@ -143,6 +143,25 @@ test('practice restores a paused race and uses the current custom throttle key',
   await expect(page.locator('#distance')).toHaveText(distance);
 });
 
+test('the gate arrow points the way and Skip step moves on by a real click', async ({ page }) => {
+  await begin(page);
+  const skip = page.locator('#tutorial-skip-step');
+  await expect(skip).toBeVisible();
+  await expect(page.locator('#tutorial-guide')).toHaveCount(0); // settled: the throttle lesson has no gate
+  await skip.click();
+  await step(page, 'left');
+  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'left');
+  await expect(page.locator('#tutorial-instruction')).toContainText('gate');
+  await page.locator('#tutorial-pause').click();
+  await expect(skip).toBeHidden();
+  await page.locator('#tutorial-pause').click();
+  await expect(skip).toBeVisible();
+  await skip.click();
+  await step(page, 'right');
+  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'right');
+  await expect(skip).not.toBeFocused(); // a focused skip button would re-fire on Space or Enter
+});
+
 test('switching language updates the active and paused lesson immediately', async ({ page }) => {
   await begin(page);
   await page.locator('#tutorial-pause').click();

@@ -1,0 +1,141 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { stepRace } from '../src/game.js';
+import { streamEndless, finishEndless } from '../src/endless-highway.ts';
+import { createInteractiveTutorial, CLEARED_SECONDS, TUTORIAL_STEPS } from '../src/interactive-tutorial.ts';
+import { tutorialInstructionKey } from '../src/tutorial-ui.ts';
+
+const DT = 1 / 60;
+function tick(session, action = {}) {
+  const input = { ...action };
+  if (!['throttle', 'brake'].includes(session.step) && !input.brake) input.throttle = true;
+  stepRace(session.race, input, DT);
+  session.update(input, DT);
+}
+function skipTo(session, name) {
+  for (let i = 0; i < TUTORIAL_STEPS.length && session.step !== name; i++) { session.skip(); tick(session); }
+  assert.equal(session.step, name);
+}
+function driveToGate(session, action) {
+  const start = session.index, gate = session.race.rings[0].distance;
+  for (let i = 0; i < 900 && session.index === start && session.race.player.distance <= gate; i++) tick(session, action);
+}
+
+test('left and right lessons are lane gates the arrow points to', () => {
+  const session = createInteractiveTutorial();
+  skipTo(session, 'left');
+  assert.deepEqual(session.race.rings.map(ring => ring.x), [-7.5]);
+  assert.equal(session.guide, 'left');
+  driveToGate(session, { steer: -1 });
+  assert.equal(session.step, 'right', 'steering into the left gate clears the lesson');
+  assert.deepEqual(session.race.rings.map(ring => ring.x), [7.5]);
+  assert.equal(session.guide, 'right');
+  driveToGate(session, { steer: 1 });
+  assert.equal(session.step, 'brake');
+});
+
+test('the brake and boost gates span the road and need the action held while passing', () => {
+  const session = createInteractiveTutorial();
+  skipTo(session, 'brake');
+  assert.equal(session.race.rings.length, 4, 'a full-width row');
+  assert.equal(session.guide, 'ahead');
+  driveToGate(session, {});
+  assert.equal(session.step, 'brake');
+  assert.equal(session.coachReason, 'noBrake', 'coasting through is named, not silently ignored');
+  tick(session);
+  driveToGate(session, { brake: true });
+  assert.equal(session.step, 'drift', 'a held brake crawls through the gate and clears it');
+  skipTo(session, 'boost');
+  driveToGate(session, {});
+  assert.equal(session.coachReason, 'noBoost');
+  tick(session);
+  driveToGate(session, { boost: true });
+  assert.equal(session.step, 'airChain');
+});
+
+test('practice gates never pay a PERFECT LINE bonus', () => {
+  const session = createInteractiveTutorial();
+  skipTo(session, 'left');
+  const car = session.race.player, nitro = car.nitro, lines = car.perfectLines;
+  driveToGate(session, { steer: -1 });
+  assert.equal(car.perfectLines, lines);
+  assert.equal(car.nitro, nitro);
+});
+
+test('a cleared lesson shows praise briefly while the next lesson already listens', () => {
+  const session = createInteractiveTutorial();
+  for (let i = 0; i < 120 && session.step === 'throttle'; i++) tick(session, { throttle: true });
+  assert.equal(session.step, 'left');
+  assert.equal(session.coachPhase, 'cleared');
+  for (let i = 0; i < Math.ceil(CLEARED_SECONDS / DT) + 1; i++) tick(session);
+  assert.equal(session.coachPhase, 'ready', 'the praise ends after the short pause');
+});
+
+test('skip advances one lesson on the next tick and skipping the last completes practice', () => {
+  const session = createInteractiveTutorial();
+  session.skip();
+  assert.equal(session.step, 'throttle', 'nothing changes until the simulation ticks');
+  tick(session);
+  assert.equal(session.step, 'left');
+  assert.equal(session.coachPhase, 'ready', 'a skip is not praised as a success');
+  skipTo(session, 'nitro');
+  session.skip(); tick(session);
+  assert.equal(session.complete, true);
+  session.skip(); tick(session);
+  assert.equal(session.complete, true, 'skip after completion is a no-op');
+});
+
+test('the air chain lesson supplies unlimited FLY, BOOST and NITRO, and NITRO alone powers a chain', () => {
+  const session = createInteractiveTutorial();
+  skipTo(session, 'airChain');
+  const car = session.race.player;
+  assert.equal(car.nitro, 1, 'a NITRO charge is ready from the start');
+  for (let i = 0; i < 30; i++) tick(session, { fly: true });
+  tick(session, { fly: true, nitro: true });
+  for (let i = 0; i < 30; i++) tick(session, { fly: true });
+  assert.equal(car.fuel, 100, 'FLY never drains in this lesson');
+  assert.ok(car.nitro >= 1, 'the spent NITRO charge is refilled');
+  for (let i = 0; i < 400 && session.step === 'airChain'; i++) tick(session);
+  assert.equal(session.step, 'barrelRoll', 'FLY + NITRO then a glide earns the chain');
+  assert.equal(car.nitro, 0, 'the practice supply does not leak into the next lesson');
+});
+
+test('a drift released before the first payout tier is named as too short', () => {
+  const session = createInteractiveTutorial();
+  skipTo(session, 'drift');
+  for (let i = 0; i < 20; i++) tick(session, { brake: true, steer: -1 });
+  tick(session);
+  assert.equal(session.step, 'drift');
+  assert.equal(session.coachReason, 'short');
+});
+
+test('practice borrows the endless road: no streaming encounters and no collision limit', () => {
+  const session = createInteractiveTutorial();
+  const race = session.race;
+  race.player.distance = 5000;
+  streamEndless(race);
+  assert.equal(race.traffic.length + race.pickups.length, 0);
+  race.player.collisions = 20;
+  assert.equal(finishEndless(race), false);
+});
+
+test('the coach names the reason for a retry and praises a cleared lesson', () => {
+  assert.equal(tutorialInstructionKey('left', 'retry', 'missed', false, false), 'tutorial.gateMissed');
+  assert.equal(tutorialInstructionKey('airChain', 'retry', 'hard', false, false), 'tutorial.airChainRetry.hard');
+  assert.equal(tutorialInstructionKey('brake', 'cleared', null, false, false), 'tutorial.cleared');
+  assert.equal(tutorialInstructionKey('nitro', 'retry', null, false, false), 'tutorial.nitroRetry');
+  assert.equal(tutorialInstructionKey('airChain', 'airborne', null, false, false), 'tutorial.airChainAirborne');
+  assert.equal(tutorialInstructionKey('left', 'retry', 'missed', true, false), 'tutorial.paused');
+  assert.equal(tutorialInstructionKey(null, 'ready', null, false, true), 'tutorial.completedCopy');
+});
+
+test('every retry reason the lessons can report has copy in both languages', async () => {
+  const { TUTORIAL_COPY } = await import('../src/locales/tutorial-copy.ts');
+  const reasons = { left: ['missed'], right: ['missed'], brake: ['missed', 'noBrake'], boost: ['missed', 'noBoost'],
+    drift: ['short'], airChain: ['noBoost', 'short', 'hard', 'slow'], barrelRoll: ['noRoll', 'early', 'hard'] };
+  for (const [step, list] of Object.entries(reasons)) for (const reason of list) {
+    const key = tutorialInstructionKey(step, 'retry', reason, false, false);
+    for (const locale of ['en', 'zh-TW']) assert.ok(TUTORIAL_COPY[locale][key], `${locale} ${key}`);
+  }
+  for (const locale of ['en', 'zh-TW']) assert.ok(TUTORIAL_COPY[locale]['tutorial.cleared'] && TUTORIAL_COPY[locale]['tutorial.skipStep']);
+});

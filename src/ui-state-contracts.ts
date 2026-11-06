@@ -60,6 +60,9 @@ export interface TutorialCoachView {
   hintText: string;
   /** Non-empty only after the last lesson: the free-cruise celebration subtitle. */
   celebration: string;
+  /** Direction of the practice target gate ('left' | 'right' | 'ahead'), '' when none is out. */
+  guide: string;
+  skipHidden: boolean;
 }
 export interface ControlPanelsView {
   settingsOpen: boolean;
