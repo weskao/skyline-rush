@@ -3452,3 +3452,14 @@ Original WebP/SVG masters, live 3D car rendering, ownership rules and the static
 - [ ] Local `make verify`: this remote GitHub-only context cannot execute the full repository locally.
 - [ ] Real manual device/3D review, artwork crop/halo/material fidelity, iPhone/Android/foldable orientation and motion comfort still require hands-on QA.
 
+
+## 2026-11-06 — Sweep-only Garage icons back to original art + GPT GIF brief
+
+**Only writable branch:** `feature/garage-preview-animated-gifs`.
+
+- [x] The 14 GIFs that only added a light sweep (`badge-*` ×6, `rarity-*` ×5, `store-cart/star/tag`) were removed. Those tiles now show their original 3× art with one shared CSS sweep in `src/GarageArtworkTile.vue`: left → right, `skewX(-23deg)` (same tilt as `.garage-paint-sheen`), 6.8 s cycle, clipped to the icon alpha by `mask`, transform-only. It is hidden on VFX Low/off/comfort and under `prefers-reduced-motion`.
+- [x] The generator, manifest, workflow and tests are now 25 GIFs across 5 categories. The node test asserts that the swept GIFs are absent, that there is one `garage-art-sweep 6.8s` declaration, and that the mask and skew are present.
+- [x] Local evidence: `node --test tests/garage-animated-artwork.test.js` 5/5, Python motion tests 8 OK, `npm run typecheck` and `npm run build` green. Seeked screenshots at 4.4/4.8/5.2 s show the sweep crossing the icon in about 1 s.
+- [x] Added a GPT production brief for replacing the remaining 25 procedural GIFs, with an apply procedure that retires the generator and workflow in the same commit: `docs/designs/garage-animated-gifs/gpt-gif-prompts.md`.
+- [ ] GPT-authored GIFs: not produced yet. The CI workflow `garage-animated-gifs.yml` still regenerates the procedural set until the brief's step 4 runs.
+- [ ] Exact-HEAD full GitHub CI with `[full-regression]`, plus manual review on real devices and Safari.
