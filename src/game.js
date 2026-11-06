@@ -17,7 +17,7 @@ import { bankItem, activateItem, tickItemCooldown, ringsForItemRule } from './ac
 import { decorateBonusGates, collectBonusGate, applyEMPPulse, recoveryRetention, bonusScore } from './bonus-gates.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
 import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
-import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts';
+import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts'; import { spawnCatchUp } from './catch-up-items.ts';
 import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
@@ -26,7 +26,8 @@ import { RACE_TRACKS, raceTrack } from './race-tracks.ts';
 import { CIRCUIT_ID } from './circuit-track.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
-export const MAX_SPEED = 88;
+import { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN } from './drive-rules.ts';
+export { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
 export const STEER_RAMP = 0.15;
@@ -38,17 +39,14 @@ export const CAR_HEIGHT = 1.2;
 export const GAP_CLEARANCE = 1; // altitude needed to fly over a missing bridge section
 export const GAP_WARN_DISTANCE = 300; // m ahead of a broken bridge where too little charge to cross is flagged
 export const GAP_LIFT_RESERVE = 6; // charge to climb from the road to GAP_CLEARANCE (about 0.3 s of thrust)
-export const FLY_DRAIN = 15; // Phase 1: more room to fly while preserving ground recharge
 export const GAP_SLOWDOWN = 0.4; // speed kept after falling into a gap
 export const GAP_RESPAWN = 5; // m past the gap where the car is put back
 export const CROSSWIND_SPEED = 4; // m/s sideways push
 export const ICE_RAMP_FACTOR = 4; // steering takes this many times longer to respond on ice
 
-export const NITRO_TIME = 2.5; // seconds one charge lasts
 export const NITRO_EXTEND = 2; // seconds added by a press during NITRO
 export const NITRO_FUEL_PER_CHARGE = 32; // overflow conversion: each 0.25 charge = 8 fuel
 export const NITRO_FUEL_BONUS = 20; // fuel per charge banked below the cap: each 0.25 charge = 5 fuel
-export const GLIDE_FUEL_REGEN = 4; // fuel/s while airborne with FLY and boost released (ground is 13)
 
 export const DRIFT_MIN_SPEED = 45; // m/s needed to start or hold a drift
 export const DRIFT_BLEED = 3; // m/s^2 lost while drifting (normal braking is 35)
@@ -76,20 +74,14 @@ const PYLON_HALF_WIDTH = 1.2; // m
 export const MAGNET_RANGE = 12; // m
 export const FREEZE_RIVAL_SPEED = 0.5; // rival speed multiplier while frozen
 
-// SLIPSTREAM: right behind a rival or traffic car (same lane, in draft range) long enough pays once per engagement.
-export const SLIPSTREAM_TIME = 1.5; // seconds in the draft before it pays
-export const SLIPSTREAM_CAP_BONUS = 6; // m/s added to the speed cap while the draft is active
-export const SLIPSTREAM_NITRO = 0.25; // charges, once per engagement (leave the draft to re-arm)
-export const SLIPSTREAM_LATERAL = 1.9; // m, max sideways offset from the car ahead
-export const SLIPSTREAM_MIN_GAP = 4.4; // m behind; closer is a collision
-export const SLIPSTREAM_MAX_GAP = 14; // m behind
-export const SLIPSTREAM_ALTITUDE = 1.8; // m, max altitude difference
+import { SLIPSTREAM_CAP_BONUS, SLIPSTREAM_NITRO, inDraft, stepSlipstream } from './drive-rules.ts'; // SLIPSTREAM: shared with rivals
+export { SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, SLIPSTREAM_NITRO, SLIPSTREAM_LATERAL, SLIPSTREAM_MIN_GAP, SLIPSTREAM_MAX_GAP, SLIPSTREAM_ALTITUDE } from './drive-rules.ts';
 
-import { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_HOP_PERIOD, ITEM_RESPAWN, rivalWantsNitro, rivalCollects, rivalSeek } from './rival-items.ts';
+import { RIVAL_NITRO_CHARGES, RIVAL_HOP_PERIOD, ITEM_RESPAWN, rivalCollects, rivalSeek } from './rival-items.ts'; import { driveRival } from './rival-driver.ts';
 export { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_NOVA_EVERY, RIVAL_NITRO_ORBIT_ALTITUDE, RIVAL_NITRO_MIN_SPEED, RIVAL_NITRO_APEX_FROM, RIVAL_HOP_PERIOD } from './rival-items.ts';
 export const RIVAL_NITRO_TIME = NITRO_TIME; // seconds one rival charge lasts
-export const RUBBER_BAND_MAX = 0.04; // speed multiplier changes by at most +/- this
-export const RUBBER_BAND_FREE = 50; // m of lead/deficit with no effect
+export const RUBBER_BAND_MAX = 0.04; // a leading rival's speed multiplier drops by at most this; one behind gets nothing (user, 2026-11-07)
+export const RUBBER_BAND_FREE = 50; // m of lead with no effect
 export const RUBBER_BAND_RANGE = 250; // m beyond the free zone to reach the full effect
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -189,7 +181,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
     },
     rivals: driverIds.map((name, i) => ({
       id: name, name, x: slots.get(name).x, homeX: slots.get(name).x, distance: slots.get(name).distance, speed: 0,
-      altitude: 0, thrusting: false, finishTime: null, nitro: RIVAL_NITRO_CHARGES, nitroUses: 0, nitroTime: 0, nitroHop: -1, pace: 0, cooldown: 0, itemTakes: 0, lastTake: null,
+      altitude: 0, thrusting: false, fuel: 100, boosting: false, slipstream: { time: 0, active: false, paid: false }, finishTime: null, nitro: RIVAL_NITRO_CHARGES, nitroUses: 0, nitroTime: 0, nitroHop: -1, pace: 0, cooldown: 0, itemTakes: 0, lastTake: null,
     })),
     traffic: Array.from({ length: Math.round(36 * density) }, (_, i) => ({
       x: LANES[(i * 7 + 1) % 4], homeX: LANES[(i * 7 + 1) % 4], distance: 170 + i * 125 / density,
@@ -261,7 +253,7 @@ export function stepRace(race, input, dt) {
     return;
   }
   if (race.phase !== 'racing') return;
-  streamEndless(race);
+  streamEndless(race); spawnCatchUp(race);
   race.elapsed += dt;
   const car = race.player;
   const previousScore = car.score;
@@ -301,19 +293,8 @@ export function stepRace(race, input, dt) {
   const nitro = car.nitroTime > 0;
   // SLIPSTREAM: judged on last frame's positions; the timer runs while a car is ahead in draft range.
   const slip = car.slipstream;
-  const inDraft = other => {
-    const gap = physicalGap(race.trackId, car.distance, other.distance);
-    return gap >= SLIPSTREAM_MIN_GAP && gap <= SLIPSTREAM_MAX_GAP && Math.abs(other.x - car.x) < SLIPSTREAM_LATERAL &&
-      Math.abs((other.altitude || 0) - car.altitude) < SLIPSTREAM_ALTITUDE;
-  };
-  const drafted = race.traffic.some(inDraft) || race.rivals.some(inDraft);
-  slip.time = drafted ? slip.time + dt : 0;
-  slip.active = drafted && slip.time >= SLIPSTREAM_TIME;
-  if (!drafted) slip.paid = false;
-  else if (slip.active && !slip.paid) {
-    slip.paid = true;
-    addNitro(car, SLIPSTREAM_NITRO);
-  }
+  const drafts = other => inDraft(race.trackId, car, other);
+  if (stepSlipstream(slip, race.traffic.some(drafts) || race.rivals.some(drafts), dt)) addNitro(car, SLIPSTREAM_NITRO);
   // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; releasing it pays out by drift time.
   if (brake && steer !== 0 && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED &&
       car.railContactSide !== Math.sign(steer)) {
@@ -339,10 +320,10 @@ export function stepRace(race, input, dt) {
   }
   const drifting = car.drift !== null;
   const boosted = boost || (car.miniBoost > 0 && !brake); // the mini boost shares the boost cap but burns no fuel
-  const limit = (nitro ? MAX_SPEED + 30 : boosted ? MAX_SPEED + 14 : MAX_SPEED) + (slip.active ? SLIPSTREAM_CAP_BONUS : 0) +
+  const limit = (nitro ? MAX_SPEED + NITRO_CAP_BONUS : boosted ? MAX_SPEED + BOOST_CAP_BONUS : MAX_SPEED) + (slip.active ? SLIPSTREAM_CAP_BONUS : 0) +
     (car.inShortcut ? SHORTCUT_CAP_BONUS : 0);
-  const drive = drifting ? -DRIFT_BLEED : (throttle ? 15 : -4) - (brake ? 35 : 0);
-  const acceleration = car.speed > limit ? -18 - (brake && !drifting ? 35 : 0) : drive + (boosted ? 12 : 0) + (nitro ? 40 : 0);
+  const drive = drifting ? -DRIFT_BLEED : (throttle ? THROTTLE_ACCEL : -4) - (brake ? 35 : 0);
+  const acceleration = car.speed > limit ? -OVER_CAP_DECEL - (brake && !drifting ? 35 : 0) : drive + (boosted ? BOOST_ACCEL : 0) + (nitro ? NITRO_ACCEL : 0);
   car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
   car.nitroTime = Math.max(0, car.nitroTime - dt);
   car.miniBoost = Math.max(0, car.miniBoost - dt);
@@ -382,10 +363,10 @@ export function stepRace(race, input, dt) {
     car.verticalSpeed -= (fly ? 11 : 7) * (car.section === 'low-gravity' ? 0.4 : 1) * dt; // releasing FLY glides; themed low gravity floats
     if (!fly && !boost) car.fuel = Math.min(100, car.fuel + GLIDE_FUEL_REGEN * dt);
   } else if (!flyInput && !boost) {
-    car.fuel = Math.min(100, car.fuel + (car.section === 'uphill' ? 6.5 : 13) * dt);
+    car.fuel = Math.min(100, car.fuel + (car.section === 'uphill' ? UPHILL_FUEL_REGEN : GROUND_FUEL_REGEN) * dt);
   }
   // AIR DASH: combined drain is 18/s (15 FLY + 3 BOOST), rather than adding 10/s to FLY.
-  if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : 10) * dt);
+  if (boost) car.fuel = Math.max(0, car.fuel - (car.thrusting ? 3 : BOOST_DRAIN) * dt);
   const previousAltitude = car.altitude;
   // Sky Spiral launch ramps impart momentum automatically; FLY can extend the jump.
   if (car.altitude === 0 && car.speed > LAUNCH_MIN_SPEED && (race.trackId === 'spiral' && car.section === 'launch' &&
@@ -450,18 +431,11 @@ export function stepRace(race, input, dt) {
     const cycle = ((race.elapsed + i * 3) % period) * (13 / period);
     rival.altitude = cycle > 6 && cycle < 11 ? Math.sin((cycle - 6) / 5 * Math.PI) * (5 + i) : 0;
     rival.thrusting = cycle > 6 && cycle < 9;
-    if (rival.nitro >= 1 && rival.nitroTime === 0 && rivalWantsNitro(race, rival, Math.floor((race.elapsed + i * 3) / period))) {
-      rival.nitro--; rival.nitroUses++;
-      rival.nitroTime = RIVAL_NITRO_TIME;
-    }
-    rival.nitroTime = Math.max(0, rival.nitroTime - dt);
     rival.cooldown = Math.max(0, (rival.cooldown || 0) - dt);
-    const cap = (70 + i * 3) * (race.config.difficulty === 'easy' ? 0.90 : race.config.difficulty === 'hard' ? 1.07 : 1) + (rival.nitroTime > 0 ? RIVAL_NITRO_BONUS : 0);
-    rival.speed = rival.speed > cap ? Math.max(cap, rival.speed - (14 + i) * dt) : Math.min(cap, rival.speed + (14 + i) * dt);
+    driveRival(race, rival, i, Math.floor((race.elapsed + i * 3) / period), dt); // the player's caps, fuel and NITRO
     const before = rival.distance;
-    // Rubber band: a rival far ahead of the player eases off, one far behind speeds up, by at most RUBBER_BAND_MAX.
-    const gap = rival.distance - car.distance;
-    const band = Math.sign(gap) * clamp((Math.abs(gap) - RUBBER_BAND_FREE) / RUBBER_BAND_RANGE, 0, 1);
+    // Rubber band: a rival far ahead of the player eases off by at most RUBBER_BAND_MAX; one behind is never sped up.
+    const band = clamp((rival.distance - car.distance - RUBBER_BAND_FREE) / RUBBER_BAND_RANGE, 0, 1);
     const slow = (car.effects.freeze > 0 || rival.empUntil > race.elapsed ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
     rival.pace = rival.speed * slow;
     rival.distance += rival.pace * dt;

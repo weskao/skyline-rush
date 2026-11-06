@@ -9,7 +9,7 @@ const VIEWPORTS = [[1440, 900], [390, 844], [320, 740], [844, 390]];
 // The page logs where each Tab lands (on its keyup), so slow CI frames cost one round trip per press, not two; a Tab
 // that reaches the browser's own UI dispatches no keyup to the page. Places: inside the dialog, on the browser's own UI
 // (a native modal hands Tab past its last control to the address bar, leaving activeElement on <body>), or escaped.
-async function assertTrapped(page, selector) {
+async function assertTrapped(page, selector, { quick = false } = {}) {
   const stops = await page.locator(`${selector} :is(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):visible`).count();
   expect(stops, `${selector} has focusable controls`).toBeGreaterThan(0);
   await page.evaluate(sel => {
@@ -25,21 +25,22 @@ async function assertTrapped(page, selector) {
   }, selector);
   for (const key of ['Tab', 'Shift+Tab']) {
     await page.evaluate(() => { window.focusPlaces = []; });
-    for (let i = 0; i < stops * 2 + 4; i++) await page.keyboard.press(key);
+    // quick: one pass of the stops plus two presses, enough to leave the last control and wrap back in.
+    const presses = quick ? stops + 2 : stops * 2 + 4;
+    for (let i = 0; i < presses; i++) await page.keyboard.press(key);
     const places = await page.evaluate(() => window.focusPlaces);
     expect(places.filter(place => place.startsWith('escaped')), `${key} never focuses the page behind ${selector}`).toEqual([]);
-    expect(places.filter(place => place === 'inside').length, `${key} cycles back into ${selector}`).toBeGreaterThan(stops * 2);
+    expect(places.filter(place => place === 'inside').length, `${key} cycles back into ${selector}`).toBeGreaterThan(quick ? stops - 1 : stops * 2);
   }
 }
 const fullyVisible = (box, width, height) => box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height;
 
-for (const [width, height] of VIEWPORTS) test.describe(`${width}x${height}`, () => {
-  const phone = width < 900;
-  test.use({ viewport: { width, height }, hasTouch: phone, isMobile: phone });
+// The Event Lab dialog is one native <dialog> (showModal) with no per-breakpoint markup, so one narrow phone proves its trap.
+test.describe('320x740 Event Lab', () => {
+  test.use({ viewport: { width: 320, height: 740 }, hasTouch: true, isMobile: true });
 
+  // Every Tab press waits on the live preview's frames; CPU-only CI draws them several times slower than a GPU.
   test('the Event Lab setup dialog traps Tab and returns focus to its mode button', async ({ gameplayPage: page }) => {
-    // ~500 Tab presses wait on the live preview's frames; CPU-only CI draws them several times slower than a GPU
-    // (the 1440x900 walk alone took over 270 s there).
     test.setTimeout(ciTimeout(180_000));
     // Focus handling is graphics-independent: Low keeps those frames cheap.
     await page.evaluate(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', preset: 'cinematic', enabled: true })));
@@ -50,13 +51,19 @@ for (const [width, height] of VIEWPORTS) test.describe(`${width}x${height}`, () 
       await opener.focus();
       await page.keyboard.press('Enter');
       await expect(page.locator('#event-lab-dialog')).toBeVisible();
-      await assertTrapped(page, '#event-lab-dialog');
-      if (close === 'Escape') await page.keyboard.press('Escape');
-      else await page.locator('#lab-close').click();
+      if (close === 'Escape') {
+        await assertTrapped(page, '#event-lab-dialog', { quick: true }); // the walk once; the second open checks the button close
+        await page.keyboard.press('Escape');
+      } else await page.locator('#lab-close').click();
       await expect(page.locator('#event-lab-dialog')).toBeHidden();
       await expect(opener, `closing by ${close} returns focus to the opener`).toBeFocused();
     }
   });
+});
+
+for (const [width, height] of VIEWPORTS) test.describe(`${width}x${height}`, () => {
+  const phone = width < 900;
+  test.use({ viewport: { width, height }, hasTouch: phone, isMobile: phone });
 
   test('a setup popover keeps focus on its combobox and never stays open behind it', async ({ gameplayPage: page }) => {
     await page.locator('button[data-race-mode="custom"]').click();

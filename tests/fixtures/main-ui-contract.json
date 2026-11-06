@@ -130,13 +130,6 @@
       "classes": []
     },
     {
-      "id": "tutorial-pause",
-      "tag": "button",
-      "classes": [
-        "controls-reset"
-      ]
-    },
-    {
       "id": "tutorial-exit",
       "tag": "button",
       "classes": [
