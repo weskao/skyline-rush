@@ -1,3 +1,69 @@
+## Garage Wave 3 branch-specific source notes (preserved from economy branch)
+
+## 2026-11-06 — Wave 3 integration completion (`feature/wave3-garage-integration-20261105`)
+
+Preflight SHAs (2026-11-06): develop `ca592105` → integrated `17c94d74`; Economy `6f0b662e`, Store `51a90571`,
+VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero tree change).
+
+- [x] Exact-HEAD CI `bf548a35` (run 42047600915) failures root-caused: Store merge `c76b1e71` kept Economy's WebP
+  summary icon vs Store's PNG spec; Economy spec counted `[data-wave3-asset]` page-wide (14 ≠ 6); Rewards spec counted
+  the summary icon as a thumbnail (9 ≠ 8). RED reproduced locally (5 failures) → GREEN `22717299`; stress
+  `CI=1 --repeat-each=8 --retries=0` 160/160.
+- [x] `badge-limited@3x.png`: detached 5×5 neighbouring-sprite fragment removed and art re-centred losslessly (bounds
+  19/18); guard `tests/garage-vfx-badge-png.test.js` RED→GREEN `c0de1be9`. Archive WebP fallback kept byte-identical.
+  Equipped/Favorite badges pass the audit unchanged (not redrawn; no image generation used).
+- [x] Mission center reads `WAVE3_PREVIEW_CATALOG` instead of a second copy of the 8 ids/names (`f4b379c9`).
+- [x] Test races fixed (product unchanged): eleven-badges `naturalWidth` before decode; podium trophy measured during
+  `reward-podium-reveal` (`5fff5b91`); pose row measured during `history-in` slide (RED via CDP playbackRate 0.05,
+  `811f06e0`). Each stress 24/24 or better under CI timing.
+- [x] Local gate on final code: typecheck PASS (non-nested copy; nested worktree resolves the parent `node_modules`),
+  unit 1617/0, browser 995 pass + the 4 race fixes above, World Tour 328/0, `npm run test:cloud` 15+3 PASS, build PASS.
+- [x] Images: every Wave 3 Garage image loads under the Pages base `/skyline-rush/` (desktop + 390×844, 0 × 4xx,
+  0 text fallbacks); en/zh-TW screenshots reviewed at 1440×900, 390×844, 844×390.
+- [x] CI typecheck failed on an npm partial publish (`playwright@1.65.0` without `playwright-core@1.65.0`) because
+  `typecheck:ts`/`typecheck:vue` installed with `--package-lock=false`. Both now install against the lockfile
+  (`--no-save` keeps package files unchanged); guard in `tests/typed-ui-state.test.js` RED→GREEN; full typecheck
+  PASS locally while the upstream release is still broken, `playwright-core` stays 1.64.1.
+- [ ] Exact-HEAD full CI for the final commit — see the completion report.
+- [ ] Lint: no linter is configured in this repo (no script, config or CI step); not run.
+- [ ] Real-device phone hardware check; mission/trophy duplicate surfaces (Mission center + concept gallery) awaiting
+  product decision; real purchases/payouts/grants remain BLOCKED by policy.
+
+
+## 2026-11-06 — Wave 3 Go backend (DEFERRED; preserve existing game and anti-cheat boundary)
+
+**Single future implementation branch:** `feature/wave3-garage-integration-20261105`. **Go backend plan/prompt:** [2026-11-06-wave3-go-backend-implementation.md](docs/superpowers/plans/2026-11-06-wave3-go-backend-implementation.md). **Status:** Documentation only; Go backend has NOT been implemented, verified, deployed or approved for real grants.
+
+- [x] Create an actionable **Go-language** backend implementation plan covering Firebase Auth, Firestore transactions/rules, Go service contracts, server-side race verification, mission progress, idempotent settlement, inventory/store boundaries, anti-cheat and TDD.
+- [ ] **Prerequisites:** Explicit future implementation authorization; verified Wave 3 frontend/CI baseline; current API/source audit; supported Go version/toolchain; Node 22+; Java 21 and Firebase emulators; dedicated non-production Firebase/GCP project and least-privilege IAM; approved architecture, budgets, privacy/data-retention policy and rollback owner. No credentials committed to this public repo.
+- [ ] **Anti-cheat prerequisite:** Threat-model the client-side race engine and decide how the Go server can *actually verify* eligible completions (server-owned sessions/challenges plus trusted deterministic replay/authoritative simulation when feasible). Auth/App Check/nonce/client telemetry or a browser signature alone are NOT anti-cheat proof; no trustworthy proof means **no redeemable or paid reward grants**.
+- [ ] **Zero regression while backend is absent/down:** Keep existing offline/local racing, tracks, controls, physics, NITRO/FLY/BOOST, tutorials, results/history, PAINTS, Garage/VFX free trials, Coming Soon Store/Rewards previews, localization, and existing local/Cloud Save behavior operational. Never make a Go request mandatory before starting or continuing a race or opening Garage.
+- [ ] **Fail-closed privileged actions:** Without verified Go authority, never create persistent achievement/reward, new paid entitlement, currency balance, purchase, or claim success. Show honest `pending/unavailable/unverified` while retaining existing playable and preview behavior.
+- [ ] Build Go authentication/authorization, versioned APIs, strict UID scoping, Firestore service IAM and server-side validation, with RED→GREEN→REFACTOR evidence.
+- [ ] Verify eligible race completions against trusted server evidence; reject forged, duplicated, replayed, cross-account, tutorial/practice/cancelled and impossible results. Document residual cheating risks; do not declare fully cheat-proof.
+- [ ] Implement durable exactly-once `(uid,completionId)` settlement and server-owned mission progress with daily/weekly UTC boundaries, replay/concurrent requests and offline/retry protection.
+- [ ] Safely integrate account-scoped inventory/entitlement reads and legacy PAINTS/Skin Session/Cloud Save migrations without granting client-forged ownership or damaging existing progress.
+- [ ] Keep real credits, wallet/payout rules, paid store/checkout, receipt fulfillment, refunds, and paid entitlement grants **BLOCKED** until explicit policy/economy/platform/backend-authority approval.
+- [ ] Test Go service down/timeout/error, authentication expiry, account A→B switching, retry/reconnect, stored-profile manipulation, Firestore emulator rules, `go test ./...`, `go test -race ./...`, `go vet ./...` and compatibility with the existing frontend.
+- [ ] Verify existing game flows **before and after** backend integration on desktop and phone (portrait/landscape, offline/online, en/zh-TW, low quality/reduced motion), `npm test`, typecheck/build, `npm run test:cloud`, `make verify`, and **exact-HEAD Full Regression CI** (not focused-only or a previous SHA). Keep rollback tested, do not weaken any quality gate.
+- [ ] Record approved release gates, Go backend commit/CI evidence, anti-cheat limits, test outcomes, and remaining policy blockers; no PR, deployment, force-push, or develop/main modification without separate authorization.
+
+---
+
+## 2026-11-02 — Wave 3 art-source discovery and 3×→1× runtime sizing
+
+**Asset source is now in GitHub.** Before inventing new icons or assuming no source images exist, read [the shared 59-file WebP/1× CSS manifest](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) at `feature/3x-ui-materials` (verified archive commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`). The staged binaries are **27 garage VFX/skin icons, 8 rewards/mission icons, 6 store icons and 18 mobile HUD/common UI images**. Physical 3× source assets are **288×288 → 96×96 CSS**, **216×216 → 72×72 CSS**, or **432×156 → 144×52 CSS**; preserve source pixel dimensions and use a 1× display box and `object-fit: contain`. Source PNGs and the original ZIPs remain in the ChatGPT File Library; Git holds optimized WebPs in `docs/designs/3x-asset-library/webp/`.
+
+**Economy boundary:** There is **no approved real currency, paid entitlement, wallet or live store source image/behavior** in this archive. Badge/rarity or trophy art must not grant/represent unauthorized ownership, convert into a fake coin balance, or imply a payment flow. Economy Foundation must keep its account/Cloud Save entitlement truth independently of artwork, and must not mistakenly count reusable decorative images as completed feature functionality. Only copy approved images into a feature public runtime directory during authorized implementation, with `import.meta.env.BASE_URL` URL, 1× CSS display, RED→GREEN tests, en/zh-TW, fallback, accessibility and CI.
+
+**Current integration target is `develop`, not historical `main`.** Shared asset archive is isolated; this Wave 3 branch does not yet contain runtime images from it. Do not mark feature TODO tasks complete solely because materials exist.
+## Rewards and Missions source instructions (retained from feature branch)
+
+**Read this before image generation or UI implementation.** The user's original `skyline-rush-3x-garage-rewards-and-missions.zip` was recovered from the ChatGPT File Library (SHA-256 `d526e1570865887924c09909f85d057186477cf189862ae351457847f4754b60`). All **eight original 3× transparent WebP icons** are now verified Git blobs in the **shared asset-only branch** `feature/3x-ui-materials`, pinned reference commit `82c7beda8bf5e0c409416c37b39cf1107a13f7e1`. Source: [asset library and exact Git blobs](https://github.com/weskao/skyline-rush/blob/feature/3x-ui-materials/docs/designs/3x-asset-library/README.md) and [Rewards/Missions WebPs](https://github.com/weskao/skyline-rush/tree/feature/3x-ui-materials/docs/designs/3x-asset-library/webp/garage-rewards-and-missions).
+
+**8 actual files:** `mission-race@3x.webp`, `mission-time@3x.webp`, `mission-drift@3x.webp`, `mission-combo@3x.webp`, `trophy-bronze@3x.webp`, `trophy-silver@3x.webp`, `trophy-gold@3x.webp`, `trophy-platinum@3x.webp` (all **288×288 physical pixels**; set **96×96 CSS px** on use, e.g. `<img width="96" height="96">` plus `width:96px;height:96px;object-fit:contain`). Use `import.meta.env.BASE_URL` when copying approved assets into `public/feature-assets/garage-rewards-and-missions/raster/` to ensure GitHub Pages subpath support. Do **not** resize the original images to 1×: only the rendered CSS box is 1×. The PNG originals/source archive remain in ChatGPT File Library, not the Git branch.
+
+**Next implementer's mandatory sequence:** (1) Sync latest `develop` only when branch dependencies/gates permit (never treat historical `main` instructions as the current integration target); (2) inspect the actual 8 WebPs and existing icons, reject glow halos / baked fake balances / illegible cutouts and select only suitable files; (3) fetch `origin/feature/3x-ui-materials` and copy approved Git blobs from `docs/designs/3x-asset-library/webp/garage-rewards-and-missions/` to runtime public path; (4) write RED BDD/tests for 1× layout, missing-image text fallback, en/zh-TW, verified-only rewards (no fake/pending payout), account isolation and retry idempotency; (5) implement Vue 3/TS at 96 CSS px and verify build/CI/WebGL and accessibility. Image existence does **not** approve settlement, create credits, make missions functional, or satisfy the rest of Wave 3.
 ## 2026-11-04 — Skyfall browser CI regression (#41803628752)
 
 - [x] RED (remote exact-HEAD `ec89c654`): Browser shard 4 failed the mobile upcoming-track swipe because the pointer-down position hits the visible intro instead of the WebGL canvas; shard 9 tried to select an option on the deliberately hidden native locale select. Quality Gate failed as a consequence.
@@ -15,15 +81,34 @@
 ## AI-assisted 3D visual fidelity pipeline / Three.js r186.1 — 2026-11-04
 
 **Branch:** `feature/3d-visual-fidelity-pipeline` (created from develop `b8ae6a19`).
-**Status:** design/planning only; local installation verification, dependency migration, new assets and game modifications **NOT DONE**.
+**Status:** r180 baseline and migration preparation underway; dependency migration, new assets and game modifications **NOT DONE**.
 **Spec:** [3D design](docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md) ·
 [Implementation plan](docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) ·
 [Phase 0 preflight](docs/designs/3d-pipeline/toolchain-environment-preflight.md) ·
-[Three.js r180→r186 migration](docs/designs/3d-pipeline/threejs-r180-r186-migration.md).
+[Three.js r180→r186 migration](docs/designs/3d-pipeline/threejs-r180-r186-migration.md) ·
+[Per-task files, by-project vs by-device](docs/designs/3d-pipeline/phases/README.md).
 
-- [ ] **Phase 0 (highest priority):** On the actual Mac at `~/Documents/Workspace/skyline-rush`, run read-only environment checks: Blender binary/version, enabled addon, live Blender MCP scene query, global Claude Code Skills `blender-image-to-3d` and `threejs-*`, user-scoped Claude MCP and optional Codex MCP, Node >=22.20, uvx, project Three.js/types and glTF Transform. Record PASS/FAIL/NOT VERIFIED with sanitized output; repair missing pieces and recheck. **User-reported installed ≠ verified.** Globally installed tools belong in home agent paths, not the repository.
+- [x] **Phase 0 (highest priority):** On the actual Mac at `~/Documents/Workspace/skyline-rush`, run read-only environment checks: Blender binary/version, enabled addon, live Blender MCP scene query, global Claude Code Skills `blender-image-to-3d` and `threejs-*`, user-scoped Claude MCP and optional Codex MCP, Node >=22.20, uvx, project Three.js/types and glTF Transform. Record PASS/FAIL/NOT VERIFIED with sanitized output; repair missing pieces and recheck. **User-reported installed ≠ verified.** Globally installed tools belong in home agent paths, not the repository.
+- [ ] **Phase 0 cross-device acceptance (separate .md):** On each target device, independently execute the by-device items of [E01–E14 standalone validation and AI prompt](docs/designs/3d-pipeline/phase0-multi-device-acceptance.md); by-project items are done once ([split](docs/designs/3d-pipeline/phases/README.md)). Device-specific results and evidence must stay **LOCAL ONLY** in gitignored `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md` (never commit/push). Once all required checks pass, store only the generic product model such as `Mac mini` in the local report and ignored `audits/device-status.md`. Keep actual commands, versions, live MCP output and READY/BLOCKED status out of public TODO.md. No device's PASS substitutes for another's; this public checkbox covers documentation, not actual verification.
 - [ ] **Phase 1:** Baseline r180 screenshots/performance/RED tests; upgrade `three` to 0.186.1 and align `@types/three`, npm lockfile, import APIs and typecheck scripts (currently hardcoded r180); keep WebGLRenderer, existing composer and shader/NaN safeguards; full regression and exact-HEAD CI.
-- [ ] **Phase 2:** Build reproducible Blender Python/MCP → editable .blend → PBR/UV/LOD → GLB → glTF Transform/Meshopt/KTX2 pipeline; audit licenses; implement asynchronous GLTFLoader with renderer reuse, startup warmup, ownership, subpath URLs and procedural fallback.
+  - **By project — done once, the result lives in git/CI and does not depend on the device:**
+    - [x] Task 1 RED contract + capture tooling (`67fc5218`): `node --test tests/three-version-contract.test.js` fails 4/4 at r180; see `tests/three-baseline-browser.spec.js` and the [baseline procedure](docs/designs/3d-pipeline/r180-baseline.md). Garage preview metrics capture corrected and Studio views added; device evidence remains local.
+    - [ ] Task 2 upgrade: `three` 0.186.1 + `@types/three` 0.186.0 exact-pinned, lockfile, dynamic types installs removed from `typecheck:ts`/`typecheck:vue`; contract test GREEN; `npm run typecheck`, `npm test`, `npm run build` (all deterministic from the lockfile). Run `python3 scripts/three-pipeline/phase1_project_check.py` (P0 rebase pull, P1 `npm ci`, P2 contract test, P3 typecheck, P4 `npm test`, P5 build; `--steps P2,P3` for a subset). AI agents may execute it directly without asking: it never commits or pushes, and stops at the first FAIL.
+      Project check P0–P5 passed locally after the upgrade (1,588 unit tests passed, 3 skipped); commit and exact-HEAD CI remain pending. `vue-tsc` is pinned in devDependencies rather than installed during typecheck.
+    - [ ] Fix any r186 API breakage found by a device run below (`RoomEnvironment` in `src/world.js`, `updateWorldMatrix` in `effects.js`/`aero-vfx.js`/`world-tour-batching.ts`); one shared fix, never a per-device workaround.
+      Studio bloom was visibly washed out after the upgrade. The real-WebGL background check failed before calibrating Studio bloom and passed afterward; broader visual comparisons and regression checks are pending.
+    - [ ] Commit, then the full exact-HEAD `quality-gate` CI run; record SHA and run ID here (no device identifiers).
+  - **By device — repeat on every device; nothing transfers between them (GPU, browser and `node_modules` differ). Results LOCAL ONLY in the gitignored `audits/` report, generic model name only.** D1–D7 run as one command, `python3 scripts/three-pipeline/phase1_device_check.py --alias "<generic model>"` (`--steps D4,D5` for a subset, `--npm-ci` for a real reinstall; `--self-test` checks the script itself); D8 and D9 stay manual:
+    - [ ] D1 Clean install: `npm ci`, then `npm ls three @types/three` shows 0.186.1 / 0.186.0 (Phase 0 E10 recheck).
+    - [ ] D2 Browser launch sanity: a bare Playwright `chromium.launch({ channel: 'chrome' })` succeeds before any spec is judged.
+    - [ ] D3 Own r180 baseline: capture it from the pre-upgrade commit `68675409` in a worktree (`make perf BASE=68675409`, plus the `THREE_BASELINE=1 LABEL=r180` spec there). Another device's evidence is not a baseline for this device.
+    - [ ] D4 `tests/shader-warmup-browser.spec.js` + `tests/black-frame-browser.spec.js` pass at r186.
+    - [ ] D5 r186 capture, phone and desktop viewport (`THREE_BASELINE=1 LABEL=r186`), compared with D3: geometries and programs equal, textures exactly +1 (r186's shared DFG lookup texture, `getDFGLUT()` in `WebGLRenderer.js`; any other delta is a real change); draw calls and triangles within ±10 % (they vary with live traffic); no page or console errors.
+    - [ ] D6 `make perf VIEWPORT=desktop RATE=6 ROUNDS=3`: p50/p95 no worse than D3.
+    - [ ] D7 `make verify` (unit, build, browser, World Tour long-run) green.
+    - [ ] D8 Own screenshots reviewed side by side against D3 (Garage paint and glass first: `RoomEnvironment` changed in r183).
+    - [ ] D9 Each physical phone: `make perf-phone`, only for phones used for QA.
+- [ ] **Phase 2:** Build reproducible Blender Python/MCP → editable .blend → PBR/UV/LOD → GLB → glTF Transform/Meshopt/KTX2 pipeline; before downloading or using external assets, verify their sources, licenses and available disk space; implement asynchronous GLTFLoader with renderer reuse, startup warmup, ownership, subpath URLs and procedural fallback.
 - [ ] **Phase 3:** Upgrade Roadster 2 model in existing Garage Studio using reference-led real 3D meshes for front, rear, four VFX thrusters, active wing, separate wheel pivots and paints; preserve current physics, collisions, NITRO/FLY/BOOST and existing Roadster branch work. Obtain real WebGL screenshots and visual approval.
 - [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
 - [ ] **All phases:** TDD RED→GREEN, renderer version/texture and animation checks, 10-track/5-new-track matrix as available, desktop/mobile Low/Medium/High (Ultra only after profiling), memory/draw/triangle/frame-time p50/p95, real-device QA, `make verify` and exact-HEAD FULL `quality-gate`. No PR, develop/main merge, release or deployment without approval.
@@ -207,6 +292,61 @@ reversing the earlier "two corner slits" decision.
 - [ ] Verify exact-HEAD full CI quality-gate and manually test road/flight/transitions on real devices. No PR, merge, deployment or modification to `main`/`develop` without explicit user approval.
 
 ---
+
+---
+
+## Security hardening — required before releasing 1.0.0 and every later version (2026-11-03)
+
+**Context:** the repo is public and `src/cloud-save.ts` hard-codes the Firebase Web config (`apiKey`, `projectId`,
+`appId`). That is the normal Firebase Web pattern: the key identifies the project and ships in the JS bundle anyway.
+Data access is enforced by `firestore.rules` (owner-only `get`/`delete`, no `list`, validated writes on `accounts`,
+`modeBests`, `saves`). The risks are an **unrestricted key** (quota/billing abuse, use from other origins) and
+**deployed rules drifting** from the file in the repo. Nothing below is verified yet.
+
+**Release gate:** 1.0.0 is not tagged until every P0 item is checked. Each later release re-runs the "Every release" list.
+
+### P0 — before 1.0.0
+
+- [ ] **Restrict the Web API key** (Google Cloud Console → APIs & Services → Credentials):
+  - Application restriction: HTTP referrers = the GitHub Pages origin, `http://localhost:*`, `http://127.0.0.1:*`.
+  - API restriction: only the APIs the app calls (Identity Toolkit, Token Service, Cloud Firestore; add Firebase
+    Installations / App Check only if used).
+  - Evidence: screenshot of the key's restriction page; a request from an unlisted origin is rejected.
+- [ ] **Regenerate (rotate) the API key** so 1.0.0 starts on a restricted key that never had an unrestricted history:
+  create the new restricted key → replace `apiKey` in `src/cloud-save.ts` → deploy → verify sign-in and cloud save on
+  desktop and iPhone → **delete the old key** in Google Cloud. (The old key stays in git history; deleting it in Google
+  Cloud is what disables it. A history rewrite is not needed.)
+- [ ] **Verify the deployed Firestore rules match `firestore.rules`** (Firebase Console → Firestore → Rules, or
+  `firebase firestore:rules:get`). No test-mode rule (`allow read, write: if true` / time-limited open rules) may remain.
+  Deploy with `firebase deploy --only firestore:rules` if they differ.
+- [ ] **Firebase Auth authorized domains**: only the production Pages domain, `localhost` and `127.0.0.1`; remove
+  leftovers (e.g. preview or old domains). Enable only the Google sign-in provider.
+- [ ] **Billing safety**: budget alert on the Firebase/Google Cloud project; review Firestore and Identity Toolkit quotas
+  so abuse can't run up a bill.
+- [ ] **Run the Firestore rules tests in CI**: `tests/firestore-rules.test.js` runs only locally through `npm run
+  test:cloud` (emulators); add it to the `quality-gate` workflow so a rules regression blocks the merge.
+- [ ] **Secret scan of the full git history** (e.g. `gitleaks detect` over all commits): confirm no service-account JSON,
+  private key, admin token or `.env` was ever committed. Rotate anything found.
+- [ ] **Enable GitHub secret scanning + push protection** on the repo (Settings → Code security).
+- [ ] **Privacy**: `accounts/{uid}` stores the Google display name and email. Add a short privacy note (what is stored,
+  why, how to delete it via the existing cloud-delete action) before 1.0.0.
+
+### P1 — recommended for 1.0.x
+
+- [ ] **Firebase App Check** (reCAPTCHA Enterprise / v3) for Firestore and Auth: monitor first, then enforce, so only
+  the real site can call the backend.
+- [ ] **Dependency hygiene**: add `.github/dependabot.yml` (npm + GitHub Actions) and an `npm audit --omit=dev` check
+  for high/critical advisories.
+- [ ] **Content Security Policy** via `<meta http-equiv="Content-Security-Policy">` (GitHub Pages can't set headers),
+  allowing only the Firebase/Google auth origins the app uses; verify Google sign-in popup still works.
+- [ ] **Pin GitHub Actions to commit SHAs** and keep workflow `permissions:` minimal.
+
+### Every release (1.0.0 and later)
+
+- [ ] Deployed Firestore rules = `firestore.rules` at the release commit; rules tests green in CI.
+- [ ] API key still restricted (no restriction removed during debugging); no new keys or secrets in the diff.
+- [ ] Any new Firestore collection ships with owner-only rules, write validation and a rules test.
+- [ ] No high/critical `npm audit` advisories in production dependencies.
 
 ---
 
@@ -1120,7 +1260,7 @@ Read `HANDOFF-TODO-2026-10-29.md` before continuing. This checklist aggregates c
 ## Photo Studio continuation — PHOTO-01 (2026-10-29)
 
 - [x] Final responsive source `d4e4e73` passes strict TS/Vue/legacy checks and Node 815 / 0 failures / 3 emulator skips. Focused browser gate: 25/25, exit 0. Actual desktop/phone controls and PNG decoding pass; the phone capture uses real touchscreen taps. Receipt: `artifacts/photo-studio/controls-responsive/receipt.json`.
-- [x] Preserve all work and stop local verification at the user's explicit handoff request. The final `make verify` was terminated with exit 143 after browser ordinal 31; no full-gate success is claimed. No task-owned browser/make processes remain. English handoff: `/Users/wes_flutter/Documents/Workspace/skyline-rush/HANDOFF-TODO-2026-10-29.md`.
+- [x] Preserve all work and stop local verification at the user's explicit handoff request. The final `make verify` was terminated with exit 143 after browser ordinal 31; no full-gate success is claimed. No task-owned browser/make processes remain. English handoff: `~/Documents/Workspace/skyline-rush/HANDOFF-TODO-2026-10-29.md`.
 - [ ] Upstream changed at handoff: `origin/main@bc5299b` is 51 commits ahead of the local ca1c777 main baseline and is not in this branch. Preserve this handoff-only TODO edit, integrate upstream when work resumes, resolve conflicts without dropping either side and repeat complete gates on the resulting source.
 - [ ] Resume full `make verify` on `d4e4e73` (or the actual source being resumed) and inspect exact-commit CI run 40851948100. PHOTO-01 stays unchecked until these gates pass; later commits need their own exact-HEAD CI. Latest source is published; this handoff-only TODO edit is intentionally uncommitted.
 
@@ -3344,6 +3484,64 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 ---
 
 
+---
+
+## 2026-11-04 — Wave 3 Garage Store Readiness implementation and pending evidence
+
+**Owner:** `feature/garage-store-readiness` only. **Integration:** no merge / PR / deployment authorized. The Store is a read-only, unavailable catalog; no price, live purchase, balance, claim, or ownership grant.
+
+- [ ] **Independent 3× assets:** 6 repaired, complete source WebPs and SVG masters are present. CI-triggered lossless exports to `public/feature-assets/garage-store-readiness/raster/store-*@3x.png` must be **committed and verified** at 216 × 216 with true alpha, safe bounds, source pixel identity, unique content and actual browser display at 72 × 72 CSS pixels. Until all six PNGs exist in the branch, this remains open.
+- [ ] **Real Garage Store UI:** direct non-checkout Store entrance in `GaragePanel.vue` opens bilingual category filters, Featured concepts, Coming Soon/Unavailable cards and a deliberately disabled action. Source added, but browser/manual acceptance is outstanding.
+- [ ] **Fallback & responsive:** `BASE_URL` PNG → repaired WebP → text, mouse/keyboard/touch, en/zh-TW, 390×844 / 844×390 / 1440×900, reduced-motion and 44px hit targets. Automated specs added; exact-HEAD results and screenshots remain unverified.
+- [ ] **TDD / Focused Checks:** source-level tests `garage-store-catalog-contract.test.js`, `garage-store-png.test.js`, existing Wave 3 tests and new `garage-store-catalog-browser.spec.js` added. RED assertions were committed before implementation; original RED was **not executed successfully** before follow-up pushes cancelled CI, so do not claim observed RED/GREEN evidence.
+- [ ] **Full Regression:** require final asset commit, `npm test`, Typecheck, Build, Browser, Cloud Save and World Tour checks on **exact final branch HEAD**. A focused green result with skipped Browser/World Tour is not full acceptance. Local `make verify` and actual iOS/Android screen/perf review remain independent gates.
+- [ ] **Separate approval:** prices, refunds, purchase SDK/checkout, paid/earned entitlement, currency balances and provider policies are neither approved nor implemented; no Store publishing until approved.
+
+Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIFEST.md`. PNG generator: `scripts/render-store-png.mjs`; branch-only audit workflow: `.github/workflows/store-png-generator.yml`. Prior exact-HEAD `c8235fc8045982e01638794027f818b8103cbdf0` passed **focused** CI run `41784030747` while Browser and World Tour were skipped. Those checks do not validate later changes.
+
+### 2026-11-02 Garage VFX CI follow-up (pending exact-HEAD full gate)
+- [x] Old feature `64773e6`: Firestore full-save and Garage button-selector regressions now green (cloud-save, browser shard 12).
+- [ ] Correct 390×844 Flight framing after spoiler/wheel pose; real WebGL browser evidence and unit gate pending on the new commit.
+- [ ] Repair solo Stunt/Checkpoint score-pad availability and re-rolled Time Trial ring test; full browser shards 2/7 and `quality-gate` pending.
+- [ ] Recheck Circuit landscape-zh pause-to-result transition on the exact merged commit; preserve the test until root cause is verified.
+- [ ] Merge only after feature full-regression and verify exact develop merge commit; no `main` change or release.
+
+### 2026-11-05 Garage VFX exact-HEAD Full CI repair
+- [x] RED observed on `2b3a10c9` Full Regression [#41908608993](https://github.com/weskao/skyline-rush/actions/runs/41908608993): Browser (7) `handoff-browser.spec.js` PERFECT LINE false; Browser (6) `release-video-browser.spec.js` undefined enlarged media after dialog teardown. Unit, Cloud Save and all five World Tour shards passed; Quality Gate failed as required.
+- [ ] Revalidate real Ring → NITRO → PERFECT LINE and viewer frame handoff with latest-head Full Browser/World Tour/Quality Gate; use the pinned Coast Solo Time Trial + actual input pilot and capture video times before DOM teardown, matching already-green Economy Full CI #41908841653. No production award/entitlement changes. Local `make verify` and physical device checks not executed in connector-only environment.
+
+### 2026-11-02 Garage VFX CI follow-up — f2a1816 RED, latest repair pending
+- [x] Observed exact-HEAD feature CI RED run 41466802082: unit-tests, cloud-save and five World Tour shards green; browser shards 4/5/7/8/11/12 red. Full gate not passed.
+- [ ] Localize 3× HUD artwork summary/notice and custom-draw its disclosure marker; verify EN/zh-TW and CSS sizing in latest CI.
+- [ ] Repair handoff test missing gameplay fixture, deterministic real callout timing and probabilistic Risk Line assertion; verify latest full CI.
+- [ ] Preserve develop Garage badge art, zoom-out fog and ring row semantics alongside feature Flight framing, bonus score gates, eight-car finish tests and real 3D framing tests.
+- [ ] Latest feature quality-gate, develop no-ff merge CI and manual WebGL/device review remain pending.
+
+### 2026-11-03 Garage CI RED checkpoint
+- [x] Exact feature 16f2485 CI 41476482401: unit-tests, cloud-save, 5 World Tour passed; browser shards 1,3,4,6,7,8,9,10,11,12,13 failed; quality-gate failed. Logs confirm stale Endless 20/15 budget, Garage zoom click count, desktop intro overflow, HUD art timeout and NITRO reward assumptions. No green claim for the next SHA.
+- [ ] Recheck complete exact-HEAD full CI after upstream sync and fixes. Manual real-WebGL/phone checks remain independent.
+
+### 2026-11-03 Garage exact-HEAD CI #41520208780 observed RED (follow-up pending)
+- [x] Browser shards 2/7/9 failed on exact feature `ef1a94a`: 1440×900 intro overlapped topbar; intro scroll test counted the fixed camera dock as flow content; handoff PERFECT LINE pilot exited in READY phase; release clip handoff assertion compared different instants. Logs inspected, not a full CI pass.
+- [ ] Verify fixes on next exact-SHA full-regression CI: actual Start race before ring collision; exclude fixed dock only from scroll-flow test; preserve 900px intro height with correct header gap; compare release video clocks at dialog close. Do not mark GREEN without CI evidence.
+- [ ] Verify remaining 13 browser, 5 World Tour, cloud-save, unit-tests, quality-gate; after all green and latest develop integrated, no-ff merge to develop only and verify merged SHA. Manual WebGL/device review separate.
+
+### 2026-11-03 Garage full-regression browser shard 2 RED — footer hitbox
+- [x] On exact feature `e4b7564031e9e9b431a06248aa4947b83f3f9121`, Actions run 41536582099 browser-tests (2) failed `tests/responsive-browser.spec.js:37` at 1440×900: intro rectangle overlapped `.bottomline`. Inspected actual Playwright failure screenshot (`browser-failures-2` artifact 13187604260). Footer includes a 44px action; the 900px override's `bottom: 24px` leaves the intro rectangle over that hitbox despite visible text ending higher. Existing browser assertion is the RED regression test; no test weakened.
+- [ ] Exact-HEAD GREEN pending: 900px desktop intro bottom inset 60px reserves the 44px footer plus a small gap, top remains 118px to clear the 112px header after the -6px margin. Re-run all 13 browser shards, unit, cloud-save, five World Tour, quality-gate and `npm run test:layout` where a runnable checkout is available; inspect 900px scroll/locale/physical screenshots separately. No local browser execution was possible in this connector-only run.
+
+## Wave 3 Economy Foundation — 2026-11-04 read-only state gate
+
+- [ ] Exact-HEAD full regression and real device/visual acceptance for the Economy state gate. The focused local Node 22 test observed RED (3 failures: missing shared state contract), then GREEN (3 passes) and strict standalone TypeScript check; this is **not** full-repo verification.
+- [ ] Obtain explicit backend entitlement authority, Firestore rules/emulator coverage, grant migration contract and product approval before enabling any owned skin, award, price, wallet, claim or checkout. The new `src/garage-economy-state.ts` is read-only: `owned: []`, `balance/price/award: null`, `canBuy/canClaim: false` in all phases.
+- [ ] Integrate the exported Garage Economy snapshot with Rewards and Store consumers **only on their respective authorized branches**. Shared version 1 phases: unavailable/loading/ready/error/unsupported; ready confirms only that schema/account metadata was read, never server-authoritative entitlement.
+- [ ] Inspect existing Economy source imagery before any redesign: this work adds no raster art and does not pretend the separate archive or previews are purchases. Legacy PAINTS and Garage trial preferences remain independent.
+
+
+## Economy Foundation — 2026-11-04 existing Store art in live Garage
+- [ ] Visual acceptance: real desktop/iOS/Android screenshots and exact-HEAD full CI still required for Garage store-entry art.
+- [ ] Source integration acceptance: existing 216×216 store-collection WebP is wired for 72×72 CSS in the Garage summary and the six 3× Store artworks remain selectable via native details/gallery controls. Await exact-HEAD CI, browser screenshots and manual visual sign-off before marking complete. No checkout, currency, price or permanent entitlement is implied.
+- [ ] Run full browser/WebGL interaction checks after CI runner availability, including keyboard, touch, 390×844, 844×390 and 1440×900; compare alpha safety and caption clipping. New browser assertions are in tests/garage-art-source-browser.spec.js.
 ## 2026-11-03 — Stage 1 real-3D homepage integration checkpoint
 
 - [x] Verified latest six branch heads before implementation. At inspection: integration `00ea05de`; Dune `b509ed2f`; Monsoon `bffc2479`; Skyfall `9eddd936`; Volcanic `efcf7a8e`; Stormline `6b28e1f4`. All five independent `src/upcoming-scenes/<id>.ts` and scene tests were absent at that snapshot; no complete art environment was selectively imported.
@@ -3356,6 +3554,29 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] **2026-11-03 source integration update:** Five independent art branches subsequently delivered actual native Three.js scene modules, corresponding focused unit tests and art notes. Their exports, geometry, absolute-time updates, quality/reduced-motion arguments and disposal methods were source-reviewed. The exact 15 committed Git blobs were selectively imported without merging old histories. Heads: `dune-tempest` `fa9573b4bddd`; `monsoon-ruins` `32411c88c702`; `skyfall-archipelago` `9707c5132dab`; `volcanic-crown` `d7ad8b01f57f`; `stormline-megacity` `84e9569a2d4c`. Source branch CI was still queued when checked; this is **not** verified visual acceptance.
 - [ ] Register all five in the shared renderer and run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify`, exact-HEAD full CI and 2 real WebGL frames per map desktop/mobile. Pending; do not label scenes visually accepted before screenshots and checks.
 
+
+## 2026-11-04 — Five playable tracks / shared graph travel verification
+
+- [x] Added isolated TDD coverage for opt-in graph travel with 3D route-frame position, legal forks, ordered progress, flight permission, eight independent vehicle states, and altitude/lateral bypass rejection. Observed RED and GREEN 9/9, plus isolated strict TypeScript checks; this is NOT a whole-repository pass.
+- [ ] Confirm the newly pushed **exact-HEAD FULL** GitHub CI: unit/typecheck/build, cloud-save, every Browser and World Tour shard, and quality gate; skipped, queued, failed or cancelled does not count as PASS.
+- [ ] Connect the canonical graph traveller to authoritative `game.js` simulation, `world.js` road/wheel contact and shared RaceFactory, then implement trusted signed swept gates, branch-aware 8-car AI, layer-aware collisions, flight/landing, recovery and real results without changing legacy courses.
+- [ ] Run real desktop/mobile WebGL acceptance, compare two source JPEGs per map, measure 20+ completed races, 30/60/120 FPS, Reduced Motion and GPU disposal before enabling any Coming Soon course.
+
+
+## 2026-11-04 — graph fleet, swept gates and physical recovery
+
+- [x] TDD isolated: eight separate graph-car states, deterministic branch movement, finite metre/pose validation, layered collision candidates, verified-clear ground recovery and measured directional gate crossing; observed RED then GREEN 20/20 on isolated exact-SHA shared modules; strict isolated TS check passed.
+- [ ] Verify latest exact-HEAD FULL CI on this integration commit: Unit/Typecheck/Build, Cloud-save, every Browser (13) and World Tour (5) shard, quality-gate; no skipped/queued/cancelled/failed required suite counts as PASS.
+- [ ] Connect signed physical gates and all eight cars to the existing `game.js` authoritative simulation and RaceFactory; connect the same canonical frames to `world.js` road/pose/AI/minimap, actual knock/bump response, landing, hazard-safe recovery and finish/results.
+- [ ] Independently verify map-source exact-HEAD FULL CI and real WebGL 1440×900 / 390×844, 20+ timed races, 30/60/120 FPS, Reduced Motion, quality tiers and GPU dispose before selective file import and playable enablement. Keep Coming Soon.
+
+
+## 2026-11-04 — provisional graph-aware AI route choices and race order
+
+- [x] Added opt-in deterministic AI fork selection (no unauthorized flight), checkpoint-aware provisional race order and finish-time ordering; test-first RED and GREEN 9/9 in a minimal Node 22 mirror, combined shared 29/29 and isolated strict TS PASS.
+- [ ] Exact-HEAD FULL GitHub Actions must run all 13 Browser, all five World Tour, Unit/Typecheck/Build, cloud-save and quality-gate, not merely Focused PASS; capture job logs and fix any regressions.
+- [ ] Wire the new helpers into the authoritative existing `game.js` / RaceFactory / `world.js` runtime with trusted physics world poses, route-aware AI steering, signed gates, 3D colliders, actual recovery and results; preserve legacy gameplay.
+- [ ] 5 source branches remain read-only candidates pending their own exact-HEAD FULL CI, 3–5 minute / 8-car tests, 30/60/120 FPS, Reduced Motion, GPU disposal and real mobile/desktop WebGL versus both concept JPEGs. Coming Soon stays enabled.
 ---
 
 ## 2026-11-04 — Skyfall playable map-owned streaming / contact
@@ -3420,3 +3641,37 @@ Code commits: [RED tests](https://github.com/weskao/skyline-rush/commit/de6ada93
 - [ ] Run Typecheck, all Unit tests, Build, `make verify`, complete Browser/World Tour suites and exact-HEAD FULL CI; no PASS claim until observed.
 - [ ] Desktop/mobile manual QA: all six original home previews, 13.8 KM Frostbite card, both P01/P02 scenes, reduced motion/airflow, title/CTA translations, no race entry.
 - [ ] Only after successful pre-merge full CI and review, normal `--no-ff` merge of this preview-only branch to latest `develop`; verify develop exact-HEAD FULL CI. Do not merge playable-course runtimes or modify `main`/release tags without separate approval.
+
+
+## 2026-11-05 — measured physical CourseGraph step (opt-in)
+
+- [x] Regression-first opt-in trusted-pose graph stepping: 10/10 isolated Node tests and strict isolated TypeScript PASS (observed RED→GREEN including follow-up forged-FINISH-next-edge test). `src/course-measured-motion.ts`, `tests/course-measured-motion.test.js`.
+- [ ] Verify this new **exact-HEAD FULL** GitHub workflow: unit/typecheck/build, cloud-save, every Browser + World Tour shard and quality-gate. No success assertion while pending or if required jobs are skipped.
+- [ ] Wire trusted world poses/distance and signed graph transitions to actual shared RaceFactory/`game.js`/`world.js`; do not treat synthetic arc-length updates as authoritative. 8-car AI/drift/BOOST/NITRO/FLY, collision, Recovery, results/ghost and mobile controls remain pending.
+- [ ] Source branches are read-only; require their exact-HEAD FULL CI, real game WebGL 1440x900 / 390x844 and 20+ physical sessions per map before selective import or enabling any Coming Soon track.
+
+
+## 2026-11-05 — signed eight-car sweeps and continuous steep-road frames
+
+- [x] Added the physical-sweep eight-car adapter and validated ID/sweep rejection, atomic rollback, checkpoint independence and flight authorization: local RED then GREEN 8/8.
+- [x] Added near-vertical route-frame regression (observed 90-degree orientation flip before fix) and 3D road-surface-normal `lift` regression: both local RED then GREEN; combined opt-in suite 20/20, isolated TypeScript PASS.
+- [ ] Verify exact-HEAD FULL CI including Unit/Typecheck/Build, Cloud-save, all 13 Browser and all five World Tour shards and quality-gate. Pending or skipped is not a PASS.
+- [ ] Integrate measured fleet state into the existing `game.js`/RaceFactory/`world.js` authoritative loop, including player/drift/BOOST/NITRO/FLY, 8-car AI and standings, layered collisions, valid recovery, minimap, race results, records and ghost persistence.
+- [ ] No source course import until each candidate branch passes its own exact-HEAD FULL CI, safety checks, real ground/aerial WebGL and 20+ timed 3–5 minute sessions per course; preserve Coming Soon until human signoff.
+
+
+## 2026-11-05 — authorized air-over-ground travel, signed gate unchanged
+
+- [x] Observed failing RED for authoritative authorized air-over-ground route advance (previously frozen by a ground-height guard), then GREEN while high checkpoint sweep remained rejected; local combined 21/21 Node tests and isolated strict TypeScript PASS.
+- [ ] Confirm newest exact-HEAD FULL CI (Unit/Typecheck/Build, Cloud-save, 13 Browser and five World Tour shards, Quality Gate); pending/skipped jobs do not pass.
+- [ ] Connect `advanceMeasuredCourseTravel` and measured fleet states to real physics-derived world positions and existing AI/game/world architecture; complete the full five-course physical/visual acceptance before enabling any race.
+
+
+## 2026-11-05 — six-course shared preview, AIRFLOW, Garage/Studio parity
+
+- [x] Read and documented the existing shared six-map home selection/swipe, AIRFLOW (ON=ground / OFF=hover), same Roadster/3 rivals, camera views, Garage Home and Preview Studio. New scoped rule: `.claude/rules/playable-course-shared-template.md`; link in `CLAUDE.md`.
+- [x] Updated the common `src/upcoming-showcase.ts` to derive Roadster vertical hover/ground/jet pose from the existing `previewPlayer` used on classic tracks; no extra map-specific controller or renderer, no change to Coming Soon.
+- [ ] Validate `tests/shared-course-template-browser.spec.js`: six consecutive horizontal carousel selections and six-course AIRFLOW/Garage/Studio interaction regressions. New `tests/upcoming-showcase.test.js` verifies shared 3D vehicle pose for every upcoming environment. Tests are authored but **not locally run**; no test-first RED or GREEN is claimed for this current revision.
+- [ ] Run `npm test`, `npm run build`, `make verify`; inspect the latest **exact-HEAD FULL** GitHub CI (all required Browser/World Tour shards, Unit/Typecheck/Build, Cloud-save, Quality Gate). Fix real failures and preserve existing behavior.
+- [ ] Capture real desktop/mobile WebGL frames for all six preview courses, AIRFLOW ON/OFF, camera views, touch swipe and Garage/Studio. Measure actual road/wheel contact, visual parity, Reduced Motion, frame timing and GPU disposal; these are not proved by UI tests.
+- [ ] Separately connect actual six-course CourseGraph physics, branching, flight/landing, 8-car AI, collision, checkpoints, recovery, results/ghost and start/finish. UI/template parity does **not** authorize race registration or remove Coming Soon.

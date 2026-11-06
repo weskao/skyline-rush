@@ -63,3 +63,17 @@ test('RED 10C: reject impossible new mode records before saving to storage', () 
   for(const race of invalid)assert.throws(()=>recordModeRace(race,storage),/invalid|finished|track|record|result/i);
   assert.deepEqual(loadModeHistory(storage),[]);
 });
+
+test('eight-car practice finishes at places 5–8 persist, while a ninth place is rejected', () => {
+  const storage = memory();
+  for (const position of [5, 6, 7, 8]) {
+    const race = sample('custom', { rivals: 7 });
+    race.result.position = position;
+    assert.doesNotThrow(() => recordModeRace(race, storage));
+  }
+  assert.deepEqual(loadModeHistory(storage).map(run => run.position), [5, 6, 7, 8]);
+  const invalid = sample('custom', { rivals: 7 });
+  invalid.result.position = 9;
+  assert.throws(() => recordModeRace(invalid, storage), /valid result/);
+  assert.equal(loadModeHistory(storage).length, 4);
+});
