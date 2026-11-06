@@ -75,7 +75,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
       const result = await cache.load(id, { quality: next, signal: own.signal });
       if (own !== controller) { if (result.kind === 'model') result.release(); return; }
       controller = null;
-      if (result.kind === 'fallback') { status = `fallback:${result.reason}`; report(); return; }
+      if (result.kind === 'fallback') { console.warn(`[model-probe] ${id} → ${result.fallback} (${result.reason})`); status = `fallback:${result.reason}`; report(); return; }
       const old = handle;
       handle = result;
       status = 'model';
