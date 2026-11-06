@@ -71,8 +71,10 @@ export function sampleRoute(graph: CourseGraph, edgeId: string, distance: number
   const point: CoursePoint3 = [lerp(0), lerp(1), lerp(2)];
   const before = data.points[Math.max(0, low - 1)], after = data.points[Math.min(data.points.length - 1, high + 1)];
   const forward = unit(sub(after, before));
-  const worldUp: CoursePoint3 = Math.abs(forward[1]) > .95 ? [1, 0, 0] : [0, 1, 0];
-  const right = unit(cross(forward, worldUp)), up = unit(cross(right, forward));
+  const horizontal = Math.hypot(forward[0], forward[2]);
+  const right: CoursePoint3 = horizontal > 1e-7
+    ? [-forward[2] / horizontal, 0, forward[0] / horizontal] : [1, 0, 0];
+  const up = unit(cross(right, forward));
   const prev = unit(sub(a, before)), next = unit(sub(after, b));
   const curvature = Math.hypot(...sub(prev, next)) / Math.max(1, data.distances[high] - data.distances[low]);
   return { edgeId, localS, point, forward, right, up, width: edge.width, curvature };

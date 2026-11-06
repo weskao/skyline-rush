@@ -90,6 +90,18 @@ test('EMP only disrupts nearby opponents once and solo power is converted safely
   assert.equal(solo.player.effects.magnet, 5);
 });
 
+test('solo style races always expose an authored score gate even with sparse random slots', () => {
+  const sparse = ['mystery', 'charge', 'mystery', 'nitro', 'risk'].map(type => ({ type }));
+  for (const mode of ['stunt', 'checkpoint']) {
+    const decorated = decorateBonusGates(sparse, { mode, rivals: 0, bonusGates: true });
+    assert.deepEqual(decorated.map(ring => ring.type), ['mystery', 'speed-pad', 'mystery', 'air-pad', 'score-pad']);
+    assert.deepEqual(sparse.map(ring => ring.type), ['mystery', 'charge', 'mystery', 'nitro', 'risk']);
+    const allMystery = Array.from({ length: 5 }, () => ({ type: 'mystery' }));
+    assert.equal(decorateBonusGates(allMystery, { mode, rivals: 0, bonusGates: true }).at(-1).type, 'score-pad');
+    assert.equal(decorateBonusGates(sparse, { mode, rivals: 0 }).some(ring => ring.type === 'score-pad'), false);
+  }
+});
+
 test('score tokens are opt-in, limited to style modes and use a nonstacking five-second double', () => {
   for (const mode of ['stunt', 'checkpoint']) {
     const race = createRace('coast', { mode, bonusGates: true });

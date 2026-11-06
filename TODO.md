@@ -290,6 +290,63 @@ reversing the earlier "two corner slits" decision.
 
 ---
 
+---
+
+## Security hardening — required before releasing 1.0.0 and every later version (2026-11-03)
+
+**Context:** the repo is public and `src/cloud-save.ts` hard-codes the Firebase Web config (`apiKey`, `projectId`,
+`appId`). That is the normal Firebase Web pattern: the key identifies the project and ships in the JS bundle anyway.
+Data access is enforced by `firestore.rules` (owner-only `get`/`delete`, no `list`, validated writes on `accounts`,
+`modeBests`, `saves`). The risks are an **unrestricted key** (quota/billing abuse, use from other origins) and
+**deployed rules drifting** from the file in the repo. Nothing below is verified yet.
+
+**Release gate:** 1.0.0 is not tagged until every P0 item is checked. Each later release re-runs the "Every release" list.
+
+### P0 — before 1.0.0
+
+- [ ] **Restrict the Web API key** (Google Cloud Console → APIs & Services → Credentials):
+  - Application restriction: HTTP referrers = the GitHub Pages origin, `http://localhost:*`, `http://127.0.0.1:*`.
+  - API restriction: only the APIs the app calls (Identity Toolkit, Token Service, Cloud Firestore; add Firebase
+    Installations / App Check only if used).
+  - Evidence: screenshot of the key's restriction page; a request from an unlisted origin is rejected.
+- [ ] **Regenerate (rotate) the API key** so 1.0.0 starts on a restricted key that never had an unrestricted history:
+  create the new restricted key → replace `apiKey` in `src/cloud-save.ts` → deploy → verify sign-in and cloud save on
+  desktop and iPhone → **delete the old key** in Google Cloud. (The old key stays in git history; deleting it in Google
+  Cloud is what disables it. A history rewrite is not needed.)
+- [ ] **Verify the deployed Firestore rules match `firestore.rules`** (Firebase Console → Firestore → Rules, or
+  `firebase firestore:rules:get`). No test-mode rule (`allow read, write: if true` / time-limited open rules) may remain.
+  Deploy with `firebase deploy --only firestore:rules` if they differ.
+- [ ] **Firebase Auth authorized domains**: only the production Pages domain, `localhost` and `127.0.0.1`; remove
+  leftovers (e.g. preview or old domains). Enable only the Google sign-in provider.
+- [ ] **Billing safety**: budget alert on the Firebase/Google Cloud project; review Firestore and Identity Toolkit quotas
+  so abuse can't run up a bill.
+- [ ] **Run the Firestore rules tests in CI**: `tests/firestore-rules.test.js` runs only locally through `npm run
+  test:cloud` (emulators); add it to the `quality-gate` workflow so a rules regression blocks the merge.
+- [ ] **Secret scan of the full git history** (e.g. `gitleaks detect` over all commits): confirm no service-account JSON,
+  private key, admin token or `.env` was ever committed. Rotate anything found.
+- [ ] **Enable GitHub secret scanning + push protection** on the repo (Settings → Code security).
+- [ ] **Privacy**: `accounts/{uid}` stores the Google display name and email. Add a short privacy note (what is stored,
+  why, how to delete it via the existing cloud-delete action) before 1.0.0.
+
+### P1 — recommended for 1.0.x
+
+- [ ] **Firebase App Check** (reCAPTCHA Enterprise / v3) for Firestore and Auth: monitor first, then enforce, so only
+  the real site can call the backend.
+- [ ] **Dependency hygiene**: add `.github/dependabot.yml` (npm + GitHub Actions) and an `npm audit --omit=dev` check
+  for high/critical advisories.
+- [ ] **Content Security Policy** via `<meta http-equiv="Content-Security-Policy">` (GitHub Pages can't set headers),
+  allowing only the Firebase/Google auth origins the app uses; verify Google sign-in popup still works.
+- [ ] **Pin GitHub Actions to commit SHAs** and keep workflow `permissions:` minimal.
+
+### Every release (1.0.0 and later)
+
+- [ ] Deployed Firestore rules = `firestore.rules` at the release commit; rules tests green in CI.
+- [ ] API key still restricted (no restriction removed during debugging); no new keys or secrets in the diff.
+- [ ] Any new Firestore collection ships with owner-only rules, write validation and a rules test.
+- [ ] No high/critical `npm audit` advisories in production dependencies.
+
+---
+
 ## Fix — What's New hero clip stays a still on iPhone Home Screen app until tapped (2026-11-03)
 
 **Branch:** `develop`. **Repro (user, iPhone 16, iOS 26.3, Home Screen app):** notes auto-open on launch, hero clip shows its
@@ -308,6 +365,8 @@ touch; the hero did not.
 - [ ] Real iPhone 16 / iOS 26.3 retest by the user (Low Power Mode on and off). Not reproducible in the simulator, which has
   no Low Power Mode; music before the first touch is impossible on iOS (platform rule).
 
+---
+
 ## Touch devices: hide keyboard remapping until a physical keyboard is used — 2026-11-03
 
 Branch: `feature/touch-hide-keymap` from `develop` `9ec7f3df`. Request: phones/tablets should not show the Controls panel's "鍵盤 · 先選擇動作，再按下按鍵" section, its rebind buttons, the fixed-shortcut note or Reset keyboard — but a phone/tablet with a Bluetooth keyboard must still be able to remap.
@@ -324,6 +383,18 @@ Branch: `feature/touch-hide-keymap` from `develop` `9ec7f3df`. Request: phones/t
 
 ---
 
+---
+
+## Stage 1 exact-HEAD browser CI regressions — 2026-11-03
+
+Branch: `feature/epic-multiroute-longform-tracks`. Run 41512159012 (HEAD `5a2e1024`) browser shards 3/10 failed while other shards were still running.
+
+- [x] RED observed: `tests/depth-browser.spec.js` selects the established exact accessible name `Start race`, but the new upcoming-preview controller appended the playable track name. Keep upcoming `COMING SOON` semantics while restoring the playable CTA's original accessible name; add an explicit browser contract.
+- [x] RED observed: `tests/bonus-gates-browser.spec.js` sometimes finds no `score-pad` after enabling solo Stunt/Checkpoint bonus gates: five slots with mystery rings may never reach the fourth decorated type. Keep authored positions and guarantee a score gate; add a sparse-layout unit regression.
+- [ ] GREEN verification on exact-HEAD GitHub Actions full regression (unit/typecheck/build, cloud, 13 browser shards, 5 World Tour shards, quality gate). Local npm and browser execution unavailable in this automation runtime; do not claim pass until CI proves it.
+
+---
+
 ## Garage VFX remembered skin picks — 2026-11-03
 
 Branch: `feature/garage-skin-pick-memory` (from `develop` `9b87af14`). A trial pick survives reload as a preference only (`src/garage-skin-preference.ts`), re-applied through `session.equip`; never ownership.
@@ -332,6 +403,125 @@ Branch: `feature/garage-skin-pick-memory` (from `develop` `9b87af14`). A trial p
 - [x] GREEN: `npm test` 1462 pass / 0 fail, `npm run typecheck`, `npm run build` (locked bundle has no `skyline-rush-garage-skin-picks`; trial bundle has it), `tests/garage-skin-trial-browser.spec.js` 4/4 (desktop, 390×844, 844×390).
 - [ ] Pre-existing locally on unchanged `HEAD` source too: `garage-inspection-mode-browser.spec.js:4` (390×844) and `garage-studio-browser.spec.js:136` fail; confirm on CI.
 - [ ] `make verify` and the full exact-HEAD `quality-gate` (`[full-regression]`); then merge into `develop` (approved for this branch).
+
+---
+
+## P0 — Stage 1 LIVE animated Three.js homepage showcases (2026-11-03)
+
+**User requirement supersedes JPEG-only artwork and static home-overlay plans.** At least the homepage must have **the same kind of dynamic 3D preview as the existing tracks**, including the genuine shared player and rival car visuals, hover/jets, view controls, real 3D scenery/landmark depth, animated local weather/props and ground/air visual route fork. **Static JPEG, CSS picture parallax, one flat photo plane or a JPEG over the old playable course is NOT COMPLETE.**
+
+**Canonical spec:** [Stage 1 animated real-time 3D home showrooms](docs/superpowers/specs/2026-11-03-stage1-animated-3d-home-showcase-design.md) · [TDD execution plan](docs/superpowers/plans/2026-11-03-six-chat-home-preview-integration.md) · [six corrected GPT tasks](docs/superpowers/prompts/2026-11-03-six-chat-home-preview-implementation.md) · [preflight audit: three art branches have user work to retain](docs/superpowers/reviews/2026-11-03-stage1-six-branch-preflight.md).
+**Scope:** ONLY first five Stage 1 tracks (Dune Tempest / Monsoon Ruins / Skyfall Archipelago / Volcanic Crown / Stormline Megacity). Stage 2 five remain planning-only and absent from home. All upcoming tracks are point-to-point, **COMING SOON**, selectable but cannot enter `createRace`.
+
+- [x] Existing first-pass five selectable Coming Soon cards, bilingual button/status and five committed reference JPEGs available; **this is interim UI, NOT real dynamic 3D preview acceptance**.
+- [x] Update project instructions, six chat prompts, scene integration plan and homepage design spec to require **actual Three.js world-space scene**; JPEG becomes art reference/card/fallback only.
+- [x] Audit five art branches after old JPEG-only prompts; **no reset needed**: retain existing Dune and Stormline art notes, keep Monsoon's original 3072×1152 committed JPEG and note. **Nothing conflicts with owned new `src/upcoming-scenes/<id>.ts`**. Ref: [preservation audit](docs/superpowers/reviews/2026-11-03-stage1-six-branch-preflight.md).
+- [ ] **GPT 1** `feature/epic-home-art-dune-tempest`: build `src/upcoming-scenes/dune-tempest.ts` with real dune/canyon road and sandstorm animation; add `tests/upcoming-dune-tempest-scene.test.js` and `docs/designs/new-tracks/home-art/dune-tempest.md`, compare against two reference JPEGs.
+- [ ] **GPT 2** `feature/epic-home-art-monsoon-ruins`: build `src/upcoming-scenes/monsoon-ruins.ts` with jungle/ruins/waterfall/wet mud and live rain/water/mist; own corresponding test and art note.
+- [ ] **GPT 3** `feature/epic-home-art-skyfall-archipelago`: build `src/upcoming-scenes/skyfall-archipelago.ts` with 3D floating islands/stone road/air branch and cloud/waterfall animation; own corresponding test and art note.
+- [ ] **GPT 4** `feature/epic-home-art-volcanic-crown`: build `src/upcoming-scenes/volcanic-crown.ts` with volcanic U curves, lava gorge, flying fork and moving lava/embers; own corresponding test and art note.
+- [ ] **GPT 5** `feature/epic-home-art-stormline-megacity`: build `src/upcoming-scenes/stormline-megacity.ts` with neon storm city/higher roads and animated rain/lights/distant traffic; own corresponding test and art note.
+- [ ] **GPT 6** `feature/epic-multiroute-longform-tracks`: TDD shared `src/upcoming-showcase.ts`, `src/world.js` and `src/main.js` integration. Use **one existing Renderer, camera, composer and frame loop**, shared vehicles/jet VFX, camera/orbit controls, quality/reduced-motion; do not fabricate playable `Race`. Remove or hide current `#upcoming-scene` image overlay when WebGL is healthy.
+- [ ] Integrate all five scene/test/art-note files **by selected blob**, not full old branch merges; avoid common-file collisions and keep genuine player/rivals same scale/effects as existing homepage.
+- [ ] **Real WebGL animation proof:** at least two time-separated screenshots per map, plus desktop 1440×900 and phone 390×844 ground/aerial views; compare to reference JPEGs and record three anchors, road/air split, car framing, weather/animation, Reduced Motion and quality-tier behavior.
+- [ ] Preserve existing 10 real tracks (and modes), all five Coming Soon disabled Start (Enter/gamepad/storage cannot bypass), fixed 236/210/190px bilingual CTA, accessible/keyboard swipes and normal return to playable home.
+- [ ] Run and record RED→GREEN→Refactor, unit/typecheck/build/Playwright, `make verify`, and **exact HEAD full GitHub CI**; no claims of pass without evidence. Do not merge to `develop` / `main`, PR, force or deploy.
+
+---
+
+## Stage 1 — Homepage Coming Soon five-track selector (2026-11-03)
+
+**Branch:** `feature/epic-multiroute-longform-tracks` (NOT `develop` or `main`).
+**Design:** [Stage 1 Coming Soon homepage](docs/superpowers/specs/2026-11-03-stage1-coming-soon-home-preview-design.md).
+**Six separate GPT implementation chats:** [6 copy/paste prompts and file ownership](docs/superpowers/prompts/2026-11-03-six-chat-home-preview-implementation.md) · [six-chat SDD/TDD implementation plan](docs/superpowers/plans/2026-11-03-six-chat-home-preview-integration.md). The [five legacy briefs](docs/superpowers/prompts/2026-11-03-stage1-home-teasers-parallel.md) were also corrected to require live 3D; all prompts supersede JPEG-only art goals.
+**Strict scope:** **ONLY** Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline Megacity appear as coming-soon cards; the next five Stage 2 maps remain design documents only.
+
+- [x] Create preview-only `UPCOMING_TRACKS` metadata and priority status; do **not** register unfinished maps in playable `RACE_TRACKS` or mutate game physics, rewards, ghost, daily or cup.
+- [x] Reuse five committed Stage 1 JPEGs and route SVGs in `public/track-teasers/` for interim cards; former **static hero** is obsolete and MUST be replaced by live Three.js showcase per P0 above.
+- [x] Set `COMING SOON` / `即將推出` on Stage 1 cards, allow selecting preview-only cards, disable start in any mode and block the Enter/keyboard race path.
+- [x] Change `#start-button` CTA by status (Start race, LOCKED, COMING SOON), bilingual en / zh-TW and fixed width per breakpoint; restore original behavior on playable map select.
+- [x] Add pure Node tests `tests/upcoming-tracks.test.js` and browser tests `tests/upcoming-home-browser.spec.js`; update previous last-track placement test for new carousel order.
+- [x] Define **six-chat ownership**: GPT 1–5 each build a real 3D environment module, scene test and `.md` on the isolated art branch; optional JPEG remains thumbnail/reference. GPT 6 owns the shared Three.js renderer, player/rival cars, camera, localizations, TDD, CI and selective scene integration. Docs/prompt creation **does not start separate GPT chats**.
+- [x] Create 5 **independent scene branches** `feature/epic-home-art-{dune-tempest,monsoon-ruins,skyfall-archipelago,volcanic-crown,stormline-megacity}` and [five individual updated GPT scene prompts](docs/superpowers/prompts/2026-11-03-stage1-home-teasers-parallel.md). Each owns **only its specific scene module, unit test, art note and optional JPEG thumbnail**. Shared UI/render system belongs to GPT 6.
+- [ ] Five art chats each implement **actual animated mesh-based Three.js environment**, deterministic update, disposal and tests; the **native JPEG is optional thumbnail/reference**, and existing Monsoon JPEG must be preserved. GPT 6 selectively integrates scene/test/art-note Git blobs into the shared branch after validation. No static JPEG qualifies as a completed 3D preview.
+- [ ] **Run and log RED→GREEN proof** for Node tests; complete `npm test`, Vue/TS typecheck, build, browser home/i18n/responsive, `make verify` and exact-HEAD full CI. This checklist does not assert a pass without actual observed evidence.
+- [ ] Desktop 1440×900 and iPhone 390×844 **actual animated WebGL** screenshots (two different timestamps per scene), ground/aerial scenes, real car/landmark/road framing, camera/locale/quality/reduced-motion review, disabled Start, no fake race entry, and comparison against ground/air concept JPEGs.
+- [ ] Do not merge into `develop` or deploy until explicit authorization and acceptance.
+
+---
+
+## Concept-to-WebGL visual parity gate for proposed ten new tracks (2026-11-02)
+
+**Design authority:** [JPEG → real WebGL visual acceptance gate](docs/designs/new-tracks/visual-acceptance-gate.md) (Stage 1 + Stage 2); invoked from [CLAUDE.md](CLAUDE.md). Existing 10 sprint courses and the circuit are unchanged; **all ten proposed new maps are point-to-point**, never laps.
+
+- [x] Link real Stage 1 & Stage 2 committed JPEGs and their route SVGs through the single visual gate.
+- [ ] For each of 10 proposed courses: confirm exact committed reference images, define 2 locked ground/aerial camera poses, biome palette, 3 visual anchors and safe route split, then approve blockout before full art.
+- [ ] For each course: record actual desktop 1440×900 + phone 390×844 WebGL screenshots, ground and aerial (≥4 captures/course, 40 baseline images), plus actual weather and Low/Medium/High + Reduced Motion reviews.
+- [ ] For each course: compare silhouette, road/terrain, vehicle scale, lighting/particles, split/landing readability and collision/UI visibility; create `artifacts/new-tracks/visual-evidence/<id>/<id>-review.md` with PASS/FAIL/APPROVED DEVIATION and rationale.
+- [ ] For each course: require safe ground-only finish, real split/merge graph, checkpoint ordering, 8-car AI, Ghost parity, variable dt tests, mobile readability, performance p50/p95 and 3–5 minute median evidence before “completed”.
+- [ ] `make verify` and exact-HEAD full GitHub CI, plus separate human visual acceptance, are still pending; this branch remains planning/art-only. Do not merge into `develop` without later authorization.
+
+---
+
+## Future New Tracks — Stage 2 / Second Set of Five (2026-11-02) [PLANNING ONLY]
+
+**Scope:** five *additional* point-to-point courses beyond Stage 1's five, for ten proposed new maps in total. All ten planned additions use separate START and FINISH; no laps. The existing ten published sprint tracks and Harbor Circuit remain unchanged.
+**Branch:** `feature/epic-multiroute-longform-tracks`. **JPEG gallery:** [Stage 2 README](docs/designs/new-tracks/stage-2/README.md) · **spec:** [Stage 2 design](docs/superpowers/specs/2026-11-02-stage2-five-longform-tracks-design.md) · **plan:** [Stage 2 TDD plan](docs/superpowers/plans/2026-11-02-stage2-five-longform-tracks.md).
+
+- [x] **Stage 1 10 original concept scene crops:** converted PNG → JPEG, retained image content/dimensions, and actually committed to [Stage 1 JPEG gallery](docs/designs/new-tracks/source-concept-jpeg/) on this branch. Historical PNG originals are *not* in GitHub and are no longer a prerequisite because JPEG was explicitly requested.
+- [x] **Stage 2 10 JPEG scene concept images:** five maps × ground and aerial view, physically committed to [source-concept-jpeg](docs/designs/new-tracks/stage-2/source-concept-jpeg/). Derived from new AI composite by crop + 3× resampling for viewing; upsampling does not invent original high-detail information.
+- [x] **Stage 2 five non-loop route schematics** at [route-schematics](docs/designs/new-tracks/stage-2/route-schematics/), with different START/FINISH and optional aerial alternative.
+- [x] **Stage 2 documentation:** [Markdown image gallery](docs/designs/new-tracks/stage-2/README.md), [visual-fidelity checklist](docs/designs/new-tracks/stage-2/visual-fidelity.md), [image/track manifest](docs/designs/new-tracks/stage-2/concept-manifest.json), [SDD design](docs/superpowers/specs/2026-11-02-stage2-five-longform-tracks-design.md) and [TDD implementation plan](docs/superpowers/plans/2026-11-02-stage2-five-longform-tracks.md).
+- [ ] **Dependency gate:** Stage 1 core CourseGraph, world-space frames, optional no-clamp natural offroad terrain, multi-branch ranking/checkpoints, AI/Ghost/finish integrity, weather and render tiers must be implemented and passing CI **before Stage 2 code development**.
+- [ ] **S2-P1 極地冰原峽谷 / Frostbite Canyon:** 13.8 km, 3:20–4:40; ice fissure canyon, switchbacks, safe snow valley vs glacial aerial bypass; ice dust / whiteout. TDD, real WebGL visual parity and timing are still pending.
+- [ ] **S2-P1 深海遺跡城 / Abyssal Ruins:** 15.2 km, 3:45–5:00; underwater-looking sealed roads and transparent tunnels, coral ruins, upper-dome alternative, caustics and bubbles. No added swimming physics.
+- [ ] **S2-P1 風之高原 / Windspire Highlands:** 14.5 km, 3:25–4:45; broad grassy terrain and windmills, cliff hairpins and crosswind alternative over bridges; predictable gust cues.
+- [ ] **S2-P2 水晶星塵谷 / Crystal Stardust Valley:** 13.6 km, 3:20–4:40; crystal canyon hairpins, prismatic arches, elevated shard route and restrained bloom/particle budgets.
+- [ ] **S2-P2 時空斷層 / Chrono Rift:** 16 km, 3:50–5:00; fractured sky stone road, glowing ancient rings, optional flight shortcut and timed visual cues only, **no unplanned teleport/time-rewind gameplay**.
+- [ ] **Release validation:** each map ≥2 major hairpins, ≥3 viable branch decisions, safe all-ground finish, ≥1 air/ground split, fair 8-car AI, deterministic weather, old-map parity, 30/60/120 Hz tests, 10 real ground/aerial WebGL captures × desktop/mobile with JPEG comparisons, 20+ timed finishes/map, Low/Medium/High + Reduced Motion, `make verify`, exact-HEAD CI. Do not mark passed without evidence.
+- [ ] Stage 2 development merges into `develop` only on explicit user authorization; this current branch remains documentation/art-only.
+
+---
+
+## Proposed Epic — Multi-route Long-form World Expansion (2026-11-02) [PLANNING ONLY]
+
+**Branch:** `feature/epic-multiroute-longform-tracks` (created from `develop` SHA `12264f74f0f6452347d0183937391da620d10343`; DO NOT merge or release yet).
+**Spec:** [2026-11-02-multiroute-longform-world-expansion-design.md](docs/superpowers/specs/2026-11-02-multiroute-longform-world-expansion-design.md)
+**Execution plan:** [2026-11-02-multiroute-longform-world-expansion.md](docs/superpowers/plans/2026-11-02-multiroute-longform-world-expansion.md).
+**Scope:** future implementation only. Current ten sprint tracks and Harbor Circuit unaffected. All estimates unverified.
+
+### Route topology and concept-art reference clarification (2026-11-02)
+
+- [x] Store five [committed one-way route schematics](docs/designs/new-tracks/README.md), one per track; technical routes distinguish green START from red FINISH and ground/air forks.
+- [x] **User-confirmed topology (2026-11-02): ALL FIVE are single-finish point-to-point**, matching ten existing sprint tracks. No circuit layouts, no lap counting, no implicit conversion; dedicated circuit gameplay remains separate. Require distinct START != FINISH nodes and world-space positions.
+- [x] Commit **five original two-view SVG design boards** to [concept-art/](docs/designs/new-tracks/README.md), one board per track, with ground driving + aerial branch visuals and START/FINISH route; link exact paths from [visual-fidelity.md](docs/designs/new-tracks/visual-fidelity.md) and [concept-manifest.json](docs/designs/new-tracks/concept-manifest.json).
+- [x] **JPEG import requested instead of PNG:** the original 10 stage-one picture crops are converted and genuinely committed under [source-concept-jpeg](docs/designs/new-tracks/source-concept-jpeg/). Lossless original PNG bytes and the optional two overview PNG originals are not committed; the [PNG historical integrity manifest](docs/designs/new-tracks/png-source-import-manifest.md) remains available, but importing PNG is no longer a required stage gate.
+- [ ] During implementation, capture and compare 2 **actual WebGL** gameplay views/map × desktop and mobile against the committed two-view boards (and original PNGs when uploaded); preserve route openness, weather/landmarks, grounded/flying camera composition, visual fidelity, Low/Medium/High and Reduced Motion. Record PASS/FAIL/APPROVED DEVIATION per view.
+
+### Ten standalone concept previews (2026-11-02, planning-only)
+
+- [x] Publish **10 individual SVG conceptual images** (5 point-to-point maps × ground/aerial) on this branch under `docs/designs/new-tracks/concept-art/<track-id>-ground-view.svg` and `<track-id>-aerial-view.svg`. Each is a cropped vector view of its committed combined storyboard, not a runtime screenshot or the original AI-generated PNG.
+- [x] Update [GitHub image gallery](docs/designs/new-tracks/README.md), [visual fidelity and per-camera descriptions](docs/designs/new-tracks/visual-fidelity.md), and [machine-readable ten-image manifest](docs/designs/new-tracks/concept-manifest.json) with working relative paths. All five maps are **single-run point-to-point**; no laps.
+- [ ] **Original cinematic PNG source import remains separate:** 2 overview originals + 10 cropped high-detail PNGs are provided as a chat ZIP and documented with SHA-256 in [PNG import manifest](docs/designs/new-tracks/png-source-import-manifest.md), but the PNG files themselves are not yet committed. Preserve originals, do not claim images are in GitHub until uploaded and hash-verified.
+- [ ] Before implementing each new course, inspect both committed standalone SVG views, the full storyboard and corresponding original PNG source (when uploaded); capture matching actual WebGL ground/aerial screenshots and record scene and camera deviations.
+
+### Shared systems
+- [ ] M1 typed CourseGraph: real hairpins, U-turns, separate ground/air branch edges and convergent joins; arc-length route frames, route-aware AI, progress, finish, minimap, checkpoints, ghost/save versions.
+- [ ] M2 natural open terrain and opt-in no-clamp driving/flying, safe recovery and honest collision/landing surfaces; old `ROAD_LIMIT` tracks remain unchanged; anti-finish-skip checks.
+- [ ] M3 Dune Tempest playable 13.5 km vertical slice: open dunes, switchbacks, sandstorm and sky shortcut.
+- [ ] M4 zone-based seeded sandstorm/rain/ash/snow weather, wet/dry surface variants and event particles; Low/Medium/High, Reduced Motion and performance gates.
+- [ ] M5 remaining P1: Monsoon Ruins and Skyfall Archipelago.
+- [ ] M6 P2: Volcanic Crown and Stormline Megacity.
+- [ ] M7 median 3–5 min per new course with real timed-play samples, 8-car AI, both route choices, mobile/foldable UI, localization, saves, CI and manual visual QA.
+
+### Five proposed maps (no maps implemented)
+- [ ] **P1 Dune Tempest / 沙暴裂谷:** 13.5 km, target 3:20–4:40, dune/wadi/hairpins, ground vs jump over canyon, gust and sand particles.
+- [ ] **P1 Monsoon Ruins / 雨林失落神殿:** 12.5 km, target 3:10–4:40, wet jungle mud trails and river/temple hairpin, waterfall sky bridge, tropical thunderstorm.
+- [ ] **P1 Skyfall Archipelago / 浮空群島:** 16 km, target 3:50–5:00, floating island loops, ground bridge vs flight chain, cloud shear and waterfall particles.
+- [ ] **P2 Volcanic Crown / 熔火天脊:** 15 km, target 3:40–5:00, volcano caldera switchbacks, basalt offroad path vs ash-glide shortcut, embers/heat haze.
+- [ ] **P2 Stormline Megacity / 霓虹暴雨都市:** 14 km, target 3:20–4:40, multi-level interchanges, flooded street vs elevated flight viaduct, rain and wet neon reflections.
+
+**Exit criteria:** no mandatory-roadline visuals on natural surfaces; controlled off-road and side flight; ≥3 legal route choices and ≥2 major hairpins/map; no invisible walls or route-skip exploitation; source artwork 3× for generated in-game rasters; deterministic TDD, `make verify`, real WebGL screenshots and exact-HEAD full CI **all still pending**. User-approved implementation + merger is separate.
 
 ---
 
@@ -3361,6 +3551,29 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] **2026-11-03 source integration update:** Five independent art branches subsequently delivered actual native Three.js scene modules, corresponding focused unit tests and art notes. Their exports, geometry, absolute-time updates, quality/reduced-motion arguments and disposal methods were source-reviewed. The exact 15 committed Git blobs were selectively imported without merging old histories. Heads: `dune-tempest` `fa9573b4bddd`; `monsoon-ruins` `32411c88c702`; `skyfall-archipelago` `9707c5132dab`; `volcanic-crown` `d7ad8b01f57f`; `stormline-megacity` `84e9569a2d4c`. Source branch CI was still queued when checked; this is **not** verified visual acceptance.
 - [ ] Register all five in the shared renderer and run `npm test`, `npm run typecheck`, `npm run build`, `npm run test:layout`, `make verify`, exact-HEAD full CI and 2 real WebGL frames per map desktop/mobile. Pending; do not label scenes visually accepted before screenshots and checks.
 
+
+## 2026-11-04 — Five playable tracks / shared graph travel verification
+
+- [x] Added isolated TDD coverage for opt-in graph travel with 3D route-frame position, legal forks, ordered progress, flight permission, eight independent vehicle states, and altitude/lateral bypass rejection. Observed RED and GREEN 9/9, plus isolated strict TypeScript checks; this is NOT a whole-repository pass.
+- [ ] Confirm the newly pushed **exact-HEAD FULL** GitHub CI: unit/typecheck/build, cloud-save, every Browser and World Tour shard, and quality gate; skipped, queued, failed or cancelled does not count as PASS.
+- [ ] Connect the canonical graph traveller to authoritative `game.js` simulation, `world.js` road/wheel contact and shared RaceFactory, then implement trusted signed swept gates, branch-aware 8-car AI, layer-aware collisions, flight/landing, recovery and real results without changing legacy courses.
+- [ ] Run real desktop/mobile WebGL acceptance, compare two source JPEGs per map, measure 20+ completed races, 30/60/120 FPS, Reduced Motion and GPU disposal before enabling any Coming Soon course.
+
+
+## 2026-11-04 — graph fleet, swept gates and physical recovery
+
+- [x] TDD isolated: eight separate graph-car states, deterministic branch movement, finite metre/pose validation, layered collision candidates, verified-clear ground recovery and measured directional gate crossing; observed RED then GREEN 20/20 on isolated exact-SHA shared modules; strict isolated TS check passed.
+- [ ] Verify latest exact-HEAD FULL CI on this integration commit: Unit/Typecheck/Build, Cloud-save, every Browser (13) and World Tour (5) shard, quality-gate; no skipped/queued/cancelled/failed required suite counts as PASS.
+- [ ] Connect signed physical gates and all eight cars to the existing `game.js` authoritative simulation and RaceFactory; connect the same canonical frames to `world.js` road/pose/AI/minimap, actual knock/bump response, landing, hazard-safe recovery and finish/results.
+- [ ] Independently verify map-source exact-HEAD FULL CI and real WebGL 1440×900 / 390×844, 20+ timed races, 30/60/120 FPS, Reduced Motion, quality tiers and GPU dispose before selective file import and playable enablement. Keep Coming Soon.
+
+
+## 2026-11-04 — provisional graph-aware AI route choices and race order
+
+- [x] Added opt-in deterministic AI fork selection (no unauthorized flight), checkpoint-aware provisional race order and finish-time ordering; test-first RED and GREEN 9/9 in a minimal Node 22 mirror, combined shared 29/29 and isolated strict TS PASS.
+- [ ] Exact-HEAD FULL GitHub Actions must run all 13 Browser, all five World Tour, Unit/Typecheck/Build, cloud-save and quality-gate, not merely Focused PASS; capture job logs and fix any regressions.
+- [ ] Wire the new helpers into the authoritative existing `game.js` / RaceFactory / `world.js` runtime with trusted physics world poses, route-aware AI steering, signed gates, 3D colliders, actual recovery and results; preserve legacy gameplay.
+- [ ] 5 source branches remain read-only candidates pending their own exact-HEAD FULL CI, 3–5 minute / 8-car tests, 30/60/120 FPS, Reduced Motion, GPU disposal and real mobile/desktop WebGL versus both concept JPEGs. Coming Soon stays enabled.
 ## 2026-11-04 — Preview-only Coming Soon fail-closed access (Frostbite working branch)
 
 - [x] Add explicit default-preview readiness to the shared Coming Soon catalog. Only approved `playable` cards with real race runtime can START under `make dev-unlocked`; concept-only or development cards never can, even with an accidental runtime registration. Frostbite remains dev-only; all production Coming Soon cards remain disabled.
@@ -3390,3 +3603,37 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Run Typecheck, all Unit tests, Build, `make verify`, complete Browser/World Tour suites and exact-HEAD FULL CI; no PASS claim until observed.
 - [ ] Desktop/mobile manual QA: all six original home previews, 13.8 KM Frostbite card, both P01/P02 scenes, reduced motion/airflow, title/CTA translations, no race entry.
 - [ ] Only after successful pre-merge full CI and review, normal `--no-ff` merge of this preview-only branch to latest `develop`; verify develop exact-HEAD FULL CI. Do not merge playable-course runtimes or modify `main`/release tags without separate approval.
+
+
+## 2026-11-05 — measured physical CourseGraph step (opt-in)
+
+- [x] Regression-first opt-in trusted-pose graph stepping: 10/10 isolated Node tests and strict isolated TypeScript PASS (observed RED→GREEN including follow-up forged-FINISH-next-edge test). `src/course-measured-motion.ts`, `tests/course-measured-motion.test.js`.
+- [ ] Verify this new **exact-HEAD FULL** GitHub workflow: unit/typecheck/build, cloud-save, every Browser + World Tour shard and quality-gate. No success assertion while pending or if required jobs are skipped.
+- [ ] Wire trusted world poses/distance and signed graph transitions to actual shared RaceFactory/`game.js`/`world.js`; do not treat synthetic arc-length updates as authoritative. 8-car AI/drift/BOOST/NITRO/FLY, collision, Recovery, results/ghost and mobile controls remain pending.
+- [ ] Source branches are read-only; require their exact-HEAD FULL CI, real game WebGL 1440x900 / 390x844 and 20+ physical sessions per map before selective import or enabling any Coming Soon track.
+
+
+## 2026-11-05 — signed eight-car sweeps and continuous steep-road frames
+
+- [x] Added the physical-sweep eight-car adapter and validated ID/sweep rejection, atomic rollback, checkpoint independence and flight authorization: local RED then GREEN 8/8.
+- [x] Added near-vertical route-frame regression (observed 90-degree orientation flip before fix) and 3D road-surface-normal `lift` regression: both local RED then GREEN; combined opt-in suite 20/20, isolated TypeScript PASS.
+- [ ] Verify exact-HEAD FULL CI including Unit/Typecheck/Build, Cloud-save, all 13 Browser and all five World Tour shards and quality-gate. Pending or skipped is not a PASS.
+- [ ] Integrate measured fleet state into the existing `game.js`/RaceFactory/`world.js` authoritative loop, including player/drift/BOOST/NITRO/FLY, 8-car AI and standings, layered collisions, valid recovery, minimap, race results, records and ghost persistence.
+- [ ] No source course import until each candidate branch passes its own exact-HEAD FULL CI, safety checks, real ground/aerial WebGL and 20+ timed 3–5 minute sessions per course; preserve Coming Soon until human signoff.
+
+
+## 2026-11-05 — authorized air-over-ground travel, signed gate unchanged
+
+- [x] Observed failing RED for authoritative authorized air-over-ground route advance (previously frozen by a ground-height guard), then GREEN while high checkpoint sweep remained rejected; local combined 21/21 Node tests and isolated strict TypeScript PASS.
+- [ ] Confirm newest exact-HEAD FULL CI (Unit/Typecheck/Build, Cloud-save, 13 Browser and five World Tour shards, Quality Gate); pending/skipped jobs do not pass.
+- [ ] Connect `advanceMeasuredCourseTravel` and measured fleet states to real physics-derived world positions and existing AI/game/world architecture; complete the full five-course physical/visual acceptance before enabling any race.
+
+
+## 2026-11-05 — six-course shared preview, AIRFLOW, Garage/Studio parity
+
+- [x] Read and documented the existing shared six-map home selection/swipe, AIRFLOW (ON=ground / OFF=hover), same Roadster/3 rivals, camera views, Garage Home and Preview Studio. New scoped rule: `.claude/rules/playable-course-shared-template.md`; link in `CLAUDE.md`.
+- [x] Updated the common `src/upcoming-showcase.ts` to derive Roadster vertical hover/ground/jet pose from the existing `previewPlayer` used on classic tracks; no extra map-specific controller or renderer, no change to Coming Soon.
+- [ ] Validate `tests/shared-course-template-browser.spec.js`: six consecutive horizontal carousel selections and six-course AIRFLOW/Garage/Studio interaction regressions. New `tests/upcoming-showcase.test.js` verifies shared 3D vehicle pose for every upcoming environment. Tests are authored but **not locally run**; no test-first RED or GREEN is claimed for this current revision.
+- [ ] Run `npm test`, `npm run build`, `make verify`; inspect the latest **exact-HEAD FULL** GitHub CI (all required Browser/World Tour shards, Unit/Typecheck/Build, Cloud-save, Quality Gate). Fix real failures and preserve existing behavior.
+- [ ] Capture real desktop/mobile WebGL frames for all six preview courses, AIRFLOW ON/OFF, camera views, touch swipe and Garage/Studio. Measure actual road/wheel contact, visual parity, Reduced Motion, frame timing and GPU disposal; these are not proved by UI tests.
+- [ ] Separately connect actual six-course CourseGraph physics, branching, flight/landing, 8-car AI, collision, checkpoints, recovery, results/ghost and start/finish. UI/template parity does **not** authorize race registration or remove Coming Soon.

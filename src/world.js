@@ -156,7 +156,6 @@ export function createWorld(canvas) {
   const sun = new THREE.Mesh(new THREE.SphereGeometry(65, 32, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.5, 1.35, 0.5), fog: false }));
   sun.position.set(-355, 88, -1600);
   scene.add(sun);
-
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000), new THREE.ShaderMaterial({
     uniforms: { time: { value: 0 }, ground: { value: new THREE.Color('#0a233b') }, fogColor: { value: new THREE.Color('#94758a') }, water: { value: 1 } },
     vertexShader: 'varying vec3 p; void main(){p=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}',
@@ -180,14 +179,12 @@ export function createWorld(canvas) {
     put(seaLines, i, Math.sin(i * 9.3) * 1100, -5.95, -i * 14, 20 + i % 18, 0.01, 0.1);
   }
   seaLines.instanceMatrix.needsUpdate = true;
-
   const mountains = instances(new THREE.ConeGeometry(1, 1, 7), material('#374762'), 30, scene);
   for (let i = 0; i < 30; i++) {
     const height = 70 + (Math.sin(i * 3.4) + 1) * 60;
     put(mountains, i, (i - 15) * 130, height / 2 - 20, -1400 - Math.cos(i * 2) * 300, 150 + i % 3 * 70, height, 220, i);
   }
   mountains.instanceMatrix.needsUpdate = true;
-
   const city = new THREE.Group();
   scene.add(city);
   const buildingMat = material('#17344d', 0.5, 0.38);
@@ -198,7 +195,6 @@ export function createWorld(canvas) {
     const side = i % 2 ? -1 : 1;
     buildingData.push({ x: side * (110 + (i * 37 % 550)), d: i * 39 % 2200, w: 12 + i * 7 % 24, h: 18 + (i * 31 % 145) });
   }
-
   const segments = 120;
   const roadGeometry = roadRibbon(segments);
   const roadVertices = roadGeometry.attributes.position.array;
@@ -301,7 +297,6 @@ export function createWorld(canvas) {
   finishSign.position.set(0, 12.9, 0.4);
   finish.add(finishSign);
   scene.add(finish);
-
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
   const rearLight = player.userData.rearLight;
@@ -372,7 +367,6 @@ export function createWorld(canvas) {
     if(!best) return null;
     return apexBox.setFromObject(best);
   }
-
   function frameShowcaseCar(distance) {
     // Hover wheels fold out over ~0.5 s and widen the car: reframe as they move, not once from the first frame.
     const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect.toFixed(3),garageHomePreview,
@@ -479,7 +473,6 @@ export function createWorld(canvas) {
     }
     return clear/carSightPoints.length;
   }
-
   function avoidShowcaseObstruction(distance) {
     if(!showcaseOccluders?.visible)return;
     const frame=trackFrame(trackId,distance);
@@ -528,7 +521,6 @@ export function createWorld(canvas) {
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
   let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null;
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
-
   let sizeKey = '', warmupPending = true, garageWarmupPending = true;
   const restoreWarmup = () => { warmupPending = garageWarmupPending = true; };
   canvas.addEventListener('webglcontextrestored', restoreWarmup);
@@ -714,7 +706,6 @@ export function createWorld(canvas) {
         light.color.set(trackId==='tokyo'?'#a6a4bc':trackId==='coastal'?'#c4c9b7':'#cfbf9f');
         light.position.fromArray(trackLocalPosition(trackId,distance+26,i===0?-17:17,10.5,distance));
       });
-
       const time = race.elapsed + idleTime;
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
