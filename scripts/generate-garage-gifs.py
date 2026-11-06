@@ -283,9 +283,32 @@ def animate_store(source, style, strength, step):
                                   dy=round(-2.4 * openness), angle=2.8 * math.sin(t),
                                   pivot=(.50, .43))
     if style == 'collection-fan':
-        # Lift just the upper collectible card, not the UI tile.
+        # A card moves independently and three offset holographic foil highlights
+        # travel over the actual card surfaces. Distinct glints prevent Pillow
+        # from collapsing near-identical frames to a misleading low FPS.
         card = polygon_mask(source.size, [(.35,.17),(.74,.19),(.80,.48),(.49,.60),(.31,.44)], .5)
-        return subtle_part_motion(source, card, step, dy=round(-2.3 * openness))
+        out = subtle_part_motion(source, card, step, dy=round(-2.3 * openness))
+        details = Image.new('RGBA', source.size)
+        draw = ImageDraw.Draw(details, 'RGBA')
+        for index, (start_x, start_y, end_x, end_y) in enumerate((
+            (54, 91, 82, 139), (91, 78, 123, 139), (138, 81, 172, 149)
+        )):
+            travel = (step / FRAMES + index / 3) % 1
+            life = math.sin(math.pi * travel) ** 2
+            if life < .01:
+                continue
+            x = start_x + (end_x - start_x) * travel
+            y = start_y + (end_y - start_y) * travel
+            color = ((164, 239, 255), (235, 167, 255), (255, 229, 156))[index]
+            alpha = round(190 * life)
+            draw.ellipse((x - 2.2, y - 2.2, x + 2.2, y + 2.2),
+                         fill=(*color, alpha))
+            draw.line((x - 4, y, x + 4, y),
+                      fill=(*color, round(alpha * .55)), width=1)
+            draw.line((x, y - 4, x, y + 4),
+                      fill=(*color, round(alpha * .55)), width=1)
+        out.alpha_composite(details)
+        return out
     raise ValueError(f'Unknown Store motion: {style}')
 
 
