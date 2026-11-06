@@ -117,7 +117,7 @@ test('queued drift feedback describes the earned tier after the player has relea
 test('a real airborne flick announces its roll, then its landing reward without a duplicate refill', () => {
   const race = running(), callouts = createCallouts();
   Object.assign(race.player, { speed: 60, altitude: 4 });
-  race.traffic = []; race.pickups = []; race.rings = [];
+  race.traffic = []; race.rivals = []; race.pickups = []; race.rings = []; // nothing to bump the car mid-trick
   callouts.update(race);
   stepRace(race, { steer: -1 }, 1 / 60);
   callouts.update(race);
@@ -148,7 +148,7 @@ test('a hard trick landing announces the lost reward once and never replays afte
 test('entering a shortcut corridor announces SHORTCUT once per entry, never on the road beneath it', () => {
   const race = running(), callouts = createCallouts();
   const corridor = race.sections.find(section => section.type === 'shortcut');
-  race.traffic = []; race.pickups = []; race.rings = [];
+  race.traffic = []; race.rivals = []; race.pickups = []; race.rings = []; // nothing to bump the car mid-trick
   callouts.update(race);
   Object.assign(race.player, { distance: corridor.from + 10, x: corridor.x, altitude: 0, speed: 30 });
   stepRace(race, {}, 1 / 60);
@@ -211,7 +211,7 @@ test('a NITRO reward that also refills flight charge says how much; a full charg
 test('a landed roll that refills flight charge names the charge in its detail', () => {
   const race = running(), callouts = createCallouts();
   Object.assign(race.player, { speed: 60, altitude: 4, fuel: 50 });
-  race.traffic = []; race.pickups = []; race.rings = [];
+  race.traffic = []; race.rivals = []; race.pickups = []; race.rings = []; // nothing to bump the car mid-trick
   callouts.update(race);
   stepRace(race, { steer: -1 }, 1 / 60);
   callouts.update(race);
