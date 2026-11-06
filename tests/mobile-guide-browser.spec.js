@@ -11,7 +11,7 @@ test.describe('390x844 first tap', () => {
     await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', 'throttle');
     await expect(page.locator('#touch-controls [data-control="throttle"]')).toHaveClass(/tutorial-target/);
     const skip = page.locator('#tutorial-exit');
-    await expect(skip).toHaveText('Skip');
+    await expect(skip).toHaveText('Skip practice'); // renamed beside "Skip step" (cfdae4a1)
     const bounds = await skip.boundingBox();
     expect(bounds.width).toBeGreaterThanOrEqual(44);
     expect(bounds.height).toBeGreaterThanOrEqual(44);
