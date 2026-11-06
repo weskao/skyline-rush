@@ -86,7 +86,7 @@ test('eleven original 3x badge/rarity artworks appear in a non-entitlement showc
 });
 
 test('badge reference art falls back to visible accessible label if the 3x image fails', async ({ page }) => {
-  await page.route('**/feature-assets/garage-vfx-skins/raster/badge-equipped@3x.webp', route => route.abort());
+  await page.route('**/feature-assets/garage-vfx-skins/raster/badge-equipped@3x.png', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
   const card = page.locator('#garage-vfx-art-badges figure').first();
@@ -99,7 +99,7 @@ test('badge reference art falls back to visible accessible label if the 3x image
 });
 
 test('failed badge artwork remains accessible and localized in Traditional Chinese', async ({ page }) => {
-  await page.route('**/feature-assets/garage-vfx-skins/raster/badge-equipped@3x.webp', route => route.abort());
+  await page.route('**/feature-assets/garage-vfx-skins/raster/badge-equipped@3x.png', route => route.abort());
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();
@@ -126,6 +126,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       const img = tile.locator('img');
       await expect(img).toHaveAttribute('width', '72');
       await expect(img).toHaveAttribute('height', '72');
+      await expect(img).toHaveAttribute('src', new RegExp(`${id}@3x\\.png$`));
       const result = await tile.evaluate(async figure => {
         const image = figure.querySelector('img');
         if (!image?.complete) await image?.decode();
@@ -181,8 +182,10 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     const colors = [];
     for (const tile of await tiles.all()) {
       await tile.scrollIntoViewIfNeeded();
-      const info = await tile.evaluate(figure => {
+      const info = await tile.evaluate(async figure => {
         const img = figure.querySelector('img');
+        // Lazy art starts loading only once scrolled in; read natural size after it decodes, not before.
+        if (!img.complete || !img.naturalWidth) await img.decode();
         const frame = figure.querySelector('.garage-badge-art-frame');
         const caption = figure.querySelector('figcaption');
         const a = img.getBoundingClientRect(), b = frame.getBoundingClientRect(), c = caption.getBoundingClientRect();

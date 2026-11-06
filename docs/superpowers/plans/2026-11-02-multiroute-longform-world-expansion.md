@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Implementation sequencing update:** The original long-form **playable-track** plan below remains future work. **First deliver Stage 1 five map-specific ANIMATED THREE.JS homepage showrooms**, not static JPEG previews, using the [binding live 3D home spec](../specs/2026-11-03-stage1-animated-3d-home-showcase-design.md), [six-GPT scene+integration tasks](../prompts/2026-11-03-six-chat-home-preview-implementation.md), and [TDD integration plan](2026-11-03-six-chat-home-preview-integration.md). This does **not** unlock/start those five races; it is a true 3D homepage-only preview with cars, jets, moving scenery/weather, and camera. Then implement full long-form point-to-point races with this plan and the separate full-course visual gate.
+
 **Goal:** Implement the proposed five original 3–5-minute graph-based courses without regressions.
 **Architecture:** Add an opt-in authored route graph that owns shared world frames, branch-aware game progress and open-terrain recovery. Preserve legacy centreline adapters and introduce weather as seeded, quality-tiered visual zones.
 **Tech Stack:** Vue 3 + strict TypeScript, Three.js, existing JS simulation/render islands as justified, Node unit tests, Playwright, GitHub Actions.

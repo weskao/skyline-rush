@@ -7,6 +7,10 @@
 **Goal:** Five original, visually distinct 3–5 minute point-to-point courses featuring real bends/hairpins, ground/air route forks, meaningful shortcuts, natural open terrain, quality-tiered weather, set pieces, and space beyond a fixed road rail.
 **Non-goals:** replacing existing ten sprint courses, changing current physics across old tracks without opt-in, copying protected level artwork, making all race modes immediately support an open world, modifying production code in the planning branch.
 
+## Stage 1 homepage first: LIVE Three.js showroom (not a JPEG mockup)
+
+**Dependency added 2026-11-03:** Implement five future-map selectable yet unplayable **real-time 3D** homepage showrooms first. Each must use the existing Three.js renderer, live car/rivals/jet animations, scene-specific animated weather and recognizable true 3D ground/air branches; the original concept JPEGs are visual references, not an accepted static replacement. See [binding showcase spec](2026-11-03-stage1-animated-3d-home-showcase-design.md), [six GPT prompts](../prompts/2026-11-03-six-chat-home-preview-implementation.md) and [home implementation plan](../plans/2026-11-03-six-chat-home-preview-integration.md). This changes implementation order, **not** the full future 3–5 minute track goals; no new race is playable at showcase stage.
+
 ## Research and references (design ideas only, no third-party game assets)
 
 | Reference | Transferable idea | Source |

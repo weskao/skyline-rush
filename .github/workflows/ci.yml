@@ -157,6 +157,16 @@ jobs:
           path: test-results/**/tokyo-finish-controls.png
           if-no-files-found: ignore
 
+      - name: Upload actual Garage Store catalog and 3x artwork screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: garage-store-review-${{ matrix.shard }}
+          path: |
+            test-results/**/store-catalog-*.png
+            test-results/**/store-icons-safe-3x-*.png
+            test-results/**/wave3-garage-store-readiness-*.png
+          if-no-files-found: ignore
       - name: Upload actual World Tour screenshots
         if: always()
         uses: actions/upload-artifact@v4

@@ -2,6 +2,7 @@ import { nextTick } from 'vue';
 import { updateCoachView } from './tutorial-coach-state.ts';
 import { t } from './i18n.ts';
 import { TUTORIAL_STEPS } from './interactive-tutorial.ts';
+import { trackProgressBottom } from './hud-progress-offset.ts';
 
 interface TutorialSnapshot {
   index: number;
@@ -9,6 +10,9 @@ interface TutorialSnapshot {
   progress: number;
   step: string | null;
   coachPhase?: string;
+  coachReason?: string | null;
+  guide?: string;
+  skip?(): void;
 }
 interface TutorialDependencies {
   getTutorial(): TutorialSnapshot | null;
@@ -17,6 +21,19 @@ interface TutorialDependencies {
   getInputPrefs(): { mode: string };
   getControlPrefs(): { flyMode: string };
   showKeyMap(): void;
+}
+
+const PHASE_COPY: Readonly<Record<string, string>> = {
+  'nitro/sprinting': 'tutorial.nitroSprint', 'nitro/retry': 'tutorial.nitroRetry',
+  'airChain/airborne': 'tutorial.airChainAirborne', 'barrelRoll/readyToLand': 'tutorial.barrelRollReadyToLand',
+  'barrelRoll/rolling': 'tutorial.barrelRollRolling', 'barrelRoll/flicked': 'tutorial.barrelRollFlicked',
+};
+/** Which coach line to show: a failed attempt names its reason, a cleared lesson celebrates before the next. */
+export function tutorialInstructionKey(step: string | null, phase: string, reason: string | null | undefined, done: boolean): string {
+  if (done) return 'tutorial.completedCopy';
+  if (phase === 'cleared') return 'tutorial.cleared';
+  if (phase === 'retry' && reason) return reason === 'missed' ? 'tutorial.gateMissed' : `tutorial.${step}Retry.${reason}`;
+  return PHASE_COPY[`${step}/${phase}`] ?? 'tutorial.' + step;
 }
 
 export function tutorialHintKey(step: string | null, steerMode: string, flyMode: string): string {
@@ -38,12 +55,15 @@ export function setupTutorialUI({
   const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
   const progress = document.querySelector<HTMLProgressElement>('#tutorial-progress')!;
   let tutorialView = '';
+  // blur(): a focused button would otherwise re-fire on the Space/Enter keys the lessons use.
+  trackProgressBottom($('#tutorial-coach'), document.documentElement, '--tutorial-coach-bottom');
+  $('#tutorial-skip-step').addEventListener('click', event => { (event.currentTarget as HTMLElement).blur(); getTutorial()?.skip?.(); });
   function renderTutorial(force = false): void {
     const tutorial = getTutorial();
     if (!tutorial) return;
     const race = getRace(), touch = getTouchMatches(), inputPrefs = getInputPrefs(), controlPrefs = getControlPrefs();
     progress.value = tutorial.index + (tutorial.complete ? 0 : tutorial.progress);
-    const view = [tutorial.step, tutorial.coachPhase, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode].join('/');
+    const view = [tutorial.step, tutorial.coachPhase, tutorial.coachReason, tutorial.guide, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode].join('/');
     if (!force && tutorialView === view) return;
     tutorialView = view;
     const step = tutorial.step;
@@ -54,7 +74,7 @@ export function setupTutorialUI({
     const action = step === 'land' ? 'fly' : step === 'airChain'
       ? phase === 'airborne' ? null : 'fly'
       : step === 'barrelRoll' ? (phase === 'ready' || phase === 'retry') ? 'fly' : null : step;
-    const keys = step === 'drift' ? 'brake left right' : step === 'airChain' ? 'fly boost' : step === 'barrelRoll' ? 'fly left right' : action;
+    const keys = step === 'drift' ? 'brake left right' : step === 'airChain' ? 'fly boost nitro' : step === 'barrelRoll' ? 'fly left right' : action;
     updateCoachView({
       step: step ?? 'complete',
       title: done ? t('tutorial.complete') : t('tutorial.step', {
@@ -62,22 +82,14 @@ export function setupTutorialUI({
         total: TUTORIAL_STEPS.length,
         action: t(step === 'land' ? 'tutorial.landTitle' : step === 'airChain' || step === 'barrelRoll' || step === 'drift' ? 'tutorial.' + step + 'Title' : 'keymap.' + step),
       }),
-      instruction: t(done ? 'tutorial.completedCopy' : race.phase === 'paused' ? 'tutorial.paused' :
-        step === 'nitro' && phase === 'sprinting' ? 'tutorial.nitroSprint' :
-        step === 'nitro' && phase === 'retry' ? 'tutorial.nitroRetry' :
-        step === 'airChain' && phase === 'airborne' ? 'tutorial.airChainAirborne' :
-        step === 'airChain' && phase === 'retry' ? 'tutorial.airChainRetry' :
-        step === 'barrelRoll' && phase === 'readyToLand' ? 'tutorial.barrelRollReadyToLand' :
-        step === 'barrelRoll' && phase === 'retry' ? 'tutorial.barrelRollRetry' :
-        step === 'barrelRoll' && phase === 'rolling' ? 'tutorial.barrelRollRolling' :
-        step === 'barrelRoll' && phase === 'flicked' ? 'tutorial.barrelRollFlicked' : 'tutorial.' + step),
-      pauseText: t(race.phase === 'paused' ? 'tutorial.resume' : 'tutorial.pause'),
-      pauseHidden: done,
+      instruction: t(tutorialInstructionKey(step, phase, tutorial.coachReason, done)), // paused: the pause screen says so
       completeActionsHidden: !done,
       assistHidden: done,
       hintKeys: done || touch ? '' : keys ?? '',
       hintText: !done && touch ? t(tutorialHintKey(step, inputPrefs.mode, controlPrefs.flyMode)) : '',
       celebration: done ? t('tutorial.freeDrive') : '',
+      guide: done ? '' : tutorial.guide ?? '',
+      skipHidden: done || race.phase === 'paused',
     });
     for (const target of document.querySelectorAll<HTMLElement>('.tutorial-target')) target.classList.remove('tutorial-target');
     if (done) return;

@@ -258,10 +258,11 @@ for (const [name, viewport] of [
   ['landscape', { width: 844, height: 390 }],
 ]) test.describe(`motion on ${name}`, () => {
   test.use({ hasTouch: true, viewport });
-  test('race feedback fits, reduced motion stays readable, and restart clears queued events', async ({ page }) => {
-    await open(page);
+  test('race feedback fits, reduced motion stays readable, and restart clears queued events', async ({ gameplayPage: page }) => {
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
+    // A real earned callout, rather than relying on the countdown to emit one.
+    await page.evaluate(() => { window.gameplay.race.player.perfectLines++; });
     const callout = page.locator('#event-callout');
     await expect(callout).toBeVisible({ timeout: ciTimeout(35000) });
     await expect(page.locator('#event-callout > div:visible')).toHaveCount(1);

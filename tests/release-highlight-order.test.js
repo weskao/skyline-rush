@@ -27,9 +27,11 @@ test('a kind the order does not know yet goes last instead of jumping ahead of N
   assert.deepEqual(highlightsByKind([{ id: 'odd', kind: 'event' }, { id: 'fix', kind: 'fix' }, { id: 'new', kind: 'new' }]).map(h => h.id), ['new', 'fix', 'odd']);
 });
 
-test('every shipped release shows its NEW highlights before anything else', () => {
+test('every shipped release shows NEW first, then improvements, then fixes', () => {
+  const rank = kind => ({ new: 0, improvement: 1, fix: 2 })[kind] ?? 3;
   for (const release of RELEASE_NOTES) {
     const kinds = highlightsByKind(release.highlights).map(h => h.kind);
     assert.equal(kinds.lastIndexOf('new'), kinds.filter(k => k === 'new').length - 1, release.version);
+    assert.deepEqual(kinds.map(rank), kinds.map(rank).sort((a, b) => a - b), release.version);
   }
 });
