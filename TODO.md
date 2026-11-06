@@ -9,6 +9,9 @@ Root cause: Coast pinned every gate to x 2.5 (lane 3); other tracks drew x unifo
   ~4% of the pre-change baseline on all ten tracks; trains/rows per race unchanged.
 - [x] Seed-coupled tests updated: Coast gate line (heights, any lane), train lanes (tracks any lane, Endless middle),
   World Tour layout hashes re-locked, risk-line payout tests use the 8-car grid. `npm test` 1890 / 0 fail.
+- [x] Authored sequences protected (user choice: rule + guard): `.claude/rules/ring-layout.md` (ask before changing)
+  and `tests/ring-authored-sequences.test.js` (Spiral/Cosmic hoops, Gauntlet hoops, shortcut reward line over 5
+  seeds); mutation check: moving `spiral-hoop-1` 10 m turns it RED. `npm test` 1893 / 0 fail.
 - [ ] `npm run test:browser` desktop + mobile; real WebGL screenshots of edge-lane rings and trains.
 - [ ] Exact-HEAD full CI after merge to `develop` (needs user approval).
 
