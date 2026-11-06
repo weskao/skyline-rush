@@ -1,0 +1,16 @@
+#garage-screen .garage-store-entry { display: flex; align-items: center; flex-wrap: wrap; gap: 9px;
+  min-width: 0; margin: 10px 0 3px; padding: 10px; border: 1px solid #7a509b; border-radius: 13px;
+  background: linear-gradient(125deg, #27163b, #12283c 85%); }
+#garage-screen .garage-store-entry .artwork-img { flex: 0 0 52px; object-fit: contain; }
+#garage-screen .garage-store-entry-copy { display: flex; flex: 1 1 155px; flex-direction: column;
+  min-width: 0; gap: 4px; overflow-wrap: anywhere; }
+#garage-screen .garage-store-entry-copy strong { color: #f5d5ff; font-size: 14px; line-height: 1.4; }
+#garage-screen .garage-store-entry-copy span { color: #bfd4ee; font-size: 11px; line-height: 1.5; }
+#garage-screen .garage-store-entry button { display: inline-flex; align-items: center; justify-content: center;
+  box-sizing: border-box; min-height: 44px; width: 100%; border-radius: 8px; border: 1px solid #b37ac9;
+  padding: 9px 13px; color: #fff2ff; font-weight: 750; font-size: 12px;
+  background: linear-gradient(110deg, #693280, #334a83); cursor: pointer; touch-action: manipulation; }
+#garage-screen .garage-store-entry button:focus-visible { outline: 3px solid #6ce8ff; outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  #garage-screen .garage-store-entry button:hover { border-color: #e4b2ff; background: #76519d; }
+}

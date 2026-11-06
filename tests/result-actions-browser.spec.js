@@ -82,7 +82,8 @@ for (const [name, viewport, hasTouch] of [
     await expect(trophy).toHaveJSProperty('naturalHeight', 288);
     await expect(trophy).toHaveAttribute('width', '96');
     await expect(trophy).toHaveAttribute('height', '96');
-    expect((await trophy.boundingBox()).width).toBe(96);
+    // The .52s reward-podium-reveal scales the art in; judge its settled 1x size, not a mid-animation frame.
+    await expect.poll(async () => (await trophy.boundingBox()).width).toBe(96);
     await expect(page.locator('#result-stats')).toContainText('Placement badge (display only)');
     const next = page.locator('#next-button');
     await expect(next).toBeVisible();

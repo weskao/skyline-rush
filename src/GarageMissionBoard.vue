@@ -2,21 +2,14 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import { getLocale, onLocaleChange } from './i18n.ts';
+import { filterWave3PreviewItems } from './garage-wave3-preview-catalog.ts';
+import type { Wave3PreviewItem } from './garage-wave3-preview-catalog.ts';
 
 const locale = ref(getLocale());
-const missions = [
-  { id: 'mission-race', en: 'Race challenge', zh: '競速挑戰' },
-  { id: 'mission-time', en: 'Time challenge', zh: '計時挑戰' },
-  { id: 'mission-drift', en: 'Drift challenge', zh: '甩尾挑戰' },
-  { id: 'mission-combo', en: 'Combo challenge', zh: '連擊挑戰' },
-] as const;
-const trophies = [
-  { id: 'trophy-bronze', en: 'Bronze trophy', zh: '銅級獎盃' },
-  { id: 'trophy-silver', en: 'Silver trophy', zh: '銀級獎盃' },
-  { id: 'trophy-gold', en: 'Gold trophy', zh: '金級獎盃' },
-  { id: 'trophy-platinum', en: 'Platinum trophy', zh: '白金獎盃' },
-] as const;
-const title = (item: { readonly en: string; readonly zh: string }) => locale.value === 'zh-TW' ? item.zh : item.en;
+// Same ids, names and art as the concept gallery's WAVE3_PREVIEW_CATALOG entry.
+const missions = filterWave3PreviewItems('garage-rewards-and-missions', 'mission');
+const trophies = filterWave3PreviewItems('garage-rewards-and-missions', 'trophy');
+const title = (item: Wave3PreviewItem) => item.name[locale.value];
 const asset = (id: string) =>
   `${import.meta.env.BASE_URL}feature-assets/garage-rewards-and-missions/raster/${id}@3x.png`;
 let stopListening: (() => void) | undefined;
