@@ -294,9 +294,14 @@ export function createRaceHud(options: HudOptions) {
     if (calm || race.phase !== 'racing') leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
     if (order !== leaderboardOrder) {
       // FLIP reads geometry only on a rank change, with all reads batched before writes.
-      const before = !calm && race.phase === 'racing' && leaderboardOrder ? new Map(leaderboardRows.map(row => [row, row.getBoundingClientRect().top])) : null;
+      const before = !calm && race.phase === 'racing' && leaderboardOrder ? new Map(leaderboardRows.map(row => [row, row.getClientRects().length ? row.getBoundingClientRect().top : NaN])) : null;
       leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
       ui.leaderboard!.replaceChildren(...racers.map(racer => racerRows.get(racer.name)!));
+      // Phones show only the car ahead, YOU and the car behind (CSS hides the rest); first or last place shifts the window.
+      const you = racers.findIndex(racer => racer.player);
+      const first = Math.max(0, Math.min(you - 1, racers.length - 3));
+      racers.forEach((racer, i) => racerRows.get(racer.name)!.toggleAttribute('data-near', i >= first && i < first + 3));
+      // A row hidden before (NaN start) just appears: `if (delta)` skips it.
       const moves = before ? leaderboardRows.map(row => [row, before.get(row)! - row.getBoundingClientRect().top] as const) : [];
       for (const [row, delta] of moves) if (delta) row.animate([{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }], motionOptions('base'));
       leaderboardOrder = order;
