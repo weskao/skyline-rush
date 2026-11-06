@@ -79,6 +79,18 @@ const keyboardToNitro = async page => {
   await keyboardRoll(page);
 };
 
+test('practice opens with the race countdown, and FLY answers the moment GO shows', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#controls-button').click();
+  await page.locator('#tutorial-open').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
+  await expect(page.locator('#countdown')).toBeVisible();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(6000) });
+  await page.keyboard.down('Space');
+  await expect.poll(async () => Number(await page.locator('#altitude').textContent()), { timeout: ciTimeout(1500) }).toBeGreaterThan(0);
+  await page.keyboard.up('Space');
+});
+
 test('keyboard practice requires real actions, completes all ten steps and preserves career', async ({ page }) => {
   await begin(page);
   const before = await career(page);

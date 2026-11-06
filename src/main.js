@@ -619,6 +619,7 @@ function beginTutorial() {
   $('#tutorial-done').dataset.i18n = raceAfterTutorial ? 'start.race' : 'tutorial.done';
   applyI18n($('#tutorial-coach'));
   tutorial = createInteractiveTutorial(); race = tutorial.race;
+  race.phase = 'countdown'; // the same 3-2-1 → GO as a race, so equipped Launch Flare charges and bursts here too
   touchUI.applyControls(false);
   goUntil = 0; hud.resetMemory(); hud.forgetFlightMode();
   document.body.dataset.tutorial = 'active';
