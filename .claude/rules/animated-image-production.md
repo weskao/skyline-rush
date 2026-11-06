@@ -36,6 +36,27 @@ This is the reusable template for **future animated UI art**, not permission to 
 
 GIF supports 1-bit transparency. Compose partially transparent edge RGB against the intended card matte `#0f1c33` before the alpha cut (~40%); reserve one transparent index, turn off alpha-edge dithering and use **one shared palette** for all frames. Preserve straight transparency outside the artwork; no white/gray halo on the actual card background.
 
+## Project-local packaging command
+
+After reviewing **all 25** 5-column × 4-row transparent sprite sheets named
+`<name>.png`, put them in a temporary local directory outside Git-tracked
+runtime asset paths, then run:
+
+```sh
+python3 -m pip install Pillow
+python3 scripts/package-garage-authored-gifs.py --sheets <approved-sprite-sheet-directory> --apply
+npm test
+npm run build
+make verify
+```
+
+The packager validates native size, transparency margins, 20-frame loops,
+frame durations and byte budgets, then updates existing Manifest metadata.
+It **does not create or invent any animation artwork**. The input sheets must
+have passed side-by-side human source fidelity and frame-motion review first.
+If a sheet is missing or unacceptable, do not execute `--apply` on the
+production branch. Always verify and review all output GIFs before committing.
+
 ## Repeatable authoring steps
 
 1. Write a per-item brief with `name`, `category`, committed `source`, output `file`, canvas, fixed parts, moving parts, timing and acceptance notes. Reuse original artwork instead of creating fresh unrelated concepts.
