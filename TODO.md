@@ -79,6 +79,21 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
     authorized 9 m rejected at all 15 Dune and 9 Skyfall ground junctions.
   - GREEN: same file 6/6; with `course-measured-motion`, `-fleet`, `course-signed-gates`,
     `course-fleet`, `legacy-race-replay` 96/96 (replay 47/47).
+- [x] Task 3 — pure per-car race runtime `src/course-race.ts` (165 lines; no engine/DOM/Three.js).
+  `stepCourseCar` turns the host's odometer/lane/altitude into one measured sweep from the stored
+  pose; a step reaching the edge end crosses the node plane and continues on `chooseEdge(node)` in
+  the same sweep (Task 2 overflow path); FINISH extrapolates past the gate along the end frame and
+  stores the node-plane fraction. Flight authorization: `altitude > 0`, or a solid (non-`noRoad`)
+  flight-edge interval at either end of the sweep. Rejections leave travel untouched and increment
+  `rt.rejections`. Pose arrays, the sweep points and the motion object are reused (no allocation in
+  the module's own step code).
+  - RED (stub exporting the names and car shapes): `node --test tests/course-race.test.js` → 0 pass /
+    8 fail, all `AssertionError` (e.g. start edge `''` vs `sunset-start`, step `'rejected'` vs
+    `'finished'`, gap `null` vs `4`).
+  - GREEN: same file 8/8. Finish odometer from the gate fraction = 13,930.524 m at x −10/0/+10 ×
+    step 3.0/1.5/0.75 m (Δ to Σ `routeLength(groundRoute)` < 0.001 m), 0 rejections, identical edge
+    sequence = `groundRoute`; cost 1.9–5.8 µs per car step. `npm test` 2028 pass / 0 fail /
+    3 skipped (replay 47/47); `npm run typecheck:ts` clean.
 
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 
