@@ -3846,3 +3846,15 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Verify long-course speed-cap test with fuel held empty on every frame, preserving its original exact cap assertions and separately guarding legitimate BOOST recharge.
 - [ ] Run focused Node unit tests, full `npm test`, `npm run typecheck`, `npm run build`, `make verify` and relevant real browser/WebGL checks against the final source checkout; isolated numeric reproduction is not a substitute.
 - [ ] Verify exact-HEAD GitHub CI `unit-tests`, `cloud-save`, all required browser/World Tour shards and `quality-gate`, then record immutable run URL/SHA. No PR, merge, deployment or Skyfall route/scene edits authorized.
+
+## 2026-11-07 — CI repair for run 42341536604
+
+- [x] Update from current `develop` (82bc4f43), preserving branch-specific course work; merge completed without conflicts.
+- [x] Trace the failed jobs: an active refill chip hid BARREL ROLL; the position-animation test depended on a natural opening overtake; complete keyboard tutorials exhausted the 135 s CI test budget and a Node/CDP round trip could miss the short spinning phase.
+- [x] Regression RED: prime an active +0.25 refill before the existing real-engine airborne-flick test; old callouts retained +0.25 instead of BARREL ROLL. Reuse the existing shared priority fix from ee2c3470; GREEN: the callout owner suite passed; reuse its existing regression from be6a6ca0.
+- [x] Keep all browser assertions: seed a first-place position then a rival overtake through the gameplay fixture; give the three complete keyboard journeys a shared 120 s local / 360 s CI budget (touch journeys already have a separate budget). Release FLY at the observed altitude and capture the real spinning phase in RAF polling before releasing the opposite direction. No retries added.
+- [x] Initial local type checks and full unit suites passed: Skyfall 2027 passed / 0 failed / 3 skipped; Stormline 2036 passed / 0 failed / 3 skipped. Production builds passed.
+- [x] First stress run: 42/48 passed; one keyboard journey missed the spinning phase (360 s timeout), five setup failures occurred while local dependency links were rebuilt. Isolated dependencies installed before rerunning; no product or test assertion was weakened.
+- [ ] Browser verification intentionally stopped at the user's explicit request: revised stress 16 passed, 4 interrupted, 28 not run; both `make verify` processes stopped. Do not treat interrupted units as a completed run. Initial full units/type checks/build results above remain separate evidence. No further browser tests or screenshots authorized for this task.
+- [x] Final non-browser checks: `node --check` on both changed browser specs; `node --test tests/callouts.test.js tests/browser-timeouts.test.js` 29/29 on each branch; `git diff --check` clean; independent review found no actionable defect.
+- [ ] Full browser/World Tour CI, physical phone input and human visual acceptance remain unverified per the user's stop request. Push without `[full-regression]`; skip the browser layout pre-push hook for this task. Only focused CI is expected.
