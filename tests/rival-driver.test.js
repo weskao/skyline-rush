@@ -137,11 +137,11 @@ test('long-course rivalPace preserves difficulty scaling without raising unboost
   const race = bare('easy'), rival = race.rivals[6];
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 1.3;
-  run(race, rival, 6, 20);
+  for (let i = 0; i < 20 * 60; i++) { rival.fuel = 0; driveRival(race, rival, 6, 0, 1 / 60); } // truly unboosted despite fuel regeneration
   assert.equal(rival.speed, MAX_SPEED, 'fast courses still respect the player throttle cap');
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 0.5;
-  run(race, rival, 6, 20);
+  for (let i = 0; i < 20 * 60; i++) { rival.fuel = 0; driveRival(race, rival, 6, 0, 1 / 60); } // truly unboosted despite fuel regeneration
   assert.equal(rival.speed, rivalBaseCap(RIVAL_SKILL.easy, 6) * 0.5, 'slower courses retain their pace multiplier');
 });
 
