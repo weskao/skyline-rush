@@ -1940,6 +1940,30 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 @media (max-width: 760px) and (min-height: 501px) { .tutorial-guide { top: 56%; } .tutorial-guide svg { width: 40px; height: 40px; } } /* below the phone coach card */
 @media (max-height: 500px) and (orientation: landscape) { .tutorial-guide { top: 48%; left: 72%; } }
 @media (prefers-reduced-motion: reduce) { .tutorial-guide svg { animation: none; opacity: 1; } }
+/* Live lesson cue (tutorial-cues.ts): what to press or release now; kbd chips show the bound desktop key. */
+.tutorial-cue { position: fixed; z-index: 13; top: 30%; left: 50%; box-sizing: border-box; width: max-content; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 10px; padding: 10px 18px; border: 2px solid #96e3ff; border-radius: 14px; background: rgb(20 35 52 / .92); color: #f4f0e9; font-size: 18px; text-align: center; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 0 6px rgb(150 227 255 / .14), 0 10px 32px rgb(0 9 22 / .45); animation: cue-in .35s var(--ease-spring) both, cue-pulse 1.2s ease-in-out .35s infinite; }
+.tutorial-cue[data-cue*="Release"], .tutorial-cue[data-cue$="driftMax"] { border-color: #ffd27a; --cue-glow: rgb(255 210 122 / .22); box-shadow: 0 0 0 6px var(--cue-glow), 0 10px 32px rgb(0 9 22 / .45); }
+.tutorial-cue-keys { display: flex; gap: 4px; }
+.tutorial-cue kbd { min-width: 28px; padding: 3px 8px; border: 1px solid #96e3ff; border-bottom-width: 3px; border-radius: 6px; background: #0d1a28; color: #96e3ff; font-family: inherit; font-size: 14px; font-weight: 700; }
+.tutorial-cue-count { min-width: 3.2em; color: #ffd27a; font-size: 22px; font-variant-numeric: tabular-nums; }
+@keyframes cue-in { from { opacity: 0; transform: translate(-50%, -50%) scale(.85); } }
+@keyframes cue-pulse { 50% { box-shadow: 0 0 0 11px var(--cue-glow, rgb(150 227 255 / .14)), 0 10px 32px rgb(0 9 22 / .45); } }
+@media (max-width: 760px) and (min-height: 501px) { .tutorial-cue { top: calc(var(--tutorial-coach-bottom, 300px) + 40px); font-size: 15px; } } /* below the phone coach card */
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-cue { top: 24%; left: 72%; padding: 6px 12px; font-size: 14px; } }
+@media (prefers-reduced-motion: reduce) { .tutorial-cue { animation: none; } }
+/* Pass toast: holds the cue's place while a cleared lesson's praise is up (CLEARED_SECONDS). */
+.tutorial-pass { position: fixed; z-index: 13; top: 30%; left: 50%; box-sizing: border-box; width: max-content; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 10px; padding: 10px 18px; border: 2px solid #91f0c5; border-radius: 14px; background: rgb(20 35 52 / .94); color: #f4f0e9; font-size: 18px; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 0 6px rgb(145 240 197 / .18), 0 10px 32px rgb(0 9 22 / .45); animation: cue-in .35s var(--ease-spring) both; }
+.tutorial-pass-badge { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%; background: #91f0c5; animation: celebrate-pop .5s var(--ease-spring) .1s both; }
+.tutorial-pass-badge svg { width: 18px; height: 18px; fill: none; stroke: #142333; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+/* NITRO rewards in coach copy and toasts: colour and glow only, so the text wraps exactly as before. */
+.tutorial-reward { padding: 0; border-radius: 3px; background: none; color: #ffd27a; font-weight: inherit; text-shadow: 0 0 10px rgb(255 210 122 / .75); white-space: nowrap; animation: reward-glow 1.4s ease-in-out infinite; }
+.tutorial-pass .tutorial-reward { font-weight: 800; }
+@keyframes reward-glow { 50% { color: #fff4dc; text-shadow: 0 0 14px rgb(255 210 122 / .95); } }
+body[data-tutorial-reward="nitro"] #nitro-meter, body[data-tutorial-reward="nitro"] #touch-controls [data-control="nitro"] { outline: 2px solid #ffd27a; outline-offset: 3px; animation: reward-meter .7s ease-in-out 2; }
+@keyframes reward-meter { 50% { outline-offset: 7px; filter: drop-shadow(0 0 10px rgb(255 210 122 / .9)); } }
+@media (max-width: 760px) and (min-height: 501px) { .tutorial-pass { top: calc(var(--tutorial-coach-bottom, 300px) + 40px); font-size: 15px; } }
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-pass { top: 24%; left: 72%; padding: 6px 12px; font-size: 14px; } }
+@media (prefers-reduced-motion: reduce) { .tutorial-pass, .tutorial-pass-badge, .tutorial-reward, body[data-tutorial-reward] #nitro-meter { animation: none; } }
 /* Paused practice: the coach keeps its full lesson and progress (Exit is its only button) and the shared
    pause screen starts below it on phones, right of it in landscape; neither covers the other. */
 body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* an open language/VFX list opens over the coach (12) */
