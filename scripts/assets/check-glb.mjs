@@ -16,6 +16,7 @@ export function checkGlb(s, entry) {
   for (const name of entry.nodes) if (!s.nodeNames.includes(name)) violations.push(`nodes: missing exact node name "${name}"`);
   for (const name of entry.materials) if (!s.usedMaterials.includes(name)) violations.push(`materials: "${name}" is not used by any mesh`);
   if (s.maxTexturePx > budgets.textureMaxPx) violations.push(`textures: ${s.maxTexturePx}px > textureMaxPx ${budgets.textureMaxPx}`);
+  for (const error of s.colorSpaceErrors ?? []) violations.push(`textures: ${error}`);
   if (s.animationNames.join('\0') !== s.rawAnimationNames.join('\0')) {
     violations.push(`animations: [${s.animationNames}] differ from raw export [${s.rawAnimationNames}]`);
   }
@@ -28,11 +29,55 @@ export function glbJson(buffer) {
   return JSON.parse(buffer.subarray(20, 20 + buffer.readUInt32LE(12)).toString('utf8'));
 }
 
+/** BIN chunk of a GLB (follows the JSON chunk), or an empty buffer. */
+function glbBin(buffer) {
+  const start = 20 + buffer.readUInt32LE(12);
+  return start + 8 <= buffer.length ? buffer.subarray(start + 8, start + 8 + buffer.readUInt32LE(start)) : Buffer.alloc(0);
+}
+
+const COLOR_SLOTS = ['baseColorTexture', 'emissiveTexture'];
+const DATA_SLOTS = ['normalTexture', 'occlusionTexture', 'metallicRoughnessTexture'];
+const KTX2_MAGIC = Buffer.from([0xab, 0x4b, 0x54, 0x58, 0x20, 0x32, 0x30, 0xbb]);
+
+/** Image header → { px, transfer }: KTX2 DFD transfer 1 = linear, 2 = sRGB; PNG/JPEG carry no colour space (transfer 0). */
+function imageInfo(bytes) {
+  if (bytes.subarray(0, 8).equals(KTX2_MAGIC)) {
+    return { px: Math.max(bytes.readUInt32LE(20), bytes.readUInt32LE(24)), transfer: bytes[bytes.readUInt32LE(48) + 14] };
+  }
+  if (bytes.readUInt32BE(0) === 0x89504e47) return { px: Math.max(bytes.readUInt32BE(16), bytes.readUInt32BE(20)), transfer: 0 };
+  // shortcut: JPEG sizes are not parsed; the Roadster pipeline ships KTX2 only. Parse SOF markers if a JPEG asset appears.
+  return { px: Infinity, transfer: 0 };
+}
+
+/** Largest texture side and KTX2 colour-space misuse, from the glTF JSON and BIN chunk alone (no pixel decode). */
+export function textureStats(json, bin) {
+  const info = (json.images ?? []).map(image => {
+    const view = json.bufferViews[image.bufferView];
+    return imageInfo(bin.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength));
+  });
+  const sourceOf = i => { const t = json.textures[i]; return t.extensions?.KHR_texture_basisu?.source ?? t.source; };
+  const colorSpaceErrors = [];
+  for (const material of json.materials ?? []) {
+    const slots = { ...material, ...material.pbrMetallicRoughness };
+    for (const slot of [...COLOR_SLOTS, ...DATA_SLOTS]) {
+      if (!slots[slot]) continue;
+      const { index } = slots[slot], { transfer } = info[sourceOf(index)];
+      const color = COLOR_SLOTS.includes(slot);
+      if (color && transfer === 1) colorSpaceErrors.push(`texture ${index} (${slot}) must be sRGB`);
+      if (!color && transfer === 2) colorSpaceErrors.push(`texture ${index} (${slot}) must be linear`);
+    }
+  }
+  return { maxTexturePx: Math.max(0, ...info.map(i => i.px)), colorSpaceErrors };
+}
+
 async function parse(buffer) {
   const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
   const { MeshoptDecoder } = await import('three/examples/jsm/libs/meshopt_decoder.module.js');
+  const { Texture } = await import('three');
   await MeshoptDecoder.ready;
-  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+  // Node has no transcoder: KTX2 images resolve to empty textures; sizes/colour spaces come from textureStats.
+  const ktx2Stub = { load: (_url, onLoad) => onLoad(new Texture()) };
+  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(ktx2Stub);
   const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.length);
   return new Promise((resolve, reject) => loader.parse(ab, '', resolve, reject));
 }
@@ -51,10 +96,9 @@ export async function summarize(buffer, rawBuffer) {
   });
   const json = glbJson(buffer);
   const animationNames = (json.animations ?? []).map(a => a.name ?? '');
-  // shortcut: texture pixel sizes are not decoded in Node, so any texture fails the budget; upgrade with the first textured asset.
-  const maxTexturePx = (json.images ?? []).length ? Infinity : 0;
+  const { maxTexturePx, colorSpaceErrors } = textureStats(json, glbBin(buffer));
   const rawAnimationNames = rawBuffer ? (glbJson(rawBuffer).animations ?? []).map(a => a.name ?? '') : animationNames;
-  return { triangles, draws, bytes: buffer.length, nodeNames, usedMaterials: [...used], maxTexturePx, animationNames, rawAnimationNames, generator: json.asset?.generator };
+  return { triangles, draws, bytes: buffer.length, nodeNames, usedMaterials: [...used], maxTexturePx, colorSpaceErrors, animationNames, rawAnimationNames, generator: json.asset?.generator };
 }
 
 async function main() {
