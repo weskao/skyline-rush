@@ -21,7 +21,7 @@ const loseContext = page => page.evaluate(() => {
 for (const [name, viewport, hasTouch] of [
   ['desktop', { width: 1440, height: 900 }, false],
   ['phone', { width: 390, height: 844 }, true],
-  // The results stack is taller than a landscape phone, so the overlay must scroll to its buttons.
+  // Landscape splits results into summary | actions (tests/overlay-landscape-fit-browser.spec.js checks no scrolling).
   ['phone landscape', { width: 844, height: 390 }, true],
 ]) test.describe(`result actions ${name}`, () => {
   test.use({ viewport, hasTouch });

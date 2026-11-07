@@ -158,3 +158,35 @@ test('long-course rivalPace respects the unboosted throttle cap on every difficu
     }
   }
 });
+
+test('long-course rivalPace preserves difficulty scaling without raising throttle-only rivals above player cap', () => {
+  const race = bare('easy'), rival = race.rivals[6];
+  Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
+  race.rivalPace = 1.3;
+  // An empty initial tank recharges; force BOOST to remain unavailable at every simulation step.
+  for (let i = 0; i < 20 * 60; i++) {
+    rival.fuel = 0;
+    driveRival(race, rival, 6, 0, 1 / 60);
+  }
+  assert.equal(rival.speed, MAX_SPEED, 'fast courses still respect the player throttle cap');
+  Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
+  race.rivalPace = 0.5;
+  for (let i = 0; i < 20 * 60; i++) {
+    rival.fuel = 0;
+    driveRival(race, rival, 6, 0, 1 / 60);
+  }
+  assert.equal(rival.speed, rivalBaseCap(RIVAL_SKILL.easy, 6) * 0.5, 'slower courses retain their pace multiplier');
+});
+
+test('a depleted rival recharges and may exceed its throttle cap only within the shared BOOST limit', () => {
+  const race = bare('easy'), rival = race.rivals[6];
+  Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
+  race.rivalPace = 1.3;
+  let usedBoost = false;
+  for (let i = 0; i < 20 * 60; i++) {
+    driveRival(race, rival, 6, 0, 1 / 60);
+    if (rival.boosting && rival.speed > MAX_SPEED) usedBoost = true;
+    assert.ok(rival.speed <= MAX_SPEED + BOOST_CAP_BONUS + 1e-9, `BOOST cap ${rival.speed}`);
+  }
+  assert.ok(usedBoost, 'recharging an empty tank eventually permits a legitimate BOOST');
+});
