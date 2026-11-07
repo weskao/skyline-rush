@@ -635,7 +635,7 @@ function endTutorial() {
   ({ race, pausedPhase, goUntil } = tutorialReturn); hud.restoreMemory(tutorialReturn.hud);
   tutorial = null; tutorialReturn = null; resetTutorialView();
   controls.clear(); clearButtonPresses();
-  delete document.body.dataset.tutorial;
+  delete document.body.dataset.tutorial; delete document.body.dataset.tutorialReward;
   touchUI.applyControls(false);
   updateCoachView({ visible: false });
   for (const target of document.querySelectorAll('.tutorial-target')) target.classList.remove('tutorial-target');
@@ -650,7 +650,7 @@ const { renderTutorial, resetTutorialView } = setupTutorialUI({
   getTouchMatches: () => touchPreference.matches,
   getInputPrefs: () => touchUI.inputPrefs(),
   getControlPrefs: () => touchUI.prefs(),
-  showKeyMap: () => keymap.showKeyMap(),
+  showKeyMap: () => keymap.showKeyMap(), getKeyMap: () => keymap.getKeyMap(), cue: name => sound.cue(name),
 });
 for (const id of ['guide-practice', 'tutorial-open', 'tutorial-retry']) $(`#${id}`).addEventListener('click', beginTutorial);
 for (const id of ['tutorial-exit', 'tutorial-done']) $(`#${id}`).addEventListener('click', endTutorial);

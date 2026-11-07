@@ -97,13 +97,20 @@ const keyboardToNitro = async page => {
   await keyboardRoll(page);
 };
 
-test('practice opens with the race countdown, and FLY answers the moment GO shows', async ({ page }) => {
+test('practice opens with the race countdown, stands still at GO, and THROTTLE then FLY answer', async ({ page }) => {
   await page.goto('/');
   await page.locator('#controls-button').click();
   await page.locator('#tutorial-open').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
   await expect(page.locator('#countdown')).toBeVisible();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(6000) });
+  // Practice has no GO roll (user, 2026-11-08): the car waits for THROTTLE, and the cue says so.
+  await expect(page.locator('#speed')).toHaveText('0');
+  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'ahead');
+  await expect(page.locator('#tutorial-cue')).toBeVisible();
+  await page.keyboard.down('KeyW');
+  await expect.poll(async () => Number(await page.locator('#speed').textContent()), { timeout: ciTimeout(4000) }).toBeGreaterThan(66); // past FLY's 18 m/s takeoff
+  await page.keyboard.up('KeyW');
   await page.keyboard.down('Space');
   await expect.poll(async () => Number(await page.locator('#altitude').textContent()), { timeout: ciTimeout(1500) }).toBeGreaterThan(0);
   await page.keyboard.up('Space');
@@ -216,7 +223,7 @@ test('the gate arrow points the way and Skip step moves on by a real click', asy
   await begin(page);
   const skip = page.locator('#tutorial-skip-step');
   await expect(skip).toBeVisible();
-  await expect(page.locator('#tutorial-guide')).toHaveCount(0); // settled: the throttle lesson has no gate
+  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'ahead'); // the throttle lesson points the way
   await skip.click();
   await step(page, 'left');
   await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'left');
