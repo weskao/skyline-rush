@@ -6,6 +6,8 @@ Plan Task 3 ([phases/task-3-glb-pipeline-mvp.md](phases/task-3-glb-pipeline-mvp.
 - **Exposure:** Garage only, behind `?model=probe`. Production keeps the procedural car.
 - **Decoders:** Meshopt only (`three/examples/jsm/libs/meshopt_decoder.module.js`, bundled JS). KTX2 and Draco stay out until an asset needs them, and adding one is a contract change.
 
+**Task 4 contract change (owner chose baked textures + KTX2, 2026-11-07):** `DECODERS` is now `['meshopt', 'ktx2']`; Draco stays out. `roadster2` is exposed in the Garage behind `?model=roadster` (`MODEL_PARAMS` in `src/garage-model.ts`: `probe → pipeline-probe`, `roadster → roadster2`). Its nodes follow the rig contract in `src/garage-model-rig.ts`: each `wheel_<fl|fr|rl|rr>` has a `<wheel>_spin` child, plus `wing > wing_blade > wing_tip_l/r`, `wing_rams`; materials ending `_paint` / `_light` follow the procedural car's paint and light colour.
+
 Unchanged by this phase: the single `WebGLRenderer` in `src/world.js`, physics, road frames, VFX ports, tracks, touch controls and NITRO/FLY/BOOST.
 
 ## 1. Manifest: `src/model-manifest.ts`
@@ -25,7 +27,7 @@ Unchanged by this phase: the single `WebGLRenderer` in `src/world.js`, physics, 
 | `materials` | non-empty, unique, non-empty strings; every one must be used by a mesh in the GLB |
 | `lods` | `[{ quality: 'high' \| 'low', url }]`, each `url` follows the `url` rules, qualities unique; `[]` is allowed (the probe has none) |
 | `fallback` | one of `FALLBACK_KEYS` (`'procedural-car'`: the existing procedural player car) |
-| `decoders` | subset of `DECODERS` (`['meshopt']`) |
+| `decoders` | unique subset of `DECODERS` (`['meshopt', 'ktx2']`); a GLB requiring `KHR_texture_basisu` without `'ktx2'` is `invalid` |
 | `budgets` | `triangles`, `bytes` positive integers; `textureMaxPx` integer `>= 0` (`0` = no textures) |
 
 The coordinate system is Y-up with the nose pointing along -Z, in meters (spec §Asset manifest). Textures: `map` and `emissiveMap` are sRGB and every other texture is linear. The pipeline check enforces this, because GLTFLoader already assigns color spaces.
@@ -43,7 +45,7 @@ handle.release(): void        // idempotent
 
 The injectable `fetch`, `manifest` and `loadMeshopt` exist only so the module can be unit-tested in Node. Production passes `baseUrl` and nothing else.
 
-- **One backend.** The module holds exactly one `new GLTFLoader(`. There is no `KTX2Loader` or `DRACOLoader`, and no `WebGLRenderer` is created or received. Shader warmup belongs to the world adapter, which calls `renderer.compileAsync(scene, camera)` with the instance added before the Garage or race is shown, never mid-race.
+- **One backend.** The module holds exactly one `new GLTFLoader(`. It never constructs a `KTX2Loader` or `DRACOLoader`, and no `WebGLRenderer` is created or received. KTX2 comes from the injected `loadKtx2()` (memoised per cache; rejection → `decoder-unavailable`); the world builds one `KTX2Loader` per renderer (`createKtx2Provider`, transcoder at `BASE_URL + 'basis/'`, `public/basis/` byte-identical to three's copy). Shader warmup belongs to the world adapter, which calls `renderer.compileAsync(scene, camera)` with the instance added before the Garage or race is shown, never mid-race.
 - **Decoders are opt-in.** `setMeshoptDecoder` is called only when the entry lists `'meshopt'`. `loadMeshopt()` (default: dynamic import + `await MeshoptDecoder.ready`) runs at most once per cache. If it rejects, the result is fallback `decoder-unavailable`.
 - **URLs.** The fetch URL is `modelUrl(lod?.url ?? entry.url, baseUrl)`. `quality: 'low'` picks the low LOD when one exists, otherwise the main URL. The cache key is `id` plus the resolved URL.
 - **Dedupe.** Concurrent and later loads of the same key share one fetch and one parse while the entry is alive.
@@ -82,7 +84,7 @@ The commands run from the repo root. Blender comes from `BLENDER_BIN`, defaultin
 
 1. **Master:** `$BLENDER_BIN --background --factory-startup --python assets-src/<id>/build.py` writes `assets-src/<id>/<id>.blend` deterministically: fixed object names, no random seed, and no file paths written into the model.
 2. **Export:** `node scripts/assets/export-glb.mjs <id>` runs Blender on the `.blend` with `scripts/assets/export_glb.py`. It writes a raw GLB to an OS temp directory, never into the repo.
-3. **Optimize:** `node scripts/assets/optimize-glb.mjs <id>` runs `npx --no-install gltf-transform optimize <raw> <out> --compress meshopt --texture-compress false --flatten false --join false --palette false --simplify false --instance false --prune false`. Each `false` keeps named nodes, empty pivots and materials intact. The defaults would flatten and join nodes, merge materials into palettes, and prune empty leaves.
+3. **Optimize:** `node scripts/assets/optimize-glb.mjs <id>` runs `npx --no-install gltf-transform optimize <raw> <out> --compress meshopt --texture-compress false --flatten false --join false --palette false --simplify false --instance false --prune false`. Each `false` keeps named nodes, empty pivots and materials intact. The defaults would flatten and join nodes, merge materials into palettes, and prune empty leaves. Entries listing `'ktx2'` first get one KTX2 pass per slot (needs KTX-Software `ktx` on PATH), **before** meshopt so meshes are not decoded and re-quantized: `uastc --slots=<slot> --level=2 --zstd=18` for normal, occlusion (plus `--rdo`) and metallicRoughness; `etc1s --slots=<slot>` for baseColor and emissive. Options use the `--opt=value` form (`--opt value` after `--slots` fails), and one pass per slot (a `{a,b}` glob converted only one slot). check-glb also enforces `textureMaxPx` and KTX2 transfer functions (colour slots sRGB, data slots linear).
 4. **Integrity:** `node scripts/assets/check-glb.mjs <id>` loads the optimized GLB with three's GLTFLoader and MeshoptDecoder, in Node with no new dependency. It exits nonzero unless all of these hold:
    - triangles `<= budgets.triangles`
    - bytes `<= budgets.bytes`
