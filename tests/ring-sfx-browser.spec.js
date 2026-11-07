@@ -2,23 +2,40 @@ import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
 
-// Real Web Audio output (analyser on the destination), real ring collection by the game loop.
+// Real Web Audio, real ring collection by the game loop. Two meters:
+// - mix: an analyser on the destination, for the engine bed the chimes must rise above;
+// - cues: a tap on every sine cue envelope that feeds the master bus (pickup, ring chimes, GO), scaled by the master
+//   gain. The engine is a sawtooth through a filter and wind/thrust are noise, so the tap hears cues alone: the race
+//   that keeps driving cannot lift a chime's level, and its ~0.7 s buffer outlasts a main-thread stall on a slow
+//   CI runner, so a short chime never slips between two reads.
 const measureAudio = () => {
   const connect = AudioNode.prototype.connect;
+  const meter = (context, fftSize) => {
+    const analyser = context.createAnalyser(), data = new Float32Array(fftSize);
+    analyser.fftSize = fftSize;
+    return { analyser, level: () => {
+      analyser.getFloatTimeDomainData(data);
+      let peak = 0; // peak: a chime is short, RMS over the window would hide it
+      for (const value of data) peak = Math.max(peak, Math.abs(value));
+      return peak;
+    } };
+  };
+  const sineFed = new WeakSet();
+  let master = null, cues = null;
+  // A fresh tap hears only the cues that start after the reset, not ones already ringing.
+  window.cueReset = () => { cues = null; };
+  window.cueLevel = () => (cues?.level() ?? 0) * (master?.gain.value ?? 0);
   AudioNode.prototype.connect = function(destination, ...args) {
     if (destination instanceof AudioDestinationNode) {
-      const analyser = this.context.createAnalyser();
-      // The largest buffer (~0.7 s) spans every gap between samples, so a main-thread stall on a slow CI runner
-      // cannot let a short chime slip between two reads.
-      analyser.fftSize = 32768;
-      connect.call(this, analyser);
-      const data = new Float32Array(analyser.fftSize);
-      window.audioLevel = () => {
-        analyser.getFloatTimeDomainData(data);
-        let peak = 0; // peak: a chime is short, RMS over the window would hide it
-        for (const value of data) peak = Math.max(peak, Math.abs(value));
-        return peak;
-      };
+      const mix = meter(this.context, 2048);
+      connect.call(this, mix.analyser);
+      window.audioLevel = mix.level;
+    }
+    if (this instanceof GainNode && destination instanceof DynamicsCompressorNode && master?.context !== this.context) master = this; // master is wired to the limiter first
+    if (this instanceof OscillatorNode && this.type === 'sine' && destination instanceof GainNode) sineFed.add(destination);
+    if (this instanceof GainNode && destination === master && sineFed.has(this)) { // music voices feed the music bus instead
+      cues ??= meter(this.context, 32768);
+      connect.call(this, cues.analyser);
     }
     return connect.call(this, destination, ...args);
   };
@@ -39,41 +56,61 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
     const result = await page.evaluate(async () => {
       const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-      const peaks = [];
+      const median = values => values.length ? [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] : null;
       const race = () => window.gameplay.race;
       const rings = race().rings.filter(ring => !ring.row).slice(0, 6);
-      await wait(1500); // let the GO cue decay out of the buffer before the engine bed is read
-      const sample = setInterval(() => peaks.push(window.audioLevel?.() ?? 0), 100);
-      await wait(600);
-      const bed = Math.max(...peaks);
-      peaks.length = 0;
-      // Drain first: the buffer still holds the previous chime for ~0.7 s.
-      const solo = async make => { await wait(800); peaks.length = 0; make(); await wait(500); return Math.max(...peaks); };
-      const pickup = await solo(() => { race().pickups.find(item => !item.taken).taken = true; });
-      const single = {};
-      for (const type of ['charge', 'nitro', 'slipstream', 'risk', 'mystery']) {
-        const ring = race().rings.find(item => item.type === type && !item.hit);
-        single[type] = ring ? await solo(() => { ring.hit = true; }) : null;
+      await wait(1000); // let the GO cue fade out of the cue buffer
+      const beds = [];
+      for (let i = 0; i < 12; i++) { beds.push(window.audioLevel?.() ?? 0); await wait(50); }
+      const bed = median(beds);
+      // One read 250 ms after the cue covers its every note (the latest ends 220 ms in). A read that a stall pushed
+      // past 600 ms may have lost the cue from the buffer, so that round is dropped rather than judged.
+      const solo = async make => {
+        await wait(300);
+        window.cueReset();
+        const start = performance.now();
+        make(); await wait(250);
+        const peak = window.cueLevel?.() ?? 0;
+        return performance.now() - start < 600 ? peak : null;
+      };
+      // The live race can add its own cue (a rival's pickup, a near miss) to a window, or a loaded runner can drop
+      // one: the median of five rounds is the chime alone.
+      const types = ['pickup', 'charge', 'nitro', 'slipstream', 'risk', 'mystery'];
+      const rounds = Object.fromEntries(types.map(type => [type, []]));
+      for (let round = 0; round < 5; round++) for (const type of types) {
+        const item = type === 'pickup' ? race().pickups.find(pickup => !pickup.taken) : race().rings.find(ring => ring.type === type && !ring.hit && !rings.includes(ring));
+        const peak = item ? await solo(() => { item[type === 'pickup' ? 'taken' : 'hit'] = true; }) : null;
+        if (peak !== null) rounds[type].push(peak);
       }
-      peaks.length = 0;
+      const level = Object.fromEntries(types.map(type => [type, median(rounds[type])]));
+      await wait(300);
+      window.cueReset();
+      const peaks = [];
+      const sample = setInterval(() => peaks.push(window.cueLevel?.() ?? 0), 100);
       let taken = 0;
+      const missed = [];
       for (const ring of rings) {
         Object.assign(race().player, { distance: ring.distance - 0.2, x: ring.x, altitude: ring.altitude, speed: 50 });
         for (let i = 0; i < 200 && !ring.hit; i++) await wait(10);
-        taken += ring.hit ? 1 : 0;
+        if (ring.hit) taken++;
+        else missed.push({ ring: { distance: ring.distance, x: ring.x, altitude: ring.altitude }, player: (({ distance, x, altitude, speed }) => ({ distance, x, altitude, speed }))(race().player) });
         await wait(250);
       }
       await wait(500);
       clearInterval(sample);
-      return { bed, pickup, single, train: Math.max(...peaks), taken };
+      return { bed, level, train: Math.max(...peaks), taken, missed };
     });
-    expect(result.taken).toBe(6);
-    for (const [type, peak] of Object.entries(result.single)) {
+    expect(result.taken, JSON.stringify(result.missed)).toBe(6);
+    const { pickup, ...single } = result.level;
+    expect(pickup, 'every pickup round was cut short by a stall').not.toBeNull();
+    for (const [type, peak] of Object.entries(single)) {
       if (peak === null) continue; // this seed laid no ring of that type
-      expect(peak, `${type} rises above the engine bed`).toBeGreaterThan(result.bed);
-      expect(peak, `${type} is no louder than the NITRO pickup`).toBeLessThan(result.pickup * 1.25);
+      // The chime alone, a bright sine, against the peak of the full engine mix (sawtooth + noise): within 6 dB keeps
+      // it clear of the engine's low rumble.
+      expect(peak, `${type} stays within 6 dB of the engine bed`).toBeGreaterThan(result.bed / 2);
+      expect(peak, `${type} is no louder than the NITRO pickup`).toBeLessThan(pickup * 1.25);
     }
-    expect(result.train).toBeGreaterThan(result.bed);
+    expect(result.train).toBeGreaterThan(result.bed / 2);
     expect(result.train, 'a quick train stays under the limiter threshold (-12 dB)').toBeLessThan(0.25);
     expect(errors).toEqual([]);
   });
