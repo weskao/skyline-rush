@@ -55,31 +55,34 @@ const keyboardRoll = async page => {
   // Release FLY at a safe height before the steering flick. The real engine
   // allows a roll while gliding; holding thrust through Playwright assertions
   // can lift the car too high for a soft landing on slow WebGL runners.
-  await page.waitForFunction(
-    () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
-    null, { polling: 'raf' },
-  );
+  await page.waitForFunction(() => {
+    if (Number(document.querySelector('#altitude')?.textContent) <= 1.5) return false;
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space' }));
+    return true;
+  }, null, { polling: 'raf' });
   await page.keyboard.up('Space');
   await page.keyboard.down('a');
   // A roll needs the opposite press within TRICK_FLICK_WINDOW (0.3 s) of the first: switch keys inside the page on
   // the frame the coach confirms the first press, since a Node → CDP round trip on a loaded runner outlasts it.
   await page.waitForFunction(() => {
-    if (!document.querySelector('#tutorial-instruction')?.textContent?.includes('First airborne steering press detected')) return false;
-    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyA' }));
-    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyD' }));
+    const text = document.querySelector('#tutorial-instruction')?.textContent ?? '';
+    if (text.includes('First airborne steering press detected')) {
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyA' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyD' }));
+    }
+    // Observe the short spinning phase before another Node/CDP round trip can miss it.
+    if (!text.includes('BARREL ROLL spinning')) return false;
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyD' }));
     return true;
   }, null, { polling: 'raf' });
   await page.keyboard.up('a');
-  await page.keyboard.down('d');
-  await page.waitForFunction(
-    () => document.querySelector('#tutorial-instruction')?.textContent?.includes('BARREL ROLL spinning'),
-    null, { polling: 'raf' },
-  );
   await page.keyboard.up('d');
   await step(page, 'nitro');
 };
 
 const keyboardToNitro = async page => {
+  // Ten engine-judged lessons need the same whole-journey budget as touch practice on software WebGL.
+  test.setTimeout(ciTimeout(120000));
   await keyStep(page, 'w', 'left');
   await keyStep(page, 'a', 'right');
   await keyStep(page, 'd', 'brake');
