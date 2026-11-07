@@ -111,6 +111,7 @@ production renderer, physics or sibling branches during a docs-only pass.
 | `npm run test:layout` | Home-screen layout browser tests |
 | `make verify` | Full local gate: unit, build, browser, World Tour long-run |
 | `make deploy` | Trigger CI GitHub Pages deploy of remote `main` |
+| `make deploy-netlify` | Build this checkout, deploy to Netlify production, live check, Telegram link |
 
 ## Branches
 
