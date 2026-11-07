@@ -6,7 +6,7 @@ import { defaultGarageCamera } from '../src/garage-camera.ts';
 import { vfxSettings } from '../src/vfx-settings.ts';
 
 test('Studio preview uses the same real Aero renderer and cosmetics as the race scene', () => {
-  const stage = createGarageStage(new THREE.Texture());
+  const stage = createGarageStage(new THREE.Texture(), new THREE.Texture());
   const camera = new THREE.PerspectiveCamera(49, 1.5, .1, 500);
   const colors = { thruster: 'thruster-ion', airflow: 'airflow-slipstream', 'nitro-trail': 'nitro-trail-cyan', 'launch-flare': 'launch-flare-blue' };
   stage.setSkins(colors);
@@ -34,7 +34,7 @@ test('Studio preview uses the same real Aero renderer and cosmetics as the race 
 });
 
 test('garage camera fit and full-car bounds ignore cosmetic VFX tube geometry', () => {
-  const stage = createGarageStage(new THREE.Texture());
+  const stage = createGarageStage(new THREE.Texture(), new THREE.Texture());
   const camera = new THREE.PerspectiveCamera(49, .65, .1, 500);
   stage.update(camera, defaultGarageCamera(), 1, false);
   const before = stage.inspectBounds(camera);

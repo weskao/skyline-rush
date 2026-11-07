@@ -33,6 +33,8 @@ export interface TrackConfig {
   layoutVersion?: number;
   /** Rival top-speed multiplier for this track (default 1); a long course where throttle alone would win sets it higher. */
   rivalPace?: number;
+  /** Optional per-grid-slot throttle pace gap. Normal AI keeps its usual skill unless this course needs more field separation. */
+  rivalSpread?: number;
 }
 export interface PlayerSnapshot {
   speed: number;

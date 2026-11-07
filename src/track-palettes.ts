@@ -10,6 +10,9 @@ export const TRACK_PALETTES = {
   spiral: { top: '#050b25', horizon: '#55348c', fog: '#302657', rock: '#29345b', road: '#111827', ground: '#161d49', rail: '#00e5ff', sun: '#a855f7', warmth: 0 },
   'harbor-circuit': { top: '#477d98', horizon: '#e6c6a1', fog: '#a4c0bd', rock: '#587b70', road: '#263941', ground: '#537d70', rail: '#eea966', sun: '#ffe3ba', warmth: .35 },
   // Same night palette as the Frostbite showroom: cobalt fog, moonlight, cyan crystal glow.
+  // Night storm city, same palette as the Stormline showroom: midnight fog, wet asphalt, cyan rails, magenta glow.
+  'stormline-megacity': { top: '#050a1c', horizon: '#3a2466', fog: '#141c38', rock: '#1b2541', road: '#11182a', ground: '#080f24', rail: '#2cc9ea', sun: '#b48cff', warmth: 0 },
+  'volcanic-crown': { top: '#1b0c12', horizon: '#6a2821', fog: '#462024', rock: '#332328', road: '#29252a', ground: '#24161a', rail: '#ff723d', sun: '#ffc58e', warmth: .7 },
   'frostbite-canyon': { top: '#071433', horizon: '#1d4f7a', fog: '#24476e', rock: '#8fb0cc', road: '#4d6b91', ground: '#bcd4ee', rail: '#3fe3ff', sun: '#7fb6ff', warmth: 0 },
   ...WORLD_THEMES,
 };

@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import productionConfig from '../vite.config.js';
 import unlockedConfig from '../vite.unlocked.config.js';
-import { availableTracks as devTracks, availablePaints as devPaints } from '../src/access/dev-unlocked.ts';
-import { availableTracks as prodTracks, availablePaints as prodPaints } from '../src/access/production.ts';
+import { availableTracks as devTracks, availablePaints as devPaints, isUpcomingEnterable as devEnterable } from '../src/access/dev-unlocked.ts';
+import { availableTracks as prodTracks, availablePaints as prodPaints, isUpcomingEnterable as prodEnterable } from '../src/access/production.ts';
 import { RACE_TRACKS } from '../src/game.js';
 import { PAINTS } from '../src/appearance.ts';
 
@@ -17,6 +17,12 @@ test('local-only build exposes every track and paint without writing storage', (
     assert.deepEqual(prodTracks(), ['coast']);
     assert.deepEqual(prodPaints(0), ['pearl']);
     assert.deepEqual(prodPaints(24), Object.keys(PAINTS));
+    // Gated CourseGraph sprints enter only through the dev-unlocked card, never the track catalog.
+    for (const id of ['frostbite-canyon', 'stormline-megacity', 'volcanic-crown']) {
+      assert.ok(!devTracks().includes(id) && !prodTracks().includes(id), id);
+      assert.equal(devEnterable(id), true, id);
+      assert.equal(prodEnterable(id), false, id);
+    }
   } finally {
     if (original) Object.defineProperty(globalThis, 'localStorage', original);
     else delete globalThis.localStorage;

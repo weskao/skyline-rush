@@ -148,9 +148,6 @@ export function createInteractiveTutorial() {
           // Practice-only retry after a spent, incomplete sprint: never mint
           // a charge in normal races or while the NITRO key is still held.
           car.nitro = 1;
-          // A retry is actionable immediately; stale praise from the previous lesson
-          // must not hide its READY cue after the player releases NITRO.
-          celebrate = 0;
           maneuver = createTutorialManeuverState('nitro', snapshot());
         }
       }

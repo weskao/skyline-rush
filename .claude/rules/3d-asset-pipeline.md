@@ -20,5 +20,5 @@ Before any Blender asset, GLB import, texture, loader, compression or asset pipe
 4. Until Three.js is tested at r186.1, installed r180 APIs take priority over r186-targeted Skill examples. Then follow the r180→r186 migration plan. Do not implicitly replace WebGLRenderer with WebGPURenderer/TSL.
 5. Require valid licensed source, editable Blender masters, stable named pivots/anchors, glTF manifest, PBR colorspace checks, texture budgets, LOD, asset lifecycle and fallback. Do not move physics, road frames or VFX ports for artistic reasons.
 6. 2D icon 3× transparency/margin rules in .claude/rules/raster-artwork.md are separate from 3D mesh and PBR texture resolutions.
-7. Record RED→GREEN regression tests, frame p50/p95, shader compile/NaN checks, real desktop/mobile WebGL captures, exact-HEAD full CI and art sign-off. Never call a concept illustration an actual in-game screenshot.
+7. Record RED→GREEN regression tests, frame p50/p95, shader compile/NaN checks, real desktop/mobile WebGL captures, exact-HEAD full CI and art sign-off. Never call a concept illustration an actual in-game screenshot. The target-look concept board is docs/designs/3d-pipeline/concept-art/skyline-rush-3d-target-concept-board.jpeg (mood reference only; see its README).
 8. No PR, deploy, branch reset, force push or merge into develop/main without owner approval.

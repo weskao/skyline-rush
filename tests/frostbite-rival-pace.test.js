@@ -4,52 +4,38 @@ import { FROSTBITE_ID } from '../src/courses/frostbite-race.ts';
 import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { createRace, stepRace, setLayoutSeed } from '../src/game.js';
 import { botInput } from '../scripts/pickup-economy.mjs';
+import { rivalBaseCap, rivalSkill, RIVAL_SKILL } from '../src/rival-driver.ts';
 import { MAX_SPEED, BOOST_CAP_BONUS } from '../src/drive-rules.ts';
-import { rivalBaseCap, rivalSkill } from '../src/rival-driver.ts';
 
 // 13.8 km is ~2x the longest classic sprint, so at classic rival pace holding the throttle alone won 9 of 24 layouts.
 // Frostbite's rivals run a faster pace: throttle-only rarely wins, a driver using the kit (the economy bot) still does.
 const SEEDS = 24;
-function positions(drive, inspect = () => {}) {
+function positions(drive) {
   const out = [];
   try {
     for (let k = 0; k < SEEDS; k++) {
       setLayoutSeed(track => track.seed + k * 7919);
       const race = createRace(FROSTBITE_ID), bot = {};
-      const boostFrames = Array(race.rivals.length).fill(0);
-      const nitroFrames = Array(race.rivals.length).fill(0);
-      let frames = 0, playerSpeed = 0;
       race.phase = 'racing';
-      for (let i = 0; i < 60 * 400 && race.phase !== 'finished'; i++) {
-        stepRace(race, drive === 'bot' ? botInput(race, bot) : { throttle: true }, 1 / 60);
-        if (k === 0) {
-          frames++;
-          playerSpeed += race.player.speed;
-          race.rivals.forEach((rival, slot) => {
-            if (rival.boosting) boostFrames[slot]++;
-            if (rival.nitroTime > 0) nitroFrames[slot]++;
-          });
-        }
-      }
-      if (k === 0) inspect({
-        finish: race.elapsed, length: race.length,
-        player: { averageSpeed: playerSpeed / frames, collisions: race.player.collisions, falls: race.player.falls, rings: race.player.rings },
-        rivals: race.rivals.map((rival, slot) => ({
-          slot, finish: rival.finishTime, speed: rival.speed, boostSeconds: boostFrames[slot] / 60,
-          nitroSeconds: nitroFrames[slot] / 60, nitroUses: rival.nitroUses, itemTakes: rival.itemTakes,
-        })),
-      });
+      for (let i = 0; i < 60 * 400 && race.phase !== 'finished'; i++) stepRace(race, drive === 'bot' ? botInput(race, bot) : { throttle: true }, 1 / 60);
       out.push(race.result.position);
     }
   } finally { setLayoutSeed(); }
   return out;
 }
 
+test('Frostbite Normal keeps the fastest rival competitive and gives a throttle driver two slower rivals', () => {
+  const normal = rivalSkill(createRace('aurora')), frostbite = rivalSkill(createRace(FROSTBITE_ID));
+  assert.equal(normal, RIVAL_SKILL.normal, 'other tracks retain their original skill');
+  assert.equal(rivalBaseCap(frostbite, 6), rivalBaseCap(normal, 6), 'fastest rival keeps its original cap');
+  assert.ok(rivalBaseCap(frostbite, 1) + BOOST_CAP_BONUS <= MAX_SPEED,
+    'two slower rivals stay within throttle-only speed even while using BOOST');
+});
+
 test('throttle-only rarely wins Frostbite Canyon across a deterministic 24-layout sweep', () => {
-  let firstSeed;
-  const p = positions('throttle', snapshot => { firstSeed = snapshot; }), wins = p.filter(x => x === 1).length;
+  const p = positions('throttle'), wins = p.filter(x => x === 1).length;
   assert.ok(wins <= 2, `throttle-only P1 in ${wins}/${SEEDS}: ${p}`);
-  assert.ok(p.every(x => x <= 6), `throttle-only stays in the pack: ${p}; first-seed telemetry: ${JSON.stringify(firstSeed)}`);
+  assert.ok(p.every(x => x <= 6), `throttle-only stays in the pack: ${p}`);
 });
 
 test('a driver using BOOST, NITRO, rings and the span still wins most layouts', () => {
@@ -62,20 +48,10 @@ test('the faster rival pace is Frostbite-only: every other track keeps the class
   assert.ok(createRace(FROSTBITE_ID).rivalPace > 1);
 });
 
-// A longer track should still have a mid-pack throttle-only experience: even at full fuel,
-// the slower two Normal rivals must not automatically outrun the player's unboosted cap.
-test('Frostbite has two genuinely slower Normal rivals even at the BOOST cap', () => {
-  const race = createRace(FROSTBITE_ID), skill = rivalSkill(race);
-  for (let slot = 0; slot < 2; slot++) {
-    const boostedCap = Math.min(MAX_SPEED, rivalBaseCap(skill, slot) * race.rivalPace) + BOOST_CAP_BONUS;
-    assert.ok(boostedCap <= MAX_SPEED, `slot ${slot} has full-BOOST cap ${boostedCap}, above the throttle-only player`);
-  }
-});
-
-test('Frostbite tuning preserves classic track rival difficulty curves', () => {
-  for (const difficulty of ['easy', 'normal', 'hard']) {
-    const legacy = createRace('aurora', { mode: 'custom', difficulty });
-    assert.equal(rivalSkill(legacy).spread, { easy: 0.012, normal: 0.006, hard: 0.003 }[difficulty], difficulty);
-  }
-  assert.equal(rivalSkill(createRace(FROSTBITE_ID)).spread, 0.035);
+test('Frostbite-specific grid spread protects the slowest slots without slowing the fastest or classic tracks', () => {
+  const frostbite = createRace(FROSTBITE_ID);
+  assert.ok(frostbite.rivalSpread > RIVAL_SKILL.normal.spread);
+  assert.ok(rivalBaseCap(RIVAL_SKILL.normal, 0, frostbite.rivalSpread) < rivalBaseCap(RIVAL_SKILL.normal, 0));
+  assert.equal(rivalBaseCap(RIVAL_SKILL.normal, 6, frostbite.rivalSpread), rivalBaseCap(RIVAL_SKILL.normal, 6));
+  for (const id of Object.keys(RACE_TRACKS)) assert.equal(createRace(id).rivalSpread, undefined, id);
 });

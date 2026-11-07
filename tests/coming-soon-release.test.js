@@ -40,8 +40,8 @@ test('all-unlocked Make variants still cannot unlock a registered cover-only cou
 });
 
 test('an approved playable preview with a real runtime is playable in dev-unlocked only', () => {
-  // Readiness 'playable' + a resolvable runtime is the only approval; Frostbite is the sole approved card.
-  assert.deepEqual(IDS.filter(id => upcomingReadiness(id) === 'playable'), ['frostbite-canyon']);
+  // Readiness 'playable' + a resolvable runtime is the only approval; Frostbite and Stormline are the approved cards.
+  assert.deepEqual(IDS.filter(id => upcomingReadiness(id) === 'playable'), ['stormline-megacity', 'frostbite-canyon']);
   RACE_TRACKS['dune-tempest'] = RACE_TRACKS.coast; // a merged runtime without readiness approval
   const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
   Object.defineProperty(globalThis, 'localStorage', {
