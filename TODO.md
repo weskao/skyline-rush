@@ -196,7 +196,13 @@ Root cause: Coast pinned every gate to x 2.5 (lane 3); other tracks drew x unifo
   lanes) plus `ring-rows` expecting a middle-lane train; test setups fixed, assertions unchanged. Every other spec passes
   alone (79 + Garage 46). Stress (`--repeat-each=8 --workers=4 --retries=0`, ring-rows + handoff + item-feedback):
   7/40 fail on this branch and 7/40 on the `develop` base — a load flake already on `develop`, not caused by this change.
-- [ ] Real WebGL screenshots of edge-lane rings, trains and catch-up items reviewed by eye.
+- [x] Real WebGL screenshots reviewed by eye on `develop` `d4b1796f`, desktop 1440×900 and phone 390×844 (Playwright
+  `gameplayPage`, a throwaway spec, not committed). Coast, at the track's own layout seed: an edge-lane ring
+  (x −7.5, 318 m) sits in the left lane at road height, and a 6-ring train runs down lane x 7.5. Classic Tokyo with
+  every rival held 300 m ahead: catch-up items spawned (2–6 in about 20 s; a NITRO ring at x 7.5 / 2.5 m and NITRO cans).
+  When first seen they were still 918–1027 m ahead, past the 900 m draw range, and up close they look like ordinary
+  rings and cans. Watching an item come into view during a live drive was not recorded. Isolated shots
+  (other items hidden) confirmed which items were catch-up ones. Not checked: phone landscape and real touch hardware.
 - [ ] Exact-HEAD full CI after merge to `develop` (needs user approval).
 
 ## Stage 2 Track 06 — Frostbite Canyon graph, gated live preview and cover — 2026-11-03
@@ -320,6 +326,79 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
 **8 actual files:** `mission-race@3x.webp`, `mission-time@3x.webp`, `mission-drift@3x.webp`, `mission-combo@3x.webp`, `trophy-bronze@3x.webp`, `trophy-silver@3x.webp`, `trophy-gold@3x.webp`, `trophy-platinum@3x.webp` (all **288×288 physical pixels**; set **96×96 CSS px** on use, e.g. `<img width="96" height="96">` plus `width:96px;height:96px;object-fit:contain`). Use `import.meta.env.BASE_URL` when copying approved assets into `public/feature-assets/garage-rewards-and-missions/raster/` to ensure GitHub Pages subpath support. Do **not** resize the original images to 1×: only the rendered CSS box is 1×. The PNG originals/source archive remain in ChatGPT File Library, not the Git branch.
 
 **Next implementer's mandatory sequence:** (1) Sync latest `develop` only when branch dependencies/gates permit (never treat historical `main` instructions as the current integration target); (2) inspect the actual 8 WebPs and existing icons, reject glow halos / baked fake balances / illegible cutouts and select only suitable files; (3) fetch `origin/feature/3x-ui-materials` and copy approved Git blobs from `docs/designs/3x-asset-library/webp/garage-rewards-and-missions/` to runtime public path; (4) write RED BDD/tests for 1× layout, missing-image text fallback, en/zh-TW, verified-only rewards (no fake/pending payout), account isolation and retry idempotency; (5) implement Vue 3/TS at 96 CSS px and verify build/CI/WebGL and accessibility. Image existence does **not** approve settlement, create credits, make missions functional, or satisfy the rest of Wave 3.
+## Concept-to-WebGL visual parity gate for proposed ten new tracks (2026-11-02)
+
+**Design authority:** [JPEG → real WebGL visual acceptance gate](docs/designs/new-tracks/visual-acceptance-gate.md) (Stage 1 + Stage 2); invoked from [CLAUDE.md](CLAUDE.md). Existing 10 sprint courses and the circuit are unchanged; **all ten proposed new maps are point-to-point**, never laps.
+
+- [x] Link real Stage 1 & Stage 2 committed JPEGs and their route SVGs through the single visual gate.
+- [ ] For each of 10 proposed courses: confirm exact committed reference images, define 2 locked ground/aerial camera poses, biome palette, 3 visual anchors and safe route split, then approve blockout before full art.
+- [ ] For each course: record actual desktop 1440×900 + phone 390×844 WebGL screenshots, ground and aerial (≥4 captures/course, 40 baseline images), plus actual weather and Low/Medium/High + Reduced Motion reviews.
+- [ ] For each course: compare silhouette, road/terrain, vehicle scale, lighting/particles, split/landing readability and collision/UI visibility; create `artifacts/new-tracks/visual-evidence/<id>/<id>-review.md` with PASS/FAIL/APPROVED DEVIATION and rationale.
+- [ ] For each course: require safe ground-only finish, real split/merge graph, checkpoint ordering, 8-car AI, Ghost parity, variable dt tests, mobile readability, performance p50/p95 and 3–5 minute median evidence before “completed”.
+- [ ] `make verify` and exact-HEAD full GitHub CI, plus separate human visual acceptance, are still pending; this branch remains planning/art-only. Do not merge into `develop` without later authorization.
+
+---
+
+## Future New Tracks — Stage 2 / Second Set of Five (2026-11-02) [PLANNING ONLY]
+
+**Scope:** five *additional* point-to-point courses beyond Stage 1's five, for ten proposed new maps in total. All ten planned additions use separate START and FINISH; no laps. The existing ten published sprint tracks and Harbor Circuit remain unchanged.
+**Branch:** `feature/epic-multiroute-longform-tracks`. **JPEG gallery:** [Stage 2 README](docs/designs/new-tracks/stage-2/README.md) · **spec:** [Stage 2 design](docs/superpowers/specs/2026-11-02-stage2-five-longform-tracks-design.md) · **plan:** [Stage 2 TDD plan](docs/superpowers/plans/2026-11-02-stage2-five-longform-tracks.md).
+
+- [x] **Stage 1 10 original concept scene crops:** converted PNG → JPEG, retained image content/dimensions, and actually committed to [Stage 1 JPEG gallery](docs/designs/new-tracks/source-concept-jpeg/) on this branch. Historical PNG originals are *not* in GitHub and are no longer a prerequisite because JPEG was explicitly requested.
+- [x] **Stage 2 10 JPEG scene concept images:** five maps × ground and aerial view, physically committed to [source-concept-jpeg](docs/designs/new-tracks/stage-2/source-concept-jpeg/). Derived from new AI composite by crop + 3× resampling for viewing; upsampling does not invent original high-detail information.
+- [x] **Stage 2 five non-loop route schematics** at [route-schematics](docs/designs/new-tracks/stage-2/route-schematics/), with different START/FINISH and optional aerial alternative.
+- [x] **Stage 2 documentation:** [Markdown image gallery](docs/designs/new-tracks/stage-2/README.md), [visual-fidelity checklist](docs/designs/new-tracks/stage-2/visual-fidelity.md), [image/track manifest](docs/designs/new-tracks/stage-2/concept-manifest.json), [SDD design](docs/superpowers/specs/2026-11-02-stage2-five-longform-tracks-design.md) and [TDD implementation plan](docs/superpowers/plans/2026-11-02-stage2-five-longform-tracks.md).
+- [ ] **Dependency gate:** Stage 1 core CourseGraph, world-space frames, optional no-clamp natural offroad terrain, multi-branch ranking/checkpoints, AI/Ghost/finish integrity, weather and render tiers must be implemented and passing CI **before Stage 2 code development**.
+- [ ] **S2-P1 極地冰原峽谷 / Frostbite Canyon:** 13.8 km, 3:20–4:40; ice fissure canyon, switchbacks, safe snow valley vs glacial aerial bypass; ice dust / whiteout. TDD, real WebGL visual parity and timing are still pending.
+- [ ] **S2-P1 深海遺跡城 / Abyssal Ruins:** 15.2 km, 3:45–5:00; underwater-looking sealed roads and transparent tunnels, coral ruins, upper-dome alternative, caustics and bubbles. No added swimming physics.
+- [ ] **S2-P1 風之高原 / Windspire Highlands:** 14.5 km, 3:25–4:45; broad grassy terrain and windmills, cliff hairpins and crosswind alternative over bridges; predictable gust cues.
+- [ ] **S2-P2 水晶星塵谷 / Crystal Stardust Valley:** 13.6 km, 3:20–4:40; crystal canyon hairpins, prismatic arches, elevated shard route and restrained bloom/particle budgets.
+- [ ] **S2-P2 時空斷層 / Chrono Rift:** 16 km, 3:50–5:00; fractured sky stone road, glowing ancient rings, optional flight shortcut and timed visual cues only, **no unplanned teleport/time-rewind gameplay**.
+- [ ] **Release validation:** each map ≥2 major hairpins, ≥3 viable branch decisions, safe all-ground finish, ≥1 air/ground split, fair 8-car AI, deterministic weather, old-map parity, 30/60/120 Hz tests, 10 real ground/aerial WebGL captures × desktop/mobile with JPEG comparisons, 20+ timed finishes/map, Low/Medium/High + Reduced Motion, `make verify`, exact-HEAD CI. Do not mark passed without evidence.
+- [ ] Stage 2 development merges into `develop` only on explicit user authorization; this current branch remains documentation/art-only.
+
+---
+
+## Proposed Epic — Multi-route Long-form World Expansion (2026-11-02) [PLANNING ONLY]
+
+**Branch:** `feature/epic-multiroute-longform-tracks` (created from `develop` SHA `12264f74f0f6452347d0183937391da620d10343`; DO NOT merge or release yet).
+**Spec:** [2026-11-02-multiroute-longform-world-expansion-design.md](docs/superpowers/specs/2026-11-02-multiroute-longform-world-expansion-design.md)
+**Execution plan:** [2026-11-02-multiroute-longform-world-expansion.md](docs/superpowers/plans/2026-11-02-multiroute-longform-world-expansion.md).
+**Scope:** future implementation only. Current ten sprint tracks and Harbor Circuit unaffected. All estimates unverified.
+
+### Route topology and concept-art reference clarification (2026-11-02)
+
+- [x] Store five [committed one-way route schematics](docs/designs/new-tracks/README.md), one per track; technical routes distinguish green START from red FINISH and ground/air forks.
+- [x] **User-confirmed topology (2026-11-02): ALL FIVE are single-finish point-to-point**, matching ten existing sprint tracks. No circuit layouts, no lap counting, no implicit conversion; dedicated circuit gameplay remains separate. Require distinct START != FINISH nodes and world-space positions.
+- [x] Commit **five original two-view SVG design boards** to [concept-art/](docs/designs/new-tracks/README.md), one board per track, with ground driving + aerial branch visuals and START/FINISH route; link exact paths from [visual-fidelity.md](docs/designs/new-tracks/visual-fidelity.md) and [concept-manifest.json](docs/designs/new-tracks/concept-manifest.json).
+- [x] **JPEG import requested instead of PNG:** the original 10 stage-one picture crops are converted and genuinely committed under [source-concept-jpeg](docs/designs/new-tracks/source-concept-jpeg/). Lossless original PNG bytes and the optional two overview PNG originals are not committed; the [PNG historical integrity manifest](docs/designs/new-tracks/png-source-import-manifest.md) remains available, but importing PNG is no longer a required stage gate.
+- [ ] During implementation, capture and compare 2 **actual WebGL** gameplay views/map × desktop and mobile against the committed two-view boards (and original PNGs when uploaded); preserve route openness, weather/landmarks, grounded/flying camera composition, visual fidelity, Low/Medium/High and Reduced Motion. Record PASS/FAIL/APPROVED DEVIATION per view.
+
+### Ten standalone concept previews (2026-11-02, planning-only)
+
+- [x] Publish **10 individual SVG conceptual images** (5 point-to-point maps × ground/aerial) on this branch under `docs/designs/new-tracks/concept-art/<track-id>-ground-view.svg` and `<track-id>-aerial-view.svg`. Each is a cropped vector view of its committed combined storyboard, not a runtime screenshot or the original AI-generated PNG.
+- [x] Update [GitHub image gallery](docs/designs/new-tracks/README.md), [visual fidelity and per-camera descriptions](docs/designs/new-tracks/visual-fidelity.md), and [machine-readable ten-image manifest](docs/designs/new-tracks/concept-manifest.json) with working relative paths. All five maps are **single-run point-to-point**; no laps.
+- [ ] **Original cinematic PNG source import remains separate:** 2 overview originals + 10 cropped high-detail PNGs are provided as a chat ZIP and documented with SHA-256 in [PNG import manifest](docs/designs/new-tracks/png-source-import-manifest.md), but the PNG files themselves are not yet committed. Preserve originals, do not claim images are in GitHub until uploaded and hash-verified.
+- [ ] Before implementing each new course, inspect both committed standalone SVG views, the full storyboard and corresponding original PNG source (when uploaded); capture matching actual WebGL ground/aerial screenshots and record scene and camera deviations.
+
+### Shared systems
+- [ ] M1 typed CourseGraph: real hairpins, U-turns, separate ground/air branch edges and convergent joins; arc-length route frames, route-aware AI, progress, finish, minimap, checkpoints, ghost/save versions.
+- [ ] M2 natural open terrain and opt-in no-clamp driving/flying, safe recovery and honest collision/landing surfaces; old `ROAD_LIMIT` tracks remain unchanged; anti-finish-skip checks.
+- [ ] M3 Dune Tempest playable 13.5 km vertical slice: open dunes, switchbacks, sandstorm and sky shortcut.
+- [ ] M4 zone-based seeded sandstorm/rain/ash/snow weather, wet/dry surface variants and event particles; Low/Medium/High, Reduced Motion and performance gates.
+- [ ] M5 remaining P1: Monsoon Ruins and Skyfall Archipelago.
+- [ ] M6 P2: Volcanic Crown and Stormline Megacity.
+- [ ] M7 median 3–5 min per new course with real timed-play samples, 8-car AI, both route choices, mobile/foldable UI, localization, saves, CI and manual visual QA.
+
+### Five proposed maps (no maps implemented)
+- [ ] **P1 Dune Tempest / 沙暴裂谷:** 13.5 km, target 3:20–4:40, dune/wadi/hairpins, ground vs jump over canyon, gust and sand particles.
+- [ ] **P1 Monsoon Ruins / 雨林失落神殿:** 12.5 km, target 3:10–4:40, wet jungle mud trails and river/temple hairpin, waterfall sky bridge, tropical thunderstorm.
+- [ ] **P1 Skyfall Archipelago / 浮空群島:** 16 km, target 3:50–5:00, floating island loops, ground bridge vs flight chain, cloud shear and waterfall particles.
+- [ ] **P2 Volcanic Crown / 熔火天脊:** 15 km, target 3:40–5:00, volcano caldera switchbacks, basalt offroad path vs ash-glide shortcut, embers/heat haze.
+- [ ] **P2 Stormline Megacity / 霓虹暴雨都市:** 14 km, target 3:20–4:40, multi-level interchanges, flooded street vs elevated flight viaduct, rain and wet neon reflections.
+
+**Exit criteria:** no mandatory-roadline visuals on natural surfaces; controlled off-road and side flight; ≥3 legal route choices and ≥2 major hairpins/map; no invisible walls or route-skip exploitation; source artwork 3× for generated in-game rasters; deterministic TDD, `make verify`, real WebGL screenshots and exact-HEAD full CI **all still pending**. User-approved implementation + merger is separate.
+
 ## Vehicle movement jitter and drift yaw — 2026-11-04
 
 **Branch:** `fix/vehicle-motion-jitter` (from `develop` b05ff1fa). Player-visible issue: left/right movement stutters at variable render rates, especially NITRO/FLY/takeoff/landing; initiating/releasing drift snaps the visual yaw 25°.
