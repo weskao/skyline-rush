@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TUTORIAL_COPY } from '../src/locales/tutorial-copy.ts';
-import { tutorialHintKey, tutorialTouchTarget, tutorialCueView, tutorialInstructionKey } from '../src/tutorial-ui.ts';
+import { tutorialHintKey, tutorialHighlight, tutorialTouchTarget, tutorialCueView, tutorialInstructionKey } from '../src/tutorial-ui.ts';
 import { DEFAULT_KEY_MAP } from '../src/key-map.ts';
 
 test('touch guide distinguishes slider, tilt and toggle-to-land variants', () => {
@@ -16,7 +16,8 @@ test('touch guide distinguishes slider, tilt and toggle-to-land variants', () =>
   assert.equal(tutorialHintKey('barrelRoll', 'buttons', 'hold'), 'tutorial.touch.barrelRoll');
   assert.equal(tutorialHintKey('barrelRoll', 'slide', 'hold'), 'tutorial.slide.barrelRoll');
   assert.equal(tutorialHintKey('barrelRoll', 'tilt', 'hold'), 'tutorial.tilt.barrelRoll');
-  assert.equal(tutorialHintKey('airChain', 'slide', 'toggle'), 'tutorial.touch.airChain');
+  assert.equal(tutorialHintKey('airChain', 'slide', 'toggle'), 'tutorial.touch.airChainToggle');
+  assert.equal(tutorialHintKey('brake', 'tilt', 'hold'), 'tutorial.slide.brake', 'tilt brakes on the slide pad');
 });
 
 test('slide-mode lessons never draw a box over the slide pad', () => {
@@ -34,7 +35,7 @@ test('the live cue toast names the bound desktop keys, the countdown and the tog
   assert.deepEqual(hold.cueKeys, ['J', 'Shift']);
   assert.equal(hold.cueCount, '0.3s');
   assert.ok(hold.cue.length > 0);
-  assert.equal(tutorialCueView({ key: 'tutorial.cue.chainRelease', actions: ['fly'] }, false, 'toggle', keyMap).cueId, 'tutorial.cue.chainReleaseToggle');
+  assert.equal(tutorialCueView({ key: 'tutorial.cue.chainRelease', actions: ['fly'] }, true, 'toggle', keyMap).cueId, 'tutorial.cue.chainReleaseToggle');
   assert.deepEqual(tutorialCueView({ key: 'tutorial.cue.driftStart', actions: ['brake'] }, true, 'hold', keyMap).cueKeys, [], 'touch shows no key chips');
   assert.match(tutorialCueView({ key: 'tutorial.cue.driftRelease', actions: ['brake'], n: 2 }, false, 'hold', keyMap).cue, /2/);
   assert.equal(tutorialCueView(null, false, 'hold', keyMap).cue, '');
@@ -44,8 +45,9 @@ test('the live cue toast names the bound desktop keys, the countdown and the tog
 test('cue text follows the live settings: toggle FLY, slide pad and rebound keys', () => {
   const keyMap = { ...DEFAULT_KEY_MAP, brake: ['KeyB'] };
   const cueId = (key, touch, flyMode, steer) => tutorialCueView({ key, actions: ['brake'] }, touch, flyMode, keyMap, steer).cueId;
-  for (const name of ['chainFly', 'chainBoost', 'chainHold', 'chainLanding', 'chainRelease', 'rollFly', 'rollClimb', 'rollRelease', 'rollSpin']) {
-    assert.equal(cueId('tutorial.cue.' + name, false, 'toggle', 'buttons'), 'tutorial.cue.' + name + 'Toggle', name);
+  for (const name of ['chainFly', 'chainBoost', 'chainHold', 'chainLanding', 'chainRelease', 'rollFly', 'rollClimb', 'rollRelease', 'rollSpin', 'rollSoften']) {
+    assert.equal(cueId('tutorial.cue.' + name, true, 'toggle', 'buttons'), 'tutorial.cue.' + name + 'Toggle', name);
+    assert.equal(cueId('tutorial.cue.' + name, false, 'toggle', 'buttons'), 'tutorial.cue.' + name, `${name}: keyboard FLY is always held`);
     assert.equal(cueId('tutorial.cue.' + name, false, 'hold', 'buttons'), 'tutorial.cue.' + name, name);
   }
   assert.equal(cueId('tutorial.cue.brakeAhead', true, 'hold', 'slide'), 'tutorial.cue.brakeAheadSlide');
@@ -63,4 +65,17 @@ test('every cue variant has copy in both languages', () => {
     }
     for (const key of ['tutorial.slide.right', 'tutorial.slide.brake']) assert.doesNotMatch(TUTORIAL_COPY[lang][key], /highlight|高亮/, 'the pad is no longer outlined');
   }
+});
+
+test('the landing lesson shows no FLY outline, ripple target or key chip', () => {
+  for (const mode of ['buttons', 'slide', 'tilt']) {
+    for (const phase of ['ready', 'airborne', 'retry']) {
+      assert.equal(tutorialTouchTarget('land', phase, mode, 'fly'), null, `land/${phase}/${mode}`);
+    }
+  }
+  assert.deepEqual(tutorialHighlight('land', 'ready'), { action: null, keys: null });
+  assert.equal(tutorialHighlight('fly', 'ready').keys, 'fly');
+  assert.equal(tutorialHighlight('airChain', 'ready').keys, 'fly boost nitro');
+  assert.equal(tutorialHighlight('barrelRoll', 'ready').action, 'fly');
+  assert.equal(tutorialTouchTarget('fly', 'ready', 'buttons', 'fly'), '#touch-controls [data-control="fly"]');
 });

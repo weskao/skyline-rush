@@ -50,11 +50,25 @@ for (const [width, height, hasTouch] of [
         `Intro overlaps ${selector}`).toBe(true);
       }
       expect(await intro.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+      // Landscape phones put Start in the right rail (bottom-right thumb zone): fully on screen, never over the panel.
+      const railStart = height <= 500 && width > height;
+      if (railStart) {
+        // The pinned Garage row shares Start's baseline and never covers the track cards (a portrait max-height lifted it 32px at 320 tall).
+        const [card, garage, start] = await Promise.all(['.track-select button', '#garage-button', '#start-button']
+          .map(selector => intro.locator(selector).first().boundingBox()));
+        expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
+        expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row bottom matches Start').toBeLessThanOrEqual(2);
+      }
       for (const selector of ['#start-button', '.history-button', '.flight-tip']) {
         const item = intro.locator(selector);
         if (!await item.isVisible()) continue;
         await item.scrollIntoViewIfNeeded();
         const box = await item.boundingBox();
+        if (railStart && selector === '#start-button') {
+          expect(box.x >= bounds.x + bounds.width && box.x + box.width <= width && box.y >= 0 && box.y + box.height <= height,
+            'rail Start is on screen, right of the panel').toBe(true);
+          continue;
+        }
         expect(box.x).toBeGreaterThanOrEqual(bounds.x);
         expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
         expect(box.y).toBeGreaterThanOrEqual(bounds.y);

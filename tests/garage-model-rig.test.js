@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { CAR_STYLES, makeCar, poseWing } from '../src/car-model.js';
 import { createGarageModel, garageModelId } from '../src/garage-model.ts';
+import { createAeroVFX } from '../src/aero-vfx.js';
+import { createGaragePaintSweep } from '../src/garage-paint-shader.ts';
+import { createGraceFade } from '../src/grace-fade.ts';
 
 const settle = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setTimeout(r, 0)); };
 const drawn = object => object.layers.test(new THREE.Camera().layers);
@@ -22,6 +25,7 @@ function roadsterGlb() {
   };
   node('body');
   node('tail_light', scene, light);
+  node('glass', scene, new THREE.MeshPhysicalMaterial({ name: 'roadster_glass', opacity: 0.5 })); // neither paint nor light
   for (const name of WHEELS) node(`${name}_spin`, node(name));
   const wing = node('wing'), blade = node('wing_blade', wing);
   node('wing_tip_l', blade);
@@ -184,6 +188,70 @@ test('close restores the procedural car and disposes the per-instance materials'
   assert.equal(disposed, 1);
 });
 
+// Task 4c: car equipment that rides on the procedural body (premium launch flare glow, Studio paint sweep) moves to the GLB.
+const glbBody = car => car.children.find(c => c.userData.garageModel).getObjectByName('body');
+
+test('the launch flare body glow wraps the GLB body while dressed, across a re-dress, and returns on close', async () => {
+  const car = makeCar(CAR_STYLES.roadster), scene = new THREE.Scene();
+  scene.add(car);
+  const aero = createAeroVFX(scene, car);
+  const glow = car.getObjectByName('Launch flare body glow'), procedural = glow.geometry;
+  const original = roadsterGlb();
+  original.getObjectByName('body').position.set(0, 0.65, -0.055); // roadster2: quantized body, positions in [-1, 1]
+  original.getObjectByName('body').scale.setScalar(2.425);
+  const cache = { async load(id) { return { kind: 'model', id, instance: () => original.clone(true), release() {} }; } };
+  const model = createGarageModel({ id: 'roadster2', cache, dataset: {}, compile: async () => {} });
+  const host = { name: 'home', car, keep: aero.group, scene };
+  const frame = glow.material.uniforms.bodyFrame.value;
+  // bodyFrame maps a GLB body vertex to the point it occupies in procedural body space
+  const mapped = v => { car.updateMatrixWorld(true); const world = glbBody(car).localToWorld(v.clone()); return car.userData.body.worldToLocal(world); };
+  for (const quality of ['high', 'low']) { // a quality change swaps in a new instance: the old rig lets go after the new one binds
+    model.sync(true, quality, host);
+    await settle();
+    model.sync(true, quality, host);
+    assert.ok(glow.parent === glbBody(car), `${quality}: glow rides on the GLB body`); // identity: a failing equal would print the whole scene
+    assert.ok(glow.geometry === glbBody(car).geometry, `${quality}: glow wraps the GLB silhouette`);
+    assert.equal(drawn(glow), true, `${quality}: glow is drawn`);
+    const v = new THREE.Vector3(0.4, -0.3, 0.9), expected = mapped(v);
+    const shader = v.clone().multiplyScalar(frame.w).add(new THREE.Vector3(frame.x, frame.y, frame.z));
+    assert.ok(shader.distanceTo(expected) < 1e-6, `${quality}: bodyFrame ${frame.toArray()} maps into the procedural body frame`);
+  }
+  model.sync(false, 'high', null);
+  assert.ok(glow.parent === car.userData.body, 'glow back on the procedural body');
+  assert.ok(glow.geometry === procedural, 'procedural geometry restored');
+  assert.deepEqual(frame.toArray(), [0, 0, 0, 1], 'identity frame restored');
+  assert.equal(drawn(glow), true);
+});
+
+test('a GLB without a body mesh (the probe) leaves the launch flare glow hidden with the procedural body', async () => {
+  const car = makeCar(CAR_STYLES.roadster), scene = new THREE.Scene();
+  scene.add(car);
+  const aero = createAeroVFX(scene, car);
+  const glow = car.getObjectByName('Launch flare body glow');
+  const probe = new THREE.Group();
+  probe.add(Object.assign(new THREE.Group(), { name: 'body' })); // not a mesh: nothing to wrap
+  const cache = { async load(id) { return { kind: 'model', id, instance: () => probe.clone(true), release() {} }; } };
+  const model = createGarageModel({ id: 'pipeline-probe', cache, dataset: {}, compile: async () => {} });
+  model.sync(true, 'high', { name: 'studio', car, keep: aero.group, scene });
+  await settle();
+  assert.ok(glow.parent === car.userData.body, 'glow stays on the procedural body');
+  assert.equal(drawn(glow), false, 'masked with the procedural car');
+});
+
+test('the Studio paint sweep shader hook carries over to the GLB paint, and only where the procedural paint has it', async () => {
+  const plain = await dressed();
+  assert.ok(glbBody(plain.car).material.onBeforeCompile === THREE.Material.prototype.onBeforeCompile, 'Home/race paint: no sweep');
+  const ctx = setup();
+  const finish = new THREE.MeshPhysicalMaterial();
+  ctx.car.userData.body.material = finish;
+  createGaragePaintSweep(finish);
+  ctx.model.sync(true, 'high', ctx.host);
+  await settle();
+  const paint = glbBody(ctx.car).material;
+  assert.ok(paint.onBeforeCompile === finish.onBeforeCompile, 'sweep hook carried over');
+  assert.equal(paint.customProgramCacheKey(), 'garage-paint-sweep-v1');
+});
+
 test('a GLB wheel without its _spin pivot (pre-rig contract, e.g. the probe) keeps its own transform', async () => {
   const car = makeCar(CAR_STYLES.roadster), scene = new THREE.Scene(), keep = new THREE.Group();
   car.add(keep);
@@ -203,4 +271,27 @@ test('a GLB wheel without its _spin pivot (pre-rig contract, e.g. the probe) kee
   const dressedWheel = car.getObjectByName('wheel_fl');
   assert.deepEqual(dressedWheel.position.toArray(), [-0.85, 0.35, -1.2]);
   assert.deepEqual(dressedWheel.quaternion.toArray(), [0, 0, 0, 1]);
+});
+
+// develop 51e25a03: post-hit grace pulses the player car translucent (grace-fade.ts); a GLB-dressed player car pulses too.
+test('post-hit grace fades every GLB material with the procedural car, leaving the cached original alone', async () => {
+  const ctx = setup();
+  const fade = createGraceFade(ctx.car); // world.js: when the player car is built, before any GLB dresses it
+  ctx.model.sync(true, 'high', ctx.host);
+  await settle();
+  ctx.model.sync(true, 'high', ctx.host);
+  const materials = [], base = new Map();
+  glbBody(ctx.car).parent.traverse(o => { if (o.isMesh) { materials.push(o.material); base.set(o.material, o.material.opacity); } });
+  assert.ok(materials.every(m => m.transparent), 'blending from dress time, so the first hit compiles nothing');
+  for (const opacity of [0.4, 0.7, 1]) {
+    fade(opacity);
+    ctx.model.sync(true, 'high', ctx.host);
+    for (const m of materials) assert.ok(Math.abs(m.opacity - base.get(m) * opacity) < 1e-9, `${m.name} at ${opacity}: ${m.opacity}`);
+  }
+  ctx.original.traverse(o => { if (o.isMesh) assert.ok(!o.material.transparent && o.material.opacity === (o.name === 'glass' ? 0.5 : 1), o.name); });
+});
+
+test('a car that never fades (Garage Studio, showcase) keeps the GLB opaque', async () => {
+  const { glb } = await dressed();
+  for (const name of ['body', 'tail_light', 'glass']) assert.equal(glb(name).material.transparent, false, name);
 });
