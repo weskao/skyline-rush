@@ -3942,3 +3942,11 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] RED reproduced from `monsoonTerrainOffset` at 8 distances and both roadside boundaries (7–55 cm height mismatch) and the original scene's dry-section puddle placement.
 - [x] New deterministic road-shoulder and puddle/physics tests. Terrain's first column now equals the +0.07 m road lift; puddle locations and elevations derive from `monsoonWetContact`.
 - [ ] Run `npm test`, `npm run typecheck`, `npm run build`, `make verify`, real WebGL desktop/mobile captures and exact-HEAD FULL CI. User-visible scene clearance and performance not accepted until direct evidence exists.
+
+## 2026-11-07 — Frostbite long-course Normal AI pack (feature/epic-multiroute-longform-tracks)
+
+- [x] Reproduced baseline from CI #42296634452 at 657030fd: throttle-only P8 in 22/24 seeds, P6 in 2/24; 1 unit failure of 2030 tests.
+- [x] Traced new 2026-11-07 shared rival BOOST skill: seven Normal rivals sustain BOOST while throttle-only remains capped at 88 m/s; original Frostbite long-course tuning predates this change.
+- [ ] RED/GREEN verify new focused Normal rival spread regression and the existing 24-seed 2-case rankings with full npm test.
+- [ ] npm run typecheck, npm run build, appropriate Playwright/World Tour, exact-HEAD full GitHub quality-gate.
+- [ ] Real WebGL desktop/mobile race and road-contact acceptance remains separate from CI.
