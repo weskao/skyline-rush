@@ -17,7 +17,7 @@ function makeRoad(edgeId: string, start: number, end: number): THREE.BufferGeome
   const e = SKYFALL_COURSE.edges.find(item => item.id === edgeId)!;
   const marks = [start, end, ...e.gaps.flatMap(g => [g.from,g.to])
     .filter(s => s > start && s < end)];
-  for (let s = Math.ceil(start / 24) * 24; s < end; s += 24) {
+  for (let s = Math.ceil(start / 3) * 3; s < end; s += 3) {
     if (s > start) marks.push(s);
   }
   marks.sort((a,b) => a-b);

@@ -9,16 +9,12 @@ import { SKYFALL_GRAPH } from './skyfall-course-graph.ts';
 /** The already-validated canonical topology; retain object identity for shared caches. */
 export const PLAYABLE_COURSE_GRAPH = SKYFALL_GRAPH;
 
-/**
- * Skyfall's rendered mesh is sampled by sampleSkyfallRoad using its own 32-step
- * arc-length table. The canonical graph sampler uses 24 steps; convert metres
- * before querying the physical road to keep gaps and landing positions aligned.
- * Never use this adapter as permission to cross a signed checkpoint/finish gate.
- */
+/** Canonical physical Skyfall metres are identical to CourseGraph metres (Q5).
+ * Never quantize positions or treat missing road contact as permission to cross a gate. */
 export function skyfallPhysicalDistance(edgeId: string, graphS: number): number {
   const graphLength = routeLength(PLAYABLE_COURSE_GRAPH, edgeId);
   if (!Number.isFinite(graphS)) throw new RangeError('Non-finite Skyfall distance');
-  return Math.min(graphLength, Math.max(0, graphS)) / graphLength * getSkyfallEdgeLength(edgeId);
+  return Math.min(graphLength, Math.max(0, graphS));
 }
 
 export function sampleSkyfallRuntimeRoad(edgeId: string, graphS: number) {
