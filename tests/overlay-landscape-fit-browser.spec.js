@@ -18,6 +18,8 @@ const unreachable = () => {
     const inside = r.top >= box.top - 0.5 && r.bottom <= box.bottom + 0.5 && r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
     const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
     if (!inside || !button.contains(hit)) misses.push(`${button.id || button.textContent.trim()} ${Math.round(r.top)}-${Math.round(r.bottom)} / ${Math.round(box.bottom)}`);
+    // A label or arrow pushed past the button edge is clipped (NEXT has overflow: hidden).
+    if (button.scrollWidth > button.clientWidth + 1) misses.push(`${button.id || button.textContent.trim()} content clipped`);
   }
   return { misses, scroll: overlay.scrollHeight - overlay.clientHeight };
 };
@@ -28,8 +30,8 @@ const offHinge = ([left, right]) => [...document.querySelectorAll('.overlay-summ
   const r = element.getBoundingClientRect();
   return r.right <= left + 0.5 || r.left >= right - 0.5 ? [] : [`${element.className} ${Math.round(r.left)}-${Math.round(r.right)}`];
 });
-// Screenshots only: let the overlay fade-in finish so the saved frame shows the settled panel.
-const shot = async (page, name) => { if (SHOTS) { await page.waitForTimeout(ciTimeout(800)); await page.screenshot({ path: `${SHOTS}/${name}.png` }); } };
+// Screenshots only: let the fade-in and the NEW BEST stamp (1.4s delay + 480ms) finish so the saved frame is settled.
+const shot = async (page, name) => { if (SHOTS) { await page.waitForTimeout(ciTimeout(2000));await page.screenshot({ path: `${SHOTS}/${name}.png` }); } };
 
 for (const { segments, ...viewport } of [
   { width: 844, height: 390 }, // iPhone 14/15
