@@ -62,6 +62,19 @@ test('NITRO needs genuine activation, observable acceleration and sustained spri
   assert.fail('sustained genuine sprint did not complete');
 });
 
+test('braking interrupts an active NITRO lesson immediately and cannot silently resume', () => {
+  const car = fresh(), state = createTutorialManeuverState('nitro', car), dt = 1 / 60;
+  state.update({ ...car, nitroUses: 1, nitroTime: 2.5, speed: 46 }, dt);
+  for (let i = 0; i < 20; i++) state.update({ ...car, nitroUses: 1, nitroTime: 2.4 - i * dt, speed: 47 + i }, dt);
+  assert.ok(state.progress > 0);
+  assert.equal(state.update({ ...car, nitroUses: 1, nitroTime: 2, speed: 58, braking: true }, dt), false);
+  assert.equal(state.phase, 'retry');
+  assert.equal(state.progress, 0);
+  for (let i = 0; i < 120; i++)
+    assert.equal(state.update({ ...car, nitroUses: 1, nitroTime: 2, speed: 112, braking: false }, dt), false);
+  assert.equal(state.phase, 'retry', 'a fresh NITRO key press is required');
+});
+
 test('NITRO ignores replayed events, invalid frames and interrupted sprint', () => {
   const car = fresh(), state = createTutorialManeuverState('nitro', car);
   state.update({ ...car, nitroUses: 1, nitroTime: 2.48, speed: 46 }, 1 / 60);

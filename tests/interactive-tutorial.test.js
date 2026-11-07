@@ -253,6 +253,30 @@ test('a completed practice keeps a live, player-steered free cruise on a road th
   assert.equal(session.complete, true);
 });
 
+test('braking re-arms NITRO practice on release without waiting for the burst to expire', () => {
+  const session = createInteractiveTutorial();
+  for (const action of [
+    { throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true },
+    { fly: true }, { fly: false }, { boost: true },
+  ]) perform(session, action);
+  performAirChain(session);
+  performBarrelRoll(session);
+  const car = session.race.player;
+  assert.equal(session.step, 'nitro');
+  tick(session, { nitro: true });
+  tick(session, { nitro: true, brake: true });
+  assert.equal(session.coachPhase, 'retry');
+  assert.ok(car.nitroTime > 0);
+  tick(session);
+  assert.equal(session.coachPhase, 'ready');
+  assert.equal(car.nitroTime, 0);
+  assert.equal(car.nitro, 1);
+  tick(session, { nitro: true });
+  assert.equal(session.coachPhase, 'sprinting');
+  for (let i = 0; i < 180 && !session.complete; i++) tick(session);
+  assert.equal(session.complete, true);
+});
+
 test('an interrupted NITRO lesson refills only after release and remains player-controlled', () => {
   const session = createInteractiveTutorial();
   for (const action of [
