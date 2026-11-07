@@ -8,7 +8,6 @@ import { historyView } from './history-view-state.ts';
 import { cloudView, updateCloudView } from './cloud-view-state.ts';
 function hideBrokenCloudAvatar() { updateCloudView({ avatarFailed: true }); }
 
-const GOOGLE_ICON = `${import.meta.env.BASE_URL}icons/google-sign-in.webp`;
 const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-run', 'Clean run', 'Finish without a collision'], ['perfect-five', 'Perfect flight', 'Five PERFECT LINEs in one race'], ['nitro-chain', 'Triple burst', 'Chain three NITRO charges']];
 </script>
 
@@ -19,7 +18,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
     <section class="history-extra" aria-labelledby="cloud-title">
       <h3 id="cloud-title" data-i18n="cloud.title">Cloud save</h3>
       <p data-i18n="cloud.explain">Sign in to save race progress and restore it after clearing browser data. Existing progress on this device will be merged. Device settings and ghosts stay here.</p>
-      <SignInButton id="cloud-login" :icon="GOOGLE_ICON" label-key="cloud.login" :hidden="cloudView.loginHidden" :disabled="cloudView.loginDisabled">Sign in with Google</SignInButton>
+      <SignInButton id="cloud-login" label-key="cloud.login" :hidden="cloudView.loginHidden" :disabled="cloudView.loginDisabled">Sign in with Google</SignInButton>
       <button type="button" class="controls-reset" id="cloud-logout" data-i18n="cloud.logout" :hidden="cloudView.logoutHidden">Sign out</button>
       <p id="cloud-logout-note" class="cloud-logout-note" data-i18n="cloud.logoutNote" :hidden="cloudView.logoutNoteHidden">Signing out does not delete cloud results or your Google account.</p>
       <button type="button" class="controls-reset" id="cloud-switch" data-i18n="cloud.switch" :hidden="cloudView.switchHidden">Use this account</button>

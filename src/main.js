@@ -485,7 +485,7 @@ function phaseUI() {
     $('#next-button').hidden = !settled.next;
     if (settled.next) $('#next-button').dataset.next = settled.next;
     $('#next-stage').hidden = !settled.intermediateStage;
-    cloud.saveCloudProgress();
+    cloud.saveRaceProgress(race.mode !== 'free');
     showTracks();
     ui['resume-button'].hidden = true;
     ui['result-stats'].hidden = false;

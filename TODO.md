@@ -1,3 +1,27 @@
+## 2026-11-07 — Results cloud-sync status (`feature/results-cloud-sync-status`, based on `develop` `355f20e8`)
+
+Acceptance: the finished-race results show one cloud line. Signed in (any provider): syncing → "Race saved to the
+cloud." only after Firestore acknowledges, or "Not synced yet — saved on this device, will retry." when the write fails
+or is offline. Signed out: an explanation plus "Sign in with Google"; the sign-in outcome (signed in + synced, sync
+failed, sign-in failed, neutral "Sign-in cancelled") appears inline. Not on pause, not in Free Drive. en + zh-TW.
+
+- [x] RED → GREEN `tests/result-cloud-status.test.js` (state logic, popup-cancel classification, locale parity,
+  controller sign-in + sync flow with injected services): failed on the missing module, then 10/10 pass.
+- [x] `tests/result-cloud-browser.spec.js` (Firebase replaced by a scripted module on the Vite dev server) at
+  1440×900, 390×844, 844×390, 667×375 + zh-TW switch: 9/9 pass locally.
+- [x] `tests/overlay-landscape-fit-browser.spec.js` now requires the results sign-in button; 5/5 viewports pass.
+  The fold check now polls (the slide-in can still offset the panel when the hit test first passes).
+- [x] `npm test` 1950 pass / 0 fail / 3 skipped; `npm run typecheck` and `npm run build` pass.
+- Audio: none added; a background sync result is status text, and the results screen already plays its own cue.
+- Quality tiers: cheap DOM UI, no tier branches.
+- [ ] Full `npm run test:browser`: stopped on request at 515/938 (511 pass, 4 fail, none on the results
+  screen: `motion-browser.spec.js:180`, `foldable-layout-browser.spec.js:105`,
+  `garage-skin-trial-browser.spec.js:4` at 1440×900 and 844×390). Another session ran Playwright in the main
+  checkout at the same time; the failures are not yet re-run in isolation or against `355f20e8`.
+- [ ] `npm run test:cloud` not run yet (Java 21 is available).
+- [ ] CI-timing stress run of `result-cloud-browser.spec.js` (`--repeat-each=8 --retries=0`) not run yet.
+- [ ] Exact-HEAD FULL CI on `develop` after the merge.
+
 ## 2026-11-07 — Ring collect sounds (`feature/pickup-sfx`, based on `origin/develop` `7f663271`)
 
 Symptom: flying/driving through a ring made no sound (only NITRO pickups and rival takes did).
@@ -14,6 +38,57 @@ and does not clip; mute/pause/new-race never replay stale cues; `game.js` unchan
   single rings 0.06-0.08, 6-ring train 0.12-0.17, limiter threshold 0.25); existing audio specs in
   `browser.spec.js`, `hud-settings`, `device-quality`, `endless-bounds` (26 passed).
 - [ ] Manual listening check by a human (levels are measured, not judged by ear). Exact-HEAD `quality-gate` pending.
+
+## 2026-11-07 — Catch-up branch review before merge (`feature/catch-up-rings-only`)
+
+- [x] Local gates at `209033fd` + review fixes: `node --test tests/catch-up-items.test.js` 11/11; `npm test` 1945 pass /
+  0 fail / 3 skipped; `npm run typecheck` and `npm run build` OK.
+- [x] Touch NITRO interruption spec failed 3/3 locally (expected step `boost`, got `airChain`). Cause: skipping FLY
+  leaves the car on the road, so LAND passes by itself within a frame and the next Skip tap skipped BOOST. The
+  cleanup `touchEnd` also threw with no touch down. Test fixed (wait for BOOST, lift only a pressed touch):
+  `CI=1 --repeat-each=8 --workers=4 --retries=0` 16/16 (with the keyboard NITRO case).
+- [x] `catchUpSettings` was rebuilt every race step; now cached per race length. `spawnCatchUp` (Tokyo, help off,
+  2 M calls × 5): 15.7 → 8.3 ns/call median.
+- [x] Browser: interactive-tutorial + handoff + item-feedback + nitro-fly 32/33. The miss was
+  `FLY answers the moment GO shows` (unchanged by this branch), 6/6 when stress-run alone: a load flake.
+- [x] Scratch sim, 10 tracks × 10 seeds, beginner bot, leader held 300 m ahead: catch-up rings taken 3.09 → 4.24/min,
+  NITRO 12.60 → 12.94/min, gap growth 141 → 109 m/min. At 150 m the length scaling raises the switch-on gap on long
+  tracks: spawned 3.43 → 1.98/min, taken 1.90 → 1.53/min (user kept the scaling, 2026-11-07).
+- [ ] Exact-HEAD GitHub `quality-gate` after the merge into `develop`.
+
+## 2026-11-07 — Adaptive catch-up rings by total race length
+
+- [x] Merged `develop` `a013e77f` into `feature/catch-up-rings-only` at `20319d7`, preserving both `TODO.md` prefixes.
+- [x] Added length-aware RED regression tests for real 4/6/8 km courses and a future 12 km course (`552cfc6`).
+- [ ] Observe the actual RED test failure and GREEN focused test after implementation; verify all 11 catch-up tests.
+- [ ] Full `npm test`, typecheck/build, 13 browser shards, five World Tour shards, cloud-save and exact-HEAD quality-gate.
+- [ ] Desktop/mobile real WebGL playthrough and authored-sequence regression.
+- [ ] No PR, merge into `develop`, deployment, release or force push without separate approval.
+
+## 2026-11-07 — Catch-up branch CI browser regressions (tutorial NITRO / airborne callout)
+
+- [x] Confirmed failed baseline browser tests at `28f5f45d`, run `42297062181`: shard 6 NITRO brake interruption, shard 7 BARREL ROLL hidden by a charge callout.
+- [x] New regression tests committed in RED `5fc93ba`; GitHub run `42341498607` produced precisely 2 expected unit failures (1941 pass, 3 skipped).
+- [ ] Verify the GREEN unit/typecheck/build run and both affected browser shards on the final exact HEAD; the new touch NITRO case exercises real pointer input.
+- [ ] Full browser (13 shards), World Tour (5 shards), cloud-save, quality-gate, and real-device/WebGL checks.
+- [ ] No merge, PR, deploy, tag or force push; only this branch may be written.
+
+## 2026-11-07 — Catch-up items: rings only (`feature/catch-up-rings-only`)
+
+Classic (excluding Daily) and Cup trailing-player aid now creates only extra rings: NITRO 60%, charge 20%,
+slipstream 20%, all at `ROW_ALTITUDE` (2.5 m). A one-line shared spawner change removes the can lottery without
+touching `src/game.js`, authored sequences, placements or rival catch-up guards.
+
+- [x] RED commit `0568a46b7c4e1aaf391383f7b23735de205f3416`: the focused test file has 9 cases, including the
+  new five-track NITRO-majority assertion and the rings-only / altitude guard.
+- [x] RED isolated source-level reproduction: `node --experimental-strip-types --test tests/red-smoke.test.js`
+  (temporary, *not* committed; exact spawner source with minimal imported constants) = 0 passed / 2 failed,
+  for mixed cans and NITRO 10/60. This does not replace the full repository test suite.
+- [x] GREEN isolated source-level reproduction: the same two tests = 2 passed / 0 failed after the minimal fix.
+- [ ] Confirm the original 9-case `node --test tests/catch-up-items.test.js` GREEN on the full repository.
+- [ ] `npm test`, `npm run build`, desktop/mobile `npm run test:browser` and `make verify`.
+- [ ] Exact feature-HEAD GitHub `quality-gate` and manual in-game / mobile acceptance.
+- [ ] Merge into `develop` with `--no-ff` only after explicit user approval (no PR or deployment beforehand).
 
 ## 2026-11-07 — Current-mechanism README refresh
 
@@ -3858,3 +3933,6 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Browser verification intentionally stopped at the user's explicit request: revised stress 16 passed, 4 interrupted, 28 not run; both `make verify` processes stopped. Do not treat interrupted units as a completed run. Initial full units/type checks/build results above remain separate evidence. No further browser tests or screenshots authorized for this task.
 - [x] Final non-browser checks: `node --check` on both changed browser specs; `node --test tests/callouts.test.js tests/browser-timeouts.test.js` 29/29 on each branch; `git diff --check` clean; independent review found no actionable defect.
 - [ ] Full browser/World Tour CI, physical phone input and human visual acceptance remain unverified per the user's stop request. Push without `[full-regression]`; skip the browser layout pre-push hook for this task. Only focused CI is expected.
+
+- [x] Final upstream refresh: `develop` advanced to be6f5a6a during verification; pulled and merged its 22 additional commits into this branch. The only conflict was equivalent comments above identical callout-preemption code; retained the shared develop wording. Existing branch fixes and upstream tutorial/catch-up/cloud-status changes are preserved. Browser testing remains stopped per user instruction.
+- [x] Final merged-tree non-browser verification: 77/77 owner tests (callouts, timeout policy, tutorial, maneuver state, catch-up items, result cloud status), both changed browser specs pass syntax checks, `npm run typecheck` and `npm run build` passed on each branch. Full browser/World Tour acceptance remains unverified.
