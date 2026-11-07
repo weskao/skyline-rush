@@ -16,6 +16,12 @@ function positions(drive) {
       const race = createRace(FROSTBITE_ID), bot = {};
       race.phase = 'racing';
       for (let i = 0; i < 60 * 400 && race.phase !== 'finished'; i++) stepRace(race, drive === 'bot' ? botInput(race, bot) : { throttle: true }, 1 / 60);
+      if (k === 0 && drive === 'throttle') console.log('FROSTBITE_DIAG', JSON.stringify({
+        elapsed: race.elapsed, result: race.result, player: { distance: race.player.distance, speed: race.player.speed,
+          collisions: race.player.collisions, falls: race.player.falls, fuel: race.player.fuel, nitroUses: race.player.nitroUses },
+        rivals: race.rivals.map(r => ({ name: r.name, finishTime: r.finishTime, distance: r.distance,
+          speed: r.speed, fuel: r.fuel, nitroUses: r.nitroUses, itemTakes: r.itemTakes })),
+      }));
       out.push(race.result.position);
     }
   } finally { setLayoutSeed(); }
