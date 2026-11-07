@@ -42,6 +42,15 @@ for (const [width, height] of [[1440, 900], [390, 844], [844, 390]]) {
     const pointer = map.locator('.route-player-pointer');
     await expect(pointer).toHaveAttribute('visibility', 'visible');
     await expect(pointer).toHaveAttribute('transform', /^translate\(-?[\d.]+ -?[\d.]+\) rotate\(-?\d+\)$/);
+    const decodedArtwork = await map.evaluate(async root => {
+      const href = root.querySelector('.route-player-art')?.getAttribute('href');
+      if (!href) return null;
+      const image = new Image();
+      image.src = href;
+      await image.decode();
+      return [image.naturalWidth, image.naturalHeight];
+    });
+    expect(decodedArtwork, 'the transparent player WebP loads on the active map').toEqual([96, 96]);
     const size = await map.evaluate(root => {
       const rect = selector => root.querySelector(selector).getBoundingClientRect();
       const fill = el => getComputedStyle(el).fill;

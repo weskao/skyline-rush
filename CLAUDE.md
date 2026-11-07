@@ -33,6 +33,19 @@ maps and existing tracks, real desktop/mobile WebGL screenshots and exact-HEAD
 FULL CI. Unverified interactions or race physics remain explicitly pending.
 A "→ Read `docs/<file>`" line names a situation: open that file only then, follow it exactly.
 
+## New long-form tracks: concept art → real WebGL acceptance (Stage 1 and Stage 2)
+
+When implementing any of the ten **proposed** multi-route point-to-point tracks, first
+read [`docs/designs/new-tracks/visual-acceptance-gate.md`](docs/designs/new-tracks/visual-acceptance-gate.md), the two
+actual JPEG references for that map, its route SVG, and the relevant
+`.claude/rules/track-showcase.md` / `.claude/rules/vehicle-road-stability.md` guidance.
+Capture repeatable **real WebGL** ground and aerial route frames, compare landmark,
+terrain, vehicle scale, weather, branch/landing and visibility, and record deviations.
+Concept illustrations and upscaled Stage-2 JPEGs are **not** real 3D renders or true
+3× in-game textures. Do not mark visual acceptance complete without screenshot evidence,
+functional tests, performance review and explicit PASS/FAIL/APPROVED DEVIATION records.
+All ten new maps are point-to-point with distinct START and FINISH; no laps.
+
 **No personal paths in files.** This repo is public: never write a user-specific absolute path
 (`/Users/<name>/…`, `/home/<name>/…`, `C:\Users\<name>\…`) into any committed file (code, docs,
 specs, configs, tests, logs). Use repo-relative paths, `$HOME`/`~`, or a placeholder such as
@@ -79,6 +92,8 @@ models (Blender, GLB/glTF, textures) — every MCP server, plugin, CLI or npm pa
 installs ONLY in this project: MCP in project `.mcp.json` / `.codex/config.toml`, packages
 as exact-pinned `devDependencies`. Never use user-scope MCP or a global npm/uv install;
 remove any global copy found. Commit no credentials.
+Target-look concept board (mood only, not a screenshot or geometry source):
+`docs/designs/3d-pipeline/concept-art/skyline-rush-3d-target-concept-board.jpeg`.
 Three.js r186.1 is the *planned* target; until verified migration, obey currently
 installed r180 APIs. Read `docs/designs/3d-pipeline/threejs-r180-r186-migration.md`
 and scoped `.claude/rules/3d-asset-pipeline.md` when applicable. Never change

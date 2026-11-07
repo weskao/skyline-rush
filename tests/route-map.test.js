@@ -66,7 +66,12 @@ test('live minimap gives the player a heading pointer that no rival has', async 
     assert.equal(pointer.attrs['aria-hidden'], 'true');
     assert.ok(!('data-racer' in pointer.attrs), 'the pointer is not a racer marker');
     assert.equal(pointer.find('route-player-halo').length, 1);
-    assert.equal(pointer.find('route-player-arrow').length, 1);
+    assert.equal(pointer.find('route-player-arrow').length, 1, 'the built-in fallback remains');
+    const artwork = pointer.find('route-player-art');
+    assert.equal(artwork.length, 1, 'exactly one WebP player marker');
+    assert.equal(artwork[0].tag, 'image');
+    assert.ok(artwork[0].attrs.href.endsWith('feature-assets/minimap-player-marker/player-marker@3x.webp'));
+    assert.deepEqual(['x', 'y', 'width', 'height'].map(key => artwork[0].attrs[key]), ['-11', '-11', '22', '22']);
     assert.strictEqual(element.children.at(-1), pointer, 'drawn last so no rival covers the player');
     assert.equal(createRouteMap('coast').element.find('route-player-pointer').length, 0, 'static previews have no player');
   });

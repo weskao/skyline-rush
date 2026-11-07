@@ -45,6 +45,7 @@ Non-goals: replacing the game with Unity/Unreal, migrating Vue to React or TresJ
 - PBR textures use proper sRGB base-color/emissive versus linear normal/roughness/metallic; create UV0 (and UV2 only when using baked lightmaps). For roadRibbon add UV in a testable, seamless road-space coordinate system with stable transitions across chunks, incl. Sky Spiral and elevated World Tour.
 - glTF Transform optimization must preserve node names/pivots and animation; never merge animated nodes or alter ownership/disposal semantics. KTX2/meshopt require tested decoder assets/configuration in built runtime; Draco optional, not stacked blindly.
 - Showcase art and covers are concept/composition references; exported gameplay shots must be authentic WebGL captures. Brand logos and invented technical specs from concept images are not required game functionality.
+- Target look: the owner-supplied concept board `docs/designs/3d-pipeline/concept-art/skyline-rush-3d-target-concept-board.jpeg` (Garage car studio views, Coast flight/drive, other map moods) is the visual goal for Phases 2–5. It is a mood/composition reference only, never an in-game capture or a geometry source; see its README.
 - Model source licensing and external asset redistribution are mandatory checks: attribution/license audit before importing Sketchfab/Poly Haven/other assets; do not assume browsing or viewing an image grants redistribution permission.
 
 ## 6. Architecture
@@ -79,11 +80,13 @@ flowchart TD
 
 **Phase 2 — asset pipeline MVP + Roadster Garage:** loader, manifest, decoder support, fail-safe procedural fallback; source reference photos from docs/designs/roadster2-reference/; build at least front/side/rear/orbit source captures and 3D painted vehicle. Validate five-blade aero wheels, hood sweep, lights, quad nozzles, full wing lifecycle and existing Garage color equipment. Real 3D mesh, not background art; owner visual sign-off against existing source photos.
 
+**Phase 2b — one hero Roadster GLB on Home showcase and in races (added 2026-11-07):** the accepted roadster2 GLB dresses the player's car on the Home showcase (the shared live `#world` preview, AIRFLOW ON grounded / OFF hovering) and in every race, through the same visual adapter as the Garage. The showcase and the race share one renderer, scene and Roadster poses, so they adopt the GLB together, in one adapter and one regression matrix; this is the "consistent hero car" formerly listed under Phase 5. Physics, collision box, road contact, camera and NITRO/FLY/BOOST/VFX ports stay owned by the procedural car, which remains the load/decode fallback. Remaining procedural parts (lift fans) are authored in Blender. Preload and compile before GO; Low tier uses the low LOD. Accept only after the all-track desktop/phone regression matrix, real-phone frame-time p50/p95, in-race screenshots, exact-HEAD full CI and owner sign-off. Default-on (removing `?model=roadster`) is a separate owner-approved step; rival cars stay procedural unless the owner opts in.
+
 **Phase 3 — Coast PBR road and authored close scenery:** road-space UV, wet/dry roughness behavior, bounded static mesh streaming, lighting test across day/night/rain without changing course frames or collisions. Use current simple geometry for distant objects/Low tier.
 
 **Phase 4 — five new maps and World Tour:** coordinate with integration branch feature/epic-multiroute-longform-tracks; individual track owners opt in after common API is stable; maintain Dune/Monsoon/Skyfall/Volcanic/Stormline visual identities, original playable course requirements and deterministic chunk load. No simultaneous source-branch writes from this branch.
 
-**Phase 5 — cover/showcase polish and Ultra (only if benchmarked):** consistent hero car, authored Three.js showcase and genuine capture-based promotion. Ultra remains opt-in; WebGPU/TSL is a separate research proposal, not a silent renderer migration.
+**Phase 5 — cover/showcase polish and Ultra (only if benchmarked):** starts after Phase 2b, so every promotion capture shows the same GLB car players actually drive. Authored Three.js showcase polish (camera, lighting, scenery) and genuine capture-based promotion. Ultra remains opt-in; WebGPU/TSL is a separate research proposal, not a silent renderer migration.
 
 ## 8. Quality evidence and failure modes
 
@@ -108,4 +111,5 @@ The external share endpoints could not be opened in this environment (cache miss
 - ../../designs/3d-pipeline/toolchain-environment-preflight.md
 - ../../designs/3d-pipeline/threejs-r180-r186-migration.md
 - ../../designs/3d-pipeline/phases/README.md (per-task files, by-project vs by-device scope)
+- ../../designs/3d-pipeline/concept-art/README.md (target-look concept board)
 - https://github.com/mrdoob/three.js/wiki/Migration-Guide
