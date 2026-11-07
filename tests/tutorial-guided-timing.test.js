@@ -154,3 +154,10 @@ test('NITRO rewards in coach copy are split out for highlighting without changin
   assert.deepEqual(rewardParts('即可獲得 0.25 格 NITRO。').filter(part => part.reward).map(part => part.text), ['0.25 格 NITRO']);
   assert.deepEqual(rewardParts('No reward here'), [{ text: 'No reward here', reward: false }]);
 });
+
+test('brake lesson cue: red gate ahead, then keep holding while braking', () => {
+  const car = { altitude: 0, thrusting: false, flightBoosted: false, poweredFlightTime: 0, drift: null, speed: 40 };
+  const cue = braking => tutorialCue({ step: 'brake', phase: 'ready', car: { ...car, braking }, countdown: null, stretchEntered: false, driftEntry: 50 });
+  assert.deepEqual(cue(false), { key: 'tutorial.cue.brakeAhead', actions: ['brake'] });
+  assert.deepEqual(cue(true), { key: 'tutorial.cue.brakeHold', actions: ['brake'] });
+});

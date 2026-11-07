@@ -45,7 +45,7 @@ test('the brake gate spans the road and needs the action held while passing', ()
   const session = createInteractiveTutorial();
   skipTo(session, 'brake');
   assert.equal(live(session).length, 4, 'a full-width row');
-  assert.equal(session.guide, 'ahead');
+  assert.equal(session.guide, 'slow', 'braking gets its own slow-down arrow, not the go-ahead one');
   driveToGate(session, {});
   assert.equal(session.step, 'brake');
   assert.equal(session.coachReason, 'noBrake', 'coasting through is named, not silently ignored');

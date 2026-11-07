@@ -103,6 +103,8 @@ test('practice opens with the race countdown, stands still at GO, and THROTTLE t
   await page.locator('#tutorial-open').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
   await expect(page.locator('#countdown')).toBeVisible();
+  // The forward arrow waits for GO (user, 2026-11-08): none during 3-2-1, then it appears with the throttle cue.
+  await expect(page.locator('#tutorial-guide')).toHaveCount(0);
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(6000) });
   // Practice has no GO roll (user, 2026-11-08): the car waits for THROTTLE, and the cue says so.
   await expect(page.locator('#speed')).toHaveText('0');
@@ -236,6 +238,15 @@ test('the gate arrow points the way and Skip step moves on by a real click', asy
   await step(page, 'right');
   await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'right');
   await expect(skip).not.toBeFocused(); // a focused skip button would re-fire on Space or Enter
+});
+
+test('the brake lesson shows a slow-down arrow and a live cue with the bound brake key', async ({ page }) => {
+  await begin(page);
+  const skip = page.locator('#tutorial-skip-step');
+  for (const name of ['left', 'right', 'brake']) { await skip.click(); await step(page, name); }
+  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'slow'); // not the go-ahead arrow
+  await expect(page.locator('#tutorial-cue')).toHaveAttribute('data-cue', 'tutorial.cue.brakeAhead');
+  await expect(page.locator('#tutorial-cue kbd')).toHaveText('S'); // default brake binding
 });
 
 test('switching language updates the active and paused lesson immediately', async ({ page }) => {

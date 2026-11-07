@@ -149,7 +149,10 @@ export function createInteractiveTutorial() {
       return celebrate > 0 && phase === 'ready' ? 'cleared' : phase; // a live cue (airborne, retry) wins over the praise
     },
     get coachReason() { return finishing ? null : maneuver ? maneuver.reason : retryReason; },
-    get guide() { return gate ? gateGuide(gate, car.x) : stretch || TUTORIAL_STEPS[index] === 'throttle' ? 'ahead' : ''; },
+    get guide() {
+      const dir = gate ? gateGuide(gate, car.x) : stretch || TUTORIAL_STEPS[index] === 'throttle' ? 'ahead' : '';
+      return dir === 'ahead' && TUTORIAL_STEPS[index] === 'brake' ? 'slow' : dir; // braking is not "go ahead"
+    },
     /** Boost lesson seconds left, the full limit before the stretch starts; null in other lessons. */
     get countdown() { return countdown(); },
     /** Lessons passed (skips excluded): one chime each. */

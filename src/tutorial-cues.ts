@@ -4,7 +4,7 @@ import { CHAIN_POWERED_SECONDS } from './air-chain.ts';
 export interface TutorialCue { key: string; actions: readonly string[]; n?: number; count?: number }
 export interface CueCar {
   altitude: number; thrusting: boolean; flightBoosted: boolean; poweredFlightTime: number;
-  drift: { time: number } | null; speed: number; verticalSpeed?: number;
+  drift: { time: number } | null; speed: number; verticalSpeed?: number; braking?: boolean;
 }
 export interface CueState {
   step: string | null; phase: string; car: CueCar;
@@ -55,6 +55,7 @@ function barrelRollCue({ car, phase }: CueState): TutorialCue {
 export function tutorialCue(state: CueState): TutorialCue | null {
   if (state.phase === 'finishing') return { key: 'tutorial.cue.finishing', actions: [] };
   if (state.step === 'throttle') return state.car.speed > 5 ? null : { key: 'tutorial.cue.throttle', actions: ['throttle'] };
+  if (state.step === 'brake') return { key: state.car.braking ? 'tutorial.cue.brakeHold' : 'tutorial.cue.brakeAhead', actions: ['brake'] };
   if (state.step === 'drift') return driftCue(state);
   if (state.step === 'airChain') return airChainCue(state);
   if (state.step === 'barrelRoll') return barrelRollCue(state);
