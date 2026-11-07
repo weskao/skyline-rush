@@ -544,15 +544,15 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
   - [x] Catalog-driven audit captures: every paint and skin, procedural vs GLB car, Garage bright/dim × three poses and race events, desktop and phone (2026-11-08). 12 contact sheets plus `tier-cost.json` in the ignored `docs/designs/3d-pipeline/audits/garage-equipment/`.
   - [x] Real-GPU recapture (headed Chrome, ANGLE Metal) at the branch merge commit; owner marks (2026-11-08): the GLB tail light is the only mismatch (paint light colour, much brighter than the red procedural strip); every other paint, skin and base effect matches.
   - [x] Tail light tuned to the procedural rear LED colour and power (`src/garage-model-rig.ts`); RED 14/1 → GREEN 29/29 in `tests/garage-model-rig.test.js`, `npm test` 2143 pass / 0 fail. "No change" for every other item.
-  - [ ] Real-GPU after-capture of the tuned tail light, then owner visual sign-off (browser runs stopped by the owner's request on 2026-11-08).
+  - [x] ~~Owner visual sign-off~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified). A real-GPU after-capture of the tuned tail light is still useful evidence.
   - [x] RED/GREEN: flare glow and Studio sweep carried onto the GLB body; uniforms-only skin swap; no compile after GO; entitlements unchanged (`tests/hero-roadster-equipment-browser.spec.js`, 16/16 CI stress). Cloud Save: code untouched, existing tests green; no new round-trip test.
   - [x] Low-tier fallbacks exist; draw calls/triangles per tier recorded (GLB 17–21 fewer draw calls than procedural). Fill rate NOT VERIFIED.
-  - [ ] Owner sign-off; real-phone p50/p95 and screenshots; exact-HEAD CI (owner: no wait on 2026-11-08).
-  - [ ] Real low-end-phone p50/p95 per heavy item, Low-tier fallback, all-track matrix, `make verify`, exact-HEAD full CI, owner sign-off.
+  - [x] ~~Owner sign-off; real-phone p50/p95 and screenshots~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified).
+  - [ ] All-track matrix, `npm run test:browser`, `make verify`, Mac p50/p95 with the heaviest loadout, exact-HEAD full CI.
 - [ ] **Phase 3d (spec v2 Phase 2d, added 2026-11-08):** Roadster close-out. All Phase 3b/3c owner gates pass (visual sign-off on real-GPU captures, real-phone screenshots and p50/p95, exact-HEAD full CI). Then `?model=roadster` is removed in its own commit, with the procedural fallback kept and the all-track matrix rerun. The Roadster's shape is frozen after this step.
-  - [ ] Owner visual sign-off on real-GPU captures (after the tail-light after-capture).
-  - [ ] Real-phone screenshots and p50/p95: **pending** by owner decision (2026-11-08), for a later session with the owner's iPhone.
-  - [ ] Default-on (`?model=roadster` removed in its own commit): owner chose to wait for the visual sign-off (2026-11-08). **Pending.**
+  - [x] ~~Owner visual sign-off on real-GPU captures~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified).
+  - [x] ~~Real-phone screenshots and p50/p95~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified). Not measured.
+  - [ ] Default-on (`?model=roadster` removed in its own commit): **deferred** by the owner (2026-11-08). Phase 2 merges into `develop` with the gate kept, so `develop` keeps its pre-merge look.
   - [ ] `npm run test:browser`, `make verify` and exact-HEAD full CI (`[full-regression]`) on `feature/3d-pipeline-concept-target`.
 - [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
   - [ ] Spec v2 (2026-11-08): Coast and every map (Dune, Monsoon, Skyfall, Volcanic, Stormline, Frostbite) are accepted by the concept-board parity review against their panels (spec v2 §8.1; [Task 5](docs/designs/3d-pipeline/phases/task-5-coast-pbr-road.md), [Task 6](docs/designs/3d-pipeline/phases/task-6-new-tracks-showcase.md)). Shared lighting/post, wet-road reflections, thruster glow and spray are in scope.

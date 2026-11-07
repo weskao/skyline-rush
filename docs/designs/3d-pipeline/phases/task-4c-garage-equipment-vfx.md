@@ -37,7 +37,7 @@ A paint or skin added later joins this task automatically through the catalog-dr
   - Tail light, chosen by the owner to match the procedural car: `bindGarageRig` (`src/garage-model-rig.ts`) now copies the procedural rear LED core (`src/rear-light.ts`) emissive colour and power (1, 2.1 BOOST, 3.8 brake) onto the GLB `_light` material, instead of the paint light colour. It is a material copy only, with no port, mesh or per-frame allocation change.
   - RED: `tests/garage-model-rig.test.js` 14 pass / 1 fail (tail light `59ff95`, expected `ff3030`). GREEN: 29/29 rig and model tests; `npm test` 2143 pass / 0 fail / 3 skipped; typecheck and build clean.
   - No change: the 6 paints (body colour), the 22 skins and the base effects.
-- [ ] Real-GPU after-capture of the tuned tail light (Garage bright/dim, race BOOST and brake), desktop and phone. Not run yet: browser runs were stopped by the owner's request on 2026-11-08.
+- [ ] Real-GPU after-capture of the tuned tail light (Garage bright/dim, race BOOST and brake), desktop and phone. Evidence only; the sign-off below no longer waits for it.
 - [x] Quality tiers: the Low fallbacks already exist.
   - Flare body glow off and half the sparks below 0.25.
   - NITRO road glow off below 0.25.
@@ -53,9 +53,9 @@ A paint or skin added later joins this task automatically through the catalog-dr
 
   - Fill rate: NOT VERIFIED (not measured).
 - [ ] Regression matrix: Garage Home, Preview Studio, the shared six-course Home carousel and every playable track including World Tour, desktop and phone; `npm test`, `npm run build`, `npm run test:browser`, `make verify`; exact-HEAD full `quality-gate` on `develop`.
-- [ ] Owner visual sign-off on the final per-item before/after matrix.
+- [x] ~~Owner visual sign-off on the final per-item before/after matrix~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified).
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 - [ ] Mac frame-time p50/p95 with the heaviest skin of each category equipped during NITRO/FLY, GLB vs procedural, real GPU, before and after. The only tuned item is a material colour copy, so the expected cost difference is none. Not measured yet.
-- [ ] Real low-end phone frame-time p50/p95 (`make phone-diag`) with the same loadout. **Pending** by owner decision (2026-11-08): recorded for a later session with the owner's iPhone.
-- [ ] Real-phone screenshots of tuned items in Garage and in race. **Pending**, same owner decision.
+- [x] ~~Real low-end phone frame-time p50/p95 (`make phone-diag`) with the same loadout~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified). Not measured.
+- [x] ~~Real-phone screenshots of tuned items in Garage and in race~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified). Not captured.
