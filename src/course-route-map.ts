@@ -8,8 +8,8 @@ export interface CourseMapLine {
   points: { x: number; y: number }[];
 }
 
-/** Fit all graph choices into one map frame; samples share the real road's arc lengths. */
-export function courseRouteOverview(graph: CourseGraph, count = 64): CourseMapLine[] {
+/** Share one projection between static SVG edges and exact per-edge live markers. */
+export function createCourseRouteProjection(graph: CourseGraph, count = 64) {
   const size = Number.isInteger(count) ? Math.max(2, Math.min(1000, count)) : 64;
   const lines = graph.edges.map(edge => {
     const length = routeLength(graph, edge.id);
@@ -20,12 +20,22 @@ export function courseRouteOverview(graph: CourseGraph, count = 64): CourseMapLi
     return { edgeId: edge.id, mode: edge.mode, ground: edge.mode === 'ground', points };
   });
   const all = lines.flatMap(line => line.points);
-  if (!all.length) return lines;
   const xMin = Math.min(...all.map(p => p.x)), xMax = Math.max(...all.map(p => p.x));
   const yMin = Math.min(...all.map(p => p.y)), yMax = Math.max(...all.map(p => p.y));
   const xSize = Math.max(xMax - xMin, 1), ySize = Math.max(yMax - yMin, 1);
-  return lines.map(line => ({ ...line, points: line.points.map(p => ({
+  const project = (p: { x: number; y: number }) => ({
     x: .08 + .84 * (p.x - xMin) / xSize,
     y: .08 + .84 * (p.y - yMin) / ySize,
-  })) }));
+  });
+  return {
+    lines: lines.map(line => ({ ...line, points: line.points.map(project) })),
+    marker(edgeId: string, localS: number) {
+      const frame = sampleRoute(graph, edgeId, localS);
+      return project({ x: frame.point[0], y: -frame.point[2] });
+    },
+  };
+}
+/** Fit all graph choices into one map frame; samples share the real road's arc lengths. */
+export function courseRouteOverview(graph: CourseGraph, count = 64): CourseMapLine[] {
+  return createCourseRouteProjection(graph, count).lines;
 }

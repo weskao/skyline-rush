@@ -1,4 +1,8 @@
 import { raceTrack } from './race-tracks.ts';
+import { COURSE_RUNTIMES } from './course-runtimes.ts';
+import { createCourseRouteProjection } from './course-route-map.ts';
+import { routeLength } from './course-route-frame.ts';
+import type { CourseRuntime } from './course-race.ts';
 import { CIRCUIT_ID, circuitDistance } from './circuit-track.ts';
 import { trackOverview, trackPoint } from './track-paths.ts';
 import { SKY_SPIRAL } from './sky-track.ts';
@@ -102,7 +106,17 @@ const routeLabel = (trackId: string, locale: string = getLocale()): string => {
 };
 export function createRouteMap(trackId: string, { live = false }: { live?: boolean } = {}) {
   const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img' }); // aria-label: relabel() below
-  element.append(svg('polyline', { points: routePolyline(trackId), class: 'route-overview-line', fill: 'none' }));
+  const graph = COURSE_RUNTIMES[trackId]?.spec.graph;
+  const graphMap = graph ? createCourseRouteProjection(graph, 64) : null;
+  if (graphMap) for (const line of graphMap.lines) {
+    element.append(svg('polyline', {
+      points: line.points.map(p => pointText({ x: p.x * 100, y: p.y * 100 })).join(' '),
+      class: line.ground ? 'route-overview-line' : 'route-overview-line route-flight-line',
+      'data-edge': line.edgeId, fill: 'none', 'aria-hidden': 'true',
+      ...(line.ground ? {} : { 'stroke-dasharray': '3 2' }),
+    }));
+  }
+  else element.append(svg('polyline', { points: routePolyline(trackId), class: 'route-overview-line', fill: 'none' }));
   const upper = spiralUpperRoutePolyline(trackId);
   if (upper) {
     element.append(svg('polyline', { points: upper, class: 'route-spiral-upper', fill: 'none', 'aria-hidden': 'true' }));
@@ -121,8 +135,11 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
     }));
   }
   for (const [kind, d] of [['start', 0], ['finish', raceTrack(trackId)!.length]] as const) {
-    const p = routeMarker(trackId, d);
-    element.append(svg('circle', { cx: p.x, cy: p.y, r: 2, class: `route-${kind}` }));
+    const edgeId = graph?.groundRoute[kind === 'start' ? 0 : graph.groundRoute.length - 1];
+    const p = graphMap && graph && edgeId
+      ? graphMap.marker(edgeId, kind === 'start' ? 0 : routeLength(graph, edgeId))
+      : routeMarker(trackId, d);
+    element.append(svg('circle', { cx: p.x * (graphMap ? 100 : 1), cy: p.y * (graphMap ? 100 : 1), r: 2, class: `route-${kind}` }));
   }
   const markers = new Map<string, SVGElement>();
   if (live) for (const [i, id] of racers.entries()) {
@@ -138,7 +155,7 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
       svg('path', { d: 'M0,-9 L5.5,3 L0,.5 L-5.5,3 Z', class: 'route-player-arrow' }));
     element.append(pointer);
   }
-  const updateDrivers = (drivers: readonly RouteDriver[]): void => {
+  const updateDrivers = (drivers: readonly RouteDriver[], course?: CourseRuntime): void => {
     const active = new Set(drivers.map(driver => driver.id));
     for (const [id, marker] of markers) {
       setIfChanged(marker, 'visibility', active.has(id) ? 'visible' : 'hidden');
@@ -147,8 +164,10 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
     for (const driver of drivers) {
       const marker = markers.get(driver.id);
       if (!marker) continue;
-      const point = routeMarker(trackId, driver.distance);
-      const ahead = routeMarker(trackId, driver.distance + 10);
+      const travel = graphMap ? course?.cars.get(driver.id)?.travel : undefined;
+      const point = graphMap && travel ? graphMap.marker(travel.currentEdgeId, travel.localS) : routeMarker(trackId, driver.distance);
+      const ahead = graphMap && travel ? graphMap.marker(travel.currentEdgeId, travel.localS + 10) : routeMarker(trackId, driver.distance + 10);
+      if (graphMap && travel) { point.x *= 100; point.y *= 100; ahead.x *= 100; ahead.y *= 100; }
       const dx = ahead.x - point.x, dy = ahead.y - point.y;
       const length = Math.hypot(dx, dy) || 1;
       const side = (driver.x ?? 0) * 0.6;
