@@ -4,6 +4,9 @@ import { FROSTBITE_ID } from '../src/courses/frostbite-race.ts';
 import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { createRace, stepRace, setLayoutSeed } from '../src/game.js';
 import { botInput } from '../scripts/pickup-economy.mjs';
+import { MAX_SPEED } from '../src/drive-rules.ts';
+import { BOOST_CAP_BONUS } from '../src/drive-rules.ts';
+import { rivalBaseCap, rivalSkill } from '../src/rival-driver.ts';
 
 // 13.8 km is ~2x the longest classic sprint, so at classic rival pace holding the throttle alone won 9 of 24 layouts.
 // Frostbite's rivals run a faster pace: throttle-only rarely wins, a driver using the kit (the economy bot) still does.
@@ -36,4 +39,14 @@ test('a driver using BOOST, NITRO, rings and the span still wins most layouts', 
 test('the faster rival pace is Frostbite-only: every other track keeps the classic pace', () => {
   for (const id of Object.keys(RACE_TRACKS)) assert.equal(createRace(id).rivalPace, 1, id);
   assert.ok(createRace(FROSTBITE_ID).rivalPace > 1);
+});
+
+// A longer track should still have a mid-pack throttle-only experience: even at full fuel,
+// the slower two Normal rivals must not automatically outrun the player's unboosted cap.
+test('Frostbite has two genuinely slower Normal rivals even at the BOOST cap', () => {
+  const race = createRace(FROSTBITE_ID), skill = rivalSkill(race);
+  for (let slot = 0; slot < 2; slot++) {
+    const boostedCap = Math.min(MAX_SPEED, rivalBaseCap(skill, slot) * race.rivalPace) + BOOST_CAP_BONUS;
+    assert.ok(boostedCap <= MAX_SPEED, `slot ${slot} has full-BOOST cap ${boostedCap}, above the throttle-only player`);
+  }
 });
