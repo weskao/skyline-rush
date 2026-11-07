@@ -104,3 +104,19 @@ test('Dune: no edge turns tighter than the pre-smoothing peak (3.63°/m) or its 
   });
   assert.deepEqual(tight, []);
 });
+
+import { PLAYABLE_COURSE_GRAPH as skyfall } from '../src/courses/skyfall-archipelago-runtime-adapter.ts';
+import { SKYFALL_COURSE } from '../src/courses/skyfall-archipelago.ts';
+
+test('Skyfall: every connected road/flight junction is tangent continuous within one degree', () => {
+  const pairs = connectedPairs(skyfall);
+  assert.equal(pairs.length, 12);
+  const bad = pairs.map(([a,b]) => ({
+    from:a.id, to:b.id,
+    degrees:headingDelta(heading(sampleRoute(skyfall,a.id,routeLength(skyfall,a.id))),
+      heading(sampleRoute(skyfall,b.id,0))),
+  })).filter(x => x.degrees > MAX_HEADING_DEG);
+  assert.deepEqual(bad,[]);
+  assert.deepEqual(SKYFALL_COURSE.edges.filter(e=>e.mode==='air').map(e=>[e.id,e.points.length]),
+    [['a-air',5],['b-air',4],['c-air',4]],'Q9 must not rewrite flight pads');
+});
