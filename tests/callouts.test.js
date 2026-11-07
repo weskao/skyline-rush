@@ -114,6 +114,24 @@ test('queued drift feedback describes the earned tier after the player has relea
   assert.equal(event.detail, 'SPARK TIER EARNED');
 });
 
+test('a new barrel roll displaces an older low-priority refill and preserves its real landing reward', () => {
+  const race = running(), callouts = createCallouts();
+  callouts.update(race);
+  race.elapsed = 0.05;
+  race.player.nitro = 0.25;
+  assert.equal(callouts.update(race)?.title, '+0.25');
+  race.elapsed = 0.1;
+  race.player.trick = { dir: 1, time: 0, done: false };
+  assert.equal(callouts.update(race)?.title, 'BARREL ROLL', 'the active refill must not hide a new trick');
+  race.elapsed = 0.3;
+  race.player.trick = null;
+  race.player.trickPayout = { nitro: 0.25, hard: false };
+  race.player.nitro = 0.5;
+  callouts.update(race);
+  race.elapsed = 1.2;
+  assert.equal(callouts.update(race)?.title, 'TRICK +0.25');
+});
+
 test('a real airborne flick announces its roll, then its landing reward without a duplicate refill', () => {
   const race = running(), callouts = createCallouts();
   Object.assign(race.player, { speed: 60, altitude: 4 });
