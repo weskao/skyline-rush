@@ -72,7 +72,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     if (!masks.size) {
       for (const part of host.car.children) {
         if (part === host.keep || (part === host.car.userData.jets && !instance.getObjectByName('lift_fans'))) continue; // aero VFX (and procedural fans, unless authored) stay drawn
-        part.traverse(object => { masks.set(object, object.layers.mask); object.layers.set(HIDDEN_LAYER); });
+        part.traverse(object => { if (!rig.riders.includes(object)) { masks.set(object, object.layers.mask); object.layers.set(HIDDEN_LAYER); } }); // riders move to the GLB body (rig)
       }
     }
     rig.update();
