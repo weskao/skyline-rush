@@ -33,10 +33,10 @@ Owner decisions (2026-11-07): add this phase; the Home showcase hero car (former
     The GLB draws about 20 fewer calls and fewer triangles than the procedural body at every tier (it replaces many small meshes), so Low keeps the low LOD.
 - [x] Regression matrix: the shared six-course Home carousel and camera dock, and every playable track including World Tour, on desktop and phone viewports, with drive, collision, NITRO, FLY, BOOST, landing and finish → retry.
   - `tests/hero-roadster-tracks-browser.spec.js`: 10 tracks × desktop/phone portrait, plus the six-course carousel and camera dock on both (22/22).
-- [ ] `npm test`, `npm run build`, `npm run test:browser`, `make verify` on the Phase 3b HEAD.
+- [x] Local gates (owner 2026-11-08: merge without waiting for `make verify` or CI): `npm test` 2133 pass / 0 fail, typecheck and build clean; `make verify` stopped by request after 102 of 983 browser tests (0 failed); hero specs 29/29.
 - [ ] Exact-HEAD full CI on the feature branch (`[full-regression]`); exact-HEAD full `quality-gate` on `develop` after the owner-approved merge.
 - [x] Real WebGL screenshots of the GLB car on Home (AIRFLOW on/off) and in race (ground, BOOST, NITRO, FLY, landing), attached by the browser spec.
-- [ ] Owner visual sign-off on the Home and in-race screenshots.
+- [x] ~~Owner visual sign-off on the Home and in-race screenshots~~: waived by the owner for Phase 2b on 2026-11-08 (no manual acceptance, no CI wait).
 - [ ] Owner-approved default-on: remove the `?model=roadster` gate in its own commit, with procedural fallback kept.
 
 Known limitation: the in-race Home link (`#leave-home`) reloads `./` and drops `?model=roadster`; End race (`#leave-end`) keeps it. Moot once the gate is removed.
@@ -46,5 +46,5 @@ Known limitation: the in-race Home link (`#leave-home`) reloads `./` and drops `
   - Desktop 1440×900: Home p50 16.7 / p95 33.3 vs 33.4 ms; race p50 33.3 / p95 50.0 ms for both; race fps 29.5 procedural vs 28.7 GLB.
   - Phone viewport 412×915 @2×, GLB first: Home p50 16.7 / p95 33.4 ms for both; race p50 33.3 / p95 50.0 vs 50.1 ms; race fps 30.1 procedural vs 29.1 GLB. (With procedural run first, later rounds drifted for both variants; the reversed order removed the gap, so it was order/thermal bias.)
   - Verdict: p50/p95 unchanged at frame quantisation; the GLB costs about 1 fps (~3 %) of average race fps under 6× throttle. Recorded as a known trade-off for the default-on decision.
-- [ ] Real phone: frame-time p50/p95 and sustained-FPS note (`make phone-diag`), GLB vs procedural, Home showcase and the same race track and tier; commit only the device-class summary.
+- [ ] Real phone (waived for Phase 2b by the owner on 2026-11-08; revisit before default-on): frame-time p50/p95 and sustained-FPS note (`make phone-diag`), GLB vs procedural, Home showcase and the same race track and tier; commit only the device-class summary.
 - [ ] Real-phone screenshots of the GLB car on Home and in race (ground, NITRO, FLY).

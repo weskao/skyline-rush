@@ -513,12 +513,11 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
   - [x] Lift fans authored in Blender (`lift_fans` > `lift_fan_01..04` pivots on the procedural LIFT_PORTS, `roadster_fan` material) through the headless `build.py`/`bake.py` path; `check-glb` PASS: main 6,784 tris / 1,395,788 B, low 4,326 tris / 493,852 B; manifest hashes updated.
   - [x] One adapter for Home and race reuses `createGarageModel` / `bindGarageRig` (`createWorldGarageModel().frame`, `dressesRaceCar`): one instance moves between the Home car, the Coming Soon card car and the Garage Studio; never attached mid-race (`race` mode). Low tier loads only `roadster2-low.glb`. Per-tier metrics in the task-4b checklist.
   - [x] Six-course Home carousel + camera dock and all 10 tracks (classic + World Tour) on desktop and phone portrait: drive, collision, BOOST, NITRO, FLY, landing, finish, retry (`tests/hero-roadster-tracks-browser.spec.js`, 22/22).
-  - [ ] `npm test`, typecheck, `npm run build`, `npm run test:browser`, `make verify` on the Phase 3b HEAD.
+  - [x] Local gates on the Phase 3b HEAD (owner 2026-11-08: merge without waiting for `make verify` or CI): `npm test` 2133 pass / 0 fail / 3 skipped, typecheck 0, `npm run build` 0; `make verify` stopped by request after 102 of 983 browser tests (0 failed); hero specs 29/29.
   - [ ] Exact-HEAD full CI on `feature/hero-roadster-glb` (`[full-regression]`); exact-HEAD full `quality-gate` on `develop` after the owner-approved merge.
   - [x] Home (AIRFLOW on/off) and in-race (ground, BOOST, NITRO, FLY, landing, low LOD, phone viewport) WebGL screenshots from the browser spec.
   - [x] Mac frame-time p50/p95, GLB vs procedural (Apple-silicon Mac, 6× CPU throttle, desktop and phone viewports): p50/p95 unchanged (race 33.3 / 50 ms), about 1 fps (~3 %) lower average race fps with the GLB. Summary in the task-4b checklist.
-  - [ ] Real-phone p50/p95 and screenshots (`make phone-diag`): owner gate.
-  - [ ] Owner visual sign-off on the Home and in-race screenshots.
+  - [x] ~~Real-phone p50/p95 and screenshots; owner visual sign-off; waiting for exact-HEAD CI~~: waived by the owner for Phase 2b on 2026-11-08 (no manual acceptance, no CI wait). Revisit before default-on.
   - [ ] Owner-approved default-on (remove `?model=roadster`), separate commit.
   - [ ] Rival cars: separate owner decision (default: stay procedural).
 - [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
