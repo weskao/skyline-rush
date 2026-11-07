@@ -23,10 +23,32 @@ Owner decisions (2026-11-07): add this phase after 2b; it must include **all** G
 A paint or skin added later joins this task automatically through the catalog-driven test.
 
 ## By project (committed once)
-- [ ] RED tests first: for every `PAINTS` id and every `GARAGE_SKINS` id, the GLB car shows it in Garage Home, Preview Studio, Home showcase and race; VFX port positions equal the procedural car's; a skin swap writes uniforms only (no new geometry, material or draw call); every style is compiled during warm-up, with no shader compile after GO; preview never grants a locked item and trial/owned/equipped rules are unchanged; paints and skins survive a Cloud Save round trip.
-- [ ] Audit: real WebGL before/after captures of each item, procedural vs GLB car, in Garage (both lighting levels and all three poses) and in race (ground, BOOST, NITRO, FLY, landing, launch), desktop and phone viewports. Owner marks each item "matches" or "mismatch".
-- [ ] Tune only the mismatched items: shader uniforms, colour, intensity, size and blend on the existing ports. Use Three.js shaders or sprites; Blender may bake flame/beam textures (sRGB/linear correct, KTX2 when used), never VFX meshes. Record "no change" for the rest.
-- [ ] Quality tiers: each heavy item (Void beams, NITRO trails, launch flares, vapor) has a Low-tier fallback; record draw calls and fill-rate cost per tier.
+- [x] RED tests first (`tests/hero-roadster-equipment-browser.spec.js`, catalog-driven; `tests/garage-model-rig.test.js`):
+  - RED on the 2b code: the launch flare body glow stayed on the hidden procedural body, so the GLB car showed no glow in race or on the phone, and the Studio paint sweep was missing on the GLB paint.
+  - GREEN: every `PAINTS` id matches the GLB paint in Garage Home, Preview Studio and the Home / Coming Soon showcase. Every `GARAGE_SKINS` preview leaves no effect hidden. Skin swaps add no shader program and no geometry (uniforms only). The race with the heaviest loadout compiles nothing after GO. `data-owned` stays false while previewing.
+  - Ports: thruster, airflow, NITRO trail and jet effects ride the procedural `keep` group, which stays drawn, so their ports are the procedural car's by construction. The flare glow now wraps the GLB body through a `bodyFrame` uniform (`src/garage-model-rig.ts`, `src/garage-launch-flare-shaders.js`).
+  - Cloud Save: no save, entitlement or catalog code changed. The existing trial, owned and cloud tests stay green in `npm test`. No new round-trip test was added.
+  - Stress: 16/16 with `CI=1 --repeat-each=4 --retries=0`.
+- [ ] Audit: real WebGL captures of every item, procedural vs GLB, in Garage (bright/dim × ground/flight/wing) and in race (launch, ground, BOOST, NITRO, FLY, landing), desktop 1440×900 and phone 390×844.
+  - Captured on 2026-11-08 by `GARAGE_EQUIPMENT_AUDIT=1 npx playwright test tests/garage-equipment-audit-browser.spec.js`. There are 12 contact sheets in the ignored `../audits/garage-equipment/`.
+  - Still open: the owner marks each item "matches" or "mismatch".
+  - Candidate mismatch for the owner: the GLB `_light` emissive takes the paint's light colour and reads much brighter than the procedural light strip (aurora, glacier and coral show it most). This is the Task 4b light binding, not a skin.
+  - The flare glow, NITRO trail, Void beams and airflow look alike on both cars.
+- [ ] Tune only the mismatched items: shader uniforms, colour, intensity, size and blend on the existing ports. Use Three.js shaders or sprites; Blender may bake flame/beam textures (sRGB/linear correct, KTX2 when used), never VFX meshes. Record "no change" for the rest. Waiting for the owner's marks; nothing has been tuned.
+- [x] Quality tiers: the Low fallbacks already exist.
+  - Flare body glow off and half the sparks below 0.25.
+  - NITRO road glow off below 0.25.
+  - Void beam brightness scales with tier (floor 0.25).
+  - Vapor emission scales with tier.
+  - Median draw calls / triangles with the heaviest loadout during NITRO + FLY (desktop, Apple-silicon Mac, 2026-11-08):
+
+    | Tier | Procedural | GLB |
+    |---|---|---|
+    | Low | 352 / 92.7k | 335 / 95.9k |
+    | Medium | 365 / 95.7k | 344 / 97.1k |
+    | High | 365 / 106.5k | 346 / 97.5k |
+
+  - Fill rate: NOT VERIFIED (not measured).
 - [ ] Regression matrix: Garage Home, Preview Studio, the shared six-course Home carousel and every playable track including World Tour, desktop and phone; `npm test`, `npm run build`, `npm run test:browser`, `make verify`; exact-HEAD full `quality-gate` on `develop`.
 - [ ] Owner visual sign-off on the final per-item before/after matrix.
 
