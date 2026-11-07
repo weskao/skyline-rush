@@ -24,14 +24,16 @@ for (const [device, viewport, touch] of [
     const stats = await page.evaluate(() => ({
       id: window.gameplay.race.trackId,
       forks: window.gameplay.race.sections.filter(s => s.type === 'shortcut').length,
-      chunks: window.gameScene.scene.getObjectByName('Monsoon Ruins race')?.children.length,
     }));
     expect(stats.id).toBe('monsoon-ruins');
     expect(stats.forks).toBe(3);
-    expect(stats.chunks).toBeGreaterThan(20);
     await shot(page, device + '-ready');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase','racing',{ timeout: ciTimeout(15000) });
+    // The home preview renders in a separate scene; the heavy race chunks mount on the first racing frame.
+    await expect.poll(() => page.evaluate(() =>
+      window.gameScene.scene.getObjectByName('Monsoon Ruins race')?.children.length
+    ), { timeout: ciTimeout(15000) }).toBeGreaterThan(20);
     for (const f of [0.12, 0.4, 0.78]) {
       await page.evaluate(frac => { const r = window.gameplay.race; Object.assign(r.player,{distance:r.length*frac,x:0,altitude:0,speed:60}); }, f);
       await page.waitForTimeout(400);
