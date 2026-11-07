@@ -494,10 +494,20 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         if (attempt) await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
         if (flyMode === 'toggle') await tapTouch(button('fly'));
         else await touch('touchStart', [await point(button('fly'), 1)]);
+        // Bounded with HUD evidence: one CI-timed run in 48 sat here until the 12-min test cap with FLY held.
         await page.waitForFunction(
           () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
-          null, { polling: 'raf' },
-        );
+          null, { polling: 'raf', timeout: ciTimeout(20000) },
+        ).catch(async error => {
+          const hud = await page.evaluate(() => {
+            const fly = document.querySelector('#touch-controls [data-control="fly"]')?.getBoundingClientRect();
+            const top = fly && document.elementFromPoint(fly.x + fly.width / 2, fly.y + fly.height / 2);
+            return [...['#tutorial-instruction', '#tutorial-cue', '#fuel-caption', '#fuel-value', '#altitude', '#speed']
+              .map(id => `${id}=${document.querySelector(id)?.textContent?.trim()}`),
+            `flyTop=${top?.id || top?.className}`, `pressed=${[...document.querySelectorAll('#touch-controls .is-pressed, #touch-controls [aria-pressed="true"]')].map(el => el.dataset.control)}`].join(' | ');
+          });
+          throw new Error(`no takeoff on roll attempt ${attempt}: ${hud}`, { cause: error });
+        });
         if (flyMode === 'toggle') await tapTouch(button('fly'));
         else await touch('touchEnd', []);
         if (pad) {
