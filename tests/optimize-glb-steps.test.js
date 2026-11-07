@@ -30,3 +30,19 @@ test('ktx2 entries encode each slot before meshopt (no lossy meshopt re-encode),
   // RDO only on the smooth AO map (keeps roadster2 inside its byte budget); normals stay plain UASTC to avoid block artefacts.
   assert.deepEqual(steps.map(s => s.includes('--rdo')), [false, true, false, false, false, false]);
 });
+
+test('low LOD: simplify then halve textures before the KTX2 passes, keeping the same meshopt flags', () => {
+  const entry = { ...validEntry(), decoders: ['meshopt', 'ktx2'] };
+  const full = optimizeSteps(entry, 'raw.glb', 'out.glb');
+  const low = optimizeSteps(entry, 'raw.glb', 'low.glb', { lod: 'low' });
+  assert.deepEqual(low.slice(0, 2).map(s => s[0]), ['simplify', 'resize']);
+  assert.equal(low[0][1], 'raw.glb');
+  assert.ok(low[1].includes('--width=512') && low[1].includes('--height=512'), low[1].join(' '));
+  for (let i = 1; i < low.length; i++) assert.equal(low[i][1], low[i - 1][2], `step ${i} reads the previous output`);
+  assert.equal(low.at(-1)[2], 'low.glb');
+  // after the LOD prep, the chain is the full chain (same KTX2 passes and meshopt flags)
+  assert.deepEqual(low.slice(2).map(s => [s[0], ...s.slice(3)]), full.map(s => [s[0], ...s.slice(3)]));
+  // pivots and named nodes survive: simplify never flattens/joins and keeps borders so the UV atlas stays seamless
+  assert.ok(low[0].includes('--lock-border'), low[0].join(' '));
+  for (const step of low.slice(0, 2)) assert.ok(step.slice(3).every(a => /^--[a-z-]+(=\S+)?$/.test(a)), step.join(' '));
+});

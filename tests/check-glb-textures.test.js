@@ -1,7 +1,7 @@
 // Task 4: check-glb reads texture sizes and KTX2 colour spaces from the GLB without decoding pixels.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkGlb, textureStats } from '../scripts/assets/check-glb.mjs';
+import { checkGlb, promotePath, textureStats } from '../scripts/assets/check-glb.mjs';
 import { validEntry } from './model-fixtures.js';
 
 /** KTX2 header + DFD with the given size and transfer function (1 = linear, 2 = sRGB). */
@@ -102,4 +102,11 @@ test('summarize parses a GLB with KTX2 textures in Node (no transcoder, no DOM)'
   assert.equal(summary.triangles, 1);
   assert.equal(summary.maxTexturePx, 256);
   assert.deepEqual(summary.colorSpaceErrors, []);
+});
+
+test('promotePath: main GLB to entry.url, a LOD to its own manifest url, an unlisted LOD is an error', () => {
+  const entry = { ...validEntry(), lods: [{ quality: 'low', url: 'models/probe-test/probe-test-low.glb' }] };
+  assert.equal(promotePath(entry), `public/${entry.url}`);
+  assert.equal(promotePath(entry, 'low'), 'public/models/probe-test/probe-test-low.glb');
+  assert.throws(() => promotePath({ ...entry, lods: [] }, 'low'), /no "low" LOD/);
 });

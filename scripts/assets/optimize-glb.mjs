@@ -14,13 +14,19 @@ const KTX2_PASSES = [
 ];
 
 /** gltf-transform argv lists, in order; each step reads the previous step's output. */
-export function optimizeSteps(entry, raw, out) {
+export function optimizeSteps(entry, raw, out, { lod } = {}) {
   // KTX2 runs before meshopt: encoding textures after meshopt decodes and re-quantizes the meshes.
   // One pass per slot with `--opt=value`: a `{a,b}` slot glob only matched one slot, and
   // `--opt value` after --slots fails with "Too many arguments".
   const passes = entry.decoders.includes('ktx2') ? KTX2_PASSES : [];
   const steps = [];
   let input = raw;
+  if (lod === 'low') {
+    // Low LOD: fewer triangles per mesh (nodes/pivots untouched; borders locked so atlas seams hold), half-size textures.
+    steps.push(['simplify', input, `${out}.simplify.glb`, '--ratio=0.5', '--error=0.01', '--lock-border']);
+    steps.push(['resize', `${out}.simplify.glb`, `${out}.resize.glb`, '--width=512', '--height=512']);
+    input = `${out}.resize.glb`;
+  }
   for (const [i, [mode, slot, ...opts]] of passes.entries()) {
     const output = `${out}.ktx${i}.glb`;
     steps.push([mode, input, output, `--slots=${slot}`, ...opts]);
@@ -32,12 +38,13 @@ export function optimizeSteps(entry, raw, out) {
 }
 
 async function main() {
-  const { manifestEntry, optGlbPath, rawGlbPath, requireFile, run } = await import('./common.mjs');
+  const { lodArg, manifestEntry, optGlbPath, rawGlbPath, requireFile, run } = await import('./common.mjs');
   const entry = await manifestEntry(process.argv[2]);
+  const lod = lodArg(process.argv.slice(3));
   const raw = rawGlbPath(entry.id);
   requireFile(raw, `Run: node scripts/assets/export-glb.mjs ${entry.id}`);
-  const out = optGlbPath(entry.id);
-  for (const step of optimizeSteps(entry, raw, out)) run('npx', ['--no-install', 'gltf-transform', ...step]);
+  const out = optGlbPath(lod ? `${entry.id}-${lod}` : entry.id);
+  for (const step of optimizeSteps(entry, raw, out, { lod })) run('npx', ['--no-install', 'gltf-transform', ...step]);
   console.log(`optimized GLB -> ${out}`);
 }
 

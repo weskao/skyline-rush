@@ -105,12 +105,22 @@ export async function summarize(buffer, rawBuffer) {
   return { triangles, draws, bytes: buffer.length, nodeNames, usedMaterials: [...used], maxTexturePx, colorSpaceErrors, animationNames, rawAnimationNames, generator: json.asset?.generator };
 }
 
+/** Repo-relative promote target: the main GLB goes to entry.url, a LOD to the url its manifest `lods` entry names. */
+export function promotePath(entry, lod) {
+  if (!lod) return `public/${entry.url}`;
+  const match = entry.lods.find(l => l.quality === lod);
+  if (!match) throw new Error(`${entry.id} has no "${lod}" LOD in its manifest lods`);
+  return `public/${match.url}`;
+}
+
 async function main() {
-  const { manifestEntry, optGlbPath, rawGlbPath, requireFile, root } = await import('./common.mjs');
+  const { lodArg, manifestEntry, optGlbPath, rawGlbPath, requireFile, root } = await import('./common.mjs');
   const [id, ...rest] = process.argv.slice(2);
   const entry = await manifestEntry(id);
   const promote = rest.includes('--promote');
-  const file = rest.find(a => !a.startsWith('--')) ?? optGlbPath(id);
+  const lod = lodArg(rest);
+  const target = promotePath(entry, lod); // fails before any work when the LOD is not in the manifest
+  const file = rest.find((a, i) => !a.startsWith('--') && rest[i - 1] !== '--lod') ?? optGlbPath(lod ? `${id}-${lod}` : id);
   requireFile(file, `Run: node scripts/assets/optimize-glb.mjs ${id}`);
   const buffer = readFileSync(file);
   const raw = rawGlbPath(id);
@@ -120,10 +130,10 @@ async function main() {
   console.log(`triangles: ${summary.triangles}\ndraws: ${summary.draws}\ngenerator: ${summary.generator}`);
   if (violations.length) { console.error(violations.map(v => `VIOLATION ${v}`).join('\n')); process.exit(1); }
   if (promote) {
-    const dest = join(root, 'public', entry.url);
+    const dest = join(root, target);
     mkdirSync(dirname(dest), { recursive: true });
     copyFileSync(file, dest);
-    console.log(`promoted -> public/${entry.url}`);
+    console.log(`promoted -> ${target}`);
   }
   console.log('check-glb: PASS');
 }

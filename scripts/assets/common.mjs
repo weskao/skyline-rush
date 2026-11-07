@@ -20,6 +20,14 @@ export async function manifestEntry(id) {
   return entry;
 }
 
+/** `--lod <quality>` from argv, or undefined for the main GLB. */
+export function lodArg(args) {
+  const i = args.indexOf('--lod');
+  if (i < 0) return undefined;
+  if (!args[i + 1] || args[i + 1].startsWith('--')) throw new Error('--lod needs a quality, e.g. --lod low');
+  return args[i + 1];
+}
+
 export function requireFile(path, hint) {
   if (!existsSync(path)) throw new Error(`${path} not found. ${hint}`);
 }
