@@ -9,9 +9,18 @@
   Existing throttle-only and skilled-bot 24-layout assertions remain unchanged.
 - [x] GREEN: focused rival tests 15/15 (also independently reviewed), typecheck,
   full units 2022 passed / 3 skipped, and production build passed.
-- [ ] `make verify`: initial browser stage could not launch Chrome in the
-  sandbox; permission-corrected run is in progress with four browser workers.
-- [ ] Exact-commit GitHub CI and real-game desktop/mobile acceptance remain pending.
+- [ ] Full `make verify` is not green: sandbox initially blocked Chrome; the
+  permission-corrected four-worker run stopped at the keyboard barrel-roll
+  wake assertion (zero observed vertices), with 2 passed / 1 failed / 3
+  interrupted / 914 not run. World Tour was not reached.
+- [x] Isolated browser follow-up: keyboard barrel roll and all four eight-car-grid
+  specs passed (5/5, one worker). Reviewed real Coast countdown screenshots at
+  1440x900 and 390x844 under `test-results/race-mode-eight-car-grid-*.png`.
+  This isolated pass does not clear the earlier full-suite failure.
+- [ ] Exact-commit full GitHub CI remains pending: source fix 8878b49d pushed,
+  run 42350405615 queued. Check the latest evidence commit's own run as well.
+  Full browser/World Tour coverage, Frostbite real-game balance review and
+  physical touch-device acceptance remain pending.
 - [x] Pulled course-graph-runtime to 428b0df2: its stale replay fixture was already
   repaired upstream. Fresh local typecheck/build passed, units 2115 passed / 3
   skipped, focused replay/rival tests 61 passed; safe push reports synchronized.
