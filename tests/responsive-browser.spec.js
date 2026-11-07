@@ -137,6 +137,36 @@ for (const width of [320, 390]) {
   });
 }
 
+// Chrome on iPhone (browser tab, not installed) overlays a bottom toolbar without shrinking the fixed layout box, so
+// 100% - 100dvh is the covered band; Chromium here has no such toolbar, so --browser-bar stands in for it.
+for (const [width, height] of [[844, 390], [667, 375]]) {
+  test.describe(`landscape home under a browser toolbar ${width}x${height}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: true, isMobile: true });
+
+    test('Start, the rail and the pinned row stay above the toolbar', async ({ page }) => {
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const intro = page.locator('#intro');
+      await intro.evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+      const bottomOf = async selector => { const box = await page.locator(selector).first().boundingBox(); return box.y + box.height; };
+      expect(Math.abs(await bottomOf('#start-button') - (height - 10)), 'no toolbar: Start keeps its 10px edge').toBeLessThanOrEqual(1);
+      const bar = 56;
+      await page.evaluate(px => document.body.style.setProperty('--browser-bar', `${px}px`), bar);
+      const [tools, daily, dock, start, card, garage] = await Promise.all(['.aero-tools', '#daily-card', '#showcase-camera-dock',
+        '#start-button', '.track-select button', '#garage-button'].map(selector => page.locator(selector).first().boundingBox()));
+      expect(Math.abs(start.y + start.height - (height - bar - 10)), 'Start sits 10px above the toolbar').toBeLessThanOrEqual(1);
+      expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row follows Start').toBeLessThanOrEqual(2);
+      expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
+      expect(dock.y + dock.height).toBeLessThanOrEqual(start.y);
+      expect(daily.y + daily.height).toBeLessThanOrEqual(dock.y);
+      expect(daily.y, 'rail runs into the AIRFLOW / VFX row').toBeGreaterThanOrEqual(tools.y + tools.height);
+      await page.keyboard.press('v');
+      await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
+      expect(await bottomOf('#start-button'), 'AIRFLOW Start sits above the toolbar').toBeLessThanOrEqual(height - bar - 10);
+    });
+  });
+}
+
 // 874x339 is iPhone landscape Safari with its toolbar showing (402 pt screen minus ~63 pt of chrome).
 for (const [width, height] of [[844, 390], [874, 339]]) {
   test.describe(`touch race HUD ${width}x${height}`, () => {
