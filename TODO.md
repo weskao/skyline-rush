@@ -56,6 +56,31 @@ Root cause: Coast pinned every gate to x 2.5 (lane 3); other tracks drew x unifo
 Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
 `docs/superpowers/plans/2026-11-06-course-graph-runtime.md`, branch `feature/course-graph-runtime`.
 
+### Status audit — Tasks 8–15 (2026-11-08, against `131b448a`)
+
+Audited every plan Step against the code and tests of `efc44eb9..131b448a`. The commits after
+`6a6ca618` (`d8fcabd6` … `131b448a`) wrote no `TODO.md` evidence; their RED/GREEN runs are
+unrecorded. Baseline `npm test` at `131b448a`: 2136 tests, 2130 pass / **3 fail** / 3 skipped
+(Skyfall junction tangents, Skyfall adapter ground traversal, Skyfall road contact), so `131b448a`
+was pushed red. `legacy-race-replay` 47/47. **Browser specs are not run in this session (user
+instruction 2026-11-08): every Playwright / `make verify` / WebGL screenshot row is NOT VERIFIED.**
+
+| Task | Step | State at `131b448a` | Evidence / gap |
+| --- | --- | --- | --- |
+| 8 | 1 tests | PARTIAL | `course-race-scene` (8 cars/3 edges, 3 km move disposes each old geometry once, hide/dispose), `course-route-map`, `route-map`, `course-render-pose`, `course-hud-standings` exist. Missing: shader warm-up of streamed chunk materials. |
+| 8 | 3 implement | DONE | `world.js` (`framedRoad`, graph pose/origin, scene update/hide/dispose, fork look-ahead, recovery camera snap, 3D-distance visibility, finish arch), HUD standings/gaps (`race-hud.ts`), per-edge minimap, Dune palette. `world.js` 1122 ≤ 1126. |
+| 8 | 4 run | PARTIAL | Unit green; shader-warmup / black-frame / legacy-minimap browser specs NOT VERIFIED. |
+| 9 | 1 browser spec | PARTIAL | `dune-tempest-race-browser.spec.js`: desktop + phone, card → START, cp1–cp4, FINISH, overlay, 0 page errors, flight branch, captures. Missing: `#track-length`, saved history/best, Dune → Coast → Dune GPU baseline, release-build Coming Soon. |
+| 9 | 3 readiness | DONE | `718c234f` `'dune-tempest': 'playable'`; `27766459` test lists + `ci-durations.json`. Production `isUpcomingEnterable` unchanged. |
+| 9 | 2/4 runs | NOT VERIFIED | Browser runs not recorded; not run by user instruction. |
+| 10 | 1 CPU bench | PARTIAL | `scripts/course-race-bench.mjs` + `course-race-bench.test.js` (`24c1fc59`, `34b76bab`); numbers never recorded. |
+| 10 | 2 WebGL/phone | NOT DONE | Needs real WebGL + device; NOT VERIFIED. |
+| 11 | all | NOT DONE | Epic merge, full gate, screenshots, exact-HEAD CI. |
+| 12 | 0 Q9 + 1–3 | PARTIAL | Shared sampler + bank 0 + identity distance (`131b448a`), tests (`5889bf8a`); 4 Skyfall junctions still 1.6–6.8° → red. |
+| 13 | all | NOT DONE | No `skyfall-archipelago-race.ts`; Skyfall not in `COURSE_RUNTIMES`. |
+| 14 | all | NOT DONE | Course scene host is Dune-only; Skyfall readiness `preview`. |
+| 15 | all | NOT DONE | — |
+
 ### Handoff state — 2026-11-07
 
 - Done and reviewed (unit level only): plan Tasks 1, 1A, 2–7 at `6a6ca618`. Spec Q1–Q9 are decided
@@ -318,6 +343,26 @@ Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
   - GREEN: same file 22/22; `npm test` 2059 tests, 2056 pass / 0 fail / 3 skipped; `npm run typecheck`
     clean; `src/game.js` still 580. `firestore-rules.test.js` 3/3 on the local emulators (Java 21,
     `npx --offline firebase-tools@15.34.1 emulators:exec`; the Playwright half of `test:cloud` not run).
+
+- [x] Task 12 — Skyfall one road frame + Q9 junctions. `131b448a` rendered the road from the shared
+  `sampleRoute` (bank 0, `skyfallPhysicalDistance` = identity) but pinned each flight-edge node to the
+  bare first/last chord, while the shared Catmull-Rom sampler's heading on those long curved pad
+  segments differs by up to 6.8°. `smoothSkyfallJunctions` now pins a flight-edge node to the heading
+  the shared sampler reports at that edge end (flight control points untouched).
+  - RED (pushed at `131b448a`, `npm test` 2130 pass / 3 fail): `course-junction-tangents` Skyfall
+    `a-air → midway-one` 6.81°, `midway-one → b-air` 1.82°, `midway-two → c-air` 2.05°, `c-air →
+    descent` 1.60°; `skyfall-archipelago-runtime-adapter` `canTraverseSkyfallRoad('midway-one', …)`
+    false; `skyfall-road-contact` identity `2014.4678967723694 !== …696`. The last two are a 1-ULP
+    overshoot of `length·40/40` / `length·10/10` past `routeLength` (probe in the scratchpad).
+  - GREEN: `node --test tests/course-junction-tangents.test.js tests/skyfall-*.test.js` 31/31;
+    `npm test` 2136 tests, 2133 pass / 0 fail / 3 skipped; replay 47/47 (Dune untouched).
+  - Measured ground route 16,452.588 → 16,457.420 m (`approach` 2,289.431, `a-ground` 2,897.929,
+    `midway-one` 2,015.591, `b-ground` 2,504.865, `midway-two` 2,185.204, `c-ground` 2,486.800,
+    `descent` 2,077.600). Flight edges and gaps unchanged: `a-air` 1,150.180 gap [276.043, 793.624],
+    `b-air` 867.996 [156.239, 555.518], `c-air` 1,237.364 [296.967, 915.649].
+  - Risk, not fixed: `canTraverseSkyfallRoad` and the identity test still use exact `toS ≤ length` /
+    strict float equality; the 1-ULP case passes now only because the lengths moved. Real WebGL
+    re-inspection of the Skyfall home preview and race road: NOT VERIFIED (no browser this session).
 
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 
