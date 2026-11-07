@@ -1,3 +1,12 @@
+## 2026-11-07 — 六賽道交接 Step A / Step B 與整合後進度（實際 GitHub 證據）
+
+- Step A（**FAIL**）：Stormline 來源 CI [42244758243](https://github.com/weskao/skyline-rush/actions/runs/42244758243) PASS；來源 HEAD `e9e7ee1a`；已於 merge `c611fe7a` 合入 epic。指定 epic CI [42272746152](https://github.com/weskao/skyline-rush/actions/runs/42272746152) 最終 **CANCELLED**，不可標記 PASS。
+- 2026-11-07 六個 `feature/playable*` 分支來源提交合入 epic，然後 `develop` 同步，merge `aeca7f5e`、後續修復 `31abfdec`；來源歷史合併不等於六張 playable。
+- [42378958068](https://github.com/weskao/skyline-rush/actions/runs/42378958068)（`31abfdec`）**FAIL**：Cloud Save Playwright 頭像測試 14/15 pass；Quality Gate FAIL；其餘 Unit、13 Browser shards、5 World Tour shards PASS。後續頭像測試修正在 `6eb4eaae`，新 CI 未驗收，不標 PASS。
+- Step B 文件記錄已更新；依使用者最新指示，**不因等待 CI 而停止開發**，但每條賽道驗收與正式發布門檻仍標示 PASS / FAIL / NOT VERIFIED，不刪除測試。
+- Step 2-2 Volcanic、Step 2-3 Monsoon：僅合入來源提交歷史；新增 race / Scene / Browser specs 與實跑驗收 **NOT VERIFIED**。Step 2.5 Lifecycle 實作未完成；Step 3 Dune runtime Tasks 1–7 單元層級完成（最新 `feature/course-graph-runtime` HEAD `428b0df2`），Task 8 起仍未完成；Skyfall Tasks 12–15 未完成。
+- Step 4 `epic → develop`：**BLOCKED**，因六張尚未 playable、exact-HEAD CI 未綠、真實 WebGL / 手機／人工簽核缺失；未進行反向合併。
+
 ## 2026-11-07 — Six playable source branch history integration (CI pending)
 
 - Source heads: Frostbite `549e8823`, Stormline `6eec7542`, Volcanic `9586ac67`, Monsoon `4b5b2fea`, Dune `959129db`, Skyfall `e094fea6`.
