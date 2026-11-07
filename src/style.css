@@ -2142,3 +2142,34 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   body:not([data-tutorial]) .result-cloud p { font-size: 10.5px; line-height: 1.3; }
   body:not([data-tutorial]) .result-cloud .sign-in-button { min-height: 44px; padding-block: 6px; font-size: 13px; }
 }
+
+/* Landscape phones (≤500px tall), racing-game home: the setup panel (mode tabs, track carousel, rules) fills the left
+   without scrolling from 360px tall, Garage / History / Practice stay pinned to its bottom, and a right rail holds
+   Daily, the camera dock and a big Start in the bottom-right thumb zone. The panel stops 280px short of the right edge
+   so it clears the AIRFLOW / VFX row (top: 64px) and the 210px rail. AIRFLOW keeps its own fixed Start and dock. */
+@media (max-height: 500px) and (orientation: landscape) {
+  body:not(.airflow-active) .intro { --rail: 210px; top: 64px; bottom: max(10px, var(--safe-bottom)); left: max(16px, var(--safe-left)); display: flex; flex-direction: column; width: min(520px, calc(100vw - 280px - var(--safe-left) - var(--safe-right))); max-width: none; padding: 0 4px 0 0; overflow-y: auto; -webkit-mask-image: none; mask-image: none; animation-name: intro-fade; }
+  .intro :is(h1, .route-label, .intro-copy, .intro-controls, .flight-tip, .start-hint) { display: none; }
+  .intro .race-mode-picker:not(.race-rules-row) { margin: 0; padding: 6px 8px 8px; }
+  .intro .race-mode-heading { margin-bottom: 4px; }
+  .race-mode-tabs { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); }
+  .race-mode-tabs button { min-height: 44px; padding: 4px 10px; font-size: 12px; }
+  .intro .track-select { flex: none; margin: 6px -6px -2px; }
+  .intro .track-select button { flex-basis: 132px; height: 78px; min-height: 0; padding: 6px 8px; }
+  .intro .track-select .track-preview { height: 34px; margin-bottom: 5px; }
+  .intro .track-select button > span.track-route-map { position: absolute; top: 8px; left: 10px; right: 10px; width: auto; height: 30px; margin: 0; padding: 0; background: none; }
+  .intro .track-select strong { margin-bottom: 2px; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+  .intro .track-note { margin: 4px 0; font-size: 10px; line-height: 1.4; }
+  .intro .race-rules-row { flex: none; }
+  /* Garage, History and Practice: one pinned row at the panel's bottom edge (Start moves to the rail). */
+  .intro .intro-actions { position: sticky; bottom: 0; z-index: 2; display: flex; flex-wrap: nowrap; gap: 8px; margin-top: auto; padding-top: 8px; background: linear-gradient(rgb(5 18 31 / 0), rgb(5 18 31 / .92) 8px); }
+  .intro .intro-primary { display: contents; }
+  .intro .intro-actions > .text-button { margin: 0; }
+  .intro :is(.history-button, .garage-button, .practice-button) { height: 44px; padding-inline: 14px; }
+  body[data-phase="ready"]:not(.airflow-active) .intro #start-button { position: fixed; z-index: 3; right: max(16px, var(--safe-right)); bottom: max(10px, var(--safe-bottom)); width: var(--rail); min-width: 0; max-width: none; height: 52px; }
+  body[data-phase="ready"]:not(.airflow-active) .showcase-camera-dock { position: fixed; right: max(16px, var(--safe-right)); bottom: calc(max(10px, var(--safe-bottom)) + 62px); top: auto; width: var(--rail); margin: 0; padding: 4px 6px; gap: 0; }
+  body[data-phase="ready"]:not(.airflow-active) :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
+  body[data-phase="ready"]:not(.airflow-active) .daily-card { position: fixed; right: max(16px, var(--safe-right)); bottom: calc(max(10px, var(--safe-bottom)) + 120px); width: var(--rail); max-width: none; box-sizing: border-box; margin: 0; padding: 6px 6px 6px 10px; gap: 8px; }
+}
+/* Opacity-only arrival: a transform on .intro would become the containing block of the fixed rail above. */
+@keyframes intro-fade { from { opacity: .25; } }
