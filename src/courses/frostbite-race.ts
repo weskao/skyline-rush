@@ -87,7 +87,9 @@ const sections: TrackSection[] = [
 
 /** The Rift corridor raced on the graph's ice bridge (`frostbiteFrame(d, true)`). */
 export const FROSTBITE_SPAN = sections.find(s => s.span)!;
-// Since the shared rivals gained player-equivalent BOOST/NITRO, this endurance-course multiplier must\n// keep slower grid slots catchable without items; full-kit driving should still win most layouts.\nexport const FROSTBITE_TRACK: TrackConfig & { topology: 'course-graph'; topologyVersion: 1 } = {
+// Since the shared rivals gained player-equivalent BOOST/NITRO, this endurance-course multiplier must
+// keep slower grid slots catchable without items; full-kit driving should still win most layouts.
+export const FROSTBITE_TRACK: TrackConfig & { topology: 'course-graph'; topologyVersion: 1 } = {
   name: 'Frostbite Canyon', length: Math.floor(total), trafficDensity: 0.6, seed: 12012,
   layoutVersion: 1, openingNitroRings: 2, rivalPace: 0.94, topology: 'course-graph', topologyVersion: 1, sections,
 };
