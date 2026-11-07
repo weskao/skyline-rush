@@ -112,6 +112,14 @@ export function tutorialCueView(cue: TutorialCue | null | undefined, touch: bool
   };
 }
 
+/** Phone controls that pulse now. The air chain follows its live cue so toast and ripple never disagree: FLY to take off,
+ * then BOOST + NITRO (either counts, game.js) while FLY is held, nothing while releasing or landing. */
+export function tutorialTouchControls(step: string | null, cue: TutorialCue | null | undefined, action: string | null): string[] {
+  if (step !== 'airChain' || !cue) return action ? [action] : [];
+  if (cue.key === 'tutorial.cue.chainFly') return ['fly'];
+  return cue.actions.includes('boost') ? ['boost', 'nitro'] : [];
+}
+
 export function setupTutorialUI({
   getTutorial, getRace, getTouchMatches, getInputPrefs, getControlPrefs, showKeyMap, getKeyMap, cue: playCue,
 }: TutorialDependencies) {
@@ -173,8 +181,10 @@ export function setupTutorialUI({
     if (!touch) {
       nextTick(() => showKeyMap());
     } else {
-      const target = tutorialTouchTarget(step, phase, inputPrefs.mode, action);
-      if (target) $(target)?.classList.add('tutorial-target');
+      for (const control of tutorialTouchControls(step, cue, action)) {
+        const target = tutorialTouchTarget(step, phase, inputPrefs.mode, control);
+        if (target) $(target)?.classList.add('tutorial-target');
+      }
     }
   }
   return { renderTutorial, resetTutorialView: () => { tutorialView = ''; } };
