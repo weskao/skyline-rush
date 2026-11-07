@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { FROSTBITE_ID } from '../src/courses/frostbite-race.ts';
 import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { createRace, stepRace, setLayoutSeed } from '../src/game.js';
+import { rivalSkill, rivalBaseCap } from '../src/rival-driver.ts';
 import { botInput } from '../scripts/pickup-economy.mjs';
 
 // 13.8 km is ~2x the longest classic sprint, so at classic rival pace holding the throttle alone won 9 of 24 layouts.
@@ -16,12 +17,6 @@ function positions(drive) {
       const race = createRace(FROSTBITE_ID), bot = {};
       race.phase = 'racing';
       for (let i = 0; i < 60 * 400 && race.phase !== 'finished'; i++) stepRace(race, drive === 'bot' ? botInput(race, bot) : { throttle: true }, 1 / 60);
-      if (k === 0 && drive === 'throttle') console.log('FROSTBITE_DIAG', JSON.stringify({
-        elapsed: race.elapsed, result: race.result, player: { distance: race.player.distance, speed: race.player.speed,
-          collisions: race.player.collisions, falls: race.player.falls, fuel: race.player.fuel, nitroUses: race.player.nitroUses },
-        rivals: race.rivals.map(r => ({ name: r.name, finishTime: r.finishTime, distance: r.distance,
-          speed: r.speed, fuel: r.fuel, nitroUses: r.nitroUses, itemTakes: r.itemTakes })),
-      }));
       out.push(race.result.position);
     }
   } finally { setLayoutSeed(); }
@@ -42,4 +37,16 @@ test('a driver using BOOST, NITRO, rings and the span still wins most layouts', 
 test('the faster rival pace is Frostbite-only: every other track keeps the classic pace', () => {
   for (const id of Object.keys(RACE_TRACKS)) assert.equal(createRace(id).rivalPace, 1, id);
   assert.ok(createRace(FROSTBITE_ID).rivalPace > 1);
+});
+
+// Before the shared player-rule AI upgrade, grid slots were separated by 3 m/s on this 13.8 km route.
+// Keep the fastest slot challenging while preserving a wider pace ladder for throttle-only racers.
+test('Frostbite keeps a three-metre-per-second rival pace ladder without changing normal tracks', () => {
+  const frostbite = rivalSkill(createRace(FROSTBITE_ID));
+  const normal = rivalSkill(createRace('canyon'));
+  assert.equal(rivalBaseCap(frostbite, 6), rivalBaseCap(normal, 6), 'fastest skill stays unchanged');
+  for (let slot = 0; slot < 6; slot++) {
+    const delta = rivalBaseCap(frostbite, slot + 1) - rivalBaseCap(frostbite, slot);
+    assert.ok(delta > 2.9 && delta < 3.1, `slot ${slot}: ${delta} m/s`);
+  }
 });
