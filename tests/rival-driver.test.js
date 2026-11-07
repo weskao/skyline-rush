@@ -144,3 +144,21 @@ test('long-course rivalPace preserves difficulty scaling without raising unboost
   run(race, rival, 6, 20);
   assert.equal(rival.speed, rivalBaseCap(RIVAL_SKILL.easy, 6) * 0.5, 'slower courses retain their pace multiplier');
 });
+
+test('Frostbite long-course pace retains slower backmarkers while the fastest rival reaches the player throttle cap', () => {
+  const race = createRace('frostbite-canyon');
+  const caps = race.rivals.map((rival, slot) => {
+    Object.assign(rival, { distance: 2000 + slot * 500, x: -2.5, speed: 0, nitro: 0, nitroTime: 0, boosting: false });
+    // No BOOST or NITRO: ground fuel naturally regenerates, so drain it before each step.
+    for (let i = 0; i < 20 * 60; i++) {
+      rival.fuel = 0;
+      driveRival(race, rival, slot, 0, 1 / 60);
+    }
+    return rival.speed;
+  });
+  assert.ok(caps[0] <= MAX_SPEED - 10, `Frostbite backmarker stays catchable: ${caps}`);
+  assert.ok(caps[1] <= MAX_SPEED - 8, `Frostbite second backmarker stays catchable: ${caps}`);
+  assert.equal(caps[6], MAX_SPEED, 'the fastest rival remains competitive at the normal throttle cap');
+  assert.ok(caps.every((speed, slot) => slot === 0 || speed >= caps[slot - 1]), `ordered grid: ${caps}`);
+  assert.equal(createRace('aurora').rivalSpread, undefined, 'classic tracks retain their original skill spread');
+});
