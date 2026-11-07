@@ -1,9 +1,21 @@
 ## 2026-11-07 — Monsoon branch shared rival pace CI repair
 
-- [x] RED evidence: original exact-HEAD CI [run 42298029488](https://github.com/weskao/skyline-rush/actions/runs/42298029488) reports Frostbite throttle-only P8 in 24/24 seeds and unboosted cap fixture reporting 100.8 instead of 88.
-- [x] Root-cause trace: long-course AI BOOST is used by all seven grid slots, eliminating the slower portion of the field; the separate 20-second throttle-cap fixture lets fuel regenerate and accidentally enables BOOST.
-- [ ] GREEN verification: run focused `node --experimental-strip-types --test tests/frostbite-rival-pace.test.js tests/rival-driver.test.js`, `npm test`, `npm run typecheck`, `npm run build`, relevant Playwright checks and exact-HEAD CI before marking passing.
-- [ ] Manual real-game Monsoon scenery / checkpoints / route / device acceptance remains an independent gate. This change leaves those modules untouched.
+- [x] Reproduced run 42344968333 locally: throttle-only finishes P7/P8 across
+  24 Frostbite layouts, outside the existing P6-or-better acceptance threshold.
+- [x] New boundary tests fail before repair: slower Frostbite rivals exceed the
+  player throttle cap even without BOOST, and full fuel cannot enable their BOOST.
+- [x] Reused the Frostbite-only skill profiles from course-graph-runtime: wider
+  Easy/Normal grid spread, unchanged classic profiles and normal BOOST thresholds.
+  Existing throttle-only and skilled-bot 24-layout assertions remain unchanged.
+- [x] GREEN: focused rival tests 15/15 (also independently reviewed), typecheck,
+  full units 2022 passed / 3 skipped, and production build passed.
+- [ ] `make verify`: initial browser stage could not launch Chrome in the
+  sandbox; permission-corrected run is in progress with four browser workers.
+- [ ] Exact-commit GitHub CI and real-game desktop/mobile acceptance remain pending.
+- [x] Pulled course-graph-runtime to 428b0df2: its stale replay fixture was already
+  repaired upstream. Fresh local typecheck/build passed, units 2115 passed / 3
+  skipped, focused replay/rival tests 61 passed; safe push reports synchronized.
+  Run 42346672195 is queued; local checks do not imply remote CI acceptance.
 
 ## 2026-11-07 — Minimap player marker (`feature/minimap-player-marker`, based on `origin/develop` `55821906`)
 

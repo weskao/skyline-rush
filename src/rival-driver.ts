@@ -36,7 +36,16 @@ export interface DriveRace {
   player: Car; traffic: readonly Car[]; rivals: readonly Car[];
 }
 
-export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill => RIVAL_SKILL[rivalLevel(race)] ?? RIVAL_SKILL.normal!;
+// Frostbite's long race needs a wider grid; ordinary tracks retain their established skill profiles.
+const FROSTBITE_SKILL: Readonly<Record<string, RivalSkill>> = {
+  easy: { ...RIVAL_SKILL.easy!, spread: 0.042 },
+  normal: { ...RIVAL_SKILL.normal!, spread: 0.035 },
+  hard: RIVAL_SKILL.hard!,
+};
+export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill => {
+  const level = rivalLevel(race);
+  return (race.trackId === 'frostbite-canyon' ? FROSTBITE_SKILL[level] : RIVAL_SKILL[level]) ?? RIVAL_SKILL.normal!;
+};
 /** The rival's throttle cap before BOOST or NITRO: never above the player's MAX_SPEED. */
 export const rivalBaseCap = (skill: RivalSkill, slot: number): number => MAX_SPEED * Math.min(1, skill.pace - skill.spread * (SLOTS - 1 - slot));
 
@@ -70,10 +79,7 @@ export function driveRival(race: DriveRace, rival: DrivenRival, slot: number, ho
   const nitro = rival.nitroTime > 0, grounded = !(rival.altitude > 0);
   rival.nitroTime = Math.max(0, rival.nitroTime - dt);
   // No BOOST under NITRO: its cap already covers BOOST's, so the fuel would be wasted.
-  // On faster long courses, back-of-grid drivers conserve BOOST; otherwise every slot outruns a throttle-only player.
-  // Classic races retain their existing BOOST thresholds and deterministic replay behavior.
-  const boostOn = skill.boostOn + ((race.rivalPace ?? 1) > 1 ? (SLOTS - 1 - slot) * 20 : 0);
-  rival.boosting = grounded && !nitro && rival.fuel > 0 && (rival.boosting ? rival.fuel > skill.boostOff : rival.fuel >= boostOn);
+  rival.boosting = grounded && !nitro && rival.fuel > 0 && (rival.boosting ? rival.fuel > skill.boostOff : rival.fuel >= skill.boostOn);
   // shortcut: the scripted hop still flies on an empty tank (it never strands a rival); upgrade if rivals ever choose when to fly.
   if (rival.thrusting) rival.fuel -= FLY_DRAIN * dt;
   else if (!grounded) rival.fuel += GLIDE_FUEL_REGEN * dt;

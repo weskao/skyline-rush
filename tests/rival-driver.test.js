@@ -138,20 +138,13 @@ test('on an opening map Easy and Normal rivals drive at intro skill: slower and 
   assert.equal(rivalSkill(createRace('canyon', { mode: 'classic' })), RIVAL_SKILL.normal, 'the third map is plain Normal');
 });
 
-test('long-course slower grid slots conserve BOOST but the fastest rival can still boost', () => {
-  for (const slot of [0, 1, 2]) {
-    const race = bare('normal'), rival = race.rivals[slot];
-    race.rivalPace = 1.04;
-    Object.assign(rival, { speed: 0, fuel: 100 });
-    run(race, rival, slot, 20);
-    assert.equal(rival.boosting, false, `slot ${slot} conserves BOOST`);
-    assert.ok(rival.speed < MAX_SPEED, `slot ${slot}: ${rival.speed}`);
+test('Frostbite slower slots retain normal BOOST use at full fuel', () => {
+  for (const slot of [0, 1, 2, 6]) {
+    const race = createRace('frostbite-canyon'), rival = race.rivals[slot];
+    Object.assign(rival, { speed: 0, fuel: 100, altitude: 0, thrusting: false });
+    driveRival(race, rival, slot, 0, 1 / 60);
+    assert.equal(rival.boosting, true, `slot ${slot} can spend its full tank`);
   }
-  const race = bare('normal'), rival = race.rivals[6];
-  race.rivalPace = 1.04;
-  Object.assign(rival, { speed: 0, fuel: 100 });
-  run(race, rival, 6, 3);
-  assert.ok(rival.boosting && rival.speed > 0, 'the leading rival retains BOOST');
 });
 
 test('long-course rivalPace preserves difficulty scaling without raising unboosted rivals above player cap', () => {
