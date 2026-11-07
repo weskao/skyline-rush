@@ -300,7 +300,7 @@ export function createSkyfallWorld(scene: THREE.Scene, quality: Tier = 'medium')
       if (disposed) return;
       disposed = true;
       for (const key of Array.from(chunks.keys())) unload(key);
-      scene.remove(group);
+      group.removeFromParent(); // the shared CourseGraph host reparents this world under its single scene root
       const geometries = new Set<THREE.BufferGeometry>();
       const materials = new Set<THREE.Material>();
       group.traverse(obj => {
