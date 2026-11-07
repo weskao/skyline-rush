@@ -1,4 +1,4 @@
-<!-- source-sha256: 2503ef3176b6343a4f3a1269da09bc83d1760b8d46be9824644c69ec13150987 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 793f38785e6e7d67eefe48b99e27b084735d212154c448639fc708366617565a generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -20,15 +20,15 @@
 
 https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
-<p align="center"><img src="artifacts/readme-tracks.jpeg?v=20261102a" width="70%" alt="飛行中的十條賽道之四：Neon Downtown、Aurora Pass、Sky Spiral 與 Tokyo Afterdark"></p>
+<p align="center"><img src="artifacts/readme-tracks.jpeg?v=2" width="70%" alt="飛行中的十條賽道之四：Neon Downtown、Aurora Pass、Sky Spiral 與 Tokyo Afterdark"></p>
 
-<p align="center"><img src="artifacts/readme-start.zh-TW.jpeg?v=20261102a" width="49%" alt="含遊戲模式、賽道與 Start race 的開始畫面"> <img src="artifacts/race-results.zh-TW.jpeg?v=20261024a" width="49%" alt="創下個人最佳的比賽結果"></p>
+<p align="center"><img src="artifacts/readme-start.zh-TW.jpeg?v=2" width="49%" alt="含遊戲模式、賽道與 Start race 的開始畫面"> <img src="artifacts/race-results.zh-TW.jpeg?v=2" width="49%" alt="創下個人最佳的比賽結果"></p>
 
 ### 在手機上遊玩
 
 直向或橫向皆支援觸控操作；AUTO 會持續按住油門。[觀看 MP4](artifacts/mobile-demo.mp4)
 
-<p align="center"><img src="artifacts/mobile-home.jpeg" height="300" alt="含賽道選擇的手機直向開始畫面"> <img src="artifacts/mobile-landscape-flight.jpeg" height="300" alt="手機橫向飛行，按住 FLY 並顯示觸控按鈕"></p>
+<p align="center"><img src="artifacts/mobile-home.jpeg?v=2" height="300" alt="含賽道選擇的手機直向開始畫面"> <img src="artifacts/mobile-landscape-flight.jpeg?v=2" height="300" alt="手機橫向飛行，按住 FLY 並顯示觸控按鈕"></p>
 
 截圖取自 Chrome 行動裝置模擬（390×844 與 844×390）的全新設定檔；並非實體手機的效能測量。
 

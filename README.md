@@ -19,15 +19,15 @@ A Classic sprint lasts about a minute; multi-stage challenges take longer. Sound
 
 https://github.com/user-attachments/assets/e0ddb94c-794e-49ab-9b66-51cb5150f101
 
-<p align="center"><img src="artifacts/readme-tracks.jpeg?v=20261102a" width="70%" alt="Four of the ten tracks in flight: Neon Downtown, Aurora Pass, Sky Spiral and Tokyo Afterdark"></p>
+<p align="center"><img src="artifacts/readme-tracks.jpeg?v=2" width="70%" alt="Four of the ten tracks in flight: Neon Downtown, Aurora Pass, Sky Spiral and Tokyo Afterdark"></p>
 
-<p align="center"><img src="artifacts/readme-start.jpeg?v=20261102a" width="49%" alt="Start screen with game modes, tracks and Start race"> <img src="artifacts/race-results.jpeg?v=20261024a" width="49%" alt="Race results with a new personal best"></p>
+<p align="center"><img src="artifacts/readme-start.jpeg?v=2" width="49%" alt="Start screen with game modes, tracks and Start race"> <img src="artifacts/race-results.jpeg?v=2" width="49%" alt="Race results with a new personal best"></p>
 
 ### Play on your phone
 
 Portrait or landscape with touch controls; AUTO keeps the accelerator held. [Watch the MP4](artifacts/mobile-demo.mp4)
 
-<p align="center"><img src="artifacts/mobile-home.jpeg" height="300" alt="Mobile portrait start screen with track selection"> <img src="artifacts/mobile-landscape-flight.jpeg" height="300" alt="Mobile landscape flight with FLY held and the touch controls visible"></p>
+<p align="center"><img src="artifacts/mobile-home.jpeg?v=2" height="300" alt="Mobile portrait start screen with track selection"> <img src="artifacts/mobile-landscape-flight.jpeg?v=2" height="300" alt="Mobile landscape flight with FLY held and the touch controls visible"></p>
 
 Captured in Chrome mobile emulation (390×844 and 844×390) on a fresh profile; not a physical-phone performance measure.
 
