@@ -18,9 +18,11 @@ export interface RivalSkill {
 // Tuned with the scripted player bot (scripts/rival-balance.mjs) to the user's 2026-11-07 "challenging" target.
 // 'intro' is Easy and Normal on an opening map (TrackConfig.introRivals): a new player mostly finishes on the podium.
 export const RIVAL_SKILL: Readonly<Record<string, RivalSkill>> = {
-  intro: { pace: 0.92, spread: 0.012, boostOn: 101, boostOff: 100, smart: false, laneShift: 6 },
-  easy: { pace: 0.93, spread: 0.012, boostOn: 80, boostOff: 50, smart: false, laneShift: 6 },
-  normal: { pace: 0.98, spread: 0.006, boostOn: 40, boostOff: 20, smart: true, laneShift: 8 },
+  // Separate the slow end of the grid even when every rival can use BOOST; the old
+  // compressed spread left throttle-only Frostbite players eighth in every layout.
+  intro: { pace: 0.92, spread: 0.045, boostOn: 101, boostOff: 100, smart: false, laneShift: 6 },
+  easy: { pace: 0.93, spread: 0.042, boostOn: 80, boostOff: 50, smart: false, laneShift: 6 },
+  normal: { pace: 0.98, spread: 0.035, boostOn: 40, boostOff: 20, smart: true, laneShift: 8 },
   hard: { pace: 1, spread: 0.003, boostOn: 30, boostOff: 10, smart: true, laneShift: 9 },
 };
 const SLOTS = 7; // the full grid's rivals; slot 6 is the fastest
