@@ -1,3 +1,27 @@
+## 2026-11-07 — Results cloud-sync status (`feature/results-cloud-sync-status`, based on `develop` `355f20e8`)
+
+Acceptance: the finished-race results show one cloud line. Signed in (any provider): syncing → "Race saved to the
+cloud." only after Firestore acknowledges, or "Not synced yet — saved on this device, will retry." when the write fails
+or is offline. Signed out: an explanation plus "Sign in with Google"; the sign-in outcome (signed in + synced, sync
+failed, sign-in failed, neutral "Sign-in cancelled") appears inline. Not on pause, not in Free Drive. en + zh-TW.
+
+- [x] RED → GREEN `tests/result-cloud-status.test.js` (state logic, popup-cancel classification, locale parity,
+  controller sign-in + sync flow with injected services): failed on the missing module, then 10/10 pass.
+- [x] `tests/result-cloud-browser.spec.js` (Firebase replaced by a scripted module on the Vite dev server) at
+  1440×900, 390×844, 844×390, 667×375 + zh-TW switch: 9/9 pass locally.
+- [x] `tests/overlay-landscape-fit-browser.spec.js` now requires the results sign-in button; 5/5 viewports pass.
+  The fold check now polls (the slide-in can still offset the panel when the hit test first passes).
+- [x] `npm test` 1950 pass / 0 fail / 3 skipped; `npm run typecheck` and `npm run build` pass.
+- Audio: none added; a background sync result is status text, and the results screen already plays its own cue.
+- Quality tiers: cheap DOM UI, no tier branches.
+- [ ] Full `npm run test:browser`: stopped on request at 515/938 (511 pass, 4 fail, none on the results
+  screen: `motion-browser.spec.js:180`, `foldable-layout-browser.spec.js:105`,
+  `garage-skin-trial-browser.spec.js:4` at 1440×900 and 844×390). Another session ran Playwright in the main
+  checkout at the same time; the failures are not yet re-run in isolation or against `355f20e8`.
+- [ ] `npm run test:cloud` not run yet (Java 21 is available).
+- [ ] CI-timing stress run of `result-cloud-browser.spec.js` (`--repeat-each=8 --retries=0`) not run yet.
+- [ ] Exact-HEAD FULL CI on `develop` after the merge.
+
 ## 2026-11-07 — Current-mechanism README refresh
 
 - [x] Reviewed README gameplay claims against race configuration/grid, shared drive rules,
