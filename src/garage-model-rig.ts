@@ -1,7 +1,7 @@
 // Task 4: binds a GLB car's named nodes and materials to the procedural car that the frame loop animates
 // (wheels, active wing, lift fans, paint, light colour). GLB pivots sit at the procedural pivots, so each bound node
 // copies its partner's local TRS. Per frame: copies only, no allocation.
-import type { Color, Material, Mesh, Object3D } from 'three';
+import type { Color, Material, Mesh, Object3D, ShaderMaterial, Vector4 } from 'three';
 
 interface Tinted extends Material { color?: Color; emissive?: Color; metalness?: number; roughness?: number }
 interface CarParts {
@@ -12,8 +12,11 @@ interface CarParts {
   brakeLight?: { color: Color };
 }
 
-export interface GarageRig { update(): void; dispose(): void }
+/** `riders`: body-wrapping effects this rig moves onto the GLB body; they must stay drawn when the car is masked. */
+export interface GarageRig { readonly riders: readonly Object3D[]; update(): void; dispose(): void }
 
+/** A rider's optional `bodyFrame` uniform (garage-launch-flare-shaders.js BODY_VERTEX). */
+const frameOf = (rider: Mesh): Vector4 | undefined => (rider.material as ShaderMaterial).uniforms?.bodyFrame?.value as Vector4 | undefined;
 const corner = (o: Object3D): string => `wheel_${o.position.z < 0 ? 'f' : 'r'}${o.position.x < 0 ? 'l' : 'r'}`;
 
 function boundPairs(car: Object3D, instance: Object3D): [Object3D, Object3D][] {
@@ -52,8 +55,26 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
   });
   const paints = [...owned.values()].filter(m => m.name.endsWith('_paint'));
   const lights = [...owned.values()].filter(m => m.name.endsWith('_light'));
+  // Task 4c: a Garage-only paint shader hook (the Studio sweep, garage-paint-shader.ts) carries over to the GLB paint.
+  const finish = parts.body?.material as Material | undefined;
+  if (finish && Object.hasOwn(finish, 'onBeforeCompile')) for (const paint of paints) {
+    paint.onBeforeCompile = finish.onBeforeCompile;
+    paint.customProgramCacheKey = finish.customProgramCacheKey;
+  }
+  // Effects that wrap the body (`followsBody`: the launch flare glow) wrap the GLB body instead. Moved in update(), not
+  // here: a re-dress binds the new rig before the old one lets go.
+  const glbBody = instance.getObjectByName('body') as Mesh | undefined;
+  const riders: Mesh[] = []; // searched car-wide: on a re-dress they still ride the old instance
+  if (glbBody?.isMesh && parts.body) car.traverse(object => { if (object.userData.followsBody) riders.push(object as Mesh); });
   return {
+    riders,
     update() {
+      for (const rider of riders) if (rider.parent !== glbBody) {
+        glbBody!.add(rider); rider.geometry = glbBody!.geometry;
+        // GLB body space (quantized, uniformly scaled, unrotated) → procedural body space, for shaders that read it
+        const { position: at, scale } = parts.body!, s = scale.x;
+        frameOf(rider)?.set((glbBody!.position.x - at.x) / s, (glbBody!.position.y - at.y) / s, (glbBody!.position.z - at.z) / s, glbBody!.scale.x / s);
+      }
       for (const [target, source] of pairs) {
         target.position.copy(source.position);
         target.quaternion.copy(source.quaternion);
@@ -68,6 +89,9 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
       }
       if (parts.brakeLight) for (const light of lights) light.emissive?.copy(parts.brakeLight.color);
     },
-    dispose() { for (const material of owned.values()) material.dispose(); },
+    dispose() {
+      for (const rider of riders) if (rider.parent === glbBody) { parts.body!.add(rider); rider.geometry = parts.body!.geometry; frameOf(rider)?.set(0, 0, 0, 1); }
+      for (const material of owned.values()) material.dispose();
+    },
   };
 }
