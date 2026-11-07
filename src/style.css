@@ -173,7 +173,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 .overlay-content { width: min(560px, calc(100% - 48px)); text-align: center; }
 .overlay-route { font-size: 9px; letter-spacing: 3px; color: #b9c4cb; }
 .overlay-content h2 { font: 700 72px/1 'Barlow Condensed', sans-serif; margin: 20px 0 15px; }
-.overlay-content > p { color: #cad2d8; font-size: 13px; line-height: 1.7; margin-bottom: 30px; }
+.overlay-summary > p { color: #cad2d8; font-size: 13px; line-height: 1.7; margin-bottom: 30px; }
 .text-button { background: transparent; border: 0; color: #c7d0d7; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 12px; margin: 23px auto 0; padding: 8px; }
 .text-button svg { width: 16px; height: 16px; }
 .text-button:hover { color: var(--accent); }
@@ -266,7 +266,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   .driving-message { top: 30%; font-size: 8px; letter-spacing: 1px; }
   .driving-message[data-tone='warning'] { font-size: 10px; padding: 2px 10px; }
   .overlay-content h2 { font-size: 58px; }
-  .overlay-content > p { font-size: 11px; }
+  .overlay-summary > p { font-size: 11px; }
   .overlay-route { font-size: 7px; letter-spacing: 2px; }
   .result-stats { gap: 24px; }
   .result-stats strong { font-size: 26px; }
@@ -308,7 +308,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   .countdown { top: 30%; font-size: 85px; }
   .race-overlay { inset: 70px 0 0; }
   .overlay-content h2 { font-size: 48px; margin-top: 12px; }
-  .overlay-content > p { margin-bottom: 18px; }
+  .overlay-summary > p { margin-bottom: 18px; }
   .result-stats { margin: 15px 0; }
   .text-button { margin-top: 12px; }
 }
@@ -1044,7 +1044,7 @@ body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] {
   .overlay-content .text-button { min-height: 44px; }
   .race-overlay { overflow-y: auto; padding-block: 20px; }
   .overlay-content h2 { margin-top: 8px; }
-  .overlay-content > p { margin-bottom: 16px; }
+  .overlay-summary > p { margin-bottom: 16px; }
 }
 @media (max-height: 500px) and (min-width: 761px) {
   .intro { top: 80px; left: max(5%, calc(var(--safe-left) + 8px)); max-width: 550px; bottom: 90px; overflow: auto; padding: 5px; } /* a landscape notch must not cover Start */
@@ -1055,7 +1055,7 @@ body[data-phase="ready"]:not(.page-hidden) .track-preview[data-visible="true"] {
   .primary-button { height: 44px; }
   .race-overlay { inset: 70px 0 16px; overflow-y: auto; padding-block: 18px; }
   .overlay-content h2 { font-size: 40px; margin: 8px 0; }
-  .overlay-content > p, .result-stats { margin: 10px 0; }
+  .overlay-summary > p, .result-stats { margin: 10px 0; }
   .overlay-content { margin-block: auto; }
 }
 @media (max-width: 370px) {
@@ -1937,7 +1937,7 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 /* Paused practice: the coach keeps its full lesson and progress (Exit is its only button) and the shared
    pause screen starts below it on phones, right of it in landscape; neither covers the other. */
 body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* an open language/VFX list opens over the coach (12) */
-@media (max-width: 760px) and (min-height: 501px) { body[data-tutorial] .race-overlay { top: max(calc(var(--safe-top) + 190px), calc(var(--tutorial-coach-bottom, 0px) + 8px)); align-items: start; overflow: auto; } body[data-tutorial] .overlay-route { display: none; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 4px 0 6px; } body[data-tutorial] .overlay-content > p { margin-bottom: 12px; } }
+@media (max-width: 760px) and (min-height: 501px) { body[data-tutorial] .race-overlay { top: max(calc(var(--safe-top) + 190px), calc(var(--tutorial-coach-bottom, 0px) + 8px)); align-items: start; overflow: auto; } body[data-tutorial] .overlay-route { display: none; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 4px 0 6px; } body[data-tutorial] .overlay-summary > p { margin-bottom: 12px; } }
 @media (max-height: 500px) and (orientation: landscape) { body[data-tutorial] .race-overlay { justify-items: end; } body[data-tutorial] .overlay-content { width: calc(50vw - 36px); margin-right: 12px; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 6px 0 8px; } } /* right of the left-half coach */
 
 /* Display-only 3x results artwork; no reward entitlement. */
@@ -2052,4 +2052,41 @@ body:not([data-phase="ready"]) .mode-indicator[data-peripheral][data-compact="tr
 @media (max-width: 370px) {
   .impact-report[data-peripheral][data-compact="true"] { padding: 4px 7px; }
   .impact-report[data-peripheral][data-compact="true"] strong { font-size: 11px; letter-spacing: 0; }
+}
+/* Phone landscape pause/results: summary | actions side by side, so every button is on screen without scrolling.
+   The tutorial keeps its own right-half panel beside the coach (above). */
+@media (max-height: 500px) and (orientation: landscape) {
+  body:not([data-tutorial]) .race-overlay { inset: 66px 0 0; padding: 38px max(16px, var(--safe-right)) max(10px, var(--safe-bottom)) max(16px, var(--safe-left)); } /* top padding clears the language/AIRFLOW/VFX row */
+  body:not([data-tutorial]) .overlay-content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(184px, 30%); align-items: center; gap: 0 24px; width: min(900px, 100%); margin-block: auto; }
+  body:not([data-tutorial]) .overlay-route { display: none; } /* the top bar already names the route */
+  body:not([data-tutorial]) .overlay-content h2 { font-size: clamp(30px, 9vh, 40px); margin: 0 0 6px; }
+  body:not([data-tutorial]) .overlay-summary { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; column-gap: 14px; }
+  body:not([data-tutorial]) .overlay-summary > :not(h2, .new-best) { flex: 1 0 100%; order: 1; } /* NEW BEST rides beside the title */
+  body:not([data-tutorial]) .overlay-summary > p { margin: 0 0 8px; line-height: 1.5; }
+  body:not([data-tutorial]) .new-best { margin-bottom: 6px; padding: 4px 10px; font-size: 10px; }
+  body:not([data-tutorial]) .result-stats { gap: 6px 22px; margin: 8px 0; }
+  body:not([data-tutorial]) .result-stats > div { gap: 4px; }
+  body:not([data-tutorial]) .result-stats strong { font-size: 24px; }
+  body:not([data-tutorial]) .result-stats > div:has(.result-trophy-art) > span { max-width: 15em; margin-inline: auto; } /* the long badge label wraps instead of pushing the trophy to a second row */
+  body:not([data-tutorial]) .result-trophy-art { max-width: 48px; max-height: 48px; }
+  body:not([data-tutorial]) .result-style { grid-template-columns: auto auto; justify-content: center; align-items: center; margin: 4px 0 0; gap: 2px 12px; }
+  body:not([data-tutorial]) .result-style small { grid-column: 1 / -1; line-height: 1.4; }
+  body:not([data-tutorial]) .style-stars svg { width: 22px; height: 22px; }
+  body:not([data-tutorial]) .overlay-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+  body:not([data-tutorial]) .overlay-actions :is(.primary-button, .text-button) { width: 100%; min-width: 0; margin: 0; }
+  body:not([data-tutorial]) .overlay-actions .primary-button { height: 48px; }
+  body:not([data-tutorial]) .race-overlay .next-button { gap: 10px; padding: 0 6px 0 14px; font-size: 16px; line-height: 1.1; letter-spacing: .08em; text-align: left; }
+  body:not([data-tutorial]) .race-overlay .next-button svg { flex: none; width: 36px; height: 36px; padding: 9px; }
+  body:not([data-tutorial]) .overlay-actions .text-button { min-height: 44px; border: 1px solid rgb(255 255 255 / .16); border-radius: 4px; }
+  body:not([data-tutorial]) .result-links { gap: 8px; }
+}
+@media (max-height: 500px) and (min-width: 761px) and (hover: hover) { body:not([data-tutorial]) .race-overlay { padding-top: 58px; } } /* mouse: the tool row sits at 86px */
+@media (max-height: 500px) and (orientation: landscape) { /* vertical fold: summary fills the left pane, actions the right, nothing on the hinge */
+  body[data-fold-axis="vertical"]:not([data-tutorial]) .race-overlay { padding-inline: 0; }
+  body[data-fold-axis="vertical"]:not([data-tutorial]) .overlay-content { width: 100%; grid-template-columns: var(--fold-pane-left-end) minmax(0, 1fr); column-gap: calc(var(--fold-pane-right-start) - var(--fold-pane-left-end)); }
+  body[data-fold-axis="vertical"]:not([data-tutorial]) .overlay-summary { padding-inline: max(16px, var(--safe-left)) 12px; }
+  body[data-fold-axis="vertical"]:not([data-tutorial]) .overlay-actions { padding-inline: 12px max(16px, var(--safe-right)); }
+  body[data-fold-axis="vertical"]:not([data-tutorial]) .result-stats { column-gap: 12px; } /* one stats row in a ~410px pane */
+  body[data-fold-axis="vertical"]:not([data-tutorial]) .result-stats strong { font-size: 22px; }
+  body[data-fold-axis="vertical"]:not([data-tutorial]) .result-stats > div:has(.result-trophy-art) > span { max-width: 9em; }
 }
