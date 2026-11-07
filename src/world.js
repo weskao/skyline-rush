@@ -43,6 +43,8 @@ import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { createRampPool, drawRamps } from './ramp-view.ts'; import { createHazardRenderer } from './hazard-render.ts';
 import { createWorldGarageModel } from './garage-model.ts';
+import { createGraceFade, graceOpacity } from './grace-fade.ts';
+import { fitText } from './sign-text.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const roadCenter = classicRoadCenter;
@@ -60,14 +62,6 @@ function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
   rotation.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, angle);
   matrix.compose(position, rotation, scale);
   mesh.setMatrixAt(index, matrix);
-}
-// Canvas sign text: Latin keeps the generic sans-serif; zh-TW appends CJK families. The font shrinks until the text fits.
-const signFont = (px, locale) => `bold ${px}px ${locale === 'zh-TW' ? '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif' : 'sans-serif'}`;
-function fitText(context, label, x, y, maxWidth, basePx, locale) {
-  let px = basePx;
-  context.font = signFont(px, locale);
-  while (px > 12 && context.measureText(label).width > maxWidth) context.font = signFont(--px, locale);
-  context.fillText(label, x, y);
 }
 export function createWorld(canvas) {
   // Scoped continuation: finite career/Ghost path API still clamps at the finish.
@@ -307,6 +301,7 @@ export function createWorld(canvas) {
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
   applyCarReflections(player, carEnvironment);
+  const graceFade = createGraceFade(player); // before aero VFX attach to it
   const rearLight = player.userData.rearLight;
   const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
@@ -884,6 +879,7 @@ export function createWorld(canvas) {
         });
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt, false, {}, poseFor(mesh, race.traffic[i], motion?.previous?.traffic?.[i], alpha)); });
       }
+      graceFade(preview || race.phase === 'finished' ? 1 : graceOpacity(car.cooldown, race.elapsed, reducedMotion));
       ghostCar.visible = !preview && !!ghost;
       rearLight.update(race, motionDt, reducedMotion || !visual.enabled);
       if (ghostCar.visible) { // samples carry no span flag: a Frostbite ghost inside the Rift corridor box is drawn on the span

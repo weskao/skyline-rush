@@ -13,7 +13,7 @@ test.use({ unlockedAccess: true });
 for (const [device, viewport, touch] of [
   ['desktop', { width: 1440, height: 900 }, false],
   ['phone', { width: 390, height: 844 }, true],
-]) test.describe('Monsoon Crown ' + device, () => {
+]) test.describe('Monsoon Ruins ' + device, () => {
   test.use({ viewport, hasTouch: touch });
   test('START, all three fork corridors, FINISH, and topology-keyed best', async ({ gameplayPage: page }) => {
     const errors = [];
@@ -24,7 +24,7 @@ for (const [device, viewport, touch] of [
     const stats = await page.evaluate(() => ({
       id: window.gameplay.race.trackId,
       forks: window.gameplay.race.sections.filter(s => s.type === 'shortcut').length,
-      chunks: window.gameScene.scene.getObjectByName('Monsoon Crown race')?.children.length,
+      chunks: window.gameScene.scene.getObjectByName('Monsoon Ruins race')?.children.length,
     }));
     expect(stats.id).toBe('monsoon-ruins');
     expect(stats.forks).toBe(3);

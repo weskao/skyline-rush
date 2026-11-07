@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, stepRace, DRIFT_MIN_SPEED } from '../src/game.js';
-import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from '../src/interactive-tutorial.ts';
+import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS, CLEARED_SECONDS } from '../src/interactive-tutorial.ts';
 import { DRIFT_ENTRY_KMH } from './helpers/tutorial-practice.js';
 
 const DT = 1 / 60;
@@ -29,9 +29,13 @@ function performDrift(session) {
   for (let i = 0; i < 130; i++) tick(session, { brake: true, steer: Math.floor(i / 10) % 2 ? 1 : -1 });
   assert.equal(session.index, start, 'drift is paid only on release');
   tick(session, { throttle: true });
-  assert.equal(session.index, start + 1, 'real drift payout advances the lesson');
   assert.ok(car.nitro >= nitroBefore + 0.3 - 1e-6, 'two-second drift pays NITRO');
   assert.ok(car.miniBoost > 0, 'release grants a real mini boost');
+  assert.equal(session.index, start, 'the lesson waits while the mini boost plays out');
+  assert.equal(session.coachPhase, 'finishing');
+  for (let i = 0; i < 120 && session.index === start; i++) tick(session);
+  assert.equal(session.index, start + 1, 'real drift payout advances the lesson once its boost ends');
+  assert.equal(car.miniBoost, 0);
 }
 function performAirChain(session) {
   const start = session.index;
@@ -135,10 +139,11 @@ test('holding steering across an earned AIR→ROAD landing never fabricates a ne
   assert.equal(session.step, 'airChain');
   for (let i = 0; i < 42; i++) tick(session, { fly: true, boost: true });
   const car = session.race.player;
-  for (let i = 0; i < 250 && session.step === 'airChain'; i++) {
-    // Start a genuine steering hold just before the engine landing event.
-    const steer = car.altitude > 0 && car.verticalSpeed < 0 && car.altitude < 0.5 ? -1 : 0;
-    tick(session, { steer });
+  let holding = false;
+  for (let i = 0; i < 400 && session.step === 'airChain'; i++) {
+    // Start a genuine steering hold just before the engine landing event and keep it through the chain boost.
+    holding ||= car.altitude > 0 && car.verticalSpeed < 0 && car.altitude < 0.5;
+    tick(session, { steer: holding ? -1 : 0 });
   }
   assert.equal(session.step, 'barrelRoll');
   assert.equal(car.steerSign, -1, 'lesson change must preserve a physically held key');
@@ -271,8 +276,8 @@ test('braking re-arms NITRO practice on release without waiting for the burst to
   tick(session);
   assert.equal(car.nitroTime, 0, 'practice ends the interrupted burst on release');
   assert.equal(car.nitro, 1, 'a fresh NITRO charge is provided');
-  // The previous lesson's 0.8s congratulations can still overlay the re-armed 'ready' state.
-  for (let i = 0; i < 60; i++) tick(session);
+  // The previous lesson's CLEARED_SECONDS congratulations can still overlay the re-armed 'ready' state.
+  for (let i = 0; i < Math.ceil(CLEARED_SECONDS / DT) + 1; i++) tick(session);
   assert.equal(session.coachPhase, 'ready');
   tick(session, { nitro: true });
   assert.equal(session.coachPhase, 'sprinting');
@@ -389,7 +394,9 @@ test('the keyboard practice drift entry speed outlasts the first payout tier bef
   // Six frames (0.1 s) of runner latency between the charged progress bar and the BRAKE release.
   for (let i = 0; i < 6; i++) tick(session, { brake: true, steer: -1 });
   tick(session);
-  assert.equal(session.step, 'fly', 'a held one-way drift still pays before it reaches the rail');
+  assert.ok(car.miniBoost > 0 && session.coachPhase === 'finishing', 'a held one-way drift still pays before it reaches the rail');
+  for (let i = 0; i < 120 && session.step === 'drift'; i++) tick(session);
+  assert.equal(session.step, 'fly', 'the next lesson starts once the mini boost ends');
 });
 
 test('drift cannot complete without a real payout and must not reward a crash', () => {
