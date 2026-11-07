@@ -1,6 +1,6 @@
 # Task 4b — One hero Roadster GLB on Home showcase and in races
 
-Part of [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md](../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) · Spec Phase 2b · TODO Phase 3b · Scope tags: [README.md](README.md).
+Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) · Spec Phase 2b · TODO Phase 3b · Scope tags: [README.md](README.md).
 
 **Depends on:** Task 4 accepted (owner visual sign-off on it6 given 2026-11-07) and merged into `develop`. **Blocks:** Task 6 launch/cover captures (Spec Phase 5).
 **Files:** src/garage-model.ts and src/garage-model-rig.ts (reuse the loader and rig; no second loader), src/world.js (Home showcase and race player car share this scene), assets-src/roadster2/ (remaining procedural parts), public/models/roadster2/. src/car-model.js and src/roadster-fidelity.js stay the procedural fallback and must not change behaviour. New tests next to `tests/garage-model-rig.test.js`, `tests/garage-model-roadster-browser.spec.js` and the existing showcase specs.

@@ -412,8 +412,8 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
 
 **Branch:** `feature/3d-visual-fidelity-pipeline` (created from develop `b8ae6a19`).
 **Status:** r180 baseline captured and the r186.1 upgrade landed (D8 visual review and D9 phones open); new assets and game modifications **NOT DONE**.
-**Spec:** [3D design](docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md) ·
-[Implementation plan](docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) ·
+**Spec:** [3D design](docs/superpowers/specs/3d-visual-fidelity-pipeline-design-v2.md) ·
+[Implementation plan](docs/superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) ·
 [Phase 0 preflight](docs/designs/3d-pipeline/toolchain-environment-preflight.md) ·
 [Three.js r180→r186 migration](docs/designs/3d-pipeline/threejs-r180-r186-migration.md) ·
 [Per-task files, by-project vs by-device](docs/designs/3d-pipeline/phases/README.md).
@@ -527,7 +527,10 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
   - [x] Low-tier fallbacks exist; draw calls/triangles per tier recorded (GLB 17–21 fewer draw calls than procedural). Fill rate NOT VERIFIED.
   - [ ] Owner sign-off; real-phone p50/p95 and screenshots; exact-HEAD CI (owner: no wait on 2026-11-08).
   - [ ] Real low-end-phone p50/p95 per heavy item, Low-tier fallback, all-track matrix, `make verify`, exact-HEAD full CI, owner sign-off.
+- [ ] **Phase 3d (spec v2 Phase 2d, added 2026-11-08):** Roadster close-out. All Phase 3b/3c owner gates pass (visual sign-off on real-GPU captures, real-phone screenshots and p50/p95, exact-HEAD full CI). Then `?model=roadster` is removed in its own commit, with the procedural fallback kept and the all-track matrix rerun. The Roadster's shape is frozen after this step.
 - [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
+  - [ ] Spec v2 (2026-11-08): Coast and every map (Dune, Monsoon, Skyfall, Volcanic, Stormline, Frostbite) are accepted by the concept-board parity review against their panels (spec v2 §8.1; [Task 5](docs/designs/3d-pipeline/phases/task-5-coast-pbr-road.md), [Task 6](docs/designs/3d-pipeline/phases/task-6-new-tracks-showcase.md)). Shared lighting/post, wet-road reflections, thruster glow and spray are in scope.
+- [ ] **Phase 7 (spec v2 Phase 6, added 2026-11-08):** Concept hero car: the board's deep-red GT becomes a second player car on the shared simulation and port contract, with a Garage car picker, equipped-car save/Cloud Save migration, i18n and What's New. Owner gates: name, unlock rule, board licence record. [Task 7](docs/designs/3d-pipeline/phases/task-7-concept-hero-car.md).
 - [ ] **All phases:** TDD RED→GREEN, renderer version/texture and animation checks, 10-track/5-new-track matrix as available, desktop/mobile Low/Medium/High (Ultra only after profiling), memory/draw/triangle/frame-time p50/p95, real-device QA, `make verify` and exact-HEAD FULL `quality-gate`. No PR, develop/main merge, release or deployment without approval.
 - [ ] **Share links:** reconcile full content if the three ChatGPT share pages become accessible; currently cannot independently verify their full text (linked in design spec).
 

@@ -1,6 +1,6 @@
 # Task 4c — Garage equipment and VFX alignment with the GLB car
 
-Part of [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md](../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) · Spec Phase 2c · TODO Phase 3c · Scope tags: [README.md](README.md).
+Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) · Spec Phase 2c · TODO Phase 3c · Scope tags: [README.md](README.md).
 
 **Depends on:** Task 4b accepted (GLB car on Home and in races, owner sign-off). **Blocks:** Task 6 launch/cover captures (Spec Phase 5).
 **Files:** src/aero-vfx.js, src/effects.js, src/garage-void-beams.js, src/garage-nitro-trail.js, src/garage-launch-flare.js (+ `-styles.ts`, `-shaders.js`), src/garage-paint-shader.ts, src/garage-model-rig.ts (paint/light targets on the GLB), src/garage-stage.ts. Catalogs `src/appearance.ts` and `src/garage-skin-catalog.ts` are read, not changed. Optional baked textures under assets-src/ and public/materials/.
