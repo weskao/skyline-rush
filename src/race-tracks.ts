@@ -3,6 +3,7 @@ import type { TrackConfig } from './game-types.ts';
 import { FROSTBITE_ID, FROSTBITE_TRACK } from './courses/frostbite-race.ts';
 import { STORMLINE_ID, STORMLINE_TRACK } from './courses/stormline-megacity-race.ts';
 import { VOLCANIC_ID, VOLCANIC_TRACK } from './courses/volcanic-crown-race.ts';
+import { MONSOON_ID, MONSOON_TRACK } from './courses/monsoon-ruins-race.ts';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
 // `x` / `altitude` place a shortcut corridor.
@@ -61,7 +62,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
 // The separate lookup never changes Daily/Career/Cup's ordered sprint catalog.
 // Frostbite Canyon and Stormline Megacity are gated CourseGraph sprints: raceable by id, never in the catalog, Daily or Cup.
 /** CourseGraph sprints outside the catalog whose results persist under a topology-keyed id (`record-layout.ts`). */
-export const COURSE_TRACKS: Readonly<Record<string, TrackConfig & { topologyVersion: number }>> = { [FROSTBITE_ID]: FROSTBITE_TRACK, [STORMLINE_ID]: STORMLINE_TRACK, [VOLCANIC_ID]: VOLCANIC_TRACK };
+export const COURSE_TRACKS: Readonly<Record<string, TrackConfig & { topologyVersion: number }>> = { [FROSTBITE_ID]: FROSTBITE_TRACK, [STORMLINE_ID]: STORMLINE_TRACK, [VOLCANIC_ID]: VOLCANIC_TRACK, [MONSOON_ID]: MONSOON_TRACK };
 export const raceTrack = (id: string): TrackConfig | undefined => id === CIRCUIT_ID ? CIRCUIT_TRACK : Object.hasOwn(COURSE_TRACKS, id) ? COURSE_TRACKS[id] : RACE_TRACKS[id];
 
 export const isModeTrack = (id: unknown, mode: unknown): id is string => typeof id === 'string' &&

@@ -41,6 +41,7 @@ const UPCOMING_READINESS: Readonly<Partial<Record<UpcomingTrackId, Exclude<Upcom
   'frostbite-canyon': 'playable',
   'stormline-megacity': 'playable',
   'volcanic-crown': 'playable',
+  'monsoon-ruins': 'playable',
 });
 export const upcomingReadiness = (id: string): UpcomingReadiness =>
   isUpcomingTrack(id) ? UPCOMING_READINESS[id] ?? 'preview' : 'preview';
