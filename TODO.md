@@ -1,3 +1,17 @@
+## 2026-11-08 — Skyfall CourseGraph Task 14 implementation continuation
+
+- [x] Task 13 was already represented by `62d0f612`; do not reimplement existing CourseGraph race registration and flight-gap physics.
+- [x] New test-first `tests/skyfall-course-race-scene.test.js` (`6b14de2a`) requires the shared scene host to stream the Skyfall physical world around all eight cars, dispose when switching tracks and rebuild on quality changes.
+- [x] Implemented `src/course-race-scene.ts` host selection and streamed Skyfall world (`aad00f90`); corrected `src/courses/skyfall-world.ts` disposal when reparented (`6c4c471d`). Do not create a second renderer or fake one-dimensional route.
+- [x] Test-first readiness assertions in `tests/upcoming-unlock-access.test.js`, `tests/coming-soon-release.test.js`, `tests/skyfall-archipelago-race.test.js` (`6c623db8`). Added real Skyfall ground/flight browser-spec scripts for desktop and phone, release lock (`6c79812c`) and five estimated CI shard-duration entries (`c95f8838`).
+- [x] Set `skyfall-archipelago` to `playable` readiness for `make dev-unlocked` only (`429503f0`); `src/access/production.ts` still rejects every Coming Soon ID.
+- [ ] RED evidence / tests: actual RED and GREEN runs NOT VERIFIED — this execution environment has no complete local git checkout or installed repo deps; do not claim tests green from files being committed.
+- [ ] Run `node --test tests/skyfall-course-race-scene.test.js tests/upcoming-unlock-access.test.js tests/skyfall-archipelago-race.test.js`, `npm test`, `npm run typecheck`, `npm run build`, focused desktop/phone Playwright, `make verify` with evidence.
+- [ ] Complete CourseGraph Task 8 streamed chunk shader warm-up, Task 9 Dune browser/history/release/GPU acceptance, Task 10 CPU and real WebGL benchmarks, Task 11 latest epic safe merge and full Dune acceptance; finish Skyfall Task 14–15 screenshots, flight/ground alternatives, HUD and physical road contact.
+- [ ] Latest epic has over 100 jointly changed files against this course branch; an actual three-way merge with careful conflict resolution, TDD and review is required. Do not overwrite the epic's latest lifecycle, Monsoon/Volcanic, tutorial, home UI or Garage changes with older branch contents.
+- [ ] Explicit approval still required for the protected course → epic and epic → develop merge gates in the original handoff. No PR, deploy, or push to develop/main.
+- [ ] Per user: implement all remaining functions FIRST without waiting/checking CI, then check latest exact-HEAD full CI every hour, fix any red tests by root cause until green.
+
 ## 2026-11-07 — Minimap player marker (`feature/minimap-player-marker`, based on `origin/develop` `55821906`)
 
 Symptom: the player's dot on `.race-route-map` was the same shape as the 7 rival dots, hard to find at a glance.
