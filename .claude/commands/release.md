@@ -79,9 +79,21 @@ Otherwise signed-in players' cloud saves are rejected (example: layout-2 bests s
 version) and leave the new rules live. They accept old and new save formats, while the old rules
 would reject every later save from players who already stored new keys (e.g. `coast@2`).
 
+## Phase D — Deploy target (ask before Phase B, run after it)
+
+The tag's CI always publishes GitHub Pages. Ask with `AskUserQuestion` where else to deploy;
+`-y` takes the Recommended option.
+
+1. "GitHub Pages only (Recommended)": nothing extra.
+2. "GitHub Pages + Netlify": after Phase B, on `main` at the release commit, run
+   `make deploy-netlify` (builds, deploys to Netlify production, checks the published deploy id,
+   sends its own Telegram link). Not logged in → hand the user
+   `! npx --yes netlify-cli@27.16.2 login` and wait. A failed Netlify deploy does not roll back
+   the release; report its result in the final report and the Telegram notice.
+
 ## Phases T, A and B
 
-Follow Phases T and A, then Phase F above, then Phase B and the final report of
+Follow Phases T and A, then Phases F and D above, then Phase B and the final report of
 `$HOME/.claude/commands/release.md` unchanged.
 `RELEASE_SCRIPT` resolves to this project's `scripts/release.sh`, whose `scripts/release-gate.sh`
 re-runs the notes check first, then requires `main` = `origin/main`, a green CI run and
