@@ -1,3 +1,20 @@
+## 2026-11-08 — 六賽道接續：develop 同步、Volcanic／Monsoon 修正、Lifecycle 合入（epic）
+
+依使用者指示不等待 CI、本 session 不跑任何 browser 測試（Playwright、`test:browser`、`make verify`、WebGL 截圖）。
+
+- `develop` `27f2074f` 合入 epic：`a8fb3b58`（TODO.md 衝突兩邊保留）。
+- 上一輪 epic CI `42393948536`（`b76a4018`）**FAIL**，根因與修正：
+  - `module-size`：`src/world.js` 1127 > 1126 → 合入 Volcanic 分支最新提交（`f09329cb` 抽出 `sign-text.ts`），merge `2e68dc1b`，world.js 1120 行。
+  - `record-layout` Firestore best ids 缺 `volcanic-crown@t1l1`（`fdfbb10a`，隨 `2e68dc1b` 合入）與 `monsoon-ruins@t1l1`（`dddafa89`；`d194d2e3` 的展開寫法尚可容納約 10 個 id）。
+  - `coming-soon-release` playable 清單加入 Monsoon；「仍為 preview 不可進入」的斷言改用 `skyfall-archipelago`（`dddafa89`）。
+  - `interactive-tutorial` NITRO re-arm：develop 把 `CLEARED_SECONDS` 0.8 → 1.4 s，epic 測試寫死等 1 s；改為等 `CLEARED_SECONDS`（`dddafa89`；乾淨 develop 上 18/18 PASS 作為對照）。
+  - `monsoon-ruins-race-browser`：spec 找 `'Monsoon Crown race'`（從 Volcanic 複製的錯字），實際群組是 `'Monsoon Ruins race'` → `chunks` undefined。已修正；Node 內建場景驗證 56 個 children（> 20）。browser 實跑 **NOT VERIFIED**。
+- [x] epic `dddafa89`：`npm test` 2181 pass / 0 fail，`npm run typecheck` PASS，`npm run build` PASS（production bundle 檢查通過）。
+- Step 2.5 Lifecycle：`feature/track-lifecycle-sop` 合入最新 epic（`ba242448`，`coming-soon-release` 衝突兩邊斷言都保留），修 `browser-timeouts` 守門（`coming-soon-views-browser.spec.js` 改用 `ciTimeout`，`1256ef88`）；`npm test` 2197 pass 外加修正後守門 10/10，typecheck、build PASS；`node scripts/check-track-lifecycle.mjs` 全 PASS（Stormline／Volcanic／Monsoon／Frostbite = playable，Dune／Skyfall = preview）。合入 epic `e744da5f`（tree 與 lifecycle 分支相同）。
+- 意外：epic push 時 repo pre-push hook 自動跑了 `npm run test:layout`（42 passed）；之後 push 一律 `SKIP_LAYOUT_GATE=1`。
+- **NOT VERIFIED**：所有 browser specs（含 Volcanic／Monsoon START→FINISH、Coming Soon views）、`make verify`、真 WebGL 截圖、exact-HEAD full CI（未等待）、真機效能、`firestore.rules` 部署與 `npm run test:cloud` Playwright 部分、人工視覺簽核。
+- Step 3 Dune／Skyfall 在 `feature/course-graph-runtime` 進行中；Dune／Skyfall 首頁展示清晰度修正在 `feature/six-course-preview-clarity`。
+
 ## Track release approvals
 
 Only the user may explicitly mark `- [x] RELEASE APPROVED: <course-id>` here. Agents must never tick approval or stamp release records without that approval.

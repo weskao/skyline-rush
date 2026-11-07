@@ -25,14 +25,14 @@ Skyfall Archipelago）都在 `feature/epic-multiroute-longform-tracks`（以下�
 | Step 2 執行位置 | Stormline → Volcanic → Monsoon 由使用者在另一台裝置實作 | 其他 session 不得重做或搶先合併 |
 | 生命週期 | `feature/track-lifecycle-sop`（stage：preview / development / playable / ready / released）在 Step 2 三條合入後才合進 epic；race 測試命名 `tests/<id>-race.test.js`、`tests/<id>-race-browser.spec.js` | 兩者都改 `src/upcoming-tracks.ts`；測試命名對齊 D-gate |
 
-## 現況（2026-11-07；依 exact-HEAD 與實際驗收更新）
+## 現況（2026-11-08；依 exact-HEAD 與實際驗收更新）
 
 | 賽道 | 分支 | 做法 | 狀態 | 依循文件 |
 |---|---|---|---|---|
 | Frostbite Canyon | `feature/playable-frostbite-canyon` | Frostbite 模式 | ✅ 已合入 epic（`9f6ba4be`，CI 綠） | 本檔 Step 1（紀錄） |
-| Stormline Megacity | `feature/playable-stormline-megacity` | Frostbite 模式 | ✅ 已合入 epic（來源 `e9e7ee1a`，merge `c611fe7a`，來源 CI `42244758243` PASS；epic CI `42272746152` CANCELLED，最新 CI 尚未 PASS） | 本檔 Step 2-1、`docs/superpowers/handoffs/2026-11-03-playable-stormline-megacity.md` |
-| Volcanic Crown | `feature/playable-volcanic-crown` | Frostbite 模式 | 🔄 僅來源提交歷史已合入 epic（`9586ac67`），race runtime、Scene、START→FINISH 尚未完成 | 本檔 Step 2-2、`docs/superpowers/reviews/2026-11-03-playable-volcanic-crown-handoff.md` |
-| Monsoon Ruins | `feature/playable-monsoon-ruins` | Frostbite 模式 | 🔄 僅來源提交歷史已合入 epic（`4b5b2fea`），race runtime、Scene、START→FINISH 尚未完成 | 本檔 Step 2-3、`docs/designs/new-tracks/monsoon-ruins-playable-handoff.md` |
+| Stormline Megacity | `feature/playable-stormline-megacity` | Frostbite 模式 | ✅ 已合入 epic（來源 `e9e7ee1a`，merge `c611fe7a`）；dev-unlocked playable。epic 本機 `npm test` 2181/0、typecheck、build PASS（`dddafa89`）；exact-HEAD full CI NOT VERIFIED | 本檔 Step 2-1、`docs/superpowers/handoffs/2026-11-03-playable-stormline-megacity.md` |
+| Volcanic Crown | `feature/playable-volcanic-crown` | Frostbite 模式 | ✅ 已合入 epic（runtime merge `7d11808f`，rules/playable-list 修正 merge `2e68dc1b`）；dev-unlocked playable；browser／真 WebGL／exact-HEAD CI NOT VERIFIED | 本檔 Step 2-2、`docs/superpowers/reviews/2026-11-03-playable-volcanic-crown-handoff.md` |
+| Monsoon Ruins | `feature/playable-monsoon-ruins` | Frostbite 模式 | ✅ 已合入 epic（merge `2d84e2fd`，Firestore best id 與 browser spec 場景名修正 `dddafa89`）；dev-unlocked playable；browser／真 WebGL／exact-HEAD CI NOT VERIFIED | 本檔 Step 2-3、`docs/designs/new-tracks/monsoon-ruins-playable-handoff.md` |
 | Dune Tempest | `feature/course-graph-runtime` | B：CourseGraph runtime | 🔄 實作中：Tasks 1–7 單元層級完成（handoff `6a6ca618`；最新分支 `428b0df2`），下一步 Task 8；Browser／真 WebGL／完整驗收 NOT VERIFIED | 本檔 Step 3、CourseGraph runtime 設計與計畫 |
 | Skyfall Archipelago | `feature/course-graph-runtime` | B：CourseGraph runtime | 🔄 Dune Task 8–11 後執行 Tasks 12–15；尚未 playable | 本檔 Step 3、CourseGraph runtime 設計與計畫 |
 
