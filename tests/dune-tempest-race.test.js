@@ -79,7 +79,7 @@ test('registry: Dune is a gated course runtime, Frostbite unchanged, never in RA
   assert.throws(() => assertTrackMode(DUNE_TEMPEST_ID, 'time'), { name: 'RangeError', message: 'Dune Tempest is a gated classic sprint' });
   assert.throws(() => assertTrackMode(FROSTBITE_ID, 'time'), { name: 'RangeError', message: 'Frostbite Canyon is a gated classic sprint' });
   assert.doesNotThrow(() => assertTrackMode(DUNE_TEMPEST_ID, 'classic'));
-  assert.equal(upcomingReadiness(DUNE_TEMPEST_ID), 'preview');
+  assert.equal(upcomingReadiness(DUNE_TEMPEST_ID), 'playable');
 });
 
 // ---- Task 5: the shared race loop on the CourseGraph runtime ----
