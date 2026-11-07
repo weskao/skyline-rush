@@ -410,6 +410,9 @@ test('Cloud save profile provides an avatar fallback and accessible account iden
   await expect(page.locator('#cloud-identity')).toContainText('avatar@example.test');
   await expect(page.locator('#cloud-name')).not.toBeEmpty();
   await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
+  // The post-sign-in sync re-runs showCloudSession(), which rewrites avatarUrl from the
+  // (https-only) account photo; inject the test avatar only after that has settled.
+  await expect(page.locator('#cloud-last-sync')).toContainText('Last synced');
   // Test the two image states using a self-contained, loadable avatar. Reusing
   // the Google login icon can fail to load asynchronously on emulator runners.
   await page.evaluate(async () => {
