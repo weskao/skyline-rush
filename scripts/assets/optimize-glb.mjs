@@ -5,16 +5,29 @@
 // UASTC for linear data maps (normal/AO/metal-rough keep detail), ETC1S for sRGB colour maps.
 import { fileURLToPath } from 'node:url';
 
+const KTX2_PASSES = [
+  ['uastc', 'normalTexture', '--level=2', '--zstd=18'],
+  ['uastc', 'occlusionTexture', '--level=2', '--zstd=18', '--rdo'], // smooth map: RDO saves ~30 KB at no visible cost
+  ['uastc', 'metallicRoughnessTexture', '--level=2', '--zstd=18'],
+  ['etc1s', 'baseColorTexture'],
+  ['etc1s', 'emissiveTexture'],
+];
+
 /** gltf-transform argv lists, in order; each step reads the previous step's output. */
 export function optimizeSteps(entry, raw, out) {
-  const ktx2 = entry.decoders.includes('ktx2');
-  const mesh = ktx2 ? `${out}.mesh.glb` : out, data = `${out}.data.glb`;
-  const steps = [['optimize', raw, mesh, '--compress', 'meshopt', '--texture-compress', 'false',
-    '--flatten', 'false', '--join', 'false', '--palette', 'false', '--simplify', 'false', '--instance', 'false', '--prune', 'false']];
-  if (ktx2) steps.push(
-    ['uastc', mesh, data, '--slots', '{normalTexture,occlusionTexture,metallicRoughnessTexture}', '--level', '2', '--zstd', '18'],
-    ['etc1s', data, out, '--slots', '{baseColorTexture,emissiveTexture}'],
-  );
+  // KTX2 runs before meshopt: encoding textures after meshopt decodes and re-quantizes the meshes.
+  // One pass per slot with `--opt=value`: a `{a,b}` slot glob only matched one slot, and
+  // `--opt value` after --slots fails with "Too many arguments".
+  const passes = entry.decoders.includes('ktx2') ? KTX2_PASSES : [];
+  const steps = [];
+  let input = raw;
+  for (const [i, [mode, slot, ...opts]] of passes.entries()) {
+    const output = `${out}.ktx${i}.glb`;
+    steps.push([mode, input, output, `--slots=${slot}`, ...opts]);
+    input = output;
+  }
+  steps.push(['optimize', input, out, '--compress', 'meshopt', '--texture-compress', 'false',
+    '--flatten', 'false', '--join', 'false', '--palette', 'false', '--simplify', 'false', '--instance', 'false', '--prune', 'false']);
   return steps;
 }
 
