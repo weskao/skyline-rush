@@ -3,7 +3,7 @@ import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 
 // Phone landscape: the pause and results panels must show every action (Resume, Next, Race again, Choose track,
-// History) without scrolling. Before this layout the results stack was ~2x the landscape height and players had
+// History, cloud Sign in) without scrolling. Before this layout the results stack was ~2x the landscape height and players had
 // to swipe the overlay to find Race again / Choose track.
 const SHOTS = process.env.OVERLAY_SHOTS;
 
@@ -66,6 +66,8 @@ for (const { segments, ...viewport } of [
     await page.evaluate(() => { const race = window.gameplay.race; race.elapsed = 80; Object.assign(race.player, { distance: race.length - 10, speed: 60 }); });
     await expect(page.locator('#next-button')).toBeVisible();
     await expect(page.locator('#result-links')).toBeVisible();
+    // Signed out: the cloud line's sign-in button joins the actions column and must fit too (unreachable() checks every button).
+    await expect(page.locator('#result-cloud-login')).toBeVisible();
     // Polled: the results slide in (enter() 'slow') and the stars arrive after ~1.1s.
     await expect.poll(() => page.evaluate(unreachable), { timeout: ciTimeout(4000) }).toEqual({ misses: [], scroll: 0 });
     if (segments) await expect.poll(() => page.evaluate(offHinge, hinge), { timeout: ciTimeout(4000) }).toEqual([]);

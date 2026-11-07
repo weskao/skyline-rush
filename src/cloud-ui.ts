@@ -4,6 +4,7 @@ import { claimCloudOwner, saveLocalProgress, clearLocalProgress, cloudFailureSta
   writeCloudSyncStatus, readLocalModeBests, saveLocalModeBests, mergeProgress, mergeModeBests, parseProgressExport } from './cloud-progress.ts';
 import { loadChallengeMedals, mergeChallengeMedals, type ChallengeMedalState } from './history-challenge-medals.ts';
 import type { MergedProgress } from './cloud-progress-merge.ts';
+import { resultCloudStatus, signInOutcome, type SignInOutcome } from './result-cloud-status.ts';
 
 export interface CloudUser {
   uid: string;
@@ -68,11 +69,24 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
   let cloudSync: Promise<unknown> = Promise.resolve();
   let profileSync: Promise<unknown> = Promise.resolve();
   let lastCloudSync: Date | null = null;
+  let resultSignIn: SignInOutcome = 'idle';
 
   function announceCloud(key: string): void {
     cloudStatusKey = key;
     const state = cloudStatusState(key);
     updateCloudView({ statusText: t(key), statusState: state, statusBusy: state === 'syncing' });
+    showResultCloud();
+  }
+  function showResultCloud(): void {
+    // Connected = signed in with any provider: the auth observer's user, whichever provider produced it.
+    const view = resultCloudStatus({ connected: cloudUser !== null, statusKey: cloudStatusKey, statusState: cloudStatusState(cloudStatusKey), signIn: resultSignIn });
+    updateCloudView({ resultText: t(view.key), resultState: view.state, resultBusy: view.busy,
+      resultSignInHidden: !view.signIn, resultSignInDisabled: resultSignIn === 'pending' });
+  }
+  /** Runs the provider sign-in; a signed-in user then syncs through the auth observer below. */
+  async function signIn(): Promise<SignInOutcome> {
+    try { await services.signInToCloud(); return 'done'; }
+    catch (error) { console.error('Cloud sign-in failed:', error); announceCloud('cloud.failed'); return signInOutcome(error); }
   }
   function showCloudSession(): void {
     const user = cloudUser;
@@ -168,9 +182,14 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
   $('#cloud-sync-now').addEventListener('click', () => { if (cloudUser && cloudOwner === cloudUser.uid) saveCloudProgress(); });
   $('#cloud-login').addEventListener('click', async () => {
     updateCloudView({ loginDisabled: true });
-    try { await services.signInToCloud(); }
-    catch (error) { console.error('Cloud sign-in failed:', error); announceCloud('cloud.failed'); }
-    finally { updateCloudView({ loginDisabled: false }); }
+    await signIn();
+    updateCloudView({ loginDisabled: false });
+  });
+  $('#result-cloud-login').addEventListener('click', async () => {
+    resultSignIn = 'pending';
+    showResultCloud();
+    resultSignIn = await signIn();
+    showResultCloud();
   });
   $('#cloud-logout').addEventListener('click', () => {
     services.signOutOfCloud().catch(() => announceCloud('cloud.failed'));
@@ -261,7 +280,14 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
   });
 
   return {
-    saveCloudProgress,
+    /** A finished race: sync it, and show the results cloud line unless the mode saves nothing (Free Drive). */
+    saveRaceProgress(recorded: boolean): Promise<unknown> {
+      resultSignIn = 'idle';
+      updateCloudView({ resultHidden: !recorded });
+      const saving = saveCloudProgress();
+      showResultCloud();
+      return saving;
+    },
     /** Reuse the single Cloud Save auth observer for Garage account isolation. */
     subscribeAccount(listener: (uid: string | null) => void): void {
       accountListeners.add(listener);
