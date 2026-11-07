@@ -48,7 +48,7 @@ export function createInteractiveTutorial() {
     altitude: car.altitude, thrusting: car.thrusting, flightBoosted: car.flightBoosted,
     poweredFlightTime: car.poweredFlightTime, flick: car.flick,
     landing: car.landing, trick: car.trick, trickPayout: car.trickPayout,
-    nitroUses: car.nitroUses, nitroTime: car.nitroTime, speed: car.speed,
+    nitroUses: car.nitroUses, nitroTime: car.nitroTime, braking: car.braking, speed: car.speed,
   });
 
   function prepare() {
@@ -143,6 +143,8 @@ export function createInteractiveTutorial() {
       else if (step === 'land') valid = !controls.fly && car.altitude < .15;
       else if (step === 'airChain' || step === 'barrelRoll' || step === 'nitro') {
         valid = maneuver!.update(snapshot(), dt);
+        // In practice only, braking ends the spent sprint immediately; race physics are unchanged.
+        if (step === 'nitro' && car.braking && maneuver!.phase === 'retry') car.nitroTime = 0;
         if (step === 'nitro' && maneuver!.phase === 'retry' && !controls.nitro && car.nitroTime <= 0) {
           // Practice-only retry after a spent, incomplete sprint: never mint
           // a charge in normal races or while the NITRO key is still held.

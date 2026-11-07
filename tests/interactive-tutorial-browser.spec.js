@@ -147,6 +147,38 @@ test('NITRO practice recovers after braking and demands a fresh charged sprint',
   await expect(page.locator('#tutorial-retry')).toBeVisible();
 });
 
+test.describe('touch NITRO interruption', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  test('brake and NITRO touches interrupt practice and a new touch spends a fresh charge', async ({ page, context }) => {
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', flyMode: 'hold' })));
+    await begin(page);
+    for (const next of ['left', 'right', 'brake', 'drift', 'fly', 'land', 'boost', 'airChain', 'barrelRoll', 'nitro']) {
+      await page.locator('#tutorial-skip-step').tap();
+      await step(page, next);
+    }
+    await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode', 'buttons');
+    const session = await context.newCDPSession(page);
+    const point = async (action, id) => {
+      const box = await page.locator('#touch-controls [data-control="' + action + '"]').boundingBox();
+      return { id, x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    };
+    try {
+      await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [await point('brake', 1), await point('nitro', 2)] });
+      await expect(page.locator('#tutorial-instruction')).toContainText('Sprint interrupted', { timeout: ciTimeout(15000) });
+      await expect.poll(() => page.evaluate(() => window.gameplay.race.player.nitroTime)).toBe(0);
+      await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await expect(page.locator('#tutorial-instruction')).toContainText('Activate NITRO');
+      await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [await point('nitro', 3)] });
+      await expect.poll(() => page.evaluate(() => window.gameplay.race.player.nitroUses)).toBe(2);
+      await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await step(page, 'complete');
+    } finally {
+      await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await session.detach();
+    }
+  });
+});
+
 test('practice restores a paused race and uses the current custom throttle key', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-keymap', JSON.stringify({throttle:['KeyZ'],brake:['KeyS'],left:['KeyA'],right:['KeyD'],fly:['Space'],boost:['ShiftLeft'],nitro:['KeyE']})));
   await page.goto('/');

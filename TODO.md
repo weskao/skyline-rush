@@ -1,3 +1,11 @@
+## 2026-11-07 — Catch-up branch CI browser regressions (tutorial NITRO / airborne callout)
+
+- [x] Confirmed failed baseline browser tests at `28f5f45d`, run `42297062181`: shard 6 NITRO brake interruption, shard 7 BARREL ROLL hidden by a charge callout.
+- [x] New regression tests committed in RED `5fc93ba`; GitHub run `42341498607` produced precisely 2 expected unit failures (1941 pass, 3 skipped).
+- [ ] Verify the GREEN unit/typecheck/build run and both affected browser shards on the final exact HEAD; the new touch NITRO case exercises real pointer input.
+- [ ] Full browser (13 shards), World Tour (5 shards), cloud-save, quality-gate, and real-device/WebGL checks.
+- [ ] No merge, PR, deploy, tag or force push; only this branch may be written.
+
 ## 2026-11-07 — Catch-up items: rings only (`feature/catch-up-rings-only`)
 
 Classic (excluding Daily) and Cup trailing-player aid now creates only extra rings: NITRO 60%, charge 20%,
