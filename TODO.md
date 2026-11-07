@@ -13,7 +13,14 @@
 - Step 2.5 Lifecycle：`feature/track-lifecycle-sop` 合入最新 epic（`ba242448`，`coming-soon-release` 衝突兩邊斷言都保留），修 `browser-timeouts` 守門（`coming-soon-views-browser.spec.js` 改用 `ciTimeout`，`1256ef88`）；`npm test` 2197 pass 外加修正後守門 10/10，typecheck、build PASS；`node scripts/check-track-lifecycle.mjs` 全 PASS（Stormline／Volcanic／Monsoon／Frostbite = playable，Dune／Skyfall = preview）。合入 epic `e744da5f`（tree 與 lifecycle 分支相同）。
 - 意外：epic push 時 repo pre-push hook 自動跑了 `npm run test:layout`（42 passed）；之後 push 一律 `SKIP_LAYOUT_GATE=1`。
 - **NOT VERIFIED**：所有 browser specs（含 Volcanic／Monsoon START→FINISH、Coming Soon views）、`make verify`、真 WebGL 截圖、exact-HEAD full CI（未等待）、真機效能、`firestore.rules` 部署與 `npm run test:cloud` Playwright 部分、人工視覺簽核。
-- Step 3 Dune／Skyfall 在 `feature/course-graph-runtime` 進行中；Dune／Skyfall 首頁展示清晰度修正在 `feature/six-course-preview-clarity`。
+- Step 3 Dune／Skyfall 在 `feature/course-graph-runtime` 進行中。
+- 首頁展示清晰度（使用者回報：沙暴裂谷、浮空群島展示畫面看不清車子）：`feature/six-course-preview-clarity` `1f689418` 合入 epic。
+  根因（依場景程式分析，非霧）：Dune 道路在車位處彎離，rival 2/3 陷入沙丘或路肩；道路 #e1ac69 與沙、天空同色，地圖燈光疊加 showcase 燈光過曝；
+  Skyfall 道路 #b8c8bd 近白，Pearl 車身亮度只有路面 1.47×。修正：Dune 前 46 m 直線、道路改深赭 #a8703f、地圖燈 2.0/2.35 → 1.6/1.95；
+  Skyfall 道路改砂岩灰 #7d7b6e；地標、天空、雲海、光環不變。
+  - [x] RED → GREEN `tests/upcoming-preview-clarity.test.js`（六張地圖 Pearl ≥ 3× 路面亮度、路面 ≤ 0.4；Dune／Skyfall 兩種 AIRFLOW 與直橫向車輛貼路且視線無遮擋）。
+  - [x] epic 合併後 `npm test` 2200 pass / 0 fail，typecheck、build PASS。
+  - [ ] 真 WebGL 截圖與人工目視 **NOT VERIFIED**（本 session 禁跑 browser；僅有 CPU ray-cast 近似圖）。
 
 ## Track release approvals
 
