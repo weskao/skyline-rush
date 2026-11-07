@@ -4,9 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 // Inspect the real scene and seed distant scenarios without shipping test hooks in the app.
 export const test = base.extend({
-  gameplayURL: [async ({}, use) => {
+  // `make dev-unlocked`'s module alias (src/access/dev-unlocked.ts): enters gated Coming Soon runtimes.
+  unlockedAccess: [false, { option: true, scope: 'worker' }],
+  gameplayURL: [async ({ unlockedAccess }, use) => {
     const server = await createServer({
       root: fileURLToPath(new URL('../../', import.meta.url)),
+      ...(unlockedAccess && { configFile: fileURLToPath(new URL('../../vite.unlocked.config.js', import.meta.url)) }),
       server: { host: '127.0.0.1', port: 0 },
     });
     try {

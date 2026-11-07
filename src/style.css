@@ -1875,6 +1875,7 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 /* History: the 4th row field is only ever the OLD LAYOUT tag; it wraps as a small label inside the 48px badge column, never into the chevron */
 .history-run summary > span:nth-child(4) { white-space: normal; color: #ccd7e0; font-size: 10px; line-height: 1.2; }
 
+
 /* Concept thumbnail is a clearly labeled fallback, never a live 3D replacement. */
 .upcoming-scene { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
 .upcoming-scene img { position: absolute; top: 19%; right: 3.5%; width: min(56vw, 760px); aspect-ratio: 568 / 205; object-fit: cover; border: 1px solid rgb(210 235 255 / .38); border-radius: 12px; box-shadow: 0 24px 90px rgb(0 9 24 / .65); filter: saturate(1.07); }
@@ -1886,6 +1887,7 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 .upcoming-track-card .upcoming-route-image { display: block; width: 100%; height: 100%; object-fit: contain; opacity: .9; }
 .intro .track-select button.upcoming-track-card small { color: #a3eaff; font-weight: 700; }
 .intro #start-button { width: 236px; min-width: 236px; max-width: 236px; gap: 8px; }
+.intro #start-button > span { letter-spacing: .06em; }
 @media (max-width: 760px) {
   .upcoming-scene img { top: 15%; right: 3%; width: 94vw; opacity: .45; }
   .intro #start-button { width: 210px; min-width: 210px; max-width: 210px; }
@@ -1894,9 +1896,13 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
   .upcoming-scene img { top: 8%; right: 2%; width: min(51vw, 520px); opacity: .5; }
   .intro #start-button { width: 190px; min-width: 190px; max-width: 190px; }
 }
+/* Frostbite Canyon (gated race runtime): night-ice minimap, appended below the main-UI contract slice. */
+.track-route-map[data-theme="frostbite-canyon"],.race-route-map[data-theme="frostbite-canyon"]{
+ --map-line:#b9dcf2;--map-bg:#16294a;--map-edge:#4f86b3;--map-player:#effaff;
+}
 /* Start keeps its size: a label wider than the panel wraps to at most two lines inside the button instead of widening it into the panel's clip. */
 .intro #start-button { max-width: 100%; }
-.intro #start-button > span { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; line-height: 1.1; letter-spacing: .06em; }
+.intro #start-button > span { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; line-height: 1.1; }
 .intro #start-button > svg { flex: none; }
 .airflow-active[data-phase="ready"] #start-button { max-width: calc(100vw - 80px); }
 

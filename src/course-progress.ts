@@ -1,4 +1,4 @@
-import type { CourseGraph, CoursePoint3 } from './course-graph.ts';
+import type { CourseGraph, CourseNode, CoursePoint3 } from './course-graph.ts';
 import { routeLength } from './course-route-frame.ts';
 
 /** Pure checkpoint state for new graph tracks; existing sprint results are unchanged. */
@@ -22,6 +22,12 @@ export function createRouteProgress(graph: CourseGraph): RouteProgress {
   if (!first || first.from !== graph.start || first.mode !== 'ground')
     throw new Error('CourseGraph must provide a valid first ground edge');
   return { currentEdgeId: first.id, nextCheckpoint: 0, finished: false };
+}
+
+/** Safe respawn after a failed jump/off-road: the last validated checkpoint, else START. Never adds progress. */
+export function recoveryNode(graph: CourseGraph, state: RouteProgress): CourseNode {
+  const id = graph.checkpoints[state.nextCheckpoint - 1] ?? graph.start;
+  return graph.nodes.find(n => n.id === id)!;
 }
 
 /** Accept a gate only on the active edge, moving forwards through its 3D endpoint. */
