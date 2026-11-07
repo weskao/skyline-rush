@@ -437,6 +437,11 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
   - [ ] Home and in-race WebGL screenshots, real-phone p50/p95 and screenshots, owner sign-off on both.
   - [ ] Owner-approved default-on (remove `?model=roadster`), separate commit.
   - [ ] Rival cars: separate owner decision (default: stay procedural).
+- [ ] **Phase 3c:** Garage equipment and VFX alignment with the GLB car (added 2026-11-07, after Phase 3b, before Phase 5 cover captures). Covers every Garage equipment item, enumerated from `PAINTS` (6 paints) and `GARAGE_SKINS` (22 skins: thruster ×4, airflow ×4, NITRO trail ×5, launch flare ×9), plus the base NITRO/FLY/BOOST/airflow/jet effects and the Ground/Flight/Wing and lighting controls. Ports, behaviour, entitlements and Cloud Save unchanged; no VFX meshes from Blender. Checklist: `docs/designs/3d-pipeline/phases/task-4c-garage-equipment-vfx.md`.
+  - [ ] Catalog-driven audit: before/after captures of every paint and skin, procedural vs GLB car, in Garage Home, Studio, Home showcase and race.
+  - [ ] Owner marks mismatched items; tune only those, record "no change" for the rest.
+  - [ ] RED/GREEN: ports, uniforms-only skin swap, warm-up of every style before GO, entitlement rules, Cloud Save round trip.
+  - [ ] Real low-end-phone p50/p95 per heavy item, Low-tier fallback, all-track matrix, `make verify`, exact-HEAD full CI, owner sign-off.
 - [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
 - [ ] **All phases:** TDD RED→GREEN, renderer version/texture and animation checks, 10-track/5-new-track matrix as available, desktop/mobile Low/Medium/High (Ultra only after profiling), memory/draw/triangle/frame-time p50/p95, real-device QA, `make verify` and exact-HEAD FULL `quality-gate`. No PR, develop/main merge, release or deployment without approval.
 - [ ] **Share links:** reconcile full content if the three ChatGPT share pages become accessible; currently cannot independently verify their full text (linked in design spec).
