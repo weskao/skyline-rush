@@ -2090,3 +2090,18 @@ body:not([data-phase="ready"]) .mode-indicator[data-peripheral][data-compact="tr
   body[data-fold-axis="vertical"]:not([data-tutorial]) .result-stats strong { font-size: 22px; }
   body[data-fold-axis="vertical"]:not([data-tutorial]) .result-stats > div:has(.result-trophy-art) > span { max-width: 9em; }
 }
+/* Results cloud line + sign-in (src/cloud-ui.ts). The overlay also serves pause, so the block shows on finished only.
+   Phone landscape keeps it in the actions column; guard: tests/overlay-landscape-fit-browser.spec.js. */
+body:not([data-phase="finished"]) .result-cloud { display: none; }
+.result-cloud { display: grid; justify-items: center; gap: 8px; margin-top: 16px; }
+.result-cloud p { margin: 0; color: #cad2d8; font-size: 12px; line-height: 1.45; text-wrap: balance; }
+.result-cloud p::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #8b98a5; vertical-align: 1px; }
+.result-cloud[data-state="syncing"] p::before { background: #7cc8ff; }
+.result-cloud[data-state="synced"] p::before { background: #5be39a; }
+.result-cloud[data-state="failed"] p::before { background: #ffb44d; }
+@media (max-height: 500px) and (orientation: landscape) {
+  body:not([data-tutorial]) .overlay-actions:has(> .result-cloud:not([hidden])) { gap: 6px; } /* pays for the cloud line at 360px tall */
+  body:not([data-tutorial]) .result-cloud { justify-items: stretch; gap: 4px; margin-top: 0; }
+  body:not([data-tutorial]) .result-cloud p { font-size: 10.5px; line-height: 1.3; }
+  body:not([data-tutorial]) .result-cloud .sign-in-button { min-height: 44px; padding-block: 6px; font-size: 13px; }
+}
