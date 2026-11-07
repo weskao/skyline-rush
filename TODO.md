@@ -14,12 +14,22 @@ failed, sign-in failed, neutral "Sign-in cancelled") appears inline. Not on paus
 - [x] `npm test` 1950 pass / 0 fail / 3 skipped; `npm run typecheck` and `npm run build` pass.
 - Audio: none added; a background sync result is status text, and the results screen already plays its own cue.
 - Quality tiers: cheap DOM UI, no tier branches.
-- [ ] Full `npm run test:browser`: stopped on request at 515/938 (511 pass, 4 fail, none on the results
-  screen: `motion-browser.spec.js:180`, `foldable-layout-browser.spec.js:105`,
-  `garage-skin-trial-browser.spec.js:4` at 1440×900 and 844×390). Another session ran Playwright in the main
-  checkout at the same time; the failures are not yet re-run in isolation or against `355f20e8`.
-- [ ] `npm run test:cloud` not run yet (Java 21 is available).
-- [ ] CI-timing stress run of `result-cloud-browser.spec.js` (`--repeat-each=8 --retries=0`) not run yet.
+- [ ] Full `npm run test:browser` was stopped on request at 515/938 (511 pass, 4 fail); not re-run in full.
+- [x] The 4 failures re-run in isolation on `fa251f03` (`--retries=0 --workers=1`, Garage trial build): foldable:105
+  passes; garage-skin-trial:4 passes at 1440×900, 390×844 and 844×390 (they failed under concurrent builds in the
+  shared checkout); `motion-browser.spec.js:180` still fails, so it is not feature-caused: it also fails 3/3 on
+  baseline `7f663271` (line 203, `getAnimations().length` is 1, not 0). Cause: a one-shot read; the HUD cancels the
+  position animations on its next frame after the reduced-motion switch. Fix on `fix/motion-speed-dial-reduced-motion-poll`
+  (`57971418`, polls the read): 8/8 under `CI=1 --repeat-each=8 --workers=4 --retries=0`, `tests/browser-timeouts.test.js`
+  9/9. The fix is not yet merged into `develop`.
+- [x] `npm run test:cloud` passes: 15/15 Playwright (`cloud-emulator-browser.spec.js`) and 3/3 Firestore rules tests
+  (Java 21, emulators auth + firestore), run on `be6f5a6a`.
+- [x] CI-timing stress run `CI=1 npx playwright test tests/result-cloud-browser.spec.js
+  tests/overlay-landscape-fit-browser.spec.js --repeat-each=8 --workers=4 --retries=0` after `npm run build`: 112/112
+  pass (14 tests × 8), so the 740×360-class layout needed no CSS change.
+- [x] Real screenshots: 7 states (syncing, saved, failed, signed out, signed in after sign-in, sign-in failed, sync
+  failed after sign-in) × 1440×900, 390×844, 844×390 captured with `RESULT_CLOUD_SHOTS`, annotated and sent via
+  Telegram (21/21). Portrait: the cloud line sits at the bottom of the scrolled results panel.
 - [ ] Exact-HEAD FULL CI on `develop` after the merge.
 
 ## 2026-11-07 — Ring collect sounds (`feature/pickup-sfx`, based on `origin/develop` `7f663271`)
