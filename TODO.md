@@ -1,3 +1,10 @@
+## 2026-11-07 — Frostbite shared-AI endurance balance (`feature/playable-frostbite-canyon`)
+
+- [x] Root-cause review: the develop merge introduced shared player-equivalent rival BOOST and automatic fuel regeneration; the Frostbite-only old 1.04 multiplier made throttle-only P8 in all 24 deterministic layouts. The long-course speed-cap test set rival fuel to 0 only once and unintentionally let AI enable BOOST after refilling (100.8 vs 88).
+- [x] Preserve real player/AI BOOST, NITRO, draft, item collection, course route and result timing. Retune only Frostbite's base rival endurance pace; strengthen the unboosted cap fixture across Easy/Normal/Hard and 30/60/120 Hz without relaxing the 24-layout pack/kit-win assertions.
+- [ ] Observe fresh RED→GREEN regression and 24-layout outcomes on the exact commit; the GitHub Actions runner queue may delay execution.
+- [ ] Run full `npm test`, typecheck, build, relevant Playwright and `make verify`; inspect full exact-HEAD CI quality-gate and actual desktop/phone gameplay before merge approval.
+
 ## 2026-11-07 — Minimap player marker (`feature/minimap-player-marker`, based on `origin/develop` `55821906`)
 
 Symptom: the player's dot on `.race-route-map` was the same shape as the 7 rival dots, hard to find at a glance.

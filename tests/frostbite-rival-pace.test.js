@@ -33,7 +33,8 @@ test('a driver using BOOST, NITRO, rings and the span still wins most layouts', 
   assert.ok(wins >= 20, `bot P1 in ${wins}/${SEEDS}: ${p}`);
 });
 
-test('the faster rival pace is Frostbite-only: every other track keeps the classic pace', () => {
+test('Frostbite is the only course with endurance-calibrated rival pace; classics keep theirs', () => {
   for (const id of Object.keys(RACE_TRACKS)) assert.equal(createRace(id).rivalPace, 1, id);
-  assert.ok(createRace(FROSTBITE_ID).rivalPace > 1);
+  const pace = createRace(FROSTBITE_ID).rivalPace;
+  assert.ok(pace > 0.9 && pace < 1, `Frostbite pace ${pace} must leave the throttle-only driver in the pack`);
 });
