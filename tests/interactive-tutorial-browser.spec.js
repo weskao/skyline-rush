@@ -80,7 +80,11 @@ const keyboardRoll = async page => {
   await step(page, 'nitro');
 };
 
+// A full practice run plays ~25 s of game time; CPU-only CI steps the game at ~1/4 speed, so a passing run took
+// 1.7 min of the 45 s × 3 default and slower runners timed out mid-lesson. Every full run gets this budget.
+const FULL_PRACTICE_BUDGET = ciTimeout(240000);
 const keyboardToNitro = async page => {
+  test.setTimeout(FULL_PRACTICE_BUDGET);
   await keyStep(page, 'w', 'left');
   await keyStep(page, 'a', 'right');
   await keyStep(page, 'd', 'brake');
@@ -358,7 +362,7 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
     test('real touch controls finish practice without the coach blocking actions', async ({ page, context }) => {
       // Up to five air-chain and three barrel-roll engine-judged attempts need more than
       // the default budget on CPU-only WebGL.
-      test.setTimeout(ciTimeout(240000));
+      test.setTimeout(FULL_PRACTICE_BUDGET);
       const prefs = {version:1,mode,flyMode,...(custom?{layout:{throttle:{x:.15,y:.18}}}:{})};
       await page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls',JSON.stringify(prefs)), prefs);
       await begin(page);

@@ -9,7 +9,126 @@ import { ARCHIVED_RELEASE_NOTES } from './release-notes-archive.ts';
 export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
-    version: UPCOMING, date: '2026-11-04', image: null,
+    version: UPCOMING, date: '2026-11-07', image: null,
+    video: {
+      desktop: {
+        src: { en: 'whats-new/catch-up-rings/catch-up-rings.desktop.en.mp4', 'zh-TW': 'whats-new/catch-up-rings/catch-up-rings.desktop.zh-TW.mp4' },
+        poster: { en: 'whats-new/catch-up-rings/catch-up-rings.desktop.en.jpg', 'zh-TW': 'whats-new/catch-up-rings/catch-up-rings.desktop.zh-TW.jpg' }
+      },
+      mobile: {
+        src: { en: 'whats-new/catch-up-rings/catch-up-rings.mobile.en.mp4', 'zh-TW': 'whats-new/catch-up-rings/catch-up-rings.mobile.zh-TW.mp4' },
+        poster: { en: 'whats-new/catch-up-rings/catch-up-rings.mobile.en.jpg', 'zh-TW': 'whats-new/catch-up-rings/catch-up-rings.mobile.zh-TW.jpg' }
+      }
+    },
+    highlights: [
+      {
+        id: 'catch-up-rings', kind: 'new', image: null,
+        title: { en: 'Rings help you catch up when you fall behind', 'zh-TW': '落後時有補給圈幫你追上' },
+        description: {
+          en: 'Trailing the pack? Extra rings with NITRO charge now appear ahead of you, and how many depends on the length of the race.',
+          'zh-TW': '落後時前方會多出帶有 NITRO 的圈，數量依賽程長短調整。'
+        }
+      },
+      {
+        id: 'practice-steps', kind: 'new', image: { en: 'whats-new/practice-steps/practice.en.jpg', 'zh-TW': 'whats-new/practice-steps/practice.zh-TW.jpg' },
+        title: { en: 'Practice teaches one move at a time', 'zh-TW': '練習一次教一個動作' },
+        description: {
+          en: 'Each lesson waits until you do the move, you can skip a single step, and an endless practice road lets you repeat it.',
+          'zh-TW': '每堂課要做出動作才會過關，可以跳過單一步驟，還有無盡練習路可反覆練習。'
+        }
+      },
+      {
+        id: 'garage-lighting', kind: 'new', image: { en: 'whats-new/garage-lighting/garage-night.en.jpg', 'zh-TW': 'whats-new/garage-lighting/garage-night.zh-TW.jpg' },
+        title: { en: 'Day and night lighting in the Garage', 'zh-TW': '車庫新增日夜燈光' },
+        description: {
+          en: 'A new button next to the pose buttons switches the showroom between day and night light.',
+          'zh-TW': '姿勢按鈕旁的新按鈕可切換車庫的白天與夜晚燈光。'
+        }
+      },
+      {
+        id: 'ring-chime', kind: 'new', image: null,
+        title: { en: 'Every ring you collect now chimes', 'zh-TW': '收集每個圈都有提示音' },
+        description: {
+          en: 'Any ring you pick up plays a short chime, so you can hear it even when your eyes are elsewhere.',
+          'zh-TW': '撿到任何圈都會響起短短的提示音，眼睛沒盯著也聽得到。'
+        }
+      },
+      {
+        id: 'results-cloud', kind: 'new', image: null,
+        title: { en: 'Results tell you if your race reached the cloud', 'zh-TW': '成績畫面顯示雲端同步狀態' },
+        description: {
+          en: 'The results screen shows whether your race is saved to the cloud, or invites you to sign in to back it up.',
+          'zh-TW': '成績畫面會顯示這場比賽是否已同步到雲端，未登入時可直接登入備份。'
+        }
+      },
+      {
+        id: 'ring-lanes', kind: 'improvement', image: null,
+        title: { en: 'Rings change lanes on every track', 'zh-TW': '每條賽道的圈位置都不同' },
+        description: {
+          en: 'Rings now weave across lanes instead of repeating one pattern, so each track plays differently.',
+          'zh-TW': '圈會在不同車道間穿梭，不再重複同一種排法。'
+        }
+      },
+      {
+        id: 'minimap-arrow', kind: 'improvement', image: null,
+        title: { en: 'Your minimap marker shows where you are heading', 'zh-TW': '小地圖標記會指出行進方向' },
+        description: {
+          en: 'A glowing arrow on the route map points the way you are driving.',
+          'zh-TW': '路線小地圖上有發光箭頭，指出你正往哪個方向開。'
+        }
+      },
+      {
+        id: 'race-screen', kind: 'improvement', image: null,
+        title: { en: 'A tidier race screen', 'zh-TW': '更清爽的比賽畫面' },
+        description: {
+          en: 'The phone leaderboard and placement are more compact, and race progress and chips sit at the screen edges.',
+          'zh-TW': '手機的排行榜與名次更精簡，賽程進度和提示條移到畫面邊緣。'
+        }
+      },
+      {
+        id: 'fair-rivals', kind: 'improvement', image: null,
+        title: { en: 'Rivals now race by your rules', 'zh-TW': '對手改用和你相同的規則' },
+        description: {
+          en: 'Rivals no longer get hidden speed advantages: they build speed, BOOST and NITRO the way you do, so Classic is a fairer fight.',
+          'zh-TW': '對手不再有隱藏的速度優勢，加速、BOOST 和 NITRO 都和你一樣，經典賽更公平。'
+        }
+      },
+      {
+        id: 'friendlier-rivals', kind: 'improvement', image: null,
+        title: { en: 'Friendlier rivals on Normal and early tracks', 'zh-TW': '新手更容易跟上對手' },
+        description: {
+          en: 'Rivals on the first two tracks and on Normal are a little easier to keep up with, so newer racers can finish near the front.',
+          'zh-TW': '前兩條賽道與普通難度的對手稍微放慢，新手也能衝到前段。'
+        }
+      },
+      {
+        id: 'fly-at-go', kind: 'fix', image: null,
+        title: { en: 'FLY and BOOST answer the moment GO appears', 'zh-TW': 'GO 一出現就能起飛' },
+        description: {
+          en: 'Cars now leave the countdown already rolling, so FLY and BOOST respond right when GO shows.',
+          'zh-TW': '車輛起跑時就已經在前進，GO 出現的瞬間按 FLY 和 BOOST 就有反應。'
+        }
+      },
+      {
+        id: 'air-callouts', kind: 'fix', image: null,
+        title: { en: 'Air tricks always show their callout', 'zh-TW': '空中特技一定會顯示提示' },
+        description: {
+          en: 'Barrel rolls and other air tricks now announce themselves even while smaller messages are on screen.',
+          'zh-TW': '桶滾等空中特技即使畫面上有其他小提示，也會顯示出來。'
+        }
+      },
+      {
+        id: 'landscape-panels', kind: 'fix', image: null,
+        title: { en: 'Pause and results fit phones held sideways', 'zh-TW': '橫放手機也看得到完整面板' },
+        description: {
+          en: 'The pause and results panels now fit a landscape phone without scrolling, and the NEXT button stays inside its column.',
+          'zh-TW': '暫停和成績面板在橫放手機上不用捲動就能看完，NEXT 按鈕也不再超出欄位。'
+        }
+      }
+    ]
+  },
+  {
+    version: '0.30.0', date: '2026-11-05', image: null,
     video: {
       desktop: {
         src: { en: 'whats-new/roadster-2/roadster-2.desktop.en.mp4', 'zh-TW': 'whats-new/roadster-2/roadster-2.desktop.zh-TW.mp4' },

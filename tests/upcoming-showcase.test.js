@@ -79,3 +79,24 @@ test('every upcoming map reuses the shared Roadster AIRFLOW ground/hover pose an
   }
   showcase.dispose();
 });
+
+test('Task 4b: the Coming Soon player car is a stable model host, released before its stage is disposed', () => {
+  const released = [];
+  const env = scene => { const group = new THREE.Group(); scene.add(group); return { group, update() {}, dispose() {} }; };
+  const showcase = createUpcomingShowcase({ 'dune-tempest': env, 'monsoon-ruins': env }, new THREE.Texture(), new THREE.Texture(),
+    host => released.push({ host, attached: !!host.car.parent }));
+  assert.equal(showcase.modelHost, null);
+  showcase.setTrack('dune-tempest');
+  const first = showcase.modelHost;
+  assert.equal(first.name, 'showcase');
+  assert.equal(first.scene, showcase.scene);
+  assert.equal(first.car.parent, showcase.scene);
+  assert.ok(first.car.userData.jets && first.car.userData.wing, 'the shared procedural Roadster');
+  assert.equal(first.keep.parent, first.car, 'aero VFX rides on the car and stays drawn');
+  assert.equal(showcase.modelHost, first, 'same object every frame');
+  showcase.setTrack('monsoon-ruins');
+  assert.deepEqual(released, [{ host: first, attached: true }], 'released while the old car still exists');
+  assert.notEqual(showcase.modelHost, first);
+  showcase.dispose();
+  assert.equal(released.length, 2);
+});
