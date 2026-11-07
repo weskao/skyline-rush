@@ -12,6 +12,7 @@ import type { VfxSettings } from './vfx-settings.ts';
 import { createModePanels, type ModePanelOptions } from './race-hud-modes.ts';
 import { createHaptics } from './haptics.ts';
 import { createNitroReadiness } from './nitro-readiness.ts';
+import { orderRaceLeaderboard, graphRivalGap } from './course-hud-standings.ts';
 
 // The in-race HUD, written every HUD tick (~13 Hz) from the frame loop. It stays imperative:
 // elements are looked up once, text/hidden are written only when they change, no Vue reactivity.
@@ -289,7 +290,7 @@ export function createRaceHud(options: HudOptions) {
       });
       leaderboardOrder = '';
     }
-    const racers: { name: string; distance: number; player?: boolean }[] = [{ name: 'YOU', distance: car.distance, player: true }, ...race.rivals].sort((a, b) => b.distance - a.distance);
+    const racers: { name: string; distance: number; player?: boolean }[] = orderRaceLeaderboard([{ name: 'YOU', distance: car.distance, player: true }, ...race.rivals], race.course?.standings);
     const order = racers.map(racer => racer.name).join(',');
     if (calm || race.phase !== 'racing') leaderboardRows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
     if (order !== leaderboardOrder) {
@@ -311,7 +312,9 @@ export function createRaceHud(options: HudOptions) {
       row.classList.toggle('is-player', !!racer.player);
       setHudText(row.children[0]!, String(i + 1));
       setHudText(row.children[2]!, racer.player ? L['hud.you']! : racer.name); // 'YOU' stays the row key
-      setHudText(row.children[3]!, racer.player ? L['hud.you']! : `${racer.distance >= car.distance ? '+' : '−'}${Math.abs(racer.distance - car.distance).toFixed(0)} m`);
+      const graphGap = race.course?.standings && graphRivalGap(race.course.standings, racer.name);
+      const gap = graphGap ?? racer.distance - car.distance;
+      setHudText(row.children[3]!, racer.player ? L['hud.you']! : `${gap >= 0 ? '+' : '−'}${Math.abs(gap).toFixed(0)} m`);
     });
   }
 
