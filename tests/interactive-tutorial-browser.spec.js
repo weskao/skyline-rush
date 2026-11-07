@@ -97,13 +97,22 @@ const keyboardToNitro = async page => {
   await keyboardRoll(page);
 };
 
-test('practice opens with the race countdown, and FLY answers the moment GO shows', async ({ page }) => {
+test('practice opens with the race countdown, stands still at GO, and THROTTLE then FLY answer', async ({ page }) => {
   await page.goto('/');
   await page.locator('#controls-button').click();
   await page.locator('#tutorial-open').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
   await expect(page.locator('#countdown')).toBeVisible();
+  // The forward arrow waits for GO (user, 2026-11-08): none during 3-2-1, then it appears with the throttle cue.
+  await expect(page.locator('#tutorial-guide')).toHaveCount(0);
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(6000) });
+  // Practice has no GO roll (user, 2026-11-08): the car waits for THROTTLE, and the cue says so.
+  await expect(page.locator('#speed')).toHaveText('0');
+  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'ahead');
+  await expect(page.locator('#tutorial-cue')).toBeVisible();
+  await page.keyboard.down('KeyW');
+  await expect.poll(async () => Number(await page.locator('#speed').textContent()), { timeout: ciTimeout(4000) }).toBeGreaterThan(66); // past FLY's 18 m/s takeoff
+  await page.keyboard.up('KeyW');
   await page.keyboard.down('Space');
   await expect.poll(async () => Number(await page.locator('#altitude').textContent()), { timeout: ciTimeout(1500) }).toBeGreaterThan(0);
   await page.keyboard.up('Space');
@@ -216,7 +225,7 @@ test('the gate arrow points the way and Skip step moves on by a real click', asy
   await begin(page);
   const skip = page.locator('#tutorial-skip-step');
   await expect(skip).toBeVisible();
-  await expect(page.locator('#tutorial-guide')).toHaveCount(0); // settled: the throttle lesson has no gate
+  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'ahead'); // the throttle lesson points the way
   await skip.click();
   await step(page, 'left');
   await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'left');
@@ -229,6 +238,15 @@ test('the gate arrow points the way and Skip step moves on by a real click', asy
   await step(page, 'right');
   await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'right');
   await expect(skip).not.toBeFocused(); // a focused skip button would re-fire on Space or Enter
+});
+
+test('the brake lesson shows a slow-down arrow and a live cue with the bound brake key', async ({ page }) => {
+  await begin(page);
+  const skip = page.locator('#tutorial-skip-step');
+  for (const name of ['left', 'right', 'brake']) { await skip.click(); await step(page, name); }
+  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'slow'); // not the go-ahead arrow
+  await expect(page.locator('#tutorial-cue')).toHaveAttribute('data-cue', 'tutorial.cue.brakeAhead');
+  await expect(page.locator('#tutorial-cue kbd')).toHaveText('S'); // default brake binding
 });
 
 test('switching language updates the active and paused lesson immediately', async ({ page }) => {
@@ -487,10 +505,20 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         if (attempt) await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
         if (flyMode === 'toggle') await tapTouch(button('fly'));
         else await touch('touchStart', [await point(button('fly'), 1)]);
+        // Bounded with HUD evidence: one CI-timed run in 48 sat here until the 12-min test cap with FLY held.
         await page.waitForFunction(
           () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
-          null, { polling: 'raf' },
-        );
+          null, { polling: 'raf', timeout: ciTimeout(20000) },
+        ).catch(async error => {
+          const hud = await page.evaluate(() => {
+            const fly = document.querySelector('#touch-controls [data-control="fly"]')?.getBoundingClientRect();
+            const top = fly && document.elementFromPoint(fly.x + fly.width / 2, fly.y + fly.height / 2);
+            return [...['#tutorial-instruction', '#tutorial-cue', '#fuel-caption', '#fuel-value', '#altitude', '#speed']
+              .map(id => `${id}=${document.querySelector(id)?.textContent?.trim()}`),
+            `flyTop=${top?.id || top?.className}`, `pressed=${[...document.querySelectorAll('#touch-controls .is-pressed, #touch-controls [aria-pressed="true"]')].map(el => el.dataset.control)}`].join(' | ');
+          });
+          throw new Error(`no takeoff on roll attempt ${attempt}: ${hud}`, { cause: error });
+        });
         if (flyMode === 'toggle') await tapTouch(button('fly'));
         else await touch('touchEnd', []);
         if (pad) {

@@ -1,0 +1,18 @@
+/* Studio entry must read as a call to action, not a header chip: accent fill, breathing glow and the START sheen. */
+/* Id selector: the shared heading-button rule in GaragePanel.vue outranks a class and repaints it #1b3044. */
+#garage-screen #garage-studio-open { color: #fff; background: linear-gradient(115deg, #1f6f9a, #2f45a0 60%, #6a32a0); }
+#garage-screen .garage-entry { position: relative; overflow: hidden; isolation: isolate;
+  box-shadow: 0 0 0 1px rgb(108 232 255 / .35), 0 0 14px rgb(108 232 255 / .35);
+  animation: garage-entry-glow 2.4s ease-in-out infinite alternate; cursor: pointer; touch-action: manipulation; }
+#garage-screen .garage-entry::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / .5) 50%, transparent 70%);
+  translate: -100% 0; animation: start-sheen 3s var(--ease-out) .6s infinite; }
+#garage-screen .garage-entry:focus-visible { outline: 3px solid #6ce8ff; outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  #garage-screen .garage-entry:hover { filter: brightness(1.15); }
+}
+@keyframes garage-entry-glow {
+  to { box-shadow: 0 0 0 1px rgb(108 232 255 / .8), 0 0 22px rgb(108 232 255 / .65); }
+}
+/* The panel's reduced-motion reset matches elements only, not ::after. */
+@media (prefers-reduced-motion: reduce) { #garage-screen .garage-entry::after { animation: none; display: none; } }

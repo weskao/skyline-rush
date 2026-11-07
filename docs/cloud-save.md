@@ -1,6 +1,6 @@
 # Cloud save operations
 
-GitHub Pages continues to host the website. Google sign-in and Firestore use the Firebase Spark project `skyline-rush-weskao`; Firebase Hosting is not required. The published GitHub Pages domain must remain in Firebase Authentication's authorized domains.
+GitHub Pages continues to host the website. Google sign-in and Firestore use the Firebase Spark project `skyline-rush-weskao`; Firebase Hosting is not required. The published GitHub Pages domain and `skyline-rush.netlify.app` (`make deploy-netlify`, which refuses to deploy while it is missing) must remain in Firebase Authentication's authorized domains.
 The game keeps versioned race results in `saves/{uid}`, permanent per-ruleset Mode/Stunt bests in `modeBests/{uid}`, and an intentionally minimal Google display name/email cache in `accounts/{uid}`. The three document paths are private by UID. Firebase Authentication remains the identity source of truth; no Google passwords or OAuth tokens are saved in Firestore. Device settings and Ghosts remain in browser storage.
 
 ## Local verification

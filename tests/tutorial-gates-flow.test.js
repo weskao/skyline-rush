@@ -21,41 +21,37 @@ function cruiseTo(session, speed) {
   for (let i = 0; i < 600 && session.race.player.speed < speed; i++) tick(session);
   assert.ok(session.race.player.speed >= speed);
 }
+// Collected rings stay briefly in race.rings (for the chime and burst); the live gate is the unhit one.
+const live = session => session.race.rings.filter(ring => !ring.hit);
 function driveToGate(session, action) {
-  const start = session.index, gate = session.race.rings[0].distance;
+  const start = session.index, gate = live(session)[0].distance;
   for (let i = 0; i < 900 && session.index === start && session.race.player.distance <= gate; i++) tick(session, action);
 }
 
 test('left and right lessons are lane gates the arrow points to', () => {
   const session = createInteractiveTutorial();
   skipTo(session, 'left');
-  assert.deepEqual(session.race.rings.map(ring => ring.x), [-7.5]);
+  assert.deepEqual(live(session).map(ring => ring.x), [-7.5]);
   assert.equal(session.guide, 'left');
   driveToGate(session, { steer: -1 });
   assert.equal(session.step, 'right', 'steering into the left gate clears the lesson');
-  assert.deepEqual(session.race.rings.map(ring => ring.x), [7.5]);
+  assert.deepEqual(live(session).map(ring => ring.x), [7.5]);
   assert.equal(session.guide, 'right');
   driveToGate(session, { steer: 1 });
   assert.equal(session.step, 'brake');
 });
 
-test('the brake and boost gates span the road and need the action held while passing', () => {
+test('the brake gate spans the road and needs the action held while passing', () => {
   const session = createInteractiveTutorial();
   skipTo(session, 'brake');
-  assert.equal(session.race.rings.length, 4, 'a full-width row');
-  assert.equal(session.guide, 'ahead');
+  assert.equal(live(session).length, 4, 'a full-width row');
+  assert.equal(session.guide, 'slow', 'braking gets its own slow-down arrow, not the go-ahead one');
   driveToGate(session, {});
   assert.equal(session.step, 'brake');
   assert.equal(session.coachReason, 'noBrake', 'coasting through is named, not silently ignored');
   tick(session);
   driveToGate(session, { brake: true });
   assert.equal(session.step, 'drift', 'a held brake crawls through the gate and clears it');
-  skipTo(session, 'boost');
-  driveToGate(session, {});
-  assert.equal(session.coachReason, 'noBoost');
-  tick(session);
-  driveToGate(session, { boost: true });
-  assert.equal(session.step, 'airChain');
 });
 
 test('practice gates never pay a PERFECT LINE bonus', () => {
@@ -151,7 +147,7 @@ test('the coach names the reason for a retry and praises a cleared lesson', () =
 
 test('every retry reason the lessons can report has copy in both languages', async () => {
   const { TUTORIAL_COPY } = await import('../src/locales/tutorial-copy.ts');
-  const reasons = { left: ['missed'], right: ['missed'], brake: ['missed', 'noBrake'], boost: ['missed', 'noBoost'],
+  const reasons = { left: ['missed'], right: ['missed'], brake: ['missed', 'noBrake'], boost: ['timeout'],
     drift: ['short'], airChain: ['noBoost', 'short', 'hard', 'slow'], barrelRoll: ['noRoll', 'early', 'hard'] };
   for (const [step, list] of Object.entries(reasons)) for (const reason of list) {
     const key = tutorialInstructionKey(step, 'retry', reason, false);
