@@ -22,7 +22,7 @@ function roadsterGlb() {
   };
   node('body');
   node('tail_light', scene, light);
-  for (const name of WHEELS) node(name);
+  for (const name of WHEELS) node(`${name}_spin`, node(name));
   const wing = node('wing'), blade = node('wing_blade', wing);
   node('wing_tip_l', blade);
   node('wing_tip_r', blade);
@@ -63,6 +63,17 @@ test('each GLB wheel follows the procedural wheel at the same corner', async () 
   for (const [name, wheel] of Object.entries(pairs)) {
     assert.deepEqual(glb(name).position.toArray(), wheel.position.toArray(), name);
     assert.ok(glb(name).quaternion.equals(wheel.quaternion), name);
+  }
+});
+
+test('each GLB wheel spin node follows the procedural wheel spin node', async () => {
+  const { car, model, host, glb } = await dressed();
+  const spins = car.userData.wheels.map(w => w.getObjectByName('Roadster wheel spin'));
+  spins.forEach((spin, i) => { spin.rotation.x = 1.1 + i; });
+  model.sync(true, 'high', host);
+  const [fl, rl, fr, rr] = spins;
+  for (const [name, spin] of Object.entries({ wheel_fl: fl, wheel_fr: fr, wheel_rl: rl, wheel_rr: rr })) {
+    assert.ok(glb(`${name}_spin`).quaternion.equals(spin.quaternion), name);
   }
 });
 
@@ -113,4 +124,25 @@ test('close restores the procedural car and disposes the per-instance materials'
   assert.equal(car.getObjectByName('wheel_fl'), undefined);
   assert.equal(drawn(car.userData.body), true);
   assert.equal(disposed, 1);
+});
+
+test('a GLB wheel without its _spin pivot (pre-rig contract, e.g. the probe) keeps its own transform', async () => {
+  const car = makeCar(CAR_STYLES.roadster), scene = new THREE.Scene(), keep = new THREE.Group();
+  car.add(keep);
+  scene.add(car);
+  const probe = new THREE.Group();
+  const wheel = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ name: 'probe_tire' }));
+  wheel.name = 'wheel_fl';
+  wheel.position.set(-0.85, 0.35, -1.2);
+  probe.add(wheel);
+  const cache = { async load(id) { return { kind: 'model', id, instance: () => probe.clone(true), release() {} }; } };
+  const model = createGarageModel({ id: 'pipeline-probe', cache, dataset: {}, compile: async () => {} });
+  const host = { name: 'studio', car, keep, scene };
+  model.sync(true, 'high', host);
+  await settle();
+  car.userData.wheels[0].rotation.z = 1;
+  model.sync(true, 'high', host);
+  const dressedWheel = car.getObjectByName('wheel_fl');
+  assert.deepEqual(dressedWheel.position.toArray(), [-0.85, 0.35, -1.2]);
+  assert.deepEqual(dressedWheel.quaternion.toArray(), [0, 0, 0, 1]);
 });

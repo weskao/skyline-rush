@@ -17,7 +17,12 @@ const corner = (o: Object3D): string => `wheel_${o.position.z < 0 ? 'f' : 'r'}${
 
 function boundPairs(car: Object3D, instance: Object3D): [Object3D, Object3D][] {
   const { wheels = [], wing } = car.userData as CarParts;
-  const procedural: [string, Object3D | undefined][] = wheels.map(w => [corner(w), w]);
+  // Only wheels authored to the rig contract (a `<wheel>_spin` pivot child) follow; the Phase 2 probe's wheels
+  // sit on their own pivots and would be thrown off by the procedural TRS.
+  const rigged = wheels.filter(w => instance.getObjectByName(`${corner(w)}_spin`)?.parent?.name === corner(w));
+  const procedural: [string, Object3D | undefined][] = rigged.flatMap(w => [
+    [corner(w), w], [`${corner(w)}_spin`, w.getObjectByName('Roadster wheel spin')],
+  ] as [string, Object3D | undefined][]);
   if (wing) {
     const { blade, rams } = wing.userData;
     const tips = blade?.children.filter(c => c.userData.fold) ?? [];

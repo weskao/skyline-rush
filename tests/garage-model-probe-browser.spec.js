@@ -35,7 +35,8 @@ const homeCar = page => page.evaluate(() => {
     let node = object, inProbe = false, inVfx = false;
     while (node && node !== player) {
       if (node.userData.garageModel) inProbe = true;
-      if (node.name === 'Airflow showcase') inVfx = true; // aero VFX riding on the car stays drawn by design
+      // aero VFX and the flight lift fans (spinning under the GLB's static nozzles) stay drawn by design
+      if (node.name === 'Airflow showcase' || node === player.userData.jets) inVfx = true;
       node = node.parent;
     }
     if (inProbe) probe++; else if (!inVfx) roadster++;
