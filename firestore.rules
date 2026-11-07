@@ -11,7 +11,8 @@ service cloud.firestore {
       'aurora@2', 'taipei@2', 'tokyo@2', 'alpine@2', 'coastal@2', 'cosmic@2',
       'coast@4', 'neon@4', 'canyon@4', 'spiral@4',
       'aurora@3', 'taipei@3', 'tokyo@3', 'alpine@3', 'coastal@3', 'cosmic@3',
-      'frostbite-canyon@t1l1', 'stormline-megacity@t1l1', 'volcanic-crown@t1l1']); // CourseGraph sprints: `<track>@t<topology>l<layout>`
+      'frostbite-canyon@t1l1', 'stormline-megacity@t1l1', 'volcanic-crown@t1l1',
+      'monsoon-ruins@t1l1']); // CourseGraph sprints: `<track>@t<topology>l<layout>`
   }
 
   // Rules stop at 1000 evaluated expressions per write, and each map lookup counts: the old keys().hasAny([id])
@@ -89,7 +90,8 @@ service cloud.firestore {
       && math.abs(bests.get('cosmic@3', 302400) - 302400) < 302400
       && math.abs(bests.get('frostbite-canyon@t1l1', 302400) - 302400) < 302400
       && math.abs(bests.get('stormline-megacity@t1l1', 302400) - 302400) < 302400
-      && math.abs(bests.get('volcanic-crown@t1l1', 302400) - 302400) < 302400;
+      && math.abs(bests.get('volcanic-crown@t1l1', 302400) - 302400) < 302400
+      && math.abs(bests.get('monsoon-ruins@t1l1', 302400) - 302400) < 302400;
   }
   function validBests(bests) {
     return validBests0(bests) && validBests1(bests) && validBests2(bests) && validBests3(bests) && validBests4(bests);

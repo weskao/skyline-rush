@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, stepRace, DRIFT_MIN_SPEED } from '../src/game.js';
-import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from '../src/interactive-tutorial.ts';
+import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS, CLEARED_SECONDS } from '../src/interactive-tutorial.ts';
 import { DRIFT_ENTRY_KMH } from './helpers/tutorial-practice.js';
 
 const DT = 1 / 60;
@@ -276,8 +276,8 @@ test('braking re-arms NITRO practice on release without waiting for the burst to
   tick(session);
   assert.equal(car.nitroTime, 0, 'practice ends the interrupted burst on release');
   assert.equal(car.nitro, 1, 'a fresh NITRO charge is provided');
-  // The previous lesson's 0.8s congratulations can still overlay the re-armed 'ready' state.
-  for (let i = 0; i < 60; i++) tick(session);
+  // The previous lesson's CLEARED_SECONDS congratulations can still overlay the re-armed 'ready' state.
+  for (let i = 0; i < Math.ceil(CLEARED_SECONDS / DT) + 1; i++) tick(session);
   assert.equal(session.coachPhase, 'ready');
   tick(session, { nitro: true });
   assert.equal(session.coachPhase, 'sprinting');
