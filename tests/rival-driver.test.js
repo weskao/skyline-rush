@@ -135,12 +135,31 @@ test('on an opening map Easy and Normal rivals drive at intro skill: slower and 
 
 test('long-course rivalPace preserves difficulty scaling without raising unboosted rivals above player cap', () => {
   const race = bare('easy'), rival = race.rivals[6];
+  // Test throttle alone: a one-time empty tank refills and legitimately enables BOOST after ~6 s.
+  const throttleOnly = () => {
+    for (let i = 0; i < 20 * 60; i++) {
+      rival.fuel = 0;
+      driveRival(race, rival, 6, 0, 1 / 60);
+      assert.equal(rival.boosting, false, 'no BOOST during throttle-cap measurement');
+    }
+  };
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 1.3;
-  run(race, rival, 6, 20);
+  throttleOnly();
   assert.equal(rival.speed, MAX_SPEED, 'fast courses still respect the player throttle cap');
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 0.5;
-  run(race, rival, 6, 20);
+  throttleOnly();
   assert.equal(rival.speed, rivalBaseCap(RIVAL_SKILL.easy, 6) * 0.5, 'slower courses retain their pace multiplier');
+});
+
+// Fuel regeneration is real gameplay; the throttle-only test must not accidentally suppress this behavior.
+test('a drained rival recovers fuel and may BOOST only up to the shared player BOOST cap', () => {
+  const race = bare('easy'), rival = race.rivals[6];
+  Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
+  race.rivalPace = 1.3;
+  run(race, rival, 6, 20);
+  assert.ok(rival.fuel > 0, 'fuel regenerated from an empty tank');
+  assert.ok(rival.speed > MAX_SPEED, 'recovered fuel enabled BOOST');
+  assert.ok(rival.speed <= MAX_SPEED + BOOST_CAP_BONUS, 'BOOST respects the same cap as the player');
 });
