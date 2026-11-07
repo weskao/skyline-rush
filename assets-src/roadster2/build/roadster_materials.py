@@ -13,6 +13,7 @@ _SPEC = {
     "roadster_light": ((0.0, 0.0, 0.0), 0.0, 0.5, {"emit": (1.0, 0.02, 0.05), "emit_strength": 2.2}),
     "roadster_lamp": ((0.0, 0.0, 0.0), 0.0, 0.5, {"emit": (0.8, 0.9, 1.0), "emit_strength": 3.0}),
     "roadster_nozzle": ((0.35, 0.29, 0.23), 0.80, 0.35, {}),
+    "roadster_fan": ((0.165, 0.219, 0.254), 0.65, 0.45, {}),  # car-model.js fanMaterial #71818a (linear), metal .65, rough .45
 }
 
 
