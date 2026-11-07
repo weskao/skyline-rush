@@ -1,3 +1,12 @@
+## 2026-11-07 — Adaptive catch-up rings by total race length
+
+- [x] Merged `develop` `a013e77f` into `feature/catch-up-rings-only` at `20319d7`, preserving both `TODO.md` prefixes.
+- [x] Added length-aware RED regression tests for real 4/6/8 km courses and a future 12 km course (`552cfc6`).
+- [ ] Observe the actual RED test failure and GREEN focused test after implementation; verify all 11 catch-up tests.
+- [ ] Full `npm test`, typecheck/build, 13 browser shards, five World Tour shards, cloud-save and exact-HEAD quality-gate.
+- [ ] Desktop/mobile real WebGL playthrough and authored-sequence regression.
+- [ ] No PR, merge into `develop`, deployment, release or force push without separate approval.
+
 ## 2026-11-07 — Catch-up branch CI browser regressions (tutorial NITRO / airborne callout)
 
 - [x] Confirmed failed baseline browser tests at `28f5f45d`, run `42297062181`: shard 6 NITRO brake interruption, shard 7 BARREL ROLL hidden by a charge callout.

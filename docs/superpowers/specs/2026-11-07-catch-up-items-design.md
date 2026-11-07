@@ -12,11 +12,21 @@ catch-up rings should appear ahead of the trailing player, naturally, so they ca
 
 ## Behaviour (the user accepted these defaults)
 
-- **Trigger:** gap to the leading rival ≥ 150 m switches help on; it stays on until the gap is back under 50 m.
-- **Strength:** scales from 150 m (weak) to 300 m (full). Spawn interval runs from 12 s down to 6 s; at most 12 extra
-  items per race.
-- **Natural appearance:** items are added 950–1030 m ahead of the player, beyond the 900 m draw range
-  (`effects.js`), so they come into view exactly like every other ring. No new effect, sound or HUD callout.
+- **Automatic course-length tuning:** read `race.length` (the total playable race length, including laps).
+  No lookup by track ID; future courses use the same formula. Reference length `L₀ = 6000 m` and
+  scale `s = clamp(√(max(0, L) / L₀), 0.75, 1.5)`.
+- **Gap trigger / recovery:** help starts at `round(150s)` m behind the leader, remains active until less than
+  `round(50s)` m behind, and reaches full strength at `round(300s)` m.
+- **Cadence:** between `12s` seconds (weakest gap) and `6s` seconds (full gap); these are *time* intervals,
+  not the course length scale's unit. The original 6 km baseline remains 12 / 6 seconds.
+- **Lookahead:** a bonus ring spawns `A = 900 + round(50s)` metres ahead, plus seeded random distance
+  `[0, round(80s))`; always beyond the renderer's 900 m draw range. It appears like ordinary rings,
+  without new effects, sounds or HUD callouts.
+- **Per-race cap:** `max(0, floor((L − A − round(80s) − 100) / 400))` rings; the original 6 km reference yields
+  12, shorter tracks receive fewer, longer tracks more. Impossible/invalid track lengths receive zero.
+- **Safety:** preserve fixed minimum 40 m section clearance, 25 m separation from existing pickups/rings,
+  100 m finish reserve, and 2.5 m road-reachable ring altitude. These are physical constraints, not scaled
+  down on short courses.
 - **Items:** all catch-up items are rings at road-reachable 2.5 m: nitro 60%, charge 20%, slipstream 20%. Rings are
   on the player's lane or a neighbouring one. Single items, never a wall; no catch-up cans.
 - **Placement guards:** never inside or within 40 m of a road section (tunnel, gap, shortcut, spiral…), never within
