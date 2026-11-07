@@ -1,6 +1,7 @@
 import { test, expect } from './helpers/test.js';
 import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 import { decodePngRgba } from './helpers/png-rgba.js';
+import { ciTimeout } from './helpers/ci.js';
 
 const IDS = Object.keys(UPCOMING_TRACKS);
 const HOME_VIEWS = ['front','rear','left','right','orbit','drive'];
@@ -23,7 +24,7 @@ async function assertDrawn(page, label, attach = false) {
 
 for(const id of IDS) for(const viewport of SCREEN_SIZES) {
   test('Coming Soon '+id+' preserves Home/Garage/Studio WebGL and START gating '+viewport.width+'px',async({page})=>{
-    test.setTimeout(180_000);
+    test.setTimeout(ciTimeout(180_000));
     await page.setViewportSize(viewport);
     await page.addInitScript(id=>{
       localStorage.setItem('skyline-rush-unlocked',JSON.stringify(['coast',id]));
