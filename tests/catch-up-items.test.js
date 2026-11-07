@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, mysteryEffect } from '../src/game.js';
 import { rivalCollects } from '../src/rival-items.ts';
-import { spawnCatchUp, CATCH_UP } from '../src/catch-up-items.ts';
+import * as catchUp from '../src/catch-up-items.ts';
+const { spawnCatchUp, CATCH_UP } = catchUp;
 import { ROW_ALTITUDE } from '../src/ring-layout.ts';
 
 // User, 2026-11-07: a player well behind the leader in Classic or Cup finds only extra rings ahead,
@@ -29,7 +30,7 @@ const sorted = items => items.every((item, i) => !i || items[i - 1].distance <= 
 test('a Classic player 300 m behind gets extra rings, added beyond the 900 m draw range', () => {
   const race = racing('tokyo'), spawned = trail(race, 300, 60);
   assert.ok(spawned.length >= 5, `spawned ${spawned.length}`);
-  assert.ok(spawned.length <= CATCH_UP.maxItems);
+  assert.ok(spawned.length <= catchUp.catchUpSettings(race.length).maxItems);
   assert.ok(spawned.every(([item]) => item.type && item.altitude === ROW_ALTITUDE), 'all catch-up items are rings at the row altitude');
   for (const [item, at] of spawned) {
     assert.ok(item.distance - at > 900, `added ${item.distance - at} m ahead`);
@@ -108,4 +109,42 @@ test('stepRace runs the spawner: a Classic player held far behind finds catch-up
     stepRace(race, { throttle: true }, 0.05);
   }
   assert.ok(extras(race).length > 0);
+});
+
+test('catch-up tuning derives limits, timing and distance thresholds from total course length', () => {
+  assert.equal(typeof catchUp.catchUpSettings, 'function', 'length-aware tuning must be exposed by shared catch-up code');
+  const short = catchUp.catchUpSettings(racing('neon').length);
+  const reference = catchUp.catchUpSettings(racing('canyon').length);
+  const long = catchUp.catchUpSettings(racing('cosmic').length);
+  const future = catchUp.catchUpSettings(12000);
+  assert.equal(reference.maxItems, CATCH_UP.maxItems, '6 km reference track keeps 12-item baseline');
+  assert.equal(reference.fastest, CATCH_UP.fastest);
+  assert.equal(reference.slowest, CATCH_UP.slowest);
+  assert.ok(short.maxItems < reference.maxItems && reference.maxItems < long.maxItems && long.maxItems < future.maxItems, 'item budget scales with each real or future course');
+  assert.ok(short.fastest < reference.fastest && reference.fastest < long.fastest, 'spawn cadence scales with length');
+  assert.ok(short.slowest < reference.slowest && reference.slowest < long.slowest);
+  assert.ok(short.on < reference.on && reference.on < long.on, 'gap thresholds scale with length');
+  assert.ok(short.off < reference.off && reference.off < long.off);
+  assert.ok(short.full < reference.full && reference.full < long.full);
+  for (const rules of [short, reference, long, future]) {
+    assert.ok(rules.ahead > 900, 'a catch-up ring stays outside the 900 m draw range');
+    assert.equal(rules.clearance, CATCH_UP.clearance, 'section clearance is a physical safety minimum');
+    assert.equal(rules.spacing, CATCH_UP.spacing, 'existing-item spacing is a physical safety minimum');
+    assert.ok(rules.maxItems >= 0);
+  }
+  assert.equal(catchUp.catchUpSettings(900).maxItems, 0, 'a course shorter than the safe lookahead cannot spawn bonus rings');
+  assert.equal(catchUp.catchUpSettings(Number.NaN).maxItems, 0, 'invalid lengths fail closed');
+});
+
+test('future 12 km race uses its length for extra-ring budget and keeps all placements safe', () => {
+  const race = racing('tokyo');
+  race.length = 12000; // future-course simulation: no track-ID-specific tuning
+  race.sections = []; race.rings = []; race.pickups = [];
+  const spawned = trail(race, 300, 240, 0), rules = catchUp.catchUpSettings(race.length);
+  assert.ok(spawned.length > CATCH_UP.maxItems, 'future long tracks must not stop at the old 12-ring cap');
+  assert.ok(spawned.length <= rules.maxItems, 'long tracks obey their own limit');
+  for (const [item, playerDistance] of spawned) {
+    assert.ok(item.distance - playerDistance > 900 && item.distance <= race.length - 100, 'safe lookahead and finish reserve');
+    assert.ok(item.type && item.altitude === ROW_ALTITUDE, 'all spawned items remain road-reachable rings');
+  }
 });
