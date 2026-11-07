@@ -14,6 +14,8 @@ branches). A rule that only matters for certain files goes there with `paths:`, 
 
 ## Shared six-course presentation and controls (mandatory for new courses)
 
+New or promoted course → read `docs/track-lifecycle-sop.md`; gates: `node scripts/check-track-lifecycle.mjs`.
+
 For Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline
 Megacity, Frostbite Canyon and future courses, **read
 `.claude/rules/playable-course-shared-template.md` before editing** map scenes,

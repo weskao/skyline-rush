@@ -1,3 +1,7 @@
+## Track release approvals
+
+Only the user may explicitly mark `- [x] RELEASE APPROVED: <course-id>` here. Agents must never tick approval or stamp release records without that approval.
+
 ## 2026-11-07 — 六賽道交接 Step A / Step B 與整合後進度（實際 GitHub 證據）
 
 - Step A（**FAIL**）：Stormline 來源 CI [42244758243](https://github.com/weskao/skyline-rush/actions/runs/42244758243) PASS；來源 HEAD `e9e7ee1a`；已於 merge `c611fe7a` 合入 epic。指定 epic CI [42272746152](https://github.com/weskao/skyline-rush/actions/runs/42272746152) 最終 **CANCELLED**，不可標記 PASS。
