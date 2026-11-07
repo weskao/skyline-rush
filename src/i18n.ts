@@ -14,11 +14,12 @@ const isLocale = (value: unknown): value is Locale =>
 const raceTracks = RACE_TRACKS as Record<string, { name?: string }>;
 const FROSTBITE_NAMES = STAGE2_TRACKS['frostbite-canyon'].names; // gated races share their Coming Soon card names
 const STORMLINE_NAMES = { en: 'Stormline Megacity', 'zh-TW': '霓虹暴雨都市' } as const; // = UPCOMING_TRACKS card (tests/stormline-megacity-race.test.js)
+const VOLCANIC_NAMES = { en: 'Volcanic Crown', 'zh-TW': '熔火天脊' } as const;
 export const TRACK_NAMES: Readonly<Record<Locale, Record<string, string>>> = Object.freeze({
   en: { coast: 'Coast', neon: 'Neon Downtown', canyon: 'Canyon Skyway', aurora: 'Aurora Pass', spiral: 'Sky Spiral',
-    taipei: 'Taipei Heritage', tokyo: 'Tokyo Afterdark', alpine: 'Alpine Rail Pass', coastal: 'Coastal Horizon', cosmic: 'Cosmic Orbit', 'harbor-circuit': 'Harbor Circuit', 'frostbite-canyon': FROSTBITE_NAMES.en, 'stormline-megacity': STORMLINE_NAMES.en },
+    taipei: 'Taipei Heritage', tokyo: 'Tokyo Afterdark', alpine: 'Alpine Rail Pass', coastal: 'Coastal Horizon', cosmic: 'Cosmic Orbit', 'harbor-circuit': 'Harbor Circuit', 'frostbite-canyon': FROSTBITE_NAMES.en, 'stormline-megacity': STORMLINE_NAMES.en, 'volcanic-crown': VOLCANIC_NAMES.en },
   'zh-TW': { coast: '海岸公路', neon: '霓虹都會', canyon: '峽谷天橋', aurora: '極光山道', spiral: '天際螺旋',
-    taipei: '台北古都', tokyo: '東京夜行', alpine: '山岳鐵道', coastal: '海岸天際', cosmic: '星際軌道', 'harbor-circuit': '港灣環道', 'frostbite-canyon': FROSTBITE_NAMES['zh-TW'], 'stormline-megacity': STORMLINE_NAMES['zh-TW'] },
+    taipei: '台北古都', tokyo: '東京夜行', alpine: '山岳鐵道', coastal: '海岸天際', cosmic: '星際軌道', 'harbor-circuit': '港灣環道', 'frostbite-canyon': FROSTBITE_NAMES['zh-TW'], 'stormline-megacity': STORMLINE_NAMES['zh-TW'], 'volcanic-crown': VOLCANIC_NAMES['zh-TW'] },
 });
 const KEY = 'skyline-rush-locale';
 export const trackName = (trackId: string, locale: string = 'en'): string =>

@@ -44,6 +44,7 @@ export function createVolcanicCrownRaceScene(scene: THREE.Scene) {
   const chunks: {
     group: THREE.Group; x: number; z: number; radius: number;
     update: (time: number, reducedMotion?: boolean) => void; dispose: () => void;
+    decorativeHazards: THREE.Object3D[];
   }[] = [];
   const hazardNames = new Set(VOLCANIC_OBSTACLES.map(o => o.id));
   let offset = 0;
@@ -53,11 +54,12 @@ export function createVolcanicCrownRaceScene(scene: THREE.Scene) {
     for (let i = 0; i < count; i++) {
       const chunk = createVolcanicCrownChunk(edgeId, i, 'medium');
       // 1D runtime has no obstacle-contact adapter. Do not show non-colliding boulders.
+      const decorativeHazards: THREE.Object3D[] = [];
       chunk.group.traverse(object => {
-        if (hazardNames.has(object.name) || object.name.endsWith('-warning')) object.visible = false;
+        if (hazardNames.has(object.name) || object.name.endsWith('-warning')) { object.visible = false; decorativeHazards.push(object); }
       });
       const c = volcanicFrame(offset + Math.min(length, (i + .5) * VOLCANIC_CHUNK_METERS)).point;
-      chunks.push({ ...chunk, x: c.x, z: c.z, radius: VOLCANIC_CHUNK_METERS / 2 + 80 });
+      chunks.push({ ...chunk, x: c.x, z: c.z, radius: VOLCANIC_CHUNK_METERS / 2 + 80, decorativeHazards });
       group.add(chunk.group);
     }
     offset += length;
@@ -98,9 +100,7 @@ export function createVolcanicCrownRaceScene(scene: THREE.Scene) {
         chunk.group.visible = visible;
         if (visible) chunk.update(time, reducedMotion);
         // The chunk updates obstacle visibility internally. Keep non-colliding hazards hidden.
-        chunk.group.traverse(o => {
-          if (hazardNames.has(o.name) || o.name.endsWith('-warning')) o.visible = false;
-        });
+        for (const hazard of chunk.decorativeHazards) hazard.visible = false;
       }
     },
     hide(): void { group.visible = false; },
