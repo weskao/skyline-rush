@@ -60,6 +60,21 @@ export function createSound() {
     if (beat === 4 || beat === 12) hit(snares, time, 0.14, 0.07);
     if (beat % 4 === 2) hit(hats, time, 0.045, 0.03);
   }
+  // Ring chimes: short and a bit quieter than 'pickup'; a quick train climbs a major scale (up to 5 steps) so six in a row stay musical, not a repeated blip.
+  const RING_CLIMB = [0, 2, 4, 5, 7, 9];
+  let ringStep = 0, lastRingAt = -Infinity;
+  function ring(type) {
+    const now = context.currentTime;
+    ringStep = now - lastRingAt < 1.2 ? Math.min(ringStep + 1, RING_CLIMB.length - 1) : 0;
+    lastRingAt = now;
+    const k = 2 ** (RING_CLIMB[ringStep] / 12), t = (hz, to, dur, delay, vol) => tone(hz * k, to * k, dur, delay, vol);
+    if (type === 'charge') t(784, 1175, .12, 0, .02);
+    else if (type === 'nitro') { t(1047, 1568, .1, 0, .022); t(1568, 2349, .12, .05, .014); }
+    else if (type === 'slipstream') t(880, 1320, .16, 0, .018);
+    else if (type === 'risk') { t(1175, 1568, .08, 0, .02); t(1568, 2349, .1, .05, .018); t(2349, 2637, .12, .1, .012); }
+    else if (type === 'mystery') { t(1319, 1976, .09, 0, .018); t(1976, 1568, .09, .07, .014); }
+    else t(988, 1480, .1, 0, .018);
+  }
   function cue(name) {
     if (name === 'go') { tone(660, 880, 0.4); tone(990, 1320, 0.4, 0, 0.025); }
     else if (name === 'finish') [523, 659, 784, 1047].forEach((pitch, i) => tone(pitch, pitch, 0.35, i * 0.13));
@@ -80,6 +95,7 @@ export function createSound() {
     else if (name === 'lift') tone(260, 900, 0.35, 0, 0.03);
     else if (name === 'near') { tone(880, 1320, 0.12); tone(1320, 1760, 0.18, 0.1); }
     else if (name === 'pickup') { tone(1047, 1568, 0.14, 0, 0.03); tone(1568, 2093, 0.18, 0.07, 0.02); }
+    else if (name.startsWith('ring-')) ring(name.slice(5));
     else if (name === 'rival-pickup') { tone(1047, 1568, 0.14, 0, 0.011); tone(1568, 2093, 0.18, 0.07, 0.007); } // the player's pickup, rival volume
     else if (name === 'rival-nitro') tone(95, 42, 0.23, 0, 0.016); // the boost thump alone, rival volume
     else if (name === 'item-use') { tone(330, 990, .2, 0, .03); tone(660, 1320, .16, .06, .02); }

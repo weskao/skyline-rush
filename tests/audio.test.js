@@ -283,3 +283,24 @@ test('ITEM-12: item use, cooldown ready and a shield block each have their own s
   assert.ok(use && ready && block);
   assert.equal(new Set([generic, pickup, use, ready, block]).size, 5);
 });
+
+test('every ring type has its own bright chime, and a quick train steps up in pitch then resets after a pause', t => {
+  const { nodes, sound } = installAudio(t);
+  const made = [];
+  globalThis.AudioContext = class extends globalThis.AudioContext { constructor() { super(); made.push(this); } };
+  sound.setEnabled(true);
+  const pitches = name => {
+    const start = nodes.length;
+    sound.cue(name);
+    return nodes.slice(start).filter(n => n.kind === 'oscillator').map(n => Math.round(n.frequency.value)).join();
+  };
+  const types = ['charge', 'nitro', 'slipstream', 'risk', 'mystery', 'speed-pad'];
+  const heard = types.map(type => { made[0].currentTime += 10; return pitches(`ring-${type}`); });
+  assert.ok(heard.every(Boolean), 'each ring type makes sound');
+  assert.equal(new Set([...heard, pitches('pickup'), pitches('ui')]).size, types.length + 2, 'distinct from each other, pickup and the UI blip');
+  made[0].currentTime += 10;
+  const train = Array.from({ length: 6 }, () => { made[0].currentTime += 0.3; return pitches('ring-charge'); });
+  assert.equal(new Set(train).size, 6, 'six quick rings climb to six different pitches');
+  made[0].currentTime += 10;
+  assert.equal(pitches('ring-charge'), train[0], 'a pause resets the climb');
+});
