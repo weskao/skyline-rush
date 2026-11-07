@@ -132,3 +132,29 @@ test('on an opening map Easy and Normal rivals drive at intro skill: slower and 
   }
   assert.equal(rivalSkill(createRace('canyon', { mode: 'classic' })), RIVAL_SKILL.normal, 'the third map is plain Normal');
 });
+
+test('long-course rivalPace respects the unboosted throttle cap on every difficulty at 30/60/120 Hz', () => {
+  for (const difficulty of DIFFICULTIES) {
+    for (const fps of [30, 60, 120]) {
+      const race = bare(difficulty), rival = race.rivals[6];
+      const throttleOnly = seconds => {
+        for (let i = 0; i < seconds * fps; i++) {
+          // Fuel refills every frame: setting it to zero only once accidentally enables BOOST.
+          rival.fuel = 0;
+          rival.boosting = false;
+          driveRival(race, rival, 6, 0, 1 / fps);
+          assert.ok(rival.speed <= MAX_SPEED + 1e-9, `${difficulty} ${fps}Hz throttle cap ${rival.speed}`);
+        }
+      };
+      Object.assign(rival, { speed: 0, nitro: 0, nitroTime: 0 });
+      race.rivalPace = 1.3;
+      throttleOnly(20);
+      assert.equal(rival.speed, MAX_SPEED, `${difficulty} ${fps}Hz fast course`);
+      Object.assign(rival, { speed: 0, nitro: 0, nitroTime: 0 });
+      race.rivalPace = 0.5;
+      throttleOnly(20);
+      assert.equal(rival.speed, rivalBaseCap(RIVAL_SKILL[difficulty], 6) * 0.5,
+        `${difficulty} ${fps}Hz slow course retains the pace multiplier`);
+    }
+  }
+});
