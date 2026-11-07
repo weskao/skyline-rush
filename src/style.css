@@ -2142,11 +2142,12 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
    Daily, the camera dock and a big Start in the bottom-right thumb zone. The panel stops 280px short of the right edge
    so it clears the AIRFLOW / VFX row (top: 64px) and the 210px rail. AIRFLOW keeps its own fixed Start and dock. */
 @media (max-height: 500px) and (orientation: landscape) {
-  body:not(.airflow-active) .intro { --rail: 210px; top: 64px; bottom: max(10px, var(--safe-bottom)); left: max(16px, var(--safe-left)); display: flex; flex-direction: column; width: min(520px, calc(100vw - 280px - var(--safe-left) - var(--safe-right))); max-width: none; padding: 0 4px 0 0; overflow-y: auto; -webkit-mask-image: none; mask-image: none; animation-name: intro-fade; }
+  body:not(.airflow-active) .intro { --rail: 210px; top: 64px; bottom: max(10px, var(--safe-bottom)); left: max(16px, var(--safe-left)); display: flex; flex-direction: column; width: min(520px, calc(100vw - 280px - var(--safe-left) - var(--safe-right))); max-width: none; padding: 0 6px; overflow-y: auto; -webkit-mask-image: none; mask-image: none; animation-name: intro-fade; }
   .intro :is(h1, .route-label, .intro-copy, .intro-controls, .flight-tip, .start-hint) { display: none; }
   .intro .race-mode-picker:not(.race-rules-row) { margin: 0; padding: 6px 8px 8px; }
   .intro .race-mode-heading { margin-bottom: 4px; }
-  .race-mode-tabs { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); }
+  /* No snap: with these wider tabs a start-snap pulled Elimination back half outside the row after it was scrolled to. */
+  .race-mode-tabs { scroll-snap-type: none; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); }
   .race-mode-tabs button { min-height: 44px; padding: 4px 10px; font-size: 12px; }
   .intro .track-select { flex: none; margin: 6px -6px -2px; }
   .intro .track-select button { flex-basis: 132px; height: 78px; min-height: 0; padding: 6px 8px; }
