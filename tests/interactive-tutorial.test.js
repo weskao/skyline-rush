@@ -268,9 +268,11 @@ test('braking re-arms NITRO practice on release without waiting for the burst to
   assert.equal(session.coachPhase, 'retry');
   assert.ok(car.nitroTime > 0);
   tick(session);
+  assert.equal(car.nitroTime, 0, 'practice ends the interrupted burst on release');
+  assert.equal(car.nitro, 1, 'a fresh NITRO charge is provided');
+  // The previous lesson's 0.8s congratulations can still overlay the re-armed 'ready' state.
+  for (let i = 0; i < 60; i++) tick(session);
   assert.equal(session.coachPhase, 'ready');
-  assert.equal(car.nitroTime, 0);
-  assert.equal(car.nitro, 1);
   tick(session, { nitro: true });
   assert.equal(session.coachPhase, 'sprinting');
   for (let i = 0; i < 180 && !session.complete; i++) tick(session);
