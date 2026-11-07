@@ -83,7 +83,9 @@ export function createCallouts() {
         if (current) current.started += elapsed;
         return null;
       }
-      const advancing = !!current && race.elapsed - current.started >= 0.85;
+      // Do not let a low-priority refill or near miss hide a newly earned aerial trick.
+      const preempt = !!current && (priority[current.kind] ?? 1) < 3 && pending.some(event => (priority[event.kind] ?? 1) > (priority[current!.kind] ?? 1));
+      const advancing = !!current && (preempt || race.elapsed - current.started >= 0.85);
       if (advancing) current = null;
       if (!current && pending.length) {
         // Keep the first earned event immediate; prioritize only later queued events.
