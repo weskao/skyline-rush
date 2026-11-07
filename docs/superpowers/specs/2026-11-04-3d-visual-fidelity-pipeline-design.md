@@ -45,6 +45,7 @@ Non-goals: replacing the game with Unity/Unreal, migrating Vue to React or TresJ
 - PBR textures use proper sRGB base-color/emissive versus linear normal/roughness/metallic; create UV0 (and UV2 only when using baked lightmaps). For roadRibbon add UV in a testable, seamless road-space coordinate system with stable transitions across chunks, incl. Sky Spiral and elevated World Tour.
 - glTF Transform optimization must preserve node names/pivots and animation; never merge animated nodes or alter ownership/disposal semantics. KTX2/meshopt require tested decoder assets/configuration in built runtime; Draco optional, not stacked blindly.
 - Showcase art and covers are concept/composition references; exported gameplay shots must be authentic WebGL captures. Brand logos and invented technical specs from concept images are not required game functionality.
+- Target look: the owner-supplied concept board `docs/designs/3d-pipeline/concept-art/skyline-rush-3d-target-concept-board.jpeg` (Garage car studio views, Coast flight/drive, other map moods) is the visual goal for Phases 2–5. It is a mood/composition reference only, never an in-game capture or a geometry source; see its README.
 - Model source licensing and external asset redistribution are mandatory checks: attribution/license audit before importing Sketchfab/Poly Haven/other assets; do not assume browsing or viewing an image grants redistribution permission.
 
 ## 6. Architecture
@@ -108,4 +109,5 @@ The external share endpoints could not be opened in this environment (cache miss
 - ../../designs/3d-pipeline/toolchain-environment-preflight.md
 - ../../designs/3d-pipeline/threejs-r180-r186-migration.md
 - ../../designs/3d-pipeline/phases/README.md (per-task files, by-project vs by-device scope)
+- ../../designs/3d-pipeline/concept-art/README.md (target-look concept board)
 - https://github.com/mrdoob/three.js/wiki/Migration-Guide

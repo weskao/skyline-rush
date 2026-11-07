@@ -40,6 +40,7 @@ import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { createRampPool, drawRamps } from './ramp-view.ts'; import { createHazardRenderer } from './hazard-render.ts';
+import { createWorldGarageModel } from './garage-model.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const roadCenter = classicRoadCenter;
@@ -514,6 +515,7 @@ export function createWorld(canvas) {
   const circuitScene = createCircuitScene(scene), frostbiteScene = createFrostbiteRaceScene(scene);
   const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : framedRoad(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
   const aero = createAeroVFX(scene, player);
+  const garageModel = createWorldGarageModel(canvas, renderer, camera), homeModelHost = { name: 'home', car: player, keep: aero.group, scene }; // ?model=probe only
   const sprintVisual = createSprintVfx();
   // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
   const sprintInput = { phase: 'ready', nitro: false, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
@@ -632,6 +634,7 @@ export function createWorld(canvas) {
       return new Promise((resolve,reject) => { photoCapture = { resolve, reject }; });
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null, motion = null) {
+      garageModel?.sync(garageHomePreview || !!garageCamera, visual.quality === 'low' ? 'low' : 'high', garageCamera ? garageStage?.modelHost ?? null : garageHomePreview ? homeModelHost : null);
       if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.01; if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; } // r186 bloom is stronger in the Studio's bright environment.
       // The original home showcase owns only scenery and camera; no race state or entry.
       if (race.phase === 'ready' && upcomingStage.scene) {
@@ -1098,7 +1101,7 @@ export function createWorld(canvas) {
       });
     },
     dispose() {
-      upcomingStage.dispose(); garageStage?.dispose(); stopLocaleSigns();
+      upcomingStage.dispose(); garageStage?.dispose(); garageModel?.dispose(); stopLocaleSigns();
       canvas.removeEventListener('webglcontextrestored', restoreWarmup);
       circuitScene.dispose(); frostbiteScene.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();

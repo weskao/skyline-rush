@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => {
       },
     ],
     define: { __GARAGE_SKIN_TRIAL__: JSON.stringify(release.mode === 'trial') },
+    // ?model=probe imports the GLB loader lazily; pre-bundle its deps so the dev server does not reload the page mid-Garage.
+    optimizeDeps: { include: ['three/examples/jsm/loaders/GLTFLoader.js', 'three/examples/jsm/utils/SkeletonUtils.js', 'three/examples/jsm/libs/meshopt_decoder.module.js'] },
     server: { watch: { ignored: [fileURLToPath(new URL('./.claude/worktrees/**', import.meta.url))] } },
     resolve: { alias: {
       '@progression-access': fileURLToPath(new URL('./src/access/production.ts', import.meta.url)),
