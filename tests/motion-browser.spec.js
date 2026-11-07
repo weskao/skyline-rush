@@ -210,7 +210,8 @@ test('speed dial eases as speed rises and a lost place flips with a readable dow
   await expect(needle).toHaveCSS('transition-duration', '0.24s');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(needle).toHaveCSS('transition-duration', '0s');
-  expect(await page.locator('#position').evaluate(element => element.getAnimations().length)).toBe(0);
+  // The HUD cancels the position animations on its next frame after the media change, so poll.
+  await expect.poll(() => page.locator('#position').evaluate(element => element.getAnimations().length)).toBe(0);
 });
 
 test('leaderboard moves the same racer rows with FLIP only when order changes', async ({ page }) => {

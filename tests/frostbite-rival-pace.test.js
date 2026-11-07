@@ -47,3 +47,11 @@ test('the faster rival pace is Frostbite-only: every other track keeps the class
   for (const id of Object.keys(RACE_TRACKS)) assert.equal(createRace(id).rivalPace, 1, id);
   assert.ok(createRace(FROSTBITE_ID).rivalPace > 1);
 });
+
+test('Frostbite-specific grid spread protects the slowest slots without slowing the fastest or classic tracks', () => {
+  const frostbite = createRace(FROSTBITE_ID);
+  assert.ok(frostbite.rivalSpread > RIVAL_SKILL.normal.spread);
+  assert.ok(rivalBaseCap(RIVAL_SKILL.normal, 0, frostbite.rivalSpread) < rivalBaseCap(RIVAL_SKILL.normal, 0));
+  assert.equal(rivalBaseCap(RIVAL_SKILL.normal, 6, frostbite.rivalSpread), rivalBaseCap(RIVAL_SKILL.normal, 6));
+  for (const id of Object.keys(RACE_TRACKS)) assert.equal(createRace(id).rivalSpread, undefined, id);
+});

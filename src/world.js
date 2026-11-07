@@ -17,7 +17,8 @@ import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
-import { createGarageStage } from './garage-stage.ts';
+import { createGarageStage, GARAGE_LIGHTING } from './garage-stage.ts';
+import { applyCarReflections, createCarEnvironment } from './car-reflections.ts';
 import { createCarBounds } from './car-bounds.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts';
@@ -101,9 +102,9 @@ export function createWorld(canvas) {
   highPass.fragmentShader = highPass.fragmentShader.replace(texel, `${texel} if ( any( isnan( texel ) ) || any( isinf( texel ) ) ) texel = vec4( 0.0 );`);
   composer.addPass(bloom);
   const lens = new ShaderPass({
-    uniforms: { tDiffuse: { value: null }, boost: { value: 0 }, impact: { value: 0 }, pressure: { value: 0 }, nozzle: { value: new THREE.Vector2() }, time: { value: 0 } },
+    uniforms: { tDiffuse: { value: null }, gain: { value: 1 }, boost: { value: 0 }, impact: { value: 0 }, pressure: { value: 0 }, nozzle: { value: new THREE.Vector2() }, time: { value: 0 } },
     vertexShader: 'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: `uniform sampler2D tDiffuse; uniform float boost; uniform float impact; uniform float pressure,time; uniform vec2 nozzle; varying vec2 vUv;
+    fragmentShader: `uniform sampler2D tDiffuse; uniform float gain, boost; uniform float impact; uniform float pressure,time; uniform vec2 nozzle; varying vec2 vUv;
       void main(){ vec2 delta=vUv-.5; vec2 offset=delta*impact*.008;
         vec2 gas=vUv-nozzle;float mask=exp(-dot(gas*vec2(2.,1.),gas*vec2(2.,1.))*550.);
         vec2 uv=vUv+sin(gas.yx*160.+time*25.)*mask*pressure*.0015;
@@ -112,7 +113,7 @@ export function createWorld(canvas) {
         vec3 blur=texture2D(tDiffuse,vUv-delta*.012).rgb+texture2D(tDiffuse,vUv-delta*.025).rgb;
         col=mix(col,blur*.5,boost*dot(delta,delta)*.65);
         col*=1.-smoothstep(.15,.85,length(delta))*.3;
-        gl_FragColor=vec4(col,1.); }`,
+        gl_FragColor=vec4(col*gain,1.); }`, // gain: the Garage/Studio sun/moon lighting, applied before tone mapping
   });
   composer.addPass(lens);
   composer.addPass(new OutputPass());
@@ -123,7 +124,8 @@ export function createWorld(canvas) {
   scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null, garagePreviewSkins = {};
   room.dispose();
   env.dispose();
-  const upcomingStage = createUpcomingShowcase(UPCOMING_ENVIRONMENTS, environment.texture);
+  const carEnvironment = createCarEnvironment(renderer);
+  const upcomingStage = createUpcomingShowcase(UPCOMING_ENVIRONMENTS, environment.texture, carEnvironment);
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
   scene.add(ambient);
   const sunlight = new THREE.DirectionalLight('#ffb88a', 2.3);
@@ -303,6 +305,7 @@ export function createWorld(canvas) {
   scene.add(finish);
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
+  applyCarReflections(player, carEnvironment);
   const rearLight = player.userData.rearLight;
   const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
@@ -524,7 +527,8 @@ export function createWorld(canvas) {
   let cameraMode = 0;
   let initialized = false, lastRace = null, trackId, carBank = 0, seenFall = null, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); // Frostbite span: a respawn (up to ~500 m back) cuts the camera; the lift carries it
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
-  let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null;
+  let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null, garageLighting = 'bright';
+  const syncGarageLighting = () => { lens.uniforms.gain.value = garageCamera || garagePose ? GARAGE_LIGHTING[garageLighting] : 1; };
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
   let sizeKey = '', warmupPending = true, garageWarmupPending = true;
   const restoreWarmup = () => { warmupPending = garageWarmupPending = true; };
@@ -592,7 +596,7 @@ export function createWorld(canvas) {
     });
   }
   return {
-    resize, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); }, setGaragePose(pose) { garagePose = pose; },
+    resize, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture, carEnvironment); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; syncGarageLighting(); }, setCosmeticSkins(ids) { aero.setSkins(ids); }, setGaragePose(pose) { garagePose = pose; syncGarageLighting(); }, setGarageLighting(level) { garageLighting = level; syncGarageLighting(); },
     setGarageSkinPreview(ids, home = false) { garagePreviewSkins = ids; garageHomePreview = home && !garageCamera; garageStage?.setSkins(ids); if (garageHomePreview) aero.setSkins(ids); }, inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : aero.inspectCosmetics(); },
         inspectGarageStudio() { if (garageStage && garageCamera) return garageStage.inspectBounds(camera); if (!garageHomePreview) return null; const { minX, maxX, minY, maxY } = projectedCarBounds(camera.position, smoothLook); return { minX, maxX, minY, maxY, inFrame: minX > -.94 && maxX < .94 && minY > -.94 && maxY < .94 }; }, // Home: QA reads how much of the showroom the car fills
     previewAppearance(paint) {

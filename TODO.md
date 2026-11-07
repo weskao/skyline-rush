@@ -1,3 +1,165 @@
+## 2026-11-07 — Six playable source branch history integration (CI pending)
+
+- Source heads: Frostbite `549e8823`, Stormline `6eec7542`, Volcanic `9586ac67`, Monsoon `4b5b2fea`, Dune `959129db`, Skyfall `e094fea6`.
+- User requested merging all `feature/playable*` into epic without waiting for source CI, then syncing latest `develop`. Source history merged into six no-ff commits; new shared source changes are reconciled separately against epic and develop; keep all six preview cards under Coming Soon in public builds.
+- Explicit **NOT VERIFIED**: full exact-HEAD CI after merge, all six gameplay START→FINISH, manual WebGL screenshots, physical device QA and Cloud rules deployment. A source history merge is NOT proof of course playability. Current `COURSE_TRACKS` only registers Frostbite and Stormline.
+
+## 2026-11-07 — Results cloud-sync status (`feature/results-cloud-sync-status`, based on `develop` `355f20e8`)
+
+Acceptance: the finished-race results show one cloud line. Signed in (any provider): syncing → "Race saved to the
+cloud." only after Firestore acknowledges, or "Not synced yet — saved on this device, will retry." when the write fails
+or is offline. Signed out: an explanation plus "Sign in with Google"; the sign-in outcome (signed in + synced, sync
+failed, sign-in failed, neutral "Sign-in cancelled") appears inline. Not on pause, not in Free Drive. en + zh-TW.
+
+- [x] RED → GREEN `tests/result-cloud-status.test.js` (state logic, popup-cancel classification, locale parity,
+  controller sign-in + sync flow with injected services): failed on the missing module, then 10/10 pass.
+- [x] `tests/result-cloud-browser.spec.js` (Firebase replaced by a scripted module on the Vite dev server) at
+  1440×900, 390×844, 844×390, 667×375 + zh-TW switch: 9/9 pass locally.
+- [x] `tests/overlay-landscape-fit-browser.spec.js` now requires the results sign-in button; 5/5 viewports pass.
+  The fold check now polls (the slide-in can still offset the panel when the hit test first passes).
+- [x] `npm test` 1950 pass / 0 fail / 3 skipped; `npm run typecheck` and `npm run build` pass.
+- Audio: none added; a background sync result is status text, and the results screen already plays its own cue.
+- Quality tiers: cheap DOM UI, no tier branches.
+- [ ] Full `npm run test:browser` was stopped on request at 515/938 (511 pass, 4 fail); not re-run in full.
+- [x] The 4 failures re-run in isolation on `fa251f03` (`--retries=0 --workers=1`, Garage trial build): foldable:105
+  passes; garage-skin-trial:4 passes at 1440×900, 390×844 and 844×390 (they failed under concurrent builds in the
+  shared checkout); `motion-browser.spec.js:180` still fails, so it is not feature-caused: it also fails 3/3 on
+  baseline `7f663271` (line 203, `getAnimations().length` is 1, not 0). Cause: a one-shot read; the HUD cancels the
+  position animations on its next frame after the reduced-motion switch. Fix on `fix/motion-speed-dial-reduced-motion-poll`
+  (`57971418`, polls the read): 8/8 under `CI=1 --repeat-each=8 --workers=4 --retries=0`, `tests/browser-timeouts.test.js`
+  9/9. The fix is not yet merged into `develop`.
+- [x] `npm run test:cloud` passes: 15/15 Playwright (`cloud-emulator-browser.spec.js`) and 3/3 Firestore rules tests
+  (Java 21, emulators auth + firestore), run on `be6f5a6a`.
+- [x] CI-timing stress run `CI=1 npx playwright test tests/result-cloud-browser.spec.js
+  tests/overlay-landscape-fit-browser.spec.js --repeat-each=8 --workers=4 --retries=0` after `npm run build`: 112/112
+  pass (14 tests × 8), so the 740×360-class layout needed no CSS change.
+- [x] Real screenshots: 7 states (syncing, saved, failed, signed out, signed in after sign-in, sign-in failed, sync
+  failed after sign-in) × 1440×900, 390×844, 844×390 captured with `RESULT_CLOUD_SHOTS`, annotated and sent via
+  Telegram (21/21). Portrait: the cloud line sits at the bottom of the scrolled results panel.
+- [ ] Exact-HEAD FULL CI on `develop` after the merge.
+
+## 2026-11-07 — Ring collect sounds (`feature/pickup-sfx`, based on `origin/develop` `7f663271`)
+
+Symptom: flying/driving through a ring made no sound (only NITRO pickups and rival takes did).
+Acceptance: every ring the player takes plays a type-appropriate cue; a 6-ring train is audible, rises in pitch
+and does not clip; mute/pause/new-race never replay stale cues; `game.js` unchanged.
+
+- [x] RED: `tests/race-audio-events.test.js` (3 ring tests; per-type cue + train failed with `[]` vs `['ring-charge']`)
+  and `tests/audio.test.js` (ring chimes fell through to the generic blip: 2 distinct sounds, expected 8).
+- [x] GREEN: `race-audio-events.ts` emits `ring-<type>` once per ring (WeakSet, consumed while muted); `audio.js`
+  `ring()` gives each type its own chime at about the `pickup` level and climbs a major scale (6 steps) for rings
+  within 1.2 s of each other.
+- [x] `npm test` 1945 pass / 0 fail, `npm run build` ok, `npm run typecheck` ok.
+- [x] Browser: `tests/ring-sfx-browser.spec.js` (desktop + phone; real analyser peaks: bed 0.034, pickup 0.07-0.08,
+  single rings 0.06-0.08, 6-ring train 0.12-0.17, limiter threshold 0.25); existing audio specs in
+  `browser.spec.js`, `hud-settings`, `device-quality`, `endless-bounds` (26 passed).
+- [ ] Manual listening check by a human (levels are measured, not judged by ear). Exact-HEAD `quality-gate` pending.
+
+## 2026-11-07 — Catch-up branch review before merge (`feature/catch-up-rings-only`)
+
+- [x] Local gates at `209033fd` + review fixes: `node --test tests/catch-up-items.test.js` 11/11; `npm test` 1945 pass /
+  0 fail / 3 skipped; `npm run typecheck` and `npm run build` OK.
+- [x] Touch NITRO interruption spec failed 3/3 locally (expected step `boost`, got `airChain`). Cause: skipping FLY
+  leaves the car on the road, so LAND passes by itself within a frame and the next Skip tap skipped BOOST. The
+  cleanup `touchEnd` also threw with no touch down. Test fixed (wait for BOOST, lift only a pressed touch):
+  `CI=1 --repeat-each=8 --workers=4 --retries=0` 16/16 (with the keyboard NITRO case).
+- [x] `catchUpSettings` was rebuilt every race step; now cached per race length. `spawnCatchUp` (Tokyo, help off,
+  2 M calls × 5): 15.7 → 8.3 ns/call median.
+- [x] Browser: interactive-tutorial + handoff + item-feedback + nitro-fly 32/33. The miss was
+  `FLY answers the moment GO shows` (unchanged by this branch), 6/6 when stress-run alone: a load flake.
+- [x] Scratch sim, 10 tracks × 10 seeds, beginner bot, leader held 300 m ahead: catch-up rings taken 3.09 → 4.24/min,
+  NITRO 12.60 → 12.94/min, gap growth 141 → 109 m/min. At 150 m the length scaling raises the switch-on gap on long
+  tracks: spawned 3.43 → 1.98/min, taken 1.90 → 1.53/min (user kept the scaling, 2026-11-07).
+- [ ] Exact-HEAD GitHub `quality-gate` after the merge into `develop`.
+
+## 2026-11-07 — Adaptive catch-up rings by total race length
+
+- [x] Merged `develop` `a013e77f` into `feature/catch-up-rings-only` at `20319d7`, preserving both `TODO.md` prefixes.
+- [x] Added length-aware RED regression tests for real 4/6/8 km courses and a future 12 km course (`552cfc6`).
+- [ ] Observe the actual RED test failure and GREEN focused test after implementation; verify all 11 catch-up tests.
+- [ ] Full `npm test`, typecheck/build, 13 browser shards, five World Tour shards, cloud-save and exact-HEAD quality-gate.
+- [ ] Desktop/mobile real WebGL playthrough and authored-sequence regression.
+- [ ] No PR, merge into `develop`, deployment, release or force push without separate approval.
+
+## 2026-11-07 — Catch-up branch CI browser regressions (tutorial NITRO / airborne callout)
+
+- [x] Confirmed failed baseline browser tests at `28f5f45d`, run `42297062181`: shard 6 NITRO brake interruption, shard 7 BARREL ROLL hidden by a charge callout.
+- [x] New regression tests committed in RED `5fc93ba`; GitHub run `42341498607` produced precisely 2 expected unit failures (1941 pass, 3 skipped).
+- [ ] Verify the GREEN unit/typecheck/build run and both affected browser shards on the final exact HEAD; the new touch NITRO case exercises real pointer input.
+- [ ] Full browser (13 shards), World Tour (5 shards), cloud-save, quality-gate, and real-device/WebGL checks.
+- [ ] No merge, PR, deploy, tag or force push; only this branch may be written.
+
+## 2026-11-07 — Catch-up items: rings only (`feature/catch-up-rings-only`)
+
+Classic (excluding Daily) and Cup trailing-player aid now creates only extra rings: NITRO 60%, charge 20%,
+slipstream 20%, all at `ROW_ALTITUDE` (2.5 m). A one-line shared spawner change removes the can lottery without
+touching `src/game.js`, authored sequences, placements or rival catch-up guards.
+
+- [x] RED commit `0568a46b7c4e1aaf391383f7b23735de205f3416`: the focused test file has 9 cases, including the
+  new five-track NITRO-majority assertion and the rings-only / altitude guard.
+- [x] RED isolated source-level reproduction: `node --experimental-strip-types --test tests/red-smoke.test.js`
+  (temporary, *not* committed; exact spawner source with minimal imported constants) = 0 passed / 2 failed,
+  for mixed cans and NITRO 10/60. This does not replace the full repository test suite.
+- [x] GREEN isolated source-level reproduction: the same two tests = 2 passed / 0 failed after the minimal fix.
+- [ ] Confirm the original 9-case `node --test tests/catch-up-items.test.js` GREEN on the full repository.
+- [ ] `npm test`, `npm run build`, desktop/mobile `npm run test:browser` and `make verify`.
+- [ ] Exact feature-HEAD GitHub `quality-gate` and manual in-game / mobile acceptance.
+- [ ] Merge into `develop` with `--no-ff` only after explicit user approval (no PR or deployment beforehand).
+
+## 2026-11-07 — Vehicle lighting balance + Garage sun/moon lighting (`feature/vehicle-lighting-balance`)
+
+Symptom: Roadster rear lights and reflections too bright in races, Garage and Preview Studio; body details washed out.
+Root cause: the shared `RoomEnvironment` map lit nearly all of the car (zeroing every direct light changed nothing;
+zeroing the environment removed the rear glints), and its HDR light panels mirrored as white glints on the clear coat,
+rear fascia and nozzles. Paint/glass `envMapIntensity` (1.3–1.6) was a no-op: without an own `envMap`,
+`scene.environmentIntensity` wins. Studio added hemi 2 + key 3.2 + rim 2.4 at environment 0.8.
+
+- [x] Rear-only dimming rejected: the environment lights the whole body, so a darker rear would look disconnected.
+  Instead the whole car reflects one blurred 64-px PMREM (`car-reflections.ts`, blur 0.3, intensity 0.3) in race,
+  Garage Home, Studio and the home showcase car; rivals and world lighting unchanged. Rear LED brake 3.8→2.6,
+  boost 2.1→1.6, halo alpha 0.22→0.15.
+- [x] Studio lights rebalanced (hemi 1.2, key 2.4, rim 1.6, stage environment 0.5).
+- [x] Garage/Studio control: sun/moon toggle (Option A) chosen over a slider: one 44-px tap target that fits the
+  existing pose row on phones, no drag conflict with orbit, two tested presets. Moon = 0.6 pre-tone-mapping gain on the
+  Garage/Studio frame only; reset to 1 when the Garage closes. No per-frame cost.
+- [x] Race crop (Coast, 2× DPR) mean luma cruise 0.316→0.286, boost clipped pixels 0.024%→0%; corner/nozzle glints gone.
+- [x] RED→GREEN: `tests/car-reflections.test.js`, `tests/garage-lighting-browser.spec.js` (1440×900, 390×844) fail on
+  the old code, pass now; `npm test` 1942 passed, 0 failed.
+- [x] Real WebGL screenshots reviewed: race cruise/brake/boost, Garage Home + Studio in sun and moon at 1440×900,
+  390×844, 844×390; Obsidian paint keeps panel shading.
+- [ ] `make verify` (stopped at the user's request before the browser stage), shader-warmup / black-frame specs,
+  other tracks (night/tour exposure) and a real phone are not verified yet. Exact-HEAD CI pending.
+
+## 2026-11-07 — Current-mechanism README refresh
+
+- [x] Reviewed README gameplay claims against race configuration/grid, shared drive rules,
+  Cup scoring, Endless track support, cloud-save policy and mode music sources.
+- [x] Replaced fixed roster sizes, tuning constants, track totals and CI shard counts with
+  mechanism-based wording; corrected glide recharge, Endless availability, optional cloud
+  saves and layout-compatible records. Updated renamed TypeScript source references.
+- [x] English/Traditional Chinese sync check, matching code blocks/heading and table counts,
+  local asset/source references and `git diff --check` passed.
+- [x] `node --test tests/ci-changes.test.js`: 5 passed, 0 failed.
+- [x] Independent source review corrected rival boost behavior and the Next-track description.
+- [x] Resolved upstream README conflicts by preserving refreshed screenshot URLs (`?v=2`)
+  alongside the mechanism wording; refreshed the translation source hash.
+- Scope: documentation only. No gameplay, artwork or controls changed; runtime, device and
+  deployed-build verification is outside this documentation check. Exact-commit CI is checked
+  after pushing; a pending run is not a pass.
+
+## 2026-11-07 — Charge pickups: ground strips and air charging (not started)
+
+- [ ] Add ground charge strips (road segments that charge on contact). A strip can span every lane or a single lane.
+- [ ] Add air charging: a charge station, a charge segment, or another mechanism, so airborne/FLY play can also charge.
+
+## 2026-11-07 — Frostbite long-course AI regressions (`feature/track-lifecycle-sop`)
+
+- [x] Reproduced two red tests at `2382ba4d` in GitHub Actions run 42298113093: 24/24 throttle-only P8; rival speed 100.8 after 20 s with an initially empty tank.
+- [x] Traced the inherited shared AI change: rivals now regenerate fuel and use player-equivalent BOOST; an initially empty tank is not a sustained throttle-only simulation. Kept all speed and fuel rules intact and isolated no-BOOST steps in the original cap assertions; added a BOOST-regeneration regression.
+- [x] Compared 24 deterministic Frostbite layouts with inherited Normal/Easy configurations: Normal at 1.01 produced 21/24 P8; Easy at 1.04 still produced P7/P8 in multiple layouts, so changing difficulty alone was insufficient.
+- [ ] Verify a course-owned rival grid spread against the unchanged 24-layout throttle/powerup-bot tests; preserve the fastest rival's speed, the classic track AI, CourseGraph physics, progression and lifecycle contracts. A locally reconstructed speed model is not a full game-suite PASS.
+- [ ] Run focused tests, `npm test`, `npm run typecheck`, `npm run build`, relevant Playwright browser tests, exact-HEAD FULL GitHub CI and real desktop/mobile WebGL QA. Local checkout/network unavailable in this execution environment; do not mark these gates complete until independently observed.
+
 ## Step 2 — Stormline Megacity gated race runtime → epic — 2026-11-06
 
 **Branch:** `feature/playable-stormline-megacity` (epic synced in first: 0 conflicts; the six-conflict list in the handoff prompt was stale).

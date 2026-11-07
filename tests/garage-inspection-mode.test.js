@@ -75,7 +75,7 @@ function garageFramedDistanceBefore(aspect, zoom, half, yaw, pitch) {
 test('Garage Studio frames the full Ground and Flight vehicle at all camera presets', async () => {
   const THREE = await import('three');
   const { createGarageStage } = await import('../src/garage-stage.ts');
-  const stage = createGarageStage(new THREE.Texture());
+  const stage = createGarageStage(new THREE.Texture(), new THREE.Texture());
   try {
     for (const aspect of [.45, .65, 1, 2.2])
       for (const mode of ['ground', 'flight'])

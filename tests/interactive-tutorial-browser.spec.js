@@ -2,6 +2,15 @@ import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 
+// Keep tutorial input/physics tests on real browser controls, but avoid software-WebGL
+// frame starvation on shared CI runners. Renderer/quality coverage lives in separate specs.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, get: () => 2 });
+    Object.defineProperty(navigator, 'deviceMemory', { configurable: true, get: () => 2 });
+  });
+});
+
 const coach = page => page.locator('#tutorial-coach');
 const step = (page, name) => expect(coach(page)).toHaveAttribute('data-step', name);
 const begin = async page => {
