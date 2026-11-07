@@ -44,6 +44,11 @@ paths:
   unannounced plans).
 - The dialog shows only the newest five versions; keep every older release's entry and images in
   the repo, archived.
+- Every notes module stays at or below 400 lines (`tests/module-size.test.js`). When writing new notes, move each
+  entry past the newest five, unchanged, from `release-notes-data.ts` to the top of
+  `release-notes-archive-recent.ts`; when an archive module would pass 400 lines, start a new one and spread it in
+  `release-notes-data.ts` in version order. Run `npm test` before pushing notes: a docs-only notes commit
+  (`caf4a3b3`, 478 lines) turned `develop` red on 2026-11-07.
 - Inside a release the dialog lists highlights NEW → improvement → fix (unknown kinds last); within
   a kind, clip + text → picture + text → text only, written order kept among equals, via `highlightsByKind` in `src/release-notes.ts`; write the data in any
   order and never re-sort it by hand.

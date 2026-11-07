@@ -1,74 +1,7 @@
 import type { ReleaseEntry } from './release-notes.ts';
 
-// Published 0.26.0–0.28.0 entries, kept for good; release-notes-data.ts lists them between the recent ones and
-// release-notes-archive.ts.
-export const OCTOBER_RELEASE_NOTES: readonly ReleaseEntry[] = [
-  {
-    version: '0.28.0', date: '2026-10-31', image: null,
-    highlights: [
-      {
-        id: 'endless-every-road', kind: 'new', image: null,
-        title: { en: 'Endless Highway on every road', 'zh-TW': '無盡公路，每條賽道都能跑' },
-        description: {
-          en: 'Keep driving past the old finish line on all ten roads. New scenery keeps appearing ahead of you, and Sky Spiral\'s loops simply carry on.',
-          'zh-TW': '十條賽道都能一路開過原本的終點線，前方的風景會不斷出現，天空螺旋的環道也會一圈接著一圈延伸下去。'
-        }
-      },
-      {
-        id: 'sky-spiral-landmarks', kind: 'improvement', image: null,
-        title: { en: 'Smoother Sky Spiral scenery', 'zh-TW': '天空螺旋的風景更自然' },
-        description: {
-          en: 'Sky Spiral landmarks now fade in softly instead of popping into view, and look the same every time the spiral loops around.',
-          'zh-TW': '天空螺旋的地標會柔和浮現，不再突然冒出來；螺旋繞到下一圈時，看起來也始終一致。'
-        }
-      },
-      {
-        id: 'barrel-roll-wake', kind: 'new', image: null,
-        title: { en: 'Barrel rolls leave a swirling trail', 'zh-TW': '翻滾時拖出旋轉氣流' },
-        description: {
-          en: 'Pull off a barrel roll and a swirl of air trails behind your car, so every roll looks as dramatic as it feels.',
-          'zh-TW': '做出翻滾時，車後會拖出一道旋轉的氣流，讓每一次翻滾都更有看頭。'
-        }
-      },
-      {
-        id: 'iphone-touch-release', kind: 'fix', image: null,
-        title: { en: 'iPhone touch controls let go reliably', 'zh-TW': 'iPhone 觸控按鈕能確實放開' },
-        description: {
-          en: 'On iPhone, lifting your finger now reliably releases a touch control, so your car no longer keeps steering or accelerating by itself.',
-          'zh-TW': '在 iPhone 上，手指一離開螢幕，觸控按鈕就會確實放開，車子不會再自己持續轉向或加速。'
-        }
-      }
-    ]
-  },
-  {
-    version: '0.27.0', date: '2026-10-30', image: null,
-    highlights: [
-      {
-        id: 'free-drive-road-end', kind: 'fix', image: null,
-        title: { en: 'Free Drive now ends at the road end', 'zh-TW': '自由駕駛開到路的盡頭就會結束' },
-        description: {
-          en: 'You no longer get stuck at the end of the road. Free Drive now finishes there and shows your time. It\'s just practice, so it won\'t count toward your records.',
-          'zh-TW': '再也不會卡在路的盡頭。自由駕駛開到終點就會結束並顯示你的時間，這只是練習，不會計入你的紀錄。'
-        }
-      },
-      {
-        id: 'no-frozen-screen', kind: 'fix', image: null,
-        title: { en: 'The game keeps going after a hiccup', 'zh-TW': '遇到小狀況，遊戲也不會當住' },
-        description: {
-          en: 'If something glitches, the screen keeps moving and the buttons keep working, so you can tap Race again without reloading the page.',
-          'zh-TW': '就算偶爾出了點狀況，畫面還是會繼續動、按鈕也都能按，不用重新整理頁面，就能直接點「再跑一次」。'
-        }
-      },
-      {
-        id: 'whats-new-enlarge', kind: 'improvement', image: null,
-        title: { en: 'See What\'s New pictures in full', 'zh-TW': '「新功能」的圖片可以完整放大看' },
-        description: {
-          en: 'Pictures and clips in What\'s New can now be opened bigger and shown in full, on any screen. Tap or click anywhere, or press Esc, to close.',
-          'zh-TW': '「新功能」裡的圖片和影片可以點開放大，完整呈現不被裁切，在各種螢幕上都能用。點畫面任何地方或按 Esc 就能關閉。'
-        }
-      }
-    ]
-  },
+// Published entries just past the dialog's newest five; release-notes-data.ts lists them before release-notes-archive.ts.
+export const RECENT_ARCHIVED_RELEASE_NOTES: readonly ReleaseEntry[] = [
   {
     version: '0.26.0', date: '2026-10-30', image: null,
     video: {

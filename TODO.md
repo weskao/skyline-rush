@@ -1,3 +1,23 @@
+## 2026-11-08 — Post-hit grace shows on the car (`develop`, based on `9772af28`)
+
+Acceptance: while `car.cooldown` > 0 (crash, shield block, respawn: no collisions) the player car pulses
+translucent (opacity 0.3–0.7 at 3 Hz, ≤ WCAG 2.3.1's 3 flashes/s; steady 0.5 under reduced motion / comfortable),
+eases back to solid over the last 0.2 s, and is solid on the finish screen and in previews. No new shader mid-race:
+the player's materials blend from world creation (identical at opacity 1).
+
+- [x] RED → GREEN `tests/grace-fade.test.js`: failed on the missing `src/grace-fade.ts`, then 5/5 pass.
+- [x] `npm test` 2139 pass / 0 fail; `npm run typecheck`, `npm run build` pass.
+- [x] `tests/grace-fade-browser.spec.js` (real WebGL: body opacity < 0.75 during grace, back to 1 after) pass;
+  `CI=1 --repeat-each=8 --workers=4 --retries=0`: 8/8.
+- [x] `tests/shader-warmup-browser.spec.js` now also starts a grace: program count unchanged, pass.
+  `tests/black-frame-browser.spec.js` pass.
+- [x] Real desktop WebGL screenshot (Coast, 1440×900): road and lane line visible through the car during grace.
+- Known trade-off: the roadster's five shared trim materials (`roadster-fidelity.js`) are also marked transparent,
+  so the Garage studio roadster draws in the transparent pass too (looks identical at opacity 1).
+- [ ] Full `npm run test:browser`: running at the time of writing.
+- [ ] Phone (real device) visual check not done.
+- Rivals/traffic keep their own cooldown without a visual cue; the Mystery `ghost` effect also has none (follow-ups).
+
 ## 2026-11-07 — 六賽道交接 Step A / Step B 與整合後進度（實際 GitHub 證據）
 
 - Step A（**FAIL**）：Stormline 來源 CI [42244758243](https://github.com/weskao/skyline-rush/actions/runs/42244758243) PASS；來源 HEAD `e9e7ee1a`；已於 merge `c611fe7a` 合入 epic。指定 epic CI [42272746152](https://github.com/weskao/skyline-rush/actions/runs/42272746152) 最終 **CANCELLED**，不可標記 PASS。
