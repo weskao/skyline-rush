@@ -43,7 +43,7 @@ test('the faster rival pace is Frostbite-only: every other track keeps the class
 // Diagnosis only: compare the inherited AI difficulty strategies on this exact route before choosing a fix.
 // This does not replace the unchanged 24-layout acceptance assertions above.
 test('Frostbite rival pacing diagnosis: stable per-layout rank distribution', () => {
-  for (const [difficulty, pace] of [['normal', 1.01], ['easy', 1.04], ['easy', 1.08]]) {
+  for (const [difficulty, pace] of [['easy', 1.001], ['easy', 1.01], ['easy', 1.02], ['intro', 1.08]]) {
     const p = positions('throttle', difficulty, pace);
     console.log(`Frostbite calibration ${difficulty} pace=${pace}: ${p.join(',')} (wins=${p.filter(x => x === 1).length}, last=${p.filter(x => x === 8).length})`);
   }
