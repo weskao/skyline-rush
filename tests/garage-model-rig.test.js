@@ -98,20 +98,34 @@ test('the GLB wing, blade, tips and rams follow the procedural active wing', asy
   }
 });
 
-test('paint and light colours follow the procedural car without touching the cached original', async () => {
+test('paint follows the procedural car without touching the cached original', async () => {
   const { car, model, host, glb, original } = await dressed();
   car.userData.body.material.color.set('#ff2200');
   car.userData.body.material.metalness = 0.42;
   car.userData.body.material.roughness = 0.33;
-  car.userData.brakeLight.color.setRGB(0.1, 2, 0.3);
   model.sync(true, 'high', host);
-  const paint = glb('body').material, light = glb('tail_light').material;
+  const paint = glb('body').material;
   assert.equal(paint.color.getHexString(), 'ff2200');
   assert.equal(paint.metalness, 0.42);
   assert.equal(paint.roughness, 0.33);
-  assert.deepEqual(light.emissive.toArray(), [0.1, 2, 0.3]);
   assert.notEqual(paint, original.getObjectByName('body').material, 'per-instance paint material');
   assert.equal(original.getObjectByName('body').material.color.getHexString(), 'ffffff');
+});
+
+// Task 4c owner mark (2026-11-08): the GLB tail light is the procedural rear LED (src/rear-light.ts), red with its
+// brake / boost power, not the paint light colour (which made it purple, cyan or amber and much brighter).
+test('the GLB tail light follows the procedural rear LED colour and power, not the paint light colour', async () => {
+  const { car, model, host, glb, original } = await dressed();
+  const led = car.userData.rearLight.group.getObjectByName('Rear LED core').material;
+  car.userData.brakeLight.color.setRGB(0.1, 2, 0.3); // a paint light colour: must not reach the tail light
+  for (const power of [1, 2.1, 3.8]) {
+    led.emissiveIntensity = power;
+    model.sync(true, 'high', host);
+    const light = glb('tail_light').material;
+    assert.equal(light.emissive.getHexString(), led.emissive.getHexString(), `colour at power ${power}`);
+    assert.equal(light.emissiveIntensity, power);
+  }
+  assert.notEqual(glb('tail_light').material, original.getObjectByName('tail_light').material, 'per-instance light material');
 });
 
 test('authored GLB lift fans replace the procedural flight fans and follow their visibility', async () => {

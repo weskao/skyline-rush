@@ -1,15 +1,15 @@
 // Task 4: binds a GLB car's named nodes and materials to the procedural car that the frame loop animates
-// (wheels, active wing, lift fans, paint, light colour). GLB pivots sit at the procedural pivots, so each bound node
+// (wheels, active wing, lift fans, paint, rear LED). GLB pivots sit at the procedural pivots, so each bound node
 // copies its partner's local TRS. Per frame: copies only, no allocation.
 import type { Color, Material, Mesh, Object3D, ShaderMaterial, Vector4 } from 'three';
 
-interface Tinted extends Material { color?: Color; emissive?: Color; metalness?: number; roughness?: number }
+interface Tinted extends Material { color?: Color; emissive?: Color; emissiveIntensity?: number; metalness?: number; roughness?: number }
 interface CarParts {
   wheels?: Object3D[];
   jets?: Object3D;
   wing?: Object3D & { userData: { blade?: Object3D; rams?: Object3D } };
   body?: Mesh;
-  brakeLight?: { color: Color };
+  rearLight?: { group: Object3D };
 }
 
 /** `riders`: body-wrapping effects this rig moves onto the GLB body; they must stay drawn when the car is masked. */
@@ -66,6 +66,8 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
   const glbBody = instance.getObjectByName('body') as Mesh | undefined;
   const riders: Mesh[] = []; // searched car-wide: on a re-dress they still ride the old instance
   if (glbBody?.isMesh && parts.body) car.traverse(object => { if (object.userData.followsBody) riders.push(object as Mesh); });
+  // Task 4c owner mark: the tail light is the procedural rear LED (rear-light.ts: red, brake/boost power), not the paint light colour.
+  const led = (parts.rearLight?.group.getObjectByName('Rear LED core') as Mesh | undefined)?.material as Tinted | undefined;
   return {
     riders,
     update() {
@@ -87,7 +89,7 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
         paint.metalness = body.metalness;
         paint.roughness = body.roughness;
       }
-      if (parts.brakeLight) for (const light of lights) light.emissive?.copy(parts.brakeLight.color);
+      if (led?.emissive) for (const light of lights) { light.emissive?.copy(led.emissive); light.emissiveIntensity = led.emissiveIntensity; }
     },
     dispose() {
       for (const rider of riders) if (rider.parent === glbBody) { parts.body!.add(rider); rider.geometry = parts.body!.geometry; frameOf(rider)?.set(0, 0, 0, 1); }
