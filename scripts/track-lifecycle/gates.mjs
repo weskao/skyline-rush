@@ -47,3 +47,59 @@ export function parseApprovals(todoMarkdown) {
   }
   return approved;
 }
+
+
+/** Validate one course against the requirements of its declared stage. */
+export function checkCourse(c) {
+  const out = [];
+  const push = (gate, ok, reason) => out.push(ok ? { id:c.id, gate, ok:true } : { id:c.id, gate, ok:false, reason });
+  const size = c.teaserJpeg && jpegSize(c.teaserJpeg);
+  push('P1', !!size && size.width === 568 && size.height === 205, 'teaser must be JPEG 568x205');
+  push('P2', !!c.routeSvgExists, 'route SVG is missing');
+  push('P3', !!c.hasEnvironment, '3D preview environment is missing');
+  push('P4', !!c.names?.en?.trim() && !!c.names?.['zh-TW']?.trim(), 'English and zh-TW names required');
+  push('P5', !c.productionEnterable && !c.productionAvailableWithStaleUnlock, 'production or stale saves unlock the course');
+  push('P6', Array.isArray(c.homeStatuses) && c.homeStatuses.length > 0 && c.homeStatuses.every(s=>s==='coming-soon'), 'upcoming card not Coming Soon');
+  if (c.stage === 'playable' || c.stage === 'ready') {
+    push('D1', !!c.raceTrackDefined && !!c.classicOnly, 'registered classic-only course required');
+    push('D2', !!c.unitTestExists && !!c.browserSpecExists, 'START-to-FINISH test specs required');
+    push('D3', !!c.developmentEnterable, 'development-only START must be enabled');
+  }
+  if (c.stage === 'ready') {
+    for (const gate of R_GATES) {
+      const item=c.evidence?.gates?.[gate];
+      push(gate, !!item?.ticked && !!item?.sha && /^[a-f\d]{7,40}$/i.test(item.sha), 'ticked evidence and valid commit sha required');
+    }
+  }
+  return out;
+}
+
+export function nextGates(c) {
+  if (c.stage === 'ready') return ['RELEASE'];
+  const next = c.stage === 'playable' ? 'ready' : c.stage === 'development' ? 'playable' : 'development';
+  const nextResults = checkCourse({ ...c, stage:next });
+  const prefix = c.stage === 'playable' ? 'R' : c.stage === 'development' ? 'D' : 'P';
+  return nextResults.filter(result=>!result.ok && result.gate.startsWith(prefix)).map(result=>result.gate);
+}
+
+/** Released before lifecycle enforcement; this list must never grow. */
+export const LEGACY_RELEASED_TRACKS = Object.freeze(['coast','neon','canyon','aurora','spiral','taipei','tokyo','alpine','coastal','cosmic']);
+
+export function checkCatalog({raceTrackIds,upcomingIds,evidenceById,approvals}) {
+  const out=[];
+  const legacy=new Set(LEGACY_RELEASED_TRACKS), upcoming=new Set(upcomingIds);
+  for(const id of raceTrackIds) {
+    const evidence=evidenceById.get(id);
+    const ok=!upcoming.has(id) && (legacy.has(id) || approvals.has(id) && !!evidence?.releasedAt);
+    out.push({id,gate:'CATALOG',ok,...(ok?{}:{reason:'released catalog requires signed approval, stamp and no Coming Soon entry'})});
+  }
+  for(const id of upcoming) if(evidenceById.get(id)?.releasedAt)
+    out.push({id,gate:'CATALOG',ok:false,reason:'stamped released course remains Coming Soon'});
+  return out;
+}
+
+export function checkRelease(id,course,approvals) {
+  const rGates=checkCourse({...course,stage:'ready'}).filter(x=>R_GATES.includes(x.gate));
+  const ok=course.stage==='ready' && approvals.has(id) && rGates.every(x=>x.ok);
+  return [{id,gate:'RELEASE',ok,...(ok?{}:{reason:'ready stage, all six verified R gates and explicit user approval required'})}];
+}
