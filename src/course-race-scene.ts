@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { routeLength, sampleRoute } from './course-route-frame.ts';
 import type { CourseRuntime } from './course-race.ts';
 import { DUNE_TEMPEST_ID } from './courses/dune-tempest-race.ts';
+import { SKYFALL_ARCHIPELAGO_ID } from './courses/skyfall-archipelago-race.ts';
+import { createSkyfallWorld } from './courses/skyfall-world.ts';
 import { createDuneTempestVisualChunk } from './courses/dune-tempest-chunk.ts';
 
 type Quality = 'low' | 'medium' | 'high';
@@ -15,16 +17,41 @@ export function createCourseRaceScene(scene: THREE.Scene) {
   root.name = 'CourseGraph race scenery';
   scene.add(root);
   const live = new Map<string, Chunk>();
+  let skyfall: ReturnType<typeof createSkyfallWorld> | null = null;
   let quality: Quality | null = null;
   const clear = () => {
     for (const chunk of live.values()) chunk.dispose();
     live.clear();
+    skyfall?.dispose();
+    skyfall = null;
     root.visible = false;
   };
   const hide = () => { clear(); quality = null; };
   const update = (race: RaceView, tier: Quality, time = race.elapsed ?? 0, reducedMotion = false) => {
-    if (!race.course || race.trackId !== DUNE_TEMPEST_ID) { hide(); return; }
+    if (!race.course || (race.trackId !== DUNE_TEMPEST_ID && race.trackId !== SKYFALL_ARCHIPELAGO_ID)) {
+      hide(); return;
+    }
     const runtime = race.course, graph = runtime.spec.graph;
+    if (race.trackId === SKYFALL_ARCHIPELAGO_ID) {
+      if (quality !== tier || !skyfall) {
+        hide();
+        skyfall = createSkyfallWorld(scene, tier);
+        root.add(skyfall.group);
+        quality = tier;
+      }
+      root.visible = true;
+      skyfall.setFocus([...runtime.cars.values()].map(car => ({
+        edgeId: car.travel.currentEdgeId, localS: car.travel.localS,
+      })));
+      skyfall.update(time, reducedMotion);
+      const player = runtime.cars.get('YOU');
+      if (player) {
+        const frame = sampleRoute(graph, player.travel.currentEdgeId, player.travel.localS);
+        root.position.set(-frame.point[0], -frame.point[1], -frame.point[2]);
+      }
+      return;
+    }
+    if (skyfall) hide();
     if (quality !== tier) { clear(); quality = tier; }
     root.visible = true;
     const active = new Set<string>();
