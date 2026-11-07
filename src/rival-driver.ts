@@ -18,11 +18,9 @@ export interface RivalSkill {
 // Tuned with the scripted player bot (scripts/rival-balance.mjs) to the user's 2026-11-07 "challenging" target.
 // 'intro' is Easy and Normal on an opening map (TrackConfig.introRivals): a new player mostly finishes on the podium.
 export const RIVAL_SKILL: Readonly<Record<string, RivalSkill>> = {
-  // Separate the slow end of the grid even when every rival can use BOOST; the old
-  // compressed spread left throttle-only Frostbite players eighth in every layout.
-  intro: { pace: 0.92, spread: 0.045, boostOn: 101, boostOff: 100, smart: false, laneShift: 6 },
-  easy: { pace: 0.93, spread: 0.042, boostOn: 80, boostOff: 50, smart: false, laneShift: 6 },
-  normal: { pace: 0.98, spread: 0.035, boostOn: 40, boostOff: 20, smart: true, laneShift: 8 },
+  intro: { pace: 0.92, spread: 0.012, boostOn: 101, boostOff: 100, smart: false, laneShift: 6 },
+  easy: { pace: 0.93, spread: 0.012, boostOn: 80, boostOff: 50, smart: false, laneShift: 6 },
+  normal: { pace: 0.98, spread: 0.006, boostOn: 40, boostOff: 20, smart: true, laneShift: 8 },
   hard: { pace: 1, spread: 0.003, boostOn: 30, boostOff: 10, smart: true, laneShift: 9 },
 };
 const SLOTS = 7; // the full grid's rivals; slot 6 is the fastest
@@ -38,7 +36,16 @@ export interface DriveRace {
   player: Car; traffic: readonly Car[]; rivals: readonly Car[];
 }
 
-export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill => RIVAL_SKILL[rivalLevel(race)] ?? RIVAL_SKILL.normal!;
+// Frostbite's long race needs a wider grid; ordinary tracks retain their established skill profiles.
+const FROSTBITE_SKILL: Readonly<Record<string, RivalSkill>> = {
+  easy: { ...RIVAL_SKILL.easy!, spread: 0.042 },
+  normal: { ...RIVAL_SKILL.normal!, spread: 0.035 },
+  hard: RIVAL_SKILL.hard!,
+};
+export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill => {
+  const level = rivalLevel(race);
+  return (race.trackId === 'frostbite-canyon' ? FROSTBITE_SKILL[level] : RIVAL_SKILL[level]) ?? RIVAL_SKILL.normal!;
+};
 /** The rival's throttle cap before BOOST or NITRO: never above the player's MAX_SPEED. */
 export const rivalBaseCap = (skill: RivalSkill, slot: number): number => MAX_SPEED * Math.min(1, skill.pace - skill.spread * (SLOTS - 1 - slot));
 

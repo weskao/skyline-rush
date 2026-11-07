@@ -50,3 +50,11 @@ test('Frostbite has two genuinely slower Normal rivals even at the BOOST cap', (
     assert.ok(boostedCap <= MAX_SPEED, `slot ${slot} has full-BOOST cap ${boostedCap}, above the throttle-only player`);
   }
 });
+
+test('Frostbite tuning preserves classic track rival difficulty curves', () => {
+  for (const difficulty of ['easy', 'normal', 'hard']) {
+    const legacy = createRace('aurora', { mode: 'custom', difficulty });
+    assert.equal(rivalSkill(legacy).spread, { easy: 0.012, normal: 0.006, hard: 0.003 }[difficulty], difficulty);
+  }
+  assert.equal(rivalSkill(createRace(FROSTBITE_ID)).spread, 0.035);
+});
