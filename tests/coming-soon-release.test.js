@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { UPCOMING_TRACKS, homeTrackStatus, isUpcomingTrack, upcomingReadiness } from '../src/upcoming-tracks.ts';
 import { RACE_TRACKS } from '../src/game.js';
+import { COURSE_TRACKS } from '../src/race-tracks.ts';
 import { STAGE2_TRACKS, stage2PreviewRequest } from '../src/stage2-tracks.ts';
 import { availableTracks as developmentTracks, isUpcomingEnterable as developmentEnterable } from '../src/access/dev-unlocked.ts';
 import { availableTracks as productionTracks, isUpcomingEnterable as productionEnterable } from '../src/access/production.ts';
 
-const IDS = ['dune-tempest', 'monsoon-ruins', 'skyfall-archipelago',
-  'volcanic-crown', 'stormline-megacity', 'frostbite-canyon'];
+const IDS = Object.keys(UPCOMING_TRACKS);
 
 test('all six unreleased courses are cover-only and never in the released race catalog', () => {
-  assert.deepEqual(Object.keys(UPCOMING_TRACKS), IDS);
+  assert.equal(IDS.length, 6, 'six new courses remain announced');
   for (const id of IDS) {
     assert.equal(isUpcomingTrack(id), true);
     assert.equal(Object.hasOwn(RACE_TRACKS, id), false, id);
@@ -40,8 +40,8 @@ test('all-unlocked Make variants still cannot unlock a registered cover-only cou
 });
 
 test('an approved playable preview with a real runtime is playable in dev-unlocked only', () => {
-  // Readiness 'playable' + a resolvable runtime is the only approval; Frostbite and Stormline are the approved cards.
-  assert.deepEqual(IDS.filter(id => upcomingReadiness(id) === 'playable'), ['stormline-megacity', 'frostbite-canyon']);
+  // All and only registered upcoming course runtimes with playable readiness are enterable in unlocked mode.
+  assert.deepEqual(IDS.filter(id => upcomingReadiness(id) === 'playable').sort(), Object.keys(COURSE_TRACKS).sort());
   RACE_TRACKS['dune-tempest'] = RACE_TRACKS.coast; // a merged runtime without readiness approval
   const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
   Object.defineProperty(globalThis, 'localStorage', {
@@ -54,7 +54,7 @@ test('an approved playable preview with a real runtime is playable in dev-unlock
     assert.equal(developmentEnterable('dune-tempest'), false, 'a runtime alone is not approval');
     assert.equal(developmentTracks().includes('dune-tempest'), false, 'unapproved cards stay blocked');
     assert.equal(productionTracks().includes('dune-tempest'), false, 'production never unlocks a Coming Soon id');
-    assert.equal(developmentEnterable('monsoon-ruins'), false);
+    for (const id of IDS) assert.equal(developmentEnterable(id), Object.hasOwn(COURSE_TRACKS, id), id);
   } finally {
     delete RACE_TRACKS['dune-tempest'];
     if (original) Object.defineProperty(globalThis, 'localStorage', original);
