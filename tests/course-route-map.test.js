@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { courseRouteOverview } from '../src/course-route-map.ts';
+import { courseRouteOverview, createCourseRouteProjection } from '../src/course-route-map.ts';
+import { routeLength } from '../src/course-route-frame.ts';
 
 const graph = {
   id:'fork', version:1, start:'start', finish:'finish', checkpoints:[],
@@ -38,4 +39,19 @@ test('invalid point counts are safely bounded without rounding course geometry',
   assert.ok(count.every(x=>x.points.length===2));
   const fallback=courseRouteOverview(graph,Number.NaN);
   assert.ok(fallback.every(x=>x.points.length===64));
+});
+
+test('live graph markers follow physically measured branches and polyline endpoints', () => {
+  const map = createCourseRouteProjection(graph, 17);
+  for (const line of map.lines) {
+    const length = routeLength(graph, line.edgeId);
+    for (const [s, point] of [[0, line.points[0]], [length, line.points.at(-1)]]) {
+      const actual = map.marker(line.edgeId, s);
+      assert.ok(Math.hypot(actual.x - point.x, actual.y - point.y) < 1e-9);
+    }
+  }
+  const ground = map.marker('safe', routeLength(graph, 'safe') / 2);
+  const flight = map.marker('jump', routeLength(graph, 'jump') / 2);
+  assert.ok(Math.hypot(ground.x-flight.x, ground.y-flight.y) > 0.01, 'parallel routes differ');
+  assert.throws(() => map.marker('missing', 0), RangeError);
 });
