@@ -55,7 +55,8 @@ for (const { segments, ...viewport } of [
     await expect(page.locator('#resume-button')).toBeVisible();
     // Polled: overlay-in / enter() transforms move the panel for a few frames.
     await expect.poll(() => page.evaluate(unreachable), { timeout: ciTimeout(3000) }).toEqual({ misses: [], scroll: 0 });
-    if (segments) expect(await page.evaluate(offHinge, hinge)).toEqual([]); // settled: the poll above waited for the final layout
+    // Polled: enter() still slides the panel sideways after its buttons are already on screen.
+    if (segments) await expect.poll(() => page.evaluate(offHinge, hinge), { timeout: ciTimeout(3000) }).toEqual([]);
     await shot(page, `pause-${tag}`);
 
     await page.locator('#resume-button').click();
@@ -65,7 +66,7 @@ for (const { segments, ...viewport } of [
     await expect(page.locator('#result-links')).toBeVisible();
     // Polled: the results slide in (enter() 'slow') and the stars arrive after ~1.1s.
     await expect.poll(() => page.evaluate(unreachable), { timeout: ciTimeout(4000) }).toEqual({ misses: [], scroll: 0 });
-    if (segments) expect(await page.evaluate(offHinge, hinge)).toEqual([]); // settled: the poll above waited for the final layout
+    if (segments) await expect.poll(() => page.evaluate(offHinge, hinge), { timeout: ciTimeout(4000) }).toEqual([]);
     await shot(page, `results-${tag}`);
 
     // Real clicks still work from the new layout.
