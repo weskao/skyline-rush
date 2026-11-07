@@ -138,7 +138,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   const group = new THREE.Group();
   group.name = 'Dune Tempest environment';
   scene.add(group);
-  const ownedFog = new THREE.FogExp2(0xe4ae81, 0.00185);
+  const ownedFog = new THREE.FogExp2(0xe4ae81, 0.0013);
   const previousFog = scene.fog;
   scene.fog = ownedFog;
   let disposed = false;
@@ -214,8 +214,8 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   sun.position.set(112, 80, -249);
   add(sun);
   // Stacked on the showcase's own lights: brighter washes sand, sky and pale cars into one glare.
-  add(new THREE.HemisphereLight(0xffdeb2, 0x76503a, 1.6));
-  const light = new THREE.DirectionalLight(0xffbb72, 1.95);
+  add(new THREE.HemisphereLight(0xffdeb2, 0x76503a, 0.95));
+  const light = new THREE.DirectionalLight(0xffbb72, 1.05);
   light.position.set(80, 140, -125);
   add(light);
 
@@ -230,7 +230,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   dustGeometry.setAttribute('position', new THREE.BufferAttribute(initial.slice(), 3));
   dustGeometry.setDrawRange(0, count);
   const dust = new THREE.Points(dustGeometry, new THREE.PointsMaterial({
-    color: 0xf6ce99, size: 1.1, transparent: true, opacity: 0.42,
+    color: 0xf6ce99, size: 1.1, transparent: true, opacity: 0.26,
     depthWrite: false, sizeAttenuation: true,
   }));
   dust.name = 'Windblown sand particles';
@@ -241,7 +241,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   for (let i = 0; i < 4; i++) {
     const wisp = new THREE.Mesh(new THREE.PlaneGeometry(33, 7),
       new THREE.MeshBasicMaterial({ color: 0xeec08a, transparent: true,
-        opacity: 0.12, depthWrite: false, side: THREE.DoubleSide }));
+        opacity: 0.08, depthWrite: false, side: THREE.DoubleSide }));
     wisp.name = 'Dust ribbon ' + i;
     wisp.position.set((i % 2 ? -1 : 1) * (38 + i * 9), 6 + i, -55 - i * 37);
     wisp.rotation.y = -0.33;
@@ -256,9 +256,9 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
     const budget = quality === 'high' ? count : quality === 'medium' ? 86 : 28;
     dustGeometry.setDrawRange(0, budget);
     // A slow, bounded golden-hour shift keeps the distant haze alive without flicker.
-    ownedFog.density = (quality === 'low' ? 0.0014 : 0.00185)
-      + 0.00013 * Math.sin(time * 0.05);
-    light.intensity = 1.95 + 0.15 * Math.sin(time * 0.045);
+    ownedFog.density = (quality === 'low' ? 0.001 : 0.0013)
+      + 0.00007 * Math.sin(time * 0.05);
+    light.intensity = 1.05 + 0.09 * Math.sin(time * 0.045);
     const positions = dustGeometry.getAttribute('position') as THREE.BufferAttribute;
     const data = positions.array as Float32Array;
     for (let i = 0; i < budget; i++) {

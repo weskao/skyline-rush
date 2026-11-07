@@ -246,8 +246,8 @@ export function createUpcomingEnvironment(scene: THREE.Scene): {
   const cyan = new THREE.MeshBasicMaterial({ color: 0x8aeaff, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide });
   const water = new THREE.MeshBasicMaterial({ color: 0x9cdef9, transparent: true, opacity: 0.48, side: THREE.DoubleSide, depthWrite: false });
   addSky(group);
-  group.add(new THREE.HemisphereLight(0xe2f4ff, 0x496d73, 1.45));
-  const sunlight = new THREE.DirectionalLight(0xfff1d3, 1.75);
+  group.add(new THREE.HemisphereLight(0xe2f4ff, 0x496d73, 0.85));
+  const sunlight = new THREE.DirectionalLight(0xfff1d3, 1.05);
   sunlight.position.set(-110, 180, 65); group.add(sunlight);
 
   ISLANDS.forEach((island, i) => {
@@ -322,7 +322,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): {
   group.add(floating);
 
   const cloudGeo = new THREE.SphereGeometry(1, 9, 6);
-  const cloudMat = new THREE.MeshBasicMaterial({ color: 0xf2f9ff, transparent: true, opacity: 0.38, depthWrite: false });
+  const cloudMat = new THREE.MeshBasicMaterial({ color: 0xf2f9ff, transparent: true, opacity: 0.26, depthWrite: false });
   const near = makeClouds(cloudGeo, cloudMat, 112, false);
   const far = makeClouds(cloudGeo, cloudMat, 76, true);
   group.add(far, near);
