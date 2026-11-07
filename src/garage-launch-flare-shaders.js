@@ -61,8 +61,9 @@ export const RING_FRAGMENT = `uniform float age,power;uniform vec3 primary,secon
     gl_FragColor=vec4(col,clamp((.45+.55*vFacing)*${LIFE}*power,0.,1.));}`;
 
 // Light sweeps over the car body (unchanged from the flat flare).
-export const BODY_VERTEX = `varying vec3 vPos,vN,vView;
-  void main(){vPos=position;vec4 mv=modelViewMatrix*vec4(position+normal*.04,1.);
+// bodyFrame (xyz offset, w scale) maps a GLB body's quantized space into the procedural body frame (garage-model-rig.ts).
+export const BODY_VERTEX = `varying vec3 vPos,vN,vView;uniform vec4 bodyFrame;
+  void main(){vPos=position*bodyFrame.w+bodyFrame.xyz;vec4 mv=modelViewMatrix*vec4(position+normal*(.04/bodyFrame.w),1.);
     vN=normalMatrix*normal;vView=-mv.xyz;gl_Position=projectionMatrix*mv;}`;
 export const BODY_FRAGMENT = `varying vec3 vPos,vN,vView;
   uniform float age,power,time,shape,swirl,pulse,corona;uniform vec3 primary,secondary;

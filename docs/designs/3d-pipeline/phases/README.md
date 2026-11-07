@@ -9,6 +9,8 @@ Index for [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-pla
 | 2 | Phase 1 (migration) | Phase 1 | [task-2-threejs-r186-upgrade.md](task-2-threejs-r186-upgrade.md) |
 | 3 | Phase 2 (pipeline) | Phase 2 | [task-3-glb-pipeline-mvp.md](task-3-glb-pipeline-mvp.md) |
 | 4 | Phase 2 (Roadster) | Phase 3 | [task-4-roadster-garage.md](task-4-roadster-garage.md) |
+| 4b | Phase 2b | Phase 3b | [task-4b-roadster-race.md](task-4b-roadster-race.md) |
+| 4c | Phase 2c | Phase 3c | [task-4c-garage-equipment-vfx.md](task-4c-garage-equipment-vfx.md) |
 | 5 | Phase 3 | — | [task-5-coast-pbr-road.md](task-5-coast-pbr-road.md) |
 | 6 | Phase 4–5 | — | [task-6-new-tracks-showcase.md](task-6-new-tracks-showcase.md) |
 

@@ -50,11 +50,25 @@ for (const [width, height, hasTouch] of [
         `Intro overlaps ${selector}`).toBe(true);
       }
       expect(await intro.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+      // Landscape phones put Start in the right rail (bottom-right thumb zone): fully on screen, never over the panel.
+      const railStart = height <= 500 && width > height;
+      if (railStart) {
+        // The pinned Garage row shares Start's baseline and never covers the track cards (a portrait max-height lifted it 32px at 320 tall).
+        const [card, garage, start] = await Promise.all(['.track-select button', '#garage-button', '#start-button']
+          .map(selector => intro.locator(selector).first().boundingBox()));
+        expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
+        expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row bottom matches Start').toBeLessThanOrEqual(2);
+      }
       for (const selector of ['#start-button', '.history-button', '.flight-tip']) {
         const item = intro.locator(selector);
         if (!await item.isVisible()) continue;
         await item.scrollIntoViewIfNeeded();
         const box = await item.boundingBox();
+        if (railStart && selector === '#start-button') {
+          expect(box.x >= bounds.x + bounds.width && box.x + box.width <= width && box.y >= 0 && box.y + box.height <= height,
+            'rail Start is on screen, right of the panel').toBe(true);
+          continue;
+        }
         expect(box.x).toBeGreaterThanOrEqual(bounds.x);
         expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
         expect(box.y).toBeGreaterThanOrEqual(bounds.y);
@@ -119,6 +133,36 @@ for (const width of [320, 390]) {
         expect((await page.locator('#daily-card-start').boundingBox()).height).toBeGreaterThanOrEqual(44);
         await page.screenshot({ path: test.info().outputPath(`daily-title-${width}-${locale}.png`), animations: 'disabled' });
       }
+    });
+  });
+}
+
+// Chrome on iPhone (browser tab, not installed) overlays a bottom toolbar without shrinking the fixed layout box, so
+// 100% - 100dvh is the covered band; Chromium here has no such toolbar, so --browser-bar stands in for it.
+for (const [width, height] of [[844, 390], [667, 375]]) {
+  test.describe(`landscape home under a browser toolbar ${width}x${height}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: true, isMobile: true });
+
+    test('Start, the rail and the pinned row stay above the toolbar', async ({ page }) => {
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const intro = page.locator('#intro');
+      await intro.evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+      const bottomOf = async selector => { const box = await page.locator(selector).first().boundingBox(); return box.y + box.height; };
+      expect(Math.abs(await bottomOf('#start-button') - (height - 10)), 'no toolbar: Start keeps its 10px edge').toBeLessThanOrEqual(1);
+      const bar = 56;
+      await page.evaluate(px => document.body.style.setProperty('--browser-bar', `${px}px`), bar);
+      const [tools, daily, dock, start, card, garage] = await Promise.all(['.aero-tools', '#daily-card', '#showcase-camera-dock',
+        '#start-button', '.track-select button', '#garage-button'].map(selector => page.locator(selector).first().boundingBox()));
+      expect(Math.abs(start.y + start.height - (height - bar - 10)), 'Start sits 10px above the toolbar').toBeLessThanOrEqual(1);
+      expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row follows Start').toBeLessThanOrEqual(2);
+      expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
+      expect(dock.y + dock.height).toBeLessThanOrEqual(start.y);
+      expect(daily.y + daily.height).toBeLessThanOrEqual(dock.y);
+      expect(daily.y, 'rail runs into the AIRFLOW / VFX row').toBeGreaterThanOrEqual(tools.y + tools.height);
+      await page.keyboard.press('v');
+      await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
+      expect(await bottomOf('#start-button'), 'AIRFLOW Start sits above the toolbar').toBeLessThanOrEqual(height - bar - 10);
     });
   });
 }

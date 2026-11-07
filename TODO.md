@@ -1,3 +1,25 @@
+## 2026-11-08 — Tutorial hints follow the Controls settings (`develop`, based on `84a2f9e7`)
+
+Acceptance: every coach line, touch hint, live cue, outline and arrow names the control the player's own
+Controls panel gives them (steering mode, hand, size, FLY mode, key bindings), in en and zh-TW.
+
+- [x] RED → GREEN `tests/tutorial-settings-copy.test.js` (11 lessons × every phase/retry reason × desktop /
+  buttons / slide / tilt × hold / toggle FLY): 4 of 5 failed on `27f2074f` code (toggle copy said hold/release
+  FLY, desktop got toggle cues, the pad named BRAKE, buttons-mode drift outlined nothing), then 5/5 pass.
+- [x] RED → GREEN `tests/tutorial-hand-layout-browser.spec.js` (hand=right, size L, 390×844 and 844×390, buttons
+  and slide; page-side rAF overlap recorder): the guide arrow sat on the slide pad, and landscape cue / pass toasts
+  covered AIRFLOW and the coach's Exit, then 4/4 pass.
+- [x] Fixed: tilt brake hint and tilt/slide drift copy and cues say to pull down on the pad; buttons-mode drift
+  outlines BRAKE; tilt outlines no hidden steering button; toggle FLY variants for air chain and barrel roll
+  coach lines, retries, hints and `rollSoften`; keyboard keeps hold copy (FLY mode only latches the touch button).
+- [x] Checked, unchanged: throttle, left, right, fly, land, boost, nitro copy; desktop key chips follow rebinds;
+  no copy names a screen side, so hand only affects layout.
+- [x] `npm test` 2157 pass / 0 fail / 3 skipped; `npm run typecheck`, `npm run build` pass. `CI=1` tutorial browser
+  specs (interactive-tutorial, mobile-guide, hand-layout) 33/33; hand-layout `--repeat-each=4` 16/16. The granted-tilt
+  spec now expects the pad brake hint. One load-time miss (1024×768 tilt barrel-roll takeoff, thruster empty at
+  load average ~60) passed 3/3 on rerun and 33/33 in the full run.
+- Known: `tutorial.driftRelease` (non-cue coach line) is unused copy; left in place.
+
 ## 2026-11-08 — Post-hit grace shows on the car (`develop`, based on `9772af28`)
 
 Acceptance: while `car.cooldown` > 0 (crash, shield block, respawn: no collisions) the player car pulses
@@ -560,6 +582,13 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
   - [x] ~~Real-phone p50/p95 and screenshots; owner visual sign-off; waiting for exact-HEAD CI~~: waived by the owner for Phase 2b on 2026-11-08 (no manual acceptance, no CI wait). Revisit before default-on.
   - [ ] Owner-approved default-on (remove `?model=roadster`), separate commit.
   - [ ] Rival cars: separate owner decision (default: stay procedural).
+- [x] **Phase 3c:** Garage equipment and VFX alignment with the GLB car (added 2026-11-07, after Phase 3b, before Phase 5 cover captures). Covers every Garage equipment item, enumerated from `PAINTS` (6 paints) and `GARAGE_SKINS` (22 skins: thruster ×4, airflow ×4, NITRO trail ×5, launch flare ×9), plus the base NITRO/FLY/BOOST/airflow/jet effects and the Ground/Flight/Wing and lighting controls. Ports, behaviour, entitlements and Cloud Save unchanged; no VFX meshes from Blender. Checklist: `docs/designs/3d-pipeline/phases/task-4c-garage-equipment-vfx.md`.
+  - [x] Catalog-driven audit captures: every paint and skin, procedural vs GLB car, Garage bright/dim × three poses and race events, desktop and phone (2026-11-08). 12 contact sheets plus `tier-cost.json` in the ignored `docs/designs/3d-pipeline/audits/garage-equipment/`.
+  - [x] ~~Owner marks mismatched items; tune only those, record "no change" for the rest. Candidate: GLB paint-light emissive is brighter than the procedural strip.~~ Waived by the owner on 2026-11-08, same as Phase 3b; revisit before default-on. Nothing was tuned.
+  - [x] RED/GREEN: flare glow and Studio sweep carried onto the GLB body; uniforms-only skin swap; no compile after GO; entitlements unchanged (`tests/hero-roadster-equipment-browser.spec.js`, 16/16 CI stress). Cloud Save: code untouched, existing tests green; no new round-trip test.
+  - [x] Low-tier fallbacks exist; draw calls/triangles per tier recorded (GLB 17–21 fewer draw calls than procedural). Fill rate NOT VERIFIED.
+  - [x] ~~Owner sign-off; real-phone p50/p95 and screenshots; exact-HEAD CI.~~ Waived by the owner on 2026-11-08, same as Phase 3b; revisit before default-on.
+  - [x] ~~Real low-end-phone p50/p95 per heavy item, Low-tier fallback, all-track matrix, `make verify`, exact-HEAD full CI, owner sign-off.~~ Matrix run on `1efa389c`: unit 2157/0, build OK, hero and Garage specs 41/41. Waived by the owner on 2026-11-08, same as Phase 3b; revisit before default-on.
 - [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
 - [ ] **All phases:** TDD RED→GREEN, renderer version/texture and animation checks, 10-track/5-new-track matrix as available, desktop/mobile Low/Medium/High (Ultra only after profiling), memory/draw/triangle/frame-time p50/p95, real-device QA, `make verify` and exact-HEAD FULL `quality-gate`. No PR, develop/main merge, release or deployment without approval.
 - [ ] **Share links:** reconcile full content if the three ChatGPT share pages become accessible; currently cannot independently verify their full text (linked in design spec).

@@ -1939,8 +1939,9 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 .tutorial-guide[data-dir="slow"] svg { stroke: #ff8a8a; }
 .tutorial-guide svg { width: 52px; height: 52px; fill: none; stroke: #96e3ff; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; opacity: .25; animation: guide-sweep 1s ease-in-out calc(var(--n) * .16s) infinite; }
 @keyframes guide-sweep { 40% { opacity: 1; transform: translateX(8px) scale(1.15); } }
-@media (max-width: 760px) and (min-height: 501px) { .tutorial-guide { top: 56%; } .tutorial-guide svg { width: 40px; height: 40px; } } /* below the phone coach card */
-@media (max-height: 500px) and (orientation: landscape) { .tutorial-guide { top: 48%; left: 72%; } }
+/* Phones: the arrow stays clear of the slide pad (top: 55%, either hand), so a resting steering thumb never hides it. */
+@media (max-width: 760px) and (min-height: 501px) { .tutorial-guide { top: 51%; } .tutorial-guide svg { width: 40px; height: 40px; } } /* below the phone coach card */
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-guide { top: 48%; left: 72%; } .tutorial-guide svg { width: 40px; height: 40px; } .tutorial-guide:is([data-dir="ahead"], [data-dir="slow"]) { top: 62%; left: 54%; } } /* upright arrows: between the coach and a right-hand pad */
 @media (prefers-reduced-motion: reduce) { .tutorial-guide svg { animation: none; opacity: 1; } }
 /* Phone: the control to press now pulses a ripple (1 Hz, under WCAG 2.3.1's 3 flashes/s); still outlined under reduced motion. */
 @keyframes tutorial-target-ripple { 0%, 100% { outline-offset: 4px; box-shadow: 0 0 0 0 rgb(150 227 255 / .6); } 50% { outline-offset: 7px; box-shadow: 0 0 0 16px rgb(150 227 255 / 0); } }
@@ -1948,14 +1949,15 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 @media (prefers-reduced-motion: reduce) { #touch-controls .tutorial-target { animation: none; } }
 /* Live lesson cue (tutorial-cues.ts): what to press or release now; kbd chips show the bound desktop key. */
 .tutorial-cue { position: fixed; z-index: 13; top: 30%; left: 50%; box-sizing: border-box; width: max-content; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 10px; padding: 10px 18px; border: 2px solid #96e3ff; border-radius: 14px; background: rgb(20 35 52 / .92); color: #f4f0e9; font-size: 18px; text-align: center; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 0 6px rgb(150 227 255 / .14), 0 10px 32px rgb(0 9 22 / .45); animation: cue-in .35s var(--ease-spring) both, cue-pulse 1.2s ease-in-out .35s infinite; }
-.tutorial-cue[data-cue*="Release"], .tutorial-cue[data-cue$="driftMax"] { border-color: #ffd27a; --cue-glow: rgb(255 210 122 / .22); box-shadow: 0 0 0 6px var(--cue-glow), 0 10px 32px rgb(0 9 22 / .45); }
+.tutorial-cue[data-cue*="Release"], .tutorial-cue[data-cue*="driftMax"] { border-color: #ffd27a; --cue-glow: rgb(255 210 122 / .22); box-shadow: 0 0 0 6px var(--cue-glow), 0 10px 32px rgb(0 9 22 / .45); }
 .tutorial-cue-keys { display: flex; gap: 4px; }
 .tutorial-cue kbd { min-width: 28px; padding: 3px 8px; border: 1px solid #96e3ff; border-bottom-width: 3px; border-radius: 6px; background: #0d1a28; color: #96e3ff; font-family: inherit; font-size: 14px; font-weight: 700; }
 .tutorial-cue-count { min-width: 3.2em; color: #ffd27a; font-size: 22px; font-variant-numeric: tabular-nums; }
 @keyframes cue-in { from { opacity: 0; transform: translate(-50%, -50%) scale(.85); } }
 @keyframes cue-pulse { 50% { box-shadow: 0 0 0 11px var(--cue-glow, rgb(150 227 255 / .14)), 0 10px 32px rgb(0 9 22 / .45); } }
 @media (max-width: 760px) and (min-height: 501px) { .tutorial-cue { top: calc(var(--tutorial-coach-bottom, 300px) + 40px); font-size: 15px; } } /* below the phone coach card */
-@media (max-height: 500px) and (orientation: landscape) { .tutorial-cue { top: 24%; left: 72%; padding: 6px 12px; font-size: 14px; } }
+/* Landscape: below the AIRFLOW/VFX row and right of the coach card; long copy wraps rather than reaching either. */
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-cue { top: 34%; left: 72%; max-width: calc(44vw - 8px); padding: 6px 12px; font-size: 14px; } }
 @media (prefers-reduced-motion: reduce) { .tutorial-cue { animation: none; } }
 /* Pass toast: holds the cue's place while a cleared lesson's praise is up (CLEARED_SECONDS). */
 .tutorial-pass { position: fixed; z-index: 13; top: 30%; left: 50%; box-sizing: border-box; width: max-content; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 10px; padding: 10px 18px; border: 2px solid #91f0c5; border-radius: 14px; background: rgb(20 35 52 / .94); color: #f4f0e9; font-size: 18px; pointer-events: none; transform: translate(-50%, -50%); box-shadow: 0 0 0 6px rgb(145 240 197 / .18), 0 10px 32px rgb(0 9 22 / .45); animation: cue-in .35s var(--ease-spring) both; }
@@ -1968,7 +1970,7 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 body[data-tutorial-reward="nitro"] #nitro-meter, body[data-tutorial-reward="nitro"] #touch-controls [data-control="nitro"] { outline: 2px solid #ffd27a; outline-offset: 3px; animation: reward-meter .7s ease-in-out 2; }
 @keyframes reward-meter { 50% { outline-offset: 7px; filter: drop-shadow(0 0 10px rgb(255 210 122 / .9)); } }
 @media (max-width: 760px) and (min-height: 501px) { .tutorial-pass { top: calc(var(--tutorial-coach-bottom, 300px) + 40px); font-size: 15px; } }
-@media (max-height: 500px) and (orientation: landscape) { .tutorial-pass { top: 24%; left: 72%; padding: 6px 12px; font-size: 14px; } }
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-pass { top: 34%; left: 72%; max-width: calc(44vw - 8px); padding: 6px 12px; font-size: 14px; } }
 @media (prefers-reduced-motion: reduce) { .tutorial-pass, .tutorial-pass-badge, .tutorial-reward, body[data-tutorial-reward] #nitro-meter { animation: none; } }
 /* Paused practice: the coach keeps its full lesson and progress (Exit is its only button) and the shared
    pause screen starts below it on phones, right of it in landscape; neither covers the other. */
@@ -2141,4 +2143,64 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   body:not([data-tutorial]) .result-cloud { justify-items: stretch; gap: 4px; margin-top: 0; }
   body:not([data-tutorial]) .result-cloud p { font-size: 10.5px; line-height: 1.3; }
   body:not([data-tutorial]) .result-cloud .sign-in-button { min-height: 44px; padding-block: 6px; font-size: 13px; }
+}
+/* Phone landscape: the coach card grows to show the whole lesson text (EN/中文). */
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-coach { width: min(520px, calc(58vw - 24px)); } .tutorial-copy { max-height: none; overflow: visible; } }
+
+/* Landscape phones (≤500px tall), racing-game home: the setup panel (mode tabs, track carousel, rules) fills the left
+   without scrolling from 360px tall, Garage / History / Practice stay pinned to its bottom, and a right rail holds
+   Daily, the camera dock and a big Start in the bottom-right thumb zone. The panel stops 280px short of the right edge
+   so it clears the AIRFLOW / VFX row (top: 64px) and the 210px rail. AIRFLOW keeps its own fixed Start and dock. */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* In a browser tab (not installed), Chrome on iPhone overlays its bottom toolbar (Gemini, new tab, …) on a page that
+     never scrolls: fixed boxes still span the whole web view while 100dvh stops above the toolbar. In bottom/inset, %
+     is of the containing block, so 100% - 100dvh is the covered band (0 in Safari, an installed app and Android). */
+  body { --browser-bar: max(0px, 100% - 100dvh); --edge-bottom: calc(max(10px, var(--safe-bottom)) + var(--browser-bar)); }
+  .airflow-active[data-phase="ready"] { --showcase-start-bottom: calc(max(48px, calc(env(safe-area-inset-bottom, 0px) + 44px)) + var(--browser-bar)); }
+  .intro { animation-name: intro-fade; } /* every landscape intro, so toggling AIRFLOW never restarts a transform under its fixed Start */
+  /* top: just under the 70px top bar (82px below 761px wide, see the next block), which the panel must not overlap. */
+  body:not(.airflow-active) .intro { --rail: 210px; top: 72px; bottom: var(--edge-bottom); left: max(16px, var(--safe-left)); display: flex; flex-direction: column; width: min(520px, calc(100vw - 280px - var(--safe-left) - var(--safe-right))); max-width: none; margin: 0; padding: 0 6px; overflow-y: auto; }
+  /* Match the phone bottom-fade rule's :has() specificity: a mask clips every descendant, the fixed rail included;
+     its portrait max-height (100dvh - 126px) also lifted the pinned row 32px over the track cards at 320px tall. */
+  body:not(.airflow-active) .intro:has(.race-mode-picker) { max-height: none; -webkit-mask-image: none; mask-image: none; }
+  /* The version chip (What's New) moves from the bottom strip into the top bar's gap beside the brand, freeing the
+     bottom edge for the panel's pinned row; its taglines hide. */
+  body[data-phase="ready"] .bottomline { top: 13px; bottom: auto; left: max(245px, calc(var(--safe-left) + 233px)); right: auto; display: block; }
+  body[data-phase="ready"] .bottomline > span { display: none; }
+  .intro :is(h1, .route-label, .intro-copy, .intro-controls, .flight-tip, .start-hint) { display: none; }
+  .intro .race-mode-picker:not(.race-rules-row) { margin: 0; padding: 6px 8px 8px; }
+  .intro .race-mode-heading { margin-bottom: 4px; }
+  /* No snap: with these wider tabs a start-snap pulled Elimination back half outside the row after it was scrolled to. */
+  .race-mode-tabs { scroll-snap-type: none; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); }
+  .race-mode-tabs button { min-height: 44px; padding: 4px 10px; font-size: 12px; }
+  .intro .track-select { flex: none; margin: 6px -6px -2px; }
+  .intro .track-select button { flex-basis: 132px; height: 78px; min-height: 0; padding: 6px 8px; }
+  .intro .track-select .track-preview { height: 34px; margin-bottom: 5px; }
+  .intro .track-select button > span.track-route-map { position: absolute; top: 8px; left: 10px; right: 10px; width: auto; height: 30px; margin: 0; padding: 0; background: none; }
+  .intro .track-select strong { margin-bottom: 2px; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+  .intro .track-note { margin: 4px 0; font-size: 10px; line-height: 1.4; }
+  .intro .race-rules-row { flex: none; }
+  /* Garage, History and Practice: one pinned row at the panel's bottom edge (Start moves to the rail). */
+  .intro .intro-actions { position: sticky; bottom: 0; z-index: 2; display: flex; flex-wrap: nowrap; gap: 8px; margin-top: auto; padding-top: 8px; background: linear-gradient(rgb(5 18 31 / 0), rgb(5 18 31 / .92) 8px); }
+  .intro .intro-primary { display: contents; }
+  .intro .intro-actions > .text-button { margin: 0; }
+  /* Share the row: English GARAGE / HISTORY / PRACTICE at 14px padding overflowed the 276px panel at 568px wide. */
+  .intro :is(.history-button, .garage-button, .practice-button) { flex: 1 1 auto; min-width: 0; height: 44px; padding-inline: 8px; white-space: nowrap; }
+  body[data-phase="ready"]:not(.airflow-active) .intro #start-button { position: fixed; z-index: 3; right: max(16px, var(--safe-right)); bottom: var(--edge-bottom); width: var(--rail); min-width: 0; max-width: none; height: 52px; }
+  body[data-phase="ready"]:not(.airflow-active) .showcase-camera-dock { position: fixed; right: max(16px, var(--safe-right)); bottom: calc(var(--edge-bottom) + 62px); top: auto; width: var(--rail); margin: 0; padding: 4px 6px; gap: 0; }
+  body[data-phase="ready"]:not(.airflow-active) :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
+  body[data-phase="ready"]:not(.airflow-active) .daily-card { position: fixed; right: max(16px, var(--safe-right)); bottom: calc(var(--edge-bottom) + 120px); width: var(--rail); max-width: none; box-sizing: border-box; margin: 0; padding: 6px 6px 6px 10px; gap: 8px; }
+  /* One-line Daily (title + route, best hidden) so the rail stays below the AIRFLOW / VFX row at 320px tall in en too. */
+  body[data-phase="ready"]:not(.airflow-active) .daily-card small { display: none; }
+  body[data-phase="ready"]:not(.airflow-active) .daily-card strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+  /* The device notice (z 18, above the .intro stacking context) sits under the top bar and stops above the rail Start. */
+  .performance-notice { top: 72px; right: max(16px, var(--safe-right)); max-height: calc(100dvh - 72px - max(10px, var(--safe-bottom)) - 62px); overflow-y: auto; }
+}
+/* Opacity-only arrival: a transform on .intro would become the containing block of the fixed rail above. */
+@keyframes intro-fade { from { opacity: .25; } }
+/* ≤760px wide the top bar is 82px tall and the brand 165px wide. */
+@media (max-height: 500px) and (orientation: landscape) and (max-width: 760px) {
+  body:not(.airflow-active) .intro { top: 84px; }
+  .performance-notice { top: 84px; max-height: calc(100dvh - 84px - max(10px, var(--safe-bottom)) - 62px); }
+  body[data-phase="ready"] .bottomline { top: 19px; left: max(190px, calc(var(--safe-left) + 178px)); }
 }
