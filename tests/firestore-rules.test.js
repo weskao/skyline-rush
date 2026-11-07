@@ -7,7 +7,7 @@ import { normalizeRaceConfig } from '../src/race-config.ts';
 import { CIRCUIT_ID } from '../src/circuit-track.ts';
 import { circuitLapKey } from '../src/circuit-records.ts';
 import { recordTrackId, recordTrackIds } from '../src/record-layout.ts';
-import { RACE_TRACKS } from '../src/race-tracks.ts';
+import { COURSE_TRACKS, RACE_TRACKS } from '../src/race-tracks.ts';
 import { mergeModeBests } from '../src/cloud-mode-bests.ts';
 
 test('cloud saves are private and accept only valid map progress', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async t => {
@@ -36,8 +36,9 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
   await assertFails(setDoc(save, { ...progress, bests: { coast: '60' } }));
   // Re-laid tracks keep every older best and add a `<track>@<layout>` best (recordTrackIds in src/record-layout.ts):
   // stage 1 ids (@2) and stage 2 ids (@3, and @2 for Aurora and the World Tour) stay valid next to the scaled-layout
-  // ids (@4, and @3 for Aurora and the World Tour).
-  const everyBest = Object.fromEntries(Object.keys(RACE_TRACKS).flatMap(recordTrackIds).map((id, i) => [id, 60 + i]));
+  // ids (@4, and @3 for Aurora and the World Tour). CourseGraph sprints add `<track>@t<topology>l<layout>` bests.
+  const everyBest = Object.fromEntries([...Object.keys(RACE_TRACKS), ...Object.keys(COURSE_TRACKS)].flatMap(recordTrackIds)
+    .map((id, i) => [id, 60 + i]));
   await assertSucceeds(setDoc(save, { ...progress, bests: everyBest }));
   // The fullest save a player can hold stays under the rules' 1000-expression evaluation limit (a 10-star,
   // 14-best save was rejected before stage 2 rewrote the per-id checks).
