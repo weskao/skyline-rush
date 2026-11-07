@@ -298,3 +298,15 @@ test('race pause and restart clear pending rewards and their cooldown', () => {
   race.player.nearMiss = { combo: 2, charge: 0 };
   assert.equal(callouts.update(race)?.title, 'NEAR MISS ×2');
 });
+
+test('an airborne trick takes priority over a still-visible refill without duplicating the refill', () => {
+  const race = running(), callouts = createCallouts();
+  callouts.update(race);
+  race.player.nitro += .25;
+  assert.equal(callouts.update(race)?.kind, 'refill');
+  race.elapsed = .1;
+  race.player.trick = { dir: 1, time: 0, done: false };
+  assert.equal(callouts.update(race)?.title, 'BARREL ROLL', 'the active roll is visible immediately');
+  race.elapsed = 1;
+  assert.equal(callouts.update(race), null, 'preempted refill must not reappear after the roll');
+});

@@ -83,6 +83,17 @@ export function createCallouts() {
         if (current) current.started += elapsed;
         return null;
       }
+      // A live air trick must be announced while the car is rolling. A previously earned
+      // refill chip must not hide this short-lived action until its normal timeout.
+      if (current?.kind === 'refill') {
+        const trickIndex = pending.findIndex(event => event.kind === 'trick');
+        if (trickIndex >= 0) {
+          current = null;
+          pending.splice(trickIndex, 1);
+          // Drop only the stale refill; preserve other queued rewards.
+          pending.unshift({ kind: 'trick', title: text('callout.roll'), detail: text('callout.roll.detail') });
+        }
+      }
       const advancing = !!current && race.elapsed - current.started >= 0.85;
       if (advancing) current = null;
       if (!current && pending.length) {
