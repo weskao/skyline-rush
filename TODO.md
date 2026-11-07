@@ -1,3 +1,20 @@
+## 2026-11-07 — Current-mechanism README refresh
+
+- [x] Reviewed README gameplay claims against race configuration/grid, shared drive rules,
+  Cup scoring, Endless track support, cloud-save policy and mode music sources.
+- [x] Replaced fixed roster sizes, tuning constants, track totals and CI shard counts with
+  mechanism-based wording; corrected glide recharge, Endless availability, optional cloud
+  saves and layout-compatible records. Updated renamed TypeScript source references.
+- [x] English/Traditional Chinese sync check, matching code blocks/heading and table counts,
+  local asset/source references and `git diff --check` passed.
+- [x] `node --test tests/ci-changes.test.js`: 5 passed, 0 failed.
+- [x] Independent source review corrected rival boost behavior and the Next-track description.
+- [x] Resolved upstream README conflicts by preserving refreshed screenshot URLs (`?v=2`)
+  alongside the mechanism wording; refreshed the translation source hash.
+- Scope: documentation only. No gameplay, artwork or controls changed; runtime, device and
+  deployed-build verification is outside this documentation check. Exact-commit CI is checked
+  after pushing; a pending run is not a pass.
+
 ## 2026-11-07 — Charge pickups: ground strips and air charging (not started)
 
 - [ ] Add ground charge strips (road segments that charge on contact). A strip can span every lane or a single lane.
