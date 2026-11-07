@@ -238,13 +238,15 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
       - The live read-only `get_scene_info` (E14) returned real scene data, confirmed by two sessions on two different scenes.
     - N/A `toktx` (KTX2): not needed with Meshopt only. Superseded by Task 4: KTX2 assets now need KTX-Software `ktx` (v4.4+) on PATH on each machine that runs `optimize-glb`.
 - [ ] **Phase 3:** Upgrade Roadster 2 model in existing Garage Studio using reference-led real 3D meshes for front, rear, four VFX thrusters, active wing, separate wheel pivots and paints; preserve current physics, collisions, NITRO/FLY/BOOST and existing Roadster branch work. Obtain real WebGL screenshots and visual approval. Checklist: `docs/designs/3d-pipeline/phases/task-4-roadster-garage.md`.
-  - [x] `roadster2` GLB behind `?model=roadster` (Garage only): Blender sources, KTX2 normal/AO, 1,485,584 B / 3,344 tris, `check-glb` PASS; manifest hashes filled.
+  - [x] `roadster2` GLB behind `?model=roadster` (Garage only): Blender sources, KTX2 normal/AO, 1,485,584 B / 3,344 tris (it5), `check-glb` PASS; manifest hashes filled.
   - [x] Rig: GLB wheels, spin pivots, wing/blade/tips/rams, paint and light follow the procedural car; lift fans stay drawn; probe wheels untouched (`818d94fb`).
   - [x] Pipeline: one KTX2 pass per slot before meshopt; check-glb parses KTX2 in Node (`c75e628e`, `c81dbb50`).
   - [x] Tests: `npm test` 2016 pass / 0 fail; typecheck clean; model browser specs (roadster, probe, lifecycle) 14/14 on desktop and phone viewports.
   - [x] Real WebGL captures (Playwright Chromium, desktop 1440×900 and phone 390×844): Home ground/wing/flight, Studio front/side/rear/3⁄4.
-  - [ ] Forms gate not met (IoU 0.79–0.87 vs 0.90); model is low-poly. Needs owner visual sign-off or a further art pass.
-  - [ ] `make verify`, exact-HEAD full CI, real-phone screenshots, LOD.
+  - [x] Art pass it6 (2026-11-07): smooth body/canopy, baked door cuts/sill/hood seams, lamp pockets, finned diffuser, sill strip; 1,383,800 B / 6,608 tris, `check-glb` PASS. IoU now side 0.791, front 0.860, rear 0.925, rear-quarter 0.828; owner chose detail acceptance + visual sign-off over the IoU 0.90 gate (contract-forced deviations in `assets-src/roadster2/asset-brief.md`).
+  - [x] Low LOD: `roadster2-low.glb` 4,150 tris / 485,732 B (`optimize-glb.mjs --lod low`, `check-glb.mjs --lod low --promote`); low quality tier fetches only it. `npm test` 2018 / 0, typecheck clean, model browser specs 15/15.
+  - [ ] Owner visual sign-off on the it6 car.
+  - [ ] `make verify` on the it6 HEAD (previous full run: 930 pass, 2 load timeouts that pass 8/8 alone), exact-HEAD full CI (needs develop), real-phone screenshots.
 - [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
 - [ ] **All phases:** TDD RED→GREEN, renderer version/texture and animation checks, 10-track/5-new-track matrix as available, desktop/mobile Low/Medium/High (Ultra only after profiling), memory/draw/triangle/frame-time p50/p95, real-device QA, `make verify` and exact-HEAD FULL `quality-gate`. No PR, develop/main merge, release or deployment without approval.
 - [ ] **Share links:** reconcile full content if the three ChatGPT share pages become accessible; currently cannot independently verify their full text (linked in design spec).

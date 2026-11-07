@@ -39,7 +39,7 @@ ARTICULATION no armature. Runtime rig copies local TRS from the procedural car o
            No animation clips.
 INFERRED   see the list below
 TARGET     three.js r186.1 WebGLRenderer, GLB through scripts/assets (export -> optimize -> check), Garage camera,
-           budget 60,000 triangles (actual 3,344), textures <= 1024 px (actual 1024), KTX2 planned in the optimize step.
+           budget 60,000 triangles (actual 6,608; low LOD 4,150), textures <= 1024 px (actual 1024; low LOD 512), KTX2 normal/AO.
 ```
 
 ## Coordinate convention
@@ -69,14 +69,15 @@ Method, per the coordinator's gate rules:
 4. **Camera solved by grid search** over azimuth, elevation and lens per view (the camera is fitted, never
    the geometry). Regions the photo cannot compare are excluded from both masks (`ignore`).
 
-Target (working values): IoU >= 0.90, band widths within 5 %. **Not met; see the deviations.**
+Target (working values): IoU >= 0.90, band widths within 5 %. **Not met; see the deviations.** Owner decision 2026-11-07: the 0.90 target conflicts with the fixed contract, so IoU is tracked as a non-regression measure and fidelity is accepted by detail plus owner visual sign-off.
 
 | Iteration | Change | side | front | rear | rear quarter |
 | --- | --- | --- | --- | --- | --- |
 | it1 baseline | procedural port | 0.729 | 0.872 | 0.810 | 0.764 (az grid 15-30) |
 | it2 | sills/body bottom .22 between and .30 beside the arches, rocker to .20, roof -.035, diffuser closes the rear face, splitter raised | 0.773 | 0.872 | 0.852 | 0.822 (az grid 10-25, camera only) |
 | it3 | one short roof peak, raked windshield and rear glass, rear shoulders lowered toward the tail | 0.793 | 0.873 | 0.853 | 0.818 |
-| it5 final | roof peak +5 mm (back inside the -3 % height bound), splitter closed up to the nose, canopy base sunk below the body surface (closed a see-through gap) | **0.792** | **0.867** | **0.854** | **0.818** |
+| it5 | roof peak +5 mm (back inside the -3 % height bound), splitter closed up to the nose, canopy base sunk below the body surface (closed a see-through gap) | 0.792 | 0.867 | 0.854 | 0.818 |
+| it6 art pass | body/canopy resampled (Catmull-Rom clamped to each span, no overshoot: stations and bounds unchanged), finned diffuser and lamp pockets, rocker -> low sill strip at x 1.17 | **0.791** | **0.860** | **0.925** | **0.828** |
 
 Stopped after it3 + one fix-up pass: front, rear and rear quarter stopped improving at it2 (|delta| < 0.005),
 side moved +0.02 at it3, and what remains in the side view is contract-forced (below).
@@ -108,12 +109,11 @@ Final band widths (render minus reference, top to bottom, percent of reference w
 **not contract-forced, open** (art decisions, outside this forms pass):
 
 - Wheel design: five swept blades (the procedural design) where photos 14 and 15 show a six-spoke wheel.
-- No door cut, panel lines, lamp pockets, light blade or plate recess as geometry; the normal map carries
-  only bevelled edges. A HIGH detail source does not exist yet.
-- Diffuser reads as a plain box under the rear fascia (it closes the gap the photos do not have);
-  the photos show a sculpted diffuser with fins.
-- Rocker outer faces are coplanar with the body side at x 1.15 (inherited from the procedural car); watch for
-  z-fighting in the Garage.
+- Wheels sit partly behind the body sides at the arches (no wheel wells; body bottom steps over the tyre top).
+- it6 resolved: door cuts, sill line and hood seams are baked into the normal map from boolean grooves on the
+  body HIGH copy (`bake.py` GROOVES); lamp pockets are trim frames behind the lights; the diffuser is a deck plate
+  over seven fins; the rocker is a low sill strip at x 1.17 (no longer coplanar). Still open: light blade and
+  plate recess as geometry.
 
 ## INFERRED
 
@@ -148,7 +148,7 @@ them. Both write datablocks only (`bpy.data.libraries.write`, uncompressed), so 
 no UI state and no home directory. Texture paths are relative (`//textures/...`). The baked PNGs
 rebuild byte-identically; the `.blend` does not, because Blender writes memory addresses into it.
 
-Validation (final master): FAIL 0, WARN 26 (all cap n-gons, triangulated on export), 3,344
+Validation (it6 master): FAIL 0, WARN 26 (all cap n-gons, triangulated on export), 6,608
 triangles, every mesh UV'd. A raw export through `scripts/assets/export_glb.py` holds only the 64
 shipping nodes (43 meshes), the nine `roadster_*` materials, and the two atlas images, used only
 in the normalTexture and occlusionTexture slots. It contains no cameras, lights or bake helpers.
