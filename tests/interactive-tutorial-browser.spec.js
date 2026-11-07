@@ -368,7 +368,7 @@ test.describe('granted tilt and rotation', () => {
     await tilt(0);
     await tilt(25);
     await step(page,'brake');
-    await expect(page.locator('#tutorial-input')).toContainText(/brake/i);
+    await expect(page.locator('#tutorial-input')).toContainText(/pull down on the slide pad/i); // tilt has no brake button
     await page.locator('#tutorial-exit').tap();
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode','tilt');
   });

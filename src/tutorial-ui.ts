@@ -38,33 +38,47 @@ const PHASE_COPY: Readonly<Record<string, string>> = {
   'airChain/airborne': 'tutorial.airChainAirborne', 'barrelRoll/readyToLand': 'tutorial.barrelRollReadyToLand',
   'barrelRoll/rolling': 'tutorial.barrelRollRolling', 'barrelRoll/flicked': 'tutorial.barrelRollFlicked',
 };
+/** The player's live Controls settings that change what a hint must name. */
+export interface HintControls { touch: boolean; steerMode: string; flyMode: string }
+const KEYBOARD: HintControls = { touch: false, steerMode: 'buttons', flyMode: 'hold' };
+// Copy naming a held FLY or the BRAKE button has a variant for the player's touch controls: toggle FLY is tapped on
+// and off (keyboard FLY is always held: the setting only latches the touch button), and the slide pad, which tilt
+// also brakes on, is pulled down. Variant keys append "Toggle" / "Slide".
+const TOGGLE_FLY_COPY = new Set(['tutorial.airChain', 'tutorial.airChainAirborne', 'tutorial.airChainRetry.noBoost', 'tutorial.airChainRetry.short',
+  'tutorial.airChainRetry.hard', 'tutorial.barrelRoll', 'tutorial.barrelRollRolling', 'tutorial.barrelRollRetry.hard', 'tutorial.touch.fly',
+  'tutorial.touch.land', 'tutorial.touch.airChain', 'tutorial.touch.barrelRoll', 'tutorial.slide.barrelRoll', 'tutorial.tilt.barrelRoll',
+  ...['chainFly', 'chainBoost', 'chainHold', 'chainLanding', 'chainRelease', 'rollFly', 'rollClimb', 'rollRelease', 'rollSpin', 'rollSoften'].map(cue => 'tutorial.cue.' + cue)]);
+const PAD_BRAKE_COPY = new Set(['tutorial.brake', 'tutorial.brakeRetry.noBrake', 'tutorial.drift', 'tutorial.driftRetry.short', 'tutorial.driftRetry.slow',
+  ...['brakeAhead', 'brakeHold', 'driftSpeed', 'driftStart', 'driftRelease', 'driftMax'].map(cue => 'tutorial.cue.' + cue)]);
+function controlVariant(key: string, { touch, steerMode, flyMode }: HintControls): string {
+  if (!touch) return key;
+  if (flyMode === 'toggle' && TOGGLE_FLY_COPY.has(key)) return key + 'Toggle';
+  return steerMode !== 'buttons' && PAD_BRAKE_COPY.has(key) ? key + 'Slide' : key;
+}
+
 /** Which coach line to show: a failed attempt names its reason, a cleared lesson celebrates before the next. */
-export function tutorialInstructionKey(step: string | null, phase: string, reason: string | null | undefined, done: boolean): string {
+export function tutorialInstructionKey(step: string | null, phase: string, reason: string | null | undefined, done: boolean, controls = KEYBOARD): string {
   if (done) return 'tutorial.completedCopy';
   if (phase === 'finishing') return 'tutorial.finishing';
   if (phase === 'cleared') return 'tutorial.cleared';
-  if (phase === 'retry' && reason) return reason === 'missed' ? 'tutorial.gateMissed' : `tutorial.${step}Retry.${reason}`;
-  return PHASE_COPY[`${step}/${phase}`] ?? 'tutorial.' + step;
+  if (phase === 'retry' && reason) return reason === 'missed' ? 'tutorial.gateMissed' : controlVariant(`tutorial.${step}Retry.${reason}`, controls);
+  return controlVariant(PHASE_COPY[`${step}/${phase}`] ?? 'tutorial.' + step, controls);
 }
 
+/** Touch hint line: the steering surface's own copy (tilt brakes on the slide pad), then the FLY mode variant. */
 export function tutorialHintKey(step: string | null, steerMode: string, flyMode: string): string {
-  const action = step === 'drift' ? 'brake' : step === 'land' ? 'fly' : step === 'airChain' ? 'boost' : step === 'barrelRoll' ? 'left' : step;
-  if (['left', 'right', 'brake'].includes(step ?? '') && steerMode === 'slide') return 'tutorial.slide.' + step;
-  if (['left', 'right'].includes(step ?? '') && steerMode === 'tilt') return 'tutorial.tilt.' + step;
-  if (step === 'land') return flyMode === 'toggle' ? 'tutorial.touch.landToggle' : 'tutorial.touch.land';
-  if (step === 'fly' && flyMode === 'toggle') return 'tutorial.touch.flyToggle';
-  if (step === 'drift') return steerMode === 'slide' ? 'tutorial.slide.drift' : steerMode === 'tilt' ? 'tutorial.tilt.drift' : 'tutorial.touch.drift';
-  if (step === 'airChain') return 'tutorial.touch.airChain';
-  if (step === 'barrelRoll') return steerMode === 'slide' ? 'tutorial.slide.barrelRoll'
-    : steerMode === 'tilt' ? 'tutorial.tilt.barrelRoll' : 'tutorial.touch.barrelRoll';
-  return 'tutorial.touch.' + action;
+  const surface = steerMode === 'buttons' || !['left', 'right', 'brake', 'drift', 'barrelRoll'].includes(step ?? '') ? 'touch'
+    : step === 'brake' ? 'slide' : steerMode;
+  return controlVariant(`tutorial.${surface}.${step}`, { touch: true, steerMode, flyMode });
 }
 
 /** Touch control the coach outlines for this lesson, or null for none. */
 export function tutorialTouchTarget(step: string | null, phase: string, steerMode: string, action: string | null): string | null {
   // The slide pad is the whole lower-left of the screen: an outline there reads as a stray box, so it is never drawn.
-  if (steerMode === 'slide' && (['left', 'right', 'brake', 'drift'].includes(step ?? '') || step === 'barrelRoll' && phase === 'flicked')) return null;
-  return action ? '#touch-controls [data-control="' + action + '"]' : null;
+  // Tilt hides the steering buttons and brakes on that same pad.
+  if (steerMode !== 'buttons' && (['left', 'right', 'brake', 'drift'].includes(step ?? '') || step === 'barrelRoll' && phase === 'flicked')) return null;
+  const control = action === 'drift' ? 'brake' : action; // buttons mode drifts on BRAKE plus an arrow
+  return control ? '#touch-controls [data-control="' + control + '"]' : null;
 }
 
 /** Lesson name for titles and the pass toast. */
@@ -85,19 +99,11 @@ export function createClearChime() {
 export function rewardParts(text: string): { text: string; reward: boolean }[] {
   return text.split(/(\+?\d+(?:\.\d+)? (?:格 )?NITRO)/).filter(Boolean).map(part => ({ text: part, reward: /NITRO$/.test(part) && /\d/.test(part) }));
 }
-// Cues name the control the player's own settings give them: toggle FLY is tapped, not held; the slide pad has no brake button.
-const TOGGLE_FLY_CUES = new Set(['chainFly', 'chainBoost', 'chainHold', 'chainLanding', 'chainRelease', 'rollFly', 'rollClimb', 'rollRelease', 'rollSpin']);
-const SLIDE_PAD_CUES = new Set(['brakeAhead', 'brakeHold']);
-function cueVariant(key: string, touch: boolean, flyMode: string, steerMode: string): string {
-  const name = key.replace('tutorial.cue.', '');
-  if (flyMode === 'toggle' && TOGGLE_FLY_CUES.has(name)) return key + 'Toggle';
-  return touch && steerMode === 'slide' && SLIDE_PAD_CUES.has(name) ? key + 'Slide' : key;
-}
 const NO_CUE = { cue: '', cueId: '', cueKeys: [] as string[], cueCount: '' };
 /** Toast fields for a live cue: localized text, the bound desktop keys and the countdown. */
 export function tutorialCueView(cue: TutorialCue | null | undefined, touch: boolean, flyMode: string, keyMap: KeyMap, steerMode = 'buttons'): typeof NO_CUE {
   if (!cue) return NO_CUE;
-  const key = cueVariant(cue.key, touch, flyMode, steerMode);
+  const key = controlVariant(cue.key, { touch, steerMode, flyMode });
   return {
     cue: t(key, cue.n === undefined ? undefined : { n: cue.n }), cueId: key,
     cueKeys: touch ? [] : cue.actions.map(action => keyMap[action as DriveAction]?.[0]).filter((code): code is string => !!code)
@@ -121,6 +127,7 @@ export function setupTutorialUI({
     const tutorial = getTutorial();
     if (!tutorial) return;
     const race = getRace(), touch = getTouchMatches(), inputPrefs = getInputPrefs(), controlPrefs = getControlPrefs(), keyMap = getKeyMap();
+    const controls = { touch, steerMode: inputPrefs.mode, flyMode: controlPrefs.flyMode };
     if (keyMap !== keyMapSeen) { keyMapSeen = keyMap; force = true; } // a rebind redraws the key chips
     progress.value = tutorial.index + (tutorial.complete ? 0 : tutorial.progress);
     if (clearChime(tutorial)) playCue('gate-clear'); // the same chime as a cleared checkpoint gate
@@ -146,7 +153,7 @@ export function setupTutorialUI({
         total: TUTORIAL_STEPS.length,
         action: lessonTitle(step ?? ''),
       }),
-      instruction: t(tutorialInstructionKey(step, phase, tutorial.coachReason, done)), // paused: the pause screen says so
+      instruction: t(tutorialInstructionKey(step, phase, tutorial.coachReason, done, controls)), // paused: the pause screen says so
       completeActionsHidden: !done,
       assistHidden: done,
       hintKeys: done || touch ? '' : keys ?? '',
