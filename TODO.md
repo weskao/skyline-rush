@@ -380,6 +380,37 @@ instruction 2026-11-08): every Playwright / `make verify` / WebGL screenshot row
   - Risk, not fixed: `canTraverseSkyfallRoad` and the identity test still use exact `toS ≤ length` /
     strict float equality; the 1-ULP case passes now only because the lengths moved. Real WebGL
     re-inspection of the Skyfall home preview and race road: NOT VERIFIED (no browser this session).
+- [x] Task 13 — Skyfall race spec + registration, readiness still `preview`.
+  `src/courses/skyfall-archipelago-race.ts` (data only): gate band Q6 −2…13.2 m (12 + `CAR_HEIGHT`,
+  literal mirrored, the test imports `game.js` `CAR_HEIGHT`); `noRoad` = the authored gaps (graph
+  metres since Q5); `recoveryEdge` = the ground twin with the same split/merge (`a/b/c-ground`);
+  hazards = `SKYFALL_OBSTACLES` (safe side opposite the lateral, `aiPreview` 120 m as Dune);
+  track `Math.floor(ground route)` = 16,462 m, seed 16016, topology v1. One line in
+  `course-runtimes.ts`; everything else (createRace, standings, gap physics, recovery, HUD, minimap,
+  record id, Ghost-off) follows the registry. `firestore.rules`: `skyfall-archipelago@t1l1` in
+  `bestIds()` and `validBests`.
+  - RED: `node --test tests/skyfall-archipelago-race.test.js` → 1 pass / 11 fail: 4 `AssertionError`
+    "Skyfall registered in COURSE_RUNTIMES"; 7 `Error: Unknown track: skyfall-archipelago` thrown
+    by `createRace` (a runtime registry miss, not an import/syntax error).
+  - Rules RED (local emulators, Java 21, `npx --offline firebase-tools@15.34.1 emulators:exec … 'node
+    --test tests/firestore-rules.test.js'`): adding the Skyfall `validBest` broke the existing
+    fullest-save case — "maximum of 1000 expressions to evaluate has been reached" (2 pass / 1 fail;
+    the same run on `HEAD` rules: 3/3). New assertion: the fullest save plus every `COURSE_TRACKS`
+    best is accepted, and each course best of 0 is rejected. Fix: `validStars` is one
+    `stars.values().hasOnly([1, 2, 3])` (keys are already `hasOnly(trackIds())`) instead of ten
+    per-id lookups; `validStar` removed. GREEN 3/3 (bad stars 0 / 4 / 2.5 / '3' / 7 still fail).
+  - GREEN: same file 12/12; `npm test` 2149 tests, 2146 pass / 0 fail / 3 skipped; `npm run typecheck`
+    exit 0; replay 47/47 (inside `npm test`).
+  - Measured bot (60 Hz, throttle; BOOST off on the incoming and flight edge toward a flight edge;
+    FLY P-controller holding ~2.5 m until the gap ends): ground route 162.76 s; one flight edge
+    151.15–155.14 s; two 139.68–144.13 s; all three 132.10 s; 0 falls, 0 rejections, lowest
+    altitude over every gap 2.53 m, landings a/b/c-air at 869.9 / 630.8–632.1 / 990.4–991.4 m (all on
+    road). 30/60/120 Hz ground route 162.902 / 162.759 / 162.687 s. Idle player: rivals finish
+    190.1–199.1 s, never on a flight edge. Window 120–330 s.
+  - No-FLY fall in each gap → re-seated on `a/b/c-ground` at 5…65 m, odometer ≤ split, checkpoints
+    unchanged, race finishes. A `skyfall-11` obstacle hits on its lateral and not on the safe side.
+  - Open: Skyfall race scenery/browser (Task 14). The bot's tank reaches 0 on BOOST stretches; the
+    gap need still ignores BOOST / low gravity (deferred minor).
 
 ## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
 
