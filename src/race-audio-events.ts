@@ -14,6 +14,7 @@ export interface AudioRace extends ModeAudioRace {
   elapsed: number;
   countdown: number;
   pickups: { taken?: boolean }[];
+  rings: { type: string; hit?: boolean }[];
   rivals: RivalCueRace['rivals'];
 }
 export interface AudioImpulse { intensity: number; landing: boolean; barrier: boolean }
@@ -32,7 +33,7 @@ export function createRaceAudioEvents() {
   let lastImpact: AudioCar['impact'] = null, lastLanding: AudioCar['landing'] = null;
   let lastNearMiss: unknown = null, lastTrick: unknown = null, lastShieldBlock: unknown = null;
   let wasThrusting = false, wasBoosting = false, lowCharge = false;
-  let collectedPickups = new WeakSet<object>();
+  let collectedPickups = new WeakSet<object>(), collectedRings = new WeakSet<object>();
   // One frame object is reused every tick (no per-frame garbage); read it before the next update.
   const frame: RaceAudioFrame = { silence: false, sounds: [], active: false, boosting: false };
 
@@ -54,7 +55,7 @@ export function createRaceAudioEvents() {
         previousPhase = previousCount = null;
         lastImpact = lastLanding = lastNearMiss = lastTrick = lastShieldBlock = null;
         wasThrusting = wasBoosting = lowCharge = false;
-        collectedPickups = new WeakSet();
+        collectedPickups = new WeakSet(); collectedRings = new WeakSet();
       }
       if (race.phase === 'paused' && previousPhase !== 'paused') silence = true;
       if (enabled) {
@@ -81,6 +82,10 @@ export function createRaceAudioEvents() {
       for (const pickup of race.pickups) if (pickup.taken && !collectedPickups.has(pickup)) {
         collectedPickups.add(pickup);
         if (enabled && active && !freshRace) sounds.push('pickup');
+      }
+      for (const ring of race.rings) if (ring.hit && !collectedRings.has(ring)) { // only the player sets hit; a row pays once
+        collectedRings.add(ring);
+        if (enabled && active && !freshRace) sounds.push(`ring-${ring.type}`);
       }
       for (const cue of rivalCues.update(race)) if (enabled && active) sounds.push(cue.kind === 'take' ? 'rival-pickup' : 'rival-nitro');
       previousPhase = race.phase;

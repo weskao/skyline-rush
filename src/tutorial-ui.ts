@@ -49,6 +49,15 @@ export function tutorialHintKey(step: string | null, steerMode: string, flyMode:
   return 'tutorial.touch.' + action;
 }
 
+/** Touch control the coach outlines for this lesson, or null for none. */
+export function tutorialTouchTarget(step: string | null, phase: string, steerMode: string, action: string | null): string | null {
+  if (steerMode === 'slide') {
+    if (step === 'left') return null; // the pad box covered the left side of phone screens during Turn left
+    if (['right', 'brake', 'drift'].includes(step ?? '') || step === 'barrelRoll' && phase === 'flicked') return '.touch-pad';
+  }
+  return action ? '#touch-controls [data-control="' + action + '"]' : null;
+}
+
 export function setupTutorialUI({
   getTutorial, getRace, getTouchMatches, getInputPrefs, getControlPrefs, showKeyMap,
 }: TutorialDependencies) {
@@ -96,9 +105,8 @@ export function setupTutorialUI({
     if (!touch) {
       nextTick(() => showKeyMap());
     } else {
-      let target = action ? $('#touch-controls [data-control="' + action + '"]') : null;
-      if ((['left', 'right', 'brake', 'drift'].includes(step ?? '') || step === 'barrelRoll' && phase === 'flicked') && inputPrefs.mode === 'slide') target = $('.touch-pad');
-      target?.classList.add('tutorial-target');
+      const target = tutorialTouchTarget(step, phase, inputPrefs.mode, action);
+      if (target) $(target)?.classList.add('tutorial-target');
     }
   }
   return { renderTutorial, resetTutorialView: () => { tutorialView = ''; } };
