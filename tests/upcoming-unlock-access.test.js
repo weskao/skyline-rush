@@ -6,13 +6,11 @@ import { UPCOMING_TRACKS, homeTrackStatus, upcomingReadiness } from '../src/upco
 import { availableTracks as releasedTracks, isUpcomingEnterable as released } from '../src/access/production.ts';
 import { isUpcomingEnterable as unlocked } from '../src/access/dev-unlocked.ts';
 
-const PLAYABLE = new Set(['frostbite-canyon', 'stormline-megacity', 'volcanic-crown', 'monsoon-ruins']);
-
 test('only explicitly playable Coming Soon tracks can START in make dev-unlocked', () => {
   for (const id of Object.keys(UPCOMING_TRACKS)) {
     assert.equal(RACE_TRACKS[id], undefined, `${id} stays out of the campaign sprint catalog`);
-    assert.equal(upcomingReadiness(id), PLAYABLE.has(id) ? 'playable' : 'preview', id);
-    assert.equal(unlocked(id), PLAYABLE.has(id), id);
+    assert.equal(upcomingReadiness(id), id === 'frostbite-canyon' ? 'playable' : 'preview', id);
+    assert.equal(unlocked(id), id === 'frostbite-canyon', id);
   }
   assert.equal(upcomingReadiness('unknown-track'), 'preview');
 });

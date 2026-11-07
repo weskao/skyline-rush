@@ -24,8 +24,6 @@ import { createUpcomingShowcase } from './upcoming-showcase.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts';
 import { createCircuitScene } from './circuit-scene.ts';
 import { createFrostbiteRaceScene } from './frostbite-race-scene.ts';
-import { createStormlineRaceScene } from './stormline-megacity-race-scene.ts'; import { createVolcanicCrownRaceScene } from './volcanic-crown-race-scene.ts'; import { createMonsoonRuinsRaceScene } from './monsoon-ruins-race-scene.ts';
-import { STORMLINE_ID } from './courses/stormline-megacity-race.ts'; import { VOLCANIC_ID } from './courses/volcanic-crown-race.ts'; import { MONSOON_ID } from './courses/monsoon-ruins-race.ts';
 import { FROSTBITE_ID, FROSTBITE_SPAN, frostbiteObjectSpan, frostbiteSpanLift } from './courses/frostbite-race.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, stepWing } from './car-model.js';
@@ -44,7 +42,6 @@ import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from
 import { createRampPool, drawRamps } from './ramp-view.ts'; import { createHazardRenderer } from './hazard-render.ts';
 import { createWorldGarageModel } from './garage-model.ts';
 import { createGraceFade, graceOpacity } from './grace-fade.ts';
-import { fitText } from './sign-text.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const roadCenter = classicRoadCenter;
@@ -55,13 +52,21 @@ const rotation = new THREE.Quaternion();
 const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
-const framedRoad = id => TOUR_IDS.has(id) || id === CIRCUIT_ID || id === FROSTBITE_ID || id === STORMLINE_ID || id === VOLCANIC_ID || id === MONSOON_ID;
+const framedRoad = id => TOUR_IDS.has(id) || id === CIRCUIT_ID || id === FROSTBITE_ID;
 function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
   position.set(x, y, z);
   scale.set(sx, sy, sz);
   rotation.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, angle);
   matrix.compose(position, rotation, scale);
   mesh.setMatrixAt(index, matrix);
+}
+// Canvas sign text: Latin keeps the generic sans-serif; zh-TW appends CJK families. The font shrinks until the text fits.
+const signFont = (px, locale) => `bold ${px}px ${locale === 'zh-TW' ? '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif' : 'sans-serif'}`;
+function fitText(context, label, x, y, maxWidth, basePx, locale) {
+  let px = basePx;
+  context.font = signFont(px, locale);
+  while (px > 12 && context.measureText(label).width > maxWidth) context.font = signFont(--px, locale);
+  context.fillText(label, x, y);
 }
 export function createWorld(canvas) {
   // Scoped continuation: finite career/Ghost path API still clamps at the finish.
@@ -394,7 +399,7 @@ export function createWorld(canvas) {
       // The drive shot also owns the signature landmark: tilting down to catch the wheels
       // must not push its top out of frame, so that top is a fit constraint too.
       // Frostbite keeps its race-only framing: the home landmark fit stays on Tour/Circuit roads.
-      const landmark=visual.view==='drive'&&framedRoad(trackId)&&trackId!==FROSTBITE_ID&&trackId!==STORMLINE_ID&&trackId!==VOLCANIC_ID&&trackId!==MONSOON_ID?landmarkBounds(originalLook):null;
+      const landmark=visual.view==='drive'&&framedRoad(trackId)&&trackId!==FROSTBITE_ID?landmarkBounds(originalLook):null;
       // Landscape keeps the landmark clear of the home panel on the left (NDC x >= .04).
       const clearLeft=camera.aspect>1;
       // Fine steps near the camera: a tight landmark leaves only a ~1 m dolly window.
@@ -509,7 +514,7 @@ export function createWorld(canvas) {
     desiredCamera.add(offset(clearancePlan));
   }
   const effectFrame = s => trackFrame(trackId, s);
-  const circuitScene = createCircuitScene(scene), frostbiteScene = createFrostbiteRaceScene(scene), stormlineScene = createStormlineRaceScene(scene), volcanicScene = (() => { let current; return { update(...args) { current ??= createVolcanicCrownRaceScene(scene); current.update(...args); }, hide() { current?.hide(); }, dispose() { current?.dispose(); } }; })(), monsoonScene = (() => { let current; return { update(...args) { current ??= createMonsoonRuinsRaceScene(scene); current.update(...args); }, hide() { current?.hide(); }, dispose() { current?.dispose(); } }; })();
+  const circuitScene = createCircuitScene(scene), frostbiteScene = createFrostbiteRaceScene(scene);
   const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : framedRoad(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
   const aero = createAeroVFX(scene, player);
   const garageModel = createWorldGarageModel(canvas, renderer, camera), homeModelHost = { name: 'home', car: player, keep: aero.group, scene }; // ?model=probe|roadster only
@@ -549,7 +554,7 @@ export function createWorld(canvas) {
     const relative = physicalGap(trackId, distance, pose.distance);
     // Tour and sky routes end at the finish and trackPoint clamps there, so cars
     // past it would pile up at the arch like parked cars; they leave the scene instead.
-    const pastFinish = !endlessActive && (trackId === 'spiral' || TOUR_IDS.has(trackId) || trackId === FROSTBITE_ID || trackId === STORMLINE_ID || trackId === VOLCANIC_ID || trackId === MONSOON_ID) && pose.distance > lastRace.length;
+    const pastFinish = !endlessActive && (trackId === 'spiral' || TOUR_IDS.has(trackId) || trackId === FROSTBITE_ID) && pose.distance > lastRace.length;
     mesh.visible = isPlayer || (relative > -55 && relative < 900 && !pastFinish);
     if (!mesh.visible) return; mesh.userData.roadDistance = pose.distance; mesh.userData.span = !!car.span; mesh.userData.altitude = (pose.altitude || 0) - (car.span ? FROSTBITE_SPAN.altitude - SHORTCUT_TOLERANCE : 0); // the pose the shadow sits under (a span car's on the deck)
     if (trackId === 'spiral' || framedRoad(trackId)) {
@@ -661,7 +666,7 @@ export function createWorld(canvas) {
         sky.material.uniforms.cloudOpacity.value = trackId==='cosmic'?0:trackId==='tokyo'?.14:trackId==='alpine'?.45:trackId==='coastal'?.32:trackId==='taipei'?.36:1;
         sky.material.uniforms.cloudTint.value.set(trackId==='alpine'?'#647575':trackId==='coastal'?'#82989a':trackId==='taipei'?'#77898b':trackId==='tokyo'?'#394354':'#4d3d60');
         sunlight.color.set(palette.sun);
-        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'coast' ? COAST_LIGHTING.sun : trackId === 'neon' || trackId === STORMLINE_ID || trackId === MONSOON_ID ? .8 : trackId === 'aurora' || trackId === FROSTBITE_ID || trackId === VOLCANIC_ID ? 1.2 : 2.3;
+        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'coast' ? COAST_LIGHTING.sun : trackId === 'neon' ? .8 : trackId === 'aurora' || trackId === FROSTBITE_ID ? 1.2 : 2.3;
         sunlight.position.set(TOUR_IDS.has(trackId)?-400:-170,TOUR_IDS.has(trackId)?230:100,TOUR_IDS.has(trackId)?260:-190);
         renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:trackId==='coast'?COAST_LIGHTING.exposure:1.12;
         ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='coast'?COAST_LIGHTING.ambient:trackId==='neon'?1.1:1.7;
@@ -717,7 +722,7 @@ export function createWorld(canvas) {
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
       const touch = touchPreference.matches;
-      const raining = visualPreset === 'rain' || (visualPreset === 'track' && (trackId === 'neon' || trackId === STORMLINE_ID || trackId === MONSOON_ID));
+      const raining = visualPreset === 'rain' || (visualPreset === 'track' && trackId === 'neon');
       weather.visible = !reducedMotion && visual.enabled && (raining || visualPreset === 'snow' || blizzard > 0 || (visualPreset === 'track' && (trackId === 'aurora' || trackId === FROSTBITE_ID)));
       weather.material.size = raining ? .12 : .24;
       weatherGeometry.setDrawRange(0, weatherDrops(visual.quality, touch));
@@ -726,9 +731,9 @@ export function createWorld(canvas) {
         weatherGeometry.attributes.position.needsUpdate = true;
         weather.position.set(visualCar.x, visualCar.altitude + 25, 15);
       }
-      if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide(); if (trackId === FROSTBITE_ID) frostbiteScene.update(distance); else frostbiteScene.hide(); if (trackId === STORMLINE_ID) stormlineScene.update(distance); else stormlineScene.hide(); if (trackId === VOLCANIC_ID) volcanicScene.update(distance, time, reducedMotion); else volcanicScene.hide(); if (trackId === MONSOON_ID) monsoonScene.update(distance, time, reducedMotion); else monsoonScene.hide();
+      if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide(); if (trackId === FROSTBITE_ID) frostbiteScene.update(distance); else frostbiteScene.hide();
       if (trackId === 'spiral' || framedRoad(trackId)) {
-        if (trackId === CIRCUIT_ID || trackId === FROSTBITE_ID || trackId === STORMLINE_ID || trackId === VOLCANIC_ID || trackId === MONSOON_ID) { skyScene.hide(); worldTourScene.hide(); }
+        if (trackId === CIRCUIT_ID || trackId === FROSTBITE_ID) { skyScene.hide(); worldTourScene.hide(); }
         else if (trackId === 'spiral') { skyScene.update(distance, visual.quality, !!race.endless); worldTourScene.hide(); }
         else { skyScene.hide(); worldTourScene.update(trackId,distance,visual.quality,race.sections,time,reducedMotion,!!race.endless); }
         road.visible = false;
@@ -1101,7 +1106,7 @@ export function createWorld(canvas) {
     dispose() {
       garageModel?.dispose(); upcomingStage.dispose(); garageStage?.dispose(); stopLocaleSigns(); // the GLB leaves the cars before their materials are disposed
       canvas.removeEventListener('webglcontextrestored', restoreWarmup);
-      circuitScene.dispose(); frostbiteScene.dispose(); stormlineScene.dispose(); volcanicScene.dispose(); monsoonScene.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
+      circuitScene.dispose(); frostbiteScene.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();
       scene.traverse(object => {
         if (object.geometry) object.geometry.dispose();

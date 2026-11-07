@@ -36,13 +36,7 @@ export interface DriveRace {
   player: Car; traffic: readonly Car[]; rivals: readonly Car[];
 }
 
-// On Frostbite's 13.8 km race, continuous AI BOOST made every Normal rival outrun a throttle-only player.
-// Keep the leader's pace, but spread the remaining grid so slower drivers can still be overtaken.
-const FROSTBITE_NORMAL_SKILL: RivalSkill = { ...RIVAL_SKILL.normal!, spread: 0.028 };
-export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill => {
-  const level = rivalLevel(race);
-  return level === 'normal' && race.trackId === 'frostbite-canyon' ? FROSTBITE_NORMAL_SKILL : RIVAL_SKILL[level] ?? RIVAL_SKILL.normal!;
-};
+export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill => RIVAL_SKILL[rivalLevel(race)] ?? RIVAL_SKILL.normal!;
 /** The rival's throttle cap before BOOST or NITRO: never above the player's MAX_SPEED. */
 export const rivalBaseCap = (skill: RivalSkill, slot: number, spread = skill.spread): number => MAX_SPEED * Math.min(1, skill.pace - spread * (SLOTS - 1 - slot));
 
