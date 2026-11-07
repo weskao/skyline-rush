@@ -15,8 +15,14 @@ test('home version stays vertically centered beside the footer tagline in both l
         page.locator('#whats-new-open').boundingBox(),
       ]);
       await page.screenshot({ path: test.info().outputPath(`footer-${width}-${locale}.png`), animations: 'disabled' });
-      expect(Math.abs(tagline.y + tagline.height / 2 - version.y - version.height / 2), `${width}px ${locale} footer alignment`).toBeLessThanOrEqual(1);
-      expect(tagline.x + tagline.width).toBeLessThanOrEqual(version.x);
+      if (height <= 500 && width > height) {
+        // Landscape phones hide the taglines and move the version chip into the top bar beside the brand.
+        expect(tagline, `${width}px ${locale} landscape hides the footer tagline`).toBeNull();
+        expect(version.y + version.height, `${width}px ${locale} version sits in the top bar`).toBeLessThanOrEqual(82);
+      } else {
+        expect(Math.abs(tagline.y + tagline.height / 2 - version.y - version.height / 2), `${width}px ${locale} footer alignment`).toBeLessThanOrEqual(1);
+        expect(tagline.x + tagline.width).toBeLessThanOrEqual(version.x);
+      }
       expect(version.height).toBeGreaterThanOrEqual(44);
       await page.locator('#whats-new-open').click();
       await expect(page.locator('#whats-new-screen')).toBeVisible();
