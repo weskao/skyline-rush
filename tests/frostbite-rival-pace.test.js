@@ -8,12 +8,14 @@ import { botInput } from '../scripts/pickup-economy.mjs';
 // 13.8 km is ~2x the longest classic sprint, so at classic rival pace holding the throttle alone won 9 of 24 layouts.
 // Frostbite's rivals run a faster pace: throttle-only rarely wins, a driver using the kit (the economy bot) still does.
 const SEEDS = 24;
-function positions(drive) {
+function positions(drive, difficulty = 'normal', pace = null, samples = SEEDS) {
   const out = [];
   try {
-    for (let k = 0; k < SEEDS; k++) {
+    for (let k = 0; k < samples; k++) {
       setLayoutSeed(track => track.seed + k * 7919);
       const race = createRace(FROSTBITE_ID), bot = {};
+      if (difficulty !== 'normal') race.config = { ...race.config, difficulty };
+      if (pace !== null) race.rivalPace = pace;
       race.phase = 'racing';
       for (let i = 0; i < 60 * 400 && race.phase !== 'finished'; i++) stepRace(race, drive === 'bot' ? botInput(race, bot) : { throttle: true }, 1 / 60);
       out.push(race.result.position);
@@ -36,4 +38,13 @@ test('a driver using BOOST, NITRO, rings and the span still wins most layouts', 
 test('the faster rival pace is Frostbite-only: every other track keeps the classic pace', () => {
   for (const id of Object.keys(RACE_TRACKS)) assert.equal(createRace(id).rivalPace, 1, id);
   assert.ok(createRace(FROSTBITE_ID).rivalPace > 1);
+});
+
+// Diagnosis only: compare the inherited AI difficulty strategies on this exact route before choosing a fix.
+// This does not replace the unchanged 24-layout acceptance assertions above.
+test('Frostbite rival pacing diagnosis: stable per-layout rank distribution', () => {
+  for (const [difficulty, pace] of [['normal', 1.01], ['easy', 1.04], ['easy', 1.08]]) {
+    const p = positions('throttle', difficulty, pace);
+    console.log(`Frostbite calibration ${difficulty} pace=${pace}: ${p.join(',')} (wins=${p.filter(x => x === 1).length}, last=${p.filter(x => x === 8).length})`);
+  }
 });
