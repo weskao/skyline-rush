@@ -189,7 +189,8 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
   - **Owner decisions (2026-11-06):**
     - MVP asset `pipeline-probe`, built entirely from a project Python script: no external source and no third-party license.
     - Exposure: Garage only, behind `?model=probe`. Production keeps the procedural car.
-    - Decoders: Meshopt only. KTX2 and Draco stay out until an asset needs them.
+    - Decoders: Meshopt only. KTX2 and Draco stay out until an asset needs them. (Superseded by Task 4: Draco still out.)
+    - [x] GPU texture compression: KTX-Software `ktx` encodes KTX2 (UASTC data maps, ETC1S colour maps) before meshopt; check-glb verifies size and sRGB/linear transfer; one `KTX2Loader` with the `public/basis/` transcoder on the existing renderer, procedural fallback when unavailable. roadster2 normal/AO ship as KTX2 (`d3deda61`, `c75e628e`, `c81dbb50`, `9456ff87`). Details: `docs/designs/3d-pipeline/phases/task-3-glb-pipeline-mvp.md`.
     - Adapter: of two candidate adapters, the owner kept A (`b66a0e9d`). The alternative, `879f5040` on `feature/3d-phase2-probe-adapter`, stays unmerged.
     - Lifecycle checks: of two copies, the owner kept the separate spec on `feature/3d-phase2-probe-tests`.
   - **By project (committed once):**
@@ -247,6 +248,7 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
   - [x] Low LOD: `roadster2-low.glb` 4,150 tris / 485,732 B (`optimize-glb.mjs --lod low`, `check-glb.mjs --lod low --promote`); low quality tier fetches only it. `npm test` 2018 / 0, typecheck clean, model browser specs 15/15.
   - [ ] Owner visual sign-off on the it6 car.
   - [ ] `make verify` on the it6 HEAD (previous full run: 930 pass, 2 load timeouts that pass 8/8 alone), exact-HEAD full CI (needs develop), real-phone screenshots.
+    - Local `make verify` on `2eb4c629` (2026-11-07, not a gate): exit nonzero; unit 2018 pass / 0 fail / 3 skipped; build OK; browser 931 passed / 6 skipped / 2 failed (1.4 h): `interactive-tutorial-browser.spec.js:87` and `motion-browser.spec.js:180`, timing checks outside 3D/GLB/Garage code. Isolated `--retries=0` rerun at load average ~14.7 passed 2/2, judged load flakes by this rerun, not by the owner. Roadster, World Tour and high-speed VFX specs passed. `develop` `57971418` targets the motion failure only; not merged here. Still open: exact-HEAD CI, owner sign-off, real-phone screenshots.
 - [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
 - [ ] **All phases:** TDD RED→GREEN, renderer version/texture and animation checks, 10-track/5-new-track matrix as available, desktop/mobile Low/Medium/High (Ultra only after profiling), memory/draw/triangle/frame-time p50/p95, real-device QA, `make verify` and exact-HEAD FULL `quality-gate`. No PR, develop/main merge, release or deployment without approval.
 - [ ] **Share links:** reconcile full content if the three ChatGPT share pages become accessible; currently cannot independently verify their full text (linked in design spec).
