@@ -134,8 +134,12 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
   // The player is a rotating arrow plus a pulsing halo (CSS only) drawn above every rival dot.
   const pointer = live ? svg('g', { class: 'route-player-pointer', 'aria-hidden': 'true' }) : undefined;
   if (pointer) {
+    // The existing SVG arrow remains visible if this transparent artwork fails to load.
+    // BASE_URL keeps the public asset working on GitHub Pages subpaths and in Node tests.
+    const artworkUrl = `${import.meta.env?.BASE_URL ?? '/'}feature-assets/minimap-player-marker/player-marker@3x.webp`;
     pointer.append(svg('circle', { r: 7, class: 'route-player-halo' }),
-      svg('path', { d: 'M0,-9 L5.5,3 L0,.5 L-5.5,3 Z', class: 'route-player-arrow' }));
+      svg('path', { d: 'M0,-9 L5.5,3 L0,.5 L-5.5,3 Z', class: 'route-player-arrow' }),
+      svg('image', { href: artworkUrl, x: -11, y: -11, width: 22, height: 22, class: 'route-player-art' }));
     element.append(pointer);
   }
   const updateDrivers = (drivers: readonly RouteDriver[]): void => {
