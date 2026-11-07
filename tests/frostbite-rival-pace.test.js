@@ -8,14 +8,35 @@ import { botInput } from '../scripts/pickup-economy.mjs';
 // 13.8 km is ~2x the longest classic sprint, so at classic rival pace holding the throttle alone won 9 of 24 layouts.
 // Frostbite's rivals run a faster pace: throttle-only rarely wins, a driver using the kit (the economy bot) still does.
 const SEEDS = 24;
-function positions(drive) {
+function positions(drive, inspect = () => {}) {
   const out = [];
   try {
     for (let k = 0; k < SEEDS; k++) {
       setLayoutSeed(track => track.seed + k * 7919);
       const race = createRace(FROSTBITE_ID), bot = {};
+      const boostFrames = Array(race.rivals.length).fill(0);
+      const nitroFrames = Array(race.rivals.length).fill(0);
+      let frames = 0, playerSpeed = 0;
       race.phase = 'racing';
-      for (let i = 0; i < 60 * 400 && race.phase !== 'finished'; i++) stepRace(race, drive === 'bot' ? botInput(race, bot) : { throttle: true }, 1 / 60);
+      for (let i = 0; i < 60 * 400 && race.phase !== 'finished'; i++) {
+        stepRace(race, drive === 'bot' ? botInput(race, bot) : { throttle: true }, 1 / 60);
+        if (k === 0) {
+          frames++;
+          playerSpeed += race.player.speed;
+          race.rivals.forEach((rival, slot) => {
+            if (rival.boosting) boostFrames[slot]++;
+            if (rival.nitroTime > 0) nitroFrames[slot]++;
+          });
+        }
+      }
+      if (k === 0) inspect({
+        finish: race.elapsed, length: race.length,
+        player: { averageSpeed: playerSpeed / frames, collisions: race.player.collisions, falls: race.player.falls, rings: race.player.rings },
+        rivals: race.rivals.map((rival, slot) => ({
+          slot, finish: rival.finishTime, speed: rival.speed, boostSeconds: boostFrames[slot] / 60,
+          nitroSeconds: nitroFrames[slot] / 60, nitroUses: rival.nitroUses, itemTakes: rival.itemTakes,
+        })),
+      });
       out.push(race.result.position);
     }
   } finally { setLayoutSeed(); }
@@ -23,9 +44,10 @@ function positions(drive) {
 }
 
 test('throttle-only rarely wins Frostbite Canyon across a deterministic 24-layout sweep', () => {
-  const p = positions('throttle'), wins = p.filter(x => x === 1).length;
+  let firstSeed;
+  const p = positions('throttle', snapshot => { firstSeed = snapshot; }), wins = p.filter(x => x === 1).length;
   assert.ok(wins <= 2, `throttle-only P1 in ${wins}/${SEEDS}: ${p}`);
-  assert.ok(p.every(x => x <= 6), `throttle-only stays in the pack: ${p}`);
+  assert.ok(p.every(x => x <= 6), `throttle-only stays in the pack: ${p}; first-seed telemetry: ${JSON.stringify(firstSeed)}`);
 });
 
 test('a driver using BOOST, NITRO, rings and the span still wins most layouts', () => {
