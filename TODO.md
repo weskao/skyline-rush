@@ -1,3 +1,20 @@
+## 2026-11-07 — Ring collect sounds (`feature/pickup-sfx`, based on `origin/develop` `7f663271`)
+
+Symptom: flying/driving through a ring made no sound (only NITRO pickups and rival takes did).
+Acceptance: every ring the player takes plays a type-appropriate cue; a 6-ring train is audible, rises in pitch
+and does not clip; mute/pause/new-race never replay stale cues; `game.js` unchanged.
+
+- [x] RED: `tests/race-audio-events.test.js` (3 ring tests; per-type cue + train failed with `[]` vs `['ring-charge']`)
+  and `tests/audio.test.js` (ring chimes fell through to the generic blip: 2 distinct sounds, expected 8).
+- [x] GREEN: `race-audio-events.ts` emits `ring-<type>` once per ring (WeakSet, consumed while muted); `audio.js`
+  `ring()` gives each type its own chime at about the `pickup` level and climbs a major scale (6 steps) for rings
+  within 1.2 s of each other.
+- [x] `npm test` 1945 pass / 0 fail, `npm run build` ok, `npm run typecheck` ok.
+- [x] Browser: `tests/ring-sfx-browser.spec.js` (desktop + phone; real analyser peaks: bed 0.034, pickup 0.07-0.08,
+  single rings 0.06-0.08, 6-ring train 0.12-0.17, limiter threshold 0.25); existing audio specs in
+  `browser.spec.js`, `hud-settings`, `device-quality`, `endless-bounds` (26 passed).
+- [ ] Manual listening check by a human (levels are measured, not judged by ear). Exact-HEAD `quality-gate` pending.
+
 ## 2026-11-07 — Current-mechanism README refresh
 
 - [x] Reviewed README gameplay claims against race configuration/grid, shared drive rules,
