@@ -71,3 +71,35 @@ test('checkGlb reports colour-space errors and the texture budget', () => {
     'textures: texture 0 (normalTexture) must be linear',
   ]);
 });
+
+/** Packs glTF JSON + BIN into a GLB container. */
+function glb(json, bin) {
+  const pad = (b, fill) => Buffer.concat([b, Buffer.alloc((4 - (b.length % 4)) % 4, fill)]);
+  const j = pad(Buffer.from(JSON.stringify(json)), 0x20), b = pad(bin, 0);
+  const head = Buffer.alloc(12);
+  head.write('glTF', 0, 'latin1');
+  head.writeUInt32LE(2, 4);
+  head.writeUInt32LE(12 + 8 + j.length + 8 + b.length, 8);
+  const chunk = (data, type) => { const h = Buffer.alloc(8); h.writeUInt32LE(data.length, 0); h.write(type, 4, 'latin1'); return Buffer.concat([h, data]); };
+  return Buffer.concat([head, chunk(j, 'JSON'), chunk(b, 'BIN\0')]);
+}
+
+test('summarize parses a GLB with KTX2 textures in Node (no transcoder, no DOM)', async () => {
+  const tex = ktx2(256, 1), positions = Buffer.from(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]).buffer);
+  const json = {
+    asset: { version: '2.0' }, extensionsUsed: ['KHR_texture_basisu'], extensionsRequired: ['KHR_texture_basisu'],
+    buffers: [{ byteLength: tex.length + positions.length }],
+    bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: tex.length }, { buffer: 0, byteOffset: tex.length, byteLength: positions.length }],
+    accessors: [{ bufferView: 1, componentType: 5126, count: 3, type: 'VEC3', min: [0, 0, 0], max: [1, 1, 0] }],
+    images: [{ bufferView: 0, mimeType: 'image/ktx2' }],
+    textures: [{ extensions: { KHR_texture_basisu: { source: 0 } } }],
+    materials: [{ name: 'm', normalTexture: { index: 0 } }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0 }, material: 0 }] }],
+    nodes: [{ name: 'body', mesh: 0 }], scenes: [{ nodes: [0] }], scene: 0,
+  };
+  const { summarize } = await import('../scripts/assets/check-glb.mjs');
+  const summary = await summarize(glb(json, Buffer.concat([tex, positions])));
+  assert.equal(summary.triangles, 1);
+  assert.equal(summary.maxTexturePx, 256);
+  assert.deepEqual(summary.colorSpaceErrors, []);
+});

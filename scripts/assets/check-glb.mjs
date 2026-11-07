@@ -75,9 +75,13 @@ async function parse(buffer) {
   const { MeshoptDecoder } = await import('three/examples/jsm/libs/meshopt_decoder.module.js');
   const { Texture } = await import('three');
   await MeshoptDecoder.ready;
-  // Node has no transcoder: KTX2 images resolve to empty textures; sizes/colour spaces come from textureStats.
-  const ktx2Stub = { load: (_url, onLoad) => onLoad(new Texture()) };
-  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(ktx2Stub);
+  // Node has no transcoder or DOM (the built-in basisu path needs self.URL): KTX2 textures become empty
+  // textures by replacing that plugin by name; sizes/colour spaces come from textureStats.
+  const basisuStub = parser => ({
+    name: 'KHR_texture_basisu',
+    loadTexture: i => (parser.json.textures[i].extensions?.KHR_texture_basisu ? Promise.resolve(new Texture()) : null),
+  });
+  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).register(basisuStub);
   const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.length);
   return new Promise((resolve, reject) => loader.parse(ab, '', resolve, reject));
 }
