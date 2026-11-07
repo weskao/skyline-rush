@@ -58,10 +58,10 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     source: {
       master: 'assets-src/roadster2/roadster2.blend',
       script: 'assets-src/roadster2/build.py',
-      masterSha256: '5a8accc5bc3544ead96809f6edfd440d52ea80562ca34aecd3ee85af066cf88d',
+      masterSha256: '1b235df29fcb7b3420964ce4d899c73eb110a1359745d6f66a149a8227070852',
       scriptSha256: 'a3d34fc7ac9c242147d9ce06727078f5381e66ec6bc29df26b0d5306ffb3e1bc',
     },
-    glb: { sha256: '51247ddc14f9f17ca4d865962945c10f2289dd96a875314b8a98112c46dfd2c8', bytes: 1_485_584 },
+    glb: { sha256: 'e848a4dbb780b5bdfc9b09a24e6907292573fcc36ab8810b8335a51efc3eb01f', bytes: 1_383_800 },
     license: { id: 'owned', creator: 'Skyline Rush project' },
     provenance: {
       blender: '5.2.3',
@@ -80,7 +80,7 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
       'thruster_01', 'thruster_02', 'thruster_03', 'thruster_04', 'nozzle_rear_01', 'nozzle_rear_02', 'nozzle_rear_03', 'nozzle_rear_04',
     ],
     materials: ['roadster_paint', 'roadster_glass', 'roadster_trim', 'roadster_carbon', 'roadster_tire', 'roadster_rim', 'roadster_light', 'roadster_lamp', 'roadster_nozzle'],
-    lods: [],
+    lods: [{ quality: 'low', url: 'models/roadster2/roadster2-low.glb' }],
     fallback: 'procedural-car',
     decoders: ['meshopt', 'ktx2'],
     budgets: { triangles: 60_000, bytes: 1_500_000, textureMaxPx: 1024 },

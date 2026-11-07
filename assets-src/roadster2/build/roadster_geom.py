@@ -58,6 +58,47 @@ def loft(rings, close):
     return verts, faces
 
 
+def _resample(points, sub, closed):
+    """Catmull-Rom through `points` with `sub` samples per span. Each sample is clamped per axis to the
+    box of its span's two endpoints, so the curve never overshoots: bounds and contract stations hold."""
+    n = len(points)
+    spans = n if closed else n - 1
+    out = []
+    for i in range(spans):
+        p1, p2 = points[i], points[(i + 1) % n]
+        p0 = points[(i - 1) % n] if closed or i > 0 else p1
+        p3 = points[(i + 2) % n] if closed or i + 2 < n else p2
+        for k in range(sub):
+            t = k / sub
+            t2, t3 = t * t, t * t * t
+            q = []
+            for a, b, c, d in zip(p0, p1, p2, p3):
+                v = .5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (3 * b - a - 3 * c + d) * t3)
+                q.append(min(max(v, min(b, c)), max(b, c)))
+            out.append(tuple(q))
+    if not closed:
+        out.append(tuple(points[-1]))
+    return out
+
+
+def _check_resample():
+    """Build-time self-check: samples pass through every control point and stay inside the control box."""
+    pts = [(0, 0, 0), (1, 2, 0), (2, -1, 1), (3, 0, 0)]
+    for closed in (False, True):
+        out = _resample(pts, 4, closed)
+        assert all(out[i * 4] == pts[i] for i in range(len(pts) if closed else len(pts) - 1)), "misses a station"
+        for axis in range(3):
+            lo, hi = min(p[axis] for p in pts), max(p[axis] for p in pts)
+            assert all(lo <= q[axis] <= hi for q in out), "overshoots the control box"
+
+
+def smooth_rings(rings, ring_sub, station_sub, ring_closed):
+    """Densify a loft: smooth each cross-section ring, then smooth along the stations (same point count per ring)."""
+    dense = [_resample(r, ring_sub, ring_closed) for r in rings]
+    columns = [_resample([r[j] for r in dense], station_sub, False) for j in range(len(dense[0]))]
+    return [[col[s] for col in columns] for s in range(len(columns[0]))]
+
+
 def merge(*parts):
     verts, faces, off = [], [], 0
     for v, f in parts:
@@ -106,3 +147,5 @@ def part(name, collection, verts, faces, material, parent=None):
         ob.parent = parent
         ob.matrix_parent_inverse = Matrix.Identity(4)
     return ob
+
+_check_resample()

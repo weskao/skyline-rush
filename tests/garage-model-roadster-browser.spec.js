@@ -4,13 +4,13 @@ import { expect } from '@playwright/test';
 
 // Task 4 `?model=roadster`: the authored Roadster GLB replaces the procedural car in the Garage and follows its
 // wheels, active wing, flight pose and paint (src/garage-model-rig.ts). Production (no query) is unchanged.
-const GLB = /\/models\/roadster2\/roadster2\.glb$/;
+const GLB = /\/models\/roadster2\/roadster2(-low)?\.glb$/;
 
-async function prepare(page, url, viewportName = 'desktop') {
-  await page.addInitScript(() => {
+async function prepare(page, url, viewportName = 'desktop', quality = 'high') {
+  await page.addInitScript(q => {
     for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
-    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high', enabled: true, comfortable: false }));
-  });
+    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: q, enabled: true, comfortable: false }));
+  }, quality);
   const requests = [], errors = [];
   page.on('request', request => { if (GLB.test(new URL(request.url()).pathname)) requests.push(request.url()); });
   page.on('pageerror', error => errors.push(error.message));
@@ -75,6 +75,16 @@ test('Preview Studio front/side/rear/orbit show the GLB in frame', async ({ game
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame', 'true');
     await attach(page, `roadster-studio-${angle}`);
   }
+});
+
+test('low quality tier loads only the low LOD and still dresses the Garage car', async ({ gameplayPage: page, gameplayURL }) => {
+  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster`, 'desktop', 'low');
+  await page.locator('#garage-button').click();
+  await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(15000) });
+  expect(requests.map(u => new URL(u).pathname)).toEqual(['/models/roadster2/roadster2-low.glb']); // settled: model state polled above
+  await expect.poll(() => page.evaluate(() => ['body', 'wheel_fl_spin', 'wing_blade', 'thruster_04'].every(n => window.gameScene.player.getObjectByName(n)))).toBe(true);
+  await attach(page, 'roadster-low-lod-garage');
+  expect(errors).toEqual([]);
 });
 
 test('missing roadster GLB falls back to the procedural Roadster without a page error', async ({ gameplayPage: page, gameplayURL }) => {

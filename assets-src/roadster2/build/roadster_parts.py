@@ -3,7 +3,7 @@
 rig and the Garage framing see the same pivots, wing travel and bounds."""
 import math
 
-from roadster_geom import cylinder, extrude, loft, merge, node, part
+from roadster_geom import cylinder, extrude, loft, merge, node, part, smooth_rings
 
 # Body stations: [z, half-width, bottom, deck, shoulder, crest]  (roadster-fidelity.js BODY_STATIONS)
 # Forms gate (gate/refs.json, photo 14): bottoms beside and between the arches are lowered so the
@@ -47,12 +47,14 @@ def body_verts():
             (-.57 * w, deck, z), (.57 * w, deck, z), (crest * w, shoulder, z), (w, shoulder - drop, z),
             (w, bottom + rise, z), (.83 * w, floor, z),
         ])
-    return loft(rings, close=True)
+    # Art pass: smooth (no-overshoot) resample through the same stations, so the faceted 10x10 loft reads as a
+    # rounded body while every station, bound and anchor stays where the contract puts it.
+    return loft(smooth_rings(rings, 4, 4, ring_closed=True), close=True)
 
 
 def canopy_verts():
     rings = [[(-b, by, z), (-r, ry, z), (r, ry, z), (b, by, z)] for z, b, by, r, ry in CANOPY_STATIONS]
-    return loft(rings, close=False)
+    return loft(smooth_rings(rings, 3, 4, ring_closed=False), close=False)
 
 
 def surround_tubes():
@@ -133,16 +135,28 @@ def build_car(c, mats):
     made.append(wing)
 
     # Static trim (procedural positions; see roadster-fidelity addRoadsterTrim / rocker).
+    # Art pass: the smoothed body side curves in below the shoulder, so the old .20-.58 block poked through as a
+    # patch; it is now a low sill strip just proud of the body side (1.17, inside the 1.19 arch half-width).
     for side in (-1, 1):
-        d = (-.085 * side, 0, 0)
-        rocker = [(side * 1.15, .20, -.86), (side * 1.15, .20, .91), (side * 1.15, .58, .88), (side * 1.15, .56, -.83)]
+        d = (-.10 * side, 0, 0)
+        rocker = [(side * 1.17, .20, -.86), (side * 1.17, .20, .91), (side * 1.17, .34, .89), (side * 1.17, .34, -.84)]
         made.append(part("rocker_" + ("l" if side < 0 else "r"), c, *extrude(rocker, d), G["roadster_carbon"]))
     # Splitter keeps its z (front bound), sits higher (nose line of photo 14) and closes up to the nose bottom (.40).
     made.append(part("splitter", c, *extrude([(-.95, .28, -2.58), (.95, .28, -2.58), (.95, .28, -2.40), (-.95, .28, -2.40)], (0, .12, 0)), G["roadster_trim"]))
-    # Diffuser closes the rear face down to .12 (photos 13/06 show no gap under the rear bumper).
-    made.append(part("diffuser", c, *extrude([(-.9, .12, 2.05), (.9, .12, 2.05), (.9, .12, 2.46), (-.9, .12, 2.46)], (0, .26, 0)), G["roadster_trim"]))
+    # Diffuser closes the rear face down to .12 (photos 13/06 show no gap under the rear bumper). Art pass: a
+    # deck plate over five vertical fins (photo 06 shows a finned diffuser), same outer box as before.
+    made.append(part("diffuser", c, *merge(
+        extrude([(-.9, .26, 2.05), (.9, .26, 2.05), (.9, .26, 2.46), (-.9, .26, 2.46)], (0, .12, 0)),
+        *[extrude([(x - .012, .12, 2.12), (x + .012, .12, 2.12), (x + .012, .12, 2.46), (x - .012, .12, 2.46)], (0, .14, 0))
+          for x in (-.88, -.6, -.3, 0, .3, .6, .88)],
+    ), G["roadster_trim"]))
     made.append(part("headlamp", c, *extrude([(-.8, .46, -2.47), (.8, .46, -2.47), (.8, .50, -2.47), (-.8, .50, -2.47)], (0, 0, -.02)), G["roadster_lamp"]))
     made.append(part("tail_light", c, *extrude([(-.95, .70, 2.37), (.95, .70, 2.37), (.95, .76, 2.37), (-.95, .76, 2.37)], (0, 0, .02)), G["roadster_light"]))
+    # Art pass: dark lamp pockets, a trim frame just behind each light's face so the light sits in a recess.
+    made.append(part("lamp_pockets", c, *merge(
+        extrude([(-.85, .43, -2.465), (.85, .43, -2.465), (.85, .53, -2.465), (-.85, .53, -2.465)], (0, 0, -.018)),
+        extrude([(-1.0, .67, 2.37), (1.0, .67, 2.37), (1.0, .79, 2.37), (-1.0, .79, 2.37)], (0, 0, .016)),
+    ), G["roadster_trim"]))
     made.append(part("wing_bay", c, *extrude([(-.6, 1.012, 2.06), (.6, 1.012, 2.06), (.6, 1.012, 2.42), (-.6, 1.012, 2.42)], (0, .002, 0)), G["roadster_trim"]))
 
     # Lift thrusters: frustum, top radius .18 / bottom .22, height .2, centred at y .3 (effects.js LIFT_PORTS).

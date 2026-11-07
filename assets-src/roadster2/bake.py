@@ -63,12 +63,39 @@ normal = atlas("roadster2_normal", (0.5, 0.5, 1.0, 1.0))
 high = bpy.data.collections.new("_BAKE_HIGH")
 scene.collection.children.link(high)
 nodes = target(normal)
+
+# Panel lines on the body HIGH copy: three.js-space boxes (x0, x1, y0, y1, z0, z1), 8 mm wide, cut into the
+# surface so the normal map shows the door cuts, sill line and hood seams the LOW mesh does not model.
+GROOVES = [
+    *[(s * 1.0, s * 1.3, .30, .74, z - .004, z + .004) for s in (-1, 1) for z in (-.72, .44)],   # door front/rear cuts
+    *[(s * 1.0, s * 1.3, .345, .353, -.80, .86) for s in (-1, 1)],                            # sill line
+    (-.80, .80, .55, .95, -1.554, -1.546),                                                     # hood rear seam
+    *[(x - .004, x + .004, .55, .95, -2.35, -1.55) for x in (-.52, .52)],                      # hood side seams
+]
+
+
+def cutter(x0, x1, y0, y1, z0, z1):
+    """Box mesh in Blender space ((x, -z, y)), hidden from render, only used as a boolean operand."""
+    me = bpy.data.meshes.new("_groove")
+    lo, hi_ = (min(x0, x1), -z1, y0), (max(x0, x1), -z0, y1)
+    v = [(a, b, c) for a in (lo[0], hi_[0]) for b in (lo[1], hi_[1]) for c in (lo[2], hi_[2])]
+    me.from_pydata(v, [], [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)])
+    ob = bpy.data.objects.new("_groove", me)
+    ob.hide_render = True
+    high.objects.link(ob)
+    return ob
+
+
 for low in lows:
     hi = low.copy()
     hi.data = low.data.copy()
     hi.parent = None
     hi.matrix_world = low.matrix_world.copy()
     high.objects.link(hi)
+    if low.name == "body":
+        for box in GROOVES:
+            cut = hi.modifiers.new("groove", "BOOLEAN")
+            cut.operation, cut.solver, cut.object = "DIFFERENCE", "EXACT", cutter(*box)
     bev = hi.modifiers.new("bevel", "BEVEL")
     bev.width, bev.segments, bev.limit_method = 0.012, 3, "ANGLE"
     bev.harden_normals = False
