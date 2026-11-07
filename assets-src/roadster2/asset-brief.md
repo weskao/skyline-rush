@@ -24,6 +24,8 @@ PARTS      body; glass_canopy; glass_surround (pillars/roof edge tubes); rocker_
            wing (pivot) > wing_blade (rig-bound) > wing_aerofoil, wing_tip_r, wing_tip_l (scale x -1, like the procedural tip);
            wing > wing_swan_necks, wing_rams (rig-bound rot.x/scale.y).
            thruster_01..04 (lift ports, effects.js LIFT_PORTS) > *_nozzle; nozzle_rear_01..04 (aero-vfx.js REAR_PORTS) > *_tube.
+           lift_fans (Task 4b, rig-bound to the procedural `jets` group: TRS + visible) > lift_fan_01..04 (pivots at the
+           lift ports, y .19) > *_disc (roadster_fan, r .13, h .025), the procedural flight fans; shown only while thrusting.
            All separate objects, rigid; pivots are empties whose TRS matches the procedural node of the same role.
 SILHOUETTE wedge nose with low splitter; single short roof peak with raked windshield and rear glass; tall rear deck
            with active wing on swan necks; dark sill/rocker band between large wheels; boxed rear fascia with four ports.

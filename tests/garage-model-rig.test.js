@@ -27,6 +27,10 @@ function roadsterGlb() {
   node('wing_tip_l', blade);
   node('wing_tip_r', blade);
   node('wing_rams', wing);
+  const fans = new THREE.Group(); // Task 4b: authored lift fans (pivot partner of the procedural `jets` group)
+  fans.name = 'lift_fans';
+  scene.add(fans);
+  for (let i = 1; i <= 4; i++) node(`lift_fan_0${i}_disc`, node(`lift_fan_0${i}`, fans));
   return scene;
 }
 
@@ -108,11 +112,65 @@ test('paint and light colours follow the procedural car without touching the cac
   assert.equal(original.getObjectByName('body').material.color.getHexString(), 'ffffff');
 });
 
-test('the flight fans stay drawn; the procedural body and wheels are hidden', async () => {
-  const { car } = await dressed();
-  car.userData.jets.traverse(o => assert.equal(drawn(o), true, 'jets keep rendering'));
+test('authored GLB lift fans replace the procedural flight fans and follow their visibility', async () => {
+  const { car, model, host, glb } = await dressed();
+  const jets = car.userData.jets;
+  car.userData.jets.traverse(o => assert.equal(drawn(o), false, 'procedural fans hidden'));
   assert.equal(drawn(car.userData.body), false);
   assert.equal(drawn(car.userData.wheels[0].children[0]), false);
+  for (const thrusting of [true, false, true]) {
+    jets.visible = thrusting;
+    model.sync(true, 'high', host);
+    assert.equal(glb('lift_fans').visible, thrusting, `GLB fans follow jets.visible=${thrusting}`);
+  }
+});
+
+test('lift fans are compiled while still visible, then hidden until the car thrusts', async () => {
+  const car = makeCar(CAR_STYLES.roadster), scene = new THREE.Scene(), keep = new THREE.Group();
+  car.add(keep);
+  scene.add(car);
+  const original = roadsterGlb();
+  const seen = [];
+  const cache = { async load(id) { return { kind: 'model', id, instance: () => original.clone(true), release() {} }; } };
+  const model = createGarageModel({ id: 'roadster2', cache, dataset: {}, compile: async object => { seen.push(object.getObjectByName('lift_fans').visible); } });
+  model.sync(true, 'high', { name: 'studio', car, keep, scene });
+  await settle();
+  assert.deepEqual(seen, [true], 'compileAsync only builds visible objects');
+  assert.equal(car.getObjectByName('lift_fans').visible, false, 'hidden once attached: the car is not thrusting');
+});
+
+test('a GLB without lift fans (the probe) keeps the procedural flight fans drawn', async () => {
+  const car = makeCar(CAR_STYLES.roadster), scene = new THREE.Scene(), keep = new THREE.Group();
+  car.add(keep);
+  scene.add(car);
+  const probe = new THREE.Group();
+  probe.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial()), { name: 'body' }));
+  const cache = { async load(id) { return { kind: 'model', id, instance: () => probe.clone(true), release() {} }; } };
+  const model = createGarageModel({ id: 'pipeline-probe', cache, dataset: {}, compile: async () => {} });
+  model.sync(true, 'high', { name: 'studio', car, keep, scene });
+  await settle();
+  car.userData.jets.traverse(o => assert.equal(drawn(o), true, 'jets keep rendering'));
+  assert.equal(drawn(car.userData.body), false);
+});
+
+test('dressing leaves the procedural car pose, collision parts and VFX ports untouched', async () => {
+  const ctx = setup();
+  const { car, model, host } = ctx;
+  car.position.set(3, 1.5, -40);
+  car.quaternion.setFromEuler(new THREE.Euler(0.05, 0.4, -0.02));
+  car.updateMatrixWorld(true);
+  const snapshot = () => { car.updateMatrixWorld(true); const out = []; car.traverse(o => { if (o.userData.garageModel || o.parent?.userData.garageModel) return; out.push(o.matrixWorld.toArray().map(v => v.toFixed(6)).join()); }); return out; };
+  const before = snapshot();
+  model.sync(true, 'high', host);
+  await settle();
+  model.sync(true, 'high', host);
+  const instance = car.children.find(c => c.userData.garageModel);
+  assert.ok(instance, 'dressed');
+  assert.deepEqual(instance.position.toArray(), [0, 0, 0]);
+  assert.deepEqual(instance.quaternion.toArray(), [0, 0, 0, 1]);
+  assert.deepEqual(instance.scale.toArray(), [1, 1, 1]);
+  const after = snapshot();
+  assert.deepEqual(after.slice(0, before.length), before, 'procedural car and its children keep their world transforms');
 });
 
 test('close restores the procedural car and disposes the per-instance materials', async () => {
