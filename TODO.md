@@ -1,3 +1,13 @@
+## 2026-11-08 — Develop 同步及沙暴裂谷／浮空群島首頁四車可讀性（epic）
+
+- [x] 在開始新的實作前將 `develop` `b6f30406` 非破壞性合入 epic：merge `8737ea35`，保留共同修改的 `TODO.md` 雙方新增紀錄；只推送 epic，未修改 develop/main。
+- [x] 新增桌機／手機 50° FOV、四車可見範圍回歸測試 `tests/showcase-vehicle-readability.test.js`（`b960ce7b`），修改共用展示車距及直向排列（`00ffe5b6`）。
+- [x] 新增兩張地圖的前景霧沙、額外光照、雲層遮擋回歸測試 `tests/showcase-weather-readability.test.js`（`d6c58bbe`），改善 Dune 沙暴與 Skyfall 浮空雲海近景對比（`b1a5e8fd`），保留地標、50° FOV、既有車輛模型及場景風格。
+- [ ] RED 實際執行輸出：目前環境無完整可執行 repository 且外網 git checkout 失敗；測試已先行編寫，但不得宣稱觀察到 RED。
+- [ ] `node --test tests/showcase-vehicle-readability.test.js tests/showcase-weather-readability.test.js`、`npm test`、`npm run typecheck`、`npm run build`：NOT VERIFIED。
+- [ ] 完整 browser、`make verify`，沙暴裂谷／浮空群島真 WebGL 桌機＋手機、AIRFLOW 兩態與六視角目視可讀性：NOT VERIFIED。
+- [ ] 所有剩餘賽道實作完成後，再進行 exact-HEAD `[full-regression]` CI 驗證及失敗修復；舊 SHA 的 PASS 不能替代新 HEAD。
+
 ## 2026-11-08 — Tutorial hints follow the Controls settings (`develop`, based on `84a2f9e7`)
 
 Acceptance: every coach line, touch hint, live cue, outline and arrow names the control the player's own
