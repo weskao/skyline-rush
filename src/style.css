@@ -2142,3 +2142,5 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   body:not([data-tutorial]) .result-cloud p { font-size: 10.5px; line-height: 1.3; }
   body:not([data-tutorial]) .result-cloud .sign-in-button { min-height: 44px; padding-block: 6px; font-size: 13px; }
 }
+/* Phone landscape: the coach card grows to show the whole lesson text (EN/中文). */
+@media (max-height: 500px) and (orientation: landscape) { .tutorial-coach { width: min(520px, calc(58vw - 24px)); } .tutorial-copy { max-height: none; overflow: visible; } }
