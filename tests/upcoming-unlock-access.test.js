@@ -6,7 +6,7 @@ import { UPCOMING_TRACKS, homeTrackStatus, upcomingReadiness } from '../src/upco
 import { availableTracks as releasedTracks, isUpcomingEnterable as released } from '../src/access/production.ts';
 import { isUpcomingEnterable as unlocked } from '../src/access/dev-unlocked.ts';
 
-const PLAYABLE = new Set(['frostbite-canyon', 'stormline-megacity', 'volcanic-crown']);
+const PLAYABLE = new Set(['frostbite-canyon', 'stormline-megacity', 'volcanic-crown', 'monsoon-ruins']);
 
 test('only explicitly playable Coming Soon tracks can START in make dev-unlocked', () => {
   for (const id of Object.keys(UPCOMING_TRACKS)) {

@@ -13,6 +13,7 @@ export const TRACK_PALETTES = {
   // Night storm city, same palette as the Stormline showroom: midnight fog, wet asphalt, cyan rails, magenta glow.
   'stormline-megacity': { top: '#050a1c', horizon: '#3a2466', fog: '#141c38', rock: '#1b2541', road: '#11182a', ground: '#080f24', rail: '#2cc9ea', sun: '#b48cff', warmth: 0 },
   'volcanic-crown': { top: '#1b0c12', horizon: '#6a2821', fog: '#462024', rock: '#332328', road: '#29252a', ground: '#24161a', rail: '#ff723d', sun: '#ffc58e', warmth: .7 },
+  'monsoon-ruins': { top: '#0b1e1c', horizon: '#55796a', fog: '#385d4b', rock: '#5d6b5c', road: '#514c3a', ground: '#244e36', rail: '#84d4c2', sun: '#c8e4bc', warmth: .2 },
   'frostbite-canyon': { top: '#071433', horizon: '#1d4f7a', fog: '#24476e', rock: '#8fb0cc', road: '#4d6b91', ground: '#bcd4ee', rail: '#3fe3ff', sun: '#7fb6ff', warmth: 0 },
   ...WORLD_THEMES,
 };
