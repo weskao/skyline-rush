@@ -1,3 +1,25 @@
+## 2026-11-08 — Tutorial hints follow the Controls settings (`develop`, based on `84a2f9e7`)
+
+Acceptance: every coach line, touch hint, live cue, outline and arrow names the control the player's own
+Controls panel gives them (steering mode, hand, size, FLY mode, key bindings), in en and zh-TW.
+
+- [x] RED → GREEN `tests/tutorial-settings-copy.test.js` (11 lessons × every phase/retry reason × desktop /
+  buttons / slide / tilt × hold / toggle FLY): 4 of 5 failed on `27f2074f` code (toggle copy said hold/release
+  FLY, desktop got toggle cues, the pad named BRAKE, buttons-mode drift outlined nothing), then 5/5 pass.
+- [x] RED → GREEN `tests/tutorial-hand-layout-browser.spec.js` (hand=right, size L, 390×844 and 844×390, buttons
+  and slide; page-side rAF overlap recorder): the guide arrow sat on the slide pad, and landscape cue / pass toasts
+  covered AIRFLOW and the coach's Exit, then 4/4 pass.
+- [x] Fixed: tilt brake hint and tilt/slide drift copy and cues say to pull down on the pad; buttons-mode drift
+  outlines BRAKE; tilt outlines no hidden steering button; toggle FLY variants for air chain and barrel roll
+  coach lines, retries, hints and `rollSoften`; keyboard keeps hold copy (FLY mode only latches the touch button).
+- [x] Checked, unchanged: throttle, left, right, fly, land, boost, nitro copy; desktop key chips follow rebinds;
+  no copy names a screen side, so hand only affects layout.
+- [x] `npm test` 2157 pass / 0 fail / 3 skipped; `npm run typecheck`, `npm run build` pass. `CI=1` tutorial browser
+  specs (interactive-tutorial, mobile-guide, hand-layout) 33/33; hand-layout `--repeat-each=4` 16/16. The granted-tilt
+  spec now expects the pad brake hint. One load-time miss (1024×768 tilt barrel-roll takeoff, thruster empty at
+  load average ~60) passed 3/3 on rerun and 33/33 in the full run.
+- Known: `tutorial.driftRelease` (non-cue coach line) is unused copy; left in place.
+
 ## 2026-11-08 — Post-hit grace shows on the car (`develop`, based on `9772af28`)
 
 Acceptance: while `car.cooldown` > 0 (crash, shield block, respawn: no collisions) the player car pulses
