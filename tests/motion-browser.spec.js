@@ -177,8 +177,8 @@ test.describe('touch button feedback', () => {
   });
 });
 
-test('speed dial eases as speed rises and a lost place flips with a readable down arrow', async ({ page }) => {
-  await open(page);
+test('speed dial eases as speed rises and a lost place flips with a readable down arrow', async ({ gameplayPage: page }) => {
+  // gameplayPage exposes the live race without adding production-only debug hooks.
   await page.evaluate(() => {
     window.placeChanges = [];
     const position = document.querySelector('#position');
