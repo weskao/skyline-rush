@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { makeCar, CAR_STYLES } from './car-model.js';
+import { applyCarReflections } from './car-reflections.ts';
 import { createAeroVFX } from './aero-vfx.js';
 import { previewPlayer, showcaseCameraPose, type CameraPose } from './track-preview.ts';
 import { vfxSettings, type VfxSettings } from './vfx-settings.ts';
@@ -29,6 +30,7 @@ type Stage = {
 export function createUpcomingShowcase(
   factories: Partial<Record<UpcomingTrackId, UpcomingEnvironmentFactory>>,
   environmentTexture: THREE.Texture,
+  carEnvironment: THREE.Texture,
 ) {
   let stage: Stage | null = null;
   let paint: PaintPreset | null = null;
@@ -94,6 +96,7 @@ export function createUpcomingShowcase(
     const cars = [CAR_STYLES.roadster, CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex]
       .map(style => makeCar(style));
     cars.forEach(car => scene.add(car));
+    applyCarReflections(cars[0]!, carEnvironment);
     const aero = createAeroVFX(scene, cars[0]!);
     const sunlight = new THREE.DirectionalLight('#f3e7d2', 2.3);
     sunlight.position.set(-30, 70, -65);
