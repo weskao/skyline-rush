@@ -36,7 +36,15 @@ export interface DriveRace {
   player: Car; traffic: readonly Car[]; rivals: readonly Car[];
 }
 
-export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill => RIVAL_SKILL[rivalLevel(race)] ?? RIVAL_SKILL.normal!;
+// Frostbite is almost twice a classic sprint's length. Preserve the distinct back/middle/front
+// grid pace from its original seven-car tuning; generic skill spreads otherwise let all seven
+// BOOST-capable rivals outrun a throttle-only player even with the leading-rival rubber band.
+// Other courses and the difficulty-dependent BOOST/NITRO/steering rules keep their defaults.
+const FROSTBITE_SKILL: Readonly<Record<string, RivalSkill>> = Object.fromEntries(
+  Object.entries(RIVAL_SKILL).map(([level, skill]) => [level, { ...skill, spread: 0.03 }]),
+);
+export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill =>
+  (race.trackId === 'frostbite-canyon' ? FROSTBITE_SKILL : RIVAL_SKILL)[rivalLevel(race)] ?? RIVAL_SKILL.normal!;
 /** The rival's throttle cap before BOOST or NITRO: never above the player's MAX_SPEED. */
 export const rivalBaseCap = (skill: RivalSkill, slot: number): number => MAX_SPEED * Math.min(1, skill.pace - skill.spread * (SLOTS - 1 - slot));
 

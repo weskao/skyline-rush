@@ -137,10 +137,27 @@ test('long-course rivalPace preserves difficulty scaling without raising unboost
   const race = bare('easy'), rival = race.rivals[6];
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 1.3;
-  run(race, rival, 6, 20);
+  // Keep the tank empty EACH frame: grounded cars recover fuel, and would otherwise enable BOOST.
+  for (let i = 0; i < 20 * 60; i++) { rival.fuel = 0; driveRival(race, rival, 6, 0, 1 / 60); }
+  assert.equal(rival.boosting, false, 'a throttle-only cap test must not activate BOOST');
   assert.equal(rival.speed, MAX_SPEED, 'fast courses still respect the player throttle cap');
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 0.5;
-  run(race, rival, 6, 20);
+  // Keep the tank empty EACH frame: grounded cars recover fuel, and would otherwise enable BOOST.
+  for (let i = 0; i < 20 * 60; i++) { rival.fuel = 0; driveRival(race, rival, 6, 0, 1 / 60); }
+  assert.equal(rival.boosting, false, 'a throttle-only cap test must not activate BOOST');
   assert.equal(rival.speed, rivalBaseCap(RIVAL_SKILL.easy, 6) * 0.5, 'slower courses retain their pace multiplier');
+});
+
+test('Frostbite keeps the original seven-car pace spread without changing other courses or difficulty order', () => {
+  for (const difficulty of DIFFICULTIES) {
+    const frostbite = rivalSkill({ trackId: 'frostbite-canyon', config: { difficulty } });
+    const back = rivalBaseCap(frostbite, 0), front = rivalBaseCap(frostbite, 6);
+    assert.ok(front - back >= 14, `${difficulty}: back and middle rivals must remain in the raceable pack (${front - back} m/s)`);
+    assert.ok(front <= MAX_SPEED, `${difficulty}: throttle cap`);
+    assert.equal(rivalSkill({ trackId: 'aurora', config: { difficulty } }), RIVAL_SKILL[difficulty], 'no legacy-track retuning');
+  }
+  const level = ['easy', 'normal', 'hard'].map(difficulty =>
+    rivalBaseCap(rivalSkill({ trackId: 'frostbite-canyon', config: { difficulty } }), 0));
+  assert.ok(level[0] < level[1] && level[1] < level[2], 'the back of the grid still respects difficulty');
 });

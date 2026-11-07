@@ -3805,3 +3805,8 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Run `npm test`, `npm run build`, `make verify`; inspect the latest **exact-HEAD FULL** GitHub CI (all required Browser/World Tour shards, Unit/Typecheck/Build, Cloud-save, Quality Gate). Fix real failures and preserve existing behavior.
 - [ ] Capture real desktop/mobile WebGL frames for all six preview courses, AIRFLOW ON/OFF, camera views, touch swipe and Garage/Studio. Measure actual road/wheel contact, visual parity, Reduced Motion, frame timing and GPU disposal; these are not proved by UI tests.
 - [ ] Separately connect actual six-course CourseGraph physics, branching, flight/landing, 8-car AI, collision, checkpoints, recovery, results/ghost and start/finish. UI/template parity does **not** authorize race registration or remove Coming Soon.
+
+### 2026-11-07 — Volcanic Crown branch: inherited AI CI regression
+- [x] Original RED: CI run 42297510109 at bf27c6c697f2 had 2 failing unit tests (24 Frostbite throttle-only P8 layouts; long-course cap test allowed automatic fuel recharge and BOOST).
+- [ ] Verify Frostbite's complete 24-layout throttle-only and equipped-player sweeps after restoring a seven-car skill spread; preserve difficulty-dependent BOOST/NITRO and all course geometry.
+- [ ] Run focused tests, entire unit suite, typecheck, build, Browser and World Tour checks, and inspect exact-final-HEAD full-regression CI quality-gate; unrun local/manual WebGL gates remain open.
