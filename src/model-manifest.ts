@@ -51,17 +51,17 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt'],
     budgets: { triangles: 5000, bytes: 200_000, textureMaxPx: 0 },
   },
-  // Task 4 hero Roadster, Garage only behind ?model=roadster. Nodes are the rig contract (src/garage-model-rig.ts).
+  // Task 4/4b hero Roadster behind ?model=roadster: Garage, Home showcase and race car. Nodes are the rig contract (src/garage-model-rig.ts).
   roadster2: {
     id: 'roadster2',
     url: 'models/roadster2/roadster2.glb',
     source: {
       master: 'assets-src/roadster2/roadster2.blend',
       script: 'assets-src/roadster2/build.py',
-      masterSha256: '1b235df29fcb7b3420964ce4d899c73eb110a1359745d6f66a149a8227070852',
-      scriptSha256: 'a3d34fc7ac9c242147d9ce06727078f5381e66ec6bc29df26b0d5306ffb3e1bc',
+      masterSha256: '7361b677f68450d9f1a5ab36affd7125abac53ccfe6df320b3dd185bf5f62997',
+      scriptSha256: '2e440bbde3129f28d44570ae31641d81ad840c00ead5b9d70d40c48e812ac1eb',
     },
-    glb: { sha256: 'e848a4dbb780b5bdfc9b09a24e6907292573fcc36ab8810b8335a51efc3eb01f', bytes: 1_383_800 },
+    glb: { sha256: '067f8922bdcee1e2a5ef1384ffbb1f241135ab16f1a4ffd0f0ffcafbd26b3344', bytes: 1_395_788 },
     license: { id: 'owned', creator: 'Skyline Rush project' },
     provenance: {
       blender: '5.2.3',
@@ -78,8 +78,9 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
       'body', 'wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr', 'wheel_fl_spin', 'wheel_fr_spin', 'wheel_rl_spin', 'wheel_rr_spin',
       'wing', 'wing_blade', 'wing_tip_l', 'wing_tip_r', 'wing_rams',
       'thruster_01', 'thruster_02', 'thruster_03', 'thruster_04', 'nozzle_rear_01', 'nozzle_rear_02', 'nozzle_rear_03', 'nozzle_rear_04',
+      'lift_fans', 'lift_fan_01', 'lift_fan_02', 'lift_fan_03', 'lift_fan_04',
     ],
-    materials: ['roadster_paint', 'roadster_glass', 'roadster_trim', 'roadster_carbon', 'roadster_tire', 'roadster_rim', 'roadster_light', 'roadster_lamp', 'roadster_nozzle'],
+    materials: ['roadster_paint', 'roadster_glass', 'roadster_trim', 'roadster_carbon', 'roadster_tire', 'roadster_rim', 'roadster_light', 'roadster_lamp', 'roadster_nozzle', 'roadster_fan'],
     lods: [{ quality: 'low', url: 'models/roadster2/roadster2-low.glb' }],
     fallback: 'procedural-car',
     decoders: ['meshopt', 'ktx2'],
