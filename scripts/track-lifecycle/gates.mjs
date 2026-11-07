@@ -99,7 +99,7 @@ export function checkCatalog({raceTrackIds,upcomingIds,evidenceById,approvals}) 
 }
 
 export function checkRelease(id,course,approvals) {
-  const rGates=checkCourse({...course,stage:'ready'}).filter(x=>R_GATES.includes(x.gate));
-  const ok=course.stage==='ready' && approvals.has(id) && rGates.every(x=>x.ok);
+  const results=checkCourse({...course,stage:'ready'});
+  const ok=course.stage==='ready' && approvals.has(id) && results.every(x=>x.ok);
   return [{id,gate:'RELEASE',ok,...(ok?{}:{reason:'ready stage, all six verified R gates and explicit user approval required'})}];
 }
