@@ -284,6 +284,31 @@ test('ITEM-12: item use, cooldown ready and a shield block each have their own s
   assert.equal(new Set([generic, pickup, use, ready, block]).size, 5);
 });
 
+test('risk ring envelopes stay below the pickup mix while retaining three audible notes', t => {
+  const { sound } = installAudio(t);
+  const original = globalThis.AudioContext.prototype.createGain;
+  const peaks = [];
+  globalThis.AudioContext.prototype.createGain = function() {
+    const node = original.call(this), ramp = node.gain.linearRampToValueAtTime;
+    node.gain.linearRampToValueAtTime = function(value, time) {
+      peaks.push(value);
+      return ramp.call(this, value, time);
+    };
+    return node;
+  };
+  sound.setEnabled(true);
+  const levels = name => {
+    peaks.length = 0;
+    sound.cue(name);
+    return [...peaks];
+  };
+  const pickup = levels('pickup'), risk = levels('ring-risk');
+  assert.equal(risk.length, 3, 'keep the three-note risk warning');
+  assert.ok(risk.every(value => value > 0), 'every note remains audible');
+  assert.ok(risk.reduce((a, b) => a + b, 0) < pickup.reduce((a, b) => a + b, 0) * 0.85,
+    'risk chime is quieter than the pickup before mixing with engine sound');
+});
+
 test('every ring type has its own bright chime, and a quick train steps up in pitch then resets after a pause', t => {
   const { nodes, sound } = installAudio(t);
   const made = [];

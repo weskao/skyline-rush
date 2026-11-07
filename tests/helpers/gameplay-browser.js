@@ -32,3 +32,9 @@ export const test = base.extend({
     await use(page);
   },
 });
+
+// `?model=roadster` (Task 4b): GLB roots in the main Home/race scene (Coming Soon and Garage stages have their own scenes),
+// compiled shader programs, and the hosts currently dressed (`#world[data-garage-model-instances]`).
+export const glbRoots = page => page.evaluate(() => { let n = 0; window.gameScene.scene.traverse(o => { if (o.userData.garageModel) n++; }); return n; });
+export const programs = page => page.evaluate(() => window.gameScene.renderer.info.programs.length);
+export const modelInstances = async page => JSON.parse((await page.locator('#world').getAttribute('data-garage-model-instances')) ?? '{}');

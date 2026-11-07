@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createGarageModel, garageModelId } from '../src/garage-model.ts';
+import { createGarageModel, dressesRaceCar, garageModelId } from '../src/garage-model.ts';
 
 const tick = () => new Promise(r => setTimeout(r, 0));
 
@@ -155,4 +155,83 @@ test('context restore: warmup recompiles every attached instance without loading
   assert.equal(compiled.length, 2);
   assert.equal(Number(dataset.garageModelWarmups), warmups + 2);
   assert.deepEqual(cache.log, ['load:pipeline-probe:high']);
+});
+
+// Task 4b: outside the Garage one car is shown at a time (Home showcase, Coming Soon showcase or the race car).
+const instanceCount = (...hosts) => hosts.reduce((n, h) => n + h.car.children.filter(c => c.userData.garageModel).length, 0);
+
+test('dressesRaceCar: only the roadster GLB dresses the Home showcase and race car; the probe stays Garage-only', () => {
+  assert.equal(dressesRaceCar('roadster2'), true);
+  assert.equal(dressesRaceCar('pipeline-probe'), false);
+});
+
+test("drive mode: showing another car moves the one instance there, with no second load", async () => {
+  const { model, cache, dataset } = setup();
+  const home = host(), showcase = host('showcase');
+  model.sync(true, 'high', home, 'drive');
+  await settle();
+  model.sync(true, 'high', showcase, 'drive');
+  await settle();
+  assert.equal(instanceCount(home, showcase), 1);
+  assert.equal(showcase.car.children.filter(c => c.userData.garageModel).length, 1);
+  assert.equal(drawn(home.body), true, 'Home car restored');
+  assert.deepEqual(Object.keys(JSON.parse(dataset.garageModelInstances)), ['showcase']);
+  assert.deepEqual(cache.log, ['load:pipeline-probe:high']);
+});
+
+test('garage mode keeps Home and Studio dressed; drive mode afterwards drops the Studio copy', async () => {
+  const { model, dataset } = setup();
+  const home = host(), studio = host('studio');
+  model.sync(true, 'high', home);
+  await settle();
+  model.sync(true, 'high', studio);
+  await settle();
+  assert.equal(instanceCount(home, studio), 2);
+  model.sync(true, 'high', home, 'drive');
+  assert.equal(instanceCount(home, studio), 1);
+  assert.deepEqual(Object.keys(JSON.parse(dataset.garageModelInstances)), ['home']);
+});
+
+test('race mode never attaches a new instance mid-race; it dresses again once the race stops', async () => {
+  const { model, compiled } = setup();
+  const home = host();
+  model.sync(true, 'high', home, 'race');
+  await settle();
+  model.sync(true, 'high', home, 'race');
+  await settle();
+  assert.equal(instanceCount(home), 0, 'loaded during the race but not shown');
+  assert.equal(compiled.length, 0, 'nothing compiled after GO');
+  model.sync(true, 'high', home, 'drive');
+  await settle();
+  assert.equal(instanceCount(home), 1);
+  model.sync(true, 'high', home, 'race');
+  assert.equal(instanceCount(home), 1, 'an instance shown before GO stays through the race');
+});
+
+test('a dress that finishes compiling after GO is not attached mid-race', async () => {
+  const { model } = setup();
+  const home = host();
+  model.sync(true, 'high', home, 'drive'); // load + compile start before GO
+  model.sync(true, 'high', home, 'race');
+  await settle();
+  model.sync(true, 'high', home, 'race');
+  await settle();
+  assert.equal(instanceCount(home), 0);
+});
+
+test('release: a disposed showcase car gives its instance back and is never dressed again', async () => {
+  const { model, dataset } = setup();
+  const showcase = host('showcase'), home = host();
+  model.sync(true, 'high', showcase, 'drive');
+  await settle();
+  const instance = showcase.car.children.find(c => c.userData.garageModel);
+  model.release(showcase);
+  assert.equal(instance.parent, null);
+  assert.equal(drawn(showcase.body), true);
+  assert.deepEqual(JSON.parse(dataset.garageModelInstances), {});
+  model.sync(true, 'high', home, 'drive');
+  await settle();
+  assert.equal(instanceCount(showcase), 0);
+  assert.equal(instanceCount(home), 1);
+  model.release(host('never-shown')); // unknown host: no-op
 });
