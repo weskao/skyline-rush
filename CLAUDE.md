@@ -79,6 +79,8 @@ models (Blender, GLB/glTF, textures) — every MCP server, plugin, CLI or npm pa
 installs ONLY in this project: MCP in project `.mcp.json` / `.codex/config.toml`, packages
 as exact-pinned `devDependencies`. Never use user-scope MCP or a global npm/uv install;
 remove any global copy found. Commit no credentials.
+Target-look concept board (mood only, not a screenshot or geometry source):
+`docs/designs/3d-pipeline/concept-art/skyline-rush-3d-target-concept-board.jpeg`.
 Three.js r186.1 is the *planned* target; until verified migration, obey currently
 installed r180 APIs. Read `docs/designs/3d-pipeline/threejs-r180-r186-migration.md`
 and scoped `.claude/rules/3d-asset-pipeline.md` when applicable. Never change

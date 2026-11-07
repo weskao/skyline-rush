@@ -6,6 +6,7 @@ Part of [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.
 **Produces:** real GLB-based hero car demonstrably matching approved front/side/rear reference while maintaining game controls and vehicle attachments.
 
 ## By project (committed once)
+- [ ] Use [concept-art/skyline-rush-3d-target-concept-board.jpeg](../concept-art/skyline-rush-3d-target-concept-board.jpeg) (top-left studio views) as the look target only; proportions, anchors and ports come from the photographs below and the existing simulation.
 - [ ] Read all docs/designs/roadster2-reference/ photographs, Garage visual contract and active roadster feature branch; reconcile its completed diff before editing any shared car file. Do not overwrite branch work.
 - [ ] RED tests for named four independent wheels, active wing, exact original VFX ports/collision frame/paint targets, fallback and camera visibility.
 - [ ] Sculpt the car in visually gated iterations (Blender MCP + `blender-image-to-3d`, both proven in Task 0). Export front, side, rear and rear-quarter same-camera comparisons; inspect body panel smoothness, lamp shapes, five-blade wheels and quad dark recessed thrusters. Commit the `.blend` master, Python source and validated GLB.
