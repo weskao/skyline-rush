@@ -2,7 +2,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { MODEL_MANIFEST, validateManifestEntry, modelUrl } from '../src/model-manifest.ts';
 import { validEntry } from './model-fixtures.js';
 
@@ -124,4 +126,12 @@ test('MODEL_MANIFEST: committed files exist and match recorded hashes', () => {
     assert.equal(sha256(entry.source.master), entry.source.masterSha256, `${entry.id}: master sha256`);
     assert.equal(sha256(entry.source.script), entry.source.scriptSha256, `${entry.id}: script sha256`);
   }
+});
+
+test('MODEL_MANIFEST: Blender auto-backup files are not tracked', () => {
+  const tracked = execFileSync('git', ['ls-files', '--', 'assets-src/'], {
+    cwd: fileURLToPath(root), encoding: 'utf8',
+  });
+  const backups = tracked.split(/\r?\n/).filter(path => /\.blend[1-9]\d*$/.test(path));
+  assert.deepEqual(backups, [], 'Do not commit Blender .blend1/.blend2 automatic backups');
 });
