@@ -1,3 +1,27 @@
+## 2026-11-07 — Vehicle lighting balance + Garage sun/moon lighting (`feature/vehicle-lighting-balance`)
+
+Symptom: Roadster rear lights and reflections too bright in races, Garage and Preview Studio; body details washed out.
+Root cause: the shared `RoomEnvironment` map lit nearly all of the car (zeroing every direct light changed nothing;
+zeroing the environment removed the rear glints), and its HDR light panels mirrored as white glints on the clear coat,
+rear fascia and nozzles. Paint/glass `envMapIntensity` (1.3–1.6) was a no-op: without an own `envMap`,
+`scene.environmentIntensity` wins. Studio added hemi 2 + key 3.2 + rim 2.4 at environment 0.8.
+
+- [x] Rear-only dimming rejected: the environment lights the whole body, so a darker rear would look disconnected.
+  Instead the whole car reflects one blurred 64-px PMREM (`car-reflections.ts`, blur 0.3, intensity 0.3) in race,
+  Garage Home, Studio and the home showcase car; rivals and world lighting unchanged. Rear LED brake 3.8→2.6,
+  boost 2.1→1.6, halo alpha 0.22→0.15.
+- [x] Studio lights rebalanced (hemi 1.2, key 2.4, rim 1.6, stage environment 0.5).
+- [x] Garage/Studio control: sun/moon toggle (Option A) chosen over a slider: one 44-px tap target that fits the
+  existing pose row on phones, no drag conflict with orbit, two tested presets. Moon = 0.6 pre-tone-mapping gain on the
+  Garage/Studio frame only; reset to 1 when the Garage closes. No per-frame cost.
+- [x] Race crop (Coast, 2× DPR) mean luma cruise 0.316→0.286, boost clipped pixels 0.024%→0%; corner/nozzle glints gone.
+- [x] RED→GREEN: `tests/car-reflections.test.js`, `tests/garage-lighting-browser.spec.js` (1440×900, 390×844) fail on
+  the old code, pass now; `npm test` 1942 passed, 0 failed.
+- [x] Real WebGL screenshots reviewed: race cruise/brake/boost, Garage Home + Studio in sun and moon at 1440×900,
+  390×844, 844×390; Obsidian paint keeps panel shading.
+- [ ] `make verify` (stopped at the user's request before the browser stage), shader-warmup / black-frame specs,
+  other tracks (night/tour exposure) and a real phone are not verified yet. Exact-HEAD CI pending.
+
 ## 2026-11-07 — Current-mechanism README refresh
 
 - [x] Reviewed README gameplay claims against race configuration/grid, shared drive rules,
