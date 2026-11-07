@@ -52,6 +52,13 @@ for (const [width, height, hasTouch] of [
       expect(await intro.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
       // Landscape phones put Start in the right rail (bottom-right thumb zone): fully on screen, never over the panel.
       const railStart = height <= 500 && width > height;
+      if (railStart) {
+        // The pinned Garage row shares Start's baseline and never covers the track cards (a portrait max-height lifted it 32px at 320 tall).
+        const [card, garage, start] = await Promise.all(['.track-select button', '#garage-button', '#start-button']
+          .map(selector => intro.locator(selector).first().boundingBox()));
+        expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
+        expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row bottom matches Start').toBeLessThanOrEqual(2);
+      }
       for (const selector of ['#start-button', '.history-button', '.flight-tip']) {
         const item = intro.locator(selector);
         if (!await item.isVisible()) continue;
