@@ -34,6 +34,10 @@ export function catchUpSettings(length: number) {
   };
 }
 
+// Per-step path: settings are recomputed only when the race length changes (a new race), not every step.
+let cached: { length: number; rules: ReturnType<typeof catchUpSettings> } | null = null;
+const settingsFor = (length: number) => cached?.length === length ? cached.rules : (cached = { length, rules: catchUpSettings(length) }).rules;
+
 const LANES = [-7.5, -2.5, 2.5, 7.5]; // game.js LANES (this module sits below game.js)
 const RING_TYPES = ['nitro', 'nitro', 'nitro', 'charge', 'slipstream']; // 60 / 20 / 20 %
 
@@ -56,7 +60,7 @@ export function spawnCatchUp(race: CatchUpRace): void {
     ? { active: false, next: 0, added: 0, tries: 0 } : null;
   const state = race.catchUp;
   if (!state) return;
-  const rules = catchUpSettings(race.length);
+  const rules = settingsFor(race.length);
   if (state.added >= rules.maxItems) return;
   const car = race.player;
   let leader = -Infinity;
