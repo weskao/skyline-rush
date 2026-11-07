@@ -37,7 +37,7 @@ test('native image sweep follows Low/Medium/High, disabled VFX and reduced-motio
 });
 
 test('real 3D paint uses clearcoat material without extra car geometry, shader sweep disabled on Low and reduced motion', () => {
-  const stage = createGarageStage(new THREE.Texture());
+  const stage = createGarageStage(new THREE.Texture(), new THREE.Texture());
   const car = stage.scene.children.find(child => child.userData.body);
   const body = car.userData.body, geometry = body.geometry, material = body.material;
   assert.ok(material instanceof THREE.MeshPhysicalMaterial);
