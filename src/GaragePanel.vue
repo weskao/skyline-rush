@@ -102,6 +102,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 </template>
 
 <style src="./garage-store-entry.css"></style>
+<style src="./garage-studio-entry.css"></style>
 <style>
 /* The full-screen Garage/Studio covers the home: stop rendering it, or iOS WebKit flashes its animated layers
    (START sheen, Garage pulse) over the dialog. Descendants too: airflow mode forces #start-button visible. */
