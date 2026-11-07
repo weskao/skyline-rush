@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TUTORIAL_COPY } from '../src/locales/tutorial-copy.ts';
-import { tutorialHintKey, tutorialTouchTarget, tutorialCueView, tutorialInstructionKey } from '../src/tutorial-ui.ts';
+import { tutorialHintKey, tutorialHighlight, tutorialTouchTarget, tutorialCueView, tutorialInstructionKey } from '../src/tutorial-ui.ts';
 import { DEFAULT_KEY_MAP } from '../src/key-map.ts';
 
 test('touch guide distinguishes slider, tilt and toggle-to-land variants', () => {
@@ -63,4 +63,17 @@ test('every cue variant has copy in both languages', () => {
     }
     for (const key of ['tutorial.slide.right', 'tutorial.slide.brake']) assert.doesNotMatch(TUTORIAL_COPY[lang][key], /highlight|高亮/, 'the pad is no longer outlined');
   }
+});
+
+test('the landing lesson shows no FLY outline, ripple target or key chip', () => {
+  for (const mode of ['buttons', 'slide', 'tilt']) {
+    for (const phase of ['ready', 'airborne', 'retry']) {
+      assert.equal(tutorialTouchTarget('land', phase, mode, 'fly'), null, `land/${phase}/${mode}`);
+    }
+  }
+  assert.deepEqual(tutorialHighlight('land', 'ready'), { action: null, keys: null });
+  assert.equal(tutorialHighlight('fly', 'ready').keys, 'fly');
+  assert.equal(tutorialHighlight('airChain', 'ready').keys, 'fly boost nitro');
+  assert.equal(tutorialHighlight('barrelRoll', 'ready').action, 'fly');
+  assert.equal(tutorialTouchTarget('fly', 'ready', 'buttons', 'fly'), '#touch-controls [data-control="fly"]');
 });
