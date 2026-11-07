@@ -246,8 +246,41 @@ test('disposal: resources dispose exactly once when the last handle releases; do
   assert.equal(calls.length, 2, 'released entry is removed; next load re-fetches');
 });
 
-test('single GLTFLoader backend; no renderer, KTX2 or Draco in the loader module', () => {
+test('single GLTFLoader backend; no renderer, no KTX2Loader construction and no Draco in the loader module', () => {
   const src = readFileSync(new URL('../src/asset-model-loader.ts', import.meta.url), 'utf8');
   assert.equal(src.match(/new GLTFLoader\(/g)?.length, 1);
-  assert.doesNotMatch(src, /WebGLRenderer|KTX2Loader|DRACOLoader/);
+  assert.doesNotMatch(src, /WebGLRenderer|new KTX2Loader|DRACOLoader/);
+});
+
+test('ktx2: without a loadKtx2 provider the entry falls back as "decoder-unavailable"', async () => {
+  const entry = { ...validEntry(), decoders: ['ktx2'] };
+  const result = await cacheWith(fakeFetch().fetch, entry).load('probe-test');
+  assert.equal(result.kind, 'fallback');
+  assert.equal(result.reason, 'decoder-unavailable');
+});
+
+test('ktx2: a rejecting provider falls back as "decoder-unavailable"', async () => {
+  const entry = { ...validEntry(), decoders: ['ktx2'] };
+  const result = await cacheWith(fakeFetch().fetch, entry, { loadKtx2: () => Promise.reject(new Error('no transcoder')) }).load('probe-test');
+  assert.equal(result.reason, 'decoder-unavailable');
+});
+
+test('ktx2: the provider runs at most once per cache and the model loads', async () => {
+  const a = { ...validEntry('probe-a'), decoders: ['ktx2'] };
+  const b = { ...validEntry('probe-b'), decoders: ['ktx2'] };
+  let loads = 0;
+  const cache = createModelCache({
+    baseUrl: BASE, manifest: { [a.id]: a, [b.id]: b }, fetch: fakeFetch().fetch,
+    loadKtx2: async () => { loads++; return { fake: 'KTX2Loader' }; },
+  });
+  const results = await Promise.all([cache.load('probe-a'), cache.load('probe-b')]);
+  assert.deepEqual(results.map(r => r.kind), ['model', 'model']);
+  assert.equal(loads, 1);
+});
+
+test('GLB requiring KHR_texture_basisu while the entry does not enable ktx2 is "invalid"', async () => {
+  const { fetch } = fakeFetch(() => new Response(makeGlb({ extensionsRequired: ['KHR_texture_basisu'] })));
+  const result = await cacheWith(fetch, validEntry(), { loadKtx2: async () => ({}) }).load('probe-test');
+  assert.equal(result.kind, 'fallback');
+  assert.equal(result.reason, 'invalid');
 });

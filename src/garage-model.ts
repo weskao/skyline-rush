@@ -4,8 +4,9 @@
 import type { Camera, Object3D, Scene, WebGLRenderer } from 'three';
 import type { ModelCache, ModelHandle } from './asset-model-loader.ts';
 import type { ModelQuality } from './model-manifest.ts';
+import { bindGarageRig, type GarageRig } from './garage-model-rig.ts';
 
-const MODEL_PARAMS: Readonly<Record<string, string>> = { probe: 'pipeline-probe' };
+const MODEL_PARAMS: Readonly<Record<string, string>> = { probe: 'pipeline-probe', roadster: 'roadster2' };
 const HIDDEN_LAYER = 31; // no camera enables it; the frame loop rewrites `visible` on car parts, never `layers`
 
 export function garageModelId(search: string): string | null {
@@ -25,7 +26,7 @@ export interface GarageModelDeps {
   dataset: Record<string, string | undefined>;
 }
 
-interface Dressing { instance: Object3D; masks: Map<Object3D, number> }
+interface Dressing { instance: Object3D; rig: GarageRig; masks: Map<Object3D, number> }
 
 export function createGarageModel({ id, cache, compile, dataset }: GarageModelDeps) {
   let open = false, quality: ModelQuality | null = null, handle: ModelHandle | null = null;
@@ -44,6 +45,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     const dressing = dressed.get(host);
     if (!dressing) return;
     dressing.instance.removeFromParent();
+    dressing.rig.dispose();
     for (const [object, mask] of dressing.masks) object.layers.mask = mask;
     dressed.delete(host);
   }
@@ -52,19 +54,23 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     pending.add(host); // request() and the per-frame sync() never dress one host twice at once
     const instance = from.instance();
     instance.userData.garageModel = id;
-    try { await compile(instance, host.scene); } catch { return; } finally { pending.delete(host); } // keeps the Roadster
+    const rig = bindGarageRig(host.car, instance);
+    rig.update();
+    try { await compile(instance, host.scene); } catch { rig.dispose(); return; } finally { pending.delete(host); } // keeps the Roadster
     warmups++;
-    if (handle !== from || !open) return; // closed or swapped while compiling
-    const masks = dressed.get(host)?.masks ?? new Map<Object3D, number>();
-    dressed.get(host)?.instance.removeFromParent();
+    if (handle !== from || !open) { rig.dispose(); return; } // closed or swapped while compiling
+    const old = dressed.get(host);
+    const masks = old?.masks ?? new Map<Object3D, number>();
+    old?.instance.removeFromParent();
+    old?.rig.dispose();
     if (!masks.size) {
       for (const part of host.car.children) {
-        if (part === host.keep) continue;
+        if (part === host.keep || part === host.car.userData.jets) continue; // aero VFX and flight fans stay drawn
         part.traverse(object => { masks.set(object, object.layers.mask); object.layers.set(HIDDEN_LAYER); });
       }
     }
     host.car.add(instance);
-    dressed.set(host, { instance, masks });
+    dressed.set(host, { instance, rig, masks });
     report();
   }
 
@@ -108,6 +114,8 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
       if (nextQuality !== quality) { quality = nextQuality; void request(nextQuality); }
       if (host) wanted.add(host);
       if (host && handle && !dressed.has(host) && !pending.has(host)) void dress(host, handle);
+      // shortcut: world.js calls sync before posing the car, so the GLB trails the pose by one frame; add a post-pose hook if it shows.
+      if (host) dressed.get(host)?.rig.update();
     },
     /** After webglcontextrestored: rebuild the programs of every shown instance; nothing is re-fetched. */
     warmAgain(): Promise<unknown> {
@@ -117,12 +125,23 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
   };
 }
 
+interface Ktx2Like { setTranscoderPath(path: string): Ktx2Like; detectSupport(renderer: never): Ktx2Like }
+type Ktx2Class = new () => Ktx2Like;
+const importKtx2 = async (): Promise<Ktx2Class> => (await import('three/examples/jsm/loaders/KTX2Loader.js')).KTX2Loader as unknown as Ktx2Class;
+
+/** One KTX2Loader per world, on the existing renderer; the transcoder is served from `public/basis/`. */
+export function createKtx2Provider(renderer: unknown, baseUrl: string, load: () => Promise<Ktx2Class> = importKtx2) {
+  let loader: Promise<Ktx2Like> | undefined;
+  return (): Promise<Ktx2Like> => (loader ??= load().then(Ktx2 => new Ktx2().setTranscoderPath(`${baseUrl}basis/`).detectSupport(renderer as never)));
+}
+
 /** World wiring: null unless the page opted in. The loader (GLTFLoader) is imported only then. */
 export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick<WebGLRenderer, 'compileAsync'>, camera: Camera,
   search = location.search, baseUrl = import.meta.env.BASE_URL) {
   const id = garageModelId(search);
   if (!id) return null;
-  const cache = import('./asset-model-loader.ts').then(({ createModelCache }) => createModelCache({ baseUrl }));
+  const loadKtx2 = createKtx2Provider(renderer, baseUrl);
+  const cache = import('./asset-model-loader.ts').then(({ createModelCache }) => createModelCache({ baseUrl, loadKtx2 }));
   const model = createGarageModel({
     id, dataset: canvas.dataset,
     cache: { load: async (key, options) => (await cache).load(key, options) },

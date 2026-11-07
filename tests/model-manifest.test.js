@@ -88,12 +88,12 @@ test('lods: quality high|low, unique, url rules apply', () => {
   assert.deepEqual(validateManifestEntry(ok, ok.id), []);
 });
 
-test('fallback and decoders: known keys only (meshopt only in Phase 2)', () => {
+test('fallback and decoders: known keys only (meshopt, and ktx2 since Task 4; no Draco)', () => {
   rejects('fallback', e => { e.fallback = 'cube'; });
-  rejects('decoders', e => { e.decoders = ['ktx2']; });
   rejects('decoders', e => { e.decoders = ['draco']; });
+  rejects('decoders', e => { e.decoders = ['ktx2', 'ktx2']; });
   const ok = structuredClone(validEntry());
-  ok.decoders = ['meshopt'];
+  ok.decoders = ['meshopt', 'ktx2'];
   assert.deepEqual(validateManifestEntry(ok, ok.id), []);
 });
 

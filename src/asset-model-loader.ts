@@ -4,6 +4,7 @@ import type { Material, Mesh, Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import type { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { MODEL_MANIFEST, modelUrl } from './model-manifest.ts';
 import type { FallbackKey, ModelManifestEntry, ModelQuality } from './model-manifest.ts';
 
@@ -21,6 +22,8 @@ export interface ModelCacheOptions {
   fetch?: (url: string, init: { signal: AbortSignal }) => Promise<Response>;
   timeoutMs?: number;
   loadMeshopt?: () => Promise<unknown>;
+  /** A KTX2Loader already given its transcoder path and `detectSupport(renderer)` by the world; absent → 'decoder-unavailable'. */
+  loadKtx2?: () => Promise<unknown>;
 }
 
 export interface ModelCache {
@@ -63,9 +66,10 @@ async function defaultLoadMeshopt(): Promise<unknown> {
   return decoder;
 }
 
-function parseGlb(buffer: ArrayBuffer, decoder: unknown): Promise<{ scene: Object3D; required: string[] }> {
+function parseGlb(buffer: ArrayBuffer, decoder: unknown, ktx2: unknown): Promise<{ scene: Object3D; required: string[] }> {
   const loader = new GLTFLoader();
   if (decoder) loader.setMeshoptDecoder(decoder as typeof MeshoptDecoder);
+  if (ktx2) loader.setKTX2Loader(ktx2 as KTX2Loader);
   return new Promise((resolve, reject) => {
     try {
       loader.parse(buffer, '', gltf => resolve({ scene: gltf.scene, required: gltf.parser.json.extensionsRequired ?? [] }), reject);
@@ -96,21 +100,28 @@ function inspect(scene: Object3D, entry: ModelManifestEntry): Loaded {
 
 export function createModelCache(options: ModelCacheOptions): ModelCache {
   const { baseUrl, manifest = MODEL_MANIFEST, timeoutMs = 15000, loadMeshopt = defaultLoadMeshopt } = options;
+  const loadKtx2 = options.loadKtx2 ?? (() => Promise.reject(new Error('no KTX2 provider')));
   const doFetch = options.fetch ?? ((url, init) => globalThis.fetch(url, init));
   const slots = new Map<string, Slot>();
   let meshopt: Promise<unknown> | undefined;
+  let ktx2: Promise<unknown> | undefined;
 
   // At most one decoder load per cache; a rejection is not remembered so a transient failure can retry.
   const meshoptDecoder = (): Promise<unknown> => (meshopt ??= loadMeshopt().catch(error => { meshopt = undefined; throw error; }));
+  const ktx2Loader = (): Promise<unknown> => (ktx2 ??= loadKtx2().catch(error => { ktx2 = undefined; throw error; }));
 
   async function fetchAndParse(entry: ModelManifestEntry, url: string, signal: AbortSignal): Promise<Loaded> {
     const response = await doFetch(url, { signal }).catch(() => { throw new Fail('network'); });
     if (!response.ok) throw new Fail('missing');
     const buffer = await response.arrayBuffer().catch(() => { throw new Fail('network'); });
     const wantsMeshopt = entry.decoders.includes('meshopt');
-    const decoder = wantsMeshopt ? await meshoptDecoder().catch(() => { throw new Fail('decoder-unavailable'); }) : undefined;
-    const parsed = await parseGlb(buffer, decoder).catch(() => { throw new Fail('invalid'); });
+    const wantsKtx2 = entry.decoders.includes('ktx2');
+    const unavailable = (): never => { throw new Fail('decoder-unavailable'); };
+    const decoder = wantsMeshopt ? await meshoptDecoder().catch(unavailable) : undefined;
+    const ktx2 = wantsKtx2 ? await ktx2Loader().catch(unavailable) : undefined;
+    const parsed = await parseGlb(buffer, decoder, ktx2).catch(() => { throw new Fail('invalid'); });
     if (!wantsMeshopt && parsed.required.includes('EXT_meshopt_compression')) throw new Fail('invalid');
+    if (!wantsKtx2 && parsed.required.includes('KHR_texture_basisu')) throw new Fail('invalid');
     return inspect(parsed.scene, entry);
   }
 

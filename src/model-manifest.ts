@@ -1,7 +1,7 @@
 // Phase 2 model manifest. Contract: docs/designs/3d-pipeline/phase2-model-contracts.md §1.
 export const FALLBACK_KEYS = ['procedural-car'] as const;
 export type FallbackKey = (typeof FALLBACK_KEYS)[number];
-export const DECODERS = ['meshopt'] as const;
+export const DECODERS = ['meshopt', 'ktx2'] as const;
 export type Decoder = (typeof DECODERS)[number];
 export type ModelQuality = 'high' | 'low';
 
@@ -107,6 +107,7 @@ export function validateManifestEntry(entry: ModelManifestEntry, key: string): s
 
   if (!(FALLBACK_KEYS as readonly string[]).includes(entry.fallback)) bad('fallback', 'unknown fallback key');
   if (entry.decoders.some(d => !(DECODERS as readonly string[]).includes(d))) bad('decoders', 'unknown decoder');
+  if (dupes(entry.decoders)) bad('decoders', 'must be unique');
 
   if (!positiveInt(budgets.triangles)) bad('budgets.triangles', 'must be a positive integer');
   if (!positiveInt(budgets.bytes)) bad('budgets.bytes', 'must be a positive integer');
