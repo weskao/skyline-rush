@@ -40,6 +40,7 @@ export type UpcomingReadiness = 'preview' | 'development' | 'playable';
 const UPCOMING_READINESS: Readonly<Partial<Record<UpcomingTrackId, Exclude<UpcomingReadiness, 'preview'>>>> = Object.freeze({
   'frostbite-canyon': 'playable',
   'stormline-megacity': 'playable',
+  'volcanic-crown': 'playable',
 });
 export const upcomingReadiness = (id: string): UpcomingReadiness =>
   isUpcomingTrack(id) ? UPCOMING_READINESS[id] ?? 'preview' : 'preview';
