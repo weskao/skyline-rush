@@ -6,7 +6,8 @@ import { createRace, stepRace, setLayoutSeed } from '../src/game.js';
 // Reproduce full race finishes; resetting layout seeds makes the same track reproducible at each tick rate.
 function finish(difficulty, fps, seed, pace) {
   setLayoutSeed(track => track.seed + seed * 7919);
-  const race = createRace(FROSTBITE_ID, { mode: 'custom', rivals: 7, difficulty });
+  const race = createRace(FROSTBITE_ID); // Frostbite is Classic-only; vary AI skill without changing its mode.
+  race.config = { ...race.config, difficulty };
   if (pace !== undefined) race.rivalPace = pace;
   race.phase = 'racing';
   for (let i = 0; i < 400 * fps && race.phase === 'racing'; i++)
