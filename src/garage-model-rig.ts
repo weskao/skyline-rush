@@ -46,17 +46,23 @@ function boundPairs(car: Object3D, instance: Object3D): [Object3D, Object3D][] {
 export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
   const parts = car.userData as CarParts;
   const pairs = boundPairs(car, instance);
-  const owned = new Map<Material, Tinted>();
+  const finish = parts.body?.material as Material | undefined;
+  // Post-hit grace (grace-fade.ts) makes the player car's materials transparent when it is built and fades them.
+  const fades = finish?.transparent === true;
+  const owned = new Map<Material, Tinted>(); // per instance; all of them when fading, so the cached original keeps its opacity
   instance.traverse(object => {
     const mesh = object as Mesh;
-    if (!mesh.isMesh || Array.isArray(mesh.material) || !/_(paint|light)$/.test(mesh.material.name)) return;
+    if (!mesh.isMesh || Array.isArray(mesh.material) || !(fades || /_(paint|light)$/.test(mesh.material.name))) return;
     if (!owned.has(mesh.material)) owned.set(mesh.material, mesh.material.clone() as Tinted);
     mesh.material = owned.get(mesh.material)!;
   });
   const paints = [...owned.values()].filter(m => m.name.endsWith('_paint'));
   const lights = [...owned.values()].filter(m => m.name.endsWith('_light'));
+  // Blending from bind time, which is before compile: turning it on at the first hit would compile programs mid-race.
+  const faded: [Material, number][] = fades ? [...owned.values()].map(m => { m.transparent = true; return [m, m.opacity]; }) : [];
+  const solid = finish?.opacity || 1; // the procedural body's opacity outside grace (dressing happens before GO)
+  let fade = 1;
   // Task 4c: a Garage-only paint shader hook (the Studio sweep, garage-paint-shader.ts) carries over to the GLB paint.
-  const finish = parts.body?.material as Material | undefined;
   if (finish && Object.hasOwn(finish, 'onBeforeCompile')) for (const paint of paints) {
     paint.onBeforeCompile = finish.onBeforeCompile;
     paint.customProgramCacheKey = finish.customProgramCacheKey;
@@ -88,6 +94,10 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
         paint.roughness = body.roughness;
       }
       if (parts.brakeLight) for (const light of lights) light.emissive?.copy(parts.brakeLight.color);
+      if (faded.length && finish!.opacity / solid !== fade) {
+        fade = finish!.opacity / solid;
+        for (const [material, base] of faded) material.opacity = base * fade;
+      }
     },
     dispose() {
       for (const rider of riders) if (rider.parent === glbBody) { parts.body!.add(rider); rider.geometry = parts.body!.geometry; frameOf(rider)?.set(0, 0, 0, 1); }

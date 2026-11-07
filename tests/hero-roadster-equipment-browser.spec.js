@@ -34,7 +34,7 @@ const audit = page => page.evaluate(() => {
   car.traverse(o => { if (o.material?.isShaderMaterial && shown(o) && !o.layers.test(camera.layers) && !shell.test(o.name)) hidden.push(o.name); });
   const glow = car.getObjectByName('Launch flare body glow');
   return {
-    paint: body.material.color.getHexString(), proc: car.userData.body.material.color.getHexString(),
+    paint: body.material.color.getHexString(), proc: car.userData.body.material.color.getHexString(), opacity: body.material.opacity,
     sweep: Object.hasOwn(body.material, 'onBeforeCompile'), hidden,
     glow: glow && { onGlb: glow.parent === body, drawn: glow.layers.test(camera.layers), shown: shown(glow) },
     gpu: { programs: renderer.info.programs.length, geometries: renderer.info.memory.geometries },
@@ -117,6 +117,8 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
   await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
   await page.waitForTimeout(ciTimeout(300));
   const before = await programs(page);
+  await page.evaluate(() => { window.gameplay.race.player.cooldown = 1.5; }); // a hit's post-hit grace (grace-fade.ts)
+  await expect.poll(async () => (await audit(page)).opacity, { timeout: ciTimeout(5000) }).toBeLessThan(0.75); // the GLB pulses too
   await page.keyboard.down('ShiftLeft');
   await page.waitForTimeout(ciTimeout(600));
   await page.keyboard.up('ShiftLeft');
