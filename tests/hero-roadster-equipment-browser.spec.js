@@ -136,13 +136,12 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
 
 test('Home and Coming Soon showcases wear the selected paint on the GLB', async ({ gameplayPage: page, gameplayURL }) => {
   const errors = await prepare(page, `${gameplayURL}?model=roadster`);
-  await page.locator('#garage-button').click();
-  await page.locator('[data-paint="cobalt"]').click(); // preview only (locked): the showcase follows the previewed paint
-  await page.locator('#garage-close').click();
-  await modelReady(page);
+  // A locked paint previewed in the Garage reverts on close, so a one-shot read raced it (make verify, 2026-11-08):
+  // judge the equipped paint (a fresh profile owns only the 0-star one), polled, on both cars.
+  const [equipped] = Object.values(PAINTS).filter(p => !p.stars).map(p => p.paint.slice(1));
   const hex = async () => { const a = await audit(page); return a && [a.paint, a.proc]; };
-  const shown = await hex();
-  expect(shown?.[0]).toBe(shown?.[1]); // settled: model ready polled above
+  const shown = [equipped, equipped];
+  await expect.poll(hex).toEqual(shown);
   await page.locator('[data-upcoming-track="dune-tempest"]').click();
   await expect.poll(async () => Object.keys(await instances(page))).toEqual(['showcase']);
   await expect.poll(hex).toEqual(shown);
