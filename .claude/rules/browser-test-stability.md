@@ -47,6 +47,13 @@ Write every assertion so that runner speed cannot change its outcome.
 ## Budgets and retries
 
 - Wrap fixed waits and timeouts in `ciTimeout()`. This is enforced by the same test file.
+- **A test must fit its budget with room to spare on CI.** CI steps the game at about 1/4 speed (each slow
+  frame is clamped to 0.05 s), so a flow that plays N s of game time needs about 4N s of wall clock. A test
+  whose passing CI run (the `(1.7m)` in the job log) uses more than about half of its budget gets an explicit
+  `test.setTimeout(ciTimeout(…))`, set in the shared flow helper so every caller inherits it. Example: the
+  keyboard full-practice tests took 1.7 min of the 135 s default and timed out mid-glide on slower runners
+  (develop, 2026-11-07); `keyboardToNitro` now sets `FULL_PRACTICE_BUDGET`, guarded in `browser-timeouts.test.js`.
+  A `Test timeout … exceeded` with the page still progressing is a budget miss; a frozen page is a bug.
 - CI retries a failed test once (`retries` in `playwright.config.js`). The retry absorbs runner
   stalls such as `browserType.launch: Timeout 180000ms`. It does **not** make a flake
   acceptable. The `github` reporter annotates every test that passed only on retry. Treat that
