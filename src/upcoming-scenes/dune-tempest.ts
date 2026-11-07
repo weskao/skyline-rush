@@ -11,8 +11,9 @@ const SAND = 0xd99445;
 const STONE = 0xa65535;
 const ROAD_WIDTH = 14;
 const WAYPOINTS: [number, number, number][] = [
-  [0, 0, 54], [0, 0, 28], [0, 0, 0], [-3, 0, -24],
-  [-20, 0, -49], [-45, 0, -53], [-62, 0, -35], [-73, 0, -18],
+  // The first 46 m run straight under the shared showcase player and rival slots (x 0..4.5).
+  [0, 0, 54], [0, 0, 28], [0, 0, 0], [1, 0, -24], [3, 0, -44],
+  [-14, 0, -60], [-45, 0, -53], [-62, 0, -35], [-73, 0, -18],
   [-86, 0, -22], [-98, 0, -51], [-90, 0, -81], [-63, 0, -99],
   [-27, 0, -105], [8, 0, -113], [31, 0, -132], [28, 0, -151],
   [8, 0, -161], [-6, 0, -149], [-21, 0, -138], [-35, 0, -150],
@@ -144,10 +145,11 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   const add = <T extends THREE.Object3D>(object: T): T => { group.add(object); return object; };
 
   const roadPath = path(WAYPOINTS);
-  const surface = new THREE.MeshStandardMaterial({ color: 0xe1ac69, roughness: 1, side: THREE.DoubleSide });
+  // Packed ochre track, darker than the dunes, so pale paints (Pearl, rivals) read against it.
+  const surface = new THREE.MeshStandardMaterial({ color: 0xa8703f, roughness: 1, side: THREE.DoubleSide });
   add(terrain(roadPath));
   add(ribbon(roadPath, ROAD_WIDTH + 6,
-    new THREE.MeshStandardMaterial({ color: 0xb77740, roughness: 1, side: THREE.DoubleSide }),
+    new THREE.MeshStandardMaterial({ color: 0x8a5634, roughness: 1, side: THREE.DoubleSide }),
     'Ground road shoulder'));
   add(ribbon(roadPath, ROAD_WIDTH, surface, 'Ground sand road'));
 
@@ -211,8 +213,9 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   sun.name = 'Sunset sun';
   sun.position.set(112, 80, -249);
   add(sun);
-  add(new THREE.HemisphereLight(0xffdeb2, 0x76503a, 2.0));
-  const light = new THREE.DirectionalLight(0xffbb72, 2.35);
+  // Stacked on the showcase's own lights: brighter washes sand, sky and pale cars into one glare.
+  add(new THREE.HemisphereLight(0xffdeb2, 0x76503a, 1.6));
+  const light = new THREE.DirectionalLight(0xffbb72, 1.95);
   light.position.set(80, 140, -125);
   add(light);
 
@@ -255,7 +258,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
     // A slow, bounded golden-hour shift keeps the distant haze alive without flicker.
     ownedFog.density = (quality === 'low' ? 0.0014 : 0.00185)
       + 0.00013 * Math.sin(time * 0.05);
-    light.intensity = 2.35 + 0.15 * Math.sin(time * 0.045);
+    light.intensity = 1.95 + 0.15 * Math.sin(time * 0.045);
     const positions = dustGeometry.getAttribute('position') as THREE.BufferAttribute;
     const data = positions.array as Float32Array;
     for (let i = 0; i < budget; i++) {
