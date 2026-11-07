@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, stepRace, DRIFT_MIN_SPEED } from '../src/game.js';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from '../src/interactive-tutorial.ts';
+import { DRIFT_ENTRY_KMH } from './helpers/tutorial-practice.js';
 
 const DT = 1 / 60;
 function tick(session, action = {}, dt = DT) {
@@ -253,6 +254,32 @@ test('a completed practice keeps a live, player-steered free cruise on a road th
   assert.equal(session.complete, true);
 });
 
+test('braking re-arms NITRO practice on release without waiting for the burst to expire', () => {
+  const session = createInteractiveTutorial();
+  for (const action of [
+    { throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true },
+    { fly: true }, { fly: false }, { boost: true },
+  ]) perform(session, action);
+  performAirChain(session);
+  performBarrelRoll(session);
+  const car = session.race.player;
+  assert.equal(session.step, 'nitro');
+  tick(session, { nitro: true });
+  tick(session, { nitro: true, brake: true });
+  assert.equal(session.coachPhase, 'retry');
+  assert.ok(car.nitroTime > 0);
+  tick(session);
+  assert.equal(car.nitroTime, 0, 'practice ends the interrupted burst on release');
+  assert.equal(car.nitro, 1, 'a fresh NITRO charge is provided');
+  // The previous lesson's 0.8s congratulations can still overlay the re-armed 'ready' state.
+  for (let i = 0; i < 60; i++) tick(session);
+  assert.equal(session.coachPhase, 'ready');
+  tick(session, { nitro: true });
+  assert.equal(session.coachPhase, 'sprinting');
+  for (let i = 0; i < 180 && !session.complete; i++) tick(session);
+  assert.equal(session.complete, true);
+});
+
 test('an interrupted NITRO lesson refills only after release and remains player-controlled', () => {
   const session = createInteractiveTutorial();
   for (const action of [
@@ -345,6 +372,24 @@ test('neutral tutorial controls do not pull left and wrong-step steering still o
   const settledX = car.x;
   for (let frame = 0; frame < 100; frame++) advance();
   assert.ok(Math.abs(car.x - settledX) < 0.001, 'once steering settles, the car must not auto-center');
+});
+
+test('the keyboard practice drift entry speed outlasts the first payout tier before the rail', () => {
+  const session = createInteractiveTutorial(), car = session.race.player;
+  for (const action of [{ throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true }]) perform(session, action);
+  assert.equal(session.step, 'drift');
+  // The browser spec holds BRAKE until it sees the lesson, then waits for auto-throttle to reach the entry speed.
+  while (car.speed * 3.6 >= DRIFT_ENTRY_KMH) tick(session, { brake: true });
+  while (car.speed * 3.6 < DRIFT_ENTRY_KMH) tick(session);
+  let frames = 0;
+  while (!(car.drift?.time >= 1)) {
+    tick(session, { brake: true, steer: -1 });
+    assert.ok(++frames < 90, 'the drift ended below DRIFT_MIN_SPEED before the first payout tier');
+  }
+  // Six frames (0.1 s) of runner latency between the charged progress bar and the BRAKE release.
+  for (let i = 0; i < 6; i++) tick(session, { brake: true, steer: -1 });
+  tick(session);
+  assert.equal(session.step, 'fly', 'a held one-way drift still pays before it reaches the rail');
 });
 
 test('drift cannot complete without a real payout and must not reward a crash', () => {

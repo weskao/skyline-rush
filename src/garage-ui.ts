@@ -6,6 +6,7 @@ import type { GaragePose } from './track-preview.ts';
 import { garageStudioView, updateGarageStudioView, updateGarageView } from './garage-view-state.ts';
 import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit, setGarageMode, toggleGarageWing } from './garage-camera.ts';
 import type { GarageCamera } from './garage-camera.ts';
+import type { GarageLighting } from './garage-stage.ts';
 import { t } from './i18n.ts';
 
 type Paint = (typeof PAINTS)[keyof typeof PAINTS];
@@ -18,6 +19,8 @@ interface GarageWorld {
   setGarageCamera(camera: GarageCamera | null): void;
   /** Home page only: poses the track-showcase car like the Studio's ground / flight / wing buttons. */
   setGaragePose?(pose: GaragePose | null): void;
+  /** Sun (bright) / moon (dim) lighting for Garage Home and the Studio; racing is unaffected. */
+  setGarageLighting?(level: GarageLighting): void;
   setCosmeticSkins?(ids: Record<SkinCategory, SkinId>): void;
   setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>, home?: boolean): void;
   inspectCosmeticPreview?(): {
@@ -196,6 +199,7 @@ export function setupGarageUI({
     preview.after(dock);
     world.resize();
     previewPaint(getEquippedPaint());
+    world.setGarageLighting?.(garageStudioView.lighting);
     autoPaused = false;
     setCamera(defaultGarageCamera());
     pushPage('home');
@@ -236,6 +240,11 @@ export function setupGarageUI({
       setGarageMode(camera, button.dataset.garageMode as GarageCamera['mode']), garageStudioView.angle,
     )));
   $('#garage-wing').addEventListener('click', () => setCamera(toggleGarageWing(camera), garageStudioView.angle));
+  $('#garage-lighting').addEventListener('click', () => {
+    const lighting: GarageLighting = garageStudioView.lighting === 'bright' ? 'dim' : 'bright';
+    updateGarageStudioView({ lighting });
+    getWorld()?.setGarageLighting?.(lighting);
+  });
   $('#garage-rotate-left').addEventListener('click', () => setCamera(dragGarageCamera(camera, -40, 0)));
   $('#garage-rotate-right').addEventListener('click', () => setCamera(dragGarageCamera(camera, 40, 0)));
   $('#garage-zoom-in').addEventListener('click', () => setCamera(zoomGarageCamera(camera, .85)));

@@ -31,22 +31,20 @@ export interface DrivenRival extends RivalNitroState {
   laneShift?: number; // read by avoidObstacles (car-collisions.js)
 }
 export interface DriveRace {
-  trackId: string; elapsed: number; length: number; rivalPace?: number; config: { difficulty?: string };
+  trackId: string; elapsed: number; length: number; rivalPace?: number; rivalSpread?: number; config: { difficulty?: string };
   sections: readonly { type: string; from: number; to: number }[];
   player: Car; traffic: readonly Car[]; rivals: readonly Car[];
 }
 
-// Frostbite is almost twice a classic sprint's length. Preserve the distinct back/middle/front
-// grid pace from its original seven-car tuning; generic skill spreads otherwise let all seven
-// BOOST-capable rivals outrun a throttle-only player even with the leading-rival rubber band.
-// Other courses and the difficulty-dependent BOOST/NITRO/steering rules keep their defaults.
-const FROSTBITE_SKILL: Readonly<Record<string, RivalSkill>> = Object.fromEntries(
-  Object.entries(RIVAL_SKILL).map(([level, skill]) => [level, { ...skill, spread: 0.03 }]),
-);
-export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill =>
-  (race.trackId === 'frostbite-canyon' ? FROSTBITE_SKILL : RIVAL_SKILL)[rivalLevel(race)] ?? RIVAL_SKILL.normal!;
+// On Frostbite's 13.8 km race, continuous AI BOOST made every Normal rival outrun a throttle-only player.
+// Keep the leader's pace, but spread the remaining grid so slower drivers can still be overtaken.
+const FROSTBITE_NORMAL_SKILL: RivalSkill = { ...RIVAL_SKILL.normal!, spread: 0.028 };
+export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill => {
+  const level = rivalLevel(race);
+  return level === 'normal' && race.trackId === 'frostbite-canyon' ? FROSTBITE_NORMAL_SKILL : RIVAL_SKILL[level] ?? RIVAL_SKILL.normal!;
+};
 /** The rival's throttle cap before BOOST or NITRO: never above the player's MAX_SPEED. */
-export const rivalBaseCap = (skill: RivalSkill, slot: number): number => MAX_SPEED * Math.min(1, skill.pace - skill.spread * (SLOTS - 1 - slot));
+export const rivalBaseCap = (skill: RivalSkill, slot: number, spread = skill.spread): number => MAX_SPEED * Math.min(1, skill.pace - spread * (SLOTS - 1 - slot));
 
 // Nothing within a second's travel on its line: a NITRO fired into a car's tail is a wasted charge.
 export function laneClear(race: DriveRace, rival: DrivenRival): boolean {
@@ -85,7 +83,7 @@ export function driveRival(race: DriveRace, rival: DrivenRival, slot: number, ho
   else if (rival.boosting) rival.fuel -= BOOST_DRAIN * dt;
   else rival.fuel += (race.sections.some(s => s.type === 'uphill' && rival.distance >= s.from && rival.distance < s.to) ? UPHILL_FUEL_REGEN : GROUND_FUEL_REGEN) * dt;
   rival.fuel = Math.min(100, Math.max(0, rival.fuel));
-  const cap = Math.min(MAX_SPEED, rivalBaseCap(skill, slot) * (race.rivalPace ?? 1)) + (nitro ? NITRO_CAP_BONUS : rival.boosting ? BOOST_CAP_BONUS : 0) +
+  const cap = Math.min(MAX_SPEED, rivalBaseCap(skill, slot, race.rivalSpread) * (race.rivalPace ?? 1)) + (nitro ? NITRO_CAP_BONUS : rival.boosting ? BOOST_CAP_BONUS : 0) +
     (rival.slipstream.active ? SLIPSTREAM_CAP_BONUS : 0);
   const accel = THROTTLE_ACCEL + (rival.boosting ? BOOST_ACCEL : 0) + (nitro ? NITRO_ACCEL : 0);
   rival.speed = rival.speed > cap ? Math.max(cap, rival.speed - OVER_CAP_DECEL * dt) : Math.min(cap, rival.speed + accel * dt);

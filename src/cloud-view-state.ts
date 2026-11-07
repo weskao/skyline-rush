@@ -18,6 +18,13 @@ export interface CloudView {
   syncDisabled: boolean;
   loginDisabled: boolean;
   deleteDisabled: boolean;
+  /** Race results panel: one cloud status line plus its own sign-in button (result-cloud-status.ts). */
+  resultHidden: boolean;
+  resultText: string;
+  resultState: string;
+  resultBusy: boolean;
+  resultSignInHidden: boolean;
+  resultSignInDisabled: boolean;
 }
 
 export const cloudView = reactive<CloudView>({
@@ -37,6 +44,12 @@ export const cloudView = reactive<CloudView>({
   syncDisabled: true,
   loginDisabled: false,
   deleteDisabled: false,
+  resultHidden: true,
+  resultText: '',
+  resultState: 'signed-out',
+  resultBusy: false,
+  resultSignInHidden: true,
+  resultSignInDisabled: false,
 });
 
 export function updateCloudView(changes: Partial<CloudView>): void {

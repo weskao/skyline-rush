@@ -133,31 +133,60 @@ test('on an opening map Easy and Normal rivals drive at intro skill: slower and 
   assert.equal(rivalSkill(createRace('canyon', { mode: 'classic' })), RIVAL_SKILL.normal, 'the third map is plain Normal');
 });
 
-test('long-course rivalPace preserves difficulty scaling without raising unboosted rivals above player cap', () => {
+test('long-course rivalPace respects the unboosted throttle cap on every difficulty at 30/60/120 Hz', () => {
+  for (const difficulty of DIFFICULTIES) {
+    for (const fps of [30, 60, 120]) {
+      const race = bare(difficulty), rival = race.rivals[6];
+      const throttleOnly = seconds => {
+        for (let i = 0; i < seconds * fps; i++) {
+          // Fuel refills every frame: setting it to zero only once accidentally enables BOOST.
+          rival.fuel = 0;
+          rival.boosting = false;
+          driveRival(race, rival, 6, 0, 1 / fps);
+          assert.ok(rival.speed <= MAX_SPEED + 1e-9, `${difficulty} ${fps}Hz throttle cap ${rival.speed}`);
+        }
+      };
+      Object.assign(rival, { speed: 0, nitro: 0, nitroTime: 0 });
+      race.rivalPace = 1.3;
+      throttleOnly(20);
+      assert.equal(rival.speed, MAX_SPEED, `${difficulty} ${fps}Hz fast course`);
+      Object.assign(rival, { speed: 0, nitro: 0, nitroTime: 0 });
+      race.rivalPace = 0.5;
+      throttleOnly(20);
+      assert.equal(rival.speed, rivalBaseCap(RIVAL_SKILL[difficulty], 6) * 0.5,
+        `${difficulty} ${fps}Hz slow course retains the pace multiplier`);
+    }
+  }
+});
+
+test('long-course rivalPace preserves difficulty scaling without raising throttle-only rivals above player cap', () => {
   const race = bare('easy'), rival = race.rivals[6];
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 1.3;
-  // Keep the tank empty EACH frame: grounded cars recover fuel, and would otherwise enable BOOST.
-  for (let i = 0; i < 20 * 60; i++) { rival.fuel = 0; driveRival(race, rival, 6, 0, 1 / 60); }
-  assert.equal(rival.boosting, false, 'a throttle-only cap test must not activate BOOST');
+  // An empty initial tank recharges; force BOOST to remain unavailable at every simulation step.
+  for (let i = 0; i < 20 * 60; i++) {
+    rival.fuel = 0;
+    driveRival(race, rival, 6, 0, 1 / 60);
+  }
   assert.equal(rival.speed, MAX_SPEED, 'fast courses still respect the player throttle cap');
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 0.5;
-  // Keep the tank empty EACH frame: grounded cars recover fuel, and would otherwise enable BOOST.
-  for (let i = 0; i < 20 * 60; i++) { rival.fuel = 0; driveRival(race, rival, 6, 0, 1 / 60); }
-  assert.equal(rival.boosting, false, 'a throttle-only cap test must not activate BOOST');
+  for (let i = 0; i < 20 * 60; i++) {
+    rival.fuel = 0;
+    driveRival(race, rival, 6, 0, 1 / 60);
+  }
   assert.equal(rival.speed, rivalBaseCap(RIVAL_SKILL.easy, 6) * 0.5, 'slower courses retain their pace multiplier');
 });
 
-test('Frostbite keeps the original seven-car pace spread without changing other courses or difficulty order', () => {
-  for (const difficulty of DIFFICULTIES) {
-    const frostbite = rivalSkill({ trackId: 'frostbite-canyon', config: { difficulty } });
-    const back = rivalBaseCap(frostbite, 0), front = rivalBaseCap(frostbite, 6);
-    assert.ok(front - back >= 14, `${difficulty}: back and middle rivals must remain in the raceable pack (${front - back} m/s)`);
-    assert.ok(front <= MAX_SPEED, `${difficulty}: throttle cap`);
-    assert.equal(rivalSkill({ trackId: 'aurora', config: { difficulty } }), RIVAL_SKILL[difficulty], 'no legacy-track retuning');
+test('a depleted rival recharges and may exceed its throttle cap only within the shared BOOST limit', () => {
+  const race = bare('easy'), rival = race.rivals[6];
+  Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
+  race.rivalPace = 1.3;
+  let usedBoost = false;
+  for (let i = 0; i < 20 * 60; i++) {
+    driveRival(race, rival, 6, 0, 1 / 60);
+    if (rival.boosting && rival.speed > MAX_SPEED) usedBoost = true;
+    assert.ok(rival.speed <= MAX_SPEED + BOOST_CAP_BONUS + 1e-9, `BOOST cap ${rival.speed}`);
   }
-  const level = ['easy', 'normal', 'hard'].map(difficulty =>
-    rivalBaseCap(rivalSkill({ trackId: 'frostbite-canyon', config: { difficulty } }), 0));
-  assert.ok(level[0] < level[1] && level[1] < level[2], 'the back of the grid still respects difficulty');
+  assert.ok(usedBoost, 'recharging an empty tank eventually permits a legitimate BOOST');
 });
