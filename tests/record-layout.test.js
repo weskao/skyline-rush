@@ -230,7 +230,7 @@ test('firestore.rules accepts exactly the versioned Classic best ids the client 
   const listed = [...rules.match(/function bestIds\(\) \{[^}]*\}/)[0].matchAll(/'([^']+)'/g)].map(m => m[1]);
   const versioned = [...Object.keys(RACE_TRACKS), ...Object.keys(COURSE_TRACKS)].flatMap(recordTrackIds).filter(id => id.includes('@'));
   assert.deepEqual(listed.sort(), [...versioned].sort());
-  for (const id of versioned) assert.match(rules, new RegExp(`validBest\\(bests, '${id}'\\)`), id); // inside validBests(bests)
+  for (const id of versioned) assert.ok(rules.includes(`math.abs(bests.get('${id}', 302400) - 302400) < 302400`), id); // a validBestsN group
 });
 
 test('AC2 device: export, import and a cloud merge write old and new records back bit-for-bit', () => {
