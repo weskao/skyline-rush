@@ -3758,3 +3758,11 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Run `npm test`, `npm run build`, `make verify`; inspect the latest **exact-HEAD FULL** GitHub CI (all required Browser/World Tour shards, Unit/Typecheck/Build, Cloud-save, Quality Gate). Fix real failures and preserve existing behavior.
 - [ ] Capture real desktop/mobile WebGL frames for all six preview courses, AIRFLOW ON/OFF, camera views, touch swipe and Garage/Studio. Measure actual road/wheel contact, visual parity, Reduced Motion, frame timing and GPU disposal; these are not proved by UI tests.
 - [ ] Separately connect actual six-course CourseGraph physics, branching, flight/landing, 8-car AI, collision, checkpoints, recovery, results/ghost and start/finish. UI/template parity does **not** authorize race registration or remove Coming Soon.
+
+## 2026-11-07 — Frostbite long-course AI regressions (`feature/track-lifecycle-sop`)
+
+- [x] Reproduced two red tests at `2382ba4d` in GitHub Actions run 42298113093: 24/24 throttle-only P8; rival speed 100.8 after 20 s with an initially empty tank.
+- [x] Traced the inherited shared AI change: rivals now regenerate fuel and use player-equivalent BOOST; an initially empty tank is not a sustained throttle-only simulation. Kept all speed and fuel rules intact and isolated no-BOOST steps in the original cap assertions; added a BOOST-regeneration regression.
+- [x] Compared 24 deterministic Frostbite layouts with inherited Normal/Easy configurations: Normal at 1.01 produced 21/24 P8; Easy at 1.04 still produced P7/P8 in multiple layouts, so changing difficulty alone was insufficient.
+- [ ] Verify a course-owned rival grid spread against the unchanged 24-layout throttle/powerup-bot tests; preserve the fastest rival's speed, the classic track AI, CourseGraph physics, progression and lifecycle contracts. A locally reconstructed speed model is not a full game-suite PASS.
+- [ ] Run focused tests, `npm test`, `npm run typecheck`, `npm run build`, relevant Playwright browser tests, exact-HEAD FULL GitHub CI and real desktop/mobile WebGL QA. Local checkout/network unavailable in this execution environment; do not mark these gates complete until independently observed.

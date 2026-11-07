@@ -4,29 +4,22 @@ import { FROSTBITE_ID } from '../src/courses/frostbite-race.ts';
 import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { createRace, stepRace, setLayoutSeed } from '../src/game.js';
 import { botInput } from '../scripts/pickup-economy.mjs';
-import { RIVAL_SKILL } from '../src/rival-driver.ts';
+import { rivalBaseCap, RIVAL_SKILL } from '../src/rival-driver.ts';
 
 // 13.8 km is ~2x the longest classic sprint, so at classic rival pace holding the throttle alone won 9 of 24 layouts.
 // Frostbite's rivals run a faster pace: throttle-only rarely wins, a driver using the kit (the economy bot) still does.
 const SEEDS = 24;
-function positions(drive, difficulty = 'normal', pace = null, samples = SEEDS, spread = null) {
-  const skill = RIVAL_SKILL[difficulty], originalSpread = skill?.spread;
-  if (spread !== null) skill.spread = spread;
+function positions(drive) {
   const out = [];
   try {
-    for (let k = 0; k < samples; k++) {
+    for (let k = 0; k < SEEDS; k++) {
       setLayoutSeed(track => track.seed + k * 7919);
       const race = createRace(FROSTBITE_ID), bot = {};
-      if (difficulty !== 'normal') race.config = { ...race.config, difficulty };
-      if (pace !== null) race.rivalPace = pace;
       race.phase = 'racing';
       for (let i = 0; i < 60 * 400 && race.phase !== 'finished'; i++) stepRace(race, drive === 'bot' ? botInput(race, bot) : { throttle: true }, 1 / 60);
       out.push(race.result.position);
     }
-  } finally {
-    setLayoutSeed();
-    if (spread !== null) skill.spread = originalSpread;
-  }
+  } finally { setLayoutSeed(); }
   return out;
 }
 
@@ -46,15 +39,11 @@ test('the faster rival pace is Frostbite-only: every other track keeps the class
   assert.ok(createRace(FROSTBITE_ID).rivalPace > 1);
 });
 
-// Diagnosis only: compare the inherited AI difficulty strategies on this exact route before choosing a fix.
-// This does not replace the unchanged 24-layout acceptance assertions above.
-test('Frostbite rival pacing diagnosis: stable per-layout rank distribution', () => {
-  for (const [difficulty, pace, spread] of [
-    ['easy', 1.001, null], ['intro', 1.08, null],
-    ['normal', 1.04, 0.025], ['normal', 1.04, 0.035], ['normal', 1.04, 0.045],
-    ['easy', 1.04, 0.022], ['easy', 1.04, 0.028], ['easy', 1.04, 0.034],
-  ]) {
-    const p = positions('throttle', difficulty, pace, SEEDS, spread);
-    console.log(`Frostbite calibration ${difficulty} pace=${pace} spread=${spread}: ${p.join(',')} (wins=${p.filter(x => x === 1).length}, last=${p.filter(x => x === 8).length})`);
-  }
+
+test('Frostbite-specific grid spread protects the slowest slots without slowing the fastest or classic tracks', () => {
+  const frostbite = createRace(FROSTBITE_ID);
+  assert.ok(frostbite.rivalSpread > RIVAL_SKILL.normal.spread);
+  assert.ok(rivalBaseCap(RIVAL_SKILL.normal, 0, frostbite.rivalSpread) < rivalBaseCap(RIVAL_SKILL.normal, 0));
+  assert.equal(rivalBaseCap(RIVAL_SKILL.normal, 6, frostbite.rivalSpread), rivalBaseCap(RIVAL_SKILL.normal, 6));
+  for (const id of Object.keys(RACE_TRACKS)) assert.equal(createRace(id).rivalSpread, undefined, id);
 });
