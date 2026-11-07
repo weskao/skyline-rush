@@ -36,7 +36,7 @@ export const isUpcomingTrack = (id: string): id is UpcomingTrackId => Object.has
  * Only promote a course to 'playable' after its real driving, finish and regression gates.
  * Production still keeps all UPCOMING_TRACKS as COMING SOON until explicit release promotion.
  */
-export type UpcomingReadiness = 'preview' | 'development' | 'playable';
+export type UpcomingReadiness = 'preview' | 'development' | 'playable' | 'ready';
 const UPCOMING_READINESS: Readonly<Partial<Record<UpcomingTrackId, Exclude<UpcomingReadiness, 'preview'>>>> = Object.freeze({
   'frostbite-canyon': 'playable',
   'stormline-megacity': 'playable',
