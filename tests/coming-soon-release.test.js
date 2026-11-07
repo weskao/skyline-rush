@@ -41,7 +41,7 @@ test('all-unlocked Make variants still cannot unlock a registered cover-only cou
 
 test('an approved playable preview with a real runtime is playable in dev-unlocked only', () => {
   // Readiness 'playable' + a resolvable runtime is the only approval; Dune and Frostbite are approved only for dev access.
-  assert.deepEqual(IDS.filter(id => upcomingReadiness(id) === 'playable'), ['dune-tempest', 'frostbite-canyon']);
+  assert.deepEqual(IDS.filter(id => upcomingReadiness(id) === 'playable'), ['dune-tempest', 'skyfall-archipelago', 'frostbite-canyon']);
   RACE_TRACKS['monsoon-ruins'] = RACE_TRACKS.coast; // a merged runtime without readiness approval
   const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
   Object.defineProperty(globalThis, 'localStorage', {
@@ -51,7 +51,9 @@ test('an approved playable preview with a real runtime is playable in dev-unlock
   try {
     assert.equal(developmentEnterable('frostbite-canyon'), true);
     assert.equal(developmentEnterable('dune-tempest'), true);
+    assert.equal(developmentEnterable('skyfall-archipelago'), true);
     assert.equal(productionEnterable('dune-tempest'), false);
+    assert.equal(productionEnterable('skyfall-archipelago'), false);
     assert.equal(productionEnterable('frostbite-canyon'), false, 'production never enters a Coming Soon id');
     assert.equal(developmentEnterable('monsoon-ruins'), false, 'a runtime alone is not approval');
     assert.equal(developmentTracks().includes('dune-tempest'), false, 'unapproved cards stay blocked');

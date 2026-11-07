@@ -71,7 +71,7 @@ test('registry: Skyfall is a gated classic course runtime, never in RACE_TRACKS'
   assert.equal(Object.hasOwn(RACE_TRACKS, ID), false);
   assert.throws(() => assertTrackMode(ID, 'time'), { name: 'RangeError', message: 'Skyfall Archipelago is a gated classic sprint' });
   assert.doesNotThrow(() => assertTrackMode(ID, 'classic'));
-  assert.equal(upcomingReadiness(ID), 'preview');
+  assert.equal(upcomingReadiness(ID), 'playable');
 });
 
 test('createRace(skyfall-archipelago) attaches the course runtime and no 1D-keyed lists', () => {
