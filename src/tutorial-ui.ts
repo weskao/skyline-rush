@@ -72,8 +72,18 @@ export function tutorialHintKey(step: string | null, steerMode: string, flyMode:
   return controlVariant(`tutorial.${surface}.${step}`, { touch: true, steerMode, flyMode });
 }
 
+/** Control to press now (phone outline) and the desktop key chips; both null while landing, when FLY must be released. */
+export function tutorialHighlight(step: string | null, phase: string): { action: string | null; keys: string | null } {
+  const action = step === 'land' ? null : step === 'airChain'
+    ? phase === 'airborne' ? null : 'fly'
+    : step === 'barrelRoll' ? (phase === 'ready' || phase === 'retry') ? 'fly' : null : step;
+  const keys = step === 'drift' ? 'brake left right' : step === 'airChain' ? 'fly boost nitro' : step === 'barrelRoll' ? 'fly left right' : action;
+  return { action, keys };
+}
+
 /** Touch control the coach outlines for this lesson, or null for none. */
 export function tutorialTouchTarget(step: string | null, phase: string, steerMode: string, action: string | null): string | null {
+  if (step === 'land') return null; // landing means releasing FLY: no outline or ripple on it
   // The slide pad is the whole lower-left of the screen: an outline there reads as a stray box, so it is never drawn.
   // Tilt hides the steering buttons and brakes on that same pad.
   if (steerMode !== 'buttons' && (['left', 'right', 'brake', 'drift'].includes(step ?? '') || step === 'barrelRoll' && phase === 'flicked')) return null;
@@ -150,10 +160,7 @@ export function setupTutorialUI({
     const phase = tutorial.coachPhase ?? 'ready';
     // Only highlight a control if pressing it is appropriate *now*.
     // Landing and finished-roll phases must not highlight BOOST or FLY.
-    const action = step === 'land' ? 'fly' : step === 'airChain'
-      ? phase === 'airborne' ? null : 'fly'
-      : step === 'barrelRoll' ? (phase === 'ready' || phase === 'retry') ? 'fly' : null : step;
-    const keys = step === 'drift' ? 'brake left right' : step === 'airChain' ? 'fly boost nitro' : step === 'barrelRoll' ? 'fly left right' : action;
+    const { action, keys } = tutorialHighlight(step, phase);
     updateCoachView({
       step: step ?? 'complete',
       title: done ? t('tutorial.complete') : t('tutorial.step', {
