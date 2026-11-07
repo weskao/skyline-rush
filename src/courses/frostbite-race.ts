@@ -91,5 +91,5 @@ export const FROSTBITE_SPAN = sections.find(s => s.span)!;
 // keep slower grid slots catchable without items; full-kit driving should still win most layouts.
 export const FROSTBITE_TRACK: TrackConfig & { topology: 'course-graph'; topologyVersion: 1 } = {
   name: 'Frostbite Canyon', length: Math.floor(total), trafficDensity: 0.6, seed: 12012,
-  layoutVersion: 1, openingNitroRings: 2, rivalPace: 0.94, topology: 'course-graph', topologyVersion: 1, sections,
+  layoutVersion: 1, openingNitroRings: 2, rivalPace: 0.92, topology: 'course-graph', topologyVersion: 1, sections,
 };

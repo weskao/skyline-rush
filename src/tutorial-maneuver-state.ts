@@ -17,6 +17,7 @@ export interface ManeuverSnapshot {
   nitroUses: number;
   nitroTime: number;
   speed: number;
+  braking?: boolean;
 }
 const NITRO_OBSERVE_SECONDS = 1.6;
 const NITRO_SPEED_GAIN = 5;
@@ -101,6 +102,11 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
           // Measure the sprint from activation: speed gained by driving before the press is not NITRO's.
           startSpeed = peakSpeed = car.speed;
         } else return false;
+      }
+      if (car.braking || phase === 'retry') {
+        sprintSeconds = 0;
+        phase = 'retry';
+        return false;
       }
       if (car.nitroTime <= 0) {
         sprintSeconds = 0;
