@@ -39,6 +39,57 @@ and does not clip; mute/pause/new-race never replay stale cues; `game.js` unchan
   `browser.spec.js`, `hud-settings`, `device-quality`, `endless-bounds` (26 passed).
 - [ ] Manual listening check by a human (levels are measured, not judged by ear). Exact-HEAD `quality-gate` pending.
 
+## 2026-11-07 — Catch-up branch review before merge (`feature/catch-up-rings-only`)
+
+- [x] Local gates at `209033fd` + review fixes: `node --test tests/catch-up-items.test.js` 11/11; `npm test` 1945 pass /
+  0 fail / 3 skipped; `npm run typecheck` and `npm run build` OK.
+- [x] Touch NITRO interruption spec failed 3/3 locally (expected step `boost`, got `airChain`). Cause: skipping FLY
+  leaves the car on the road, so LAND passes by itself within a frame and the next Skip tap skipped BOOST. The
+  cleanup `touchEnd` also threw with no touch down. Test fixed (wait for BOOST, lift only a pressed touch):
+  `CI=1 --repeat-each=8 --workers=4 --retries=0` 16/16 (with the keyboard NITRO case).
+- [x] `catchUpSettings` was rebuilt every race step; now cached per race length. `spawnCatchUp` (Tokyo, help off,
+  2 M calls × 5): 15.7 → 8.3 ns/call median.
+- [x] Browser: interactive-tutorial + handoff + item-feedback + nitro-fly 32/33. The miss was
+  `FLY answers the moment GO shows` (unchanged by this branch), 6/6 when stress-run alone: a load flake.
+- [x] Scratch sim, 10 tracks × 10 seeds, beginner bot, leader held 300 m ahead: catch-up rings taken 3.09 → 4.24/min,
+  NITRO 12.60 → 12.94/min, gap growth 141 → 109 m/min. At 150 m the length scaling raises the switch-on gap on long
+  tracks: spawned 3.43 → 1.98/min, taken 1.90 → 1.53/min (user kept the scaling, 2026-11-07).
+- [ ] Exact-HEAD GitHub `quality-gate` after the merge into `develop`.
+
+## 2026-11-07 — Adaptive catch-up rings by total race length
+
+- [x] Merged `develop` `a013e77f` into `feature/catch-up-rings-only` at `20319d7`, preserving both `TODO.md` prefixes.
+- [x] Added length-aware RED regression tests for real 4/6/8 km courses and a future 12 km course (`552cfc6`).
+- [ ] Observe the actual RED test failure and GREEN focused test after implementation; verify all 11 catch-up tests.
+- [ ] Full `npm test`, typecheck/build, 13 browser shards, five World Tour shards, cloud-save and exact-HEAD quality-gate.
+- [ ] Desktop/mobile real WebGL playthrough and authored-sequence regression.
+- [ ] No PR, merge into `develop`, deployment, release or force push without separate approval.
+
+## 2026-11-07 — Catch-up branch CI browser regressions (tutorial NITRO / airborne callout)
+
+- [x] Confirmed failed baseline browser tests at `28f5f45d`, run `42297062181`: shard 6 NITRO brake interruption, shard 7 BARREL ROLL hidden by a charge callout.
+- [x] New regression tests committed in RED `5fc93ba`; GitHub run `42341498607` produced precisely 2 expected unit failures (1941 pass, 3 skipped).
+- [ ] Verify the GREEN unit/typecheck/build run and both affected browser shards on the final exact HEAD; the new touch NITRO case exercises real pointer input.
+- [ ] Full browser (13 shards), World Tour (5 shards), cloud-save, quality-gate, and real-device/WebGL checks.
+- [ ] No merge, PR, deploy, tag or force push; only this branch may be written.
+
+## 2026-11-07 — Catch-up items: rings only (`feature/catch-up-rings-only`)
+
+Classic (excluding Daily) and Cup trailing-player aid now creates only extra rings: NITRO 60%, charge 20%,
+slipstream 20%, all at `ROW_ALTITUDE` (2.5 m). A one-line shared spawner change removes the can lottery without
+touching `src/game.js`, authored sequences, placements or rival catch-up guards.
+
+- [x] RED commit `0568a46b7c4e1aaf391383f7b23735de205f3416`: the focused test file has 9 cases, including the
+  new five-track NITRO-majority assertion and the rings-only / altitude guard.
+- [x] RED isolated source-level reproduction: `node --experimental-strip-types --test tests/red-smoke.test.js`
+  (temporary, *not* committed; exact spawner source with minimal imported constants) = 0 passed / 2 failed,
+  for mixed cans and NITRO 10/60. This does not replace the full repository test suite.
+- [x] GREEN isolated source-level reproduction: the same two tests = 2 passed / 0 failed after the minimal fix.
+- [ ] Confirm the original 9-case `node --test tests/catch-up-items.test.js` GREEN on the full repository.
+- [ ] `npm test`, `npm run build`, desktop/mobile `npm run test:browser` and `make verify`.
+- [ ] Exact feature-HEAD GitHub `quality-gate` and manual in-game / mobile acceptance.
+- [ ] Merge into `develop` with `--no-ff` only after explicit user approval (no PR or deployment beforehand).
+
 ## 2026-11-07 — Current-mechanism README refresh
 
 - [x] Reviewed README gameplay claims against race configuration/grid, shared drive rules,

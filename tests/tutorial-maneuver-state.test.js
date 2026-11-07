@@ -72,6 +72,15 @@ test('NITRO ignores replayed events, invalid frames and interrupted sprint', () 
   assert.equal(state.update({ ...car, nitroUses: 1, nitroTime: 2.2, speed: 85 }, 0), false);
 });
 
+test('NITRO practice stops counting a sprint immediately when the player brakes', () => {
+  const car = fresh(), state = createTutorialManeuverState('nitro', car), dt = 1 / 60;
+  state.update({ ...car, nitroUses: 1, nitroTime: 2.48, speed: 46, braking: false }, dt);
+  assert.equal(state.phase, 'sprinting');
+  assert.equal(state.update({ ...car, nitroUses: 1, nitroTime: 2.46, speed: 47, braking: true }, dt), false);
+  assert.equal(state.phase, 'retry', 'braking interrupts a sprint before the timer naturally expires');
+  assert.equal(state.progress, 0, 'an interrupted sprint cannot retain progress');
+});
+
 test('BARREL ROLL must not reuse a landing from before the latest roll', () => {
   const oldLanding = { chain: false };
   const car = { ...fresh(), landing: oldLanding };
