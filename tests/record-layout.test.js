@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RACE_TRACKS, createRace } from '../src/game.js';
+import { COURSE_TRACKS } from '../src/race-tracks.ts';
 import { CIRCUIT_ID } from '../src/circuit-track.ts';
 import { layoutVersion, raceLayout, recordTrackId, recordTrackIds, runLayout, parseRecordTrackId, isCurrentLayout } from '../src/record-layout.ts';
 import { BEST_KEY, recordBest, loadBests, recordRace, loadModeBest, recordModeRace, loadModeHistory, loadGhost, saveGhost, loadModeGhost, saveModeGhost } from '../src/history.ts';
@@ -227,7 +228,7 @@ test('firestore.rules accepts exactly the versioned Classic best ids the client 
   const { readFileSync } = await import('node:fs');
   const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
   const listed = [...rules.match(/function bestIds\(\) \{[^}]*\}/)[0].matchAll(/'([^']+)'/g)].map(m => m[1]);
-  const versioned = Object.keys(RACE_TRACKS).flatMap(recordTrackIds).filter(id => id.includes('@'));
+  const versioned = [...Object.keys(RACE_TRACKS), ...Object.keys(COURSE_TRACKS)].flatMap(recordTrackIds).filter(id => id.includes('@'));
   assert.deepEqual(listed.sort(), [...versioned].sort());
   for (const id of versioned) assert.match(rules, new RegExp(`validBest\\(bests, '${id}'\\)`), id); // inside validBests(bests)
 });

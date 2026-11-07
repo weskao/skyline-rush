@@ -9,6 +9,10 @@ export interface TrackSection {
   x?: number;
   altitude?: number;
   dir?: number;
+  /** Shortcut drawn high over a chasm (Frostbite Rift): sinking or steering out of it mid-span is a fall. */
+  span?: boolean;
+  /** Shortcut over a road with a solid deck (Frostbite): cars can neither rise nor sink through its slab. */
+  deck?: boolean;
 }
 export interface TrackConfig {
   name: string;
@@ -27,6 +31,10 @@ export interface TrackConfig {
   introRivals?: boolean;
   /** Ring/pickup layout generation for timed records (`src/record-layout.ts`); omitted = 1. Bump it whenever a layout change makes older times incomparable. */
   layoutVersion?: number;
+  /** Rival top-speed multiplier for this track (default 1); a long course where throttle alone would win sets it higher. */
+  rivalPace?: number;
+  /** Optional per-grid-slot throttle pace gap. Normal AI keeps its usual skill unless this course needs more field separation. */
+  rivalSpread?: number;
 }
 export interface PlayerSnapshot {
   speed: number;

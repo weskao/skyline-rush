@@ -7,7 +7,7 @@ import { previewPlayer } from '../src/track-preview.ts';
 const id = 'dune-tempest';
 
 test('missing environment never presents a fake live Three.js showcase', () => {
-  const showcase = createUpcomingShowcase({}, new THREE.Texture());
+  const showcase = createUpcomingShowcase({}, new THREE.Texture(), new THREE.Texture());
   assert.equal(showcase.setTrack(id), false);
   assert.equal(showcase.scene, null);
   showcase.dispose();
@@ -29,7 +29,7 @@ test('showcase shares a Three.js scene and disposes old environment on track cha
   const showcase = createUpcomingShowcase({
     'dune-tempest': create('dune'),
     'monsoon-ruins': create('monsoon'),
-  }, new THREE.Texture());
+  }, new THREE.Texture(), new THREE.Texture());
   const camera = new THREE.PerspectiveCamera(50, 16 / 9, .1, 2000);
   assert.equal(showcase.setTrack('dune-tempest'), true);
   assert.ok(showcase.scene instanceof THREE.Scene);
@@ -54,7 +54,7 @@ test('every upcoming map reuses the shared Roadster AIRFLOW ground/hover pose an
     scene.add(group);
     return { group, update() {}, dispose() {} };
   }]));
-  const showcase = createUpcomingShowcase(factories, new THREE.Texture());
+  const showcase = createUpcomingShowcase(factories, new THREE.Texture(), new THREE.Texture());
   const camera = new THREE.PerspectiveCamera(50, 16 / 9, .1, 2000);
 
   for (const id of ids) {

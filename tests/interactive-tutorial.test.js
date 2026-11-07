@@ -266,7 +266,10 @@ test('an interrupted NITRO lesson refills only after release and remains player-
   const previousUses = car.nitroUses;
   // Real players read the coach first: auto-throttle gains speed before NITRO is pressed.
   for (let i = 0; i < 30; i++) tick(session);
-  for (let i = 0; i < 180; i++) tick(session, { nitro: true, brake: true });
+  tick(session, { nitro: true, brake: true });
+  assert.equal(session.coachPhase, 'retry', 'braking interrupts practice on the first simulation tick');
+  assert.equal(car.nitroTime, 0, 'practice-only braking cancels the active sprint');
+  for (let i = 1; i < 180; i++) tick(session, { nitro: true, brake: true });
   assert.equal(session.step, 'nitro', 'braking during activation must not fake a sprint');
   assert.equal(car.nitroUses, previousUses + 1, 'one real charge was spent');
   assert.ok(car.nitro < 1, 'holding NITRO must not grant another charge');
