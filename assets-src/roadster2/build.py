@@ -4,7 +4,7 @@ Run from the repo root:
   "$BLENDER_BIN" --background --factory-startup --python assets-src/roadster2/build.py
 
 The Roadster 2 master is a procedural port of the existing Garage car, with the node names, pivots,
-wing travel and rear/lift ports the runtime rig binds to (src/garage-model-rig.ts, src/effects.js).
+wing travel, rear/lift ports and lift fans (Task 4b) the runtime rig binds to (src/garage-model-rig.ts, src/effects.js).
 Only the LOW collection is created: every object in the file ships. Helpers: build/roadster_*.py.
 """
 import json

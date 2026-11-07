@@ -133,7 +133,14 @@ NETLIFY := npx --yes netlify-cli@27.16.2
 NETLIFY_SITE := skyline-rush
 NETLIFY_URL := https://$(NETLIFY_SITE).netlify.app
 TG_SEND := $(HOME)/.claude/scripts/tg-send.sh
+# Google sign-in fails with auth/unauthorized-domain on hosts missing from Firebase Auth's authorized domains;
+# the project's public config endpoint lists them, so check before building (web API key read from cloud-save.ts).
+FIREBASE_API_KEY = $(shell sed -n "s/.*apiKey: '\([^']*\)'.*/\1/p" src/cloud-save.ts)
 deploy-netlify: node_modules ## `make deploy-netlify`: production build of this checkout, Netlify deploy, live check, Telegram link
+	@curl -fsS "https://identitytoolkit.googleapis.com/v1/projects?key=$(FIREBASE_API_KEY)" \
+	  | jq -e --arg d "$(NETLIFY_SITE).netlify.app" '.authorizedDomains | any(. == $$d)' >/dev/null || { \
+	  echo "Google sign-in would fail: $(NETLIFY_SITE).netlify.app is not a confirmed Firebase Auth authorized domain."; \
+	  echo "Add it: Firebase console > Authentication > Settings > Authorized domains > Add domain"; exit 1; }
 	GARAGE_VFX_RELEASE_MODE=trial $(NPM) run build
 	@out=$$($(NETLIFY) deploy --prod --no-build --dir=dist --site $(NETLIFY_SITE) --json \
 	  --message "local deploy $$(git describe --tags --always)") || { echo "$$out"; exit 1; }; \

@@ -164,6 +164,14 @@ def build_car(c, mats):
         pivot = node("thruster_%02d" % i, c, pos=(x, .3, z))
         made.append(part("thruster_%02d_nozzle" % i, c, *cylinder((0, -.1, 0), (0, .1, 0), .22, .18, 10), G["roadster_nozzle"], pivot))
         made.append(pivot)
+    # Lift fans (Task 4b): the procedural car's flight fans (car-model.js makeCar `jets`): a disc of radius .13 and
+    # height .025, 12 sides, centred at y .19 under each lift port. lift_fans is the pivot partner of the procedural
+    # `jets` group, so the rig shows the fans only while the car thrusts.
+    fans = node("lift_fans", c)
+    for i, (x, z) in enumerate(LIFT_PORTS, 1):
+        pivot = node("lift_fan_%02d" % i, c, pos=(x, .19, z), parent=fans)
+        made.append(part("lift_fan_%02d_disc" % i, c, *cylinder((0, -.0125, 0), (0, .0125, 0), .13, .13, 12), G["roadster_fan"], pivot))
+    made.append(fans)
     # Rear nozzles at the REAR_PORTS: satin bronze lip tube (roadster-rear-nozzles.js, radii simplified).
     for i, x in enumerate(REAR_PORT_X, 1):
         pivot = node("nozzle_rear_%02d" % i, c, pos=(x, .64, 2.39))
