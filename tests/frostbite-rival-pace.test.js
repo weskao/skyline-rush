@@ -4,6 +4,8 @@ import { FROSTBITE_ID } from '../src/courses/frostbite-race.ts';
 import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { createRace, stepRace, setLayoutSeed } from '../src/game.js';
 import { botInput } from '../scripts/pickup-economy.mjs';
+import { MAX_SPEED } from '../src/drive-rules.ts';
+import { rivalBaseCap, rivalSkill } from '../src/rival-driver.ts';
 
 // 13.8 km is ~2x the longest classic sprint, so at classic rival pace holding the throttle alone won 9 of 24 layouts.
 // Frostbite's rivals run a faster pace: throttle-only rarely wins, a driver using the kit (the economy bot) still does.
@@ -21,6 +23,16 @@ function positions(drive) {
   } finally { setLayoutSeed(); }
   return out;
 }
+
+test('Frostbite preserves its original three-metre-per-second grid spread under the shared rival physics', () => {
+  const race = createRace(FROSTBITE_ID), skill = rivalSkill(race);
+  for (let slot = 0; slot < 4; slot++) {
+    const cap = Math.min(MAX_SPEED, rivalBaseCap(skill, slot) * race.rivalPace);
+    const expected = (70 + slot * 3) * race.rivalPace;
+    assert.ok(Math.abs(cap - expected) < 1e-9, `slot ${slot}: ${cap}, expected ${expected}`);
+  }
+  assert.equal(Math.min(MAX_SPEED, rivalBaseCap(skill, 6) * race.rivalPace), MAX_SPEED);
+});
 
 test('throttle-only rarely wins Frostbite Canyon across a deterministic 24-layout sweep', () => {
   const p = positions('throttle'), wins = p.filter(x => x === 1).length;

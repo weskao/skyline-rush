@@ -36,7 +36,11 @@ export interface DriveRace {
   player: Car; traffic: readonly Car[]; rivals: readonly Car[];
 }
 
-export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill => RIVAL_SKILL[rivalLevel(race)] ?? RIVAL_SKILL.normal!;
+// Frostbite's original seven-car grid used 70, 73, ... 88 m/s before its course pace multiplier.
+// Keep that wider skill spread after the shared player-equivalent BOOST/NITRO model replaced legacy AI.
+const FROSTBITE_SKILL: RivalSkill = { ...RIVAL_SKILL.normal!, pace: 1, spread: 3 / MAX_SPEED };
+export const rivalSkill = (race: Pick<DriveRace, 'trackId' | 'config'>): RivalSkill =>
+  race.trackId === 'frostbite-canyon' ? FROSTBITE_SKILL : RIVAL_SKILL[rivalLevel(race)] ?? RIVAL_SKILL.normal!;
 /** The rival's throttle cap before BOOST or NITRO: never above the player's MAX_SPEED. */
 export const rivalBaseCap = (skill: RivalSkill, slot: number): number => MAX_SPEED * Math.min(1, skill.pace - skill.spread * (SLOTS - 1 - slot));
 

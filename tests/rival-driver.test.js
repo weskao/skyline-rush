@@ -136,11 +136,33 @@ test('on an opening map Easy and Normal rivals drive at intro skill: slower and 
 test('long-course rivalPace preserves difficulty scaling without raising unboosted rivals above player cap', () => {
   const race = bare('easy'), rival = race.rivals[6];
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
+  // Fuel replenishes on every unboosted frame. Keep it empty throughout to measure throttle-only caps,
+  // otherwise this 20-second test legitimately engages BOOST after regeneration.
+  const throttleOnly = () => {
+    for (let i = 0; i < 20 * 60; i++) {
+      rival.fuel = 0;
+      driveRival(race, rival, 6, 0, 1 / 60);
+      assert.equal(rival.boosting, false);
+    }
+  };
   race.rivalPace = 1.3;
-  run(race, rival, 6, 20);
+  throttleOnly();
   assert.equal(rival.speed, MAX_SPEED, 'fast courses still respect the player throttle cap');
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 0.5;
-  run(race, rival, 6, 20);
+  throttleOnly();
   assert.equal(rival.speed, rivalBaseCap(RIVAL_SKILL.easy, 6) * 0.5, 'slower courses retain their pace multiplier');
+});
+
+test('a rival starting on empty fuel can regenerate and use the shared BOOST bonus', () => {
+  const race = bare('easy'), rival = race.rivals[6];
+  Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
+  race.rivalPace = 1.3;
+  let usedBoost = false;
+  for (let i = 0; i < 20 * 60; i++) {
+    driveRival(race, rival, 6, 0, 1 / 60);
+    usedBoost ||= rival.boosting;
+  }
+  assert.equal(usedBoost, true, 'natural fuel recharge allows a later BOOST');
+  assert.ok(rival.speed <= MAX_SPEED + BOOST_CAP_BONUS, 'BOOST respects the player bonus cap');
 });

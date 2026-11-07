@@ -3798,3 +3798,12 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Run `npm test`, `npm run build`, `make verify`; inspect the latest **exact-HEAD FULL** GitHub CI (all required Browser/World Tour shards, Unit/Typecheck/Build, Cloud-save, Quality Gate). Fix real failures and preserve existing behavior.
 - [ ] Capture real desktop/mobile WebGL frames for all six preview courses, AIRFLOW ON/OFF, camera views, touch swipe and Garage/Studio. Measure actual road/wheel contact, visual parity, Reduced Motion, frame timing and GPU disposal; these are not proved by UI tests.
 - [ ] Separately connect actual six-course CourseGraph physics, branching, flight/landing, 8-car AI, collision, checkpoints, recovery, results/ghost and start/finish. UI/template parity does **not** authorize race registration or remove Coming Soon.
+
+## 2026-11-07 — Skyfall-branch shared rival CI regression (run 42298092010)
+
+- [x] Reviewed project rules, Skyfall physical CourseGraph/gap constraints and the exact failed CI log for branch `feature/playable-skyfall-archipelago` at `c48fdd074ab8b209a0cc7110eeb2c939d5b08f71`: 2 failing unit tests; typecheck passed, build/browser skipped.
+- [x] Traced Frostbite P8/24 layouts to inherited shared rival skill spread (new Normal 0.006 vs former 3 m/s per grid slot) and the 100.8 m/s unit assertion to natural fuel regeneration activating BOOST despite a one-time zero-fuel setup; reproduced the numeric 100.8 m/s path in an isolated 60 Hz model.
+- [ ] Verify new Frostbite spread regression RED on the original code and GREEN after the smallest course-specific skill-profile correction. Original deterministic 24-layout test must remain unchanged.
+- [ ] Verify long-course speed-cap test with fuel held empty on every frame, preserving its original exact cap assertions and separately guarding legitimate BOOST recharge.
+- [ ] Run focused Node unit tests, full `npm test`, `npm run typecheck`, `npm run build`, `make verify` and relevant real browser/WebGL checks against the final source checkout; isolated numeric reproduction is not a substitute.
+- [ ] Verify exact-HEAD GitHub CI `unit-tests`, `cloud-save`, all required browser/World Tour shards and `quality-gate`, then record immutable run URL/SHA. No PR, merge, deployment or Skyfall route/scene edits authorized.
