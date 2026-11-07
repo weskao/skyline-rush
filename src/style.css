@@ -2155,8 +2155,9 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   .intro { animation-name: intro-fade; } /* every landscape intro, so toggling AIRFLOW never restarts a transform under its fixed Start */
   /* top: just under the 70px top bar (82px below 761px wide, see the next block), which the panel must not overlap. */
   body:not(.airflow-active) .intro { --rail: 210px; top: 72px; bottom: max(10px, var(--safe-bottom)); left: max(16px, var(--safe-left)); display: flex; flex-direction: column; width: min(520px, calc(100vw - 280px - var(--safe-left) - var(--safe-right))); max-width: none; margin: 0; padding: 0 6px; overflow-y: auto; }
-  /* Match the phone bottom-fade rule's :has() specificity: a mask clips every descendant, the fixed rail included. */
-  body:not(.airflow-active) .intro:has(.race-mode-picker) { -webkit-mask-image: none; mask-image: none; }
+  /* Match the phone bottom-fade rule's :has() specificity: a mask clips every descendant, the fixed rail included;
+     its portrait max-height (100dvh - 126px) also lifted the pinned row 32px over the track cards at 320px tall. */
+  body:not(.airflow-active) .intro:has(.race-mode-picker) { max-height: none; -webkit-mask-image: none; mask-image: none; }
   /* The version chip (What's New) moves from the bottom strip into the top bar's gap beside the brand, freeing the
      bottom edge for the panel's pinned row; its taglines hide. */
   body[data-phase="ready"] .bottomline { top: 13px; bottom: auto; left: max(245px, calc(var(--safe-left) + 233px)); right: auto; display: block; }
