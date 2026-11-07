@@ -128,12 +128,16 @@ export function createUpcomingShowcase(
       + (grounded ? 0 : player.userData.wing.userData.lift);
     for (const wheel of player.userData.wheels)
       wheel.rotation.z = grounded ? 0 : Math.sign(wheel.position.x) * Math.PI / 2.6;
+    const portrait = camera.aspect < .78;
     for (let i = 1; i < stage.cars.length; i++) {
       const rival = stage.cars[i]!;
-      rival.position.set((i - 2) * 4.5, i === 1 ? 4.5 : .06, -16 - i * 10);
+      // Keep all three rivals readable in the shared 50° hero frame, including narrow phones.
+      // The old 26–46 m line hid the back cars, especially against bright sand/clouds.
+      const x = portrait ? (i === 1 ? -4.5 : -2) : (i - 2) * 4.5;
+      rival.position.set(x, i === 1 ? 4.5 : .06, -6 - i * 8);
       rival.userData.jets.visible = i === 1 && !calm;
     }
-    const portrait = camera.aspect < .78, authored = portrait ? stage.environment.portraitCameraPose : stage.environment.cameraPose;
+    const authored = portrait ? stage.environment.portraitCameraPose : stage.environment.cameraPose;
     const pose = settings.view === 'drive' && authored || showcaseCameraPose(stage.id, settings.view, calm ? 0 : time, portrait);
     camera.fov = 50;
     camera.position.set(pose.cameraSide, player.position.y + pose.cameraHeight, pose.cameraBack);
