@@ -4,6 +4,8 @@ import { FROSTBITE_ID } from '../src/courses/frostbite-race.ts';
 import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { createRace, stepRace, setLayoutSeed } from '../src/game.js';
 import { botInput } from '../scripts/pickup-economy.mjs';
+import { MAX_SPEED } from '../src/drive-rules.ts';
+import { driveRival, rivalSkill, rivalBaseCap } from '../src/rival-driver.ts';
 
 // 13.8 km is ~2x the longest classic sprint, so at classic rival pace holding the throttle alone won 9 of 24 layouts.
 // Frostbite's rivals run a faster pace: throttle-only rarely wins, a driver using the kit (the economy bot) still does.
@@ -31,6 +33,30 @@ test('throttle-only rarely wins Frostbite Canyon across a deterministic 24-layou
 test('a driver using BOOST, NITRO, rings and the span still wins most layouts', () => {
   const p = positions('bot'), wins = p.filter(x => x === 1).length;
   assert.ok(wins >= 20, `bot P1 in ${wins}/${SEEDS}: ${p}`);
+});
+
+test('endurance pace separates grid slots while preserving the player throttle cap', () => {
+  const race = createRace(FROSTBITE_ID), skill = rivalSkill(race);
+  const slow = race.rivals[0], fast = race.rivals[6];
+  race.traffic = [];
+  race.rivals = [];
+  race.sections = [];
+  race.player.distance = -10000;
+  for (let i = 0; i < 20 * 60; i++) {
+    for (const [rival, slot] of [[slow, 0], [fast, 6]]) {
+      rival.fuel = 0;
+      rival.boosting = false;
+      rival.nitro = 0;
+      rival.nitroTime = 0;
+      rival.altitude = 0;
+      rival.thrusting = false;
+      driveRival(race, rival, slot, 0, 1 / 60);
+    }
+  }
+  assert.ok(slow.speed < rivalBaseCap(skill, 0) * race.rivalPace, 'slower slots stay catchable');
+  assert.ok(fast.speed > rivalBaseCap(skill, 6) * race.rivalPace, 'front runners remain challenging');
+  assert.ok(fast.speed <= MAX_SPEED, 'rivals never exceed the player throttle cap without power-ups');
+  for (const id of Object.keys(RACE_TRACKS)) assert.equal(createRace(id).rivalPaceSpread, 0, id);
 });
 
 test('Frostbite is the only course with endurance-calibrated rival pace; classics keep theirs', () => {
