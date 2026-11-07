@@ -360,6 +360,23 @@ instruction 2026-11-08): every Playwright / `make verify` / WebGL screenshot row
     `midway-one` 2,015.591, `b-ground` 2,504.865, `midway-two` 2,185.204, `c-ground` 2,486.800,
     `descent` 2,077.600). Flight edges and gaps unchanged: `a-air` 1,150.180 gap [276.043, 793.624],
     `b-air` 867.996 [156.239, 555.518], `c-air` 1,237.364 [296.967, 915.649].
+  - Review fix (fresh reviewer, Critical): the fixed 18 m / 36 m guide points next to 143–471 m
+    authored segments made the uniform Catmull-Rom overshoot and fold the road back over itself at
+    every ground-edge end (the heading-only Q9 test could not see it). Guides now sit at 15 % / 40 %
+    of the node → first-authored-control chord. New test in `tests/course-junction-tangents.test.js`:
+    every ground edge's 5 m-chord turn rate ≤ the road half-width radius (Dune-style).
+    - RED: 1 fail, 25 violations; worst 36.0°/m vs 3.58°/m (`approach` s = 20/30 m), ratio 11.3×.
+      The authored (unsmoothed) Skyfall geometry passes the same bound.
+    - Tried (scratchpad probe, worst ratio): thirds 1.90, 0.2/0.45 1.02, 0.15/0.38 1.02,
+      0.13–0.17/0.40–0.42 0.83–0.91. Chosen 0.15/0.40 → 0.835.
+    - GREEN: `node --test tests/course-junction-tangents.test.js tests/skyfall-*.test.js
+      tests/upcoming-*.test.js` 83/83.
+    - Ground route now 16,462.256 m (`approach` 2,283.873, `a-ground` 2,871.079, `midway-one`
+      1,987.281, `b-ground` 2,498.409, `midway-two` 2,215.640, `c-ground` 2,556.099, `descent`
+      2,049.875); flight edges and gaps unchanged.
+    - Not fixed (minor): the guides carry the flight edge's pitch (≈ 10° at b-split) — a 3D tangent,
+      so heading and grade are both continuous; two flight edges sharing a node would silently keep
+      the last heading (none do).
   - Risk, not fixed: `canTraverseSkyfallRoad` and the identity test still use exact `toS ≤ length` /
     strict float equality; the 1-ULP case passes now only because the lengths moved. Real WebGL
     re-inspection of the Skyfall home preview and race road: NOT VERIFIED (no browser this session).

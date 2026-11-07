@@ -120,3 +120,12 @@ test('Skyfall: every connected road/flight junction is tangent continuous within
   assert.deepEqual(SKYFALL_COURSE.edges.filter(e=>e.mode==='air').map(e=>[e.id,e.points.length]),
     [['a-air',5],['b-air',4],['c-air',4]],'Q9 must not rewrite flight pads');
 });
+
+test('Skyfall: Q9 guide points never fold a ground edge (5 m chords, turn radius ≥ road half-width)', () => {
+  const tight = skyfall.edges.filter(edge => edge.mode === 'ground').flatMap(edge => {
+    const limit = DEG / (edge.width / 2);
+    return turnRates(skyfall, edge.id).filter(r => !(r.degPerMetre <= limit))
+      .map(r => ({ edge: edge.id, s: r.s, degPerMetre: +r.degPerMetre.toFixed(3), limit: +limit.toFixed(3) }));
+  });
+  assert.deepEqual(tight, []);
+});

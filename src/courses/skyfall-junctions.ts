@@ -27,7 +27,7 @@ function sampledEnds(edge: SkyfallEdge): [SkyfallVec3, SkyfallVec3] {
 
 /** Q9: enforce one physical incoming/outgoing tangent at every shared Skyfall junction.
  * Flight pad control points remain authored: adjacent ground approaches absorb their mismatch.
- * Only new guide points within 36m of edge endpoints are introduced; no node or gap moves.
+ * Only two guide points per ground edge end are introduced; no node or gap moves.
  */
 export function smoothSkyfallJunctions(authored: readonly SkyfallEdge[]): SkyfallEdge[] {
   const directions = new Map<string, SkyfallVec3>(), pinned = new Set<string>();
@@ -47,13 +47,19 @@ export function smoothSkyfallJunctions(authored: readonly SkyfallEdge[]): Skyfal
     }
   }
   for (const [node, direction] of directions) directions.set(node, unit(direction));
-  const metres = 18;
+  // Uniform Catmull-Rom overshoots (folds the road back) when a short guide segment sits next to a long
+  // authored one, so the two collinear guides sit at 15 % and 40 % of the chord to the first authored control:
+  // graded segments with room left to turn. Measured: worst 5 m-chord turn 0.84 × the half-width limit
+  // (fixed 18/36 m guides: 11.3×, a 180° reversal within 5 m; thirds: 1.9×).
+  const GUIDES = [0.15, 0.4] as const;
+  const chord = (a: SkyfallVec3, b: SkyfallVec3): number => Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
   return authored.map(edge => {
     if (edge.mode === 'air') return edge; // keep actual takeoff, gap and landing geometries
     const p = edge.points, start = p[0], end = p.at(-1)!;
     const tangentStart = directions.get(edge.from)!, tangentEnd = directions.get(edge.to)!;
-    return { ...edge, points: [start, along(start, tangentStart, metres),
-      along(start, tangentStart, 2 * metres), ...p.slice(1, -1),
-      along(end, tangentEnd, -2 * metres), along(end, tangentEnd, -metres), end] };
+    const head = chord(start, p[1]), tail = chord(p.at(-2)!, end);
+    return { ...edge, points: [start, along(start, tangentStart, GUIDES[0] * head),
+      along(start, tangentStart, GUIDES[1] * head), ...p.slice(1, -1),
+      along(end, tangentEnd, -GUIDES[1] * tail), along(end, tangentEnd, -GUIDES[0] * tail), end] };
   });
 }
