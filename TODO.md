@@ -1,3 +1,23 @@
+## 2026-11-08 — Tutorial guided timing (`feature/tutorial-guided-timing`, based on `develop` `caf4a3b3`)
+
+Acceptance: live engine-driven cue toasts (key chips on desktop, buttons on touch) for throttle, drift, air chain,
+barrel roll and boost; effect lessons advance only after boost/NITRO plays out; gate rings chime and burst; standing
+start (no GO roll); no car snap between lessons; timed blue boost stretch with finite BOOST and re-arm on timeout;
+pass chime + toast per cleared lesson; highlighted +NITRO reward with meter pulse; actionable hard-landing guidance.
+
+- [x] RED → GREEN `tests/tutorial-guided-timing.test.js` (9 tests); existing tutorial unit tests updated to the new
+  behaviour. `npm test` 2143/2147 pass. 1 fail is pre-existing on `develop`: `module-size` flags
+  `src/release-notes-data.ts` (478 lines) from `caf4a3b3`. `npm run typecheck` and `npm run test:layout` 42/42 pass.
+- [x] Real WebGL screenshots: desktop 1440×900 (en + zh-TW), phone 390×844, landscape 844×390. They show the throttle
+  cue, pass toast, boost countdown, roll climb/release cues, +0.25 NITRO highlight and meter pulse, with no overlap
+  with the coach card.
+- [x] `CI=1 … interactive-tutorial-browser.spec.js --repeat-each=2 --workers=4 --retries=0`: 41/42.
+- [ ] Flake, not root-caused: on touch practice roll attempt 2, FLY does not take off (fuel 100, on the ground, FLY
+  not registered after two missed flicks). Seen 3/12 in one loaded run (844×390 toggle ×2, 390×844 custom), then
+  0/40 in three later CI-timed runs. The wait is now bounded, and on failure it reports the HUD state and the element
+  under FLY, so the next occurrence names its cause.
+- [ ] Exact-HEAD FULL CI after the merge into `develop`.
+
 ## 2026-11-07 — Results cloud-sync status (`feature/results-cloud-sync-status`, based on `develop` `355f20e8`)
 
 Acceptance: the finished-race results show one cloud line. Signed in (any provider): syncing → "Race saved to the
