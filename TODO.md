@@ -1,3 +1,10 @@
+## 2026-11-07 — Monsoon branch shared rival pace CI repair
+
+- [x] RED evidence: original exact-HEAD CI [run 42298029488](https://github.com/weskao/skyline-rush/actions/runs/42298029488) reports Frostbite throttle-only P8 in 24/24 seeds and unboosted cap fixture reporting 100.8 instead of 88.
+- [x] Root-cause trace: long-course AI BOOST is used by all seven grid slots, eliminating the slower portion of the field; the separate 20-second throttle-cap fixture lets fuel regenerate and accidentally enables BOOST.
+- [ ] GREEN verification: run focused `node --experimental-strip-types --test tests/frostbite-rival-pace.test.js tests/rival-driver.test.js`, `npm test`, `npm run typecheck`, `npm run build`, relevant Playwright checks and exact-HEAD CI before marking passing.
+- [ ] Manual real-game Monsoon scenery / checkpoints / route / device acceptance remains an independent gate. This change leaves those modules untouched.
+
 ## 2026-11-07 — Minimap player marker (`feature/minimap-player-marker`, based on `origin/develop` `55821906`)
 
 Symptom: the player's dot on `.race-route-map` was the same shape as the 7 rival dots, hard to find at a glance.

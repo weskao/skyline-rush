@@ -17,7 +17,12 @@ function bare(difficulty) {
   race.rivals.forEach((r, i) => Object.assign(r, { distance: 2000 + i * 400, x: -2.5, altitude: 0, thrusting: false }));
   return race;
 }
-const run = (race, rival, slot, seconds) => { for (let i = 0; i < seconds * 60; i++) driveRival(race, rival, slot, 0, 1 / 60); };
+const run = (race, rival, slot, seconds, throttleOnly = false) => {
+  for (let i = 0; i < seconds * 60; i++) {
+    if (throttleOnly) rival.fuel = 0; // fuel regenerates every tick; keep BOOST unavailable in throttle-cap tests
+    driveRival(race, rival, slot, 0, 1 / 60);
+  }
+};
 
 test('rivals start like the player: no NITRO, a full tank', () => {
   assert.equal(RIVAL_NITRO_CHARGES, 0);
@@ -133,14 +138,30 @@ test('on an opening map Easy and Normal rivals drive at intro skill: slower and 
   assert.equal(rivalSkill(createRace('canyon', { mode: 'classic' })), RIVAL_SKILL.normal, 'the third map is plain Normal');
 });
 
+test('long-course slower grid slots conserve BOOST but the fastest rival can still boost', () => {
+  for (const slot of [0, 1, 2]) {
+    const race = bare('normal'), rival = race.rivals[slot];
+    race.rivalPace = 1.04;
+    Object.assign(rival, { speed: 0, fuel: 100 });
+    run(race, rival, slot, 20);
+    assert.equal(rival.boosting, false, `slot ${slot} conserves BOOST`);
+    assert.ok(rival.speed < MAX_SPEED, `slot ${slot}: ${rival.speed}`);
+  }
+  const race = bare('normal'), rival = race.rivals[6];
+  race.rivalPace = 1.04;
+  Object.assign(rival, { speed: 0, fuel: 100 });
+  run(race, rival, 6, 3);
+  assert.ok(rival.boosting && rival.speed > 0, 'the leading rival retains BOOST');
+});
+
 test('long-course rivalPace preserves difficulty scaling without raising unboosted rivals above player cap', () => {
   const race = bare('easy'), rival = race.rivals[6];
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 1.3;
-  run(race, rival, 6, 20);
+  run(race, rival, 6, 20, true);
   assert.equal(rival.speed, MAX_SPEED, 'fast courses still respect the player throttle cap');
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 0.5;
-  run(race, rival, 6, 20);
+  run(race, rival, 6, 20, true);
   assert.equal(rival.speed, rivalBaseCap(RIVAL_SKILL.easy, 6) * 0.5, 'slower courses retain their pace multiplier');
 });

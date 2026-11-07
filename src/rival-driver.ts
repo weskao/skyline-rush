@@ -70,7 +70,10 @@ export function driveRival(race: DriveRace, rival: DrivenRival, slot: number, ho
   const nitro = rival.nitroTime > 0, grounded = !(rival.altitude > 0);
   rival.nitroTime = Math.max(0, rival.nitroTime - dt);
   // No BOOST under NITRO: its cap already covers BOOST's, so the fuel would be wasted.
-  rival.boosting = grounded && !nitro && rival.fuel > 0 && (rival.boosting ? rival.fuel > skill.boostOff : rival.fuel >= skill.boostOn);
+  // On faster long courses, back-of-grid drivers conserve BOOST; otherwise every slot outruns a throttle-only player.
+  // Classic races retain their existing BOOST thresholds and deterministic replay behavior.
+  const boostOn = skill.boostOn + ((race.rivalPace ?? 1) > 1 ? (SLOTS - 1 - slot) * 20 : 0);
+  rival.boosting = grounded && !nitro && rival.fuel > 0 && (rival.boosting ? rival.fuel > skill.boostOff : rival.fuel >= boostOn);
   // shortcut: the scripted hop still flies on an empty tank (it never strands a rival); upgrade if rivals ever choose when to fly.
   if (rival.thrusting) rival.fuel -= FLY_DRAIN * dt;
   else if (!grounded) rival.fuel += GLIDE_FUEL_REGEN * dt;
