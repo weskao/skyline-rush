@@ -241,7 +241,8 @@ export function createUpcomingEnvironment(scene: THREE.Scene): {
   scene.add(group);
   const stone = new THREE.MeshStandardMaterial({ color: 0x667d85, roughness: 0.98, flatShading: true, side: THREE.DoubleSide });
   const grass = new THREE.MeshStandardMaterial({ color: 0x74a889, roughness: 1, flatShading: true });
-  const roadStone = new THREE.MeshStandardMaterial({ color: 0xb8c8bd, roughness: 0.96, side: THREE.DoubleSide });
+  // Weathered sandstone, not pale mint: the near-white road hid the Pearl car under the bright sky.
+  const roadStone = new THREE.MeshStandardMaterial({ color: 0x7d7b6e, roughness: 0.96, side: THREE.DoubleSide });
   const cyan = new THREE.MeshBasicMaterial({ color: 0x8aeaff, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide });
   const water = new THREE.MeshBasicMaterial({ color: 0x9cdef9, transparent: true, opacity: 0.48, side: THREE.DoubleSide, depthWrite: false });
   addSky(group);
