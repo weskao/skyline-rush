@@ -410,12 +410,14 @@ test('Cloud save profile provides an avatar fallback and accessible account iden
   await expect(page.locator('#cloud-identity')).toContainText('avatar@example.test');
   await expect(page.locator('#cloud-name')).not.toBeEmpty();
   await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
-  // Give the Vue view a real, loaded avatar rather than overriding Vue-owned
-  // hidden attributes, then exercise the browser's failed-image event.
+  // Test the two image states using a self-contained, loadable avatar. Reusing
+  // the Google login icon can fail to load asynchronously on emulator runners.
   await page.evaluate(async () => {
     const { updateCloudView } = await import('/src/cloud-view-state.ts');
-    updateCloudView({ avatarUrl: document.querySelector('#cloud-login img').src, avatarFailed: false });
+    const avatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="#175b84"/></svg>');
+    updateCloudView({ avatarUrl: avatar, avatarFailed: false });
   });
+  await expect.poll(() => page.locator('#cloud-avatar').evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
   await expect(page.locator('#cloud-avatar')).toBeVisible();
   await expect(page.locator('#cloud-avatar-fallback')).toBeHidden();
   await page.locator('#cloud-avatar').dispatchEvent('error');
