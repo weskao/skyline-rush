@@ -3,6 +3,9 @@ import { updateCoachView } from './tutorial-coach-state.ts';
 import { t } from './i18n.ts';
 import { TUTORIAL_STEPS } from './interactive-tutorial.ts';
 import { trackProgressBottom } from './hud-progress-offset.ts';
+import { keyLabel } from './keymap-ui.ts';
+import type { KeyMap, DriveAction } from './key-map.ts';
+import type { TutorialCue } from './tutorial-cues.ts';
 
 interface TutorialSnapshot {
   index: number;
@@ -12,6 +15,10 @@ interface TutorialSnapshot {
   coachPhase?: string;
   coachReason?: string | null;
   guide?: string;
+  cue?: TutorialCue | null;
+  clears?: number;
+  clearedStep?: string | null;
+  clearedReward?: number;
   skip?(): void;
 }
 interface TutorialDependencies {
@@ -21,6 +28,9 @@ interface TutorialDependencies {
   getInputPrefs(): { mode: string };
   getControlPrefs(): { flyMode: string };
   showKeyMap(): void;
+  getKeyMap(): KeyMap;
+  /** Plays a named sound effect (audio.js); muted audio stays silent there. */
+  cue(name: string): void;
 }
 
 const PHASE_COPY: Readonly<Record<string, string>> = {
@@ -31,6 +41,7 @@ const PHASE_COPY: Readonly<Record<string, string>> = {
 /** Which coach line to show: a failed attempt names its reason, a cleared lesson celebrates before the next. */
 export function tutorialInstructionKey(step: string | null, phase: string, reason: string | null | undefined, done: boolean): string {
   if (done) return 'tutorial.completedCopy';
+  if (phase === 'finishing') return 'tutorial.finishing';
   if (phase === 'cleared') return 'tutorial.cleared';
   if (phase === 'retry' && reason) return reason === 'missed' ? 'tutorial.gateMissed' : `tutorial.${step}Retry.${reason}`;
   return PHASE_COPY[`${step}/${phase}`] ?? 'tutorial.' + step;
@@ -51,28 +62,72 @@ export function tutorialHintKey(step: string | null, steerMode: string, flyMode:
 
 /** Touch control the coach outlines for this lesson, or null for none. */
 export function tutorialTouchTarget(step: string | null, phase: string, steerMode: string, action: string | null): string | null {
-  if (steerMode === 'slide') {
-    if (step === 'left') return null; // the pad box covered the left side of phone screens during Turn left
-    if (['right', 'brake', 'drift'].includes(step ?? '') || step === 'barrelRoll' && phase === 'flicked') return '.touch-pad';
-  }
+  // The slide pad is the whole lower-left of the screen: an outline there reads as a stray box, so it is never drawn.
+  if (steerMode === 'slide' && (['left', 'right', 'brake', 'drift'].includes(step ?? '') || step === 'barrelRoll' && phase === 'flicked')) return null;
   return action ? '#touch-controls [data-control="' + action + '"]' : null;
 }
 
+/** Lesson name for titles and the pass toast. */
+const lessonTitle = (step: string): string =>
+  t(step === 'land' ? 'tutorial.landTitle' : step === 'airChain' || step === 'barrelRoll' || step === 'drift' ? 'tutorial.' + step + 'Title' : 'keymap.' + step);
+/** True once per newly passed lesson of the practice it is given; a new practice starts from its own count. */
+export function createClearChime() {
+  let seen: TutorialSnapshot | null = null, count = 0;
+  return (tutorial: TutorialSnapshot): boolean => {
+    const clears = tutorial.clears ?? 0;
+    if (tutorial !== seen) { seen = tutorial; count = clears; return false; }
+    if (clears <= count) return false;
+    count = clears;
+    return true;
+  };
+}
+/** Coach copy split around NITRO rewards ("+0.25 NITRO", "0.25 格 NITRO") so the view can highlight them. */
+export function rewardParts(text: string): { text: string; reward: boolean }[] {
+  return text.split(/(\+?\d+(?:\.\d+)? (?:格 )?NITRO)/).filter(Boolean).map(part => ({ text: part, reward: /NITRO$/.test(part) && /\d/.test(part) }));
+}
+// Cues name the control the player's own settings give them: toggle FLY is tapped, not held; the slide pad has no brake button.
+const TOGGLE_FLY_CUES = new Set(['chainFly', 'chainBoost', 'chainHold', 'chainLanding', 'chainRelease', 'rollFly', 'rollClimb', 'rollRelease', 'rollSpin']);
+const SLIDE_PAD_CUES = new Set(['brakeAhead', 'brakeHold']);
+function cueVariant(key: string, touch: boolean, flyMode: string, steerMode: string): string {
+  const name = key.replace('tutorial.cue.', '');
+  if (flyMode === 'toggle' && TOGGLE_FLY_CUES.has(name)) return key + 'Toggle';
+  return touch && steerMode === 'slide' && SLIDE_PAD_CUES.has(name) ? key + 'Slide' : key;
+}
+const NO_CUE = { cue: '', cueId: '', cueKeys: [] as string[], cueCount: '' };
+/** Toast fields for a live cue: localized text, the bound desktop keys and the countdown. */
+export function tutorialCueView(cue: TutorialCue | null | undefined, touch: boolean, flyMode: string, keyMap: KeyMap, steerMode = 'buttons'): typeof NO_CUE {
+  if (!cue) return NO_CUE;
+  const key = cueVariant(cue.key, touch, flyMode, steerMode);
+  return {
+    cue: t(key, cue.n === undefined ? undefined : { n: cue.n }), cueId: key,
+    cueKeys: touch ? [] : cue.actions.map(action => keyMap[action as DriveAction]?.[0]).filter((code): code is string => !!code)
+      .map(code => keyLabel(code).replace(/^(Left|Right) Shift$/, 'Shift')),
+    cueCount: cue.count === undefined ? '' : cue.count.toFixed(1) + 's',
+  };
+}
+
 export function setupTutorialUI({
-  getTutorial, getRace, getTouchMatches, getInputPrefs, getControlPrefs, showKeyMap,
+  getTutorial, getRace, getTouchMatches, getInputPrefs, getControlPrefs, showKeyMap, getKeyMap, cue: playCue,
 }: TutorialDependencies) {
   const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
   const progress = document.querySelector<HTMLProgressElement>('#tutorial-progress')!;
   let tutorialView = '';
+  let keyMapSeen: KeyMap | null = null;
+  const clearChime = createClearChime();
   // blur(): a focused button would otherwise re-fire on the Space/Enter keys the lessons use.
   trackProgressBottom($('#tutorial-coach'), document.documentElement, '--tutorial-coach-bottom');
   $('#tutorial-skip-step').addEventListener('click', event => { (event.currentTarget as HTMLElement).blur(); getTutorial()?.skip?.(); });
   function renderTutorial(force = false): void {
     const tutorial = getTutorial();
     if (!tutorial) return;
-    const race = getRace(), touch = getTouchMatches(), inputPrefs = getInputPrefs(), controlPrefs = getControlPrefs();
+    const race = getRace(), touch = getTouchMatches(), inputPrefs = getInputPrefs(), controlPrefs = getControlPrefs(), keyMap = getKeyMap();
+    if (keyMap !== keyMapSeen) { keyMapSeen = keyMap; force = true; } // a rebind redraws the key chips
     progress.value = tutorial.index + (tutorial.complete ? 0 : tutorial.progress);
-    const view = [tutorial.step, tutorial.coachPhase, tutorial.coachReason, tutorial.guide, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode].join('/');
+    if (clearChime(tutorial)) playCue('gate-clear'); // the same chime as a cleared checkpoint gate
+    const passed = race.phase === 'racing' ? tutorial.clearedStep ?? null : null;
+    // While the pass toast is up it holds the cue's place; a paused race shows the pause screen instead.
+    const cue = race.phase === 'racing' && !tutorial.complete && !passed ? tutorial.cue : null;
+    const view = [passed, tutorial.step, tutorial.coachPhase, tutorial.coachReason, tutorial.guide, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode, cue?.key, cue?.n, cue?.count].join('/');
     if (!force && tutorialView === view) return;
     tutorialView = view;
     const step = tutorial.step;
@@ -89,7 +144,7 @@ export function setupTutorialUI({
       title: done ? t('tutorial.complete') : t('tutorial.step', {
         n: tutorial.index + 1,
         total: TUTORIAL_STEPS.length,
-        action: t(step === 'land' ? 'tutorial.landTitle' : step === 'airChain' || step === 'barrelRoll' || step === 'drift' ? 'tutorial.' + step + 'Title' : 'keymap.' + step),
+        action: lessonTitle(step ?? ''),
       }),
       instruction: t(tutorialInstructionKey(step, phase, tutorial.coachReason, done)), // paused: the pause screen says so
       completeActionsHidden: !done,
@@ -97,9 +152,15 @@ export function setupTutorialUI({
       hintKeys: done || touch ? '' : keys ?? '',
       hintText: !done && touch ? t(tutorialHintKey(step, inputPrefs.mode, controlPrefs.flyMode)) : '',
       celebration: done ? t('tutorial.freeDrive') : '',
-      guide: done ? '' : tutorial.guide ?? '',
+      guide: done || race.phase === 'countdown' ? '' : tutorial.guide ?? '', // the arrow starts at GO, with the throttle cue
       skipHidden: done || race.phase === 'paused',
+      ...tutorialCueView(cue, touch, controlPrefs.flyMode, keyMap, inputPrefs.mode),
+      passed: passed ? t('tutorial.passed', { action: lessonTitle(passed) }) : '',
+      passedReward: passed && tutorial.clearedReward ? t('tutorial.passedReward', { n: tutorial.clearedReward }) : '',
     });
+    // Point at the NITRO meter (and touch button) while a lesson's NITRO payout is announced.
+    if (passed && tutorial.clearedReward) document.body.dataset.tutorialReward = 'nitro';
+    else delete document.body.dataset.tutorialReward;
     for (const target of document.querySelectorAll<HTMLElement>('.tutorial-target')) target.classList.remove('tutorial-target');
     if (done) return;
     if (!touch) {

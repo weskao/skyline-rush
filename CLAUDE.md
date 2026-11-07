@@ -11,6 +11,10 @@ File-scoped rules live in `.claude/rules/` and load only with the files they cov
 architecture, module size, artwork, tracks, touch, Garage, tutorial, release notes, CI,
 branches). A rule that only matters for certain files goes there with `paths:`, not here.
 
+**Tutorial lessons** (details: `docs/tutorial-driving.md`): give live, engine-driven cues for
+what to press or release now (the bound key on desktop), let every boost/NITRO effect finish
+before the next lesson, never move the car between lessons, and chime + toast every pass.
+
 
 ## Shared six-course presentation and controls (mandatory for new courses)
 

@@ -148,3 +148,16 @@ test('camera remains in frame across all preset angles and zoom boundaries', asy
     await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
   }
 });
+
+test('Studio entry advertises itself with a sheen and glow, and stills under Reduced Motion', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const entry = page.locator('#garage-studio-open');
+  await expect(entry).toBeVisible();
+  const animations = () => entry.evaluate(node => [getComputedStyle(node).animationName, getComputedStyle(node, '::after').animationName]);
+  await expect.poll(animations).toEqual(['garage-entry-glow', 'start-sheen']);
+  // The shared heading-button rule once repainted it flat #1b3044 over the accent gradient.
+  expect(await entry.evaluate(node => getComputedStyle(node).backgroundImage)).toContain('linear-gradient'); // settled: static stylesheet
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect.poll(animations).toEqual(['none', 'none']);
+});

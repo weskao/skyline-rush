@@ -10,6 +10,7 @@ test.describe('390x844 first tap', () => {
     await page.locator('#start-button').tap();
     await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', 'throttle');
     await expect(page.locator('#touch-controls [data-control="throttle"]')).toHaveClass(/tutorial-target/);
+    await expect(page.locator('#touch-controls [data-control="throttle"]')).toHaveCSS('animation-name', 'tutorial-target-ripple'); // the press-now button pulses
     const skip = page.locator('#tutorial-exit');
     await expect(skip).toHaveText('Skip practice'); // renamed beside "Skip step" (cfdae4a1)
     const bounds = await skip.boundingBox();

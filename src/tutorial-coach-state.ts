@@ -7,5 +7,6 @@ export const coachView = reactive<TutorialCoachView>({
   visible: false, step: '', title: '', instruction: '',
   completeActionsHidden: true, assistHidden: false,
   hintKeys: '', hintText: '', celebration: '', guide: '', skipHidden: true,
+  cue: '', cueId: '', cueKeys: [], cueCount: '', passed: '', passedReward: '',
 });
 export function updateCoachView(fields: Partial<TutorialCoachView>) { Object.assign(coachView, fields); }
