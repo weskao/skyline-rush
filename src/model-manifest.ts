@@ -51,6 +51,40 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt'],
     budgets: { triangles: 5000, bytes: 200_000, textureMaxPx: 0 },
   },
+  // Task 4 hero Roadster, Garage only behind ?model=roadster. Nodes are the rig contract (src/garage-model-rig.ts).
+  roadster2: {
+    id: 'roadster2',
+    url: 'models/roadster2/roadster2.glb',
+    source: {
+      master: 'assets-src/roadster2/roadster2.blend',
+      script: 'assets-src/roadster2/build.py',
+      masterSha256: '5a8accc5bc3544ead96809f6edfd440d52ea80562ca34aecd3ee85af066cf88d',
+      scriptSha256: 'a3d34fc7ac9c242147d9ce06727078f5381e66ec6bc29df26b0d5306ffb3e1bc',
+    },
+    glb: { sha256: '51247ddc14f9f17ca4d865962945c10f2289dd96a875314b8a98112c46dfd2c8', bytes: 1_485_584 },
+    license: { id: 'owned', creator: 'Skyline Rush project' },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        '$BLENDER_BIN --background --factory-startup --python assets-src/roadster2/build.py',
+        'node scripts/assets/export-glb.mjs roadster2',
+        'node scripts/assets/optimize-glb.mjs roadster2',
+        'node scripts/assets/check-glb.mjs roadster2 --promote',
+      ],
+    },
+    nodes: [
+      'body', 'wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr', 'wheel_fl_spin', 'wheel_fr_spin', 'wheel_rl_spin', 'wheel_rr_spin',
+      'wing', 'wing_blade', 'wing_tip_l', 'wing_tip_r', 'wing_rams',
+      'thruster_01', 'thruster_02', 'thruster_03', 'thruster_04', 'nozzle_rear_01', 'nozzle_rear_02', 'nozzle_rear_03', 'nozzle_rear_04',
+    ],
+    materials: ['roadster_paint', 'roadster_glass', 'roadster_trim', 'roadster_carbon', 'roadster_tire', 'roadster_rim', 'roadster_light', 'roadster_lamp', 'roadster_nozzle'],
+    lods: [],
+    fallback: 'procedural-car',
+    decoders: ['meshopt', 'ktx2'],
+    budgets: { triangles: 60_000, bytes: 1_500_000, textureMaxPx: 1024 },
+  },
 };
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
