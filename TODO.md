@@ -1,3 +1,8 @@
+## 2026-11-07 — Charge pickups: ground strips and air charging (not started)
+
+- [ ] Add ground charge strips (road segments that charge on contact). A strip can span every lane or a single lane.
+- [ ] Add air charging: a charge station, a charge segment, or another mechanism, so airborne/FLY play can also charge.
+
 ## 2026-11-07 — Minimap player marker (`feature/minimap-player-marker`, based on `origin/develop` `55821906`)
 
 Symptom: the player's dot on `.race-route-map` was the same shape as the 7 rival dots, hard to find at a glance.
