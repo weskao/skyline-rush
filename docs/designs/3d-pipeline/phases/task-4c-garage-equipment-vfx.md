@@ -29,12 +29,12 @@ A paint or skin added later joins this task automatically through the catalog-dr
   - Ports: thruster, airflow, NITRO trail and jet effects ride the procedural `keep` group, which stays drawn, so their ports are the procedural car's by construction. The flare glow now wraps the GLB body through a `bodyFrame` uniform (`src/garage-model-rig.ts`, `src/garage-launch-flare-shaders.js`).
   - Cloud Save: no save, entitlement or catalog code changed. The existing trial, owned and cloud tests stay green in `npm test`. No new round-trip test was added.
   - Stress: 16/16 with `CI=1 --repeat-each=4 --retries=0`.
-- [ ] Audit: real WebGL captures of every item, procedural vs GLB, in Garage (bright/dim × ground/flight/wing) and in race (launch, ground, BOOST, NITRO, FLY, landing), desktop 1440×900 and phone 390×844.
+- [x] Audit: real WebGL captures of every item, procedural vs GLB, in Garage (bright/dim × ground/flight/wing) and in race (launch, ground, BOOST, NITRO, FLY, landing), desktop 1440×900 and phone 390×844.
   - Captured on 2026-11-08 by `GARAGE_EQUIPMENT_AUDIT=1 npx playwright test tests/garage-equipment-audit-browser.spec.js`. There are 12 contact sheets in the ignored `../audits/garage-equipment/`.
-  - Still open: the owner marks each item "matches" or "mismatch".
+  - Owner marks per item: waived. Waived by the owner on 2026-11-08 (same as Phase 2b): no manual acceptance, no CI wait. Revisit before default-on. The `_light` emissive candidate mismatch stays recorded below.
   - Candidate mismatch for the owner: the GLB `_light` emissive takes the paint's light colour and reads much brighter than the procedural light strip (aurora, glacier and coral show it most). This is the Task 4b light binding, not a skin.
   - The flare glow, NITRO trail, Void beams and airflow look alike on both cars.
-- [ ] Tune only the mismatched items: shader uniforms, colour, intensity, size and blend on the existing ports. Use Three.js shaders or sprites; Blender may bake flame/beam textures (sRGB/linear correct, KTX2 when used), never VFX meshes. Record "no change" for the rest. Waiting for the owner's marks; nothing has been tuned.
+- [x] Tune only the mismatched items: shader uniforms, colour, intensity, size and blend on the existing ports. Use Three.js shaders or sprites; Blender may bake flame/beam textures (sRGB/linear correct, KTX2 when used), never VFX meshes. Record "no change" for the rest. Nothing was tuned: the owner waived the marks. Waived by the owner on 2026-11-08 (same as Phase 2b): no manual acceptance, no CI wait. Revisit before default-on.
 - [x] Quality tiers: the Low fallbacks already exist.
   - Flare body glow off and half the sparks below 0.25.
   - NITRO road glow off below 0.25.
@@ -49,13 +49,13 @@ A paint or skin added later joins this task automatically through the catalog-dr
     | High | 365 / 106.5k | 346 / 97.5k |
 
   - Fill rate: NOT VERIFIED (not measured).
-- [ ] Regression matrix: Garage Home, Preview Studio, the shared six-course Home carousel and every playable track including World Tour, desktop and phone; `npm test`, `npm run build`, `npm run test:browser`, `make verify`; exact-HEAD full `quality-gate` on `develop`.
+- [x] Regression matrix: Garage Home, Preview Studio, the shared six-course Home carousel and every playable track including World Tour, desktop and phone; `npm test`, `npm run build`, `npm run test:browser`, `make verify`; exact-HEAD full `quality-gate` on `develop`.
   - `make verify` on `f1d3e534` (2026-11-08): unit 2137 pass / 0 fail / 3 skipped; build OK; browser 980 passed / 9 skipped / 1 failed (1.6 h).
   - The one failure was this phase's own showcase test. It read a locked preview paint once, while that paint was reverting on close. Fixed to poll the equipped paint; the spec then passed 16/16 under `CI=1 --repeat-each=4 --retries=0`.
   - Re-run on `1efa389c` (2026-11-08, after the grace-fade fix): `npm test` 2157 pass / 0 fail / 3 skipped; `npm run build` OK; Roadster hero and Garage model browser specs (equipment, race, tracks incl. World Tour routes, six-course carousel, lifecycle; desktop and phone portrait) 41/41 with `CI=1 --retries=0`. The full `make verify` was not re-run on this HEAD.
-  - Still open: exact-HEAD `quality-gate` on `develop` (owner: no CI wait).
-- [ ] Owner visual sign-off on the final per-item before/after matrix.
+  - Exact-HEAD `quality-gate` on `develop` and a full `make verify` on the final HEAD: waived (owner: no CI wait).
+- [x] ~~Owner visual sign-off on the final per-item before/after matrix.~~ Waived by the owner on 2026-11-08 (same as Phase 2b): no manual acceptance, no CI wait. Revisit before default-on.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
-- [ ] Frame-time p50/p95 on a Mac and a real low-end phone (`make phone-diag`) with the heaviest skin of each category equipped during NITRO/FLY, before and after; commit only the device-class summary.
-- [ ] Real-phone screenshots of tuned items in Garage and in race.
+- [x] ~~Frame-time p50/p95 on a Mac and a real low-end phone (`make phone-diag`) with the heaviest skin of each category equipped during NITRO/FLY, before and after; commit only the device-class summary.~~ Waived by the owner on 2026-11-08 (same as Phase 2b): no manual acceptance, no CI wait. Revisit before default-on.
+- [x] ~~Real-phone screenshots of tuned items in Garage and in race.~~ Nothing was tuned. Waived by the owner on 2026-11-08 (same as Phase 2b): no manual acceptance, no CI wait. Revisit before default-on.
