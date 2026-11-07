@@ -196,7 +196,13 @@ Root cause: Coast pinned every gate to x 2.5 (lane 3); other tracks drew x unifo
   lanes) plus `ring-rows` expecting a middle-lane train; test setups fixed, assertions unchanged. Every other spec passes
   alone (79 + Garage 46). Stress (`--repeat-each=8 --workers=4 --retries=0`, ring-rows + handoff + item-feedback):
   7/40 fail on this branch and 7/40 on the `develop` base — a load flake already on `develop`, not caused by this change.
-- [ ] Real WebGL screenshots of edge-lane rings, trains and catch-up items reviewed by eye.
+- [x] Real WebGL screenshots reviewed by eye on `develop` `d4b1796f`, desktop 1440×900 and phone 390×844 (Playwright
+  `gameplayPage`, a throwaway spec, not committed). Coast, at the track's own layout seed: an edge-lane ring
+  (x −7.5, 318 m) sits in the left lane at road height, and a 6-ring train runs down lane x 7.5. Classic Tokyo with
+  every rival held 300 m ahead: catch-up items spawned (2–6 in about 20 s; a NITRO ring at x 7.5 / 2.5 m and NITRO cans).
+  When first seen they were still 918–1027 m ahead, past the 900 m draw range, and up close they look like ordinary
+  rings and cans. Watching an item come into view during a live drive was not recorded. Isolated shots
+  (other items hidden) confirmed which items were catch-up ones. Not checked: phone landscape and real touch hardware.
 - [ ] Exact-HEAD full CI after merge to `develop` (needs user approval).
 
 ## Stage 2 Track 06 — Frostbite Canyon graph, gated live preview and cover — 2026-11-03
