@@ -89,5 +89,5 @@ const sections: TrackSection[] = [
 export const FROSTBITE_SPAN = sections.find(s => s.span)!;
 export const FROSTBITE_TRACK: TrackConfig & { topology: 'course-graph'; topologyVersion: 1 } = {
   name: 'Frostbite Canyon', length: Math.floor(total), trafficDensity: 0.6, seed: 12012,
-  layoutVersion: 1, openingNitroRings: 2, rivalPace: 1.04, rivalSpread: 0.028, topology: 'course-graph', topologyVersion: 1, sections,
+  layoutVersion: 1, openingNitroRings: 2, rivalPace: 1.04, rivalSpread: 0.03, topology: 'course-graph', topologyVersion: 1, sections,
 };
