@@ -165,11 +165,12 @@ test.describe('touch NITRO interruption', () => {
     try {
       await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [await point('brake', 1), await point('nitro', 2)] });
       await expect(page.locator('#tutorial-instruction')).toContainText('Sprint interrupted', { timeout: ciTimeout(15000) });
-      await expect.poll(() => page.evaluate(() => window.gameplay.race.player.nitroTime)).toBe(0);
+      await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '0');
       await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await expect(page.locator('#tutorial-instruction')).toContainText('Activate NITRO');
+      await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '1');
       await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [await point('nitro', 3)] });
-      await expect.poll(() => page.evaluate(() => window.gameplay.race.player.nitroUses)).toBe(2);
+      await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '0');
       await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await step(page, 'complete');
     } finally {
