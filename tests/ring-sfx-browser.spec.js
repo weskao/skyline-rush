@@ -8,11 +8,16 @@ const measureAudio = () => {
   AudioNode.prototype.connect = function(destination, ...args) {
     if (destination instanceof AudioDestinationNode) {
       const analyser = this.context.createAnalyser();
+      // The largest buffer (~0.7 s) spans every gap between samples, so a main-thread stall on a slow CI runner
+      // cannot let a short chime slip between two reads.
+      analyser.fftSize = 32768;
       connect.call(this, analyser);
+      const data = new Float32Array(analyser.fftSize);
       window.audioLevel = () => {
-        const data = new Float32Array(analyser.fftSize);
         analyser.getFloatTimeDomainData(data);
-        return Math.max(...data.map(Math.abs)); // peak: a chime is short, RMS over the window would hide it
+        let peak = 0; // peak: a chime is short, RMS over the window would hide it
+        for (const value of data) peak = Math.max(peak, Math.abs(value));
+        return peak;
       };
     }
     return connect.call(this, destination, ...args);
@@ -35,13 +40,15 @@ for (const [name, viewport, hasTouch] of [
     const result = await page.evaluate(async () => {
       const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
       const peaks = [];
-      const sample = setInterval(() => peaks.push(window.audioLevel?.() ?? 0), 8);
       const race = () => window.gameplay.race;
       const rings = race().rings.filter(ring => !ring.row).slice(0, 6);
+      await wait(1500); // let the GO cue decay out of the buffer before the engine bed is read
+      const sample = setInterval(() => peaks.push(window.audioLevel?.() ?? 0), 100);
       await wait(600);
       const bed = Math.max(...peaks);
       peaks.length = 0;
-      const solo = async make => { peaks.length = 0; make(); await wait(500); return Math.max(...peaks); };
+      // Drain first: the buffer still holds the previous chime for ~0.7 s.
+      const solo = async make => { await wait(800); peaks.length = 0; make(); await wait(500); return Math.max(...peaks); };
       const pickup = await solo(() => { race().pickups.find(item => !item.taken).taken = true; });
       const single = {};
       for (const type of ['charge', 'nitro', 'slipstream', 'risk', 'mystery']) {
