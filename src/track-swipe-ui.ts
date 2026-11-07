@@ -1,6 +1,7 @@
 import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, liveSwipeStep, addSwipeSample, releaseVelocity } from './track-swipe.ts';
 import { trackName, getLocale, t } from './i18n.ts';
 import { isUpcomingTrack, upcomingTrackName, type PreviewTrackId } from './upcoming-tracks.ts';
+import { trackLandscapeHomeScale } from './landscape-home-scale.ts';
 
 interface SwipeStart {
   button: number;
@@ -41,6 +42,7 @@ export function canBeginTrackSwipe({ button, phase, tutorial, editing, busy, dia
 
 export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches, getSelectedTrackId }: SwipeOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
+  trackLandscapeHomeScale($('#intro'), $('.aero-tools')); // the home strip's short-landscape panel + rail scale
   // Home screen: swipe (touch) or drag (mouse) the 3D preview to change track, like a carousel page.
   const worldCanvas = $<HTMLCanvasElement>('#world');
   const swipeChip = $('#track-swipe');
