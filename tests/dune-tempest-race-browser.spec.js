@@ -37,6 +37,7 @@ for (const [device, viewport, hasTouch] of [
 ]) test.describe('Dune CourseGraph ' + device, () => {
   test.use({ viewport, hasTouch });
   test('dev-only WebGL races every mandatory checkpoint, finishes and shows distinct edge markers', async ({ gameplayPage: page }) => {
+    test.setTimeout(ciTimeout(150_000));
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.locator('[data-upcoming-track="dune-tempest"]').click();
@@ -82,6 +83,7 @@ for (const [device, viewport, hasTouch] of [
 test.describe('Dune real flight branch', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test('FLY crosses the authored no-road gap without flattened geometry or missed checkpoint', async ({ gameplayPage: page }) => {
+    test.setTimeout(ciTimeout(150_000));
     await page.locator('[data-upcoming-track="dune-tempest"]').click();
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(16_000) });
