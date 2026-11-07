@@ -180,7 +180,7 @@ Draft behind a rival or traffic car to earn a temporary speed-cap increase and N
 
 ### Saved data
 
-Progress and preferences use browser storage with validation and failure handling, so blocked or malformed storage does not prevent play. History retains recent races, while compatible best times, track unlocks, medals, stars, paint choices and eligible Ghosts are stored separately. Records are scoped to the track layout and ruleset so incompatible runs do not replace current bests; compatible legacy data is migrated when available. Open **History** to filter races, compare times and inspect details. Daily and challenge-mode records remain separate from Career results. Optional Google sign-in synchronizes supported progress through Firebase; device settings stay local. See `docs/cloud-save.md` for synchronization and storage details.
+Progress and preferences use browser storage with validation and failure handling, so blocked or malformed storage does not prevent play. History retains recent races, while compatible best times, track unlocks, medals, stars, paint choices and eligible Ghosts are stored separately. Records are scoped to the track layout and ruleset so incompatible runs do not replace current bests; compatible legacy data is migrated when available. Open **History** to filter races, compare times and inspect details. Daily and challenge-mode records remain separate from Career results. Optional Google sign-in synchronizes supported progress through Firebase; device settings stay local. The results screen says whether the finished race reached the cloud, or offers sign-in when you are signed out. See `docs/cloud-save.md` for synchronization and storage details.
 
 ### Ghost, daily challenge, medals and Garage
 

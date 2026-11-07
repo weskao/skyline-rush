@@ -1,4 +1,4 @@
-<!-- source-sha256: b1967b542d9ce6ec64acce9dc0ab3e1e8a79c032778cf1408697663b1cc5848c generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: c9c9bc39d5b7288c766c0dd819f350f61354c0eddd8303bf8ab7bf1085e68b90 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -181,7 +181,7 @@ NITRO 不消耗推進器電量，可與 FLY 或 BOOST 同時運作；動力飛�
 
 ### 儲存的資料
 
-進度與偏好設定儲存在瀏覽器中，並具備資料驗證與失敗處理，因此儲存空間被封鎖或資料格式錯誤時，仍可遊玩。History 保留近期比賽；相容的最佳時間、賽道解鎖、獎牌、星數、塗裝選擇與符合資格的 Ghost 則分開儲存。紀錄依賽道配置版本與規則區分，避免不相容的行程取代目前最佳成績；相容的舊資料會在可用時遷移。開啟 **History** 可篩選比賽、比較時間並查看詳細資料。每日挑戰與挑戰模式紀錄和生涯結果分開保存。可選的 Google 登入會透過 Firebase 同步支援的進度；裝置設定留在本機。同步與儲存細節見 `docs/cloud-save.md`。
+進度與偏好設定儲存在瀏覽器中，並具備資料驗證與失敗處理，因此儲存空間被封鎖或資料格式錯誤時，仍可遊玩。History 保留近期比賽；相容的最佳時間、賽道解鎖、獎牌、星數、塗裝選擇與符合資格的 Ghost 則分開儲存。紀錄依賽道配置版本與規則區分，避免不相容的行程取代目前最佳成績；相容的舊資料會在可用時遷移。開啟 **History** 可篩選比賽、比較時間並查看詳細資料。每日挑戰與挑戰模式紀錄和生涯結果分開保存。可選的 Google 登入會透過 Firebase 同步支援的進度；裝置設定留在本機。結算畫面會顯示本場比賽是否已同步至雲端，未登入時則提供登入按鈕。同步與儲存細節見 `docs/cloud-save.md`。
 
 ### Ghost、每日挑戰、獎牌與 Garage
 
