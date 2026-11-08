@@ -133,22 +133,23 @@ test('on an opening map Easy and Normal rivals drive at intro skill: slower and 
   assert.equal(rivalSkill(createRace('canyon', { mode: 'classic' })), RIVAL_SKILL.normal, 'the third map is plain Normal');
 });
 
-test('long-course rivalPace preserves difficulty scaling without raising throttle-only rivals above player cap', () => {
+test('long-course rivalPace preserves difficulty scaling without raising unboosted rivals above player cap', () => {
   const race = bare('easy'), rival = race.rivals[6];
+  // Holding fuel at zero each frame models throttle-only driving: fuel otherwise regenerates and enables BOOST.
+  const driveWithoutBoost = () => {
+    for (let i = 0; i < 20 * 60; i++) {
+      rival.fuel = 0;
+      driveRival(race, rival, 6, 0, 1 / 60);
+      assert.equal(rival.boosting, false, 'throttle-only must never activate BOOST');
+    }
+  };
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 1.3;
-  // An empty initial tank recharges; force BOOST to remain unavailable at every simulation step.
-  for (let i = 0; i < 20 * 60; i++) {
-    rival.fuel = 0;
-    driveRival(race, rival, 6, 0, 1 / 60);
-  }
+  driveWithoutBoost();
   assert.equal(rival.speed, MAX_SPEED, 'fast courses still respect the player throttle cap');
   Object.assign(rival, { speed: 0, fuel: 0, boosting: false });
   race.rivalPace = 0.5;
-  for (let i = 0; i < 20 * 60; i++) {
-    rival.fuel = 0;
-    driveRival(race, rival, 6, 0, 1 / 60);
-  }
+  driveWithoutBoost();
   assert.equal(rival.speed, rivalBaseCap(RIVAL_SKILL.easy, 6) * 0.5, 'slower courses retain their pace multiplier');
 });
 

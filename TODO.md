@@ -1,3 +1,57 @@
+## 2026-11-08 — Repair develop CI run 42452541249
+
+Acceptance: CourseGraph selection/racing/finish render without legacy World Tour errors; tutorial cues and
+pause controls remain separate in short landscape; Start labels follow the right rail; the quality notice
+leaves language controls clickable; Studio entry animation stays inside its button; narrow mode tabs stay reachable.
+
+- [x] Investigated every failed browser shard in the linked run. Unit/build/cloud/World Tour were green there.
+- [x] RED: registered-runtime palette test fails for Skyfall. New browser regressions fail on the previous
+  production build: the quality notice intercepts the landscape language picker; Studio shine overflows at 2400 ms.
+- [x] Fix: provide Skyfall lighting and retain CourseGraph rendering during the transient ready frame, instead
+  of dispatching Dune/Skyfall to legacy World Tour scenery. Route geometry and race physics are preserved.
+- [x] Fix: landscape cue/pass and pause columns respect the coach's 58vw width. Reserve the Large control rows
+  below the coach; long lessons scroll inside the card. Actual landscape hand-layout screenshots inspected.
+- [x] Fix: keep the landscape notice below global tools; animate the Studio shine background within its box.
+  DOM layout is shared across quality tiers. Existing audio remains appropriate. Palette work adds no geometry.
+- [x] RED: on 320x568 the Endless tab centre was x=295 while its scroll row ended at x=291. Native proximity
+  snapping pulled it outside the hit area. Disable phone-row snapping as the landscape row already does;
+  the original compact-target browser test is retained, and its latest rerun passes.
+- [x] Align Start-label containment/width expectations with the existing 210px landscape rail. Give the longer
+  700m BOOST lesson an assertion budget scaled for software WebGL, preserving its engine completion checks.
+- [x] Latest `npm test`: 2301 pass, 0 fail, 3 intentional skips. Typecheck, production build and CSS-prefix
+  contract pass. The initial `make verify` attempt found a prefix hash change; its bytes were restored.
+- [x] Dune/Skyfall desktop/phone ground and flight browser cases: 6/6 pass, without recorded page errors.
+- [x] Language/Studio regressions, 12 Start-label cases, both portrait hand layouts and paused-practice cases
+  pass. Final landscape hand-layout / paused-coach recheck: 4/4 pass.
+- [x] Full keyboard NITRO recovery and 1024x768 tilt-fallback touch practice each pass individually (1.8 min).
+  Concurrent software-WebGL runs also produced BRAKE/BOOST assertion timeouts; these isolated rechecks are
+  recorded separately from the concurrent failures and from remote CI.
+- [x] Final complete `test:layout` command sequence (3 workers, no retries): 47 pass / 1 intentional skip,
+  then 42/42 pass. Localized Coming Soon label recheck: 1/1 pass. Latest code was rebuilt before this gate.
+- [ ] Full local `make verify`, physical-device/manual acceptance and exact-new-commit remote quality-gate.
+
+## 2026-11-08 — Tutorial hints follow the Controls settings (`develop`, based on `84a2f9e7`)
+
+Acceptance: every coach line, touch hint, live cue, outline and arrow names the control the player's own
+Controls panel gives them (steering mode, hand, size, FLY mode, key bindings), in en and zh-TW.
+
+- [x] RED → GREEN `tests/tutorial-settings-copy.test.js` (11 lessons × every phase/retry reason × desktop /
+  buttons / slide / tilt × hold / toggle FLY): 4 of 5 failed on `27f2074f` code (toggle copy said hold/release
+  FLY, desktop got toggle cues, the pad named BRAKE, buttons-mode drift outlined nothing), then 5/5 pass.
+- [x] RED → GREEN `tests/tutorial-hand-layout-browser.spec.js` (hand=right, size L, 390×844 and 844×390, buttons
+  and slide; page-side rAF overlap recorder): the guide arrow sat on the slide pad, and landscape cue / pass toasts
+  covered AIRFLOW and the coach's Exit, then 4/4 pass.
+- [x] Fixed: tilt brake hint and tilt/slide drift copy and cues say to pull down on the pad; buttons-mode drift
+  outlines BRAKE; tilt outlines no hidden steering button; toggle FLY variants for air chain and barrel roll
+  coach lines, retries, hints and `rollSoften`; keyboard keeps hold copy (FLY mode only latches the touch button).
+- [x] Checked, unchanged: throttle, left, right, fly, land, boost, nitro copy; desktop key chips follow rebinds;
+  no copy names a screen side, so hand only affects layout.
+- [x] `npm test` 2157 pass / 0 fail / 3 skipped; `npm run typecheck`, `npm run build` pass. `CI=1` tutorial browser
+  specs (interactive-tutorial, mobile-guide, hand-layout) 33/33; hand-layout `--repeat-each=4` 16/16. The granted-tilt
+  spec now expects the pad brake hint. One load-time miss (1024×768 tilt barrel-roll takeoff, thruster empty at
+  load average ~60) passed 3/3 on rerun and 33/33 in the full run.
+- Known: `tutorial.driftRelease` (non-cue coach line) is unused copy; left in place.
+
 ## 2026-11-08 — Post-hit grace shows on the car (`develop`, based on `9772af28`)
 
 Acceptance: while `car.cooldown` > 0 (crash, shield block, respawn: no collisions) the player car pulses
@@ -186,6 +240,20 @@ rear fascia and nozzles. Paint/glass `envMapIntensity` (1.3–1.6) was a no-op: 
 - [ ] Add ground charge strips (road segments that charge on contact). A strip can span every lane or a single lane.
 - [ ] Add air charging: a charge station, a charge segment, or another mechanism, so airborne/FLY play can also charge.
 
+## 2026-11-08 — Skyfall CourseGraph Task 14 implementation continuation
+
+- [x] Task 13 was already represented by `62d0f612`; do not reimplement existing CourseGraph race registration and flight-gap physics.
+- [x] New test-first `tests/skyfall-course-race-scene.test.js` (`6b14de2a`) requires the shared scene host to stream the Skyfall physical world around all eight cars, dispose when switching tracks and rebuild on quality changes.
+- [x] Implemented `src/course-race-scene.ts` host selection and streamed Skyfall world (`aad00f90`); corrected `src/courses/skyfall-world.ts` disposal when reparented (`6c4c471d`). Do not create a second renderer or fake one-dimensional route.
+- [x] Test-first readiness assertions in `tests/upcoming-unlock-access.test.js`, `tests/coming-soon-release.test.js`, `tests/skyfall-archipelago-race.test.js` (`6c623db8`). Added real Skyfall ground/flight browser-spec scripts for desktop and phone, release lock (`6c79812c`) and five estimated CI shard-duration entries (`c95f8838`).
+- [x] Set `skyfall-archipelago` to `playable` readiness for `make dev-unlocked` only (`429503f0`); `src/access/production.ts` still rejects every Coming Soon ID.
+- [ ] RED evidence / tests: actual RED and GREEN runs NOT VERIFIED — this execution environment has no complete local git checkout or installed repo deps; do not claim tests green from files being committed.
+- [ ] Run `node --test tests/skyfall-course-race-scene.test.js tests/upcoming-unlock-access.test.js tests/skyfall-archipelago-race.test.js`, `npm test`, `npm run typecheck`, `npm run build`, focused desktop/phone Playwright, `make verify` with evidence.
+- [ ] Complete CourseGraph Task 8 streamed chunk shader warm-up, Task 9 Dune browser/history/release/GPU acceptance, Task 10 CPU and real WebGL benchmarks, Task 11 latest epic safe merge and full Dune acceptance; finish Skyfall Task 14–15 screenshots, flight/ground alternatives, HUD and physical road contact.
+- [ ] Latest epic has over 100 jointly changed files against this course branch; an actual three-way merge with careful conflict resolution, TDD and review is required. Do not overwrite the epic's latest lifecycle, Monsoon/Volcanic, tutorial, home UI or Garage changes with older branch contents.
+- [ ] Explicit approval still required for the protected course → epic and epic → develop merge gates in the original handoff. No PR, deploy, or push to develop/main.
+- [ ] Per user: implement all remaining functions FIRST without waiting/checking CI, then check latest exact-HEAD full CI every hour, fix any red tests by root cause until green.
+
 ## 2026-11-07 — Minimap player marker (`feature/minimap-player-marker`, based on `origin/develop` `55821906`)
 
 Symptom: the player's dot on `.race-route-map` was the same shape as the 7 rival dots, hard to find at a glance.
@@ -244,6 +312,376 @@ Root cause: Coast pinned every gate to x 2.5 (lane 3); other tracks drew x unifo
   rings and cans. Watching an item come into view during a live drive was not recorded. Isolated shots
   (other items hidden) confirmed which items were catch-up ones. Not checked: phone landscape and real touch hardware.
 - [ ] Exact-HEAD full CI after merge to `develop` (needs user approval).
+
+## CourseGraph runtime (Dune → Skyfall)
+
+Spec `docs/superpowers/specs/2026-11-06-course-graph-runtime-design.md`, plan
+`docs/superpowers/plans/2026-11-06-course-graph-runtime.md`, branch `feature/course-graph-runtime`.
+
+### Status audit — Tasks 8–15 (2026-11-08, against `131b448a`)
+
+Audited every plan Step against the code and tests of `efc44eb9..131b448a`. The commits after
+`6a6ca618` (`d8fcabd6` … `131b448a`) wrote no `TODO.md` evidence; their RED/GREEN runs are
+unrecorded. Baseline `npm test` at `131b448a`: 2136 tests, 2130 pass / **3 fail** / 3 skipped
+(Skyfall junction tangents, Skyfall adapter ground traversal, Skyfall road contact), so `131b448a`
+was pushed red. `legacy-race-replay` 47/47. **Browser specs are not run in this session (user
+instruction 2026-11-08): every Playwright / `make verify` / WebGL screenshot row is NOT VERIFIED.**
+
+| Task | Step | State at `131b448a` | Evidence / gap |
+| --- | --- | --- | --- |
+| 8 | 1 tests | PARTIAL | `course-race-scene` (8 cars/3 edges, 3 km move disposes each old geometry once, hide/dispose), `course-route-map`, `route-map`, `course-render-pose`, `course-hud-standings` exist. Missing: shader warm-up of streamed chunk materials. |
+| 8 | 3 implement | DONE | `world.js` (`framedRoad`, graph pose/origin, scene update/hide/dispose, fork look-ahead, recovery camera snap, 3D-distance visibility, finish arch), HUD standings/gaps (`race-hud.ts`), per-edge minimap, Dune palette. `world.js` 1122 ≤ 1126. |
+| 8 | 4 run | PARTIAL | Unit green; shader-warmup / black-frame / legacy-minimap browser specs NOT VERIFIED. |
+| 9 | 1 browser spec | PARTIAL | `dune-tempest-race-browser.spec.js`: desktop + phone, card → START, cp1–cp4, FINISH, overlay, 0 page errors, flight branch, captures. Missing: `#track-length`, saved history/best, Dune → Coast → Dune GPU baseline, release-build Coming Soon. |
+| 9 | 3 readiness | DONE | `718c234f` `'dune-tempest': 'playable'`; `27766459` test lists + `ci-durations.json`. Production `isUpcomingEnterable` unchanged. |
+| 9 | 2/4 runs | NOT VERIFIED | Browser runs not recorded; not run by user instruction. |
+| 10 | 1 CPU bench | PARTIAL | `scripts/course-race-bench.mjs` + `course-race-bench.test.js` (`24c1fc59`, `34b76bab`); numbers never recorded. |
+| 10 | 2 WebGL/phone | NOT DONE | Needs real WebGL + device; NOT VERIFIED. |
+| 11 | all | NOT DONE | Epic merge, full gate, screenshots, exact-HEAD CI. |
+| 12 | 0 Q9 + 1–3 | PARTIAL | Shared sampler + bank 0 + identity distance (`131b448a`), tests (`5889bf8a`); 4 Skyfall junctions still 1.6–6.8° → red. |
+| 13 | all | NOT DONE | No `skyfall-archipelago-race.ts`; Skyfall not in `COURSE_RUNTIMES`. |
+| 14 | all | NOT DONE | Course scene host is Dune-only; Skyfall readiness `preview`. |
+| 15 | all | NOT DONE | — |
+
+### Handoff state — 2026-11-07
+
+- Done and reviewed (unit level only): plan Tasks 1, 1A, 2–7 at `6a6ca618`. Spec Q1–Q9 are decided
+  in §17. Legacy replay guard `tests/legacy-race-replay.test.js` 47/47; `src/game.js` at its
+  580-line ceiling. Browser, `make verify`, WebGL screenshots, `[full-regression]` CI: NOT VERIFIED.
+- Next: plan Task 8 (not started; no code written). Then Tasks 9–11 (Dune acceptance gate), then
+  Skyfall Tasks 12–15. Branch CI on `6a6ca618` is the focused gate only.
+- Rulings that bind later tasks:
+  - Task 8 must also switch `race-hud.ts:309` HUD standings and the `world.js` ~546 (H8) gap
+    gate from 1D odometers to the graph standings / `carGap` (or 3D distance), and snap the
+    camera on graph recovery (world.js snaps only for Frostbite today).
+  - The track-switch browser case (Dune → Coast → Dune) lives in Task 9's browser spec.
+  - Task 11 merges the latest epic first; acceptance pushes carry `[full-regression]`.
+  - Bot finish window floor 120 s (measured 133.5–139.2 s); the rival-finish assertion runs in
+    a player-idle race; the 2 µm pre-node clamp is not quantization.
+- Deferred minors (fix or re-check in the named task):
+  - Task 10 perf: per-frame chooser closures and the finishTimes record in
+    `course-race-step.ts`; `recordGhost` still samples every frame on graph races (discarded).
+  - Skyfall: hazard preview is current-edge only; the gap need ignores BOOST / low-gravity /
+    shortcut; `firestore.rules` is near the 1000-expression limit (one more `validBest`).
+  - The home card shows a static 13.5 KM against the measured 13.93 km.
+  - No direct load/replay test with a seeded `dune-tempest@t1l1` Ghost; `progressGap` on parallel
+    branches at an equal odometer is not pinned; rock-c hazard sits 79 m from hairpin-1's apex.
+
+- [x] Task 1A — Dune tangent-continuous junctions (Q9). `src/courses/dune-tempest-junctions.ts`
+  gives every node one horizontal tangent: a node touched by the flight edge (`split2`, `merge2`)
+  takes `canyon-air-crossing`'s authored heading, every other node the mean of its edge-end
+  headings. `canyon-air-crossing` is left exactly as authored (pads, gap and climb unchanged); the
+  ground side absorbs the split2/merge2 kink. Each ground edge end gets two collinear points along
+  the node tangent, then rejoins the authored curve before the first authored control ≥ 80 m from
+  the node (blend = 0.8 × that chord): three quintic-eased points, or nine points on a cubic
+  Hermite when that end must turn more than 60° (`canyon-switchbacks` head, `canyon-approach`
+  tail). Controls nearer than 80 m are replaced (only `canyon-switchbacks`' last control, 50 m from
+  `merge2`). Node positions, edge ids, endpoints, checkpoints, split/merge structure and hazard
+  fractions are unchanged; hairpin apex indices point at the same authored apex points
+  (2/6/10/14 → 13/17/21/25).
+  - Round 0 RED: `node --test tests/course-junction-tangents.test.js` → 1 pass / 2 fail: 16 of 16
+    junctions over 1° (max `dune-s-bends → dune-crest-cut` 90.04°, `canyon-approach →
+    canyon-air-crossing` 70.08°); `DUNE_JUNCTION_BLEND_METERS` missing (assertion, not an import
+    error). GREEN 3/3 at `85dd3c9c`.
+  - Fix round 1 (review I1/I2/M2): `85dd3c9c` bent the flight pads (takeoff peak 5.29°/m at 5 m
+    chords, radius ≈ 10.8 m < 12 m half-width) and grew the flight gap 923.3 → 948.2 m. New
+    assertions (5 m chords from s = 0 on the shared `sampleRoute`): gap 923.3 ± 5 m; takeoff
+    60 m and landing 105 m pad peak ≤ 1.0°/m; every edge peak ≤ min(3.63°/m, road half-width
+    radius). RED on `85dd3c9c`: gap 948.2 m; `canyon-air-crossing` 4.116 / 5.286 / 3.76°/m at
+    s = 30 / 35 / 40 m. GREEN: same file 5/5 (junctions 0.00°, gap 923.3 m,
+    takeoff / landing pad peaks 0.280 / 0.073°/m = authored).
+    The merge2 join/landing-grade tests now sample the road (5 m chords, same 35° / 40° / 0.12
+    thresholds); the hairpin test judges the authored apex and its authored neighbours.
+  - Measured (shared `routeLength`, metres, pre-Q9 `0c951d49` → now): ground route 13,713.604 →
+    13,930.524; `winding-wadi` 1,240.109 → 1,241.496 vs `dune-crest-cut` 917.508 → 954.821;
+    `canyon-switchbacks` 3,553.549 → 3,671.973 vs `canyon-air-crossing` 1,088.306 (unchanged);
+    `natural-arch-pass` 1,045.355 → 1,055.109 vs `dry-wash-cut` 743.096 → 763.573.
+    Flight solid road `[0, 60]` + `[983.306, 1088.306]` (unchanged; gap 923.3 m).
+    Raw main control polyline 13,484.1 → 13,716.3; its test nominal moved 13,500 → 13,716
+    (same ± 120 m).
+  - Curvature caveat: the 3.63°/m bound is met at the stated 5 m-chord phase only. The authored
+    hairpin itself peaks at 3.816°/m and `stone-ring-corridor` at 3.626°/m (> its 3.37°/m
+    half-width limit) when the 5 m grid is shifted; both unchanged by smoothing (now 3.810 /
+    3.545°/m worst phase).
+  - The home card still shows the static planned `length: 13500` (`src/upcoming-tracks.ts`), not
+    the graph.
+  - Route SVG `public/track-teasers/dune-tempest-route.svg` is a hand-authored schematic (no
+    generator; `f8c359d5`), unchanged. The home Coming Soon preview
+    (`src/upcoming-scenes/dune-tempest.ts`) does not read the graph, so its check is a regression
+    check only.
+  - Real WebGL (production build, headless Chrome, hardware GPU via ANGLE Metal): desktop
+    1440×900 and phone 390×844 touch DPR 3, Dune card selected, Start `COMING SOON`, 0 page errors;
+    preview road continuous, unchanged by this task (no graph junction is drawn there). The graph
+    race road / scenery chunks are not rendered anywhere yet (Task 9). Physical device: NOT VERIFIED.
+- [x] Task 2 — junction crossings at lateral offset (`src/course-measured-motion.ts`). After a node
+  crossing, `localS` = odometer overflow (`toS − length`) and lateral/altitude are measured from the
+  pose on `sampleRoute(next, overflow)` (same 0.25 m forward, half-width and ground −2…5 m rules),
+  instead of re-projecting the world point onto the next edge's entry tangent. The signed gate gets
+  that road-frame pose expressed in the incoming edge's node frame, so a kink cannot swing an inner
+  lateral behind the gate plane; gate plane, direction, width, height band, order and the real 3D
+  step bound are unchanged. `MeasuredCourseMotion` and the function signature are unchanged.
+  - RED: `node --test tests/course-measured-junctions.test.js` → 2 pass / 2 fail (assertions).
+    83 of 252 cases: Dune 5 (all `canyon-approach → canyon-air-crossing`: localS 3.092 / 2.908 at
+    overflow 3, lateral off by up to 9.5e-5 m; Task 1A left every other Dune junction at 0.00°);
+    Skyfall 78 (32 rejected — inner-side ±10 m at `approach → a-ground/a-air`,
+    `a-ground → midway-one`, `a-air → midway-one`, `midway-one → b-ground/b-air`,
+    `b-ground/b-air → midway-two`, `midway-two → c-ground/c-air`, `c-ground/c-air → descent` — and
+    46 accepted with lateral off by 1e-6…3e-5 m or localS 2.999). Negative cases (reverse sweep,
+    wrong next edge, skipped checkpoint, 20 m altitude) already rejected.
+  - GREEN: same file 4/4; with `course-measured-motion`, `-fleet`, `course-signed-gates`,
+    `course-fleet`, `dune-tempest-runtime-adapter`, `legacy-race-replay` 102/102 (replay 47/47);
+    `npm test` 2018 pass / 0 fail / 3 skipped; `npm run typecheck:ts` clean.
+  - Two existing tests entered the synthetic 58°-climb `air` edge with `toPosition [0,0,-51]` (1 m
+    along the ground continuation, 0.47 m off the claimed 1 m air station); their input pose is now
+    `sampleRoute(graph,'air',1).point`. Assertions unchanged.
+- [x] Task 3 prerequisite — authorized flight across a ground junction (Review Focus 2).
+  `src/course-measured-motion.ts` rejected altitude > 5 m on a ground next edge even with
+  `flightAuthorized`, while the in-edge path allows it. Now an authorized car may cross a node onto
+  a ground edge up to the gate band's `maxHeight` (default 5 m); unauthorized stays capped at 5 m and
+  the existing 20 m case (band 13.2 m) stays rejected.
+  - RED: `node --test tests/course-measured-junctions.test.js` → 4 pass / 2 fail (assertions):
+    authorized 9 m rejected at all 15 Dune and 9 Skyfall ground junctions.
+  - GREEN: same file 6/6; with `course-measured-motion`, `-fleet`, `course-signed-gates`,
+    `course-fleet`, `legacy-race-replay` 96/96 (replay 47/47).
+- [x] Task 3 — pure per-car race runtime `src/course-race.ts` (165 lines; no engine/DOM/Three.js).
+  `stepCourseCar` turns the host's odometer/lane/altitude into one measured sweep from the stored
+  pose; a step reaching the edge end crosses the node plane and continues on `chooseEdge(node)` in
+  the same sweep (Task 2 overflow path); FINISH extrapolates past the gate along the end frame and
+  stores the node-plane fraction. Flight authorization: `altitude > 0`, or a solid (non-`noRoad`)
+  flight-edge interval at either end of the sweep. Rejections leave travel untouched and increment
+  `rt.rejections`. Pose arrays, the sweep points and the motion object are reused (no allocation in
+  the module's own step code).
+  - RED (stub exporting the names and car shapes): `node --test tests/course-race.test.js` → 0 pass /
+    8 fail, all `AssertionError` (e.g. start edge `''` vs `sunset-start`, step `'rejected'` vs
+    `'finished'`, gap `null` vs `4`).
+  - GREEN: same file 8/8. Finish odometer from the gate fraction = 13,930.524 m at x −10/0/+10 ×
+    step 3.0/1.5/0.75 m (Δ to Σ `routeLength(groundRoute)` < 0.001 m), 0 rejections, identical edge
+    sequence = `groundRoute`; cost 1.9–5.8 µs per car step. `npm test` 2028 pass / 0 fail /
+    3 skipped (replay 47/47); `npm run typecheck:ts` clean.
+- [x] Task 4 — Dune race spec and registry, readiness unchanged (`preview`).
+  `src/courses/dune-tempest-race.ts` (`DUNE_TEMPEST_RACE`, `DUNE_TEMPEST_TRACK`; length =
+  `Math.floor(Σ routeLength(groundRoute))` = 13,930, seed 13013, no sections/traffic, topology
+  `course-graph-runtime` v1); gate band −6…22 from `DUNE_TEMPEST_GATES`; `noRoad['canyon-air-crossing']`
+  = complement of `solidRoadIntervals` (`[60, 983.306]`); `recoveryEdge` = `canyon-switchbacks`;
+  nine hazards at `atFraction × routeLength`. `src/course-runtimes.ts` registry; `COURSE_TRACKS`
+  = Frostbite + runtimes, `raceTrack` resolves it, `assertTrackMode` adds
+  `'<Name> is a gated classic sprint'` (Frostbite message unchanged). Not in `RACE_TRACKS`.
+  - RED (stub module, empty spec, length 0): `node --test tests/dune-tempest-race.test.js` → 0 pass /
+    4 fail, all assertions (length `0` vs `13930`; gate band `{-2,5}` vs `{-6,22}`; hazards `0` vs `9`;
+    registry entry `undefined`).
+  - GREEN: same file 4/4; with `frostbite-race`, `coming-soon-release`, `course-junction-tangents`,
+    `course-measured-junctions`, `legacy-race-replay` 78/78 (replay 47/47); `typecheck:ts` clean.
+  - Full `npm test`: 2035 tests, 1 fail = `firestore.rules accepts exactly the versioned Classic best
+    ids` (registering Dune in `COURSE_TRACKS` adds `dune-tempest@t1l1`); added it to
+    `firestore.rules` `bestIds()` + `validBest` (spec §9). Re-run: `firestore-rules`, `record-layout`,
+    `cloud-progress`, `race-results`, `dune-tempest-race` 69 pass / 0 fail / 3 skipped.
+- [x] Task 3 carry-over (review rulings) — `src/course-race.ts`. (a) No dead window before a
+  node: an in-edge target (and a `placeCourseCar` station) is clamped to ≤ `length − 1e-4` m
+  (`NODE_CLEARANCE`, a clamp, not rounding; `edgeStart` keeps the exact odometer, so the next
+  crossing's overflow is unchanged). The shared gate rejects a sweep starting within 1e-6 m of the
+  plane, so a car stopped in `[length − 1e-6, length)` was frozen forever. (b) `car.last` is a
+  preallocated per-car object; `stepCourseCar` / `placeCourseCar` copy the three fields
+  (alias-safe, no allocation).
+  - RED: `node --test tests/course-race.test.js` → 8 pass / 2 fail (assertions): step from
+    `length − 5e-7` across the node `'rejected'` vs `'crossed'`; `car.last` after mutating the
+    passed object `{ distance: 999, x: -9, altitude: 7 }` vs `{ distance: 25.5, x: 1, altitude: 0 }`.
+  - GREEN: same file 10/10; with `course-measured-motion`, `course-measured-junctions`,
+    `dune-tempest-race`, `legacy-race-replay` 78/78 (replay 47/47); `typecheck:ts` clean.
+- [x] Task 5 — engine wiring H1–H5, H7 and Dune START → FINISH. `src/course-race-step.ts` (glue):
+  `attachCourse` (H1, from `createRace`; registry ids only, empties `rings`/`pickups`/`traffic`/
+  `hazards`/`sections`), `stepCourseCars` (H2, once per frame after the rival loop: player branch by
+  `chooseBranchByLateral` with a 2.5 m deadband, rivals `chooseCourseNextEdge(…, i + 1, false,
+  seed)` ground-only, rival `finishTime = elapsed − dt + dt · finishFraction`, standings),
+  `carGap` (H3; `null` for another branch or a car past FINISH — every caller reads `null` as no
+  interaction: draft, player contact, `bumpCars`, AI blockers), `progressGap` (H4 rubber band and
+  `sprintGaps`; remaining metres to FINISH via `courseRemaining`), `courseFinished` (H5: rival
+  finish, player completion via `raceCompletion(race, routeEnd)`). `racePosition` uses
+  `race.course.standings` (H7). Each legacy branch is the replaced expression verbatim.
+  `src/race-finish.js`: the completion/result block moved out of `game.js` (598 → 580 lines,
+  ceiling lowered to 580). Step bound `|Δodometer|·(1 + |x|·curvature) + |Δx| + |Δaltitude| +
+  0.01`; `stepCourseCar` adds `|x|·|Δright| + |altitude|·|Δup|` of the sampled frames because the
+  shared LUT frame turns in steps (without it: VEGA rejected 4× in the first 3.2 s, a 0.897 m step
+  at x 2.5 measured 0.9206 m vs bound 0.9099 m).
+  - RED (stub module exporting the five names): `node --test tests/course-race-step.test.js
+    tests/dune-tempest-race.test.js` → 5 pass / 7 fail, all `AssertionError` (`carGap` `null` vs
+    the `physicalGap` value; `src/race-finish.js exists`; `createRace attaches race.course` ×5).
+  - GREEN: same files 12/12 (22/22 with `course-race`); `legacy-race-replay` 47/47;
+    `module-size`, `legacy-js-names`, `game`, `race-standings`, `race-objectives`,
+    `frostbite-race` 127/127; `npm test` 2042 pass / 0 fail / 3 skipped; `npm run typecheck` clean.
+  - Measured bot (throttle + BOOST, x held per path, 60 Hz): 139.16 s ground route
+    (`winding-wadi`/`natural-arch-pass`), 136.30 s `winding-wadi`/`dry-wash-cut`, 136.35 s
+    `dune-crest-cut`/`natural-arch-pass`, 133.48 s `dune-crest-cut`/`dry-wash-cut`; position 1,
+    0 rejections, cp1..cp4 in order. 30/60/120 Hz: 139.276 / 139.159 / 139.102 s (spread ≤ 0.17 s on
+    all four paths) → tolerance 0.5 s. Window asserted 120–330 s: the planned 150 s floor is below
+    every measured path (deviation, flagged for review). Idle player: rivals finish 159.5–199.9 s on
+    both ground alternates, never `canyon-air-crossing`, 0 rejections; `racePosition` 8.
+  - Parallel branches (Review Focus 3): player on `winding-wadi` and NOVA on `dune-crest-cut` at
+    equal odometer (and 8 m ahead): 0 collisions, draft time 0, NOVA not knocked; NOVA/ORBIT
+    rival-vs-rival not bumped. Same-edge controls do collide and draft.
+  - Cost: `stepCourseCars` ≈ 19–21 µs per frame for 8 cars; whole `stepRace` Dune 27.6–33.5 µs vs
+    Frostbite 27.8–32.0 µs per frame (Node, 60 Hz bot).
+  - Not done here (later tasks): gap fall / rejected-sweep recovery (H6, Task 6) — a rejected car
+    is counted but not recovered; player taking `canyon-air-crossing` before Task 6 has no gap
+    physics; rendering/camera (H8/H9); readiness stays `preview`.
+
+- [x] Task 6 — Dune flight gap, hazards and recovery on the graph runtime (Q1: the flight edge ships in
+  Phase 1). `src/course-race.ts`: `recoverCourseCar(rt, id, isClear)` → the flight edge's recovery edge
+  (else the car's own ground edge) at the first clear slot 5…65 m, odometer = the edge-start (split)
+  odometer, never ahead of it; `CourseHazard.aiPreview`. `src/course-race-step.ts`:
+  `stepCoursePlayer` (H2 + H6 for the player, called at game.js `gapNow` right after its odometer
+  integration; returns `false`, so the legacy 1D drop never runs on a course): over a no-road
+  interval below `GAP_CLEARANCE`, or on a rejected sweep, `dropCar` (× `GAP_SLOWDOWN`, grace,
+  `falls`/`fall`) and re-seat through `placeCourseCar` — that frame sweeps no gate, hazard or score;
+  else the hazard sweep (`contact(race, 'barrier', …, 0.7, 0.6)`, below 2.4 m, within the hazard
+  radius laterally, across at most one node). `stepCourseCars` now steps rivals only: rejected →
+  re-seated, hazard hit → `knock`. `courseHazardBlockers` (one line in `car-collisions.js`
+  `avoidObstacles`): within `aiPreview` ahead on the rival's edge the unsafe side is blocked to the
+  road edge, so the rival takes `safePassSide`. `courseGapWarning`: next gap within
+  `GAP_WARN_DISTANCE` on the player's edge, else on the branch its lane picks; `gapChargeWarning`
+  dispatches to it. `isClear` rejects slots within 4.4 m of another car on that edge or inside a
+  hazard's ±radius. game.js: 4 existing lines edited (import, `gapNow`, H2 comment,
+  `gapChargeWarning`), still 580.
+  - Step bound (Task 5 review carry-over): `maxStepMetres` now uses `player.speed·dt` /
+    `rival.pace·dt` instead of `|Δodometer|`. Confirmed nothing changes `player.speed` between its
+    integration and the step (the step now runs right after it) nor `rival.pace` between
+    `rival.distance += rival.pace·dt` and H2 (avoidance/deck/aiImpacts/rivalCollects touch x,
+    altitude and speed, not pace).
+  - RED: `node --test tests/dune-tempest-race.test.js` → 9 pass / 7 fail, all `AssertionError`:
+    `aiPreview` undefined !== 120; no-FLY run "fell once" (null); FLY-pulse 8-path finish 116.65 s
+    (no gap physics yet); recovery frame `falls` 0 !== 1; hazard `collisions` 0 !== 1;
+    "course-race-step exports courseGapWarning" ('undefined' vs 'function'); odometer jump
+    "player jump rejected" 0 !== 1 (the old `|Δodometer|` bound accepted a +50 m rewrite).
+    `rivals never select the flight edge` was already green (Q8 from Task 5).
+  - GREEN: same file 16/16; `tests/course-race.test.js` 11/11 (new `recoverCourseCar` unit test,
+    written after the implementation); `legacy-race-replay` + `module-size` + `course-race-step`
+    52/52 (replay 47/47); `npm test` 2053 tests, 2050 pass / 0 fail / 3 skipped;
+    `npm run typecheck` clean.
+  - Measured FLY-pulse bot (vertical-speed P-controller holding ~2.5 m, BOOST off on
+    `canyon-approach` and the flight edge), 60 Hz: 116.653 / 113.792 / 114.226 / 111.365 s on the
+    four air paths (30/120 Hz within 0.07 s), 0 falls, 0 rejections, lowest altitude over the gap
+    2.38 m, landing localS 1057–1061 on the [983.3, 1088.3] pad, tank 100 → ≥ 87. Air window
+    100–330 s (below the shortest measured air path, above one skipping the 1,088 m edge).
+    Ground paths unchanged in the 120–330 s window, 0 rejections.
+  - Cost: `stepRace` on Dune, min of 8 runs, 45.7 µs/frame at `caee7bf1` vs 46.7 µs now (host load
+    average 33–68, so within noise; recovery allocates only on the rare recovery frame).
+  - Open: camera snap on recovery is Task 8 (world.js only snaps for Frostbite). Rival hazard knock at
+    the parallel branch is covered by the same sweep (edge-matched), not by a separate test.
+  - Follow-up (user decision 2026-11-07): gap-charge need from pulsed FLY usage, graph path only.
+    The legacy formula (`FLY_DRAIN · gap / speed` + lift, continuous thrust) gave 163.4 at 88 m/s
+    (141.8 BOOST, 123.4 NITRO), so every Dune air approach showed "NEED 164% CHARGE" with any fuel,
+    while the pulse bot uses ~13. `courseGapWarning` now uses need = 1.5 × hover burn × gap seconds
+    + `GAP_LIFT_RESERVE` below `GAP_CLEARANCE`. Hover burn comes from the engine physics: thrust duty
+    7 / (19 + 7) (thrust 19 m/s², released-FLY glide 7 m/s², inline literals in `stepRace`, mirrored
+    in `course-race-step.ts`) × `FLY_DRAIN` − (1 − duty) × `GLIDE_FUEL_REGEN` ≈ 1.115 fuel/s.
+    Legacy `gapChargeWarning` is unchanged (replay 47/47).
+    - RED: `node --test --test-name-pattern='pulsed|88 m/s' tests/dune-tempest-race.test.js` →
+      0 pass / 2 fail, both `AssertionError`: "a full tank crosses with pulsed FLY" (warning
+      non-null at fuel 100, 88 m/s, 300 m before the gap); `assert.ok(full.need <= 100)`.
+    - GREEN: `tests/dune-tempest-race.test.js` 18/18.
+    - Measured: need 300 m before the gap 23.55 / 21.14 / 19.09 at 88 / 102 / 118 m/s. Pulse bot
+      at 88 m/s: 12.58 used (100 → 87.42); 12.58 × 1.5 = 18.87 ≤ 23.55. Entering with exactly the
+      need (23.55, no warning shown) it crosses with 10.97 left, 0 falls, 0 rejections; with 6.5
+      it runs dry and falls.
+    - "Warned-against fuel fails to cross" cannot hold by design: the margin warns before the
+      crossing is impossible (fuel in [12.6, 23.55) still crosses with this bot). The test instead
+      covers: no warning ⇒ crosses, margin ≥ 1.5 × measured usage, a tank at half the usage falls.
+    - [ ] Pending: the 1.5 margin is chosen, not measured against human pulsing — tune it after a
+      real-device playtest of the Dune gap; keep the `used × 1.5 ≤ need` assertion.
+    - [ ] Pending: the thrust 19 / glide 7 mirror has no exact drift guard (only drift that breaks
+      `used × 1.5 ≤ need` fails); export the constants from `game.js` when it has line headroom.
+      BOOST (+3 fuel/s while thrusting) is not in the need.
+
+- [x] Task 7 — Dune results under the topology-keyed id, Ghost never valid on a graph-runtime id (Q4).
+  `src/ghost.ts` `validGhost` returns false for `isCourseRuntime(trackId)` (one line; covers save, load
+  and replay, and Skyfall when it joins `COURSE_RUNTIMES`). Settlement is the existing Frostbite gated
+  path (`isUpcomingTrack`): history + best only. Already in place, no change: `recordTrackId('dune-tempest')
+  === 'dune-tempest@t1l1'` (Task 1 `COURSE_TRACKS`) and `firestore.rules` `bestIds()`/`validBest` (Task 4);
+  `firestore.rules` untouched (close to the 1000-expression limit). New tests in
+  `tests/dune-tempest-race.test.js`.
+  - RED: `node --test tests/dune-tempest-race.test.js` → 20 pass / 2 fail, both `AssertionError`:
+    finished race keys `[best-tracks, ghosts, history, unlocked]` !== `[best-tracks, history, unlocked]`;
+    `validGhost(600-sample trace, 'dune-tempest')` true !== false. The record-id and `firestore.rules`
+    assertions were already green before this task (Task 1 / Task 4).
+  - GREEN: same file 22/22; `npm test` 2059 tests, 2056 pass / 0 fail / 3 skipped; `npm run typecheck`
+    clean; `src/game.js` still 580. `firestore-rules.test.js` 3/3 on the local emulators (Java 21,
+    `npx --offline firebase-tools@15.34.1 emulators:exec`; the Playwright half of `test:cloud` not run).
+
+- [x] Task 12 — Skyfall one road frame + Q9 junctions. `131b448a` rendered the road from the shared
+  `sampleRoute` (bank 0, `skyfallPhysicalDistance` = identity) but pinned each flight-edge node to the
+  bare first/last chord, while the shared Catmull-Rom sampler's heading on those long curved pad
+  segments differs by up to 6.8°. `smoothSkyfallJunctions` now pins a flight-edge node to the heading
+  the shared sampler reports at that edge end (flight control points untouched).
+  - RED (pushed at `131b448a`, `npm test` 2130 pass / 3 fail): `course-junction-tangents` Skyfall
+    `a-air → midway-one` 6.81°, `midway-one → b-air` 1.82°, `midway-two → c-air` 2.05°, `c-air →
+    descent` 1.60°; `skyfall-archipelago-runtime-adapter` `canTraverseSkyfallRoad('midway-one', …)`
+    false; `skyfall-road-contact` identity `2014.4678967723694 !== …696`. The last two are a 1-ULP
+    overshoot of `length·40/40` / `length·10/10` past `routeLength` (probe in the scratchpad).
+  - GREEN: `node --test tests/course-junction-tangents.test.js tests/skyfall-*.test.js` 31/31;
+    `npm test` 2136 tests, 2133 pass / 0 fail / 3 skipped; replay 47/47 (Dune untouched).
+  - Measured ground route 16,452.588 → 16,457.420 m (`approach` 2,289.431, `a-ground` 2,897.929,
+    `midway-one` 2,015.591, `b-ground` 2,504.865, `midway-two` 2,185.204, `c-ground` 2,486.800,
+    `descent` 2,077.600). Flight edges and gaps unchanged: `a-air` 1,150.180 gap [276.043, 793.624],
+    `b-air` 867.996 [156.239, 555.518], `c-air` 1,237.364 [296.967, 915.649].
+  - Review fix (fresh reviewer, Critical): the fixed 18 m / 36 m guide points next to 143–471 m
+    authored segments made the uniform Catmull-Rom overshoot and fold the road back over itself at
+    every ground-edge end (the heading-only Q9 test could not see it). Guides now sit at 15 % / 40 %
+    of the node → first-authored-control chord. New test in `tests/course-junction-tangents.test.js`:
+    every ground edge's 5 m-chord turn rate ≤ the road half-width radius (Dune-style).
+    - RED: 1 fail, 25 violations; worst 36.0°/m vs 3.58°/m (`approach` s = 20/30 m), ratio 11.3×.
+      The authored (unsmoothed) Skyfall geometry passes the same bound.
+    - Tried (scratchpad probe, worst ratio): thirds 1.90, 0.2/0.45 1.02, 0.15/0.38 1.02,
+      0.13–0.17/0.40–0.42 0.83–0.91. Chosen 0.15/0.40 → 0.835.
+    - GREEN: `node --test tests/course-junction-tangents.test.js tests/skyfall-*.test.js
+      tests/upcoming-*.test.js` 83/83.
+    - Ground route now 16,462.256 m (`approach` 2,283.873, `a-ground` 2,871.079, `midway-one`
+      1,987.281, `b-ground` 2,498.409, `midway-two` 2,215.640, `c-ground` 2,556.099, `descent`
+      2,049.875); flight edges and gaps unchanged.
+    - Not fixed (minor): the guides carry the flight edge's pitch (≈ 10° at b-split) — a 3D tangent,
+      so heading and grade are both continuous; two flight edges sharing a node would silently keep
+      the last heading (none do).
+  - Risk, not fixed: `canTraverseSkyfallRoad` and the identity test still use exact `toS ≤ length` /
+    strict float equality; the 1-ULP case passes now only because the lengths moved. Real WebGL
+    re-inspection of the Skyfall home preview and race road: NOT VERIFIED (no browser this session).
+- [x] Task 13 — Skyfall race spec + registration, readiness still `preview`.
+  `src/courses/skyfall-archipelago-race.ts` (data only): gate band Q6 −2…13.2 m (12 + `CAR_HEIGHT`,
+  literal mirrored, the test imports `game.js` `CAR_HEIGHT`); `noRoad` = the authored gaps (graph
+  metres since Q5); `recoveryEdge` = the ground twin with the same split/merge (`a/b/c-ground`);
+  hazards = `SKYFALL_OBSTACLES` (safe side opposite the lateral, `aiPreview` 120 m as Dune);
+  track `Math.floor(ground route)` = 16,462 m, seed 16016, topology v1. One line in
+  `course-runtimes.ts`; everything else (createRace, standings, gap physics, recovery, HUD, minimap,
+  record id, Ghost-off) follows the registry. `firestore.rules`: `skyfall-archipelago@t1l1` in
+  `bestIds()` and `validBests`.
+  - RED: `node --test tests/skyfall-archipelago-race.test.js` → 1 pass / 11 fail: 4 `AssertionError`
+    "Skyfall registered in COURSE_RUNTIMES"; 7 `Error: Unknown track: skyfall-archipelago` thrown
+    by `createRace` (a runtime registry miss, not an import/syntax error).
+  - Rules RED (local emulators, Java 21, `npx --offline firebase-tools@15.34.1 emulators:exec … 'node
+    --test tests/firestore-rules.test.js'`): adding the Skyfall `validBest` broke the existing
+    fullest-save case — "maximum of 1000 expressions to evaluate has been reached" (2 pass / 1 fail;
+    the same run on `HEAD` rules: 3/3). New assertion: the fullest save plus every `COURSE_TRACKS`
+    best is accepted, and each course best of 0 is rejected. Fix: `validStars` is one
+    `stars.values().hasOnly([1, 2, 3])` (keys are already `hasOnly(trackIds())`) instead of ten
+    per-id lookups; `validStar` removed. GREEN 3/3 (bad stars 0 / 4 / 2.5 / '3' / 7 still fail).
+  - GREEN: same file 12/12; `npm test` 2149 tests, 2146 pass / 0 fail / 3 skipped; `npm run typecheck`
+    exit 0; replay 47/47 (inside `npm test`).
+  - Measured bot (60 Hz, throttle; BOOST off on the incoming and flight edge toward a flight edge;
+    FLY P-controller holding ~2.5 m until the gap ends): ground route 162.76 s; one flight edge
+    151.15–155.14 s; two 139.68–144.13 s; all three 132.10 s; 0 falls, 0 rejections, lowest
+    altitude over every gap 2.53 m, landings a/b/c-air at 869.9 / 630.8–632.1 / 990.4–991.4 m (all on
+    road). 30/60/120 Hz ground route 162.902 / 162.759 / 162.687 s. Idle player: rivals finish
+    190.1–199.1 s, never on a flight edge. Window 120–330 s.
+  - No-FLY fall in each gap → re-seated on `a/b/c-ground` at 5…65 m, odometer ≤ split, checkpoints
+    unchanged, race finishes. A `skyfall-11` obstacle hits on its lateral and not on the safe side.
+  - Open: Skyfall race scenery/browser (Task 14). The bot's tank reaches 0 on BOOST stretches; the
+    gap need still ignores BOOST / low gravity (deferred minor).
+
+## Step 1 — Frostbite Canyon → epic integration record — 2026-11-06
+
+- **Branch CI:** `feature/playable-frostbite-canyon` `fb0b8564`, run `42195029806` — every job green. **PASS**
+- **Epic merge:** `9f6ba4be` = `git merge --no-ff origin/feature/playable-frostbite-canyon` `[full-regression]` into `feature/epic-multiroute-longform-tracks`; local `npm test` + `npm run build` green before push. **PASS**
+- **Epic exact-HEAD full CI:** run `42207155521` on `9f6ba4be` — 22 success, 4 skipped (path-gated), 0 failed, `quality-gate` success. **PASS**
+- **Other `playable-*` handoff docs merged into epic** (docs-only, `--no-ff`; `TODO.md` conflicts resolved keep-both, 0 lines dropped): `a08cd5cb` dune-tempest, `560020bc` monsoon-ruins, `0f566f38` skyfall-archipelago, `28acdd85` stormline-megacity, `036a6c52` volcanic-crown. Local `npm test` 1962 pass / 0 fail / 3 skipped, `npm run build` green. **PASS**
+- **Real WebGL / human visual sign-off of the Frostbite race on epic:** not re-run after the merge (branch evidence above in this file). **NOT VERIFIED**
+- **Real-device performance, `firestore.rules` deploy + `npm run test:cloud`:** unchanged from the Frostbite pending list below. **NOT VERIFIED**
 
 ## Stage 2 Track 06 — Frostbite Canyon graph, gated live preview and cover — 2026-11-03
 
@@ -560,15 +998,13 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
   - [x] ~~Real-phone p50/p95 and screenshots; owner visual sign-off; waiting for exact-HEAD CI~~: waived by the owner for Phase 2b on 2026-11-08 (no manual acceptance, no CI wait). Revisit before default-on.
   - [ ] Owner-approved default-on (remove `?model=roadster`), separate commit.
   - [ ] Rival cars: separate owner decision (default: stay procedural).
-- [ ] **Phase 3c:** Garage equipment and VFX alignment with the GLB car (added 2026-11-07, after Phase 3b, before Phase 5 cover captures). Covers every Garage equipment item, enumerated from `PAINTS` (6 paints) and `GARAGE_SKINS` (22 skins: thruster ×4, airflow ×4, NITRO trail ×5, launch flare ×9), plus the base NITRO/FLY/BOOST/airflow/jet effects and the Ground/Flight/Wing and lighting controls. Ports, behaviour, entitlements and Cloud Save unchanged; no VFX meshes from Blender. Checklist: `docs/designs/3d-pipeline/phases/task-4c-garage-equipment-vfx.md`.
+- [x] **Phase 3c:** Garage equipment and VFX alignment with the GLB car (added 2026-11-07, after Phase 3b, before Phase 5 cover captures). Covers every Garage equipment item, enumerated from `PAINTS` (6 paints) and `GARAGE_SKINS` (22 skins: thruster ×4, airflow ×4, NITRO trail ×5, launch flare ×9), plus the base NITRO/FLY/BOOST/airflow/jet effects and the Ground/Flight/Wing and lighting controls. Ports, behaviour, entitlements and Cloud Save unchanged; no VFX meshes from Blender. Checklist: `docs/designs/3d-pipeline/phases/task-4c-garage-equipment-vfx.md`.
   - [x] Catalog-driven audit captures: every paint and skin, procedural vs GLB car, Garage bright/dim × three poses and race events, desktop and phone (2026-11-08). 12 contact sheets plus `tier-cost.json` in the ignored `docs/designs/3d-pipeline/audits/garage-equipment/`.
-  - [x] Real-GPU recapture (headed Chrome, ANGLE Metal) at the branch merge commit; owner marks (2026-11-08): the GLB tail light is the only mismatch (paint light colour, much brighter than the red procedural strip); every other paint, skin and base effect matches.
-  - [x] Tail light tuned to the procedural rear LED colour and power (`src/garage-model-rig.ts`); RED 14/1 → GREEN 29/29 in `tests/garage-model-rig.test.js`, `npm test` 2143 pass / 0 fail. "No change" for every other item.
-  - [x] ~~Owner visual sign-off~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified). A real-GPU after-capture of the tuned tail light is still useful evidence.
+  - [x] ~~Owner marks mismatched items; tune only those, record "no change" for the rest. Candidate: GLB paint-light emissive is brighter than the procedural strip.~~ Waived by the owner on 2026-11-08, same as Phase 3b; revisit before default-on. Nothing was tuned.
   - [x] RED/GREEN: flare glow and Studio sweep carried onto the GLB body; uniforms-only skin swap; no compile after GO; entitlements unchanged (`tests/hero-roadster-equipment-browser.spec.js`, 16/16 CI stress). Cloud Save: code untouched, existing tests green; no new round-trip test.
   - [x] Low-tier fallbacks exist; draw calls/triangles per tier recorded (GLB 17–21 fewer draw calls than procedural). Fill rate NOT VERIFIED.
-  - [x] ~~Owner sign-off; real-phone p50/p95 and screenshots~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified).
-  - [ ] All-track matrix, `npm run test:browser`, `make verify`, Mac p50/p95 with the heaviest loadout, exact-HEAD full CI.
+  - [x] ~~Owner sign-off; real-phone p50/p95 and screenshots; exact-HEAD CI.~~ Waived by the owner on 2026-11-08, same as Phase 3b; revisit before default-on.
+  - [x] ~~Real low-end-phone p50/p95 per heavy item, Low-tier fallback, all-track matrix, `make verify`, exact-HEAD full CI, owner sign-off.~~ Matrix run on `1efa389c`: unit 2157/0, build OK, hero and Garage specs 41/41. Waived by the owner on 2026-11-08, same as Phase 3b; revisit before default-on.
 - [ ] **Phase 3d (spec v2 Phase 2d, added 2026-11-08):** Roadster close-out. All Phase 3b/3c owner gates pass (visual sign-off on real-GPU captures, real-phone screenshots and p50/p95, exact-HEAD full CI). Then `?model=roadster` is removed in its own commit, with the procedural fallback kept and the all-track matrix rerun. The Roadster's shape is frozen after this step.
   - [x] ~~Owner visual sign-off on real-GPU captures~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified).
   - [x] ~~Real-phone screenshots and p50/p95~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified). Not measured.

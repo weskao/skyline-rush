@@ -1,4 +1,4 @@
-import { physicalGap } from './circuit-track.ts';
+import { carGap, courseHazardBlockers } from './course-race-step.ts';
 import { ROAD_LIMIT } from './game.js';
 import { hazardReach, hazardTouch, nudge } from './hazard-race.ts';
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -38,8 +38,8 @@ function laneFree(x) {
   return true;
 }
 // A car alongside, or one ahead this car closes on within ~3 s, blocks its own width.
-function carBlocker(race, d, altitude, pace, car, carPace, look) {
-  const gap = physicalGap(race.trackId, d, car.distance);
+function carBlocker(race, other, altitude, pace, car, carPace, look) {
+  const gap = carGap(race, other, car) ?? -Infinity; // cars on different graph branches never block
   if (gap > -4.4 && gap < Math.min(look, 4.4 + (pace - carPace) * 3) && Math.abs((car.altitude || 0) - altitude) < 1.8) {
     blockers.push(car.x - AI_HALF_WIDTH, car.x + AI_HALF_WIDTH);
   }
@@ -47,9 +47,9 @@ function carBlocker(race, d, altitude, pace, car, carPace, look) {
 export function avoidObstacles(race, other, pace, dt) {
   const { props, hazards } = race, d = other.distance, altitude = other.altitude || 0, look = Math.max(AI_LOOKAHEAD, pace * AI_LOOK_TIME);
   blockers.length = 0;
-  for (const car of race.traffic) if (car !== other) carBlocker(race, d, altitude, pace, car, car.speed, look);
-  for (const car of race.rivals) if (car !== other) carBlocker(race, d, altitude, pace, car, car.pace ?? car.speed, look);
-  carBlocker(race, d, altitude, pace, race.player, race.player.speed, look);
+  for (const car of race.traffic) if (car !== other) carBlocker(race, other, altitude, pace, car, car.speed, look);
+  for (const car of race.rivals) if (car !== other) carBlocker(race, other, altitude, pace, car, car.pace ?? car.speed, look);
+  carBlocker(race, other, altitude, pace, race.player, race.player.speed, look);
   for (let i = firstProp(props, d); i < props.length && props[i].from < d + look; i++) {
     const p = props[i];
     if (p.to > d - 2.2 && p.top > altitude && p.bottom < altitude + 1.8) blockers.push(p.left, p.right);
@@ -60,6 +60,7 @@ export function avoidObstacles(race, other, pace, dt) {
     const reach = hazardReach(h); // covers a moving hazard's whole sweep; 0 = a trigger, never steered around
     if (reach) blockers.push(h.x - reach, h.x + reach);
   }
+  if (race.course && altitude < BARRIER_HEIGHT) courseHazardBlockers(race, other, blockers); // graph hazards: steer to the safe side
   let target = other.seekX ?? other.homeX ?? other.x; // seekX: a rival's item lane (rival-items.ts), only while free
   if (!laneFree(target)) {
     target = other.x; // nowhere free: hold the line rather than swerve into something else
@@ -103,7 +104,7 @@ export function aiImpacts(race, other, before, pace) {
   }
 }
 export function bumpCars(race, a, b) {
-  if ((a.cooldown > 0 && b.cooldown > 0) || Math.abs(physicalGap(race.trackId, a.distance, b.distance)) >= 4.4 || Math.abs(a.x - b.x) >= 1.7 ||
+  if ((a.cooldown > 0 && b.cooldown > 0) || Math.abs(carGap(race, a, b) ?? Infinity) >= 4.4 || Math.abs(a.x - b.x) >= 1.7 ||
     Math.abs((a.altitude || 0) - (b.altitude || 0)) >= 1.8) return;
   const side = Math.sign(a.x - b.x) || -1, intensity = clamp(Math.abs(a.speed - b.speed) / 70, 0.25, 1);
   if (!(a.cooldown > 0)) knock(race, a, side, intensity, aiRetention(a));

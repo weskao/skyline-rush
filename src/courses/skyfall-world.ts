@@ -17,7 +17,7 @@ function makeRoad(edgeId: string, start: number, end: number): THREE.BufferGeome
   const e = SKYFALL_COURSE.edges.find(item => item.id === edgeId)!;
   const marks = [start, end, ...e.gaps.flatMap(g => [g.from,g.to])
     .filter(s => s > start && s < end)];
-  for (let s = Math.ceil(start / 24) * 24; s < end; s += 24) {
+  for (let s = Math.ceil(start / 3) * 3; s < end; s += 3) {
     if (s > start) marks.push(s);
   }
   marks.sort((a,b) => a-b);
@@ -300,7 +300,7 @@ export function createSkyfallWorld(scene: THREE.Scene, quality: Tier = 'medium')
       if (disposed) return;
       disposed = true;
       for (const key of Array.from(chunks.keys())) unload(key);
-      scene.remove(group);
+      group.removeFromParent(); // the shared CourseGraph host reparents this world under its single scene root
       const geometries = new Set<THREE.BufferGeometry>();
       const materials = new Set<THREE.Material>();
       group.traverse(obj => {

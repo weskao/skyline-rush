@@ -13,7 +13,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 const coach = page => page.locator('#tutorial-coach');
-const step = (page, name) => expect(coach(page)).toHaveAttribute('data-step', name);
+// BOOST now includes a 700 m timed stretch plus its approach. Slow CI can need over 30 s to drive it.
+const step = (page, name) => expect(coach(page)).toHaveAttribute('data-step', name, { timeout: ciTimeout(name === 'airChain' ? 30000 : 10000) });
 const begin = async page => {
   await page.goto('/');
   await page.locator('#controls-button').click();
@@ -368,7 +369,7 @@ test.describe('granted tilt and rotation', () => {
     await tilt(0);
     await tilt(25);
     await step(page,'brake');
-    await expect(page.locator('#tutorial-input')).toContainText(/brake/i);
+    await expect(page.locator('#tutorial-input')).toContainText(/pull down on the slide pad/i); // tilt has no brake button
     await page.locator('#tutorial-exit').tap();
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode','tilt');
   });
