@@ -8,7 +8,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { roadRibbon } from './geometry.ts';
+import { roadRibbon, setRoadRow } from './geometry.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
 import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
@@ -196,7 +196,6 @@ export function createWorld(canvas) {
   }
   const segments = 120;
   const roadGeometry = roadRibbon(segments);
-  const roadVertices = roadGeometry.attributes.position.array;
   const baseIndices = roadGeometry.index.array.slice();
   const roadMaterial = material('#142534', 0.3, 0.5);
   roadMaterial.envMapIntensity = 0.25;
@@ -752,7 +751,7 @@ export function createWorld(canvas) {
         const d = tile + (i - 5) * 12;
         const x = roadCenter(d);
         const z = -d;
-        roadVertices.set([x - 12, 0, z, x + 12, 0, z], i * 6);
+        setRoadRow(roadGeometry, i, x, z, d, tile);
         if (i === segments) continue;
         const section = race.sections.find(section => d + 6 >= section.from && d + 6 < section.to);
         if (trackId === 'canyon') for (let j = 0; j < 6; j++) roadGeometry.index.array[i * 6 + j] = section?.type === 'gap' ? 0 : baseIndices[i * 6 + j];
@@ -778,7 +777,7 @@ export function createWorld(canvas) {
           put(railLights, i * 2 + side, x + sx * 12.1, 0.68, z - 6, 0.045, 0.04, 12.15, angle);
         }
       }
-      if (refreshClassicRoad) roadGeometry.attributes.position.needsUpdate = true;
+      if (refreshClassicRoad) roadGeometry.attributes.position.needsUpdate = roadGeometry.attributes.uv.needsUpdate = true;
       if (refreshClassicRoad && trackId === 'canyon') roadGeometry.index.needsUpdate = true;
       if (refreshClassicRoad && tunnelRoofs.visible) tunnelRoofs.instanceMatrix.needsUpdate = tunnelWalls.instanceMatrix.needsUpdate = true;
       if (refreshClassicRoad && surfaceMarks.visible) surfaceMarks.instanceMatrix.needsUpdate = true;

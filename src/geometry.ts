@@ -41,6 +41,20 @@ export function roadRibbon(rows: number): BufferGeometry {
   for (let i = 0; i < rows; i++) indices.set([i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2], i * 6);
   geometry.setAttribute('position', new BufferAttribute(new Float32Array((rows + 1) * 6), 3).setUsage(DynamicDrawUsage));
   geometry.setAttribute('normal', new BufferAttribute(normals, 3).setUsage(DynamicDrawUsage));
+  geometry.setAttribute('uv', new BufferAttribute(new Float32Array((rows + 1) * 4), 2).setUsage(DynamicDrawUsage));
   geometry.setIndex(new BufferAttribute(indices, 1).setUsage(DynamicDrawUsage));
   return geometry;
+}
+
+/** Metres of road per texture repeat along the road; across, u spans the full road width once. */
+export const ROAD_UV_METRES = 24;
+// v is measured from a base that only jumps by whole repeats, so it stays small for float32 yet never swims.
+const ROAD_UV_PERIOD = ROAD_UV_METRES * 64;
+
+/** Writes one flat road row: left/right edges at centre ± halfWidth, u 0 → 1 across, v from road distance. */
+export function setRoadRow(geometry: BufferGeometry, row: number, x: number, z: number, distance: number,
+  ribbonTile: number, halfWidth = 12): void {
+  (geometry.attributes.position.array as Float32Array).set([x - halfWidth, 0, z, x + halfWidth, 0, z], row * 6);
+  const v = (distance - Math.floor(ribbonTile / ROAD_UV_PERIOD) * ROAD_UV_PERIOD) / ROAD_UV_METRES;
+  (geometry.attributes.uv.array as Float32Array).set([0, v, 1, v], row * 4);
 }
