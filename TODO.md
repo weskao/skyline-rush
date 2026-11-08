@@ -1,3 +1,9 @@
+## 2026-11-08 — Monsoon branch full Browser CI regression investigation
+
+- [x] Historical RED: full CI #42452541249 for b860d739bd8e6e7c8616dac8e1aa9cfee4bd25a1 failed 10 Browser shards; Unit/Typecheck/Build, Cloud Save and all five World Tour shards passed. Dune/Skyfall errors show unknown World Tour scenery id and absent Skyfall palette. Phone locale click was intercepted by a nonmodal performance notice; zh-TW Garage Studio entry label overflowed.
+- [ ] GREEN: verify new exact HEAD with focused palette tests, npm test, typecheck, build, 13 Browser shards, 5 World Tour shards, cloud-save and quality-gate. Local npm unavailable in this execution context; do not report passing until CI confirms.
+- [ ] Remaining Browser regressions: tutorial step progression, pause layout, start-button positioning; requires separate verified fixes. Manual WebGL/touch acceptance also pending.
+
 ## 2026-11-08 — Tutorial hints follow the Controls settings (`develop`, based on `84a2f9e7`)
 
 Acceptance: every coach line, touch hint, live cue, outline and arrow names the control the player's own

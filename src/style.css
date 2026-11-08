@@ -1402,13 +1402,14 @@ body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15
  width:min(325px,calc(100vw - 32px));border:1px solid #6c90a0;
  border-radius:10px;background:#122535f5;color:#f2f5ef;padding:14px 16px;
  box-shadow:0 14px 34px #0006;display:grid;gap:7px;
+ pointer-events:none; /* nonmodal device notice must not intercept global controls */
 }
 .performance-notice[hidden]{display:none!important;}
 .performance-notice-eyebrow{font-size:9px;letter-spacing:1.9px;color:#a8c3cb;}
 .performance-notice strong{font-size:16px;}
 .performance-notice p{font-size:12px;line-height:1.6;margin:0;color:#e0e5e5;}
 .performance-notice button{justify-self:end;background:#264758;border:1px solid #85a8b2;
- border-radius:5px;color:#fff;padding:7px 13px;cursor:pointer;}
+ border-radius:5px;color:#fff;padding:7px 13px;cursor:pointer;pointer-events:auto;}
 @media(max-width:760px){.performance-notice{top:calc(190px + env(safe-area-inset-top,0px));right:12px;width:min(285px,calc(100vw - 24px));}}
 
 

@@ -730,7 +730,7 @@ export function createWorld(canvas) {
       }
       if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide(); if (trackId === FROSTBITE_ID) frostbiteScene.update(distance); else frostbiteScene.hide(); if (graphCentre) courseScene.update(race, visual.quality, time, reducedMotion); else courseScene.hide();
       if (trackId === 'spiral' || framedRoad(trackId)) {
-        if (trackId === CIRCUIT_ID || trackId === FROSTBITE_ID || graphCentre) { skyScene.hide(); worldTourScene.hide(); }
+        if (trackId === CIRCUIT_ID || trackId === FROSTBITE_ID || isCourseRuntime(trackId)) { skyScene.hide(); worldTourScene.hide(); }
         else if (trackId === 'spiral') { skyScene.update(distance, visual.quality, !!race.endless); worldTourScene.hide(); }
         else { skyScene.hide(); worldTourScene.update(trackId,distance,visual.quality,race.sections,time,reducedMotion,!!race.endless); }
         road.visible = false;
