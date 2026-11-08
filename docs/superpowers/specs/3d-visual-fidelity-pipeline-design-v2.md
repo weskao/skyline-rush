@@ -198,6 +198,8 @@ sunset**):
 - Road:
   - road-space UV with wet/dry roughness, puddles and reflection of lights and sky on wet asphalt
   - lane paint and a guard-rail material, without changing course frames or collisions
+  - realism first (owner, 2026-11-08): CC0 photoscanned sources (Poly Haven) baked in Blender to KTX2, and a new
+    Ultra quality tier above High; procedural looks remain only as Low/fallback
 - Close scenery: authored sea arch, cliffs, palms and guard rails, with bounded static streaming. Distant objects and
   the Low tier keep simple geometry.
 - Shared lighting and post-processing:
