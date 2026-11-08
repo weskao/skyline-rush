@@ -1,3 +1,16 @@
+## 2026-11-09 — Monsoon branch CI run 42490836456 (cca99961) browser flakes
+
+- [x] `ring-sfx-browser` phone, both attempts: a 6-ring train missed one air ring (ring altitude 8, car past it at
+  altitude 0). Cause: a rival had just taken that ring (`rival-items.ts` `take`, gone `ITEM_RESPAWN` 2.5 s game time,
+  which a slow runner stretches), so the teleported car could not collect it. RED: a local variant that marks the first
+  train ring as just taken fails with the same signature (5/6); GREEN: the train clears `downUntil` before each pass.
+- [x] `phase4-first-five-browser` neon 1440x900, both attempts: `#perf-overlay` empty for 30 s, then "0 s" evidence.
+  Cause: on the CPU-only runner frames exceeded the overlay's 250 ms stall cut-off, so the fixed 1.7 s sleep read an
+  empty or sub-second strip. Now polls (`ciTimeout(30000)`) for a ≥1 s sampled window with its draw-call count. RED not
+  reproduced locally (GPU frames stay under 250 ms); fix verified green locally.
+- [x] `release-video-browser` desktop hand-over: flaky (passed on retry), already addressed by `cca99961`.
+- [ ] Exact-HEAD full CI for the fix commit.
+
 ## 2026-11-08 — Monsoon branch full Browser CI regression investigation
 
 - [x] Historical RED: full CI #42452541249 for b860d739bd8e6e7c8616dac8e1aa9cfee4bd25a1 failed 10 Browser shards; Unit/Typecheck/Build, Cloud Save and all five World Tour shards passed. Dune/Skyfall errors show unknown World Tour scenery id and absent Skyfall palette. Phone locale click was intercepted by a nonmodal performance notice; zh-TW Garage Studio entry label overflowed.
