@@ -19,7 +19,10 @@ a near-timeout test is visible on green runs.
   `tests/helpers/budget-reporter.js` (CI warning + job summary for tests over half their budget).
 - [x] Cloud-save avatar (run 42494040937): already fixed by 85e020eb. Audited other DOM injections (`home-shortcuts`,
   `start-button-label`, `responsive` canvas size): their writers run only at startup or on user input, no guard needed.
-- [ ] Exact-HEAD branch CI (`[full-regression]`).
+- [x] Exact-HEAD branch CI run 42512364531 on `e019f9b1` (`[full-regression]`): every job and `quality-gate` green;
+  ring-sfx desktop 55.9 s, phone 1.2 min of the 225 s budget; no near-timeout warning (reporter checked locally
+  with a 63%-budget test: annotation and job-summary row both appear).
+- [ ] Exact-HEAD develop full CI after the merge.
 
 ## 2026-11-08 — Superseded develop runs no longer paint `quality-gate` red (`fix/ci-quality-gate-cancelled`)
 
