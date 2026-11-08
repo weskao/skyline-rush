@@ -88,7 +88,7 @@ const AUTO_KEY = 'skyline-rush-auto';
 let autoThrottle = true;
 try { autoThrottle = localStorage.getItem(AUTO_KEY) !== 'off'; } catch { /* AUTO stays on without storage. */ }
 let animationId;
-if (import.meta.env.VITE_DIAG) import('./diag-relay.ts').then(({ startDiag }) => startDiag(window, localStorage, $('#error-message'), () => ({ phase: race.phase, track: race.trackId, mode: race.mode }))); // diagnostic builds only; production drops the module
+if (import.meta.env.VITE_DIAG) import('./diag-relay.ts').then(({ startDiag }) => startDiag(window, localStorage, $('#error-message'), () => ({ phase: race.phase, track: race.trackId, mode: race.mode, quality: vfx.settings().ultra ? 'ultra' : vfx.settings().quality }))); // diagnostic builds only; production drops the module
 let pausedPhase = 'racing';
 const progress = loadSessionProgress(availableTracks());
 const unlockedTracks = progress.unlocked; // one Set for the session; merges add to it in place
@@ -539,7 +539,7 @@ try {
   world.configureVFX(vfx.settings());
   world.previewAppearance(PAINTS[equippedPaint]);
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
-  const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad());
+  const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad(), !!import.meta.env.VITE_DIAG);
   const fps = setupFpsUI(scale => world.setRenderScale(scale));
   let motionRace = null; const previousMotion = {}, renderMotion = { previous: previousMotion, alpha: 1 };
   function frame(now) {
