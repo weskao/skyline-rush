@@ -44,3 +44,46 @@ test('all 18 artwork cards preserve native 3x pixels, visible icons and labels o
   }
 });
 
+test('HUD art remains uncropped at alpha-pixel level and is visually reviewable at all three viewports', async ({ page }) => {
+  test.setTimeout(ciTimeout(180000));
+  for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.locator('#settings-button').click();
+    const gallery = page.locator('#hud-3x-source-gallery');
+    await gallery.locator('summary').click();
+    const result = await gallery.evaluate(async root => {
+      const entries = [];
+      for (const card of root.querySelectorAll('.garage-badge-card')) {
+        card.scrollIntoView({ block: 'nearest' });
+        const img = card.querySelector('img');
+        await img.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0);
+        const rgba = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let left = canvas.width, top = canvas.height, right = -1, bottom = -1;
+        for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
+          if (rgba[(y * canvas.width + x) * 4 + 3] <= 16) continue;
+          left = Math.min(left, x); top = Math.min(top, y);
+          right = Math.max(right, x); bottom = Math.max(bottom, y);
+        }
+        const margins = [left, top, canvas.width - right - 1, canvas.height - bottom - 1];
+        entries.push({ name: img.dataset.image, margins, hasOpaqueArt: right >= left && bottom >= top });
+      }
+      return entries;
+    });
+    expect(result).toHaveLength(18);
+    for (const art of result) {
+      expect(art.hasOpaqueArt, art.name).toBe(true);
+      for (const margin of art.margins) {
+        expect(margin, JSON.stringify(art)).toBeGreaterThanOrEqual(20);
+      }
+    }
+    await test.info().attach(`hud-3x-complete-${viewport.width}x${viewport.height}.png`, {
+      body: await gallery.screenshot(), contentType: 'image/png',
+    });
+  }
+});
