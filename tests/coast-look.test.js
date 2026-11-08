@@ -73,3 +73,11 @@ test('a failed load leaves the current environment in place', async () => {
   look.update('coast', 'day', 'high'); await settle();
   assert.equal(scene.environment, room);
 });
+
+test('world.js drives the look from the race visual preset and tier, and disposes it', async () => {
+  const { readFileSync } = await import('node:fs');
+  const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
+  assert.match(world, /createCoastLook\(\{[^}]*lens[^}]*room: environment\.texture/);
+  assert.match(world, /coastLook\.update\(trackId, visualPreset, visual\.quality\)/);
+  assert.match(world, /coastLook\.dispose\(\)/);
+});

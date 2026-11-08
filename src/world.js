@@ -5,6 +5,7 @@ import { capturePhoto } from './photo-capture.ts';
 import { createRoomEnvironment } from './room-environment.ts';
 import { createWeatherPoints } from './weather-points.ts';
 import { createSectionSignMaterials } from './section-sign-materials.ts';
+import { createCoastLook } from './coast-look.ts';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -102,6 +103,7 @@ export function createWorld(canvas) {
   const environment = createRoomEnvironment(renderer);
   scene.environment = environment.texture;
   scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null, garagePreviewSkins = {};
+  const coastLook = createCoastLook({ scene, renderer, lens, room: environment.texture, roomIntensity: 0.42, baseUrl: import.meta.env.BASE_URL });
   const carEnvironment = createCarEnvironment(renderer);
   const upcomingStage = createUpcomingShowcase(UPCOMING_ENVIRONMENTS, environment.texture, carEnvironment, host => garageModel?.release(host)); // runs after createWorld returns, so garageModel is initialised
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
@@ -650,6 +652,7 @@ export function createWorld(canvas) {
         warmupPending = true; // track-specific props hidden until an event get their pipelines before racing
       }
       const visualPreset = race.mode === 'custom' || race.mode === 'free' ? race.session?.presentation.visualPreset ?? 'track' : 'track';
+      coastLook.update(trackId, visualPreset, visual.quality);
       raceVisuals.apply(visualPreset); const blizzard = preview ? 0 : blizzardLevel(trackId, visualCar.distance, !!race.config.themes); raceVisuals.blizzard(blizzard);
       const distance = preview ? previewDistance(trackId) : visualCar.distance;
       if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality,race.endless ? race.seed : undefined);} else coastScenery.hide();
@@ -1069,7 +1072,7 @@ export function createWorld(canvas) {
       });
     },
     dispose() {
-      garageModel?.dispose(); upcomingStage.dispose(); garageStage?.dispose(); stopLocaleSigns(); // the GLB leaves the cars before their materials are disposed
+      coastLook.dispose(); garageModel?.dispose(); upcomingStage.dispose(); garageStage?.dispose(); stopLocaleSigns(); // the GLB leaves the cars before their materials are disposed
       canvas.removeEventListener('webglcontextrestored', restoreWarmup);
       circuitScene.dispose(); frostbiteScene.dispose(); courseScene.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();
