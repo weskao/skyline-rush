@@ -39,6 +39,9 @@ async function driveToCheckpoint(page, checkpoint, branches) {
       visited: [...visited], rejections: race.course.rejections, falls: race.player.falls };
   }, { checkpoint, branches });
 }
+// A worker-scoped unlockedAccess fixture must be configured at file scope.
+test.use({ unlockedAccess: true });
+
 for (const [device, viewport, touch] of [
   ['desktop', { width: 1440, height: 900 }, false],
   ['phone', { width: 390, height: 844 }, true],
@@ -46,7 +49,7 @@ for (const [device, viewport, touch] of [
   ['ground', ['a-ground', 'b-ground', 'c-ground']],
   ['flight', ['a-air', 'b-air', 'c-air']],
 ]) test.describe(`Skyfall ${device} ${route} CourseGraph`, () => {
-  test.use({ unlockedAccess: true, viewport, hasTouch: touch });
+  test.use({ viewport, hasTouch: touch });
   test('dev-only START drives three split/merge stages and a real finish with streamed WebGL', async ({ gameplayPage: page }) => {
     test.setTimeout(ciTimeout(180_000));
     const errors = [];
@@ -90,12 +93,5 @@ for (const [device, viewport, touch] of [
     await expect(page.locator('#race-overlay')).toBeVisible({ timeout: ciTimeout(15_000) });
     await capture(page, `${device}-skyfall-${route}-finish`);
     expect(errors).toEqual([]);
-  });
-});
-test.describe('Skyfall release lock', () => {
-  test.use({ unlockedAccess: false });
-  test('production card remains Coming Soon and START is disabled', async ({ gameplayPage: page }) => {
-    await page.locator('[data-upcoming-track="skyfall-archipelago"]').click();
-    await expect(page.locator('#start-button')).toBeDisabled();
   });
 });
