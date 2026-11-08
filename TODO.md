@@ -86,6 +86,37 @@ Original WebP/SVG masters, live 3D car rendering, ownership rules and the static
 - [ ] Independently decode all 25 GIFs and confirm actual 20×50ms frames, infinite loop, real transparency and >=12/20 transparent alpha margins, plus actual six distinct contact-sheet frames. Manifest metadata and an earlier generator run alone do not prove these checks.
 - [ ] Run `npm test`, `npm run build` and `make verify` in a complete checkout. The connector-only runtime cannot clone GitHub or execute repository commands; no local PASS is claimed.
 - [ ] Only after visual, binary, local test and exact-HEAD FULL CI acceptance all pass: atomically retire `scripts/generate-garage-gifs.py`, `tests/test_garage_gif_motion.py`, `.github/workflows/garage-animated-gifs.yml` and the **single obsolete recipe test** in `tests/garage-animated-artwork.test.js`; preserve all other tests, docs, rules and `scripts/package-garage-authored-gifs.py`. Run a fresh post-cleanup exact-HEAD FULL CI before declaring complete.
+## 2026-11-08 — Repair develop CI run 42452541249
+
+Acceptance: CourseGraph selection/racing/finish render without legacy World Tour errors; tutorial cues and
+pause controls remain separate in short landscape; Start labels follow the right rail; the quality notice
+leaves language controls clickable; Studio entry animation stays inside its button; narrow mode tabs stay reachable.
+
+- [x] Investigated every failed browser shard in the linked run. Unit/build/cloud/World Tour were green there.
+- [x] RED: registered-runtime palette test fails for Skyfall. New browser regressions fail on the previous
+  production build: the quality notice intercepts the landscape language picker; Studio shine overflows at 2400 ms.
+- [x] Fix: provide Skyfall lighting and retain CourseGraph rendering during the transient ready frame, instead
+  of dispatching Dune/Skyfall to legacy World Tour scenery. Route geometry and race physics are preserved.
+- [x] Fix: landscape cue/pass and pause columns respect the coach's 58vw width. Reserve the Large control rows
+  below the coach; long lessons scroll inside the card. Actual landscape hand-layout screenshots inspected.
+- [x] Fix: keep the landscape notice below global tools; animate the Studio shine background within its box.
+  DOM layout is shared across quality tiers. Existing audio remains appropriate. Palette work adds no geometry.
+- [x] RED: on 320x568 the Endless tab centre was x=295 while its scroll row ended at x=291. Native proximity
+  snapping pulled it outside the hit area. Disable phone-row snapping as the landscape row already does;
+  the original compact-target browser test is retained, and its latest rerun passes.
+- [x] Align Start-label containment/width expectations with the existing 210px landscape rail. Give the longer
+  700m BOOST lesson an assertion budget scaled for software WebGL, preserving its engine completion checks.
+- [x] Latest `npm test`: 2301 pass, 0 fail, 3 intentional skips. Typecheck, production build and CSS-prefix
+  contract pass. The initial `make verify` attempt found a prefix hash change; its bytes were restored.
+- [x] Dune/Skyfall desktop/phone ground and flight browser cases: 6/6 pass, without recorded page errors.
+- [x] Language/Studio regressions, 12 Start-label cases, both portrait hand layouts and paused-practice cases
+  pass. Final landscape hand-layout / paused-coach recheck: 4/4 pass.
+- [x] Full keyboard NITRO recovery and 1024x768 tilt-fallback touch practice each pass individually (1.8 min).
+  Concurrent software-WebGL runs also produced BRAKE/BOOST assertion timeouts; these isolated rechecks are
+  recorded separately from the concurrent failures and from remote CI.
+- [x] Final complete `test:layout` command sequence (3 workers, no retries): 47 pass / 1 intentional skip,
+  then 42/42 pass. Localized Coming Soon label recheck: 1/1 pass. Latest code was rebuilt before this gate.
+- [ ] Full local `make verify`, physical-device/manual acceptance and exact-new-commit remote quality-gate.
 
 ## 2026-11-08 — Tutorial hints follow the Controls settings (`develop`, based on `84a2f9e7`)
 

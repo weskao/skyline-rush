@@ -74,6 +74,19 @@ minimal fix (GREEN); regression-check affected tracks, vehicles, locales and inp
 `make verify`; inspect real WebGL / touch screenshots when behavior or rendering changed; then
 check the full GitHub `quality-gate` for the exact HEAD commit. Track evidence in `TODO.md`.
 CI, manual visual confirmation and RED evidence are separate gates; one never proves another.
+
+### Mandatory checks before Commit / Push
+
+- Before committing source changes, run `node --test tests/module-size.test.js`; also run the
+  focused regression tests, typecheck and build appropriate to the changed behavior.
+- Before a local push, the existing `.githooks/pre-push` runs the module-size gate automatically,
+  even with `SKIP_LAYOUT_GATE=1`. Configure `git config core.hooksPath .githooks` for new clones.
+- When a check fails, identify the exact source file(s), actual/allowed line count when relevant,
+  failed test file, applicable rule file and command to reproduce it. Fix and rerun before pushing.
+- Do not compress unrelated statements, remove tests or increase legacy ceilings just to silence CI.
+  Keep modules readable; extract code only when there is a meaningful responsibility boundary.
+- GitHub API/connector commits bypass local Git hooks: explicitly perform available checks and
+  inspect the exact-HEAD remote CI. Report commands not executed; never assume a check passed.
 For CourseGraph geometry tests, compare equivalent **physical arc-length** fractions,
 not equal fractions of an authored scalar-distance parameter. Compare float-derived
 bank/frame values with tight explicit tolerances, never strict equality of results

@@ -20,6 +20,13 @@ responsibility), not by line count alone.
   exception.
 - **A function stays under ~60 lines.** A long `if/else` chain over modes or phases becomes a
   lookup table or one small function per case (as `phaseText` result screens should be).
+- **Before committing/pushing source changes:** run `node --test tests/module-size.test.js`.
+  The repository's `.githooks/pre-push` enforces this locally, including when the layout gate
+  is skipped. GitHub API/connector pushes bypass hooks, so run checks explicitly when available.
+- **Actionable failures:** report the exact `src/...` file, current/allowed/excess lines,
+  `tests/module-size.test.js`, this rule, and the reproduction command. Fix the source rather
+  than adjusting tests or concealing excessive growth. Do not collapse unrelated statements
+  onto one line merely to comply; keep code readable and split by actual responsibility.
 
 ## Where the seams are
 

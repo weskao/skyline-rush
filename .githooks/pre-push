@@ -1,7 +1,18 @@
 #!/bin/sh
-# Run the home-screen layout browser tests before pushing commits that touch the UI, so an intro that
-# scrolls, overlaps the top bar or shrinks a touch target fails here instead of turning CI on main red.
-# Bypass once with SKIP_LAYOUT_GATE=1 git push ...
+# Check module-size limits on every local push before the existing UI layout gate.
+# GitHub API/connector pushes do not run local hooks; remote CI remains mandatory.
+echo "pre-push: checking source module sizes (tests/module-size.test.js)..." >&2
+if ! node --test tests/module-size.test.js >&2; then
+  echo "pre-push: BLOCKED - module size check failed." >&2
+  echo "  Test: tests/module-size.test.js" >&2
+  echo "  Rules: .claude/rules/module-size.md" >&2
+  echo "  Review the File / Current lines / Allowed lines / Exceeded by details above." >&2
+  echo "  Fix the named source file(s), then run: node --test tests/module-size.test.js" >&2
+  exit 1
+fi
+
+# Run home-screen layout browser tests on relevant UI changes.
+# SKIP_LAYOUT_GATE bypasses only the layout gate, not the module-size check.
 [ "${SKIP_LAYOUT_GATE:-}" = 1 ] && exit 0
 zero=0000000000000000000000000000000000000000
 ui='^(index\.html|src/(App\.vue|main\.js|style\.css|locales/))'
