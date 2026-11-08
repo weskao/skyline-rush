@@ -688,7 +688,7 @@ export function createWorld(canvas) {
       const distance = preview ? previewDistance(trackId) : visualCar.distance;
       if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality,race.endless ? race.seed : undefined);} else coastScenery.hide();
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
-      const graphCentre = race.course && !preview ? graphOrigin(race.course) : null;
+      const graphCentre = race.course ? graphOrigin(race.course) : null;
       if (graphCentre) for (let axis = 0; axis < 3; axis++) courseOriginPoint[axis] = graphCentre[axis];
       const origin = graphCentre ? aeroOrigin.set(...graphCentre) : trackId === 'spiral' || framedRoad(trackId) ? trackPoint(trackId,distance) : null, center = origin ? origin.x : roadCenter(distance);
       // Smooth mountain bore lighting over 38 m for road readability.
