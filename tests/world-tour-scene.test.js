@@ -128,3 +128,19 @@ test('the rebuilt road ribbon still sits on the shared centreline on every World
     }
   }
 });
+
+
+test('World Tour scenery skips CourseGraph destinations without creating legacy assets', () => {
+  const scene = new THREE.Scene(), visual = createWorldTourScene(scene);
+  const root = scene.getObjectByName('World Tour authored scenery');
+  try {
+    visual.update('taipei', 1500, 'low', RACE_TRACKS.taipei.sections);
+    assert.equal(root.visible, true);
+    for (const id of ['dune-tempest', 'skyfall-archipelago']) {
+      assert.doesNotThrow(() => visual.update(id, 0, 'low', []), id);
+      assert.equal(root.visible, false, `${id} must use CourseGraph scenery, not World Tour props`);
+    }
+    visual.update('tokyo', 1500, 'low', RACE_TRACKS.tokyo.sections);
+    assert.equal(root.visible, true, 'classic World Tour scenery must recover after switching back');
+  } finally { visual.dispose(); }
+});
