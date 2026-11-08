@@ -9,7 +9,14 @@ a failed, skipped or individually cancelled suite in a live run still fails the 
   which never satisfies the `main requires quality-gate` ruleset; a cancelled-but-unsuperseded run stays unmerged.
 - [x] RED → GREEN `tests/ci-quality-gate.test.js`: fails on the `always()` workflow, passes on the fix.
 - [x] `npm test` 2305 pass / 0 fail / 3 skipped; `npm run build` and `tests/module-size.test.js` pass.
-- [ ] Exact-HEAD develop full CI after the merge.
+- [x] Develop run 42494040937 on merge `408cfa56`: everything green except `cloud-save` (avatar test), and the gate
+  failed on it as intended. Cause: a test race. The post-sign-in sync calls `showCloudSession()`
+  (`src/cloud-ui.ts:135`), which re-renders the photo-less account avatar over the one the test injected when
+  it lands after the injection.
+- [x] RED: holding Firestore until the avatar is injected fails the old test every time (avatar hidden). GREEN: the test
+  waits for `synced` before injecting; 3/3 with a 400 ms Firestore delay, full cloud suite 15/15, `CI=1` 8/8 repeats
+  with `--retries=0`, Firestore rules 3/3.
+- [ ] Exact-HEAD develop full CI after the follow-up merge.
 
 ## 2026-11-08 — Repair develop CI run 42452541249
 

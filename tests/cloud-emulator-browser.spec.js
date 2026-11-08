@@ -410,6 +410,9 @@ test('Cloud save profile provides an avatar fallback and accessible account iden
   await expect(page.locator('#cloud-identity')).toContainText('avatar@example.test');
   await expect(page.locator('#cloud-name')).not.toBeEmpty();
   await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
+  // The post-sign-in sync re-renders the profile from the account (no photo here), which would wipe an avatar
+  // injected before it lands; on a slow runner it lands mid-assertion. Inject only after it settles.
+  await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'synced');
   // Give the Vue view a real, loaded avatar rather than overriding Vue-owned
   // hidden attributes, then exercise the browser's failed-image event.
   await page.evaluate(async () => {
