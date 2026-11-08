@@ -35,6 +35,7 @@ import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_S
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
 import { landmarkBounds } from './landmark-bounds.ts';
+import { createContactShadow, shadowOpacity } from './contact-shadow.ts';
 import { isRaining, racePreset } from './board-effects.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
@@ -234,19 +235,7 @@ export function createWorld(canvas) {
   ghostCar.traverse(object => { if (object.material) { [].concat(object.material).forEach(mat => mat.dispose()); object.material = ghostMaterial; } });
   ghostCar.userData.jets.visible = ghostCar.visible = false; ghostCar.name = 'ghost-car';
   scene.add(ghostCar);
-  const shadowCanvas = document.createElement('canvas');
-  shadowCanvas.width = shadowCanvas.height = 64;
-  const shadowContext = shadowCanvas.getContext('2d');
-  const shadowGradient = shadowContext.createRadialGradient(32, 32, 5, 32, 32, 32);
-  shadowGradient.addColorStop(0, 'rgba(0,0,0,0.8)');
-  shadowGradient.addColorStop(1, 'rgba(0,0,0,0)');
-  shadowContext.fillStyle = shadowGradient;
-  shadowContext.fillRect(0, 0, 64, 64);
-  const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
-  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(5, 8), new THREE.MeshBasicMaterial({ map: shadowTexture, transparent: true, opacity: 0.6, depthWrite: false }));
-  shadow.rotation.x = -Math.PI / 2;
-  shadow.position.y = 0.03;
-  scene.add(shadow);
+  const { shadow, texture: shadowTexture } = createContactShadow(scene);
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
   const coastScenery = createCoastScenery(scene, roadCenter), classicScenery = createClassicTrackScenery(scene, roadCenter);
@@ -806,7 +795,7 @@ export function createWorld(canvas) {
       const { roadDistance, altitude: lift, span } = player.userData; // Classic: equals player.position.y; banked/sloped roads: height above the road
       if (trackId === 'spiral' || framedRoad(trackId)) placeGroundShadow(shadow, graphCentre ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance, span), player.position, lift);
       else { shadow.position.set(player.position.x, 0.03, player.position.z); shadow.rotation.set(-Math.PI / 2, 0, 0); }
-      shadow.scale.setScalar(1 + lift * 0.04); shadow.material.opacity = 0.6 / (1 + lift * 0.2);
+      shadow.scale.setScalar(1 + lift * 0.04); shadow.material.opacity = shadowOpacity(lift);
       const graphFinish = graphCentre ? graphFinishVisual(race.course, courseOriginPoint) : null;
       if (trackId === 'spiral' || framedRoad(trackId)) {
         if (graphFinish) finish.position.fromArray(graphFinish.position);
