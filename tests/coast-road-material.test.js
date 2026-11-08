@@ -75,6 +75,32 @@ test('wetness is a uniform: changing the weather never recompiles the road progr
   assert.equal(shader.uniforms.wetness.value, 0);
 });
 
+test('wet road adds the lights-only mirror (wet-reflection.ts) through uniforms: one program, no NaN path', () => {
+  const reflection = { reflectMap: { value: new THREE.Texture() }, reflectMatrix: { value: new THREE.Matrix4() }, reflectStrength: { value: 0 } };
+  const road = createCoastRoadMaterial(maps(), 1, { reflection }), shader = standardShader();
+  const key = road.material.customProgramCacheKey();
+  road.material.onBeforeCompile(shader, null);
+  assert.equal(shader.uniforms.reflectMap, reflection.reflectMap, 'shared uniform objects: the mirror pass updates them in place');
+  assert.equal(shader.uniforms.reflectStrength, reflection.reflectStrength);
+  assert.match(shader.vertexShader, /vReflectUv = reflectMatrix \* modelMatrix/);
+  const frag = shader.fragmentShader, opaque = frag.indexOf('#include <opaque_fragment>'), add = frag.indexOf('outgoingLight +=');
+  assert.ok(add > frag.indexOf('#include <lights_fragment_end>') && add < opaque, 'added after lighting, before output');
+  assert.match(frag, /max\( vReflectUv\.w, 1e-4 \)/, 'no divide by zero behind the mirror camera');
+  assert.doesNotMatch(frag.slice(frag.indexOf('#include <roughnessmap_fragment>')), /\b(pow|exp)\s*\(/);
+  reflection.reflectStrength.value = .7;
+  assert.equal(road.material.customProgramCacheKey(), key, 'strength is a uniform: no recompile between dry and wet');
+  const medium = createCoastRoadMaterial(maps()), plain = standardShader();
+  medium.material.onBeforeCompile(plain, null);
+  assert.equal(plain.uniforms.reflectStrength.value, 0, 'without a mirror the same shader adds nothing');
+});
+
+test('wet asphalt reads wet: darker and glossier than the first pass, puddles near mirror', () => {
+  const road = createCoastRoadMaterial(maps()), shader = standardShader();
+  road.material.onBeforeCompile(shader, null);
+  assert.match(shader.fragmentShader, /roughnessFactor \* \.4, wetness/);
+  assert.match(shader.fragmentShader, /mix\( 1\., \.5, wetness \)/);
+});
+
 test('wet shader: puddles from packed.b darken, smooth and flatten the asphalt', () => {
   const road = createCoastRoadMaterial(maps()), shader = standardShader();
   road.material.onBeforeCompile(shader, null);

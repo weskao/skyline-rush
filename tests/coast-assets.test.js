@@ -121,11 +121,51 @@ test('rain soaks the road through a uniform every frame, without another warmup'
   assets.update('coast', 'high', false);
   await tick();
   assets.update('coast', 'high', false);
-  const shader = { uniforms: {}, vertexShader: '', fragmentShader: THREE.ShaderLib.standard.fragmentShader };
+  const shader = { uniforms: {}, vertexShader: THREE.ShaderLib.standard.vertexShader, fragmentShader: THREE.ShaderLib.standard.fragmentShader };
   r.mesh.material.onBeforeCompile(shader, null);
   assert.equal(assets.update('coast', 'high', true, 'rain'), false);
   assert.ok(shader.uniforms.wetness.value >= .7);
   assets.update('coast', 'high', true, 'day');
   assert.equal(shader.uniforms.wetness.value, 0);
+  assets.dispose();
+});
+
+test('wet Coast on High mirrors the lights under the road; Medium, dry presets and dispose stop it', async () => {
+  const r = roadFakes(), renders = [];
+  const reflection = { uniforms: { reflectMap: { value: null }, reflectMatrix: { value: new THREE.Matrix4() }, reflectStrength: { value: 0 } },
+    strength: 0, tagged: 0, setStrength(v) { this.strength = v; }, tag() { this.tagged++; }, render: (...args) => renders.push(args), dispose() {} };
+  r.mesh.matrixWorld = new THREE.Matrix4().makeTranslation(0, 0.02, 0);
+  const assets = createCoastAssets({ scenery, cache: never, road: r.road, reflection });
+  assets.update('coast', 'high', false, 'rain');
+  await tick();
+  assets.update('coast', 'high', false, 'rain');
+  const shader = { uniforms: {}, vertexShader: THREE.ShaderLib.standard.vertexShader, fragmentShader: THREE.ShaderLib.standard.fragmentShader };
+  r.mesh.material.onBeforeCompile(shader, null);
+  assert.equal(shader.uniforms.reflectStrength, reflection.uniforms.reflectStrength, 'the road samples the shared mirror');
+  assert.ok(reflection.strength > 0, 'High rain turns the mirror on');
+  const scene = {}, camera = {};
+  r.mesh.onBeforeRender('renderer', scene, camera);
+  assert.equal(reflection.tagged, 1, 'light sources tagged once the mirror turns on');
+  assert.deepEqual(renders[0], ['renderer', scene, camera, 0.02], 'mirror plane at the road height');
+  r.mesh.onBeforeRender('renderer', scene, camera);
+  assert.equal(reflection.tagged, 1, 'no per-frame traversal');
+  assets.update('coast', 'high', true, 'rain');
+  r.mesh.onBeforeRender('renderer', scene, camera);
+  assert.equal(reflection.tagged, 2, 'race start re-tags: the grid cars are new');
+  assets.update('coast', 'high', true, 'day');
+  assert.equal(reflection.strength, 0, 'dry road: no pass');
+  assets.dispose();
+  assert.equal(r.mesh.onBeforeRender, undefined, 'the hook leaves with the asphalt');
+});
+
+test('Medium keeps env-map-only wet asphalt: no mirror pass', async () => {
+  const r = roadFakes();
+  const reflection = { uniforms: { reflectMap: { value: null }, reflectMatrix: { value: new THREE.Matrix4() }, reflectStrength: { value: 0 } },
+    strength: -1, setStrength(v) { this.strength = v; }, tag() {}, render() {}, dispose() {} };
+  const assets = createCoastAssets({ scenery, cache: never, road: r.road, reflection });
+  assets.update('coast', 'medium', false, 'rain');
+  await tick();
+  assets.update('coast', 'medium', false, 'rain');
+  assert.equal(reflection.strength, 0);
   assets.dispose();
 });
