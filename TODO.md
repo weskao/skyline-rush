@@ -86,6 +86,22 @@ Original WebP/SVG masters, live 3D car rendering, ownership rules and the static
 - [ ] Independently decode all 25 GIFs and confirm actual 20×50ms frames, infinite loop, real transparency and >=12/20 transparent alpha margins, plus actual six distinct contact-sheet frames. Manifest metadata and an earlier generator run alone do not prove these checks.
 - [ ] Run `npm test`, `npm run build` and `make verify` in a complete checkout. The connector-only runtime cannot clone GitHub or execute repository commands; no local PASS is claimed.
 - [ ] Only after visual, binary, local test and exact-HEAD FULL CI acceptance all pass: atomically retire `scripts/generate-garage-gifs.py`, `tests/test_garage_gif_motion.py`, `.github/workflows/garage-animated-gifs.yml` and the **single obsolete recipe test** in `tests/garage-animated-artwork.test.js`; preserve all other tests, docs, rules and `scripts/package-garage-authored-gifs.py`. Run a fresh post-cleanup exact-HEAD FULL CI before declaring complete.
+
+## 2026-11-08 — Garage glow GIFs: card-tint compositing (no dark matte rim)
+
+- [x] Root cause: soft glow edges were composited over the flat `#0f1c33` matte and cut at ~40% alpha, so 16 GIFs
+  (thruster ×4, nitro-trail cyan/gold/red/purple, launch-flare blue/ring/pulse/gold/red/cyan/magenta/white) showed a
+  dark navy rim on the lighter card tint. Card backgrounds are identical per category (measured).
+- [x] RED: `test_glow_gifs_have_no_dark_rim_on_their_card` fails on the previous GIFs (thruster-basic frame 0: 42% of
+  edge pixels darker than the card; 14 of 16 between 42% and 92%). GREEN after re-export: at most 7%.
+- [x] Fix: `save_gif` composites onto `assets-src/garage-card-bg/<category>.png` with a ~10% cut;
+  `scripts/repackage-garage-card-gifs.py --apply` re-exports the 16 GIFs from the committed WebP sources, keeps the
+  dcec8b99 thruster repair (alpha never below source). The 103eda55 flare fixes were single-pixel palette outliers;
+  the new palette leaves 0–10 such pixels per 20-frame GIF, same order as before.
+- [x] Visual: static | old | new browser crops at mobile 3×, plus frame 0 of all 16 over the real card. Rim gone;
+  flares keep a tinted halo that still ends in a 1-bit edge (GIF limit). Sizes 357–639 KB (<900 KB).
+- [ ] Exact-HEAD remote CI for this commit. Not merged into `develop` (user instruction).
+
 ## 2026-11-08 — Repair develop CI run 42452541249
 
 Acceptance: CourseGraph selection/racing/finish render without legacy World Tour errors; tutorial cues and

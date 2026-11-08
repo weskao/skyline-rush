@@ -34,7 +34,7 @@ This is the reusable template for **future animated UI art**, not permission to 
 | Output | GIF89a, transparent, one global palette (≤255 colors + transparent slot) | Same |
 | Size | <900,000 bytes | <900,000 bytes |
 
-GIF supports 1-bit transparency. Compose partially transparent edge RGB against the intended card matte `#0f1c33` before the alpha cut (~40%); reserve one transparent index, turn off alpha-edge dithering and use **one shared palette** for all frames. Preserve straight transparency outside the artwork; no white/gray halo on the actual card background.
+GIF supports 1-bit transparency. Compose partially transparent edge RGB against the real card background before the alpha cut. When `assets-src/garage-card-bg/<category>.png` exists (a 3× capture of the Garage card under the art: hide the `<img>` with `opacity: 0`, screenshot its box at device scale 3), composite onto it and cut at ~10% alpha, so glow falloff blends into the card tint instead of ending in a dark `#0f1c33` rim; recapture it whenever the card CSS changes. Categories without a capture use the flat matte `#0f1c33` with the ~40% cut. Reserve one transparent index, turn off alpha-edge dithering and use **one shared palette** for all frames. Preserve straight transparency outside the artwork; no white/gray halo on the actual card background.
 
 ## Project-local packaging command
 
@@ -55,7 +55,10 @@ frame durations and byte budgets, then updates existing Manifest metadata.
 It **does not create or invent any animation artwork**. The input sheets must
 have passed side-by-side human source fidelity and frame-motion review first.
 If a sheet is missing or unacceptable, do not execute `--apply` on the
-production branch. Always verify and review all output GIFs before committing.
+production branch. The glow-edged thruster, coloured nitro-trail and coloured launch-flare GIFs are
+re-exported onto their card capture with `python3 scripts/repackage-garage-card-gifs.py --apply`
+(needs numpy + Pillow; keeps the dcec8b99 thruster no-alpha-dip repair); `tests/test_garage_authored_gif_packager.py`
+fails if any of them regains a dark matte rim. Always verify and review all output GIFs before committing.
 
 ## Repeatable authoring steps
 
@@ -78,7 +81,7 @@ output: public/feature-assets/<category>/<unique-id>@3x.gif
 canvas: [288, 288]
 frames: 20
 frame_duration_ms: 50
-transparent_matte: "#0f1c33"
+transparent_matte: "assets-src/garage-card-bg/<category>.png, else #0f1c33"
 stationary_parts: "<exact object/components to lock>"
 animated_parts: "<what genuinely changes physically>"
 motion_timeline: "<anticipation / action / follow-through / return>"

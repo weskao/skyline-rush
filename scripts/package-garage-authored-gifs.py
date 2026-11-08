@@ -13,6 +13,9 @@ from pathlib import Path
 from PIL import Image, ImageSequence
 
 MATTE = (15, 28, 51)
+MATTE_CUT = 102  # ~40% alpha over the flat matte
+CARD_CUT = 26  # ~10% alpha: the glow falloff is already blended into the real card pixels
+CARD_BACKGROUNDS = Path(__file__).resolve().parents[1] / "assets-src/garage-card-bg"
 DURATION_MS = 50
 FRAMES = 20
 MAX_BYTES = 900_000
@@ -41,19 +44,34 @@ def split_sheet(path: Path, side: int) -> list[Image.Image]:
     return frames
 
 
-def save_gif(frames: list[Image.Image], output: Path) -> None:
-    """One global palette, one transparent index, matte-composited alpha edges."""
+def card_background(category: str, side: int) -> Image.Image | None:
+    """3x capture of the real Garage card under the artwork, or None (flat matte)."""
+    path = CARD_BACKGROUNDS / f"{category}.png"
+    if not path.is_file():
+        return None
+    with Image.open(path) as bg:
+        if bg.size != (side, side):
+            raise ValueError(f"{path.name}: expected {side}x{side}, got {bg.size}")
+        return bg.convert("RGBA")
+
+
+def save_gif(frames: list[Image.Image], output: Path,
+             background: Image.Image | None = None) -> None:
+    """One global palette, one transparent index, alpha edges composited onto the
+    card background (or the flat matte) before the 1-bit alpha cut."""
     if len(frames) != FRAMES:
         raise ValueError("expected exactly 20 frames")
     side = frames[0].width
     if any(im.size != (side, side) for im in frames):
         raise ValueError("inconsistent frame dimensions")
+    base = background or Image.new("RGBA", (side, side), MATTE + (255,))
+    cut = CARD_CUT if background else MATTE_CUT
     # Build a shared RGB palette from every frame on the production card matte.
     matte_rgb = Image.new("RGB", (side * 5, side * 4), MATTE)
     for i, frame in enumerate(frames):
-        background = Image.new("RGBA", frame.size, MATTE + (255,))
-        background.alpha_composite(frame)
-        matte_rgb.paste(background.convert("RGB"),
+        composed = base.copy()
+        composed.alpha_composite(frame)
+        matte_rgb.paste(composed.convert("RGB"),
                         ((i % 5) * side, (i // 5) * side))
     palette_master = matte_rgb.quantize(colors=255, method=Image.Quantize.MEDIANCUT)
     # Assign color indices 1..255; reserve zero for transparency.
@@ -62,7 +80,7 @@ def save_gif(frames: list[Image.Image], output: Path) -> None:
     fixed.putpalette([0, 0, 0] + colors + [0] * (768 - 3 - len(colors)))
     encoded = []
     for frame in frames:
-        bg = Image.new("RGBA", frame.size, MATTE + (255,))
+        bg = base.copy()
         bg.alpha_composite(frame)
         pal = bg.convert("RGB").quantize(palette=fixed, dither=Image.Dither.NONE)
         # Quantize using colors 1..255 only: shift possible index-0 pixels to
@@ -73,7 +91,7 @@ def save_gif(frames: list[Image.Image], output: Path) -> None:
             arr = bytearray(1 if v == 0 else v for v in arr)
         a = frame.getchannel("A").tobytes()
         for p, opacity in enumerate(a):
-            if opacity < 102:  # ~40% alpha threshold
+            if opacity < cut:
                 arr[p] = 0
         img = Image.frombytes("P", frame.size, bytes(arr))
         img.putpalette(fixed.getpalette())
@@ -122,7 +140,7 @@ def apply(sheets: Path, manifest_path: Path) -> None:
         outputs.append((item, output, frames))
     # Validate all authoring inputs before writing any manifest changes.
     for item, output, frames in outputs:
-        save_gif(frames, output)
+        save_gif(frames, output, card_background(item["category"], item["width"]))
         item.update(size=output.stat().st_size, frames=FRAMES,
                     fps=1000 / DURATION_MS, profile="gpt-authored")
         print(f"{item['name']}: {item['size']} bytes / {FRAMES} frames")

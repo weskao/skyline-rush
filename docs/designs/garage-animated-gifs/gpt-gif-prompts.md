@@ -29,8 +29,9 @@ clearly stay the same item.
 1. Exact canvas: 288×288 px (thruster, nitro, launch flare, airflow) or 216×216 px (store). GIF89a, transparent background.
 2. 20 to 24 frames at 50 ms each, infinite loop (`loop=0`). The loop is seamless: the last frame flows into the first with no pop.
 3. Transparent margin (alpha > 16) in EVERY frame: at least 12 px on each edge for 288×288 and at least 20 px for 216×216.
-4. GIF alpha is 1-bit. Before quantizing, composite each semi-transparent pixel over the card color `#0f1c33`
-   (matte), then cut alpha at about 40%. No white or grey fringe, and no dithering on the alpha edge.
+4. GIF alpha is 1-bit. Before quantizing, composite each semi-transparent pixel over the real card background
+   (`assets-src/garage-card-bg/<category>.png`, cut alpha at about 10%), or over `#0f1c33` (cut at about 40%)
+   for categories without a capture. No white or grey fringe, and no dithering on the alpha edge.
 5. One global palette for all frames (≤ 255 colors + 1 transparent index), so colors never flicker between frames.
 6. File size < 900,000 bytes.
 7. Production method (an image model cannot output a GIF directly): generate the frames as ONE sprite
