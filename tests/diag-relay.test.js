@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { installCrashLog, showCrashLog } from '../src/crash-log.ts';
-import { captureConsole, createRelay } from '../src/diag-relay.ts';
+import { captureConsole, createRelay, relayStatus } from '../src/diag-relay.ts';
 import { summarizeUserAgent } from '../src/diag-device.ts';
 import { batchToJsonl, isTrustedPeer } from '../scripts/diag-relay-plugin.mjs';
 
@@ -42,6 +42,14 @@ test('the relay batches entries with token and session, flushes nothing when emp
   assert.equal(entries.length, 501);
   assert.deepEqual(entries.at(-1), { t: 'T', kind: 'dropped', count: 100 });
   assert.equal(entries[0].i, 100);
+});
+
+test('the status badge is live only while the Mac acknowledged a batch in the last 2 s', () => {
+  assert.deepEqual(relayStatus(1000, undefined, undefined), { live: false, text: 'DIAG … 連線中' });
+  assert.deepEqual(relayStatus(5000, 4000, undefined), { live: true, text: 'DIAG ● 連線中' });
+  assert.deepEqual(relayStatus(9000, 4000, undefined), { live: false, text: 'DIAG ✕ 中斷 5s' });
+  assert.deepEqual(relayStatus(9000, 4000, '403'), { live: false, text: 'DIAG ✕ 中斷 5s · 403' });
+  assert.deepEqual(relayStatus(9000, undefined, 'network'), { live: false, text: 'DIAG ✕ 中斷 · network' });
 });
 
 test('a throwing sender never breaks the game', () => {
