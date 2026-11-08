@@ -20,6 +20,9 @@ files=$(while read -r local_ref local_sha remote_ref remote_sha; do
   [ -n "$base" ] || continue
   git diff --name-only "$base" "$local_sha"
 done)
+# git exports GIT_DIR (this worktree's gitdir) to hooks: tests that spawn git in scratch repos would rewrite this
+# repo's refs and config instead (2026-11-09). Drop every repo-local variable before running any suite.
+unset $(git rev-parse --local-env-vars)
 
 # Unit tests on any push that changes code or tests: committed RED tests for never-registered tracks once turned the
 # remote CI red (2026-11-09). Guard: tests/pre-push-unit-gate.test.js.
