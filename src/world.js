@@ -34,6 +34,7 @@ import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, stepWing } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
+import { landmarkBounds } from './landmark-bounds.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
@@ -270,20 +271,6 @@ export function createWorld(canvas) {
   const { projectedCarBounds, carCorner } = createCarBounds(showcaseProbe, camera, player, () => aero.group);
   let framingKey = '', framingBack = 0, framingLookY = 0; const framingAxis = new THREE.Vector3();
 
-  // Bounds of the visible landmark nearest the look target; null when none is shown.
-  const apexBox = new THREE.Box3();
-  function landmarkBounds(look) {
-    let best = null, bestDistance = Infinity;
-    for(const hero of trackId === CIRCUIT_ID ? circuitScene.landmarks() : worldTourScene.landmarks()) {
-      if(!hero.visible) continue;
-      apexBox.setFromObject(hero);
-      if(apexBox.isEmpty()) continue;
-      const d = apexBox.distanceToPoint(look);
-      if(d < bestDistance) { bestDistance = d; best = hero; }
-    }
-    if(!best) return null;
-    return apexBox.setFromObject(best);
-  }
   function frameShowcaseCar(distance) {
     // Hover wheels fold out over ~0.5 s and widen the car: reframe as they move, not once from the first frame.
     const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect.toFixed(3),garageHomePreview,
@@ -308,7 +295,7 @@ export function createWorld(canvas) {
       // The drive shot also owns the signature landmark: tilting down to catch the wheels
       // must not push its top out of frame, so that top is a fit constraint too.
       // Frostbite keeps its race-only framing: the home landmark fit stays on Tour/Circuit roads.
-      const landmark=visual.view==='drive'&&framedRoad(trackId)&&trackId!==FROSTBITE_ID?landmarkBounds(originalLook):null;
+      const landmark=visual.view==='drive'&&framedRoad(trackId)&&trackId!==FROSTBITE_ID?landmarkBounds(trackId===CIRCUIT_ID?circuitScene.landmarks():worldTourScene.landmarks(),originalLook):null;
       // Landscape keeps the landmark clear of the home panel on the left (NDC x >= .04).
       const clearLeft=camera.aspect>1;
       // Fine steps near the camera: a tight landmark leaves only a ~1 m dolly window.
