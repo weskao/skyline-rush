@@ -156,6 +156,8 @@ test.describe('desktop', () => {
     await expect.poll(() => playing(clip)).toBe(true);
     const heroTime = await time(video); // frozen at the hand-over
     expect(await paused(video)).toBe(true);
+    // `paused` flips on play(); the `playing` event that records the frame is dispatched a task later.
+    await expect.poll(() => page.evaluate(() => window.handOver.clipStart)).toBeDefined();
     const { clipStart } = await page.evaluate(() => window.handOver);
     expect(clipStart, 'no restart: it carries on from the hero\'s frame').toBeGreaterThanOrEqual(heroTime - 0.1);
     expect(clipStart).toBeLessThan(heroTime + 0.5);
@@ -166,6 +168,7 @@ test.describe('desktop', () => {
     // Playback may loop between the earlier progress check and the dialog's close event.
     // A wrapped frame of 0 is valid; validate the frame handoff modulo duration instead.
     await expect.poll(() => page.evaluate(() => window.handOver.clipEnd)).toBeGreaterThanOrEqual(0);
+    await expect.poll(() => page.evaluate(() => window.handOver.heroResume)).toBeDefined();
     const { clipEnd, heroResume } = await page.evaluate(() => window.handOver);
     const duration = await video.evaluate(el => el.duration);
     expect(clipEnd).toBeLessThanOrEqual(duration);

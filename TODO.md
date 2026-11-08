@@ -3,6 +3,9 @@
 - [x] Historical RED: full CI #42452541249 for b860d739bd8e6e7c8616dac8e1aa9cfee4bd25a1 failed 10 Browser shards; Unit/Typecheck/Build, Cloud Save and all five World Tour shards passed. Dune/Skyfall errors show unknown World Tour scenery id and absent Skyfall palette. Phone locale click was intercepted by a nonmodal performance notice; zh-TW Garage Studio entry label overflowed.
 - [ ] GREEN: verify new exact HEAD with focused palette tests, npm test, typecheck, build, 13 Browser shards, 5 World Tour shards, cloud-save and quality-gate. Local npm unavailable in this execution context; do not report passing until CI confirms.
 - [ ] Remaining Browser regressions: tutorial step progression, pause layout, start-button positioning; requires separate verified fixes. Manual WebGL/touch acceptance also pending.
+- [x] cca9f1b9 tutorial/Start-label/home failures came from the old develop base (b860d739); develop 21d51164 fixed them and merge e57d8b88 carries it. Locally on e57d8b88, 42/44 previously failing specs pass.
+- [x] RED → GREEN: `release-video-browser.spec.js` hand-over read `handOver.clipStart` once after `paused` flipped, before the async `playing` event recorded it (`undefined`, 1/4 local runs). Now polls `clipStart`/`heroResume` first; `CI=1 --repeat-each=8 --workers=4 --retries=0` 8/8 pass.
+- [ ] macOS-only: `paused practice 750x342` pause panel content (217px) overflows `.race-overlay` (197px) by ~20px with zh-TW CJK font metrics; Linux CI passes. Pre-existing on develop; real-iPhone check pending.
 ## 2026-11-08 — Repair develop CI run 42452541249
 
 Acceptance: CourseGraph selection/racing/finish render without legacy World Tour errors; tutorial cues and
