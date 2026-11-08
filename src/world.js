@@ -4,6 +4,7 @@ import { photoFov } from './photo-export.ts';
 import { capturePhoto } from './photo-capture.ts';
 import { createRoomEnvironment } from './room-environment.ts';
 import { createWeatherPoints } from './weather-points.ts';
+import { createSectionSignMaterials } from './section-sign-materials.ts';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -38,7 +39,7 @@ import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
 import { poseFor, smoothDriftYaw } from './vehicle-render-motion.js';
 import { classicRoadCenter, trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition, lookAheadDistance } from './track-paths.ts';
 import { HERO_PREVIEWS,SHOWCASE_BACKS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
-import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
+import { sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { createRampPool, drawRamps } from './ramp-view.ts'; import { createHazardRenderer } from './hazard-render.ts';
@@ -209,21 +210,7 @@ export function createWorld(canvas) {
   const cliffs = instances(new THREE.ConeGeometry(1, 1, 5), material('#a15339'), 40, scene);
   const { positions: weatherPositions, geometry: weatherGeometry, points: weather } = createWeatherPoints();
   scene.add(weather);
-  const signTextures = [];
-  const signPaints = [];
-  const signs = Object.fromEntries(Object.keys(SECTION_SIGN_LABELS).map(type => {
-    const sign = document.createElement('canvas'); sign.width = 512; sign.height = 96;
-    const context = sign.getContext('2d');
-    const texture = new THREE.CanvasTexture(sign); texture.colorSpace = THREE.SRGBColorSpace; signTextures.push(texture);
-    signPaints.push(locale => {
-      context.fillStyle = '#142334'; context.fillRect(0, 0, 512, 96);
-      context.strokeStyle = '#ffc36f'; context.lineWidth = 8; context.strokeRect(4, 4, 504, 88);
-      context.fillStyle = '#fff1d6'; context.textAlign = 'center';
-      fitText(context, t(`sign.${type}`, undefined, locale), 256, 58, 472, 27, locale);
-      texture.needsUpdate = true;
-    });
-    return [type, new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })];
-  }));
+  const { signs, signTextures, signPaints } = createSectionSignMaterials();
   const sectionSigns = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => track.sections.length)) }, () => {
     const group = new THREE.Group();
     block(group, material('#637282'), 0, 2.5, 0, .2, 5, .2);
