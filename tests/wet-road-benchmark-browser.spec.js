@@ -2,10 +2,11 @@ import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import fs from 'node:fs';
+import { gpuName, sampleFrameCost } from './helpers/frame-cost.js';
 
 // Task 5 wet-road decision: env-map reflections plus the lights-only mirror (production) against env-only and a
 // full three.js planar Reflector on Coast rain.
-// Chrome runs without vsync or its frame cap, so rAF intervals show the real cost, not 16.7 ms. Runs only with
+// Chrome runs without vsync or its frame cap; helpers/frame-cost.js times each frame GPU-synced. Runs only with
 // WET_BENCH=1, never in the gate:
 //   WET_BENCH=1 LABEL=<x> QUALITY=high|ultra npx playwright test tests/wet-road-benchmark-browser.spec.js
 // Output stays in the gitignored audits/ dir (machine-specific timings).
@@ -40,7 +41,7 @@ test(`${LABEL} ${QUALITY}: wet road env-map vs planar Reflector`, async ({ gamep
   await page.waitForTimeout(3000);
 
   // The Reflector comes from the dev server's three addons, so it shares the app's three instance; it never ships.
-  const gpu = await page.evaluate(async () => {
+  await page.evaluate(async () => {
     const addon = '/node_modules/three/examples/jsm/objects/Reflector.js';
     const { Reflector } = await import(addon);
     // Import three through the exact URL vite rewrote the addon's `from 'three'` to: one module instance.
@@ -56,34 +57,18 @@ test(`${LABEL} ${QUALITY}: wet road env-map vs planar Reflector`, async ({ gamep
     let road = null;
     scene.traverse(o => { if (o.material?.name === 'coast_asphalt') road = o; });
     window.wetBench = { mirrors: { 'planar-half': plane(0.5), 'planar-full': plane(1) }, road, pass: road.onBeforeRender };
-    const gl = renderer.getContext(), info = gl.getExtension('WEBGL_debug_renderer_info');
-    return info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : 'unknown';
   });
+  const gpu = await gpuName(page);
 
   const rows = [];
   for (const variant of ORDER) {
-    const sample = await page.evaluate(async ({ variant }) => {
+    await page.evaluate(variant => {
       const bench = window.wetBench;
       for (const [name, mirror] of Object.entries(bench.mirrors)) mirror.visible = name === variant;
       bench.road.onBeforeRender = variant === 'lights-mirror' ? bench.pass : () => {};
-      const { renderer, composer } = window.gameScene;
-      await new Promise(resolve => setTimeout(resolve, 800)); // settle: first frames compile the mirror shader
-      // rAF intervals only time command submission once vsync is off; a 1-pixel readPixels before and after the
-      // composer drains the GPU, so each sample is the frame's real CPU + GPU render time.
-      const gl = renderer.getContext(), pixel = new Uint8Array(4), render = composer.render, times = [];
-      composer.render = function (...args) {
-        gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-        const start = performance.now();
-        render.apply(this, args);
-        gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-        times.push(performance.now() - start);
-      };
-      await new Promise(resolve => setTimeout(resolve, 4000));
-      composer.render = render;
-      times.sort((a, b) => a - b);
-      const at = q => +times[Math.min(times.length - 1, Math.floor(times.length * q))].toFixed(2);
-      return { variant, frames: times.length, p50: at(.5), p95: at(.95), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles };
-    }, { variant });
+    }, variant);
+    await page.waitForTimeout(800); // settle: first frames compile the mirror shader
+    const sample = { variant, ...await sampleFrameCost(page, 4000) };
     rows.push(sample);
   }
   await page.keyboard.up('KeyW');
