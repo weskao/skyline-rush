@@ -318,8 +318,7 @@ export function createWorldTourScene(scene){
     update(id,distance,quality='high',sections=[],time=0,reducedMotion=false,endless=false){
       if (!Object.hasOwn(WORLD_THEMES, id)) { group.visible = false; return; }
       if(endlessActive!==endless){cachedOrigin=null;homeOrigin=null;clearChunks();}
-      endlessActive=endless;
-      configure(id);group.visible=true;
+      endlessActive=endless; configure(id);group.visible=true;
       const theme=WORLD_THEMES[id],low=quality==='low',landscape=theme.prop;
       // The world is authored in camera-relative coordinates. Moving the
       // *entire group* by the centreline delta is exact; regenerating every
