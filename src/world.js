@@ -2,7 +2,7 @@ import { updateSkyline } from './skyline-scenery.ts';
 import * as THREE from 'three';
 import { photoFov } from './photo-export.ts';
 import { capturePhoto } from './photo-capture.ts';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { createRoomEnvironment } from './room-environment.ts';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -97,13 +97,9 @@ export function createWorld(canvas) {
   const lens = createLensPass();
   composer.addPass(lens);
   composer.addPass(new OutputPass());
-  const env = new THREE.PMREMGenerator(renderer);
-  const room = new RoomEnvironment();
-  const environment = env.fromScene(room, 0.04);
+  const environment = createRoomEnvironment(renderer);
   scene.environment = environment.texture;
   scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null, garagePreviewSkins = {};
-  room.dispose();
-  env.dispose();
   const carEnvironment = createCarEnvironment(renderer);
   const upcomingStage = createUpcomingShowcase(UPCOMING_ENVIRONMENTS, environment.texture, carEnvironment, host => garageModel?.release(host)); // runs after createWorld returns, so garageModel is initialised
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
