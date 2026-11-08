@@ -11,6 +11,8 @@ export const TRACK_PALETTES = {
   'harbor-circuit': { top: '#477d98', horizon: '#e6c6a1', fog: '#a4c0bd', rock: '#587b70', road: '#263941', ground: '#537d70', rail: '#eea966', sun: '#ffe3ba', warmth: .35 },
   // Same night palette as the Frostbite showroom: cobalt fog, moonlight, cyan crystal glow.
   'frostbite-canyon': { top: '#071433', horizon: '#1d4f7a', fog: '#24476e', rock: '#8fb0cc', road: '#4d6b91', ground: '#bcd4ee', rail: '#3fe3ff', sun: '#7fb6ff', warmth: 0 },
+  // Sunset and amber dust follow the Dune preview; the real road/chasm are streamed in world coordinates.
+  'dune-tempest': { top: '#3b2545', horizon: '#e9a16e', fog: '#b57e62', rock: '#965838', road: '#d4a064', ground: '#d99445', rail: '#f4c78e', sun: '#ffd397', warmth: .65 },
   ...WORLD_THEMES,
 };
 
