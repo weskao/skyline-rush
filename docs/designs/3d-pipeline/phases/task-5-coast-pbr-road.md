@@ -12,16 +12,24 @@ quality tier is added. Each source's licence, creator and source URL goes in the
 commit. Procedural substitutes are a fallback (Low tier, load failure), never the shipped Medium+ look.
 
 ## By project (committed once)
-- [ ] Look brief: for each Coast panel, record its camera, time of day, weather and the spec v2 §8.1 checklist items it scores, before any change.
+- [x] Look brief: for each Coast panel, record its camera, time of day, weather and the spec v2 §8.1 checklist items it scores, before any change. *Evidence: `coast-look-brief.md` (b6a39ad6).*
 - [ ] Shared lighting and post: per-time-of-day environment map from CC0 HDRIs (day, sunset, overcast rain), tone mapping and colour grade, bloom tuned for light blades, contact shadow under the car, and sun/haze. Measure the cost per tier, and keep Low on the current path (RoomEnvironment, current tone mapping).
+  - [x] CC0 HDRI per time of day, exposure and colour grade (`coast-lighting.test.js`, 985f6984); Low keeps RoomEnvironment; tight contact shadow (`contact-shadow.test.js`, 0b442e75).
+  - [ ] Bloom tuned for light blades, sun/haze, and a per-tier cost that resolves below vsync (all tiers held 60 fps / p95 ≤ 16.8 ms on a Mac, so deltas were not measurable).
 - [ ] Wet road: puddle and roughness masks with reflections of lights and sky on wet asphalt (environment-map or planar approximation, chosen by benchmark), in rain and at sunset.
-- [ ] Road material: Blender-baked KTX2 set (base colour sRGB; normal and roughness/AO linear) from a CC0 photoscanned asphalt, with lane paint and a dry/wet roughness + puddle mask; per-tier resolution (Medium 1K, High 2K, Ultra 2K plus detail normal), within a recorded texture-memory budget; KTX2Loader transcoder served from the built bundle and tested offline.
+  - [x] One wet variant driven by a `wetness` uniform: puddle albedo, roughness and flat normal from packed.b in rain, dusk and fog, with no recompile (905322ea; browser: rain flip compiles no program).
+  - [ ] Env-map vs planar Reflector benchmark, and visible sky/light reflections at sunset (§8.1 panel 5 still reads as grey road).
+- [x] Road material: Blender-baked KTX2 set (base colour sRGB; normal and roughness/AO linear) from a CC0 photoscanned asphalt, with lane paint and a dry/wet roughness + puddle mask; per-tier resolution (Medium 1K, High 2K, Ultra 2K plus detail normal), within a recorded texture-memory budget; KTX2Loader transcoder served from the built bundle and tested offline. *Evidence: 4a44116a, 905322ea, 447a5e3b; `coast-road-material.test.js`, `material-manifest.test.js`, browser offline KTX2 + Ultra no-compile-after-GO.*
 - [ ] Ultra tier: new quality option after High (settings UI, en + zh-TW copy, saved preference, migration of existing saves). It is never auto-selected by device detection; every map renders on Ultra at least as High does.
+  - [x] Settings option, en/zh-TW copy, saved preference (older saves stay valid without migration), never auto-selected (6777d8c9).
+  - [ ] Ultra screenshots on every map (only Coast was captured).
 - [ ] Effects toward the board, on the existing ports: thruster glow and boost-plume colour and length, wheel spray in rain, and a speed-line or motion-blur approximation only as Ultra after benchmarking. Each one needs a Low-tier fallback and must not compile after GO.
-- [ ] Close scenery: sea arch, cliffs, palms and guard rails as GLB with deterministic chunk placement. Cliffs and rocks are Poly Haven CC0 scans decimated to budget with baked normals; the sea arch is kitbashed in Blender from those scans; palms and W-beam guard rails (absent from Poly Haven) are modelled in Blender with CC0 photoscanned PBR textures. Distant objects stay procedural.
-- [ ] RED tests for UV continuity across moving road ribbon/chunks, correct tangent-space orientation, road widths, world-frame transforms, track switch and collision/vehicle-road clearance parity.
-- [ ] Add UV0 and safe road PBR texture assignment with per-quality resources; static terrain props may use an authored GLB with existing deterministic 120 m chunk placement/InstancedMesh.
-- [ ] Validate asset stream eviction and no duplicate draw calls; preserve Low visuals and proper renderer ownership.
+  - [x] Magenta plume tail and length (Low keeps the old plume), rain wheel spray (none on Low), stronger Ultra-only lens blur; warmup and black-frame specs extended (0f918d92).
+  - [ ] Thruster glow itself (unchanged), and a cost benchmark that resolves below vsync.
+- [x] Close scenery: sea arch, cliffs, palms and guard rails as GLB with deterministic chunk placement. Cliffs and rocks are Poly Haven CC0 scans decimated to budget with baked normals; the sea arch is kitbashed in Blender from those scans; palms and W-beam guard rails (absent from Poly Haven) are modelled in Blender with CC0 photoscanned PBR textures. Distant objects stay procedural. *Evidence: 5693439d, 54da98ae, f518da7e, 0396bc51.*
+- [x] RED tests for UV continuity across moving road ribbon/chunks, correct tangent-space orientation, road widths, world-frame transforms, track switch and collision/vehicle-road clearance parity. *Evidence: `road-ribbon-uv.test.js` (8c6652c5), `coast-scenery-glb.test.js`, `coast-lighting.test.js` (track switch).*
+- [x] Add UV0 and safe road PBR texture assignment with per-quality resources; static terrain props may use an authored GLB with existing deterministic 120 m chunk placement/InstancedMesh. *Evidence: 8c6652c5, 905322ea, f518da7e.*
+- [x] Validate asset stream eviction and no duplicate draw calls; preserve Low visuals and proper renderer ownership. *Evidence: `coast-scenery-glb.test.js` "driving evicts chunks without leaks, duplicate draws…"; Low specs in `coast-scenery-browser.spec.js`.*
 - [ ] Full verification and exact-HEAD CI, no silent map topology changes.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
