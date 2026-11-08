@@ -7,6 +7,17 @@ const constrained=page=>page.addInitScript(()=>{
   Object.defineProperty(navigator,'deviceMemory',{configurable:true,get:()=>2});
 });
 
+test('landscape language controls remain clickable while the quality notice is visible', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await constrained(page);
+  await page.goto('/');
+  await expect(page.locator('#performance-notice')).toBeVisible();
+  await selectLocale(page, 'zh-TW');
+  await expect(page.locator('#performance-notice-text')).toContainText('低');
+  await page.locator('#performance-notice-dismiss').click();
+  await expect(page.locator('#performance-notice')).toBeHidden();
+});
+
 test('first visit chooses Low for constrained device, explains it in either language, then never reopens',async({page})=>{
   await constrained(page);
   await page.goto('/');

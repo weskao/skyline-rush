@@ -17,7 +17,8 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[320, 64
       await start.locator('span').evaluate((span, text) => { span.textContent = text; }, LONG_LABEL[locale]);
       const after = await start.boundingBox();
       expect(after.height, 'button height unchanged').toBeCloseTo(before.height, 0);
-      const limit = showcase ? width : await page.locator('#intro').evaluate(el => el.getBoundingClientRect().right);
+      // Short landscape homes put Start in a fixed right rail outside the setup panel, including with AIRFLOW off.
+      const limit = showcase || (width > height && height <= 500) ? width : await page.locator('#intro').evaluate(el => el.getBoundingClientRect().right);
       expect(after.x + after.width, 'button stays inside its container').toBeLessThanOrEqual(limit + 1);
       const label = await start.locator('span').evaluate(span => {
         const range = document.createRange();
