@@ -6,6 +6,12 @@
 - [x] RED: `tests/ring-count-total.test.js` fails on `51137db4` (`spiral {"mode":"free","themes":true} seed 1: group 0
   counted 9/4 rings`). GREEN after the fix in `src/game.js` (`ownLine`: hoops get their own group, `groupSize` Infinity,
   like catch-up rings). Positions/count/type unchanged; race history/save schema unchanged.
+- [x] Follow-up (adversarial review of `c66494ed`): `withHoops` drops ring gates within 30 m of a hoop after
+  `assignGroups` sized the lines, so with hoops moved out a line could hold fewer gates than its `groupSize` (coast mixed
+  Gauntlet seed 24: group 0 = 4 gates, size 5) and never pay. RED: the coast seed-24 case in
+  `tests/ring-count-total.test.js`. GREEN (`65f6315b`): `withHoops` shrinks each line's `groupSize` by the gates it
+  dropped. Sweep of every track × 5 configs × seeds 1–60 (3000 races): 0 lines over or under their size (was 212 under).
+  Re-run: `npm test` 2311/0/3 skipped, `npm run typecheck` OK, `npm run build` OK, the same 5 browser specs 34/0.
 - [ ] Ring SFX misfire and a HUD "6/5" counter were not reproduced: there is no ring collected/total HUD counter in `src`,
   and ring SFX count == collected rings in every probed run. Needs a repro from the reporter.
 - [ ] Design decision pending: hoops never pay their own PERFECT LINE (default chosen to avoid a new +500/NITRO reward on a
