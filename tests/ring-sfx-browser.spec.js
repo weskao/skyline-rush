@@ -91,6 +91,7 @@ for (const [name, viewport, hasTouch] of [
       const missed = [];
       for (const ring of rings) {
         Object.assign(race().player, { distance: ring.distance - 0.2, x: ring.x, altitude: ring.altitude, speed: 50 });
+        ring.downUntil = 0; // a rival may have just taken it (gone 2.5 s of game time, which a slow runner stretches)
         for (let i = 0; i < 200 && !ring.hit; i++) await wait(10);
         if (ring.hit) taken++;
         else missed.push({ ring: { distance: ring.distance, x: ring.x, altitude: ring.altitude }, player: (({ distance, x, altitude, speed }) => ({ distance, x, altitude, speed }))(race().player) });
