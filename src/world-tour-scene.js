@@ -316,6 +316,8 @@ export function createWorldTourScene(scene){
   }
   return {
     update(id,distance,quality='high',sections=[],time=0,reducedMotion=false,endless=false){
+      // CourseGraph owns its physical road/scenery. Never configure World Tour props for an unknown id.
+      if (!Object.hasOwn(WORLD_THEMES, id)) { group.visible = false; return; }
       if(endlessActive!==endless){cachedOrigin=null;homeOrigin=null;clearChunks();}
       endlessActive=endless;
       configure(id);group.visible=true;
