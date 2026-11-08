@@ -19,6 +19,9 @@ paths:
   still reports green), but only when the parent commit's own CI run on that branch passed.
   Rules: `scripts/ci-changes.mjs`; a test that reads a new doc must add it to `NEEDS_CI` there
   (`tests/ci-changes.test.js` enforces it).
+- Pushing to a branch whose CI is in progress cancels that run (`cancel-in-progress`); wait for it to
+  finish, or accept that the superseded run shows as cancelled, not failed (`quality-gate` uses
+  `!cancelled()`, never `always()`; `tests/ci-quality-gate.test.js` pins it).
 - A commit on `main` is not a deploy; publication rules are in `.github/workflows/ci.yml`.
 - CI runs and optional screenshot artifacts are evidence for review, not substitutes for real
   vehicle/road contact or manual interaction testing on devices.

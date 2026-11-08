@@ -6,6 +6,8 @@ import { existsSync } from 'node:fs';
 const RELEASE_LEAK_MARKERS = {
   SKYLINE_RUSH_DEV_UNLOCK_ALL_ONLY: 'development unlock code',
   'skyline-rush-crash-log': 'diagnostic crash log / live panel (VITE_DIAG build)',
+  '__diag/log': 'diagnostic log relay client (VITE_DIAG build)',
+  'diag-relay-token': 'diagnostic log relay token (VITE_DIAG dev server)',
 };
 const files = [];
 function scan(directory) {
