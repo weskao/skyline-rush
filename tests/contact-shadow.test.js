@@ -29,3 +29,15 @@ test('the shadow fades as the car lifts off', () => {
   assert.ok(shadowOpacity(0) > shadowOpacity(2));
   assert.ok(shadowOpacity(20) > 0);
 });
+
+test('board panel 1: a tight, dark contact under the car, not a 5 x 8 m halo', t => {
+  const stops = withCanvas(t);
+  const { shadow } = createContactShadow(new THREE.Scene());
+  const { width, height } = shadow.geometry.parameters;
+  assert.ok(width >= 2.6 && width <= 3.4, `width ${width} m hugs the ~2.3 m track`);
+  assert.ok(height >= 5.2 && height <= 6.2, `length ${height} m hugs the ~4.9 m body`);
+  const alpha = color => +color.match(/[\d.]+\)$/)[0].slice(0, -1);
+  assert.ok(alpha(stops[0][1]) >= 0.9, 'dark core where the tyres meet the road');
+  assert.ok(stops.some(([at, color]) => at > 0.3 && at < 0.8 && alpha(color) >= 0.4), 'holds density under the body before the soft edge');
+  assert.ok(shadowOpacity(0) >= 0.7);
+});
