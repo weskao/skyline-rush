@@ -6,6 +6,7 @@ import { CAR_STYLES, makeCar, poseWing } from '../src/car-model.js';
 import { createGarageModel, garageModelId } from '../src/garage-model.ts';
 import { createAeroVFX } from '../src/aero-vfx.js';
 import { createGaragePaintSweep } from '../src/garage-paint-shader.ts';
+import { createGraceFade } from '../src/grace-fade.ts';
 
 const settle = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setTimeout(r, 0)); };
 const drawn = object => object.layers.test(new THREE.Camera().layers);
@@ -24,6 +25,7 @@ function roadsterGlb() {
   };
   node('body');
   node('tail_light', scene, light);
+  node('glass', scene, new THREE.MeshPhysicalMaterial({ name: 'roadster_glass', opacity: 0.5 })); // neither paint nor light
   for (const name of WHEELS) node(`${name}_spin`, node(name));
   const wing = node('wing'), blade = node('wing_blade', wing);
   node('wing_tip_l', blade);
@@ -283,4 +285,27 @@ test('a GLB wheel without its _spin pivot (pre-rig contract, e.g. the probe) kee
   const dressedWheel = car.getObjectByName('wheel_fl');
   assert.deepEqual(dressedWheel.position.toArray(), [-0.85, 0.35, -1.2]);
   assert.deepEqual(dressedWheel.quaternion.toArray(), [0, 0, 0, 1]);
+});
+
+// develop 51e25a03: post-hit grace pulses the player car translucent (grace-fade.ts); a GLB-dressed player car pulses too.
+test('post-hit grace fades every GLB material with the procedural car, leaving the cached original alone', async () => {
+  const ctx = setup();
+  const fade = createGraceFade(ctx.car); // world.js: when the player car is built, before any GLB dresses it
+  ctx.model.sync(true, 'high', ctx.host);
+  await settle();
+  ctx.model.sync(true, 'high', ctx.host);
+  const materials = [], base = new Map();
+  glbBody(ctx.car).parent.traverse(o => { if (o.isMesh) { materials.push(o.material); base.set(o.material, o.material.opacity); } });
+  assert.ok(materials.every(m => m.transparent), 'blending from dress time, so the first hit compiles nothing');
+  for (const opacity of [0.4, 0.7, 1]) {
+    fade(opacity);
+    ctx.model.sync(true, 'high', ctx.host);
+    for (const m of materials) assert.ok(Math.abs(m.opacity - base.get(m) * opacity) < 1e-9, `${m.name} at ${opacity}: ${m.opacity}`);
+  }
+  ctx.original.traverse(o => { if (o.isMesh) assert.ok(!o.material.transparent && o.material.opacity === (o.name === 'glass' ? 0.5 : 1), o.name); });
+});
+
+test('a car that never fades (Garage Studio, showcase) keeps the GLB opaque', async () => {
+  const { glb } = await dressed();
+  for (const name of ['body', 'tail_light', 'glass']) assert.equal(glb(name).material.transparent, false, name);
 });

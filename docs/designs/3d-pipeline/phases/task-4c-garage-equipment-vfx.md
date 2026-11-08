@@ -53,6 +53,9 @@ A paint or skin added later joins this task automatically through the catalog-dr
 
   - Fill rate: NOT VERIFIED (not measured).
 - [ ] Regression matrix: Garage Home, Preview Studio, the shared six-course Home carousel and every playable track including World Tour, desktop and phone; `npm test`, `npm run build`, `npm run test:browser`, `make verify`; exact-HEAD full `quality-gate` on `develop`.
+  - `make verify` on `f1d3e534` (2026-11-08): unit 2137 pass / 0 fail / 3 skipped; build OK; browser 980 passed / 9 skipped / 1 failed (1.6 h).
+  - The one failure was this phase's own showcase test. It read a locked preview paint once, while that paint was reverting on close. Fixed to poll the equipped paint; the spec then passed 16/16 under `CI=1 --repeat-each=4 --retries=0`.
+  - Still open: exact-HEAD `quality-gate` on `develop` (owner: no CI wait).
 - [x] ~~Owner visual sign-off on the final per-item before/after matrix~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified).
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
