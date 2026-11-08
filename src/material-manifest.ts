@@ -4,7 +4,7 @@
 export type MaterialMap = 'baseColor' | 'normal' | 'packed';
 export type MaterialColorSpace = 'srgb' | 'linear';
 /** Texture resolution per quality tier; Low keeps the procedural road and loads nothing. */
-export const TIERS = { medium: 1024, high: 1024, ultra: 2048 } as const;
+export const TIERS = { medium: 1024, high: 2048, ultra: 2048 } as const; // Ultra adds a detail normal (coast-road-material.ts)
 export type MaterialTier = keyof typeof TIERS;
 
 export interface MaterialFile { map: MaterialMap; resolution: number; url: string; bytes: number; sha256: string; colorSpace: MaterialColorSpace }
@@ -50,7 +50,7 @@ export const MATERIAL_MANIFEST: Record<string, MaterialManifestEntry> = {
     ],
     budgets: {
       downloadBytes: { 1024: 3_300_000, 2048: 13_000_000 },
-      gpuBytes: { medium: 4_500_000, high: 4_500_000, ultra: 17_500_000 },
+      gpuBytes: { medium: 4_500_000, high: 17_500_000, ultra: 17_500_000 },
     },
   },
 };

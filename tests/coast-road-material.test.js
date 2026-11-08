@@ -2,23 +2,37 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { coastRoadFiles, coastRoadTier, coastWetness, createCoastRoadMaterial } from '../src/coast-road-material.ts';
-import { MATERIAL_MANIFEST, gpuBytesEstimate } from '../src/material-manifest.ts';
+import { MATERIAL_MANIFEST, TIERS, gpuBytesEstimate } from '../src/material-manifest.ts';
 
 const maps = () => ({ baseColor: new THREE.Texture(), normal: new THREE.Texture(), packed: new THREE.Texture() });
 const standardShader = () => ({ uniforms: THREE.UniformsUtils.clone(THREE.ShaderLib.standard.uniforms),
   vertexShader: THREE.ShaderLib.standard.vertexShader, fragmentShader: THREE.ShaderLib.standard.fragmentShader });
 
-test('Coast road texture tier: Low keeps the procedural road, Medium/High 1K, Ultra 2K', () => {
+test('Coast road texture tier (task 5): Low keeps the procedural road, Medium 1K, High 2K, Ultra 2K plus detail normal', () => {
   assert.equal(coastRoadTier('low', false), null);
   assert.equal(coastRoadTier('low', true), null, 'Ultra flag never overrides an explicit Low');
-  assert.equal(coastRoadTier('medium', false), 1024);
-  assert.equal(coastRoadTier('high', false), 1024);
-  assert.equal(coastRoadTier('high', true), 2048);
+  assert.equal(coastRoadTier('medium', false), 'medium');
+  assert.equal(coastRoadTier('high', false), 'high');
+  assert.equal(coastRoadTier('high', true), 'ultra');
+  assert.deepEqual([TIERS.medium, TIERS.high, TIERS.ultra], [1024, 2048, 2048]);
   const files = coastRoadFiles(2048);
   assert.deepEqual(Object.keys(files).sort(), ['baseColor', 'normal', 'packed']);
   for (const file of Object.values(files)) assert.equal(file.resolution, 2048);
   const budget = MATERIAL_MANIFEST['coast-asphalt'].budgets.gpuBytes;
-  assert.ok(gpuBytesEstimate(1024) <= budget.high && gpuBytesEstimate(2048) <= budget.ultra, 'within the recorded texture-memory budget');
+  assert.ok(gpuBytesEstimate(1024) <= budget.medium && gpuBytesEstimate(2048) <= budget.high, 'within the recorded texture-memory budget');
+});
+
+test('Ultra adds a detail normal from the same map: no extra texture, its own program built before GO', () => {
+  const m = maps(), plain = createCoastRoadMaterial(maps()), detail = createCoastRoadMaterial(m, 1, { detail: true });
+  assert.equal(detail.material.normalMap, m.normal, 'one normal texture');
+  assert.notEqual(detail.material.customProgramCacheKey(), plain.material.customProgramCacheKey());
+  const a = standardShader(), b = standardShader();
+  plain.material.onBeforeCompile(a, null);
+  detail.material.onBeforeCompile(b, null);
+  assert.doesNotMatch(a.fragmentShader, /detailN/);
+  const frag = b.fragmentShader, at = frag.indexOf('detailN');
+  assert.match(frag, /texture2D\( normalMap, vNormalMapUv \* [\d.]+ \)/, 'resamples the asphalt normal at a finer scale');
+  assert.ok(at > frag.indexOf('#include <normal_fragment_maps>') && at < frag.indexOf('nonPerturbedNormal', at), 'standing water still flattens the detail');
 });
 
 test('wetness follows the Coast weather: rain soaks the road, dusk is damp, day is dry', () => {

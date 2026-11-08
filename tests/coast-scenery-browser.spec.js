@@ -51,12 +51,12 @@ test('Coast Low never fetches the scenery GLB and keeps the procedural rocks and
   expect(requests).toEqual([]);
 });
 
-test('Coast High puts the KTX2 asphalt on the road before GO, offline: transcoder and textures come from this origin', async ({ gameplayPage: page }) => {
+test('Coast High puts the 2K KTX2 asphalt on the road before GO, offline: transcoder and textures come from this origin', async ({ gameplayPage: page }) => {
   test.setTimeout(ciTimeout(90000));
   const foreign = [];
   await page.route(url => !['127.0.0.1', 'localhost'].includes(url.hostname), route => { foreign.push(route.request().url()); return route.abort(); });
   await withQuality(page, 'high');
-  await expect.poll(() => page.locator('#world').getAttribute('data-coast-road'), { timeout: ciTimeout(40000) }).toBe('1024');
+  await expect.poll(() => page.locator('#world').getAttribute('data-coast-road'), { timeout: ciTimeout(40000) }).toBe('high');
   const road = await page.evaluate(() => {
     let found = null;
     window.gameScene.scene.traverse(o => { if (o.material?.name === 'coast_asphalt') found = { maps: ['map', 'normalMap', 'roughnessMap', 'aoMap'].map(k => !!o.material[k]?.isCompressedTexture) }; });
@@ -65,14 +65,29 @@ test('Coast High puts the KTX2 asphalt on the road before GO, offline: transcode
   expect(road).toEqual({ maps: [true, true, true, true] });
   const ktx2 = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /basis_transcoder|asphalt_.*\.ktx2/.test(n)));
   expect(ktx2.some(n => n.includes('basis_transcoder'))).toBe(true);
-  expect(ktx2.filter(n => n.includes('asphalt_')).length).toBe(3);
+  expect(ktx2.filter(n => /asphalt_.*_2k\.ktx2/.test(n)).length).toBe(3);
   expect(foreign).toEqual([]);
+});
+
+test('Coast Ultra compiles the detail-normal road before GO without shader errors', async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(90000));
+  const errors = [];
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  await withQuality(page, 'ultra');
+  await expect.poll(() => page.locator('#world').getAttribute('data-coast-road'), { timeout: ciTimeout(40000) }).toBe('ultra');
+  await page.locator('#start-button').click();
+  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await page.waitForTimeout(ciTimeout(300));
+  const before = await programs(page);
+  await page.waitForTimeout(ciTimeout(1000));
+  expect(await programs(page)).toBe(before);
+  expect(errors.filter(e => /shader|WebGLProgram|webgl/i.test(e))).toEqual([]);
 });
 
 test('switching Coast to rain mid-race only moves uniforms: no program compiles', async ({ gameplayPage: page }) => {
   test.setTimeout(ciTimeout(90000));
   await withQuality(page, 'high');
-  await expect.poll(() => page.locator('#world').getAttribute('data-coast-road'), { timeout: ciTimeout(40000) }).toBe('1024');
+  await expect.poll(() => page.locator('#world').getAttribute('data-coast-road'), { timeout: ciTimeout(40000) }).toBe('high');
   await expect.poll(() => status(page), { timeout: ciTimeout(40000) }).toBe('attached');
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
@@ -82,5 +97,5 @@ test('switching Coast to rain mid-race only moves uniforms: no program compiles'
   await page.evaluate(() => { const race = window.gameplay.race; race.mode = 'free'; race.session = { ...race.session, presentation: { visualPreset: 'rain' } }; });
   await page.waitForTimeout(ciTimeout(1500));
   expect(await programs(page)).toBe(before);
-  expect(await page.locator('#world').getAttribute('data-coast-road')).toBe('1024'); // settled: the road never swaps while racing
+  expect(await page.locator('#world').getAttribute('data-coast-road')).toBe('high'); // settled: the road never swaps while racing
 });

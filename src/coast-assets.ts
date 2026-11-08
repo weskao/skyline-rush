@@ -3,7 +3,7 @@
 // warmupShaders pass must build their programs before GO (performance-review.md). Weather is a uniform, never a swap.
 import type { Material, Object3D, Texture } from 'three';
 import type { ModelCache, ModelHandle } from './asset-model-loader.ts';
-import type { MaterialFile } from './material-manifest.ts';
+import { TIERS, type MaterialFile, type MaterialTier } from './material-manifest.ts';
 import { modelUrl } from './model-manifest.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 import { createKtx2Provider } from './garage-model.ts';
@@ -14,14 +14,14 @@ interface Road { mesh: { material: Material | Material[] }; load(file: MaterialF
 interface Deps {
   scenery: Scenery; cache: Pick<ModelCache, 'load'>; road?: Road;
   /** QA state (the canvas dataset): coastScenery = loading | waiting-for-race-end | attached | fallback:<reason> | off;
-   *  coastRoad = <resolution> while the asphalt is on the road, else procedural | fallback. */
+   *  coastRoad = medium | high | ultra (material tier) while the asphalt is on the road, else procedural | fallback. */
   dataset?: Record<string, string | undefined>;
 }
 
 export function createCoastAssets({ scenery, cache, road, dataset = {} }: Deps) {
   const controller = new AbortController();
   const procedural = road?.mesh.material;
-  const roads = new Map<number, CoastRoad | 'loading' | 'failed'>();
+  const roads = new Map<MaterialTier, CoastRoad | 'loading' | 'failed'>();
   let requested = false, attached = false, handle: ModelHandle | null = null;
 
   function updateScenery(trackId: string, quality: VfxQuality, racing: boolean): boolean {
@@ -42,11 +42,11 @@ export function createCoastAssets({ scenery, cache, road, dataset = {} }: Deps) 
     return true;
   }
 
-  function loadRoad(tier: number, { load, anisotropy }: Road): void {
+  function loadRoad(tier: MaterialTier, { load, anisotropy }: Road): void {
     roads.set(tier, 'loading');
-    const files = coastRoadFiles(tier);
+    const files = coastRoadFiles(TIERS[tier]);
     Promise.all([files.baseColor, files.normal, files.packed].map(load)).then(([baseColor, normal, packed]) => {
-      const made = createCoastRoadMaterial({ baseColor: baseColor!, normal: normal!, packed: packed! }, anisotropy);
+      const made = createCoastRoadMaterial({ baseColor: baseColor!, normal: normal!, packed: packed! }, anisotropy, { detail: tier === 'ultra' });
       if (controller.signal.aborted) made.dispose(); else roads.set(tier, made);
     }, error => {
       roads.set(tier, 'failed');
@@ -65,8 +65,8 @@ export function createCoastAssets({ scenery, cache, road, dataset = {} }: Deps) 
     const target = want?.material ?? procedural!;
     if (road.mesh.material === target || racing) return false;
     road.mesh.material = target;
-    dataset.coastRoad = want ? String(tier) : 'procedural';
-    for (const [other, entry] of roads) if (other !== tier && typeof entry === 'object') { entry.dispose(); roads.delete(other); } // frees the 2K set after leaving Ultra
+    dataset.coastRoad = want ? tier! : 'procedural';
+    for (const [other, entry] of roads) if (other !== tier && typeof entry === 'object') { entry.dispose(); roads.delete(other); } // frees the tier left behind
     return !!want;
   }
 

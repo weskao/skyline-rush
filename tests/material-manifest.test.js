@@ -72,5 +72,5 @@ test('coast-asphalt: per-tier download and GPU budgets hold', () => {
     const gpu = gpuBytesEstimate(resolution);
     assert.ok(gpu <= entry.budgets.gpuBytes[tier], `${tier}: ${gpu} GPU bytes > ${entry.budgets.gpuBytes[tier]}`);
   }
-  assert.ok(entry.budgets.gpuBytes.ultra > entry.budgets.gpuBytes.high, 'Ultra spends more than High');
+  assert.ok(entry.budgets.gpuBytes.ultra >= entry.budgets.gpuBytes.high, 'Ultra never spends less than High (its extra is a shader detail pass, not memory)');
 });

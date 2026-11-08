@@ -88,7 +88,7 @@ test('Coast Medium+ swaps in the KTX2 asphalt outside racing; Low and other trac
   assert.equal(r.mesh.material, r.defaultMaterial);
   assert.equal(assets.update('coast', 'medium', false), true, 'the new road program is warmed before GO');
   assert.equal(r.mesh.material.name, 'coast_asphalt');
-  assert.equal(dataset.coastRoad, '1024');
+  assert.equal(dataset.coastRoad, 'medium');
   assert.equal(assets.update('coast', 'medium', false), false);
   assets.update('neon', 'medium', false);
   assert.equal(r.mesh.material, r.defaultMaterial, 'other tracks get the procedural road back');
@@ -97,11 +97,11 @@ test('Coast Medium+ swaps in the KTX2 asphalt outside racing; Low and other trac
   assets.dispose();
 });
 
-test('Ultra loads the 2K set; the tier not on screen is freed', async () => {
+test('leaving Medium for Ultra loads the 2K set with the detail normal; the tier not on screen is freed', async () => {
   const r = roadFakes(), assets = createCoastAssets({ scenery, cache: never, road: r.road });
-  assets.update('coast', 'high', false);
+  assets.update('coast', 'medium', false);
   await tick();
-  assets.update('coast', 'high', false);
+  assets.update('coast', 'medium', false);
   const oneK = r.mesh.material;
   let freed = false;
   oneK.addEventListener('dispose', () => { freed = true; });
@@ -109,6 +109,7 @@ test('Ultra loads the 2K set; the tier not on screen is freed', async () => {
   await tick();
   assets.update('coast', 'high', false, 'track', true);
   assert.ok(r.log.includes('2048:baseColor'));
+  assert.match(r.mesh.material.customProgramCacheKey(), /detail/, 'Ultra shows the detail-normal program');
   assert.notEqual(r.mesh.material, oneK);
   assert.ok(freed, '1K textures released once the 2K road is shown');
   assets.dispose();

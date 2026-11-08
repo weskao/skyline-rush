@@ -3,13 +3,13 @@
 // normal, so the scene environment (the Coast HDRI) reflects in them. Weather changes only move the uniform; the
 // program is built once (customProgramCacheKey) and warmed before GO like every other material.
 import * as THREE from 'three';
-import { MATERIAL_MANIFEST, TIERS, type MaterialFile, type MaterialMap } from './material-manifest.ts';
+import { MATERIAL_MANIFEST, type MaterialFile, type MaterialMap, type MaterialTier } from './material-manifest.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
-/** Texture resolution for a tier; null keeps the procedural road (Low, also with the Ultra flag). */
-export function coastRoadTier(quality: VfxQuality, ultra: boolean): number | null {
+/** Road material tier (TIERS gives its resolution); null keeps the procedural road (Low, also with the Ultra flag). */
+export function coastRoadTier(quality: VfxQuality, ultra: boolean): MaterialTier | null {
   if (quality === 'low') return null;
-  return ultra ? TIERS.ultra : TIERS[quality];
+  return ultra ? 'ultra' : quality;
 }
 
 export function coastRoadFiles(resolution: number): Record<MaterialMap, MaterialFile> {
@@ -27,10 +27,12 @@ float puddle = smoothstep( .3, .7, texelRoughness.b ) * wetness;
 roughnessFactor = mix( roughnessFactor, roughnessFactor * .55, wetness );
 roughnessFactor = mix( roughnessFactor, .05, puddle );
 diffuseColor.rgb *= mix( 1., .6, wetness ) * mix( 1., .75, puddle );`;
-const WET_NORMAL = `${NORMAL}
-normal = normalize( mix( normal, nonPerturbedNormal, puddle ) );`;
+const FLATTEN = 'normal = normalize( mix( normal, nonPerturbedNormal, puddle ) );';
+// Ultra: the same normal map again at 1/6 the repeat, adding grain the 2K texels cannot hold at the bumper camera.
+const DETAIL = `vec3 detailN = texture2D( normalMap, vNormalMapUv * 6. ).xyz * 2. - 1.;
+normal = normalize( normal + tbn * vec3( detailN.xy * normalScale * .4, 0. ) );`;
 
-export function createCoastRoadMaterial(maps: Record<MaterialMap, THREE.Texture>, anisotropy = 1) {
+export function createCoastRoadMaterial(maps: Record<MaterialMap, THREE.Texture>, anisotropy = 1, { detail = false } = {}) {
   maps.baseColor.colorSpace = THREE.SRGBColorSpace;
   maps.normal.colorSpace = maps.packed.colorSpace = THREE.NoColorSpace;
   for (const texture of Object.values(maps)) {
@@ -47,9 +49,11 @@ export function createCoastRoadMaterial(maps: Record<MaterialMap, THREE.Texture>
     const frag = shader.fragmentShader;
     if (!frag.includes(ROUGHNESS) || !frag.includes(NORMAL) || !frag.includes(COMMON)) throw new Error('coast road: three shader chunks moved; update the wet-road injection');
     shader.uniforms.wetness = wetness;
-    shader.fragmentShader = frag.replace(COMMON, `${COMMON}\nuniform float wetness;`).replace(ROUGHNESS, WET_ROUGHNESS).replace(NORMAL, WET_NORMAL);
+    const normal = [NORMAL, ...detail ? [DETAIL] : [], FLATTEN].join('\n');
+    shader.fragmentShader = frag.replace(COMMON, `${COMMON}\nuniform float wetness;`).replace(ROUGHNESS, WET_ROUGHNESS).replace(NORMAL, normal);
   };
-  material.customProgramCacheKey = () => 'coast-road-wet-v1';
+  const key = detail ? 'coast-road-wet-v1-detail' : 'coast-road-wet-v1';
+  material.customProgramCacheKey = () => key;
   return {
     material,
     setWetness(value: number): void { wetness.value = value; },
