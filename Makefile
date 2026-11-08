@@ -46,11 +46,13 @@ dev: stop-old-dev reclaim-dev-port node_modules ## `make`: Vite + Vue dev server
 
 # VITE_DIAG=1 compiles in src/crash-log.ts: a live banner with frame counter, lifecycle and input events plus the
 # stored crash log. Production builds never include it (scripts/assert-production-locked.mjs refuses the marker).
+# Both also stream it to diag-logs/*.jsonl on this Mac (scripts/diag-relay-plugin.mjs; read live: `npm run diag:tail`),
+# from localhost and Tailscale only; `via=wifi` serves Wi-Fi, whose logs need DIAG_ALLOW_LAN=1 (unencrypted).
 dev-diag: stop-old-dev reclaim-dev-port node_modules ## `make dev-diag`: like `make`, with the on-screen diagnostic panel compiled in
 	VITE_DIAG=1 $(WITH_EMULATORS) '$(NPM) run dev'
 
 phone-diag: ## `make phone-diag [name|off] [y=1]`: like `make phone`, with the on-screen diagnostic panel compiled in
-	VITE_DIAG=1 $(MAKE) phone $(if $(y),y=$(y)) $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
+	VITE_DIAG=1 $(MAKE) phone $(if $(y),y=$(y)) $(if $(via),PHONE_VITE_ARGS="--via $(via)") $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Compile with the development-only access implementation. Never produces a distributable build.
 dev-unlocked: stop-old-dev reclaim-dev-port node_modules ## `make dev-unlocked`: local-only Vite server with all tracks and paints unlocked
