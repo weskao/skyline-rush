@@ -147,6 +147,13 @@ test.describe('desktop', () => {
       document.addEventListener('close', ({ target }) => {
         if (target.id === 'release-media-viewer') window.handOver.clipEnd = target.querySelector('video').currentTime;
       }, true);
+      // The frame the viewer asks its clip to start from: a `playing` event can reach a main thread busy rendering WebGL
+      // after the clip has already played on, so only the requested frame is exact on a slow runner.
+      const seek = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'currentTime');
+      Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', { ...seek, set(value) {
+        if (this.closest('#release-media-viewer')) window.handOver.clipSeek ??= value;
+        seek.set.call(this, value);
+      } });
     });
     await expect.poll(() => time(video)).toBeGreaterThan(1.2);
     // A ~6 s looping clip: a slow runner can reach the hand-over late enough that heroTime + 1 wraps past the end.
@@ -158,9 +165,10 @@ test.describe('desktop', () => {
     expect(await paused(video)).toBe(true);
     // `paused` flips on play(); the `playing` event that records the frame is dispatched a task later.
     await expect.poll(() => page.evaluate(() => window.handOver.clipStart)).toBeDefined();
-    const { clipStart } = await page.evaluate(() => window.handOver);
+    const { clipStart, clipSeek } = await page.evaluate(() => window.handOver);
     expect(clipStart, 'no restart: it carries on from the hero\'s frame').toBeGreaterThanOrEqual(heroTime - 0.1);
-    expect(clipStart).toBeLessThan(heroTime + 0.5);
+    expect(clipSeek, 'it starts at the hero\'s frame').toBeGreaterThanOrEqual(heroTime - 0.1);
+    expect(clipSeek).toBeLessThan(heroTime + 0.5);
     await expect.poll(() => time(clip)).toBeGreaterThan(heroTime + 1);
     await page.keyboard.press('Escape');
     await expect(page.locator('#release-media-viewer')).toBeHidden();

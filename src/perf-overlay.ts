@@ -3,6 +3,9 @@ import { frameStats, PERF_WINDOW } from './perf.ts';
 export const perfLine = ({ p50, p95, fps }: { p50: number; p95: number; fps: number }, seconds: number): string =>
   `FRAME p50 ${p50.toFixed(1)} ms · p95 ${p95.toFixed(1)} ms · ${fps} fps · ${Math.round(seconds)} s`;
 
+// A gap this long is a stall (tab switch, backgrounding), not a frame time. 250 ms hid every frame of a 3-4 fps device.
+const STALL_MS = 1000;
+
 /** The `?perf` frame-time strip used for device checks; null when the page was opened without ?perf. */
 export function createPerfOverlay(search: string, readLoad?: () => {drawCalls:number;triangles:number}) {
   if (!new URLSearchParams(search).has('perf')) return null;
@@ -13,7 +16,7 @@ export function createPerfOverlay(search: string, readLoad?: () => {drawCalls:nu
   return {
     /** Racing frames only; a long stall (tab switch) is not a frame time. */
     record(now: number, rawDelta: number, racing: boolean, rendered = true): void {
-      if (!racing || rawDelta > 0.25) {
+      if (!racing || rawDelta * 1000 > STALL_MS) {
         lastPresentedAt = null;
         return;
       }
@@ -21,7 +24,7 @@ export function createPerfOverlay(search: string, readLoad?: () => {drawCalls:nu
       if (lastPresentedAt === null) { lastPresentedAt = now; return; }
       const elapsed = now - lastPresentedAt;
       lastPresentedAt = now;
-      if (elapsed <= 0 || elapsed > 250) return;
+      if (elapsed <= 0 || elapsed > STALL_MS) return;
       frames.push({ at: now, ms: elapsed });
       while (now - frames[0]!.at > PERF_WINDOW * 1000) frames.shift();
       if (now - shownAt < 500) return;

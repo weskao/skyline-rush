@@ -8,7 +8,13 @@
   Cause: on the CPU-only runner frames exceeded the overlay's 250 ms stall cut-off, so the fixed 1.7 s sleep read an
   empty or sub-second strip. Now polls (`ciTimeout(30000)`) for a ≥1 s sampled window with its draw-call count. RED not
   reproduced locally (GPU frames stay under 250 ms); fix verified green locally.
-- [x] `release-video-browser` desktop hand-over: flaky (passed on retry), already addressed by `cca99961`.
+- [x] `release-video-browser` desktop hand-over (clipStart +0.61 s, passed on retry): `cca99961` only fixed the
+  `undefined` read. Under WebGL load the `playing` handler reads the clip after it played on. Sustained 300 ms
+  main-thread slices: old 2/3 fail, new 3/3 pass; the upper bound now uses the frame the viewer requests
+  (`currentTime` setter), the no-restart lower bound keeps `playing`. Spec 104/104 under `CI=1 --repeat-each=8`.
+- [x] `?perf` root cause for the neon strip: every frame over 250 ms counted as a stall, so a 3-4 fps device
+  (CI Neon p95 is 233 ms on a normal runner) showed nothing. Stall threshold now 1 s (`src/perf-overlay.ts`);
+  unit test RED (`''`) → GREEN.
 - [ ] Exact-HEAD full CI for the fix commit.
 
 ## 2026-11-08 — Monsoon branch full Browser CI regression investigation
