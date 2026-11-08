@@ -1,5 +1,6 @@
 // Visual controls only: none of these values are consumed by the race simulation.
 // Index 0 is the English label; the UI translates it through the `vfx.<key>` catalog entry (vfxLabelKey).
+import { look3d } from './look-gate.ts';
 export const vfxLabelKey = (key: string): string => `vfx.${key}`;
 export const SHOWCASE_VIEWS = Object.freeze(['drive','front','rear','left','right','orbit'] as const);
 export const VFX_RANGES = {
@@ -126,7 +127,7 @@ export function createSprintVfx() {
       frame.particles = frame.power * (comfort ? 0.2 : tier);
       // FOV is camera framing, not GPU cost: one strength on every tier (pre-Wave 2 behaviour).
       frame.fov = comfort ? 0 : frame.power;
-      frame.blur = comfort ? 0 : Math.min(1, frame.power * tier * (input.ultra ? 0.96 : 0.6)); // Ultra only: stronger lens radial blur, same pass
+      frame.blur = comfort ? 0 : Math.min(1, frame.power * tier * (input.ultra && look3d() ? 0.96 : 0.6)); // Ultra only (`?look=3d`): stronger lens radial blur, same pass
       return frame;
     },
   };

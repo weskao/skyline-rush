@@ -9,6 +9,7 @@ import type { VfxQuality } from './vfx-settings.ts';
 import { createKtx2Provider } from './garage-model.ts';
 import { coastRoadFiles, coastRoadTier, coastWetness, createCoastRoadMaterial, type CoastRoad, type ReflectionUniforms } from './coast-road-material.ts';
 import { createWetReflection, wetReflectionStrength } from './wet-reflection.ts';
+import { look3d } from './look-gate.ts';
 
 interface Scenery { attachModel(source: Object3D): void; detachModel(): void }
 type BeforeRender = (renderer: never, scene: Scene, camera: Camera) => void;
@@ -119,9 +120,11 @@ export function createCoastAssets({ scenery, cache, road, reflection, dataset = 
 interface Ktx2TextureLoader { loadAsync(url: string): Promise<Texture> }
 interface WorldRenderer { capabilities: { getMaxAnisotropy(): number } }
 
-/** World wiring: one model cache and KTX2 transcoder for the Coast assets, imported only when first needed. */
+/** World wiring: one model cache and KTX2 transcoder for the Coast assets, imported only when first needed.
+ *  null without `?look=3d` (look-gate.ts): no loader, mirror hook or fetch, the develop road and scenery. */
 export function createWorldCoastAssets(renderer: WorldRenderer, targets: { scenery: Scenery; road: Road['mesh'] },
   dataset: Deps['dataset'], baseUrl = import.meta.env.BASE_URL) {
+  if (!look3d()) return null;
   const loadKtx2 = createKtx2Provider(renderer, baseUrl);
   // shortcut: `?model=` Garage QA builds its own cache and KTX2 loader; share one if both ever ship by default.
   const real = import('./asset-model-loader.ts').then(({ createModelCache }) => createModelCache({ baseUrl, loadKtx2 }));

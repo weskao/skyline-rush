@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { Color } from 'three';
 import { createCoastLook } from '../src/coast-look.ts';
 import { COAST_ENV_VARIANTS } from '../src/coast-lighting.ts';
+import { setLook3d } from '../src/look-gate.ts';
+
+setLook3d(true); // the Phase 3 look (`?look=3d`); tests/look-gate.test.js covers the develop look without it
 
 function rig() {
   const room = { id: 'room' }, textures = {}, loads = [];

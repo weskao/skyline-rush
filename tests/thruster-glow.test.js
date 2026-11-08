@@ -5,6 +5,9 @@ import { createRace } from '../src/game.js';
 import { createAeroVFX, REAR_PORTS } from '../src/aero-vfx.js';
 import { thrusterGlow } from '../src/board-effects.ts';
 import { vfxSettings } from '../src/vfx-settings.ts';
+import { setLook3d } from '../src/look-gate.ts';
+
+setLook3d(true); // the Phase 3 look (`?look=3d`); tests/look-gate.test.js covers the develop look without it
 
 test('thruster glow (§8.1 panel 3): bright discs in flight, a faint idle glow racing, none on Low or off the grid', () => {
   assert.equal(thrusterGlow('low', true, true, 1), 0, 'Low keeps the unlit nozzles');

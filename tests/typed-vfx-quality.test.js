@@ -54,12 +54,12 @@ test('Ultra tier is never auto-selected and a saved Ultra survives device startu
   assert.equal(saved.downgraded, false);
 });
 
-test('Ultra render resolution equals High; settings UI lists Ultra last with en + zh-TW copy', async () => {
+test('Ultra render resolution equals High; settings UI lists Ultra last (`?look=3d` only) with en + zh-TW copy', async () => {
   const { renderPixelRatioForQuality } = await import('../src/render-resolution.ts');
   const { readFileSync } = await import('node:fs');
   assert.equal(renderPixelRatioForQuality(vfxSettings({ quality: 'ultra' }).quality, 3, 1), renderPixelRatioForQuality('high', 3, 1));
   const app = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
-  assert.match(app, /<option value="high"[^>]*>High<\/option><option value="ultra" data-i18n="vfx\.quality\.ultra">Ultra<\/option><\/select>/);
+  assert.match(app, /<option value="high"[^>]*>High<\/option><option v-if="look3d\(\)" value="ultra" data-i18n="vfx\.quality\.ultra">Ultra<\/option><\/select>/);
   const copy = readFileSync(new URL('../src/locales/display-settings.ts', import.meta.url), 'utf8');
   assert.match(copy, /'vfx\.quality\.ultra': 'Ultra'/);
   assert.equal((copy.match(/'vfx\.quality\.ultra'/g) ?? []).length, 2);

@@ -11,6 +11,16 @@ Blender-baked KTX2 from CC0 photoscanned sources; close scenery comes from Poly 
 quality tier is added. Each source's licence, creator and source URL goes in the model/material manifest before
 commit. Procedural substitutes are a fallback (Low tier, load failure), never the shipped Medium+ look.
 
+**Gate on develop (owner, 2026-11-09):** develop keeps its current appearance. The whole Phase 3 pass (Coast HDRI look
+with its bloom/sun retune, KTX2 road, close-scenery GLB, wet-road mirror, magenta plume tail, thruster glow, rain wheel
+spray, contact shadow, Ultra quality option and Ultra lens blur) is opt-in behind `?look=3d` (`src/look-gate.ts`), the
+same way the car is gated by `?model=roadster`; the two gates are independent and combine (`?model=roadster&look=3d`).
+Without `?look=3d` every map and the Settings panel render as develop did: no Ultra option, and a saved Ultra choice
+renders and shows as High but stays saved. Default-on is deferred by the owner, as for the car. Guards:
+`tests/look-gate.test.js`, `coast-scenery-browser.spec.js` (develop-look Coast), `device-quality-browser.spec.js` (no
+Ultra without the gate); the shader-warmup and black-frame specs run both looks. The checkboxes below describe the
+`?look=3d` look.
+
 ## By project (committed once)
 - [x] Look brief: for each Coast panel, record its camera, time of day, weather and the spec v2 §8.1 checklist items it scores, before any change. *Evidence: `coast-look-brief.md` (b6a39ad6).*
 - [x] Shared lighting and post: per-time-of-day environment map from CC0 HDRIs (day, sunset, overcast rain), tone mapping and colour grade, bloom tuned for light blades, contact shadow under the car, and sun/haze. Measure the cost per tier, and keep Low on the current path (RoomEnvironment, current tone mapping).

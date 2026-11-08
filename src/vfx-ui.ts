@@ -2,6 +2,7 @@ import { t } from './i18n.ts';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS, type VfxSettings, type ShowcaseView, type VfxPreset } from './vfx-settings.ts';
 import { initialDeviceVisuals, QUALITY_STORAGE_KEY } from './device-quality.ts';
 import { trackDropdown } from './dropdown.ts';
+import { look3d } from './look-gate.ts';
 
 interface VfxWorld { configureVFX(settings: VfxSettings): void }
 interface VfxOptions {
@@ -39,7 +40,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
     for (const control of vfxControls) {
       const key = control.dataset.vfx as keyof VfxSettings;
       if (control.type === 'checkbox') control.checked = visual[key] as boolean;
-      else control.value = key === 'quality' && visual.ultra ? 'ultra' : String(visual[key]);
+      else control.value = key === 'quality' && visual.ultra && look3d() ? 'ultra' : String(visual[key]);
       if (control.type === 'range') (control.previousElementSibling as HTMLOutputElement).value = String(visual[key]);
     }
     const dock = $('#showcase-camera-dock');

@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { COAST_ENV_VARIANTS, coastEnvVariant, coastEnvPlan, PMREM_CUBE_SIZE } from '../src/coast-lighting.ts';
 import { createLensPass } from '../src/lens-pass.ts';
+import { setLook3d } from '../src/look-gate.ts';
+
+setLook3d(true); // the Phase 3 look (`?look=3d`); tests/look-gate.test.js covers the develop look without it
 
 test('Coast presets map to the four CC0 sky environments (spec v2 Phase 3 mapping)', () => {
   assert.equal(coastEnvVariant('track'), 'day');

@@ -38,7 +38,7 @@ test(`${LABEL} ${VIEW} ${QUALITY}: Coast day and rain`, async ({ gameplayPage: p
     for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ ...settings, preset: 'cinematic', enabled: true }));
   }, vfx);
-  await page.goto(`${gameplayURL}?perf${MODEL && `&${MODEL}`}`);
+  await page.goto(`${gameplayURL}?look=3d&perf${MODEL && `&${MODEL}`}`);
   for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   if (QUALITY !== 'low') await expect.poll(() => page.locator('#world').getAttribute('data-coast-scenery'), { timeout: ciTimeout(60000) }).toBe('attached');
@@ -80,7 +80,7 @@ test(`${LABEL} ${VIEW} ${QUALITY}: §8.1 Coast panels`, async ({ gameplayPage: p
     for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ ...settings, preset: 'cinematic', enabled: true }));
   }, vfx);
-  await page.goto(MODEL ? `${gameplayURL}?${MODEL}` : gameplayURL);
+  await page.goto(`${gameplayURL}?look=3d${MODEL && `&${MODEL}`}`);
   for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   if (QUALITY !== 'low') await expect.poll(() => page.locator('#world').getAttribute('data-coast-scenery'), { timeout: ciTimeout(60000) }).toBe('attached');

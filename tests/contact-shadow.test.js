@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { createContactShadow, shadowOpacity } from '../src/contact-shadow.ts';
+import { setLook3d } from '../src/look-gate.ts';
+
+setLook3d(true); // the Phase 3 look (`?look=3d`); tests/look-gate.test.js covers the develop look without it
 
 function withCanvas(t) {
   const stops = [];

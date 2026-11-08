@@ -26,7 +26,7 @@ test(`${LABEL}: sustained Coast rain FPS on ${QUALITY}`, async ({ gameplayPage: 
     for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: quality === 'ultra' ? 'high' : quality, ultra: quality === 'ultra', preset: 'cinematic', enabled: true }));
   }, QUALITY);
-  await page.goto(gameplayURL);
+  await page.goto(`${gameplayURL}?look=3d`);
   for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(ciTimeout(400)); }
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   await page.locator('#start-button').click();

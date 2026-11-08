@@ -4,6 +4,8 @@ import { ciTimeout } from './helpers/ci.js';
 
 // Task 5: Coast Medium+ draws the coast-scenery.glb scans (cliffs, rocks, palms, sea arch, rails) instead of the
 // procedural rocks/trees. The GLB attaches before GO and its programs are built by the warmup, never mid-race.
+// All of it is the Phase 3 look behind `?look=3d` (src/look-gate.ts); the last test checks the develop look without it.
+test.use({ gameplaySearch: '?look=3d' });
 const status = page => page.locator('#world').getAttribute('data-coast-scenery');
 const layer = page => page.evaluate(() => {
   const pieces = {};
@@ -98,4 +100,24 @@ test('switching Coast to rain mid-race only moves uniforms: no program compiles'
   await page.waitForTimeout(ciTimeout(1500));
   expect(await programs(page)).toBe(before);
   expect(await page.locator('#world').getAttribute('data-coast-road')).toBe('high'); // settled: the road never swaps while racing
+});
+
+test.describe('without ?look=3d', () => {
+  test.use({ gameplaySearch: '' });
+  test('Coast High keeps the develop look: no scenery GLB, KTX2 asphalt or HDRI is fetched or drawn', async ({ gameplayPage: page }) => {
+    await withQuality(page, 'high');
+    await page.waitForTimeout(ciTimeout(1500));
+    expect(await status(page)).toBeNull(); // settled: nothing is ever requested, so nothing can arrive later
+    expect(await page.locator('#world').getAttribute('data-coast-road')).toBeNull(); // settled: as above
+    const pieces = await layer(page);
+    expect(pieces['Coast shoreline rocks'].visible).toBe(true);
+    expect(Object.keys(pieces).some(name => name.startsWith('cliff_'))).toBe(false);
+    const look = await page.evaluate(() => {
+      const { scene, composer } = window.gameScene, grade = composer.passes.find(pass => pass.uniforms?.saturation).uniforms;
+      return { env: scene.environmentIntensity, grade: [grade.saturation.value, grade.contrast.value, ...grade.tint.value.toArray()] };
+    });
+    expect(look).toEqual({ env: 0.42, grade: [1, 1, 1, 1, 1] }); // RoomEnvironment, identity grade: no HDRI look
+    const fetched = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-scenery\.glb|\.ktx2|basis_transcoder|environments\/.*\.hdr/.test(n)));
+    expect(fetched).toEqual([]);
+  });
 });

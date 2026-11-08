@@ -7,6 +7,9 @@ import { createSprintVfx, vfxSettings } from '../src/vfx-settings.ts';
 import { createRace } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 import { createAeroVFX } from '../src/aero-vfx.js';
+import { setLook3d } from '../src/look-gate.ts';
+
+setLook3d(true); // the Phase 3 look (`?look=3d`); tests/look-gate.test.js covers the develop look without it
 
 test('race weather preset: custom/free races show the chosen preset, every other mode the track default', () => {
   const session = { presentation: { visualPreset: 'rain' } };

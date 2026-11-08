@@ -7,7 +7,7 @@ import { ciTimeout } from './helpers/ci.js';
 // material must therefore be drawn by the first-frame warmup, so no program may be compiled once the race runs.
 const programs = page => page.evaluate(() => window.gameScene.renderer.info.programs.length);
 
-test('no shader compiles mid-race: hidden effects were drawn by the first-frame warmup', async ({ gameplayPage: page }) => {
+const noMidRaceCompile = async ({ gameplayPage: page }) => {
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.waitForTimeout(300);
@@ -21,4 +21,10 @@ test('no shader compiles mid-race: hidden effects were drawn by the first-frame 
   await page.evaluate(() => { const race = window.gameplay.race; race.mode = 'free'; race.session = { ...race.session, presentation: { visualPreset: 'rain' } }; race.player.boosting = true; });
   await page.waitForTimeout(ciTimeout(1500));
   expect(await programs(page)).toBe(before);
+};
+
+test('no shader compiles mid-race: hidden effects were drawn by the first-frame warmup', noMidRaceCompile);
+test.describe('?look=3d', () => {
+  test.use({ gameplaySearch: '?look=3d' }); // the Phase 3 look (src/look-gate.ts) adds the board effects
+  test('no shader compiles mid-race with the Phase 3 look', noMidRaceCompile);
 });
