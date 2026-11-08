@@ -13,6 +13,13 @@ const LOW_PLUME = { tail: 0, stretch: 1 }, BOARD_PLUME = { tail: 1, stretch: 1.3
 /** Boost plume: Medium+ fades the blue-white core into a magenta tail about a third longer; Low keeps the current plume. */
 export const plumeLook = (quality: VfxQuality): { tail: number; stretch: number } => quality === 'low' ? LOW_PLUME : BOARD_PLUME;
 
+/** Rear thruster discs (§8.1 panel 3): bright in flight or under boost, a faint idle glow while racing; Low keeps the
+ *  unlit nozzles. `boost` is the plume strength (0..1). */
+export function thrusterGlow(quality: VfxQuality, racing: boolean, flying: boolean, boost: number): number {
+  if (quality === 'low' || !racing) return 0;
+  return Math.max(flying ? .9 : .3, Math.min(1, boost));
+}
+
 /** Rain spray particles per second off the rear wheels, full at 90 m/s; Low emits none (its rain streaks remain). */
 export function sprayRate(quality: VfxQuality, speed: number): number {
   if (quality === 'low') return 0;

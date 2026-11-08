@@ -4,7 +4,8 @@ import { createVoidPulseBeams } from '#garage-void-beams';
 import { createLaunchFlare } from '#garage-launch-flare';
 import { createNitroTrail } from '#garage-nitro-trail';
 import { TRICK_ROLL_TIME } from './game.js';
-import { plumeLook } from './board-effects.ts';
+import { plumeLook, thrusterGlow } from './board-effects.ts';
+import { createThrusterGlow } from './thruster-glow.ts';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const REAR_PORTS = [-0.62, -0.22, 0.22, 0.62].map(x => ({ position: [x, 0.64, 2.39], direction: [0, 0, 1], size: 0.065 }));
@@ -119,6 +120,7 @@ export function createAeroVFX(scene, vehicle) {
   jetMaterial.dispose();
   const voidBeams = createVoidPulseBeams(local, REAR_PORTS);
   const nitroTrail = createNitroTrail(local, REAR_PORTS);
+  const glow = createThrusterGlow(local, REAR_PORTS);
 
   const particles = Array.from({ length: MAX_PARTICLES }, () => ({ life: 0, roll: false, pos: new THREE.Vector3(), velocity: new THREE.Vector3() }));
   const positions = new Float32Array(MAX_PARTICLES * 3), alphas = new Float32Array(MAX_PARTICLES), sizes = new Float32Array(MAX_PARTICLES);
@@ -186,6 +188,7 @@ export function createAeroVFX(scene, vehicle) {
     particles.forEach(p => { p.life = 0; }); alphas.fill(0); particleGeo.attributes.alpha.needsUpdate = true;
     segments.forEach(s => { s.life = 0; }); ribbonAlpha.fill(0); ribbonGeo.attributes.alpha.needsUpdate = true;
     ghosts.forEach(g => { g.life = 0; g.mesh.visible = false; });
+    glow.update(0);
     jets.forEach(jet => { jet.visible = false; }); flow.visible = pressure.visible = shock.visible = false;
     voidBeams.update(time, 0, 0, false); nitroTrail.update(time, 0, 0, false); flare.reset(); demoPulseClock = 2.2;
     hadPosition = wasBoosting = wasNitro = false; strength = rollStrength = wakeStrength = reveal = emission = ghostDistance = 0; shockAge = 1; lastImpact = null; lastPhase = 'ready';
@@ -202,6 +205,7 @@ export function createAeroVFX(scene, vehicle) {
       voidBeams.setSelected(voidPulse);
       flow.material.uniforms.skinTint.value.fromArray(palette.airflow);
       flow.material.uniforms.skinPattern.value = patterns.airflow;
+      glow.tint.fromArray(palette.thruster);
       for (const jet of jets) {
         jet.material.uniforms.skinTint.value.fromArray(palette.thruster);
         jet.material.uniforms.skinPattern.value = patterns.thruster;
@@ -294,6 +298,7 @@ export function createAeroVFX(scene, vehicle) {
       nitroTrail.update(time, studioDemo && preview ? 0.85 : strength * nitroMix, quality, enabled && !calm); // Studio previews the trail without NITRO
       ribbon.material.uniforms.time.value = time;
       const plume = plumeLook(settings.quality);
+      glow.update(enabled && !voidPulse ? thrusterGlow(settings.quality, active, car.altitude > 0, strength) : 0);
       jets.forEach((jet, i) => {
         jet.visible = enabled && strength > 0.005 && !voidPulse;
         jet.scale.set(REAR_PORTS[i].size, REAR_PORTS[i].size, settings.exhaustLength * strength * (0.65 + car.speed / 200) * plume.stretch);
