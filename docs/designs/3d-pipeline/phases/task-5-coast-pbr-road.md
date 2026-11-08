@@ -35,7 +35,9 @@ commit. Procedural substitutes are a fallback (Low tier, load failure), never th
   the map needs the realistic treatment, not only the road and close scenery. "Distant objects stay procedural" above
   no longer holds for the shipped Medium+ look. Each item below follows the owner decisions at the top (realistic
   first, licensed sources in the manifest, procedural only as Low/load-failure fallback) and the shared rules (no
-  change to the track frame, lanes, collisions or ports; deterministic chunks; budgets; no compile after GO):
+  change to the track frame, lanes, collisions or ports; deterministic chunks; budgets; no compile after GO).
+  Gap list, constraints and the open owner decisions D1–D3: [coast-full-scene-gap.md](coast-full-scene-gap.md).
+  - [ ] Owner decisions D1 (Coast skyline buildings: the board has none), D2 (bridge towers), D3 (sky source).
   - [ ] Skyline buildings: realistic 3D/PBR towers (facade materials, windows, night emissive) instead of the
     procedural blocks.
   - [ ] Sea: a realistic water surface (waves/normal detail, sky and sun reflection, shoreline/foam) in day, rain
