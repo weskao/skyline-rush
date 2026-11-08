@@ -65,3 +65,66 @@ test('a failed load keeps the procedural scenery', async () => {
   assets.dispose();
   assert.ok(!f.log.some(([op]) => op === 'release'));
 });
+
+function roadFakes() {
+  const log = [], defaultMaterial = new THREE.MeshStandardMaterial({ name: 'procedural' });
+  const mesh = { material: defaultMaterial };
+  const load = file => { log.push(file.resolution + ':' + file.map); return Promise.resolve(new THREE.Texture()); };
+  return { log, mesh, defaultMaterial, road: { mesh, load } };
+}
+const scenery = { attachModel() {}, detachModel() {} };
+const never = { load: () => new Promise(() => {}) };
+const tick = () => new Promise(r => setTimeout(r, 0));
+
+test('Coast Medium+ swaps in the KTX2 asphalt outside racing; Low and other tracks keep the procedural road', async () => {
+  const r = roadFakes(), dataset = {}, assets = createCoastAssets({ scenery, cache: never, road: r.road, dataset });
+  assets.update('coast', 'low', false);
+  assets.update('neon', 'high', false);
+  assert.deepEqual(r.log, [], 'Low and other tracks fetch no textures');
+  assets.update('coast', 'medium', true);
+  assert.deepEqual(r.log.sort(), ['1024:baseColor', '1024:normal', '1024:packed']);
+  await tick();
+  assert.equal(assets.update('coast', 'medium', true), false, 'never swap materials after GO');
+  assert.equal(r.mesh.material, r.defaultMaterial);
+  assert.equal(assets.update('coast', 'medium', false), true, 'the new road program is warmed before GO');
+  assert.equal(r.mesh.material.name, 'coast_asphalt');
+  assert.equal(dataset.coastRoad, '1024');
+  assert.equal(assets.update('coast', 'medium', false), false);
+  assets.update('neon', 'medium', false);
+  assert.equal(r.mesh.material, r.defaultMaterial, 'other tracks get the procedural road back');
+  assets.update('coast', 'low', false);
+  assert.equal(r.mesh.material, r.defaultMaterial, 'Low keeps the current road');
+  assets.dispose();
+});
+
+test('Ultra loads the 2K set; the tier not on screen is freed', async () => {
+  const r = roadFakes(), assets = createCoastAssets({ scenery, cache: never, road: r.road });
+  assets.update('coast', 'high', false);
+  await tick();
+  assets.update('coast', 'high', false);
+  const oneK = r.mesh.material;
+  let freed = false;
+  oneK.addEventListener('dispose', () => { freed = true; });
+  assets.update('coast', 'high', false, 'track', true);
+  await tick();
+  assets.update('coast', 'high', false, 'track', true);
+  assert.ok(r.log.includes('2048:baseColor'));
+  assert.notEqual(r.mesh.material, oneK);
+  assert.ok(freed, '1K textures released once the 2K road is shown');
+  assets.dispose();
+  assert.equal(r.mesh.material, r.defaultMaterial, 'dispose restores the procedural road');
+});
+
+test('rain soaks the road through a uniform every frame, without another warmup', async () => {
+  const r = roadFakes(), assets = createCoastAssets({ scenery, cache: never, road: r.road });
+  assets.update('coast', 'high', false);
+  await tick();
+  assets.update('coast', 'high', false);
+  const shader = { uniforms: {}, vertexShader: '', fragmentShader: THREE.ShaderLib.standard.fragmentShader };
+  r.mesh.material.onBeforeCompile(shader, null);
+  assert.equal(assets.update('coast', 'high', true, 'rain'), false);
+  assert.ok(shader.uniforms.wetness.value >= .7);
+  assets.update('coast', 'high', true, 'day');
+  assert.equal(shader.uniforms.wetness.value, 0);
+  assets.dispose();
+});

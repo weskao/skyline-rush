@@ -1,0 +1,74 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import { coastRoadFiles, coastRoadTier, coastWetness, createCoastRoadMaterial } from '../src/coast-road-material.ts';
+import { MATERIAL_MANIFEST, gpuBytesEstimate } from '../src/material-manifest.ts';
+
+const maps = () => ({ baseColor: new THREE.Texture(), normal: new THREE.Texture(), packed: new THREE.Texture() });
+const standardShader = () => ({ uniforms: THREE.UniformsUtils.clone(THREE.ShaderLib.standard.uniforms),
+  vertexShader: THREE.ShaderLib.standard.vertexShader, fragmentShader: THREE.ShaderLib.standard.fragmentShader });
+
+test('Coast road texture tier: Low keeps the procedural road, Medium/High 1K, Ultra 2K', () => {
+  assert.equal(coastRoadTier('low', false), null);
+  assert.equal(coastRoadTier('low', true), null, 'Ultra flag never overrides an explicit Low');
+  assert.equal(coastRoadTier('medium', false), 1024);
+  assert.equal(coastRoadTier('high', false), 1024);
+  assert.equal(coastRoadTier('high', true), 2048);
+  const files = coastRoadFiles(2048);
+  assert.deepEqual(Object.keys(files).sort(), ['baseColor', 'normal', 'packed']);
+  for (const file of Object.values(files)) assert.equal(file.resolution, 2048);
+  const budget = MATERIAL_MANIFEST['coast-asphalt'].budgets.gpuBytes;
+  assert.ok(gpuBytesEstimate(1024) <= budget.high && gpuBytesEstimate(2048) <= budget.ultra, 'within the recorded texture-memory budget');
+});
+
+test('wetness follows the Coast weather: rain soaks the road, dusk is damp, day is dry', () => {
+  assert.equal(coastWetness('track'), 0);
+  assert.equal(coastWetness('day'), 0);
+  assert.ok(coastWetness('rain') >= .7);
+  assert.ok(coastWetness('dusk') > .15 && coastWetness('dusk') < coastWetness('rain'));
+  assert.ok(coastWetness('fog') > 0 && coastWetness('fog') < coastWetness('rain'));
+  assert.equal(coastWetness('unknown-preset'), 0);
+});
+
+test('asphalt maps: sRGB base colour, linear normal and packed AO/roughness/puddle, repeating along the road', () => {
+  const m = maps(), road = createCoastRoadMaterial(m);
+  const { material } = road;
+  assert.equal(material.map, m.baseColor);
+  assert.equal(m.baseColor.colorSpace, THREE.SRGBColorSpace);
+  assert.equal(m.normal.colorSpace, THREE.NoColorSpace);
+  assert.equal(m.packed.colorSpace, THREE.NoColorSpace);
+  assert.equal(material.normalMap, m.normal);
+  assert.equal(material.aoMap, m.packed, 'packed.r = ambient occlusion');
+  assert.equal(material.roughnessMap, m.packed, 'packed.g = roughness (three reads G)');
+  assert.equal(material.metalness, 0);
+  for (const t of Object.values(m)) {
+    assert.equal(t.wrapS, THREE.RepeatWrapping);
+    assert.equal(t.wrapT, THREE.RepeatWrapping);
+    assert.equal(t.flipY, false, 'KTX2 rows are written v = 0 first');
+  }
+});
+
+test('wetness is a uniform: changing the weather never recompiles the road program', () => {
+  const road = createCoastRoadMaterial(maps());
+  const key = road.material.customProgramCacheKey(), version = road.material.version;
+  road.setWetness(.9);
+  assert.equal(road.material.customProgramCacheKey(), key);
+  assert.equal(road.material.version, version);
+  const shader = standardShader();
+  road.material.onBeforeCompile(shader, null);
+  assert.equal(shader.uniforms.wetness.value, .9, 'the program reads the live uniform');
+  road.setWetness(0);
+  assert.equal(shader.uniforms.wetness.value, 0);
+});
+
+test('wet shader: puddles from packed.b darken, smooth and flatten the asphalt', () => {
+  const road = createCoastRoadMaterial(maps()), shader = standardShader();
+  road.material.onBeforeCompile(shader, null);
+  const frag = shader.fragmentShader;
+  assert.match(frag, /uniform float wetness;/);
+  const rough = frag.indexOf('#include <roughnessmap_fragment>'), puddle = frag.indexOf('texelRoughness.b');
+  assert.ok(rough >= 0 && puddle > rough, 'puddle mask read after three samples the packed map');
+  assert.ok(frag.indexOf('nonPerturbedNormal', frag.indexOf('#include <normal_fragment_maps>')) > 0, 'standing water flattens the normal map');
+  assert.doesNotMatch(frag.slice(rough), /\b(pow|exp)\s*\(/, 'no pow/exp: no NaN texels from the wet path');
+  assert.throws(() => road.material.onBeforeCompile({ ...shader, fragmentShader: 'void main(){}' }, null), /moved/, 'fails loudly if three renames the chunks');
+});

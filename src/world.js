@@ -248,7 +248,7 @@ export function createWorld(canvas) {
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
   const coastScenery = createCoastScenery(scene, roadCenter), classicScenery = createClassicTrackScenery(scene, roadCenter);
-  const coastAssets = createWorldCoastAssets(renderer, coastScenery, canvas.dataset); // Medium+ Coast: close-scenery GLB
+  const coastAssets = createWorldCoastAssets(renderer, { scenery: coastScenery, road }, canvas.dataset); // Medium+ Coast: scenery GLB + KTX2 asphalt
   // Inspect car occlusion only when the showroom angle changes.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
   const showcaseRay = new THREE.Raycaster();
@@ -604,7 +604,7 @@ export function createWorld(canvas) {
       raceVisuals.apply(visualPreset); const blizzard = preview ? 0 : blizzardLevel(trackId, visualCar.distance, !!race.config.themes); raceVisuals.blizzard(blizzard);
       const distance = preview ? previewDistance(trackId) : visualCar.distance;
       if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality,race.endless ? race.seed : undefined);} else coastScenery.hide();
-      if (coastAssets.update(trackId, visual.quality, race.phase === 'racing')) warmupPending = true; // new GLB materials compile before GO
+      if (coastAssets.update(trackId, visual.quality, race.phase === 'racing', visualPreset, visual.ultra)) warmupPending = true; // new materials compile before GO
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
       const graphCentre = race.course ? graphOrigin(race.course) : null;
       if (graphCentre) for (let axis = 0; axis < 3; axis++) courseOriginPoint[axis] = graphCentre[axis];
