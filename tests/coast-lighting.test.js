@@ -46,3 +46,13 @@ test('the lens pass carries the colour-grade uniforms at identity by default (no
   assert.deepEqual(lens.uniforms.tint.value.toArray(), [1, 1, 1]);
   lens.dispose();
 });
+
+test('bloom per variant lights the blades without blooming the sky; sun intensity follows the time of day', () => {
+  for (const [name, v] of Object.entries(COAST_ENV_VARIANTS)) {
+    assert.ok(v.bloom.threshold >= 0.85 && v.bloom.threshold <= 1.3, `${name}: HDR lights bloom, the sky does not`);
+    assert.ok(v.bloom.strength > 0.2 && v.bloom.strength <= 0.8, `${name}: bloom strength`);
+    assert.match(v.sun.color, /^#[0-9a-f]{6}$/);
+  }
+  assert.ok(COAST_ENV_VARIANTS.dusk.bloom.strength > COAST_ENV_VARIANTS.day.bloom.strength, 'light blades read stronger at sunset than at noon');
+  assert.ok(COAST_ENV_VARIANTS.day.sun.intensity > COAST_ENV_VARIANTS.rain.sun.intensity, 'rain dims the sun');
+});

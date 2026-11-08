@@ -108,7 +108,6 @@ export function createWorld(canvas) {
   const environment = createRoomEnvironment(renderer);
   scene.environment = environment.texture;
   scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null, garagePreviewSkins = {};
-  const coastLook = createCoastLook({ scene, renderer, lens, room: environment.texture, roomIntensity: 0.42, baseUrl: import.meta.env.BASE_URL });
   const carEnvironment = createCarEnvironment(renderer);
   const upcomingStage = createUpcomingShowcase(UPCOMING_ENVIRONMENTS, environment.texture, carEnvironment, host => garageModel?.release(host)); // runs after createWorld returns, so garageModel is initialised
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
@@ -120,6 +119,7 @@ export function createWorld(canvas) {
   roadsideLamps.forEach(light=>{light.visible=false;scene.add(light);});
   sunlight.position.set(-170, 100, -190);
   scene.add(sunlight);
+  const coastLook = createCoastLook({ scene, renderer, lens, room: environment.texture, roomIntensity: 0.42, baseUrl: import.meta.env.BASE_URL, bloom, sun: sunlight });
   const { sky, sun, sea, seaLines, mountains } = createClassicBackdrop(scene, box, put);
   const city = new THREE.Group();
   scene.add(city);
@@ -917,7 +917,7 @@ export function createWorld(canvas) {
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?COAST_LIGHTING.bloom:.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
+      bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?coastLook.bloomStrength(COAST_LIGHTING.bloom):.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
       renderer.info.reset(); // Exclude warmup draws and previous frames.
