@@ -1,3 +1,25 @@
+## 2026-11-09 — Epic: ring PERFECT LINE count 6/5 + Monsoon START
+
+- [x] Root cause: authored hoops (`src/track-themes.ts:53` themed, `src/gauntlet-course.ts:48` mixed-Gauntlet) were merged by
+  `withHoops` into the first random ring line, also group 0 with an explicit `groupSize`, so `collectRing` counted hoop
+  hits into it (6/5, 7/5, 9/4) and PERFECT LINE never paid. Base `51137db4`.
+- [x] RED: `tests/ring-count-total.test.js` fails on `51137db4` (`spiral {"mode":"free","themes":true} seed 1: group 0
+  counted 9/4 rings`). GREEN after the fix in `src/game.js` (`ownLine`: hoops get their own group, `groupSize` Infinity,
+  like catch-up rings). Positions/count/type unchanged; race history/save schema unchanged.
+- [ ] Ring SFX misfire and a HUD "6/5" counter were not reproduced: there is no ring collected/total HUD counter in `src`,
+  and ring SFX count == collected rings in every probed run. Needs a repro from the reporter.
+- [ ] Design decision pending: hoops never pay their own PERFECT LINE (default chosen to avoid a new +500/NITRO reward on a
+  single hoop).
+- [ ] Monsoon START stays disabled — correct for now: `COURSE_RUNTIMES` only has Dune Tempest and Skyfall,
+  `UPCOMING_READINESS` has no `'monsoon-ruins': 'playable'`, and `src/courses/monsoon-ruins-race.ts` /
+  `src/monsoon-ruins-race-scene.ts` / `tests/monsoon-ruins-race.test.js` exist only as uncommitted staged work in another
+  worktree. Blocked on that work being committed plus the physical START→FINISH acceptance in
+  `.claude/rules/playable-course-shared-template.md`.
+- [x] Gates: `node --test tests/module-size.test.js` 3/3; `npm test` 2311 pass / 0 fail / 3 skipped; `npm run build` OK;
+  Playwright (`PLAYWRIGHT_PORT=5398`: `ring-sfx`, `risk-lines`, `obstacle-gauntlet`, `spiral-items`, `race-modes`
+  browser specs) 34 passed / 0 failed.
+- [ ] Exact-HEAD remote CI for this commit; not merged into the Epic branch (awaiting user approval).
+
 ## 2026-11-08 — Develop 同步及沙暴裂谷／浮空群島首頁四車可讀性（epic）
 
 - [x] 在開始新的實作前將 `develop` `b6f30406` 非破壞性合入 epic：merge `8737ea35`，保留共同修改的 `TODO.md` 雙方新增紀錄；只推送 epic，未修改 develop/main。

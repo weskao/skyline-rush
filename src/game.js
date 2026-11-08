@@ -137,6 +137,9 @@ export function dailyChallenge(date = new Date()) {
   return { id, track, modifier: modifiers[Math.floor(random() * modifiers.length)] };
 }
 
+// Authored hoops keep out of the layout's group 0 (they pushed its count past groupSize, 6/5) and, like catch-up
+// rings, form no PERFECT LINE of their own: a lone mixed-Gauntlet hoop would otherwise pay one per hit.
+const ownLine = (extras, group) => extras && { hoops: extras.hoops.map(hoop => ({ ...hoop, group, groupSize: Infinity })) };
 export function createRace(trackId = 'coast', modifier = null, presentation = {}, nextGrid = undefined) {
   const track = raceTrack(trackId);
   if (!track) throw new Error(`Unknown track: ${trackId}`);
@@ -152,7 +155,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
   const session = createRaceSessionContract(trackId, track.seed, config, presentation), risk = riskRules(config), themed = themedExtras(trackId, config, risk);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
   const seed = layoutSeed(track), count = ITEMS_PER_CAR * (driverIds.length + 1), perLap = (items, kind) => config.mode === 'circuit' ? lapItems(items, config.laps, kind) : items;
-  const course = mixedCourse(trackId, track, LANES, config), hoopsAt = [...(course?.hoops ?? []), ...(themed?.hoops ?? [])].map(hoop => hoop.distance), rings = decorateBonusGates(ringsForItemRule(withHoops(withHoops(perLap(createRings(track, risk.rings, count, seed, hoopsAt), 'ring'), course), themed), config.itemRules), config);
+  const course = mixedCourse(trackId, track, LANES, config), hoopsAt = [...(course?.hoops ?? []), ...(themed?.hoops ?? [])].map(hoop => hoop.distance), rings = decorateBonusGates(ringsForItemRule(withHoops(withHoops(perLap(createRings(track, risk.rings, count, seed, hoopsAt), 'ring'), ownLine(course, -2)), ownLine(themed, -3)), config.itemRules), config);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   const race = {
     trackId, modifier: dailyModifier, mode: config.mode, config, grid, session, objective: session.objective, seed: track.seed, length: track.length * (config.laps ?? 1), sections: (themed?.sections.length ? [...track.sections, ...themed.sections].sort((a, b) => a.from - b.from) : track.sections).map(section => ({ ...section })),
