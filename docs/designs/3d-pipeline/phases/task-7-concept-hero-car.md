@@ -26,10 +26,20 @@ There are no badges or logos.
 equipment as the Roadster, and the procedural Roadster stays its load fallback.
 
 ## Owner gates (ask before starting the affected step)
-- [ ] The car's display name and stable ID (the working ID `concept-gt` is a placeholder).
+- [x] The car's display name and stable ID (the working ID `concept-gt` is a placeholder).
+  - **Decided 2026-11-09 (owner):** display name **Crimson GT**, stable ID **`crimson-gt`**. Replaces the `concept-gt`
+    placeholder; the ID is final and must not change after release.
 - [ ] The unlock rule: stars threshold, trial, or free; and the default paint.
+  - **Decided 2026-11-09 (owner): trial + stars.** The car follows the paint model's locked/trial/owned/equipped
+    states: equippable during an account-scoped trial, owned permanently once the stars threshold is reached. A
+    preview never grants the car.
+  - **Still open:** the stars threshold value and the default paint.
 - [ ] The concept board's generator and terms of use, recorded in [../concept-art/README.md](../concept-art/README.md).
   This is a release gate.
+  - **Decided 2026-11-09 (owner): the board is AI-generated; its generator and terms of use are recorded in the
+    concept-art README, and the GT may be derived from the board's design.** Derivation is allowed only once that
+    record shows the terms permit commercial use and redistribution.
+  - **Still open:** the owner writes the generator name and terms into the README (not recorded yet).
 
 ## By project (committed once)
 - [ ] RED tests first:
