@@ -66,3 +66,34 @@ test(`${LABEL} ${VIEW} ${QUALITY}: Coast day and rain`, async ({ gameplayPage: p
   fs.writeFileSync(`${OUT}/stats.json`, JSON.stringify({ label: LABEL, view: VIEW, quality: QUALITY, rows, errors }, null, 2));
   expect(errors).toEqual([]);
 });
+
+// §8.1 parity frames: the five Coast board panels per coast-look-brief.md (preset, pose, NITRO/FLY), one race.
+test(`${LABEL} ${VIEW} ${QUALITY}: §8.1 Coast panels`, async ({ gameplayPage: page, gameplayURL }) => {
+  test.skip(!process.env.COAST_PANELS, 'run with COAST_CAPTURE=1 COAST_PANELS=1');
+  test.setTimeout(ciTimeout(240000));
+  fs.mkdirSync(OUT, { recursive: true });
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const vfx = QUALITY === 'ultra' ? { quality: 'high', ultra: true } : { quality: QUALITY };
+  await page.evaluate(settings => {
+    for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
+    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ ...settings, preset: 'cinematic', enabled: true }));
+  }, vfx);
+  await page.goto(gameplayURL);
+  for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+  if (QUALITY !== 'low') await expect.poll(() => page.locator('#world').getAttribute('data-coast-scenery'), { timeout: ciTimeout(60000) }).toBe('attached');
+  await page.locator('#start-button').click();
+  await page.waitForFunction(() => document.body.dataset.phase === 'racing', null, { timeout: ciTimeout(30000) });
+  await page.keyboard.down('KeyW');
+  const preset = name => page.evaluate(p => { const race = window.gameplay.race; race.mode = 'free'; race.session = { ...race.session, presentation: { visualPreset: p } }; }, name);
+  const panel = async (name, wait) => { await page.waitForTimeout(wait); await page.screenshot({ path: `${OUT}/${name}.png` }); };
+  await preset('dusk'); await panel('panel-1-grounded-dusk', 3000);
+  await page.evaluate(() => { window.gameplay.race.player.nitroTime = 4; }); await panel('panel-2-boost-dusk', 1500);
+  await page.evaluate(() => { window.gameplay.race.player.nitroTime = 0; });
+  await preset('day'); await panel('panel-4-day', 3000);
+  await page.keyboard.down('Space'); await panel('panel-3-flight-day', 1500); await page.keyboard.up('Space');
+  await preset('rain'); await panel('panel-5-rain-sunset', 4000);
+  await page.keyboard.up('KeyW');
+  expect(errors).toEqual([]);
+});
