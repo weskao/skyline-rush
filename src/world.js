@@ -116,18 +116,7 @@ export function createWorld(canvas) {
   roadsideLamps.forEach(light=>{light.visible=false;scene.add(light);});
   sunlight.position.set(-170, 100, -190);
   scene.add(sunlight);
-  const { sky, sun, sea } = createClassicBackdrop(scene);
-  const seaLines = instances(box, new THREE.MeshBasicMaterial({ color: '#bca99d', transparent: true, opacity: 0.25 }), 110, scene);
-  for (let i = 0; i < 110; i++) {
-    put(seaLines, i, Math.sin(i * 9.3) * 1100, -5.95, -i * 14, 20 + i % 18, 0.01, 0.1);
-  }
-  seaLines.instanceMatrix.needsUpdate = true;
-  const mountains = instances(new THREE.ConeGeometry(1, 1, 7), material('#374762'), 30, scene);
-  for (let i = 0; i < 30; i++) {
-    const height = 70 + (Math.sin(i * 3.4) + 1) * 60;
-    put(mountains, i, (i - 15) * 130, height / 2 - 20, -1400 - Math.cos(i * 2) * 300, 150 + i % 3 * 70, height, 220, i);
-  }
-  mountains.instanceMatrix.needsUpdate = true;
+  const { sky, sun, sea, seaLines, mountains } = createClassicBackdrop(scene, box, put);
   const city = new THREE.Group();
   scene.add(city);
   const buildingMat = material('#17344d', 0.5, 0.38);

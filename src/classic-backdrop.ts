@@ -1,7 +1,10 @@
 import * as THREE from 'three';
+import { instances, material } from './car-model.js';
 
-/** The shared classic-track backdrop: sky dome, sun disc and sea plane, added to `scene` in this draw order. */
-export function createClassicBackdrop(scene: THREE.Scene) {
+type Put = (mesh: THREE.InstancedMesh, index: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, angle?: number) => void;
+
+/** The shared classic-track backdrop: sky dome, sun disc, sea plane, sea lines and far mountains, added in this draw order. */
+export function createClassicBackdrop(scene: THREE.Scene, box: THREE.BufferGeometry, put: Put) {
   const sky = new THREE.Mesh(new THREE.SphereGeometry(2500, 24, 16), new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false,
     uniforms: { top: { value: new THREE.Color('#101e43') }, horizon: { value: new THREE.Color('#d98785') }, warmth: { value: 1 }, aurora: { value: 0 }, cloudOpacity: { value: 1 }, cloudTint: { value: new THREE.Color('#4d3d60') }, time: { value: 0 } },
@@ -47,5 +50,16 @@ export function createClassicBackdrop(scene: THREE.Scene) {
   sea.rotation.x = -Math.PI / 2;
   sea.position.y = -6;
   scene.add(sea);
-  return { sky, sun, sea };
+  const seaLines = instances(box, new THREE.MeshBasicMaterial({ color: '#bca99d', transparent: true, opacity: 0.25 }), 110, scene);
+  for (let i = 0; i < 110; i++) {
+    put(seaLines, i, Math.sin(i * 9.3) * 1100, -5.95, -i * 14, 20 + i % 18, 0.01, 0.1);
+  }
+  seaLines.instanceMatrix.needsUpdate = true;
+  const mountains = instances(new THREE.ConeGeometry(1, 1, 7), material('#374762'), 30, scene);
+  for (let i = 0; i < 30; i++) {
+    const height = 70 + (Math.sin(i * 3.4) + 1) * 60;
+    put(mountains, i, (i - 15) * 130, height / 2 - 20, -1400 - Math.cos(i * 2) * 300, 150 + i % 3 * 70, height, 220, i);
+  }
+  mountains.instanceMatrix.needsUpdate = true;
+  return { sky, sun, sea, seaLines, mountains };
 }
