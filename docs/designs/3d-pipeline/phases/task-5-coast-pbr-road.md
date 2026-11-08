@@ -15,6 +15,7 @@ commit. Procedural substitutes are a fallback (Low tier, load failure), never th
 - [x] Look brief: for each Coast panel, record its camera, time of day, weather and the spec v2 §8.1 checklist items it scores, before any change. *Evidence: `coast-look-brief.md` (b6a39ad6).*
 - [x] Shared lighting and post: per-time-of-day environment map from CC0 HDRIs (day, sunset, overcast rain), tone mapping and colour grade, bloom tuned for light blades, contact shadow under the car, and sun/haze. Measure the cost per tier, and keep Low on the current path (RoomEnvironment, current tone mapping).
   - [x] CC0 HDRI per time of day, exposure and colour grade (`coast-lighting.test.js`, 985f6984); Low keeps RoomEnvironment; tight contact shadow (`contact-shadow.test.js`, 0b442e75).
+  - [x] The `?model=roadster` GLB keeps the softened car reflection map under every Coast HDRI: it had mirrored the full rain HDRI and washed out white on High/Ultra (`garage-model.test.js` RED→GREEN, 75295f87; Roadster, Garage, warmup and black-frame specs 71/71).
   - [x] Bloom tuned for light blades and the sun matched to each HDRI (`coast-look.test.js`, `coast-lighting.test.js`, f4e25c4f); haze stays the existing per-preset fog. Per-tier cost resolved below vsync with GPU-synced frame timing (`tier-cost-benchmark-browser.spec.js`, 080bbd4a): Low ≈ 4.9 ms, Medium ≈ 8.6 ms, High 8.7 ms day / 9.1 ms rain, Ultra within 0.2 ms of High (one Mac; table in ignored audits).
 - [x] Wet road: puddle and roughness masks with reflections of lights and sky on wet asphalt (environment-map or planar approximation, chosen by benchmark), in rain and at sunset.
   - [x] One wet variant driven by a `wetness` uniform: puddle albedo, roughness and flat normal from packed.b in rain, dusk and fog, with no recompile (905322ea; browser: rain flip compiles no program).
@@ -34,5 +35,14 @@ commit. Procedural substitutes are a fallback (Low tier, load failure), never th
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 - [ ] Real WebGL screenshots/draw and p50/p95 tables across Coast rain/day and other ten tracks on a Mac and a phone (`make phone-diag`); verify drift, flight/landing and ramps on each.
+  - [x] Desktop Apple silicon (one Mac, 2026-11-09): every selectable map raced on High and Ultra at 1440×900 and an 844×390 viewport with GPU-synced p50/p95, draw calls and triangles, no page errors (`ultra-maps-capture-browser.spec.js`); Coast day/rain per tier (`tier-cost-benchmark-browser.spec.js`); flight/landing on every track (`hero-roadster-tracks-browser.spec.js`). Tables in ignored audits.
+  - [ ] Phone (`make phone-diag`): NOT VERIFIED, needs owner hardware. The 844×390 viewport above is a desktop GPU, not a phone.
 - [ ] Thermal / sustained-FPS note per device class; commit only the device-class summary table.
+  - [x] Sustained run tool: `tests/sustained-fps-browser.spec.js` (gated, `SUSTAINED=1`), 10 min of Coast rain with the car held on the course, delivered fps and GPU-synced cost per minute, macOS thermal state before and after.
+
+    | Device class | Scene | Minutes | Delivered fps | GPU-synced p50 / p95 | Thermal warning |
+    |---|---|---|---|---|---|
+    | Desktop Apple silicon, active cooling | Coast rain, High, 1440×900 | 10 | 59.8–60 | 9.4–10.6 / ≤ 12.8 ms | none |
+    | Phone | — | — | NOT VERIFIED | — | — |
+  - [ ] Phone class run: NOT VERIFIED (passive cooling is the class that throttles).
 - [ ] Concept-board parity review (spec v2 §8.1) of the five Coast panels on a real-GPU desktop, with the Roadster and, once Task 7 lands, the concept car. Owner sign-off on the scored sheet.
