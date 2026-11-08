@@ -23,3 +23,7 @@ test('typed palette catalog preserves the ten existing tracks and adds the separ
   assert.equal(TRACK_PALETTES.canyon.rail, '#ffc36f');
   assert.equal(TRACK_PALETTES['dune-tempest'].road, '#d4a064');
 });
+
+test('Dune and Skyfall CourseGraph races keep distinct sky/fog identities', () => {
+  assert.notEqual(TRACK_PALETTES['dune-tempest'].fog, TRACK_PALETTES['skyfall-archipelago'].fog);
+});
