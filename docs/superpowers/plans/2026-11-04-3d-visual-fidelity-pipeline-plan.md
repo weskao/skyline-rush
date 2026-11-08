@@ -43,6 +43,8 @@ This repo and `~/.claude` are both git repos shared across the owner's machines.
 | 2 — Upgrade to Three.js r186.1 | 1 | project + `~/.claude` + device | ../../designs/3d-pipeline/phases/task-2-threejs-r186-upgrade.md |
 | 3 — GLB pipeline MVP, licensing, loader | 2 | project + device | ../../designs/3d-pipeline/phases/task-3-glb-pipeline-mvp.md |
 | 4 — Reference-led Roadster in Garage | 2 | project + device | ../../designs/3d-pipeline/phases/task-4-roadster-garage.md |
+| 4b — One hero Roadster GLB on Home showcase and in races (after Task 4, before Task 6 covers) | 2b | project + device | ../../designs/3d-pipeline/phases/task-4b-roadster-race.md |
+| 4c — Garage equipment and VFX alignment with the GLB car: all paints, skins and base effects (after Task 4b, before Task 6 covers) | 2c | project + device | ../../designs/3d-pipeline/phases/task-4c-garage-equipment-vfx.md |
 | 5 — Coast road UV, PBR, streaming pilot | 3 | project + device evidence | ../../designs/3d-pipeline/phases/task-5-coast-pbr-road.md |
 | 6 — Five new tracks + showcase/cover | 4–5 | project + device | ../../designs/3d-pipeline/phases/task-6-new-tracks-showcase.md |
 

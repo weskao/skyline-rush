@@ -1,6 +1,6 @@
 # Cloud save operations
 
-GitHub Pages continues to host the website. Google sign-in and Firestore use the Firebase Spark project `skyline-rush-weskao`; Firebase Hosting is not required. The published GitHub Pages domain must remain in Firebase Authentication's authorized domains.
+GitHub Pages continues to host the website. Google sign-in and Firestore use the Firebase Spark project `skyline-rush-weskao`; Firebase Hosting is not required. The published GitHub Pages domain and `skyline-rush.netlify.app` (`make deploy-netlify`, which refuses to deploy while it is missing) must remain in Firebase Authentication's authorized domains.
 The game keeps versioned race results in `saves/{uid}`, permanent per-ruleset Mode/Stunt bests in `modeBests/{uid}`, and an intentionally minimal Google display name/email cache in `accounts/{uid}`. The three document paths are private by UID. Firebase Authentication remains the identity source of truth; no Google passwords or OAuth tokens are saved in Firestore. Device settings and Ghosts remain in browser storage.
 
 ## Local verification
@@ -19,6 +19,7 @@ npm run build
 
 - Google login caches only `displayName` and `email` in `accounts/{uid}`, reading existing fields to avoid duplicate writes. Empty/invalid Google values do not wipe previously saved valid values. This uses the existing Spark database.
 - Permanent mode records are synced separately from the last 50 `modeHistory` items. Private `modeBests/{uid}` contains versioned `bests` and `stunts` maps (maximum 200 entries each); device-specific Ghost traces remain local.
+- The race results panel shows one cloud line for the finished race (not on pause, not in Free Drive, which saves nothing): syncing, then "saved to the cloud" only after Firestore acknowledges the write, or "not synced yet, saved on this device" when it fails or is offline. Signed out, it explains backup and offers the same sign-in button; the outcome (signed in and synced, sync failed, sign-in failed, or a neutral "cancelled" when the popup is closed) appears inline. "Connected" means signed in with any provider, so another provider would need no results-UI change (`src/result-cloud-status.ts`).
 - The Cloud save dialog shows the current Google name, email and avatar with a fallback. The Sync now action reuses the normal transaction path; only acknowledged Firestore writes update the successful sync time.
 - Switching Google identities keeps per-account local snapshots, including unsynced permanent results. Deleting cloud progress uses a single Firestore batch to delete `saves/{uid}`, `modeBests/{uid}` and `accounts/{uid}`; a local deletion marker blocks any accidental re-upload until browser cleanup has succeeded.
 - Export generates a versioned JSON save with permanent records but without Google account metadata or Ghosts. Import accepts at most 1 MiB and validates the schema before merging. Neither operation upgrades the Firebase plan.

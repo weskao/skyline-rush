@@ -1,6 +1,6 @@
 import { STAGE2_TRACKS } from './stage2-tracks.ts';
 
-/** Six concept-only Coming Soon tracks; keep out of the simulation race registry. */
+/** Coming Soon home cards (Stage 1 five + Frostbite Canyon). Do not add these IDs to the simulation race registry. */
 export const UPCOMING_TRACKS = Object.freeze({
   'dune-tempest': {
     names: { en: 'Dune Tempest', 'zh-TW': '沙暴裂谷' }, length: 13500,
@@ -27,17 +27,27 @@ export const UPCOMING_TRACKS = Object.freeze({
 
 // Covers are not race runtimes. Release promotion is separate from branch integration.
 export type UpcomingTrackId = keyof typeof UPCOMING_TRACKS;
+/** Any Coming Soon card; entry is independently gated by readiness and build mode. */
+export type PreviewTrackId = UpcomingTrackId;
 export type HomeTrackStatus = 'coming-soon' | 'locked' | 'unlocked';
 export const isUpcomingTrack = (id: string): id is UpcomingTrackId => Object.hasOwn(UPCOMING_TRACKS, id);
+/**
+ * A concept/preview is NEVER evidence of a playable race. Missing entries fail closed.
+ * Only promote a course to 'playable' after its real driving, finish and regression gates.
+ * Production still keeps all UPCOMING_TRACKS as COMING SOON until explicit release promotion.
+ */
+export type UpcomingReadiness = 'preview' | 'development' | 'playable';
+const UPCOMING_READINESS: Readonly<Partial<Record<UpcomingTrackId, Exclude<UpcomingReadiness, 'preview'>>>> = Object.freeze({
+  'frostbite-canyon': 'playable',
+  'dune-tempest': 'playable',
+  'skyfall-archipelago': 'playable',
+});
+export const upcomingReadiness = (id: string): UpcomingReadiness =>
+  isUpcomingTrack(id) ? UPCOMING_READINESS[id] ?? 'preview' : 'preview';
 
-/** Cards whose real race runtime is registered in RACE_TRACKS and approved for dev-unlocked play (empty until then).
- *  Only src/access/dev-unlocked.ts honours it; production.ts always filters every upcoming id. */
-export const PLAYABLE_PREVIEW_IDS: Set<string> = new Set();
-export const isPlayablePreview = (id: string): boolean => isUpcomingTrack(id) && PLAYABLE_PREVIEW_IDS.has(id);
-/** A Coming Soon id that must never START: every upcoming card except an approved playable preview. */
-export const isCoverOnly = (id: string): boolean => isUpcomingTrack(id) && !PLAYABLE_PREVIEW_IDS.has(id);
-export const upcomingTrackName = (id: UpcomingTrackId, locale: string): string =>
-  UPCOMING_TRACKS[id].names[locale === 'zh-TW' ? 'zh-TW' : 'en'];
+export const upcomingTrackInfo = (id: PreviewTrackId) => UPCOMING_TRACKS[id];
+export const upcomingTrackName = (id: PreviewTrackId, locale: string): string =>
+  upcomingTrackInfo(id).names[locale === 'zh-TW' ? 'zh-TW' : 'en'];
 export function homeTrackStatus(id: string, unlocked: ReadonlySet<string>): HomeTrackStatus {
   return isUpcomingTrack(id) ? 'coming-soon' : unlocked.has(id) ? 'unlocked' : 'locked';
 }

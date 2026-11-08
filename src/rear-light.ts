@@ -42,7 +42,7 @@ export function createRearLight() {
     fragmentShader: `varying vec2 vUv;uniform float power;
       void main(){float halo=exp(-abs(vUv.y-.5)*12.)*(1.-smoothstep(.43,.5,abs(vUv.y-.5)));
         float ends=smoothstep(0.,.025,vUv.x)*(1.-smoothstep(.975,1.,vUv.x));
-        gl_FragColor=vec4(1.,.012,.012,halo*ends*power*.22);}`,
+        gl_FragColor=vec4(1.,.012,.012,halo*ends*power*.15);}`,
     toneMapped: false,
   }));
   glow.name = 'Rear LED glow';
@@ -64,7 +64,8 @@ export function createRearLight() {
       const car = race.player;
       const boost = car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
       lights.scale.x = calm ? 1 : THREE.MathUtils.smoothstep(age, 0, 0.75) * 0.999 + 0.001;
-      const power = car.braking ? 3.8 : boost ? 2.1 + (calm ? 0 : Math.sin(time * 22) * 0.35) : 1;
+      // Brake/boost stay clearly above cruising without washing the chase-camera view of the rear fascia.
+      const power = car.braking ? 2.6 : boost ? 1.6 + (calm ? 0 : Math.sin(time * 22) * 0.3) : 1;
       core.material.emissiveIntensity = power;
       glow.material.uniforms.power.value = power;
       flow.visible = !calm && !boost && !car.braking && car.speed >= MAX_SPEED && age >= 0.75;

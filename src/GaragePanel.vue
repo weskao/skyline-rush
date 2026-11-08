@@ -9,6 +9,7 @@ import GaragePaintPreview from './GaragePaintPreview.vue';
 import GarageSourceArtGallery from './GarageSourceArtGallery.vue';
 import GarageMissionBoard from './GarageMissionBoard.vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
+import GarageLightingToggle from './GarageLightingToggle.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 const locale = ref(getLocale());
@@ -57,6 +58,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
           <button type="button" data-garage-mode="ground" :aria-pressed="garageStudioView.mode === 'ground'">{{ copy.ground }}</button>
           <button type="button" data-garage-mode="flight" :aria-pressed="garageStudioView.mode === 'flight'">{{ copy.flight }}</button>
           <button type="button" id="garage-wing" :aria-pressed="garageStudioView.wing">{{ copy.wing }}</button>
+          <GarageLightingToggle :locale="locale" />
         </div>
         <nav v-show="garageStudioView.page === 'studio'" class="garage-camera-controls" :aria-label="locale === 'zh-TW' ? '鏡頭控制' : 'Camera controls'">
           <button v-for="(angle, index) in angles" :key="angle" type="button" :data-garage-angle="angle" :aria-pressed="garageStudioView.angle === angle">{{ copy.angles[index] }}</button>
@@ -100,6 +102,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 </template>
 
 <style src="./garage-store-entry.css"></style>
+<style src="./garage-studio-entry.css"></style>
 <style>
 /* The full-screen Garage/Studio covers the home: stop rendering it, or iOS WebKit flashes its animated layers
    (START sheen, Garage pulse) over the dialog. Descendants too: airflow mode forces #start-button visible. */

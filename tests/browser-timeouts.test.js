@@ -115,3 +115,12 @@ test('CI retries a failed browser test once and still reports it; local runs nev
     if (ci) assert.deepEqual(reporter, [['list'], ['github']]); else assert.equal(reporter, 'list');
   }
 });
+
+// The keyboard full-practice tests ran on the 135 s default while their touch twins had 720 s; a passing CI run took
+// 1.7 min, so slower runners timed out mid-lesson (develop, 2026-11-07). The shared flow helper owns the budget.
+test('every full practice run declares the full-practice budget', () => {
+  const spec = readFileSync(new URL('./interactive-tutorial-browser.spec.js', import.meta.url), 'utf8');
+  assert.match(spec, /const FULL_PRACTICE_BUDGET = ciTimeout\(\d+\)/);
+  assert.match(spec, /const keyboardToNitro = async page => \{\n\s*test\.setTimeout\(FULL_PRACTICE_BUDGET\);/);
+  assert.match(spec, /real touch controls finish practice[\s\S]{0,400}test\.setTimeout\(FULL_PRACTICE_BUDGET\)/);
+});

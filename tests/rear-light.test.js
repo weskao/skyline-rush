@@ -15,11 +15,11 @@ test('typed rear LED preserves brake/boost behavior and pauses its animation clo
   assert.equal(flow.visible, false);
   race.player.braking = true;
   light.update(race, 0.2, true);
-  assert.equal(core.material.emissiveIntensity, 3.8);
+  assert.equal(core.material.emissiveIntensity, 2.6);
   race.player.braking = false;
   race.player.nitroTime = 1;
   light.update(race, 0.2, true);
-  assert.equal(core.material.emissiveIntensity, 2.1);
+  assert.equal(core.material.emissiveIntensity, 1.6);
   race.phase = 'paused';
   light.update(race, 1, true);
   const level = core.material.emissiveIntensity;
@@ -97,5 +97,5 @@ test('rear LED flow runs at top speed; reduced motion keeps it off and steady', 
   calmRace.player.nitroTime = 5;
   const levels = new Set();
   for (let i = 0; i < 8; i++) { calm.update(calmRace, 0.07, true); levels.add(calmCore.material.emissiveIntensity); }
-  assert.deepEqual([...levels], [2.1], 'reduced motion holds a constant boost level');
+  assert.deepEqual([...levels], [1.6], 'reduced motion holds a constant boost level');
 });

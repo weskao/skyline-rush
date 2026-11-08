@@ -1,0 +1,51 @@
+{
+ "about": "Forms-gate references. anchors_px are hand-picked photo pixels of the contract points anchors_m (three.js car space, metres; wheel hub faces sit at x = +-1.23). Mattes, ignore regions and anchors are hand-picked; asset-brief.md lists what is inferred.",
+ "targets": {"iou_min": 0.9, "band_pct_max": 5},
+ "views": {
+  "side": {
+   "photo": "docs/designs/roadster2-reference/14-side-profile-road-mode.jpeg",
+   "anchors_m": [[-1.23, 0.46, -1.35], [-1.23, 0.46, 1.42]],
+   "anchors_px": [[201, 259], [506, 260]],
+   "matte": {"mode": "auto", "box": [105, 150, 590, 299], "bg_cols": [[0, 60], [680, 739]], "tol": 60,
+             "include": [[[525, 200], [573, 207], [569, 229], [562, 257], [558, 273], [548, 284], [525, 284]]],
+             "exclude": [[[243, 289], [464, 289], [464, 320], [243, 320]],
+                         [[100, 274], [165, 279], [176, 290], [188, 300], [100, 300]],
+                         [[548, 284], [600, 284], [600, 320], [525, 320], [531, 290], [537, 285]]]},
+   "cams": {"az": [268, 270, 272], "el": [0, 3, 6], "lens": [50, 85]}
+  },
+  "front": {
+   "photo": "docs/designs/roadster2-reference/05-front-nose-light-blade.jpeg",
+   "note": "No wheel centre is visible from the front. Anchors are the front tyre contact points: the car-left one is visible (photo right), the car-right one is hidden in shadow and placed under the fender edge (INFERRED). Below the splitter is ignored: underbody and tyres are in shadow.",
+   "anchors_m": [[1.185, 0.02, -1.35], [-1.185, 0.02, -1.35]],
+   "anchors_px": [[110, 950], [1638, 950]],
+   "matte": {"mode": "polygon", "points": [[590, 185], [830, 165], [1210, 168], [1310, 188], [1500, 352], [1555, 355],
+             [1610, 410], [1640, 500], [1645, 650], [1645, 760], [1635, 860], [1400, 845], [1290, 808], [330, 808],
+             [260, 825], [100, 845], [105, 760], [105, 600], [110, 500], [130, 420], [215, 355], [290, 352]]},
+   "ignore": [[[0, 845], [1806, 845], [1806, 1058], [0, 1058]]],
+   "cams": {"az": [176, 180, 184], "el": [2, 6, 10], "lens": [35, 50]}
+  },
+  "rear": {
+   "photo": "docs/designs/roadster2-reference/13-rear-flight-thrusters.jpeg",
+   "note": "Lower car of the pair. Wing is deployed in the photo, so everything above the light bar is ignored. Tyre contact points are under thruster smoke (INFERRED from the tyre outer edges).",
+   "anchors_m": [[-1.05, 0.02, 1.42], [1.05, 0.02, 1.42]],
+   "anchors_px": [[247, 507], [472, 507]],
+   "matte": {"mode": "polygon", "points": [[242, 380], [477, 380], [487, 430], [488, 493], [478, 508], [458, 508],
+             [458, 496], [262, 496], [262, 508], [242, 508], [233, 493], [233, 430]]},
+   "ignore": [[[0, 0], [720, 0], [720, 395], [0, 395]]],
+   "cams": {"az": [-3, 0, 3], "el": [4, 8, 12], "lens": [50, 85]}
+  },
+  "rear_quarter": {
+   "photo": "docs/designs/roadster2-reference/06-rear-quarter-wing-stage.jpeg",
+   "note": "Wing deployed in the photo: the wing band left of the C-pillar is ignored. Anchors are the right-side hub centres.",
+   "anchors_m": [[1.23, 0.46, 1.42], [1.23, 0.46, -1.35]],
+   "anchors_px": [[945, 420], [1170, 375]],
+   "matte": {"mode": "polygon", "points": [[70, 200], [640, 200], [640, 90], [760, 62], [880, 58], [960, 75],
+             [1040, 110], [1110, 165], [1160, 180], [1190, 215], [1195, 290], [1195, 400], [1185, 440], [1165, 490],
+             [1140, 480], [1125, 445], [975, 520], [975, 560], [950, 590], [925, 590], [895, 560], [880, 520],
+             [800, 520], [690, 505], [200, 500], [170, 510], [165, 545], [110, 545], [85, 520], [70, 450],
+             [68, 330], [75, 270]]},
+   "ignore": [[[0, 0], [845, 0], [845, 232], [0, 232]]],
+   "cams": {"az": [10, 15, 20, 25], "el": [0, 3, 6], "lens": [24, 35, 50]}
+  }
+ }
+}

@@ -24,3 +24,6 @@ artifacts/*
 docs/designs/3d-pipeline/audits/
 
 __pycache__/
+
+# Blender saves numbered .blend backups; keep only verified editable masters in Git.
+assets-src/**/*.blend[0-9]*

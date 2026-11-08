@@ -283,3 +283,49 @@ test('ITEM-12: item use, cooldown ready and a shield block each have their own s
   assert.ok(use && ready && block);
   assert.equal(new Set([generic, pickup, use, ready, block]).size, 5);
 });
+
+test('risk ring envelopes stay below the pickup mix while retaining three audible notes', t => {
+  const { sound } = installAudio(t);
+  const original = globalThis.AudioContext.prototype.createGain;
+  const peaks = [];
+  globalThis.AudioContext.prototype.createGain = function() {
+    const node = original.call(this), ramp = node.gain.linearRampToValueAtTime;
+    node.gain.linearRampToValueAtTime = function(value, time) {
+      peaks.push(value);
+      return ramp.call(this, value, time);
+    };
+    return node;
+  };
+  sound.setEnabled(true);
+  const levels = name => {
+    peaks.length = 0;
+    sound.cue(name);
+    return [...peaks];
+  };
+  const pickup = levels('pickup'), risk = levels('ring-risk');
+  assert.equal(risk.length, 3, 'keep the three-note risk warning');
+  assert.ok(risk.every(value => value > 0), 'every note remains audible');
+  assert.ok(risk.reduce((a, b) => a + b, 0) < pickup.reduce((a, b) => a + b, 0) * 0.85,
+    'risk chime is quieter than the pickup before mixing with engine sound');
+});
+
+test('every ring type has its own bright chime, and a quick train steps up in pitch then resets after a pause', t => {
+  const { nodes, sound } = installAudio(t);
+  const made = [];
+  globalThis.AudioContext = class extends globalThis.AudioContext { constructor() { super(); made.push(this); } };
+  sound.setEnabled(true);
+  const pitches = name => {
+    const start = nodes.length;
+    sound.cue(name);
+    return nodes.slice(start).filter(n => n.kind === 'oscillator').map(n => Math.round(n.frequency.value)).join();
+  };
+  const types = ['charge', 'nitro', 'slipstream', 'risk', 'mystery', 'speed-pad'];
+  const heard = types.map(type => { made[0].currentTime += 10; return pitches(`ring-${type}`); });
+  assert.ok(heard.every(Boolean), 'each ring type makes sound');
+  assert.equal(new Set([...heard, pitches('pickup'), pitches('ui')]).size, types.length + 2, 'distinct from each other, pickup and the UI blip');
+  made[0].currentTime += 10;
+  const train = Array.from({ length: 6 }, () => { made[0].currentTime += 0.3; return pitches('ring-charge'); });
+  assert.equal(new Set(train).size, 6, 'six quick rings climb to six different pitches');
+  made[0].currentTime += 10;
+  assert.equal(pitches('ring-charge'), train[0], 'a pause resets the climb');
+});

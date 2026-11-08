@@ -1,5 +1,7 @@
 import { CIRCUIT_ID, CIRCUIT_TRACK } from './circuit-track.ts';
 import type { TrackConfig } from './game-types.ts';
+import { FROSTBITE_ID, FROSTBITE_TRACK } from './courses/frostbite-race.ts';
+import { COURSE_RUNTIMES, isCourseRuntime } from './course-runtimes.ts';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
 // `x` / `altitude` place a shortcut corridor.
@@ -56,7 +58,19 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
 };
 
 // The separate lookup never changes Daily/Career/Cup's ordered sprint catalog.
-export const raceTrack = (id: string): TrackConfig | undefined => id === CIRCUIT_ID ? CIRCUIT_TRACK : RACE_TRACKS[id];
+// Frostbite Canyon is a gated CourseGraph sprint: raceable by id, never in the catalog, Daily, Cup or saves.
+/** CourseGraph sprints outside the catalog whose results persist under a topology-keyed id (`record-layout.ts`). */
+export const COURSE_TRACKS: Readonly<Record<string, TrackConfig & { topologyVersion: number }>> = {
+  [FROSTBITE_ID]: FROSTBITE_TRACK, ...Object.fromEntries(Object.entries(COURSE_RUNTIMES).map(([id, entry]) => [id, entry.track])),
+};
+export const raceTrack = (id: string): TrackConfig | undefined => id === CIRCUIT_ID ? CIRCUIT_TRACK : Object.hasOwn(COURSE_TRACKS, id) ? COURSE_TRACKS[id] : RACE_TRACKS[id];
 
 export const isModeTrack = (id: unknown, mode: unknown): id is string => typeof id === 'string' &&
   (mode === 'circuit' ? id === CIRCUIT_ID : Object.hasOwn(RACE_TRACKS, id));
+
+/** Topology guard for createRace: a circuit only in Circuit mode; gated CourseGraph sprints only in Classic. */
+export function assertTrackMode(trackId: string, mode: string): void {
+  if ((trackId === CIRCUIT_ID) !== (mode === 'circuit')) throw new RangeError('Circuit mode requires a circuit route');
+  if (trackId === FROSTBITE_ID && mode !== 'classic') throw new RangeError('Frostbite Canyon is a gated classic sprint');
+  if (isCourseRuntime(trackId) && mode !== 'classic') throw new RangeError(`${COURSE_RUNTIMES[trackId].track.name} is a gated classic sprint`);
+}

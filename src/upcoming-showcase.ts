@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { makeCar, CAR_STYLES } from './car-model.js';
+import { applyCarReflections } from './car-reflections.ts';
 import { createAeroVFX } from './aero-vfx.js';
 import { previewPlayer, showcaseCameraPose, type CameraPose } from './track-preview.ts';
 import { vfxSettings, type VfxSettings } from './vfx-settings.ts';
 import type { PaintPreset } from './appearance.ts';
-import type { UpcomingTrackId } from './upcoming-tracks.ts';
+import type { PreviewTrackId } from './upcoming-tracks.ts';
+import type { GarageModelHost } from './garage-model.ts';
 
 export type UpcomingEnvironment = {
   group: THREE.Group;
@@ -18,17 +20,21 @@ export type UpcomingEnvironment = {
 };
 export type UpcomingEnvironmentFactory = (scene: THREE.Scene) => UpcomingEnvironment;
 type Stage = {
-  id: UpcomingTrackId;
+  id: PreviewTrackId;
   scene: THREE.Scene;
   environment: UpcomingEnvironment;
   cars: THREE.Group[];
   aero: ReturnType<typeof createAeroVFX>;
+  host: GarageModelHost;
 };
 
 /** A scene host, not a renderer: uses the game's camera, composer and frame clock. */
 export function createUpcomingShowcase(
-  factories: Partial<Record<UpcomingTrackId, UpcomingEnvironmentFactory>>,
+  factories: Partial<Record<PreviewTrackId, UpcomingEnvironmentFactory>>,
   environmentTexture: THREE.Texture,
+  carEnvironment: THREE.Texture,
+  /** `?model=roadster` (garage-model.ts): takes the GLB off the player car before its materials are disposed. */
+  releaseModel: (host: GarageModelHost) => void = () => {},
 ) {
   let stage: Stage | null = null;
   let paint: PaintPreset | null = null;
@@ -39,8 +45,9 @@ export function createUpcomingShowcase(
 
   function disposeStage(): void {
     if (!stage) return;
-    const { scene, environment, cars, aero } = stage;
+    const { scene, environment, cars, aero, host } = stage;
     stage = null;
+    releaseModel(host); // the GLB's cached materials are shared; only the procedural car's are disposed below
     environment.dispose();
     // Car geometry is shared with live races. Dispose only the instance's materials.
     const geometries = new Set<THREE.BufferGeometry>();
@@ -74,7 +81,7 @@ export function createUpcomingShowcase(
     car.userData.lightColor.fromArray(next.light);
   }
 
-  function setTrack(id: UpcomingTrackId | null): boolean {
+  function setTrack(id: PreviewTrackId | null): boolean {
     if (stage?.id === id) return true;
     disposeStage();
     const factory = id && factories[id];
@@ -94,11 +101,12 @@ export function createUpcomingShowcase(
     const cars = [CAR_STYLES.roadster, CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex]
       .map(style => makeCar(style));
     cars.forEach(car => scene.add(car));
+    applyCarReflections(cars[0]!, carEnvironment);
     const aero = createAeroVFX(scene, cars[0]!);
     const sunlight = new THREE.DirectionalLight('#f3e7d2', 2.3);
     sunlight.position.set(-30, 70, -65);
     scene.add(new THREE.HemisphereLight('#c1e5ff', '#1e283a', 1.9), sunlight);
-    stage = { id, scene, environment, cars, aero };
+    stage = { id, scene, environment, cars, aero, host: { name: 'showcase', car: cars[0]!, keep: aero.group as THREE.Object3D, scene } };
     if (paint) setPaint(paint);
     return true;
   }
@@ -140,7 +148,8 @@ export function createUpcomingShowcase(
 
   return {
     get scene(): THREE.Scene | null { return stage?.scene ?? null; },
-    get activeTrack(): UpcomingTrackId | null { return stage?.id ?? null; },
+    get activeTrack(): PreviewTrackId | null { return stage?.id ?? null; },
+    get modelHost(): GarageModelHost | null { return stage?.host ?? null; },
     setTrack, setPaint, update,
     dispose(): void { disposeStage(); },
   };

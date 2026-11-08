@@ -10,17 +10,14 @@ service cloud.firestore {
     return trackIds().concat(['coast@2', 'coast@3', 'neon@2', 'neon@3', 'canyon@2', 'canyon@3', 'spiral@2', 'spiral@3',
       'aurora@2', 'taipei@2', 'tokyo@2', 'alpine@2', 'coastal@2', 'cosmic@2',
       'coast@4', 'neon@4', 'canyon@4', 'spiral@4',
-      'aurora@3', 'taipei@3', 'tokyo@3', 'alpine@3', 'coastal@3', 'cosmic@3']);
+      'aurora@3', 'taipei@3', 'tokyo@3', 'alpine@3', 'coastal@3', 'cosmic@3',
+      'frostbite-canyon@t1l1', 'dune-tempest@t1l1', 'skyfall-archipelago@t1l1']); // CourseGraph sprints: `<track>@t<topology>l<layout>`
   }
 
   // Rules stop at 1000 evaluated expressions per write, and each map lookup counts: the old keys().hasAny([id])
   // form rejected a player holding every star and best (already 10 stars + 14 bests before stage 2). One
   // A defaulted lookup avoids evaluating a separate presence check for every optional field.
   // Invalid present values still fail the same bounds. This keeps full saves under the 1000-expression limit.
-  function validStar(values, id) {
-    return values.get(id, 1) in [1, 2, 3];
-  }
-
   // 0 < best < 604800 s (one week) in a single lookup.
   function validBest(values, id) {
     return math.abs(values.get(id, 302400) - 302400) < 302400;
@@ -32,11 +29,9 @@ service cloud.firestore {
         values[id].matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z$'));
   }
 
+  // Keys are already limited to trackIds(); one list check replaces ten per-id lookups (expression budget).
   function validStars(stars) {
-    return validStar(stars, 'coast') && validStar(stars, 'neon') && validStar(stars, 'canyon')
-      && validStar(stars, 'aurora') && validStar(stars, 'spiral') && validStar(stars, 'taipei')
-      && validStar(stars, 'tokyo') && validStar(stars, 'alpine') && validStar(stars, 'coastal')
-      && validStar(stars, 'cosmic');
+    return stars.values().hasOnly([1, 2, 3]);
   }
 
   function validBests(bests) {
@@ -55,7 +50,9 @@ service cloud.firestore {
       && validBest(bests, 'canyon@4') && validBest(bests, 'spiral@4')
       && validBest(bests, 'aurora@3') && validBest(bests, 'taipei@3')
       && validBest(bests, 'tokyo@3') && validBest(bests, 'alpine@3')
-      && validBest(bests, 'coastal@3') && validBest(bests, 'cosmic@3');
+      && validBest(bests, 'coastal@3') && validBest(bests, 'cosmic@3')
+      && validBest(bests, 'frostbite-canyon@t1l1') && validBest(bests, 'dune-tempest@t1l1')
+      && validBest(bests, 'skyfall-archipelago@t1l1');
   }
 
   function validMedals(medals) {

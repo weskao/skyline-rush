@@ -12,7 +12,8 @@ test('no shader compiles mid-race: hidden effects were drawn by the first-frame 
   await page.waitForTimeout(300);
   const before = await programs(page);
   expect(before).toBeGreaterThan(0);
-  await page.evaluate(() => { const { player } = window.gameplay.race; player.nitroTime = 4; player.speed = 90; });
+  // cooldown: the post-hit grace fades the car, which must not need a new (transparent) program either.
+  await page.evaluate(() => { const { player } = window.gameplay.race; player.nitroTime = 4; player.speed = 90; player.cooldown = 1.5; });
   await page.waitForTimeout(1500);
   expect(await programs(page)).toBe(before);
 });

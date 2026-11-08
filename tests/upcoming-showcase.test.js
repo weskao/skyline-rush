@@ -7,7 +7,7 @@ import { previewPlayer } from '../src/track-preview.ts';
 const id = 'dune-tempest';
 
 test('missing environment never presents a fake live Three.js showcase', () => {
-  const showcase = createUpcomingShowcase({}, new THREE.Texture());
+  const showcase = createUpcomingShowcase({}, new THREE.Texture(), new THREE.Texture());
   assert.equal(showcase.setTrack(id), false);
   assert.equal(showcase.scene, null);
   showcase.dispose();
@@ -29,7 +29,7 @@ test('showcase shares a Three.js scene and disposes old environment on track cha
   const showcase = createUpcomingShowcase({
     'dune-tempest': create('dune'),
     'monsoon-ruins': create('monsoon'),
-  }, new THREE.Texture());
+  }, new THREE.Texture(), new THREE.Texture());
   const camera = new THREE.PerspectiveCamera(50, 16 / 9, .1, 2000);
   assert.equal(showcase.setTrack('dune-tempest'), true);
   assert.ok(showcase.scene instanceof THREE.Scene);
@@ -54,7 +54,7 @@ test('every upcoming map reuses the shared Roadster AIRFLOW ground/hover pose an
     scene.add(group);
     return { group, update() {}, dispose() {} };
   }]));
-  const showcase = createUpcomingShowcase(factories, new THREE.Texture());
+  const showcase = createUpcomingShowcase(factories, new THREE.Texture(), new THREE.Texture());
   const camera = new THREE.PerspectiveCamera(50, 16 / 9, .1, 2000);
 
   for (const id of ids) {
@@ -78,4 +78,25 @@ test('every upcoming map reuses the shared Roadster AIRFLOW ground/hover pose an
     assert.equal(player.userData.jets.visible, false, id + ' Reduced Motion disables jets');
   }
   showcase.dispose();
+});
+
+test('Task 4b: the Coming Soon player car is a stable model host, released before its stage is disposed', () => {
+  const released = [];
+  const env = scene => { const group = new THREE.Group(); scene.add(group); return { group, update() {}, dispose() {} }; };
+  const showcase = createUpcomingShowcase({ 'dune-tempest': env, 'monsoon-ruins': env }, new THREE.Texture(), new THREE.Texture(),
+    host => released.push({ host, attached: !!host.car.parent }));
+  assert.equal(showcase.modelHost, null);
+  showcase.setTrack('dune-tempest');
+  const first = showcase.modelHost;
+  assert.equal(first.name, 'showcase');
+  assert.equal(first.scene, showcase.scene);
+  assert.equal(first.car.parent, showcase.scene);
+  assert.ok(first.car.userData.jets && first.car.userData.wing, 'the shared procedural Roadster');
+  assert.equal(first.keep.parent, first.car, 'aero VFX rides on the car and stays drawn');
+  assert.equal(showcase.modelHost, first, 'same object every frame');
+  showcase.setTrack('monsoon-ruins');
+  assert.deepEqual(released, [{ host: first, attached: true }], 'released while the old car still exists');
+  assert.notEqual(showcase.modelHost, first);
+  showcase.dispose();
+  assert.equal(released.length, 2);
 });

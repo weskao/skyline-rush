@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy stop-old-dev reclaim-dev-port
+.PHONY: help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy deploy-netlify stop-old-dev reclaim-dev-port
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -124,6 +124,33 @@ help: ## `make help`: list these commands
 # Requires an authenticated GitHub CLI; CI checks the pushed main branch before publishing.
 deploy: ## `make deploy`: trigger CI checks and GitHub Pages deployment of remote main
 	gh workflow run ci.yml --ref main
+
+# Deploys the current checkout straight from this Mac; needs `npx netlify-cli login` once per machine.
+# GARAGE_VFX_RELEASE_MODE matches the Pages deploy pin in ci.yml. The site has Netlify visitor access protection
+# (anonymous requests get 401), so the live check asks the Netlify API which deploy is published instead of curl.
+# The Telegram line goes through tg-send.sh when it exists (bot type deploy-done; default bot until that exists).
+NETLIFY := npx --yes netlify-cli@27.16.2
+NETLIFY_SITE := skyline-rush
+NETLIFY_URL := https://$(NETLIFY_SITE).netlify.app
+TG_SEND := $(HOME)/.claude/scripts/tg-send.sh
+# Google sign-in fails with auth/unauthorized-domain on hosts missing from Firebase Auth's authorized domains;
+# the project's public config endpoint lists them, so check before building (web API key read from cloud-save.ts).
+FIREBASE_API_KEY = $(shell sed -n "s/.*apiKey: '\([^']*\)'.*/\1/p" src/cloud-save.ts)
+deploy-netlify: node_modules ## `make deploy-netlify`: production build of this checkout, Netlify deploy, live check, Telegram link
+	@curl -fsS "https://identitytoolkit.googleapis.com/v1/projects?key=$(FIREBASE_API_KEY)" \
+	  | jq -e --arg d "$(NETLIFY_SITE).netlify.app" '.authorizedDomains | any(. == $$d)' >/dev/null || { \
+	  echo "Google sign-in would fail: $(NETLIFY_SITE).netlify.app is not a confirmed Firebase Auth authorized domain."; \
+	  echo "Add it: Firebase console > Authentication > Settings > Authorized domains > Add domain"; exit 1; }
+	GARAGE_VFX_RELEASE_MODE=trial $(NPM) run build
+	@out=$$($(NETLIFY) deploy --prod --no-build --dir=dist --site $(NETLIFY_SITE) --json \
+	  --message "local deploy $$(git describe --tags --always)") || { echo "$$out"; exit 1; }; \
+	id=$$(echo "$$out" | jq -r .deploy_id); unique=$$(echo "$$out" | jq -r .deploy_url); \
+	live=$$($(NETLIFY) api getSite --data '{"site_id":"$(NETLIFY_SITE).netlify.app"}' | jq -r .published_deploy.id); \
+	[ "$$live" = "$$id" ] || { echo "Netlify publishes deploy $$live, not the new $$id"; exit 1; }; \
+	echo "Live: $(NETLIFY_URL)/ (deploy $$id, $$unique)"; \
+	msg=$$(printf '🚀 skyline-rush 已部署到 Netlify：%s/\n本次部署：%s\n%s @ %s' "$(NETLIFY_URL)" "$$unique" \
+	  "$$(git rev-parse --abbrev-ref HEAD)" "$$(git describe --tags --always)"); \
+	if [ -f "$(TG_SEND)" ]; then TG_MSG_TYPE=deploy-done bash "$(TG_SEND)" send "$$msg"; else echo "TG: send skipped — $(TG_SEND) not found"; fi
 
 # Installs dependencies on first run and whenever package-lock.json changes; also enables the repo's git hooks.
 node_modules: package-lock.json

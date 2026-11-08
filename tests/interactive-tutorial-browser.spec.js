@@ -1,6 +1,16 @@
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { DRIFT_ENTRY_KMH } from './helpers/tutorial-practice.js';
+
+// Keep tutorial input/physics tests on real browser controls, but avoid software-WebGL
+// frame starvation on shared CI runners. Renderer/quality coverage lives in separate specs.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, get: () => 2 });
+    Object.defineProperty(navigator, 'deviceMemory', { configurable: true, get: () => 2 });
+  });
+});
 
 const coach = page => page.locator('#tutorial-coach');
 const step = (page, name) => expect(coach(page)).toHaveAttribute('data-step', name);
@@ -18,68 +28,63 @@ const keyStep = async (page, key, next) => {
   await page.keyboard.up(key);
 };
 
-// DRIFT needs >= 162 km/h to hold and bleeds speed, so the 1 s payout needs ~173 km/h on entry; the brake lesson
-// hands over at crawl speed (lessons keep the player's speed), so wait for auto-throttle.
-const driftReady = (page, kmh = 180) => page.waitForFunction(kmh => Number(document.querySelector('#speed')?.textContent) >= kmh, kmh, { polling: 'raf' });
+// Engine-judged lessons leave fractions of a second of game time: the 0.3 s flick window, the height for a soft
+// landing, 0.2 s before a held drift reaches the rail. One harness round trip under CI load took 17 frames
+// (0.38 s), so the page sends each time-critical key edge on the frame its cue appears. Opening presses stay
+// real keyboard input, and the engine still judges every lesson.
+const keysOnCue = (page, cue, edges) => page.evaluate(({ cue, edges }) => new Promise(resolve => {
+  const ready = () => typeof cue === 'string'
+    ? document.querySelector('#tutorial-instruction')?.textContent?.includes(cue)
+    : Number(document.querySelector(cue.selector)?.[cue.prop ?? 'textContent']) >= cue.min;
+  const poll = () => {
+    if (!ready()) return requestAnimationFrame(poll);
+    for (const [type, code] of edges) dispatchEvent(new KeyboardEvent(type, { code }));
+    resolve();
+  };
+  poll();
+}), { cue, edges });
+// The brake lesson's held key can slow the car, so wait for auto-throttle to reach a drift that outlasts 1 s.
+const driftReady = page => page.waitForFunction(kmh => Number(document.querySelector('#speed')?.textContent) >= kmh, DRIFT_ENTRY_KMH, { polling: 'raf' });
 // The coach progress bar reaches the next whole step once the drift lasts 1 s (the first payout tier).
-const driftCharged = page => page.waitForFunction(() => Number(document.querySelector('#tutorial-progress')?.value) >= 5, null, { polling: 'raf' });
-// From the centre a held left drift hits the rail 1.18 s after steering starts, and the crash cancels it unpaid:
-// ~0.15 s of slack past the 1 s payout. Brake first from a high speed so steering starts with the drift (brake alone
-// costs 35 m/s² per second of lag), and let go inside the page on the frame the bar fills, since a Node → CDP round
-// trip on a loaded runner outlasts that slack.
+const DRIFT_CHARGED = { selector: '#tutorial-progress', prop: 'value', min: 5 };
+const driftCharged = page => page.waitForFunction(min => Number(document.querySelector('#tutorial-progress')?.value) >= min, DRIFT_CHARGED.min, { polling: 'raf' });
 const keyboardDrift = async page => {
-  await driftReady(page, 280);
-  await page.keyboard.down('s');
-  await page.keyboard.down('a');
-  await page.waitForFunction(() => {
-    if (Number(document.querySelector('#tutorial-progress')?.value) < 5) return false;
-    for (const code of ['KeyA', 'KeyS']) window.dispatchEvent(new KeyboardEvent('keyup', { code }));
-    return true;
-  }, null, { polling: 'raf' });
-  await page.keyboard.up('a');
+  await driftReady(page);
+  // Sent together: steering alone drifts the car toward the rail, braking alone sheds the entry speed.
+  await Promise.all([page.keyboard.down('a'), page.keyboard.down('s')]);
+  await keysOnCue(page, DRIFT_CHARGED, [['keyup', 'KeyS'], ['keyup', 'KeyA']]);
   await page.keyboard.up('s');
+  await page.keyboard.up('a');
   await step(page, 'fly');
 };
 
 const keyboardChain = async page => {
-  await page.keyboard.down('Space');
-  await page.keyboard.down('Shift');
-  await expect(page.locator('#tutorial-instruction')).toContainText('Powered flight detected');
-  await page.keyboard.up('Shift');
+  await Promise.all([page.keyboard.down('Space'), page.keyboard.down('Shift')]);
+  // Release FLY and BOOST once the chain is earned; holding thrust climbs into a hard landing.
+  await keysOnCue(page, 'Powered flight detected', [['keyup', 'Space'], ['keyup', 'ShiftLeft']]);
   await page.keyboard.up('Space');
+  await page.keyboard.up('Shift');
   await step(page, 'barrelRoll');
 };
 const keyboardRoll = async page => {
   await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
   await page.keyboard.down('Space');
-  // Release FLY at a safe height before the steering flick. The real engine
-  // allows a roll while gliding; holding thrust through Playwright assertions
-  // can lift the car too high for a soft landing on slow WebGL runners.
-  await page.waitForFunction(
-    () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
-    null, { polling: 'raf' },
-  );
+  // Release FLY at a safe height before the steering flick: the engine allows a roll while gliding.
+  await keysOnCue(page, { selector: '#altitude', min: 1.5 }, [['keyup', 'Space']]);
   await page.keyboard.up('Space');
   await page.keyboard.down('a');
-  // A roll needs the opposite press within TRICK_FLICK_WINDOW (0.3 s) of the first: switch keys inside the page on
-  // the frame the coach confirms the first press, since a Node → CDP round trip on a loaded runner outlasts it.
-  await page.waitForFunction(() => {
-    if (!document.querySelector('#tutorial-instruction')?.textContent?.includes('First airborne steering press detected')) return false;
-    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyA' }));
-    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyD' }));
-    return true;
-  }, null, { polling: 'raf' });
+  await keysOnCue(page, 'First airborne steering press detected', [['keyup', 'KeyA'], ['keydown', 'KeyD']]);
   await page.keyboard.up('a');
-  await page.keyboard.down('d');
-  await page.waitForFunction(
-    () => document.querySelector('#tutorial-instruction')?.textContent?.includes('BARREL ROLL spinning'),
-    null, { polling: 'raf' },
-  );
-  await page.keyboard.up('d');
+  // Release RIGHT once spinning: held steering carries the car into the rail as it lands.
+  await keysOnCue(page, 'BARREL ROLL spinning', [['keyup', 'KeyD']]);
   await step(page, 'nitro');
 };
 
+// A full practice run plays ~25 s of game time; CPU-only CI steps the game at ~1/4 speed, so a passing run took
+// 1.7 min of the 45 s × 3 default and slower runners timed out mid-lesson. Every full run gets this budget.
+const FULL_PRACTICE_BUDGET = ciTimeout(240000);
 const keyboardToNitro = async page => {
+  test.setTimeout(FULL_PRACTICE_BUDGET);
   await keyStep(page, 'w', 'left');
   await keyStep(page, 'a', 'right');
   await keyStep(page, 'd', 'brake');
@@ -92,13 +97,22 @@ const keyboardToNitro = async page => {
   await keyboardRoll(page);
 };
 
-test('practice opens with the race countdown, and FLY answers the moment GO shows', async ({ page }) => {
+test('practice opens with the race countdown, stands still at GO, and THROTTLE then FLY answer', async ({ page }) => {
   await page.goto('/');
   await page.locator('#controls-button').click();
   await page.locator('#tutorial-open').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
   await expect(page.locator('#countdown')).toBeVisible();
+  // The forward arrow waits for GO (user, 2026-11-08): none during 3-2-1, then it appears with the throttle cue.
+  await expect(page.locator('#tutorial-guide')).toHaveCount(0);
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(6000) });
+  // Practice has no GO roll (user, 2026-11-08): the car waits for THROTTLE, and the cue says so.
+  await expect(page.locator('#speed')).toHaveText('0');
+  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'ahead');
+  await expect(page.locator('#tutorial-cue')).toBeVisible();
+  await page.keyboard.down('KeyW');
+  await expect.poll(async () => Number(await page.locator('#speed').textContent()), { timeout: ciTimeout(4000) }).toBeGreaterThan(66); // past FLY's 18 m/s takeoff
+  await page.keyboard.up('KeyW');
   await page.keyboard.down('Space');
   await expect.poll(async () => Number(await page.locator('#altitude').textContent()), { timeout: ciTimeout(1500) }).toBeGreaterThan(0);
   await page.keyboard.up('Space');
@@ -147,6 +161,44 @@ test('NITRO practice recovers after braking and demands a fresh charged sprint',
   await expect(page.locator('#tutorial-retry')).toBeVisible();
 });
 
+test.describe('touch NITRO interruption', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  test('brake and NITRO touches interrupt practice and a new touch spends a fresh charge', async ({ page, context }) => {
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', flyMode: 'hold' })));
+    await begin(page);
+    // Skipping FLY leaves the car on the road, so LAND passes by itself within a frame: tapping Skip there would
+    // race it and skip BOOST instead. Wait for BOOST directly.
+    for (const next of ['left', 'right', 'brake', 'drift', 'fly', 'boost', 'airChain', 'barrelRoll', 'nitro']) {
+      await page.locator('#tutorial-skip-step').tap();
+      await step(page, next);
+    }
+    await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode', 'buttons');
+    const session = await context.newCDPSession(page);
+    const point = async (action, id) => {
+      const box = await page.locator('#touch-controls [data-control="' + action + '"]').boundingBox();
+      return { id, x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    };
+    // CDP rejects a touchEnd with no touch down, so the cleanup only lifts a touch the test left pressed.
+    let down = false;
+    const touch = async (type, points) => { await session.send('Input.dispatchTouchEvent', { type, touchPoints: points }); down = type === 'touchStart'; };
+    try {
+      await touch('touchStart', [await point('brake', 1), await point('nitro', 2)]);
+      await expect(page.locator('#tutorial-instruction')).toContainText('Sprint interrupted', { timeout: ciTimeout(15000) });
+      await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '0');
+      await touch('touchEnd', []);
+      await expect(page.locator('#tutorial-instruction')).toContainText('Activate NITRO');
+      await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '1');
+      await touch('touchStart', [await point('nitro', 3)]);
+      await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '0');
+      await touch('touchEnd', []);
+      await step(page, 'complete');
+    } finally {
+      if (down) await touch('touchEnd', []);
+      await session.detach();
+    }
+  });
+});
+
 test('practice restores a paused race and uses the current custom throttle key', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-keymap', JSON.stringify({throttle:['KeyZ'],brake:['KeyS'],left:['KeyA'],right:['KeyD'],fly:['Space'],boost:['ShiftLeft'],nitro:['KeyE']})));
   await page.goto('/');
@@ -173,7 +225,7 @@ test('the gate arrow points the way and Skip step moves on by a real click', asy
   await begin(page);
   const skip = page.locator('#tutorial-skip-step');
   await expect(skip).toBeVisible();
-  await expect(page.locator('#tutorial-guide')).toHaveCount(0); // settled: the throttle lesson has no gate
+  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'ahead'); // the throttle lesson points the way
   await skip.click();
   await step(page, 'left');
   await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'left');
@@ -186,6 +238,15 @@ test('the gate arrow points the way and Skip step moves on by a real click', asy
   await step(page, 'right');
   await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'right');
   await expect(skip).not.toBeFocused(); // a focused skip button would re-fire on Space or Enter
+});
+
+test('the brake lesson shows a slow-down arrow and a live cue with the bound brake key', async ({ page }) => {
+  await begin(page);
+  const skip = page.locator('#tutorial-skip-step');
+  for (const name of ['left', 'right', 'brake']) { await skip.click(); await step(page, name); }
+  await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'slow'); // not the go-ahead arrow
+  await expect(page.locator('#tutorial-cue')).toHaveAttribute('data-cue', 'tutorial.cue.brakeAhead');
+  await expect(page.locator('#tutorial-cue kbd')).toHaveText('S'); // default brake binding
 });
 
 test('switching language updates the active and paused lesson immediately', async ({ page }) => {
@@ -307,7 +368,7 @@ test.describe('granted tilt and rotation', () => {
     await tilt(0);
     await tilt(25);
     await step(page,'brake');
-    await expect(page.locator('#tutorial-input')).toContainText(/brake/i);
+    await expect(page.locator('#tutorial-input')).toContainText(/pull down on the slide pad/i); // tilt has no brake button
     await page.locator('#tutorial-exit').tap();
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode','tilt');
   });
@@ -319,7 +380,7 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
     test('real touch controls finish practice without the coach blocking actions', async ({ page, context }) => {
       // Up to five air-chain and three barrel-roll engine-judged attempts need more than
       // the default budget on CPU-only WebGL.
-      test.setTimeout(ciTimeout(240000));
+      test.setTimeout(FULL_PRACTICE_BUDGET);
       const prefs = {version:1,mode,flyMode,...(custom?{layout:{throttle:{x:.15,y:.18}}}:{})};
       await page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls',JSON.stringify(prefs)), prefs);
       await begin(page);
@@ -444,10 +505,20 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
         if (attempt) await expect.poll(async () => Number(await page.locator('#altitude').textContent())).toBeLessThan(.1);
         if (flyMode === 'toggle') await tapTouch(button('fly'));
         else await touch('touchStart', [await point(button('fly'), 1)]);
+        // Bounded with HUD evidence: one CI-timed run in 48 sat here until the 12-min test cap with FLY held.
         await page.waitForFunction(
           () => Number(document.querySelector('#altitude')?.textContent) > 1.5,
-          null, { polling: 'raf' },
-        );
+          null, { polling: 'raf', timeout: ciTimeout(20000) },
+        ).catch(async error => {
+          const hud = await page.evaluate(() => {
+            const fly = document.querySelector('#touch-controls [data-control="fly"]')?.getBoundingClientRect();
+            const top = fly && document.elementFromPoint(fly.x + fly.width / 2, fly.y + fly.height / 2);
+            return [...['#tutorial-instruction', '#tutorial-cue', '#fuel-caption', '#fuel-value', '#altitude', '#speed']
+              .map(id => `${id}=${document.querySelector(id)?.textContent?.trim()}`),
+            `flyTop=${top?.id || top?.className}`, `pressed=${[...document.querySelectorAll('#touch-controls .is-pressed, #touch-controls [aria-pressed="true"]')].map(el => el.dataset.control)}`].join(' | ');
+          });
+          throw new Error(`no takeoff on roll attempt ${attempt}: ${hud}`, { cause: error });
+        });
         if (flyMode === 'toggle') await tapTouch(button('fly'));
         else await touch('touchEnd', []);
         if (pad) {

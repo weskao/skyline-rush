@@ -33,12 +33,11 @@ test('native image sweep follows Low/Medium/High, disabled VFX and reduced-motio
   for (const q of ['low', 'medium', 'high']) assert.ok(preview.includes('data-vfx-quality="' + q + '"'));
   assert.match(preview, /prefers-reduced-motion: reduce/);
   assert.match(preview, /garage-paint-sheen/);
-  assert.doesNotMatch(preview, /<canvas/i);
-  assert.doesNotMatch(preview, /garage-animated-gif|sparkle-paint@3x\\.gif/, 'generic overlay must not masquerade as paint animation');
+  assert.doesNotMatch(preview, /<canvas|\.gif/i);
 });
 
 test('real 3D paint uses clearcoat material without extra car geometry, shader sweep disabled on Low and reduced motion', () => {
-  const stage = createGarageStage(new THREE.Texture());
+  const stage = createGarageStage(new THREE.Texture(), new THREE.Texture());
   const car = stage.scene.children.find(child => child.userData.body);
   const body = car.userData.body, geometry = body.geometry, material = body.material;
   assert.ok(material instanceof THREE.MeshPhysicalMaterial);
