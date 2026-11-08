@@ -13,7 +13,8 @@ export const TRACK_PALETTES = {
   'frostbite-canyon': { top: '#071433', horizon: '#1d4f7a', fog: '#24476e', rock: '#8fb0cc', road: '#4d6b91', ground: '#bcd4ee', rail: '#3fe3ff', sun: '#7fb6ff', warmth: 0 },
   // Sunset and amber dust follow the Dune preview; the real road/chasm are streamed in world coordinates.
   'dune-tempest': { top: '#3b2545', horizon: '#e9a16e', fog: '#b57e62', rock: '#965838', road: '#d4a064', ground: '#d99445', rail: '#f4c78e', sun: '#ffd397', warmth: .65 },
-  'skyfall-archipelago': { top: '#3269b4', horizon: '#b6d9f8', fog: '#9fbcc9', rock: '#73818d', road: '#758e91', ground: '#70a797', rail: '#a6f2ed', sun: '#fff1d3', warmth: .1 },
+  // Skyfall's floating-island race uses its own cool cloud-sea palette, never a World Tour theme.
+  'skyfall-archipelago': { top: '#1f3656', horizon: '#a2b9c4', fog: '#758c9d', rock: '#64727c', road: '#7d7b6e', ground: '#5d7782', rail: '#c8cbbe', sun: '#dceaf0', warmth: .08 },
   ...WORLD_THEMES,
 };
 
