@@ -39,7 +39,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
     for (const control of vfxControls) {
       const key = control.dataset.vfx as keyof VfxSettings;
       if (control.type === 'checkbox') control.checked = visual[key] as boolean;
-      else control.value = String(visual[key]);
+      else control.value = key === 'quality' && visual.ultra ? 'ultra' : String(visual[key]);
       if (control.type === 'range') (control.previousElementSibling as HTMLOutputElement).value = String(visual[key]);
     }
     const dock = $('#showcase-camera-dock');
@@ -71,7 +71,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
   for (const control of vfxControls) control.addEventListener('input', () => {
     const key = control.dataset.vfx!;
     const value = control.type === 'checkbox' ? control.checked : control.type === 'range' ? Number(control.value) : control.value;
-    visual = vfxSettings({ ...visual, ...(key === 'preset' ? VFX_PRESETS[value as VfxPreset] : {}), [key]: value });
+    visual = vfxSettings({ ...visual, ...(key === 'preset' ? VFX_PRESETS[value as VfxPreset] : {}), ...(key === 'quality' ? { ultra: false } : {}), [key]: value });
     showVFX();
   });
   function stepShowcaseView(delta: number): void {

@@ -26,8 +26,10 @@ export type VfxRangeKey = keyof typeof VFX_RANGES;
 export type ShowcaseView = (typeof SHOWCASE_VIEWS)[number];
 export type VfxPreset = 'realistic' | 'cinematic' | 'extreme';
 export type VfxQuality = 'low' | 'medium' | 'high';
+/** Saved/selectable tier: Ultra renders as 'high' for scene density tables, plus the `ultra` flag for Ultra-only effects. */
+export type QualityTier = VfxQuality | 'ultra';
 export type VfxSettings = {
-  enabled: boolean; airflow: boolean; preset: VfxPreset; quality: VfxQuality;
+  enabled: boolean; airflow: boolean; preset: VfxPreset; quality: VfxQuality; ultra: boolean;
   aeroMode: 'drag' | 'downforce'; view: ShowcaseView; comfortable: boolean; haptics: boolean;
 } & Record<VfxRangeKey, number>;
 export const VFX_PRESETS: Record<VfxPreset, Partial<Record<VfxRangeKey, number>>> = {
@@ -42,9 +44,11 @@ export function vfxSettings(values: unknown = {}): VfxSettings {
     ? input.preset as VfxPreset : 'cinematic';
   const quality: VfxQuality = input.quality === 'low' || input.quality === 'medium' || input.quality === 'high'
     ? input.quality : 'high';
+  // Saved form is {quality:'high', ultra:true}; a raw 'ultra' choice from the settings control maps to the same.
+  const ultra = input.quality === 'ultra' || (input.quality === 'high' && input.ultra === true);
   const view: ShowcaseView = SHOWCASE_VIEWS.find(candidate => candidate === input.view) ?? 'drive';
   const base = {
-    enabled: input.enabled !== false, airflow: input.airflow === true, preset, quality,
+    enabled: input.enabled !== false, airflow: input.airflow === true, preset, quality, ultra,
     aeroMode: input.aeroMode === 'downforce' ? 'downforce' as const : 'drag' as const,
     view, comfortable: input.comfortable === true, haptics: input.haptics === true,
   };
