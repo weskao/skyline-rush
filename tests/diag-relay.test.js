@@ -74,7 +74,10 @@ test('console errors and warnings are relayed and still printed', () => {
 test('user agents summarize into device class, OS version and browser version', () => {
   const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1';
   assert.deepEqual(summarizeUserAgent(iphone, 5), { device: 'iPhone', os: 'iOS 18.1', browser: 'Safari 18.1' });
-  const crios = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0.6723.90 Mobile/15E148 Safari/604.1';
+  // Safari 26 freezes the UA's OS at 18.x; its own version tracks the real iOS (seen on a real iPhone, 2026-11-09).
+  const safari26 = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1';
+  assert.deepEqual(summarizeUserAgent(safari26, 5), { device: 'iPhone', os: 'iOS 26.3 (UA says 18.7)', browser: 'Safari 26.3' });
+  const crios ='Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0.6723.90 Mobile/15E148 Safari/604.1';
   assert.deepEqual(summarizeUserAgent(crios, 5), { device: 'iPhone', os: 'iOS 17.4', browser: 'Chrome 130.0.6723.90' });
   const ipadDesktopMode = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15';
   assert.equal(summarizeUserAgent(ipadDesktopMode, 5).device, 'iPad');

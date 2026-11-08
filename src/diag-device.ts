@@ -17,7 +17,9 @@ export function summarizeUserAgent(ua: string, touchPoints: number): { device: s
     : mac && touchPoints > 1 ? ['iPad', 'iPadOS (desktop UA)']
     : ['desktop', mac ? 'macOS' : /Windows NT [\d.]+/.exec(ua)?.[0] ?? (/Linux|CrOS/.test(ua) ? 'Linux' : 'unknown')];
   const match = BROWSERS.map(([name, pattern]) => [name, pattern.exec(ua)?.[1]] as const).find(([, version]) => version);
-  return { device, os, browser: match ? `${match[0]} ${match[1]}` : ios ? 'WebKit in-app' : 'unknown' };
+  // Safari 26+ freezes the UA's iOS at 18.x; its own version tracks the real iOS, so report that and keep the UA value.
+  const frozen = ios && match?.[0] === 'Safari' && parseInt(match[1] ?? '', 10) > parseInt(ios[2], 10);
+  return { device, os: frozen ? `iOS ${match[1]} (UA says ${os.slice(4)})` : os, browser:match ? `${match[0]} ${match[1]}` : ios ? 'WebKit in-app' : 'unknown' };
 }
 
 interface NavigatorHints { deviceMemory?: number; standalone?: boolean; connection?: { effectiveType?: string; saveData?: boolean };
