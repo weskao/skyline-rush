@@ -34,6 +34,9 @@ test(`${LABEL}: sustained Coast rain FPS on ${QUALITY}`, async ({ gameplayPage: 
   await page.evaluate(() => {
     const race = window.gameplay.race;
     race.mode = 'free'; race.session = { ...race.session, presentation: { visualPreset: 'rain' } }; // no finish line
+    // Past the course end the scenery thins out (draw calls fell from ~530 to ~220 after two minutes): wrap the car
+    // back so every minute loads the full Coast scene.
+    setInterval(() => { const car = window.gameplay.race.player; if (car.distance > 0.85 * window.gameplay.race.length) car.distance = 300; }, 500);
   });
   await page.keyboard.down('KeyW');
   const start = Date.now();
