@@ -25,6 +25,7 @@ const measureAudio = () => {
   // A fresh tap hears only the cues that start after the reset, not ones already ringing.
   window.cueReset = () => { cues = null; };
   window.cueLevel = () => (cues?.level() ?? 0) * (master?.gain.value ?? 0);
+  window.cueWindowMs = () => 32768 / (master?.context.sampleRate ?? 48000) * 1000; // what the cue tap still holds
   AudioNode.prototype.connect = function(destination, ...args) {
     if (destination instanceof AudioDestinationNode) {
       const mix = meter(this.context, 2048);
@@ -47,6 +48,9 @@ for (const [name, viewport, hasTouch] of [
 ]) test.describe(`ring collect sounds ${name}`, () => {
   test.use({ viewport, hasTouch });
   test('every ring type is audible at about the pickup level and a 6-ring train stays under the limiter', async ({ gameplayPage: page }) => {
+    // 30 timed solo rounds of real audio: passing CI runs took 55-90 s of the 135 s default, and ~110 s with 300 ms
+    // frames, so the budget left no room for a slower runner (.claude/rules/browser-test-stability.md).
+    test.setTimeout(ciTimeout(75000));
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(measureAudio);
@@ -57,32 +61,40 @@ for (const [name, viewport, hasTouch] of [
     const result = await page.evaluate(async () => {
       const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
       const median = values => values.length ? [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] : null;
+      const frame = () => new Promise(requestAnimationFrame); // resolves after the game's own frame (registered first)
       const race = () => window.gameplay.race;
-      const rings = race().rings.filter(ring => !ring.row).slice(0, 6);
       await wait(1000); // let the GO cue fade out of the cue buffer
       const beds = [];
       for (let i = 0; i < 12; i++) { beds.push(window.audioLevel?.() ?? 0); await wait(50); }
       const bed = median(beds);
-      // One read 250 ms after the cue covers its every note (the latest ends 220 ms in). A read that a stall pushed
-      // past 600 ms may have lost the cue from the buffer, so that round is dropped rather than judged.
+      // One read 250 ms after the cue covers its every note (the latest ends 220 ms in). The cue sounds on the next game
+      // frame, which a CPU-only runner can start 300 ms later, so the clock starts after that frame. A read that a stall
+      // pushed past the tap's buffer (~680 ms at 48 kHz) may have lost the cue, so that round is dropped, not judged.
       const solo = async make => {
         await wait(300);
         window.cueReset();
+        make(); await frame();
         const start = performance.now();
-        make(); await wait(250);
+        await wait(250);
         const peak = window.cueLevel?.() ?? 0;
-        return performance.now() - start < 600 ? peak : null;
+        return performance.now() - start < window.cueWindowMs() - 20 ? peak : null;
       };
       // The live race can add its own cue (a rival's pickup, a near miss) to a window, or a loaded runner can drop
       // one: the median of five rounds is the chime alone.
       const types = ['pickup', 'charge', 'nitro', 'slipstream', 'risk', 'mystery'];
       const rounds = Object.fromEntries(types.map(type => [type, []]));
       for (let round = 0; round < 5; round++) for (const type of types) {
-        const item = type === 'pickup' ? race().pickups.find(pickup => !pickup.taken) : race().rings.find(ring => ring.type === type && !ring.hit && !rings.includes(ring));
+        const item = type === 'pickup' ? race().pickups.find(pickup => !pickup.taken) : race().rings.find(ring => ring.type === type && !ring.hit);
         const peak = item ? await solo(() => { item[type === 'pickup' ? 'taken' : 'hit'] = true; }) : null;
         if (peak !== null) rounds[type].push(peak);
       }
       const level = Object.fromEntries(types.map(type => [type, median(rounds[type])]));
+      // The train runs ahead of every car. The first rings lie behind the field by now (the player has driven on), where
+      // a rival steps first and takes the ring (src/game.js) or a car in the pack knocks the player off it (CI
+      // 42489399352). GHOST (game seconds) lets the player pass through traffic.
+      const lead = Math.max(...[race().player, ...race().rivals].map(car => car.distance));
+      const rings = race().rings.filter(ring => !ring.row && !ring.hit && ring.distance > lead + 300).slice(0, 6);
+      race().player.effects.ghost = 30;
       await wait(300);
       window.cueReset();
       const peaks = [];
@@ -91,17 +103,19 @@ for (const [name, viewport, hasTouch] of [
       const missed = [];
       for (const ring of rings) {
         Object.assign(race().player, { distance: ring.distance - 0.2, x: ring.x, altitude: ring.altitude, speed: 50 });
-        ring.downUntil = 0; // a rival may have just taken it (gone 2.5 s of game time, which a slow runner stretches)
-        for (let i = 0; i < 200 && !ring.hit; i++) await wait(10);
+        // One game step decides it: the car collects the ring or passes it. Wait per frame, bounded by race time, never
+        // by a count of wall-clock sleeps: a CPU-only runner stretches each sleep to a ~300 ms frame.
+        const until = race().elapsed + 1;
+        while (!ring.hit && race().player.distance <= ring.distance && race().elapsed < until) await frame();
         if (ring.hit) taken++;
         else missed.push({ ring: { distance: ring.distance, x: ring.x, altitude: ring.altitude }, player: (({ distance, x, altitude, speed }) => ({ distance, x, altitude, speed }))(race().player) });
         await wait(250);
       }
       await wait(500);
       clearInterval(sample);
-      return { bed, level, train: Math.max(...peaks), taken, missed };
+      return { bed, level, train: Math.max(...peaks), taken, missed, size: rings.length };
     });
-    expect(result.taken, JSON.stringify(result.missed)).toBe(6);
+    expect(result.taken, JSON.stringify({ size: result.size, missed: result.missed })).toBe(6);
     const { pickup, ...single } = result.level;
     expect(pickup, 'every pickup round was cut short by a stall').not.toBeNull();
     for (const [type, peak] of Object.entries(single)) {

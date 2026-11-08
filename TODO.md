@@ -1,3 +1,26 @@
+## 2026-11-09 — ring-sfx timeout on CPU-only runners (`fix/ci-recurring-flakes`, based on `develop` `281d21b1`)
+
+Acceptance: CI run 42489399352's `page.evaluate: Test timeout of 135000ms exceeded` (4 of 4 attempts) cannot recur;
+a near-timeout test is visible on green runs.
+
+- [x] Root cause: the 6-ring train used the course's first rings (≈200–700 m), but by then the player had driven
+  ≈1 km, so the test teleported it back into the pack. Rivals step before the player and take the ring
+  (`src/game.js` rivals then rings), traffic contact knocks the car off it (the CI screenshot shows "STABILIZING ·
+  174 KM/H LOST" at 1.41 km = last ring + ≈10 s of driving). A miss then ran `200 × wait(10)`, which a CPU-only
+  runner stretches to 200 frames ≈ 60 s. 281d21b1's `ring.downUntil = 0` covered rival takes only.
+- [x] Second cause: clean passing CI runs took 55–90 s of the 135 s default (> half the budget), and `solo()` timed
+  its 250 ms read from `make()` though the cue sounds on the next game frame.
+- [x] RED: a 300 ms-per-frame stall shim (game/wall ratio 0.16, as CI's 21 s of race at timeout) plus a car parked at
+  each teleport: HEAD spec 4/4 `page.evaluate: Test timeout of 135000ms exceeded`; at normal speed 2/2 missed rings.
+  GREEN: train ahead of every rival with GHOST, per-frame wait bounded by `race.elapsed`, solo clock from the cue frame
+  with the tap-buffer cut-off, `test.setTimeout(ciTimeout(75000))`: model 4/4 (1.8–2.0 min), `CI=1 --repeat-each=3
+  --retries=0` 6/6 (23–26 s).
+- [x] Guards: `tests/browser-timeouts.test.js` fails on a counted wall-clock sleep loop (RED on the old line 95) and pins
+  `tests/helpers/budget-reporter.js` (CI warning + job summary for tests over half their budget).
+- [x] Cloud-save avatar (run 42494040937): already fixed by 85e020eb. Audited other DOM injections (`home-shortcuts`,
+  `start-button-label`, `responsive` canvas size): their writers run only at startup or on user input, no guard needed.
+- [ ] Exact-HEAD branch CI (`[full-regression]`).
+
 ## 2026-11-08 — Superseded develop runs no longer paint `quality-gate` red (`fix/ci-quality-gate-cancelled`)
 
 Acceptance: a run cancelled by a newer push (`cancel-in-progress`) reports `quality-gate` as cancelled, not failed;
