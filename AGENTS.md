@@ -69,6 +69,16 @@ Read applicable `CLAUDE.md`, `.claude/CLAUDE.md`, and `.claude/rules/*.md` instr
 At conversation startup, also read `$HOME/.claude/CLAUDE.md` and applicable rules under
 `$HOME/.claude/rules/`. Treat these as supplementary guidance, subject to instruction priority.
 
+## Required pre-push file diagnostics (all coding agents)
+
+For source changes, run `node --test tests/module-size.test.js` before committing or pushing.
+The local `.githooks/pre-push` enforces it, even when `SKIP_LAYOUT_GATE=1`; API/connector
+pushes bypass Git hooks and still require explicit available checks and exact-HEAD CI review.
+On failure name each affected source path, current/allowed/excess lines, the failed test,
+`.claude/rules/module-size.md` and a reproducible repair command. Do not weaken tests,
+raise ceilings or compress unrelated statements to hide violations. Keep existing layout
+pre-push checks intact. Do not claim unexecuted checks passed.
+
 ## Required quality workflow
 
 For any implementation, follow `docs/regression-first-workflow.md` and its
