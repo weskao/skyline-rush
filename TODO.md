@@ -1,3 +1,16 @@
+## 2026-11-08 — Superseded develop runs no longer paint `quality-gate` red (`fix/ci-quality-gate-cancelled`)
+
+Acceptance: a run cancelled by a newer push (`cancel-in-progress`) reports `quality-gate` as cancelled, not failed;
+a failed, skipped or individually cancelled suite in a live run still fails the gate.
+
+- [x] Root cause: run 42478613906 (develop `8ccb7d6d`) was cancelled by the `fcf89962` push; browser shards 9/11/13
+  cancelled, every completed suite passed. `quality-gate` used `always()`, so it ran and failed on the cancelled shards.
+- [x] Fix: `!cancelled()` replaces `always()`. Same run shows a `!cancelled()` job (`deploy`) concluding `cancelled`,
+  which never satisfies the `main requires quality-gate` ruleset; a cancelled-but-unsuperseded run stays unmerged.
+- [x] RED → GREEN `tests/ci-quality-gate.test.js`: fails on the `always()` workflow, passes on the fix.
+- [x] `npm test` 2305 pass / 0 fail / 3 skipped; `npm run build` and `tests/module-size.test.js` pass.
+- [ ] Exact-HEAD develop full CI after the merge.
+
 ## 2026-11-08 — Repair develop CI run 42452541249
 
 Acceptance: CourseGraph selection/racing/finish render without legacy World Tour errors; tutorial cues and
