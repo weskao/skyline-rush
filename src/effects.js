@@ -174,7 +174,7 @@ export function createEffects(scene, roadCenter) {
           if (collected || item.downUntil > race.elapsed || item.distance <= distance || item.distance > distance + 900) continue; // gone until it respawns
           const mesh = marker;
           if (options.worldPoint) mesh.position.fromArray(options.worldPoint(item.distance, item.x,
-            item.altitude + (source === 0 ? 0.85 : 0), distance));
+            item.altitude + (source === 0 ? 0.85 : 0), distance, item));
           else mesh.position.set(roadCenter(item.distance) + item.x - center,
             item.altitude + (source === 0 ? 0.85 : 0), -(item.distance - distance));
           if (source === 1 && options.worldFrame) {
@@ -182,7 +182,7 @@ export function createEffects(scene, roadCenter) {
             // (a new race brings new gate objects; the WeakMap lets old ones go).
             let facing = gateFrames.get(item);
             if (!facing || item.spin) { // a spinning hoop re-bases before its swivel
-              const frame = options.worldFrame(item.distance);
+              const frame = options.worldFrame(item.distance, item);
               if (!facing) gateFrames.set(item, facing = new THREE.Quaternion());
               facing.setFromRotationMatrix(gateBasis.makeBasis(gateRight.fromArray(frame.right), gateUp.fromArray(frame.up), gateBack.fromArray(frame.forward).negate()));
             }

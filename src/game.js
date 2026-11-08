@@ -3,7 +3,7 @@ import { earnsAirChain } from './air-chain.ts';
 import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 export { RING_RADIUS, RISK_RING_RADIUS, ITEMS_PER_CAR, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
-import { attachCourse, stepCoursePlayer, stepCourseCars, carGap, progressGap, courseFinished, courseGapWarning } from './course-race-step.ts'; import { finishRace } from './race-finish.js';
+import { attachCourse, stepCoursePlayer, stepCourseCars, carGap, progressGap, courseFinished, courseGapWarning, recycleCourseTraffic } from './course-race-step.ts'; import { finishRace } from './race-finish.js';
 import { hitProp, clearOf, avoidObstacles, knock, aiRetention, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
 import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
@@ -22,7 +22,7 @@ import { createRaceSessionContract } from './race-session.ts';
 import { SKY_JUMPS, skyGapAt, skyFrame } from './sky-track.ts'; import { dropCar, stepDeck, stepRivalDeck, stepSpan, SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE } from './road-falls.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
-import { RACE_TRACKS, raceTrack, assertTrackMode } from './race-tracks.ts';
+import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
 import { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN } from './drive-rules.ts';
@@ -151,7 +151,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
   assertTrackMode(trackId, config.mode);
   const session = createRaceSessionContract(trackId, track.seed, config, presentation), risk = riskRules(config), themed = themedExtras(trackId, config, risk);
   const density = track.trafficDensity * (dailyModifier === 'double-traffic' ? 2 : 1) * (config.mode !== 'classic' ? trafficMultiplier(config.traffic) : 1);
-  const seed = layoutSeed(track), count = ITEMS_PER_CAR * (driverIds.length + 1), perLap = (items, kind) => config.mode === 'circuit' ? lapItems(items, config.laps, kind) : items;
+  const seed = layoutSeed(track), count = Math.round(ITEMS_PER_CAR * (driverIds.length + 1) * itemScale(track)), perLap = (items, kind) => config.mode === 'circuit' ? lapItems(items, config.laps, kind) : items;
   const course = mixedCourse(trackId, track, LANES, config), hoopsAt = [...(course?.hoops ?? []), ...(themed?.hoops ?? [])].map(hoop => hoop.distance), rings = decorateBonusGates(ringsForItemRule(withHoops(withHoops(perLap(createRings(track, risk.rings, count, seed, hoopsAt), 'ring'), course), themed), config.itemRules), config);
   if (dailyModifier === 'gold-rings') for (const ring of rings) Object.assign(ring, { type: 'nitro', radius: RING_RADIUS });
   const race = {
@@ -420,7 +420,7 @@ export function stepRace(race, input, dt) {
     avoidObstacles(race, traffic, traffic.speed, dt);
     aiImpacts(race, traffic, before, traffic.speed);
     // Recycle distant traffic so the same small scene stays populated for the full sprint.
-    if (!race.endless && traffic.distance < car.distance - 60) traffic.distance += 1400;
+    if (!race.endless && (race.course ? recycleCourseTraffic(race, traffic) : traffic.distance < car.distance - 60)) traffic.distance += 1400;
   }
   race.rivals.forEach((rival, i) => {
     const period = RIVAL_HOP_PERIOD[rival.name] ?? 13;

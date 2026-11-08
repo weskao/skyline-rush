@@ -1,3 +1,47 @@
+## 2026-11-09 — 新地圖光圈／道具依長度配置、Classic 路上車流（epic，based on `51137db4`）
+
+- [x] 密度：`itemScale(track) = length / 經典平均長度`（僅 course topology）；10 張經典賽道數量不變（`tests/course-item-density.test.js` 鎖定）。
+- [x] Dune／Skyfall graph runtime：光圈／道具改以 `(edgeId, localS)` 放置（`src/course-items.ts`），每條支線有 reward line，對手會搶道具；車流為不計名次的 course car，僅跑地面路線。
+- [x] Classic 車流：Dune 0.9、Skyfall 0.75、Frostbite 0.6→0.65（經典範圍 0.65–1.5）。legacy replay 僅 frostbite-canyon|classic 3 個 key 變動。
+- [x] UI：`world.js` 的 `worldPoint` 對沒有 item 的粒子／爆點／磁吸圈回退至原 1D 路徑（修正每幀 `reading 'edgeId'` 例外，曾使 Dune／Skyfall 無法暫停、道具不顯示）。
+- [x] 驗證：`npm run typecheck` 0；`npm test` 僅 15 個既有失敗（Monsoon／Stormline／Volcanic 未註冊，staged WIP）；`tests/course-items-browser.spec.js` 桌機＋手機 6/6、相關 course/shader-warmup browser 14/14；真 WebGL 截圖確認光圈與車流顯示。
+- [x] CI 時序壓測 `CI=1 --repeat-each=8 --workers=4 --retries=0`：48/48 passed
+- [ ] 未做：graph 賽道 catch-up 道具與 rival seek 仍關閉（shortcut 註解）；粒子特效仍用 1D 座標；未 bump layoutVersion；Monsoon／Stormline／Volcanic 尚未註冊；exact-HEAD FULL CI 未跑。
+
+## 2026-11-08 — Develop 同步及沙暴裂谷／浮空群島首頁四車可讀性（epic）
+
+- [x] 在開始新的實作前將 `develop` `b6f30406` 非破壞性合入 epic：merge `8737ea35`，保留共同修改的 `TODO.md` 雙方新增紀錄；只推送 epic，未修改 develop/main。
+- [x] 新增桌機／手機 50° FOV、四車可見範圍回歸測試 `tests/showcase-vehicle-readability.test.js`（`b960ce7b`），修改共用展示車距及直向排列（`00ffe5b6`）。
+- [x] 新增兩張地圖的前景霧沙、額外光照、雲層遮擋回歸測試 `tests/showcase-weather-readability.test.js`（`d6c58bbe`），改善 Dune 沙暴與 Skyfall 浮空雲海近景對比（`b1a5e8fd`），保留地標、50° FOV、既有車輛模型及場景風格。
+- [ ] RED 實際執行輸出：目前環境無完整可執行 repository 且外網 git checkout 失敗；測試已先行編寫，但不得宣稱觀察到 RED。
+- [ ] `node --test tests/showcase-vehicle-readability.test.js tests/showcase-weather-readability.test.js`、`npm test`、`npm run typecheck`、`npm run build`：NOT VERIFIED。
+- [ ] 完整 browser、`make verify`，沙暴裂谷／浮空群島真 WebGL 桌機＋手機、AIRFLOW 兩態與六視角目視可讀性：NOT VERIFIED。
+- [ ] 所有剩餘賽道實作完成後，再進行 exact-HEAD `[full-regression]` CI 驗證及失敗修復；舊 SHA 的 PASS 不能替代新 HEAD。
+
+## 2026-11-08 — 六賽道接續：develop 同步、Volcanic／Monsoon 修正、Lifecycle 合入（epic）
+
+依使用者指示不等待 CI、本 session 不跑任何 browser 測試（Playwright、`test:browser`、`make verify`、WebGL 截圖）。
+
+- `develop` `27f2074f` 合入 epic：`a8fb3b58`（TODO.md 衝突兩邊保留）。
+- 上一輪 epic CI `42393948536`（`b76a4018`）**FAIL**，根因與修正：
+  - `module-size`：`src/world.js` 1127 > 1126 → 合入 Volcanic 分支最新提交（`f09329cb` 抽出 `sign-text.ts`），merge `2e68dc1b`，world.js 1120 行。
+  - `record-layout` Firestore best ids 缺 `volcanic-crown@t1l1`（`fdfbb10a`，隨 `2e68dc1b` 合入）與 `monsoon-ruins@t1l1`（`dddafa89`；`d194d2e3` 的展開寫法尚可容納約 10 個 id）。
+  - `coming-soon-release` playable 清單加入 Monsoon；「仍為 preview 不可進入」的斷言改用 `skyfall-archipelago`（`dddafa89`）。
+  - `interactive-tutorial` NITRO re-arm：develop 把 `CLEARED_SECONDS` 0.8 → 1.4 s，epic 測試寫死等 1 s；改為等 `CLEARED_SECONDS`（`dddafa89`；乾淨 develop 上 18/18 PASS 作為對照）。
+  - `monsoon-ruins-race-browser`：spec 找 `'Monsoon Crown race'`（從 Volcanic 複製的錯字），實際群組是 `'Monsoon Ruins race'` → `chunks` undefined。已修正；Node 內建場景驗證 56 個 children（> 20）。browser 實跑 **NOT VERIFIED**。
+- [x] epic `dddafa89`：`npm test` 2181 pass / 0 fail，`npm run typecheck` PASS，`npm run build` PASS（production bundle 檢查通過）。
+- Step 2.5 Lifecycle：`feature/track-lifecycle-sop` 合入最新 epic（`ba242448`，`coming-soon-release` 衝突兩邊斷言都保留），修 `browser-timeouts` 守門（`coming-soon-views-browser.spec.js` 改用 `ciTimeout`，`1256ef88`）；`npm test` 2197 pass 外加修正後守門 10/10，typecheck、build PASS；`node scripts/check-track-lifecycle.mjs` 全 PASS（Stormline／Volcanic／Monsoon／Frostbite = playable，Dune／Skyfall = preview）。合入 epic `e744da5f`（tree 與 lifecycle 分支相同）。
+- 意外：epic push 時 repo pre-push hook 自動跑了 `npm run test:layout`（42 passed）；之後 push 一律 `SKIP_LAYOUT_GATE=1`。
+- **NOT VERIFIED**：所有 browser specs（含 Volcanic／Monsoon START→FINISH、Coming Soon views）、`make verify`、真 WebGL 截圖、exact-HEAD full CI（未等待）、真機效能、`firestore.rules` 部署與 `npm run test:cloud` Playwright 部分、人工視覺簽核。
+- Step 3 Dune／Skyfall 在 `feature/course-graph-runtime` 進行中。
+- 首頁展示清晰度（使用者回報：沙暴裂谷、浮空群島展示畫面看不清車子）：`feature/six-course-preview-clarity` `1f689418` 合入 epic。
+  根因（依場景程式分析，非霧）：Dune 道路在車位處彎離，rival 2/3 陷入沙丘或路肩；道路 #e1ac69 與沙、天空同色，地圖燈光疊加 showcase 燈光過曝；
+  Skyfall 道路 #b8c8bd 近白，Pearl 車身亮度只有路面 1.47×。修正：Dune 前 46 m 直線、道路改深赭 #a8703f、地圖燈 2.0/2.35 → 1.6/1.95；
+  Skyfall 道路改砂岩灰 #7d7b6e；地標、天空、雲海、光環不變。
+  - [x] RED → GREEN `tests/upcoming-preview-clarity.test.js`（六張地圖 Pearl ≥ 3× 路面亮度、路面 ≤ 0.4；Dune／Skyfall 兩種 AIRFLOW 與直橫向車輛貼路且視線無遮擋）。
+  - [x] epic 合併後 `npm test` 2200 pass / 0 fail，typecheck、build PASS。
+  - [ ] 真 WebGL 截圖與人工目視 **NOT VERIFIED**（本 session 禁跑 browser；僅有 CPU ray-cast 近似圖）。
+
 ## 2026-11-08 — Superseded develop runs no longer paint `quality-gate` red (`fix/ci-quality-gate-cancelled`)
 
 Acceptance: a run cancelled by a newer push (`cancel-in-progress`) reports `quality-gate` as cancelled, not failed;

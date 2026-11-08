@@ -57,6 +57,12 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
   cosmic: {"name":"Cosmic Orbit","length":8000,"trafficDensity":0.65,"seed":1010,"layoutVersion":3,"sections":[{"from":1400,"to":1900,"type":"crosswind","dir":1},{"from":3000,"to":3500,"type":"shortcut","x":-7.5,"altitude":6},{"from":5100,"to":5600,"type":"crosswind","dir":-1},{"from":6100,"to":6540,"type":"boost-tunnel"}]},
 };
 
+// User, 2026-11-09: a new course (any `topology`) keeps the classic per-km ring/pickup density: its per-car item count
+// scales by length / the mean classic length. The ten classic tracks stay at 1 (their layouts are pinned).
+const CLASSIC_MEAN_LENGTH = Object.values(RACE_TRACKS).reduce((sum, track) => sum + track.length, 0) / Object.keys(RACE_TRACKS).length;
+export const itemScale = (track: TrackConfig): number =>
+  track.topology === 'course-graph' || track.topology === 'course-graph-runtime' ? track.length / CLASSIC_MEAN_LENGTH : 1;
+
 // The separate lookup never changes Daily/Career/Cup's ordered sprint catalog.
 // Frostbite Canyon is a gated CourseGraph sprint: raceable by id, never in the catalog, Daily, Cup or saves.
 /** CourseGraph sprints outside the catalog whose results persist under a topology-keyed id (`record-layout.ts`). */
