@@ -31,6 +31,18 @@ commit. Procedural substitutes are a fallback (Low tier, load failure), never th
 - [x] RED tests for UV continuity across moving road ribbon/chunks, correct tangent-space orientation, road widths, world-frame transforms, track switch and collision/vehicle-road clearance parity. *Evidence: `road-ribbon-uv.test.js` (8c6652c5), `coast-scenery-glb.test.js`, `coast-lighting.test.js` (track switch).*
 - [x] Add UV0 and safe road PBR texture assignment with per-quality resources; static terrain props may use an authored GLB with existing deterministic 120 m chunk placement/InstancedMesh. *Evidence: 8c6652c5, 905322ea, f518da7e.*
 - [x] Validate asset stream eviction and no duplicate draw calls; preserve Low visuals and proper renderer ownership. *Evidence: `coast-scenery-glb.test.js` "driving evicts chunks without leaks, duplicate draws…"; Low specs in `coast-scenery-browser.spec.js`.*
+- [ ] **Full-scene upgrade (owner, 2026-11-09).** The owner judged Coast **not yet at their standard**: every element of
+  the map needs the realistic treatment, not only the road and close scenery. "Distant objects stay procedural" above
+  no longer holds for the shipped Medium+ look. Each item below follows the owner decisions at the top (realistic
+  first, licensed sources in the manifest, procedural only as Low/load-failure fallback) and the shared rules (no
+  change to the track frame, lanes, collisions or ports; deterministic chunks; budgets; no compile after GO):
+  - [ ] Skyline buildings: realistic 3D/PBR towers (facade materials, windows, night emissive) instead of the
+    procedural blocks.
+  - [ ] Sea: a realistic water surface (waves/normal detail, sky and sun reflection, shoreline/foam) in day, rain
+    and sunset.
+  - [ ] Sky: HDRI or sky dome matched to each Coast preset (day, rain, sunset), consistent with the lighting HDRIs.
+  - [ ] Distant terrain and remaining procedural props: realistic far hills/coastline, matching the close scans.
+  - [ ] The concept-board parity review and owner sign-off below wait for these items.
 - [ ] Full verification and exact-HEAD CI, no silent map topology changes.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
