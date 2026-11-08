@@ -19,11 +19,11 @@ import { recordGhost, validGhost, GHOST_RATE } from '../src/ghost.ts';
 const groundLength = graph.groundRoute.reduce((sum, id) => sum + routeLength(graph, id), 0);
 const AIR = 'canyon-air-crossing';
 
-test('Dune track: measured ground-route length, no 1D lists, topology v1', () => {
+test('Dune track: measured ground-route length, classic traffic, topology v1', () => {
   assert.equal(DUNE_TEMPEST_ID, 'dune-tempest');
   assert.equal(DUNE_TEMPEST_TRACK.length, Math.floor(groundLength));
   assert.ok(DUNE_TEMPEST_TRACK.length > 13_000 && DUNE_TEMPEST_TRACK.length < 14_500);
-  assert.equal(DUNE_TEMPEST_TRACK.trafficDensity, 0);
+  assert.equal(DUNE_TEMPEST_TRACK.trafficDensity, 0.9); // classic range (user, 2026-11-09)
   assert.deepEqual(DUNE_TEMPEST_TRACK.sections, []);
   assert.equal(DUNE_TEMPEST_TRACK.topology, 'course-graph-runtime');
   assert.equal(DUNE_TEMPEST_TRACK.topologyVersion, graph.version);
@@ -95,8 +95,9 @@ const PATHS = [['winding-wadi', 'natural-arch-pass'], ['winding-wadi', 'dry-wash
 // Toward the flight edge it drops BOOST on canyon-approach (the tank refills on the ground) and, on the flight edge,
 // pulses FLY with a vertical-speed P-controller holding ~2.5 m until the gap ends, then glides onto the landing pad.
 const gapEnd = () => DUNE_TEMPEST_RACE.noRoad[AIR][0][1];
-function botRace(hz, [first, third], { second = 'canyon-switchbacks', pilot = true, trace = null } = {}) {
+function botRace(hz, [first, third], { second = 'canyon-switchbacks', pilot = true, trace = null, traffic = true } = {}) {
   const race = createRace(DUNE_TEMPEST_ID), dt = 1 / hz;
+  if (!traffic) { for (const car of race.traffic) race.course.cars.delete(car.id); race.traffic = []; }
   startRace(race);
   while (race.phase === 'countdown') stepRace(race, {}, dt);
   const you = courseOf(race).cars.get('YOU'), edges = [you.travel.currentEdgeId], checkpoints = [0];
@@ -114,12 +115,16 @@ function botRace(hz, [first, third], { second = 'canyon-switchbacks', pilot = tr
   return { race, edges, checkpoints };
 }
 
-test('createRace(dune-tempest) attaches the course runtime and no 1D-keyed lists', () => {
+// User, 2026-11-09: rings, pickups and traffic now ride the graph (course-item-density.test.js); hazards and sections
+// still come from the spec only.
+test('createRace(dune-tempest) attaches the course runtime with graph-keyed items and traffic', () => {
   const race = createRace(DUNE_TEMPEST_ID);
   assert.ok(race.course, 'race.course defined');
   assert.equal(race.course.spec, DUNE_TEMPEST_RACE);
-  assert.deepEqual([...race.course.cars.keys()], ['YOU', ...race.rivals.map(r => r.id)]);
-  for (const list of ['rings', 'pickups', 'traffic', 'hazards', 'sections']) assert.deepEqual(race[list], [], list);
+  assert.deepEqual([...race.course.cars.keys()], ['YOU', ...race.rivals.map(r => r.id), ...race.traffic.map(t => t.id)]);
+  assert.equal(race.traffic.length, Math.round(36 * DUNE_TEMPEST_TRACK.trafficDensity));
+  for (const list of ['rings', 'pickups']) assert.ok(race[list].length > 0 && race[list].every(item => item.edgeId), list);
+  for (const list of ['hazards', 'sections']) assert.deepEqual(race[list], [], list);
   assert.equal(race.length, DUNE_TEMPEST_TRACK.length);
 });
 
@@ -144,11 +149,13 @@ test('a throttle+BOOST bot finishes START → FINISH on all four ground-only pat
 });
 
 // Measured on the ground route: 139.276 / 139.159 / 139.102 s at 30 / 60 / 120 Hz (spread 0.17 s; ≤ 0.17 s on all
-// four paths). The finish is interpolated at the gate; the spread is the engine's own per-Hz integration.
+// four paths). The finish is interpolated at the gate; the spread is the engine's own per-Hz integration. Traffic is
+// left out: car contacts are frame-discrete in the shared engine (2026-11-09: 1.1 s spread with traffic, 0.02 s without;
+// rings and pickups change nothing), so they would measure collisions, not the graph integration.
 const HZ_TOLERANCE = 0.5; // s
 test('the bot finish time agrees at 30, 60 and 120 Hz', () => {
   const times = [30, 60, 120].map(hz => {
-    const { race } = botRace(hz, PATHS[0]);
+    const { race } = botRace(hz, PATHS[0], { traffic: false });
     assert.equal(race.phase, 'finished', `${hz} Hz`);
     assert.equal(race.course.rejections, 0, `${hz} Hz`);
     return race.result.time;
@@ -269,6 +276,7 @@ test('a FLY-pulse bot crosses the gap, lands on the pad and finishes: all 8 path
 // recovery edge's start and the recovery slot (inside a naive prev→new sweep window).
 test('the recovery frame collects no gate, hazard or score sweep', () => {
   const race = raceAt(), probe = { id: 'probe', edgeId: SWITCHBACKS, localS: 2.5, lateral: 0, radius: 2, safePassSide: 'left', aiPreview: 120 };
+  race.traffic = []; // the hand-built runtime below seats only the eight racers
   const grid = [race.player, ...race.rivals].map((car, i) => ({ id: i ? car.id : 'YOU', distance: car.distance, x: car.x }));
   race.course = createCourseRuntime({ ...DUNE_TEMPEST_RACE, hazards: [...DUNE_TEMPEST_RACE.hazards, probe] }, grid);
   const split2 = 6000, you = race.course.cars.get('YOU');

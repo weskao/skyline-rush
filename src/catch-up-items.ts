@@ -47,6 +47,7 @@ interface CatchUpRace {
   player: { distance: number; x: number }; rivals: { distance: number }[];
   sections: { from: number; to: number }[]; rings: Item[]; pickups: Item[];
   catchUp?: { active: boolean; next: number; added: number; tries: number } | null; // plain data: races are structuredClone'd
+  course?: unknown;
 }
 
 const insertSorted = (items: Item[], item: Item) => {
@@ -56,7 +57,8 @@ const insertSorted = (items: Item[], item: Item) => {
 
 /** Runs once per race step: adds at most one catch-up ring when the player trails the leader. */
 export function spawnCatchUp(race: CatchUpRace): void {
-  if (race.catchUp === undefined) race.catchUp = race.rivals.length && ((race.mode === 'classic' && !race.modifier) || race.mode === 'cup')
+  // shortcut: none on a graph course (an item needs an edge on the player's path ahead); add when graph look-ahead placement lands
+  if (race.catchUp === undefined) race.catchUp = race.rivals.length && !race.course && ((race.mode === 'classic' && !race.modifier) || race.mode === 'cup')
     ? { active: false, next: 0, added: 0, tries: 0 } : null;
   const state = race.catchUp;
   if (!state) return;

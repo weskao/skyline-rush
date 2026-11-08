@@ -88,6 +88,6 @@ const sections: TrackSection[] = [
 /** The Rift corridor raced on the graph's ice bridge (`frostbiteFrame(d, true)`). */
 export const FROSTBITE_SPAN = sections.find(s => s.span)!;
 export const FROSTBITE_TRACK: TrackConfig & { topology: 'course-graph'; topologyVersion: 1 } = {
-  name: 'Frostbite Canyon', length: Math.floor(total), trafficDensity: 0.6, seed: 12012,
+  name: 'Frostbite Canyon', length: Math.floor(total), trafficDensity: 0.65, seed: 12012,
   layoutVersion: 1, openingNitroRings: 2, rivalPace: 1.04, rivalSpread: 0.045, topology: 'course-graph', topologyVersion: 1, sections,
 };

@@ -1,3 +1,13 @@
+## 2026-11-09 — 新地圖光圈／道具依長度配置、Classic 路上車流（epic，based on `51137db4`）
+
+- [x] 密度：`itemScale(track) = length / 經典平均長度`（僅 course topology）；10 張經典賽道數量不變（`tests/course-item-density.test.js` 鎖定）。
+- [x] Dune／Skyfall graph runtime：光圈／道具改以 `(edgeId, localS)` 放置（`src/course-items.ts`），每條支線有 reward line，對手會搶道具；車流為不計名次的 course car，僅跑地面路線。
+- [x] Classic 車流：Dune 0.9、Skyfall 0.75、Frostbite 0.6→0.65（經典範圍 0.65–1.5）。legacy replay 僅 frostbite-canyon|classic 3 個 key 變動。
+- [x] UI：`world.js` 的 `worldPoint` 對沒有 item 的粒子／爆點／磁吸圈回退至原 1D 路徑（修正每幀 `reading 'edgeId'` 例外，曾使 Dune／Skyfall 無法暫停、道具不顯示）。
+- [x] 驗證：`npm run typecheck` 0；`npm test` 僅 15 個既有失敗（Monsoon／Stormline／Volcanic 未註冊，staged WIP）；`tests/course-items-browser.spec.js` 桌機＋手機 6/6、相關 course/shader-warmup browser 14/14；真 WebGL 截圖確認光圈與車流顯示。
+- [x] CI 時序壓測 `CI=1 --repeat-each=8 --workers=4 --retries=0`：48/48 passed
+- [ ] 未做：graph 賽道 catch-up 道具與 rival seek 仍關閉（shortcut 註解）；粒子特效仍用 1D 座標；未 bump layoutVersion；Monsoon／Stormline／Volcanic 尚未註冊；exact-HEAD FULL CI 未跑。
+
 ## 2026-11-08 — Develop 同步及沙暴裂谷／浮空群島首頁四車可讀性（epic）
 
 - [x] 在開始新的實作前將 `develop` `b6f30406` 非破壞性合入 epic：merge `8737ea35`，保留共同修改的 `TODO.md` 雙方新增紀錄；只推送 epic，未修改 develop/main。

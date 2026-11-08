@@ -62,19 +62,24 @@ function checkpointsBefore(graph: CourseGraph, node: string): number {
   return index < 0 ? graph.checkpoints.length : index;
 }
 
+/** Road traffic shares the runtime (poses, gaps, collisions, recovery) but is never ranked. */
+export const TRAFFIC_PREFIX = 'traffic-';
+
+/** A car on the start edge at `slot.distance`; re-seat it elsewhere with `placeCourseCar`. */
+export function addCourseCar(rt: Pick<CourseRuntime, 'spec' | 'cars'>, slot: { id: string; distance: number; x: number }): void {
+  if (rt.cars.has(slot.id)) throw new Error(`Duplicate course car: ${slot.id}`);
+  const car: CourseCar = {
+    travel: { ...createCourseTravel(rt.spec.graph), localS: slot.distance, lateral: slot.x },
+    edgeStart: 0, last: { distance: slot.distance, x: slot.x, altitude: 0 }, finishFraction: null,
+    pose: { point: [0, 0, 0], forward: [0, 0, 0], right: [0, 0, 0], up: [0, 0, 0] },
+  };
+  writePose(rt.spec.graph, car);
+  rt.cars.set(slot.id, car);
+}
+
 export function createCourseRuntime(spec: CourseRaceSpec, grid: readonly { id: string; distance: number; x: number }[]): CourseRuntime {
-  const cars = new Map<string, CourseCar>();
-  for (const slot of grid) {
-    if (cars.has(slot.id)) throw new Error(`Duplicate course car: ${slot.id}`);
-    const car: CourseCar = {
-      travel: { ...createCourseTravel(spec.graph), localS: slot.distance, lateral: slot.x },
-      edgeStart: 0, last: { distance: slot.distance, x: slot.x, altitude: 0 }, finishFraction: null,
-      pose: { point: [0, 0, 0], forward: [0, 0, 0], right: [0, 0, 0], up: [0, 0, 0] },
-    };
-    writePose(spec.graph, car);
-    cars.set(slot.id, car);
-  }
-  const rt: CourseRuntime = { spec, cars, rejections: 0, standings: [] };
+  const rt: CourseRuntime = { spec, cars: new Map<string, CourseCar>(), rejections: 0, standings: [] };
+  for (const slot of grid) addCourseCar(rt, slot);
   rankCourseRuntime(rt, {});
   return rt;
 }
@@ -205,6 +210,7 @@ export function courseRemaining(rt: CourseRuntime, id: string): number {
 
 /** Graph standings (§7): checkpoints first, then physical metres to the next mandatory target. */
 export function rankCourseRuntime(rt: CourseRuntime, finishTimes: Readonly<Record<string, number>>): CourseStanding[] {
-  const fleet = [...rt.cars].map(([id, car]) => ({ id, travel: car.travel }));
+  const fleet: { id: string; travel: CourseTravel }[] = [];
+  for (const [id, car] of rt.cars) if (!id.startsWith(TRAFFIC_PREFIX)) fleet.push({ id, travel: car.travel });
   return (rt.standings = rankCourseFleet(rt.spec.graph, fleet, finishTimes));
 }
