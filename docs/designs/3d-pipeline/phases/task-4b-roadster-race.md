@@ -1,6 +1,6 @@
 # Task 4b — One hero Roadster GLB on Home showcase and in races
 
-Part of [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md](../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) · Spec Phase 2b · TODO Phase 3b · Scope tags: [README.md](README.md).
+Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) · Spec Phase 2b · TODO Phase 3b · Scope tags: [README.md](README.md).
 
 **Depends on:** Task 4 accepted (owner visual sign-off on it6 given 2026-11-07) and merged into `develop`. **Blocks:** Task 6 launch/cover captures (Spec Phase 5).
 **Files:** src/garage-model.ts and src/garage-model-rig.ts (reuse the loader and rig; no second loader), src/world.js (Home showcase and race player car share this scene), assets-src/roadster2/ (remaining procedural parts), public/models/roadster2/. src/car-model.js and src/roadster-fidelity.js stay the procedural fallback and must not change behaviour. New tests next to `tests/garage-model-rig.test.js`, `tests/garage-model-roadster-browser.spec.js` and the existing showcase specs.
@@ -38,6 +38,7 @@ Owner decisions (2026-11-07): add this phase; the Home showcase hero car (former
 - [x] Real WebGL screenshots of the GLB car on Home (AIRFLOW on/off) and in race (ground, BOOST, NITRO, FLY, landing), attached by the browser spec.
 - [x] ~~Owner visual sign-off on the Home and in-race screenshots~~: waived by the owner for Phase 2b on 2026-11-08 (no manual acceptance, no CI wait).
 - [ ] Owner-approved default-on: remove the `?model=roadster` gate in its own commit, with procedural fallback kept.
+  - **Deferred** by the owner (2026-11-08): Phase 2 merges into `develop` with the gate kept, so `develop` looks exactly as it did before the merge. The GLB car shows only with `?model=roadster`. Default-on needs a later owner decision.
 
 Known limitation: the in-race Home link (`#leave-home`) reloads `./` and drops `?model=roadster`; End race (`#leave-end`) keeps it. Moot once the gate is removed.
 
@@ -46,5 +47,5 @@ Known limitation: the in-race Home link (`#leave-home`) reloads `./` and drops `
   - Desktop 1440×900: Home p50 16.7 / p95 33.3 vs 33.4 ms; race p50 33.3 / p95 50.0 ms for both; race fps 29.5 procedural vs 28.7 GLB.
   - Phone viewport 412×915 @2×, GLB first: Home p50 16.7 / p95 33.4 ms for both; race p50 33.3 / p95 50.0 vs 50.1 ms; race fps 30.1 procedural vs 29.1 GLB. (With procedural run first, later rounds drifted for both variants; the reversed order removed the gap, so it was order/thermal bias.)
   - Verdict: p50/p95 unchanged at frame quantisation; the GLB costs about 1 fps (~3 %) of average race fps under 6× throttle. Recorded as a known trade-off for the default-on decision.
-- [ ] Real phone (waived for Phase 2b by the owner on 2026-11-08; revisit before default-on): frame-time p50/p95 and sustained-FPS note (`make phone-diag`), GLB vs procedural, Home showcase and the same race track and tier; commit only the device-class summary.
-- [ ] Real-phone screenshots of the GLB car on Home and in race (ground, NITRO, FLY).
+- [x] ~~Real phone~~ (owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified); not measured): frame-time p50/p95 and sustained-FPS note (`make phone-diag`), GLB vs procedural, Home showcase and the same race track and tier; commit only the device-class summary.
+- [x] ~~Real-phone screenshots of the GLB car on Home and in race (ground, NITRO, FLY)~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified). Not captured.

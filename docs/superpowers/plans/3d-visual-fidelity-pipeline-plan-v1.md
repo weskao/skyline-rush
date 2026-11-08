@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Each task uses checked boxes only after observed evidence.
 
-Date: 2026-11-04 · Status: PLANNED / NOT EXECUTED
+Date: 2026-11-04 · Status: **SUPERSEDED by [3d-visual-fidelity-pipeline-plan-v2.md](3d-visual-fidelity-pipeline-plan-v2.md) (2026-11-08)** — frozen; do not edit
 **Goal:** Establish a verified Mac AI/Blender-to-GLB pipeline, upgrade to Three.js r186.1 without gameplay regressions, then upgrade the vehicle, Garage and road/world visuals incrementally.
 **Architecture:** Keep Vue+TypeScript+WebGL and physics unchanged; independent asset authoring/loader layer with LOD, PBR, lifecycle control and procedural fallback; shared pipeline adopted after source integration.
 **Tech Stack:** Blender + Python + mcp-for-blender + blender-image-to-3d + Three.js 0.186.1 + GLTFLoader + glTF Transform + Meshopt/KTX2 + Vue 3 + Vite + Node tests + Playwright.
-**Spec:** ../specs/2026-11-04-3d-visual-fidelity-pipeline-design.md
+**Spec:** ../specs/3d-visual-fidelity-pipeline-design-v1.md
 **Preflight:** ../../designs/3d-pipeline/toolchain-environment-preflight.md
 **Standalone Phase 0 acceptance, device-specific reporting, and ready-to-copy AI prompt:** ../../designs/3d-pipeline/phase0-multi-device-acceptance.md
 **Version migration:** ../../designs/3d-pipeline/threejs-r180-r186-migration.md

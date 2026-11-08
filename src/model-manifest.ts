@@ -1,5 +1,5 @@
 // Phase 2 model manifest. Contract: docs/designs/3d-pipeline/phase2-model-contracts.md §1.
-export const FALLBACK_KEYS = ['procedural-car'] as const;
+export const FALLBACK_KEYS = ['procedural-car', 'procedural-scenery'] as const;
 export type FallbackKey = (typeof FALLBACK_KEYS)[number];
 export const DECODERS = ['meshopt', 'ktx2'] as const;
 export type Decoder = (typeof DECODERS)[number];
@@ -85,6 +85,42 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     fallback: 'procedural-car',
     decoders: ['meshopt', 'ktx2'],
     budgets: { triangles: 60_000, bytes: 1_500_000, textureMaxPx: 1024 },
+  },
+  // Task 5 Coast close scenery (Medium+; Low keeps the procedural scenery). Poly Haven CC0 scans decimated with baked
+  // normals, plus modelled palms and W-beam rail. Each node is a top-level piece at the origin, pivot at ground contact.
+  'coast-scenery': {
+    id: 'coast-scenery',
+    url: 'models/coast-scenery/coast-scenery.glb',
+    source: {
+      master: 'assets-src/coast-scenery/coast-scenery.blend',
+      script: 'assets-src/coast-scenery/build.py',
+      masterSha256: 'd0d1fc30a29ecdafaa44a7223be89bf50488218e0157f359b8f21a0c2f0f0168',
+      scriptSha256: '78911534d79b4664897bed9f7e6b667af3b068f24e1b7b73e51b8e96ffaab952',
+    },
+    glb: { sha256: 'edbababe79fc952b8c5043ff4b92bbdafc55ed7eaf7e299e6f590cddaf9aa930', bytes: 5_827_256 },
+    license: {
+      id: 'CC0-1.0',
+      creator: 'Poly Haven: Rob Tuytel, Rico Cilliers (coastal_cliff_01/02/04, coast_rocks_05, metal_plate_02), Charlotte Baglioni (palm_bark); palms and rail modelled by Skyline Rush project',
+      sourceUrl: 'https://polyhaven.com/a/coastal_cliff_04',
+    },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        'python3 -I scripts/assets/fetch_polyhaven.py fetch',
+        '$BLENDER_BIN --background --factory-startup --python assets-src/coast-scenery/build.py',
+        'node scripts/assets/export-glb.mjs coast-scenery',
+        'node scripts/assets/optimize-glb.mjs coast-scenery',
+        'node scripts/assets/check-glb.mjs coast-scenery --promote',
+      ],
+    },
+    nodes: ['sea_arch', 'sea_arch_front', 'sea_arch_back', 'cliff_a', 'cliff_b', 'rock_a', 'rock_b', 'palm_a', 'palm_b', 'guard_rail'],
+    materials: ['coast_arch', 'coast_cliff_a', 'coast_cliff_b', 'coast_rock', 'coast_palm_bark', 'coast_palm_frond', 'coast_rail_steel'],
+    lods: [],
+    fallback: 'procedural-scenery',
+    decoders: ['meshopt', 'ktx2'],
+    budgets: { triangles: 63_500, bytes: 6_000_000, textureMaxPx: 1024 },
   },
 };
 

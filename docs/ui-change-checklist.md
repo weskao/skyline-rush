@@ -53,6 +53,8 @@ tier (Low / Medium / High) and say so in the implementation summary.
 - Read the tier from the existing Quality setting (`src/vfx-settings.js`, `src/device-quality.js`);
   never add a second quality source or fork by device/OS. Changing tier at runtime must apply
   without a reload, following the cache-invalidation rules in `docs/rendering-performance.md`.
+- **Ultra** is a settings-level tier above High (`QualityTier`): scene consumers still receive
+  `quality: 'high'` plus `ultra: true` from `vfxSettings()`; it is never auto-selected by device detection.
 
 ## Touch and post-race clickability
 

@@ -1,6 +1,6 @@
 # Skyline Rush — AI-assisted 3D Visual Fidelity Pipeline (Design)
 
-Date: 2026-11-04 · Status: design only · Branch: feature/3d-visual-fidelity-pipeline
+Date: 2026-11-04 · Status: **SUPERSEDED by [3d-visual-fidelity-pipeline-design-v2.md](3d-visual-fidelity-pipeline-design-v2.md) (2026-11-08)** — frozen; do not edit · Branch: feature/3d-visual-fidelity-pipeline
 
 ## 1. Goal and boundaries
 
@@ -109,7 +109,7 @@ Related owner references:
 The external share endpoints could not be opened in this environment (cache miss). This design reflects the owner's instructions and accessible repository code; a local agent with authorized access should explicitly compare all three shared transcripts, append any newly discovered acceptance requirements, and keep a traceability note before implementation.
 
 ## 10. Related documents
-- ../plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md
+- ../plans/3d-visual-fidelity-pipeline-plan-v1.md
 - ../../designs/3d-pipeline/toolchain-environment-preflight.md
 - ../../designs/3d-pipeline/threejs-r180-r186-migration.md
 - ../../designs/3d-pipeline/phases/README.md (per-task files, by-project vs by-device scope)

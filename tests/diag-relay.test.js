@@ -8,6 +8,21 @@ import { batchToJsonl, isTrustedPeer } from '../scripts/diag-relay-plugin.mjs';
 
 const fakeStorage = () => { const map = new Map(); return { getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value) }; };
 
+test('the beat carries extra context (quality tier, perf stats) to the relay; the panel text stays as before', () => {
+  const emitted = [];
+  const doc = { addEventListener() {}, visibilityState: 'visible', activeElement: { tagName: 'BODY', className: '' }, elementFromPoint: () => null };
+  let tick;
+  const win = { addEventListener() {}, requestAnimationFrame: () => 1, setInterval: fn => { tick = fn; }, document: doc };
+  const perf = { p50: 16.7, p95: 22.1, fps: 58, seconds: 20, drawCalls: 120, triangles: 90000 };
+  const element = { hidden: true, textContent: '', style: {} };
+  showCrashLog(element, fakeStorage(), { win, context: () => ({ phase: 'racing', track: 'coast', mode: 'classic', quality: 'high', perf }), emit: entry => emitted.push(entry) });
+  tick();
+  const beat = emitted.find(entry => entry.kind === 'beat');
+  assert.equal(beat.quality, 'high');
+  assert.deepEqual(beat.perf, perf);
+  assert.match(element.textContent, /diag \d\d:\d\d:\d\d frames=0 racing coast classic vis=visible active=body$/);
+});
+
 test('crash, lifecycle, input and beat entries reach the relay emitter', () => {
   const emitted = [], listeners = {};
   const doc = { addEventListener: (type, fn) => { listeners[type] = fn; }, visibilityState: 'visible', activeElement: { tagName: 'BODY', className: '' }, elementFromPoint: () => null };

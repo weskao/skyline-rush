@@ -88,8 +88,8 @@ without explicit user approval.
 ## AI-assisted 3D asset / Three.js upgrade (planned; not deployed)
 
 For any Blender, GLB/PBR, 3D asset, rendering-quality or Three.js r180 → r186 work:
-first read `docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md`
-and `docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md`.
+first read `docs/superpowers/specs/3d-visual-fidelity-pipeline-design-v2.md`
+and `docs/superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md`.
 For repeatable checks across Mac mini, MacBook Pro or other devices, use the self-contained
 `docs/designs/3d-pipeline/phase0-multi-device-acceptance.md` (E01–E15, device alias,
 actual live MCP evidence and per-device reports). Never reuse another device's PASS.
