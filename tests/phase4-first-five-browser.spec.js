@@ -82,8 +82,10 @@ for (const track of TRACKS) for (const viewport of VIEWPORTS) {
     expect(await live.evaluate(el => el === window.__phase4MapNode)).toBe(true);
     expect(await live.evaluate(el => el.querySelectorAll('*').length)).toBe(before, 'update markers without rebuilding SVG');
     const perf = page.locator('#perf-overlay');
-    await expect(perf).toContainText('FRAME p50');
-    await page.waitForTimeout(1700); // Allow at least one full sampling second.
+    // At least one full sampled second with its load: a CPU-only runner's frames can exceed the overlay's 250 ms stall
+    // cut-off for a while, so a fixed sleep could read an empty strip or a window that rounds to "0 s".
+    await expect.poll(() => perf.evaluate(el => /· [1-9]\d* s$/.test(el.textContent) && Number.isInteger(Number(el.dataset.drawCalls))),
+      { timeout: ciTimeout(30000) }).toBe(true);
     const metrics = await perf.evaluate(el => ({
       line: el.textContent, calls: Number(el.dataset.drawCalls),
       triangles: Number(el.dataset.triangles),
