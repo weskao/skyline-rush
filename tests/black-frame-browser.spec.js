@@ -50,4 +50,8 @@ test('no NaN pixel reaches the bloom through the airflow showcase, nitro and its
   await expectClean(page, 'nitro');
   await page.waitForTimeout(1500);
   await expectClean(page, 'nitro fade-out');
+  // Task 5: the wet road (puddle mask, flattened normals) and rain wheel spray.
+  await page.evaluate(() => { const race = window.gameplay.race; race.mode = 'free'; race.session = { ...race.session, presentation: { visualPreset: 'rain' } }; race.player.speed = 90; });
+  await page.waitForTimeout(ciTimeout(1500));
+  await expectClean(page, 'rain spray and wet road');
 });

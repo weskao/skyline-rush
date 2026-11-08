@@ -51,10 +51,11 @@ test(`${LABEL} ${VIEW} ${QUALITY}: Coast day and rain`, async ({ gameplayPage: p
   await page.waitForTimeout(SECONDS * 1000);
   await shot('race-day');
   rows.push({ scenario: 'race-day', ...await perf(), ...await stats() });
-  await page.evaluate(() => { const { player } = window.gameplay.race; player.nitroTime = 4; player.speed = 90; });
-  await page.waitForTimeout(800);
+  // Held for the whole window so ?perf times the plume and the (Ultra-only) stronger blur, not a fade-out.
+  await page.evaluate(seconds => { const { player } = window.gameplay.race; player.nitroTime = seconds + 2; player.speed = 90; }, SECONDS);
+  await page.waitForTimeout(SECONDS * 1000);
   await shot('race-day-nitro');
-  rows.push({ scenario: 'race-day-nitro', ...await stats() });
+  rows.push({ scenario: 'race-day-nitro', ...await perf(), ...await stats() });
   // Capture only: world.js shows a session preset in custom/free races; flip this race to rain in place.
   await page.evaluate(() => { const race = window.gameplay.race; race.mode = 'free'; race.session = { ...race.session, presentation: { visualPreset: 'rain' } }; });
   await page.waitForTimeout(SECONDS * 1000);

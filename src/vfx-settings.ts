@@ -68,7 +68,7 @@ export function vfxSettings(values: unknown = {}): VfxSettings {
 export type SprintPhase = 'ready' | 'ignition' | 'sustain' | 'recovery';
 export type SprintInput = {
   phase: string; nitro: boolean; boost: boolean; speed: number; cap: number; dt: number;
-  enabled: boolean; quality: VfxQuality; reducedMotion: boolean;
+  enabled: boolean; quality: VfxQuality; reducedMotion: boolean; ultra?: boolean;
 };
 type SprintChannel = { phase: SprintPhase; intensity: number; ignition: number; age: number; release: number };
 const finite = (value: number, fallback = 0): number => Number.isFinite(value) ? value : fallback;
@@ -126,7 +126,7 @@ export function createSprintVfx() {
       frame.particles = frame.power * (comfort ? 0.2 : tier);
       // FOV is camera framing, not GPU cost: one strength on every tier (pre-Wave 2 behaviour).
       frame.fov = comfort ? 0 : frame.power;
-      frame.blur = comfort ? 0 : Math.min(1, frame.power * tier * 0.6);
+      frame.blur = comfort ? 0 : Math.min(1, frame.power * tier * (input.ultra ? 0.96 : 0.6)); // Ultra only: stronger lens radial blur, same pass
       return frame;
     },
   };

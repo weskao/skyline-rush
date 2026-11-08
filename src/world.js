@@ -35,6 +35,7 @@ import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_S
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
 import { landmarkBounds } from './landmark-bounds.ts';
+import { isRaining, racePreset } from './board-effects.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
@@ -586,7 +587,7 @@ export function createWorld(canvas) {
         roadGeometry.index.array.set(baseIndices); roadGeometry.index.needsUpdate = true;
         warmupPending = true; // track-specific props hidden until an event get their pipelines before racing
       }
-      const visualPreset = race.mode === 'custom' || race.mode === 'free' ? race.session?.presentation.visualPreset ?? 'track' : 'track';
+      const visualPreset = racePreset(race);
       coastLook.update(trackId, visualPreset, visual.quality);
       raceVisuals.apply(visualPreset); const blizzard = preview ? 0 : blizzardLevel(trackId, visualCar.distance, !!race.config.themes); raceVisuals.blizzard(blizzard);
       const distance = preview ? previewDistance(trackId) : visualCar.distance;
@@ -624,7 +625,7 @@ export function createWorld(canvas) {
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
       const touch = touchPreference.matches;
-      const raining = visualPreset === 'rain' || (visualPreset === 'track' && trackId === 'neon');
+      const raining = isRaining(visualPreset, trackId);
       weather.visible = !reducedMotion && visual.enabled && (raining || visualPreset === 'snow' || blizzard > 0 || (visualPreset === 'track' && (trackId === 'aurora' || trackId === FROSTBITE_ID)));
       weather.material.size = raining ? .12 : .24;
       weatherGeometry.setDrawRange(0, weatherDrops(visual.quality, touch));
@@ -819,7 +820,7 @@ export function createWorld(canvas) {
         framedRoad(trackId) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin), worldFrame: trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual);
       Object.assign(sprintInput, {
         phase: race.phase, nitro: car.nitroTime > 0, boost: !!(car.boosting || car.miniBoost > 0),
-        speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion,
+        speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion, ultra: visual.ultra,
       });
       const sprintFrame = sprintVisual.update(sprintInput);
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), garageHomePreview ? garageHomeVisual : visual, reducedMotion, sprintFrame, garageHomePreview);
