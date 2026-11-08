@@ -177,7 +177,7 @@ test('Studio entry advertises itself with a sheen and glow, and stills under Red
   const entry = page.locator('#garage-studio-open');
   await expect(entry).toBeVisible();
   const animations = () => entry.evaluate(node => [getComputedStyle(node).animationName, getComputedStyle(node, '::after').animationName]);
-  await expect.poll(animations).toEqual(['garage-entry-glow', 'start-sheen']);
+  await expect.poll(animations).toEqual(['garage-entry-glow', 'garage-entry-sheen']);
   // The shared heading-button rule once repainted it flat #1b3044 over the accent gradient.
   expect(await entry.evaluate(node => getComputedStyle(node).backgroundImage)).toContain('linear-gradient'); // settled: static stylesheet
   await page.emulateMedia({ reducedMotion: 'reduce' });
