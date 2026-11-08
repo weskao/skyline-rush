@@ -123,6 +123,8 @@ production renderer, physics or sibling branches during a docs-only pass.
   mobile. `npx playwright test <spec>` serves `dist/`: run `npm run build` first or it tests old code.
 - Bug seen only on a phone → reproduce on that device class (`make phone-diag`).
 - Never delete or weaken tests to pass CI; report any test you could not run.
+- Never commit RED tests (yours or another session's staged files) without the implementation that turns them
+  green; `.githooks/pre-push` runs `npm test` on code/test pushes, never bypass it with `--no-verify`.
 - Only `main`/`develop` run the full remote CI; a green run on an earlier commit does not
   validate the new HEAD. Pushing, reading CI or merging → Read `.claude/rules/ci-gates.md`
   and `.claude/rules/branch-release.md`.
