@@ -1,5 +1,6 @@
 import { ROAD_LIMIT } from './game.js';
 import { raceTrack } from './race-tracks.ts';
+import { isCourseRuntime } from './course-runtimes.ts';
 import { CIRCUIT_ID, circuitLaps } from './circuit-track.ts';
 
 export type GhostSample = [distance: number, x: number, altitude: number];
@@ -30,8 +31,10 @@ export function recordGhost(samples: GhostSample[], race: GhostRace): void {
   previousPose.set(samples, [race.elapsed, car.distance, car.x, car.altitude]);
 }
 
-// A saved ghost is untrusted: it must be a complete, physically possible run of this track.
+// A saved ghost is untrusted: it must be a complete, physically possible run of this track. A graph-runtime course has
+// no Ghost (Q4): its (distance, x) samples cannot replay a branching route.
 export function validGhost(ghost: unknown, trackId: string, config?: unknown): ghost is GhostRun {
+  if (isCourseRuntime(trackId)) return false;
   const track = raceTrack(trackId);
   const laps = trackId === CIRCUIT_ID ? circuitLaps(config) : 1;
   if (!laps) return false;

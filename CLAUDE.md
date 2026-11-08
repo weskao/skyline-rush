@@ -18,8 +18,6 @@ before the next lesson, never move the car between lessons, and chime + toast ev
 
 ## Shared six-course presentation and controls (mandatory for new courses)
 
-New or promoted course → read `docs/track-lifecycle-sop.md`; gates: `node scripts/check-track-lifecycle.mjs`.
-
 For Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline
 Megacity, Frostbite Canyon and future courses, **read
 `.claude/rules/playable-course-shared-template.md` before editing** map scenes,
@@ -112,7 +110,6 @@ production renderer, physics or sibling branches during a docs-only pass.
   mobile. `npx playwright test <spec>` serves `dist/`: run `npm run build` first or it tests old code.
 - Bug seen only on a phone → reproduce on that device class (`make phone-diag`).
 - Never delete or weaken tests to pass CI; report any test you could not run.
-- Before pushing home Start-label or preview-swipe changes, run the focused Playwright `tests/start-button-label-browser.spec.js` and `tests/track-swipe-browser.spec.js` on a fresh build. Two-line labels must wrap instead of being ellipsized; real touch tests must first hit-test the exposed `#world` canvas. Never bypass red browser checks.
 - Only `main`/`develop` run the full remote CI; a green run on an earlier commit does not
   validate the new HEAD. Pushing, reading CI or merging → Read `.claude/rules/ci-gates.md`
   and `.claude/rules/branch-release.md`.

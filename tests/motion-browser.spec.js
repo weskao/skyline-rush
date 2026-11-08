@@ -177,8 +177,8 @@ test.describe('touch button feedback', () => {
   });
 });
 
-test('speed dial eases as speed rises and a lost place flips with a readable down arrow', async ({ gameplayPage: page }) => {
-  // gameplayPage exposes the live race without adding production-only debug hooks.
+test('speed dial eases as speed rises and a lost place flips with a readable down arrow', async ({ page }) => {
+  await open(page);
   await page.evaluate(() => {
     window.placeChanges = [];
     const position = document.querySelector('#position');
@@ -192,16 +192,6 @@ test('speed dial eases as speed rises and a lost place flips with a readable dow
   await expect(page.locator('#speed-needle')).toBeVisible();
   const initial = await page.locator('#speed-needle').evaluate(element => getComputedStyle(element).transform);
   await expect(page.locator('#race-status')).toHaveText('RACING');
-  // Deterministically exercise a real rank loss even when intro rivals start slower.
-  await page.evaluate(() => {
-    const { player, rivals } = window.gameplay.race;
-    for (const rival of rivals) rival.distance = player.distance - 500;
-  });
-  await expect(page.locator('#position')).toHaveText('01');
-  await page.evaluate(() => {
-    const { player, rivals } = window.gameplay.race;
-    rivals[0].distance = player.distance + 500;
-  });
   await expect.poll(() => page.evaluate(() => window.placeChanges.some(change => change.arrow === '↓' && change.direction === 'lost' && change.animated))).toBe(true);
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(60);

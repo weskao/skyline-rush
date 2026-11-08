@@ -16,8 +16,8 @@ export interface ManeuverSnapshot {
   trickPayout: { nitro: number; hard: boolean } | null;
   nitroUses: number;
   nitroTime: number;
-  speed: number;
   braking?: boolean;
+  speed: number;
 }
 const NITRO_OBSERVE_SECONDS = 1.6;
 const NITRO_SPEED_GAIN = 5;
@@ -103,12 +103,7 @@ export function createTutorialManeuverState(kind: ManeuverLesson, initial: Maneu
           startSpeed = peakSpeed = car.speed;
         } else return false;
       }
-      if (car.braking || phase === 'retry') {
-        sprintSeconds = 0;
-        phase = 'retry';
-        return false;
-      }
-      if (car.nitroTime <= 0) {
+      if (car.braking || car.nitroTime <= 0) {
         sprintSeconds = 0;
         // A failed, spent charge requires a new player press, not fake success.
         phase = 'retry';

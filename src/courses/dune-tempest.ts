@@ -1,5 +1,6 @@
 import { buildDuneGates } from './dune-tempest-gates.ts';
 import { createDuneCourseGraph } from './dune-tempest-graph.ts';
+import { smoothDuneJunctions } from './dune-tempest-junctions.ts';
 import { duneAvoidanceHint } from './dune-tempest-safety.ts';
 
 /** Authored, data-only Dune Tempest CourseGraph draft (metres).
@@ -49,7 +50,8 @@ function edge(id: string, from: NodeId, to: NodeId, role: Edge['role'],
   };
 }
 
-const edges: Edge[] = [
+/** Pre-Q9 authored edges (control points as drawn); racing uses the smoothed `edges`. */
+export const DUNE_TEMPEST_AUTHORED_EDGES: readonly Edge[] = [
   edge('sunset-start', 'start', 'cp1', 'main', 'sand-road', 42, 1,
     [[180, 8, -280], [530, 11, -650], [600, 8, -1000]]),
   edge('dune-s-bends', 'cp1', 'split1', 'main', 'sand-road', 32, 1,
@@ -89,9 +91,18 @@ const edges: Edge[] = [
     [[800, 9, -9780], [1030, 8, -10220], [1200, 8, -10550]]),
 ];
 
+// Q9: junctions are made tangent-continuous; only control points near nodes change.
+const junctions = smoothDuneJunctions({ id: 'dune-tempest', topologyVersion: 1, nodes,
+  edges: DUNE_TEMPEST_AUTHORED_EDGES, checkpoints: ['cp1', 'cp2', 'cp3', 'cp4'] });
+const edges = junctions.edges;
+/** Authored-arc metres of each edge's start / end junction blend (keep hazards outside). */
+export const DUNE_JUNCTION_BLEND_METERS = junctions.blendMeters;
+
 /** Indexed into canyon-switchbacks.controlPoints; pre-bend signs belong in runtime. */
-const hairpins = [2, 6, 10, 14].map((apexControlIndex, index) => ({
-  id: 'canyon-hairpin-' + (index + 1), edgeId: 'canyon-switchbacks', apexControlIndex,
+const switchbacks = (list: readonly Edge[]) => list.find(e => e.id === 'canyon-switchbacks')!.controlPoints;
+const hairpins = [2, 6, 10, 14].map((authoredIndex, index) => ({
+  id: 'canyon-hairpin-' + (index + 1), edgeId: 'canyon-switchbacks',
+  apexControlIndex: switchbacks(edges).indexOf(switchbacks(DUNE_TEMPEST_AUTHORED_EDGES)[authoredIndex]),
   signLeadMeters: 150, suggestedSpeedMps: 32,
 }));
 

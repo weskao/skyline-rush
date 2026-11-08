@@ -83,7 +83,7 @@ export function createCallouts() {
         if (current) current.started += elapsed;
         return null;
       }
-      // Do not let a low-priority refill or near miss hide a newly earned aerial trick.
+      // An earned high-priority maneuver must not be hidden behind a low-priority refill.
       const preempt = !!current && (priority[current.kind] ?? 1) < 3 && pending.some(event => (priority[event.kind] ?? 1) > (priority[current!.kind] ?? 1));
       const advancing = !!current && (preempt || race.elapsed - current.started >= 0.85);
       if (advancing) current = null;

@@ -96,3 +96,27 @@ test('player pointer follows the YOU marker, points along the route and only wri
     assert.equal(pointer.attrs.visibility, 'hidden', 'hidden with the YOU marker');
   });
 });
+
+test('Dune SVG uses each CourseGraph edge, and player marker follows its actual branch', async () => {
+  const { createRouteMap } = await import('../src/route-map.ts');
+  const { COURSE_RUNTIMES } = await import('../src/course-runtimes.ts');
+  const { createCourseRouteProjection } = await import('../src/course-route-map.ts');
+  await withFakeDom(() => {
+    const graph = COURSE_RUNTIMES['dune-tempest'].spec.graph;
+    const map = createRouteMap('dune-tempest', { live: true });
+    const paths = map.element.children.filter(node => node.attrs['data-edge']);
+    assert.equal(paths.length, graph.edges.length, 'all graph edges visible');
+    assert.ok(paths.some(node => (node.attrs.class || '').includes('route-flight-line')));
+    const travel = { currentEdgeId: 'canyon-air-crossing', localS: 300 };
+    const drivers = [{ id: 'YOU', distance: 5000, x: 0 }];
+    map.updateDrivers(drivers, { cars: new Map([['YOU', { travel }]]) });
+    const marker = map.element.children.find(node => node.attrs['data-racer'] === 'YOU');
+    const expected = createCourseRouteProjection(graph, 64).marker(travel.currentEdgeId, travel.localS);
+    assert.equal(marker.attrs.cx, (expected.x * 100).toFixed(2));
+    assert.equal(marker.attrs.cy, (expected.y * 100).toFixed(2));
+    const before = [marker.attrs.cx, marker.attrs.cy];
+    travel.currentEdgeId = 'canyon-switchbacks';
+    map.updateDrivers(drivers, { cars: new Map([['YOU', { travel }]]) });
+    assert.notDeepEqual([marker.attrs.cx, marker.attrs.cy], before, 'branch determines position, not odometer');
+  });
+});

@@ -2152,9 +2152,16 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
    Daily, the camera dock and a big Start in the bottom-right thumb zone. The panel stops 280px short of the right edge
    so it clears the AIRFLOW / VFX row (top: 64px) and the 210px rail. AIRFLOW keeps its own fixed Start and dock. */
 @media (max-height: 500px) and (orientation: landscape) {
+  /* A browser toolbar overlaid on the page bottom (fixed boxes span the web view, 100dvh stops above it) is the band
+     100% - 100dvh; 0 where measured (iPhone Chrome 154 keeps its toolbars outside the page, Safari, installed apps).
+     --z (--home-scale, landscape-home-scale.ts) zooms .intro, and with it the rail inside it, on short pages such as
+     in-app browsers (756x265). Zoom multiplies every inset and makes % of the containing block zoomed units while dvh
+     is not, so --browser-bar is kept in screen px (100% * --z) and the insets are divided by --z. --z: 1 changes nothing. */
+  body { --z: var(--home-scale, 1); --browser-bar: max(0px, 100% * var(--z) - 100dvh); --edge-bottom: calc((max(10px, var(--safe-bottom)) + var(--browser-bar)) / var(--z)); }
+  .airflow-active[data-phase="ready"] { --showcase-start-bottom: calc(max(48px, calc(env(safe-area-inset-bottom, 0px) + 44px)) + var(--browser-bar)); }
   .intro { animation-name: intro-fade; } /* every landscape intro, so toggling AIRFLOW never restarts a transform under its fixed Start */
   /* top: just under the 70px top bar (82px below 761px wide, see the next block), which the panel must not overlap. */
-  body:not(.airflow-active) .intro { --rail: 210px; top: 72px; bottom: max(10px, var(--safe-bottom)); left: max(16px, var(--safe-left)); display: flex; flex-direction: column; width: min(520px, calc(100vw - 280px - var(--safe-left) - var(--safe-right))); max-width: none; margin: 0; padding: 0 6px; overflow-y: auto; }
+  body:not(.airflow-active) .intro { --rail: 210px; zoom: var(--z); top: calc(72px / var(--z)); bottom: var(--edge-bottom); left: calc(max(16px, var(--safe-left)) / var(--z)); display: flex; flex-direction: column; width: min(520px, calc((100vw - 280px - var(--safe-left) - var(--safe-right)) / var(--z))); max-width: none; margin: 0; padding: 0 6px; overflow-y: auto; }
   /* Match the phone bottom-fade rule's :has() specificity: a mask clips every descendant, the fixed rail included;
      its portrait max-height (100dvh - 126px) also lifted the pinned row 32px over the track cards at 320px tall. */
   body:not(.airflow-active) .intro:has(.race-mode-picker) { max-height: none; -webkit-mask-image: none; mask-image: none; }
@@ -2181,21 +2188,21 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   .intro .intro-actions > .text-button { margin: 0; }
   /* Share the row: English GARAGE / HISTORY / PRACTICE at 14px padding overflowed the 276px panel at 568px wide. */
   .intro :is(.history-button, .garage-button, .practice-button) { flex: 1 1 auto; min-width: 0; height: 44px; padding-inline: 8px; white-space: nowrap; }
-  body[data-phase="ready"]:not(.airflow-active) .intro #start-button { position: fixed; z-index: 3; right: max(16px, var(--safe-right)); bottom: max(10px, var(--safe-bottom)); width: var(--rail); min-width: 0; max-width: none; height: 52px; }
-  body[data-phase="ready"]:not(.airflow-active) .showcase-camera-dock { position: fixed; right: max(16px, var(--safe-right)); bottom: calc(max(10px, var(--safe-bottom)) + 62px); top: auto; width: var(--rail); margin: 0; padding: 4px 6px; gap: 0; }
+  body[data-phase="ready"]:not(.airflow-active) .intro #start-button { position: fixed; z-index: 3; right: calc(max(16px, var(--safe-right)) / var(--z)); bottom: var(--edge-bottom); width: var(--rail); min-width: 0; max-width: none; height: 52px; }
+  body[data-phase="ready"]:not(.airflow-active) .showcase-camera-dock { position: fixed; right: calc(max(16px, var(--safe-right)) / var(--z)); bottom: calc(var(--edge-bottom) + 62px); top: auto; width: var(--rail); margin: 0; padding: 4px 6px; gap: 0; }
   body[data-phase="ready"]:not(.airflow-active) :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
-  body[data-phase="ready"]:not(.airflow-active) .daily-card { position: fixed; right: max(16px, var(--safe-right)); bottom: calc(max(10px, var(--safe-bottom)) + 120px); width: var(--rail); max-width: none; box-sizing: border-box; margin: 0; padding: 6px 6px 6px 10px; gap: 8px; }
+  body[data-phase="ready"]:not(.airflow-active) .daily-card { position: fixed; right: calc(max(16px, var(--safe-right)) / var(--z)); bottom: calc(var(--edge-bottom) + 120px); width: var(--rail); max-width: none; box-sizing: border-box; margin: 0; padding: 6px 6px 6px 10px; gap: 8px; }
   /* One-line Daily (title + route, best hidden) so the rail stays below the AIRFLOW / VFX row at 320px tall in en too. */
   body[data-phase="ready"]:not(.airflow-active) .daily-card small { display: none; }
   body[data-phase="ready"]:not(.airflow-active) .daily-card strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
   /* The device notice (z 18, above the .intro stacking context) sits under the top bar and stops above the rail Start. */
-  .performance-notice { top: 72px; right: max(16px, var(--safe-right)); max-height: calc(100vh - 72px - max(10px, var(--safe-bottom)) - 62px); overflow-y: auto; }
+  .performance-notice { top: 72px; right: max(16px, var(--safe-right)); max-height: calc(100dvh - 72px - max(10px, var(--safe-bottom)) - 62px); overflow-y: auto; }
 }
 /* Opacity-only arrival: a transform on .intro would become the containing block of the fixed rail above. */
 @keyframes intro-fade { from { opacity: .25; } }
 /* ≤760px wide the top bar is 82px tall and the brand 165px wide. */
 @media (max-height: 500px) and (orientation: landscape) and (max-width: 760px) {
-  body:not(.airflow-active) .intro { top: 84px; }
-  .performance-notice { top: 84px; max-height: calc(100vh - 84px - max(10px, var(--safe-bottom)) - 62px); }
+  body:not(.airflow-active) .intro { top: calc(84px / var(--z)); }
+  .performance-notice { top: 84px; max-height: calc(100dvh - 84px - max(10px, var(--safe-bottom)) - 62px); }
   body[data-phase="ready"] .bottomline { top: 19px; left: max(190px, calc(var(--safe-left) + 178px)); }
 }

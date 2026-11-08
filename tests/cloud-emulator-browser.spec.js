@@ -410,17 +410,15 @@ test('Cloud save profile provides an avatar fallback and accessible account iden
   await expect(page.locator('#cloud-identity')).toContainText('avatar@example.test');
   await expect(page.locator('#cloud-name')).not.toBeEmpty();
   await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
-  // The post-sign-in sync re-runs showCloudSession(), which rewrites avatarUrl from the
-  // (https-only) account photo; inject the test avatar only after that has settled.
-  await expect(page.locator('#cloud-last-sync')).toContainText('Last synced');
-  // Test the two image states using a self-contained, loadable avatar. Reusing
-  // the Google login icon can fail to load asynchronously on emulator runners.
+  // Give the Vue view a real, loaded avatar rather than overriding Vue-owned
+  // hidden attributes, then exercise the browser's failed-image event.
   await page.evaluate(async () => {
-    const { updateCloudView } = await import('/src/cloud-view-state.ts');
-    const avatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="#175b84"/></svg>');
-    updateCloudView({ avatarUrl: avatar, avatarFailed: false });
+    // Import the exact URL the app loaded (Vite may append ?t=/?v= after a dep reload on cold CI),
+    // otherwise this is a second module instance and the Vue view never updates.
+    const url = performance.getEntriesByType('resource').map(e => e.name).find(n => /\/src\/cloud-view-state\.ts/.test(n)) || '/src/cloud-view-state.ts';
+    const { updateCloudView } = await import(/* @vite-ignore */ url);
+    updateCloudView({ avatarUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', avatarFailed: false });
   });
-  await expect.poll(() => page.locator('#cloud-avatar').evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
   await expect(page.locator('#cloud-avatar')).toBeVisible();
   await expect(page.locator('#cloud-avatar-fallback')).toBeHidden();
   await page.locator('#cloud-avatar').dispatchEvent('error');

@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DUNE_TEMPEST_COURSE as course, DUNE_TEMPEST_GATES } from '../src/courses/dune-tempest.ts';
+import { DUNE_TEMPEST_COURSE as course, DUNE_TEMPEST_GATES, DUNE_TEMPEST_AUTHORED_EDGES }
+  from '../src/courses/dune-tempest.ts';
+import { routeLength, sampleRoute } from '../src/course-route-frame.ts';
+import { PLAYABLE_COURSE_GRAPH as graph } from '../src/courses/dune-tempest-runtime-adapter.ts';
 
 const distance = (a, b) => Math.hypot(...a.map((v, i) => v - b[i]));
 const edgeLength = edge => edge.controlPoints.slice(1).reduce((n, p, i) => n + distance(p, edge.controlPoints[i]), 0);
@@ -40,7 +43,7 @@ test('three grounded forks rejoin and every legal path crosses ordered checkpoin
   }
 });
 
-test('all edge polylines coincide with graph nodes and the main greybox is near 13.5 km', () => {
+test('all edge polylines coincide with graph nodes and the main greybox is near 13.7 km', () => {
   for (const edge of course.edges) {
     assert.deepEqual(edge.controlPoints[0], course.nodes[edge.from].position, edge.id + ' starts at node');
     assert.deepEqual(edge.controlPoints.at(-1), course.nodes[edge.to].position, edge.id + ' ends at node');
@@ -50,7 +53,8 @@ test('all edge polylines coincide with graph nodes and the main greybox is near 
   }
   const route = course.edges.filter(e => e.role === 'main');
   const length = route.reduce((n, e) => n + edgeLength(e), 0);
-  assert.ok(Math.abs(length - 13500) < 120, 'main raw centreline is ' + Math.round(length) + ' m');
+  // Measured after Q9 junction smoothing (authored polylines: 13,484 m; smoothed: 13,716 m).
+  assert.ok(Math.abs(length - 13716) < 120, 'main raw centreline is ' + Math.round(length) + ' m');
 });
 
 test('the canyon has four actual reversing hairpins with pre-turn visibility cues', () => {
@@ -60,9 +64,10 @@ test('the canyon has four actual reversing hairpins with pre-turn visibility cue
   for (const hairpin of course.hairpins) {
     assert.equal(hairpin.edgeId, canyon.id);
     assert.ok(hairpin.signLeadMeters >= 110);
-    const i = hairpin.apexControlIndex;
-    const pts = canyon.controlPoints;
-    assert.ok(i >= 2 && i + 2 < pts.length);
+    // Junction blends insert controls near the nodes, so judge the authored apex and neighbours.
+    const pts = DUNE_TEMPEST_AUTHORED_EDGES.find(edge => edge.id === canyon.id).controlPoints;
+    const i = pts.indexOf(canyon.controlPoints[hairpin.apexControlIndex]);
+    assert.ok(i >= 2 && i + 2 < pts.length, hairpin.id + ' apex must be an authored control');
     const a = [pts[i][0] - pts[i - 2][0], pts[i][2] - pts[i - 2][2]];
     const b = [pts[i + 2][0] - pts[i][0], pts[i + 2][2] - pts[i][2]];
     const dot = (a[0]*b[0]+a[1]*b[1]) / Math.hypot(...a) / Math.hypot(...b);
@@ -146,32 +151,30 @@ test('Dune directional gates bind every ordered checkpoint and finish to its rea
   }
 });
 
+// Road-sampled 5 m chords on the shared sampler, so inserted blend controls cannot hide a snap.
+const CHORD = 5;
+const at = (id, s) => sampleRoute(graph, id, s).point;
+const flatChord = (p, q) => [q[0] - p[0], q[2] - p[2]];
+const firstChord = id => flatChord(at(id, 0), at(id, CHORD));
+const lastChord = id => flatChord(at(id, routeLength(graph, id) - CHORD), at(id, routeLength(graph, id)));
+const angleDeg = (a, b) => Math.acos(Math.max(-1, Math.min(1,
+  (a[0] * b[0] + a[1] * b[1]) / Math.hypot(...a) / Math.hypot(...b)))) * 180 / Math.PI;
+
 test('merge2 ground branch meets the post-merge corridor without reversing direction', () => {
-  const incoming = byId('canyon-switchbacks').controlPoints;
-  const outgoing = byId('stone-ring-corridor').controlPoints;
-  const tangent = (a, b) => [b[0] - a[0], b[2] - a[2]];
-  const a = tangent(incoming.at(-2), incoming.at(-1));
-  const b = tangent(outgoing[0], outgoing[1]);
-  const dot = (a[0] * b[0] + a[1] * b[1]) / Math.hypot(...a) / Math.hypot(...b);
-  assert.ok(dot > Math.cos(35 * Math.PI / 180),
+  assert.ok(angleDeg(lastChord('canyon-switchbacks'), firstChord('stone-ring-corridor')) < 35,
     'canyon exit must connect to the shared road without a 144° steering snap');
 });
 
 test('both ground and aerial canyon choices join merge2 within safe turning angles', () => {
-  const following = byId('stone-ring-corridor').controlPoints;
-  const exit = byId('canyon-switchbacks').controlPoints;
-  const air = byId('canyon-air-crossing').controlPoints;
-  const tangent = (p, q) => [q[0] - p[0], q[2] - p[2]];
-  const outgoing = tangent(following[0], following[1]);
-  const joinAngle = points => {
-    const incoming = tangent(points.at(-2), points.at(-1));
-    const dot = (incoming[0] * outgoing[0] + incoming[1] * outgoing[1])
-      / Math.hypot(...incoming) / Math.hypot(...outgoing);
-    return Math.acos(Math.max(-1, Math.min(1, dot))) * 180 / Math.PI;
-  };
-  assert.ok(joinAngle(exit) < 40, 'main switchbacks must not snap at merge2');
-  assert.ok(joinAngle(air) < 40, 'flight landing must join without a sideways steering snap');
-  const last = air.at(-1), before = air.at(-2);
-  const grade = Math.abs(last[1] - before[1]) / Math.hypot(last[0] - before[0], last[2] - before[2]);
-  assert.ok(grade < 0.12, 'landing approach must not demand an unsafe vertical drop');
+  const outgoing = firstChord('stone-ring-corridor');
+  assert.ok(angleDeg(lastChord('canyon-switchbacks'), outgoing) < 40, 'main switchbacks must not snap at merge2');
+  assert.ok(angleDeg(lastChord('canyon-air-crossing'), outgoing) < 40,
+    'flight landing must join without a sideways steering snap');
+  const length = routeLength(graph, 'canyon-air-crossing');
+  let grade = 0;
+  for (let s = length - 105; s + CHORD <= length + 1e-9; s += CHORD) {
+    const p = at('canyon-air-crossing', s), q = at('canyon-air-crossing', s + CHORD);
+    grade = Math.max(grade, Math.abs(q[1] - p[1]) / Math.hypot(q[0] - p[0], q[2] - p[2]));
+  }
+  assert.ok(grade < 0.12, 'landing approach must not demand an unsafe vertical drop: ' + grade.toFixed(3));
 });

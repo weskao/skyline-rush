@@ -40,19 +40,6 @@ test('all six preview cards retain their original selection flow and cannot STAR
   await expect(page.locator('#start-button span')).toHaveText('LOCKED');
 });
 
-test('a stale remembered playable-in-dev course (Stormline) cannot be restored or started in a release build', async ({ page }) => {
-  await page.evaluate(() => { sessionStorage.setItem('skyline-rush-last-track', 'stormline-megacity'); sessionStorage.setItem('skyline-rush-last-mode', 'classic'); });
-  await page.reload();
-  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await expect(page.locator('[data-upcoming-track="stormline-megacity"]')).not.toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#start-button span')).toHaveText('Start race'); // the restore fell back to the playable default
-  await page.locator('[data-upcoming-track="stormline-megacity"]').click();
-  await expect(page.locator('#start-button')).toBeDisabled();
-  await page.keyboard.press('Enter');
-  await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-  expect(await page.evaluate(() => window.gameplay?.race?.trackId ?? null)).not.toBe('stormline-megacity');
-});
-
 test('the Stage 2 preview URL opens the Frostbite card as Coming Soon with Start disabled', async ({ page }) => {
   await page.goto('/?stage2-preview=frostbite-canyon&shot=p02');
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();

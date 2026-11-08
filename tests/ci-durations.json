@@ -202,6 +202,9 @@
  "device-quality-browser.spec.js › opening the vfx panel puts the downgrade notice away so its controls stay clickable": 13.1,
  "device-quality-browser.spec.js › saved manual High takes precedence and suppresses automatic downgrade notice": 7,
  "device-quality-browser.spec.js › starting a race puts the downgrade notice away so it never covers the race view": 13.1,
+ "dune-tempest-race-browser.spec.js › Dune CourseGraph desktop › dev-only WebGL races every mandatory checkpoint, finishes and shows distinct edge markers": 110,
+ "dune-tempest-race-browser.spec.js › Dune CourseGraph phone › dev-only WebGL races every mandatory checkpoint, finishes and shows distinct edge markers": 110,
+ "dune-tempest-race-browser.spec.js › Dune real flight branch › FLY crosses the authored no-road gap without flattened geometry or missed checkpoint": 75,
  "eight-car-grid-browser.spec.js › Custom 2 and 8 total racers work in a real mobile race, preserving leaderboard and minimap": 19.3,
  "eight-car-grid-browser.spec.js › Custom two-car race runs in real portrait WebGL with one AI": 19.4,
  "eight-car-grid-browser.spec.js › Time Attack stays solo without a fabricated eight-driver HUD": 14,
@@ -1345,5 +1348,10 @@
  "world-tour-showcase-browser.spec.js › tokyo: hovering showcase is not occluded across six camera angles": 29.6,
  "world-tour-showcase-browser.spec.js › tokyo: landscape home preview frames its signature landmark": 31.1,
  "world-tour-showcase-browser.spec.js › tokyo: portrait home preview frames its signature landmark": 36,
- "world-tour-showcase-browser.spec.js › tokyo: racing toward the tower keeps it in view and unobstructed": 54.4
+ "world-tour-showcase-browser.spec.js › tokyo: racing toward the tower keeps it in view and unobstructed": 54.4,
+ "skyfall-archipelago-race-browser.spec.js › Skyfall desktop ground CourseGraph › dev-only START drives three split/merge stages and a real finish with streamed WebGL": 115,
+ "skyfall-archipelago-race-browser.spec.js › Skyfall desktop flight CourseGraph › dev-only START drives three split/merge stages and a real finish with streamed WebGL": 130,
+ "skyfall-archipelago-race-browser.spec.js › Skyfall phone ground CourseGraph › dev-only START drives three split/merge stages and a real finish with streamed WebGL": 120,
+ "skyfall-archipelago-race-browser.spec.js › Skyfall phone flight CourseGraph › dev-only START drives three split/merge stages and a real finish with streamed WebGL": 135,
+ "skyfall-archipelago-race-browser.spec.js › Skyfall release lock › production card remains Coming Soon and START is disabled": 30
 }

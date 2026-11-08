@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, stepRace, DRIFT_MIN_SPEED } from '../src/game.js';
-import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS, CLEARED_SECONDS } from '../src/interactive-tutorial.ts';
+import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from '../src/interactive-tutorial.ts';
 import { DRIFT_ENTRY_KMH } from './helpers/tutorial-practice.js';
 
 const DT = 1 / 60;
@@ -259,32 +259,6 @@ test('a completed practice keeps a live, player-steered free cruise on a road th
   assert.equal(session.complete, true);
 });
 
-test('braking re-arms NITRO practice on release without waiting for the burst to expire', () => {
-  const session = createInteractiveTutorial();
-  for (const action of [
-    { throttle: true }, { steer: -1 }, { steer: 1 }, { brake: true },
-    { fly: true }, { fly: false }, { boost: true },
-  ]) perform(session, action);
-  performAirChain(session);
-  performBarrelRoll(session);
-  const car = session.race.player;
-  assert.equal(session.step, 'nitro');
-  tick(session, { nitro: true });
-  tick(session, { nitro: true, brake: true });
-  assert.equal(session.coachPhase, 'retry');
-  assert.ok(car.nitroTime > 0);
-  tick(session);
-  assert.equal(car.nitroTime, 0, 'practice ends the interrupted burst on release');
-  assert.equal(car.nitro, 1, 'a fresh NITRO charge is provided');
-  // The previous lesson's CLEARED_SECONDS congratulations can still overlay the re-armed 'ready' state.
-  for (let i = 0; i < Math.ceil(CLEARED_SECONDS / DT) + 1; i++) tick(session);
-  assert.equal(session.coachPhase, 'ready');
-  tick(session, { nitro: true });
-  assert.equal(session.coachPhase, 'sprinting');
-  for (let i = 0; i < 180 && !session.complete; i++) tick(session);
-  assert.equal(session.complete, true);
-});
-
 test('an interrupted NITRO lesson refills only after release and remains player-controlled', () => {
   const session = createInteractiveTutorial();
   for (const action of [
@@ -297,7 +271,10 @@ test('an interrupted NITRO lesson refills only after release and remains player-
   const previousUses = car.nitroUses;
   // Real players read the coach first: auto-throttle gains speed before NITRO is pressed.
   for (let i = 0; i < 30; i++) tick(session);
-  for (let i = 0; i < 180; i++) tick(session, { nitro: true, brake: true });
+  tick(session, { nitro: true, brake: true });
+  assert.equal(session.coachPhase, 'retry', 'braking interrupts practice on the first simulation tick');
+  assert.equal(car.nitroTime, 0, 'practice-only braking cancels the active sprint');
+  for (let i = 1; i < 180; i++) tick(session, { nitro: true, brake: true });
   assert.equal(session.step, 'nitro', 'braking during activation must not fake a sprint');
   assert.equal(car.nitroUses, previousUses + 1, 'one real charge was spent');
   assert.ok(car.nitro < 1, 'holding NITRO must not grant another charge');

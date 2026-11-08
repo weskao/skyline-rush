@@ -7,7 +7,7 @@ import { normalizeRaceConfig } from '../src/race-config.ts';
 import { CIRCUIT_ID } from '../src/circuit-track.ts';
 import { circuitLapKey } from '../src/circuit-records.ts';
 import { recordTrackId, recordTrackIds } from '../src/record-layout.ts';
-import { COURSE_TRACKS, RACE_TRACKS } from '../src/race-tracks.ts';
+import { RACE_TRACKS, COURSE_TRACKS } from '../src/race-tracks.ts';
 import { mergeModeBests } from '../src/cloud-mode-bests.ts';
 
 test('cloud saves are private and accept only valid map progress', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async t => {
@@ -36,15 +36,21 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
   await assertFails(setDoc(save, { ...progress, bests: { coast: '60' } }));
   // Re-laid tracks keep every older best and add a `<track>@<layout>` best (recordTrackIds in src/record-layout.ts):
   // stage 1 ids (@2) and stage 2 ids (@3, and @2 for Aurora and the World Tour) stay valid next to the scaled-layout
-  // ids (@4, and @3 for Aurora and the World Tour). CourseGraph sprints add `<track>@t<topology>l<layout>` bests.
-  const everyBest = Object.fromEntries([...Object.keys(RACE_TRACKS), ...Object.keys(COURSE_TRACKS)].flatMap(recordTrackIds)
-    .map((id, i) => [id, 60 + i]));
+  // ids (@4, and @3 for Aurora and the World Tour).
+  const everyBest = Object.fromEntries(Object.keys(RACE_TRACKS).flatMap(recordTrackIds).map((id, i) => [id, 60 + i]));
   await assertSucceeds(setDoc(save, { ...progress, bests: everyBest }));
   // The fullest save a player can hold stays under the rules' 1000-expression evaluation limit (a 10-star,
   // 14-best save was rejected before stage 2 rewrote the per-id checks).
   const tracks = Object.keys(RACE_TRACKS), stamp = '2026-11-01T00:00:00.000Z';
   await assertSucceeds(setDoc(save, { ...progress, unlocked: tracks, stars: Object.fromEntries(tracks.map(id => [id, 3])), bests: everyBest,
     medals: { 'first-win': stamp, 'clean-run': stamp, 'perfect-five': stamp, 'nitro-chain': stamp } }));
+  // ... and with every CourseGraph sprint best (topology-keyed) on top of it.
+  const courseBests = Object.fromEntries(Object.keys(COURSE_TRACKS).map((id, i) => [recordTrackId(id), 120 + i]));
+  assert.ok(Object.keys(courseBests).length >= 3, 'Frostbite, Dune and Skyfall');
+  await assertSucceeds(setDoc(save, { ...progress, unlocked: tracks, stars: Object.fromEntries(tracks.map(id => [id, 3])),
+    bests: { ...everyBest, ...courseBests },
+    medals: { 'first-win': stamp, 'clean-run': stamp, 'perfect-five': stamp, 'nitro-chain': stamp } }), 'fullest save with course bests');
+  for (const id of Object.keys(courseBests)) await assertFails(setDoc(save, { ...progress, bests: { [id]: 0 } }), `${id} best 0`);
   for (const bad of [0, 604800, 604801, -1, '60', true]) await assertFails(setDoc(save, { ...progress, bests: { [recordTrackId('coast')]: bad } }), `best ${bad}`);
   for (const bad of [0, 4, 2.5, '3']) await assertFails(setDoc(save, { ...progress, stars: { coast: bad } }), `star ${bad}`);
   await assertSucceeds(setDoc(save, { ...progress,
