@@ -23,11 +23,15 @@ exactly. Topics whose work often starts before a scoped file is open:
 | --- | --- |
 | Home / HUD layout, any `(orientation: landscape)` or `max-height` media query | `.claude/rules/orientation-layout.md` (iOS paints portrait and landscape differently; check both) |
 | Dune, Monsoon, Skyfall, Volcanic, Stormline, Frostbite or a new course; the ten proposed long-form tracks | `.claude/rules/playable-course-shared-template.md` |
+| Course music, or music while a map is only selected on the home screen | `.claude/rules/playable-course-shared-template.md` |
 | Animated Garage/HUD/Store/VFX art (GIF, sprite sheet) | `.claude/rules/animated-image-production.md`, `.claude/rules/raster-artwork.md` |
 | Track teaser JPEGs under `public/track-teasers/` | `.claude/rules/track-teaser-artwork.md` |
 | Blender, GLB/PBR, 3D asset, rendering quality, Three.js r180 → r186 | `.claude/rules/3d-asset-pipeline.md` (planned; not deployed) |
 | Tutorial lessons, cues or transitions | `docs/tutorial-driving.md` |
 | Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
+
+Every course needs its own in-race song, and that song must not match any other course.
+It plays after the race starts. Selecting the course on the home screen keeps the shared intro.
 
 ## Workflow (every feature and bug fix)
 
