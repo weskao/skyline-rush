@@ -57,7 +57,7 @@ class OriginalArtworkRepairTests(unittest.TestCase):
         self.assertEqual(repaired.getpixel((105, 130)),
                          image.getpixel((105, 130)))
 
-    def test_bubble_inpainting_uses_matching_top_region_not_flat_patch(self):
+    def test_bubble_inpainting_preserves_dark_enamel_not_upper_bezel(self):
         image = Image.new("RGBA", (216, 216))
         pixel = image.load()
         for y in range(62, 159):
@@ -67,7 +67,7 @@ class OriginalArtworkRepairTests(unittest.TestCase):
                                         fill=(0, 0, 0, 0))
         repaired = repair_module.restore_gallery_face(image, "ui-tooltip")
         self.assertEqual(repaired.getpixel((140, 140)),
-                         image.getpixel((140, 84)))
+                         image.getpixel((105, 140)))
         self.assertEqual(repaired.getpixel((90, 140)),
                          image.getpixel((90, 140)))
 
