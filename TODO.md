@@ -68,6 +68,110 @@ a near-timeout test is visible on green runs.
   with a 63%-budget test: annotation and job-summary row both appear).
 - [ ] Exact-HEAD develop full CI after the merge.
 
+## 2026-11-05 — Garage / Preview Studio animated GIF artwork (feature branch)
+
+**Branch:** `feature/garage-preview-animated-gifs`, from `develop` at `4b94bdabf9fa5030045646e04a45a4aef549edc3`.
+
+- [x] Preserve the interactive WebGL car showroom, 3x WebP paint/VFX/badge/store masters, artwork IDs, selections, entitlement checks and fallback images.
+- [x] Add three genuine eight-frame transparent looping GIF overlays at native 3× layout sizes: 216×216 badges/store, 288×288 VFX, 960×510 paint. Apply them to all paint, VFX, badge and concept cards in Garage and Preview Studio. These are animated **GIF overlays**, not full per-image re-encodings: original artwork remains sharp and uncropped.
+- [x] Respect `prefers-reduced-motion`; paint GIF also stops when visual effects are disabled or comfort mode is enabled. No new audio: these are decorative flourishes without state changes. HTML/CSS art unchanged across Low/Medium/High quality tiers.
+- [x] Add unit GIF-format/loop/frame-count and browser two-page/reduced-motion checks, adjusting original no-GIF contract while preserving 3x source checks.
+- [ ] RED run observed before production changes: first feature-branch Actions attempts were cancelled by subsequent pushes; cannot claim a verified RED run.
+- [ ] Run `make verify`, typecheck, full browser / World Tour regression and exact-HEAD FULL GitHub Actions CI. Required for acceptance; remote work does not prove local execution.
+- [ ] Manual desktop/mobile visual review, browser GIF animation decode/performance, iOS and Android reduced-motion, GIF artwork appearance and showroom interactions. No PR, merge or deployment authorized.
+
+
+## 2026-11-05 — Garage / Preview Studio actual original-art GIF upgrade
+
+**Scope:** Only `feature/garage-preview-animated-gifs`. Supersedes the earlier three `sparkle*.gif` **overlay-only** UI implementation, not its historical record.
+
+- [x] From existing tracked 3× WebP/SVG art, generate **39 distinct GIFs** in `public/feature-assets/garage-animated/` using `scripts/generate-garage-gifs.py`: Thruster 4/4, Airflow 4/4, NITRO Trail 5/5, Launch Flare 9/9, badges/rarity 11/11, Store Concept 6/6.
+- [x] Each 12-frame GIF loops at 12.5 FPS with transparent palette index, preserves source output dimensions (288×288 VFX and 216×216 badge/store), and retains its untouched WebP/SVG in the repository. The original-asset generator job 41966520062 succeeded; `manifest.json` records source paths and actual sizes (39 GIFs, 6,719,740 bytes total).
+- [x] Replace generic `::after` sparkle animation in actual VFX cards and badge/store artwork tiles with their per-artwork GIF; remove paint-specific generic sparkle overlay without altering existing paint texture or 3D renderer.
+- [x] Add `GarageArtworkImage.vue` `animatedSrc` support: IntersectionObserver visibility gating, media-query reduced motion switching, GIF error fallback to original WebP/SVG, then existing text fallback.
+- [x] Add 39-file integrity assertions, rendering contract checks, browser tests for Garage Home and Studio, store artwork, reduced motion and GIF failures, and update previous VFX static-source browser expectations.
+- [ ] Exact latest HEAD Unit, Typecheck, Build, Browser, World Tour, cloud-save and Quality Gate: **do not mark passing** until a completed full Actions run matches the final HEAD.
+- [ ] Local `make verify` on a full checkout; GitHub connector does not provide a local runner. Record the command's exit status rather than assuming success.
+- [ ] Actual on-device visual acceptance for flame shapes/flow, genuine box-lid articulation, source-image fidelity, clipping, iOS/Android reduced motion, folded landscape/portrait, touch, 3D rotation and GPU/memory budget. Automated frame change cannot substitute for human visual approval.
+- [ ] Document separate observed RED failure and full GREEN command evidence; local synthetic-source generator smoke test is **not** a complete TDD/CI gate.
+
+No new branches, PR, deployment or merges to `develop`/`main`.
+
+
+## 2026-11-05 — Garage animated GIF artistic rework after user visual review
+
+**Scope:** `feature/garage-preview-animated-gifs` only. Prior 39-icon generic pixel field animation produced undesirable distortion. This revision replaces it with explicitly keyed profiles on the same 39 original 3× WebP/SVG masters.
+
+- [x] 39 icon IDs each have distinct `PROFILES` recipes, across thruster (4), airflow (4), NITRO (5), launch (9), badge/rarity (11), Store concept (6).
+- [x] Stop whole-image grid displacement: move energy highlights within original flames, trails and shockwaves; animate author-drawn SVG airflow paths while blocking highlights over the partially translucent car; keep badge silhouettes fixed while changing material response; separate crate lid/gift ribbon/card component movement.
+- [x] Replace separately quantized moving pixels with an all-frame shared palette per GIF, 16 source-linked phases at 12.5 FPS. Avoid patterned Bayer transparency dithering after inspecting actual exported GIFs: it created a visible checkerboard glow. The refreshed binaries use explicit binary alpha threshold for clean cutouts.
+- [x] Test-first RED observed on original animation script: GitHub Action `41968588434`, 7 new source fidelity checks failed (old program lacked independent source-linked part animation).
+- [x] GREEN on the actual GitHub WebP/SVG masters: `41969123657` generated/validated all 39 original-art GIFs; generated commit `b2a3d27fcc984bb7ab2e95360ca705b0127702d9`, 10,240,587 bytes total. The generated manifest records all 39 source-to-GIF paths, dimensions, original IDs, file sizes and unique motion profiles.
+- [x] Examine representative real exported GIF frames for `thruster-ion` and `store-box` after the alpha change; original shapes remain recognizable, with no artificial patterned transparency around their glow.
+- [ ] Full exact-HEAD GitHub CI (Unit, Typecheck, Build, Browser, World Tour, cloud-save, Quality Gate) for the *final* commit; do not reuse a prior successful SHA.
+- [ ] On-device human acceptance of motion style, box lid hinge, GPU/decode cost, true frame sequence and loop smoothness, reduced motion, all screen sizes including folding, interactive 3D showcase and cosmetic entitlement regression.
+- [ ] Run complete `make verify` in a full local checkout (GitHub contents connector has no local test runner). Synthetic-image local smoke tests are not production-art visual sign-off.
+
+Original WebP/SVG masters, live 3D car rendering, ownership rules and the static/reduced-motion fallback stay in place. No PR, merge or deploy.
+
+- [x] 2026-11-05 full-CI regression failure repro: Actions `41969270176` browser shards failed Vite template parse at `src/GarageSkinCatalog.vue:86` because `import.meta.env.BASE_URL` was incorrectly embedded in template expression; corrected by `animatedArtworkSrc(skin.id)` in the script module at `58ae193c9ab6daefb05c77af63121e8567893d74`. Added a source-structure regression test. This fixes the identified syntax root cause; do not mark Build/Browser green until fresh exact-HEAD CI completes.
+
+## 2026-11-05 — Original-art animated Garage GIF physical-motion correction
+
+**Only writable branch:** `feature/garage-preview-animated-gifs`.
+
+- [x] Reviewed source-linked 39-image manifest and preserved each icon's 3x WebP/SVG and native 1x CSS footprint.
+- [x] Added regression tests for genuine alpha/silhouette changes in 4 thrusters and 9 launch flares; preserve untouched metal/nozzle pixels and transparent original outside silhouette.
+- [x] Added a synthetic red-lid/blue-base test that rejects entire-box movement or simple vertical lid bobbing; require two-axis physical hinge motion.
+- [x] Observed RED from GitHub Actions run 41975454359 (11 failures, including launch flare material-only animation, thruster-basic and vertically bobbing store-box).
+- [x] Updated `scripts/generate-garage-gifs.py`: directional combustion-edge alpha changes, radial shockwave edge alpha modulation, rotated chest lid around back hinge and independently hinged/bobbing ribbon loop. No full-image zoom, rotation, generic sparkle overlay or changes to game physics.
+- [x] GitHub Actions source-animation generation run 41975622710 succeeded and committed **39 GIF files** plus manifest (16 frames each, native 3x, 12.5fps; 10,327,386 bytes across six categories). This demonstrates Python motion regression GREEN and actual GitHub asset generation, not manual visual approval.
+- [x] Corrected existing Garage Browser checks to separately verify GIF runtime `src` and the original lossless-fidelity source WebP/SVG `data-static-src`. Badge-error tests now block both GIF and source to check accessible fallback; fixed previous stale WebP-only expectations.
+- [ ] Exact-HEAD FULL GitHub CI: rerun after this evidence update with `[full-regression]`; do not claim success until all required Unit/Typecheck/Build/Browser/World Tour/cloud-save/Quality Gate jobs pass.
+- [ ] Local `make verify`: this remote GitHub-only context cannot execute the full repository locally.
+- [ ] Real manual device/3D review, artwork crop/halo/material fidelity, iPhone/Android/foldable orientation and motion comfort still require hands-on QA.
+
+
+## 2026-11-06 — Sweep-only Garage icons back to original art + GPT GIF brief
+
+**Only writable branch:** `feature/garage-preview-animated-gifs`.
+
+- [x] The 14 GIFs that only added a light sweep (`badge-*` ×6, `rarity-*` ×5, `store-cart/star/tag`) were removed. Those tiles now show their original 3× art with one shared CSS sweep in `src/GarageArtworkTile.vue`: left → right, `skewX(-23deg)` (same tilt as `.garage-paint-sheen`), 6.8 s cycle, clipped to the icon alpha by `mask`, transform-only. It is hidden on VFX Low/off/comfort and under `prefers-reduced-motion`.
+- [x] The generator, manifest, workflow and tests are now 25 GIFs across 5 categories. The node test asserts that the swept GIFs are absent, that there is one `garage-art-sweep 6.8s` declaration, and that the mask and skew are present.
+- [x] Local evidence: `node --test tests/garage-animated-artwork.test.js` 5/5, Python motion tests 8 OK, `npm run typecheck` and `npm run build` green. Seeked screenshots at 4.4/4.8/5.2 s show the sweep crossing the icon in about 1 s.
+- [x] Added a GPT production brief for replacing the remaining 25 procedural GIFs, with an apply procedure that retires the generator and workflow in the same commit: `docs/designs/garage-animated-gifs/gpt-gif-prompts.md`.
+- [x] GPT pushed 25 repaired GIFs up to `6af15b02`, all marked `profile: gpt-authored`. Local evidence: the brief check prints `25/25`, the Python GIF tests pass 13 OK, and `npm test` passes 1889/0.
+- [ ] Retire the generator, `tests/test_garage_gif_motion.py` and `garage-animated-gifs.yml` once a human confirms that the 25 GIFs are final authentic frames (rule step 5). Until then, any change to the generator re-renders and overwrites them.
+- [x] **Bug fixed (full CI run 42232699577 on `6af15b02`):** the sweep rule `:global(body[data-vfx-quality="low"]) .garage-art-sweep` compiled under Vue scoped CSS to `body[data-vfx-quality=low]{display:none}`. That hid the whole app on VFX Low, VFX off and comfort mode. It failed the browser specs `garage-paint-collection` (low), `responsive-focus` Event Lab (low) and `airflow-wake`. The fix uses plain `body[...] .garage-art-sweep` (scoped attribute on the sweep). The guard `tests/vue-scoped-global-selector.test.js` was RED with 3 offenders before the fix and is GREEN after. Locally, the Garage paint/VFX/animated specs pass 34/34 and responsive-focus + airflow-wake pass 15/15. `airflow-wake` was not reproduced RED locally.
+- [ ] Exact-HEAD full GitHub CI with `[full-regression]` on the fix commit, plus manual review on real devices and Safari.
+
+## 2026-11-07 — Garage formal GIF visual QA gate (source-locked 25)
+
+**Only writable branch:** `feature/garage-preview-animated-gifs`.
+
+- [x] Verified exact HEAD `dd8114b3f01104ee5cc9b33c97f1aaf0d5f9a959` FULL CI run [42296245882](https://github.com/weskao/skyline-rush/actions/runs/42296245882) completed with `success`. This is evidence for the pre-QA HEAD only; any later documentation/cleanup commit needs its own CI.
+- [x] Inspected GitHub's complete recursive tree and 25-entry manifest: all 25 source paths, 25 GIFs and 25 six-frame QA contact-sheet files exist; exact GitHub blob byte sizes match manifest (9,440,892 bytes total), native 288×288 except store 216×216, 20 frames / 20 FPS metadata and each below 900,000 bytes.
+- [x] Visually inspected actual six-frame contact sheets for `thruster-ion`, `nitro-trail-purple`, `store-bundle` and `airflow-vortex`. Original art is recognizable, but these sampled frames are almost static and do **not** demonstrate convincing independent physical-part animation. The `thruster-ion` sheet also shows conspicuous white rectangular artifacts in some sampled frames. This is a **visual QA blocker**, not artistic approval. The generator is programmatic; the manifest's `gpt-authored` label is not evidence of image-model hand painting.
+- [ ] Fix the `thruster-ion` rectangular artifact and improve source-locked physical motion with a test-first regression. Verify six sampled frames show material motion (not just a shared overlay) across each category, including actual flame deformation, airflow movement, nitro trail propagation and independently moving store components; retain all original WebP/SVG blobs.
+- [ ] Independently decode all 25 GIFs and confirm actual 20×50ms frames, infinite loop, real transparency and >=12/20 transparent alpha margins, plus actual six distinct contact-sheet frames. Manifest metadata and an earlier generator run alone do not prove these checks.
+- [ ] Run `npm test`, `npm run build` and `make verify` in a complete checkout. The connector-only runtime cannot clone GitHub or execute repository commands; no local PASS is claimed.
+- [ ] Only after visual, binary, local test and exact-HEAD FULL CI acceptance all pass: atomically retire `scripts/generate-garage-gifs.py`, `tests/test_garage_gif_motion.py`, `.github/workflows/garage-animated-gifs.yml` and the **single obsolete recipe test** in `tests/garage-animated-artwork.test.js`; preserve all other tests, docs, rules and `scripts/package-garage-authored-gifs.py`. Run a fresh post-cleanup exact-HEAD FULL CI before declaring complete.
+
+## 2026-11-08 — Garage glow GIFs: card-tint compositing (no dark matte rim)
+
+- [x] Root cause: soft glow edges were composited over the flat `#0f1c33` matte and cut at ~40% alpha, so 16 GIFs
+  (thruster ×4, nitro-trail cyan/gold/red/purple, launch-flare blue/ring/pulse/gold/red/cyan/magenta/white) showed a
+  dark navy rim on the lighter card tint. Card backgrounds are identical per category (measured).
+- [x] RED: `test_glow_gifs_have_no_dark_rim_on_their_card` fails on the previous GIFs (thruster-basic frame 0: 42% of
+  edge pixels darker than the card; 14 of 16 between 42% and 92%). GREEN after re-export: at most 7%.
+- [x] Fix: `save_gif` composites onto `assets-src/garage-card-bg/<category>.png` with a ~10% cut;
+  `scripts/repackage-garage-card-gifs.py --apply` re-exports the 16 GIFs from the committed WebP sources, keeps the
+  dcec8b99 thruster repair (alpha never below source). The 103eda55 flare fixes were single-pixel palette outliers;
+  the new palette leaves 0–10 such pixels per 20-frame GIF, same order as before.
+- [x] Visual: static | old | new browser crops at mobile 3×, plus frame 0 of all 16 over the real card. Rim gone;
+  flares keep a tinted halo that still ends in a 1-bit edge (GIF limit). Sizes 357–639 KB (<900 KB).
+- [ ] Exact-HEAD remote CI for this commit. Not merged into `develop` (user instruction).
+
 ## 2026-11-08 — Superseded develop runs no longer paint `quality-gate` red (`fix/ci-quality-gate-cancelled`)
 
 Acceptance: a run cancelled by a newer push (`cancel-in-progress`) reports `quality-gate` as cancelled, not failed;

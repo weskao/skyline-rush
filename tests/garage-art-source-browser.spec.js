@@ -109,6 +109,7 @@ test('safe 3x Rewards/Missions reference cards never crop image or caption on de
     await expect(cards).toHaveCount(8);
     for (const card of await cards.all()) {
       await card.scrollIntoViewIfNeeded();
+      await expect.poll(() => card.locator('img').evaluate(img => img.naturalWidth), { message: 'lazy art decoded at 3x' }).toBe(288);
       const v = await card.evaluate(node => {
         const outer = node.getBoundingClientRect(), art = node.querySelector('img').getBoundingClientRect();
         const frame = node.querySelector('.garage-badge-art-frame').getBoundingClientRect();
