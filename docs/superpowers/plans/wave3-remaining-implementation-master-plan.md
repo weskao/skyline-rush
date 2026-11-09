@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Checkboxes mean executable evidence, never plans-only.
 
 **Goal:** Deliver a complete, attractive, genuinely playable **backend-free early-access** Mission → Results → Demo Rewards → Demo Store → Demo Collection → Equip loop first, then add a verified Go backend **without rewriting the UI**.
-**Date/status:** 2026-11-10 · DOCUMENTATION PLANNED, NOTHING IN THIS PLAN IMPLEMENTED BY THIS COMMIT.
+**Date/status:** 2026-11-10 · Frontend/backend flows remain unimplemented by this art-only change; static A-03/A-04 WebP + PNG files are now committed on the plan branch.
 **Architecture:** Keep the existing Vue 3 + strict TypeScript / Vite / Three.js game untouched in its hot path. Add a small local-demo experience port and components first; use the same port for future trusted Go+Firestore authority after frontend acceptance. Keep true Cloud Save/PAINTS and demo state entirely separate.
 **Tech stack:** Vue 3, TS, native Node tests, Playwright, GitHub Actions, optional small browser storage, existing Firebase client for current gameplay only. Go + Firebase Auth + Firestore **later**.
 **Spec:** `docs/superpowers/specs/2026-11-10-wave3-frontend-first-experience-design.md`
@@ -38,14 +38,14 @@
 
 ### A-03 / A-04 implementation file handoff (2026-11-10)
 
-Two standalone new art assets have been produced externally to the app code; the current canonical runtime filename/ownership contract is:
+Two standalone A-03/A-04 art assets have now been committed to this planning branch as transparent WebP **and** same-name PNG fallback files. The canonical runtime filename/ownership contract is:
 
-- **A-03 Demo Points:** `public/feature-assets/wave3-demo/raster/demo-points@3x.webp` (transparent `demo-points@3x.png` master counterpart). Consume at **72×72 CSS px** from the 216×216 3× image in the local-only Demo Points balance, Store and Results presentation; never represent as real currency.
-- **A-04 Demo Claim:** `public/feature-assets/wave3-demo/raster/demo-claim@3x.webp` (transparent `demo-claim@3x.png` master counterpart). Consume at **72×72 CSS px** when a local-demo mission reward can be claimed or confirmed; state and translation remain authored by Vue, never the image.
+- **A-03 Demo Points:** `public/feature-assets/wave3-demo/raster/demo-points@3x.webp` (transparent `demo-points@3x.png` 216px PNG fallback). Consume at **72×72 CSS px** from the 216×216 3× image in the local-only Demo Points balance, Store and Results presentation; never represent as real currency.
+- **A-04 Demo Claim:** `public/feature-assets/wave3-demo/raster/demo-claim@3x.webp` (transparent `demo-claim@3x.png` 216px PNG fallback). Consume at **72×72 CSS px** when a local-demo mission reward can be claimed or confirmed; state and translation remain authored by Vue, never the image.
 
 Use `import.meta.env.BASE_URL` + `feature-assets/wave3-demo/raster/<filename>`, `object-fit:contain` and ≥8px container padding. Static art needs no GIF/reduced-motion variant. Do not silently substitute existing Store or mission sprites. Before A01/A02 is checked off, verify each binary exists and decodes in the branch, RGBA alpha and ≥20px inset, and capture browser screenshots in portrait/landscape/desktop. Other artwork (A-05/A-06) stays optional. See `docs/designs/wave3-frontend-first-visual-assets.md` §7 for the canonical asset table.
 
-**Status distinction:** file naming/handoff is documented, but this alone is not proof the WebPs are in the repository, wired into UI, or cleared for visual approval. F03–F06 and A01/A02 remain open until their respective evidence is observed.
+**Status distinction:** all four A-03/A-04 binary files now exist at these exact paths on the planning branch (WebP blob SHAs: points `c5027a27b01f4e9b9440f980abb23546a3c8987b`, claim `856dfa604dd8b00a5b59ebe14f1db97f7875022d`). 216×216 RGBA and ≥20px alpha inset have been checked. Images are **not yet wired into UI** or cleared for live screenshot/manual visual approval. F03–F06 and A01/A02 full acceptance stay open until their respective evidence is observed.
 
 ## Work graph and ownership
 
