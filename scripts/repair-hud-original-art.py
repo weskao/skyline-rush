@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Repair the existing mobile HUD art without redesigning its original visual style.
+"""Repair clipped 3x HUD sprites from the ORIGINAL illustrated WebPs.
 
-The master images are pinned to the pre-redesign commit; no new icons, lettering,
-palettes, or materials are synthesized. Only foreign sprite scraps, top bars and
-incomplete bottom rims are addressed. The original 3x canvases are preserved.
+The original, pre-redesign Git objects are the only artwork inputs. Do not
+repaint icon silhouettes, replace lettering, or upscale cropped sprites.
 """
+import argparse
 import io
 import subprocess
 from pathlib import Path
@@ -12,107 +12,154 @@ from pathlib import Path
 from PIL import Image, ImageFilter
 
 SOURCE_COMMIT = "f67d3bf31012edfa52cc06f46abe586ad5bdd78e"
-FOLDER = "public/feature-assets/mobile-controls-hud/raster"
+FOLDER = Path("public/feature-assets/mobile-controls-hud/raster")
 NAMES = (
     "button-back", "button-coming-soon", "button-garage", "button-nitro",
     "button-play", "button-retry", "hud-brake", "hud-combo", "hud-drift",
     "hud-nitro", "hud-pause", "hud-speed", "ui-arrow-left",
     "ui-arrow-right", "ui-close", "ui-info", "ui-settings", "ui-tooltip",
 )
+# These regions belong to adjacent icons in the original sprite sheet.
 FOREIGN_LEFT = {
-    "button-back": 68, "button-coming-soon": 70,
-    "button-garage": 94, "button-retry": 94,
+    "button-back": 71, "button-coming-soon": 76,
+    "button-garage": 96, "button-retry": 96,
 }
 FOREIGN_TOP = {
-    "hud-brake": 43, "hud-drift": 43, "hud-nitro": 42,
-    "ui-arrow-left": 46, "ui-arrow-right": 46, "ui-close": 46,
+    "hud-brake": 44, "hud-drift": 44, "hud-nitro": 44,
+    "ui-arrow-left": 49, "ui-arrow-right": 49, "ui-close": 57,
 }
-RIM_DONOR = {
-    "hud-brake": "hud-pause", "hud-drift": "hud-pause",
-    "hud-nitro": "hud-combo",
+# Same-family rings: only restore pixels in missing *outer rim* regions.
+RING_DONOR = {
+    "hud-brake": ("hud-pause", 0, 14, 194, 300),
+    "hud-drift": ("hud-pause", 0, 14, 194, 300),
+    "hud-nitro": ("hud-combo", 0, 17, 189, 188),
+    "hud-combo": ("hud-combo", 0, 0, 194, 205),
 }
 
 
-def source_bytes(name):
-    return subprocess.check_output([
-        "git", "show", f"{SOURCE_COMMIT}:{FOLDER}/{name}@3x.webp"
-    ])
+def original_bytes(name):
+    return subprocess.check_output(
+        ["git", "show", f"{SOURCE_COMMIT}:{FOLDER}/{name}@3x.webp"]
+    )
 
 
-def bbox(image):
+def alpha_bounds(image):
     return image.getchannel("A").point(
-        lambda value: 255 if value > 16 else 0
+        lambda pixel: 255 if pixel > 16 else 0
     ).getbbox()
 
 
-def repair(name, originals):
-    image = originals[name].copy()
+def repair_rim(image, donor, dx, dy, bottom, right):
+    """Extend truncated metallic/energy rims, never replace interior glyphs."""
+    w, h = image.size
+    # A larger stage exposes donor pixels that the source's bottom clipped.
+    stage = Image.new("RGBA", (w + 72, h + 72))
+    stage.alpha_composite(image, (36, 36))
+    donor_stage = Image.new("RGBA", stage.size)
+    donor_stage.alpha_composite(donor, (36 + dx, 36 + dy))
+    pixels = stage.load()
+    donor_pixels = donor_stage.load()
+    cx, cy = (122, 141) if donor is not None and bottom == 189 else (108, 124)
+    for y in range(36 + bottom, stage.height - 16):
+        for x in range(36, stage.width - 16):
+            lx, ly = x - 36, y - 36
+            if ly < bottom and lx < right:
+                continue
+            # Reconstruct only the outer arc, not the icon's centre/lettering.
+            radius = ((lx - cx) ** 2 + (ly - cy) ** 2) ** .5
+            if not 63 <= radius <= 91:
+                continue
+            r, g, b, a = donor_pixels[x, y]
+            if a <= 30 or max(r, g, b) < 95:
+                continue
+            if pixels[x, y][3] >= 48:
+                continue
+            pixels[x, y] = (r, g, b, a)
+    return stage
+
+
+def cleanup(image, name):
     alpha = image.getchannel("A")
     if name in FOREIGN_LEFT:
         alpha.paste(0, (0, 0, FOREIGN_LEFT[name], image.height))
     if name in FOREIGN_TOP:
         alpha.paste(0, (0, 0, image.width, FOREIGN_TOP[name]))
     image.putalpha(alpha)
-
-    if name in RIM_DONOR:
-        donor = originals[RIM_DONOR[name]]
-        dx, dy = (0, 5) if name == "hud-nitro" else (11, 8)
-        shifted_donor = Image.new("RGBA", image.size)
-        shifted_donor.paste(donor, (dx, dy))
-        dp = shifted_donor.load()
-        ap = alpha.load()
-        patch = Image.new("RGBA", image.size)
-        pp = patch.load()
-        start_y = 176 if name == "hud-nitro" else 174
-        min_brightness = 95 if name == "hud-nitro" else 125
-        for y in range(start_y, image.height):
-            for x in range(image.width):
-                red, green, blue, a = dp[x, y]
-                if a < 100 or max(red, green, blue) < min_brightness:
-                    continue
-                if ap[x, y] >= 72:
-                    continue  # Preserve every existing visible silhouette pixel.
-                pp[x, y] = (
-                    red, green, blue, int(a * (1 - ap[x, y] / 72))
-                )
-        image.alpha_composite(patch)
-        placed = Image.new("RGBA", image.size)
-        placed.paste(image, (0, -12))  # Safety margin below restored rim.
-        image = placed
-
-    if name in FOREIGN_LEFT or name in FOREIGN_TOP or name in RIM_DONOR:
-        sharpened = image.convert("RGB").filter(
-            ImageFilter.UnsharpMask(radius=0.8, percent=115, threshold=3)
-        )
-        sharpened.putalpha(image.getchannel("A"))
-        image = sharpened
-
-    expected = (432, 156) if name.startswith("button-") else (216, 216)
-    assert image.size == expected, (name, "dimensions", image.size)
-    box = bbox(image)
-    assert box, (name, "empty")
-    assert min(box[0], box[1], image.width - box[2], image.height - box[3]) >= 12, (name, box)
     return image
 
 
+def pack(image, name):
+    width, height = (432, 156) if name.startswith("button-") else (216, 216)
+    margin = 20 if width == 216 else 14
+    bounds = alpha_bounds(image)
+    assert bounds is not None, (name, "no artwork")
+    # Include faint glows without carrying empty sheet-space or other sprites.
+    expanded = (
+        max(0, bounds[0] - 3), max(0, bounds[1] - 3),
+        min(image.width, bounds[2] + 3), min(image.height, bounds[3] + 3),
+    )
+    content = image.crop(expanded)
+    max_width, max_height = width - 2 * margin, height - 2 * margin
+    scale = min(1.0, max_width / content.width, max_height / content.height)
+    if scale < 1:
+        content = content.resize(
+            (max(1, round(content.width * scale)), max(1, round(content.height * scale))),
+            Image.Resampling.LANCZOS,
+        )
+    # A modest contrast-aware sharpen restores legibility without changing
+    # the original metallic highlights, colour scheme, or 3D illustration.
+    rgb = content.convert("RGB").filter(
+        ImageFilter.UnsharpMask(radius=0.65, percent=76, threshold=3)
+    )
+    rgb.putalpha(content.getchannel("A"))
+    out = Image.new("RGBA", (width, height))
+    out.alpha_composite(rgb, ((width - rgb.width) // 2, (height - rgb.height) // 2))
+    bounds = alpha_bounds(out)
+    assert bounds, name
+    margins = (bounds[0], bounds[1], width - bounds[2], height - bounds[3])
+    assert min(margins) >= margin - 1, (name, "clipped", margins)
+    return out
+
+
+def repair(name, originals):
+    base = cleanup(originals[name].copy(), name)
+    if name in RING_DONOR:
+        donor_name, dx, dy, bottom, right = RING_DONOR[name]
+        # Only ring pixels from another original HUD icon can be used as fill.
+        base = repair_rim(base, originals[donor_name], dx, dy, bottom, right)
+    return pack(base, name)
+
+
+def verify_file(name):
+    path = FOLDER / f"{name}@3x.webp"
+    with Image.open(path) as opened:
+        assert opened.format == "WEBP", (name, "not WebP")
+        image = opened.convert("RGBA")
+    expected = (432, 156) if name.startswith("button-") else (216, 216)
+    assert image.size == expected, (name, "wrong size", image.size)
+    bounds = alpha_bounds(image)
+    assert bounds, (name, "empty image")
+    margins = (bounds[0], bounds[1], image.width - bounds[2], image.height - bounds[3])
+    required = 14 if name.startswith("button-") else 20
+    assert min(margins) >= required - 1, (name, "alpha clipped", margins)
+    return margins
+
+
 def main():
-    originals = {
-        name: Image.open(io.BytesIO(source_bytes(name))).convert("RGBA")
-        for name in NAMES
-    }
-    out = Path(FOLDER)
-    out.mkdir(parents=True, exist_ok=True)
+    args = argparse.ArgumentParser(description=__doc__)
+    args.add_argument("--check", action="store_true")
+    opts = args.parse_args()
+    if not opts.check:
+        originals = {
+            n: Image.open(io.BytesIO(original_bytes(n))).convert("RGBA") for n in NAMES
+        }
+        for name in NAMES:
+            image = repair(name, originals)
+            target = FOLDER / f"{name}@3x.webp"
+            # Alpha/layer information survives untouched; no lossy re-encode.
+            image.save(target, "WEBP", lossless=True, method=6, exact=True)
     for name in NAMES:
-        result = repair(name, originals)
-        path = out / f"{name}@3x.webp"
-        if name not in FOREIGN_LEFT and name not in FOREIGN_TOP and name not in RIM_DONOR:
-            path.write_bytes(source_bytes(name))  # Preserve intact art bit-for-bit.
-        else:
-            result.save(path, "WEBP", lossless=True, method=6, exact=True)
-        reopened = Image.open(path).convert("RGBA")
-        assert reopened.size == result.size
-        assert bbox(reopened) == bbox(result)
-        print(f"{name}: {reopened.width}x{reopened.height} alpha={bbox(reopened)}")
+        print(name, verify_file(name))
 
 
 if __name__ == "__main__":
