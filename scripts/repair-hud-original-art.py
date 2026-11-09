@@ -219,37 +219,46 @@ def pack(image, name):
 
 
 def restore_gallery_face(image, name):
-    """Patch visibly missing inside-panel pixels *after* fitting to 3x canvas.
+    """Rebuild lost enamel using a spatially matching part of the SAME icon.
 
-    A cutout may contain nearly transparent dark RGB (rather than pure alpha
-    zero) and have no intact exact mirrored counterpart. Copy nearby original
-    enamel pixels, never a synthetic flat colour or a glyph/highlight.
+    Do not stamp one fixed colour: that created a flat rectangular seam on
+    the original semi-transparent gradient. Restore only locally depleted
+    alpha, feather near the damaged edge, leave all glyphs/bevels unchanged.
     """
-    if name not in ("ui-info", "ui-tooltip"):
+    if name not in ("ui-info", "ui-tooltip", "hud-nitro"):
         return image
     source, output = image.load(), image.copy()
     target = output.load()
-    for y in range(116, 156):
-        for x in range(119, 158):
-            if name == "ui-info" and (x - 108) ** 2 + (y - 108) ** 2 > 51 ** 2:
-                continue
-            if name == "ui-tooltip" and (x > 150 or y > 151):
-                continue
-            original = source[x, y]
-            if original[3] >= 145 and max(original[:3]) > 28:
-                continue
+    if name == "hud-nitro":
+        # A horizontal cyan remnant from the composite sheet survives below
+        # the bottom-right circle. It is outside the circular silhouette.
+        for y in range(155, image.height):
+            for x in range(157, image.width):
+                radius = ((x - 108) ** 2 + (y - 108) ** 2) ** .5
+                if radius > 88:
+                    target[x, y] = (0, 0, 0, 0)
+        return output
+
+    for y in range(102 if name == "ui-info" else 112, 159):
+        for x in range(113, 159):
             if name == "ui-info":
-                candidates = ((82, min(y, 138)), (77, 128),
-                              (87, 115), (91, 133))
+                if (x - 108) ** 2 + (y - 108) ** 2 > 52 ** 2:
+                    continue  # Preserve the real chrome ring and its glow.
+                donor_x, donor_y = 216 - x, y
+                feather = min(1., max(0., (x - 112) / 18),
+                              max(0., (y - 101) / 17))
             else:
-                candidates = ((89, min(y, 139)), (83, 137),
-                              (103, 139), (91, 130))
-            for sx, sy in candidates:
-                donor = source[sx, sy]
-                brightness = max(donor[:3])
-                if donor[3] >= 35 and 35 <= brightness <= 174:
-                    target[x, y] = donor
-                    break
+                if x > 150 or y > 154:
+                    continue  # Preserve the speech tail and lower metal rim.
+                donor_x, donor_y = x, 224 - y
+                feather = min(1., max(0., (x - 112) / 17),
+                              max(0., (y - 111) / 17))
+            donor = source[donor_x, donor_y]
+            original = source[x, y]
+            if donor[3] < 20 or original[3] >= donor[3] * .65:
+                continue
+            weight = clamp((donor[3] - original[3]) / donor[3]) * feather
+            target[x, y] = blend_rgba(original, donor, weight)
     return output
 
 
