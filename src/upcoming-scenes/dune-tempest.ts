@@ -297,8 +297,8 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   update(0, 'high', false);
   // Both drive shots follow the straight departure road instead of aiming sideways into the canyon.
   // Other five camera modes continue to use the shared showcase presets.
-  const cameraPose: CameraPose = { cameraSide: 6.3, cameraBack: 12.8, cameraHeight: 3.5,
-    lookSide: 0.5, lookAhead: 10, lookHeight: 1.6 };
+  const cameraPose: CameraPose = { cameraSide: 5, cameraBack: 15, cameraHeight: 3.5,
+    lookSide: -2, lookAhead: 5, lookHeight: 1.6 };
   const portraitCameraPose: CameraPose = { cameraSide: 5.8, cameraBack: 14, cameraHeight: 4.3,
     lookSide: 0.5, lookAhead: 6, lookHeight: 1.6 };
   return { group, update, dispose, cameraPose, portraitCameraPose };

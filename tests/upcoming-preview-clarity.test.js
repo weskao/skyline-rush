@@ -115,6 +115,8 @@ test('Dune drive camera looks along the departure road on desktop and phone', ()
       'Dune drive camera must show road ahead instead of only the canyon side');
     assert.ok(Math.abs(car.x) < 0.8 && Math.abs(car.y) < 0.8,
       'Dune drive view must keep the Roadster in frame');
+    if (aspect >= 0.78) assert.ok(car.x > -0.1,
+      'Dune Roadster stays clear of the left-hand home panel in landscape');
     showcase.dispose();
   }
 });
