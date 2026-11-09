@@ -8,7 +8,7 @@ type ObservedRace = {
   player: { driftPayout: unknown; longestCombo: number };
   result: null | { success?: boolean; time?: number };
 };
-type RaceMemory = { completionId: string; accountId: string; lastDrift: unknown; driftCount: number; combo: number };
+type RaceMemory = { completionId: string; accountId: string; lastDrift: unknown; driftCount: number; combo: number; pending: { kind: GameEvent['kind']; suffix: string }[] };
 const id = (): string => globalThis.crypto?.randomUUID?.() ?? `demo-${Math.random().toString(36).slice(2)}-${Date.now()}`;
 
 export function createWave3RaceEventBridge(experience: Wave3ExperiencePort, idFactory: () => string = id) {
@@ -17,7 +17,7 @@ export function createWave3RaceEventBridge(experience: Wave3ExperiencePort, idFa
     let item = known.get(race);
     if (!item) {
       item = { completionId: idFactory(), accountId: experience.getSnapshot().accountId,
-        lastDrift: null, driftCount: 0, combo: 0 };
+        lastDrift: null, driftCount: 0, combo: 0, pending: [] };
       known.set(race, item);
     }
     return item;
@@ -36,11 +36,11 @@ export function createWave3RaceEventBridge(experience: Wave3ExperiencePort, idFa
       const player = race.player;
       if (player.driftPayout && player.driftPayout !== state.lastDrift) {
         state.lastDrift = player.driftPayout;
-        emit(race, state, 'drift', String(++state.driftCount));
+        state.pending.push({ kind: 'drift', suffix: String(++state.driftCount) });
       }
       if (Number.isFinite(player.longestCombo) && player.longestCombo > state.combo) {
         state.combo = player.longestCombo;
-        emit(race, state, 'combo', String(state.combo));
+        state.pending.push({ kind: 'combo', suffix: String(state.combo) });
       }
     },
     finish(race: ObservedRace, intermediateStage: boolean): ExperienceResult | null {
@@ -49,7 +49,11 @@ export function createWave3RaceEventBridge(experience: Wave3ExperiencePort, idFa
       if (state.accountId !== experience.getSnapshot().accountId) return null;
       const eligible = !intermediateStage && race.result.success !== false &&
         typeof race.result.time === 'number' && Number.isFinite(race.result.time) && race.result.time > 0;
-      if (eligible) emit(race, state, 'finish', 'end');
+      if (eligible) {
+        for (const { kind, suffix } of state.pending) emit(race, state, kind, suffix);
+        state.pending.length = 0;
+        emit(race, state, 'finish', 'end');
+      }
       return experience.settleCompletion({ schemaVersion: WAVE3_EXPERIENCE_VERSION,
         completionId: state.completionId, accountId: state.accountId,
         trackId: race.trackId, mode: race.mode, occurredAt: Date.now(), eligible });

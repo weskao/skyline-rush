@@ -15,11 +15,13 @@ test('real drift payout, combo and eligible finish increment demo only from game
   race.player.longestCombo = 2;
   bridge.capture(race);
   bridge.capture(race);
-  assert.equal(demo.getSnapshot().missions['mission-drift'].progress, 1);
-  assert.equal(demo.getSnapshot().missions['mission-combo'].progress, 1);
+  assert.equal(demo.getSnapshot().missions['mission-drift'].progress, 0, 'staged until real finish');
+  assert.equal(demo.getSnapshot().missions['mission-combo'].progress, 0, 'staged until real finish');
   assert.equal(demo.getSnapshot().missions['mission-race'].progress, 0);
   race.phase = 'finished'; race.result = { success: true, time: 51, position: 1 };
   assert.equal(bridge.finish(race, false).status, 'completed');
+  assert.equal(demo.getSnapshot().missions['mission-drift'].progress, 1);
+  assert.equal(demo.getSnapshot().missions['mission-combo'].progress, 1);
   assert.equal(demo.getSnapshot().missions['mission-race'].progress, 1);
   assert.equal(demo.getSnapshot().demoPoints, 40);
   assert.equal(bridge.finish(race, false).status, 'duplicate');
@@ -59,4 +61,17 @@ test('each newly finished race receives a unique completion identifier', () => {
     assert.equal(bridge.finish(race, false).status, 'completed');
   }
   assert.equal(demo.getSnapshot().demoPoints, 60);
+});
+
+test('aborted race cannot grant demo mission progress or rewards', () => {
+  const demo = createWave3LocalDemo();
+  const bridge = createWave3RaceEventBridge(demo, () => 'race-aborted-00001');
+  const race = aRace();
+  race.player.driftPayout = { time: 2, nitro: .15 };
+  race.player.longestCombo = 3;
+  bridge.capture(race);
+  assert.equal(bridge.finish(race, false), null);
+  assert.equal(demo.getSnapshot().missions['mission-drift'].progress, 0);
+  assert.equal(demo.getSnapshot().missions['mission-combo'].progress, 0);
+  assert.equal(demo.getSnapshot().demoPoints, 20);
 });
