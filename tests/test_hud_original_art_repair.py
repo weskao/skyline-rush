@@ -42,5 +42,14 @@ class OriginalArtworkRepairTests(unittest.TestCase):
         self.assertGreater(restored.getpixel((145, 131))[3], 180,
                            "missing bubble panel was left with a hole")
 
+    def test_original_enamel_faces_have_no_dark_cutout_inside_the_frame(self):
+        folder = Path(__file__).resolve().parents[1] / "public/feature-assets/mobile-controls-hud/raster"
+        for name, point in (("ui-info", (140, 140)), ("ui-tooltip", (136, 144))):
+            with Image.open(folder / (name + "@3x.webp")) as opened:
+                px = opened.convert("RGBA").getpixel(point)
+            print(name, point, "RGBA", px)
+            self.assertGreater(px[3], 140, (name, point, "face is transparent"))
+            self.assertGreater(max(px[:3]), 35, (name, point, "face contains dark cutout"))
+
 if __name__ == "__main__":
     unittest.main()
