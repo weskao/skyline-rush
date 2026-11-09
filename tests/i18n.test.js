@@ -9,6 +9,7 @@ import {
 import { UI } from '../src/locales/ui.ts';
 import { GAME } from '../src/locales/game.ts';
 import { RACE_TRACKS } from '../src/game.js';
+import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 import { strayEnglish } from './helpers/i18n-english.js';
 
 test('FPS is an allowed technical acronym, while ordinary English still needs translation', () => {
@@ -26,6 +27,12 @@ test('all track IDs have English and Traditional Chinese labels', () => {
   assert.equal(trackName('cosmic', 'en'), 'Cosmic Orbit');
   assert.equal(trackName('coast', 'ja'), 'Coast');
 });
+test('Coming Soon route labels use localized catalog names, never raw IDs', () => {
+  for (const [id, track] of Object.entries(UPCOMING_TRACKS))
+    for (const locale of SUPPORTED_LOCALES)
+      assert.equal(trackName(id, locale), track.names[locale], `${id} / ${locale}`);
+});
+
 test('locale preference validates and gracefully handles blocked storage', () => {
   const data = new Map();
   const store = { getItem: k => data.get(k) ?? null, setItem: (k,v) => data.set(k,v) };
