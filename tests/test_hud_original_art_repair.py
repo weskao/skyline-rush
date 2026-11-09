@@ -42,6 +42,35 @@ class OriginalArtworkRepairTests(unittest.TestCase):
         self.assertGreater(restored.getpixel((145, 131))[3], 180,
                            "missing bubble panel was left with a hole")
 
+    def test_round_face_inpainting_follows_the_original_opposite_side_gradient(self):
+        image = Image.new("RGBA", (216, 216))
+        pixel = image.load()
+        for y in range(54, 164):
+            for x in range(54, 164):
+                if (x - 108) ** 2 + (y - 108) ** 2 < 54 ** 2:
+                    pixel[x, y] = (x, y, 95, 180)
+        ImageDraw.Draw(image).rectangle((130, 124, 150, 148),
+                                        fill=(0, 0, 0, 0))
+        repaired = repair_module.restore_gallery_face(image, "ui-info")
+        self.assertEqual(repaired.getpixel((140, 137)),
+                         image.getpixel((76, 137)))
+        self.assertEqual(repaired.getpixel((105, 130)),
+                         image.getpixel((105, 130)))
+
+    def test_bubble_inpainting_uses_matching_top_region_not_flat_patch(self):
+        image = Image.new("RGBA", (216, 216))
+        pixel = image.load()
+        for y in range(62, 159):
+            for x in range(50, 153):
+                pixel[x, y] = (x, y, 98, 180)
+        ImageDraw.Draw(image).rectangle((125, 125, 148, 150),
+                                        fill=(0, 0, 0, 0))
+        repaired = repair_module.restore_gallery_face(image, "ui-tooltip")
+        self.assertEqual(repaired.getpixel((140, 140)),
+                         image.getpixel((140, 84)))
+        self.assertEqual(repaired.getpixel((90, 140)),
+                         image.getpixel((90, 140)))
+
     def test_original_enamel_faces_have_no_dark_cutout_inside_the_frame(self):
         folder = Path(__file__).resolve().parents[1] / "public/feature-assets/mobile-controls-hud/raster"
         for name, point in (("ui-info", (140, 140)), ("ui-tooltip", (136, 144))):
