@@ -65,4 +65,14 @@ export function createWave3RaceEventBridge(experience: Wave3ExperiencePort, idFa
 export const wave3DemoExperience = createWave3LocalDemo();
 const bridge = createWave3RaceEventBridge(wave3DemoExperience);
 export const captureWave3RaceTelemetry = bridge.capture;
-export const settleWave3RaceDemo = bridge.finish;
+const receipts = new WeakMap<object, ExperienceResult | null>();
+/** The first receipt is held by race identity, so rendering never settles again. */
+export function settleWave3RaceDemo(race: Parameters<typeof bridge.finish>[0], intermediate: boolean): ExperienceResult | null {
+  if (!receipts.has(race)) receipts.set(race, bridge.finish(race, intermediate));
+  return receipts.get(race) ?? null;
+}
+export function getWave3DemoReceipt(race: object): ExperienceResult | null {
+  const receipt = receipts.get(race);
+  return receipt?.snapshot.accountId === wave3DemoExperience.getSnapshot().accountId ? receipt : null;
+}
+export const setWave3DemoAccount = (id: string | null): void => { wave3DemoExperience.setAccount(id); };

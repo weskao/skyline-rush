@@ -48,6 +48,7 @@ import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, delet
 import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-progress.ts';
 import { settleRaceAndDemo, captureWave3RaceTelemetry } from './race-results.ts';
 import { resultView, setupResultScreen } from './result-screen.ts';
+import { renderWave3DemoResults } from './wave3-demo-results-integration.ts';
 import { createRaceHud } from './race-hud.ts';
 import { setupItemUI } from './item-ui.ts';
 import { setupRaceSelectUI } from './race-select-ui.ts';
@@ -152,8 +153,7 @@ function leaveIntro() {
   const animation = ui.intro.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-36px)' }], motionOptions('base'));
   animation.finished.catch(() => {}).then(() => { ui.intro.inert = false; ui.intro.hidden = race.phase !== 'ready'; });
 }
-const renderResult = setupResultScreen();
-
+const renderResult = setupResultScreen(() => renderWave3DemoResults(race, getLocale()));
 const notice = setupPerformanceNotice({ downgraded: vfx.deviceSelection.downgraded, quality: vfx.deviceSelection.settings.quality });
 
 const { renderReleaseNotes, maybeShowReleaseNotes } = setupReleaseNotesUI({
