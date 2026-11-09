@@ -1,3 +1,14 @@
+## 2026-11-09 — Last home-page 賽道 stays in memory (`develop`)
+
+User-visible: picking a course on Home (playable or Coming Soon), then leaving via Daily / a race and returning with Choose track, restores that card. Reload starts on Coast. The course is a JS variable for this page load; never `localStorage` or `sessionStorage` (`skyline-rush-last-track` is no longer written). Last mode still uses sessionStorage.
+
+- [x] Root cause: last-track was written only on Start (sessionStorage) and restored only on reload; `chooseTrack` used the finished `race.trackId`, and Daily/`selectClassic` overwrote it (often Coast) and cleared `upcomingSelection`.
+- [x] RED: `tests/last-home-track.test.js` failed with `ERR_MODULE_NOT_FOUND` for `src/last-home-track.ts` before the module existed.
+- [x] GREEN: `rememberLastHomeTrack` on picker clicks; `restoreLastTrack` in `chooseTrack`; Start no longer overwrites picker memory. `src/main.js` 677, `src/race-select-ui.ts` 352, `src/last-home-track.ts` 23.
+- [x] Gates: focused unit 21/21; `npm test` 2500 pass / 0 fail / 3 skipped; `npm run typecheck` OK; `npm run build` OK; Playwright `PLAYWRIGHT_PORT=5398` `last-home-track-browser` + `guide-browser` 11/11 (Daily then Choose track keeps the picked playable / Coming Soon card; `skyline-rush-last-track` is null in localStorage and sessionStorage).
+- [x] `npm run test:layout` (`PLAYWRIGHT_PORT=5399`): 47 passed / 1 skipped (home-shortcuts + race-modes) then 42 passed (intro bottom edge + start layout).
+- [ ] Exact-HEAD remote CI; no merge/PR/deploy without user approval.
+
 ## 2026-11-09 — Epic: ring PERFECT LINE count 6/5 + Monsoon START
 
 - [x] Root cause: authored hoops (`src/track-themes.ts:53` themed, `src/gauntlet-course.ts:48` mixed-Gauntlet) were merged by

@@ -61,7 +61,7 @@ test('first Start opens practice; Skip races the selected track and is remembere
   await page.locator('#tutorial-exit').click();
   await expect(page.locator('#tutorial-coach')).toBeHidden();
   await expect(page.locator('#race-status')).toHaveText('RACING');
-  expect(await page.evaluate(() => sessionStorage.getItem('skyline-rush-last-track'))).toBe(track);
+  expect(await page.evaluate(() => sessionStorage.getItem('skyline-rush-last-track'))).toBeNull();
   await page.reload();
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');

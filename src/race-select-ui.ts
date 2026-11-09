@@ -16,6 +16,7 @@ import { setupEventLabUI } from './event-lab-ui.ts';
 import type { GhostRun } from './ghost.ts';
 import { racePresentationFor, updateRaceSetup } from './race-presentation-ui.ts';
 import type { VisualPreset } from './race-session.ts';
+import { lastHomeTrack, rememberLastHomeTrack, restoreHomeTrack } from './last-home-track.ts';
 
 // The simulation race comes from plain-JS game.js; this screen reads its selection fields only.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,8 +43,7 @@ interface RaceSelectOptions {
   isUpcomingEnterable(id: string): boolean;
 }
 type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines' | 'themes';
-const LAST_TRACK_KEY = 'skyline-rush-last-track';
-const LAST_MODE_KEY = 'skyline-rush-last-mode'; // tab-only, like the track; Event Lab needs its course, so it is not restored
+const LAST_MODE_KEY = 'skyline-rush-last-mode'; // tab-only; Event Lab needs its course, so it is not restored
 
 /** Home-screen race selection: mode, custom rules, track picker, route maps and the remembered track. */
 export function setupRaceSelectUI(options: RaceSelectOptions) {
@@ -240,6 +240,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (getRace().phase !== 'ready') return;
     options.clearControls();
     upcomingSelection = null;
+    rememberLastHomeTrack(button.dataset.track!);
     setRace(selectedRace(button.dataset.track!)); options.clearDaily();
     showTracks();
     button.focus({ preventScroll: true }); // Safari does not focus buttons on click
@@ -250,6 +251,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (getRace().phase !== 'ready') return;
     const id = button.dataset.upcomingTrack as UpcomingTrackId;
     upcomingSelection = options.isUpcomingEnterable(id) ? null : id;
+    rememberLastHomeTrack(id);
     options.clearControls(); options.clearDaily();
     if (!upcomingSelection) setRace(selectedRace(id));
     showTracks(); options.refreshPhase();
@@ -299,11 +301,11 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     raceRules[input.dataset.raceRule as RuleKey] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule!) ? Number(input.value) : input.value;
     changeRaceSelection();
   });
-  // Back to home reloads the page; the tab remembers the last raced mode and track so the intro reopens on them.
+  // The tab remembers the last raced mode. The last picker course stays in memory for this page load.
   try {
-    const mode = sessionStorage.getItem(LAST_MODE_KEY), last = sessionStorage.getItem(LAST_TRACK_KEY);
+    const mode = sessionStorage.getItem(LAST_MODE_KEY);
     if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
-    setRace(selectedRace(last && playable(last) ? last : getRace().trackId));
+    setRace(selectedRace(getRace().trackId));
   } catch { /* Classic on Coast stays the default without storage. */ }
   upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
   if (upcomingSelection) requestAnimationFrame(showTracks); // the shared WebGL world exists only after bootstrap
@@ -338,8 +340,13 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     /** Live route map for the HUD tick (rebuilt when the track changes). */
     raceRouteMap: (): RouteMap => { if (raceRouteMap?.trackId !== getRace().trackId) ensureRouteMaps(); return raceRouteMap!; },
     relabelRouteMaps(locale: string): void { for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale); },
-    rememberTrack(trackId: string): void {
-      try { sessionStorage.setItem(LAST_TRACK_KEY, trackId); sessionStorage.setItem(LAST_MODE_KEY, selectedMode); } catch { /* The intro falls back to Classic on Coast after a reload. */ }
+    restoreLastTrack(): void {
+      const choice = restoreHomeTrack(lastHomeTrack(), getRace().trackId, playable, isUpcomingTrack);
+      upcomingSelection = choice.upcoming as PreviewTrackId | null;
+      setRace(selectedRace(choice.trackId));
+    },
+    rememberTrack(_trackId: string): void {
+      try { sessionStorage.setItem(LAST_MODE_KEY, selectedMode); } catch { /* The intro falls back to Classic on Coast after a reload. */ }
     },
   };
 }
