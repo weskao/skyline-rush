@@ -3,7 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import { SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
-import type { ExperienceSnapshot, Wave3ExperiencePort } from './wave3-experience-contract.ts';
+import type { ExperienceSnapshot, Wave3ExperiencePort, Wave3Status } from './wave3-experience-contract.ts';
 import {
   WAVE3_DEMO_ITEMS, WAVE3_DEMO_STORE_ART, demoItemStatus, demoItemStatusText,
   demoRedemptionState,
@@ -68,7 +68,7 @@ function selectCategory(category: 'all' | SkinCategory): void {
   if (first) selectedId.value = first.id;
   confirmationId.value = null;
 }
-function feedback(status: DemoRedeemState | 'completed'): string {
+function feedback(status: DemoRedeemState | Wave3Status): string {
   switch (status) {
     case 'completed': return tr('Demo unlocked. Open Demo Collection to equip.', '試玩取得成功，請前往試玩收藏裝備。');
     case 'insufficient-demo-points': return tr('Not enough demo points. Finish a race or claim a demo mission.', '試玩點數不足，請完成比賽或領取試玩任務。');
