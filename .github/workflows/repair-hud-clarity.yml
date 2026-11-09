@@ -5,6 +5,7 @@ on:
       - fix/wave3-hud-artwork-completeness
     paths:
       - .github/workflows/repair-hud-clarity.yml
+      - scripts/repair-hud-original-art.py
   workflow_dispatch:
 permissions:
   contents: write
