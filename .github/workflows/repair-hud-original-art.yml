@@ -1,0 +1,51 @@
+name: Repair original Wave 3 HUD artwork once
+on:
+  push:
+    branches:
+      - fix/wave3-hud-artwork-completeness
+    paths:
+      - .github/workflows/repair-hud-original-art.yml
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install image decoder
+        run: python -m pip install Pillow==11.3.0
+      - name: Restore original style and repair only clipping artifacts
+        run: python scripts/repair-hud-original-art.py
+      - name: Validate untouched sizes, alpha insets, and changed file scope
+        shell: bash
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          folder = Path("public/feature-assets/mobile-controls-hud/raster")
+          entries = sorted(folder.glob("*@3x.webp"))
+          assert len(entries) == 18, entries
+          for p in entries:
+              with Image.open(p) as img:
+                  assert img.format == "WEBP", p
+                  assert img.size == ((432, 156) if p.name.startswith("button-") else (216, 216)), p
+                  assert img.mode in ("RGBA", "RGB"), p
+          print("18 WebP assets verified; native canvas and format retained.")
+          PY
+          git add public/feature-assets/mobile-controls-hud/raster
+          git rm .github/workflows/repair-hud-original-art.yml
+          git diff --cached --check
+      - name: Commit only the repaired assets and remove this one-time workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "fix(art): preserve original HUD style and repair clipped source sprites"
+          git push origin HEAD:refs/heads/fix/wave3-hud-artwork-completeness
