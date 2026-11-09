@@ -148,5 +148,5 @@ test('store/collection stay presentation-only and controls are accessible', () =
   assert.match(store, /redeemPreview\(/);
   assert.match(collection, /equipPreview\(/);
   assert.match(store, /aria-live=/);
-  assert.match(collection, /@keydown\.esc=/);
+  assert.match(collection, /@keydown\.esc(?:\.stop)?=/);
 });
