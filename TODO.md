@@ -1,3 +1,12 @@
+## 2026-11-10 — Epic shortcut reward balance and Volcanic Crown Chrome stalls
+
+- [x] Source review: commit `15272ed` changes PERFECT LINE grouping, not ring spawning. Dense placement originates in `shortcut-rewards.ts`; 1D mapped shortcut corridors share ordinary road visibility.
+- [x] Narrow change prepared: actual alternate CourseGraph edges retain 25 m reward mix; 1D mapped sections use 50 m rings and offset cells, confined to the authored shortcut. 60 m cells and midpoint tank unchanged; classic tracks unchanged.
+- [x] Volcanic static root cause: a PointLight per 240 m chunk across a 1500 m view changed visible shader-light count while driving. Replace with two fixed pooled lava lights plus crater light (3 total), preserving authored light positions, range, color, lava shader, geometry and collision rules.
+- [ ] Run focused RED/GREEN tests, module-size, full unit/typecheck/build/Playwright and `make verify` on a checkout with dependencies (not available in the GitHub connector execution environment).
+- [ ] Measure frame p50/p95, shader recompilations, draw calls, and compare actual Mac mini M4 / Chrome WebGL video and drive-through at Low/Medium/High; do not mark performance fixed without a real-device capture.
+- [ ] Exact-HEAD remote CI and manual regression: all routes, races, variants, track switch, reduced motion.
+
 ## 2026-11-09 — Dense rewards on long-form shortcuts (`feature/epic-multiroute-longform-tracks`)
 
 - [x] RED: `tests/shortcut-rewards.test.js` missed the first ring on every shortcut of the six long-form courses. The classic guard already passed.

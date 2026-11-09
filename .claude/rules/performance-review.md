@@ -23,6 +23,7 @@ Don't:
 - Allocate large transient arrays/objects in hot loops; force SVG/DOM layout needlessly.
 - Allocate GPU resources repeatedly while driving.
 - Add overdraw, high pixel ratios, heavy bloom or centre-screen glare.
+- Add a PointLight to each streamed Volcanic Crown chunk: the 1,500 m view used to expose many at once and change the shader light count as chunks became visible. Keep exactly two pooled lava lights and the fixed crater light attached to the race root; move only their positions/intensities, never their visibility.
 
 Measure CPU and GPU: frame time median/p95, draw calls, triangles, GPU memory, stalls,
 allocations, across 5–8 km continuous driving on High/Medium/Low. Report before/after numbers;
