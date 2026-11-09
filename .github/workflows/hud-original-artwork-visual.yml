@@ -1,0 +1,45 @@
+name: HUD original-artwork visual regression
+on:
+  push:
+    branches:
+      - fix/wave3-hud-artwork-completeness
+    paths:
+      - .github/workflows/hud-original-artwork-visual.yml
+      - public/feature-assets/mobile-controls-hud/raster/**
+      - scripts/repair-hud-original-art.py
+      - tests/hud-3x-artwork-browser.spec.js
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-artwork-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Original-source WebP identity, alpha, and gradient regression
+        run: |
+          python scripts/repair-hud-original-art.py --check
+          python -m unittest discover -s tests -p test_hud_original_art_repair.py -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Test all 18 HUD icons on phone and desktop layouts
+        run: npm run test:browser -- tests/hud-3x-artwork-browser.spec.js
+      - name: Upload real browser screenshots on failure or success
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hud-original-artwork-browser-screenshots
+          path: |
+            test-results/**/*.png
+            test-results/**/*.webm
+          if-no-files-found: ignore

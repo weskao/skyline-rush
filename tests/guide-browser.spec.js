@@ -53,15 +53,15 @@ test('first Start opens practice; Skip races the selected track and is remembere
   const track = await page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
   await page.locator('#start-button').click();
   await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', 'throttle');
-  await expect(page.locator('#tutorial-exit')).toHaveText('Skip');
-  await page.locator('#tutorial-pause').click();
+  await expect(page.locator('#tutorial-exit')).toHaveText('Skip practice'); // not a second "Skip" beside Skip step
+  await page.locator('#pause-button').click();
   await selectLocale(page, 'zh-TW');
-  await expect(page.locator('#tutorial-exit')).toHaveText('跳過');
+  await expect(page.locator('#tutorial-exit')).toHaveText('跳過教學');
   await selectLocale(page, 'en');
   await page.locator('#tutorial-exit').click();
   await expect(page.locator('#tutorial-coach')).toBeHidden();
   await expect(page.locator('#race-status')).toHaveText('RACING');
-  expect(await page.evaluate(() => sessionStorage.getItem('skyline-rush-last-track'))).toBe(track);
+  expect(await page.evaluate(() => sessionStorage.getItem('skyline-rush-last-track'))).toBeNull();
   await page.reload();
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');

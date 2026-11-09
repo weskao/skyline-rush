@@ -1,6 +1,28 @@
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
+test('phone Studio entry text and shine stay inside the button in both locales', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  for (const locale of ['en', 'zh-TW']) {
+    await selectLocale(page, locale);
+    await page.locator('#garage-button').click();
+    const entry = page.locator('#garage-studio-open');
+    await expect(entry).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    for (const time of [0, 1200, 2400, 3200]) {
+      const size = await entry.evaluate((el, time) => {
+        for (const animation of el.getAnimations({ subtree: true })) { animation.pause(); animation.currentTime = time; }
+        return { width: el.clientWidth, content: el.scrollWidth };
+      }, time);
+      expect(size.content, `${locale} shine at ${time} ms`).toBeLessThanOrEqual(size.width + 1);
+    }
+    await entry.click();
+    await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'studio');
+    await page.locator('#garage-close').click();
+  }
+});
+
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }, { width: 320, height: 740 }]) {
   test(`scenario 1 — Full-screen entry stays within safe viewport ${viewport.width}×${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
@@ -147,4 +169,17 @@ test('camera remains in frame across all preset angles and zoom boundaries', asy
     await expect(preview).toHaveAttribute('data-camera-zoom', '2.400'); // far enough for the full exhaust trail
     await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
   }
+});
+
+test('Studio entry advertises itself with a sheen and glow, and stills under Reduced Motion', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const entry = page.locator('#garage-studio-open');
+  await expect(entry).toBeVisible();
+  const animations = () => entry.evaluate(node => [getComputedStyle(node).animationName, getComputedStyle(node, '::after').animationName]);
+  await expect.poll(animations).toEqual(['garage-entry-glow', 'garage-entry-sheen']);
+  // The shared heading-button rule once repainted it flat #1b3044 over the accent gradient.
+  expect(await entry.evaluate(node => getComputedStyle(node).backgroundImage)).toContain('linear-gradient'); // settled: static stylesheet
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect.poll(animations).toEqual(['none', 'none']);
 });

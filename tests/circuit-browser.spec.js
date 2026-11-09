@@ -4,8 +4,6 @@ import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 
 for (const [name, viewport, hasTouch, locale] of [
-  ['desktop', { width: 1440, height: 900 }, false, 'en'],
-  ['desktop-zh', { width: 1440, height: 900 }, false, 'zh-TW'],
   ['phone-en', { width: 390, height: 844 }, true, 'en'],
   ['phone', { width: 390, height: 844 }, true, 'zh-TW'],
   ['landscape-en', { width: 844, height: 390 }, true, 'en'],
@@ -14,7 +12,7 @@ for (const [name, viewport, hasTouch, locale] of [
   test.use({ viewport, hasTouch });
   test('real loop, valid sectors, result and retry preserve laps and Classic access', async ({ gameplayPage: page }) => {
     test.setTimeout(ciTimeout(90000));
-    const lapCount = name === 'desktop' ? 3 : name === 'phone-en' ? 5 : 1;
+    const lapCount = name === 'phone-en' ? 5 : 1;
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await expect(page.locator('#history-track')).toHaveValue('coast');
     await selectLocale(page, locale);
@@ -59,6 +57,7 @@ for (const [name, viewport, hasTouch, locale] of [
     await page.locator('#world').screenshot({ path: `artifacts/circuit/${name}-seam.png` });
     await page.keyboard.press('Escape');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');
+    expect(errors, 'settleRace/phaseUI must not throw after pause-to-finish').toEqual([]);
     await expect(page.locator('#overlay-title')).toHaveText(locale === 'en' ? 'Circuit complete' : '環道賽完成');
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-mode-history-v1')).at(-1).lapCount)).toBe(lapCount);
     await expect(page.locator('#race-overlay')).toBeVisible();

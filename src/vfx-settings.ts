@@ -1,5 +1,6 @@
 // Visual controls only: none of these values are consumed by the race simulation.
 // Index 0 is the English label; the UI translates it through the `vfx.<key>` catalog entry (vfxLabelKey).
+import { look3d } from './look-gate.ts';
 export const vfxLabelKey = (key: string): string => `vfx.${key}`;
 export const SHOWCASE_VIEWS = Object.freeze(['drive','front','rear','left','right','orbit'] as const);
 export const VFX_RANGES = {
@@ -26,8 +27,10 @@ export type VfxRangeKey = keyof typeof VFX_RANGES;
 export type ShowcaseView = (typeof SHOWCASE_VIEWS)[number];
 export type VfxPreset = 'realistic' | 'cinematic' | 'extreme';
 export type VfxQuality = 'low' | 'medium' | 'high';
+/** Saved/selectable tier: Ultra renders as 'high' for scene density tables, plus the `ultra` flag for Ultra-only effects. */
+export type QualityTier = VfxQuality | 'ultra';
 export type VfxSettings = {
-  enabled: boolean; airflow: boolean; preset: VfxPreset; quality: VfxQuality;
+  enabled: boolean; airflow: boolean; preset: VfxPreset; quality: VfxQuality; ultra: boolean;
   aeroMode: 'drag' | 'downforce'; view: ShowcaseView; comfortable: boolean; haptics: boolean;
 } & Record<VfxRangeKey, number>;
 export const VFX_PRESETS: Record<VfxPreset, Partial<Record<VfxRangeKey, number>>> = {
@@ -42,9 +45,11 @@ export function vfxSettings(values: unknown = {}): VfxSettings {
     ? input.preset as VfxPreset : 'cinematic';
   const quality: VfxQuality = input.quality === 'low' || input.quality === 'medium' || input.quality === 'high'
     ? input.quality : 'high';
+  // Saved form is {quality:'high', ultra:true}; a raw 'ultra' choice from the settings control maps to the same.
+  const ultra = input.quality === 'ultra' || (input.quality === 'high' && input.ultra === true);
   const view: ShowcaseView = SHOWCASE_VIEWS.find(candidate => candidate === input.view) ?? 'drive';
   const base = {
-    enabled: input.enabled !== false, airflow: input.airflow === true, preset, quality,
+    enabled: input.enabled !== false, airflow: input.airflow === true, preset, quality, ultra,
     aeroMode: input.aeroMode === 'downforce' ? 'downforce' as const : 'drag' as const,
     view, comfortable: input.comfortable === true, haptics: input.haptics === true,
   };
@@ -64,7 +69,7 @@ export function vfxSettings(values: unknown = {}): VfxSettings {
 export type SprintPhase = 'ready' | 'ignition' | 'sustain' | 'recovery';
 export type SprintInput = {
   phase: string; nitro: boolean; boost: boolean; speed: number; cap: number; dt: number;
-  enabled: boolean; quality: VfxQuality; reducedMotion: boolean;
+  enabled: boolean; quality: VfxQuality; reducedMotion: boolean; ultra?: boolean;
 };
 type SprintChannel = { phase: SprintPhase; intensity: number; ignition: number; age: number; release: number };
 const finite = (value: number, fallback = 0): number => Number.isFinite(value) ? value : fallback;
@@ -122,7 +127,7 @@ export function createSprintVfx() {
       frame.particles = frame.power * (comfort ? 0.2 : tier);
       // FOV is camera framing, not GPU cost: one strength on every tier (pre-Wave 2 behaviour).
       frame.fov = comfort ? 0 : frame.power;
-      frame.blur = comfort ? 0 : Math.min(1, frame.power * tier * 0.6);
+      frame.blur = comfort ? 0 : Math.min(1, frame.power * tier * (input.ultra && look3d() ? 0.96 : 0.6)); // Ultra only (`?look=3d`): stronger lens radial blur, same pass
       return frame;
     },
   };

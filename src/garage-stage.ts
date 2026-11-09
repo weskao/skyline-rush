@@ -8,15 +8,20 @@ import type { GarageCamera } from './garage-camera.ts';
 import { garageFramedDistance } from './garage-camera.ts';
 import type { PaintPreset } from './appearance.ts';
 import { createGaragePaintSweep } from './garage-paint-shader.ts';
+import { applyCarReflections } from './car-reflections.ts';
+
+/** Garage/Studio sun (bright) and moon (dim) lighting: a pre-tone-mapping gain on the whole preview. */
+export const GARAGE_LIGHTING = Object.freeze({ bright: 1, dim: 0.6 });
+export type GarageLighting = keyof typeof GARAGE_LIGHTING;
 
 // Dedicated scene, not a renderer or canvas. Reuse the world's composer, camera and GPU context.
-export function createGarageStage(environment: THREE.Texture) {
+export function createGarageStage(environment: THREE.Texture, carEnvironment: THREE.Texture) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#07101b');
   const fog = new THREE.Fog('#07101b', 24, 54);
   scene.fog = fog;
   scene.environment = environment;
-  scene.environmentIntensity = 0.8;
+  scene.environmentIntensity = 0.5; // stage only; the car reflects its own softened map (car-reflections.ts)
 
   const car = makeCar(CAR_STYLES.roadster);
   // Dedicated Garage finish; never change shared racing/traffic materials.
@@ -29,6 +34,7 @@ export function createGarageStage(environment: THREE.Texture) {
     if (object instanceof THREE.Mesh && object.material === oldPaint) object.material = finish;
   });
   oldPaint.dispose();
+  applyCarReflections(car, carEnvironment);
   const paintSweep = createGaragePaintSweep(finish);
   car.position.y = 0.06;
   scene.add(car);
@@ -47,7 +53,8 @@ export function createGarageStage(environment: THREE.Texture) {
   poseCar(true);
   const flightBounds = new THREE.Box3().setFromObject(car);
   poseCar(false);
-  const flightHalf = flightBounds.max.clone().sub(carCenter).max(carCenter.clone().sub(flightBounds.min));
+  const flightCenter = flightBounds.getCenter(new THREE.Vector3());
+  const flightHalf = flightBounds.getSize(new THREE.Vector3()).multiplyScalar(.53); // 6% roll/hover headroom
   // Studio uses the SAME Aero implementation and shader resources as live racing.
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
@@ -88,10 +95,11 @@ export function createGarageStage(environment: THREE.Texture) {
   backdrop.position.set(0, 7, -17);
   scene.add(backdrop);
   stageMeshes.push(backdrop);
-  const ambient = new THREE.HemisphereLight('#b8eafa', '#14212a', 2);
-  const key = new THREE.DirectionalLight('#b9eaff', 3.2);
+  // Balanced so a white paint keeps its contours under the sun setting; the moon setting dims the whole frame.
+  const ambient = new THREE.HemisphereLight('#b8eafa', '#14212a', 1.2);
+  const key = new THREE.DirectionalLight('#b9eaff', 2.4);
   key.position.set(-6, 12, -5);
-  const rimLight = new THREE.DirectionalLight('#ffad69', 2.4);
+  const rimLight = new THREE.DirectionalLight('#ffad69', 1.6);
   rimLight.position.set(6, 7, 6);
   scene.add(ambient, key, rimLight);
   const look = carCenter.clone();
@@ -109,7 +117,7 @@ export function createGarageStage(environment: THREE.Texture) {
     car.rotation.z = flying && !reducedMotion ? Math.sin(time * .9) * .035 : 0;
     poseCar(flying, wingTilt);
     previewDriver.altitude = flying ? 2 : 0;
-    look.copy(carCenter);
+    look.copy(flying ? flightCenter : carCenter);
     look.y += hover;
     const distance = garageFramedDistance(camera.aspect, state.zoom, flying ? flightHalf : carHalf, yaw, state.pitch);
     // Zoomed-out views (up to ~44 m, top view) keep the car and trail clear of the fog.
@@ -197,6 +205,7 @@ export function createGarageStage(environment: THREE.Texture) {
   }
   return {
     scene, update, inspectBounds, setPaint, dispose,
+    modelHost: { name: 'studio' as const, car, keep: aero.group as THREE.Object3D, scene }, // ?model=probe (garage-model.ts)
     inspectCosmetics() { return aero.inspectCosmetics(); },
     setSkins(ids: Partial<Record<SkinCategory, SkinId>>) { aero.setSkins(ids); },
     configureVFX(settings: VfxSettings) { previewSettings = { ...settings, airflow: settings.enabled }; },

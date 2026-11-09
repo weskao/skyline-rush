@@ -1,0 +1,189 @@
+{
+  "version": 3,
+  "status": "design-only",
+  "approvedRouting": "five-point-to-point-races",
+  "sourceMode": "develop",
+  "imageIndex": "visual-fidelity.md",
+  "description": "Ten standalone SVGs + five combined storyboards + 10 original Stage 1 AI art crops converted to JPEG are committed; lossless PNG source remains outside GitHub. Stage 2 adds five additional planned maps, ten JPEG views and route schematics in its own directory.",
+  "tracks": [
+    {
+      "id": "dune-tempest",
+      "zh": "沙暴裂谷",
+      "en": "Dune Tempest",
+      "topology": "point-to-point",
+      "laps": 1,
+      "finishCondition": "ordered-checkpoints-and-finish",
+      "cameraReferences": [
+        {
+          "purpose": "ground",
+          "file": "concept-art/dune-tempest-ground-view.svg",
+          "panel": "01",
+          "renderType": "svg-vector-storyboard-crop"
+        },
+        {
+          "purpose": "air-split",
+          "file": "concept-art/dune-tempest-aerial-view.svg",
+          "panel": "02",
+          "renderType": "svg-vector-storyboard-crop"
+        }
+      ],
+      "routeReference": "route-schematics/dune-tempest.svg",
+      "originalGeneratedPngUploaded": false,
+      "storyboard": "concept-art/dune-tempest-point-to-point-storyboard.svg",
+      "jpegViews": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/dune-tempest/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial",
+          "file": "source-concept-jpeg/dune-tempest/concept-view-02.jpg"
+        }
+      ]
+    },
+    {
+      "id": "monsoon-ruins",
+      "zh": "雨林失落神殿",
+      "en": "Monsoon Ruins",
+      "topology": "point-to-point",
+      "laps": 1,
+      "finishCondition": "ordered-checkpoints-and-finish",
+      "cameraReferences": [
+        {
+          "purpose": "ground",
+          "file": "concept-art/monsoon-ruins-ground-view.svg",
+          "panel": "01",
+          "renderType": "svg-vector-storyboard-crop"
+        },
+        {
+          "purpose": "air-split",
+          "file": "concept-art/monsoon-ruins-aerial-view.svg",
+          "panel": "02",
+          "renderType": "svg-vector-storyboard-crop"
+        }
+      ],
+      "routeReference": "route-schematics/monsoon-ruins.svg",
+      "originalGeneratedPngUploaded": false,
+      "storyboard": "concept-art/monsoon-ruins-point-to-point-storyboard.svg",
+      "jpegViews": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/monsoon-ruins/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial",
+          "file": "source-concept-jpeg/monsoon-ruins/concept-view-02.jpg"
+        }
+      ]
+    },
+    {
+      "id": "skyfall-archipelago",
+      "zh": "浮空群島",
+      "en": "Skyfall Archipelago",
+      "topology": "point-to-point",
+      "laps": 1,
+      "finishCondition": "ordered-checkpoints-and-finish",
+      "cameraReferences": [
+        {
+          "purpose": "ground",
+          "file": "concept-art/skyfall-archipelago-ground-view.svg",
+          "panel": "01",
+          "renderType": "svg-vector-storyboard-crop"
+        },
+        {
+          "purpose": "air-split",
+          "file": "concept-art/skyfall-archipelago-aerial-view.svg",
+          "panel": "02",
+          "renderType": "svg-vector-storyboard-crop"
+        }
+      ],
+      "routeReference": "route-schematics/skyfall-archipelago.svg",
+      "originalGeneratedPngUploaded": false,
+      "storyboard": "concept-art/skyfall-archipelago-point-to-point-storyboard.svg",
+      "jpegViews": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/skyfall-archipelago/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial",
+          "file": "source-concept-jpeg/skyfall-archipelago/concept-view-02.jpg"
+        }
+      ]
+    },
+    {
+      "id": "volcanic-crown",
+      "zh": "熔火天脊",
+      "en": "Volcanic Crown",
+      "topology": "point-to-point",
+      "laps": 1,
+      "finishCondition": "ordered-checkpoints-and-finish",
+      "cameraReferences": [
+        {
+          "purpose": "ground",
+          "file": "concept-art/volcanic-crown-ground-view.svg",
+          "panel": "01",
+          "renderType": "svg-vector-storyboard-crop"
+        },
+        {
+          "purpose": "air-split",
+          "file": "concept-art/volcanic-crown-aerial-view.svg",
+          "panel": "02",
+          "renderType": "svg-vector-storyboard-crop"
+        }
+      ],
+      "routeReference": "route-schematics/volcanic-crown.svg",
+      "originalGeneratedPngUploaded": false,
+      "storyboard": "concept-art/volcanic-crown-point-to-point-storyboard.svg",
+      "jpegViews": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/volcanic-crown/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial",
+          "file": "source-concept-jpeg/volcanic-crown/concept-view-02.jpg"
+        }
+      ]
+    },
+    {
+      "id": "stormline-megacity",
+      "zh": "霓虹暴雨都市",
+      "en": "Stormline Megacity",
+      "topology": "point-to-point",
+      "laps": 1,
+      "finishCondition": "ordered-checkpoints-and-finish",
+      "cameraReferences": [
+        {
+          "purpose": "ground",
+          "file": "concept-art/stormline-megacity-ground-view.svg",
+          "panel": "01",
+          "renderType": "svg-vector-storyboard-crop"
+        },
+        {
+          "purpose": "air-split",
+          "file": "concept-art/stormline-megacity-aerial-view.svg",
+          "panel": "02",
+          "renderType": "svg-vector-storyboard-crop"
+        }
+      ],
+      "routeReference": "route-schematics/stormline-megacity.svg",
+      "originalGeneratedPngUploaded": false,
+      "storyboard": "concept-art/stormline-megacity-point-to-point-storyboard.svg",
+      "jpegViews": [
+        {
+          "purpose": "ground",
+          "file": "source-concept-jpeg/stormline-megacity/concept-view-01.jpg"
+        },
+        {
+          "purpose": "aerial",
+          "file": "source-concept-jpeg/stormline-megacity/concept-view-02.jpg"
+        }
+      ]
+    }
+  ],
+  "imageCount": 10,
+  "jpegCropsCommitted": true,
+  "originalPngCommitted": false,
+  "stage2Manifest": "stage-2/concept-manifest.json"
+}

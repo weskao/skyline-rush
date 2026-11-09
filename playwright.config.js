@@ -9,7 +9,7 @@ export default defineConfig({
   testDir: './tests',
   testMatch: '**/*browser.spec.js',
   // These load tests/fixtures/*.html, which only the dev server serves (preview falls back to the app); see playwright.world-tour.config.js.
-  testIgnore: ['**/world-tour-mid-race-browser.spec.js', '**/world-tour-showcase-browser.spec.js', '**/showcase-camera-views-browser.spec.js', '**/cloud-emulator-browser.spec.js'],
+  testIgnore: ['**/world-tour-mid-race-browser.spec.js', '**/world-tour-showcase-browser.spec.js', '**/showcase-camera-views-browser.spec.js', '**/cloud-emulator-browser.spec.js', '**/frostbite-canyon-browser.spec.js'],
   // Lets CI --shard split by test instead of by file (browser.spec.js alone is most of the suite).
   fullyParallel: true,
   workers: 1,
@@ -18,7 +18,8 @@ export default defineConfig({
   // One CI retry absorbs runner stalls (e.g. browserType.launch timing out); the github reporter still annotates a
   // test that passed only on retry, and .claude/rules/browser-test-stability.md treats that annotation as a bug.
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? [['list'], ['github']] : 'list',
+  // The budget reporter warns about every test that used more than half its timeout, before one tips over.
+  reporter: process.env.CI ? [['list'], ['github'], ['./tests/helpers/budget-reporter.js']] : 'list',
   use: {
     channel: 'chrome',
     baseURL: `http://127.0.0.1:${port}`,

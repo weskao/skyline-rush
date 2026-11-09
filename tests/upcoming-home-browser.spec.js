@@ -40,6 +40,14 @@ test('all six preview cards retain their original selection flow and cannot STAR
   await expect(page.locator('#start-button span')).toHaveText('LOCKED');
 });
 
+test('the Stage 2 preview URL opens the Frostbite card as Coming Soon with Start disabled', async ({ page }) => {
+  await page.goto('/?stage2-preview=frostbite-canyon&shot=p02');
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+  await expect(page.locator('[data-upcoming-track="frostbite-canyon"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#start-button')).toBeDisabled();
+  await expect(page.locator('#start-button span')).toHaveText('COMING SOON');
+});
+
 test('CTA copy is translated without resizing its hit target', async ({ page }) => {
   await page.locator('[data-upcoming-track="dune-tempest"]').click();
   const button = page.locator('#start-button');
@@ -94,7 +102,7 @@ test('Start and Coming Soon labels fit after locale switching on phones', async 
           const span = button.querySelector('span');
           return { button: button.getBoundingClientRect().width, text: span.scrollWidth, available: span.clientWidth };
         });
-        expect(sizing.button).toBe(viewport.height < 500 ? 190 : 210);
+        expect(sizing.button).toBe(210); // portrait button and the shared landscape right rail
         expect(sizing.text, `${locale} ${upcoming ? 'Coming Soon' : 'Start'} must not be clipped`)
           .toBeLessThanOrEqual(sizing.available + 1);
       }

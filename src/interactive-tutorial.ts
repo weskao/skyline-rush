@@ -1,5 +1,8 @@
-import { createRace, startRace } from './game.js';
+import { createRace, startRace, DRIFT_MIN_SPEED, DRIFT_BLEED } from './game.js';
 import { createTutorialManeuverState, type ManeuverSnapshot } from './tutorial-maneuver-state.ts';
+import { isGateStep, placeGate, judgeGate, gateGuide, placeBoostStretch, BOOST_LIMIT, type GateRing } from './tutorial-gates.ts';
+import { tutorialCue } from './tutorial-cues.ts';
+import type { EndlessState } from './endless-highway.ts';
 
 export const TUTORIAL_STEPS = Object.freeze(['throttle', 'left', 'right', 'brake', 'drift', 'fly', 'land', 'boost', 'airChain', 'barrelRoll', 'nitro'] as const);
 export type TutorialStep = typeof TUTORIAL_STEPS[number];
@@ -8,8 +11,18 @@ export interface TutorialInput {
   fly?: boolean; boost?: boolean; nitro?: boolean;
 }
 
+// Success feedback stays on screen this long after a lesson clears.
+export const CLEARED_SECONDS = 1.4; // long enough to read the pass toast
+// Only these lessons ask for a sustained 0.4 s hold; the rest complete on a real engine event.
+const HELD_STEPS: readonly string[] = ['throttle', 'fly'];
+const BRAKE_CRAWL = 25; // m/s: a held brake still reaches the gate in a few seconds
+// m/s: a drift ends below DRIFT_MIN_SPEED, so it must start fast enough to outlast its bleed to the 1 s payout.
+const DRIFT_ENTRY = DRIFT_MIN_SPEED + DRIFT_BLEED * 1;
+// m behind the car a collected gate ring stays in race.rings: audio and effects read hits after the step.
+const SPENT_RING_METERS = 60;
+
 export function prepareTutorialInput(input: TutorialInput, step: TutorialStep | string): TutorialInput {
-  if (!['throttle', 'brake'].includes(step) && !input.brake) input.throttle = true;
+  if (step !== 'throttle' && !input.brake) input.throttle = true;
   input.laneAssist = false;
   return input;
 }
@@ -22,36 +35,43 @@ export function createInteractiveTutorial() {
     config: { mode: 'free'; traffic: 'off'; items: false; collision: 'relaxed' }
   ) => ReturnType<typeof createRace>;
   const race = tutorialRace('coast', { mode: 'free', traffic: 'off', items: false, collision: 'relaxed' });
-  race.objective = Object.freeze({ type: 'no-auto-finish' as const }); // update() loops the road; a lesson never ends the run
-  race.rings = [];
+  race.objective = Object.freeze({ type: 'no-auto-finish' as const }); // a lesson never ends the run
+  // The Endless Highway road without its encounters: the practice road never runs out.
+  (race as typeof race & { endless?: EndlessState }).endless = { chunk: 0, milestones: 0, practice: true };
+  race.sections.length = 0;
+  (race as typeof race & { standingStart?: boolean }).standingStart = true; // GO does not roll the car: THROTTLE does
+  const rings = race.rings = [] as GateRing[] as typeof race.rings;
   race.rivals = [];
   race.traffic = [];
   startRace(race);
   const car = race.player;
-  let index = 0, held = 0, previousSpeed = 0, previousElapsed = race.elapsed;
+  let clears = 0, clearedStep: TutorialStep | null = null, clearedReward = 0;
+  let index = 0, held = 0, previousElapsed = race.elapsed, celebrate = 0, skipRequested = false;
+  let gate: GateRing[] | null = null, retryReason: string | null = null, drifted = false, finishing = false;
+  let stretch: { start: number; end: number } | null = null, enteredAt: number | null = null;
   let maneuver: ReturnType<typeof createTutorialManeuverState> | null = null;
   const snapshot = (): ManeuverSnapshot => ({
     altitude: car.altitude, thrusting: car.thrusting, flightBoosted: car.flightBoosted,
     poweredFlightTime: car.poweredFlightTime, flick: car.flick,
     landing: car.landing, trick: car.trick, trickPayout: car.trickPayout,
-    nitroUses: car.nitroUses, nitroTime: car.nitroTime, speed: car.speed,
+    nitroUses: car.nitroUses, nitroTime: car.nitroTime, braking: car.braking, speed: car.speed,
   });
 
   function prepare() {
     const step = TUTORIAL_STEPS[index];
-    if (index === 0) car.x = car.steering = 0;
-    car.speed = step === 'throttle' ? 0 : step === 'drift' ? 65 : 45;
+    // Speed is the player's own from the standing start on: a lesson snap read as a sudden jump.
+    if (index === 0) car.x = car.steering = car.speed = 0;
     car.fuel = 100;
     car.exhausted = false;
     car.flyBuffer = 0;
-    if (TUTORIAL_STEPS[index - 1] !== 'drift') car.nitro = step === 'nitro' ? 1 : 0;
+    if (TUTORIAL_STEPS[index - 1] !== 'drift') car.nitro = step === 'nitro' || step === 'airChain' ? 1 : 0;
     car.nitroTime = 0;
     car.nitroHeld = false;
     if (TUTORIAL_STEPS[index - 1] !== 'drift') car.miniBoost = 0;
     car.drift = car.trick = null;
-    if (step === 'drift') { car.driftPayout = null; car.x = 0; }
+    // Lesson changes never move the car (user, 2026-11-08): only rings and lesson state change.
+    if (step === 'drift') car.driftPayout = null;
     if (step !== 'land') {
-      car.altitude = car.verticalSpeed = 0;
       // A fresh exercise must never inherit an earlier flight's chain credit.
       car.poweredFlightTime = 0;
       car.flightBoosted = false;
@@ -61,46 +81,128 @@ export function createInteractiveTutorial() {
       // it fabricates a new input edge when the key remains pressed.
       car.flick = null;
     }
-    previousSpeed = car.speed;
+    keepSpentRings();
+    gate = retryReason = stretch = enteredAt = null;
+    if (isGateStep(step)) rings.push(...(gate = placeGate(step, car.distance, car.speed)));
+    if (step === 'boost') placeStretch();
+    drifted = finishing = false;
     maneuver = step === 'airChain' || step === 'barrelRoll' || step === 'nitro'
       ? createTutorialManeuverState(step, snapshot()) : null;
     held = 0;
   }
+  function keepSpentRings(): void {
+    let kept = 0;
+    for (const ring of rings) if (ring.hit && ring.distance > car.distance - SPENT_RING_METERS) rings[kept++] = ring;
+    rings.length = kept;
+  }
+  function placeStretch(): void {
+    const rows = placeBoostStretch(car.distance, car.speed);
+    rings.push(...rows);
+    stretch = { start: rows[0]!.distance, end: rows[rows.length - 1]!.distance };
+    enteredAt = null;
+  }
+  /** Boost lesson: reach the stretch's end within BOOST_LIMIT of entering it; a timeout re-arms a stretch ahead. */
+  function judgeStretch(): boolean {
+    if (!stretch) return false;
+    if (enteredAt === null) {
+      if (car.distance >= stretch.start) { enteredAt = race.elapsed; retryReason = null; }
+      return false;
+    }
+    const used = race.elapsed - enteredAt;
+    if (used > BOOST_LIMIT) { retryReason = 'timeout'; keepSpentRings(); placeStretch(); return false; }
+    return car.distance >= stretch.end;
+  }
+  const countdown = (): number | null =>
+    stretch && TUTORIAL_STEPS[index] === 'boost' ? enteredAt === null ? BOOST_LIMIT : Math.max(0, BOOST_LIMIT - (race.elapsed - enteredAt)) : null;
   prepare();
+  function advance(cleared: boolean): void {
+    if (cleared) {
+      clears++;
+      clearedStep = TUTORIAL_STEPS[index]!;
+      const paid = clearedStep === 'barrelRoll' ? car.trickPayout : clearedStep === 'drift' ? (car as unknown as { driftPayout: { nitro: number } | null }).driftPayout : null;
+      clearedReward = paid?.nitro ?? 0;
+    }
+    index++;
+    if (index < TUTORIAL_STEPS.length) prepare();
+    else rings.length = 0;
+    celebrate = cleared && index < TUTORIAL_STEPS.length ? CLEARED_SECONDS : 0;
+  }
+  const effectRunning = (): boolean => car.miniBoost > 0 || car.nitroTime > 0;
+  function judgeGateStep(step: string): boolean {
+    if (!isGateStep(step) || !gate || car.distance < gate[0]!.distance) return false;
+    const result = judgeGate(step, gate, car);
+    keepSpentRings();
+    gate = null;
+    if (result === 'pass') return true;
+    retryReason = result;
+    return false;
+  }
 
   return {
     race,
     get index() { return index; },
     get step() { return TUTORIAL_STEPS[index] ?? null; },
-    get progress() { return index === TUTORIAL_STEPS.length ? 1 : TUTORIAL_STEPS[index] === 'drift' ? Math.min(1, ((car as unknown as { drift: { time: number } | null }).drift?.time ?? 0) / 1) : maneuver?.progress ?? Math.min(1, held / .4); },
-    get coachPhase() { return maneuver?.phase ?? 'ready'; },
+    get progress() { return index === TUTORIAL_STEPS.length || finishing ? 1 : TUTORIAL_STEPS[index] === 'drift' ? Math.min(1, ((car as unknown as { drift: { time: number } | null }).drift?.time ?? 0) / 1) : maneuver?.progress ?? Math.min(1, held / .4); },
+    get coachPhase() {
+      if (finishing) return 'finishing';
+      const phase = maneuver?.phase ?? (retryReason ? 'retry' : 'ready');
+      return celebrate > 0 && phase === 'ready' ? 'cleared' : phase; // a live cue (airborne, retry) wins over the praise
+    },
+    get coachReason() { return finishing ? null : maneuver ? maneuver.reason : retryReason; },
+    get guide() {
+      const dir = gate ? gateGuide(gate, car.x) : stretch || TUTORIAL_STEPS[index] === 'throttle' ? 'ahead' : '';
+      return dir === 'ahead' && TUTORIAL_STEPS[index] === 'brake' ? 'slow' : dir; // braking is not "go ahead"
+    },
+    /** Boost lesson seconds left, the full limit before the stretch starts; null in other lessons. */
+    get countdown() { return countdown(); },
+    /** Lessons passed (skips excluded): one chime each. */
+    get clears() { return clears; },
+    /** The lesson the pass toast names while its praise is up, else null. */
+    get clearedStep() { return celebrate > 0 ? clearedStep : null; },
+    /** NITRO charges the cleared lesson paid (drift, barrel roll), else 0. */
+    get clearedReward() { return clearedReward; },
+    /** Live toast: the next control and its timing, read from the engine state. */
+    get cue() {
+      return tutorialCue({ step: TUTORIAL_STEPS[index] ?? null, phase: this.coachPhase, car, countdown: countdown(),
+        stretchEntered: enteredAt !== null, driftEntry: DRIFT_ENTRY });
+    },
+    /** Applied on the next racing tick, so completion still flows through update(). */
+    skip(): void { if (index < TUTORIAL_STEPS.length) skipRequested = true; },
     get complete() { return index === TUTORIAL_STEPS.length; },
     update(input: unknown, dt: number): void {
       if (race.phase !== 'racing' || !Number.isFinite(dt) || dt <= 0 || race.elapsed <= previousElapsed) return;
       previousElapsed = race.elapsed;
       const controls: TutorialInput = input && typeof input === 'object' ? input as TutorialInput : {};
-      const step = TUTORIAL_STEPS[index];
-      if (car.distance >= race.length - 100) {
-        car.distance = car.x = 0;
-        car.speed = step === 'throttle' ? 0 : 45;
-        previousSpeed = car.speed;
-        held = 0;
-        return;
-      }
-      if (index === TUTORIAL_STEPS.length) return; // finished: a free cruise that only loops the road
-      // Keep the braking exercise rolling while the learner reads its instructions.
-      if (step === 'brake' && !car.braking && car.speed < 20) car.speed = 45;
+      if (index === TUTORIAL_STEPS.length) return; // finished: a free cruise on the endless road
+      if (skipRequested) { skipRequested = false; advance(false); return; }
+      // A cleared lesson waits until its boost or NITRO has fully played out (user, 2026-11-08).
+      if (finishing) { if (!effectRunning()) advance(true); return; }
+      const step = TUTORIAL_STEPS[index]!;
+      // Practice-only supply: the air chain lesson never runs out of FLY, BOOST or NITRO.
+      if (step === 'airChain') { car.fuel = 100; car.exhausted = false; car.nitro = Math.max(car.nitro, 1); }
+      // Keep the braking exercise rolling toward its gate: a held brake crawls through, a released one re-accelerates.
+      if (step === 'brake' && car.braking && car.speed < BRAKE_CRAWL) car.speed = BRAKE_CRAWL;
+      // A miss re-arms a fresh gate ahead.
+      if (isGateStep(step) && !gate) rings.push(...(gate = placeGate(step, car.distance, car.speed)));
+      // Display-only: the praise stays up briefly, but input during it still counts toward the next lesson.
+      if (celebrate > 0) celebrate -= Math.min(dt, .05);
       let valid = false;
       if (step === 'throttle') valid = controls.throttle === true && car.speed > 5;
-      else if (step === 'left') valid = typeof controls.steer === 'number' && Number.isFinite(controls.steer) && controls.steer < 0 && car.steering < 0;
-      else if (step === 'right') valid = typeof controls.steer === 'number' && Number.isFinite(controls.steer) && controls.steer > 0 && car.steering > 0;
-      else if (step === 'brake') valid = controls.brake === true && car.braking && car.speed < previousSpeed;
-      else if (step === 'drift') valid = ((car as unknown as { driftPayout: { nitro: number } | null }).driftPayout?.nitro ?? 0) >= 0.15 && car.miniBoost > 0;
+      else if (isGateStep(step)) valid = judgeGateStep(step);
+      else if (step === 'boost') valid = judgeStretch();
+      else if (step === 'drift') {
+        valid = ((car as unknown as { driftPayout: { nitro: number } | null }).driftPayout?.nitro ?? 0) >= 0.15 && car.miniBoost > 0;
+        if (car.drift) { drifted = true; if (retryReason === 'slow') retryReason = null; }
+        else if (drifted && !valid) { drifted = false; retryReason = 'short'; } // released before the first payout tier
+        // Lessons keep the player's speed, so a drift tried at crawl speed only brakes: say why.
+        else if (!valid && controls.brake && controls.steer && car.altitude === 0 && car.speed < DRIFT_ENTRY) retryReason = 'slow';
+      }
       else if (step === 'fly') valid = controls.fly === true && car.altitude > 1;
       else if (step === 'land') valid = !controls.fly && car.altitude < .15;
-      else if (step === 'boost') valid = controls.boost === true && car.boosting;
       else if (step === 'airChain' || step === 'barrelRoll' || step === 'nitro') {
         valid = maneuver!.update(snapshot(), dt);
+        // In practice only, braking ends the spent sprint immediately; race physics are unchanged.
+        if (step === 'nitro' && car.braking && maneuver!.phase === 'retry') car.nitroTime = 0;
         if (step === 'nitro' && maneuver!.phase === 'retry' && !controls.nitro && car.nitroTime <= 0) {
           // Practice-only retry after a spent, incomplete sprint: never mint
           // a charge in normal races or while the NITRO key is still held.
@@ -108,11 +210,10 @@ export function createInteractiveTutorial() {
           maneuver = createTutorialManeuverState('nitro', snapshot());
         }
       }
-      previousSpeed = car.speed;
       held = valid ? held + Math.min(dt, .05) : 0;
-      if (valid && (held >= .4 || step === 'drift' || step === 'land' || step === 'airChain' || step === 'barrelRoll' || step === 'nitro')) {
-        index++;
-        if (index < TUTORIAL_STEPS.length) prepare();
+      if (valid && (held >= .4 || !HELD_STEPS.includes(step))) {
+        if (effectRunning()) finishing = true;
+        else advance(true);
       }
     },
   };

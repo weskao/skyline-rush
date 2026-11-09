@@ -86,11 +86,12 @@ export function createLaunchFlare(effects, vehicle) {
     .map(key => [key, { value: 0 }]));
   uniforms.core.value = uniforms.size.value = 1;
   uniforms.primary = { value: new THREE.Vector3(1, 1, 1) }; uniforms.secondary = { value: new THREE.Vector3(1, 1, 1) };
+  uniforms.bodyFrame = { value: new THREE.Vector4(0, 0, 0, 1) }; // identity: the procedural body
   // Every part rides on the car and sits in the scene (hidden) from creation so shader warm-up compiles it.
   const { pool, rays, rings, sparks, body } = createParts(uniforms);
   const rig = new THREE.Group(); rig.name = 'Launch flare'; rig.add(pool, rays, rings, sparks); effects.add(rig);
   const glow = new THREE.Mesh(vehicle.userData.body.geometry, body);
-  glow.name = 'Launch flare body glow'; glow.visible = false; vehicle.userData.body.add(glow);
+  glow.name = 'Launch flare body glow'; glow.visible = false; glow.userData.followsBody = true; vehicle.userData.body.add(glow); // a GLB car re-wraps it (garage-model-rig.ts)
   const parts = [pool, rays, rings, sparks, glow];
   let style = null, age = 1, duration = 1, held = false;
   const hide = () => { age = 1; for (const part of parts) part.visible = false; };

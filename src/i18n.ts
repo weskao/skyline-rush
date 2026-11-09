@@ -1,5 +1,7 @@
 import { CIRCUIT_COPY } from './locales/circuit.ts';
 import { RACE_TRACKS } from './game.js';
+import { STAGE2_TRACKS } from './stage2-tracks.ts';
+import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
 import { ENDLESS_COPY } from './locales/endless.ts';
 import { UI } from './locales/ui.ts';
 import { GAME } from './locales/game.ts';
@@ -11,11 +13,13 @@ interface LocaleStorage { getItem(key: string): string | null; setItem(key: stri
 const isLocale = (value: unknown): value is Locale =>
   typeof value === 'string' && SUPPORTED_LOCALES.includes(value as Locale);
 const raceTracks = RACE_TRACKS as Record<string, { name?: string }>;
+const FROSTBITE_NAMES = STAGE2_TRACKS['frostbite-canyon'].names; // gated races share their Coming Soon card names
+const { 'stormline-megacity': { names: STORMLINE_NAMES }, 'volcanic-crown': { names: VOLCANIC_NAMES }, 'monsoon-ruins': { names: MONSOON_NAMES } } = UPCOMING_TRACKS;
 export const TRACK_NAMES: Readonly<Record<Locale, Record<string, string>>> = Object.freeze({
   en: { coast: 'Coast', neon: 'Neon Downtown', canyon: 'Canyon Skyway', aurora: 'Aurora Pass', spiral: 'Sky Spiral',
-    taipei: 'Taipei Heritage', tokyo: 'Tokyo Afterdark', alpine: 'Alpine Rail Pass', coastal: 'Coastal Horizon', cosmic: 'Cosmic Orbit', 'harbor-circuit': 'Harbor Circuit' },
+    taipei: 'Taipei Heritage', tokyo: 'Tokyo Afterdark', alpine: 'Alpine Rail Pass', coastal: 'Coastal Horizon', cosmic: 'Cosmic Orbit', 'harbor-circuit': 'Harbor Circuit', 'frostbite-canyon': FROSTBITE_NAMES.en, 'stormline-megacity': STORMLINE_NAMES.en, 'volcanic-crown': VOLCANIC_NAMES.en, 'monsoon-ruins': MONSOON_NAMES.en },
   'zh-TW': { coast: '海岸公路', neon: '霓虹都會', canyon: '峽谷天橋', aurora: '極光山道', spiral: '天際螺旋',
-    taipei: '台北古都', tokyo: '東京夜行', alpine: '山岳鐵道', coastal: '海岸天際', cosmic: '星際軌道', 'harbor-circuit': '港灣環道' },
+    taipei: '台北古都', tokyo: '東京夜行', alpine: '山岳鐵道', coastal: '海岸天際', cosmic: '星際軌道', 'harbor-circuit': '港灣環道', 'frostbite-canyon': FROSTBITE_NAMES['zh-TW'], 'stormline-megacity': STORMLINE_NAMES['zh-TW'], 'volcanic-crown': VOLCANIC_NAMES['zh-TW'], 'monsoon-ruins': MONSOON_NAMES['zh-TW'] },
 });
 const KEY = 'skyline-rush-locale';
 export const trackName = (trackId: string, locale: string = 'en'): string =>

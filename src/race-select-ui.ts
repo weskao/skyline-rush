@@ -1,6 +1,6 @@
 import { CIRCUIT_ID } from './circuit-track.ts';
+import { homeTrackStatus, isUpcomingTrack, upcomingTrackInfo, upcomingTrackName, type PreviewTrackId, type UpcomingTrackId } from './upcoming-tracks.ts';
 import { stage2PreviewRequest } from './stage2-tracks.ts';
-import { UPCOMING_TRACKS, homeTrackStatus, isCoverOnly, upcomingTrackName, type UpcomingTrackId } from './upcoming-tracks.ts';
 import { raceTrack } from './race-tracks.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_TRACKS } from './game.js';
@@ -16,6 +16,7 @@ import { setupEventLabUI } from './event-lab-ui.ts';
 import type { GhostRun } from './ghost.ts';
 import { racePresentationFor, updateRaceSetup } from './race-presentation-ui.ts';
 import type { VisualPreset } from './race-session.ts';
+import { lastHomeTrack, rememberLastHomeTrack, restoreHomeTrack } from './last-home-track.ts';
 
 // The simulation race comes from plain-JS game.js; this screen reads its selection fields only.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,11 +38,12 @@ interface RaceSelectOptions {
   clearControls(): void;
   cueUi(): void;
   reducedMotion: MediaQueryList;
-  showUpcoming3D(id: UpcomingTrackId | null): boolean;
+  showUpcoming3D(id: PreviewTrackId | null): boolean;
+  /** Local all-unlocked server only: a Coming Soon card whose race runtime is finished starts like a playable track. */
+  isUpcomingEnterable(id: string): boolean;
 }
 type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines' | 'themes';
-const LAST_TRACK_KEY = 'skyline-rush-last-track';
-const LAST_MODE_KEY = 'skyline-rush-last-mode'; // tab-only, like the track; Event Lab needs its course, so it is not restored
+const LAST_MODE_KEY = 'skyline-rush-last-mode'; // tab-only; Event Lab needs its course, so it is not restored
 
 /** Home-screen race selection: mode, custom rules, track picker, route maps and the remembered track. */
 export function setupRaceSelectUI(options: RaceSelectOptions) {
@@ -52,14 +54,14 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   const ruleInputs = (): HTMLInputElement[] => [...document.querySelectorAll<HTMLInputElement>('[data-race-rule]')];
   let selectedMode = 'classic';
   // Preview-only selection is deliberately separate from the playable Race state.
-  let upcomingSelection: UpcomingTrackId | null = null;
+  let upcomingSelection: PreviewTrackId | null = null;
   const raceRules: Record<RuleKey, unknown> = { ...DEFAULT_RULES };
   const cupCount = (): number => Number($<HTMLSelectElement>('#cup-length').value);
   const eventLab = setupEventLabUI({ ...options, select: next => {
     selectedMode = 'eventlab'; upcomingSelection = null; options.clearDaily(); setRace(next); showTracks(); options.refreshPhase();
   } });
   const selectedRace = (trackId: string): Race => selectedMode === 'circuit' ? options.createRace(CIRCUIT_ID, { mode: 'circuit', laps: Number($<HTMLSelectElement>('#circuit-laps').value) }) : selectSprint(trackId === CIRCUIT_ID ? 'coast' : trackId);
-  const selectSprint = (trackId: string): Race => selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
+  const selectSprint = (trackId: string): Race => isUpcomingTrack(trackId) ? options.createRace(trackId) /* gated runtimes race Classic only */ : selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
     ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
       ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
     ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value, layout: $<HTMLSelectElement>('#gauntlet-layout').value } : {}),
@@ -152,16 +154,20 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     }
     for (const button of upcomingButtons()) {
       const id = button.dataset.upcomingTrack as UpcomingTrackId;
-      button.setAttribute('aria-pressed', String(id === upcomingSelection));
-      button.querySelector('small')!.textContent = t('track.comingSoon');
+      const entered = options.isUpcomingEnterable(id);
+      button.setAttribute('aria-pressed', String(entered && !upcomingSelection ? id === race.trackId : id === upcomingSelection));
+      button.querySelector('small')!.textContent = t(entered ? 'track.open' : 'track.comingSoon');
       button.title = t('track.comingSoonInfo', { track: upcomingTrackName(id, getLocale()) });
     }
   }
-  const canRace = (trackId: string): boolean => !upcomingSelection && !isCoverOnly(trackId) && (getRace().mode === 'circuit' && trackId === CIRCUIT_ID || unlockedTracks.has(trackId));
+  const canRace = (trackId: string): boolean => !upcomingSelection && (getRace().mode === 'circuit' && trackId === CIRCUIT_ID || playable(trackId));
+  // An enterable Coming Soon card (dev-unlocked only) is raceable without joining the unlock catalog.
+  // A stale saved unlock never makes a Coming Soon card playable in a release.
+  function playable(id: string): boolean { return isUpcomingTrack(id) ? options.isUpcomingEnterable(id) : unlockedTracks.has(id); }
   function renderRouteInfo(race: Race): void {
     const daily = options.getDaily();
     const startButton = ui['start-button'] as HTMLButtonElement;
-    const upcoming = upcomingSelection ? UPCOMING_TRACKS[upcomingSelection] : null;
+    const upcoming = upcomingSelection ? upcomingTrackInfo(upcomingSelection) : null;
     const name = upcomingSelection ? upcomingTrackName(upcomingSelection, getLocale()) : trackName(race.trackId, getLocale());
     startButton.disabled = Boolean(upcoming) || (!daily && (!canRace(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < cupCount())));
     const labelKey = upcoming ? 'track.comingSoon' : startButton.disabled ? 'track.locked' : 'start.race';
@@ -178,11 +184,11 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     else sceneImage.removeAttribute('src');
     startButton.setAttribute('aria-describedby', 'track-note');
     $('.start-hint').hidden = startButton.disabled;
-    $('#track-length').textContent = upcoming ? t('track.previewLength', { km: upcoming.length / 1000 }) : race.endless ? t('mode.endlessRoute') : race.mode === 'circuit' ? t('circuit.length', { laps: race.config.laps, km: race.length / 1000 }) : t('track.sprint', { km: raceTrack(race.trackId)!.length / 1000 });
+    $('#track-length').textContent = upcoming ? t('track.previewLength', { km: upcoming.length / 1000 }) : race.endless ? t('mode.endlessRoute') : race.mode === 'circuit' ? t('circuit.length', { laps: race.config.laps, km: race.length / 1000 }) : t('track.sprint', { km: Math.round(raceTrack(race.trackId)!.length / 100) / 10 });
     const tracks = Object.keys(RACE_TRACKS);
     const next = tracks[tracks.indexOf(race.trackId) + 1];
     const previous = tracks[tracks.indexOf(race.trackId) - 1]!;
-    $('#track-note').textContent = upcomingSelection ? t('track.comingSoonInfo', { track: name }) + ' · ' + t(`track.note.${upcomingSelection}`) : (selectedMode === 'cup' && unlockedTracks.size < cupCount() ? t('mode.cupLocked', { n: cupCount() }) + ' · ' : '') + (!daily && race.trackId !== CIRCUIT_ID && !unlockedTracks.has(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
+    $('#track-note').textContent = upcomingSelection ? t('track.comingSoonInfo', { track: name }) + ' · ' + t(`track.note.${upcomingSelection}`) : (selectedMode === 'cup' && unlockedTracks.size < cupCount() ? t('mode.cupLocked', { n: cupCount() }) + ' · ' : '') + (!daily && race.trackId !== CIRCUIT_ID && !playable(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) + ' · ' : '') + t(`track.note.${race.trackId}`) + (next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier ? t('track.unlockNext', { track: trackName(race.trackId, getLocale()), next: trackName(next, getLocale()) }) : '');
     const route = (upcoming ? name : race.modifier ? t('route.daily', { track: name, modifier: t(`modifier.${race.modifier}`) }) : race.mode !== 'classic' ? `${t('mode.' + race.mode)} · ${name}` : name).toUpperCase();
     $('.route-heading').textContent = route;
     $('.overlay-route').textContent = `SKYLINE RUSH / ${route}`;
@@ -234,6 +240,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (getRace().phase !== 'ready') return;
     options.clearControls();
     upcomingSelection = null;
+    rememberLastHomeTrack(button.dataset.track!);
     setRace(selectedRace(button.dataset.track!)); options.clearDaily();
     showTracks();
     button.focus({ preventScroll: true }); // Safari does not focus buttons on click
@@ -242,8 +249,11 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   });
   for (const button of upcomingButtons()) button.addEventListener('click', () => {
     if (getRace().phase !== 'ready') return;
-    upcomingSelection = button.dataset.upcomingTrack as UpcomingTrackId;
+    const id = button.dataset.upcomingTrack as UpcomingTrackId;
+    upcomingSelection = options.isUpcomingEnterable(id) ? null : id;
+    rememberLastHomeTrack(id);
     options.clearControls(); options.clearDaily();
+    if (!upcomingSelection) setRace(selectedRace(id));
     showTracks(); options.refreshPhase();
     button.focus({ preventScroll: true });
     centerSelectedTrack(true);
@@ -291,15 +301,14 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     raceRules[input.dataset.raceRule as RuleKey] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule!) ? Number(input.value) : input.value;
     changeRaceSelection();
   });
-  // Back to home reloads the page; the tab remembers the last raced mode and track so the intro reopens on them.
+  // The tab remembers the last raced mode. The last picker course stays in memory for this page load.
   try {
-    const mode = sessionStorage.getItem(LAST_MODE_KEY), last = sessionStorage.getItem(LAST_TRACK_KEY);
+    const mode = sessionStorage.getItem(LAST_MODE_KEY);
     if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
-    setRace(selectedRace(last && unlockedTracks.has(last) ? last : getRace().trackId));
+    setRace(selectedRace(getRace().trackId));
   } catch { /* Classic on Coast stays the default without storage. */ }
-  // Original Frostbite showroom URL: open P01/P02 preview, never enter a playable race.
   upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
-  if (upcomingSelection) requestAnimationFrame(showTracks); // World WebGL bootstrap finishes first.
+  if (upcomingSelection) requestAnimationFrame(showTracks); // the shared WebGL world exists only after bootstrap
 
   // Card previews animate only while scrolled into view.
   const previewObserver = new IntersectionObserver(entries => {
@@ -331,8 +340,13 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     /** Live route map for the HUD tick (rebuilt when the track changes). */
     raceRouteMap: (): RouteMap => { if (raceRouteMap?.trackId !== getRace().trackId) ensureRouteMaps(); return raceRouteMap!; },
     relabelRouteMaps(locale: string): void { for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale); },
-    rememberTrack(trackId: string): void {
-      try { sessionStorage.setItem(LAST_TRACK_KEY, trackId); sessionStorage.setItem(LAST_MODE_KEY, selectedMode); } catch { /* The intro falls back to Classic on Coast after a reload. */ }
+    restoreLastTrack(): void {
+      const choice = restoreHomeTrack(lastHomeTrack(), getRace().trackId, playable, isUpcomingTrack);
+      upcomingSelection = choice.upcoming as PreviewTrackId | null;
+      setRace(selectedRace(choice.trackId));
+    },
+    rememberTrack(_trackId: string): void {
+      try { sessionStorage.setItem(LAST_MODE_KEY, selectedMode); } catch { /* The intro falls back to Classic on Coast after a reload. */ }
     },
   };
 }

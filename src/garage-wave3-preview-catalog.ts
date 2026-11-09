@@ -65,3 +65,15 @@ export function filterWave3PreviewItems(category: Wave3PreviewCategory, group: W
   const items = WAVE3_PREVIEW_CATALOG[category].items;
   return group === 'all' ? items : items.filter(item => item.group === group);
 }
+
+
+/** Marketing-only presentation metadata; intentionally contains no price, balance or entitlement. */
+export type StoreItemPresentation = Readonly<{ availability: 'coming-soon' | 'unavailable'; featured: boolean }>;
+export const STORE_ITEM_PRESENTATION: Readonly<Record<string, StoreItemPresentation>> = Object.freeze({
+  'store-cart': { availability: 'coming-soon', featured: false },
+  'store-box': { availability: 'unavailable', featured: false },
+  'store-bundle': { availability: 'coming-soon', featured: true },
+  'store-tag': { availability: 'unavailable', featured: false },
+  'store-star': { availability: 'coming-soon', featured: true },
+  'store-collection': { availability: 'coming-soon', featured: false },
+});

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-defineProps<{ icon: string; labelKey: string }>();
+// Google is the only cloud provider today, so its mark is the default icon.
+withDefaults(defineProps<{ icon?: string; labelKey: string }>(), { icon: `${import.meta.env.BASE_URL}icons/google-sign-in.webp` });
 </script>
 
 <template>

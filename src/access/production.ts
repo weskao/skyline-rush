@@ -4,6 +4,8 @@ import { loadUnlocks } from '../history.ts';
 import { ownedPaints } from '../appearance.ts';
 import { isUpcomingTrack } from '../upcoming-tracks.ts';
 
-// A stale save or accidental runtime merge cannot unlock unreleased covers.
+// Even merged catalogs and stale progression saves must not release preview-only maps.
 export const availableTracks = () => loadUnlocks().filter(id => !isUpcomingTrack(id));
+/** Release builds keep every Coming Soon card preview-only until it is removed from UPCOMING_TRACKS. */
+export const isUpcomingEnterable = (_id: string): boolean => false;
 export const availablePaints = (totalStars: number): string[] => ownedPaints(totalStars);

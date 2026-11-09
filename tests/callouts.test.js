@@ -114,10 +114,28 @@ test('queued drift feedback describes the earned tier after the player has relea
   assert.equal(event.detail, 'SPARK TIER EARNED');
 });
 
+test('a new barrel roll displaces an older low-priority refill and preserves its real landing reward', () => {
+  const race = running(), callouts = createCallouts();
+  callouts.update(race);
+  race.elapsed = 0.05;
+  race.player.nitro = 0.25;
+  assert.equal(callouts.update(race)?.title, '+0.25');
+  race.elapsed = 0.1;
+  race.player.trick = { dir: 1, time: 0, done: false };
+  assert.equal(callouts.update(race)?.title, 'BARREL ROLL', 'the active refill must not hide a new trick');
+  race.elapsed = 0.3;
+  race.player.trick = null;
+  race.player.trickPayout = { nitro: 0.25, hard: false };
+  race.player.nitro = 0.5;
+  callouts.update(race);
+  race.elapsed = 1.2;
+  assert.equal(callouts.update(race)?.title, 'TRICK +0.25');
+});
+
 test('a real airborne flick announces its roll, then its landing reward without a duplicate refill', () => {
   const race = running(), callouts = createCallouts();
   Object.assign(race.player, { speed: 60, altitude: 4 });
-  race.traffic = []; race.pickups = []; race.rings = [];
+  race.traffic = []; race.rivals = []; race.pickups = []; race.rings = []; // nothing to bump the car mid-trick
   callouts.update(race);
   stepRace(race, { steer: -1 }, 1 / 60);
   callouts.update(race);
@@ -148,7 +166,7 @@ test('a hard trick landing announces the lost reward once and never replays afte
 test('entering a shortcut corridor announces SHORTCUT once per entry, never on the road beneath it', () => {
   const race = running(), callouts = createCallouts();
   const corridor = race.sections.find(section => section.type === 'shortcut');
-  race.traffic = []; race.pickups = []; race.rings = [];
+  race.traffic = []; race.rivals = []; race.pickups = []; race.rings = []; // nothing to bump the car mid-trick
   callouts.update(race);
   Object.assign(race.player, { distance: corridor.from + 10, x: corridor.x, altitude: 0, speed: 30 });
   stepRace(race, {}, 1 / 60);
@@ -211,7 +229,7 @@ test('a NITRO reward that also refills flight charge says how much; a full charg
 test('a landed roll that refills flight charge names the charge in its detail', () => {
   const race = running(), callouts = createCallouts();
   Object.assign(race.player, { speed: 60, altitude: 4, fuel: 50 });
-  race.traffic = []; race.pickups = []; race.rings = [];
+  race.traffic = []; race.rivals = []; race.pickups = []; race.rings = []; // nothing to bump the car mid-trick
   callouts.update(race);
   stepRace(race, { steer: -1 }, 1 / 60);
   callouts.update(race);
@@ -297,4 +315,22 @@ test('race pause and restart clear pending rewards and their cooldown', () => {
   race.player.nearMisses = 2;
   race.player.nearMiss = { combo: 2, charge: 0 };
   assert.equal(callouts.update(race)?.title, 'NEAR MISS ×2');
+});
+
+test('a new airborne roll displaces an older low-priority refill without dropping its real payout', () => {
+  const race = running(), callouts = createCallouts();
+  callouts.update(race);
+  race.elapsed = 0.05;
+  race.player.nitro = 0.25;
+  assert.equal(callouts.update(race)?.title, '+0.25');
+  race.elapsed = 0.1;
+  race.player.trick = { dir: 1, time: 0, done: false };
+  assert.equal(callouts.update(race)?.title, 'BARREL ROLL');
+  race.elapsed = 0.3;
+  race.player.trick = null;
+  race.player.trickPayout = { nitro: 0.25, hard: false };
+  race.player.nitro = 0.5;
+  callouts.update(race);
+  race.elapsed = 1.2;
+  assert.equal(callouts.update(race)?.title, 'TRICK +0.25');
 });

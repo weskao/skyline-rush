@@ -38,7 +38,7 @@ import { trackPressedButtons } from './pressed-buttons.ts';
 import { setupHistoryDialog } from './history-dialog-ui.ts';
 import { setupPhotoUI } from './photo-ui.ts';
 import { saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, formatDate } from './i18n.ts';
-import { availableTracks, availablePaints } from '@progression-access';
+import { availableTracks, availablePaints, isUpcomingEnterable } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.ts';
 import { trackDropdown } from './dropdown.ts';
 import { setupTrackSwipeUI } from './track-swipe-ui.ts';
@@ -51,7 +51,8 @@ import { resultView, setupResultScreen } from './result-screen.ts';
 import { createRaceHud } from './race-hud.ts';
 import { setupItemUI } from './item-ui.ts';
 import { setupRaceSelectUI } from './race-select-ui.ts';
-import { isCoverOnly } from './upcoming-tracks.ts';
+import { isUpcomingTrack } from './upcoming-tracks.ts';
+const isUpcomingBlocked = id => isUpcomingTrack(id) && !isUpcomingEnterable(id); // the build's access module decides
 import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 import { setupCupRecovery } from './cup-recovery-ui.ts';
@@ -87,7 +88,7 @@ const AUTO_KEY = 'skyline-rush-auto';
 let autoThrottle = true;
 try { autoThrottle = localStorage.getItem(AUTO_KEY) !== 'off'; } catch { /* AUTO stays on without storage. */ }
 let animationId;
-if (import.meta.env.VITE_DIAG) import('./crash-log.ts').then(({ installCrashLog, showCrashLog }) => { const raceContext = () => ({ phase: race.phase, track: race.trackId, mode: race.mode }); installCrashLog(window, localStorage, raceContext); showCrashLog($('#error-message'), localStorage, { win: window, context: raceContext }); }); // diagnostic builds only; production drops the module
+if (import.meta.env.VITE_DIAG) import('./diag-relay.ts').then(({ startDiag }) => startDiag(window, localStorage, $('#error-message'), () => ({ phase: race.phase, track: race.trackId, mode: race.mode, quality: vfx.settings().ultra ? 'ultra' : vfx.settings().quality }))); // diagnostic builds only; production drops the module
 let pausedPhase = 'racing';
 const progress = loadSessionProgress(availableTracks());
 const unlockedTracks = progress.unlocked; // one Set for the session; merges add to it in place
@@ -196,7 +197,7 @@ const raceSelect = setupRaceSelectUI({
   refreshPhase: () => phaseUI(),
   clearControls: () => controls.clear(),
   cueUi: () => sound.cue('ui'),
-  reducedMotion, showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false,
+  reducedMotion, showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false, isUpcomingEnterable,
 });
 const { centerSelectedTrack, selectedRace, cupCount } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
@@ -258,7 +259,7 @@ const { showGarage, syncSkins } = setupGarageUI({
 });
 function chooseTrack() {
   if (tutorial) { endTutorial(); return; }
-  controls.clear(); sprintSeries = null; cup = null; stunt = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
+  controls.clear(); sprintSeries = null; cup = null; stunt = null; daily = null; goUntil = 0; raceSelect.restoreLastTrack();
   hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
   document.querySelector(`[data-track="${race.trackId}"], [data-race-mode="${race.mode}"]`).focus({ preventScroll: true });
@@ -282,7 +283,7 @@ setupRaceNavigation({ phase: () => race.phase, pause, clearControls: () => contr
 const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
 
 function start() {
-  if (raceSelect.isUpcomingSelected() || isCoverOnly(race.trackId)) return; // preview selection cannot START, including Daily/unlocked
+  if (raceSelect.isUpcomingSelected() || isUpcomingBlocked(race.trackId)) return; // preview selection cannot START, including Daily/unlocked
   if (tutorial) return;
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
@@ -303,7 +304,7 @@ function start() {
 }
 
 function restart(trackId = race.trackId) {
-  if (raceSelect.isUpcomingSelected() || isCoverOnly(trackId)) return;
+  if (raceSelect.isUpcomingSelected() || isUpcomingBlocked(trackId)) return;
   if (tutorial) { beginTutorial(); return; }
   if (!world || (!daily && !raceSelect.canRace(trackId))) return;
   if (contextLost) { location.reload(); return; }
@@ -459,12 +460,12 @@ function phaseUI() {
   ui['restart-button'].hidden = ready;
   if (ready) queueMicrotask(maybeShowReleaseNotes);
   if (tutorial) {
-    ui['race-overlay'].hidden = true;
+    ui['race-overlay'].hidden = phase !== 'paused'; // the shared pause screen shows how to resume
     ui['controls-button'].disabled = true;
     ui['restart-button'].hidden = true;
     ui['pause-button'].disabled = tutorial.complete;
   }
-  ui['assist-button'].disabled = !!tutorial;
+  ui['assist-button'].disabled = ui['again-button'].hidden = !!tutorial; // "Race again" means nothing in practice
   $('#photo-open').hidden = !!tutorial || phase !== 'paused' || race.mode !== 'free';
   if (phase === 'paused') {
     $('#new-best').hidden = true;
@@ -484,7 +485,7 @@ function phaseUI() {
     $('#next-button').hidden = !settled.next;
     if (settled.next) $('#next-button').dataset.next = settled.next;
     $('#next-stage').hidden = !settled.intermediateStage;
-    cloud.saveCloudProgress();
+    cloud.saveRaceProgress(race.mode !== 'free');
     showTracks();
     ui['resume-button'].hidden = true;
     ui['result-stats'].hidden = false;
@@ -503,14 +504,14 @@ function phaseText() {
   ui['pause-button'].setAttribute('aria-label', t(phase === 'paused' ? 'resume.aria' : 'pause.aria'));
   if (phase === 'paused') {
     ui['overlay-title'].textContent = t('overlay.pausedTitle');
-    ui['overlay-copy'].textContent = t('overlay.pausedCopy');
+    ui['overlay-copy'].textContent = t(tutorial ? 'tutorial.paused' : 'overlay.pausedCopy');
   }
   if (phase !== 'finished' || lastResult?.race !== race) return;
   resultCounts = renderResult(resultView(race, lastResult));
 }
 
 function updateUI(now, input) {
-  raceSelect.raceRouteMap().updateDrivers([{ id: 'YOU', distance: race.player.distance, x: race.player.x, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance, x: r.x }))]);
+  raceSelect.raceRouteMap().updateDrivers([{ id: 'YOU', distance: race.player.distance, x: race.player.x, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance, x: r.x }))], race.course);
   if (previousPhase !== race.phase) {
     if (previousPhase === 'countdown' && race.phase === 'racing') goUntil = now + 0.8;
     phaseUI();
@@ -538,7 +539,7 @@ try {
   world.configureVFX(vfx.settings());
   world.previewAppearance(PAINTS[equippedPaint]);
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
-  const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad());
+  const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad(), !!import.meta.env.VITE_DIAG);
   const fps = setupFpsUI(scale => world.setRenderScale(scale));
   let motionRace = null; const previousMotion = {}, renderMotion = { previous: previousMotion, alpha: 1 };
   function frame(now) {
@@ -619,6 +620,7 @@ function beginTutorial() {
   $('#tutorial-done').dataset.i18n = raceAfterTutorial ? 'start.race' : 'tutorial.done';
   applyI18n($('#tutorial-coach'));
   tutorial = createInteractiveTutorial(); race = tutorial.race;
+  race.phase = 'countdown'; // the same 3-2-1 → GO as a race, so equipped Launch Flare charges and bursts here too
   touchUI.applyControls(false);
   goUntil = 0; hud.resetMemory(); hud.forgetFlightMode();
   document.body.dataset.tutorial = 'active';
@@ -633,7 +635,7 @@ function endTutorial() {
   ({ race, pausedPhase, goUntil } = tutorialReturn); hud.restoreMemory(tutorialReturn.hud);
   tutorial = null; tutorialReturn = null; resetTutorialView();
   controls.clear(); clearButtonPresses();
-  delete document.body.dataset.tutorial;
+  delete document.body.dataset.tutorial; delete document.body.dataset.tutorialReward;
   touchUI.applyControls(false);
   updateCoachView({ visible: false });
   for (const target of document.querySelectorAll('.tutorial-target')) target.classList.remove('tutorial-target');
@@ -648,11 +650,10 @@ const { renderTutorial, resetTutorialView } = setupTutorialUI({
   getTouchMatches: () => touchPreference.matches,
   getInputPrefs: () => touchUI.inputPrefs(),
   getControlPrefs: () => touchUI.prefs(),
-  showKeyMap: () => keymap.showKeyMap(),
+  showKeyMap: () => keymap.showKeyMap(), getKeyMap: () => keymap.getKeyMap(), cue: name => sound.cue(name),
 });
 for (const id of ['guide-practice', 'tutorial-open', 'tutorial-retry']) $(`#${id}`).addEventListener('click', beginTutorial);
 for (const id of ['tutorial-exit', 'tutorial-done']) $(`#${id}`).addEventListener('click', endTutorial);
-$('#tutorial-pause').addEventListener('click', () => { pause(); renderTutorial(true); });
 window.addEventListener('resize', () => { if (tutorial) renderTutorial(true); });
 const { closeGuide, hasSeenGuide } = setupGuideUI({
   beforeOpen: () => {

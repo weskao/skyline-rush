@@ -70,3 +70,21 @@ function garageFramedDistanceBefore(aspect, zoom, half, yaw, pitch) {
   const fit = Math.max(width / (vTan * aspect), height / vTan);
   return Math.max(4, depth + fit * (1.12 + (zoom - .75) * .45));
 }
+
+// Real Three.js bounds: the raised spoiler/folded wheels must remain inside narrow-phone framing.
+test('Garage Studio frames the full Ground and Flight vehicle at all camera presets', async () => {
+  const THREE = await import('three');
+  const { createGarageStage } = await import('../src/garage-stage.ts');
+  const stage = createGarageStage(new THREE.Texture(), new THREE.Texture());
+  try {
+    for (const aspect of [.45, .65, 1, 2.2])
+      for (const mode of ['ground', 'flight'])
+        for (const angle of ['front', 'rear', 'side', 'top', 'cinematic']) {
+          const camera = new THREE.PerspectiveCamera(49, aspect, .1, 100);
+          stage.update(camera, { ...garagePreset(angle), mode }, 0, true);
+          const bounds = stage.inspectBounds(camera);
+          assert.equal(bounds.inFrame, true,
+            `${mode} ${angle} aspect=${aspect} projected=${JSON.stringify(bounds)}`);
+        }
+  } finally { stage.dispose(); }
+});

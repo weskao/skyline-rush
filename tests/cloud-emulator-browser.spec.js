@@ -410,11 +410,17 @@ test('Cloud save profile provides an avatar fallback and accessible account iden
   await expect(page.locator('#cloud-identity')).toContainText('avatar@example.test');
   await expect(page.locator('#cloud-name')).not.toBeEmpty();
   await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
+  // The post-sign-in sync re-renders the profile from the account (no photo here), which would wipe an avatar
+  // injected before it lands; on a slow runner it lands mid-assertion. Inject only after it settles.
+  await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'synced');
   // Give the Vue view a real, loaded avatar rather than overriding Vue-owned
   // hidden attributes, then exercise the browser's failed-image event.
   await page.evaluate(async () => {
-    const { updateCloudView } = await import('/src/cloud-view-state.ts');
-    updateCloudView({ avatarUrl: document.querySelector('#cloud-login img').src, avatarFailed: false });
+    // Import the exact URL the app loaded (Vite may append ?t=/?v= after a dep reload on cold CI),
+    // otherwise this is a second module instance and the Vue view never updates.
+    const url = performance.getEntriesByType('resource').map(e => e.name).find(n => /\/src\/cloud-view-state\.ts/.test(n)) || '/src/cloud-view-state.ts';
+    const { updateCloudView } = await import(/* @vite-ignore */ url);
+    updateCloudView({ avatarUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', avatarFailed: false });
   });
   await expect(page.locator('#cloud-avatar')).toBeVisible();
   await expect(page.locator('#cloud-avatar-fallback')).toBeHidden();

@@ -15,8 +15,14 @@ test('home version stays vertically centered beside the footer tagline in both l
         page.locator('#whats-new-open').boundingBox(),
       ]);
       await page.screenshot({ path: test.info().outputPath(`footer-${width}-${locale}.png`), animations: 'disabled' });
-      expect(Math.abs(tagline.y + tagline.height / 2 - version.y - version.height / 2), `${width}px ${locale} footer alignment`).toBeLessThanOrEqual(1);
-      expect(tagline.x + tagline.width).toBeLessThanOrEqual(version.x);
+      if (height <= 500 && width > height) {
+        // Landscape phones hide the taglines and move the version chip into the top bar beside the brand.
+        expect(tagline, `${width}px ${locale} landscape hides the footer tagline`).toBeNull();
+        expect(version.y + version.height, `${width}px ${locale} version sits in the top bar`).toBeLessThanOrEqual(82);
+      } else {
+        expect(Math.abs(tagline.y + tagline.height / 2 - version.y - version.height / 2), `${width}px ${locale} footer alignment`).toBeLessThanOrEqual(1);
+        expect(tagline.x + tagline.width).toBeLessThanOrEqual(version.x);
+      }
       expect(version.height).toBeGreaterThanOrEqual(44);
       await page.locator('#whats-new-open').click();
       await expect(page.locator('#whats-new-screen')).toBeVisible();
@@ -50,11 +56,25 @@ for (const [width, height, hasTouch] of [
         `Intro overlaps ${selector}`).toBe(true);
       }
       expect(await intro.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+      // Landscape phones put Start in the right rail (bottom-right thumb zone): fully on screen, never over the panel.
+      const railStart = height <= 500 && width > height;
+      if (railStart) {
+        // The pinned Garage row shares Start's baseline and never covers the track cards (a portrait max-height lifted it 32px at 320 tall).
+        const [card, garage, start] = await Promise.all(['.track-select button', '#garage-button', '#start-button']
+          .map(selector => intro.locator(selector).first().boundingBox()));
+        expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
+        expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row bottom matches Start').toBeLessThanOrEqual(2);
+      }
       for (const selector of ['#start-button', '.history-button', '.flight-tip']) {
         const item = intro.locator(selector);
         if (!await item.isVisible()) continue;
         await item.scrollIntoViewIfNeeded();
         const box = await item.boundingBox();
+        if (railStart && selector === '#start-button') {
+          expect(box.x >= bounds.x + bounds.width && box.x + box.width <= width && box.y >= 0 && box.y + box.height <= height,
+            'rail Start is on screen, right of the panel').toBe(true);
+          continue;
+        }
         expect(box.x).toBeGreaterThanOrEqual(bounds.x);
         expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
         expect(box.y).toBeGreaterThanOrEqual(bounds.y);
@@ -119,6 +139,109 @@ for (const width of [320, 390]) {
         expect((await page.locator('#daily-card-start').boundingBox()).height).toBeGreaterThanOrEqual(44);
         await page.screenshot({ path: test.info().outputPath(`daily-title-${width}-${locale}.png`), animations: 'disabled' });
       }
+    });
+  });
+}
+
+// Chrome on iPhone (browser tab, not installed) overlays a bottom toolbar without shrinking the fixed layout box, so
+// 100% - 100dvh is the covered band; Chromium here has no such toolbar, so --browser-bar stands in for it.
+for (const [width, height] of [[844, 390], [667, 375]]) {
+  test.describe(`landscape home under a browser toolbar ${width}x${height}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: true, isMobile: true });
+
+    test('Start, the rail and the pinned row stay above the toolbar', async ({ page }) => {
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const intro = page.locator('#intro');
+      await intro.evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+      const bottomOf = async selector => { const box = await page.locator(selector).first().boundingBox(); return box.y + box.height; };
+      expect(Math.abs(await bottomOf('#start-button') - (height - 10)), 'no toolbar: Start keeps its 10px edge').toBeLessThanOrEqual(1);
+      const bar = 56;
+      await page.evaluate(px => document.body.style.setProperty('--browser-bar', `${px}px`), bar);
+      const [tools, daily, dock, start, card, garage] = await Promise.all(['.aero-tools', '#daily-card', '#showcase-camera-dock',
+        '#start-button', '.track-select button', '#garage-button'].map(selector => page.locator(selector).first().boundingBox()));
+      expect(Math.abs(start.y + start.height - (height - bar - 10)), 'Start sits 10px above the toolbar').toBeLessThanOrEqual(1);
+      expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row follows Start').toBeLessThanOrEqual(2);
+      expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
+      expect(dock.y + dock.height).toBeLessThanOrEqual(start.y);
+      expect(daily.y + daily.height).toBeLessThanOrEqual(dock.y);
+      expect(daily.y, 'rail runs into the AIRFLOW / VFX row').toBeGreaterThanOrEqual(tools.y + tools.height);
+      await page.keyboard.press('v');
+      await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
+      expect(await bottomOf('#start-button'), 'AIRFLOW Start sits above the toolbar').toBeLessThanOrEqual(height - bar - 10);
+    });
+  });
+}
+
+// Page boxes measured on an iPhone (402x874 pt): Chrome landscape is 743x340 with its tab strip outside the page and a
+// left notch / bottom home-indicator inset; an in-app browser (Telegram) leaves only 756x265. The panel and the rail scale
+// down together so the home keeps its layout: Start bottom-right, rail below the top-bar tools, cards above the pinned row.
+for (const [name, width, height, insets] of [['Chrome', 743, 340, { left: 62, right: 0, top: 0, bottom: 20 }],
+  ['in-app browser', 756, 265, null]]) {
+  test.describe(`landscape home in ${name} ${width}x${height}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: true, isMobile: true });
+
+    test('the scaled panel and rail keep Start bottom-right without overlaps', async ({ page, context }) => {
+      if (insets) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets });
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const intro = page.locator('#intro');
+      await intro.evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+      const edge = Math.max(10, insets?.bottom ?? 0);
+      for (const locale of ['en', 'zh-TW']) {
+        await page.locator('#locale-select').selectOption(locale, { force: true });
+        const [tools, daily, dock, start, card, garage, panel] = await Promise.all(['.aero-tools', '#daily-card',
+          '#showcase-camera-dock', '#start-button', '.track-select button', '#garage-button', '#intro']
+          .map(selector => page.locator(selector).first().boundingBox()));
+        await page.screenshot({ path: test.info().outputPath(`home-${width}x${height}-${locale}.png`), animations: 'disabled' });
+        expect(Math.abs(start.y + start.height - (height - edge)), `${locale} Start keeps its bottom edge`).toBeLessThanOrEqual(1);
+        expect(start.x + start.width, `${locale} Start stays right`).toBeLessThanOrEqual(width - 10);
+        expect(start.x, `${locale} Start sits right of the panel`).toBeGreaterThanOrEqual(panel.x + panel.width);
+        expect(panel.x, `${locale} panel clears the notch`).toBeGreaterThanOrEqual(Math.max(16, insets?.left ?? 0) - 1);
+        expect(dock.y + dock.height, `${locale} dock above Start`).toBeLessThanOrEqual(start.y);
+        expect(daily.y + daily.height, `${locale} daily above dock`).toBeLessThanOrEqual(dock.y);
+        expect(daily.y, `${locale} rail runs into the AIRFLOW / VFX row`).toBeGreaterThanOrEqual(tools.y + tools.height);
+        expect(card.y + card.height, `${locale} pinned row covers the track cards`).toBeLessThanOrEqual(garage.y);
+        expect(start.height, `${locale} Start stays a usable tap target`).toBeGreaterThanOrEqual(36);
+      }
+      // iOS WebKit (not desktop engines) clips a fixed box to a scroller that is, or holds, its nearest stacking context:
+      // Start, Daily and the dock were invisible yet tappable on iPhone Chrome. Only a fixed ancestor lifts them out.
+      const clippedBy = await page.evaluate(() => ['#start-button', '#daily-card', '#showcase-camera-dock'].map(selector => {
+        for (let el = document.querySelector(selector).parentElement; el; el = el.parentElement) {
+          const { position, zIndex, display } = getComputedStyle(el);
+          if (display === 'contents') continue; // no box, so no stacking context
+          if (position === 'fixed') return null;
+          if (position === 'sticky' || (position !== 'static' && zIndex !== 'auto')) {
+            for (let up = el; up; up = up.parentElement) if (/auto|scroll/.test(getComputedStyle(up).overflowY)) return `${selector} in ${el.className}`;
+            return null;
+          }
+        }
+        return null;
+      }).filter(Boolean));
+      expect(clippedBy, 'rail painted inside the scrolling panel').toEqual([]);
+      await page.locator('#start-button').click();
+      await expect(intro).toBeHidden();
+    });
+  });
+}
+
+// iPhone Chrome 154 (743x340, diag log 2026-11-09): on first load the rail had its real place and took taps, but was not
+// painted. iOS WebKit paints a fixed box into an animating ancestor's layer, clipped to that ancestor's box, and the
+// rail lies outside the panel. Desktop engines composite it correctly, so the guard is that no ancestor animates.
+for (const [width, height] of [[743, 340], [844, 390]]) {
+  test.describe(`landscape home rail paint ${width}x${height}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: true, isMobile: true });
+
+    test('no ancestor of the fixed rail runs an animation', async ({ page }) => {
+      await page.goto('/');
+      const animated = await page.evaluate(() => ['#start-button', '#daily-card', '#showcase-camera-dock'].flatMap(selector => {
+        const found = [];
+        for (let el = document.querySelector(selector)?.parentElement; el; el = el.parentElement) {
+          if (getComputedStyle(el).animationName !== 'none') found.push(`${selector} < ${el.id || el.className}`);
+        }
+        return found;
+      }));
+      expect(animated).toEqual([]);
     });
   });
 }

@@ -7,48 +7,70 @@ UI `src/App.vue`, `src/main.js`, `src/style.css`.
 Preserve existing tracks, touch controls, NITRO/FLY/BOOST, race history, Garage paints and
 browser support. Prefer small changes with deterministic unit tests + browser regression.
 
-File-scoped rules live in `.claude/rules/` and load only with the files they cover (UI
-architecture, module size, artwork, tracks, touch, Garage, tutorial, release notes, CI,
-branches). A rule that only matters for certain files goes there with `paths:`, not here.
-A "→ Read `docs/<file>`" line names a situation: open that file only then, follow it exactly.
+**No personal paths in files.** This repo is public: never write a user-specific absolute path
+(`/Users/<name>/…`, `/home/<name>/…`, `C:\Users\<name>\…`) into any committed file (code, docs,
+specs, configs, tests, logs). Use repo-relative paths, `$HOME`/`~`, or a placeholder such as
+`<repo>`.
+
+## Rules and pointers
+
+File-scoped rules live in `.claude/rules/` and load only with the files they cover. A rule that
+only matters for certain files goes there with `paths:`, not here; one home per rule, never a
+copy in both. A "→ Read `<file>`" line names a situation: open that file only then, follow it
+exactly. Topics whose work often starts before a scoped file is open:
+
+| Starting on… | → Read first |
+| --- | --- |
+| Home / HUD layout, any `(orientation: landscape)` or `max-height` media query | `.claude/rules/orientation-layout.md` (iOS paints portrait and landscape differently; check both) |
+| Dune, Monsoon, Skyfall, Volcanic, Stormline, Frostbite or a new course; the ten proposed long-form tracks | `.claude/rules/playable-course-shared-template.md` |
+| Animated Garage/HUD/Store/VFX art (GIF, sprite sheet) | `.claude/rules/animated-image-production.md`, `.claude/rules/raster-artwork.md` |
+| Track teaser JPEGs under `public/track-teasers/` | `.claude/rules/track-teaser-artwork.md` |
+| Blender, GLB/PBR, 3D asset, rendering quality, Three.js r180 → r186 | `.claude/rules/3d-asset-pipeline.md` (planned; not deployed) |
+| Tutorial lessons, cues or transitions | `docs/tutorial-driving.md` |
+| Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
 
 ## Workflow (every feature and bug fix)
 
 Follow `docs/regression-first-workflow.md`: trace the shared root cause; failing test (RED) →
-minimal fix (GREEN); regression-check affected tracks, vehicles, locales and inputs;
-`make verify`; inspect real WebGL / touch screenshots when behavior or rendering changed; then
-check the full GitHub `quality-gate` for the exact HEAD commit. Track evidence in `TODO.md`.
-CI, manual visual confirmation and RED evidence are separate gates; one never proves another.
+minimal fix (GREEN); regression-check affected tracks, vehicles, locales, inputs and **both
+orientations** on phones; `make verify`; inspect real WebGL / touch screenshots when behavior or
+rendering changed; then check the full GitHub `quality-gate` for the exact HEAD commit. Track
+evidence in `TODO.md`. CI, manual visual confirmation and RED evidence are separate gates; one
+never proves another.
+
+A bug fix ships with its prevention: the scoped rule that names the trap, the mechanism that
+removes it, and a guard test that is RED on the old code.
+
+### Mandatory checks before Commit / Push
+
+- Before committing source changes, run `node --test tests/module-size.test.js`; also run the
+  focused regression tests, typecheck and build appropriate to the changed behavior.
+- Before a local push, the existing `.githooks/pre-push` runs the module-size gate automatically,
+  even with `SKIP_LAYOUT_GATE=1`. Configure `git config core.hooksPath .githooks` for new clones.
+- When a check fails, identify the exact source file(s), actual/allowed line count when relevant,
+  failed test file, applicable rule file and command to reproduce it. Fix and rerun before pushing.
+- Do not compress unrelated statements, remove tests or increase legacy ceilings just to silence CI.
+  Keep modules readable; extract code only when there is a meaningful responsibility boundary.
+- GitHub API/connector commits bypass local Git hooks: explicitly perform available checks and
+  inspect the exact-HEAD remote CI. Report commands not executed; never assume a check passed.
 
 Merge-ready only when the latest `develop` is integrated, required checks are green and the
 user-visible symptoms were retested. Never merge into `develop`/`main`, open a PR or deploy
 without explicit user approval.
 
-## AI-assisted 3D asset / Three.js upgrade (planned; not deployed)
-
-For any Blender, GLB/PBR, 3D asset, rendering-quality or Three.js r180 → r186 work:
-first read `docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md`
-and `docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md`.
-**Mandatory Phase 0 before implementation:** run
-`docs/designs/3d-pipeline/toolchain-environment-preflight.md` on the user's Mac;
-check actual Blender addon + live MCP transport, user-global Skills, Claude/Codex scopes,
-Node and glTF Transform. Report PASS/FAIL/NOT VERIFIED; remote GitHub cannot validate
-local installation. Global Skills belong under `~/.claude/skills`, not in this repo.
-Three.js r186.1 is the *planned* target; until verified migration, obey currently
-installed r180 APIs. Read `docs/designs/3d-pipeline/threejs-r180-r186-migration.md`
-and scoped `.claude/rules/3d-asset-pipeline.md` when applicable. Never change
-production renderer, physics or sibling branches during a docs-only pass.
-
 ## Verification
 
 - Gameplay / progression / build config → `npm test` + `npm run build`.
 - Rendering / navigation / controls / unlock visibility → also `npm run test:browser`, desktop and
-  mobile. `npx playwright test <spec>` serves `dist/`: run `npm run build` first or it tests old code.
-- Bug seen only on a phone → reproduce on that device class (`make phone-diag`).
+  mobile, portrait and landscape. `npx playwright test <spec>` serves `dist/`: run `npm run build`
+  first or it tests old code.
+- Bug seen only on a phone → reproduce on that device class and orientation (`make phone-diag`);
+  a desktop viewport of the same size is not a reproduction.
 - Never delete or weaken tests to pass CI; report any test you could not run.
+- Never commit RED tests (yours or another session's staged files) without the implementation that turns them
+  green; `.githooks/pre-push` runs `npm test` on code/test pushes, never bypass it with `--no-verify`.
 - Only `main`/`develop` run the full remote CI; a green run on an earlier commit does not
-  validate the new HEAD. Pushing, reading CI or merging → Read `.claude/rules/ci-gates.md`
-  and `.claude/rules/branch-release.md`.
+  validate the new HEAD.
 
 ## Commands
 
@@ -65,6 +87,7 @@ production renderer, physics or sibling branches during a docs-only pass.
 | `npm run test:layout` | Home-screen layout browser tests |
 | `make verify` | Full local gate: unit, build, browser, World Tour long-run |
 | `make deploy` | Trigger CI GitHub Pages deploy of remote `main` |
+| `make deploy-netlify` | Build this checkout, deploy to Netlify production, live check, Telegram link |
 
 ## Branches
 

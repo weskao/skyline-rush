@@ -1,18 +1,44 @@
 #!/bin/sh
-# Run the home-screen layout browser tests before pushing commits that touch the UI, so an intro that
-# scrolls, overlaps the top bar or shrinks a touch target fails here instead of turning CI on main red.
-# Bypass once with SKIP_LAYOUT_GATE=1 git push ...
-[ "${SKIP_LAYOUT_GATE:-}" = 1 ] && exit 0
+# Check module-size limits on every local push before the existing UI layout gate.
+# GitHub API/connector pushes do not run local hooks; remote CI remains mandatory.
+echo "pre-push: checking source module sizes (tests/module-size.test.js)..." >&2
+if ! node --test tests/module-size.test.js >&2; then
+  echo "pre-push: BLOCKED - module size check failed." >&2
+  echo "  Test: tests/module-size.test.js" >&2
+  echo "  Rules: .claude/rules/module-size.md" >&2
+  echo "  Review the File / Current lines / Allowed lines / Exceeded by details above." >&2
+  echo "  Fix the named source file(s), then run: node --test tests/module-size.test.js" >&2
+  exit 1
+fi
+
+# Files the pushed commits change (stdin is read once and shared by both gates below).
 zero=0000000000000000000000000000000000000000
-ui='^(index\.html|src/(App\.vue|main\.js|style\.css|locales/))'
-while read -r local_ref local_sha remote_ref remote_sha; do
+files=$(while read -r local_ref local_sha remote_ref remote_sha; do
   [ "$local_sha" = "$zero" ] && continue
   base=$remote_sha
   [ "$base" = "$zero" ] && base=$(git merge-base origin/main "$local_sha" 2>/dev/null)
   [ -n "$base" ] || continue
-  git diff --name-only "$base" "$local_sha" | grep -Eq "$ui" && changed=1
-done
-[ -n "${changed:-}" ] || exit 0
+  git diff --name-only "$base" "$local_sha"
+done)
+# git exports GIT_DIR (this worktree's gitdir) to hooks: tests that spawn git in scratch repos would rewrite this
+# repo's refs and config instead (2026-11-09). Drop every repo-local variable before running any suite.
+unset $(git rev-parse --local-env-vars)
+
+# Unit tests on any push that changes code or tests: committed RED tests for never-registered tracks once turned the
+# remote CI red (2026-11-09). Guard: tests/pre-push-unit-gate.test.js.
+if printf '%s\n' "$files" | grep -Eq '^(src|tests|scripts)/|^package(-lock)?\.json$'; then
+  echo "pre-push: code or tests changed; running npm test..." >&2
+  if ! npm test >&2; then
+    echo "pre-push: BLOCKED - unit tests failed. Fix them (or finish the implementation the RED tests need) first." >&2
+    exit 1
+  fi
+fi
+
+# Run home-screen layout browser tests on relevant UI changes.
+# SKIP_LAYOUT_GATE bypasses only the layout gate, not the module-size or unit-test checks.
+[ "${SKIP_LAYOUT_GATE:-}" = 1 ] && exit 0
+ui='^(index\.html|src/(App\.vue|main\.js|style\.css|locales/))'
+printf '%s\n' "$files" | grep -Eq "$ui" || exit 0
 echo "pre-push: home-screen files changed; running npm run test:layout (a few minutes)..." >&2
 # A preview server another worktree's test run still holds on 5178 would abort the gate; take a free port.
 PLAYWRIGHT_PORT=$(node -e "const s=require('net').createServer().listen(0,'127.0.0.1',()=>{console.log(s.address().port);s.close()})")

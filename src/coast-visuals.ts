@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { seededRng } from './rng.ts';
 import type { VfxQuality } from './vfx-settings.ts';
+import { coastChunkWindow, createCoastModelLayer, type CoastModelLayer } from './coast-scenery-glb.ts';
 
 // Shared Coast palette, separate from the five authored World Tour routes.
 export const COAST_PALETTE = Object.freeze({
@@ -35,6 +36,7 @@ export function createCoastScenery(scene: THREE.Scene, roadCenter: (distance:num
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     group.add(mesh);
   }
+  let model: CoastModelLayer | null = null;
   const distances = new Float64Array(TOTAL);
   let initialized = false, previousTier:VfxQuality|null=null;
   let origin = 0, previousDistance = 0, previousSeed: number | undefined;
@@ -76,7 +78,11 @@ export function createCoastScenery(scene: THREE.Scene, roadCenter: (distance:num
         }
       }
       initialized=true;
+      const window = model ? coastChunkWindow(distance, quality) : null;
+      if (model && window) model.place(window, origin, seed);
+      for (const mesh of model?.meshes ?? []) mesh.visible = !!window;
       for(const mesh of meshes) {
+        mesh.visible = !window; // Medium+ with the GLB: the scans replace the procedural rocks and trees
         mesh.count=count;
         if(moved||previousTier!==quality)mesh.instanceMatrix.needsUpdate=true;
       }
@@ -84,9 +90,20 @@ export function createCoastScenery(scene: THREE.Scene, roadCenter: (distance:num
       group.position.set(-roadCenter(distance),0,distance-origin);
       previousDistance=distance;previousSeed=seed;
     },
+    /** Medium+ draws this parsed coast-scenery.glb instead of the procedural rocks/trees; the caller keeps ownership. */
+    attachModel(source:THREE.Object3D) {
+      model?.dispose();
+      model = createCoastModelLayer(source, roadCenter);
+      for (const mesh of model.meshes) { mesh.visible = false; group.add(mesh); }
+    },
+    detachModel() {
+      model?.dispose(); model = null;
+      for (const mesh of meshes) mesh.visible = true;
+    },
     hide() {group.visible=false;},
     show() {group.visible=true;},
     dispose() {
+      model?.dispose(); model = null;
       scene.remove(group);
       for(const mesh of meshes) {mesh.geometry.dispose();mesh.material.dispose();}
     },

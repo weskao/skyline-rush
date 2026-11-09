@@ -9,6 +9,10 @@ export interface TrackSection {
   x?: number;
   altitude?: number;
   dir?: number;
+  /** Shortcut drawn high over a chasm (Frostbite Rift): sinking or steering out of it mid-span is a fall. */
+  span?: boolean;
+  /** Shortcut over a road with a solid deck (Frostbite): cars can neither rise nor sink through its slab. */
+  deck?: boolean;
 }
 export interface TrackConfig {
   name: string;
@@ -23,8 +27,16 @@ export interface TrackConfig {
   ringAltitudes?: readonly number[];
   /** The first N rings are nitro rings, so the first NITRO comes early without adding rings. */
   openingNitroRings?: number;
+  /** An opening map: Easy and Normal rivals drive at the gentler 'intro' skill (`src/rival-driver.ts`), so a new player can place. */
+  introRivals?: boolean;
   /** Ring/pickup layout generation for timed records (`src/record-layout.ts`); omitted = 1. Bump it whenever a layout change makes older times incomparable. */
   layoutVersion?: number;
+  /** Rival top-speed multiplier for this track (default 1); a long course where throttle alone would win sets it higher. */
+  rivalPace?: number;
+  /** Optional per-grid-slot throttle pace gap. Normal AI keeps its usual skill unless this course needs more field separation. */
+  rivalSpread?: number;
+  /** Harbor Circuit, or a new CourseGraph course ('course-graph' 1D-mapped, 'course-graph-runtime' per-car graph; `itemScale`). */
+  topology?: 'circuit' | 'course-graph' | 'course-graph-runtime';
 }
 export interface PlayerSnapshot {
   speed: number;

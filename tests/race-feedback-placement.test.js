@@ -37,3 +37,16 @@ test('blocked edge columns fall back to a free gap beside an edge widget, still 
   assert.equal(intersects(chip, rect(184.6, 64, 383.4, 230.4)), false, 'road');
   for (const block of obstacles) assert.equal(intersects(chip, block), false, JSON.stringify(block));
 });
+test('a portrait collision chip with every edge column taken docks in the sky band above the road (opt-in)', () => {
+  // 390x844 competitive, en: POSITION + three-row leaderboard on top, gauges, thumb pad, mode chip and buttons below the road.
+  const obstacles = [rect(12, 26, 42, 56), rect(75, 19, 378, 63), rect(234, 70, 374, 100), rect(23, 102, 114, 212), rect(23, 70, 224, 95),
+    rect(262, 102, 367, 144), rect(317, 270, 376, 342), rect(23, 546, 147, 664), rect(228, 628, 378, 658), rect(170, 508, 367, 624),
+    rect(20, 464, 145, 844), rect(232, 686, 366, 820)];
+  const size = { width: 121, height: 25 }, road = rect(126.75, 168.8, 263.25, 607.68);
+  assert.equal(pickPeripheralSlot({ width: 390, height: 844 }, size, obstacles), null, 'still no central fallback by default');
+  const slot = pickPeripheralSlot({ width: 390, height: 844 }, size, obstacles, { sky: true });
+  assert.ok(slot);
+  const chip = box(slot, size.width, size.height);
+  assert.ok(chip.bottom <= road.top, 'above the road');
+  for (const block of obstacles) assert.equal(intersects(chip, block), false, JSON.stringify(block));
+});

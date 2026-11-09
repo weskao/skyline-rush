@@ -1,6 +1,7 @@
 import { SWIPE_EDGE_PX, swipeAxis, swipeDistance, swipeOffset, swipeStep, liveSwipeStep, addSwipeSample, releaseVelocity } from './track-swipe.ts';
 import { trackName, getLocale, t } from './i18n.ts';
-import { isUpcomingTrack, upcomingTrackName, type UpcomingTrackId } from './upcoming-tracks.ts';
+import { isUpcomingTrack, upcomingTrackName, type PreviewTrackId } from './upcoming-tracks.ts';
+import { trackLandscapeHomeScale } from './landscape-home-scale.ts';
 
 interface SwipeStart {
   button: number;
@@ -14,7 +15,7 @@ interface SwipeStart {
   width: number;
 }
 interface SwipeRace { phase: string; trackId: string }
-interface SwipeWorld { render(race: object, interpolation: number, time: number): void; setUpcomingTrack(id: UpcomingTrackId | null): boolean }
+interface SwipeWorld { render(race: object, interpolation: number, time: number): void; setUpcomingTrack(id: PreviewTrackId | null): boolean }
 interface SwipeOptions {
   getRace(): SwipeRace;
   getWorld(): SwipeWorld | null | undefined;
@@ -41,6 +42,7 @@ export function canBeginTrackSwipe({ button, phase, tutorial, editing, busy, dia
 
 export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches, getSelectedTrackId }: SwipeOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
+  trackLandscapeHomeScale($('#intro'), $('.aero-tools')); // the home strip's short-landscape panel + rail scale
   // Home screen: swipe (touch) or drag (mouse) the 3D preview to change track, like a carousel page.
   const worldCanvas = $<HTMLCanvasElement>('#world');
   const swipeChip = $('#track-swipe');
@@ -152,6 +154,9 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
   async function commitSwipe(button: HTMLButtonElement, step: number): Promise<void> {
     swipe = null; swipeTarget = null; swipeBusy = true;
     const prepared = prepareSwipeScenes(step);
+    // Commit the choice before the transition: software WebGL can delay animation frames in CI.
+    button.click();
+    showSwipeChip('done', getSelectedTrackId());
     if (prepared && !calmMotion()) {
       const from = swipeScenes.style.transform || (step > 0 ? 'translateX(0px)' : 'translateX(-100vw)');
       const to = step > 0 ? 'translateX(-100vw)' : 'translateX(0px)';

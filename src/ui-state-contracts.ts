@@ -52,14 +52,26 @@ export interface TutorialCoachView {
   step: string;
   title: string;
   instruction: string;
-  pauseText: string;
-  pauseHidden: boolean;
   completeActionsHidden: boolean;
   assistHidden: boolean;
   hintKeys: string;
   hintText: string;
   /** Non-empty only after the last lesson: the free-cruise celebration subtitle. */
   celebration: string;
+  /** Direction of the practice target gate ('left' | 'right' | 'ahead'), '' when none is out. */
+  guide: string;
+  skipHidden: boolean;
+  /** Live lesson toast text, '' when none; cueId re-keys its entrance animation when the cue changes. */
+  cue: string;
+  cueId: string;
+  /** Desktop key chips for the cue's controls (current key map); empty on touch. */
+  cueKeys: string[];
+  /** Live countdown such as "0.6s", '' when the cue has none. */
+  cueCount: string;
+  /** Pass toast while a cleared lesson's praise is up: its title, '' otherwise. */
+  passed: string;
+  /** NITRO the cleared lesson paid, e.g. "+0.25 NITRO"; '' when none. */
+  passedReward: string;
 }
 export interface ControlPanelsView {
   settingsOpen: boolean;

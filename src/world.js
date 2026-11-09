@@ -2,13 +2,17 @@ import { updateSkyline } from './skyline-scenery.ts';
 import * as THREE from 'three';
 import { photoFov } from './photo-export.ts';
 import { capturePhoto } from './photo-capture.ts';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { createRoomEnvironment } from './room-environment.ts';
+import { createWeatherPoints } from './weather-points.ts';
+import { createSectionSignMaterials } from './section-sign-materials.ts';
+import { createCoastLook } from './coast-look.ts';
+import { createClassicBackdrop } from './classic-backdrop.ts';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { createLensPass } from './lens-pass.ts';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { roadRibbon } from './geometry.ts';
+import { roadRibbon, setRoadRow } from './geometry.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
 import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
@@ -17,26 +21,36 @@ import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
-import { createGarageStage } from './garage-stage.ts';
+import { createGarageStage, GARAGE_LIGHTING } from './garage-stage.ts';
+import { applyCarReflections, createCarEnvironment } from './car-reflections.ts';
 import { createCarBounds } from './car-bounds.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts';
 import { createCircuitScene } from './circuit-scene.ts';
+import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { fitText } from './sign-text.ts'; import { MEASURED_COURSE_IDS, MEASURED_COURSE_SUN, createMeasuredCourseScenes } from './measured-course-scenes.ts';
+import { createCourseRaceScene } from './course-race-scene.ts'; import { graphOrigin, graphCarVisual, graphLookAhead, graphFinishVisual } from './course-render-pose.ts'; import { courseItemFrame, courseItemPoint } from './course-items.ts'; import { isCourseRuntime } from './course-runtimes.ts';
+import { FROSTBITE_ID, FROSTBITE_SPAN, frostbiteObjectSpan, frostbiteSpanLift } from './courses/frostbite-race.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
 import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, stepWing } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
+import { createWorldCoastAssets } from './coast-assets.ts';
+import { landmarkBounds } from './landmark-bounds.ts';
+import { createContactShadow, shadowOpacity } from './contact-shadow.ts';
+import { isRaining, racePreset } from './board-effects.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition as finiteSkyPosition, skyFrame as finiteSkyFrame } from './sky-track.ts';
 import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
 import { poseFor, smoothDriftYaw } from './vehicle-render-motion.js';
-import { classicRoadCenter, trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition } from './track-paths.ts';
+import { classicRoadCenter, trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition, lookAheadDistance } from './track-paths.ts';
 import { HERO_PREVIEWS,SHOWCASE_BACKS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
-import { SECTION_SIGN_LABELS, sectionSignKey } from './section-signs.ts';
+import { sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { createRampPool, drawRamps } from './ramp-view.ts'; import { createHazardRenderer } from './hazard-render.ts';
+import { createWorldGarageModel } from './garage-model.ts';
+import { createGraceFade, graceOpacity } from './grace-fade.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const roadCenter = classicRoadCenter;
@@ -47,7 +61,7 @@ const rotation = new THREE.Quaternion();
 const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
-const framedRoad = id => TOUR_IDS.has(id) || id === CIRCUIT_ID;
+const framedRoad = id => TOUR_IDS.has(id) || id === CIRCUIT_ID || id === FROSTBITE_ID || MEASURED_COURSE_IDS.has(id) || isCourseRuntime(id);
 function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
   position.set(x, y, z);
   scale.set(sx, sy, sz);
@@ -55,19 +69,11 @@ function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
   matrix.compose(position, rotation, scale);
   mesh.setMatrixAt(index, matrix);
 }
-// Canvas sign text: Latin keeps the generic sans-serif; zh-TW appends CJK families. The font shrinks until the text fits.
-const signFont = (px, locale) => `bold ${px}px ${locale === 'zh-TW' ? '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif' : 'sans-serif'}`;
-function fitText(context, label, x, y, maxWidth, basePx, locale) {
-  let px = basePx;
-  context.font = signFont(px, locale);
-  while (px > 12 && context.measureText(label).width > maxWidth) context.font = signFont(--px, locale);
-  context.fillText(label, x, y);
-}
 export function createWorld(canvas) {
   // Scoped continuation: finite career/Ghost path API still clamps at the finish.
   let endlessActive=false;
   const skyPosition=(d,x=0,y=0,o=0)=>finiteSkyPosition(d,x,y,o,endlessActive),skyFrame=d=>finiteSkyFrame(d,endlessActive),
-    trackPoint=(id,d)=>finitePoint(id,d,endlessActive),trackFrame=(id,d)=>finiteFrame(id,d,endlessActive),
+    trackPoint=(id,d)=>finitePoint(id,d,endlessActive),trackFrame=(id,d,span=false)=>finiteFrame(id,d,endlessActive,span),
     trackLocalPosition=(id,d,x=0,y=0,o=0)=>finitePosition(id,d,x,y,o,endlessActive);
   // No canvas MSAA: the composer's final pass only blits a full-screen quad here; edges are resolved in sceneTarget.
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
@@ -96,30 +102,14 @@ export function createWorld(canvas) {
   if (!highPass.fragmentShader.includes(texel)) throw new Error('UnrealBloomPass high pass changed: move the NaN guard');
   highPass.fragmentShader = highPass.fragmentShader.replace(texel, `${texel} if ( any( isnan( texel ) ) || any( isinf( texel ) ) ) texel = vec4( 0.0 );`);
   composer.addPass(bloom);
-  const lens = new ShaderPass({
-    uniforms: { tDiffuse: { value: null }, boost: { value: 0 }, impact: { value: 0 }, pressure: { value: 0 }, nozzle: { value: new THREE.Vector2() }, time: { value: 0 } },
-    vertexShader: 'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: `uniform sampler2D tDiffuse; uniform float boost; uniform float impact; uniform float pressure,time; uniform vec2 nozzle; varying vec2 vUv;
-      void main(){ vec2 delta=vUv-.5; vec2 offset=delta*impact*.008;
-        vec2 gas=vUv-nozzle;float mask=exp(-dot(gas*vec2(2.,1.),gas*vec2(2.,1.))*550.);
-        vec2 uv=vUv+sin(gas.yx*160.+time*25.)*mask*pressure*.0015;
-        vec3 col=texture2D(tDiffuse,uv).rgb;
-        col.r=texture2D(tDiffuse,uv+offset).r; col.b=texture2D(tDiffuse,uv-offset).b;
-        vec3 blur=texture2D(tDiffuse,vUv-delta*.012).rgb+texture2D(tDiffuse,vUv-delta*.025).rgb;
-        col=mix(col,blur*.5,boost*dot(delta,delta)*.65);
-        col*=1.-smoothstep(.15,.85,length(delta))*.3;
-        gl_FragColor=vec4(col,1.); }`,
-  });
+  const lens = createLensPass();
   composer.addPass(lens);
   composer.addPass(new OutputPass());
-  const env = new THREE.PMREMGenerator(renderer);
-  const room = new RoomEnvironment();
-  const environment = env.fromScene(room, 0.04);
+  const environment = createRoomEnvironment(renderer);
   scene.environment = environment.texture;
   scene.environmentIntensity = 0.42; let garageStage = null, garagePaint = null, garagePreviewSkins = {};
-  room.dispose();
-  env.dispose();
-  const upcomingStage = createUpcomingShowcase(UPCOMING_ENVIRONMENTS, environment.texture);
+  const carEnvironment = createCarEnvironment(renderer);
+  const upcomingStage = createUpcomingShowcase(UPCOMING_ENVIRONMENTS, environment.texture, carEnvironment, host => garageModel?.release(host)); // runs after createWorld returns, so garageModel is initialised
   const ambient = new THREE.HemisphereLight('#90bcff', '#15273f', 1.7);
   scene.add(ambient);
   const sunlight = new THREE.DirectionalLight('#ffb88a', 2.3);
@@ -129,65 +119,8 @@ export function createWorld(canvas) {
   roadsideLamps.forEach(light=>{light.visible=false;scene.add(light);});
   sunlight.position.set(-170, 100, -190);
   scene.add(sunlight);
-  const sky = new THREE.Mesh(new THREE.SphereGeometry(2500, 24, 16), new THREE.ShaderMaterial({
-    side: THREE.BackSide, depthWrite: false,
-    uniforms: { top: { value: new THREE.Color('#101e43') }, horizon: { value: new THREE.Color('#d98785') }, warmth: { value: 1 }, aurora: { value: 0 }, cloudOpacity: { value: 1 }, cloudTint: { value: new THREE.Color('#4d3d60') }, time: { value: 0 } },
-    vertexShader: 'varying vec3 vPosition; void main(){ vPosition=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-    fragmentShader: `varying vec3 vPosition; uniform vec3 top; uniform vec3 horizon,cloudTint; uniform float warmth,aurora,time,cloudOpacity;
-      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-      float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
-        return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
-      void main(){vec3 dir=normalize(vPosition);float h=dir.y;
-        vec3 col=mix(horizon,top,smoothstep(-.03,.65,h));
-        float light=pow(max(0.,dot(dir,normalize(vec3(-.22,.055,-1.)))),12.);
-        col+=vec3(.65,.21,.07)*light*warmth;
-        vec2 p=dir.xz/(max(.08,abs(h)))*2.;
-        float cloud=noise(p*1.8)*.6+noise(p*4.5)*.25+noise(p*9.)*.15;
-        float band=smoothstep(.05,.13,h)*(1.-smoothstep(.3,.62,h));
-        col=mix(col,cloudTint+vec3(.32,.12,.02)*light,smoothstep(.45,.75,cloud)*band*.6*cloudOpacity);
-        float ribbon=pow(max(0.,sin(dir.x*9.+sin(dir.z*6.+time*.08)*2.+h*16.)),12.);
-        col+=vec3(.04,.8,.35)*ribbon*band*aurora;
-        gl_FragColor=vec4(col,1.);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }`,
-  }));
-  scene.add(sky);
-  const sun = new THREE.Mesh(new THREE.SphereGeometry(65, 32, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.5, 1.35, 0.5), fog: false }));
-  sun.position.set(-355, 88, -1600);
-  scene.add(sun);
-
-  const sea = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000), new THREE.ShaderMaterial({
-    uniforms: { time: { value: 0 }, ground: { value: new THREE.Color('#0a233b') }, fogColor: { value: new THREE.Color('#94758a') }, water: { value: 1 } },
-    vertexShader: 'varying vec3 p; void main(){p=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}',
-    fragmentShader: `varying vec3 p; uniform float time,water; uniform vec3 ground,fogColor;
-      void main(){float wave=sin(p.x*.065+time*.7+sin(p.z*.018))*sin(p.z*.21-time)*.5+.5;
-        vec3 col=mix(vec3(.018,.055,.11),vec3(.055,.14,.21),wave*.5);
-        float reflection=pow(max(0.,1.-abs(p.x+170.)*.003),8.)*smoothstep(.68,1.,wave);
-        col+=vec3(.65,.22,.08)*reflection;
-        col=mix(ground,col,water);
-        float fog=smoothstep(300.,1800.,distance(p,cameraPosition));col=mix(col,fogColor,fog);
-        gl_FragColor=vec4(col,1.);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }`,
-  }));
-  sea.rotation.x = -Math.PI / 2;
-  sea.position.y = -6;
-  scene.add(sea);
-  const seaLines = instances(box, new THREE.MeshBasicMaterial({ color: '#bca99d', transparent: true, opacity: 0.25 }), 110, scene);
-  for (let i = 0; i < 110; i++) {
-    put(seaLines, i, Math.sin(i * 9.3) * 1100, -5.95, -i * 14, 20 + i % 18, 0.01, 0.1);
-  }
-  seaLines.instanceMatrix.needsUpdate = true;
-
-  const mountains = instances(new THREE.ConeGeometry(1, 1, 7), material('#374762'), 30, scene);
-  for (let i = 0; i < 30; i++) {
-    const height = 70 + (Math.sin(i * 3.4) + 1) * 60;
-    put(mountains, i, (i - 15) * 130, height / 2 - 20, -1400 - Math.cos(i * 2) * 300, 150 + i % 3 * 70, height, 220, i);
-  }
-  mountains.instanceMatrix.needsUpdate = true;
-
+  const coastLook = createCoastLook({ scene, renderer, lens, room: environment.texture, roomIntensity: 0.42, baseUrl: import.meta.env.BASE_URL, bloom, sun: sunlight });
+  const { sky, sun, sea, seaLines, mountains } = createClassicBackdrop(scene, box, put);
   const city = new THREE.Group();
   scene.add(city);
   const buildingMat = material('#17344d', 0.5, 0.38);
@@ -198,10 +131,8 @@ export function createWorld(canvas) {
     const side = i % 2 ? -1 : 1;
     buildingData.push({ x: side * (110 + (i * 37 % 550)), d: i * 39 % 2200, w: 12 + i * 7 % 24, h: 18 + (i * 31 % 145) });
   }
-
   const segments = 120;
   const roadGeometry = roadRibbon(segments);
-  const roadVertices = roadGeometry.attributes.position.array;
   const baseIndices = roadGeometry.index.array.slice();
   const roadMaterial = material('#142534', 0.3, 0.5);
   roadMaterial.envMapIntensity = 0.25;
@@ -229,27 +160,9 @@ export function createWorld(canvas) {
   shortcutDeck.name = 'shortcut-deck'; shortcutPylonMeshes.name = 'shortcut-pylons';
   const surfaceMarks = instances(box, new THREE.MeshBasicMaterial({ color: '#9ae6ff', transparent: true, opacity: .3, depthWrite: false }), segments, scene);
   const cliffs = instances(new THREE.ConeGeometry(1, 1, 5), material('#a15339'), 40, scene);
-  const weatherPositions = new Float32Array(180 * 3);
-  for (let i = 0; i < 180; i++) weatherPositions.set([Math.sin(i * 29) * 45, i * 17 % 32, -(i * 13 % 180)], i * 3);
-  const weatherGeometry = new THREE.BufferGeometry();
-  weatherGeometry.setAttribute('position', new THREE.BufferAttribute(weatherPositions, 3));
-  const weather = new THREE.Points(weatherGeometry, new THREE.PointsMaterial({ color: '#b8d8ef', size: .18, transparent: true, opacity: .65, depthWrite: false }));
+  const { positions: weatherPositions, geometry: weatherGeometry, points: weather } = createWeatherPoints();
   scene.add(weather);
-  const signTextures = [];
-  const signPaints = [];
-  const signs = Object.fromEntries(Object.keys(SECTION_SIGN_LABELS).map(type => {
-    const sign = document.createElement('canvas'); sign.width = 512; sign.height = 96;
-    const context = sign.getContext('2d');
-    const texture = new THREE.CanvasTexture(sign); texture.colorSpace = THREE.SRGBColorSpace; signTextures.push(texture);
-    signPaints.push(locale => {
-      context.fillStyle = '#142334'; context.fillRect(0, 0, 512, 96);
-      context.strokeStyle = '#ffc36f'; context.lineWidth = 8; context.strokeRect(4, 4, 504, 88);
-      context.fillStyle = '#fff1d6'; context.textAlign = 'center';
-      fitText(context, t(`sign.${type}`, undefined, locale), 256, 58, 472, 27, locale);
-      texture.needsUpdate = true;
-    });
-    return [type, new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })];
-  }));
+  const { signs, signTextures, signPaints } = createSectionSignMaterials();
   const sectionSigns = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => track.sections.length)) }, () => {
     const group = new THREE.Group();
     block(group, material('#637282'), 0, 2.5, 0, .2, 5, .2);
@@ -301,9 +214,10 @@ export function createWorld(canvas) {
   finishSign.position.set(0, 12.9, 0.4);
   finish.add(finishSign);
   scene.add(finish);
-
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
+  applyCarReflections(player, carEnvironment);
+  const graceFade = createGraceFade(player); // before aero VFX attach to it
   const rearLight = player.userData.rearLight;
   const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
@@ -319,24 +233,13 @@ export function createWorld(canvas) {
   const ghostCar = makeCar(CAR_STYLES.roadster);
   const ghostMaterial = new THREE.MeshBasicMaterial({ color: '#8fd3ff', transparent: true, opacity: 0.3, depthWrite: false });
   ghostCar.traverse(object => { if (object.material) { [].concat(object.material).forEach(mat => mat.dispose()); object.material = ghostMaterial; } });
-  ghostCar.userData.jets.visible = ghostCar.visible = false;
+  ghostCar.userData.jets.visible = ghostCar.visible = false; ghostCar.name = 'ghost-car';
   scene.add(ghostCar);
-  const shadowCanvas = document.createElement('canvas');
-  shadowCanvas.width = shadowCanvas.height = 64;
-  const shadowContext = shadowCanvas.getContext('2d');
-  const shadowGradient = shadowContext.createRadialGradient(32, 32, 5, 32, 32, 32);
-  shadowGradient.addColorStop(0, 'rgba(0,0,0,0.8)');
-  shadowGradient.addColorStop(1, 'rgba(0,0,0,0)');
-  shadowContext.fillStyle = shadowGradient;
-  shadowContext.fillRect(0, 0, 64, 64);
-  const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
-  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(5, 8), new THREE.MeshBasicMaterial({ map: shadowTexture, transparent: true, opacity: 0.6, depthWrite: false }));
-  shadow.rotation.x = -Math.PI / 2;
-  shadow.position.y = 0.03;
-  scene.add(shadow);
+  const { shadow, texture: shadowTexture } = createContactShadow(scene);
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
   const coastScenery = createCoastScenery(scene, roadCenter), classicScenery = createClassicTrackScenery(scene, roadCenter);
+  const coastAssets = createWorldCoastAssets(renderer, { scenery: coastScenery, road }, canvas.dataset); // ?look=3d Medium+ Coast: scenery GLB + KTX2 asphalt + wet mirror; else null
   // Inspect car occlusion only when the showroom angle changes.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
   const showcaseRay = new THREE.Raycaster();
@@ -357,21 +260,6 @@ export function createWorld(canvas) {
   // Frame the full vehicle silhouette, including wheels.
   const { projectedCarBounds, carCorner } = createCarBounds(showcaseProbe, camera, player, () => aero.group);
   let framingKey = '', framingBack = 0, framingLookY = 0; const framingAxis = new THREE.Vector3();
-
-  // Bounds of the visible landmark nearest the look target; null when none is shown.
-  const apexBox = new THREE.Box3();
-  function landmarkBounds(look) {
-    let best = null, bestDistance = Infinity;
-    for(const hero of trackId === CIRCUIT_ID ? circuitScene.landmarks() : worldTourScene.landmarks()) {
-      if(!hero.visible) continue;
-      apexBox.setFromObject(hero);
-      if(apexBox.isEmpty()) continue;
-      const d = apexBox.distanceToPoint(look);
-      if(d < bestDistance) { bestDistance = d; best = hero; }
-    }
-    if(!best) return null;
-    return apexBox.setFromObject(best);
-  }
 
   function frameShowcaseCar(distance) {
     // Hover wheels fold out over ~0.5 s and widen the car: reframe as they move, not once from the first frame.
@@ -396,7 +284,8 @@ export function createWorld(canvas) {
       projectedCarBounds(originalEye,originalLook); // measure the car once; candidates only re-project it
       // The drive shot also owns the signature landmark: tilting down to catch the wheels
       // must not push its top out of frame, so that top is a fit constraint too.
-      const landmark=visual.view==='drive'&&framedRoad(trackId)?landmarkBounds(originalLook):null;
+      // Frostbite keeps its race-only framing: the home landmark fit stays on Tour/Circuit roads.
+      const landmark=visual.view==='drive'&&framedRoad(trackId)&&trackId!==FROSTBITE_ID&&!MEASURED_COURSE_IDS.has(trackId)?landmarkBounds(trackId===CIRCUIT_ID?circuitScene.landmarks():worldTourScene.landmarks(),originalLook):null;
       // Landscape keeps the landmark clear of the home panel on the left (NDC x >= .04).
       const clearLeft=camera.aspect>1;
       // Fine steps near the camera: a tight landmark leaves only a ~1 m dolly window.
@@ -479,7 +368,6 @@ export function createWorld(canvas) {
     }
     return clear/carSightPoints.length;
   }
-
   function avoidShowcaseObstruction(distance) {
     if(!showcaseOccluders?.visible)return;
     const frame=trackFrame(trackId,distance);
@@ -512,9 +400,10 @@ export function createWorld(canvas) {
     desiredCamera.add(offset(clearancePlan));
   }
   const effectFrame = s => trackFrame(trackId, s);
-  const circuitScene = createCircuitScene(scene);
-  const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : TOUR_IDS.has(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
+  const circuitScene = createCircuitScene(scene), frostbiteScene = createFrostbiteRaceScene(scene), courseScene = createCourseRaceScene(scene), measuredScenes = createMeasuredCourseScenes(scene);
+  const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : framedRoad(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
   const aero = createAeroVFX(scene, player);
+  const garageModel = createWorldGarageModel(canvas, renderer, camera), homeModelHost = { name: 'home', car: player, keep: aero.group, scene }; // ?model=probe|roadster only
   const sprintVisual = createSprintVfx();
   // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
   const sprintInput = { phase: 'ready', nitro: false, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
@@ -524,11 +413,11 @@ export function createWorld(canvas) {
   const lookTarget = new THREE.Vector3();
   const smoothLook = new THREE.Vector3(0, 2, -25);
   let cameraMode = 0;
-  let initialized = false, lastRace = null, trackId, carBank = 0;
+  let initialized = false, lastRace = null, trackId, carBank = 0, seenFall = null, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); const courseOriginPoint = [0, 0, 0]; // Frostbite span: a respawn (up to ~500 m back) cuts the camera; the lift carries it
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
-  let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null;
+  let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null, garageLighting = 'bright';
+  const syncGarageLighting = () => { lens.uniforms.gain.value = garageCamera || garagePose ? GARAGE_LIGHTING[garageLighting] : 1; };
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
-
   let sizeKey = '', warmupPending = true, garageWarmupPending = true;
   const restoreWarmup = () => { warmupPending = garageWarmupPending = true; };
   canvas.addEventListener('webglcontextrestored', restoreWarmup);
@@ -548,19 +437,21 @@ export function createWorld(canvas) {
   // iOS fires resize on rotation before the new layout lands; observing the canvas catches the settled size.
   new ResizeObserver(resize).observe(canvas);
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}, pose = car) {
-    const relative = physicalGap(trackId, distance, pose.distance);
+    const graphView = lastRace?.course && isCourseRuntime(trackId) ? graphCarVisual(lastRace.course, isPlayer ? 'YOU' : car.id, courseOriginPoint) : null;
+    const relative = graphView ? graphView.separation : physicalGap(trackId, distance, pose.distance);
     // Tour and sky routes end at the finish and trackPoint clamps there, so cars
     // past it would pile up at the arch like parked cars; they leave the scene instead.
-    const pastFinish = !endlessActive && (trackId === 'spiral' || TOUR_IDS.has(trackId)) && pose.distance > RACE_TRACKS[trackId].length;
-    mesh.visible = isPlayer || (relative > -55 && relative < 900 && !pastFinish);
-    if (!mesh.visible) return; mesh.userData.roadDistance = pose.distance; mesh.userData.altitude = pose.altitude || 0; // the pose the shadow sits under
+    const pastFinish = graphView?.finished || (!endlessActive && (trackId === 'spiral' || TOUR_IDS.has(trackId) || trackId === FROSTBITE_ID || MEASURED_COURSE_IDS.has(trackId)) && pose.distance > lastRace.length);
+    mesh.visible = isPlayer || (graphView ? relative < 900 && !pastFinish : relative > -55 && relative < 900 && !pastFinish);
+    if (!mesh.visible) return; mesh.userData.roadDistance = pose.distance; mesh.userData.span = !!car.span; mesh.userData.altitude = (pose.altitude || 0) - (car.span ? FROSTBITE_SPAN.altitude - SHORTCUT_TOLERANCE : 0); // the pose the shadow sits under (a span car's on the deck)
     if (trackId === 'spiral' || framedRoad(trackId)) {
-      if (trackId === 'spiral') mesh.position.fromArray(skyPosition(pose.distance, pose.x, pose.altitude || 0, distance));
+      if (graphView) mesh.position.fromArray(graphView.position);
+      else if (trackId === 'spiral') mesh.position.fromArray(skyPosition(pose.distance, pose.x, pose.altitude || 0, distance));
       else {
-        const p=trackPoint(trackId,pose.distance),o=trackPoint(trackId,distance),f=trackFrame(trackId,pose.distance);
+        const f=trackFrame(trackId,pose.distance,car.span),p=f.point,o=trackPoint(trackId,distance);
         mesh.position.set(p.x-o.x+f.right[0]*pose.x+f.up[0]*(pose.altitude||0),p.y-o.y+f.right[1]*pose.x+f.up[1]*(pose.altitude||0),p.z-o.z+f.right[2]*pose.x+f.up[2]*(pose.altitude||0));
       }
-      const frame = trackId === 'spiral' ? skyFrame(pose.distance) : trackFrame(trackId,pose.distance);
+      const frame = graphView?.frame ?? (trackId === 'spiral' ? skyFrame(pose.distance) : trackFrame(trackId,pose.distance,car.span));
       // Compose every visual offset in local car axes, retaining the actual road pitch/bank.
       // Reading/writing Euler rotation after setting the track quaternion used to
       // overwrite its banking and snap near 90-degree spiral headings.
@@ -595,7 +486,7 @@ export function createWorld(canvas) {
     });
   }
   return {
-    resize, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; }, setCosmeticSkins(ids) { aero.setSkins(ids); }, setGaragePose(pose) { garagePose = pose; },
+    resize, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture, carEnvironment); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; syncGarageLighting(); }, setCosmeticSkins(ids) { aero.setSkins(ids); }, setGaragePose(pose) { garagePose = pose; syncGarageLighting(); }, setGarageLighting(level) { garageLighting = level; syncGarageLighting(); },
     setGarageSkinPreview(ids, home = false) { garagePreviewSkins = ids; garageHomePreview = home && !garageCamera; garageStage?.setSkins(ids); if (garageHomePreview) aero.setSkins(ids); }, inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : aero.inspectCosmetics(); },
         inspectGarageStudio() { if (garageStage && garageCamera) return garageStage.inspectBounds(camera); if (!garageHomePreview) return null; const { minX, maxX, minY, maxY } = projectedCarBounds(camera.position, smoothLook); return { minX, maxX, minY, maxY, inFrame: minX > -.94 && maxX < .94 && minY > -.94 && maxY < .94 }; }, // Home: QA reads how much of the showroom the car fills
     previewAppearance(paint) {
@@ -633,7 +524,8 @@ export function createWorld(canvas) {
       return new Promise((resolve,reject) => { photoCapture = { resolve, reject }; });
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null, motion = null) {
-      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.12; if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; }
+      garageModel?.frame(visual.quality === 'low' ? 'low' : 'high', race.phase, garageHomePreview || !!garageCamera, garageCamera ? garageStage?.modelHost ?? null : null, race.phase === 'ready' ? upcomingStage.modelHost : null, homeModelHost);
+      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.01; if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; } // r186 bloom is stronger in the Studio's bright environment.
       // The original home showcase owns only scenery and camera; no race state or entry.
       if (race.phase === 'ready' && upcomingStage.scene) {
         renderPass.scene = upcomingStage.scene;
@@ -658,11 +550,11 @@ export function createWorld(canvas) {
         hazardMeshes.setTrack(trackId);
         scene.background.set(palette.fog); scene.fog.color.set(palette.fog);
         sky.material.uniforms.top.value.set(palette.top); sky.material.uniforms.horizon.value.set(palette.horizon);
-        sky.material.uniforms.warmth.value = palette.warmth; sky.material.uniforms.aurora.value = trackId === 'aurora' ? 1 : 0;
+        sky.material.uniforms.warmth.value = palette.warmth; sky.material.uniforms.aurora.value = trackId === 'aurora' || trackId === FROSTBITE_ID ? 1 : 0;
         sky.material.uniforms.cloudOpacity.value = trackId==='cosmic'?0:trackId==='tokyo'?.14:trackId==='alpine'?.45:trackId==='coastal'?.32:trackId==='taipei'?.36:1;
         sky.material.uniforms.cloudTint.value.set(trackId==='alpine'?'#647575':trackId==='coastal'?'#82989a':trackId==='taipei'?'#77898b':trackId==='tokyo'?'#394354':'#4d3d60');
         sunlight.color.set(palette.sun);
-        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : trackId === 'coast' ? COAST_LIGHTING.sun : trackId === 'neon' ? .8 : trackId === 'aurora' ? 1.2 : 2.3;
+        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : MEASURED_COURSE_SUN[trackId] ?? (trackId === 'coast' ? COAST_LIGHTING.sun : trackId === 'neon' ? .8 : trackId === 'aurora' || trackId === FROSTBITE_ID ? 1.2 : 2.3);
         sunlight.position.set(TOUR_IDS.has(trackId)?-400:-170,TOUR_IDS.has(trackId)?230:100,TOUR_IDS.has(trackId)?260:-190);
         renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:trackId==='coast'?COAST_LIGHTING.exposure:1.12;
         ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='coast'?COAST_LIGHTING.ambient:trackId==='neon'?1.1:1.7;
@@ -684,12 +576,16 @@ export function createWorld(canvas) {
         roadGeometry.index.array.set(baseIndices); roadGeometry.index.needsUpdate = true;
         warmupPending = true; // track-specific props hidden until an event get their pipelines before racing
       }
-      const visualPreset = race.mode === 'custom' || race.mode === 'free' ? race.session?.presentation.visualPreset ?? 'track' : 'track';
+      const visualPreset = racePreset(race);
+      coastLook.update(trackId, visualPreset, visual.quality);
       raceVisuals.apply(visualPreset); const blizzard = preview ? 0 : blizzardLevel(trackId, visualCar.distance, !!race.config.themes); raceVisuals.blizzard(blizzard);
       const distance = preview ? previewDistance(trackId) : visualCar.distance;
       if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality,race.endless ? race.seed : undefined);} else coastScenery.hide();
+      if (coastAssets?.update(trackId, visual.quality, race.phase === 'racing', visualPreset, visual.ultra)) warmupPending = true; // new materials compile before GO
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
-      const origin = trackId === 'spiral' || framedRoad(trackId) ? trackPoint(trackId,distance) : null, center = origin ? origin.x : roadCenter(distance);
+      const graphCentre = race.course ? graphOrigin(race.course) : null;
+      if (graphCentre) for (let axis = 0; axis < 3; axis++) courseOriginPoint[axis] = graphCentre[axis];
+      const origin = graphCentre ? aeroOrigin.set(...graphCentre) : trackId === 'spiral' || framedRoad(trackId) ? trackPoint(trackId,distance) : null, center = origin ? origin.x : roadCenter(distance);
       // Smooth mountain bore lighting over 38 m for road readability.
       const tour=TOUR_IDS.has(trackId);
       const bore=tour&&trackId==='alpine'?race.sections.find(s=>
@@ -714,13 +610,12 @@ export function createWorld(canvas) {
         light.color.set(trackId==='tokyo'?'#a6a4bc':trackId==='coastal'?'#c4c9b7':'#cfbf9f');
         light.position.fromArray(trackLocalPosition(trackId,distance+26,i===0?-17:17,10.5,distance));
       });
-
       const time = race.elapsed + idleTime;
       sea.material.uniforms.time.value = reducedMotion ? 0 : time;
       sky.material.uniforms.time.value = reducedMotion ? 0 : time;
       const touch = touchPreference.matches;
-      const raining = visualPreset === 'rain' || (visualPreset === 'track' && trackId === 'neon');
-      weather.visible = !reducedMotion && visual.enabled && (raining || visualPreset === 'snow' || blizzard > 0 || (visualPreset === 'track' && trackId === 'aurora'));
+      const raining = isRaining(visualPreset, trackId);
+      weather.visible = !reducedMotion && visual.enabled && (raining || visualPreset === 'snow' || blizzard > 0 || (visualPreset === 'track' && (trackId === 'aurora' || trackId === FROSTBITE_ID)));
       weather.material.size = raining ? .12 : .24;
       weatherGeometry.setDrawRange(0, weatherDrops(visual.quality, touch));
       if (weather.visible) {
@@ -728,9 +623,9 @@ export function createWorld(canvas) {
         weatherGeometry.attributes.position.needsUpdate = true;
         weather.position.set(visualCar.x, visualCar.altitude + 25, 15);
       }
-      if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide();
+      if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide(); if (trackId === FROSTBITE_ID) frostbiteScene.update(distance); else frostbiteScene.hide(); if (graphCentre) courseScene.update(race, visual.quality, time, reducedMotion); else courseScene.hide(); measuredScenes.update(trackId, distance, time, reducedMotion);
       if (trackId === 'spiral' || framedRoad(trackId)) {
-        if (trackId === CIRCUIT_ID) { skyScene.hide(); worldTourScene.hide(); }
+        if (trackId === CIRCUIT_ID || trackId === FROSTBITE_ID || MEASURED_COURSE_IDS.has(trackId) || isCourseRuntime(trackId) || graphCentre) { skyScene.hide(); worldTourScene.hide(); }
         else if (trackId === 'spiral') { skyScene.update(distance, visual.quality, !!race.endless); worldTourScene.hide(); }
         else { skyScene.hide(); worldTourScene.update(trackId,distance,visual.quality,race.sections,time,reducedMotion,!!race.endless); }
         road.visible = false;
@@ -752,7 +647,7 @@ export function createWorld(canvas) {
         const d = tile + (i - 5) * 12;
         const x = roadCenter(d);
         const z = -d;
-        roadVertices.set([x - 12, 0, z, x + 12, 0, z], i * 6);
+        setRoadRow(roadGeometry, i, x, z, d, tile);
         if (i === segments) continue;
         const section = race.sections.find(section => d + 6 >= section.from && d + 6 < section.to);
         if (trackId === 'canyon') for (let j = 0; j < 6; j++) roadGeometry.index.array[i * 6 + j] = section?.type === 'gap' ? 0 : baseIndices[i * 6 + j];
@@ -778,7 +673,7 @@ export function createWorld(canvas) {
           put(railLights, i * 2 + side, x + sx * 12.1, 0.68, z - 6, 0.045, 0.04, 12.15, angle);
         }
       }
-      if (refreshClassicRoad) roadGeometry.attributes.position.needsUpdate = true;
+      if (refreshClassicRoad) roadGeometry.attributes.position.needsUpdate = roadGeometry.attributes.uv.needsUpdate = true;
       if (refreshClassicRoad && trackId === 'canyon') roadGeometry.index.needsUpdate = true;
       if (refreshClassicRoad && tunnelRoofs.visible) tunnelRoofs.instanceMatrix.needsUpdate = tunnelWalls.instanceMatrix.needsUpdate = true;
       if (refreshClassicRoad && surfaceMarks.visible) surfaceMarks.instanceMatrix.needsUpdate = true;
@@ -795,7 +690,7 @@ export function createWorld(canvas) {
         const relative = section ? section.from - 65 - distance : 0;
         group.visible = !!section && relative > -40 && relative < 850;
         if (!group.visible) return;
-        if (TOUR_IDS.has(trackId)) {
+        if (framedRoad(trackId)) {
           const signDistance = section.from - 65;
           group.position.fromArray(trackLocalPosition(trackId, signDistance, -17, 0, distance));
           const frame = trackFrame(trackId, signDistance);
@@ -881,36 +776,40 @@ export function createWorld(canvas) {
         });
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt, false, {}, poseFor(mesh, race.traffic[i], motion?.previous?.traffic?.[i], alpha)); });
       }
+      graceFade(preview || race.phase === 'finished' ? 1 : graceOpacity(car.cooldown, race.elapsed, reducedMotion));
       ghostCar.visible = !preview && !!ghost;
       rearLight.update(race, motionDt, reducedMotion || !visual.enabled);
-      if (ghostCar.visible) {
+      if (ghostCar.visible) { // samples carry no span flag: a Frostbite ghost inside the Rift corridor box is drawn on the span
+        const ghostSpan = trackId === FROSTBITE_ID && frostbiteObjectSpan(ghost.distance, ghost.x, ghost.altitude);
         if (trackId === 'spiral' || framedRoad(trackId)) {
           if(trackId==='spiral')ghostCar.position.fromArray(skyPosition(ghost.distance,ghost.x,ghost.altitude,distance));
-          else {const p=trackPoint(trackId,ghost.distance),o=trackPoint(trackId,distance),f=trackFrame(trackId,ghost.distance);
+          else {const f=trackFrame(trackId,ghost.distance,ghostSpan),p=f.point,o=trackPoint(trackId,distance);
             ghostCar.position.set(p.x-o.x+f.right[0]*ghost.x,p.y-o.y+f.up[1]*ghost.altitude,p.z-o.z+f.right[2]*ghost.x);}
-          const frame = trackId==='spiral'?skyFrame(ghost.distance):trackFrame(trackId,ghost.distance);
+          const frame = trackId==='spiral'?skyFrame(ghost.distance):trackFrame(trackId,ghost.distance,ghostSpan);
           ghostCar.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right),new THREE.Vector3(...frame.up),new THREE.Vector3(...frame.forward).negate()));
         } else {
           ghostCar.position.set(roadCenter(ghost.distance) - center + ghost.x, ghost.altitude, distance - ghost.distance);
           ghostCar.rotation.y = -roadHeading(ghost.distance);
         }
       }
-      const { roadDistance, altitude: lift } = player.userData; // Classic: equals player.position.y; banked/sloped roads: height above the road
-      if (trackId === 'spiral' || framedRoad(trackId)) placeGroundShadow(shadow, trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance), player.position, lift);
+      const { roadDistance, altitude: lift, span } = player.userData; // Classic: equals player.position.y; banked/sloped roads: height above the road
+      if (trackId === 'spiral' || framedRoad(trackId)) placeGroundShadow(shadow, graphCentre ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance, span), player.position, lift);
       else { shadow.position.set(player.position.x, 0.03, player.position.z); shadow.rotation.set(-Math.PI / 2, 0, 0); }
-      shadow.scale.setScalar(1 + lift * 0.04); shadow.material.opacity = 0.6 / (1 + lift * 0.2);
+      shadow.scale.setScalar(1 + lift * 0.04); shadow.material.opacity = shadowOpacity(lift);
+      const graphFinish = graphCentre ? graphFinishVisual(race.course, courseOriginPoint) : null;
       if (trackId === 'spiral' || framedRoad(trackId)) {
-        if(trackId==='spiral')finish.position.fromArray(skyPosition(race.length,0,0,distance));
+        if (graphFinish) finish.position.fromArray(graphFinish.position);
+        else if(trackId==='spiral')finish.position.fromArray(skyPosition(race.length,0,0,distance));
         else {const p=trackPoint(trackId,race.length),o=trackPoint(trackId,distance);finish.position.set(p.x-o.x,p.y-o.y,p.z-o.z);}
-        const frame=trackId==='spiral'?skyFrame(race.length):trackFrame(trackId,race.length);
+        const frame=graphFinish?.frame ?? (trackId==='spiral'?skyFrame(race.length):trackFrame(trackId,race.length));
         finish.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up), new THREE.Vector3(...frame.forward).negate()));
       } else { finish.position.set(roadCenter(race.length) - center, 0, -(race.length - distance)); finish.rotation.set(0,0,0); }
-      finish.visible = trackId === CIRCUIT_ID || (!race.endless && race.length - distance < 1400);
+      finish.visible = graphFinish ? graphFinish.separation < 1400 : trackId === CIRCUIT_ID || (!race.endless && race.length - distance < 1400);
       effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
-        framedRoad(trackId) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin) => trackLocalPosition(trackId,s,x,y,origin), worldFrame: trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual);
+        framedRoad(trackId) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin,item) => race.course && item ? courseItemPoint(race.course,item,x,y,courseOriginPoint) : trackLocalPosition(trackId,s,x,y,origin), worldFrame: race.course ? (s,item) => courseItemFrame(race.course,item) : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual);
       Object.assign(sprintInput, {
         phase: race.phase, nitro: car.nitroTime > 0, boost: !!(car.boosting || car.miniBoost > 0),
-        speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion,
+        speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion, ultra: visual.ultra,
       });
       const sprintFrame = sprintVisual.update(sprintInput);
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), garageHomePreview ? garageHomeVisual : visual, reducedMotion, sprintFrame, garageHomePreview);
@@ -966,19 +865,19 @@ export function createWorld(canvas) {
         if (trackId === 'spiral' || framedRoad(trackId)) desiredCamera.copy(player.position).add(new THREE.Vector3(0, 1.7, 0));
         else desiredCamera.set(visualCar.x, visualCar.altitude + 1.7, -0.95);
         if (trackId === 'spiral' || framedRoad(trackId)) {
-          const f=trackFrame(trackId,distance+65),p=f.point,o=trackPoint(trackId,distance);
-          lookTarget.set(p.x-o.x+f.right[0]*visualCar.x,p.y-o.y+visualCar.altitude+1.5,p.z-o.z+f.right[2]*visualCar.x);
+          const f=race.course?graphLookAhead(race.course,visualCar.x,65):trackFrame(trackId,distance+lookAheadDistance(trackId,distance,65,endlessActive),car.span),p=f.point,o=race.course?courseOriginPoint:trackPoint(trackId,distance);
+          lookTarget.set((race.course?p[0]-o[0]:p.x-o.x)+f.right[0]*visualCar.x,(race.course?p[1]-o[1]:p.y-o.y)+visualCar.altitude+1.5,(race.course?p[2]-o[2]:p.z-o.z)+f.right[2]*visualCar.x);
         }
         else lookTarget.set(visualCar.x + roadCenter(distance + 65) - center, visualCar.altitude + 1.5, -65);
       } else {
         if (trackId === 'spiral' || framedRoad(trackId)) {
-          const frame = trackId === 'spiral' ? skyFrame(distance) : trackFrame(trackId,distance);
+          const frame = race.course ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(distance) : trackFrame(trackId,distance,car.span);
           const back = new THREE.Vector3(...frame.forward).multiplyScalar(- (portrait ? 14.5 : 12.5));
           desiredCamera.copy(player.position).add(back).add(new THREE.Vector3(0,5,0));
         } else desiredCamera.set(visualCar.x * 0.74, visualCar.altitude * 0.85 + (visualCar.altitude > 2 ? 4.4 : 4.8), portrait ? 13.5 : 11.6);
         if (trackId === 'spiral' || framedRoad(trackId)) {
-          const f=trackFrame(trackId,distance+34),p=f.point,o=trackPoint(trackId,distance);
-          lookTarget.set(p.x-o.x+f.right[0]*visualCar.x,p.y-o.y+visualCar.altitude+1.5,p.z-o.z+f.right[2]*visualCar.x);
+          const f=race.course?graphLookAhead(race.course,visualCar.x,34):trackFrame(trackId,distance+lookAheadDistance(trackId,distance,34,endlessActive),car.span),p=f.point,o=race.course?courseOriginPoint:trackPoint(trackId,distance);
+          lookTarget.set((race.course?p[0]-o[0]:p.x-o.x)+f.right[0]*visualCar.x,(race.course?p[1]-o[1]:p.y-o.y)+visualCar.altitude+1.5,(race.course?p[2]-o[2]:p.z-o.z)+f.right[2]*visualCar.x);
         }
         else lookTarget.set(visualCar.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, visualCar.altitude * 0.85 + 1.5, -25);
       }
@@ -998,7 +897,8 @@ export function createWorld(canvas) {
         if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance);
         frameShowcaseCar(distance);
       }
-      const smoothing = 1 - Math.exp(-dt * 7); if (!initialized) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; }
+      const smoothing = 1 - Math.exp(-dt * 7); if (trackId === FROSTBITE_ID) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
+      if (!initialized || (car.fall !== seenFall && (trackId === FROSTBITE_ID || !!race.course))) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; } seenFall = car.fall;
       camera.position.lerp(desiredCamera, smoothing); smoothLook.lerp(lookTarget, smoothing);
       // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.
       if (photoView && race.phase === 'paused') {
@@ -1017,7 +917,7 @@ export function createWorld(canvas) {
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?COAST_LIGHTING.bloom:.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
+      bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?coastLook.bloomStrength(COAST_LIGHTING.bloom):.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
       bloom.enabled = visual.quality !== 'low';
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
       renderer.info.reset(); // Exclude warmup draws and previous frames.
@@ -1098,9 +998,9 @@ export function createWorld(canvas) {
       });
     },
     dispose() {
-      upcomingStage.dispose(); garageStage?.dispose(); stopLocaleSigns();
+      coastLook.dispose(); garageModel?.dispose(); upcomingStage.dispose(); garageStage?.dispose(); stopLocaleSigns(); // the GLB leaves the cars before their materials are disposed
       canvas.removeEventListener('webglcontextrestored', restoreWarmup);
-      circuitScene.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastScenery.dispose(); classicScenery.dispose();
+      circuitScene.dispose(); frostbiteScene.dispose(); courseScene.dispose(); measuredScenes.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastAssets?.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();
       scene.traverse(object => {
         if (object.geometry) object.geometry.dispose();

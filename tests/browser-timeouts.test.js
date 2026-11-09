@@ -111,7 +111,56 @@ test('CI retries a failed browser test once and still reports it; local runs nev
     assert.equal(result.status, 0, result.stderr);
     const { retries, reporter } = JSON.parse(result.stdout);
     assert.equal(retries, ci ? 1 : 0);
-    // The github reporter annotates a test that passed only on retry, so a flake stays visible on a green run.
-    if (ci) assert.deepEqual(reporter, [['list'], ['github']]); else assert.equal(reporter, 'list');
+    // The github reporter annotates a test that passed only on retry, so a flake stays visible on a green run; the
+    // budget reporter does the same for a test that used more than half its timeout.
+    if (ci) assert.deepEqual(reporter, [['list'], ['github'], ['./tests/helpers/budget-reporter.js']]); else assert.equal(reporter, 'list');
   }
+});
+
+test('the budget reporter flags a test past half its own timeout, by file, line and title', async () => {
+  const { default: BudgetReporter, nearBudget } = await import('./helpers/budget-reporter.js');
+  const spec = (timeout, line = 49) => ({ timeout, location: { file: `${process.cwd()}/tests/ring-sfx-browser.spec.js`, line },
+    titlePath: () => ['', '', 'ring-sfx-browser.spec.js', 'ring collect sounds desktop', 'train'] });
+  assert.equal(nearBudget(spec(135000), { duration: 67500 }), false);
+  assert.equal(nearBudget(spec(135000), { duration: 90000 }), true);
+  assert.equal(nearBudget(spec(0), { duration: 90000 }), false, 'test.setTimeout(0) disables the budget');
+  const reporter = new BudgetReporter(), lines = [], log = console.log;
+  console.log = line => lines.push(line);
+  try {
+    reporter.onTestEnd(spec(135000), { duration: 55000, status: 'passed' });
+    reporter.onTestEnd(spec(135000), { duration: 90000, status: 'passed' });
+  } finally { console.log = log; }
+  assert.deepEqual(lines, ['::warning file=tests/ring-sfx-browser.spec.js,line=49,title=Near its test timeout::' +
+    'ring collect sounds desktop › train: 90.0 s of 135 s (67%), passed']);
+});
+
+// ring-sfx waited for a ring with `for (i < 200 && !ring.hit) await wait(10)`: on a CPU-only runner each sleep lasts a
+// whole ~300 ms frame, so one ring a rival had taken burned 60 s and the test hit its 135 s budget (CI 42489399352).
+// Wait on game state per frame (`await new Promise(requestAnimationFrame)`) until it decides, bounded by race time.
+const COUNTED_SLEEP = /for \(let (\w+) = 0; \1 < \d+ && [^;]+; \1\+\+\) await (?:wait|sleep|new Promise\(\w+ => setTimeout)\(/;
+
+test('browser specs never poll game state with a counted wall-clock sleep', () => {
+  const offenders = FILES.flatMap(file => readFileSync(new URL(file, import.meta.url), 'utf8').split('\n')
+    .flatMap((line, i) => COUNTED_SLEEP.test(line) ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
+  assert.deepEqual(offenders, [], 'Poll per frame until the game decides, bounded by race.elapsed (see .claude/rules/browser-test-stability.md)');
+});
+
+// The keyboard full-practice tests ran on the 135 s default while their touch twins had 720 s; a passing CI run took
+// 1.7 min, so slower runners timed out mid-lesson (develop, 2026-11-07). The shared flow helper owns the budget.
+test('every full practice run declares the full-practice budget', () => {
+  const spec = readFileSync(new URL('./interactive-tutorial-browser.spec.js', import.meta.url), 'utf8');
+  assert.match(spec, /const FULL_PRACTICE_BUDGET = ciTimeout\(\d+\)/);
+  assert.match(spec, /const keyboardToNitro = async page => \{\n\s*test\.setTimeout\(FULL_PRACTICE_BUDGET\);/);
+  assert.match(spec, /real touch controls finish practice[\s\S]{0,400}test\.setTimeout\(FULL_PRACTICE_BUDGET\)/);
+});
+
+test('a ?look=3d spec gives its countdown an explicit CI budget', () => {
+  // CPU-only CI draws a ?look=3d High frame in ~0.5 s and the 3 s countdown needs ~70 frames (each clamped to 0.05 s),
+  // so GO came after the 30 s default expect on develop (CI 42525271964, 42538999660).
+  const offenders = FILES.filter(file => file.endsWith('.spec.js')).flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    return source.includes("gameplaySearch: '?look=3d'") ? source.split('\n').flatMap((line, i) =>
+      line.includes("toHaveText('RACING')") ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []) : [];
+  });
+  assert.deepEqual(offenders, [], "Pass { timeout: ciTimeout(30000) } to the RACING wait (.claude/rules/browser-test-stability.md)");
 });

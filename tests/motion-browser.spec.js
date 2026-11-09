@@ -177,8 +177,7 @@ test.describe('touch button feedback', () => {
   });
 });
 
-test('speed dial eases as speed rises and a lost place flips with a readable down arrow', async ({ page }) => {
-  await open(page);
+test('speed dial eases as speed rises and a lost place flips with a readable down arrow', async ({ gameplayPage: page }) => {
   await page.evaluate(() => {
     window.placeChanges = [];
     const position = document.querySelector('#position');
@@ -192,6 +191,17 @@ test('speed dial eases as speed rises and a lost place flips with a readable dow
   await expect(page.locator('#speed-needle')).toBeVisible();
   const initial = await page.locator('#speed-needle').evaluate(element => getComputedStyle(element).transform);
   await expect(page.locator('#race-status')).toHaveText('RACING');
+  // The eight-car grid can start the player in last place; waiting for a natural loss is not deterministic.
+  // Drive real HUD/ranking updates from a controlled first-to-second-place transition instead.
+  await page.evaluate(() => {
+    const race = window.gameplay.race;
+    race.player.distance = Math.max(...race.rivals.map(rival => rival.distance)) + 100;
+  });
+  await expect(page.locator('#position')).toHaveText('01');
+  await page.evaluate(() => {
+    const race = window.gameplay.race;
+    race.rivals[0].distance = race.player.distance + 100;
+  });
   await expect.poll(() => page.evaluate(() => window.placeChanges.some(change => change.arrow === '↓' && change.direction === 'lost' && change.animated))).toBe(true);
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(60);
@@ -200,7 +210,8 @@ test('speed dial eases as speed rises and a lost place flips with a readable dow
   await expect(needle).toHaveCSS('transition-duration', '0.24s');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(needle).toHaveCSS('transition-duration', '0s');
-  expect(await page.locator('#position').evaluate(element => element.getAnimations().length)).toBe(0);
+  // The HUD cancels the position animations on its next frame after the media change, so poll.
+  await expect.poll(() => page.locator('#position').evaluate(element => element.getAnimations().length)).toBe(0);
 });
 
 test('leaderboard moves the same racer rows with FLIP only when order changes', async ({ page }) => {
@@ -258,10 +269,11 @@ for (const [name, viewport] of [
   ['landscape', { width: 844, height: 390 }],
 ]) test.describe(`motion on ${name}`, () => {
   test.use({ hasTouch: true, viewport });
-  test('race feedback fits, reduced motion stays readable, and restart clears queued events', async ({ page }) => {
-    await open(page);
+  test('race feedback fits, reduced motion stays readable, and restart clears queued events', async ({ gameplayPage: page }) => {
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
+    // A real earned callout, rather than relying on the countdown to emit one.
+    await page.evaluate(() => { window.gameplay.race.player.perfectLines++; });
     const callout = page.locator('#event-callout');
     await expect(callout).toBeVisible({ timeout: ciTimeout(35000) });
     await expect(page.locator('#event-callout > div:visible')).toHaveCount(1);

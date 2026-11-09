@@ -1,5 +1,10 @@
 import { CIRCUIT_ID, CIRCUIT_TRACK } from './circuit-track.ts';
 import type { TrackConfig } from './game-types.ts';
+import { FROSTBITE_ID, FROSTBITE_TRACK } from './courses/frostbite-race.ts';
+import { STORMLINE_ID, STORMLINE_TRACK } from './courses/stormline-megacity-race.ts';
+import { VOLCANIC_ID, VOLCANIC_TRACK } from './courses/volcanic-crown-race.ts';
+import { MONSOON_ID, MONSOON_TRACK } from './courses/monsoon-ruins-race.ts';
+import { COURSE_RUNTIMES } from './course-runtimes.ts';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
 // `x` / `altitude` place a shortcut corridor.
@@ -7,12 +12,12 @@ import type { TrackConfig } from './game-types.ts';
 // the World Tour BOOST/NITRO median. Every other track keeps the defaults bit-for-bit.
 const BOOST_ODDS = [0.4, 0.7, 0.8, 0.9] as const; // charge 40%, nitro 30%, slipstream 10%, risk 10%, mystery 10% (unchanged)
 export const RACE_TRACKS: Record<string, TrackConfig> = {
-  coast: { // fixedRings: the original gate line (x 2.5); every other ring is low enough to take from the road
-    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, layoutVersion: 4, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS, // the first, easiest map
+  coast: { // fixedRings: the original gate heights (8 m, then road height 3 m) on any lane
+    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, layoutVersion: 4, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS, introRivals: true, // the first, easiest map
     sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
   },
   neon: {
-    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 4, ringOdds: BOOST_ODDS, // an early, easy map
+    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 4, ringOdds: BOOST_ODDS, introRivals: true, // an early, easy map
     sections: [
       { from: 600, to: 1100, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 },
       { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
@@ -55,8 +60,27 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
   cosmic: {"name":"Cosmic Orbit","length":8000,"trafficDensity":0.65,"seed":1010,"layoutVersion":3,"sections":[{"from":1400,"to":1900,"type":"crosswind","dir":1},{"from":3000,"to":3500,"type":"shortcut","x":-7.5,"altitude":6},{"from":5100,"to":5600,"type":"crosswind","dir":-1},{"from":6100,"to":6540,"type":"boost-tunnel"}]},
 };
 
+// User, 2026-11-09: a new course (any `topology`) keeps the classic per-km ring/pickup density: its per-car item count
+// scales by length / the mean classic length. The ten classic tracks stay at 1 (their layouts are pinned).
+const CLASSIC_MEAN_LENGTH = Object.values(RACE_TRACKS).reduce((sum, track) => sum + track.length, 0) / Object.keys(RACE_TRACKS).length;
+export const itemScale = (track: TrackConfig): number =>
+  track.topology === 'course-graph' || track.topology === 'course-graph-runtime' ? track.length / CLASSIC_MEAN_LENGTH : 1;
+
 // The separate lookup never changes Daily/Career/Cup's ordered sprint catalog.
-export const raceTrack = (id: string): TrackConfig | undefined => id === CIRCUIT_ID ? CIRCUIT_TRACK : RACE_TRACKS[id];
+// Frostbite, Stormline, Volcanic and Monsoon (measured routes) plus the per-car graph runtimes are gated CourseGraph sprints:
+// raceable by id, never in the catalog, Daily or Cup.
+/** CourseGraph sprints outside the catalog whose results persist under a topology-keyed id (`record-layout.ts`). */
+export const COURSE_TRACKS: Readonly<Record<string, TrackConfig & { topologyVersion: number }>> = {
+  [FROSTBITE_ID]: FROSTBITE_TRACK, [STORMLINE_ID]: STORMLINE_TRACK, [VOLCANIC_ID]: VOLCANIC_TRACK, [MONSOON_ID]: MONSOON_TRACK,
+  ...Object.fromEntries(Object.entries(COURSE_RUNTIMES).map(([id, entry]) => [id, entry.track])),
+};
+export const raceTrack = (id: string): TrackConfig | undefined => id === CIRCUIT_ID ? CIRCUIT_TRACK : Object.hasOwn(COURSE_TRACKS, id) ? COURSE_TRACKS[id] : RACE_TRACKS[id];
 
 export const isModeTrack = (id: unknown, mode: unknown): id is string => typeof id === 'string' &&
   (mode === 'circuit' ? id === CIRCUIT_ID : Object.hasOwn(RACE_TRACKS, id));
+
+/** Topology guard for createRace: a circuit only in Circuit mode; gated CourseGraph sprints only in Classic. */
+export function assertTrackMode(trackId: string, mode: string): void {
+  if ((trackId === CIRCUIT_ID) !== (mode === 'circuit')) throw new RangeError('Circuit mode requires a circuit route');
+  if (Object.hasOwn(COURSE_TRACKS, trackId) && mode !== 'classic') throw new RangeError(`${COURSE_TRACKS[trackId].name} is a gated classic sprint`);
+}
