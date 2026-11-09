@@ -1,4 +1,4 @@
-<!-- source-sha256: 5384774879c63058bede6c3ff3e79e57fb0b6c11430113002af0629389961454 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 991c7b4416bd17bc929ccb066a83cb34329d9fd9937898b4db717a92877ecb9e generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -60,7 +60,7 @@ Custom Race 可為每個衝刺階段重播最快的相容 Ghost。Custom 與 Fre
 
 ### 選用道具與獎勵門
 
-Custom 與 Free Drive 提供 **Off / Classic Mystery Rings / Active Items / All Items**。持有的道具佔用單一欄位:按 **Q** 或點擊 **USE** 啟動,然後等待冷卻。NITRO 與 FLY/BOOST 保有各自的操作。All Items 會加入有限的速度、空中電量及一次性復原門;EMP 會短暫減慢附近的對手,在單人遊玩時會轉換為 Magnet。復原不會影響官方碰撞次數。Stunt Attack 與 Checkpoint Rush 可另外選擇啟用暫時、不可疊加的 ×2 分數門。Classic 的預設值維持不變。
+Custom 與 Free Drive 提供 **Off / Classic Mystery Rings / Active Items / All Items**。持有的道具佔用單一欄位:按 **Q** 或點擊 **USE** 啟動,然後等待冷卻。NITRO 與 FLY/BOOST 保有各自的操作。All Items 會加入有限的速度、空中電量及一次性復原門;EMP 會短暫減慢附近的對手,在單人遊玩時會轉換為 Magnet。復原不會影響官方碰撞次數。Stunt Attack 與 Checkpoint Rush 可另外選擇啟用暫時、不可疊加的分數倍率門。Classic 的預設值維持不變。
 
 ### Event Lab Lite v1
 
@@ -76,7 +76,7 @@ Custom 與 Free Drive 提供 **Off / Classic Mystery Rings / Active Items / All 
 
 ### 賽道主題、障礙與風險路線
 
-- **賽道主題**(Custom、Free Drive 與 Obstacle Run 中可選用)為每條路線帶來專屬危險:Coast 的貨物與陣風、Neon 的道路施工、Canyon 的落石、Aurora 的雪堆、冰面與暴風雪、Sky Spiral 的能量門、Taipei 的節慶路障、Tokyo 的號誌門、Alpine 的雪崩、Coastal 的浪花,以及 Cosmic 的能量牆。危險會提前警示,始終保留兩條車道暢通,且絕不會改變 Classic。
+- **賽道主題**(Custom、Free Drive 與 Obstacle Run 中可選用)為每條路線帶來專屬危險:Coast 的貨物與陣風、Neon 的道路施工、Canyon 的落石、Aurora 的雪堆、冰面與暴風雪、Sky Spiral 的能量門、Taipei 的節慶路障、Tokyo 的號誌門、Alpine 的雪崩、Coastal 的浪花,以及 Cosmic 的能量牆。危險會提前警示,始終保留車道暢通,且絕不會改變 Classic。
 - **Obstacle Run** 提供 **Mixed obstacles** 賽道:掃過的閘門、墜落的碎片,以及位於路障上方的圈環,獎勵飛越或繞行的玩家。
 - **風險路線**:高風險光環與近距離超車在 Custom Hard 難度下回報更高,也可關閉以便輕鬆練習。
 - 道路新增了非實體的路邊生活景象:觀眾、廣告看板、服務車輛、鐵路月台、行駛中的列車、船隻與無人機。較低的畫面設定會減少繪製這些內容。
@@ -137,7 +137,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 賽前或暫停時開啟 **Controls**,可調整鍵盤轉向靈敏度或重新對應駕駛動作。選取一個動作後按下按鍵;衝突的綁定會互換,固定快捷鍵保持保留,按 Escape 取消擷取。Reset keyboard 會還原預設值。綁定會立即生效,並儲存在 `localStorage['skyline-rush-keymap']`。手機與平板在按下實體(例如藍牙)按鍵之前會隱藏鍵盤區段;之後該鍵盤會被記錄在 `localStorage['skyline-rush-keyboard-seen']` 之下。
 
-同一面板也控制觸控轉向模式、慣用手、滑動靈敏度、大小、不透明度以及按住/切換式 FLY。**Edit touch layout** 讓你把動作按鈕與經典轉向按鈕拖曳到賽事預覽上;**Done editing** 會保留配置,**Reset touch layout** 則會還原。位置會在重新載入後保留,隨慣用手鏡像,並在旋轉後仍留在視窗範圍內。在較矮的橫向螢幕(高度低於 380 px,例如工具列顯示時的 iPhone Safari)上,開始畫面會省略其標語,讓 START RACE 不需要捲動,賽事 HUD 也會隱藏速度表與次要電量列,使各面板不會互相重疊。
+同一面板也控制觸控轉向模式、慣用手、滑動靈敏度、大小、不透明度以及按住/切換式 FLY。**Edit touch layout** 讓你把動作按鈕與經典轉向按鈕拖曳到賽事預覽上;**Done editing** 會保留配置,**Reset touch layout** 則會還原。位置會在重新載入後保留,隨慣用手鏡像,並在旋轉後仍留在視窗範圍內。在較矮的橫向螢幕(例如工具列顯示時的 iPhone Safari)上,開始畫面會省略其標語,讓 START RACE 不需要捲動,賽事 HUD 也會隱藏速度表與次要電量列,使各面板不會互相重疊。
 
 所有音訊皆以 Web Audio 合成;不需要下載任何音訊。音樂會依目前的畫面、賽道與遊戲模式變化,並為檢查點、危險、特技與最後衝刺等事件配上提示音。音效涵蓋選單、倒數、駕駛、飛行、加力、碰撞、降落與獎勵。暫停時駕駛聲音會淡出;靜音音效會停止待播的提示音。
 
@@ -185,9 +185,9 @@ NITRO 不會消耗推進器電量,可與 FLY 或 BOOST 同時運作;動力飛行
 
 ### Ghost、每日挑戰、獎牌與 Garage
 
-- **Ghost**:每場賽程每秒取樣 10 次車輛的距離、車道位置與高度。賽道上的新個人最佳會儲存該賽程,之後在該賽道的賽事中會以半透明藍色車輛顯示。預設為關閉;在 Controls 中開啟 **Show best-run ghost** 即可。
-- **每日挑戰**:History 會顯示今日的賽道與修飾條件,依本機日期挑選:禁止飛行、雙倍車流,或僅限金色光環。Canyon 絕不會出現禁止飛行,因為它的斷橋需要飛行。Daily 賽程只會進入各自的榜單(今日最快的五名);絕不會影響歷史紀錄、最佳時間、解鎖、星數或 Ghost。重新開始會保留挑戰,而 **Choose track** 則會離開挑戰。
-- **獎牌**:First victory(獲勝)、Clean run(無碰撞)、Perfect flight(單場賽事中 5 次 PERFECT LINE)與 Triple burst(單次爆發中 3 次 NITRO 充能:一次按下加兩次延長)。只有符合資格的 Classic Race 完賽才能獲得;每枚獎牌都會記錄首次獲得的日期。
+- **Ghost**:每場賽程都會持續取樣車輛的距離、車道位置與高度。賽道上的新個人最佳會儲存該賽程,之後在該賽道的賽事中會以半透明藍色車輛顯示。預設為關閉;在 Controls 中開啟 **Show best-run ghost** 即可。
+- **每日挑戰**:History 會顯示今日的賽道與修飾條件,依本機日期挑選:禁止飛行、增加車流,或僅限金色光環。Canyon 絕不會出現禁止飛行,因為它的斷橋需要飛行。Daily 賽程只會進入各自的榜單(今日最快的賽程);絕不會影響歷史紀錄、最佳時間、解鎖、星數或 Ghost。重新開始會保留挑戰,而 **Choose track** 則會離開挑戰。
+- **獎牌**:First victory(獲勝)、Clean run(無碰撞)、Perfect flight(單場賽事中獲得足夠的 PERFECT LINE)與 Triple burst(多次延長 NITRO 爆發)。只有符合資格的 Classic Race 完賽才能獲得;每枚獎牌都會記錄首次獲得的日期。
 - **Garage**:每條 Career 賽道上獲得的最佳風格星數會累計用於塗裝解鎖。Garage 會顯示每款塗裝的需求,並讓你預覽尚未解鎖的選項。塗裝只改變外觀,不改變車輛數值。
 
 ### Sky Spiral
@@ -200,13 +200,13 @@ Sky Spiral 加入了一條真正的 3D 上升螺旋道路,位於賽博龐克天�
 
 ### World Tour 賽道、路線地圖與賽道名稱
 
-World Tour 各賽道共用一個彎曲道路渲染器(`src/world-tour-scene.js`),並搭配各賽道專屬的色調、建築與地標(總統府與北門的剪影、霓虹路口與一座塔、鐵路高架橋與山峰、一座燈塔與跨海大橋、帶環的行星)。在首頁選擇 World Tour 賽道時,會把它的標誌性地標框在盤旋的車輛後方:總統府、Tokyo Tower、一座阿爾卑斯山峰、一座燈塔或宇宙之門。朝它競速時,路邊會讓該地標保持清晰可見。每張賽道卡片都會顯示完整的主要路線,賽事中則有即時地圖標出玩家與 AI 對手在其上的位置;空中捷徑絕不會被畫出。在高度低於 500px 的螢幕與高度低於 700px 的窄版手機上,即時地圖會讓位,排行榜仍會為車手排名。賽道名稱會跟隨 **EN / 繁體中文** 切換開關所選的語言(請見下方的 Language)。
+World Tour 各賽道共用一個彎曲道路渲染器(`src/world-tour-scene.js`),並搭配各賽道專屬的色調、建築與地標(總統府與北門的剪影、霓虹路口與一座塔、鐵路高架橋與山峰、一座燈塔與跨海大橋、帶環的行星)。在首頁選擇 World Tour 賽道時,會把它的標誌性地標框在盤旋的車輛後方:總統府、Tokyo Tower、一座阿爾卑斯山峰、一座燈塔或宇宙之門。朝它競速時,路邊會讓該地標保持清晰可見。每張賽道卡片都會顯示完整的主要路線,賽事中則有即時地圖標出玩家與 AI 對手在其上的位置;空中捷徑絕不會被畫出。在較矮的螢幕與窄版手機上,即時地圖會讓位,排行榜仍會為車手排名。賽道名稱會跟隨 **EN / 繁體中文** 切換開關所選的語言(請見下方的 Language)。
 
 風格分數獎勵近距離超車、光環、完整的光環組、移動中的滯空時間與乾淨的行駛距離。漂移與風險機會會提高獎勵,而碰撞與掉入缺口則會中斷乾淨距離的進度。符合資格的 Classic 結果會依相對於賽道長度的分數頒發風格星數,與完賽名次無關。
 
 燃料與 nitro 條會平順地趨向新數值,電量低時發出警告,補充時閃爍,並在 nitro 充能完成時脈動。Comfort mode 與系統的減少動態效果會停用這些動畫。滑動板在按住時顯示浮動的圓環/旋鈕,並在賽事開始時顯示簡短提示;放開後轉向會回到中立。
 
-HUD 使用共用的動態時序。速度表指針會隨速度緩動;名次變動時,名次數字會翻轉並帶有綠色向上或紅色向下的箭頭,排行榜列則滑入新的位置。精簡的半透明事件提示位於視野中央上方,避開 HUD 面板,並將險些擦撞、PERFECT LINE、NITRO 爆發、電量增加與漂移火花等級排入佇列而不重疊;同時補充飛行電量的 NITRO 獎勵會標明這一點(NITRO · +20% CHARGE)。按鈕在按下時會變暗而不改變大小,所以直到邊框為止的任何位置按下都會生效;按住的觸控按鈕保持亮起。VFX 設定中選用的 **Haptic feedback** 會在支援的觸控裝置上為碰撞、NITRO 與漂移獎勵發出震動。Comfort mode 與系統的減少動態效果會保留文字與按下狀態的顏色,同時移除新增的動態與震動。
+HUD 使用共用的動態時序。速度表指針會隨速度緩動;名次變動時,名次數字會翻轉並帶有綠色向上或紅色向下的箭頭,排行榜列則滑入新的位置。精簡的半透明事件提示位於視野中央上方,避開 HUD 面板,並將險些擦撞、PERFECT LINE、NITRO 爆發、電量增加與漂移火花等級排入佇列而不重疊;同時補充飛行電量的 NITRO 獎勵會在提示中標明這一點。按鈕在按下時會變暗而不改變大小,所以直到邊框為止的任何位置按下都會生效;按住的觸控按鈕保持亮起。VFX 設定中選用的 **Haptic feedback** 會在支援的觸控裝置上為碰撞、NITRO 與漂移獎勵發出震動。Comfort mode 與系統的減少動態效果會保留文字與按下狀態的顏色,同時移除新增的動態與震動。
 
 ### 語言
 

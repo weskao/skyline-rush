@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {
-  MONSOON_RUINS_COURSE, sampleMonsoonRoute, monsoonWetContact,
+  MONSOON_RUINS_COURSE, MONSOON_RUNOUT, sampleMonsoonRoute, monsoonWetContact,
   monsoonTerrainOffset, monsoonTerrainHeight,
   type MonsoonEdgeId, type Vec3,
 } from './monsoon-ruins.ts';
@@ -265,7 +265,7 @@ function makeRain(group: THREE.Group, from: number, to: number, tier: Quality) {
 export function createMonsoonRuinsChunk(options: MonsoonChunkOptions) {
   const { from, to, edgeId = 'ground', quality = 'medium' } = options;
   const branch = MONSOON_RUINS_COURSE.branches.find(e => e.id === edgeId);
-  const rangeFrom = branch?.from ?? 0, rangeTo = branch?.to ?? MONSOON_RUINS_COURSE.length;
+  const rangeFrom = branch?.from ?? 0, rangeTo = branch?.to ?? MONSOON_RUINS_COURSE.length + MONSOON_RUNOUT;
   if (!Number.isFinite(from) || !Number.isFinite(to) || from < rangeFrom || to > rangeTo || to <= from) {
     throw new RangeError('Monsoon chunk must be inside its route edge');
   }

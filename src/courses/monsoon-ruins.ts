@@ -17,6 +17,9 @@ export interface MonsoonRouteFrame {
   edgeId: MonsoonEdgeId; distance: number;
 }
 const LENGTH = 12500;
+/** Scenery-only ground run-out past FINISH, straight on the final tangent: FogExp2 .0013 is ~98% opaque at 1500 m. */
+export const MONSOON_RUNOUT = 1500;
+const GROUND_END = LENGTH + MONSOON_RUNOUT;
 const nodes = [
   { id: 'start', distance: 0, type: 'start' },
   { id: 'river-split', distance: 2600, type: 'split' },
@@ -139,7 +142,7 @@ function mainPoint(distance: number): Vec3 {
 // Deterministic contact height for the authored ground roadside terrain (13.5..184.5m).
 // Shares the vertex-height law with the rendered mesh; outside its authored width, recover instead.
 export function monsoonTerrainOffset(distance: number, lateral: number): number {
-  if (!Number.isFinite(distance) || distance < 0 || distance > LENGTH ||
+  if (!Number.isFinite(distance) || distance < 0 || distance > GROUND_END ||
     !Number.isFinite(lateral) || Math.abs(lateral) > 184.5) {
     throw new RangeError('Monsoon ground terrain coordinate outside modelled bounds');
   }
@@ -177,10 +180,10 @@ function frameFor(pointAt: (s: number) => Vec3, s: number, from: number, to: num
 export function sampleMonsoonRoute(edgeId: MonsoonEdgeId | string, distance: number): MonsoonRouteFrame {
   const branch = branches.find(e => e.id === edgeId);
   if (edgeId !== 'ground' && !branch) throw new Error('Unknown Monsoon edge: ' + edgeId);
-  if (!Number.isFinite(distance) || distance < (branch?.from ?? 0) || distance > (branch?.to ?? LENGTH)) {
+  if (!Number.isFinite(distance) || distance < (branch?.from ?? 0) || distance > (branch?.to ?? GROUND_END)) {
     throw new RangeError('Monsoon route distance outside edge range');
   }
-  if (!branch) return frameFor(mainPoint, distance, 0, LENGTH, 'ground');
+  if (!branch) return frameFor(mainPoint, distance, 0, GROUND_END, 'ground');
   const branchPoint = (s: number): Vec3 => {
     const t = (s - branch.from) / (branch.to - branch.from);
     if (t <= 0) return mainPoint(branch.from);

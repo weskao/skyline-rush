@@ -1,3 +1,39 @@
+## 2026-11-09 — iPhone 橫向首頁 START／每日挑戰／鏡頭列看不見（`fix/landscape-start-visible`）
+
+- [x] 根因：iPhone Chrome 743×340 diag log 顯示 `#start-button` 位置正確、`elementFromPoint` 命中（可點但不顯示）。iOS 27 模擬器 Safari 以 743×340 iframe 重現；逐項切換：只有讓 `.intro` 不再是捲動容器（overflow visible）才顯示。iOS WebKit 在固定定位元素的最近 stacking context 是捲動中的 `.intro`（z-index 2）或其中的 sticky 列時，會把它裁到 `.intro` 範圍內繪製，命中測試卻不裁。
+- [x] 修正（`src/style.css` 橫向區塊）：`.intro` z-index auto、底部釘選列由 sticky 改 fixed（`--panel-left`/`--panel-width`，面板留 52px 底距讓 Rules 列可捲出），移除橫向 arrival 動畫（播放期間 opacity 動畫同樣讓 `.intro` 成為 stacking context）。模擬器確認 rail 全部顯示、捲到底 Rules 列不被遮。
+- [x] RED → GREEN：`tests/responsive-browser.spec.js` 743×340／756×265 守門（rail 不得畫在捲動面板的 stacking context 內）舊 CSS 2/2 FAIL、修正後 PASS；另一 session 新增的「rail 祖先無動畫」測試一併 GREEN。`npm test` 2445/0、typecheck、build、module-size PASS。
+- [x] 實機 iPhone 橫向重測：使用者確認 UI 正常。
+- [ ] exact-HEAD develop FULL CI。
+
+## 2026-11-09 — Monsoon branch CI run 42490836456 (cca99961) browser flakes
+
+- [x] `ring-sfx-browser` phone, both attempts: a 6-ring train missed one air ring (ring altitude 8, car past it at
+  altitude 0). Cause: a rival had just taken that ring (`rival-items.ts` `take`, gone `ITEM_RESPAWN` 2.5 s game time,
+  which a slow runner stretches), so the teleported car could not collect it. RED: a local variant that marks the first
+  train ring as just taken fails with the same signature (5/6); GREEN: the train clears `downUntil` before each pass.
+- [x] `phase4-first-five-browser` neon 1440x900, both attempts: `#perf-overlay` empty for 30 s, then "0 s" evidence.
+  Cause: on the CPU-only runner frames exceeded the overlay's 250 ms stall cut-off, so the fixed 1.7 s sleep read an
+  empty or sub-second strip. Now polls (`ciTimeout(30000)`) for a ≥1 s sampled window with its draw-call count. RED not
+  reproduced locally (GPU frames stay under 250 ms); fix verified green locally.
+- [x] `release-video-browser` desktop hand-over (clipStart +0.61 s, passed on retry): `cca99961` only fixed the
+  `undefined` read. Under WebGL load the `playing` handler reads the clip after it played on. Sustained 300 ms
+  main-thread slices: old 2/3 fail, new 3/3 pass; the upper bound now uses the frame the viewer requests
+  (`currentTime` setter), the no-restart lower bound keeps `playing`. Spec 104/104 under `CI=1 --repeat-each=8`.
+- [x] `?perf` root cause for the neon strip: every frame over 250 ms counted as a stall, so a 3-4 fps device
+  (CI Neon p95 is 233 ms on a normal runner) showed nothing. Stall threshold now 1 s (`src/perf-overlay.ts`);
+  unit test RED (`''`) → GREEN.
+- [ ] Exact-HEAD full CI for the fix commit.
+
+## 2026-11-08 — Monsoon branch full Browser CI regression investigation
+
+- [x] Historical RED: full CI #42452541249 for b860d739bd8e6e7c8616dac8e1aa9cfee4bd25a1 failed 10 Browser shards; Unit/Typecheck/Build, Cloud Save and all five World Tour shards passed. Dune/Skyfall errors show unknown World Tour scenery id and absent Skyfall palette. Phone locale click was intercepted by a nonmodal performance notice; zh-TW Garage Studio entry label overflowed.
+- [ ] GREEN: verify new exact HEAD with focused palette tests, npm test, typecheck, build, 13 Browser shards, 5 World Tour shards, cloud-save and quality-gate. Local npm unavailable in this execution context; do not report passing until CI confirms.
+- [ ] Remaining Browser regressions: tutorial step progression, pause layout, start-button positioning; requires separate verified fixes. Manual WebGL/touch acceptance also pending.
+- [x] cca9f1b9 tutorial/Start-label/home failures came from the old develop base (b860d739); develop 21d51164 fixed them and merge e57d8b88 carries it. Locally on e57d8b88, 42/44 previously failing specs pass.
+- [x] RED → GREEN: `release-video-browser.spec.js` hand-over read `handOver.clipStart` once after `paused` flipped, before the async `playing` event recorded it (`undefined`, 1/4 local runs). Now polls `clipStart`/`heroResume` first; `CI=1 --repeat-each=8 --workers=4 --retries=0` 8/8 pass.
+- [ ] macOS-only: `paused practice 750x342` pause panel content (217px) overflows `.race-overlay` (197px) by ~20px with zh-TW CJK font metrics; Linux CI passes. Pre-existing on develop; real-iPhone check pending.
+
 ## 2026-11-09 — 新地圖光圈／道具依長度配置、Classic 路上車流（epic，based on `51137db4`）
 
 - [x] 密度：`itemScale(track) = length / 經典平均長度`（僅 course topology）；10 張經典賽道數量不變（`tests/course-item-density.test.js` 鎖定）。

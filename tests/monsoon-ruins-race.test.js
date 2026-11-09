@@ -92,3 +92,21 @@ test('Monsoon scene shows the authored jungle ground, stone decks and no phantom
   race.hide(); assert.equal(race.group.visible, false);
   race.dispose(); assert.equal(race.group.parent, null);
 });
+test('Monsoon scenery runs on past FINISH as far as the race view reaches, not a bare plane', async () => {
+  const THREE = await import('three');
+  const { createMonsoonRuinsRaceScene } = await import('../src/monsoon-ruins-race-scene.ts');
+  const race = createMonsoonRuinsRaceScene(new THREE.Scene());
+  race.update(MONSOON_TRACK.length + 40); // the car rolls on after the line
+  race.group.updateMatrixWorld(true);
+  const { forward } = monsoonFrame(MONSOON_TRACK.length);
+  const box = new THREE.Box3(), centre = new THREE.Vector3();
+  const ahead = race.group.children.filter(c => c.name === 'monsoon-course-chunk-ground' && c.visible)
+    .map(c => { box.setFromObject(c).getCenter(centre); return centre.x * forward[0] + centre.z * forward[2]; });
+  // FogExp2 .0013 is ~98% opaque at 1500 m: ground chunks must reach that far beyond the line.
+  assert.ok(Math.max(...ahead) > 1300, 'farthest scenery ahead of FINISH: ' + Math.round(Math.max(...ahead)) + ' m');
+  race.dispose();
+  const { MONSOON_RUINS_COURSE, MONSOON_RUNOUT, sampleMonsoonRoute } = await import('../src/courses/monsoon-ruins.ts');
+  const end = MONSOON_RUINS_COURSE.length, y = s => sampleMonsoonRoute('ground', s).point[1];
+  assert.ok(Math.abs(y(end + MONSOON_RUNOUT) - y(end)) < 40, 'run-out stays level: ' + (y(end + MONSOON_RUNOUT) - y(end)).toFixed(1) + ' m');
+  assert.throws(() => sampleMonsoonRoute('ground', end + MONSOON_RUNOUT + 1), /distance/i);
+});

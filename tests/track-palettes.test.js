@@ -22,6 +22,9 @@ test('typed palette catalog preserves the ten existing tracks and adds the separ
   assert.equal(TRACK_PALETTES.neon.road, '#101c2e');
   assert.equal(TRACK_PALETTES.canyon.rail, '#ffc36f');
   assert.equal(TRACK_PALETTES['dune-tempest'].road, '#d4a064');
+  for (const id of Object.keys(COURSE_RUNTIMES)) {
+    assert.ok(TRACK_PALETTES[id], `shared world renderer needs a palette for ${id}`);
+  }
 });
 
 test('Dune and Skyfall CourseGraph races keep distinct sky/fog identities', () => {
