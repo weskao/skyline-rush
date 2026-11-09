@@ -23,7 +23,7 @@ interface CourseRef { course?: CourseRuntime; player: object }
 interface CourseHost extends CourseRef {
   trackId: string; seed: number; elapsed: number; length: number; player: Player; rivals: Rival[]; result: { time: number } | null;
   rings: CourseItem[]; pickups: CourseItem[]; traffic: (RaceCar & { speed: number })[]; hazards: unknown[]; sections: unknown[];
-  mode: string; config: { difficulty?: string };
+  mode: string; endless?: object; config: { difficulty?: string };
 }
 type Contact = (race: CourseHost, kind: 'barrier', obstacleX: number, intensity: number, retention: number) => void;
 
@@ -40,8 +40,8 @@ const travelOf = (rt: CourseRuntime, id: string) => {
 /** H1: graph courses get a runtime; rings, pickups and traffic move onto its edges (Q3 follow-up), hazards and sections
  * come from the spec. Every other track is left untouched. */
 export function attachCourse(race: CourseHost): void {
-  // Endless uses the existing procedural highway; finite graph FINISH would strand the player.
-  if (race.mode === 'endless') return;
+  // Both streaming modes use the shared highway, never a finite CourseGraph FINISH gate.
+  if (race.endless) return;
   if (!isCourseRuntime(race.trackId)) {
     if (raceTrack(race.trackId)?.topology === 'course-graph') placeSectionBurst(race.rings, race.pickups, race.sections);
     return;

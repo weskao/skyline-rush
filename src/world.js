@@ -24,7 +24,7 @@ import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.t
 import { createGarageStage, GARAGE_LIGHTING } from './garage-stage.ts';
 import { applyCarReflections, createCarEnvironment } from './car-reflections.ts';
 import { createCarBounds } from './car-bounds.ts';
-import { createUpcomingShowcase } from './upcoming-showcase.ts'; import { isUpcomingTrack } from './upcoming-tracks.ts';
+import { createUpcomingShowcase } from './upcoming-showcase.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts';
 import { createCircuitScene } from './circuit-scene.ts';
 import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { fitText } from './sign-text.ts'; import { MEASURED_COURSE_IDS, MEASURED_COURSE_SUN, createMeasuredCourseScenes } from './measured-course-scenes.ts';
@@ -61,7 +61,8 @@ const rotation = new THREE.Quaternion();
 const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
-const framedRoad = (id, endless = false) => !(endless && isUpcomingTrack(id)) && (TOUR_IDS.has(id) || id === CIRCUIT_ID || id === FROSTBITE_ID || MEASURED_COURSE_IDS.has(id) || isCourseRuntime(id));
+const framedRoad = (id, endless = false) => TOUR_IDS.has(id) || id === CIRCUIT_ID ||
+  (!endless && (id === FROSTBITE_ID || MEASURED_COURSE_IDS.has(id) || isCourseRuntime(id)));
 function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
   position.set(x, y, z);
   scale.set(sx, sy, sz);
@@ -623,7 +624,7 @@ export function createWorld(canvas) {
         weatherGeometry.attributes.position.needsUpdate = true;
         weather.position.set(visualCar.x, visualCar.altitude + 25, 15);
       }
-      if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide(); if (trackId === FROSTBITE_ID && !endlessActive) frostbiteScene.update(distance); else frostbiteScene.hide(); if (graphCentre) courseScene.update(race, visual.quality, time, reducedMotion); else courseScene.hide(); measuredScenes.update(endlessActive && isUpcomingTrack(trackId) ? '' : trackId, distance, time, reducedMotion);
+      if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide(); if (trackId === FROSTBITE_ID && !endlessActive) frostbiteScene.update(distance); else frostbiteScene.hide(); if (graphCentre) courseScene.update(race, visual.quality, time, reducedMotion); else courseScene.hide(); measuredScenes.update(endlessActive ? '' : trackId, distance, time, reducedMotion);
       if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
         if (trackId === CIRCUIT_ID || trackId === FROSTBITE_ID || MEASURED_COURSE_IDS.has(trackId) || isCourseRuntime(trackId) || graphCentre) { skyScene.hide(); worldTourScene.hide(); }
         else if (trackId === 'spiral') { skyScene.update(distance, visual.quality, !!race.endless); worldTourScene.hide(); }
