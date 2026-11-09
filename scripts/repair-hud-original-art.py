@@ -158,20 +158,6 @@ def restore_missing_face(image, name):
                     if donor[3] > 160:
                         out[x, y] = donor
         return target
-    if name == "ui-tooltip":
-        # Original bubble face, not its pointed lower-left speech tail.
-        source, target = image.load(), image.copy()
-        out = target.load()
-        for y in range(120, min(image.height, 159)):
-            for x in range(115, min(image.width, 144)):
-                if source[x, y][3] > 80:
-                    continue
-                mirror_y = 230 - y
-                if 0 <= mirror_y < image.height:
-                    donor = source[x, mirror_y]
-                    if donor[3] > 160:
-                        out[x, y] = donor
-        return target
     return image
 
 
@@ -250,7 +236,7 @@ def restore_gallery_face(image, name):
             else:
                 if x > 150 or y > 154:
                     continue  # Preserve the speech tail and lower metal rim.
-                donor_x, donor_y = x, 224 - y
+                donor_x, donor_y = x - 35, y
                 feather = min(1., max(0., (x - 112) / 17),
                               max(0., (y - 111) / 17))
             donor = source[donor_x, donor_y]
