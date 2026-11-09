@@ -1,7 +1,7 @@
 import { CIRCUIT_COPY } from './locales/circuit.ts';
 import { RACE_TRACKS } from './game.js';
 import { STAGE2_TRACKS } from './stage2-tracks.ts';
-import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
+import { UPCOMING_TRACKS, isUpcomingTrack, upcomingTrackName } from './upcoming-tracks.ts';
 import { ENDLESS_COPY } from './locales/endless.ts';
 import { UI } from './locales/ui.ts';
 import { GAME } from './locales/game.ts';
@@ -24,6 +24,7 @@ export const TRACK_NAMES: Readonly<Record<Locale, Record<string, string>>> = Obj
 const KEY = 'skyline-rush-locale';
 export const trackName = (trackId: string, locale: string = 'en'): string =>
   (TRACK_NAMES[isLocale(locale) ? locale : 'en']?.[trackId])
+  ?? (isUpcomingTrack(trackId) ? upcomingTrackName(trackId, locale) : undefined)
   ?? TRACK_NAMES.en[trackId] ?? raceTracks[trackId]?.name ?? String(trackId);
 export function saveLocale(locale: string, storage?: LocaleStorage): void {
   if (!isLocale(locale)) return;
