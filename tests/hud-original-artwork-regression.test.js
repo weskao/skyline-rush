@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import test from 'node:test';
 
 const ART_DIR = new URL('../public/feature-assets/mobile-controls-hud/raster/', import.meta.url);
