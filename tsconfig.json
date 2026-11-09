@@ -13,7 +13,9 @@
       "#garage-skin-ui": ["src/GarageSkinCatalog.vue"],
       "#garage-skin-runtime": ["src/garage-skin-runtime.ts"],
       "#garage-skin-palette": ["src/garage-skin-palette.ts"],
-      "#garage-release-config": ["src/garage-release-trial.ts"]
+      "#garage-release-config": ["src/garage-release-trial.ts"],
+      "#wave3-demo-race": ["src/wave3-race-events.ts"],
+      "#wave3-demo-ui": ["src/Wave3DemoEntry.vue"]
     },
     "strict": true,
     "noEmit": true,

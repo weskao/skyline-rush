@@ -24,6 +24,8 @@ export function selectGarageReleaseBuild(viteMode, explicit = undefined) {
       '#garage-launch-flare': source(locked ? 'garage-launch-flare-locked.js' : 'garage-launch-flare.js'),
       '#garage-nitro-trail': source(locked ? 'garage-nitro-trail-locked.js' : 'garage-nitro-trail.js'),
       '#garage-release-config': source(`garage-release-${mode}.ts`),
+      '#wave3-demo-race': source(locked ? 'wave3-demo-race-locked.ts' : 'wave3-race-events.ts'),
+      '#wave3-demo-ui': source(locked ? 'Wave3DemoLocked.vue' : 'Wave3DemoEntry.vue'),
     },
   };
 }
