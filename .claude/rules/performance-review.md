@@ -34,6 +34,16 @@ batching/culling; real WebGL screenshots on all affected courses incl. pause/res
 switch, WebGL recovery, low-power devices, narrow phone/landscape. Final report names untested
 devices and remaining uncertainty.
 
+## Home map switching: preserve the last two Coming Soon stages
+
+The 3D swipe snapshots temporarily select the neighbor and then return to the selected track.
+Never destroy/rebuild an environment, four cars or their effects on every transition. Keep a bounded
+two-stage LRU in `upcoming-showcase.ts`, reuse the same scene and model host on a return swipe,
+evict inactive scenes with proper GPU/GLB disposal, and release all stages when the world exits.
+Selection must execute once per completed swipe (not again after the page animation).
+Guard the LRU/paint/disposal in `tests/upcoming-showcase.test.js` and selection count in
+`tests/track-swipe-browser.spec.js`. Do not substitute static screenshots for live 3D previews.
+
 ## Shaders compile at first draw — never mid-race
 
 WebKit (iPhone Safari/Chrome) builds shaders and Metal pipelines the first time a material is

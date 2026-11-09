@@ -1,3 +1,10 @@
+## 2026-11-10 — Homepage map-switch stall (Mac mini M4 / Chrome; all devices target)
+
+- [x] Root cause from code: `src/upcoming-showcase.ts` rebuilt/disposed 3D environments, four cars, GPU materials and aero VFX on each preview switch; `src/track-swipe-ui.ts` swaps scenes twice to capture neighboring frames and called `button.click()` again after committing an already-selected track.
+- [x] Minimal fix committed in Epic: keep only two recent Coming Soon stages by LRU; reselect uses cached scene/model, with exact disposal on eviction/world exit and current paint reapplied. Remove the duplicate committed card click; retain the two opaque snapshot pages and live 3D scenes.
+- [ ] Local focused RED/GREEN (tests authored against old implementation, but cannot run outside repo checkout), module-size, npm test, typecheck/build, browser test and `make verify`.
+- [ ] Exact-HEAD GitHub CI and physical Mac mini M4 Chrome profile (p50/p95 frame time, shader compiles, GPU draw calls, first-visit vs repeat switching); mobile portrait/landscape, reduced-motion, Garage, race restart and WebGL recovery.
+
 ## 2026-11-10 — Epic shortcut reward balance and Volcanic Crown Chrome stalls
 
 - [x] Source review: commit `15272ed` changes PERFECT LINE grouping, not ring spawning. Dense placement originates in `shortcut-rewards.ts`; 1D mapped shortcut corridors share ordinary road visibility.
