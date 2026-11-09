@@ -52,3 +52,32 @@ reconstruction does **not** claim to restore unavailable genuine native 3×
 detail. If high-frequency original detail is required beyond this restoration,
 the original per-icon image masters must be recovered and individually redrawn
 **in the same established art direction**, not replaced with flat icons.
+
+## Follow-up: original-style clarity and missing-face correction
+
+The image inventory is **18 existing runtime WebPs**, with unchanged paths,
+transparent file format and 3× dimensions. Source identity remains the pinned
+pre-redesign Git commit, not the rejected flat-icon redesign.
+
+- Right-hand button bezels are reconstructed from the original opposite bezel
+  rather than leaving opaque adjacent-sprite strips in front.
+- Real missing enamel-face pixels are filled using the original icon's matching
+  spatial gradient and alpha, without replacing a face with a flat rectangle.
+- Detached lower-right cyan sheet scrap on NITRO is trimmed conservatively;
+  the speedometer's mirrored extra arrow/highlight was removed.
+- Output uses lossless WebP, no upscaling, and the source colors, highlights,
+  baked original sample lettering and intended open-brake/drift-ring shapes.
+- The source itself was derived from a previously cut composite. Recovering
+  **true native 3× fine detail** that never existed in these files still requires
+  the actual pre-cut per-icon masters, not extra sharpening or an invented art set.
+
+Reproduced test failures (RED): [right-bezel / enamel gap](https://github.com/weskao/skyline-rush/actions/runs/42581568732)
+and [spatial-gradient regression](https://github.com/weskao/skyline-rush/actions/runs/42582679819).
+Regeneration + unit checks (GREEN):
+[original-illustration repair run](https://github.com/weskao/skyline-rush/actions/runs/42582994962).
+This action also committed the binary WebPs directly to the source branch.
+
+The original 18-item source archive under `docs/designs/3x-asset-library/webp/`
+is kept unmodified for side-by-side comparison. Automated pixel checks do NOT
+replace final human review of every subtle halo/bezel and real phone screenshots.
+Only this feature branch was modified; no ZIP, PR, merge or deploy.
