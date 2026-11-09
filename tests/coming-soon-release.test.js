@@ -114,3 +114,12 @@ test('Frostbite home shares Stage 2 metadata and only accepts the explicit showr
   assert.equal(stage2PreviewRequest('?stage2-preview=dune-tempest'), null);
   assert.equal(stage2PreviewRequest('?stage2-preview=unknown&shot=p02'), null);
 });
+
+test('a course race browser spec runs only once its course is playable', () => {
+  // The Monsoon spec reached develop without its runtime and failed every CI run (42525271964, 42538999660).
+  for (const id of IDS) {
+    let spec;
+    try { spec = readFileSync(new URL(`./${id}-race-browser.spec.js`, import.meta.url), 'utf8'); } catch { continue; }
+    if (upcomingReadiness(id) !== 'playable') assert.match(spec, new RegExp(`test\\.skip\\(upcomingReadiness\\('${id}'\\) !== 'playable'`), id);
+  }
+});

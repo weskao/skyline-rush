@@ -3,12 +3,15 @@ import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { upcomingReadiness } from '../src/upcoming-tracks.ts';
 const dir = process.env.MONSOON_CAPTURE_DIR;
 const shot = async (page, name) => {
   if (!dir) return;
   mkdirSync(dir, { recursive: true });
   await page.screenshot({ path: join(dir, name + '.png') });
 };
+// The Monsoon race runtime has not reached this branch (readiness in src/upcoming-tracks.ts); runs once it is promoted.
+test.skip(upcomingReadiness('monsoon-ruins') !== 'playable', 'Monsoon Ruins is not playable yet');
 test.use({ unlockedAccess: true });
 for (const [device, viewport, touch] of [
   ['desktop', { width: 1440, height: 900 }, false],
