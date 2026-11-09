@@ -3,7 +3,8 @@
 - [x] 根因：iPhone Chrome 743×340 diag log 顯示 `#start-button` 位置正確、`elementFromPoint` 命中（可點但不顯示）。iOS 27 模擬器 Safari 以 743×340 iframe 重現；逐項切換：只有讓 `.intro` 不再是捲動容器（overflow visible）才顯示。iOS WebKit 在固定定位元素的最近 stacking context 是捲動中的 `.intro`（z-index 2）或其中的 sticky 列時，會把它裁到 `.intro` 範圍內繪製，命中測試卻不裁。
 - [x] 修正（`src/style.css` 橫向區塊）：`.intro` z-index auto、底部釘選列由 sticky 改 fixed（`--panel-left`/`--panel-width`，面板留 52px 底距讓 Rules 列可捲出），移除橫向 arrival 動畫（播放期間 opacity 動畫同樣讓 `.intro` 成為 stacking context）。模擬器確認 rail 全部顯示、捲到底 Rules 列不被遮。
 - [x] RED → GREEN：`tests/responsive-browser.spec.js` 743×340／756×265 守門（rail 不得畫在捲動面板的 stacking context 內）舊 CSS 2/2 FAIL、修正後 PASS；另一 session 新增的「rail 祖先無動畫」測試一併 GREEN。`npm test` 2445/0、typecheck、build、module-size PASS。
-- [ ] 實機 iPhone Chrome／Safari 橫向重測（使用者）；exact-HEAD develop FULL CI。
+- [x] 實機 iPhone 橫向重測：使用者確認 UI 正常。
+- [ ] exact-HEAD develop FULL CI。
 
 ## 2026-11-09 — 新地圖光圈／道具依長度配置、Classic 路上車流（epic，based on `51137db4`）
 
