@@ -1,0 +1,55 @@
+name: Repair original HUD artwork clarity (one-time)
+on:
+  push:
+    branches:
+      - fix/wave3-hud-artwork-completeness
+    paths:
+      - .github/workflows/repair-hud-clarity.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: hud-clarity-one-time
+  cancel-in-progress: false
+jobs:
+  repair-original-icons:
+    if: github.ref == 'refs/heads/fix/wave3-hud-artwork-completeness'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/wave3-hud-artwork-completeness
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Prepare pinned original Git art and Pillow
+        run: |
+          git fetch --no-tags --depth=1 origin f67d3bf31012edfa52cc06f46abe586ad5bdd78e
+          python -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: RED - existing sprites fail strict alpha completeness gate
+        run: |
+          if python scripts/repair-hud-original-art.py --check > "$RUNNER_TEMP/hud-before.log" 2>&1; then
+            echo 'Expected the original/clipped sprites to fail the new gate' >&2
+            exit 1
+          fi
+          tail -n 5 "$RUNNER_TEMP/hud-before.log"
+      - name: GREEN - rebuild from original illustrated art and verify all 18
+        run: |
+          python scripts/repair-hud-original-art.py
+          python scripts/repair-hud-original-art.py --check
+          node --test tests/hud-original-artwork-regression.test.js tests/module-size.test.js
+          git diff --check
+      - name: Commit only the existing WebP files and remove one-shot workflow
+        run: |
+          git add public/feature-assets/mobile-controls-hud/raster/*@3x.webp
+          git rm .github/workflows/repair-hud-clarity.yml
+          test "$(git diff --cached --name-only | grep -c '@3x.webp$')" -eq 18
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m 'fix(art): repair 18 original HUD sprites without redesign'
+          git push origin HEAD:refs/heads/fix/wave3-hud-artwork-completeness
