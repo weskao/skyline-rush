@@ -59,6 +59,12 @@ for (const [name, viewport, hasTouch] of [
     expect(flying.lift, 'drawn high over the lower road').toBeGreaterThan(15);
     await capture(page, `${name}-rift-span`);
     await page.keyboard.up('Space');
+    // The CPU-only phone runner advances the race much more slowly than wall time. Hold the car at mid-span
+    // and exhaust its fuel so it must glide into the chasm rather than driving past the merge before falling.
+    await page.evaluate(s => Object.assign(window.gameplay.race.player, {
+      distance: (s.from + s.to) / 2, x: s.x, altitude: s.altitude,
+      verticalSpeed: 0, speed: 0, fuel: 0, span: true,
+    }), span);
     await expect.poll(() => page.evaluate(() => window.gameplay.race.player.falls), { timeout: ciTimeout(8_000) }).toBe(1);
     expect(await page.evaluate(() => window.gameplay.race.player.fall.distance), 'never ahead').toBe(span.from);
     await page.waitForTimeout(500);
