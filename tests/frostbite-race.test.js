@@ -69,7 +69,7 @@ test('Frostbite is a gated classic sprint: not in the sprint catalog, saves or m
   assert.throws(() => createRace(FROSTBITE_ID, { mode: 'endless' }), RangeError);
   assert.equal(released(FROSTBITE_ID), false);
   assert.equal(unlocked(FROSTBITE_ID), true);
-  assert.equal(unlocked('monsoon-ruins'), false);
+  assert.equal(unlocked('unknown-track'), false);
 });
 
 // Measured on the shared engine (no physics change): bot 129 s, throttle-only 160 s; the spec's 3:20-4:40 was an

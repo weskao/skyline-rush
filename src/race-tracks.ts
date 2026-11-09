@@ -1,7 +1,10 @@
 import { CIRCUIT_ID, CIRCUIT_TRACK } from './circuit-track.ts';
 import type { TrackConfig } from './game-types.ts';
 import { FROSTBITE_ID, FROSTBITE_TRACK } from './courses/frostbite-race.ts';
-import { COURSE_RUNTIMES, isCourseRuntime } from './course-runtimes.ts';
+import { STORMLINE_ID, STORMLINE_TRACK } from './courses/stormline-megacity-race.ts';
+import { VOLCANIC_ID, VOLCANIC_TRACK } from './courses/volcanic-crown-race.ts';
+import { MONSOON_ID, MONSOON_TRACK } from './courses/monsoon-ruins-race.ts';
+import { COURSE_RUNTIMES } from './course-runtimes.ts';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
 // `x` / `altitude` place a shortcut corridor.
@@ -64,10 +67,12 @@ export const itemScale = (track: TrackConfig): number =>
   track.topology === 'course-graph' || track.topology === 'course-graph-runtime' ? track.length / CLASSIC_MEAN_LENGTH : 1;
 
 // The separate lookup never changes Daily/Career/Cup's ordered sprint catalog.
-// Frostbite Canyon is a gated CourseGraph sprint: raceable by id, never in the catalog, Daily, Cup or saves.
+// Frostbite, Stormline, Volcanic and Monsoon (measured routes) plus the per-car graph runtimes are gated CourseGraph sprints:
+// raceable by id, never in the catalog, Daily or Cup.
 /** CourseGraph sprints outside the catalog whose results persist under a topology-keyed id (`record-layout.ts`). */
 export const COURSE_TRACKS: Readonly<Record<string, TrackConfig & { topologyVersion: number }>> = {
-  [FROSTBITE_ID]: FROSTBITE_TRACK, ...Object.fromEntries(Object.entries(COURSE_RUNTIMES).map(([id, entry]) => [id, entry.track])),
+  [FROSTBITE_ID]: FROSTBITE_TRACK, [STORMLINE_ID]: STORMLINE_TRACK, [VOLCANIC_ID]: VOLCANIC_TRACK, [MONSOON_ID]: MONSOON_TRACK,
+  ...Object.fromEntries(Object.entries(COURSE_RUNTIMES).map(([id, entry]) => [id, entry.track])),
 };
 export const raceTrack = (id: string): TrackConfig | undefined => id === CIRCUIT_ID ? CIRCUIT_TRACK : Object.hasOwn(COURSE_TRACKS, id) ? COURSE_TRACKS[id] : RACE_TRACKS[id];
 
@@ -77,6 +82,5 @@ export const isModeTrack = (id: unknown, mode: unknown): id is string => typeof 
 /** Topology guard for createRace: a circuit only in Circuit mode; gated CourseGraph sprints only in Classic. */
 export function assertTrackMode(trackId: string, mode: string): void {
   if ((trackId === CIRCUIT_ID) !== (mode === 'circuit')) throw new RangeError('Circuit mode requires a circuit route');
-  if (trackId === FROSTBITE_ID && mode !== 'classic') throw new RangeError('Frostbite Canyon is a gated classic sprint');
-  if (isCourseRuntime(trackId) && mode !== 'classic') throw new RangeError(`${COURSE_RUNTIMES[trackId].track.name} is a gated classic sprint`);
+  if (Object.hasOwn(COURSE_TRACKS, trackId) && mode !== 'classic') throw new RangeError(`${COURSE_TRACKS[trackId].name} is a gated classic sprint`);
 }

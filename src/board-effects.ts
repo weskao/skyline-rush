@@ -8,7 +8,8 @@ interface RaceLike { mode: string; session?: { presentation: { visualPreset?: st
 /** Weather preset the race shows: custom/free races carry the player's choice, every other mode the track's own. */
 export const racePreset = (race: RaceLike): string =>
   race.mode === 'custom' || race.mode === 'free' ? race.session?.presentation.visualPreset ?? 'track' : 'track';
-export const isRaining = (preset: string, trackId: string): boolean => preset === 'rain' || (preset === 'track' && trackId === 'neon');
+export const isRaining = (preset: string, trackId: string): boolean => preset === 'rain' || (preset === 'track' && RAINY_TRACKS.has(trackId));
+const RAINY_TRACKS: ReadonlySet<string> = new Set(['neon', 'stormline-megacity', 'monsoon-ruins']);
 
 const LOW_PLUME = { tail: 0, stretch: 1 }, BOARD_PLUME = { tail: 1, stretch: 1.35 };
 /** Boost plume: Medium+ fades the blue-white core into a magenta tail about a third longer; Low keeps the current plume. */

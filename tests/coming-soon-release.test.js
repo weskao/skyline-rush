@@ -20,8 +20,9 @@ test('all six unreleased courses are cover-only and never in the released race c
   }
 });
 
-test('all-unlocked Make variants still cannot unlock a registered cover-only course', () => {
-  RACE_TRACKS['monsoon-ruins'] = RACE_TRACKS.coast; // Regression: accidentally merged unfinished runtime
+// Every Coming Soon id is approved now (user, 2026-11-09); the cover-only gate itself is pinned by 'future-course' below.
+test('a Coming Soon id registered in the sprint catalog is listed only by the approved dev build, never production', () => {
+  RACE_TRACKS['monsoon-ruins'] = RACE_TRACKS.coast; // Regression: accidentally merged runtime in the sprint catalog
   const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
   Object.defineProperty(globalThis, 'localStorage', {
     configurable: true,
@@ -29,7 +30,7 @@ test('all-unlocked Make variants still cannot unlock a registered cover-only cou
       setItem() {} },
   });
   try {
-    assert.equal(developmentTracks().includes('monsoon-ruins'), false);
+    assert.equal(developmentTracks().includes('monsoon-ruins'), true, 'approved readiness + runtime');
     assert.equal(productionTracks().includes('monsoon-ruins'), false);
     assert.equal(developmentTracks().includes('coast'), true);
   } finally {
@@ -40,27 +41,23 @@ test('all-unlocked Make variants still cannot unlock a registered cover-only cou
 });
 
 test('an approved playable preview with a real runtime is playable in dev-unlocked only', () => {
-  // Readiness 'playable' + a resolvable runtime is the only approval; Dune and Frostbite are approved only for dev access.
-  assert.deepEqual(IDS.filter(id => upcomingReadiness(id) === 'playable'), ['dune-tempest', 'skyfall-archipelago', 'frostbite-canyon']);
-  RACE_TRACKS['monsoon-ruins'] = RACE_TRACKS.coast; // a merged runtime without readiness approval
+  // Readiness 'playable' + a resolvable runtime is the only approval; every Coming Soon course is approved for dev access only.
+  assert.deepEqual(IDS.filter(id => upcomingReadiness(id) === 'playable'), IDS);
+  RACE_TRACKS['future-course'] = RACE_TRACKS.coast; // a merged runtime without readiness approval
   const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
   Object.defineProperty(globalThis, 'localStorage', {
     configurable: true,
-    value: { getItem: () => JSON.stringify(['coast', 'monsoon-ruins']), setItem() {} },
+    value: { getItem: () => JSON.stringify(['coast', 'future-course', ...IDS]), setItem() {} },
   });
   try {
-    assert.equal(developmentEnterable('frostbite-canyon'), true);
-    assert.equal(developmentEnterable('dune-tempest'), true);
-    assert.equal(developmentEnterable('skyfall-archipelago'), true);
-    assert.equal(productionEnterable('dune-tempest'), false);
-    assert.equal(productionEnterable('skyfall-archipelago'), false);
-    assert.equal(productionEnterable('frostbite-canyon'), false, 'production never enters a Coming Soon id');
-    assert.equal(developmentEnterable('monsoon-ruins'), false, 'a runtime alone is not approval');
-    assert.equal(developmentTracks().includes('dune-tempest'), false, 'unapproved cards stay blocked');
-    assert.equal(productionTracks().includes('dune-tempest'), false, 'production never unlocks a Coming Soon id');
-    assert.equal(developmentEnterable('monsoon-ruins'), false);
+    for (const id of IDS) {
+      assert.equal(developmentEnterable(id), true, id);
+      assert.equal(productionEnterable(id), false, `production never enters Coming Soon ${id}`);
+      assert.equal(productionTracks().includes(id), false, `production never unlocks Coming Soon ${id}`);
+    }
+    assert.equal(developmentEnterable('future-course'), false, 'a runtime alone is not approval');
   } finally {
-    delete RACE_TRACKS['monsoon-ruins'];
+    delete RACE_TRACKS['future-course'];
     if (original) Object.defineProperty(globalThis, 'localStorage', original);
     else delete globalThis.localStorage;
   }

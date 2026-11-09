@@ -20,6 +20,8 @@ test('race weather preset: custom/free races show the chosen preset, every other
   assert.equal(isRaining('rain', 'coast'), true);
   assert.equal(isRaining('track', 'neon'), true, 'Neon rains by default');
   assert.equal(isRaining('track', 'coast'), false);
+  for (const id of ['stormline-megacity', 'monsoon-ruins']) assert.equal(isRaining('track', id), true, `${id} rains by default`);
+  assert.equal(isRaining('track', 'volcanic-crown'), false);
   assert.equal(isRaining('day', 'neon'), false);
 });
 

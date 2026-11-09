@@ -2,6 +2,11 @@ import { raceTrack } from './race-tracks.ts';
 import { CIRCUIT_ID, circuitFrame } from './circuit-track.ts';
 import { skyFrame, skyPoint, type Vec3, type SkyPoint } from './sky-track.ts';
 import { FROSTBITE_ID, frostbiteFrame, frostbiteObjectSpan } from './courses/frostbite-race.ts';
+import { STORMLINE_ID, stormlineFrame } from './courses/stormline-megacity-race.ts';
+import { VOLCANIC_ID, volcanicFrame } from './courses/volcanic-crown-race.ts';
+import { MONSOON_ID, monsoonFrame } from './courses/monsoon-ruins-race.ts';
+// Measured-route courses: point-to-point, no endless extension.
+const MEASURED_FRAMES: Readonly<Record<string, typeof monsoonFrame>> = { [STORMLINE_ID]: stormlineFrame, [VOLCANIC_ID]: volcanicFrame, [MONSOON_ID]: monsoonFrame };
 
 interface OverviewPoint { distance: number; x: number; y: number }
 
@@ -28,6 +33,7 @@ export function trackPoint(trackId: string, distance: number, extended = false):
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   if (trackId === CIRCUIT_ID) return circuitFrame(distance).point;
   if (trackId === FROSTBITE_ID) return frostbiteFrame(distance).point; // point-to-point: no endless extension
+  if (Object.hasOwn(MEASURED_FRAMES, trackId)) return MEASURED_FRAMES[trackId](distance).point;
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
   if (trackId === 'spiral') return skyPoint(s, extended);
   const profile = profiles[trackId];
@@ -41,6 +47,7 @@ export function trackFrame(trackId: string, distance: number, extended = false, 
   if (!track) throw new Error(`Unknown track: ${trackId}`);
   if (trackId === CIRCUIT_ID) return circuitFrame(distance);
   if (trackId === FROSTBITE_ID) return frostbiteFrame(distance, span);
+  if (Object.hasOwn(MEASURED_FRAMES, trackId)) return MEASURED_FRAMES[trackId](distance);
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
   if (trackId === 'spiral') return skyFrame(s, extended);
   const a = trackPoint(trackId, s - 0.5, extended);
