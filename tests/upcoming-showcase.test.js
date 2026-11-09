@@ -13,10 +13,11 @@ test('missing environment never presents a fake live Three.js showcase', () => {
   showcase.dispose();
 });
 
-test('showcase shares a Three.js scene and disposes old environment on track change', () => {
+test('showcase reuses its two most recent 3D scenes and disposes them when the host exits', () => {
   const released = [];
-  const updates = [];
+  const updates = [], built = [];
   const create = name => scene => {
+    built.push(name);
     const group = new THREE.Group();
     group.name = name;
     scene.add(group);
@@ -35,13 +36,18 @@ test('showcase shares a Three.js scene and disposes old environment on track cha
   assert.ok(showcase.scene instanceof THREE.Scene);
   showcase.update(camera, 2, { quality: 'low', view: 'drive', enabled: true, airflow: false }, true);
   assert.deepEqual(updates, [{ name: 'dune', time: 2, quality: 'low', reducedMotion: true }]);
+  const originalScene = showcase.scene;
   assert.equal(showcase.setTrack('monsoon-ruins'), true);
-  assert.deepEqual(released, ['dune']);
+  assert.deepEqual(released, [], 'switching must not dispose a preview needed for swipe snapshots');
+  assert.equal(showcase.setTrack('dune-tempest'), true);
+  assert.equal(showcase.scene, originalScene, 'returning uses the same 3D scene and models');
+  assert.deepEqual(built, ['dune', 'monsoon'], 'no rebuild on a return swipe');
   assert.equal(showcase.setTrack(null), false);
   assert.equal(showcase.scene, null);
-  assert.deepEqual(released, ['dune', 'monsoon']);
+  assert.deepEqual(released, [], 'classic preview hides the stage without destroying the cache');
   showcase.dispose();
-  assert.deepEqual(released, ['dune', 'monsoon'], 'no double-disposal');
+  showcase.dispose();
+  assert.deepEqual(released.sort(), ['dune', 'monsoon'], 'every cached stage disposed exactly once');
 });
 
 test('every upcoming map reuses the shared Roadster AIRFLOW ground/hover pose and camera', () => {
@@ -83,7 +89,7 @@ test('every upcoming map reuses the shared Roadster AIRFLOW ground/hover pose an
 test('Task 4b: the Coming Soon player car is a stable model host, released before its stage is disposed', () => {
   const released = [];
   const env = scene => { const group = new THREE.Group(); scene.add(group); return { group, update() {}, dispose() {} }; };
-  const showcase = createUpcomingShowcase({ 'dune-tempest': env, 'monsoon-ruins': env }, new THREE.Texture(), new THREE.Texture(),
+  const showcase = createUpcomingShowcase({ 'dune-tempest': env, 'monsoon-ruins': env, 'skyfall-archipelago': env }, new THREE.Texture(), new THREE.Texture(),
     host => released.push({ host, attached: !!host.car.parent }));
   assert.equal(showcase.modelHost, null);
   showcase.setTrack('dune-tempest');
@@ -95,8 +101,51 @@ test('Task 4b: the Coming Soon player car is a stable model host, released befor
   assert.equal(first.keep.parent, first.car, 'aero VFX rides on the car and stays drawn');
   assert.equal(showcase.modelHost, first, 'same object every frame');
   showcase.setTrack('monsoon-ruins');
-  assert.deepEqual(released, [{ host: first, attached: true }], 'released while the old car still exists');
+  assert.deepEqual(released, [], 'the old model is retained for the next preview swipe');
   assert.notEqual(showcase.modelHost, first);
+  showcase.setTrack('skyfall-archipelago');
+  assert.deepEqual(released, [{ host: first, attached: true }], 'LRU eviction releases the old model before disposal');
   showcase.dispose();
-  assert.equal(released.length, 2);
+  assert.equal(released.length, 3);
+});
+
+// The cache may never retain an unlimited number of GPU scene graphs.
+test('preview stage LRU evicts the oldest scene, not the currently displayed track', () => {
+  const created = [], released = [];
+  const factory = id => scene => {
+    created.push(id);
+    const group = new THREE.Group(); scene.add(group);
+    return { group, update() {}, dispose() { released.push(id); } };
+  };
+  const preview = createUpcomingShowcase({
+    'dune-tempest': factory('dune'),
+    'monsoon-ruins': factory('monsoon'),
+    'skyfall-archipelago': factory('skyfall'),
+  }, new THREE.Texture(), new THREE.Texture());
+  preview.setTrack('dune-tempest');
+  preview.setTrack('monsoon-ruins');
+  preview.setTrack('skyfall-archipelago');
+  assert.deepEqual(released, ['dune'], 'the first of three stages must be evicted');
+  preview.setTrack('monsoon-ruins');
+  assert.deepEqual(created, ['dune', 'monsoon', 'skyfall'], 'recent stage should be reused');
+  preview.dispose();
+  assert.deepEqual(released.sort(), ['dune', 'monsoon', 'skyfall']);
+});
+
+test('cached showcase uses the latest car paint when reselected', () => {
+  const make = scene => {
+    const group = new THREE.Group(); scene.add(group);
+    return { group, update() {}, dispose() {} };
+  };
+  const showcase = createUpcomingShowcase({
+    'dune-tempest': make, 'monsoon-ruins': make,
+  }, new THREE.Texture(), new THREE.Texture());
+  showcase.setTrack('dune-tempest');
+  const firstCar = showcase.scene.children.find(child => child.userData?.body);
+  showcase.setTrack('monsoon-ruins');
+  showcase.setPaint({ paint: '#ff0000', metalness: .2, roughness: .8, light: [1, 1, 1] });
+  showcase.setTrack('dune-tempest');
+  assert.equal(showcase.scene.children.find(child => child.userData?.body), firstCar);
+  assert.equal(firstCar.userData.body.material.color.getHexString(), 'ff0000');
+  showcase.dispose();
 });

@@ -1,3 +1,19 @@
+## 2026-11-10 — Homepage map-switch stall (Mac mini M4 / Chrome; all devices target)
+
+- [x] Root cause from code: `src/upcoming-showcase.ts` rebuilt/disposed 3D environments, four cars, GPU materials and aero VFX on each preview switch; `src/track-swipe-ui.ts` swaps scenes twice to capture neighboring frames and called `button.click()` again after committing an already-selected track.
+- [x] Minimal fix committed in Epic: keep only two recent Coming Soon stages by LRU; reselect uses cached scene/model, with exact disposal on eviction/world exit and current paint reapplied. Remove the duplicate committed card click; retain the two opaque snapshot pages and live 3D scenes.
+- [ ] Local focused RED/GREEN (tests authored against old implementation, but cannot run outside repo checkout), module-size, npm test, typecheck/build, browser test and `make verify`.
+- [ ] Exact-HEAD GitHub CI and physical Mac mini M4 Chrome profile (p50/p95 frame time, shader compiles, GPU draw calls, first-visit vs repeat switching); mobile portrait/landscape, reduced-motion, Garage, race restart and WebGL recovery.
+
+## 2026-11-10 — Epic shortcut reward balance and Volcanic Crown Chrome stalls
+
+- [x] Source review: commit `15272ed` changes PERFECT LINE grouping, not ring spawning. Dense placement originates in `shortcut-rewards.ts`; 1D mapped shortcut corridors share ordinary road visibility.
+- [x] Narrow change prepared: actual alternate CourseGraph edges retain 25 m reward mix; 1D mapped sections use 50 m rings and offset cells, confined to the authored shortcut. 60 m cells and midpoint tank unchanged; classic tracks unchanged.
+- [x] Volcanic static root cause: a PointLight per 240 m chunk across a 1500 m view changed visible shader-light count while driving. Replace with two fixed pooled lava lights plus crater light (3 total), preserving authored light positions, range, color, lava shader, geometry and collision rules.
+- [ ] Run focused RED/GREEN tests, module-size, full unit/typecheck/build/Playwright and `make verify` on a checkout with dependencies (not available in the GitHub connector execution environment).
+- [ ] Measure frame p50/p95, shader recompilations, draw calls, and compare actual Mac mini M4 / Chrome WebGL video and drive-through at Low/Medium/High; do not mark performance fixed without a real-device capture.
+- [ ] Exact-HEAD remote CI and manual regression: all routes, races, variants, track switch, reduced motion.
+
 ## 2026-11-09 — Back to home reopens on the raced course (`develop` CI)
 
 User-visible: Back to home (the reload from the leave dialog) opens the course that was just raced, centred in the row. A later reload, with no `raced` query, still starts on Coast. Choose track still restores the in-memory picker. `skyline-rush-last-track` is still not written. No new audio: the page unloads. The link is plain DOM, same at every quality tier.
@@ -4856,3 +4872,14 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Compared 24 deterministic Frostbite layouts with inherited Normal/Easy configurations: Normal at 1.01 produced 21/24 P8; Easy at 1.04 still produced P7/P8 in multiple layouts, so changing difficulty alone was insufficient.
 - [ ] Verify a course-owned rival grid spread against the unchanged 24-layout throttle/powerup-bot tests; preserve the fastest rival's speed, the classic track AI, CourseGraph physics, progression and lifecycle contracts. A locally reconstructed speed model is not a full game-suite PASS.
 - [ ] Run focused tests, `npm test`, `npm run typecheck`, `npm run build`, relevant Playwright browser tests, exact-HEAD FULL GitHub CI and real desktop/mobile WebGL QA. Local checkout/network unavailable in this execution environment; do not mark these gates complete until independently observed.
+
+## 2026-11-10 — All-course Elimination infinite highway and dev-mode parity
+
+- [x] 追查短路線問題：Elimination 在 `src/game.js` 的到站距離截斷將玩家速度歸零，定時淘汰繼續造成誤判。
+- [x] Elimination 與 Endless 共用 `prepareEndless` / `streamEndless` 道路、道具及交通串流；淘汰制不受 Endless 五碰撞中止規則影響，`finishEndless` 僅對真正 Endless 結算。
+- [x] 新舊 16 張賽道及新增 track registry 均採用共用機制，CourseGraph 有限路線只保留於正常競速；測試 `tests/elimination-endless-all-tracks.test.js`、`tests/elimination-endless-browser.spec.js` 已新增。
+- [x] 開發版 Coming Soon 六張地圖支援一般模式；更新 access-build 和 lifecycle D1 開發相容性驗證，正式版 Coming Soon 與發布的十張賽道清單不變。
+- [ ] 當前 HEAD 的 Node Unit、Typecheck、Build、Browser、World Tour、quality-gate 全綠證據；GitHub connector 無法代替本機 `make verify`。
+- [ ] 桌機/手機、直橫屏、真實 WebGL 地形連續性與勝負記錄檢查；Cloud/History 還需確認失敗淘汰不寫入最佳成績。
+
+- [x] CI 實際 Red evidence（run #42662501680 canceled, job log still records）：新 Elimination 16 賽道跨終點、完整七輪 knockout 與未來短賽道 deterministic tests 3/3 PASS；舊 S4 假設 Elimination 與 Classic 使用相同有限賽道獎勵已失效，改為要求 Elimination 與 Endless 道具/車流同源；Coast Elimination 60Hz Replay 因有意切換無盡道路產生新 SHA，僅更新此模式 fixture。更新後需於新 HEAD 再驗證。

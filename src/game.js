@@ -440,7 +440,7 @@ export function stepRace(race, input, dt) {
     rival.distance += rival.pace * dt;
     rivalSeek(race, rival); avoidObstacles(race, rival, rival.pace, dt); stepRivalDeck(rival, race.sections, hopFrom, CAR_HEIGHT);
     aiImpacts(race, rival, before, rival.pace); rivalCollects(race, rival, before);
-    if (!race.circuit && courseFinished(race, rival) && rival.finishTime === null) {
+    if (!race.endless && !race.circuit && courseFinished(race, rival) && rival.finishTime === null) {
       rival.finishTime = race.elapsed - dt + Math.max(0, race.length - before) / rival.pace;
     }
   });
@@ -536,8 +536,6 @@ export function stepRace(race, input, dt) {
   if (race.styleAttack) car.score += scoreStuntAttack(race.styleAttack, car, car.score - previousScore, dt, race.elapsed);
   car.score += bonusScore(car, race.mode, car.score - previousScore);
   if (race.elimination) {
-    // Keep the original course bounded even if a future car tuning reaches the end early.
-    if (car.distance >= race.length) { car.distance = race.length; car.speed = 0; }
     const knockout = stepElimination(race.elimination,race);
     if (knockout?.outcome) {
       race.result = {position:knockout.outcome === 'won' ? 1 : race.rivals.length + 1, time:race.elapsed,
