@@ -247,7 +247,7 @@ def restore_gallery_face(image, name):
             for sx, sy in candidates:
                 donor = source[sx, sy]
                 brightness = max(donor[:3])
-                if donor[3] >= 165 and 35 <= brightness <= 174:
+                if donor[3] >= 35 and 35 <= brightness <= 174:
                     target[x, y] = donor
                     break
     return output
