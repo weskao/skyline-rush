@@ -1,3 +1,11 @@
+## 2026-11-09 — Dense rewards on long-form shortcuts (`feature/epic-multiroute-longform-tracks`)
+
+- [x] RED: `tests/shortcut-rewards.test.js` missed the first ring on every shortcut of the six long-form courses. The classic guard already passed.
+- [x] GREEN: `src/shortcut-rewards.ts` keeps the 60 m cell line and the halfway tank, and adds a ring every 25 m plus a cell 12 m after each ring (`group: -4`, never a PERFECT LINE). Classic `RACE_TRACKS` stay on the 60 m line only.
+- [x] The per-km cap still measures the shared road layout and that 60 m line. Burst rings and the offset-12 cells sit outside it.
+- [x] Frostbite's 45 s replay hashes moved with the new items. The other recorded tracks did not.
+- [x] Gates this session: shortcut, density, authored sequences, module-size, replay and `tsc` green after the cast and fixture fix. Full `npm test` before that fix: 2506 pass / 4 fail / 3 skipped (those 4 were the replay hashes and the cast). Browser `tests/course-items-browser.spec.js` not run. No merge.
+
 ## 2026-11-09 — Last home-page 賽道 stays in memory (`develop`)
 
 User-visible: picking a course on Home (playable or Coming Soon), then leaving via Daily / a race and returning with Choose track, restores that card. Reload starts on Coast. The course is a JS variable for this page load; never `localStorage` or `sessionStorage` (`skyline-rush-last-track` is no longer written). Last mode still uses sessionStorage.

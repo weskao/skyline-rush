@@ -12,6 +12,20 @@ import { spawnCatchUp } from '../src/catch-up-items.ts';
 // User, 2026-11-09: new long-form courses keep the classic per-km ring/pickup density and have Classic traffic.
 const perKm = (race, list) => race[list].length / (race.length / 1000);
 const median = values => { const s = [...values].sort((a, b) => a - b); return (s[(s.length - 1) >> 1] + s[s.length >> 1]) / 2; };
+// The extra shortcut mix is outside that cap: rings are group -4, cells sit 12 m after each 25 m ring.
+// The 60 m line (inset 30, step 60) is not on the cell lattice, so those cells stay in the count.
+const burstCell = (race, item) => {
+  if (item.tier !== 'cell') return false;
+  const graph = COURSE_RUNTIMES[race.trackId]?.spec.graph;
+  if (graph && item.edgeId && !graph.groundRoute.includes(item.edgeId)) {
+    const end = routeLength(graph, item.edgeId) - 30;
+    return item.localS >= 42 && item.localS < end && Math.abs((item.localS - 42) % 25) < 1e-6;
+  }
+  return (COURSE_TRACKS[race.trackId]?.sections ?? []).some(section => section.type === 'shortcut'
+    && item.x === section.x && item.altitude === section.altitude
+    && item.distance >= section.from + 42 && item.distance < section.to
+    && Math.abs((item.distance - (section.from + 42)) % 25) < 1e-6);
+};
 const classic = Object.keys(RACE_TRACKS).map(id => createRace(id, { mode: 'classic' }));
 const graphIds = Object.keys(COURSE_RUNTIMES);
 
@@ -19,7 +33,9 @@ for (const id of Object.keys(COURSE_TRACKS)) {
   test(`${id}: Classic ring and pickup density is near the classic median and inside the classic range per km`, () => {
     const race = createRace(id, { mode: 'classic' });
     for (const list of ['rings', 'pickups']) {
-      const ref = classic.map(r => perKm(r, list)), want = median(ref), got = perKm(race, list);
+      // Shared road layout plus the 60 m shortcut line. The dense mix on the shortcut is extra.
+      const items = list === 'rings' ? race.rings.filter(item => item.group !== -4) : race.pickups.filter(item => !burstCell(race, item));
+      const ref = classic.map(r => perKm(r, list)), want = median(ref), got = items.length / (race.length / 1000);
       assert.ok(got >= 0.8 * want && got <= Math.max(...ref), `${list}: ${got.toFixed(1)}/km vs classic median ${want.toFixed(1)}/km`);
     }
   });
@@ -42,7 +58,7 @@ for (const id of graphIds) {
   const graph = COURSE_RUNTIMES[id].spec.graph;
   const branches = graph.edges.filter(e => !graph.groundRoute.includes(e.id));
 
-  test(`${id}: every ring and pickup sits on a real edge, ordered by ground progress`, () => {
+  test(`${id}: every ring and pickup sits on a real edge, in collector distance order`, () => {
     const race = createRace(id, { mode: 'classic' });
     for (const list of ['rings', 'pickups']) {
       assert.ok(race[list].length > 0, list);
@@ -51,16 +67,22 @@ for (const id of graphIds) {
         assert.ok(item.localS >= 0 && item.localS <= routeLength(graph, item.edgeId), `${list} localS ${item.localS}`);
       }
     }
-    const anchors = race.pickups.map(p => groundOffset(graph, p.edgeId, p.localS));
-    for (let i = 1; i < anchors.length; i++) assert.ok(anchors[i] >= anchors[i - 1] - 1e-9, `pickup order at ${i}`);
+    // projectCourseItems rewrites distance into the player's odometer and re-sorts. The collector stops at the first item ahead.
+    for (const list of ['rings', 'pickups']) for (let i = 1; i < race[list].length; i++) {
+      assert.ok(race[list][i].distance >= race[list][i - 1].distance - 1e-9, `${list} distance order at ${i}`);
+    }
   });
 
   test(`${id}: each alternate branch carries a reward line (cells every 60 m and a tank halfway)`, () => {
     const race = createRace(id, { mode: 'classic' });
     for (const edge of branches) {
       const line = race.pickups.filter(p => p.edgeId === edge.id), length = routeLength(graph, edge.id);
+      const sparse = [], dense = [];
+      for (let s = 30; s < length - 30; s += 60) sparse.push(s);
+      for (let s = 42; s < length - 30; s += 25) dense.push(s);
       assert.equal(line.filter(p => p.tier === 'tank').length, 1, edge.id);
-      assert.equal(line.filter(p => p.tier === 'cell').length, Math.ceil((length - 60) / 60), edge.id);
+      for (const s of sparse) assert.ok(line.some(p => p.tier === 'cell' && p.localS === s), `${edge.id} 60 m cell @${s}`);
+      assert.equal(line.filter(p => p.tier === 'cell').length, sparse.length + dense.length, edge.id);
       for (const p of line) assert.equal(p.altitude, edge.mode === 'flight' ? 6 : 0);
     }
   });
