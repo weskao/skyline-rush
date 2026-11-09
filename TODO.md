@@ -1,3 +1,23 @@
+# 2026-11-10 — Wave 3 frontend integration: F01 / F02 / F04 local-demo core (feature branch)
+
+**Branch:** `feature/wave3-frontend-demo-integration`. **Integration parent:** `develop@dbf2ffc1e8e248c4042cce35a09bc7b5e58255fc`.
+**Contract frozen for parallel agents:** `3a5ff9378667a53f23f17134c4d0f2cbaafb83d4`.
+**Handoff:** `docs/superpowers/plans/2026-11-10-wave3-core-frontend-handoff.md`.
+**Planning reference (read-only):** `feature/wave3-implementation-plan-audit-20261110`.
+
+- [x] **F01 source/TDD:** Versioned `Wave3ExperiencePort`, in-memory local demo with Guest, subscription, account isolation, demo points/redeem/equip/reset; RED was `ERR_MODULE_NOT_FOUND`, then `node --experimental-strip-types --test tests/wave3-local-demo.test.js` passed **9/9**. No Go/Firebase/real ownership change. F01 code at `3a5ff937`.
+- [x] **F04 data/TDD:** Local-only points and redemption, duplicate-safe completion, mission claim once, insufficient-points guard, invalid item and unsupported mode tests. Same focused **9/9** verification; no server-verified or paid grants.
+- [x] **F02 source/TDD:** Actual `game.js` drift-payout and longest-combo snapshots observed after `stepRace`; buffered until valid completed race; shared race-results wrapper preserves original settlement. Aborted-race test RED **2 failures**, GREEN after buffering; final-step drift test RED **1 failure**, GREEN after capture guard. Combined `node --experimental-strip-types --test tests/wave3-local-demo.test.js tests/wave3-race-events.test.js`: **15 passed / 0 failed**.
+- [x] **Local standalone strict check:** `tsc --noEmit --target ES2022 --lib ES2022,DOM --module ESNext --moduleResolution bundler --strict --allowImportingTsExtensions src/wave3-experience-contract.ts src/wave3-demo-settlement.ts src/wave3-local-demo.ts src/wave3-race-events.ts`: exit 0 (local TypeScript 5.8.3; repo version 5.9.3 awaits exact-head CI).
+- [x] **Legacy ceiling inspected:** `src/main.js` remains 677 lines (limit 677), new TS modules 54/25/88/68 lines; actual repository-wide `tests/module-size.test.js` is **not** claimed local-executed.
+- [x] **Early CI partial evidence:** on `3a5ff937`, GitHub Actions run [42662263629](https://github.com/weskao/skyline-rush/actions/runs/42662263629) ran and passed typecheck, npm test, build and cloud-save jobs; the overall run was **cancelled** by a newer push, so this is not an exact-HEAD full gate.
+- [ ] **Current exact-HEAD full CI:** all required unit, browser, World Tour and cloud-save jobs (including `quality-gate`) must finish and pass at the final commit. Queued/partial/cancelled runs never count as PASS.
+- [ ] **Real WebGL/phone UI acceptance:** verify guest race → actual demo mission and points → claim → Demo Store → collection → equip, portrait/landscape and account changes. Current branch intentionally implements **core logic only**, not unfinished satellite Vue screens.
+- [ ] **Pending feature branches:** F03 Missions UI, F05 Store/Collection UI, F06 Persistence, result-presentation UI, asset QA and full F08 E2E; integrate after each owner's evidence and re-run full checks.
+- [ ] **Backend:** no Go/backend/payments or production real entitlements in this branch. Future Go must not migrate demo credits/claims to real grants.
+
+---
+
 ## 2026-11-09 — Back to home reopens on the raced course (`develop` CI)
 
 User-visible: Back to home (the reload from the leave dialog) opens the course that was just raced, centred in the row. A later reload, with no `raced` query, still starts on Coast. Choose track still restores the in-memory picker. `skyline-rush-last-track` is still not written. No new audio: the page unloads. The link is plain DOM, same at every quality tier.
