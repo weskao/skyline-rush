@@ -1,0 +1,45 @@
+name: Repair original-style HUD raster defects
+on:
+  push:
+    branches:
+      - fix/wave3-hud-artwork-completeness
+    paths:
+      - scripts/repair-hud-original-art.py
+      - tests/test_hud_original_art_repair.py
+      - .github/workflows/hud-original-artwork-repair.yml
+permissions:
+  contents: write
+concurrency:
+  group: hud-original-artwork-repair
+  cancel-in-progress: false
+jobs:
+  repair-existing-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/wave3-hud-artwork-completeness
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Source-style artifact regression tests
+        run: python -m unittest discover -s tests -p test_hud_original_art_repair.py -v
+      - name: Regenerate existing files from pinned pre-redesign originals
+        run: |
+          python scripts/repair-hud-original-art.py
+          python scripts/repair-hud-original-art.py --check
+      - name: Validate source and module regression
+        run: |
+          node --test tests/hud-original-artwork-regression.test.js
+          node --test tests/module-size.test.js
+      - name: Push lossless repairs to this branch without creating a ZIP
+        run: |
+          git add public/feature-assets/mobile-controls-hud/raster
+          if ! git diff --cached --quiet; then
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -m 'fix(art): restore original HUD bezels and missing faces without redesign'
+            git push origin HEAD:refs/heads/fix/wave3-hud-artwork-completeness
+          fi
