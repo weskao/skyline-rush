@@ -241,12 +241,13 @@ export function createUpcomingEnvironment(scene: THREE.Scene): {
   scene.add(group);
   const stone = new THREE.MeshStandardMaterial({ color: 0x667d85, roughness: 0.98, flatShading: true, side: THREE.DoubleSide });
   const grass = new THREE.MeshStandardMaterial({ color: 0x74a889, roughness: 1, flatShading: true });
-  const roadStone = new THREE.MeshStandardMaterial({ color: 0xb8c8bd, roughness: 0.96, side: THREE.DoubleSide });
+  // Weathered sandstone, not pale mint: the near-white road hid the Pearl car under the bright sky.
+  const roadStone = new THREE.MeshStandardMaterial({ color: 0x7d7b6e, roughness: 0.96, side: THREE.DoubleSide });
   const cyan = new THREE.MeshBasicMaterial({ color: 0x8aeaff, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide });
   const water = new THREE.MeshBasicMaterial({ color: 0x9cdef9, transparent: true, opacity: 0.48, side: THREE.DoubleSide, depthWrite: false });
   addSky(group);
-  group.add(new THREE.HemisphereLight(0xe2f4ff, 0x496d73, 1.45));
-  const sunlight = new THREE.DirectionalLight(0xfff1d3, 1.75);
+  group.add(new THREE.HemisphereLight(0xe2f4ff, 0x496d73, 0.85));
+  const sunlight = new THREE.DirectionalLight(0xfff1d3, 1.05);
   sunlight.position.set(-110, 180, 65); group.add(sunlight);
 
   ISLANDS.forEach((island, i) => {
@@ -321,7 +322,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): {
   group.add(floating);
 
   const cloudGeo = new THREE.SphereGeometry(1, 9, 6);
-  const cloudMat = new THREE.MeshBasicMaterial({ color: 0xf2f9ff, transparent: true, opacity: 0.38, depthWrite: false });
+  const cloudMat = new THREE.MeshBasicMaterial({ color: 0xf2f9ff, transparent: true, opacity: 0.26, depthWrite: false });
   const near = makeClouds(cloudGeo, cloudMat, 112, false);
   const far = makeClouds(cloudGeo, cloudMat, 76, true);
   group.add(far, near);

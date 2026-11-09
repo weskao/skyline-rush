@@ -6,6 +6,7 @@ import packageMeta from '../package.json' with { type: 'json' };
 import { RACE_TRACKS } from './game.js';
 import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
 import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
+import { look3d } from './look-gate.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
 import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';
@@ -75,7 +76,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <label><span data-i18n="vfx.preset">Visual style</span> <select data-vfx="preset"><option value="realistic" data-i18n="vfx.preset.realistic">Realistic</option><option value="cinematic" data-i18n="vfx.preset.cinematic">Cinematic</option><option value="extreme" data-i18n="vfx.preset.extreme">Extreme · sci-fi</option></select></label>
         <label><span data-i18n="vfx.fps">Target FPS</span> <select id="target-fps" aria-label="Target FPS" data-i18n-aria-label="vfx.fps"><option value="auto" data-i18n="vfx.fps.auto">Auto</option><option value="30">30 FPS</option><option value="60">60 FPS</option><option value="90">90 FPS</option><option value="120">120 FPS</option></select></label>
          <small data-i18n="vfx.fps.note">Auto raises rendering FPS only on sustained fast displays; 90/120 may be capped by your browser. Graphics quality stays independent.</small>
-         <label><span data-i18n="vfx.quality">Quality</span> <select data-vfx="quality"><option value="low" data-i18n="vfx.quality.low">Low</option><option value="medium" data-i18n="vfx.quality.medium">Medium</option><option value="high" data-i18n="vfx.quality.high">High</option></select></label>
+         <label><span data-i18n="vfx.quality">Quality</span> <select data-vfx="quality"><option value="low" data-i18n="vfx.quality.low">Low</option><option value="medium" data-i18n="vfx.quality.medium">Medium</option><option value="high" data-i18n="vfx.quality.high">High</option><option v-if="look3d()" value="ultra" data-i18n="vfx.quality.ultra">Ultra</option></select></label>
         <label><span data-i18n="vfx.aeroMode">Aerodynamics</span> <select data-vfx="aeroMode"><option value="drag" data-i18n="vfx.aeroMode.drag">Low drag</option><option value="downforce" data-i18n="vfx.aeroMode.downforce">High downforce</option></select></label>
         <label><span data-i18n="vfx.view">Showcase camera</span> <select data-vfx="view"><option value="drive" data-i18n="vfx.view.drive">Driving camera</option><option value="front" data-i18n="vfx.view.front">Front</option><option value="rear" data-i18n="vfx.view.rear">Rear</option><option value="left" data-i18n="vfx.view.left">Left</option><option value="right" data-i18n="vfx.view.right">Right</option><option value="orbit" data-i18n="vfx.view.orbit">Orbit</option></select></label>
         <label><span data-i18n="vfx.comfortable">Comfort mode</span> <input type="checkbox" data-vfx="comfortable"></label>

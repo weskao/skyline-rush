@@ -25,6 +25,201 @@
 - [x] cca9f1b9 tutorial/Start-label/home failures came from the old develop base (b860d739); develop 21d51164 fixed them and merge e57d8b88 carries it. Locally on e57d8b88, 42/44 previously failing specs pass.
 - [x] RED → GREEN: `release-video-browser.spec.js` hand-over read `handOver.clipStart` once after `paused` flipped, before the async `playing` event recorded it (`undefined`, 1/4 local runs). Now polls `clipStart`/`heroResume` first; `CI=1 --repeat-each=8 --workers=4 --retries=0` 8/8 pass.
 - [ ] macOS-only: `paused practice 750x342` pause panel content (217px) overflows `.race-overlay` (197px) by ~20px with zh-TW CJK font metrics; Linux CI passes. Pre-existing on develop; real-iPhone check pending.
+
+## 2026-11-09 — 新地圖光圈／道具依長度配置、Classic 路上車流（epic，based on `51137db4`）
+
+- [x] 密度：`itemScale(track) = length / 經典平均長度`（僅 course topology）；10 張經典賽道數量不變（`tests/course-item-density.test.js` 鎖定）。
+- [x] Dune／Skyfall graph runtime：光圈／道具改以 `(edgeId, localS)` 放置（`src/course-items.ts`），每條支線有 reward line，對手會搶道具；車流為不計名次的 course car，僅跑地面路線。
+- [x] Classic 車流：Dune 0.9、Skyfall 0.75、Frostbite 0.6→0.65（經典範圍 0.65–1.5）。legacy replay 僅 frostbite-canyon|classic 3 個 key 變動。
+- [x] UI：`world.js` 的 `worldPoint` 對沒有 item 的粒子／爆點／磁吸圈回退至原 1D 路徑（修正每幀 `reading 'edgeId'` 例外，曾使 Dune／Skyfall 無法暫停、道具不顯示）。
+- [x] 驗證：`npm run typecheck` 0；`npm test` 僅 15 個既有失敗（Monsoon／Stormline／Volcanic 未註冊，staged WIP）；`tests/course-items-browser.spec.js` 桌機＋手機 6/6、相關 course/shader-warmup browser 14/14；真 WebGL 截圖確認光圈與車流顯示。
+- [x] CI 時序壓測 `CI=1 --repeat-each=8 --workers=4 --retries=0`：48/48 passed
+- [ ] 未做：graph 賽道 catch-up 道具與 rival seek 仍關閉（shortcut 註解）；粒子特效仍用 1D 座標；未 bump layoutVersion；Monsoon／Stormline／Volcanic 尚未註冊；exact-HEAD FULL CI 未跑。
+
+## 2026-11-08 — Develop 同步及沙暴裂谷／浮空群島首頁四車可讀性（epic）
+
+- [x] 在開始新的實作前將 `develop` `b6f30406` 非破壞性合入 epic：merge `8737ea35`，保留共同修改的 `TODO.md` 雙方新增紀錄；只推送 epic，未修改 develop/main。
+- [x] 新增桌機／手機 50° FOV、四車可見範圍回歸測試 `tests/showcase-vehicle-readability.test.js`（`b960ce7b`），修改共用展示車距及直向排列（`00ffe5b6`）。
+- [x] 新增兩張地圖的前景霧沙、額外光照、雲層遮擋回歸測試 `tests/showcase-weather-readability.test.js`（`d6c58bbe`），改善 Dune 沙暴與 Skyfall 浮空雲海近景對比（`b1a5e8fd`），保留地標、50° FOV、既有車輛模型及場景風格。
+- [ ] RED 實際執行輸出：目前環境無完整可執行 repository 且外網 git checkout 失敗；測試已先行編寫，但不得宣稱觀察到 RED。
+- [ ] `node --test tests/showcase-vehicle-readability.test.js tests/showcase-weather-readability.test.js`、`npm test`、`npm run typecheck`、`npm run build`：NOT VERIFIED。
+- [ ] 完整 browser、`make verify`，沙暴裂谷／浮空群島真 WebGL 桌機＋手機、AIRFLOW 兩態與六視角目視可讀性：NOT VERIFIED。
+- [ ] 所有剩餘賽道實作完成後，再進行 exact-HEAD `[full-regression]` CI 驗證及失敗修復；舊 SHA 的 PASS 不能替代新 HEAD。
+
+## 2026-11-08 — 六賽道接續：develop 同步、Volcanic／Monsoon 修正、Lifecycle 合入（epic）
+
+依使用者指示不等待 CI、本 session 不跑任何 browser 測試（Playwright、`test:browser`、`make verify`、WebGL 截圖）。
+
+- `develop` `27f2074f` 合入 epic：`a8fb3b58`（TODO.md 衝突兩邊保留）。
+- 上一輪 epic CI `42393948536`（`b76a4018`）**FAIL**，根因與修正：
+  - `module-size`：`src/world.js` 1127 > 1126 → 合入 Volcanic 分支最新提交（`f09329cb` 抽出 `sign-text.ts`），merge `2e68dc1b`，world.js 1120 行。
+  - `record-layout` Firestore best ids 缺 `volcanic-crown@t1l1`（`fdfbb10a`，隨 `2e68dc1b` 合入）與 `monsoon-ruins@t1l1`（`dddafa89`；`d194d2e3` 的展開寫法尚可容納約 10 個 id）。
+  - `coming-soon-release` playable 清單加入 Monsoon；「仍為 preview 不可進入」的斷言改用 `skyfall-archipelago`（`dddafa89`）。
+  - `interactive-tutorial` NITRO re-arm：develop 把 `CLEARED_SECONDS` 0.8 → 1.4 s，epic 測試寫死等 1 s；改為等 `CLEARED_SECONDS`（`dddafa89`；乾淨 develop 上 18/18 PASS 作為對照）。
+  - `monsoon-ruins-race-browser`：spec 找 `'Monsoon Crown race'`（從 Volcanic 複製的錯字），實際群組是 `'Monsoon Ruins race'` → `chunks` undefined。已修正；Node 內建場景驗證 56 個 children（> 20）。browser 實跑 **NOT VERIFIED**。
+- [x] epic `dddafa89`：`npm test` 2181 pass / 0 fail，`npm run typecheck` PASS，`npm run build` PASS（production bundle 檢查通過）。
+- Step 2.5 Lifecycle：`feature/track-lifecycle-sop` 合入最新 epic（`ba242448`，`coming-soon-release` 衝突兩邊斷言都保留），修 `browser-timeouts` 守門（`coming-soon-views-browser.spec.js` 改用 `ciTimeout`，`1256ef88`）；`npm test` 2197 pass 外加修正後守門 10/10，typecheck、build PASS；`node scripts/check-track-lifecycle.mjs` 全 PASS（Stormline／Volcanic／Monsoon／Frostbite = playable，Dune／Skyfall = preview）。合入 epic `e744da5f`（tree 與 lifecycle 分支相同）。
+- 意外：epic push 時 repo pre-push hook 自動跑了 `npm run test:layout`（42 passed）；之後 push 一律 `SKIP_LAYOUT_GATE=1`。
+- **NOT VERIFIED**：所有 browser specs（含 Volcanic／Monsoon START→FINISH、Coming Soon views）、`make verify`、真 WebGL 截圖、exact-HEAD full CI（未等待）、真機效能、`firestore.rules` 部署與 `npm run test:cloud` Playwright 部分、人工視覺簽核。
+- Step 3 Dune／Skyfall 在 `feature/course-graph-runtime` 進行中。
+- 首頁展示清晰度（使用者回報：沙暴裂谷、浮空群島展示畫面看不清車子）：`feature/six-course-preview-clarity` `1f689418` 合入 epic。
+  根因（依場景程式分析，非霧）：Dune 道路在車位處彎離，rival 2/3 陷入沙丘或路肩；道路 #e1ac69 與沙、天空同色，地圖燈光疊加 showcase 燈光過曝；
+  Skyfall 道路 #b8c8bd 近白，Pearl 車身亮度只有路面 1.47×。修正：Dune 前 46 m 直線、道路改深赭 #a8703f、地圖燈 2.0/2.35 → 1.6/1.95；
+  Skyfall 道路改砂岩灰 #7d7b6e；地標、天空、雲海、光環不變。
+  - [x] RED → GREEN `tests/upcoming-preview-clarity.test.js`（六張地圖 Pearl ≥ 3× 路面亮度、路面 ≤ 0.4；Dune／Skyfall 兩種 AIRFLOW 與直橫向車輛貼路且視線無遮擋）。
+  - [x] epic 合併後 `npm test` 2200 pass / 0 fail，typecheck、build PASS。
+  - [ ] 真 WebGL 截圖與人工目視 **NOT VERIFIED**（本 session 禁跑 browser；僅有 CPU ray-cast 近似圖）。
+
+## 2026-11-09 — ring-sfx timeout on CPU-only runners (`fix/ci-recurring-flakes`, based on `develop` `281d21b1`)
+
+Acceptance: CI run 42489399352's `page.evaluate: Test timeout of 135000ms exceeded` (4 of 4 attempts) cannot recur;
+a near-timeout test is visible on green runs.
+
+- [x] Root cause: the 6-ring train used the course's first rings (≈200–700 m), but by then the player had driven
+  ≈1 km, so the test teleported it back into the pack. Rivals step before the player and take the ring
+  (`src/game.js` rivals then rings), traffic contact knocks the car off it (the CI screenshot shows "STABILIZING ·
+  174 KM/H LOST" at 1.41 km = last ring + ≈10 s of driving). A miss then ran `200 × wait(10)`, which a CPU-only
+  runner stretches to 200 frames ≈ 60 s. 281d21b1's `ring.downUntil = 0` covered rival takes only.
+- [x] Second cause: clean passing CI runs took 55–90 s of the 135 s default (> half the budget), and `solo()` timed
+  its 250 ms read from `make()` though the cue sounds on the next game frame.
+- [x] RED: a 300 ms-per-frame stall shim (game/wall ratio 0.16, as CI's 21 s of race at timeout) plus a car parked at
+  each teleport: HEAD spec 4/4 `page.evaluate: Test timeout of 135000ms exceeded`; at normal speed 2/2 missed rings.
+  GREEN: train ahead of every rival with GHOST, per-frame wait bounded by `race.elapsed`, solo clock from the cue frame
+  with the tap-buffer cut-off, `test.setTimeout(ciTimeout(75000))`: model 4/4 (1.8–2.0 min), `CI=1 --repeat-each=3
+  --retries=0` 6/6 (23–26 s).
+- [x] Guards: `tests/browser-timeouts.test.js` fails on a counted wall-clock sleep loop (RED on the old line 95) and pins
+  `tests/helpers/budget-reporter.js` (CI warning + job summary for tests over half their budget).
+- [x] Cloud-save avatar (run 42494040937): already fixed by 85e020eb. Audited other DOM injections (`home-shortcuts`,
+  `start-button-label`, `responsive` canvas size): their writers run only at startup or on user input, no guard needed.
+- [x] Exact-HEAD branch CI run 42512364531 on `e019f9b1` (`[full-regression]`): every job and `quality-gate` green;
+  ring-sfx desktop 55.9 s, phone 1.2 min of the 225 s budget; no near-timeout warning (reporter checked locally
+  with a 63%-budget test: annotation and job-summary row both appear).
+- [ ] Exact-HEAD develop full CI after the merge.
+
+## 2026-11-05 — Garage / Preview Studio animated GIF artwork (feature branch)
+
+**Branch:** `feature/garage-preview-animated-gifs`, from `develop` at `4b94bdabf9fa5030045646e04a45a4aef549edc3`.
+
+- [x] Preserve the interactive WebGL car showroom, 3x WebP paint/VFX/badge/store masters, artwork IDs, selections, entitlement checks and fallback images.
+- [x] Add three genuine eight-frame transparent looping GIF overlays at native 3× layout sizes: 216×216 badges/store, 288×288 VFX, 960×510 paint. Apply them to all paint, VFX, badge and concept cards in Garage and Preview Studio. These are animated **GIF overlays**, not full per-image re-encodings: original artwork remains sharp and uncropped.
+- [x] Respect `prefers-reduced-motion`; paint GIF also stops when visual effects are disabled or comfort mode is enabled. No new audio: these are decorative flourishes without state changes. HTML/CSS art unchanged across Low/Medium/High quality tiers.
+- [x] Add unit GIF-format/loop/frame-count and browser two-page/reduced-motion checks, adjusting original no-GIF contract while preserving 3x source checks.
+- [ ] RED run observed before production changes: first feature-branch Actions attempts were cancelled by subsequent pushes; cannot claim a verified RED run.
+- [ ] Run `make verify`, typecheck, full browser / World Tour regression and exact-HEAD FULL GitHub Actions CI. Required for acceptance; remote work does not prove local execution.
+- [ ] Manual desktop/mobile visual review, browser GIF animation decode/performance, iOS and Android reduced-motion, GIF artwork appearance and showroom interactions. No PR, merge or deployment authorized.
+
+
+## 2026-11-05 — Garage / Preview Studio actual original-art GIF upgrade
+
+**Scope:** Only `feature/garage-preview-animated-gifs`. Supersedes the earlier three `sparkle*.gif` **overlay-only** UI implementation, not its historical record.
+
+- [x] From existing tracked 3× WebP/SVG art, generate **39 distinct GIFs** in `public/feature-assets/garage-animated/` using `scripts/generate-garage-gifs.py`: Thruster 4/4, Airflow 4/4, NITRO Trail 5/5, Launch Flare 9/9, badges/rarity 11/11, Store Concept 6/6.
+- [x] Each 12-frame GIF loops at 12.5 FPS with transparent palette index, preserves source output dimensions (288×288 VFX and 216×216 badge/store), and retains its untouched WebP/SVG in the repository. The original-asset generator job 41966520062 succeeded; `manifest.json` records source paths and actual sizes (39 GIFs, 6,719,740 bytes total).
+- [x] Replace generic `::after` sparkle animation in actual VFX cards and badge/store artwork tiles with their per-artwork GIF; remove paint-specific generic sparkle overlay without altering existing paint texture or 3D renderer.
+- [x] Add `GarageArtworkImage.vue` `animatedSrc` support: IntersectionObserver visibility gating, media-query reduced motion switching, GIF error fallback to original WebP/SVG, then existing text fallback.
+- [x] Add 39-file integrity assertions, rendering contract checks, browser tests for Garage Home and Studio, store artwork, reduced motion and GIF failures, and update previous VFX static-source browser expectations.
+- [ ] Exact latest HEAD Unit, Typecheck, Build, Browser, World Tour, cloud-save and Quality Gate: **do not mark passing** until a completed full Actions run matches the final HEAD.
+- [ ] Local `make verify` on a full checkout; GitHub connector does not provide a local runner. Record the command's exit status rather than assuming success.
+- [ ] Actual on-device visual acceptance for flame shapes/flow, genuine box-lid articulation, source-image fidelity, clipping, iOS/Android reduced motion, folded landscape/portrait, touch, 3D rotation and GPU/memory budget. Automated frame change cannot substitute for human visual approval.
+- [ ] Document separate observed RED failure and full GREEN command evidence; local synthetic-source generator smoke test is **not** a complete TDD/CI gate.
+
+No new branches, PR, deployment or merges to `develop`/`main`.
+
+
+## 2026-11-05 — Garage animated GIF artistic rework after user visual review
+
+**Scope:** `feature/garage-preview-animated-gifs` only. Prior 39-icon generic pixel field animation produced undesirable distortion. This revision replaces it with explicitly keyed profiles on the same 39 original 3× WebP/SVG masters.
+
+- [x] 39 icon IDs each have distinct `PROFILES` recipes, across thruster (4), airflow (4), NITRO (5), launch (9), badge/rarity (11), Store concept (6).
+- [x] Stop whole-image grid displacement: move energy highlights within original flames, trails and shockwaves; animate author-drawn SVG airflow paths while blocking highlights over the partially translucent car; keep badge silhouettes fixed while changing material response; separate crate lid/gift ribbon/card component movement.
+- [x] Replace separately quantized moving pixels with an all-frame shared palette per GIF, 16 source-linked phases at 12.5 FPS. Avoid patterned Bayer transparency dithering after inspecting actual exported GIFs: it created a visible checkerboard glow. The refreshed binaries use explicit binary alpha threshold for clean cutouts.
+- [x] Test-first RED observed on original animation script: GitHub Action `41968588434`, 7 new source fidelity checks failed (old program lacked independent source-linked part animation).
+- [x] GREEN on the actual GitHub WebP/SVG masters: `41969123657` generated/validated all 39 original-art GIFs; generated commit `b2a3d27fcc984bb7ab2e95360ca705b0127702d9`, 10,240,587 bytes total. The generated manifest records all 39 source-to-GIF paths, dimensions, original IDs, file sizes and unique motion profiles.
+- [x] Examine representative real exported GIF frames for `thruster-ion` and `store-box` after the alpha change; original shapes remain recognizable, with no artificial patterned transparency around their glow.
+- [ ] Full exact-HEAD GitHub CI (Unit, Typecheck, Build, Browser, World Tour, cloud-save, Quality Gate) for the *final* commit; do not reuse a prior successful SHA.
+- [ ] On-device human acceptance of motion style, box lid hinge, GPU/decode cost, true frame sequence and loop smoothness, reduced motion, all screen sizes including folding, interactive 3D showcase and cosmetic entitlement regression.
+- [ ] Run complete `make verify` in a full local checkout (GitHub contents connector has no local test runner). Synthetic-image local smoke tests are not production-art visual sign-off.
+
+Original WebP/SVG masters, live 3D car rendering, ownership rules and the static/reduced-motion fallback stay in place. No PR, merge or deploy.
+
+- [x] 2026-11-05 full-CI regression failure repro: Actions `41969270176` browser shards failed Vite template parse at `src/GarageSkinCatalog.vue:86` because `import.meta.env.BASE_URL` was incorrectly embedded in template expression; corrected by `animatedArtworkSrc(skin.id)` in the script module at `58ae193c9ab6daefb05c77af63121e8567893d74`. Added a source-structure regression test. This fixes the identified syntax root cause; do not mark Build/Browser green until fresh exact-HEAD CI completes.
+
+## 2026-11-05 — Original-art animated Garage GIF physical-motion correction
+
+**Only writable branch:** `feature/garage-preview-animated-gifs`.
+
+- [x] Reviewed source-linked 39-image manifest and preserved each icon's 3x WebP/SVG and native 1x CSS footprint.
+- [x] Added regression tests for genuine alpha/silhouette changes in 4 thrusters and 9 launch flares; preserve untouched metal/nozzle pixels and transparent original outside silhouette.
+- [x] Added a synthetic red-lid/blue-base test that rejects entire-box movement or simple vertical lid bobbing; require two-axis physical hinge motion.
+- [x] Observed RED from GitHub Actions run 41975454359 (11 failures, including launch flare material-only animation, thruster-basic and vertically bobbing store-box).
+- [x] Updated `scripts/generate-garage-gifs.py`: directional combustion-edge alpha changes, radial shockwave edge alpha modulation, rotated chest lid around back hinge and independently hinged/bobbing ribbon loop. No full-image zoom, rotation, generic sparkle overlay or changes to game physics.
+- [x] GitHub Actions source-animation generation run 41975622710 succeeded and committed **39 GIF files** plus manifest (16 frames each, native 3x, 12.5fps; 10,327,386 bytes across six categories). This demonstrates Python motion regression GREEN and actual GitHub asset generation, not manual visual approval.
+- [x] Corrected existing Garage Browser checks to separately verify GIF runtime `src` and the original lossless-fidelity source WebP/SVG `data-static-src`. Badge-error tests now block both GIF and source to check accessible fallback; fixed previous stale WebP-only expectations.
+- [ ] Exact-HEAD FULL GitHub CI: rerun after this evidence update with `[full-regression]`; do not claim success until all required Unit/Typecheck/Build/Browser/World Tour/cloud-save/Quality Gate jobs pass.
+- [ ] Local `make verify`: this remote GitHub-only context cannot execute the full repository locally.
+- [ ] Real manual device/3D review, artwork crop/halo/material fidelity, iPhone/Android/foldable orientation and motion comfort still require hands-on QA.
+
+
+## 2026-11-06 — Sweep-only Garage icons back to original art + GPT GIF brief
+
+**Only writable branch:** `feature/garage-preview-animated-gifs`.
+
+- [x] The 14 GIFs that only added a light sweep (`badge-*` ×6, `rarity-*` ×5, `store-cart/star/tag`) were removed. Those tiles now show their original 3× art with one shared CSS sweep in `src/GarageArtworkTile.vue`: left → right, `skewX(-23deg)` (same tilt as `.garage-paint-sheen`), 6.8 s cycle, clipped to the icon alpha by `mask`, transform-only. It is hidden on VFX Low/off/comfort and under `prefers-reduced-motion`.
+- [x] The generator, manifest, workflow and tests are now 25 GIFs across 5 categories. The node test asserts that the swept GIFs are absent, that there is one `garage-art-sweep 6.8s` declaration, and that the mask and skew are present.
+- [x] Local evidence: `node --test tests/garage-animated-artwork.test.js` 5/5, Python motion tests 8 OK, `npm run typecheck` and `npm run build` green. Seeked screenshots at 4.4/4.8/5.2 s show the sweep crossing the icon in about 1 s.
+- [x] Added a GPT production brief for replacing the remaining 25 procedural GIFs, with an apply procedure that retires the generator and workflow in the same commit: `docs/designs/garage-animated-gifs/gpt-gif-prompts.md`.
+- [x] GPT pushed 25 repaired GIFs up to `6af15b02`, all marked `profile: gpt-authored`. Local evidence: the brief check prints `25/25`, the Python GIF tests pass 13 OK, and `npm test` passes 1889/0.
+- [ ] Retire the generator, `tests/test_garage_gif_motion.py` and `garage-animated-gifs.yml` once a human confirms that the 25 GIFs are final authentic frames (rule step 5). Until then, any change to the generator re-renders and overwrites them.
+- [x] **Bug fixed (full CI run 42232699577 on `6af15b02`):** the sweep rule `:global(body[data-vfx-quality="low"]) .garage-art-sweep` compiled under Vue scoped CSS to `body[data-vfx-quality=low]{display:none}`. That hid the whole app on VFX Low, VFX off and comfort mode. It failed the browser specs `garage-paint-collection` (low), `responsive-focus` Event Lab (low) and `airflow-wake`. The fix uses plain `body[...] .garage-art-sweep` (scoped attribute on the sweep). The guard `tests/vue-scoped-global-selector.test.js` was RED with 3 offenders before the fix and is GREEN after. Locally, the Garage paint/VFX/animated specs pass 34/34 and responsive-focus + airflow-wake pass 15/15. `airflow-wake` was not reproduced RED locally.
+- [ ] Exact-HEAD full GitHub CI with `[full-regression]` on the fix commit, plus manual review on real devices and Safari.
+
+## 2026-11-07 — Garage formal GIF visual QA gate (source-locked 25)
+
+**Only writable branch:** `feature/garage-preview-animated-gifs`.
+
+- [x] Verified exact HEAD `dd8114b3f01104ee5cc9b33c97f1aaf0d5f9a959` FULL CI run [42296245882](https://github.com/weskao/skyline-rush/actions/runs/42296245882) completed with `success`. This is evidence for the pre-QA HEAD only; any later documentation/cleanup commit needs its own CI.
+- [x] Inspected GitHub's complete recursive tree and 25-entry manifest: all 25 source paths, 25 GIFs and 25 six-frame QA contact-sheet files exist; exact GitHub blob byte sizes match manifest (9,440,892 bytes total), native 288×288 except store 216×216, 20 frames / 20 FPS metadata and each below 900,000 bytes.
+- [x] Visually inspected actual six-frame contact sheets for `thruster-ion`, `nitro-trail-purple`, `store-bundle` and `airflow-vortex`. Original art is recognizable, but these sampled frames are almost static and do **not** demonstrate convincing independent physical-part animation. The `thruster-ion` sheet also shows conspicuous white rectangular artifacts in some sampled frames. This is a **visual QA blocker**, not artistic approval. The generator is programmatic; the manifest's `gpt-authored` label is not evidence of image-model hand painting.
+- [ ] Fix the `thruster-ion` rectangular artifact and improve source-locked physical motion with a test-first regression. Verify six sampled frames show material motion (not just a shared overlay) across each category, including actual flame deformation, airflow movement, nitro trail propagation and independently moving store components; retain all original WebP/SVG blobs.
+- [ ] Independently decode all 25 GIFs and confirm actual 20×50ms frames, infinite loop, real transparency and >=12/20 transparent alpha margins, plus actual six distinct contact-sheet frames. Manifest metadata and an earlier generator run alone do not prove these checks.
+- [ ] Run `npm test`, `npm run build` and `make verify` in a complete checkout. The connector-only runtime cannot clone GitHub or execute repository commands; no local PASS is claimed.
+- [ ] Only after visual, binary, local test and exact-HEAD FULL CI acceptance all pass: atomically retire `scripts/generate-garage-gifs.py`, `tests/test_garage_gif_motion.py`, `.github/workflows/garage-animated-gifs.yml` and the **single obsolete recipe test** in `tests/garage-animated-artwork.test.js`; preserve all other tests, docs, rules and `scripts/package-garage-authored-gifs.py`. Run a fresh post-cleanup exact-HEAD FULL CI before declaring complete.
+
+## 2026-11-08 — Garage glow GIFs: card-tint compositing (no dark matte rim)
+
+- [x] Root cause: soft glow edges were composited over the flat `#0f1c33` matte and cut at ~40% alpha, so 16 GIFs
+  (thruster ×4, nitro-trail cyan/gold/red/purple, launch-flare blue/ring/pulse/gold/red/cyan/magenta/white) showed a
+  dark navy rim on the lighter card tint. Card backgrounds are identical per category (measured).
+- [x] RED: `test_glow_gifs_have_no_dark_rim_on_their_card` fails on the previous GIFs (thruster-basic frame 0: 42% of
+  edge pixels darker than the card; 14 of 16 between 42% and 92%). GREEN after re-export: at most 7%.
+- [x] Fix: `save_gif` composites onto `assets-src/garage-card-bg/<category>.png` with a ~10% cut;
+  `scripts/repackage-garage-card-gifs.py --apply` re-exports the 16 GIFs from the committed WebP sources, keeps the
+  dcec8b99 thruster repair (alpha never below source). The 103eda55 flare fixes were single-pixel palette outliers;
+  the new palette leaves 0–10 such pixels per 20-frame GIF, same order as before.
+- [x] Visual: static | old | new browser crops at mobile 3×, plus frame 0 of all 16 over the real card. Rim gone;
+  flares keep a tinted halo that still ends in a 1-bit edge (GIF limit). Sizes 357–639 KB (<900 KB).
+- [ ] Exact-HEAD remote CI for this commit. Not merged into `develop` (user instruction).
+
+## 2026-11-08 — Superseded develop runs no longer paint `quality-gate` red (`fix/ci-quality-gate-cancelled`)
+
+Acceptance: a run cancelled by a newer push (`cancel-in-progress`) reports `quality-gate` as cancelled, not failed;
+a failed, skipped or individually cancelled suite in a live run still fails the gate.
+
+- [x] Root cause: run 42478613906 (develop `8ccb7d6d`) was cancelled by the `fcf89962` push; browser shards 9/11/13
+  cancelled, every completed suite passed. `quality-gate` used `always()`, so it ran and failed on the cancelled shards.
+- [x] Fix: `!cancelled()` replaces `always()`. Same run shows a `!cancelled()` job (`deploy`) concluding `cancelled`,
+  which never satisfies the `main requires quality-gate` ruleset; a cancelled-but-unsuperseded run stays unmerged.
+- [x] RED → GREEN `tests/ci-quality-gate.test.js`: fails on the `always()` workflow, passes on the fix.
+- [x] `npm test` 2305 pass / 0 fail / 3 skipped; `npm run build` and `tests/module-size.test.js` pass.
+- [x] Develop run 42494040937 on merge `408cfa56`: everything green except `cloud-save` (avatar test), and the gate
+  failed on it as intended. Cause: a test race. The post-sign-in sync calls `showCloudSession()`
+  (`src/cloud-ui.ts:135`), which re-renders the photo-less account avatar over the one the test injected when
+  it lands after the injection.
+- [x] RED: holding Firestore until the avatar is injected fails the old test every time (avatar hidden). GREEN: the test
+  waits for `synced` before injecting; 3/3 with a 400 ms Firestore delay, full cloud suite 15/15, `CI=1` 8/8 repeats
+  with `--retries=0`, Firestore rules 3/3.
+- [ ] Exact-HEAD develop full CI after the follow-up merge.
+
 ## 2026-11-08 — Repair develop CI run 42452541249
 
 Acceptance: CourseGraph selection/racing/finish render without legacy World Tour errors; tutorial cues and
@@ -917,8 +1112,8 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
 
 **Branch:** `feature/3d-visual-fidelity-pipeline` (created from develop `b8ae6a19`).
 **Status:** r180 baseline captured and the r186.1 upgrade landed (D8 visual review and D9 phones open); new assets and game modifications **NOT DONE**.
-**Spec:** [3D design](docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md) ·
-[Implementation plan](docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) ·
+**Spec:** [3D design](docs/superpowers/specs/3d-visual-fidelity-pipeline-design-v2.md) ·
+[Implementation plan](docs/superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) ·
 [Phase 0 preflight](docs/designs/3d-pipeline/toolchain-environment-preflight.md) ·
 [Three.js r180→r186 migration](docs/designs/3d-pipeline/threejs-r180-r186-migration.md) ·
 [Per-task files, by-project vs by-device](docs/designs/3d-pipeline/phases/README.md).
@@ -1032,7 +1227,21 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
   - [x] Low-tier fallbacks exist; draw calls/triangles per tier recorded (GLB 17–21 fewer draw calls than procedural). Fill rate NOT VERIFIED.
   - [x] ~~Owner sign-off; real-phone p50/p95 and screenshots; exact-HEAD CI.~~ Waived by the owner on 2026-11-08, same as Phase 3b; revisit before default-on.
   - [x] ~~Real low-end-phone p50/p95 per heavy item, Low-tier fallback, all-track matrix, `make verify`, exact-HEAD full CI, owner sign-off.~~ Matrix run on `1efa389c`: unit 2157/0, build OK, hero and Garage specs 41/41. Waived by the owner on 2026-11-08, same as Phase 3b; revisit before default-on.
+- [ ] **Phase 3d (spec v2 Phase 2d, added 2026-11-08):** Roadster close-out. All Phase 3b/3c owner gates pass (visual sign-off on real-GPU captures, real-phone screenshots and p50/p95, exact-HEAD full CI). Then `?model=roadster` is removed in its own commit, with the procedural fallback kept and the all-track matrix rerun. The Roadster's shape is frozen after this step.
+  - [x] ~~Owner visual sign-off on real-GPU captures~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified).
+  - [x] ~~Real-phone screenshots and p50/p95~~: owner-accepted on 2026-11-08 without a manual review (the owner treats every manual-verification item as verified). Not measured.
+  - [ ] Default-on (`?model=roadster` removed in its own commit): **deferred** by the owner (2026-11-08). Phase 2 merges into `develop` with the gate kept, so `develop` keeps its pre-merge look.
+  - [ ] `npm run test:browser`, `make verify` and exact-HEAD full CI (`[full-regression]`) on `feature/3d-pipeline-concept-target`.
 - [ ] **Phase 4:** Coast road-space UV/PBR and high-quality nearby scenery with deterministic chunks; then staged adoption for five playable new maps and other tracks only after shared API passes integration gates; optionally improve showcase/cover from real captures, not concept images.
+  - [ ] Spec v2 (2026-11-08): Coast and every map (Dune, Monsoon, Skyfall, Volcanic, Stormline, Frostbite) are accepted by the concept-board parity review against their panels (spec v2 §8.1; [Task 5](docs/designs/3d-pipeline/phases/task-5-coast-pbr-road.md), [Task 6](docs/designs/3d-pipeline/phases/task-6-new-tracks-showcase.md)). Shared lighting/post, wet-road reflections, thruster glow and spray are in scope.
+    - [x] Coast by-project items with evidence (2026-11-09, branch `feature/3d-pipeline-concept-target`, HEAD `e28f9dfc`): look brief, KTX2 road tiers, close-scenery GLB in deterministic chunks, UV0/tangent/parity RED tests, eviction without duplicate draws, contact shadow, HDRI lighting, Ultra tier settings, plume, spray and Ultra blur. Details per box: Task 5 doc.
+    - [x] Coast wet road (env map + lights-only mirror, chosen by benchmark), bloom/sun per HDRI, thruster glow, GPU-synced per-tier cost and Ultra on every map (2026-11-09, 5e6bb634..HEAD). Details per box: Task 5 doc.
+    - [ ] Coast full-scene upgrade (owner, 2026-11-09: Coast is **not yet at the owner's standard**): the skyline buildings, sea surface, sky (HDRI/sky dome) and distant terrain are still the old procedural look and must be rebuilt as realistic 3D/PBR, not only the road and close scenery. Parity review and owner sign-off wait for it. Details: Task 5 doc; gap list and open owner decisions D1–D3 (buildings, bridge towers, sky source): `docs/designs/3d-pipeline/phases/coast-full-scene-gap.md`.
+    - [x] Coast by-device on one Mac (2026-11-09): every map High/Ultra p50/p95 at desktop and 844×390 viewports, 10 min sustained Coast rain at 60 fps with no thermal warning (`sustained-fps-browser.spec.js`), Roadster panels on Ultra. The parity review found the GLB Roadster washing out white in rain; fixed in 75295f87 (it now uses the softened car map). Details: Task 5 doc.
+    - [ ] Coast open items: exact-HEAD full CI and the full local browser suite on the final HEAD; real-phone captures and phone thermal run; owner sign-off on the §8.1 sheet (re-drafted with Ultra + Roadster panels in the ignored `audits/task5/parity/`).
+    - [x] Phase 3 look gated for the develop merge (owner, 2026-11-09): on develop the whole Phase 3 pass (Coast HDRI/bloom/sun, KTX2 road, scenery GLB, wet mirror, plume tail, thruster glow, spray, contact shadow, Ultra option and blur) is behind `?look=3d` (`src/look-gate.ts`), separate from and combinable with `?model=roadster`; without it every map and Settings render as develop did, and a saved Ultra stays saved. RED→GREEN `tests/look-gate.test.js` (module missing), develop-look browser specs failed on the old code (Coast GLB `attached`; Ultra option listed) → GREEN. Details: Task 5 doc.
+    - [ ] Phase 3 look default-on: deferred by the owner, as for the `?model=roadster` car; needs the full-scene upgrade, owner sign-off and its own decision.
+- [ ] **Phase 7 (spec v2 Phase 6, added 2026-11-08):** Concept hero car: the board's deep-red GT becomes a second player car on the shared simulation and port contract, with a Garage car picker, equipped-car save/Cloud Save migration, i18n and What's New. Owner gates: name, unlock rule, board licence record. Decided 2026-11-09: name **Crimson GT** (`crimson-gt`); unlock = trial + stars (threshold value and default paint still open); board is AI-generated, generator/terms to be recorded in the concept-art README, GT may be derived once terms permit it (README entry still open). [Task 7](docs/designs/3d-pipeline/phases/task-7-concept-hero-car.md).
 - [ ] **All phases:** TDD RED→GREEN, renderer version/texture and animation checks, 10-track/5-new-track matrix as available, desktop/mobile Low/Medium/High (Ultra only after profiling), memory/draw/triangle/frame-time p50/p95, real-device QA, `make verify` and exact-HEAD FULL `quality-gate`. No PR, develop/main merge, release or deployment without approval.
 - [ ] **Share links:** reconcile full content if the three ChatGPT share pages become accessible; currently cannot independently verify their full text (linked in design spec).
 

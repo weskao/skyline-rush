@@ -17,7 +17,7 @@ test('every registered CourseGraph runtime has a complete renderer palette', () 
 
 test('typed palette catalog preserves the ten existing tracks and adds the separate circuit and gated Frostbite', () => {
   assert.deepEqual(Object.keys(TRACK_PALETTES).sort(),
-    ['coast','neon','canyon','aurora','spiral','taipei','tokyo','alpine','coastal','cosmic','harbor-circuit','frostbite-canyon','dune-tempest','skyfall-archipelago'].sort());
+    ['coast','neon','canyon','aurora','spiral','taipei','tokyo','alpine','coastal','cosmic','harbor-circuit','frostbite-canyon','dune-tempest','skyfall-archipelago','stormline-megacity','volcanic-crown','monsoon-ruins'].sort());
   assert.equal(TRACK_PALETTES.coast, COAST_PALETTE);
   assert.equal(TRACK_PALETTES.neon.road, '#101c2e');
   assert.equal(TRACK_PALETTES.canyon.rail, '#ffc36f');

@@ -1,6 +1,6 @@
 # Task 0 — Mandatory user-Mac toolchain audit (execute FIRST; highest priority)
 
-Part of [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md](../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) · Spec Phase 0 · Scope tags: [README.md](README.md) (Phase 0 split); the checklists live in [../phase0-multi-device-acceptance.md](../phase0-multi-device-acceptance.md) and [../toolchain-environment-preflight.md](../toolchain-environment-preflight.md).
+Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) · Spec Phase 0 · Scope tags: [README.md](README.md) (Phase 0 split); the checklists live in [../phase0-multi-device-acceptance.md](../phase0-multi-device-acceptance.md) and [../toolchain-environment-preflight.md](../toolchain-environment-preflight.md).
 
 
 **Files:** Reference the standalone `docs/designs/3d-pipeline/phase0-multi-device-acceptance.md` plus `docs/designs/3d-pipeline/toolchain-environment-preflight.md`; save E01–E14 audit **only locally** to `docs/designs/3d-pipeline/audits/YYYY-MM-DD-<device-alias>.md` (gitignored) and update the ignored `audits/device-status.md` with non-identifying product model **only after PASS**. Public TODO.md can reference the verification procedure but must never contain device-specific outcomes or identifiers.

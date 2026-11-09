@@ -38,3 +38,20 @@ test('QA perf strip reports a device slower than 4 fps instead of treating every
     assert.match(overlay.textContent, /^FRAME p50 300.0 ms · p95 300.0 ms · /, 'a tab switch is not a frame time');
   } finally { globalThis.document = original; }
 });
+
+test('diag builds measure without ?perf but draw no strip; stats only while racing', async () => {
+  const original = globalThis.document;
+  let created = 0;
+  globalThis.document = { createElement: () => { created++; return { dataset: {} }; }, body: { appendChild: element => element } };
+  try {
+    const { latestPerf } = await import('../src/perf-overlay.ts');
+    const meter = createPerfOverlay('', () => ({ drawCalls: 42, triangles: 75000 }), true);
+    assert.ok(meter, 'record mode returns a meter');
+    assert.equal(created, 0, 'no on-screen strip covers the game without ?perf');
+    meter.record(1000, .016, true);
+    meter.record(1016.04, .016, true);
+    assert.deepEqual(latestPerf(), { p50: 16, p95: 16, fps: 62.3, seconds: 0, drawCalls: 42, triangles: 75000 });
+    meter.record(1032, .016, false);
+    assert.equal(latestPerf(), null, 'outside racing the beat carries no stale stats');
+  } finally { globalThis.document = original; }
+});

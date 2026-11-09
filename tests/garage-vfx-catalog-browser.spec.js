@@ -19,12 +19,14 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
   });
 }
 
-test('selected artwork loads its original 3x WebP at 1x CSS size', async ({ page }) => {
+test('selected artwork animates at original 3x dimensions while retaining WebP fallback', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   const ion = page.locator('[data-skin="thruster-ion"] img');
-  await expect(ion).toHaveAttribute('src', /raster\/thruster-ion@3x\.webp$/);
+  await ion.scrollIntoViewIfNeeded();
+  await expect(ion).toHaveAttribute('data-static-src', /raster\/thruster-ion@3x\.webp$/);
+  await expect(ion).toHaveAttribute('src', /garage-animated\/thruster-ion@3x\.gif$/);
   await expect(ion).toHaveAttribute('width', '96');
   await expect(ion).toHaveAttribute('height', '96');
   await expect(ion).toBeVisible();
@@ -32,24 +34,28 @@ test('selected artwork loads its original 3x WebP at 1x CSS size', async ({ page
   expect(dims).toEqual({ width: 288, height: 288 });
 });
 
-test('unavailable original WebP falls back to category SVG, without granting ownership', async ({ page }) => {
+test('unavailable GIF and original WebP fall back to category SVG, without granting ownership', async ({ page }) => {
+  await page.route('**/feature-assets/garage-animated/thruster-ion@3x.gif', route => route.abort());
   await page.route('**/feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   const ion = page.locator('[data-skin="thruster-ion"]');
+  await ion.scrollIntoViewIfNeeded(); // lazy art loads (and can fail) only once scrolled in
   await expect(ion.locator('img')).toHaveAttribute('src', /thruster\.svg$/);
   await expect(ion).toHaveAttribute('data-state', 'trial');
   await expect(page.locator('#garage-equip')).toBeDisabled();
 });
 
-test('missing both WebP and SVG shows accessible text fallback without unlocking a skin', async ({ page }) => {
+test('missing GIF, WebP and SVG shows accessible text fallback without unlocking a skin', async ({ page }) => {
+  await page.route('**/feature-assets/garage-animated/thruster-ion@3x.gif', route => route.abort());
   await page.route('**/feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', route => route.abort());
   await page.route('**/feature-assets/garage-vfx-skins/thruster.svg', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   const ion = page.locator('[data-skin="thruster-ion"]');
+  await ion.scrollIntoViewIfNeeded(); // lazy art loads (and can fail) only once scrolled in
   await expect(ion.locator('.garage-vfx-fallback')).toBeVisible();
   await expect(ion).toHaveAttribute('data-state', 'trial');
   await expect(page.locator('#garage-equip')).toBeDisabled();
@@ -126,10 +132,13 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       const img = tile.locator('img');
       await expect(img).toHaveAttribute('width', '72');
       await expect(img).toHaveAttribute('height', '72');
-      await expect(img).toHaveAttribute('src', new RegExp(`${id}@3x\\.png$`));
+      await expect(img).toHaveAttribute('data-static-src', new RegExp(`${id}@3x\\.png$`));
       const result = await tile.evaluate(async figure => {
-        const image = figure.querySelector('img');
-        if (!image?.complete) await image?.decode();
+        const displayed = figure.querySelector('img');
+        // The displayed art swaps to a palette-limited GIF once visible; audit the original PNG's alpha instead.
+        const image = new Image();
+        image.src = displayed.dataset.staticSrc;
+        await image.decode();
         const canvas = document.createElement('canvas');
         canvas.width = image.naturalWidth;
         canvas.height = image.naturalHeight;
@@ -142,7 +151,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
           minX = Math.min(minX, x); minY = Math.min(minY, y);
           maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
         }
-        const imageBox = image.getBoundingClientRect();
+        const imageBox = displayed.getBoundingClientRect();
         const frame = figure.querySelector('.garage-badge-art-frame')?.getBoundingClientRect();
         const caption = figure.querySelector('figcaption')?.getBoundingClientRect();
         return {
@@ -182,10 +191,11 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     const colors = [];
     for (const tile of await tiles.all()) {
       await tile.scrollIntoViewIfNeeded();
-      const info = await tile.evaluate(async figure => {
+      // Lazy art loads once scrolled in; poll the size, never decode() a pending src (browser-test-stability.md).
+      // Badges are a pure CSS sweep over the original art, so no GIF attaches.
+      await expect.poll(() => tile.locator('img').evaluate(img => [img.dataset.animationActive, img.naturalWidth, img.naturalHeight]), { message: 'badge 3x art decoded, no GIF' }).toEqual(['false', 216, 216]);
+      const info = await tile.evaluate(figure => {
         const img = figure.querySelector('img');
-        // Lazy art starts loading only once scrolled in; read natural size after it decodes, not before.
-        if (!img.complete || !img.naturalWidth) await img.decode();
         const frame = figure.querySelector('.garage-badge-art-frame');
         const caption = figure.querySelector('figcaption');
         const a = img.getBoundingClientRect(), b = frame.getBoundingClientRect(), c = caption.getBoundingClientRect();
@@ -310,15 +320,21 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       await tile.scrollIntoViewIfNeeded();
       await expect(tile).toHaveAttribute('data-artwork-restored', 'true');
       const image = tile.locator('img');
-      await expect(image).toHaveAttribute('src', new RegExp(`${id}@3x\\.webp$`));
+      await expect(image).toHaveAttribute('data-static-src', new RegExp(`${id}@3x\\.webp$`));
+      await expect(image).toHaveAttribute('data-animation-active', 'false');
+      await expect(tile.locator('.garage-art-sweep')).toHaveCount(1);
+      await expect(image).toHaveJSProperty('naturalWidth', 216); // lazy src loaded before decode()
       const result = await tile.evaluate(async figure => {
         const img = figure.querySelector('img');
         await img.decode();
+        const original = new Image();
+        original.src = img.dataset.staticSrc;
+        await original.decode();
         const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
+        canvas.width = original.naturalWidth;
+        canvas.height = original.naturalHeight;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(original, 0, 0);
         const rgba = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
         const bounds = { minX: canvas.width, minY: canvas.height, maxX: -1, maxY: -1 };
         for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {

@@ -35,6 +35,8 @@ export interface TrackConfig {
   rivalPace?: number;
   /** Optional per-grid-slot throttle pace gap. Normal AI keeps its usual skill unless this course needs more field separation. */
   rivalSpread?: number;
+  /** Harbor Circuit, or a new CourseGraph course ('course-graph' 1D-mapped, 'course-graph-runtime' per-car graph; `itemScale`). */
+  topology?: 'circuit' | 'course-graph' | 'course-graph-runtime';
 }
 export interface PlayerSnapshot {
   speed: number;

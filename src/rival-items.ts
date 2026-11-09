@@ -14,7 +14,7 @@ interface RingItem extends Collectible { type: string; radius: number; row?: boo
 /** What the renderer shows when a rival collects (`effects.js`). */
 export interface RivalTake { time: number; distance: number; x: number; altitude: number; kind: string }
 export interface RivalCollector { x: number; altitude: number; distance: number; nitro: number; itemTakes: number; lastTake: RivalTake | null }
-interface CollectRace { trackId: string; elapsed: number; config: { difficulty?: string }; pickups: PickupItem[]; rings: RingItem[] }
+interface CollectRace { trackId: string; elapsed: number; config: { difficulty?: string }; pickups: PickupItem[]; rings: RingItem[]; course?: unknown }
 
 /** The rivals' skill level: the race's difficulty, except Easy and Normal on an opening map (user, 2026-11-07) are 'intro'. */
 export function rivalLevel(race: { trackId: string; config: { difficulty?: string } }): string {
@@ -29,7 +29,7 @@ function firstAfter(items: readonly Collectible[], d: number): number {
   while (lo < hi) { const mid = (lo + hi) >> 1; if (items[mid]!.distance <= d) lo = mid + 1; else hi = mid; }
   return lo;
 }
-function take(race: CollectRace, rival: RivalCollector, item: Collectible, amount: number, kind: string): void {
+function take(race: Pick<CollectRace, 'elapsed'>, rival: RivalCollector, item: Collectible, amount: number, kind: string): void {
   item.downUntil = race.elapsed + ITEM_RESPAWN;
   rival.nitro = Math.min(NITRO_MAX, rival.nitro + amount); // the player's cap
   rival.itemTakes++;
@@ -39,20 +39,30 @@ function take(race: CollectRace, rival: RivalCollector, item: Collectible, amoun
 // A rival takes the NITRO rings (nitro, risk) and pickups (not the overcharge) it crosses this step, with the
 // player's boxes: pickups within 1.7 m sideways and 1.8 m in height, rings inside their radius. Takes are
 // shared: the item is gone for every car until it respawns.
+// A graph course (race.course) sweeps per edge instead: course-race-step.ts calls rivalTakes.
 export function rivalCollects(race: CollectRace, rival: RivalCollector, before: number): void {
-  const altitude = rival.altitude || 0;
-  for (let i = firstAfter(race.pickups, before); i < race.pickups.length && race.pickups[i]!.distance <= rival.distance; i++) {
-    const p = race.pickups[i]!, amount = p.tier === 'overcharge' || p.catchUp ? 0 : NITRO_PICKUPS[p.tier] ?? 0; // catch-up items are the player's
-    if (amount && !gone(p, race.elapsed) && Math.abs(p.x - rival.x) < 1.7 && Math.abs(p.altitude - altitude) < 1.8) take(race, rival, p, amount, p.tier);
-  }
+  if (race.course) return;
+  for (let i = firstAfter(race.pickups, before); i < race.pickups.length && race.pickups[i]!.distance <= rival.distance; i++) rivalTakes(race, rival, race.pickups[i]!, false);
   let rowTaken = NaN; // a full-width ring row pays once per car
   for (let i = firstAfter(race.rings, before); i < race.rings.length && race.rings[i]!.distance <= rival.distance; i++) {
-    const r = race.rings[i]!, amount = r.catchUp ? 0 : RING_NITRO[r.type] ?? 0;
-    if (amount && !gone(r, race.elapsed) && !(r.row && r.distance === rowTaken) && Math.hypot(r.x - rival.x, r.altitude - altitude) < r.radius) {
-      take(race, rival, r, amount, r.type);
-      if (r.row) rowTaken = r.distance;
-    }
+    const r = race.rings[i]!;
+    if (!(r.row && r.distance === rowTaken) && rivalTakes(race, rival, r, true) && r.row) rowTaken = r.distance;
   }
+}
+/** One item a rival's step crossed: taken (shared, respawning) when it pays NITRO, is up and inside the player's box. */
+export type TakeItem = PickupItem | RingItem;
+export function rivalTakes(race: Pick<CollectRace, 'elapsed'>, rival: RivalCollector, item: TakeItem, ring: boolean): boolean {
+  const altitude = rival.altitude || 0;
+  if (ring) {
+    const r = item as RingItem, amount = r.catchUp ? 0 : RING_NITRO[r.type] ?? 0;
+    if (!amount || gone(r, race.elapsed) || !(Math.hypot(r.x - rival.x, r.altitude - altitude) < r.radius)) return false;
+    take(race, rival, r, amount, r.type);
+    return true;
+  }
+  const p = item as PickupItem, amount = p.tier === 'overcharge' || p.catchUp ? 0 : NITRO_PICKUPS[p.tier] ?? 0; // catch-up items are the player's
+  if (!amount || gone(p, race.elapsed) || !(Math.abs(p.x - rival.x) < 1.7 && Math.abs(p.altitude - altitude) < 1.8)) return false;
+  take(race, rival, p, amount, p.tier);
+  return true;
 }
 
 // Rival NITRO timing by personality (rival-driver.ts adds race sense on Normal and Hard). Like the player, a rival
@@ -85,6 +95,7 @@ function nextWanted<T extends Collectible>(items: readonly T[], rival: Seeker, n
 }
 export function rivalSeek(race: CollectRace, rival: Seeker): void {
   rival.seekX = undefined;
+  if (race.course) return; // shortcut: graph rivals take what their line crosses; seeking needs per-edge look-ahead
   const seek = RIVAL_SEEK[rivalLevel(race)] ?? RIVAL_SEEK.normal!;
   const pickup = nextWanted(race.pickups, rival, race.elapsed, seek, (p, alt) => p.tier !== 'overcharge' && !!NITRO_PICKUPS[p.tier] && Math.abs(p.altitude - alt) < 1.8);
   // A full-width ring row is already on every lane: no lane change for it.

@@ -3,6 +3,7 @@ import { RACE_DRIVER_IDS } from './race-grid.ts';
 import { MAGNET_RANGE } from './game.js';
 import { createMarkerPool } from './marker-pool.js';
 import { createRivalCues } from './rival-cues.ts';
+import { isRaining, racePreset, sprayRate } from './board-effects.ts';
 
 // Shared by all car models and their wakes: every thrust stream starts at its actual port.
 export const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]];
@@ -114,10 +115,20 @@ export function createEffects(scene, roadCenter) {
   for (let i = 0; i < 7; i++) beams.add(new THREE.Mesh(beamGeometry, beamMaterial));
   scene.add(beams);
   const pickupSizes = { cell: 0.28, can: 0.48, tank: 0.7, overcharge: 0.95 };
-  let previousRace = null, seen = new WeakSet(), driftEmission = 0;
+  let previousRace = null, seen = new WeakSet(), driftEmission = 0, sprayEmission = 0, spraySide = 1;
   function emit(x, y, distance, vx, vy, forward, size, life, color, gravity, kind = 0, opacity = 0.85, radialX = Math.sign(vx)) {
     Object.assign(particles[cursor], { x, y, distance, vx, vy, forward, size, life, maxLife: life, color, gravity, kind, opacity, radialX, grounded: false, phase: cursor * 2.39996 });
     cursor = (cursor + 1) % COUNT;
+  }
+  const wheel = { x: 0, d: 0 };
+  // Rear-wheel contact in world x / race distance: drift smoke and rain spray start here.
+  function rearWheel(side, car, center, distance, vehicles) {
+    nozzlePosition.set(side * 1.05, 0.12, 1.45);
+    const pose = vehicles?.[0];
+    if (pose) { pose.updateWorldMatrix(true, false); nozzlePosition.applyMatrix4(pose.matrixWorld); }
+    else nozzlePosition.x += roadCenter(car.distance) + car.x - center;
+    wheel.x = nozzlePosition.x + center; wheel.d = distance - nozzlePosition.z;
+    return wheel;
   }
   function burst(event, count, color, carSpeed, landing = false) {
     const x = roadCenter(event.distance) + event.x;
@@ -174,7 +185,7 @@ export function createEffects(scene, roadCenter) {
           if (collected || item.downUntil > race.elapsed || item.distance <= distance || item.distance > distance + 900) continue; // gone until it respawns
           const mesh = marker;
           if (options.worldPoint) mesh.position.fromArray(options.worldPoint(item.distance, item.x,
-            item.altitude + (source === 0 ? 0.85 : 0), distance));
+            item.altitude + (source === 0 ? 0.85 : 0), distance, item));
           else mesh.position.set(roadCenter(item.distance) + item.x - center,
             item.altitude + (source === 0 ? 0.85 : 0), -(item.distance - distance));
           if (source === 1 && options.worldFrame) {
@@ -182,7 +193,7 @@ export function createEffects(scene, roadCenter) {
             // (a new race brings new gate objects; the WeakMap lets old ones go).
             let facing = gateFrames.get(item);
             if (!facing || item.spin) { // a spinning hoop re-bases before its swivel
-              const frame = options.worldFrame(item.distance);
+              const frame = options.worldFrame(item.distance, item);
               if (!facing) gateFrames.set(item, facing = new THREE.Quaternion());
               facing.setFromRotationMatrix(gateBasis.makeBasis(gateRight.fromArray(frame.right), gateUp.fromArray(frame.up), gateBack.fromArray(frame.forward).negate()));
             }
@@ -212,17 +223,20 @@ export function createEffects(scene, roadCenter) {
         driftEmission = Math.min(8, driftEmission + dt * (lowQuality ? 16 : 60));
         while (driftEmission >= 1) {
           const side = Math.floor(driftEmission) % 2 ? -1 : 1;
-          nozzlePosition.set(side * 1.05, 0.12, 1.45);
-          const pose = vehicles?.[0];
-          if (pose) { pose.updateWorldMatrix(true, false); nozzlePosition.applyMatrix4(pose.matrixWorld); }
-          else nozzlePosition.x += roadCenter(car.distance) + car.x - center;
-          const x = nozzlePosition.x + center, d = distance - nozzlePosition.z;
+          const { x, d } = rearWheel(side, car, center, distance, vehicles);
           emit(x, 0.12, d, side * 1.5, 0.8, car.speed * 0.25, 0.55, 0.5, mist, 0, 2, 0.3);
           if (car.drift.time >= 1) emit(x, 0.15, d, side * (2 + Math.random() * 3), 1.5, car.speed * 0.3,
             0.12, 0.4, car.drift.time >= 3 ? purple : car.drift.time >= 2 ? orange : blue, 6);
           driftEmission--;
         }
       } else driftEmission = 0;
+      // Board panel 5: wet tyres throw a mist off both rear wheels (pooled particles, Medium+ only).
+      const spraying = active && !reducedMotion && car.altitude < 0.2 && isRaining(racePreset(race), race.trackId);
+      sprayEmission = spraying ? Math.min(4, sprayEmission + dt * sprayRate(options.quality ?? 'high', car.speed)) : 0;
+      for (; sprayEmission >= 1; sprayEmission--) {
+        const { x, d } = rearWheel(spraySide = -spraySide, car, center, distance, vehicles);
+        emit(x, 0.1, d, spraySide * (0.6 + Math.random()), 1.2 + Math.random(), car.speed * 0.88, 0.7, 0.5, mist, 3, 2, 0.35); // ~0.88: hangs a few metres behind the tyres
+      }
       if (car.impact !== lastImpact) {
         lastImpact = car.impact;
         if (lastImpact && active) { burst(lastImpact, 95, orange, car.speed); rings[0].userData.event = lastImpact; }
@@ -367,7 +381,7 @@ export function createEffects(scene, roadCenter) {
       rings.forEach(ring => { ring.userData.event = null; ring.visible = false; });
       magnetRing.visible = false;
       lastImpact = lastLanding = lastShieldBlock = null;
-      seen = new WeakSet(); previousRace = null; driftEmission = 0;
+      seen = new WeakSet(); previousRace = null; driftEmission = sprayEmission = 0;
       cursor = 0;
       emissions.fill(0); strengths.fill(0); nozzles.fill(0);
       cores.children.forEach(jet => { jet.visible = false; });

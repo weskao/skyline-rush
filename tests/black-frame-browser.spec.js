@@ -35,7 +35,7 @@ const expectClean = async (page, phase) => {
   expect(stats, phase).toEqual({ frames: stats.frames, scene: 0, bloom: 0 });
 };
 
-test('no NaN pixel reaches the bloom through the airflow showcase, nitro and its fade-out', async ({ gameplayPage: page }) => {
+const noNaN = async ({ gameplayPage: page }) => {
   await page.evaluate(() => document.fonts.ready);
   await watch(page);
   for (let i = 0; i < 4; i++) { await page.keyboard.press('v'); await page.waitForTimeout(400); }
@@ -50,4 +50,14 @@ test('no NaN pixel reaches the bloom through the airflow showcase, nitro and its
   await expectClean(page, 'nitro');
   await page.waitForTimeout(1500);
   await expectClean(page, 'nitro fade-out');
+  // Task 5: the wet road (puddle mask, flattened normals) and rain wheel spray.
+  await page.evaluate(() => { const race = window.gameplay.race; race.mode = 'free'; race.session = { ...race.session, presentation: { visualPreset: 'rain' } }; race.player.speed = 90; });
+  await page.waitForTimeout(ciTimeout(1500));
+  await expectClean(page, 'rain spray and wet road');
+};
+
+test('no NaN pixel reaches the bloom through the airflow showcase, nitro and its fade-out', noNaN);
+test.describe('?look=3d', () => {
+  test.use({ gameplaySearch: '?look=3d' }); // the Phase 3 look (src/look-gate.ts): HDRI grade, wet road, spray, plume tail
+  test('no NaN pixel reaches the bloom with the Phase 3 look', noNaN);
 });

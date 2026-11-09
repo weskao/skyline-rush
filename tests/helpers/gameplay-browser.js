@@ -29,9 +29,11 @@ export const test = base.extend({
       await use(server.resolvedUrls.local[0]);
     } finally { await server.close(); }
   }, { scope: 'worker' }],
-  gameplayPage: async ({ page, gameplayURL }, use) => {
+  // `?look=3d` (src/look-gate.ts): `test.use({ gameplaySearch: '?look=3d' })` opens the Phase 3 look; '' is the develop look.
+  gameplaySearch: ['', { option: true }],
+  gameplayPage: async ({ page, gameplayURL, gameplaySearch }, use) => {
     await captureHooks(page);
-    await page.goto(gameplayURL);
+    await page.goto(`${gameplayURL}${gameplaySearch}`);
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
     await use(page);
   },

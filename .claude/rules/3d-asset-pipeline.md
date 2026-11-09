@@ -14,7 +14,7 @@ paths:
 # AI and Blender 3D asset pipeline (planning rule)
 
 Before any Blender asset, GLB import, texture, loader, compression or asset pipeline work:
-1. Read docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md and the corresponding implementation plan and local toolchain preflight.
+1. Read docs/superpowers/specs/3d-visual-fidelity-pipeline-design-v2.md and the corresponding implementation plan and local toolchain preflight.
 2. Execute Phase 0 environment checks on the actual Mac and record PASS/FAIL/NOT VERIFIED. Owner reports tools installed; this does NOT establish live Blender MCP transport or loaded global Skills. If environment is unavailable, give owner commands; do not invent a result.
 3. Run all Skills/MCP setup from the project root: Three.js Skills to `~/.claude/skills` (shared `~/.claude` repo), `blender-image-to-3d` and Blender MCP in project scope (`.mcp.json`, `.codex/config.toml`), never user-scope MCP. Per-device state (`~/.claude.json` approvals, Blender, `uv`) is redone on each machine — see docs/designs/3d-pipeline/phases/README.md. Never copy user config or credentials to this repository. Respect Claude/Codex scope differences and source audit.
 4. Until Three.js is tested at r186.1, installed r180 APIs take priority over r186-targeted Skill examples. Then follow the r180→r186 migration plan. Do not implicitly replace WebGLRenderer with WebGPURenderer/TSL.
