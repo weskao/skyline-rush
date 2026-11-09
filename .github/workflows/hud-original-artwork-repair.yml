@@ -25,12 +25,12 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install --disable-pip-version-check pillow==11.3.0
-      - name: Source-style artifact regression tests
-        run: python -m unittest discover -s tests -p test_hud_original_art_repair.py -v
       - name: Regenerate existing files from pinned pre-redesign originals
         run: |
           python scripts/repair-hud-original-art.py
           python scripts/repair-hud-original-art.py --check
+      - name: Verify source-style artifact regression after regeneration
+        run: python -m unittest discover -s tests -p test_hud_original_art_repair.py -v
       - name: Validate source and module regression
         run: |
           node --test tests/hud-original-artwork-regression.test.js
