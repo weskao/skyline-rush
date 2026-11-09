@@ -61,8 +61,7 @@ const rotation = new THREE.Quaternion();
 const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
-const framedRoad = (id, endless = false) => TOUR_IDS.has(id) || id === CIRCUIT_ID ||
-  (!endless && (id === FROSTBITE_ID || MEASURED_COURSE_IDS.has(id) || isCourseRuntime(id)));
+const framedRoad = (id, endless = false) => TOUR_IDS.has(id) || id === CIRCUIT_ID || (!endless && (id === FROSTBITE_ID || MEASURED_COURSE_IDS.has(id) || isCourseRuntime(id)));
 function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
   position.set(x, y, z);
   scale.set(sx, sy, sz);
