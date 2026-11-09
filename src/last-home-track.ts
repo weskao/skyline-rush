@@ -9,6 +9,26 @@ export function lastHomeTrack(): string | null {
   return last;
 }
 
+const RACED_PARAM = 'raced';
+
+/** Back to home loads a new document. The raced course rides on that one navigation. */
+export function backHomeHref(trackId: string): string {
+  return `./?${RACED_PARAM}=${encodeURIComponent(trackId)}`;
+}
+
+export function bootHomeTrack(search: string, fallback: string, canPlay: (id: string) => boolean): string {
+  const raced = new URLSearchParams(search).get(RACED_PARAM);
+  return raced && canPlay(raced) ? raced : fallback;
+}
+
+/** Drop the one-shot param so the next reload opens the fallback course. */
+export function withoutRacedQuery(search: string): string {
+  const params = new URLSearchParams(search);
+  params.delete(RACED_PARAM);
+  const rest = params.toString();
+  return rest ? `?${rest}` : '';
+}
+
 export function restoreHomeTrack(
   remembered: string | null,
   fallback: string,

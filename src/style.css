@@ -1884,7 +1884,6 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 .intro .track-select button.upcoming-track-card { border-color: rgb(123 215 241 / .42); }
 .intro .track-select button.upcoming-track-card[aria-pressed="true"] { border-color: #a3eaff; box-shadow: inset 0 0 0 1px #a3eaff, 0 7px 27px rgb(71 179 239 / .22); }
 .upcoming-track-card .upcoming-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.upcoming-track-card .upcoming-route-image { display: block; width: 100%; height: 100%; object-fit: contain; opacity: .9; }
 .intro .track-select button.upcoming-track-card small { color: #a3eaff; font-weight: 700; }
 .intro #start-button { width: 236px; min-width: 236px; max-width: 236px; gap: 8px; }
 .intro #start-button > span { letter-spacing: .06em; }
@@ -1895,6 +1894,22 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 @media (max-height: 500px) {
   .upcoming-scene img { top: 8%; right: 2%; width: min(51vw, 520px); opacity: .5; }
   .intro #start-button { width: 190px; min-width: 190px; max-width: 190px; }
+}
+/* Coming Soon course minimaps. Without --map-line the theme rule clears the default stroke and the course disappears. */
+.track-route-map[data-theme="dune-tempest"],.race-route-map[data-theme="dune-tempest"]{
+ --map-line:#e6c39a;--map-bg:#3a2c22;--map-edge:#a68462;--map-player:#fff1d4;
+}
+.track-route-map[data-theme="monsoon-ruins"],.race-route-map[data-theme="monsoon-ruins"]{
+ --map-line:#b7e2cf;--map-bg:#1a3330;--map-edge:#5e9a86;--map-player:#f3fff6;
+}
+.track-route-map[data-theme="skyfall-archipelago"],.race-route-map[data-theme="skyfall-archipelago"]{
+ --map-line:#c5dff5;--map-bg:#1a2c48;--map-edge:#6f93b8;--map-player:#f4fbff;
+}
+.track-route-map[data-theme="volcanic-crown"],.race-route-map[data-theme="volcanic-crown"]{
+ --map-line:#e7c2a4;--map-bg:#3a241f;--map-edge:#a86a52;--map-player:#fff0dc;
+}
+.track-route-map[data-theme="stormline-megacity"],.race-route-map[data-theme="stormline-megacity"]{
+ --map-line:#c9c4e4;--map-bg:#241c3a;--map-edge:#7d74a8;--map-player:#f6f2ff;
 }
 /* Frostbite Canyon (gated race runtime): night-ice minimap, appended below the main-UI contract slice. */
 .track-route-map[data-theme="frostbite-canyon"],.race-route-map[data-theme="frostbite-canyon"]{
@@ -1990,7 +2005,6 @@ body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* 
 .intro .track-select button.upcoming-track-card { border-color: rgb(123 215 241 / .42); }
 .intro .track-select button.upcoming-track-card[aria-pressed="true"] { border-color: #a3eaff; box-shadow: inset 0 0 0 1px #a3eaff, 0 7px 27px rgb(71 179 239 / .22); }
 .upcoming-track-card .upcoming-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.upcoming-track-card .upcoming-route-image { display: block; width: 100%; height: 100%; object-fit: contain; opacity: .9; }
 .intro .track-select button.upcoming-track-card small { color: #a3eaff; font-weight: 700; }
 .intro #start-button { width: 236px; min-width: 236px; max-width: 236px; gap: 8px; }
 .intro #start-button > span { letter-spacing: .06em; }

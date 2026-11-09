@@ -16,7 +16,7 @@ import { setupEventLabUI } from './event-lab-ui.ts';
 import type { GhostRun } from './ghost.ts';
 import { racePresentationFor, updateRaceSetup } from './race-presentation-ui.ts';
 import type { VisualPreset } from './race-session.ts';
-import { lastHomeTrack, rememberLastHomeTrack, restoreHomeTrack } from './last-home-track.ts';
+import { backHomeHref, bootHomeTrack, lastHomeTrack, rememberLastHomeTrack, restoreHomeTrack, withoutRacedQuery } from './last-home-track.ts';
 
 // The simulation race comes from plain-JS game.js; this screen reads its selection fields only.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,6 +70,15 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
 
   let raceRouteMap: RouteMap | undefined;
   const trackRouteMaps = new Map<string, RouteMap>();
+  function mountRouteMap(id: string): void {
+    if (trackRouteMaps.has(id)) return;
+    const slot = document.querySelector<HTMLElement>(`[data-upcoming-track="${id}"] .track-route-map`);
+    if (!slot) return;
+    const map = createRouteMap(id);
+    slot.replaceChildren(map.element);
+    slot.dataset.theme = id;
+    trackRouteMaps.set(id, map);
+  }
   function ensureRouteMaps(): void {
     const race = getRace();
     for (const button of trackButtons()) {
@@ -78,6 +87,9 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       button.querySelector('.track-route-map')!.append(map.element);
       button.querySelector<HTMLElement>('.track-route-map')!.dataset.theme = button.dataset.track;
       trackRouteMaps.set(button.dataset.track!, map);
+    }
+    for (const button of upcomingButtons()) {
+      mountRouteMap(button.dataset.upcomingTrack!);
     }
     if (!raceRouteMap || raceRouteMap.trackId !== race.trackId) {
       raceRouteMap?.destroy();
@@ -302,12 +314,16 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     changeRaceSelection();
   });
   // The tab remembers the last raced mode. The last picker course stays in memory for this page load.
+  // Back to home is a new document: the raced course is a one-shot query, then removed so a later reload stays on Coast.
   try {
     const mode = sessionStorage.getItem(LAST_MODE_KEY);
     if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
-    setRace(selectedRace(getRace().trackId));
-  } catch { /* Classic on Coast stays the default without storage. */ }
-  upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
+  } catch { /* Classic stays the default without storage. */ }
+  const search = location.search;
+  setRace(selectedRace(bootHomeTrack(search, getRace().trackId, playable)));
+  const cleaned = withoutRacedQuery(search);
+  if (cleaned !== search) history.replaceState(history.state, '', `${location.pathname}${cleaned}${location.hash}`);
+  upcomingSelection = stage2PreviewRequest(search)?.id ?? null;
   if (upcomingSelection) requestAnimationFrame(showTracks); // the shared WebGL world exists only after bootstrap
 
   // Card previews animate only while scrolled into view.
@@ -315,6 +331,10 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     for (const entry of entries) (entry.target as HTMLElement).dataset.visible = String(entry.isIntersecting);
   }, { root: $('.track-select') });
   document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
+  const leaveHome = $<HTMLAnchorElement>('#leave-home');
+  const pointHomeAtRace = (): void => { leaveHome.href = backHomeHref(getRace().trackId); };
+  $('#leave-screen').addEventListener('toggle', pointHomeAtRace);
+  leaveHome.addEventListener('click', pointHomeAtRace);
 
   return {
     recreate: eventLab.recreate,

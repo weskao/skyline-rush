@@ -1,3 +1,12 @@
+## 2026-11-09 — Back to home reopens on the raced course (`develop` CI)
+
+User-visible: Back to home (the reload from the leave dialog) opens the course that was just raced, centred in the row. A later reload, with no `raced` query, still starts on Coast. Choose track still restores the in-memory picker. `skyline-rush-last-track` is still not written. No new audio: the page unloads. The link is plain DOM, same at every quality tier.
+
+- [x] Root cause: `#leave-home` is `href="./"`, a new document. `101e7e68` stopped writing `skyline-rush-last-track`, so the in-memory picker died on that reload and the card stayed `aria-pressed="false"` (CI run 42621778779, browser shards 2 and 8, desktop and phone).
+- [x] RED: `tests/last-home-track.test.js` — `backHomeHref('taipei')` was `./`, expected `./?raced=taipei`.
+- [x] GREEN: `bootHomeTrack` reads that one query; the leave link points at it when the leave dialog opens; `withoutRacedQuery` removes it. `PLAYWRIGHT_PORT=5411` `home-track-focus-browser` desktop and phone, plus `last-home-track-browser` and `leave-race-browser`: 12 passed.
+- [x] `npm test` 2504 pass / 0 fail / 3 skipped; `npm run typecheck` OK; `npm run build` OK; `node --test tests/module-size.test.js` 3/3. `src/race-select-ui.ts` 372 lines. Exact-HEAD CI after push.
+
 ## 2026-11-09 — Last home-page 賽道 stays in memory (`develop`)
 
 User-visible: picking a course on Home (playable or Coming Soon), then leaving via Daily / a race and returning with Choose track, restores that card. Reload starts on Coast. The course is a JS variable for this page load; never `localStorage` or `sessionStorage` (`skyline-rush-last-track` is no longer written). Last mode still uses sessionStorage.
