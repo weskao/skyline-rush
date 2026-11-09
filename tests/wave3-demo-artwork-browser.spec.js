@@ -86,7 +86,7 @@ for (const viewport of screens) for (const locale of ['en', 'zh-TW']) {
       });
       expect(below, id + ': trophy caption must remain below image').toBe(true);
     }
-    await test.info().attach('baseline-missions-trophies-' +
+    await test.info().attach('store-icons-safe-3x-wave3-missions-' +
       viewport.width + 'x' + viewport.height + '-' + locale + '.png', {
       body: await board.screenshot(), contentType: 'image/png',
     });
@@ -98,7 +98,7 @@ for (const viewport of screens) for (const locale of ['en', 'zh-TW']) {
       await checkStoreTile(store.locator('[data-wave3-asset="' + id + '"]'), id);
     }
     await expect(store.locator('[data-store-purchase-disabled]')).toBeDisabled();
-    await test.info().attach('baseline-store-' +
+    await test.info().attach('store-icons-safe-3x-wave3-store-' +
       viewport.width + 'x' + viewport.height + '-' + locale + '.png', {
       body: await store.screenshot(), contentType: 'image/png',
     });
@@ -173,7 +173,7 @@ test('reduced motion retains static art and VFX-Off hides the CSS sweep', async 
   const tagSweep = store.locator('[data-wave3-asset="store-tag"] .garage-art-sweep');
   await page.evaluate(() => { document.body.dataset.vfxEnabled = 'false'; });
   await expect.poll(() => tagSweep.evaluate(el => getComputedStyle(el).display)).toBe('none');
-  await test.info().attach('baseline-reduced-motion-vfx-off.png', {
+  await test.info().attach('store-icons-safe-3x-wave3-reduced-motion-vfx-off.png', {
     body: await store.screenshot(), contentType: 'image/png',
   });
 });
