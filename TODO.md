@@ -7,16 +7,6 @@ User-visible: Back to home (the reload from the leave dialog) opens the course t
 - [x] GREEN: `bootHomeTrack` reads that one query; the leave link points at it when the leave dialog opens; `withoutRacedQuery` removes it. `PLAYWRIGHT_PORT=5411` `home-track-focus-browser` desktop and phone, plus `last-home-track-browser` and `leave-race-browser`: 12 passed.
 - [x] `npm test` 2504 pass / 0 fail / 3 skipped; `npm run typecheck` OK; `npm run build` OK; `node --test tests/module-size.test.js` 3/3. `src/race-select-ui.ts` 372 lines. Exact-HEAD CI after push.
 
-## 2026-11-09 — Coming Soon course minimaps
-
-User-visible: the six Coming Soon cards and the in-race map draw that course's real route, including branches. In a dev-unlocked race the eight racers (you and seven rivals) move on that map, and a car on a branch stays on that branch.
-
-- [x] Root cause: `createRouteMap` projected only `COURSE_RUNTIMES` (Dune, Skyfall). Monsoon, Volcanic, Stormline and Frostbite fell through to a single ground polyline. Cards showed the concept poster SVG. Racers without graph travel were placed on the classic sine overview, off the drawn course. Five courses had no `--map-line`.
-- [x] RED: `tests/route-map.test.js` — Monsoon drew 0 edges (expected 16); Dune YOU sat at `83.04` instead of the course `62.82`; Dune had no map theme.
-- [x] GREEN: `src/course-minimap.ts` shares each playable graph; `src/route-map.ts` draws every edge and places racers with `groundAt` or course travel; card slot in `src/App.vue` / `src/race-select-ui.ts`; themes in `src/style.css`.
-- [x] Gates: `node --test tests/route-map.test.js tests/coming-soon-release.test.js tests/module-size.test.js tests/browser-timeouts.test.js` pass. `npm run typecheck` OK. `npm run build` OK. Node step of all six races: 8/8 markers moved. Playwright `PLAYWRIGHT_PORT=5413` `upcoming-home-browser` + `coming-soon-minimap-browser`: 13 passed (each course's race map moved all eight racers; home cards stay Coming Soon and show the course).
-- [ ] `npm test` full suite not re-run. Exact-HEAD remote CI not run. No merge or deploy.
-
 ## 2026-11-09 — Last home-page 賽道 stays in memory (`develop`)
 
 User-visible: picking a course on Home (playable or Coming Soon), then leaving via Daily / a race and returning with Choose track, restores that card. Reload starts on Coast. The course is a JS variable for this page load; never `localStorage` or `sessionStorage` (`skyline-rush-last-track` is no longer written). Last mode still uses sessionStorage.
