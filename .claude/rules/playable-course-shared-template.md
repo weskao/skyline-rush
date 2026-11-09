@@ -137,3 +137,19 @@ and the map's source handoff/plan. Honor stricter scoped rules as well.
   WebGL screenshots for car/road contact, cockpit silhouette, takeoff/
   landing, camera composition and artwork matching. Skipped/pending,
   isolated or old-SHA tests never count as final acceptance.
+
+## New long-form tracks: concept art → real WebGL acceptance
+
+- The ten **proposed** multi-route tracks are point-to-point with distinct START and FINISH;
+  no laps. Before implementing one, read `docs/designs/new-tracks/visual-acceptance-gate.md`,
+  its two JPEG references, its route SVG, `.claude/rules/track-showcase.md` and
+  `.claude/rules/vehicle-road-stability.md`.
+- Capture repeatable **real WebGL** ground and aerial route frames; compare landmark, terrain,
+  vehicle scale, weather, branch/landing and visibility, and record deviations. Concept
+  illustrations and upscaled Stage-2 JPEGs are not 3D renders or true 3× in-game textures.
+- Visual acceptance is complete only with screenshot evidence, functional tests, performance
+  review and explicit PASS / FAIL / APPROVED DEVIATION records.
+- CourseGraph geometry tests compare equivalent **physical arc-length** fractions, never equal
+  fractions of an authored scalar parameter. Float-derived bank/frame values get tight explicit
+  tolerances, not strict equality across expression orders. Never round or quantize production
+  metres, coordinates, road contact, signed checkpoints, collisions or flight gaps.
