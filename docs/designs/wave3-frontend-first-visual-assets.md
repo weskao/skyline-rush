@@ -91,3 +91,17 @@ Export equal-size RGBA sheet cells first; **each cell** is already the full 3× 
 5. Record in `TODO.md` and the master-plan evidence ledger: asset ID, source SHA, generated file SHA, prompt version, source vs rendered preview path, test output, actual WebGL screenshots, reviewer PASS/FAIL, issues. Leave acceptance unchecked if any reference, test or real visual verification was not observed.
 
 **Explicit current result:** only the plan, prompts, sizes and acceptance gates are authored; **no images are generated, changed or shipped by this documentation branch**.
+
+
+## 7. A-03 / A-04 produced image filenames and implementation handoff (2026-11-10)
+
+The user's first two new Wave 3 visual assets have been generated as standalone transparent RGBA images (not a sprite sheet). The filenames below are **canonical**; use them without renaming. This is an **asset handoff only**, not confirmation of working backend-free reward flows or a deployed Store. The demo wording remains mandatory; images alone must never imply real/verified balance or ownership.
+
+| ID | Asset role | Required runtime filename and repo path | PNG counterpart | Native → CSS | Intended integration point |
+| --- | --- | --- | --- | --- | --- |
+| A-03 | Demo Points energy chip (試玩點數) | `public/feature-assets/wave3-demo/raster/demo-points@3x.webp` | `demo-points@3x.png` | 216×216 RGBA → 72×72 CSS px | Local-only demo points display in Garage, mission rewards, Results and demo Store; **not** real currency |
+| A-04 | Local demo mission claim capsule (試玩領取) | `public/feature-assets/wave3-demo/raster/demo-claim@3x.webp` | `demo-claim@3x.png` | 216×216 RGBA → 72×72 CSS px | Claim-ready / completed **local demo** mission-reward presentation; actual claim state comes from local demo adapter |
+
+**Consumer contract:** reference the stable runtime path with `import.meta.env.BASE_URL`; use an `<img>` with `object-fit: contain`, ≥8 CSS px frame padding, and localized text/status from Vue **outside** the image. Do not render new currency amounts, entitlement decisions, claim flags or payments inside artwork. Both raster sources are static, so Reduced Motion uses the same WebP; no GIF needed. If WebP cannot decode, use the sibling transparent PNG after it is published. A-05 (`demo-collection-empty@3x.webp`) and A-06 (`demo-results-banner@3x.webp`) remain **optional, not produced**.
+
+**Rollout / provenance:** these image filenames are reserved for the user-approved A-03 / A-04 art. Before marking A01/A02 complete, check the physical files exist at the exact paths on this branch, validate 216×216 RGBA and a ≥20-pixel alpha safety inset, verify previews at 72×72 CSS against dark/light/saturated cards, and record runtime screenshots and human visual approval. Existing mission/trophy, Store and VFX assets must remain unchanged until individually reviewed. This documentation update alone is not evidence that the binary files or runtime UI have been integrated.
