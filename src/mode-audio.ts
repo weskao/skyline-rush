@@ -23,7 +23,14 @@ export interface ModeAudioState {
   trickPayout?: { hard?: boolean } | null;
 }
 // Pure mode-specific sound events: one-shot transitions, no Web Audio dependencies.
-const COURSE_MUSIC: Record<string, string> = {spiral:'spiral',neon:'neon',canyon:'canyon',aurora:'aurora',taipei:'taipei',tokyo:'tokyo',alpine:'alpine',coastal:'coastal',cosmic:'cosmic'};
+// Coast keeps the original `race` loop. Every other course id names its own song.
+const COURSE_MUSIC: Record<string, string> = {
+  coast: 'race', spiral: 'spiral', neon: 'neon', canyon: 'canyon', aurora: 'aurora',
+  taipei: 'taipei', tokyo: 'tokyo', alpine: 'alpine', coastal: 'coastal', cosmic: 'cosmic',
+  'dune-tempest': 'dune-tempest', 'monsoon-ruins': 'monsoon-ruins', 'skyfall-archipelago': 'skyfall-archipelago',
+  'volcanic-crown': 'volcanic-crown', 'stormline-megacity': 'stormline-megacity', 'frostbite-canyon': 'frostbite-canyon',
+  'harbor-circuit': 'harbor-circuit',
+};
 const MODE_MUSIC: Record<string, string> = {checkpoint:'checkpoint',stunt:'stunt',gauntlet:'gauntlet',cup:'cup',free:'cruise',endless:'cruise',elimination:'gauntlet'};
 export const musicForMode = (race: ModeAudioRace): string => ['ready','finished'].includes(race.phase) ? 'intro' : MODE_MUSIC[race.mode] || COURSE_MUSIC[race.trackId] || 'race';
 
