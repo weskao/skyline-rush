@@ -95,8 +95,8 @@ test('Dune and Skyfall AIRFLOW ground/hover poses clear the road and show the sa
       const island = scene.getObjectByName('Skyfall island 1');
       const grass = island.children.find(child => child.geometry?.type === 'CylinderGeometry');
       const top = island.position.y + grass.position.y + grass.geometry.parameters.height / 2;
-      assert.ok(Math.abs(top - road.point.y) < 0.12,
-        'Skyfall start island grass must meet the road so the car does not appear to float over the island');
+      assert.ok(top <= road.point.y - .12 && top > road.point.y - .2,
+        'Skyfall grass stays below the undulating road without leaving a visible gap');
     }
     showcase.update(camera, 3, { quality: 'high', view: 'drive', enabled: true, airflow: false }, false);
     assert.ok(Math.abs(cars[0].position.y - road.point.y - 1.6 - Math.sin(3 * 1.1) * 0.12) < 0.02,
