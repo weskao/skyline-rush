@@ -9,6 +9,8 @@ import type { SessionProgress } from './session-progress.ts';
 import type { createGhostStore } from './ghost-store.ts';
 import { recordChallengeMedals, type ChallengeMedalId } from './history-challenge-medals.ts';
 import { addStuntHeat, stuntHeatContinues, type StuntRun } from './stunt-attack.ts';
+import { settleWave3RaceDemo } from './wave3-race-events.ts';
+export { captureWave3RaceTelemetry } from './wave3-race-events.ts';
 export interface RaceSeries { sprintSeries: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null }
 // The simulation race comes from plain-JS game.js; each history.ts writer validates the fields it stores.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,6 +47,13 @@ export function settleRace(race: FinishedRace, context: SettleContext): Settleme
   const settlement = settleOnce(race, context);
   settled.set(race, settlement);
   return settlement;
+}
+
+/** Completes the existing local race settlement before showing disposable demo rewards. */
+export function settleRaceAndDemo(race: FinishedRace, context: SettleContext): Settlement {
+  const previous = settleRace(race, context);
+  settleWave3RaceDemo(race, previous.intermediateStage);
+  return previous;
 }
 
 /** Classic personal best and its Ghost. A re-laid track keeps its best under `<track>@<layout>`, a course sprint under its

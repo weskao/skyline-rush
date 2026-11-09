@@ -46,7 +46,7 @@ import { refreshIfStale } from './update-check.ts';
 import { setupReleaseNotesUI } from './release-notes-ui.ts';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.ts';
 import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-progress.ts';
-import { settleRace } from './race-results.ts';
+import { settleRaceAndDemo, captureWave3RaceTelemetry } from './race-results.ts';
 import { resultView, setupResultScreen } from './result-screen.ts';
 import { createRaceHud } from './race-hud.ts';
 import { setupItemUI } from './item-ui.ts';
@@ -478,7 +478,7 @@ function phaseUI() {
     $('#result-links').hidden = true;
   } else if (phase === 'finished') {
     controls.clear();
-    const settled = settleRace(race, { series: { sprintSeries, cup, stunt }, progress, ghosts, daily, trace: traceRace === race ? trace : null });
+    const settled = settleRaceAndDemo(race, { series: { sprintSeries, cup, stunt }, progress, ghosts, daily, trace: traceRace === race ? trace : null });
     ({ sprintSeries, cup } = settled.series);
     if (cup) cupRecovery.remember(cup);
     const { best, record, medals } = settled;
@@ -559,7 +559,7 @@ try {
     }
     if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
     for (let step = 0; step < due.steps; step++) {
-      captureRaceMotion(race, previousMotion); stepRace(race, input, SIM_STEP);
+      captureRaceMotion(race, previousMotion); stepRace(race, input, SIM_STEP); if (!tutorial) captureWave3RaceTelemetry(race);
       if (tutorial) {
         // Completion keeps the race live as a free cruise: pausing it froze the world and read as a crash.
         const wasComplete = tutorial.complete; tutorial.update(input, SIM_STEP);

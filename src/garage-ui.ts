@@ -1,4 +1,5 @@
 import { PAINTS } from './appearance.ts';
+import { wave3DemoExperience } from './wave3-race-events.ts';
 import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from '#garage-skin-runtime';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
@@ -80,7 +81,7 @@ export function setupGarageUI({
     inspectStudioAfterFrame();
   }
   subscribeGarageSkins(syncSkins);
-  subscribeAccount(setGarageSkinAccount);
+  subscribeAccount(accountId => { setGarageSkinAccount(accountId); wave3DemoExperience.setAccount(accountId); });
   function inspectStudioAfterFrame() {
     if (pendingStudioInspection || !garageScreen.open) return;
     pendingStudioInspection = true;
