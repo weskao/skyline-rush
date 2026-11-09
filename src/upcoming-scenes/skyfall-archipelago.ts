@@ -256,8 +256,8 @@ export function createUpcomingEnvironment(scene: THREE.Scene): {
     land.position.set(island.x, island.y, island.z);
     land.add(new THREE.Mesh(islandRock(island.radius, i + 1), stone));
     const cap = new THREE.Mesh(new THREE.CylinderGeometry(island.radius * 0.91, island.radius * 0.95, 1.1, 17), grass);
-    // Base meets the island rock at y=0.3; the near island's grass now meets the Y=0 road.
-    cap.position.y = 0.85;
+    // The start island sits just below the road, keeping road depth in front of the grass without a visible gap.
+    cap.position.y = 0.75;
     land.add(cap);
     group.add(land);
   });
