@@ -35,3 +35,12 @@ The active demo state is **memory only** and resets on refresh; F06 persistence 
 Observed local RED for missing F01 implementation; GREEN: 9 F01 tests. Observed RED for F02 missing module; GREEN: 13 tests. Additional abort-race RED 2 / GREEN 14; final-frame drift RED 1 / GREEN 15. Standalone strict TypeScript 5.8.3 check exit 0. `src/main.js` stays at its existing 677-line ratchet.
 
 The GitHub run on F01 commit passed its unit/typecheck/build/cloud jobs but was cancelled by newer pushes; no full branch acceptance is claimed. The current exact-HEAD `[full-regression]` GitHub Actions, real browser and phone checks are independent pending gates. Update `TODO.md` and this handoff after each verified stage; only the narrow observed tasks may be checked.
+
+## Parallel branch integration checkpoint (2026-11-10)
+
+- **B Store + Collection:** full source/tests merged via Git parent `be179828122f196b2e1f2b80a5d3483ed38ffd1c`; new Vue entry is confined to the trial release strategy.
+- **D Results UI:** merged Git parent `7552d4362b367ae3c6f344471c7dbb85ac60dae5`; result rendering reads the first receipt via a WeakMap, not a second settlement.
+- **C Storage:** imported only `src/wave3-demo-storage.ts` and `tests/wave3-demo-storage.test.js` from `555984cdb849db2fb1f007755996803d304bc6e2`. Unrelated Makefile/Vite/redirect changes intentionally NOT imported. Recovery now saves a snapshot with bounded replay identifiers in the same local-only namespace, and refuses snapshot-only restores.
+- **E Art QA:** merged Git parent `a506b495f1c26d42c1d4c273b823f9b27d269f23`; external images still pending, and manual visual acceptance is not claimed.
+- **Release gate:** build-time aliases `#wave3-demo-race` and `#wave3-demo-ui` route `coming-soon` builds to inert stubs; only the trial variant includes demo store/gameplay logic.
+- **Pending:** `feature/wave3-demo-missions` real mission UI, exact-head CI, browser/phone E2E, and validation of newly integrated test cases. Do not mark full F05/F06/F08 complete until these gates pass.

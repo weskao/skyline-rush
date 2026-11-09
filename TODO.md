@@ -1,3 +1,17 @@
+# Wave 3 — satellite frontend integration checkpoint (2026-11-10)
+
+**Branch:** `feature/wave3-frontend-demo-integration`. Satellite source integration is **not** the same as completed acceptance; no new paid or verified entitlements.
+
+- [x] **Source integration:** Demo Store/Collection from `be179828122f196b2e1f2b80a5d3483ed38ffd1c`, Results UI from `7552d4362b367ae3c6f344471c7dbb85ac60dae5`, scoped Storage module/tests from `555984cdb849db2fb1f007755996803d304bc6e2`, artwork QA tests from `a506b495f1c26d42c1d4c273b823f9b27d269f23`. Compare commit tree and changed files; these are code-import checkpoints only.
+- [x] **Integration source and regression cases added:** trial-only Garage Store/Collection Vue entry, original race results receipt hook, per-race first receipt, session-only demo skin preview, single-key versioned snapshot + replay checkpoint, account-scoped rehydrate/reset and source-level build-time coming-soon isolation.
+- [ ] **TDD and complete verification:** No newly integrated unit/browser test has been executed locally in the GitHub-only workspace. Observe exact-HEAD `npm test`, `npm run typecheck`, `npm run build`, `tests/module-size.test.js`, asset QA and full feature CI, then investigate any failures. Source work alone does NOT mean F03/F05/F06 or F08 is accepted.
+- [ ] **Demo missions frontend:** `feature/wave3-demo-missions` has not yet supplied a tested integration commit; the existing GarageMissionBoard still needs live UI integration.
+- [ ] **Visual acceptance:** Real WebGL gameplay, mobile portrait/landscape, Store/Collection, results summary and demo cosmetic effects; no real-device proof yet.
+- [ ] **CI and merge eligibility:** Need exact-head GitHub Actions `quality-gate` fully green and reviewed before merging into `develop`; no PR, deploy or main merge without authorization.
+- [ ] **Persistence and security audit:** Complete review of reload, replay dedupe, account changes and disposal in real browser before marking full storage feature done.
+
+---
+
 # 2026-11-10 — Wave 3 frontend integration: F01 / F02 / F04 local-demo core (feature branch)
 
 **Branch:** `feature/wave3-frontend-demo-integration`. **Integration parent:** `develop@dbf2ffc1e8e248c4042cce35a09bc7b5e58255fc`.
