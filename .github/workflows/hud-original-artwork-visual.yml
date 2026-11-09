@@ -1,0 +1,35 @@
+name: HUD original-artwork visual regression
+on:
+  push:
+    branches:
+      - fix/wave3-hud-artwork-completeness
+    paths:
+      - .github/workflows/hud-original-artwork-visual.yml
+      - public/feature-assets/mobile-controls-hud/raster/**
+      - scripts/repair-hud-original-art.py
+      - tests/hud-3x-artwork-browser.spec.js
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-artwork-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Test all 18 HUD icons on phone and desktop layouts
+        run: npm run test:browser -- tests/hud-3x-artwork-browser.spec.js
+      - name: Upload real browser screenshots on failure or success
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hud-original-artwork-browser-screenshots
+          path: |
+            test-results/**/*.png
+            test-results/**/*.webm
+          if-no-files-found: ignore
