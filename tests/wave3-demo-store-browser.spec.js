@@ -9,6 +9,8 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
   test.beforeAll(async () => {
     server = await createServer({
       configFile: false, root: process.cwd(), base: '/', plugins: [vue()],
+      // Scan only the isolated fixture: the main app imports a production-only Vite alias.
+      optimizeDeps: { entries: ['tests/fixtures/wave3-demo-store.html'] },
       server: { host: '127.0.0.1', port: 0 },
     });
     await server.listen();
