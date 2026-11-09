@@ -6,6 +6,8 @@ import { ciTimeout } from './helpers/ci.js';
 // procedural rocks/trees. The GLB attaches before GO and its programs are built by the warmup, never mid-race.
 // All of it is the Phase 3 look behind `?look=3d` (src/look-gate.ts); the last test checks the develop look without it.
 test.use({ gameplaySearch: '?look=3d' });
+// CPU-only CI draws a ?look=3d High frame in ~0.5 s; the 3 s countdown (~70 clamped frames) outlasts the 30 s default.
+const racing = page => expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
 const status = page => page.locator('#world').getAttribute('data-coast-scenery');
 const layer = page => page.evaluate(() => {
   const pieces = {};
@@ -32,7 +34,7 @@ test('Coast High attaches the scenery GLB before GO and compiles nothing after i
   expect(pieces['Coast shoreline rocks'].visible).toBe(false);
   expect(pieces.guard_rail.count).toBeGreaterThan(0);
   await page.locator('#start-button').click();
-  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await racing(page);
   await page.waitForTimeout(ciTimeout(300));
   const before = await programs(page);
   await page.evaluate(() => { const { player } = window.gameplay.race; player.nitroTime = 4; player.speed = 90; });
@@ -78,7 +80,7 @@ test('Coast Ultra compiles the detail-normal road before GO without shader error
   await withQuality(page, 'ultra');
   await expect.poll(() => page.locator('#world').getAttribute('data-coast-road'), { timeout: ciTimeout(40000) }).toBe('ultra');
   await page.locator('#start-button').click();
-  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await racing(page);
   await page.waitForTimeout(ciTimeout(300));
   const before = await programs(page);
   await page.waitForTimeout(ciTimeout(1000));
@@ -92,7 +94,7 @@ test('switching Coast to rain mid-race only moves uniforms: no program compiles'
   await expect.poll(() => page.locator('#world').getAttribute('data-coast-road'), { timeout: ciTimeout(40000) }).toBe('high');
   await expect.poll(() => status(page), { timeout: ciTimeout(40000) }).toBe('attached');
   await page.locator('#start-button').click();
-  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await racing(page);
   await page.waitForTimeout(ciTimeout(300));
   const before = await programs(page);
   // world.js shows a session preset in custom/free races; flip this race to rain in place.

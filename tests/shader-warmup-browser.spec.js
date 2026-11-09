@@ -9,7 +9,7 @@ const programs = page => page.evaluate(() => window.gameScene.renderer.info.prog
 
 const noMidRaceCompile = async ({ gameplayPage: page }) => {
   await page.locator('#start-button').click();
-  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) }); // ?look=3d: ~0.5 s CI frames
   await page.waitForTimeout(300);
   const before = await programs(page);
   expect(before).toBeGreaterThan(0);

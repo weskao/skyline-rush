@@ -153,3 +153,14 @@ test('every full practice run declares the full-practice budget', () => {
   assert.match(spec, /const keyboardToNitro = async page => \{\n\s*test\.setTimeout\(FULL_PRACTICE_BUDGET\);/);
   assert.match(spec, /real touch controls finish practice[\s\S]{0,400}test\.setTimeout\(FULL_PRACTICE_BUDGET\)/);
 });
+
+test('a ?look=3d spec gives its countdown an explicit CI budget', () => {
+  // CPU-only CI draws a ?look=3d High frame in ~0.5 s and the 3 s countdown needs ~70 frames (each clamped to 0.05 s),
+  // so GO came after the 30 s default expect on develop (CI 42525271964, 42538999660).
+  const offenders = FILES.filter(file => file.endsWith('.spec.js')).flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    return source.includes("gameplaySearch: '?look=3d'") ? source.split('\n').flatMap((line, i) =>
+      line.includes("toHaveText('RACING')") ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []) : [];
+  });
+  assert.deepEqual(offenders, [], "Pass { timeout: ciTimeout(30000) } to the RACING wait (.claude/rules/browser-test-stability.md)");
+});
