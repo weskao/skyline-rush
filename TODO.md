@@ -1,3 +1,33 @@
+# Wave 3 Frontend-first — Missions / Rewards / Demo Store / Visual Assets / Future Go Backend (2026-11-10)
+
+> **Current tracking index (documentation-only).** This section updates the development **sequence**. Older 2026-10-31 "plan only" notes below are historical snapshots: the Garage, preview gallery, VFX trials, settlement/economy read-only contracts and existing cloud progress have since been integrated. No new frontend features, images, backend, deployment or tests are claimed completed here.
+> **Canonical plans:** [Wave 3 Master Plan](docs/superpowers/plans/wave3-remaining-implementation-master-plan.md) · [Frontend-first Design](docs/superpowers/specs/2026-11-10-wave3-frontend-first-experience-design.md) · [Image Generation/Visual Specs](docs/designs/wave3-frontend-first-visual-assets.md) · [Future Go Backend](docs/superpowers/plans/2026-11-06-wave3-go-backend-implementation.md).
+> **User-approved ordering:** finish a fully interactive **backend-free local demo** (possibly early-access public preview) first; **after acceptance**, implement Go backend and server authority. "Demo progress / 試玩點數 / demo redeem" are explicitly temporary, local, nontransferable and non-migratable to official inventory, wallet, rewards or purchases.
+
+| ID / Priority | Owner | Status on audited `develop` | Remaining deliverable and acceptance |
+| --- | --- | --- | --- |
+| F00 / P0 | Audit | Existing Wave 3 previews integrated | [ ] Fresh-HEAD source/tests/visual baseline, distinguish real vs read-only vs legacy historical TODO |
+| F01 / P0 | Frontend | Economy state safe but read-only | [ ] Versioned `Wave3ExperiencePort` + in-memory `LocalDemoAdapter`; no backend dependency |
+| F02 / P0 | Frontend/game adapter | `settleRace` existing; no mission events wired | [ ] Real race→demo event mapping; repeat IDs and noneligible finishes covered by RED→GREEN |
+| F03 / P0 | Frontend | Mission center displays four tasks/four trophies but "unavailable" | [ ] Working task progress, daily/weekly reset, local-only claims/trophy status in both locales |
+| F04 / P0 | Frontend | Existing results/stars/medals, no demo payout | [ ] Local demo result/points/claim UI, one-time settlement and explicit disposable labels |
+| F05 / P0 | Frontend | Store Coming Soon and 6-category artwork | [ ] Demo browse→redeem→collection→try/equip flow; no billing/official entitlement |
+| F06 / P0 | Frontend | Skin preferences exist, separate from official ownership | [ ] Optional small 7-day v1 demo cache + reset; guest/blocked-storage/account switch/no server tests |
+| A00 / P0 | Art | 8 mission/trophy + 6 store icons and VFX/GIF set already present | [ ] Source SHA/alpha/crop/blur/art-identity audit first; repair only damaged assets |
+| A01 / P1 | Art | Source art present; missing roles not yet approved | [ ] Conditional native-3× generation: demo-points/claim/empty-state/banner per visual brief; no style drift |
+| A02 / P1 | Art/QA | Historical visual tests exist | [ ] Native 3×/alpha tests, original side-by-side, live WebGL + device/screenshots, manual aesthetic approval |
+| F08 / P0 | QA | No completed backend-free end-to-end mission/store demo | [ ] Guest race→mission→claim→demo redeem→collection→equip→race, full test+device+exact-HEAD CI |
+| B00 / deferred | Backend | Go plan only, no service | [ ] After F08 + separate approval: Go Auth, anti-cheat, verified events, transactional settlement, rules, authoritative inventory |
+| B01 / deferred | Policy/backend | Real wallet/checkout blocked | [ ] Official rates/purchases/refunds/receipts **only after separate explicit policy & security approval** |
+
+- [ ] **Preview-launch gate:** no UI dead ends with backend entirely absent; guest can complete every demo flow, understand local-only/reset/data loss; avoid touching legacy PAINTS/history/Cloud Save.
+- [ ] **Asset-production gate:** follow `.claude/rules/raster-artwork.md` (native 3×; preserve source style, alpha and completeness) and `.claude/rules/animated-image-production.md` (source-locked motion, not generic overlay).
+- [ ] **Security/migration gate:** never promote demo wallet/claims/collection to server-authoritative ownership or real money. Connect future backend through the same UI port; graceful fallback when server is down.
+- [ ] **Evidence gate:** focused RED→GREEN, Node/typecheck/build, module-size, full Browser/World Tour/Cloud when relevant, exact-HEAD Full CI and genuine iPhone/Android/desktop visual review separately; only check boxes with observed output.
+- [ ] **Publishing/merge approval:** no PR, merge to `develop`/`main`, deployment, paid checkout or Go provisioning by this documentation task.
+
+---
+
 ## 2026-11-09 — Back to home reopens on the raced course (`develop` CI)
 
 User-visible: Back to home (the reload from the leave dialog) opens the course that was just raced, centred in the row. A later reload, with no `raced` query, still starts on Coast. Choose track still restores the in-memory picker. `skyline-rush-last-track` is still not written. No new audio: the page unloads. The link is plain DOM, same at every quality tier.
