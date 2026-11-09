@@ -116,7 +116,7 @@ test('the World Tour baseline is the per-metric median of its five tracks', () =
 // S4: modes and other generators. The modes below draw rings and pickups straight from the track, 4 per car, so
 // every mode with the same grid lays out the same rings and pickups; options that change rings on purpose
 // (gauntlet mixed layout, themes, bonus gates, active item rules) are left out.
-const SAME_GRID = [['classic', 'cup', 'elimination', { mode: 'custom', rivals: 7 }], ['time', 'free', 'gauntlet', 'checkpoint', 'stunt', { mode: 'custom', rivals: 0 }]];
+const SAME_GRID = [['classic', 'cup', { mode: 'custom', rivals: 7 }], ['time', 'free', 'gauntlet', 'checkpoint', 'stunt', { mode: 'custom', rivals: 0 }]];
 const CLASSIC_TRACKS = ['coast', 'neon', 'canyon', 'aurora', 'spiral'];
 const layoutOf = race => JSON.stringify({ rings: race.rings.map(r => [r.distance, r.x, r.altitude, r.type, r.group]), pickups: race.pickups.map(p => [p.distance, p.x, p.altitude, p.tier]) });
 
@@ -124,6 +124,17 @@ test('S4: every mode with the same grid keeps one ring and pickup layout on the 
   for (const id of CLASSIC_TRACKS) for (const [first, ...rest] of SAME_GRID) {
     const options = mode => typeof mode === 'string' ? { mode } : mode, reference = layoutOf(createRace(id, options(first)));
     for (const mode of rest) assert.equal(layoutOf(createRace(id, options(mode))), reference, `${id} ${JSON.stringify(mode)}`);
+  }
+});
+
+test('S4: Elimination intentionally shares the Endless highway layout on every classic theme', () => {
+  for (const id of CLASSIC_TRACKS) {
+    const knockout = createRace(id, { mode: 'elimination' });
+    const survival = createRace(id, { mode: 'endless' });
+    assert.equal(knockout.rivals.length, 7, id);
+    assert.equal(survival.rivals.length, 0, id);
+    assert.deepEqual(layoutOf(knockout), layoutOf(survival), id + ': shared procedural ring/pickup layout');
+    assert.equal(knockout.traffic.length, survival.traffic.length, id + ': same streamed traffic budget');
   }
 });
 

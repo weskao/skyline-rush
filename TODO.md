@@ -4872,3 +4872,5 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] 開發版 Coming Soon 六張地圖支援一般模式；更新 access-build 和 lifecycle D1 開發相容性驗證，正式版 Coming Soon 與發布的十張賽道清單不變。
 - [ ] 當前 HEAD 的 Node Unit、Typecheck、Build、Browser、World Tour、quality-gate 全綠證據；GitHub connector 無法代替本機 `make verify`。
 - [ ] 桌機/手機、直橫屏、真實 WebGL 地形連續性與勝負記錄檢查；Cloud/History 還需確認失敗淘汰不寫入最佳成績。
+
+- [x] CI 實際 Red evidence（run #42662501680 canceled, job log still records）：新 Elimination 16 賽道跨終點、完整七輪 knockout 與未來短賽道 deterministic tests 3/3 PASS；舊 S4 假設 Elimination 與 Classic 使用相同有限賽道獎勵已失效，改為要求 Elimination 與 Endless 道具/車流同源；Coast Elimination 60Hz Replay 因有意切換無盡道路產生新 SHA，僅更新此模式 fixture。更新後需於新 HEAD 再驗證。
