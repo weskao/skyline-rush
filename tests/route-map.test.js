@@ -1,8 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { RACE_TRACKS } from '../src/game.js';
 import { trackPoint } from '../src/track-paths.ts';
 import { routePolyline, routeMarker, routeSamples, routeElevationCues } from '../src/route-map.ts';
+import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
+import { RACE_DRIVER_IDS } from '../src/race-grid.ts';
+import { COURSE_RUNTIMES } from '../src/course-runtimes.ts';
+import { groundAt } from '../src/course-items.ts';
+import { routeLength } from '../src/course-route-frame.ts';
+import { PLAYABLE_COURSE_GRAPH as monsoonGraph } from '../src/courses/monsoon-ruins-runtime-adapter.ts';
+import { PLAYABLE_COURSE_GRAPH as volcanicGraph } from '../src/courses/volcanic-crown-runtime-adapter.ts';
+import { PLAYABLE_COURSE_GRAPH as stormlineGraph } from '../src/courses/stormline-megacity-runtime-adapter.ts';
+import { FROSTBITE_CANYON_GRAPH } from '../src/courses/frostbite-canyon.ts';
+
+// The same graphs the races drive. A Coming Soon minimap that omits one is the wrong course.
+const COMING_SOON_GRAPHS = {
+  'dune-tempest': COURSE_RUNTIMES['dune-tempest'].spec.graph,
+  'skyfall-archipelago': COURSE_RUNTIMES['skyfall-archipelago'].spec.graph,
+  'monsoon-ruins': monsoonGraph,
+  'volcanic-crown': volcanicGraph,
+  'stormline-megacity': stormlineGraph,
+  'frostbite-canyon': FROSTBITE_CANYON_GRAPH,
+};
 
 test('the public route preview is only a single sampled main centreline', () => {
   for (const id of Object.keys(RACE_TRACKS)) {
@@ -119,4 +139,81 @@ test('Dune SVG uses each CourseGraph edge, and player marker follows its actual 
     map.updateDrivers(drivers, { cars: new Map([['YOU', { travel }]]) });
     assert.notDeepEqual([marker.attrs.cx, marker.attrs.cy], before, 'branch determines position, not odometer');
   });
+});
+
+test('every Coming Soon minimap draws that course graph, including branches', async () => {
+  const { createRouteMap } = await import('../src/route-map.ts');
+  const { createCourseRouteProjection } = await import('../src/course-route-map.ts');
+  assert.deepEqual(Object.keys(COMING_SOON_GRAPHS).sort(), Object.keys(UPCOMING_TRACKS).sort());
+  await withFakeDom(() => {
+    for (const [id, graph] of Object.entries(COMING_SOON_GRAPHS)) {
+      const projection = createCourseRouteProjection(graph, 64);
+      const paths = createRouteMap(id, { live: true }).element.children.filter(node => node.attrs['data-edge']);
+      assert.equal(paths.length, graph.edges.length, `${id} draws every edge`);
+      for (const line of projection.lines) {
+        const node = paths.find(item => item.attrs['data-edge'] === line.edgeId);
+        assert.ok(node, `${id} missing ${line.edgeId}`);
+        const start = line.points[0];
+        assert.ok(node.attrs.points.startsWith(`${(start.x * 100).toFixed(2)},${(start.y * 100).toFixed(2)}`), `${id} ${line.edgeId} is the real road`);
+        if (!line.ground) assert.match(node.attrs.class, /route-flight-line/, `${id} ${line.edgeId} stays a branch`);
+      }
+    }
+  });
+});
+
+test('all eight Coming Soon racers move along the drawn course', async () => {
+  const { createRouteMap } = await import('../src/route-map.ts');
+  const { createCourseRouteProjection } = await import('../src/course-route-map.ts');
+  await withFakeDom(() => {
+    for (const [id, graph] of Object.entries(COMING_SOON_GRAPHS)) {
+      const projection = createCourseRouteProjection(graph, 64);
+      const map = createRouteMap(id, { live: true });
+      const place = (distance) => {
+        const at = groundAt(graph, distance);
+        const point = projection.marker(at.edgeId, at.localS);
+        return { cx: (point.x * 100).toFixed(2), cy: (point.y * 100).toFixed(2) };
+      };
+      const drivers = RACE_DRIVER_IDS.map((driverId, index) => ({ id: driverId, distance: 400 + index * 700, x: 0 }));
+      map.updateDrivers(drivers);
+      const markers = drivers.map(driver => map.element.children.find(node => node.attrs['data-racer'] === driver.id));
+      assert.equal(markers.length, 8, `${id} has eight racers`);
+      drivers.forEach((driver, index) => {
+        const expected = place(driver.distance);
+        assert.equal(markers[index].attrs.visibility, 'visible', `${id} ${driver.id}`);
+        assert.equal(markers[index].attrs.cx, expected.cx, `${id} ${driver.id} x`);
+        assert.equal(markers[index].attrs.cy, expected.cy, `${id} ${driver.id} y`);
+      });
+      map.updateDrivers([{ id: 'YOU', distance: drivers[0].distance, x: 4 }]);
+      assert.notEqual(markers[0].attrs.cx + markers[0].attrs.cy, place(drivers[0].distance).cx + place(drivers[0].distance).cy, `${id} YOU shifts with its lane`);
+      map.updateDrivers(drivers);
+      const before = markers.map(marker => `${marker.attrs.cx},${marker.attrs.cy}`);
+      for (const driver of drivers) driver.distance += 1800;
+      map.updateDrivers(drivers);
+      drivers.forEach((driver, index) => {
+        const expected = place(driver.distance);
+        assert.equal(markers[index].attrs.cx, expected.cx, `${id} ${driver.id} follows the move`);
+        assert.equal(markers[index].attrs.cy, expected.cy, `${id} ${driver.id} follows the move`);
+        assert.notEqual(`${markers[index].attrs.cx},${markers[index].attrs.cy}`, before[index], `${id} ${driver.id} actually moves`);
+      });
+      const branch = graph.edges.find(edge => edge.mode === 'flight');
+      if (!branch) continue;
+      const localS = routeLength(graph, branch.id) / 2;
+      map.updateDrivers([{ id: 'NOVA', distance: 0, x: 0 }], { cars: new Map([['NOVA', { travel: { currentEdgeId: branch.id, localS } }]]) });
+      const nova = map.element.children.find(node => node.attrs['data-racer'] === 'NOVA');
+      const onBranch = projection.marker(branch.id, localS);
+      assert.equal(nova.attrs.cx, (onBranch.x * 100).toFixed(2), `${id} NOVA follows its branch`);
+      assert.equal(nova.attrs.cy, (onBranch.y * 100).toFixed(2), `${id} NOVA follows its branch`);
+    }
+  });
+});
+
+test('every Coming Soon race map has a stroke colour so the course is visible', () => {
+  const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  for (const id of Object.keys(UPCOMING_TRACKS)) {
+    const theme = css.match(new RegExp(`data-theme="${id}"[^{]*\\{([^}]*)\\}`));
+    assert.ok(theme, `${id} map theme`);
+    assert.match(theme[1], /--map-line:\s*#[0-9a-fA-F]{6}/, `${id} course stroke`);
+    assert.match(theme[1], /--map-bg:\s*#[0-9a-fA-F]{6}/, `${id} map background`);
+    assert.match(theme[1], /--map-player:\s*#[0-9a-fA-F]{6}/, `${id} player colour`);
+  }
 });
