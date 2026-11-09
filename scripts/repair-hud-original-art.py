@@ -28,20 +28,20 @@ FOREIGN_TOP = {
     "hud-brake": 44, "hud-drift": 44, "hud-nitro": 44,
     "ui-arrow-left": 49, "ui-arrow-right": 49, "ui-close": 57,
 }
-# Approximate centres of the ORIGINAL circular bezels, not new designs.
-# Mirrored original metal/energy pixels complete only missing outside arcs.
+# Round badges are closed; the two silver brake/drift rings intentionally
+# have open bottoms and must NOT acquire a second invented lower arc.
 CIRCLE_GEOMETRY = {
-    "hud-brake": (100, 134, 204, 208),
-    "hud-drift": (100, 134, 204, 208),
-    "hud-nitro": (124, 143, 197, 196),
-    "hud-combo": (123, 125, 195, 192),
+    "hud-nitro": (125, 140, 180, 181),
+    "hud-combo": (125, 125, 180, 179),
 }
+# Original illustrated border extents; repairs blend seamlessly into the
+# original button rather than pasting a disconnected mirror strip.
 BUTTON_GEOMETRY = {
-    "button-coming-soon": (83, 400, 22, 158),
-    "button-garage": (100, 408, 20, 154),
-    "button-retry": (99, 408, 8, 152),
-    "button-nitro": (42, 414, 10, 150),
-    "button-play": (48, 407, 15, 154),
+    "button-coming-soon": (83, 389, 22, 148),
+    "button-garage": (100, 398, 20, 150),
+    "button-retry": (99, 402, 8, 148),
+    "button-nitro": (42, 406, 10, 150),
+    "button-play": (48, 398, 15, 150),
 }
 
 
@@ -57,61 +57,75 @@ def alpha_bounds(image):
     ).getbbox()
 
 
+def clamp(value):
+    return max(0., min(1., value))
+
+
+def blend_rgba(original, donor, weight):
+    return tuple(round(original[i] * (1 - weight) + donor[i] * weight)
+                 for i in range(4))
+
+
 def mirror_missing_rim(image, name):
-    """Reconstruct only clipped metal/energy circumference from its OWN rim."""
-    cx, cy, right, bottom = CIRCLE_GEOMETRY[name]
+    """Continue a cropped circular border with smoothly aligned original pixels."""
+    cx, cy, right_begin, bottom_begin = CIRCLE_GEOMETRY[name]
     w, h = image.size
-    stage = Image.new("RGBA", (w + 80, h + 80))
-    stage.alpha_composite(image, (32, 32))
-    source, target = image.load(), stage.load()
-    for ly in range(0, h + 28):
-        for lx in range(0, w + 28):
-            if lx < right and ly < bottom:
+    stage = Image.new("RGBA", (w + 28, h + 28))
+    stage.alpha_composite(image)
+    source, pixels = image.load(), stage.load()
+    for y in range(bottom_begin, min(stage.height, 2 * cy + 95)):
+        for x in range(0, min(stage.width, 2 * cx + 95)):
+            dx, dy = x - cx, y - cy
+            distance = (dx * dx + dy * dy) ** .5
+            if not 58 <= distance <= 92:
                 continue
-            if not 65 <= ((lx - cx) ** 2 + (ly - cy) ** 2) ** .5 <= 91:
+            wx = clamp((x - right_begin) / 18) if x > right_begin else 0
+            wy = clamp((y - bottom_begin) / 18)
+            weight = max(wx, wy)
+            if weight == 0:
                 continue
-            tx, ty = lx + 32, ly + 32
-            if target[tx, ty][3] >= 64:
+            mirror_x = round(2 * cx - x) if wx else x
+            mirror_y = round(2 * cy - y) if wy else y
+            if not (0 <= mirror_x < w and 0 <= mirror_y < h):
                 continue
-            candidates = []
-            if lx >= right:
-                candidates.append((round(2 * cx - lx), ly))
-            if ly >= bottom:
-                candidates.append((lx, round(2 * cy - ly)))
-            candidates.append((round(2 * cx - lx), round(2 * cy - ly)))
-            for sx, sy in candidates:
-                if 0 <= sx < w and 0 <= sy < h:
-                    r, g, b, alpha = source[sx, sy]
-                    if alpha > 50 and max(r, g, b) > 95:
-                        target[tx, ty] = (r, g, b, alpha)
-                        break
+            old = pixels[x, y]
+            new = source[mirror_x, mirror_y]
+            pixels[x, y] = blend_rgba(old, new, weight)
+    # The right-hand arc must be repaired all the way up to the equator too.
+    for y in range(0, bottom_begin):
+        for x in range(right_begin, min(stage.width, 2 * cx + 95)):
+            radius = ((x - cx) ** 2 + (y - cy) ** 2) ** .5
+            if not 58 <= radius <= 92:
+                continue
+            sx = round(2 * cx - x)
+            if 0 <= sx < w:
+                pixels[x, y] = blend_rgba(pixels[x, y], source[sx, y],
+                                         clamp((x - right_begin) / 18))
     return stage
 
 
 def mirror_missing_button_frame(image, name):
-    """Complete clipped bevel caps using original *same button* materials."""
+    """Softly blend the *same button's* illustrated left/top bevel into missing edges."""
     left, right, top, bottom = BUTTON_GEOMETRY[name]
     w, h = image.size
     cx, cy = (left + right) / 2, (top + bottom) / 2
-    stage = Image.new("RGBA", (w + 80, h + 80))
-    stage.alpha_composite(image, (32, 32))
-    source, target = image.load(), stage.load()
-    for ly in range(top - 2, min(h + 22, bottom + 10)):
-        for lx in range(left, min(w + 30, right + 10)):
-            if lx < right - 14 and ly < bottom - 14:
+    stage = Image.new("RGBA", (w + 10, h + 20))
+    stage.alpha_composite(image)
+    source, pixels = image.load(), stage.load()
+    for y in range(top - 3, min(stage.height, bottom + 9)):
+        for x in range(left, min(stage.width, right + 8)):
+            wx = clamp((x - (right - 46)) / 22)
+            wy = clamp((y - (bottom - 28)) / 18)
+            weight = max(wx, wy)
+            if weight == 0:
                 continue
-            tx, ty = lx + 32, ly + 32
-            if target[tx, ty][3] >= 90:
+            mx = round(2 * cx - x) if wx else x
+            my = round(2 * cy - y) if wy else y
+            if not (0 <= mx < w and 0 <= my < h):
                 continue
-            # Paint mirrored boundary only. Never mirror letters or inner symbols.
-            sx = round(2 * cx - lx) if lx >= right - 14 else lx
-            sy = round(2 * cy - ly) if ly >= bottom - 14 else ly
-            for px, py in ((sx, sy), (round(2 * cx - lx), ly), (lx, round(2 * cy - ly))):
-                if 0 <= px < w and 0 <= py < h:
-                    r, g, b, alpha = source[px, py]
-                    if alpha > 35:
-                        target[tx, ty] = (r, g, b, alpha)
-                        break
+            original = pixels[x, y]
+            donor = source[mx, my]
+            pixels[x, y] = blend_rgba(original, donor, weight)
     return stage
 
 
