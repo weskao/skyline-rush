@@ -9,8 +9,8 @@ import type { SessionProgress } from './session-progress.ts';
 import type { createGhostStore } from './ghost-store.ts';
 import { recordChallengeMedals, type ChallengeMedalId } from './history-challenge-medals.ts';
 import { addStuntHeat, stuntHeatContinues, type StuntRun } from './stunt-attack.ts';
-import { settleWave3RaceDemo } from './wave3-race-events.ts';
-export { captureWave3RaceTelemetry } from './wave3-race-events.ts';
+import { settleWave3RaceDemo } from '#wave3-demo-race';
+export { captureWave3RaceTelemetry } from '#wave3-demo-race';
 export interface RaceSeries { sprintSeries: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null }
 // The simulation race comes from plain-JS game.js; each history.ts writer validates the fields it stores.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
