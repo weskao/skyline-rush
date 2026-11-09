@@ -1,6 +1,6 @@
 # Wave 3 — Frontend-first Image Generation, Asset Specs and Visual Acceptance
 
-**Date:** 2026-11-10 · **Status:** DESIGN/PRODUCTION PLAN ONLY; this commit generates **zero new images**.
+**Date:** 2026-11-10 · **Status:** A-03/A-04 transparent WebP + PNG art files committed to this branch; no frontend wiring, visual approval, backend or payments delivered by artwork alone.
 **Feature goal:** make a full backend-free demo of Missions, Rewards, Demo Points, Collection and Demo Store feel polished and consistent with existing Skyline Rush Garage art.
 **Primary rule:** `.claude/rules/raster-artwork.md`; animated items additionally `.claude/rules/animated-image-production.md`; existing `docs/designs/garage-animated-gifs/gpt-gif-prompts.md` takes priority for its 25 tracked GIFs.
 **Master:** `docs/superpowers/plans/wave3-remaining-implementation-master-plan.md`.
@@ -90,7 +90,7 @@ Export equal-size RGBA sheet cells first; **each cell** is already the full 3× 
 4. Style audit: compare input/reference source and new pixels at **1× actual display** and 100% source; preserve saturated 3D, angle and object shape. Art approval is **human** and separate from numeric alpha tests.
 5. Record in `TODO.md` and the master-plan evidence ledger: asset ID, source SHA, generated file SHA, prompt version, source vs rendered preview path, test output, actual WebGL screenshots, reviewer PASS/FAIL, issues. Leave acceptance unchecked if any reference, test or real visual verification was not observed.
 
-**Explicit current result:** only the plan, prompts, sizes and acceptance gates are authored; **no images are generated, changed or shipped by this documentation branch**.
+**Current branch status (2026-11-10):** A-03/A-04 static images are generated and now committed to the Wave 3 documentation branch. Existing mission, trophy, Store and VFX assets were not replaced. A-05/A-06, frontend integration, runtime screenshots and A02 manual aesthetic approval are still pending.
 
 
 ## 7. A-03 / A-04 produced image filenames and implementation handoff (2026-11-10)
@@ -105,3 +105,16 @@ The user's first two new Wave 3 visual assets have been generated as standalone 
 **Consumer contract:** reference the stable runtime path with `import.meta.env.BASE_URL`; use an `<img>` with `object-fit: contain`, ≥8 CSS px frame padding, and localized text/status from Vue **outside** the image. Do not render new currency amounts, entitlement decisions, claim flags or payments inside artwork. Both raster sources are static, so Reduced Motion uses the same WebP; no GIF needed. If WebP cannot decode, use the sibling transparent PNG after it is published. A-05 (`demo-collection-empty@3x.webp`) and A-06 (`demo-results-banner@3x.webp`) remain **optional, not produced**.
 
 **Rollout / provenance:** these image filenames are reserved for the user-approved A-03 / A-04 art. Before marking A01/A02 complete, check the physical files exist at the exact paths on this branch, validate 216×216 RGBA and a ≥20-pixel alpha safety inset, verify previews at 72×72 CSS against dark/light/saturated cards, and record runtime screenshots and human visual approval. Existing mission/trophy, Store and VFX assets must remain unchanged until individually reviewed. This documentation update alone is not evidence that the binary files or runtime UI have been integrated.
+
+### Published assets — exact-blob delivery confirmed
+
+All four files exist in `feature/wave3-implementation-plan-audit-20261110` under `public/feature-assets/wave3-demo/raster/`. Each remote Git blob SHA was compared successfully with the exact source file; source dimensions and alpha geometry were measured with Pillow, not inferred from filenames.
+
+| File | Git blob SHA | Verified source | Alpha margin left/top/right/bottom (px, cutoff 16/255) |
+| --- | --- | --- | --- |
+| `demo-points@3x.webp` | `c5027a27b01f4e9b9440f980abb23546a3c8987b` | 216×216 RGBA, 41,822 bytes | 21 / 32 / 22 / 30 |
+| `demo-points@3x.png` | `1e42ee8cafd6c3bee1c5993497df7d6cdbecc9d7` | 216×216 RGBA, 55,078 bytes | 21 / 32 / 22 / 30 |
+| `demo-claim@3x.webp` | `856dfa604dd8b00a5b59ebe14f1db97f7875022d` | 216×216 RGBA, 48,778 bytes | 22 / 28 / 21 / 28 |
+| `demo-claim@3x.png` | `7901ff2864dd5d3c4d0f3aae986284f36ed6a173` | 216×216 RGBA, 61,170 bytes | 22 / 28 / 21 / 28 |
+
+**Evidence:** file presence, dimensions and alpha-inset requirements pass. Image-level approval still needs a human visual signoff, and the new asset usage must be tested in real running UI before marking the A01/A02 workstreams fully complete. High-resolution rendering masters were delivered separately; the committed 216px PNGs are 3× source-size PNG counterparts, **not** the original high-res generator masters.
