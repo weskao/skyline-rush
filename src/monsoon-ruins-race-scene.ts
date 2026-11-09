@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { MONSOON_TRACK, monsoonFrame } from './courses/monsoon-ruins-race.ts';
-import { MONSOON_RUINS_COURSE, sampleMonsoonRoute } from './courses/monsoon-ruins.ts';
+import { MONSOON_RUINS_COURSE, MONSOON_RUNOUT, sampleMonsoonRoute } from './courses/monsoon-ruins.ts';
 import { createMonsoonRuinsChunk } from './courses/monsoon-ruins-scene.ts';
 import { SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { DECK_DEPTH } from './road-falls.ts';
@@ -44,8 +44,10 @@ export function createMonsoonRuinsRaceScene(scene: THREE.Scene) {
   }[] = [];
   // Source scene distances are authored 0..12500; the shared graph spline's
   // measured odometer differs slightly. Both share the same world-space road.
-  for (let from = 0; from < MONSOON_RUINS_COURSE.length; from += CHUNK) {
-    const to = Math.min(MONSOON_RUINS_COURSE.length, from + CHUNK);
+  // Scenery runs on past FINISH so the post-race camera never looks out over an empty plane.
+  const sceneryEnd = MONSOON_RUINS_COURSE.length + MONSOON_RUNOUT;
+  for (let from = 0; from < sceneryEnd; from += CHUNK) {
+    const to = Math.min(sceneryEnd, from + CHUNK);
     const chunk = createMonsoonRuinsChunk({ edgeId: 'ground', from, to, quality: 'medium' });
     // Obstacles are visual-only until the 1D game's collision adapter is wired.
     chunk.group.traverse(object => { if (object.name.startsWith('solid-')) object.visible = false; });
