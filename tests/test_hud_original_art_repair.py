@@ -48,6 +48,11 @@ class OriginalArtworkRepairTests(unittest.TestCase):
             with Image.open(folder / (name + "@3x.webp")) as opened:
                 px = opened.convert("RGBA").getpixel(point)
             print(name, point, "RGBA", px)
+            with Image.open(folder / (name + "@3x.webp")) as sample:
+                sample = sample.convert("RGBA")
+                for yy in (110, 125, 135, 145):
+                    print("PROFILE", name, yy, [sample.getpixel((xx, yy))
+                          for xx in (75, 82, 89, 100, 110, 120, 130, 140, 150)])
             self.assertGreater(px[3], 140, (name, point, "face is transparent"))
             self.assertGreater(max(px[:3]), 35, (name, point, "face contains dark cutout"))
 
