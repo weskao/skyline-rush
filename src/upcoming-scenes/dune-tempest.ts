@@ -1,10 +1,13 @@
 import * as THREE from 'three';
+import type { CameraPose } from '../track-preview.ts';
 
 type Quality = 'low' | 'medium' | 'high';
 type Environment = {
   group: THREE.Group;
   update(timeSeconds: number, quality: Quality, reducedMotion: boolean): void;
   dispose(): void;
+  readonly cameraPose: CameraPose;
+  readonly portraitCameraPose: CameraPose;
 };
 
 const SAND = 0xd99445;
@@ -35,8 +38,8 @@ function ribbon(curve: THREE.Curve<THREE.Vector3>, width: number, material: THRE
     const length = Math.hypot(tangent.x, tangent.z) || 1;
     const rx = -tangent.z / length, rz = tangent.x / length;
     const half = width * (name === 'Air corridor' ? 0.45 + 0.55 * Math.sin(Math.PI * t) : 0.5);
-    vertices.push(point.x - rx * half, point.y + (name === 'Ground road shoulder' ? -0.08 : 0.10), point.z - rz * half,
-      point.x + rx * half, point.y + (name === 'Ground road shoulder' ? -0.08 : 0.10), point.z + rz * half);
+    vertices.push(point.x - rx * half, point.y + (name === 'Ground road shoulder' ? -0.08 : name === 'Ground sand road' ? 0 : 0.10), point.z - rz * half,
+      point.x + rx * half, point.y + (name === 'Ground road shoulder' ? -0.08 : name === 'Ground sand road' ? 0 : 0.10), point.z + rz * half);
     if (i < segments) {
       const a = i * 2;
       indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
@@ -292,5 +295,11 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
     group.clear();
   };
   update(0, 'high', false);
-  return { group, update, dispose };
+  // Both drive shots follow the straight departure road instead of aiming sideways into the canyon.
+  // Other five camera modes continue to use the shared showcase presets.
+  const cameraPose: CameraPose = { cameraSide: 6.3, cameraBack: 12.8, cameraHeight: 3.5,
+    lookSide: 0.5, lookAhead: 10, lookHeight: 1.6 };
+  const portraitCameraPose: CameraPose = { cameraSide: 5.8, cameraBack: 14, cameraHeight: 4.3,
+    lookSide: 0.5, lookAhead: 6, lookHeight: 1.6 };
+  return { group, update, dispose, cameraPose, portraitCameraPose };
 }

@@ -81,3 +81,40 @@ test('Dune Tempest and Skyfall rest grounded showcase cars on their road with cl
     }
   }
 });
+
+test('Dune and Skyfall AIRFLOW ground/hover poses clear the road and show the same jets', () => {
+  for (const [id, roadName] of Object.entries(ROADS)) {
+    const { showcase, camera, cars, environment, scene } = stage(id, true);
+    const road = roadUnder(environment, 0, 0);
+    assert.equal(road?.object.name, roadName);
+    assert.ok(Math.abs(road.point.y) < 0.02, id + ': the showroom road must use the shared Y=0 vehicle anchor');
+    assert.ok(Math.abs(cars[0].position.y - road.point.y - 0.06) < 0.02,
+      id + ': AIRFLOW-on wheels must clear the actual road surface');
+    assert.equal(cars[0].userData.jets.visible, false, id + ': no jets when grounded');
+    if (id === 'skyfall-archipelago') {
+      const island = scene.getObjectByName('Skyfall island 1');
+      const grass = island.children.find(child => child.geometry?.type === 'CylinderGeometry');
+      const top = island.position.y + grass.position.y + grass.geometry.parameters.height / 2;
+      assert.ok(Math.abs(top - road.point.y) < 0.12,
+        'Skyfall start island grass must meet the road so the car does not appear to float over the island');
+    }
+    showcase.update(camera, 3, { quality: 'high', view: 'drive', enabled: true, airflow: false }, false);
+    assert.ok(Math.abs(cars[0].position.y - road.point.y - 1.6 - Math.sin(3 * 1.1) * 0.12) < 0.02,
+      id + ': AIRFLOW-off hover height stays relative to its road');
+    assert.equal(cars[0].userData.jets.visible, true, id + ': hover jets must be visible');
+    showcase.dispose();
+  }
+});
+
+test('Dune drive camera looks along the departure road on desktop and phone', () => {
+  for (const aspect of [16 / 9, 390 / 844]) for (const airflow of [true, false]) {
+    const { showcase, camera, cars } = stage('dune-tempest', airflow, aspect);
+    const near = new THREE.Vector3(1, 0, -24).project(camera);
+    const car = cars[0].position.clone().project(camera);
+    assert.ok(Math.abs(near.x) < (aspect < 0.78 ? 0.8 : 0.3),
+      'Dune drive camera must show road ahead instead of only the canyon side');
+    assert.ok(Math.abs(car.x) < 0.8 && Math.abs(car.y) < 0.8,
+      'Dune drive view must keep the Roadster in frame');
+    showcase.dispose();
+  }
+});
