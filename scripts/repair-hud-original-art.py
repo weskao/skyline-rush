@@ -105,27 +105,29 @@ def mirror_missing_rim(image, name):
 
 
 def mirror_missing_button_frame(image, name):
-    """Softly blend the *same button's* illustrated left/top bevel into missing edges."""
+    """Inpaint only MISSING bezel pixels; never overlay text or valid background."""
     left, right, top, bottom = BUTTON_GEOMETRY[name]
     w, h = image.size
     cx, cy = (left + right) / 2, (top + bottom) / 2
-    stage = Image.new("RGBA", (w + 10, h + 20))
+    stage = Image.new("RGBA", (w + 12, h + 15))
+    # A reconstructed border is a BACKING layer. The original pixels remain
+    # entirely untouched on top, preventing flat horizontal joins/ghost letters.
+    backing = Image.new("RGBA", stage.size)
+    source, target = image.load(), backing.load()
+    for y in range(top - 2, min(stage.height, bottom + 8)):
+        for x in range(left, min(stage.width, right + 6)):
+            at_right = x >= right - 16
+            at_bottom = y >= bottom - 16
+            if not (at_right or at_bottom):
+                continue
+            sx = round(2 * cx - x) if at_right else x
+            sy = round(2 * cy - y) if at_bottom else y
+            if 0 <= sx < w and 0 <= sy < h:
+                donor = source[sx, sy]
+                if donor[3] > 30:
+                    target[x, y] = donor
+    stage.alpha_composite(backing)
     stage.alpha_composite(image)
-    source, pixels = image.load(), stage.load()
-    for y in range(top - 3, min(stage.height, bottom + 9)):
-        for x in range(left, min(stage.width, right + 8)):
-            wx = clamp((x - (right - 46)) / 22)
-            wy = clamp((y - (bottom - 28)) / 18)
-            weight = max(wx, wy)
-            if weight == 0:
-                continue
-            mx = round(2 * cx - x) if wx else x
-            my = round(2 * cy - y) if wy else y
-            if not (0 <= mx < w and 0 <= my < h):
-                continue
-            original = pixels[x, y]
-            donor = source[mx, my]
-            pixels[x, y] = blend_rgba(original, donor, weight)
     return stage
 
 
