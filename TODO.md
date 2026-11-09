@@ -21,6 +21,8 @@
 | B01 / deferred | Policy/backend | Real wallet/checkout blocked | [ ] Official rates/purchases/refunds/receipts **only after separate explicit policy & security approval** |
 
 - [ ] **Preview-launch gate:** no UI dead ends with backend entirely absent; guest can complete every demo flow, understand local-only/reset/data loss; avoid touching legacy PAINTS/history/Cloud Save.
+- [x] **A03/A04 asset filename handoff (2026-11-10):** canonical `demo-points@3x.webp` (A-03) and `demo-claim@3x.webp` (A-04), intended under `public/feature-assets/wave3-demo/raster/`; each is 216×216 RGBA displayed at 72×72 CSS px. See `docs/designs/wave3-frontend-first-visual-assets.md` §7 and `docs/superpowers/plans/wave3-remaining-implementation-master-plan.md`.
+- [ ] **A03/A04 asset integration gate (2026-11-10):** verify both images exist in the target branch at the canonical paths, preserve alpha/≥20px inset, are referenced from UI with `import.meta.env.BASE_URL`, and pass 1× visual QA + actual runtime/mobile screenshots. Do not mark A01/A02 or F03–F06 complete based on filenames alone.
 - [ ] **Asset-production gate:** follow `.claude/rules/raster-artwork.md` (native 3×; preserve source style, alpha and completeness) and `.claude/rules/animated-image-production.md` (source-locked motion, not generic overlay).
 - [ ] **Security/migration gate:** never promote demo wallet/claims/collection to server-authoritative ownership or real money. Connect future backend through the same UI port; graceful fallback when server is down.
 - [ ] **Evidence gate:** focused RED→GREEN, Node/typecheck/build, module-size, full Browser/World Tour/Cloud when relevant, exact-HEAD Full CI and genuine iPhone/Android/desktop visual review separately; only check boxes with observed output.
