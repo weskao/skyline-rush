@@ -78,6 +78,7 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await store.locator('[data-demo-id="thruster-ion"]').click();
     await store.getByRole('button', { name: 'Demo redeem' }).click();
     await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
+    await expect(store.locator('[data-demo-id="thruster-ion"]')).toHaveAttribute('data-demo-status', 'demo-unlocked');
     expect(await page.evaluate(() => window.__wave3DemoFixture.duplicateRedeem())).toBe('duplicate');
     await expect(store.locator('.demo-wallet strong')).toHaveText('15');
     await page.evaluate(() => window.__wave3DemoFixture.setAccount('driver_B'));
