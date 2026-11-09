@@ -85,8 +85,11 @@ test('HUD art remains uncropped at alpha-pixel level and is visually reviewable 
         expect(margin, JSON.stringify(art)).toBeGreaterThanOrEqual(minimum - 1);
       }
     }
-    await test.info().attach(`hud-3x-complete-${viewport.width}x${viewport.height}.png`, {
-      body: await gallery.screenshot(), contentType: 'image/png',
-    });
+    // Keep a real on-disk screenshot as a CI artifact, not only an in-memory
+    // Playwright attachment (which is discarded by the line reporter).
+    const name = `hud-3x-complete-${viewport.width}x${viewport.height}.png`;
+    const screenshot = test.info().outputPath(name);
+    await gallery.screenshot({ path: screenshot });
+    await test.info().attach(name, { path: screenshot, contentType: 'image/png' });
   }
 });
