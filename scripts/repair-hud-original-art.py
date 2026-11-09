@@ -105,30 +105,88 @@ def mirror_missing_rim(image, name):
 
 
 def mirror_missing_button_frame(image, name):
-    """Inpaint only MISSING bezel pixels; never overlay text or valid background."""
+    """Rebuild a cut right bezel from the opposite *original* bezel.
+
+    The former backing-only patch left opaque foreign pixels in front and
+    generated a second jagged edge. Restrict replacement to the damaged
+    narrow strip; never touch the actual glyph or centre of the button.
+    """
     left, right, top, bottom = BUTTON_GEOMETRY[name]
-    w, h = image.size
-    cx, cy = (left + right) / 2, (top + bottom) / 2
-    stage = Image.new("RGBA", (w + 12, h + 15))
-    # A reconstructed border is a BACKING layer. The original pixels remain
-    # entirely untouched on top, preventing flat horizontal joins/ghost letters.
-    backing = Image.new("RGBA", stage.size)
-    source, target = image.load(), backing.load()
-    for y in range(top - 2, min(stage.height, bottom + 8)):
-        for x in range(left, min(stage.width, right + 6)):
-            at_right = x >= right - 16
-            at_bottom = y >= bottom - 16
-            if not (at_right or at_bottom):
-                continue
-            sx = round(2 * cx - x) if at_right else x
-            sy = round(2 * cy - y) if at_bottom else y
-            if 0 <= sx < w and 0 <= sy < h:
-                donor = source[sx, sy]
-                if donor[3] > 30:
-                    target[x, y] = donor
-    stage.alpha_composite(backing)
+    width, height = image.size
+    stage = Image.new("RGBA", (width + 12, height + 15))
     stage.alpha_composite(image)
+    source, target = image.load(), stage.load()
+
+    for y in range(max(0, top - 3), min(height, bottom + 10)):
+        for x in range(max(0, right - 38), min(stage.width, right + 13)):
+            donor_x = left + right - x
+            if not (0 <= donor_x < width):
+                continue
+            donor = source[donor_x, y]
+            if donor[3] <= 16:
+                continue
+            original = source[x, y] if x < width else (0, 0, 0, 0)
+            weight = clamp((x - (right - 38)) / 23)
+            target[x, y] = blend_rgba(original, donor, weight)
+
+    # Some source sheets were cut just below the bevel: extend only pixels
+    # genuinely absent there, using the matching top original bezel.
+    for y in range(max(0, bottom - 10), min(stage.height, bottom + 10)):
+        donor_y = top + bottom - y
+        if not (0 <= donor_y < height):
+            continue
+        for x in range(max(0, left + 12), min(width, right - 20)):
+            original = target[x, y]
+            if original[3] > 16:
+                continue
+            donor = source[x, donor_y]
+            if donor[3] > 32:
+                target[x, y] = donor
     return stage
+
+
+# Inside some badges, the screenshot/cutout source lost part of the dark
+# enamel face while retaining its metallic ring and glyph. Restore only
+# transparent damage from the intact opposite half of the SAME source.
+DISC_FACE_PATCHES = {
+    "hud-nitro": (125, 140, 61, 146, 115),
+    "hud-speed": (101, 121, 53, 120, 111),
+    "ui-info": (102, 127, 57, 115, 111),
+}
+
+
+def restore_missing_face(image, name):
+    if name in DISC_FACE_PATCHES:
+        cx, cy, radius, begin_x, begin_y = DISC_FACE_PATCHES[name]
+        source, target = image.load(), image.copy()
+        out = target.load()
+        for y in range(begin_y, min(image.height, cy + radius)):
+            for x in range(begin_x, min(image.width, cx + radius)):
+                if (x - cx) ** 2 + (y - cy) ** 2 > radius ** 2:
+                    continue
+                if source[x, y][3] > 80:
+                    continue
+                mirror_x = 2 * cx - x
+                if 0 <= mirror_x < image.width:
+                    donor = source[mirror_x, y]
+                    if donor[3] > 160:
+                        out[x, y] = donor
+        return target
+    if name == "ui-tooltip":
+        # Original bubble face, not its pointed lower-left speech tail.
+        source, target = image.load(), image.copy()
+        out = target.load()
+        for y in range(120, min(image.height, 159)):
+            for x in range(115, min(image.width, 144)):
+                if source[x, y][3] > 80:
+                    continue
+                mirror_y = 230 - y
+                if 0 <= mirror_y < image.height:
+                    donor = source[x, mirror_y]
+                    if donor[3] > 160:
+                        out[x, y] = donor
+        return target
+    return image
 
 
 def cleanup(image, name):
@@ -175,7 +233,7 @@ def pack(image, name):
 
 
 def repair(name, originals):
-    base = cleanup(originals[name].copy(), name)
+    base = restore_missing_face(cleanup(originals[name].copy(), name), name)
     if name in CIRCLE_GEOMETRY:
         base = mirror_missing_rim(base, name)
     elif name in BUTTON_GEOMETRY:
