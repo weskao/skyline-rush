@@ -1,3 +1,12 @@
+## 2026-11-10 — main CI 42662669700: route previews and Frostbite Rift phone
+
+- [x] RED evidence: main `cc5df3fe9e30` failed browser shard 9 because the 10-track World Tour assertion saw 16 home previews; shard 1's Frostbite phone span fall stayed 0 after 24 s, including retries.
+- [x] Root cause of preview failure: six gated `UPCOMING_TRACKS` maps now render beside ten `RACE_TRACKS`; CourseGraph previews have legitimate extra edges, so the classic one-line assertion must stay scoped to classic cards.
+- [x] Stability correction: assert both registries' DOM cards and authored routes; hold Frostbite at mid-span with zero fuel/speed to test the real engine's unpowered glide and recovery, backed by 30/60/120 Hz unit coverage.
+- [x] Prevent hotfix CI blind spots: add `hotfix/**` to workflow push triggers and a workflow regression guard.
+- [ ] Local `make verify` / phone hardware evidence (GitHub connector cannot provide a working local checkout in this session).
+- [ ] Exact-HEAD GitHub Actions full `quality-gate` success for the hotfix commit.
+
 ## 2026-11-09 — Back to home reopens on the raced course (`develop` CI)
 
 User-visible: Back to home (the reload from the leave dialog) opens the course that was just raced, centred in the row. A later reload, with no `raced` query, still starts on Coast. Choose track still restores the in-memory picker. `skyline-rush-last-track` is still not written. No new audio: the page unloads. The link is plain DOM, same at every quality tier.

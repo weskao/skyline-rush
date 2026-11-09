@@ -44,6 +44,17 @@ Write every assertion so that runner speed cannot change its outcome.
 - Compare against the text actually shown, not a literal guessed in advance. Read it once the
   element is visible and the state is frozen, then assert that it changes.
 
+## Catalog drift and deterministic physics
+
+- Home route-map checks cover both `RACE_TRACKS` and `UPCOMING_TRACKS`. Keep classic-only
+  single-line/no-secret-corridor assertions scoped to `[data-track]`; gated CourseGraph cards
+  legitimately draw multiple authored edges. Assert each preview has a route, not a fixed
+  overall polyline count. Adding an upcoming track must not invalidate the classic contract.
+- A browser scenario teleported onto a gap/span must keep the car inside that section while
+  waiting for a fall. Force an unpowered glide at a stable mid-span position and assert the
+  *real engine's* respawn; separate deterministic unit tests cover natural falls at several
+  simulation frame rates. Do not use wall-clock sleeps or bigger timeouts to hide movement.
+
 ## Budgets and retries
 
 - Wrap fixed waits and timeouts in `ciTimeout()`. This is enforced by the same test file.
