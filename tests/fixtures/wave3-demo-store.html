@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wave 3 isolated demo UI tests</title></head>
+<body style="margin:0;background:#061223;color:#e7f5ff;font:14px system-ui">
+<div id="app"></div>
+<script type="module">
+import { createApp, ref } from 'vue';
+import Wave3DemoStore from '../../src/Wave3DemoStore.vue';
+import Wave3DemoCollection from '../../src/Wave3DemoCollection.vue';
+import { createWave3LocalDemo } from '../../src/wave3-local-demo.ts';
+
+const port = createWave3LocalDemo();
+const page = ref('store');
+const locale = ref('en');
+const skinRevision = ref(0);
+const trialUntil = ref(0);
+const trialAccess = id => id === 'airflow-vortex' && trialUntil.value > 0
+  ? { state: 'trial', canEquip: true, owned: false, expiresAt: trialUntil.value } : null;
+const lastEquipped = ref('');
+const App = {
+  components: { Wave3DemoStore, Wave3DemoCollection },
+  setup() {
+    return { port, page, locale, trialAccess, skinRevision, lastEquipped };
+  },
+  template: `<main style="max-width:1200px;margin:auto;padding:10px">
+    <Wave3DemoStore v-if="page === 'store'" :port="port" :locale="locale" :trial-access="trialAccess" :skin-revision="skinRevision"
+      @open-collection="page = 'collection'" />
+    <Wave3DemoCollection v-else-if="page === 'collection'" :port="port" :locale="locale"
+      :trial-access="trialAccess" :skin-revision="skinRevision"
+      @open-store="page = 'store'" @equipped-preview="lastEquipped = $event" @return-to-race="page = 'race'" />
+    <p v-else data-race-handoff>Race handoff fixture</p>
+  </main>`,
+};
+createApp(App).mount('#app');
+window.__wave3DemoFixture = {
+  grantRace() { return port.settleCompletion({ schemaVersion:1, completionId:'race-demo-0001',
+    trackId:'coast', mode:'classic', eligible:true, occurredAt:1700000000000, accountId:port.getSnapshot().accountId }); },
+  setAccount(account) { port.setAccount(account); },
+  snapshot() { return port.getSnapshot(); },
+  duplicateRedeem() { return port.redeemPreview('thruster-ion').status; },
+  setLocale(value) { locale.value = value; },
+  enableTrial() { trialUntil.value = Date.now() + 60_000; skinRevision.value++; },
+  expireTrial() { trialUntil.value = Date.now() - 1; skinRevision.value++; },
+  lastEquipped() { return lastEquipped.value; },
+};
+</script>
+</body></html>
