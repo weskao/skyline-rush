@@ -28,7 +28,27 @@ interface NavigatorHints { deviceMemory?: number; standalone?: boolean; connecti
 export const viewportOf = (win: Window) => ({
   width: win.innerWidth, height: win.innerHeight, dpr: win.devicePixelRatio, orientation: win.screen.orientation?.type,
   visualWidth: win.visualViewport?.width, visualHeight: win.visualViewport?.height, scale: win.visualViewport?.scale,
+  home: homeLayoutOf(win.document),
 });
+
+const box = (el: Element | null) => { const r = el?.getBoundingClientRect(); return r && [r.x, r.y, r.width, r.height].map(Math.round); };
+
+/** Where the home's Start and rail really are versus the dynamic viewport and safe areas (a toolbar may cover the page). */
+function homeLayoutOf(doc: Document): Record<string, unknown> {
+  const probe = doc.createElement('div');
+  probe.style.cssText = 'position:fixed;left:0;top:0;width:100dvw;height:100dvh;visibility:hidden;pointer-events:none;'
+    + 'padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+  doc.body.append(probe);
+  const cs = getComputedStyle(probe), start = doc.querySelector('#start-button'), r = start?.getBoundingClientRect();
+  const hit = r && doc.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+  const facts = { dvw: probe.offsetWidth, dvh: probe.offsetHeight, client: [doc.documentElement.clientWidth, doc.documentElement.clientHeight],
+    safe: [cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft].map(parseFloat),
+    scale: getComputedStyle(doc.documentElement).getPropertyValue('--home-scale'), introZoom: doc.querySelector('#intro') && getComputedStyle(doc.querySelector('#intro')!).zoom,
+    start: box(start), intro: box(doc.querySelector('#intro')), daily: box(doc.querySelector('#daily-card')),
+    startHit: hit ? (start?.contains(hit) ? 'start' : `${hit.tagName}#${hit.id}.${hit.className}`) : null };
+  probe.remove();
+  return facts;
+}
 
 function webglInfo(doc: Document): Record<string, unknown> {
   try {

@@ -204,8 +204,44 @@ for (const [name, width, height, insets] of [['Chrome', 743, 340, { left: 62, ri
         expect(card.y + card.height, `${locale} pinned row covers the track cards`).toBeLessThanOrEqual(garage.y);
         expect(start.height, `${locale} Start stays a usable tap target`).toBeGreaterThanOrEqual(36);
       }
+      // iOS WebKit (not desktop engines) clips a fixed box to a scroller that is, or holds, its nearest stacking context:
+      // Start, Daily and the dock were invisible yet tappable on iPhone Chrome. Only a fixed ancestor lifts them out.
+      const clippedBy = await page.evaluate(() => ['#start-button', '#daily-card', '#showcase-camera-dock'].map(selector => {
+        for (let el = document.querySelector(selector).parentElement; el; el = el.parentElement) {
+          const { position, zIndex, display } = getComputedStyle(el);
+          if (display === 'contents') continue; // no box, so no stacking context
+          if (position === 'fixed') return null;
+          if (position === 'sticky' || (position !== 'static' && zIndex !== 'auto')) {
+            for (let up = el; up; up = up.parentElement) if (/auto|scroll/.test(getComputedStyle(up).overflowY)) return `${selector} in ${el.className}`;
+            return null;
+          }
+        }
+        return null;
+      }).filter(Boolean));
+      expect(clippedBy, 'rail painted inside the scrolling panel').toEqual([]);
       await page.locator('#start-button').click();
       await expect(intro).toBeHidden();
+    });
+  });
+}
+
+// iPhone Chrome 154 (743x340, diag log 2026-11-09): on first load the rail had its real place and took taps, but was not
+// painted. iOS WebKit paints a fixed box into an animating ancestor's layer, clipped to that ancestor's box, and the
+// rail lies outside the panel. Desktop engines composite it correctly, so the guard is that no ancestor animates.
+for (const [width, height] of [[743, 340], [844, 390]]) {
+  test.describe(`landscape home rail paint ${width}x${height}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: true, isMobile: true });
+
+    test('no ancestor of the fixed rail runs an animation', async ({ page }) => {
+      await page.goto('/');
+      const animated = await page.evaluate(() => ['#start-button', '#daily-card', '#showcase-camera-dock'].flatMap(selector => {
+        const found = [];
+        for (let el = document.querySelector(selector)?.parentElement; el; el = el.parentElement) {
+          if (getComputedStyle(el).animationName !== 'none') found.push(`${selector} < ${el.id || el.className}`);
+        }
+        return found;
+      }));
+      expect(animated).toEqual([]);
     });
   });
 }

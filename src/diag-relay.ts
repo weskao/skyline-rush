@@ -96,6 +96,7 @@ export function startDiag(win: Window & typeof globalThis, storage: Storage, ele
     void deviceHints(win).then(hints => hints && relay.emit({ kind: 'device-hints', ...hints }));
     captureConsole(win.console, relay.emit);
     let resized: ReturnType<typeof setTimeout> | undefined;
+    win.setTimeout(() => relay.emit({ kind: 'viewport', ...viewportOf(win) }), 2000); // after the intro fade settles
     win.addEventListener('resize', () => { clearTimeout(resized); resized = setTimeout(() => relay.emit({ kind: 'viewport', ...viewportOf(win) }), 300); });
   }
   installCrashLog(win, storage, context, relay?.emit);
