@@ -34,6 +34,19 @@
 
 **Repository pointers:** `src/GarageMissionBoard.vue`; `src/garage-wave3-preview-catalog.ts`; `src/GaragePanel.vue`; `src/garage-economy-state.ts`; `src/garage-settlement-gate.ts`; `src/garage-store-readiness.ts`; `src/garage-skin-runtime.ts`; `src/garage-skin-preference.ts`; `src/race-results.ts`; `src/result-screen.ts`; `src/history-achievements.ts`; `src/cloud-progress.ts`; `firestore.rules`; `docs/garage-release-policy.md`.
 
+
+
+### A-03 / A-04 implementation file handoff (2026-11-10)
+
+Two standalone new art assets have been produced externally to the app code; the current canonical runtime filename/ownership contract is:
+
+- **A-03 Demo Points:** `public/feature-assets/wave3-demo/raster/demo-points@3x.webp` (transparent `demo-points@3x.png` master counterpart). Consume at **72×72 CSS px** from the 216×216 3× image in the local-only Demo Points balance, Store and Results presentation; never represent as real currency.
+- **A-04 Demo Claim:** `public/feature-assets/wave3-demo/raster/demo-claim@3x.webp` (transparent `demo-claim@3x.png` master counterpart). Consume at **72×72 CSS px** when a local-demo mission reward can be claimed or confirmed; state and translation remain authored by Vue, never the image.
+
+Use `import.meta.env.BASE_URL` + `feature-assets/wave3-demo/raster/<filename>`, `object-fit:contain` and ≥8px container padding. Static art needs no GIF/reduced-motion variant. Do not silently substitute existing Store or mission sprites. Before A01/A02 is checked off, verify each binary exists and decodes in the branch, RGBA alpha and ≥20px inset, and capture browser screenshots in portrait/landscape/desktop. Other artwork (A-05/A-06) stays optional. See `docs/designs/wave3-frontend-first-visual-assets.md` §7 for the canonical asset table.
+
+**Status distinction:** file naming/handoff is documented, but this alone is not proof the WebPs are in the repository, wired into UI, or cleared for visual approval. F03–F06 and A01/A02 remain open until their respective evidence is observed.
+
 ## Work graph and ownership
 
 `F00 audit → F01 local port → F02 game event capture → F03 local mission engine → F04 local result/demo ledger → F05 demo store+inventory → F06 frontend UX integration → F08 early-access gates → B00 Go backend.`
