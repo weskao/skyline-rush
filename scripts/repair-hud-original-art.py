@@ -149,16 +149,23 @@ def main():
     args = argparse.ArgumentParser(description=__doc__)
     args.add_argument("--check", action="store_true")
     opts = args.parse_args()
-    if not opts.check:
-        originals = {
-            n: Image.open(io.BytesIO(original_bytes(n))).convert("RGBA") for n in NAMES
-        }
-        for name in NAMES:
-            image = repair(name, originals)
-            target = FOLDER / f"{name}@3x.webp"
-            # Alpha/layer information survives untouched; no lossy re-encode.
-            image.save(target, "WEBP", lossless=True, method=6, exact=True)
+    originals = {
+        n: Image.open(io.BytesIO(original_bytes(n))).convert("RGBA") for n in NAMES
+    }
     for name in NAMES:
+        image = repair(name, originals)
+        target = FOLDER / f"{name}@3x.webp"
+        binary = io.BytesIO()
+        image.save(binary, "WEBP", lossless=True, method=6, exact=True)
+        # The original branch already passed rough alpha-margin checks while
+        # still showing sprite scraps and broken rings. Compare the *pixels
+        # reconstructed from the approved source*, not margins alone.
+        if opts.check:
+            assert target.read_bytes() == binary.getvalue(), (
+                name, "image does not match the original-style crop repair"
+            )
+        else:
+            target.write_bytes(binary.getvalue())
         print(name, verify_file(name))
 
 
