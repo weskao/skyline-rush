@@ -129,19 +129,6 @@ def mirror_missing_button_frame(image, name):
             weight = clamp((x - (right - 38)) / 23)
             target[x, y] = blend_rgba(original, donor, weight)
 
-    # Some source sheets were cut just below the bevel: extend only pixels
-    # genuinely absent there, using the matching top original bezel.
-    for y in range(max(0, bottom - 10), min(stage.height, bottom + 10)):
-        donor_y = top + bottom - y
-        if not (0 <= donor_y < height):
-            continue
-        for x in range(max(0, left + 12), min(width, right - 20)):
-            original = target[x, y]
-            if original[3] > 16:
-                continue
-            donor = source[x, donor_y]
-            if donor[3] > 32:
-                target[x, y] = donor
     return stage
 
 
@@ -150,7 +137,6 @@ def mirror_missing_button_frame(image, name):
 # transparent damage from the intact opposite half of the SAME source.
 DISC_FACE_PATCHES = {
     "hud-nitro": (125, 140, 61, 146, 115),
-    "hud-speed": (101, 121, 53, 120, 111),
     "ui-info": (102, 127, 57, 115, 111),
 }
 
@@ -232,13 +218,48 @@ def pack(image, name):
     return out
 
 
+def restore_gallery_face(image, name):
+    """Patch visibly missing inside-panel pixels *after* fitting to 3x canvas.
+
+    A cutout may contain nearly transparent dark RGB (rather than pure alpha
+    zero) and have no intact exact mirrored counterpart. Copy nearby original
+    enamel pixels, never a synthetic flat colour or a glyph/highlight.
+    """
+    if name not in ("ui-info", "ui-tooltip"):
+        return image
+    source, output = image.load(), image.copy()
+    target = output.load()
+    for y in range(116, 156):
+        for x in range(119, 158):
+            if name == "ui-info" and (x - 108) ** 2 + (y - 108) ** 2 > 51 ** 2:
+                continue
+            if name == "ui-tooltip" and (x > 150 or y > 151):
+                continue
+            original = source[x, y]
+            if original[3] >= 145 and max(original[:3]) > 28:
+                continue
+            if name == "ui-info":
+                candidates = ((82, min(y, 138)), (77, 128),
+                              (87, 115), (91, 133))
+            else:
+                candidates = ((89, min(y, 139)), (83, 137),
+                              (103, 139), (91, 130))
+            for sx, sy in candidates:
+                donor = source[sx, sy]
+                brightness = max(donor[:3])
+                if donor[3] >= 165 and 35 <= brightness <= 174:
+                    target[x, y] = donor
+                    break
+    return output
+
+
 def repair(name, originals):
     base = restore_missing_face(cleanup(originals[name].copy(), name), name)
     if name in CIRCLE_GEOMETRY:
         base = mirror_missing_rim(base, name)
     elif name in BUTTON_GEOMETRY:
         base = mirror_missing_button_frame(base, name)
-    return pack(base, name)
+    return restore_gallery_face(pack(base, name), name)
 
 
 def verify_file(name):
