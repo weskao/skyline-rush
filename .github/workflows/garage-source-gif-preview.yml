@@ -1,0 +1,168 @@
+name: Garage source GIF preview
+on:
+  push:
+    branches:
+      - feature/garage-preview-animated-gifs
+    paths:
+      - .github/workflows/garage-source-gif-preview.yml
+      - public/feature-assets/garage-vfx-skins/raster/**
+      - public/feature-assets/garage-store-readiness/raster/**
+permissions:
+  contents: read
+jobs:
+  source-gif-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check Pillow numpy cairosvg
+      - name: Render native source WebP/SVG to transparent moving GIF and validate frames
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from io import BytesIO
+          import math
+          import xml.etree.ElementTree as ET
+          import numpy as np
+          import cairosvg
+          from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter
+          
+          N=16
+          base=Path("public/feature-assets")
+          vfx=base/"garage-vfx-skins/raster"
+          store=base/"garage-store-readiness/raster"
+          out=Path("gif-output")
+          out.mkdir(exist_ok=True)
+          assets={"thruster":vfx/"thruster-ion@3x.webp",
+                  "nitro":vfx/"trail-cyan@3x.webp",
+                  "flare":vfx/"flare-gold@3x.webp",
+                  "badge":vfx/"rarity-legendary@3x.webp",
+                  "store":store/"store-box@3x.webp"}
+          def mask(w,h,poly):
+              m=Image.new("L",(w,h),0)
+              ImageDraw.Draw(m).polygon(poly,fill=255)
+              return m.filter(ImageFilter.GaussianBlur(5))
+          def zoom(im,sx,sy,cx,cy):
+              a,b=1/sx,1/sy
+              return im.transform(im.size,Image.Transform.AFFINE,
+                  (a,0,cx*(1-a),0,b,cy*(1-b)),resample=Image.Resampling.BICUBIC)
+          def bitmap(kind,src,t):
+              w,h=src.size
+              phase=2*math.pi*t/N
+              wave=math.sin(phase); pulse=(1+wave)/2
+              if kind=="thruster":
+                  m=mask(w,h,[(0,int(h*.48)),(int(w*.31),int(h*.33)),(int(w*.61),int(h*.53)),
+                                (int(w*.49),int(h*.83)),(int(w*.25),h),(0,h)])
+                  m=m.filter(ImageFilter.GaussianBlur(6))
+                  jet=src.copy();jet.putalpha(ImageChops.multiply(src.getchannel("A"),m))
+                  metal=src.copy();metal.putalpha(ImageChops.multiply(src.getchannel("A"),ImageChops.invert(m)))
+                  jet=zoom(jet,.82+.27*pulse,.90+.17*pulse,w*.54,h*.57)
+                  jet=ImageEnhance.Brightness(jet).enhance(.91+.18*pulse)
+                  return Image.alpha_composite(jet,metal)
+              if kind=="nitro":
+                  arr=np.asarray(src).copy()
+                  yy,xx=np.indices((h,w))
+                  shift=6.5*np.sin((xx+yy)/19+phase)
+                  sy=np.clip(np.rint(yy+shift).astype("int32"),0,h-1)
+                  sx=np.clip(np.rint(xx-shift).astype("int32"),0,w-1)
+                  warped=arr[sy,sx]
+                  dst=np.clip(arr.astype("float32")*.35+warped.astype("float32")*.65,0,255).astype("uint8")
+                  return Image.fromarray(dst,"RGBA")
+              if kind=="flare":
+                  frame=zoom(src,.88+.17*pulse,.88+.17*pulse,w/2,h/2)
+                  return ImageEnhance.Brightness(frame).enhance(.88+.20*pulse)
+              if kind=="badge":
+                  im=src.rotate(3*wave,resample=Image.Resampling.BICUBIC,expand=False,center=(w/2,h/2))
+                  arr=np.asarray(im,dtype=np.float32).copy()
+                  yy,xx=np.indices((h,w))
+                  xpos=(t/N)*(w+70)-35
+                  shine=np.exp(-((xx-xpos)/16)**2)*.4
+                  arr[:,:,:3]=np.clip(arr[:,:,:3]*(1+shine[:,:,None]),0,255)
+                  return Image.fromarray(arr.astype("uint8"),"RGBA")
+              if kind=="store":
+                  m=mask(w,h,[(int(.17*w),int(.15*h)),(int(.8*w),int(.13*h)),
+                               (int(.93*w),int(.41*h)),(int(.75*w),int(.52*h)),(int(.17*w),int(.5*h))])
+                  lid=src.copy();lid.putalpha(ImageChops.multiply(src.getchannel("A"),m))
+                  body=src.copy();body.putalpha(ImageChops.multiply(src.getchannel("A"),ImageChops.invert(m)))
+                  opened=(1-math.cos(phase))/2
+                  interior=Image.new("RGBA",(w,h))
+                  ImageDraw.Draw(interior).ellipse((w*.3,h*.35,w*.73,h*.58),fill=(167,79,255,int(75+85*opened)))
+                  lid=lid.transform((w,h),Image.Transform.AFFINE,(1,0,0,0,1,6+14*opened),
+                                    resample=Image.Resampling.BICUBIC)
+                  return Image.alpha_composite(Image.alpha_composite(interior,body),lid)
+              raise ValueError(kind)
+          def airflow(t):
+              src=vfx/"airflow-vortex@3x.svg"
+              root=ET.fromstring(src.read_bytes())
+              ns="{http://www.w3.org/2000/svg}"
+              g=root.findall(ns+"g")[0]
+              phase=2*math.pi*t/N
+              g.set("transform",f"translate(0 -4) rotate({9*math.sin(phase):.3f} 144 145)")
+              for j,p in enumerate(g.findall(ns+"path")):
+                  p.set("stroke-dasharray","45 8 22 7")
+                  p.set("stroke-dashoffset",f"{-145*t/N+j*19:.2f}")
+              for c in g.findall(ns+"circle"):
+                  c.set("transform",f"rotate({360*t/N:.2f} 186 158)")
+              return Image.open(BytesIO(cairosvg.svg2png(bytestring=ET.tostring(root),
+                                output_width=288,output_height=288))).convert("RGBA")
+          def convert(im):
+              a=np.asarray(im.getchannel("A"))
+              pal=im.convert("RGB").quantize(colors=254,method=Image.Quantize.FASTOCTREE,dither=Image.Dither.NONE)
+              idx=(np.asarray(pal).astype("uint16")+1).astype("uint8")
+              idx[a<34]=0
+              result=Image.fromarray(idx,"P")
+              colors=pal.getpalette()[:254*3]
+              result.putpalette(([0,0,0]+colors+[0]*(768-3-len(colors)))[:768])
+              result.info["transparency"]=0
+              return result
+          def save(key,frames):
+              palettes=[convert(f) for f in frames]
+              dest=out/(key+"-source-original@3x.gif")
+              palettes[0].save(dest,save_all=True,append_images=palettes[1:],duration=80,
+                  loop=0,disposal=2,transparency=0,optimize=False)
+              actual=Image.open(dest)
+              assert actual.n_frames==16 and actual.info.get("loop")==0 and "transparency" in actual.info,key
+              values=[]
+              for i in (0,5,10):
+                  actual.seek(i)
+                  values.append(np.asarray(actual.convert("RGBA")).copy())
+              assert np.count_nonzero(values[0]!=values[1])>250,key
+              assert np.count_nonzero(values[0]!=values[2])>250,key
+              for i in range(16):
+                  actual.seek(i);actual.load()
+              print("VALID",dest,actual.size,actual.n_frames,dest.stat().st_size)
+              return frames
+          images={}
+          for name,path in assets.items():
+              assert path.exists(),f"Missing original WebP {path}"
+              src=Image.open(path).convert("RGBA")
+              assert src.getchannel("A").getextrema()[0]<255,path
+              images[name]=save(name,[bitmap(name,src,i) for i in range(N)])
+          images["airflow"]=save("airflow",[airflow(i) for i in range(N)])
+          gallery=[]
+          entries=[("THRUSTER","thruster"),("AIRFLOW","airflow"),("NITRO TRAIL","nitro"),
+                   ("LAUNCH FLARE","flare"),("BADGE & RARITY","badge"),("STORE CONCEPT","store")]
+          for i in range(N):
+              im=Image.new("RGBA",(900,648))
+              d=ImageDraw.Draw(im)
+              for j,(label,key) in enumerate(entries):
+                  x=5+(j%3)*300;y=5+(j//3)*320
+                  d.rounded_rectangle((x,y,x+290,y+306),radius=15,
+                      fill=(16,29,49,254),outline=(71,115,158,255),width=2)
+                  pic=images[key][i].copy()
+                  pic.thumbnail((268,268),Image.Resampling.LANCZOS)
+                  im.alpha_composite(pic,(x+(290-pic.width)//2,y+8+(268-pic.height)//2))
+                  d.text((x+15,y+282),label,fill=(242,249,255,255))
+              gallery.append(im)
+          save("material-showcase",gallery)
+          
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: garage-source-original-gif-preview
+          path: gif-output/*.gif
+          if-no-files-found: error
+          retention-days: 7

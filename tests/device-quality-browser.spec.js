@@ -57,3 +57,30 @@ test('starting a race puts the downgrade notice away so it never covers the race
   await expect(page.locator('#countdown')).toBeVisible();
   await expect(page.locator('#performance-notice')).toBeHidden();
 });
+
+test('without ?look=3d Settings is the develop one: no Ultra option, and a saved Ultra shows as High but is kept', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high', ultra: true, preset: 'cinematic', enabled: true })));
+  await page.reload();
+  const quality = page.locator('select[data-vfx="quality"]');
+  await expect(quality.locator('option')).toHaveText(['Low', 'Medium', 'High']);
+  await expect(quality).toHaveValue('high');
+  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'high');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx')))).toMatchObject({ quality: 'high', ultra: true });
+  await page.goto('/?look=3d');
+  await expect(page.locator('select[data-vfx="quality"]')).toHaveValue('ultra'); // the same saved choice, back with the gate
+});
+
+test('?look=3d: Ultra quality is selectable, saved across reloads, and switching back to High clears it', async ({ page }) => {
+  await page.goto('/?look=3d');
+  const quality = page.locator('select[data-vfx="quality"]');
+  await expect(quality.locator('option')).toHaveText(['Low', 'Medium', 'High', 'Ultra']);
+  await quality.selectOption('ultra', { force: true });
+  await expect(quality).toHaveValue('ultra');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx')))).toMatchObject({ quality: 'high', ultra: true });
+  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'high');
+  await page.reload();
+  await expect(page.locator('select[data-vfx="quality"]')).toHaveValue('ultra');
+  await page.locator('select[data-vfx="quality"]').selectOption('high', { force: true });
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx')).ultra)).toBe(false);
+});

@@ -235,3 +235,28 @@ test('release: a disposed showcase car gives its instance back and is never dres
   assert.equal(instanceCount(home), 1);
   model.release(host('never-shown')); // unknown host: no-op
 });
+
+test('a dressed GLB reflects the host car\'s softened map, set before compiling (Roadster washed white in Coast rain)', async () => {
+  const { applyCarReflections, CAR_REFLECTION } = await import('../src/car-reflections.ts');
+  const carMap = new THREE.Texture(), paint = new THREE.MeshPhysicalMaterial({ name: 'roadster_paint' });
+  const glb = new THREE.Group();
+  glb.add(new THREE.Mesh(new THREE.BoxGeometry(), paint), new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()));
+  const cache = { async load(id) { await tick(); return { kind: 'model', id, instance: () => glb.clone(true), release() {} }; } };
+  const seen = [];
+  const model = createGarageModel({ id: 'roadster2', cache, dataset: {}, compile: async () => { seen.push([paint.envMap, paint.envMapIntensity]); } });
+  const home = host();
+  home.body.material = new THREE.MeshStandardMaterial();
+  applyCarReflections(home.car, carMap);
+  model.sync(true, 'high', home, 'drive');
+  await settle();
+  assert.deepEqual(seen, [[carMap, CAR_REFLECTION.intensity]], 'compiled with the car map, never with the scene HDRI');
+  assert.equal(paint.envMap, carMap);
+
+  const bare = new THREE.MeshPhysicalMaterial(), plain = new THREE.Group();
+  plain.add(new THREE.Mesh(new THREE.BoxGeometry(), bare));
+  const other = createGarageModel({ id: 'roadster2', dataset: {}, compile: async () => {},
+    cache: { async load(id) { await tick(); return { kind: 'model', id, instance: () => plain.clone(true), release() {} }; } } });
+  other.sync(true, 'high', host(), 'drive');
+  await settle();
+  assert.equal(bare.envMap, null, 'a host car without its own map leaves the GLB as authored');
+});

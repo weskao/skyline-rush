@@ -54,6 +54,17 @@ Write every assertion so that runner speed cannot change its outcome.
   keyboard full-practice tests took 1.7 min of the 135 s default and timed out mid-glide on slower runners
   (develop, 2026-11-07); `keyboardToNitro` now sets `FULL_PRACTICE_BUDGET`, guarded in `browser-timeouts.test.js`.
   A `Test timeout … exceeded` with the page still progressing is a budget miss; a frozen page is a bug.
+- **CI warns before a test tips over.** `tests/helpers/budget-reporter.js` (CI only) adds a
+  "Near its test timeout" warning and a job-summary row for every test that used more than half
+  its own budget. Treat it like a retry annotation: fix the wait or set an explicit budget.
+- **Inside `page.evaluate`, wait on game state per frame, bounded by race time.** A CPU-only
+  runner stretches every `setTimeout` to a whole ~300 ms frame, so `for (i < 200 && !ring.hit)
+  await wait(10)` burned 60 s on one missed ring and timed ring-sfx out (CI 42489399352). Write
+  `while (!decided && race.elapsed < until) await new Promise(requestAnimationFrame)`. Enforced by
+  `tests/browser-timeouts.test.js` (*counted wall-clock sleep*).
+- **Seeded positions stay clear of the field.** Teleporting the player back to the first rings put
+  it in the pack: rivals step first and take the ring, traffic knocks the car off it. Seed ahead of
+  every car (`race.rivals`) and pass traffic with `player.effects.ghost` (game seconds).
 - CI retries a failed test once (`retries` in `playwright.config.js`). The retry absorbs runner
   stalls such as `browserType.launch: Timeout 180000ms`. It does **not** make a flake
   acceptable. The `github` reporter annotates every test that passed only on retry. Treat that

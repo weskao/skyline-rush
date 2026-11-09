@@ -285,8 +285,8 @@ Windows 亦必須做 **GUI + Claude MCP live scene read**，不能僅憑 PowerSh
 ## 9. 相關規格（進一步詳細設計；非本文件必要依賴）
 
 - `docs/designs/3d-pipeline/toolchain-environment-preflight.md`
-- `docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md`
-- `docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md`
+- `docs/superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md`
+- `docs/superpowers/specs/3d-visual-fidelity-pipeline-design-v2.md`
 - `docs/designs/3d-pipeline/threejs-r180-r186-migration.md`
 - https://github.com/ahujasid/mcp-for-blender
 - https://github.com/majidmanzarpour/blender-game-skills

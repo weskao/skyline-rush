@@ -12,7 +12,7 @@ test('all four classic roads upload geometry and lane instances only on sector/i
     'renderer must explicitly gate classic road refresh');
   assert.match(renderer,/if\s*\(refreshClassicRoad\)\s*for\s*\(let i = 0; i <= segments; i\+\+\)/,
     'road/lane instance transforms must not be recomputed on every frame');
-  assert.match(renderer,/if\s*\(refreshClassicRoad\)\s*roadGeometry\.attributes\.position\.needsUpdate\s*=\s*true;/,
+  assert.match(renderer,/if\s*\(refreshClassicRoad\)\s*roadGeometry\.attributes\.position\.needsUpdate\s*=\s*(roadGeometry\.attributes\.uv\.needsUpdate\s*=\s*)?true;/,
     'road vertex GPU upload must be skipped inside a stable sector');
   assert.match(renderer,/if\s*\(refreshClassicRoad\)\s*\[laneLines, curbs, edgeLines, railLights\]/,
     'lane/rail GPU uploads must be skipped inside a stable sector');

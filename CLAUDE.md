@@ -55,6 +55,18 @@ All ten new maps are point-to-point with distinct START and FINISH; no laps.
 specs, configs, tests, logs). Use repo-relative paths, `$HOME`/`~`, or a placeholder such as
 `<repo>`.
 
+## Animated image / GIF production (mandatory)
+
+Before creating or replacing animated Garage/HUD/Store/VFX art, **read
+`.claude/rules/animated-image-production.md` and `.claude/rules/raster-artwork.md`**.
+Use the source-locked per-item motion template, genuine object/energy motion,
+3× native canvas, transparent sprite-sheet workflow, shared-palette GIF export,
+frame/alpha/size verification and six-frame visual contact sheets. Never
+substitute generic overlays or procedural placeholder GIFs for original art.
+Do not retire the old Garage GIF generator or update a GIF manifest profile to
+`gpt-authored` until all 25 authentic replacement GIFs are committed and verified.
+Keep all reference sources intact. Follow exact-HEAD tests/CI and human review.
+
 ## Workflow (every feature and bug fix)
 
 Follow `docs/regression-first-workflow.md`: trace the shared root cause; failing test (RED) →
@@ -88,8 +100,8 @@ without explicit user approval.
 ## AI-assisted 3D asset / Three.js upgrade (planned; not deployed)
 
 For any Blender, GLB/PBR, 3D asset, rendering-quality or Three.js r180 → r186 work:
-first read `docs/superpowers/specs/2026-11-04-3d-visual-fidelity-pipeline-design.md`
-and `docs/superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md`.
+first read `docs/superpowers/specs/3d-visual-fidelity-pipeline-design-v2.md`
+and `docs/superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md`.
 For repeatable checks across Mac mini, MacBook Pro or other devices, use the self-contained
 `docs/designs/3d-pipeline/phase0-multi-device-acceptance.md` (E01–E15, device alias,
 actual live MCP evidence and per-device reports). Never reuse another device's PASS.

@@ -1,6 +1,6 @@
 # Task 3 — GLB pipeline MVP, licensing and asset loader
 
-Part of [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md](../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) · Spec Phase 2 (pipeline) · TODO Phase 2 · Scope tags: [README.md](README.md).
+Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) · Spec Phase 2 (pipeline) · TODO Phase 2 · Scope tags: [README.md](README.md).
 
 **Files:** scripts/assets/ (planned Blender export / glTF Transform CLI scripts); src/asset-model-loader.ts (planned), src/model-manifest.ts (planned), tests/model-asset-loader.test.js (planned), tests/model-manifest.test.js (planned), public/models/ (validated outputs only), assets-src/ (masters); src/world.js minimally for staged adapter.
 **Produces:** manifest-defined, preloaded game model with fallback, predictable decoder/asset lifetime and GitHub Pages subpath support.

@@ -1,6 +1,6 @@
 # Task 4 — Reference-led high-fidelity Roadster in Garage
 
-Part of [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md](../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) · Spec Phase 2 (Roadster) · TODO Phase 3 · Scope tags: [README.md](README.md).
+Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) · Spec Phase 2 (Roadster) · TODO Phase 3 · Scope tags: [README.md](README.md).
 
 **Files:** assets-src/roadster2/ (planned), public/models/cars/ (planned), src/car-model.js, src/garage-stage.ts, src/roadster-fidelity.js for procedural fallback only, tests/roadster-fidelity.test.js, tests/garage-*-browser.spec.js.
 **Produces:** real GLB-based hero car demonstrably matching approved front/side/rear reference while maintaining game controls and vehicle attachments.
