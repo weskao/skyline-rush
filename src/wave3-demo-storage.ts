@@ -1,5 +1,6 @@
 import { WAVE3_CATALOG_VERSION, WAVE3_EXPERIENCE_VERSION } from './wave3-experience-contract.ts';
 import type { ExperienceSnapshot } from './wave3-experience-contract.ts';
+import type { Wave3DemoCheckpoint } from './wave3-local-demo.ts';
 
 /** Disposable cache only: never Cloud Save, real ownership, money or server migration. */
 export const WAVE3_DEMO_STORAGE_PREFIX = 'skyline-rush-wave3-demo:v1:';
@@ -10,7 +11,8 @@ const ACCOUNT = /^[A-Za-z0-9_-]{1,128}$/;
 const ITEM = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
 
 type DemoStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
-type Entry = { snapshot: ExperienceSnapshot; savedAt: number };
+type Replay = Readonly<Pick<Wave3DemoCheckpoint, 'seenEvents' | 'settledCompletions'>>;
+type Entry = { snapshot: ExperienceSnapshot; savedAt: number; checkpoint?: Replay };
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 const exact = (value: Record<string, unknown>, keys: readonly string[]) =>
@@ -43,15 +45,28 @@ function validSnapshot(value: unknown, id: string, savedAt: number): value is Ex
   });
 }
 
+const validReplay = (value: unknown): value is Replay => isRecord(value) &&
+  exact(value, ['seenEvents', 'settledCompletions']) &&
+  Array.isArray(value.seenEvents) && Array.isArray(value.settledCompletions) &&
+  value.seenEvents.length <= 1024 && value.settledCompletions.length <= 1024 &&
+  [...value.seenEvents, ...value.settledCompletions].every(
+    id => typeof id === 'string' && ITEM.test(id) && id.length >= 4,
+  ) &&
+  new Set(value.seenEvents).size === value.seenEvents.length &&
+  new Set(value.settledCompletions).size === value.settledCompletions.length;
+
 function readEntry(raw: string, id: string, now: number): Entry | null {
   if (new TextEncoder().encode(raw).byteLength > MAX_BYTES) return null;
   let parsed: unknown;
   try { parsed = JSON.parse(raw); } catch { return null; }
-  if (!isRecord(parsed) || !exact(parsed, ['version', 'accountId', 'savedAt', 'snapshot']) ||
+  if (!isRecord(parsed) || !(exact(parsed, ['version', 'accountId', 'savedAt', 'snapshot']) ||
+    exact(parsed, ['version', 'accountId', 'savedAt', 'snapshot', 'checkpoint'])) ||
     parsed.version !== WAVE3_EXPERIENCE_VERSION || parsed.accountId !== id ||
     !withinTime(parsed.savedAt, 0, now + FUTURE_SKEW_MS) || now - parsed.savedAt > RETENTION_MS ||
-    !validSnapshot(parsed.snapshot, id, parsed.savedAt)) return null;
-  return { savedAt: parsed.savedAt, snapshot: parsed.snapshot };
+    !validSnapshot(parsed.snapshot, id, parsed.savedAt) ||
+    (Object.hasOwn(parsed, 'checkpoint') && !validReplay(parsed.checkpoint))) return null;
+  return { savedAt: parsed.savedAt, snapshot: parsed.snapshot,
+    ...(Object.hasOwn(parsed, 'checkpoint') ? { checkpoint: parsed.checkpoint as Replay } : {}) };
 }
 
 export function browserWave3DemoStorage(): DemoStorage | null {
@@ -64,6 +79,23 @@ export function createWave3DemoStorage(options: { storage?: DemoStorage | null; 
   const now = options.now ?? Date.now;
   const memory = new Map<string, Entry>();
   const resetAccounts = new Set<string>();
+  const persist = (snapshot: ExperienceSnapshot, expectedAccount: string | null, checkpoint?: Replay): boolean => {
+    const id = account(expectedAccount);
+    const time = now();
+    if (!id || !withinTime(time, 0, Number.MAX_SAFE_INTEGER) || !validSnapshot(snapshot, id, time) ||
+      (checkpoint && !validReplay(checkpoint))) return false;
+    let raw: string;
+    try { raw = JSON.stringify({ version: WAVE3_EXPERIENCE_VERSION, accountId: id,
+      savedAt: time, snapshot, ...(checkpoint ? { checkpoint } : {}) }); }
+    catch { return false; }
+    if (new TextEncoder().encode(raw).byteLength > MAX_BYTES) return false;
+    const entry = readEntry(raw, id, time);
+    if (!entry) return false;
+    memory.set(id, entry);
+    resetAccounts.delete(id);
+    try { storage?.setItem(WAVE3_DEMO_STORAGE_PREFIX + id, raw); return !!storage; }
+    catch { return false; }
+  };
 
   return {
     load(accountId: string | null, mode: 'local-demo' | 'server' = 'local-demo'): ExperienceSnapshot | null {
@@ -85,19 +117,18 @@ export function createWave3DemoStorage(options: { storage?: DemoStorage | null; 
       return null;
     },
     save(snapshot: ExperienceSnapshot, expectedAccountId: string | null = snapshot.accountId): boolean {
-      const id = account(expectedAccountId);
-      const time = now();
-      if (!id || !withinTime(time, 0, Number.MAX_SAFE_INTEGER) || !validSnapshot(snapshot, id, time)) return false;
-      let raw: string;
-      try { raw = JSON.stringify({ version: WAVE3_EXPERIENCE_VERSION, accountId: id, savedAt: time, snapshot }); }
-      catch { return false; }
-      if (new TextEncoder().encode(raw).byteLength > MAX_BYTES) return false;
-      const entry = readEntry(raw, id, time);
-      if (!entry) return false;
-      memory.set(id, entry);
-      resetAccounts.delete(id);
-      try { storage?.setItem(WAVE3_DEMO_STORAGE_PREFIX + id, raw); return !!storage; }
-      catch { return false; }
+      return persist(snapshot, expectedAccountId);
+    },
+    saveCheckpoint(checkpoint: Wave3DemoCheckpoint, expectedAccountId: string | null = checkpoint.snapshot.accountId): boolean {
+      return persist(checkpoint.snapshot, expectedAccountId, {
+        seenEvents: checkpoint.seenEvents, settledCompletions: checkpoint.settledCompletions,
+      });
+    },
+    loadCheckpoint(accountId: string | null): Wave3DemoCheckpoint | null {
+      const id = account(accountId);
+      const snapshot = this.load(accountId, 'local-demo');
+      const replay = id ? memory.get(id)?.checkpoint : null;
+      return snapshot && replay ? { snapshot, ...replay } : null;
     },
     resetDemo(accountId: string | null = null): void {
       const id = account(accountId);

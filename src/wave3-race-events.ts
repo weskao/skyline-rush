@@ -1,4 +1,5 @@
 import { createWave3LocalDemo } from './wave3-local-demo.ts';
+import { createWave3DemoStorage } from './wave3-demo-storage.ts';
 import { WAVE3_EXPERIENCE_VERSION } from './wave3-experience-contract.ts';
 import type { Wave3ExperiencePort, GameEvent, ExperienceResult } from './wave3-experience-contract.ts';
 
@@ -62,7 +63,38 @@ export function createWave3RaceEventBridge(experience: Wave3ExperiencePort, idFa
 }
 
 /** Shared gameplay-to-Garage adapter, never a verified wallet. */
-export const wave3DemoExperience = createWave3LocalDemo();
+const state = createWave3LocalDemo();
+const cache = createWave3DemoStorage();
+const initial = cache.loadCheckpoint('guest');
+if (initial) state.restoreCheckpoint(initial);
+let switchingAccount = false;
+state.subscribe(() => {
+  if (!switchingAccount) cache.saveCheckpoint(state.getCheckpoint());
+});
+/** The only adapter for the active account; queued events cannot cross account boundaries. */
+export const wave3DemoExperience: Wave3ExperiencePort = {
+  ...state,
+  setAccount(next) {
+    switchingAccount = true;
+    try {
+      const snap = state.setAccount(next);
+      const checkpoint = cache.loadCheckpoint(snap.accountId);
+      if (checkpoint) state.restoreCheckpoint(checkpoint);
+      return state.getSnapshot();
+    } finally {
+      switchingAccount = false;
+      cache.saveCheckpoint(state.getCheckpoint());
+    }
+  },
+  resetDemo() {
+    switchingAccount = true;
+    try {
+      const snap = state.resetDemo();
+      cache.resetDemo(snap.accountId);
+      return snap;
+    } finally { switchingAccount = false; }
+  },
+};
 const bridge = createWave3RaceEventBridge(wave3DemoExperience);
 export const captureWave3RaceTelemetry = bridge.capture;
 const receipts = new WeakMap<object, ExperienceResult | null>();

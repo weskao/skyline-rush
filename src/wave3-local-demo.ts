@@ -1,7 +1,12 @@
 import { WAVE3_CATALOG_VERSION, WAVE3_EXPERIENCE_VERSION } from './wave3-experience-contract.ts';
 import type { ExperienceSnapshot, ExperienceResult, Wave3ExperiencePort, GameEvent, RaceCompletion, Wave3Status } from './wave3-experience-contract.ts';
-import { DEMO_ELIGIBLE_MODES, DEMO_MISSION_CLAIM_REWARD, DEMO_START_POINTS, demoRedemption, demoSettlement } from './wave3-demo-settlement.ts';
+import { DEMO_ELIGIBLE_MODES, DEMO_MISSION_CLAIM_REWARD, DEMO_REDEMPTION_COSTS, DEMO_START_POINTS, demoRedemption, demoSettlement } from './wave3-demo-settlement.ts';
 
+export type Wave3DemoCheckpoint = Readonly<{
+  snapshot: ExperienceSnapshot;
+  seenEvents: readonly string[];
+  settledCompletions: readonly string[];
+}>;
 const GOALS: Readonly<Record<string, number>> = Object.freeze({
   'mission-race': 1, 'mission-time': 1, 'mission-drift': 2, 'mission-combo': 1,
 });
@@ -10,7 +15,10 @@ const VALID_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{3,159}$/;
 const validId = (id: unknown): id is string => typeof id === 'string' && VALID_ID.test(id);
 const validTime = (time: unknown): time is number => typeof time === 'number' && Number.isFinite(time) && time >= 0;
 
-export function createWave3LocalDemo(options: { now?: () => number } = {}): Wave3ExperiencePort {
+export function createWave3LocalDemo(options: { now?: () => number } = {}): Wave3ExperiencePort & {
+  getCheckpoint(): Wave3DemoCheckpoint;
+  restoreCheckpoint(value: Wave3DemoCheckpoint): ExperienceSnapshot | null;
+} {
   const now = options.now ?? Date.now;
   const listeners = new Set<(value: ExperienceSnapshot) => void>();
   let accountId = 'guest', demoPoints = DEMO_START_POINTS, equippedPreview: string | null = null;
@@ -39,7 +47,41 @@ export function createWave3LocalDemo(options: { now?: () => number } = {}): Wave
     return publish();
   };
 
+  const validCheckpoint = (value: Wave3DemoCheckpoint) => {
+    const incoming = value?.snapshot;
+    if (!incoming || incoming.mode !== 'local-demo' || incoming.authority !== 'local' ||
+      incoming.syncState !== 'local-only' || incoming.accountId !== accountId ||
+      incoming.version !== WAVE3_EXPERIENCE_VERSION || incoming.catalogVersion !== WAVE3_CATALOG_VERSION ||
+      !Number.isSafeInteger(incoming.demoPoints) || incoming.demoPoints < 0 || incoming.demoPoints > 1_000_000_000 ||
+      !Array.isArray(incoming.demoInventory) || incoming.demoInventory.length > 256 ||
+      !incoming.demoInventory.every(id => Object.hasOwn(DEMO_REDEMPTION_COSTS, id)) ||
+      new Set(incoming.demoInventory).size !== incoming.demoInventory.length ||
+      (incoming.equippedPreview !== null && !incoming.demoInventory.includes(incoming.equippedPreview)) ||
+      !incoming.missions || Object.keys(incoming.missions).sort().join('|') !== Object.keys(GOALS).sort().join('|')) return false;
+    if (!Array.isArray(value.seenEvents) || !Array.isArray(value.settledCompletions) ||
+      value.seenEvents.length > 1024 || value.settledCompletions.length > 1024 ||
+      ![...value.seenEvents, ...value.settledCompletions].every(validId)) return false;
+    return Object.entries(GOALS).every(([id, goal]) => {
+      const mission = incoming.missions[id];
+      return mission && mission.goal === goal && mission.rewardDemoPoints === DEMO_MISSION_CLAIM_REWARD &&
+        Number.isSafeInteger(mission.progress) && mission.progress >= 0 && mission.progress <= goal &&
+        typeof mission.claimed === 'boolean' && (!mission.claimed || mission.progress === goal);
+    });
+  };
+
   return {
+    getCheckpoint: () => ({ snapshot: snapshot(), seenEvents: [...seenEvents], settledCompletions: [...settled] }),
+    restoreCheckpoint(value) {
+      if (!validCheckpoint(value)) return null;
+      const incoming = value.snapshot;
+      demoPoints = incoming.demoPoints;
+      redeemed = new Set(incoming.demoInventory);
+      equippedPreview = incoming.equippedPreview;
+      seenEvents = new Set(value.seenEvents);
+      settled = new Set(value.settledCompletions);
+      missions = Object.fromEntries(Object.entries(incoming.missions).map(([id, progress]) => [id, { ...progress }]));
+      return publish();
+    },
     getSnapshot: snapshot,
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
     setAccount(id) {

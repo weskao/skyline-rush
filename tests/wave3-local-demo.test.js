@@ -111,3 +111,33 @@ test('invalid input does not mutate a demo state', () => {
   assert.equal(store.settleCompletion(completion('race-00000001', { schemaVersion: 999 })).status, 'invalid');
   assert.equal(store.getSnapshot().demoPoints, 20);
 });
+
+test('checkpoint restoration retains completion, claim and redemption dedupe', () => {
+  const first = createWave3LocalDemo();
+  first.recordGameEvent(event('finish-race-1', 'finish'));
+  first.settleCompletion(completion());
+  first.claimMission('mission-race');
+  first.redeemPreview('thruster-ion');
+  const checkpoint = first.getCheckpoint();
+
+  const reloaded = createWave3LocalDemo();
+  assert.ok(reloaded.restoreCheckpoint(checkpoint));
+  assert.equal(reloaded.getSnapshot().demoPoints, 25);
+  assert.equal(reloaded.settleCompletion(completion()).status, 'duplicate');
+  assert.equal(reloaded.claimMission('mission-race').status, 'duplicate');
+  assert.equal(reloaded.redeemPreview('thruster-ion').status, 'duplicate');
+  assert.equal(reloaded.getSnapshot().demoPoints, 25);
+});
+
+test('replay state from another account or with an unapproved skin cannot hydrate', () => {
+  const initial = createWave3LocalDemo();
+  const checkpoint = initial.getCheckpoint();
+  const other = createWave3LocalDemo();
+  other.setAccount('driver_B');
+  assert.equal(other.restoreCheckpoint(checkpoint), null);
+  assert.equal(other.getSnapshot().accountId, 'driver_B');
+  assert.equal(initial.restoreCheckpoint({
+    ...checkpoint, snapshot: { ...checkpoint.snapshot, demoInventory: ['not-a-skin'] },
+  }), null);
+  assert.equal(initial.getSnapshot().demoPoints, 20);
+});

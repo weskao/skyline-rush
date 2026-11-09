@@ -169,3 +169,29 @@ test('a failed remove cannot resurrect the previous demo snapshot in this sessio
   assert.equal(cache.save(snapshot('guest', { demoPoints: 77 })), true);
   assert.equal(cache.load('guest')?.demoPoints, 77);
 });
+
+test('replay-aware checkpoint restores with the demo balance in one bounded namespace', () => {
+  const backing = storage();
+  const checkpoint = { snapshot: snapshot(), seenEvents: ['drift-event-0001'],
+    settledCompletions: ['race-finish-0001'] };
+  assert.equal(adapter(backing).saveCheckpoint(checkpoint), true);
+  assert.deepEqual(adapter(backing).loadCheckpoint('guest'), checkpoint);
+  assert.deepEqual(adapter(backing).load('guest'), checkpoint.snapshot);
+  assert.equal(backing.data.has(key('guest') + ':replay'), false, 'single-key atomic payload');
+});
+
+test('snapshot-only caches are not hydrated without replay proof', () => {
+  const backing = storage();
+  assert.equal(adapter(backing).save(snapshot()), true);
+  assert.equal(adapter(backing).loadCheckpoint('guest'), null);
+});
+
+test('corrupt replay IDs reject the whole checkpoint, never credit without dedupe', () => {
+  const backing = storage();
+  const checkpoint = { snapshot: snapshot(), seenEvents: ['event-1234'], settledCompletions: ['race-1234'] };
+  assert.equal(adapter(backing).saveCheckpoint(checkpoint), true);
+  const raw = JSON.parse(backing.data.get(key('guest')));
+  raw.checkpoint.settledCompletions = Array.from({ length: 1025 }, (_, i) => 'race-' + i);
+  backing.data.set(key('guest'), JSON.stringify(raw));
+  assert.equal(adapter(backing).loadCheckpoint('guest'), null);
+});
