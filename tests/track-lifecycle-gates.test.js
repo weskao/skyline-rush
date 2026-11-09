@@ -28,7 +28,7 @@ const validPreview = () => ({
   teaserJpeg: Uint8Array.from([255,216,255,192,0,11,8,0,205,2,56,3,1,0,2,17,3,17,255,217]),
   routeSvgExists:true, hasEnvironment:true, productionEnterable:false,
   productionAvailableWithStaleUnlock:false, homeStatuses:['coming-soon','coming-soon'],
-  raceTrackDefined:false, classicOnly:true, unitTestExists:false, browserSpecExists:false,
+  raceTrackDefined:false, devModeCompatible:true, unitTestExists:false, browserSpecExists:false,
   developmentEnterable:false, evidence:null,
 });
 const gate = (results, id) => results.find(x => x.gate === id);
@@ -50,15 +50,15 @@ test('preview check evaluates every mandatory P gate', async () => {
 
 test('playable must have engine, tests, and development entry', async () => {
   const {checkCourse} = await import('../scripts/track-lifecycle/gates.mjs');
-  const base={...validPreview(),stage:'playable',raceTrackDefined:true,classicOnly:true,unitTestExists:true,browserSpecExists:true,developmentEnterable:true};
+  const base={...validPreview(),stage:'playable',raceTrackDefined:true,devModeCompatible:true,unitTestExists:true,browserSpecExists:true,developmentEnterable:true};
   assert.ok(checkCourse(base).every(g=>g.ok));
-  for(const [patch,id] of [[{classicOnly:false},'D1'],[{browserSpecExists:false},'D2'],[{developmentEnterable:false},'D3']])
+  for(const [patch,id] of [[{devModeCompatible:false},'D1'],[{browserSpecExists:false},'D2'],[{developmentEnterable:false},'D3']])
     assert.equal(gate(checkCourse({...base,...patch}),id)?.ok,false,id);
 });
 
 test('ready refuses empty or invalid evidence, nextGates lists R gates', async () => {
   const {checkCourse,nextGates} = await import('../scripts/track-lifecycle/gates.mjs');
-  const base={...validPreview(),stage:'playable',raceTrackDefined:true,classicOnly:true,unitTestExists:true,browserSpecExists:true,developmentEnterable:true};
+  const base={...validPreview(),stage:'playable',raceTrackDefined:true,devModeCompatible:true,unitTestExists:true,browserSpecExists:true,developmentEnterable:true};
   assert.deepEqual(nextGates(base),R_GATES);
   const result=checkCourse({...base,stage:'ready'});
   for(const id of R_GATES) assert.equal(gate(result,id)?.ok,false,id);
@@ -81,7 +81,7 @@ test('released catalog rejects unapproved, duplicated, and stamped upcoming cour
 test('release requires ready R-gates and explicit approval', async () => {
   const {checkRelease} = await import('../scripts/track-lifecycle/gates.mjs');
   const evidence={gates:Object.fromEntries(R_GATES.map(id=>[id,{ticked:true,sha:'abcdef1'}])),releasedAt:null};
-  const course={...validPreview(),stage:'ready',raceTrackDefined:true,classicOnly:true,unitTestExists:true,browserSpecExists:true,developmentEnterable:true,evidence};
+  const course={...validPreview(),stage:'ready',raceTrackDefined:true,devModeCompatible:true,unitTestExists:true,browserSpecExists:true,developmentEnterable:true,evidence};
   const approvals=new Set(['dune-tempest']);
   assert.ok(checkRelease('dune-tempest',course,approvals).every(x=>x.ok));
   assert.ok(checkRelease('dune-tempest',{...course,stage:'playable'},approvals).some(x=>!x.ok));

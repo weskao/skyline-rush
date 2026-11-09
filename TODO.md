@@ -4863,3 +4863,12 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Compared 24 deterministic Frostbite layouts with inherited Normal/Easy configurations: Normal at 1.01 produced 21/24 P8; Easy at 1.04 still produced P7/P8 in multiple layouts, so changing difficulty alone was insufficient.
 - [ ] Verify a course-owned rival grid spread against the unchanged 24-layout throttle/powerup-bot tests; preserve the fastest rival's speed, the classic track AI, CourseGraph physics, progression and lifecycle contracts. A locally reconstructed speed model is not a full game-suite PASS.
 - [ ] Run focused tests, `npm test`, `npm run typecheck`, `npm run build`, relevant Playwright browser tests, exact-HEAD FULL GitHub CI and real desktop/mobile WebGL QA. Local checkout/network unavailable in this execution environment; do not mark these gates complete until independently observed.
+
+## 2026-11-10 — All-course Elimination infinite highway and dev-mode parity
+
+- [x] 追查短路線問題：Elimination 在 `src/game.js` 的到站距離截斷將玩家速度歸零，定時淘汰繼續造成誤判。
+- [x] Elimination 與 Endless 共用 `prepareEndless` / `streamEndless` 道路、道具及交通串流；淘汰制不受 Endless 五碰撞中止規則影響，`finishEndless` 僅對真正 Endless 結算。
+- [x] 新舊 16 張賽道及新增 track registry 均採用共用機制，CourseGraph 有限路線只保留於正常競速；測試 `tests/elimination-endless-all-tracks.test.js`、`tests/elimination-endless-browser.spec.js` 已新增。
+- [x] 開發版 Coming Soon 六張地圖支援一般模式；更新 access-build 和 lifecycle D1 開發相容性驗證，正式版 Coming Soon 與發布的十張賽道清單不變。
+- [ ] 當前 HEAD 的 Node Unit、Typecheck、Build、Browser、World Tour、quality-gate 全綠證據；GitHub connector 無法代替本機 `make verify`。
+- [ ] 桌機/手機、直橫屏、真實 WebGL 地形連續性與勝負記錄檢查；Cloud/History 還需確認失敗淘汰不寫入最佳成績。
