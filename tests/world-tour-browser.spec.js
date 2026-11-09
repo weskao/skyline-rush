@@ -1,22 +1,31 @@
 import { selectLocale } from './helpers/locale-browser.js';
 import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
+import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 import { brightness } from './helpers/frame-brightness.js';
 const ids = Object.keys(RACE_TRACKS);
+const upcomingIds = Object.keys(UPCOMING_TRACKS);
 const newIds = ['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic'];
 const classicIds = ids.filter(id => !newIds.includes(id));
 const seed = page => page.addInitScript(ids => {
   localStorage.setItem('skyline-rush-unlocked', JSON.stringify(ids));
   localStorage.setItem('skyline-rush-music', 'off');
 }, ids);
-test('ten full-route previews and bilingual names are available without exposing shortcuts', async ({ page }) => {
+test('all home route previews and bilingual names are available without exposing classic shortcuts', async ({ page }) => {
   await seed(page);
   await page.goto('/');
-  await expect(page.locator('.track-route-map svg')).toHaveCount(ids.length);
-  await expect(page.locator('.track-route-map polyline.route-overview-line')).toHaveCount(ids.length);
-  // Sky Spiral's upper-loop and heading overlays are decoration; any other line would expose a shortcut.
-  await expect(page.locator('.track-route-map polyline:not(.route-overview-line):not(.route-spiral-upper):not(.route-spiral-direction)')).toHaveCount(0);
-  await expect(page.locator('.track-route-map polyline')).toHaveCount(ids.length + 2);
+  // The home screen includes the classic catalog AND gated CourseGraph previews. Graph maps legitimately
+  // contain multiple ground/flight edges; only classic maps promise a single non-secret centreline.
+  const classicMaps = page.locator('[data-track] .track-route-map');
+  await expect(page.locator('[data-track]')).toHaveCount(ids.length);
+  await expect(page.locator('[data-upcoming-track]')).toHaveCount(upcomingIds.length);
+  await expect(page.locator('.track-route-map svg')).toHaveCount(ids.length + upcomingIds.length);
+  await expect(classicMaps.locator('polyline.route-overview-line')).toHaveCount(ids.length);
+  // Sky Spiral's upper-loop and direction overlays are decoration, not extra roads.
+  await expect(classicMaps.locator('polyline:not(.route-overview-line):not(.route-spiral-upper):not(.route-spiral-direction)')).toHaveCount(0);
+  await expect(classicMaps.locator('polyline')).toHaveCount(ids.length + 2);
+  for (const id of upcomingIds)
+    await expect(page.locator(`[data-upcoming-track="${id}"] .route-overview-line`).first(), `${id} has an authored route`).toHaveAttribute('points', /\d/);
   for (const id of ids) await expect(page.locator(`.preview-${id}`), `${id} preview has its own sky`).not.toHaveCSS('background-image', 'none');
   await selectLocale(page, 'zh-TW');
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
