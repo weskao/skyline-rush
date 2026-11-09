@@ -1,4 +1,4 @@
-import { RACE_TRACKS } from './game.js';
+import { raceTrack } from './race-tracks.ts';
 import { RACE_DRIVER_IDS, reversedGrid } from './race-grid.ts';
 
 export interface CupHeat { track: string; time: number; order: string[]; times: Record<string, number> }
@@ -17,7 +17,7 @@ const EIGHT_POINTS = [10, 8, 6, 5, 4, 3, 2, 1];
 
 export function createCup(unlocked: string[], startingTrack: string, count: number = 3): CupState {
   if (!Array.isArray(unlocked) || new Set(unlocked).size !== unlocked.length ||
-    unlocked.some(id => !Object.hasOwn(RACE_TRACKS, id)) || ![3, 5].includes(count) ||
+    unlocked.some(id => !raceTrack(id)) || ![3, 5].includes(count) ||
     unlocked.length < count || !unlocked.includes(startingTrack)) throw new RangeError('Cup requires unlocked courses');
   const start = unlocked.indexOf(startingTrack);
   return { tracks: Array.from({ length: count }, (_, i) => unlocked[(start + i) % unlocked.length]), results: [] };
@@ -31,7 +31,7 @@ function roster(cup: CupState): readonly string[] {
 // Validate saved history before awarding new points or recovering the next heat.
 function assertCupStandings(cup: CupState): void {
   const tracks = Array.isArray(cup?.tracks) && [3, 5].includes(cup.tracks.length) &&
-    new Set(cup.tracks).size === cup.tracks.length && cup.tracks.every(track => Object.hasOwn(RACE_TRACKS, track));
+    new Set(cup.tracks).size === cup.tracks.length && cup.tracks.every(track => !!raceTrack(track));
   if (!tracks || !Array.isArray(cup.results) || cup.results.length > cup.tracks.length)
     throw new RangeError('Invalid Cup standings');
   const names = roster(cup);

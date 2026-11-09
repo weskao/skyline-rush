@@ -24,7 +24,7 @@ import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.t
 import { createGarageStage, GARAGE_LIGHTING } from './garage-stage.ts';
 import { applyCarReflections, createCarEnvironment } from './car-reflections.ts';
 import { createCarBounds } from './car-bounds.ts';
-import { createUpcomingShowcase } from './upcoming-showcase.ts';
+import { createUpcomingShowcase } from './upcoming-showcase.ts'; import { isUpcomingTrack } from './upcoming-tracks.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts';
 import { createCircuitScene } from './circuit-scene.ts';
 import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { fitText } from './sign-text.ts'; import { MEASURED_COURSE_IDS, MEASURED_COURSE_SUN, createMeasuredCourseScenes } from './measured-course-scenes.ts';
@@ -61,7 +61,7 @@ const rotation = new THREE.Quaternion();
 const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
-const framedRoad = id => TOUR_IDS.has(id) || id === CIRCUIT_ID || id === FROSTBITE_ID || MEASURED_COURSE_IDS.has(id) || isCourseRuntime(id);
+const framedRoad = (id, endless = false) => !(endless && isUpcomingTrack(id)) && (TOUR_IDS.has(id) || id === CIRCUIT_ID || id === FROSTBITE_ID || MEASURED_COURSE_IDS.has(id) || isCourseRuntime(id));
 function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
   position.set(x, y, z);
   scale.set(sx, sy, sz);
@@ -273,7 +273,7 @@ export function createWorld(canvas) {
       framingLookY=0;
       const originalEye=desiredCamera.clone(), originalLook=lookTarget.clone();
       const frame=trackId==='spiral'?skyFrame(distance):
-        framedRoad(trackId)?trackFrame(trackId,distance):null;
+        framedRoad(trackId, endlessActive)?trackFrame(trackId,distance):null;
       if(visual.view==='drive') framingAxis.set(...(frame?frame.forward:[0,0,-1])).negate();
       // Try the smallest look adjustment first, then dolly out if a wide
       // vehicle cannot fit. No per-track offsets or expensive per-frame probes.
@@ -285,7 +285,7 @@ export function createWorld(canvas) {
       // The drive shot also owns the signature landmark: tilting down to catch the wheels
       // must not push its top out of frame, so that top is a fit constraint too.
       // Frostbite keeps its race-only framing: the home landmark fit stays on Tour/Circuit roads.
-      const landmark=visual.view==='drive'&&framedRoad(trackId)&&trackId!==FROSTBITE_ID&&!MEASURED_COURSE_IDS.has(trackId)?landmarkBounds(trackId===CIRCUIT_ID?circuitScene.landmarks():worldTourScene.landmarks(),originalLook):null;
+      const landmark=visual.view==='drive'&&framedRoad(trackId, endlessActive)&&trackId!==FROSTBITE_ID&&!MEASURED_COURSE_IDS.has(trackId)?landmarkBounds(trackId===CIRCUIT_ID?circuitScene.landmarks():worldTourScene.landmarks(),originalLook):null;
       // Landscape keeps the landmark clear of the home panel on the left (NDC x >= .04).
       const clearLeft=camera.aspect>1;
       // Fine steps near the camera: a tight landmark leaves only a ~1 m dolly window.
@@ -401,7 +401,7 @@ export function createWorld(canvas) {
   }
   const effectFrame = s => trackFrame(trackId, s);
   const circuitScene = createCircuitScene(scene), frostbiteScene = createFrostbiteRaceScene(scene), courseScene = createCourseRaceScene(scene), measuredScenes = createMeasuredCourseScenes(scene);
-  const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : framedRoad(trackId) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
+  const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : framedRoad(trackId, endlessActive) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s));
   const aero = createAeroVFX(scene, player);
   const garageModel = createWorldGarageModel(canvas, renderer, camera), homeModelHost = { name: 'home', car: player, keep: aero.group, scene }; // ?model=probe|roadster only
   const sprintVisual = createSprintVfx();
@@ -444,7 +444,7 @@ export function createWorld(canvas) {
     const pastFinish = graphView?.finished || (!endlessActive && (trackId === 'spiral' || TOUR_IDS.has(trackId) || trackId === FROSTBITE_ID || MEASURED_COURSE_IDS.has(trackId)) && pose.distance > lastRace.length);
     mesh.visible = isPlayer || (graphView ? relative < 900 && !pastFinish : relative > -55 && relative < 900 && !pastFinish);
     if (!mesh.visible) return; mesh.userData.roadDistance = pose.distance; mesh.userData.span = !!car.span; mesh.userData.altitude = (pose.altitude || 0) - (car.span ? FROSTBITE_SPAN.altitude - SHORTCUT_TOLERANCE : 0); // the pose the shadow sits under (a span car's on the deck)
-    if (trackId === 'spiral' || framedRoad(trackId)) {
+    if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
       if (graphView) mesh.position.fromArray(graphView.position);
       else if (trackId === 'spiral') mesh.position.fromArray(skyPosition(pose.distance, pose.x, pose.altitude || 0, distance));
       else {
@@ -585,7 +585,7 @@ export function createWorld(canvas) {
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
       const graphCentre = race.course ? graphOrigin(race.course) : null;
       if (graphCentre) for (let axis = 0; axis < 3; axis++) courseOriginPoint[axis] = graphCentre[axis];
-      const origin = graphCentre ? aeroOrigin.set(...graphCentre) : trackId === 'spiral' || framedRoad(trackId) ? trackPoint(trackId,distance) : null, center = origin ? origin.x : roadCenter(distance);
+      const origin = graphCentre ? aeroOrigin.set(...graphCentre) : trackId === 'spiral' || framedRoad(trackId, endlessActive) ? trackPoint(trackId,distance) : null, center = origin ? origin.x : roadCenter(distance);
       // Smooth mountain bore lighting over 38 m for road readability.
       const tour=TOUR_IDS.has(trackId);
       const bore=tour&&trackId==='alpine'?race.sections.find(s=>
@@ -623,8 +623,8 @@ export function createWorld(canvas) {
         weatherGeometry.attributes.position.needsUpdate = true;
         weather.position.set(visualCar.x, visualCar.altitude + 25, 15);
       }
-      if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide(); if (trackId === FROSTBITE_ID) frostbiteScene.update(distance); else frostbiteScene.hide(); if (graphCentre) courseScene.update(race, visual.quality, time, reducedMotion); else courseScene.hide(); measuredScenes.update(trackId, distance, time, reducedMotion);
-      if (trackId === 'spiral' || framedRoad(trackId)) {
+      if (trackId === CIRCUIT_ID) circuitScene.update(distance); else circuitScene.hide(); if (trackId === FROSTBITE_ID && !endlessActive) frostbiteScene.update(distance); else frostbiteScene.hide(); if (graphCentre) courseScene.update(race, visual.quality, time, reducedMotion); else courseScene.hide(); measuredScenes.update(endlessActive && isUpcomingTrack(trackId) ? '' : trackId, distance, time, reducedMotion);
+      if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
         if (trackId === CIRCUIT_ID || trackId === FROSTBITE_ID || MEASURED_COURSE_IDS.has(trackId) || isCourseRuntime(trackId) || graphCentre) { skyScene.hide(); worldTourScene.hide(); }
         else if (trackId === 'spiral') { skyScene.update(distance, visual.quality, !!race.endless); worldTourScene.hide(); }
         else { skyScene.hide(); worldTourScene.update(trackId,distance,visual.quality,race.sections,time,reducedMotion,!!race.endless); }
@@ -638,7 +638,7 @@ export function createWorld(canvas) {
         for (const m of [laneLines, curbs, edgeLines, railLights, pillars, poles, lamps, shortcutDeck, tunnelRoofs, tunnelWalls]) m.visible = true;
         towers.forEach(t => { t.visible = true; });
       }
-      const classicRoad=trackId!=='spiral'&&!framedRoad(trackId),tile=Math.floor(distance/12)*12;
+      const classicRoad=trackId!=='spiral'&&!framedRoad(trackId, endlessActive),tile=Math.floor(distance/12)*12;
       const refreshClassicRoad=classicRoad&&(tile!==classicTile||trackId!==classicTrack||race.sections!==classicSections||visual.quality!==classicQuality||touch!==classicTouch);
       if(refreshClassicRoad){classicTile=tile;classicTrack=trackId;classicSections=race.sections;classicQuality=visual.quality;classicTouch=touch;}
       // Cache invalidates on tile, track, section, quality or input changes; only origin moves per frame.
@@ -690,7 +690,7 @@ export function createWorld(canvas) {
         const relative = section ? section.from - 65 - distance : 0;
         group.visible = !!section && relative > -40 && relative < 850;
         if (!group.visible) return;
-        if (framedRoad(trackId)) {
+        if (framedRoad(trackId, endlessActive)) {
           const signDistance = section.from - 65;
           group.position.fromArray(trackLocalPosition(trackId, signDistance, -17, 0, distance));
           const frame = trackFrame(trackId, signDistance);
@@ -737,7 +737,7 @@ export function createWorld(canvas) {
       updateSkyline(city, buildings, windows, buildingData, put, distance, center, race.endless ? race.seed : undefined);
 
       const at = (d, x, y) => trackId === 'spiral' ? skyPosition(d, x, y, distance) // one road frame for every authored object
-        : framedRoad(trackId) ? trackLocalPosition(trackId, d, x, y, distance) : [roadCenter(d) - center + x, y, distance - d];
+        : framedRoad(trackId, endlessActive) ? trackLocalPosition(trackId, d, x, y, distance) : [roadCenter(d) - center + x, y, distance - d];
       hazardMeshes.update(race, trackId, distance, center, preview);
 
       let visibleGateParts = 0;
@@ -781,7 +781,7 @@ export function createWorld(canvas) {
       rearLight.update(race, motionDt, reducedMotion || !visual.enabled);
       if (ghostCar.visible) { // samples carry no span flag: a Frostbite ghost inside the Rift corridor box is drawn on the span
         const ghostSpan = trackId === FROSTBITE_ID && frostbiteObjectSpan(ghost.distance, ghost.x, ghost.altitude);
-        if (trackId === 'spiral' || framedRoad(trackId)) {
+        if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
           if(trackId==='spiral')ghostCar.position.fromArray(skyPosition(ghost.distance,ghost.x,ghost.altitude,distance));
           else {const f=trackFrame(trackId,ghost.distance,ghostSpan),p=f.point,o=trackPoint(trackId,distance);
             ghostCar.position.set(p.x-o.x+f.right[0]*ghost.x,p.y-o.y+f.up[1]*ghost.altitude,p.z-o.z+f.right[2]*ghost.x);}
@@ -793,11 +793,11 @@ export function createWorld(canvas) {
         }
       }
       const { roadDistance, altitude: lift, span } = player.userData; // Classic: equals player.position.y; banked/sloped roads: height above the road
-      if (trackId === 'spiral' || framedRoad(trackId)) placeGroundShadow(shadow, graphCentre ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance, span), player.position, lift);
+      if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) placeGroundShadow(shadow, graphCentre ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance, span), player.position, lift);
       else { shadow.position.set(player.position.x, 0.03, player.position.z); shadow.rotation.set(-Math.PI / 2, 0, 0); }
       shadow.scale.setScalar(1 + lift * 0.04); shadow.material.opacity = shadowOpacity(lift);
       const graphFinish = graphCentre ? graphFinishVisual(race.course, courseOriginPoint) : null;
-      if (trackId === 'spiral' || framedRoad(trackId)) {
+      if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
         if (graphFinish) finish.position.fromArray(graphFinish.position);
         else if(trackId==='spiral')finish.position.fromArray(skyPosition(race.length,0,0,distance));
         else {const p=trackPoint(trackId,race.length),o=trackPoint(trackId,distance);finish.position.set(p.x-o.x,p.y-o.y,p.z-o.z);}
@@ -806,7 +806,7 @@ export function createWorld(canvas) {
       } else { finish.position.set(roadCenter(race.length) - center, 0, -(race.length - distance)); finish.rotation.set(0,0,0); }
       finish.visible = graphFinish ? graphFinish.separation < 1400 : trackId === CIRCUIT_ID || (!race.endless && race.length - distance < 1400);
       effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
-        framedRoad(trackId) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin,item) => race.course && item ? courseItemPoint(race.course,item,x,y,courseOriginPoint) : trackLocalPosition(trackId,s,x,y,origin), worldFrame: race.course ? (s,item) => courseItemFrame(race.course,item) : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual);
+        framedRoad(trackId, endlessActive) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin,item) => race.course && item ? courseItemPoint(race.course,item,x,y,courseOriginPoint) : trackLocalPosition(trackId,s,x,y,origin), worldFrame: race.course ? (s,item) => courseItemFrame(race.course,item) : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual);
       Object.assign(sprintInput, {
         phase: race.phase, nitro: car.nitroTime > 0, boost: !!(car.boosting || car.miniBoost > 0),
         speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion, ultra: visual.ultra,
@@ -825,7 +825,7 @@ export function createWorld(canvas) {
       } else if (preview && visual.view !== 'drive') {
         // The selected view wins over curated showcase framing on every map, but only on the ready screen: it never moves the race camera.
         const pose = showcaseCameraPose(trackId,visual.view,time,portrait||garageHomePreview||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
-        const frame = framedRoad(trackId) ? trackFrame(trackId,distance)
+        const frame = framedRoad(trackId, endlessActive) ? trackFrame(trackId,distance)
           : trackId === 'spiral' ? skyFrame(distance) : null;
         if (frame) {
           const right = new THREE.Vector3(...frame.right);
@@ -862,20 +862,20 @@ export function createWorld(canvas) {
         desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
         lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
       } else if (cameraMode === 1) {
-        if (trackId === 'spiral' || framedRoad(trackId)) desiredCamera.copy(player.position).add(new THREE.Vector3(0, 1.7, 0));
+        if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) desiredCamera.copy(player.position).add(new THREE.Vector3(0, 1.7, 0));
         else desiredCamera.set(visualCar.x, visualCar.altitude + 1.7, -0.95);
-        if (trackId === 'spiral' || framedRoad(trackId)) {
+        if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
           const f=race.course?graphLookAhead(race.course,visualCar.x,65):trackFrame(trackId,distance+lookAheadDistance(trackId,distance,65,endlessActive),car.span),p=f.point,o=race.course?courseOriginPoint:trackPoint(trackId,distance);
           lookTarget.set((race.course?p[0]-o[0]:p.x-o.x)+f.right[0]*visualCar.x,(race.course?p[1]-o[1]:p.y-o.y)+visualCar.altitude+1.5,(race.course?p[2]-o[2]:p.z-o.z)+f.right[2]*visualCar.x);
         }
         else lookTarget.set(visualCar.x + roadCenter(distance + 65) - center, visualCar.altitude + 1.5, -65);
       } else {
-        if (trackId === 'spiral' || framedRoad(trackId)) {
+        if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
           const frame = race.course ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(distance) : trackFrame(trackId,distance,car.span);
           const back = new THREE.Vector3(...frame.forward).multiplyScalar(- (portrait ? 14.5 : 12.5));
           desiredCamera.copy(player.position).add(back).add(new THREE.Vector3(0,5,0));
         } else desiredCamera.set(visualCar.x * 0.74, visualCar.altitude * 0.85 + (visualCar.altitude > 2 ? 4.4 : 4.8), portrait ? 13.5 : 11.6);
-        if (trackId === 'spiral' || framedRoad(trackId)) {
+        if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
           const f=race.course?graphLookAhead(race.course,visualCar.x,34):trackFrame(trackId,distance+lookAheadDistance(trackId,distance,34,endlessActive),car.span),p=f.point,o=race.course?courseOriginPoint:trackPoint(trackId,distance);
           lookTarget.set((race.course?p[0]-o[0]:p.x-o.x)+f.right[0]*visualCar.x,(race.course?p[1]-o[1]:p.y-o.y)+visualCar.altitude+1.5,(race.course?p[2]-o[2]:p.z-o.z)+f.right[2]*visualCar.x);
         }
@@ -897,7 +897,7 @@ export function createWorld(canvas) {
         if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance);
         frameShowcaseCar(distance);
       }
-      const smoothing = 1 - Math.exp(-dt * 7); if (trackId === FROSTBITE_ID) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
+      const smoothing = 1 - Math.exp(-dt * 7); if (trackId === FROSTBITE_ID && !endlessActive) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
       if (!initialized || (car.fall !== seenFall && (trackId === FROSTBITE_ID || !!race.course))) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; } seenFall = car.fall;
       camera.position.lerp(desiredCamera, smoothing); smoothLook.lerp(lookTarget, smoothing);
       // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.

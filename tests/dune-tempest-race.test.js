@@ -76,8 +76,9 @@ test('registry: Dune is a gated course runtime, Frostbite unchanged, never in RA
   assert.equal(COURSE_TRACKS[FROSTBITE_ID], FROSTBITE_TRACK);
   assert.equal(raceTrack('coast'), RACE_TRACKS.coast);
   assert.equal(Object.hasOwn(RACE_TRACKS, DUNE_TEMPEST_ID), false);
-  assert.throws(() => assertTrackMode(DUNE_TEMPEST_ID, 'time'), { name: 'RangeError', message: 'Dune Tempest is a gated classic sprint' });
-  assert.throws(() => assertTrackMode(FROSTBITE_ID, 'time'), { name: 'RangeError', message: 'Frostbite Canyon is a gated classic sprint' });
+  assert.doesNotThrow(() => assertTrackMode(DUNE_TEMPEST_ID, 'time'));
+  assert.throws(() => assertTrackMode(DUNE_TEMPEST_ID, 'circuit'), RangeError);
+  assert.doesNotThrow(() => assertTrackMode(FROSTBITE_ID, 'time'));
   assert.doesNotThrow(() => assertTrackMode(DUNE_TEMPEST_ID, 'classic'));
   assert.equal(upcomingReadiness(DUNE_TEMPEST_ID), 'playable');
 });

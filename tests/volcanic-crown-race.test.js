@@ -65,8 +65,8 @@ test('Volcanic is a dev-unlocked-only classic sprint', () => {
   assert.equal(released(VOLCANIC_ID), false);
   const race = createRace(VOLCANIC_ID);
   assert.equal(race.rivals.length, 7);
-  for (const mode of ['time','circuit','endless'])
-    assert.throws(() => createRace(VOLCANIC_ID, { mode }), RangeError);
+  for (const mode of ['time', 'endless']) assert.equal(createRace(VOLCANIC_ID, { mode }).mode, mode);
+  assert.throws(() => createRace(VOLCANIC_ID, { mode: 'circuit' }), RangeError);
 });
 test('Volcanic finishes once with a valid eight-car ranking', () => {
   const race = createRace(VOLCANIC_ID);

@@ -1,7 +1,7 @@
 import { seededRng } from './rng.ts';
 import { ringRow, ringTrain, pickupRun, TRAIN_LANES } from './ring-layout.ts';
 
-// Endless extends each themed route; finite sprint geometry and rules are unchanged.
+// Endless streams a procedural highway also for finite CourseGraph tracks; authored sprint routes are unchanged.
 export const ENDLESS_CHUNK = 500;
 export const ENDLESS_COLLISIONS = 5;
 // practice: the tutorial borrows the endless road only; no encounters stream in and no collision limit ends it.
