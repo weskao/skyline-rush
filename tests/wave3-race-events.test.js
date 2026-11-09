@@ -75,3 +75,15 @@ test('aborted race cannot grant demo mission progress or rewards', () => {
   assert.equal(demo.getSnapshot().missions['mission-combo'].progress, 0);
   assert.equal(demo.getSnapshot().demoPoints, 20);
 });
+
+test('the final simulation step still captures a drift that ends at the finish line', () => {
+  const demo = createWave3LocalDemo();
+  const bridge = createWave3RaceEventBridge(demo, () => 'race-final-drift-001');
+  const race = aRace();
+  bridge.capture(race);
+  race.player.driftPayout = { time: 28, nitro: .15 };
+  race.phase = 'finished'; race.result = { success: true, time: 28 };
+  bridge.capture(race);
+  bridge.finish(race, false);
+  assert.equal(demo.getSnapshot().missions['mission-drift'].progress, 1);
+});

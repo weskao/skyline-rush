@@ -31,7 +31,7 @@ export function createWave3RaceEventBridge(experience: Wave3ExperiencePort, idFa
   };
   return {
     capture(race: ObservedRace): void {
-      if (race.phase !== 'racing') return;
+      if (race.phase !== 'racing' && race.phase !== 'finished') return;
       const state = memory(race);
       const player = race.player;
       if (player.driftPayout && player.driftPayout !== state.lastDrift) {
