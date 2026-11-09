@@ -1,6 +1,6 @@
 # Task 2 — Upgrade to Three.js r186.1 with aligned types and stable WebGL
 
-Part of [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md](../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) · Spec Phase 1 · Migration detail: [../threejs-r180-r186-migration.md](../threejs-r180-r186-migration.md) · Scope tags: [README.md](README.md).
+Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) · Spec Phase 1 · Migration detail: [../threejs-r180-r186-migration.md](../threejs-r180-r186-migration.md) · Scope tags: [README.md](README.md).
 
 **Files:** package.json, package-lock.json, src/world.js (only if required), targeted imports/shader files identified by audit, tests/three-version-contract.test.js, tests/shader-safety.test.js.
 **Produces:** r186.1 WebGL app matching baseline and production bundle, no stale r180 types.

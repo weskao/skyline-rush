@@ -46,3 +46,15 @@ test('low LOD: simplify then halve textures before the KTX2 passes, keeping the 
   assert.ok(low[0].includes('--lock-border'), low[0].join(' '));
   for (const step of low.slice(0, 2)) assert.ok(step.slice(3).every(a => /^--[a-z-]+(=\S+)?$/.test(a)), step.join(' '));
 });
+
+test('coast-scenery encodes its AO/roughness data slots as ETC1S; normals stay UASTC', () => {
+  const steps = optimizeSteps({ ...validEntry(), id: 'coast-scenery', decoders: ['meshopt', 'ktx2'] }, 'raw.glb', 'out.glb');
+  assert.deepEqual(steps.map(s => [s[0], s.find(a => a.startsWith('--slots='))]), [
+    ['uastc', '--slots=normalTexture'],
+    ['etc1s', '--slots=occlusionTexture'],
+    ['etc1s', '--slots=metallicRoughnessTexture'],
+    ['etc1s', '--slots=baseColorTexture'],
+    ['etc1s', '--slots=emissiveTexture'],
+    ['optimize', undefined],
+  ]);
+});

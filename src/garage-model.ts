@@ -2,16 +2,26 @@
 // a manifest model replaces the procedural Roadster in Garage Home and the Preview Studio. Production (no query)
 // never creates it. The model is held while the Garage stays open and released when it closes.
 // Task 4b (`?model=roadster`): the same adapter also dresses the Home showcase car and the race car, one car at a time.
-import type { Camera, Object3D, Scene, WebGLRenderer } from 'three';
+import type { Camera, Material, Mesh, MeshStandardMaterial, Object3D, Scene, Texture, WebGLRenderer } from 'three';
 import type { ModelCache, ModelHandle } from './asset-model-loader.ts';
 import type { ModelQuality } from './model-manifest.ts';
 import { bindGarageRig, type GarageRig } from './garage-model-rig.ts';
+import { applyCarReflections } from './car-reflections.ts';
 
 const MODEL_PARAMS: Readonly<Record<string, string>> = { probe: 'pipeline-probe', roadster: 'roadster2' };
 const HIDDEN_LAYER = 31; // no camera enables it; the frame loop rewrites `visible` on car parts, never `layers`
 
 /** Task 4b: the roadster GLB also dresses the Home showcase and race car; the probe stays Garage-only. */
 export const dressesRaceCar = (id: string): boolean => id === 'roadster2';
+
+/** The softened map the host's procedural car reflects (car-reflections.ts), if one was applied to it. */
+function carMapOf(car: Object3D): Texture | null {
+  let map: Texture | null = null;
+  car.traverse(object => {
+    for (const material of ([] as (Material | undefined)[]).concat((object as Mesh).material)) map ??= (material as MeshStandardMaterial | undefined)?.envMap ?? null;
+  });
+  return map;
+}
 
 export function garageModelId(search: string): string | null {
   const value = new URLSearchParams(search).get('model');
@@ -61,6 +71,8 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     pending.add(host); // request() and the per-frame sync() never dress one host twice at once
     const instance = from.instance();
     instance.userData.garageModel = id;
+    const carMap = carMapOf(host.car); // without it the GLB mirrors the full scene HDRI: washed white in Coast rain
+    if (carMap) applyCarReflections(instance, carMap); // before compiling, so no program changes after GO
     const rig = bindGarageRig(host.car, instance); // rig.update() only after compiling: compileAsync skips hidden parts (lift fans)
     try { await compile(instance, host.scene); } catch { rig.dispose(); return; } finally { pending.delete(host); } // keeps the Roadster
     warmups++;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { routeLength, sampleRoute } from './course-route-frame.ts';
-import type { CourseRuntime } from './course-race.ts';
+import { TRAFFIC_PREFIX, type CourseRuntime } from './course-race.ts';
 import { DUNE_TEMPEST_ID } from './courses/dune-tempest-race.ts';
 import { SKYFALL_ARCHIPELAGO_ID } from './courses/skyfall-archipelago-race.ts';
 import { createSkyfallWorld } from './courses/skyfall-world.ts';
@@ -40,7 +40,7 @@ export function createCourseRaceScene(scene: THREE.Scene) {
         quality = tier;
       }
       root.visible = true;
-      skyfall.setFocus([...runtime.cars.values()].map(car => ({
+      skyfall.setFocus([...runtime.cars].filter(([id]) => !id.startsWith(TRAFFIC_PREFIX)).map(([, car]) => ({
         edgeId: car.travel.currentEdgeId, localS: car.travel.localS,
       })));
       skyfall.update(time, reducedMotion);
@@ -75,7 +75,8 @@ export function createCourseRaceScene(scene: THREE.Scene) {
         live.set(key, chunk);
       }
     };
-    for (const car of runtime.cars.values()) {
+    for (const [id, car] of runtime.cars) {
+      if (id.startsWith(TRAFFIC_PREFIX)) continue; // traffic stays near the player: its scenery streams anyway
       const { currentEdgeId, localS } = car.travel;
       const edge = graph.edges.find(item => item.id === currentEdgeId);
       if (!edge) continue;

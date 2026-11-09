@@ -2,6 +2,7 @@
 // server, which appends it to diag-logs/*.jsonl on the Mac (scripts/diag-relay-plugin.mjs). Diagnostic builds only.
 import { installCrashLog, showCrashLog, type CrashContext, type DiagEmit } from './crash-log.ts';
 import { describeDevice, deviceHints, viewportOf } from './diag-device.ts';
+import { latestPerf } from './perf-overlay.ts';
 
 export const RELAY_PATH = '/__diag/log';
 const MAX_QUEUE = 500;
@@ -99,7 +100,8 @@ export function startDiag(win: Window & typeof globalThis, storage: Storage, ele
   }
   installCrashLog(win, storage, context, relay?.emit);
   // With the relay the Mac has the full log, so the panel renders off-screen and only the badge covers the game.
-  showCrashLog(relay ? win.document.createElement('pre') : element, storage, { win, context, emit: relay?.emit });
+  // Beats also carry the racing frame-time window, so `npm run diag:tail` has p50/p95 without a ?perf strip on screen.
+  showCrashLog(relay ? win.document.createElement('pre') : element, storage, { win, context: () => ({ ...context(), perf: latestPerf() }), emit: relay?.emit });
   if (!relay) return;
   const badge = createBadge(win.document);
   win.setInterval(() => {

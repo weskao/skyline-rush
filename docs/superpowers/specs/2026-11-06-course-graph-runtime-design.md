@@ -122,7 +122,8 @@ also requires every branch and flight edge to be driven.
 `attachCourse` looks the track id up in a registry (`src/course-runtimes.ts`). For every id not in
 the registry it does nothing and `race.course` stays `undefined`. For Dune (later Skyfall) it sets
 `race.course` to a `CourseRuntime` and clears the 1D-keyed lists the course does not use
-(`rings`, `pickups`, `traffic`, `hazards`, `sections` → empty).
+(`rings`, `pickups`, `traffic`, `hazards`, `sections` → empty). *Superseded 2026-11-09 (Q3): rings, pickups and
+traffic are re-keyed onto the graph by `attachCourseItems` (`src/course-items.ts`); only `hazards` and `sections` stay empty.*
 
 Every hook inside the step is written `race.course ? <graph path> : <existing expression>`, with the
 existing expression moved verbatim. Behaviour for a race without `race.course` is therefore
@@ -362,7 +363,7 @@ section says "(Qn)", this table is the answer.
 |---|---|---|---|
 | Q1 | Dune's flight edge `canyon-air-crossing` in Phase 1? | **Yes** | Phase 1 ships the gap mechanic (plan Task 6); Skyfall reuses it. Dune can reach `ready` without waiting for Phase 2. |
 | Q2 | Lateral range | **Keep `ROAD_LIMIT` ±10.2 m** on the 24–60 m wide roads | No change to the core clamp, rail or lane logic; Dune off-road zones stay unused in this work. |
-| Q3 | Rings / pickups / traffic on graph courses | **None in this work** | NITRO comes from drift, slipstream, tricks and landing chains; a follow-up places them by `(edgeId, localS)`. |
+| Q3 | Rings / pickups / traffic on graph courses | **None in this work** | NITRO comes from drift, slipstream, tricks and landing chains; a follow-up places them by `(edgeId, localS)`. **Done 2026-11-09:** `src/course-items.ts`, length-scaled density, branch reward lines, rival takes, ground-route traffic. |
 | Q4 | Ghost | **No Ghost save/replay** on graph-runtime courses | Until samples carry edge ids (a schema change, separate work). |
 | Q5 | Skyfall sampler | **Render Skyfall's road from the shared `sampleRoute`** | One sampler for road mesh, car pose, camera, gates and AI (contract rule). Only Skyfall's map code changes (`src/courses/skyfall-world.ts` and its road builder); the shared `course-route-frame` / `course-graph` stay untouched. The authored bank (up to ±0.12 rad) is dropped; `skyfallPhysicalDistance` becomes the identity, so gaps are stored directly in graph metres. Re-inspect Skyfall's home 3D preview and race road in real WebGL. |
 | Q6 | Skyfall gate band | **Engine envelope −2…13.2 m** | No authored band needed from the map owner. |

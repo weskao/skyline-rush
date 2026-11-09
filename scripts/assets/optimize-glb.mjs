@@ -12,13 +12,20 @@ const KTX2_PASSES = [
   ['etc1s', 'baseColorTexture'],
   ['etc1s', 'emissiveTexture'],
 ];
+// Per-asset slot overrides. coast-scenery: the scans' AO/roughness (ARM) and the rail roughness are low-contrast data
+// maps; ETC1S (still linear) keeps each near 150 KB instead of ~800 KB UASTC. Normals stay UASTC: gltf-transform never
+// applies RDO to normal maps, so they are the bulk of that GLB.
+const KTX2_SLOT_OVERRIDES = {
+  'coast-scenery': { occlusionTexture: ['etc1s', 'occlusionTexture'], metallicRoughnessTexture: ['etc1s', 'metallicRoughnessTexture'] },
+};
 
 /** gltf-transform argv lists, in order; each step reads the previous step's output. */
 export function optimizeSteps(entry, raw, out, { lod } = {}) {
   // KTX2 runs before meshopt: encoding textures after meshopt decodes and re-quantizes the meshes.
   // One pass per slot with `--opt=value`: a `{a,b}` slot glob only matched one slot, and
   // `--opt value` after --slots fails with "Too many arguments".
-  const passes = entry.decoders.includes('ktx2') ? KTX2_PASSES : [];
+  const overrides = KTX2_SLOT_OVERRIDES[entry.id] ?? {};
+  const passes = entry.decoders.includes('ktx2') ? KTX2_PASSES.map(pass => overrides[pass[1]] ?? pass) : [];
   const steps = [];
   let input = raw;
   if (lod === 'low') {

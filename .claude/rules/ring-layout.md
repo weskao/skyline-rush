@@ -7,6 +7,9 @@ paths:
   - "src/gauntlet-course.ts"
   - "src/endless-highway.ts"
   - "src/catch-up-items.ts"
+  - "src/course-items.ts"
+  - "src/course-race-step.ts"
+  - "src/courses/*-race.ts"
   - "tests/ring-*.test.js"
   - "tests/pickup-economy.test.js"
   - "scripts/ring-variety.mjs"
@@ -40,3 +43,11 @@ in the same commit. Never weaken that test to make a change pass.
 Cup only, player-only, beyond the 900 m draw range, never near sections or other items. Keep them out of start
 layouts, rival takes and PERFECT LINE groups (`tests/catch-up-items.test.js`; design:
 `docs/superpowers/specs/2026-11-07-catch-up-items-design.md`).
+
+**Long-form courses** (`topology: 'course-graph' | 'course-graph-runtime'`; user, 2026-11-09): rings and pickups scale
+with length, `itemScale(track) = length / mean classic length` (`race-tracks.ts`). Classic tracks stay at scale 1, so
+their counts are unchanged. Classic traffic uses a `trafficDensity` inside the classic range (0.65–1.5), never 0.
+On graph runtimes (`src/course-items.ts`) the shared layout is re-keyed to `(edgeId, localS)` on the ground route.
+Every alternate branch gets the shortcut reward line above, rivals take items on their own edges, and traffic
+runs as unranked course cars on the ground route. Catch-up items stay off graph courses. Guards:
+`tests/course-item-density.test.js`, `tests/course-items-browser.spec.js` (real WebGL: drawn where they score).

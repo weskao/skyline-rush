@@ -4,7 +4,8 @@ export const BEAT_KEY = 'skyline-rush-diag-beat';
 const KEEP = 8;
 interface StorageLike { getItem(key: string): string | null; setItem(key: string, value: string): void }
 interface ErrorTarget { addEventListener(type: string, listener: (event: any) => void, options?: boolean): void } // eslint-disable-line @typescript-eslint/no-explicit-any
-export interface CrashContext { phase: string; track: string; mode: string }
+/** `quality` and `perf` ride along on diag beats only for the relay; the panel shows phase/track/mode. */
+export interface CrashContext { phase: string; track: string; mode: string; quality?: string; perf?: unknown }
 interface CrashEntry extends CrashContext { at: string; message: string; stack: string }
 /** Receives every diag entry as it happens; the dev-server relay (src/diag-relay.ts) sends them to the Mac. */
 export type DiagEmit = (entry: Record<string, unknown>) => void;
@@ -64,11 +65,11 @@ function startLivePanel(win: DiagWindow, element: HTMLElement, storage: StorageL
   emit?.({ kind: 'previous-beat', beat: previous });
   element.style.whiteSpace = 'pre-wrap'; element.style.textAlign = 'left';
   win.setInterval(() => {
-    const { phase, track, mode } = context();
+    const { phase, track, mode, ...extra } = context();
     const beat = `${clock()} frames=${frames} ${phase} ${track} ${mode}`;
     try { storage.setItem(BEAT_KEY, beat); } catch { /* the panel still shows it */ }
     const vis = win.document.visibilityState, active = describe(win.document.activeElement);
-    emit?.({ kind: 'beat', frames, phase, track, mode, vis, active });
+    emit?.({ kind: 'beat', frames, phase, track, mode, vis, active, ...extra });
     // Newest lines last: the banner grows upward from its fixed bottom, so the top may leave the screen.
     element.textContent = [crashes, `before reload: ${previous}`, ...inputs, `diag ${beat} vis=${vis} active=${active}`].join('\n');
   }, 500);

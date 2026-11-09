@@ -1,0 +1,138 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createRace, stepRace } from '../src/game.js';
+import { RACE_TRACKS, COURSE_TRACKS } from '../src/race-tracks.ts';
+import { COURSE_RUNTIMES } from '../src/course-runtimes.ts';
+import { routeLength, sampleRoute } from '../src/course-route-frame.ts';
+import { placeCourseCar } from '../src/course-race.ts';
+import { progressGap } from '../src/course-race-step.ts';
+import { courseItemPoint, groundOffset, projectCourseItems } from '../src/course-items.ts';
+import { spawnCatchUp } from '../src/catch-up-items.ts';
+
+// User, 2026-11-09: new long-form courses keep the classic per-km ring/pickup density and have Classic traffic.
+const perKm = (race, list) => race[list].length / (race.length / 1000);
+const median = values => { const s = [...values].sort((a, b) => a - b); return (s[(s.length - 1) >> 1] + s[s.length >> 1]) / 2; };
+const classic = Object.keys(RACE_TRACKS).map(id => createRace(id, { mode: 'classic' }));
+const graphIds = Object.keys(COURSE_RUNTIMES);
+
+for (const id of Object.keys(COURSE_TRACKS)) {
+  test(`${id}: Classic ring and pickup density is near the classic median and inside the classic range per km`, () => {
+    const race = createRace(id, { mode: 'classic' });
+    for (const list of ['rings', 'pickups']) {
+      const ref = classic.map(r => perKm(r, list)), want = median(ref), got = perKm(race, list);
+      assert.ok(got >= 0.8 * want && got <= Math.max(...ref), `${list}: ${got.toFixed(1)}/km vs classic median ${want.toFixed(1)}/km`);
+    }
+  });
+  test(`${id}: Classic has road traffic in the classic density range`, () => {
+    const densities = Object.values(RACE_TRACKS).map(t => t.trafficDensity), track = COURSE_TRACKS[id];
+    assert.ok(track.trafficDensity >= Math.min(...densities) && track.trafficDensity <= Math.max(...densities), `trafficDensity ${track.trafficDensity}`);
+    assert.equal(createRace(id, { mode: 'classic' }).traffic.length, Math.round(36 * track.trafficDensity));
+  });
+}
+
+test('classic tracks keep their item counts (the length scale applies to course topologies only)', () => {
+  const counts = Object.fromEntries(classic.map(r => [r.trackId, [r.rings.length, r.pickups.length]]));
+  assert.deepEqual(counts, {
+    coast: [91, 109], neon: [50, 124], canyon: [50, 103], aurora: [48, 103], spiral: [63, 119],
+    taipei: [70, 101], tokyo: [49, 108], alpine: [43, 110], coastal: [55, 103], cosmic: [66, 106],
+  });
+});
+
+for (const id of graphIds) {
+  const graph = COURSE_RUNTIMES[id].spec.graph;
+  const branches = graph.edges.filter(e => !graph.groundRoute.includes(e.id));
+
+  test(`${id}: every ring and pickup sits on a real edge, ordered by ground progress`, () => {
+    const race = createRace(id, { mode: 'classic' });
+    for (const list of ['rings', 'pickups']) {
+      assert.ok(race[list].length > 0, list);
+      for (const item of race[list]) {
+        assert.ok(graph.edges.some(e => e.id === item.edgeId), `${list} edge ${item.edgeId}`);
+        assert.ok(item.localS >= 0 && item.localS <= routeLength(graph, item.edgeId), `${list} localS ${item.localS}`);
+      }
+    }
+    const anchors = race.pickups.map(p => groundOffset(graph, p.edgeId, p.localS));
+    for (let i = 1; i < anchors.length; i++) assert.ok(anchors[i] >= anchors[i - 1] - 1e-9, `pickup order at ${i}`);
+  });
+
+  test(`${id}: each alternate branch carries a reward line (cells every 60 m and a tank halfway)`, () => {
+    const race = createRace(id, { mode: 'classic' });
+    for (const edge of branches) {
+      const line = race.pickups.filter(p => p.edgeId === edge.id), length = routeLength(graph, edge.id);
+      assert.equal(line.filter(p => p.tier === 'tank').length, 1, edge.id);
+      assert.equal(line.filter(p => p.tier === 'cell').length, Math.ceil((length - 60) / 60), edge.id);
+      for (const p of line) assert.equal(p.altitude, edge.mode === 'flight' ? 6 : 0);
+    }
+  });
+
+  test(`${id}: items project into the player's odometer only on edges it can still reach`, () => {
+    const race = createRace(id, { mode: 'classic' }), rt = race.course, edge = branches[0];
+    const parallel = graph.edges.filter(e => graph.groundRoute.includes(e.id) && e.from === edge.from);
+    placeCourseCar(rt, 'YOU', edge.id, 10, { distance: 5000, x: 0, altitude: 8 });
+    race.player.distance = 5000;
+    projectCourseItems(race);
+    const start = rt.cars.get('YOU').edgeStart;
+    for (const item of [...race.rings, ...race.pickups]) {
+      if (item.edgeId === edge.id) assert.equal(item.distance, start + item.localS);
+      if (parallel.some(e => e.id === item.edgeId)) assert.equal(item.distance, -Infinity);
+    }
+  });
+
+  test(`${id}: the renderer places an item on its own edge frame`, () => {
+    const race = createRace(id, { mode: 'classic' }), item = race.rings[3], origin = [10, -4, 2];
+    const f = sampleRoute(graph, item.edgeId, item.localS), p = courseItemPoint(race.course, item, item.x, item.altitude, origin);
+    for (let i = 0; i < 3; i++) assert.ok(Math.abs(p[i] - (f.point[i] + f.right[i] * item.x + f.up[i] * item.altitude - origin[i])) < 1e-9);
+  });
+
+  test(`${id}: the player collects a ring it drives through on the graph`, () => {
+    const race = createRace(id, { mode: 'classic' }), rt = race.course;
+    race.phase = 'racing';
+    const ring = race.rings.find(r => r.localS > 300 && graph.groundRoute.includes(r.edgeId) && graph.groundRoute.indexOf(r.edgeId) > 0);
+    const odometer = groundOffset(graph, ring.edgeId, ring.localS) - 4;
+    Object.assign(race.player, { distance: odometer, x: ring.x, altitude: ring.altitude, speed: 60 });
+    placeCourseCar(rt, 'YOU', ring.edgeId, ring.localS - 4, race.player);
+    projectCourseItems(race);
+    for (let i = 0; i < 12 && !ring.hit; i++) stepRace(race, { throttle: true }, 1 / 60);
+    assert.ok(ring.hit, `ring at ${ring.edgeId}+${ring.localS} not collected`);
+    assert.ok(race.player.rings >= 1);
+  });
+
+  test(`${id}: a rival takes a NITRO pickup on its line`, () => {
+    const race = createRace(id, { mode: 'classic' }), rt = race.course, rival = race.rivals[0];
+    race.phase = 'racing';
+    const pickup = race.pickups.find(p => p.tier === 'cell' && p.altitude === 0 && p.localS > 300 && graph.groundRoute.indexOf(p.edgeId) > 0);
+    const odometer = groundOffset(graph, pickup.edgeId, pickup.localS) - 3;
+    Object.assign(rival, { distance: odometer, x: pickup.x, homeX: pickup.x, altitude: 0, speed: 60 });
+    placeCourseCar(rt, rival.id, pickup.edgeId, pickup.localS - 3, rival);
+    for (let i = 0; i < 12 && !rival.itemTakes; i++) stepRace(race, { throttle: true }, 1 / 60);
+    assert.ok(rival.itemTakes >= 1, 'rival took nothing');
+    assert.ok(pickup.downUntil > race.elapsed - 1, 'the take is shared: the pickup is down for everyone');
+  });
+
+  test(`${id}: traffic runs on the ground route as course cars, outside the standings, and recycles ahead`, () => {
+    const race = createRace(id, { mode: 'classic' }), rt = race.course;
+    race.phase = 'racing';
+    assert.ok(race.traffic.length > 0);
+    for (const car of race.traffic) {
+      assert.ok(rt.cars.has(car.id), `traffic ${car.id} has a course travel`);
+      assert.ok(graph.groundRoute.includes(rt.cars.get(car.id).travel.currentEdgeId));
+    }
+    stepRace(race, { throttle: true }, 1 / 60);
+    assert.equal(rt.standings.length, race.rivals.length + 1, 'traffic is not ranked');
+    const car = race.traffic[0], t = rt.cars.get(car.id).travel, ahead = groundOffset(graph, t.currentEdgeId, t.localS) + 300;
+    let edgeId = graph.groundRoute[0], localS = ahead;
+    for (const id2 of graph.groundRoute) { const len = routeLength(graph, id2); if (localS <= len) { edgeId = id2; break; } localS -= len; }
+    Object.assign(race.player, { distance: ahead, x: car.x + 5, altitude: 0, speed: 0 });
+    placeCourseCar(rt, 'YOU', edgeId, localS, race.player);
+    stepRace(race, {}, 1 / 60);
+    assert.ok(progressGap(race, race.player, car) > 1000, `recycled ${progressGap(race, race.player, car)} m ahead`);
+  });
+
+  test(`${id}: catch-up items stay off graph courses (they have no edge to sit on)`, () => {
+    const race = createRace(id, { mode: 'classic' }), before = race.rings.length;
+    race.phase = 'racing';
+    for (const rival of race.rivals) rival.distance = race.player.distance + 2000;
+    for (let i = 0; i < 50; i++) { race.elapsed += 1; spawnCatchUp(race); }
+    assert.equal(race.rings.length, before);
+  });
+}

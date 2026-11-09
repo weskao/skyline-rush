@@ -11,8 +11,11 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       const item = page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
       await item.scrollIntoViewIfNeeded();
       const image = item.locator('.artwork-img');
-      await expect(image).toHaveAttribute('src', new RegExp(`/raster/${id}@3x\\.png$`));
-      const result = await image.evaluate(async img => {
+      await expect(image).toHaveAttribute('data-static-src', new RegExp(`/raster/${id}@3x\\.png$`));
+      const result = await image.evaluate(async displayed => {
+        // The displayed art swaps to a palette-limited GIF once visible; audit the original PNG's alpha instead.
+        const img = new Image();
+        img.src = displayed.dataset.staticSrc;
         await img.decode();
         const canvas = document.createElement('canvas');
         canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
@@ -25,7 +28,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
           count++; left = Math.min(left, x); top = Math.min(top, y);
           right = Math.max(right, x); bottom = Math.max(bottom, y);
         }
-        const box = img.getBoundingClientRect();
+        const box = displayed.getBoundingClientRect();
         return { size: [canvas.width, canvas.height], box: [box.width, box.height],
           count, margins: [left, top, canvas.width - 1 - right, canvas.height - 1 - bottom],
           cornerAlpha: pixels[3], src: img.currentSrc };

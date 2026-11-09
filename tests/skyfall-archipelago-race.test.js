@@ -23,11 +23,11 @@ const GROUNDS = ['a-ground', 'b-ground', 'c-ground'];
 const INCOMING = ['approach', 'midway-one', 'midway-two'];
 const groundLength = SKYFALL_GROUND_PATH.reduce((sum, id) => sum + routeLength(graph, id), 0);
 
-test('Skyfall track: measured ground-route length, no 1D lists, topology v1, own seed', () => {
+test('Skyfall track: measured ground-route length, classic traffic, topology v1, own seed', () => {
   const track = entry().track;
   assert.equal(track.length, Math.floor(groundLength));
   assert.ok(track.length > 16_000 && track.length < 17_000, `ground route ${groundLength}`);
-  assert.equal(track.trafficDensity, 0);
+  assert.equal(track.trafficDensity, 0.75); // classic range (user, 2026-11-09)
   assert.deepEqual(track.sections, []);
   assert.equal(track.topology, 'course-graph-runtime');
   assert.equal(track.topologyVersion, graph.version);
@@ -74,12 +74,15 @@ test('registry: Skyfall is a gated classic course runtime, never in RACE_TRACKS'
   assert.equal(upcomingReadiness(ID), 'playable');
 });
 
-test('createRace(skyfall-archipelago) attaches the course runtime and no 1D-keyed lists', () => {
+// User, 2026-11-09: rings, pickups and traffic now ride the graph (course-item-density.test.js).
+test('createRace(skyfall-archipelago) attaches the course runtime with graph-keyed items and traffic', () => {
   const race = createRace(ID);
   assert.ok(race.course, 'race.course defined');
   assert.equal(race.course.spec, spec());
-  assert.deepEqual([...race.course.cars.keys()], ['YOU', ...race.rivals.map(r => r.id)]);
-  for (const list of ['rings', 'pickups', 'traffic', 'hazards', 'sections']) assert.deepEqual(race[list], [], list);
+  assert.deepEqual([...race.course.cars.keys()], ['YOU', ...race.rivals.map(r => r.id), ...race.traffic.map(t => t.id)]);
+  assert.equal(race.traffic.length, Math.round(36 * entry().track.trafficDensity));
+  for (const list of ['rings', 'pickups']) assert.ok(race[list].length > 0 && race[list].every(item => item.edgeId), list);
+  for (const list of ['hazards', 'sections']) assert.deepEqual(race[list], [], list);
   assert.equal(race.length, entry().track.length);
 });
 

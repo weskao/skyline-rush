@@ -8,23 +8,26 @@ import { chooseBranchByLateral, courseCarGap, courseNoRoadAt, courseRemaining, c
   rankCourseRuntime, recoverCourseCar, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
 import { dropCar, type FallingCar } from './road-falls.ts';
 import { knock } from './car-collisions.js';
+import { attachCourseItems, groundAt, groundOffset, projectCourseItems, type CourseItem } from './course-items.ts';
+import { rivalTakes, type RivalCollector, type TakeItem } from './rival-items.ts';
 // Read only inside functions, so the game.js ↔ course-race-step.ts import cycle cannot hit the TDZ.
 import { FLY_DRAIN, GAP_CLEARANCE, GAP_LIFT_RESERVE, GAP_SLOWDOWN, GAP_WARN_DISTANCE, GLIDE_FUEL_REGEN } from './game.js';
 
 interface Car { distance: number; id?: string }
 interface RaceCar extends Car { x: number; altitude: number; finishTime?: number | null }
 type Player = RaceCar & FallingCar & { fuel: number };
-type Rival = RaceCar & { pace: number; speed: number; cooldown?: number };
+type Rival = RaceCar & RivalCollector & { pace: number; speed: number; cooldown?: number };
 interface CourseRef { course?: CourseRuntime; player: object }
 interface CourseHost extends CourseRef {
-  trackId: string; seed: number; elapsed: number; player: Player; rivals: Rival[]; result: { time: number } | null;
-  rings: unknown[]; pickups: unknown[]; traffic: unknown[]; hazards: unknown[]; sections: unknown[];
+  trackId: string; seed: number; elapsed: number; length: number; player: Player; rivals: Rival[]; result: { time: number } | null;
+  rings: CourseItem[]; pickups: CourseItem[]; traffic: (RaceCar & { speed: number })[]; hazards: unknown[]; sections: unknown[];
+  config: { difficulty?: string };
 }
 type Contact = (race: CourseHost, kind: 'barrier', obstacleX: number, intensity: number, retention: number) => void;
 
 export const PLAYER_ID = 'YOU';
 export const BRANCH_DEADBAND = 2.5; // m, one lane: inside it the player keeps the ground route (§6)
-// Rivals and traffic carry `id`; traffic never runs on a course (attachCourse empties it).
+// Rivals and traffic carry `id` (traffic gets `traffic-<i>` in attachCourseItems).
 const idOf = (race: CourseRef, car: Car): string => car === race.player ? PLAYER_ID : car.id as string;
 const travelOf = (rt: CourseRuntime, id: string) => {
   const car = rt.cars.get(id);
@@ -32,12 +35,14 @@ const travelOf = (rt: CourseRuntime, id: string) => {
   return car.travel;
 };
 
-/** H1: graph courses get a runtime and no 1D-keyed lists (Q3); every other track is left untouched. */
+/** H1: graph courses get a runtime; rings, pickups and traffic move onto its edges (Q3 follow-up), hazards and sections
+ * come from the spec. Every other track is left untouched. */
 export function attachCourse(race: CourseHost): void {
   if (!isCourseRuntime(race.trackId)) return;
   const grid = [race.player, ...race.rivals].map(car => ({ id: idOf(race, car), distance: car.distance, x: car.x }));
   race.course = createCourseRuntime(COURSE_RUNTIMES[race.trackId].spec, grid);
-  race.rings = []; race.pickups = []; race.traffic = []; race.hazards = []; race.sections = [];
+  race.hazards = []; race.sections = [];
+  attachCourseItems(race, race.course);
 }
 
 // `travelled` is this frame's physical speed·dt (pace·dt for rivals), never the odometer delta: an odometer rewrite
@@ -81,7 +86,7 @@ function recover(rt: CourseRuntime, id: string): { edgeId: string; localS: numbe
  * no gate, hazard or score; else the hazard sweep. Returns false: the legacy 1D gap drop never runs on a course.
  */
 export function stepCoursePlayer(race: CourseHost, dt: number, contact: Contact): false {
-  const rt = race.course!, player = race.player, { travel } = rt.cars.get(PLAYER_ID)!;
+  const rt = race.course!, player = race.player, { travel, edgeStart } = rt.cars.get(PLAYER_ID)!;
   const prevEdge = travel.currentEdgeId, prevS = travel.localS;
   const event = stepCar(rt, PLAYER_ID, player, player.speed * dt,
     () => chooseBranchByLateral(rt.spec.graph, prevEdge, player.x, BRANCH_DEADBAND));
@@ -89,8 +94,10 @@ export function stepCoursePlayer(race: CourseHost, dt: number, contact: Contact)
     const seat = recover(rt, PLAYER_ID);
     dropCar(player, seat.odometer, player.distance, race.elapsed, GAP_SLOWDOWN); // fall.from: the odometer where it fell
     placeCourseCar(rt, PLAYER_ID, seat.edgeId, seat.localS, player);
+    projectCourseItems(race);
     return false;
   }
+  if (event === 'crossed') projectCourseItems(race, prevEdge, edgeStart); // before game.js's ring/pickup loops
   const hazard = event !== 'finished' && player.cooldown === 0 ? hazardCrossed(rt, PLAYER_ID, prevEdge, prevS, player.x, player.altitude) : null;
   if (hazard) contact(race, 'barrier', hazard.lateral, 0.7, 0.6); // stepPlayerHazards' block response
   return false;
@@ -113,11 +120,47 @@ export function stepCourseCars(race: CourseHost, dt: number): void {
       const hazard = hazardCrossed(rt, id, prevEdge, prevS, rival.x, rival.altitude);
       if (hazard) knock(race, rival, Math.sign(rival.x - hazard.lateral) || -1, 0.7, 0.6); // aiImpacts' block response
     }
+    if (event !== 'rejected' && event !== 'finished') rivalSweepsItems(race, rt, id, rival, prevEdge, prevS);
     if (event === 'finished' && rival.finishTime === null) rival.finishTime = race.elapsed - dt + dt * rt.cars.get(id)!.finishFraction!;
     if (rival.finishTime != null) finishTimes[id] = rival.finishTime;
   });
+  for (const car of race.traffic) { // ground route only; the bound is this frame's odometer move (no 1D respawns)
+    const id = car.id!, course = rt.cars.get(id)!;
+    if (course.travel.finished) continue;
+    const event = stepCar(rt, id, car, Math.max(0, car.distance - course.last.distance), node =>
+      graph.edges.find(e => e.from === node && graph.groundRoute.includes(e.id))?.id ?? null);
+    if (event === 'rejected') {
+      const seat = recover(rt, id);
+      car.distance = seat.odometer;
+      placeCourseCar(rt, id, seat.edgeId, seat.localS, car);
+    }
+  }
   if (race.result) finishTimes[PLAYER_ID] = race.result.time;
   rankCourseRuntime(rt, finishTimes);
+}
+
+/** Rival takes on the graph: the items on the edges this step swept, with the 1D take rules (rival-items.ts). */
+function rivalSweepsItems(race: CourseHost, rt: CourseRuntime, id: string, rival: Rival, prevEdge: string, prevS: number): void {
+  const { travel } = rt.cars.get(id)!;
+  let rowTaken = NaN; // a full-width ring row pays once per car
+  for (const ring of [false, true]) for (const item of ring ? race.rings : race.pickups) {
+    const from = item.edgeId === prevEdge ? prevS : item.edgeId === travel.currentEdgeId ? -1 : NaN; // NaN: another edge
+    const to = item.edgeId === travel.currentEdgeId ? travel.localS : Infinity;
+    if (!(item.localS! > from && item.localS! <= to) || (ring && (item as { row?: boolean }).row && item.localS === rowTaken)) continue;
+    if (rivalTakes(race, rival, item as TakeItem, ring) && ring) rowTaken = item.localS!;
+  }
+}
+
+/** game.js traffic recycle on a graph course: a car 60 m behind the player re-seats 1400 m further up the ground route
+ * (the legacy +1400 m); none past FINISH. Returns whether game.js adds the 1400 m to its odometer. */
+export function recycleCourseTraffic(race: CourseHost, car: RaceCar): boolean {
+  const rt = race.course!, graph = rt.spec.graph, { travel } = rt.cars.get(car.id!)!;
+  if (travel.finished || progressGap(race, car, race.player) <= 60) return false;
+  const target = groundOffset(graph, travel.currentEdgeId, travel.localS) + 1400;
+  if (target > race.length - 100) return false;
+  const seat = groundAt(graph, target);
+  placeCourseCar(rt, car.id!, seat.edgeId, seat.localS, { distance: car.distance + 1400, x: car.x, altitude: car.altitude });
+  return true;
 }
 
 /** AI avoidance (car-collisions.js): within a hazard's aiPreview ahead on the car's edge, block its unsafe side to the road edge. */

@@ -30,8 +30,9 @@ export const SKYFALL_ARCHIPELAGO_RACE: CourseRaceSpec = {
 
 const groundLength = graph.groundRoute.reduce((sum, id) => sum + routeLength(graph, id), 0);
 
-// Every 1D list is empty: rings, pickups, traffic and hazards come from the graph runtime, never the shared generators.
+// Rings, pickups and traffic come from the shared generators, re-keyed onto graph edges (course-items.ts); hazards and
+// sections come from the spec. Traffic density sits in the classic range (user, 2026-11-09: Classic has road traffic).
 export const SKYFALL_ARCHIPELAGO_TRACK: TrackConfig & { topology: 'course-graph-runtime'; topologyVersion: number } = {
-  name: 'Skyfall Archipelago', length: Math.floor(groundLength), trafficDensity: 0, seed: 16016,
+  name: 'Skyfall Archipelago', length: Math.floor(groundLength), trafficDensity: 0.75, seed: 16016,
   layoutVersion: 1, sections: [], topology: 'course-graph-runtime', topologyVersion: graph.version,
 };

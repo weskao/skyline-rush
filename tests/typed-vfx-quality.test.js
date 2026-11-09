@@ -25,3 +25,42 @@ test('typed device-quality profile still respects saved high fidelity and missin
   assert.equal(saved.automatic, false);
   assert.equal(existsSync(new URL('../src/device-quality.js', import.meta.url)), false);
 });
+
+test('Ultra tier: saved as quality "ultra", scene consumers get high plus an ultra flag', () => {
+  const ultra = vfxSettings({ quality: 'ultra' });
+  assert.equal(ultra.quality, 'high');
+  assert.equal(ultra.ultra, true);
+  // Persisted form (what vfx-ui stores) round-trips without losing the tier.
+  const reloaded = vfxSettings(JSON.parse(JSON.stringify(ultra)));
+  assert.equal(reloaded.quality, 'high');
+  assert.equal(reloaded.ultra, true);
+  for (const quality of ['low', 'medium', 'high', undefined, 'invalid', 'ULTRA']) {
+    assert.equal(vfxSettings({ quality }).ultra, false, `quality ${quality}`);
+  }
+  assert.equal(vfxSettings({ quality: 'medium', ultra: true }).ultra, false);
+  assert.equal(vfxSettings({ quality: 'low' }).quality, 'low');
+});
+
+test('Ultra tier is never auto-selected and a saved Ultra survives device startup', () => {
+  for (const device of [{}, { cores: 16, memoryGiB: 32, width: 3840, height: 2160, pixelRatio: 2 },
+    { cores: 2, memoryGiB: 1 }, { cores: 4, width: 2560, height: 1440, pixelRatio: 2 }]) {
+    assert.notEqual(selectDeviceQuality(device), 'ultra');
+    const fresh = initialDeviceVisuals({ device });
+    assert.equal(fresh.settings.ultra, false);
+  }
+  const saved = initialDeviceVisuals({ storedSettings: { quality: 'high', ultra: true }, device: { cores: 2 } });
+  assert.equal(saved.settings.ultra, true);
+  assert.equal(saved.settings.quality, 'high');
+  assert.equal(saved.downgraded, false);
+});
+
+test('Ultra render resolution equals High; settings UI lists Ultra last (`?look=3d` only) with en + zh-TW copy', async () => {
+  const { renderPixelRatioForQuality } = await import('../src/render-resolution.ts');
+  const { readFileSync } = await import('node:fs');
+  assert.equal(renderPixelRatioForQuality(vfxSettings({ quality: 'ultra' }).quality, 3, 1), renderPixelRatioForQuality('high', 3, 1));
+  const app = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
+  assert.match(app, /<option value="high"[^>]*>High<\/option><option v-if="look3d\(\)" value="ultra" data-i18n="vfx\.quality\.ultra">Ultra<\/option><\/select>/);
+  const copy = readFileSync(new URL('../src/locales/display-settings.ts', import.meta.url), 'utf8');
+  assert.match(copy, /'vfx\.quality\.ultra': 'Ultra'/);
+  assert.equal((copy.match(/'vfx\.quality\.ultra'/g) ?? []).length, 2);
+});

@@ -1,6 +1,6 @@
 # Task 1 — Characterize r180 visuals and performance; add RED compatibility tests
 
-Part of [../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md](../../../superpowers/plans/2026-11-04-3d-visual-fidelity-pipeline-plan.md) · Spec Phase 1 (baseline) · Scope tags: [README.md](README.md).
+Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) · Spec Phase 1 (baseline) · Scope tags: [README.md](README.md).
 
 **Files:** tests/three-version-contract.test.js (planned new); tests/shader-warmup-browser.spec.js; tests/black-frame-browser.spec.js; src/world.js read-only baseline; new evidence doc under docs/designs/3d-pipeline/.
 **Produces:** reproducible r180 acceptance baseline and real RED evidence tied to a specific compatibility assertion.

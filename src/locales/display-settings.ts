@@ -8,6 +8,7 @@ export const DISPLAY_SETTINGS_COPY = {
     'vfx.quality.low': 'Low',
     'vfx.quality.medium': 'Medium',
     'vfx.quality.high': 'High',
+    'vfx.quality.ultra': 'Ultra',
   },
   'zh-TW': {
     'vfx.fps': '目標幀率',
@@ -17,5 +18,6 @@ export const DISPLAY_SETTINGS_COPY = {
     'vfx.quality.low': '低',
     'vfx.quality.medium': '中',
     'vfx.quality.high': '高',
+    'vfx.quality.ultra': '極致',
   },
 } as const;
