@@ -123,3 +123,12 @@ test('compact portrait/landscape and reduced-motion styling is scoped to the opt
   assert.match(css, /prefers-reduced-motion/);
   assert.doesNotMatch(css, /#result-stats|#again-button|#next-button/);
 });
+
+test('Wave 3 result card stays out of the live result buttons and cloud-status layout flow', () => {
+  const css = readFileSync(new URL('../src/wave3-demo-results.css', import.meta.url), 'utf8');
+  assert.match(css, /\.wave3-demo-results\s*\{[^}]*position:\s*fixed/s);
+  assert.match(css, /\.wave3-demo-results\s*\{[^}]*max-height:\s*min\(/s);
+  assert.match(css, /orientation:\s*portrait/);
+  assert.match(css, /\.wave3-demo-results\s*\{[^}]*position:\s*static/s);
+  assert.doesNotMatch(css, /#result-cloud|#again-button|#result-links/);
+});
