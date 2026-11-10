@@ -198,8 +198,10 @@ function confirmRedemption(): void {
 .demo-kicker { color: #6be8df; font-weight: 800; font-size: 11px; letter-spacing: .09em; }
 .demo-title h3 { margin: 5px 0 8px; font-size: clamp(18px, 2vw, 24px); }
 .demo-title p, .demo-disclaimer { margin: 0; font-size: 12px; line-height: 1.6; color: #bad4e9; }
-.demo-wallet { display: flex; flex-direction: column; align-items: center; min-width: 112px;
-  border: 1px solid #60dcd2; border-radius: 12px; padding: 8px; background: #0d3540; }
+.demo-wallet { position:relative; display: flex; flex-direction: column; align-items: center; min-width: 112px;
+  border: 1px solid #60dcd2; border-radius: 12px; padding: 8px;
+  background:radial-gradient(circle at 50% 0%,#255a6a,#0c253d 80%);
+  box-shadow:inset 0 1px 0 #ffffff26,0 0 18px #3bf0d62f; }
 .demo-wallet strong { font-size: 26px; font-variant-numeric: tabular-nums; }
 .demo-wallet span { font-size: 12px; color: #9bf2e0; }
 .demo-concept-art { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; margin: 10px 0;
