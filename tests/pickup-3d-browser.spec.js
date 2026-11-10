@@ -12,8 +12,11 @@ test('3d=1 previews the same four physical collectibles used by the shared in-ra
   await expect(canvases).toHaveCount(4);
   const tiers = await canvases.evaluateAll(nodes => nodes.map(node => node.closest('[data-tier]')?.dataset.tier));
   expect(tiers).toEqual(['cell', 'can', 'tank', 'overcharge']);
+  for (const preview of await canvases.all()) {
+    await preview.scrollIntoViewIfNeeded();
+    await expect(preview).toHaveAttribute('data-motion', 'running');
+  }
   await canvases.first().scrollIntoViewIfNeeded();
-  await expect(canvases.first()).toHaveAttribute('data-motion', 'running');
   expect(await canvases.first().evaluate(canvas => {
     const gl = canvas.getContext('webgl2');
     return !!gl && !gl.isContextLost() && canvas.width > 0 && canvas.height > 0;
@@ -39,6 +42,9 @@ test('3d=1 previews the same four physical collectibles used by the shared in-ra
   expect(sceneModels?.map(x => x.tier)).toEqual(tiers);
   expect(new Set(sceneModels.map(x => x.uniqueGeometry)).size).toBe(4);
   expect(sceneModels.every(x => x.physical && x.instanced)).toBe(true);
+  await test.info().attach('real-3d-pickups-race.png', {
+    body: await page.screenshot(), contentType: 'image/png',
+  });
 });
 
 test('the 3D guide respects reduced motion when 3d=1 is active', async ({ gameplayPage: page }) => {
