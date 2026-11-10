@@ -114,7 +114,7 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
         <strong>{{ title(item.art) }} · {{ item.cadence === 'daily' ? label('Daily', '每日') : label('Weekly', '每週') }}</strong>
         <small>{{ statusName(item.id) }}</small>
         <progress :value="progressValue(item.id)" :max="goalValue(item.id)"
-          :aria-label="title(item.art) + ' ' + item.cadence + ': ' + progressValue(item.id) + ' / ' + goalValue(item.id)" />
+          :aria-label="title(item.art) + ' ' + (item.cadence === 'daily' ? label('Daily', '每日') : label('Weekly', '每週')) + ': ' + progressValue(item.id) + ' / ' + goalValue(item.id)" />
         <small>{{ progressValue(item.id) }} / {{ goalValue(item.id) }}</small>
         <button v-if="stateOf(item.id) === 'claimable'" class="garage-mission-claim" type="button"
           @click="claim(item.id)">{{ label('Claim demo reward', '領取試玩獎勵') }}</button>
@@ -159,7 +159,7 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 .garage-trophy-heading { margin-top:16px; }
 .garage-trophy-heading h4 { margin:0; font-size:15px; }
 .garage-trophy-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px; }
-.garage-trophy-card { min-width:0; margin:0; padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:8px;
+.garage-trophy-card { min-width:0; margin:0; padding:10px 2px; display:flex; flex-direction:column; align-items:center; gap:8px;
   border:1px solid #536184; border-radius:12px; background:radial-gradient(circle at 50% 30%,#33476b,#121f37 74%); }
 .garage-trophy-card :deep(.artwork-img) { object-fit:contain; max-width:100%; }
 .garage-trophy-card figcaption { display:grid; gap:3px; min-width:0; text-align:center; overflow-wrap:anywhere; }

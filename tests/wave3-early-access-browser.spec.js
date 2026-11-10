@@ -128,8 +128,8 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   expect(first?.snapshot?.demoPoints).toBe(40);
   expect(first.checkpoint.settledCompletions).toHaveLength(1);
   expect(first.snapshot.missions['mission-time:daily'].progress).toBe(1);
-  const history = await page.evaluate(() => localStorage.getItem('skyline-rush-history'));
-  expect(history).toBeTruthy();
+  const history = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-mode-history-v1') || 'null'));
+  expect(history).toEqual(expect.arrayContaining([expect.objectContaining({ mode: 'time', track: 'coast' })]));
   await test.info().attach('wave3-real-race-result.png', {
     body: await page.screenshot(), contentType: 'image/png',
   });
