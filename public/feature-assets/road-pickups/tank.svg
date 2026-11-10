@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 384" role="img" aria-label="Gold High-Capacity Tank sci-fi energy pickup">
+<defs>
+ <radialGradient id="aura"><stop stop-color="#ffc01e" stop-opacity=".46"/><stop offset=".48" stop-color="#fff4a8" stop-opacity=".18"/><stop offset="1" stop-color="#ffc01e" stop-opacity="0"/></radialGradient>
+ <linearGradient id="hull" x1="0" y1="0" x2=".95" y2="1"><stop stop-color="#effaff"/><stop offset=".16" stop-color="#7f97b1"/><stop offset=".4" stop-color="#263a53"/><stop offset=".75" stop-color="#101b30"/><stop offset="1" stop-color="#62738a"/></linearGradient>
+ <linearGradient id="light" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff8e0"/><stop offset=".17" stop-color="#fff4a8"/><stop offset=".6" stop-color="#ffc01e"/><stop offset="1" stop-color="#182c52"/></linearGradient>
+ <linearGradient id="dark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d5e9ff"/><stop offset=".22" stop-color="#5f708a"/><stop offset=".45" stop-color="#142239"/><stop offset="1" stop-color="#070e1e"/></linearGradient>
+ <radialGradient id="core"><stop stop-color="#ffffff"/><stop offset=".2" stop-color="#fff4a8"/><stop offset=".62" stop-color="#ffc01e"/><stop offset="1" stop-color="#ffc01e" stop-opacity=".15"/></radialGradient>
+ <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8"/></filter>
+ <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
+</defs>
+<ellipse cx="191" cy="182" rx="158" ry="151" fill="url(#aura)"/>
+<ellipse cx="192" cy="316" rx="91" ry="16" fill="#ffc01e" opacity=".26" filter="url(#glow)"/>
+<ellipse cx="192" cy="312" rx="88" ry="11" fill="none" stroke="#fff4a8" stroke-width="2" stroke-dasharray="24 10" opacity=".72"/>
+<g fill="none" stroke="#ffc01e" stroke-width="2" opacity=".62"><path d="M60 180l24-9m-12 24l20-8M303 172l27 8m-19 11l16 4"/><path d="M185 44v13m-7-6h14M189 296v14m-8-7h16"/></g>
+<g fill="#fff4a8" opacity=".9"><path d="M92 88l4 11 12 4-12 4-4 11-4-11-12-4 12-4z"/><circle cx="305" cy="250" r="3"/><circle cx="73" cy="232" r="2.5"/></g>
+
+<g transform="translate(192 176) rotate(-8)">
+ <rect x="-92" y="-76" width="184" height="166" rx="20" fill="url(#dark)" stroke="#ffe29b" stroke-width="7"/>
+ <rect x="-79" y="-118" width="76" height="232" rx="31" fill="url(#hull)" stroke="#ffdc72" stroke-width="5"/>
+ <rect x="3" y="-118" width="76" height="232" rx="31" fill="url(#hull)" stroke="#ffdc72" stroke-width="5"/>
+ <rect x="-64" y="-103" width="44" height="198" rx="20" fill="url(#light)" stroke="#ffe594" stroke-width="3"/>
+ <rect x="18" y="-103" width="44" height="198" rx="20" fill="url(#light)" stroke="#ffe594" stroke-width="3"/>
+ <ellipse cx="-41" cy="-108" rx="38" ry="15" fill="#ffe4a0" stroke="#fffbe4" stroke-width="4"/>
+ <ellipse cx="41" cy="-108" rx="38" ry="15" fill="#ffe4a0" stroke="#fffbe4" stroke-width="4"/>
+ <ellipse cx="-41" cy="111" rx="38" ry="14" fill="#90661e" stroke="#ffe395" stroke-width="6"/>
+ <ellipse cx="41" cy="111" rx="38" ry="14" fill="#90661e" stroke="#ffe395" stroke-width="6"/>
+ <g fill="none" stroke="#edfaee" stroke-width="11"><path d="M-80-62H-5M3-62H80M-80 65H-5M3 65H80"/></g>
+ <rect x="-23" y="-30" width="47" height="69" rx="7" fill="#192235" stroke="#ffeb9f" stroke-width="6"/>
+ <path d="M4-20L-7 3 5 3-7 28 14-2 1-2 14-20Z" fill="#fff6c7"/>
+ <path d="M-63-40V46M22-40V46" stroke="#ffffff" stroke-width="6" opacity=".52"/>
+ <path d="M-7-114V-132Q-7-142 5-142H20" stroke="#fff8c2" stroke-width="8" fill="none"/>
+</g>
+<path d="M76 282l25-12m212-104l-23-12" stroke="#ffdc7b" stroke-width="3" opacity=".8"/>
+</svg>
