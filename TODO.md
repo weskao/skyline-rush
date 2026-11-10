@@ -1,3 +1,15 @@
+## 2026-11-11 — Premium 3D pickup collection VFX (`feature/pickup-3d-artwork-ui`)
+
+- [x] Four tier-specific player pickup animations (flash, ring waves, GPU-instanced energy shards, and rare-item beams)
+- [x] Brighter rainbow `overcharge` effect with three prismatic waves, distinct premium visual identity
+- [x] Shared `createEffects` integration across existing and future tracks; test world-point mapping with original graph item metadata
+- [x] AI item-take cues get reduced effects, player pickup is full strength; existing NITRO HUD/audio/reward logic preserved
+- [x] Respawn generation-aware event dedupe; VFX reset/disposal during race changes and shutdown
+- [x] Maximum two pooled effects per tier, stable GPU shaders, High/Medium/Low graphics and reduced-motion fallback
+- [x] TDD unit tests and actual WebGL collection screenshots for each tier, checked in `tests/pickup-collect-vfx.test.js` and `tests/pickup-3d-collection-browser.spec.js`
+- [ ] Exact-head 3D-smoke, typecheck, units, default and opt-in builds, cloud-save, all browser and World Tour CI shards GREEN
+- [ ] Manually review screenshot artifacts on actual mobile devices; measure p50/p95 FPS, draw calls, GPU memory across all quality tiers
+
 ## 2026-11-11 — Unified 3D roadside pickups and guide (`feature/pickup-3d-artwork-ui`)
 
 - [x] `Makefile` supports `make build 3d=1` in addition to the existing dev/phone `3d=1` flows; default continues to use legacy art.
