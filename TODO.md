@@ -1,3 +1,15 @@
+# Wave 3 — resource HUD and artwork acceptance (2026-11-11)
+
+- [x] Read-only demo wallet projection: local F01 only, account isolation, no invented paid coins/diamonds. Local TDD RED (missing module) → GREEN (3/3) verified.
+- [x] New responsive Garage resource strip, existing A-03 image with PNG fallback, coins/diamonds visual placeholders labelled unavailable, reduced-motion support, live F01 subscription.
+- [x] Existing Store's point counter polished; mission claim feedback includes real delta and resulting balance, without a second credit transaction.
+- [x] Repair candidate for previous CI #42863591047: NITRO CSS moved into Wave 1 override to preserve main CSS hash, icon positioned off-flow for 658×320, BOOST assertion scoped to direct SVG, and mission 96px art selectors separated from A-03 72px artwork.
+- [ ] Confirm exact-head `npm test`, typecheck/build, browser 13 shards, World Tour 5 shards and quality gate; no merge until verified green at same SHA.
+- [ ] Browser E2E screenshot inspection on real browsers and real phone/foldable devices: do not mark complete from source review alone.
+- [ ] Real coins/diamonds/purchases remain unavailable until authenticated backend/verification exists (must not expose fake currency or ownership).
+
+---
+
 # Wave 3 artwork follow-up — A-03/A-04 + NITRO (2026-11-11)
 
 - [x] Approved artwork provenance located: four exact 216×216 RGBA WebP/PNG Git blobs on `feature/wave3-implementation-plan-audit-20261110`; existing `hud-nitro@3x.webp` and BOOST SVG controls identified.
