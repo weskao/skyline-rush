@@ -139,3 +139,9 @@ The branch must remain unmerged until the exact-commit [full-regression] run
 has successful 3D browser smoke, both build variants, all 13 browser shards,
 all 5 World Tour shards, cloud checks and the aggregate quality gate. These
 checks are required even if the branch's normal focused gate is green.
+
+The regression tests respect repository-specific CI time scaling
+(`ciTimeout()`), permit Vue/TypeScript's non-null `motion!.matches`
+syntax, and exclude the Three.js Sprite engine-owned shared quad from
+resource-disposal expectations. The collection module still disposes all
+resources it allocates, and no individual pickup allocates new GPU buffers.
