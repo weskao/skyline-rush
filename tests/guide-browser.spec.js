@@ -163,3 +163,14 @@ test(`rings and supplies guide explains all ring types, road pickups and mystery
   await expect(page.locator('#guide-screen')).toBeHidden();
 });
 }
+
+test('road pickup gallery keeps its artwork animated by default but stops for reduced motion', async ({ page }) => {
+  await page.goto('/');
+  await openGuide(page);
+  await page.locator('[data-guide-device="items"]').click();
+  const art = page.locator('.pickup-art').first();
+  await expect(art).toBeVisible();
+  expect(await art.evaluate(el => getComputedStyle(el).animationName)).toContain('pickup-hover');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await art.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+});
