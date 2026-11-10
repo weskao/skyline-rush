@@ -2,7 +2,7 @@
 
 ## Build and run
 
-`make 3d=1`, `make dev-unlocked 3d=1`, `make phone y=1 3d=1` and
+`make 3d=1`, `make build 3d=1`, `make dev-unlocked 3d=1`, `make phone y=1 3d=1` and
 `make dev-feature pickup-3d-artwork-ui 3d=1` export **both** `DEV_3D=1` (existing
 3D Roadster/Coast preview) and **`VITE_PICKUP_3D=1`** (these four pickups).
 
@@ -40,13 +40,29 @@ volumes, rewards, paths, terrain, respawn timers or race balancing.
 - One merged BufferGeometry and one `MeshPhysicalMaterial` per tier; still just
   four pickup `InstancedMesh` draw calls, capped at 128 instances each.
 - PBR metal / coated surfaces, modeled colored emitters, chamfered metal shells,
-  continuous distance-phased yaw/hover in scene; motion is frozen on reduced-motion.
-- Four small live WebGL product previews are created only when the **Rings &
+  stable distance-phased yaw/hover and uniform-only animated glow. Ground-level models
+  receive a render-only vertical offset so their complete silhouette stays visible
+  above asphalt despite bobbing; collision/rewards/respawn remain unchanged.
+  Reduced-motion freezes spin, bob and glow.
+- Four small live WebGL product previews use the *exact same* shared geometry, PBR material, scale, hover, rotation and pulsating energy-emission functions as the in-race pickups. They are created only when the **Rings &
   Supplies** guide tab is selected. The preview uses the *same model and material*
   definitions as the race, with a dedicated three-point studio lighting rig.
   IntersectionObserver stops off-screen rendering, the DPR caps at 1.5, and
   component unmount disposes its WebGL and GPU resources.
 - Guide keeps responsive sizing, existing text and native language keys.
+
+## Art review and how to see the real effect
+
+The separately authored SVGs are only fallbacks for non-WebGL clients and for the
+default `3d=0` look. A published site cannot pick up an unmerged feature branch
+from a browser refresh: review `make dev-unlocked 3d=1` on this branch, or the
+CI screenshot artifact **pickup-3d-visual-evidence** from the exact-head run.
+
+In the guide, choose Controls → How to play → Rings & Supplies; the four
+animated WebGL product stages are the same real-time models used in the road.
+The `make build 3d=1` command creates a deployable build artifact locally,
+but **does not deploy** it. Publication still requires the repository's normal
+main/release approval and exact-head all-green CI.
 
 ## Verification checklist
 
