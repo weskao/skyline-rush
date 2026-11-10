@@ -102,13 +102,15 @@ jobs:
         run: VITE_PICKUP_3D=1 npm run build
       - name: Smoke-test opt-in 3D guide and race model parity
         if: github.ref == 'refs/heads/feature/pickup-3d-artwork-ui' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
-        run: VITE_PICKUP_3D=1 npx playwright test tests/pickup-3d-browser.spec.js
+        run: VITE_PICKUP_3D=1 npx playwright test tests/pickup-3d-browser.spec.js tests/pickup-3d-collection-browser.spec.js
       - name: Upload real 3D model preview and race screenshots
         if: always() && (github.ref == 'refs/heads/feature/pickup-3d-artwork-ui' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
           name: pickup-3d-visual-evidence
-          path: test-results/**/real-3d-pickups-*.png
+          path: |
+            test-results/**/real-3d-pickups-*.png
+            test-results/**/pickup-collect-*.png
           if-no-files-found: ignore
 
   # CPU-only WebGL makes the serial suite take about 6.4 runner-hours. Playwright's own --shard cuts equal contiguous
