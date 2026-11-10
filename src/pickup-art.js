@@ -5,6 +5,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const PICKUP_SIZES = Object.freeze({ cell: .82, can: .94, tank: 1.08, overcharge: 1.24 });
+// Render-only clearance: preserve the simulation's authored altitude and collision volume.
+export const PICKUP_GROUND_LIFT = Object.freeze({ cell: 0, can: .08, tank: .5, overcharge: 1.20 });
 const ACCENTS = Object.freeze({ cell: 0x2bc9ff, can: 0xff9d35, tank: 0xffcf48, overcharge: 0xe180ff });
 const STEEL = 0x6c819d, DARK = 0x162840, WHITE = 0xeaf6ff;
 const ROTATE_RIGHT = [0, 0, Math.PI / 2];
@@ -50,6 +52,7 @@ function energyCell() {
     ...[-.25, 0, .25].map(y => box(.11, .055, .81, 0xbcefff, [.22, y, .03])),
     bead(.12, WHITE, [0, .67, 0]),
     bead(.12, ACCENTS.cell, [0, -.67, 0]),
+    ring(.67, .035, ACCENTS.cell, [0, -.78, 0]),
   ]);
 }
 
@@ -70,6 +73,7 @@ function energyCan() {
     tube(.17, .21, 0xe7effc, [0, .81, 0]),
     tube(.24, .15, DARK, [0, .96, 0]),
     bead(.17, ACCENTS.can, [0, 1.04, 0]),
+    ring(.68, .035, ACCENTS.can, [0, -.79, 0]),
   ]);
 }
 
@@ -90,6 +94,7 @@ function highCapacityTank() {
     box(.09, .25, .30, WHITE, [0, 0, .67]),
     ...[-.22, .22].map(y => box(.24, .08, .30, 0xfff3c6, [0, y, .65])),
     tube(.12, 1.3, 0xffe4a4, [0, 1.04, 0], ROTATE_RIGHT),
+    ring(1.15, .045, ACCENTS.tank, [0, -1.1, 0]),
   ]);
 }
 
@@ -120,17 +125,23 @@ function overchargeCore() {
 const BUILDERS = Object.freeze({ cell: energyCell, can: energyCan, tank: highCapacityTank, overcharge: overchargeCore });
 export const createPickupGeometry = tier => BUILDERS[tier]();
 export const createPickupGeometries = () => Object.fromEntries(Object.entries(BUILDERS).map(([tier, build]) => [tier, build()]));
-export const createPickupMaterials = () => Object.fromEntries(Object.entries(ACCENTS).map(([tier, color]) =>
-  [tier, new THREE.MeshPhysicalMaterial({
+export const createPickupMaterial = tier => {
+  const accent = ACCENTS[tier];
+  if (accent === undefined) throw new RangeError('Unknown pickup material: ' + tier);
+  return new THREE.MeshPhysicalMaterial({
     name: 'Pickup ' + tier, color: WHITE, vertexColors: true, roughness: .27,
-    metalness: .42, clearcoat: .8, clearcoatRoughness: .14, emissive: color, emissiveIntensity: .14,
-  })]));
+    metalness: .42, clearcoat: .8, clearcoatRoughness: .14, emissive: accent, emissiveIntensity: .26,
+  });
+};
+export const createPickupMaterials = () => Object.fromEntries(Object.keys(ACCENTS).map(tier =>
+  [tier, createPickupMaterial(tier)]));
 
 export function animatePickup(marker, item, time, reducedMotion) {
   const phase = item.distance * .037, spinning = !reducedMotion;
   marker.rotation.set(spinning ? Math.sin(time * .65 + phase) * .065 : 0,
     spinning ? time * (item.tier === 'overcharge' ? 1.15 : .78) + phase : .2,
     spinning ? Math.sin(time * 1.7 + phase) * .08 : 0);
+  if (Number.isFinite(item.altitude) && item.altitude < .5) marker.position.y += PICKUP_GROUND_LIFT[item.tier] ?? 0;
   marker.position.y += spinning ? Math.sin(time * 2.1 + phase) * .17 : 0;
   marker.scale.setScalar(PICKUP_SIZES[item.tier] ?? PICKUP_SIZES.cell);
 }
