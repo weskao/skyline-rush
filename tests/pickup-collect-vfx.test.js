@@ -116,3 +116,30 @@ test('legacy pickup mode does not allocate premium VFX objects', () => {
     effects.dispose();
   } finally { delete globalThis.devicePixelRatio; }
 });
+
+test('a rival pickup on a branching course retains its original graph item for world-point placement', () => {
+  globalThis.devicePixelRatio = 1;
+  try {
+    const scene = new THREE.Scene(), effects = createEffects(scene, () => 0, { pickup3D: true });
+    const race = createRace('coast');
+    race.phase = 'racing'; race.player.speed = 40; race.player.distance = 0;
+    race.rings = [];
+    const item = { tier: 'can', distance: 80, x: 0, altitude: 0, edgeId: 'shortcut-branch' };
+    race.pickups = [item];
+    const accessed = [];
+    const options = { worldPoint: (distance, x, y, origin, original) => {
+      if (original) accessed.push(original);
+      return [x, y, -(distance - origin)];
+    } };
+    effects.update(race, .05, 0, false, false, undefined, options);
+    accessed.length = 0;
+    race.elapsed = 1;
+    item.downUntil = 3.5;
+    race.rivals[0].lastTake = { time: race.elapsed, distance: item.distance,
+      x: item.x, altitude: item.altitude, kind: item.tier };
+    effects.update(race, .05, 0, false, false, undefined, options);
+    assert.ok(scene.getObjectByName('Pickup collect VFX').children.some(stage => stage.visible));
+    assert.ok(accessed.includes(item), 'use the authored pickup edge and branch metadata, not the generic rival cue');
+    effects.dispose();
+  } finally { delete globalThis.devicePixelRatio; }
+});
