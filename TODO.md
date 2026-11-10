@@ -1,3 +1,15 @@
+## 2026-11-11 — Optional AAA-style 3D pickup art, Makefile `3d=1`
+
+- [x] Root cause: `3d=1` previously only enabled Roadster/Coast look; the guide rendered unrelated SVG illustrations while the race rendered simple, independently authored models.
+- [x] Add `VITE_PICKUP_3D=1` to the existing `DEV_3D` Makefile switch for `make 3d=1`, `dev-unlocked`, `phone`, and `dev-feature`.
+- [x] Re-author tier-specific capsule, pressure canister, twin tanks and gyroscopic multicolor reactor, including metallic PBR surfaces, glow, depth and differentiated width/height.
+- [x] Reuse **the exact same geometry/material factories** in the world renderer and four interactive guide WebGL previews, with real 3D spin, hover and reduced-motion.
+- [x] Preserve legacy non-3D display, gameplay economy/collectors, all existing/future shared race tracks, instanced draw-call budget, scene disposal and lazy guide mounting.
+- [x] Add opt-in smoke tests, visual snapshot attachment, CI 3D build path, model parity and pooled-geometry tests.
+- [ ] Confirm latest exact-HEAD CI (unit, typecheck, build x2, 3D browser smoke, full browser/World Tour/cloud); resolve any failure.
+- [ ] Confirm real desktop and phone art review and frame p50/p95; do not label as accepted until visual verification.
+- [ ] No merge/release without explicit owner authorization. Existing public URL remains on deployed main.
+
 ## 2026-11-11 — Road pickup models and collectible-guide artwork (`feature/pickup-3d-artwork-ui`)
 
 - [x] Replace four shared octahedrons with distinct blue battery, orange canister, gold twin tank and rainbow multi-ring reactor; adjust display dimensions without changing the game economy.
