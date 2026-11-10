@@ -114,7 +114,7 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
         <strong>{{ title(item.art) }} · {{ item.cadence === 'daily' ? label('Daily', '每日') : label('Weekly', '每週') }}</strong>
         <small>{{ statusName(item.id) }}</small>
         <progress :value="progressValue(item.id)" :max="goalValue(item.id)"
-          :aria-label="title(item.art) + ' ' + item.cadence + ': ' + progressValue(item.id) + ' / ' + goalValue(item.id)" />
+          :aria-label="title(item.art) + ' ' + (item.cadence === 'daily' ? label('Daily', '每日') : label('Weekly', '每週')) + ': ' + progressValue(item.id) + ' / ' + goalValue(item.id)" />
         <small>{{ progressValue(item.id) }} / {{ goalValue(item.id) }}</small>
         <button v-if="stateOf(item.id) === 'claimable'" class="garage-mission-claim" type="button"
           @click="claim(item.id)">{{ label('Claim demo reward', '領取試玩獎勵') }}</button>

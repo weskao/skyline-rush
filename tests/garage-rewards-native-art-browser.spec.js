@@ -31,6 +31,7 @@ test('Garage Missions stay truthful in Traditional Chinese and fall back on miss
   const board = page.locator('.garage-mission-board');
   await expect(board).toContainText('任務中心');
   await expect(board).toContainText('試玩進度與獎盃僅儲存在本機');
+  await expect(board.locator('.garage-period-card progress').first()).toHaveAttribute('aria-label', '競速挑戰 每日: 0 / 1');
   await expect(board.locator('[data-mission-id="mission-race"] .artwork-fallback')).toBeVisible();
   await expect(board.locator('[data-mission-id="mission-race"]')).toContainText('競速挑戰');
   await expect(board).not.toContainText(/領取|已完成|已獲得/);
@@ -61,6 +62,6 @@ test('Garage trophy display preserves Traditional Chinese and missing-image fall
   await page.locator('#garage-button').click();
   const trophy = page.locator('.garage-mission-board [data-trophy-id="trophy-gold"]');
   await expect(trophy).toContainText('金級獎盃');
-  await expect(trophy).toContainText('僅展示');
+  await expect(trophy).toContainText('僅供展示');
   await expect(trophy.locator('.artwork-fallback')).toBeVisible();
 });

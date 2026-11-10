@@ -4,7 +4,7 @@
 <body style="margin:0;background:#061223;color:#e7f5ff;font:14px system-ui">
 <div id="app"></div>
 <script type="module">
-import { createApp, ref } from 'vue';
+import { createApp, h, ref } from 'vue';
 import Wave3DemoStore from '../../src/Wave3DemoStore.vue';
 import Wave3DemoCollection from '../../src/Wave3DemoCollection.vue';
 import { createWave3LocalDemo } from '../../src/wave3-local-demo.ts';
@@ -17,19 +17,21 @@ const trialUntil = ref(0);
 const trialAccess = id => id === 'airflow-vortex' && trialUntil.value > 0
   ? { state: 'trial', canEquip: true, owned: false, expiresAt: trialUntil.value } : null;
 const lastEquipped = ref('');
+// Use the runtime render API: Vite's Vue runtime has no in-browser template compiler.
 const App = {
-  components: { Wave3DemoStore, Wave3DemoCollection },
   setup() {
-    return { port, page, locale, trialAccess, skinRevision, lastEquipped };
+    return () => h('main', { style: 'max-width:1200px;margin:auto;padding:10px' }, [
+      page.value === 'store'
+        ? h(Wave3DemoStore, { port, locale: locale.value, trialAccess, skinRevision: skinRevision.value,
+            onOpenCollection: () => { page.value = 'collection'; } })
+        : page.value === 'collection'
+          ? h(Wave3DemoCollection, { port, locale: locale.value, trialAccess, skinRevision: skinRevision.value,
+              onOpenStore: () => { page.value = 'store'; },
+              onEquippedPreview: id => { lastEquipped.value = id; },
+              onReturnToRace: () => { page.value = 'race'; } })
+          : h('p', { 'data-race-handoff': '' }, 'Race handoff fixture'),
+    ]);
   },
-  template: `<main style="max-width:1200px;margin:auto;padding:10px">
-    <Wave3DemoStore v-if="page === 'store'" :port="port" :locale="locale" :trial-access="trialAccess" :skin-revision="skinRevision"
-      @open-collection="page = 'collection'" />
-    <Wave3DemoCollection v-else-if="page === 'collection'" :port="port" :locale="locale"
-      :trial-access="trialAccess" :skin-revision="skinRevision"
-      @open-store="page = 'store'" @equipped-preview="lastEquipped = $event" @return-to-race="page = 'race'" />
-    <p v-else data-race-handoff>Race handoff fixture</p>
-  </main>`,
 };
 createApp(App).mount('#app');
 window.__wave3DemoFixture = {

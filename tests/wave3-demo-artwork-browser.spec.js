@@ -70,7 +70,8 @@ for (const viewport of screens) for (const locale of ['en', 'zh-TW']) {
     const board = page.locator('.garage-mission-board');
     await expect(board).toBeVisible();
     await expect(board).toContainText(locale === 'en' ? 'Mission center' : '任務中心');
-    await expect(board).toHaveAttribute('data-rewards-authority', 'not-connected');
+    await expect(board).toHaveAttribute('data-rewards-authority', 'local-demo');
+    await expect(board).toContainText(locale === 'en' ? 'local, disposable' : '僅儲存在本機');
     for (const id of missionIds) {
       const card = board.locator('[data-mission-id="' + id + '"]');
       await expect(card).toBeVisible();
