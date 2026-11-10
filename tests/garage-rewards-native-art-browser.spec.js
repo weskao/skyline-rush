@@ -12,7 +12,7 @@ test('actual Garage mission cards and source icons preserve native 3x alpha on m
     await expect(board.locator('.garage-mission-card')).toHaveCount(4);
     await expect(board).toContainText('Demo progress and trophies are local');
     await expect(board).not.toContainText(/claim reward|reward received|領取獎勵|已領取/);
-    for (const img of await board.locator('img').all()) {
+    for (const img of await board.locator('.garage-mission-card > img, .garage-trophy-card img').all()) {
       await img.scrollIntoViewIfNeeded();
       await expect(img).toHaveAttribute('width', '96');
       await expect(img).toHaveAttribute('height', '96');
@@ -20,6 +20,9 @@ test('actual Garage mission cards and source icons preserve native 3x alpha on m
       await expect(img).toHaveJSProperty('naturalHeight', 288);
       // Alpha margins (>= 20 px) are asserted on the PNG files in tests/rewards-visual-contract.test.js.
     }
+    const demoIcon = board.locator('.garage-demo-balance [data-wave3-demo-art="demo-points"] img');
+    await expect(demoIcon).toHaveAttribute('width', '72');
+    await expect(demoIcon).toHaveJSProperty('naturalWidth', 216);
   }
 });
 
