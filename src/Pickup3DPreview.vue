@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import * as THREE from 'three';
-import { createPickupGeometry, createPickupMaterial, PICKUP_SIZES, animatePickup } from './pickup-art.js';
+import { createPickupGeometry, createPickupMaterial, PICKUP_SIZES, animatePickup, pulsePickupMaterial } from './pickup-art.js';
 
 const props = defineProps<{ tier: 'cell' | 'can' | 'tank' | 'overcharge' }>();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -61,6 +61,7 @@ onMounted(() => {
       movement.value = animated ? 'running' : 'paused';
       mesh.position.set(0, 0, 0);
       animatePickup(mesh, item, seconds, motion!.matches);
+      pulsePickupMaterial(material!, props.tier, seconds, motion!.matches);
       renderer!.render(scene, camera);
       ready.value = true;
       if (animated) frame = requestAnimationFrame(draw);
