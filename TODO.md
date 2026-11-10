@@ -1,3 +1,12 @@
+## 2026-11-11 — Road pickup models and collectible-guide artwork (`feature/pickup-3d-artwork-ui`)
+
+- [x] Replace four shared octahedrons with distinct blue battery, orange canister, gold twin tank and rainbow multi-ring reactor; adjust display dimensions without changing the game economy.
+- [x] Use the existing four InstancedMesh pools for performance; apply distance-phased hovering/spinning with reduced-motion support.
+- [x] Add four transparent authored 384 × 384 SVG product illustrations to the guide with breathing glow, a rotating platform, enhanced card sizing and responsive layout.
+- [x] Add regression tests for the modeled silhouettes, instancing, motion, guide image assets and four-viewport browser rendering.
+- [ ] Run module-size, focused tests, full test/typecheck/build/browser gates and `make verify` in a working checkout; connector write actions cannot run local tests.
+- [ ] Verify exact-HEAD GitHub CI and manually inspect real WebGL frame time, color/contrast and desktop/mobile screenshots before merging or releasing.
+
 ## 2026-11-10 — main CI 42662669700: route previews and Frostbite Rift phone
 
 - [x] RED evidence: main `cc5df3fe9e30` failed browser shard 9 because the 10-track World Tour assertion saw 16 home previews; shard 1's Frostbite phone span fall stayed 0 after 24 s, including retries.
