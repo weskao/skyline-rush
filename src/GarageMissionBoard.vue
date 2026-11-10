@@ -64,7 +64,10 @@ watch(() => props.experience, port => {
 onMounted(() => {
   locale.value = getLocale();
   stopLocale = onLocaleChange(next => { locale.value = next; });
-  minuteTimer = setInterval(() => { now.value = Date.now(); }, 60000);
+  minuteTimer = setInterval(() => {
+    now.value = Date.now();
+    snapshot.value = props.experience?.getSnapshot() ?? null;
+  }, 60000);
 });
 onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTimer); });
 </script>
