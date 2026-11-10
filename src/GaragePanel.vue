@@ -384,19 +384,4 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 }
 </style>
 
-<style>
-/* Compact Garage/Studio: preserve 44px touch targets, maximise the real WebGL viewport. */
-#garage-screen .garage-collection :is(.collection-note, .garage-coming) { margin-block: 5px; line-height: 1.4; }
-#garage-screen .garage-vfx-catalog { margin-top: 8px; padding-top: 7px; }
-#garage-screen .garage-vfx-category { margin-block: 8px; }
-#garage-screen .garage-vfx-category ul { gap: 7px; }
-#garage-screen .garage-vfx-message { margin-block: 5px 7px; }
-#garage-screen .garage-collection .garage-art-showcase { margin-top: 10px; padding-top: 8px; }
-#garage-screen .garage-entry { white-space: normal; overflow-wrap: anywhere; }
-#garage-screen .garage-camera-controls { overscroll-behavior-inline: contain; }
-@media (max-width: 650px) and (orientation: portrait) {
-  #garage-screen .garage-entry { max-width: 49vw; padding-inline: 6px; font-size: 11px; }
-  #garage-screen .garage-heading h2 { font-size: 18px; }
-  #garage-screen .garage-mode-controls button { min-width: 0; padding-inline: 9px; }
-}
-</style>
+<style src="./garage-compact-layout.css"></style>
