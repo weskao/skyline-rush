@@ -6,9 +6,9 @@ Branch: `feature/wave3-wallet-ui-polish` from `feature/wave3-demo-acceptance@e8d
 
 - A player should immediately see the exact **local demo points** from the existing F01 `Wave3ExperiencePort` in the Garage, in the Store, and in race results; never invent a second wallet, credit payout or paid entitlement.
 - Display gold coins and diamonds as **Coming soon / —**, not as zero or spendable amounts. `src/garage-economy-state.ts` intentionally exposes `balance:null`, `canBuy:false`, `canClaim:false`; do not change that contract or `SkinProfile.owned`.
-- Use approved A-03 216px transparent WebP (+PNG fallback) for demo points. Gold/diamond may use small CSS-drawn decorative symbols pending independent approved 3x transparent source artwork; never show them as owned.
+- Use approved A-03 216px transparent WebP (+PNG fallback) for demo points. Gold/diamond use the new 3x transparent PNG artwork and a separate frame-sequence glint; art does not imply ownership.
 - Reuse the actual NITRO HUD icon and working BOOST SVG/button; preserve their logic and click targets. Move any NITRO image CSS out of the frozen main CSS baseline into the Wave 1 override segment.
-- Visual treatment: dark racing telemetry, cyan/purple/gold accents, tabular numerals, gentle native CSS glint on balance changes, reduced-motion support, accessible bilingual labels, no JS animation loop or new dependency.
+- Visual treatment: dark racing telemetry, cyan/purple/gold accents, tabular numerals, CSS image-sequence glint on coin/diamond plus gentle numeric balance emphasis, reduced-motion support, accessible bilingual labels, no JS animation loop or new dependency.
 - Preserve viewport-safe Garage controls and scrolling on desktop (1440×900), phone portrait (390×844, 320×568), phone landscape (844×390, 658×320), and narrow/foldable widths. No overlays over touch zones.
 
 ## Plan / acceptance (RED → GREEN → REVIEW)
