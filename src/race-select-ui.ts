@@ -61,7 +61,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     selectedMode = 'eventlab'; upcomingSelection = null; options.clearDaily(); setRace(next); showTracks(); options.refreshPhase();
   } });
   const selectedRace = (trackId: string): Race => selectedMode === 'circuit' ? options.createRace(CIRCUIT_ID, { mode: 'circuit', laps: Number($<HTMLSelectElement>('#circuit-laps').value) }) : selectSprint(trackId === CIRCUIT_ID ? 'coast' : trackId);
-  const selectSprint = (trackId: string): Race => isUpcomingTrack(trackId) ? options.createRace(trackId) /* gated runtimes race Classic only */ : selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
+  const selectSprint = (trackId: string): Race => selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
     ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
       ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
     ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value, layout: $<HTMLSelectElement>('#gauntlet-layout').value } : {}),

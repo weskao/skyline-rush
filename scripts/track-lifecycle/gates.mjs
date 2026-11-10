@@ -61,7 +61,7 @@ export function checkCourse(c) {
   push('P5', !c.productionEnterable && !c.productionAvailableWithStaleUnlock, 'production or stale saves unlock the course');
   push('P6', Array.isArray(c.homeStatuses) && c.homeStatuses.length > 0 && c.homeStatuses.every(s=>s==='coming-soon'), 'upcoming card not Coming Soon');
   if (c.stage === 'playable' || c.stage === 'ready') {
-    push('D1', !!c.raceTrackDefined && !!c.classicOnly, 'registered classic-only course required');
+    push('D1', !!c.raceTrackDefined && !!c.devModeCompatible, 'registered dev-mode-compatible course outside release catalog required');
     push('D2', !!c.unitTestExists && !!c.browserSpecExists, 'START-to-FINISH test specs required');
     push('D3', !!c.developmentEnterable, 'development-only START must be enabled');
   }

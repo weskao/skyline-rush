@@ -27,7 +27,6 @@ test('all track IDs have English and Traditional Chinese labels', () => {
   assert.equal(trackName('cosmic', 'en'), 'Cosmic Orbit');
   assert.equal(trackName('coast', 'ja'), 'Coast');
 });
-
 // Home route maps label every Coming Soon card through trackName. A missing catalog entry
 // falls through to the English slug, which the zh-TW stray-English scan rejects.
 test('every Coming Soon card name is the route label in both languages', () => {

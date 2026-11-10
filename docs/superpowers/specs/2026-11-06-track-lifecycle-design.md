@@ -84,7 +84,7 @@ is added.
 ### D-gates — stage `playable`
 
 - D1 `raceTrack(<id>)` returns a track config (today via `COURSE_TRACKS`) and `assertTrackMode`
-  restricts it to classic mode; it is not in Daily, Cup or the catalog.
+  accepts all non-Circuit modes in local development; Circuit uses its own Harbor course. The upcoming id remains absent from Daily and the released catalog.
 - D2 `tests/<id>-race.test.js` and `tests/<id>-race-browser.spec.js` exist (START → FINISH).
   Frostbite's files are currently `tests/frostbite-race*.js`; the build renames them to the full id
   and updates `tests/ci-durations.json` (builder's proposal, accepted as my call).

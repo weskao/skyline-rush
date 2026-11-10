@@ -20,7 +20,7 @@ P1: exact 568×205 JPEG; P2: SVG route; P3: registered Three.js environment; P4:
 
 ### Development gates D1–D3
 
-D1: race registered for Classic only, never Daily, Cup or the released catalog. D2: `tests/<id>-race.test.js` and `tests/<id>-race-browser.spec.js` exercise START→FINISH. D3: development access accepts the registered playable course; production still does not.
+D1: race registered for all ordinary modes (Classic, Custom, Free, Time, Gauntlet, Checkpoint, Cup, Stunt, Elimination and Endless) in local-unlocked development, but not Circuit (the separate Harbor course), Daily or the released catalog. D2: `tests/<id>-race.test.js` and `tests/<id>-race-browser.spec.js` exercise START→FINISH. D3: development access accepts the registered playable course; production still does not.
 
 ### Ready evidence R1–R6
 
