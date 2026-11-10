@@ -87,5 +87,6 @@ const sparkleArt = `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/
   .wallet-artwork { flex-basis:38px;width:38px;height:38px; }
   .wallet-artwork :deep(.artwork-img) { width:38px!important;height:38px!important; } }
 @media (max-height:480px) and (orientation:landscape) { .wave3-wallet-strip { position:static; } }
+:global(body[data-vfx-enabled="false"]) .wallet-shimmer { display:none; }
 @media (prefers-reduced-motion:reduce) { .wallet-credit-value, .wallet-shimmer { animation:none; } }
 </style>
