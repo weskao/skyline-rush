@@ -1,5 +1,6 @@
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
+import { ciTimeout } from './helpers/ci.js';
 
 test('3d=1 renders real in-race tiered collection shockwaves and captures their WebGL frames', async ({ gameplayPage: page }) => {
   test.skip(process.env.VITE_PICKUP_3D !== '1', 'This requires make verify 3d=1');
@@ -15,7 +16,7 @@ test('3d=1 renders real in-race tiered collection shockwaves and captures their 
     await expect.poll(() => page.evaluate(name => {
       const group = window.gameScene.scene.getObjectByName('Pickup collect VFX');
       return group?.children.filter(stage => stage.visible).map(stage => stage.userData.tier) ?? [];
-    }, tier), { timeout: 4000 }).toContain(tier);
+    }, tier), { timeout: ciTimeout(4000) }).toContain(tier);
     const state = await page.evaluate(name => {
       const group = window.gameScene.scene.getObjectByName('Pickup collect VFX');
       const stage = group.children.find(stage => stage.userData.tier === name && stage.visible);
@@ -45,7 +46,7 @@ test('3d=1 reduced-motion collection stays restrained without the rare beam or p
   });
   await expect.poll(() => page.evaluate(() =>
     window.gameScene.scene.getObjectByName('Pickup collect VFX')?.children.some(stage => stage.visible) ?? false
-  ), { timeout: 4000 }).toBe(true);
+  ), { timeout: ciTimeout(4000) }).toBe(true);
   const state = await page.evaluate(() => {
     const stage = window.gameScene.scene.getObjectByName('Pickup collect VFX').children.find(stage => stage.visible);
     return { shards: stage.children.find(mesh => mesh.isInstancedMesh).count,
