@@ -163,7 +163,7 @@ const FORMATS: Record<CountFormat, (value: number) => string> = {
 };
 
 /** Writes a result view into the race overlay; returns the elements whose numbers count up on reveal. */
-export function setupResultScreen() {
+export function setupResultScreen(afterRender: () => void = () => {}) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const title = $('#overlay-title'), copy = $('#overlay-copy'), stats = $('#result-stats');
   const nextStage = $('#next-stage'), nextTrack = $('#next-track'), style = $('#result-style');
@@ -178,6 +178,7 @@ export function setupResultScreen() {
       image.onerror = () => { image.hidden = true; };
     }
     if (view.style) { style.setAttribute('aria-label', view.style.aria); style.innerHTML = view.style.html; }
+    afterRender();
     if (!view.counts.length) return [];
     const targets = [stats.children[1]!.querySelector('strong')!, stats.children[2]!.querySelector('strong')!, $('#result-style > strong')];
     return view.counts.map(({ value, format }, i) => ({ element: targets[i] as HTMLElement, value, format: FORMATS[format] }));

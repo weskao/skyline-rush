@@ -138,3 +138,18 @@ test('locked bundle audit refuses the skin pick storage key, other modes allow i
   assert.match(locked.stderr, /skin pick/i);
   assert.equal(run('released').status, 0, 'key is scoped to the locked build only');
 });
+
+test('Wave 3 demo and race modules are build-time locked out of coming-soon bundles', () => {
+  const locked = selectGarageReleaseBuild('production', undefined);
+  assert.match(locked.aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);
+  assert.match(locked.aliases['#wave3-demo-ui'], /Wave3DemoLocked\.vue$/);
+  const trial = selectGarageReleaseBuild('production', 'trial');
+  assert.match(trial.aliases['#wave3-demo-race'], /wave3-race-events\.ts$/);
+  assert.match(trial.aliases['#wave3-demo-ui'], /Wave3DemoEntry\.vue$/);
+});
+
+test('the public released strategy must also exclude local-only demo rewards and UI', () => {
+  const aliases = selectGarageReleaseBuild('production', 'released').aliases;
+  assert.match(aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);
+  assert.match(aliases['#wave3-demo-ui'], /Wave3DemoLocked\.vue$/);
+});

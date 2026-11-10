@@ -46,6 +46,7 @@
     "#garage-void-beams": "./src/garage-void-beams.js",
     "#garage-launch-flare": "./src/garage-launch-flare.js",
     "#garage-nitro-trail": "./src/garage-nitro-trail.js",
-    "#garage-release-config": "./src/garage-release-trial.ts"
+    "#garage-release-config": "./src/garage-release-trial.ts",
+    "#wave3-demo-race": "./src/wave3-race-events.ts"
   }
 }

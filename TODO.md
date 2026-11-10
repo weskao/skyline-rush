@@ -1,3 +1,37 @@
+# Wave 3 — satellite frontend integration checkpoint (2026-11-10)
+
+**Branch:** `feature/wave3-frontend-demo-integration`. Satellite source integration is **not** the same as completed acceptance; no new paid or verified entitlements.
+
+- [x] **Source integration:** Demo Store/Collection from `be179828122f196b2e1f2b80a5d3483ed38ffd1c`, Results UI from `7552d4362b367ae3c6f344471c7dbb85ac60dae5`, scoped Storage module/tests from `555984cdb849db2fb1f007755996803d304bc6e2`, artwork QA tests from `a506b495f1c26d42c1d4c273b823f9b27d269f23`. Compare commit tree and changed files; these are code-import checkpoints only.
+- [x] **Integration source and regression cases added:** trial-only Garage Store/Collection Vue entry, original race results receipt hook, per-race first receipt, session-only demo skin preview, single-key versioned snapshot + replay checkpoint, account-scoped rehydrate/reset and source-level build-time coming-soon isolation.
+- [ ] **TDD and complete verification:** No newly integrated unit/browser test has been executed locally in the GitHub-only workspace. Observe exact-HEAD `npm test`, `npm run typecheck`, `npm run build`, `tests/module-size.test.js`, asset QA and full feature CI, then investigate any failures. Source work alone does NOT mean F03/F05/F06 or F08 is accepted.
+- [ ] **Demo missions frontend:** `feature/wave3-demo-missions` has not yet supplied a tested integration commit; the existing GarageMissionBoard still needs live UI integration.
+- [ ] **Visual acceptance:** Real WebGL gameplay, mobile portrait/landscape, Store/Collection, results summary and demo cosmetic effects; no real-device proof yet.
+- [ ] **CI and merge eligibility:** Need exact-head GitHub Actions `quality-gate` fully green and reviewed before merging into `develop`; no PR, deploy or main merge without authorization.
+- [ ] **Persistence and security audit:** Complete review of reload, replay dedupe, account changes and disposal in real browser before marking full storage feature done.
+
+---
+
+# 2026-11-10 — Wave 3 frontend integration: F01 / F02 / F04 local-demo core (feature branch)
+
+**Branch:** `feature/wave3-frontend-demo-integration`. **Integration parent:** `develop@dbf2ffc1e8e248c4042cce35a09bc7b5e58255fc`.
+**Contract frozen for parallel agents:** `3a5ff9378667a53f23f17134c4d0f2cbaafb83d4`.
+**Handoff:** `docs/superpowers/plans/2026-11-10-wave3-core-frontend-handoff.md`.
+**Planning reference (read-only):** `feature/wave3-implementation-plan-audit-20261110`.
+
+- [x] **F01 source/TDD:** Versioned `Wave3ExperiencePort`, in-memory local demo with Guest, subscription, account isolation, demo points/redeem/equip/reset; RED was `ERR_MODULE_NOT_FOUND`, then `node --experimental-strip-types --test tests/wave3-local-demo.test.js` passed **9/9**. No Go/Firebase/real ownership change. F01 code at `3a5ff937`.
+- [x] **F04 data/TDD:** Local-only points and redemption, duplicate-safe completion, mission claim once, insufficient-points guard, invalid item and unsupported mode tests. Same focused **9/9** verification; no server-verified or paid grants.
+- [x] **F02 source/TDD:** Actual `game.js` drift-payout and longest-combo snapshots observed after `stepRace`; buffered until valid completed race; shared race-results wrapper preserves original settlement. Aborted-race test RED **2 failures**, GREEN after buffering; final-step drift test RED **1 failure**, GREEN after capture guard. Combined `node --experimental-strip-types --test tests/wave3-local-demo.test.js tests/wave3-race-events.test.js`: **15 passed / 0 failed**.
+- [x] **Local standalone strict check:** `tsc --noEmit --target ES2022 --lib ES2022,DOM --module ESNext --moduleResolution bundler --strict --allowImportingTsExtensions src/wave3-experience-contract.ts src/wave3-demo-settlement.ts src/wave3-local-demo.ts src/wave3-race-events.ts`: exit 0 (local TypeScript 5.8.3; repo version 5.9.3 awaits exact-head CI).
+- [x] **Legacy ceiling inspected:** `src/main.js` remains 677 lines (limit 677), new TS modules 54/25/88/68 lines; actual repository-wide `tests/module-size.test.js` is **not** claimed local-executed.
+- [x] **Early CI partial evidence:** on `3a5ff937`, GitHub Actions run [42662263629](https://github.com/weskao/skyline-rush/actions/runs/42662263629) ran and passed typecheck, npm test, build and cloud-save jobs; the overall run was **cancelled** by a newer push, so this is not an exact-HEAD full gate.
+- [ ] **Current exact-HEAD full CI:** all required unit, browser, World Tour and cloud-save jobs (including `quality-gate`) must finish and pass at the final commit. Queued/partial/cancelled runs never count as PASS.
+- [ ] **Real WebGL/phone UI acceptance:** verify guest race → actual demo mission and points → claim → Demo Store → collection → equip, portrait/landscape and account changes. Current branch intentionally implements **core logic only**, not unfinished satellite Vue screens.
+- [ ] **Pending feature branches:** F03 Missions UI, F05 Store/Collection UI, F06 Persistence, result-presentation UI, asset QA and full F08 E2E; integrate after each owner's evidence and re-run full checks.
+- [ ] **Backend:** no Go/backend/payments or production real entitlements in this branch. Future Go must not migrate demo credits/claims to real grants.
+
+---
+
 ## 2026-11-10 — main CI 42662669700: route previews and Frostbite Rift phone
 
 - [x] RED evidence: main `cc5df3fe9e30` failed browser shard 9 because the 10-track World Tour assertion saw 16 home previews; shard 1's Frostbite phone span fall stayed 0 after 24 s, including retries.
