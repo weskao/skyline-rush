@@ -136,6 +136,12 @@ export const createPickupMaterial = tier => {
 export const createPickupMaterials = () => Object.fromEntries(Object.keys(ACCENTS).map(tier =>
   [tier, createPickupMaterial(tier)]));
 
+// Shared uniform-only glow animation; reuses compiled PBR shader and all instancing.
+export function pulsePickupMaterial(material, tier, time, reducedMotion) {
+  const phase = { cell: 0, can: 1.5, tank: 2.9, overcharge: 4.2 }[tier] ?? 0;
+  material.emissiveIntensity = reducedMotion ? .34 : .35 + .14 * Math.sin(time * 2.7 + phase);
+}
+
 export function animatePickup(marker, item, time, reducedMotion) {
   const phase = item.distance * .037, spinning = !reducedMotion;
   marker.rotation.set(spinning ? Math.sin(time * .65 + phase) * .065 : 0,
