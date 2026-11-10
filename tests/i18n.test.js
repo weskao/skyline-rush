@@ -27,12 +27,15 @@ test('all track IDs have English and Traditional Chinese labels', () => {
   assert.equal(trackName('cosmic', 'en'), 'Cosmic Orbit');
   assert.equal(trackName('coast', 'ja'), 'Coast');
 });
-test('Coming Soon route labels use localized catalog names, never raw IDs', () => {
-  for (const [id, track] of Object.entries(UPCOMING_TRACKS))
-    for (const locale of SUPPORTED_LOCALES)
-      assert.equal(trackName(id, locale), track.names[locale], `${id} / ${locale}`);
+// Home route maps label every Coming Soon card through trackName. A missing catalog entry
+// falls through to the English slug, which the zh-TW stray-English scan rejects.
+test('every Coming Soon card name is the route label in both languages', () => {
+  for (const [id, track] of Object.entries(UPCOMING_TRACKS)) {
+    for (const locale of SUPPORTED_LOCALES) assert.equal(trackName(id, locale), track.names[locale], `${id} ${locale}`);
+    const label = t('route.aria', { name: trackName(id, 'zh-TW') }, 'zh-TW');
+    assert.deepEqual(strayEnglish(label), [], `${id} ${label}`);
+  }
 });
-
 test('locale preference validates and gracefully handles blocked storage', () => {
   const data = new Map();
   const store = { getItem: k => data.get(k) ?? null, setItem: (k,v) => data.set(k,v) };

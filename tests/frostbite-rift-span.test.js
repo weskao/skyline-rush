@@ -65,6 +65,17 @@ test('a failed jump (sinking out of the span) recovers to the corridor start on 
   assert.deepEqual(car.fall, { from: rift.from, distance: rift.from, time: race.elapsed });
 });
 
+
+for (const hz of [30, 60, 120]) test(`an exhausted Rift span car glides into the chasm and respawns on the ground (${hz} Hz)`, () => {
+  const race = onSpan(), car = race.player;
+  Object.assign(car, { distance: (rift.from + rift.to) / 2, x: rift.x, altitude: rift.altitude,
+    verticalSpeed: 0, speed: 0, fuel: 0, span: true });
+  for (let i = 0; i < 5 * hz && car.falls === 0; i++) stepRace(race, { throttle: true, fly: true }, 1 / hz);
+  assert.equal(car.falls, 1, 'the unpowered car must fall before the span exit');
+  assert.equal(car.distance, rift.from);
+  assert.deepEqual([car.span, car.altitude, car.verticalSpeed], [false, 0, 0]);
+});
+
 test('steering off the side of the span is a fall too; flying above it is not', () => {
   const race = onSpan(), car = race.player;
   for (let i = 0; i < 90; i++) stepRace(race, { throttle: true, fly: true }, 1 / 60);

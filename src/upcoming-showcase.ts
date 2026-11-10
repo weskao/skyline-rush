@@ -37,16 +37,19 @@ export function createUpcomingShowcase(
   releaseModel: (host: GarageModelHost) => void = () => {},
 ) {
   let stage: Stage | null = null;
+  // Keep the active and adjacent Coming Soon stages: swipes visit the next scene
+  // twice for snapshots, and eager disposal rebuilt every mesh, car and shader.
+  const cachedStages = new Map<PreviewTrackId, Stage>();
+  const MAX_CACHED_STAGES = 2;
   let paint: PaintPreset | null = null;
   let previousTime = NaN;
   const origin = new THREE.Vector3();
   const driver = { speed: 105, boosting: true, nitroTime: 1, miniBoost: 0, impact: null, altitude: 0, trick: null };
   const previewRace = { phase: 'racing', player: driver };
 
-  function disposeStage(): void {
-    if (!stage) return;
-    const { scene, environment, cars, aero, host } = stage;
-    stage = null;
+  function disposeStage(old: Stage): void {
+    const { scene, environment, cars, aero, host } = old;
+    if (stage === old) stage = null;
     releaseModel(host); // the GLB's cached materials are shared; only the procedural car's are disposed below
     environment.dispose();
     // Car geometry is shared with live races. Dispose only the instance's materials.
@@ -83,9 +86,17 @@ export function createUpcomingShowcase(
 
   function setTrack(id: PreviewTrackId | null): boolean {
     if (stage?.id === id) return true;
-    disposeStage();
+    stage = null;
+    previousTime = NaN;
     const factory = id && factories[id];
     if (!id || !factory) return false;
+    const reused = cachedStages.get(id);
+    if (reused) {
+      cachedStages.delete(id); cachedStages.set(id, reused); // LRU: eviction never targets the current stage
+      stage = reused;
+      if (paint) setPaint(paint);
+      return true;
+    }
     const scene = new THREE.Scene();
     scene.background = new THREE.Color('#0b1724');
     scene.environment = environmentTexture;
@@ -107,6 +118,13 @@ export function createUpcomingShowcase(
     sunlight.position.set(-30, 70, -65);
     scene.add(new THREE.HemisphereLight('#c1e5ff', '#1e283a', 1.9), sunlight);
     stage = { id, scene, environment, cars, aero, host: { name: 'showcase', car: cars[0]!, keep: aero.group as THREE.Object3D, scene } };
+    cachedStages.set(id, stage);
+    if (cachedStages.size > MAX_CACHED_STAGES) {
+      const oldest = cachedStages.keys().next().value!;
+      const evicted = cachedStages.get(oldest)!;
+      cachedStages.delete(oldest);
+      disposeStage(evicted); // only inactive stages; release GPU/GLB resources when the cache moves
+    }
     if (paint) setPaint(paint);
     return true;
   }
@@ -155,6 +173,6 @@ export function createUpcomingShowcase(
     get activeTrack(): PreviewTrackId | null { return stage?.id ?? null; },
     get modelHost(): GarageModelHost | null { return stage?.host ?? null; },
     setTrack, setPaint, update,
-    dispose(): void { disposeStage(); },
+    dispose(): void { for (const item of cachedStages.values()) disposeStage(item); cachedStages.clear(); },
   };
 }

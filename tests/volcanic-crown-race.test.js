@@ -65,8 +65,8 @@ test('Volcanic is a dev-unlocked-only classic sprint', () => {
   assert.equal(released(VOLCANIC_ID), false);
   const race = createRace(VOLCANIC_ID);
   assert.equal(race.rivals.length, 7);
-  for (const mode of ['time','circuit','endless'])
-    assert.throws(() => createRace(VOLCANIC_ID, { mode }), RangeError);
+  for (const mode of ['time', 'endless']) assert.equal(createRace(VOLCANIC_ID, { mode }).mode, mode);
+  assert.throws(() => createRace(VOLCANIC_ID, { mode: 'circuit' }), RangeError);
 });
 test('Volcanic finishes once with a valid eight-car ranking', () => {
   const race = createRace(VOLCANIC_ID);
@@ -90,4 +90,22 @@ test('Volcanic race scene renders authored road chunks and disposes cleanly', as
   assert.equal(names.filter(n => n === 'shortcut-deck').length, 1);
   race.hide(); assert.equal(race.group.visible, false);
   race.dispose(); assert.equal(race.group.parent, null);
+});
+
+test('Volcanic uses a fixed shader light budget while streaming its road and crater', async () => {
+  const THREE = await import('three');
+  const { createVolcanicCrownRaceScene } = await import('../src/volcanic-crown-race-scene.ts');
+  const race = createVolcanicCrownRaceScene(new THREE.Scene());
+  const lights = [];
+  race.group.traverse(object => { if (object instanceof THREE.PointLight) lights.push(object); });
+  assert.deepEqual(lights.map(light => light.name).sort(),
+    ['pooled-lava-light', 'pooled-lava-light', 'pooled-crater-glow'].sort());
+  assert.ok(lights.every(light => light.parent === race.group), 'chunk visibility must not change shader light count');
+  for (const distance of [0, 240, 800, 2400, 5400, 9000, VOLCANIC_TRACK.length - 1]) {
+    race.update(distance, 4);
+    assert.ok(lights.every(light => light.visible && light.parent === race.group), 'stable light count @' + distance);
+    assert.ok(lights.some(light => light.name === 'pooled-lava-light' && light.intensity > 0),
+      'nearby road lighting @' + distance);
+  }
+  race.dispose();
 });

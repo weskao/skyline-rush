@@ -24,7 +24,7 @@ const burstCell = (race, item) => {
   return (COURSE_TRACKS[race.trackId]?.sections ?? []).some(section => section.type === 'shortcut'
     && item.x === section.x && item.altitude === section.altitude
     && item.distance >= section.from + 42 && item.distance < section.to
-    && Math.abs((item.distance - (section.from + 42)) % 25) < 1e-6);
+    && Math.abs((item.distance - (section.from + 42)) % 50) < 1e-6);
 };
 const classic = Object.keys(RACE_TRACKS).map(id => createRace(id, { mode: 'classic' }));
 const graphIds = Object.keys(COURSE_RUNTIMES);
