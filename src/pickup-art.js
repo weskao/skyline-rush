@@ -6,7 +6,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const PICKUP_SIZES = Object.freeze({ cell: .82, can: .94, tank: 1.08, overcharge: 1.24 });
 // Render-only clearance: preserve the simulation's authored altitude and collision volume.
-export const PICKUP_GROUND_LIFT = Object.freeze({ cell: 0, can: .08, tank: .5, overcharge: 1.20 });
+export const PICKUP_GROUND_LIFT = Object.freeze({ cell: .23, can: .28, tank: .82, overcharge: 1.50 });
 const ACCENTS = Object.freeze({ cell: 0x2bc9ff, can: 0xff9d35, tank: 0xffcf48, overcharge: 0xe180ff });
 const STEEL = 0x6c819d, DARK = 0x162840, WHITE = 0xeaf6ff;
 const ROTATE_RIGHT = [0, 0, Math.PI / 2];
