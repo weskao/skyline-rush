@@ -102,7 +102,7 @@ jobs:
         run: VITE_PICKUP_3D=1 npm run build
       - name: Smoke-test opt-in 3D guide and race model parity
         if: github.ref == 'refs/heads/feature/pickup-3d-artwork-ui' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
-        run: npx playwright test tests/pickup-3d-browser.spec.js
+        run: VITE_PICKUP_3D=1 npx playwright test tests/pickup-3d-browser.spec.js
 
   # CPU-only WebGL makes the serial suite take about 6.4 runner-hours. Playwright's own --shard cuts equal contiguous
   # slices, so 16 of them ran 14 to 48 min; scripts/ci-shards.mjs packs tests by the durations in
