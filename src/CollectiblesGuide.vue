@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { COLLECTIBLES_GUIDE_COPY } from './collectibles-guide-copy.ts';
 import './pickup-guide-art.css';
+import Pickup3DPreview from './Pickup3DPreview.vue';
+import { PICKUP_3D_ENABLED } from './pickup-3d-config.js';
+import { guideView } from './guide-view-state.ts';
+const pickup3DEnabled = PICKUP_3D_ENABLED;
 
 const pickupArt = (tier: string) => `${import.meta.env.BASE_URL}feature-assets/road-pickups/${tier}.svg`;
-
 const rings = [
   { key: 'charge', color: 'cyan', icon: 'charge' },
   { key: 'nitro', color: 'gold', icon: 'nitro' },
@@ -12,14 +15,12 @@ const rings = [
   { key: 'mystery', color: 'rainbow', icon: 'mystery' },
   { key: 'perfect', color: 'gold', icon: 'perfect' },
 ];
-
 const pickups = [
   { key: 'cell', color: 'blue', icon: 'cell' },
   { key: 'can', color: 'orange', icon: 'can' },
   { key: 'tank', color: 'gold', icon: 'tank' },
   { key: 'overcharge', color: 'rainbow', icon: 'overcharge' },
-];
-
+] as const;
 const powers = [
   { key: 'shield', color: 'cyan', icon: 'shield' },
   { key: 'magnet', color: 'gold', icon: 'magnet' },
@@ -27,11 +28,9 @@ const powers = [
   { key: 'freeze', color: 'blue', icon: 'freeze' },
 ];
 </script>
-
 <template>
   <div id="guide-items" class="collectibles-guide">
     <p class="collectibles-intro" data-i18n="guide.items.intro">{{ COLLECTIBLES_GUIDE_COPY.en['guide.items.intro'] }}</p>
-
     <!-- SECTION 1: RINGS -->
     <div class="collectibles-section">
       <div class="section-header">
@@ -74,7 +73,8 @@ const powers = [
       <div class="collectibles-grid">
         <article v-for="pickup in pickups" :key="pickup.key" class="collectible-card pickup-card" :class="`card-${pickup.color}`">
           <div class="pickup-showcase" aria-hidden="true">
-            <img class="pickup-art" :src="pickupArt(pickup.key)" alt="" width="110" height="110" decoding="async" />
+            <Pickup3DPreview v-if="pickup3DEnabled && guideView.selectedDevice === 'items'" :tier="pickup.key" />
+            <img v-else class="pickup-art" :src="pickupArt(pickup.key)" alt="" width="110" height="110" decoding="async" />
           </div>
           <div class="card-info">
             <header class="card-head">
