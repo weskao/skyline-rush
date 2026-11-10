@@ -121,7 +121,8 @@ test('resetDemo only removes its own account demo key, not cloud, real unlocks, 
   const initial = {
     [key('driver_A')]: 'data-a', [key('driver_B')]: 'data-b',
     'skyline-rush-cloud-account:driver_A': 'cloud', 'skyline-rush-garage-skin-picks:driver_A': 'paints',
-    'skyline-rush-history': 'history', 'skyline-rush-unlocked': 'unlocked',
+    'skyline-rush-history': 'history', 'skyline-rush-mode-history-v1': 'time-history',
+    'skyline-rush-unlocked': 'unlocked',
   };
   const store = storage(initial);
   adapter(store).resetDemo('driver_A');

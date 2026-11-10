@@ -10,6 +10,7 @@ import { ciTimeout } from './helpers/ci.js';
  * supplies a working mission board. Do not treat skipped tests as acceptance.
  */
 const demoKey = 'skyline-rush-wave3-demo:v1:guest';
+const modeHistoryKey = 'skyline-rush-mode-history-v1';
 const openGarage = async page => {
   await page.goto('/');
   await page.locator('#garage-button').click();
@@ -128,7 +129,7 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   expect(first?.snapshot?.demoPoints).toBe(40);
   expect(first.checkpoint.settledCompletions).toHaveLength(1);
   expect(first.snapshot.missions['mission-time:daily'].progress).toBe(1);
-  const history = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-mode-history-v1') || 'null'));
+  const history = await page.evaluate(key => JSON.parse(localStorage.getItem(key) || 'null'), modeHistoryKey);
   expect(history).toEqual(expect.arrayContaining([expect.objectContaining({ mode: 'time', track: 'coast' })]));
   await test.info().attach('wave3-real-race-result.png', {
     body: await page.screenshot(), contentType: 'image/png',
@@ -168,14 +169,14 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await page.locator('[data-wave3-open-store]').click();
   await expect(page.locator('[data-wave3-demo-store] .demo-wallet strong')).toHaveText('25');
   await expect(page.locator('[data-wave3-demo-store] [data-demo-id="thruster-ion"]')).toHaveAttribute('data-demo-status', 'demo-unlocked');
-  const beforeResetHistory = await page.evaluate(() => localStorage.getItem('skyline-rush-history'));
+  const beforeResetHistory = await page.evaluate(key => localStorage.getItem(key), modeHistoryKey);
+  expect(JSON.parse(beforeResetHistory)).toEqual(history);
   await page.getByRole('button', { name: 'Back to demo menu' }).click();
   await page.locator('[data-wave3-reset]').click();
   await page.locator('[data-wave3-open-store]').click();
   await expect(page.locator('[data-wave3-demo-store] .demo-wallet strong')).toHaveText('20');
   await expect(page.locator('[data-wave3-demo-store] [data-demo-id="thruster-ion"]')).not.toHaveAttribute('data-demo-status', 'demo-unlocked');
-  expect(await page.evaluate(() => localStorage.getItem('skyline-rush-history'))).toBe(beforeResetHistory);
-  expect(beforeResetHistory).toBe(history);
+  expect(await page.evaluate(key => localStorage.getItem(key), modeHistoryKey)).toBe(beforeResetHistory);
   expect(await page.evaluate(key => localStorage.getItem(key), demoKey)).toBeNull();
 });
 
