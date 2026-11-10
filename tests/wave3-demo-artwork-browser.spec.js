@@ -217,3 +217,37 @@ test('externally approved demo WebPs, when present, must decode at their genuine
     expect(result.inset.every(value => value >= minInset), file + ': clipped glows').toBe(true);
   }
 });
+
+for (const viewport of screens) {
+  test('A-03 approved Demo Points artwork is displayed at native 3x in Garage and Store ' +
+    viewport.width + 'x' + viewport.height, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.locator('#garage-button').click();
+    const board = page.locator('.garage-mission-board');
+    await checkImage(board.locator('[data-wave3-demo-art="demo-points"] img'), 216, 72);
+    await expect(board).toContainText(/Demo points|試玩點數/);
+    await page.locator('[data-wave3-open-store]').click();
+    const store = page.locator('[data-wave3-demo-store]');
+    await checkImage(store.locator('[data-wave3-demo-art="demo-points"] img'), 216, 72);
+    await expect(store.locator('.demo-wallet strong')).toHaveText('20');
+    await test.info().attach('wave3-a03-wallet-' + viewport.width + 'x' + viewport.height + '.png', {
+      body: await store.screenshot(), contentType: 'image/png',
+    });
+  });
+}
+
+test('A-03 WebP failure falls back to the approved PNG without losing live points labels', async ({ page }) => {
+  await page.route('**/feature-assets/wave3-demo/raster/demo-points@3x.webp', route => route.abort());
+  await page.goto('/');
+  await selectLocale(page, 'zh-TW');
+  await page.locator('#garage-button').click();
+  const board = page.locator('.garage-mission-board');
+  await expect(board.locator('[data-wave3-demo-art="demo-points"] img'))
+    .toHaveAttribute('src', /demo-points@3x\.png$/);
+  await page.locator('[data-wave3-open-store]').click();
+  const store = page.locator('[data-wave3-demo-store]');
+  await expect(store.locator('[data-wave3-demo-art="demo-points"] img'))
+    .toHaveAttribute('src', /demo-points@3x\.png$/);
+  await expect(store).toContainText('試玩點數');
+});

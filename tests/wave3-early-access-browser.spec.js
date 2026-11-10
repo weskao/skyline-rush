@@ -125,6 +125,7 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   } finally { await page.keyboard.up('w'); }
   await expect(page.locator('#result-stats')).toBeVisible();
   await expect(page.locator('.wave3-demo-results__points')).toContainText(/20 Demo points/);
+  await expect(page.locator('.wave3-demo-results__mark img')).toHaveAttribute('src', /demo-points@3x\.webp$/);
   const first = await page.evaluate(key => JSON.parse(localStorage.getItem(key) || 'null'), demoKey);
   expect(first?.snapshot?.demoPoints).toBe(40);
   expect(first.checkpoint.settledCompletions).toHaveLength(1);
@@ -141,6 +142,8 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await expect(board).toHaveAttribute('data-rewards-authority', 'local-demo');
   const timeMission = board.locator('[data-mission-id="mission-time:daily"]');
   await expect(timeMission).toHaveAttribute('data-mission-state', 'claimable');
+  const claimArt = timeMission.locator('[data-wave3-demo-art="demo-claim"] img');
+  await expect(claimArt).toHaveJSProperty('naturalWidth', 216);
   await timeMission.getByRole('button', { name: 'Claim demo reward' }).click();
   await expect(timeMission).toHaveAttribute('data-mission-state', 'claimed');
   await expect(board).toContainText('Demo progress');

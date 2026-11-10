@@ -132,3 +132,18 @@ test('Wave 3 result card stays out of the live result buttons and cloud-status l
   assert.match(css, /\.wave3-demo-results\s*\{[^}]*position:\s*static/s);
   assert.doesNotMatch(css, /#result-cloud|#again-button|#result-links/);
 });
+
+test('results A-03 optional WebP falls back to PNG then retained decorative CSS mark', () => {
+  const host = fakeHost();
+  const region = mountWave3DemoResults({
+    container: host, settlement: settlement(), artworkUrl: '/demo-points@3x.webp',
+    artworkFallbackUrl: '/demo-points@3x.png',
+  });
+  const image = region.querySelector('img');
+  assert.ok(image);
+  image.fire('error');
+  assert.equal(image.src, '/demo-points@3x.png');
+  image.fire('error');
+  assert.equal(region.querySelector('img'), null);
+  assert.match(region.querySelector('.wave3-demo-results__points').textContent, /20 Demo points/);
+});

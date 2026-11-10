@@ -113,18 +113,32 @@ test('the existing 25 GIFs retain matching names, manifests and real files', () 
   }
 });
 
-test('external demo art is optional until delivered, but every committed candidate must be a genuine WebP', () => {
+test('A-03 and A-04 exact approved 216px WebP + PNG assets have safe RGBA source insets', () => {
   const dir = 'public/feature-assets/wave3-demo/raster/';
-  if (!existsSync(root(dir))) return; // External GPT conversation has not delivered any art.
-  const allowed = ['demo-points@3x.webp', 'demo-claim@3x.webp',
+  const approved = [
+    ['demo-points', 'c5027a27b01f4e9b9440f980abb23546a3c8987b', '1e42ee8cafd6c3bee1c5993497df7d6cdbecc9d7'],
+    ['demo-claim', '856dfa604dd8b00a5b59ebe14f1db97f7875022d', '7901ff2864dd5d3c4d0f3aae986284f36ed6a173'],
+  ];
+  const allowed = [...approved.flatMap(([id]) => [id + '@3x.webp', id + '@3x.png']),
     'demo-collection-empty@3x.webp', 'demo-results-banner@3x.webp'];
   for (const file of readdirSync(root(dir)).filter(name => !name.startsWith('.'))) {
-    assert.ok(allowed.includes(file), file + ': unapproved demo artwork');
-    const webp = bytes(dir + file);
-    assert.ok(webp.length > 100 && webp.toString('ascii', 0, 4) === 'RIFF'
-      && webp.toString('ascii', 8, 12) === 'WEBP'
-      && webp.readUInt32LE(4) + 8 === webp.length, file + ': invalid WebP header');
+    assert.ok(allowed.includes(file), file + ': unapproved art');
   }
+  for (const [id, webpSha, pngSha] of approved) {
+    const webp = bytes(dir + id + '@3x.webp');
+    assert.equal(gitBlob(webp), webpSha, id + ': WebP differs from approved source');
+    assert.equal(webp.toString('ascii', 0, 4), 'RIFF');
+    assert.equal(webp.toString('ascii', 8, 12), 'WEBP');
+    assert.equal(webp.readUInt32LE(4) + 8, webp.length);
+    const png = bytes(dir + id + '@3x.png');
+    assert.equal(gitBlob(png), pngSha, id + ': PNG backup differs from approved source');
+    const image = decodePngRgba(png);
+    assert.deepEqual([image.width, image.height], [216, 216]);
+    assert.ok(alphaInsets(image).every(edge => edge >= 20), id + ': unsafe transparent edge');
+  }
+  const art = source('src/wave3-demo-art.ts');
+  assert.match(art, /import\.meta\.env\.BASE_URL/);
+  for (const id of ['demo-points', 'demo-claim']) assert.match(art, new RegExp(id));
 });
 
 test('asset audit has an explicit unfinished-generation state and baseline SHA', () => {
