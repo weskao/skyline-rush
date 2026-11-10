@@ -4892,3 +4892,12 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] 桌機/手機、直橫屏、真實 WebGL 地形連續性與勝負記錄檢查；Cloud/History 還需確認失敗淘汰不寫入最佳成績。
 
 - [x] CI 實際 Red evidence（run #42662501680 canceled, job log still records）：新 Elimination 16 賽道跨終點、完整七輪 knockout 與未來短賽道 deterministic tests 3/3 PASS；舊 S4 假設 Elimination 與 Classic 使用相同有限賽道獎勵已失效，改為要求 Elimination 與 Endless 道具/車流同源；Coast Elimination 60Hz Replay 因有意切換無盡道路產生新 SHA，僅更新此模式 fixture。更新後需於新 HEAD 再驗證。
+
+## 2026-11-10 — Launch-flare visibility above every road surface (`fix/launch-flare-road-occlusion-20261110`)
+
+- [x] Root cause traced to `src/garage-launch-flare.js`: flare's additive materials disabled depth writes but still depth-tested against asphalt/deck depth, so the shallow pool and sill rays/sparks could be clipped by banked or raised road geometry.
+- [x] Added `tests/garage-launch-flare.test.js` regression covering all eight premium flare skins, the four burst layers, ordering, no depth writes and preserved car-body glow depth.
+- [x] Set burst layer `depthTest: false`, `renderOrder: 10`; kept body glow `depthTest: true`; unchanged timing, palettes, geometry and vehicle pose. Scoped regression rule: `.claude/rules/launch-flare-rendering.md`.
+- [ ] Exact-HEAD Node module-size, focused/all unit tests, typecheck, build, desktop/mobile browser tests and full GitHub quality-gate. The GitHub connector environment has no local checkout or repository dependencies; do not mark local gates green without actual runs.
+- [ ] Real WebGL screenshot review on flat, banked and raised roads across desktop/mobile portrait and landscape. Until observed, visual acceptance is still pending.
+- [ ] Historical RED test execution: test-only run 42831180066 was cancelled when the production fix was pushed; no RED assertion result was captured.
