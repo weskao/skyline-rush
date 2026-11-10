@@ -1,6 +1,14 @@
 /* Optional standalone result card: never changes the original stars, badges or action buttons. */
 body:not([data-phase="finished"]) .wave3-demo-results { display: none; }
 .wave3-demo-results {
+  /* Detached from the result grid: never push Race again or Cloud Save off-screen. */
+  position: fixed;
+  left: max(10px, env(safe-area-inset-left));
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 1;
+  width: min(330px, calc(100vw - 20px));
+  max-height: min(220px, 28dvh);
+  overflow-y: auto;
   color: #e9f6ff;
   background: linear-gradient(125deg, rgba(16, 42, 66, .94), rgba(37, 38, 78, .90));
   border: 1px solid rgba(145, 224, 242, .36);
@@ -35,10 +43,16 @@ body:not([data-phase="finished"]) .wave3-demo-results { display: none; }
 .wave3-demo-results__disclaimer { color: #d1c3bb; }
 @media (max-width: 480px) {
   .wave3-demo-results { margin: 5px 0; padding: 8px 10px; font-size: 11px; }
+}
+@media (max-width: 480px) and (orientation: portrait) {
+  /* Portrait result pages scroll naturally; display the entire reward explanation inline. */
+  .wave3-demo-results { position: static; width: auto; max-height: none; overflow: visible; }
+}
+@media (max-width: 480px) {
   .wave3-demo-results__missions { grid-template-columns: 1fr 1fr; }
 }
 @media (max-height: 480px) and (orientation: landscape) {
-  .wave3-demo-results { margin: 3px 0; padding: 5px 10px; max-height: 115px; overflow-y: auto; font-size: 10px; }
+  .wave3-demo-results { margin: 0; padding: 5px 10px; width: min(235px, 35vw); max-height: min(98px, 29dvh); font-size: 10px; }
   .wave3-demo-results__header { gap: 5px; }
   .wave3-demo-results__mark { width: 22px; height: 22px; font-size: 16px; }
   .wave3-demo-results__heading { font-size: 12px; }

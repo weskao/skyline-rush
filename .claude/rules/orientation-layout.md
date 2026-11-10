@@ -1,6 +1,7 @@
 ---
 paths:
   - "src/style.css"
+  - "src/wave3-demo-results.css"
   - "src/App.vue"
   - "tests/responsive-browser.spec.js"
   - "tests/*layout*"
@@ -32,3 +33,9 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
 - **Reproduce on iOS before claiming fixed.** A paint bug that only WebKit on iOS shows needs an
   iOS simulator or a device in that orientation (`make phone-diag`), not a desktop viewport of
   the same size.
+
+- **Wave 3 results stay out of the landscape overlay flow.** The extra mission/result card must
+  not push Race Again, Next, History or Cloud Sign in below the viewport. Keep the card
+  independently bounded and preserve `tests/overlay-landscape-fit-browser.spec.js` at
+  667×375, 740×360, 844×390, 932×430 and a foldable viewport; the RED regression was
+  43–100px of unwanted `#race-overlay` scrolling in CI run 42811323467.
