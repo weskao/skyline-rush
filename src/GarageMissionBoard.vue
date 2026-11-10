@@ -50,7 +50,7 @@ function claim(id: string): void {
   if (!available.value || stateOf(id) !== 'claimable' || !props.experience) return;
   const result = props.experience.claimMission(id);
   feedback.value = result.status === 'completed'
-    ? label('Demo claim recorded locally.', '已在本機記錄試玩領取。')
+    ? label(`+${result.deltaDemoPoints} demo points · Balance ${result.snapshot.demoPoints}`, `+${result.deltaDemoPoints} 試玩點數 · 目前 ${result.snapshot.demoPoints}`)
     : label('Demo claim unavailable or already processed.', '試玩領取尚未開放或已處理。');
 }
 let stopLocale: (() => void) | undefined;
@@ -187,7 +187,7 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 .garage-mission-card progress,.garage-period-card progress {display:block;width:100%;height:10px;accent-color:#6ce2f6}
 .garage-mission-claim {display:flex;flex-direction:column;align-items:center;gap:3px;min-height:44px;border:1px solid #7fe4ff;border-radius:8px;background:#155574;color:white;cursor:pointer;padding:8px}
 .garage-mission-claim:focus-visible{outline:3px solid white;outline-offset:2px}
-.garage-mission-feedback {font-size:12px;min-height:1em}
+.garage-mission-feedback {font-size:12px;min-height:1em;color:#a6f5d8;font-weight:750;font-variant-numeric:tabular-nums}
 .garage-period-heading {margin-top:16px}
 .garage-period-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,225px),1fr));gap:10px}
 .garage-period-card{display:grid;gap:6px;min-width:0;border:1px solid #385375;border-radius:10px;background:#14253d;padding:10px}
