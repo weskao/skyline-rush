@@ -27,7 +27,7 @@ test('all four pickup silhouettes clear the road, with movement frozen for reduc
       const item = { tier, distance: 0, altitude: 0 };
       animatePickup(marker, item, 3, true);
       const lowest = marker.position.y + geometry.boundingBox.min.y * PICKUP_SIZES[tier];
-      assert.ok(lowest >= .08, tier + ' should not be buried in asphalt: ' + lowest.toFixed(2));
+      assert.ok(lowest >= .30, tier + ' must clear the asphalt even at its lowest bobbing phase: ' + lowest.toFixed(2));
       const frozen = marker.position.y;
       marker.position.y = .85;
       animatePickup(marker, item, 12, true);
