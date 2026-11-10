@@ -153,3 +153,14 @@ test('the public released strategy must also exclude local-only demo rewards and
   assert.match(aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);
   assert.match(aliases['#wave3-demo-ui'], /Wave3DemoLocked\.vue$/);
 });
+
+test('trial-only live mission UI and race port cannot leak into locked releases', () => {
+  for (const mode of ['coming-soon', 'released']) {
+    const aliases = selectGarageReleaseBuild('production', mode).aliases;
+    assert.match(aliases['#wave3-demo-mission-ui'], /GarageMissionBoardLocked\.vue$/);
+    assert.match(aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);
+  }
+  const trial = selectGarageReleaseBuild('production', 'trial').aliases;
+  assert.match(trial['#wave3-demo-mission-ui'], /GarageMissionBoard\.vue$/);
+  assert.match(trial['#wave3-demo-race'], /wave3-race-events\.ts$/);
+});

@@ -27,6 +27,7 @@ export function selectGarageReleaseBuild(viteMode, explicit = undefined) {
       '#garage-release-config': source(`garage-release-${mode}.ts`),
       '#wave3-demo-race': source(demoEnabled ? 'wave3-race-events.ts' : 'wave3-demo-race-locked.ts'),
       '#wave3-demo-ui': source(demoEnabled ? 'Wave3DemoEntry.vue' : 'Wave3DemoLocked.vue'),
+      '#wave3-demo-mission-ui': source(demoEnabled ? 'GarageMissionBoard.vue' : 'GarageMissionBoardLocked.vue'),
     },
   };
 }
