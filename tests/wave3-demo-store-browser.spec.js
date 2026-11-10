@@ -9,6 +9,9 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
   test.beforeAll(async () => {
     server = await createServer({
       configFile: false, root: process.cwd(), base: '/', plugins: [vue()],
+      // Browser shards also start the gameplay Vite server. Sharing its cache
+      // invalidates already-loaded Vue imports mid-test during re-optimization.
+      cacheDir: 'node_modules/.vite-wave3-store-fixture',
       // Scan only the isolated fixture: the main app imports a production-only Vite alias.
       optimizeDeps: { entries: ['tests/fixtures/wave3-demo-store.html'] },
       server: { host: '127.0.0.1', port: 0 },
