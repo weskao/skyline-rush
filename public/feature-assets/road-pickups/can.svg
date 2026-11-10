@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 384" role="img" aria-label="Orange Energy Canister sci-fi energy pickup">
+<svg xmlns="http://www.w3.org/2000/svg" width="384" height="384" viewBox="0 0 384 384" role="img" aria-label="Orange Energy Canister sci-fi energy pickup">
 <defs>
  <radialGradient id="aura"><stop stop-color="#ff8d1f" stop-opacity=".46"/><stop offset=".48" stop-color="#ffe4a2" stop-opacity=".18"/><stop offset="1" stop-color="#ff8d1f" stop-opacity="0"/></radialGradient>
  <linearGradient id="hull" x1="0" y1="0" x2=".95" y2="1"><stop stop-color="#effaff"/><stop offset=".16" stop-color="#7f97b1"/><stop offset=".4" stop-color="#263a53"/><stop offset=".75" stop-color="#101b30"/><stop offset="1" stop-color="#62738a"/></linearGradient>
