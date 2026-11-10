@@ -126,6 +126,13 @@ test(`rings and supplies guide explains all ring types, road pickups and mystery
   await expect(panel.locator('[data-i18n="guide.items.pickup.can.title"]')).toHaveText('Energy Canister (Orange)');
   await expect(panel.locator('[data-i18n="guide.items.pickup.tank.title"]')).toHaveText('High-Capacity Tank (Gold)');
   await expect(panel.locator('[data-i18n="guide.items.pickup.overcharge.title"]')).toHaveText('Overcharge Core (Rainbow)');
+  const arts = panel.locator('.pickup-card .pickup-art');
+  await expect(arts).toHaveCount(4);
+  expect(await arts.evaluateAll(images => Promise.all(images.map(async img => {
+    await img.decode();
+    return img.naturalWidth === 384 && img.naturalHeight === 384 &&
+      img.getBoundingClientRect().width > 0 && img.currentSrc.includes('/feature-assets/road-pickups/');
+  })).then(values => values.every(Boolean))), 'each pickup card shows uncropped original artwork').toBe(true);
 
   // Mystery powers
   await expect(panel.locator('[data-i18n="guide.items.power.shield.title"]')).toHaveText('Energy Shield');
