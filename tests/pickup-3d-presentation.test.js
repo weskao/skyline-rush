@@ -29,8 +29,9 @@ test('all four pickup silhouettes clear the road, with movement frozen for reduc
       const lowest = marker.position.y + geometry.boundingBox.min.y * PICKUP_SIZES[tier];
       assert.ok(lowest >= .08, tier + ' should not be buried in asphalt: ' + lowest.toFixed(2));
       const frozen = marker.position.y;
+      marker.position.y = .85;
       animatePickup(marker, item, 12, true);
-      assert.equal(marker.position.y - frozen, frozen - .85, tier + ' height is stable across paused frames with reset position');
+      assert.equal(marker.position.y, frozen, tier + ' height must be stable when motion is reduced');
     }
   } finally {
     Object.values(geometries).forEach(g => g.dispose());
