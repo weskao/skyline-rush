@@ -24,7 +24,7 @@ test('all four pickup silhouettes clear the road, with movement frozen for reduc
       geometry.computeBoundingBox();
       const marker = new THREE.Object3D();
       marker.position.y = .85;
-      const item = { tier, distance: 0 };
+      const item = { tier, distance: 0, altitude: 0 };
       animatePickup(marker, item, 3, true);
       const lowest = marker.position.y + geometry.boundingBox.min.y * PICKUP_SIZES[tier];
       assert.ok(lowest >= .08, tier + ' should not be buried in asphalt: ' + lowest.toFixed(2));
