@@ -43,3 +43,19 @@ test('Garage player wallet is localized without exposing nonexistent paid balanc
   await expect(wallet.locator('[data-currency="coins"]')).toContainText('尚未開放');
   await expect(wallet.locator('[data-currency="diamonds"] strong')).toHaveText('—');
 });
+
+test('image frame animation honors accessibility and broken PNGs keep real labels', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('**/wallet-diamond@3x.png', route => route.abort());
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const wallet = page.locator('#garage-screen [data-wave3-wallet]');
+  const diamond = wallet.locator('[data-currency="diamonds"]');
+  const sprite = diamond.locator('.wallet-shimmer');
+  await expect(sprite).toHaveCSS('animation-name', 'none');
+  await expect(diamond.locator('.artwork-fallback')).toBeVisible();
+  await expect(diamond).toContainText('Diamonds');
+  await expect(diamond.locator('strong')).toHaveText('—');
+  await page.evaluate(() => { document.body.dataset.vfxEnabled = 'false'; });
+  await expect(sprite).toHaveCSS('display', 'none');
+});
