@@ -83,7 +83,13 @@ export function createPickupCollectVfx(scene) {
       // Rainbow instance colors are authored once; every pickup only updates matrix transforms.
       if (style.rainbow) for (let i = 0; i < MAX_PARTICLES; i++)
         shards.setColorAt(i, new THREE.Color(PRISM[i % PRISM.length]));
-      shards.count = 0;
+      // Pre-warm both the plain and per-instance rainbow shader variant before the first collection.
+      scratch.position.set(0, -10000, 0);
+      scratch.rotation.set(0, 0, 0);
+      scratch.scale.setScalar(1);
+      scratch.updateMatrix();
+      shards.setMatrixAt(0, scratch.matrix);
+      shards.count = 1;
       shards.frustumCulled = false;
       group.add(shards);
       root.add(group);
