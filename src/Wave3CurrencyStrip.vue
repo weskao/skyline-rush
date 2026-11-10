@@ -57,7 +57,7 @@ const label = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
   border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 18px #64eddb19; }
 .wallet-currency[data-available="false"] { opacity:.78; border-color:#4a536b; }
 .wallet-currency :deep(.wave3-demo-art) { width:48px;min-width:48px;height:48px;padding:3px; }
-.wallet-currency :deep(.artwork-img) { width:42px;height:42px;max-width:42px;max-height:42px;object-fit:contain; }
+.wallet-currency :deep(.artwork-img) { width:42px!important;height:42px!important;max-width:42px;max-height:42px;object-fit:contain; }
 .wallet-symbol { flex:0 0 46px;width:46px;height:46px;display:grid;place-items:center;
   font-size:23px;text-shadow:0 2px 9px #0009; }
 .wallet-symbol--coin { color:#fff0a5;border:3px double #ffcd72;border-radius:50%;
@@ -77,7 +77,7 @@ const label = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
   100%{transform:scale(1);filter:brightness(1)} }
 @media (max-width:380px) { .wallet-currency { min-height:90px;padding:4px 2px; }
   .wallet-currency :deep(.wave3-demo-art) { min-width:38px;width:38px;height:38px; }
-  .wallet-currency :deep(.artwork-img) { width:34px;height:34px; }
+  .wallet-currency :deep(.artwork-img) { width:34px!important;height:34px!important; }
   .wallet-symbol { flex-basis:38px;width:38px;height:38px;font-size:18px; } }
 @media (prefers-reduced-motion:reduce) { .wallet-credit-value { animation:none; } }
 </style>
