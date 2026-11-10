@@ -8,9 +8,9 @@ test('actual Garage mission cards and source icons preserve native 3x alpha on m
     await page.locator('#garage-button').click();
     const board = page.locator('.garage-mission-board');
     await expect(board).toBeVisible();
-    await expect(board).toHaveAttribute('data-mission-state', 'unavailable');
+    await expect(board).toHaveAttribute('data-mission-state', 'local-demo');
     await expect(board.locator('.garage-mission-card')).toHaveCount(4);
-    await expect(board).toContainText('Verified mission progress is unavailable');
+    await expect(board).toContainText('Demo progress and trophies are local');
     await expect(board).not.toContainText(/claim reward|reward received|領取獎勵|已領取/);
     for (const img of await board.locator('img').all()) {
       await img.scrollIntoViewIfNeeded();
@@ -30,7 +30,7 @@ test('Garage Missions stay truthful in Traditional Chinese and fall back on miss
   await page.locator('#garage-button').click();
   const board = page.locator('.garage-mission-board');
   await expect(board).toContainText('任務中心');
-  await expect(board).toContainText('目前尚無已驗證的任務進度');
+  await expect(board).toContainText('試玩進度與獎盃僅儲存在本機');
   await expect(board.locator('[data-mission-id="mission-race"] .artwork-fallback')).toBeVisible();
   await expect(board.locator('[data-mission-id="mission-race"]')).toContainText('競速挑戰');
   await expect(board).not.toContainText(/領取|已完成|已獲得/);

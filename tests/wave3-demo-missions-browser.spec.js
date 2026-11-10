@@ -1,12 +1,12 @@
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1440,height:900}]){
-  test('Wave3 missions safe without a wired demo port at '+viewport.width+'x'+viewport.height,async({page})=>{
+  test('Wave3 missions connect to the real local demo port at '+viewport.width+'x'+viewport.height,async({page})=>{
     await page.setViewportSize(viewport);await page.goto('/');
     await page.locator('#garage-button').click();
     const board=page.locator('.garage-mission-board');
     await expect(board).toBeVisible();
-    await expect(board).toHaveAttribute('data-rewards-authority','not-connected');
+    await expect(board).toHaveAttribute('data-rewards-authority','local-demo');
     await expect(board.locator('.garage-mission-card')).toHaveCount(4);
     await expect(board.locator('.garage-period-card')).toHaveCount(8);
     await expect(board.locator('[data-trophy-id]')).toHaveCount(4);

@@ -7,7 +7,8 @@ import { garageView } from './garage-view-state.ts';
 import CloseButton from './CloseButton.vue';
 import GaragePaintPreview from './GaragePaintPreview.vue';
 import GarageSourceArtGallery from './GarageSourceArtGallery.vue';
-import GarageMissionBoard from './GarageMissionBoard.vue';
+import GarageMissionBoard from '#wave3-demo-mission-ui';
+import { wave3DemoExperience } from '#wave3-demo-race';
 import Wave3DemoEntry from '#wave3-demo-ui';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageLightingToggle from './GarageLightingToggle.vue';
@@ -81,7 +82,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
     <button v-show="garageStudioView.page === 'studio'" id="garage-restore-default" type="button" class="garage-restore">{{ copy.restore }}</button>
         <p class="collection-note">{{ copy.unlockNote }}</p>
         <p class="garage-coming">{{ copy.coming }}</p>
-        <GarageMissionBoard />
+        <GarageMissionBoard :experience="GARAGE_RELEASE_MODE === 'trial' ? wave3DemoExperience : null" />
         <Wave3DemoEntry v-if="GARAGE_RELEASE_MODE === 'trial'" :locale="locale" />
         <GarageSkinCatalog :locale="locale" />
         <p v-show="garageStudioView.page === 'studio'" class="garage-cosmetic">{{ copy.cosmetic }}</p>
