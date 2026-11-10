@@ -100,7 +100,7 @@ test('existing NITRO HUD artwork renders over the real meter without changing BO
   await expect(icon).toHaveAttribute('src', /mobile-controls-hud\/raster\/hud-nitro@3x\.webp$/);
   await expect(icon).toHaveJSProperty('naturalWidth', 216);
   await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuemax', '3');
-  await expect(page.locator('.touch-boost svg')).toHaveCount(1);
+  await expect(page.locator('.touch-boost > svg')).toHaveCount(1);
   await expect(page.locator('.touch-boost')).toHaveAttribute('data-control', 'boost');
 });
 
