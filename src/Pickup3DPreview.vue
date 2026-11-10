@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import * as THREE from 'three';
-import { createPickupGeometries, createPickupMaterials } from './pickup-art.js';
+import { createPickupGeometry, createPickupMaterial, PICKUP_SIZES, animatePickup } from './pickup-art.js';
 
 const props = defineProps<{ tier: 'cell' | 'can' | 'tank' | 'overcharge' }>();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -28,13 +28,11 @@ onMounted(() => {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.4;
     // Exactly the same THREE geometries and PBR materials as in effects.js on the road.
-    const geometries = createPickupGeometries(), materials = createPickupMaterials();
-    geometry = geometries[props.tier];
-    material = materials[props.tier];
-    for (const [tier, model] of Object.entries(geometries)) if (tier !== props.tier) model.dispose();
-    for (const [tier, surface] of Object.entries(materials)) if (tier !== props.tier) surface.dispose();
+    geometry = createPickupGeometry(props.tier);
+    material = createPickupMaterial(props.tier);
     const scene = new THREE.Scene();
     const mesh = new THREE.Mesh(geometry, material);
+    const item = { tier: props.tier, distance: 0, altitude: 2 };
     scene.add(mesh);
     const key = new THREE.DirectionalLight(0xfff3df, 3);
     key.position.set(-3, 5, 7); scene.add(key);
@@ -42,7 +40,7 @@ onMounted(() => {
     edge.position.set(4, 1, -4); scene.add(edge);
     scene.add(new THREE.HemisphereLight(0xd7efff, 0x26314c, 2.2));
     geometry.computeBoundingSphere();
-    const extent = Math.max(0.85, geometry.boundingSphere!.radius * 1.28);
+    const extent = Math.max(.95, geometry.boundingSphere!.radius * PICKUP_SIZES[props.tier] * 1.15);
     const camera = new THREE.OrthographicCamera(-extent, extent, extent, -extent, .1, 50);
     camera.position.set(4, 2.7, 5.5).normalize().multiplyScalar(8);
     camera.lookAt(0, 0, 0);
@@ -61,8 +59,8 @@ onMounted(() => {
       const seconds = timestamp / 1000;
       const animated = !motion!.matches;
       movement.value = animated ? 'running' : 'paused';
-      mesh.rotation.set(.10, animated ? seconds * .76 + .3 : .4, animated ? Math.sin(seconds * .8) * .06 : 0);
-      mesh.position.y = animated ? Math.sin(seconds * 1.8) * .10 : 0;
+      mesh.position.set(0, 0, 0);
+      animatePickup(mesh, item, seconds, motion!.matches);
       renderer!.render(scene, camera);
       ready.value = true;
       if (animated) frame = requestAnimationFrame(draw);
