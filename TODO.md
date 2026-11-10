@@ -1,3 +1,14 @@
+## 2026-11-11 — Unified 3D roadside pickups and guide (`feature/pickup-3d-artwork-ui`)
+
+- [x] `Makefile` supports `make build 3d=1` in addition to the existing dev/phone `3d=1` flows; default continues to use legacy art.
+- [x] Shared low-poly luxury PBR object geometries and per-tier materials: battery, pressure canister, twin reservoir and gyro reactor.
+- [x] Four guide WebGL previews use the identical model, scale, animation and material factories as all races; unrelated SVGs are fallback only.
+- [x] Scene models pulse, spin, hover and clear asphalt; motion-reduction freezes movements and glow.
+- [x] Existing global `createEffects` path remains shared across all tracks and future authored routes; no changes to collision/economy.
+- [x] Added model parity, clearance, glow, build flag, browser screenshots and disposal assertions; CI attaches real rendered evidence.
+- [ ] Exact-head required full unit, cloud, browser, World Tour and 3D-specific smoke suites must all pass.
+- [ ] Manual WebGL/physical-device screenshots and FPS p50/p95 before an authorized merge/release.
+
 ## 2026-11-11 — Optional AAA-style 3D pickup art, Makefile `3d=1`
 
 - [x] Root cause: `3d=1` previously only enabled Roadster/Coast look; the guide rendered unrelated SVG illustrations while the race rendered simple, independently authored models.
