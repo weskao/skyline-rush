@@ -23,3 +23,10 @@ test('quality-gate reports upstream test failure before downloading WebGL eviden
   assert.ok(gate.includes('if [ "$result" != success ]; then'),
     'cancelled, skipped and failed mandatory suites cannot pass');
 });
+
+// A production hotfix starts on main. It must trigger its own push CI before merging back.
+test('hotfix branch pushes are included in CI triggers', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const push = workflow.split('\n  pull_request:')[0];
+  assert.match(push, /^\s+- 'hotfix\/\*\*'$/m);
+});

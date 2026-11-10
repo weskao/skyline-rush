@@ -1,3 +1,12 @@
+## 2026-11-10 — main CI 42662669700: route previews and Frostbite Rift phone
+
+- [x] RED evidence: main `cc5df3fe9e30` failed browser shard 9 because the 10-track World Tour assertion saw 16 home previews; shard 1's Frostbite phone span fall stayed 0 after 24 s, including retries.
+- [x] Root cause of preview failure: six gated `UPCOMING_TRACKS` maps now render beside ten `RACE_TRACKS`; CourseGraph previews have legitimate extra edges, so the classic one-line assertion must stay scoped to classic cards.
+- [x] Stability correction: assert both registries' DOM cards and authored routes; hold Frostbite at mid-span with zero fuel/speed to test the real engine's unpowered glide and recovery, backed by 30/60/120 Hz unit coverage.
+- [x] Prevent hotfix CI blind spots: add `hotfix/**` to workflow push triggers and a workflow regression guard.
+- [ ] Local `make verify` / phone hardware evidence (GitHub connector cannot provide a working local checkout in this session).
+- [ ] Exact-HEAD GitHub Actions full `quality-gate` success for the hotfix commit.
+
 ## 2026-11-10 — Homepage map-switch stall (Mac mini M4 / Chrome; all devices target)
 
 - [x] Root cause from code: `src/upcoming-showcase.ts` rebuilt/disposed 3D environments, four cars, GPU materials and aero VFX on each preview switch; `src/track-swipe-ui.ts` swaps scenes twice to capture neighboring frames and called `button.click()` again after committing an already-selected track.
