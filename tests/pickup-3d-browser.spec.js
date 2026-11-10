@@ -1,9 +1,9 @@
-import { test, expect } from './helpers/test.js';
+import { test } from './helpers/gameplay-browser.js';
+import { expect } from '@playwright/test';
 
 test.use({ guideSeen: false });
 
-test('3d=1 previews the same four physical collectibles used by the shared in-race renderer', async ({ page }) => {
-  await page.goto('/');
+test('3d=1 previews the same four physical collectibles used by the shared in-race renderer', async ({ gameplayPage: page }) => {
   await page.locator('#controls-button').click();
   await page.locator('#guide-open').click();
   await page.locator('[data-guide-device="items"]').click();
@@ -41,9 +41,8 @@ test('3d=1 previews the same four physical collectibles used by the shared in-ra
   expect(sceneModels.every(x => x.physical && x.instanced)).toBe(true);
 });
 
-test('the 3D guide respects reduced motion when 3d=1 is active', async ({ page }) => {
+test('the 3D guide respects reduced motion when 3d=1 is active', async ({ gameplayPage: page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
   await page.locator('#controls-button').click();
   await page.locator('#guide-open').click();
   await page.locator('[data-guide-device="items"]').click();
