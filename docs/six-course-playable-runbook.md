@@ -1,5 +1,7 @@
 # 六條新賽道 playable 執行手冊（runbook）
 
+> **2026-11-10 mode parity override:** 此手冊先前「僅 Classic、其他模式 Coming Soon」屬當時的實作階段限制，現依使用者新要求改為：六張已核准 playable 賽道在 `make dev-unlocked` 支援前十張相同的所有一般競速模式（Circuit 使用專屬 Harbor Circuit）；`Elimination` 與 `Endless` 共用無限道路串流但各自結算。正式版仍只顯示 Coming Soon，禁止 START。下方歷史執行紀錄仍保留。
+
 狀態：2026-11-06 定稿。本檔取代先前以 Telegram 傳送的「賽道合併計畫 0/8–8/8」訊息，並已併入之後的使用者決定。
 執行者（人或 agent）照本檔各 Step 依序處理即可；每個 Step 都附可直接複製的 prompt。
 

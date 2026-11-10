@@ -6,8 +6,12 @@
 import type { CourseGraph, CoursePoint3 } from './course-graph.ts';
 import { addCourseCar, placeCourseCar, TRAFFIC_PREFIX, type CourseRuntime } from './course-race.ts';
 import { routeLength, sampleRoute } from './course-route-frame.ts';
+import { burstRing, burstStations } from './shortcut-rewards.ts';
 
-export interface CourseItem { distance: number; x: number; altitude: number; edgeId?: string; localS?: number; tier?: string }
+export interface CourseItem {
+  distance: number; x: number; altitude: number; edgeId?: string; localS?: number; tier?: string;
+  type?: string; radius?: number; group?: number; groupSize?: number;
+}
 interface Traffic { id?: string; distance: number; x: number; altitude: number }
 interface ItemRace { course?: CourseRuntime; rings: CourseItem[]; pickups: CourseItem[]; traffic: Traffic[] }
 
@@ -63,6 +67,11 @@ export function attachCourseItems(race: ItemRace, rt: CourseRuntime): void {
     const add = (localS: number, tier: string) => race.pickups.push({ distance: groundOffset(graph, edge.id, localS), x: 0, altitude, tier, edgeId: edge.id, localS });
     for (let s = REWARD_INSET; s < length - REWARD_INSET; s += REWARD_STEP) add(s, 'cell');
     add(length / 2, 'tank');
+    const burst = burstStations(REWARD_INSET, length - REWARD_INSET);
+    burst.rings.forEach((localS, index) => race.rings.push({
+      ...burstRing(groundOffset(graph, edge.id, localS), 0, altitude, index), edgeId: edge.id, localS,
+    }));
+    for (const localS of burst.cells) add(localS, 'cell');
   }
   race.pickups.sort((a, b) => a.distance - b.distance); // ground-progress order: projected distances stay ascending per path
   race.traffic.forEach((car, i) => {
@@ -87,9 +96,13 @@ export function projectCourseItems(race: ItemRace, previousEdge?: string, previo
     for (const next of graph.edges) if (next.from === edge.to) reach(next.id, end);
   };
   reach(player.travel.currentEdgeId, player.edgeStart);
-  for (const list of [race.rings, race.pickups]) for (const item of list) {
-    const start = item.edgeId === undefined ? undefined : base.get(item.edgeId);
-    item.distance = start === undefined ? -Infinity : start + item.localS!;
+  for (const list of [race.rings, race.pickups]) {
+    for (const item of list) {
+      const start = item.edgeId === undefined ? undefined : base.get(item.edgeId);
+      item.distance = start === undefined ? -Infinity : start + item.localS!;
+    }
+    // The collector stops at the first item past the car, so distances have to stay sorted after a re-seat.
+    list.sort((a, b) => a.distance - b.distance);
   }
 }
 

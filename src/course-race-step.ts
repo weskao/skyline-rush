@@ -9,6 +9,8 @@ import { chooseBranchByLateral, courseCarGap, courseNoRoadAt, courseRemaining, c
 import { dropCar, type FallingCar } from './road-falls.ts';
 import { knock } from './car-collisions.js';
 import { attachCourseItems, groundAt, groundOffset, projectCourseItems, type CourseItem } from './course-items.ts';
+import { placeSectionBurst } from './shortcut-rewards.ts';
+import { raceTrack } from './race-tracks.ts';
 import { rivalTakes, type RivalCollector, type TakeItem } from './rival-items.ts';
 // Read only inside functions, so the game.js ↔ course-race-step.ts import cycle cannot hit the TDZ.
 import { FLY_DRAIN, GAP_CLEARANCE, GAP_LIFT_RESERVE, GAP_SLOWDOWN, GAP_WARN_DISTANCE, GLIDE_FUEL_REGEN } from './game.js';
@@ -21,7 +23,7 @@ interface CourseRef { course?: CourseRuntime; player: object }
 interface CourseHost extends CourseRef {
   trackId: string; seed: number; elapsed: number; length: number; player: Player; rivals: Rival[]; result: { time: number } | null;
   rings: CourseItem[]; pickups: CourseItem[]; traffic: (RaceCar & { speed: number })[]; hazards: unknown[]; sections: unknown[];
-  config: { difficulty?: string };
+  mode: string; endless?: object; config: { difficulty?: string };
 }
 type Contact = (race: CourseHost, kind: 'barrier', obstacleX: number, intensity: number, retention: number) => void;
 
@@ -38,7 +40,12 @@ const travelOf = (rt: CourseRuntime, id: string) => {
 /** H1: graph courses get a runtime; rings, pickups and traffic move onto its edges (Q3 follow-up), hazards and sections
  * come from the spec. Every other track is left untouched. */
 export function attachCourse(race: CourseHost): void {
-  if (!isCourseRuntime(race.trackId)) return;
+  // Both streaming modes use the shared highway, never a finite CourseGraph FINISH gate.
+  if (race.endless) return;
+  if (!isCourseRuntime(race.trackId)) {
+    if (raceTrack(race.trackId)?.topology === 'course-graph') placeSectionBurst(race.rings, race.pickups, race.sections);
+    return;
+  }
   const grid = [race.player, ...race.rivals].map(car => ({ id: idOf(race, car), distance: car.distance, x: car.x }));
   race.course = createCourseRuntime(COURSE_RUNTIMES[race.trackId].spec, grid);
   race.hazards = []; race.sections = [];

@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import productionConfig from '../vite.config.js';
 import unlockedConfig from '../vite.unlocked.config.js';
-import { availableTracks as devTracks, availablePaints as devPaints } from '../src/access/dev-unlocked.ts';
+import { availableTracks as devTracks, availablePaints as devPaints, isUpcomingEnterable } from '../src/access/dev-unlocked.ts';
+import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 import { availableTracks as prodTracks, availablePaints as prodPaints } from '../src/access/production.ts';
 import { RACE_TRACKS } from '../src/game.js';
 import { PAINTS } from '../src/appearance.ts';
@@ -12,7 +13,9 @@ test('local-only build exposes every track and paint without writing storage', (
   const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw Error('storage inaccessible'); } });
   try {
-    assert.deepEqual(devTracks(), Object.keys(RACE_TRACKS));
+    const allLocal = [...Object.keys(RACE_TRACKS), ...Object.keys(UPCOMING_TRACKS).filter(isUpcomingEnterable)];
+    assert.deepEqual(devTracks(), allLocal);
+    assert.equal(allLocal.length, 16, 'all six approved previews are available only in local-unlocked');
     assert.deepEqual(devPaints(), Object.keys(PAINTS));
     assert.deepEqual(prodTracks(), ['coast']);
     assert.deepEqual(prodPaints(0), ['pearl']);

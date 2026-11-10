@@ -23,6 +23,7 @@ Don't:
 - Allocate large transient arrays/objects in hot loops; force SVG/DOM layout needlessly.
 - Allocate GPU resources repeatedly while driving.
 - Add overdraw, high pixel ratios, heavy bloom or centre-screen glare.
+- Add a PointLight to each streamed Volcanic Crown chunk: the 1,500 m view used to expose many at once and change the shader light count as chunks became visible. Keep exactly two pooled lava lights and the fixed crater light attached to the race root; move only their positions/intensities, never their visibility.
 
 Measure CPU and GPU: frame time median/p95, draw calls, triangles, GPU memory, stalls,
 allocations, across 5–8 km continuous driving on High/Medium/Low. Report before/after numbers;
@@ -32,6 +33,16 @@ Tests: unit + browser regression for performance-sensitive code and scene correc
 batching/culling; real WebGL screenshots on all affected courses incl. pause/restart, track
 switch, WebGL recovery, low-power devices, narrow phone/landscape. Final report names untested
 devices and remaining uncertainty.
+
+## Home map switching: preserve the last two Coming Soon stages
+
+The 3D swipe snapshots temporarily select the neighbor and then return to the selected track.
+Never destroy/rebuild an environment, four cars or their effects on every transition. Keep a bounded
+two-stage LRU in `upcoming-showcase.ts`, reuse the same scene and model host on a return swipe,
+evict inactive scenes with proper GPU/GLB disposal, and release all stages when the world exits.
+Selection must execute once per completed swipe (not again after the page animation).
+Guard the LRU/paint/disposal in `tests/upcoming-showcase.test.js` and selection count in
+`tests/track-swipe-browser.spec.js`. Do not substitute static screenshots for live 3D previews.
 
 ## Shaders compile at first draw — never mid-race
 

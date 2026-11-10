@@ -9,10 +9,10 @@ const TEST_STEM = { 'frostbite-canyon': 'frostbite' };
 export async function collectState(root = process.cwd()) {
   root = resolve(root);
   const moduleAt = path => import(pathToFileURL(join(root,path)).href);
-  const [upcoming, tracks, scenes, production, development] = await Promise.all([
+  const [upcoming, tracks, scenes, production, development, modes] = await Promise.all([
     moduleAt('src/upcoming-tracks.ts'), moduleAt('src/race-tracks.ts'),
     moduleAt('src/upcoming-scenes/index.ts'), moduleAt('src/access/production.ts'),
-    moduleAt('src/access/dev-unlocked.ts'),
+    moduleAt('src/access/dev-unlocked.ts'), moduleAt('src/race-config.ts'),
   ]);
   const optionalFile = async path => existsSync(join(root,path)) ? readFile(join(root,path)) : null;
   const todo = (await optionalFile('TODO.md'))?.toString('utf8') ?? '';
@@ -35,12 +35,15 @@ export async function collectState(root = process.cwd()) {
       });
       const staleAvailable = production.availableTracks().includes(id);
       const runtime = tracks.raceTrack(id);
-      let classicOnly = false;
+      let devModeCompatible = false;
       if (runtime) {
-        let classicAccepted = false, otherRejected = false;
-        try { tracks.assertTrackMode(id,'classic'); classicAccepted=true; } catch {}
-        try { tracks.assertTrackMode(id,'custom'); } catch { otherRejected=true; }
-        classicOnly = classicAccepted && otherRejected && !raceTrackIds.includes(id);
+        const ordinaryModes = modes.MODES.filter(mode => mode !== 'circuit');
+        const supported = ordinaryModes.every(mode => {
+          try { tracks.assertTrackMode(id, mode); return true; } catch { return false; }
+        });
+        let circuitDenied = false;
+        try { tracks.assertTrackMode(id, 'circuit'); } catch { circuitDenied = true; }
+        devModeCompatible = supported && circuitDenied && !raceTrackIds.includes(id);
       }
       courses.push({
         id,stage:upcoming.upcomingReadiness(id),names:meta.names,
@@ -50,7 +53,7 @@ export async function collectState(root = process.cwd()) {
         productionEnterable:production.isUpcomingEnterable(id),
         productionAvailableWithStaleUnlock:staleAvailable,
         homeStatuses:[upcoming.homeTrackStatus(id,new Set()),upcoming.homeTrackStatus(id,staleUnlocks)],
-        raceTrackDefined:!!runtime,classicOnly,
+        raceTrackDefined:!!runtime,devModeCompatible,
         unitTestExists:existsSync(join(root,'tests/'+(TEST_STEM[id]??id)+'-race.test.js')),
         browserSpecExists:existsSync(join(root,'tests/'+(TEST_STEM[id]??id)+'-race-browser.spec.js')),
         developmentEnterable:development.isUpcomingEnterable(id),evidence,

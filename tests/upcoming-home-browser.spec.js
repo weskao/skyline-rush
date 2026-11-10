@@ -21,7 +21,11 @@ test('all six preview cards retain their original selection flow and cannot STAR
     await expect(page.locator('#upcoming-scene-image')).toHaveAttribute('src', new RegExp(id + '\\.jpg$'));
     const card = page.locator(`[data-upcoming-track="${id}"]`);
     await expect(card).toHaveClass(/upcoming-track-card/);
-    await expect(card.locator('.upcoming-route-image')).toHaveAttribute('src', new RegExp(id + '-route\\.svg$'));
+    await expect(card.locator('.track-route-map svg.route-overview')).toHaveCount(1);
+    await expect(card.locator('.upcoming-route-image')).toHaveCount(0);
+    expect(await card.locator('.track-route-map [data-edge]').count()).toBeGreaterThan(1);
+    const stroke = await card.locator('.route-overview-line').first().evaluate(line => getComputedStyle(line).stroke);
+    expect(stroke, `${id} course stroke`).not.toBe('none');
     await expect(card.locator('strong')).not.toBeEmpty();
     await expect(card.locator('span').last()).toContainText('KM');
     await expect(page.locator('#upcoming-scene')).toBeHidden(); // Live Three.js, not a static JPEG.

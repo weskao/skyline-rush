@@ -69,7 +69,9 @@ test('Coming Soon cards keep original selectable route-map and KM styling, not a
   assert.match(shell, /<button v-for="\(track, id\) in UPCOMING_TRACKS"/);
   assert.match(shell, /class="upcoming-track-card"/);
   assert.match(shell, /:data-upcoming-track="id" aria-pressed="false"/);
-  assert.match(shell, /class="track-route-map"[^>]*><img class="upcoming-route-image"/);
+  assert.match(shell, /class="track-route-map" aria-hidden="true"><\/span><strong>\{\{ track\.names\.en \}\}<\/strong>/);
+  assert.doesNotMatch(shell, /upcoming-route-image/);
+  assert.match(select, /for \(const button of upcomingButtons\(\)\) \{\s*mountRouteMap\(button\.dataset\.upcomingTrack!\)/);
   assert.match(shell, /<strong>\{\{ track.names.en \}\}<\/strong><span>\{\{ track.length \/ 1000 \}\} KM <small><\/small><\/span>/);
   assert.doesNotMatch(shell, /class="coming-soon-card"/);
   assert.match(select, /for \(const button of upcomingButtons\(\)\) button.addEventListener\('click'/);

@@ -59,8 +59,14 @@ export const mixedCourse = (trackId: string, track: HazardTrack, lanes: readonly
   config.mode === 'gauntlet' && config.layout === 'mixed' ? createGauntletCourse(trackId, track, lanes, config.hazardTier) : null;
 
 /** Hoops replace any ring within 30 m so the risky line reads as one target. */
-export function withHoops<T extends { distance: number }>(rings: T[], course: GauntletCourse | null): (T | CourseHoop)[] {
+export function withHoops<T extends { distance: number; group?: number; groupSize?: number }>(rings: T[],
+  course: GauntletCourse | null): (T | CourseHoop)[] {
   if (!course) return rings;
-  return [...rings.filter(r => course.hoops.every(h => Math.abs(h.distance - r.distance) > 30)), ...course.hoops]
-    .sort((a, b) => a.distance - b.distance);
+  const near = (r: T) => course.hoops.some(h => Math.abs(h.distance - r.distance) <= 30);
+  // A ring line shrinks by the gates (distinct distances; a row is one gate) a hoop replaced, or PERFECT LINE never pays.
+  const lost = new Map<number, Set<number>>();
+  for (const r of rings) if (near(r) && r.group !== undefined) lost.set(r.group, (lost.get(r.group) ?? new Set()).add(r.distance));
+  const kept = rings.filter(r => !near(r)).map(r => r.group !== undefined && r.groupSize !== undefined && lost.has(r.group)
+    ? { ...r, groupSize: r.groupSize - lost.get(r.group)!.size } : r);
+  return [...kept, ...course.hoops].sort((a, b) => a.distance - b.distance);
 }

@@ -21,6 +21,11 @@ paths:
   - "tests/*showcase*"
   - "tests/*airflow*"
   - "docs/designs/new-tracks/**"
+  - "src/music-tracks.ts"
+  - "src/mode-audio.ts"
+  - "tests/course-music.test.js"
+  - "tests/music-tracks.test.js"
+  - "tests/mode-audio.test.js"
 ---
 
 # Shared playable-course template: six new courses and future tracks
@@ -39,6 +44,21 @@ Before touching a course, read `AGENTS.md`, `CLAUDE.md`,
 `docs/superpowers/specs/2026-11-03-playable-coursegraph-contract.md`,
 `.claude/rules/track-showcase.md`, `.claude/rules/vehicle-road-stability.md`,
 and the map's source handoff/plan. Honor stricter scoped rules as well.
+
+## Exclusive in-race music
+
+Every registered course (`RACE_TRACKS`, `COURSE_TRACKS`, and Harbor Circuit) has its own
+synthesized song in `TRACKS`. No two courses share a loop: the bpm, chords, lead and
+opening pad all differ. The ten classic songs stay as they are. Coast keeps the existing
+`race` loop.
+
+The song starts only after the race leaves `ready`. `finished` returns to the shared intro.
+Selecting or swiping a course on the home screen does not start that song. Checkpoint, Stunt,
+Gauntlet, Cup, Free and Endless keep their own mode themes.
+
+A new course is not accepted until its song is keyed by that course id, `musicForMode`
+selects it for a classic race on that id, and `tests/course-music.test.js` is green. Do not
+reuse or transpose another course's loop.
 
 ## Home selection and horizontal swipe (all six courses)
 
@@ -126,6 +146,8 @@ and the map's source handoff/plan. Honor stricter scoped rules as well.
   both AIRFLOW states, six camera views, touch/mouse/trackpad/keyboard,
   Reduced Motion, English/Traditional Chinese, paint persistence,
   Coming Soon/Start CTA and proper GPU disposal when changing tracks.
+- Every course's song is unique and stays on the shared intro until the race starts
+  (`tests/course-music.test.js`).
 - Relevant tests: `tests/shared-course-template-browser.spec.js`,
   `tests/upcoming-home-browser.spec.js`, `tests/upcoming-showcase.test.js`,
   `tests/track-swipe-browser.spec.js`, `tests/garage-home-pose-browser.spec.js`,

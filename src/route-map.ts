@@ -1,7 +1,8 @@
 import { raceTrack } from './race-tracks.ts';
-import { COURSE_RUNTIMES } from './course-runtimes.ts';
+import { minimapGraph } from './course-minimap.ts';
 import { createCourseRouteProjection } from './course-route-map.ts';
 import { routeLength } from './course-route-frame.ts';
+import { groundAt } from './course-items.ts';
 import type { CourseRuntime } from './course-race.ts';
 import { CIRCUIT_ID, circuitDistance } from './circuit-track.ts';
 import { trackOverview, trackPoint } from './track-paths.ts';
@@ -106,7 +107,7 @@ const routeLabel = (trackId: string, locale: string = getLocale()): string => {
 };
 export function createRouteMap(trackId: string, { live = false }: { live?: boolean } = {}) {
   const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img' }); // aria-label: relabel() below
-  const graph = COURSE_RUNTIMES[trackId]?.spec.graph;
+  const graph = minimapGraph(trackId);
   const graphMap = graph ? createCourseRouteProjection(graph, 64) : null;
   if (graphMap) for (const line of graphMap.lines) {
     element.append(svg('polyline', {
@@ -169,9 +170,11 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
       const marker = markers.get(driver.id);
       if (!marker) continue;
       const travel = graphMap ? course?.cars.get(driver.id)?.travel : undefined;
-      const point = graphMap && travel ? graphMap.marker(travel.currentEdgeId, travel.localS) : routeMarker(trackId, driver.distance);
-      const ahead = graphMap && travel ? graphMap.marker(travel.currentEdgeId, travel.localS + 10) : routeMarker(trackId, driver.distance + 10);
-      if (graphMap && travel) { point.x *= 100; point.y *= 100; ahead.x *= 100; ahead.y *= 100; }
+      const at = graph && graphMap ? travel ? { edgeId: travel.currentEdgeId, localS: travel.localS } : groundAt(graph, driver.distance) : null;
+      const next = graph && graphMap ? travel ? { edgeId: travel.currentEdgeId, localS: travel.localS + 10 } : groundAt(graph, driver.distance + 10) : null;
+      const point = at && graphMap ? graphMap.marker(at.edgeId, at.localS) : routeMarker(trackId, driver.distance);
+      const ahead = next && graphMap ? graphMap.marker(next.edgeId, next.localS) : routeMarker(trackId, driver.distance + 10);
+      if (at) { point.x *= 100; point.y *= 100; ahead.x *= 100; ahead.y *= 100; }
       const dx = ahead.x - point.x, dy = ahead.y - point.y;
       const length = Math.hypot(dx, dy) || 1;
       const side = (driver.x ?? 0) * 0.6;

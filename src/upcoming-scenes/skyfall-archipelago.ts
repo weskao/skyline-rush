@@ -256,7 +256,8 @@ export function createUpcomingEnvironment(scene: THREE.Scene): {
     land.position.set(island.x, island.y, island.z);
     land.add(new THREE.Mesh(islandRock(island.radius, i + 1), stone));
     const cap = new THREE.Mesh(new THREE.CylinderGeometry(island.radius * 0.91, island.radius * 0.95, 1.1, 17), grass);
-    cap.position.y = 0.24;
+    // The road undulates by ~0.12 m: keep the grass cap below even its lowest section, not merely y=0.
+    cap.position.y = 0.72;
     land.add(cap);
     group.add(land);
   });

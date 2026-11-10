@@ -347,3 +347,17 @@ test.describe('phone upcoming preview swipe', () => {
     await expect(page.locator('#upcoming-scene')).toBeHidden();
   });
 });
+
+test('a committed Coming Soon swipe selects the card exactly once', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-track="cosmic"]').click();
+  await page.evaluate(() => {
+    window.__duneClicks = 0;
+    document.querySelector('[data-upcoming-track="dune-tempest"]')
+      .addEventListener('click', () => { window.__duneClicks++; });
+  });
+  await trackpadSwipe(page, 30, 6);
+  await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
+  expect(await page.evaluate(() => window.__duneClicks)).toBe(1);
+});
