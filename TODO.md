@@ -1,3 +1,47 @@
+## 2026-11-10 — Homepage map-switch stall (Mac mini M4 / Chrome; all devices target)
+
+- [x] Root cause from code: `src/upcoming-showcase.ts` rebuilt/disposed 3D environments, four cars, GPU materials and aero VFX on each preview switch; `src/track-swipe-ui.ts` swaps scenes twice to capture neighboring frames and called `button.click()` again after committing an already-selected track.
+- [x] Minimal fix committed in Epic: keep only two recent Coming Soon stages by LRU; reselect uses cached scene/model, with exact disposal on eviction/world exit and current paint reapplied. Remove the duplicate committed card click; retain the two opaque snapshot pages and live 3D scenes.
+- [ ] Local focused RED/GREEN (tests authored against old implementation, but cannot run outside repo checkout), module-size, npm test, typecheck/build, browser test and `make verify`.
+- [ ] Exact-HEAD GitHub CI and physical Mac mini M4 Chrome profile (p50/p95 frame time, shader compiles, GPU draw calls, first-visit vs repeat switching); mobile portrait/landscape, reduced-motion, Garage, race restart and WebGL recovery.
+
+## 2026-11-10 — Epic shortcut reward balance and Volcanic Crown Chrome stalls
+
+- [x] Source review: commit `15272ed` changes PERFECT LINE grouping, not ring spawning. Dense placement originates in `shortcut-rewards.ts`; 1D mapped shortcut corridors share ordinary road visibility.
+- [x] Narrow change prepared: actual alternate CourseGraph edges retain 25 m reward mix; 1D mapped sections use 50 m rings and offset cells, confined to the authored shortcut. 60 m cells and midpoint tank unchanged; classic tracks unchanged.
+- [x] Volcanic static root cause: a PointLight per 240 m chunk across a 1500 m view changed visible shader-light count while driving. Replace with two fixed pooled lava lights plus crater light (3 total), preserving authored light positions, range, color, lava shader, geometry and collision rules.
+- [ ] Run focused RED/GREEN tests, module-size, full unit/typecheck/build/Playwright and `make verify` on a checkout with dependencies (not available in the GitHub connector execution environment).
+- [ ] Measure frame p50/p95, shader recompilations, draw calls, and compare actual Mac mini M4 / Chrome WebGL video and drive-through at Low/Medium/High; do not mark performance fixed without a real-device capture.
+- [ ] Exact-HEAD remote CI and manual regression: all routes, races, variants, track switch, reduced motion.
+
+## 2026-11-09 — Back to home reopens on the raced course (`develop` CI)
+
+User-visible: Back to home (the reload from the leave dialog) opens the course that was just raced, centred in the row. A later reload, with no `raced` query, still starts on Coast. Choose track still restores the in-memory picker. `skyline-rush-last-track` is still not written. No new audio: the page unloads. The link is plain DOM, same at every quality tier.
+
+- [x] Root cause: `#leave-home` is `href="./"`, a new document. `101e7e68` stopped writing `skyline-rush-last-track`, so the in-memory picker died on that reload and the card stayed `aria-pressed="false"` (CI run 42621778779, browser shards 2 and 8, desktop and phone).
+- [x] RED: `tests/last-home-track.test.js` — `backHomeHref('taipei')` was `./`, expected `./?raced=taipei`.
+- [x] GREEN: `bootHomeTrack` reads that one query; the leave link points at it when the leave dialog opens; `withoutRacedQuery` removes it. `PLAYWRIGHT_PORT=5411` `home-track-focus-browser` desktop and phone, plus `last-home-track-browser` and `leave-race-browser`: 12 passed.
+- [x] `npm test` 2504 pass / 0 fail / 3 skipped; `npm run typecheck` OK; `npm run build` OK; `node --test tests/module-size.test.js` 3/3. `src/race-select-ui.ts` 372 lines. Exact-HEAD CI after push.
+
+## 2026-11-09 — Dense rewards on long-form shortcuts (`feature/epic-multiroute-longform-tracks`)
+
+- [x] RED: `tests/shortcut-rewards.test.js` missed the first ring on every shortcut of the six long-form courses. The classic guard already passed.
+- [x] GREEN: `src/shortcut-rewards.ts` keeps the 60 m cell line and the halfway tank, and adds a ring every 25 m plus a cell 12 m after each ring (`group: -4`, never a PERFECT LINE). Classic `RACE_TRACKS` stay on the 60 m line only.
+- [x] The per-km cap still measures the shared road layout and that 60 m line. Burst rings and the offset-12 cells sit outside it.
+- [x] Frostbite's 45 s replay hashes moved with the new items. The other recorded tracks did not.
+- [x] Gates this session: shortcut, density, authored sequences, module-size, replay and `tsc` green after the cast and fixture fix. Full `npm test` before that fix: 2506 pass / 4 fail / 3 skipped (those 4 were the replay hashes and the cast). Browser `tests/course-items-browser.spec.js` not run. No merge.
+
+## 2026-11-09 — Last home-page 賽道 stays in memory (`develop`)
+
+User-visible: picking a course on Home (playable or Coming Soon), then leaving via Daily / a race and returning with Choose track, restores that card. Reload starts on Coast. The course is a JS variable for this page load; never `localStorage` or `sessionStorage` (`skyline-rush-last-track` is no longer written). Last mode still uses sessionStorage.
+
+- [x] Root cause: last-track was written only on Start (sessionStorage) and restored only on reload; `chooseTrack` used the finished `race.trackId`, and Daily/`selectClassic` overwrote it (often Coast) and cleared `upcomingSelection`.
+- [x] RED: `tests/last-home-track.test.js` failed with `ERR_MODULE_NOT_FOUND` for `src/last-home-track.ts` before the module existed.
+- [x] GREEN: `rememberLastHomeTrack` on picker clicks; `restoreLastTrack` in `chooseTrack`; Start no longer overwrites picker memory. `src/main.js` 677, `src/race-select-ui.ts` 352, `src/last-home-track.ts` 23.
+- [x] Gates: focused unit 21/21; `npm test` 2500 pass / 0 fail / 3 skipped; `npm run typecheck` OK; `npm run build` OK; Playwright `PLAYWRIGHT_PORT=5398` `last-home-track-browser` + `guide-browser` 11/11 (Daily then Choose track keeps the picked playable / Coming Soon card; `skyline-rush-last-track` is null in localStorage and sessionStorage).
+- [x] `npm run test:layout` (`PLAYWRIGHT_PORT=5399`): 47 passed / 1 skipped (home-shortcuts + race-modes) then 42 passed (intro bottom edge + start layout).
+- [ ] Exact-HEAD remote CI; no merge/PR/deploy without user approval.
+
 ## 2026-11-09 — Epic: ring PERFECT LINE count 6/5 + Monsoon START
 
 - [x] Root cause: authored hoops (`src/track-themes.ts:53` themed, `src/gauntlet-course.ts:48` mixed-Gauntlet) were merged by
@@ -4828,3 +4872,14 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Compared 24 deterministic Frostbite layouts with inherited Normal/Easy configurations: Normal at 1.01 produced 21/24 P8; Easy at 1.04 still produced P7/P8 in multiple layouts, so changing difficulty alone was insufficient.
 - [ ] Verify a course-owned rival grid spread against the unchanged 24-layout throttle/powerup-bot tests; preserve the fastest rival's speed, the classic track AI, CourseGraph physics, progression and lifecycle contracts. A locally reconstructed speed model is not a full game-suite PASS.
 - [ ] Run focused tests, `npm test`, `npm run typecheck`, `npm run build`, relevant Playwright browser tests, exact-HEAD FULL GitHub CI and real desktop/mobile WebGL QA. Local checkout/network unavailable in this execution environment; do not mark these gates complete until independently observed.
+
+## 2026-11-10 — All-course Elimination infinite highway and dev-mode parity
+
+- [x] 追查短路線問題：Elimination 在 `src/game.js` 的到站距離截斷將玩家速度歸零，定時淘汰繼續造成誤判。
+- [x] Elimination 與 Endless 共用 `prepareEndless` / `streamEndless` 道路、道具及交通串流；淘汰制不受 Endless 五碰撞中止規則影響，`finishEndless` 僅對真正 Endless 結算。
+- [x] 新舊 16 張賽道及新增 track registry 均採用共用機制，CourseGraph 有限路線只保留於正常競速；測試 `tests/elimination-endless-all-tracks.test.js`、`tests/elimination-endless-browser.spec.js` 已新增。
+- [x] 開發版 Coming Soon 六張地圖支援一般模式；更新 access-build 和 lifecycle D1 開發相容性驗證，正式版 Coming Soon 與發布的十張賽道清單不變。
+- [ ] 當前 HEAD 的 Node Unit、Typecheck、Build、Browser、World Tour、quality-gate 全綠證據；GitHub connector 無法代替本機 `make verify`。
+- [ ] 桌機/手機、直橫屏、真實 WebGL 地形連續性與勝負記錄檢查；Cloud/History 還需確認失敗淘汰不寫入最佳成績。
+
+- [x] CI 實際 Red evidence（run #42662501680 canceled, job log still records）：新 Elimination 16 賽道跨終點、完整七輪 knockout 與未來短賽道 deterministic tests 3/3 PASS；舊 S4 假設 Elimination 與 Classic 使用相同有限賽道獎勵已失效，改為要求 Elimination 與 Endless 道具/車流同源；Coast Elimination 60Hz Replay 因有意切換無盡道路產生新 SHA，僅更新此模式 fixture。更新後需於新 HEAD 再驗證。

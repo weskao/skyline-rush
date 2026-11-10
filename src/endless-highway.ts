@@ -1,7 +1,7 @@
 import { seededRng } from './rng.ts';
 import { ringRow, ringTrain, pickupRun, TRAIN_LANES } from './ring-layout.ts';
 
-// Endless extends each themed route; finite sprint geometry and rules are unchanged.
+// Endless and Elimination share one streaming highway; neither changes the finite sprint routes.
 export const ENDLESS_CHUNK = 500;
 export const ENDLESS_COLLISIONS = 5;
 // practice: the tutorial borrows the endless road only; no encounters stream in and no collision limit ends it.
@@ -77,7 +77,7 @@ export function streamEndless(race: EndlessRace): void {
   race.endless.chunk = chunk;
 }
 export function prepareEndless(race: EndlessRace): void {
-  if (race.mode !== 'endless') return;
+  if (race.mode !== 'endless' && race.mode !== 'elimination') return;
 
   race.sections.length = race.traffic.length = race.pickups.length = race.rings.length = 0;
   race.endless = { chunk: -10, milestones: 0 };
@@ -85,7 +85,7 @@ export function prepareEndless(race: EndlessRace): void {
 }
 /** A collision limit ends a completed survival attempt; it is an eligible distance result. */
 export function finishEndless(race: EndlessRace): boolean {
-  if (!race.endless || race.endless.practice) return false;
+  if (race.mode !== 'endless' || !race.endless || race.endless.practice) return false;
   race.endless.milestones = Math.floor(race.player.distance / 1000);
   const car = race.player;
   if (car.collisions < ENDLESS_COLLISIONS) return false;

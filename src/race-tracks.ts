@@ -77,10 +77,9 @@ export const COURSE_TRACKS: Readonly<Record<string, TrackConfig & { topologyVers
 export const raceTrack = (id: string): TrackConfig | undefined => id === CIRCUIT_ID ? CIRCUIT_TRACK : Object.hasOwn(COURSE_TRACKS, id) ? COURSE_TRACKS[id] : RACE_TRACKS[id];
 
 export const isModeTrack = (id: unknown, mode: unknown): id is string => typeof id === 'string' &&
-  (mode === 'circuit' ? id === CIRCUIT_ID : Object.hasOwn(RACE_TRACKS, id));
+  (mode === 'circuit' ? id === CIRCUIT_ID : Object.hasOwn(RACE_TRACKS, id) || (mode !== 'classic' && Object.hasOwn(COURSE_TRACKS, id)));
 
-/** Topology guard for createRace: a circuit only in Circuit mode; gated CourseGraph sprints only in Classic. */
+/** Circuit keeps its own loop; approved CourseGraph courses can reuse existing race modes in dev. */
 export function assertTrackMode(trackId: string, mode: string): void {
   if ((trackId === CIRCUIT_ID) !== (mode === 'circuit')) throw new RangeError('Circuit mode requires a circuit route');
-  if (Object.hasOwn(COURSE_TRACKS, trackId) && mode !== 'classic') throw new RangeError(`${COURSE_TRACKS[trackId].name} is a gated classic sprint`);
 }

@@ -259,7 +259,7 @@ const { showGarage, syncSkins } = setupGarageUI({
 });
 function chooseTrack() {
   if (tutorial) { endTutorial(); return; }
-  controls.clear(); sprintSeries = null; cup = null; stunt = null; race = selectedRace(unlockedTracks.has(race.trackId) ? race.trackId : 'coast'); daily = null; goUntil = 0;
+  controls.clear(); sprintSeries = null; cup = null; stunt = null; daily = null; goUntil = 0; raceSelect.restoreLastTrack();
   hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
   document.querySelector(`[data-track="${race.trackId}"], [data-race-mode="${race.mode}"]`).focus({ preventScroll: true });

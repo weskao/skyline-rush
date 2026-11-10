@@ -16,6 +16,7 @@ import { setupEventLabUI } from './event-lab-ui.ts';
 import type { GhostRun } from './ghost.ts';
 import { racePresentationFor, updateRaceSetup } from './race-presentation-ui.ts';
 import type { VisualPreset } from './race-session.ts';
+import { backHomeHref, bootHomeTrack, lastHomeTrack, rememberLastHomeTrack, restoreHomeTrack, withoutRacedQuery } from './last-home-track.ts';
 
 // The simulation race comes from plain-JS game.js; this screen reads its selection fields only.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,8 +43,7 @@ interface RaceSelectOptions {
   isUpcomingEnterable(id: string): boolean;
 }
 type RuleKey = 'rivals' | 'traffic' | 'difficulty' | 'items' | 'activeItems' | 'itemRules' | 'collision' | 'hazards' | 'stages' | 'bonusGates' | 'riskLines' | 'themes';
-const LAST_TRACK_KEY = 'skyline-rush-last-track';
-const LAST_MODE_KEY = 'skyline-rush-last-mode'; // tab-only, like the track; Event Lab needs its course, so it is not restored
+const LAST_MODE_KEY = 'skyline-rush-last-mode'; // tab-only; Event Lab needs its course, so it is not restored
 
 /** Home-screen race selection: mode, custom rules, track picker, route maps and the remembered track. */
 export function setupRaceSelectUI(options: RaceSelectOptions) {
@@ -61,7 +61,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     selectedMode = 'eventlab'; upcomingSelection = null; options.clearDaily(); setRace(next); showTracks(); options.refreshPhase();
   } });
   const selectedRace = (trackId: string): Race => selectedMode === 'circuit' ? options.createRace(CIRCUIT_ID, { mode: 'circuit', laps: Number($<HTMLSelectElement>('#circuit-laps').value) }) : selectSprint(trackId === CIRCUIT_ID ? 'coast' : trackId);
-  const selectSprint = (trackId: string): Race => isUpcomingTrack(trackId) ? options.createRace(trackId) /* gated runtimes race Classic only */ : selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
+  const selectSprint = (trackId: string): Race => selectedMode === 'eventlab' ? eventLab.selectedRace(trackId) : selectedMode === 'classic' ? options.createRace(trackId) : options.createRace(trackId, { mode: selectedMode, ...raceRules,
     ...(selectedMode === 'cup' && unlockedTracks.size >= cupCount() && unlockedTracks.has(trackId)
       ? { cupTracks: createCup([...unlockedTracks], trackId, cupCount()).tracks } : {}),
     ...(selectedMode === 'gauntlet' ? { hazardTier: $<HTMLSelectElement>('#hazard-tier').value, layout: $<HTMLSelectElement>('#gauntlet-layout').value } : {}),
@@ -70,6 +70,15 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
 
   let raceRouteMap: RouteMap | undefined;
   const trackRouteMaps = new Map<string, RouteMap>();
+  function mountRouteMap(id: string): void {
+    if (trackRouteMaps.has(id)) return;
+    const slot = document.querySelector<HTMLElement>(`[data-upcoming-track="${id}"] .track-route-map`);
+    if (!slot) return;
+    const map = createRouteMap(id);
+    slot.replaceChildren(map.element);
+    slot.dataset.theme = id;
+    trackRouteMaps.set(id, map);
+  }
   function ensureRouteMaps(): void {
     const race = getRace();
     for (const button of trackButtons()) {
@@ -78,6 +87,9 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       button.querySelector('.track-route-map')!.append(map.element);
       button.querySelector<HTMLElement>('.track-route-map')!.dataset.theme = button.dataset.track;
       trackRouteMaps.set(button.dataset.track!, map);
+    }
+    for (const button of upcomingButtons()) {
+      mountRouteMap(button.dataset.upcomingTrack!);
     }
     if (!raceRouteMap || raceRouteMap.trackId !== race.trackId) {
       raceRouteMap?.destroy();
@@ -240,6 +252,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (getRace().phase !== 'ready') return;
     options.clearControls();
     upcomingSelection = null;
+    rememberLastHomeTrack(button.dataset.track!);
     setRace(selectedRace(button.dataset.track!)); options.clearDaily();
     showTracks();
     button.focus({ preventScroll: true }); // Safari does not focus buttons on click
@@ -250,6 +263,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     if (getRace().phase !== 'ready') return;
     const id = button.dataset.upcomingTrack as UpcomingTrackId;
     upcomingSelection = options.isUpcomingEnterable(id) ? null : id;
+    rememberLastHomeTrack(id);
     options.clearControls(); options.clearDaily();
     if (!upcomingSelection) setRace(selectedRace(id));
     showTracks(); options.refreshPhase();
@@ -299,13 +313,17 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     raceRules[input.dataset.raceRule as RuleKey] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule!) ? Number(input.value) : input.value;
     changeRaceSelection();
   });
-  // Back to home reloads the page; the tab remembers the last raced mode and track so the intro reopens on them.
+  // The tab remembers the last raced mode. The last picker course stays in memory for this page load.
+  // Back to home is a new document: the raced course is a one-shot query, then removed so a later reload stays on Coast.
   try {
-    const mode = sessionStorage.getItem(LAST_MODE_KEY), last = sessionStorage.getItem(LAST_TRACK_KEY);
+    const mode = sessionStorage.getItem(LAST_MODE_KEY);
     if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
-    setRace(selectedRace(last && playable(last) ? last : getRace().trackId));
-  } catch { /* Classic on Coast stays the default without storage. */ }
-  upcomingSelection = stage2PreviewRequest(location.search)?.id ?? null;
+  } catch { /* Classic stays the default without storage. */ }
+  const search = location.search;
+  setRace(selectedRace(bootHomeTrack(search, getRace().trackId, playable)));
+  const cleaned = withoutRacedQuery(search);
+  if (cleaned !== search) history.replaceState(history.state, '', `${location.pathname}${cleaned}${location.hash}`);
+  upcomingSelection = stage2PreviewRequest(search)?.id ?? null;
   if (upcomingSelection) requestAnimationFrame(showTracks); // the shared WebGL world exists only after bootstrap
 
   // Card previews animate only while scrolled into view.
@@ -313,6 +331,10 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     for (const entry of entries) (entry.target as HTMLElement).dataset.visible = String(entry.isIntersecting);
   }, { root: $('.track-select') });
   document.querySelectorAll('.track-preview').forEach(preview => previewObserver.observe(preview));
+  const leaveHome = $<HTMLAnchorElement>('#leave-home');
+  const pointHomeAtRace = (): void => { leaveHome.href = backHomeHref(getRace().trackId); };
+  $('#leave-screen').addEventListener('toggle', pointHomeAtRace);
+  leaveHome.addEventListener('click', pointHomeAtRace);
 
   return {
     recreate: eventLab.recreate,
@@ -338,8 +360,13 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     /** Live route map for the HUD tick (rebuilt when the track changes). */
     raceRouteMap: (): RouteMap => { if (raceRouteMap?.trackId !== getRace().trackId) ensureRouteMaps(); return raceRouteMap!; },
     relabelRouteMaps(locale: string): void { for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale); },
-    rememberTrack(trackId: string): void {
-      try { sessionStorage.setItem(LAST_TRACK_KEY, trackId); sessionStorage.setItem(LAST_MODE_KEY, selectedMode); } catch { /* The intro falls back to Classic on Coast after a reload. */ }
+    restoreLastTrack(): void {
+      const choice = restoreHomeTrack(lastHomeTrack(), getRace().trackId, playable, isUpcomingTrack);
+      upcomingSelection = choice.upcoming as PreviewTrackId | null;
+      setRace(selectedRace(choice.trackId));
+    },
+    rememberTrack(_trackId: string): void {
+      try { sessionStorage.setItem(LAST_MODE_KEY, selectedMode); } catch { /* The intro falls back to Classic on Coast after a reload. */ }
     },
   };
 }

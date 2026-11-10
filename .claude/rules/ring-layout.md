@@ -9,8 +9,11 @@ paths:
   - "src/catch-up-items.ts"
   - "src/course-items.ts"
   - "src/course-race-step.ts"
+  - "src/shortcut-rewards.ts"
   - "src/courses/*-race.ts"
   - "tests/ring-*.test.js"
+  - "tests/shortcut-rewards.test.js"
+  - "tests/course-item-density.test.js"
   - "tests/pickup-economy.test.js"
   - "scripts/ring-variety.mjs"
 ---
@@ -32,6 +35,7 @@ pre-2026-11-07 baseline (user: more variety, but collecting must not get much ha
   `track-themes-world-tour.ts`, themed races)
 - the mixed Gauntlet's hoop over each barricade (`gauntlet-course.ts`, merged by `withHoops`)
 - each shortcut corridor's reward line: a cell every 60 m from `from + 30` and a tank halfway (`createPickups`)
+- each long-form shortcut or hidden path also gets the dense mix below, in that same window. Classic `RACE_TRACKS` corridors do not
 - trains (6 consecutive rings) and full-width rows still occurring in every race
 
 Never move, remove, thin out or randomize an authored sequence as a side effect of layout, variety or economy
@@ -48,6 +52,8 @@ layouts, rival takes and PERFECT LINE groups (`tests/catch-up-items.test.js`; de
 with length, `itemScale(track) = length / mean classic length` (`race-tracks.ts`). Classic tracks stay at scale 1, so
 their counts are unchanged. Classic traffic uses a `trafficDensity` inside the classic range (0.65–1.5), never 0.
 On graph runtimes (`src/course-items.ts`) the shared layout is re-keyed to `(edgeId, localS)` on the ground route.
-Every alternate branch gets the shortcut reward line above, rivals take items on their own edges, and traffic
+Every alternate branch gets the shortcut reward line above plus the dense mix, rivals take items on their own edges, and traffic
 runs as unranked course cars on the ground route. Catch-up items stay off graph courses. Guards:
 `tests/course-item-density.test.js`, `tests/course-items-browser.spec.js` (real WebGL: drawn where they score).
+
+**Dense mix on a shortcut or hidden path** (user, 2026-11-09): a shortcut or hidden path is a section with `type: 'shortcut'`, or a CourseGraph edge that is not on `groundRoute`. The six long-form courses (Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline Megacity, Frostbite Canyon) reward that corridor. Distinct CourseGraph alternate edges use the full 25 m mix. A mapped 1D shortcut lane shares the main road's camera and visibility: use 50 m rings and offset cells there, so normal driving does not look like a permanent dense shortcut; never move the reward outside the authored section. The window is the existing reward span, inset 30 m from each end (`from + 30` until `to`, or local arc 30 m until `length - 30`). On a distinct graph edge rings sit every 25 m from the window start; on a mapped 1D section every 50 m (`group: -4`, `groupSize: Infinity`, so neither completes a PERFECT LINE). Cells sit 12 m after each of those rings, never on the 60 m lattice. The 60 m cells and the halfway tank stay. The mix is authored: re-rolling the layout seed does not move it. Classic tracks keep only the 60 m line. The per-km density cap counts the shared road layout and that 60 m line; the extra rings and the offset-12 cells are outside it. Home: `src/shortcut-rewards.ts`. Guard: `tests/shortcut-rewards.test.js`.
