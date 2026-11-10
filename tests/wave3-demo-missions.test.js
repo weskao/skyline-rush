@@ -20,7 +20,7 @@ test('real eligible race finish counts race, but not time; ineligible finish doe
   const p=projectMissionState(a,at);
   assert.equal(p['mission-race:daily'].progress,1);
   assert.equal(p['mission-time:daily'].progress,0);
-  assert.equal(reduceMissionEvent(a,event('finish-bad',{kind:'finish',eligible:false}),at),a);
+  assert.equal(reduceMissionEvent(a,event('finish-bad','finish',{eligible:false}),at),a);
 });
 test('valid time challenge, drift and combo update only the corresponding task', () => {
   let s=createMissionPeriodState('guest',at);
@@ -80,4 +80,9 @@ test('locale display status does not mutate snapshot; account switch rejects sta
   port.setAccount('account-B');
   assert.equal(port.recordGameEvent(event('old-user')).status,'invalid');
   assert.equal(port.getSnapshot().missions['mission-race'].progress,0);
+});
+
+test('unsupported race mode never advances missions even with an eligible flag', () => {
+  const state=createMissionPeriodState('guest',at);
+  assert.equal(reduceMissionEvent(state,event('bad-mode','finish',{mode:'endless'}),at),state);
 });
