@@ -44,10 +44,10 @@ const label = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
 </template>
 
 <style scoped>
-.wave3-wallet-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,128px),1fr));
+.wave3-wallet-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
   gap:8px; min-width:0; margin:0 0 12px; }
-.wallet-currency { position:relative; isolation:isolate; min-width:0; min-height:78px; padding:9px 8px;
-  display:flex; align-items:center; gap:5px; overflow:hidden;
+.wallet-currency { position:relative; isolation:isolate; min-width:0; min-height:98px; padding:7px 3px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; overflow:hidden; text-align:center;
   border:1px solid #3d7692; border-radius:14px; color:#f1faff;
   background:linear-gradient(125deg,#112c47 0%,#0a1b2f 65%,#182540 100%);
   box-shadow:inset 0 1px 0 #ffffff17,0 6px 16px #0004; }
@@ -66,16 +66,16 @@ const label = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
 .wallet-symbol--diamond { color:#e4faff; font-size:31px; text-shadow:0 0 10px #55d9ff;
   background:linear-gradient(135deg,#b8faff 6%,#44b3ed 40%,#325da6 70%,#a180e3);
   clip-path:polygon(50% 5%,84% 25%,95% 55%,50% 95%,5% 55%,16% 25%); }
-.wallet-quantity { min-width:0;display:flex;flex-direction:column;gap:2px; }
-.wallet-label { font-size:11px;line-height:1.2;font-weight:800;letter-spacing:.025em;color:#bcddf0; }
-.wallet-quantity strong { font:800 clamp(18px,2.1vw,23px)/1.1 system-ui,sans-serif;
-  font-variant-numeric:tabular-nums;white-space:nowrap;color:#fff1be; }
+.wallet-quantity { min-width:0;width:100%;display:flex;flex-direction:column;align-items:center;gap:2px; }
+.wallet-label { font-size:10px;line-height:1.2;font-weight:800;letter-spacing:.025em;color:#bcddf0; }
+.wallet-quantity strong { font:800 clamp(15px,1.5vw,21px)/1.1 system-ui,sans-serif;
+  font-variant-numeric:tabular-nums;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;color:#fff1be; }
 .wallet-currency[data-available="false"] strong { color:#99a8ba; }
-.wallet-quantity small { font-size:10px;line-height:1.3;color:#c4d9e4; }
+.wallet-quantity small { font-size:9px;line-height:1.25;color:#c4d9e4; }
 .wallet-credit-value { animation:wallet-credit-glow .42s ease-out; }
 @keyframes wallet-credit-glow { 0%{transform:scale(1.13);filter:brightness(1.6)}
   100%{transform:scale(1);filter:brightness(1)} }
-@media (max-width:380px) { .wallet-currency { min-height:68px;padding:6px; }
+@media (max-width:380px) { .wallet-currency { min-height:90px;padding:4px 2px; }
   .wallet-currency :deep(.wave3-demo-art) { min-width:38px;width:38px;height:38px; }
   .wallet-currency :deep(.artwork-img) { width:34px;height:34px; }
   .wallet-symbol { flex-basis:38px;width:38px;height:38px;font-size:18px; } }
