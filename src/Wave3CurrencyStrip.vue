@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
+import GarageArtworkImage from './GarageArtworkImage.vue';
 import type { ExperienceSnapshot, Wave3ExperiencePort } from './wave3-experience-contract.ts';
 import { projectWave3Currency } from './wave3-currency-view.ts';
 
@@ -21,6 +22,9 @@ watch(() => [snapshot.value?.accountId, snapshot.value?.demoPoints], (next, prev
 });
 const rows = computed(() => projectWave3Currency(snapshot.value, props.locale));
 const label = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
+const currencyArt = (kind: string) =>
+  `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/wallet-${kind === 'coins' ? 'coin' : 'diamond'}@3x.png`;
+const sparkleArt = `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/wallet-sparkle-strip.png`;
 </script>
 
 <template>
@@ -30,8 +34,10 @@ const label = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
     <div v-for="row in rows" :key="row.id" class="wallet-currency"
       :data-currency="row.id" :data-available="row.state === 'local-demo'">
       <Wave3DemoArt v-if="row.id === 'demo-points'" id="demo-points" />
-      <span v-else-if="row.id === 'coins'" class="wallet-symbol wallet-symbol--coin" aria-hidden="true">✦</span>
-      <span v-else class="wallet-symbol wallet-symbol--diamond" aria-hidden="true">◆</span>
+      <span v-else class="wallet-artwork" :data-wallet-art="row.id">
+        <GarageArtworkImage :src="currencyArt(row.id)" :size="48" :alt="''" :fallback-text="row.label" loading="eager" />
+        <span class="wallet-shimmer" aria-hidden="true" :style="{ backgroundImage: 'url(' + sparkleArt + ')' }"></span>
+      </span>
       <div class="wallet-quantity">
         <span class="wallet-label">{{ row.label }}</span>
         <strong v-if="row.id === 'demo-points'" :key="balanceRevision" class="wallet-credit-value"
@@ -58,14 +64,13 @@ const label = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
 .wallet-currency[data-available="false"] { opacity:.78; border-color:#4a536b; }
 .wallet-currency :deep(.wave3-demo-art) { width:48px;min-width:48px;height:48px;padding:3px; }
 .wallet-currency :deep(.artwork-img) { width:42px!important;height:42px!important;max-width:42px;max-height:42px;object-fit:contain; }
-.wallet-symbol { flex:0 0 46px;width:46px;height:46px;display:grid;place-items:center;
-  font-size:23px;text-shadow:0 2px 9px #0009; }
-.wallet-symbol--coin { color:#fff0a5;border:3px double #ffcd72;border-radius:50%;
-  background:radial-gradient(circle at 36% 25%,#ffe8a6,#b8752c 70%,#593e25);
-  box-shadow:inset 0 0 0 2px #e9a848,0 0 14px #eab34955; }
-.wallet-symbol--diamond { color:#e4faff; font-size:31px; text-shadow:0 0 10px #55d9ff;
-  background:linear-gradient(135deg,#b8faff 6%,#44b3ed 40%,#325da6 70%,#a180e3);
-  clip-path:polygon(50% 5%,84% 25%,95% 55%,50% 95%,5% 55%,16% 25%); }
+.wallet-artwork { position:relative; flex:0 0 48px; display:grid; place-items:center; width:48px; height:48px;
+  filter:drop-shadow(0 1px 7px #8beaff29); }
+.wallet-artwork :deep(.artwork-img) { display:block; width:48px; height:48px; object-fit:contain; }
+.wallet-shimmer { position:absolute; inset:0; pointer-events:none; background-repeat:no-repeat;
+  background-size:800% 100%; background-position:0 0; animation:wallet-shimmer 1.6s steps(7,end) infinite; }
+.wallet-artwork[data-wallet-art="diamonds"] .wallet-shimmer { animation-duration:2.3s; animation-delay:-.7s; }
+@keyframes wallet-shimmer { from { background-position:0 0; } to { background-position:100% 0; } }
 .wallet-quantity { min-width:0;width:100%;display:flex;flex-direction:column;align-items:center;gap:2px; }
 .wallet-label { font-size:10px;line-height:1.2;font-weight:800;letter-spacing:.025em;color:#bcddf0; }
 .wallet-quantity strong { font:800 clamp(15px,1.5vw,21px)/1.1 system-ui,sans-serif;
@@ -78,6 +83,7 @@ const label = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
 @media (max-width:380px) { .wallet-currency { min-height:90px;padding:4px 2px; }
   .wallet-currency :deep(.wave3-demo-art) { min-width:38px;width:38px;height:38px; }
   .wallet-currency :deep(.artwork-img) { width:34px!important;height:34px!important; }
-  .wallet-symbol { flex-basis:38px;width:38px;height:38px;font-size:18px; } }
-@media (prefers-reduced-motion:reduce) { .wallet-credit-value { animation:none; } }
+  .wallet-artwork { flex-basis:38px;width:38px;height:38px; }
+  .wallet-artwork :deep(.artwork-img) { width:38px!important;height:38px!important; } }
+@media (prefers-reduced-motion:reduce) { .wallet-credit-value, .wallet-shimmer { animation:none; } }
 </style>
