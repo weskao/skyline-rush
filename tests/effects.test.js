@@ -110,10 +110,10 @@ test('lift cores follow tilted nozzle transforms and fade completely on release/
   assert.ok(cores.children.every(core => !core.visible));
 });
 
-function raceScene(t) {
+function raceScene(t, pickup3D = false) {
   globalThis.devicePixelRatio = 1;
   t.after(() => { delete globalThis.devicePixelRatio; });
-  const scene = new Scene(), effects = createEffects(scene, () => 0), race = createRace();
+  const scene = new Scene(), effects = createEffects(scene, () => 0, { pickup3D }), race = createRace();
   race.phase = 'racing'; race.player.speed = 60;
   race.pickups = []; race.rings = [];
   const points = scene.children.find(object => object.isPoints);
@@ -214,7 +214,7 @@ test('drifting emits ground smoke and threshold-colored sparks while respecting 
 });
 
 test('disposing marker pools releases every tier material, including types no longer drawn', t => {
-  const { scene, effects, race, update } = raceScene(t);
+  const { scene, effects, race, update } = raceScene(t, true);
   race.pickups = ['cell', 'can', 'tank', 'overcharge'].map((tier, i) => ({ tier, x: 0, altitude: 0, distance: 100 + i * 10 }));
   race.rings = ['charge', 'nitro', 'slipstream', 'risk', 'mystery'].map((type, i) => ({ type, radius: 4.8, x: 0, altitude: 8, distance: 100 + i * 20 }));
   update();
