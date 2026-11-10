@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RACE_DRIVER_IDS } from './race-grid.ts';
 import { MAGNET_RANGE } from './game.js';
 import { createMarkerPool } from './marker-pool.js';
+import { createPickupGeometries, animatePickup } from './pickup-art.js';
 import { createRivalCues } from './rival-cues.ts';
 import { isRaining, racePreset, sprayRate } from './board-effects.ts';
 
@@ -98,13 +99,10 @@ export function createEffects(scene, roadCenter) {
   const ringMaterials = Object.fromEntries(Object.entries(ringColors).map(([type, color]) => [type,
     new THREE.MeshBasicMaterial({ color: new THREE.Color(...(type === 'mystery' ? [1, 1, 1] : color)), vertexColors: type === 'mystery', transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false })]));
   const pickupMaterials = Object.fromEntries(Object.entries(pickupColors).map(([tier, color]) => [tier,
-    new THREE.MeshBasicMaterial({ color: new THREE.Color(...(tier === 'overcharge' ? [1, 1, 1] : color)), vertexColors: tier === 'overcharge' })]));
-  const pickupGeometry = new THREE.OctahedronGeometry(1);
-  const pickupRainbow = new Float32Array(pickupGeometry.attributes.position.count * 3);
-  for (let i = 0; i < pickupGeometry.attributes.position.count; i++) tint.setHSL(i / pickupGeometry.attributes.position.count, 1, 0.6).toArray(pickupRainbow, i * 3);
-  pickupGeometry.setAttribute('color', new THREE.BufferAttribute(pickupRainbow, 3));
+    new THREE.MeshBasicMaterial({ color: new THREE.Color(...(tier === 'overcharge' ? [1, 1, 1] : color)), vertexColors: true })]));
+  const pickupGeometries = createPickupGeometries();
   // One instanced pool per material, each warmed by its parked instance (marker-pool.js); capacity covers the densest 900 m view.
-  const ringPool = createMarkerPool('Race rings', ringGeometry, ringMaterials, RING_POOL_CAPACITY), pickupPool = createMarkerPool('Nitro pickups', pickupGeometry, pickupMaterials, 128);
+  const ringPool = createMarkerPool('Race rings', ringGeometry, ringMaterials, RING_POOL_CAPACITY), pickupPool = createMarkerPool('Nitro pickups', pickupGeometries, pickupMaterials, 128);
   const gates = ringPool.group, pickups = pickupPool.group, marker = new THREE.Object3D(), gateFrames = new WeakMap(), rivalCues = createRivalCues();
   scene.add(gates, pickups);
   // ITEM-12: a light column over each ring that grants a held item, one per ring slot; same program as the plain rings.
@@ -114,7 +112,6 @@ export function createEffects(scene, roadCenter) {
   beams.name = 'Item beams';
   for (let i = 0; i < 7; i++) beams.add(new THREE.Mesh(beamGeometry, beamMaterial));
   scene.add(beams);
-  const pickupSizes = { cell: 0.28, can: 0.48, tank: 0.7, overcharge: 0.95 };
   let previousRace = null, seen = new WeakSet(), driftEmission = 0, sprayEmission = 0, spraySide = 1;
   function emit(x, y, distance, vx, vy, forward, size, life, color, gravity, kind = 0, opacity = 0.85, radialX = Math.sign(vx)) {
     Object.assign(particles[cursor], { x, y, distance, vx, vy, forward, size, life, maxLife: life, color, gravity, kind, opacity, radialX, grounded: false, phase: cursor * 2.39996 });
@@ -198,12 +195,11 @@ export function createEffects(scene, roadCenter) {
               facing.setFromRotationMatrix(gateBasis.makeBasis(gateRight.fromArray(frame.right), gateUp.fromArray(frame.up), gateBack.fromArray(frame.forward).negate()));
             }
             mesh.quaternion.copy(facing);
-          } else {
-            mesh.rotation.set(0, source === 0 ? reducedMotion ? 0 : flowTime : -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2), 0);
-          }
+          } else if (source === 0) animatePickup(mesh, item, flowTime, reducedMotion);
+          else mesh.rotation.set(0, -Math.atan((roadCenter(item.distance + 1) - roadCenter(item.distance - 1)) / 2), 0);
           // Themed hoops swivel ±35° on race time (paused with the race) and never turn edge-on to the driver.
           if (source === 1 && item.spin && !reducedMotion) mesh.rotateY(0.6 * Math.sin(item.spin * race.elapsed + item.spinPhase));
-          mesh.scale.setScalar(source === 0 ? pickupSizes[item.tier] : item.radius);
+          if (source === 1) mesh.scale.setScalar(item.radius);
           mesh.updateMatrix();
           pool.add(source === 0 ? item.tier : ringType, mesh.matrix);
           if (source === 1 && beam < beams.children.length && (item.type === 'emp' || (item.type === 'mystery' && !!race.config?.activeItems))) {
@@ -370,7 +366,7 @@ export function createEffects(scene, roadCenter) {
     },
     dispose() {
       gates.removeFromParent(); pickups.removeFromParent(); beams.removeFromParent(); ringPool.dispose(); pickupPool.dispose();
-      ringGeometry.dispose(); pickupGeometry.dispose(); beamGeometry.dispose(); beamMaterial.dispose();
+      ringGeometry.dispose(); Object.values(pickupGeometries).forEach(g => g.dispose()); beamGeometry.dispose(); beamMaterial.dispose();
       for (const mat of Object.values(ringMaterials)) mat.dispose();
       for (const mat of Object.values(pickupMaterials)) mat.dispose();
     },
