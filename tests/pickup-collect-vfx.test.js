@@ -44,7 +44,8 @@ test('pool preallocates geometry, reuses capacity, animates and cleans up finite
   vfx.reset();
   assert.ok(group.children.every(s => !s.visible));
   const resources = new Set(), releases = new Map();
-  group.traverse(obj => { if (obj.geometry) resources.add(obj.geometry); if (obj.material) resources.add(obj.material); });
+  // Three.js Sprite's internal shared quad is owned by THREE, not by this VFX subsystem.
+  group.traverse(obj => { if (obj.geometry && !obj.isSprite) resources.add(obj.geometry); if (obj.material) resources.add(obj.material); });
   for (const r of resources) r.addEventListener('dispose', () => releases.set(r, (releases.get(r) || 0) + 1));
   vfx.dispose();
   assert.equal(group.parent, null);
