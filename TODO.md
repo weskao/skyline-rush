@@ -1,13 +1,26 @@
-# Wave 3 — satellite frontend integration checkpoint (2026-11-10)
+# 2026-11-11 — Wave 3 frontend QA synchronization for develop
+
+- [x] **F01–F06 + Prompt A–E and F08 code integration:** Same local-only demo authority for missions, awards, Store, Collection, preview-only cosmetic equip and versioned bounded persistence. Locked production release modes remain without demo grants or real purchase entitlements.
+- [x] **Exact-head integration CI green:** `85f3f09f21f52ea320b1492a338b377e0424db4d`, [CI #42822205901](https://github.com/weskao/skyline-rush/actions/runs/42822205901): Unit/Typecheck/Build, Cloud Save, 13 Browser Shards, 5 World Tour Shards and quality-gate succeeded.
+- [x] **Exact-head QA CI green (before source synchronization):** `51bc143425b69ec91074079b47514e9823a6e9cd`, [CI #42841586781](https://github.com/weskao/skyline-rush/actions/runs/42841586781): same full CI success including Playwright's genuine 5 km Time Attack → result → mission claim → Store redemption → Collection equip → reload/reset.
+- [x] **QA source sync prepared:** integrate core's latest mission grid, phone result overlay CSS, and layout rule into `feature/wave3-demo-acceptance`; preserve stronger QA unverified-authority regression and its dedicated E2E checks.
+- [ ] **Exact-HEAD combined QA CI:** must rerun complete regression on the synchronized merge commit, not infer success from either parent.
+- [ ] **Develop:** user-authorized merge only after synchronized QA all green, then independently verify the merged `develop` HEAD and update this checklist with the actual SHA/run IDs.
+- [ ] **Physical-device manual acceptance:** real iPhone, Android, Mac Chrome WebGL performance/controls and visual screenshots; no actual device evidence from GitHub CI alone.
+- [ ] **Go/Firebase backend:** intentionally deferred; do not interpret demo points, ownership, reward claims or Store as real server-authoritative grants.
+
+---
+
+## Wave 3 — satellite frontend integration checkpoint (2026-11-10, historical)
 
 **Branch:** `feature/wave3-frontend-demo-integration`. Satellite source integration is **not** the same as completed acceptance; no new paid or verified entitlements.
 
 - [x] **Source integration:** Demo Store/Collection from `be179828122f196b2e1f2b80a5d3483ed38ffd1c`, Results UI from `7552d4362b367ae3c6f344471c7dbb85ac60dae5`, scoped Storage module/tests from `555984cdb849db2fb1f007755996803d304bc6e2`, artwork QA tests from `a506b495f1c26d42c1d4c273b823f9b27d269f23`. Compare commit tree and changed files; these are code-import checkpoints only.
 - [x] **Integration source and regression cases added:** trial-only Garage Store/Collection Vue entry, original race results receipt hook, per-race first receipt, session-only demo skin preview, single-key versioned snapshot + replay checkpoint, account-scoped rehydrate/reset and source-level build-time coming-soon isolation.
-- [ ] **TDD and complete verification:** No newly integrated unit/browser test has been executed locally in the GitHub-only workspace. Observe exact-HEAD `npm test`, `npm run typecheck`, `npm run build`, `tests/module-size.test.js`, asset QA and full feature CI, then investigate any failures. Source work alone does NOT mean F03/F05/F06 or F08 is accepted.
-- [ ] **Demo missions frontend:** `feature/wave3-demo-missions` has not yet supplied a tested integration commit; the existing GarageMissionBoard still needs live UI integration.
+- [x] **Remote full-regression baseline:** exact integration `85f3f09f21f52ea320b1492a338b377e0424db4d` / Actions #42822205901 and QA `51bc143425b69ec91074079b47514e9823a6e9cd` / Actions #42841586781 passed Unit, Cloud Save, Browser (13 shards), World Tour (5 shards) and quality-gate independently. A newly combined head still requires its own green CI.
+- [x] **Demo missions frontend:** `GarageMissionBoard.vue` uses the shared F01 port to display claimable daily/weekly mission rewards on trial builds; live mission E2E is included in the passing QA browser run, with locked production variants kept separate.
 - [ ] **Visual acceptance:** Real WebGL gameplay, mobile portrait/landscape, Store/Collection, results summary and demo cosmetic effects; no real-device proof yet.
-- [ ] **CI and merge eligibility:** Need exact-head GitHub Actions `quality-gate` fully green and reviewed before merging into `develop`; no PR, deploy or main merge without authorization.
+- [ ] **Final combined QA CI and develop merge:** Sync integration UX/rules into the QA candidate, obtain full exact-head `quality-gate` (including Browser 13 shards + World Tour 5 shards), then perform user-authorized no-ff QA merge into `develop` and verify develop's new exact-HEAD CI; no PR, deploy or main merge.
 - [ ] **Persistence and security audit:** Complete review of reload, replay dedupe, account changes and disposal in real browser before marking full storage feature done.
 
 ---

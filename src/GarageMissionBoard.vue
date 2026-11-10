@@ -158,8 +158,8 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
  .garage-mission-progress { height:7px; border:1px dashed #60718b; border-radius:8px; background:#213047; }
 .garage-trophy-heading { margin-top:16px; }
 .garage-trophy-heading h4 { margin:0; font-size:15px; }
-.garage-trophy-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px; }
-.garage-trophy-card { min-width:0; margin:0; padding:10px 2px; display:flex; flex-direction:column; align-items:center; gap:8px;
+.garage-trophy-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,110px),1fr)); gap:10px; margin-top:10px; }
+.garage-trophy-card { min-width:0; margin:0; padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:8px;
   border:1px solid #536184; border-radius:12px; background:radial-gradient(circle at 50% 30%,#33476b,#121f37 74%); }
 .garage-trophy-card :deep(.artwork-img) { object-fit:contain; max-width:100%; }
 .garage-trophy-card figcaption { display:grid; gap:3px; min-width:0; text-align:center; overflow-wrap:anywhere; }
