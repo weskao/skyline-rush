@@ -9,7 +9,7 @@ const read = name => readFileSync(new URL('../' + name, import.meta.url), 'utf8'
 test('guide and road use the exact same transform, material factory and selected-tier model', () => {
   const preview = read('src/Pickup3DPreview.vue');
   const scene = read('src/effects.js');
-  assert.match(preview, /animatePickup\(mesh,\s*item,\s*seconds,\s*!?motion\.matches\)/);
+  assert.match(preview, /animatePickup\(mesh,\s*item,\s*seconds,\s*motion!?\.matches\)/);
   assert.match(scene, /animatePickup\(mesh,\s*item,\s*flowTime,\s*reducedMotion\)/);
   assert.match(preview, /createPickupGeometry\(props\.tier\)/);
   assert.match(preview, /createPickupMaterial\(props\.tier\)/);
