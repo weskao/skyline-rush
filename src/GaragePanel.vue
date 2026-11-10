@@ -10,6 +10,7 @@ import GarageSourceArtGallery from './GarageSourceArtGallery.vue';
 import GarageMissionBoard from '#wave3-demo-mission-ui';
 import { wave3DemoExperience } from '#wave3-demo-race';
 import Wave3DemoEntry from '#wave3-demo-ui';
+import Wave3CurrencyStrip from './Wave3CurrencyStrip.vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageLightingToggle from './GarageLightingToggle.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
@@ -73,6 +74,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
         </nav>
       </section>
       <aside class="garage-collection">
+        <Wave3CurrencyStrip v-if="GARAGE_RELEASE_MODE === 'trial'" :experience="wave3DemoExperience" :locale="locale" />
         <h3>{{ copy.collection }}</h3>
         <GarageSourceArtGallery ref="storeCatalog" category="garage-store-readiness" />
         <p class="collection-note garage-intro" v-show="garageStudioView.page === 'home'" data-i18n="garage.intro">Explore paint and tail light combinations. Appearance never changes performance.</p>
