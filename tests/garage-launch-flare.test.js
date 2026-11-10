@@ -116,3 +116,24 @@ test('Studio previews loop every flare without touching race state', () => {
   }
   assert.deepEqual(race, before);
 });
+
+
+test('premium launch flare layers render above road depth throughout each burst shape', () => {
+  const { scene, aero, race } = rig();
+  const settings = vfxSettings({ enabled: true, quality: 'high' });
+  const names = ['Launch flare burst', 'Launch flare rays', 'Launch flare rings', 'Launch flare sparks'];
+  const bodyGlow = scene.getObjectByName('Launch flare body glow');
+  for (const id of FLARES) {
+    aero.reset(); aero.setSkins({ 'launch-flare': id });
+    launch(aero, race, settings);
+    assert.ok(scene.getObjectByName('Launch flare burst').visible, `${id} triggered`);
+    for (const name of names) {
+      const effect = scene.getObjectByName(name);
+      assert.ok(effect, `${id}: ${name} exists`);
+      assert.equal(effect.material.depthTest, false, `${id}: road cannot clip ${name}`);
+      assert.equal(effect.material.depthWrite, false, `${id}: ${name} never hides later effects`);
+      assert.ok(effect.renderOrder > 0, `${id}: ${name} is drawn after ordinary track geometry`);
+    }
+    assert.equal(bodyGlow.material.depthTest, true, `${id}: car-body glow respects scene depth`);
+  }
+});
