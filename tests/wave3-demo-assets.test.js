@@ -120,7 +120,8 @@ test('A-03 and A-04 exact approved 216px WebP + PNG assets have safe RGBA source
     ['demo-claim', '856dfa604dd8b00a5b59ebe14f1db97f7875022d', '7901ff2864dd5d3c4d0f3aae986284f36ed6a173'],
   ];
   const allowed = [...approved.flatMap(([id]) => [id + '@3x.webp', id + '@3x.png']),
-    'demo-collection-empty@3x.webp', 'demo-results-banner@3x.webp'];
+    'demo-collection-empty@3x.webp', 'demo-results-banner@3x.webp',
+    'wallet-coin@3x.png', 'wallet-diamond@3x.png', 'wallet-sparkle-strip.png'];
   for (const file of readdirSync(root(dir)).filter(name => !name.startsWith('.'))) {
     assert.ok(allowed.includes(file), file + ': unapproved art');
   }
