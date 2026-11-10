@@ -50,8 +50,9 @@ const sparkleArt = `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/
 </template>
 
 <style scoped>
-.wave3-wallet-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:8px; min-width:0; margin:0 0 12px; }
+.wave3-wallet-strip { position:sticky; top:0; z-index:2; display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px; min-width:0; margin:0 0 12px; padding:5px; border-radius:15px;
+  background:linear-gradient(115deg,#0b2034f5,#101d32f5); }
 .wallet-currency { position:relative; isolation:isolate; min-width:0; min-height:98px; padding:7px 3px;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; overflow:hidden; text-align:center;
   border:1px solid #3d7692; border-radius:14px; color:#f1faff;
@@ -85,5 +86,6 @@ const sparkleArt = `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/
   .wallet-currency :deep(.artwork-img) { width:34px!important;height:34px!important; }
   .wallet-artwork { flex-basis:38px;width:38px;height:38px; }
   .wallet-artwork :deep(.artwork-img) { width:38px!important;height:38px!important; } }
+@media (max-height:480px) and (orientation:landscape) { .wave3-wallet-strip { position:static; } }
 @media (prefers-reduced-motion:reduce) { .wallet-credit-value, .wallet-shimmer { animation:none; } }
 </style>
