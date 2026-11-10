@@ -24,8 +24,8 @@ test('3D mode reuses one model and material definition for road objects and live
   assert.match(effects, /createPickupMaterials\(/);
   assert.match(guide, /Pickup3DPreview/);
   assert.match(guide, /pickup3DEnabled\s*&&\s*guideView\.selectedDevice\s*===\s*'items'/);
-  assert.match(preview, /createPickupGeometries\(/);
-  assert.match(preview, /createPickupMaterials\(/);
+  assert.match(preview, /createPickupGeometry\(/);
+  assert.match(preview, /createPickupMaterial\(/);
   assert.match(preview, /dispose\(/);
   assert.match(preview, /IntersectionObserver/);
   assert.match(preview, /prefers-reduced-motion/);
