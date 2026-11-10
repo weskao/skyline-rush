@@ -1,4 +1,5 @@
 import type { GameEvent, MissionProgress } from './wave3-experience-contract.ts';
+import { DEMO_ELIGIBLE_MODES } from './wave3-demo-settlement.ts';
 
 /** Pure local demo rules. F01 owns rewards and the only authoritative mission snapshot. */
 export type MissionFamily = 'race' | 'time' | 'drift' | 'combo';
@@ -30,7 +31,7 @@ const matches=(family:MissionFamily,e:GameEvent):boolean=>
 export function reduceMissionEvent(state:MissionPeriodState,event:GameEvent,now:number):MissionPeriodState{
   if(!event||event.schemaVersion!==1||!event.eligible||
     !['finish','drift','combo'].includes(event.kind)||
-    !event.eventId||!event.completionId||!event.trackId||!event.mode||
+    !event.eventId||!event.completionId||!event.trackId||!DEMO_ELIGIBLE_MODES.has(event.mode)||
     (event.accountId!==undefined&&event.accountId!==state.accountId)||
     !Number.isFinite(event.occurredAt)||event.occurredAt>now||
     event.occurredAt<now-MAX_EVENT_AGE||state.seenEventIds.includes(event.eventId)) return state;
