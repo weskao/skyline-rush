@@ -1,3 +1,13 @@
+# Wave 3 artwork follow-up — A-03/A-04 + NITRO (2026-11-11)
+
+- [x] Approved artwork provenance located: four exact 216×216 RGBA WebP/PNG Git blobs on `feature/wave3-implementation-plan-audit-20261110`; existing `hud-nitro@3x.webp` and BOOST SVG controls identified.
+- [x] Additional expansion scope documented in `docs/superpowers/plans/2026-11-11-wave3-artwork-expansion.md`; excluded `boost-polish.png` composite screenshot from production controls.
+- [ ] A-03/A-04 runtime UI integration and existing NITRO decorative HUD artwork: implement and verify source on latest QA SHA.
+- [ ] Source/SHA/alpha/216px and 72px CSS, WebP→PNG fallback and original live mission/Store/result functionality: exact-HEAD tests + browser evidence.
+- [ ] Latest QA full CI all green, then user-authorized `develop` merge, post-merge CI and real physical-device review. Do not invent native-device or art-direction signoff.
+
+---
+
 # 2026-11-11 — Wave 3 frontend QA synchronization for develop
 
 - [x] **F01–F06 + Prompt A–E and F08 code integration:** Same local-only demo authority for missions, awards, Store, Collection, preview-only cosmetic equip and versioned bounded persistence. Locked production release modes remain without demo grants or real purchase entitlements.

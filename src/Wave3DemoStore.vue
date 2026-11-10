@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
+import Wave3DemoArt from './Wave3DemoArt.vue';
 import { SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import type { ExperienceSnapshot, Wave3ExperiencePort, Wave3Status } from './wave3-experience-contract.ts';
@@ -121,6 +122,7 @@ function confirmRedemption(): void {
           '僅供使用可重設的試玩點數與暫時外觀預覽，不含真實交易或永久擁有權。') }}</p>
       </div>
       <div class="demo-wallet" role="status" aria-live="polite">
+        <Wave3DemoArt id="demo-points" :alt="tr('Demo points', '試玩點數')" />
         <strong>{{ snapshot.demoPoints }}</strong>
         <span>{{ tr('Demo points', '試玩點數') }}</span>
       </div>

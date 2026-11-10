@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
+import Wave3DemoArt from './Wave3DemoArt.vue';
 import { getLocale, onLocaleChange } from './i18n.ts';
 import { WAVE3_PREVIEW_CATALOG, filterWave3PreviewItems } from './garage-wave3-preview-catalog.ts';
 import type { Wave3PreviewItem } from './garage-wave3-preview-catalog.ts';
@@ -83,6 +84,10 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
     <p class="garage-mission-notice">{{ label(
       'Demo progress and trophies are local, disposable, unverified and never server-backed. Clearing this device may erase them.',
       '試玩進度與獎盃僅儲存在本機，可清除且未經伺服器驗證；清除裝置資料可能導致遺失。') }}</p>
+    <div v-if="available" class="garage-demo-balance" role="status" aria-live="polite">
+      <Wave3DemoArt id="demo-points" :alt="label('Demo points', '試玩點數')" />
+      <strong>{{ snapshot?.demoPoints }} {{ label('Demo points', '試玩點數') }}</strong>
+    </div>
     <div class="garage-mission-grid">
       <article v-for="item in missions" :key="item.id" class="garage-mission-card"
         :data-mission-id="item.id" :data-mission-state="stateOf(item.id)">
@@ -96,8 +101,11 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
           <small>{{ label('Demo progress', '試玩進度') }} {{ progressValue(item.id) }} / {{ goalValue(item.id) }}</small>
           <button v-if="stateOf(item.id) === 'claimable'" class="garage-mission-claim" type="button"
             :aria-label="label('Claim demo reward', '領取試玩獎勵') + ': ' + title(item)" @click="claim(item.id)">
-            {{ label('Claim demo reward', '領取試玩獎勵') }}
+            <Wave3DemoArt id="demo-claim" />
+            <span>{{ label('Claim demo reward', '領取試玩獎勵') }}</span>
           </button>
+          <Wave3DemoArt v-else-if="stateOf(item.id) === 'claimed'" id="demo-claim"
+            :alt="label('Demo claimed', '試玩已領取')" />
         </div>
       </article>
     </div>
@@ -117,7 +125,12 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
           :aria-label="title(item.art) + ' ' + (item.cadence === 'daily' ? label('Daily', '每日') : label('Weekly', '每週')) + ': ' + progressValue(item.id) + ' / ' + goalValue(item.id)" />
         <small>{{ progressValue(item.id) }} / {{ goalValue(item.id) }}</small>
         <button v-if="stateOf(item.id) === 'claimable'" class="garage-mission-claim" type="button"
-          @click="claim(item.id)">{{ label('Claim demo reward', '領取試玩獎勵') }}</button>
+          @click="claim(item.id)">
+          <Wave3DemoArt id="demo-claim" />
+          <span>{{ label('Claim demo reward', '領取試玩獎勵') }}</span>
+        </button>
+        <Wave3DemoArt v-else-if="stateOf(item.id) === 'claimed'" id="demo-claim"
+          :alt="label('Demo claimed', '試玩已領取')" />
       </article>
     </div>
     <div class="garage-mission-heading garage-trophy-heading">
@@ -142,6 +155,9 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 </template>
 
 <style scoped>
+.garage-demo-balance { display:inline-flex;flex-direction:column;align-items:center;max-width:145px;
+  margin:0 0 12px;padding:4px 8px;border:1px solid #3f728e;border-radius:10px;background:#102b42; }
+.garage-demo-balance strong { font-size:12px;font-variant-numeric:tabular-nums;text-align:center; }
 .garage-mission-board { box-sizing:border-box; min-width:0; margin:16px 0; padding:12px; border:1px solid #405c85;
   border-radius:14px; color:#e7f5ff; background:linear-gradient(140deg,#142742,#0a1525); }
 .garage-mission-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
@@ -169,7 +185,7 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 @media (prefers-reduced-motion:reduce) { .garage-mission-card, .garage-mission-card * { animation:none!important; transition:none!important; } }
 
 .garage-mission-card progress,.garage-period-card progress {display:block;width:100%;height:10px;accent-color:#6ce2f6}
-.garage-mission-claim {min-height:44px;border:1px solid #7fe4ff;border-radius:8px;background:#155574;color:white;cursor:pointer;padding:8px}
+.garage-mission-claim {display:flex;flex-direction:column;align-items:center;gap:3px;min-height:44px;border:1px solid #7fe4ff;border-radius:8px;background:#155574;color:white;cursor:pointer;padding:8px}
 .garage-mission-claim:focus-visible{outline:3px solid white;outline-offset:2px}
 .garage-mission-feedback {font-size:12px;min-height:1em}
 .garage-period-heading {margin-top:16px}

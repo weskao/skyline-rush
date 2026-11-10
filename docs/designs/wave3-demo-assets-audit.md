@@ -111,3 +111,11 @@ The 59-image source archive includes some resampled PNG cutouts. A 3× dimension
 - [ ] For any *approved* original-art repair, provide a real before-and-after 1× comparison, original and repaired SHA, reviewer and exact-HEAD CI. Until that occurs, preserve all original pixels.
 
 **Handoff status:** reused/locked existing art; tests added; candidate generation awaiting external conversation; browser/CI/human visual acceptance pending. Never mark art generation or end-to-end integration complete based on this audit alone.
+
+## 2026-11-11 follow-up — shipped A-03/A-04 and existing in-game NITRO art
+
+The sections above are preserved as the **2026-11-10 historical base-branch audit**, not a statement of the current QA candidate. The approved A-03 `demo-points@3x.webp/png` and A-04 `demo-claim@3x.webp/png` files have now been retrieved from the separate design branch with the exact source blob SHAs documented in `docs/superpowers/plans/2026-11-11-wave3-artwork-expansion.md`. Their native file dimensions and alpha-inset values were documented on the source branch; a new `tests/wave3-demo-assets.test.js` gate rechecks exact binary provenance and source-alpha geometry on the QA branch.
+
+Integration sites: demo Store wallet, Garage mission balance and claim/claimed states, plus the actual race-result demo points panel. `Wave3DemoArt.vue` uses `GarageArtworkImage.vue` with WebP → PNG fallback at 72px CSS; state and localized text stay in DOM. The existing `hud-nitro@3x.webp` is proposed as a small **decorative** icon alongside the live NITRO meter; BOOST's verified SVG control remains unchanged, because `artifacts/boost-polish.png` is a composition screenshot, not an approved independent transparent control asset.
+
+**Remaining gates:** new exact-head Browser/Unit/Typecheck/Build, 3 viewport screenshots, genuine mission claim and result display, mobile touch control regression, manual 1× art quality approval, physical device WebGL validation. Do not mark art fully accepted from a committed file or a past successful CI run.

@@ -7,6 +7,7 @@ export type DemoResultsMount = Readonly<{
   locale?: string;
   raceMode?: string;
   artworkUrl?: string | null;
+  artworkFallbackUrl?: string | null;
 }>;
 
 const make = (doc: Document, tag: string, className: string, content = ''): HTMLElement => {
@@ -20,7 +21,7 @@ const put = (element: HTMLElement, value: string): void => {
 };
 
 /** Mount inside #race-overlay .overlay-summary, after #result-style. Does not modify original result rows or buttons. */
-export function mountWave3DemoResults({ container, settlement, locale, raceMode, artworkUrl }: DemoResultsMount): HTMLElement {
+export function mountWave3DemoResults({ container, settlement, locale, raceMode, artworkUrl, artworkFallbackUrl }: DemoResultsMount): HTMLElement {
   const view = projectWave3DemoResults(settlement, { locale, raceMode });
   let region = container.querySelector<HTMLElement>('[data-wave3-demo-results]');
   if (!region) {
@@ -80,7 +81,12 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
       img.src = artworkUrl;
       img.alt = '';
       img.decoding = 'async';
-      img.addEventListener('error', () => img.remove(), { once: true });
+      img.addEventListener('error', () => {
+        if (artworkFallbackUrl && img.dataset.usingFallback !== 'true') {
+          img.dataset.usingFallback = 'true';
+          img.src = artworkFallbackUrl;
+        } else img.remove();
+      });
       mark.append(img);
     }
   }
