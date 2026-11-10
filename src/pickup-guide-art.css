@@ -1,30 +1,30 @@
 /* Illustrated road pickups only. Rings and mystery powers keep their existing guide layout. */
-.collectibles-guide .pickup-card {
+.collectibles-guide .collectible-card.pickup-card {
   --pickup-accent: #50caff;
   position: relative;
   min-height: 156px;
   align-items: center;
   gap: 10px;
   padding: 12px 14px 12px 9px;
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
   background: radial-gradient(ellipse at 18% 50%, color-mix(in srgb, var(--pickup-accent) 12%, transparent), transparent 61%), #101e2d;
   box-shadow: inset 0 1px 0 #ffffff0b, 0 8px 20px #00000010;
   transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
 }
-.collectibles-guide .pickup-card.card-orange { --pickup-accent: #ff9b35; }
-.collectibles-guide .pickup-card.card-gold { --pickup-accent: #ffcf4f; }
-.collectibles-guide .pickup-card.card-rainbow { --pickup-accent: #ef81ff; }
-.collectibles-guide .pickup-card:hover {
+.collectibles-guide .collectible-card.pickup-card.card-orange { --pickup-accent: #ff9b35; }
+.collectibles-guide .collectible-card.pickup-card.card-gold { --pickup-accent: #ffcf4f; }
+.collectibles-guide .collectible-card.pickup-card.card-rainbow { --pickup-accent: #ef81ff; }
+.collectibles-guide .collectible-card.pickup-card:hover {
   border-color: var(--pickup-accent);
   box-shadow: 0 0 20px color-mix(in srgb, var(--pickup-accent) 17%, transparent), inset 0 1px 0 #ffffff14;
   transform: translateY(-3px);
 }
-.collectibles-guide .pickup-card .card-info { position: relative; z-index: 1; }
-.collectibles-guide .pickup-card .card-head { display: block; }
-.collectibles-guide .pickup-card .card-head h4 { margin-bottom: 6px; font-size: 14px; }
-.collectibles-guide .pickup-card .card-badge { display: inline-block; line-height: 1.45; }
-.collectibles-guide .pickup-card .card-info p { font-size: 12.5px; line-height: 1.5; }
+.collectibles-guide .collectible-card.pickup-card .card-info { position: relative; z-index: 1; }
+.collectibles-guide .collectible-card.pickup-card .card-head { display: block; }
+.collectibles-guide .collectible-card.pickup-card .card-head h4 { margin-bottom: 6px; font-size: 14px; }
+.collectibles-guide .collectible-card.pickup-card .card-badge { display: inline-block; line-height: 1.45; }
+.collectibles-guide .collectible-card.pickup-card .card-info p { font-size: 12.5px; line-height: 1.5; }
 .pickup-showcase {
   position: relative;
   flex: 0 0 110px;
@@ -86,12 +86,12 @@
   to { transform: rotateX(55deg) rotateZ(360deg); }
 }
 @media (max-width: 480px) {
-  .collectibles-guide .pickup-card { min-height: 128px; gap: 8px; padding: 9px; }
+  .collectibles-guide .collectible-card.pickup-card { min-height: 128px; gap: 8px; padding: 9px; }
   .pickup-showcase { flex-basis: 86px; width: 86px; height: 100px; }
   .pickup-showcase .pickup-art { width: 90px; height: 90px; }
   .pickup-showcase::after { left: 12px; right: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .pickup-showcase .pickup-art, .pickup-showcase::before, .pickup-showcase::after { animation: none; }
-  .collectibles-guide .pickup-card { transition: none; }
+  .collectibles-guide .collectible-card.pickup-card { transition: none; }
 }
