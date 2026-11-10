@@ -4,7 +4,7 @@ import { MAGNET_RANGE } from './game.js';
 import { createMarkerPool } from './marker-pool.js';
 import { createPickupGeometries, createPickupMaterials, animatePickup, pulsePickupMaterial } from './pickup-art.js';
 import { PICKUP_3D_ENABLED } from './pickup-3d-config.js';
-import { createPickupCollectVfx } from './pickup-collect-vfx.js';
+import { createPickupCollectVfx, pickupCueSource } from './pickup-collect-vfx.js';
 import { createParticleBurst } from './effects-particle-burst.js';
 import { createRivalCues } from './rival-cues.ts';
 import { isRaining, racePreset, sprayRate } from './board-effects.ts';
@@ -220,7 +220,7 @@ export function createEffects(scene, roadCenter, { pickup3D = PICKUP_3D_ENABLED 
         burst(cue, reducedMotion ? 4 : lowQuality ? 8 : 18,
           cue.kind === 'nitro' ? gold : pickupColors[cue.item] ?? ringColors[cue.item] ?? gold, car.speed);
         if (cue.kind === 'take' && pickupColors[cue.item])
-          collectVfx?.spawn(cue.item, cue, { quality: options.quality, reducedMotion, rival: true });
+          collectVfx?.spawn(cue.item, pickupCueSource(cue, race.pickups), { quality: options.quality, reducedMotion, rival: true });
       }
       collectVfx?.update(dt, { distance, center, roadCenter, worldPoint: options.worldPoint, enabled });
       beamMaterial.opacity = reducedMotion ? 0.3 : 0.3 + Math.sin(flowTime * 4) * 0.1;
