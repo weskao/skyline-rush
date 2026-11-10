@@ -140,12 +140,17 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await page.locator('#garage-button').click();
   const board = page.locator('.garage-mission-board');
   await expect(board).toHaveAttribute('data-rewards-authority', 'local-demo');
+  const resourceHud = page.locator('#garage-screen [data-wave3-wallet]');
+  await expect(resourceHud.locator('[data-currency="demo-points"] strong')).toHaveText('40');
+  await expect(resourceHud.locator('[data-currency="coins"] strong')).toHaveText('—');
+  await expect(resourceHud.locator('[data-currency="diamonds"] strong')).toHaveText('—');
   const timeMission = board.locator('[data-mission-id="mission-time:daily"]');
   await expect(timeMission).toHaveAttribute('data-mission-state', 'claimable');
   const claimArt = timeMission.locator('[data-wave3-demo-art="demo-claim"] img');
   await expect(claimArt).toHaveJSProperty('naturalWidth', 216);
   await timeMission.getByRole('button', { name: 'Claim demo reward' }).click();
   await expect(timeMission).toHaveAttribute('data-mission-state', 'claimed');
+  await expect(resourceHud.locator('[data-currency="demo-points"] strong')).toHaveText('50');
   await expect(board).toContainText('Demo progress');
   const store = await openStore(page);
   await expect(store.locator('.demo-wallet strong')).toHaveText('50');
@@ -153,6 +158,7 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await store.getByRole('button', { name: 'Demo redeem' }).click();
   await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
   await expect(store.locator('.demo-wallet strong')).toHaveText('25');
+  await expect(resourceHud.locator('[data-currency="demo-points"] strong')).toHaveText('25');
   await store.getByRole('button', { name: 'Demo Collection' }).click();
   const collection = page.locator('[data-wave3-demo-collection]');
   await expect(collection).toBeVisible();
