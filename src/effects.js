@@ -12,6 +12,7 @@ export const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.
 
 // One reusable GPU pool keeps airflow, sparks and landing dust bounded.
 const COUNT = 480;
+const LEGACY_PICKUP_SIZES = { cell: .28, can: .48, tank: .7, overcharge: .95 };
 export const RING_POOL_CAPACITY = 48; // densest 900 m view of one colour: 18 with trains and rows (tests/ring-rows.test.js)
 
 export function createEffects(scene, roadCenter, { pickup3D = PICKUP_3D_ENABLED } = {}) {
@@ -208,7 +209,7 @@ export function createEffects(scene, roadCenter, { pickup3D = PICKUP_3D_ENABLED 
           // Themed hoops swivel ±35° on race time (paused with the race) and never turn edge-on to the driver.
           if (source === 1 && item.spin && !reducedMotion) mesh.rotateY(0.6 * Math.sin(item.spin * race.elapsed + item.spinPhase));
           if (source === 1) mesh.scale.setScalar(item.radius);
-          else if (!pickup3D) mesh.scale.setScalar({ cell: .28, can: .48, tank: .7, overcharge: .95 }[item.tier]);
+          else if (!pickup3D) mesh.scale.setScalar(LEGACY_PICKUP_SIZES[item.tier]);
           mesh.updateMatrix();
           pool.add(source === 0 ? item.tier : ringType, mesh.matrix);
           if (source === 1 && beam < beams.children.length && (item.type === 'emp' || (item.type === 'mystery' && !!race.config?.activeItems))) {
