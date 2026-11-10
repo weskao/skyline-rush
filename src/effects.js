@@ -167,8 +167,7 @@ export function createEffects(scene, roadCenter, { pickup3D = PICKUP_3D_ENABLED 
     update(race, dt, center, preview, reducedMotion, vehicles, options = {}) {
       dt = Math.max(0, dt);
       flowTime += dt;
-      if (pickup3D) for (const tier in pickupMaterials)
-        pulsePickupMaterial(pickupMaterials[tier], tier, flowTime, reducedMotion);
+      if (pickup3D) for (const tier in pickupMaterials) pulsePickupMaterial(pickupMaterials[tier], tier, flowTime, reducedMotion);
       const car = race.player;
       const distance = preview ? 340 : car.distance;
       const enabled = options.enabled !== false;
