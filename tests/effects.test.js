@@ -229,7 +229,8 @@ test('disposing marker pools releases every tier material, including types no lo
   update();
   assert.ok(groups.every(group => new Set(drawnMarkers(group).map(mesh => mesh.material)).size === 1));
   effects.dispose?.();
-  assert.equal(disposed.size, 11, 'all nine materials and both shared geometries are released');
+  assert.equal(geometries.size, 5, 'four distinct pickup models and one shared ring geometry');
+  assert.equal(disposed.size, materials.size + geometries.size, 'every material and all five geometries are released');
   assert.ok([...disposed.values()].every(count => count === 1));
   assert.ok(groups.every(group => group.parent === null), 'scene disposal will not dispose these resources twice');
 });
