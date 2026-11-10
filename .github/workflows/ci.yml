@@ -1,4 +1,4 @@
-# Check main, develop, feature and fix branches (except disabled MODE-00) / PR; deploy only on main dispatch or release tags.
+# Check main, develop, feature, fix and hotfix branches (except disabled MODE-00) / PR; deploy only on main dispatch or release tags.
 # Browser and World Tour suites run only on main and develop (or an explicit full regression); other branches get unit + cloud-save.
 # Docs/media-only pushes and PRs skip every suite on any branch (see the changes job).
 name: CI
@@ -13,6 +13,7 @@ on:
       - 'feature/**'
       - 'refactor/**'
       - 'fix/**'
+      - 'hotfix/**'
       - '!feature/mode00-objective-contract'
     tags: ['v*']
   pull_request:

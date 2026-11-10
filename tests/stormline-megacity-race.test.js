@@ -68,16 +68,18 @@ test('each fork is a same-stretch shortcut over its safe edge, and fork lengths 
   sorted.forEach((s, i) => { assert.ok(s.from < s.to && s.to <= STORMLINE_TRACK.length); if (i) assert.ok(sorted[i - 1].to <= s.from, 'no overlap'); });
 });
 
-test('Stormline is a gated classic sprint: dev-unlocked only, never in the catalog or other modes', () => {
+test('Stormline stays dev-unlocked but supports non-circuit race modes', () => {
   assert.equal(RACE_TRACKS[STORMLINE_ID], undefined);
   assert.equal(COURSE_TRACKS[STORMLINE_ID], STORMLINE_TRACK);
   assert.equal(raceTrack(STORMLINE_ID), STORMLINE_TRACK);
-  for (const mode of ['time', 'circuit', 'classic']) assert.equal(isModeTrack(STORMLINE_ID, mode), false, mode);
+  for (const mode of ['time', 'endless']) assert.equal(isModeTrack(STORMLINE_ID, mode), true, mode);
+  for (const mode of ['circuit', 'classic']) assert.equal(isModeTrack(STORMLINE_ID, mode), false, mode);
   const race = createRace(STORMLINE_ID);
   assert.equal(race.length, STORMLINE_TRACK.length);
   assert.equal(race.circuit, null);
   assert.equal(race.rivals.length, 7);
-  for (const mode of ['endless', 'time', 'circuit']) assert.throws(() => createRace(STORMLINE_ID, { mode }), RangeError, mode);
+  for (const mode of ['endless', 'time']) assert.equal(createRace(STORMLINE_ID, { mode }).mode, mode);
+  assert.throws(() => createRace(STORMLINE_ID, { mode: 'circuit' }), RangeError);
   assert.equal(released(STORMLINE_ID), false);
   assert.equal(unlocked(STORMLINE_ID), true);
 });

@@ -7,12 +7,12 @@ import { routeLength } from '../src/course-route-frame.ts';
 
 // A shortcut or hidden path keeps the 60 m cell line, and a long-form course also fills that same
 // window with a ring every 25 m and a cell 12 m after each ring. Classic tracks stay on the 60 m line.
-const STEP = 25, OFFSET = 12, INSET = 30;
+const STEP = 25, MAPPED_STEP = 50, OFFSET = 12, INSET = 30;
 const BURST_TYPES = ['charge', 'slipstream', 'charge', 'nitro', 'slipstream', 'charge'];
 
-const slots = (start, end, offset) => {
+const slots = (start, end, offset, step = STEP) => {
   const out = [];
-  for (let s = start + offset; s < end; s += STEP) out.push(s);
+  for (let s = start + offset; s < end; s += step) out.push(s);
   return out;
 };
 
@@ -34,8 +34,8 @@ function corridors(id) {
   }
   return COURSE_TRACKS[id].sections.filter(section => section.type === 'shortcut').map(section => ({
     name: `${section.from}-${section.to}`,
-    ringAt: slots(section.from + INSET, section.to, 0),
-    cellAt: slots(section.from + INSET, section.to, OFFSET),
+    ringAt: slots(section.from + INSET, section.to, 0, MAPPED_STEP),
+    cellAt: slots(section.from + INSET, section.to, OFFSET, MAPPED_STEP),
     ring: (race, distance) => race.rings.find(item => item.distance === distance && item.x === section.x && item.altitude === section.altitude),
     cell: (race, distance) => race.pickups.find(item => item.distance === distance && item.x === section.x && item.altitude === section.altitude && item.tier === 'cell'),
   }));
@@ -79,5 +79,20 @@ test('classic shortcut corridors keep the 60 m reward line and do not gain the d
       const placed = ringAt.filter(distance => race.rings.some(ring => ring.distance === distance && ring.x === section.x && ring.altitude === section.altitude));
       assert.ok(placed.length < ringAt.length, `${id} dense rings ${placed.length}/${ringAt.length}`);
     }
+  }
+});
+
+test('mapped course shortcut bursts never spill onto ordinary stretches or exceed one ring per 50 m', () => {
+  for (const [id, track] of Object.entries(COURSE_TRACKS)) {
+    if (COURSE_RUNTIMES[id]) continue; // physically separate graph edges retain the 25 m reward lattice
+    const race = createRace(id, { mode: 'classic' });
+    const shortcuts = track.sections.filter(section => section.type === 'shortcut');
+    const expected = shortcuts.flatMap(section =>
+      slots(section.from + INSET, section.to, 0, MAPPED_STEP)).sort((a, b) => a - b);
+    const burst = race.rings.filter(ring => ring.group === -4);
+    assert.deepEqual(burst.map(ring => ring.distance), expected, id);
+    for (const ring of burst) assert.ok(shortcuts.some(section =>
+      ring.distance >= section.from + INSET && ring.distance < section.to &&
+      ring.x === section.x && ring.altitude === section.altitude), id + ': stray reward @' + ring.distance);
   }
 });

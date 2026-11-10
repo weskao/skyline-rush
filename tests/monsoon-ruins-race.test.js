@@ -65,8 +65,8 @@ test('Monsoon is a dev-unlocked-only classic sprint', () => {
   assert.equal(released(MONSOON_ID), false);
   const race = createRace(MONSOON_ID);
   assert.equal(race.rivals.length, 7);
-  for (const mode of ['time','circuit','endless'])
-    assert.throws(() => createRace(MONSOON_ID, { mode }), RangeError);
+  for (const mode of ['time', 'endless']) assert.equal(createRace(MONSOON_ID, { mode }).mode, mode);
+  assert.throws(() => createRace(MONSOON_ID, { mode: 'circuit' }), RangeError);
 });
 test('Monsoon finishes once with a valid eight-car ranking', () => {
   const race = createRace(MONSOON_ID);

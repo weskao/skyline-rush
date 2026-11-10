@@ -78,7 +78,7 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     (stunt && stuntHeatContinues(stunt, race.result.endReason)));
   if (intermediateStage) {
     best = 0; record = false; // A partial series never writes a misleading individual best.
-  } else if (gated) {
+  } else if (gated && race.mode === 'classic') {
     progress.history = [...progress.history, recordRace(race)].slice(-50);
     ({ best, record } = classicBest(race, progress, ghosts, trace));
   } else if (race.result.success === false && race.mode !== 'classic') {
@@ -121,7 +121,7 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
   }
   if (race.mode === 'custom' && trace) ghosts.saveCustom(race, { time: race.elapsed, samples: trace });
   let challengeMedals: ChallengeMedalId[] = [];
-  if (!intermediateStage) {
+  if (!intermediateStage && !gated) {
     const challenge = recordChallengeMedals(stunt ? { ...race, result: { ...race.result, time: stunt.elapsed }, styleAttack: stunt } : race, progress.challengeMedals);
     progress.challengeMedals = challenge.state; challengeMedals = challenge.awarded;
   }

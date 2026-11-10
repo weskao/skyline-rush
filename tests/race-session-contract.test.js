@@ -183,7 +183,9 @@ test('9A: every finishing mode, Free Drive included, settles a finite result at 
     for (let i = 0; i < (mode === 'elimination' ? 5400 : 2400) && race.phase === 'racing'; i++) stepRace(race, { throttle: true }, 1 / 60);
     assert.equal(race.phase, 'finished', `${trackId} ${mode}`);
     assert.ok(Number.isFinite(race.result.time) && race.result.time > 0, `${trackId} ${mode} time`);
-    assert.ok(race.player.distance <= race.length, `${trackId} ${mode} stays on the authored road`);
+    // Elimination shares Endless streaming and must pass the authored end; other finishing modes stay on it.
+    if (mode === 'elimination') assert.ok(race.player.distance > race.length, `${trackId} elimination continues past the authored road`);
+    else assert.ok(race.player.distance <= race.length, `${trackId} ${mode} stays on the authored road`);
   }
 });
 

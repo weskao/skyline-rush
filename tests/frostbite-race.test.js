@@ -58,15 +58,15 @@ test('the three graph decisions are elevated shortcut lanes on their split stret
   sorted.forEach((s, i) => { assert.ok(s.from < s.to && s.to <= FROSTBITE_TRACK.length); if (i) assert.ok(sorted[i - 1].to <= s.from, 'no overlap'); });
 });
 
-test('Frostbite is a gated classic sprint: not in the sprint catalog, saves or modes', () => {
+test('Frostbite stays outside the released catalog but reuses dev race modes', () => {
   assert.equal(RACE_TRACKS[FROSTBITE_ID], undefined);
   assert.equal(raceTrack(FROSTBITE_ID), FROSTBITE_TRACK);
-  assert.equal(isModeTrack(FROSTBITE_ID, 'time'), false);
+  assert.equal(isModeTrack(FROSTBITE_ID, 'time'), true);
   const race = createRace(FROSTBITE_ID);
   assert.equal(race.length, FROSTBITE_TRACK.length);
   assert.equal(race.circuit, null);
   assert.equal(race.rivals.length, 7);
-  assert.throws(() => createRace(FROSTBITE_ID, { mode: 'endless' }), RangeError);
+  assert.ok(createRace(FROSTBITE_ID, { mode: 'endless' }).endless);
   assert.equal(released(FROSTBITE_ID), false);
   assert.equal(unlocked(FROSTBITE_ID), true);
   assert.equal(unlocked('unknown-track'), false);

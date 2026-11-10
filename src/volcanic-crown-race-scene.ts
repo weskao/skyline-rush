@@ -47,12 +47,25 @@ export function createVolcanicCrownRaceScene(scene: THREE.Scene) {
     decorativeHazards: THREE.Object3D[];
   }[] = [];
   const hazardNames = new Set(VOLCANIC_OBSTACLES.map(o => o.id));
+  // Lighting sources are authored per chunk, but only the two nearest can affect the road:
+  // each source reaches 95 m while chunks are 240 m long. Pool lights so shaders never
+  // recompile as the 1,500 m culling window changes its number of visible chunks.
+  const lavaSources: { distance: number; position: THREE.Vector3 }[] = [];
+  let craterLight: THREE.PointLight | undefined;
   let offset = 0;
   for (const edgeId of graph.groundRoute) {
     const length = runtime.edgeLength(edgeId);
     const count = Math.ceil(length / VOLCANIC_CHUNK_METERS);
     for (let i = 0; i < count; i++) {
       const chunk = createVolcanicCrownChunk(edgeId, i, 'medium');
+      const lava = chunk.group.getObjectByName('lava-reflection-light');
+      if (lava instanceof THREE.PointLight) {
+        lavaSources.push({ distance: offset + Math.min(length, (i + .5) * VOLCANIC_CHUNK_METERS),
+          position: lava.position.clone() });
+        lava.removeFromParent();
+      }
+      const crater = chunk.group.getObjectByName('crater-glow');
+      if (crater instanceof THREE.PointLight) { crater.removeFromParent(); craterLight = crater; }
       // 1D runtime has no obstacle-contact adapter. Do not show non-colliding boulders.
       const decorativeHazards: THREE.Object3D[] = [];
       chunk.group.traverse(object => {
@@ -64,6 +77,14 @@ export function createVolcanicCrownRaceScene(scene: THREE.Scene) {
     }
     offset += length;
   }
+  const lavaLights = Array.from({ length: 2 }, () => {
+    const light = new THREE.PointLight('#ff743b', 0, 95, 2);
+    light.name = 'pooled-lava-light'; group.add(light);
+    return light;
+  });
+  const craterGlow = craterLight ?? new THREE.PointLight('#ff5b24', 0, 310, 2);
+  craterGlow.name = 'pooled-crater-glow';
+  group.add(craterGlow);
   const materials = {
     deck: new THREE.MeshStandardMaterial({ color: '#34383d', roughness: .75, emissive: '#fb5a21', emissiveIntensity: .18 }),
     pylons: new THREE.MeshStandardMaterial({ color: '#ff8d4e', emissive: '#ff642b', emissiveIntensity: .65 }),
@@ -93,6 +114,16 @@ export function createVolcanicCrownRaceScene(scene: THREE.Scene) {
       const { point, forward } = volcanicFrame(distance);
       group.visible = true;
       group.position.set(-point.x, -point.y, -point.z);
+      let lo = 0, hi = lavaSources.length;
+      while (lo < hi) { const mid = (lo + hi) >> 1;
+        if (lavaSources[mid].distance < distance) lo = mid + 1; else hi = mid; }
+      for (let i = 0; i < lavaLights.length; i++) {
+        const source = lavaSources[i === 0 ? lo - 1 : lo], light = lavaLights[i];
+        if (!source || Math.abs(source.distance - distance) > 220) { light.intensity = 0; continue; }
+        light.position.copy(source.position);
+        light.intensity = 1.1 + (reducedMotion ? 0 : Math.sin(time * .9) * .14);
+      }
+      craterGlow.intensity = craterLight ? 3.2 : 0;
       for (const chunk of chunks) {
         const dx = chunk.x - point.x, dz = chunk.z - point.z;
         const visible = Math.hypot(dx, dz) < VIEW_RADIUS + chunk.radius &&
