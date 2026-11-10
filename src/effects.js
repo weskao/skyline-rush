@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RACE_DRIVER_IDS } from './race-grid.ts';
 import { MAGNET_RANGE } from './game.js';
 import { createMarkerPool } from './marker-pool.js';
-import { createPickupGeometries, createPickupMaterials, animatePickup } from './pickup-art.js';
+import { createPickupGeometries, createPickupMaterials, animatePickup, pulsePickupMaterial } from './pickup-art.js';
 import { PICKUP_3D_ENABLED } from './pickup-3d-config.js';
 import { createRivalCues } from './rival-cues.ts';
 import { isRaining, racePreset, sprayRate } from './board-effects.ts';
@@ -167,6 +167,8 @@ export function createEffects(scene, roadCenter, { pickup3D = PICKUP_3D_ENABLED 
     update(race, dt, center, preview, reducedMotion, vehicles, options = {}) {
       dt = Math.max(0, dt);
       flowTime += dt;
+      if (pickup3D) for (const tier in pickupMaterials)
+        pulsePickupMaterial(pickupMaterials[tier], tier, flowTime, reducedMotion);
       const car = race.player;
       const distance = preview ? 340 : car.distance;
       const enabled = options.enabled !== false;
