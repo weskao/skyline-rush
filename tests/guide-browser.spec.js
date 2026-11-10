@@ -126,13 +126,20 @@ test(`rings and supplies guide explains all ring types, road pickups and mystery
   await expect(panel.locator('[data-i18n="guide.items.pickup.can.title"]')).toHaveText('Energy Canister (Orange)');
   await expect(panel.locator('[data-i18n="guide.items.pickup.tank.title"]')).toHaveText('High-Capacity Tank (Gold)');
   await expect(panel.locator('[data-i18n="guide.items.pickup.overcharge.title"]')).toHaveText('Overcharge Core (Rainbow)');
-  const arts = panel.locator('.pickup-card .pickup-art');
-  await expect(arts).toHaveCount(4);
-  expect(await arts.evaluateAll(images => Promise.all(images.map(async img => {
-    await img.decode();
-    return img.naturalWidth === 384 && img.naturalHeight === 384 &&
-      img.getBoundingClientRect().width > 0 && img.currentSrc.includes('/feature-assets/road-pickups/');
-  })).then(values => values.every(Boolean))), 'each pickup card shows uncropped original artwork').toBe(true);
+  const previews = panel.locator('.pickup-3d-canvas'), arts = panel.locator('.pickup-card .pickup-art');
+  if (await previews.count()) {
+    await expect(previews).toHaveCount(4);
+    expect(await previews.evaluateAll(canvases => canvases.every(canvas =>
+      canvas.width > 0 && canvas.height > 0 && canvas.closest('.pickup-3d-stage')?.dataset.tier
+    )), 'live 3D canvases and actual tier names render at every viewport').toBe(true);
+  } else {
+    await expect(arts).toHaveCount(4);
+    expect(await arts.evaluateAll(images => Promise.all(images.map(async img => {
+      await img.decode();
+      return img.naturalWidth === 384 && img.naturalHeight === 384 &&
+        img.getBoundingClientRect().width > 0 && img.currentSrc.includes('/feature-assets/road-pickups/');
+    })).then(values => values.every(Boolean))), 'legacy gallery illustrations decode without clipping').toBe(true);
+  }
 
   // Mystery powers
   await expect(panel.locator('[data-i18n="guide.items.power.shield.title"]')).toHaveText('Energy Shield');
@@ -169,8 +176,16 @@ test('road pickup gallery keeps its artwork animated by default but stops for re
   await openGuide(page);
   await page.locator('[data-guide-device="items"]').click();
   const art = page.locator('.pickup-art').first();
-  await expect(art).toBeVisible();
-  expect(await art.evaluate(el => getComputedStyle(el).animationName)).toContain('pickup-hover');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  expect(await art.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+  const live = page.locator('.pickup-3d-canvas').first();
+  if (await live.count()) {
+    await expect(live).toBeVisible();
+    await expect(live).toHaveAttribute('data-motion', 'running');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(live).toHaveAttribute('data-motion', 'paused');
+  } else {
+    await expect(art).toBeVisible();
+    expect(await art.evaluate(el => getComputedStyle(el).animationName)).toContain('pickup-hover');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await art.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+  }
 });
