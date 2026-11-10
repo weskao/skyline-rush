@@ -1,3 +1,14 @@
+# 2026-11-11 — Premium currency PNG artwork and 8-frame sprite integration
+
+- [x] Native transparent 3x PNGs checked into `public/feature-assets/wave3-demo/raster/`: `wallet-coin@3x.png` (144×144), `wallet-diamond@3x.png` (144×144). New assets, original A-03/A-04 and HUD images are preserved.
+- [x] 8-frame `wallet-sparkle-strip.png` (512×64, each frame 64×64) used as a CSS steps image-sequence overlay in the real Garage wallet, not as an SVG or full-image scale animation.
+- [x] `Wave3CurrencyStrip.vue` now renders actual PNGs with live F01 demo points, local-only authority and explicitly unavailable coins/diamonds. Sprite animation respects `prefers-reduced-motion`.
+- [x] Responsive 3-column resource display including sticky scroll on tall viewports and static compact landscape; browser checks include 390×844, 844×390, 1440×900.
+- [ ] Exact HEAD GitHub Actions CI all pass and browser screenshots/physical devices approved. Until then, do NOT merge to `develop` or describe full Wave 3 UI/E2E as complete.
+- [ ] Authenticated real coins/diamonds must remain unavailable until server-backed economy is implemented and verified.
+
+---
+
 # Wave 3 — resource HUD and artwork acceptance (2026-11-11)
 
 - [x] Read-only demo wallet projection: local F01 only, account isolation, no invented paid coins/diamonds. Local TDD RED (missing module) → GREEN (3/3) verified.
