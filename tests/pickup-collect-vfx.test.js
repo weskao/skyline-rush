@@ -23,6 +23,8 @@ test('pool preallocates geometry, reuses capacity, animates and cleans up finite
   const geometryIds = new Set();
   group.traverse(mesh => { if (mesh.geometry) geometryIds.add(mesh.geometry.uuid); });
   assert.ok(geometryIds.size <= 4, 'four reused 3D geometry types, not one per animation');
+  assert.ok(group.children.every(stage => stage.children.filter(mesh => mesh.isInstancedMesh).every(mesh => mesh.count >= 1)),
+    'each instanced shader has a parked example for pre-race WebGL warmup');
   const particle = { x: 2.5, altitude: 0, distance: 250, tier: 'overcharge' };
   assert.equal(vfx.spawn('overcharge', particle), true);
   assert.equal(vfx.activeCount(), 1);
