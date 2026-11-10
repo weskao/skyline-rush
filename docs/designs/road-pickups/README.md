@@ -132,3 +132,10 @@ Performance p50/p95 on High/Medium/Low and physical-device art direction
 approval require separate recorded measurements; do not claim them without
 the actual evidence.
 
+
+### CI acceptance gate
+
+The branch must remain unmerged until the exact-commit [full-regression] run
+has successful 3D browser smoke, both build variants, all 13 browser shards,
+all 5 World Tour shards, cloud checks and the aggregate quality gate. These
+checks are required even if the branch's normal focused gate is green.
