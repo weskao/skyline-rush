@@ -1,3 +1,1282 @@
+## [0.31.0] - 2026-11-10
+
+### 🚀 Features
+
+- Define five Stage 1 preview-only tracks without race registration
+- Add five selectable Stage 1 teaser cards and still-scene preview to home
+- Preview upcoming tracks without creating races; localize start CTA by selection state
+- Connect upcoming scene host to shared world with explicit missing-scene fallback [full-regression]
+- Selectively integrate five time-driven Three.js environments [full-regression]
+- **courses:** Add validated graph and arc-length route-frame contract [full-regression]
+- **courses:** Gate route edge transitions through ordered 3D checkpoints [full-regression]
+- **frostbite:** Author 13.8 km point-to-point CourseGraph with road/contact geometry
+- **frostbite:** Real Three.js Rift Spine scene built from the CourseGraph
+- **frostbite:** Gated Stage 2 live preview with P01 ground and P02 flight shots
+- **frostbite:** Add native 3x cover and route map
+- **home:** Show Frostbite Canyon as a Coming Soon card; unlock enters only race-ready cards
+- **frostbite:** Add gated race runtime and dedicated scene
+- **frostbite:** Build real shortcut-corridor structures
+- **frostbite:** Race the rift span on the ice bridge
+- **frostbite:** Faster rival pace on the 13.8 km course
+- **frostbite:** Fix showroom visual deviations
+- **frostbite:** Save topology-keyed results and ghost
+- **coursegraph:** Add opt-in physical graph traversal [full-regression]
+- **coursegraph:** Validate signed gates and eight-car fleet recovery [full-regression]
+- **coursegraph:** Deterministic branch AI and gate-aware standings [full-regression]
+- **coursegraph:** Verify measured physical gate crossings [full-regression]
+- **courses:** Selectively import five playable course sources and tests [full-regression]
+- **courses:** Stage five canonical CourseGraph runtime adapters [full-regression]
+- **course-fleet:** Add atomic eight-car measured-motion stepping [full-regression]
+- **economy:** Add fail-closed Wave 3 read-only state contract [full-regression]
+- **garage:** Show existing 3x Store artwork in Economy Garage [full-regression]
+- **garage:** Show selected 3x Store concept art in live Garage detail [full-regression]
+- **wave3:** GREEN archive and display 8 original 3x garage-rewards-and-missions UI icons at 1x CSS
+- **wave3:** GREEN bilingual mission/store read-only catalog previews and 3x artwork
+- **wave3:** Add fail-closed idempotent settlement gate [full-regression]
+- **wave3:** Add bilingual display-only finish placement badges [full-regression]
+- **wave3:** Show nontransactional podium badge in actual Classic results [full-regression]
+- **wave3:** Use existing 3x trophy art on live Classic finish results [full-regression]
+- **wave3:** Introduce truthful bilingual mission cards with inaccessible-progress guard
+- **wave3:** Wire native 3x rewards PNGs into Garage and Results [full-regression]
+- **wave3:** Show all 8 native PNGs in Garage mission and trophy panels [full-regression]
+- **wave3:** Enforce nontransactional Store preview policy [full-regression]
+- **wave3:** Expose truthful disabled Store state in Garage catalog [full-regression]
+- **wave3:** Use authentic Store 3x artwork as Garage entry icon [full-regression]
+- **store:** Model featured and unavailable display states without commerce
+- **store:** Build nontransactional Garage catalog with featured and unavailable states
+- **store:** Serve true-alpha PNG primary art from BASE_URL with safe entry fallback
+- **store:** Reuse safe WebP/text fallback when 3x PNG cannot load
+- **store:** Reuse safe WebP/text fallback when 3x PNG cannot load
+- **store:** Allow Garage entry to open accessible catalog
+- **store:** Add discoverable Garage Store entry beyond concept gallery
+- **garage:** Native 3x Airflow PNGs and distinct preview glow [full-regression]
+- **garage:** Display real selected VFX artwork in Studio loadout [full-regression]
+- **previews:** Add six release-locked Coming Soon cover and route assets
+- **home:** Display six non-interactive Coming Soon cover cards
+- **home:** Restore original selectable Coming Soon cards, SVG minimaps and KM layout
+- **previews:** Port original Coming Soon selection, CTA labels, map info and keyboard handling
+- **i18n:** Reuse original Coming Soon and planned-KM translations for all six tracks
+- **showcase:** Port original Stage 1 3D preview scenes and regression tests without playable race runtimes
+- **world:** Reuse original five Three.js home showcases while preserving develop vehicle motion
+- **home:** Restore original swipe and drag navigation across playable and preview cards
+- **home:** Connect preview selection and swipe to original 3D showcase with image fallback
+- **frostbite:** Port original P01/P02 3D showroom, geometry data, and scene tests without race registration
+- **showcase:** Activate Frostbite original 3D shots and adaptive portrait camera in six-preview home
+- **frostbite:** Restore original stage2-preview URL auto-selection without race access
+- **scripts:** Add glTF Transform install and smoke script
+- **3d-pipeline:** Add Phase 1 per-device check script
+- **3d-pipeline:** Add Phase 1 by-project check script
+- **3d-pipeline:** Guard Phase 1 verify against tree changes
+- **dune:** Author standalone point-to-point course graph data
+- **dune:** Author direction-aware checkpoint gate descriptors [full-regression]
+- **dune:** Expose authored course as shared CourseGraph contract
+- **dune:** Derive streamed road ribbons and hazards from shared route frames
+- **dune:** Add seam-safe native dune terrain and bounded aerial landing pads
+- **dune:** Native Three.js streamed scenery, visible hazards, stone arches and sandstorms
+- **dune:** Supply obstacle avoidance, safe recovery and flight landing contracts
+- **dune:** Add streamed flight-canyon mesh with TDD [full-regression]
+- **monsoon:** Author 12.5km branching course, wet contact and obstacle interfaces
+- **monsoon:** Add disposable 3D course chunks with valley, temple, falls, bridge and rain
+- **monsoon:** Stream shallow ford water and real stone-bridge supports; cache rain spawn points
+- **monsoon:** Sample each ground and fork edge by real physical arc length
+- **monsoon:** Expose direct node-to-node CourseGraph edge sampler [full-regression]
+- **monsoon:** Add real river watercourse and sculpted guardian facial stonework [full-regression]
+- **skyfall:** Author 16 km branch-aware floating island course and 3D world [full-regression]
+- **skyfall:** Stream disposable per-edge road and island chunks
+- **skyfall:** Mark supported aerial landing pavement [full-regression]
+- **skyfall:** Show four elevated non-collision checkpoint rings [full-regression]
+- **skyfall:** Adapt authored course to validated shared CourseGraph [full-regression]
+- **stormline:** Author 14km branched city course graph blockout
+- **stormline:** Add streamed true-3D road, viaduct and city chunk builder
+- **stormline:** Add animated neon signs and non-solid reflective puddles
+- **stormline:** Calibrate 14.24km course layout [full-regression]
+- Add streamable world-frame tunnel shell for Stormline [full-regression]
+- **stormline:** Smooth branch landings, wet-road guides and obstacle validation [full-regression]
+- **stormline:** Stable visible rooftop flight guides and canonical road parity [full-regression]
+- **volcanic:** Author point-to-point graph, hazards and streamed 3D chunks [full-regression]
+- **volcanic:** Warn for eruptions and tier ash, heat and lava lighting [full-regression]
+- **volcanic:** Add deterministic swept hazard adapter and record verification gaps [full-regression]
+- **stormline-megacity:** Gated dev-unlocked CourseGraph race runtime [full-regression]
+- **tutorial:** Add shared air-chain landing rule
+- **tutorial:** Add endless practice road option
+- **tutorial:** Gate lessons, skip step and retry reasons
+- **minimap:** Player heading arrow and pulse halo
+- **hud:** Dock race progress and chips at edges
+- **hud:** Compact phone leaderboard and placement
+- **rings:** Vary ring lanes on every track
+- **rings:** Add catch-up items for trailing player
+- **tutorial:** One pause and exit control, visible pause screen
+- **ai:** Make rivals skill-only and harder
+- **tutorial:** Add shared air-chain landing rule
+- **tutorial:** Add endless practice road option
+- **tutorial:** Gate lessons, skip step and retry reasons
+- **minimap:** Player heading arrow and pulse halo
+- **ai:** Gentler Normal and opening-map rivals
+- **audio:** Play a chime for every ring collected
+- **cloud:** Show race cloud-sync status on results
+- **catch-up:** Spawn weighted rings only [full-regression]
+- **catch-up:** Adapt ring budget, cadence and placement to total race length [full-regression]
+- **garage:** Add sun/moon lighting toggle
+- **3d-pipeline:** GLB manifest validation and async model cache
+- **3d-pipeline:** Pipeline-probe Blender→GLB→glTF Transform pipeline
+- **3d-pipeline:** ?model=probe Garage adapter with lifecycle specs
+- **3d-pipeline:** Rig GLB Roadster to the procedural car and add opt-in KTX2
+- **3d-pipeline:** KTX2 texture passes and texture checks in the GLB pipeline
+- **3d-pipeline:** Add roadster2 KTX2 GLB and sources
+- **3d-pipeline:** Add low-LOD support to GLB tools
+- **3d-pipeline:** Roadster2 it6 art pass and low LOD
+- **minimap:** Add transparent WebP player marker and preserve SVG fallback
+- **dune-tempest:** Add native canyon terrain, hairpins, flight route and animated sand [full-regression]
+- **dune-tempest:** Animate distant sand haze and golden-hour lighting [full-regression]
+- **skyfall:** Build animated 3D archipelago and dual-height showroom routes
+- Build animated Stormline Megacity 3D home environment [full-regression]
+- **volcanic-crown:** Procedural lava canyon, hairpin road and flying showroom branch [full-regression]
+- **volcanic-crown:** Visible erupting summit and basalt road shoulders
+- Build spatial Monsoon Ruins Three.js home environment
+- **volcanic:** Implement arc-length ground route and authored 3D race chunks [full-regression]
+- **volcanic:** Register gated CourseGraph sprint and reuse authored 3D scene [full-regression]
+- **monsoon:** Implement measured ground-route race and authored jungle scene [full-regression]
+- **monsoon:** Wire gated Classic race, world view, locale and access tests [full-regression]
+- **lifecycle:** Parse JPEG, evidence, and release approvals [full-regression]
+- **lifecycle:** Add ready stage with fail-closed dev access [full-regression]
+- **lifecycle:** Enforce preview, race, evidence and catalog gates [full-regression]
+- **lifecycle:** Collect runtime state and expose lifecycle CLI [full-regression]
+- **3d-pipeline:** Author roadster2 lift fans with named pivots
+- **garage-model:** Dress the Home showcase and race car with the GLB behind ?model=roadster
+- **garage:** Make the Studio entry stand out with sheen and glow
+- **race:** Show post-hit grace as a translucent pulse
+- **tutorial:** Add live cues and guided lesson timing
+- **tutorial:** Guide arrows and live cues follow lesson
+- **home:** Game-style landscape phone home layout
+- **tutorial:** Air chain phone ripple follows the live cue
+- **course-runtime:** Pure per-car CourseGraph race runtime
+- **dune-tempest:** Register gated CourseGraph race spec
+- **course-runtime:** Dispatch graph courses through the shared race loop
+- **dune-tempest:** Flight gap, hazards and recovery on the graph runtime
+- **dune-tempest:** Topology-keyed results without Ghost
+- **course-runtime:** Add arc-length graph route-map data with fork tests [full-regression]
+- **course-runtime:** Draw per-edge Dune minimap and project live markers [full-regression]
+- **course-runtime:** Stream and dispose physical Dune road chunks [full-regression]
+- **course-runtime:** Use graph standings and branch-aware HUD gaps [full-regression]
+- **course-runtime:** Expose shared physical car and camera render poses [full-regression]
+- **course-runtime:** Attach streamed Dune geometry, physical car poses and fork camera to world [full-regression]
+- **dune-tempest:** Add matching sunset race palette [full-regression]
+- **dune-tempest:** Allow dev-unlocked START with CourseGraph while production stays Coming Soon [full-regression]
+- **skyfall:** Share canonical physical road sampler and smooth junction pads [full-regression]
+- **skyfall-archipelago:** Gated CourseGraph race with flight gaps [full-regression]
+- **skyfall:** Stream existing world through shared CourseGraph scene host [full-regression]
+- **skyfall:** Enable dev-unlocked CourseGraph START; production locked [full-regression]
+- **diag:** Relay crash log, inputs, beat to dev server
+- **diag:** Replace the covering panel with a live relay status badge
+- **courses:** Add monsoon, stormline, volcanic race configs
+- **courses:** Scale rings and items, add course traffic
+- **road:** UV0 on road ribbons with seam-free classic road rows
+- **settings:** Ultra quality tier above High
+- **lighting:** Per-time-of-day Coast environment, exposure and colour grade (not wired yet)
+- **lighting:** Drive the Coast look from the race visual preset and quality tier
+- **assets:** Coast-scenery GLB (cliffs, rocks, sea arch, palms, guard rail) with manifest entry
+- **coast:** Place coast-scenery.glb pieces in deterministic 120 m chunks
+- **coast:** Load the scenery GLB on Coast Medium+ and attach it before GO
+- **coast:** KTX2 photoscanned asphalt on Coast Medium+ with a uniform-driven wet variant
+- **coast:** High uses the 2K asphalt, Ultra adds a detail normal (task 5 tier table)
+- **vfx:** Board effects - magenta plume tail, rain wheel spray, Ultra-only stronger motion blur
+- **world:** Tighter, darker contact shadow under the car (board panel 1)
+- **coast:** Lights-only wet-road mirror on High/Ultra, chosen over a planar Reflector by benchmark
+- **coast:** Bloom tuned for the light blades and sun matched to each Coast HDRI
+- **vfx:** Thruster glow discs in flight and under boost (board panel 3)
+- **diag:** Log frame-time stats and quality tier in beats
+- **3d:** Gate the Phase 3 look behind ?look=3d
+- Add native 3x eight-frame transparent looping Garage GIF
+- Render looping GIF highlights over native Garage and Studio artwork
+- Render looping GIF highlights over native Garage and Studio artwork
+- Render looping GIF highlights over native Garage and Studio artwork
+- Match Garage GIF overlay assets to native 3x dimensions [full-regression]
+- Add source-preserving Garage GIF animation renderer with six behaviors
+- Lazy-load per-artwork GIF with original image and reduced-motion fallbacks
+- Render original-art motion directly in GarageArtworkTile.vue
+- Render original-art motion directly in GarageSkinCatalog.vue
+- Render original-art motion directly in GaragePaintPreview.vue
+- Replace warp GIFs with 39 source-faithful per-object animations [full-regression]
+- **garage:** Replace 14 sweep GIFs with css sweep
+- **courses:** Restore Monsoon, Stormline and Volcanic races; all six Coming Soon courses playable in dev [full-regression]
+- **3d-pipeline:** Garage-only ?model=probe adapter with lifecycle specs
+- **audio:** Give each course its own race song
+- **tracks:** Reward long-form shortcuts densely
+- **dev:** Add 3d=1 make param for 3d redirect
+- **dev:** Enable all non-circuit race modes for six upcoming courses
+
+### 🐛 Bug Fixes
+
+- Prevent duplicate SELECTED labels when inspecting an upcoming map
+- Keep canvas swipes from replacing a selected coming-soon preview
+- Keep canvas swipes from replacing a selected coming-soon preview
+- Keep canvas swipes from replacing a selected coming-soon preview
+- Preserve playable Start CTA name and guarantee solo score gates [full-regression]
+- Use ES2022-compatible score-gate lookup [full-regression]
+- Clear upcoming showcase on Event Lab selection [full-regression]
+- **release-notes:** Start refused hero on first touch
+- **ui:** Import package.json with json attributes
+- **home:** Reuse existing track swipe for Coming Soon 3D previews [full-regression]
+- **release-notes:** Announce notes to first-time players
+- Commit preview swipe before GPU transition and honor auto-open release dialog [full-regression]
+- **roadster:** Replace flat white nose face with carbon band, black intake and splitter
+- **tracks:** Keep preview-only Coming Soon inaccessible even in unlocked dev [full-regression]
+- **dev-feature:** Enforce TypeScript unlocked access and fail closed for stale previews
+- **release:** Filter Coming Soon courses from production unlocks
+- **tracks:** Gate preview START independently of saved unlocks
+- **garage:** Restore scenic showcase framing
+- **frostbite:** Make glacier and aurora decks solid
+- **frostbite:** Keep rival hops out of solid decks
+- **assets:** Sync five textless track teasers and artwork rules from develop
+- **assets:** Sync vehicle-free teaser scenes and rules from develop
+- **tests:** Upcoming-tracks contract expects the sixth Frostbite Canyon card
+- **coursegraph:** Stabilize steep road frames and trusted fleet steps [full-regression]
+- **coursegraph:** Permit trusted flight above road without gate bypass [full-regression]
+- **assets:** Sync five textless track teasers and artwork rules from develop
+- **assets:** Sync canonical no-car teasers and rollback rules from develop
+- **ci:** Pin Playwright to locked version during typechecks [full-regression]
+- **assets:** Replace five track teasers with clean 568x205 artwork
+- **assets:** Preserve original teaser scenes, clean captions and borders
+- **assets:** Remove remaining volcanic seam and refine monsoon text removal
+- **assets:** Restore natural monsoon sky behind removed caption
+- **assets:** Use newly illustrated textless Frostbite teaser at 568x205
+- **ci:** Restore quality-gate order lost in an earlier garage merge
+- **ci:** Accept looped release clip time in viewer handoff test [full-regression]
+- **ci:** Restore quality-gate order lost in an earlier garage merge
+- **store:** Preserve repaired full-color icon pixels in lossless PNG export [render-store-png]
+- **store:** Align preview detail availability with selected item and capture visual evidence [full-regression]
+- **garage:** Frame raised Flight pose; align ring and bonus-gate regressions with scaled layouts [full-regression]
+- **results:** Accept eight-car mode placements and preserve Circuit finish after pause; sync develop [full-regression]
+- **ci:** Localize 3x HUD gallery, restore gameplay fixtures and deterministic risk/callout checks; sync develop [full-regression]
+- **ui:** Fit desktop 900px home and record reviewed CSS/DOM contract [full-regression]
+- **ci:** Start real ring race and stabilize home/video regression timing [full-regression]
+- **home:** Clear 44px footer hitbox at 900px desktop [full-regression]
+- **garage-vfx:** Use independent native 3x PNG badges [full-regression]
+- **garage:** Preserve native 1x VFX thumbnails in narrow Studio sidebar [full-regression]
+- **ci:** Stabilize Garage VFX artwork and browser regression assertions [full-regression]
+- **ci:** Restore valid Garage cosmetics browser spec after patch corruption [full-regression]
+- **garage:** Prevent 3x VFX thumbnails shrinking in landscape [full-regression]
+- **ci:** Stabilize real ring reward and release video handoff browser tests [full-regression]
+- **wave3:** Reconcile Store entry icon and gallery-scoped Garage art tests [full-regression]
+- **garage-vfx:** Remove stray sprite fragment from Limited badge PNG [full-regression]
+- **assets:** Crop LaMa model padding before compositing preview
+- **assets:** Expand vehicle masks to remove residual details
+- **ci:** Install typecheck tools against the lockfile [full-regression]
+- **assets:** Remove cars from four existing track teaser scenes
+- **assets:** Replace Monsoon teaser with approved vehicle-free rainforest scene
+- **unlocks:** Never unlock preview-only courses in development or release
+- **unlocks:** Never unlock preview-only courses in development or release
+- **race-select:** Hard-block preview track IDs from START regardless of saved unlocks
+- **dev-feature:** Require worktree-local TypeScript access and Coming Soon guard
+- **release:** Guard direct race entry for all six unreleased tracks
+- **browser:** Repair corrupted preview spec and test Frostbite P02 against original 3D UI
+- **release:** Block direct START/restart while a Coming Soon preview is selected
+- **race-select:** Use defined track.locked label
+- **assets:** Sync five textless track teasers and artwork rules from develop
+- **assets:** Sync canonical no-car teasers and rollback rules from develop
+- **garage:** Calibrate studio bloom for r186
+- **tests:** Upcoming-tracks contract expects the sixth Frostbite Canyon card
+- **dune:** Align canyon merge tangent and preserve route length [full-regression]
+- **dune:** Make both canyon branches enter safe landing geometry [full-regression]
+- **ci:** Wrap Start labels and hit-test phone swipe canvas [full-regression]
+- **assets:** Sync five textless track teasers and artwork rules from develop
+- **assets:** Sync vehicle-free teaser scenes and rules from develop
+- **monsoon:** Position animated waterfall and mist in world space
+- **monsoon:** Require ordered one-time checkpoints before finish [full-regression]
+- **monsoon:** Validate signed checkpoint crossings and swept lateral obstacle encounters [full-regression]
+- **monsoon:** Use scoped guardian face material to unblock typecheck
+- **monsoon:** Smooth fork offset normal so edge arc-length stays physical
+- **monsoon:** Align ford water depth and swept obstacle contact [full-regression]
+- **monsoon:** Align viaduct and scale streamed scenery; repair responsive Start [full-regression]
+- **monsoon:** Match rainforest geometry and world-space terrain contact [full-regression]
+- **monsoon:** Smooth valley terrain and wet-contact transitions [full-regression]
+- **tests:** Upcoming-tracks contract expects the sixth Frostbite Canyon card
+- **monsoon:** Scene test picks the trunk and left-terrain meshes, not the last same-named node
+- **monsoon:** Remove road shoulder ledge and align puddles to contact [full-regression]
+- **ci:** Wrap Start labels and hit-test phone swipe canvas [full-regression]
+- **assets:** Sync five textless track teasers and artwork rules from develop
+- **assets:** Sync vehicle-free teaser scenes and rules from develop
+- **skyfall:** Reject phantom road contact outside a graph edge [full-regression]
+- **skyfall:** Preload graph joins one full chunk [full-regression]
+- **ui:** Allow Start button label to wrap into two lines [full-regression]
+- **skyfall:** Align first aerial landing tangent with merged road [full-regression]
+- **skyfall:** Suspend island terraces below drivable road [full-regression]
+- **tests:** Upcoming-tracks contract expects the sixth Frostbite Canyon card
+- **assets:** Sync five textless track teasers and artwork rules from develop
+- **assets:** Sync vehicle-free teaser scenes and rules from develop
+- **stormline:** Keep puddles non-solid while preserving construction collision metadata
+- Anchor Stormline neon billboards to world distance [full-regression]
+- Skip degenerate Stormline road streaming geometry [full-regression]
+- **stormline:** Anchor streamed towers and viaduct supports to edge distance [full-regression]
+- **tests:** Upcoming-tracks contract expects the sixth Frostbite Canyon card
+- **stormline:** Stream full canonical CourseGraph arc-length tail
+- **stormline:** Reduce low-tier hairpin road contact chord error [full-regression]
+- **ci:** Wrap Start labels and hit-test phone swipe canvas [full-regression]
+- **assets:** Sync five textless track teasers and artwork rules from develop
+- **assets:** Sync vehicle-free teaser scenes and rules from develop
+- **tests:** Upcoming-tracks contract expects the sixth Frostbite Canyon card
+- **ci:** Wrap Start labels and hit-test phone swipe canvas [full-regression]
+- **assets:** Sync five textless track teasers and artwork rules from develop
+- **assets:** Sync vehicle-free teaser scenes and rules from develop
+- **hud:** Keep mode chip unclipped, clear of HUD
+- **race:** Launch the grid rolling at go
+- **tutorial:** Open practice with the race countdown
+- **hud:** Reserve telemetry space during countdown
+- **hud:** Reserve hidden telemetry for mode chip only
+- **tutorial:** Keep the player's speed across lessons
+- **tutorial:** Keep the full coach visible on pause screen
+- **frostbite:** Restore competitive Normal AI pack after BOOST rework [full-regression]
+- **callouts:** Preempt low-priority refill for airborne trick feedback [full-regression]
+- NITRO retry and deterministic position-loss regression [full-regression]
+- Rebalance Frostbite under shared rival BOOST and isolate unboosted speed tests [full-regression]
+- **frostbite:** Restore line breaks in course config [full-regression]
+- Handle interrupted NITRO, test deterministic position loss and tune Frostbite [full-regression]
+- Separate endurance rival skill slots without changing player speed caps [full-regression]
+- Restore Frostbite grid pace spread after shared rival upgrade
+- **ui:** Fit pause and results panels on phone landscape without scrolling
+- **ui:** Keep NEXT label and arrow inside the landscape action column
+- **tutorial:** Drop slide-pad highlight on phone turn-left
+- **callouts:** Preempt low-priority refill for airborne trick feedback [full-regression]
+- Stop interrupted tutorial NITRO and surface barrel rolls [full-regression]
+- **callouts:** Preserve earned high-priority chips while preempting low-priority text [full-regression]
+- **ai:** Restore Frostbite pack spread and isolate throttle-only cap regression [full-regression]
+- **ai:** Preserve long-course rival speed fairness and throttle-only regression [full-regression]
+- **ai:** Restore frostbite rival pace spread
+- **ai:** Show airborne trick over stale refill callout [full-regression]
+- Immediately retry interrupted NITRO tutorial on release [full-regression]
+- **tutorial:** Show NITRO retry READY immediately after release [full-regression]
+- **ai:** Rebalance Frostbite rival grid and verify truly unboosted caps [full-regression]
+- **frostbite:** Widen long-course grid pacing for throttle-only parity [full-regression]
+- Make tutorial NITRO retry immediate and rank-motion test deterministic [full-regression]
+- Preserve Frostbite rival grid balance and isolate throttle cap tests [full-regression]
+- **callouts:** Preempt low-priority refill for airborne trick feedback [full-regression]
+- **render:** Soften roadster reflections and rear led
+- Restore Frostbite rival grid balance without changing shared driver rules [full-regression]
+- **callouts:** Preempt low-priority refill for airborne trick feedback [full-regression]
+- Keep risk ring chime below pickup loudness [full-regression]
+- **merge:** Restore develop shared UI and regression coverage [full-regression]
+- **3d-pipeline:** CreateModelCache defaults manifest to MODEL_MANIFEST
+- **3d-pipeline:** Warn once when the ?model=probe Garage model falls back
+- **3d-pipeline:** Restore verified probe master and ignore Blender backups [full-regression]
+- **3d-pipeline:** Run one KTX2 pass per slot before meshopt
+- **3d-pipeline:** Parse KTX2 GLBs in check-glb on Node
+- **3d-pipeline:** Bind only wheels with a spin pivot
+- **dune-tempest:** Support lower roadbed and separate sandy shoulder depth [full-regression]
+- **skyfall:** Align flowing particles with island waterfall curtains (GREEN)
+- Extend Stormline ground roadway past elevated-branch reunion [full-regression]
+- Face road normals upward and keep elevated route and landmark sightlines clear
+- Align Monsoon stone viaduct beneath raised shortcut
+- **deploy:** Block netlify deploy on unauthorized domain
+- **release:** Archive 0.26.0 notes to fit module size
+- **volcanic:** Accept Volcanic Crown sprint bests in rules
+- **cloud:** Keep fullest save under rules limit
+- **six-course:** Accept Monsoon bests in rules and align tests with merged develop [full-regression]
+- **garage-model:** Carry flare glow and Studio sweep onto GLB car
+- **garage-model:** GLB car pulses with the post-hit grace fade
+- **tutorial:** Hints name the controls the player's settings give them
+- **tutorial:** Keep hint overlays off controls for a right-hand cluster
+- **tutorial:** Drop FLY outline and key chip from the landing lesson
+- **tutorial:** Phone-landscape coach card shows its whole text without scrolling
+- **home:** Keep landscape mode tabs and panel in bounds
+- **home:** Clear landscape gate overlaps on phones
+- **home:** Keep landscape pinned row off track cards
+- **home:** Lift landscape start above chrome toolbar
+- **test:** Load app's cloud-view-state in avatar test
+- **home:** Scale landscape home on short pages
+- **dune:** Tangent-continuous junctions (Q9)
+- **dune:** Keep flight pads authored and bound junction curvature
+- **course-graph:** Carry road-frame lateral across kinked junctions
+- **course-graph:** Allow authorized flight across ground junctions
+- **course-runtime:** No dead window before nodes; alias-safe last
+- **dune-tempest:** Gap-charge need from pulsed FLY usage
+- **ai:** Restore meaningful rival pace spread with BOOST on long courses
+- **ai:** Scope Frostbite rival balance without altering classic tracks
+- **skyfall:** Pin flight junctions to the shared sampler heading (Q9) [full-regression]
+- **skyfall:** Graded junction guides so ground edges never fold (Q9 review) [full-regression]
+- **skyfall:** Release world after shared scene host reparents it [full-regression]
+- **coursegraph:** Keep Dune and Skyfall out of World Tour scenery and theme crashes [full-regression]
+- **coursegraph:** Honor World Tour legacy module line ceiling [full-regression]
+- **coursegraph:** Restore world-tour-scene 453-line size contract [full-regression]
+- Repair CourseGraph rendering and browser CI regressions
+- **ci:** Report superseded runs' quality-gate as cancelled, not failed
+- **diag:** Report the real iOS version when Safari 26 freezes the UA at 18.x
+- **art:** Replace 18 clipped HUD controls with complete 3x WebP
+- **upcoming-preview:** Make Dune Tempest and Skyfall showcase cars readable
+- **showcase:** Bring all cars into readable desktop and portrait framing [full-regression]
+- **showcase:** Retain Dune sandstorm and Skyfall cloud identity with legible cars [full-regression]
+- **ci:** Port verified shared CourseGraph, UI and deterministic browser regressions
+- **hooks:** Run unit tests on pre-push when code or tests change
+- **hooks:** Clear git's repo env before pre-push runs the unit tests
+- **garage-model:** GLB tail light follows the procedural rear LED
+- **roadster:** Dressed GLB reflects the softened car map, not the full scene HDRI
+- Keep lightweight GIF highlights visible at Low visual quality
+- Correct GarageArtworkTile computed animation source TypeScript syntax
+- Occlude moving airflow highlights behind transparent SVG car body
+- Eliminate artificial checkered alpha dithering from Garage source GIFs
+- Resolve animated GIF asset BASE_URL in Vue script module, not template
+- Repair animated badge source/assertion browser fixture
+- Physical flame and shockwave alpha motion plus hinged Store crate articulation
+- **garage:** Preserve 20 distinct collection foil animation frames [full-regression]
+- **ci:** Use current Node 22 for Garage GIF tests and TypeScript loaders [full-regression]
+- **garage-art:** Preserve bright flare cores and intact moving store parts
+- **garage:** Stop scoped :global() sweep rule from hiding body on Low VFX [full-regression]
+- **ci:** Port verified shared CourseGraph, UI and deterministic browser regressions
+- **garage:** Composite glow GIF edges onto the real card tint
+- **art:** Add source-locked repair for original HUD artwork
+- **art:** Preserve original HUD style and repair clipped source sprites
+- **art:** Retire rejected HUD redesign generator and rebuild workflow
+- **art:** Reframe original HUD sprites, remove foreign cutouts and preserve 3x artwork
+- **art:** Repair 18 original HUD sprites without redesign
+- **art:** Restore clipped original bevel corners and circular rims by matching symmetry
+- **art:** Complete original HUD bezels and circle borders
+- **art:** Blend original border pixels continuously; preserve intentionally open rings
+- **art:** Make original HUD edges seamless and readable
+- **art:** Remove frame seams; inpaint only missing pixels behind unmodified original artwork
+- **art:** Restore original full-size HUD button bevels without seams
+- **art:** Replace mirrored bezel defects and fill missing original enamel faces [GREEN]
+- **art:** Restore original HUD bezels and missing faces without redesign
+- **art:** Restore dark interior cutouts, avoid doubled speed gauge and button strip
+- **art:** Preserve source semi-transparent enamel when restoring holes
+- **art:** Restore original HUD bezels and missing faces without redesign
+- **art:** Seam-free original gradient inpainting and remove detached nitro edge
+- **art:** Restore original HUD bezels and missing faces without redesign
+- **art:** Use matching lower enamel to restore tooltip without false rim
+- **art:** Restore original HUD bezels and missing faces without redesign
+- **art:** Redraw cropped HUD icons at native size
+- Guard CourseGraph scenery and mobile overlays [full-regression]
+- **ci:** Preserve CSS baseline while keeping device notice nonmodal
+- **ci:** Record slow-runner perf frames and the requested clip hand-over frame [full-regression]
+- **monsoon:** Run the jungle on past FINISH instead of a bare plane
+- **home:** Paint the landscape rail outside the scrolling panel on iOS
+- **home:** Paint the landscape rail outside the scrolling panel on iOS
+- **rings:** Keep authored hoops out of PERFECT LINE group 0
+- **rings:** Shrink a ring line by the gates its hoops replace
+- **home:** Remember last picked course in memory
+- **home:** Reopen raced course after back to home
+- **minimap:** Draw coming soon course maps
+- **i18n:** Use card names on route maps
+- **home:** Align dune and skyfall showroom road contact and dune drive view
+- **home:** Keep Skyfall grass below the roadway depth plane
+- **home:** Preserve Dune hero framing while showing road ahead
+- **epic:** Balance mapped shortcut rewards and pool Volcanic race lights
+- **home:** Keep Skyfall island grass below undulating preview road
+- **elimination:** Share endless road streaming across all tracks
+- **i18n:** Resolve upcoming course labels from shared catalog
+
+### 💼 Other
+
+- Import first five tracks ten original views as JPEG references
+- Add stage two five new course concepts as ten JPEG views
+- Integrate latest develop into long-form track planning (preserve all assets and TODOs)
+- Reuse committed Stage 1 JPEGs and schematic SVGs for coming-soon cards
+- Add English and Traditional Chinese coming-soon track copy and CTA states
+- Require real animated 3D homepage for five Stage 1 upcoming maps; JPEG only references
+- Prioritize real animated 3D home scenes and TDD; JPEG-only preview is not done
+- Bring latest develop into epic-multiroute-longform-tracks (preserve Stage 1 track planning and art)
+- Bring develop vehicle-fleet and Roadster updates into animated Stage 1 showcase [full-regression]
+- Latest develop UX; prevent localized Start CTA clipping [full-regression]
+- **assets:** Run one-time original teaser crop repair
+- **assets:** Run final teaser seam cleanup
+- **assets:** Finalize monsoon caption retouch
+- **develop:** Sync Wave 3 Economy foundation [full-regression]
+- **develop:** Update Wave 3 Economy with Roadster 2 [full-regression]
+- **wave3:** Integrate Economy Foundation into develop baseline
+- **rewards:** Add generic transparent mission and medal icons [skip ci]
+- **develop:** Integrate latest Wave 3 Rewards and shared UI [full-regression]
+- **develop:** Sync Rewards with Roadster 2 Garage updates [full-regression]
+- **wave3:** Export native transparent PNGs [full-regression]
+- **wave3:** Integrate Rewards and Missions display into isolated branch
+- **develop:** Integrate v0.29.0 updates into Store readiness [full-regression]
+- **develop:** Sync Roadster 2 into Wave 3 Store [full-regression]
+- **store:** Generate true-alpha 3x Store PNGs from independent SVG masters
+- **store:** Publish verified transparent 3x Store PNG artwork
+- **wave3:** Integrate Store Readiness preview with Economy and Rewards
+- **develop:** Retain Garage VFX and latest 3x art, ring streaming and CI changes [full-regression]
+- **develop:** Retain Garage Flight framing, HUD localization and latest Garage fixes [full-regression]
+- **develop:** Preserve latest HUD and deterministic browser regression fixes [full-regression]
+- **develop:** Integrate Wave 3 VFX without losing UI fixes [full-regression]
+- **develop:** Preserve VFX flight framing with new Roadster wing [full-regression]
+- **wave3:** Integrate VFX & Skins into isolated Garage Wave 3 integration [full-regression]
+- **wave3:** Record Rewards develop back-merge 01637c6c (no tree change)
+- **wave3:** Integrate latest develop 17c94d74 into Wave 3 integration [full-regression]
+- Sync latest develop garage access contract into Coming Soon preview release [full-regression]
+- **wave3:** Integrate latest develop c259675a (teaser artwork + rules) [full-regression]
+- **wave3:** Integrate garage Wave 3 into develop [full-regression]
+- **deps:** Add `@gltf`-transform/cli 4.5.1
+- **deps:** Upgrade three to r186 and pin vue-tsc
+- **deps:** Upgrade three to 0.186.1 + `@types`/three 0.186.0
+- **3d-pipeline:** Integrate feature/3d-visual-fidelity-pipeline into develop [full-regression]
+- **develop:** Integrate Garage Wave 3 and Three.js r186 safely [full-regression]
+- **epic:** Integrate epic/develop e9e6dbca into playable-frostbite-canyon [full-regression]
+- **frostbite:** Integrate playable-frostbite-canyon into epic [full-regression]
+- **develop:** Sync develop e9e6dbca into playable-dune-tempest [full-regression]
+- **dune-tempest:** Integrate feature/playable-dune-tempest handoff docs into epic
+- **develop:** Sync develop e9e6dbca into playable-monsoon-ruins [full-regression]
+- **monsoon-ruins:** Integrate feature/playable-monsoon-ruins handoff docs into epic
+- **develop:** Sync develop e9e6dbca into playable-skyfall-archipelago [full-regression]
+- **skyfall-archipelago:** Integrate feature/playable-skyfall-archipelago handoff docs into epic
+- **develop:** Sync develop e9e6dbca into playable-stormline-megacity [full-regression]
+- **stormline-megacity:** Integrate feature/playable-stormline-megacity handoff docs into epic
+- **develop:** Sync develop e9e6dbca into playable-volcanic-crown [full-regression]
+- **volcanic-crown:** Integrate feature/playable-volcanic-crown handoff docs into epic
+- **epic:** Sync epic 9f6ba4be (Frostbite gate) into playable-stormline-megacity [full-regression]
+- **epic:** Sync epic 7a631c53 (runbook, Frostbite record) into playable-stormline-megacity [full-regression]
+- **stormline-megacity:** Integrate playable-stormline-megacity into epic [full-regression]
+- **develop:** Integrate latest develop into six-course epic [full-regression]
+- **playable:** Integrate feature/playable-frostbite-canyon into epic [full-regression]
+- **make:** Add deploy-netlify target with live check
+- Integrate develop into stormline
+- Sync latest develop into stormline
+- **playable:** Integrate feature/playable-stormline-megacity into epic [full-regression]
+- **epic:** Sync epic 9f6ba4be (Frostbite gate) into playable-volcanic-crown [full-regression]
+- **playable:** Integrate feature/playable-volcanic-crown into epic [full-regression]
+- **epic:** Sync epic 9f6ba4be (Frostbite gate) into playable-monsoon-ruins [full-regression]
+- **playable:** Integrate feature/playable-monsoon-ruins into epic [full-regression]
+- **epic:** Sync epic 9f6ba4be (Frostbite gate) into playable-dune-tempest [full-regression]
+- **playable:** Integrate feature/playable-dune-tempest into epic [full-regression]
+- **epic:** Sync epic 9f6ba4be (Frostbite gate) into playable-skyfall-archipelago [full-regression]
+- Integrate develop into skyfall
+- Sync latest develop into skyfall
+- **playable:** Integrate feature/playable-skyfall-archipelago into epic [full-regression]
+- **develop:** Sync develop after six playable source history merges [full-regression]
+- Bring latest develop into epic-home-art-dune-tempest (preserve Stage 1 track planning and art)
+- Bring latest develop into epic-home-art-skyfall-archipelago (preserve Stage 1 track planning and art)
+- Bring latest develop into epic-home-art-stormline-megacity (preserve Stage 1 track planning and art)
+- Bring latest develop into epic-home-art-volcanic-crown (preserve Stage 1 track planning and art)
+- Add Monsoon Ruins stage-one home teaser JPEG
+- Bring latest develop into epic-home-art-monsoon-ruins (preserve Stage 1 track planning and art)
+- **epic:** Sync six-course integration into Volcanic Crown work [full-regression]
+- **volcanic:** Integrate Volcanic Crown runtime without CI waiting [full-regression]
+- **epic:** Synchronize Monsoon with completed Volcanic source integration [full-regression]
+- **monsoon:** Integrate Monsoon Ruins race without awaiting CI [full-regression]
+- Synchronize develop into six-course epic [full-regression]
+- Sync latest six-course epic into lifecycle branch [full-regression]
+- Synchronize develop 27f2074f into six-course epic [full-regression]
+- **volcanic:** Bring Volcanic Crown rules and playable-list fixes into epic [full-regression]
+- Sync six-course epic (Volcanic+Monsoon+develop) into lifecycle branch [full-regression]
+- **develop:** Sync into track-lifecycle-sop [full-regression]
+- Integrate develop pre-push diagnostics into CourseGraph runtime [full-regression]
+- **art:** Directly replace existing 18 WebPs on Wave3 HUD repair branch
+- **lifecycle:** Integrate track lifecycle SOP into six-course epic [full-regression]
+- **upcoming-preview:** Readable Dune Tempest and Skyfall showcase cars [full-regression]
+- **develop:** Sync upstream into epic preserving TODO sections
+- **assets:** Reproducible Poly Haven CC0 source fetch for Task 5
+- **assets:** Baked KTX2 Coast asphalt PBR set (CC0 Asphalt 02) with manifest
+- **assets:** Per-asset ETC1S override for data maps in optimize-glb (coast-scenery)
+- **assets:** Coast close-scenery Blender master, build scripts and baked textures (CC0 Poly Haven scans)
+- Commit 39 original-art Garage animations
+- Commit 39 original-art Garage animations
+- Commit 39 original-art Garage animations
+- Commit 39 original-art Garage animations
+- **gifs:** Integrate develop into feature/garage-preview-animated-gifs [full-regression]
+- **gifs:** Integrate develop into feature/garage-preview-animated-gifs [full-regression]
+- **garage:** Add repo-native approved sprite-sheet GIF packager [full-regression]
+- **garage:** Stage source-faithful GIF animator batch 1/4
+- **garage:** Stage source-faithful GIF animator batch 2/4
+- **garage:** Stage source-faithful GIF animator batch 3/4
+- **garage:** Render 25 source-locked 20fps icon animations with strict review gate [full-regression]
+- Commit 25 original-art Garage animations
+- Commit 25 original-art Garage animations
+- **garage:** Push repaired flare and store GIF binaries directly
+- **garage:** Sync direct GIF repair byte sizes in manifest
+- **garage:** Directly push repaired thruster GIF frames
+- **garage:** Directly push repaired Nitro trail GIF frames
+- **garage:** Directly push repaired colored and pulse flare GIF frames
+- **garage:** Directly push remaining launch flare and ribbon GIF frames
+
+### 🚜 Refactor
+
+- Avoid empty image fetch and keep coming-soon route heading compact
+- Stay within source module size ratchets for Stage 1 integration [full-regression]
+- **audio:** Share user-activation listener helper
+- **dev-feature:** Testable fail-closed worktree access checks
+- **showcase:** Enforce shared six-course controls and Garage parity [full-regression]
+- **wave3:** Reuse the same safe 3x artwork and neon card widgets for gallery
+- **store:** Extract Store entry styles from oversized Garage panel [full-regression]
+- **wave3:** Mission center reads the shared Wave 3 rewards catalog [full-regression]
+- **home:** Place Coming Soon cards in existing track row without increasing intro height
+- **frostbite:** Reuse original Stage 2 home metadata without enabling runtime
+- **module-size:** Split oversized modules
+- **ui:** Default sign-in button to the google mark
+- **release:** Move 0.26-0.28 notes to archive
+- **world:** Move sign text helpers to sign-text.ts
+- **post:** Move the lens pass out of world.js (move-only)
+- **world:** Move the RoomEnvironment prefilter out of world.js (move-only)
+- **world:** Move the weather particle set out of world.js (move-only)
+- **world:** Move the section sign materials out of world.js (move-only)
+- **world:** Move classic sky dome, sun and sea into classic-backdrop.ts
+- **world:** Move classic sea lines and far mountains into classic-backdrop.ts
+- **world:** Move the landmark-bounds search into landmark-bounds.ts
+- **world:** Move the car contact shadow into contact-shadow.ts
+
+### 📚 Documentation
+
+- Record six planned multi-route long-form tracks and acceptance gates
+- Design and implementation roadmap for multi-route long courses
+- Design and implementation roadmap for multi-route long courses
+- Scope epic world expansion to five distinct tracks
+- Scope epic world expansion to five distinct tracks
+- Scope epic world expansion to five distinct tracks
+- Add open-route concept schematic for dune-tempest
+- Add open-route concept schematic for monsoon-ruins
+- Add open-route concept schematic for skyfall-archipelago
+- Add open-route concept schematic for volcanic-crown
+- Add open-route concept schematic for stormline-megacity
+- Index committed open-course maps and artwork provenance
+- Clarify point-to-point default, discuss lap variants and reference SVG art
+- Clarify point-to-point default, discuss lap variants and reference SVG art
+- Clarify point-to-point default, discuss lap variants and reference SVG art
+- Recommend five consistent point-to-point races, circuit as separate mode
+- Recommend five consistent point-to-point races, circuit as separate mode
+- Recommend five consistent point-to-point races, circuit as separate mode
+- Recommend five consistent point-to-point races, circuit as separate mode
+- Add two-view point-to-point visual concept storyboard for dune-tempest
+- Add two-view point-to-point visual concept storyboard for monsoon-ruins
+- Add two-view point-to-point visual concept storyboard for skyfall-archipelago
+- Add two-view point-to-point visual concept storyboard for volcanic-crown
+- Add two-view point-to-point visual concept storyboard for stormline-megacity
+- Lock five one-way course visuals to track-by-track reference and acceptance matrix
+- Add machine-readable manifest for five point-to-point concept references
+- Lock five point-to-point maps and link committed visual storyboards
+- Lock five point-to-point maps and link committed visual storyboards
+- Lock five point-to-point maps and link committed visual storyboards
+- Lock five point-to-point maps and link committed visual storyboards
+- Preserve checksums and future paths for twelve original AI PNG references
+- Link verified original-PNG checksum manifest from planning references
+- Link verified original-PNG checksum manifest from planning references
+- Link verified original-PNG checksum manifest from planning references
+- Add standalone dune-tempest ground-view concept preview
+- Add standalone dune-tempest aerial-view concept preview
+- Add standalone monsoon-ruins ground-view concept preview
+- Add standalone monsoon-ruins aerial-view concept preview
+- Add standalone skyfall-archipelago ground-view concept preview
+- Add standalone skyfall-archipelago aerial-view concept preview
+- Add standalone volcanic-crown ground-view concept preview
+- Add standalone volcanic-crown aerial-view concept preview
+- Add standalone stormline-megacity ground-view concept preview
+- Add standalone stormline-megacity aerial-view concept preview
+- Index and embed all ten independent ground/aerial concept SVGs
+- Bind per-track visual fidelity to all ten committed camera images
+- Map ten standalone concept images to five course camera references
+- Align new branch naming and ten ground/air visual references
+- Align new branch naming and ten ground/air visual references
+- Align new branch naming and ten ground/air visual references
+- Align new branch naming and ten ground/air visual references
+- Add stage two frostbite-canyon single-finish route schematic
+- Add stage two abyssal-ruins single-finish route schematic
+- Add stage two windspire-highlands single-finish route schematic
+- Add stage two crystal-stardust-valley single-finish route schematic
+- Add stage two chrono-rift single-finish route schematic
+- Add stage two five-track JPEG gallery and visual fidelity references
+- Add stage two five-track JPEG gallery and visual fidelity references
+- Add stage two five-track JPEG gallery and visual fidelity references
+- Specify five new stage two point-to-point courses and TDD implementation plan
+- Specify five new stage two point-to-point courses and TDD implementation plan
+- Record next five planned tracks, JPEG references and pending TDD milestones
+- Link committed stage one JPEG art and stage two five-track gallery
+- Add real stage one JPEG references to visual fidelity requirements
+- Mark stage one JPEG art committed and link Stage 2 manifest
+- Reconcile original PNG provenance and committed Stage 1/2 JPEG galleries
+- Reconcile original PNG provenance and committed Stage 1/2 JPEG galleries
+- Reconcile original PNG provenance and committed Stage 1/2 JPEG galleries
+- Add reproducible concept-to-WebGL visual acceptance gate for all 10 planned tracks
+- Enforce reproducible ground/aerial concept-to-WebGL acceptance for new tracks
+- Enforce reproducible ground/aerial concept-to-WebGL acceptance for new tracks
+- Enforce reproducible ground/aerial concept-to-WebGL acceptance for new tracks
+- Enforce reproducible ground/aerial concept-to-WebGL acceptance for new tracks
+- Enforce reproducible ground/aerial concept-to-WebGL acceptance for new tracks
+- Enforce reproducible ground/aerial concept-to-WebGL acceptance for new tracks
+- Enforce reproducible ground/aerial concept-to-WebGL acceptance for new tracks
+- Enforce reproducible ground/aerial concept-to-WebGL acceptance for new tracks
+- Link strict visual-acceptance gate from both stage design specs
+- Link strict visual-acceptance gate from both stage design specs
+- Five independent Stage 1 home artwork chat prompts with isolated ownership
+- Specify Stage 1 coming-soon cards, safe state, i18n CTA and parallel art ownership
+- Track five coming-soon home previews and independent art branches with open CI gates
+- Add six isolated GPT chat prompts and ownership for Stage 1 home teaser implementation
+- Split six-chat homepage work into art, UI TDD, preview QA and exact-HEAD CI gates
+- Link six-GPT parallel execution, shared UI owner and art branch boundaries
+- Link six-GPT parallel execution, shared UI owner and art branch boundaries
+- Link six-GPT parallel execution, shared UI owner and art branch boundaries
+- Correct home preview spec from JPEG overlay to animated 3D showroom
+- Rewrite all six GPT prompts for real animated per-map Three.js home scenes
+- Make real animated 3D Stage 1 homepage binding in CLAUDE.md
+- Prioritize animated Three.js homepage for five coming-soon tracks in TODO
+- Replace obsolete five JPEG-only art prompts with five Three.js scene tasks
+- Align track art and long-form spec with animated 3D homepage-first acceptance
+- Align track art and long-form spec with animated 3D homepage-first acceptance
+- Align track art and long-form spec with animated 3D homepage-first acceptance
+- Align track art and long-form spec with animated 3D homepage-first acceptance
+- Align track art and long-form spec with animated 3D homepage-first acceptance
+- Audit old art branch changes, preserve all user assets and resume safe 3D six-chat prompts
+- Make all six GPT prompts preserve previous JPEG/notes and read 3D spec from shared branch
+- Remove stale JPEG-only TODOs; keep user's prior art and prioritize live 3D scene work
+- **security:** Add release security checklist
+- **frostbite:** Capture two-reference visual and gameplay design
+- **frostbite:** Add detailed TDD implementation milestones
+- **frostbite:** Add full and short implementer prompts
+- **frostbite:** Record WebGL evidence and TODO gates [full-regression]
+- **unlocks:** Explain all Make variants and independent Coming Soon release policy
+- **merge:** Require independent preview locks before develop or release [full-regression]
+- **assets:** Align Frostbite no-car teaser, rules and rollback ledger with develop
+- **assets:** Enforce textless 568x205 track teaser artwork contract
+- **claude:** Forbid personal paths in committed files
+- **spec:** Define SDD and BDD for garage-economy-foundation
+- **plan:** Create Superpowers SDD-BDD-TDD plan for garage-economy-foundation
+- **prompt:** Add standalone GPT Wave 3 assignment for garage-economy-foundation
+- **wave:** Specify GPT-made assets and transparent-background policy for garage-economy-foundation
+- **plan:** Add conditional GPT asset generation and alpha QA task for garage-economy-foundation
+- **spec:** Clarify Wave 2-3 optional images, alpha channel and BDD asset fallback for garage-economy-foundation
+- **plan:** Record independent artwork status and deferred Wave prerequisites [skip ci]
+- **dispatch:** Hand off prebuilt artwork and defer runtime until dependency gates [skip ci]
+- **visual:** Map original reference art and require render fidelity signoff [skip ci]
+- **plan:** Require actual approved-art visual gate [skip ci]
+- **dispatch:** Require user-approved reference fidelity [skip ci]
+- **wave3:** Point Garage Economy Foundation at verified 59-image source library
+- **wave3:** Make 3x source archive discoverable from economy agent and dispatch entrypoints
+- **wave3:** Record v0.29.0 completion roadmap, TDD gates, and honest blockers
+- **economy:** Keep art acceptance open until visual and CI evidence [full-regression]
+- **spec:** Define SDD and BDD for garage-rewards-and-missions
+- **plan:** Create Superpowers SDD-BDD-TDD plan for garage-rewards-and-missions
+- **visual:** Add screen and asset design prompt for garage-rewards-and-missions
+- **plan:** Add visual art direction and responsive asset gate for garage-rewards-and-missions
+- **prompt:** Add standalone GPT Wave 3 assignment for garage-rewards-and-missions
+- **wave:** Specify GPT-made assets and transparent-background policy for garage-rewards-and-missions
+- **visual:** Add optional GPT image creation and alpha asset QA for garage-rewards-and-missions
+- **plan:** Add conditional GPT asset generation and alpha QA task for garage-rewards-and-missions
+- **spec:** Clarify Wave 2-3 optional images, alpha channel and BDD asset fallback for garage-rewards-and-missions
+- **plan:** Record independent artwork status and deferred Wave prerequisites [skip ci]
+- **dispatch:** Hand off prebuilt artwork and defer runtime until dependency gates [skip ci]
+- **visual:** Reference prebuilt SVG assets and avoid regeneration [skip ci]
+- **visual:** Map original reference art and require render fidelity signoff [skip ci]
+- **plan:** Require actual approved-art visual gate [skip ci]
+- **dispatch:** Require user-approved reference fidelity [skip ci]
+- **visual:** Require true reference assets before image generation [skip ci]
+- **assets:** Specify verified 3x art pack, 1x CSS sizing and pending import [skip ci]
+- **dispatch:** Require 3x raster to display at 1x CSS dimensions [skip ci]
+- **assets:** Commit exact 3x filenames, checksums and 1x import contract for garage-rewards-and-missions [skip ci]
+- **plan:** Link exact raster handoff and CSS sizes [skip ci]
+- **dispatch:** Point to exact 3x image manifest [skip ci]
+- **assets:** Use valid candidate key in integration example [skip ci]
+- **wave3:** Guide rewards and missions to 8 verified original 3x WebPs and 1x CSS
+- **wave3:** Update garage-rewards-and-missions raster handoff with verified 3x Git source
+- **wave3:** Make 3x source archive discoverable from rewards agent and dispatch entrypoints
+- **wave3:** Record all 8 verified 3x source images and non-entitlement UI integration
+- **store:** Map independent 3x PNG sources and honest no-commerce UI acceptance
+- **store:** Track pending PNG, real UI and exact-HEAD regression gates
+- **wave3:** Plan Go authoritative backend with no-regression and anti-cheat gates
+- **wave3:** Track deferred Go backend prerequisites, compatibility and anti-cheat in TODO
+- **assets:** Clarify vehicle-free teaser requirements and Monsoon replacement
+- Log wave 3 integration notes
+- **assets:** Record canonical no-car teaser SHAs and safe rollback steps
+- **assets:** Record five teaser image commits, blob SHAs and rollback sources
+- Record 3d pipeline audit
+- **3d:** Add reusable multi-device Phase 0 environment acceptance contract
+- **3d:** Link standalone cross-device Phase 0 acceptance
+- **3d:** Link standalone cross-device Phase 0 acceptance
+- **3d:** Link standalone cross-device Phase 0 acceptance
+- **3d:** Link standalone cross-device Phase 0 acceptance
+- **security:** Keep Phase 0 device audit local and name model after PASS
+- **security:** Keep device names and Phase 0 evidence off public GitHub
+- **security:** Keep device names and Phase 0 evidence off public GitHub
+- **security:** Keep device names and Phase 0 evidence off public GitHub
+- **security:** Keep device names and Phase 0 evidence off public GitHub
+- Redact local path in handoff
+- Align pinned blender mcp setup
+- Clarify phase zero acceptance scope
+- **todo:** Mark 3d pipeline phase 0 done
+- **3d-pipeline:** Make glTF Transform required
+- **claude:** Scope 3D tooling installs
+- Defer asset checks to pipeline phase
+- **3d-pipeline:** Split plan into per-task files
+- **3d-pipeline:** Split phase 0-1 by project/device
+- **dune:** Record course graph handoff and pending runtime gates [full-regression]
+- **dune:** Record blocked source full-CI merge and runtime acceptance gates
+- **assets:** Sync no-car teaser rollback ledger and scoped rules
+- **monsoon:** Document integrator interfaces and outstanding playable/visual gates
+- **monsoon:** Render backtick code references correctly
+- **monsoon:** Track implemented modules and unverified regression/visual gates [full-regression]
+- **monsoon:** Hand off edge IDs, gate crossing, collision and river visuals [full-regression]
+- **monsoon:** Record exact-HEAD CI failures, scoped repair and acceptance blockers
+- **assets:** Sync no-car teaser rollback ledger and scoped rules
+- **skyfall:** Hand off streamed scene and outstanding validation gates
+- **skyfall:** Record TDD and request exact-HEAD full regression [full-regression]
+- **skyfall:** Record map fixes and pending exact-HEAD acceptance [full-regression]
+- **assets:** Sync no-car teaser rollback ledger and scoped rules
+- **stormline:** Document integration contract and unverified QA gates
+- **stormline:** Update calibrated route length and outstanding time trial gate
+- Record Stormline chunk fixes and outstanding exact-HEAD acceptance [full-regression]
+- Record Stormline tunnel milestone and unverified acceptance [full-regression]
+- **assets:** Sync no-car teaser rollback ledger and scoped rules
+- **assets:** Sync no-car teaser rollback ledger and scoped rules
+- **todo:** Record Frostbite → epic integration SHAs, CI runs and acceptance
+- **six-course:** Add playable runbook with Option B decision for Dune/Skyfall
+- **six-course:** Point TODO at playable runbook
+- **3d-pipeline:** Tick verified Phase 1 items
+- **3d-pipeline:** Record Phase 1 CI SHA and run IDs
+- **3d-pipeline:** Tick verified Phase 1 D1/D2/D5/D6
+- **3d-pipeline:** Tick Phase 1 D8 owner screenshot review
+- **3d-pipeline:** Tick Phase 1 D9 owner phone run
+- **3d-pipeline:** Tick Phase 1 after full CI on 4b5843a9
+- **3d-pipeline:** Tick Phase 0 cross-device documentation box
+- **3d-pipeline:** Record Phase 1 CI run and device scope
+- **todo:** Record related browser spec results for minimap player marker
+- **todo:** Record edge-docked race HUD evidence
+- **readme:** Document ring-variety script and evidence
+- **rules:** Add ring-layout rule and TODO evidence
+- Document catch-up items in README and rule
+- **todo:** Record related browser spec results for minimap player marker
+- **readme:** Document rival balance harness
+- **todo:** Add ground and air charge pickup items
+- **readme:** Refresh screenshots for v0.30.0
+- **readme:** Align descriptions with current mechanics
+- **release:** Ask deploy target, Pages recommended
+- **todo:** Record ring collect sound evidence
+- **cloud:** Describe results cloud line and evidence
+- **todo:** Record catch-up branch review evidence before merge
+- **todo:** Record ci repair verification
+- **todo:** Record results cloud-sync verification evidence
+- **todo:** Record vehicle lighting balance evidence
+- **lifecycle:** Approve track lifecycle design (Coming Soon to release gates)
+- **lifecycle:** Add track lifecycle implementation plan
+- **3d-pipeline:** Tick Task 3 by-project items with Phase 2 evidence
+- **todo:** Record Phase 2 GLB pipeline evidence ledger
+- **3d-pipeline:** Add target-look concept board and reference it
+- **3d-pipeline:** Record KTX2 contract and roadster2 task evidence
+- **3d-pipeline:** Record roadster2 it6 acceptance
+- **3d-pipeline:** Record KTX2 texture compression and make verify on 2eb4c629
+- **3d-pipeline:** Record make verify on merge c2b1cd87
+- **3d-pipeline:** Record owner visual sign-off on roadster2 it6
+- **3d-pipeline:** Plan Phase 2b hero Roadster GLB on Home and in races
+- **3d-pipeline:** Split Phase 3 evidence item; record make verify and pending develop CI
+- **todo:** Record ring-variety WebGL screenshot review
+- Record Dune Tempest homepage art direction and generation blocker
+- **dune-tempest:** Preserve art provenance and describe live 3D scene handoff [full-regression]
+- **dune-tempest:** Align canyon roadbed and stone ring positions [full-regression]
+- **dune-tempest:** Document live sunset and haze motion [full-regression]
+- **skyfall:** Document live 3D scene handoff and visual acceptance gaps
+- Record Stormline Megacity stage-1 home art handoff and binary import blocker
+- Preserve Stormline art provenance and document live 3D handoff [full-regression]
+- Align Stormline road handoff with extended landing continuity [full-regression]
+- **volcanic-crown:** Record source visual anchors and pending WebGL gates
+- Record Monsoon Ruins home art composition and provenance
+- Preserve Monsoon JPEG provenance and document live 3D scene handoff
+- **six-course:** Record actual Stormline CI and remaining playable gates [full-regression]
+- **lifecycle:** Add SOP, scoped rule and six evidence records [full-regression]
+- **3d-pipeline:** Record Phase 2b evidence, tier metrics and Mac frame times
+- **3d-pipeline:** Phase 2b done; owner waived manual acceptance and CI wait
+- **release:** Draft upcoming what's new notes
+- **tutorial:** Document live cues and lesson timing
+- **todo:** Record tutorial guided timing evidence
+- **3d-pipeline:** Plan Phase 2c Garage equipment and VFX
+- **3d-pipeline:** Phase 2c evidence, owner review pending
+- **3d-pipeline:** Record Phase 2c re-run on 1efa389c
+- **3d-pipeline:** Close Phase 2c with owner waiver
+- **course-graph:** Design and plan for CourseGraph race runtime (Dune, then Skyfall)
+- **course-graph:** Record user decisions on Q1-Q9
+- **todo:** Record gap-margin and constant-mirror follow-ups
+- **todo:** Course-graph-runtime handoff state after Task 7
+- **course-runtime:** Ledger Task 14 changes and unresolved validation gates
+- **six-course:** Record develop sync, Volcanic/Monsoon fixes and lifecycle merge [full-regression]
+- **todo:** Record Dune/Skyfall preview clarity evidence [full-regression]
+- **epic:** Record upstream merge and showcase readability work with honest verification gates
+- **todo:** Record green exact-HEAD CI for ring-sfx fix
+- **3d-pipeline:** Adopt the concept board as target in spec/plan v2
+- **3d-pipeline:** Record Phase 2c owner marks, tail-light tuning and 2d gates
+- **3d-pipeline:** Owner accepts Phase 2 manual checks, defers default-on
+- **3d:** Task 5 owner decisions and Coast look brief
+- **3d:** Tick Task 5 Coast items that have evidence; split the partly-done ones
+- **3d:** Tick Task 5 lighting, wet road, Ultra and effects boxes with evidence
+- **3d:** Task 5 Roadster rain fix, one-Mac by-device tables and thermal summary; phone items stay open
+- **3d:** Record phase 7 owner decisions
+- **3d:** Expand coast scope to full-scene upgrade
+- **3d:** Coast full-scene gap list and owner decisions
+- Record Garage GIF acceptance gates [full-regression]
+- Record 39 verified source GIF exports and remaining CI/manual acceptance gates
+- Record real 39-icon art-direction RED/GREEN evidence [full-regression]
+- Record GIF Vite template fix and rerun full verification [full-regression]
+- Record GIF RED to GREEN evidence and trigger exact-HEAD [full-regression]
+- **garage:** Add gpt gif production brief [full-regression]
+- **art:** Establish source-locked animated image production rules [full-regression]
+- **art:** Link reusable animation production rule from CLAUDE.md [full-regression]
+- **art:** Reference actual Garage GPT GIF production brief
+- **art:** Document in-repository sprite-sheet packaging workflow [full-regression]
+- **garage:** Keep GIF generator until all 25 GPT GIFs land [full-regression]
+- **garage:** Record source-locked GIF visual QA blockers and CI evidence
+- **art:** Record original-style HUD repair evidence and pending device validation
+- **art:** Record RED/GREEN source preservation and image clarity limitations
+- Generalize changeable gameplay values
+- **todo:** Record real-iPhone landscape retest for the rail fix
+- **rules:** Add orientation-layout rule; move file-scoped guidance out of CLAUDE.md
+- **todo:** Record ring line groupSize follow-up evidence
+- **release:** Review 0.31.0 notes
+- **todo:** Drop uncommitted minimap notes
+
+### ⚡ Performance
+
+- **catch-up:** Cache length-scaled settings per race instead of every step
+- **course-runtime:** Add repeatable 60-Hz Coast vs Dune race-step benchmark [full-regression]
+- **home:** Reuse nearby 3D preview stages and commit swipes once
+
+### 🎨 Styling
+
+- Differentiate coming-soon teasers and keep localized start button width fixed
+- **home:** Keep release Coming Soon gallery compact and accessible on phones
+- **previews:** Retain existing home height and display whole cover images
+- **home:** Restore original Coming Soon card/minimap typography and responsive START CTA
+- **home:** Restore original landscape phone Coming Soon preview and CTA width
+- **frostbite:** Retain original Coming Soon CTA typography while preserving fixed button widths
+- **world:** Keep Endless frame predicate within existing module-size ceiling
+
+### 🧪 Testing
+
+- **red:** Define Stage 1 preview-only tracks and localized start CTA contract
+- Cover five teaser cards, keyboard guard, locales and fixed CTA widths
+- Keep last playable track centered when coming-soon cards follow
+- Validate Stage 1 coming-soon home UI [full-regression]
+- Stage 1 coming-soon homepage full regression [full-regression]
+- Cover preview exit via Event Lab and keyboard carousel [full-regression]
+- Define upcoming Three.js showcase lifecycle contract (RED)
+- Verify actual showroom road surface and instanced city; scope browser selector [full-regression]
+- Count playable and Stage 1 preview cards [full-regression]
+- **release-video:** Hero starts on first touch if refused
+- Cover home scroll transitions into Coming Soon scenes [red]
+- Assert canvas hit target for Stage 1 phone swipe [full-regression]
+- **upcoming:** Switch locale through the custom picker after develop hid #locale-select
+- **tracks:** Cover release fail-closed with stale unlocks and preview runtime
+- **unlocks:** Verify all Make entrypoints use one development-only policy
+- **dev-feature:** Verify alias and stale Coming Soon runtime rejection
+- **track-swipe:** Follow click-before-slide commit
+- **courses:** Use physical arc-length and ULP-tolerant bank checks [full-regression]
+- **garage:** RED guard Wave3 previews and approved public-trial VFX integration
+- **economy:** Align locked Garage read contract [full-regression]
+- **garage:** Select Store filter without matching preview cards [full-regression]
+- **wave3:** RED 8 original 3x garage-rewards-and-missions images need safe Garage UI
+- **art:** RED shared 3x cards need safe frames and caption separation at all viewports
+- **wave3:** RED read-only interactive mission/store catalog with bilingual 3x artwork
+- **wave3:** Exercise locale switch outside modal before reopening preview
+- **garage:** RED guard Wave3 previews and approved public-trial VFX integration
+- **wave3:** Specify verified settlement and safe retry boundary [full-regression]
+- **wave3:** Specify eight-car finish placement display badge [full-regression]
+- **wave3:** Require real Classic result to show localised podium display badge [full-regression]
+- **wave3:** Verify real 288px trophy renders at 48 CSS px across result devices [full-regression]
+- **rewards:** Match literal WebP extension in podium asset assertions
+- **wave3:** RED reproduce missing native transparent PNG art and real UI wiring
+- **wave3:** Cover mission PNG alpha, locale and missing-art fallback [full-regression]
+- **wave3:** RED assert 8 native PNGs appear on Garage, not only Gallery [full-regression]
+- **results:** Align full browser podium assertion with 3x RGBA PNG display [full-regression]
+- **wave3:** Fail-closed shop with bilingual preview-only labels [full-regression]
+- **wave3:** Require visible disabled Shop state on mobile and desktop [full-regression]
+- **wave3:** Await 3x icon decode and correct Store asset matcher [full-regression]
+- **store:** Distinguish six source cards from 3x entrance icon [full-regression]
+- **store:** Observe actual stale-build navigation without missed load event [full-regression]
+- **store:** Specify nontransactional catalog status contract [full-regression]
+- **store:** Make missing presentation behavior an assertion RED [full-regression]
+- **store:** Require six independent native-size transparent PNG icons
+- **store:** Decode all legal PNG filters before alpha audit
+- **store:** Validate isolated PNG primary art and fallback at three viewports
+- **store:** Cover browser catalog statuses, locale, nonpurchase, fallback and reduced motion
+- **store:** Expose direct accessible entry and safe catalog open behavior
+- **store:** Expose direct accessible entry and safe catalog open behavior
+- **store:** Correct PNG and WebP fallback browser assertions
+- **store:** Correct PNG and WebP fallback browser assertions
+- **store:** Preserve every decoded WebP pixel in isolated RGBA PNG export
+- **store:** Compare PNG versus WebP with proper URL extension regex
+- **store:** Require matching detail availability in English and zh-TW (RED)
+- **ci:** Restore Garage zoom, NITRO, endless and 3x artwork regression coverage [full-regression]
+- **nitro:** Accept earned partial charge from seeded rings before full HUD boundary [full-regression]
+- **nitro:** Collect a deterministic live first ring group before HUD assertions [full-regression]
+- **ci:** Align reviewed CSS contract with desktop header clearance [full-regression]
+- **garage-vfx:** Correct native PNG badge assertions [full-regression]
+- **garage:** Reproduce missing Airflow PNGs and preview state [full-regression]
+- **garage:** Require live skin artwork in Garage Studio [full-regression]
+- **results:** Poll trophy size after the podium reveal animation [full-regression]
+- **garage:** Measure pose row after the Garage dialog slide-in finishes [full-regression]
+- **previews:** Assert six Coming Soon cards stay unenterable across release and unlocked modes
+- **dev-feature:** Verify worktree-ready unlock guard for Coming Soon
+- **release:** Fail closed direct START and restart even in Daily mode
+- **home:** Keep last playable track centred with Coming Soon cards after it
+- **previews:** Require original selectable cards, route thumbnails and dynamic CTA before port
+- **showcase:** Preserve five original 3D scenes and use safe Frostbite JPEG fallback
+- **browser:** Verify all six original selectable Coming Soon cards, minimaps, CTA and i18n
+- **swipe:** Retain original preview card navigation contract for all-unreleased tracks
+- **home:** Update track focus regression for selectable Coming Soon cards
+- **red:** Require Frostbite Canyon to mount native 3D home scenery
+- **browser:** Restore intact original preview interactions and cover six 3D scenes incl Frostbite P02
+- **red:** Port Frostbite original P01/P02 live WebGL, aurora, mobile and airflow browser gates
+- **red:** Guard selected Coming Soon against direct race entry and share Frostbite source metadata
+- **previews:** Expect frostbite-canyon hero preview
+- **3d-pipeline:** Add r180 baseline capture and RED three-version contract
+- **garage:** Wait for lazy badge art to decode before asserting
+- **3d-pipeline:** Strengthen r180 baseline capture
+- **dune:** Check branches hairpins hazards and route geometry
+- **dune:** Validate directional checkpoint crossings [full-regression]
+- **dune:** Export verified map-owned runtime contracts [full-regression]
+- **monsoon:** Define route graph, contact and collision contracts (RED)
+- **monsoon:** Require distinct hairpins instead of repeated samples of one bend
+- **monsoon:** Verify 3D landmarks, animated falls, branch meshes, reduced motion and disposal (RED)
+- **monsoon:** Require visible ford water and support piers (RED)
+- **monsoon:** Require constant-speed arc-length sampling for each real fork (RED)
+- **monsoon:** Guard collisions between disconnected route edges
+- **monsoon:** Reject reordered or replayed finish gates (RED)
+- **monsoon:** Require signed world-space gates and diagonal swept obstacle hits (RED)
+- **monsoon:** Enforce compatibility for every authored CourseGraph edge ID (RED)
+- **monsoon:** Require sculpted guardian facial anchors and running river (RED)
+- **monsoon:** Reproduce swept obstacle and ford contact mismatch
+- **skyfall:** Reject out-of-range and invalid road contact [full-regression]
+- **skyfall:** Specify chunk streaming and deterministic waterfalls
+- **skyfall:** Require one-chunk split and merge streaming prefetch
+- **skyfall:** Require supported landing guides and chunk GPU cleanup
+- **skyfall:** Import authored road-contact predicate for landing checks
+- **skyfall:** Reject sharp air-landing junction headings
+- **skyfall:** Island terraces must stay below the drivable roadway
+- **skyfall:** Require visible non-contact checkpoint world markers
+- **skyfall:** Fix browser swipe hit target and locale picker regression [full-regression]
+- **skyfall:** Specify canonical CourseGraph adapter RED
+- **stormline:** Cover graph, forks, hairpins, obstacles and weather tiers
+- **stormline:** Assert genuine 3D chunks and GPU resource cleanup
+- **stormline:** Distinguish traversable puddles from solid obstacles
+- **stormline:** Tighten approximately 14km course length acceptance
+- Reproduce Stormline streamed neon pop at chunk boundaries [full-regression]
+- Reject empty Stormline stream chunk mesh allocation
+- Require real 3D tunnel envelope in Stormline streamed chunks
+- **stormline:** RED streaming tower and elevated support stability
+- **stormline:** RED missing curved road arc-length tail
+- **volcanic:** Reproduce endpoint tunneling in hazard sweeps [red]
+- **volcanic:** Reproduce lateral swept collision tunnelling
+- **volcanic:** Reject noncanonical mode for drivable vent shortcut
+- **volcanic:** Require visible flight landing pad edge lights
+- **volcanic:** Reproduce slope-space hazard contact and warning tilt
+- **volcanic:** Reproduce Low-detail hairpin mesh vs physics clearance
+- **volcanic:** Reproduce abrupt flight-to-road landing direction
+- **volcanic:** Require direct canonical graph handoff
+- **volcanic:** Define shared-AI obstacle warning and safe corridors
+- **volcanic:** Reproduce missing lava UV coordinates and chunk seam
+- **volcanic:** Require physically oriented checkpoint and finish metadata
+- **volcanic:** Reproduce inactive vent rendered as collision hazard
+- **volcanic:** Expose quality lighting overwritten by update
+- **volcanic:** Reproduce zero-width AI passing corridor
+- **volcanic:** Require identical shared and local CourseGraph frames
+- **showcase:** Unit-test the camera pose bearings, orbit rate and radius
+- **ci:** Drop duplicate showcase camera browser variants, keep one framing keeper
+- **ci:** Check tour frame brightness in phase5, limit world-tour course loop to classic tracks
+- **ci:** One 320x740 Event Lab Tab trap walk; drop tablet and duplicate focus-ring zoom rows
+- **ci:** Move 3x HUD WebP dimensions to a Node header test; drop vacuous decor test
+- **ci:** Release highlight order lives in the Node test
+- **ci:** Drop Airflow PNG browser test duplicated by garage-airflow-png.test.js
+- **ci:** Fold two art-source gallery tests into the wave3 keepers
+- **ci:** Move Rewards alpha-margin check to rewards-visual-contract.test.js
+- **ci:** Drop duplicate zh/phone hazard variants, shrink themes to one case per pool, settle-once to classic+endless
+- **minimap:** Fold route outline and race minimap shape into phase4-first-five
+- **rear-light:** Move LED behaviour to unit tests, keep a slim wiring check
+- **ci:** Merge FPS browser tests, drop device-quality decisions covered by unit tests
+- **ci:** Move NEXT and personal-medal settlement into Node, keep one viewport per result-actions/medal browser test
+- **ci:** Drop duplicate launch-ramp fly-and-land, circuit desktop, magnet and cup-heat variants
+- **ring-rows:** Assert drawn rings headless and retire the ring-rows browser spec
+- **risk-lines:** Pin the Hard riskRules values in Node, drop desktop-en browser variant
+- **ci:** Seed the 5 km sprint finish and drop duplicate touch/mount tests
+- **i18n:** Keep one zh-TW system-language smoke, detection lives in i18n.test.js
+- **ci:** Move the main CSS contract hash into a Node test
+- **handoff:** Point the layout-seed comment at the Node ring-rows test
+- **rings:** Guard authored ring and reward sequences
+- **rings:** Let browser specs follow rings into any lane
+- **tutorial:** Make keyboard drift and barrel roll robust to runner lag
+- **callouts:** Reproduce lost airborne roll announcement [full-regression]
+- Exercise rank changes against live-race fixture [full-regression]
+- Wait for tutorial celebration before asserting re-armed ready state [full-regression]
+- Use a guaranteed loaded avatar to verify cloud image and fallback states [full-regression]
+- Reproduce Frostbite AI ranking across difficulty and frame rates [red]
+- Keep Frostbite diagnostics in its classic-only race mode [red]
+- Use live-race fixture for deterministic HUD position animation [full-regression]
+- Wait for tutorial celebration before asserting re-armed ready state [full-regression]
+- Collect Frostbite race telemetry for failing pace regression
+- Restore Frostbite grid-spacing regression (RED)
+- Isolate throttle cap from fuel regeneration
+- **ui:** Poll the fold hinge check while results slide in
+- **callouts:** Reproduce lost airborne roll announcement [full-regression]
+- **ci:** Stabilize motion and tutorial checks
+- **ui:** Cover results sign-in in landscape fit spec
+- **catch-up:** RED rings-only and NITRO-majority regressions
+- **catch-up:** Document weighted rings; run full regression [full-regression]
+- Reproduce NITRO brake interruption and trick callout starvation
+- Assert touch NITRO behavior through public HUD [full-regression]
+- **catch-up:** RED course-length-aware limits and future track regression
+- **tutorial:** Stop the touch NITRO spec racing the self-passing LAND lesson
+- **ai:** Capture first-seed Frostbite pace telemetry during red regression
+- Wait for tutorial celebration before asserting re-armed ready state [full-regression]
+- **ai:** Reproduce Frostbite long-course rival grid imbalance
+- Exercise rank changes against live-race fixture [full-regression]
+- Wait for tutorial celebration before asserting re-armed ready state [full-regression]
+- **callouts:** Reproduce lost airborne roll announcement [full-regression]
+- **ci:** Stabilize motion and tutorial checks
+- **motion:** Poll position animations after the reduced-motion switch
+- Capture Frostbite rival balance regression diagnostics
+- Calibrate Frostbite inherited AI strategies before repair
+- Distinguish throttle cap from regenerated BOOST in rival pace checks
+- Measure Frostbite rival grid spread across 24 deterministic layouts
+- **callouts:** Reproduce lost airborne roll announcement [full-regression]
+- Run interactive tutorials at low render load to keep real input/physics responsive [full-regression]
+- **3d-pipeline:** ?model=probe racing, /skyline-rush/ base and 404 lifecycle checks
+- **tutorial:** Send time-critical practice key edges on their engine cue
+- **tutorial:** Restore driftCharged for the touch practice drift
+- **3d-pipeline:** Reproduce tracked Blender autosave regression [full-regression]
+- **dune-tempest:** Define live 3D environment contract [full-regression]
+- **dune-tempest:** Require continuous grounded roadbed through ravine edge [full-regression]
+- **dune-tempest:** Require slow haze and sunset updates with reduced-motion freeze [full-regression]
+- **skyfall:** Define real-time archipelago scene contracts (RED)
+- **skyfall:** Assert waterfall droplets stay beneath their source islands (RED)
+- Specify Stormline dynamic Three.js environment contracts [full-regression]
+- Assert Stormline repeated timestamps are deterministic [full-regression]
+- **upcoming:** Detect Stormline instanced meshes by duck type, not cross-module instanceof
+- **volcanic-crown:** Specify live 3D terrain lava and lifecycle [full-regression]
+- **volcanic-crown:** Require elevated shortcut, basalt shoulders and erupting summit
+- **upcoming:** Check Volcanic Crown road under the origin by raycast, not edge vertices
+- Specify live Monsoon Ruins environment contract (RED)
+- Cover overcast horizon and instanced resource release
+- **cloud:** Wait for post-sign-in sync before injecting avatar [full-regression]
+- **volcanic:** Specify arc-length, fork, unlock and WebGL behavior (RED) [full-regression]
+- **monsoon:** Specify measured route, three forks, dev unlock and WebGL (RED) [full-regression]
+- **lifecycle:** Wire lifecycle gates into npm tests and align race spec filenames [full-regression]
+- **lifecycle:** Validate Coming Soon WebGL views across six courses [full-regression]
+- **3d-pipeline:** GLB Roadster matrix on every track and the six-course carousel
+- **ring-sfx:** Harden analyser measurement
+- **ring-sfx:** Measure ring chimes on a cue-only tap
+- **tutorial:** Give keyboard full practice its budget
+- **tutorial:** Bound roll takeoff wait with hud evidence
+- **volcanic:** Include Volcanic Crown in playable list
+- **lifecycle:** Scale the Coming Soon views budget for CI runners [full-regression]
+- **garage-model:** Catalog-driven equipment spec for GLB car
+- **audit:** Opt-in Garage equipment audit captures
+- **garage-model:** Poll the equipped showcase paint instead of a reverting preview
+- **home:** Landscape footer test follows top-bar version
+- **course-runtime:** Characterize legacy race replays before graph wiring
+- **ai:** Hold fuel empty when asserting unboosted rival caps
+- **ai:** Expose Frostbite boosted-rival pace compression (RED)
+- **replay:** Re-record legacy replay fixture after the develop merge
+- **course-runtime:** Cover physical branch minimap markers [full-regression]
+- **course-runtime:** Require streaming CourseGraph scene lifecycle [full-regression]
+- **course-runtime:** Pin CourseGraph leaderboard order and physical gaps [full-regression]
+- **course-runtime:** Assert physical graph world pose, camera and finish [full-regression]
+- **dune-tempest:** Require real race palette on CourseGraph [full-regression]
+- **dune-tempest:** Desktop-phone WebGL real checkpoint and flight coverage [full-regression]
+- **dune-tempest:** Align dev-only readiness guards and browser shard estimates [full-regression]
+- **course-runtime:** Pin p95 benchmark arithmetic and unknown gates [full-regression]
+- **skyfall:** Assert Q9 junction continuity and canonical wheel contact [full-regression]
+- **skyfall:** Demand streamed physical CourseGraph scenery [full-regression]
+- **skyfall:** Require dev-only access while production stays Coming Soon [full-regression]
+- **skyfall:** Require dev-only ground/flight WebGL START-to-FINISH and release lock [full-regression]
+- **skyfall:** Budget new browser paths in CI shards [full-regression]
+- Fix Skyfall worker-scoped Playwright fixture placement
+- **coursegraph:** Expose missing Skyfall palette and invalid World Tour scene dispatch
+- **ci:** Make lost-position transition deterministic and align Studio sheen contract
+- **ci:** Diagnose module-size violations before push with file-specific failures [full-regression]
+- **cloud:** Inject the avatar only after the post-sign-in sync settles
+- **browser:** Wait out rival ring takes and CPU-only perf stalls [full-regression]
+- **art:** Add reproducible native-3x HUD source renderer and alpha safety checks
+- **art:** Verify complete alpha bounds of all 18 HUD icons on 3 viewports [full-regression]
+- **monsoon:** Inspect lazy race chunks after entering racing phase [full-regression]
+- **showcase:** Require visible, readable four-car Dune and Skyfall frames [full-regression]
+- **showcase:** Pin Dune and Skyfall foreground visibility without losing landmarks [full-regression]
+- **ci:** Enforce complete Skyfall palette and align runtime catalog
+- **browser:** Keep ring-sfx clear of the pack and wall clock
+- **coast:** Gated capture of the five section 8.1 Coast board panels
+- **perf:** Gated per-tier Coast frame-cost benchmark, GPU-synced below vsync
+- **ultra:** Gated High vs Ultra race capture on every selectable map
+- **ultra:** Per-map p50/p95 frame cost in the gated High vs Ultra capture
+- **perf:** Gated sustained Coast rain FPS run with thermal state, guard that audit specs stay gated
+- **coast:** Optional MODEL param in the gated Coast look capture (GLB Roadster panels)
+- **perf:** Sustained FPS run keeps the car on the Coast course for the whole window
+- Specify looping animated Garage art and reduced-motion fallback (RED)
+- Cover Garage and Studio GIF overlays in browser (RED)
+- Permit GIF highlights while retaining original paint artwork checks
+- Verify original WebP source without regex escaping [full-regression]
+- Require 39 original-source transparent GIFs and six per-asset motion templates
+- Verify Garage and Studio source-art GIF display, motion and failure fallback
+- Preserve original 3x fallback assertions after direct GIF integration
+- Keep real car shader sweep while rejecting removed sparkle GIF overlays
+- Render original Garage WebP/SVG artwork into verified animated GIF previews
+- Assert per-art motion, stationary body, and source-alpha fidelity [red]
+- Run true-source motion tests before generation (RED baseline)
+- Require 39 individually art-directed motion recipes, no global image warp
+- Sample the actual stationary car, not the animated Vortex trail below it
+- Prevent import.meta parsing errors in Vue animated GIF bindings
+- Audit original Store WebP fidelity while verifying displayed animated GIF
+- Simulate both animated GIF and original badge artwork failures
+- Preserve native badge alpha audit while expecting animated GIF artwork
+- Assert animated airflow while preserving original SVG source identity
+- RED physical GIF motion checks for energy silhouettes and hinged gift lids
+- Verify all 39 real Garage animated art mappings on Home and Studio [full-regression]
+- **garage:** Cover frame-sheet GIF contract and rejection paths [full-regression]
+- **ci:** Enforce complete Skyfall palette and align runtime catalog
+- **ci:** Give ?look=3d countdown an explicit budget
+- **monsoon:** Skip race spec until course is playable
+- **art:** Guard 18 HUD canvases against rejected redesign
+- **art:** Keep HUD art regression gate dependency-free
+- **art:** RED compares preserved-source pixels, not just transparent margins
+- **art:** Enforce original-style alpha margins by artwork aspect ratio
+- **art:** Run phone and desktop HUD gallery visual regression on original artwork
+- **art:** Retain HUD gallery browser screenshots as downloadable CI artifacts
+- **art:** Reproduce broken right bezel and transparent badge face [RED]
+- **art:** Reveal dark cutout pixels in original HUD badge faces [RED]
+- **art:** Diagnose actual badge enamel alpha and color profiles
+- **art:** Compare badge opacity against original translucent enamel
+- **art:** Prove original gradients continue across restored HUD gaps [RED]
+- **art:** Forbid bright upper-bezel reflection in repaired tooltip face [RED]
+- **release-video:** Wait for recorded hand-over frames before asserting [full-regression]
+- **browser:** Wait out rival ring takes and CPU-only perf stalls [full-regression]
+- **ci:** Stabilize route catalog and Frostbite fall checks [full-regression]
+- **ci:** Validate six dev-only courses across all ordinary modes
+- **elimination:** Characterize shared Endless item layout and intentional replay change
+- **ci:** Cover classic and upcoming track maps separately [full-regression]
+- **i18n:** Cover localization of all upcoming courses
+- Deterministically verify Frostbite Rift fall on slow CI runners
+
+### ⚙️ Miscellaneous Tasks
+
+- Re-run complete regression after cancelled workflow [full-regression]
+- **store:** Render and verify native-size standalone PNGs [render-store-png]
+- **assets:** Stage one-time vehicle-removal preview for review
+- **assets:** Retain exact source images alongside inpainting previews
+- **assets:** Test scene-preserving LaMa removal for track cars
+- **assets:** Commit inspected source-faithful vehicle removals
+- **ci:** Request full Coming Soon and Frostbite showroom regression [full-regression]
+- **security:** Ignore per-device 3D environment audits
+- Ignore local logs and event streams
+- Redact local path in diagnostic log
+- Configure project blender toolchain
+- **mcp:** Pin mcp-for-blender to 2.2.7
+- Delete redundant images
+- **gitignore:** Ignore Python __pycache__
+- **3d-pipeline:** Use 68675409 as r180 baseline ref
+- Refresh shard durations from run 42182362109
+- **scripts:** Add rival balance harness
+- Run Stormline exact-HEAD full regression [full-regression]
+- **catch-up:** Validate synchronized HEAD [full-regression]
+- Add car assets
+- **make:** Pass via=wifi through phone-diag
+- Verify browser, World Tour and quality gates at exact HEAD [full-regression]
+- Generate and commit real Garage art GIFs only on authorized feature branch
+- Rerun real-source motion rendering whenever its acceptance tests change
+- **garage:** Remove unused staged animation payload 1
+- **garage:** Remove unused staged animation payload 2
+- **garage:** Remove unused staged animation payload 3
+- Verify browser, World Tour and quality gates at exact HEAD [full-regression]
+- **art:** Run one-time source-locked HUD crop repair
+- **art:** Run source-locked one-time HUD completeness repair
+- **art:** Rerun source-locked repair after strengthening RED test
+- **art:** Execute final original-border completion and remove one-shot workflow
+- **art:** Verify seamlessly reconstructed original HUD artwork
+- **art:** Inpaint original bevel borders without ghost fragments
+- **art:** Verify source-style repairs and overwrite originals on branch
+- **art:** Validate repaired pixels after regenerating from pinned originals
+- **art:** Check exact repaired WebPs before cross-viewport screenshot capture
+- Verify browser, World Tour and quality gates at exact HEAD [full-regression]
+- **mcp:** Add project-scoped firebase MCP server
+- **diag:** Log home Start geometry in viewport events
+
+### ◀️ Revert
+
+- **assets:** Restore original four track teaser artworks
 ## [0.30.0] - 2026-11-04
 
 ### 🚀 Features
