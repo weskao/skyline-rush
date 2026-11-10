@@ -44,3 +44,24 @@ test('make build 3d=1 is a real non-deploying build target and preserves the 3D 
   assert.match(makefile, /(?:^|\n)\s+\$\(NPM\) run build/);
   assert.match(makefile, /export VITE_PICKUP_3D\s*:?=\s*1/);
 });
+
+test('3D pickup emissions pulse in the shared PBR material without changing shader programs', async () => {
+  const { createPickupMaterial, pulsePickupMaterial } = await import('../src/pickup-art.js');
+  for (const tier of ['cell', 'can', 'tank', 'overcharge']) {
+    const material = createPickupMaterial(tier);
+    try {
+      const original = material.uuid, values = [];
+      for (const time of [0, 1, 2]) {
+        pulsePickupMaterial(material, tier, time, false);
+        values.push(material.emissiveIntensity);
+        assert.equal(material.uuid, original, 'avoid reconstructing GPU material each frame');
+        assert.ok(material.emissiveIntensity > .2 && material.emissiveIntensity < .7);
+      }
+      assert.equal(new Set(values).size, 3, tier + ' uses visibly animated luminous energy');
+      pulsePickupMaterial(material, tier, 100, true);
+      const reduced = material.emissiveIntensity;
+      pulsePickupMaterial(material, tier, 150, true);
+      assert.equal(material.emissiveIntensity, reduced, 'reduced motion freezes the glow');
+    } finally { material.dispose(); }
+  }
+});
