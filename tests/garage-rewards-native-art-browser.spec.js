@@ -63,5 +63,7 @@ test('Garage trophy display preserves Traditional Chinese and missing-image fall
   const trophy = page.locator('.garage-mission-board [data-trophy-id="trophy-gold"]');
   await expect(trophy).toContainText('金級獎盃');
   await expect(trophy).toContainText('僅供展示');
+  // The image is lazy-loaded: scroll it into view so the aborted request fires.
+  await trophy.scrollIntoViewIfNeeded();
   await expect(trophy.locator('.artwork-fallback')).toBeVisible();
 });
