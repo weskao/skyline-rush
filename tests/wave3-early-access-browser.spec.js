@@ -110,23 +110,108 @@ test('starting actual Free Drive cannot immediately credit a demo race reward', 
   }, demoKey), { timeout: ciTimeout(8000) }).toBe(20);
 });
 
-test.fixme('FINAL GATE: actual completed race -> live mission -> claim -> Store -> Collection -> equip -> reload -> reset', async ({ page }) => {
-  // Prompt A must first replace the static "Not tracking" board with real
-  // progress and claim controls. This scenario must use real race simulation:
-  // never call port.settleCompletion() or mutate window.gameplay as a shortcut.
-  await openGarage(page);
-  await expect(page.locator('[data-mission-id="mission-race"]')).not.toHaveAttribute('data-mission-state', 'unavailable');
-  await page.locator('#garage-close').click();
+test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persistence -> reset', async ({ page }) => {
+  // Drive the real simulation; never alter window.gameplay, timers, or settlement state.
+  test.setTimeout(ciTimeout(240000));
+  await page.goto('/');
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+  await page.locator('button[data-race-mode="time"]').click();
   await page.locator('#start-button').click();
-  await expect(page.locator('#race-status')).toHaveText('RACING');
-  // Drive to a genuine finish and assert the result receipt exactly once.
-  // On activation, finish this script with mission claim, wallet delta,
-  // offline redemption, collection equip, persistent reload and scoped reset.
+  await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(20000) });
+  await page.keyboard.down('w');
+  try {
+    await expect(page.locator('#race-status')).toHaveText('FINISHED', { timeout: ciTimeout(200000) });
+  } finally { await page.keyboard.up('w'); }
+  await expect(page.locator('#result-stats')).toBeVisible();
+  await expect(page.locator('.wave3-demo-results__points')).toContainText(/20 Demo points/);
+  const first = await page.evaluate(key => JSON.parse(localStorage.getItem(key) || 'null'), demoKey);
+  expect(first?.snapshot?.demoPoints).toBe(40);
+  expect(first.checkpoint.settledCompletions).toHaveLength(1);
+  expect(first.snapshot.missions['mission-time:daily'].progress).toBe(1);
+  const history = await page.evaluate(() => localStorage.getItem('skyline-rush-history'));
+  expect(history).toBeTruthy();
+  await test.info().attach('wave3-real-race-result.png', {
+    body: await page.screenshot(), contentType: 'image/png',
+  });
+
+  await page.reload();
+  await page.locator('#garage-button').click();
+  const board = page.locator('.garage-mission-board');
+  await expect(board).toHaveAttribute('data-rewards-authority', 'local-demo');
+  const timeMission = board.locator('[data-mission-id="mission-time:daily"]');
+  await expect(timeMission).toHaveAttribute('data-mission-state', 'claimable');
+  await timeMission.getByRole('button', { name: 'Claim demo reward' }).click();
+  await expect(timeMission).toHaveAttribute('data-mission-state', 'claimed');
+  await expect(board).toContainText('Demo progress');
+  const store = await openStore(page);
+  await expect(store.locator('.demo-wallet strong')).toHaveText('50');
+  await store.locator('[data-demo-id="thruster-ion"]').click();
+  await store.getByRole('button', { name: 'Demo redeem' }).click();
+  await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
+  await expect(store.locator('.demo-wallet strong')).toHaveText('25');
+  await store.getByRole('button', { name: 'Demo Collection' }).click();
+  const collection = page.locator('[data-wave3-demo-collection]');
+  await expect(collection).toBeVisible();
+  await collection.locator('[data-demo-id="thruster-ion"]').click();
+  await collection.getByRole('button', { name: 'Equip demo preview' }).click();
+  await expect(collection.locator('[data-demo-id="thruster-ion"]')).toContainText('Demo equipped');
+  await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-equipped-thruster', 'thruster-ion');
+  await test.info().attach('wave3-collection-equipped.png', {
+    body: await page.screenshot(), contentType: 'image/png',
+  });
+  await collection.getByRole('button', { name: 'Return to racing' }).click();
+  await page.locator('#start-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
+
+  await page.reload();
+  await page.locator('#garage-button').click();
+  await page.locator('[data-wave3-open-store]').click();
+  await expect(page.locator('[data-wave3-demo-store] .demo-wallet strong')).toHaveText('25');
+  await expect(page.locator('[data-wave3-demo-store] [data-demo-id="thruster-ion"]')).toHaveAttribute('data-demo-status', 'demo-unlocked');
+  const beforeResetHistory = await page.evaluate(() => localStorage.getItem('skyline-rush-history'));
+  await page.getByRole('button', { name: 'Back to demo menu' }).click();
+  await page.locator('[data-wave3-reset]').click();
+  await page.locator('[data-wave3-open-store]').click();
+  await expect(page.locator('[data-wave3-demo-store] .demo-wallet strong')).toHaveText('20');
+  await expect(page.locator('[data-wave3-demo-store] [data-demo-id="thruster-ion"]')).not.toHaveAttribute('data-demo-status', 'demo-unlocked');
+  expect(await page.evaluate(() => localStorage.getItem('skyline-rush-history'))).toBe(beforeResetHistory);
+  expect(beforeResetHistory).toBe(history);
+  expect(await page.evaluate(key => localStorage.getItem(key), demoKey)).toBeNull();
 });
 
-test.fixme('FINAL GATE: guest/account isolation, duplicate claim/settlement, existing PAINTS and Cloud Save preservation', async ({ page }) => {
-  // Account-switch and real progress assertions require the live mission
-  // implementation, a completed race, and a verified way back to Garage.
+test('real Garage cannot grant paid entitlements or stale demo claims through repeated visits', async ({ page }) => {
   await openGarage(page);
-  await expect(page.locator('.garage-mission-board')).not.toHaveAttribute('data-rewards-authority', 'not-connected');
+  await expect(page.locator('.garage-mission-board')).toHaveAttribute('data-rewards-authority', 'local-demo');
+  await expect(page.locator('.garage-mission-board [data-mission-id="mission-race:daily"]'))
+    .toHaveAttribute('data-mission-state', 'not-started');
+  await expect(page.locator('.garage-mission-board').getByRole('button', { name: /Claim demo reward/ })).toHaveCount(0);
+  await expect(page.locator('[data-store-purchase-disabled]')).toBeDisabled();
+  await expect(page.locator('[data-garage-store-entry]')).toContainText(/Coming Soon/);
+  const store = await openStore(page);
+  await expect(store).toHaveAttribute('data-authority', 'local-demo');
+  await store.locator('[data-demo-id="thruster-ion"]').click();
+  await store.getByRole('button', { name: 'Demo redeem' }).click();
+  await expect(store.locator('.demo-wallet strong')).toHaveText('20');
+  const before = await page.evaluate(() => Object.keys(localStorage));
+  await page.reload();
+  await page.locator('#garage-button').click();
+  await expect(page.locator('.garage-mission-board [data-mission-id="mission-race:daily"]'))
+    .toHaveAttribute('data-mission-state', 'not-started');
+  const after = await page.evaluate(() => Object.keys(localStorage));
+  expect(after.filter(x => /paid|real-wallet|entitlement/i.test(x))).toEqual(before.filter(x => /paid|real-wallet|entitlement/i.test(x)));
+});
+
+test('portrait phone exposes keyboard-accessible real mission progress and demo navigation', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openGarage(page);
+  const board = page.locator('.garage-mission-board');
+  await expect(board).toHaveAttribute('data-mission-state', 'local-demo');
+  await expect(board.locator('progress')).toHaveCount(12);
+  await expect(board.locator('[data-mission-id="mission-race:daily"] progress')).toHaveAttribute('aria-label', /0 \/ 1/);
+  await page.locator('[data-wave3-open-store]').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-wave3-demo-store]')).toBeVisible();
+  await test.info().attach('wave3-portrait-390x844.png', {
+    body: await page.screenshot(), contentType: 'image/png',
+  });
 });
