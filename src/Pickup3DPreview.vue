@@ -28,7 +28,8 @@ onMounted(() => {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.4;
     // Exactly the same THREE geometries and PBR materials as in effects.js on the road.
-    geometry = createPickupGeometry(props.tier);
+    const model = createPickupGeometry(props.tier);
+    geometry = model;
     material = createPickupMaterial(props.tier);
     const scene = new THREE.Scene();
     const mesh = new THREE.Mesh(geometry, material);
@@ -39,8 +40,8 @@ onMounted(() => {
     const edge = new THREE.DirectionalLight(0x84d9ff, 2.6);
     edge.position.set(4, 1, -4); scene.add(edge);
     scene.add(new THREE.HemisphereLight(0xd7efff, 0x26314c, 2.2));
-    geometry.computeBoundingSphere();
-    const extent = Math.max(.95, geometry.boundingSphere!.radius * PICKUP_SIZES[props.tier] * 1.15);
+    model.computeBoundingSphere();
+    const extent = Math.max(.95, model.boundingSphere!.radius * PICKUP_SIZES[props.tier] * 1.15);
     const camera = new THREE.OrthographicCamera(-extent, extent, extent, -extent, .1, 50);
     camera.position.set(4, 2.7, 5.5).normalize().multiplyScalar(8);
     camera.lookAt(0, 0, 0);
