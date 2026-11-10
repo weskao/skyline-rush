@@ -84,3 +84,51 @@ VITE_PICKUP_3D=1 npm run build
 npx playwright test tests/pickup-3d-browser.spec.js
 make verify 3d=1
 ```
+
+## Tiered collection VFX — gameplay effect parity
+
+The shared `src/pickup-collect-vfx.js` module is created only with `VITE_PICKUP_3D=1`,
+on the shared `createEffects` path for every track. Existing default-mode
+debris and the existing NITRO HUD refill/pulse are preserved.
+
+| Tier | Shockwaves | Peak GPU-instanced shards | Burst details |
+| --- | ---: | ---: | --- |
+| `cell` | 1 | 18 | Cyan electrical flash, small fragments |
+| `can` | 2 | 24 | Orange plasma pulse and warm-energy scatter |
+| `tank` | 2 | 30 | Golden crown flash, vertical energy beam |
+| `overcharge` | 3 | 42 | Prism-color facets, rainbow orbital waves and rare-item beam |
+
+The sequence is roughly 0–0.84 seconds: immediate emissive flash, spreading
+3D shockwaves and orbiting shards, then controlled decay. Every variant uses a
+single radial glow texture, three reusable geometries and **at most two active
+effect slots per tier** (eight concurrently across four tiers). Matrices are
+updated in pooled `InstancedMesh` buffers. Pipeline warmup gets one parked
+shard instance per tier; no new shaders, lights, materials or geometry are
+constructed by collection events.
+
+`effects.js` uses the pickup's current `downUntil` token as the take
+generation so respawning and collecting the same object can trigger a new
+effect without duplicate per-frame bursts. It uses the existing
+`rivalCues` to draw a quieter event for AI pickups only. The origin follows
+`worldPoint` with original item metadata on branching CourseGraph tracks,
+or the normal track-relative distance projection otherwise.
+
+Medium reduces shards to 65% and rings to two; Low uses 26% and one
+ring; reduced motion uses a restrained static flash/ring, no energy beam or
+shard spray. The default (`3d=0`) keeps the lightweight legacy effect.
+
+### Actual visual and performance verification
+
+Opt-in CI runs `tests/pickup-3d-collection-browser.spec.js` with
+`VITE_PICKUP_3D=1` and uploads screenshots as
+`pickup-3d-visual-evidence`, in addition to existing guide/race WebGL shots.
+The smoke test sets collected items in the browser's **test-only** race state,
+then verifies that the actual scene renders tier-specific effects, including
+a reduced-motion test. It does not ship any test hooks into the site.
+
+The exact-head full regression includes all regular browser shards and World
+Tour shards, which may run substantially longer than the focused VFX gate.
+Performance p50/p95 on High/Medium/Low and physical-device art direction
+approval require separate recorded measurements; do not claim them without
+the actual evidence.
+
