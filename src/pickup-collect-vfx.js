@@ -8,6 +8,10 @@ export const PICKUP_COLLECTION_STYLES = Object.freeze({
   tank: Object.freeze({ color: 0xffd34e, rings: 2, particles: 30, beam: true, rainbow: false, life: .72 }),
   overcharge: Object.freeze({ color: 0xef81ff, rings: 3, particles: 42, beam: true, rainbow: true, life: .84 }),
 });
+// Rival cues omit CourseGraph edge identifiers; retain the original authored item if present.
+export const pickupCueSource = (cue, pickups) =>
+  pickups.find(item => item.tier === cue.item && item.distance === cue.distance && item.x === cue.x) ?? cue;
+
 const TIERS = Object.keys(PICKUP_COLLECTION_STYLES);
 const SLOTS_PER_TIER = 2, MAX_PARTICLES = 42, MAX_RINGS = 3;
 const PRISM = [0x6ceaff, 0xf88aff, 0xffd35c, 0x91a5ff, 0x7cffcb, 0xff7398];
