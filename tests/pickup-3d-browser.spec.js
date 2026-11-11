@@ -1,5 +1,6 @@
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
+import { ciTimeout } from './helpers/ci.js';
 
 test.use({ guideSeen: false });
 
@@ -15,22 +16,13 @@ test('3d=1 previews the same four physical collectibles used by the shared in-ra
   for (const stage of await stages.all()) {
     await stage.scrollIntoViewIfNeeded();
     await expect(stage).toHaveAttribute('data-motion', 'running');
-    // The source PNG/WebP assets may be delivered separately: until installed the exact original
-    // WebGL model is the fallback. Both choices must be real, visible content.
-    await expect.poll(async () => stage.evaluate(el => {
-      const sprite = el.querySelector('img.pickup-animation');
-      const canvas = el.querySelector('canvas.pickup-3d-canvas');
-      return !!((sprite?.complete && sprite.naturalWidth > 0) || (canvas?.width > 0 && canvas?.height > 0));
-    })).toBe(true);
-  }
-  const fallbackCanvases = page.locator('#guide-items-panel .pickup-3d-canvas');
-  if (await fallbackCanvases.count()) {
-    await expect(fallbackCanvases).toHaveCount(4);
-    await fallbackCanvases.first().scrollIntoViewIfNeeded();
-    expect(await fallbackCanvases.first().evaluate(canvas => {
-      const gl = canvas.getContext('webgl2');
-      return !!gl && !gl.isContextLost() && canvas.width > 0 && canvas.height > 0;
-    })).toBe(true);
+    const tier = await stage.getAttribute('data-tier');
+    const sprite = stage.locator('img.pickup-animation');
+    await expect(sprite).toHaveAttribute('src', new RegExp('/animated/' + tier + '\\.webp$'));
+    await expect(sprite).toHaveClass(/is-ready/, { timeout: ciTimeout(8000) });
+    expect(await sprite.evaluate(img => img.complete && img.naturalWidth === 192 && img.naturalHeight === 192))
+      .toBe(true);
+    await expect(stage.locator('.pickup-3d-canvas')).toHaveCount(0);
   }
   await test.info().attach('real-3d-pickups-guide.png', {
     body: await page.locator('#guide-items-panel .collectibles-section').nth(1).screenshot(),
@@ -68,6 +60,8 @@ test('the 3D guide respects reduced motion when 3d=1 is active', async ({ gamepl
   await stage.scrollIntoViewIfNeeded();
   await expect(stage).toHaveAttribute('data-motion', 'paused');
   const sprite = stage.locator('.pickup-animation');
-  if (await sprite.count()) await expect(sprite).toHaveAttribute('src', /-poster\.webp$/);
-  else await expect(stage.locator('.pickup-3d-canvas')).toHaveAttribute('data-motion', 'paused');
+  await expect(sprite).toHaveAttribute('src', /-poster\.webp$/);
+  await expect(sprite).toHaveClass(/is-ready/, { timeout: ciTimeout(8000) });
+  expect(await sprite.evaluate(img => img.complete && img.naturalWidth === 192 && img.naturalHeight === 192))
+    .toBe(true);
 });

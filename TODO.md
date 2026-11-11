@@ -4,9 +4,10 @@
 - [x] Convert to 16-frame transparent animated WebP and separate reduced-motion poster assets (85 ms/frame)
 - [x] Add `PickupAnimatedPreview.vue` for guide playback, WebGL fallback and reduced-motion behavior
 - [x] Keep actual 3D roadside models and 3D pickup collection VFX unchanged
-- [ ] Transfer all eight binary WebP assets to `public/feature-assets/road-pickups/animated/` on the GitHub branch and verify real GitHub file hashes
-- [ ] Verify the guide displays the actual animated WebP in Playwright, rather than the missing-file WebGL/SVG fallback
-- [ ] Confirm latest complete CI (all browser and World Tour shards) is GREEN after binary assets are committed
+- [x] Commit all four original RGBA spritesheet PNGs to `docs/designs/road-pickups/ai-sprite-sources/`
+- [x] Commit all eight binary WebP assets to `public/feature-assets/road-pickups/animated/` on GitHub and verify all original Git blob SHAs
+- [ ] Confirm Playwright loads all four genuine animated WebPs and reduced-motion poster (test now strictly requires real image content)
+- [ ] Confirm latest complete CI (all browser and World Tour shards) is GREEN after the final asset and test commit
 
 ## 2026-11-11 — Premium 3D pickup collection VFX (`feature/pickup-3d-artwork-ui`)
 

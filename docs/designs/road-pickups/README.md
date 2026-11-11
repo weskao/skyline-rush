@@ -173,11 +173,12 @@ Asset integrity: each `*.webp` must contain exactly 16 frames; each
 Do not replace these with CSS scaling of a single image or regenerate them
 from the lower-detail SVGs. No additional JavaScript dependency is needed.
 
-**If the WebP files have not yet been committed to this branch**, the guide
-automatically falls back to the prior real-time WebGL model in `3d=1`,
-and to the existing SVG in the lightweight build. Do not call the
-new animated artwork fully shipped until all eight WebP files are actually
-present on GitHub and their browser tests load them successfully.
+**All eight WebP assets are now committed on this branch**, including four
+16-frame animated sequences and four reduced-motion posters. The guide loads
+the authored images in both default and `3d=1` builds. The prior real-time
+WebGL model and original SVG remain error fallbacks, not the intended
+presentation. The 3D opt-in browser smoke now requires the real WebP images
+to load, rather than accepting those fallbacks as a passed artwork test.
 
 WebP source archive:
 `skyline-pickup-sprite-assets.zip` from the corresponding ChatGPT delivery.
@@ -186,10 +187,11 @@ Extract it at the repository root, preserving
 run `npm run typecheck`, `npm test`, `VITE_PICKUP_3D=1 npx playwright
 test tests/pickup-3d-browser.spec.js`, and the full exact-head CI.
 
-The source archive also includes the unmodified 1254 × 1254 original generated
-AI PNG image sheets at `docs/designs/road-pickups/ai-sprite-sources/`:
+The four 1254 × 1254 AI-generated source image sheets are now committed
+under `docs/designs/road-pickups/ai-sprite-sources/`:
 `cell-sheet.png`, `can-sheet.png`, `tank-sheet.png`, and
 `overcharge-sheet.png`. These PNGs are for archival/editing only and must
-not be loaded during racing or guide rendering. They are included in the
-delivered ZIP but are not claimed to be committed until the files are
-actually visible in the remote Git tree.
+not be loaded during racing or guide rendering. All four source PNGs are visible in the remote Git tree. The
+`overcharge-sheet.png` PNG was losslessly recompressed during upload,
+without changing the pixels or alpha channel; other source images retain
+their original binary content.

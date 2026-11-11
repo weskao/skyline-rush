@@ -13,13 +13,9 @@ const expected = Object.freeze({
 const sha = buffer => createHash('sha256').update(buffer).digest('hex');
 const path = (tier, poster = false) => new URL(tier + (poster ? '-poster' : '') + '.webp', base);
 
-test('GPT sprite bundle is complete, not a partially uploaded or broken collection', t => {
+test('GPT sprite bundle is complete, not a partially uploaded or broken collection', () => {
   const tiers = Object.keys(expected);
   const missing = tiers.flatMap(tier => [path(tier), path(tier, true)].filter(url => !existsSync(url)).map(url => url.pathname));
-  if (missing.length === 8) {
-    t.skip('The original binary WebP bundle has not been uploaded yet; the game intentionally uses real-time 3D/SVG fallback.');
-    return;
-  }
   assert.deepEqual(missing, [], 'all eight WebP files must be installed as one coherent set');
   for (const tier of tiers) {
     for (const poster of [false, true]) {
@@ -33,4 +29,17 @@ test('GPT sprite bundle is complete, not a partially uploaded or broken collecti
       }
     }
   }
+});
+
+test('all four original spritesheets remain source-editable RGBA PNGs with 4x4 cells', () => {
+  const pngSignature = '89504e470d0a1a0a';
+  const pngs = Object.keys(expected).map(tier =>
+    readFileSync(new URL('../docs/designs/road-pickups/ai-sprite-sources/' + tier + '-sheet.png', import.meta.url)));
+  for (const png of pngs) {
+    assert.equal(png.subarray(0, 8).toString('hex'), pngSignature);
+    assert.equal(png.readUInt32BE(16), 1254);
+    assert.equal(png.readUInt32BE(20), 1254);
+    assert.equal(png[25], 6, 'source art must preserve RGBA alpha');
+  }
+  assert.equal(new Set(pngs.map(sha)).size, 4, 'different pickup identities require distinct source drawings');
 });
