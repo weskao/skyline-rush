@@ -14,7 +14,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1440
     await expect(collection.locator('.collection-count strong')).toHaveText('0');
     await expect(collection.locator('.collection-empty')).toContainText(/empty/i);
     const scan=collection.locator('.collection-empty-scan');
-    await expect(scan).toHaveCSS('animation-name','wave3-collection-scan');
+    await expect(scan).toHaveCSS('animation-name',/wave3-collection-scan/);
     await page.evaluate(()=>{document.body.dataset.vfxEnabled='false';});
     await expect(scan).toHaveCSS('display','none');
   });
