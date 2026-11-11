@@ -800,7 +800,6 @@ body.layout-editing #touch-controls { display: grid; }
 .layout-editing .telemetry { opacity: .35; pointer-events: none; }
 .layout-editing .aero-tools { visibility: hidden; }
 .nitro-hud { margin-top: 10px; font-size: 10px; letter-spacing: .3px; color: #f2d39e; }
-.nitro-hud > img[data-wave3-hud-art] { display: inline-block; width: 24px; height: 24px; margin-right: 5px; object-fit: contain; vertical-align: middle; }
 #nitro-status { white-space: nowrap; }
 .nitro-meter { display: flex; gap: 4px; margin-top: 5px; }
 .nitro-segment { flex: 1; height: 7px; overflow: hidden; border: 1px solid #ae946f; border-radius: 8px; background: #233748; }
@@ -2268,3 +2267,6 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 /* Keep the device notice nonmodal without modifying the byte-locked CSS prefix. */
 .performance-notice { pointer-events: none; }
 .performance-notice button { pointer-events: auto; }
+
+/* Wave 3 NITRO artwork: appended after the byte-locked main CSS contract. */
+.nitro-hud > img[data-wave3-hud-art] { display: inline-block; width: 24px; height: 24px; margin-right: 5px; object-fit: contain; vertical-align: middle; }
