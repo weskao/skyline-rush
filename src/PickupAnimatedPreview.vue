@@ -32,7 +32,7 @@ onBeforeUnmount(() => motion?.removeEventListener('change', handleMotion));
 </script>
 
 <template>
-  <div class="pickup-animation-stage" :data-tier="tier" :data-motion="reduced || failed ? 'paused' : 'running'">
+  <div class="pickup-animation-stage" :data-tier="tier" :data-motion="reduced ? 'paused' : 'running'">
     <template v-if="!failed">
       <img :key="imageSource" :src="imageSource" :alt="''"
         class="pickup-animation" :class="{ 'is-ready': loaded }"
