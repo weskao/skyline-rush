@@ -68,6 +68,6 @@ test('the 3D guide respects reduced motion when 3d=1 is active', async ({ gamepl
   await stage.scrollIntoViewIfNeeded();
   await expect(stage).toHaveAttribute('data-motion', 'paused');
   const sprite = stage.locator('.pickup-animation');
-  if (await sprite.count()) await expect(sprite).toHaveAttribute('src', /-poster\\.webp$/);
+  if (await sprite.count()) await expect(sprite).toHaveAttribute('src', /-poster\.webp$/);
   else await expect(stage.locator('.pickup-3d-canvas')).toHaveAttribute('data-motion', 'paused');
 });
