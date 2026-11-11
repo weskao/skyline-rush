@@ -1,3 +1,13 @@
+## 2026-11-11 — AI 16-frame animated pickup sprites (guide only)
+
+- [x] Generate four original 4 × 4 frame animation sheets for cell, can, tank and overcharge
+- [x] Convert to 16-frame transparent animated WebP and separate reduced-motion poster assets (85 ms/frame)
+- [x] Add `PickupAnimatedPreview.vue` for guide playback, WebGL fallback and reduced-motion behavior
+- [x] Keep actual 3D roadside models and 3D pickup collection VFX unchanged
+- [ ] Transfer all eight binary WebP assets to `public/feature-assets/road-pickups/animated/` on the GitHub branch and verify real GitHub file hashes
+- [ ] Verify the guide displays the actual animated WebP in Playwright, rather than the missing-file WebGL/SVG fallback
+- [ ] Confirm latest complete CI (all browser and World Tour shards) is GREEN after binary assets are committed
+
 ## 2026-11-11 — Premium 3D pickup collection VFX (`feature/pickup-3d-artwork-ui`)
 
 - [x] Four tier-specific player pickup animations (flash, ring waves, GPU-instanced energy shards, and rare-item beams)
