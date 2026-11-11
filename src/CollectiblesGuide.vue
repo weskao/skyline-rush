@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { COLLECTIBLES_GUIDE_COPY } from './collectibles-guide-copy.ts';
 import './pickup-guide-art.css';
-import Pickup3DPreview from './Pickup3DPreview.vue';
-import { PICKUP_3D_ENABLED } from './pickup-3d-config.js';
-import { guideView } from './guide-view-state.ts';
-const pickup3DEnabled = PICKUP_3D_ENABLED;
-
-const pickupArt = (tier: string) => `${import.meta.env.BASE_URL}feature-assets/road-pickups/${tier}.svg`;
+import PickupAnimatedPreview from './PickupAnimatedPreview.vue';
 const rings = [
   { key: 'charge', color: 'cyan', icon: 'charge' },
   { key: 'nitro', color: 'gold', icon: 'nitro' },
@@ -73,8 +68,7 @@ const powers = [
       <div class="collectibles-grid">
         <article v-for="pickup in pickups" :key="pickup.key" class="collectible-card pickup-card" :class="`card-${pickup.color}`">
           <div class="pickup-showcase" aria-hidden="true">
-            <Pickup3DPreview v-if="pickup3DEnabled && guideView.selectedDevice === 'items'" :tier="pickup.key" />
-            <img v-else class="pickup-art" :src="pickupArt(pickup.key)" alt="" width="110" height="110" decoding="async" />
+            <PickupAnimatedPreview :tier="pickup.key" />
           </div>
           <div class="card-info">
             <header class="card-head">
