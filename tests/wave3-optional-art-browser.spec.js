@@ -27,7 +27,10 @@ test('A-05 fallback preserves empty-copy and motion accessibility',async({page})
   await page.locator('[data-wave3-open-store]').click();
   await page.getByRole('button',{name:'Demo Collection'}).click();
   const collection=page.locator('[data-wave3-demo-collection]');
-  await expect(collection.locator('.collection-empty-art img')).toHaveAttribute('src',/demo-collection-empty@3x\.png$/);
+  // A-05 intentionally ships only WebP: a failed image must keep readable copy, not request a deleted PNG.
+  await expect(collection.locator('.collection-empty-art img')).toHaveCount(0);
+  await expect(collection.locator('.collection-empty-art .artwork-fallback')).toBeVisible();
+  await expect(collection.locator('.collection-empty-art .artwork-fallback')).toHaveAttribute('role', 'img');
   await expect(collection.locator('.collection-empty-scan')).toHaveCSS('animation-name','none');
   await expect(collection.locator('.collection-empty')).toContainText(/empty/i);
 });
