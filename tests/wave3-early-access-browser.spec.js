@@ -126,6 +126,10 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await expect(page.locator('#result-stats')).toBeVisible();
   await expect(page.locator('.wave3-demo-results__points')).toContainText(/20 Demo points/);
   await expect(page.locator('.wave3-demo-results__mark img')).toHaveAttribute('src', /demo-points@3x\.webp$/);
+  const banner = page.locator('.wave3-demo-results__banner img');
+  await expect(banner).toHaveAttribute('src', /demo-results-banner@3x\.webp$/);
+  await expect(banner).toHaveJSProperty('naturalWidth', 432);
+  await expect(banner).toHaveJSProperty('naturalHeight', 156);
   const first = await page.evaluate(key => JSON.parse(localStorage.getItem(key) || 'null'), demoKey);
   expect(first?.snapshot?.demoPoints).toBe(40);
   expect(first.checkpoint.settledCompletions).toHaveLength(1);
