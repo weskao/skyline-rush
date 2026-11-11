@@ -1,0 +1,28 @@
+name: Wave3 A05 A06 PNG Export (temporary)
+on:
+  push:
+    branches: [feature/wave3-wallet-ui-polish]
+    paths: [.github/workflows/wave3-artwork-png-export.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Convert committed artwork and emit recoverable PNG pixels
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in demo-collection-empty demo-results-banner; do
+            src="public/feature-assets/wave3-demo/raster/${name}@3x.webp"
+            target="/tmp/${name}.png"
+            ffmpeg -hide_banner -loglevel error -i "$src" -pix_fmt rgba -y "$target"
+            python3 - "$target" "$name" <<'PY'
+          import base64, pathlib, sys, textwrap
+          payload = base64.b64encode(pathlib.Path(sys.argv[1]).read_bytes()).decode()
+          print("@@WAVE3_PNG_BEGIN_" + sys.argv[2] + "@@")
+          print("\n".join(textwrap.wrap(payload, 400)))
+          print("@@WAVE3_PNG_END_" + sys.argv[2] + "@@")
+          PY
+          done
