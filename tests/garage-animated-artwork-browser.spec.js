@@ -95,3 +95,24 @@ test('25 part-motion cards map to their own GIFs; 14 sweep cards share one CSS s
   await expect(page.locator('#garage-preview #world')).toBeVisible();
   await readCards();
 });
+
+test('VFX Off and Low use the static original art; returning to High resumes only the GIF', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const skin = page.locator('[data-skin="thruster-basic"]');
+  const icon = skin.locator('.garage-vfx-art img');
+  await icon.scrollIntoViewIfNeeded();
+  const owned = await skin.getAttribute('data-owned');
+  await expect(icon).toHaveAttribute('data-animation-active', 'true');
+  await page.evaluate(() => { document.body.dataset.vfxEnabled = 'false'; });
+  await expect(icon).toHaveAttribute('data-animation-active', 'false');
+  await expect(icon).toHaveAttribute('src', /raster\/thruster-basic@3x\.webp$/);
+  await page.evaluate(() => {
+    document.body.dataset.vfxEnabled = 'true';
+    document.body.dataset.vfxQuality = 'low';
+  });
+  await expect(icon).toHaveAttribute('data-animation-active', 'false');
+  await page.evaluate(() => { document.body.dataset.vfxQuality = 'high'; });
+  await expect(icon).toHaveAttribute('data-animation-active', 'true');
+  await expect(skin).toHaveAttribute('data-owned', owned ?? 'false');
+});

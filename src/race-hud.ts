@@ -71,8 +71,9 @@ export function createRaceHud(options: HudOptions) {
   const calloutReports = [$('#maneuver-report'), ui['skill-report']!, $('#action-report')];
   const nitroHud = document.createElement('div');
   nitroHud.className = 'nitro-hud';
-  nitroHud.innerHTML = `<span id="nitro-status">${t('hud.nitroCount', { n: 0 })}</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="${t('hud.nitroAria')}" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
+  nitroHud.innerHTML = `<img data-wave3-hud-art="hud-nitro" src="${import.meta.env.BASE_URL}feature-assets/mobile-controls-hud/raster/hud-nitro@3x.webp" alt="" decoding="async"><span id="nitro-status">${t('hud.nitroCount', { n: 0 })}</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="${t('hud.nitroAria')}" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
   $('.fuel-stat').append(nitroHud);
+  nitroHud.querySelector('img')?.addEventListener('error', () => nitroHud.querySelector('img')?.remove(), { once: true });
   // Include the dynamically inserted NITRO status in the initial collision geometry.
   const feedbackPlacement = createRoadSafeFeedback(eventCallout, ui['driving-message']!, $<HTMLElement>('#impact-report'), $<HTMLElement>('.mode-indicator'));
   const nitroSegments = [...nitroHud.querySelectorAll<HTMLElement>('.nitro-segment')];

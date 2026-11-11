@@ -93,3 +93,23 @@ test('HUD art remains uncropped at alpha-pixel level and is visually reviewable 
     await test.info().attach(name, { path: screenshot, contentType: 'image/png' });
   }
 });
+
+test('existing NITRO HUD artwork renders over the real meter without changing BOOST controls', async ({ page }) => {
+  await page.goto('/');
+  const icon = page.locator('.nitro-hud [data-wave3-hud-art="hud-nitro"]');
+  await expect(icon).toHaveAttribute('src', /mobile-controls-hud\/raster\/hud-nitro@3x\.webp$/);
+  await expect(icon).toHaveJSProperty('naturalWidth', 216);
+  await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuemax', '3');
+  // The settings preview also uses .touch-boost; verify the playable control separately.
+  await expect(page.locator('#touch-controls button.touch-boost > svg')).toHaveCount(1);
+  await expect(page.locator('#controls-panel .controls-preview-keys .touch-boost > svg')).toHaveCount(1);
+  await expect(page.locator('#touch-controls button.touch-boost')).toHaveAttribute('data-control', 'boost');
+});
+
+test('if the NITRO source fails the engine meter and translated state remain usable', async ({ page }) => {
+  await page.route('**/mobile-controls-hud/raster/hud-nitro@3x.webp', route => route.abort());
+  await page.goto('/');
+  await expect(page.locator('.nitro-hud [data-wave3-hud-art="hud-nitro"]')).toHaveCount(0);
+  await expect(page.locator('#nitro-status')).not.toBeEmpty();
+  await expect(page.locator('#nitro-meter')).toHaveAttribute('role', 'meter');
+});
