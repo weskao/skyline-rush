@@ -9,8 +9,8 @@ test('collectibles guide mounts authored sequential-image preview for all four t
   const preview = read('src/PickupAnimatedPreview.vue');
   assert.match(guide, /PickupAnimatedPreview/);
   assert.match(guide, /<PickupAnimatedPreview[^>]+:tier="pickup.key"/);
-  assert.match(preview, /road-pickups\/animated\/\$\{props\.tier\}\.webp/);
-  assert.match(preview, /road-pickups\/animated\/\$\{props\.tier\}-poster\.webp/);
+  assert.match(preview, /animated\/\$\{props\.tier\}\.webp/);
+  assert.match(preview, /animated\/\$\{props\.tier\}-poster\.webp/);
   assert.match(preview, /prefers-reduced-motion/);
   assert.match(preview, /\@error="failSprite"/);
   assert.match(preview, /Pickup3DPreview/, 'missing sprites fall back to the existing 3D model, not a broken image');
