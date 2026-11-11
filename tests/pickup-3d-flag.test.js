@@ -22,8 +22,9 @@ test('3D mode reuses one model and material definition for road objects and live
   const preview = file('src/Pickup3DPreview.vue');
   assert.match(effects, /createPickupGeometries\(/);
   assert.match(effects, /createPickupMaterials\(/);
-  assert.match(guide, /Pickup3DPreview/);
-  assert.match(guide, /pickup3DEnabled\s*&&\s*guideView\.selectedDevice\s*===\s*'items'/);
+  assert.match(guide, /PickupAnimatedPreview/);
+  const animatedPreview = file('src/PickupAnimatedPreview.vue');
+  assert.match(animatedPreview, /Pickup3DPreview/, 'original real-time 3D preview remains the asset fallback');
   assert.match(preview, /createPickupGeometry\(/);
   assert.match(preview, /createPickupMaterial\(/);
   assert.match(preview, /dispose\(/);
