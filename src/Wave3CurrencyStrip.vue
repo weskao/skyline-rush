@@ -79,7 +79,7 @@ const sparkleArt = `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/
 .wallet-quantity strong { font:800 clamp(15px,1.5vw,21px)/1.1 system-ui,sans-serif;
   font-variant-numeric:tabular-nums;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;color:#fff1be; }
 .wallet-currency[data-available="false"] strong { color:#99a8ba; }
-.wallet-quantity small { font-size:9px;line-height:1.25;color:#c4d9e4; }
+.wallet-quantity small { font-size:10px;line-height:1.25;color:#c4d9e4; }
 .wallet-credit-value { animation:wallet-credit-glow .42s ease-out; }
 @keyframes wallet-credit-glow { 0%{transform:scale(1.13);filter:brightness(1.6)}
   100%{transform:scale(1);filter:brightness(1)} }
