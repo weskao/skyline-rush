@@ -16,7 +16,8 @@ async function checkImage(image, nativePx, cssPx) {
   await expect(image).toHaveJSProperty('naturalWidth', nativePx);
   await expect(image).toHaveJSProperty('naturalHeight', nativePx);
   const size = await image.evaluate(async el => {
-    await el.decode();
+    // Native dimensions are already awaited above. decode() here races the
+    // IntersectionObserver replacing still artwork with the animated GIF.
     const rect = el.getBoundingClientRect(), style = getComputedStyle(el);
     const url = new URL(el.currentSrc);
     const base = new URL('feature-assets/', location.href).pathname;
