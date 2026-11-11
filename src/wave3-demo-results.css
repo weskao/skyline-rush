@@ -63,3 +63,29 @@ body:not([data-phase="finished"]) .wave3-demo-results { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .wave3-demo-results, .wave3-demo-results * { animation: none !important; transition: none !important; }
 }
+
+
+/* A-06 illustrated reward crest. Decoration never overlays actionable result controls. */
+.wave3-demo-results__banner { position: relative; width: 100%; height: 72px; margin: 0 0 3px;
+  overflow: hidden; pointer-events: none; }
+.wave3-demo-results__banner[hidden] { display: none; }
+.wave3-demo-results__banner img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.wave3-demo-results__banner::after { content: ''; position: absolute; inset: 0; width: 36%; pointer-events: none;
+  transform: translateX(-130%) skewX(-20deg);
+  background: linear-gradient(90deg, transparent, #cfffff08 25%, #e4ffff85 50%, #ffffff08 75%, transparent);
+  mix-blend-mode: screen; animation: wave3-results-sheen 4.6s ease-in-out infinite; }
+@keyframes wave3-results-sheen {
+  0%, 20% { transform: translateX(-130%) skewX(-20deg); opacity: 0; }
+  25% { opacity: .85; }
+  65% { transform: translateX(360%) skewX(-20deg); opacity: .75; }
+  68%, 100% { transform: translateX(360%) skewX(-20deg); opacity: 0; }
+}
+body[data-vfx-enabled="false"] .wave3-demo-results__banner::after,
+body[data-vfx-quality="low"] .wave3-demo-results__banner::after,
+body.vfx-comfort .wave3-demo-results__banner::after { display: none; }
+@media (max-height: 480px) and (orientation: landscape) {
+  .wave3-demo-results__banner { height: 24px; margin: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wave3-demo-results__banner::after { animation: none; display: none; }
+}
