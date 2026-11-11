@@ -1,3 +1,4 @@
+import { ciTimeout } from './helpers/ci.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
@@ -67,9 +68,9 @@ test('wallet does not intercept Garage VFX preview taps after scrolling on a pho
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   const ion = page.locator('#garage-vfx-catalog [data-skin="thruster-ion"] .garage-skin-preview-hitarea');
-  await ion.click({ timeout: 15000 });
+  await ion.click({ timeout: ciTimeout(15000) });
   await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-preview-thruster', 'thruster-ion');
   const ring = page.locator('#garage-vfx-catalog [data-skin="launch-flare-ring"] .garage-skin-preview-hitarea');
-  await ring.click({ timeout: 15000 });
+  await ring.click({ timeout: ciTimeout(15000) });
   await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-preview-launch-flare', 'launch-flare-ring');
 });
