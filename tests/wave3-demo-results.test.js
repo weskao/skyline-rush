@@ -148,11 +148,11 @@ test('results A-03 optional WebP falls back to PNG then retained decorative CSS 
   assert.match(region.querySelector('.wave3-demo-results__points').textContent, /20 Demo points/);
 });
 
-test('A-06 victory art shows only for settled demo rewards and preserves text on image errors', () => {
+test('A-06 WebP-only art hides on error without changing settled demo reward text', () => {
   const host = fakeHost();
   const region = mountWave3DemoResults({
     container: host, settlement: settlement(), locale: 'en',
-    bannerUrl: '/demo-results-banner@3x.webp', bannerFallbackUrl: '/demo-results-banner@3x.png',
+    bannerUrl: '/demo-results-banner@3x.webp',
   });
   const banner = region.querySelector('.wave3-demo-results__banner');
   assert.ok(banner);
@@ -160,8 +160,6 @@ test('A-06 victory art shows only for settled demo rewards and preserves text on
   const image = banner.querySelector('img');
   assert.equal(image.src, '/demo-results-banner@3x.webp');
   assert.equal(image.alt, '');
-  image.fire('error');
-  assert.equal(image.src, '/demo-results-banner@3x.png');
   image.fire('error');
   assert.equal(banner.querySelector('img'), null);
   assert.equal(banner.hidden, true);

@@ -9,7 +9,6 @@ export type DemoResultsMount = Readonly<{
   artworkUrl?: string | null;
   artworkFallbackUrl?: string | null;
   bannerUrl?: string | null;
-  bannerFallbackUrl?: string | null;
 }>;
 
 const make = (doc: Document, tag: string, className: string, content = ''): HTMLElement => {
@@ -23,7 +22,7 @@ const put = (element: HTMLElement, value: string): void => {
 };
 
 /** Mount inside #race-overlay .overlay-summary, after #result-style. Does not modify original result rows or buttons. */
-export function mountWave3DemoResults({ container, settlement, locale, raceMode, artworkUrl, artworkFallbackUrl, bannerUrl, bannerFallbackUrl }: DemoResultsMount): HTMLElement {
+export function mountWave3DemoResults({ container, settlement, locale, raceMode, artworkUrl, artworkFallbackUrl, bannerUrl }: DemoResultsMount): HTMLElement {
   const view = projectWave3DemoResults(settlement, { locale, raceMode });
   let region = container.querySelector<HTMLElement>('[data-wave3-demo-results]');
   if (!region) {
@@ -87,12 +86,7 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     image.src = bannerUrl!;
     image.alt = '';
     image.decoding = 'async';
-    image.addEventListener('error', () => {
-      if (bannerFallbackUrl && image.dataset.usingFallback !== 'true') {
-        image.dataset.usingFallback = 'true';
-        image.src = bannerFallbackUrl;
-      } else { image.remove(); banner.hidden = true; }
-    });
+    image.addEventListener('error', () => { image.remove(); banner.hidden = true; });
     banner.append(image);
   }
   // Image is decorative and optional. A visible CSS/text glyph remains if it fails to load.

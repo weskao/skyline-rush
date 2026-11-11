@@ -50,7 +50,6 @@ const statusFor = (id: SkinId): DemoItemStatus => {
 };
 const artwork = (id: SkinId) => skinArtwork(id, import.meta.env.BASE_URL);
 const emptyArt = wave3DemoArtUrl('demo-collection-empty');
-const emptyArtFallback = wave3DemoArtUrl('demo-collection-empty', 'png');
 const items = computed(() => WAVE3_DEMO_ITEMS.filter(item =>
   filter.value === 'all' || statusFor(item.id) === filter.value));
 const selected = computed(() => WAVE3_DEMO_ITEMS.find(item => item.id === selectedId.value));
@@ -116,7 +115,7 @@ function closePreview(): void {
 
     <p v-if="unlockedCount === 0" class="collection-empty" role="status">
       <span class="collection-empty-art" data-wave3-demo-art="demo-collection-empty" aria-hidden="true">
-        <GarageArtworkImage :src="emptyArt" :fallback-src="emptyArtFallback"
+        <GarageArtworkImage :src="emptyArt"
           :size="96" image-id="demo-collection-empty" alt="" fallback-text="" loading="eager" />
         <span class="collection-empty-scan" aria-hidden="true"></span>
       </span>
