@@ -22,8 +22,10 @@ watch(() => [snapshot.value?.accountId, snapshot.value?.demoPoints], (next, prev
 });
 const rows = computed(() => projectWave3Currency(snapshot.value, props.locale));
 const label = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
-const currencyArt = (kind: string) =>
-  `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/wallet-${kind === 'coins' ? 'coin' : 'diamond'}@3x.png`;
+const currencyArt = (kind: string) => {
+  const file = kind === 'coins' ? 'wallet-coin@3x.png' : 'wallet-diamond@3x.png';
+  return `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/${file}`;
+};
 const sparkleArt = `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/wallet-sparkle-strip.png`;
 </script>
 
