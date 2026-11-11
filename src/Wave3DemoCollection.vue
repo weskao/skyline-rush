@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import { skinArtwork } from './garage-skin-catalog.ts';
+import { wave3DemoArtUrl } from './wave3-demo-art.ts';
 import type { SkinId } from './garage-skin-catalog.ts';
 import type { ExperienceSnapshot, Wave3ExperiencePort } from './wave3-experience-contract.ts';
 import {
@@ -48,6 +49,8 @@ const statusFor = (id: SkinId): DemoItemStatus => {
   return demoItemStatus(id, snapshot.value, props.trialAccess?.(id));
 };
 const artwork = (id: SkinId) => skinArtwork(id, import.meta.env.BASE_URL);
+const emptyArt = wave3DemoArtUrl('demo-collection-empty');
+const emptyArtFallback = wave3DemoArtUrl('demo-collection-empty', 'png');
 const items = computed(() => WAVE3_DEMO_ITEMS.filter(item =>
   filter.value === 'all' || statusFor(item.id) === filter.value));
 const selected = computed(() => WAVE3_DEMO_ITEMS.find(item => item.id === selectedId.value));
@@ -112,8 +115,13 @@ function closePreview(): void {
     </header>
 
     <p v-if="unlockedCount === 0" class="collection-empty" role="status">
-      {{ tr('Your Demo Collection is empty. Browse cosmetics and earn demo points in races to try an unlock.',
-        '目前沒有試玩收藏。可瀏覽外觀，並透過比賽取得試玩點數後兌換。') }}
+      <span class="collection-empty-art" data-wave3-demo-art="demo-collection-empty" aria-hidden="true">
+        <GarageArtworkImage :src="emptyArt" :fallback-src="emptyArtFallback"
+          :size="96" image-id="demo-collection-empty" alt="" fallback-text="" loading="eager" />
+        <span class="collection-empty-scan" aria-hidden="true"></span>
+      </span>
+      <span>{{ tr('Your Demo Collection is empty. Browse cosmetics and earn demo points in races to try an unlock.',
+        '目前沒有試玩收藏。可瀏覽外觀，並透過比賽取得試玩點數後兌換。') }}</span>
       <button type="button" @click="emit('open-store')">{{ tr('Open Demo Store', '開啟試玩商城') }}</button>
     </p>
 
@@ -206,6 +214,22 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .collection-detail p { margin: 4px 0 10px; font-size: 12px; line-height: 1.5; }
 .collection-footer { margin-top: 14px; }
 .collection-message { min-height: 1.5em; margin: 12px 0 5px; color: #ffe0a9; font-size: 12px; }
+.collection-empty-art { position: relative; isolation: isolate; display: grid; place-items: center;
+  width: 112px; height: 112px; flex: 0 0 112px; overflow: hidden; border-radius: 12px;
+  background: radial-gradient(ellipse at 50% 60%, #2ba5d120, transparent 70%); }
+.collection-empty-art :deep(.artwork-img) { width: 96px; height: 96px; object-fit: contain; }
+.collection-empty-scan { position: absolute; inset: 8px; pointer-events: none; border-radius: 10px;
+  background: linear-gradient(180deg, transparent 30%, #c4ffff08 44%, #7dffff88 50%, #c4ffff08 56%, transparent 70%);
+  mix-blend-mode: screen; animation: wave3-collection-scan 4.8s ease-in-out infinite; }
+@keyframes wave3-collection-scan {
+  0%, 12% { transform: translateY(-110%); opacity: 0; }
+  18% { opacity: .9; }
+  65% { transform: translateY(110%); opacity: .9; }
+  68%, 100% { transform: translateY(110%); opacity: 0; }
+}
+:global(body[data-vfx-enabled="false"] .collection-empty-scan),
+:global(body[data-vfx-quality="low"] .collection-empty-scan),
+:global(body.vfx-comfort .collection-empty-scan) { display: none; }
 @media (max-width: 440px) { .wave3-demo-collection { padding: 9px; } .collection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
 </style>
