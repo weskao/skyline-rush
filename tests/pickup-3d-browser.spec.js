@@ -7,20 +7,31 @@ test('3d=1 previews the same four physical collectibles used by the shared in-ra
   await page.locator('#controls-button').click();
   await page.locator('#guide-open').click();
   await page.locator('[data-guide-device="items"]').click();
-  const canvases = page.locator('#guide-items-panel .pickup-3d-canvas');
   test.skip(process.env.VITE_PICKUP_3D !== '1', 'Run with: make verify 3d=1');
-  await expect(canvases).toHaveCount(4);
-  const tiers = await canvases.evaluateAll(nodes => nodes.map(node => node.closest('[data-tier]')?.dataset.tier));
+  const stages = page.locator('#guide-items-panel .pickup-animation-stage');
+  await expect(stages).toHaveCount(4);
+  const tiers = await stages.evaluateAll(nodes => nodes.map(node => node.dataset.tier));
   expect(tiers).toEqual(['cell', 'can', 'tank', 'overcharge']);
-  for (const preview of await canvases.all()) {
-    await preview.scrollIntoViewIfNeeded();
-    await expect(preview).toHaveAttribute('data-motion', 'running');
+  for (const stage of await stages.all()) {
+    await stage.scrollIntoViewIfNeeded();
+    await expect(stage).toHaveAttribute('data-motion', 'running');
+    // The source PNG/WebP assets may be delivered separately: until installed the exact original
+    // WebGL model is the fallback. Both choices must be real, visible content.
+    await expect.poll(async () => stage.evaluate(el => {
+      const sprite = el.querySelector('img.pickup-animation');
+      const canvas = el.querySelector('canvas.pickup-3d-canvas');
+      return !!((sprite?.complete && sprite.naturalWidth > 0) || (canvas?.width > 0 && canvas?.height > 0));
+    })).toBe(true);
   }
-  await canvases.first().scrollIntoViewIfNeeded();
-  expect(await canvases.first().evaluate(canvas => {
-    const gl = canvas.getContext('webgl2');
-    return !!gl && !gl.isContextLost() && canvas.width > 0 && canvas.height > 0;
-  })).toBe(true);
+  const fallbackCanvases = page.locator('#guide-items-panel .pickup-3d-canvas');
+  if (await fallbackCanvases.count()) {
+    await expect(fallbackCanvases).toHaveCount(4);
+    await fallbackCanvases.first().scrollIntoViewIfNeeded();
+    expect(await fallbackCanvases.first().evaluate(canvas => {
+      const gl = canvas.getContext('webgl2');
+      return !!gl && !gl.isContextLost() && canvas.width > 0 && canvas.height > 0;
+    })).toBe(true);
+  }
   await test.info().attach('real-3d-pickups-guide.png', {
     body: await page.locator('#guide-items-panel .collectibles-section').nth(1).screenshot(),
     contentType: 'image/png',
@@ -52,8 +63,11 @@ test('the 3D guide respects reduced motion when 3d=1 is active', async ({ gamepl
   await page.locator('#controls-button').click();
   await page.locator('#guide-open').click();
   await page.locator('[data-guide-device="items"]').click();
-  const canvas = page.locator('.pickup-3d-canvas').first();
   test.skip(process.env.VITE_PICKUP_3D !== '1', 'Requires 3d=1');
-  await canvas.scrollIntoViewIfNeeded();
-  await expect(canvas).toHaveAttribute('data-motion', 'paused');
+  const stage = page.locator('.pickup-animation-stage').first();
+  await stage.scrollIntoViewIfNeeded();
+  await expect(stage).toHaveAttribute('data-motion', 'paused');
+  const sprite = stage.locator('.pickup-animation');
+  if (await sprite.count()) await expect(sprite).toHaveAttribute('src', /-poster\\.webp$/);
+  else await expect(stage.locator('.pickup-3d-canvas')).toHaveAttribute('data-motion', 'paused');
 });
