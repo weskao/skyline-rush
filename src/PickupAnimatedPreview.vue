@@ -53,9 +53,9 @@ onBeforeUnmount(() => motion?.removeEventListener('change', handleMotion));
   position: absolute; inset: 0; display: block; width: 100%; height: 100%;
   object-fit: contain; pointer-events: none; filter: drop-shadow(0 5px 8px #0008);
 }
-.pickup-animation { opacity: 0; }
+.pickup-animation { opacity: 0; z-index: 1; }
 .pickup-animation.is-ready { opacity: 1; }
-.pickup-animation-placeholder { z-index: -1; }
+.pickup-animation-placeholder { z-index: 0; }
 @media (max-width: 480px) {
   .pickup-animation-stage { width: 90px; height: 90px; }
 }
