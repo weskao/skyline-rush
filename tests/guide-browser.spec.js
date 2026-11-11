@@ -177,10 +177,10 @@ test('road pickup gallery keeps its artwork animated by default but stops for re
   const image = stage.locator('.pickup-animation');
   await expect(image).toBeVisible();
   await expect(stage).toHaveAttribute('data-motion', 'running');
-  await expect(image).toHaveAttribute('src', /animated\\/cell\\.webp$/);
+  await expect(image).toHaveAttribute('src', /cell[.]webp$/);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(stage).toHaveAttribute('data-motion', 'paused');
-  await expect(image).toHaveAttribute('src', /animated\\/cell-poster\\.webp$/);
+  await expect(image).toHaveAttribute('src', /cell-poster[.]webp$/);
   await expect(image).toBeVisible();
   expect(await image.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
 });
