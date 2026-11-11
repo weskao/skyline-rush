@@ -145,3 +145,43 @@ The regression tests respect repository-specific CI time scaling
 syntax, and exclude the Three.js Sprite engine-owned shared quad from
 resource-disposal expectations. The collection module still disposes all
 resources it allocates, and no individual pickup allocates new GPU buffers.
+
+## AI-authored 16-frame guide sprites (2026-11-11)
+
+The in-game **Rings & Supplies** cards now use `src/PickupAnimatedPreview.vue`.
+The new art is authored as 4 × 4 sprite sheets and converted into **16 frames,
+85 ms each, looping animated WebP** (192 × 192 per frame). A matching single
+WebP poster provides a still image for `prefers-reduced-motion`. These images
+are specifically for the guide: track pickup models, GPU instancing and the
+collection VFX remain fully 3D.
+
+Expected game assets, **relative to `public/feature-assets/road-pickups/`**:
+
+| Tier | Animated 16-frame art | Reduced-motion / first-frame fallback |
+| --- | --- | --- |
+| cell | `animated/cell.webp` | `animated/cell-poster.webp` |
+| can | `animated/can.webp` | `animated/can-poster.webp` |
+| tank | `animated/tank.webp` | `animated/tank-poster.webp` |
+| overcharge | `animated/overcharge.webp` | `animated/overcharge-poster.webp` |
+
+Each source has a separate 1254 × 1254 AI-generated 4 × 4 PNG image; split
+by its 4 × 4 grid, remove low-alpha background noise, resize each frame to
+192 × 192, and encode as looping animated WebP with 85 ms frame duration.
+
+Asset integrity: each `*.webp` must contain exactly 16 frames; each
+`*-poster.webp` must contain exactly one frame, with alpha transparency.
+Do not replace these with CSS scaling of a single image or regenerate them
+from the lower-detail SVGs. No additional JavaScript dependency is needed.
+
+**If the WebP files have not yet been committed to this branch**, the guide
+automatically falls back to the prior real-time WebGL model in `3d=1`,
+and to the existing SVG in the lightweight build. Do not call the
+new animated artwork fully shipped until all eight WebP files are actually
+present on GitHub and their browser tests load them successfully.
+
+WebP source archive:
+`skyline-pickup-sprite-assets.zip` from the corresponding ChatGPT delivery.
+Extract it at the repository root, preserving
+`public/feature-assets/road-pickups/animated/`. After installing images,
+run `npm run typecheck`, `npm test`, `VITE_PICKUP_3D=1 npx playwright
+test tests/pickup-3d-browser.spec.js`, and the full exact-head CI.
