@@ -217,6 +217,9 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   width: 112px; height: 112px; flex: 0 0 112px; overflow: hidden; border-radius: 12px;
   background: radial-gradient(ellipse at 50% 60%, #2ba5d120, transparent 70%); }
 .collection-empty-art :deep(.artwork-img) { width: 96px; height: 96px; object-fit: contain; }
+.collection-empty-art :deep(.artwork-fallback) { box-sizing: border-box; width: 96px; height: 96px;
+  border: 1px dashed #68cce080; border-radius: 50%;
+  background: radial-gradient(circle, #42b7dc30 0%, #19375360 65%, transparent 70%); }
 .collection-empty-scan { position: absolute; inset: 8px; pointer-events: none; border-radius: 10px;
   background: linear-gradient(180deg, transparent 30%, #c4ffff08 44%, #7dffff88 50%, #c4ffff08 56%, transparent 70%);
   mix-blend-mode: screen; animation: wave3-collection-scan 4.8s ease-in-out infinite; }

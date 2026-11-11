@@ -59,3 +59,17 @@ test('image frame animation honors accessibility and broken PNGs keep real label
   await page.evaluate(() => { document.body.dataset.vfxEnabled = 'false'; });
   await expect(sprite).toHaveCSS('display', 'none');
 });
+
+// A read-only resource strip must not overlay the interactive VFX catalog on phones.
+test('wallet does not intercept Garage VFX preview taps after scrolling on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-studio-open').click();
+  const ion = page.locator('#garage-vfx-catalog [data-skin="thruster-ion"] .garage-skin-preview-hitarea');
+  await ion.click({ timeout: 15000 });
+  await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-preview-thruster', 'thruster-ion');
+  const ring = page.locator('#garage-vfx-catalog [data-skin="launch-flare-ring"] .garage-skin-preview-hitarea');
+  await ring.click({ timeout: 15000 });
+  await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-preview-launch-flare', 'launch-flare-ring');
+});

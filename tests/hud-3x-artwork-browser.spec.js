@@ -103,7 +103,7 @@ test('existing NITRO HUD artwork renders over the real meter without changing BO
   // The settings preview also uses .touch-boost; verify the playable control separately.
   await expect(page.locator('#touch-controls button.touch-boost > svg')).toHaveCount(1);
   await expect(page.locator('#controls-panel .controls-preview-keys .touch-boost > svg')).toHaveCount(1);
-  await expect(page.locator('.touch-boost')).toHaveAttribute('data-control', 'boost');
+  await expect(page.locator('#touch-controls button.touch-boost')).toHaveAttribute('data-control', 'boost');
 });
 
 test('if the NITRO source fails the engine meter and translated state remain usable', async ({ page }) => {
