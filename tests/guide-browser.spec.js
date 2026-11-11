@@ -126,19 +126,17 @@ test(`rings and supplies guide explains all ring types, road pickups and mystery
   await expect(panel.locator('[data-i18n="guide.items.pickup.can.title"]')).toHaveText('Energy Canister (Orange)');
   await expect(panel.locator('[data-i18n="guide.items.pickup.tank.title"]')).toHaveText('High-Capacity Tank (Gold)');
   await expect(panel.locator('[data-i18n="guide.items.pickup.overcharge.title"]')).toHaveText('Overcharge Core (Rainbow)');
-  const previews = panel.locator('.pickup-3d-canvas'), arts = panel.locator('.pickup-card .pickup-art');
-  if (await previews.count()) {
-    await expect(previews).toHaveCount(4);
-    expect(await previews.evaluateAll(canvases => canvases.every(canvas =>
-      canvas.width > 0 && canvas.height > 0 && canvas.closest('.pickup-3d-stage')?.dataset.tier
-    )), 'live 3D canvases and actual tier names render at every viewport').toBe(true);
-  } else {
-    await expect(arts).toHaveCount(4);
-    expect(await arts.evaluateAll(images => Promise.all(images.map(async img => {
-      await img.decode();
-      return img.naturalWidth === 384 && img.naturalHeight === 384 &&
-        img.getBoundingClientRect().width > 0 && img.currentSrc.includes('/feature-assets/road-pickups/');
-    })).then(values => values.every(Boolean))), 'legacy gallery illustrations decode without clipping').toBe(true);
+  const stages = panel.locator('.pickup-animation-stage');
+  await expect(stages).toHaveCount(4);
+  for (const tier of ['cell', 'can', 'tank', 'overcharge']) {
+    const stage = panel.locator(`.pickup-animation-stage[data-tier="${tier}"]`);
+    const image = stage.locator('.pickup-animation');
+    await expect(stage).toHaveCount(1);
+    await expect(image).toBeVisible();
+    await expect(image).toHaveJSProperty('complete', true);
+    expect(await image.evaluate((img, name) => img.naturalWidth > 0 && img.naturalHeight > 0 &&
+      new URL(img.currentSrc).pathname.endsWith('/animated/' + name + '.webp'), tier),
+    `animated ${tier} WebP loads at every viewport`).toBe(true);
   }
 
   // Mystery powers
@@ -175,17 +173,14 @@ test('road pickup gallery keeps its artwork animated by default but stops for re
   await page.goto('/');
   await openGuide(page);
   await page.locator('[data-guide-device="items"]').click();
-  const art = page.locator('.pickup-art').first();
-  const live = page.locator('.pickup-3d-canvas').first();
-  if (await live.count()) {
-    await expect(live).toBeVisible();
-    await expect(live).toHaveAttribute('data-motion', 'running');
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await expect(live).toHaveAttribute('data-motion', 'paused');
-  } else {
-    await expect(art).toBeVisible();
-    expect(await art.evaluate(el => getComputedStyle(el).animationName)).toContain('pickup-hover');
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    expect(await art.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
-  }
+  const stage = page.locator('.pickup-animation-stage').first();
+  const image = stage.locator('.pickup-animation');
+  await expect(image).toBeVisible();
+  await expect(stage).toHaveAttribute('data-motion', 'running');
+  await expect(image).toHaveAttribute('src', /animated\\/cell\\.webp$/);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(stage).toHaveAttribute('data-motion', 'paused');
+  await expect(image).toHaveAttribute('src', /animated\\/cell-poster\\.webp$/);
+  await expect(image).toBeVisible();
+  expect(await image.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
 });
