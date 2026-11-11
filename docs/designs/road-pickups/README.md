@@ -185,3 +185,11 @@ Extract it at the repository root, preserving
 `public/feature-assets/road-pickups/animated/`. After installing images,
 run `npm run typecheck`, `npm test`, `VITE_PICKUP_3D=1 npx playwright
 test tests/pickup-3d-browser.spec.js`, and the full exact-head CI.
+
+The source archive also includes the unmodified 1254 × 1254 original generated
+AI PNG image sheets at `docs/designs/road-pickups/ai-sprite-sources/`:
+`cell-sheet.png`, `can-sheet.png`, `tank-sheet.png`, and
+`overcharge-sheet.png`. These PNGs are for archival/editing only and must
+not be loaded during racing or guide rendering. They are included in the
+delivered ZIP but are not claimed to be committed until the files are
+actually visible in the remote Git tree.
