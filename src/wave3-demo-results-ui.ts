@@ -8,6 +8,8 @@ export type DemoResultsMount = Readonly<{
   raceMode?: string;
   artworkUrl?: string | null;
   artworkFallbackUrl?: string | null;
+  bannerUrl?: string | null;
+  bannerFallbackUrl?: string | null;
 }>;
 
 const make = (doc: Document, tag: string, className: string, content = ''): HTMLElement => {
@@ -21,7 +23,7 @@ const put = (element: HTMLElement, value: string): void => {
 };
 
 /** Mount inside #race-overlay .overlay-summary, after #result-style. Does not modify original result rows or buttons. */
-export function mountWave3DemoResults({ container, settlement, locale, raceMode, artworkUrl, artworkFallbackUrl }: DemoResultsMount): HTMLElement {
+export function mountWave3DemoResults({ container, settlement, locale, raceMode, artworkUrl, artworkFallbackUrl, bannerUrl, bannerFallbackUrl }: DemoResultsMount): HTMLElement {
   const view = projectWave3DemoResults(settlement, { locale, raceMode });
   let region = container.querySelector<HTMLElement>('[data-wave3-demo-results]');
   if (!region) {
@@ -30,6 +32,8 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     region.dataset.wave3DemoResults = '';
     region.tabIndex = 0;
     region.setAttribute('role', 'region');
+    const banner = make(doc, 'div', 'wave3-demo-results__banner');
+    banner.hidden = true;
     const header = make(doc, 'div', 'wave3-demo-results__header');
     header.append(make(doc, 'span', 'wave3-demo-results__mark', '✦'), make(doc, 'h3', 'wave3-demo-results__heading'));
     const status = make(doc, 'p', 'wave3-demo-results__status');
@@ -40,7 +44,7 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     const progress = make(doc, 'div', 'wave3-demo-results__missions');
     const distinction = make(doc, 'p', 'wave3-demo-results__distinction');
     const disclaimer = make(doc, 'p', 'wave3-demo-results__disclaimer');
-    region.append(header, status, points, progress, distinction, disclaimer);
+    region.append(banner, header, status, points, progress, distinction, disclaimer);
     container.append(region);
   }
   region.className = `wave3-demo-results wave3-demo-results--${view.state}`;
@@ -70,6 +74,26 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
       nodes.push(row);
     }
     missions.replaceChildren(...nodes);
+  }
+  // A-06 is purely decorative and never shown for duplicate, ineligible or unverified receipts.
+  const banner = region.querySelector<HTMLElement>('.wave3-demo-results__banner')!;
+  const showBanner = view.state === 'earned' && !!bannerUrl;
+  banner.hidden = !showBanner;
+  const previousBanner = banner.querySelector<HTMLImageElement>('img');
+  if (!showBanner) previousBanner?.remove();
+  else if (!previousBanner || previousBanner.getAttribute('src') !== bannerUrl) {
+    previousBanner?.remove();
+    const image = container.ownerDocument.createElement('img');
+    image.src = bannerUrl!;
+    image.alt = '';
+    image.decoding = 'async';
+    image.addEventListener('error', () => {
+      if (bannerFallbackUrl && image.dataset.usingFallback !== 'true') {
+        image.dataset.usingFallback = 'true';
+        image.src = bannerFallbackUrl;
+      } else { image.remove(); banner.hidden = true; }
+    });
+    banner.append(image);
   }
   // Image is decorative and optional. A visible CSS/text glyph remains if it fails to load.
   const mark = region.querySelector<HTMLElement>('.wave3-demo-results__mark')!;
