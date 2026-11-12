@@ -18,8 +18,7 @@ import GarageSkinCatalog from '#garage-skin-ui';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 const locale = ref(getLocale());
 const storeCatalog = ref<{ openStore: () => void } | null>(null);
-const storeIcon = `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/store-cart@3x.png`;
-const storeIconFallback = `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/store-cart@3x.webp`;
+const storeIcon = `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/store-cart@3x.webp`;
 let unsubscribe: (() => void) | undefined;
 onMounted(() => { unsubscribe = onLocaleChange(value => { locale.value = value; }); });
 onUnmounted(() => unsubscribe?.());
@@ -92,7 +91,7 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
         <p v-show="garageStudioView.page === 'studio'" class="garage-cosmetic">{{ copy.cosmetic }}</p>
         <section class="garage-store-entry" data-garage-store-entry
           :aria-label="locale === 'zh-TW' ? '車庫商店' : 'Garage Store'">
-          <GarageArtworkImage :src="storeIcon" :fallback-src="storeIconFallback"
+          <GarageArtworkImage :src="storeIcon"
             :size="52" :alt="''" :fallback-text="locale === 'zh-TW' ? '商店' : 'Store'" loading="eager" />
           <div class="garage-store-entry-copy">
             <strong>{{ locale === 'zh-TW' ? '商店 · 即將推出' : 'Garage Store · Coming Soon' }}</strong>

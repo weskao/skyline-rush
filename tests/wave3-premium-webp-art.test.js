@@ -30,7 +30,8 @@ test('Wave 3 reward and wallet illustration packages are WebP-only with 3x sourc
 
 test('every Wave 3 decorative surface references WebP and never PNG fallback', () => {
   for (const file of ['Wave3CurrencyStrip.vue', 'Wave3DemoArt.vue',
-    'GarageMissionBoard.vue', 'GarageSourceArtGallery.vue', 'wave3-demo-art.ts',
+    'GarageMissionBoard.vue', 'GarageSourceArtGallery.vue', 'GaragePanel.vue',
+    'Wave3DemoStore.vue', 'wave3-demo-art.ts',
     'wave3-demo-results-integration.ts', 'finish-placement-badge.ts']) {
     assert.doesNotMatch(source('src/' + file), /\.png|['"]png['"]/, file);
   }
@@ -75,4 +76,16 @@ test('rendered assets use the approved Demo Points metallic spectral treatment',
   assert.match(animations, /mission-drift-pulse/);
   assert.match(animations, /mission-combo-boost/);
   assert.match(animations, /prefers-reduced-motion/);
+});
+
+test('Garage and Demo Store actually mount source WebP instead of requesting removed PNG', () => {
+  const garage = source('src/GaragePanel.vue');
+  const store = source('src/Wave3DemoStore.vue');
+  assert.match(garage, /store-cart@3x\.webp/);
+  assert.doesNotMatch(garage, /storeIconFallback|store-cart@3x\.png/);
+  assert.match(garage, /<Wave3CurrencyStrip/);
+  assert.match(garage, /<GarageMissionBoard/);
+  assert.match(garage, /<GarageSourceArtGallery[^>]*category="garage-rewards-and-missions"/);
+  assert.match(store, /storeArt\(icon\)/);
+  assert.doesNotMatch(store, /storeArt\(icon,\s*'png'\)|fallback-src="storeArt/);
 });
