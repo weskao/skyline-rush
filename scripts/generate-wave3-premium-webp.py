@@ -152,7 +152,12 @@ def preserve_original_silhouette(output: Image.Image, alpha: Image.Image) -> Ima
     # All peripheral glow, swooshes and sparks stay atmospheric (alpha <128).
     core = alpha.point(lambda x: 255 if x >= 128 else 0)
     existing = output.getchannel("A")
-    peripheral = existing.point(lambda x: min(x, 90))
+    # Soft ambient color cannot turn into an opaque purple backdrop or plate.
+    # Allow a fine neon rim only at the subject's existing contour.
+    diffuse = existing.point(lambda x: min(x, 34))
+    rim = ImageChops.subtract(alpha.filter(ImageFilter.MaxFilter(5)), alpha)
+    narrow_rim = rim.point(lambda x: round(x * 0.24))
+    peripheral = ImageChops.lighter(diffuse, narrow_rim)
     output.putalpha(Image.composite(existing, peripheral, core))
     return output
 
@@ -193,6 +198,10 @@ def main() -> None:
         improved = polish(original, name)
         score = silhouette_similarity(original, improved)
         assert score >= 0.80, (name, score)
+        # Regression gate: outside the recognizable icon no opaque neon plate.
+        outside = original.getchannel("A").point(lambda a: 255 if a < 128 else 0)
+        outer_alpha = ImageChops.multiply(improved.getchannel("A"), outside)
+        assert outer_alpha.getextrema()[1] <= 64, (name, "excess halo opacity")
         dest = (ASSETS / "garage-rewards-and-missions/raster" if name in REWARDS
                 else ASSETS / "wave3-demo/raster")
         dest.mkdir(parents=True, exist_ok=True)
