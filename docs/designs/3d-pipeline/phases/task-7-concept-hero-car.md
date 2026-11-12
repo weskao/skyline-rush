@@ -49,7 +49,9 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   `tests/crimson-gt-browser.spec.js`, each RED before its implementation.
   - the manifest has the required nodes and pivots (`wheel_*`, `wing_*`, `thruster_01..04`, `lift_fan_01..04`): same
     `nodes` list as `roadster2`
-  - the GLB thruster, rear-nozzle, wing and wheel pivots sit within 1e-4 m of the procedural ports, on both LODs
+  - the GLB thruster, wing and wheel pivots sit within 1e-4 m of the procedural ports, on both LODs
+  - 2026-11-13 rebuild, RED on the old GLBs (`wheel_fl_axle: node exists`): each hub hangs on a static
+    `<wheel>_axle` at y .357, and the rear nozzles sit one rigid offset (0, -.33, -.415) from the rear ports
   - the equipped car persists across reload (local save)
   - a save without a car loads as the Roadster with its paint
 - [ ] RED tests, part 2 (not written):
@@ -63,12 +65,18 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     image-to-3D mesh. Ports and pivots are the Roadster's. Silhouette IoU against the panels is 0.745 to 0.833,
     below the 0.90 forms target; the measured deviations and the inferred list are in
     `assets-src/crimson-gt/asset-brief.md`. Parity review and sign-off stay open under "By device".
+  - 2026-11-13: rebuilt from the panel silhouettes instead of the Roadster's shape (`build/gt_body.py`,
+    `build/gt_parts.py`). Wheel, wing and lift-port pivots stay on contract; the owner approved a smaller tyre
+    (radius .337) and a shorter tail with the rear nozzles ahead of the contract rear ports. Silhouette IoU:
+    side 0.936, front 3/4 0.865, rear 3/4 0.871, rear 0.857 (0.968 / 0.872 / 0.880 / 0.905 without the wing,
+    which only one panel shows). The 0.90 target is met in the side view only.
 - [x] Materials: a deep-red metallic clearcoat that responds to `PAINTS`, emissive light blade and rear bar,
   dark glass, five-spoke wheels.
   - 2026-11-13: all 6 `PAINTS` tint the GLB body (`tests/crimson-gt-browser.spec.js`).
-  - LOD0 17,296 triangles / 1,201,628 B, low 10,534 triangles / 504,628 B, KTX2 normal and AO.
+  - LOD0 22,540 triangles / 1,180,364 B, low 13,636 triangles / 509,964 B, KTX2 normal and AO (2026-11-13 rebuild).
   - `check-glb: PASS` on both LODs; manifest hashes match (`tests/model-manifest.test.js`).
-- [ ] Material gaps: the paint has no flake layer (factors only), and the rims are mid-grey metal, not dark.
+- [ ] Material gaps: the paint has no flake layer (factors only); no interior behind the glass, no hood vents.
+  The rims are dark since the 2026-11-13 rebuild.
 - [x] Rig via `bindGarageRig` unchanged (`src/garage-model-rig.ts` has no diff); the wheels spin in a race. All 6
   paints and all 22 `GARAGE_SKINS` preview on the new car (`tests/crimson-gt-browser.spec.js`, 2026-11-13).
 - [ ] Wing tilt/raise and lift fans following the jets are not asserted on the GT (same rig nodes as `roadster2`,
