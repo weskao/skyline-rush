@@ -76,6 +76,11 @@ def polish(src: Image.Image, name: str) -> Image.Image:
     output.alpha_composite(tint(reflection, (244, 252, 255), 0.37))
     rim = ImageChops.subtract(alpha.filter(ImageFilter.MaxFilter(5)), alpha)
     output.alpha_composite(tint(rim.filter(ImageFilter.GaussianBlur(0.8)), hue, 0.52))
+    # Reflected light must NEVER inflate the recognisable painted foreground.
+    # Preserve the original threshold-alpha contour; allow only faint outer halo.
+    core = alpha.point(lambda a: 255 if a >= 128 else 0)
+    soft = output.getchannel("A").point(lambda a: min(a, 110))
+    output.putalpha(Image.composite(output.getchannel("A"), soft, core))
     return output
 
 def silhouette_similarity(a: Image.Image, b: Image.Image) -> float:
