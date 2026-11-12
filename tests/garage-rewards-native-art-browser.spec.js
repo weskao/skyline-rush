@@ -16,7 +16,8 @@ test('actual Garage mission cards and source icons preserve native 3x alpha on m
     await expect(board.locator('[data-wave3-demo-art="demo-points"] img')).toHaveAttribute('width', '72');
     await expect(board.locator('[data-wave3-demo-art="demo-points"] img')).toHaveJSProperty('naturalWidth', 216);
     for (const img of await board.locator('.garage-mission-card > img, .garage-trophy-card img').all()) {
-      await img.scrollIntoViewIfNeeded();
+      // 3D floating WebP artwork is intentionally animated and never has a stable bounding box.
+      await img.evaluate(el => el.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
       await expect(img).toHaveAttribute('width', '96');
       await expect(img).toHaveAttribute('height', '96');
       await expect(img).toHaveJSProperty('naturalWidth', 288);
@@ -52,7 +53,7 @@ test('Garage shows all eight WebPs in the actual interface without opening the c
   await expect(board.locator('[data-trophy-id] img')).toHaveCount(4);
   for (const trophy of await board.locator('[data-trophy-id]').all()) {
     const img = trophy.locator('img');
-    await img.scrollIntoViewIfNeeded();
+    await img.evaluate(el => el.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
     await expect(img).toHaveAttribute('width', '96');
     await expect(img).toHaveJSProperty('naturalWidth', 288);
     await expect(trophy).toContainText('Display only');

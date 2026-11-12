@@ -12,7 +12,8 @@ const storeIds = ['store-cart', 'store-box', 'store-bundle',
   'store-tag', 'store-star', 'store-collection'];
 
 async function checkImage(image, nativePx, cssPx) {
-  await image.scrollIntoViewIfNeeded();
+  // Animated icons never settle; scroll without Playwright's stable-box actionability check.
+  await image.evaluate(el => el.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
   await expect(image).toHaveJSProperty('naturalWidth', nativePx);
   await expect(image).toHaveJSProperty('naturalHeight', nativePx);
   const size = await image.evaluate(async el => {
