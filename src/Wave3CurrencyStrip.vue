@@ -114,8 +114,8 @@ const currencyArt = (kind: string) => {
  border-right-color:#b976ff91;filter:drop-shadow(0 0 6px #6cceff)}
 @keyframes wallet-charged-trail{0%,100%{opacity:.25;transform:rotate(-22deg) scale(.88)}
  50%{opacity:.9;transform:rotate(11deg) scale(1.08)}}
-:global(body[data-vfx-enabled="false"] .wallet-artwork)::before,
-:global(body[data-vfx-quality="low"] .wallet-artwork)::before{display:none}
+:global(body[data-vfx-enabled="false"] .wallet-artwork::before),
+:global(body[data-vfx-quality="low"] .wallet-artwork::before){display:none}
 @media (prefers-reduced-motion:reduce){.wallet-artwork::before{animation:none}}
 
 </style>
