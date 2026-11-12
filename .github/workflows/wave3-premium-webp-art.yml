@@ -1,0 +1,43 @@
+name: Wave 3 premium WebP artwork
+
+on:
+  push:
+    branches: [feature/wave3-premium-webp-art-v2]
+    paths:
+      - scripts/generate-wave3-premium-webp.py
+      - .github/workflows/wave3-premium-webp-art.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wave3-premium-art-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  render-and-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/wave3-premium-webp-art-v2
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install raster renderer
+        run: python -m pip install 'Pillow==12.0.0'
+      - name: Generate native 3x assets
+        run: python scripts/generate-wave3-premium-webp.py
+      - name: Commit regenerated artwork to feature branch
+        shell: bash
+        run: |
+          git add public/feature-assets/garage-rewards-and-missions/raster/*.webp
+          git add public/feature-assets/wave3-demo/raster/wallet-*.webp
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'art(wave3): regenerate ten premium native-3x WebP illustrations'
+            git push origin HEAD:refs/heads/feature/wave3-premium-webp-art-v2
+          fi
