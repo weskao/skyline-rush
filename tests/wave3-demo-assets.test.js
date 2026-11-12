@@ -40,8 +40,8 @@ test('catalog and actual Garage screens reference the native-size WebPs',()=>{
  }
  for(const file of ['GarageMissionBoard.vue','GarageSourceArtGallery.vue',
   'GarageSkinCatalog.vue','GarageArtworkTile.vue'])
-  assert.match(src('src/'+file),/import\\.meta\\.env\\.BASE_URL/);
- assert.match(src('src/GarageMissionBoard.vue'),/@3x\\.webp/);
+  assert.match(src('src/'+file),/import\.meta\.env\.BASE_URL/);
+ assert.match(src('src/GarageMissionBoard.vue'),/@3x\.webp/);
  assert.doesNotMatch(src('src/GarageSourceArtGallery.vue'),/legacyStoreImage/);
 });
 test('the existing 25 GIFs retain matching names, manifests and real files', () => {

@@ -23,10 +23,10 @@ test('Garage resources show genuine local credits and native gold/diamond artwor
       await expect(item.locator('strong')).toHaveText('—');
       await expect(item).toContainText('Coming soon');
       const art = item.locator('.wallet-artwork img');
-      await expect(art).toHaveAttribute('src', new RegExp('wallet-' + asset + '@3x\\.png$'));
+      await expect(art).toHaveAttribute('src', new RegExp('wallet-' + asset + '@3x\\.webp$'));
       await expect(art).toHaveJSProperty('naturalWidth', 144);
       await expect(art).toHaveJSProperty('naturalHeight', 144);
-      await expect(item.locator('.wallet-shimmer')).toHaveCSS('background-image', /wallet-sparkle-strip\.png/);
+      await expect(item.locator('.wallet-orbit')).toHaveCSS('animation-name', /wallet-coin-orbit|wallet-diamond-prism/);
     }
     expect(await wallet.evaluate(el => el.scrollWidth > el.clientWidth + 1)).toBe(false);
   }
@@ -45,14 +45,14 @@ test('Garage player wallet is localized without exposing nonexistent paid balanc
   await expect(wallet.locator('[data-currency="diamonds"] strong')).toHaveText('—');
 });
 
-test('image frame animation honors accessibility and broken PNGs keep real labels', async ({ page }) => {
+test('WebP motion honors accessibility and broken art keep real labels', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.route('**/wallet-diamond@3x.png', route => route.abort());
+  await page.route('**/wallet-diamond@3x.webp', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
   const wallet = page.locator('#garage-screen [data-wave3-wallet]');
   const diamond = wallet.locator('[data-currency="diamonds"]');
-  const sprite = diamond.locator('.wallet-shimmer');
+  const sprite = diamond.locator('.wallet-orbit');
   await expect(sprite).toHaveCSS('animation-name', 'none');
   await expect(diamond.locator('.artwork-fallback')).toBeVisible();
   await expect(diamond).toContainText('Diamonds');

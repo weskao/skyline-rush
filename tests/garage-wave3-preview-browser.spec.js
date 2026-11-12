@@ -105,7 +105,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
           fitsViewport: button.getBoundingClientRect().width <= innerWidth,
           vividFraction: vivid / Math.max(visible, 1), paletteBins: palette.size};
       });
-      expect(metrics.type).toMatch(gif ? new RegExp(`garage-animated/${id}@3x\\.gif$`) : new RegExp(`raster/${id}@3x\\.png$`));
+      expect(metrics.type).toMatch(gif ? new RegExp(`garage-animated/${id}@3x\\.gif$`) : new RegExp(`raster/${id}@3x\\.webp$`));
       expect(metrics.animated).toBe(String(gif));
       expect(metrics.original).toMatch(/@3x\.png$/);
       expect(metrics.nativeGif).toEqual([216,216]);
@@ -128,8 +128,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
   });
 }
 
-test('Store entrance icon falls back from the 3x PNG to its original 3x WebP', async ({ page }) => {
-  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.png', route => route.abort());
+test('Store entrance icon loads native WebP without any PNG fallback', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
   const entryIcon = page.locator('#garage-art-source-garage-store-readiness summary [data-wave3-entry-icon] img');
@@ -138,7 +137,7 @@ test('Store entrance icon falls back from the 3x PNG to its original 3x WebP', a
 });
 
 test('Store preview keeps readable Coming Soon when the real 3x entrance icon fails', async ({ page }) => {
-  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.{png,webp}', route => route.abort());
+  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.webp', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
   const gallery = page.locator('#garage-art-source-garage-store-readiness');

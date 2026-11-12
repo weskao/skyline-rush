@@ -21,7 +21,7 @@ test('actual Garage mission cards and source icons preserve native 3x alpha on m
       await expect(img).toHaveAttribute('height', '96');
       await expect(img).toHaveJSProperty('naturalWidth', 288);
       await expect(img).toHaveJSProperty('naturalHeight', 288);
-      // Alpha margins (>= 20 px) are asserted on the PNG files in tests/rewards-visual-contract.test.js.
+      // Alpha margins (>= 20 px) are asserted on the WebP files in tests/rewards-visual-contract.test.js.
     }
     const demoIcon = board.locator('.garage-demo-balance [data-wave3-demo-art="demo-points"] img');
     await expect(demoIcon).toHaveAttribute('width', '72');
@@ -30,7 +30,7 @@ test('actual Garage mission cards and source icons preserve native 3x alpha on m
 });
 
 test('Garage Missions stay truthful in Traditional Chinese and fall back on missing artwork', async ({ page }) => {
-  await page.route('**/mission-race@3x.png', route => route.abort());
+  await page.route('**/mission-race@3x.webp', route => route.abort());
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();
@@ -43,7 +43,7 @@ test('Garage Missions stay truthful in Traditional Chinese and fall back on miss
   await expect(board).not.toContainText(/領取|已完成|已獲得/);
 });
 
-test('Garage shows all eight PNGs in the actual interface without opening the concept gallery', async ({ page }) => {
+test('Garage shows all eight WebPs in the actual interface without opening the concept gallery', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.locator('#garage-button').click();
@@ -62,7 +62,7 @@ test('Garage shows all eight PNGs in the actual interface without opening the co
 });
 
 test('Garage trophy display preserves Traditional Chinese and missing-image fallback', async ({ page }) => {
-  await page.route('**/trophy-gold@3x.png', route => route.abort());
+  await page.route('**/trophy-gold@3x.webp', route => route.abort());
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();
