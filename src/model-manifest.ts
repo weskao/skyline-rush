@@ -1,5 +1,5 @@
 // Phase 2 model manifest. Contract: docs/designs/3d-pipeline/phase2-model-contracts.md §1.
-export const FALLBACK_KEYS = ['procedural-car', 'procedural-scenery'] as const;
+export const FALLBACK_KEYS = ['procedural-car', 'procedural-scenery', 'procedural-pickup'] as const;
 export type FallbackKey = (typeof FALLBACK_KEYS)[number];
 export const DECODERS = ['meshopt', 'ktx2'] as const;
 export type Decoder = (typeof DECODERS)[number];
@@ -18,6 +18,37 @@ export interface ModelManifestEntry {
   fallback: FallbackKey;
   decoders: Decoder[];
   budgets: { triangles: number; bytes: number; textureMaxPx: number };
+}
+
+// The other power-up tiers share the cell's pipeline, budgets and art kit (scripts/assets/pickup_kit.py).
+const UNRECORDED = '0'.repeat(64);
+function pickupModel(tier: string, triangles: number, sha = { master: UNRECORDED, script: UNRECORDED, glb: UNRECORDED, bytes: 1 }): ModelManifestEntry {
+  const id = `pickup-${tier}`, src = `assets-src/${id}`;
+  return {
+    id,
+    url: `models/${id}/${id}.glb`,
+    source: { master: `${src}/${id}.blend`, script: `${src}/build.py`, masterSha256: sha.master, scriptSha256: sha.script },
+    glb: { sha256: sha.glb, bytes: sha.bytes },
+    license: { id: 'owned', creator: 'Skyline Rush project' },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        `$BLENDER_BIN --background --factory-startup --python ${src}/build.py`,
+        `node scripts/assets/export-glb.mjs ${id}`,
+        `node scripts/assets/optimize-glb.mjs ${id}`,
+        `$BLENDER_BIN --background --factory-startup --python scripts/assets/pickup_kit.py -- review ${id}`,
+        `node scripts/assets/check-glb.mjs ${id} --promote`,
+      ],
+    },
+    nodes: [`pickup_${tier}`],
+    materials: [`pickup_${tier}_pbr`],
+    lods: [],
+    fallback: 'procedural-pickup',
+    decoders: ['meshopt', 'ktx2'],
+    budgets: { triangles, bytes: 300_000, textureMaxPx: 512 },
+  };
 }
 
 // Hashes/bytes come from `node scripts/assets/check-glb.mjs <id>` and shasum of the committed sources.
@@ -122,6 +153,32 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt', 'ktx2'],
     budgets: { triangles: 63_500, bytes: 6_000_000, textureMaxPx: 1024 },
   },
+  // Road power-ups: one mesh and one baked 512 px PBR set per tier, shared by the guide preview and the GPU-instanced
+  // track pool. Shapes in each build.py; materials, bake and review sheets in scripts/assets/pickup_kit.py.
+  'pickup-cell': pickupModel('cell', 3000, {
+    master: '89066a7f864fc86ac3f9ee1ccc8d1264220005928f6719b40be77e84fd569773',
+    script: '441f303eef72a0fd7c98abdd573c43a8ea1c0a01633576c4d390fbdc6fe4c7db',
+    glb: 'fc12ea421a2e4f85163bb03c3653501a0fa836079448cdf89be51b2582920c1c',
+    bytes: 296136,
+  }),
+  'pickup-can': pickupModel('can', 3000, {
+    master: '1018d03abec9d2e7222b842a02348071bca7e8b795727383930d685887b62678',
+    script: '4eb1fa8617885c7219eac05491c091379799d491c3dd80061b28a1d4b15a14ff',
+    glb: 'a935f735d2d9c6c05c22400a9aeb81dbf8f2dccec0724c164549c9556e9dc3ab',
+    bytes: 283440,
+  }),
+  'pickup-tank': pickupModel('tank', 4000, {
+    master: '0dd516a8afebb9ebab65a38e8f2324a27317f730ea4ac12992b31d914dc3fea8',
+    script: 'cd6fcf48c6ef93330e0742e1b0046fc822b135567fc9a2b8beb94ce938d6a799',
+    glb: 'bee734a3ae2c9b016efee63886d0f86053de49ca1dcb33708e6f93f4ecd744de',
+    bytes: 287132,
+  }),
+  'pickup-overcharge': pickupModel('overcharge', 4500, {
+    master: 'eb4765525fd77fe2dd7700084b1edeb38497f69b714f5830494eb7b6ed02035a',
+    script: '95a46e1f004cdb25a9c3bd1c9547a6934805cdfb2977567b104b10b4aec7804b',
+    glb: 'fe33592ca9471de4e30c883b176dee8166314ca20bc3313962d52395c7cc98ec',
+    bytes: 283232,
+  }),
 };
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
