@@ -39,3 +39,5 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   independently bounded and preserve `tests/overlay-landscape-fit-browser.spec.js` at
   667×375, 740×360, 844×390, 932×430 and a foldable viewport; the RED regression was
   43–100px of unwanted `#race-overlay` scrolling in CI run 42811323467.
+
+- **Wave 3 post-race rewards must not jump between coordinate systems.** `enter(.overlay-content)` animates `transform`, making `position: fixed` descendants resolve against the animated parent before snapping back to the viewport. Keep `.wave3-demo-results` in the normal `.overlay-summary` flow; short landscape uses an accessible compact summary rather than a floating toast. Protect the regression with `tests/wave3-demo-results.test.js`, `tests/wave3-demo-results-layout-browser.spec.js`, and `tests/overlay-landscape-fit-browser.spec.js`.

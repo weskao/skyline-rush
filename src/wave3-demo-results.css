@@ -1,35 +1,37 @@
 /* Optional standalone result card: never changes the original stars, badges or action buttons. */
 body:not([data-phase="finished"]) .wave3-demo-results { display: none; }
 .wave3-demo-results {
-  /* Detached from the result grid: never push Race again or Cloud Save off-screen. */
-  position: fixed;
-  left: max(10px, env(safe-area-inset-left));
-  bottom: max(10px, env(safe-area-inset-bottom));
-  z-index: 1;
-  width: min(330px, calc(100vw - 20px));
-  max-height: min(220px, 28dvh);
+  /* The reward is a part of the finished-race summary, not a viewport toast.
+     Never use fixed here: .overlay-content animates with transform on reveal. */
+  position: static;
+  box-sizing: border-box;
+  width: min(100%, 460px);
+  max-height: min(200px, 34dvh);
   overflow-y: auto;
   color: #e9f6ff;
   background: linear-gradient(125deg, rgba(16, 42, 66, .94), rgba(37, 38, 78, .90));
   border: 1px solid rgba(145, 224, 242, .36);
   border-radius: 14px;
   padding: 10px 14px;
-  margin: 10px auto 8px;
-  max-width: 500px;
+  margin: 12px auto 0;
   text-align: left;
   font: 12px/1.4 system-ui, sans-serif;
   box-shadow: 0 6px 22px rgba(5, 17, 30, .22);
+}
+.wave3-demo-results--earned {
+  border-color: rgba(255, 215, 141, .55);
+  box-shadow: 0 6px 22px rgba(5, 17, 30, .22), inset 0 1px 0 rgba(255, 241, 199, .15);
 }
 .wave3-demo-results:focus-visible { outline: 2px solid #95e2f6; outline-offset: 3px; }
 .wave3-demo-results__header { display: flex; align-items: center; gap: 9px; }
 .wave3-demo-results__heading { margin: 0; font: 700 16px/1.2 system-ui, sans-serif; letter-spacing: .4px; }
 .wave3-demo-results__mark {
   position: relative; flex: none; display: grid; place-items: center;
-  box-sizing: border-box; width: 88px; height: 88px; border-radius: 50%;
+  box-sizing: border-box; width: 44px; height: 44px; border-radius: 50%;
   color: #ffdda2; background: rgba(221, 166, 65, .13);
   border: 1px solid rgba(255, 214, 131, .48); font-size: 20px;
 }
-.wave3-demo-results__mark img { position: absolute; inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); object-fit: contain; }
+.wave3-demo-results__mark img { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); object-fit: contain; }
 .wave3-demo-results__status { margin: 5px 0; color: #d6e7f4; }
 .wave3-demo-results__points { margin: 3px 0; font-weight: 750; color: #ffd38d; font-variant-numeric: tabular-nums; }
 .wave3-demo-results__points[hidden] { display: none; }
@@ -44,21 +46,41 @@ body:not([data-phase="finished"]) .wave3-demo-results { display: none; }
 @media (max-width: 480px) {
   .wave3-demo-results { margin: 5px 0; padding: 8px 10px; font-size: 11px; }
 }
-@media (max-width: 480px) and (orientation: portrait) {
-  /* Portrait result pages scroll naturally; display the entire reward explanation inline. */
-  .wave3-demo-results { position: static; width: auto; max-height: none; overflow: visible; }
+@media (max-width: 760px) and (orientation: portrait) {
+  /* The results overlay scrolls as one page, without nested scrollbars. */
+  .wave3-demo-results { max-height: none; overflow: visible; }
 }
 @media (max-width: 480px) {
   .wave3-demo-results__missions { grid-template-columns: 1fr 1fr; }
 }
-@media (max-height: 480px) and (orientation: landscape) {
-  .wave3-demo-results { margin: 0; padding: 5px 10px; width: min(235px, 35vw); max-height: min(98px, 29dvh); font-size: 10px; }
-  .wave3-demo-results__header { gap: 5px; }
-  .wave3-demo-results__mark { width: 22px; height: 22px; font-size: 16px; }
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Keep the landscape podium and 44px action targets above the fold. */
+  .wave3-demo-results {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: min(100%, 420px);
+    max-height: 48px;
+    margin: 4px auto 0;
+    padding: 5px 10px;
+    overflow: hidden;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+  .wave3-demo-results__banner { display: none; }
+  .wave3-demo-results__header { flex: none; gap: 6px; }
+  .wave3-demo-results__mark { width: 24px; height: 24px; font-size: 15px; }
   .wave3-demo-results__mark img { inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); }
-  .wave3-demo-results__heading { font-size: 12px; }
-  .wave3-demo-results__status, .wave3-demo-results__distinction, .wave3-demo-results__disclaimer { margin: 2px 0; }
-  .wave3-demo-results__progress-title { margin: 2px 0; }
+  .wave3-demo-results__heading { font-size: 12px; letter-spacing: 0; white-space: nowrap; }
+  .wave3-demo-results__points { flex: none; margin: 0; white-space: nowrap; }
+  .wave3-demo-results__status { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+  /* Keep detailed settlement text available to screen readers even when visually condensed. */
+  .wave3-demo-results--earned .wave3-demo-results__status,
+  .wave3-demo-results__missions, .wave3-demo-results__distinction, .wave3-demo-results__disclaimer {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; border: 0; clip-path: inset(50%); white-space: nowrap;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .wave3-demo-results, .wave3-demo-results * { animation: none !important; transition: none !important; }
@@ -66,7 +88,7 @@ body:not([data-phase="finished"]) .wave3-demo-results { display: none; }
 
 
 /* A-06 illustrated reward crest. Decoration never overlays actionable result controls. */
-.wave3-demo-results__banner { position: relative; width: 100%; height: 72px; margin: 0 0 3px;
+.wave3-demo-results__banner { position: relative; width: 100%; height: 48px; margin: 0 0 3px;
   overflow: hidden; pointer-events: none; }
 .wave3-demo-results__banner[hidden] { display: none; }
 .wave3-demo-results__banner img { display: block; width: 100%; height: 100%; object-fit: contain; }
