@@ -1,0 +1,49 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+
+const root = path => new URL('../' + path, import.meta.url);
+const source = path => readFileSync(root(path), 'utf8');
+const rewardIds = ['mission-race', 'mission-time', 'mission-drift', 'mission-combo',
+  'trophy-bronze', 'trophy-silver', 'trophy-gold', 'trophy-platinum'];
+const walletIds = ['wallet-coin', 'wallet-diamond'];
+
+test('Wave 3 reward and wallet illustration packages are WebP-only with 3x source geometry', () => {
+  for (const [dir, ids] of [
+    ['garage-rewards-and-missions', rewardIds],
+    ['wave3-demo', [...walletIds, 'demo-points', 'demo-claim',
+      'demo-collection-empty', 'demo-results-banner']],
+    ['garage-store-readiness', ['store-cart', 'store-box', 'store-bundle',
+      'store-tag', 'store-star', 'store-collection']],
+  ]) {
+    const path = 'public/feature-assets/' + dir + '/raster/';
+    const filenames = readdirSync(root(path));
+    assert.equal(filenames.some(file => file.endsWith('.png')), false, dir + ': no PNG runtime originals or fallbacks');
+    for (const id of ids) {
+      const bytes = readFileSync(root(path + id + '@3x.webp'));
+      assert.equal(bytes.toString('ascii', 0, 4), 'RIFF', id);
+      assert.equal(bytes.toString('ascii', 8, 12), 'WEBP', id);
+      assert.equal(bytes.readUInt32LE(4) + 8, bytes.length, id);
+    }
+  }
+});
+
+test('every Wave 3 decorative surface references WebP and never PNG fallback', () => {
+  for (const file of ['Wave3CurrencyStrip.vue', 'Wave3DemoArt.vue',
+    'GarageMissionBoard.vue', 'GarageSourceArtGallery.vue', 'wave3-demo-art.ts',
+    'wave3-demo-results-integration.ts', 'finish-placement-badge.ts']) {
+    assert.doesNotMatch(source('src/' + file), /\.png|['"]png['"]/, file);
+  }
+  assert.match(source('src/Wave3CurrencyStrip.vue'), /wallet-coin@3x\.webp/);
+  assert.match(source('src/Wave3CurrencyStrip.vue'), /wallet-diamond@3x\.webp/);
+  assert.match(source('src/GarageMissionBoard.vue'), /@3x\.webp/);
+});
+
+test('wallet, mission and trophy have distinct animations beyond shimmer, respecting reduced motion', () => {
+  const wallet = source('src/Wave3CurrencyStrip.vue');
+  const board = source('src/GarageMissionBoard.vue');
+  assert.match(wallet, /wallet-coin-orbit|wallet-diamond-prism/);
+  assert.match(board, /mission-drive|trophy-awaken/);
+  assert.match(wallet, /prefers-reduced-motion/);
+  assert.match(board, /prefers-reduced-motion/);
+});
