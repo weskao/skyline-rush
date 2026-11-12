@@ -287,6 +287,67 @@ test('a GLB wheel without its _spin pivot (pre-rig contract, e.g. the probe) kee
   assert.deepEqual(dressedWheel.quaternion.toArray(), [0, 0, 0, 1]);
 });
 
+// Task 7 (owner, 2026-11-13): the Crimson GT may draw smaller tyres and a shorter tail than the Roadster contract.
+test('a GLB wheel spin pivot lowered by an axle offset (smaller tyre) still follows the procedural wheel', async () => {
+  const ctx = setup();
+  for (const name of WHEELS) {
+    const wheel = ctx.original.getObjectByName(name), spin = wheel.getObjectByName(`${name}_spin`);
+    const axle = new THREE.Group();
+    axle.name = `${name}_axle`;
+    axle.position.y = -0.103; // tyre radius 0.337: the centre sits below the 0.44 contract pivot
+    wheel.add(axle);
+    axle.add(spin);
+  }
+  const { car, model, host } = ctx;
+  model.sync(true, 'high', host);
+  await settle();
+  const wheel = car.userData.wheels[0], spin = wheel.getObjectByName('Roadster wheel spin');
+  wheel.position.y = 0.71;
+  spin.rotation.x = 1.3;
+  model.sync(true, 'high', host);
+  assert.equal(car.getObjectByName('wheel_fl').position.y, 0.71, 'the wheel pivot follows');
+  assert.ok(car.getObjectByName('wheel_fl_spin').quaternion.equals(spin.quaternion), 'the spin follows');
+  assert.equal(car.getObjectByName('wheel_fl_axle').position.y, -0.103, 'the authored drop stays');
+});
+
+test('rear-port VFX move to a GLB that authors its nozzles ahead of the contract ports, and return on close', async () => {
+  const car = makeCar(CAR_STYLES.roadster), scene = new THREE.Scene();
+  scene.add(car);
+  const aero = createAeroVFX(scene, car);
+  const rear = aero.group.getObjectByName('Rear ports');
+  assert.ok(rear, 'the rear-port effects share one group');
+  assert.equal(rear.children.filter(c => c.name.startsWith('Cold gas nozzle')).length, 4);
+  const glb = roadsterGlb(), ports = new THREE.Group(); // nozzles under an offset parent, as exported
+  ports.position.z = -0.41;
+  glb.add(ports);
+  [-0.62, -0.22, 0.22, 0.62].forEach((x, i) => {
+    const nozzle = new THREE.Group();
+    nozzle.name = `nozzle_rear_0${i + 1}`;
+    nozzle.position.set(x, 0.58, 2.39);
+    ports.add(nozzle);
+  });
+  const cache = { async load(id) { return { kind: 'model', id, instance: () => glb.clone(true), release() {} }; } };
+  const model = createGarageModel({ id: 'crimson-gt', cache, dataset: {}, compile: async () => {} });
+  const host = { name: 'home', car, keep: aero.group, scene };
+  model.sync(true, 'high', host);
+  await settle();
+  const near = (actual, expected) => actual.forEach((v, i) => assert.ok(Math.abs(v - expected[i]) < 1e-9, `${actual} vs ${expected}`));
+  near(rear.position.toArray(), [0, -0.06, -0.41]);
+  model.sync(false, 'high', null);
+  near(rear.position.toArray(), [0, 0, 0]);
+});
+
+test('a GLB without rear nozzle nodes leaves the rear-port VFX on the contract ports', async () => {
+  const car = makeCar(CAR_STYLES.roadster), scene = new THREE.Scene();
+  scene.add(car);
+  const aero = createAeroVFX(scene, car), original = roadsterGlb();
+  const cache = { async load(id) { return { kind: 'model', id, instance: () => original.clone(true), release() {} }; } };
+  const model = createGarageModel({ id: 'roadster2', cache, dataset: {}, compile: async () => {} });
+  model.sync(true, 'high', { name: 'home', car, keep: aero.group, scene });
+  await settle();
+  assert.deepEqual(aero.group.getObjectByName('Rear ports').position.toArray(), [0, 0, 0]);
+});
+
 // develop 51e25a03: post-hit grace pulses the player car translucent (grace-fade.ts); a GLB-dressed player car pulses too.
 test('post-hit grace fades every GLB material with the procedural car, leaving the cached original alone', async () => {
   const ctx = setup();

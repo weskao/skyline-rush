@@ -8,7 +8,7 @@ test('garage cosmetics bind shared Aero shaders without reallocating scene or mu
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   const aero = createAeroVFX(scene, car);
   const flow = aero.group.children.find(child => child.geometry?.attributes.flowType);
-  const jet = aero.group.children.find(child => child.name.startsWith('Cold gas nozzle'));
+  const jet = aero.group.getObjectByName('Rear ports').children.find(child => child.name.startsWith('Cold gas nozzle'));
   const ribbon = scene.getObjectByName('Continuous dash ribbon');
   const shock = scene.getObjectByName('Ignition shockwave');
   const originalGeometry = { flow: flow.geometry, jet: jet.geometry, ribbon: ribbon.geometry };
@@ -59,7 +59,7 @@ test('selected skins switch shape and timing patterns in the shared WebGL render
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   const aero = createAeroVFX(scene, car);
   const flow = aero.group.children.find(child => child.geometry?.attributes.flowType);
-  const jet = aero.group.children.find(child => child.name.startsWith('Cold gas nozzle'));
+  const jet = aero.group.getObjectByName('Rear ports').children.find(child => child.name.startsWith('Cold gas nozzle'));
   const ribbon = scene.getObjectByName('Continuous dash ribbon');
   const shock = scene.getObjectByName('Ignition shockwave');
   const original = [flow.material, jet.material, ribbon.material, shock.geometry];

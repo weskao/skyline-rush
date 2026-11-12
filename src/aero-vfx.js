@@ -87,6 +87,7 @@ export function createAeroVFX(scene, vehicle) {
   }));
   pressure.rotation.x = -Math.PI / 2; pressure.position.y = 0.11;
   local.add(pressure);
+  const rear = new THREE.Group(); rear.name = 'Rear ports'; local.add(rear); // garage-model.ts moves it onto a dressed GLB's nozzles
 
   const jetGeometry = new THREE.CylinderGeometry(1, 4.8, 1, 20, 24, true);
   jetGeometry.rotateX(-Math.PI / 2); jetGeometry.translate(0, 0, 0.5);
@@ -114,13 +115,13 @@ export function createAeroVFX(scene, vehicle) {
     jet.name = `Cold gas nozzle ${i + 1}`;
     jet.position.fromArray(port.position);
     jet.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...port.direction));
-    local.add(jet);
+    rear.add(jet);
     return jet;
   });
   jetMaterial.dispose();
-  const voidBeams = createVoidPulseBeams(local, REAR_PORTS);
-  const nitroTrail = createNitroTrail(local, REAR_PORTS);
-  const glow = createThrusterGlow(local, REAR_PORTS);
+  const voidBeams = createVoidPulseBeams(rear, REAR_PORTS);
+  const nitroTrail = createNitroTrail(rear, REAR_PORTS);
+  const glow = createThrusterGlow(rear, REAR_PORTS);
 
   const particles = Array.from({ length: MAX_PARTICLES }, () => ({ life: 0, roll: false, pos: new THREE.Vector3(), velocity: new THREE.Vector3() }));
   const positions = new Float32Array(MAX_PARTICLES * 3), alphas = new Float32Array(MAX_PARTICLES), sizes = new Float32Array(MAX_PARTICLES);
@@ -172,7 +173,7 @@ export function createAeroVFX(scene, vehicle) {
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
     for (const port of REAR_PORTS) {
       const p = particles[cursor]; cursor = (cursor + 1) % Math.round(MAX_PARTICLES * quality);
-      p.pos.fromArray(port.position).applyQuaternion(sampleRotation).add(sample);
+      p.pos.fromArray(port.position).add(rear.position).applyQuaternion(sampleRotation).add(sample);
       p.roll = rollStrength * .7 > strength;
       // shortcut: still-air frozen-convection markers; use a validated flow solver for pressure or swirl predictions.
       if (p.roll) p.velocity.set(0, 0, 0);

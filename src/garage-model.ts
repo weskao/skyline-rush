@@ -9,6 +9,7 @@ import type { ModelQuality } from './model-manifest.ts';
 import { bindGarageRig, type GarageRig } from './garage-model-rig.ts';
 import { applyCarReflections } from './car-reflections.ts';
 import { equippedCarModel } from './car-catalog.ts';
+import { REAR_PORTS } from './aero-vfx.js';
 
 const MODEL_PARAMS: Readonly<Record<string, string>> = { probe: 'pipeline-probe', roadster: 'roadster2' };
 const HIDDEN_LAYER = 31; // no camera enables it; the frame loop rewrites `visible` on car parts, never `layers`
@@ -60,9 +61,21 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     dataset.garageModelWarmups = String(warmups);
   }
 
+  /** Rear-port VFX (aero-vfx.js `Rear ports`) sit on the GLB's nozzles when it authors them off the contract ports. */
+  function moveRearPorts(host: GarageModelHost, instance?: Object3D): void {
+    const rear = host.keep.getObjectByName('Rear ports');
+    if (!rear) return;
+    rear.position.set(0, 0, 0);
+    let node = instance?.getObjectByName('nozzle_rear_01');
+    if (!node) return;
+    for (; node && node !== instance; node = node.parent ?? undefined) rear.position.add(node.position); // unrotated, unscaled pivots
+    rear.position.x -= REAR_PORTS[0].position[0]; rear.position.y -= REAR_PORTS[0].position[1]; rear.position.z -= REAR_PORTS[0].position[2];
+  }
+
   function undress(host: GarageModelHost): void {
     const dressing = dressed.get(host);
     if (!dressing) return;
+    moveRearPorts(host);
     dressing.instance.removeFromParent();
     dressing.rig.dispose();
     for (const [object, mask] of dressing.masks) object.layers.mask = mask;
@@ -90,6 +103,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
       }
     }
     rig.update();
+    moveRearPorts(host, instance);
     host.car.add(instance);
     dressed.set(host, { instance, rig, masks });
     report();
