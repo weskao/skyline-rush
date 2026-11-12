@@ -20,3 +20,22 @@ The icons contain **no currency, numbers, reward amount, balance, date, payment 
 - `src/GarageArtworkImage.vue` provides card image-load fallback; the Results renderer hides failed decorative PNG while preserving textual badge. CSS podium entrance animation is disabled by `prefers-reduced-motion`.
 - These are **display-only** assets and an **unavailable** mission board. Do not show 0% or completed state as real progression. No signed-off goal counters, awarding, earned-trophy ownership, payouts, or backend-authoritative settlement exist yet. Never grant rewards from the source Gallery or result decorations.
 - Required pending verification: physically present PNG Git blobs, successful GitHub PNG-export job, full exact-HEAD Actions, desktop/mobile browser screenshots, hardware and visually reviewed layouts. Mark acceptance complete only when the evidence exists.
+
+## 2026-11-12 WebP-only premium asset pass (supersedes the PNG runtime handoff)
+
+- Branch: `feature/wave3-premium-webp-art-v2`, starting from `develop`; no `develop` or `main` write.
+- `scripts/generate-wave3-premium-webp.py` recreates four mission, four trophy and two
+  wallet icons as distinct transparent multi-layer metallic 3x WebP illustrations.
+- Native dimensions: 8 mission/trophy icons 288×288 at 96 CSS px; 2 wallet icons
+  144×144 at 48 CSS px. The approved Demo Points/Claim WebPs remain 216×216.
+- Runtime Gallery, Missions, Results, Wallet and Demo artwork now request WebP only.
+  When a WebP cannot load, the UI retains existing text/CSS semantics rather than
+  requesting a removed PNG. The fourteen original archived WebPs in
+  `docs/designs/3x-asset-library/webp/` are unchanged for reference.
+- PNG files in the Wave 3 Demo, Rewards/Missions and Store Readiness runtime raster
+  folders were removed, along with the obsolete PNG export workflow and script.
+- Live effects: coin orbit and sparkle, diamond prism/floating facets, mission radar
+  rings and claimed animation, trophy light/corona and bob. Effects honor reduced
+  motion and VFX-disabled modes and never confer real currency or entitlements.
+- Verify with `npm test`, Vue/TS typecheck, full regression GitHub Actions and visual
+  screenshot review before considering this branch ready for merge.
