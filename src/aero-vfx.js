@@ -44,7 +44,7 @@ function streamGeometry() {
   return geometry;
 }
 
-export function createAeroVFX(scene, vehicle) {
+export function createAeroVFX(scene, vehicle, ground) { // ground: the car's contact-shadow plane, when the scene has one
   const local = new THREE.Group();
   local.name = 'Airflow showcase';
   vehicle.add(local);
@@ -160,7 +160,7 @@ export function createAeroVFX(scene, vehicle) {
   });
   const shock = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 64), new THREE.MeshBasicMaterial({ color: '#bdeeff', transparent: true, depthWrite: false, side: THREE.DoubleSide, opacity: 0 }));
   shock.name = 'Ignition shockwave'; shock.visible = false; scene.add(shock);
-  const flare = createLaunchFlare(local, vehicle); // premium launch flares: badge-matched burst + body glow
+  const flare = createLaunchFlare(local, vehicle, ground); // premium launch flares: badge-matched burst + body glow
   const shockPosition = new THREE.Vector3();
   const previous = new THREE.Vector3(), current = new THREE.Vector3(), sample = new THREE.Vector3(), direction = new THREE.Vector3();
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
