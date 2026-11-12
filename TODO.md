@@ -78,6 +78,61 @@
 
 ---
 
+## 2026-11-11 — AI 16-frame animated pickup sprites (guide only)
+
+- [x] Generate four original 4 × 4 frame animation sheets for cell, can, tank and overcharge
+- [x] Convert to 16-frame transparent animated WebP and separate reduced-motion poster assets (85 ms/frame)
+- [x] Add `PickupAnimatedPreview.vue` for guide playback, WebGL fallback and reduced-motion behavior
+- [x] Keep actual 3D roadside models and 3D pickup collection VFX unchanged
+- [x] Commit all four original RGBA spritesheet PNGs to `docs/designs/road-pickups/ai-sprite-sources/`
+- [x] Commit all eight binary WebP assets to `public/feature-assets/road-pickups/animated/` on GitHub and verify all original Git blob SHAs
+- [ ] Confirm Playwright loads all four genuine animated WebPs and reduced-motion poster (test now strictly requires real image content)
+- [ ] Confirm latest complete CI (all browser and World Tour shards) is GREEN after the final asset and test commit
+
+## 2026-11-11 — Premium 3D pickup collection VFX (`feature/pickup-3d-artwork-ui`)
+
+- [x] Four tier-specific player pickup animations (flash, ring waves, GPU-instanced energy shards, and rare-item beams)
+- [x] Brighter rainbow `overcharge` effect with three prismatic waves, distinct premium visual identity
+- [x] Shared `createEffects` integration across existing and future tracks; test world-point mapping with original graph item metadata
+- [x] AI item-take cues get reduced effects, player pickup is full strength; existing NITRO HUD/audio/reward logic preserved
+- [x] Respawn generation-aware event dedupe; VFX reset/disposal during race changes and shutdown
+- [x] Maximum two pooled effects per tier, stable GPU shaders, High/Medium/Low graphics and reduced-motion fallback
+- [x] TDD unit tests and actual WebGL collection screenshots for each tier, checked in `tests/pickup-collect-vfx.test.js` and `tests/pickup-3d-collection-browser.spec.js`
+- [ ] Exact-head 3D-smoke, typecheck, units, default and opt-in builds, cloud-save, all browser and World Tour CI shards GREEN
+- [ ] Manually review screenshot artifacts on actual mobile devices; measure p50/p95 FPS, draw calls, GPU memory across all quality tiers
+
+## 2026-11-11 — Unified 3D roadside pickups and guide (`feature/pickup-3d-artwork-ui`)
+
+- [x] `Makefile` supports `make build 3d=1` in addition to the existing dev/phone `3d=1` flows; default continues to use legacy art.
+- [x] Shared low-poly luxury PBR object geometries and per-tier materials: battery, pressure canister, twin reservoir and gyro reactor.
+- [x] Four guide WebGL previews use the identical model, scale, animation and material factories as all races; unrelated SVGs are fallback only.
+- [x] Scene models pulse, spin, hover and clear asphalt; motion-reduction freezes movements and glow.
+- [x] Existing global `createEffects` path remains shared across all tracks and future authored routes; no changes to collision/economy.
+- [x] Added model parity, clearance, glow, build flag, browser screenshots and disposal assertions; CI attaches real rendered evidence.
+- [ ] Exact-head required full unit, cloud, browser, World Tour and 3D-specific smoke suites must all pass.
+- [ ] Manual WebGL/physical-device screenshots and FPS p50/p95 before an authorized merge/release.
+
+## 2026-11-11 — Optional AAA-style 3D pickup art, Makefile `3d=1`
+
+- [x] Root cause: `3d=1` previously only enabled Roadster/Coast look; the guide rendered unrelated SVG illustrations while the race rendered simple, independently authored models.
+- [x] Add `VITE_PICKUP_3D=1` to the existing `DEV_3D` Makefile switch for `make 3d=1`, `dev-unlocked`, `phone`, and `dev-feature`.
+- [x] Re-author tier-specific capsule, pressure canister, twin tanks and gyroscopic multicolor reactor, including metallic PBR surfaces, glow, depth and differentiated width/height.
+- [x] Reuse **the exact same geometry/material factories** in the world renderer and four interactive guide WebGL previews, with real 3D spin, hover and reduced-motion.
+- [x] Preserve legacy non-3D display, gameplay economy/collectors, all existing/future shared race tracks, instanced draw-call budget, scene disposal and lazy guide mounting.
+- [x] Add opt-in smoke tests, visual snapshot attachment, CI 3D build path, model parity and pooled-geometry tests.
+- [ ] Confirm latest exact-HEAD CI (unit, typecheck, build x2, 3D browser smoke, full browser/World Tour/cloud); resolve any failure.
+- [ ] Confirm real desktop and phone art review and frame p50/p95; do not label as accepted until visual verification.
+- [ ] No merge/release without explicit owner authorization. Existing public URL remains on deployed main.
+
+## 2026-11-11 — Road pickup models and collectible-guide artwork (`feature/pickup-3d-artwork-ui`)
+
+- [x] Replace four shared octahedrons with distinct blue battery, orange canister, gold twin tank and rainbow multi-ring reactor; adjust display dimensions without changing the game economy.
+- [x] Use the existing four InstancedMesh pools for performance; apply distance-phased hovering/spinning with reduced-motion support.
+- [x] Add four transparent authored 384 × 384 SVG product illustrations to the guide with breathing glow, a rotating platform, enhanced card sizing and responsive layout.
+- [x] Add regression tests for the modeled silhouettes, instancing, motion, guide image assets and four-viewport browser rendering.
+- [ ] Run module-size, focused tests, full test/typecheck/build/browser gates and `make verify` in a working checkout; connector write actions cannot run local tests.
+- [ ] Verify exact-HEAD GitHub CI and manually inspect real WebGL frame time, color/contrast and desktop/mobile screenshots before merging or releasing.
+
 ## 2026-11-10 — main CI 42662669700: route previews and Frostbite Rift phone
 
 - [x] RED evidence: main `cc5df3fe9e30` failed browser shard 9 because the 10-track World Tour assertion saw 16 home previews; shard 1's Frostbite phone span fall stayed 0 after 24 s, including retries.

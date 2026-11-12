@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { COLLECTIBLES_GUIDE_COPY } from './collectibles-guide-copy.ts';
-
+import './pickup-guide-art.css';
+import PickupAnimatedPreview from './PickupAnimatedPreview.vue';
 const rings = [
   { key: 'charge', color: 'cyan', icon: 'charge' },
   { key: 'nitro', color: 'gold', icon: 'nitro' },
@@ -9,14 +10,12 @@ const rings = [
   { key: 'mystery', color: 'rainbow', icon: 'mystery' },
   { key: 'perfect', color: 'gold', icon: 'perfect' },
 ];
-
 const pickups = [
   { key: 'cell', color: 'blue', icon: 'cell' },
   { key: 'can', color: 'orange', icon: 'can' },
   { key: 'tank', color: 'gold', icon: 'tank' },
   { key: 'overcharge', color: 'rainbow', icon: 'overcharge' },
-];
-
+] as const;
 const powers = [
   { key: 'shield', color: 'cyan', icon: 'shield' },
   { key: 'magnet', color: 'gold', icon: 'magnet' },
@@ -24,11 +23,9 @@ const powers = [
   { key: 'freeze', color: 'blue', icon: 'freeze' },
 ];
 </script>
-
 <template>
   <div id="guide-items" class="collectibles-guide">
     <p class="collectibles-intro" data-i18n="guide.items.intro">{{ COLLECTIBLES_GUIDE_COPY.en['guide.items.intro'] }}</p>
-
     <!-- SECTION 1: RINGS -->
     <div class="collectibles-section">
       <div class="section-header">
@@ -69,16 +66,9 @@ const powers = [
         <p class="section-intro" data-i18n="guide.items.pickupsIntro">{{ COLLECTIBLES_GUIDE_COPY.en['guide.items.pickupsIntro'] }}</p>
       </div>
       <div class="collectibles-grid">
-        <article v-for="pickup in pickups" :key="pickup.key" class="collectible-card" :class="`card-${pickup.color}`">
-          <div class="card-emblem" aria-hidden="true">
-            <svg viewBox="0 0 48 48" class="emblem-svg">
-              <!-- Diamond / Octahedron Gem -->
-              <polygon points="24,8 38,24 24,40 10,24" class="gem-body" />
-              <polygon points="24,8 38,24 24,24" class="gem-facet-a" />
-              <polygon points="24,24 38,24 24,40" class="gem-facet-b" />
-              <polygon points="10,24 24,8 24,24" class="gem-facet-c" />
-              <polygon points="10,24 24,24 24,40" class="gem-facet-d" />
-            </svg>
+        <article v-for="pickup in pickups" :key="pickup.key" class="collectible-card pickup-card" :class="`card-${pickup.color}`">
+          <div class="pickup-showcase" aria-hidden="true">
+            <PickupAnimatedPreview :tier="pickup.key" />
           </div>
           <div class="card-info">
             <header class="card-head">
@@ -399,15 +389,6 @@ const powers = [
   background: rgba(56, 189, 248, 0.08);
   color: #38bdf8;
 }
-.card-blue .gem-body {
-  fill: #0284c7;
-  stroke: #38bdf8;
-  stroke-width: 2;
-}
-.card-blue .gem-facet-a { fill: #38bdf8; opacity: 0.6; }
-.card-blue .gem-facet-b { fill: #0369a1; opacity: 0.6; }
-.card-blue .gem-facet-c { fill: #7dd3fc; opacity: 0.7; }
-.card-blue .gem-facet-d { fill: #075985; opacity: 0.7; }
 .card-blue .card-badge {
   background: rgba(56, 189, 248, 0.15);
   color: #7dd3fc;
@@ -427,39 +408,12 @@ const powers = [
   background: rgba(255, 145, 0, 0.08);
   color: #ff9100;
 }
-.card-orange .gem-body {
-  fill: #d97706;
-  stroke: #ff9100;
-  stroke-width: 2;
-}
-.card-orange .gem-facet-a { fill: #fbbf24; opacity: 0.6; }
-.card-orange .gem-facet-b { fill: #b45309; opacity: 0.6; }
-.card-orange .gem-facet-c { fill: #fde68a; opacity: 0.7; }
-.card-orange .gem-facet-d { fill: #78350f; opacity: 0.7; }
 .card-orange .card-badge {
   background: rgba(255, 145, 0, 0.15);
   color: #fed7aa;
 }
 
-.card-gold .gem-body {
-  fill: #ca8a04;
-  stroke: #ffc400;
-  stroke-width: 2;
-}
-.card-gold .gem-facet-a { fill: #fde047; opacity: 0.6; }
-.card-gold .gem-facet-b { fill: #a16207; opacity: 0.6; }
-.card-gold .gem-facet-c { fill: #fef08a; opacity: 0.7; }
-.card-gold .gem-facet-d { fill: #713f12; opacity: 0.7; }
 
-.card-rainbow .gem-body {
-  fill: #ec4899;
-  stroke: #f43f5e;
-  stroke-width: 2;
-}
-.card-rainbow .gem-facet-a { fill: #38bdf8; opacity: 0.6; }
-.card-rainbow .gem-facet-b { fill: #a855f7; opacity: 0.6; }
-.card-rainbow .gem-facet-c { fill: #facc15; opacity: 0.7; }
-.card-rainbow .gem-facet-d { fill: #ef4444; opacity: 0.7; }
 
 @media (max-width: 480px) {
   .collectibles-grid {
