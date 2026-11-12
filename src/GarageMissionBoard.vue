@@ -220,4 +220,28 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 :global(body[data-vfx-enabled="false"] .garage-mission-board .garage-trophy-card::before){display:none}
 @media (prefers-reduced-motion:reduce){.garage-mission-card::before,.garage-trophy-card::before,
 .garage-mission-card :deep(.artwork-img),.garage-trophy-card :deep(.artwork-img){animation:none!important}}
+
+/* Shape-specific Wave 3 racing effects; original silhouettes are never redrawn. */
+.garage-mission-card[data-mission-id="mission-race"] :deep(.artwork-img){
+ animation:mission-flag-wave 3.3s ease-in-out infinite}
+.garage-mission-card[data-mission-id="mission-time"] :deep(.artwork-img){
+ animation:mission-time-tick 4s steps(12,end) infinite}
+.garage-mission-card[data-mission-id="mission-drift"] :deep(.artwork-img){
+ animation:mission-drift-pulse 3.8s cubic-bezier(.3,.1,.5,1) infinite}
+.garage-mission-card[data-mission-id="mission-combo"] :deep(.artwork-img){
+ animation:mission-combo-boost 2.7s ease-out infinite}
+@keyframes mission-flag-wave{0%,100%{transform:skewY(0deg) translateY(0)}
+ 25%{transform:skewY(-2deg) translateY(-3px)}75%{transform:skewY(2deg) translateY(-1px)}}
+@keyframes mission-time-tick{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}
+@keyframes mission-drift-pulse{0%,100%{transform:rotate(-6deg) scale(1)}
+ 52%{transform:rotate(6deg) scale(1.08)}}
+@keyframes mission-combo-boost{0%,100%{transform:translateX(0) scale(1);filter:brightness(1)}
+ 45%{transform:translateX(5px) scale(1.1);filter:brightness(1.5)}}
+.garage-trophy-card[data-trophy-id="trophy-bronze"] :deep(.artwork-img){animation-duration:5.1s}
+.garage-trophy-card[data-trophy-id="trophy-silver"] :deep(.artwork-img){animation-duration:4.4s}
+.garage-trophy-card[data-trophy-id="trophy-gold"] :deep(.artwork-img){animation-duration:3.8s}
+.garage-trophy-card[data-trophy-id="trophy-platinum"] :deep(.artwork-img){animation-duration:3.1s}
+:global(body[data-vfx-enabled="false"] .garage-mission-board .garage-mission-card .artwork-img),
+:global(body[data-vfx-enabled="false"] .garage-mission-board .garage-trophy-card .artwork-img){animation:none!important}
+
 </style>
