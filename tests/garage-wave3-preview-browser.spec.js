@@ -13,7 +13,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
     await expect(entryIcon).toBeVisible();
     await expect(entryIcon).toHaveJSProperty('naturalWidth', 216);
     await expect(entryIcon).toHaveJSProperty('naturalHeight', 216);
-    await expect(entryIcon).toHaveAttribute('src', /store-collection@3x\.png$/);
+    await expect(entryIcon).toHaveAttribute('src', /store-collection@3x\.webp$/);
     await expect(gallery.locator('[data-store-phase="coming-soon"]')).toHaveText('Shop · Coming soon — preview only');
     const cards=gallery.locator('button[data-wave3-asset]');
     await expect(cards).toHaveCount(6);
@@ -107,7 +107,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
       });
       expect(metrics.type).toMatch(gif ? new RegExp(`garage-animated/${id}@3x\\.gif$`) : new RegExp(`raster/${id}@3x\\.webp$`));
       expect(metrics.animated).toBe(String(gif));
-      expect(metrics.original).toMatch(/@3x\.png$/);
+      expect(metrics.original).toMatch(/@3x\.webp$/);
       expect(metrics.nativeGif).toEqual([216,216]);
       expect(metrics.size).toEqual([216,216]);
       expect(metrics.display).toEqual([72,72]);

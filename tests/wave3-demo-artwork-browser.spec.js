@@ -169,7 +169,7 @@ test('reduced motion retains static art and VFX-Off hides the CSS sweep', async 
   const box = store.locator('[data-wave3-asset="store-box"] img');
   await box.scrollIntoViewIfNeeded();
   await expect(box).toHaveAttribute('data-animation-active', 'false');
-  await expect(box).toHaveAttribute('src', /store-box@3x\.png$/);
+  await expect(box).toHaveAttribute('src', /store-box@3x\.webp$/);
   const tagSweep = store.locator('[data-wave3-asset="store-tag"] .garage-art-sweep');
   await page.evaluate(() => { document.body.dataset.vfxEnabled = 'false'; });
   await expect.poll(() => tagSweep.evaluate(el => getComputedStyle(el).display)).toBe('none');
