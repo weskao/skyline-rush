@@ -56,11 +56,14 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     `<wheel>_axle` at y .357, and the rear nozzles sit one rigid offset (0, -.33, -.415) from the rear ports
   - the equipped car persists across reload (local save)
   - a save without a car loads as the Roadster with its paint
-- [ ] RED tests, part 2 (not written):
-  - collision box, road contact and camera target are identical to the Roadster's. No test asserts it; the
-    simulation (`src/game.js`) takes no car input and is unchanged.
-  - the equipped car persists across Cloud Save (the car is a local save only, see below)
-  - a preview never grants the car (nothing to grant while both cars are open to everyone)
+- [x] Tests, part 2 (2026-11-13):
+  - collision box, road contact and camera target are identical to the Roadster's: `tests/car-catalog.test.js`
+    (the simulation takes no car input) and `tests/crimson-gt-browser.spec.js` "the GT stands on the road and under
+    the chase camera exactly like the Roadster" (car root, chase camera, procedural tyres equal; GLB tyres touch the
+    road within 0.005). These are guards: the product already behaved this way, so there was no product RED.
+  - the equipped car persists across Cloud Save: see the Cloud Save box below.
+- [ ] A preview never grants the car: not written, nothing to grant while both cars are open to everyone (waits for
+  the unlock rule).
 - [x] Blockout from the four studio panels (image-to-3D allowed only as a blockout). Then author the car in Blender
   around the shared collision envelope and ports. Do **not** move the ports to match the image.
   - 2026-11-12: `assets-src/crimson-gt/` (`build.py`, `bake.py`, `crimson-gt.blend`), authored in bpy, no
@@ -72,17 +75,29 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     (radius .337) and a shorter tail with the rear nozzles ahead of the contract rear ports. Silhouette IoU:
     side 0.936, front 3/4 0.865, rear 3/4 0.871, rear 0.857 (0.968 / 0.872 / 0.880 / 0.905 without the wing,
     which only one panel shows). The 0.90 target is met in the side view only.
+  - 2026-11-13, iteration 8: the wing rests stowed over the tail deck (owner-approved; the contract pivot is
+    unchanged and a static `wing_stow` node carries the offset), so the three panels without a wing are measured
+    in the rest pose and the rear three-quarter panel with the wing raised. Rest: side 0.952, front 3/4 0.878,
+    rear 3/4 0.877, rear 0.882. Wing raised: 0.936 / 0.865 / 0.871 / 0.837. **0.90 is met in the side view only**;
+    the measured ceilings and their reasons per view are in `assets-src/crimson-gt/asset-brief.md`. The mattes were
+    not tuned.
 - [x] Materials: a deep-red metallic clearcoat that responds to `PAINTS`, emissive light blade and rear bar,
   dark glass, five-spoke wheels.
   - 2026-11-13: all 6 `PAINTS` tint the GLB body (`tests/crimson-gt-browser.spec.js`).
-  - LOD0 22,540 triangles / 1,180,364 B, low 13,636 triangles / 509,964 B, KTX2 normal and AO (2026-11-13 rebuild).
+  - LOD0 22,996 triangles / 1,204,084 B, low 13,926 triangles / 541,088 B, KTX2 normal, AO and flake
+    (2026-11-13, iteration 8).
   - `check-glb: PASS` on both LODs; manifest hashes match (`tests/model-manifest.test.js`).
-- [ ] Material gaps: the paint has no flake layer (factors only); no interior behind the glass, no hood vents.
-  The rims are dark since the 2026-11-13 rebuild.
+- [x] Material gaps closed (2026-11-13): a tiling flake normal map under the clearcoat (the baked normal shapes
+  the coat), see-through glass over a cabin with seats, and a hood vent pair with slats.
+  `tests/crimson-gt-model.test.js` "flake layer under the clearcoat, see-through glass over a cabin, hood vent pair"
+  on both LODs; RED on the previous GLBs (no `cabin`, `hood_vent_l` or `crimson_gt_flake`, opaque glass). The cabin,
+  vents and flake are inferred (the panels show them only partly): listed in the asset brief.
 - [x] Rig via `bindGarageRig` unchanged (`src/garage-model-rig.ts` has no diff); the wheels spin in a race. All 6
   paints and all 22 `GARAGE_SKINS` preview on the new car (`tests/crimson-gt-browser.spec.js`, 2026-11-13).
-- [ ] Wing tilt/raise and lift fans following the jets are not asserted on the GT (same rig nodes as `roadster2`,
-  whose specs cover them); only the last of the 22 skins was inspected in a screenshot.
+- [x] Wing and lift fans (2026-11-13): `tests/crimson-gt-browser.spec.js` "the GT wing rests stowed, tilts and
+  raises with the procedural wing, and the lift fans follow the jets" (the GLB `wing` and `wing_blade` follow the
+  procedural parts, the endplates stay on the blade, the fans show with the jets). All 22 skins were captured on
+  the GT one by one (`CRIMSON_GT_SHOTS=<dir>`) and inspected on contact sheets: each previews on the GT.
 - [x] Garage car selection UI (2026-11-13, `src/GarageCarPicker.vue`, `src/car-catalog.ts`):
   - a car picker on Garage Home and Preview Studio, showing the car in use
   - the equipped car is shown on the Home showcase and in races, with no URL flag
@@ -93,12 +108,24 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     equipped GT. The equipped car's own model now wins (`carModel() ?? forced` in `src/garage-model.ts`); the flag
     dresses only the Roadster. RED (`Expected "crimson-gt", Received "roadster2"`) → GREEN in
     `tests/crimson-gt-browser.spec.js`; rule 13 in `.claude/rules/3d-asset-pipeline.md`.
-- [ ] Car picker: locked/trial/owned states (not built: both cars are open); focus order not asserted; the factory
-  colour is a plain swatch because no painted card art exists for it.
+- [x] Car picker focus order (2026-11-13): `tests/crimson-gt-browser.spec.js` "keyboard: Tab walks the cars in
+  catalog order, Enter equips the focused car, and the paints come after the picker".
+- [x] Factory colour card (2026-11-13): `factory@3x.webp` (960x510, 3x the 320x170 card) is rendered from the car's
+  own master by `assets-src/crimson-gt/card/render_card.py`; the plain swatch is gone
+  (`tests/garage-paint-presentation.test.js`, RED before the change). Browser test "factory card" at 390x844,
+  844x390 and 1440x900: native size, opaque, same frame as the other paint cards, name below. It is a render, so it
+  is darker and less stylised than the six painted cards; the flake is rendered at a third of its strength for the
+  card only.
+- [ ] Car picker locked/trial/owned states: not built, both cars are open (waits for the unlock rule).
 - [x] Local save for the equipped car (`skyline-rush-car`) and each car's paint (`skyline-rush-car-paints`), with a
   backward-compatible load: no entry means the Roadster, whose paint stays in `skyline-rush-paint`. No change to
   existing paint or skin entitlements.
-- [ ] Cloud Save field for the equipped car (owner 2026-11-12: local save only for now).
+- [x] Cloud Save field for the equipped car (2026-11-13): an optional `car` in the cloud document, validated in
+  `firestore.rules` together with the client (`src/cloud-progress-merge.ts`, `src/cloud-progress.ts`). A save
+  without it loads as the Roadster; a device that already picked a car keeps its own pick. RED → GREEN
+  `tests/cloud-progress.test.js`, `tests/car-catalog.test.js`, `tests/firestore-rules.test.js`; emulator browser
+  test in `tests/cloud-emulator-browser.spec.js` (`npm run test:cloud`: 16 passed, rules 3/3). Each car's paint
+  stays a local save.
 - [x] The Low tier requests only `crimson-gt-low.glb`; rival cars stay procedural (one GLB root in a race); a
   missing GLB falls back to the procedural car with no page error. The car never swaps during a race.
 - [ ] Preload and compile the equipped car before GO: the shader-program count stayed constant over the first
