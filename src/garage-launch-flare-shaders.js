@@ -4,9 +4,12 @@ const VIEW = 'normalize(-mv.xyz+vec3(0.,0.,1e-5))'; // never normalize a zero ve
 const LIFE = 'pow(max(0.,1.-age),1.4)';
 
 // Light pool on the road under the car: the flare erupts from below, so the road lights up first.
+// Quad half-extent in glow footprints: past the furthest ripple front (1.5), where the glow is under one 8-bit step,
+// so the pool never ends in a straight edge beside the next lane.
+export const POOL_SPREAD = 1.6;
 export const POOL_VERTEX = 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}';
 export const POOL_FRAGMENT = `varying vec2 vUv;uniform float age,power,time,pulse,corona,shape;uniform vec3 primary,secondary;
-  void main(){vec2 q=clamp(vUv,0.,1.)*2.-1.;
+  void main(){vec2 q=(clamp(vUv,0.,1.)*2.-1.)*${POOL_SPREAD.toFixed(1)};
     float pool=exp(-dot(q,q)*2.6);float hot=exp(-dot(q*vec2(1.,.6),q*vec2(1.,.6))*9.);
     float flick=1.+corona*.25*sin(time*23.+q.y*7.)+pulse*.35*sin(time*14.);
     float r=length(q),front=age*1.5,ring=shape>.5&&shape<1.5?0.:1.; // the shock ring keeps its own look

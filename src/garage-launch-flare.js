@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { FLARE_SHAPES, LAUNCH_FLARE_STYLES } from './garage-launch-flare-styles.ts';
-import { POOL_VERTEX, POOL_FRAGMENT, RAY_VERTEX, RAY_FRAGMENT, RING_VERTEX, RING_FRAGMENT,
+import { POOL_SPREAD, POOL_VERTEX, POOL_FRAGMENT, RAY_VERTEX, RAY_FRAGMENT, RING_VERTEX, RING_FRAGMENT,
   BODY_VERTEX, BODY_FRAGMENT, SPARK_VERTEX, SPARK_FRAGMENT } from './garage-launch-flare-shaders.js';
 
 const RIM_X = 1.1, RIM_Z = 2.2; // half-extents of the body footprint the flare wraps (car frame, rear faces +z)
 const MAX_RAYS = 24, SPARKS = 96; // the richest style has 20 rays plus the crimson slashes
 const UP = new THREE.Vector3(0, 1, 0);
+const FLAT = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2); // the pool plane laid on the road
+const roadUp = new THREE.Vector3(), carFrame = new THREE.Quaternion();
 
 const hash = n => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
 const ray = (phi, rise, length, thickness = 0.035, tone = 0) => [
@@ -38,11 +40,11 @@ function instanced(geometry, material, count, name) {
 }
 
 function createParts(uniforms) {
-  const additive = { uniforms, transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending };
+  const additive = { uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
   const material = (vertexShader, fragmentShader, extra = {}) => new THREE.ShaderMaterial({ ...additive, vertexShader, fragmentShader, ...extra });
   const pool = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material(POOL_VERTEX, POOL_FRAGMENT));
   pool.name = 'Launch flare burst'; pool.frustumCulled = false; pool.visible = false;
-  pool.rotation.x = -Math.PI / 2; pool.position.y = 0.05; pool.scale.set(RIM_X * 5, RIM_Z * 3.6, 1); // flat on the road
+  pool.rotation.x = -Math.PI / 2; pool.position.y = 0.05; pool.scale.set(RIM_X * 5 * POOL_SPREAD, RIM_Z * 3.6 * POOL_SPREAD, 1); // flat on the road
   const cone = new THREE.ConeGeometry(1, 1, 8, 12, true); cone.translate(0, 0.5, 0); // base at the sill, tip at y=1
   cone.setAttribute('delay', new THREE.InstancedBufferAttribute(Float32Array.from({ length: MAX_RAYS }, (_, i) => hash(i + 31)), 1));
   const rays = instanced(cone, material(RAY_VERTEX, RAY_FRAGMENT, { side: THREE.DoubleSide }), MAX_RAYS, 'Launch flare rays');
@@ -52,8 +54,8 @@ function createParts(uniforms) {
   const around = new THREE.Matrix4().makeRotationX(-Math.PI / 2).scale(new THREE.Vector3(RIM_X * 1.32, RIM_Z * 1.25, 1));
   rings.setMatrixAt(0, around); rings.setMatrixAt(1, around); // horizontal, sized to enclose the body
   rings.geometry.attributes.tone.array[1] = 1;
-  for (const layer of [pool, rays, rings, sparks]) layer.renderOrder = 10; // composite above the road, including banked course surfaces
-  return { pool, rays, rings, sparks, body: material(BODY_VERTEX, BODY_FRAGMENT, { depthTest: true }) }; // body glow still respects car geometry
+  pool.renderOrder = 10; // drawn after shadows and transparent road markings; depth-tested, so every car still occludes it
+  return { pool, rays, rings, sparks, body: material(BODY_VERTEX, BODY_FRAGMENT) }; // 3D flare and body glow respect car depth
 }
 
 function sparkCloud() { // spawn points around the sill ellipse plus a seed per spark; static, built once
@@ -81,8 +83,9 @@ function writeRays(rays, layout) {
   rays.instanceMatrix.needsUpdate = tone.needsUpdate = true;
 }
 
-// effects: the car-mounted effects group (outside the silhouette Studio framing measures); vehicle: the car.
-export function createLaunchFlare(effects, vehicle) {
+// effects: the car-mounted effects group (outside the silhouette Studio framing measures); vehicle: the car;
+// ground: the road plane under the car (its contact shadow, in the car's parent space), absent in Garage and Studio.
+export function createLaunchFlare(effects, vehicle, ground) {
   const uniforms = Object.fromEntries(['age', 'power', 'time', 'shape', 'rays', 'swirl', 'pulse', 'corona', 'core', 'size']
     .map(key => [key, { value: 0 }]));
   uniforms.core.value = uniforms.size.value = 1;
@@ -122,6 +125,10 @@ export function createLaunchFlare(effects, vehicle) {
       rays.visible = on && rays.count > 0; rings.visible = on && style.shape === 'ring';
       sparks.visible = on && style.shape !== 'ring'; sparks.geometry.setDrawRange(0, quality > 0.25 ? SPARKS : SPARKS / 2); // Low throws half
       if (!on) return;
+      if (ground) { // the car leans about its wheels (steering bank, thrust pitch): a pool leaning with it sinks under the road
+        roadUp.set(0, 0, 1).applyQuaternion(ground.quaternion).applyQuaternion(carFrame.copy(vehicle.quaternion).invert());
+        pool.quaternion.setFromUnitVectors(UP, roadUp).multiply(FLAT);
+      }
       uniforms.age.value = age; uniforms.time.value = time; uniforms.power.value = power;
       rays.rotation.y = style.swirl * time * 0.8; // the magenta vortex swirls its rays around the car
     },

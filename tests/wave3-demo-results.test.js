@@ -124,13 +124,25 @@ test('compact portrait/landscape and reduced-motion styling is scoped to the opt
   assert.doesNotMatch(css, /#result-stats|#again-button|#next-button/);
 });
 
-test('Wave 3 result card stays out of the live result buttons and cloud-status layout flow', () => {
+test('reward panel remains anchored in the results summary instead of jumping from a transformed fixed-position parent', () => {
   const css = readFileSync(new URL('../src/wave3-demo-results.css', import.meta.url), 'utf8');
-  assert.match(css, /\.wave3-demo-results\s*\{[^}]*position:\s*fixed/s);
+  const card = css.match(/^\.wave3-demo-results\s*\{([^}]*)\}/m)?.[1] ?? '';
+  assert.match(card, /position:\s*static/);
+  assert.doesNotMatch(card, /position:\s*(?:fixed|absolute)/);
+  assert.doesNotMatch(card, /\b(?:left|bottom|right|top):/);
   assert.match(css, /\.wave3-demo-results\s*\{[^}]*max-height:\s*min\(/s);
-  assert.match(css, /orientation:\s*portrait/);
-  assert.match(css, /\.wave3-demo-results\s*\{[^}]*position:\s*static/s);
   assert.doesNotMatch(css, /#result-cloud|#again-button|#result-links/);
+});
+
+test('short landscape results show a compact earned reward without crowding race actions', () => {
+  const css = readFileSync(new URL('../src/wave3-demo-results.css', import.meta.url), 'utf8');
+  const compact = css.split('@media (max-height: 500px) and (orientation: landscape)')[1] ?? '';
+  assert.match(compact, /\.wave3-demo-results\s*\{/);
+  assert.match(compact, /\.wave3-demo-results__banner\s*\{\s*display:\s*none/);
+  assert.match(compact, /\.wave3-demo-results__missions/);
+  assert.match(compact, /\.wave3-demo-results__points/);
+  // Compact visuals must not remove the settled status and mission text from assistive technology.
+  assert.match(compact, /clip-path:\s*inset\(50%\)/);
 });
 
 test('results A-03 optional WebP falls back to PNG then retained decorative CSS mark', () => {
