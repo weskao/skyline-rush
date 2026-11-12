@@ -48,7 +48,7 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
   const courseBests = Object.fromEntries(Object.keys(COURSE_TRACKS).map((id, i) => [recordTrackId(id), 120 + i]));
   assert.ok(Object.keys(courseBests).length >= 3, 'Frostbite, Dune and Skyfall');
   await assertSucceeds(setDoc(save, { ...progress, unlocked: tracks, stars: Object.fromEntries(tracks.map(id => [id, 3])),
-    bests: { ...everyBest, ...courseBests },
+    bests: { ...everyBest, ...courseBests }, car: 'crimson-gt',
     medals: { 'first-win': stamp, 'clean-run': stamp, 'perfect-five': stamp, 'nitro-chain': stamp } }), 'fullest save with course bests');
   for (const id of Object.keys(courseBests)) await assertFails(setDoc(save, { ...progress, bests: { [id]: 0 } }), `${id} best 0`);
   for (const bad of [0, 604800, 604801, -1, '60', true]) await assertFails(setDoc(save, { ...progress, bests: { [recordTrackId('coast')]: bad } }), `best ${bad}`);
@@ -60,6 +60,9 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
   await assertFails(setDoc(save, { ...progress, bests: { 'aurora@4': 60 } }), 'a layout no build wrote');
   await assertFails(setDoc(save, { ...progress, stars: { [recordTrackId('coast')]: 3 } }));
   await assertFails(setDoc(save, { ...progress, medals: { 'first-win': 'not-a-date' } }));
+  // Optional equipped car (Task 7): the catalog's ids only; a save without it stays valid for older clients.
+  for (const car of ['roadster', 'crimson-gt']) await assertSucceeds(setDoc(save, { ...progress, car }), `car ${car}`);
+  for (const bad of ['hovercraft', '', 7, null, ['crimson-gt']]) await assertFails(setDoc(save, { ...progress, car: bad }), `car ${JSON.stringify(bad)}`);
   await assertFails(deleteDoc(doc(other, 'saves/owner')));
   await assertFails(deleteDoc(doc(guest, 'saves/owner')));
   await assertSucceeds(deleteDoc(save));

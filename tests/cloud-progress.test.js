@@ -312,3 +312,43 @@ test('importing exported progress validates data and never accepts unbounded or 
   assert.throws(() => parseProgressExport('not-json'), /Invalid/);
   assert.throws(() => parseProgressExport('x'.repeat(1100000)), /large/);
 });
+
+// Task 7 item 7: the equipped car is an optional Cloud Save field. `firestore.rules` accepts the same ids.
+const NO_CAR = { version: 2, unlocked: ['coast'], stars: {}, bests: {}, medals: {}, history: [], modeHistory: [], daily: [] };
+
+test('equipped car in Cloud Save: this device\'s own choice wins, a device without one adopts the cloud car, a save without a car keeps its shape', () => {
+  assert.equal(mergeProgress(NO_CAR, { ...NO_CAR, car: 'crimson-gt' }).car, 'crimson-gt');
+  assert.equal(mergeProgress({ ...NO_CAR, car: 'roadster' }, { ...NO_CAR, car: 'crimson-gt' }).car, 'roadster');
+  assert.equal(mergeProgress({ ...NO_CAR, car: 'crimson-gt' }, NO_CAR).car, 'crimson-gt');
+  assert.deepEqual(Object.keys(mergeProgress(NO_CAR, NO_CAR)), Object.keys(NO_CAR), 'a save from before cars is written back unchanged');
+  for (const bad of ['hovercraft', 'toString', 7, null, ['crimson-gt']]) {
+    assert.equal(Object.hasOwn(mergeProgress(NO_CAR, { ...NO_CAR, car: bad }), 'car'), false, `cloud car ${JSON.stringify(bad)}`);
+    assert.equal(mergeProgress({ ...NO_CAR, car: bad }, { ...NO_CAR, car: 'crimson-gt' }).car, 'crimson-gt', `local car ${JSON.stringify(bad)}`);
+  }
+  assert.equal(parseProgressExport(JSON.stringify({ ...NO_CAR, car: 'crimson-gt' })).progress.car, 'crimson-gt');
+  assert.equal(Object.hasOwn(parseProgressExport(JSON.stringify(NO_CAR)).progress, 'car'), false);
+});
+
+test('local progress reads and restores the equipped car, and an account switch keeps each account\'s own car', () => {
+  const data = new Map();
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key) };
+  assert.equal(Object.hasOwn(readLocalProgress(storage), 'car'), false, 'no car was ever picked on this device');
+  assert.equal(saveLocalProgress({ ...NO_CAR, car: 'crimson-gt' }, storage), true);
+  assert.equal(readLocalProgress(storage).car, 'crimson-gt');
+  assert.equal(saveLocalProgress(NO_CAR, storage), true);
+  assert.equal(readLocalProgress(storage).car, 'crimson-gt', 'a cloud save without a car leaves the device choice alone');
+  assert.equal(switchCloudAccount('player-A', 'player-B', storage), true);
+  assert.equal(Object.hasOwn(readLocalProgress(storage), 'car'), false, 'player B never picked a car');
+  assert.equal(switchCloudAccount('player-B', 'player-A', storage), true);
+  assert.equal(readLocalProgress(storage).car, 'crimson-gt');
+});
+
+test('firestore.rules accepts exactly the catalog\'s car ids in the optional car field', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { CARS } = await import('../src/car-catalog.ts');
+  const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  const [, ids] = rules.match(/data\.get\('car', 'roadster'\) in \[([^\]]+)\]/) ?? [];
+  assert.deepEqual(ids?.split(',').map(id => id.trim().replaceAll("'", '')), Object.keys(CARS));
+  assert.match(rules, /hasOnly\(\['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily', 'car'\]\)/);
+  assert.match(rules, /hasAll\(\['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'\]\)/, 'car stays optional: older clients keep saving');
+});

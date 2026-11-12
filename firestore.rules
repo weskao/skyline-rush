@@ -102,9 +102,11 @@ service cloud.firestore {
     match /saves/{uid} {
       allow get, delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'])
+        && request.resource.data.keys().hasOnly(['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily', 'car'])
         && request.resource.data.keys().hasAll(['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'])
         && request.resource.data.version == 2
+        // Optional equipped car (CARS in src/car-catalog.ts); a save without it is the Roadster.
+        && request.resource.data.get('car', 'roadster') in ['roadster', 'crimson-gt']
         && request.resource.data.unlocked is list
         && request.resource.data.unlocked.size() <= 10
         && request.resource.data.unlocked.hasAll(['coast'])

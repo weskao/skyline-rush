@@ -1,5 +1,5 @@
 import type { PaintPreset } from './appearance.ts';
-import { FACTORY_PAINT, carPaints, defaultPaint, equipCar, equippedCar, isCar, loadCarPaint } from './car-catalog.ts';
+import { FACTORY_PAINT, carPaints, defaultPaint, equipCar, equippedCar, isCar, loadCarPaint, reloadCar } from './car-catalog.ts';
 import { setWave3DemoAccount } from '#wave3-demo-race';
 import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from '#garage-skin-runtime';
@@ -135,6 +135,16 @@ export function setupGarageUI({
     updateGarageView({ selected: id });
     showGarage();
   }
+  function wearCar(): void {
+    setEquippedPaint(loadCarPaint(equippedCar(), availablePaints(getStars()))); // each car remembers its own paint
+    previewPaint(getEquippedPaint());
+    inspectStudioAfterFrame();
+  }
+  /** After Cloud Save or a backup import: wear the car it restored into storage, if it is another one. */
+  function adoptCar(): void {
+    const before = equippedCar();
+    if (reloadCar() !== before) wearCar(); else showGarage();
+  }
   function syncWorldCamera(): void {
     const studio = garageStudioView.page === 'studio';
     getWorld()?.setGarageCamera(studio ? camera : null);
@@ -202,9 +212,7 @@ export function setupGarageUI({
     const id = button.dataset.car;
     if (!isCar(id) || id === equippedCar()) return;
     equipCar(id); // both cars are open to everyone: picking one equips it
-    setEquippedPaint(loadCarPaint(id, availablePaints(getStars()))); // each car remembers its own paint
-    previewPaint(getEquippedPaint());
-    inspectStudioAfterFrame();
+    wearCar();
   }));
   $('#garage-button').addEventListener('click', () => {
     const world = getWorld();
@@ -311,5 +319,5 @@ export function setupGarageUI({
     event.preventDefault();
   });
   showGarage();
-  return { showGarage, syncSkins };
+  return { showGarage, adoptCar, syncSkins };
 }
