@@ -63,15 +63,15 @@ def spectral_rim(canvas: Image.Image, alpha: Image.Image,
                  color: tuple[int, int, int]) -> None:
     """Multi-pass blue/violet emissive outline and metallic material bevel."""
     # Far bloom is atmospheric and always below 128 alpha.
-    overlay(canvas, alpha.filter(ImageFilter.GaussianBlur(18)), VIOLET, 0.29)
-    overlay(canvas, alpha.filter(ImageFilter.GaussianBlur(10)), CYAN, 0.24)
-    overlay(canvas, alpha.filter(ImageFilter.GaussianBlur(5)), color, 0.45)
+    overlay(canvas, alpha.filter(ImageFilter.GaussianBlur(18)), VIOLET, 0.055)
+    overlay(canvas, alpha.filter(ImageFilter.GaussianBlur(10)), CYAN, 0.085)
+    overlay(canvas, alpha.filter(ImageFilter.GaussianBlur(5)), color, 0.13)
 
     # Outer corona follows the ORIGINAL contour. It is not a circular frame.
     expanded = alpha.filter(ImageFilter.MaxFilter(9))
     outside = ImageChops.subtract(expanded, alpha)
-    overlay(canvas, outside.filter(ImageFilter.GaussianBlur(2)), VIOLET, 0.65)
-    overlay(canvas, outside.filter(ImageFilter.GaussianBlur(0.5)), CYAN, 0.35)
+    overlay(canvas, outside.filter(ImageFilter.GaussianBlur(2)), VIOLET, 0.24)
+    overlay(canvas, outside.filter(ImageFilter.GaussianBlur(0.5)), CYAN, 0.17)
 
     # Chrome bevel follows the original subject edge, without altering core geometry.
     inside = ImageChops.subtract(alpha, alpha.filter(ImageFilter.MinFilter(13)))
@@ -152,7 +152,7 @@ def preserve_original_silhouette(output: Image.Image, alpha: Image.Image) -> Ima
     # All peripheral glow, swooshes and sparks stay atmospheric (alpha <128).
     core = alpha.point(lambda x: 255 if x >= 128 else 0)
     existing = output.getchannel("A")
-    peripheral = existing.point(lambda x: min(x, 109))
+    peripheral = existing.point(lambda x: min(x, 90))
     output.putalpha(Image.composite(existing, peripheral, core))
     return output
 
@@ -170,7 +170,7 @@ def polish(src: Image.Image, name: str) -> Image.Image:
     energy_trails(canvas, alpha, color, name)
     shadow = Image.new("L", src.size)
     shadow.paste(alpha, (0, max(2, src.width // 65)))
-    overlay(canvas, shadow.filter(ImageFilter.GaussianBlur(8)), (4, 8, 37), 0.46)
+    overlay(canvas, shadow.filter(ImageFilter.GaussianBlur(6)), (4, 8, 37), 0.27)
     # Keep the original's actual checkers, arrows, trophy handles and central marks.
     subject = ImageEnhance.Color(src).enhance(1.34)
     subject = ImageEnhance.Contrast(subject).enhance(1.24)
