@@ -117,6 +117,42 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt', 'ktx2'],
     budgets: { triangles: 60_000, bytes: 1_500_000, textureMaxPx: 1024 },
   },
+  // Task 7 Crimson GT, the second player car (src/car-catalog.ts): same rig nodes and contract pivots as roadster2.
+  'crimson-gt': {
+    id: 'crimson-gt',
+    url: 'models/crimson-gt/crimson-gt.glb',
+    source: {
+      master: 'assets-src/crimson-gt/crimson-gt.blend',
+      script: 'assets-src/crimson-gt/build.py',
+      masterSha256: 'd9bb2bb9a06db74c6fec2723a3b1ccfda188652f0e537e336ca813c42af3fef0',
+      scriptSha256: '9ab734ab533f927b2f774618d09d055fe84f8a7d4a5ce1253b25cb2591c64372',
+    },
+    glb: { sha256: 'c96e1296b9d71db7284a62778f33a5f321507ac55a6443638ca87b23c818dfe8', bytes: 1_201_628 },
+    license: { id: 'owned', creator: 'Skyline Rush project' },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        '$BLENDER_BIN --background --factory-startup --python assets-src/crimson-gt/build.py',
+        '$BLENDER_BIN --background --factory-startup --python assets-src/crimson-gt/bake.py',
+        'node scripts/assets/export-glb.mjs crimson-gt',
+        'node scripts/assets/optimize-glb.mjs crimson-gt',
+        'node scripts/assets/check-glb.mjs crimson-gt --promote',
+      ],
+    },
+    nodes: [
+      'body', 'wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr', 'wheel_fl_spin', 'wheel_fr_spin', 'wheel_rl_spin', 'wheel_rr_spin',
+      'wing', 'wing_blade', 'wing_tip_l', 'wing_tip_r', 'wing_rams',
+      'thruster_01', 'thruster_02', 'thruster_03', 'thruster_04', 'nozzle_rear_01', 'nozzle_rear_02', 'nozzle_rear_03', 'nozzle_rear_04',
+      'lift_fans', 'lift_fan_01', 'lift_fan_02', 'lift_fan_03', 'lift_fan_04',
+    ],
+    materials: ['gt_paint', 'gt_glass', 'gt_trim', 'gt_carbon', 'gt_tire', 'gt_rim', 'gt_light', 'gt_lamp', 'gt_nozzle', 'gt_fan'],
+    lods: [{ quality: 'low', url: 'models/crimson-gt/crimson-gt-low.glb' }],
+    fallback: 'procedural-car',
+    decoders: ['meshopt', 'ktx2'],
+    budgets: { triangles: 60_000, bytes: 1_500_000, textureMaxPx: 1024 },
+  },
   // Task 5 Coast close scenery (Medium+; Low keeps the procedural scenery). Poly Haven CC0 scans decimated with baked
   // normals, plus modelled palms and W-beam rail. Each node is a top-level piece at the origin, pivot at ground contact.
   'coast-scenery': {
