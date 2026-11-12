@@ -19,11 +19,12 @@ async function checkImage(image, nativePx, cssPx) {
   const size = await image.evaluate(async el => {
     // Native dimensions are already awaited above. decode() here races the
     // IntersectionObserver replacing still artwork with the animated GIF.
-    const rect = el.getBoundingClientRect(), style = getComputedStyle(el);
+    // CSS animation changes the visual box, not the intended 3x layout size.
+    const style = getComputedStyle(el);
     const url = new URL(el.currentSrc);
     const base = new URL('feature-assets/', location.href).pathname;
     return {
-      width: rect.width, height: rect.height, fit: style.objectFit,
+      width: el.offsetWidth, height: el.offsetHeight, fit: style.objectFit,
       url: url.pathname, base, loaded: el.complete && el.naturalWidth > 0,
     };
   });

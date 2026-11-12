@@ -23,6 +23,23 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
   });
   test.afterAll(async () => { await server?.close(); });
 
+  test('all six Demo Store concept assets load native WebP without removed PNG', async ({ page }) => {
+    const pngRequests = [];
+    page.on('request', request => {
+      if (/garage-store-readiness\/raster\/.*\.png(?:\?|$)/.test(request.url())) pngRequests.push(request.url());
+    });
+    await page.goto(url);
+    const images = page.locator('[data-wave3-demo-store] .demo-concept-art img.artwork-img');
+    await expect(images).toHaveCount(6);
+    for (const image of await images.all()) {
+      await image.evaluate(el => el.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+      await expect(image).toHaveAttribute('src', /garage-store-readiness\/raster\/store-[a-z]+@3x\.webp$/);
+      await expect(image).toHaveJSProperty('naturalWidth', 216);
+    }
+    expect(pngRequests).toEqual([]);
+  });
+
+
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
     test(`offline guest demo redeem to collection and equip on ${viewport.width}x${viewport.height}`, async ({ page }) => {
       await page.setViewportSize(viewport);

@@ -192,3 +192,16 @@ test('Wave3 garage-rewards-and-missions filters and locale switch keep all butto
   await expect(localized.locator('[data-wave3-description]')).toContainText(/[一-龥]/);
   await expect(localized.getByRole('button',{name:/購買|領取|buy|claim/i})).toHaveCount(0);
 });
+
+test('the actual Garage Store entrance directly renders native WebP, without removed PNG', async ({ page }) => {
+  const pngRequests = [];
+  page.on('request', request => {
+    if (/garage-store-readiness\/raster\/.*\.png(?:\?|$)/.test(request.url())) pngRequests.push(request.url());
+  });
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const image = page.locator('[data-garage-store-entry] img.artwork-img');
+  await expect(image).toHaveAttribute('src', /store-cart@3x\.webp$/);
+  await expect(image).toHaveJSProperty('naturalWidth', 216);
+  expect(pngRequests).toEqual([]);
+});
