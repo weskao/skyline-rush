@@ -6,6 +6,12 @@ Original artwork:
 - pearl@3x.webp, aurora@3x.webp, glacier@3x.webp
 - coral@3x.webp, cobalt@3x.webp, obsidian@3x.webp
 
+Car factory finish:
+- factory@3x.webp: the Crimson GT's factory red. It is a render of the car's own master
+  (`assets-src/crimson-gt/crimson-gt.blend`), not painted artwork: `assets-src/crimson-gt/card/render_card.py`
+  writes the 960×510 PNG (Cycles, front three-quarter, the flake at a third of the master's strength so the
+  highlight does not frost at card size), then `cwebp -q 90`. Re-render it after the car's shape or paint changes.
+
 Names and status labels remain live Vue DOM, not baked into artwork. The image URL respects Vite's BASE_URL for GitHub Pages.
 
 The Medium/High card glint is a compositor-friendly CSS sweep, while actual Garage Three.js body paint uses a MeshPhysicalMaterial clearcoat and animated fragment shader sweep. Low, VFX-off, comfortable mode, and Reduced Motion keep the artwork static and disable the sheen. No extra canvas or per-frame GPU material allocation.

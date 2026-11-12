@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { FACTORY_PAINT } from './car-catalog.ts';
 const props = defineProps<{ id: string; color: string }>();
 // Vite BASE_URL supports both the local dev server and /skyline-rush/ Pages.
 const artwork = computed(() => import.meta.env.BASE_URL + 'feature-assets/garage-vfx-skins/paint-cards/' + props.id + '@3x.webp');
@@ -8,8 +7,7 @@ const artwork = computed(() => import.meta.env.BASE_URL + 'feature-assets/garage
 
 <template>
   <span class="garage-paint-preview" :data-finish="id" :style="{ '--paint-color': color }" aria-hidden="true">
-    <!-- A car's factory finish has no painted card: it shows the paint colour itself. -->
-    <img v-if="id !== FACTORY_PAINT" class="garage-paint-image" :src="artwork" width="960" height="510" alt=""
+    <img class="garage-paint-image" :src="artwork" width="960" height="510" alt=""
       loading="eager" decoding="async" />
     <span class="garage-paint-sheen"></span>
     <span class="garage-paint-reflection"></span>
@@ -22,9 +20,6 @@ const artwork = computed(() => import.meta.env.BASE_URL + 'feature-assets/garage
   position: relative; isolation: isolate; display: block; width: 100%;
   min-height: 92px; aspect-ratio: 960 / 510; overflow: hidden; border-radius: 11px 8px 6px 6px;
   background: radial-gradient(ellipse at 45% 32%, color-mix(in srgb, var(--paint-color) 34%, #0b2642), transparent 75%), #081828;
-}
-.garage-paint-preview[data-finish="factory"] {
-  background: radial-gradient(ellipse at 38% 26%, color-mix(in srgb, var(--paint-color) 62%, #fff), var(--paint-color) 46%, color-mix(in srgb, var(--paint-color) 38%, #05070c));
 }
 .garage-paint-image { display: block; width: 100%; height: 100%; object-fit: cover;
   object-position: center; border-radius: inherit; }
