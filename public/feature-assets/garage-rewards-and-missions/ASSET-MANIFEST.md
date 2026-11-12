@@ -39,3 +39,14 @@ The icons contain **no currency, numbers, reward amount, balance, date, payment 
   motion and VFX-disabled modes and never confer real currency or entitlements.
 - Verify with `npm test`, Vue/TS typecheck, full regression GitHub Actions and visual
   screenshot review before considering this branch ready for merge.
+
+
+## 2026-11-12 correction — original artwork silhouettes must be retained
+The first premium illustration commit e4a73a2 was rejected for replacing
+the original artwork with unrelated shapes. Revert 454f394 restored the
+eight archived mission/trophy WebPs and removed two replacement wallet WebPs.
+New assets at 6db0b85 are enhanced **from the original pixels**, not
+redrawn as new objects. The checker flag, stopwatch, drift and combo marks,
+three cup trophies, platinum star badge, lightning coin and faceted diamond
+must remain identifiable. See docs/designs/wave3-premium-webp-art.md.
+This note supersedes the earlier 2026-11-12 description of recreating them.

@@ -47,3 +47,14 @@ test('wallet, mission and trophy have distinct animations beyond shimmer, respec
   assert.match(wallet, /prefers-reduced-motion/);
   assert.match(board, /prefers-reduced-motion/);
 });
+
+
+test('premium renderer must preserve original source icon contours instead of inventing new shapes', () => {
+  const s = source('scripts/generate-wave3-premium-webp.py');
+  assert.match(s, /ARCHIVE.*3x-asset-library/);
+  assert.match(s, /WALLET_ORIGINAL/);
+  assert.match(s, /silhouette_similarity/);
+  assert.match(s, /score >= 0\.80/);
+  assert.match(s, /"git", "show"/);
+  assert.doesNotMatch(s, /class Painter|def frame\(|def race\(|def trophy\(|def diamond\(/);
+});

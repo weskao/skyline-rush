@@ -1,41 +1,49 @@
-# Wave 3 — Premium 3x WebP artwork and motion
+# Wave 3 — Source-preserving WebP restoration and polishing
 
-## Intent and boundaries
-Preserve the existing racing telemetry visual language and match the rich,
-high-contrast, dimensional direction of `demo-points@3x.webp`. This release
-recreates the **requested ten icons**, not the already approved Demo Points master,
-and does not change any underlying wallet value, mission goal, result reward,
-achievement entitlement or backend service.
+## Reason for correction
+The earlier e4a73a2 render replaced the original familiar silhouettes with
+unrelated icon illustrations. The corrective 454f394 commit reverted all ten
+affected paths (eight originals restored; two wallet replacements removed).
+The corrected WebP outputs in 6db0b85 now derive their pixels and contours
+from the original artwork. No replacement icon is drawn.
 
-## Reproducible source and artwork delivery
-- Source of truth: `scripts/generate-wave3-premium-webp.py` (Pillow, fixed art
-  geometry, deterministic color palettes, layered metal, alpha/glow and highlights).
-- GitHub Actions: `.github/workflows/wave3-premium-webp-art.yml`.
-- Output: `public/feature-assets/garage-rewards-and-missions/raster/`
-  and `public/feature-assets/wave3-demo/raster/`.
-- At 3×: mission/trophy **288×288**, wallet coin/diamond **144×144**,
-  approved Demo Points/Claim **216×216** (not regenerated).
-- No PNG source or fallbacks in the three Wave 3 runtime raster directories,
-  including Store Readiness; existing archive WebPs remain intact.
-- WebP decoding uses intrinsic dimensions and true transparent margins.
-  Unavailable rewards remain explicitly display-only.
+## Originals explicitly retained
+- Race: black/white checkered flag and flagpole.
+- Time: stopwatch, watch face and hand.
+- Drift: the existing silver-blue drifting/turning-arrow symbol.
+- Combo: the upward cyan arrow.
+- Bronze, silver and gold: their original handled trophy cups.
+- Platinum: original blue star in a purple medal.
+- Coin: original circular gold token with lightning-bolt mark.
+- Diamond: original polygonal cyan-blue gemstone with faceted cut.
 
-## Motion vocabulary
-| Asset | Distinct visible animation | Reduced motion |
-| --- | --- | --- |
-| Gold coin | Rotating outer ring, floating coin, timed starburst | Static image |
-| Diamond | Prism tilt, faceted rotation, cyan spectral sparkle | Static image |
-| Race/time/drift/combo | Radar-like concentric telemetry orbit; drift reverses, combo accelerates | Static image |
-| Trophy tiers | Breathing colored corona, gentle lifting and reflections | Static image |
-| Claimed demo mission | One-shot brightness / scale burst | No animation |
+The disconnected green bar above the old mission exports has been removed.
+The existing coin and gem opaque square backgrounds are isolated to the
+original shape, not kept as an opaque card.
 
-The components preserve the existing local-demo permission and balance logic.
-No paid coin or diamond balance is created, and no art interaction grants
-anything. Progressive enhancement remains CSS-only and transform/opacity-led.
+## Reproducible image pipeline
+- scripts/generate-wave3-premium-webp.py opens the original eight archived
+  WebPs under docs/designs/3x-asset-library/webp/garage-rewards-and-missions.
+- The two original 144px wallet PNGs are loaded via git show from immutable
+  commit 438a22a7876bfbfb9d4ffcb851d06c438c849523; the current runtime
+  does not contain PNG files or PNG fallbacks.
+- Subtle metallic gloss is clipped to the original subject. Rim illumination
+  and drop shadows follow the exact existing alpha contour. There are no
+  generic decorative disks, new logos or replacement foreground symbols.
+- Outputs: eight transparent 288x288 rewards/mission WebPs; two 144x144
+  wallet WebPs, all native 3x for the existing 96px/48px UI slots.
+- The generator verifies the alpha contour overlap against the original at
+  128/255: 80% is required, all ten generated assets measured 100% before
+  WebP encoding.
+- GitHub Actions renderer: .github/workflows/wave3-premium-webp-art.yml.
 
-## Acceptance
-Tests cover WebP-only runtime paths, RIFF/WebP signatures, transparent VP8X
-native dimensions, updated element usage, missing-image readability,
-localization, motion-reduction behavior, mobile layouts and regression checks.
-Manual art review of the branch screenshots is still necessary; do not
-confuse an automated green run with final visual sign-off.
+## Runtime and acceptance
+The existing Wallet, Garage Missions, Source Gallery, Results and Demo screen
+image references remain WebP-only, without PNG fallbacks. Existing coin,
+diamond, mission and trophy CSS animation layers remain separate from the
+WebP files and honor reduced motion and VFX-disabled modes. No entitlement
+or demo economy authority is changed.
+
+Full exact-head CI and visual review of the generated images are required
+before merging this feature branch to develop. An alpha contour metric does
+not certify visual quality or identical detail.
