@@ -14,6 +14,7 @@ export function selectGarageReleaseBuild(viteMode, explicit = undefined) {
     throw new Error(`Invalid GARAGE_VFX_RELEASE_MODE: ${String(mode)}`);
   }
   const locked = mode === 'coming-soon';
+  const demoEnabled = mode === 'trial';
   return {
     mode,
     aliases: {
@@ -24,6 +25,9 @@ export function selectGarageReleaseBuild(viteMode, explicit = undefined) {
       '#garage-launch-flare': source(locked ? 'garage-launch-flare-locked.js' : 'garage-launch-flare.js'),
       '#garage-nitro-trail': source(locked ? 'garage-nitro-trail-locked.js' : 'garage-nitro-trail.js'),
       '#garage-release-config': source(`garage-release-${mode}.ts`),
+      '#wave3-demo-race': source(demoEnabled ? 'wave3-race-events.ts' : 'wave3-demo-race-locked.ts'),
+      '#wave3-demo-ui': source(demoEnabled ? 'Wave3DemoEntry.vue' : 'Wave3DemoLocked.vue'),
+      '#wave3-demo-mission-ui': source(demoEnabled ? 'GarageMissionBoard.vue' : 'GarageMissionBoardLocked.vue'),
     },
   };
 }

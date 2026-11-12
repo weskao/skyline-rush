@@ -25,10 +25,10 @@ import { setupPerformanceNotice } from './performance-notice-ui.ts';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.ts';
 import { setupKeyMapUI, keyLabel } from './keymap-ui.ts';
 import { setupTouchControlsUI } from './touch-controls-ui.ts';
-import { starTotal, loadPaint, savePaint } from './history.ts';
+import { starTotal } from './history.ts';
 import { recordGhost, ghostAt } from './ghost.ts';
 import { createPresentation } from './presentation.ts';
-import { PAINTS } from './appearance.ts';
+import { carPaints, equippedCar, loadCarPaint, saveCarPaint } from './car-catalog.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
 import { drainSteps, SIM_STEP } from './frame-pacing.ts';
@@ -46,8 +46,9 @@ import { refreshIfStale } from './update-check.ts';
 import { setupReleaseNotesUI } from './release-notes-ui.ts';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.ts';
 import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-progress.ts';
-import { settleRace } from './race-results.ts';
+import { settleRaceAndDemo, captureWave3RaceTelemetry } from './race-results.ts';
 import { resultView, setupResultScreen } from './result-screen.ts';
+import { renderWave3DemoResults } from './wave3-demo-results-integration.ts';
 import { createRaceHud } from './race-hud.ts';
 import { setupItemUI } from './item-ui.ts';
 import { setupRaceSelectUI } from './race-select-ui.ts';
@@ -92,7 +93,7 @@ if (import.meta.env.VITE_DIAG) import('./diag-relay.ts').then(({ startDiag }) =>
 let pausedPhase = 'racing';
 const progress = loadSessionProgress(availableTracks());
 const unlockedTracks = progress.unlocked; // one Set for the session; merges add to it in place
-let equippedPaint = loadPaint(availablePaints(starTotal(progress.stars)));
+let equippedPaint = loadCarPaint(equippedCar(), availablePaints(starTotal(progress.stars)));
 const ghosts = createGhostStore();
 let trace = [], traceRace = null;
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
@@ -152,8 +153,7 @@ function leaveIntro() {
   const animation = ui.intro.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-36px)' }], motionOptions('base'));
   animation.finished.catch(() => {}).then(() => { ui.intro.inert = false; ui.intro.hidden = race.phase !== 'ready'; });
 }
-const renderResult = setupResultScreen();
-
+const renderResult = setupResultScreen(() => renderWave3DemoResults(race, getLocale()));
 const notice = setupPerformanceNotice({ downgraded: vfx.deviceSelection.downgraded, quality: vfx.deviceSelection.settings.quality });
 
 const { renderReleaseNotes, maybeShowReleaseNotes } = setupReleaseNotesUI({
@@ -254,7 +254,7 @@ const { showGarage, syncSkins } = setupGarageUI({
   canOpen: () => race.phase === 'ready',
   clearControls: () => controls.clear(),
   getEquippedPaint: () => equippedPaint,
-  setEquippedPaint: id => { equippedPaint = id; savePaint(id); },
+  setEquippedPaint: id => { equippedPaint = id; saveCarPaint(equippedCar(), id); },
   getStars: () => starTotal(progress.stars), availablePaints, subscribeAccount: cloud.subscribeAccount,
 });
 function chooseTrack() {
@@ -478,7 +478,7 @@ function phaseUI() {
     $('#result-links').hidden = true;
   } else if (phase === 'finished') {
     controls.clear();
-    const settled = settleRace(race, { series: { sprintSeries, cup, stunt }, progress, ghosts, daily, trace: traceRace === race ? trace : null });
+    const settled = settleRaceAndDemo(race, { series: { sprintSeries, cup, stunt }, progress, ghosts, daily, trace: traceRace === race ? trace : null });
     ({ sprintSeries, cup } = settled.series);
     if (cup) cupRecovery.remember(cup);
     const { best, record, medals } = settled;
@@ -537,7 +537,7 @@ try {
   requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(vfx.settings());
-  world.previewAppearance(PAINTS[equippedPaint]);
+  world.previewAppearance(carPaints(equippedCar())[equippedPaint]);
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad(), !!import.meta.env.VITE_DIAG);
   const fps = setupFpsUI(scale => world.setRenderScale(scale));
@@ -559,7 +559,7 @@ try {
     }
     if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
     for (let step = 0; step < due.steps; step++) {
-      captureRaceMotion(race, previousMotion); stepRace(race, input, SIM_STEP);
+      captureRaceMotion(race, previousMotion); stepRace(race, input, SIM_STEP); if (!tutorial) captureWave3RaceTelemetry(race);
       if (tutorial) {
         // Completion keeps the race live as a free cruise: pausing it froze the world and read as a crash.
         const wasComplete = tutorial.complete; tutorial.update(input, SIM_STEP);

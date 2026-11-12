@@ -49,6 +49,10 @@ When adding or updating Garage, HUD, Store, Rewards or any other transparent ico
   dimensions, alpha pixel bounds using Canvas, image/frame/caption rectangles and no clipping
   at portrait 390×844, landscape 844×390 and desktop 1440×900. Preserve keyboard/touch,
   locale, fallback and store-preview-only controls. Capture actual browser screenshots.
+- Garage trophy icons must remain 96×96 CSS pixels (native 288×288) even when Traditional
+  Chinese labels narrow the landscape two-column cards. Do not allow `max-width:100%` to
+  shrink them: keep sufficient inner card width and retain the strict real-browser test
+  `tests/wave3-demo-artwork-browser.spec.js` at 844×390 zh-TW (the old failure drew 91px).
 - Follow RED → GREEN → `make verify` → full exact-HEAD CI and actual visual review;
   programmatic alpha insets do not prove that the original silhouette is artistically complete.
   Do not call it accepted while any required test or manual review remains pending.
