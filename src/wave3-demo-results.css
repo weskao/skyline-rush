@@ -75,8 +75,12 @@ body:not([data-phase="finished"]) .wave3-demo-results { display: none; }
   .wave3-demo-results__heading { font-size: 12px; letter-spacing: 0; white-space: nowrap; }
   .wave3-demo-results__points { flex: none; margin: 0; white-space: nowrap; }
   .wave3-demo-results__status { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
-  .wave3-demo-results--earned .wave3-demo-results__status { display: none; }
-  .wave3-demo-results__missions, .wave3-demo-results__distinction, .wave3-demo-results__disclaimer { display: none; }
+  /* Keep detailed settlement text available to screen readers even when visually condensed. */
+  .wave3-demo-results--earned .wave3-demo-results__status,
+  .wave3-demo-results__missions, .wave3-demo-results__distinction, .wave3-demo-results__disclaimer {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; border: 0; clip-path: inset(50%); white-space: nowrap;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .wave3-demo-results, .wave3-demo-results * { animation: none !important; transition: none !important; }
