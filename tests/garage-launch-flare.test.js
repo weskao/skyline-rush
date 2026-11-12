@@ -118,22 +118,29 @@ test('Studio previews loop every flare without touching race state', () => {
 });
 
 
-test('premium launch flare layers render above road depth throughout each burst shape', () => {
+
+test('ground ripple spans road markings without drawing over the car, while 3D flare shapes obey car depth', () => {
   const { scene, aero, race } = rig();
   const settings = vfxSettings({ enabled: true, quality: 'high' });
-  const names = ['Launch flare burst', 'Launch flare rays', 'Launch flare rings', 'Launch flare sparks'];
+  const pool = scene.getObjectByName('Launch flare burst');
   const bodyGlow = scene.getObjectByName('Launch flare body glow');
+  const threeD = ['Launch flare rays', 'Launch flare rings', 'Launch flare sparks'];
   for (const id of FLARES) {
     aero.reset(); aero.setSkins({ 'launch-flare': id });
     launch(aero, race, settings);
-    assert.ok(scene.getObjectByName('Launch flare burst').visible, `${id} triggered`);
-    for (const name of names) {
-      const effect = scene.getObjectByName(name);
-      assert.ok(effect, `${id}: ${name} exists`);
-      assert.equal(effect.material.depthTest, false, `${id}: road cannot clip ${name}`);
-      assert.equal(effect.material.depthWrite, false, `${id}: ${name} never hides later effects`);
-      assert.ok(effect.renderOrder > 0, `${id}: ${name} is drawn after ordinary track geometry`);
+    assert.ok(pool.visible, `${id}: ground ripple is visible`);
+    assert.equal(pool.material.depthTest, false, `${id}: road layers cannot occlude the ground ripple across lanes`);
+    assert.equal(pool.material.depthWrite, false, `${id}: ripple must not write depth`);
+    assert.ok(pool.renderOrder > 0, `${id}: ripple composites over transparent road markings`);
+    assert.match(pool.material.fragmentShader, /carMask/, `${id}: ripple excludes the car footprint`);
+    assert.match(pool.material.fragmentShader, /1\\.-carMask/, `${id}: the car mask must affect the ripple opacity`);
+    for (const name of threeD) {
+      const part = scene.getObjectByName(name);
+      assert.ok(part, `${id}: ${name} exists`);
+      assert.equal(part.material.depthTest, true, `${id}: the car must occlude ${name}`);
+      assert.equal(part.material.depthWrite, false, `${id}: ${name} cannot hide later effects`);
+      assert.equal(part.renderOrder, 0, `${id}: ${name} retains normal scene sorting`);
     }
-    assert.equal(bodyGlow.material.depthTest, true, `${id}: car-body glow respects scene depth`);
+    assert.equal(bodyGlow.material.depthTest, true, `${id}: body glow stays depth tested`);
   }
 });
