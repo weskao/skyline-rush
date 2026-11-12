@@ -4,6 +4,7 @@ NPM := npm
 
 # `3d=1` on any dev server (`make 3d=1`, `make dev-unlocked 3d=1`, `make phone 3d=1 y=1`, `make dev-feature <name> 3d=1`):
 # the bare URL redirects to ?model=roadster&look=3d (GLB Roadster + Coast look), phone and Telegram links included.
+# An equipped car with its own model (Crimson GT) keeps it: ?model= dresses only the procedural Roadster.
 # Exported so every child (emulators:exec, Vite, phone-dev, dev-feature) sees it; scripts/dev-3d-redirect-plugin.mjs reads DEV_3D.
 # VITE_PICKUP_3D enables the same enhanced 3D pickup models in ALL tracks and their interactive in-guide previews.
 # 3d=0 or omitted keeps the legacy lightweight pickup renderer. This flag is build-time and does not deploy.

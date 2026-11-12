@@ -113,6 +113,20 @@ test('a save from before cars existed loads as the Roadster with its paint', asy
   expect(errors).toEqual([]);
 });
 
+test('?model=roadster&look=3d (any dev server started with 3d=1) keeps the equipped Crimson GT; the flag dresses only the Roadster', async ({ gameplayPage: page, gameplayURL }) => {
+  const dressedAs = () => page.evaluate(() => window.gameScene.player.children.find(part => part.userData.garageModel)?.userData.garageModel ?? null);
+  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster&look=3d`, { storage: GT });
+  await modelReady(page);
+  await expect.poll(dressedAs).toBe('crimson-gt');
+  expect(requests).toEqual(['/models/crimson-gt/crimson-gt.glb']); // settled: the dressed model was polled above
+  await page.locator('#garage-button').click();
+  await carButton(page, 'roadster').click();
+  await expect.poll(dressedAs).toBe('roadster2');
+  await carButton(page, 'crimson-gt').click();
+  await expect.poll(dressedAs).toBe('crimson-gt');
+  expect(errors).toEqual([]);
+});
+
 test('Preview Studio frames the Crimson GT from the front, side and rear', async ({ gameplayPage: page, gameplayURL }) => {
   await prepare(page, gameplayURL, { storage: GT });
   await page.locator('#garage-button').click();

@@ -180,7 +180,7 @@ export function createKtx2Provider(renderer: unknown, baseUrl: string, load: () 
   return (): Promise<Ktx2Like> => (loader ??= load().then(Ktx2 => new Ktx2().setTranscoderPath(`${baseUrl}basis/`).detectSupport(renderer as never)));
 }
 
-/** World wiring. Idle until a model is wanted: `?model=` first, else the equipped car's model. GLTFLoader is imported only then. */
+/** World wiring. Idle until a model is wanted: the equipped car's own model first, else `?model=`. GLTFLoader is imported only then. */
 export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick<WebGLRenderer, 'compileAsync'>, camera: Camera,
   search = location.search, baseUrl = import.meta.env.BASE_URL, carModel: () => string | null = equippedCarModel) {
   const forced = garageModelId(search);
@@ -202,7 +202,7 @@ export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick
     /** Per frame, before posing: dresses the car on screen. `studio` only while the Preview Studio camera is on;
      *  `showcase` only while the Coming Soon stage renders the Home preview; `home` is the Home/race player car. */
     frame(quality: ModelQuality, phase: string, garageOpen: boolean, studio: GarageModelHost | null, showcase: GarageModelHost | null, home: GarageModelHost): void {
-      const wanted = forced ?? carModel();
+      const wanted = carModel() ?? forced; // `?model=` (every 3d=1 dev URL) dresses the procedural Roadster only, never over a car with its own model
       if (wanted !== id && phase !== 'racing') use(wanted); // the car changes in the Garage only; never rebuild mid-race
       if (!model || id === null) return;
       if (studio) { model.sync(true, quality, studio); return; }
