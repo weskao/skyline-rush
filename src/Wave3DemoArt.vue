@@ -7,7 +7,7 @@ withDefaults(defineProps<{ id: Wave3DemoArtId; alt?: string }>(), { alt: '' });
 
 <template>
   <span class="wave3-demo-art" :data-wave3-demo-art="id">
-    <GarageArtworkImage :src="wave3DemoArtUrl(id)" :fallback-src="wave3DemoArtUrl(id, 'png')"
+    <GarageArtworkImage :src="wave3DemoArtUrl(id)"
       :size="72" :image-id="id" :alt="alt" :fallback-text="alt" />
   </span>
 </template>

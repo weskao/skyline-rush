@@ -23,10 +23,9 @@ watch(() => [snapshot.value?.accountId, snapshot.value?.demoPoints], (next, prev
 const rows = computed(() => projectWave3Currency(snapshot.value, props.locale));
 const label = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
 const currencyArt = (kind: string) => {
-  const file = kind === 'coins' ? 'wallet-coin@3x.png' : 'wallet-diamond@3x.png';
+  const file = kind === 'coins' ? 'wallet-coin@3x.webp' : 'wallet-diamond@3x.webp';
   return `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/${file}`;
 };
-const sparkleArt = `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/wallet-sparkle-strip.png`;
 </script>
 
 <template>
@@ -38,7 +37,7 @@ const sparkleArt = `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/
       <Wave3DemoArt v-if="row.id === 'demo-points'" id="demo-points" />
       <span v-else class="wallet-artwork" :data-wallet-art="row.id">
         <GarageArtworkImage :src="currencyArt(row.id)" :size="48" :alt="''" :fallback-text="row.label" loading="eager" />
-        <span class="wallet-shimmer" aria-hidden="true" :style="{ backgroundImage: 'url(' + sparkleArt + ')' }"></span>
+        <span class="wallet-orbit" aria-hidden="true"></span><span class="wallet-facet" aria-hidden="true"></span>
       </span>
       <div class="wallet-quantity">
         <span class="wallet-label">{{ row.label }}</span>
@@ -70,10 +69,24 @@ const sparkleArt = `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/
 .wallet-artwork { position:relative; flex:0 0 48px; display:grid; place-items:center; width:48px; height:48px;
   filter:drop-shadow(0 1px 7px #8beaff29); }
 .wallet-artwork :deep(.artwork-img) { display:block; width:48px; height:48px; object-fit:contain; }
-.wallet-shimmer { position:absolute; inset:0; pointer-events:none; background-repeat:no-repeat;
-  background-size:800% 100%; background-position:0 0; animation:wallet-shimmer 1.6s steps(7,end) infinite; }
-.wallet-artwork[data-wallet-art="diamonds"] .wallet-shimmer { animation-duration:2.3s; animation-delay:-.7s; }
-@keyframes wallet-shimmer { from { background-position:0 0; } to { background-position:100% 0; } }
+
+.wallet-artwork :deep(.artwork-img){position:relative;z-index:2;animation:wallet-coin-float 3.5s ease-in-out infinite}
+.wallet-artwork[data-wallet-art="diamonds"] :deep(.artwork-img){animation:wallet-diamond-prism 3.5s ease-in-out infinite}
+.wallet-orbit{position:absolute;z-index:1;inset:7px;border-radius:50%;border:1px solid #ffd36acc;
+ border-left-color:transparent;border-bottom-color:#ffd36a22;box-shadow:0 0 8px #ffd96555;
+ animation:wallet-coin-orbit 3.5s linear infinite;pointer-events:none}
+.wallet-artwork[data-wallet-art="diamonds"] .wallet-orbit{border-color:#70f1ffcc;border-top-color:transparent;
+ box-shadow:0 0 12px #36aaff66;animation:wallet-diamond-prism 3.1s ease-in-out infinite}
+.wallet-facet{position:absolute;z-index:3;width:9px;height:9px;right:3px;top:6px;
+ background:#fff8dd;clip-path:polygon(50% 0,62% 36%,100% 50%,62% 64%,50% 100%,38% 64%,0 50%,38% 36%);
+ filter:drop-shadow(0 0 6px #ffe78b);animation:wallet-coin-spark 3.5s ease-in-out infinite;pointer-events:none}
+.wallet-artwork[data-wallet-art="diamonds"] .wallet-facet{background:#f4ffff;top:3px;
+ filter:drop-shadow(0 0 7px #67efff);animation:wallet-diamond-prism 2.8s ease-in-out infinite}
+@keyframes wallet-coin-orbit{to{transform:rotate(360deg)}}
+@keyframes wallet-coin-float{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-3px) rotate(5deg)}}
+@keyframes wallet-coin-spark{0%,25%,100%{opacity:.2;transform:scale(.5)}43%,55%{opacity:1;transform:scale(1.5)}}
+@keyframes wallet-diamond-prism{0%,100%{opacity:.78;transform:translateY(1px) rotate(-5deg) scale(.96)}
+ 50%{opacity:1;transform:translateY(-4px) rotate(7deg) scale(1.06)}}
 .wallet-quantity { min-width:0;width:100%;display:flex;flex-direction:column;align-items:center;gap:2px; }
 .wallet-label { font-size:10px;line-height:1.2;font-weight:800;letter-spacing:.025em;color:#bcddf0; }
 .wallet-quantity strong { font:800 clamp(15px,1.5vw,21px)/1.1 system-ui,sans-serif;
@@ -88,6 +101,7 @@ const sparkleArt = `${import.meta.env.BASE_URL}feature-assets/wave3-demo/raster/
   .wallet-currency :deep(.artwork-img) { width:34px!important;height:34px!important; }
   .wallet-artwork { flex-basis:38px;width:38px;height:38px; }
   .wallet-artwork :deep(.artwork-img) { width:38px!important;height:38px!important; } }
-:global(body[data-vfx-enabled="false"] .wallet-shimmer) { display:none; }
-@media (prefers-reduced-motion:reduce) { .wallet-credit-value, .wallet-shimmer { animation:none; } }
+:global(body[data-vfx-enabled="false"] .wallet-orbit),:global(body[data-vfx-enabled="false"] .wallet-facet){display:none}
+:global(body[data-vfx-enabled="false"] .wallet-artwork .artwork-img){animation:none}
+@media (prefers-reduced-motion:reduce){.wallet-credit-value,.wallet-orbit,.wallet-facet,.wallet-artwork :deep(.artwork-img){animation:none}}
 </style>

@@ -87,4 +87,24 @@ body.vfx-comfort .garage-art-sweep { display: none; }
   .garage-badge-card * { animation: none !important; transition: none !important; }
   .garage-art-sweep { display: none; }
 }
+
+/* Mission icons transmit telemetry; trophies awaken their own light corona. */
+.garage-badge-card[data-art^="mission-"] .garage-badge-art-frame::before{
+ content:'';position:absolute;inset:9px;border-radius:50%;pointer-events:none;
+ border:2px dashed hsl(var(--badge-hue) 96% 70% / .58);animation:mission-drive 7s linear infinite}
+.garage-badge-card[data-art^="trophy-"] .garage-badge-art-frame::before{
+ content:'';position:absolute;inset:12px;border-radius:50%;pointer-events:none;
+ box-shadow:0 0 17px hsl(var(--badge-hue) 100% 74% / .48);animation:trophy-awaken 3.7s ease-in-out infinite}
+.garage-badge-card[data-art^="mission-"] .garage-badge-art-frame :deep(.artwork-img){
+ animation:mission-hover 3.8s ease-in-out infinite}
+.garage-badge-card[data-art^="trophy-"] .garage-badge-art-frame :deep(.artwork-img){
+ animation:trophy-hover 4.2s ease-in-out infinite}
+@keyframes mission-drive{to{transform:rotate(360deg)}}
+@keyframes mission-hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes trophy-awaken{0%,100%{opacity:.35;transform:scale(.94)}50%{opacity:1;transform:scale(1.04)}}
+@keyframes trophy-hover{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg) translateY(-4px)}}
+:global(body[data-vfx-enabled="false"] .garage-badge-card[data-art^="mission-"] .garage-badge-art-frame::before),
+:global(body[data-vfx-enabled="false"] .garage-badge-card[data-art^="trophy-"] .garage-badge-art-frame::before){display:none}
+@media (prefers-reduced-motion:reduce){.garage-badge-card[data-art^="mission-"] .garage-badge-art-frame::before,
+.garage-badge-card[data-art^="trophy-"] .garage-badge-art-frame::before{animation:none}}
 </style>
