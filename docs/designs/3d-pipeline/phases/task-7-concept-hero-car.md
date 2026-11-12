@@ -37,6 +37,8 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   - **Decided 2026-11-12 (owner), for the first build:** both cars are open to everyone (no lock, trial or stars
     threshold is implemented), and the default paint is the car's own factory colour (`factory`, deep red `#9a1424`
     on the GT; the Roadster keeps Pearl). The trial + stars rule above is not built, so this gate stays open.
+  - **Decided 2026-11-13 (owner):** the 2026-11-09 rule stands (trial + stars). The stars threshold value is still
+    not decided, so the locked/trial/owned states are not built and this gate stays open.
 - [ ] The concept board's generator and terms of use, recorded in [../concept-art/README.md](../concept-art/README.md).
   This is a release gate.
   - **Decided 2026-11-09 (owner): the board is AI-generated; its generator and terms of use are recorded in the
@@ -87,6 +89,10 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   - keyboard (Enter on a native button), touch on phone portrait 390x844 and landscape 844x390, and car names in
     every supported language (`tests/i18n.test.js`)
   - each car remembers its own paint; the GT lists its factory colour first
+  - 2026-11-13 fix: on a dev server started with `3d=1` (`?model=roadster&look=3d`) the Roadster GLB covered the
+    equipped GT. The equipped car's own model now wins (`carModel() ?? forced` in `src/garage-model.ts`); the flag
+    dresses only the Roadster. RED (`Expected "crimson-gt", Received "roadster2"`) → GREEN in
+    `tests/crimson-gt-browser.spec.js`; rule 13 in `.claude/rules/3d-asset-pipeline.md`.
 - [ ] Car picker: locked/trial/owned states (not built: both cars are open); focus order not asserted; the factory
   colour is a plain swatch because no painted card art exists for it.
 - [x] Local save for the equipped car (`skyline-rush-car`) and each car's paint (`skyline-rush-car-paints`), with a
