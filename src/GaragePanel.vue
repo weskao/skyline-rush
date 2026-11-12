@@ -2,12 +2,16 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { getLocale, onLocaleChange, t } from './i18n.ts';
 import { garageStudioView } from './garage-view-state.ts';
-import { PAINTS } from './appearance.ts';
+import { carPaints } from './car-catalog.ts';
+import GarageCarPicker from './GarageCarPicker.vue';
 import { garageView } from './garage-view-state.ts';
 import CloseButton from './CloseButton.vue';
 import GaragePaintPreview from './GaragePaintPreview.vue';
 import GarageSourceArtGallery from './GarageSourceArtGallery.vue';
-import GarageMissionBoard from './GarageMissionBoard.vue';
+import GarageMissionBoard from '#wave3-demo-mission-ui';
+import { wave3DemoExperience } from '#wave3-demo-race';
+import Wave3DemoEntry from '#wave3-demo-ui';
+import Wave3CurrencyStrip from './Wave3CurrencyStrip.vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageLightingToggle from './GarageLightingToggle.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
@@ -71,16 +75,19 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
         </nav>
       </section>
       <aside class="garage-collection">
+        <Wave3CurrencyStrip v-if="GARAGE_RELEASE_MODE === 'trial'" :experience="wave3DemoExperience" :locale="locale" />
+        <GarageCarPicker :locale="locale" />
         <h3>{{ copy.collection }}</h3>
         <GarageSourceArtGallery ref="storeCatalog" category="garage-store-readiness" />
         <p class="collection-note garage-intro" v-show="garageStudioView.page === 'home'" data-i18n="garage.intro">Explore paint and tail light combinations. Appearance never changes performance.</p>
-    <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button type="button" v-for="(paint, id) in PAINTS" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><GaragePaintPreview :id="id" :color="paint.paint" /><span class="garage-paint-meta"><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ t('paint.' + id) }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></span></button></div>
+    <div class="paint-options" role="group" aria-label="Preview car finish" data-i18n-aria-label="garage.finishes"><button type="button" v-for="(paint, id) in carPaints(garageStudioView.car)" :data-paint="id" :data-state="paintState(id)" :aria-label="`${copy.preview} ${t('paint.' + id)} · ${copy[paintState(id)]}`" :aria-pressed="id === garageView.selected" :key="id"><GaragePaintPreview :id="id" :color="paint.paint" /><span class="garage-paint-meta"><span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ t('paint.' + id) }}</span><span class="garage-paint-badge">{{ copy[paintState(id)] }}</span></span></button></div>
     <p id="garage-status" class="collection-note" role="status">{{ garageView.status }}</p>
     <button id="garage-equip" class="controls-reset" :disabled="garageView.equipDisabled" aria-label="Equip finish" data-i18n-aria-label="garage.equip">{{ garageView.equipLabel }}</button>
     <button v-show="garageStudioView.page === 'studio'" id="garage-restore-default" type="button" class="garage-restore">{{ copy.restore }}</button>
         <p class="collection-note">{{ copy.unlockNote }}</p>
         <p class="garage-coming">{{ copy.coming }}</p>
-        <GarageMissionBoard />
+        <GarageMissionBoard :experience="GARAGE_RELEASE_MODE === 'trial' ? wave3DemoExperience : null" />
+        <Wave3DemoEntry v-if="GARAGE_RELEASE_MODE === 'trial'" :locale="locale" />
         <GarageSkinCatalog :locale="locale" />
         <p v-show="garageStudioView.page === 'studio'" class="garage-cosmetic">{{ copy.cosmetic }}</p>
         <section class="garage-store-entry" data-garage-store-entry
@@ -379,19 +386,4 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 }
 </style>
 
-<style>
-/* Compact Garage/Studio: preserve 44px touch targets, maximise the real WebGL viewport. */
-#garage-screen .garage-collection :is(.collection-note, .garage-coming) { margin-block: 5px; line-height: 1.4; }
-#garage-screen .garage-vfx-catalog { margin-top: 8px; padding-top: 7px; }
-#garage-screen .garage-vfx-category { margin-block: 8px; }
-#garage-screen .garage-vfx-category ul { gap: 7px; }
-#garage-screen .garage-vfx-message { margin-block: 5px 7px; }
-#garage-screen .garage-collection .garage-art-showcase { margin-top: 10px; padding-top: 8px; }
-#garage-screen .garage-entry { white-space: normal; overflow-wrap: anywhere; }
-#garage-screen .garage-camera-controls { overscroll-behavior-inline: contain; }
-@media (max-width: 650px) and (orientation: portrait) {
-  #garage-screen .garage-entry { max-width: 49vw; padding-inline: 6px; font-size: 11px; }
-  #garage-screen .garage-heading h2 { font-size: 18px; }
-  #garage-screen .garage-mode-controls button { min-width: 0; padding-inline: 9px; }
-}
-</style>
+<style src="./garage-compact-layout.css"></style>

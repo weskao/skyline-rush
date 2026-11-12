@@ -4,12 +4,15 @@ NPM := npm
 
 # `3d=1` on any dev server (`make 3d=1`, `make dev-unlocked 3d=1`, `make phone 3d=1 y=1`, `make dev-feature <name> 3d=1`):
 # the bare URL redirects to ?model=roadster&look=3d (GLB Roadster + Coast look), phone and Telegram links included.
-# Exported so every child (emulators:exec, Vite, phone-dev, dev-feature) sees it; scripts/dev-3d-redirect-plugin.mjs reads it.
-ifneq ($(3d),)
+# Exported so every child (emulators:exec, Vite, phone-dev, dev-feature) sees it; scripts/dev-3d-redirect-plugin.mjs reads DEV_3D.
+# VITE_PICKUP_3D enables the same enhanced 3D pickup models in ALL tracks and their interactive in-guide previews.
+# 3d=0 or omitted keeps the legacy lightweight pickup renderer. This flag is build-time and does not deploy.
+ifeq ($(3d),1)
 export DEV_3D := 1
+export VITE_PICKUP_3D := 1
 endif
 
-.PHONY: help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy deploy-netlify stop-old-dev reclaim-dev-port
+.PHONY: build help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy deploy-netlify stop-old-dev reclaim-dev-port
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -111,6 +114,11 @@ ifneq ($(DEV_FEATURE_NAME),)
 $(eval $(DEV_FEATURE_NAME):;@:)
 endif
 endif
+
+# Production-style artifact without deployment. `make build 3d=1` activates the shared
+# 3D pickup models and guide previews in the output; by default, keep the lightweight mode.
+build: node_modules ## `make build [3d=1]`: compile the site locally without publishing
+	$(NPM) run build
 
 # test:browser builds dist/ first via pretest:browser, so build is not run separately.
 run: node_modules ## `make run`: unit tests, production build and Chrome browser tests

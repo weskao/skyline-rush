@@ -1,0 +1,113 @@
+/* Optional standalone result card: never changes the original stars, badges or action buttons. */
+body:not([data-phase="finished"]) .wave3-demo-results { display: none; }
+.wave3-demo-results {
+  /* The reward is a part of the finished-race summary, not a viewport toast.
+     Never use fixed here: .overlay-content animates with transform on reveal. */
+  position: static;
+  box-sizing: border-box;
+  width: min(100%, 460px);
+  max-height: min(200px, 34dvh);
+  overflow-y: auto;
+  color: #e9f6ff;
+  background: linear-gradient(125deg, rgba(16, 42, 66, .94), rgba(37, 38, 78, .90));
+  border: 1px solid rgba(145, 224, 242, .36);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin: 12px auto 0;
+  text-align: left;
+  font: 12px/1.4 system-ui, sans-serif;
+  box-shadow: 0 6px 22px rgba(5, 17, 30, .22);
+}
+.wave3-demo-results--earned {
+  border-color: rgba(255, 215, 141, .55);
+  box-shadow: 0 6px 22px rgba(5, 17, 30, .22), inset 0 1px 0 rgba(255, 241, 199, .15);
+}
+.wave3-demo-results:focus-visible { outline: 2px solid #95e2f6; outline-offset: 3px; }
+.wave3-demo-results__header { display: flex; align-items: center; gap: 9px; }
+.wave3-demo-results__heading { margin: 0; font: 700 16px/1.2 system-ui, sans-serif; letter-spacing: .4px; }
+.wave3-demo-results__mark {
+  position: relative; flex: none; display: grid; place-items: center;
+  box-sizing: border-box; width: 44px; height: 44px; border-radius: 50%;
+  color: #ffdda2; background: rgba(221, 166, 65, .13);
+  border: 1px solid rgba(255, 214, 131, .48); font-size: 20px;
+}
+.wave3-demo-results__mark img { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); object-fit: contain; }
+.wave3-demo-results__status { margin: 5px 0; color: #d6e7f4; }
+.wave3-demo-results__points { margin: 3px 0; font-weight: 750; color: #ffd38d; font-variant-numeric: tabular-nums; }
+.wave3-demo-results__points[hidden] { display: none; }
+.wave3-demo-results__progress-title { margin: 6px 0 3px; font: 650 11px system-ui, sans-serif; color: #aed7eb; }
+.wave3-demo-results__missions { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 4px 10px; }
+.wave3-demo-results__progress-title { grid-column: 1 / -1; }
+.wave3-demo-results__mission { min-width: 0; }
+.wave3-demo-results__mission-label { display: block; font-size: 11px; }
+.wave3-demo-results__mission progress { display: block; width: 100%; height: 5px; accent-color: #95ddc8; }
+.wave3-demo-results__distinction, .wave3-demo-results__disclaimer { margin: 4px 0 0; font-size: 10px; color: #b0c2d3; }
+.wave3-demo-results__disclaimer { color: #d1c3bb; }
+@media (max-width: 480px) {
+  .wave3-demo-results { margin: 5px 0; padding: 8px 10px; font-size: 11px; }
+}
+@media (max-width: 760px) and (orientation: portrait) {
+  /* The results overlay scrolls as one page, without nested scrollbars. */
+  .wave3-demo-results { max-height: none; overflow: visible; }
+}
+@media (max-width: 480px) {
+  .wave3-demo-results__missions { grid-template-columns: 1fr 1fr; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Keep the landscape podium and 44px action targets above the fold. */
+  .wave3-demo-results {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: min(100%, 420px);
+    max-height: 48px;
+    margin: 4px auto 0;
+    padding: 5px 10px;
+    overflow: hidden;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+  .wave3-demo-results__banner { display: none; }
+  .wave3-demo-results__header { flex: none; gap: 6px; }
+  .wave3-demo-results__mark { width: 24px; height: 24px; font-size: 15px; }
+  .wave3-demo-results__mark img { inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); }
+  .wave3-demo-results__heading { font-size: 12px; letter-spacing: 0; white-space: nowrap; }
+  .wave3-demo-results__points { flex: none; margin: 0; white-space: nowrap; }
+  .wave3-demo-results__status { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+  /* Keep detailed settlement text available to screen readers even when visually condensed. */
+  .wave3-demo-results--earned .wave3-demo-results__status,
+  .wave3-demo-results__missions, .wave3-demo-results__distinction, .wave3-demo-results__disclaimer {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; border: 0; clip-path: inset(50%); white-space: nowrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wave3-demo-results, .wave3-demo-results * { animation: none !important; transition: none !important; }
+}
+
+
+/* A-06 illustrated reward crest. Decoration never overlays actionable result controls. */
+.wave3-demo-results__banner { position: relative; width: 100%; height: 48px; margin: 0 0 3px;
+  overflow: hidden; pointer-events: none; }
+.wave3-demo-results__banner[hidden] { display: none; }
+.wave3-demo-results__banner img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.wave3-demo-results__banner::after { content: ''; position: absolute; inset: 0; width: 36%; pointer-events: none;
+  transform: translateX(-130%) skewX(-20deg);
+  background: linear-gradient(90deg, transparent, #cfffff08 25%, #e4ffff85 50%, #ffffff08 75%, transparent);
+  mix-blend-mode: screen; animation: wave3-results-sheen 4.6s ease-in-out infinite; }
+@keyframes wave3-results-sheen {
+  0%, 20% { transform: translateX(-130%) skewX(-20deg); opacity: 0; }
+  25% { opacity: .85; }
+  65% { transform: translateX(360%) skewX(-20deg); opacity: .75; }
+  68%, 100% { transform: translateX(360%) skewX(-20deg); opacity: 0; }
+}
+body[data-vfx-enabled="false"] .wave3-demo-results__banner::after,
+body[data-vfx-quality="low"] .wave3-demo-results__banner::after,
+body.vfx-comfort .wave3-demo-results__banner::after { display: none; }
+@media (max-height: 480px) and (orientation: landscape) {
+  .wave3-demo-results__banner { height: 24px; margin: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wave3-demo-results__banner::after { animation: none; display: none; }
+}

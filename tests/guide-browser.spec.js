@@ -126,6 +126,18 @@ test(`rings and supplies guide explains all ring types, road pickups and mystery
   await expect(panel.locator('[data-i18n="guide.items.pickup.can.title"]')).toHaveText('Energy Canister (Orange)');
   await expect(panel.locator('[data-i18n="guide.items.pickup.tank.title"]')).toHaveText('High-Capacity Tank (Gold)');
   await expect(panel.locator('[data-i18n="guide.items.pickup.overcharge.title"]')).toHaveText('Overcharge Core (Rainbow)');
+  const stages = panel.locator('.pickup-animation-stage');
+  await expect(stages).toHaveCount(4);
+  for (const tier of ['cell', 'can', 'tank', 'overcharge']) {
+    const stage = panel.locator(`.pickup-animation-stage[data-tier="${tier}"]`);
+    const image = stage.locator('.pickup-animation');
+    await expect(stage).toHaveCount(1);
+    await expect(image).toBeVisible();
+    await expect(image).toHaveJSProperty('complete', true);
+    expect(await image.evaluate((img, name) => img.naturalWidth > 0 && img.naturalHeight > 0 &&
+      new URL(img.currentSrc).pathname.endsWith('/animated/' + name + '.webp'), tier),
+    `animated ${tier} WebP loads at every viewport`).toBe(true);
+  }
 
   // Mystery powers
   await expect(panel.locator('[data-i18n="guide.items.power.shield.title"]')).toHaveText('Energy Shield');
@@ -156,3 +168,19 @@ test(`rings and supplies guide explains all ring types, road pickups and mystery
   await expect(page.locator('#guide-screen')).toBeHidden();
 });
 }
+
+test('road pickup gallery keeps its artwork animated by default but stops for reduced motion', async ({ page }) => {
+  await page.goto('/');
+  await openGuide(page);
+  await page.locator('[data-guide-device="items"]').click();
+  const stage = page.locator('.pickup-animation-stage').first();
+  const image = stage.locator('.pickup-animation');
+  await expect(image).toBeVisible();
+  await expect(stage).toHaveAttribute('data-motion', 'running');
+  await expect(image).toHaveAttribute('src', /cell[.]webp$/);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(stage).toHaveAttribute('data-motion', 'paused');
+  await expect(image).toHaveAttribute('src', /cell-poster[.]webp$/);
+  await expect(image).toBeVisible();
+  expect(await image.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+});

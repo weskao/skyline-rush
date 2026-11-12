@@ -1,4 +1,6 @@
-import { PAINTS } from './appearance.ts';
+import type { PaintPreset } from './appearance.ts';
+import { FACTORY_PAINT, carPaints, defaultPaint, equipCar, equippedCar, isCar, loadCarPaint } from './car-catalog.ts';
+import { setWave3DemoAccount } from '#wave3-demo-race';
 import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from '#garage-skin-runtime';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
@@ -9,7 +11,7 @@ import type { GarageCamera } from './garage-camera.ts';
 import type { GarageLighting } from './garage-stage.ts';
 import { t } from './i18n.ts';
 
-type Paint = (typeof PAINTS)[keyof typeof PAINTS];
+type Paint = PaintPreset;
 type PaintCatalog = Record<string, { stars: number }>;
 type GarageState = 'equipped' | 'owned' | 'locked';
 
@@ -63,6 +65,9 @@ export function setupGarageUI({
   const dockParent = dock.parentElement!, dockNext = dock.nextSibling;
   const historyKey = '__skylineGaragePage';
   let previewing = getEquippedPaint();
+  /** Paints the equipped car can wear: the star-unlocked ones, plus its own factory finish if it has one. */
+  const paints = (): Record<string, Paint> => carPaints(equippedCar());
+  const owned = (): string[] => [...(Object.hasOwn(paints(), FACTORY_PAINT) ? [FACTORY_PAINT] : []), ...availablePaints(getStars())];
   let camera = defaultGarageCamera();
   let autoPaused = false;
   const contacts = new Map<number, { x: number; y: number }>();
@@ -80,7 +85,7 @@ export function setupGarageUI({
     inspectStudioAfterFrame();
   }
   subscribeGarageSkins(syncSkins);
-  subscribeAccount(setGarageSkinAccount);
+  subscribeAccount(accountId => { setGarageSkinAccount(accountId); setWave3DemoAccount(accountId); });
   function inspectStudioAfterFrame() {
     if (pendingStudioInspection || !garageScreen.open) return;
     pendingStudioInspection = true;
@@ -113,11 +118,9 @@ export function setupGarageUI({
 
   function showGarage(id: string = previewing): void {
     const stars = getStars();
-    const { state, canEquip, need } = garagePresentation(
-      id, getEquippedPaint(), stars, PAINTS, availablePaints(stars),
-    );
+    const { state, canEquip, need } = garagePresentation(id, getEquippedPaint(), stars, paints(), owned());
     const name = t('paint.' + id);
-    updateGarageStudioView({ ownedPaints: availablePaints(stars), equippedPaint: getEquippedPaint() });
+    updateGarageStudioView({ ownedPaints: owned(), equippedPaint: getEquippedPaint(), car: equippedCar() });
     updateGarageView({
       status: t('garage.status.' + state, { name, stars: need, have: stars }),
       equipDisabled: !canEquip,
@@ -125,9 +128,10 @@ export function setupGarageUI({
     });
   }
   function previewPaint(id: string): void {
-    if (!Object.hasOwn(PAINTS, id)) return;
+    const paint = Object.hasOwn(paints(), id) ? paints()[id] : undefined;
+    if (!paint) return;
     previewing = id;
-    getWorld()?.previewAppearance(PAINTS[id]);
+    getWorld()?.previewAppearance(paint);
     updateGarageView({ selected: id });
     showGarage();
   }
@@ -177,19 +181,31 @@ export function setupGarageUI({
   }
 
   $('#garage-restore-default').addEventListener('click', () => {
-    // Restore is a saved equip action, not a temporary preview; pearl is always owned.
-    if (!availablePaints(getStars()).includes('pearl')) return;
-    setEquippedPaint('pearl');
-    previewPaint('pearl');
+    // Restore is a saved equip action, not a temporary preview; a car's default (pearl, or its factory finish) is always owned.
+    const standard = defaultPaint(equippedCar());
+    if (!owned().includes(standard)) return;
+    setEquippedPaint(standard);
+    previewPaint(standard);
   });
   $('#garage-equip').addEventListener('click', () => {
     // Guard the data boundary, not only the disabled UI: a locked paint is never persisted.
-    if (!garagePresentation(previewing, getEquippedPaint(), getStars(), PAINTS, availablePaints(getStars())).canEquip) return;
+    if (!garagePresentation(previewing, getEquippedPaint(), getStars(), paints(), owned()).canEquip) return;
     setEquippedPaint(previewing);
     previewPaint(getEquippedPaint());
   });
-  document.querySelectorAll<HTMLButtonElement>('[data-paint]').forEach(button =>
-    button.addEventListener('click', () => { if (button.dataset.paint) previewPaint(button.dataset.paint); }));
+  // Delegated: the paint list changes with the car (the factory finish exists only on cars that have one).
+  $('#garage-screen .paint-options').addEventListener('click', event => {
+    const id = (event.target as Element).closest<HTMLElement>('[data-paint]')?.dataset.paint;
+    if (id) previewPaint(id);
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-car]').forEach(button => button.addEventListener('click', () => {
+    const id = button.dataset.car;
+    if (!isCar(id) || id === equippedCar()) return;
+    equipCar(id); // both cars are open to everyone: picking one equips it
+    setEquippedPaint(loadCarPaint(id, availablePaints(getStars()))); // each car remembers its own paint
+    previewPaint(getEquippedPaint());
+    inspectStudioAfterFrame();
+  }));
   $('#garage-button').addEventListener('click', () => {
     const world = getWorld();
     if (!world || !canOpen() || garageScreen.open) return;

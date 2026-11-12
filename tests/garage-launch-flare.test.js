@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Scene, Group, Mesh, BoxGeometry, Vector3 } from 'three';
+import { Scene, Group, Mesh, BoxGeometry, Vector3, Quaternion, Euler } from 'three';
 import { createAeroVFX } from '../src/aero-vfx.js';
 import { createRace } from '../src/game.js';
 import { vfxSettings } from '../src/vfx-settings.ts';
 import { LAUNCH_FLARE_STYLES } from '../src/garage-launch-flare-styles.ts';
+import * as flareShaders from '../src/garage-launch-flare-shaders.js';
 import { skinVfxPalette } from '../src/garage-skin-palette.ts';
 
 const FLARES = ['launch-flare-blue', 'launch-flare-ring', 'launch-flare-pulse', 'launch-flare-gold',
@@ -115,4 +116,68 @@ test('Studio previews loop every flare without touching race state', () => {
     assert.ok(starts >= 2, `${id} loops in the Studio (${starts})`);
   }
   assert.deepEqual(race, before);
+});
+
+
+
+test('the car occludes the ground pool by depth while the pool composites after road-level layers', () => {
+  const { scene, aero, race } = rig();
+  const settings = vfxSettings({ enabled: true, quality: 'high' });
+  const pool = scene.getObjectByName('Launch flare burst');
+  const bodyGlow = scene.getObjectByName('Launch flare body glow');
+  const threeD = ['Launch flare rays', 'Launch flare rings', 'Launch flare sparks'];
+  for (const id of FLARES) {
+    aero.reset(); aero.setSkins({ 'launch-flare': id });
+    launch(aero, race, settings);
+    assert.ok(pool.visible, `${id}: ground pool is visible`);
+    assert.equal(pool.material.depthTest, true, `${id}: every car body must occlude the ground pool`);
+    assert.equal(pool.material.depthWrite, false, `${id}: the pool must not write depth`);
+    assert.ok(pool.renderOrder > 0, `${id}: the pool composites after shadows and transparent road markings`);
+    assert.doesNotMatch(pool.material.fragmentShader, /carMask/, `${id}: depth hides the pool behind the car, not a footprint cut-out`);
+    for (const name of threeD) {
+      const part = scene.getObjectByName(name);
+      assert.ok(part, `${id}: ${name} exists`);
+      assert.equal(part.material.depthTest, true, `${id}: the car must occlude ${name}`);
+      assert.equal(part.material.depthWrite, false, `${id}: ${name} cannot hide later effects`);
+      assert.equal(part.renderOrder, 0, `${id}: ${name} retains normal scene sorting`);
+    }
+    assert.equal(bodyGlow.material.depthTest, true, `${id}: body glow stays depth tested`);
+  }
+});
+
+// The quad used to end 0.25 m past the lane line with the glow still visible: a straight cut that read as the next lane covering it.
+test('the ground pool outreaches its ripple and fades out before the quad ends', () => {
+  const { scene } = rig();
+  const pool = scene.getObjectByName('Launch flare burst');
+  const { POOL_SPREAD } = flareShaders, footprint = [1.1 * 5, 2.2 * 3.6], rippleReach = 1.5; // glow footprint in metres; the ripple front runs to age * 1.5 footprints
+  assert.ok(POOL_SPREAD >= rippleReach, 'the quad reaches past the furthest ripple front');
+  assert.deepEqual([pool.scale.x, pool.scale.y], footprint.map(size => size * POOL_SPREAD), 'the quad grows by the spread');
+  assert.ok(pool.material.fragmentShader.includes(`*${POOL_SPREAD.toFixed(1)};`), 'the shader rescales with the quad, so glow and ripple keep their size');
+  assert.ok(1.4 * 1.5 * Math.exp(-2.6 * POOL_SPREAD ** 2) < 1 / 255, 'the glow is under one 8-bit step at the nearest quad edge');
+});
+
+// The car leans about its wheels; a pool leaning with it sank under the road on the side it leaned towards.
+test('the ground pool stays on the road plane while the car banks and pitches', () => {
+  const settings = vfxSettings({ enabled: true, quality: 'high' });
+  const poolAxes = (road, lean) => {
+    const scene = new Scene(), car = new Group(), ground = new Group();
+    car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+    car.add(car.userData.body); scene.add(car, ground);
+    ground.quaternion.copy(road).multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -Math.PI / 2)); // the contact shadow's pose
+    car.quaternion.copy(road).multiply(lean);
+    const aero = createAeroVFX(scene, car, lean === LEVEL ? undefined : ground), race = createRace();
+    aero.setSkins({ 'launch-flare': 'launch-flare-white' }); launch(aero, race, settings);
+    scene.updateMatrixWorld(true);
+    const pool = scene.getObjectByName('Launch flare burst');
+    return { normal: new Vector3(0, 0, 1).transformDirection(pool.matrixWorld), length: new Vector3(0, 1, 0).transformDirection(pool.matrixWorld) };
+  };
+  const LEVEL = new Quaternion(), lean = new Quaternion().setFromEuler(new Euler(-0.06, 0, 0.045)); // thrust pitch + full steering bank
+  const roads = { flat: new Quaternion().setFromEuler(new Euler(0, -0.56, 0)), 'sloped and banked': new Quaternion().setFromEuler(new Euler(0.035, -0.96, 0.03)) };
+  for (const [name, road] of Object.entries(roads)) {
+    const up = new Vector3(0, 1, 0).applyQuaternion(road), forward = new Vector3(0, 0, -1).applyQuaternion(road);
+    const { normal, length } = poolAxes(road, lean);
+    assert.ok(normal.distanceTo(up) < 1e-6, `${name} road: the pool faces the road normal, not the leaning car's (off by ${normal.distanceTo(up)})`);
+    assert.ok(length.dot(forward) > 0.998, `${name} road: the pool still points along the car`);
+    assert.ok(poolAxes(road, LEVEL).normal.distanceTo(up) < 1e-6, `${name} road: with no ground plane (Garage, Studio) the pool rides the car`);
+  }
 });
