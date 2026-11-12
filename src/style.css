@@ -2270,3 +2270,12 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 /* Keep the device notice nonmodal without modifying the byte-locked CSS prefix. */
 .performance-notice { pointer-events: none; }
 .performance-notice button { pointer-events: auto; }
+
+/* Wave 3 NITRO artwork: appended after the byte-locked main CSS contract. */
+.nitro-hud > img[data-wave3-hud-art] { display: inline-block; width: 24px; height: 24px; margin-right: 5px; object-fit: contain; vertical-align: middle; }
+
+/* 658x320 short landscape: lift from the 320px-height gauge slot used to touch the AIRFLOW/VFX bar.
+   There is room below the bar and above the NITRO/BOOST thumb cluster without hiding the flight readouts. */
+@media (pointer: coarse) and (max-width: 700px) and (max-height: 330px) and (orientation: landscape) {
+  body:not([data-phase="ready"]) .telemetry .flight-telemetry { transform: translateY(12px); }
+}
