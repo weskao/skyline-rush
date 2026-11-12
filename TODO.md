@@ -5036,3 +5036,14 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Exact-HEAD Node module-size, focused/all unit tests, typecheck, build, desktop/mobile browser tests and full GitHub quality-gate. The GitHub connector environment has no local checkout or repository dependencies; do not mark local gates green without actual runs.
 - [ ] Real WebGL screenshot review on flat, banked and raised roads across desktop/mobile portrait and landscape. Until observed, visual acceptance is still pending.
 - [ ] Historical RED test execution: test-only run 42831180066 was cancelled when the production fix was pushed; no RED assertion result was captured.
+
+## 2026-11-13 — Launch-flare layering: car depth restored, ground pool no longer cut at the next lane (`fix/launch-flare-road-car-layering`)
+
+- [x] Reproduced in real WebGL (dev-unlocked server, Chrome, white flare, frozen flare age). 277c5964 / f820d57f / 49901964 were never observed on screen: with `depthTest: false` the ripple drew across the player car's roof and the footprint mask removed the glow under the car.
+- [x] Root cause 1 (reach): the pool quad ended 0.25 m past the lane line (5.5 m wide on a 5 m lane) while its glow and ripple were still visible there, so the pool stopped in a straight line that read as the next lane covering it. Depth was never involved, which is why three depth fixes changed nothing.
+- [x] Root cause 2 (lean): the pool rode the car body, so steering at GO (bank 0.0385 rad measured) tilted it through the road and the side leaned towards disappeared.
+- [x] RED on the old code: `the car occludes the ground pool by depth…`, `the ground pool outreaches its ripple…`, `the ground pool stays on the road plane…` each failed on their own assertion (pool normal off by 0.075).
+- [x] Fix: pool depth-tested again and the mask removed (car occlusion as before 277c5964); quad grown by `POOL_SPREAD` 1.6 with the shader rescaled so glow and ripple keep their size; pool orientation taken from the contact-shadow plane `world.js` passes to `createAeroVFX`. `world.js` stays at its 1019-line ceiling. Rule rewritten: `.claude/rules/launch-flare-rendering.md`.
+- [x] Real WebGL after the fix, desktop landscape 1440x900: Coast, Taipei, Alpine, Cosmic, Spiral, Aurora at flare age 0.15 / 0.4 / 0.7 show the car occluding the pool and a complete ripple ellipse across both lane lines; Coast at GO with full left steer keeps the pool normal at (0, 1, 0) and lit on both sides.
+- [ ] Phone portrait and landscape WebGL review of the same frames.
+- [ ] Exact-HEAD GitHub `quality-gate` after push.

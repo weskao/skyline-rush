@@ -4,18 +4,19 @@ const VIEW = 'normalize(-mv.xyz+vec3(0.,0.,1e-5))'; // never normalize a zero ve
 const LIFE = 'pow(max(0.,1.-age),1.4)';
 
 // Light pool on the road under the car: the flare erupts from below, so the road lights up first.
+// Quad half-extent in glow footprints: past the furthest ripple front (1.5), where the glow is under one 8-bit step,
+// so the pool never ends in a straight edge beside the next lane.
+export const POOL_SPREAD = 1.6;
 export const POOL_VERTEX = 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}';
 export const POOL_FRAGMENT = `varying vec2 vUv;uniform float age,power,time,pulse,corona,shape;uniform vec3 primary,secondary;
-  void main(){vec2 q=clamp(vUv,0.,1.)*2.-1.;
+  void main(){vec2 q=(clamp(vUv,0.,1.)*2.-1.)*${POOL_SPREAD.toFixed(1)};
     float pool=exp(-dot(q,q)*2.6);float hot=exp(-dot(q*vec2(1.,.6),q*vec2(1.,.6))*9.);
     float flick=1.+corona*.25*sin(time*23.+q.y*7.)+pulse*.35*sin(time*14.);
     float r=length(q),front=age*1.5,ring=shape>.5&&shape<1.5?0.:1.; // the shock ring keeps its own look
     float ripple=ring*(exp(-abs(r-front)*26.)+pulse*exp(-abs(r-fract(age*3.)*1.2)*30.))*(1.-clamp(age,0.,1.)); // a crisp wave runs out over the road
     vec3 col=primary*pool*1.4+mix(secondary,vec3(1.),.25)*hot*1.2+mix(primary,vec3(1.),.4)*ripple*1.6;
     float life=${LIFE}*smoothstep(0.,.06,age+.02);
-    // The road-only overlay ignores road depth to cross lanes. Mask the vehicle footprint so it never paints the body.
-    float carMask=(1.-smoothstep(.4,.55,abs(q.x)))*(1.-smoothstep(.56,.72,abs(q.y)));
-    gl_FragColor=vec4(col*flick,clamp((pool*life*1.5+ripple*.9)*power,0.,1.)*(1.-carMask));}`;
+    gl_FragColor=vec4(col*flick,clamp((pool*life*1.5+ripple*.9)*power,0.,1.));}`;
 
 // Instanced cones rising from the sills; each instance matrix carries its base, 3D direction and length.
 export const RAY_VERTEX = `attribute float tone,delay;varying float vT,vTone,vFacing,vDelay;
