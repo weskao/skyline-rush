@@ -107,4 +107,25 @@ body.vfx-comfort .garage-art-sweep { display: none; }
 :global(body[data-vfx-enabled="false"] .garage-badge-card[data-art^="trophy-"] .garage-badge-art-frame::before){display:none}
 @media (prefers-reduced-motion:reduce){.garage-badge-card[data-art^="mission-"] .garage-badge-art-frame::before,
 .garage-badge-card[data-art^="trophy-"] .garage-badge-art-frame::before{animation:none}}
+
+/* Distinct racing-object effects in the Source Gallery, not a generic shimmer. */
+.garage-badge-card[data-art="mission-race"] .garage-badge-art-frame :deep(.artwork-img){animation:wave3-race-flag 3.2s ease-in-out infinite}
+.garage-badge-card[data-art="mission-time"] .garage-badge-art-frame :deep(.artwork-img){animation:wave3-time-pulse 3.6s steps(10) infinite}
+.garage-badge-card[data-art="mission-drift"] .garage-badge-art-frame :deep(.artwork-img){animation:wave3-drift-torque 3.7s ease-in-out infinite}
+.garage-badge-card[data-art="mission-combo"] .garage-badge-art-frame :deep(.artwork-img){animation:wave3-combo-dash 2.7s cubic-bezier(.2,.5,.4,1) infinite}
+@keyframes wave3-race-flag{0%,100%{transform:skewY(-2deg) translateY(0)}50%{transform:skewY(2deg) translateY(-3px)}}
+@keyframes wave3-time-pulse{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}
+@keyframes wave3-drift-torque{0%,100%{transform:rotate(-7deg) scale(.96)}48%{transform:rotate(7deg) scale(1.06)}}
+@keyframes wave3-combo-dash{0%,100%{transform:translateX(-3px) scale(1)}46%{transform:translateX(4px) scale(1.09)}}
+.garage-badge-card[data-art="trophy-platinum"] .garage-badge-art-frame::before{
+ box-shadow:0 0 21px #ab73ff90,0 0 15px #60f8ff65}
+.garage-badge-card[data-art="trophy-gold"] .garage-badge-art-frame::before{
+ box-shadow:0 0 21px #ffb74899,0 0 12px #ffe79277}
+.garage-badge-card[data-art="trophy-bronze"] .garage-badge-art-frame::before{
+ box-shadow:0 0 15px #ff9e5380}
+.garage-badge-card[data-art="trophy-silver"] .garage-badge-art-frame::before{
+ box-shadow:0 0 16px #b6e4ff89}
+:global(body[data-vfx-enabled="false"] .garage-badge-art-frame .artwork-img),
+:global(body[data-vfx-quality="low"] .garage-badge-art-frame .artwork-img){animation:none!important}
+
 </style>

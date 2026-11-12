@@ -104,4 +104,18 @@ const currencyArt = (kind: string) => {
 :global(body[data-vfx-enabled="false"] .wallet-orbit),:global(body[data-vfx-enabled="false"] .wallet-facet){display:none}
 :global(body[data-vfx-enabled="false"] .wallet-artwork .artwork-img){animation:none}
 @media (prefers-reduced-motion:reduce){.wallet-credit-value,.wallet-orbit,.wallet-facet,.wallet-artwork :deep(.artwork-img){animation:none}}
+
+/* Comet trails inherit Demo Points cyan/violet reflections; no icon redraw. */
+.wallet-artwork::before{content:'';position:absolute;inset:17px -2px 7px -2px;
+ border-radius:50%;border-bottom:2px solid #ffc963ad;border-right:1px solid #e976ff7d;
+ transform:rotate(-22deg);filter:drop-shadow(0 0 5px #fbb246);
+ animation:wallet-charged-trail 3.5s ease-in-out infinite;pointer-events:none;z-index:1}
+.wallet-artwork[data-wallet-art="diamonds"]::before{border-bottom-color:#58e7ffb8;
+ border-right-color:#b976ff91;filter:drop-shadow(0 0 6px #6cceff)}
+@keyframes wallet-charged-trail{0%,100%{opacity:.25;transform:rotate(-22deg) scale(.88)}
+ 50%{opacity:.9;transform:rotate(11deg) scale(1.08)}}
+:global(body[data-vfx-enabled="false"] .wallet-artwork)::before,
+:global(body[data-vfx-quality="low"] .wallet-artwork)::before{display:none}
+@media (prefers-reduced-motion:reduce){.wallet-artwork::before{animation:none}}
+
 </style>
