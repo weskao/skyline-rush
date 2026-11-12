@@ -13,7 +13,7 @@ export interface AudioRace extends ModeAudioRace {
   player: AudioCar & NonNullable<ModeAudioRace['player']>;
   elapsed: number;
   countdown: number;
-  pickups: { taken?: boolean }[];
+  pickups: { taken?: boolean; tier?: string }[];
   rings: { type: string; hit?: boolean }[];
   rivals: RivalCueRace['rivals'];
 }
@@ -81,7 +81,7 @@ export function createRaceAudioEvents() {
       }
       for (const pickup of race.pickups) if (pickup.taken && !collectedPickups.has(pickup)) {
         collectedPickups.add(pickup);
-        if (enabled && active && !freshRace) sounds.push('pickup');
+        if (enabled && active && !freshRace) sounds.push(`pickup-${pickup.tier ?? 'cell'}`);
       }
       for (const ring of race.rings) if (ring.hit && !collectedRings.has(ring)) { // only the player sets hit; a row pays once
         collectedRings.add(ring);

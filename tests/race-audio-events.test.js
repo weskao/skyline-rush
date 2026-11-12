@@ -45,7 +45,7 @@ test('a pickup collected while muted is consumed and never cues after unmuting',
   assert.deepEqual(cues(events.update(race, false)), []);
   assert.deepEqual(cues(events.update(race, true)), []);
   race.pickups[1].taken = true;
-  assert.deepEqual(cues(events.update(race, true)), ['pickup']);
+  assert.deepEqual(cues(events.update(race, true)), [`pickup-${race.pickups[1].tier}`]);
 });
 
 const ringAt = (race, type) => { const ring = { type, hit: false, distance: 500, x: 0, altitude: 0, radius: 4.8, group: 0 }; race.rings.push(ring); return ring; };
@@ -161,4 +161,18 @@ test('ITEM-12: a shield blocking a hit plays its own cue once, and never a crash
   const frame = events.update(race, true);
   assert.deepEqual([cues(frame), impulses(frame)], [['shield-block'], []]);
   assert.deepEqual(cues(events.update(race, true)), []);
+});
+
+
+test('each road supply selects its own cue once at collection', () => {
+  const events = createRaceAudioEvents(), race = racing();
+  events.update(race, true);
+  for (const tier of ['cell', 'can', 'tank', 'overcharge']) {
+    const pickup = { tier, taken: false };
+    race.pickups.push(pickup);
+    assert.deepEqual(cues(events.update(race, true)), []);
+    pickup.taken = true;
+    assert.deepEqual(cues(events.update(race, true)), [`pickup-${tier}`]);
+    assert.deepEqual(cues(events.update(race, true)), []);
+  }
 });

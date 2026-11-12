@@ -13,7 +13,7 @@ function installAudio(t) {
     exponentialRampToValueAtTime(value) { this.value = value; } });
   const node = kind => {
     const result = { kind, frequency: param(), gain: param(), Q: param(), threshold: param(), ratio: param(),
-      connect(destination) { this.destination = destination; return destination; }, disconnect() {}, start() {}, stop() {} };
+      connect(destination) { this.destination = destination; return destination; }, disconnect() {}, start(time) { this.started = time; }, stop(time) { this.stopped = time; } };
     nodes.push(result); return result;
   };
   globalThis.AudioContext = class {
@@ -328,4 +328,30 @@ test('every ring type has its own bright chime, and a quick train steps up in pi
   assert.equal(new Set(train).size, 6, 'six quick rings climb to six different pitches');
   made[0].currentTime += 10;
   assert.equal(pitches('ring-charge'), train[0], 'a pause resets the climb');
+});
+
+
+test('road supplies have distinct timbres and capacity-sized tails, with bounded voices and mute', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const signatures = [];
+  for (const [tier, duration] of [['cell', .22], ['can', .36], ['tank', .54], ['overcharge', .76]]) {
+    const start = nodes.length;
+    sound.cue(`pickup-${tier}`);
+    const voices = nodes.slice(start).filter(n => n.kind === 'oscillator' || n.kind === 'buffer');
+    assert.ok(voices.length >= 2, `${tier} has a layered collection sound`);
+    assert.ok(Math.abs(Math.max(...voices.map(n => n.stopped)) - duration) < .001, `${tier} tail ends on time`);
+    assert.ok(voices.every(n => Number.isFinite(n.stopped)), 'every voice has a stop time');
+    signatures.push(voices.map(n => `${n.kind}:${n.type}:${n.frequency.value}`).join());
+  }
+  assert.equal(new Set(signatures).size, 4, 'each supply is recognizable');
+  sound.setEnabled(false);
+  const muted = nodes.length;
+  sound.cue('pickup-overcharge');
+  assert.equal(nodes.length, muted, 'muted supplies allocate no voices');
+  sound.setEnabled(true);
+  for (let i = 0; i < 40; i++) sound.cue('pickup-overcharge');
+  const capped = nodes.length;
+  sound.cue('pickup-overcharge');
+  assert.equal(nodes.length, capped, 'rapid collections respect the voice cap');
 });

@@ -1,3 +1,16 @@
+## 2026-11-12 — Per-supply collection audio (`feature/pickup-3d-artwork-ui`)
+
+- [x] Scope: the four road/air energy supplies (cell, can, tank, overcharge) select distinct sounds on actual collection, once per object; reuse the existing Web Audio SFX bus, mute/volume, pause/restart cleanup and 24-voice cap. No art, input geometry, ring sound or reward changes; audio presentation is identical across visual quality tiers.
+- [x] RED: `node --test tests/audio.test.js tests/race-audio-events.test.js` failed because typed collection cues were absent and every supply selected generic `pickup`.
+- [x] GREEN: focused audio/event tests plus `tests/module-size.test.js`: 52/52 passed. Guard distinct layered timbres, scheduled ends, mute and saturated voice cap; existing tests cover pause/restart and stale collections.
+- [x] Design: cell = short electronic spark (0.22 s); can = midrange refill sweep (0.36 s); tank = deeper recharge (0.54 s); overcharge = richer harmonic surge (0.76 s). Each uses a low-frequency body and filtered air layer; all nodes stop/disconnect through the existing lifecycle. Generic item and rival cues retain their existing semantics.
+- [x] `npm run build` passed (existing large-bundle warning). Chrome OfflineAudioContext rendered all four real engine cues at 48 kHz: nonzero, unclipped peaks 0.013/0.020/0.032/0.031; audible tails 0.226/0.366/0.546/0.766 s including mixer smoothing. Local review WAVs: `artifacts/pickup-audio/{cell,can,tank,overcharge}.wav` (ignored).
+- [x] `npx playwright test tests/pickup-3d-browser.spec.js`: 3/3 passed, including real guide/race models, reduced motion and WebGL fallback. Chrome required execution outside the filesystem sandbox (sandbox launch aborted with SIGABRT).
+- [x] `make verify` typechecks and full unit stage passed: 2,664 passed / 3 skipped / 0 failed (2,667 total); production build passed.
+- [ ] Full `make verify` browser / World Tour stages: stopped after the 1,121-test browser suite started: 2 passed, touch barrel-roll test interrupted, 1,118 not run (exit 130); World Tour not reached and full-suite acceptance remains unverified. The focused 3-test pickup browser suite above passed separately. Initial sandbox attempt was also stopped; successful type/unit stages ran outside sandbox.
+- [ ] Human listening with music/engine on desktop speakers, phone speaker/headphones; physical iOS/Android and portrait/landscape driving acceptance. Offline waveform checks do not prove perceived immersion.
+- [ ] Exact-commit remote `quality-gate`: no commit/push requested; no PR, merge or deployment performed.
+
 ## 2026-11-12 — Authored 3D power-ups, always on, one renderer for guide and race (`feature/pickup-3d-artwork-ui`)
 
 Supersedes the `3d=1` / `VITE_PICKUP_3D` and `PickupAnimatedPreview.vue` items in the 2026-11-11 sections below.
