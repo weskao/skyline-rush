@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url';
 const DOC_EXT = /\.(md|txt|log|png|jpe?g|gif|webp|svg|mp4|mov|webm)$/i;
 // Shipped in the build, run as tests/CI, or read by a unit test; tests/ci-changes.test.js fails when a test reads a doc
 // this list does not cover.
-const NEEDS_CI = /^(src|public|tests|scripts|\.github)\/|^docs\/(garage-release-policy\.md|designs\/road-pickups\/README\.md)$/;
+const NEEDS_CI = /^(src|public|tests|scripts|\.github)\/|^docs\/(garage-release-policy\.md|designs\/road-pickups\/README\.md)$|^wallet-sparkle-strip\.png$/;
 
 // Makefile: dev-server shortcuts only; no CI job or test runs `make`.
 export const docOnly = (path) => (DOC_EXT.test(path) || path === 'Makefile') && !NEEDS_CI.test(path);

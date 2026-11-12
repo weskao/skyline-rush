@@ -1,11 +1,12 @@
 import { reactive } from 'vue';
-import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
+import { DEFAULT_SKINS, SKIN_CATEGORIES, findSkin } from './garage-skin-catalog.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { createGarageSkinSession } from './garage-skin-session.ts';
 import { createGarageEconomyState } from './garage-economy-state.ts';
 import { browserSkinPickStorage, rememberSkinPick, restoreSkinPicks } from './garage-skin-preference.ts';
 
 let accountId = 'guest';
+let demoApplied: { category: SkinCategory; prior: SkinId } | null = null;
 const session = createGarageSkinSession(accountId, Date.now);
 // Shared, fail-closed Economy read state. Cosmetics trials are not ownership.
 const economy = createGarageEconomyState();
@@ -49,9 +50,28 @@ export function selectGarageSkin(id: unknown): boolean {
 }
 export function equipGarageSkin(id: unknown): boolean {
   if (!session.equip(id)) return false;
+  if (demoApplied?.category === findSkin(id)?.category) demoApplied = null;
   rememberSkinPick(browserSkinPickStorage(), accountId, id);
   publish();
   return true;
+}
+/** Session-only VFX, gated by both the local demo scope and the existing trial entitlement. */
+export function equipWave3DemoSkin(id: unknown, expectedAccount: string): boolean {
+  const skin = findSkin(id);
+  if (!trialMode || !skin || skin.default || expectedAccount !== accountId) return false;
+  const prior = demoApplied?.category === skin.category ? demoApplied.prior : session.active(skin.category);
+  if (demoApplied?.category !== skin.category) resetWave3DemoSkin();
+  if (!session.equip(skin.id)) return false;
+  demoApplied = { category: skin.category, prior };
+  publish();
+  return true;
+}
+export function resetWave3DemoSkin(): void {
+  if (!demoApplied) return;
+  const { category, prior } = demoApplied;
+  demoApplied = null;
+  if (!session.equip(prior)) session.equip(DEFAULT_SKINS[category]);
+  publish();
 }
 export function cancelGarageSkinPreview(): void {
   session.cancelPreview();
@@ -61,6 +81,7 @@ export function setGarageSkinAccount(nextId: string | null): void {
   const id = nextId || 'guest';
   if (id === accountId) return;
   accountId = id;
+  demoApplied = null;
   clearExpiryTimer();
   session.setAccount(id);
   economy.setAccount(id);
@@ -87,6 +108,7 @@ export function setGarageSkinTrial(enabled: boolean, expiresAt: number): void {
   if (!trialMode) return;
   clearExpiryTimer();
   session.setTrial({ enabled, expiresAt });
+  if (!enabled || expiresAt <= Date.now()) demoApplied = null;
   publish();
   const remaining = expiresAt - Date.now();
   // The unlimited development trial is a feature flag, not a finite timer.

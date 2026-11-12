@@ -38,7 +38,7 @@ function instanced(geometry, material, count, name) {
 }
 
 function createParts(uniforms) {
-  const additive = { uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
+  const additive = { uniforms, transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending };
   const material = (vertexShader, fragmentShader, extra = {}) => new THREE.ShaderMaterial({ ...additive, vertexShader, fragmentShader, ...extra });
   const pool = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material(POOL_VERTEX, POOL_FRAGMENT));
   pool.name = 'Launch flare burst'; pool.frustumCulled = false; pool.visible = false;
@@ -52,7 +52,8 @@ function createParts(uniforms) {
   const around = new THREE.Matrix4().makeRotationX(-Math.PI / 2).scale(new THREE.Vector3(RIM_X * 1.32, RIM_Z * 1.25, 1));
   rings.setMatrixAt(0, around); rings.setMatrixAt(1, around); // horizontal, sized to enclose the body
   rings.geometry.attributes.tone.array[1] = 1;
-  return { pool, rays, rings, sparks, body: material(BODY_VERTEX, BODY_FRAGMENT) };
+  for (const layer of [pool, rays, rings, sparks]) layer.renderOrder = 10; // composite above the road, including banked course surfaces
+  return { pool, rays, rings, sparks, body: material(BODY_VERTEX, BODY_FRAGMENT, { depthTest: true }) }; // body glow still respects car geometry
 }
 
 function sparkCloud() { // spawn points around the sill ellipse plus a seed per spark; static, built once

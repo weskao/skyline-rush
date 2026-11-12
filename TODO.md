@@ -29,6 +29,88 @@ Design and numbers: `docs/designs/road-pickups/README.md`.
   (`compose_review.py`) against the reference sprites: not run, models were judged by eye from `review/final.png`
 - [ ] Exact-HEAD `quality-gate` after a push; art sign-off by the owner
 
+---
+
+# 2026-11-11 — Premium currency PNG artwork and 8-frame sprite integration
+
+- [x] Native transparent 3x PNGs checked into `public/feature-assets/wave3-demo/raster/`: `wallet-coin@3x.png` (144×144), `wallet-diamond@3x.png` (144×144). New assets, original A-03/A-04 and HUD images are preserved.
+- [x] 8-frame `wallet-sparkle-strip.png` (512×64, each frame 64×64) used as a CSS steps image-sequence overlay in the real Garage wallet, not as an SVG or full-image scale animation.
+- [x] `Wave3CurrencyStrip.vue` now renders actual PNGs with live F01 demo points, local-only authority and explicitly unavailable coins/diamonds. Sprite animation respects `prefers-reduced-motion`.
+- [x] Responsive 3-column resource display including sticky scroll on tall viewports and static compact landscape; browser checks include 390×844, 844×390, 1440×900.
+- [ ] Exact HEAD GitHub Actions CI all pass and browser screenshots/physical devices approved. Until then, do NOT merge to `develop` or describe full Wave 3 UI/E2E as complete.
+- [ ] Authenticated real coins/diamonds must remain unavailable until server-backed economy is implemented and verified.
+
+---
+
+# Wave 3 — resource HUD and artwork acceptance (2026-11-11)
+
+- [x] Read-only demo wallet projection: local F01 only, account isolation, no invented paid coins/diamonds. Local TDD RED (missing module) → GREEN (3/3) verified.
+- [x] New responsive Garage resource strip, existing A-03 image with PNG fallback, coins/diamonds visual placeholders labelled unavailable, reduced-motion support, live F01 subscription.
+- [x] Existing Store's point counter polished; mission claim feedback includes real delta and resulting balance, without a second credit transaction.
+- [x] Repair candidate for previous CI #42863591047: NITRO CSS moved into Wave 1 override to preserve main CSS hash, icon positioned off-flow for 658×320, BOOST assertion scoped to direct SVG, and mission 96px art selectors separated from A-03 72px artwork.
+- [ ] Confirm exact-head `npm test`, typecheck/build, browser 13 shards, World Tour 5 shards and quality gate; no merge until verified green at same SHA.
+- [ ] Browser E2E screenshot inspection on real browsers and real phone/foldable devices: do not mark complete from source review alone.
+- [ ] Real coins/diamonds/purchases remain unavailable until authenticated backend/verification exists (must not expose fake currency or ownership).
+
+---
+
+# Wave 3 artwork follow-up — A-03/A-04 + NITRO (2026-11-11)
+
+- [x] Approved artwork provenance located: four exact 216×216 RGBA WebP/PNG Git blobs on `feature/wave3-implementation-plan-audit-20261110`; existing `hud-nitro@3x.webp` and BOOST SVG controls identified.
+- [x] Additional expansion scope documented in `docs/superpowers/plans/2026-11-11-wave3-artwork-expansion.md`; excluded `boost-polish.png` composite screenshot from production controls.
+- [ ] A-03/A-04 runtime UI integration and existing NITRO decorative HUD artwork: implement and verify source on latest QA SHA.
+- [ ] Source/SHA/alpha/216px and 72px CSS, WebP→PNG fallback and original live mission/Store/result functionality: exact-HEAD tests + browser evidence.
+- [ ] Latest QA full CI all green, then user-authorized `develop` merge, post-merge CI and real physical-device review. Do not invent native-device or art-direction signoff.
+
+---
+
+# 2026-11-11 — Wave 3 frontend QA synchronization for develop
+
+- [x] **F01–F06 + Prompt A–E and F08 code integration:** Same local-only demo authority for missions, awards, Store, Collection, preview-only cosmetic equip and versioned bounded persistence. Locked production release modes remain without demo grants or real purchase entitlements.
+- [x] **Exact-head integration CI green:** `85f3f09f21f52ea320b1492a338b377e0424db4d`, [CI #42822205901](https://github.com/weskao/skyline-rush/actions/runs/42822205901): Unit/Typecheck/Build, Cloud Save, 13 Browser Shards, 5 World Tour Shards and quality-gate succeeded.
+- [x] **Exact-head QA CI green (before source synchronization):** `51bc143425b69ec91074079b47514e9823a6e9cd`, [CI #42841586781](https://github.com/weskao/skyline-rush/actions/runs/42841586781): same full CI success including Playwright's genuine 5 km Time Attack → result → mission claim → Store redemption → Collection equip → reload/reset.
+- [x] **QA source sync prepared:** integrate core's latest mission grid, phone result overlay CSS, and layout rule into `feature/wave3-demo-acceptance`; preserve stronger QA unverified-authority regression and its dedicated E2E checks.
+- [ ] **Exact-HEAD combined QA CI:** must rerun complete regression on the synchronized merge commit, not infer success from either parent.
+- [ ] **Develop:** user-authorized merge only after synchronized QA all green, then independently verify the merged `develop` HEAD and update this checklist with the actual SHA/run IDs.
+- [ ] **Physical-device manual acceptance:** real iPhone, Android, Mac Chrome WebGL performance/controls and visual screenshots; no actual device evidence from GitHub CI alone.
+- [ ] **Go/Firebase backend:** intentionally deferred; do not interpret demo points, ownership, reward claims or Store as real server-authoritative grants.
+
+---
+
+## Wave 3 — satellite frontend integration checkpoint (2026-11-10, historical)
+
+**Branch:** `feature/wave3-frontend-demo-integration`. Satellite source integration is **not** the same as completed acceptance; no new paid or verified entitlements.
+
+- [x] **Source integration:** Demo Store/Collection from `be179828122f196b2e1f2b80a5d3483ed38ffd1c`, Results UI from `7552d4362b367ae3c6f344471c7dbb85ac60dae5`, scoped Storage module/tests from `555984cdb849db2fb1f007755996803d304bc6e2`, artwork QA tests from `a506b495f1c26d42c1d4c273b823f9b27d269f23`. Compare commit tree and changed files; these are code-import checkpoints only.
+- [x] **Integration source and regression cases added:** trial-only Garage Store/Collection Vue entry, original race results receipt hook, per-race first receipt, session-only demo skin preview, single-key versioned snapshot + replay checkpoint, account-scoped rehydrate/reset and source-level build-time coming-soon isolation.
+- [x] **Remote full-regression baseline:** exact integration `85f3f09f21f52ea320b1492a338b377e0424db4d` / Actions #42822205901 and QA `51bc143425b69ec91074079b47514e9823a6e9cd` / Actions #42841586781 passed Unit, Cloud Save, Browser (13 shards), World Tour (5 shards) and quality-gate independently. A newly combined head still requires its own green CI.
+- [x] **Demo missions frontend:** `GarageMissionBoard.vue` uses the shared F01 port to display claimable daily/weekly mission rewards on trial builds; live mission E2E is included in the passing QA browser run, with locked production variants kept separate.
+- [ ] **Visual acceptance:** Real WebGL gameplay, mobile portrait/landscape, Store/Collection, results summary and demo cosmetic effects; no real-device proof yet.
+- [ ] **Final combined QA CI and develop merge:** Sync integration UX/rules into the QA candidate, obtain full exact-head `quality-gate` (including Browser 13 shards + World Tour 5 shards), then perform user-authorized no-ff QA merge into `develop` and verify develop's new exact-HEAD CI; no PR, deploy or main merge.
+- [ ] **Persistence and security audit:** Complete review of reload, replay dedupe, account changes and disposal in real browser before marking full storage feature done.
+
+---
+
+# 2026-11-10 — Wave 3 frontend integration: F01 / F02 / F04 local-demo core (feature branch)
+
+**Branch:** `feature/wave3-frontend-demo-integration`. **Integration parent:** `develop@dbf2ffc1e8e248c4042cce35a09bc7b5e58255fc`.
+**Contract frozen for parallel agents:** `3a5ff9378667a53f23f17134c4d0f2cbaafb83d4`.
+**Handoff:** `docs/superpowers/plans/2026-11-10-wave3-core-frontend-handoff.md`.
+**Planning reference (read-only):** `feature/wave3-implementation-plan-audit-20261110`.
+
+- [x] **F01 source/TDD:** Versioned `Wave3ExperiencePort`, in-memory local demo with Guest, subscription, account isolation, demo points/redeem/equip/reset; RED was `ERR_MODULE_NOT_FOUND`, then `node --experimental-strip-types --test tests/wave3-local-demo.test.js` passed **9/9**. No Go/Firebase/real ownership change. F01 code at `3a5ff937`.
+- [x] **F04 data/TDD:** Local-only points and redemption, duplicate-safe completion, mission claim once, insufficient-points guard, invalid item and unsupported mode tests. Same focused **9/9** verification; no server-verified or paid grants.
+- [x] **F02 source/TDD:** Actual `game.js` drift-payout and longest-combo snapshots observed after `stepRace`; buffered until valid completed race; shared race-results wrapper preserves original settlement. Aborted-race test RED **2 failures**, GREEN after buffering; final-step drift test RED **1 failure**, GREEN after capture guard. Combined `node --experimental-strip-types --test tests/wave3-local-demo.test.js tests/wave3-race-events.test.js`: **15 passed / 0 failed**.
+- [x] **Local standalone strict check:** `tsc --noEmit --target ES2022 --lib ES2022,DOM --module ESNext --moduleResolution bundler --strict --allowImportingTsExtensions src/wave3-experience-contract.ts src/wave3-demo-settlement.ts src/wave3-local-demo.ts src/wave3-race-events.ts`: exit 0 (local TypeScript 5.8.3; repo version 5.9.3 awaits exact-head CI).
+- [x] **Legacy ceiling inspected:** `src/main.js` remains 677 lines (limit 677), new TS modules 54/25/88/68 lines; actual repository-wide `tests/module-size.test.js` is **not** claimed local-executed.
+- [x] **Early CI partial evidence:** on `3a5ff937`, GitHub Actions run [42662263629](https://github.com/weskao/skyline-rush/actions/runs/42662263629) ran and passed typecheck, npm test, build and cloud-save jobs; the overall run was **cancelled** by a newer push, so this is not an exact-HEAD full gate.
+- [ ] **Current exact-HEAD full CI:** all required unit, browser, World Tour and cloud-save jobs (including `quality-gate`) must finish and pass at the final commit. Queued/partial/cancelled runs never count as PASS.
+- [ ] **Real WebGL/phone UI acceptance:** verify guest race → actual demo mission and points → claim → Demo Store → collection → equip, portrait/landscape and account changes. Current branch intentionally implements **core logic only**, not unfinished satellite Vue screens.
+- [ ] **Pending feature branches:** F03 Missions UI, F05 Store/Collection UI, F06 Persistence, result-presentation UI, asset QA and full F08 E2E; integrate after each owner's evidence and re-run full checks.
+- [ ] **Backend:** no Go/backend/payments or production real entitlements in this branch. Future Go must not migrate demo credits/claims to real grants.
+
+---
+
 ## 2026-11-11 — AI 16-frame animated pickup sprites (guide only)
 
 - [x] Generate four original 4 × 4 frame animation sheets for cell, can, tank and overcharge
@@ -4978,3 +5060,12 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] 桌機/手機、直橫屏、真實 WebGL 地形連續性與勝負記錄檢查；Cloud/History 還需確認失敗淘汰不寫入最佳成績。
 
 - [x] CI 實際 Red evidence（run #42662501680 canceled, job log still records）：新 Elimination 16 賽道跨終點、完整七輪 knockout 與未來短賽道 deterministic tests 3/3 PASS；舊 S4 假設 Elimination 與 Classic 使用相同有限賽道獎勵已失效，改為要求 Elimination 與 Endless 道具/車流同源；Coast Elimination 60Hz Replay 因有意切換無盡道路產生新 SHA，僅更新此模式 fixture。更新後需於新 HEAD 再驗證。
+
+## 2026-11-10 — Launch-flare visibility above every road surface (`fix/launch-flare-road-occlusion-20261110`)
+
+- [x] Root cause traced to `src/garage-launch-flare.js`: flare's additive materials disabled depth writes but still depth-tested against asphalt/deck depth, so the shallow pool and sill rays/sparks could be clipped by banked or raised road geometry.
+- [x] Added `tests/garage-launch-flare.test.js` regression covering all eight premium flare skins, the four burst layers, ordering, no depth writes and preserved car-body glow depth.
+- [x] Set burst layer `depthTest: false`, `renderOrder: 10`; kept body glow `depthTest: true`; unchanged timing, palettes, geometry and vehicle pose. Scoped regression rule: `.claude/rules/launch-flare-rendering.md`.
+- [ ] Exact-HEAD Node module-size, focused/all unit tests, typecheck, build, desktop/mobile browser tests and full GitHub quality-gate. The GitHub connector environment has no local checkout or repository dependencies; do not mark local gates green without actual runs.
+- [ ] Real WebGL screenshot review on flat, banked and raised roads across desktop/mobile portrait and landscape. Until observed, visual acceptance is still pending.
+- [ ] Historical RED test execution: test-only run 42831180066 was cancelled when the production fix was pushed; no RED assertion result was captured.
