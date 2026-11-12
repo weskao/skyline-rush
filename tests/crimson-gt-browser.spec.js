@@ -11,6 +11,7 @@ import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
 const GLB = /\/models\/(crimson-gt|roadster2)\/[\w-]+\.glb$/;
 const FACTORY_RED = '9a1424';
 const REAR_PORT_X = [-0.62, -0.22, 0.22, 0.62]; // src/aero-vfx.js REAR_PORTS (y .64, z 2.39)
+const NOZZLE = [0.31, 1.975]; // the GT's nozzles: one rigid offset (0, -.33, -.415) from the contract ports
 
 async function prepare(page, url, { quality = 'high', storage = {} } = {}) {
   await page.addInitScript(([q, extra]) => {
@@ -125,7 +126,7 @@ test('Preview Studio frames the Crimson GT from the front, side and rear', async
   }
 });
 
-test('race: the equipped GT dresses Home and carries into the race on the contract ports', async ({ gameplayPage: page, gameplayURL }) => {
+test('race: the equipped GT dresses Home and carries into the race with the rear-port VFX on its nozzles', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(90000));
   const { requests, errors } = await prepare(page, gameplayURL, { storage: GT });
   await modelReady(page);
@@ -139,7 +140,9 @@ test('race: the equipped GT dresses Home and carries into the race on the contra
     const car = window.gameScene.player;
     return [1, 2, 3, 4].map(i => car.worldToLocal(car.getObjectByName(`nozzle_rear_0${i}`).getWorldPosition(car.position.clone())).toArray().map(v => Math.round(v * 1e3) / 1e3));
   });
-  expect(nozzles).toEqual(REAR_PORT_X.map(x => [x, 0.64, 2.39]));
+  expect(nozzles).toEqual(REAR_PORT_X.map(x => [x, ...NOZZLE]));
+  const ports = await page.evaluate(() => window.gameScene.player.getObjectByName('Rear ports').position.toArray().map(v => Math.round(v * 1e3) / 1e3 + 0)); // + 0: a rounded -0 is 0
+  expect(ports, 'the rear-port VFX moved onto the nozzles').toEqual([0, -0.33, -0.415]);
   const before = await programs(page);
   const wheel = () => page.evaluate(() => window.gameScene.player.getObjectByName('wheel_fl_spin').quaternion.toArray().join());
   const parked = await wheel();

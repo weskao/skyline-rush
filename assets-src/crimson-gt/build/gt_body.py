@@ -1,17 +1,20 @@
-"""Crimson GT body and canopy in three.js car space (Y up, nose toward -Z, metres).
+"""Crimson GT body and upper (glasshouse, roof, buttresses) in three.js car space (Y up, nose toward -Z, metres).
 
-Every curve below is a list of (z, value) keys read off ref/side.png after registering it by the two
-hub centres (255.2 px/m at 3x, hub line y .46), or marked `inferred` / `contract` (asset-brief.md).
-Mesh helpers and the three -> Blender conversion are the Roadster's (assets-src/roadster2/build/roadster_geom.py).
+Built from the concept panels, not from the Roadster: every curve is a list of (z, value) keys read off the
+hand-traced silhouettes in gate/refs.json (side.png registered by its two hub centres at 85.1 px/m, rear.png by
+its tyre contact points), or marked `inferred`. Ground is y .02 (the game's tyre contact plane), so the panel
+tyre radius .337 puts the hubs at y .357. Mesh helpers: assets-src/roadster2/build/roadster_geom.py.
 """
 import math
 
-from roadster_geom import _resample, loft
+from roadster_geom import _resample, loft, smooth_rings
 
-HUB_Y, ARCH_R = 0.46, 0.468          # contract hub height; arch = tyre radius .44 + 28 mm
-ARCH_Z = (-1.35, 1.42)               # contract wheel centres
-Z_NOSE, Z_TAIL = -2.30, 2.44         # nose: side.png tip; tail: contract (rear ports z 2.39, wing bay to 2.47)
-WELL_X = 0.90                        # wheel-well inner wall, just inside the tyre inner face (.915)
+GROUND, TYRE_R = 0.02, 0.337
+HUB_Y = GROUND + TYRE_R
+ARCH_R = TYRE_R + .022
+ARCH_Z = (-1.35, 1.42)               # contract wheel centres (wheelbase 2.77 m registers side.png)
+Z_NOSE, Z_TAIL = -2.27, 2.04         # side.png: nose tip (perspective fit, lens 135), tail end
+WELL_X = 0.90                        # wheel-well inner wall, inside the tyre inner face (.925)
 
 
 def pchip(keys):
@@ -40,47 +43,77 @@ def _check_pchip():
 
 _check_pchip()
 
-# Half-width at the shoulder line. No top view exists: inferred from the front and rear three-quarter panels,
-# held >= 1.2 at the arches so the body covers the contract tyre outer face (x 1.185).
-W = pchip([(-2.30, .74), (-2.19, .92), (-2.0, 1.08), (-1.7, 1.18), (-1.35, 1.205), (-1.0, 1.195), (-.4, 1.16),
-           (.3, 1.165), (.9, 1.195), (1.42, 1.205), (1.9, 1.19), (2.25, 1.13), (2.44, 1.06)])
-# Side bottom edge (sill): side.png y 408 px -> .26 between the wheels.
-SILL = pchip([(-2.30, .35), (-2.12, .30), (-1.9, .27), (-.8, .25), (.9, .25), (1.9, .30), (2.2, .36), (2.44, .42)])
-# Shoulder (widest) line: rises toward the tail (side.png character line).
-SHOULDER = pchip([(-2.30, .52), (-1.9, .62), (-1.35, .70), (-.6, .70), (.4, .74), (1.42, .80), (2.0, .84), (2.44, .84)])
-# Fender / haunch crown. Front arch +.065 and tail +.12 over side.png: contract tyre radius and wing bay.
-CROWN = pchip([(-2.30, .575), (-2.1, .675), (-1.8, .835), (-1.35, .962), (-.95, .955), (-.4, .955), (.4, .985),
-               (1.0, 1.01), (1.42, 1.03), (1.9, 1.022), (2.44, .99)])
-CROWN_INSET = pchip([(-2.30, .05), (-1.35, .14), (0, .16), (1.42, .15), (2.44, .09)])
-# Centreline: hood from side.png, deck under the canopy inferred (hidden), tail deck 1.0 under the stowed wing (contract).
-CENTRE = pchip([(-2.30, .582), (-2.0, .665), (-1.6, .765), (-1.2, .84), (-1.0, .885), (0, .94), (1.0, .97),
-                (1.6, .99), (2.05, 1.0), (2.44, .985)])
-# Lower-side tuck between the wheels (the scalloped flank); zero across both arches so the lip covers the tyre.
-TUCK = pchip([(-2.30, .02), (-1.9, 0), (-.82, 0), (-.6, .08), (-.2, .12), (.5, .12), (.75, .06), (.9, 0),
-              (1.95, 0), (2.44, .03)])
+# Plan view: half-width of the widest line. No top view: inferred from the two three-quarter panels; the rear panel
+# gives 1.15-1.16 at the haunches, and the arches must cover the tyre outer face (x 1.175).
+W = pchip([(-2.27, .40), (-2.14, .72), (-1.95, .96), (-1.7, 1.12), (-1.35, 1.165), (-1.0, 1.15), (-.3, 1.105),
+           (.4, 1.125), (1.0, 1.16), (1.42, 1.175), (1.7, 1.15), (1.9, 1.07), (2.04, .95)])
+# Underside edge (side.png): .165 between the wheels, rising under the nose and up the raked tail face.
+SILL = pchip([(-2.27, .27), (-2.2, .19), (-1.9, .178), (-.9, .165), (1.0, .165), (1.8, .24), (1.95, .25),
+              (2.0, .42), (2.04, .56)])
+SILL_IN = pchip([(-2.27, .06), (-1.9, .03), (-.9, .02), (.9, .02), (1.9, .03), (2.04, .06)])
+# Flank scallop: the door skin tucks in above the sill and deepens into the intake ahead of the rear wheel
+# (side.png, both three-quarter panels). Depth inferred.
+SC_IN = pchip([(-2.27, .02), (-1.9, .01), (-.95, .01), (-.5, .07), (0, .13), (.6, .20), (.9, .22), (1.04, .10),
+               (1.2, .01), (2.04, .02)])
+SC_Y = pchip([(-2.27, .34), (-1.35, .36), (0, .38), (.9, .42), (2.04, .40)])
+# Character line (the widest point) and the shoulder above it. Heights from side.png, insets from rear.png
+# (outline 1.157 at y .49, 1.129 at .63, 1.045 at .71, .905 at .757).
+CHAR_Y = pchip([(-2.27, .40), (-2.0, .46), (-1.35, .55), (-.8, .60), (0, .62), (.8, .60), (1.42, .52), (2.04, .52)])
+SH_Y = pchip([(-2.27, .44), (-2.0, .52), (-1.35, .70), (-.6, .705), (.4, .705), (1.42, .655), (2.04, .64)])
+SH_IN = pchip([(-2.27, .03), (-1.35, .045), (0, .04), (1.42, .06), (2.04, .06)])
+# Fender / haunch crown: the side.png top edge ahead of the windscreen; rear.png for the haunch.
+CROWN = pchip([(-2.27, .455), (-2.08, .535), (-1.886, .64), (-1.67, .745), (-1.48, .80), (-1.25, .818), (-1.0, .80),
+               (-.5, .76), (.3, .755), (1.0, .785), (1.42, .80), (1.8, .783), (2.04, .75)])
+CR_IN = pchip([(-2.27, .10), (-1.9, .16), (-1.35, .19), (-.5, .19), (.4, .20), (1.42, .27), (2.04, .22)])
+# Hood plateau, then the deck the upper stands on: half-width and height. Hood centre and every width inferred.
+RIDGE_X = pchip([(-2.27, .10), (-1.3, .42), (-1.0, .52), (-.4, .59), (0, .60), (.5, .57), (1.0, .50), (1.4, .45),
+                 (1.8, .44), (2.04, .42)])
+DECK_Y = pchip([(-2.27, .455), (-2.0, .555), (-1.7, .66), (-1.35, .735), (-1.0, .80), (1.42, .80), (1.8, .785),
+                (2.04, .765)])
+# Roof line: the side.png top edge from the windscreen base to the tail.
+TOP = pchip([(-1.02, .835), (-.667, .963), (-.392, 1.057), (-.077, 1.084), (.235, 1.079), (.548, 1.043),
+             (.783, .973), (1.017, .93), (1.407, .866), (1.721, .823), (2.014, .775)])
+ROOF_X = pchip([(-1.02, .46), (-.4, .41), (0, .38), (.5, .37), (1.0, .37), (1.4, .39), (2.014, .40)])  # rear.png, else inferred
+Z_UPPER = (-1.02, 2.014)
 
 
-def arch_bottom(z):
-    """Lower edge of the body side: the sill, or the wheel-arch circle above the hub line."""
-    bot = SILL(z)
+def side_profile(z):
+    """Un-arched side of the section, bottom to top: sill edge, scallop, character line, shoulder, crown."""
+    w = W(z)
+    return [(w - SILL_IN(z), SILL(z)), (w - SC_IN(z), max(SC_Y(z), SILL(z) + .03)), (w, max(CHAR_Y(z), SILL(z) + .06)),
+            (w - SH_IN(z), max(SH_Y(z), SILL(z) + .09)), (w - CR_IN(z), max(CROWN(z), SILL(z) + .12))]
+
+
+def arch_y(z):
+    """Height of the wheel-arch opening at z, or None outside both arches."""
     for zc in ARCH_Z:
         d = abs(z - zc)
         if d <= ARCH_R + 1e-9:
-            bot = max(bot, HUB_Y + math.sqrt(max(ARCH_R * ARCH_R - d * d, 0.0)))
-    return bot
+            return HUB_Y + math.sqrt(max(ARCH_R * ARCH_R - d * d, 0.0))
+    return None
+
+
+def clip_profile(pts, y):
+    """The profile cut off below height y: same point count, the cut points spread evenly up from the arch lip."""
+    if y is None or y <= pts[0][1]:
+        return pts
+    keep = next(i for i, p in enumerate(pts) if p[1] > y + .012)   # first point clear of the lip
+    (x0, y0), (x1, y1) = pts[keep - 1], pts[keep]
+    lip = (x0 + (x1 - x0) * (y - y0) / (y1 - y0), y)
+    return [(lip[0] + (pts[keep][0] - lip[0]) * i / keep, lip[1] + (pts[keep][1] - lip[1]) * i / keep)
+            for i in range(keep)] + pts[keep:]
 
 
 def half_ring(z):
-    """Right half of the cross-section at z, bottom centre to top centre: 9 (x, y) points."""
-    w, sill, bot = W(z), SILL(z), arch_bottom(z)
-    floor = sill - .02  # a 20 mm step keeps the well corner points distinct outside the arches (no zero-area faces)
-    wi = min(WELL_X, w - .12)
-    y_low = max(sill + .45 * (SHOULDER(z) - sill), bot + .005)
-    y_sh = max(SHOULDER(z), bot + .012)
-    y_cr = max(CROWN(z), bot + .03)
-    tuck = TUCK(z)
-    return [(0, floor), (wi, floor), (wi, bot), (w - tuck - (.03 if bot == sill else 0), bot), (w - tuck, y_low),
-            (w, y_sh), (w - CROWN_INSET(z), y_cr), (.55 * w, CENTRE(z) - .012), (0, CENTRE(z))]
+    """Right half of the cross-section at z, bottom centre to top centre: 12 (x, y) points."""
+    sill, lip = SILL(z), arch_y(z)
+    side = clip_profile(side_profile(z), lip)
+    floor = sill - .02   # a 20 mm step keeps the well corner distinct outside the arches (no zero-area faces)
+    wi = min(WELL_X, W(z) - .14)
+    ridge, deck, crown = min(RIDGE_X(z), side[-1][0] - .12), DECK_Y(z), side[-1]
+    valley = (ridge + .45 * (crown[0] - ridge), min(deck, crown[1]) - .03)
+    rise = .022 * min(max((-.9 - z) / .4, 0.0), 1.0)   # raised hood centre, creases meeting at the nose (front three-quarter panel)
+    return [(0, floor), (wi, floor), (wi, side[0][1])] + side + [valley, (ridge, deck), (.5 * ridge, deck + rise), (0, deck + rise + .004)]
 
 
 def ring(z):
@@ -96,8 +129,7 @@ def stations():
     zs = [Z_NOSE + i * (Z_TAIL - Z_NOSE) / 64 for i in range(65)]
     arch = []
     for zc in ARCH_Z:
-        arch += [zc + ARCH_R * math.cos(math.pi * i / 18) for i in range(19)]
-        arch += [zc - ARCH_R - .012, zc + ARCH_R + .012]
+        arch += [zc - ARCH_R + ARCH_R * (1 - math.cos(math.pi * i / 12)) for i in range(13)]
     zs = [z for z in zs if all(abs(z - a) > .025 for a in arch)] + arch
     return sorted(zs)
 
@@ -108,7 +140,7 @@ def body_verts():
 
 def side_x(z, y):
     """Half-width of the smoothed body side at height y (between the sill edge and the crown)."""
-    pts = _resample(ring(z), RING_SUB, True)[3 * RING_SUB:6 * RING_SUB + 1]
+    pts = _resample(ring(z), RING_SUB, True)[3 * RING_SUB:7 * RING_SUB + 1]
     for (x0, y0, _), (x1, y1, _) in zip(pts, pts[1:]):
         if y0 <= y <= y1 and y1 > y0:
             return x0 + (x1 - x0) * (y - y0) / (y1 - y0)
@@ -126,25 +158,55 @@ def patch(zs, y_lo, y_hi, ny=4, proud=.008, depth=.03, side=1):
     return loft(rings, close=True)
 
 
-# Canopy stations: [z, base half-width, base y, roof half-width, roof y]. Roof line from side.png (peak 1.185 at
-# z -.09); base sunk 20 mm under the body deck; widths inferred (front three-quarter panel).
-CANOPY_STATIONS = [
-    [-1.06, .52, .86, .44, .87], [-.62, .74, .93, .52, 1.09], [-.09, .78, .96, .54, 1.185],
-    [.40, .78, .975, .52, 1.165], [.90, .70, .985, .44, 1.10], [1.45, .52, .985, .32, 1.03], [1.98, .34, .985, .24, 1.005],
-]
+# ---- Upper: one lofted shell from the windscreen base to the tail, split into glass and paint faces. ----
+UP_SUB, UP_STATION_SUB, RAIL = 3, 3, .07
 
 
-def canopy_rings():
-    return [[(-b, by, z), (-(b + r) / 2 - .03, (by + ry) / 2 + .02, z), (-r, ry, z), (r, ry, z),
-             ((b + r) / 2 + .03, (by + ry) / 2 + .02, z), (b, by, z)] for z, b, by, r, ry in CANOPY_STATIONS]
+def _belt(z):
+    """How far up the cabin side the glass starts (0 base .. 1 roof rail): the beltline climbs to the rail at the
+    rear, which gives the side glass its teardrop point (side.png)."""
+    return .10 if z <= -.2 else min(.93, .10 + .83 * (z + .2) / .95)
 
 
-# Rear buttresses (rear three-quarter panel): body-colour fins from the B-pillar down to the tail deck, either side of
-# the rear glass. [z, inner x, outer x, top y]; widths inferred.
-BUTTRESS_STATIONS = [[.50, .50, .60, 1.12], [.75, .47, .60, 1.125], [1.1, .42, .58, 1.085], [1.5, .36, .54, 1.04],
-                     [1.9, .31, .50, 1.012], [2.06, .30, .48, 1.0]]
+def upper_rings():
+    zs = [Z_UPPER[0] + (Z_UPPER[1] - Z_UPPER[0]) * i / 22 for i in range(23)]
+    rings = []
+    for z in zs:
+        b, by, r, top = RIDGE_X(z) + .04, DECK_Y(z) - .06, ROOF_X(z), TOP(z)   # base sunk 60 mm into the deck
+        ry = max(top - .05, by + .05)
+
+        def side(u):   # bowed cabin side from the base (u 0) to the roof rail (u 1)
+            return (b + (r - b) * u + .14 * u * (1 - u), by + (ry - by) * u * (1.2 - .2 * u))
+        u = _belt(z)
+        half = [side(0), side(u), side((u + 1) / 2), side(1), (r - RAIL, min(ry + .03, top))]
+        rings.append([(-x, y, z) for x, y in half] + [(0, top, z)] + [(x, y, z) for x, y in reversed(half)])
+    return rings
 
 
-def buttress_rings(side):
-    return [[(side * (xi - .02), top - .10, z), (side * xi, top, z), (side * xo, top - .012, z), (side * (xo + .16), .97, z)]
-            for z, xi, xo, top in BUTTRESS_STATIONS]
+def _is_glass(span, z):
+    """span across one half: 0 door top / buttress, 1-2 side glass, 3 roof rail, 4 centre; z: quad centre."""
+    if span in (1, 2):
+        return -.80 < z < .72
+    if span == 4:   # windscreen, then the body-colour roof, then the dark engine cover between the buttresses
+        return z < -.30 or .85 < z < 1.55
+    return False
+
+
+def upper_parts():
+    """(glass, paint): two (verts, faces) meshes cut from the same smoothed shell."""
+    rings = smooth_rings(upper_rings(), UP_SUB, UP_STATION_SUB, ring_closed=False)
+    m = len(rings[0])                     # 10 spans x UP_SUB + 1
+    verts = [p for r in rings for p in r]
+    glass, paint = [], []
+    for s in range(len(rings) - 1):
+        z = (rings[s][0][2] + rings[s + 1][0][2]) / 2
+        for j in range(m - 1):
+            k = j if j < (m - 1) / 2 else m - 2 - j      # mirror the right half onto the left
+            (glass if _is_glass(k // UP_SUB, z) else paint).append((s * m + j, s * m + j + 1, (s + 1) * m + j + 1, (s + 1) * m + j))
+    return _compact(verts, glass), _compact(verts, paint)
+
+
+def _compact(verts, faces):
+    used = sorted({i for f in faces for i in f})
+    index = {old: new for new, old in enumerate(used)}
+    return [verts[i] for i in used], [tuple(index[i] for i in f) for f in faces]

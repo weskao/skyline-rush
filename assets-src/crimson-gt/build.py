@@ -3,10 +3,11 @@
 Run from the repo root:
   "$BLENDER_BIN" --background --factory-startup --python assets-src/crimson-gt/build.py
 
-Crimson GT is the second player car: its shape follows the studio panels of the concept board (ref/*.png,
-asset-brief.md) around the Roadster's contract pivots and ports, so src/garage-model-rig.ts binds it unchanged.
-Only the LOW collection is created: every object in the file ships. Shape: build/gt_body.py, build/gt_parts.py;
-mesh, node and material helpers are the Roadster's (assets-src/roadster2/build).
+Crimson GT is the second player car. Its shape is built from the studio panels of the concept board (ref/*.png,
+asset-brief.md), not around the Roadster's shape: only the rig pivots (wheels, wing, lift ports) are the Roadster's
+contract numbers, so src/garage-model-rig.ts binds it. Only the LOW collection is created: every object in the file
+ships. Shape: build/gt_body.py, build/gt_parts.py; mesh, node and material helpers are the Roadster's
+(assets-src/roadster2/build).
 """
 import json
 import os
@@ -28,7 +29,7 @@ MATERIALS = {
     "gt_trim": ((0.012, 0.014, 0.018), 0.30, 0.42, {}),
     "gt_carbon": ((0.03, 0.035, 0.04), 0.35, 0.34, {}),
     "gt_tire": ((0.03, 0.03, 0.035), 0.0, 0.82, {}),
-    "gt_rim": ((0.30, 0.31, 0.33), 0.90, 0.28, {}),
+    "gt_rim": ((0.10, 0.105, 0.115), 0.90, 0.30, {}),   # dark gunmetal (side.png, rear three-quarter panel)
     "gt_light": ((0.0, 0.0, 0.0), 0.0, 0.5, {"emit": (1.0, 0.03, 0.03), "emit_strength": 2.6}),
     "gt_lamp": ((0.0, 0.0, 0.0), 0.0, 0.5, {"emit": (0.92, 0.94, 1.0), "emit_strength": 3.5}),
     "gt_nozzle": ((0.30, 0.30, 0.32), 0.90, 0.26, {}),

@@ -1,5 +1,7 @@
-// Crimson GT (second player car): its GLB must sit on the Roadster's contract pivots and ports, so the rig
-// (src/garage-model-rig.ts), the wheels, the wing and every VFX port work unchanged on both LODs.
+// Crimson GT (second player car): its GLB keeps the Roadster's contract wheel pivots, wing pivot and lift ports, so
+// the rig (src/garage-model-rig.ts) binds it on both LODs. Two owner-approved departures follow the concept's
+// proportions: the smaller tyre hangs on a static `<wheel>_axle` node, and the four rear nozzles sit off the contract
+// rear ports by one rigid offset (src/garage-model.ts moves the rear-port VFX by the same offset).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -10,6 +12,8 @@ import { glbJson } from '../scripts/assets/check-glb.mjs';
 
 const entry = MODEL_MANIFEST['crimson-gt'];
 const WHEELS = { wheel_fl: [-1.05, 0.46, -1.35], wheel_fr: [1.05, 0.46, -1.35], wheel_rl: [-1.05, 0.46, 1.42], wheel_rr: [1.05, 0.46, 1.42] };
+const HUB_Y = 0.357; // ground .02 + the concept's tyre radius .337 (assets-src/crimson-gt/build/gt_body.py)
+const NOZZLE_OFFSET = [0, -0.33, -0.415]; // nozzle minus contract rear port (assets-src/crimson-gt/build/gt_parts.py)
 
 /** World translation of every named node (pivots are unrotated, unscaled empties up to the root). */
 function pivots(url) {
@@ -39,14 +43,16 @@ test('crimson-gt manifest entry: same rig nodes as roadster2, own materials, low
 });
 
 for (const lod of ['high', 'low']) {
-  test(`crimson-gt ${lod} GLB: wheels, wing and VFX ports sit on the contract positions`, () => {
+  test(`crimson-gt ${lod} GLB: wheel pivots, wing and lift ports on contract; lowered hubs; nozzles one rigid offset from the rear ports`, () => {
     const at = pivots(lod === 'low' ? entry.lods[0].url : entry.url);
     for (const [name, position] of Object.entries(WHEELS)) {
       near(at.get(name), position, name);
-      near(at.get(`${name}_spin`), position, `${name}_spin`);
+      const hub = [position[0], HUB_Y, position[2]];
+      near(at.get(`${name}_axle`), hub, `${name}_axle`);
+      near(at.get(`${name}_spin`), hub, `${name}_spin`);
     }
     near(at.get('wing'), [0, 1.08, 2.25], 'wing');
-    REAR_PORTS.forEach((port, i) => near(at.get(`nozzle_rear_0${i + 1}`), port.position, `nozzle_rear_0${i + 1}`));
+    REAR_PORTS.forEach((port, i) => near(at.get(`nozzle_rear_0${i + 1}`), port.position.map((v, axis) => v + NOZZLE_OFFSET[axis]), `nozzle_rear_0${i + 1}`));
     const lift = LIFT_PORTS.map(([x, z]) => [x, z].join());
     for (let i = 1; i <= 4; i++) {
       const [x, y, z] = at.get(`thruster_0${i}`);

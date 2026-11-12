@@ -15,15 +15,14 @@ from bake import bake  # noqa: E402
 # Panel lines cut into the body HIGH copy: three.js-space boxes (x0, x1, y0, y1, z0, z1), 8 mm wide. Positions are
 # inferred: the concept panels are too small (189 px tall) to resolve shut lines.
 GROOVES = [
-    *[(s * .95, s * 1.3, .30, .82, z - .004, z + .004) for s in (-1, 1) for z in (-.62, .50)],   # door front/rear cuts
-    (-.50, .50, .55, 1.0, -1.104, -1.096),                                                     # hood rear seam
-    *[(x - .004, x + .004, .55, 1.0, -2.25, -1.10) for x in (-.50, .50)],                      # hood side seams
+    *[(s * .95, s * 1.3, .20, .76, z - .004, z + .004) for s in (-1, 1) for z in (-.62, .50)],   # door front/rear cuts
+    (-.50, .50, .55, 1.0, -1.064, -1.056),                                                     # hood rear seam
 ]
 
 # Only the panels get rounded edges. Wheels, nozzles, fans, rams and lamps are a few texels each in the atlas: their
 # bevel gradients cost 80 KB of UASTC and put the GLB over its 1.5 MB budget, for nothing visible at race distance.
-BEVELLED = ("body", "glass_canopy", "rear_buttresses", "wing_aerofoil", "wing_tip", "front_intake", "rear_fascia",
-            "side_intake", "rocker", "mirror", "splitter", "diffuser")
+BEVELLED = ("body", "glass_canopy", "roof", "wing_aerofoil", "wing_tip", "wing_pylons", "front_intake", "rear_fascia",
+            "side_intake", "corner_intake", "rocker", "mirror", "splitter", "diffuser")
 
 if __name__ == "__main__":
     bake(HERE, "crimson-gt", GROOVES, BEVELLED)

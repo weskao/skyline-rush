@@ -1,5 +1,5 @@
 {
- "about": "Forms-gate references for assets-src/roadster2/gate/gate_render.py and gate_measure.py (shared tooling). Photos are the four studio panels cropped from the concept board (ref/crop_panels.py). anchors_px, mattes and ignore regions are hand-picked on 3x enlargements and stored in native panel pixels; anchors_m are contract points in three.js car space (hub faces at x = -1.23, the visible left flank). asset-brief.md lists what is inferred.",
+ "about": "Forms-gate references for assets-src/roadster2/gate/gate_render.py and gate_measure.py (shared tooling). Photos are the four studio panels cropped from the concept board (ref/crop_panels.py). anchors_px, mattes and ignore regions are hand-picked on 3x enlargements and stored in native panel pixels; anchors_m are contract points in three.js car space (hub faces at x = -1.18, y .357: the concept's tyre radius .337 standing on the game's ground plane y .02, on the visible left flank). asset-brief.md lists what is inferred.",
  "targets": {
   "iou_min": 0.9,
   "band_pct_max": 5
@@ -9,13 +9,13 @@
    "photo": "assets-src/crimson-gt/ref/side.png",
    "anchors_m": [
     [
-     -1.23,
-     0.46,
+     -1.18,
+     0.357,
      -1.35
     ],
     [
-     -1.23,
-     0.46,
+     -1.18,
+     0.357,
      1.42
     ]
    ],
@@ -208,33 +208,37 @@
    },
    "cams": {
     "az": [
-     268,
+     269,
      270,
-     272
+     271
     ],
     "el": [
      0,
+     1,
      2,
-     4
+     3
     ],
     "lens": [
      50,
-     85
+     85,
+     135,
+     200
     ]
-   }
+   },
+   "note": "The panel shows no wing, so the model's wing counts as render-only area (asset-brief.md: per-view ceiling)."
   },
   "front_three_quarter": {
    "photo": "assets-src/crimson-gt/ref/front_three_quarter.png",
    "note": "Anchors are the two left hub centres; the rear one is partly hidden by the body side (INFERRED from the tyre ellipse).",
    "anchors_m": [
     [
-     -1.23,
-     0.46,
+     -1.18,
+     0.357,
      -1.35
     ],
     [
-     -1.23,
-     0.46,
+     -1.18,
+     0.357,
      1.42
     ]
    ],
@@ -375,17 +379,24 @@
    },
    "cams": {
     "az": [
-     205,
+     209,
+     211,
+     213,
      215,
-     225,
-     235
+     217,
+     219
     ],
     "el": [
-     4,
-     8,
-     12
+     0,
+     1,
+     2,
+     3,
+     4
     ],
     "lens": [
+     24,
+     28,
+     32,
      35,
      50
     ]
@@ -393,16 +404,16 @@
   },
   "rear_three_quarter": {
    "photo": "assets-src/crimson-gt/ref/rear_three_quarter.png",
-   "note": "Wing deployed in the panel (ours is stowed at rest): everything above the tail deck right of the roof is ignored.",
+   "note": "Wing raised in the panel. The matte was traced without it, so everything above the tail deck right of the roof is ignored in both the panel and the render.",
    "anchors_m": [
     [
-     -1.23,
-     0.46,
+     -1.18,
+     0.357,
      1.42
     ],
     [
-     -1.23,
-     0.46,
+     -1.18,
+     0.357,
      -1.35
     ]
    ],
@@ -571,34 +582,41 @@
    ],
    "cams": {
     "az": [
-     305,
-     315,
      325,
+     327,
+     329,
+     331,
+     333,
      335
     ],
     "el": [
-     4,
-     8,
-     12
+     -2,
+     -1,
+     0,
+     1,
+     2
     ],
     "lens": [
+     16,
+     28,
      35,
+     42,
      50
     ]
    }
   },
   "rear": {
    "photo": "assets-src/crimson-gt/ref/rear.png",
-   "note": "Anchors are the rear tyre contact points, placed at y .12: the panel ground in hub-registered space (panel tyre radius .34, contract .44). (tyre bottoms are in shadow: INFERRED from the tyre outer edges). Thruster plumes are outside the matte.",
+   "note": "Anchors are the rear tyre contact points on the ground plane y .02 (tyre bottoms are in shadow: INFERRED from the tyre outer edges). Thruster plumes are outside the matte. The panel shows no raised wing, so the model's wing counts as render-only area (asset-brief.md: per-view ceiling).",
    "anchors_m": [
     [
      -1.05,
-     0.12,
+     0.02,
      1.42
     ],
     [
      1.05,
-     0.12,
+     0.02,
      1.42
     ]
    ],
@@ -719,18 +737,19 @@
    },
    "cams": {
     "az": [
-     -3,
+     -1.5,
      0,
-     3
+     1.5
     ],
     "el": [
+     1.5,
      3,
-     6,
-     9
+     4.5
     ],
     "lens": [
      50,
-     85
+     85,
+     135
     ]
    }
   }
