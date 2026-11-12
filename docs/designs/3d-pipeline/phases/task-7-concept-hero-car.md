@@ -34,6 +34,9 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     states: equippable during an account-scoped trial, owned permanently once the stars threshold is reached. A
     preview never grants the car.
   - **Still open:** the stars threshold value and the default paint.
+  - **Decided 2026-11-12 (owner), for the first build:** both cars are open to everyone (no lock, trial or stars
+    threshold is implemented), and the default paint is the car's own factory colour (`factory`, deep red `#9a1424`
+    on the GT; the Roadster keeps Pearl). The trial + stars rule above is not built, so this gate stays open.
 - [ ] The concept board's generator and terms of use, recorded in [../concept-art/README.md](../concept-art/README.md).
   This is a release gate.
   - **Decided 2026-11-09 (owner): the board is AI-generated; its generator and terms of use are recorded in the
@@ -42,30 +45,54 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   - **Still open:** the owner writes the generator name and terms into the README (not recorded yet).
 
 ## By project (committed once)
-- [ ] RED tests first:
-  - the manifest has the required nodes and pivots (`wheel_*`, `wing_*`, `thruster_01..04`, `lift_fan_01..04`)
-  - the GLB thruster and wheel positions sit within 1e-4 m of the procedural ports
-  - collision box, road contact and camera target are identical to the Roadster's
-  - the equipped car persists across reload and Cloud Save
-  - a save without a car migrates to the Roadster
-  - a preview never grants the car
-- [ ] Blockout from the four studio panels (image-to-3D allowed only as a blockout). Then author the car in Blender
+- [x] RED tests first (2026-11-13), part 1: `tests/crimson-gt-model.test.js`, `tests/car-catalog.test.js` and
+  `tests/crimson-gt-browser.spec.js`, each RED before its implementation.
+  - the manifest has the required nodes and pivots (`wheel_*`, `wing_*`, `thruster_01..04`, `lift_fan_01..04`): same
+    `nodes` list as `roadster2`
+  - the GLB thruster, rear-nozzle, wing and wheel pivots sit within 1e-4 m of the procedural ports, on both LODs
+  - the equipped car persists across reload (local save)
+  - a save without a car loads as the Roadster with its paint
+- [ ] RED tests, part 2 (not written):
+  - collision box, road contact and camera target are identical to the Roadster's. No test asserts it; the
+    simulation (`src/game.js`) takes no car input and is unchanged.
+  - the equipped car persists across Cloud Save (the car is a local save only, see below)
+  - a preview never grants the car (nothing to grant while both cars are open to everyone)
+- [x] Blockout from the four studio panels (image-to-3D allowed only as a blockout). Then author the car in Blender
   around the shared collision envelope and ports. Do **not** move the ports to match the image.
-- [ ] Materials: a deep-red metallic flake clearcoat that responds to `PAINTS`, emissive light blade and rear bar,
-  dark glass, multi-spoke dark wheels.
-  - Use LOD0/low with KTX2 textures.
-  - `check-glb` must PASS on both LODs and the manifest hashes must match.
-- [ ] Rig via `bindGarageRig` unchanged (wheels spin, the wing tilts and raises, lift fans follow the jets). Every
-  Phase 2c paint and skin must render on the new car.
-- [ ] Garage car selection UI:
-  - a car picker on Garage Home and Preview Studio, with locked/trial/owned/equipped states
-  - the equipped car is shown on the Home showcase and in races
-  - keyboard and focus order, touch, and every supported language
-- [ ] Save and Cloud Save field for the equipped car, with a backward-compatible migration. No change to existing
-  paint or skin entitlements.
-- [ ] Preload and compile the equipped car before GO; the Low tier uses its low LOD. Rival cars stay procedural.
-- [ ] Regression: rerun the Phase 2b all-track matrix and the Phase 2c equipment audit with the new car; `npm test`,
-  `npm run typecheck`, `npm run build`, `make verify`, and exact-HEAD full CI.
+  - 2026-11-12: `assets-src/crimson-gt/` (`build.py`, `bake.py`, `crimson-gt.blend`), authored in bpy, no
+    image-to-3D mesh. Ports and pivots are the Roadster's. Silhouette IoU against the panels is 0.745 to 0.833,
+    below the 0.90 forms target; the measured deviations and the inferred list are in
+    `assets-src/crimson-gt/asset-brief.md`. Parity review and sign-off stay open under "By device".
+- [x] Materials: a deep-red metallic clearcoat that responds to `PAINTS`, emissive light blade and rear bar,
+  dark glass, five-spoke wheels.
+  - 2026-11-13: all 6 `PAINTS` tint the GLB body (`tests/crimson-gt-browser.spec.js`).
+  - LOD0 17,296 triangles / 1,201,628 B, low 10,534 triangles / 504,628 B, KTX2 normal and AO.
+  - `check-glb: PASS` on both LODs; manifest hashes match (`tests/model-manifest.test.js`).
+- [ ] Material gaps: the paint has no flake layer (factors only), and the rims are mid-grey metal, not dark.
+- [x] Rig via `bindGarageRig` unchanged (`src/garage-model-rig.ts` has no diff); the wheels spin in a race. All 6
+  paints and all 22 `GARAGE_SKINS` preview on the new car (`tests/crimson-gt-browser.spec.js`, 2026-11-13).
+- [ ] Wing tilt/raise and lift fans following the jets are not asserted on the GT (same rig nodes as `roadster2`,
+  whose specs cover them); only the last of the 22 skins was inspected in a screenshot.
+- [x] Garage car selection UI (2026-11-13, `src/GarageCarPicker.vue`, `src/car-catalog.ts`):
+  - a car picker on Garage Home and Preview Studio, showing the car in use
+  - the equipped car is shown on the Home showcase and in races, with no URL flag
+  - keyboard (Enter on a native button), touch on phone portrait 390x844 and landscape 844x390, and car names in
+    every supported language (`tests/i18n.test.js`)
+  - each car remembers its own paint; the GT lists its factory colour first
+- [ ] Car picker: locked/trial/owned states (not built: both cars are open); focus order not asserted; the factory
+  colour is a plain swatch because no painted card art exists for it.
+- [x] Local save for the equipped car (`skyline-rush-car`) and each car's paint (`skyline-rush-car-paints`), with a
+  backward-compatible load: no entry means the Roadster, whose paint stays in `skyline-rush-paint`. No change to
+  existing paint or skin entitlements.
+- [ ] Cloud Save field for the equipped car (owner 2026-11-12: local save only for now).
+- [x] The Low tier requests only `crimson-gt-low.glb`; rival cars stay procedural (one GLB root in a race); a
+  missing GLB falls back to the procedural car with no page error. The car never swaps during a race.
+- [ ] Preload and compile the equipped car before GO: the shader-program count stayed constant over the first
+  seconds of a Coast race, but `tests/shader-warmup-browser.spec.js` (boost, afterimages, top speed) has not been run
+  with the GT equipped, and a race started before the GLB arrives runs on the procedural car.
+- [x] `npm test`, `npm run typecheck`, `npm run build` and `node --test tests/module-size.test.js` (2026-11-13).
+- [ ] Regression: rerun the Phase 2b all-track matrix and the Phase 2c equipment audit with the new car;
+  `make verify`, and exact-HEAD full CI.
 - [ ] What's New entry and release notes; update the `UPCOMING` notes per the repo's release rules.
 
 ## By device (repeat per machine; evidence in the ignored `../audits/`)
