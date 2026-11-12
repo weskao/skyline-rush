@@ -25,10 +25,10 @@ import { setupPerformanceNotice } from './performance-notice-ui.ts';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from './interactive-tutorial.ts';
 import { setupKeyMapUI, keyLabel } from './keymap-ui.ts';
 import { setupTouchControlsUI } from './touch-controls-ui.ts';
-import { starTotal, loadPaint, savePaint } from './history.ts';
+import { starTotal } from './history.ts';
 import { recordGhost, ghostAt } from './ghost.ts';
 import { createPresentation } from './presentation.ts';
-import { PAINTS } from './appearance.ts';
+import { carPaints, equippedCar, loadCarPaint, saveCarPaint } from './car-catalog.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
 import { drainSteps, SIM_STEP } from './frame-pacing.ts';
@@ -93,7 +93,7 @@ if (import.meta.env.VITE_DIAG) import('./diag-relay.ts').then(({ startDiag }) =>
 let pausedPhase = 'racing';
 const progress = loadSessionProgress(availableTracks());
 const unlockedTracks = progress.unlocked; // one Set for the session; merges add to it in place
-let equippedPaint = loadPaint(availablePaints(starTotal(progress.stars)));
+let equippedPaint = loadCarPaint(equippedCar(), availablePaints(starTotal(progress.stars)));
 const ghosts = createGhostStore();
 let trace = [], traceRace = null;
 let daily = null; // the challenge being raced; its modifier lives on race.modifier
@@ -254,7 +254,7 @@ const { showGarage, syncSkins } = setupGarageUI({
   canOpen: () => race.phase === 'ready',
   clearControls: () => controls.clear(),
   getEquippedPaint: () => equippedPaint,
-  setEquippedPaint: id => { equippedPaint = id; savePaint(id); },
+  setEquippedPaint: id => { equippedPaint = id; saveCarPaint(equippedCar(), id); },
   getStars: () => starTotal(progress.stars), availablePaints, subscribeAccount: cloud.subscribeAccount,
 });
 function chooseTrack() {
@@ -537,7 +537,7 @@ try {
   requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(vfx.settings());
-  world.previewAppearance(PAINTS[equippedPaint]);
+  world.previewAppearance(carPaints(equippedCar())[equippedPaint]);
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad(), !!import.meta.env.VITE_DIAG);
   const fps = setupFpsUI(scale => world.setRenderScale(scale));

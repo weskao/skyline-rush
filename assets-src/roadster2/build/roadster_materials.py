@@ -17,9 +17,10 @@ _SPEC = {
 }
 
 
-def make_materials():
+def make_materials(spec=_SPEC):
+    """spec: another car's table in the same shape (assets-src/crimson-gt/build.py)."""
     out = {}
-    for name, (rgb, metal, rough, extra) in _SPEC.items():
+    for name, (rgb, metal, rough, extra) in spec.items():
         mat = bpy.data.materials.new(name)
         mat.use_nodes = True
         bsdf = next(n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")

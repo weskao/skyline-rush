@@ -2,17 +2,19 @@
 // a manifest model replaces the procedural Roadster in Garage Home and the Preview Studio. Production (no query)
 // never creates it. The model is held while the Garage stays open and released when it closes.
 // Task 4b (`?model=roadster`): the same adapter also dresses the Home showcase car and the race car, one car at a time.
+// Task 7: the equipped car's model (car-catalog.ts) is dressed the same way with no query; the Roadster has none.
 import type { Camera, Material, Mesh, MeshStandardMaterial, Object3D, Scene, Texture, WebGLRenderer } from 'three';
 import type { ModelCache, ModelHandle } from './asset-model-loader.ts';
 import type { ModelQuality } from './model-manifest.ts';
 import { bindGarageRig, type GarageRig } from './garage-model-rig.ts';
 import { applyCarReflections } from './car-reflections.ts';
+import { equippedCarModel } from './car-catalog.ts';
 
 const MODEL_PARAMS: Readonly<Record<string, string>> = { probe: 'pipeline-probe', roadster: 'roadster2' };
 const HIDDEN_LAYER = 31; // no camera enables it; the frame loop rewrites `visible` on car parts, never `layers`
 
-/** Task 4b: the roadster GLB also dresses the Home showcase and race car; the probe stays Garage-only. */
-export const dressesRaceCar = (id: string): boolean => id === 'roadster2';
+/** Player-car GLBs also dress the Home showcase and race car; the probe stays Garage-only. */
+export const dressesRaceCar = (id: string): boolean => id === 'roadster2' || id === 'crimson-gt';
 
 /** The softened map the host's procedural car reflects (car-reflections.ts), if one was applied to it. */
 function carMapOf(car: Object3D): Texture | null {
@@ -164,30 +166,37 @@ export function createKtx2Provider(renderer: unknown, baseUrl: string, load: () 
   return (): Promise<Ktx2Like> => (loader ??= load().then(Ktx2 => new Ktx2().setTranscoderPath(`${baseUrl}basis/`).detectSupport(renderer as never)));
 }
 
-/** World wiring: null unless the page opted in. The loader (GLTFLoader) is imported only then. */
+/** World wiring. Idle until a model is wanted: `?model=` first, else the equipped car's model. GLTFLoader is imported only then. */
 export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick<WebGLRenderer, 'compileAsync'>, camera: Camera,
-  search = location.search, baseUrl = import.meta.env.BASE_URL) {
-  const id = garageModelId(search);
-  if (!id) return null;
-  const everywhere = dressesRaceCar(id);
+  search = location.search, baseUrl = import.meta.env.BASE_URL, carModel: () => string | null = equippedCarModel) {
+  const forced = garageModelId(search);
   const loadKtx2 = createKtx2Provider(renderer, baseUrl);
-  const cache = import('./asset-model-loader.ts').then(({ createModelCache }) => createModelCache({ baseUrl, loadKtx2 }));
-  const model = createGarageModel({
-    id, dataset: canvas.dataset,
-    cache: { load: async (key, options) => (await cache).load(key, options) },
-    compile: (object, scene) => renderer.compileAsync(object, camera, scene),
-  });
-  const restored = (): void => { void model.warmAgain(); };
+  let cache: Promise<ModelCache> | undefined;
+  let id: string | null = null, model: ReturnType<typeof createGarageModel> | null = null;
+  function use(next: string | null): void {
+    model?.dispose(); // the cars are procedural again before another model dresses them
+    id = next;
+    model = next === null ? null : createGarageModel({
+      id: next, dataset: canvas.dataset,
+      cache: { load: async (key, options) => (await (cache ??= import('./asset-model-loader.ts').then(({ createModelCache }) => createModelCache({ baseUrl, loadKtx2 })))).load(key, options) },
+      compile: (object, scene) => renderer.compileAsync(object, camera, scene),
+    });
+  }
+  const restored = (): void => { void model?.warmAgain(); };
   canvas.addEventListener('webglcontextrestored', restored);
   return {
     /** Per frame, before posing: dresses the car on screen. `studio` only while the Preview Studio camera is on;
      *  `showcase` only while the Coming Soon stage renders the Home preview; `home` is the Home/race player car. */
     frame(quality: ModelQuality, phase: string, garageOpen: boolean, studio: GarageModelHost | null, showcase: GarageModelHost | null, home: GarageModelHost): void {
+      const wanted = forced ?? carModel();
+      if (wanted !== id && phase !== 'racing') use(wanted); // the car changes in the Garage only; never rebuild mid-race
+      if (!model || id === null) return;
       if (studio) { model.sync(true, quality, studio); return; }
+      const everywhere = dressesRaceCar(id);
       const shown = showcase ?? (garageOpen || everywhere ? home : null);
       model.sync(garageOpen || everywhere, quality, shown, garageOpen ? 'garage' : phase === 'racing' ? 'race' : 'drive');
     },
-    release: model.release,
-    dispose() { canvas.removeEventListener('webglcontextrestored', restored); model.dispose(); },
+    release: (host: GarageModelHost): void => model?.release(host),
+    dispose() { canvas.removeEventListener('webglcontextrestored', restored); model?.dispose(); },
   };
 }
