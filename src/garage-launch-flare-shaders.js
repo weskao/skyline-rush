@@ -13,7 +13,9 @@ export const POOL_FRAGMENT = `varying vec2 vUv;uniform float age,power,time,puls
     float ripple=ring*(exp(-abs(r-front)*26.)+pulse*exp(-abs(r-fract(age*3.)*1.2)*30.))*(1.-clamp(age,0.,1.)); // a crisp wave runs out over the road
     vec3 col=primary*pool*1.4+mix(secondary,vec3(1.),.25)*hot*1.2+mix(primary,vec3(1.),.4)*ripple*1.6;
     float life=${LIFE}*smoothstep(0.,.06,age+.02);
-    gl_FragColor=vec4(col*flick,clamp((pool*life*1.5+ripple*.9)*power,0.,1.));}`;
+    // The road-only overlay ignores road depth to cross lanes. Mask the vehicle footprint so it never paints the body.
+    float carMask=(1.-smoothstep(.4,.55,abs(q.x)))*(1.-smoothstep(.56,.72,abs(q.y)));
+    gl_FragColor=vec4(col*flick,clamp((pool*life*1.5+ripple*.9)*power,0.,1.)*(1.-carMask));}`;
 
 // Instanced cones rising from the sills; each instance matrix carries its base, 3D direction and length.
 export const RAY_VERTEX = `attribute float tone,delay;varying float vT,vTone,vFacing,vDelay;
