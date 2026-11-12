@@ -1,28 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-const root = new URL('../public/feature-assets/wave3-demo/raster/', import.meta.url);
-const pngSize = name => {
-  const file = readFileSync(new URL(name, root));
-  assert.equal(file.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', name);
-  return [file.readUInt32BE(16), file.readUInt32BE(20)];
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
+const root = path => new URL('../' + path, import.meta.url);
+const src = path => readFileSync(root(path), 'utf8');
+const webp = path => {
+ const b = readFileSync(root(path));
+ assert.equal(b.toString('ascii', 0, 4), 'RIFF', path);
+ assert.equal(b.toString('ascii', 8, 12), 'WEBP', path);
+ assert.equal(b.readUInt32LE(4) + 8, b.length, path);
+ return b;
 };
-test('premium currency art is committed as transparent RGBA PNG at 3x display resolution', () => {
-  for (const name of ['wallet-coin@3x.png', 'wallet-diamond@3x.png']) {
-    assert.deepEqual(pngSize(name), [144, 144], name);
-    assert.equal(readFileSync(new URL(name, root))[25], 6, name + ' must be RGBA');
-  }
+
+test('wallet coin and diamond are native transparent WebP, 3x their 48px UI display size', () => {
+ for (const id of ['wallet-coin', 'wallet-diamond']) {
+  const bytes = webp('public/feature-assets/wave3-demo/raster/' + id + '@3x.webp');
+  assert.equal(bytes.toString('ascii', 12, 16), 'VP8X', id + ' extended alpha WebP');
+  assert.equal(bytes[20] & 0x10, 0x10, id + ' has transparency');
+  const width = 1 + bytes.readUIntLE(24, 3), height = 1 + bytes.readUIntLE(27, 3);
+  assert.deepEqual([width,height],[144,144],id);
+ }
+ const dir = 'public/feature-assets/wave3-demo/raster/';
+ assert.ok(readdirSync(root(dir)).every(n => !n.endsWith('.png')));
 });
-test('eight-frame alpha sparkle atlas stays a separate lightweight 64px frame sheet', () => {
-  assert.deepEqual(pngSize('wallet-sparkle-strip.png'), [512, 64]);
-  assert.equal(readFileSync(new URL('wallet-sparkle-strip.png', root))[25], 6);
-});
-test('Garage wallet uses real artwork instead of CSS-drawn coin/diamond shapes', () => {
-  const view = readFileSync(new URL('../src/Wave3CurrencyStrip.vue', import.meta.url), 'utf8');
-  for (const name of ['wallet-coin@3x.png', 'wallet-diamond@3x.png', 'wallet-sparkle-strip.png']) {
-    assert.ok(view.includes(name), name);
-  }
-  assert.match(view, /prefers-reduced-motion/);
-  assert.match(view, /steps\(7/);
-  assert.doesNotMatch(view, /clip-path:polygon|wallet-symbol--coin|wallet-symbol--diamond/);
+test('real art is animated with object-specific motion and a readable reduced-motion alternative', () => {
+ const s=src('src/Wave3CurrencyStrip.vue');
+ assert.match(s,/wallet-coin@3x\.webp/);
+ assert.match(s,/wallet-diamond@3x\.webp/);
+ assert.match(s,/wallet-coin-orbit/);
+ assert.match(s,/wallet-diamond-prism/);
+ assert.match(s,/prefers-reduced-motion/);
+ assert.doesNotMatch(s,/wallet-shimmer|wallet-sparkle-strip/);
 });
