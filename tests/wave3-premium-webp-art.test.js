@@ -58,3 +58,21 @@ test('premium renderer must preserve original source icon contours instead of in
   assert.match(s, /"git", "show"/);
   assert.doesNotMatch(s, /class Painter|def frame\(|def race\(|def trophy\(|def diamond\(/);
 });
+
+test('rendered assets use the approved Demo Points metallic spectral treatment', () => {
+  const renderer = source('scripts/generate-wave3-premium-webp.py');
+  assert.match(renderer, /demo-points@3x\.webp/);
+  assert.match(renderer, /spectral_rim/);
+  assert.match(renderer, /energy_trails/);
+  assert.match(renderer, /gloss_reflection/);
+  assert.match(renderer, /original.*silhouette|silhouette.*original/i);
+  const animations = source('src/GarageMissionBoard.vue');
+  for (const id of ['mission-race', 'mission-time', 'mission-drift', 'mission-combo']) {
+    assert.match(animations, new RegExp('data-mission-id="' + id + '"'), 'individual effect for ' + id);
+  }
+  assert.match(animations, /mission-flag-wave/);
+  assert.match(animations, /mission-time-tick/);
+  assert.match(animations, /mission-drift-pulse/);
+  assert.match(animations, /mission-combo-boost/);
+  assert.match(animations, /prefers-reduced-motion/);
+});
