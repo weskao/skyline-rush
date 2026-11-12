@@ -5045,5 +5045,8 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] RED on the old code: `the car occludes the ground pool by depth…`, `the ground pool outreaches its ripple…`, `the ground pool stays on the road plane…` each failed on their own assertion (pool normal off by 0.075).
 - [x] Fix: pool depth-tested again and the mask removed (car occlusion as before 277c5964); quad grown by `POOL_SPREAD` 1.6 with the shader rescaled so glow and ripple keep their size; pool orientation taken from the contact-shadow plane `world.js` passes to `createAeroVFX`. `world.js` stays at its 1019-line ceiling. Rule rewritten: `.claude/rules/launch-flare-rendering.md`.
 - [x] Real WebGL after the fix, desktop landscape 1440x900: Coast, Taipei, Alpine, Cosmic, Spiral, Aurora at flare age 0.15 / 0.4 / 0.7 show the car occluding the pool and a complete ripple ellipse across both lane lines; Coast at GO with full left steer keeps the pool normal at (0, 1, 0) and lit on both sides.
-- [ ] Phone portrait and landscape WebGL review of the same frames.
+- [x] Emulated phone viewports (390x844 and 844x390, touch, Chrome) on Coast at flare age 0.7: complete ripple, car occludes the pool.
+- [ ] Real-device phone review in portrait and landscape (`make phone-diag`); emulation is not a device reproduction.
+- [x] Local gates on the working tree: `npm test` 2655 pass / 0 fail / 3 skipped, `npm run typecheck`, `npm run build`, module-size, and the trial-build Garage browser specs (`garage-vfx-catalog`, `garage-cosmetics-preview`) 30 passed.
+- [ ] Full `npm run test:browser` / `make verify` not run.
 - [ ] Exact-HEAD GitHub `quality-gate` after push.
