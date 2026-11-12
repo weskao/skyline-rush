@@ -1,3 +1,34 @@
+## 2026-11-12 — Authored 3D power-ups, always on, one renderer for guide and race (`feature/pickup-3d-artwork-ui`)
+
+Supersedes the `3d=1` / `VITE_PICKUP_3D` and `PickupAnimatedPreview.vue` items in the 2026-11-11 sections below.
+Design and numbers: `docs/designs/road-pickups/README.md`.
+
+- [x] Four Blender-built GLBs (`assets-src/pickup-<tier>/build.py`, shared kit `scripts/assets/pickup_kit.py`), each
+  `check-glb: PASS` and promoted: cell 1,626 tris / 296,136 B, can 1,870 / 283,440, tank 1,822 / 287,132,
+  overcharge 2,508 / 283,232; manifest hashes recorded (`node --test tests/model-manifest.test.js` 16/16)
+- [x] Build flag removed: `src/pickup-3d-config.js` deleted, `VITE_PICKUP_3D` gone from `Makefile` and CI
+  (`tests/pickup-3d-flag.test.js`)
+- [x] Guide and race draw through the same `createPickupMarkers()` (`src/pickup-markers.js`): same model, material,
+  reflection, scale, hover, spin, glow pulse and halo (`tests/pickup-markers.test.js`, `tests/pickup-3d-browser.spec.js`)
+- [x] Animated WebP kept only as the loading / no-WebGL fallback (`tests/pickup-3d-browser.spec.js`, third test)
+- [x] Each tier has its own collection choreography that follows the car's rendered pose (`tests/pickup-collect-vfx.test.js`,
+  `tests/pickup-3d-collection-browser.spec.js`: effect within 3 m of the car for all four tiers)
+- [x] RED → GREEN: `tests/pickup-models.test.js` failed with ENOENT before the GLBs existed, passes now (model is one
+  opaque PBR mesh, centred, clears the asphalt at the bottom of its hover, 0.7–1.3 × its stand-in's height)
+- [x] `npm test` 2574 tests / 2571 pass / 3 skipped / 0 fail; `npm run typecheck` clean; `npm run build` OK;
+  `node --test tests/module-size.test.js` 3/3
+- [x] Real WebGL frames viewed (desktop Chromium 1440 × 900): guide cards with the four live models and halo, race with
+  the four tiers on Coast. Fixed from them: halo texture was nearest-filtered (32 px blocks), models washed out
+  (glow 1.6 → 0.9, reflection 0.9 → 0.5, studio lights lowered), Overcharge single-colour (now four-hue prism, gold caps)
+- [x] Cost measured on Coast, desktop Chromium: +4 draw calls / +60,000 triangles for 30 pickups, halo 1 draw call,
+  a playing Overcharge effect 16 draw calls; frame p50 16.7 ms with 40 pickups + effect shown and hidden
+- [ ] `npm run test:browser` full suite on the final build
+- [ ] `make verify` (adds the World Tour long-run)
+- [ ] Phone portrait and landscape frames of the guide and a race; physical-phone review; frame time on a phone
+- [ ] `.claude/rules/3d-asset-pipeline.md` Phase 0 environment record for this Mac and the skill's silhouette IoU gate
+  (`compose_review.py`) against the reference sprites: not run, models were judged by eye from `review/final.png`
+- [ ] Exact-HEAD `quality-gate` after a push; art sign-off by the owner
+
 ## 2026-11-11 — AI 16-frame animated pickup sprites (guide only)
 
 - [x] Generate four original 4 × 4 frame animation sheets for cell, can, tank and overcharge

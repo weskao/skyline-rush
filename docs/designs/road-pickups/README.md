@@ -1,197 +1,123 @@
-# Road Supplies — shared 3D models, guide, and Makefile gate
+# Road Supplies — authored 3D pickups, shared by the race and the guide
 
-## Build and run
+The four pickups (`cell`, `can`, `tank`, `overcharge`) are always the enhanced 3D version. There is
+no build flag: `make 3d=1` only keeps its Roadster/Coast preview redirect (`DEV_3D`).
 
-`make 3d=1`, `make build 3d=1`, `make dev-unlocked 3d=1`, `make phone y=1 3d=1` and
-`make dev-feature pickup-3d-artwork-ui 3d=1` export **both** `DEV_3D=1` (existing
-3D Roadster/Coast preview) and **`VITE_PICKUP_3D=1`** (these four pickups).
+## One renderer, two places
 
-The Vite feature switch is **build-time**: a page already published from a
-different build does not update by appending a URL query string. With `3d=0`
-or no `3d` argument, the original octahedron GPU-instanced pickups remain.
-GitHub Pages is unchanged until an explicitly authorized release from main.
+| Piece | File | Used by |
+| --- | --- | --- |
+| Models (Blender → GLB, baked PBR) | `assets-src/pickup-<tier>/`, `public/models/pickup-<tier>/`, manifest entries in `src/model-manifest.ts` | both |
+| Model loading, one fetch per page | `src/pickup-models.ts` | both |
+| Instanced models + halo + glow pulse + hover/spin | `src/pickup-markers.js`, `src/pickup-aura.js`, `src/pickup-art.js` | both |
+| Race placement and collection triggers | `src/effects.js` | race |
+| Card previews, one WebGL context for all cards | `src/pickup-preview-stage.ts`, `src/Pickup3DPreview.vue` | guide |
+| Collection effects | `src/pickup-collect-vfx.js` | race |
 
-## One source of truth
+The guide and the race call the same `createPickupMarkers()` and the same `place()` per pickup, so
+model, material, reflection map, scale, hover, spin, glow pulse and halo cannot drift apart. What
+still differs is the light around them: the guide uses a fixed three-light studio rig, a track uses
+its own sun and sky.
 
-All four models and their PBR materials originate in `src/pickup-art.js`.
-`src/effects.js` reads the feature flag from `src/pickup-3d-config.js` and
-calls the same `createPickupGeometries()` / `createPickupMaterials()` functions
-as `src/Pickup3DPreview.vue`. No separately illustrated SVG is displayed when
-the 3D browser preview succeeds. The SVG illustrations in
-`public/feature-assets/road-pickups/` are graceful fallbacks for disabled
-WebGL or the intentional non-3D presentation.
+| Tier | Model | Triangles | GLB | Scene scale | Reward |
+| --- | --- | ---: | ---: | --- | --- |
+| cell | Armoured energy cell, glowing blue core | 1,626 | 296 KB | 0.82 | +0.25 NITRO |
+| can | Orange pressure canister | 1,870 | 283 KB | 0.94 | +0.5 NITRO |
+| tank | Twin gold high-capacity tank | 1,822 | 287 KB | 1.08 | +1.0 NITRO |
+| overcharge | Four-hue prism core, gold caps, two gyro rings | 2,508 | 283 KB | 1.24 | Top up 3 NITRO |
 
-| Tier | In-game model | Shared full-color material | Scene scale | Reward logic |
-| --- | --- | --- | --- | --- |
-| cell | Shielded capsule, luminous blue core, cap connectors and bolts | Cyan steel / glass | 0.82 | +0.25 NITRO |
-| can | Orange pressure canister, metal collars, side meter and nozzle | Orange alloy | 0.94 | +0.5 NITRO |
-| tank | Twin cylindrical gold tanks, titanium frame and gauge | Gold reinforced alloy | 1.08 | +1.0 NITRO |
-| overcharge | Multicolored reactor, gyroscopic rings and orbit nodes | Prismatic reactor | 1.24 | Top up 3 NITRO |
+Each GLB has a 300 KB budget (`src/model-manifest.ts`); the cell is 3.9 KB under it, so a rebuild that
+grows its textures fails `check-glb` rather than shipping.
 
-These scale factors multiply the tier-specific authored geometry: width, height
-and depth are inherently different without changing **any** pickup collection
-volumes, rewards, paths, terrain, respawn timers or race balancing.
+Collision volumes, rewards, placement, respawn timers and balance are unchanged.
 
-## Rendering/performance
+## Loading and fallbacks
 
-- `createEffects` is already the shared runtime path for classic, World Tour,
-  CourseGraph and future playable race tracks using the same scene. This feature
-  does not add per-track placement logic.
-- One merged BufferGeometry and one `MeshPhysicalMaterial` per tier; still just
-  four pickup `InstancedMesh` draw calls, capped at 128 instances each.
-- PBR metal / coated surfaces, modeled colored emitters, chamfered metal shells,
-  stable distance-phased yaw/hover and uniform-only animated glow. Ground-level models
-  receive a render-only vertical offset so their complete silhouette stays visible
-  above asphalt despite bobbing; collision/rewards/respawn remain unchanged.
-  Reduced-motion freezes spin, bob and glow.
-- Four small live WebGL product previews use the *exact same* shared geometry, PBR material, scale, hover, rotation and pulsating energy-emission functions as the in-race pickups. They are created only when the **Rings &
-  Supplies** guide tab is selected. The preview uses the *same model and material*
-  definitions as the race, with a dedicated three-point studio lighting rig.
-  IntersectionObserver stops off-screen rendering, the DPR caps at 1.5, and
-  component unmount disposes its WebGL and GPU resources.
-- Guide keeps responsive sizing, existing text and native language keys.
+- `src/pickup-art.js` builds procedural stand-in models at scene construction. They are drawn until
+  the four GLBs are parsed, and for good if any of them fails to load (all four or none, so one
+  track never mixes two art styles).
+- The swap to the loaded models happens only while no race is running, and `effects.update()`
+  returns `true` on that frame so `world.js` warms the new shaders. Nothing compiles mid-race.
+- Guide cards: the live model is always mounted. The animated WebP (its poster under reduced
+  motion) is shown only until the first live frame, and stays where WebGL is unavailable; the SVG
+  replaces a WebP that fails to load.
 
-## Art review and how to see the real effect
+## Rendering and performance
 
-The separately authored SVGs are only fallbacks for non-WebGL clients and for the
-default `3d=0` look. A published site cannot pick up an unmerged feature branch
-from a browser refresh: review `make dev-unlocked 3d=1` on this branch, or the
-CI screenshot artifact **pickup-3d-visual-evidence** from the exact-head run.
+- One `InstancedMesh` per tier (128 instances) and one instanced halo pool: at most five draw calls
+  for every pickup in view. Geometry and textures are shared by the race and the guide; each
+  renderer owns only its material clones (a reflection map belongs to one renderer).
+- The halo is a camera-facing additive quad per pickup, tinted with the tier accent and breathing
+  with the model's emissive pulse (`pickupPulse`).
+- Reduced motion freezes spin, hover, glow and halo.
+- Measured on Coast (desktop Chromium, 2026-11-12, scene total 543 draw calls): 30 pickups in view add
+  4 draw calls and 60,000 triangles, the halo 1 draw call, a playing Overcharge effect 16 draw calls and
+  4,500 triangles. With 40 pickups plus that effect shown or hidden the frame time is the same within
+  noise (p50 16.7 ms both; p95 18.4 ms shown, 18.9 ms hidden). Phones are not measured yet.
+- The guide draws only the cards on screen, at a pixel ratio of at most 2, and releases its WebGL
+  context when the last card unmounts.
 
-In the guide, choose Controls → How to play → Rings & Supplies; the four
-animated WebGL product stages are the same real-time models used in the road.
-The `make build 3d=1` command creates a deployable build artifact locally,
-but **does not deploy** it. Publication still requires the repository's normal
-main/release approval and exact-head all-green CI.
+## Collection effects
 
-## Verification checklist
+Each tier plays its own choreography on the same pooled meshes (no extra shader, material or draw
+call per tier). The player's effect follows the car's rendered pose; a rival's quieter cue stays
+where the item was.
 
-- [x] Same mesh/PBR geometry code in race and guide for all four tiers
-- [x] `3d=1` Makefile gate + legacy fallback, including phone and unlocked targets
-- [x] Tier-specific scale and animated 3D presentation
-- [x] Unit/visual smoke tests for build flag, model parity, animation, memory release
-- [ ] Exact-HEAD typecheck, unit, both build variants, Playwright 3D smoke,
-  full browser tests and World Tour CI all green
-- [ ] Visual art direction approval from desktop and actual mobile device
-- [ ] Performance measurements (p50/p95, draw calls, GPU allocations) by quality tier
-- [ ] Authorized merge/release; do not claim the public site is updated until deployed
+| Tier | Motion | Rings | Shards | Length | What it does |
+| --- | --- | ---: | ---: | ---: | --- |
+| `cell` | `arcSnap` | 2 | 18 | 0.50 s | Two rings contract onto the car while jagged needles discharge into it |
+| `can` | `afterburn` | 2 | 24 | 0.65 s | Heat rings and two ember jets are blown out behind the car |
+| `tank` | `surge` | 3 | 30 | 0.78 s | Scan rings climb the car inside a soft pillar, a double helix winds up |
+| `overcharge` | `prismNova` | 3 | 42 | 0.90 s | Three gyro rings on different axes, a prismatic starburst and a tall beam |
 
-Commands for direct checkout verification:
+Two slots per tier (eight at most). Medium quality draws 65% of the shards and two rings, Low 26%
+and one ring. Reduced motion shows one still ring and a faint glow, no shards and no beam. Every
+effect stays on or behind the car and below the driver's sightline; the flash is capped in size and
+opacity so it never whites out the centre of the screen.
+
+`effects.js` uses the pickup's `downUntil` as the take generation, so a respawned pickup gets a new
+effect and one take never plays twice.
+
+## Building a model
+
+Each tier is one mesh (`pickup_<tier>`) with one material (`pickup_<tier>_pbr`) and a baked texture
+set. `scripts/assets/pickup_kit.py` holds the shared helpers; `assets-src/pickup-<tier>/build.py`
+is the reproducible build. Chain, from the repo root:
+
 ```sh
-node --test tests/pickup-art.test.js tests/pickup-3d-flag.test.js tests/effects.test.js tests/module-size.test.js
-npm run typecheck && npm test && npm run build
-VITE_PICKUP_3D=1 npm run build
-npx playwright test tests/pickup-3d-browser.spec.js
-make verify 3d=1
+$BLENDER_BIN --background --factory-startup --python assets-src/pickup-<tier>/build.py
+node scripts/assets/export-glb.mjs pickup-<tier>
+node scripts/assets/optimize-glb.mjs pickup-<tier>
+node scripts/assets/check-glb.mjs pickup-<tier> --promote
 ```
 
-## Tiered collection VFX — gameplay effect parity
+The AI sprite sheets in `docs/designs/road-pickups/ai-sprite-sources/` are the art reference.
 
-The shared `src/pickup-collect-vfx.js` module is created only with `VITE_PICKUP_3D=1`,
-on the shared `createEffects` path for every track. Existing default-mode
-debris and the existing NITRO HUD refill/pulse are preserved.
+## Guide sprites (fallback artwork)
 
-| Tier | Shockwaves | Peak GPU-instanced shards | Burst details |
-| --- | ---: | ---: | --- |
-| `cell` | 1 | 18 | Cyan electrical flash, small fragments |
-| `can` | 2 | 24 | Orange plasma pulse and warm-energy scatter |
-| `tank` | 2 | 30 | Golden crown flash, vertical energy beam |
-| `overcharge` | 3 | 42 | Prism-color facets, rainbow orbital waves and rare-item beam |
+Relative to `public/feature-assets/road-pickups/`:
 
-The sequence is roughly 0–0.84 seconds: immediate emissive flash, spreading
-3D shockwaves and orbiting shards, then controlled decay. Every variant uses a
-single radial glow texture, three reusable geometries and **at most two active
-effect slots per tier** (eight concurrently across four tiers). Matrices are
-updated in pooled `InstancedMesh` buffers. Pipeline warmup gets one parked
-shard instance per tier; no new shaders, lights, materials or geometry are
-constructed by collection events.
-
-`effects.js` uses the pickup's current `downUntil` token as the take
-generation so respawning and collecting the same object can trigger a new
-effect without duplicate per-frame bursts. It uses the existing
-`rivalCues` to draw a quieter event for AI pickups only. The origin follows
-`worldPoint` with original item metadata on branching CourseGraph tracks,
-or the normal track-relative distance projection otherwise.
-
-Medium reduces shards to 65% and rings to two; Low uses 26% and one
-ring; reduced motion uses a restrained static flash/ring, no energy beam or
-shard spray. The default (`3d=0`) keeps the lightweight legacy effect.
-
-### Actual visual and performance verification
-
-Opt-in CI runs `tests/pickup-3d-collection-browser.spec.js` with
-`VITE_PICKUP_3D=1` and uploads screenshots as
-`pickup-3d-visual-evidence`, in addition to existing guide/race WebGL shots.
-The smoke test sets collected items in the browser's **test-only** race state,
-then verifies that the actual scene renders tier-specific effects, including
-a reduced-motion test. It does not ship any test hooks into the site.
-
-The exact-head full regression includes all regular browser shards and World
-Tour shards, which may run substantially longer than the focused VFX gate.
-Performance p50/p95 on High/Medium/Low and physical-device art direction
-approval require separate recorded measurements; do not claim them without
-the actual evidence.
-
-
-### CI acceptance gate
-
-The branch must remain unmerged until the exact-commit [full-regression] run
-has successful 3D browser smoke, both build variants, all 13 browser shards,
-all 5 World Tour shards, cloud checks and the aggregate quality gate. These
-checks are required even if the branch's normal focused gate is green.
-
-The regression tests respect repository-specific CI time scaling
-(`ciTimeout()`), permit Vue/TypeScript's non-null `motion!.matches`
-syntax, and exclude the Three.js Sprite engine-owned shared quad from
-resource-disposal expectations. The collection module still disposes all
-resources it allocates, and no individual pickup allocates new GPU buffers.
-
-## AI-authored 16-frame guide sprites (2026-11-11)
-
-The in-game **Rings & Supplies** cards now use `src/PickupAnimatedPreview.vue`.
-The new art is authored as 4 × 4 sprite sheets and converted into **16 frames,
-85 ms each, looping animated WebP** (192 × 192 per frame). A matching single
-WebP poster provides a still image for `prefers-reduced-motion`. These images
-are specifically for the guide: track pickup models, GPU instancing and the
-collection VFX remain fully 3D.
-
-Expected game assets, **relative to `public/feature-assets/road-pickups/`**:
-
-| Tier | Animated 16-frame art | Reduced-motion / first-frame fallback |
+| Tier | Animated art | Reduced-motion poster |
 | --- | --- | --- |
 | cell | `animated/cell.webp` | `animated/cell-poster.webp` |
 | can | `animated/can.webp` | `animated/can-poster.webp` |
 | tank | `animated/tank.webp` | `animated/tank-poster.webp` |
 | overcharge | `animated/overcharge.webp` | `animated/overcharge-poster.webp` |
 
-Each source has a separate 1254 × 1254 AI-generated 4 × 4 PNG image; split
-by its 4 × 4 grid, remove low-alpha background noise, resize each frame to
-192 × 192, and encode as looping animated WebP with 85 ms frame duration.
+Each animation is a looping WebP of 16 frames at 85 ms (192 × 192 per frame), converted from a
+1254 × 1254 4 × 4 sheet; each poster is a single frame with alpha. The sheets are archived for
+editing only and are never loaded by the game.
 
-Asset integrity: each `*.webp` must contain exactly 16 frames; each
-`*-poster.webp` must contain exactly one frame, with alpha transparency.
-Do not replace these with CSS scaling of a single image or regenerate them
-from the lower-detail SVGs. No additional JavaScript dependency is needed.
+## Verification
 
-**All eight WebP assets are now committed on this branch**, including four
-16-frame animated sequences and four reduced-motion posters. The guide loads
-the authored images in both default and `3d=1` builds. The prior real-time
-WebGL model and original SVG remain error fallbacks, not the intended
-presentation. The 3D opt-in browser smoke now requires the real WebP images
-to load, rather than accepting those fallbacks as a passed artwork test.
+```sh
+node --test tests/pickup-markers.test.js tests/pickup-collect-vfx.test.js tests/pickup-3d-flag.test.js \
+  tests/pickup-3d-presentation.test.js tests/pickup-sprite-guide.test.js tests/effects.test.js tests/module-size.test.js
+npm run typecheck && npm test && npm run build
+npx playwright test tests/pickup-3d-browser.spec.js tests/pickup-3d-collection-browser.spec.js
+make verify
+```
 
-WebP source archive:
-`skyline-pickup-sprite-assets.zip` from the corresponding ChatGPT delivery.
-Extract it at the repository root, preserving
-`public/feature-assets/road-pickups/animated/`. After installing images,
-run `npm run typecheck`, `npm test`, `VITE_PICKUP_3D=1 npx playwright
-test tests/pickup-3d-browser.spec.js`, and the full exact-head CI.
-
-The four 1254 × 1254 AI-generated source image sheets are now committed
-under `docs/designs/road-pickups/ai-sprite-sources/`:
-`cell-sheet.png`, `can-sheet.png`, `tank-sheet.png`, and
-`overcharge-sheet.png`. These PNGs are for archival/editing only and must
-not be loaded during racing or guide rendering. All four source PNGs are visible in the remote Git tree. The
-`overcharge-sheet.png` PNG was losslessly recompressed during upload,
-without changing the pixels or alpha channel; other source images retain
-their original binary content.
+CI runs the two browser specs on the default build and uploads their real WebGL frames as
+`pickup-3d-visual-evidence`. Physical-phone art review and the exact-HEAD full CI are separate
+gates; see `TODO.md` for what has been run.
