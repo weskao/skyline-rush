@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
+import { ciTimeout } from './helpers/ci.js';
 
 test.use({ guideSeen: false });
 
@@ -130,13 +131,10 @@ test(`rings and supplies guide explains all ring types, road pickups and mystery
   await expect(stages).toHaveCount(4);
   for (const tier of ['cell', 'can', 'tank', 'overcharge']) {
     const stage = panel.locator(`.pickup-animation-stage[data-tier="${tier}"]`);
-    const image = stage.locator('.pickup-animation');
     await expect(stage).toHaveCount(1);
-    await expect(image).toBeVisible();
-    await expect(image).toHaveJSProperty('complete', true);
-    expect(await image.evaluate((img, name) => img.naturalWidth > 0 && img.naturalHeight > 0 &&
-      new URL(img.currentSrc).pathname.endsWith('/animated/' + name + '.webp'), tier),
-    `animated ${tier} WebP loads at every viewport`).toBe(true);
+    await stage.scrollIntoViewIfNeeded();
+    await expect(stage.locator('.pickup-3d-canvas')).toBeVisible();
+    await expect(stage, `live 3D ${tier} draws at every viewport`).toHaveAttribute('data-live', 'true', { timeout: ciTimeout(8000) });
   }
 
   // Mystery powers
@@ -174,13 +172,10 @@ test('road pickup gallery keeps its artwork animated by default but stops for re
   await openGuide(page);
   await page.locator('[data-guide-device="items"]').click();
   const stage = page.locator('.pickup-animation-stage').first();
-  const image = stage.locator('.pickup-animation');
-  await expect(image).toBeVisible();
+  await expect(stage.locator('.pickup-3d-canvas')).toBeVisible();
+  await expect(stage).toHaveAttribute('data-live', 'true', { timeout: ciTimeout(8000) });
   await expect(stage).toHaveAttribute('data-motion', 'running');
-  await expect(image).toHaveAttribute('src', /cell[.]webp$/);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(stage).toHaveAttribute('data-motion', 'paused');
-  await expect(image).toHaveAttribute('src', /cell-poster[.]webp$/);
-  await expect(image).toBeVisible();
-  expect(await image.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+  await expect(stage.locator('.pickup-3d-canvas')).toBeVisible();
 });

@@ -9,7 +9,11 @@ const tiers = ['cell', 'can', 'tank', 'overcharge'];
 
 test('premium pickup collection has four increasingly expressive bounded tier designs', () => {
   assert.deepEqual(Object.keys(PICKUP_COLLECTION_STYLES), tiers);
-  assert.deepEqual(tiers.map(t => PICKUP_COLLECTION_STYLES[t].rings), [1, 2, 2, 3]);
+  assert.deepEqual(tiers.map(t => PICKUP_COLLECTION_STYLES[t].rings), [2, 2, 3, 3]);
+  assert.equal(new Set(tiers.map(t => PICKUP_COLLECTION_STYLES[t].motion)).size, 4, 'one choreography per tier');
+  const lives = tiers.map(t => PICKUP_COLLECTION_STYLES[t].life);
+  assert.deepEqual(lives, [...lives].sort((a, b) => a - b), 'rarer tiers play longer');
+  assert.ok(lives.at(-1) <= 1, 'even the rarest effect is over within a second');
   assert.deepEqual(tiers.map(t => PICKUP_COLLECTION_STYLES[t].particles), [18, 24, 30, 42]);
   assert.equal(PICKUP_COLLECTION_STYLES.overcharge.rainbow, true);
   assert.ok(PICKUP_COLLECTION_STYLES.tank.beam && PICKUP_COLLECTION_STYLES.overcharge.beam);
@@ -83,7 +87,7 @@ test('low quality and reduced motion keep the item identity without particle spa
 test('3D pickup VFX only triggers on collected items; respawn and reset do not replay stale pickups', () => {
   globalThis.devicePixelRatio = 1;
   try {
-    const scene = new THREE.Scene(), effects = createEffects(scene, () => 0, { pickup3D: true });
+    const scene = new THREE.Scene(), effects = createEffects(scene, () => 0);
     const race = createRace('coast');
     race.phase = 'racing'; race.player.speed = 40; race.player.distance = 0;
     race.rings = [];
@@ -109,19 +113,91 @@ test('3D pickup VFX only triggers on collected items; respawn and reset do not r
   } finally { delete globalThis.devicePixelRatio; }
 });
 
-test('legacy pickup mode does not allocate premium VFX objects', () => {
-  globalThis.devicePixelRatio = 1;
-  try {
-    const scene = new THREE.Scene(), effects = createEffects(scene, () => 0, { pickup3D: false });
-    assert.equal(scene.getObjectByName('Pickup collect VFX'), undefined);
-    effects.dispose();
-  } finally { delete globalThis.devicePixelRatio; }
+// Ring and shard transforms of one running effect, in the effect's local space.
+function choreography(tier, age) {
+  const vfx = createPickupCollectVfx(new THREE.Scene());
+  vfx.spawn(tier, { distance: 100, x: 0, altitude: 0 });
+  vfx.update(age, { distance: 0, center: 0, roadCenter: () => 0 });
+  const stage = vfx.group.children.find(s => s.visible), shards = stage.children.find(mesh => mesh.isInstancedMesh);
+  const rings = stage.children.filter(mesh => mesh.name.startsWith('energy shockwave') && mesh.visible);
+  const matrix = new THREE.Matrix4(), shardPoints = [], values = [];
+  for (let i = 0; i < shards.count; i++) {
+    shards.getMatrixAt(i, matrix);
+    values.push(...matrix.elements, matrix.determinant());
+    shardPoints.push(new THREE.Vector3().setFromMatrixPosition(matrix));
+  }
+  for (const ring of rings) values.push(...ring.position.toArray(), ...ring.scale.toArray(), ring.material.opacity);
+  const flash = stage.children.find(child => child.isSprite);
+  values.push(flash.material.opacity, ...flash.scale.toArray(), ...flash.position.toArray());
+  const result = { rings, shardPoints, values, flash, signature: rings.map(ring => [...ring.position.toArray(), ...ring.rotation.toArray().slice(0, 3)].map(v => v.toFixed(2)).join()).join('|') };
+  vfx.dispose();
+  return result;
+}
+
+test('each tier plays its own choreography on the shared pooled meshes', () => {
+  const at = Object.fromEntries(tiers.map(tier => [tier, choreography(tier, .25)]));
+  assert.equal(new Set(tiers.map(tier => at[tier].signature)).size, 4, 'no two tiers move their rings alike');
+  const spread = (points, axis) => Math.max(...points.map(p => p[axis])) - Math.min(...points.map(p => p[axis]));
+  assert.ok(at.cell.rings.every(ring => ring.scale.x < 2.7), 'cell: the rings contract onto the car');
+  assert.ok(at.can.shardPoints.every(p => p.z > 1.3), 'can: every ember is thrown out behind the car');
+  assert.ok(at.can.rings.every(ring => ring.position.z > 1.3), 'can: the heat rings trail behind the car');
+  assert.ok(spread(at.tank.shardPoints, 'y') > 1 && spread(at.tank.shardPoints, 'x') < 3.2, 'tank: a tall narrow helix');
+  assert.ok(new Set(at.overcharge.rings.map(ring => ring.rotation.x.toFixed(2))).size > 1, 'overcharge: rings spin on different axes');
+  assert.ok(at.overcharge.shardPoints.every(p => p.y > 0), 'overcharge: nothing bursts down through the road');
+});
+
+test('every frame of every tier is finite and non-degenerate (one NaN pixel blacks out the bloom)', () => {
+  for (const tier of tiers) for (let age = .01; age < PICKUP_COLLECTION_STYLES[tier].life; age += .04) {
+    const { values, flash } = choreography(tier, age);
+    assert.ok(values.every(Number.isFinite), `${tier} at ${age.toFixed(2)} s`);
+    assert.ok(flash.material.opacity <= .9 && flash.scale.x <= 4, `${tier} flash stays bounded at ${age.toFixed(2)} s`);
+  }
+});
+
+test("the player's effect rides the car; a rival's stays at the item", () => {
+  const vfx = createPickupCollectVfx(new THREE.Scene());
+  const item = { distance: 100, x: 2, altitude: 0 }, car = { distance: 130, x: -1, altitude: 0 };
+  const pose = new THREE.Object3D(), frame = { distance: 130, center: 0, roadCenter: () => 0, car, pose };
+  pose.position.set(-1, .4, 0);
+  pose.rotation.y = .5;
+  pose.updateMatrixWorld();
+  vfx.spawn('can', item, { follow: true });
+  vfx.spawn('tank', item, { rival: true });
+  vfx.update(.1, frame);
+  const stage = tier => vfx.group.children.find(s => s.visible && s.userData.tier === tier);
+  assert.deepEqual(stage('can').position.toArray(), pose.position.toArray(), 'anchored on the rendered car');
+  assert.ok(stage('can').quaternion.angleTo(pose.quaternion) < 1e-6, 'and turned with it, so "behind" stays behind');
+  assert.equal(stage('tank').position.z, 30, 'a rival cue is left where the item was');
+  pose.position.x = 3;
+  pose.updateMatrixWorld();
+  vfx.update(.1, frame);
+  assert.equal(stage('can').position.x, 3, 'it keeps following while it plays');
+  vfx.update(.05, { ...frame, pose: undefined });
+  assert.ok(stage('can').position.distanceTo(new THREE.Vector3(-1, .3, 0)) < 1e-9, 'without a rendered pose it follows the race state');
+  vfx.dispose();
+});
+
+test('reduced motion keeps one still ring and a faint glow for every tier', () => {
+  for (const tier of tiers) {
+    const vfx = createPickupCollectVfx(new THREE.Scene());
+    vfx.spawn(tier, { distance: 10, x: 0, altitude: 0 }, { reducedMotion: true, follow: true });
+    const frame = { distance: 0, center: 0, roadCenter: () => 0, car: { distance: 0, x: 0, altitude: 0 } };
+    vfx.update(.1, frame);
+    const stage = vfx.group.children.find(s => s.visible), ring = () => stage.children.find(mesh => mesh.name === 'energy shockwave 0');
+    const before = [...ring().scale.toArray(), ...ring().rotation.toArray().slice(0, 3)];
+    vfx.update(.1, frame);
+    assert.deepEqual([...ring().scale.toArray(), ...ring().rotation.toArray().slice(0, 3)], before, tier + ' ring does not move');
+    assert.equal(stage.children.filter(mesh => mesh.name.startsWith('energy shockwave') && mesh.visible).length, 1, tier);
+    assert.ok(stage.children.find(child => child.isSprite).material.opacity < .25, tier + ' glow stays faint');
+    assert.equal(stage.children.find(mesh => mesh.isInstancedMesh).count, 0, tier + ' has no particles');
+    vfx.dispose();
+  }
 });
 
 test('a rival pickup on a branching course retains its original graph item for world-point placement', () => {
   globalThis.devicePixelRatio = 1;
   try {
-    const scene = new THREE.Scene(), effects = createEffects(scene, () => 0, { pickup3D: true });
+    const scene = new THREE.Scene(), effects = createEffects(scene, () => 0);
     const race = createRace('coast');
     race.phase = 'racing'; race.player.speed = 40; race.player.distance = 0;
     race.rings = [];
