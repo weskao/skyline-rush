@@ -22,10 +22,19 @@ test('approved archival sources remain unchanged; all fourteen runtime icons are
  for(const id of [...originals,...store]){
   const path='public/feature-assets/'+category(id)+'/raster/'+id+'@3x.webp';
   const file=webp(path);
-  assert.equal(file.toString('ascii',12,16),'VP8X',id);
-  assert.equal(file[20]&0x10,0x10,id+' preserves alpha');
-  assert.deepEqual([1+file.readUIntLE(24,3),1+file.readUIntLE(27,3)],
-   id.startsWith('store-')?[216,216]:[288,288],id);
+  const kind=file.toString('ascii',12,16);
+  assert.ok(kind==='VP8X'||kind==='VP8L',id+': supported native WebP variant '+kind);
+  let size;
+  if(kind==='VP8X') {
+    assert.equal(file[20]&0x10,0x10,id+' has transparency');
+    size=[1+file.readUIntLE(24,3),1+file.readUIntLE(27,3)];
+  } else {
+    assert.equal(file[20],0x2f,id+': lossless WebP signature');
+    const info=file.readUInt32LE(21);
+    assert.equal((info>>>28)&1,1,id+': lossless WebP has alpha');
+    size=[1+(info&0x3fff),1+((info>>>14)&0x3fff)];
+  }
+  assert.deepEqual(size,id.startsWith('store-')?[216,216]:[288,288],id);
   assert.ok(existsSync(root('docs/designs/3x-asset-library/webp/'+category(id)+'/'+id+'@3x.webp')));
  }
  for(const dir of ['garage-rewards-and-missions','garage-store-readiness'])
