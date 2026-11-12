@@ -8,11 +8,12 @@ from roadster_geom import cylinder, extrude, loft, merge, node, part
 from roadster_parts import (HINGE, LIFT_PORTS, RAM_BASE_Y, RAM_BASE_Z, REAR_PORT_X, WHEEL_Y, WHEELS, WING_POS,
                             ram_rest_pose)
 
-from gt_body import HUB_Y, SILL, TYRE_R, Z_NOSE, Z_TAIL, body_verts, patch, side_x, upper_parts
+from gt_body import DECK_Y, HUB_Y, RIDGE_X, SILL, TYRE_R, Z_NOSE, Z_TAIL, body_verts, hood_y, patch, side_x, upper_parts
 
 SEG = 32
 NOZZLE_Y, NOZZLE_Z = .31, 1.975      # rear.png: four nozzles in a row at y .29-.31; contract ports are y .64, z 2.39
-BLADE_Z = (-.42, -.06)               # wing chord in the blade frame: the blade ends over the tail, not behind it
+CHORD = .36                          # wing chord, back from the hinge line on its leading edge
+WING_STOW = (0, -.22, -.42)          # hinge line minus the contract hinge: the blade rests over the tail deck (z 1.63-1.99)
 
 
 def lathe(profile, n=SEG, axis="x"):
@@ -95,6 +96,36 @@ def _prism(profile, x0, x1):
     return extrude([(x0, y, z) for y, z in profile], (x1 - x0, 0, 0))
 
 
+def hood_vents(side):
+    """(recess, slats): a dark recess with three body-colour louvres on the hood plateau at the windscreen base
+    (front three-quarter panel). Size and louvre count inferred: the panel resolves only a dark patch."""
+    xs, zs = (.18, .29, .40), [-1.30 + .045 * i for i in range(5)]
+    recess = loft([[(side * x, hood_y(z, x) + .004, z) for x in xs] + [(side * x, hood_y(z, x) - .02, z) for x in reversed(xs)]
+                   for z in zs], close=True)
+    slats = []
+    for z in (-1.265, -1.21, -1.155):
+        y = max(hood_y(z, x) for x in xs) + .004
+        slats.append(extrude([(side * .19, y, z - .012), (side * .39, y, z - .012), (side * .39, y, z + .012), (side * .19, y, z + .012)], (0, .01, 0)))
+    return recess, merge(*slats)
+
+
+def cabin_parts():
+    """(dark, tan): what shows behind the glass. The hull is closed under the canopy, so the cabin is the part above
+    the deck: floor liner, bulkhead, steering wheel (dark); dash top and two seat backs (tan). All inferred: the
+    panels show a tan interior, not its layout."""
+    def edge(z):
+        return .90 * (RIDGE_X(z) + .04)
+    zs = [-.96 + 2.46 * i / 12 for i in range(13)]
+    floor = loft([[(-edge(z), DECK_Y(z) - .02, z), (-edge(z), DECK_Y(z) + .012, z), (edge(z), DECK_Y(z) + .012, z), (edge(z), DECK_Y(z) - .02, z)]
+                  for z in zs], close=True)
+    bulkhead = extrude([(-.50, .80, .70), (.50, .80, .70), (.32, .93, .70), (-.32, .93, .70)], (0, 0, .04))
+    rim = revolve([(-.012, .105), (.012, .105), (.012, .13), (-.012, .13)], 16, axis="z")
+    wheel = merge(([(x - .27, y + .89, z - .50) for x, y, z in rim[0]], rim[1]), cylinder((-.27, .85, -.62), (-.27, .89, -.50), .02, .02, 6))
+    dash = _prism([(.805, -.96), (.885, -.66), (.875, -.56), (.805, -.56)], -.50, .50)   # (y, z)
+    seat = [(.805, -.10), (.805, .14), (.97, .40), (.97, .31), (.88, .12), (.86, -.10)]    # squab and raked back, (y, z)
+    return merge(floor, bulkhead, wheel), merge(dash, *[_prism(seat, s * .27 - .15, s * .27 + .15) for s in (-1, 1)])
+
+
 def build_car(c, mats):
     """c: the collection that holds every shipping object."""
     P, G = mats["gt_paint"], mats
@@ -103,6 +134,9 @@ def build_car(c, mats):
     glass, roof = upper_parts()
     part("glass_canopy", c, *glass, G["gt_glass"])
     part("roof", c, *roof, P)
+    dark, tan = cabin_parts()
+    part("cabin", c, *dark, G["gt_trim"])
+    part("cabin_seats", c, *tan, G["gt_cabin"])
 
     for name, (x, z) in WHEELS.items():
         side = -1 if x < 0 else 1
@@ -118,29 +152,30 @@ def build_car(c, mats):
         part(name + "_hub", c, *hub, G["gt_trim"], spin)
         part(name + "_disc", c, *disc, G["gt_carbon"], spin)
 
-    # Tall twin-pylon wing (rear three-quarter panel). The blade sits on the contract hinge line, so at rest it
-    # stands at roof height and the rig raises it from there; side.png shows the car without it.
+    # Twin swan-neck wing (rear three-quarter panel; the other three panels show the car without it). `wing` is the
+    # contract pivot the rig raises; `wing_stow` under it is a static offset that puts the hinge line (`wing_blade`,
+    # rig-driven) on the blade's leading edge just above the tail deck. Stowed, the blade lies close over the deck;
+    # the rig's tilt swings its trailing edge up about the leading edge, and its raise lifts it on the pylons.
     wing = node("wing", c, pos=WING_POS)
-    blade = node("wing_blade", c, pos=(0, 0, -HINGE), parent=wing)
-    z0, z1 = BLADE_Z
-    chord = z1 - z0
-    section = [(z0, -.030), (z0 + .12 * chord, -.012), (z0 + .5 * chord, -.006), (z1, -.022), (z1, -.030),
-               (z0 + .5 * chord, -.046), (z0 + .12 * chord, -.046)]                                        # (z, y)
+    stow = node("wing_stow", c, pos=WING_STOW, parent=wing)
+    blade = node("wing_blade", c, pos=(0, 0, -HINGE), parent=stow)
+    section = [(0, -.030), (.12 * CHORD, -.012), (.5 * CHORD, -.006), (CHORD, -.022), (CHORD, -.030),
+               (.5 * CHORD, -.046), (.12 * CHORD, -.046)]                                                  # (z, y)
     part("wing_aerofoil", c, *extrude([(-.98, y, z) for z, y in section], (1.96, 0, 0)), P, blade)
-    # Endplates, authored in the tip nodes the rig drives (procedural tips sit at x +-.80 on the hinge line).
-    # Swept plates, taller at the back and canted outward at the top (rear three-quarter panel): (y, z).
-    quad = [(-.11, -.61), (.02, -.63), (.07, -.23), (-.11, -.21)]
-    plate = loft([[(.18 + .15 * (y + .11) + t, y, z) for y, z in quad] for t in (0, .016)], close=True)
-    part("wing_tip_r_mesh", c, *plate, P, node("wing_tip_r", c, pos=(.80, 0, HINGE), parent=blade))
-    part("wing_tip_l_mesh", c, *plate, P, node("wing_tip_l", c, pos=(-.80, 0, HINGE), parent=blade, scale=(-1, 1, 1)))
-    # Swan-neck pylons: a stalk from inside the tail deck up ahead of the leading edge, then a neck over the
-    # blade top, in the wing frame so they rise with it: (y, z).
-    stalk, neck = [(-.50, -.80), (-.50, -.64), (-.02, -.60), (.03, -.66)], [(.03, -.66), (-.01, -.62), (-.006, -.42), (.018, -.42)]
-    part("wing_pylons", c, *merge(*[_prism(p, s * .42 - .015, s * .42 + .015) for s in (-1, 1) for p in (stalk, neck)]), G["gt_carbon"], wing)
+    # Swept endplates, taller at the back and canted outward at the top (rear three-quarter panel): (y, z). They are
+    # fixed to the blade. The rig folds `wing_tip_*` 60 degrees with the Roadster's tips, so those nodes stay empty.
+    quad = [(-.11, .01), (.02, -.01), (.07, .39), (-.11, .41)]
+    part("wing_endplates", c, *merge(*[loft([[(s * (.98 + .15 * (y + .11) + t), y, z) for y, z in quad] for t in (0, .016)], close=True)
+                                       for s in (-1, 1)]), P, blade)
+    node("wing_tip_r", c, pos=(.80, 0, HINGE), parent=blade)
+    node("wing_tip_l", c, pos=(-.80, 0, HINGE), parent=blade, scale=(-1, 1, 1))
+    # Swan-neck pylons: a stalk from inside the tail up ahead of the leading edge, then a short neck onto the hinge
+    # line, in the stow frame so they rise with the blade: (y, z).
+    stalk, neck = [(-.50, -.38), (-.50, -.22), (-.02, -.18), (.03, -.24)], [(.03, -.24), (-.012, -.20), (-.012, -.14), (.012, -.14)]
+    part("wing_pylons", c, *merge(*[_prism(p, s * .42 - .015, s * .42 + .015) for s in (-1, 1) for p in (stalk, neck)]), G["gt_carbon"], stow)
     rot, sy = ram_rest_pose()
-    rams = node("wing_rams", c, pos=(0, RAM_BASE_Y, RAM_BASE_Z), parent=wing, scale=(1, sy, 1), rot_x=rot)
-    # The rig still drives the rams; on this car they are slim rods inside the pylon tops.
-    part("wing_rams_mesh", c, *merge(*[cylinder((s * .42, 0, -.66), (s * .42, 1, -.66), .008, .008, 6) for s in (-1, 1)]), G["gt_carbon"], rams)
+    # The rig drives `wing_rams` between the Roadster's bay and blade, which this wing does not share: the node ships empty.
+    node("wing_rams", c, pos=(0, RAM_BASE_Y, RAM_BASE_Z), parent=wing, scale=(1, sy, 1), rot_x=rot)
 
     # Lamps.
     part("headlamp", c, *merge(light_blade(), drl_slashes()), G["gt_lamp"])
@@ -162,6 +197,10 @@ def build_car(c, mats):
         *[extrude([(x - .011, .19, 1.84), (x + .011, .19, 1.84), (x + .011, .19, 2.0), (x - .011, .19, 2.0)], (0, .06, 0))
           for x in (-.84, -.42, 0, .42, .84)],
     ), G["gt_carbon"])
+    for side, tag in ((-1, "l"), (1, "r")):
+        recess, slats = hood_vents(side)
+        part("hood_vent_" + tag, c, *recess, G["gt_trim"])
+        part("hood_vent_slats_" + tag, c, *slats, P)
     intake_z = [.15 + .88 * i / 10 for i in range(11)]
     corner_z = [-2.16 + .30 * i / 6 for i in range(7)]
     rocker_z = [-.92 + 1.94 * i / 12 for i in range(13)]

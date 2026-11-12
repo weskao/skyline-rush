@@ -147,6 +147,15 @@ def side_x(z, y):
     return pts[0][0] if y < pts[0][1] else pts[-1][0]
 
 
+def hood_y(z, x):
+    """Height of the smoothed body top at half-width x (between the crown and the centreline)."""
+    pts = _resample(ring(z), RING_SUB, True)[7 * RING_SUB:11 * RING_SUB + 1]   # crown, valley, ridge, centre: x falling
+    for (x0, y0, _), (x1, y1, _) in zip(pts, pts[1:]):
+        if x1 <= x <= x0 and x0 > x1:
+            return y0 + (y1 - y0) * (x0 - x) / (x0 - x1)
+    return pts[-1][1]
+
+
 def patch(zs, y_lo, y_hi, ny=4, proud=.008, depth=.03, side=1):
     """Closed thin panel lying on the body side: at each z it spans y_lo(z)..y_hi(z), `proud` outside the surface."""
     rings = []

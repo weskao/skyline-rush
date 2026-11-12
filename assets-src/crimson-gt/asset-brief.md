@@ -28,24 +28,33 @@ PARTS      body; glass_canopy; roof (body-colour upper: roof, pillars, buttresse
            rocker_l/r; mirror_l/r; splitter; diffuser — static.
            wheel_fl/fr/rl/rr (contract pivot, rig-bound) > <wheel>_axle (static, lowers the hub to y .357) >
            tyre, barrel, caliper (static) and <wheel>_spin > 5 forked spokes, hub, disc.
-           wing (contract pivot) > wing_blade (rig-bound) > wing_aerofoil, wing_tip_r, wing_tip_l (scale x -1);
-           wing > wing_pylons (swan necks), wing_rams (rig-bound rot.x / scale.y).
+           wing (contract pivot) > wing_stow (static, (0, -.22, -.42): rests the blade over the tail deck) >
+           wing_blade (rig-bound, hinged on its leading edge at y .86, z 1.63) > wing_aerofoil with fixed
+           endplates; wing_tip_r/l are empty nodes (the rig folds them, nothing hangs on them);
+           wing_stow > wing_pylons (swan necks, rise with the blade);
+           wing > wing_rams (rig-bound rot.x / scale.y; ships empty, this wing has no ram bay).
+           cabin (floor liner, bulkhead, steering wheel), cabin_seats (dash top, two seat backs);
+           hood_vent_l/r (recess) > hood_vent_slats_l/r — static.
            thruster_01..04 (contract lift ports) > *_nozzle; lift_fans > lift_fan_01..04 > *_disc;
            nozzle_rear_01..04 > *_tube, *_throat, one rigid offset (0, -.33, -.415) from the contract rear ports.
 SILHOUETTE low pointed wedge nose with a full-width light blade; long teardrop canopy peaking ahead of the
            centre; rising shoulder into wide rear haunches; black triangular side intake; short tail with a
-           full-width red light bar over four round nozzles; tall swan-neck wing.
+           full-width red light bar over four round nozzles; wing stowed flat on the tail deck, raised in flight.
 MATERIALS  gt_paint (factory deep red sRGB #9a1424, metallic .74, roughness .17, clearcoat; tinted at runtime by
            the Garage paint), gt_glass, gt_trim, gt_carbon, gt_tire, gt_rim (dark), gt_nozzle, gt_fan,
-           gt_light (rear LED, emissive driven at runtime), gt_lamp (front blade emissive). Factors only.
-           Textures: one shared 1024 px atlas (UV channel 0):
-             textures/crimson_gt_normal.png  tangent-space normal, OpenGL +Y, Non-Color -> glTF normalTexture
+           gt_light (rear LED, emissive driven at runtime), gt_lamp (front blade emissive), gt_cabin (tan).
+           gt_glass is see-through (alpha blend) over the cabin. Factors only.
+           Textures: one shared 1024 px atlas (UV channel 0), plus the tiling flake:
+             textures/crimson_gt_normal.png  tangent-space normal, OpenGL +Y, Non-Color -> clearcoat normal on
+                                             gt_paint (the smooth coat keeps the baked edges), normalTexture elsewhere
              textures/crimson_gt_ao.png      ambient occlusion, Non-Color, R channel   -> glTF occlusionTexture
+             textures/crimson_gt_flake.png   128 px tiling normal, 48 repeats, strength .35 -> gt_paint base normal
+                                             (metallic flake under the clearcoat; written by bake.py)
 ARTICULATION no armature, no clips. The runtime rig copies local TRS from the procedural car onto the same node
            names as roadster2; `<wheel>_axle` and the nozzle offset are static and read by src/garage-model.ts.
 INFERRED   see the list below
 TARGET     three.js WebGLRenderer, GLB through scripts/assets (export -> optimize -> check). Budget 60,000
-           triangles (actual 22,540; low LOD 13,636), 1.5 MB (actual 1,180,364 B; low LOD 509,964 B),
+           triangles (actual 22,996; low LOD 13,926), 1.5 MB (actual 1,204,084 B; low LOD 541,088 B),
            textures <= 1024 px (low LOD 512), KTX2 normal/AO, meshopt.
 ```
 
@@ -93,13 +102,29 @@ build with an earlier set of mattes and anchors, so they are not directly compar
 | 4 | 0.930 | 0.848 | 0.775 | 0.862 | rebuilt from the panel silhouettes: tyre r .337, length 4.26 m |
 | 4, finer camera grid | 0.939 | 0.862 | 0.862 | 0.862 | same geometry; the first grid's best cameras sat on its edges |
 | 5 (rejected) | 0.932 | 0.865 | 0.846 | 0.818 | pointed nose z -2.27, tapered tail plan, haunch +.03, lower tail raked to side.png, larger endplates |
-| 6 (shipped) | 0.936 | 0.865 | 0.871 | 0.857 | 5 with the deep lower tail restored, haunch +.015, calmer endplates |
+| 6 | 0.936 | 0.865 | 0.871 | 0.857 | 5 with the deep lower tail restored, haunch +.015, calmer endplates |
 | 6 without the wing (measurement only) | 0.968 | 0.872 | 0.880 | 0.905 | what the wing costs: .032 / .007 / .009 / .048 |
+| 8 (shipped), rest pose | 0.952 | 0.878 | 0.877 | 0.882 | wing stowed on the tail deck (owner approved), hood vents, cabin behind see-through glass; front 3/4 lens grid widened to 24-85 |
+| 8, wing deployed (`gate/pose_deployed.py`) | 0.936 | 0.865 | 0.871 | 0.837 | the runtime's raise = 1 pose; the rear 3/4 panel is the only one that shows the wing up |
 
-**The 0.90 target is met in the side view only** (and in the rear view only with the wing removed).
-The three-quarter views are also very sensitive to azimuth: 2 degrees either way costs .01 to .05.
+**The 0.90 target is met in the side view only** (0.952 at rest). Front 3/4 0.878, rear 3/4 0.877 (0.871 in
+the deployed pose its panel shows) and rear 0.882 are the measured values; shape iterations stopped here.
+The mattes were not changed after iteration 4. The three-quarter views are also very sensitive to azimuth:
+2 degrees either way costs .01 to .05. Why the other three views stay below 0.90, read from the overlay
+sheets (not isolated by a separate probe):
+
+- Rear: the stowed wing's endplates and the mirrors lie outside the panel matte, and the body is 5-7 cm
+  wider per side than rear.png (scale conflict with side.png, table below). Without any wing the view
+  measured 0.905.
+- Front 3/4: the panel has a band of extra roof and tail, the render extra nose. The side panel (0.952)
+  fixes roof height and overhang, so closing this view would open that one (panel conflict).
+- Rear 3/4, deployed: the panel's roof is higher and its body bottom lower than the render, and the
+  raised endplate stands above the matte.
 
 ## Deviations (measured on iteration 6, render minus panel, at the anchor scale)
+
+The body is unchanged since iteration 6; the wing rows describe the old roof-height wing and no longer
+apply at rest (iteration 8 stows it).
 
 | View | Where | Difference | Cause |
 | --- | --- | --- | --- |
@@ -121,21 +146,28 @@ Deviations kept on purpose:
 
 | What | Panel | Model | Why |
 | --- | --- | --- | --- |
-| Wing | raised in the rear 3/4 panel only; absent in the other three | tall twin swan-neck wing on the contract pivot (0, 1.08, 2.25) | the rig drives the Roadster's wing motion; the blade rests at roof height and rises from there |
 | Wheel pivots | hub y .357 | pivot y .46 with a static `<wheel>_axle` at -.103 | contract pivot; owner approved the smaller tyre |
 | Rear nozzles | y .31, z 1.975 | same; contract rear ports are y .64, z 2.39 | owner approved the shorter tail; the rear-port VFX follow the nozzles |
 | Lift ports | not shown | contract (+-.79, .3, -1.3 / 1.45), inside the floor | contract |
 | Nose z | -2.22 (orthographic trace) | -2.27 | best fit at the solved camera (lens 135) |
 
-Not built this round: a hood vent pair at the windscreen base, an interior behind the glass, a
-paint flake layer, and the red glow under the wing in the rear 3/4 panel.
+| Wing at rest | absent in three panels | stowed flat over the tail deck on a static `wing_stow` node | owner approved 2026-11-13; three panels show no wing, the contract pivot does not move |
+| Wing raised | high above the tail on tall supports (rear 3/4 panel) | the Roadster's raise (pivot up, blade tilted), lower than the panel | the rig's motion is shared; short swan-neck pylons rise with the blade, the rams are empty nodes |
+
+Not built: the red glow under the wing in the rear 3/4 panel.
 
 ## Inferred (not shown by any panel)
 
 - Every width: no top or front view. Nose, shoulder, canopy, buttress and tail plan widths are read
   from the two three-quarter panels; the haunch is held to the tyre outer face (x 1.175).
 - Scallop depth on the flank, hood centre height and its raised centre section, deck height under the upper.
-- Underbody, sill inset, wheel wells, inner arch walls, everything behind the glass (no interior).
+- Underbody, sill inset, wheel wells, inner arch walls.
+- The whole cabin: floor liner, bulkhead, steering wheel, dash top, two seat backs and their tan colour.
+  The front 3/4 panel shows a tan interior through the glass and resolves nothing else.
+- Hood vent size, position and louvre count: the front 3/4 panel shows only two dark patches.
+- Paint flake size (about 1.2 mm), density and strength; no panel resolves the paint surface.
+- The stowed wing: its rest height, the leading-edge hinge line and the (0, -.22, -.42) offset; how high
+  the raised wing stands (lower than the rear 3/4 panel); the pylons' stalk and neck shape.
 - The right side of the car (mirrored from the left).
 - Lower rear fascia depth, diffuser and its strakes: hidden by thruster glow in rear.png.
 - Rim depth, spoke section, brake disc and caliper; the panels show five forked spokes only.
