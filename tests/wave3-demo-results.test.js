@@ -141,6 +141,8 @@ test('short landscape results show a compact earned reward without crowding race
   assert.match(compact, /\.wave3-demo-results__banner\s*\{\s*display:\s*none/);
   assert.match(compact, /\.wave3-demo-results__missions/);
   assert.match(compact, /\.wave3-demo-results__points/);
+  // Compact visuals must not remove the settled status and mission text from assistive technology.
+  assert.match(compact, /clip-path:\s*inset\(50%\)/);
 });
 
 test('results A-03 optional WebP falls back to PNG then retained decorative CSS mark', () => {
