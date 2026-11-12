@@ -215,7 +215,7 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 35%{filter:brightness(1.9);transform:scale(1.2)}70%{transform:scale(.96)}
 100%{transform:scale(1);filter:brightness(1)}}
 @keyframes trophy-awaken{0%,100%{opacity:.4;filter:brightness(1)}50%{opacity:1;filter:brightness(1.9)}}
-@keyframes trophy-rise{0%,100%{transform:translateY(1px) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+@keyframes trophy-rise{0%,100%{transform:translateY(1px)}50%{transform:translateY(-5px)}}
 :global(body[data-vfx-enabled="false"] .garage-mission-board .garage-mission-card::before),
 :global(body[data-vfx-enabled="false"] .garage-mission-board .garage-trophy-card::before){display:none}
 @media (prefers-reduced-motion:reduce){.garage-mission-card::before,.garage-trophy-card::before,
