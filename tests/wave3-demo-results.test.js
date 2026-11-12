@@ -126,7 +126,7 @@ test('compact portrait/landscape and reduced-motion styling is scoped to the opt
 
 test('reward panel remains anchored in the results summary instead of jumping from a transformed fixed-position parent', () => {
   const css = readFileSync(new URL('../src/wave3-demo-results.css', import.meta.url), 'utf8');
-  const card = css.match(/\.wave3-demo-results\s*\{([^}]*)\}/)?.[1] ?? '';
+  const card = css.match(/^\.wave3-demo-results\s*\{([^}]*)\}/m)?.[1] ?? '';
   assert.match(card, /position:\s*static/);
   assert.doesNotMatch(card, /position:\s*(?:fixed|absolute)/);
   assert.doesNotMatch(card, /\b(?:left|bottom|right|top):/);
