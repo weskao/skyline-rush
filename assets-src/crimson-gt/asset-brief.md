@@ -109,6 +109,7 @@ build with an earlier set of mattes and anchors, so they are not directly compar
 
 **The 0.90 target is met in the side view only** (0.952 at rest). Front 3/4 0.878, rear 3/4 0.877 (0.871 in
 the deployed pose its panel shows) and rear 0.882 are the measured values; shape iterations stopped here.
+The owner accepted these three views as a deviation on 2026-11-14; the measurements stand.
 The mattes were not changed after iteration 4. The three-quarter views are also very sensitive to azimuth:
 2 degrees either way costs .01 to .05. Why the other three views stay below 0.90, read from the overlay
 sheets (not isolated by a separate probe):
