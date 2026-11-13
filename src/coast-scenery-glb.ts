@@ -23,7 +23,9 @@ export const RAIL_CHUNKS = 4;
 const AHEAD: Readonly<Record<Exclude<VfxQuality, 'low'>, number>> = { medium: 4, high: 6 };
 const MAX_CHUNKS = 2 + AHEAD.high;
 const RAIL_LENGTH = 12;
-const CURB = 12.4, CLEAR = 20, SEA = -6, ALONG_ROAD = Math.PI / 2;
+const CURB = 12.4, CLEAR = 20, ALONG_ROAD = Math.PI / 2;
+/** Height of the sea plane the scans stand in (and the boats of coast-boats.ts float on). */
+export const SEA = -6;
 
 /** `offset` is lateral metres from the road centre; `yaw` is relative to the road heading (pi/2 = model x along the road). */
 export interface Placement { piece: CoastPiece; along: number; offset: number; y: number; yaw: number; scale: number }

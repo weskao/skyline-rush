@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { ClassicRoad } from './classic-road-routes.ts';
 import { seededRng } from './rng.ts';
 import type { VfxQuality } from './vfx-settings.ts';
+import { createCoastBoatLayer, type CoastBoatLayer } from './coast-boats.ts';
 import { coastChunkWindow, coastFarWindow, createCoastModelLayer, type CoastModelLayer, type ShoreSink } from './coast-scenery-glb.ts';
 
 // Shared Coast palette, separate from the five authored World Tour routes.
@@ -38,6 +39,7 @@ export function createCoastScenery(scene: THREE.Scene) {
     group.add(mesh);
   }
   let model: CoastModelLayer | null = null;
+  let boats: { layer: CoastBoatLayer; clock: { value: number } } | null = null;
   const distances = new Float64Array(TOTAL);
   let previousRoute: ClassicRoad | undefined, previousTier:VfxQuality|null=null;
   let origin = 0, previousDistance = 0, previousSeed: number | undefined;
@@ -83,6 +85,7 @@ export function createCoastScenery(scene: THREE.Scene) {
       const window = model ? coastChunkWindow(distance, quality) : null;
       if (model && window) model.place(route, window, origin, seed, coastFarWindow(distance, quality));
       for (const mesh of model?.meshes ?? []) mesh.visible = !!window;
+      boats?.layer.update(route, distance, quality, origin, seed, boats.clock.value);
       for(const mesh of meshes) {
         mesh.visible = !window; // Medium+ with the GLB: the scans replace the procedural rocks and trees
         mesh.count=count;
@@ -103,10 +106,18 @@ export function createCoastScenery(scene: THREE.Scene) {
       model?.dispose(); model = null;
       for (const mesh of meshes) mesh.visible = true;
     },
+    /** Medium+ sails this parsed coast-boats.glb on the open water, on `clock` (seconds); the caller keeps ownership. */
+    attachBoats(source:THREE.Object3D, clock:{ value: number }) {
+      boats?.layer.dispose();
+      boats = { layer: createCoastBoatLayer(source), clock };
+      for (const mesh of boats.layer.meshes) { mesh.visible = false; group.add(mesh); }
+    },
+    detachBoats() { boats?.layer.dispose(); boats = null; },
     hide() {group.visible=false;},
     show() {group.visible=true;},
     dispose() {
       model?.dispose(); model = null;
+      boats?.layer.dispose(); boats = null;
       scene.remove(group);
       for(const mesh of meshes) {mesh.geometry.dispose();mesh.material.dispose();}
     },
