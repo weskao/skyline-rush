@@ -62,7 +62,7 @@ const FRAGMENT = `varying vec3 p; varying vec3 ambient;
     float fresnel=(.02+.98*pow(max(0.,1.-dot(n,v)),5.))*(1.-.4*smoothstep(80.,900.,dist)); // far waves face the eye more than a flat plane does
     vec3 r=reflect(-v,n);r.y=abs(r.y);
     vec3 light=ambient+sunColor*max(0.,dot(n,sunDirection))*.3;
-    vec3 col=mix(mix(vec3(.02,.33,.34),vec3(.005,.05,.16),smoothstep(15.,300.,dist))*light,skyAt(r,2.+3.*far),fresnel);
+    vec3 col=mix(mix(vec3(.02,.46,.42),vec3(.005,.05,.16),smoothstep(15.,300.,dist))*light,skyAt(r,2.+3.*far),fresnel);
     col+=sunColor*pow(max(0.,dot(n,normalize(v+sunDirection))),mix(900.,320.,far))*mix(3.,.6,far);
     float edge=texture2D(shore,(uv-shoreRect.xy)*shoreRect.z).r;
     float surf=smoothstep(.45,.9,edge*(.65+.35*sin(edge*10.+time*1.4))+(a.z+b.z)*.3);
