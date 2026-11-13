@@ -12,21 +12,24 @@ const storeIds = ['store-cart', 'store-box', 'store-bundle',
   'store-tag', 'store-star', 'store-collection'];
 
 async function checkImage(image, nativePx, cssPx) {
-  await image.scrollIntoViewIfNeeded();
+  // Animated icons never settle; scroll without Playwright's stable-box actionability check.
+  await image.evaluate(el => el.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
   await expect(image).toHaveJSProperty('naturalWidth', nativePx);
   await expect(image).toHaveJSProperty('naturalHeight', nativePx);
-  const size = await image.evaluate(async el => {
-    // Native dimensions are already awaited above. decode() here races the
-    // IntersectionObserver replacing still artwork with the animated GIF.
-    const rect = el.getBoundingClientRect(), style = getComputedStyle(el);
-    const url = new URL(el.currentSrc);
-    const base = new URL('feature-assets/', location.href).pathname;
-    return {
-      width: rect.width, height: rect.height, fit: style.objectFit,
-      url: url.pathname, base, loaded: el.complete && el.naturalWidth > 0,
-    };
-  });
-  expect(size.loaded).toBe(true);
+  // The IntersectionObserver still -> animated src swap briefly empties `currentSrc` and resets `complete`,
+  // so measure only a loaded frame instead of one sampled instant. CSS animation changes the visual box,
+  // not the intended 3x layout size.
+  let size;
+  await expect.poll(async () => {
+    size = await image.evaluate(el => {
+      if (!el.complete || !el.naturalWidth || !el.currentSrc) return null;
+      return {
+        width: el.offsetWidth, height: el.offsetHeight, fit: getComputedStyle(el).objectFit,
+        url: new URL(el.currentSrc).pathname, base: new URL('feature-assets/', location.href).pathname,
+      };
+    });
+    return size !== null;
+  }, { message: 'artwork loaded' }).toBe(true);
   expect([size.width, size.height]).toEqual([cssPx, cssPx]);
   expect(size.fit).toBe('contain');
   expect(size.url.startsWith(size.base), size.url + ' must use Vite base path').toBe(true);
@@ -56,7 +59,7 @@ async function checkStoreTile(button, id) {
   expect(metric.imageInside, id + ': artwork spills past frame').toBe(true);
   expect(metric.captionBelow, id + ': caption overlaps art').toBe(true);
   expect(metric.cardInside, id + ': horizontal layout overflow').toBe(true);
-  expect(metric.staticSrc).toMatch(new RegExp('garage-store-readiness/raster/' + id + '@3x\\.png$'));
+  expect(metric.staticSrc).toMatch(new RegExp('garage-store-readiness/raster/' + id + '@3x\\.webp$'));
   expect(['true', 'false']).toContain(metric.animated);
 }
 
@@ -136,13 +139,12 @@ test('Canvas verifies original source alpha bounds independently of displayed GI
   }
 });
 
-test('corrupted Store PNG falls back to original WebP; missing assets keep localized text', async ({ page }) => {
-  await page.route('**/store-tag@3x.png', route => route.fulfill({
-    status: 200, contentType: 'image/png', body: 'invalid PNG bytes',
+test('corrupted Store WebP and missing mission art keep localized text, not PNG fallback', async ({ page }) => {
+  await page.route('**/store-tag@3x.webp', route => route.fulfill({
+    status: 200, contentType: 'image/webp', body: 'invalid WebP bytes',
   }));
-  await page.route('**/store-cart@3x.png', route => route.abort());
   await page.route('**/store-cart@3x.webp', route => route.abort());
-  await page.route('**/mission-race@3x.png', route => route.abort());
+  await page.route('**/mission-race@3x.webp', route => route.abort());
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();
@@ -152,10 +154,9 @@ test('corrupted Store PNG falls back to original WebP; missing assets keep local
 
   const gallery = page.locator('#garage-art-source-garage-store-readiness');
   await gallery.locator('summary').click();
-  const tag = gallery.locator('[data-wave3-asset="store-tag"] img');
+  const tag = gallery.locator('[data-wave3-asset="store-tag"]');
   await tag.scrollIntoViewIfNeeded();
-  await expect(tag).toHaveAttribute('src', /store-tag@3x\.webp$/);
-  await expect(tag).toHaveJSProperty('naturalWidth', 216);
+  await expect(tag.locator('.artwork-fallback')).toBeVisible();
   const cart = gallery.locator('[data-wave3-asset="store-cart"]');
   await expect(cart.locator('.artwork-fallback')).toBeVisible();
   await expect(cart).toContainText('商店圖示');
@@ -171,7 +172,7 @@ test('reduced motion retains static art and VFX-Off hides the CSS sweep', async 
   const box = store.locator('[data-wave3-asset="store-box"] img');
   await box.scrollIntoViewIfNeeded();
   await expect(box).toHaveAttribute('data-animation-active', 'false');
-  await expect(box).toHaveAttribute('src', /store-box@3x\.png$/);
+  await expect(box).toHaveAttribute('src', /store-box@3x\.webp$/);
   const tagSweep = store.locator('[data-wave3-asset="store-tag"] .garage-art-sweep');
   await page.evaluate(() => { document.body.dataset.vfxEnabled = 'false'; });
   await expect.poll(() => tagSweep.evaluate(el => getComputedStyle(el).display)).toBe('none');
@@ -220,14 +221,16 @@ test('externally approved demo WebPs, when present, must decode at their genuine
 });
 
 for (const viewport of screens) {
-  test('A-03 approved Demo Points artwork is displayed at native 3x in Garage and Store ' +
+  test('A-03 approved Demo Points artwork is displayed at native 3x in Home and Store ' +
     viewport.width + 'x' + viewport.height, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
+    const home = page.locator('#intro [data-wave3-wallet]');
+    // Short landscape compacts the Home wallet (Wave3CurrencyStrip.vue) so the pinned row clears the track cards.
+    const shortLandscape = viewport.height <= 500 && viewport.width > viewport.height;
+    await checkImage(home.locator('[data-wave3-demo-art="demo-points"] img'), 216, shortLandscape ? 14 : 22);
+    await expect(home.locator('[data-currency="demo-points"]')).toHaveAttribute('aria-label', /Demo points|試玩點數/);
     await page.locator('#garage-button').click();
-    const board = page.locator('.garage-mission-board');
-    await checkImage(board.locator('[data-wave3-demo-art="demo-points"] img'), 216, 72);
-    await expect(board).toContainText(/Demo points|試玩點數/);
     await page.locator('[data-wave3-open-store]').click();
     const store = page.locator('[data-wave3-demo-store]');
     await checkImage(store.locator('[data-wave3-demo-art="demo-points"] img'), 216, 72);
@@ -238,17 +241,16 @@ for (const viewport of screens) {
   });
 }
 
-test('A-03 WebP failure falls back to the approved PNG without losing live points labels', async ({ page }) => {
+test('A-03 WebP decode failure preserves readable demo points without PNG requests', async ({ page }) => {
   await page.route('**/feature-assets/wave3-demo/raster/demo-points@3x.webp', route => route.abort());
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
+  const home = page.locator('#intro [data-wave3-wallet]');
+  await expect(home.locator('[data-wave3-demo-art="demo-points"] img')).toHaveCount(0);
+  await expect(home.locator('[data-currency="demo-points"]')).toHaveAttribute('aria-label', /試玩點數/);
   await page.locator('#garage-button').click();
-  const board = page.locator('.garage-mission-board');
-  await expect(board.locator('[data-wave3-demo-art="demo-points"] img'))
-    .toHaveAttribute('src', /demo-points@3x\.png$/);
   await page.locator('[data-wave3-open-store]').click();
   const store = page.locator('[data-wave3-demo-store]');
-  await expect(store.locator('[data-wave3-demo-art="demo-points"] img'))
-    .toHaveAttribute('src', /demo-points@3x\.png$/);
+  await expect(store.locator('[data-wave3-demo-art="demo-points"] img')).toHaveCount(0);
   await expect(store).toContainText('試玩點數');
 });

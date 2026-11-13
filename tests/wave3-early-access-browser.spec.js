@@ -2,13 +2,7 @@ import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 
-/**
- * Pre-Prompt-A acceptance slice against the REAL built game (not the isolated
- * Store fixture). The trial artifact comes from pretest:browser.
- *
- * Final race->mission->claim E2E is deliberately marked fixme until Prompt A
- * supplies a working mission board. Do not treat skipped tests as acceptance.
- */
+// Exercise the real built game using the trial artifact from pretest:browser.
 const demoKey = 'skyline-rush-wave3-demo:v1:guest';
 const modeHistoryKey = 'skyline-rush-mode-history-v1';
 const openGarage = async page => {
@@ -141,28 +135,33 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   });
 
   await page.reload();
+  const homeWallet = page.locator('#intro [data-wave3-wallet]');
+  const homePoints = homeWallet.locator('[data-currency="demo-points"] strong');
+  await expect(homeWallet).toBeVisible();
+  await expect(homePoints).toHaveText('40');
+  await expect(homeWallet.locator('[data-currency="coins"] strong')).toHaveText('—');
+  await expect(homeWallet.locator('[data-currency="diamonds"] strong')).toHaveText('—');
   await page.locator('#garage-button').click();
   const board = page.locator('.garage-mission-board');
   await expect(board).toHaveAttribute('data-rewards-authority', 'local-demo');
-  const resourceHud = page.locator('#garage-screen [data-wave3-wallet]');
-  await expect(resourceHud.locator('[data-currency="demo-points"] strong')).toHaveText('40');
-  await expect(resourceHud.locator('[data-currency="coins"] strong')).toHaveText('—');
-  await expect(resourceHud.locator('[data-currency="diamonds"] strong')).toHaveText('—');
+  await expect(page.locator('#garage-screen [data-wave3-wallet]')).toHaveCount(0);
   const timeMission = board.locator('[data-mission-id="mission-time:daily"]');
   await expect(timeMission).toHaveAttribute('data-mission-state', 'claimable');
   const claimArt = timeMission.locator('[data-wave3-demo-art="demo-claim"] img');
   await expect(claimArt).toHaveJSProperty('naturalWidth', 216);
   await timeMission.getByRole('button', { name: 'Claim demo reward' }).click();
   await expect(timeMission).toHaveAttribute('data-mission-state', 'claimed');
-  await expect(resourceHud.locator('[data-currency="demo-points"] strong')).toHaveText('50');
   await expect(board).toContainText('Demo progress');
+  await page.locator('#garage-close').click();
+  await expect(homeWallet).toBeVisible();
+  await expect(homePoints).toHaveText('50');
+  await page.locator('#garage-button').click();
   const store = await openStore(page);
   await expect(store.locator('.demo-wallet strong')).toHaveText('50');
   await store.locator('[data-demo-id="thruster-ion"]').click();
   await store.getByRole('button', { name: 'Demo redeem' }).click();
   await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
   await expect(store.locator('.demo-wallet strong')).toHaveText('25');
-  await expect(resourceHud.locator('[data-currency="demo-points"] strong')).toHaveText('25');
   await store.getByRole('button', { name: 'Demo Collection' }).click();
   const collection = page.locator('[data-wave3-demo-collection]');
   await expect(collection).toBeVisible();
@@ -174,6 +173,8 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
     body: await page.screenshot(), contentType: 'image/png',
   });
   await collection.getByRole('button', { name: 'Return to racing' }).click();
+  await expect(homeWallet).toBeVisible();
+  await expect(homePoints).toHaveText('25');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
 
@@ -191,6 +192,9 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await expect(page.locator('[data-wave3-demo-store] [data-demo-id="thruster-ion"]')).not.toHaveAttribute('data-demo-status', 'demo-unlocked');
   expect(await page.evaluate(key => localStorage.getItem(key), modeHistoryKey)).toBe(beforeResetHistory);
   expect(await page.evaluate(key => localStorage.getItem(key), demoKey)).toBeNull();
+  await page.locator('#garage-close').click();
+  await expect(homeWallet).toBeVisible();
+  await expect(homePoints).toHaveText('20');
 });
 
 test('real Garage cannot grant paid entitlements or stale demo claims through repeated visits', async ({ page }) => {

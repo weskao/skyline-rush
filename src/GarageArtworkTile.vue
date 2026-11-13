@@ -16,8 +16,6 @@ const colors = computed(() => ({
   '--badge-hue': String(hues[props.tone]),
   '--art-width': props.size + 'px',
   '--art-height': (props.imageHeight ?? props.size) + 'px',
-  '--frame-width': (props.size + 16) + 'px',
-  '--frame-height': ((props.imageHeight ?? props.size) + 16) + 'px',
 }));
 </script>
 <template>
@@ -49,7 +47,10 @@ const colors = computed(() => ({
 }
 .garage-badge-art-frame {
   position: relative; box-sizing: border-box; display: grid; place-items: center; flex: 0 0 auto;
-  width: var(--frame-width); height: var(--frame-height); padding: 8px; border-radius: 13px; overflow: visible;
+  --frame-inset: 8px;
+  width: calc(var(--art-width) + 2 * var(--frame-inset));
+  height: calc(var(--art-height) + 2 * var(--frame-inset));
+  padding: var(--frame-inset); border-radius: 13px; overflow: visible;
   background: radial-gradient(circle, hsl(var(--badge-hue) 70% 49% / .15), transparent 67%);
 }
 .garage-badge-art-frame :deep(.artwork-img) {
@@ -87,4 +88,50 @@ body.vfx-comfort .garage-art-sweep { display: none; }
   .garage-badge-card * { animation: none !important; transition: none !important; }
   .garage-art-sweep { display: none; }
 }
+
+/* Leave room for the full-size art at the peaks of its rotate and scale animations. */
+.garage-badge-card:is([data-art^="mission-"], [data-art^="trophy-"]) .garage-badge-art-frame {
+  --frame-inset: 12px;
+}
+
+/* Mission icons transmit telemetry; trophies awaken their own light corona. */
+.garage-badge-card[data-art^="mission-"] .garage-badge-art-frame::before{
+ content:'';position:absolute;inset:9px;border-radius:50%;pointer-events:none;
+ border:2px dashed hsl(var(--badge-hue) 96% 70% / .58);animation:mission-drive 7s linear infinite}
+.garage-badge-card[data-art^="trophy-"] .garage-badge-art-frame::before{
+ content:'';position:absolute;inset:12px;border-radius:50%;pointer-events:none;
+ box-shadow:0 0 17px hsl(var(--badge-hue) 100% 74% / .48);animation:trophy-awaken 3.7s ease-in-out infinite}
+.garage-badge-card[data-art^="mission-"] .garage-badge-art-frame :deep(.artwork-img){
+ animation:mission-hover 3.8s ease-in-out infinite}
+.garage-badge-card[data-art^="trophy-"] .garage-badge-art-frame :deep(.artwork-img){
+ animation:trophy-hover 4.2s ease-in-out infinite}
+@keyframes mission-drive{to{transform:rotate(360deg)}}
+@keyframes mission-hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes trophy-awaken{0%,100%{opacity:.35;transform:scale(.94)}50%{opacity:1;transform:scale(1.04)}}
+@keyframes trophy-hover{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg) translateY(-4px)}}
+:global(body[data-vfx-enabled="false"] .garage-badge-card[data-art^="mission-"] .garage-badge-art-frame::before),
+:global(body[data-vfx-enabled="false"] .garage-badge-card[data-art^="trophy-"] .garage-badge-art-frame::before){display:none}
+@media (prefers-reduced-motion:reduce){.garage-badge-card[data-art^="mission-"] .garage-badge-art-frame::before,
+.garage-badge-card[data-art^="trophy-"] .garage-badge-art-frame::before{animation:none}}
+
+/* Distinct racing-object effects in the Source Gallery, not a generic shimmer. */
+.garage-badge-card[data-art="mission-race"] .garage-badge-art-frame :deep(.artwork-img){animation:wave3-race-flag 3.2s ease-in-out infinite}
+.garage-badge-card[data-art="mission-time"] .garage-badge-art-frame :deep(.artwork-img){animation:wave3-time-pulse 3.6s steps(10) infinite}
+.garage-badge-card[data-art="mission-drift"] .garage-badge-art-frame :deep(.artwork-img){animation:wave3-drift-torque 3.7s ease-in-out infinite}
+.garage-badge-card[data-art="mission-combo"] .garage-badge-art-frame :deep(.artwork-img){animation:wave3-combo-dash 2.7s cubic-bezier(.2,.5,.4,1) infinite}
+@keyframes wave3-race-flag{0%,100%{transform:skewY(-2deg) translateY(0)}50%{transform:skewY(2deg) translateY(-3px)}}
+@keyframes wave3-time-pulse{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}
+@keyframes wave3-drift-torque{0%,100%{transform:rotate(-7deg) scale(.96)}48%{transform:rotate(7deg) scale(1.06)}}
+@keyframes wave3-combo-dash{0%,100%{transform:translateX(-3px) scale(1)}46%{transform:translateX(4px) scale(1.09)}}
+.garage-badge-card[data-art="trophy-platinum"] .garage-badge-art-frame::before{
+ box-shadow:0 0 21px #ab73ff90,0 0 15px #60f8ff65}
+.garage-badge-card[data-art="trophy-gold"] .garage-badge-art-frame::before{
+ box-shadow:0 0 21px #ffb74899,0 0 12px #ffe79277}
+.garage-badge-card[data-art="trophy-bronze"] .garage-badge-art-frame::before{
+ box-shadow:0 0 15px #ff9e5380}
+.garage-badge-card[data-art="trophy-silver"] .garage-badge-art-frame::before{
+ box-shadow:0 0 16px #b6e4ff89}
+:global(body[data-vfx-enabled="false"] .garage-badge-art-frame .artwork-img),
+:global(body[data-vfx-quality="low"] .garage-badge-art-frame .artwork-img){animation:none!important}
+
 </style>

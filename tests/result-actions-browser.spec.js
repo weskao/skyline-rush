@@ -69,7 +69,7 @@ for (const [name, viewport, hasTouch] of [
     await finishRace(page);
     const trophy = page.locator('#result-stats .result-trophy-art');
     await expect(trophy).toBeVisible();
-    await expect(trophy).toHaveAttribute('src', /trophy-gold@3x\.png$/);
+    await expect(trophy).toHaveAttribute('src', /trophy-gold@3x\.webp$/);
     await expect(trophy).toHaveJSProperty('naturalWidth', 288);
     await expect(trophy).toHaveJSProperty('naturalHeight', 288);
     await expect(trophy).toHaveAttribute('width', '96');

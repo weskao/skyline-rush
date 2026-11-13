@@ -1,30 +1,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
+const root = path => new URL('../' + path, import.meta.url);
+const src = path => readFileSync(root(path), 'utf8');
+const webp = path => {
+ const b = readFileSync(root(path));
+ assert.equal(b.toString('ascii', 0, 4), 'RIFF', path);
+ assert.equal(b.toString('ascii', 8, 12), 'WEBP', path);
+ assert.equal(b.readUInt32LE(4) + 8, b.length, path);
+ return b;
+};
 
-const raster = file => new URL('../public/feature-assets/wave3-demo/raster/' + file, import.meta.url);
-const source = file => readFileSync(new URL('../src/' + file, import.meta.url), 'utf8');
-
-test('A-05/A-06 ship WebP only; A-03/A-04 and wallet source PNGs are preserved', () => {
-  for (const name of ['demo-collection-empty', 'demo-results-banner']) {
-    assert.ok(existsSync(raster(name + '@3x.webp')), name + ' approved WebP still exists');
-    assert.equal(existsSync(raster(name + '@3x.png')), false, name + ' PNG backup removed');
-  }
-  for (const name of ['demo-points', 'demo-claim', 'wallet-coin', 'wallet-diamond']) {
-    assert.ok(existsSync(raster(name + '@3x.png')), name + ' unrelated original PNG preserved');
-  }
+test('all Wave 3 demo raster images are WebP-only, including wallet and existing approved art', () => {
+ const dir='public/feature-assets/wave3-demo/raster/';
+ const names=readdirSync(root(dir));
+ assert.equal(names.filter(n=>n.endsWith('.png')).length,0);
+ for(const id of ['demo-points','demo-claim','demo-collection-empty','demo-results-banner','wallet-coin','wallet-diamond']){
+  assert.ok(existsSync(root(dir+id+'@3x.webp')),id);
+  webp(dir+id+'@3x.webp');
+ }
 });
-
-test('A-05/A-06 image failure never requests removed PNGs or changes demo settlement', () => {
-  const collection = source('Wave3DemoCollection.vue');
-  const integration = source('wave3-demo-results-integration.ts');
-  const results = source('wave3-demo-results-ui.ts');
-  assert.match(collection, /wave3DemoArtUrl\('demo-collection-empty'\)/);
-  assert.doesNotMatch(collection, /emptyArtFallback/);
-  assert.match(integration, /bannerUrl: wave3DemoArtUrl\('demo-results-banner'\)/);
-  assert.doesNotMatch(integration, /bannerFallbackUrl/);
-  assert.doesNotMatch(results, /bannerFallbackUrl/);
-  assert.match(results, /image\.remove\(\); banner\.hidden = true;/);
-  assert.match(integration, /artworkFallbackUrl: wave3DemoArtUrl\('demo-points', 'png'\)/,
-    'A-03 original PNG fallback remains intentional');
+test('image decode failures keep text or CSS rather than silently requesting a PNG', () => {
+ const c=src('src/Wave3DemoCollection.vue');
+ const integration=src('src/wave3-demo-results-integration.ts');
+ const ui=src('src/wave3-demo-results-ui.ts');
+ const art=src('src/Wave3DemoArt.vue');
+ assert.match(c,/wave3DemoArtUrl\('demo-collection-empty'\)/);
+ assert.match(integration,/bannerUrl: wave3DemoArtUrl\('demo-results-banner'\)/);
+ assert.doesNotMatch(integration+art+ui,/artworkFallbackUrl|\.png|['"]png['"]/);
+ assert.match(ui,/img\.remove\(\)/);
 });
