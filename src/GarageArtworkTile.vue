@@ -16,8 +16,6 @@ const colors = computed(() => ({
   '--badge-hue': String(hues[props.tone]),
   '--art-width': props.size + 'px',
   '--art-height': (props.imageHeight ?? props.size) + 'px',
-  '--frame-width': (props.size + 16) + 'px',
-  '--frame-height': ((props.imageHeight ?? props.size) + 16) + 'px',
 }));
 </script>
 <template>
@@ -49,7 +47,10 @@ const colors = computed(() => ({
 }
 .garage-badge-art-frame {
   position: relative; box-sizing: border-box; display: grid; place-items: center; flex: 0 0 auto;
-  width: var(--frame-width); height: var(--frame-height); padding: 8px; border-radius: 13px; overflow: visible;
+  --frame-inset: 8px;
+  width: calc(var(--art-width) + 2 * var(--frame-inset));
+  height: calc(var(--art-height) + 2 * var(--frame-inset));
+  padding: var(--frame-inset); border-radius: 13px; overflow: visible;
   background: radial-gradient(circle, hsl(var(--badge-hue) 70% 49% / .15), transparent 67%);
 }
 .garage-badge-art-frame :deep(.artwork-img) {
@@ -86,6 +87,11 @@ body.vfx-comfort .garage-art-sweep { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .garage-badge-card * { animation: none !important; transition: none !important; }
   .garage-art-sweep { display: none; }
+}
+
+/* Leave room for the full-size art at the peaks of its rotate and scale animations. */
+.garage-badge-card:is([data-art^="mission-"], [data-art^="trophy-"]) .garage-badge-art-frame {
+  --frame-inset: 12px;
 }
 
 /* Mission icons transmit telemetry; trophies awaken their own light corona. */

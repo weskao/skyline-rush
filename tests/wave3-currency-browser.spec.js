@@ -46,6 +46,21 @@ test('home displays three compact resource icons with genuine demo points', asyn
   }
 });
 
+for (const viewport of [{ width: 568, height: 320 }, { width: 756, height: 265 }]) {
+  test(`the compact Home wallet fits above the mode picker at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    const wallet = page.locator('#intro [data-wave3-wallet]');
+    await expect(wallet).toBeVisible();
+    await expect(wallet.locator('img')).toHaveCount(3);
+    const [resources, modes] = await Promise.all([
+      wallet.boundingBox(), page.locator('#race-mode-picker').boundingBox(),
+    ]);
+    expect(resources.height, 'short landscape wallet keeps the track-card height budget').toBeLessThanOrEqual(22);
+    expect(resources.y + resources.height).toBeLessThanOrEqual(modes.y);
+  });
+}
+
 test('compact home wallet localizes accessible resource names without creating paid balances', async ({ page }) => {
   await page.goto('/');
   await selectLocale(page, 'zh-TW');

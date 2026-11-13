@@ -158,5 +158,17 @@ const currencyArt = (kind: string) => {
   .wave3-wallet-strip[data-compact="true"] { gap:3px; }
   .wave3-wallet-strip[data-compact="true"] .wallet-currency { min-width:59px; padding:2px 6px 2px 3px; }
 }
+@media (max-height: 500px) and (orientation: landscape) {
+  .wave3-wallet-strip[data-compact="true"] .wallet-currency {
+    height: 16px; min-height: 16px; padding-block: 0;
+  }
+  .wave3-wallet-strip[data-compact="true"] :is(.wallet-artwork, :deep(.wave3-demo-art)) {
+    width: 14px; min-width: 14px; height: 14px; flex-basis: 14px;
+  }
+  .wave3-wallet-strip[data-compact="true"] :deep(.artwork-img) {
+    width: 14px !important; height: 14px !important;
+  }
+  .wave3-wallet-strip[data-compact="true"] .wallet-quantity strong { font-size: 11px; }
+}
 
 </style>

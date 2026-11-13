@@ -1,3 +1,11 @@
+# 2026-11-13 — Premium WebP full CI repair
+
+- [x] Compact the Home wallet and track previews in short landscape. Reproduced five pinned-row overlaps on the original commit, then verified clearance at 568×320, 667×375 and 844×390 with the browser regressions.
+- [x] Preserve 96px Rewards/Missions artwork and reserve room for its transforms. The keyframe regression failed on Drift at 390×844 before the repair and passed at that viewport afterward.
+- [ ] Verify the real 5 km demo flow reflects reward, redemption and reset in the Home wallet.
+- [x] Local typecheck, module-size gate, locked and trial builds, and unit suite (2,673 passed, three skipped).
+- [ ] Confirm exact-HEAD full CI and its quality gate on the feature branch.
+
 # 2026-11-11 — Premium currency PNG artwork and 8-frame sprite integration
 
 - [x] Native transparent 3x PNGs checked into `public/feature-assets/wave3-demo/raster/`: `wallet-coin@3x.png` (144×144), `wallet-diamond@3x.png` (144×144). New assets, original A-03/A-04 and HUD images are preserved.

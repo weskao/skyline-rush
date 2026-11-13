@@ -2301,6 +2301,10 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   .intro .home-intro-topbar {margin-bottom:8px;}
   .intro .home-intro-topbar .route-label {flex-basis:100%;}
 }
-@media (max-height:500px) and (min-width:761px) {
-  .intro .home-intro-topbar {margin-bottom:4px;}
+/* The compact wallet shares the short landscape panel's height budget with the track carousel. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .intro .home-intro-topbar { margin: 0; }
+  .intro:has(.home-resource-strip) .track-select button { height: 66px; padding-block: 4px; }
+  .intro:has(.home-resource-strip) .track-select .track-preview { height: 26px; }
+  .intro:has(.home-resource-strip) .track-select button > span.track-route-map { top: 6px; height: 24px; }
 }
