@@ -18,8 +18,11 @@ history and Ghost keys stay readable, and only records for the active layout
 are compared. Update the Firestore best-id allowlist with any new finite
 layout keys.
 
-Sky Spiral uses `skyPoint`/`skyFrame` for 3D road positions, with cached,
-decorative altitude annotations on its 2D route map.
+Sky Spiral uses `skyPoint`/`skyFrame` for the helix, sweepers and jump approaches.
+The 2D map uses the same lateral coordinates and highlights the elevated exit.
+Its sprint records use layout 5 and its Endless, Event Lab and Daily road
+records use layout 2. The streaming road uses solid decks through the three
+sprint jump sectors.
 
 Preserve the Coast scenery kit and palette when adjusting its placement. All other track detail must be pooled/instanced,
 bounded by Low/Medium/High quality, outside the road clearance, and hidden

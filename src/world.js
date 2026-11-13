@@ -652,7 +652,7 @@ export function createWorld(canvas) {
       for (let i = 0; i < shortcutPylonMeshes.count; i++) {
         const pylon = pylons[i], relative = pylon?.distance - distance;
         const shown = relative > -20 && relative < 900; // NaN without a pylon
-        put(shortcutPylonMeshes, i, ...(shown ? classicPosition(pylon.distance, pylon.x, pylon.altitude, distance) : [0, -1000, 0]), .4, SHORTCUT_TOLERANCE * 2, .4);
+        put(shortcutPylonMeshes, i, ...(shown ? (trackId === 'spiral' ? skyPosition : classicPosition)(pylon.distance, pylon.x, pylon.altitude, distance) : [0, -1000, 0]), .4, SHORTCUT_TOLERANCE * 2, .4);
       }
       shortcutPylonMeshes.instanceMatrix.needsUpdate = true;
       sectionSigns.forEach(({ group, panel }, i) => {
@@ -660,7 +660,7 @@ export function createWorld(canvas) {
         const relative = section ? section.from - 65 - distance : 0;
         group.visible = !!section && relative > -40 && relative < 850;
         if (!group.visible) return;
-        if (framedRoad(trackId, endlessActive)) {
+        if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
           const signDistance = section.from - 65;
           group.position.fromArray(trackLocalPosition(trackId, signDistance, -17, 0, distance));
           const frame = trackFrame(trackId, signDistance);

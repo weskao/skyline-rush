@@ -1,3 +1,4 @@
+import { SKY_LENGTH } from './sky-track.ts';
 import { CIRCUIT_ID, CIRCUIT_TRACK } from './circuit-track.ts';
 import type { TrackConfig } from './game-types.ts';
 import { FROSTBITE_ID, FROSTBITE_TRACK } from './courses/frostbite-race.ts';
@@ -41,7 +42,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   spiral: {
-    name: 'Sky Spiral', length: 5600, trafficDensity: 0.75, seed: 5005, layoutVersion: 4, openingNitroRings: 2, // difficulty curve: only the late first NITRO is fixed
+    name: 'Sky Spiral', length: SKY_LENGTH, trafficDensity: 0.75, seed: 5005, layoutVersion: 5, openingNitroRings: 2, // difficulty curve: only the late first NITRO is fixed
     sections: [
       { from: 1100, to: 2200, type: 'spiral' },
       { from: 2800, to: 2870, type: 'launch' },

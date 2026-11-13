@@ -1,8 +1,9 @@
 # 2026-11-13 — Classic track corners
 
-- [x] Author distinct Coast, Neon Downtown, Canyon Skyway and Aurora Pass corner sequences, preserving their shortcuts, tunnels, gaps and ice. Sky Spiral keeps its 3D helix.
+- [x] Author distinct Coast, Neon Downtown, Canyon Skyway and Aurora Pass corner sequences, preserving their shortcuts, tunnels, gaps and ice.
 - [x] Use the same road coordinates for the minimap, road mesh, vehicles, hazards, pickups and `3d=1` scenery. Stream the route through Endless and Elimination with a rolling minimap. Preserve earlier bests and ghosts under their existing layout keys.
 - [x] RED/GREEN observed for missing left/right bends, Canyon gap edges, speed-dependent handling, streamed minimap, Coast GLB rail seams and record versioning. Replay baselines changed only for the four revised tracks.
+- [x] Add five Sky Spiral sweepers, preserve the helix and three straight jump corridors, and continue the sweepers after the sprint in streaming modes. Make the former sprint gaps solid in Endless and Elimination and keep the minimap in sync.
 - [ ] Complete browser WebGL and physical-phone checks, and verify the exact-commit GitHub CI quality gate.
 
 # 2026-11-13 — Model-adaptive airflow

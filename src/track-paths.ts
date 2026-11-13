@@ -1,7 +1,7 @@
 import { classicRoadRoute, legacyClassicRoad } from './classic-road-routes.ts';
 import { raceTrack } from './race-tracks.ts';
 import { CIRCUIT_ID, circuitFrame } from './circuit-track.ts';
-import { skyFrame, skyPoint, type Vec3, type SkyPoint } from './sky-track.ts';
+import { skyFrame, skyPoint, SKY_SPIRAL, type Vec3, type SkyPoint } from './sky-track.ts';
 import { FROSTBITE_ID, frostbiteFrame, frostbiteObjectSpan } from './courses/frostbite-race.ts';
 import { STORMLINE_ID, stormlineFrame } from './courses/stormline-megacity-race.ts';
 import { VOLCANIC_ID, volcanicFrame } from './courses/volcanic-crown-race.ts';
@@ -99,10 +99,10 @@ export function trackOverview(trackId: string, count = 128): OverviewPoint[] {
   });
   if(classicRoadRoute(trackId))return mapFit(points,'flat');
   if(trackId==='spiral'){
-    const start=1100,end=2200,after=Math.max(1,track.length-end);
+    const { start, end, radius } = SKY_SPIRAL, after = track.length - end;
     return points.map(p=>{
       if(p.distance<start)return {
-        distance:p.distance,x:.16,y:.07+(p.distance/start)*.36,
+        distance:p.distance,x:.20+p.x/(2*radius)*.56,y:.07+(p.distance/start)*.36,
       };
       if(p.distance<=end){
         // Project the canonical helix to a legible 360-degree loop.
@@ -110,12 +110,12 @@ export function trackOverview(trackId: string, count = 128): OverviewPoint[] {
         // another "secret path" and is intentionally excluded.
         return {
           distance:p.distance,
-          x:.16+(p.x/330)*.56,
-          y:.43+(p.y-start)/165*.145,
+          x:.20+(p.x/(2*radius))*.56,
+          y:.43+(p.y-start)/radius*.145,
         };
       }
       return {
-        distance:p.distance,x:.16,y:.43+(p.distance-end)/after*.49,
+        distance:p.distance,x:.20+p.x/(2*radius)*.56,y:.43+(p.distance-end)/after*.49,
       };
     });
   }
@@ -124,7 +124,7 @@ export function trackOverview(trackId: string, count = 128): OverviewPoint[] {
   return mapFit(points,'world-tour');
 }
 
-const MAX_LOOK_TURN = 22 * Math.PI / 180; // above every pre-Frostbite track's bend over 65 m (Sky Spiral 21.2°)
+const MAX_LOOK_TURN = 22 * Math.PI / 180;
 const turnBetween = (trackId: string, from: number, to: number, extended: boolean): number => {
   const f = trackFrame(trackId, from, extended).forward, g = trackFrame(trackId, to, extended).forward;
   return Math.acos(clamp(f[0] * g[0] + f[1] * g[1] + f[2] * g[2], -1, 1));

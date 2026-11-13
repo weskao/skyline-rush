@@ -112,14 +112,14 @@ test('a finished gated Frostbite race writes only its topology-keyed results, ne
 
 test('race camera shortens look-ahead through sharp classic corners and Frostbite hairpins', async () => {
   const { lookAheadDistance } = await import('../src/track-paths.ts');
-  const reauthored = new Set(['coast', 'neon', 'canyon', 'aurora']);
+  const reauthored = new Set(['coast', 'neon', 'canyon', 'aurora', 'spiral']);
   for (const id of [...Object.keys(RACE_TRACKS), 'harbor-circuit'])
     for (let d = 0; d < raceTrack(id).length; d += 25) for (const reach of [34, 65]) {
       const actual = lookAheadDistance(id, d, reach);
       if (!reauthored.has(id)) assert.equal(actual, reach, `${id}@${d}`);
       else {
         const f = trackFrame(id, d).forward, g = trackFrame(id, d + actual).forward;
-        const turn = Math.acos(Math.min(1, f[0] * g[0] + f[2] * g[2]));
+        const turn = Math.acos(Math.min(1, f.reduce((dot, axis, i) => dot + axis * g[i], 0)));
         assert.ok(actual > 5 && actual <= reach && turn <= 22.5 * Math.PI / 180, `${id}@${d}`);
       }
     }

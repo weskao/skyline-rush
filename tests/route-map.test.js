@@ -232,3 +232,18 @@ test('a streamed classic minimap follows the actual bends after the original fin
     assert.ok(line.attrs.points.split(' ').length >= 20);
   });
 });
+
+test('the streamed Sky Spiral minimap fits the helix and the nearby racer markers', async () => {
+  const { createRouteMap, hasStreamingRouteMap } = await import('../src/route-map.ts');
+  await withFakeDom(() => {
+    assert.equal(hasStreamingRouteMap('spiral', 'endless'), true);
+    assert.equal(hasStreamingRouteMap('spiral', 'elimination'), true);
+    const { element, updateDrivers } = createRouteMap('spiral', { live: true, streaming: true });
+    updateDrivers([{ id: 'YOU', distance: 1375 }, { id: 'NOVA', distance: 900 }]);
+    assert.equal(element.find('route-finish').length, 0);
+    assert.equal(element.find('route-spiral-upper').length, 0);
+    assert.equal(element.find('route-driver-nova')[0].attrs.visibility, 'hidden');
+    const points = element.find('route-overview-line')[0].attrs.points.split(' ').flatMap(pair => pair.split(',').map(Number));
+    assert.ok(points.every(n => n >= 0 && n <= 100), 'the loop stays inside the rolling map');
+  });
+});

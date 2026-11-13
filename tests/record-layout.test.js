@@ -15,8 +15,8 @@ import { GHOST_RATE } from '../src/ghost.ts';
 // 2026-11-02: more rings on every map, every timed record gets a new key) moved those five to layout 3 and
 // Aurora and the World Tour to layout 2. Scaled layouts (user, 2026-11-02: 4 rings and pickups per car, re-rolled
 // every race) bump every track once more. Every older id stays readable as an old-layout record.
-const NEWEST = ['coast', 'neon', 'canyon']; // layout 5
-const TWICE = ['aurora', 'spiral', CIRCUIT_ID]; // layout 4
+const NEWEST = ['coast', 'neon', 'canyon', 'spiral']; // layout 5
+const TWICE = ['aurora', CIRCUIT_ID]; // layout 4
 const ONCE = [ 'taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']; // layout 3
 const memory = (initial = {}) => {
   const data = { ...initial };

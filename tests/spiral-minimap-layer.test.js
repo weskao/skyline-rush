@@ -27,3 +27,11 @@ test('upper-ramp chevron is in bounds, points forward and cannot be generated fo
   assert.ok(dot > 0, 'tip indicates the real race direction, not a mirrored arrow');
   for (const track of ['coast', 'neon', 'canyon', 'aurora']) assert.equal(spiralUpperDirectionChevron(track), '');
 });
+
+test('the sprint minimap follows lateral road changes on both sides of the helix', () => {
+  const before = [170, 420, 690].map(d => routeMarker('spiral', d).x);
+  const after = [4900, 5190, 5480].map(d => routeMarker('spiral', d).x);
+  for (const [left, apex, right] of [before, after]) {
+    assert.ok(Math.abs(apex - left) > 7 && Math.abs(apex - right) > 7);
+  }
+});

@@ -1,4 +1,4 @@
-import { classicRoadRoute, type ClassicRoad } from './classic-road-routes.ts';
+import { classicRoadRoute } from './classic-road-routes.ts';
 import { raceTrack } from './race-tracks.ts';
 import { minimapGraph } from './course-minimap.ts';
 import { createCourseRouteProjection } from './course-route-map.ts';
@@ -7,7 +7,7 @@ import { groundAt } from './course-items.ts';
 import type { CourseRuntime } from './course-race.ts';
 import { CIRCUIT_ID, circuitDistance } from './circuit-track.ts';
 import { trackOverview, trackPoint } from './track-paths.ts';
-import { SKY_SPIRAL } from './sky-track.ts';
+import { SKY_SPIRAL, skyPoint } from './sky-track.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_DRIVER_IDS } from './race-grid.ts';
 
@@ -108,20 +108,23 @@ const routeLabel = (trackId: string, locale: string = getLocale()): string => {
 };
 // Streaming uses a rolling local map. Sample a new window once per 100 m sector,
 // then project markers through the same world-space bounds on every update.
-function streamingRoute(road: ClassicRoad, distance: number) {
+function streamingRoute(point: (d: number) => readonly [number, number], distance: number) {
   const sector = Math.floor(distance / 100), start = sector * 100 - 80;
-  const samples = Array.from({ length: 36 }, (_, i) => road.point(start + i * 20));
+  const samples = Array.from({ length: 36 }, (_, i) => point(start + i * 20));
   const xs = samples.map(p => p[0]), zs = samples.map(p => p[1]);
-  const minX = Math.min(...xs), maxX = Math.max(...xs), startZ = zs[0]!, endZ = zs.at(-1)!;
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
   const midX = (minX + maxX) / 2, width = Math.max(100, maxX - minX);
-  const project = ([x, z]: readonly [number, number]) => ({ x: 50 + (x - midX) / width * 80, y: 92 - (z - startZ) / (endZ - startZ) * 84 });
-  return { sector, start, end: start + 700, line: samples.map(p => pointText(project(p))).join(' '), marker: (d: number) => project(road.point(d)) };
+  const project = ([x, z]: readonly [number, number]) => ({ x: 50 + (x - midX) / width * 80, y: 8 + (z - minZ) / Math.max(1, maxZ - minZ) * 84 });
+  return { sector, start, end: start + 700, line: samples.map(p => pointText(project(p))).join(' '), marker: (d: number) => project(point(d)) };
 }
 export const hasStreamingRouteMap = (trackId: string, mode: string): boolean =>
-  (mode === 'endless' || mode === 'elimination') && !!classicRoadRoute(trackId);
+  (mode === 'endless' || mode === 'elimination') && (trackId === 'spiral' || !!classicRoadRoute(trackId));
 
 export function createRouteMap(trackId: string, { live = false, streaming = false }: { live?: boolean; streaming?: boolean } = {}) {
-  const streamRoad = streaming ? classicRoadRoute(trackId) : undefined;
+  const streamRoad = streaming ? trackId === 'spiral' ? (d: number) => {
+    const { x, z } = skyPoint(d, true);
+    return [x, z] as const;
+  } : classicRoadRoute(trackId)?.point : undefined;
   let window: ReturnType<typeof streamingRoute> | undefined;
   const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img' }); // aria-label: relabel() below
   const graph = minimapGraph(trackId);
@@ -136,7 +139,7 @@ export function createRouteMap(trackId: string, { live = false, streaming = fals
   }
   const line = svg('polyline', { points: streamRoad || graphMap ? '' : routePolyline(trackId), class: 'route-overview-line', fill: 'none' });
   if (!graphMap) element.append(line);
-  const upper = spiralUpperRoutePolyline(trackId);
+  const upper = streamRoad ? '' : spiralUpperRoutePolyline(trackId);
   if (upper) {
     element.append(svg('polyline', { points: upper, class: 'route-spiral-upper', fill: 'none', 'aria-hidden': 'true' }));
     element.append(svg('polyline', { points: spiralUpperDirectionChevron(trackId),

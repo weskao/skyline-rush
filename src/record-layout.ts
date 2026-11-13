@@ -12,7 +12,7 @@ export function layoutVersion(trackId: unknown): number {
 }
 
 /** Daily challenges and custom courses version the road independently of the stock item layout. */
-export const roadRecordLayout = (trackId: string): number => classicRoadRoute(trackId) ? 2 : 1;
+export const roadRecordLayout = (trackId: string): number => trackId === 'spiral' || classicRoadRoute(trackId) ? 2 : 1;
 
 /** The layout a race runs on; a Cup counts as its newest track. */
 export function raceLayout(trackId: string, config?: unknown): number {
