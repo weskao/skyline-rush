@@ -334,3 +334,28 @@ test('a new airborne roll displaces an older low-priority refill without droppin
   race.elapsed = 1.2;
   assert.equal(callouts.update(race)?.title, 'TRICK +0.25');
 });
+
+test('crossing half the course raises one HALFWAY callout with the distance left', () => {
+  setLocale('en');
+  const race = running(), callouts = createCallouts();
+  race.player.distance = race.length * 0.49;
+  callouts.update(race);
+  race.elapsed += 0.1; race.player.distance = race.length * 0.51;
+  const half = callouts.update(race);
+  assert.equal(half?.kind, 'halfway');
+  assert.equal(half?.title, 'HALFWAY');
+  assert.equal(half?.detail, `${(race.length * 0.49 / 1000).toFixed(2)} KM TO GO`);
+  for (let i = 0; i < 4; i++) { race.elapsed += 0.5; race.player.distance += 10; callouts.update(race); }
+  assert.equal(callouts.update(race), null, 'announced once per race');
+});
+
+test('endless and circuit races never announce a halfway point', () => {
+  for (const flag of ['endless', 'circuit']) {
+    const race = running(), callouts = createCallouts();
+    race[flag] = { laps: 3 };
+    race.player.distance = race.length * 0.49;
+    callouts.update(race);
+    race.elapsed += 0.1; race.player.distance = race.length * 0.51;
+    assert.equal(callouts.update(race), null, flag);
+  }
+});

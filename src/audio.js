@@ -118,6 +118,7 @@ export function createSound() {
       }
     }
     else if (name === 'lift') tone(260, 900, 0.35, 0, 0.03);
+    else if (name === 'halfway') [784, 988, 1175, 1568].forEach((pitch, i) => tone(pitch, pitch, 0.2, i * 0.08, 0.024)); // bright rising arpeggio, quieter and quicker than finish
     else if (name === 'near') { tone(880, 1320, 0.12); tone(1320, 1760, 0.18, 0.1); }
     else if (name === 'pickup') { tone(1047, 1568, 0.14, 0, 0.03); tone(1568, 2093, 0.18, 0.07, 0.02); }
     else if (name.startsWith('pickup-')) supply(name.slice(7));

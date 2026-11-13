@@ -176,3 +176,19 @@ test('each road supply selects its own cue once at collection', () => {
     assert.deepEqual(cues(events.update(race, true)), []);
   }
 });
+
+test('the halfway chime plays once when the player crosses half of a finite course', () => {
+  const events = createRaceAudioEvents(), race = racing();
+  race.player.distance = race.length * 0.49;
+  events.update(race, true);
+  race.player.distance = race.length * 0.51;
+  assert.deepEqual(cues(events.update(race, true)), ['halfway']);
+  race.player.distance = race.length * 0.6;
+  assert.deepEqual(cues(events.update(race, true)), []);
+  const endless = racing();
+  endless.endless = {};
+  endless.player.distance = endless.length * 0.49;
+  events.update(endless, true);
+  endless.player.distance = endless.length * 0.51;
+  assert.ok(!cues(events.update(endless, true)).includes('halfway'));
+});

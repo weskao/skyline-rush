@@ -10,17 +10,21 @@ interface CalloutPlayer {
   trickPayout?: CalloutPayout | null;
   landing?: { chain?: boolean } | null;
   inShortcut: boolean;
+  distance?: number;
 }
-export interface CalloutRace { phase: string; elapsed: number; player: CalloutPlayer }
+export interface CalloutRace { phase: string; elapsed: number; player: CalloutPlayer; length?: number; endless?: unknown; circuit?: unknown }
 interface FeedbackSnapshot {
   near: number; perfect: number; nitro: number; nitroTime: number; uses: number;
   rewardFuel: number; drift: number; trick: unknown; trickPayout?: CalloutPayout | null;
-  shortcut: boolean; landing?: { chain?: boolean } | null;
+  shortcut: boolean; landing?: { chain?: boolean } | null; half: boolean;
 }
 
 
 // A callout field is a catalog key or [key, params]; it resolves in the active locale once, when the event is queued.
 const text = (field: CalloutText): string => typeof field === 'string' ? t(field) : t(field[0], field[1]);
+// Circuits count laps on their own HUD; endless has no finish.
+const pastHalf = (race: CalloutRace): boolean =>
+  !race.endless && !race.circuit && !!race.length && (race.player.distance ?? 0) >= race.length / 2;
 
 export function createCallouts() {
   let previousRace: CalloutRace | undefined;
@@ -29,7 +33,7 @@ export function createCallouts() {
   let current: ActiveCallout | null = null;
   const pending: CalloutEvent[] = [];
   const lastShown = new Map<string, number>();
-  const priority: Record<string, number> = { nitro: 4, flow: 4, trick: 3, 'trick-payout': 3, perfect: 3, near: 2, drift: 2, shortcut: 2, refill: 1 };
+  const priority: Record<string, number> = { halfway: 4, nitro: 4, flow: 4, trick: 3, 'trick-payout': 3, perfect: 3, near: 2, drift: 2, shortcut: 2, refill: 1 };
   const enqueue = (kind: string, title: CalloutText, detail: CalloutText): void => {
     if (['near', 'refill', 'perfect'].includes(kind) && previousElapsed - (lastShown.get(kind) ?? -Infinity) < 2) return;
     const event = { kind, title: text(title), detail: text(detail) };
@@ -49,6 +53,7 @@ export function createCallouts() {
         nitroTime: car.nitroTime, uses: car.nitroUses, rewardFuel: car.rewardFuel,
         drift: Math.min(3, Math.floor(car.drift?.time ?? 0)),
         trick: car.trick, trickPayout: car.trickPayout, shortcut: car.inShortcut, landing: car.landing,
+        half: pastHalf(race),
       };
       if (race !== previousRace || race.phase !== 'racing' || !previous) {
         pending.length = 0;
@@ -67,6 +72,8 @@ export function createCallouts() {
         enqueue('nitro', 'callout.nitro', next.uses > previous.uses ? 'callout.nitro.burst' : 'callout.nitro.extend');
       }
       if (next.drift > previous.drift) enqueue('drift', ['callout.drift', { tier: t(`callout.drift.tier.${next.drift}`) }], 'callout.drift.detail');
+      if (next.half && !previous.half) enqueue('halfway', 'callout.halfway',
+        ['callout.halfway.detail', { km: ((race.length! - (car.distance ?? 0)) / 1000).toFixed(2) }]);
       if (next.shortcut && !previous.shortcut) enqueue('shortcut', 'callout.shortcut', 'callout.shortcut.detail');
       if (next.trick && next.trick !== previous.trick) enqueue('trick', 'callout.roll', 'callout.roll.detail');
       if (next.landing?.chain && next.landing !== previous.landing) enqueue('flow', 'callout.flow', 'callout.flow.detail');
@@ -85,7 +92,7 @@ export function createCallouts() {
       }
       // An earned high-priority maneuver must not be hidden behind a low-priority refill.
       const preempt = !!current && (priority[current.kind] ?? 1) < 3 && pending.some(event => (priority[event.kind] ?? 1) > (priority[current!.kind] ?? 1));
-      const advancing = !!current && (preempt || race.elapsed - current.started >= 0.85);
+      const advancing = !!current && (preempt || race.elapsed - current.started >= (current.kind === 'halfway' ? 1.6 : 0.85)); // a milestone reads longer than a combo
       if (advancing) current = null;
       if (!current && pending.length) {
         // Keep the first earned event immediate; prioritize only later queued events.
