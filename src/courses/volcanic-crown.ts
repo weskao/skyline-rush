@@ -74,6 +74,7 @@ export const VOLCANIC_CROWN_COURSE_GRAPH = {
   edges: VOLCANIC_CROWN.edges,
   checkpoints: VOLCANIC_CROWN.checkpoints,
   groundRoute: VOLCANIC_CROWN.groundEdgeIds,
+  groundJoinBlend: 36,
 } as const;
 
 const add = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];

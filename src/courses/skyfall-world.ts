@@ -182,7 +182,7 @@ function addRealObstacles(group: THREE.Group, edgeId: string,
 function addCloudOcean(group: THREE.Group, quality: Tier): THREE.InstancedMesh {
   const count=quality==='low'?28:quality==='medium'?64:96;
   const cloud=new THREE.InstancedMesh(new THREE.SphereGeometry(1,8,6),
-    new THREE.MeshBasicMaterial({color:0xf5fbff,transparent:true,opacity:.27,depthWrite:false}),count);
+    new THREE.MeshBasicMaterial({color:0xf5fbff,transparent:true,opacity:.18,depthWrite:false}),count);
   cloud.name='Skyfall playable cloud ocean';
   const dummy=new THREE.Object3D();
   for(let i=0;i<count;i++){
@@ -206,7 +206,7 @@ export function createSkyfallWorld(scene: THREE.Scene, quality: Tier = 'medium')
   group.name = 'Skyfall playable world';
   scene.add(group);
   const ground = new THREE.MeshStandardMaterial({
-    color: 0xc1c7c1, roughness: .96, side: THREE.DoubleSide,
+    color: 0x888b80, roughness: .96, side: THREE.DoubleSide,
   });
   const air = new THREE.MeshStandardMaterial({
     color: 0x86c4cf, roughness: .87, side: THREE.DoubleSide,

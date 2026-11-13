@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {
   VOLCANIC_CROWN_EDGES, sampleVolcanicRoute, volcanicEdgeLength,
-  volcanicWorldPosition, type RouteFrame,
+  volcanicWorldPosition, VOLCANIC_CROWN_COURSE_GRAPH, type RouteFrame,
 } from './volcanic-crown.ts';
 import { VOLCANIC_OBSTACLES, volcanicObstaclePose } from './volcanic-crown-obstacles.ts';
 
@@ -31,13 +31,13 @@ void main(){
 const material=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.94,side:THREE.DoubleSide,flatShading:true});
 const to3=(p:readonly number[])=>new THREE.Vector3(p[0],p[1],p[2]);
 function ribbon(edgeId:string, from:number, to:number, halfWidth:number,
-  rows:number, center=0, drop=0):THREE.BufferGeometry {
+  rows:number, center=0, drop=0, widthAt?:(s:number)=>number):THREE.BufferGeometry {
   const vertices:number[]=[],uvs:number[]=[],indices:number[]=[];
   for(let i=0;i<=rows;i++){
     const s=from+(to-from)*i/rows;
     const f=sampleVolcanicRoute(edgeId,s);
     for(const sign of [-1,1]){
-      const lat=center+sign*halfWidth;
+      const lat=center+sign*(widthAt?.(s)??halfWidth);
       vertices.push(...f.point.map((v,k)=>v+f.right[k]*lat-f.up[k]*drop));
       // Absolute distance makes flowing magma continuous across streamed chunks.
       uvs.push(sign<0?0:1,s/VOLCANIC_CHUNK_METERS);
@@ -135,22 +135,29 @@ export function createVolcanicCrownChunk(
     throw new RangeError('Invalid Volcanic Crown chunk index');
   const from=chunkIndex*VOLCANIC_CHUNK_METERS;
   const to=Math.min(volcanicEdgeLength(edgeId),from+VOLCANIC_CHUNK_METERS);
-  const baseRows=quality==='high'?28:quality==='medium'?20:12;
-  // Tight crater-rim turns need closer mesh/physics correspondence even at Low.
-  // Only these two authored hairpins pay the extra vertices.
-  const rows=edgeId==='ground-6'?Math.max(28,baseRows)
-    :edgeId==='ground-2'?Math.max(24,baseRows):baseRows;
+  // A few extra cross-sections keep the driving surface flush with the route
+  // through crests, hairpins and joins at every graphics tier.
+  const rows=Math.ceil((to-from)/4);
   const group=new THREE.Group();group.name=`volcanic-${edgeId}-${chunkIndex}`;
   let disposed=false;
   const roadMat=new THREE.MeshStandardMaterial({
-    color:'#29252a',roughness:.54,metalness:.19,side:THREE.DoubleSide,flatShading:true,
+    color:'#342e32',roughness:.88,metalness:.07,side:THREE.DoubleSide,flatShading:true,
   }),rock=material('#1b1b20');
   const lavaMat=new THREE.ShaderMaterial({
     uniforms:{uTime:{value:0}},vertexShader:LAVA_VERTEX,fragmentShader:LAVA_FRAGMENT,
     side:THREE.DoubleSide,
   });
   if(edge.mode!=='flight'){
-    const road=new THREE.Mesh(ribbon(edgeId,from,to,edge.width/2,rows),roadMat);
+    const route=VOLCANIC_CROWN_COURSE_GRAPH.groundRoute;
+    const index=route.indexOf(edgeId), length=volcanicEdgeLength(edgeId);
+    const widthAt=(s:number):number=>{
+      const atStart=s<length/2, gap=atStart?s:length-s;
+      const neighbor=index<0?undefined:VOLCANIC_CROWN_EDGES.find(item=>item.id===route[index+(atStart?-1:1)]);
+      const reach=VOLCANIC_CROWN_COURSE_GRAPH.groundJoinBlend;
+      const fraction=neighbor?Math.max(0,1-gap/reach):0;
+      return edge.width/2+((neighbor?.width??edge.width)-edge.width)*fraction/4;
+    };
+    const road=new THREE.Mesh(ribbon(edgeId,from,to,edge.width/2,rows,0,0,widthAt),roadMat);
     road.name='physical-road';group.add(road);
     const bed=new THREE.Mesh(ribbon(edgeId,from,to,edge.width/2+9,rows,0,1.7),rock);
     bed.name='basalt-road-foundation';group.add(bed);

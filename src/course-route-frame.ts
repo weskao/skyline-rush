@@ -55,6 +55,37 @@ const findEdge = (graph: CourseGraph, edgeId: string): CourseEdge => {
 export function routeLength(graph: CourseGraph, edgeId: string): number {
   return samplesFor(findEdge(graph, edgeId)).length;
 }
+// Both edges of an authored join share one cross-section, even when their endpoint
+// tangents differ. Blend only the frame; the centreline, odometer and gates stay put.
+const joinDirections = new WeakMap<CourseGraph, Map<string, CoursePoint3>>();
+function joinDirection(graph: CourseGraph, node: string): CoursePoint3 | undefined {
+  let directions = joinDirections.get(graph);
+  if (!directions) {
+    directions = new Map();
+    for (let i = 1; i < graph.groundRoute.length; i++) {
+      const incoming = findEdge(graph, graph.groundRoute[i - 1]), outgoing = findEdge(graph, graph.groundRoute[i]);
+      const before = samplesFor(incoming).points, after = samplesFor(outgoing).points;
+      const a = unit(sub(before.at(-1)!, before.at(-3) ?? before[0]));
+      const b = unit(sub(after[2] ?? after.at(-1)!, after[0]));
+      directions.set(outgoing.from, unit([a[0] + b[0], a[1] + b[1], a[2] + b[2]]));
+    }
+    joinDirections.set(graph, directions);
+  }
+  return directions.get(node);
+}
+
+function joinedForward(graph: CourseGraph, edge: CourseEdge, localS: number, length: number, forward: CoursePoint3): CoursePoint3 {
+  const reach = graph.groundJoinBlend ?? 0;
+  const atStart = localS <= length / 2;
+  const gap = atStart ? localS : length - localS;
+  if (gap >= reach) return forward;
+  const shared = joinDirection(graph, atStart ? edge.from : edge.to);
+  if (!shared) return forward;
+  const t = gap / reach, blend = 1 - t * t * (3 - 2 * t);
+  const mix = (i: 0 | 1 | 2) => forward[i] + (shared[i] - forward[i]) * blend;
+  return unit([mix(0), mix(1), mix(2)]);
+}
+
 /** Arc-length distance in metres, shared by geometry, vehicle pose, camera and AI. */
 export function sampleRoute(graph: CourseGraph, edgeId: string, distance: number): CourseRouteFrame {
   const edge = findEdge(graph, edgeId), data = samplesFor(edge);
@@ -70,7 +101,7 @@ export function sampleRoute(graph: CourseGraph, edgeId: string, distance: number
   const lerp = (i: number): number => a[i] + (b[i] - a[i]) * t;
   const point: CoursePoint3 = [lerp(0), lerp(1), lerp(2)];
   const before = data.points[Math.max(0, low - 1)], after = data.points[Math.min(data.points.length - 1, high + 1)];
-  const forward = unit(sub(after, before));
+  const forward = joinedForward(graph, edge, localS, data.length, unit(sub(after, before)));
   const horizontal = Math.hypot(forward[0], forward[2]);
   const right: CoursePoint3 = horizontal > 1e-7
     ? [-forward[2] / horizontal, 0, forward[0] / horizontal] : [1, 0, 0];

@@ -24,11 +24,12 @@ for (const [device, viewport, touch] of [
     const stats = await page.evaluate(() => ({
       id: window.gameplay.race.trackId,
       forks: window.gameplay.race.sections.filter(s => s.type === 'shortcut').length,
-      chunks: window.gameScene.scene.getObjectByName('Volcanic Crown race')?.children.length,
     }));
     expect(stats.id).toBe('volcanic-crown');
     expect(stats.forks).toBe(3);
-    expect(stats.chunks).toBeGreaterThan(20);
+    await expect.poll(() => page.evaluate(() =>
+      window.gameScene.scene.getObjectByName('Volcanic Crown race')?.children.length ?? 0),
+    { timeout: ciTimeout(15_000) }).toBeGreaterThan(20);
     await shot(page, device + '-ready');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase','racing',{ timeout: ciTimeout(15000) });

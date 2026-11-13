@@ -73,7 +73,7 @@ function buildRoads(group: THREE.Group) {
 function buildLighting(group: THREE.Group) {
   const moon = new THREE.DirectionalLight('#7fb6ff', .8);
   moon.position.set(-200, 400, 300);
-  const glow = new THREE.PointLight('#3fe3ff', 320, 120, 1.6);
+  const glow = new THREE.PointLight('#3fe3ff', 112, 110, 2);
   glow.name = 'crystal-glow';
   group.add(moon, glow);
   return glow;
@@ -149,7 +149,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene) {
     const t = reducedMotion || !Number.isFinite(timeSeconds) ? 0 : timeSeconds % 10000;
     sky.update(t, quality, reducedMotion);
     driftMist(mist, t);
-    glow.intensity = reducedMotion ? 320 : 320 + Math.sin(t * .7) * 50;
+    glow.intensity = 112 + (reducedMotion ? 0 : Math.sin(t * .7) * 18);
   }
 
   function dispose(): void {

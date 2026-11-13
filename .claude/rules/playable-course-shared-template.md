@@ -175,3 +175,18 @@ reuse or transpose another course's loop.
   fractions of an authored scalar parameter. Float-derived bank/frame values get tight explicit
   tolerances, not strict equality across expression orders. Never round or quantize production
   metres, coordinates, road contact, signed checkpoints, collisions or flight gaps.
+
+
+### Coming Soon lighting and layered road visibility
+
+Keep bloom threshold and strength scoped to the currently rendered scene. Test a
+track switch after Coast HDRI and preview rendering because those scenes share the
+same composer. Use the softened environment map on rival and traffic materials as
+well as the player. Keep wet sheen, snow and glowing landmarks outside the exposure
+range that obscures the road.
+
+For Volcanic Crown, groundJoinBlend aligns the cross-sections at CourseGraph edge
+joins. Geometry and vehicle pose read that same frame. The vent deck uses a
+translucent surface over the ground lane, with solid contact supplied by the race
+section. Validate road clearance with rays against the rendered triangles near joins
+and inspect the lower lane from chase view on both sides of the deck.
