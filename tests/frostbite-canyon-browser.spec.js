@@ -77,7 +77,7 @@ test('Reduced Motion holds the Frostbite showroom still', async ({ page }) => {
   await page.waitForTimeout(1500);
   const first = await frame(page);
   await page.waitForTimeout(1200);
-  // Only the shared car exhaust (aero-vfx, identical on Stage 1 scenes) may still shimmer; scenery holds still.
+  // Scenery and the shared car exhaust (aero-vfx freezes its shader clock under Reduced Motion) both hold still.
   expect(await changedShare(page, first, await frame(page)), 'no ambient scenery motion').toBeLessThan(0.002);
   if (captureDir) await page.screenshot({ path: join(captureDir, 'p01-reduced-motion-1440x900.png') });
 });
