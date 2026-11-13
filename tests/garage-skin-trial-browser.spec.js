@@ -30,7 +30,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
   });
 }
 
-test('VFX requires preview before confirmation and returns to the equipped effect when closed', async ({ page }) => {
+// The action button equips in one press; it must never wait for a card preview first.
+test('VFX Try free equips directly and closing restores an unconfirmed preview', async ({ page }) => {
   test.setTimeout(ciTimeout(90000));
   await page.setViewportSize({ width: 844, height: 390 });
   await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: true })));
@@ -39,9 +40,7 @@ test('VFX requires preview before confirmation and returns to the equipped effec
   const showroom = page.locator('#garage-preview');
   const ion = page.locator('[data-skin="thruster-ion"]');
   const action = ion.locator('.garage-skin-action');
-  await expect(action).toBeDisabled();
   await ion.locator('.garage-skin-preview-hitarea').click();
-  await expect(action).toBeEnabled();
   await expect(showroom).toHaveAttribute('data-skin-preview-thruster', 'thruster-ion');
   await expect(showroom).toHaveAttribute('data-skin-equipped-thruster', 'thruster-basic');
   await page.locator('#garage-close').click();
@@ -49,17 +48,14 @@ test('VFX requires preview before confirmation and returns to the equipped effec
   await expect(showroom).toHaveAttribute('data-skin-preview-thruster', 'thruster-basic');
 
   await page.locator('#garage-button').click();
-  await expect(action).toBeDisabled();
-  await ion.locator('.garage-skin-preview-hitarea').click();
+  await expect(action).toBeEnabled();
+  await expect(action).toHaveText('Try free');
   await action.click();
-  await expect(action).toHaveText('Trial active');
+  await expect(action).toHaveText('Equipped');
   await expect(showroom).toHaveAttribute('data-skin-equipped-thruster', 'thruster-ion');
   await expect(ion).toHaveAttribute('data-owned', 'false');
 
-  const standard = page.locator('[data-skin="thruster-basic"]');
-  const equip = standard.locator('.garage-skin-action');
-  await expect(equip).toBeDisabled();
-  await standard.locator('.garage-skin-preview-hitarea').click();
+  const equip = page.locator('[data-skin="thruster-basic"] .garage-skin-action');
   await expect(equip).toHaveText('Equip');
   await equip.click();
   await expect(showroom).toHaveAttribute('data-skin-equipped-thruster', 'thruster-basic');
