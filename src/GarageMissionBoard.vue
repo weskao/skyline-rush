@@ -180,11 +180,12 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
  .garage-mission-progress { height:7px; border:1px dashed #60718b; border-radius:8px; background:#213047; }
 .garage-trophy-heading { margin-top:16px; }
 .garage-trophy-heading h4 { margin:0; font-size:15px; }
-.garage-trophy-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,110px),1fr)); gap:10px; margin-top:10px; }
-.garage-trophy-card { min-width:0; margin:0; padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:8px;
+/* Four trophies as a 2x2 block; 3px side padding keeps the 96px art whole in the 214px tablet column. */
+.garage-trophy-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:8px; }
+.garage-trophy-card { min-width:0; margin:0; padding:7px 3px 8px; display:flex; flex-direction:column; align-items:center; gap:4px;
   border:1px solid #536184; border-radius:12px; background:radial-gradient(circle at 50% 30%,#33476b,#121f37 74%); }
 .garage-trophy-card :deep(.artwork-img) { object-fit:contain; max-width:100%; }
-.garage-trophy-card figcaption { display:grid; gap:3px; min-width:0; text-align:center; overflow-wrap:anywhere; }
+.garage-trophy-card figcaption { display:grid; gap:1px; min-width:0; line-height:1.25; text-align:center; overflow-wrap:anywhere; }
 .garage-trophy-card strong { font-size:12px; }
 .garage-trophy-card small { font-size:11px; color:#afc5dc; }
 @media (max-width:420px) { .garage-mission-grid { grid-template-columns:1fr; } }
@@ -214,7 +215,7 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 .garage-mission-card[data-mission-id="mission-combo"]::before{border-color:#ffcb6999;animation-duration:4s}
 .garage-mission-card :deep(.artwork-img){position:relative;z-index:1;animation:mission-float 3.8s ease-in-out infinite}
 .garage-mission-card[data-mission-state="claimed"] :deep(.artwork-img){animation:mission-claim-burst .75s ease-out 1 both}
-.garage-trophy-card::before{content:'';position:absolute;left:50%;top:43px;width:80px;height:80px;
+.garage-trophy-card::before{content:'';position:absolute;left:50%;top:40px;width:80px;height:80px;
  border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;
  background:radial-gradient(circle,#f9eeb15e,transparent 70%);animation:trophy-awaken 4.5s ease-in-out infinite}
 .garage-trophy-card[data-trophy-id="trophy-platinum"]::before{background:radial-gradient(circle,#80fcff75,transparent 70%)}
