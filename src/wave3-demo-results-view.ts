@@ -5,6 +5,7 @@ type State = 'earned' | 'duplicate' | 'ineligible' | 'unavailable';
 export type DemoMissionView = Readonly<{ id: string; label: string; progress: number; goal: number; description: string }>;
 export type DemoResultView = Readonly<{
   state: State; heading: string; status: string; points: string | null;
+  balance: Readonly<{ label: string; from: number; total: number }> | null;
   progressHeading: string; missions: readonly DemoMissionView[];
   distinction: string; disclaimer: string;
 }>;
@@ -13,7 +14,7 @@ const COPY = {
   en: {
     heading: 'Demo reward', earned: 'Local demo race reward recorded.', duplicate: 'Already recorded — no additional Demo points.',
     ineligible: 'This result is not eligible for a Demo reward.', unavailable: 'Demo rewards are unavailable for this result.',
-    points: 'Demo points', progress: 'Current demo mission progress',
+    points: 'Demo points', balance: 'Demo points balance', progress: 'Current demo mission progress',
     distinction: 'Separate from race stars, placement badges and medals.',
     disclaimer: 'Local demo only · This device only · Not verified or permanent.',
     missions: { 'mission-race': 'Race finish', 'mission-time': 'Time trial', 'mission-drift': 'Drift', 'mission-combo': 'Combo' },
@@ -22,7 +23,7 @@ const COPY = {
   'zh-TW': {
     heading: '試玩獎勵', earned: '已記錄本機試玩賽事獎勵。', duplicate: '此結果已記錄，不會再次發放試玩點數。',
     ineligible: '此賽事結果不符合試玩獎勵資格。', unavailable: '目前無法顯示此結果的試玩獎勵。',
-    points: '試玩點數', progress: '目前試玩任務進度',
+    points: '試玩點數', balance: '試玩點數總額', progress: '目前試玩任務進度',
     distinction: '與正式比賽星星、名次徽章及獎牌分開計算。',
     disclaimer: '僅限本機試玩 · 僅此裝置 · 未經伺服器驗證，也非永久獎勵。',
     missions: { 'mission-race': '完成比賽', 'mission-time': '計時賽', 'mission-drift': '甩尾', 'mission-combo': '連擊' },
@@ -45,6 +46,9 @@ export function projectWave3DemoResults(
     : status === 'duplicate' ? 'duplicate' : status === 'ineligible' ? 'ineligible' : 'unavailable';
   const amount = state === 'earned' && Number.isFinite(settlement?.deltaDemoPoints)
     ? Math.max(0, Math.floor(settlement!.deltaDemoPoints)) : 0;
+  const total = snapshot?.demoPoints ?? 0;
+  const balance = amount > 0 && Number.isSafeInteger(total) && total >= amount
+    ? { label: copy.balance, from: total - amount, total } : null;
   const ids = [raceMode === 'time' ? 'mission-time' : 'mission-race', 'mission-drift', 'mission-combo'] as const;
   const missions: DemoMissionView[] = [];
   if (state === 'earned' || state === 'duplicate') {
@@ -59,7 +63,7 @@ export function projectWave3DemoResults(
   }
   return {
     state, heading: copy.heading,
-    status: copy[state], points: amount > 0 ? `+${amount} ${copy.points}` : null,
+    status: copy[state], points: amount > 0 ? `+${amount} ${copy.points}` : null, balance,
     progressHeading: copy.progress, missions, distinction: copy.distinction, disclaimer: copy.disclaimer,
   };
 }

@@ -177,3 +177,16 @@ test('A-06 WebP-only art hides on error without changing settled demo reward tex
     bannerUrl: '/demo-results-banner@3x.webp' });
   assert.equal(banner.hidden, true);
 });
+
+
+test('earned result shows the actual post-race local balance and hides it on a duplicate result', () => {
+  const host = fakeHost();
+  const receipt = settlement('completed', 43, snapshot({ demoPoints: 63 }));
+  const result = mountWave3DemoResults({ container: host, settlement: receipt, locale: 'zh-TW' });
+  const balance = result.querySelector('.wave3-demo-results__balance');
+  assert.equal(balance?.hidden, false);
+  assert.equal(balance.querySelector('.wave3-demo-results__balance-value')?.textContent, '63');
+  assert.match(balance.getAttribute('aria-label'), /試玩點數總額.*63/);
+  mountWave3DemoResults({ container: host, settlement: settlement('duplicate', 0) });
+  assert.equal(balance.hidden, true);
+});

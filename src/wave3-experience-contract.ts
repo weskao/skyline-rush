@@ -29,6 +29,12 @@ export type GameEvent = Readonly<{
   eligible: boolean;
   accountId?: string;
 }>;
+export type DemoRaceMetrics = Readonly<{
+  legs: readonly Readonly<{ trackId: string; distance: number }>[];
+  difficulty?: string;
+  position?: number;
+  rivalCount: number;
+}>;
 export type RaceCompletion = Readonly<{
   schemaVersion: typeof WAVE3_EXPERIENCE_VERSION;
   completionId: string;
@@ -37,6 +43,7 @@ export type RaceCompletion = Readonly<{
   occurredAt: number;
   eligible: boolean;
   accountId?: string;
+  demoRace?: DemoRaceMetrics;
 }>;
 export type ExperienceResult = Readonly<{ status: Wave3Status; snapshot: ExperienceSnapshot; deltaDemoPoints: number }>;
 

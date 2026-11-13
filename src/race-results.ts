@@ -52,7 +52,7 @@ export function settleRace(race: FinishedRace, context: SettleContext): Settleme
 /** Completes the existing local race settlement before showing disposable demo rewards. */
 export function settleRaceAndDemo(race: FinishedRace, context: SettleContext): Settlement {
   const previous = settleRace(race, context);
-  settleWave3RaceDemo(race, previous.intermediateStage);
+  settleWave3RaceDemo(race, previous.intermediateStage, previous.series);
   return previous;
 }
 

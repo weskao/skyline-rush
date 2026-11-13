@@ -108,7 +108,15 @@ test('starting actual Free Drive cannot immediately credit a demo race reward', 
 test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persistence -> reset', async ({ page }) => {
   // Drive the real simulation; never alter window.gameplay, timers, or settlement state.
   test.setTimeout(ciTimeout(240000));
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/');
+  await page.locator('#race-overlay').evaluate(overlay => {
+    window.rewardBalanceFrames = [];
+    new MutationObserver(() => {
+      const balance = overlay.querySelector('.wave3-demo-results__balance-value');
+      if (!overlay.hidden && balance) window.rewardBalanceFrames.push(balance.textContent);
+    }).observe(overlay, { attributes: true, attributeFilter: ['hidden', 'data-reward-reveal'], childList: true, subtree: true });
+  });
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   await page.locator('button[data-race-mode="time"]').click();
   await page.locator('#start-button').click();
@@ -119,6 +127,12 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   } finally { await page.keyboard.up('w'); }
   await expect(page.locator('#result-stats')).toBeVisible();
   await expect(page.locator('.wave3-demo-results__points')).toContainText(/20 Demo points/);
+  const balance = page.locator('.wave3-demo-results__balance');
+  await expect(balance).toHaveAttribute('aria-label', /Demo points balance.*40/);
+  await expect(balance.locator('.wave3-demo-results__balance-value')).toHaveText('40');
+  const frames = await page.evaluate(() => window.rewardBalanceFrames);
+  expect(frames).toContain('20');
+  expect(frames.some(frame => Number(frame) > 20 && Number(frame) < 40)).toBe(true);
   await expect(page.locator('.wave3-demo-results__mark img')).toHaveAttribute('src', /demo-points@3x\.webp$/);
   const banner = page.locator('.wave3-demo-results__banner img');
   await expect(banner).toHaveAttribute('src', /demo-results-banner@3x\.webp$/);
