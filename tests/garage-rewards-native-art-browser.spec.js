@@ -46,7 +46,8 @@ test('Garage shows all eight WebPs in the actual interface without opening the c
   await page.goto('/');
   await page.locator('#garage-button').click();
   const board = page.locator('.garage-mission-board');
-  await expect(board.locator('[data-mission-id] img')).toHaveCount(4);
+  // Mission cards only: the period cards share data-mission-id and carry small currency icons.
+  await expect(board.locator('.garage-mission-card img')).toHaveCount(4);
   await expect(board.locator('[data-trophy-id] img')).toHaveCount(4);
   for (const trophy of await board.locator('[data-trophy-id]').all()) {
     const img = trophy.locator('img');

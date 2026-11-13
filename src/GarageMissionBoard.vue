@@ -6,9 +6,10 @@ import { getLocale, onLocaleChange } from './i18n.ts';
 import { WAVE3_PREVIEW_CATALOG, filterWave3PreviewItems } from './garage-wave3-preview-catalog.ts';
 import type { Wave3PreviewItem } from './garage-wave3-preview-catalog.ts';
 import { MISSION_DEFINITIONS, missionPeriodBounds, missionPeriodId, missionStatus, trophyTier } from './wave3-demo-missions.ts';
-import { formatDemoReward } from './wave3-currency-view.ts';
+import { demoCurrencyLabel, formatDemoReward } from './wave3-currency-view.ts';
+import { wave3DemoArtUrl } from './wave3-demo-art.ts';
 import { demoMissionBonus } from './wave3-demo-settlement.ts';
-import type { Wave3ExperiencePort, ExperienceSnapshot, MissionProgress } from './wave3-experience-contract.ts';
+import type { DemoCurrency, Wave3ExperiencePort, ExperienceSnapshot, MissionProgress } from './wave3-experience-contract.ts';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = defineProps<{ experience?: Wave3ExperiencePort | null }>();
@@ -63,9 +64,14 @@ async function claim(id: string): Promise<void> {
       ? label('This challenge has expired. Check the current challenges.', '此挑戰已過期，請查看目前的挑戰。')
       : label('Demo claim unavailable or already processed.', '試玩領取尚未開放或已處理。');
 }
-function missionReward(id: string): string {
-  if (!available.value) return '';
-  return formatDemoReward({ points: progressOf(id)?.rewardDemoPoints, ...demoMissionBonus(id) }, locale.value);
+const REWARD_ART = { points: 'demo-points', coins: 'wallet-coin', diamonds: 'wallet-diamond' } as const;
+/** One chip per currency a claim pays: amount, icon and the currency name for assistive tech. */
+function missionReward(id: string) {
+  const delta: Record<DemoCurrency, number> = { points: progressOf(id)?.rewardDemoPoints ?? 0, ...demoMissionBonus(id) };
+  return (Object.keys(REWARD_ART) as DemoCurrency[]).filter(currency => delta[currency] > 0).map(currency => ({
+    currency, amount: delta[currency], art: wave3DemoArtUrl(REWARD_ART[currency]),
+    name: demoCurrencyLabel(currency, locale.value),
+  }));
 }
 let stopLocale: (() => void) | undefined;
 let stopExperience: (() => void) | undefined;
@@ -129,19 +135,21 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
     <div class="garage-period-grid">
       <article v-for="item in periodRows" :key="item.id" class="garage-period-card"
         :data-mission-id="item.id" :data-mission-state="stateOf(item.id)">
-        <strong>{{ title(item.art) }} · {{ item.cadence === 'daily' ? label('Daily', '每日') : label('Weekly', '每週') }}</strong>
-        <small>{{ statusName(item.id) }}</small>
+        <strong class="period-title">{{ title(item.art) }} · {{ item.cadence === 'daily' ? label('Daily', '每日') : label('Weekly', '每週') }}</strong>
+        <small class="period-count">{{ progressValue(item.id) }} / {{ goalValue(item.id) }}</small>
         <progress :value="progressValue(item.id)" :max="goalValue(item.id)"
           :aria-label="title(item.art) + ' ' + (item.cadence === 'daily' ? label('Daily', '每日') : label('Weekly', '每週')) + ': ' + progressValue(item.id) + ' / ' + goalValue(item.id)" />
-        <small>{{ progressValue(item.id) }} / {{ goalValue(item.id) }}</small>
-        <small v-if="available">{{ missionReward(item.id) }}</small>
-        <button v-if="stateOf(item.id) === 'claimable'" class="garage-mission-claim" type="button"
+        <small class="period-status">{{ statusName(item.id) }}</small>
+        <small v-if="available" class="period-reward">
+          <span v-for="chip in missionReward(item.id)" :key="chip.currency" class="period-chip" :data-currency="chip.currency">
+            +{{ chip.amount }}<GarageArtworkImage :src="chip.art" :size="16" :alt="chip.name" :fallback-text="chip.name" />
+          </span>
+        </small>
+        <button v-if="stateOf(item.id) === 'claimable'" class="garage-mission-claim period-claim" type="button"
           @click="claim(item.id)">
           <Wave3DemoArt id="demo-claim" />
           <span>{{ label('Claim demo reward', '領取試玩獎勵') }}</span>
         </button>
-        <Wave3DemoArt v-else-if="stateOf(item.id) === 'claimed'" id="demo-claim"
-          :alt="label('Demo claimed', '試玩已領取')" />
       </article>
     </div>
     <div class="garage-mission-heading garage-trophy-heading">
@@ -198,15 +206,30 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 .garage-mission-claim:focus-visible{outline:3px solid white;outline-offset:2px}
 .garage-mission-feedback {font-size:12px;min-height:1em;color:#a6f5d8;font-weight:750;font-variant-numeric:tabular-nums}
 .garage-period-heading {margin-top:16px}
-/* Quest-row layout: title | count, then bar | status. Two short lines per card, two cards per row on phones. */
+/* Quest card: title | count, bar | status, reward chips, claim. Two cards per row on phones.
+   Each part takes its columns from its own class and its row from document order: never place a part by
+   sibling position or a fixed row, or a line added later lands on another (the reward sat on the title). */
 .garage-period-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:7px}
-.garage-period-card{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:4px 8px;min-width:0;border:1px solid #385375;border-radius:10px;background:#14253d;padding:7px 9px}
+.garage-period-card{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;align-content:start;gap:4px 8px;min-width:0;border:1px solid #385375;border-radius:10px;background:#14253d;padding:7px 9px}
 /* Three tracks so the long status only narrows the bar, and the short count only narrows the title. */
-.garage-period-card strong{grid-area:1/1/2/3;font-size:12px;line-height:1.3;overflow-wrap:anywhere}
-.garage-period-card small{grid-area:2/2/3/4;justify-self:end;color:#abbfd5;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
-.garage-period-card small ~ small{grid-area:1/3}
-.garage-period-card progress{grid-area:2/1}
-.garage-period-card > :nth-child(n+5){grid-column:1/-1;justify-self:center}
+.period-title{grid-column:1/3;font-size:12px;line-height:1.3;overflow-wrap:anywhere}
+.period-count,.period-status,.period-reward{color:#abbfd5;font-size:11px;font-variant-numeric:tabular-nums}
+.period-count,.period-status{justify-self:end;white-space:nowrap}
+.period-count{grid-column:3}
+.garage-period-card progress{grid-column:1}
+.period-status{grid-column:2/4}
+.period-reward,.period-claim{grid-column:1/-1;min-width:0}
+.period-reward{display:flex;flex-wrap:wrap;gap:2px 8px}
+.period-chip{display:inline-flex;align-items:center;gap:3px}
+.period-claim{flex-direction:row;justify-content:center;gap:6px;padding:4px 8px;font-size:12px;line-height:1.25;text-align:left}
+.period-claim > span:last-child{min-width:0;overflow-wrap:anywhere}
+/* The 72px claim art would fill a 150px card; same downsizing as the wallet strip. */
+.period-claim :deep(.wave3-demo-art){width:32px;min-width:32px;height:32px;padding:0}
+.period-claim :deep(.artwork-img){width:32px!important;height:32px!important}
+.garage-period-card[data-mission-state="claimable"]{border-color:#7fe4ff;background:#16324c}
+.garage-period-card[data-mission-state="claimable"] .period-status{color:#ffd76a}
+.garage-period-card[data-mission-state="claimed"] .period-status{color:#a6f5d8}
+.garage-period-card[data-mission-state="claimed"] .period-status::before{content:'✓ '}
 
 /* Independent object-specific motion: telemetry orbit and trophy illumination. */
 .garage-mission-card,.garage-trophy-card{position:relative;isolation:isolate}
