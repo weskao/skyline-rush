@@ -7,10 +7,13 @@ Original artwork:
 - coral@3x.webp, cobalt@3x.webp, obsidian@3x.webp
 
 Car factory finish:
-- factory@3x.webp: the Crimson GT's factory red. It is a render of the car's own master
-  (`assets-src/crimson-gt/crimson-gt.blend`), not painted artwork: `assets-src/crimson-gt/card/render_card.py`
-  writes the 960×510 PNG (Cycles, front three-quarter, the flake at a third of the master's strength so the
-  highlight does not frost at card size), then `cwebp -q 90`. Re-render it after the car's shape or paint changes.
+- `factory@3x.webp` uses the same front-quarter crop and blue studio light as the paint collection. The
+  `coral@3x.webp` artwork was the image reference for a factory crimson (`#9a1424`) variant. The generator output
+  was downsampled to the 960×510 runtime card size.
+- The car picker uses separate 432×198 transparent WebPs in `../car-picker/`. The Crimson GT thumbnail
+  reframes the car geometry used for the previous factory artwork (`assets-src/crimson-gt/build.py` and its
+  Blender master). The Roadster thumbnail uses the actual procedural car from `src/car-model.js`. Both are
+  rendered under the same studio light rig, with the full wheels and wing visible, at up to 144×66 CSS pixels.
 
 Names and status labels remain live Vue DOM, not baked into artwork. The image URL respects Vite's BASE_URL for GitHub Pages.
 

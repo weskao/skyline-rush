@@ -1,3 +1,9 @@
+# 2026-11-13 — Garage vehicle thumbnails and factory paint artwork
+
+- [x] Match the factory crimson swatch to the existing paint cards and show the full Roadster and Crimson GT on their picker buttons.
+- [x] RED: the desktop browser regression could not find the Roadster thumbnail. GREEN: the portrait and landscape checks decoded both thumbnails with intact alpha bounds, and the existing touch and desktop keyboard selection tests passed.
+- [ ] Confirm the exact-commit GitHub quality gate and review on a physical phone.
+
 # 2026-11-13 — Wave 3 local demo race rewards
 
 - [x] RED → GREEN for distance, authored hazards, AI difficulty, placement, timed distance, multi-stage settlement, duplicate receipts and the result wallet balance.
