@@ -23,8 +23,11 @@ for (const [label, viewport, locale, touch] of [
       await page.locator('#start-button').click();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
       await expect(page.locator('#speed')).not.toHaveText('0');
-      await expect(page.locator('#race-route-map')).toBeHidden();
-      await expect(page.locator('.progress-track')).toBeHidden();
+      // A classic road streams a rolling minimap through Endless (route-map.ts hasStreamingRouteMap); it has no finish.
+      await expect(page.locator('#race-route-map')).toBeVisible();
+      await expect(page.locator('#race-route-map')).toHaveAttribute('data-streaming', '');
+      await expect(page.locator('#race-route-map .route-travelled')).toBeHidden();
+      await expect(page.locator('#distance')).toBeVisible();
       await page.evaluate(() => {
         const race = window.gameplay.race;
         Object.assign(race.player, { distance: 15000, speed: 75, x: 0, cooldown: 2 });

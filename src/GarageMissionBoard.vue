@@ -5,7 +5,9 @@ import Wave3DemoArt from './Wave3DemoArt.vue';
 import { getLocale, onLocaleChange } from './i18n.ts';
 import { WAVE3_PREVIEW_CATALOG, filterWave3PreviewItems } from './garage-wave3-preview-catalog.ts';
 import type { Wave3PreviewItem } from './garage-wave3-preview-catalog.ts';
-import { MISSION_DEFINITIONS, missionPeriodBounds, missionStatus, trophyTier } from './wave3-demo-missions.ts';
+import { MISSION_DEFINITIONS, missionPeriodBounds, missionPeriodId, missionStatus, trophyTier } from './wave3-demo-missions.ts';
+import { formatDemoReward } from './wave3-currency-view.ts';
+import { demoMissionBonus } from './wave3-demo-settlement.ts';
 import type { Wave3ExperiencePort, ExperienceSnapshot, MissionProgress } from './wave3-experience-contract.ts';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
@@ -47,13 +49,23 @@ const earnedCount = computed(() => available.value ? missions.filter(m => progre
 const earnedTier = computed(() => trophyTier(earnedCount.value));
 const TROPHY_LEVELS: Readonly<Record<string, number>> =
   { 'trophy-bronze': 1, 'trophy-silver': 2, 'trophy-gold': 3, 'trophy-platinum': 4 };
-function claim(id: string): void {
+async function claim(id: string): Promise<void> {
   if (!available.value || stateOf(id) !== 'claimable' || !props.experience) return;
-  const result = props.experience.claimMission(id);
+  const port = props.experience;
+  const scope = port.getOperationScope();
+  const result = await port.claimMission(id, missionPeriodId(id, snapshot.value!.updatedAt), scope);
+  snapshot.value = result.snapshot;
   if (result.status === 'completed' && result.deltaDemoPoints > 0) cue('reward-credited');
   feedback.value = result.status === 'completed'
-    ? label(`+${result.deltaDemoPoints} demo points`, `+${result.deltaDemoPoints} 試玩點數`)
-    : label('Demo claim unavailable or already processed.', '試玩領取尚未開放或已處理。');
+    ? formatDemoReward({ points: result.deltaDemoPoints, coins: result.deltaDemoCoins,
+        diamonds: result.deltaDemoDiamonds }, locale.value)
+    : result.status === 'expired'
+      ? label('This challenge has expired. Check the current challenges.', '此挑戰已過期，請查看目前的挑戰。')
+      : label('Demo claim unavailable or already processed.', '試玩領取尚未開放或已處理。');
+}
+function missionReward(id: string): string {
+  if (!available.value) return '';
+  return formatDemoReward({ points: progressOf(id)?.rewardDemoPoints, ...demoMissionBonus(id) }, locale.value);
 }
 let stopLocale: (() => void) | undefined;
 let stopExperience: (() => void) | undefined;
@@ -122,6 +134,7 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
         <progress :value="progressValue(item.id)" :max="goalValue(item.id)"
           :aria-label="title(item.art) + ' ' + (item.cadence === 'daily' ? label('Daily', '每日') : label('Weekly', '每週')) + ': ' + progressValue(item.id) + ' / ' + goalValue(item.id)" />
         <small>{{ progressValue(item.id) }} / {{ goalValue(item.id) }}</small>
+        <small v-if="available">{{ missionReward(item.id) }}</small>
         <button v-if="stateOf(item.id) === 'claimable'" class="garage-mission-claim" type="button"
           @click="claim(item.id)">
           <Wave3DemoArt id="demo-claim" />
@@ -169,11 +182,12 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
  .garage-mission-progress { height:7px; border:1px dashed #60718b; border-radius:8px; background:#213047; }
 .garage-trophy-heading { margin-top:16px; }
 .garage-trophy-heading h4 { margin:0; font-size:15px; }
-.garage-trophy-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,110px),1fr)); gap:10px; margin-top:10px; }
-.garage-trophy-card { min-width:0; margin:0; padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:8px;
+/* Four trophies as a 2x2 block; 3px side padding keeps the 96px art whole in the 214px tablet column. */
+.garage-trophy-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:8px; }
+.garage-trophy-card { min-width:0; margin:0; padding:7px 3px 8px; display:flex; flex-direction:column; align-items:center; gap:4px;
   border:1px solid #536184; border-radius:12px; background:radial-gradient(circle at 50% 30%,#33476b,#121f37 74%); }
 .garage-trophy-card :deep(.artwork-img) { object-fit:contain; max-width:100%; }
-.garage-trophy-card figcaption { display:grid; gap:3px; min-width:0; text-align:center; overflow-wrap:anywhere; }
+.garage-trophy-card figcaption { display:grid; gap:1px; min-width:0; line-height:1.25; text-align:center; overflow-wrap:anywhere; }
 .garage-trophy-card strong { font-size:12px; }
 .garage-trophy-card small { font-size:11px; color:#afc5dc; }
 @media (max-width:420px) { .garage-mission-grid { grid-template-columns:1fr; } }
@@ -184,11 +198,15 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 .garage-mission-claim:focus-visible{outline:3px solid white;outline-offset:2px}
 .garage-mission-feedback {font-size:12px;min-height:1em;color:#a6f5d8;font-weight:750;font-variant-numeric:tabular-nums}
 .garage-period-heading {margin-top:16px}
-.garage-period-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,225px),1fr));gap:10px}
-.garage-period-card{display:grid;gap:6px;min-width:0;border:1px solid #385375;border-radius:10px;background:#14253d;padding:10px}
-.garage-period-card strong{font-size:12px;overflow-wrap:anywhere}
-.garage-period-card small{color:#abbfd5;font-size:11px}
-@media (max-width:420px){.garage-period-grid{grid-template-columns:1fr}}
+/* Quest-row layout: title | count, then bar | status. Two short lines per card, two cards per row on phones. */
+.garage-period-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:7px}
+.garage-period-card{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:4px 8px;min-width:0;border:1px solid #385375;border-radius:10px;background:#14253d;padding:7px 9px}
+/* Three tracks so the long status only narrows the bar, and the short count only narrows the title. */
+.garage-period-card strong{grid-area:1/1/2/3;font-size:12px;line-height:1.3;overflow-wrap:anywhere}
+.garage-period-card small{grid-area:2/2/3/4;justify-self:end;color:#abbfd5;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.garage-period-card small ~ small{grid-area:1/3}
+.garage-period-card progress{grid-area:2/1}
+.garage-period-card > :nth-child(n+5){grid-column:1/-1;justify-self:center}
 
 /* Independent object-specific motion: telemetry orbit and trophy illumination. */
 .garage-mission-card,.garage-trophy-card{position:relative;isolation:isolate}
@@ -199,7 +217,7 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 .garage-mission-card[data-mission-id="mission-combo"]::before{border-color:#ffcb6999;animation-duration:4s}
 .garage-mission-card :deep(.artwork-img){position:relative;z-index:1;animation:mission-float 3.8s ease-in-out infinite}
 .garage-mission-card[data-mission-state="claimed"] :deep(.artwork-img){animation:mission-claim-burst .75s ease-out 1 both}
-.garage-trophy-card::before{content:'';position:absolute;left:50%;top:43px;width:80px;height:80px;
+.garage-trophy-card::before{content:'';position:absolute;left:50%;top:40px;width:80px;height:80px;
  border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;
  background:radial-gradient(circle,#f9eeb15e,transparent 70%);animation:trophy-awaken 4.5s ease-in-out infinite}
 .garage-trophy-card[data-trophy-id="trophy-platinum"]::before{background:radial-gradient(circle,#80fcff75,transparent 70%)}

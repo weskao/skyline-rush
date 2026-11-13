@@ -35,7 +35,7 @@ const App = {
 };
 createApp(App).mount('#app');
 window.__wave3DemoFixture = {
-  grantRace() { return port.settleCompletion({ schemaVersion:1, completionId:'race-demo-0001',
+  grantRace(index = 1) { return port.settleCompletion({ schemaVersion:1, completionId: `race-demo-000${index}`,
     trackId:'coast', mode:'classic', eligible:true, occurredAt:1700000000000, accountId:port.getSnapshot().accountId }); },
   setAccount(account) { port.setAccount(account); },
   snapshot() { return port.getSnapshot(); },

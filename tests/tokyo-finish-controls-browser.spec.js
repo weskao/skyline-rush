@@ -19,14 +19,20 @@ async function collidedTokyoFinish(page) {
   // Exercise actual simulation impacts before the results UI is shown.
   // Repeat only after pulling clear, so each is a new contact.
   for (let i = 0; i < 2; i++) {
-    await page.evaluate(({ distance, limit }) => {
-      const race = window.gameplay.race;
-      Object.assign(race.player, {
-        distance, speed: 70, x: limit, steering: 1,
-        railContactSide: 0, cooldown: 0, altitude: 0,
-      });
-    }, { distance: 900 + i * 300, limit: ROAD_LIMIT });
-    await expect.poll(() => page.evaluate(() => window.gameplay.race.player.collisions)).toBeGreaterThan(i);
+    await page.keyboard.down('ArrowRight');
+    try {
+      const before = await page.evaluate(({ distance, limit }) => {
+        const { player } = window.gameplay.race;
+        Object.assign(player, {
+          distance, speed: 70, x: limit - 1, steering: 1,
+          railContactSide: 0, cooldown: 0, altitude: 0,
+        });
+        return player.collisions;
+      }, { distance: 900 + i * 300, limit: ROAD_LIMIT });
+      await expect.poll(() => page.evaluate(() => window.gameplay.race.player.collisions)).toBeGreaterThan(before);
+    } finally {
+      await page.keyboard.up('ArrowRight');
+    }
   }
   await page.evaluate(() => {
     const race = window.gameplay.race;

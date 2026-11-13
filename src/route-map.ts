@@ -19,6 +19,7 @@ const cache = new Map<string, RouteSample[]>();
 const lineCache = new Map<string, string>();
 const overpassCache = new Map<string, string>();
 const racers = RACE_DRIVER_IDS;
+const TRAIL_STEPS = 200;
 interface GradeCue extends RoutePoint { distance: number; direction: 'up' | 'down' }
 const gradeCache = new Map<string, GradeCue[]>();
 // Write only when the value changed: the live map updates every frame.
@@ -139,6 +140,16 @@ export function createRouteMap(trackId: string, { live = false, streaming = fals
   }
   const line = svg('polyline', { points: streamRoad || graphMap ? '' : routePolyline(trackId), class: 'route-overview-line', fill: 'none' });
   if (!graphMap) element.append(line);
+  // Road already driven, in the accent colour, rebuilt only when the player crosses one of TRAIL_STEPS samples.
+  const total = raceTrack(trackId)!.length;
+  const trail = live && !streamRoad ? svg('polyline', { points: '', class: 'route-travelled', fill: 'none', 'aria-hidden': 'true' }) : undefined;
+  let trailSamples: string[] | undefined, trailStep = -1;
+  const trailPoint = (d: number): string => {
+    const at = graph && graphMap ? groundAt(graph, d) : null;
+    const p = at && graphMap ? graphMap.marker(at.edgeId, at.localS) : routeMarker(trackId, d);
+    return pointText(at ? { x: p.x * 100, y: p.y * 100 } : p);
+  };
+  if (trail) element.append(trail);
   const upper = streamRoad ? '' : spiralUpperRoutePolyline(trackId);
   if (upper) {
     element.append(svg('polyline', { points: upper, class: 'route-spiral-upper', fill: 'none', 'aria-hidden': 'true' }));
@@ -182,6 +193,16 @@ export function createRouteMap(trackId: string, { live = false, streaming = fals
     element.append(pointer);
   }
   const updateDrivers = (drivers: readonly RouteDriver[], course?: CourseRuntime): void => {
+    const you = trail && drivers.find(driver => driver.id === 'YOU');
+    if (trail && you) {
+      const lap = trackId === CIRCUIT_ID ? circuitDistance(you.distance) : you.distance;
+      const step = Math.round(clamp(lap / total) * TRAIL_STEPS);
+      if (step !== trailStep) {
+        trailStep = step;
+        trailSamples ??= Array.from({ length: TRAIL_STEPS + 1 }, (_, i) => trailPoint(i / TRAIL_STEPS * total));
+        setIfChanged(trail, 'points', trailSamples.slice(0, step + 1).join(' '));
+      }
+    }
     if (streamRoad) {
       const distance = drivers.find(driver => driver.id === 'YOU')?.distance ?? 0;
       if (window?.sector !== Math.floor(distance / 100)) {

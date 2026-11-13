@@ -6,7 +6,7 @@ import { ciTimeout } from './helpers/ci.js';
 
 const TRACKS = ['coast', 'neon', 'canyon', 'aurora', 'spiral'];
 // Only Sky Spiral adds decorative upper-loop and heading overlays; any other line would be an extra route such as a shortcut.
-const EXTRA = 'polyline:not(.route-overview-line):not(.route-spiral-upper):not(.route-spiral-direction)';
+const EXTRA = 'polyline:not(.route-overview-line):not(.route-spiral-upper):not(.route-spiral-direction):not(.route-travelled)'; // .route-travelled is the live driven-route trail, not a second route
 // A legible, complete main route: the drawn line's own box (SVG user units) and the rendered SVG box.
 const routeShape = line => line.evaluate(el => {
   const b = el.getBBox(), r = el.closest('svg').getBoundingClientRect();
@@ -62,7 +62,7 @@ for (const track of TRACKS) for (const viewport of VIEWPORTS) {
     await expect(live.locator('[data-racer]')).toHaveCount(8);
     await expect(page.locator('#race-route-map')).toHaveAttribute('data-theme', track);
     await expect(live.locator(EXTRA)).toHaveCount(0);
-    await expect(live.locator('polyline')).toHaveCount(track === 'spiral' ? 3 : 1);
+    await expect(live.locator('polyline')).toHaveCount((track === 'spiral' ? 3 : 1) + 1); // + the driven-route trail
     const race = await routeShape(live.locator('.route-overview-line'));
     expect(race.width).toBeGreaterThan(48);
     expect(race.height).toBeGreaterThan(23);

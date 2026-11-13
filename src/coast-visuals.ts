@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { ClassicRoad } from './classic-road-routes.ts';
 import { seededRng } from './rng.ts';
 import type { VfxQuality } from './vfx-settings.ts';
-import { coastChunkWindow, createCoastModelLayer, type CoastModelLayer } from './coast-scenery-glb.ts';
+import { coastChunkWindow, coastFarWindow, createCoastModelLayer, type CoastModelLayer, type ShoreSink } from './coast-scenery-glb.ts';
 
 // Shared Coast palette, separate from the five authored World Tour routes.
 export const COAST_PALETTE = Object.freeze({
@@ -81,7 +81,7 @@ export function createCoastScenery(scene: THREE.Scene) {
       }
       previousRoute=route;
       const window = model ? coastChunkWindow(distance, quality) : null;
-      if (model && window) model.place(route, window, origin, seed);
+      if (model && window) model.place(route, window, origin, seed, coastFarWindow(distance, quality));
       for (const mesh of model?.meshes ?? []) mesh.visible = !!window;
       for(const mesh of meshes) {
         mesh.visible = !window; // Medium+ with the GLB: the scans replace the procedural rocks and trees
@@ -94,9 +94,9 @@ export function createCoastScenery(scene: THREE.Scene) {
       previousDistance=distance;previousSeed=seed;
     },
     /** Medium+ draws this parsed coast-scenery.glb instead of the procedural rocks/trees; the caller keeps ownership. */
-    attachModel(source:THREE.Object3D) {
+    attachModel(source:THREE.Object3D, shore?:ShoreSink) {
       model?.dispose();
-      model = createCoastModelLayer(source);
+      model = createCoastModelLayer(source, shore);
       for (const mesh of model.meshes) { mesh.visible = false; group.add(mesh); }
     },
     detachModel() {

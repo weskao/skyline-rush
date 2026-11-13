@@ -227,8 +227,9 @@ test('scrolled notes slide under the dialog top edge, never over its gradient ba
   await page.locator('#whats-new-open').click();
   const dialog = page.locator('#whats-new-screen');
   await expect(dialog).toBeVisible();
-  const scrolled = await dialog.evaluate(el => { el.scrollTop = 120; return el.scrollTop; });
-  expect(scrolled).toBeGreaterThan(0);
+  const longest = recentReleases().reduce((longest, entry) => entry.highlights.length > longest.highlights.length ? entry : longest);
+  await tabFor(dialog, longest.version).click();
+  await expect.poll(() => dialog.evaluate(el => { el.scrollTop = 120; return el.scrollTop; })).toBeGreaterThan(0);
   // The 3px bar is the dialog's own ::before: a hit test on it must return the dialog, not scrolled media or cards.
   const hit = await dialog.evaluate(el => {
     const r = el.getBoundingClientRect();

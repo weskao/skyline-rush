@@ -247,3 +247,32 @@ test('the streamed Sky Spiral minimap fits the helix and the nearby racer marker
     assert.ok(points.every(n => n >= 0 && n <= 100), 'the loop stays inside the rolling map');
   });
 });
+
+test('the live map paints the road already driven, from the start up to the player, under every marker', async () => {
+  const { createRouteMap } = await import('../src/route-map.ts');
+  const { raceTrack } = await import('../src/race-tracks.ts');
+  await withFakeDom(() => {
+    for (const trackId of ['coast', 'dune-tempest']) {
+      const { element, updateDrivers } = createRouteMap(trackId, { live: true });
+      const [trail, ...extra] = element.find('route-travelled');
+      assert.ok(trail && !extra.length, `${trackId}: exactly one travelled trail`);
+      assert.equal(trail.tag, 'polyline');
+      const index = element.children.indexOf(trail);
+      assert.ok(element.children.slice(index + 1).some(n => 'data-racer' in n.attrs), `${trackId}: racers drawn above the trail`);
+      const pointCount = () => (trail.attrs.points || '').trim().split(/\s+/).filter(Boolean).length;
+      const length = raceTrack(trackId).length;
+      updateDrivers([{ id: 'YOU', distance: 0, x: 0 }]);
+      assert.ok(pointCount() <= 1, `${trackId}: nothing driven at the start`);
+      updateDrivers([{ id: 'YOU', distance: length / 2, x: 0 }]);
+      const half = pointCount();
+      updateDrivers([{ id: 'YOU', distance: length, x: 0 }]);
+      const full = pointCount();
+      assert.ok(half > 10 && full > half * 1.8, `${trackId}: trail grows with distance (${half} → ${full})`);
+      const writes = trail.writes;
+      updateDrivers([{ id: 'YOU', distance: length, x: 0 }]);
+      assert.equal(trail.writes, writes, `${trackId}: unchanged distance rewrites nothing`);
+    }
+    assert.equal(createRouteMap('coast').element.find('route-travelled').length, 0, 'static previews have no trail');
+    assert.equal(createRouteMap('coast', { live: true, streaming: true }).element.find('route-travelled').length, 0, 'rolling maps have no finish to measure');
+  });
+});

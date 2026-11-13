@@ -1,8 +1,12 @@
 import { raceTrack } from './race-tracks.ts';
 import { RACE_DRIVER_IDS, reversedGrid } from './race-grid.ts';
+import type { DemoOperationScope } from './wave3-experience-contract.ts';
 
 export interface CupHeat { track: string; time: number; order: string[]; times: Record<string, number> }
-export interface CupState { tracks: string[]; results: CupHeat[] }
+export interface CupState {
+  tracks: string[]; results: CupHeat[];
+  demoScope?: Pick<DemoOperationScope, 'accountId' | 'generation'> | null;
+}
 interface CupRace {
   trackId: string; phase: string; result?: { time: number } | null;
   elapsed: number; length: number;
@@ -66,7 +70,7 @@ export function addCupResult(cup: CupState, race: CupRace): CupState {
   if (drivers.some(driver => !Number.isFinite(driver.time) || driver.time <= 0))
     throw new RangeError('Invalid completed Cup heat');
   drivers.sort((a, b) => a.time - b.time || a.name.localeCompare(b.name));
-  return { tracks: cup.tracks, results: [...cup.results, {
+  return { ...cup, results: [...cup.results, {
     track: race.trackId, time: raceTime, order: drivers.map(x => x.name),
     times: Object.fromEntries(drivers.map(x => [x.name, x.time])),
   }] };

@@ -1,3 +1,142 @@
+# 2026-11-14 — Audio feedback integration CI
+
+- [x] Inspect the two full CI runs (`43459368880` and `43462172499`). Both passed all three audio scenarios; shared browser failures blocked `quality-gate`.
+- [x] Carry forward the shared `develop` fixes for scaled lift jets, road-relative hazards, Endless minimap, Coast asset requests and the release video fixture. Keep each candidate's original commit in its branch history.
+- [x] Correct browser setup for current paint states, daily road-layout saves, visible guide previews, release-note scrolling, Sky Spiral pickup clearance and the delayed GT load. Keep the original interaction and render assertions in place.
+- [ ] Verify all browser and World Tour shards and `quality-gate` on each candidate's new head. Local software Chromium reproduced the guide failure and passed its fix and the delayed GT scenario.
+
+# 2026-11-14 — Race map holds progress; top-right on phone landscape; HALFWAY callout
+
+- [x] The standalone progress strip is gone: the live map paints the road already driven orange (`.route-travelled`, rewritten only when the 0.5% step changes) and its caption shows `x.xx / y.yy KM`; the phase word shows only outside racing. Endless keeps the rolling map or the bare caption.
+- [x] Touch short landscape: the map takes the top-right corner, the toolbar shifts left by its width, AIRFLOW/VFX sit on the top row beside the logo (pause drops them under the toolbar; the VFX panel opens rightwards).
+- [x] HALFWAY callout with the distance left and a rising chime, once per finite race (never Endless or Circuit). RED → GREEN in `tests/callouts.test.js`, `tests/race-audio-events.test.js`, `tests/route-map.test.js`.
+- [x] Guard `tests/race-map-corner-browser.spec.js` (en/zh-TW at 844×390, 740×360, 640×360, 874×339, plus 390×844 and 1440×900). Its first run caught the English toolbar (345px) running into AIRFLOW/VFX and the VFX panel opening off-screen; fixed.
+- [x] Unit 2,765 passed (3 skipped), typecheck, module-size, build; browser: corner, hud-overlap, endless, mode-acceptance, main-ui-parity, legacy-minimap, hud-settings 55/55. Chromium screenshots reviewed at 844×390, 640×360, 390×844, 1440×900.
+- [x] Second browser round caught three more: zh-TW's 10px caption ran past the 59px portrait map (RED 313 vs ≥318; the narrow maps now drop the ` KM` unit), Buttons-mode flight telemetry overlapped the corner map at 844×390/874×339 (telemetry now clears the map width), and Phase 4 counted the new trail polyline (spec updated for the extra line).
+- [ ] Notch insets on a physical iPhone in landscape (Chromium cannot emulate `env(safe-area-inset-*)`) and the exact-commit GitHub quality gate.
+
+# 2026-11-14 — Six red browser tests on develop (`fix/develop-red-browser-specs`)
+
+Every develop push since 2026-11-12 cancelled the previous full CI run, so these failures went unseen. Bisected with `git bisect --first-parent` from the last commit where all four specs passed (`8372c577`).
+
+- [x] Hero Roadster ports (`hero-roadster-race-browser.spec.js:57`, 0.0266 vs < 1e-4): product regression from `56536093` (every car shown at the Roadster's size). The lift jets and their gas stayed on the unscaled `LIFT_PORTS`: 2.6–2.9 cm off roadster2's thrusters, 28–32 cm off the Crimson GT's. `dress()` now publishes the instance scale as `car.userData.displayScale` and `effects.js` `liftPort()` multiplies by it. A live flying probe measured 0 cm on both cars (old code: 2.6–2.9 cm and 28–32 cm). RED on the old `src/`: the 2 new unit tests fail; GREEN: `node --test tests/effects.test.js tests/garage-model-rig.test.js` 41 pass.
+- [x] Endless rolling minimap (`endless-highway-browser.spec.js:12`, desktop-en + phone-zh): stale expectation. `fbbfb8e5` added the rolling Endless/Elimination map on purpose; the spec now asserts it is visible with `data-streaming`. The updated spec fails on `fbbfb8e5^`.
+- [x] Hazard captures (`hazard-captures-browser.spec.js:22`, desktop-en + phone-en, 0.0445 vs < 0.01): stale expectation. `fbbfb8e5` curves classic roads and turns hazards with them; the gust yaw is judged against `classicRoadRoute(...).heading`, and the Neon sweep is measured on the ground plane. The updated spec fails on `fbbfb8e5^`.
+- [x] Coast scenery transcoder fetch (`coast-scenery-browser.spec.js:109`): stale expectation. Always-on 3D pickups (`e30ee752`) load the shared KTX2 transcoder on every track; the check now names only Coast's own files. Not RED on the old code: it only narrows the forbidden list.
+- [x] Prevention notes: `.claude/rules/browser-test-stability.md` (road-relative poses, absence checks name the feature's own files) and `.claude/rules/3d-asset-pipeline.md` item 14 (lift jets follow the display scale).
+- [x] The four specs with `--repeat-each=3 --retries=0`: 18 passed. Full hero-roadster (7) and hazard (2) specs, plus crimson-gt, coast-scenery, endless-highway, shader-warmup and black-frame regression specs (34), passed.
+- [x] `npm test` (2,763 passed, 3 skipped, 0 failed), `npm run typecheck`, `npm run build` and `node --test tests/module-size.test.js` passed.
+- [ ] Exact-HEAD full GitHub CI: only runs on develop/main, pending merge approval.
+
+# 2026-11-13 — Drift pays at every speed (`feature/drift-balance`)
+
+Design: `docs/superpowers/specs/2026-11-13-drift-balance-design.md`. One table: `DRIFT_REWARDS` / `driftTier` in `src/drive-rules.ts`.
+
+- [x] Tuning (user picked 平衡版): bleed 3 → 1.5 m/s²; tiers 1/2/3 s → 0.6/1.2/2.0 s paying 0.15/0.30/0.50 → 0.25/0.45/0.70 NITRO and 0.5/0.8/1.2 → 0.7/1.1/1.6 s boost; `DRIFT_MIN_SPEED` stays 45.
+- [x] Before/after (8 s window vs plain throttle, real engine): at 88 m/s +17/+30/+44 m → +34…84 m; at 70 m/s −5/−17/−26 m → +15…39 m; back-to-back spam 2.0 → 6.3 NITRO/min (pickups ≈ 15/min). Guarded in `tests/drift-balance.test.js` (every tier net > 0 at 70 and 88 m/s, spam < 8/min, 30 FPS, slow-out payout).
+- [x] HUD tier label, callouts, sparks, screech and the tutorial read `driftTier` / `DRIFT_FIRST_TIER`; a source scan fails on literal tier seconds. Tutorial copy (en/zh-TW, buttons and slide) teaches 0.6/1.2/2 s.
+- [x] `npm test` 2767 pass / 0 fail; typecheck, build and module-size pass. Legacy replay fixture re-recorded: base 46094f80 passed 47/47, exactly the 38 cases that drift changed.
+- [x] zh-TW drift lesson shortened to fit the two-line 750x342 paused coach (78.7 → under 60 width units; the mini-boost seconds stay in the lesson title and the en copy). Drift "too slow" coaching now says 170 km/h (entry 165.2 km/h; was 180). Guards: `tests/tutorial-copy.test.js`, both RED first.
+- [x] Review fix (2026-11-14, spec "Revision"): the 6.3/min spam figure came from a loop that sagged below 45 m/s; drift-and-recover farming earned 13.3–18.3 NITRO/min. User picked NITRO 0.25/0.45/0.70 → 0.10/0.22/0.35, credited the moment each tier is reached; release pays only the mini boost; a crash/take-off/gap keeps credited NITRO, loses the boost. Farm now 5.9–8.6/min. RED → GREEN: `tests/drift-balance.test.js` farm guard (18.3/min on the old table), `tests/game.test.js` mid-drift credit, cap overflow and the three cancel cases. Tutorial copy (en/zh-TW, buttons and slide, lesson, release and tier cues) says NITRO arrives while holding and the release boosts. Legacy replay re-recorded (34 drift keys).
+- [x] Per-tier "charge" body animation (`src/drift-charge.ts` look/timing, `src/drift-charge-vfx.js` shell + shockwave + hop, wired through `src/effects.js`): a rim light sweeps tail → nose in the tier colour (1 = one blue sweep, 2 = two orange sweeps + ~0.4 s outline glow, 3 = purple flash, ground shockwave, dip-and-rebound) plus a burst off both rear tyres; unlike the rear-exhaust NITRO flame. Sized from the measured body, so Roadster and Crimson GT (GLB) share one path. RED → GREEN `tests/drift-charge.test.js` (8, incl. effects wiring); `tests/shader-safety.test.js` now lints the shell. `npm test` 2777 pass / 0 fail / 3 skipped; typecheck, build, module-size pass (`effects.js` 400/400). Real WebGL screenshots (dev server, Coast, 1280×720) Roadster and Crimson GT × tiers 1–3 + pickup NITRO: tier colours read on both bodies, tyres stay on the road. Staging note: a 2 s held drift from the right kerb crosses the road in ~1.5 s and hits the left rail, so the tier-3 shots pinned x ≥ −6 and moved traffic back.
+- [x] Drift rail before tier 3 (user: slide slower while drifting, 80%): `DRIFT_LATERAL` = 0.8 in `src/drive-rules.ts`, applied in `src/game.js` lateral step only while drifting. RED at 1.0 (`tests/drift-balance.test.js`: full-lock drift from x = 8 stopped at the rail, x = −10.2) → GREEN at 0.8. Legacy replay re-recorded (43/47 keys, the drifting runs). `npm test` 2778 pass / 0 fail / 3 skipped; typecheck, build, module-size pass.
+- [ ] Drift charge: frame cost (median/p95, draw calls) on High/Low, phone look in both orientations, and the tier-3 shockwave ring confirmed in a frame (not distinguishable in the stills).
+- [ ] Drift at 80% slide: phone feel check (does a full-lock drift still read as a slide, and is tier 3 reachable on a real track bend).
+- [x] Drift retune (`fix/drift-flip-and-lateral`, spec "Revision 2026-11-14 (second)"): no `classicCornerPush` while drifting, 0.2 s steer-flip grace (`DRIFT_FLIP_GRACE`, earns no time/NITRO, flips `drift.dir`), `DRIFT_LATERAL` 0.8 → 0.9. RED on old code → GREEN: `tests/drift-all-tracks.test.js` (iterates `RACE_TRACKS`, `COURSE_TRACKS`, circuit, Endless; Coast @300 m slid 0.093 vs 0.120 m/frame, 33 ms neutral ended the drift) and `tests/drift-balance.test.js` (owner values; grace exceeded / brake release). Legacy replay re-recorded (41/46 keys). `npm test` 2880 pass / 0 fail / 3 skipped; module-size, typecheck, build pass. Rule: `.claude/rules/vehicle-road-stability.md` "Drift handling is global".
+- [ ] Drift retune: phone feel check of the flip (keyboard, touch one-thumb drift, pad) and the 90% slide on a classic bend; browser suite and `make verify` results below.
+- [ ] Browser: `interactive-tutorial-browser.spec.js` 18/22 before the copy fix — three touch cases passed on a serial rerun (load); `paused practice 750x342` failed with the zh-TW copy overflowing (text bottom 193 px > card 184 px). Not re-run after shortening; remaining browser suite skipped at the user's request.
+- [ ] Exact-commit GitHub quality gate and phone feel check.
+
+# 2026-11-13 — Wave 3 trial coins, diamonds and cosmetic offers
+
+## Wave 3 local demo economy E2E (feature/wave3-demo-economy)
+
+- [x] Baseline `de82fc03`, with the original BDD/SDD plan synchronized at `56f7db22`.
+  RED reproduced a stale UTC claim paying +10 points/+40 coins, checkpoint
+  rejection after 1,025 events and near 64 KiB, three publishes for one finish,
+  and a finish surviving a reset. Focused tests cover the fixes, v1 restoration,
+  week/day rollback, shared-lock redemption, expiry and write failure.
+- [x] Deterministic reconciliation with a fresh adapter reload after every step.
+  Points / coins / diamonds in plan order:
+  `20/0/0 → 40/70/0 → 40/70/0 → 60/110/0 → 200/390/0 → 210/430/0 →
+  220/430/5 → 195/430/5 → 195/280/5 → 195/280/5 → 495/840/15 →
+  495/840/0 → 495/840/0 → 20/0/0`.
+- [x] Transaction design: one profile-scoped Web Lock and one v1 checkpoint per
+  mutation. A reset writes a fresh, empty generation so another tab can reject
+  its old race or confirmation. A browser without usable locks or storage keeps
+  a session-only wallet and shows a save warning. Redemption quotes expire after
+  60 seconds. Durable replays prioritize recent finishes before telemetry.
+- [x] Local `npm test` on implementation `9edf4c42`: 2,778 passed, 3 skipped,
+  zero failed. Strict typecheck and locked/trial build audits passed. The
+  follow-up focused suite passed 155 tests, including retention, rollback,
+  multi-heat account scope, and a Garage override of a demo equip.
+- [x] Chrome for Testing 156 / Playwright: all 14 fixed steps passed with real
+  wallet, mission, store and collection controls, native storage, a network
+  cut during redemption/equip, and refresh. Two competing browser tabs gave
+  one debit and one duplicate; a blocked wallet write kept the balance in the
+  active session and showed the warning. Full WebGL driving is a separate case.
+- [ ] First full run for [9edf4c42](https://github.com/weskao/skyline-rush/commit/9edf4c42cf3915bdd7a97b1aee4e321962af6439):
+  [CI 43440898727](https://github.com/weskao/skyline-rush/actions/runs/43440898727)
+  failed the existing Cloud Save suite (13 failures). The next feature HEAD
+  includes upstream `2418a55e` with the Firestore expression-budget fix.
+- [x] Verification for code tree `91e7588b` at
+  [e1464c21](https://github.com/weskao/skyline-rush/commit/e1464c210c10d2804c2988529d1b53ceea0c7c3e):
+  `make verify` passed strict typecheck and unit tests (2,786 passed, 3 skipped).
+  The trial build and bundle audit passed. The default local Chrome launch
+  failed in the executor, so the full browser/World Tour result is tracked in
+  [CI 43442895560](https://github.com/weskao/skyline-rush/actions/runs/43442895560).
+- [x] Chromium 156 Coast 5 km Time Attack, keyboard throttle from start to
+  finish, reduced motion, Low quality. Wallet `20/0/0 → 40/70/0`; result
+  and v1 snapshot agree and the receipt recorded zero page errors. The
+  local review throttled WebGL draws to fit the CPU executor. Playwright
+  passed portrait 390×844 and 360×740 and reduced-motion 667×375.
+  A separate seeded finish verified landscape 844×390 and 667×375 touch
+  details at 70 coins and the Race Again target. Standard local Playwright
+  at 844×390, tablet and desktop had countdown timeouts.
+- [x] With networking disabled after the app loaded, Coast finished, the
+  daily Time Attack mission credited, the Ion Thruster redeemed and equipped,
+  and the next race started. After reconnecting, refresh restored 25 points
+  and the same wallet and equipment.
+- [x] WebGL Roadster and Crimson GT both rendered Void Pulse beams in the
+  next race after a confirmed demo equip. No new sound or quality-tier
+  setting was needed for the wallet and transaction messages.
+- Browser evidence: [Coast receipt](https://chatgpt.com/library?file_id=libfile_91612be09c3481919d91d7f820751063&account_id=personal),
+  [desktop](https://chatgpt.com/library?file_id=libfile_d7afdf82efb8819199acbc45c7313ced&account_id=personal),
+  [390×844](https://chatgpt.com/library?file_id=libfile_2338c5b303588191a4911479eb6c1e82&account_id=personal),
+  [844×390](https://chatgpt.com/library?file_id=libfile_2a776029ba048191ad55a8cf16c5bbf5&account_id=personal),
+  [667×375](https://chatgpt.com/library?file_id=libfile_dc7de2ff17048191b174df66183385d9&account_id=personal),
+  [Roadster](https://chatgpt.com/library?file_id=libfile_a7b861aeb0d48191b202ea5c086d904f&account_id=personal)
+  and [Crimson GT](https://chatgpt.com/library?file_id=libfile_25b33aaaa7808191958f2f29208c8bdd&account_id=personal).
+- [x] Synced `develop` at `6d2ec20a`. Git resolved the overlapping `TODO.md`
+  edits automatically. Strict typecheck, trial build and 80 focused tests passed.
+- [x] The [previous full run](https://github.com/weskao/skyline-rush/actions/runs/43444542248)
+  failed Browser shard 1 because the current release had no standalone picture
+  for the pointer test. The release media fixture now supplies one. Both the
+  image/video pointer and highlight-video Playwright tests passed in headless
+  Chromium with WebGL disabled for this media-only check.
+- [x] Integrated `develop` at `37ad97e0` with no conflicts. The merged tree
+  passed strict typecheck, the trial build, 39 focused unit tests, and the
+  Playwright ledger, concurrent confirmation, and save-failure tests. The
+  first local ledger attempt hit a Chromium renderer crash at Garage re-entry;
+  an isolated rerun with shared-memory usage disabled passed all 14 steps.
+- [x] Integrated `develop` at `245c0cab` (Race and Garage sound feedback). Seven
+  Wave 3 files conflicted; the audio cues and `missionReady` flag now ride on the
+  async, scope-checked demo port, and result audio awaits the receipt. Strict
+  typecheck, build, `npm test` (2,808 passed, 3 skipped) and 8 Playwright tests
+  (audio feedback desktop/phone/muted landscape, Wave 3 ledger) passed.
+- [ ] Await full regression for the latest integration commit. The preceding
+  candidate [3d5b377e](https://github.com/weskao/skyline-rush/commit/3d5b377e31c362d773e328a5c4e4490238aa3215)
+  is tracked in [CI 43458160566](https://github.com/weskao/skyline-rush/actions/runs/43458160566).
+  Use the [branch workflow history](https://github.com/weskao/skyline-rush/actions?query=branch%3Afeature%2Fwave3-demo-economy)
+  for the new commit.
+- [ ] Complete physical iOS Safari and Android Chrome acceptance, then
+  record exact-head full CI before a direct merge to `develop`.
+
+- [x] Extend the existing frontend-first design with BDD scenarios, trial economy rules and verified-economy handoff.
+- [x] RED → GREEN covers race credit, first finish, daily and weekly claims, currency-specific redemption, old and extended v1 checkpoints, reset and account isolation.
+- [x] Focused Wave 3 and module-size tests passed. Both locked and trial Vite builds passed bundle audits.
+- [ ] Confirm the exact-HEAD full CI gate and verify the finish, compact result details and redemption on physical phones.
+
 # 2026-11-13 — Race and Garage sound feedback
 
 - [x] Add transaction, equipment, and race-result feedback to the existing SFX mix.
@@ -1635,11 +1774,17 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
     - [x] Coast by-project items with evidence (2026-11-09, branch `feature/3d-pipeline-concept-target`, HEAD `e28f9dfc`): look brief, KTX2 road tiers, close-scenery GLB in deterministic chunks, UV0/tangent/parity RED tests, eviction without duplicate draws, contact shadow, HDRI lighting, Ultra tier settings, plume, spray and Ultra blur. Details per box: Task 5 doc.
     - [x] Coast wet road (env map + lights-only mirror, chosen by benchmark), bloom/sun per HDRI, thruster glow, GPU-synced per-tier cost and Ultra on every map (2026-11-09, 5e6bb634..HEAD). Details per box: Task 5 doc.
     - [ ] Coast full-scene upgrade (owner, 2026-11-09: Coast is **not yet at the owner's standard**): the sea surface, sky and distant terrain are still the old procedural look and must be rebuilt as realistic 3D/PBR, not only the road and close scenery; the skyline buildings and bridge towers leave Coast. Parity review and owner sign-off wait for it. Details: Task 5 doc; gap list and owner decisions D1–D3: `docs/designs/3d-pipeline/phases/coast-full-scene-gap.md`.
+      - [x] Step 1, sky (D3), behind `?look=3d`: HDRI dome 4K / 8K, sun disc and key light on the HDRI sun (`d7137534`, `ddf48900`; `tests/coast-sky.test.js`; real WebGL captures on four tiers in the ignored audits). Evidence in the Task 5 doc.
+      - [x] Step 2, sea, behind `?look=3d` on Medium+: water surface mirroring the sky dome, sun glitter, shore foam (`c3dbb1dc`, `1e528477`; `tests/coast-sea.test.js`; real WebGL captures on four tiers in the ignored audits). Evidence in the Task 5 doc.
+      - [x] Step 3, distant terrain and mid band, behind `?look=3d` on Medium+: far headlands and sea stacks from the close cliff and rock scans, cones off; Coast High draw-call cap set first (`875758bc`; `tests/coast-scenery-glb.test.js`, `tests/coast-scenery-browser.spec.js`; real WebGL captures on four tiers in the ignored audits). Evidence and limits in the Task 5 doc.
+      - [ ] Step 3 follow-up: decimated far LOD nodes in `coast-scenery.glb` (the far coast adds about 90k triangles on High), green tops on the headlands.
+      - [x] Step 4, city and bridge towers leave Coast behind `?look=3d` on Medium+; Low keeps them (owner decision 2026-11-14) (`66d6ca94`; `tests/coast-assets.test.js` "D1, D2", `tests/coast-scenery-browser.spec.js`; real WebGL captures on four tiers in the ignored audits; High draw calls home 650 to 491, race 469 to 307). Evidence in the Task 5 doc.
+      - [ ] Step 4 follow-up: `tests/coast-scenery-browser.spec.js` "without ?look=3d" fails on its last assertion (Basis transcoder fetched without the gate; the pickup models request it). Not caused by this branch's files; not yet checked on `develop`.
       - [x] Owner decisions (2026-11-13): D1 remove the skyline buildings from Coast (Neon keeps its city); D2 remove the bridge towers from Coast (other classic tracks keep theirs); D3 the visible sky is the existing Poly Haven HDRIs at a higher resolution.
-      - [ ] Sky (D3): higher-resolution HDRI on a sky dome per preset, sun disc and directional light aligned to the HDRI sun.
-      - [ ] Sea: realistic water surface (waves, sky and sun reflection, shoreline foam), fog following each preset.
-      - [ ] Distant terrain and the mid band: scan-based far headlands and coastline matching the close cliffs.
-      - [ ] Remove the city and bridge towers from Coast in the `?look=3d` look (D1, D2).
+      - [x] Sky (D3, step 1 above): higher-resolution HDRI on a sky dome per preset, sun disc and directional light aligned to the HDRI sun.
+      - [x] Sea (step 2 above): realistic water surface (waves, sky and sun reflection, shoreline foam), fog following each preset.
+      - [x] Distant terrain and the mid band (step 3 above): scan-based far headlands and coastline matching the close cliffs.
+      - [x] Remove the city and bridge towers from Coast in the `?look=3d` look (D1, D2; step 4 above).
     - [x] Coast by-device on one Mac (2026-11-09): every map High/Ultra p50/p95 at desktop and 844×390 viewports, 10 min sustained Coast rain at 60 fps with no thermal warning (`sustained-fps-browser.spec.js`), Roadster panels on Ultra. The parity review found the GLB Roadster washing out white in rain; fixed in 75295f87 (it now uses the softened car map). Details: Task 5 doc.
     - [ ] Coast open items: exact-HEAD full CI and the full local browser suite on the final HEAD; real-phone captures and phone thermal run; owner sign-off on the §8.1 sheet (re-drafted with Ultra + Roadster panels in the ignored `audits/task5/parity/`).
     - [x] Phase 3 look gated for the develop merge (owner, 2026-11-09): on develop the whole Phase 3 pass (Coast HDRI/bloom/sun, KTX2 road, scenery GLB, wet mirror, plume tail, thruster glow, spray, contact shadow, Ultra option and blur) is behind `?look=3d` (`src/look-gate.ts`), separate from and combinable with `?model=roadster`; without it every map and Settings render as develop did, and a saved Ultra stays saved. RED→GREEN `tests/look-gate.test.js` (module missing), develop-look browser specs failed on the old code (Coast GLB `attached`; Ultra option listed) → GREEN. Details: Task 5 doc.
@@ -1647,19 +1792,21 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
 - [ ] **Phase 7 (spec v2 Phase 6, added 2026-11-08):** Concept hero car: the board's deep-red GT becomes a second player car on the shared simulation and port contract, with a Garage car picker, equipped-car save/Cloud Save migration, i18n and What's New. Owner gates: name, unlock rule, board licence record. Decided 2026-11-09: name **Crimson GT** (`crimson-gt`); unlock = trial + stars (threshold value and default paint still open); board is AI-generated, generator/terms to be recorded in the concept-art README, GT may be derived once terms permit it (README entry still open). [Task 7](docs/designs/3d-pipeline/phases/task-7-concept-hero-car.md).
     - [x] Asset (2026-11-12, `d863cb74`; rebuilt from the concept panels 2026-11-13, `82f81f22`; iteration 8 `35c7360b`): `assets-src/crimson-gt/` build script + `.blend` master, `public/models/crimson-gt/` GLB 22,996 tris / 1,204,084 B and low LOD 13,926 tris / 541,088 B, `check-glb: PASS` on both, manifest hashes match; wheel, wing and lift-port pivots within 1e-4 m of the Roadster contract on both LODs, hubs on a static `<wheel>_axle` (tyre radius .337) and rear nozzles one rigid offset (0, -.33, -.415) from the rear ports, both owner-approved (`tests/crimson-gt-model.test.js`, RED on the old GLBs).
     - [x] Asset fidelity, side view: silhouette IoU .952 against the side panel in the rest pose (wing stowed, owner-approved 2026-11-13), at or above the 0.90 forms target (`assets-src/crimson-gt/asset-brief.md` iteration 8, `35c7360b`).
-    - [ ] Asset fidelity, other views: front 3/4 .878, rear 3/4 .877 (wing raised .871), rear .882 are below the 0.90 target (iteration 6: .865 / .871 / .857). Measured ceilings, reasons per view, panel conflicts and the inferred list are in `assets-src/crimson-gt/asset-brief.md`; the mattes were not tuned.
+    - [x] Asset fidelity, other views: front 3/4 .878, rear 3/4 .877 (wing raised .871), rear .882 are below the 0.90 target (iteration 6: .865 / .871 / .857). Measured ceilings, reasons per view, panel conflicts and the inferred list are in `assets-src/crimson-gt/asset-brief.md`; the mattes were not tuned. Iteration 9 probes (2026-11-13, four variants of the inferred dimensions, scratch builds only): best gain at rest +.004, so the owner kept iteration 8 and the GLBs are unchanged. Closed 2026-11-14 by the owner after discussion (deviation accepted; measurements above unchanged).
     - [x] Garage car picker (2026-11-13): Roadster / Crimson GT on Garage Home and Preview Studio, no URL flag; the GT dresses Garage, Home and the race car; equipped car and per-car paint are local saves, a save without a car loads as the Roadster; GT default is its factory deep red, all 6 `PAINTS` and all 22 `GARAGE_SKINS` preview on it; Low tier loads only the low LOD; a missing GLB falls back to the procedural car. RED → GREEN `tests/car-catalog.test.js` 7/7, `tests/crimson-gt-browser.spec.js` 8/8 (desktop, phone portrait 390x844 and landscape 844x390, zh-TW); `npm test`, typecheck, build, module-size pass; real WebGL screenshots of Garage, Studio, Home and a Coast race inspected.
     - [x] Material gaps (2026-11-13, `35c7360b`): flake layer under the clearcoat, cabin behind see-through glass, hood vent pair; `tests/crimson-gt-model.test.js` 7/7 on both LODs, RED on the previous GLBs (no `cabin`, `hood_vent_l`, `crimson_gt_flake`). `check-glb: PASS` on both LODs, manifest hashes match.
     - [x] Cloud Save field for the equipped car (2026-11-13, `924674c7`): optional `car`, rules changed with the client, a save without it loads as the Roadster. RED → GREEN `tests/cloud-progress.test.js`, `tests/car-catalog.test.js`, `tests/firestore-rules.test.js`; `npm run test:cloud` 16 passed, rules 3/3.
     - [x] Factory colour card (2026-11-13, `679ce068`): `factory@3x.webp` 960x510 rendered from the car's own master (`assets-src/crimson-gt/card/render_card.py`); RED → GREEN `tests/garage-paint-presentation.test.js`; browser test at 390x844, 844x390 and 1440x900.
     - [x] GT guards (2026-11-13, `020a1598`, `tests/crimson-gt-browser.spec.js` 16/16): car root, road contact and chase camera equal to the Roadster's; wing stowed / tilted / raised with the procedural wing and lift fans following the jets; car picker keyboard focus order; all 22 skins captured on the GT and inspected on contact sheets. `tests/shader-warmup-browser.spec.js` with the GT equipped: 2/2, no program compiles mid-race.
-    - [x] Phase 2b track matrix and Phase 2c equipment audit with the GT equipped (2026-11-13, `HERO_CAR=crimson-gt`): MATRIX_RESULT; the audit's tier cost and capture sheets are in the ignored `audits/garage-equipment-crimson-gt/` (High, heaviest loadout, NITRO + FLY: 437 draw calls, 132,571 to 144,011 triangles over two runs).
+    - [x] Phase 2b track matrix and Phase 2c equipment audit with the GT equipped (2026-11-13, `HERO_CAR=crimson-gt`): on a detached checkout of `6d2ec20a`, `tests/hero-roadster-tracks-browser.spec.js` + `tests/hero-roadster-equipment-browser.spec.js` 26/26 (5.1 min) and `tests/garage-equipment-audit-browser.spec.js` 3/3 (9.9 min); the audit's tier cost and capture sheets are in the ignored `audits/garage-equipment-crimson-gt/` (High, heaviest loadout, NITRO + FLY: 432 draw calls / 178,751 triangles in this run; 437 draw calls, 132,571 to 144,011 triangles in two earlier runs). An earlier run on the branch checkout failed one Coast test because the checkout was fast-forwarded mid-run and the dev server reloaded the page; not counted (`.claude/rules/browser-test-stability.md`).
     - [x] What's New entry drafted (2026-11-13, `18ad0d27`): the shipped entry is stamped 0.31.0 (2026-11-10) and a new `UPCOMING` entry announces the Crimson GT in en and zh-TW; release-notes tests 30/30, `node scripts/check-release-notes.mjs 0.31.0` clean.
-    - [ ] What's New review at `/release`: fresh-eyes review, owner approval (`--approve`) and the real-game media a new car needs.
-    - [ ] Concept-board parity review: drafted on a real-GPU desktop (2026-11-13, `f0599b86`, ignored `audits/crimson-gt/parity/`): 0 match, 4 close (silhouette, light signatures, atmosphere, colour grade), 3 gap (paint depth and reflections, ground material, effects). Owner sign-off open; each gap needs a follow-up or an accepted deviation.
-    - [ ] Real-phone screenshots and frame-time p50/p95, GT versus Roadster: not captured (needs the owner's phone; checklist in the ignored `audits/crimson-gt/phone-checklist.md`).
-    - [ ] `make verify` and exact-HEAD full CI: VERIFY_RESULT
-    - [ ] Open by owner decision: unlock rule (trial + stars not built, both cars open, 2026-11-12) with the picker's locked/trial/owned states; board generator/terms record (release gate); live Blender showing the rebuilt master (the live session held unsaved changes on 2026-11-13, so it was not reloaded).
+    - [x] What's New review at `/release`: fresh-eyes review, owner approval (`--approve`) and the real-game media a new car needs. Closed 2026-11-14 by the owner after discussion.
+    - [x] Concept-board parity review drafted on a real-GPU desktop (2026-11-13, `f0599b86`, ignored `audits/crimson-gt/parity/`): 0 match, 4 close (silhouette, light signatures, atmosphere, colour grade), 3 gap (paint depth and reflections, ground material, effects).
+    - [x] Concept-board parity review sign-off: closed 2026-11-14 by the owner after discussion (the 3 gaps handled in that discussion).
+    - [x] Real-phone screenshots and frame-time p50/p95, GT versus Roadster: closed 2026-11-14 by the owner after discussion; owner's own visual acceptance passed; no real-phone capture is recorded here (checklist in the ignored `audits/crimson-gt/phone-checklist.md`).
+    - [x] `make verify` and exact-HEAD full CI: closed 2026-11-14 by the owner after discussion, with the suite not green. Observed on a detached checkout of `6d2ec20a` (`make verify`, stopped reading at browser test 467 of 1163): typecheck pass; unit 2764 tests, 2761 pass, 0 fail, 3 skipped; browser suite 9 failures, none in a Crimson GT spec: `coast-scenery-browser.spec.js:109`, `endless-highway-browser.spec.js:12` (desktop-en, phone-zh), `hazard-captures-browser.spec.js:22` (desktop-en, phone-en), `hero-roadster-race-browser.spec.js:57`, `release-video-browser.spec.js:227` (desktop), `spiral-items-browser.spec.js:12` (desktop, phone). The first six reproduced in two runs on develop-level code and are being fixed on `fix/develop-red-browser-specs`; the last three are not yet examined. Exact-HEAD full CI runs on `develop` after the merge the owner approved 2026-11-14; no result is recorded here yet.
+    - [ ] Unlock rule (trial + stars not built) with the picker's locked/trial/owned states: both cars are temporarily free for everyone (2026-11-12); the owner decides the plan later (2026-11-14).
+    - [x] Owner decision, closed 2026-11-14 after discussion: board generator/terms record (release gate). Decided 2026-11-13: develop's iteration 8 `.blend` is the master to build from; the one in `4ca197b1` is an older build (22,540 triangles, no cabin, vents or flake) and its merge `114af6ea` left the master unchanged. The live Blender MCP query answered on one Mac (default scene); no live edit followed.
 - [ ] **All phases:** TDD RED→GREEN, renderer version/texture and animation checks, 10-track/5-new-track matrix as available, desktop/mobile Low/Medium/High (Ultra only after profiling), memory/draw/triangle/frame-time p50/p95, real-device QA, `make verify` and exact-HEAD FULL `quality-gate`. No PR, develop/main merge, release or deployment without approval.
 - [ ] **Share links:** reconcile full content if the three ChatGPT share pages become accessible; currently cannot independently verify their full text (linked in design spec).
 

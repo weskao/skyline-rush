@@ -49,14 +49,17 @@ for (const [name, viewport, hasTouch] of [
           await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
           const { scene, camera } = window.gameScene, mesh = scene.getObjectByName(meshName);
           const { hazardPose } = await import('/src/hazard-race.ts');
+          const { classicRoadRoute } = await import('/src/classic-road-routes.ts');
           const race = window.gameplay.race, target = race.hazards[0];
+          // Hazards turn with a curved classic road (hazard-render.ts yawAt, world.js): judge the arrow against the road's yaw.
+          const roadYaw = -(classicRoadRoute(race.trackId)?.heading(target.distance) ?? 0);
           if (!mesh?.visible || mesh.count === 0) return { count: 0 };
           const m = mesh.matrix.clone(), position = camera.position.clone(), quaternion = camera.quaternion.clone(), scale = camera.scale.clone();
           mesh.getMatrixAt(0, m); m.decompose(position, quaternion, scale);
           const ndc = position.clone().project(camera), pose = hazardPose(target, race.elapsed);
           // The game frame runs before the pin each rAF, so it draws up to one clamped 0.05 s step (src/main.js) past the pin.
           const stepAltitude = hazardPose(target, race.elapsed + 0.05).altitude;
-          return { count: mesh.count, x: position.x, y: position.y, sy: scale.y, yaw: 2 * Math.atan2(quaternion.y, quaternion.w),
+          return { count: mesh.count, x: position.x, y: position.y, z: position.z, sy: scale.y, yaw: 2 * Math.atan2(quaternion.y, quaternion.w), roadYaw,
             inFrame: ndc.z < 1 && Math.abs(ndc.x) <= 1 && Math.abs(ndc.y) <= 1, poseAltitude: pose.altitude, stepAltitude, height: target.height };
         }, { meshName: c.mesh });
         const expectDrawn = !(c.track === 'tokyo' && time === 3);
@@ -67,7 +70,7 @@ for (const [name, viewport, hasTouch] of [
         await saveArtifact(page, { path: `artifacts/hazard-captures/${name}-${c.id}-t${time}.jpeg`, quality: 75 });
       }
       const [first, second] = samples;
-      if (c.id === 'coast-gust-1') expect(Math.abs(Math.sin(first.yaw / 2))).toBeLessThan(0.01); // seed 1 shoves right: the arrow points +x
+      if (c.id === 'coast-gust-1') expect(Math.abs(Math.sin((first.yaw - first.roadYaw) / 2))).toBeLessThan(0.01); // seed 1 shoves right: the arrow points along the road's +x
       if (c.id === 'aurora-ice-1') { expect(first.sy).toBeLessThan(0.1); expect(first.y).toBeLessThan(0.1); }
       if (c.id === 'canyon-rock-1') {
         expect(first.poseAltitude).toBeGreaterThan(0.5);
@@ -77,7 +80,8 @@ for (const [name, viewport, hasTouch] of [
         expect(first.y).toBeGreaterThan(low - 0.02);
         expect(first.y).toBeLessThan(high + 0.02);
       }
-      if (c.id === 'neon-gate-1') expect(Math.abs(Math.abs(first.x - second.x) - 3.6)).toBeLessThan(0.1);
+      // The sweep runs across the road, which a curved classic road turns off world x: measure it on the ground plane.
+      if (c.id === 'neon-gate-1') expect(Math.abs(Math.hypot(first.x - second.x, first.z - second.z) - 3.6)).toBeLessThan(0.1);
       // Just reload: forcing phase 'finished' without the race.result every real finish sets crashed the result screen.
       await page.evaluate(() => cancelAnimationFrame(window.hazardPin));
       await page.reload();
