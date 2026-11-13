@@ -54,8 +54,16 @@ Ultra without the gate); the shader-warmup and black-frame specs run both looks.
     towers are built.
   - [ ] Sea: a realistic water surface (waves/normal detail, sky and sun reflection, shoreline/foam) in day, rain
     and sunset.
-  - [ ] Sky (D3): each Coast preset's Poly Haven lighting HDRI (day, rain, sunset) shown at a higher resolution on
-    a sky dome, with the sun disc and directional light aligned to the HDRI sun.
+  - [x] Sky (D3): each Coast preset's Poly Haven lighting HDRI (day, rain, sunset, fog) shown at a higher resolution
+    on a sky dome (4K; 8K on Ultra), with the sun disc and directional light aligned to the HDRI sun, behind
+    `?look=3d`. `d7137534` (KTX2 textures, manifest), `ddf48900` (runtime). Tests: `tests/coast-sky.test.js`,
+    `tests/coast-sky-manifest.test.js`, `tests/coast-environment.test.js`, `tests/coast-look.test.js` ("the key
+    light and the environment turn with the dome"). Gates: `npm test` 2788 pass / 0 fail / 3 skipped, typecheck,
+    build, module-size. Real WebGL (`COAST_CAPTURE=1 COAST_PANELS=1`, desktop High / Ultra / Low and a phone-size
+    viewport on Medium): `data-coast-sky` = `day:4096`, `day:8192` on Ultra, `procedural` on Low; a mid-race day
+    to rain swap keeps `renderer.info.programs` constant; 60 fps. Captures in ignored `../audits/task5/`.
+    Not verified: a real phone GPU. Free Drive with a non-day preset shows the procedural sky until its texture
+    lands (no countdown to hide the download).
   - [ ] Distant terrain and remaining procedural props: realistic far hills/coastline, matching the close scans.
   - [ ] The concept-board parity review and owner sign-off below wait for these items.
 - [ ] Full verification and exact-HEAD CI, no silent map topology changes.
