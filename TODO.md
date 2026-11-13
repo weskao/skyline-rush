@@ -30,11 +30,36 @@
   [CI 43440898727](https://github.com/weskao/skyline-rush/actions/runs/43440898727)
   failed the existing Cloud Save suite (13 failures). The next feature HEAD
   includes upstream `2418a55e` with the Firestore expression-budget fix.
-- [ ] Run and review full browser coverage, screenshots, physical iOS Safari
-  and Android Chrome, and exact-head GitHub Actions before integration into
-  `develop`. Browser specs: `wave3-early-access-browser.spec.js`,
-  `wave3-economy-transactions-browser.spec.js`, and
-  `wave3-demo-results-layout-browser.spec.js`.
+- [x] Verification for code tree `91e7588b` at
+  [e1464c21](https://github.com/weskao/skyline-rush/commit/e1464c210c10d2804c2988529d1b53ceea0c7c3e):
+  `make verify` passed strict typecheck and unit tests (2,786 passed, 3 skipped).
+  The trial build and bundle audit passed. The default local Chrome launch
+  failed in the executor, so the full browser/World Tour result is tracked in
+  [CI 43442895560](https://github.com/weskao/skyline-rush/actions/runs/43442895560).
+- [x] Chromium 156 Coast 5 km Time Attack, keyboard throttle from start to
+  finish, reduced motion, Low quality. Wallet `20/0/0 → 40/70/0`; result
+  and v1 snapshot agree and the receipt recorded zero page errors. The
+  local review throttled WebGL draws to fit the CPU executor. Playwright
+  passed portrait 390×844 and 360×740 and reduced-motion 667×375.
+  A separate seeded finish verified landscape 844×390 and 667×375 touch
+  details at 70 coins and the Race Again target. Standard local Playwright
+  at 844×390, tablet and desktop had countdown timeouts.
+- [x] With networking disabled after the app loaded, Coast finished, the
+  daily Time Attack mission credited, the Ion Thruster redeemed and equipped,
+  and the next race started. After reconnecting, refresh restored 25 points
+  and the same wallet and equipment.
+- [x] WebGL Roadster and Crimson GT both rendered Void Pulse beams in the
+  next race after a confirmed demo equip. No new sound or quality-tier
+  setting was needed for the wallet and transaction messages.
+- Browser evidence: [Coast receipt](https://chatgpt.com/library?file_id=libfile_91612be09c3481919d91d7f820751063&account_id=personal),
+  [desktop](https://chatgpt.com/library?file_id=libfile_d7afdf82efb8819199acbc45c7313ced&account_id=personal),
+  [390×844](https://chatgpt.com/library?file_id=libfile_2338c5b303588191a4911479eb6c1e82&account_id=personal),
+  [844×390](https://chatgpt.com/library?file_id=libfile_2a776029ba048191ad55a8cf16c5bbf5&account_id=personal),
+  [667×375](https://chatgpt.com/library?file_id=libfile_dc7de2ff17048191b174df66183385d9&account_id=personal),
+  [Roadster](https://chatgpt.com/library?file_id=libfile_a7b861aeb0d48191b202ea5c086d904f&account_id=personal)
+  and [Crimson GT](https://chatgpt.com/library?file_id=libfile_25b33aaaa7808191958f2f29208c8bdd&account_id=personal).
+- [ ] Complete physical iOS Safari and Android Chrome acceptance, then
+  record exact-head full CI before a direct merge to `develop`.
 
 - [x] Extend the existing frontend-first design with BDD scenarios, trial economy rules and verified-economy handoff.
 - [x] RED → GREEN covers race credit, first finish, daily and weekly claims, currency-specific redemption, old and extended v1 checkpoints, reset and account isolation.
