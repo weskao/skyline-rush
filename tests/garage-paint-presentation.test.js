@@ -7,7 +7,7 @@ import { createGarageStage } from '../src/garage-stage.ts';
 import { createGaragePaintSweep } from '../src/garage-paint-shader.ts';
 const read = path => readFileSync(new URL('../src/' + path, import.meta.url), 'utf8');
 
-test('six native 3x car-paint image assets are present and reusable by 1x UI cards', () => {
+test('all native 3x car-paint image assets are present and reusable by 1x UI cards', () => {
   const vue = read('GaragePanel.vue'), preview = read('GaragePaintPreview.vue');
   assert.match(vue, /GaragePaintPreview :id="id" :color="paint.paint"/);
   assert.match(preview, /<img/);
@@ -24,14 +24,6 @@ test('six native 3x car-paint image assets are present and reusable by 1x UI car
     assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
     assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
   }
-});
-
-test('the Crimson GT factory finish has its own 3x paint card', () => {
-  assert.doesNotMatch(read('GaragePaintPreview.vue'), /FACTORY_PAINT|v-if/, 'every finish, the factory one included, shows its card');
-  const bytes = readFileSync(new URL('../public/feature-assets/garage-vfx-skins/paint-cards/factory@3x.webp', import.meta.url));
-  assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
-  assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
-  assert.ok(bytes.length > 10_000, 'a substantive image, not a placeholder');
 });
 
 test('native image sweep follows Low/Medium/High, disabled VFX and reduced-motion preferences', () => {

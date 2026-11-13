@@ -1,4 +1,5 @@
 import type { ReleaseEntry } from './release-notes.ts';
+import { GARAGE_CARS_COPY } from './locales/garage-cars.ts';
 import { ARCHIVED_RELEASE_NOTES } from './release-notes-archive.ts';
 import { RECENT_ARCHIVED_RELEASE_NOTES } from './release-notes-archive-recent.ts';
 
@@ -14,10 +15,13 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
     highlights: [
       {
         id: 'crimson-gt', kind: 'new', image: null,
-        title: { en: 'A second car: the Crimson GT', 'zh-TW': '第二台車：深紅跑車' },
+        title: {
+          en: `A second car: ${GARAGE_CARS_COPY.en['car.crimson-gt']}`,
+          'zh-TW': `第二款車：${GARAGE_CARS_COPY['zh-TW']['car.crimson-gt']}`,
+        },
         description: {
-          en: 'Pick the Crimson GT in the Garage. It drives just like the Roadster, wears every paint and effect, and remembers its own paint.',
-          'zh-TW': '在車庫就能換開深紅跑車。操控和原本的跑車一樣，所有塗裝和特效都能搭配，還會各自記住自己的塗裝。'
+          en: 'Switch cars in the Garage. Both cars share every paint and effect, and each remembers its own paint.',
+          'zh-TW': '在車庫即可切換車款。兩款車共用所有車漆與特效，並各自記住上次使用的車漆。'
         }
       }
     ]

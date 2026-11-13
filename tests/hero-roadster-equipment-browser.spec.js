@@ -2,7 +2,7 @@ import { test, programs, modelInstances as instances } from './helpers/gameplay-
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { PAINTS } from '../src/appearance.ts';
-import { carPaints, defaultPaint } from '../src/car-catalog.ts';
+import { defaultPaint } from '../src/car-catalog.ts';
 import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
 
 // Task 4c `?model=roadster`: every Garage paint and skin (read from the catalogs, so a new one joins automatically) shows
@@ -143,7 +143,7 @@ test('Home and Coming Soon showcases wear the selected paint on the GLB', async 
   // judge the equipped paint (a fresh profile wears its car's default: the 0-star paint, or the GT's factory red
   // under HERO_CAR=crimson-gt), polled, on both cars.
   const car = process.env.HERO_CAR ?? 'roadster';
-  const equipped = carPaints(car)[defaultPaint(car)].paint.slice(1);
+  const equipped = PAINTS[defaultPaint(car)].paint.slice(1);
   const hex = async () => { const a = await audit(page); return a && [a.paint, a.proc]; };
   const shown = [equipped, equipped];
   await expect.poll(hex).toEqual(shown);

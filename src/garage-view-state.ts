@@ -16,7 +16,7 @@ export function updateGarageView(fields: Partial<GarageView>) {
 }
 
 export const garageStudioView = reactive<{ page: 'home' | 'studio'; angle: string; autoRotate: boolean; mode: 'ground' | 'flight'; wing: boolean; lighting: GarageLighting; ownedPaints: string[]; equippedPaint: string; car: CarId }>({
-  page: 'home', angle: '', autoRotate: true, mode: 'ground', wing: false, lighting: 'bright', ownedPaints: ['pearl'], equippedPaint: 'pearl', car: 'roadster',
+  page: 'home', angle: '', autoRotate: true, mode: 'ground', wing: false, lighting: 'bright', ownedPaints: ['pearl', 'crimson'], equippedPaint: 'pearl', car: 'roadster',
 });
 export function updateGarageStudioView(fields: Partial<typeof garageStudioView>) {
   Object.assign(garageStudioView, fields);
