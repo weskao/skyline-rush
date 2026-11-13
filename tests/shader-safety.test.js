@@ -14,9 +14,10 @@ test('every VFX shader clamps pow() bases so edge pixels cannot produce NaN blac
   globalThis.devicePixelRatio = 1;
   t.after(() => { delete globalThis.devicePixelRatio; });
   const scene = new Scene(), vehicle = new Group();
-  vehicle.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  vehicle.add(vehicle.userData.body = new Mesh(new BoxGeometry(2, 1, 4)));
   scene.add(vehicle);
-  createEffects(scene, () => 0);
+  createEffects(scene, () => 0, { player: vehicle }); // the player car carries the drift charge shell
+  assert.ok(scene.getObjectByName('Drift charge shell')?.material.isShaderMaterial, 'the drift charge shader is linted');
   createAeroVFX(scene, vehicle);
   const skyCourse = new Scene(), frostbite = new Scene();
   createSkyScene(skyCourse).update(400, 'high');
