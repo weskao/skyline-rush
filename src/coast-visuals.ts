@@ -3,6 +3,7 @@ import type { ClassicRoad } from './classic-road-routes.ts';
 import { seededRng } from './rng.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 import { coastChunkWindow, coastFarWindow, createCoastModelLayer, type CoastModelLayer, type ShoreSink } from './coast-scenery-glb.ts';
+import { createCoastGreenery, type CoastGreenery } from './coast-greenery.ts';
 
 // Shared Coast palette, separate from the five authored World Tour routes.
 export const COAST_PALETTE = Object.freeze({
@@ -37,7 +38,8 @@ export function createCoastScenery(scene: THREE.Scene) {
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     group.add(mesh);
   }
-  let model: CoastModelLayer | null = null;
+  let model: CoastModelLayer | null = null, greenery: CoastGreenery | null = null;
+  const dropModel = () => { greenery?.dispose(); greenery = null; model?.dispose(); model = null; };
   const distances = new Float64Array(TOTAL);
   let previousRoute: ClassicRoad | undefined, previousTier:VfxQuality|null=null;
   let origin = 0, previousDistance = 0, previousSeed: number | undefined;
@@ -82,7 +84,8 @@ export function createCoastScenery(scene: THREE.Scene) {
       previousRoute=route;
       const window = model ? coastChunkWindow(distance, quality) : null;
       if (model && window) model.place(route, window, origin, seed, coastFarWindow(distance, quality));
-      for (const mesh of model?.meshes ?? []) mesh.visible = !!window;
+      if (window) greenery?.sync(); // shrubs follow the cliffs the layer just placed
+      for (const mesh of [...model?.meshes ?? [], ...greenery?.meshes ?? []]) mesh.visible = !!window;
       for(const mesh of meshes) {
         mesh.visible = !window; // Medium+ with the GLB: the scans replace the procedural rocks and trees
         mesh.count=count;
@@ -95,18 +98,19 @@ export function createCoastScenery(scene: THREE.Scene) {
     },
     /** Medium+ draws this parsed coast-scenery.glb instead of the procedural rocks/trees; the caller keeps ownership. */
     attachModel(source:THREE.Object3D, shore?:ShoreSink) {
-      model?.dispose();
+      dropModel();
       model = createCoastModelLayer(source, shore);
-      for (const mesh of model.meshes) { mesh.visible = false; group.add(mesh); }
+      greenery = createCoastGreenery(source, model.meshes);
+      for (const mesh of [...model.meshes, ...greenery.meshes]) { mesh.visible = false; group.add(mesh); }
     },
     detachModel() {
-      model?.dispose(); model = null;
+      dropModel();
       for (const mesh of meshes) mesh.visible = true;
     },
     hide() {group.visible=false;},
     show() {group.visible=true;},
     dispose() {
-      model?.dispose(); model = null;
+      dropModel();
       scene.remove(group);
       for(const mesh of meshes) {mesh.geometry.dispose();mesh.material.dispose();}
     },
