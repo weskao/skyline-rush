@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRace, startRace, stepRace, DRIFT_MIN_SPEED, DRIFT_REWARDS } from '../src/game.js';
-import { driftTier, DRIFT_LATERAL } from '../src/drive-rules.ts';
+import { driftTier, DRIFT_LATERAL, DRIFT_FLIP_GRACE } from '../src/drive-rules.ts';
 
 // Design: docs/superpowers/specs/2026-11-13-drift-balance-design.md — every drift pays, spamming does not.
 const DT = 1 / 60, WINDOW = 8; // s compared against plain throttle
@@ -33,6 +33,29 @@ test('a drift slides sideways at DRIFT_LATERAL of the steering rate, so a full-l
   const race = cruising(70); race.player.x = 8;
   for (let t = 0; t < TIER_TIMES.at(-1) + 0.05; t += DT) stepRace(race, { brake: true, steer: -1 }, DT);
   assert.equal(driftTier(race.player.drift?.time ?? 0), 3, `still drifting at x=${race.player.x.toFixed(1)}`);
+});
+
+// Owner decision 2026-11-14 (revised): 0.8 felt too slow; 1.0 leaves the one-way median at ~2.0 s, too thin for the top tier.
+test('the drift keeps 90% of the steering slide and survives 0.2 s of neutral steer', () => {
+  assert.equal(DRIFT_LATERAL, 0.9);
+  assert.equal(DRIFT_FLIP_GRACE, 0.2);
+});
+
+// A flip passes through neutral; holding neutral past the grace (or letting go of BRAKE) ends the drift as before.
+test('neutral steer past DRIFT_FLIP_GRACE, or a brake release in it, ends the drift and pays the reached tier', () => {
+  for (const neutral of [{ brake: true }, {}]) {
+    const race = cruising(80);
+    for (let t = 0; t < TIER_TIMES[0] + .05; t += DT) stepRace(race, { brake: true, steer: 1 }, DT);
+    const held = race.player.drift.time, nitro = race.player.nitro;
+    let frames = 0;
+    while (race.player.drift && frames < 60) { stepRace(race, neutral, DT); frames++; }
+    assert.equal(race.player.drift, null);
+    assert.equal(race.player.nitro, nitro, 'grace earns no NITRO');
+    assert.ok(race.player.miniBoost > 0, 'the release still pays the mini boost');
+    if (neutral.brake) {
+      assert.equal(frames, Math.floor(DRIFT_FLIP_GRACE / DT + 1e-6) + 1, `held ${held.toFixed(2)} s, ended after ${frames} neutral frames`);
+    } else assert.equal(frames, 1, 'releasing BRAKE ends the drift at once');
+  }
 });
 
 test('driftTier counts the reward thresholds reached', () => {
