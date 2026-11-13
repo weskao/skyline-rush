@@ -73,7 +73,19 @@ Ultra without the gate); the shader-warmup and black-frame specs run both looks.
     to rain swap keeps `renderer.info.programs` constant; 60 fps. Captures in ignored `../audits/task5/`.
     Not verified: a real phone GPU. Free Drive with a non-day preset shows the procedural sky until its texture
     lands (no countdown to hide the download).
-  - [ ] Distant terrain and remaining procedural props: realistic far hills/coastline, matching the close scans.
+  - [x] Distant terrain and the mid band: far headlands and sea stacks are the close scenery's Poly Haven cliff and
+    rock scans (same licence entry, no new asset) at headland size, in 480 m slots keyed by absolute distance and
+    the endless seed, drawn as extra instances of the existing pools; the scene fog gives the haze layers. The
+    procedural cones are not drawn on Coast Medium+ while the scan coast is attached; Low and a failed GLB load keep
+    them. `875758bc`. Tests: `tests/coast-scenery-glb.test.js` ("far plan", "far window", "far pieces are more
+    instances"), `tests/coast-assets.test.js` ("procedural cones"), `tests/coast-scenery-browser.spec.js` ("draw-call
+    cap": High home 700, race 560, set before the far content). Gates: `npm test` 2800 pass / 0 fail / 3 skipped,
+    typecheck, build, module-size. Real WebGL (desktop High / Ultra / Low, phone-size Medium): draw calls and
+    programs unchanged (High race 469, was 482; 76 programs), triangles High race 406k to 495k and phone-size Medium
+    346k to 415k, 60 fps on the capture machine. Limits: the far pieces draw the full-detail scans (no decimated far
+    LOD yet); no shore foam at their base; rock tops are bare (the board shows green tops); a new slot enters at
+    about 70% fog on Medium. Not verified: a real phone GPU.
+  - [ ] Remaining procedural props on Coast (rail lights, lamp posts): not assessed.
   - [ ] The concept-board parity review and owner sign-off below wait for these items.
 - [ ] Full verification and exact-HEAD CI, no silent map topology changes.
 
