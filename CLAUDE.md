@@ -27,7 +27,7 @@ exactly. Topics whose work often starts before a scoped file is open:
 | Course music, or music while a map is only selected on the home screen | `.claude/rules/playable-course-shared-template.md` |
 | Animated Garage/HUD/Store/VFX art (GIF, sprite sheet) | `.claude/rules/animated-image-production.md`, `.claude/rules/raster-artwork.md` |
 | Track teaser JPEGs under `public/track-teasers/` | `.claude/rules/track-teaser-artwork.md` |
-| Blender, GLB/PBR, 3D asset, rendering quality, Three.js r180 → r186 | `.claude/rules/3d-asset-pipeline.md` (planned; not deployed) |
+| Blender, GLB/PBR, 3D asset, new car model, rendering quality, Three.js r180 → r186 | `docs/designs/3d-pipeline/phases/README.md` (phase index; new car = `task-7-concept-hero-car.md`), then `.claude/rules/3d-asset-pipeline.md` |
 | Tutorial lessons, cues or transitions | `docs/tutorial-driving.md` |
 | Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
 
