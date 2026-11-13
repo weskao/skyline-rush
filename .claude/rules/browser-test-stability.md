@@ -86,3 +86,16 @@ Write every assertion so that runner speed cannot change its outcome.
   `CI=1 npx playwright test <spec> --repeat-each=8 --workers=4 --retries=0` after
   `npm run build`. `--retries=0` keeps the CI retry from hiding a flake. Report the pass count.
   A single local pass does not prove a fix.
+
+## A long local run needs a checkout nobody else moves
+
+- **Gameplay specs serve live source.** `tests/helpers/gameplay-browser.js` starts a Vite dev server on
+  the checkout, so a file that changes mid-run (a merge, a pull, another session's edit) reloads the page
+  under the test. Trap (2026-11-13): a fast-forward during `make verify` changed `src/aero-vfx.js`; the
+  race in progress went back to Home and the test failed with `#race-status` "READY" instead of "RACING".
+  The run log names the cause: `[vite] (client) page reload <file>`.
+- Before blaming the product, grep the run log for `page reload` and compare `git reflog` times with the
+  failure time. A run whose HEAD moved proves nothing about either commit: rerun it.
+- Run `make verify` and other long gates on a detached worktree pinned to the commit
+  (`git worktree add --detach .claude/worktrees/<name> <sha>`, then `npm ci`), and record
+  `git rev-parse HEAD` before and after the run.
