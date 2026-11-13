@@ -109,3 +109,69 @@ test('Volcanic uses a fixed shader light budget while streaming its road and cra
   }
   race.dispose();
 });
+
+async function inspectVolcanicSurfaces(check) {
+  const THREE = await import('three');
+  const { createVolcanicCrownRaceScene } = await import('../src/volcanic-crown-race-scene.ts');
+  const scene = new THREE.Scene(), race = createVolcanicCrownRaceScene(scene);
+  const ray = new THREE.Raycaster(), roads = [];
+  race.group.traverse(object => { if (object.name === 'physical-road') roads.push(object); });
+  const hitsFromAbove = (distance, x, height, targets) => {
+    const f = volcanicFrame(distance);
+    const up = new THREE.Vector3(...f.up);
+    const origin = new THREE.Vector3(f.point.x, f.point.y, f.point.z)
+      .addScaledVector(new THREE.Vector3(...f.right), x).addScaledVector(up, height);
+    ray.set(origin, up.negate());
+    ray.far = height + .5;
+    return ray.intersectObjects(targets);
+  };
+  try {
+    race.update(0);
+    race.group.position.set(0, 0, 0);
+    scene.updateMatrixWorld(true);
+    check(race, hitsFromAbove, roads);
+  } finally {
+    race.dispose();
+  }
+}
+
+test('Volcanic ground cars stay visible through the elevated shortcut', () =>
+  inspectVolcanicSurfaces((race, hitsFromAbove, roads) => {
+    const deck = race.group.getObjectByName('shortcut-deck');
+    const section = VOLCANIC_TRACK.sections.find(item => item.deck);
+    const hits = hitsFromAbove((section.from + section.to) / 2, section.x, 8, [deck, ...roads]);
+    assert.equal(hits[0]?.object, deck, 'the shortcut still spans the right lane');
+    assert.ok(deck.material.transparent && !deck.material.depthWrite && deck.material.opacity <= .45,
+      'the solid upper road must let the chase camera see the lower-lane car beneath it');
+  }));
+
+test('Volcanic road mesh stays below the car and leaves no holes at edge joins', () =>
+  inspectVolcanicSurfaces((_race, hitsFromAbove, roads) => {
+    let seam = 0;
+    for (const edgeId of graph.groundRoute.slice(0, -1)) {
+      seam += routeLength(graph, edgeId);
+      for (const metres of [-12, -4, -1, -.05, .05, 1, 4, 12]) for (const lane of [-10.2, 0, 10.2]) {
+        const hit = hitsFromAbove(seam + metres, lane, 4, roads)[0];
+        assert.ok(hit, `${edgeId} seam ${metres}m, lane ${lane}: road hole`);
+        assert.ok(Math.abs(hit.distance - 4) <= .18,
+          `${edgeId} seam ${metres}m, lane ${lane}: road is ${(4 - hit.distance).toFixed(2)}m above contact`);
+      }
+    }
+  }));
+
+test('Volcanic chase camera keeps the car in frame at the gorge join on portrait phones', async () => {
+  const { PerspectiveCamera, Vector3 } = await import('three');
+  const { RACE_CAMERA, frameChaseSightline } = await import('../src/race-camera.ts');
+  const { lookAheadDistance } = await import('../src/track-paths.ts');
+  const view = RACE_CAMERA.chasePortrait, camera = new PerspectiveCamera(view.fov, 390 / 844);
+  const distance = 11321, lane = 8.5;
+  const f = volcanicFrame(distance);
+  const car = new Vector3(f.point.x, f.point.y, f.point.z).addScaledVector(new Vector3(...f.right), lane);
+  camera.position.copy(car).addScaledVector(new Vector3(...f.forward), -view.back).y += view.height;
+  const next = volcanicFrame(distance + lookAheadDistance(VOLCANIC_ID, distance, view.ahead));
+  const look = new Vector3(next.point.x + next.right[0] * lane, next.point.y + view.look, next.point.z + next.right[2] * lane);
+  frameChaseSightline(camera.position, look, car, camera.aspect, view.fov);
+  camera.lookAt(look);
+  camera.updateMatrixWorld();
+  assert.ok(Math.abs(car.clone().project(camera).x) < .65, 'the rear silhouette needs room on both sides');
+});

@@ -102,7 +102,7 @@ export function createUpcomingShowcase(
     const scene = new THREE.Scene();
     scene.background = new THREE.Color('#0b1724');
     scene.environment = environmentTexture;
-    scene.environmentIntensity = .5;
+    scene.environmentIntensity = .36;
     let environment: UpcomingEnvironment;
     try {
       environment = factory(scene);
@@ -114,12 +114,12 @@ export function createUpcomingShowcase(
     const cars = [CAR_STYLES.roadster, CAR_STYLES.nova, CAR_STYLES.orbit, CAR_STYLES.apex]
       .map(style => makeCar(style));
     cars.forEach(car => scene.add(car));
-    applyCarReflections(cars[0]!, carEnvironment);
+    cars.forEach(car => applyCarReflections(car, carEnvironment));
     const aero = createAeroVFX(scene, cars[0]!);
     aero.setSkins({ airflow: airflowSkin });
-    const sunlight = new THREE.DirectionalLight('#f3e7d2', 2.3);
+    const sunlight = new THREE.DirectionalLight('#f3e7d2', .85);
     sunlight.position.set(-30, 70, -65);
-    scene.add(new THREE.HemisphereLight('#c1e5ff', '#1e283a', 1.9), sunlight);
+    scene.add(new THREE.HemisphereLight('#c1e5ff', '#1e283a', .95), sunlight);
     stage = { id, scene, environment, cars, aero, host: { name: 'showcase', car: cars[0]!, keep: aero.group as THREE.Object3D, scene, fitAirflow: aero.fitAirflow } };
     cachedStages.set(id, stage);
     if (cachedStages.size > MAX_CACHED_STAGES) {

@@ -12,6 +12,14 @@
 - [x] Add five Sky Spiral sweepers, preserve the helix and three straight jump corridors, and continue the sweepers after the sprint in streaming modes. Make the former sprint gaps solid in Endless and Elimination and keep the minimap in sync.
 - [ ] Complete browser WebGL and physical-phone checks, and verify the exact-commit GitHub CI quality gate.
 
+# 2026-11-13 — Coming Soon track visibility
+
+- [x] Tune road and vehicle reflections, scene light levels and bloom across all six Coming Soon tracks. The showcase light regression failed on stacked key lights before the change and passed for all six scenes after it.
+- [x] Volcanic Crown: preserve the ground lane under the vent shortcut and align the visible road with the shared driving frame. RED reproduced the opaque deck and a join hole. GREEN passed the deck and mesh-ray regressions plus the existing Volcanic route, fork, obstacle and lighting tests.
+- [x] Desktop WebGL samples cover all six Home and race scenes. Volcanic Crown before/after probes reproduced the missing car around 11.32 km and the opaque deck at 7.08 km. Phone-sized portrait and landscape probes covered both locations.
+- [x] Keep the car inside the portrait chase camera through the Volcanic gorge join. RED projected the body off-screen at 11.32 km. GREEN keeps room around the silhouette.
+- [ ] Verify the loaded GLB on hardware and the exact commit's full GitHub CI.
+
 # 2026-11-13 — Model-adaptive airflow
 
 - [x] Fit the shared AIRFLOW streamlines and underbody pressure to the displayed car on Home, Coming Soon tracks, Garage Studio and in races. Cover the procedural Roadster, Roadster GLB, Crimson GT and a wider/taller future-model fixture.
