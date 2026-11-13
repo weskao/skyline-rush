@@ -23,6 +23,14 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
           en: 'Switch cars in the Garage. Both cars share every paint and effect, and each remembers its own paint.',
           'zh-TW': '在車庫即可切換車款。兩款車共用所有車漆與特效，並各自記住上次使用的車漆。'
         }
+      },
+      {
+        id: 'drift-flip', kind: 'improvement', image: null,
+        title: { en: 'Drifts flow through corners', 'zh-TW': '漂移過彎更順暢' },
+        description: {
+          en: 'Flip steering mid-drift to swing the other way without losing it, corners no longer push a drifting car wide, and the slide is quicker.',
+          'zh-TW': '漂移中可直接反打方向切換邊，漂移不會中斷；彎道不再把漂移中的車推向外側，側滑也更快。'
+        }
       }
     ]
   },

@@ -112,3 +112,33 @@ outside a drift is unchanged; payouts are time-based, so the farm and net-metre 
 Guard: `tests/drift-balance.test.js` (slide ratio = `DRIFT_LATERAL`; full-lock drift from x = 8 m
 reaches tier 3; RED at 1.0: the car stopped at the rail, x = −10.2). The legacy replay fixture was
 re-recorded (43 of 47 keys, all runs that drift).
+
+## Revision 2026-11-14 (second) — steer-flip grace, no corner push, 90% slide
+
+At 0.8 the slide felt too slow, and on classic tracks `classicCornerPush` stacked on it, cutting an
+into-the-turn drift to ~4.4 m/s. A side flip always passes through at least one neutral-steer frame
+on keyboard, touch and pad, so flipping ended the drift. Owner decisions:
+
+1. **No corner push while drifting.** `classicCornerPush` is skipped while `drifting`; without a
+   drift it acts exactly as before. Crosswind sections still push (a hazard, not drift tuning).
+2. **Steer-flip grace.** With BRAKE held, on the ground and at `DRIFT_MIN_SPEED` or more, neutral
+   steer keeps the drift for up to `DRIFT_FLIP_GRACE` = **0.2 s**. Grace time adds no drift time
+   and earns no NITRO; any non-zero steer resets it and sets `drift.dir` to the new side (the
+   car's drift yaw follows). Past the grace, a brake release, slowing below 45 m/s, take-off or a
+   crash end the drift exactly as before.
+3. **`DRIFT_LATERAL` 0.8 → 0.9** (8.1 m/s at full lock, ~16 m over 2 s).
+
+Unchanged: `DRIFT_BLEED`, tiers 0.6 / 1.2 / 2.0 s and their NITRO / boost, `DRIFT_MIN_SPEED`, rail
+contact on the steered side ending the drift.
+
+Prototype (4 classic tracks x 25 spots, 80 m/s; share of drifts reaching 2.0 s): outer lane one way
+80% (median 2.48 s) → 90% (2.25 s); inner lane flip after 1 s with 2 frames / 100 ms neutral 0% →
+95%; 300 ms neutral 0% (grace exceeded, by design). At 1.0 the one-way median fell to 2.02 s, too
+thin, hence 0.9. 30/60/120 FPS agreed within 0.04 s.
+
+Guards: `tests/drift-all-tracks.test.js` (every registered track, course, circuit and Endless: drift
+slide = `DRIFT_LATERAL` x steering rate at every sampled spot, corners included; a 2-frame / 100 ms
+neutral flip at 30/60/120 FPS keeps the drift, turns it and adds no time) and
+`tests/drift-balance.test.js` (owner values; neutral past the grace or a brake release ends the
+drift with the tier's mini boost and no extra NITRO). All four RED on the old code. The legacy
+replay fixture was re-recorded (41 of 46 keys).

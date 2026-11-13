@@ -26,7 +26,7 @@ import { skyJumpGap } from './sky-track.ts'; import { dropCar, stepDeck, stepRiv
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
-import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, DRIFT_REWARDS, driftCredit } from './drive-rules.ts';
+import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, DRIFT_FLIP_GRACE, DRIFT_REWARDS, driftCredit } from './drive-rules.ts';
 export { MAX_SPEED, NITRO_TIME, NITRO_EXTEND, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
@@ -293,12 +293,12 @@ export function stepRace(race, input, dt) {
   };
   if (stepSlipstream(slip, race.traffic.some(drafts) || race.rivals.some(drafts), dt)) addNitro(car, SLIPSTREAM_NITRO);
   // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; each tier reached pays NITRO, the release a mini boost.
-  if (brake && steer !== 0 && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED &&
-      car.railContactSide !== Math.sign(steer)) {
-    car.drift ??= { time: 0, dir: Math.sign(steer), nitro: 0 };
-    car.drift.time += dt;
+  const canDrift = brake && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED;
+  if (canDrift && steer !== 0 && car.railContactSide !== Math.sign(steer)) {
+    car.drift ??= { time: 0, dir: 0, nitro: 0, grace: 0 };
+    car.drift.dir = Math.sign(steer); car.drift.grace = 0; car.drift.time += dt; // a flip turns the drift
     const owed = driftCredit(car.drift); if (owed > 0) addNitro(car, owed);
-  } else if (car.drift) {
+  } else if (car.drift && !(canDrift && steer === 0 && (car.drift.grace += dt) <= DRIFT_FLIP_GRACE)) { // neutral mid-flip: held, unpaid
     const reward = DRIFT_REWARDS.find(r => car.drift.time >= r.time);
     if (reward) {
       car.miniBoost = Math.max(car.miniBoost, reward.boost);
@@ -329,7 +329,7 @@ export function stepRace(race, input, dt) {
   const ramp = STEER_RAMP * (car.section === 'ice' ? ICE_RAMP_FACTOR : 1);
   car.steering += clamp(steer - car.steering, -dt / ramp, dt / ramp);
   let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * (drifting ? DRIFT_LATERAL : 1) * dt;
-  if (car.altitude < .1 && !race.endless?.practice) lateralPosition += classicCornerPush(race.trackId, car.distance, car.speed) * dt;
+  if (car.altitude < .1 && !drifting && !race.endless?.practice) lateralPosition += classicCornerPush(race.trackId, car.distance, car.speed) * dt;
   if (car.section === 'crosswind') lateralPosition += (section.dir ?? 1) * CROSSWIND_SPEED * dt;
   if (input.laneAssist === true && steer === 0 && car.cooldown === 0 && car.speed > 5) {
     const lane = LANES.reduce((best, centre) => Math.abs(centre - car.x) < Math.abs(best - car.x) ? centre : best);
