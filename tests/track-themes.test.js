@@ -79,16 +79,16 @@ test('themed hazards join Custom races sorted, and generated hazards stay clear 
   }
 });
 
-function driveThrough(trackId, hazard, x, startTime = 0) {
+function driveThrough(trackId, hazard, x, startTime = 0, baselineFrames = 0) {
   const race = createRace(trackId, { mode: 'free', themes: true, traffic: 'off', items: false });
-  race.hazards = hazard ? [{ ...hazard, hit: false, passed: false }] : [];
+  race.hazards = hazard && !baselineFrames ? [{ ...hazard, hit: false, passed: false }] : [];
   race.rings = [];
   startRace(race);
   race.elapsed = startTime;
   hazard ??= { distance: 1000 };
   Object.assign(race.player, { distance: hazard.distance - 30, x, speed: 40 });
   // The driver holds the lane (e.g. counter-steering Canyon's crosswind); only the hazard decides the outcome.
-  for (let i = 0; i < 90 && !race.hazards[0]?.hit && !race.hazards[0]?.passed; i++) {
+  for (let i = 0; i < (baselineFrames || 90) && !race.hazards[0]?.hit && !race.hazards[0]?.passed; i++) {
     race.player.x = x;
     stepRace(race, { throttle: true }, 1 / 60);
   }
@@ -125,7 +125,10 @@ test('gusts shove the car sideways and ice patches bleed speed, without a crash'
     const run = driveThrough(trackId, hazard, hazard.x);
     assert.equal(run.hazards[0].passed, true, hazard.id);
     assert.equal(run.player.collisions, 0, hazard.id);
-    if (effect(hazard) === 'push') assert.equal(run.player.x - hazard.x, hazard.placement.seed % 2 ? 1.5 : -1.5, hazard.id);
+    if (effect(hazard) === 'push') {
+      const free = driveThrough(trackId, hazard, hazard.x, 0, Math.round(run.elapsed * 60));
+      assert.ok(Math.abs(run.player.x - free.player.x - (hazard.placement.seed % 2 ? 1.5 : -1.5)) < 1e-8, hazard.id);
+    }
     else {
       const free = driveThrough(trackId, null, hazard.x);
       while (free.player.distance < run.player.distance) stepRace(free, { throttle: true }, 1 / 60);

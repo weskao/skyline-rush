@@ -10,7 +10,7 @@ import { itemRuleValue } from './item-ui.ts';
 import { createCup, nextCupGrid, type CupState } from './championship-cup.ts';
 import { loadRecentCustom } from './recent-custom.ts';
 import { refreshCustomSelects } from './custom-select.ts';
-import { createRouteMap } from './route-map.ts';
+import { createRouteMap, hasStreamingRouteMap } from './route-map.ts';
 import { timeString } from './time-format.ts';
 import { setupEventLabUI } from './event-lab-ui.ts';
 import type { GhostRun } from './ghost.ts';
@@ -21,7 +21,7 @@ import { backHomeHref, bootHomeTrack, lastHomeTrack, rememberLastHomeTrack, rest
 // The simulation race comes from plain-JS game.js; this screen reads its selection fields only.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Race = any;
-type RouteMap = ReturnType<typeof createRouteMap> & { trackId?: string };
+type RouteMap = ReturnType<typeof createRouteMap> & { trackId?: string; streaming?: boolean };
 interface RaceSelectOptions {
   ui: Record<string, HTMLElement>;
   getRace(): Race;
@@ -91,10 +91,13 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     for (const button of upcomingButtons()) {
       mountRouteMap(button.dataset.upcomingTrack!);
     }
-    if (!raceRouteMap || raceRouteMap.trackId !== race.trackId) {
+    const streaming = hasStreamingRouteMap(race.trackId, race.mode);
+    if (!raceRouteMap || raceRouteMap.trackId !== race.trackId || raceRouteMap.streaming !== streaming) {
       raceRouteMap?.destroy();
-      raceRouteMap = createRouteMap(race.trackId, { live: true });
+      raceRouteMap = createRouteMap(race.trackId, { live: true, streaming });
       raceRouteMap.trackId = race.trackId;
+      raceRouteMap.streaming = streaming;
+      $('#race-route-map').toggleAttribute('data-streaming', streaming);
       $('#race-route-map').replaceChildren(raceRouteMap.element);
       $('#race-route-map').dataset.theme = race.trackId;
     }
@@ -358,7 +361,11 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     centerSelectedTrack,
     ensureRouteMaps,
     /** Live route map for the HUD tick (rebuilt when the track changes). */
-    raceRouteMap: (): RouteMap => { if (raceRouteMap?.trackId !== getRace().trackId) ensureRouteMaps(); return raceRouteMap!; },
+    raceRouteMap: (): RouteMap => {
+      const { trackId, mode } = getRace();
+      if (raceRouteMap?.trackId !== trackId || raceRouteMap?.streaming !== hasStreamingRouteMap(trackId, mode)) ensureRouteMaps();
+      return raceRouteMap!;
+    },
     relabelRouteMaps(locale: string): void { for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale); },
     restoreLastTrack(): void {
       const choice = restoreHomeTrack(lastHomeTrack(), getRace().trackId, playable, isUpcomingTrack);

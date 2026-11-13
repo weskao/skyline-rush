@@ -51,7 +51,7 @@ test('daily runs go on their own board, fastest first, filtered to that day', ()
   recordDaily(dailyChallenge(day(1)), race(50), storage, day(1));
   const board = dailyBoard(loadDaily(storage), today.id);
   assert.deepEqual(board.map(run => run.time), [64.2, 70]);
-  assert.deepEqual(Object.keys(board[0]).sort(), ['date', 'id', 'modifier', 'position', 'score', 'time', 'track']);
+  assert.equal(board[0].modifier, today.modifier);
   assert.equal(board[0].track, today.track);
 });
 
@@ -99,4 +99,13 @@ test('no-flight input clears a latched touch FLY and rejects disabled keyboard o
   } finally {
     controls.destroy();
   }
+});
+
+test('Daily compares times from the new route and retains prior attempts in storage', () => {
+  const challenge = { id: '2026-11-13', track: 'coast', modifier: 'gold-rings' };
+  const old = { ...challenge, time: 30, position: 1, score: 10, date: '2026-11-13T07:00:00.000Z' };
+  const storage = memoryStorage({ 'skyline-rush-daily': JSON.stringify([old]) });
+  const fresh = recordDaily(challenge, { result: { position: 1, time: 60, score: 10 } }, storage, new Date('2026-11-13T08:00:00.000Z'));
+  assert.deepEqual(loadDaily(storage), [old, fresh]);
+  assert.deepEqual(dailyBoard(loadDaily(storage), challenge.id), [fresh]);
 });

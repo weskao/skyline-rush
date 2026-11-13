@@ -33,6 +33,7 @@ interface SavedModeRace { distance?: number; layout?: number;
   date?: string;
 }
 interface SavedDailyRace {
+  layout?: number;
   id: string;
   track: string;
   modifier: string;

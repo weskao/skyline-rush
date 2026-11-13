@@ -1,3 +1,4 @@
+import { classicCornerPush } from './classic-road-routes.ts';
 import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
 import { earnsAirChain } from './air-chain.ts';
 import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
@@ -340,6 +341,7 @@ export function stepRace(race, input, dt) {
   const ramp = STEER_RAMP * (car.section === 'ice' ? ICE_RAMP_FACTOR : 1);
   car.steering += clamp(steer - car.steering, -dt / ramp, dt / ramp);
   let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * dt;
+  if (car.altitude < .1 && !race.endless?.practice) lateralPosition += classicCornerPush(race.trackId, car.distance, car.speed) * dt;
   if (car.section === 'crosswind') lateralPosition += (section.dir ?? 1) * CROSSWIND_SPEED * dt;
   if (input.laneAssist === true && steer === 0 && car.cooldown === 0 && car.speed > 5) {
     const lane = LANES.reduce((best, centre) => Math.abs(centre - car.x) < Math.abs(best - car.x) ? centre : best);

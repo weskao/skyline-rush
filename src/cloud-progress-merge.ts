@@ -102,7 +102,7 @@ function dailyRun(raw: unknown): NormalizedRun | null {
   if (!when || typeof id !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(id) ||
       !track(trackId) || typeof modifier !== 'string' || !DAILY_MODIFIERS.includes(modifier) ||
       !validTime(time) || typeof pos !== 'number' || !Number.isInteger(pos) || pos < 1 || pos > 4) return null;
-  return { id, track: trackId, modifier, time, position: pos, score: nonnegative(run.score), date: when };
+  return { id, track: trackId, modifier, time, position: pos, score: nonnegative(run.score), date: when, ...layoutOf(run) };
 }
 
 // Stable identity ignores mutable telemetry: the same attempt never counts twice on two devices.

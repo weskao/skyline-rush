@@ -110,11 +110,20 @@ test('a finished gated Frostbite race writes only its topology-keyed results, ne
   } finally { delete globalThis.localStorage; }
 });
 
-test('chase-camera look-ahead is unchanged on every existing track and shortened only through Frostbite hairpins', async () => {
+test('race camera shortens look-ahead through sharp classic corners and Frostbite hairpins', async () => {
   const { lookAheadDistance } = await import('../src/track-paths.ts');
+  const reauthored = new Set(['coast', 'neon', 'canyon', 'aurora']);
   for (const id of [...Object.keys(RACE_TRACKS), 'harbor-circuit'])
-    for (let d = 0; d < raceTrack(id).length; d += 25) for (const reach of [34, 65])
-      assert.equal(lookAheadDistance(id, d, reach), reach, `${id}@${d}`);
+    for (let d = 0; d < raceTrack(id).length; d += 25) for (const reach of [34, 65]) {
+      const actual = lookAheadDistance(id, d, reach);
+      if (!reauthored.has(id)) assert.equal(actual, reach, `${id}@${d}`);
+      else {
+        const f = trackFrame(id, d).forward, g = trackFrame(id, d + actual).forward;
+        const turn = Math.acos(Math.min(1, f[0] * g[0] + f[2] * g[2]));
+        assert.ok(actual > 5 && actual <= reach && turn <= 22.5 * Math.PI / 180, `${id}@${d}`);
+      }
+    }
+  assert.ok(lookAheadDistance('neon', 175, 65) < 65);
   const hairpin = [...Array(400).keys()].map(i => i * 30).find(d => lookAheadDistance(FROSTBITE_ID, d, 34) < 34);
   assert.ok(hairpin !== undefined);
   const reach = lookAheadDistance(FROSTBITE_ID, hairpin, 34), f = trackFrame(FROSTBITE_ID, hairpin).forward, g = trackFrame(FROSTBITE_ID, hairpin + reach).forward;

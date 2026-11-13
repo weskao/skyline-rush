@@ -1,3 +1,5 @@
+import { roadRecordLayout, runLayout } from './record-layout.ts';
+
 // Pure results projections; storage and legacy JSON handling remain in history.js.
 export interface CareerRun {
   position?: number;
@@ -12,8 +14,8 @@ export const validStars = (stars: unknown): stars is 1 | 2 | 3 =>
 export const starTotal = (stars: Record<string, number>): number =>
   Object.values(stars).reduce((sum, value) => sum + value, 0);
 
-export function dailyBoard<T extends { id: string; time: number }>(runs: readonly T[], id: string): T[] {
-  return runs.filter(run => run.id === id).sort((a, b) => a.time - b.time);
+export function dailyBoard<T extends { id: string; time: number; track?: string; layout?: number }>(runs: readonly T[], id: string): T[] {
+  return runs.filter(run => run.id === id && (!run.track || runLayout(run) === roadRecordLayout(run.track))).sort((a, b) => a.time - b.time);
 }
 
 export function careerStats(history: readonly CareerRun[] | null | undefined) {

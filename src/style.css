@@ -2284,3 +2284,6 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 /* Wave 3 NITRO artwork: appended after the byte-locked main CSS contract. */
 .nitro-hud > img[data-wave3-hud-art] { display: inline-block; width: 24px; height: 24px; margin-right: 5px; object-fit: contain; vertical-align: middle; }
 
+
+/* The rolling Endless minimap follows the current road window and has no finite finish. */
+body[data-race-mode="endless"] #race-route-map[data-streaming] { display: block; }

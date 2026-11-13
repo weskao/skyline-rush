@@ -1,3 +1,4 @@
+import { classicRoadRoute, legacyClassicRoad } from './classic-road-routes.ts';
 import { raceTrack } from './race-tracks.ts';
 import { CIRCUIT_ID, circuitFrame } from './circuit-track.ts';
 import { skyFrame, skyPoint, type Vec3, type SkyPoint } from './sky-track.ts';
@@ -10,10 +11,8 @@ const MEASURED_FRAMES: Readonly<Record<string, typeof monsoonFrame>> = { [STORML
 
 interface OverviewPoint { distance: number; x: number; y: number }
 
-// A single distance -> main-road mapping drives previews, minimaps and world geometry.
-// The original flat routes retain their exact world-space centreline.
-export const classicRoadCenter = (distance: number): number => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
-const flatCourses = new Set(['coast', 'neon', 'canyon', 'aurora']);
+// The same distance-to-road mapping drives the race scene, previews and minimaps.
+export { classicRoadCenter } from './classic-road-routes.ts';
 const profiles: Record<string, (s: number) => Pick<SkyPoint, 'x' | 'y'>> = {
  taipei: s => ({ x: 205 * Math.sin(s/670) + 60 * Math.sin(s/185), y: 0 }),
  tokyo: s => ({ x: 275 * Math.sin(s/455) + 90 * Math.cos(s/205), y: 0 }),
@@ -38,7 +37,8 @@ export function trackPoint(trackId: string, distance: number, extended = false):
   if (trackId === 'spiral') return skyPoint(s, extended);
   const profile = profiles[trackId];
   if (profile) return { ...profile(s), z: -s };
-  return { x: classicRoadCenter(s), y: 0, z: -s };
+  const [x, z] = (classicRoadRoute(trackId) ?? legacyClassicRoad).point(s);
+  return { x, y: 0, z };
 }
 
 /** `span`: the car flies the Frostbite Rift span (`car.span`); other tracks ignore it. */
@@ -50,6 +50,11 @@ export function trackFrame(trackId: string, distance: number, extended = false, 
   if (Object.hasOwn(MEASURED_FRAMES, trackId)) return MEASURED_FRAMES[trackId](distance);
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
   if (trackId === 'spiral') return skyFrame(s, extended);
+  const road = classicRoadRoute(trackId);
+  if (road) {
+    const heading = road.heading(s), sin = Math.sin(heading), cos = Math.cos(heading);
+    return { point: trackPoint(trackId, s, extended), forward: [sin, 0, -cos] as Vec3, right: [cos, 0, sin] as Vec3, up: [0, 1, 0] as Vec3 };
+  }
   const a = trackPoint(trackId, s - 0.5, extended);
   const b = trackPoint(trackId, s + 0.5, extended);
   // The end derivative is a one-sided difference, not a zero-length tangent.
@@ -71,16 +76,11 @@ export function trackLocalPosition(trackId: string, distance: number, lateral = 
   ];
 }
 
-// Map-only projection. Actual race geometry is unchanged. The historic flat
-// road bends by <100m over 4-6km: an equal-scale full-course map would render
-// as a near-invisible vertical thread. Independently scale the lateral axis so
-// players can READ the turns. This is a schematic, not a map-distance scale.
+// Fit the real lateral and longitudinal route extents to the small HUD map.
 const mapFit = (points: readonly OverviewPoint[], mode: 'flat' | 'world-tour'): OverviewPoint[] => {
   const xs=points.map(p=>p.x), ys=points.map(p=>p.y);
   const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
   const midX=(minX+maxX)/2, spanX=Math.max(maxX-minX,1), spanY=Math.max(maxY-minY,1);
-  // Old flat courses show their actual sinusoidal road centerline; no hidden
-  // shortcuts or artificial bends are added.
   return points.map(p=>({
     distance:p.distance,
     x:.5 + (p.x-midX)/spanX*(mode==='flat'?.72:.84),
@@ -97,7 +97,7 @@ export function trackOverview(trackId: string, count = 128): OverviewPoint[] {
     const world=trackPoint(trackId,distance);
     return {distance,x:world.x,y:-world.z};
   });
-  if(flatCourses.has(trackId))return mapFit(points,'flat');
+  if(classicRoadRoute(trackId))return mapFit(points,'flat');
   if(trackId==='spiral'){
     const start=1100,end=2200,after=Math.max(1,track.length-end);
     return points.map(p=>{
@@ -131,12 +131,12 @@ const turnBetween = (trackId: string, from: number, to: number, extended: boolea
 };
 /** Chase-camera look-ahead in metres: `reach`, shortened where the road turns more than 22° before it (hairpins). */
 export function lookAheadDistance(trackId: string, distance: number, reach: number, extended = false): number {
-  let ahead = reach;
-  // Turn grows ~linearly with arc on a bend, so a few proportional steps settle under the cap.
-  for (let i = 0; i < 4; i++) {
-    const turn = turnBetween(trackId, distance, distance + ahead, extended);
-    if (turn <= MAX_LOOK_TURN) break;
-    ahead *= MAX_LOOK_TURN / turn * .98;
+  if (turnBetween(trackId, distance, distance + reach, extended) <= MAX_LOOK_TURN) return reach;
+  let low = 0, high = reach;
+  for (let i = 0; i < 10; i++) {
+    const mid = (low + high) / 2;
+    if (turnBetween(trackId, distance, distance + mid, extended) <= MAX_LOOK_TURN) low = mid;
+    else high = mid;
   }
-  return ahead;
+  return low;
 }

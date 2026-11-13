@@ -13,18 +13,18 @@ import { COURSE_RUNTIMES } from './course-runtimes.ts';
 const BOOST_ODDS = [0.4, 0.7, 0.8, 0.9] as const; // charge 40%, nitro 30%, slipstream 10%, risk 10%, mystery 10% (unchanged)
 export const RACE_TRACKS: Record<string, TrackConfig> = {
   coast: { // fixedRings: the original gate heights (8 m, then road height 3 m) on any lane
-    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, layoutVersion: 4, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS, introRivals: true, // the first, easiest map
+    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, layoutVersion: 5, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS, introRivals: true, // the first, easiest map
     sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
   },
   neon: {
-    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 4, ringOdds: BOOST_ODDS, introRivals: true, // an early, easy map
+    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 5, ringOdds: BOOST_ODDS, introRivals: true, // an early, easy map
     sections: [
       { from: 600, to: 1100, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 },
       { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
     ],
   },
   canyon: {
-    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 4, openingNitroRings: 2, // volume was enough; only the first NITRO came late
+    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 5, openingNitroRings: 2, // volume was enough; only the first NITRO came late
     sections: [
       { from: 700, to: 1300, type: 'crosswind', dir: 1 }, { from: 1500, to: 1560, type: 'gap' },
       { from: 2000, to: 2500, type: 'shortcut', x: -7.5, altitude: 6 },
@@ -33,7 +33,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   aurora: {
-    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004, layoutVersion: 3,
+    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004, layoutVersion: 4,
     sections: [
       { from: 900, to: 1500, type: 'ice' }, { from: 1800, to: 2600, type: 'uphill' }, { from: 2800, to: 3500, type: 'ice' },
       { from: 3800, to: 4200, type: 'uphill' }, { from: 4300, to: 4900, type: 'ice' },
