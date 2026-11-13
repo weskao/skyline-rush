@@ -1,3 +1,4 @@
+import { classicRoadRoute } from './classic-road-routes.ts';
 import { raceTrack } from './race-tracks.ts';
 import { minimapGraph } from './course-minimap.ts';
 import { createCourseRouteProjection } from './course-route-map.ts';
@@ -6,7 +7,7 @@ import { groundAt } from './course-items.ts';
 import type { CourseRuntime } from './course-race.ts';
 import { CIRCUIT_ID, circuitDistance } from './circuit-track.ts';
 import { trackOverview, trackPoint } from './track-paths.ts';
-import { SKY_SPIRAL } from './sky-track.ts';
+import { SKY_SPIRAL, skyPoint } from './sky-track.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_DRIVER_IDS } from './race-grid.ts';
 
@@ -105,7 +106,26 @@ const routeLabel = (trackId: string, locale: string = getLocale()): string => {
   const label = t('route.aria', { name: trackName(trackId, locale) }, locale);
   return routeElevationCues(trackId).length ? `${label} · ${t('route.grade', undefined, locale)}` : label;
 };
-export function createRouteMap(trackId: string, { live = false }: { live?: boolean } = {}) {
+// Streaming uses a rolling local map. Sample a new window once per 100 m sector,
+// then project markers through the same world-space bounds on every update.
+function streamingRoute(point: (d: number) => readonly [number, number], distance: number) {
+  const sector = Math.floor(distance / 100), start = sector * 100 - 80;
+  const samples = Array.from({ length: 36 }, (_, i) => point(start + i * 20));
+  const xs = samples.map(p => p[0]), zs = samples.map(p => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
+  const midX = (minX + maxX) / 2, width = Math.max(100, maxX - minX);
+  const project = ([x, z]: readonly [number, number]) => ({ x: 50 + (x - midX) / width * 80, y: 8 + (z - minZ) / Math.max(1, maxZ - minZ) * 84 });
+  return { sector, start, end: start + 700, line: samples.map(p => pointText(project(p))).join(' '), marker: (d: number) => project(point(d)) };
+}
+export const hasStreamingRouteMap = (trackId: string, mode: string): boolean =>
+  (mode === 'endless' || mode === 'elimination') && (trackId === 'spiral' || !!classicRoadRoute(trackId));
+
+export function createRouteMap(trackId: string, { live = false, streaming = false }: { live?: boolean; streaming?: boolean } = {}) {
+  const streamRoad = streaming ? trackId === 'spiral' ? (d: number) => {
+    const { x, z } = skyPoint(d, true);
+    return [x, z] as const;
+  } : classicRoadRoute(trackId)?.point : undefined;
+  let window: ReturnType<typeof streamingRoute> | undefined;
   const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img' }); // aria-label: relabel() below
   const graph = minimapGraph(trackId);
   const graphMap = graph ? createCourseRouteProjection(graph, 64) : null;
@@ -117,8 +137,9 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
       ...(line.ground ? {} : { 'stroke-dasharray': '3 2' }),
     }));
   }
-  else element.append(svg('polyline', { points: routePolyline(trackId), class: 'route-overview-line', fill: 'none' }));
-  const upper = spiralUpperRoutePolyline(trackId);
+  const line = svg('polyline', { points: streamRoad || graphMap ? '' : routePolyline(trackId), class: 'route-overview-line', fill: 'none' });
+  if (!graphMap) element.append(line);
+  const upper = streamRoad ? '' : spiralUpperRoutePolyline(trackId);
   if (upper) {
     element.append(svg('polyline', { points: upper, class: 'route-spiral-upper', fill: 'none', 'aria-hidden': 'true' }));
     element.append(svg('polyline', { points: spiralUpperDirectionChevron(trackId),
@@ -135,7 +156,7 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
       style: 'fill:var(--map-player, #ffe9b4);stroke:#0b1a2c;stroke-width:.8;vector-effect:non-scaling-stroke;pointer-events:none',
     }));
   }
-  for (const [kind, d] of [['start', 0], ['finish', raceTrack(trackId)!.length]] as const) {
+  if (!streamRoad) for (const [kind, d] of [['start', 0], ['finish', raceTrack(trackId)!.length]] as const) {
     const edgeId = graph?.groundRoute[kind === 'start' ? 0 : graph.groundRoute.length - 1];
     const p = graphMap && graph && edgeId
       ? graphMap.marker(edgeId, kind === 'start' ? 0 : routeLength(graph, edgeId))
@@ -161,19 +182,28 @@ export function createRouteMap(trackId: string, { live = false }: { live?: boole
     element.append(pointer);
   }
   const updateDrivers = (drivers: readonly RouteDriver[], course?: CourseRuntime): void => {
-    const active = new Set(drivers.map(driver => driver.id));
+    if (streamRoad) {
+      const distance = drivers.find(driver => driver.id === 'YOU')?.distance ?? 0;
+      if (window?.sector !== Math.floor(distance / 100)) {
+        window = streamingRoute(streamRoad, distance);
+        setIfChanged(line, 'points', window.line);
+      }
+    }
+    const range = window;
+    const visible = range ? drivers.filter(driver => driver.distance >= range.start && driver.distance <= range.end) : drivers;
+    const active = new Set(visible.map(driver => driver.id));
     for (const [id, marker] of markers) {
       setIfChanged(marker, 'visibility', active.has(id) ? 'visible' : 'hidden');
     }
     if (pointer) setIfChanged(pointer, 'visibility', active.has('YOU') ? 'visible' : 'hidden');
-    for (const driver of drivers) {
+    for (const driver of visible) {
       const marker = markers.get(driver.id);
       if (!marker) continue;
       const travel = graphMap ? course?.cars.get(driver.id)?.travel : undefined;
       const at = graph && graphMap ? travel ? { edgeId: travel.currentEdgeId, localS: travel.localS } : groundAt(graph, driver.distance) : null;
       const next = graph && graphMap ? travel ? { edgeId: travel.currentEdgeId, localS: travel.localS + 10 } : groundAt(graph, driver.distance + 10) : null;
-      const point = at && graphMap ? graphMap.marker(at.edgeId, at.localS) : routeMarker(trackId, driver.distance);
-      const ahead = next && graphMap ? graphMap.marker(next.edgeId, next.localS) : routeMarker(trackId, driver.distance + 10);
+      const point = at && graphMap ? graphMap.marker(at.edgeId, at.localS) : window?.marker(driver.distance) ?? routeMarker(trackId, driver.distance);
+      const ahead = next && graphMap ? graphMap.marker(next.edgeId, next.localS) : window?.marker(driver.distance + 10) ?? routeMarker(trackId, driver.distance + 10);
       if (at) { point.x *= 100; point.y *= 100; ahead.x *= 100; ahead.y *= 100; }
       const dx = ahead.x - point.x, dy = ahead.y - point.y;
       const length = Math.hypot(dx, dy) || 1;

@@ -8,6 +8,14 @@
 - [x] `checkImage` in `tests/wave3-demo-artwork-browser.spec.js` sampled `complete`/`currentSrc` once and raced the still → animated src swap (`loaded` false or an empty URL under parallel load: 1/42 and 1/56 failures with `--repeat-each`). It now polls until a loaded frame exists before measuring: 84/84 passed with `--repeat-each=6`.
 - [ ] Confirm exact-HEAD full CI and its quality gate on the feature branch.
 
+# 2026-11-13 — Classic track corners
+
+- [x] Author distinct Coast, Neon Downtown, Canyon Skyway and Aurora Pass corner sequences, preserving their shortcuts, tunnels, gaps and ice.
+- [x] Use the same road coordinates for the minimap, road mesh, vehicles, hazards, pickups and `3d=1` scenery. Stream the route through Endless and Elimination with a rolling minimap. Preserve earlier bests and ghosts under their existing layout keys.
+- [x] RED/GREEN observed for missing left/right bends, Canyon gap edges, speed-dependent handling, streamed minimap, Coast GLB rail seams and record versioning. Replay baselines changed only for the four revised tracks.
+- [x] Add five Sky Spiral sweepers, preserve the helix and three straight jump corridors, and continue the sweepers after the sprint in streaming modes. Make the former sprint gaps solid in Endless and Elimination and keep the minimap in sync.
+- [ ] Complete browser WebGL and physical-phone checks, and verify the exact-commit GitHub CI quality gate.
+
 # 2026-11-13 — Model-adaptive airflow
 
 - [x] Fit the shared AIRFLOW streamlines and underbody pressure to the displayed car on Home, Coming Soon tracks, Garage Studio and in races. Cover the procedural Roadster, Roadster GLB, Crimson GT and a wider/taller future-model fixture.

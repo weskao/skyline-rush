@@ -120,15 +120,16 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   }
   const wheel = { x: 0, d: 0 };
   // Rear-wheel contact in world x / race distance: drift smoke and rain spray start here.
-  function rearWheel(side, car, center, distance, vehicles) {
+  function rearWheel(side, car, center, originZ, vehicles) {
     nozzlePosition.set(side * 1.05, 0.12, 1.45);
     const pose = vehicles?.[0];
     if (pose) { pose.updateWorldMatrix(true, false); nozzlePosition.applyMatrix4(pose.matrixWorld); }
     else nozzlePosition.x += roadCenter(car.distance) + car.x - center;
-    wheel.x = nozzlePosition.x + center; wheel.d = distance - nozzlePosition.z;
+    wheel.x = nozzlePosition.x + center; wheel.d = originZ - nozzlePosition.z;
     return wheel;
   }
-  const burst = createParticleBurst(emit, roadCenter);
+  let classicRoute;
+  const burst = createParticleBurst(emit, (d, x) => classicRoute?.point(d, x) ?? [roadCenter(d) + x, -d]);
   // rings[0] flashes a crash, rings[1] a hit the shield blocked (ITEM-12); one shader program for both.
   const rings = [orange, blue].map(color => {
     const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(...color), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -153,7 +154,9 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       // Loaded pickup models replace the stand-ins only between races: their shaders compile before GO, never mid-race.
       const rewarm = pickupMarkers.frame(flowTime, reducedMotion, race.phase !== 'racing');
       const car = race.player;
-      const distance = preview ? 340 : car.distance;
+      const distance = options.roadDistance ?? (preview ? 340 : car.distance);
+      classicRoute = options.classicRoute;
+      const originZ = classicRoute ? -classicRoute.point(distance)[1] : distance;
       const enabled = options.enabled !== false;
       const active = enabled && !preview && race.phase === 'racing' && dt > 0;
       const lowQuality = options.quality === 'low';
@@ -220,7 +223,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         driftEmission = Math.min(8, driftEmission + dt * (lowQuality ? 16 : 60));
         while (driftEmission >= 1) {
           const side = Math.floor(driftEmission) % 2 ? -1 : 1;
-          const { x, d } = rearWheel(side, car, center, distance, vehicles);
+          const { x, d } = rearWheel(side, car, center, originZ, vehicles);
           emit(x, 0.12, d, side * 1.5, 0.8, car.speed * 0.25, 0.55, 0.5, mist, 0, 2, 0.3);
           if (car.drift.time >= 1) emit(x, 0.15, d, side * (2 + Math.random() * 3), 1.5, car.speed * 0.3,
             0.12, 0.4, car.drift.time >= 3 ? purple : car.drift.time >= 2 ? orange : blue, 6);
@@ -231,7 +234,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       const spraying = active && !reducedMotion && car.altitude < 0.2 && isRaining(racePreset(race), race.trackId);
       sprayEmission = spraying ? Math.min(4, sprayEmission + dt * sprayRate(options.quality ?? 'high', car.speed)) : 0;
       for (; sprayEmission >= 1; sprayEmission--) {
-        const { x, d } = rearWheel(spraySide = -spraySide, car, center, distance, vehicles);
+        const { x, d } = rearWheel(spraySide = -spraySide, car, center, originZ, vehicles);
         emit(x, 0.1, d, spraySide * (0.6 + Math.random()), 1.2 + Math.random(), car.speed * 0.88, 0.7, 0.5, mist, 3, 2, 0.35); // ~0.88: hangs a few metres behind the tyres
       }
       if (car.impact !== lastImpact) {
@@ -267,7 +270,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         if (!enabled || strengths[source] < 0.01 || dt === 0) continue;
         const d = preview ? source === 0 ? 340 : 375 + (source - 1) * 28 : driver.distance;
         const altitude = pose ? pose.position.y : preview ? source === 0 ? 1.6 : 5 : driver.altitude;
-        const heading = Math.atan((roadCenter(d + 1) - roadCenter(d - 1)) / 2);
+        const heading = classicRoute?.heading(d) ?? Math.atan((roadCenter(d + 1) - roadCenter(d - 1)) / 2);
         const speed = preview ? 0 : driver.speed;
         if (pose) pose.updateWorldMatrix(true, false);
         emissions[source] = Math.min(12, emissions[source] + dt * strengths[source] * (reducedMotion ? 65 : source === 0 ? 240 : 90));
@@ -281,7 +284,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
           if (pose) {
             nozzlePosition.applyMatrix4(pose.matrixWorld);
             nozzlePosition.x += center;
-            nozzlePosition.z = distance - nozzlePosition.z;
+            nozzlePosition.z = originZ - nozzlePosition.z;
             nozzleVelocity.applyQuaternion(pose.quaternion);
           } else {
             nozzlePosition.x += roadCenter(d) + driver.x;
@@ -311,7 +314,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         p.y += p.vy * dt;
         p.vy -= p.gravity * dt;
         p.distance += p.forward * dt;
-        if (p.y < 0.08 && Math.abs(p.x - roadCenter(p.distance)) < 12) {
+        if (p.y < 0.08 && Math.abs(p.x - (classicRoute?.centerAtZ(-p.distance) ?? roadCenter(p.distance))) < 12) {
           p.y = 0.08;
           if (p.kind === 1 && !p.grounded) {
             // The deck redirects the downwash into a broad, slowing wall jet.
@@ -328,10 +331,10 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
           p.forward *= Math.exp(-dt * 2.4);
         }
         const offset = i * 3;
-        if (options.worldPoint) {
+        if (options.worldPoint && !classicRoute) {
           positions.set(options.worldPoint(p.distance,p.x-roadCenter(p.distance),p.y,distance),offset);
         } else {
-          positions[offset] = p.x - center; positions[offset + 1] = p.y; positions[offset + 2] = -(p.distance - distance);
+          positions[offset] = p.x - center; positions[offset + 1] = p.y; positions[offset + 2] = originZ - p.distance;
         }
         colors[offset] = p.color[0]; colors[offset + 1] = p.color[1]; colors[offset + 2] = p.color[2];
         velocities[offset] = p.vx; velocities[offset + 1] = p.vy; velocities[offset + 2] = -p.forward;

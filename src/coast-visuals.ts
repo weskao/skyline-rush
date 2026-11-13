@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { ClassicRoad } from './classic-road-routes.ts';
 import { seededRng } from './rng.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 import { coastChunkWindow, createCoastModelLayer, type CoastModelLayer } from './coast-scenery-glb.ts';
@@ -17,7 +18,7 @@ const DENSITY: Record<VfxQuality, number> = {low:12,medium:20,high:32};
 const STEP = 60, TOTAL = DENSITY.high;
 type ScenicMesh = THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
 
-export function createCoastScenery(scene: THREE.Scene, roadCenter: (distance:number)=>number) {
+export function createCoastScenery(scene: THREE.Scene) {
   const group = new THREE.Group();
   group.name = 'Coast scenic details';
   scene.add(group);
@@ -38,21 +39,22 @@ export function createCoastScenery(scene: THREE.Scene, roadCenter: (distance:num
   }
   let model: CoastModelLayer | null = null;
   const distances = new Float64Array(TOTAL);
-  let initialized = false, previousTier:VfxQuality|null=null;
+  let previousRoute: ClassicRoad | undefined, previousTier:VfxQuality|null=null;
   let origin = 0, previousDistance = 0, previousSeed: number | undefined;
   const transform = new THREE.Matrix4();
   const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
-  function place(index:number,distance:number,seed?:number) {
+  function place(route:ClassicRoad,index:number,distance:number,seed?:number) {
     const shape = seed === undefined ? index : Math.floor(seededRng(seed, 'endless-coast-v1:' + distance)() * 100000);
-    const localDistance = distance - origin;
     const side=index%2===0?-1:1;
-    const x=roadCenter(distance)+side*(42+(shape*13%39));
+    const offset=side*(42+(shape*13%39));
+    const [x,z]=route.point(distance,offset);
     // All scenery stays beyond the driving corridor and its existing railings.
-    p.set(x,-2.8,-localDistance);
+    p.set(x,-2.8,z+origin);
     s.set(7+(shape%4)*2,6+(shape%3)*1.6,9+(shape%3)*2);
     q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP,shape*.71);
     transform.compose(p,q,s);rock.setMatrixAt(index,transform);
-    p.set(x+side*11,6.2,-localDistance-8);
+    const [treeX,treeZ]=route.point(distance+8,offset+side*11);
+    p.set(treeX,6.2,treeZ+origin);
     s.set(3.9+(shape%3)*.55,10+(shape%3)*1.5,3.9+(shape%3)*.55);
     transform.compose(p,q,s);tree.setMatrixAt(index,transform);
     p.y=1.3;s.set(.9,9,.9);
@@ -60,11 +62,11 @@ export function createCoastScenery(scene: THREE.Scene, roadCenter: (distance:num
   }
   return {
     group,
-    update(distance:number,quality:VfxQuality,seed?:number) {
+    update(route:ClassicRoad,distance:number,quality:VfxQuality,seed?:number) {
       if (!Number.isFinite(distance)) return;
       const count=DENSITY[quality];
-      const nextOrigin = seed === undefined ? 0 : Math.floor(distance / 500) * 500;
-      const rebuild = !initialized || seed !== previousSeed || seed !== undefined && (nextOrigin !== origin || distance < previousDistance || quality !== previousTier);
+      const nextOrigin = seed === undefined ? 0 : -route.point(Math.floor(distance / 500) * 500)[1];
+      const rebuild = route !== previousRoute || seed !== previousSeed || seed !== undefined && (nextOrigin !== origin || distance < previousDistance || quality !== previousTier);
       origin = nextOrigin;
       const first=(Math.floor(distance/STEP)-2)*STEP;
       let moved=false;
@@ -74,12 +76,12 @@ export function createCoastScenery(scene: THREE.Scene, roadCenter: (distance:num
         // Recycle only expired slots. Mesh matrices stay stable across ordinary frames.
         if(distances[i]<first) distances[i]+=Math.ceil((first-distances[i])/(capacity*STEP))*capacity*STEP;
         if(rebuild||distances[i]!== (group.userData['distance'+i] as number)) {
-          place(i,distances[i],seed);group.userData['distance'+i]=distances[i];moved=true;
+          place(route,i,distances[i],seed);group.userData['distance'+i]=distances[i];moved=true;
         }
       }
-      initialized=true;
+      previousRoute=route;
       const window = model ? coastChunkWindow(distance, quality) : null;
-      if (model && window) model.place(window, origin, seed);
+      if (model && window) model.place(route, window, origin, seed);
       for (const mesh of model?.meshes ?? []) mesh.visible = !!window;
       for(const mesh of meshes) {
         mesh.visible = !window; // Medium+ with the GLB: the scans replace the procedural rocks and trees
@@ -87,13 +89,14 @@ export function createCoastScenery(scene: THREE.Scene, roadCenter: (distance:num
         if(moved||previousTier!==quality)mesh.instanceMatrix.needsUpdate=true;
       }
       previousTier=quality;
-      group.position.set(-roadCenter(distance),0,distance-origin);
+      const [x,z]=route.point(distance);
+      group.position.set(-x,0,-z-origin);
       previousDistance=distance;previousSeed=seed;
     },
     /** Medium+ draws this parsed coast-scenery.glb instead of the procedural rocks/trees; the caller keeps ownership. */
     attachModel(source:THREE.Object3D) {
       model?.dispose();
-      model = createCoastModelLayer(source, roadCenter);
+      model = createCoastModelLayer(source);
       for (const mesh of model.meshes) { mesh.visible = false; group.add(mesh); }
     },
     detachModel() {

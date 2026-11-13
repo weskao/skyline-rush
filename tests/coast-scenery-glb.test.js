@@ -6,6 +6,7 @@ import { COAST_CHUNK_METRES, COAST_PIECES, coastChunkPlan, coastChunkWindow, PIE
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
 
 const center = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
+const road = { point: (d, lane = 0) => [center(d) + lane, -d], heading: d => Math.atan((center(d + 1) - center(d - 1)) / 2) };
 const PROCEDURAL = ['Coast shoreline rocks', 'Coast wind-shaped trees', 'Coast tree trunks'];
 
 /** Stand-in for the parsed coast-scenery.glb: same node names, palms with two primitives, the arch as two shells. */
@@ -67,25 +68,25 @@ test('chunk window: one chunk behind, more ahead on High than Medium, nothing on
 });
 
 test('the GLB layer draws one InstancedMesh per GLB primitive and replaces the procedural rocks/trees on Medium+', () => {
-  const scene = new THREE.Scene(), kit = createCoastScenery(scene, center);
+  const scene = new THREE.Scene(), kit = createCoastScenery(scene);
   kit.attachModel(fakeGlb());
   const layer = layerMeshes(kit);
   // cliff_a, cliff_b, rock_a, rock_b, guard_rail, 2 x palm bark/frond, one arch shell shared by front and back.
   assert.equal(layer.length, 10, 'one draw per primitive, never one per placed prop');
   for (const mesh of layer) assert.equal(mesh.frustumCulled, false);
-  kit.update(300, 'medium');
+  kit.update(road, 300, 'medium');
   for (const name of PROCEDURAL) assert.equal(kit.group.getObjectByName(name).visible, false, name);
   assert.ok(layer.every(mesh => mesh.visible));
-  kit.update(300, 'low');
+  kit.update(road, 300, 'low');
   for (const name of PROCEDURAL) assert.equal(kit.group.getObjectByName(name).visible, true, 'Low keeps the procedural scenery');
   assert.ok(layer.every(mesh => !mesh.visible), 'Low draws no GLB scenery');
   kit.dispose();
 });
 
 test('placed pieces sit where the chunk plan puts them, and unused instances are parked, not zero-scaled', () => {
-  const kit = createCoastScenery(new THREE.Scene(), center);
+  const kit = createCoastScenery(new THREE.Scene());
   kit.attachModel(fakeGlb());
-  kit.update(300, 'high');
+  kit.update(road, 300, 'high');
   const window = coastChunkWindow(300, 'high');
   const rails = kit.group.getObjectByName('guard_rail');
   let expected = 0;
@@ -108,14 +109,14 @@ test('placed pieces sit where the chunk plan puts them, and unused instances are
 });
 
 test('driving evicts chunks without leaks, duplicate draws or disposing shared GLB resources', () => {
-  const scene = new THREE.Scene(), kit = createCoastScenery(scene, center), glb = fakeGlb();
+  const scene = new THREE.Scene(), kit = createCoastScenery(scene), glb = fakeGlb();
   kit.attachModel(glb);
   const disposed = [];
   glb.traverse(o => { if (o.isMesh) { o.geometry.addEventListener('dispose', () => disposed.push(o.name)); o.material.addEventListener('dispose', () => disposed.push(o.name)); } });
   const layer = layerMeshes(kit);
   const arches = kit.group.getObjectByName('sea_arch');
   for (let d = 0; d < 6000; d += 7) {
-    kit.update(d, 'high');
+    kit.update(road, d, 'high');
     const window = coastChunkWindow(d, 'high');
     let archCount = 0;
     for (let c = window.first; c < window.first + window.count; c++) archCount += coastChunkPlan(c).filter(p => p.piece === 'sea_arch').length;
@@ -130,28 +131,42 @@ test('driving evicts chunks without leaks, duplicate draws or disposing shared G
 });
 
 test('a chunk keeps its pieces exactly while it stays in the window, and endless scenery stays near the floating origin', () => {
-  const kit = createCoastScenery(new THREE.Scene(), center);
+  const kit = createCoastScenery(new THREE.Scene());
   kit.attachModel(fakeGlb());
-  kit.update(5000, 'high', 77);
+  kit.update(road, 5000, 'high', 77);
   const cliffs = ['cliff_a', 'cliff_b'].map(n => kit.group.getObjectByName(n));
   // Group-local (road) space: the group itself follows the car laterally every frame, as the procedural scenery does.
   const local = mesh => Array.from({ length: mesh.count }, (_, i) => matrixOf(mesh, i).elements.map(v => +v.toFixed(4)).join());
   const before = new Set(cliffs.flatMap(local));
-  kit.update(5050, 'high', 77);
+  kit.update(road, 5050, 'high', 77);
   const after = cliffs.flatMap(local);
   assert.ok(after.filter(m => before.has(m)).length >= after.length - 1, 'only the newly entered chunk adds a cliff');
-  kit.update(1_000_000_000, 'high', 77);
+  kit.update(road, 1_000_000_000, 'high', 77);
   for (const mesh of layerMeshes(kit)) for (let i = 0; i < mesh.count; i++) assert.ok(Math.abs(matrixOf(mesh, i).elements[14]) < 3000);
   kit.dispose();
 });
 
 test('detaching the model returns Medium+ to the procedural scenery', () => {
-  const kit = createCoastScenery(new THREE.Scene(), center);
+  const kit = createCoastScenery(new THREE.Scene());
   kit.attachModel(fakeGlb());
-  kit.update(300, 'medium');
+  kit.update(road, 300, 'medium');
   kit.detachModel();
-  kit.update(300, 'medium');
+  kit.update(road, 300, 'medium');
   assert.equal(layerMeshes(kit).length, 0);
   for (const name of PROCEDURAL) assert.equal(kit.group.getObjectByName(name).visible, true);
+  kit.dispose();
+});
+
+test('3D guard rails join along the outside edge through a Coast sweeper', async () => {
+  const { classicRoadRoute } = await import('../src/classic-road-routes.ts');
+  const route = classicRoadRoute('coast'), kit = createCoastScenery(new THREE.Scene());
+  const glb = fakeGlb(), bar = glb.getObjectByName('guard_rail');
+  bar.scale.x = 6; // The shipped GLB's node turns the 2 m primitive into a 12 m bar.
+  kit.attachModel(glb);
+  kit.update(route, 350, 'high');
+  const rails = kit.group.getObjectByName('guard_rail');
+  const a = new THREE.Vector3(1, 0, 0).applyMatrix4(matrixOf(rails, 21));
+  const b = new THREE.Vector3(-1, 0, 0).applyMatrix4(matrixOf(rails, 22));
+  assert.ok(a.distanceTo(b) < .16, 'adjacent outside rail ends meet on the same curb');
   kit.dispose();
 });

@@ -10,6 +10,7 @@ service cloud.firestore {
     return trackIds().concat(['coast@2', 'coast@3', 'neon@2', 'neon@3', 'canyon@2', 'canyon@3', 'spiral@2', 'spiral@3',
       'aurora@2', 'taipei@2', 'tokyo@2', 'alpine@2', 'coastal@2', 'cosmic@2',
       'coast@4', 'neon@4', 'canyon@4', 'spiral@4',
+      'coast@5', 'neon@5', 'canyon@5', 'aurora@4', 'spiral@5',
       'aurora@3', 'taipei@3', 'tokyo@3', 'alpine@3', 'coastal@3', 'cosmic@3',
       'frostbite-canyon@t1l1', 'dune-tempest@t1l1', 'skyfall-archipelago@t1l1',
       'stormline-megacity@t1l1', 'volcanic-crown@t1l1', 'monsoon-ruins@t1l1']); // CourseGraph sprints: `<track>@t<topology>l<layout>`
@@ -25,9 +26,9 @@ service cloud.firestore {
   }
 
   function validMedal(values, id) {
-    return !(id in values) ||
-      (values[id] is string &&
-        values[id].matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z$'));
+    // A missing medal uses a valid default. A present non-string fails matches().
+    return values.get(id, '2000-01-01T00:00:00.000Z')
+      .matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z$');
   }
 
   // Keys are already limited to trackIds(); one list check replaces ten per-id lookups (expression budget).
@@ -49,6 +50,8 @@ service cloud.firestore {
       && validBest(bests, 'coastal@2') && validBest(bests, 'cosmic@2')
       && validBest(bests, 'coast@4') && validBest(bests, 'neon@4')
       && validBest(bests, 'canyon@4') && validBest(bests, 'spiral@4')
+      && validBest(bests, 'coast@5') && validBest(bests, 'neon@5')
+      && validBest(bests, 'canyon@5') && validBest(bests, 'aurora@4') && validBest(bests, 'spiral@5')
       && validBest(bests, 'aurora@3') && validBest(bests, 'taipei@3')
       && validBest(bests, 'tokyo@3') && validBest(bests, 'alpine@3')
       && validBest(bests, 'coastal@3') && validBest(bests, 'cosmic@3')

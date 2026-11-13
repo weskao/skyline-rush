@@ -82,3 +82,27 @@ test('missing a Sky Spiral gap triggers the existing recovery path', () => {
   assert.equal(race.player.falls, 1);
   assert.ok(race.player.distance >= 2940);
 });
+
+test('Sky Spiral has sweepers before and after the helix, with straight jump corridors', () => {
+  for (const [from, to] of [[170, 690], [2260, 2730], [3100, 3600], [4010, 4460], [4900, 5480]]) {
+    const headings = Array.from({ length: 20 }, (_, i) => skyFrame(from + i * (to - from) / 20).forward[0]);
+    assert.ok(Math.max(...headings) > .23 && Math.min(...headings) < -.23, `${from}–${to} needs visible turns`);
+  }
+  for (const { rampFrom, gapTo } of SKY_JUMPS) {
+    for (let d = rampFrom - 50; d <= gapTo + 150; d += 5) close(skyFrame(d).forward[0], 0, .01);
+  }
+});
+
+test('Sky Spiral streaming races drive through the former sprint gaps on solid road', () => {
+  for (const mode of ['endless', 'elimination']) {
+    const race = createRace('spiral', { mode });
+    race.phase = 'racing';
+    for (const { gapFrom, gapTo } of SKY_JUMPS) {
+      Object.assign(race.player, { distance: gapFrom - 5, speed: 75, altitude: 0, x: 0, cooldown: 5 });
+      for (let step = 0; step < 120 && race.player.distance < gapTo + 5; step++) stepRace(race, { throttle: true }, 1 / 60);
+      assert.ok(race.player.distance >= gapTo + 5, mode);
+      assert.equal(race.player.falls, 0, mode);
+      assert.equal(race.player.altitude, 0, mode);
+    }
+  }
+});

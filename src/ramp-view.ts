@@ -31,15 +31,16 @@ export function createRampPool(scene: THREE.Scene): THREE.InstancedMesh {
   return mesh;
 }
 
-const matrix = new THREE.Matrix4(), position = new THREE.Vector3(), scale = new THREE.Vector3(), upright = new THREE.Quaternion();
+const matrix = new THREE.Matrix4(), position = new THREE.Vector3(), scale = new THREE.Vector3(), rotation = new THREE.Quaternion();
 /** Places ramps near the camera; reuses module objects so the frame loop allocates nothing here. */
-export function drawRamps(mesh: THREE.InstancedMesh, ramps: readonly LaunchRamp[] | undefined | null, distance: number, at: Locate): void {
+export function drawRamps(mesh: THREE.InstancedMesh, ramps: readonly LaunchRamp[] | undefined | null, distance: number, at: Locate, heading?: (distance: number) => number): void {
   let visible = 0;
   if (ramps) for (const ramp of ramps) {
     if (ramp.distance < distance - 16 || ramp.distance > distance + 550) continue;
     if (visible >= mesh.instanceMatrix.count) break;
     const [x, y, z] = at(ramp.distance, ramp.x, 0);
-    matrix.compose(position.set(x, y, z), upright, scale.set(ramp.halfWidth * 2, ramp.height, ramp.halfLength * 2));
+    rotation.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, -(heading?.(ramp.distance) ?? 0));
+    matrix.compose(position.set(x, y, z), rotation, scale.set(ramp.halfWidth * 2, ramp.height, ramp.halfLength * 2));
     mesh.setMatrixAt(visible++, matrix);
   }
   mesh.count = visible;

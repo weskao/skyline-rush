@@ -2308,3 +2308,6 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   .intro:has(.home-resource-strip) .track-select .track-preview { height: 26px; }
   .intro:has(.home-resource-strip) .track-select button > span.track-route-map { top: 6px; height: 24px; }
 }
+
+/* The rolling Endless minimap follows the current road window and has no finite finish. */
+body[data-race-mode="endless"] #race-route-map[data-streaming] { display: block; }

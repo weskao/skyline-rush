@@ -4,13 +4,46 @@ import { RACE_TRACKS } from '../src/game.js';
 import { trackPoint, trackFrame, trackOverview } from '../src/track-paths.ts';
 const close=(a,b,e=1e-7)=>assert.ok(Math.abs(a-b)<e,`${a} != ${b}`);
 
-test('legacy courses preserve their existing road centreline',()=>{
-  for(const id of ['coast','neon','canyon','aurora']){
-    const p=trackPoint(id,1000);
-    close(p.x,Math.sin(1000/270)*18+Math.sin(1000/610)*25);
-    close(p.y,0);close(p.z,-1000);
+const classicIds = ['coast', 'neon', 'canyon', 'aurora'];
+const heading = (id, distance, extended = false) => {
+  const [x, , z] = trackFrame(id, distance, extended).forward;
+  return Math.atan2(x, -z);
+};
+
+test('the four classic tracks have distinct left/right corners and usable straights', () => {
+  const turns = new Map();
+  for (const id of classicIds) {
+    const distances = Array.from({ length: RACE_TRACKS[id].length / 20 + 1 }, (_, i) => i * 20);
+    const headings = distances.map(d => heading(id, d));
+    assert.ok(Math.max(...headings) > .28 && Math.min(...headings) < -.28, id + ' has bends in both directions');
+    assert.ok(headings.slice(0, 8).every(angle => Math.abs(angle) < .025), id + ' opens on a straight');
+    const section = distances.filter(d => d <= 1500).map(d => heading(id, d).toFixed(2));
+    turns.set(id, section.join(','));
+  }
+  assert.equal(new Set(turns.values()).size, classicIds.length);
+});
+
+test('Canyon bridge gaps have straight approaches and landings', () => {
+  for (const { from, to } of RACE_TRACKS.canyon.sections.filter(s => s.type === 'gap')) {
+    for (let d = from - 75; d <= to + 45; d += 5) close(heading('canyon', d), 0, .01);
   }
 });
+
+test('classic turns continue beyond the finish with metre-based progress and no heading jump', () => {
+  for (const id of classicIds) {
+    const { length } = RACE_TRACKS[id];
+    for (const start of [0, length - 40, length, 50000]) {
+      for (let d = start; d < start + 180; d += 4) {
+        const a = trackPoint(id, d, true), b = trackPoint(id, d + 4, true);
+        close(Math.hypot(b.x - a.x, b.z - a.z), 4, .025);
+        assert.ok(Math.abs(heading(id, d + 4, true) - heading(id, d, true)) < .045, id + ' turn is continuous');
+      }
+    }
+    const futureTurns = Array.from({ length: 70 }, (_, i) => Math.abs(heading(id, length + 20 * i, true)));
+    assert.ok(Math.max(...futureTurns) > .28, id + ' retains corners in Endless');
+  }
+});
+
 test('spiral is a true 360-degree elevated turn',()=>{
   const a=trackPoint('spiral',1100),middle=trackPoint('spiral',1650),b=trackPoint('spiral',2200);
   close(a.x,b.x,1e-5); close(a.z,b.z,1e-5);

@@ -2,6 +2,7 @@
 // primitive. The plan is pure (absolute chunk index + endless seed); the layer only rewrites instance matrices when the
 // chunk window or floating origin moves. The model cache handle owns the GLB geometry/materials, never this layer.
 import * as THREE from 'three';
+import type { ClassicRoad } from './classic-road-routes.ts';
 import { seededRng } from './rng.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
@@ -21,6 +22,7 @@ const MAX_PER_CHUNK: Readonly<Record<CoastPiece, number>> = {
 export const RAIL_CHUNKS = 4;
 const AHEAD: Readonly<Record<Exclude<VfxQuality, 'low'>, number>> = { medium: 4, high: 6 };
 const MAX_CHUNKS = 2 + AHEAD.high;
+const RAIL_LENGTH = 12;
 const CURB = 12.4, CLEAR = 20, SEA = -6, ALONG_ROAD = Math.PI / 2;
 
 /** `offset` is lateral metres from the road centre; `yaw` is relative to the road heading (pi/2 = model x along the road). */
@@ -30,7 +32,7 @@ export function coastChunkPlan(chunk: number, seed?: number): Placement[] {
   const r = seededRng(seed ?? 0, 'coast-glb-v1:' + chunk);
   const side = (): number => (r() < .5 ? -1 : 1);
   const out: Placement[] = [];
-  for (const s of [-1, 1]) for (let i = 0; i < 10; i++) out.push({ piece: 'guard_rail', along: 6 + i * 12, offset: s * CURB, y: .76, yaw: ALONG_ROAD, scale: 1 });
+  for (const s of [-1, 1]) for (let i = 0; i < 10; i++) out.push({ piece: 'guard_rail', along: RAIL_LENGTH * (i + .5), offset: s * CURB, y: .76, yaw: ALONG_ROAD, scale: 1 });
   const cliffSide = side();
   const cliff: CoastPiece = r() < .5 ? 'cliff_a' : 'cliff_b';
   const cliffScale = cliff === 'cliff_a' ? 1.4 + r() * .6 : 1.6 + r() * .8;
@@ -64,7 +66,7 @@ export function coastChunkWindow(distance: number, quality: VfxQuality): ChunkWi
 interface Part { mesh: THREE.InstancedMesh; locals: THREE.Matrix4[]; used: number }
 
 /** Pools sized for the largest window; spare instances are parked far below the scene (never zero scale). */
-export function createCoastModelLayer(source: THREE.Object3D, roadCenter: (distance: number) => number) {
+export function createCoastModelLayer(source: THREE.Object3D) {
   source.updateMatrixWorld(true);
   const rootInverse = source.matrixWorld.clone().invert();
   const parts = new Map<CoastPiece, Part[]>();
@@ -95,23 +97,31 @@ export function createCoastModelLayer(source: THREE.Object3D, roadCenter: (dista
   }
   const transform = new THREE.Matrix4(), part = new THREE.Matrix4();
   const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3(), up = THREE.Object3D.DEFAULT_UP;
-  let key = '';
+  let key = '', previousRoute: ClassicRoad | undefined;
   return {
     meshes,
     /** Rewrites every instance for the chunk window; a no-op unless the window, origin or seed changed. */
-    place(window: ChunkWindow, origin: number, seed?: number): void {
+    place(route: ClassicRoad, window: ChunkWindow, origin: number, seed?: number): void {
       const next = `${window.first}|${window.count}|${origin}|${seed}`;
-      if (next === key) return;
-      key = next;
+      if (next === key && route === previousRoute) return;
+      key = next; previousRoute = route;
       for (const list of parts.values()) for (const entry of list) entry.used = 0;
       for (let chunk = window.first; chunk < window.first + window.count; chunk++) {
         for (const placement of coastChunkPlan(chunk, seed)) {
           if (placement.piece === 'guard_rail' && chunk >= window.first + RAIL_CHUNKS) continue;
           const distance = chunk * COAST_CHUNK_METRES + placement.along;
-          const slope = (roadCenter(distance + 1) - roadCenter(distance - 1)) / 2;
-          p.set(roadCenter(distance) + placement.offset, placement.y, -(distance - origin));
-          q.setFromAxisAngle(up, placement.yaw - Math.atan(slope));
-          s.setScalar(placement.scale);
+          if (placement.piece === 'guard_rail') {
+            const [ax, az] = route.point(distance - RAIL_LENGTH / 2, placement.offset);
+            const [bx, bz] = route.point(distance + RAIL_LENGTH / 2, placement.offset);
+            p.set((ax + bx) / 2, placement.y, (az + bz) / 2 + origin);
+            q.setFromAxisAngle(up, Math.atan2(az - bz, bx - ax));
+            s.set(Math.hypot(bx - ax, bz - az) / RAIL_LENGTH, 1, 1);
+          } else {
+            const [x, z] = route.point(distance, placement.offset);
+            p.set(x, placement.y, z + origin);
+            q.setFromAxisAngle(up, placement.yaw - route.heading(distance));
+            s.setScalar(placement.scale);
+          }
           transform.compose(p, q, s);
           for (const entry of parts.get(placement.piece)!) for (const local of entry.locals) {
             if (entry.used < entry.mesh.instanceMatrix.count) entry.mesh.setMatrixAt(entry.used++, part.multiplyMatrices(transform, local));
