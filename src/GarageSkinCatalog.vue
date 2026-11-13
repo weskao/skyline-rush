@@ -200,13 +200,14 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-vfx-message { font-size: 12px; line-height: 1.45; color: #c2d4e3; margin: 6px 0 10px; }
 .garage-vfx-category { margin: 12px 0; }
 .garage-vfx-category h4 { font-size: 13px; margin: 0 0 6px; }
+/* 114px = 112px art frame + borders: three cards fit the 358px list of a 390px phone, art stays native 96px. */
 .garage-vfx-category ul {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 138px), 1fr));
-  gap: 10px; padding: 0; margin: 0; list-style: none;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 114px), 1fr));
+  gap: 6px; padding: 0; margin: 0; list-style: none;
 }
 .garage-vfx-category li.garage-skin-card {
   box-sizing: border-box; position: relative; isolation: isolate;
-  min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
   padding: 0; text-align: center;
   border: 1px solid hsl(var(--card-hue) 63% 59% / .5);
   border-radius: 14px 6px 14px 6px;
@@ -222,8 +223,8 @@ const statusText = (id: SkinId, locale: string) => {
 }
 .garage-skin-preview-hitarea {
   position: relative; z-index: 1; flex: 1; width: 100%; min-height: 0;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  border: 0; border-radius: inherit; padding: 12px 4px 8px; color: inherit;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  border: 0; border-radius: inherit; padding: 2px 0 4px; color: inherit;
   text-align: center; background: transparent; cursor: pointer; touch-action: manipulation;
 }
 /* Press feedback belongs to the whole card, never a dimmed box around its upper part. */
@@ -258,21 +259,20 @@ const statusText = (id: SkinId, locale: string) => {
 }
 .garage-vfx-fallback { color: #c4e7f0; font-size: 12px; overflow-wrap: anywhere; }
 .garage-skin-card strong {
-  min-height: 35px; font-size: 12px; line-height: 1.5; color: #ecf6ff;
+  padding: 0 4px; font-size: 12px; line-height: 1.3; color: #ecf6ff;
   font-weight: 750; overflow-wrap: anywhere; pointer-events: none;
 }
-.garage-skin-preview-label {
-  display: block; min-height: 15px; font-size: 11px; font-weight: 750;
-  color: #bdefff; opacity: 0; pointer-events: none;
-}
-.garage-skin-card[data-preview-only="true"] .garage-skin-preview-label { opacity: 1; }
-.garage-skin-status {
+/* One state pill per card: "Previewing" takes the status pill's place instead of its own row. */
+.garage-skin-status, .garage-skin-preview-label {
   font-size: 11px; min-height: 19px; padding: 1px 7px; border-radius: 999px;
   background: hsl(var(--card-hue) 82% 54% / .13);
   color: hsl(var(--card-hue) 91% 80%); border: 1px solid hsl(var(--card-hue) 60% 61% / .28);
   pointer-events: none;
 }
-.garage-vfx-actions { position: relative; z-index: 2; width: 100%; display: flex; justify-content: center; margin-top: auto; padding: 0 8px 10px; box-sizing: border-box; }
+.garage-skin-preview-label { display: none; font-weight: 750; color: #bdefff; }
+.garage-skin-card[data-preview-only="true"] .garage-skin-preview-label { display: block; }
+.garage-skin-card[data-preview-only="true"] .garage-skin-status { display: none; }
+.garage-vfx-actions { position: relative; z-index: 2; width: 100%; display: flex; justify-content: center; margin-top: auto; padding: 0 5px 5px; box-sizing: border-box; }
 .garage-vfx-actions .garage-skin-action {
   display: block; min-height: 44px; width: 100%; border-radius: 10px 4px 10px 4px;
   border: 1px solid hsl(var(--card-hue) 82% 67% / .85);
@@ -295,7 +295,7 @@ const statusText = (id: SkinId, locale: string) => {
     0 0 23px hsl(var(--card-hue) 88% 58% / .32), inset 0 0 20px hsl(var(--card-hue) 80% 48% / .15);
 }
 .garage-skin-card[data-preview-active="true"]::before {
-  content: '◉'; position: absolute; top: 7px; right: 9px;
+  content: '◉'; position: absolute; top: 4px; right: 6px;
   z-index: 2; font-size: 13px; color: hsl(var(--card-hue) 95% 78%);
   pointer-events: none;
 }
