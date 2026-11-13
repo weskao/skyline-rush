@@ -7,7 +7,7 @@ export type DemoResultView = Readonly<{
   state: State; heading: string; status: string; points: string | null;
   balance: Readonly<{ label: string; from: number; total: number }> | null;
   progressHeading: string; missions: readonly DemoMissionView[];
-  distinction: string; disclaimer: string;
+  distinction: string; disclaimer: string; details: string;
 }>;
 
 const COPY = {
@@ -18,7 +18,7 @@ const COPY = {
     distinction: 'Separate from race stars, placement badges and medals.',
     disclaimer: 'Local demo only · This device only · Not verified or permanent.',
     missions: { 'mission-race': 'Race finish', 'mission-time': 'Time trial', 'mission-drift': 'Drift', 'mission-combo': 'Combo' },
-    claimed: 'Demo claimed',
+    claimed: 'Demo claimed', details: 'Details',
   },
   'zh-TW': {
     heading: '試玩獎勵', earned: '已記錄本機試玩賽事獎勵。', duplicate: '此結果已記錄，不會再次發放試玩點數。',
@@ -27,7 +27,7 @@ const COPY = {
     distinction: '與正式比賽星星、名次徽章及獎牌分開計算。',
     disclaimer: '僅限本機試玩 · 僅此裝置 · 未經伺服器驗證，也非永久獎勵。',
     missions: { 'mission-race': '完成比賽', 'mission-time': '計時賽', 'mission-drift': '甩尾', 'mission-combo': '連擊' },
-    claimed: '已領取試玩獎勵',
+    claimed: '已領取試玩獎勵', details: '詳情',
   },
 } as const;
 
@@ -64,6 +64,6 @@ export function projectWave3DemoResults(
   return {
     state, heading: copy.heading,
     status: copy[state], points: amount > 0 ? `+${amount} ${copy.points}` : null, balance,
-    progressHeading: copy.progress, missions, distinction: copy.distinction, disclaimer: copy.disclaimer,
+    progressHeading: copy.progress, missions, distinction: copy.distinction, disclaimer: copy.disclaimer, details: copy.details,
   };
 }

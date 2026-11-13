@@ -1,3 +1,10 @@
+# 2026-11-13 — Demo reward (試玩獎勵) results card fully visible
+
+- [x] RED: zh-TW guard reported the card scrolling 262/198px on desktop/tablet (missions and fine print cut) and four lines hidden in short landscape. GREEN: no height cap; crest moved into the header, mission tiles and fine print visible at 1440×900, 768×1024, 390×844, 360×740.
+- [x] Short landscape keeps the one-line strip (no overlay scroll) and a 詳情 tap opens the full details as a panel over the summary column, clear of the actions; tapping again closes it. `overlay-landscape-fit` passes at 667×375, 740×360, 844×390, 932×430 and the fold.
+- [x] Typecheck, module-size, production build and unit suite passed (2,757 passed, 3 skipped); Chromium screenshots reviewed for all six viewports.
+- [ ] Check the 詳情 panel on a physical iPhone in landscape and the exact-commit GitHub CI quality gate.
+
 # 2026-11-13 — Wave 3 local demo race rewards
 
 - [x] RED → GREEN for distance, authored hazards, AI difficulty, placement, timed distance, multi-stage settlement, duplicate receipts and the result wallet balance.
