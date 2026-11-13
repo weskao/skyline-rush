@@ -189,6 +189,10 @@ export function createWave3LocalDemo(options: {
       }
       return snapshot();
     },
+    expireCheckpoint(nextGeneration: string) {
+      generation = nextGeneration;
+      return clear();
+    },
     resetDemo() {
       generation = newDemoGeneration();
       session++;
@@ -202,7 +206,7 @@ export function createWave3LocalDemo(options: {
         (event.kind === 'finish' && settled.has(event.completionId))) return result('duplicate');
       syncPeriods();
       remember(seenEvents, event.eventId);
-      remember(seenEvents, eventId);
+      if (validId(eventId)) remember(seenEvents, eventId);
       applyMissionEvent(event, missionTime);
       return result('completed', publish());
     },
@@ -253,6 +257,11 @@ export function createWave3LocalDemo(options: {
       redeemed.add(itemId);
       return { status: 'completed', operationId: itemId, snapshot: publish(), deltaDemoPoints: currency === 'points' ? -cost : 0,
         deltaDemoCoins: currency === 'coins' ? -cost : 0, deltaDemoDiamonds: currency === 'diamonds' ? -cost : 0 };
+    },
+    clearEquippedPreview(itemId: string) {
+      if (equippedPreview !== itemId) return result('duplicate');
+      equippedPreview = null;
+      return result('completed', publish());
     },
     equipPreview(itemId: string, expectedScope?: DemoOperationScope) {
       if (expectedScope && !sameDemoScope(expectedScope, scope())) return result('expired');

@@ -63,14 +63,15 @@ const validReplay = (value: unknown): value is Replay => isRecord(value) &&
   new Set(value.seenEvents).size === value.seenEvents.length &&
   new Set(value.settledCompletions).size === value.settledCompletions.length;
 
-function readEntry(raw: string, id: string, now: number): Entry | null {
+function readEntry(raw: string, id: string, now: number, checkRetention = true): Entry | null {
   if (new TextEncoder().encode(raw).byteLength > MAX_BYTES) return null;
   let parsed: unknown;
   try { parsed = JSON.parse(raw); } catch { return null; }
   if (!isRecord(parsed) || !(exact(parsed, ['version', 'accountId', 'savedAt', 'snapshot']) ||
     exact(parsed, ['version', 'accountId', 'savedAt', 'snapshot', 'checkpoint'])) ||
     parsed.version !== WAVE3_EXPERIENCE_VERSION || parsed.accountId !== id ||
-    !withinTime(parsed.savedAt, 0, now + FUTURE_SKEW_MS) || now - parsed.savedAt > DEMO_RETENTION_MS ||
+    !withinTime(parsed.savedAt, 0, checkRetention ? now + FUTURE_SKEW_MS : Number.MAX_SAFE_INTEGER) ||
+    (checkRetention && now - parsed.savedAt > DEMO_RETENTION_MS) ||
     !validSnapshot(parsed.snapshot, id, parsed.savedAt) ||
     (Object.hasOwn(parsed, 'checkpoint') && !validReplay(parsed.checkpoint))) return null;
   return { savedAt: parsed.savedAt, snapshot: parsed.snapshot,
@@ -162,12 +163,22 @@ export function createWave3DemoStorage(options: { storage?: DemoStorage | null; 
       return snapshot && replay ? { snapshot, ...replay } : null;
     },
     /** Read the shared source while holding the profile lock, bypassing this tab's memory fallback. */
-    readDiskCheckpoint(id: string): { raw: string | null; checkpoint: Wave3DemoCheckpoint | null } | undefined {
+    readDiskCheckpoint(id: string): {
+      raw: string | null; savedAt: number | null; expiredGeneration?: string;
+      clockRollback?: boolean; checkpoint: Wave3DemoCheckpoint | null;
+    } | undefined {
       if (!storage || !ACCOUNT.test(id)) return undefined;
       try {
         const raw = storage.getItem(WAVE3_DEMO_STORAGE_PREFIX + id);
-        const entry = raw === null ? null : readEntry(raw, id, now());
-        return { raw, checkpoint: entry ? { snapshot: entry.snapshot,
+        const currentTime = now();
+        const entry = raw === null ? null : readEntry(raw, id, currentTime, false);
+        if (entry && currentTime - entry.savedAt > DEMO_RETENTION_MS) {
+          return { raw, savedAt: null, expiredGeneration: `retention-${entry.savedAt}`, checkpoint: null };
+        }
+        if (entry && entry.savedAt > currentTime + FUTURE_SKEW_MS) {
+          return { raw, savedAt: entry.savedAt, clockRollback: true, checkpoint: null };
+        }
+        return { raw, savedAt: entry?.savedAt ?? null, checkpoint: entry ? { snapshot: entry.snapshot,
           seenEvents: [], settledCompletions: [], ...entry.checkpoint } : null };
       } catch { return undefined; }
     },

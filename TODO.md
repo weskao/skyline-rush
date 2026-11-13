@@ -17,6 +17,19 @@
   its old race or confirmation. A browser without usable locks or storage keeps
   a session-only wallet and shows a save warning. Redemption quotes expire after
   60 seconds. Durable replays prioritize recent finishes before telemetry.
+- [x] Local `npm test` on implementation `9edf4c42`: 2,778 passed, 3 skipped,
+  zero failed. Strict typecheck and locked/trial build audits passed. The
+  follow-up focused suite passed 155 tests, including retention, rollback,
+  multi-heat account scope, and a Garage override of a demo equip.
+- [x] Chrome for Testing 156 / Playwright: all 14 fixed steps passed with real
+  wallet, mission, store and collection controls, native storage, a network
+  cut during redemption/equip, and refresh. Two competing browser tabs gave
+  one debit and one duplicate; a blocked wallet write kept the balance in the
+  active session and showed the warning. Full WebGL driving is a separate case.
+- [ ] First full run for [9edf4c42](https://github.com/weskao/skyline-rush/commit/9edf4c42cf3915bdd7a97b1aee4e321962af6439):
+  [CI 43440898727](https://github.com/weskao/skyline-rush/actions/runs/43440898727)
+  failed the existing Cloud Save suite (13 failures). The next feature HEAD
+  includes upstream `2418a55e` with the Firestore expression-budget fix.
 - [ ] Run and review full browser coverage, screenshots, physical iOS Safari
   and Android Chrome, and exact-head GitHub Actions before integration into
   `develop`. Browser specs: `wave3-early-access-browser.spec.js`,

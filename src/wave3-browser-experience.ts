@@ -2,8 +2,8 @@ import { createWave3LocalDemo } from './wave3-local-demo.ts';
 import type { Wave3DemoCheckpoint } from './wave3-local-demo.ts';
 import { createWave3DemoStorage, WAVE3_DEMO_STORAGE_PREFIX } from './wave3-demo-storage.ts';
 import type { ExperienceResult, ExperienceSnapshot, Wave3ExperiencePort } from './wave3-experience-contract.ts';
-import { sameDemoScope } from './wave3-experience-contract.ts';
-import { equipWave3DemoSkin, resetWave3DemoSkin } from '#garage-skin-runtime';
+import { DEMO_RETENTION_MS, sameDemoScope } from './wave3-experience-contract.ts';
+import { equipWave3DemoSkin, onWave3DemoSkinOverride, resetWave3DemoSkin } from '#garage-skin-runtime';
 
 type ProfileLock = Pick<LockManager, 'request'>;
 type Options = {
@@ -24,6 +24,8 @@ export function createWave3BrowserExperience(options: Options = {}) {
   const volatile = new Map<string, Wave3DemoCheckpoint>();
   let diskRaw: string | null | undefined;
   let diskValid = false;
+  let savedAt: number | null = null;
+  const now = options.now ?? Date.now;
   let equipped: string | null = null;
   const getSnapshot = (): ExperienceSnapshot => {
     const snapshot = state.getSnapshot();
@@ -51,11 +53,20 @@ export function createWave3BrowserExperience(options: Options = {}) {
       volatile.set(accountId, state.getCheckpoint());
       return false;
     }
+    if (disk.clockRollback) {
+      volatile.set(accountId, state.getCheckpoint());
+      return true;
+    }
     const valid = disk.checkpoint !== null;
+    savedAt = disk.savedAt;
     if (!initial && disk.raw === diskRaw && valid === diskValid) return false;
     diskRaw = disk.raw;
     diskValid = valid;
     if (disk.checkpoint && state.restoreCheckpoint(disk.checkpoint)) return true;
+    if (disk.expiredGeneration) {
+      state.expireCheckpoint(disk.expiredGeneration);
+      return true;
+    }
     if (initial) return false;
     // A removed or invalid checkpoint replaces the old tab state without writing back.
     state.resetDemo();
@@ -66,12 +77,19 @@ export function createWave3BrowserExperience(options: Options = {}) {
     if (!writable || volatile.has(accountId) || !cache.saveCheckpoint(checkpoint, accountId)) {
       volatile.set(accountId, checkpoint);
     } else {
-      diskRaw = cache.readDiskCheckpoint(accountId)?.raw;
+      const disk = cache.readDiskCheckpoint(accountId);
+      diskRaw = disk?.raw;
+      savedAt = disk?.savedAt ?? null;
       diskValid = true;
     }
   };
-  const transact = async <T>(action: (accountId: string, writable: boolean, changed: boolean) => T, stale: () => T): Promise<T> => {
+  const currentScope = () => {
     const scope = state.getOperationScope();
+    if (savedAt !== null && now() - savedAt > DEMO_RETENTION_MS && syncDisk(scope.accountId)) publish();
+    return state.getOperationScope();
+  };
+  const transact = async <T>(action: (accountId: string, writable: boolean, changed: boolean) => T, stale: () => T): Promise<T> => {
+    const scope = currentScope();
     const run = (writable: boolean): T => {
       const before = state.getOperationScope();
       // Tab switches invalidate queued work even when the user switches away and back.
@@ -114,7 +132,7 @@ export function createWave3BrowserExperience(options: Options = {}) {
   syncEquipment();
   const port = {
     getSnapshot,
-    getOperationScope: state.getOperationScope,
+    getOperationScope: currentScope,
     subscribe(listener: (value: ExperienceSnapshot) => void) {
       listeners.add(listener);
       return () => listeners.delete(listener);
@@ -126,6 +144,7 @@ export function createWave3BrowserExperience(options: Options = {}) {
       equipped = null;
       options.clearEquipment?.();
       diskRaw = undefined;
+      savedAt = null;
       const checkpoint = volatile.get(accountId);
       if (checkpoint) state.restoreCheckpoint(checkpoint);
       else syncDisk(accountId, true);
@@ -150,6 +169,10 @@ export function createWave3BrowserExperience(options: Options = {}) {
       if (result.status === 'completed' || result.status === 'duplicate') equipped = itemId;
       return result;
     }),
+    clearEquippedPreview: (itemId: string, accountId: string) => mutate(() => {
+      if (state.getOperationScope().accountId !== accountId) return expired();
+      return state.clearEquippedPreview(itemId);
+    }),
     refresh(accountId: string) {
       if (accountId === state.getOperationScope().accountId && syncDisk(accountId)) publish();
     },
@@ -163,6 +186,9 @@ export const wave3DemoExperience = createWave3BrowserExperience({
 });
 
 if (typeof window !== 'undefined') {
+  onWave3DemoSkinOverride((itemId, accountId) => {
+    void wave3DemoExperience.clearEquippedPreview(itemId, accountId);
+  });
   window.addEventListener('storage', event => {
     if (event.key === null) wave3DemoExperience.refresh(wave3DemoExperience.getOperationScope().accountId);
     else if (event.key.startsWith(WAVE3_DEMO_STORAGE_PREFIX)) {

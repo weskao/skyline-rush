@@ -46,6 +46,12 @@ export function createWave3RaceEventBridge<T extends ReturnType<Wave3ExperienceP
   now: () => number = Date.now,
 ) {
   const known = new WeakMap<object, RaceMemory>();
+  const seriesScopes = new WeakMap<object, DemoOperationScope>();
+  const seriesKey = (race: ObservedRace, series?: RaceSeries): object | undefined => {
+    if (race.mode === 'cup') return series?.cup?.results[0];
+    if (race.mode === 'custom') return series?.sprintSeries?.results[0];
+    if (race.mode === 'stunt') return series?.stunt ?? undefined;
+  };
   const memory = (race: ObservedRace): RaceMemory => {
     let item = known.get(race);
     if (!item) {
@@ -73,7 +79,18 @@ export function createWave3RaceEventBridge<T extends ReturnType<Wave3ExperienceP
     finish(race: ObservedRace, intermediateStage: boolean, series?: RaceSeries): T | null {
       if (race.phase !== 'finished' || !race.result) return null;
       const state = memory(race);
-      if (!sameDemoScope(state.scope, experience.getOperationScope())) return null;
+      const key = seriesKey(race, series);
+      const seriesScope = key && seriesScopes.get(key);
+      if (key && intermediateStage && !seriesScope) seriesScopes.set(key, state.scope);
+      const cup = race.mode === 'cup' ? series?.cup : null;
+      if (cup && intermediateStage && cup.demoScope === undefined) {
+        cup.demoScope = { accountId: state.scope.accountId, generation: state.scope.generation };
+      }
+      const currentScope = experience.getOperationScope();
+      if (cup?.demoScope === null || (cup?.demoScope && (cup.demoScope.accountId !== currentScope.accountId ||
+        cup.demoScope.generation !== currentScope.generation))) return null;
+      if (!sameDemoScope(state.scope, currentScope) ||
+        (seriesScope && !sameDemoScope(seriesScope, currentScope))) return null;
       const eligible = !intermediateStage && race.result.success !== false &&
         typeof race.result.time === 'number' && Number.isFinite(race.result.time) && race.result.time > 0;
       state.finishedAt ??= now();

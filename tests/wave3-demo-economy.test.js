@@ -365,8 +365,8 @@ test('simultaneous tabs debit once and cannot overwrite the other tab with a sta
   assert.deepEqual(balances(open().getSnapshot()), [15, 70, 0]);
   assert.deepEqual(open().getSnapshot().demoInventory, ['thruster-ion']);
   assert.equal((await second.settleCompletion(race('shared-race'))).status, 'duplicate');
-  await first.resetDemo();
   const oldScope = second.getOperationScope();
+  await first.resetDemo();
   assert.equal((await second.settleCompletion(race('racing-before-reset', { scope: oldScope }))).status, 'expired');
   assert.deepEqual(balances(second.getSnapshot()), [20, 0, 0]);
 });
@@ -377,4 +377,84 @@ test('outdated or malformed confirmation deadlines cannot debit the wallet', () 
   const quote = { scope: port.getOperationScope(), expiresAt: Infinity, catalogVersion: 1, currency: 'points', cost: 25 };
   assert.equal(port.redeemPreview('thruster-ion', quote).status, 'expired');
   assert.deepEqual(balances(port.getSnapshot()), [40, 70, 0]);
+});
+
+test('a fresh operation in a long-open tab starts after the seven-day retention reset', async () => {
+  const { createWave3BrowserExperience } = await import('../src/wave3-browser-experience.ts');
+  let time = now;
+  const storage = memoryStorage();
+  const port = createWave3BrowserExperience({
+    now: () => time, locks: { request: async (_name, action) => action() },
+    cache: createWave3DemoStorage({ storage, now: () => time }),
+  });
+  await port.settleCompletion(race('last-week'));
+  time += 8 * 24 * 60 * 60 * 1000;
+  const scope = port.getOperationScope();
+  const current = await port.settleCompletion(race('today', { occurredAt: time, scope }));
+  assert.equal(current.status, 'completed');
+  assert.deepEqual(balances(current.snapshot), [40, 70, 0]);
+});
+
+test('a regular Garage override clears the persisted demo selection without removing the cosmetic', async () => {
+  const { createWave3BrowserExperience } = await import('../src/wave3-browser-experience.ts');
+  const storage = memoryStorage();
+  const open = () => createWave3BrowserExperience({
+    now: () => now, locks: { request: async (_name, action) => action() },
+    cache: createWave3DemoStorage({ storage, now: () => now }),
+  });
+  const port = open();
+  await port.settleCompletion(race('before-override'));
+  await port.redeemPreview('thruster-ion');
+  await port.equipPreview('thruster-ion');
+  const override = await port.clearEquippedPreview?.('thruster-ion', 'guest');
+  const reloaded = open().getSnapshot();
+  assert.equal(reloaded.equippedPreview, null);
+  assert.equal(override.status, 'completed');
+  assert.deepEqual(reloaded.demoInventory, ['thruster-ion']);
+});
+
+test('valid long finish event identifiers do not poison an otherwise valid checkpoint', () => {
+  const port = demo();
+  const completionId = 'race-' + 'a'.repeat(154);
+  port.recordGameEvent({ ...race('long'), completionId, eventId: 'finish-long', kind: 'finish' });
+  const cache = createWave3DemoStorage({ storage: memoryStorage(), now: () => now });
+  assert.equal(cache.saveCheckpoint(port.getCheckpoint()), true);
+});
+
+test('two tabs starting after natural retention expiry share one new generation', async () => {
+  const { createWave3BrowserExperience } = await import('../src/wave3-browser-experience.ts');
+  let time = now;
+  const storage = memoryStorage();
+  const open = () => createWave3BrowserExperience({
+    now: () => time, locks: { request: async (_name, action) => action() },
+    cache: createWave3DemoStorage({ storage, now: () => time }),
+  });
+  const first = open();
+  await first.settleCompletion(race('last-week'));
+  const second = open();
+  time += 8 * 24 * 60 * 60 * 1000;
+  const scopes = [first.getOperationScope(), second.getOperationScope(), open().getOperationScope()];
+  assert.equal(scopes[0].generation, scopes[1].generation);
+  assert.equal(scopes[0].generation, scopes[2].generation);
+  const completed = await first.settleCompletion(race('today-a', { occurredAt: time, scope: scopes[0] }));
+  assert.equal(completed.status, 'completed');
+  const next = await second.settleCompletion(race('today-b', { occurredAt: time, scope: scopes[1] }));
+  assert.equal(next.status, 'completed');
+  assert.deepEqual(balances(next.snapshot), [60, 110, 0]);
+});
+
+test('rolling the device clock backwards cannot erase the active tab wallet', async () => {
+  const { createWave3BrowserExperience } = await import('../src/wave3-browser-experience.ts');
+  let time = now;
+  const storage = memoryStorage();
+  const port = createWave3BrowserExperience({
+    now: () => time, locks: { request: async (_name, action) => action() },
+    cache: createWave3DemoStorage({ storage, now: () => time }),
+  });
+  await port.settleCompletion(race('before-rollback'));
+  time -= 10 * 60 * 1000;
+  const result = await port.redeemPreview('thruster-ion');
+  assert.equal(result.status, 'completed');
+  assert.deepEqual(balances(result.snapshot), [15, 70, 0]);
+  assert.equal(result.snapshot.persistence, 'memory-only');
 });
