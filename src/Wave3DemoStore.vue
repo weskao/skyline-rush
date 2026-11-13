@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue';
+import { inject, computed, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
 import { SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
@@ -14,6 +14,7 @@ import type { DemoTrialAccess, DemoRedeemState, Wave3DemoItem } from './wave3-de
 import { demoBalance } from './wave3-demo-settlement.ts';
 import { demoCurrencyLabel } from './wave3-currency-view.ts';
 
+const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = withDefaults(defineProps<{
   port: Wave3ExperiencePort;
   locale?: string;
@@ -99,7 +100,11 @@ function requestRedemption(): void {
   if (!item?.currency || item.demoPrice === null) return;
   const current = props.port.getSnapshot();
   const state = demoRedemptionState(item.id, current);
-  if (state !== 'ready') { message.value = feedback(state); return; }
+  if (state !== 'ready') {
+    message.value = feedback(state);
+    if (state.startsWith('insufficient-demo-')) cue('action-unavailable');
+    return;
+  }
   snapshot.value = current;
   confirmationId.value = item.id;
   quote.value = { scope: props.port.getOperationScope(), expiresAt: Date.now() + DEMO_QUOTE_LIFETIME_MS,
@@ -119,6 +124,8 @@ async function confirmRedemption(): Promise<void> {
   const result = await props.port.redeemPreview(id, request);
   snapshot.value = result.snapshot;
   message.value = feedback(result.status);
+  if (result.status === 'completed') cue('redeem-unlocked');
+  else if (result.status === 'expired' || result.status.startsWith('insufficient-demo-')) cue('action-unavailable');
 }
 </script>
 

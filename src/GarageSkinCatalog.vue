@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { inject, computed } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
 import { GARAGE_SKINS, SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
@@ -7,6 +7,7 @@ import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, se
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
+const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 defineProps<{ locale: string }>();
 const animatedArtworkSrc = (id: string): string =>
   `${import.meta.env.BASE_URL}feature-assets/garage-animated/${id}@3x.gif`;
@@ -141,7 +142,7 @@ const statusText = (id: SkinId, locale: string) => {
           </button>
           <div class="garage-vfx-actions">
             <button class="garage-skin-action" type="button" :disabled="!view(skin.id)?.canEquip"
-              @click.stop="equipGarageSkin(skin.id)">
+              @click.stop="equipGarageSkin(skin.id) && cue('equip-confirmed')">
               {{ view(skin.id)?.state === 'equipped' ? (locale === 'zh-TW' ? '已裝備' : 'Equipped') : view(skin.id)?.owned ? (locale === 'zh-TW' ? '裝備' : 'Equip') : GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '免費試用' : 'Try free') : (locale === 'zh-TW' ? '未解鎖' : 'Locked') }}
             </button>
           </div>
