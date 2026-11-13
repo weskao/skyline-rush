@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RACE_DRIVER_IDS } from './race-grid.ts';
-import { MAGNET_RANGE } from './game.js';
+import { MAGNET_RANGE, driftTier } from './game.js';
 import { createMarkerPool } from './marker-pool.js';
 import { createPickupMarkers } from './pickup-markers.js';
 import { createPickupCollectVfx, pickupCueSource } from './pickup-collect-vfx.js';
@@ -225,8 +225,8 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
           const side = Math.floor(driftEmission) % 2 ? -1 : 1;
           const { x, d } = rearWheel(side, car, center, originZ, vehicles);
           emit(x, 0.12, d, side * 1.5, 0.8, car.speed * 0.25, 0.55, 0.5, mist, 0, 2, 0.3);
-          if (car.drift.time >= 1) emit(x, 0.15, d, side * (2 + Math.random() * 3), 1.5, car.speed * 0.3,
-            0.12, 0.4, car.drift.time >= 3 ? purple : car.drift.time >= 2 ? orange : blue, 6);
+          const tier = driftTier(car.drift.time);
+          if (tier > 0) emit(x, 0.15, d, side * (2 + Math.random() * 3), 1.5, car.speed * 0.3, 0.12, 0.4, [blue, orange, purple][tier - 1], 6);
           driftEmission--;
         }
       } else driftEmission = 0;

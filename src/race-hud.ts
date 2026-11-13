@@ -3,7 +3,7 @@ import { trackProgressBottom } from './hud-progress-offset.ts';
 import { t, interpolate, getLocale, CATALOGS } from './i18n.ts';
 import { icon } from './icons.ts';
 import { timeString } from './time-format.ts';
-import { racePosition, sprintGaps, gapChargeWarning, MAX_SPEED } from './game.js';
+import { racePosition, sprintGaps, gapChargeWarning, MAX_SPEED, driftTier } from './game.js';
 import { ghostAt, type GhostRun } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
 import { createRoadSafeFeedback } from './race-feedback-placement.ts';
@@ -342,7 +342,7 @@ export function createRaceHud(options: HudOptions) {
     const nitroActive = car.nitroTime > 0 && race.phase === 'racing';
     const airDash = car.thrusting && car.boosting;
     setHudText(ui['flight-state']!, race.modifier === 'no-flight' ? L['daily.flightDisabled.state']! : car.thrusting && car.nitroTime > 0 ? L['hud.airDashNitro']! : airDash ? L['hud.airDash']! : nitroActive ? L['hud.nitroActive']! : car.trick && !car.trick.done ? L['hud.trick']! : car.inShortcut ? L['callout.shortcut']!
-      : car.drift ? interpolate(L['callout.drift']!, { tier: L[car.drift.time >= 3 ? 'callout.drift.tier.3' : car.drift.time >= 2 ? 'callout.drift.tier.2' : car.drift.time >= 1 ? 'callout.drift.tier.1' : 'hud.driftBuilding']! }) : car.miniBoost > 0 && !touchdown ? L['hud.miniBoost']! : state);
+      : car.drift ? interpolate(L['callout.drift']!, { tier: L[driftTier(car.drift.time) ? `callout.drift.tier.${driftTier(car.drift.time)}` : 'hud.driftBuilding']! }) : car.miniBoost > 0 && !touchdown ? L['hud.miniBoost']! : state);
     updateNitro(now, race, car, nitroActive);
     updateCallout(race, impactAge, calm);
     document.body.classList.toggle('nitro-active', nitroActive);

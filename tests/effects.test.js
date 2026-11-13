@@ -192,7 +192,7 @@ for (const kind of ['pickup', 'ring']) test(`${kind} collection bursts once and 
 test('drifting emits ground smoke and threshold-colored sparks while respecting motion/VFX limits', t => {
   const { race, effects, attributes, update } = raceScene(t);
   const counts = [];
-  for (const time of [1, 2, 3]) {
+  for (const time of [0.61, 1.21, 2.01]) { // just past each DRIFT_REWARDS threshold
     effects.reset();
     race.player.drift = { time, dir: 1 };
     update();
@@ -200,9 +200,9 @@ test('drifting emits ground smoke and threshold-colored sparks while respecting 
     assert.ok(sparks.length > 0, `sparks at ${time} seconds`);
     for (const i of sparks) {
       const [r, g, b] = attributes.color.array.slice(i * 3, i * 3 + 3);
-      if (time === 1) assert.ok(b > r * 2 && b > g * 2, 'one-second sparks are blue');
-      if (time === 2) assert.ok(r > g * 2 && g > b * 3, 'two-second sparks are orange');
-      if (time === 3) assert.ok(r > g * 2 && b > g * 3, 'three-second sparks are purple');
+      if (time === 0.61) assert.ok(b > r * 2 && b > g * 2, 'first-tier sparks are blue');
+      if (time === 1.21) assert.ok(r > g * 2 && g > b * 3, 'second-tier sparks are orange');
+      if (time === 2.01) assert.ok(r > g * 2 && b > g * 3, 'top-tier sparks are purple');
     }
     assert.ok([...attributes.alpha.array].some((a, i) => a > 0 && attributes.kind.array[i] === 2), 'tire smoke');
     counts.push(sparks.length);

@@ -1,4 +1,4 @@
-import { musicForMode } from './mode-audio.ts';
+import { musicForMode } from './mode-audio.ts'; import { driftTier } from './drive-rules.ts';
 import { createRaceAudioEvents } from './race-audio-events.ts';
 import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
 
@@ -283,7 +283,7 @@ export function createSound() {
         gain.gain.setTargetAtTime(active ? 0.014 + car.speed * 0.00016 : 0, now, 0.06);
         thrustGain.gain.setTargetAtTime(active && (car.thrusting || boosting) ? 0.055 : 0, now, 0.08);
         windGain.gain.setTargetAtTime(active ? (car.speed / 102) ** 2 * 0.07 : 0, now, 0.1);
-        const skid = car.drift ? 0.035 + Math.min(3, Math.floor(car.drift.time)) * 0.012 : car.braking ? 0.035 : 0;
+        const skid = car.drift ? 0.035 + driftTier(car.drift.time) * 0.012 : car.braking ? 0.035 : 0;
         skidGain.gain.setTargetAtTime(active && car.altitude < 0.2 && car.speed > 15 ? skid : 0, now, 0.06);
         music.gain.setTargetAtTime(!musicOn ? 0 : musicLevel * (race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65), now, 0.1);
         const name = !musicOn ? null : musicForMode(race);

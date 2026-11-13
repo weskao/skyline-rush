@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createRace, startRace, stepRace, DRIFT_MIN_SPEED, DRIFT_REWARDS } from '../src/game.js';
 import { driftTier } from '../src/drive-rules.ts';
 
@@ -27,6 +28,16 @@ function drive(speed, seconds, pressNitro = false) {
 
 test('driftTier counts the reward thresholds reached', () => {
   assert.deepEqual([0.59, 0.6, 1.2, 5].map(driftTier), [0, 1, 2, 3]);
+});
+
+// Every consumer reads driftTier/DRIFT_REWARDS, so a retune is one edit (literal 1/2/3 s once lived in six files).
+const TIER_READERS = ['race-hud.ts', 'callouts.ts', 'effects.js', 'audio.js'];
+test('drift feedback reads tier thresholds from DRIFT_REWARDS, never literal seconds', () => {
+  for (const file of TIER_READERS) {
+    const source = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
+    assert.doesNotMatch(source, /drift\??\.time\)?\s*>=\s*\d|Math\.floor\([^)]*drift\??\.time/, file);
+    assert.match(source, /driftTier\(/, file);
+  }
 });
 
 test('every drift tier is net positive vs plain throttle from 70 and 88 m/s', () => {

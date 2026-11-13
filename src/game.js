@@ -27,7 +27,7 @@ import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-track
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
 import { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS } from './drive-rules.ts';
-export { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS } from './drive-rules.ts';
+export { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
 export const STEER_RAMP = 0.15;

@@ -176,7 +176,7 @@ test('drift screech builds with charge thresholds and silences on release/pause'
   const { sound, race, nodes } = audioScene(t);
   const skid = nodes.find(node => node.kind === 'filter' && node.frequency.value === 2300).destination;
   const levels = [];
-  for (const time of [0.5, 1, 2, 3]) {
+  for (const time of [0.3, 0.61, 1.21, 2.01]) { // below, then just past each DRIFT_REWARDS threshold
     race.player.drift = { time, dir: 1 }; sound.update(race); levels.push(skid.gain.value);
   }
   assert.ok(levels[0] > 0, 'drift state alone drives screech');
