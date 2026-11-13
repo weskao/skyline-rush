@@ -1,3 +1,14 @@
+# 2026-11-13 — Drift pays at every speed (`feature/drift-balance`)
+
+Design: `docs/superpowers/specs/2026-11-13-drift-balance-design.md`. One table: `DRIFT_REWARDS` / `driftTier` in `src/drive-rules.ts`.
+
+- [x] Tuning (user picked 平衡版): bleed 3 → 1.5 m/s²; tiers 1/2/3 s → 0.6/1.2/2.0 s paying 0.15/0.30/0.50 → 0.25/0.45/0.70 NITRO and 0.5/0.8/1.2 → 0.7/1.1/1.6 s boost; `DRIFT_MIN_SPEED` stays 45.
+- [x] Before/after (8 s window vs plain throttle, real engine): at 88 m/s +17/+30/+44 m → +34…84 m; at 70 m/s −5/−17/−26 m → +15…39 m; back-to-back spam 2.0 → 6.3 NITRO/min (pickups ≈ 15/min). Guarded in `tests/drift-balance.test.js` (every tier net > 0 at 70 and 88 m/s, spam < 8/min, 30 FPS, slow-out payout).
+- [x] HUD tier label, callouts, sparks, screech and the tutorial read `driftTier` / `DRIFT_FIRST_TIER`; a source scan fails on literal tier seconds. Tutorial copy (en/zh-TW, buttons and slide) teaches 0.6/1.2/2 s.
+- [x] `npm test` 2767 pass / 0 fail; typecheck, build and module-size pass. Legacy replay fixture re-recorded: base 46094f80 passed 47/47, exactly the 38 cases that drift changed.
+- [ ] Browser: `interactive-tutorial-browser.spec.js` 18/22 — three touch cases passed on a serial rerun (load); `paused practice 750x342` still fails, and the zh-TW drift copy overflows the coach card there (text bottom 193 px > card 184 px). Remaining browser suite skipped at the user's request.
+- [ ] Exact-commit GitHub quality gate and phone feel check.
+
 # 2026-11-13 — Demo reward (試玩獎勵) results card fully visible
 
 - [x] RED: zh-TW guard reported the card scrolling 262/198px on desktop/tablet (missions and fine print cut) and four lines hidden in short landscape. GREEN: no height cap; crest moved into the header, mission tiles and fine print visible at 1440×900, 768×1024, 390×844, 360×740.
