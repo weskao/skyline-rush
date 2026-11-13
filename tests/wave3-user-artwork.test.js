@@ -34,11 +34,12 @@ test('the exact ten original 3D screenshot cutouts are committed, not placeholde
   }
 });
 
-test('wallet, mission and trophies use their screenshot originals in actual Garage UI', () => {
+test('wallet icons appear on Home while missions and trophies stay in Garage', () => {
   const read = name => readFileSync(new URL('../src/' + name, import.meta.url), 'utf8');
   const wallet = read('Wave3CurrencyStrip.vue');
   const board = read('GarageMissionBoard.vue');
   const garage = read('GaragePanel.vue');
+  const home = read('App.vue');
   const gallery = read('GarageSourceArtGallery.vue');
   const catalog = read('garage-wave3-preview-catalog.ts');
   for (const id of Object.keys(hashes)) {
@@ -48,7 +49,8 @@ test('wallet, mission and trophies use their screenshot originals in actual Gara
       assert.match(board + gallery, /garage-rewards-and-missions\/raster/, id + ' dynamic source');
     }
   }
-  assert.match(garage, /<Wave3CurrencyStrip/);
+  assert.match(home, /<Wave3CurrencyStrip/);
+  assert.doesNotMatch(garage, /<Wave3CurrencyStrip/);
   assert.match(garage, /<GarageMissionBoard/);
   assert.match(garage, /category="garage-rewards-and-missions"/);
   assert.match(board, /:src="asset\(item.id\)"/);

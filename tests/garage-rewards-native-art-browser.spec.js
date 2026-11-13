@@ -12,9 +12,8 @@ test('actual Garage mission cards and source icons preserve native 3x alpha on m
     await expect(board.locator('.garage-mission-card')).toHaveCount(4);
     await expect(board).toContainText('Demo progress and trophies are local');
     await expect(board).not.toContainText(/claim reward|reward received|領取獎勵|已領取/);
-    // Only mission/trophy source art uses 288px at 96 CSS px; the demo balance icon is intentionally smaller.
-    await expect(board.locator('[data-wave3-demo-art="demo-points"] img')).toHaveAttribute('width', '72');
-    await expect(board.locator('[data-wave3-demo-art="demo-points"] img')).toHaveJSProperty('naturalWidth', 216);
+    // The player resources moved to Home, leaving only mission/trophy art in Garage.
+    await expect(board.locator('.garage-demo-balance')).toHaveCount(0);
     for (const img of await board.locator('.garage-mission-card > img, .garage-trophy-card img').all()) {
       // 3D floating WebP artwork is intentionally animated and never has a stable bounding box.
       await img.evaluate(el => el.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
@@ -24,9 +23,7 @@ test('actual Garage mission cards and source icons preserve native 3x alpha on m
       await expect(img).toHaveJSProperty('naturalHeight', 288);
       // Alpha margins (>= 20 px) are asserted on the WebP files in tests/rewards-visual-contract.test.js.
     }
-    const demoIcon = board.locator('.garage-demo-balance [data-wave3-demo-art="demo-points"] img');
-    await expect(demoIcon).toHaveAttribute('width', '72');
-    await expect(demoIcon).toHaveJSProperty('naturalWidth', 216);
+    await expect(page.locator('#garage-screen [data-wave3-wallet]')).toHaveCount(0);
   }
 });
 

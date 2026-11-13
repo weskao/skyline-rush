@@ -220,14 +220,14 @@ test('externally approved demo WebPs, when present, must decode at their genuine
 });
 
 for (const viewport of screens) {
-  test('A-03 approved Demo Points artwork is displayed at native 3x in Garage and Store ' +
+  test('A-03 approved Demo Points artwork is displayed at native 3x in Home and Store ' +
     viewport.width + 'x' + viewport.height, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
+    const home = page.locator('#intro [data-wave3-wallet]');
+    await checkImage(home.locator('[data-wave3-demo-art="demo-points"] img'), 216, 22);
+    await expect(home.locator('[data-currency="demo-points"]')).toHaveAttribute('aria-label', /Demo points|試玩點數/);
     await page.locator('#garage-button').click();
-    const board = page.locator('.garage-mission-board');
-    await checkImage(board.locator('[data-wave3-demo-art="demo-points"] img'), 216, 72);
-    await expect(board).toContainText(/Demo points|試玩點數/);
     await page.locator('[data-wave3-open-store]').click();
     const store = page.locator('[data-wave3-demo-store]');
     await checkImage(store.locator('[data-wave3-demo-art="demo-points"] img'), 216, 72);
@@ -242,10 +242,10 @@ test('A-03 WebP decode failure preserves readable demo points without PNG reques
   await page.route('**/feature-assets/wave3-demo/raster/demo-points@3x.webp', route => route.abort());
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
+  const home = page.locator('#intro [data-wave3-wallet]');
+  await expect(home.locator('[data-wave3-demo-art="demo-points"] img')).toHaveCount(0);
+  await expect(home.locator('[data-currency="demo-points"]')).toHaveAttribute('aria-label', /試玩點數/);
   await page.locator('#garage-button').click();
-  const board = page.locator('.garage-mission-board');
-  await expect(board.locator('[data-wave3-demo-art="demo-points"] img')).toHaveCount(0);
-  await expect(board).toContainText('試玩點數');
   await page.locator('[data-wave3-open-store]').click();
   const store = page.locator('[data-wave3-demo-store]');
   await expect(store.locator('[data-wave3-demo-art="demo-points"] img')).toHaveCount(0);

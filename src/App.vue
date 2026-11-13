@@ -3,6 +3,11 @@
 // Static text carries data-i18n / data-i18n-title / data-i18n-aria-label keys; applyI18n() (src/i18n.js) fills them per locale.
 // Text that main.js always rewrites before it is seen (HUD readouts, statuses, route heading) stays untagged.
 import packageMeta from '../package.json' with { type: 'json' };
+import { ref, onMounted, onUnmounted } from 'vue';
+import { getLocale, onLocaleChange } from './i18n.ts';
+import { GARAGE_RELEASE_MODE } from '#garage-release-config';
+import { wave3DemoExperience } from '#wave3-demo-race';
+import Wave3CurrencyStrip from './Wave3CurrencyStrip.vue';
 import { RACE_TRACKS } from './game.js';
 import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
 import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
@@ -31,6 +36,13 @@ import ItemSlot from './ItemSlot.vue';
 
 const { version } = packageMeta;
 setupInputModality();
+const homeWalletLocale = ref(getLocale());
+let stopWalletLocale: (() => void) | undefined;
+onMounted(() => {
+  homeWalletLocale.value = getLocale();
+  stopWalletLocale = onLocaleChange(next => { homeWalletLocale.value = next; });
+});
+onUnmounted(() => stopWalletLocale?.());
 
 const BASE_URL = import.meta.env.BASE_URL;
 const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar brand and the start-screen wordmark
@@ -105,6 +117,8 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <button type="button" id="performance-notice-dismiss">Got it</button>
     </section>
     <section class="intro" id="intro" aria-labelledby="intro-title">
+      <Wave3CurrencyStrip v-if="GARAGE_RELEASE_MODE === 'trial'" compact
+        class="home-resource-strip" :experience="wave3DemoExperience" :locale="homeWalletLocale" />
       <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers" data-i18n="intro.drivers">4 DRIVERS</span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals" :aria-label="homeStatusView.medalLabel" :class="{ 'has-medals': homeStatusView.hasMedals }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">{{ homeStatusView.medalCount }}</span></button></div>
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
       <h1 id="intro-title"><span data-i18n="intro.title.1">The road is just </span><br><span data-i18n="intro.title.2">the </span><em data-i18n="intro.title.3">beginning.</em></h1>

@@ -8,7 +8,8 @@ import { projectWave3Currency } from './wave3-currency-view.ts';
 const props = withDefaults(defineProps<{
   experience?: Wave3ExperiencePort | null;
   locale?: string;
-}>(), { locale: 'en' });
+  compact?: boolean;
+}>(), { locale: 'en', compact: false });
 
 const snapshot = ref<ExperienceSnapshot | null>(null);
 const balanceRevision = ref(0);
@@ -30,21 +31,25 @@ const currencyArt = (kind: string) => {
 
 <template>
   <section class="wave3-wallet-strip" data-wave3-wallet
+    :data-compact="String(compact)"
     :data-wallet-authority="rows[0]?.state"
     :aria-label="label('Player resources', '玩家資源')">
     <div v-for="row in rows" :key="row.id" class="wallet-currency"
-      :data-currency="row.id" :data-available="row.state === 'local-demo'">
+      :data-currency="row.id" :data-available="row.state === 'local-demo'"
+      :title="row.label + ': ' + row.display + ' · ' + row.note"
+      :aria-label="row.label + ': ' + row.display + ' · ' + row.note">
       <Wave3DemoArt v-if="row.id === 'demo-points'" id="demo-points" />
       <span v-else class="wallet-artwork" :data-wallet-art="row.id">
         <GarageArtworkImage :src="currencyArt(row.id)" :size="48" :alt="''" :fallback-text="row.label" loading="eager" />
-        <span class="wallet-orbit" aria-hidden="true"></span><span class="wallet-facet" aria-hidden="true"></span>
+        <span v-if="!compact" class="wallet-orbit" aria-hidden="true"></span>
+        <span v-if="!compact" class="wallet-facet" aria-hidden="true"></span>
       </span>
       <div class="wallet-quantity">
-        <span class="wallet-label">{{ row.label }}</span>
+        <span v-if="!compact" class="wallet-label">{{ row.label }}</span>
         <strong v-if="row.id === 'demo-points'" :key="balanceRevision" class="wallet-credit-value"
           role="status" aria-live="polite" aria-atomic="true">{{ row.display }}</strong>
         <strong v-else>{{ row.display }}</strong>
-        <small>{{ row.note }}</small>
+        <small v-if="!compact">{{ row.note }}</small>
       </div>
     </div>
   </section>
@@ -117,5 +122,41 @@ const currencyArt = (kind: string) => {
 :global(body[data-vfx-enabled="false"] .wallet-artwork::before),
 :global(body[data-vfx-quality="low"] .wallet-artwork::before){display:none}
 @media (prefers-reduced-motion:reduce){.wallet-artwork::before{animation:none}}
+
+
+/* Home-only miniature currency chips: no large cards, labels, or extra orbit effects. */
+.wave3-wallet-strip[data-compact="true"] {
+  display:flex; flex-wrap:nowrap; align-items:center; gap:5px;
+  width:max-content; max-width:100%; margin:0 0 5px; padding:0;
+  background:none; border:0; border-radius:0; pointer-events:none;
+}
+.wave3-wallet-strip[data-compact="true"] .wallet-currency {
+  flex:0 1 auto; flex-direction:row; align-items:center; gap:4px;
+  min-width:64px; max-width:110px; height:30px; min-height:30px;
+  padding:2px 8px 2px 4px; border-radius:99px; text-align:left;
+  box-shadow:inset 0 1px 0 #ffffff16,0 2px 7px #0003;
+}
+.wave3-wallet-strip[data-compact="true"] .wallet-artwork {
+  width:22px; height:22px; flex:0 0 22px; filter:none;
+}
+.wave3-wallet-strip[data-compact="true"] :deep(.wave3-demo-art) {
+  width:22px; min-width:22px; height:22px; padding:0;
+}
+.wave3-wallet-strip[data-compact="true"] :deep(.artwork-img) {
+  width:22px!important; height:22px!important; max-width:22px; max-height:22px;
+  animation:none!important; filter:none; transform:none;
+}
+.wave3-wallet-strip[data-compact="true"] .wallet-artwork::before { display:none; }
+.wave3-wallet-strip[data-compact="true"] .wallet-quantity { width:auto; align-items:flex-start; }
+.wave3-wallet-strip[data-compact="true"] .wallet-quantity strong {
+  font:800 12px/1.2 'Avenir Next','Segoe UI',sans-serif;
+  color:#f7faff; max-width:65px;
+}
+.wave3-wallet-strip[data-compact="true"] .wallet-currency[data-available="false"] {opacity:.85}
+.wave3-wallet-strip[data-compact="true"] .wallet-credit-value {animation:none}
+@media (max-width:370px) {
+  .wave3-wallet-strip[data-compact="true"] { gap:3px; }
+  .wave3-wallet-strip[data-compact="true"] .wallet-currency { min-width:59px; padding:2px 6px 2px 3px; }
+}
 
 </style>

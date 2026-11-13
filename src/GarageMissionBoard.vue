@@ -84,10 +84,6 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
     <p class="garage-mission-notice">{{ label(
       'Demo progress and trophies are local, disposable, unverified and never server-backed. Clearing this device may erase them.',
       '試玩進度與獎盃僅儲存在本機，可清除且未經伺服器驗證；清除裝置資料可能導致遺失。') }}</p>
-    <div v-if="available" class="garage-demo-balance" role="status" aria-live="polite">
-      <Wave3DemoArt id="demo-points" :alt="label('Demo points', '試玩點數')" />
-      <strong>{{ snapshot?.demoPoints }} {{ label('Demo points', '試玩點數') }}</strong>
-    </div>
     <div class="garage-mission-grid">
       <article v-for="item in missions" :key="item.id" class="garage-mission-card"
         :data-mission-id="item.id" :data-mission-state="stateOf(item.id)">
@@ -155,9 +151,6 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 </template>
 
 <style scoped>
-.garage-demo-balance { display:inline-flex;flex-direction:column;align-items:center;max-width:145px;
-  margin:0 0 12px;padding:4px 8px;border:1px solid #3f728e;border-radius:10px;background:#102b42; }
-.garage-demo-balance strong { font-size:12px;font-variant-numeric:tabular-nums;text-align:center; }
 .garage-mission-board { box-sizing:border-box; min-width:0; margin:16px 0; padding:12px; border:1px solid #405c85;
   border-radius:14px; color:#e7f5ff; background:linear-gradient(140deg,#142742,#0a1525); }
 .garage-mission-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }

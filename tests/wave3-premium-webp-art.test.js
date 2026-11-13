@@ -83,7 +83,8 @@ test('Garage and Demo Store actually mount source WebP instead of requesting rem
   const store = source('src/Wave3DemoStore.vue');
   assert.match(garage, /store-cart@3x\.webp/);
   assert.doesNotMatch(garage, /storeIconFallback|store-cart@3x\.png/);
-  assert.match(garage, /<Wave3CurrencyStrip/);
+  assert.match(source('src/App.vue'), /<Wave3CurrencyStrip/);
+  assert.doesNotMatch(garage, /<Wave3CurrencyStrip/);
   assert.match(garage, /<GarageMissionBoard/);
   assert.match(garage, /<GarageSourceArtGallery[^>]*category="garage-rewards-and-missions"/);
   assert.match(store, /storeArt\(icon\)/);
