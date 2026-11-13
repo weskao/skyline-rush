@@ -6,7 +6,8 @@ Design: `docs/superpowers/specs/2026-11-13-drift-balance-design.md`. One table: 
 - [x] Before/after (8 s window vs plain throttle, real engine): at 88 m/s +17/+30/+44 m → +34…84 m; at 70 m/s −5/−17/−26 m → +15…39 m; back-to-back spam 2.0 → 6.3 NITRO/min (pickups ≈ 15/min). Guarded in `tests/drift-balance.test.js` (every tier net > 0 at 70 and 88 m/s, spam < 8/min, 30 FPS, slow-out payout).
 - [x] HUD tier label, callouts, sparks, screech and the tutorial read `driftTier` / `DRIFT_FIRST_TIER`; a source scan fails on literal tier seconds. Tutorial copy (en/zh-TW, buttons and slide) teaches 0.6/1.2/2 s.
 - [x] `npm test` 2767 pass / 0 fail; typecheck, build and module-size pass. Legacy replay fixture re-recorded: base 46094f80 passed 47/47, exactly the 38 cases that drift changed.
-- [ ] Browser: `interactive-tutorial-browser.spec.js` 18/22 — three touch cases passed on a serial rerun (load); `paused practice 750x342` still fails, and the zh-TW drift copy overflows the coach card there (text bottom 193 px > card 184 px). Remaining browser suite skipped at the user's request.
+- [x] zh-TW drift lesson shortened to fit the two-line 750x342 paused coach (78.7 → under 60 width units; the mini-boost seconds stay in the lesson title and the en copy). Drift "too slow" coaching now says 170 km/h (entry 165.2 km/h; was 180). Guards: `tests/tutorial-copy.test.js`, both RED first.
+- [ ] Browser: `interactive-tutorial-browser.spec.js` 18/22 before the copy fix — three touch cases passed on a serial rerun (load); `paused practice 750x342` failed with the zh-TW copy overflowing (text bottom 193 px > card 184 px). Not re-run after shortening; remaining browser suite skipped at the user's request.
 - [ ] Exact-commit GitHub quality gate and phone feel check.
 
 # 2026-11-13 — Demo reward (試玩獎勵) results card fully visible

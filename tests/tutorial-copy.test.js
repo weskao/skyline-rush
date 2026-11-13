@@ -2,6 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { UI } from '../src/locales/ui.ts';
 import { TUTORIAL_COPY } from '../src/locales/tutorial-copy.ts';
+import { DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_FIRST_TIER } from '../src/drive-rules.ts';
+
+// The "too slow" coaching names the speed the lesson's own entry check uses (interactive-tutorial.ts DRIFT_ENTRY).
+test('drift speed coaching names a km/h just above the real drift entry speed', () => {
+  const entryKmh = (DRIFT_MIN_SPEED + DRIFT_BLEED * DRIFT_FIRST_TIER) * 3.6;
+  const keys = ['tutorial.driftRetry.slow', 'tutorial.driftRetry.slowSlide', 'tutorial.cue.driftSpeed', 'tutorial.cue.driftSpeedSlide'];
+  for (const locale of ['en', 'zh-TW']) for (const key of keys) {
+    const kmh = Number(TUTORIAL_COPY[locale][key].match(/(\d+) km\/h/)?.[1]);
+    assert.ok(kmh >= entryKmh && kmh < entryKmh + 10, `${locale} ${key}: ${kmh} km/h vs entry ${entryKmh.toFixed(1)}`);
+  }
+});
+
+// shortcut: CJK = 1 unit, ASCII ≈ 0.55 (12 px coach font), not real layout; the 750x342 browser spec is the real check.
+// At 750x342 landscape the paused coach shows two lines of ~32 CJK each beside the pause card.
+const coachUnits = text => [...text].reduce((sum, ch) => sum + (ch.charCodeAt(0) < 128 ? 0.55 : 1), 0);
+test('the zh-TW drift lesson fits the two-line short-landscape coach card', () => {
+  for (const key of ['tutorial.drift', 'tutorial.driftSlide']) {
+    const units = coachUnits(TUTORIAL_COPY['zh-TW'][key]);
+    assert.ok(units <= 60, `${key}: ${units.toFixed(1)} units`);
+  }
+});
 
 test('all bilingual interactive tutorial strings are retained in the public UI catalog', () => {
   const english = Object.keys(TUTORIAL_COPY.en).sort();
