@@ -49,3 +49,8 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   listener sits on the card, not a stretched `::before` on the button: `button.is-pressed` applies
   `filter`, which makes the button the pseudo's containing block mid-tap and the click misses.
   Guard: `tests/wave3-demo-results-layout-browser.spec.js` (zh-TW, `clipped()` per viewport).
+- **Desktop/tablet results scroll, never run off-screen.** The split layout
+  (`min-width: 761px and min-height: 501px`) had no `overflow`, so the Wave 3 coin row pushed the
+  card 45–177px past the overlay bottom at 1440×900, 1366×768 and 1024×768, where nobody could
+  reach it (2026-11-14). `#race-overlay` scrolls there; a new summary row is checked at those
+  sizes. Guard: the scrolled-to-end assertion in `tests/wave3-demo-results-layout-browser.spec.js`.

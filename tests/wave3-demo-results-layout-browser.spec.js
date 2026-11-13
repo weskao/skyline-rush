@@ -38,6 +38,8 @@ for (const viewport of [
   { width: 844, height: 390 }, // phone landscape
   { width: 667, height: 375 }, // iPhone SE landscape
   { width: 768, height: 1024 }, // tablet portrait
+  { width: 1024, height: 768 }, // tablet landscape
+  { width: 1366, height: 768 }, // laptop
   { width: 1440, height: 900 }, // desktop
 ]) {
   test.describe(`Wave 3 earned results layout ${viewport.width}x${viewport.height}`, () => {
@@ -102,6 +104,14 @@ for (const viewport of [
         }
       } else await expect(toggle).toBeHidden();
       await expect.poll(() => page.evaluate(clipped), { timeout: ciTimeout(3000) }).toEqual([]);
+      // Laptops and tablets in landscape: the card ran past the overlay's bottom edge with no
+      // way to scroll to it, which hid the coin row and mission progress.
+      await expect.poll(() => page.evaluate(() => {
+        const overlay = document.querySelector('#race-overlay');
+        overlay.scrollTop = overlay.scrollHeight;
+        const card = document.querySelector('.wave3-demo-results--earned').getBoundingClientRect();
+        return Math.max(0, Math.round(card.bottom - overlay.getBoundingClientRect().bottom));
+      }), { timeout: ciTimeout(3000) }).toBe(0);
       if (SHOTS) {
         await page.waitForTimeout(1500);
         await page.screenshot({ path: `${SHOTS}/demo-reward-${viewport.width}x${viewport.height}.png` });
