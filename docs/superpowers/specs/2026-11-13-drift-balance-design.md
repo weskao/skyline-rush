@@ -69,3 +69,34 @@ accrual rewrites HUD, callouts and tutorial for little extra gain.
 
 Exact helper signature, where the economy guard lives, and which existing tests only need their time literals
 updated versus reading `DRIFT_REWARDS`.
+
+## Revision 2026-11-14 — NITRO per tier, boost on release, smaller payouts
+
+The final review found the spam figure above (6.3 NITRO/min) came from a loop that let speed sag
+below 45 m/s. A real farmer drifts just past a tier, throttles back to the start speed and repeats:
+the Balanced table then earned 13–18 NITRO/min, as much as pickups (≈ 15/min). Lowering only the
+first tier moved the farm to 1.2 s holds (17.5/min). The physics has no corners, so every drift is
+the same anywhere and only the exchange rate can limit farming; a payout cooldown was rejected by
+the user because players would read it as a bug.
+
+User decisions (2026-11-14):
+
+- **NITRO 0.10 / 0.22 / 0.35** (totals at 0.6 / 1.2 / 2.0 s); mini boost 0.7 / 1.1 / 1.6 s and the
+  1.5 m/s² bleed unchanged.
+- **NITRO is credited the moment each tier is reached** (the increment to that tier's total); the
+  release pays only the mini boost of the highest tier. A drift cut short by a crash, take-off or
+  gap keeps the NITRO already credited and loses the boost. `driftPayout` still fires once on
+  release with the total credited.
+- **Feedback on the car, not the HUD:** a per-tier "charge" body animation, deliberately unlike the
+  exhaust flames that NITRO/BOOST/mini boost use (light sweeping from the rear wheels over the body,
+  outline glow in the tier's spark colour, tier 3 adds a ground shockwave), fired when a tier is
+  reached; fitted to every car's geometry. Verified with screenshots of each car at each tier only.
+
+| Drift-and-recover farm, NITRO/min (0.65 / 1.25 / 2.05 s holds) | 70 m/s | 88 m/s |
+|---|---|---|
+| Balanced 0.25 / 0.45 / 0.70 | 18.3 / 17.5 / 16.8 | 14.8 / 14.4 / 13.3 |
+| **Picked 0.10 / 0.22 / 0.35** | 7.3 / 8.6 / 8.4 | 5.9 / 7.0 / 6.6 |
+
+Net metres per drift vs plain throttle (8 s window, NITRO valued at its distance): +1 / +4 / +7 m at
+70 m/s, +20 / +35 / +52 m at 88 m/s. Guard: `tests/drift-balance.test.js` (every tier net > 0;
+drift-and-recover farm < 9 NITRO/min, 60% of pickup income, at both speeds and every tier).

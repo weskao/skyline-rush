@@ -23,7 +23,7 @@ const tenth = (seconds: number): number => Math.round(Math.max(0, seconds) * 10)
 function driftCue({ car, driftEntry }: CueState): TutorialCue {
   const time = car.drift?.time;
   if (time !== undefined) {
-    // The engine pays the reached DRIFT_REWARDS tier on release.
+    // The engine credits each DRIFT_REWARDS tier's NITRO as it is reached; the release pays the mini boost.
     const tier = driftTier(time);
     if (tier === 0) return { key: 'tutorial.cue.driftHold', actions: ['brake'], count: tenth(DRIFT_FIRST_TIER - time) };
     return tier < DRIFT_REWARDS.length ? { key: 'tutorial.cue.driftRelease', actions: ['brake'], n: tier } : { key: 'tutorial.cue.driftMax', actions: ['brake'] };

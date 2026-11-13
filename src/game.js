@@ -26,7 +26,7 @@ import { skyJumpGap } from './sky-track.ts'; import { dropCar, stepDeck, stepRiv
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
-import { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS } from './drive-rules.ts';
+import { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftCredit } from './drive-rules.ts';
 export { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
@@ -299,17 +299,17 @@ export function stepRace(race, input, dt) {
       Math.abs((other.altitude || 0) - car.altitude) < SLIPSTREAM_ALTITUDE;
   };
   if (stepSlipstream(slip, race.traffic.some(drafts) || race.rivals.some(drafts), dt)) addNitro(car, SLIPSTREAM_NITRO);
-  // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; releasing it pays out by drift time.
+  // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; each tier reached pays NITRO, the release a mini boost.
   if (brake && steer !== 0 && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED &&
       car.railContactSide !== Math.sign(steer)) {
-    car.drift ??= { time: 0, dir: Math.sign(steer) };
+    car.drift ??= { time: 0, dir: Math.sign(steer), nitro: 0 };
     car.drift.time += dt;
+    const owed = driftCredit(car.drift); if (owed > 0) addNitro(car, owed);
   } else if (car.drift) {
     const reward = DRIFT_REWARDS.find(r => car.drift.time >= r.time);
     if (reward) {
-      addNitro(car, reward.nitro);
       car.miniBoost = Math.max(car.miniBoost, reward.boost);
-      car.driftPayout = { time: race.elapsed, nitro: reward.nitro };
+      car.driftPayout = { time: race.elapsed, nitro: car.drift.nitro };
     }
     car.drift = null;
   }

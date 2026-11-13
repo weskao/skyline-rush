@@ -51,28 +51,35 @@ test('every drift tier is net positive vs plain throttle from 70 and 88 m/s', ()
   }
 });
 
-test('back-to-back top-tier drifts on a straight earn under 8 NITRO per minute', () => {
-  const race = cruising(88), top = TIER_TIMES.at(-1);
+// A farmer drifts just past a tier, throttles back to the start speed and repeats; speed never sags below 45 m/s.
+function farm(speed, hold) {
+  const race = cruising(speed);
   let earned = 0;
   for (let t = 0; t < 60;) {
-    for (let held = 0; held < top + .05; held += DT, t += DT) stepRace(race, DRIFT, DT);
-    const banked = race.player.nitro; race.player.nitro = 0; // count uncapped
-    stepRace(race, { throttle: true }, DT); t += DT;
-    earned += race.player.nitro; race.player.nitro = banked;
+    for (let held = 0; held < hold && t < 60; held += DT, t += DT) stepRace(race, DRIFT, DT);
+    do { stepRace(race, { throttle: true }, DT); t += DT; earned += race.player.nitro; race.player.nitro = 0; } // count uncapped
+    while (race.player.speed < speed && t < 60);
   }
-  assert.ok(earned < 8, `${earned.toFixed(1)} NITRO/min`);
+  return earned;
+}
+
+test('drift-and-recover farming at any tier earns under 60% of pickup income (9 NITRO/min)', () => {
+  for (const speed of [70, 88]) for (const time of TIER_TIMES) {
+    const earned = farm(speed, time + .05);
+    assert.ok(earned < 9, `${time} s holds from ${speed} m/s: ${earned.toFixed(1)} NITRO/min`);
+  }
 });
 
 test('a first-tier drift at 30 FPS still pays the first tier', () => {
   const race = cruising(80);
   for (let t = 0; t < TIER_TIMES[0] + .05; t += 1 / 30) stepRace(race, DRIFT, 1 / 30);
   stepRace(race, {}, 1 / 30);
-  assert.equal(race.player.nitro, 0.25);
+  assert.equal(race.player.nitro, DRIFT_REWARDS.at(-1).nitro);
 });
 
 test('a drift that slows below DRIFT_MIN_SPEED pays the tier it reached', () => {
   const race = cruising(DRIFT_MIN_SPEED + 1);
   for (let t = 0; t < 1; t += DT) stepRace(race, DRIFT, DT);
   assert.equal(race.player.drift, null);
-  assert.equal(race.player.nitro, 0.25);
+  assert.equal(race.player.nitro, DRIFT_REWARDS.at(-1).nitro);
 });
