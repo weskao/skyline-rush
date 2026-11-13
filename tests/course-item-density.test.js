@@ -46,10 +46,10 @@ for (const id of Object.keys(COURSE_TRACKS)) {
   });
 }
 
-test('classic tracks keep their item counts (the length scale applies to course topologies only)', () => {
+test('classic tracks keep their item counts (the length scale applies to course topologies; classic uses itemDensity)', () => {
   const counts = Object.fromEntries(classic.map(r => [r.trackId, [r.rings.length, r.pickups.length]]));
   assert.deepEqual(counts, {
-    coast: [91, 109], neon: [50, 124], canyon: [50, 103], aurora: [48, 103], spiral: [63, 119],
+    coast: [121, 152], neon: [69, 163], canyon: [77, 139], aurora: [64, 143], spiral: [92, 157], // first five: itemDensity 1.4 (user, 2026-11-13)
     taipei: [70, 101], tokyo: [49, 108], alpine: [43, 110], coastal: [55, 103], cosmic: [66, 106],
   });
 });

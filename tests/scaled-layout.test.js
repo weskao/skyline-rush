@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRace, startRace, stepRace, setLayoutSeed, RACE_TRACKS, CAR_HEIGHT, TUNNEL_CEILING, GAP_CLEARANCE, ITEMS_PER_CAR } from '../src/game.js';
+import { itemScale } from '../src/race-tracks.ts';
 
 // User, 2026-11-02: rings and pickups scale with the cars on the grid (5 slots per car since the user's 2026-11-03
 // "medium increase"; 4 before), spread over the whole track,
@@ -8,6 +9,7 @@ import { createRace, startRace, stepRace, setLayoutSeed, RACE_TRACKS, CAR_HEIGHT
 // trails a run of cells (tests/ring-rows.test.js): `slots` counts one ring per slot, `pickupsOf` one pickup.
 const TRACKS = Object.keys(RACE_TRACKS);
 const PER_CAR = ITEMS_PER_CAR;
+const slotsFor = (id, cars) => Math.round(PER_CAR * cars * itemScale(RACE_TRACKS[id])); // the first five maps carry 40% more (user, 2026-11-13)
 const singles = race => race.rings.filter(ring => !ring.train && !(ring.row && ring.x !== -7.5)); // one ring per slot
 const cars = race => 1 + race.rivals.length;
 const inCorridor = (race, p) => race.sections.some(s => s.type === 'shortcut' && p.distance >= s.from && p.distance < s.to && p.x === s.x && p.altitude === s.altitude);
@@ -17,9 +19,9 @@ const pickupsOf = race => race.pickups.filter(p => p.tier !== 'overcharge' && !p
 test('L1: a race carries ITEMS_PER_CAR single rings per car on the grid, on every track', () => {
   for (const id of TRACKS) for (const rivals of [0, 1, 2, 7]) {
     const race = createRace(id, { mode: 'custom', rivals });
-    assert.equal(singles(race).length, PER_CAR * (rivals + 1), `${id} with ${rivals + 1} car(s)`);
+    assert.equal(singles(race).length, slotsFor(id, rivals + 1), `${id} with ${rivals + 1} car(s)`);
   }
-  for (const id of TRACKS) assert.equal(singles(createRace(id)).length, 40, `${id} classic grid of 8: 5 per car`);
+  for (const id of TRACKS) assert.equal(singles(createRace(id)).length, slotsFor(id, 8), `${id} classic grid of 8`);
 });
 
 test('L2: a slot is a single ring, a 6-ring train or a 4-ring full-width row', () => {
@@ -47,7 +49,7 @@ test('L3: rings and pickups spread from start to finish, never bunched on one st
 test('L4: a race carries ITEMS_PER_CAR single pickups per car plus the one overcharge', () => {
   for (const id of TRACKS) for (const rivals of [0, 2, 7]) {
     const race = createRace(id, { mode: 'custom', rivals });
-    assert.equal(pickupsOf(race).length, PER_CAR * (rivals + 1), `${id} with ${rivals + 1} car(s)`);
+    assert.equal(pickupsOf(race).length, slotsFor(id, rivals + 1), `${id} with ${rivals + 1} car(s)`);
     assert.equal(race.pickups.filter(p => p.tier === 'overcharge').length, 1, id);
   }
 });

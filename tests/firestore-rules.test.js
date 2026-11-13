@@ -57,7 +57,7 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
     history: [{ date: '2026-11-01T00:00:00.000Z', track: 'coast', position: 1, time: 70, layout: 3 }],
     modeHistory: [{ date: '2026-11-01T00:00:00.000Z', mode: 'circuit', track: CIRCUIT_ID, rules: '{}', time: 100, layout: 3 }] }));
   await assertFails(setDoc(save, { ...progress, bests: { [recordTrackId('coast')]: -1 } }));
-  await assertFails(setDoc(save, { ...progress, bests: { 'aurora@5': 60 } }), 'a layout no build wrote');
+  await assertFails(setDoc(save, { ...progress, bests: { 'aurora@6': 60 } }), 'a layout no build wrote');
   await assertFails(setDoc(save, { ...progress, stars: { [recordTrackId('coast')]: 3 } }));
   await assertFails(setDoc(save, { ...progress, medals: { 'first-win': 'not-a-date' } }));
   // Optional equipped car (Task 7): the catalog's ids only; a save without it stays valid for older clients.

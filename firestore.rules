@@ -11,6 +11,7 @@ service cloud.firestore {
       'aurora@2', 'taipei@2', 'tokyo@2', 'alpine@2', 'coastal@2', 'cosmic@2',
       'coast@4', 'neon@4', 'canyon@4', 'spiral@4',
       'coast@5', 'neon@5', 'canyon@5', 'aurora@4', 'spiral@5',
+      'coast@6', 'neon@6', 'canyon@6', 'aurora@5', 'spiral@6',
       'aurora@3', 'taipei@3', 'tokyo@3', 'alpine@3', 'coastal@3', 'cosmic@3',
       'frostbite-canyon@t1l1', 'dune-tempest@t1l1', 'skyfall-archipelago@t1l1',
       'stormline-megacity@t1l1', 'volcanic-crown@t1l1', 'monsoon-ruins@t1l1']); // CourseGraph sprints: `<track>@t<topology>l<layout>`
@@ -52,6 +53,8 @@ service cloud.firestore {
       && validBest(bests, 'canyon@4') && validBest(bests, 'spiral@4')
       && validBest(bests, 'coast@5') && validBest(bests, 'neon@5')
       && validBest(bests, 'canyon@5') && validBest(bests, 'aurora@4') && validBest(bests, 'spiral@5')
+      && validBest(bests, 'coast@6') && validBest(bests, 'neon@6')
+      && validBest(bests, 'canyon@6') && validBest(bests, 'aurora@5') && validBest(bests, 'spiral@6')
       && validBest(bests, 'aurora@3') && validBest(bests, 'taipei@3')
       && validBest(bests, 'tokyo@3') && validBest(bests, 'alpine@3')
       && validBest(bests, 'coastal@3') && validBest(bests, 'cosmic@3')

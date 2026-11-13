@@ -49,8 +49,10 @@ layouts, rival takes and PERFECT LINE groups (`tests/catch-up-items.test.js`; de
 `docs/superpowers/specs/2026-11-07-catch-up-items-design.md`).
 
 **Long-form courses** (`topology: 'course-graph' | 'course-graph-runtime'`; user, 2026-11-09): rings and pickups scale
-with length, `itemScale(track) = length / mean classic length` (`race-tracks.ts`). Classic tracks stay at scale 1, so
-their counts are unchanged. Classic traffic uses a `trafficDensity` inside the classic range (0.65–1.5), never 0.
+with length, `itemScale(track) = length / mean classic length` (`race-tracks.ts`). Classic tracks use their own `itemDensity`
+(default 1; the first five maps, Coast → Sky Spiral, carry 1.4 since the user's 2026-11-13 request). Changing it is a
+layout change: bump that track's `layoutVersion`, add the new `<track>@<layout>` ids to `firestore.rules`, re-lock
+`tests/course-item-density.test.js`, the `ring-variety` baseline and the legacy replay fixture. Classic traffic uses a `trafficDensity` inside the classic range (0.65–1.5), never 0.
 On graph runtimes (`src/course-items.ts`) the shared layout is re-keyed to `(edgeId, localS)` on the ground route.
 Every alternate branch gets the shortcut reward line above plus the dense mix, rivals take items on their own edges, and traffic
 runs as unranked course cars on the ground route. Catch-up items stay off graph courses. Guards:
