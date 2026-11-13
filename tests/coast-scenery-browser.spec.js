@@ -43,6 +43,30 @@ test('Coast High attaches the scenery GLB before GO and compiles nothing after i
   expect(errors).toEqual([]);
 });
 
+// Set before the far coast was added (full-scene step 3). Measured on High 2026-11-14: home 652, race 482 to 507.
+// The bridge towers (about 170 calls) leave Coast in step 4: lower the cap with them.
+const DRAW_CALL_CAP = { home: 700, race: 560 };
+test('Coast High stays under the draw-call cap on the home showcase and in a race', async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(90000));
+  const calls = () => page.evaluate(() => window.gameScene.renderer.info.render.calls);
+  await withQuality(page, 'high');
+  await expect.poll(() => status(page), { timeout: ciTimeout(40000) }).toBe('attached');
+  await expect.poll(() => page.locator('#world').getAttribute('data-coast-sea'), { timeout: ciTimeout(40000) }).toBe('water');
+  const far = await page.evaluate(() => { // the far coast: scan cliffs at headland size in the close pools, cones off
+    const { scene } = window.gameScene, sizes = [], m = new window.gameScene.scene.matrix.constructor();
+    for (const name of ['cliff_a', 'cliff_b']) { const mesh = scene.getObjectByName(name); for (let i = 0; i < mesh.count; i++) { mesh.getMatrixAt(i, m); sizes.push(m.getMaxScaleOnAxis()); } }
+    return { headlands: sizes.filter(size => size >= 5).length, cones: scene.children.find(o => o.isInstancedMesh && o.geometry.type === 'ConeGeometry').material.visible };
+  });
+  expect(far.headlands).toBeGreaterThanOrEqual(6);
+  expect(far.cones).toBe(false);
+  expect(await calls()).toBeLessThanOrEqual(DRAW_CALL_CAP.home);
+  await page.locator('#start-button').click();
+  await racing(page);
+  let peak = 0;
+  for (let i = 0; i < 6; i++) { await page.waitForTimeout(ciTimeout(300)); peak = Math.max(peak, await calls()); }
+  expect(peak).toBeLessThanOrEqual(DRAW_CALL_CAP.race);
+});
+
 test('Coast Low never fetches the scenery GLB and keeps the procedural rocks and trees', async ({ gameplayPage: page }) => {
   await withQuality(page, 'low');
   await page.waitForTimeout(ciTimeout(1500));

@@ -30,12 +30,15 @@ type Sky = Pick<ReturnType<typeof createCoastSky>, 'update' | 'dispose'>;
 type Sea = Pick<ReturnType<typeof createCoastSea>, 'update' | 'dispose' | 'shore'>;
 interface Deps {
   scenery: Scenery; cache: Pick<ModelCache, 'load'>; road?: Road; reflection?: Reflection; sky?: Sky; sea?: Sea;
+  /** The procedural far cones (classic-backdrop.ts): off on Coast while the scan coast, which has its own far
+   *  headlands (coast-scenery-glb.ts), is drawn. */
+  mountains?: { material: { visible: boolean } };
   /** QA state (the canvas dataset): coastScenery = loading | waiting-for-race-end | attached | fallback:<reason> | off;
    *  coastRoad = medium | high | ultra (material tier) while the asphalt is on the road, else procedural | fallback. */
   dataset?: Record<string, string | undefined>;
 }
 
-export function createCoastAssets({ scenery, cache, road, reflection, sky, sea, dataset = {} }: Deps) {
+export function createCoastAssets({ scenery, cache, road, reflection, sky, sea, mountains, dataset = {} }: Deps) {
   const controller = new AbortController();
   const procedural = road?.mesh.material;
   const roads = new Map<MaterialTier, CoastRoad | 'loading' | 'failed'>();
@@ -107,6 +110,7 @@ export function createCoastAssets({ scenery, cache, road, reflection, sky, sea, 
     /** Per frame; true when new materials joined the scene and the caller must run its shader warmup. */
     update(trackId: string, quality: VfxQuality, racing: boolean, preset = 'track', ultra = false): boolean {
       const scenery = updateScenery(trackId, quality, racing);
+      if (mountains) mountains.material.visible = !(attached && trackId === 'coast' && quality !== 'low');
       sky?.update(trackId, preset, quality, ultra); // its program exists from creation: nothing to warm up
       sea?.update(trackId, preset, quality); // after the sky: the water shows only under the dome it mirrors
       return updateRoad(trackId, quality, racing, preset, ultra) || scenery;
@@ -114,6 +118,7 @@ export function createCoastAssets({ scenery, cache, road, reflection, sky, sea, 
     dispose(): void {
       controller.abort();
       if (attached) scenery.detachModel();
+      if (mountains) mountains.material.visible = true;
       handle?.release();
       handle = null;
       if (road) { road.mesh.material = procedural!; road.mesh.onBeforeRender = onBeforeRender; }
@@ -131,7 +136,7 @@ interface WorldRenderer { capabilities: { getMaxAnisotropy(): number; maxTexture
 /** World wiring: one model cache and KTX2 transcoder for the Coast assets, imported only when first needed.
  *  null without `?look=3d` (look-gate.ts): no loader, mirror hook or fetch, the develop road and scenery. */
 export function createWorldCoastAssets(renderer: WorldRenderer,
-  targets: { scenery: Scenery & { group: { position: Vector3 } }; road: Road['mesh'] } & Pick<Parameters<typeof createCoastSky>[0], 'sky' | 'sun'> & Pick<Parameters<typeof createCoastSea>[0], 'sea' | 'seaLines'>,
+  targets: { scenery: Scenery & { group: { position: Vector3 } }; road: Road['mesh'] } & Pick<Parameters<typeof createCoastSky>[0], 'sky' | 'sun'> & Pick<Parameters<typeof createCoastSea>[0], 'sea' | 'seaLines'> & Pick<Deps, 'mountains'>,
   dataset: Deps['dataset'], baseUrl = import.meta.env.BASE_URL) {
   if (!look3d()) return null;
   const loadKtx2 = createKtx2Provider(renderer, baseUrl);
@@ -145,5 +150,5 @@ export function createWorldCoastAssets(renderer: WorldRenderer,
   };
   const sky = createCoastSky({ sky: targets.sky, sun: targets.sun, load: loadTexture, maxTextureSize: renderer.capabilities.maxTextureSize, dataset });
   const sea = createCoastSea({ sea: targets.sea, seaLines: targets.seaLines, dome: sky.dome, origin: targets.scenery.group.position, load: loadTexture, dataset });
-  return createCoastAssets({ scenery: targets.scenery, road, sky, sea, dataset, reflection: createWetReflection(), cache: { load: async (id, options) => (await real).load(id, options) } });
+  return createCoastAssets({ scenery: targets.scenery, road, sky, sea, mountains: targets.mountains, dataset, reflection: createWetReflection(), cache: { load: async (id, options) => (await real).load(id, options) } });
 }

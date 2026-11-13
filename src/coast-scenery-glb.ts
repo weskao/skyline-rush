@@ -63,6 +63,33 @@ export function coastChunkWindow(distance: number, quality: VfxQuality): ChunkWi
   return { first: Math.floor(distance / COAST_CHUNK_METRES) - 1, count: 2 + AHEAD[quality] };
 }
 
+/** Far coast (full-scene step 3): the same cliff and rock scans at headland and sea-stack size, in 480 m slots keyed
+ *  by absolute distance and the endless seed like the chunks. `along` is metres into the slot. */
+export const COAST_FAR_SLOT_METRES = 480;
+const FAR_SLOTS: Readonly<Record<Exclude<VfxQuality, 'low'>, number>> = { medium: 3, high: 4 };
+/** Upper bound of far placements per slot; added to the same instance pools, so the far coast adds no draw call. */
+// shortcut: a far headland draws the full 11k-triangle cliff scan (about +90k triangles on High, +70k on Medium);
+// add decimated far nodes to coast-scenery.glb if a phone profile shows the vertex cost.
+const FAR_PER_SLOT: Partial<Record<CoastPiece, number>> = { cliff_a: 2, cliff_b: 2, rock_a: 1, rock_b: 1 };
+
+export function coastFarPlan(slot: number, seed?: number): Placement[] {
+  const r = seededRng(seed ?? 0, 'coast-far-v1:' + slot), out: Placement[] = [];
+  for (const s of [-1, 1]) { // a headland on each side: cliff_a is 92 m long and 13 m tall at scale 1, cliff_b 41 m and 13 m
+    const piece: CoastPiece = r() < .5 ? 'cliff_a' : 'cliff_b', scale = piece === 'cliff_a' ? 5 + r() * 3 : 8 + r() * 4;
+    out.push({ piece, along: 140 + r() * 200, offset: s * (330 + r() * 420), y: SEA, yaw: ALONG_ROAD + (r() - .5) * .3, scale });
+  }
+  if (r() < .7) { // a sea stack in the mid band, between the close chunks and the headlands
+    const piece: CoastPiece = r() < .5 ? 'rock_a' : 'rock_b', scale = piece === 'rock_a' ? 12 + r() * 12 : 20 + r() * 20;
+    out.push({ piece, along: r() * COAST_FAR_SLOT_METRES, offset: (r() < .5 ? -1 : 1) * (220 + r() * 160), y: SEA - .15 * scale, yaw: r() * Math.PI * 2, scale });
+  }
+  return out;
+}
+/** From half a slot behind the car to past where the fog closes on High; Low keeps the procedural cones. */
+export function coastFarWindow(distance: number, quality: VfxQuality): ChunkWindow | null {
+  if (quality === 'low') return null;
+  return { first: Math.floor(distance / COAST_FAR_SLOT_METRES - .5), count: FAR_SLOTS[quality] };
+}
+
 interface Part { mesh: THREE.InstancedMesh; locals: THREE.Matrix4[]; used: number }
 /** Receives the footprint of every piece standing in the sea, in the layer's coordinates, once per placement pass
  *  (the water's shore foam, coast-sea.ts): centre, half extents along the piece's own x and z, and its yaw. */
@@ -90,7 +117,7 @@ export function createCoastModelLayer(source: THREE.Object3D, shore?: ShoreSink)
       byKey.set(key, entry);
     });
     const list: Part[] = [...byKey.values()].map(({ geometry, material, locals }, k) => {
-      const capacity = MAX_PER_CHUNK[piece] * MAX_CHUNKS * locals.length;
+      const capacity = (MAX_PER_CHUNK[piece] * MAX_CHUNKS + (FAR_PER_SLOT[piece] ?? 0) * FAR_SLOTS.high) * locals.length;
       const mesh = new THREE.InstancedMesh(geometry, material, capacity);
       mesh.name = k ? `${piece}:${k}` : piece;
       mesh.frustumCulled = false; // instances span the whole window; the pool's bounds would be stale
@@ -105,14 +132,29 @@ export function createCoastModelLayer(source: THREE.Object3D, shore?: ShoreSink)
   let key = '', previousRoute: ClassicRoad | undefined;
   return {
     meshes,
-    /** Rewrites every instance for the chunk window; a no-op unless the window, origin or seed changed. */
-    place(route: ClassicRoad, window: ChunkWindow, origin: number, seed?: number): void {
-      const next = `${window.first}|${window.count}|${origin}|${seed}`;
+    /** Rewrites every instance for the chunk and far windows; a no-op unless a window, the origin or the seed changed. */
+    place(route: ClassicRoad, window: ChunkWindow, origin: number, seed?: number, far?: ChunkWindow | null): void {
+      const next = `${window.first}|${window.count}|${origin}|${seed}|${far?.first}|${far?.count}`;
       if (next === key && route === previousRoute) return;
       key = next; previousRoute = route;
       for (const list of parts.values()) for (const entry of list) entry.used = 0;
       const [midX, midZ] = route.point((window.first + window.count / 2) * COAST_CHUNK_METRES);
       shore?.begin(midX, midZ + origin);
+      const write = (piece: CoastPiece): void => {
+        transform.compose(p, q, s);
+        for (const entry of parts.get(piece)!) for (const local of entry.locals) {
+          if (entry.used < entry.mesh.instanceMatrix.count) entry.mesh.setMatrixAt(entry.used++, part.multiplyMatrices(transform, local));
+        }
+      };
+      const stand = (placement: Placement, distance: number, wet: boolean): void => {
+        const [x, z] = route.point(distance, placement.offset);
+        p.set(x, placement.y, z + origin);
+        const yaw = placement.yaw - route.heading(distance), size = half.get(placement.piece)!;
+        q.setFromAxisAngle(up, yaw);
+        s.setScalar(placement.scale);
+        if (wet && placement.y <= SEA) shore?.stamp(p.x, p.z, size.x * placement.scale, size.z * placement.scale, yaw);
+        write(placement.piece);
+      };
       for (let chunk = window.first; chunk < window.first + window.count; chunk++) {
         for (const placement of coastChunkPlan(chunk, seed)) {
           if (placement.piece === 'guard_rail' && chunk >= window.first + RAIL_CHUNKS) continue;
@@ -123,19 +165,14 @@ export function createCoastModelLayer(source: THREE.Object3D, shore?: ShoreSink)
             p.set((ax + bx) / 2, placement.y, (az + bz) / 2 + origin);
             q.setFromAxisAngle(up, Math.atan2(az - bz, bx - ax));
             s.set(Math.hypot(bx - ax, bz - az) / RAIL_LENGTH, 1, 1);
-          } else {
-            const [x, z] = route.point(distance, placement.offset);
-            p.set(x, placement.y, z + origin);
-            const yaw = placement.yaw - route.heading(distance), size = half.get(placement.piece)!;
-            q.setFromAxisAngle(up, yaw);
-            s.setScalar(placement.scale);
-            if (placement.y <= SEA) shore?.stamp(p.x, p.z, size.x * placement.scale, size.z * placement.scale, yaw);
-          }
-          transform.compose(p, q, s);
-          for (const entry of parts.get(placement.piece)!) for (const local of entry.locals) {
-            if (entry.used < entry.mesh.instanceMatrix.count) entry.mesh.setMatrixAt(entry.used++, part.multiplyMatrices(transform, local));
-          }
+            write(placement.piece);
+          } else stand(placement, distance, true);
         }
+      }
+      // shortcut: no shore foam on the far pieces (their bounding ellipse is far wider than the rock); give them a
+      // footprint mesh or a larger mask if the base of a headland ever reads as cut out of the water.
+      if (far) for (let slot = far.first; slot < far.first + far.count; slot++) {
+        for (const placement of coastFarPlan(slot, seed)) stand(placement, slot * COAST_FAR_SLOT_METRES + placement.along, false);
       }
       for (const list of parts.values()) for (const { mesh, used } of list) {
         for (let i = used; i < mesh.count; i++) mesh.setMatrixAt(i, parked);

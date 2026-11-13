@@ -197,7 +197,27 @@ test('the water controller runs after the sky every frame, lends its shore mask 
   assert.deepEqual(calls.slice(-2), ['sea dispose', 'sky dispose']);
 });
 
-test('world.js hands the procedural sky dome, sun disc, sea plane and sea lines to the Coast assets', async () => {
+test('the procedural cones leave Coast once the scan coast is attached on Medium+, and come back everywhere else', async () => {
+  const mountains = { material: { visible: true } };
+  const handle = { kind: 'model', instance: () => new THREE.Group(), release() {} };
+  const assets = createCoastAssets({ scenery, cache: { load: async () => handle }, mountains });
+  assets.update('coast', 'high', false);
+  assert.equal(mountains.material.visible, true, 'cones until the GLB is attached (and for good if it fails to load)');
+  await tick();
+  assets.update('coast', 'high', false);
+  assert.equal(mountains.material.visible, false, 'the far headlands replace them');
+  assets.update('coast', 'low', false);
+  assert.equal(mountains.material.visible, true, 'Low draws no GLB: it keeps the cones');
+  assets.update('coast', 'medium', false);
+  assert.equal(mountains.material.visible, false);
+  assets.update('neon', 'high', false);
+  assert.equal(mountains.material.visible, true, 'other tracks keep their mountains');
+  assets.update('coast', 'high', false);
+  assets.dispose();
+  assert.equal(mountains.material.visible, true);
+});
+
+test('world.js hands the procedural sky dome, sun disc, sea plane, sea lines and mountains to the Coast assets', async () => {
   const { readFileSync } = await import('node:fs');
-  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scenery: coastScenery, road, sky, sun, sea, seaLines \}, canvas\.dataset\)/);
+  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scenery: coastScenery, road, sky, sun, sea, seaLines, mountains \}, canvas\.dataset\)/);
 });
