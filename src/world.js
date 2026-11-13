@@ -19,7 +19,7 @@ import { createClassicRoadRender } from './classic-road-render.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
 import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
-import { raceCameraView, rigBack, rigHeight, rigFov, rigShake, stepCameraSwing, frameChaseSightline } from './race-camera.ts';
+import { raceCameraView, rigBack, rigHeight, rigFov, rigShake, rigKick, stepCameraSwing, frameChaseSightline } from './race-camera.ts';
 import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
@@ -837,7 +837,7 @@ export function createWorld(canvas) {
         desiredCamera.fromArray(classicPosition(distance - (portrait ? 13.8 : 11.8), portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, distance));
         lookTarget.fromArray(classicPosition(distance + 3.5, portrait ? 1 : -1.4, 1.4, distance));
       } else {
-        const first = cameraMode === 1, back = rigBack(view, visualCar.speed), height = rigHeight(view, visualCar.altitude);
+        const first = cameraMode === 1, back = rigBack(view, visualCar.speed, sprintFrame.fov), height = rigHeight(view, visualCar.altitude);
         cameraSwing = reducedMotion ? 0 : stepCameraSwing(cameraSwing, player.userData.driftYaw ?? 0, view, dt);
         if (curvedClassic) {
           const heading = roadHeading(distance);
@@ -867,8 +867,6 @@ export function createWorld(canvas) {
         desiredCamera.x += Math.sin(time * 61) * impact * 0.27;
         desiredCamera.y += Math.sin(time * 47) * impact * 0.15 - landing * 0.3;
         desiredCamera.z += impact * 0.65;
-        desiredCamera.x += Math.sin(time * 65) * feedback.ignition * visual.shake * 0.12;
-        desiredCamera.z += boostStrength * (visual.enabled ? 0.22 : 0);
       }
       if(preview && !garageCamera) {
         // Preserve scenery clearance, then fit the complete car within the
@@ -888,8 +886,9 @@ export function createWorld(canvas) {
       carBank = THREE.MathUtils.damp(carBank, !reducedMotion && cameraMode === 1 && visualCar.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt); // flight banks first person only: the chase horizon stays level
       camera.rotation.z += carBank;
       // Applied after lookAt, so the shake never feeds the smoothed camera position.
-      const shake = reducedMotion || race.phase !== 'racing' ? 0 : rigShake(view, visualCar.speed, boostStrength, visual.enabled ? visual.shake : 0);
-      if (shake) { camera.rotateX(Math.sin(time * 53) * shake); camera.rotateY(Math.sin(time * 37) * shake * 0.6); }
+      const shakeSetting = reducedMotion || race.phase !== 'racing' || !visual.enabled ? 0 : visual.shake, shake = rigShake(view, visualCar.speed, shakeSetting);
+      camera.rotateX(Math.sin(time * 53) * shake + rigKick(view, sprintFrame.kick, shakeSetting));
+      if (shake) camera.rotateY(Math.sin(time * 37) * shake * 0.6);
       const targetFov = preview ? 50 : reducedMotion ? 64 : rigFov(view, visualCar.speed) + sprintFovOffset(sprintFrame, visual) - impact * 4;
       camera.fov = photoView && race.phase === 'paused' ? photoView.fov : camera.fov + (targetFov - camera.fov) * smoothing;
       camera.updateProjectionMatrix();

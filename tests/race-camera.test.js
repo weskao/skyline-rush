@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import * as rig from '../src/race-camera.ts';
 import { RACE_CAMERA, raceCameraView, rigBack, rigHeight, rigFov, rigShake, stepCameraSwing } from '../src/race-camera.ts';
 import { CAR_HEIGHT, ROAD_LIMIT } from '../src/game.js';
 import { MAX_SPEED, NITRO_CAP_BONUS } from '../src/drive-rules.ts';
@@ -21,8 +22,8 @@ const frameFill = (back, height, fov) =>
   (deg(Math.atan(height / (back - CAR_HALF_LENGTH))) - deg(Math.atan((height - CAR_HEIGHT) / (back + CAR_HALF_LENGTH)))) / fov;
 const horizontalFov = (fov, aspect) => 2 * deg(Math.atan(Math.tan(fov * Math.PI / 360) * aspect));
 /** Where a point `ahead` m in front of the camera and `y` m above the road lands on screen: 0 top, 1 bottom. */
-const screenY = (view, speed, ahead, y) => {
-  const eye = rigHeight(view, 0), pitch = Math.atan((eye - view.look) / (rigBack(view, speed) + view.ahead));
+const screenY = (view, speed, ahead, y, sprint = 0) => {
+  const eye = rigHeight(view, 0), pitch = Math.atan((eye - view.look) / (rigBack(view, speed, sprint) + view.ahead));
   return 0.5 + 0.5 * Math.tan(Math.atan((eye - y) / ahead) - pitch) / Math.tan(rigFov(view, speed) * Math.PI / 360);
 };
 const settle = (swing, yaw, view, seconds, fps = 60) => {
@@ -68,10 +69,11 @@ test('portrait chase stays further back: the narrow horizontal FOV still holds t
 
 test('portrait chase looks down enough to hold the car mid-frame, above the HUD readouts', () => {
   // On a 390x844 phone the altitude and speed readouts start 60% down the screen; the old rig left the car under them.
-  for (const speed of [60, MAX_SPEED, MAX_SPEED + NITRO_CAP_BONUS]) {
-    const back = rigBack(portrait, speed), bumper = screenY(portrait, speed, back - CAR_HALF_LENGTH, 0);
-    assert.ok(bumper < 0.61, `rear bumper at ${bumper.toFixed(3)} of the height at ${speed} m/s`);
-    assert.ok(screenY(portrait, speed, back, CAR_HEIGHT) > 0.42, 'the car stays in the lower half, not floating mid-sky');
+  // sprint 1: the NITRO/BOOST pull-back must not drop the car under the readouts either.
+  for (const [speed, sprint] of [[60, 0], [MAX_SPEED, 0], [MAX_SPEED, 1], [MAX_SPEED + NITRO_CAP_BONUS, 0], [MAX_SPEED + NITRO_CAP_BONUS, 1]]) {
+    const back = rigBack(portrait, speed, sprint), bumper = screenY(portrait, speed, back - CAR_HALF_LENGTH, 0, sprint);
+    assert.ok(bumper < 0.61, `rear bumper at ${bumper.toFixed(3)} of the height at ${speed} m/s, sprint ${sprint}`);
+    assert.ok(screenY(portrait, speed, back, CAR_HEIGHT, sprint) > 0.42, 'the car stays in the lower half, not floating mid-sky');
     assert.ok(screenY(portrait, speed, 1e6, 0) > 0.36, 'the horizon keeps the road ahead and the rings in view');
   }
 });
@@ -146,22 +148,56 @@ test('first person sits at a seated eye height over the nose, not on the roof or
   assert.ok(nose > rigFov(first, MAX_SPEED + NITRO_CAP_BONUS) / 2 + 5, `the nose sits ${nose.toFixed(1)} deg below the horizon, outside the frame`);
 });
 
-test('shake: first person trembles with speed, NITRO/BOOST adds a slight kick, the chase stays calm at cruise', () => {
-  assert.equal(rigShake(first, 0, 0, 0.15), 0);
-  assert.ok(rigShake(first, MAX_SPEED, 0, 0.15) > rigShake(first, MAX_SPEED / 2, 0, 0.15));
-  assert.equal(rigShake(chase, MAX_SPEED, 0, 0.15), 0);
-  for (const view of [chase, portrait, first]) {
-    assert.ok(rigShake(view, MAX_SPEED, 1, 0.15) > rigShake(view, MAX_SPEED, 0, 0.15));
-    assert.equal(rigShake(view, MAX_SPEED, 1, 0), 0, 'the Camera shake setting at 0 turns it off');
-    assert.ok(rigShake(view, MAX_SPEED + NITRO_CAP_BONUS, 1, 1) < 0.03, 'under 2 degrees even on the strongest setting');
-    assert.ok(rigShake(view, MAX_SPEED + NITRO_CAP_BONUS, 1, 0.15) < 0.006, 'subtle on the default setting');
-    assert.equal(rigShake(view, NaN, NaN, NaN), 0);
+// A NITRO/BOOST used to shake the camera at 8.4 Hz for as long as it lasted (±0.14° on the default setting, ±1.25° on
+// the strongest): speed now reads through the FOV, the pull-back and the lens, and the shake is only the speed tremble.
+test('shake: first person trembles with speed; the chase stays calm and a NITRO/BOOST adds no sustained shake', () => {
+  const top = MAX_SPEED + NITRO_CAP_BONUS;
+  assert.equal(rigShake.length, 3, 'view, speed, setting: the sprint strength is not an input any more');
+  assert.equal(rigShake(first, 0, 0.15), 0);
+  assert.ok(rigShake(first, MAX_SPEED, 0.15) > rigShake(first, MAX_SPEED / 2, 0.15));
+  for (const view of [chase, portrait]) assert.equal(rigShake(view, top, 1), 0);
+  assert.equal(rigShake(first, top, 0), 0, 'the Camera shake setting at 0 turns it off');
+  assert.ok(rigShake(first, top, 1) < 0.03, 'under 2 degrees even on the strongest setting');
+  assert.ok(rigShake(first, top, 0.15) < 0.006, 'subtle on the default setting');
+  assert.equal(rigShake(first, NaN, NaN), 0);
+});
+
+test('NITRO/BOOST ignition: one short, low-frequency kick that dies out', () => {
+  assert.equal(typeof rig.rigKick, 'function', 'the ignition kick lives in the rig module');
+  for (const view of [chase, portrait, first]) for (const setting of [0.15, 0.3, 1]) {
+    const samples = Array.from({ length: 121 }, (_, i) => rig.rigKick(view, i / 240, setting)); // 0 to 0.5 s
+    const peak = Math.max(...samples.map(Math.abs));
+    assert.equal(samples[0], 0, 'starts from rest: nothing pops on the ignition frame');
+    assert.ok(deg(peak) >= 0.1 && deg(peak) <= 0.4, `setting ${setting} peaks at ${deg(peak).toFixed(3)} degrees`);
+    assert.ok(samples.slice(60).every(value => value === 0), 'over within a quarter of a second');
+    const live = samples.slice(1, 60), flips = live.filter((value, i) => i > 0 && value * live[i - 1] < 0).length;
+    assert.ok(flips <= 2, `${flips} direction changes: a 4 to 6 Hz jolt, not a buzz`);
+    const rebound = Math.max(...samples.slice(samples.findIndex((value, i) => i > 0 && value <= 0)).map(Math.abs));
+    assert.ok(rebound < peak / 2, 'each swing is under half of the one before');
   }
+  assert.equal(rig.rigKick(chase, 0.05, 0), 0, 'the Camera shake setting at 0 turns it off');
+  for (const age of [NaN, -1, Infinity]) assert.equal(rig.rigKick(chase, age, 1), 0);
+  assert.equal(rig.rigKick(chase, 0.05, NaN), 0);
+});
+
+test('NITRO/BOOST pulls the chase camera back so the car surges ahead; first person never moves its eye', () => {
+  const top = MAX_SPEED + NITRO_CAP_BONUS;
+  for (const view of [chase, portrait]) {
+    const pull = rigBack(view, MAX_SPEED, 1) - rigBack(view, MAX_SPEED, 0);
+    assert.ok(pull >= 0.6 && pull <= 1.2, `${pull} m`);
+    assert.ok(Math.abs(rigBack(view, MAX_SPEED, 0.5) - rigBack(view, MAX_SPEED, 0) - pull / 2) < 1e-9, 'follows the eased sprint share');
+    assert.equal(rigBack(view, MAX_SPEED, NaN), rigBack(view, MAX_SPEED, 0));
+    assert.equal(rigBack(view, MAX_SPEED), rigBack(view, MAX_SPEED, 0));
+    assert.ok(rigBack(view, top, 1) < (view === chase ? OLD.landscape : OLD.portrait).back, 'still closer than the old rig');
+  }
+  assert.equal(rigBack(first, top, 1), rigBack(first, top, 0));
 });
 
 test('world.js takes its race camera numbers from the table', () => {
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
-  for (const name of ['raceCameraView', 'rigBack', 'rigHeight', 'rigFov', 'rigShake', 'stepCameraSwing'])
+  for (const name of ['raceCameraView', 'rigBack', 'rigHeight', 'rigFov', 'rigShake', 'rigKick', 'stepCameraSwing'])
     assert.ok(world.includes(`${name}(`), `world.js calls ${name}`);
   assert.ok(!/portrait \? 14\.5 : 12\.5|57 \+ visualCar\.speed/.test(world), 'the old inline offsets and FOV are gone');
+  assert.ok(!/time \* 65|boostStrength \* \(visual\.enabled \? 0\.22|rigShake\([^)]*boostStrength/.test(world),
+    'no sprint shake outside the rig: the 10 Hz ignition sway, the world-Z push and the sustained boost shake are gone');
 });

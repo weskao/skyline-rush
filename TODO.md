@@ -1,3 +1,14 @@
+# 2026-11-14 — NITRO/BOOST camera: sprint pulse, no sustained shake (`fix/sprint-camera-shake`)
+
+Report: firing NITRO or BOOST shook the screen too hard on desktop. User picked 方案 B 衝刺脈衝. Root cause: `rigShake` fed the sprint strength into a continuous 8.4 Hz rotation in `src/world.js` for the whole sprint, plus a 10 Hz ignition sway and a world-Z push, and the FOV share jumped on the ignition frame. Rule: `.claude/rules/race-camera.md` "Sprint judder".
+
+- [x] Fix: `rigShake(view, speed, strength)` is the speed tremble only; one damped ignition kick `rigKick` (0.25 s, 5 Hz, ≤ 0.4°) on the `kick` clock that `createSprintVfx` restarts only on a fresh ignition; FOV share eases in over 0.3 s; chase pull-back `sprintBack` 0.9 m (first person 0) via `rigBack(view, speed, sprint)`. Sway and Z push removed from `src/world.js` (1002 → 1001 lines, ceiling ratcheted). Radial blur, speed lines and bloom unchanged.
+- [x] RED on the old code: `node --test tests/race-camera.test.js tests/aero-vfx.test.js` 5 failures (kick while nothing fires, `rigShake.length` 4 vs 3, `rigKick` missing, 0 m pull-back, world.js does not call `rigKick`). GREEN after the fix; the portrait HUD test also checks sprint 1 at top and NITRO-cap speed.
+- [x] Measured before → after (1440×900, Sky Spiral chase, main-loop replay): sustained pitch wobble BOOST/NITRO ±0.14°/±0.19° → 0 at default shake 0.15 (0.3: ±0.28°/±0.37° → 0; 1.0: ±0.92°/±1.25° → 0); same on Coast, Taipei and at 120 Hz. Ignition: one kick, ±0.135° default, ±0.18° at 0.3 and 1.0 (cap), 0 with shake off. FOV rate 50 ms after BOOST ignition 18.6 → 5.8 °/s; peak FOV rate unchanged (≈19.7 vs 19.3 °/s) and the total widening is the same (67.0° → 73.4°). Camera range during BOOST 8.86 → 9.52 m before, 8.86 → 10.00 m after. First person keeps its ±0.09° speed tremble (was ±0.23°/±0.28° in a sprint).
+- [x] `npm test` 2906 pass / 0 fail / 3 skipped (after `npm ci` in the worktree), `npm run typecheck`, `npm run build`, `node --test tests/module-size.test.js tests/legacy-js-names.test.js` 4/4.
+- [ ] Real WebGL frames (desktop, phone portrait and landscape; Coast and Sky Spiral; cruise, BOOST, NITRO, first person).
+- [ ] Frame time before/after, physical-phone feel check, browser suite and exact-HEAD GitHub quality gate.
+
 # 2026-11-14 — Race map holds progress; top-right on phone landscape; HALFWAY callout
 
 - [x] The standalone progress strip is gone: the live map paints the road already driven orange (`.route-travelled`, rewritten only when the 0.5% step changes) and its caption shows `x.xx / y.yy KM`; the phase word shows only outside racing. Endless keeps the rolling map or the bare caption.
