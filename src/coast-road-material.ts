@@ -23,9 +23,9 @@ export const coastWetness = (preset: string): number => WETNESS[preset] ?? 0;
 
 const ROUGHNESS = '#include <roughnessmap_fragment>', NORMAL = '#include <normal_fragment_maps>', COMMON = '#include <common>';
 const WET_ROUGHNESS = `${ROUGHNESS}
-float puddle = smoothstep( .3, .7, texelRoughness.b ) * wetness;
+float puddle = smoothstep( .4, .95, texelRoughness.b ) * wetness;
 roughnessFactor = mix( roughnessFactor, roughnessFactor * .4, wetness );
-roughnessFactor = mix( roughnessFactor, .05, puddle );
+roughnessFactor = mix( roughnessFactor, .2, puddle );
 diffuseColor.rgb *= mix( 1., .5, wetness ) * mix( 1., .75, puddle );`;
 // The lights-only mirror (wet-reflection.ts): projective lookup, rippled by the normal map, five fading taps stretched
 // along the screen like light on wet asphalt, strongest in puddles and at grazing angles. No pow/exp, w clamped.
