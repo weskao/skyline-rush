@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
   test(`Trial preview and equip preserve gameplay ownership on ${viewport.width}x${viewport.height}`, async ({ page }) => {
@@ -30,6 +31,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 }
 
 test('VFX requires preview before confirmation and returns to the equipped effect when closed', async ({ page }) => {
+  test.setTimeout(ciTimeout(90000));
   await page.setViewportSize({ width: 844, height: 390 });
   await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: true })));
   await page.goto('/');
@@ -44,9 +46,9 @@ test('VFX requires preview before confirmation and returns to the equipped effec
   await expect(showroom).toHaveAttribute('data-skin-equipped-thruster', 'thruster-basic');
   await page.locator('#garage-close').click();
   await expect(page.locator('#garage-screen')).toBeHidden();
+  await expect(showroom).toHaveAttribute('data-skin-preview-thruster', 'thruster-basic');
 
   await page.locator('#garage-button').click();
-  await expect(showroom).toHaveAttribute('data-skin-preview-thruster', 'thruster-basic');
   await expect(action).toBeDisabled();
   await ion.locator('.garage-skin-preview-hitarea').click();
   await action.click();

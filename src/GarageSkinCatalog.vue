@@ -86,7 +86,7 @@ const statusText = (id: SkinId, locale: string) => {
 function actionLabel(id: SkinId, category: SkinCategory, locale: string): string {
   const entry = view(id);
   if (!entry?.canEquip) return statusText(id, locale);
-  if (!isPreviewOnly(id, category)) return locale === 'zh-TW' ? '先預覽' : 'Preview first';
+  if (!isPreviewOnly(id, category)) return locale === 'zh-TW' ? '先選卡片' : 'Select card';
   if (entry.owned) return locale === 'zh-TW' ? '套用' : 'Equip';
   return locale === 'zh-TW' ? '免費試用' : 'Try free';
 }
@@ -244,7 +244,6 @@ function confirmPreview(id: SkinId, category: SkinCategory): void {
 }
 /* Press feedback belongs to the whole card, never a dimmed box around its upper part. */
 .garage-skin-preview-hitarea:active:not(:disabled) { filter: none; }
-
 .garage-vfx-category li.garage-skin-card:has(> .garage-skin-preview-hitarea:active) { filter: brightness(.86); transform: scale(.985); }
 .garage-skin-preview-hitarea:focus-visible {
   outline: 3px solid #74ebff; outline-offset: 3px;
