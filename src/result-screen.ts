@@ -157,6 +157,12 @@ export function resultView(race: FinishedRace, finished: FinishedResult): Result
 }
 
 export interface ResultCount { element: HTMLElement; value: number; format(value: number): string }
+export function animateResultCounts(counts: readonly ResultCount[], count: number): void {
+  counts.forEach(({ element, value, format }, i) => {
+    const progress = Math.max(0, Math.min(1, count * 3 - i));
+    element.textContent = format(value * (1 - (1 - progress) ** 3));
+  });
+}
 const FORMATS: Record<CountFormat, (value: number) => string> = {
   time: timeString,
   style: value => t('result.style', { score: Math.round(value) }),

@@ -1,7 +1,7 @@
 import { GARAGE_SKINS } from './garage-skin-catalog.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
-import { DEMO_REDEMPTION_COSTS } from './wave3-demo-settlement.ts';
-import type { ExperienceSnapshot } from './wave3-experience-contract.ts';
+import { demoOffer, demoBalance, insufficientDemo } from './wave3-demo-settlement.ts';
+import type { DemoCurrency, DemoInsufficient, ExperienceSnapshot } from './wave3-experience-contract.ts';
 
 /** Presentation derived from the real VFX catalog; NOT a second inventory or paid SKU list. */
 export type Wave3DemoItem = Readonly<{
@@ -9,9 +9,10 @@ export type Wave3DemoItem = Readonly<{
   category: SkinCategory;
   name: Readonly<{ en: string; 'zh-TW': string }>;
   demoPrice: number | null;
+  currency: DemoCurrency | null;
 }>;
 export type DemoItemStatus = 'preview-only' | 'trial' | 'demo-unlocked' | 'locked';
-export type DemoRedeemState = 'ready' | 'invalid' | 'unavailable' | 'preview-only' | 'duplicate' | 'insufficient-demo-points';
+export type DemoRedeemState = 'ready' | 'invalid' | 'unavailable' | 'preview-only' | 'duplicate' | DemoInsufficient;
 /** A read-only projection of the existing Garage skin session's view(). */
 export type DemoTrialAccess = Readonly<{
   state: 'locked' | 'trial' | 'owned' | 'equipped';
@@ -21,13 +22,11 @@ export type DemoTrialAccess = Readonly<{
 }>;
 
 export const WAVE3_DEMO_ITEMS: readonly Wave3DemoItem[] = Object.freeze(
-  GARAGE_SKINS.filter(skin => !skin.default).map(skin => Object.freeze({
-    id: skin.id,
-    category: skin.category,
-    name: skin.name,
-    demoPrice: Object.hasOwn(DEMO_REDEMPTION_COSTS, skin.id)
-      ? DEMO_REDEMPTION_COSTS[skin.id] ?? null : null,
-  })),
+  GARAGE_SKINS.filter(skin => !skin.default).map(skin => {
+    const offer = demoOffer(skin.id);
+    return Object.freeze({ id: skin.id, category: skin.category, name: skin.name,
+      demoPrice: offer?.cost ?? null, currency: offer?.currency ?? null });
+  }),
 );
 
 /** Existing 3x Store illustrations; display-only concepts, never redeemable cosmetics. */
@@ -58,10 +57,10 @@ export function demoItemStatus(
 export function demoRedemptionState(id: string, snapshot: ExperienceSnapshot): DemoRedeemState {
   const item = findDemoItem(id);
   if (!item) return 'invalid';
-  if (item.demoPrice === null) return 'preview-only';
+  if (item.demoPrice === null || !item.currency) return 'preview-only';
   if (!isLocalDemo(snapshot)) return 'unavailable';
   if (snapshot.demoInventory.includes(item.id)) return 'duplicate';
-  if (snapshot.demoPoints < item.demoPrice) return 'insufficient-demo-points';
+  if (demoBalance(snapshot, item.currency) < item.demoPrice) return insufficientDemo(item.currency);
   return 'ready';
 }
 

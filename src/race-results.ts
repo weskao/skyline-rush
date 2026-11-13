@@ -32,6 +32,7 @@ export interface Settlement {
   challengeMedals: ChallengeMedalId[];
   /** Track the NEXT button offers, when this run moved the campaign forward. */
   next: string | null;
+  unlockedTrack: boolean;
   /** A heat inside a sprint series, cup or stunt run with more to come. */
   intermediateStage: boolean;
   series: RaceSeries;
@@ -82,7 +83,7 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
   const medals = (race.mode === 'classic' && !gated ? recordMedals(race.result) : []).filter(id => !progress.medals[id]); // history.ts swallows storage failures
   progress.medals = { ...progress.medals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
   const trackId: string = race.trackId ?? 'coast';
-  let best: number, record: boolean, next: string | null = null;
+  let best: number, record: boolean, next: string | null = null, unlockedTrack = false;
   const intermediateStage = !!((sprintSeries && sprintSeries.results.length < sprintSeries.count) || (cup && !cupComplete(cup)) ||
     (stunt && stuntHeatContinues(stunt, race.result.endReason)));
   if (intermediateStage) {
@@ -120,7 +121,10 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     const following = tracks[tracks.indexOf(race.trackId) + 1];
     // NEXT drives progression only: hidden once every track was already open before this run.
     const campaignDone = tracks.every(id => progress.unlocked.has(id));
-    if (following && race.result.position <= 3 && !progress.unlocked.has(following)) progress.unlocked.add(following);
+    if (following && race.result.position <= 3 && !progress.unlocked.has(following)) {
+      progress.unlocked.add(following);
+      unlockedTrack = true;
+    }
     if (following && !campaignDone && progress.unlocked.has(following)) next = following;
     ({ best, record } = classicBest(race, progress, ghosts, trace));
     // The pre-tracks key stays readable for layout-1 coast only (older builds, browser test).
@@ -134,5 +138,5 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     const challenge = recordChallengeMedals(stunt ? { ...race, result: { ...race.result, time: stunt.elapsed }, styleAttack: stunt } : race, progress.challengeMedals);
     progress.challengeMedals = challenge.state; challengeMedals = challenge.awarded;
   }
-  return { best, record, medals, challengeMedals, next, intermediateStage, series: { sprintSeries, cup, stunt } };
+  return { best, record, medals, challengeMedals, next, unlockedTrack, intermediateStage, series: { sprintSeries, cup, stunt } };
 }

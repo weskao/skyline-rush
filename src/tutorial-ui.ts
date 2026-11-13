@@ -95,13 +95,14 @@ export function tutorialTouchTarget(step: string | null, phase: string, steerMod
 const lessonTitle = (step: string): string =>
   t(step === 'land' ? 'tutorial.landTitle' : step === 'airChain' || step === 'barrelRoll' || step === 'drift' ? 'tutorial.' + step + 'Title' : 'keymap.' + step);
 /** True once per newly passed lesson of the practice it is given; a new practice starts from its own count. */
-export function createClearChime() {
+export function createClearChime(cue: (name: string) => void = () => {}) {
   let seen: TutorialSnapshot | null = null, count = 0;
   return (tutorial: TutorialSnapshot): boolean => {
     const clears = tutorial.clears ?? 0;
     if (tutorial !== seen) { seen = tutorial; count = clears; return false; }
     if (clears <= count) return false;
     count = clears;
+    cue(tutorial.complete ? 'tutorial-complete' : 'gate-clear');
     return true;
   };
 }
@@ -137,7 +138,7 @@ export function setupTutorialUI({
   const progress = document.querySelector<HTMLProgressElement>('#tutorial-progress')!;
   let tutorialView = '';
   let keyMapSeen: KeyMap | null = null;
-  const clearChime = createClearChime();
+  const clearChime = createClearChime(playCue);
   // blur(): a focused button would otherwise re-fire on the Space/Enter keys the lessons use.
   trackProgressBottom($('#tutorial-coach'), document.documentElement, '--tutorial-coach-bottom');
   $('#tutorial-skip-step').addEventListener('click', event => { (event.currentTarget as HTMLElement).blur(); getTutorial()?.skip?.(); });
@@ -148,7 +149,7 @@ export function setupTutorialUI({
     const controls = { touch, steerMode: inputPrefs.mode, flyMode: controlPrefs.flyMode };
     if (keyMap !== keyMapSeen) { keyMapSeen = keyMap; force = true; } // a rebind redraws the key chips
     progress.value = tutorial.index + (tutorial.complete ? 0 : tutorial.progress);
-    if (clearChime(tutorial)) playCue('gate-clear'); // the same chime as a cleared checkpoint gate
+    clearChime(tutorial);
     const passed = race.phase === 'racing' ? tutorial.clearedStep ?? null : null;
     // While the pass toast is up it holds the cue's place; a paused race shows the pause screen instead.
     const cue = race.phase === 'racing' && !tutorial.complete && !passed ? tutorial.cue : null;
