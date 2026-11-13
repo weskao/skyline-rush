@@ -55,8 +55,8 @@ const statusFor = (id: SkinId) => {
   return demoItemStatus(id, snapshot.value, props.trialAccess?.(id));
 };
 const artwork = (id: SkinId) => skinArtwork(id, import.meta.env.BASE_URL);
-const storeArt = (id: string, ext: 'png' | 'webp') =>
-  `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/${id}@3x.${ext}`;
+const storeArt = (id: string) =>
+  `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/${id}@3x.webp`;
 const categoryLabel = (value: 'all' | SkinCategory): string => ({
   all: tr('All', '全部'), thruster: tr('Thrusters', '推進器'),
   airflow: tr('Airflow', '氣流'), 'nitro-trail': tr('NITRO trails', '氮氣尾跡'),
@@ -131,7 +131,7 @@ function confirmRedemption(): void {
     <div class="demo-concept-art" :aria-label="tr('Existing Store source illustrations', '現有商店素材圖示')">
       <div v-for="icon in WAVE3_DEMO_STORE_ART" :key="icon" class="demo-concept-icon"
         :title="tr('Store concept art only', '僅供商店素材展示')">
-        <GarageArtworkImage :src="storeArt(icon, 'png')" :fallback-src="storeArt(icon, 'webp')"
+        <GarageArtworkImage :src="storeArt(icon)"
           :size="72" :alt="tr('Store concept illustration', '商店概念圖示')"
           :fallback-text="tr('Store art', '商店圖示')" />
       </div>

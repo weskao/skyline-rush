@@ -18,7 +18,7 @@ const missions = filterWave3PreviewItems('garage-rewards-and-missions', 'mission
 const trophies = filterWave3PreviewItems('garage-rewards-and-missions', 'trophy');
 const title = (item: Wave3PreviewItem) => item.name[locale.value];
 const label = (en: string, zh: string) => locale.value === 'zh-TW' ? zh : en;
-const asset = (id: string) => import.meta.env.BASE_URL + 'feature-assets/garage-rewards-and-missions/raster/' + id + '@3x.png';
+const asset = (id: string) => import.meta.env.BASE_URL + 'feature-assets/garage-rewards-and-missions/raster/' + id + '@3x.webp';
 const available = computed(() => snapshot.value?.mode === 'local-demo' &&
   snapshot.value.authority === 'local' && snapshot.value.syncState === 'local-only');
 const progressOf = (id: string): MissionProgress | null =>
@@ -50,7 +50,7 @@ function claim(id: string): void {
   if (!available.value || stateOf(id) !== 'claimable' || !props.experience) return;
   const result = props.experience.claimMission(id);
   feedback.value = result.status === 'completed'
-    ? label(`+${result.deltaDemoPoints} demo points · Balance ${result.snapshot.demoPoints}`, `+${result.deltaDemoPoints} 試玩點數 · 目前 ${result.snapshot.demoPoints}`)
+    ? label(`+${result.deltaDemoPoints} demo points`, `+${result.deltaDemoPoints} 試玩點數`)
     : label('Demo claim unavailable or already processed.', '試玩領取尚未開放或已處理。');
 }
 let stopLocale: (() => void) | undefined;
@@ -84,10 +84,6 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
     <p class="garage-mission-notice">{{ label(
       'Demo progress and trophies are local, disposable, unverified and never server-backed. Clearing this device may erase them.',
       '試玩進度與獎盃僅儲存在本機，可清除且未經伺服器驗證；清除裝置資料可能導致遺失。') }}</p>
-    <div v-if="available" class="garage-demo-balance" role="status" aria-live="polite">
-      <Wave3DemoArt id="demo-points" :alt="label('Demo points', '試玩點數')" />
-      <strong>{{ snapshot?.demoPoints }} {{ label('Demo points', '試玩點數') }}</strong>
-    </div>
     <div class="garage-mission-grid">
       <article v-for="item in missions" :key="item.id" class="garage-mission-card"
         :data-mission-id="item.id" :data-mission-state="stateOf(item.id)">
@@ -155,9 +151,6 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 </template>
 
 <style scoped>
-.garage-demo-balance { display:inline-flex;flex-direction:column;align-items:center;max-width:145px;
-  margin:0 0 12px;padding:4px 8px;border:1px solid #3f728e;border-radius:10px;background:#102b42; }
-.garage-demo-balance strong { font-size:12px;font-variant-numeric:tabular-nums;text-align:center; }
 .garage-mission-board { box-sizing:border-box; min-width:0; margin:16px 0; padding:12px; border:1px solid #405c85;
   border-radius:14px; color:#e7f5ff; background:linear-gradient(140deg,#142742,#0a1525); }
 .garage-mission-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
@@ -194,4 +187,54 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 .garage-period-card strong{font-size:12px;overflow-wrap:anywhere}
 .garage-period-card small{color:#abbfd5;font-size:11px}
 @media (max-width:420px){.garage-period-grid{grid-template-columns:1fr}}
+
+/* Independent object-specific motion: telemetry orbit and trophy illumination. */
+.garage-mission-card,.garage-trophy-card{position:relative;isolation:isolate}
+.garage-mission-card::before{content:'';position:absolute;pointer-events:none;left:13px;top:50%;
+ width:84px;height:84px;border:2px dashed #70f1ff77;border-radius:50%;
+ transform:translateY(-50%);animation:mission-drive 8s linear infinite}
+.garage-mission-card[data-mission-id="mission-drift"]::before{border-color:#ee82ff99;animation-direction:reverse}
+.garage-mission-card[data-mission-id="mission-combo"]::before{border-color:#ffcb6999;animation-duration:4s}
+.garage-mission-card :deep(.artwork-img){position:relative;z-index:1;animation:mission-float 3.8s ease-in-out infinite}
+.garage-mission-card[data-mission-state="claimed"] :deep(.artwork-img){animation:mission-claim-burst .75s ease-out 1 both}
+.garage-trophy-card::before{content:'';position:absolute;left:50%;top:43px;width:80px;height:80px;
+ border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;
+ background:radial-gradient(circle,#f9eeb15e,transparent 70%);animation:trophy-awaken 4.5s ease-in-out infinite}
+.garage-trophy-card[data-trophy-id="trophy-platinum"]::before{background:radial-gradient(circle,#80fcff75,transparent 70%)}
+.garage-trophy-card :deep(.artwork-img){position:relative;z-index:1;animation:trophy-rise 4.5s ease-in-out infinite}
+@keyframes mission-drive{to{transform:translateY(-50%) rotate(360deg)}}
+@keyframes mission-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes mission-claim-burst{0%{filter:brightness(1);transform:scale(.85)}
+35%{filter:brightness(1.9);transform:scale(1.2)}70%{transform:scale(.96)}
+100%{transform:scale(1);filter:brightness(1)}}
+@keyframes trophy-awaken{0%,100%{opacity:.4;filter:brightness(1)}50%{opacity:1;filter:brightness(1.9)}}
+@keyframes trophy-rise{0%,100%{transform:translateY(1px)}50%{transform:translateY(-5px)}}
+:global(body[data-vfx-enabled="false"] .garage-mission-board .garage-mission-card::before),
+:global(body[data-vfx-enabled="false"] .garage-mission-board .garage-trophy-card::before){display:none}
+@media (prefers-reduced-motion:reduce){.garage-mission-card::before,.garage-trophy-card::before,
+.garage-mission-card :deep(.artwork-img),.garage-trophy-card :deep(.artwork-img){animation:none!important}}
+
+/* Shape-specific Wave 3 racing effects; original silhouettes are never redrawn. */
+.garage-mission-card[data-mission-id="mission-race"] :deep(.artwork-img){
+ animation:mission-flag-wave 3.3s ease-in-out infinite}
+.garage-mission-card[data-mission-id="mission-time"] :deep(.artwork-img){
+ animation:mission-time-tick 4s steps(12,end) infinite}
+.garage-mission-card[data-mission-id="mission-drift"] :deep(.artwork-img){
+ animation:mission-drift-pulse 3.8s cubic-bezier(.3,.1,.5,1) infinite}
+.garage-mission-card[data-mission-id="mission-combo"] :deep(.artwork-img){
+ animation:mission-combo-boost 2.7s ease-out infinite}
+@keyframes mission-flag-wave{0%,100%{transform:skewY(0deg) translateY(0)}
+ 25%{transform:skewY(-2deg) translateY(-3px)}75%{transform:skewY(2deg) translateY(-1px)}}
+@keyframes mission-time-tick{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}
+@keyframes mission-drift-pulse{0%,100%{transform:rotate(-6deg) scale(1)}
+ 52%{transform:rotate(6deg) scale(1.08)}}
+@keyframes mission-combo-boost{0%,100%{transform:translateX(0) scale(1);filter:brightness(1)}
+ 45%{transform:translateX(5px) scale(1.1);filter:brightness(1.5)}}
+.garage-trophy-card[data-trophy-id="trophy-bronze"] :deep(.artwork-img){animation-duration:5.1s}
+.garage-trophy-card[data-trophy-id="trophy-silver"] :deep(.artwork-img){animation-duration:4.4s}
+.garage-trophy-card[data-trophy-id="trophy-gold"] :deep(.artwork-img){animation-duration:3.8s}
+.garage-trophy-card[data-trophy-id="trophy-platinum"] :deep(.artwork-img){animation-duration:3.1s}
+:global(body[data-vfx-enabled="false"] .garage-mission-board .garage-mission-card .artwork-img),
+:global(body[data-vfx-enabled="false"] .garage-mission-board .garage-trophy-card .artwork-img){animation:none!important}
+
 </style>

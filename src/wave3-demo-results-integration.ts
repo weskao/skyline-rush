@@ -10,6 +10,5 @@ export function renderWave3DemoResults(race: { mode: string }, locale: string): 
   if (!container) return;
   mountWave3DemoResults({ container, settlement: receipt, locale, raceMode: race.mode,
     artworkUrl: wave3DemoArtUrl('demo-points'),
-    artworkFallbackUrl: wave3DemoArtUrl('demo-points', 'png'),
     bannerUrl: wave3DemoArtUrl('demo-results-banner') });
 }

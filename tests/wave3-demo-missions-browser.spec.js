@@ -18,7 +18,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1440
 }
 test('missing art and reduced-motion bilingual UTC fallback remain usable',async({page})=>{
   await page.emulateMedia({reducedMotion:'reduce'});
-  await page.route('**/feature-assets/garage-rewards-and-missions/raster/*.png',route=>route.abort());
+  await page.route('**/feature-assets/garage-rewards-and-missions/raster/*.webp',route=>route.abort());
   await page.goto('/');await selectLocale(page,'zh-TW');
   await page.locator('#garage-button').click();
   const board=page.locator('.garage-mission-board');

@@ -12,25 +12,23 @@ test('actual Garage mission cards and source icons preserve native 3x alpha on m
     await expect(board.locator('.garage-mission-card')).toHaveCount(4);
     await expect(board).toContainText('Demo progress and trophies are local');
     await expect(board).not.toContainText(/claim reward|reward received|領取獎勵|已領取/);
-    // Only mission/trophy source art uses 288px at 96 CSS px; the demo balance icon is intentionally smaller.
-    await expect(board.locator('[data-wave3-demo-art="demo-points"] img')).toHaveAttribute('width', '72');
-    await expect(board.locator('[data-wave3-demo-art="demo-points"] img')).toHaveJSProperty('naturalWidth', 216);
+    // The player resources moved to Home, leaving only mission/trophy art in Garage.
+    await expect(board.locator('.garage-demo-balance')).toHaveCount(0);
     for (const img of await board.locator('.garage-mission-card > img, .garage-trophy-card img').all()) {
-      await img.scrollIntoViewIfNeeded();
+      // 3D floating WebP artwork is intentionally animated and never has a stable bounding box.
+      await img.evaluate(el => el.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
       await expect(img).toHaveAttribute('width', '96');
       await expect(img).toHaveAttribute('height', '96');
       await expect(img).toHaveJSProperty('naturalWidth', 288);
       await expect(img).toHaveJSProperty('naturalHeight', 288);
-      // Alpha margins (>= 20 px) are asserted on the PNG files in tests/rewards-visual-contract.test.js.
+      // Alpha margins (>= 20 px) are asserted on the WebP files in tests/rewards-visual-contract.test.js.
     }
-    const demoIcon = board.locator('.garage-demo-balance [data-wave3-demo-art="demo-points"] img');
-    await expect(demoIcon).toHaveAttribute('width', '72');
-    await expect(demoIcon).toHaveJSProperty('naturalWidth', 216);
+    await expect(page.locator('#garage-screen [data-wave3-wallet]')).toHaveCount(0);
   }
 });
 
 test('Garage Missions stay truthful in Traditional Chinese and fall back on missing artwork', async ({ page }) => {
-  await page.route('**/mission-race@3x.png', route => route.abort());
+  await page.route('**/mission-race@3x.webp', route => route.abort());
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();
@@ -43,7 +41,7 @@ test('Garage Missions stay truthful in Traditional Chinese and fall back on miss
   await expect(board).not.toContainText(/領取|已完成|已獲得/);
 });
 
-test('Garage shows all eight PNGs in the actual interface without opening the concept gallery', async ({ page }) => {
+test('Garage shows all eight WebPs in the actual interface without opening the concept gallery', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.locator('#garage-button').click();
@@ -52,7 +50,7 @@ test('Garage shows all eight PNGs in the actual interface without opening the co
   await expect(board.locator('[data-trophy-id] img')).toHaveCount(4);
   for (const trophy of await board.locator('[data-trophy-id]').all()) {
     const img = trophy.locator('img');
-    await img.scrollIntoViewIfNeeded();
+    await img.evaluate(el => el.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
     await expect(img).toHaveAttribute('width', '96');
     await expect(img).toHaveJSProperty('naturalWidth', 288);
     await expect(trophy).toContainText('Display only');
@@ -62,7 +60,7 @@ test('Garage shows all eight PNGs in the actual interface without opening the co
 });
 
 test('Garage trophy display preserves Traditional Chinese and missing-image fallback', async ({ page }) => {
-  await page.route('**/trophy-gold@3x.png', route => route.abort());
+  await page.route('**/trophy-gold@3x.webp', route => route.abort());
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();

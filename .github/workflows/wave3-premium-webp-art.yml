@@ -1,0 +1,24 @@
+name: Wave 3 approved 3D asset integrity
+
+on:
+  push:
+    branches: [feature/wave3-premium-webp-art-v2]
+    paths:
+      - 'public/feature-assets/garage-rewards-and-missions/raster/*.webp'
+      - 'public/feature-assets/wave3-demo/raster/wallet-*.webp'
+      - 'tests/wave3-user-artwork.test.js'
+      - '.github/workflows/wave3-premium-webp-art.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-approved-art:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify the approved screenshot cutouts and actual UI references
+        run: node --test tests/wave3-user-artwork.test.js

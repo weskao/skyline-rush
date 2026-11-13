@@ -17,6 +17,6 @@ export function presentationPlacementBadge(position: number, players: number, lo
 /** 288px source shown at 96 CSS pixels (native 3x). This is decoration, not an award. */
 export function placementBadgeArtwork(tier: PlacementTier, baseUrl: string): Readonly<{ src: string; cssSize: 96; sourcePixels: 288 }> {
   const base = /^\/(?!\/)(?:[A-Za-z0-9_-]+\/)*$/.test(baseUrl) ? baseUrl : '/';
-  return { src: `${base}feature-assets/garage-rewards-and-missions/raster/trophy-${tier}@3x.png`,
+  return { src: `${base}feature-assets/garage-rewards-and-missions/raster/trophy-${tier}@3x.webp`,
     cssSize: 96, sourcePixels: 288 };
 }

@@ -98,8 +98,8 @@ test('failed selected Store concept image keeps readable text and no purchase CT
   await expect(gallery.getByRole('button', {name: /buy|checkout|claim|pay/i})).toHaveCount(0);
 });
 
-test('safe 3x Rewards/Missions reference cards never crop image or caption on desktop and phone', async ({ page }) => {
-  for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1440,height:900}]) {
+for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
+  test(`safe 3x Rewards/Missions reference cards fit at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
     await page.locator('#garage-button').click();
@@ -108,20 +108,32 @@ test('safe 3x Rewards/Missions reference cards never crop image or caption on de
     const cards = gallery.locator('.garage-badge-card');
     await expect(cards).toHaveCount(8);
     for (const card of await cards.all()) {
-      await card.scrollIntoViewIfNeeded();
+      await card.evaluate(node => node.scrollIntoView({ block: 'nearest' }));
       await expect.poll(() => card.locator('img').evaluate(img => img.naturalWidth), { message: 'lazy art decoded at 3x' }).toBe(288);
       const v = await card.evaluate(node => {
-        const outer = node.getBoundingClientRect(), art = node.querySelector('img').getBoundingClientRect();
+        const image = node.querySelector('img');
+        const outer = node.getBoundingClientRect();
         const frame = node.querySelector('.garage-badge-art-frame').getBoundingClientRect();
         const caption = node.querySelector('figcaption').getBoundingClientRect();
-        return { native: node.querySelector('img').naturalWidth, icon: [art.width,art.height],
-          inside: frame.left <= art.left && frame.right >= art.right && frame.top <= art.top && frame.bottom >= art.bottom,
-          labelSafe: caption.top >= frame.bottom + 4, width: outer.width, viewport: innerWidth };
+        const [animation] = image.getAnimations();
+        // Sample the CSS transform extremes even when the runner reaches each card at a different time.
+        const offsets = animation?.effect.getKeyframes().map(keyframe => keyframe.computedOffset) ?? [0];
+        animation?.pause();
+        const clippedAt = offsets.filter(offset => {
+          if (animation) {
+            animation.currentTime = offset * animation.effect.getComputedTiming().duration;
+          }
+          const art = image.getBoundingClientRect();
+          return art.left < frame.left || art.right > frame.right || art.top < frame.top || art.bottom > frame.bottom;
+        });
+        return { native: image.naturalWidth, icon: [image.offsetWidth, image.offsetHeight],
+          clippedAt, labelSafe: caption.top >= frame.bottom + 4, width: outer.width, viewport: innerWidth };
       });
       expect(v.native).toBe(288);
       expect(v.icon).toEqual([96,96]);
-      expect(v.inside).toBe(true); expect(v.labelSafe).toBe(true);
+      expect(v.clippedAt, `${await card.getAttribute('data-art')} at ${viewport.width}x${viewport.height}`).toEqual([]);
+      expect(v.labelSafe).toBe(true);
       expect(v.width).toBeLessThanOrEqual(v.viewport);
     }
-  }
-});
+  });
+}
