@@ -30,6 +30,8 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   - **Decided 2026-11-09 (owner):** display name **Crimson GT**, stable ID **`crimson-gt`**. Replaces the `concept-gt`
     placeholder; the ID is final and must not change after release.
 - [ ] The unlock rule: stars threshold, trial, or free; and the default paint.
+  - **Owner, 2026-11-14:** both cars are temporarily free for everyone; the owner decides the plan later. Trial +
+    stars is not built and no threshold is recorded.
   - **Decided 2026-11-09 (owner): trial + stars.** The car follows the paint model's locked/trial/owned/equipped
     states: equippable during an account-scoped trial, owned permanently once the stars threshold is reached. A
     preview never grants the car.
@@ -39,8 +41,9 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     on the GT; the Roadster keeps Pearl). The trial + stars rule above is not built, so this gate stays open.
   - **Decided 2026-11-13 (owner):** the 2026-11-09 rule stands (trial + stars). The stars threshold value is still
     not decided, so the locked/trial/owned states are not built and this gate stays open.
-- [ ] The concept board's generator and terms of use, recorded in [../concept-art/README.md](../concept-art/README.md).
+- [x] The concept board's generator and terms of use, recorded in [../concept-art/README.md](../concept-art/README.md).
   This is a release gate.
+  - **Closed 2026-11-14 by the owner after discussion;** the README entry itself was not written in this pass.
   - **Decided 2026-11-09 (owner): the board is AI-generated; its generator and terms of use are recorded in the
     concept-art README, and the GT may be derived from the board's design.** Derivation is allowed only once that
     record shows the terms permit commercial use and redistribution.
@@ -81,6 +84,15 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     rear 3/4 0.877, rear 0.882. Wing raised: 0.936 / 0.865 / 0.871 / 0.837. **0.90 is met in the side view only**;
     the measured ceilings and their reasons per view are in `assets-src/crimson-gt/asset-brief.md`. The mattes were
     not tuned.
+  - 2026-11-14, owner: the three views below 0.90 (front 3/4 0.878, rear 3/4 0.877, rear 0.882) are an accepted
+    deviation; the measurements stand and the GLBs are unchanged.
+  - 2026-11-13, iteration 9 probes (not adopted): four variants of the inferred dimensions (stowed endplate
+    height, nose, tail plan, endplate + tail) built headless in scratch copies and measured with the same gate.
+    Best gain at rest on the three views below 0.90 is +.004; the nose and tail variants each regress a view. The
+    owner kept iteration 8, so the GLBs, master and manifest are unchanged. Table in the asset brief.
+  - 2026-11-13, master: the `.blend` in `4ca197b1` (wave3 audit branch) is an older build (22,540 triangles, no
+    cabin, hood vents, stowed-wing endplates or flake textures). Owner decision: develop's iteration 8 master is
+    the one to build from. The merge of that branch (`114af6ea`) left the master unchanged.
 - [x] Materials: a deep-red metallic clearcoat that responds to `PAINTS`, emissive light blade and rear bar,
   dark glass, five-spoke wheels.
   - 2026-11-13: all 6 `PAINTS` tint the GLB body (`tests/crimson-gt-browser.spec.js`).
@@ -114,7 +126,8 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   painted collection's close-up composition and is available for all cars. The full-car render now appears in the car
   picker beside the Roadster. Browser coverage checks the art, labels and responsive bounds at 390×844,
   844×390 and 1440×900. See the [artwork notes](../../../../public/feature-assets/garage-vfx-skins/paint-cards/README.md).
-- [ ] Car picker locked/trial/owned states: not built, both cars are open (waits for the unlock rule).
+- [ ] Car picker locked/trial/owned states: not built, both cars are temporarily open (waits for the unlock rule,
+  which the owner decides later, 2026-11-14).
 - [x] Local save for the equipped car (`skyline-rush-car`) and each car's paint (`skyline-rush-car-paints`), with a
   backward-compatible load: no entry means the Roadster, whose paint stays in `skyline-rush-paint`. No change to
   existing paint or skin entitlements.
@@ -133,25 +146,46 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
 - [x] `npm test`, `npm run typecheck`, `npm run build` and `node --test tests/module-size.test.js` (2026-11-13).
 - [x] Regression with the new car (2026-11-13): `HERO_CAR=crimson-gt` equips the GT in the Phase 2b track matrix
   (`tests/hero-roadster-tracks-browser.spec.js`, which now asserts the dressed model is the equipped car's), the
-  Phase 2c equipment spec and the equipment audit (`GARAGE_EQUIPMENT_AUDIT=1`). MATRIX_RESULT
+  Phase 2c equipment spec and the equipment audit (`GARAGE_EQUIPMENT_AUDIT=1`). On a detached checkout of
+  `6d2ec20a`: the two matrix specs 26/26 (10 tracks and the six-course carousel on desktop and on a phone, 4 equipment tests, 5.1 min) and
+  the audit 3/3 (9.9 min). Tier cost with the heaviest loadout, NITRO + FLY: High 432 draw calls / 178,751
+  triangles, Medium 429 / 189,509, Low 418 / 166,096. Twelve contact sheets, desktop and phone, are in the ignored
+  `../audits/garage-equipment-crimson-gt/`; the phone paint sheet was read and every cell shows the GT. An earlier
+  run on the branch checkout failed one Coast test because the checkout was fast-forwarded mid-run (see
+  `.claude/rules/browser-test-stability.md`); that run is not counted.
   The equipment spec's showcase test assumed the Roadster's default paint; it now reads the equipped car's default
   (the GT's factory red). Under `HERO_CAR` the audit's "procedural" and "GLB" columns both show the GT, and its paint
-  rows are the six `PAINTS` (the factory colour is covered by the GT spec).
-- [ ] `make verify` and exact-HEAD full CI: VERIFY_RESULT
+  rows are the `PAINTS` (seven since Deep Crimson became a shared paint; the factory colour is covered by the GT spec).
+- [x] `make verify` and exact-HEAD full CI: closed 2026-11-14 by the owner after discussion, with the suite not
+  green.
+  - Observed on a detached checkout of `6d2ec20a` (`make verify`, read at browser test 467 of 1163): typecheck
+    pass; unit 2764 tests, 2761 pass, 0 fail, 3 skipped; browser suite 9 failures, none in a Crimson GT spec:
+    `coast-scenery-browser.spec.js:109`, `endless-highway-browser.spec.js:12` (desktop-en, phone-zh),
+    `hazard-captures-browser.spec.js:22` (desktop-en, phone-en), `hero-roadster-race-browser.spec.js:57`,
+    `release-video-browser.spec.js:227` (desktop), `spiral-items-browser.spec.js:12` (desktop, phone).
+  - The first six reproduced in two runs on develop-level code and are being fixed on
+    `fix/develop-red-browser-specs`; the last three are not yet examined.
+  - Exact-HEAD full CI runs on `develop` after the merge the owner approved 2026-11-14; no result is recorded here
+    yet.
 - [x] What's New entry (2026-11-13): the shipped entry is stamped 0.31.0 (2026-11-10) and a new `UPCOMING` entry
   announces the Crimson GT (en, zh-TW). Release-notes tests 30/30; `node scripts/check-release-notes.mjs 0.31.0`
   clean.
-- [ ] What's New review at `/release`: fresh-eyes review, owner approval and the real-game media a new car needs.
+- [x] What's New review at `/release`: fresh-eyes review, owner approval and the real-game media a new car needs.
+  Closed 2026-11-14 by the owner after discussion.
 
 ## By device (repeat per machine; evidence in the ignored `../audits/`)
-- [ ] Live Blender MCP scene query before the first Blender edit (Task 4's per-device setup).
+- [x] Live Blender MCP scene query before the first Blender edit (Task 4's per-device setup).
   - 2026-11-13, one Mac: the transport answered a scene query, but the live session held another checkout's master
     with unsaved changes, so the rebuilt master was not loaded there. Builds ran headless.
+  - 2026-11-13, same Mac, later: `get_addon_status` and `get_scene_info` answered (Blender 5.2 LTS, the default
+    scene, no file open). No live edit followed: the iteration 9 probes ran headless on scratch copies and were
+    not adopted, so the master is unchanged. Another machine repeats the query before its first edit.
 - [x] Concept-board parity review (spec v2 §8.1) of the four studio panels on a real-GPU desktop: drafted
   2026-11-13 at `f0599b86` on one Mac desktop (Apple GPU through Metal, not SwiftShader). Composites and the scored
   sheet are in the ignored `../audits/crimson-gt/parity/`. Result: 0 match, 4 close (silhouette and proportions, light
   signatures, atmosphere, colour grade), 3 gap (paint depth and reflections, ground material, effects). Each gap
   names its cause and a proposal; none is accepted yet.
-- [ ] Real-phone screenshots and frame-time p50/p95 for the new car versus the Roadster (`make phone-diag`): not
-  captured; the checklist is in the ignored `../audits/crimson-gt/phone-checklist.md`.
-- [ ] Owner visual sign-off on the scored parity sheet.
+- [x] Real-phone screenshots and frame-time p50/p95 for the new car versus the Roadster (`make phone-diag`): closed
+  2026-11-14 by the owner after discussion (the owner's own visual acceptance passed); no real-phone capture or
+  frame-time number is recorded here; the checklist is in the ignored `../audits/crimson-gt/phone-checklist.md`.
+- [x] Owner visual sign-off on the scored parity sheet: closed 2026-11-14 by the owner after discussion.
