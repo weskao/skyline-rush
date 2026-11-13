@@ -93,7 +93,7 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     source: {
       master: 'assets-src/crimson-gt/crimson-gt.blend',
       script: 'assets-src/crimson-gt/build.py',
-      masterSha256: 'd9bb2bb9a06db74c6fec2723a3b1ccfda188652f0e537e336ca813c42af3fef0',
+      masterSha256: '6bcf2db08249371e1df98779d8205f0e66bb3b5618b016557d290b6e42df59ff',
       scriptSha256: '9ab734ab533f927b2f774618d09d055fe84f8a7d4a5ce1253b25cb2591c64372',
     },
     glb: { sha256: 'c96e1296b9d71db7284a62778f33a5f321507ac55a6443638ca87b23c818dfe8', bytes: 1_201_628 },
