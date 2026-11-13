@@ -1,4 +1,4 @@
-import { test, captureHooks } from './helpers/gameplay-browser.js';
+import { test, captureHooks, seedHeroCar } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -12,7 +12,7 @@ import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
 // Run: GARAGE_EQUIPMENT_AUDIT=1 npx playwright test tests/garage-equipment-audit-browser.spec.js --workers=1
 test.skip(!process.env.GARAGE_EQUIPMENT_AUDIT, 'owner audit captures only: set GARAGE_EQUIPMENT_AUDIT=1');
 
-const OUT = fileURLToPath(new URL('../docs/designs/3d-pipeline/audits/garage-equipment/', import.meta.url));
+const OUT = fileURLToPath(new URL(`../docs/designs/3d-pipeline/audits/garage-equipment${process.env.HERO_CAR ? `-${process.env.HERO_CAR}` : ''}/`, import.meta.url));
 const CARS = { procedural: '', glb: '?model=roadster' };
 const COMBOS = ['bright', 'dim'].flatMap(light => ['ground', 'flight', 'wing'].map(pose => ({ light, pose })));
 const ITEMS = [
@@ -27,6 +27,7 @@ async function open(page, url, quality = 'high') {
     for (const [key, value] of [['guide-seen', '1'], ['whats-new-seen-v1', '999.0.0'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: q, enabled: true, comfortable: false }));
   }, quality);
+  await seedHeroCar(page);
   await page.goto(url);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   if (url.includes('model=')) await expect(page.locator('#world')).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });

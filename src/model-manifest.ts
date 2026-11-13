@@ -124,10 +124,10 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     source: {
       master: 'assets-src/crimson-gt/crimson-gt.blend',
       script: 'assets-src/crimson-gt/build.py',
-      masterSha256: 'd9bb2bb9a06db74c6fec2723a3b1ccfda188652f0e537e336ca813c42af3fef0',
-      scriptSha256: '9ab734ab533f927b2f774618d09d055fe84f8a7d4a5ce1253b25cb2591c64372',
+      masterSha256: '11cc90e6520cc22444709ecce81c5bce3cba2653b26be8cfde3efbc11cbdfac0',
+      scriptSha256: '97837b8d0c905393e8e7c126fcd3c441a2d5c3a8b6c3f112b5c978193dfdb91a',
     },
-    glb: { sha256: 'c96e1296b9d71db7284a62778f33a5f321507ac55a6443638ca87b23c818dfe8', bytes: 1_201_628 },
+    glb: { sha256: '19001f893db56bf7d2a6ca6b1127abd0ba80a9153bf39fb9973290df1ab520b1', bytes: 1_204_084 },
     license: { id: 'owned', creator: 'Skyline Rush project' },
     provenance: {
       blender: '5.2.3',
@@ -147,7 +147,7 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
       'thruster_01', 'thruster_02', 'thruster_03', 'thruster_04', 'nozzle_rear_01', 'nozzle_rear_02', 'nozzle_rear_03', 'nozzle_rear_04',
       'lift_fans', 'lift_fan_01', 'lift_fan_02', 'lift_fan_03', 'lift_fan_04',
     ],
-    materials: ['gt_paint', 'gt_glass', 'gt_trim', 'gt_carbon', 'gt_tire', 'gt_rim', 'gt_light', 'gt_lamp', 'gt_nozzle', 'gt_fan'],
+    materials: ['gt_paint', 'gt_glass', 'gt_cabin', 'gt_trim', 'gt_carbon', 'gt_tire', 'gt_rim', 'gt_light', 'gt_lamp', 'gt_nozzle', 'gt_fan'],
     lods: [{ quality: 'low', url: 'models/crimson-gt/crimson-gt-low.glb' }],
     fallback: 'procedural-car',
     decoders: ['meshopt', 'ktx2'],

@@ -26,6 +26,15 @@ test('six native 3x car-paint image assets are present and reusable by 1x UI car
   }
 });
 
+test("the Crimson GT factory finish has its own 3x card, rendered from the car's master", () => {
+  assert.doesNotMatch(read('GaragePaintPreview.vue'), /FACTORY_PAINT|v-if/, 'every finish, the factory one included, shows its card');
+  const bytes = readFileSync(new URL('../public/feature-assets/garage-vfx-skins/paint-cards/factory@3x.webp', import.meta.url));
+  assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
+  assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
+  assert.ok(bytes.length > 10_000, 'a substantive image, not a placeholder');
+  assert.ok(existsSync(new URL('../assets-src/crimson-gt/card/render_card.py', import.meta.url)), 'the render script beside the master is its source');
+});
+
 test('native image sweep follows Low/Medium/High, disabled VFX and reduced-motion preferences', () => {
   const preview = read('GaragePaintPreview.vue'), vfx = read('vfx-ui.ts');
   assert.match(vfx, /dataset.vfxQuality = visual.quality/);

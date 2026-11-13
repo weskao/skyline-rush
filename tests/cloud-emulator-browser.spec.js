@@ -428,3 +428,41 @@ test('Cloud save profile provides an avatar fallback and accessible account iden
   await expect(page.locator('#cloud-avatar-fallback')).toBeVisible();
   await expect(page.locator('#cloud-avatar')).toBeHidden();
 });
+
+test('the equipped car is restored on a clean device, and a device that picked its own car keeps it', async ({ browser, context, page }) => {
+  const email = 'car@example.test';
+  const savedMessage = 'Race progress is saved to your Google account.';
+  const storedCar = target => target.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-car')));
+  await context.route(liveApis, route => route.abort());
+  await page.addInitScript(disableWebGL);
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-car', JSON.stringify('crimson-gt')));
+  await page.goto('/?firebase-emulator=1');
+  await page.locator('#cloud-open').click();
+  await mockGoogleSignIn(page, { email });
+  await expect(page.locator('#cloud-status')).toHaveText(savedMessage);
+
+  const fresh = await browser.newPage({ locale: 'en-US' });
+  await fresh.context().route(liveApis, route => route.abort());
+  await fresh.addInitScript(disableWebGL);
+  await fresh.goto('/?firebase-emulator=1');
+  expect(await storedCar(fresh)).toBeNull();
+  await fresh.locator('#cloud-open').click();
+  await mockGoogleSignIn(fresh, { existing: true, email });
+  await expect(fresh.locator('#cloud-status')).toHaveText(savedMessage);
+  await expect.poll(() => storedCar(fresh)).toBe('crimson-gt');
+  await expect(fresh.locator('#garage-screen [data-car="crimson-gt"]')).toHaveAttribute('aria-pressed', 'true'); // worn without a reload
+  await fresh.close();
+
+  const own = await browser.newPage({ locale: 'en-US' });
+  await own.context().route(liveApis, route => route.abort());
+  await own.addInitScript(disableWebGL);
+  await own.addInitScript(() => localStorage.setItem('skyline-rush-car', JSON.stringify('roadster')));
+  await own.goto('/?firebase-emulator=1');
+  await own.locator('#cloud-open').click();
+  await mockGoogleSignIn(own, { existing: true, email });
+  await expect(own.locator('#cloud-status')).toHaveText(savedMessage);
+  // settled: the status line above is written after the merged save reached storage
+  expect(await storedCar(own)).toBe('roadster');
+  await expect(own.locator('#garage-screen [data-car="roadster"]')).toHaveAttribute('aria-pressed', 'true');
+  await own.close();
+});

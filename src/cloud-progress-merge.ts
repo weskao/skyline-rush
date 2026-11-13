@@ -6,6 +6,7 @@ import { validCircuitRecord } from './circuit-records.ts';
 import type { LapTime } from './circuit-laps.ts';
 import { validStars } from './history-stats.ts';
 import { recordTrackIds, runLayout } from './record-layout.ts';
+import { isCar, type CarId } from './car-catalog.ts';
 
 type RawRecord = Record<string, unknown>;
 type NormalizedRun = { date: string; [key: string]: unknown };
@@ -18,6 +19,8 @@ export interface MergedProgress {
   history: NormalizedRun[];
   modeHistory: NormalizedRun[];
   daily: NormalizedRun[];
+  /** The equipped car. Absent in saves from before cars, and until the player picks one: both mean the Roadster. */
+  car?: CarId;
 }
 const asRecord = (v: unknown): RawRecord =>
   v !== null && typeof v === 'object' && !Array.isArray(v) ? v as RawRecord : {};
@@ -146,5 +149,8 @@ export function mergeProgress(local: unknown = {}, cloud: unknown = null): Merge
     history: mergeRuns(localProgress.history, remote.history, raceRun, classicRunId),
     modeHistory: mergeRuns(localProgress.modeHistory, remote.modeHistory, modeRun, modeRunId),
     daily: mergeRuns(localProgress.daily, remote.daily, dailyRun, dailyRunId),
+    // shortcut: this device's own pick always beats the cloud's, so two devices that each picked a car keep their own;
+    // add a pick timestamp to both sides if the latest pick must follow the player across devices.
+    ...(isCar(localProgress.car) ? { car: localProgress.car } : isCar(remote.car) ? { car: remote.car } : {}),
   };
 }

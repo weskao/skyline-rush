@@ -7,6 +7,9 @@ paths:
   - "docs/designs/3d-pipeline/**"
   - "src/asset-model-loader.ts"
   - "src/model-manifest.ts"
+  - "src/garage-model.ts"
+  - "src/car-catalog.ts"
+  - "scripts/dev-3d-redirect-plugin.mjs"
   - "tests/model-asset-*.js"
   - "tests/model-manifest*.js"
 ---
@@ -26,3 +29,4 @@ Before any Blender asset, GLB import, texture, loader, compression or asset pipe
 10. Public repo: per-device reports and device names live only in the `.gitignore`-excluded docs/designs/3d-pipeline/audits/; after a pass, write only the general model (e.g. Mac mini) to the local report and audits/device-status.md. Never commit machine identifiers, paths, serials, MCP configs, raw logs or per-device results.
 11. Tooling scope (HARD RULE): Skills may stay global (`~/.claude/skills`, the `threejs-*` set); `blender-image-to-3d` stays in `.claude/skills/`. Every other 3D tool — MCP server, plugin, CLI or npm package — installs only in this project (`.mcp.json` / `.codex/config.toml`, exact-pinned `devDependencies`). Never user-scope MCP or a global npm/uv install; remove any global copy found. Commit no credentials.
 12. Three.js r186.1 is the planned target (docs/designs/3d-pipeline/threejs-r180-r186-migration.md). A docs-only pass changes no production renderer, physics or sibling branch.
+13. A URL gate never replaces the equipped car's own model. `?model=` (added to every bare URL by `3d=1`, scripts/dev-3d-redirect-plugin.mjs) dresses only a car without a model, the procedural Roadster: `createWorldGarageModel` resolves `carModel() ?? forced`. Trap (2026-11-13): `forced ?? carModel()` showed the Roadster GLB over an equipped Crimson GT on every `3d=1` dev server. Guard: tests/crimson-gt-browser.spec.js "?model=roadster&look=3d ... keeps the equipped Crimson GT". A new car or model gate gets the same test with that car equipped.

@@ -58,7 +58,7 @@ test('the Studio never loops the standard shock ring; BOOST ignition in a race s
 test('a NITRO trail skin replaces the standard purple on the airflow, the nozzles and the NITRO ring', () => {
   const { scene, car, aero, race, origin, settings } = rig();
   const flow = car.getObjectByName('Airflow showcase').children[0];
-  const jets = car.getObjectByName('Airflow showcase').children.filter(child => child.name.startsWith('Cold gas nozzle'));
+  const jets = car.getObjectByName('Rear ports').children.filter(child => child.name.startsWith('Cold gas nozzle'));
   const ring = scene.getObjectByName('Ignition shockwave');
   const nitro = () => {
     aero.reset(); race.phase = 'racing'; race.player.boosting = false; race.player.nitroTime = 0;
@@ -85,7 +85,7 @@ test('a NITRO trail skin replaces the standard purple on the airflow, the nozzle
 
 test('Void Pulse replaces the standard nozzle flames with its beams; other thrusters keep the flames', () => {
   const { car, aero, race, origin, settings } = rig();
-  const jets = car.getObjectByName('Airflow showcase').children.filter(child => child.name.startsWith('Cold gas nozzle'));
+  const jets = car.getObjectByName('Rear ports').children.filter(child => child.name.startsWith('Cold gas nozzle'));
   const beams = car.getObjectByName('Void pulse beams');
   race.phase = 'racing'; race.player.boosting = true; race.player.speed = 90;
   aero.setSkins({ thruster: 'thruster-void' });

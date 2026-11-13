@@ -21,9 +21,13 @@ const corner = (o: Object3D): string => `wheel_${o.position.z < 0 ? 'f' : 'r'}${
 
 function boundPairs(car: Object3D, instance: Object3D): [Object3D, Object3D][] {
   const { wheels = [], wing, jets } = car.userData as CarParts;
-  // Only wheels authored to the rig contract (a `<wheel>_spin` pivot child) follow; the Phase 2 probe's wheels
-  // sit on their own pivots and would be thrown off by the procedural TRS.
-  const rigged = wheels.filter(w => instance.getObjectByName(`${corner(w)}_spin`)?.parent?.name === corner(w));
+  // Only wheels authored to the rig contract (a `<wheel>_spin` pivot under the wheel, directly or below one static
+  // axle offset for a smaller tyre) follow; the Phase 2 probe's wheels sit on their own pivots and would be thrown
+  // off by the procedural TRS.
+  const rigged = wheels.filter(w => {
+    const holder = instance.getObjectByName(`${corner(w)}_spin`)?.parent;
+    return holder?.name === corner(w) || holder?.parent?.name === corner(w);
+  });
   const procedural: [string, Object3D | undefined][] = rigged.flatMap(w => [
     [corner(w), w], [`${corner(w)}_spin`, w.getObjectByName('Roadster wheel spin')],
   ] as [string, Object3D | undefined][]);

@@ -1,6 +1,7 @@
 // Dev-server half of `make <dev target> 3d=1` (DEV_3D=1): the bare app root redirects to the GLB Roadster + Coast look
 // gates (`?model=roadster&look=3d`, see src/garage-model.ts and src/look-gate.ts), so every URL a dev server hands out
 // (desktop, phone, Telegram) shows the 3D scene. Serve only, never a build; the gates themselves stay opt-in query params.
+// `model=roadster` dresses only the procedural Roadster: an equipped car with its own model (Crimson GT) keeps it.
 export const DEV_3D_QUERY = 'model=roadster&look=3d';
 
 /** Redirect target for a request URL, or null to let it through. Only the bare root is rewritten; an explicit `model` or `look` wins. */

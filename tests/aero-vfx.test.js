@@ -163,7 +163,7 @@ test('real roll uses world-space streak edges without enabling attached airflow 
   assert.equal(f.ribbon.parent, f.scene);
   const local = f.scene.getObjectByName('Airflow showcase');
   assert.equal(local.children.find(x => x.geometry?.attributes.flowType).visible, false);
-  assert.ok(local.children.filter(x => x.name.startsWith('Cold gas')).every(x => !x.visible));
+  assert.ok(local.getObjectByName('Rear ports').children.filter(x => x.name.startsWith('Cold gas')).every(x => !x.visible));
   assert.equal(f.race.player.boosting, false);
 });
 
@@ -363,7 +363,7 @@ test('AIRFLOW off (V) hides the streamline showcase during BOOST/NITRO; the NITR
     }
     const [flow, pressure] = vehicle.getObjectByName('Airflow showcase').children;
     const ribbon = scene.getObjectByName('Continuous dash ribbon');
-    const jets = vehicle.getObjectByName('Airflow showcase').children.filter(child => child.material?.uniforms?.diamonds);
+    const jets = vehicle.getObjectByName('Rear ports').children.filter(child => child.material?.uniforms?.diamonds);
     return { flow: flow.visible, pressure: pressure.visible, ribbon: ribbon.geometry.attributes.alpha.array.some(a => a > 0),
       jets: jets.some(jet => jet.visible) };
   };

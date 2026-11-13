@@ -1,4 +1,4 @@
-import { test, glbRoots, programs, modelInstances as instances } from './helpers/gameplay-browser.js';
+import { test, glbRoots, programs, modelInstances as instances, dressedAs, HERO_MODEL } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 
@@ -27,6 +27,7 @@ function drive(id) {
     await expect(page.locator(`[data-track="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#world')).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
     await expect.poll(() => glbRoots(page)).toBe(1); // Home showcase car dressed
+    expect(await dressedAs(page)).toBe(HERO_MODEL); // settled: polled above; under HERO_CAR the equipped car's GLB, not the flag's
     const { home } = await instances(page);
 
     await page.locator('#start-button').click();

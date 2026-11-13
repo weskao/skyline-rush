@@ -35,5 +35,7 @@ def make_materials(spec=_SPEC):
             bsdf.inputs["Emission Strength"].default_value = extra["emit_strength"]
         if not extra.get("cull", True):
             mat.use_backface_culling = False
+        if "alpha" in extra:   # exported as alphaMode BLEND (another car's see-through glass)
+            bsdf.inputs["Alpha"].default_value = extra["alpha"]
         out[name] = mat
     return out

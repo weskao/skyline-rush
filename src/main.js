@@ -229,7 +229,7 @@ const cloud = setupCloudUI({
     adoptProgress(progress, merged, localChallengeMedals);
     showTracks();
     if (historyDialog.isOpen()) showHistory();
-    showGarage();
+    adoptCar();
   },
 });
 
@@ -249,7 +249,7 @@ const historyDialog = setupHistoryDialog({
   calm: calmMotion,
   motionOptions,
 });
-const { showGarage, syncSkins } = setupGarageUI({
+const { showGarage, adoptCar, syncSkins } = setupGarageUI({
   getWorld: () => world,
   canOpen: () => race.phase === 'ready',
   clearControls: () => controls.clear(),

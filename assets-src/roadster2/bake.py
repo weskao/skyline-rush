@@ -26,10 +26,12 @@ GROOVES = [
 ]
 
 
-def bake(here, name, grooves, bevelled=None):
+def bake(here, name, grooves, bevelled=None, ao_hidden=(), finish=None):
     """Bake normal + AO for assets-src/<name>/<name>.blend (also used by assets-src/crimson-gt/bake.py).
 
     bevelled: object-name prefixes that get the bevelled-copy normal bake; the rest keep a flat normal (None = all).
+    ao_hidden: object-name prefixes left out of the AO bake (see-through glass must not shade what is behind it).
+    finish: called with (materials by name, normal image) after the atlas is wired, before the file is saved.
     """
     stem = name.replace("-", "_")
     bpy.ops.wm.open_mainfile(filepath=os.path.join(here, name + ".blend"))
@@ -113,8 +115,13 @@ def bake(here, name, grooves, bevelled=None):
     # AO: all shipping meshes at once, so wheels, wing and canopy occlude each other.
     ao = atlas(stem + "_ao", (1.0, 1.0, 1.0, 1.0))
     nodes = target(ao)
-    select(lows, lows[0])
+    shaded = [ob for ob in lows if not (ao_hidden and ob.name.startswith(ao_hidden))]
+    for ob in lows:
+        ob.hide_render = ob not in shaded
+    select(shaded, shaded[0])
     bpy.ops.object.bake(type="AO", margin=MARGIN, use_clear=False)
+    for ob in lows:
+        ob.hide_render = False
     untarget(nodes)
 
     os.makedirs(os.path.join(here, "textures"), exist_ok=True)
@@ -146,6 +153,8 @@ def bake(here, name, grooves, bevelled=None):
         nt.links.new(ta.outputs["Color"], sep.inputs["Color"])
         nt.links.new(sep.outputs[0], g.inputs["Occlusion"])
 
+    if finish:
+        finish({m.name: m for m in mats}, normal)
     # Datablocks only, uncompressed, like build.py (no UI state, so no home directory in the file).
     bpy.data.libraries.write(os.path.join(here, name + ".blend"), {scene}, compress=False)
     print(stem.upper() + "_BAKED", RES, [i.filepath for i in (normal, ao)])

@@ -10,7 +10,20 @@ import { RECENT_ARCHIVED_RELEASE_NOTES } from './release-notes-archive-recent.ts
 export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
-    version: UPCOMING, date: '2026-11-07', image: null,
+    version: UPCOMING, date: '2026-11-13', image: null,
+    highlights: [
+      {
+        id: 'crimson-gt', kind: 'new', image: null,
+        title: { en: 'A second car: the Crimson GT', 'zh-TW': '第二台車：深紅跑車' },
+        description: {
+          en: 'Pick the Crimson GT in the Garage. It drives just like the Roadster, wears every paint and effect, and remembers its own paint.',
+          'zh-TW': '在車庫就能換開深紅跑車。操控和原本的跑車一樣，所有塗裝和特效都能搭配，還會各自記住自己的塗裝。'
+        }
+      }
+    ]
+  },
+  {
+    version: '0.31.0', date: '2026-11-10', image: null,
     video: {
       desktop: {
         src: { en: 'whats-new/catch-up-rings/catch-up-rings.desktop.en.mp4', 'zh-TW': 'whats-new/catch-up-rings/catch-up-rings.desktop.zh-TW.mp4' },

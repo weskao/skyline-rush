@@ -3,10 +3,11 @@
 Run from the repo root:
   "$BLENDER_BIN" --background --factory-startup --python assets-src/crimson-gt/build.py
 
-Crimson GT is the second player car: its shape follows the studio panels of the concept board (ref/*.png,
-asset-brief.md) around the Roadster's contract pivots and ports, so src/garage-model-rig.ts binds it unchanged.
-Only the LOW collection is created: every object in the file ships. Shape: build/gt_body.py, build/gt_parts.py;
-mesh, node and material helpers are the Roadster's (assets-src/roadster2/build).
+Crimson GT is the second player car. Its shape is built from the studio panels of the concept board (ref/*.png,
+asset-brief.md), not around the Roadster's shape: only the rig pivots (wheels, wing, lift ports) are the Roadster's
+contract numbers, so src/garage-model-rig.ts binds it. Only the LOW collection is created: every object in the file
+ships. Shape: build/gt_body.py, build/gt_parts.py; mesh, node and material helpers are the Roadster's
+(assets-src/roadster2/build).
 """
 import json
 import os
@@ -24,11 +25,13 @@ from roadster_materials import make_materials  # noqa: E402
 # the paint colour here is the factory finish (sRGB #9a1424, src/car-catalog.ts) for viewers without the rig.
 MATERIALS = {
     "gt_paint": ((0.323, 0.007, 0.018), 0.74, 0.17, {"coat": 0.9, "coat_rough": 0.06}),
-    "gt_glass": ((0.035, 0.024, 0.018), 0.04, 0.07, {"coat": 0.96, "coat_rough": 0.06, "cull": False}),
+    # Amber-tinted, see-through (front three-quarter panel): the cabin shows behind it.
+    "gt_glass": ((0.09, 0.055, 0.03), 0.04, 0.07, {"coat": 0.96, "coat_rough": 0.06, "cull": False, "alpha": 0.5}),
+    "gt_cabin": ((0.30, 0.17, 0.09), 0.0, 0.62, {}),     # tan seats and dash top (front three-quarter panel)
     "gt_trim": ((0.012, 0.014, 0.018), 0.30, 0.42, {}),
     "gt_carbon": ((0.03, 0.035, 0.04), 0.35, 0.34, {}),
     "gt_tire": ((0.03, 0.03, 0.035), 0.0, 0.82, {}),
-    "gt_rim": ((0.30, 0.31, 0.33), 0.90, 0.28, {}),
+    "gt_rim": ((0.10, 0.105, 0.115), 0.90, 0.30, {}),   # dark gunmetal (side.png, rear three-quarter panel)
     "gt_light": ((0.0, 0.0, 0.0), 0.0, 0.5, {"emit": (1.0, 0.03, 0.03), "emit_strength": 2.6}),
     "gt_lamp": ((0.0, 0.0, 0.0), 0.0, 0.5, {"emit": (0.92, 0.94, 1.0), "emit_strength": 3.5}),
     "gt_nozzle": ((0.30, 0.30, 0.32), 0.90, 0.26, {}),

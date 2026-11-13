@@ -1,6 +1,7 @@
 import { mergeProgress } from './cloud-progress-merge.ts';
 import { mergeModeBests } from './cloud-mode-bests.ts';
 import { CUP_PROGRESS_KEY } from './cup-progress.ts';
+import { CAR_KEY, isCar, savedCar } from './car-catalog.ts';
 import { CHALLENGE_MEDALS_KEY, loadChallengeMedals, parseChallengeMedals, canWriteChallengeMedals,
   type ChallengeMedalState } from './history-challenge-medals.ts';
 import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
@@ -25,6 +26,8 @@ interface ProgressValues {
   history: unknown;
   modeHistory: unknown;
   daily: unknown;
+  /** Present and a car: saved. Present but not a car: the saved car is removed. Absent: the saved car stays. */
+  car?: unknown;
   localChallengeMedals?: ChallengeMedalState;
 }
 const asRecord = (v: unknown): Record<string, unknown> =>
@@ -73,8 +76,10 @@ export function parseProgressExport(text: unknown) {
 }
 
 export function readLocalProgress(storage?: ProgressStorage) {
+  const car = savedCar(storage);
   return { version: 2 as const, unlocked: loadUnlocks(storage), stars: loadStars(storage), bests: loadBests(storage),
-    medals: loadMedals(storage), history: loadHistory(storage), modeHistory: loadModeHistory(storage), daily: loadDaily(storage) };
+    medals: loadMedals(storage), history: loadHistory(storage), modeHistory: loadModeHistory(storage), daily: loadDaily(storage),
+    ...(car ? { car } : {}) };
 }
 
 export function saveLocalProgress(progress: ProgressValues, storage?: ProgressStorage): boolean {
@@ -83,6 +88,7 @@ export function saveLocalProgress(progress: ProgressValues, storage?: ProgressSt
     [MEDALS_KEY, progress.medals], [HISTORY_KEY, progress.history],
     [MODE_HISTORY_KEY, progress.modeHistory], [DAILY_KEY, progress.daily],
   ];
+  if (Object.hasOwn(progress, 'car')) fields.push([CAR_KEY, isCar(progress.car) ? progress.car : undefined]);
   if (progress.localChallengeMedals !== undefined) {
     try {
       if (!canWriteChallengeMedals(storage)) return false;
@@ -93,7 +99,9 @@ export function saveLocalProgress(progress: ProgressValues, storage?: ProgressSt
     const target = storage ?? globalThis.localStorage;
     const previous = fields.map(([key]) => [key, target.getItem(key)] as const);
     try {
-      for (const [key, value] of fields) target.setItem(key, JSON.stringify(value));
+      for (const [key, value] of fields) {
+        if (value === undefined) target.removeItem?.(key); else target.setItem(key, JSON.stringify(value));
+      }
       return true;
     } catch {
       for (const [key, old] of previous) {
@@ -114,7 +122,8 @@ export function switchCloudAccount(previousUid: unknown, nextUid: unknown,
   if (previousUid === nextUid) return true;
   try {
     if (!canWriteChallengeMedals(storage)) return false;
-    const current = { ...readLocalProgress(storage), permanent: readLocalModeBests(storage),
+    // `car: undefined` on both sides: the car is this account's, so a switch (or its rollback) never leaves the other one's.
+    const current = { car: undefined, ...readLocalProgress(storage), permanent: readLocalModeBests(storage),
       localChallengeMedals: loadChallengeMedals(storage) };
     const stored = storage.getItem(accountKey(nextUid));
     const rawNext: unknown = stored ? JSON.parse(stored) : null;
@@ -122,7 +131,7 @@ export function switchCloudAccount(previousUid: unknown, nextUid: unknown,
     const permanent = mergeModeBests(asRecord(rawNext).permanent);
     const localChallengeMedals = parseChallengeMedals(asRecord(rawNext).localChallengeMedals);
     if (previousUid) storage.setItem(accountKey(previousUid as string), JSON.stringify(current));
-    if (!saveLocalProgress({ ...next, localChallengeMedals }, storage) || !saveLocalModeBests(permanent, storage)) {
+    if (!saveLocalProgress({ car: undefined, ...next, localChallengeMedals }, storage) || !saveLocalModeBests(permanent, storage)) {
       saveLocalProgress(current, storage);
       saveLocalModeBests(current.permanent, storage);
       return false;

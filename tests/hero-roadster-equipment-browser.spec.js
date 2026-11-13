@@ -2,6 +2,7 @@ import { test, programs, modelInstances as instances } from './helpers/gameplay-
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { PAINTS } from '../src/appearance.ts';
+import { carPaints, defaultPaint } from '../src/car-catalog.ts';
 import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
 
 // Task 4c `?model=roadster`: every Garage paint and skin (read from the catalogs, so a new one joins automatically) shows
@@ -139,8 +140,10 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
 test('Home and Coming Soon showcases wear the selected paint on the GLB', async ({ gameplayPage: page, gameplayURL }) => {
   const errors = await prepare(page, `${gameplayURL}?model=roadster`);
   // A locked paint previewed in the Garage reverts on close, so a one-shot read raced it (make verify, 2026-11-08):
-  // judge the equipped paint (a fresh profile owns only the 0-star one), polled, on both cars.
-  const [equipped] = Object.values(PAINTS).filter(p => !p.stars).map(p => p.paint.slice(1));
+  // judge the equipped paint (a fresh profile wears its car's default: the 0-star paint, or the GT's factory red
+  // under HERO_CAR=crimson-gt), polled, on both cars.
+  const car = process.env.HERO_CAR ?? 'roadster';
+  const equipped = carPaints(car)[defaultPaint(car)].paint.slice(1);
   const hex = async () => { const a = await audit(page); return a && [a.paint, a.proc]; };
   const shown = [equipped, equipped];
   await expect.poll(hex).toEqual(shown);
