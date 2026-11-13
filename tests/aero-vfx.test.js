@@ -61,6 +61,22 @@ test('VFX is read-only to race state, follows rotated anchors and rebases histor
   }
 });
 
+// User, 2026-11-13: the Frostbite showroom under Reduced Motion failed its stillness gate once dimmer lighting made the
+// exhaust shimmer readable. Reduced Motion and Comfortable hold every exhaust/airflow shader clock still.
+test('Reduced Motion and Comfortable freeze every exhaust and airflow shader clock in the showroom', () => {
+  for (const [calm, comfortable] of [[true, false], [false, true], [false, false]]) {
+    const { scene, vfx, race, options } = fixture();
+    race.phase = 'ready'; race.player.boosting = false; options.comfortable = comfortable;
+    const clocks = () => { const t = []; scene.traverse(o => { const u = o.material?.uniforms?.time; if (u) t.push(u.value); }); return t; };
+    vfx.update(race, .05, new Vector3(), options, calm, null, true);
+    const first = clocks();
+    vfx.update(race, .05, new Vector3(), options, calm, null, true);
+    assert.ok(first.length >= 4, 'jets, airflow, pressure and ribbon clocks found');
+    if (calm || comfortable) assert.deepEqual(clocks(), first, `calm=${calm} comfortable=${comfortable}`);
+    else assert.notDeepEqual(clocks(), first, 'full motion keeps animating');
+  }
+});
+
 test('repeated boost cycles stay bounded, release fades and restart clears every transient', () => {
   const { scene, vfx, race, update, vapor } = fixture();
   const count = scene.children.length;
