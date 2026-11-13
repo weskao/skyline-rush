@@ -393,12 +393,57 @@ for (const [name, viewport] of [['phone portrait', { width: 390, height: 844 }],
   });
 }
 
-// The factory finish has a card like the six paints: the GT's own master rendered in factory red
-// (assets-src/crimson-gt/card/render_card.py), 960x510 for the 320x170 card, full-bleed like the others.
+for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
+  test.describe(`car picker ${viewport.width}x${viewport.height}`, () => {
+    test.use({ viewport });
+    test('each car has a distinct, fully visible 3x thumbnail and a caption', async ({ gameplayPage: page, gameplayURL }) => {
+      await prepare(page, gameplayURL);
+      await page.locator('#garage-button').click();
+      for (const id of ['roadster', 'crimson-gt']) {
+        const button = carButton(page, id);
+        const image = button.locator('img');
+        await expect(image).toHaveAttribute('src', new RegExp(`/car-picker/${id}@3x\\.webp$`));
+        await expect(image).toHaveJSProperty('naturalWidth', 432);
+        await expect(image).toHaveJSProperty('naturalHeight', 198);
+        const bounds = await button.evaluate(card => {
+          const img = card.querySelector('img');
+          const image = img.getBoundingClientRect();
+          const name = card.querySelector('.garage-car-name').getBoundingClientRect();
+          const { left, right, height } = card.getBoundingClientRect();
+          const canvas = Object.assign(document.createElement('canvas'), { width: img.naturalWidth, height: img.naturalHeight });
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          let clipped = 0;
+          for (let y = 0; y < canvas.height; y++) {
+            for (let x = 0; x < canvas.width; x++) {
+              if (x >= 4 && y >= 4 && x < canvas.width - 4 && y < canvas.height - 4) continue;
+              if (data[4 * (y * canvas.width + x) + 3] > 16) clipped++;
+            }
+          }
+          return { left, right, height, imageLeft: image.left, imageRight: image.right,
+            imageWidth: image.width, imageBottom: image.bottom, nameTop: name.top, clipped };
+        });
+        expect(bounds.clipped).toBe(0);
+        expect(bounds.height).toBeGreaterThanOrEqual(44);
+        expect(bounds.left).toBeGreaterThanOrEqual(0);
+        expect(bounds.right).toBeLessThanOrEqual(viewport.width);
+        expect(bounds.imageLeft).toBeGreaterThanOrEqual(bounds.left + 8);
+        expect(bounds.imageRight).toBeLessThanOrEqual(bounds.right - 8);
+        expect(bounds.imageWidth).toBeGreaterThan(0);
+        expect(bounds.imageWidth).toBeLessThanOrEqual(144);
+        expect(bounds.nameTop).toBeGreaterThanOrEqual(bounds.imageBottom);
+      }
+      await attach(page, `car-picker-${viewport.width}x${viewport.height}`);
+    });
+  });
+}
+
+// The factory finish uses the same full-bleed 960×510 layout as the rest of the paint collection.
 for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
   test.describe(`factory card ${viewport.width}x${viewport.height}`, () => {
     test.use({ viewport });
-    test('the factory red card is the car in its own paint: native 3x, opaque, laid out like the paint cards, name below', async ({ gameplayPage: page, gameplayURL }) => {
+    test('the factory red card is native 3x, opaque, and uses the same layout as the paint collection', async ({ gameplayPage: page, gameplayURL }) => {
       const { errors } = await prepare(page, gameplayURL, { storage: GT });
       await page.locator('#garage-button').click();
       const button = page.locator('#garage-screen [data-paint="factory"]');
@@ -427,7 +472,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
         };
       });
       expect(facts.minAlpha, 'full-bleed card, no transparent edge').toBe(255);
-      expect(facts.redShare, 'lit factory red, not a placeholder or another paint (measured .15; highlights and shadow do not count)').toBeGreaterThan(0.1);
+      expect(facts.redShare, 'factory crimson covers a visible portion of the card').toBeGreaterThan(0.1);
       expect(Math.abs(facts.image.width - facts.preview.width)).toBeLessThan(1);
       expect(Math.abs(facts.image.height - facts.preview.height)).toBeLessThan(1);
       expect(Math.abs(facts.preview.width - facts.pearl.width), 'same frame as the paint cards').toBeLessThan(1);
