@@ -81,18 +81,20 @@ const channel = (): SprintChannel => ({ phase: 'ready', intensity: 0, ignition: 
 
 export function createSprintVfx() {
   const nitro = channel(), boost = channel();
-  const frame = { nitro, boost, power: 0, fov: 0, blur: 0, particles: 0, nitroMix: 0 };
+  /** `fov`: eased sprint share for the camera (FOV, pull-back). `kick`: seconds since the last fresh ignition. */
+  const frame = { nitro, boost, power: 0, fov: 0, blur: 0, particles: 0, nitroMix: 0, kick: 1 };
   let lift = 1;
   const clear = (part: SprintChannel): void => {
     part.phase = 'ready'; part.intensity = part.ignition = part.age = part.release = 0;
   };
   const reset = (): typeof frame => {
     clear(nitro); clear(boost);
-    frame.power = frame.fov = frame.blur = frame.particles = frame.nitroMix = 0;
+    frame.power = frame.fov = frame.blur = frame.particles = frame.nitroMix = 0; frame.kick = 1;
     lift = 1;
     return frame;
   };
   const advance = (part: SprintChannel, active: boolean, dt: number, speedScale: number): void => {
+    if (active && part.phase === 'ready') frame.kick = 0; // a flicker re-ignites from 'recovery' and must not kick again
     if (active && (part.phase === 'ready' || part.phase === 'recovery')) {
       part.phase = 'ignition'; part.age = 0;
     } else if (!active && (part.phase === 'sustain' || part.phase === 'ignition')) {
@@ -122,6 +124,7 @@ export function createSprintVfx() {
       const cap = Math.max(40, finite(input.cap, 110));
       const speed = Math.max(0, finite(input.speed));
       const speedScale = unit((speed - 12) / (cap - 12));
+      frame.kick = Math.min(1, frame.kick + dt);
       advance(nitro, !!input.nitro, dt, speedScale);
       advance(boost, !!input.boost, dt, speedScale);
       // Independent channels never add; simultaneous activation is capped at one.
@@ -135,7 +138,9 @@ export function createSprintVfx() {
       const comfort = input.reducedMotion;
       frame.particles = frame.power * (comfort ? 0.2 : tier);
       // FOV is camera framing, not GPU cost: one strength on every tier (pre-Wave 2 behaviour).
-      frame.fov = comfort ? 0 : frame.power;
+      // Ramped over 0.3 s instead of jumping with the ignition; the camera's own smoothing rounds both ends.
+      const target = comfort ? 0 : frame.power, step = dt / 0.3;
+      frame.fov = comfort || Math.abs(target - frame.fov) <= step ? target : frame.fov + Math.sign(target - frame.fov) * step;
       frame.blur = comfort ? 0 : Math.min(1, frame.power * tier * (input.ultra && look3d() ? 0.96 : 0.6)); // Ultra only (`?look=3d`): stronger lens radial blur, same pass
       return frame;
     },

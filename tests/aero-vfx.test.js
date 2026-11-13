@@ -340,6 +340,30 @@ test('sprint FOV: NITRO+BOOST widens the camera by the full FOV setting on every
     enabled: true, quality: 'high', reducedMotion: false }), vfxSettings({ enabled: false })), 0, 'VFX off');
 });
 
+// The FOV share used to jump to 65% of the sprint on the ignition frame (18.6 deg/s on the first frame).
+test('sprint camera: the FOV share ramps in over 0.3 s and the kick clock restarts only on a fresh ignition', async () => {
+  const { createSprintVfx } = await import('../src/vfx-settings.ts');
+  const sprint = createSprintVfx(), dt = 1 / 60;
+  const idle = { phase: 'racing', nitro: false, boost: false, speed: 110, cap: 110, dt, enabled: true, quality: 'high', reducedMotion: false };
+  const held = { ...idle, boost: true };
+  assert.ok(sprint.update(idle).kick >= 0.25, 'no kick while nothing fires');
+  let frame = sprint.update(held);
+  assert.equal(frame.kick, 0, 'the kick clock starts with the ignition');
+  assert.ok(frame.fov > 0 && frame.fov <= 0.1, `ignition frame FOV share ${frame.fov}: a ramp, not a jump`);
+  for (let i = 0, last = frame.fov; i < 20; i++, last = frame.fov) {
+    frame = sprint.update(held);
+    assert.ok(frame.fov >= last && frame.fov - last <= dt / 0.3 + 1e-9, 'rises at an even rate');
+  }
+  assert.equal(frame.fov, frame.power, 'at the full sprint share 0.35 s after the ignition');
+  assert.ok(Math.abs(frame.kick - 20 * dt) < 1e-9, 'the kick clock runs in race time');
+  sprint.update(idle);
+  assert.ok(sprint.update(held).kick > 0.3, 'a BOOST that flickers off for a frame does not kick again');
+  assert.equal(sprint.update({ ...held, nitro: true }).kick, 0, 'NITRO fired on top of a held BOOST is a fresh ignition');
+  for (let i = 0; i < 40; i++) frame = sprint.update(idle);
+  assert.equal(frame.fov, 0, 'back to rest after the recovery');
+  assert.equal(createSprintVfx().update({ ...held, reducedMotion: true }).fov, 0, 'Reduced Motion never widens the camera');
+});
+
 test('cyan NITRO trail replaces the standard purple from the first NITRO frame', async () => {
   const { createSprintVfx } = await import('../src/vfx-settings.ts');
   const firstFrame = skin => {

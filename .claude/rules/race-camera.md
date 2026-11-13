@@ -24,6 +24,13 @@ a different camera (`track-showcase.md`, `src/track-preview.ts`).
 - **Horizon.** The chase camera never rolls; only first person banks in flight.
 - **Comfort.** Reduced motion disables the drift swing and the shake. Shake scales with the
   player's Camera shake setting and is applied after `lookAt`, never to the smoothed position.
+- **Sprint judder.** NITRO/BOOST never feed a sustained shake: the old rig shook at 8.4 Hz for the
+  whole sprint (±0.14° default, ±1.25° on the strongest setting) and read as judder on desktop.
+  `rigShake` takes speed only. The ignition is one damped pitch kick (`rigKick`, ≈0.25 s, 5 Hz,
+  capped at 0.4°) on the `kick` clock that `createSprintVfx` restarts only on a fresh ignition;
+  the FOV share eases in over 0.3 s; the pull-back is the sprint share of `rigBack`
+  (`sprintBack`). Every number stays in `RACE_CAMERA`, no sway or world-space push in `world.js`.
+  A portrait `sprintBack` must keep the rear bumper above the HUD (portrait HUD test, sprint 1).
 
 ## Changing a number
 

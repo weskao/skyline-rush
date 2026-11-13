@@ -17,8 +17,9 @@ export interface RaceCameraView {
   /** Vertical FOV at rest, and the degrees added per m/s. */
   fov: number;
   speedFov: number;
-  /** Metres further back per m/s. */
+  /** Metres further back per m/s, and at a full NITRO/BOOST (the car surges ahead of the camera). */
   speedBack: number;
+  sprintBack: number;
   /** Extra eye height once fully airborne (reached at `flyAltitude` m). */
   flyLift: number;
   flyAltitude: number;
@@ -26,21 +27,24 @@ export interface RaceCameraView {
   swing: number;
   swingIn: number;
   swingOut: number;
-  /** Shake amplitude in radians at top speed and at full NITRO/BOOST, before the player's Camera shake setting. */
+  /** Shake amplitude in radians at top speed, before the player's Camera shake setting. */
   speedShake: number;
-  boostShake: number;
+  /** NITRO/BOOST ignition kick: radians of pitch per unit of the Camera shake setting, capped at KICK_LIMIT. */
+  kick: number;
 }
 
-const SHARED = { speedFov: 0.115, flyAltitude: 6, swingIn: 4.5, swingOut: 3 };
+const SHARED = { speedFov: 0.115, flyAltitude: 6, swingIn: 4.5, swingOut: 3, kick: 0.035 };
+/** The kick is one damped swing: seconds it lasts, its frequency, and the most it may turn the camera (0.4 degrees). */
+const KICK_TIME = 0.25, KICK_HZ = 5, KICK_LIMIT = 0.007;
 
 export const RACE_CAMERA: Record<'chase' | 'chasePortrait' | 'first', RaceCameraView> = {
-  chase: { ...SHARED, back: 7.6, height: 2.5, look: 1.5, ahead: 34, follow: 0.74, fov: 57, speedBack: 0.012, flyLift: 1.5, swing: 0.5, speedShake: 0, boostShake: 0.018 },
+  chase: { ...SHARED, back: 7.6, height: 2.5, look: 1.5, ahead: 34, follow: 0.74, fov: 57, speedBack: 0.012, sprintBack: 0.9, flyLift: 1.5, swing: 0.5, speedShake: 0 },
   // Portrait's horizontal FOV is about half of landscape's: further back, wider, straight behind the car and a smaller swing
   // keep a sideways car in frame. It aims below the road so the car sits mid-frame, above the HUD readouts.
-  chasePortrait: { ...SHARED, back: 12, height: 3, look: -4, ahead: 34, follow: 0.95, fov: 61, speedBack: 0.012, flyLift: 1.5, swing: 0.25, speedShake: 0, boostShake: 0.018 },
+  chasePortrait: { ...SHARED, back: 12, height: 3, look: -4, ahead: 34, follow: 0.95, fov: 61, speedBack: 0.012, sprintBack: 0.9, flyLift: 1.5, swing: 0.25, speedShake: 0 },
   // Seated eye height over the nose tip: ahead of the cabin shell and far enough forward that the sunlit bonnet (which
   // blooms into a white wash on phones) stays under the frame. It looks down the road, so no swing, pull-back or lift.
-  first: { ...SHARED, back: -2.3, height: 1, look: 0.95, ahead: 65, follow: 1, fov: 60, speedBack: 0, flyLift: 0, swing: 0, speedShake: 0.009, boostShake: 0.018 },
+  first: { ...SHARED, back: -2.3, height: 1, look: 0.95, ahead: 65, follow: 1, fov: 60, speedBack: 0, sprintBack: 0, flyLift: 0, swing: 0, speedShake: 0.009 },
 };
 
 const finite = (value: number, fallback = 0) => Number.isFinite(value) ? value : fallback;
@@ -50,7 +54,9 @@ const unit = (value: number) => Math.min(1, Math.max(0, finite(value)));
 export const raceCameraView = (mode: number, portrait: boolean): RaceCameraView =>
   mode === 1 ? RACE_CAMERA.first : portrait ? RACE_CAMERA.chasePortrait : RACE_CAMERA.chase;
 
-export const rigBack = (view: RaceCameraView, speed: number): number => view.back + Math.max(0, finite(speed)) * view.speedBack;
+/** `sprint` is the eased NITRO/BOOST share (0–1) from createSprintVfx, so the pull-back never steps. */
+export const rigBack = (view: RaceCameraView, speed: number, sprint = 0): number =>
+  view.back + Math.max(0, finite(speed)) * view.speedBack + unit(sprint) * view.sprintBack;
 
 export const rigHeight = (view: RaceCameraView, altitude: number): number => view.height + unit(altitude / view.flyAltitude) * view.flyLift;
 
@@ -83,8 +89,17 @@ export function stepCameraSwing(swing: number, driftYaw: number, view: RaceCamer
   return target + (swing - target) * Math.exp(-rate * dt);
 }
 
-/** Shake amplitude in radians; `strength` is the player's Camera shake setting (0–1). */
-export function rigShake(view: RaceCameraView, speed: number, boost: number, strength: number): number {
+/**
+ * Continuous speed tremble in radians; `strength` is the player's Camera shake setting (0–1). A NITRO/BOOST is not an
+ * input: a shake held for the whole sprint reads as judder, so the sprint shows in the FOV, the pull-back and rigKick.
+ */
+export function rigShake(view: RaceCameraView, speed: number, strength: number): number {
   const pace = unit(speed / MAX_SPEED);
-  return unit(strength) * (pace * pace * view.speedShake + unit(boost) * view.boostShake);
+  return unit(strength) * pace * pace * view.speedShake;
+}
+
+/** Pitch in radians `age` seconds after a NITRO/BOOST ignition: one damped swing from rest, 0 once it is over. */
+export function rigKick(view: RaceCameraView, age: number, strength: number): number {
+  if (!(age >= 0 && age < KICK_TIME)) return 0;
+  return Math.min(KICK_LIMIT, unit(strength) * view.kick) * Math.sin(2 * Math.PI * KICK_HZ * age) * (1 - age / KICK_TIME) ** 2;
 }
