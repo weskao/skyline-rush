@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRace, startRace, stepRace, DRIFT_MIN_SPEED, DRIFT_REWARDS } from '../src/game.js';
-import { driftTier } from '../src/drive-rules.ts';
+import { driftTier, DRIFT_LATERAL } from '../src/drive-rules.ts';
 
 // Design: docs/superpowers/specs/2026-11-13-drift-balance-design.md — every drift pays, spamming does not.
 const DT = 1 / 60, WINDOW = 8; // s compared against plain throttle
@@ -25,6 +25,15 @@ function drive(speed, seconds, pressNitro = false) {
   for (let pressed = false; t < WINDOW; t += DT, pressed = true) stepRace(race, { throttle: true, nitro: pressNitro && !pressed }, DT);
   return { metres: race.player.distance - start, nitro: race.player.nitro };
 }
+
+// User, 2026-11-14: a full-lock drift crossed the 20 m road at 9 m/s and hit the far rail before the 2 s tier.
+test('a drift slides sideways at DRIFT_LATERAL of the steering rate, so a full-lock drift from the kerb reaches the top tier', () => {
+  const slide = input => { const race = cruising(70); race.player.x = 8; for (let t = 0; t < 0.5; t += DT) stepRace(race, input, DT); return 8 - race.player.x; };
+  assert.ok(Math.abs(slide({ brake: true, steer: -1 }) / slide({ steer: -1 }) - DRIFT_LATERAL) < 0.02);
+  const race = cruising(70); race.player.x = 8;
+  for (let t = 0; t < TIER_TIMES.at(-1) + 0.05; t += DT) stepRace(race, { brake: true, steer: -1 }, DT);
+  assert.equal(driftTier(race.player.drift?.time ?? 0), 3, `still drifting at x=${race.player.x.toFixed(1)}`);
+});
 
 test('driftTier counts the reward thresholds reached', () => {
   assert.deepEqual([0.59, 0.6, 1.2, 5].map(driftTier), [0, 1, 2, 3]);

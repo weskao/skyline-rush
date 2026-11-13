@@ -15,10 +15,12 @@ export const BOOST_DRAIN = 10; // fuel/s while boosting on the road
 export const GROUND_FUEL_REGEN = 13; // fuel/s on the road with FLY and BOOST released
 export const UPHILL_FUEL_REGEN = 6.5; // fuel/s on an uphill section
 export const GLIDE_FUEL_REGEN = 4; // fuel/s while airborne with FLY and boost released
-
 // DRIFT: brake + steer on the ground at speed; tuning in docs/superpowers/specs/2026-11-13-drift-balance-design.md.
 export const DRIFT_MIN_SPEED = 45; // m/s needed to start or hold a drift
 export const DRIFT_BLEED = 1.5; // m/s^2 lost while drifting (normal braking is 35)
+// Share of the steering slide kept while drifting (user, 2026-11-14): at 1 a full-lock drift crossed the 20 m road
+// at 9 m/s and hit the far rail before the 2 s tier; 0.8 leaves ~14 m over 2 s.
+export const DRIFT_LATERAL = 0.8;
 // Per threshold: seconds drifted, total NITRO charges by then (credited as each tier is reached), mini-boost seconds on release.
 export const DRIFT_REWARDS = [{ time: 2, nitro: 0.35, boost: 1.6 }, { time: 1.2, nitro: 0.22, boost: 1.1 }, { time: 0.6, nitro: 0.1, boost: 0.7 }] as const;
 /** NITRO a drift is still owed for the tiers it has reached; marks it credited. */

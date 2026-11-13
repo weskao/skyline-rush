@@ -24,7 +24,8 @@ Make drifting friendly and worth using everywhere, without turning it into the b
 
 ## Non-goals / anti-goals
 
-- No handling change: drift does not alter lateral movement or cornering.
+- No handling change: drift does not alter lateral movement or cornering (superseded 2026-11-14, see the lateral
+  slide revision below).
 - No change to tier count, tier colors (blue/orange/purple), callout names, or the release-to-claim rule.
 - Anti-goal: drift spam out-earning pickups (drifting the whole race becomes optimal).
 - Rivals still do not drift.
@@ -100,3 +101,14 @@ User decisions (2026-11-14):
 Net metres per drift vs plain throttle (8 s window, NITRO valued at its distance): +1 / +4 / +7 m at
 70 m/s, +20 / +35 / +52 m at 88 m/s. Guard: `tests/drift-balance.test.js` (every tier net > 0;
 drift-and-recover farm < 9 NITRO/min, 60% of pickup income, at both speeds and every tier).
+
+## Revision 2026-11-14 — slower sideways slide while drifting
+
+A full-lock drift slid sideways at the normal steering rate (9 m/s from 41 m/s up), so a drift from
+one kerb crossed the 20 m road and hit the far rail before the 2 s tier: tier 3 was only reachable
+with steering feathered. User decision: while drifting the slide is `DRIFT_LATERAL` = **0.8** of the
+steering rate (7.2 m/s, ~14 m over 2 s), so a full-lock drift from the kerb reaches tier 3. Steering
+outside a drift is unchanged; payouts are time-based, so the farm and net-metre figures above stand.
+Guard: `tests/drift-balance.test.js` (slide ratio = `DRIFT_LATERAL`; full-lock drift from x = 8 m
+reaches tier 3; RED at 1.0: the car stopped at the rail, x = −10.2). The legacy replay fixture was
+re-recorded (43 of 47 keys, all runs that drift).
