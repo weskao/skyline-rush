@@ -1,3 +1,9 @@
+# 2026-11-13 — Garage selection feedback
+
+- [x] Add a shared press animation to car and paint cards and distinguish the previewed paint from the equipped paint.
+- [x] Browser RED reproduced the missing press effect. GREEN verifies click, keyboard, Reduced Motion, and explicit paint saving.
+- [ ] Check exact-commit CI.
+
 # 2026-11-13 — Shared Garage paints and car names
 
 - [x] Share all paints across both cars and make Deep Crimson available at zero stars. Keep each car's default and saved paint.

@@ -1,0 +1,83 @@
+/* Live badges overlay native @3x art: visually match the premium Garage cards. */
+#garage-screen .garage-collection {
+  background: radial-gradient(ellipse at 75% 2%, #123858b3, transparent 49%), linear-gradient(155deg, #081e32, #071321 76%);
+  border-color: #246c98; border-radius: 18px;
+  box-shadow: inset 0 1px #75d9ff36, 0 16px 36px #00132389;
+}
+#garage-screen .paint-options { gap: 8px; }
+#garage-screen .paint-options button {
+  background: linear-gradient(180deg, #0c2e49, #071828 83%); border: 1px solid #327eaf;
+  border-radius: 15px; padding: 4px; gap: 0; min-height: 0; overflow: hidden;
+  box-shadow: inset 0 1px #5ad9ff45, 0 4px 14px #0008;
+}
+#garage-screen .paint-options button .garage-paint-preview { border: 0; border-radius: 10px 10px 3px 3px; }
+#garage-screen .paint-options .garage-paint-meta {
+  padding: 7px 6px 8px; gap: 4px; min-height: 44px;
+  background: linear-gradient(120deg, #0a3048ef, #071b2cfa); border-top: 1px solid #57dfff62;
+}
+#garage-screen .paint-options .garage-paint-name {
+  color: #f5fbff; font-size: clamp(11px, 1.6vw, 14px); font-weight: 850; text-shadow: 0 1px 3px #000e;
+}
+#garage-screen .paint-options .garage-paint-name::before {
+  content: "//"; margin-right: 5px; color: #13d8ff; font-weight: 900; letter-spacing: -.13em;
+}
+#garage-screen .paint-options button .garage-paint-badge {
+  font-weight: 800; line-height: 1.4; color: #bdeaff; background: #042a46c9;
+  border: 1px solid #51bfe6; box-shadow: inset 0 0 8px #39e4ff10;
+}
+#garage-screen .paint-options button[data-state="equipped"] .garage-paint-badge {
+  color: #65ffe3; background: #023f38bb; border-color: #15d5a9;
+}
+#garage-screen .paint-options button[data-state="equipped"]::before {
+  content: "✓"; position: absolute; z-index: 4; left: 4px; top: 4px;
+  width: 27px; height: 27px; display: grid; place-items: center;
+  color: #81ffe3; background: #007a69db; font-size: 19px; font-weight: 900;
+  border: 1px solid #39f6c4; border-radius: 8px 0 10px 0;
+}
+#garage-screen .paint-options button[data-state="locked"] { filter: none; border-color: #426b8c; }
+#garage-screen .paint-options button[data-state="locked"] .garage-paint-preview { filter: none; }
+#garage-screen .paint-options button[data-state="locked"] .garage-paint-badge {
+  color: #ffdb9e; border-color: #d6ae71; background: #3a251d72;
+}
+#garage-screen .paint-options button[aria-pressed="true"] {
+  outline: 1px solid #75efff; border-color: #1af4ff;
+  box-shadow: 0 0 0 2px #02c9e755, 0 0 19px #06d3f680, inset 0 1px #b3ffffa0;
+}
+#garage-screen .paint-options button:focus-visible { outline: 3px solid #dbffff; outline-offset: 2px; }
+@media (max-width: 650px) and (orientation: portrait) {
+  #garage-screen .paint-options { gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #garage-screen .paint-options button { min-height: 0; padding: 3px; }
+  #garage-screen .paint-options .garage-paint-meta { min-height: 46px; flex-wrap: wrap; padding: 6px 4px; }
+  #garage-screen .paint-options .garage-paint-name { font-size: 12px; }
+  #garage-screen .paint-options button .garage-paint-badge { font-size: 10px; }
+}
+
+/* A single sweep per press. The effect stays inside the card and never intercepts input. */
+#garage-screen .garage-selection-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(112deg,
+    transparent 31%, #27c4ff38 40%, #7cefff90 46%, #e6ffffe0 49%,
+    #72ebff80 51%, #6455ff46 57%, transparent 70%);
+}
+#garage-screen .garage-preview-badge {
+  position: absolute;
+  z-index: 4;
+  top: 6px;
+  right: 6px;
+  padding: 3px 6px;
+  border: 1px solid #76eaff;
+  border-radius: 6px;
+  background: #062b40;
+  color: #c7f7ff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+body:is(.vfx-comfort, [data-vfx-enabled="false"]) #garage-screen .garage-selection-flash { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  #garage-screen .garage-selection-flash { display: none; }
+}
