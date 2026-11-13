@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
 import { REAR_PORTS } from '../src/aero-vfx.js';
-import { LIFT_PORTS } from '../src/effects.js';
+import { LIFT_PORTS } from '../src/lift-ports.js';
 import { Box3 } from 'three';
 import { glbJson, parseGlb } from '../scripts/assets/check-glb.mjs';
 import { fitToRoadsterSize } from '../src/car-display-size.ts';

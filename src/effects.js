@@ -8,12 +8,7 @@ import { createParticleBurst } from './effects-particle-burst.js';
 import { createRivalCues } from './rival-cues.ts';
 import { isRaining, racePreset, sprayRate } from './board-effects.ts';
 import { createDriftCharge } from './drift-charge-vfx.js';
-
-// Shared by all car models and their wakes: every thrust stream starts at its actual port.
-export const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]];
-const UNSCALED = new THREE.Vector3(1, 1, 1);
-// A dressed GLB shows at the Roadster's measured size (car-display-size.ts), carrying its authored thrusters with it.
-const liftPort = (pose, port, y, out) => out.set(LIFT_PORTS[port][0], y, LIFT_PORTS[port][1]).multiply(pose?.userData.displayScale ?? UNSCALED);
+import { LIFT_PORTS, liftPort } from './lift-ports.js';
 
 const COUNT = 480;
 export const RING_POOL_CAPACITY = 48; // densest 900 m view of one colour: 18 with trains and rows (tests/ring-rows.test.js)
