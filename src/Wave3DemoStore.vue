@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue';
+import { inject, computed, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
 import { SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
@@ -11,6 +11,7 @@ import {
 } from './wave3-demo-catalog.ts';
 import type { DemoTrialAccess, DemoRedeemState } from './wave3-demo-catalog.ts';
 
+const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = withDefaults(defineProps<{
   port: Wave3ExperiencePort;
   locale?: string;
@@ -82,7 +83,11 @@ function feedback(status: DemoRedeemState | Wave3Status): string {
 function requestRedemption(): void {
   if (!selected.value) return;
   const state = demoRedemptionState(selected.value.id, props.port.getSnapshot());
-  if (state !== 'ready') { message.value = feedback(state); return; }
+  if (state !== 'ready') {
+    message.value = feedback(state);
+    if (state === 'insufficient-demo-points') cue('action-unavailable');
+    return;
+  }
   confirmationId.value = selected.value.id;
   confirmationAccount.value = snapshot.value.accountId;
   message.value = '';
@@ -100,13 +105,20 @@ function confirmRedemption(): void {
     cancelRedemption();
     snapshot.value = current;
     message.value = tr('Account changed. Please select again.', '帳號已切換，請重新選取。');
+    cue('action-unavailable');
     return;
   }
   const state = demoRedemptionState(id, current);
-  if (state !== 'ready') { cancelRedemption(); snapshot.value = current; message.value = feedback(state); return; }
+  if (state !== 'ready') {
+    cancelRedemption(); snapshot.value = current; message.value = feedback(state);
+    if (state === 'insufficient-demo-points') cue('action-unavailable');
+    return;
+  }
   const result = props.port.redeemPreview(id);
   snapshot.value = result.snapshot;
   message.value = feedback(result.status);
+  if (result.status === 'completed') cue('redeem-unlocked');
+  else if (result.status === 'expired' || result.status === 'insufficient-demo-points') cue('action-unavailable');
   cancelRedemption();
 }
 </script>
