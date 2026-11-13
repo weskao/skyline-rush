@@ -109,6 +109,7 @@ build with an earlier set of mattes and anchors, so they are not directly compar
 
 **The 0.90 target is met in the side view only** (0.952 at rest). Front 3/4 0.878, rear 3/4 0.877 (0.871 in
 the deployed pose its panel shows) and rear 0.882 are the measured values; shape iterations stopped here.
+The owner accepted these three views as a deviation on 2026-11-14; the measurements stand.
 The mattes were not changed after iteration 4. The three-quarter views are also very sensitive to azimuth:
 2 degrees either way costs .01 to .05. Why the other three views stay below 0.90, read from the overlay
 sheets (not isolated by a separate probe):
@@ -120,6 +121,37 @@ sheets (not isolated by a separate probe):
   fixes roof height and overhang, so closing this view would open that one (panel conflict).
 - Rear 3/4, deployed: the panel's roof is higher and its body bottom lower than the render, and the
   raised endplate stands above the matte.
+
+### Iteration 9 probes (2026-11-13, not adopted: the shipped GLB is still iteration 8)
+
+Measurement only. Each variant changed inferred dimensions in a scratch copy of the build scripts, was
+built headless from the iteration 8 master and measured with the same gate on the cameras around each
+view's best one. The repo's `.blend`, GLBs and manifest were not touched. Owner rule for promoting a
+variant: one of the three views below 0.90 gains at least .01, the side view stays at or above 0.90 and
+no view regresses.
+
+| Variant (rest pose) | Side | Front 3/4 | Rear 3/4 | Rear |
+| --- | --- | --- | --- | --- |
+| 8, baseline | 0.9518 | 0.8779 | 0.8774 | 0.8820 |
+| stowed endplate top 4 to 5.5 cm lower | 0.9578 (+.0060) | 0.8794 (+.0015) | 0.8775 (+.0001) | 0.8853 (+.0033) |
+| shorter, lower nose and splitter | 0.9517 (-.0001) | 0.8765 (-.0014) | 0.8774 (0) | 0.8820 (0) |
+| narrower tail plan (fascia half-width .74) | 0.9512 (-.0006) | 0.8775 (-.0004) | 0.8814 (+.0040) | 0.8813 (-.0007) |
+| endplate + tail | 0.9572 (+.0054) | 0.8789 (+.0010) | 0.8815 (+.0041) | 0.8846 (+.0026) |
+
+| Variant (wing deployed) | Side | Front 3/4 | Rear 3/4 | Rear |
+| --- | --- | --- | --- | --- |
+| 8, baseline | 0.9365 | 0.8645 | 0.8713 | 0.8371 |
+| endplate | 0.9437 (+.0072) | 0.8666 (+.0021) | 0.8780 (+.0067) | 0.8415 (+.0044) |
+| nose | 0.9365 (0) | 0.8625 (-.0020) | 0.8713 (0) | 0.8371 (0) |
+| tail | 0.9362 (-.0003) | 0.8640 (-.0005) | 0.8756 (+.0043) | 0.8363 (-.0008) |
+| endplate + tail | 0.9431 (+.0066) | 0.8661 (+.0016) | 0.8816 (+.0103) | 0.8407 (+.0036) |
+
+- The nose and tail variants each regress a view, so the panels disagree about those dimensions.
+- Endplate + tail regresses nothing, but its best gain at rest is +.0041. Its only gain above .01 is the
+  rear 3/4 view with the wing up (+.0103), and all three views stay below 0.90. The owner chose not to
+  rebuild the GLB for it (2026-11-13).
+- Not tried: a lower stow offset (the blade already touches the upper spine) and smaller mirrors (the
+  overlay puts them at about +.002 to +.004 in the rear view).
 
 ## Deviations (measured on iteration 6, render minus panel, at the anchor scale)
 

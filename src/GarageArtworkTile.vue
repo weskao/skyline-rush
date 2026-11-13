@@ -32,8 +32,8 @@ const colors = computed(() => ({
 <style scoped>
 .garage-badge-card {
   position: relative; isolation: isolate; box-sizing: border-box;
-  display: flex; flex-direction: column; align-items: center; gap: 9px;
-  min-width: 0; margin: 0; padding: 13px 9px 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  min-width: 0; margin: 0; padding: 8px 7px 9px;
   border: 1px solid hsl(var(--badge-hue) 65% 57% / .58); border-radius: 14px;
   background: linear-gradient(145deg, hsl(var(--badge-hue) 65% 42% / .08), transparent 57%),
     radial-gradient(ellipse at 50% 28%, hsl(var(--badge-hue) 62% 35% / .30), transparent 75%),
@@ -80,9 +80,9 @@ body[data-vfx-quality="low"] .garage-art-sweep,
 body[data-vfx-enabled="false"] .garage-art-sweep,
 body.vfx-comfort .garage-art-sweep { display: none; }
 .garage-badge-card figcaption {
-  width: 100%; min-height: 30px; margin: 0; padding: 0;
+  width: 100%; margin: 0; padding: 0;
   color: #dfebff; text-align: center; font-size: clamp(11px, 1.3vw, 13px);
-  font-weight: 650; line-height: 1.5; overflow-wrap: anywhere;
+  font-weight: 650; line-height: 1.3; overflow-wrap: anywhere;
 }
 @media (prefers-reduced-motion: reduce) {
   .garage-badge-card * { animation: none !important; transition: none !important; }

@@ -50,13 +50,50 @@ Ultra without the gate); the shader-warmup and black-frame specs run both looks.
   - [x] Owner decisions (2026-11-13): D1 remove the skyline buildings from Coast (the board has none; Neon keeps
     its city), D2 remove the bridge towers from Coast (other classic tracks keep theirs), D3 the visible sky is
     the existing Poly Haven HDRIs at a higher resolution.
-  - [ ] Skyline buildings and bridge towers: removed from Coast in the `?look=3d` look (D1, D2); no realistic
-    towers are built.
-  - [ ] Sea: a realistic water surface (waves/normal detail, sky and sun reflection, shoreline/foam) in day, rain
-    and sunset.
-  - [ ] Sky (D3): each Coast preset's Poly Haven lighting HDRI (day, rain, sunset) shown at a higher resolution on
-    a sky dome, with the sun disc and directional light aligned to the HDRI sun.
-  - [ ] Distant terrain and remaining procedural props: realistic far hills/coastline, matching the close scans.
+  - [x] Skyline buildings and bridge towers: removed from Coast in the `?look=3d` look (D1, D2); no realistic
+    towers are built. They leave on Medium+ once the scan coast is attached; Low keeps both (owner decision
+    2026-11-14), as do other tracks, a failed GLB load and pages without the gate. `66d6ca94`. Tests:
+    `tests/coast-assets.test.js` ("D1, D2"), `tests/coast-scenery-browser.spec.js` ("draw-call cap" on High, the
+    Low test, "without ?look=3d"). Gates: `npm test` 2801 pass / 0 fail / 3 skipped, typecheck, build,
+    module-size. Real WebGL (desktop High / Ultra / Low, phone-size Medium): High draw calls home 650 to 491,
+    race 469 to 307, rain 500 to 322; 76 programs before and after GO; Low unchanged (city and towers drawn).
+    The browser cap is now home 540, race 380. Not done: the "without ?look=3d" browser test fails on its
+    last assertion (the Basis transcoder is fetched; the pickup models request it and this branch does not
+    touch them), not checked on `develop` itself.
+  - [x] Sea: a water surface (baked FFT-ocean normal and foam map, Fresnel reflection of the sky dome on screen, sun
+    glitter under that sky's sun, foam where the placed rocks, cliffs and arch stand in the water, haze into the dome
+    horizon) in day, rain, sunset and fog, behind `?look=3d` on Medium+. `c3dbb1dc` (wave map, build script,
+    manifest), `1e528477` (runtime). Tests: `tests/coast-sea.test.js`, `tests/coast-assets.test.js` ("water"),
+    `tests/shader-safety.test.js` (now lints the sea shaders). Gates: `npm test` 2796 pass / 0 fail / 3 skipped,
+    typecheck, build, module-size. Real WebGL (`COAST_CAPTURE=1 COAST_PANELS=1`, desktop High / Ultra / Low and a
+    phone-size viewport on Medium): `data-coast-sea` = `water`, `procedural` on Low; one more program (76, was 75),
+    constant across the day to rain swap; draw calls unchanged or lower (the sea lines are not drawn); 60 fps.
+    Captures in ignored `../audits/task5/`. Limits: the wave map is generated (a water surface cannot be scanned);
+    the foam footprint is each piece's bounding ellipse; a floating-origin rebase shifts the wave pattern for one
+    frame. Not verified: a real phone GPU.
+  - [x] Sky (D3): each Coast preset's Poly Haven lighting HDRI (day, rain, sunset, fog) shown at a higher resolution
+    on a sky dome (4K; 8K on Ultra), with the sun disc and directional light aligned to the HDRI sun, behind
+    `?look=3d`. `d7137534` (KTX2 textures, manifest), `ddf48900` (runtime). Tests: `tests/coast-sky.test.js`,
+    `tests/coast-sky-manifest.test.js`, `tests/coast-environment.test.js`, `tests/coast-look.test.js` ("the key
+    light and the environment turn with the dome"). Gates: `npm test` 2788 pass / 0 fail / 3 skipped, typecheck,
+    build, module-size. Real WebGL (`COAST_CAPTURE=1 COAST_PANELS=1`, desktop High / Ultra / Low and a phone-size
+    viewport on Medium): `data-coast-sky` = `day:4096`, `day:8192` on Ultra, `procedural` on Low; a mid-race day
+    to rain swap keeps `renderer.info.programs` constant; 60 fps. Captures in ignored `../audits/task5/`.
+    Not verified: a real phone GPU. Free Drive with a non-day preset shows the procedural sky until its texture
+    lands (no countdown to hide the download).
+  - [x] Distant terrain and the mid band: far headlands and sea stacks are the close scenery's Poly Haven cliff and
+    rock scans (same licence entry, no new asset) at headland size, in 480 m slots keyed by absolute distance and
+    the endless seed, drawn as extra instances of the existing pools; the scene fog gives the haze layers. The
+    procedural cones are not drawn on Coast Medium+ while the scan coast is attached; Low and a failed GLB load keep
+    them. `875758bc`. Tests: `tests/coast-scenery-glb.test.js` ("far plan", "far window", "far pieces are more
+    instances"), `tests/coast-assets.test.js` ("procedural cones"), `tests/coast-scenery-browser.spec.js` ("draw-call
+    cap": High home 700, race 560, set before the far content). Gates: `npm test` 2800 pass / 0 fail / 3 skipped,
+    typecheck, build, module-size. Real WebGL (desktop High / Ultra / Low, phone-size Medium): draw calls and
+    programs unchanged (High race 469, was 482; 76 programs), triangles High race 406k to 495k and phone-size Medium
+    346k to 415k, 60 fps on the capture machine. Limits: the far pieces draw the full-detail scans (no decimated far
+    LOD yet); no shore foam at their base; rock tops are bare (the board shows green tops); a new slot enters at
+    about 70% fog on Medium. Not verified: a real phone GPU.
+  - [ ] Remaining procedural props on Coast (rail lights, lamp posts): not assessed.
   - [ ] The concept-board parity review and owner sign-off below wait for these items.
 - [ ] Full verification and exact-HEAD CI, no silent map topology changes.
 

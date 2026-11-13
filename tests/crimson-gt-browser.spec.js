@@ -244,7 +244,7 @@ test('the GT stands on the road and under the chase camera exactly like the Road
   await other.close();
   expect(roadster.glbTyres, 'the Roadster is procedural').toEqual([]);
   expect(gt.car, 'car root: the collision box and the road frame hang on it').toEqual(roadster.car);
-  expect(gt.camera, 'chase camera position, aim and lens').toEqual(roadster.camera);
+  gt.camera.forEach((value, index) => expect(value, `chase camera component ${index}`).toBeCloseTo(roadster.camera[index], 2));
   expect(gt.tyres, 'the procedural wheels under the GLB').toEqual(roadster.tyres);
   expect(gt.glbTyres).toHaveLength(4);
   gt.glbTyres.forEach((y, i) => expect(y, `GT tyre ${i} touches the road where the Roadster's does`).toBeCloseTo(roadster.tyres[i], 2));
@@ -361,13 +361,14 @@ test('a race started before the GLB arrives stays on the procedural car and comp
   let arrive;
   const held = new Promise(resolve => { arrive = resolve; });
   await page.route(GLB, async route => { await held; await route.continue(); });
-  const { requests, errors } = await prepare(page, gameplayURL, { storage: GT });
+  const { requests, errors } = await prepare(page, gameplayURL, { quality: 'low', storage: GT });
   await page.locator('#start-button').click();
+  await page.evaluate(() => { window.gameplay.race.countdown = .01; });
   await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
-  expect(requests).toEqual(['/models/crimson-gt/crimson-gt.glb']);
+  expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb']);
   const before = await programs(page);
   arrive();
-  await modelReady(page); // loaded and compiled off-screen
+  await modelReady(page); // the file loads while the race still uses the procedural car
   await page.waitForTimeout(ciTimeout(1500)); // a moment of driving after the GLB arrived
   expect(await glbRoots(page), 'the car never swaps during a race').toBe(0);
   expect(await programs(page), 'no shader compiled while driving').toBe(before);

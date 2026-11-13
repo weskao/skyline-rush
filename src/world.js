@@ -246,7 +246,7 @@ export function createWorld(canvas) {
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
   const coastScenery = createCoastScenery(scene), classicScenery = createClassicTrackScenery(scene);
-  const coastAssets = createWorldCoastAssets(renderer, { scenery: coastScenery, road }, canvas.dataset); // ?look=3d Medium+ Coast: scenery GLB + KTX2 asphalt + wet mirror; else null
+  const coastAssets = createWorldCoastAssets(renderer, { scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers }, canvas.dataset); // ?look=3d Medium+ Coast: scan coast (no city or towers) + KTX2 asphalt + wet mirror + HDRI sky dome + water; else null
   // Inspect car occlusion only when the showroom angle changes.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
   const showcaseRay = new THREE.Raycaster();
@@ -408,12 +408,12 @@ export function createWorld(canvas) {
   }
   const effectFrame = s => trackFrame(trackId, s);
   const circuitScene = createCircuitScene(scene), frostbiteScene = createFrostbiteRaceScene(scene), courseScene = createCourseRaceScene(scene), measuredScenes = createMeasuredCourseScenes(scene);
-  const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : framedRoad(trackId, endlessActive) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s), { camera, renderer, pickupEnvironment: carEnvironment });
+  const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : framedRoad(trackId, endlessActive) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s), { camera, renderer, pickupEnvironment: carEnvironment, player });
   const aero = createAeroVFX(scene, player, shadow);
   const garageModel = createWorldGarageModel(canvas, renderer, camera), homeModelHost = { name: 'home', car: player, keep: aero.group, scene, fitAirflow: aero.fitAirflow }; // idle for the procedural Roadster; ?model= or the equipped car's GLB
   const sprintVisual = createSprintVfx();
   // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
-  const sprintInput = { phase: 'ready', nitro: false, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
+  const sprintInput = { phase: 'ready', nitro: false, chain: 0, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
   let visual = vfxSettings(), garageHomeVisual = { ...visual, airflow: true };
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
   const desiredCamera = new THREE.Vector3();
@@ -783,7 +783,7 @@ export function createWorld(canvas) {
         curvedClassic ? { ...visual, classicRoute, roadDistance: distance, worldPoint: classicPosition, worldFrame: effectFrame } :
         framedRoad(trackId, endlessActive) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin,item) => race.course && item ? courseItemPoint(race.course,item,x,y,courseOriginPoint) : trackLocalPosition(trackId,s,x,y,origin), worldFrame: race.course ? (s,item) => courseItemFrame(race.course,item) : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual)) warmupPending = true; // loaded pickup models compile before GO
       Object.assign(sprintInput, {
-        phase: race.phase, nitro: car.nitroTime > 0, boost: !!(car.boosting || car.miniBoost > 0),
+        phase: race.phase, nitro: car.nitroTime > 0, chain: car.nitroTime > 0 ? car.nitroBurst : 0, boost: !!(car.boosting || car.miniBoost > 0),
         speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion, ultra: visual.ultra,
       });
       const sprintFrame = sprintVisual.update(sprintInput);

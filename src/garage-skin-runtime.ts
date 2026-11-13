@@ -6,7 +6,17 @@ import { createGarageEconomyState } from './garage-economy-state.ts';
 import { browserSkinPickStorage, rememberSkinPick, restoreSkinPicks } from './garage-skin-preference.ts';
 
 let accountId = 'guest';
-let demoApplied: { category: SkinCategory; prior: SkinId } | null = null;
+let demoApplied: { category: SkinCategory; prior: SkinId; itemId: SkinId } | null = null;
+const demoOverrideListeners = new Set<(itemId: SkinId, accountId: string) => void>();
+export function onWave3DemoSkinOverride(listener: (itemId: SkinId, accountId: string) => void): void {
+  demoOverrideListeners.add(listener);
+}
+function clearDemoSelection(): void {
+  if (!demoApplied) return;
+  const { itemId } = demoApplied;
+  demoApplied = null;
+  for (const listener of demoOverrideListeners) listener(itemId, accountId);
+}
 const session = createGarageSkinSession(accountId, Date.now);
 // Shared, fail-closed Economy read state. Cosmetics trials are not ownership.
 const economy = createGarageEconomyState();
@@ -50,7 +60,7 @@ export function selectGarageSkin(id: unknown): boolean {
 }
 export function equipGarageSkin(id: unknown): boolean {
   if (!session.equip(id)) return false;
-  if (demoApplied?.category === findSkin(id)?.category) demoApplied = null;
+  if (demoApplied?.category === findSkin(id)?.category) clearDemoSelection();
   rememberSkinPick(browserSkinPickStorage(), accountId, id);
   publish();
   return true;
@@ -60,9 +70,9 @@ export function equipWave3DemoSkin(id: unknown, expectedAccount: string): boolea
   const skin = findSkin(id);
   if (!trialMode || !skin || skin.default || expectedAccount !== accountId) return false;
   const prior = demoApplied?.category === skin.category ? demoApplied.prior : session.active(skin.category);
-  if (demoApplied?.category !== skin.category) resetWave3DemoSkin();
   if (!session.equip(skin.id)) return false;
-  demoApplied = { category: skin.category, prior };
+  if (demoApplied?.category !== skin.category) resetWave3DemoSkin();
+  demoApplied = { category: skin.category, prior, itemId: skin.id };
   publish();
   return true;
 }
@@ -101,6 +111,7 @@ function scheduleTrialExpiry(expiresAt: number): void {
     return;
   }
   session.setTrial({ enabled: false, expiresAt: 0 });
+  clearDemoSelection();
   publish();
 }
 
@@ -108,7 +119,7 @@ export function setGarageSkinTrial(enabled: boolean, expiresAt: number): void {
   if (!trialMode) return;
   clearExpiryTimer();
   session.setTrial({ enabled, expiresAt });
-  if (!enabled || expiresAt <= Date.now()) demoApplied = null;
+  if (!enabled || expiresAt <= Date.now()) clearDemoSelection();
   publish();
   const remaining = expiresAt - Date.now();
   // The unlimited development trial is a feature flag, not a finite timer.

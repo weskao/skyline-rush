@@ -46,6 +46,7 @@ Write every assertion so that runner speed cannot change its outcome.
 
 ## Catalog drift and deterministic physics
 
+- Seed a Daily board entry for the fixed browser date with its actual track, modifier and current road layout. For scroll-dependent specs, select content that overflows or scroll the observed card into view before waiting for a visible-frame effect.
 - Home route-map checks cover both `RACE_TRACKS` and `UPCOMING_TRACKS`. Keep classic-only
   single-line/no-secret-corridor assertions scoped to `[data-track]`; gated CourseGraph cards
   legitimately draw multiple authored edges. Assert each preview has a route, not a fixed
@@ -54,6 +55,22 @@ Write every assertion so that runner speed cannot change its outcome.
   waiting for a fall. Force an unpowered glide at a stable mid-span position and assert the
   *real engine's* respawn; separate deterministic unit tests cover natural falls at several
   simulation frame rates. Do not use wall-clock sleeps or bigger timeouts to hide movement.
+
+## Judge a feature in its own frame, by its own assets
+
+Trap (2026-11-14): three merges changed intended behaviour and left sibling browser specs red on develop for a
+day, unseen because each develop push cancelled the previous full CI run. Classic tracks now curve
+(`fbbfb8e5`), Endless shows a rolling minimap (same commit) and pickups are always-on meshopt + KTX2 GLBs (`e30ee752`).
+
+- **Poses on a classic road are road-relative.** Hazards and gates turn with the road
+  (`hazard-render.ts` `yawAt`), so a world yaw of 0 or a world-x sweep only held while the road was straight.
+  Read the heading from `classicRoadRoute(trackId).heading(distance)`, the source the renderer uses, and
+  measure lateral sweeps on the ground plane (`tests/hazard-captures-browser.spec.js`).
+- **An absence check names the feature's own files.** A shared decoder (`basis/basis_transcoder.*`,
+  meshopt) belongs to whichever system loads it first; "no Coast KTX2" is `.ktx2` files, not the transcoder
+  (`tests/coast-scenery-browser.spec.js`).
+- A merge that changes a shared HUD, road or asset rule runs the browser specs that assert it before it lands
+  (`git grep` the selector or asset name in `tests/*browser.spec.js`); do not rely on develop's CI to finish.
 
 ## Budgets and retries
 
@@ -86,3 +103,16 @@ Write every assertion so that runner speed cannot change its outcome.
   `CI=1 npx playwright test <spec> --repeat-each=8 --workers=4 --retries=0` after
   `npm run build`. `--retries=0` keeps the CI retry from hiding a flake. Report the pass count.
   A single local pass does not prove a fix.
+
+## A long local run needs a checkout nobody else moves
+
+- **Gameplay specs serve live source.** `tests/helpers/gameplay-browser.js` starts a Vite dev server on
+  the checkout, so a file that changes mid-run (a merge, a pull, another session's edit) reloads the page
+  under the test. Trap (2026-11-13): a fast-forward during `make verify` changed `src/aero-vfx.js`; the
+  race in progress went back to Home and the test failed with `#race-status` "READY" instead of "RACING".
+  The run log names the cause: `[vite] (client) page reload <file>`.
+- Before blaming the product, grep the run log for `page reload` and compare `git reflog` times with the
+  failure time. A run whose HEAD moved proves nothing about either commit: rerun it.
+- Run `make verify` and other long gates on a detached worktree pinned to the commit
+  (`git worktree add --detach .claude/worktrees/<name> <sha>`, then `npm ci`), and record
+  `git rev-parse HEAD` before and after the run.

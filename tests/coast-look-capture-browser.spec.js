@@ -25,7 +25,7 @@ test(`${LABEL} ${VIEW} ${QUALITY}: Coast day and rain`, async ({ gameplayPage: p
   const stats = () => page.evaluate(() => {
     const { renderer } = window.gameScene, { render, memory, programs } = renderer.info;
     return { drawCalls: render.calls, triangles: render.triangles, textures: memory.textures, geometries: memory.geometries, programs: programs.length,
-      coastScenery: document.querySelector('#world')?.dataset.coastScenery ?? null };
+      coastScenery: document.querySelector('#world')?.dataset.coastScenery ?? null, coastSky: document.querySelector('#world')?.dataset.coastSky ?? null, coastSea: document.querySelector('#world')?.dataset.coastSea ?? null };
   });
   const perf = async () => {
     const text = await page.locator('#perf-overlay').textContent();
@@ -42,6 +42,7 @@ test(`${LABEL} ${VIEW} ${QUALITY}: Coast day and rain`, async ({ gameplayPage: p
   for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   if (QUALITY !== 'low') await expect.poll(() => page.locator('#world').getAttribute('data-coast-scenery'), { timeout: ciTimeout(60000) }).toBe('attached');
+  if (QUALITY !== 'low') await expect.poll(() => page.locator('#world').getAttribute('data-coast-sky'), { timeout: ciTimeout(60000) }).toMatch(/^day:/);
   await page.waitForTimeout(2500); // HDRI + idle camera settle
   await shot('home-day');
   rows.push({ scenario: 'home-day', ...await stats() });

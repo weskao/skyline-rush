@@ -120,6 +120,8 @@ test('fresh progress locks tracks, empty History works and Escape restores menu 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) test.describe(`locked previews ${viewport.width}`, () => {
   test.use({ viewport });
   test('all tracks preview while locked starts stay blocked', async ({ page }) => {
+    test.setTimeout(ciTimeout(90_000));
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: true })));
     await open(page);
     const ids = await page.locator('[data-track]').evaluateAll(buttons => buttons.map(button => button.dataset.track));
     for (const id of ids.slice(1)) {

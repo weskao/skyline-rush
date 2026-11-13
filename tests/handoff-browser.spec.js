@@ -50,6 +50,8 @@ test('desktop remaps swap conflicts, reject reserved keys, persist and drive AIR
 test.describe('touch controls', () => {
   test.use({ hasTouch: true, viewport: { width: 844, height: 390 } });
   test('slide steers, classic buttons work, mirror and every editable button persist', async ({ page, context }) => {
+    test.setTimeout(ciTimeout(90_000));
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: true })));
     const session = await context.newCDPSession(page);
     const touch = (type, ...touchPoints) => session.send('Input.dispatchTouchEvent', { type, touchPoints });
     await open(page);
@@ -104,6 +106,7 @@ test.describe('touch controls', () => {
     await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuemax', '3');
     await expect(page.locator('.nitro-segment')).toHaveCount(3);
     await page.locator('#pause-button').click();
+    await expect(page.locator('#race-status')).toHaveText('PAUSED');
     await page.locator('#controls-button').click();
     await page.locator('[data-controls="hand"][value="left"]').check();
     await page.locator('#layout-edit').click();

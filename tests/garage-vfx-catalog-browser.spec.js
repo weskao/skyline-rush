@@ -363,3 +363,42 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     }
   });
 }
+
+// Compact cards: fewer rows to scroll, but the art stays native 96px and Equip/Try keeps a 44px touch target.
+// Period challenge cards are two-line quest rows. Checked from a 320px phone to desktop, both orientations.
+const COMPACT_VIEWPORTS = [[320, 568], [360, 740], [390, 844], [430, 932], [768, 1024], [844, 390], [1024, 768], [1440, 900]];
+const measureCards = cards => cards.evaluateAll(els => {
+  const list = els[0].parentElement.getBoundingClientRect(), boxes = els.map(el => el.getBoundingClientRect());
+  return { listWidth: list.width, perRow: boxes.filter(b => Math.round(b.top) === Math.round(boxes[0].top)).length,
+    tallest: Math.max(...boxes.map(b => b.height)),
+    inside: boxes.every(b => b.left >= list.left - 1 && b.right <= list.right + 1),
+    unclipped: els.every(el => el.scrollWidth <= el.clientWidth) };
+});
+for (const [width, height] of COMPACT_VIEWPORTS) {
+  test(`skin and period cards stay compact, unclipped and touchable at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.locator('#garage-button').click();
+    const skins = page.locator('#garage-vfx-catalog [data-skin^="launch-flare-"]');
+    await skins.first().scrollIntoViewIfNeeded();
+    const skin = await measureCards(skins);
+    const touch = await skins.first().evaluate(el => {
+      const img = el.querySelector('.garage-vfx-art img').getBoundingClientRect();
+      const action = el.querySelector('.garage-skin-action').getBoundingClientRect();
+      return { img: [img.width, img.height], action: [action.width, action.height] };
+    });
+    expect(touch.img, 'art keeps its native 1x size').toEqual([96, 96]);
+    expect(touch.action[1], 'Equip/Try touch height').toBeGreaterThanOrEqual(44);
+    expect(touch.action[0], 'Equip/Try touch width').toBeGreaterThanOrEqual(88);
+    expect(skin.tallest, 'skin card height').toBeLessThanOrEqual(240);
+    // The Garage column is ~260px beside the 3D preview on tablets and landscape phones: two cards there.
+    expect(skin.perRow, 'skin cards per row').toBeGreaterThanOrEqual(skin.listWidth >= 354 ? 3 : 2);
+    expect([skin.inside, skin.unclipped], 'skin cards fit their list').toEqual([true, true]);
+    const periods = page.locator('.garage-mission-board .garage-period-card');
+    await periods.first().scrollIntoViewIfNeeded();
+    const period = await measureCards(periods);
+    expect(period.tallest, 'period card height').toBeLessThanOrEqual(72);
+    expect(period.perRow, 'period cards per row').toBeGreaterThanOrEqual(period.listWidth >= 307 ? 2 : 1);
+    expect([period.inside, period.unclipped], 'period cards fit their grid').toEqual([true, true]);
+  });
+}

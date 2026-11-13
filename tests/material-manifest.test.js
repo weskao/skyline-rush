@@ -6,22 +6,12 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { MATERIAL_MANIFEST, TIERS, gpuBytesEstimate } from '../src/material-manifest.ts';
+import { KTX2_MAGIC as MAGIC, ktx2 } from './helpers/ktx2.js';
 
 const root = new URL('../', import.meta.url);
 const read = path => readFileSync(new URL(path, root));
 const sha256 = buffer => createHash('sha256').update(buffer).digest('hex');
-const MAGIC = Buffer.from([0xab, 0x4b, 0x54, 0x58, 0x20, 0x32, 0x30, 0xbb, 0x0d, 0x0a, 0x1a, 0x0a]);
-const TRANSFER = { 1: 'linear', 2: 'srgb' };
 const isPow2 = n => n > 0 && (n & (n - 1)) === 0;
-
-function ktx2(buffer) {
-  const dfd = buffer.readUInt32LE(48);
-  return {
-    magic: buffer.subarray(0, 12), vkFormat: buffer.readUInt32LE(12), width: buffer.readUInt32LE(20), height: buffer.readUInt32LE(24),
-    levels: buffer.readUInt32LE(40), supercompression: buffer.readUInt32LE(44),
-    colorModel: buffer.readUInt8(dfd + 12), transfer: TRANSFER[buffer.readUInt8(dfd + 14)],
-  };
-}
 
 const entry = MATERIAL_MANIFEST['coast-asphalt'];
 

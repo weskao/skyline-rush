@@ -79,6 +79,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     const dressing = dressed.get(host);
     if (!dressing) return;
     moveRearPorts(host);
+    delete host.car.userData.displayScale;
     host.fitAirflow?.();
     dressing.instance.removeFromParent();
     dressing.rig.dispose();
@@ -110,6 +111,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     host.fitAirflow?.(instance); // measure the authored neutral pose before binding the current wheel/wing animation
     rig.update();
     moveRearPorts(host, instance);
+    host.car.userData.displayScale = instance.scale; // effects.js: lift jets stay on the scaled authored thrusters
     host.car.add(instance);
     dressed.set(host, { instance, rig, masks });
     report();

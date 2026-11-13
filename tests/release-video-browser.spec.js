@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 
-// Attach the bundled clips to the current release (and, with `onHighlight`, to its first highlight) on the served build.
+// Attach bundled media fixtures so the tests can run with any current release notes.
 const CLIPS = 'whats-new/0.24.0/air-road-chain';
 const VIDEO = {
   desktop: { src: { en: `${CLIPS}.desktop.en.mp4`, 'zh-TW': `${CLIPS}.desktop.zh-TW.mp4` }, poster: { en: `${CLIPS}.desktop.en.jpg`, 'zh-TW': `${CLIPS}.desktop.zh-TW.jpg` } },
@@ -13,7 +13,16 @@ async function openNotes(page, gameplayURL, onHighlight = false, launch = false)
     const response = await route.fetch();
     const source = await response.text();
     if (!source.includes('export const CURRENT_RELEASE')) throw new Error('Missing CURRENT_RELEASE in release-notes.ts');
-    await route.fulfill({ response, body: `${source}\nif (CURRENT_RELEASE) CURRENT_RELEASE.video = ${JSON.stringify(VIDEO)};${onHighlight ? ` CURRENT_RELEASE.highlights[0].video = ${JSON.stringify(VIDEO)};` : ''}\n` });
+    const highlightMedia = onHighlight ? `
+      CURRENT_RELEASE.highlights[0].video = ${JSON.stringify(VIDEO)};
+      CURRENT_RELEASE.highlights.push(${JSON.stringify({
+        id: 'test-picture', kind: 'new', image: VIDEO.desktop.poster, title: 'Fixture picture', description: 'Fixture picture',
+      })});
+    ` : '';
+    await route.fulfill({ response, body: `${source}\nif (CURRENT_RELEASE) {
+      CURRENT_RELEASE.video = ${JSON.stringify(VIDEO)};
+      ${highlightMedia}
+    }\n` });
   });
   const errors = [];
   page.on('pageerror', error => errors.push(String(error)));

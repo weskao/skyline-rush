@@ -1,11 +1,11 @@
-import { createWave3LocalDemo } from './wave3-local-demo.ts';
-import { createWave3DemoStorage } from './wave3-demo-storage.ts';
+import { wave3DemoExperience } from './wave3-browser-experience.ts';
 import { missionStatus } from './wave3-demo-missions.ts';
+export { wave3DemoExperience };
 import { cupStandings } from './championship-cup.ts';
 import { raceTrack } from './race-tracks.ts';
 import type { RaceSeries } from './race-results.ts';
-import { WAVE3_EXPERIENCE_VERSION } from './wave3-experience-contract.ts';
-import type { Wave3ExperiencePort, GameEvent, ExperienceResult, DemoRaceMetrics } from './wave3-experience-contract.ts';
+import { WAVE3_EXPERIENCE_VERSION, sameDemoScope } from './wave3-experience-contract.ts';
+import type { Wave3ExperiencePort, DemoOperationScope, ExperienceResult, ExperienceSnapshot, DemoRaceMetrics } from './wave3-experience-contract.ts';
 
 /** Only real simulation transitions are observed. No DOM or server calls in a frame. */
 type ObservedRace = {
@@ -14,7 +14,10 @@ type ObservedRace = {
   player: { driftPayout: unknown; longestCombo: number; distance?: number };
   result: null | { success?: boolean; time?: number; position?: number; endReason?: string };
 };
-type RaceMemory = { completionId: string; accountId: string; lastDrift: unknown; driftCount: number; combo: number; pending: { kind: GameEvent['kind']; suffix: string }[] };
+type RaceMemory = {
+  completionId: string; scope: DemoOperationScope; lastDrift: unknown;
+  driftCount: number; combo: number; comboCount: number; finishedAt?: number;
+};
 const id = (): string => globalThis.crypto?.randomUUID?.() ?? `demo-${Math.random().toString(36).slice(2)}-${Date.now()}`;
 
 function rewardMetrics(race: ObservedRace, series?: RaceSeries): DemoRaceMetrics | undefined {
@@ -36,104 +39,94 @@ function rewardMetrics(race: ObservedRace, series?: RaceSeries): DemoRaceMetrics
   return { legs, position, difficulty: race.config?.difficulty, rivalCount: race.rivals?.length ?? 0 };
 }
 
-export function createWave3RaceEventBridge(experience: Wave3ExperiencePort, idFactory: () => string = id) {
+/** Flags a settlement that turned at least one mission claimable, for the result cue. */
+function withMissionReady(receipt: ExperienceResult, before: ExperienceSnapshot): ExperienceResult {
+  const missionReady = receipt.status === 'completed' && Object.entries(receipt.snapshot.missions)
+    .some(([id, mission]) => missionStatus(mission) === 'claimable' && missionStatus(before.missions[id] ?? null) !== 'claimable');
+  return missionReady ? { ...receipt, missionReady } : receipt;
+}
+
+export function createWave3RaceEventBridge<T extends ReturnType<Wave3ExperiencePort['settleCompletion']>>(
+  experience: Pick<Wave3ExperiencePort, 'getOperationScope' | 'getSnapshot'> & {
+    settleCompletion: (completion: Parameters<Wave3ExperiencePort['settleCompletion']>[0]) => T;
+  },
+  idFactory: () => string = id,
+  now: () => number = Date.now,
+) {
   const known = new WeakMap<object, RaceMemory>();
+  const seriesScopes = new WeakMap<object, DemoOperationScope>();
+  const seriesKey = (race: ObservedRace, series?: RaceSeries): object | undefined => {
+    if (race.mode === 'cup') return series?.cup?.results[0];
+    if (race.mode === 'custom') return series?.sprintSeries?.results[0];
+    if (race.mode === 'stunt') return series?.stunt ?? undefined;
+  };
   const memory = (race: ObservedRace): RaceMemory => {
     let item = known.get(race);
     if (!item) {
-      item = { completionId: idFactory(), accountId: experience.getSnapshot().accountId,
-        lastDrift: null, driftCount: 0, combo: 0, pending: [] };
+      item = { completionId: idFactory(), scope: experience.getOperationScope(),
+        lastDrift: null, driftCount: 0, combo: 0, comboCount: 0 };
       known.set(race, item);
     }
     return item;
   };
-  const emit = (race: ObservedRace, state: RaceMemory, kind: GameEvent['kind'], suffix: string) => {
-    const event: GameEvent = { schemaVersion: WAVE3_EXPERIENCE_VERSION,
-      eventId: `${state.completionId}:${kind}:${suffix}`, completionId: state.completionId,
-      accountId: state.accountId, trackId: race.trackId, mode: race.mode,
-      occurredAt: Date.now(), kind, eligible: true };
-    experience.recordGameEvent(event);
-  };
   return {
     capture(race: ObservedRace): void {
-      if (race.phase !== 'racing' && race.phase !== 'finished') return;
+      if (race.phase !== 'countdown' && race.phase !== 'racing' && race.phase !== 'finished') return;
       const state = memory(race);
+      if (race.phase === 'countdown') return;
       const player = race.player;
       if (player.driftPayout && player.driftPayout !== state.lastDrift) {
         state.lastDrift = player.driftPayout;
-        state.pending.push({ kind: 'drift', suffix: String(++state.driftCount) });
+        state.driftCount++;
       }
       if (Number.isFinite(player.longestCombo) && player.longestCombo > state.combo) {
         state.combo = player.longestCombo;
-        state.pending.push({ kind: 'combo', suffix: String(state.combo) });
+        state.comboCount++;
       }
     },
-    finish(race: ObservedRace, intermediateStage: boolean, series?: RaceSeries): ExperienceResult | null {
+    finish(race: ObservedRace, intermediateStage: boolean, series?: RaceSeries): T | null {
       if (race.phase !== 'finished' || !race.result) return null;
       const state = memory(race);
-      const before = experience.getSnapshot();
-      if (state.accountId !== before.accountId) return null;
+      const key = seriesKey(race, series);
+      const seriesScope = key && seriesScopes.get(key);
+      if (key && intermediateStage && !seriesScope) seriesScopes.set(key, state.scope);
+      const cup = race.mode === 'cup' ? series?.cup : null;
+      if (cup && intermediateStage && cup.demoScope === undefined) {
+        cup.demoScope = { accountId: state.scope.accountId, generation: state.scope.generation };
+      }
+      const currentScope = experience.getOperationScope();
+      if (cup?.demoScope === null || (cup?.demoScope && (cup.demoScope.accountId !== currentScope.accountId ||
+        cup.demoScope.generation !== currentScope.generation))) return null;
+      if (!sameDemoScope(state.scope, currentScope) ||
+        (seriesScope && !sameDemoScope(seriesScope, currentScope))) return null;
       const eligible = !intermediateStage && race.result.success !== false &&
         typeof race.result.time === 'number' && Number.isFinite(race.result.time) && race.result.time > 0;
-      if (eligible) {
-        for (const { kind, suffix } of state.pending) emit(race, state, kind, suffix);
-        state.pending.length = 0;
-        emit(race, state, 'finish', 'end');
-      }
+      state.finishedAt ??= now();
+      const before = experience.getSnapshot();
       const receipt = experience.settleCompletion({ schemaVersion: WAVE3_EXPERIENCE_VERSION,
-        completionId: state.completionId, accountId: state.accountId,
-        trackId: race.trackId, mode: race.mode, occurredAt: Date.now(), eligible,
+        completionId: state.completionId, accountId: state.scope.accountId, scope: state.scope,
+        trackId: race.trackId, mode: race.mode, occurredAt: state.finishedAt, eligible,
+        telemetry: { drift: state.driftCount, combo: state.comboCount },
         ...(eligible ? { demoRace: rewardMetrics(race, series) } : {}) });
-      const missionReady = receipt.status === 'completed' && Object.entries(receipt.snapshot.missions)
-        .some(([id, mission]) => missionStatus(mission) === 'claimable' && missionStatus(before.missions[id] ?? null) !== 'claimable');
-      return missionReady ? { ...receipt, missionReady } : receipt;
+      const mark = (result: ExperienceResult): ExperienceResult => withMissionReady(result, before);
+      return (receipt instanceof Promise ? receipt.then(mark) : mark(receipt)) as T;
     },
   };
 }
 
-/** Shared gameplay-to-Garage adapter, never a verified wallet. */
-const state = createWave3LocalDemo();
-const cache = createWave3DemoStorage();
-const initial = cache.loadCheckpoint('guest');
-if (initial) state.restoreCheckpoint(initial);
-let switchingAccount = false;
-state.subscribe(() => {
-  if (!switchingAccount) cache.saveCheckpoint(state.getCheckpoint());
-});
-/** The only adapter for the active account; queued events cannot cross account boundaries. */
-export const wave3DemoExperience: Wave3ExperiencePort = {
-  ...state,
-  setAccount(next) {
-    switchingAccount = true;
-    try {
-      const snap = state.setAccount(next);
-      const checkpoint = cache.loadCheckpoint(snap.accountId);
-      if (checkpoint) state.restoreCheckpoint(checkpoint);
-      return state.getSnapshot();
-    } finally {
-      switchingAccount = false;
-      cache.saveCheckpoint(state.getCheckpoint());
-    }
-  },
-  resetDemo() {
-    switchingAccount = true;
-    try {
-      const snap = state.resetDemo();
-      cache.resetDemo(snap.accountId);
-      return snap;
-    } finally { switchingAccount = false; }
-  },
-};
 const bridge = createWave3RaceEventBridge(wave3DemoExperience);
 export const captureWave3RaceTelemetry = bridge.capture;
-const receipts = new WeakMap<object, ExperienceResult | null>();
+type PendingReceipt = { scope: DemoOperationScope; value: Promise<ExperienceResult | null> };
+const receipts = new WeakMap<object, PendingReceipt>();
 /** The first receipt is held by race identity, so rendering never settles again. */
-export function settleWave3RaceDemo(race: Parameters<typeof bridge.finish>[0], intermediate: boolean, series?: RaceSeries): ExperienceResult | null {
-  if (!receipts.has(race)) receipts.set(race, bridge.finish(race, intermediate, series));
-  return receipts.get(race) ?? null;
+export function settleWave3RaceDemo(race: Parameters<typeof bridge.finish>[0], intermediate: boolean, series?: RaceSeries): void {
+  if (receipts.has(race)) return;
+  const scope = wave3DemoExperience.getOperationScope();
+  receipts.set(race, { scope, value: Promise.resolve(bridge.finish(race, intermediate, series)) });
 }
-export function getWave3DemoReceipt(race: object): ExperienceResult | null {
+export async function getWave3DemoReceipt(race: object): Promise<ExperienceResult | null> {
   const receipt = receipts.get(race);
-  return receipt?.snapshot.accountId === wave3DemoExperience.getSnapshot().accountId ? receipt : null;
+  const value = await receipt?.value;
+  return receipt && sameDemoScope(receipt.scope, wave3DemoExperience.getOperationScope()) ? value ?? null : null;
 }
 export const setWave3DemoAccount = (id: string | null): void => { wave3DemoExperience.setAccount(id); };
