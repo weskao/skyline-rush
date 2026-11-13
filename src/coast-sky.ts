@@ -101,6 +101,8 @@ export function createCoastSky({ sky, sun, load, maxTextureSize, dataset = {} }:
   }
 
   return {
+    /** The water mirrors what this mesh shows (coast-sea.ts): its map, colour scale, yaw and visibility. */
+    dome,
     /** Per frame: a string compare unless the track, preset or tier changed. */
     update(trackId: string, preset: string, quality: VfxQuality, ultra: boolean): void {
       const plan = coastEnvPlan(trackId, preset, quality);

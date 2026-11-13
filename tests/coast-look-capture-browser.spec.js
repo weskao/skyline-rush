@@ -25,7 +25,7 @@ test(`${LABEL} ${VIEW} ${QUALITY}: Coast day and rain`, async ({ gameplayPage: p
   const stats = () => page.evaluate(() => {
     const { renderer } = window.gameScene, { render, memory, programs } = renderer.info;
     return { drawCalls: render.calls, triangles: render.triangles, textures: memory.textures, geometries: memory.geometries, programs: programs.length,
-      coastScenery: document.querySelector('#world')?.dataset.coastScenery ?? null, coastSky: document.querySelector('#world')?.dataset.coastSky ?? null };
+      coastScenery: document.querySelector('#world')?.dataset.coastScenery ?? null, coastSky: document.querySelector('#world')?.dataset.coastSky ?? null, coastSea: document.querySelector('#world')?.dataset.coastSea ?? null };
   });
   const perf = async () => {
     const text = await page.locator('#perf-overlay').textContent();

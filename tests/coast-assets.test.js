@@ -181,7 +181,23 @@ test('the sky dome controller gets the track, preset, tier and Ultra flag every 
   assert.equal(calls.at(-1), 'dispose');
 });
 
-test('world.js hands the procedural sky dome and sun disc to the Coast assets', async () => {
+test('the water controller runs after the sky every frame, lends its shore mask to the scenery layer, and is disposed with the assets', async () => {
+  const calls = [], shore = { begin() {}, stamp() {}, end() {} };
+  const sky = { update: () => { calls.push('sky'); }, dispose: () => calls.push('sky dispose') };
+  const sea = { shore, update: (...args) => { calls.push(args); }, dispose: () => calls.push('sea dispose') };
+  const handle = { kind: 'model', instance: () => new THREE.Group(), release() {} };
+  const attached = [];
+  const assets = createCoastAssets({ scenery: { attachModel: (...args) => attached.push(args), detachModel() {} }, cache: { load: async () => handle }, sky, sea });
+  assert.equal(assets.update('coast', 'high', false, 'dusk', true), false, 'the water program exists from creation: no shader warmup');
+  assert.deepEqual(calls, ['sky', ['coast', 'dusk', 'high']], 'the water reads the dome the sky just updated');
+  await tick();
+  assets.update('coast', 'high', false, 'dusk', true);
+  assert.equal(attached[0][1], shore, 'the scenery layer stamps its sea-level footprints into the water mask');
+  assets.dispose();
+  assert.deepEqual(calls.slice(-2), ['sea dispose', 'sky dispose']);
+});
+
+test('world.js hands the procedural sky dome, sun disc, sea plane and sea lines to the Coast assets', async () => {
   const { readFileSync } = await import('node:fs');
-  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scenery: coastScenery, road, sky, sun \}, canvas\.dataset\)/);
+  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scenery: coastScenery, road, sky, sun, sea, seaLines \}, canvas\.dataset\)/);
 });

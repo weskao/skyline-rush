@@ -64,17 +64,22 @@ export function coastChunkWindow(distance: number, quality: VfxQuality): ChunkWi
 }
 
 interface Part { mesh: THREE.InstancedMesh; locals: THREE.Matrix4[]; used: number }
+/** Receives the footprint of every piece standing in the sea, in the layer's coordinates, once per placement pass
+ *  (the water's shore foam, coast-sea.ts): centre, half extents along the piece's own x and z, and its yaw. */
+export interface ShoreSink { begin(x: number, z: number): void; stamp(x: number, z: number, halfX: number, halfZ: number, yaw: number): void; end(): void }
 
 /** Pools sized for the largest window; spare instances are parked far below the scene (never zero scale). */
-export function createCoastModelLayer(source: THREE.Object3D) {
+export function createCoastModelLayer(source: THREE.Object3D, shore?: ShoreSink) {
   source.updateMatrixWorld(true);
   const rootInverse = source.matrixWorld.clone().invert();
   const parts = new Map<CoastPiece, Part[]>();
   const meshes: THREE.InstancedMesh[] = [];
   const parked = new THREE.Matrix4().makeTranslation(0, -1000, 0);
+  const half = new Map<CoastPiece, THREE.Vector3>(), box = new THREE.Box3();
   for (const piece of COAST_PIECES) {
     const root = source.getObjectByName(piece);
     if (!root) throw new Error(`coast-scenery: missing node ${piece}`);
+    half.set(piece, box.setFromObject(root).getSize(new THREE.Vector3()).multiplyScalar(.5));
     const byKey = new Map<string, { geometry: THREE.BufferGeometry; material: THREE.Material | THREE.Material[]; locals: THREE.Matrix4[] }>();
     root.traverse(object => {
       const mesh = object as THREE.Mesh;
@@ -106,6 +111,8 @@ export function createCoastModelLayer(source: THREE.Object3D) {
       if (next === key && route === previousRoute) return;
       key = next; previousRoute = route;
       for (const list of parts.values()) for (const entry of list) entry.used = 0;
+      const [midX, midZ] = route.point((window.first + window.count / 2) * COAST_CHUNK_METRES);
+      shore?.begin(midX, midZ + origin);
       for (let chunk = window.first; chunk < window.first + window.count; chunk++) {
         for (const placement of coastChunkPlan(chunk, seed)) {
           if (placement.piece === 'guard_rail' && chunk >= window.first + RAIL_CHUNKS) continue;
@@ -119,8 +126,10 @@ export function createCoastModelLayer(source: THREE.Object3D) {
           } else {
             const [x, z] = route.point(distance, placement.offset);
             p.set(x, placement.y, z + origin);
-            q.setFromAxisAngle(up, placement.yaw - route.heading(distance));
+            const yaw = placement.yaw - route.heading(distance), size = half.get(placement.piece)!;
+            q.setFromAxisAngle(up, yaw);
             s.setScalar(placement.scale);
+            if (placement.y <= SEA) shore?.stamp(p.x, p.z, size.x * placement.scale, size.z * placement.scale, yaw);
           }
           transform.compose(p, q, s);
           for (const entry of parts.get(placement.piece)!) for (const local of entry.locals) {
@@ -133,6 +142,7 @@ export function createCoastModelLayer(source: THREE.Object3D) {
         mesh.count = used;
         mesh.instanceMatrix.needsUpdate = true;
       }
+      shore?.end();
     },
     /** Frees the instance buffers only; geometry and materials belong to the model cache handle. */
     dispose(): void { for (const mesh of meshes) { mesh.removeFromParent(); mesh.dispose(); } },
