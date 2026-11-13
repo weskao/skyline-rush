@@ -114,7 +114,7 @@ test('safe 3x Rewards/Missions reference cards never crop image or caption on de
         const outer = node.getBoundingClientRect(), art = node.querySelector('img').getBoundingClientRect();
         const frame = node.querySelector('.garage-badge-art-frame').getBoundingClientRect();
         const caption = node.querySelector('figcaption').getBoundingClientRect();
-        return { native: node.querySelector('img').naturalWidth, icon: [art.width,art.height],
+        return { native: node.querySelector('img').naturalWidth, icon: [node.querySelector('img').offsetWidth, node.querySelector('img').offsetHeight],
           inside: frame.left <= art.left && frame.right >= art.right && frame.top <= art.top && frame.bottom >= art.bottom,
           labelSafe: caption.top >= frame.bottom + 4, width: outer.width, viewport: innerWidth };
       });
