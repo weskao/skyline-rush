@@ -29,9 +29,9 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
 - [x] The car's display name and stable ID (the working ID `concept-gt` is a placeholder).
   - **Decided 2026-11-09 (owner):** display name **Crimson GT**, stable ID **`crimson-gt`**. Replaces the `concept-gt`
     placeholder; the ID is final and must not change after release.
-- [x] The unlock rule: stars threshold, trial, or free; and the default paint.
-  - **Closed 2026-11-14 by the owner after discussion:** both cars stay open to everyone; trial + stars is not
-    built and no threshold is recorded here.
+- [ ] The unlock rule: stars threshold, trial, or free; and the default paint.
+  - **Owner, 2026-11-14:** both cars are temporarily free for everyone; the owner decides the plan later. Trial +
+    stars is not built and no threshold is recorded.
   - **Decided 2026-11-09 (owner): trial + stars.** The car follows the paint model's locked/trial/owned/equipped
     states: equippable during an account-scoped trial, owned permanently once the stars threshold is reached. A
     preview never grants the car.
@@ -126,8 +126,8 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   painted collection's close-up composition and is available for all cars. The full-car render now appears in the car
   picker beside the Roadster. Browser coverage checks the art, labels and responsive bounds at 390×844,
   844×390 and 1440×900. See the [artwork notes](../../../../public/feature-assets/garage-vfx-skins/paint-cards/README.md).
-- [x] Car picker locked/trial/owned states: not built, both cars are open. Closed 2026-11-14 by the owner with the
-  unlock rule.
+- [ ] Car picker locked/trial/owned states: not built, both cars are temporarily open (waits for the unlock rule,
+  which the owner decides later, 2026-11-14).
 - [x] Local save for the equipped car (`skyline-rush-car`) and each car's paint (`skyline-rush-car-paints`), with a
   backward-compatible load: no entry means the Roadster, whose paint stays in `skyline-rush-paint`. No change to
   existing paint or skin entitlements.
