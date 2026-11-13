@@ -14,6 +14,9 @@ for (const [name, viewport, hasTouch, muted] of [
       await captureHooks(page);
       await page.route(/^https:\/\//, route => route.abort());
       await page.addInitScript(isMuted => {
+        if (!location.origin.startsWith('http://')) return;
+        // Audio coverage does not depend on render quality. Keep CPU-only runners responsive.
+        localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality:'low', enabled:false }));
         localStorage.setItem('skyline-rush-music', 'off');
         localStorage.setItem('skyline-rush-sound', isMuted ? 'off' : 'on');
         window.feedbackNotes = [];
@@ -41,21 +44,24 @@ for (const [name, viewport, hasTouch, muted] of [
         Object.assign(race.player, { distance:race.length - 10, speed:60 });
       });
       await expect(page.locator('.wave3-demo-results--earned')).toBeVisible();
+      await expect(page.locator('.wave3-demo-results--earned')).toContainText('Demo points');
       await expect.poll(() => notes(880), { timeout:ciTimeout(5000) }).toBe(muted ? 0 : 1);
       await selectLocale(page, 'zh-TW');
+      await expect(page.locator('.wave3-demo-results--earned')).toContainText('試玩點數');
       await selectLocale(page, 'en');
       expect(await notes(880)).toBe(muted ? 0 : 1);
 
       await page.locator('#choose-track').click();
       await page.locator('#garage-button').click();
-      const claim = page.locator('.garage-mission-board').getByRole('button', { name:/claim demo reward/i }).first();
-      await claim.click();
+      const mission = page.locator('[data-mission-id="mission-race:daily"]');
+      await mission.getByRole('button', { name:/claim demo reward/i }).click();
+      await expect(mission).toHaveAttribute('data-mission-state', 'claimed');
       await expect.poll(() => notes(880)).toBe(muted ? 0 : 2);
 
       await page.locator('[data-wave3-open-store]').click();
       const store = page.locator('[data-wave3-demo-store]');
       await store.locator('[data-demo-id="thruster-ion"]').click();
-      await store.getByRole('button', { name:'Demo redeem' }).click();
+      await store.getByRole('button', { name:'Demo redeem', exact:true }).click();
       const beforeRedeem = await notes(990);
       await store.getByRole('button', { name:'Confirm demo redeem' }).click();
       await expect(store.locator('[data-demo-id="thruster-ion"]')).toHaveAttribute('data-demo-status','demo-unlocked');
