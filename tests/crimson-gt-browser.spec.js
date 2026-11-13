@@ -33,6 +33,12 @@ const world = page => page.locator('#world');
 const modelReady = page => expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
 const carButton = (page, id) => page.locator(`#garage-screen [data-car="${id}"]`);
 const saved = (page, key) => page.evaluate(k => JSON.parse(localStorage.getItem(k)), key);
+const airflowBounds = page => page.evaluate(() => {
+  const flow = window.gameScene.player.getObjectByName('Airflow showcase').children[0];
+  flow.geometry.computeBoundingBox();
+  const { min, max } = flow.geometry.boundingBox;
+  return [...min.toArray(), ...max.toArray()];
+});
 /** Body colour of the GLB (null while the car is procedural) and of the procedural car it mirrors. */
 const paintHex = page => page.evaluate(() => {
   const car = window.gameScene.player;
@@ -54,6 +60,7 @@ test('Garage picker: Roadster by default, Crimson GT in factory red, six paints,
   await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(6);
   expect(requests).toEqual([]); // the Roadster stays procedural: no GLB
   expect((await paintHex(page)).glb).toBeNull();
+  const roadsterAirflow = await airflowBounds(page);
 
   await carButton(page, 'crimson-gt').click();
   await expect(carButton(page, 'crimson-gt')).toHaveAttribute('aria-pressed', 'true');
@@ -63,6 +70,7 @@ test('Garage picker: Roadster by default, Crimson GT in factory red, six paints,
   await expect(page.locator('#garage-screen [data-paint]').first()).toHaveAttribute('data-paint', 'factory');
   await expect(page.locator('[data-paint="factory"]')).toHaveAttribute('data-state', 'equipped');
   await expect.poll(() => paintHex(page)).toEqual({ model: 'crimson-gt', glb: FACTORY_RED, proc: FACTORY_RED });
+  await expect.poll(() => airflowBounds(page)).not.toEqual(roadsterAirflow);
   await attach(page, 'gt-garage-factory');
 
   for (const [id, paint] of Object.entries(PAINTS)) { // every paint previews on the GT, owned or not
@@ -90,6 +98,7 @@ test('Garage picker: Roadster by default, Crimson GT in factory red, six paints,
   await expect(carButton(page, 'roadster')).toHaveAttribute('aria-pressed', 'true');
   await expect(world(page)).toHaveAttribute('data-garage-model', 'off');
   await expect.poll(() => glbRoots(page)).toBe(0);
+  await expect.poll(() => airflowBounds(page)).toEqual(roadsterAirflow);
   await expect.poll(async () => (await paintHex(page)).proc).toBe(PAINTS.pearl.paint.slice(1)); // the Roadster kept its own paint
   await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(6);
   await carButton(page, 'crimson-gt').click();

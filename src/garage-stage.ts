@@ -205,7 +205,7 @@ export function createGarageStage(environment: THREE.Texture, carEnvironment: TH
   }
   return {
     scene, update, inspectBounds, setPaint, dispose,
-    modelHost: { name: 'studio' as const, car, keep: aero.group as THREE.Object3D, scene }, // ?model=probe (garage-model.ts)
+    modelHost: { name: 'studio' as const, car, keep: aero.group as THREE.Object3D, scene, fitAirflow: aero.fitAirflow }, // ?model=probe (garage-model.ts)
     inspectCosmetics() { return aero.inspectCosmetics(); },
     setSkins(ids: Partial<Record<SkinCategory, SkinId>>) { aero.setSkins(ids); },
     configureVFX(settings: VfxSettings) { previewSettings = { ...settings, airflow: settings.enabled }; },

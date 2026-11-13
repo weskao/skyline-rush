@@ -8,14 +8,15 @@ import type { ModelCache, ModelHandle } from './asset-model-loader.ts';
 import type { ModelQuality } from './model-manifest.ts';
 import { bindGarageRig, type GarageRig } from './garage-model-rig.ts';
 import { applyCarReflections } from './car-reflections.ts';
-import { equippedCarModel } from './car-catalog.ts';
+import { CARS, equippedCarModel } from './car-catalog.ts';
 import { REAR_PORTS } from './aero-vfx.js';
 
 const MODEL_PARAMS: Readonly<Record<string, string>> = { probe: 'pipeline-probe', roadster: 'roadster2' };
+const EQUIPPED_MODELS = new Set(Object.values(CARS).map(car => car.model));
 const HIDDEN_LAYER = 31; // no camera enables it; the frame loop rewrites `visible` on car parts, never `layers`
 
 /** Player-car GLBs also dress the Home showcase and race car; the probe stays Garage-only. */
-export const dressesRaceCar = (id: string): boolean => id === 'roadster2' || id === 'crimson-gt';
+export const dressesRaceCar = (id: string): boolean => id === MODEL_PARAMS.roadster || EQUIPPED_MODELS.has(id);
 
 /** The softened map the host's procedural car reflects (car-reflections.ts), if one was applied to it. */
 function carMapOf(car: Object3D): Texture | null {
@@ -32,7 +33,7 @@ export function garageModelId(search: string): string | null {
 }
 
 /** A car to dress: `keep` (aero VFX riding on the car) stays drawn, `scene` supplies lights for compiling. */
-export interface GarageModelHost { name: 'home' | 'studio' | 'showcase'; car: Object3D; keep: Object3D; scene: Scene }
+export interface GarageModelHost { name: 'home' | 'studio' | 'showcase'; car: Object3D; keep: Object3D; scene: Scene; fitAirflow?(model?: Object3D): void }
 /** garage: every car shown since the Garage opened stays dressed. drive: only the car on screen. race: drive, but
  *  never attach or compile a new instance (after GO), so a race shows the GLB only if it was dressed before. */
 export type DressMode = 'garage' | 'drive' | 'race';
@@ -76,6 +77,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     const dressing = dressed.get(host);
     if (!dressing) return;
     moveRearPorts(host);
+    host.fitAirflow?.();
     dressing.instance.removeFromParent();
     dressing.rig.dispose();
     for (const [object, mask] of dressing.masks) object.layers.mask = mask;
@@ -102,6 +104,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
         part.traverse(object => { if (!rig.riders.includes(object)) { masks.set(object, object.layers.mask); object.layers.set(HIDDEN_LAYER); } }); // riders move to the GLB body (rig)
       }
     }
+    host.fitAirflow?.(instance); // measure the authored neutral pose before binding the current wheel/wing animation
     rig.update();
     moveRearPorts(host, instance);
     host.car.add(instance);

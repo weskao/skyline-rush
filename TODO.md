@@ -1,3 +1,12 @@
+# 2026-11-13 — Model-adaptive airflow
+
+- [x] Fit the shared AIRFLOW streamlines and underbody pressure to the displayed car on Home, Coming Soon tracks, Garage Studio and in races. Cover the procedural Roadster, Roadster GLB, Crimson GT and a wider/taller future-model fixture.
+- [x] RED: the future-model fixture placed the fixed roof flow below its cabin. GREEN: the flow clears the roof and follows the lower hood, adapts after an LOD swap and restores the procedural fit when the GLB is removed.
+- [x] Local typecheck, module-size, shader safety, locked production build and unit suite passed (2,680 passed, 3 skipped).
+- [ ] Complete the WebGL review on desktop and phone-sized views and confirm the full exact-commit GitHub quality gate. Physical phone review remains open.
+
+---
+
 # 2026-11-11 — Premium currency PNG artwork and 8-frame sprite integration
 
 - [x] Native transparent 3x PNGs checked into `public/feature-assets/wave3-demo/raster/`: `wallet-coin@3x.png` (144×144), `wallet-diamond@3x.png` (144×144). New assets, original A-03/A-04 and HUD images are preserved.

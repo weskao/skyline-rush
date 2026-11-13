@@ -69,6 +69,10 @@ frame and on every track change, so no per-module warmup flag is needed. Keep it
   something. Diagnose with `renderer.info.programs` and `renderer.properties.get(material)
   .currentProgram.cacheKey` to name the offending material.
 
+## Fit airflow when the displayed model changes
+
+Sample the neutral-pose shell in vehicle-local coordinates before animating the wheels and wing. Refit when a GLB or LOD attaches and restore the procedural fit on removal. Reuse the warmed airflow material and dispose replaced geometry. The same fit serves Home, Garage Studio, Coming Soon and races. The model swap and fallback regression lives in `tests/garage-model-rig.test.js`.
+
 ## One NaN pixel is a black frame
 
 The bloom blur spreads a single NaN/Inf texel in the HDR scene buffer into a screen-sized black

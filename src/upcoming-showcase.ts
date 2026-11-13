@@ -117,7 +117,7 @@ export function createUpcomingShowcase(
     const sunlight = new THREE.DirectionalLight('#f3e7d2', 2.3);
     sunlight.position.set(-30, 70, -65);
     scene.add(new THREE.HemisphereLight('#c1e5ff', '#1e283a', 1.9), sunlight);
-    stage = { id, scene, environment, cars, aero, host: { name: 'showcase', car: cars[0]!, keep: aero.group as THREE.Object3D, scene } };
+    stage = { id, scene, environment, cars, aero, host: { name: 'showcase', car: cars[0]!, keep: aero.group as THREE.Object3D, scene, fitAirflow: aero.fitAirflow } };
     cachedStages.set(id, stage);
     if (cachedStages.size > MAX_CACHED_STAGES) {
       const oldest = cachedStages.keys().next().value!;
