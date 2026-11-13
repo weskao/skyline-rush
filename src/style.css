@@ -2192,6 +2192,16 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
     align-items: center;
   }
 }
+/* Compact the non-interactive podium summary only on very short landscape screens.
+   Keep the header/tool clearance and every 44px action target unchanged.
+   Regression: overlay-landscape-fit-browser.spec.js (360–390px heights / fold). */
+@media (max-height: 400px) and (orientation: landscape) {
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-content h2 { margin-bottom: 4px; }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-summary > p { margin-bottom: 2px; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-stats { margin: 2px 0; gap: 4px 18px; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-style { margin: 0; gap: 2px 10px; }
+  body[data-phase="finished"]:not([data-tutorial]) .wave3-demo-results { margin-top: 0; }
+}
 /* Phone landscape: the coach card grows to show the whole lesson text (EN/中文). */
 @media (max-height: 500px) and (orientation: landscape) { .tutorial-coach { width: min(520px, calc(58vw - 24px)); } .tutorial-copy { max-height: none; overflow: visible; } }
 /* Reserve both Large thumb-control rows, including mirrored hands; long lessons scroll inside the card. */
