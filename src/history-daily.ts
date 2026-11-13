@@ -1,4 +1,5 @@
 import { RACE_TRACKS, DAILY_MODIFIERS } from './game.js';
+import { roadRecordLayout } from './record-layout.ts';
 import { HISTORY_LIMIT } from './history-policy.ts';
 import { readStored as read, writeStored as write, type HistoryStorage } from './history-storage.ts';
 
@@ -11,6 +12,7 @@ export interface DailyRun {
   position: number;
   score: number;
   date: string;
+  layout?: number;
 }
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -34,8 +36,9 @@ export function recordDaily(
   storage?: HistoryStorage, now = new Date(),
 ): DailyRun {
   const { position, time, score } = race.result;
+  const layout = roadRecordLayout(challenge.track);
   const run = { id: challenge.id, track: challenge.track, modifier: challenge.modifier,
-    time, position, score, date: now.toISOString() };
+    time, position, score, date: now.toISOString(), ...(layout > 1 ? { layout } : {}) };
   write(DAILY_KEY, [...loadDaily(storage), run].slice(-HISTORY_LIMIT), storage);
   return run;
 }

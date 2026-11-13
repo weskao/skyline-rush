@@ -1,26 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { classicRoadCenter, trackPoint, trackFrame, trackOverview } from '../src/track-paths.ts';
+import { trackPoint, trackFrame, trackOverview } from '../src/track-paths.ts';
 import { RACE_TRACKS } from '../src/game.js';
 
 // Unbounded renderer chunks (behind the start / beyond the finish) must have
 // the same lateral curve as the simulation and the sampled route map.
-test('first four classic roads have exactly one centreline for renderer and map', () => {
-  const renderer = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
-  assert.match(renderer, /const roadCenter = classicRoadCenter;/);
+test('classic minimaps project the sampled road without replacing its turns', () => {
   for (const id of ['coast', 'neon', 'canyon', 'aurora']) {
-    for (const distance of [0, 60, 600, 1100, 1650, RACE_TRACKS[id].length]) {
-      const point = trackPoint(id, distance);
-      assert.ok(Math.abs(point.x-classicRoadCenter(distance)) < 1e-10, id);
-      assert.equal(point.y, 0);
-    }
     const overview = trackOverview(id, 128);
-    assert.equal(overview.length, 128);
-    assert.deepEqual([overview[0].distance, overview.at(-1).distance],[0,RACE_TRACKS[id].length]);
-  }
-  for (const distance of [-120, -1, 0, 5000, 6000, 8000]) {
-    assert.ok(Number.isFinite(classicRoadCenter(distance)), 'renderer off-track chunks stay finite');
+    assert.deepEqual([overview[0].distance, overview.at(-1).distance], [0, RACE_TRACKS[id].length]);
+    for (let i = 1; i < overview.length; i++) {
+      const previous = trackPoint(id, overview[i - 1].distance);
+      const point = trackPoint(id, overview[i].distance);
+      assert.ok(Math.abs(point.x - previous.x) < 1e-7 ||
+        Math.sign(point.x - previous.x) === Math.sign(overview[i].x - overview[i - 1].x), id);
+    }
   }
 });
 

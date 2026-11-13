@@ -1,22 +1,23 @@
+import { classicRoadRoute } from './classic-road-routes.ts';
 import { COURSE_TRACKS, RACE_TRACKS } from './race-tracks.ts';
 import { CIRCUIT_ID, CIRCUIT_TRACK } from './circuit-track.ts';
 
-// One source of truth for which ring/pickup layout a timed record was set on. A layout change makes
+// One source of truth for which road and item layout a timed record was set on. A layout change makes
 // older times incomparable, so layout 2+ records live under `<track>@<layout>` while layout 1 keeps
 // the bare track id: saved data from before the change stays bit-for-bit where it was.
-
-/** Modes with their own course: the track's ring layout never reaches them. */
-const OWN_COURSE_MODES: ReadonlySet<unknown> = new Set(['endless', 'eventlab']);
 
 export function layoutVersion(trackId: unknown): number {
   const track = trackId === CIRCUIT_ID ? CIRCUIT_TRACK : typeof trackId === 'string' && Object.hasOwn(RACE_TRACKS, trackId) ? RACE_TRACKS[trackId] : null;
   return track?.layoutVersion ?? 1;
 }
 
+/** Daily challenges and custom courses version the road independently of the stock item layout. */
+export const roadRecordLayout = (trackId: string): number => trackId === 'spiral' || classicRoadRoute(trackId) ? 2 : 1;
+
 /** The layout a race runs on; a Cup counts as its newest track. */
 export function raceLayout(trackId: string, config?: unknown): number {
   const rules = config && typeof config === 'object' ? config as { mode?: unknown; cupTracks?: unknown } : {};
-  if (OWN_COURSE_MODES.has(rules.mode)) return 1;
+  if (rules.mode === 'endless' || rules.mode === 'eventlab') return roadRecordLayout(trackId);
   const cup = Array.isArray(rules.cupTracks) ? rules.cupTracks : [];
   return Math.max(layoutVersion(trackId), ...cup.map(layoutVersion));
 }

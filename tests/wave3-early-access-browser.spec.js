@@ -139,8 +139,8 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   const homePoints = homeWallet.locator('[data-currency="demo-points"] strong');
   await expect(homeWallet).toBeVisible();
   await expect(homePoints).toHaveText('40');
-  await expect(homeWallet.locator('[data-currency="coins"] strong')).toHaveText('—');
-  await expect(homeWallet.locator('[data-currency="diamonds"] strong')).toHaveText('—');
+  await expect(homeWallet.locator('[data-currency="coins"] strong')).toHaveText('0');
+  await expect(homeWallet.locator('[data-currency="diamonds"] strong')).toHaveText('0');
   await page.locator('#garage-button').click();
   const board = page.locator('.garage-mission-board');
   await expect(board).toHaveAttribute('data-rewards-authority', 'local-demo');

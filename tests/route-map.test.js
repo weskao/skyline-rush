@@ -217,3 +217,33 @@ test('every Coming Soon race map has a stroke colour so the course is visible', 
     assert.match(theme[1], /--map-player:\s*#[0-9a-fA-F]{6}/, `${id} player colour`);
   }
 });
+
+test('a streamed classic minimap follows the actual bends after the original finish', async () => {
+  const { createRouteMap } = await import('../src/route-map.ts');
+  await withFakeDom(() => {
+    const { element, updateDrivers } = createRouteMap('neon', { live: true, streaming: true });
+    const line = element.find('route-overview-line')[0];
+    updateDrivers([{ id: 'YOU', distance: 205 }]);
+    const first = line.attrs.points, marker = element.find('route-player-pointer')[0].attrs.transform;
+    updateDrivers([{ id: 'YOU', distance: 4205 }]);
+    assert.notEqual(line.attrs.points, first, 'the mirrored next stretch has the opposite bends');
+    assert.notEqual(element.find('route-player-pointer')[0].attrs.transform, marker);
+    assert.equal(element.find('route-finish').length, 0);
+    assert.ok(line.attrs.points.split(' ').length >= 20);
+  });
+});
+
+test('the streamed Sky Spiral minimap fits the helix and the nearby racer markers', async () => {
+  const { createRouteMap, hasStreamingRouteMap } = await import('../src/route-map.ts');
+  await withFakeDom(() => {
+    assert.equal(hasStreamingRouteMap('spiral', 'endless'), true);
+    assert.equal(hasStreamingRouteMap('spiral', 'elimination'), true);
+    const { element, updateDrivers } = createRouteMap('spiral', { live: true, streaming: true });
+    updateDrivers([{ id: 'YOU', distance: 1375 }, { id: 'NOVA', distance: 900 }]);
+    assert.equal(element.find('route-finish').length, 0);
+    assert.equal(element.find('route-spiral-upper').length, 0);
+    assert.equal(element.find('route-driver-nova')[0].attrs.visibility, 'hidden');
+    const points = element.find('route-overview-line')[0].attrs.points.split(' ').flatMap(pair => pair.split(',').map(Number));
+    assert.ok(points.every(n => n >= 0 && n <= 100), 'the loop stays inside the rolling map');
+  });
+});

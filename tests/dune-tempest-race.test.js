@@ -440,7 +440,7 @@ test('Dune records live under one topology-keyed id', () => {
   assert.deepEqual(recordTrackIds(DUNE_TEMPEST_ID), [KEY]);
   assert.deepEqual(parseRecordTrackId(KEY), { trackId: DUNE_TEMPEST_ID, layout: 1 });
   assert.equal(parseRecordTrackId('dune-tempest@t2l1'), null);
-  assert.equal(recordTrackId('coast'), 'coast@4', 'classic ids unchanged');
+  assert.equal(recordTrackId('coast'), 'coast@5', 'Classic still uses a layout version without a topology prefix');
 });
 
 test('a finished Dune race settles history and a topology-keyed best; no Ghost, medals, stars, unlocks or NEXT', async () => {

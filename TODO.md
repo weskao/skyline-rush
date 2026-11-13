@@ -1,3 +1,11 @@
+# 2026-11-13 — Classic track corners
+
+- [x] Author distinct Coast, Neon Downtown, Canyon Skyway and Aurora Pass corner sequences, preserving their shortcuts, tunnels, gaps and ice.
+- [x] Use the same road coordinates for the minimap, road mesh, vehicles, hazards, pickups and `3d=1` scenery. Stream the route through Endless and Elimination with a rolling minimap. Preserve earlier bests and ghosts under their existing layout keys.
+- [x] RED/GREEN observed for missing left/right bends, Canyon gap edges, speed-dependent handling, streamed minimap, Coast GLB rail seams and record versioning. Replay baselines changed only for the four revised tracks.
+- [x] Add five Sky Spiral sweepers, preserve the helix and three straight jump corridors, and continue the sweepers after the sprint in streaming modes. Make the former sprint gaps solid in Endless and Elimination and keep the minimap in sync.
+- [ ] Complete browser WebGL and physical-phone checks, and verify the exact-commit GitHub CI quality gate.
+
 # 2026-11-13 — Model-adaptive airflow
 
 - [x] Fit the shared AIRFLOW streamlines and underbody pressure to the displayed car on Home, Coming Soon tracks, Garage Studio and in races. Cover the procedural Roadster, Roadster GLB, Crimson GT and a wider/taller future-model fixture.
@@ -117,6 +125,11 @@ Design and numbers: `docs/designs/road-pickups/README.md`.
 - [ ] Authenticated real coins/diamonds must remain unavailable until server-backed economy is implemented and verified.
 
 ---
+
+## 2026-11-13 — Home wallet balance and resource details
+
+- [x] Empty balances show zero and invalid demo data shows a dash. Unit and browser regressions reproduced the previous behavior. Typecheck, both production build modes, and eight Home wallet browser checks passed, including desktop hover and keyboard and touch in portrait and short landscape.
+- [ ] Verify the full race-to-wallet reward flow and exact-commit GitHub quality gate. Local wallet browser checks ran with WebGL disabled, and the Garage Studio preview requires WebGL.
 
 # Wave 3 — resource HUD and artwork acceptance (2026-11-11)
 
