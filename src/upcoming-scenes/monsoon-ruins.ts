@@ -255,7 +255,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   scene.add(group);
   const stone = new THREE.MeshStandardMaterial({ color: color.stone, roughness: .94, flatShading: true });
   const shadow = new THREE.MeshStandardMaterial({ color: color.darkStone, roughness: .98 });
-  const mud = new THREE.MeshStandardMaterial({ color: color.mud, roughness: .68, metalness: .06, side: THREE.DoubleSide });
+  const mud = new THREE.MeshStandardMaterial({ color: color.mud, roughness: .61, metalness: .06, side: THREE.DoubleSide });
   const water = new THREE.MeshStandardMaterial({ color: color.water, transparent: true, opacity: .78,
     roughness: .4, metalness: .07, side: THREE.DoubleSide, depthWrite: false });
   const foam = new THREE.MeshBasicMaterial({ color: '#c2ece9', transparent: true, opacity: .73, depthWrite: false });
