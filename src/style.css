@@ -2173,6 +2173,8 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 /* Results gain a third action (cloud backup); split summary/actions on desktop instead of
    clipping Sign in behind #app. Preserve the existing one-column layout on portrait phones. */
 @media (min-width: 761px) and (min-height: 501px) {
+  /* Laptops / tablet landscape: a taller summary (Wave 3 reward card) scrolls instead of running off-screen. */
+  body[data-phase="finished"]:not([data-tutorial]) .race-overlay { overflow-y: auto; padding-block: 16px; }
   body[data-phase="finished"]:not([data-tutorial]) .overlay-content {
     display: grid;
     width: min(900px, calc(100% - 48px));
