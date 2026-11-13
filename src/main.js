@@ -10,7 +10,7 @@ import { updateCoachView } from './tutorial-coach-state.ts';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.ts';
-import { startRace, stepRace, dailyChallenge } from './game.js';
+import { startRace, stepRace, dailyChallenge, gapChargeWarning } from './game.js';
 import { createRace } from './race-factory.ts';
 import { createControls } from './input.ts';
 import { createSprintSeries, nextSprintGrid } from './sprint-series.ts';
@@ -47,7 +47,8 @@ import { setupReleaseNotesUI } from './release-notes-ui.ts';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.ts';
 import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-progress.ts';
 import { settleRaceAndDemo, captureWave3RaceTelemetry } from './race-results.ts';
-import { resultView, setupResultScreen } from './result-screen.ts';
+import { resultView, setupResultScreen, animateResultCounts } from './result-screen.ts';
+import { playResultFeedbackOnce } from './result-audio.ts';
 import { renderWave3DemoResults } from './wave3-demo-results-integration.ts';
 import { createRaceHud } from './race-hud.ts';
 import { setupItemUI } from './item-ui.ts';
@@ -62,7 +63,8 @@ import { focusRace, setupRaceNavigation } from './race-navigation-ui.ts';
 /** @typedef {import('./game-types.js').PlayerSnapshot} PlayerSnapshot */
 /** @typedef {import('./game-types.js').RivalSnapshot} RivalSnapshot */
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
-createApp(App).mount('#app');
+const sound = createSound(race => gapChargeWarning(race)?.from ?? null);
+createApp(App).provide('game-audio-cue', sound.cue).mount('#app');
 // Saved choice > system language > English; only a click on the switch persists (saveLocale below).
 setLocale(resolveInitialLocale());
 applyI18n(); applyDocumentLocale(); // before customSelect, so the drawn selects copy translated text
@@ -104,7 +106,6 @@ const presentation = createPresentation();
 let presentationState = presentation.update(race, 0);
 let resultCounts = [];
 try { ({ audio, volume } = readAudio(localStorage)); } catch { /* Audio defaults to on when storage is blocked. */ }
-const sound = createSound();
 const keymap = setupKeyMapUI({ clearControls: () => controls.clear(), say });
 // Its action callback only runs on input, so the handlers declared further down are ready by then.
 const controls = createControls(window, action => {
@@ -255,7 +256,7 @@ const { showGarage, adoptCar, syncSkins, previewPaint } = setupGarageUI({
   clearControls: () => controls.clear(),
   getEquippedPaint: () => equippedPaint,
   setEquippedPaint: id => { equippedPaint = id; saveCarPaint(equippedCar(), id); },
-  getStars: () => starTotal(progress.stars), availablePaints, subscribeAccount: cloud.subscribeAccount,
+  getStars: () => starTotal(progress.stars), availablePaints, subscribeAccount: cloud.subscribeAccount, cue: sound.cue,
 });
 function chooseTrack() {
   if (tutorial) { endTutorial(); return; }
@@ -492,7 +493,7 @@ function phaseUI() {
     $('#new-best').hidden = !record;
     $('#result-style').hidden = race.mode !== 'classic';
     $('#result-links').hidden = false;
-    lastResult = { race, best, record, medals, challengeMedals: settled.challengeMedals, series: sprintSeries, cup, stunt, next: settled.next };
+    lastResult = { race, best, record, medals, challengeMedals: settled.challengeMedals, series: sprintSeries, cup, stunt, next: settled.next, settled };
   }
   phaseText();
 }
@@ -523,12 +524,10 @@ function updateUI(now, input) {
     if (ui['race-overlay'].hidden) {
       ui['race-overlay'].hidden = false;
       enter($('.overlay-content'), 'translateX(48px)', 'slow');
+      playResultFeedbackOnce(sound.cue, race, lastResult.settled, calmMotion());
       ui['again-button'].focus({ preventScroll: true });
     }
-    resultCounts.forEach(({ element, value, format }, i) => {
-      const progress = Math.max(0, Math.min(1, presentationState.count * 3 - i));
-      element.textContent = format(value * (1 - (1 - progress) ** 3));
-    });
+    animateResultCounts(resultCounts, presentationState.count);
   }
   hud.update(now, input);
 }

@@ -1,3 +1,10 @@
+# 2026-11-13 — Race and Garage sound feedback
+
+- [x] Add transaction, equipment, and race-result feedback to the existing SFX mix.
+- [x] Add one-shot race cues for driving rewards, route entry, objective warnings and mode-specific endings.
+- [x] Verify cue selection, synth timing, mute, result priority and repeat prevention with focused Node tests.
+- [ ] Verify the desktop and mobile browser flow, exact-commit full regression and physical-device mix.
+
 # 2026-11-13 — Demo reward (試玩獎勵) results card fully visible
 
 - [x] RED: zh-TW guard reported the card scrolling 262/198px on desktop/tablet (missions and fine print cut) and four lines hidden in short landscape. GREEN: no height cap; crest moved into the header, mission tiles and fine print visible at 1440×900, 768×1024, 390×844, 360×740.
