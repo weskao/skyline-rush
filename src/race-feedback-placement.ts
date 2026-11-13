@@ -37,7 +37,7 @@ export function pickPeripheralSlot(viewport: Size, size: Size, obstacles: Feedba
   return best && { left: best.left, top: best.top };
 }
 
-const SELECTORS = '.brand, .toolbar, .aero-tools, .airflow-hud, .race-progress, .progress-bar, .mode-indicator, .position-stat, .speedometer, .flight-telemetry, #nitro-status, .leaderboard, .race-route-map, .impact-report, #touch-controls [data-control], .touch-pad, #tutorial-coach';
+const SELECTORS = '.brand, .toolbar, .aero-tools, .airflow-hud, .race-progress, .mode-indicator, .position-stat, .speedometer, .flight-telemetry, #nitro-status, .leaderboard, .race-route-map, .impact-report, #touch-controls [data-control], .touch-pad, #tutorial-coach';
 const visible = (el: HTMLElement): boolean => !el.hidden && !!el.getClientRects().length &&
   getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
 // The countdown hides the telemetry footer (speed, mode chip, flight stats) with visibility only; the mode chip keeps clear of it for GO.
@@ -47,7 +47,7 @@ const rect = (box: DOMRect): FeedbackRect => ({ left: box.left, right: box.right
 /** `mode` (ROAD/FLIGHT chip) and `impact` (collision chip) dock at an edge too; both have a fixed CSS size, so text updates never re-place them. */
 export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement, impact?: HTMLElement, mode?: HTMLElement) {
   const blocks = [...document.querySelectorAll<HTMLElement>(SELECTORS)];
-  const yielding = blocks.filter(el => el.matches('.leaderboard, .progress-bar'));
+  const yielding = blocks.filter(el => el.matches('.leaderboard'));
   const controls = blocks.filter(el => el.matches('#touch-controls [data-control], .touch-pad'));
   // POSITION widens for 1.2 s on every place change (its ↑/↓ arrow): measure it with the arrow shown, so a chip docked beside it stays clear.
   const placeArrow = document.getElementById('position-change');
@@ -72,7 +72,7 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement, 
       const insets = { top: parseFloat(safe.paddingTop) || 0, right: parseFloat(safe.paddingRight) || 0,
         bottom: parseFloat(safe.paddingBottom) || 0, left: parseFloat(safe.paddingLeft) || 0 };
       const viewport = { width: innerWidth, height: innerHeight };
-      // A touch control the player placed (Controls panel hand/size/layout) wins: the leaderboard and progress bar yield rather than sit under a thumb.
+      // A touch control the player placed (Controls panel hand/size/layout) wins: the leaderboard yields rather than sit under a thumb.
       for (const el of yielding) {
         el.style.visibility = '';
         const area = visible(el) ? rect(el.getBoundingClientRect()) : null;

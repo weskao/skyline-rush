@@ -126,7 +126,6 @@ export function createRaceHud(options: HudOptions) {
   function updateProgress(race: HudRace, car: HudRace): void {
     setHudText(ui.timer!, timeString(race.elapsed));
     setHudText(ui.distance!, (car.distance / 1000).toFixed(2));
-    ui['progress-fill']!.style.width = `${race.endless ? 0 : car.distance / race.length * 100}%`;
     setHudText(hudNodes['race-length']!, race.endless ? '∞' : (race.length / 1000).toFixed(2));
     const timeGhost = race.mode === 'time' && getControlPrefs().ghost ? options.timeTrialGhost(race) : null;
     const split = hudNodes['ghost-split']!;

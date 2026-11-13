@@ -98,7 +98,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       raceRouteMap.trackId = race.trackId;
       raceRouteMap.streaming = streaming;
       $('#race-route-map').toggleAttribute('data-streaming', streaming);
-      $('#race-route-map').replaceChildren(raceRouteMap.element);
+      $('#race-route-map').replaceChildren(raceRouteMap.element, $('#race-route-map > .progress-bar')); // the distance caption stays under the map
       $('#race-route-map').dataset.theme = race.trackId;
     }
   }
