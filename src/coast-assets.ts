@@ -1,7 +1,9 @@
-// Task 5 runtime assets for Coast on Medium+: the close-scenery GLB (Poly Haven scans) and the KTX2 asphalt road.
+// Task 5 runtime assets for Coast on Medium+: the close-scenery GLB (Poly Haven scans), the KTX2 asphalt road and the
+// HDRI sky dome (coast-sky.ts).
 // Low and every other track never fetch anything. New materials join the scene only outside 'racing': the world's
 // warmupShaders pass must build their programs before GO (performance-review.md). Weather is a uniform, never a swap.
 import type { Camera, Material, Matrix4, Object3D, Scene, Texture } from 'three';
+import { createCoastSky } from './coast-sky.ts';
 import type { ModelCache, ModelHandle } from './asset-model-loader.ts';
 import { TIERS, type MaterialFile, type MaterialTier } from './material-manifest.ts';
 import { modelUrl } from './model-manifest.ts';
@@ -22,14 +24,15 @@ interface Reflection {
   uniforms: ReflectionUniforms; setStrength(value: number): void; tag(scene: Object3D): void;
   render(renderer: never, scene: Scene, camera: Camera, height: number): void; dispose(): void;
 }
+type Sky = Pick<ReturnType<typeof createCoastSky>, 'update' | 'dispose'>;
 interface Deps {
-  scenery: Scenery; cache: Pick<ModelCache, 'load'>; road?: Road; reflection?: Reflection;
+  scenery: Scenery; cache: Pick<ModelCache, 'load'>; road?: Road; reflection?: Reflection; sky?: Sky;
   /** QA state (the canvas dataset): coastScenery = loading | waiting-for-race-end | attached | fallback:<reason> | off;
    *  coastRoad = medium | high | ultra (material tier) while the asphalt is on the road, else procedural | fallback. */
   dataset?: Record<string, string | undefined>;
 }
 
-export function createCoastAssets({ scenery, cache, road, reflection, dataset = {} }: Deps) {
+export function createCoastAssets({ scenery, cache, road, reflection, sky, dataset = {} }: Deps) {
   const controller = new AbortController();
   const procedural = road?.mesh.material;
   const roads = new Map<MaterialTier, CoastRoad | 'loading' | 'failed'>();
@@ -101,6 +104,7 @@ export function createCoastAssets({ scenery, cache, road, reflection, dataset = 
     /** Per frame; true when new materials joined the scene and the caller must run its shader warmup. */
     update(trackId: string, quality: VfxQuality, racing: boolean, preset = 'track', ultra = false): boolean {
       const scenery = updateScenery(trackId, quality, racing);
+      sky?.update(trackId, preset, quality, ultra); // its program exists from creation: nothing to warm up
       return updateRoad(trackId, quality, racing, preset, ultra) || scenery;
     },
     dispose(): void {
@@ -109,7 +113,7 @@ export function createCoastAssets({ scenery, cache, road, reflection, dataset = 
       handle?.release();
       handle = null;
       if (road) { road.mesh.material = procedural!; road.mesh.onBeforeRender = onBeforeRender; }
-      reflection?.dispose();
+      reflection?.dispose(); sky?.dispose();
       for (const entry of roads.values()) if (typeof entry === 'object') entry.dispose();
       roads.clear();
       dataset.coastScenery = 'off';
@@ -118,20 +122,22 @@ export function createCoastAssets({ scenery, cache, road, reflection, dataset = 
 }
 
 interface Ktx2TextureLoader { loadAsync(url: string): Promise<Texture> }
-interface WorldRenderer { capabilities: { getMaxAnisotropy(): number } }
+interface WorldRenderer { capabilities: { getMaxAnisotropy(): number; maxTextureSize: number } }
 
 /** World wiring: one model cache and KTX2 transcoder for the Coast assets, imported only when first needed.
  *  null without `?look=3d` (look-gate.ts): no loader, mirror hook or fetch, the develop road and scenery. */
-export function createWorldCoastAssets(renderer: WorldRenderer, targets: { scenery: Scenery; road: Road['mesh'] },
+export function createWorldCoastAssets(renderer: WorldRenderer, targets: { scenery: Scenery; road: Road['mesh'] } & Pick<Parameters<typeof createCoastSky>[0], 'sky' | 'sun'>,
   dataset: Deps['dataset'], baseUrl = import.meta.env.BASE_URL) {
   if (!look3d()) return null;
   const loadKtx2 = createKtx2Provider(renderer, baseUrl);
   // shortcut: `?model=` Garage QA builds its own cache and KTX2 loader; share one if both ever ship by default.
   const real = import('./asset-model-loader.ts').then(({ createModelCache }) => createModelCache({ baseUrl, loadKtx2 }));
+  const loadTexture = async (url: string) => ((await loadKtx2()) as unknown as Ktx2TextureLoader).loadAsync(modelUrl(url, baseUrl));
   const road: Road = {
     mesh: targets.road,
     anisotropy: Math.min(8, renderer.capabilities.getMaxAnisotropy()), // grazing-angle asphalt; Medium+ only
-    load: async file => ((await loadKtx2()) as unknown as Ktx2TextureLoader).loadAsync(modelUrl(file.url, baseUrl)),
+    load: file => loadTexture(file.url),
   };
-  return createCoastAssets({ scenery: targets.scenery, road, dataset, reflection: createWetReflection(), cache: { load: async (id, options) => (await real).load(id, options) } });
+  const sky = createCoastSky({ sky: targets.sky, sun: targets.sun, load: loadTexture, maxTextureSize: renderer.capabilities.maxTextureSize, dataset });
+  return createCoastAssets({ scenery: targets.scenery, road, sky, dataset, reflection: createWetReflection(), cache: { load: async (id, options) => (await real).load(id, options) } });
 }

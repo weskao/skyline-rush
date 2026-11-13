@@ -169,3 +169,19 @@ test('Medium keeps env-map-only wet asphalt: no mirror pass', async () => {
   assert.equal(reflection.strength, 0);
   assets.dispose();
 });
+
+test('the sky dome controller gets the track, preset, tier and Ultra flag every frame, and is disposed with the assets', () => {
+  const calls = [];
+  const sky = { update: (...args) => { calls.push(args); }, dispose: () => calls.push('dispose') };
+  const assets = createCoastAssets({ scenery, cache: never, sky });
+  assert.equal(assets.update('coast', 'high', false, 'dusk', true), false, 'a sky swap is a texture swap: no shader warmup');
+  assets.update('coast', 'medium', true, 'rain', false);
+  assert.deepEqual(calls, [['coast', 'dusk', 'high', true], ['coast', 'rain', 'medium', false]]);
+  assets.dispose();
+  assert.equal(calls.at(-1), 'dispose');
+});
+
+test('world.js hands the procedural sky dome and sun disc to the Coast assets', async () => {
+  const { readFileSync } = await import('node:fs');
+  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scenery: coastScenery, road, sky, sun \}, canvas\.dataset\)/);
+});
