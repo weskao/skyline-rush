@@ -8,14 +8,16 @@ import type { ModelCache, ModelHandle } from './asset-model-loader.ts';
 import type { ModelQuality } from './model-manifest.ts';
 import { bindGarageRig, type GarageRig } from './garage-model-rig.ts';
 import { applyCarReflections } from './car-reflections.ts';
-import { equippedCarModel } from './car-catalog.ts';
+import { CARS, equippedCarModel } from './car-catalog.ts';
 import { REAR_PORTS } from './aero-vfx.js';
+import { fitToRoadsterSize } from './car-display-size.ts';
 
 const MODEL_PARAMS: Readonly<Record<string, string>> = { probe: 'pipeline-probe', roadster: 'roadster2' };
+const EQUIPPED_MODELS = new Set(Object.values(CARS).map(car => car.model));
 const HIDDEN_LAYER = 31; // no camera enables it; the frame loop rewrites `visible` on car parts, never `layers`
 
 /** Player-car GLBs also dress the Home showcase and race car; the probe stays Garage-only. */
-export const dressesRaceCar = (id: string): boolean => id === 'roadster2' || id === 'crimson-gt';
+export const dressesRaceCar = (id: string): boolean => id === MODEL_PARAMS.roadster || EQUIPPED_MODELS.has(id);
 
 /** The softened map the host's procedural car reflects (car-reflections.ts), if one was applied to it. */
 function carMapOf(car: Object3D): Texture | null {
@@ -32,7 +34,7 @@ export function garageModelId(search: string): string | null {
 }
 
 /** A car to dress: `keep` (aero VFX riding on the car) stays drawn, `scene` supplies lights for compiling. */
-export interface GarageModelHost { name: 'home' | 'studio' | 'showcase'; car: Object3D; keep: Object3D; scene: Scene }
+export interface GarageModelHost { name: 'home' | 'studio' | 'showcase'; car: Object3D; keep: Object3D; scene: Scene; fitAirflow?(model?: Object3D): void }
 /** garage: every car shown since the Garage opened stays dressed. drive: only the car on screen. race: drive, but
  *  never attach or compile a new instance (after GO), so a race shows the GLB only if it was dressed before. */
 export type DressMode = 'garage' | 'drive' | 'race';
@@ -69,6 +71,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     let node = instance?.getObjectByName('nozzle_rear_01');
     if (!node) return;
     for (; node && node !== instance; node = node.parent ?? undefined) rear.position.add(node.position); // unrotated, unscaled pivots
+    rear.position.multiply(instance!.scale); // the instance's display scale (car-display-size.ts) carries the nozzles outward
     rear.position.x -= REAR_PORTS[0].position[0]; rear.position.y -= REAR_PORTS[0].position[1]; rear.position.z -= REAR_PORTS[0].position[2];
   }
 
@@ -76,6 +79,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     const dressing = dressed.get(host);
     if (!dressing) return;
     moveRearPorts(host);
+    host.fitAirflow?.();
     dressing.instance.removeFromParent();
     dressing.rig.dispose();
     for (const [object, mask] of dressing.masks) object.layers.mask = mask;
@@ -86,6 +90,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     pending.add(host); // request() and the per-frame sync() never dress one host twice at once
     const instance = from.instance();
     instance.userData.garageModel = id;
+    if (dressesRaceCar(id)) fitToRoadsterSize(instance); // before the airflow fit and the rig, which measure the shown size
     const carMap = carMapOf(host.car); // without it the GLB mirrors the full scene HDRI: washed white in Coast rain
     if (carMap) applyCarReflections(instance, carMap); // before compiling, so no program changes after GO
     const rig = bindGarageRig(host.car, instance); // rig.update() only after compiling: compileAsync skips hidden parts (lift fans)
@@ -102,6 +107,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
         part.traverse(object => { if (!rig.riders.includes(object)) { masks.set(object, object.layers.mask); object.layers.set(HIDDEN_LAYER); } }); // riders move to the GLB body (rig)
       }
     }
+    host.fitAirflow?.(instance); // measure the authored neutral pose before binding the current wheel/wing animation
     rig.update();
     moveRearPorts(host, instance);
     host.car.add(instance);

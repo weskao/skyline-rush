@@ -7,7 +7,8 @@ import { readStored, writeStored, type HistoryStorage } from './history-storage.
 
 export type CarId = 'roadster' | 'crimson-gt';
 /** model: MODEL_MANIFEST id drawn over the procedural car, or null for the procedural Roadster itself.
- *  factory: the finish shown until the player picks a paint for this car. */
+ *  factory: the finish shown until the player picks a paint for this car.
+ *  No size field: car-display-size.ts measures each GLB and shows it at the Roadster's size. */
 interface CarEntry { model: string | null; factory?: PaintPreset }
 export const CARS: Readonly<Record<CarId, CarEntry>> = {
   roadster: { model: null },

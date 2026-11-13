@@ -6,7 +6,7 @@ import { createNitroTrail } from '#garage-nitro-trail';
 import { TRICK_ROLL_TIME } from './game.js';
 import { plumeLook, thrusterGlow } from './board-effects.ts';
 import { createThrusterGlow } from './thruster-glow.ts';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { SKIN_MOTION, airflowFrame, measureAirflowProfile, streamGeometry } from './airflow-geometry.ts';
 
 export const REAR_PORTS = [-0.62, -0.22, 0.22, 0.62].map(x => ({ position: [x, 0.64, 2.39], direction: [0, 0, 1], size: 0.065 }));
 const MAX_PARTICLES = 512, MAX_GHOSTS = 8;
@@ -20,45 +20,29 @@ export function dashSamples(from, to, spacing, limit, visit) {
   for (let i = 1; i <= count; i++) visit(start + (1 - start) * i / count);
 }
 
-function streamGeometry() {
-  const paths = [];
-  const add = (points, type) => paths.push({ points, type });
-  for (const x of [-0.78, -0.39, 0, 0.39, 0.78]) {
-    add([[x, 0.65, -4.2], [x, 0.85, -2.5], [x, 1.06, -1.25], [x * 0.88, 1.94, -0.1], [x, 1.92, 0.9], [x, 1.62, 2.35], [x * 1.25, 1.4, 5.8]], 0);
-  }
-  for (const side of [-1, 1]) {
-    for (const y of [0.45, 0.85, 1.15]) add([[side * 0.8, y, -4], [side * 1.35, y, -2.2], [side * 1.46, y, -1.2], [side * 1.4, y, 0.3], [side * 1.47, y, 1.6], [side * 1.3, y, 3], [side * 1.8, y + 0.1, 6]], 0);
-    for (const z of [-1.35, 1.42]) add([[side * 1.5, 0.5, z - 0.65], [side * 1.57, 0.98, z], [side * 1.6, 0.6, z + 0.7], [side * 1.75, 0.4, z + 1.6], [side * 1.9, 0.65, z + 2.5]], 2);
-    for (const z of [-0.7, 0, 0.75]) add([[side * 2.3, 0.12, z - 1], [side * 1.3, 0.14, z - 0.5], [side * 0.7, 0.17, z], [side * 0.3, 0.2, z + 0.6], [side * 0.3, 0.18, 2.6], [side * 0.45, 0.25, 4]], 1);
-    add([[side * 0.7, 1.6, 1.6], [side * 1.05, 1.7, 2.3], [side * 1.3, 1.6, 3.4], [side * 1.4, 1.9, 4.3], [side * 1.1, 1.8, 5.1], [side * 1.4, 1.5, 6.5]], 2);
-  }
-  const pieces = paths.map(({ points, type }, index) => {
-    const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)), false, 'centripetal');
-    const geo = new THREE.TubeGeometry(curve, 64, type === 1 ? 0.014 : 0.011, 4, false);
-    geo.setAttribute('flowType', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count).fill(type), 1));
-    geo.setAttribute('lane', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count).fill(index / paths.length), 1));
-    return geo;
-  });
-  const geometry = mergeGeometries(pieces);
-  pieces.forEach(geo => geo.dispose());
-  return geometry;
-}
-
 export function createAeroVFX(scene, vehicle, ground) { // ground: the car's contact-shadow plane, when the scene has one
+  const proceduralProfile = measureAirflowProfile(vehicle);
   const local = new THREE.Group();
   local.name = 'Airflow showcase';
   vehicle.add(local);
-  const flow = new THREE.Mesh(streamGeometry(), new THREE.ShaderMaterial({
+  const flow = new THREE.Mesh(streamGeometry(proceduralProfile), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])), skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
-    vertexShader: `attribute float flowType; attribute float lane; varying vec2 vUv; varying float vType; varying float vLane;
-      uniform float time; uniform float turbulence; uniform float downforce;uniform float skinPattern;
+    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])), wakeRange: { value: new THREE.Vector2() }, rippleScale: { value: new THREE.Vector2() }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
+    vertexShader: `attribute float flowType; attribute float lane; attribute vec2 flowOutward; varying vec2 vUv; varying float vType; varying float vLane;
+      uniform float time; uniform float turbulence; uniform float downforce;uniform float skinPattern; uniform vec2 wakeRange, rippleScale;
       void main(){vUv=uv;vType=flowType;vLane=lane;vec3 p=position;
-        float wake=smoothstep(2.5,6.,p.z);p.x+=sin(time*2.+p.z*3.+lane*9.)*wake*turbulence*.13;
-        p.y+=wake*downforce*.25;
-        float phase=p.z*(2.+skinPattern)+time*(1.+skinPattern*.7)+lane*6.28;
-        if(skinPattern>.5) p.x+=sin(phase)*(.025+skinPattern*.024)*(1.+wake);
-        if(skinPattern>1.5) p.y+=cos(phase)*(.045+skinPattern*.012);
+        float wake=smoothstep(wakeRange.x,wakeRange.y,p.z);p.x+=sin(time*2.+p.z*3.+lane*9.)*wake*turbulence*.13*rippleScale.x;
+        p.y+=wake*downforce*.25*rippleScale.y;
+        float along=(position.z-wakeRange.x)/(wakeRange.y-wakeRange.x);
+        float phase=along*(7.+skinPattern*3.)+time*(1.+skinPattern*.7)+lane*6.28;
+        if(skinPattern>.5){
+          float ripple=(.5+.5*sin(phase))*(${SKIN_MOTION.ripple[0]}+skinPattern*${SKIN_MOTION.ripple[1]})*(1.+wake);
+          p.xy+=flowOutward*rippleScale*ripple;
+          if(skinPattern>1.5&&flowType!=1.){
+            vec2 tangent=vec2(flowOutward.y,-flowOutward.x);
+            p.xy+=tangent*rippleScale*cos(phase)*(${SKIN_MOTION.sway[0]}+skinPattern*${SKIN_MOTION.sway[1]});
+          }
+        }
         gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
     fragmentShader: `varying vec2 vUv; varying float vType; varying float vLane;
       uniform float time,power,speed,density,length,suction,downforce,nitroMix,skinPattern;uniform vec3 skinTint;uniform vec4 trailAccent;
@@ -77,16 +61,29 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         gl_FragColor=vec4(color*(1.+point),ends*power*(.08+pulse*.7+point*.2)*strength*pattern);}`,
   }));
   local.add(flow);
-  const pressure = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 4.5), new THREE.ShaderMaterial({
+  const pressure = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide,
-    uniforms: { power: { value: 0 }, time: { value: 0 } },
+    uniforms: { power: { value: 0 }, time: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) } },
     vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: `varying vec2 vUv;uniform float power,time;void main(){vec2 p=vUv*2.-1.;
+    fragmentShader: `varying vec2 vUv;uniform float power,time;uniform vec3 skinTint;void main(){vec2 p=vUv*2.-1.;
       float edge=pow(max(0.,1.-dot(p,p)*.65),3.);float wave=.7+.3*sin(length(p)*25.+time*6.);
-      gl_FragColor=vec4(.08,.55,.8,edge*wave*power*.15);}`,
+      gl_FragColor=vec4(vec3(.08,.55,.8)*skinTint,edge*wave*power*.15);}`,
   }));
   pressure.rotation.x = -Math.PI / 2; pressure.position.y = 0.11;
   local.add(pressure);
+  function placeAirflow(profile) {
+    const frame = airflowFrame(profile), { wakeRange, rippleScale } = flow.material.uniforms;
+    pressure.position.x = frame.pressure.x;
+    pressure.position.z = frame.pressure.z;
+    pressure.scale.set(frame.pressure.width, frame.pressure.length, 1);
+    wakeRange.value.fromArray(frame.wakeRange);
+    rippleScale.value.fromArray(frame.motionScale);
+    trailAnchor.set(frame.trail.x, frame.trail.y, frame.trail.z);
+    trailHalfWidth = frame.trail.halfWidth;
+  }
+  const trailAnchor = new THREE.Vector3();
+  let trailHalfWidth = 0;
+  placeAirflow(proceduralProfile);
   const rear = new THREE.Group(); rear.name = 'Rear ports'; local.add(rear); // garage-model.ts moves it onto a dressed GLB's nozzles
 
   const jetGeometry = new THREE.CylinderGeometry(1, 4.8, 1, 20, 24, true);
@@ -205,6 +202,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       voidPulse = patterns.thruster === 3; // its beams replace the nozzle flames
       voidBeams.setSelected(voidPulse);
       flow.material.uniforms.skinTint.value.fromArray(palette.airflow);
+      pressure.material.uniforms.skinTint.value.fromArray(palette.airflow);
       flow.material.uniforms.skinPattern.value = patterns.airflow;
       glow.tint.fromArray(palette.thruster);
       for (const jet of jets) {
@@ -227,6 +225,12 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       shock.material.color.copy(shockColor);
     },
     group: local, // effects riding on the vehicle; not part of its silhouette
+    fitAirflow(model) {
+      const profile = model ? measureAirflowProfile(model, vehicle) : proceduralProfile;
+      flow.geometry.dispose();
+      flow.geometry = streamGeometry(profile);
+      placeAirflow(profile);
+    },
     inspectCosmetics() {
       return { voidBeams: voidBeams.mesh.visible, launchPattern,
         launchPreviewActive: flare.active || (shock.visible && shock.material.opacity > 0),
@@ -333,8 +337,8 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         const start = Math.max(0, 1 - 60 / previous.distanceTo(current));
         sample.lerpVectors(previous, current, start);
         sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, start);
-        ribbonFrom.set(0, 0.55, 2.5).applyQuaternion(sampleRotation).add(sample);
-        ribbonSide.set(0.65, 0, 0).applyQuaternion(sampleRotation);
+        ribbonFrom.copy(trailAnchor).applyQuaternion(sampleRotation).add(sample);
+        ribbonSide.set(trailHalfWidth, 0, 0).applyQuaternion(sampleRotation);
         dashSamples(previous, current, 0.8 / quality, 16, t => {
           const slot = segmentCursor, s = segments[slot]; segmentCursor = (slot + 1) % segments.length;
           s.roll = !boost && !showcaseRibbon;
@@ -343,8 +347,8 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
           s.a.copy(ribbonFrom); s.left.copy(ribbonSide);
           sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
           sample.lerpVectors(previous, current, t);
-          s.b.set(0, 0.55, 2.5).applyQuaternion(sampleRotation).add(sample);
-          s.right.set(0.65, 0, 0).applyQuaternion(sampleRotation);
+          s.b.copy(trailAnchor).applyQuaternion(sampleRotation).add(sample);
+          s.right.set(trailHalfWidth, 0, 0).applyQuaternion(sampleRotation);
           s.life = s.maxLife = Math.min(0.6, settings.trailLength / Math.max(30, car.speed));
           ribbonFrom.copy(s.b); ribbonSide.copy(s.right);
         });

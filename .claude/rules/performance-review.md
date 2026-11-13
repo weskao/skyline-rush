@@ -69,6 +69,10 @@ frame and on every track change, so no per-module warmup flag is needed. Keep it
   something. Diagnose with `renderer.info.programs` and `renderer.properties.get(material)
   .currentProgram.cacheKey` to name the offending material.
 
+## Fit airflow when the displayed model changes
+
+Sample the neutral-pose shell in vehicle-local coordinates before animating the wheels and wing. Refit when a GLB or LOD attaches and restore the procedural fit on removal. Reuse the warmed airflow material and dispose replaced geometry. The same fit serves Home, Garage Studio, Coming Soon and races. The model swap and fallback regression lives in `tests/garage-model-rig.test.js`. Skin animation must use the fitted paths’ outward directions and reuse the same mesh when the skin changes. Refresh cached Coming Soon stages when the selected airflow skin changes. Every size-dependent airflow number (pressure footprint, wake range, skin motion scale, dash-ribbon/roll-wake anchor) comes from `airflowFrame(profile)` in `src/airflow-geometry.ts`; skin amplitudes live once in `SKIN_MOTION` and the shader interpolates them. Never add a Roadster-sized constant, clamp or per-car value: a new car or a new display size (src/car-display-size.ts) must need no airflow edits. Guard: `tests/airflow-adaptive-fit.test.js` (Roadster + scaled GLB stand-in, every airflow skin).
+
 ## One NaN pixel is a black frame
 
 The bloom blur spreads a single NaN/Inf texel in the HDR scene buffer into a screen-sized black

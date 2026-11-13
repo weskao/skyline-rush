@@ -1,3 +1,13 @@
+# 2026-11-13 — Model-adaptive airflow
+
+- [x] Fit the shared AIRFLOW streamlines and underbody pressure to the displayed car on Home, Coming Soon tracks, Garage Studio and in races. Cover the procedural Roadster, Roadster GLB, Crimson GT and a wider/taller future-model fixture.
+- [x] RED: the future-model fixture placed the fixed roof flow below its cabin. GREEN: the flow clears the roof and follows the lower hood, adapts after an LOD swap and restores the procedural fit when the GLB is removed.
+- [x] Local typecheck, module-size, shader safety, locked production build and unit suite passed (2,680 passed, 3 skipped).
+- [x] Checked the original adaptive fit in live WebGL for three models on Coast (desktop and phone-sized portrait/landscape), and for Crimson GT in Studio, Dune Tempest and a Coast race.
+- [x] Garage equipment follow-up: Standard, Slipstream, Vortex and Prism share the fitted geometry. The animated offsets follow each path’s outward direction and vehicle proportions, and the pressure area uses the selected tint. RED → GREEN also covers the selected style propagating to fresh and cached Coming Soon scenes.
+- [x] Equipment follow-up verification: local typecheck, production build and 2,682 unit tests passed (3 skipped). Chromium passed the live Crimson GT test covering all four Garage previews, cancel-to-equipped, trial equip and a second Coming Soon track.
+- [ ] Confirm the full exact-commit GitHub quality gate and physical phone review.
+
 ## 2026-11-12 — Per-supply collection audio (`feature/pickup-3d-artwork-ui`)
 
 - [x] Scope: the four road/air energy supplies (cell, can, tank, overcharge) select distinct sounds on actual collection, once per object; reuse the existing Web Audio SFX bus, mute/volume, pause/restart cleanup and 24-voice cap. No art, input geometry, ring sound or reward changes; audio presentation is identical across visual quality tiers.

@@ -8,7 +8,9 @@ import { readFileSync } from 'node:fs';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
 import { REAR_PORTS } from '../src/aero-vfx.js';
 import { LIFT_PORTS } from '../src/effects.js';
-import { glbJson } from '../scripts/assets/check-glb.mjs';
+import { Box3 } from 'three';
+import { glbJson, parseGlb } from '../scripts/assets/check-glb.mjs';
+import { fitToRoadsterSize } from '../src/car-display-size.ts';
 
 const entry = MODEL_MANIFEST['crimson-gt'];
 const WHEELS = { wheel_fl: [-1.05, 0.46, -1.35], wheel_fr: [1.05, 0.46, -1.35], wheel_rl: [-1.05, 0.46, 1.42], wheel_rr: [1.05, 0.46, 1.42] };
@@ -92,5 +94,27 @@ for (const lod of ['high', 'low']) {
     for (const name of ['cabin', 'cabin_seats', 'hood_vent_l', 'hood_vent_r', 'hood_vent_slats_l', 'hood_vent_slats_r']) {
       assert.notEqual(json.nodes.find(n => n.name === name)?.mesh, undefined, `${name} mesh`);
     }
+  });
+}
+
+// Owner, 2026-11-13: the GT read much smaller than the Roadster on every screen. The GLB stays as authored; the
+// garage adapter measures every player GLB and scales its instance to the Roadster (src/car-display-size.ts).
+const shown = async url => {
+  const { scene } = await parseGlb(readFileSync(new URL(`../public/${url}`, import.meta.url)));
+  fitToRoadsterSize(scene);
+  scene.updateMatrixWorld(true);
+  return new Box3().setFromObject(scene);
+};
+
+for (const lod of ['high', 'low']) {
+  test(`crimson-gt ${lod} GLB is shown at the Roadster's size: width, roof and length within 3% of roadster2, tyres on the ground`, async () => {
+    const roadster = await shown(lod === 'low' ? MODEL_MANIFEST.roadster2.lods[0].url : MODEL_MANIFEST.roadster2.url);
+    const gt = await shown(lod === 'low' ? entry.lods[0].url : entry.url);
+    const extent = box => ({ width: box.max.x - box.min.x, roof: box.max.y, length: box.max.z - box.min.z });
+    const want = extent(roadster), got = extent(gt);
+    for (const key of ['width', 'roof', 'length']) {
+      assert.ok(Math.abs(got[key] / want[key] - 1) < 0.03, `${key}: GT ${got[key].toFixed(3)} vs Roadster ${want[key].toFixed(3)}`);
+    }
+    assert.ok(gt.min.y >= 0 && gt.min.y < 0.05, `tyres on the ground: lowest point ${gt.min.y.toFixed(3)}`);
   });
 }
