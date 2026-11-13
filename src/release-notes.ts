@@ -22,6 +22,7 @@ export interface ReleaseEntry {
 }
 interface ReleaseStore { getItem(key: string): string | null; setItem(key: string, value: string): void }
 
+import { GARAGE_CARS_COPY } from './locales/garage-cars.ts';
 import packageMeta from '../package.json' with { type: 'json' };
 import { RELEASE_NOTES as WRITTEN_NOTES, UPCOMING } from './release-notes-data.ts';
 const { version } = packageMeta;
@@ -73,6 +74,17 @@ export const highlightsByKind = <T extends Pick<ReleaseHighlight, 'kind'> & Part
   [...highlights].sort((a, b) => kindRank(a.kind) - kindRank(b.kind) || mediaRank(a) - mediaRank(b));
 export const releaseText =(value: LocalizedText | LocalizedImage | null | undefined, locale: string): string =>
   typeof value === 'string' ? value : (value?.[locale as 'en' | 'zh-TW'] ?? value?.en ?? '');
+
+// Render the current name in this historical highlight while preserving the reviewed release record.
+export function releaseHighlightCopy(item: ReleaseHighlight, locale: string): { title: string; description: string } {
+  const title = releaseText(item.title, locale), description = releaseText(item.description, locale);
+  if (item.id !== 'roadster-redesign') return { title, description };
+  const name = GARAGE_CARS_COPY[locale === 'zh-TW' ? 'zh-TW' : 'en']['car.roadster'];
+  return {
+    title: title.replace(/\bRoadster\b/g, name),
+    description: locale === 'zh-TW' ? `${name}採用${description}` : description.replace(/\bRoadster\b/g, name),
+  };
+}
 
 // Only relative paths to files bundled under public/: no remote URLs, no traversal.
 const bundledPath = (value: LocalizedImage | undefined, locale: string, extensions: string): string | null => {

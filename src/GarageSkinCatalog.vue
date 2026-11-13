@@ -76,10 +76,24 @@ const isPreviewActive = (id: SkinId, category: SkinCategory) => {
 const isPreviewOnly = (id: SkinId, category: SkinCategory) =>
   isPreviewActive(id, category) && view(id)?.state !== 'equipped';
 const statusText = (id: SkinId, locale: string) => {
-  const state = view(id)?.state ?? 'locked';
+  const entry = view(id);
+  if (entry?.state === 'equipped' && !entry.owned) return locale === 'zh-TW' ? '試用中' : 'Trial active';
+  const state = entry?.state ?? 'locked';
   return ({ en: { trial: 'Free trial', equipped: 'Equipped', owned: 'Owned', locked: 'Locked' },
     'zh-TW': { trial: '免費試用', equipped: '已裝備', owned: '已擁有', locked: '未解鎖' } } as const)[locale === 'zh-TW' ? 'zh-TW' : 'en'][state];
 };
+
+function actionLabel(id: SkinId, category: SkinCategory, locale: string): string {
+  const entry = view(id);
+  if (!entry?.canEquip) return statusText(id, locale);
+  if (!isPreviewOnly(id, category)) return locale === 'zh-TW' ? '先預覽' : 'Preview first';
+  if (entry.owned) return locale === 'zh-TW' ? '套用' : 'Equip';
+  return locale === 'zh-TW' ? '免費試用' : 'Try free';
+}
+
+function confirmPreview(id: SkinId, category: SkinCategory): void {
+  if (isPreviewOnly(id, category) && view(id)?.canEquip) equipGarageSkin(id);
+}
 
 </script>
 
@@ -88,7 +102,9 @@ const statusText = (id: SkinId, locale: string) => {
   <section id="garage-vfx-catalog" class="garage-vfx-catalog" data-preview-contract="live-shared-aero" :data-release-mode="GARAGE_RELEASE_MODE"
     aria-labelledby="garage-vfx-catalog-heading">
     <h3 id="garage-vfx-catalog-heading">{{ locale === 'zh-TW' ? '外觀特效收藏' : 'VFX collection' }}</h3>
-    <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '點選卡片可預覽，按「試用」暫時裝備。重新載入後仍會記住你在此帳號最後的選擇，但這不是擁有權；試用結束後會還原為預設。' : 'Select a card to preview, then Try to equip temporarily. Your last pick is remembered on reload for this account, but it is not ownership; it returns to default when the trial ends.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
+    <p class="garage-vfx-message">{{ locale === 'zh-TW'
+      ? '點選卡片即時預覽，再按「套用」或「免費試用」確認。離開車庫會還原未確認的預覽。'
+      : 'Select a card to preview it, then choose Equip or Try free. Leaving the Garage restores the equipped effect.' }}</p>
     <section id="garage-vfx-live-loadout" class="garage-vfx-live-loadout" :aria-label="locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance'">
       <h4>{{ locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance' }}</h4>
       <ul class="garage-vfx-loadout-grid">
@@ -136,11 +152,13 @@ const statusText = (id: SkinId, locale: string) => {
             <strong>{{ skin.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
             <small class="garage-skin-status">{{ statusText(skin.id, locale) }}</small>
             <small class="garage-skin-preview-label" :aria-hidden="!isPreviewOnly(skin.id, skin.category)">{{ locale === 'zh-TW' ? '預覽中' : 'Previewing' }}</small>
+            <span class="garage-selection-flash" aria-hidden="true"></span>
           </button>
           <div class="garage-vfx-actions">
-            <button class="garage-skin-action" type="button" :disabled="!view(skin.id)?.canEquip"
-              @click.stop="equipGarageSkin(skin.id)">
-              {{ view(skin.id)?.state === 'equipped' ? (locale === 'zh-TW' ? '已裝備' : 'Equipped') : view(skin.id)?.owned ? (locale === 'zh-TW' ? '裝備' : 'Equip') : GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '免費試用' : 'Try free') : (locale === 'zh-TW' ? '未解鎖' : 'Locked') }}
+            <button class="garage-skin-action" type="button"
+              :disabled="!isPreviewOnly(skin.id, skin.category) || !view(skin.id)?.canEquip"
+              @click.stop="confirmPreview(skin.id, skin.category)">
+              {{ actionLabel(skin.id, skin.category, locale) }}
             </button>
           </div>
         </li>
@@ -221,11 +239,12 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-skin-preview-hitarea {
   position: relative; z-index: 1; flex: 1; width: 100%; min-height: 0;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  border: 0; border-radius: inherit; padding: 12px 4px 8px; color: inherit;
+  border: 0; border-radius: inherit; overflow: hidden; padding: 12px 4px 8px; color: inherit;
   text-align: center; background: transparent; cursor: pointer; touch-action: manipulation;
 }
 /* Press feedback belongs to the whole card, never a dimmed box around its upper part. */
 .garage-skin-preview-hitarea:active:not(:disabled) { filter: none; }
+
 .garage-vfx-category li.garage-skin-card:has(> .garage-skin-preview-hitarea:active) { filter: brightness(.86); transform: scale(.985); }
 .garage-skin-preview-hitarea:focus-visible {
   outline: 3px solid #74ebff; outline-offset: 3px;

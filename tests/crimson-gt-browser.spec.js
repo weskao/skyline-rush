@@ -519,6 +519,7 @@ test('Garage airflow previews and equipped styles follow Crimson GT onto Coming 
   await expect.poll(style).toEqual(['crimson-gt', 0]);
 
   await page.locator('#garage-button').click();
+  await page.locator('[data-skin="airflow-vortex"] .garage-skin-preview-hitarea').click();
   await page.locator('[data-skin="airflow-vortex"] .garage-skin-action').click();
   await page.locator('#garage-close').click();
   await expect.poll(style).toEqual(['crimson-gt', 2]);

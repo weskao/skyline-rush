@@ -46,7 +46,7 @@ const isPreviewingPaint = (id: string): boolean =>
   id === garageView.selected && id !== garageStudioView.equippedPaint;
 
 function animateSelection(event: MouseEvent): void {
-  const flash = (event.target as Element).closest('button:is([data-car], [data-paint])')
+  const flash = (event.target as Element).closest('button:is([data-car], [data-paint], .garage-skin-preview-hitarea)')
     ?.querySelector('.garage-selection-flash');
   if (!flash) return;
   flash.getAnimations().forEach(animation => animation.cancel());

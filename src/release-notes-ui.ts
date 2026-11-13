@@ -1,7 +1,7 @@
 import { nextTick } from 'vue';
 import { releaseView, updateReleaseView } from './release-view-state.ts';
 import { getLocale, t, formatDate, SUPPORTED_LOCALES } from './i18n.ts';
-import { CURRENT_RELEASE, UPCOMING, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, highlightsByKind, type ReleaseVideo } from './release-notes.ts';
+import { CURRENT_RELEASE, UPCOMING, recentReleases, shouldAnnounce, markAnnouncementSeen, releaseHighlightCopy, releaseImage, releaseHeroVideo, highlightsByKind, type ReleaseVideo } from './release-notes.ts';
 import type { ReleaseClipView } from './ui-state-contracts.ts';
 import { createReleaseMediaCache } from './release-media-cache.ts';
 import { onUserActivation } from './user-activation.ts';
@@ -86,13 +86,14 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
       zoom: { image: t('release.zoomImage'), video: t('release.zoomVideo'), close: t('release.zoomClose'), pause: t('release.pauseClip'), resume: t('release.resumeClip') },
       heroVideo: clipView(release.video, locale),
       entries: highlightsByKind(release.highlights).map(item => {
-        const image = releaseImage(item.image, locale), title = releaseText(item.title, locale);
+        const image = releaseImage(item.image, locale);
+        const { title, description } = releaseHighlightCopy(item, locale);
         return {
           kind: item.kind,
           kindLabel: t('release.kind.' + item.kind),
           title,
           zoomLabel: t('release.zoomEntry', { title }),
-          description: releaseText(item.description, locale),
+          description,
           image: image ? import.meta.env.BASE_URL + image : '',
           video: clipView(item.video, locale),
           playLabel: t('release.playEntry', { title }),
