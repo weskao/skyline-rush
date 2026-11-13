@@ -6,15 +6,13 @@ import { animatePickup, createPickupGeometries, PICKUP_SIZES } from '../src/pick
 
 const read = name => readFileSync(new URL('../' + name, import.meta.url), 'utf8');
 
-test('guide and road use the exact same transform, material factory and selected-tier model', () => {
-  const preview = read('src/Pickup3DPreview.vue');
+test('guide and road pose pickups through the same shared call and frame the in-race size', () => {
+  const stage = read('src/pickup-preview-stage.ts');
   const scene = read('src/effects.js');
-  assert.match(preview, /animatePickup\(mesh,\s*item,\s*seconds,\s*motion!?\.matches\)/);
-  assert.match(scene, /animatePickup\(mesh,\s*item,\s*flowTime,\s*reducedMotion\)/);
-  assert.match(preview, /createPickupGeometry\(props\.tier\)/);
-  assert.match(preview, /createPickupMaterial\(props\.tier\)/);
-  assert.doesNotMatch(preview, /createPickupGeometries\(/, 'no wasted construction of other tiers');
-  assert.match(preview, /PICKUP_SIZES\[props\.tier\]/, 'camera must frame the actual in-race size');
+  assert.match(stage, /markers\.place\(marker,\s*item,\s*seconds,\s*still,\s*camera\.quaternion\)/);
+  assert.match(scene, /pickupMarkers\.place\(mesh,\s*item,\s*flowTime,\s*reducedMotion,\s*camera\?\.quaternion\)/);
+  assert.match(stage, /PICKUP_SIZES\[tier\]/, 'camera must frame the actual in-race size');
+  assert.match(stage, /toneMappingExposure = 1\.12/, 'same exposure as the race renderer');
 });
 
 test('all four pickup silhouettes clear the road, with movement frozen for reduced motion', () => {
@@ -38,11 +36,11 @@ test('all four pickup silhouettes clear the road, with movement frozen for reduc
   }
 });
 
-test('make build 3d=1 is a real non-deploying build target and preserves the 3D switch', () => {
+test('make build is a real non-deploying build target with no pickup switch', () => {
   const makefile = read('Makefile');
   assert.match(makefile, /(?:^|\n)build:\s*node_modules\b/);
   assert.match(makefile, /(?:^|\n)\s+\$\(NPM\) run build/);
-  assert.match(makefile, /export VITE_PICKUP_3D\s*:?=\s*1/);
+  assert.doesNotMatch(makefile, /VITE_PICKUP_3D/);
 });
 
 test('3D pickup emissions pulse in the shared PBR material without changing shader programs', async () => {

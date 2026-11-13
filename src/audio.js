@@ -75,6 +75,31 @@ export function createSound() {
     else if (type === 'mystery') { t(1319, 1976, .09, 0, .018); t(1976, 1568, .09, .07, .014); }
     else t(988, 1480, .1, 0, .018);
   }
+  // Capacity sets the recharge tail; all layers share the existing SFX bus and voice lifecycle.
+  function supply(tier) {
+    const presets = {
+      cell: [880, 1760, .20, 'sine', .028],
+      can: [320, 960, .34, 'triangle', .032],
+      tank: [150, 600, .52, 'triangle', .038],
+      overcharge: [220, 1760, .74, 'sawtooth', .018],
+    };
+    const [from, to, duration, type, volume] = presets[tier] ?? presets.cell;
+    if (!enabled || voices.size > 21) return; // Reserve all three layers within the 24-voice cap.
+    const now = context.currentTime;
+    voice(type, from, to, now, duration, volume, .006, master);
+    tone(from / 4, from / 8, duration * .55, 0, .035);
+    const source = context.createBufferSource(), band = context.createBiquadFilter(), envelope = context.createGain();
+    source.buffer = noiseBuffer;
+    band.type = 'bandpass'; band.Q.value = .8;
+    band.frequency.setValueAtTime(to, now);
+    band.frequency.exponentialRampToValueAtTime(from, now + duration);
+    envelope.gain.setValueAtTime(0, now);
+    envelope.gain.linearRampToValueAtTime(.025, now + .012);
+    envelope.gain.exponentialRampToValueAtTime(.0001, now + duration);
+    source.connect(band).connect(envelope).connect(master);
+    source.start(now);
+    track(source, [band, envelope], now + duration + .02);
+  }
   function cue(name) {
     if (name === 'go') { tone(660, 880, 0.4); tone(990, 1320, 0.4, 0, 0.025); }
     else if (name === 'finish') [523, 659, 784, 1047].forEach((pitch, i) => tone(pitch, pitch, 0.35, i * 0.13));
@@ -95,6 +120,7 @@ export function createSound() {
     else if (name === 'lift') tone(260, 900, 0.35, 0, 0.03);
     else if (name === 'near') { tone(880, 1320, 0.12); tone(1320, 1760, 0.18, 0.1); }
     else if (name === 'pickup') { tone(1047, 1568, 0.14, 0, 0.03); tone(1568, 2093, 0.18, 0.07, 0.02); }
+    else if (name.startsWith('pickup-')) supply(name.slice(7));
     else if (name.startsWith('ring-')) ring(name.slice(5));
     else if (name === 'rival-pickup') { tone(1047, 1568, 0.14, 0, 0.011); tone(1568, 2093, 0.18, 0.07, 0.007); } // the player's pickup, rival volume
     else if (name === 'rival-nitro') tone(95, 42, 0.23, 0, 0.016); // the boost thump alone, rival volume

@@ -7,10 +7,10 @@ const guide = read('src/CollectiblesGuide.vue'), style = read('src/pickup-guide-
 const tiers = ['cell', 'can', 'tank', 'overcharge'];
 
 test('every pickup is a genuine separate illustration on the guide, not a shared diamond', () => {
-  const preview = read('src/PickupAnimatedPreview.vue');
-  assert.match(guide, /PickupAnimatedPreview/);
+  const preview = read('src/Pickup3DPreview.vue');
+  assert.match(guide, /Pickup3DPreview/);
   assert.match(preview, /import\.meta\.env\.BASE_URL/, 'works on GitHub Pages subpath');
-  assert.match(preview, /animated\/\$\{props\.tier\}/, 'each tier uses its own AI animation');
+  assert.match(preview, /animated\/\$\{props\.tier\}/, 'each tier keeps its own AI animation as the loading fallback');
   assert.match(preview, /\.svg/, 'preserve authored SVG fallback when images are unavailable');
   assert.doesNotMatch(guide, /class="gem-body"/);
   assert.match(guide, /class="collectible-card pickup-card"/);

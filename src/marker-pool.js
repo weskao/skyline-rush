@@ -41,6 +41,8 @@ export function createMarkerPool(name, geometry, materials, capacity) {
         mesh.computeBoundingSphere();
       }
     },
+    /** Replaces one key's shape and material in place (pickups: procedural stand-in → loaded model). */
+    swap(key, shape, material) { meshes[key].geometry = shape; meshes[key].material = material; },
     dispose() { for (const key in meshes) meshes[key].dispose(); },
   };
 }

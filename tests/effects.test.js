@@ -110,10 +110,10 @@ test('lift cores follow tilted nozzle transforms and fade completely on release/
   assert.ok(cores.children.every(core => !core.visible));
 });
 
-function raceScene(t, pickup3D = false) {
+function raceScene(t) {
   globalThis.devicePixelRatio = 1;
   t.after(() => { delete globalThis.devicePixelRatio; });
-  const scene = new Scene(), effects = createEffects(scene, () => 0, { pickup3D }), race = createRace();
+  const scene = new Scene(), effects = createEffects(scene, () => 0), race = createRace();
   race.phase = 'racing'; race.player.speed = 60;
   race.pickups = []; race.rings = [];
   const points = scene.children.find(object => object.isPoints);
@@ -130,11 +130,13 @@ test('pickup tiers are visible at their seeded positions and taken pickups disap
   assert.ok(group, 'collectible models are attached to the real scene');
   const visible = drawnMarkers(group);
   assert.equal(visible.length, 4);
-  assert.equal(new Set(visible.map(mesh => mesh.material.color.getHex())).size, 4);
+  const glow = visible.map(mesh => mesh.material.emissive); // the tier's accent; the body colours are in the model
+  assert.equal(new Set(glow.map(color => color.getHex())).size, 4);
   assert.equal(new Set(visible.map(mesh => mesh.scale.x)).size, 4);
-  assert.ok(visible[0].material.color.b > visible[0].material.color.r * 3 && visible[0].material.color.b > visible[0].material.color.g * 2, 'cell is blue');
-  assert.ok(visible[1].material.color.r > visible[1].material.color.g * 2, 'can is orange');
-  assert.ok(visible[2].material.color.g > visible[1].material.color.g, 'tank is gold');
+  assert.equal(new Set(visible.map(mesh => mesh.geometry.uuid)).size, 4, 'four different models');
+  assert.ok(glow[0].b > glow[0].r * 3 && glow[0].b > glow[0].g, 'cell is blue');
+  assert.ok(glow[1].r > glow[1].g * 2, 'can is orange');
+  assert.ok(glow[2].g > glow[1].g, 'tank is gold');
   assert.ok(visible[3].material.vertexColors && visible[3].geometry.attributes.color, 'overcharge is rainbow');
   assert.equal(visible[2].position.x, 2);
   assert.equal(visible[2].position.z, -120);
@@ -214,7 +216,7 @@ test('drifting emits ground smoke and threshold-colored sparks while respecting 
 });
 
 test('disposing marker pools releases every tier material, including types no longer drawn', t => {
-  const { scene, effects, race, update } = raceScene(t, true);
+  const { scene, effects, race, update } = raceScene(t);
   race.pickups = ['cell', 'can', 'tank', 'overcharge'].map((tier, i) => ({ tier, x: 0, altitude: 0, distance: 100 + i * 10 }));
   race.rings = ['charge', 'nitro', 'slipstream', 'risk', 'mystery'].map((type, i) => ({ type, radius: 4.8, x: 0, altitude: 8, distance: 100 + i * 20 }));
   update();

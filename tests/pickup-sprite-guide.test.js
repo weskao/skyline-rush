@@ -4,26 +4,26 @@ import { readFileSync } from 'node:fs';
 
 const read = path => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
 
-test('collectibles guide mounts authored sequential-image preview for all four tiers', () => {
+test('collectibles guide mounts the live 3D preview for all four tiers; the sprites are its fallback only', () => {
   const guide = read('src/CollectiblesGuide.vue');
-  const preview = read('src/PickupAnimatedPreview.vue');
-  assert.match(guide, /PickupAnimatedPreview/);
-  assert.match(guide, /<PickupAnimatedPreview[^>]+:tier="pickup.key"/);
-  assert.match(preview, /animated\/\$\{props\.tier\}\.webp/);
-  assert.match(preview, /animated\/\$\{props\.tier\}-poster\.webp/);
-  assert.match(preview, /prefers-reduced-motion/);
-  assert.match(preview, /\@error="failSprite"/);
-  assert.match(preview, /Pickup3DPreview/, 'missing sprites fall back to the existing 3D model, not a broken image');
-  assert.match(preview, /\.svg/, 'legacy SVG remains usable when WebGL is off');
+  const preview = read('src/Pickup3DPreview.vue');
+  assert.match(guide, /<Pickup3DPreview[^>]+:tier="pickup.key"/);
+  assert.match(preview, /<canvas[^>]+class="pickup-3d-canvas"/, 'the live model is always mounted');
+  assert.match(preview, /<img v-if="!ready"[^>]+class="pickup-animation"/,
+    'the image is shown only until the first live frame, or for good without WebGL');
+  assert.match(preview, /animated\/\$\{props\.tier\}\$\{reduced\.value \? '-poster' : ''\}\.webp/,
+    'animated sprite, or its still poster under reduced motion');
+  assert.match(preview, /@error="spriteFailed = true"/);
+  assert.match(preview, /\$\{props\.tier\}\.svg/, 'a missing sprite falls back to the authored SVG, not a broken image');
+  assert.match(preview, /catch \{/, 'a browser without WebGL keeps the image instead of throwing');
 });
 
-test('animated artwork replaces the guide only, never the in-race 3D models or collection burst', () => {
-  const scene = read('src/effects.js');
+test('sprite artwork never reaches the in-race renderer or the collection effects', () => {
   const guide = read('src/CollectiblesGuide.vue');
-  assert.match(scene, /createPickupGeometries/);
-  assert.match(scene, /createPickupCollectVfx/);
-  assert.doesNotMatch(scene, /PickupAnimatedPreview|\.webp/);
-  assert.match(guide, /PickupAnimatedPreview/);
+  for (const path of ['src/effects.js', 'src/pickup-markers.js', 'src/pickup-collect-vfx.js', 'src/pickup-preview-stage.ts'])
+    assert.doesNotMatch(read(path), /\.webp/, path);
+  assert.match(read('src/effects.js'), /createPickupCollectVfx/);
+  assert.doesNotMatch(guide, /\.webp/, 'the guide itself does not pick artwork; its preview component does');
 });
 
 test('asset conversion instructions preserve exact four animation identities, frame duration and fallbacks', () => {

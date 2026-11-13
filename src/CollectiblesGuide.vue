@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { COLLECTIBLES_GUIDE_COPY } from './collectibles-guide-copy.ts';
 import './pickup-guide-art.css';
-import PickupAnimatedPreview from './PickupAnimatedPreview.vue';
+import Pickup3DPreview from './Pickup3DPreview.vue';
 const rings = [
   { key: 'charge', color: 'cyan', icon: 'charge' },
   { key: 'nitro', color: 'gold', icon: 'nitro' },
@@ -68,7 +68,7 @@ const powers = [
       <div class="collectibles-grid">
         <article v-for="pickup in pickups" :key="pickup.key" class="collectible-card pickup-card" :class="`card-${pickup.color}`">
           <div class="pickup-showcase" aria-hidden="true">
-            <PickupAnimatedPreview :tier="pickup.key" />
+            <Pickup3DPreview :tier="pickup.key" />
           </div>
           <div class="card-info">
             <header class="card-head">
