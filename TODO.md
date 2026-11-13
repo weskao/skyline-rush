@@ -1,3 +1,16 @@
+# 2026-11-14 — Six red browser tests on develop (`fix/develop-red-browser-specs`)
+
+Every develop push since 2026-11-12 cancelled the previous full CI run, so these failures went unseen. Bisected with `git bisect --first-parent` from the last commit where all four specs passed (`8372c577`).
+
+- [x] Hero Roadster ports (`hero-roadster-race-browser.spec.js:57`, 0.0266 vs < 1e-4): product regression from `56536093` (every car shown at the Roadster's size). The lift jets and their gas stayed on the unscaled `LIFT_PORTS`: 2.6–2.9 cm off roadster2's thrusters, 28–32 cm off the Crimson GT's. `dress()` now publishes the instance scale as `car.userData.displayScale` and `effects.js` `liftPort()` multiplies by it. A live flying probe measured 0 cm on both cars (old code: 2.6–2.9 cm and 28–32 cm). RED on the old `src/`: the 2 new unit tests fail; GREEN: `node --test tests/effects.test.js tests/garage-model-rig.test.js` 41 pass.
+- [x] Endless rolling minimap (`endless-highway-browser.spec.js:12`, desktop-en + phone-zh): stale expectation. `fbbfb8e5` added the rolling Endless/Elimination map on purpose; the spec now asserts it is visible with `data-streaming`. The updated spec fails on `fbbfb8e5^`.
+- [x] Hazard captures (`hazard-captures-browser.spec.js:22`, desktop-en + phone-en, 0.0445 vs < 0.01): stale expectation. `fbbfb8e5` curves classic roads and turns hazards with them; the gust yaw is judged against `classicRoadRoute(...).heading`, and the Neon sweep is measured on the ground plane. The updated spec fails on `fbbfb8e5^`.
+- [x] Coast scenery transcoder fetch (`coast-scenery-browser.spec.js:109`): stale expectation. Always-on 3D pickups (`e30ee752`) load the shared KTX2 transcoder on every track; the check now names only Coast's own files. Not RED on the old code: it only narrows the forbidden list.
+- [x] Prevention notes: `.claude/rules/browser-test-stability.md` (road-relative poses, absence checks name the feature's own files) and `.claude/rules/3d-asset-pipeline.md` item 14 (lift jets follow the display scale).
+- [x] The four specs with `--repeat-each=3 --retries=0`: 18 passed. Full hero-roadster (7) and hazard (2) specs, plus crimson-gt, coast-scenery, endless-highway, shader-warmup and black-frame regression specs (34), passed.
+- [x] `npm test` (2,763 passed, 3 skipped, 0 failed), `npm run typecheck`, `npm run build` and `node --test tests/module-size.test.js` passed.
+- [ ] Exact-HEAD full GitHub CI: only runs on develop/main, pending merge approval.
+
 # 2026-11-13 — Wave 3 trial coins, diamonds and cosmetic offers
 
 ## Wave 3 local demo economy E2E (feature/wave3-demo-economy)

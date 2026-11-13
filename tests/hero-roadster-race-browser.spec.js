@@ -66,20 +66,26 @@ test('race: the Home instance carries on; VFX ports, programs and flight fans fo
   expect(await glbRoots(page)).toBe(1);
   await attach(page, 'race-ground');
 
-  // Ports: the GLB thruster/rear-nozzle pivots sit exactly on the procedural VFX ports, in world space.
+  // Ports: the GLB thruster/rear-nozzle pivots sit exactly on the VFX ports, in world space. The GLB shows at the
+  // Roadster's measured size (car-display-size.ts), so the lift jets scale their ports by it (effects.js) and the
+  // rear-port group moves onto the nozzles (garage-model.ts).
   const offsets = await page.evaluate(([lift, rear]) => {
     const car = window.gameScene.player, V = car.position.constructor;
     car.updateMatrixWorld(true);
-    const gap = (name, local) => car.getObjectByName(name).getWorldPosition(new V()).distanceTo(car.localToWorld(new V(...local)));
-    const root = car.children.find(c => c.userData.garageModel);
+    const at = name => car.getObjectByName(name).getWorldPosition(new V());
+    const root = car.children.find(c => c.userData.garageModel), shown = car.userData.displayScale;
+    const ports = car.getObjectByName('Rear ports');
     return {
-      lift: lift.map(([x, z], i) => gap(`thruster_0${i + 1}`, [x, 0.3, z])),
-      rear: rear.map((x, i) => gap(`nozzle_rear_0${i + 1}`, [x, 0.64, 2.39])),
-      root: [...root.position.toArray(), ...root.quaternion.toArray(), ...root.scale.toArray()],
+      lift: lift.map(([x, z], i) => at(`thruster_0${i + 1}`).distanceTo(car.localToWorld(new V(x, 0.3, z).multiply(shown)))),
+      rear: rear.map((x, i) => at(`nozzle_rear_0${i + 1}`).distanceTo(ports.localToWorld(new V(x, 0.64, 2.39)))),
+      root: [...root.position.toArray(), ...root.quaternion.toArray()],
+      scale: root.scale.toArray(), shown: shown.toArray(),
     };
   }, [LIFT_PORTS, REAR_PORT_X]);
   for (const gap of [...offsets.lift, ...offsets.rear]) expect(gap).toBeLessThan(1e-4);
-  expect(offsets.root).toEqual([0, 0, 0, 0, 0, 0, 1, 1, 1, 1]);
+  expect(offsets.root).toEqual([0, 0, 0, 0, 0, 0, 1]);
+  expect(offsets.shown).toEqual(offsets.scale);
+  expect(offsets.scale[1]).toBe(offsets.scale[2]); // wheels stay round
 
   await page.keyboard.down('ShiftLeft');
   await page.waitForTimeout(ciTimeout(600));

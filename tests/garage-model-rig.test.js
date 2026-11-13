@@ -343,6 +343,19 @@ test('rear-port VFX move to a GLB that authors its nozzles ahead of the contract
   near(rear.position.toArray(), [0, 0, 0]);
 });
 
+test('lift-jet VFX get the dressed instance\'s display scale while it is shown, and the contract ports after', async () => {
+  const ctx = setup();
+  const { car, model, host } = ctx;
+  model.sync(true, 'high', host);
+  await settle();
+  const instance = car.children.find(c => c.userData.garageModel);
+  assert.ok(instance, 'dressed');
+  // effects.js multiplies LIFT_PORTS by it, so the jets stay on the scaled authored thrusters (car-display-size.ts)
+  assert.deepEqual(car.userData.displayScale?.toArray(), instance.scale.toArray());
+  model.sync(false, 'high', null);
+  assert.equal(car.userData.displayScale, undefined);
+});
+
 test('a GLB without rear nozzle nodes leaves the rear-port VFX on the contract ports', async () => {
   const car = makeCar(CAR_STYLES.roadster), scene = new THREE.Scene();
   scene.add(car);
