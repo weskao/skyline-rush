@@ -189,6 +189,36 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt', 'ktx2'],
     budgets: { triangles: 63_500, bytes: 6_000_000, textureMaxPx: 1024 },
   },
+  // The boats on the open Coast water (coast-boats.ts): three modelled meshes, one vertex-coloured material, no textures.
+  'coast-boats': {
+    id: 'coast-boats',
+    url: 'models/coast-boats/coast-boats.glb',
+    source: {
+      master: 'assets-src/coast-boats/coast-boats.blend',
+      script: 'assets-src/coast-boats/build.py',
+      masterSha256: '1aed6c2efbbe527a4b2f4d3e55a33d80e431c89b6bba49b140326549d78eafb2',
+      scriptSha256: '4aa0dddb29c7f9b354f67859f2083f2ffbf41c968ef55b129ac0b50f855374b5',
+    },
+    glb: { sha256: '26c6b7a6e34f85920c61055b8d0612138f6296962810bfc91334b8f3ac82a7e4', bytes: 25_772 },
+    license: { id: 'owned', creator: 'Skyline Rush project' },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        '$BLENDER_BIN --background --factory-startup --python assets-src/coast-boats/build.py',
+        'node scripts/assets/export-glb.mjs coast-boats',
+        'node scripts/assets/optimize-glb.mjs coast-boats',
+        'node scripts/assets/check-glb.mjs coast-boats --promote',
+      ],
+    },
+    nodes: ['sailboat_a', 'sailboat_b', 'motorboat'],
+    materials: ['coast_boat_paint'],
+    lods: [],
+    fallback: 'procedural-scenery',
+    decoders: ['meshopt'],
+    budgets: { triangles: 3_000, bytes: 120_000, textureMaxPx: 0 },
+  },
   // Road power-ups: one mesh and one baked 512 px PBR set per tier, shared by the guide preview and the GPU-instanced
   // track pool. Shapes in each build.py; materials, bake and review sheets in scripts/assets/pickup_kit.py.
   'pickup-cell': pickupModel('cell', 3000, {
