@@ -41,3 +41,11 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   43–100px of unwanted `#race-overlay` scrolling in CI run 42811323467.
 
 - **Wave 3 post-race rewards must not jump between coordinate systems.** `enter(.overlay-content)` animates `transform`, making `position: fixed` descendants resolve against the animated parent before snapping back to the viewport. Keep `.wave3-demo-results` in the normal `.overlay-summary` flow; short landscape uses an accessible compact summary rather than a floating toast. Protect the regression with `tests/wave3-demo-results.test.js`, `tests/wave3-demo-results-layout-browser.spec.js`, and `tests/overlay-landscape-fit-browser.spec.js`.
+
+- **Wave 3 reward card shows every line; no height cap.** A `max-height` + `overflow` on
+  `.wave3-demo-results` cut mission progress and fine print on desktop/tablet (2026-11-13). Short
+  landscape has zero spare height, so the strip stays one line and a 詳情 tap raises the details as
+  an absolute panel over the summary column (card is `position: relative`, never `fixed`). The tap
+  listener sits on the card, not a stretched `::before` on the button: `button.is-pressed` applies
+  `filter`, which makes the button the pseudo's containing block mid-tap and the click misses.
+  Guard: `tests/wave3-demo-results-layout-browser.spec.js` (zh-TW, `clipped()` per viewport).

@@ -21,6 +21,7 @@ const put = (element: HTMLElement, value: string): void => {
 };
 
 const credited = new WeakMap<HTMLElement, ExperienceResult>();
+const shown = new WeakMap<HTMLElement, ExperienceResult | null | undefined>();
 const rollDuration = 900;
 
 function renderCredit(credit: HTMLElement, view: DemoResultView, receipt: ExperienceResult | null | undefined): void {
@@ -86,7 +87,7 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     const banner = make(doc, 'div', 'wave3-demo-results__banner');
     banner.hidden = true;
     const header = make(doc, 'div', 'wave3-demo-results__header');
-    header.append(make(doc, 'span', 'wave3-demo-results__mark', '✦'), make(doc, 'h3', 'wave3-demo-results__heading'));
+    header.append(make(doc, 'span', 'wave3-demo-results__mark', '✦'), make(doc, 'h3', 'wave3-demo-results__heading'), banner);
     const status = make(doc, 'p', 'wave3-demo-results__status');
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
@@ -100,15 +101,35 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     value.setAttribute('aria-hidden', 'true');
     balance.append(label, value);
     credit.append(make(doc, 'p', 'wave3-demo-results__points'), balance);
-    const progress = make(doc, 'div', 'wave3-demo-results__missions');
-    const distinction = make(doc, 'p', 'wave3-demo-results__distinction');
-    const disclaimer = make(doc, 'p', 'wave3-demo-results__disclaimer');
-    region.append(banner, header, status, credit, progress, distinction, disclaimer);
+    const details = make(doc, 'div', 'wave3-demo-results__details');
+    details.id = 'wave3-demo-results-details';
+    details.append(status, make(doc, 'div', 'wave3-demo-results__missions'),
+      make(doc, 'p', 'wave3-demo-results__distinction'), make(doc, 'p', 'wave3-demo-results__disclaimer'));
+    // Only shown on short landscape, where the card is a one-line strip and details open as a panel above it.
+    const toggle = make(doc, 'button', 'wave3-demo-results__toggle');
+    toggle.setAttribute('type', 'button');
+    toggle.setAttribute('aria-controls', details.id);
+    // The whole strip (and the open panel) is the tap target; the button keeps keyboard/AT access.
+    region.addEventListener('click', () => {
+      if (doc.defaultView?.getComputedStyle(toggle).display === 'none') return;
+      const open = toggle.getAttribute('aria-expanded') !== 'true';
+      toggle.setAttribute('aria-expanded', String(open));
+      if (open) region!.dataset.open = ''; else delete region!.dataset.open;
+    });
+    region.append(header, credit, details, toggle);
     container.append(region);
   }
   region.className = `wave3-demo-results wave3-demo-results--${view.state}`;
   region.setAttribute('aria-label', view.heading);
   put(region.querySelector<HTMLElement>('.wave3-demo-results__heading')!, view.heading);
+  const toggle = region.querySelector<HTMLElement>('.wave3-demo-results__toggle')!;
+  put(toggle, view.details);
+  // Results rerender during the reveal; only a new race receipt closes the details panel.
+  if (!shown.has(region) || shown.get(region) !== settlement) {
+    shown.set(region, settlement);
+    toggle.setAttribute('aria-expanded', 'false');
+    delete region.dataset.open;
+  }
   put(region.querySelector<HTMLElement>('.wave3-demo-results__status')!, view.status);
   renderCredit(region.querySelector<HTMLElement>('.wave3-demo-results__credit')!, view, settlement);
   put(region.querySelector<HTMLElement>('.wave3-demo-results__distinction')!, view.distinction);

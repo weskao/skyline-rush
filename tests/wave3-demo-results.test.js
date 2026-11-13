@@ -118,7 +118,7 @@ test('rerender reuses the same node/status and does not modify existing results 
 test('compact portrait/landscape and reduced-motion styling is scoped to the optional card', () => {
   const css = readFileSync(new URL('../src/wave3-demo-results.css', import.meta.url), 'utf8');
   assert.match(css, /\.wave3-demo-results/);
-  assert.match(css, /max-height:\s*480px/);
+  assert.match(css, /max-height:\s*500px\) and \(orientation: landscape/);
   assert.match(css, /max-width:\s*480px/);
   assert.match(css, /prefers-reduced-motion/);
   assert.doesNotMatch(css, /#result-stats|#again-button|#next-button/);
@@ -130,7 +130,8 @@ test('reward panel remains anchored in the results summary instead of jumping fr
   assert.match(card, /position:\s*static/);
   assert.doesNotMatch(card, /position:\s*(?:fixed|absolute)/);
   assert.doesNotMatch(card, /\b(?:left|bottom|right|top):/);
-  assert.match(css, /\.wave3-demo-results\s*\{[^}]*max-height:\s*min\(/s);
+  // A height cap clipped the mission progress and fine print (desktop showed only the first lines).
+  assert.doesNotMatch(card, /max-height|overflow/);
   assert.doesNotMatch(css, /#result-cloud|#again-button|#result-links/);
 });
 
