@@ -5,7 +5,9 @@ import Wave3DemoArt from './Wave3DemoArt.vue';
 import { getLocale, onLocaleChange } from './i18n.ts';
 import { WAVE3_PREVIEW_CATALOG, filterWave3PreviewItems } from './garage-wave3-preview-catalog.ts';
 import type { Wave3PreviewItem } from './garage-wave3-preview-catalog.ts';
-import { MISSION_DEFINITIONS, missionPeriodBounds, missionStatus, trophyTier } from './wave3-demo-missions.ts';
+import { MISSION_DEFINITIONS, missionPeriodBounds, missionPeriodId, missionStatus, trophyTier } from './wave3-demo-missions.ts';
+import { formatDemoReward } from './wave3-currency-view.ts';
+import { demoMissionBonus } from './wave3-demo-settlement.ts';
 import type { Wave3ExperiencePort, ExperienceSnapshot, MissionProgress } from './wave3-experience-contract.ts';
 
 const props = defineProps<{ experience?: Wave3ExperiencePort | null }>();
@@ -46,12 +48,22 @@ const earnedCount = computed(() => available.value ? missions.filter(m => progre
 const earnedTier = computed(() => trophyTier(earnedCount.value));
 const TROPHY_LEVELS: Readonly<Record<string, number>> =
   { 'trophy-bronze': 1, 'trophy-silver': 2, 'trophy-gold': 3, 'trophy-platinum': 4 };
-function claim(id: string): void {
+async function claim(id: string): Promise<void> {
   if (!available.value || stateOf(id) !== 'claimable' || !props.experience) return;
-  const result = props.experience.claimMission(id);
+  const port = props.experience;
+  const scope = port.getOperationScope();
+  const result = await port.claimMission(id, missionPeriodId(id, snapshot.value!.updatedAt), scope);
+  snapshot.value = result.snapshot;
   feedback.value = result.status === 'completed'
-    ? label(`+${result.deltaDemoPoints} demo points`, `+${result.deltaDemoPoints} 試玩點數`)
-    : label('Demo claim unavailable or already processed.', '試玩領取尚未開放或已處理。');
+    ? formatDemoReward({ points: result.deltaDemoPoints, coins: result.deltaDemoCoins,
+        diamonds: result.deltaDemoDiamonds }, locale.value)
+    : result.status === 'expired'
+      ? label('This challenge has expired. Check the current challenges.', '此挑戰已過期，請查看目前的挑戰。')
+      : label('Demo claim unavailable or already processed.', '試玩領取尚未開放或已處理。');
+}
+function missionReward(id: string): string {
+  if (!available.value) return '';
+  return formatDemoReward({ points: progressOf(id)?.rewardDemoPoints, ...demoMissionBonus(id) }, locale.value);
 }
 let stopLocale: (() => void) | undefined;
 let stopExperience: (() => void) | undefined;
@@ -120,6 +132,7 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
         <progress :value="progressValue(item.id)" :max="goalValue(item.id)"
           :aria-label="title(item.art) + ' ' + (item.cadence === 'daily' ? label('Daily', '每日') : label('Weekly', '每週')) + ': ' + progressValue(item.id) + ' / ' + goalValue(item.id)" />
         <small>{{ progressValue(item.id) }} / {{ goalValue(item.id) }}</small>
+        <small v-if="available">{{ missionReward(item.id) }}</small>
         <button v-if="stateOf(item.id) === 'claimable'" class="garage-mission-claim" type="button"
           @click="claim(item.id)">
           <Wave3DemoArt id="demo-claim" />

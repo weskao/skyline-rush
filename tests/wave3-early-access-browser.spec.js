@@ -109,7 +109,10 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   // Drive the real simulation; never alter window.gameplay, timers, or settlement state.
   test.setTimeout(ciTimeout(240000));
   await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto('/');
+  await expect(page.locator('#intro [data-wave3-wallet] [data-currency="demo-points"] strong')).toHaveText('20');
   await page.locator('#race-overlay').evaluate(overlay => {
     window.rewardBalanceFrames = [];
     new MutationObserver(() => {
@@ -126,10 +129,14 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
     await expect(page.locator('#race-status')).toHaveText('FINISHED', { timeout: ciTimeout(200000) });
   } finally { await page.keyboard.up('w'); }
   await expect(page.locator('#result-stats')).toBeVisible();
-  await expect(page.locator('.wave3-demo-results__points')).toContainText(/20 Demo points/);
-  const balance = page.locator('.wave3-demo-results__balance');
+  const points = page.locator('.wave3-demo-results__credit:not(.wave3-demo-results__coin-credit)');
+  await expect(points.locator('.wave3-demo-results__points')).toContainText(/20 Demo points/);
+  const balance = points.locator('.wave3-demo-results__balance');
   await expect(balance).toHaveAttribute('aria-label', /Demo points balance.*40/);
   await expect(balance.locator('.wave3-demo-results__balance-value')).toHaveText('40');
+  const coins = page.locator('.wave3-demo-results__coin-credit');
+  await expect(coins.locator('.wave3-demo-results__points')).toContainText('+70 Demo coins');
+  await expect(coins.locator('.wave3-demo-results__balance-value')).toHaveText('70');
   const frames = await page.evaluate(() => window.rewardBalanceFrames);
   expect(frames).toContain('20');
   expect(frames.some(frame => Number(frame) > 20 && Number(frame) < 40)).toBe(true);
@@ -153,7 +160,7 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   const homePoints = homeWallet.locator('[data-currency="demo-points"] strong');
   await expect(homeWallet).toBeVisible();
   await expect(homePoints).toHaveText('40');
-  await expect(homeWallet.locator('[data-currency="coins"] strong')).toHaveText('0');
+  await expect(homeWallet.locator('[data-currency="coins"] strong')).toHaveText('70');
   await expect(homeWallet.locator('[data-currency="diamonds"] strong')).toHaveText('0');
   await page.locator('#garage-button').click();
   const board = page.locator('.garage-mission-board');
@@ -172,6 +179,11 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await page.locator('#garage-button').click();
   const store = await openStore(page);
   await expect(store.locator('.demo-wallet strong')).toHaveText('50');
+  await store.locator('[data-demo-id="nitro-trail-cyan"]').click();
+  await expect(store.locator('.demo-detail')).toContainText('150 Demo coins');
+  await expect(store.locator('.demo-selected-balance')).toHaveText('Available 70 Demo coins');
+  await store.getByRole('button', { name: 'Demo redeem' }).click();
+  await expect(store.locator('.demo-message')).toContainText('Not enough demo coins');
   await store.locator('[data-demo-id="thruster-ion"]').click();
   await store.getByRole('button', { name: 'Demo redeem' }).click();
   await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
@@ -205,10 +217,14 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await expect(page.locator('[data-wave3-demo-store] .demo-wallet strong')).toHaveText('20');
   await expect(page.locator('[data-wave3-demo-store] [data-demo-id="thruster-ion"]')).not.toHaveAttribute('data-demo-status', 'demo-unlocked');
   expect(await page.evaluate(key => localStorage.getItem(key), modeHistoryKey)).toBe(beforeResetHistory);
-  expect(await page.evaluate(key => localStorage.getItem(key), demoKey)).toBeNull();
+  await expect.poll(() => page.evaluate(key => {
+    const entry = JSON.parse(localStorage.getItem(key) || 'null');
+    return [entry?.snapshot.demoPoints, entry?.snapshot.demoInventory, entry?.checkpoint.settledCompletions];
+  }, demoKey)).toEqual([20, [], []]);
   await page.locator('#garage-close').click();
   await expect(homeWallet).toBeVisible();
   await expect(homePoints).toHaveText('20');
+  expect(pageErrors).toEqual([]);
 });
 
 test('real Garage cannot grant paid entitlements or stale demo claims through repeated visits', async ({ page }) => {

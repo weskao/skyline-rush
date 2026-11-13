@@ -24,21 +24,22 @@ const credited = new WeakMap<HTMLElement, ExperienceResult>();
 const shown = new WeakMap<HTMLElement, ExperienceResult | null | undefined>();
 const rollDuration = 900;
 
-function renderCredit(credit: HTMLElement, view: DemoResultView, receipt: ExperienceResult | null | undefined): void {
+function renderCredit(credit: HTMLElement, reward: string | null, summary: DemoResultView['balance'],
+  receipt: ExperienceResult | null | undefined): void {
   const points = credit.querySelector<HTMLElement>('.wave3-demo-results__points')!;
   const balance = credit.querySelector<HTMLElement>('.wave3-demo-results__balance')!;
   const label = balance.querySelector<HTMLElement>('.wave3-demo-results__balance-label')!;
   const value = balance.querySelector<HTMLElement>('.wave3-demo-results__balance-value')!;
-  credit.hidden = points.hidden = !view.points;
-  put(points, view.points ?? '');
-  balance.hidden = !view.balance;
-  if (!view.balance || !receipt) {
+  credit.hidden = points.hidden = !reward;
+  put(points, reward ?? '');
+  balance.hidden = !summary;
+  if (!summary || !receipt) {
     credited.delete(credit);
     delete credit.dataset.rewardReveal;
     return;
   }
 
-  const { label: title, from, total } = view.balance;
+  const { label: title, from, total } = summary;
   put(label, title);
   balance.setAttribute('aria-label', `${title} ${total}`);
   if (credited.get(credit) === receipt) return;
@@ -74,6 +75,19 @@ function renderCredit(credit: HTMLElement, view: DemoResultView, receipt: Experi
   });
 }
 
+function makeCredit(doc: Document, className: string): HTMLElement {
+  const credit = make(doc, 'div', className);
+  const balance = make(doc, 'div', 'wave3-demo-results__balance');
+  balance.setAttribute('role', 'group');
+  const label = make(doc, 'span', 'wave3-demo-results__balance-label');
+  const value = make(doc, 'strong', 'wave3-demo-results__balance-value');
+  label.setAttribute('aria-hidden', 'true');
+  value.setAttribute('aria-hidden', 'true');
+  balance.append(label, value);
+  credit.append(make(doc, 'p', 'wave3-demo-results__points'), balance);
+  return credit;
+}
+
 /** Mount inside #race-overlay .overlay-summary, after #result-style. Does not modify original result rows or buttons. */
 export function mountWave3DemoResults({ container, settlement, locale, raceMode, artworkUrl, bannerUrl }: DemoResultsMount): HTMLElement {
   const view = projectWave3DemoResults(settlement, { locale, raceMode });
@@ -92,18 +106,11 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
     status.setAttribute('aria-atomic', 'true');
-    const credit = make(doc, 'div', 'wave3-demo-results__credit');
-    const balance = make(doc, 'div', 'wave3-demo-results__balance');
-    balance.setAttribute('role', 'group');
-    const label = make(doc, 'span', 'wave3-demo-results__balance-label');
-    const value = make(doc, 'strong', 'wave3-demo-results__balance-value');
-    label.setAttribute('aria-hidden', 'true');
-    value.setAttribute('aria-hidden', 'true');
-    balance.append(label, value);
-    credit.append(make(doc, 'p', 'wave3-demo-results__points'), balance);
+    const credit = makeCredit(doc, 'wave3-demo-results__credit');
+    const coinCredit = makeCredit(doc, 'wave3-demo-results__credit wave3-demo-results__coin-credit');
     const details = make(doc, 'div', 'wave3-demo-results__details');
     details.id = 'wave3-demo-results-details';
-    details.append(status, make(doc, 'div', 'wave3-demo-results__missions'),
+    details.append(coinCredit, status, make(doc, 'div', 'wave3-demo-results__missions'),
       make(doc, 'p', 'wave3-demo-results__distinction'), make(doc, 'p', 'wave3-demo-results__disclaimer'));
     // Only shown on short landscape, where the card is a one-line strip and details open as a panel above it.
     const toggle = make(doc, 'button', 'wave3-demo-results__toggle');
@@ -131,7 +138,8 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     delete region.dataset.open;
   }
   put(region.querySelector<HTMLElement>('.wave3-demo-results__status')!, view.status);
-  renderCredit(region.querySelector<HTMLElement>('.wave3-demo-results__credit')!, view, settlement);
+  renderCredit(region.querySelector<HTMLElement>('.wave3-demo-results__credit')!, view.points, view.balance, settlement);
+  renderCredit(region.querySelector<HTMLElement>('.wave3-demo-results__coin-credit')!, view.coins, view.coinBalance, settlement);
   put(region.querySelector<HTMLElement>('.wave3-demo-results__distinction')!, view.distinction);
   put(region.querySelector<HTMLElement>('.wave3-demo-results__disclaimer')!, view.disclaimer);
   const missions = region.querySelector<HTMLElement>('.wave3-demo-results__missions')!;

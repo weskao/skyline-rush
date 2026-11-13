@@ -28,7 +28,10 @@ export function saveCupProgress(cup: CupState | null, storage?: HistoryStorage):
 export function retryCupHeat(cup: CupState, trackId: string): CupState {
   cupComplete(cup); // Reuse the shared track/driver/time validation before rolling back.
   const last = cup.results.at(-1);
-  if (last?.track === trackId) return { tracks: [...cup.tracks], results: cup.results.slice(0, -1) };
+  if (last?.track === trackId) {
+    if (cup.results.length === 1) return { tracks: [...cup.tracks], results: [] };
+    return { ...cup, results: cup.results.slice(0, -1) };
+  }
   if (cup.tracks[cup.results.length] !== trackId) throw new RangeError('Invalid Cup retry');
   return cup;
 }

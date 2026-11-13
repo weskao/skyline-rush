@@ -1,3 +1,88 @@
+# 2026-11-13 — Wave 3 trial coins, diamonds and cosmetic offers
+
+## Wave 3 local demo economy E2E (feature/wave3-demo-economy)
+
+- [x] Baseline `de82fc03`, with the original BDD/SDD plan synchronized at `56f7db22`.
+  RED reproduced a stale UTC claim paying +10 points/+40 coins, checkpoint
+  rejection after 1,025 events and near 64 KiB, three publishes for one finish,
+  and a finish surviving a reset. Focused tests cover the fixes, v1 restoration,
+  week/day rollback, shared-lock redemption, expiry and write failure.
+- [x] Deterministic reconciliation with a fresh adapter reload after every step.
+  Points / coins / diamonds in plan order:
+  `20/0/0 → 40/70/0 → 40/70/0 → 60/110/0 → 200/390/0 → 210/430/0 →
+  220/430/5 → 195/430/5 → 195/280/5 → 195/280/5 → 495/840/15 →
+  495/840/0 → 495/840/0 → 20/0/0`.
+- [x] Transaction design: one profile-scoped Web Lock and one v1 checkpoint per
+  mutation. A reset writes a fresh, empty generation so another tab can reject
+  its old race or confirmation. A browser without usable locks or storage keeps
+  a session-only wallet and shows a save warning. Redemption quotes expire after
+  60 seconds. Durable replays prioritize recent finishes before telemetry.
+- [x] Local `npm test` on implementation `9edf4c42`: 2,778 passed, 3 skipped,
+  zero failed. Strict typecheck and locked/trial build audits passed. The
+  follow-up focused suite passed 155 tests, including retention, rollback,
+  multi-heat account scope, and a Garage override of a demo equip.
+- [x] Chrome for Testing 156 / Playwright: all 14 fixed steps passed with real
+  wallet, mission, store and collection controls, native storage, a network
+  cut during redemption/equip, and refresh. Two competing browser tabs gave
+  one debit and one duplicate; a blocked wallet write kept the balance in the
+  active session and showed the warning. Full WebGL driving is a separate case.
+- [ ] First full run for [9edf4c42](https://github.com/weskao/skyline-rush/commit/9edf4c42cf3915bdd7a97b1aee4e321962af6439):
+  [CI 43440898727](https://github.com/weskao/skyline-rush/actions/runs/43440898727)
+  failed the existing Cloud Save suite (13 failures). The next feature HEAD
+  includes upstream `2418a55e` with the Firestore expression-budget fix.
+- [x] Verification for code tree `91e7588b` at
+  [e1464c21](https://github.com/weskao/skyline-rush/commit/e1464c210c10d2804c2988529d1b53ceea0c7c3e):
+  `make verify` passed strict typecheck and unit tests (2,786 passed, 3 skipped).
+  The trial build and bundle audit passed. The default local Chrome launch
+  failed in the executor, so the full browser/World Tour result is tracked in
+  [CI 43442895560](https://github.com/weskao/skyline-rush/actions/runs/43442895560).
+- [x] Chromium 156 Coast 5 km Time Attack, keyboard throttle from start to
+  finish, reduced motion, Low quality. Wallet `20/0/0 → 40/70/0`; result
+  and v1 snapshot agree and the receipt recorded zero page errors. The
+  local review throttled WebGL draws to fit the CPU executor. Playwright
+  passed portrait 390×844 and 360×740 and reduced-motion 667×375.
+  A separate seeded finish verified landscape 844×390 and 667×375 touch
+  details at 70 coins and the Race Again target. Standard local Playwright
+  at 844×390, tablet and desktop had countdown timeouts.
+- [x] With networking disabled after the app loaded, Coast finished, the
+  daily Time Attack mission credited, the Ion Thruster redeemed and equipped,
+  and the next race started. After reconnecting, refresh restored 25 points
+  and the same wallet and equipment.
+- [x] WebGL Roadster and Crimson GT both rendered Void Pulse beams in the
+  next race after a confirmed demo equip. No new sound or quality-tier
+  setting was needed for the wallet and transaction messages.
+- Browser evidence: [Coast receipt](https://chatgpt.com/library?file_id=libfile_91612be09c3481919d91d7f820751063&account_id=personal),
+  [desktop](https://chatgpt.com/library?file_id=libfile_d7afdf82efb8819199acbc45c7313ced&account_id=personal),
+  [390×844](https://chatgpt.com/library?file_id=libfile_2338c5b303588191a4911479eb6c1e82&account_id=personal),
+  [844×390](https://chatgpt.com/library?file_id=libfile_2a776029ba048191ad55a8cf16c5bbf5&account_id=personal),
+  [667×375](https://chatgpt.com/library?file_id=libfile_dc7de2ff17048191b174df66183385d9&account_id=personal),
+  [Roadster](https://chatgpt.com/library?file_id=libfile_a7b861aeb0d48191b202ea5c086d904f&account_id=personal)
+  and [Crimson GT](https://chatgpt.com/library?file_id=libfile_25b33aaaa7808191958f2f29208c8bdd&account_id=personal).
+- [x] Synced `develop` at `6d2ec20a`. Git resolved the overlapping `TODO.md`
+  edits automatically. Strict typecheck, trial build and 80 focused tests passed.
+- [x] The [previous full run](https://github.com/weskao/skyline-rush/actions/runs/43444542248)
+  failed Browser shard 1 because the current release had no standalone picture
+  for the pointer test. The release media fixture now supplies one. Both the
+  image/video pointer and highlight-video Playwright tests passed in headless
+  Chromium with WebGL disabled for this media-only check.
+- [x] Integrated `develop` at `37ad97e0` with no conflicts. The merged tree
+  passed strict typecheck, the trial build, 39 focused unit tests, and the
+  Playwright ledger, concurrent confirmation, and save-failure tests. The
+  first local ledger attempt hit a Chromium renderer crash at Garage re-entry;
+  an isolated rerun with shared-memory usage disabled passed all 14 steps.
+- [ ] Await full regression for the latest integration commit. The preceding
+  candidate [3d5b377e](https://github.com/weskao/skyline-rush/commit/3d5b377e31c362d773e328a5c4e4490238aa3215)
+  is tracked in [CI 43458160566](https://github.com/weskao/skyline-rush/actions/runs/43458160566).
+  Use the [branch workflow history](https://github.com/weskao/skyline-rush/actions?query=branch%3Afeature%2Fwave3-demo-economy)
+  for the new commit.
+- [ ] Complete physical iOS Safari and Android Chrome acceptance, then
+  record exact-head full CI before a direct merge to `develop`.
+
+- [x] Extend the existing frontend-first design with BDD scenarios, trial economy rules and verified-economy handoff.
+- [x] RED → GREEN covers race credit, first finish, daily and weekly claims, currency-specific redemption, old and extended v1 checkpoints, reset and account isolation.
+- [x] Focused Wave 3 and module-size tests passed. Both locked and trial Vite builds passed bundle audits.
+- [ ] Confirm the exact-HEAD full CI gate and verify the finish, compact result details and redemption on physical phones.
+
 # 2026-11-13 — Demo reward (試玩獎勵) results card fully visible
 
 - [x] RED: zh-TW guard reported the card scrolling 262/198px on desktop/tablet (missions and fine print cut) and four lines hidden in short landscape. GREEN: no height cap; crest moved into the header, mission tiles and fine print visible at 1440×900, 768×1024, 390×844, 360×740.

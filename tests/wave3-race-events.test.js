@@ -134,3 +134,76 @@ test('multi-stage custom rewards use cumulative distance and average finishing p
   assert.equal(bridge.finish(race, false, series).deltaDemoPoints, 0);
   assert.equal(demo.getSnapshot().demoPoints, 54);
 });
+
+test('one finished race publishes mission progress, first-finish flag and all balances together', () => {
+  const demo = createWave3LocalDemo();
+  const commits = [];
+  demo.subscribe(snapshot => commits.push(snapshot));
+  const bridge = createWave3RaceEventBridge(demo, () => 'atomic-race-0001');
+  const race = aRace('time');
+  race.player.driftPayout = { time: 28, nitro: .15 };
+  bridge.capture(race);
+  race.phase = 'finished';
+  race.result = { success: true, time: 60 };
+  const receipt = bridge.finish(race, false);
+  assert.equal(commits.length, 1);
+  assert.equal(commits[0], receipt.snapshot);
+  assert.equal(commits[0].missions['mission-time:daily'].progress, 1);
+  assert.equal(commits[0].missions['mission-race:daily'].progress, 0);
+  assert.equal(commits[0].missions['mission-drift:daily'].progress, 1);
+  assert.deepEqual(commits[0].demoEconomy, { coins: 70, diamonds: 0, firstFinishes: ['coast'] });
+  const replay = bridge.finish(race, false);
+  assert.deepEqual([replay.deltaDemoPoints, replay.deltaDemoCoins, replay.deltaDemoDiamonds], [0, 0, 0]);
+  assert.equal(commits.length, 1);
+});
+
+test('reset or a round trip through another account invalidates a race already underway', () => {
+  for (const change of [port => port.resetDemo(), port => { port.setAccount('other'); port.setAccount(null); }]) {
+    const demo = createWave3LocalDemo();
+    const bridge = createWave3RaceEventBridge(demo, () => 'stale-race-0001');
+    const race = aRace();
+    bridge.capture(race);
+    change(demo);
+    race.phase = 'finished';
+    race.result = { success: true, time: 60 };
+    assert.equal(bridge.finish(race, false), null);
+    assert.equal(demo.getSnapshot().demoPoints, 20);
+  }
+});
+
+test('later heats cannot claim a series started in another account or before a reset', () => {
+  for (const mode of ['custom', 'cup', 'stunt']) {
+    const demo = createWave3LocalDemo();
+    let sequence = 0;
+    const bridge = createWave3RaceEventBridge(demo, () => `scoped-heat-${++sequence}`);
+    const firstHeat = { track: 'coast', position: 1, time: 60, score: 0 };
+    const series = {
+      cup: mode === 'cup' ? { tracks: ['coast', 'neon'], results: [firstHeat] } : null,
+      sprintSeries: mode === 'custom' ? { count: 2, results: [firstHeat] } : null,
+      stunt: mode === 'stunt' ? { heats: 1 } : null,
+    };
+    const finish = intermediate => {
+      const race = { ...aRace(mode), phase: 'finished', result: { success: true, time: 60, position: 1 } };
+      return bridge.finish(race, intermediate, series);
+    };
+    assert.equal(finish(true).status, 'ineligible');
+    demo.resetDemo();
+    assert.equal(finish(false), null, mode);
+    assert.equal(demo.getSnapshot().demoPoints, 20);
+  }
+});
+
+test('a recovered Cup retains its demo account and generation across a reload', () => {
+  const before = createWave3LocalDemo();
+  const cup = { tracks: ['coast', 'neon', 'canyon'], results: [{ track: 'coast' }] };
+  const race = () => ({ ...aRace('cup'), phase: 'finished', result: { success: true, time: 60, position: 1 } });
+  const series = { cup, sprintSeries: null, stunt: null };
+  assert.equal(createWave3RaceEventBridge(before).finish(race(), true, series).status, 'ineligible');
+  const recovered = JSON.parse(JSON.stringify(series));
+  const after = createWave3LocalDemo();
+  after.setAccount('another-driver');
+  assert.equal(createWave3RaceEventBridge(after).finish(race(), false, recovered), null);
+  assert.equal(after.getSnapshot().demoPoints, 20);
+  after.setAccount(null);
+  assert.equal(createWave3RaceEventBridge(after).finish(race(), false, recovered).status, 'completed');
+});
