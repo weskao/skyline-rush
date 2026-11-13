@@ -6,8 +6,11 @@ import { ringVariety } from '../scripts/ring-variety.mjs';
 // User, 2026-11-07: ring lines on some maps always sat in one lane (Coast: lane 3 only; trains: lanes 2/3 only).
 // Rings now use all four lanes, yet trains, rows and pickup runs stay and collecting must not get much harder.
 // Pre-change baseline over the same 12 seeds (scripts/ring-variety.mjs): bot ring take % and NITRO per minute.
+// User, 2026-11-13: the first five maps carry 40% more ring slots, so the bot takes a smaller share of more rings
+// while its NITRO/min rises; their baseline is re-measured then (was coast 70.6/19.52, neon 73.9/23.04,
+// canyon 75.8/19.3, aurora 82.1/19.38, spiral 78.7/20.31).
 const BASELINE = {
-  coast: [70.6, 19.52], neon: [73.9, 23.04], canyon: [75.8, 19.3], aurora: [82.1, 19.38], spiral: [78.7, 20.31],
+  coast: [64.6, 21.78], neon: [68.6, 24.55], canyon: [74.7, 22.48], aurora: [76.5, 20.85], spiral: [73.1, 22.83],
   taipei: [78.2, 19.23], tokyo: [80.3, 19.8], alpine: [82.4, 17.19], coastal: [78.2, 19.53], cosmic: [81.8, 18.31],
 };
 const rows = Object.keys(RACE_TRACKS).map(id => ringVariety(id, 12));

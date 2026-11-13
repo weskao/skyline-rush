@@ -34,7 +34,7 @@ test('Frostbite records live under one topology-keyed id', () => {
   assert.deepEqual(recordTrackIds(FROSTBITE_ID), [KEY]);
   assert.deepEqual(parseRecordTrackId(KEY), { trackId: FROSTBITE_ID, layout: 1 });
   for (const stale of ['frostbite-canyon@t2l1', 'frostbite-canyon@t1l2', 'frostbite-canyon@2']) assert.equal(parseRecordTrackId(stale), null, stale);
-  assert.equal(recordTrackId('coast'), 'coast@5', 'Classic still uses a layout version without a topology prefix');
+  assert.equal(recordTrackId('coast'), 'coast@6', 'Classic still uses a layout version without a topology prefix');
 });
 
 test('a finished Frostbite race saves history, a topology-keyed best and its Ghost; no campaign effects', async () => {

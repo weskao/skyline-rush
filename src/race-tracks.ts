@@ -11,21 +11,24 @@ import { COURSE_RUNTIMES } from './course-runtimes.ts';
 // `x` / `altitude` place a shortcut corridor.
 // Classic layout v2 (Coast, Neon, Canyon): denser, more rewarding rings, tuned by scripts/pickup-economy.mjs to
 // the World Tour BOOST/NITRO median. Every other track keeps the defaults bit-for-bit.
+// User, 2026-11-13: the first five maps (Coast → Sky Spiral) felt sparse, so they carry 40% more ring and pickup
+// slots (a new layoutVersion each).
+const OPENING_ITEMS = 1.4;
 const BOOST_ODDS = [0.4, 0.7, 0.8, 0.9] as const; // charge 40%, nitro 30%, slipstream 10%, risk 10%, mystery 10% (unchanged)
 export const RACE_TRACKS: Record<string, TrackConfig> = {
   coast: { // fixedRings: the original gate heights (8 m, then road height 3 m) on any lane
-    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, layoutVersion: 5, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS, introRivals: true, // the first, easiest map
+    name: 'Coast', length: 5000, trafficDensity: 1, seed: 1001, layoutVersion: 6, itemDensity: OPENING_ITEMS, fixedRings: true, ringAltitudes: [8, 3], ringOdds: BOOST_ODDS, introRivals: true, // the first, easiest map
     sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
   },
   neon: {
-    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 5, ringOdds: BOOST_ODDS, introRivals: true, // an early, easy map
+    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 6, itemDensity: OPENING_ITEMS, ringOdds: BOOST_ODDS, introRivals: true, // an early, easy map
     sections: [
       { from: 600, to: 1100, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 },
       { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
     ],
   },
   canyon: {
-    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 5, openingNitroRings: 2, // volume was enough; only the first NITRO came late
+    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 6, itemDensity: OPENING_ITEMS, openingNitroRings: 2, // volume was enough; only the first NITRO came late
     sections: [
       { from: 700, to: 1300, type: 'crosswind', dir: 1 }, { from: 1500, to: 1560, type: 'gap' },
       { from: 2000, to: 2500, type: 'shortcut', x: -7.5, altitude: 6 },
@@ -34,7 +37,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   aurora: {
-    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004, layoutVersion: 4,
+    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004, layoutVersion: 5, itemDensity: OPENING_ITEMS,
     sections: [
       { from: 900, to: 1500, type: 'ice' }, { from: 1800, to: 2600, type: 'uphill' }, { from: 2800, to: 3500, type: 'ice' },
       { from: 3800, to: 4200, type: 'uphill' }, { from: 4300, to: 4900, type: 'ice' },
@@ -42,7 +45,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   spiral: {
-    name: 'Sky Spiral', length: SKY_LENGTH, trafficDensity: 0.75, seed: 5005, layoutVersion: 5, openingNitroRings: 2, // difficulty curve: only the late first NITRO is fixed
+    name: 'Sky Spiral', length: SKY_LENGTH, trafficDensity: 0.75, seed: 5005, layoutVersion: 6, itemDensity: OPENING_ITEMS, openingNitroRings: 2, // difficulty curve: only the late first NITRO is fixed
     sections: [
       { from: 1100, to: 2200, type: 'spiral' },
       { from: 2800, to: 2870, type: 'launch' },
@@ -62,10 +65,10 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
 };
 
 // User, 2026-11-09: a new course (any `topology`) keeps the classic per-km ring/pickup density: its per-car item count
-// scales by length / the mean classic length. The ten classic tracks stay at 1 (their layouts are pinned).
+// scales by length / the mean classic length. Classic tracks use their own itemDensity (default 1).
 const CLASSIC_MEAN_LENGTH = Object.values(RACE_TRACKS).reduce((sum, track) => sum + track.length, 0) / Object.keys(RACE_TRACKS).length;
 export const itemScale = (track: TrackConfig): number =>
-  track.topology === 'course-graph' || track.topology === 'course-graph-runtime' ? track.length / CLASSIC_MEAN_LENGTH : 1;
+  track.topology === 'course-graph' || track.topology === 'course-graph-runtime' ? track.length / CLASSIC_MEAN_LENGTH : track.itemDensity ?? 1;
 
 // The separate lookup never changes Daily/Career/Cup's ordered sprint catalog.
 // Frostbite, Stormline, Volcanic and Monsoon (measured routes) plus the per-car graph runtimes are gated CourseGraph sprints:

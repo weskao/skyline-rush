@@ -40,8 +40,10 @@ test('median picks the middle value, or the mean of the two middle values', () =
 // Re-locked for the user's 2026-11-07 lane variety (ring lines and trains on all four lanes; tests/ring-variety.test.js
 // holds collecting near the old ease). Middle-lane hashes before it: aurora 4c8e2977913671d9, taipei a1fcaaf6829fc7ab,
 // tokyo 0e0c60b082ae64d6, alpine 3baaf86d05a6687d, coastal 59c8c7f6d245f3b0, cosmic 95e09bd6901f2a9d.
+// Re-locked for the user's 2026-11-13 increase (40% more rings and pickups on the first five maps, Aurora included).
+// Aurora before it: accf48d891104502.
 const LOCKED_LAYOUTS = {
-  aurora: 'accf48d891104502', taipei: 'c8a0656396c290d7', tokyo: 'd1963910b490325b',
+  aurora: 'd66e118bccbeec3c', taipei: 'c8a0656396c290d7', tokyo: 'd1963910b490325b',
   alpine: 'edf1cb0bf8ec882a', coastal: 'fbbf0b518e3cba3b', cosmic: '02405104894581e8',
 };
 test('AC3: Aurora and the World Tour keep their (scaled) ring and pickup layout', () => {
