@@ -70,7 +70,10 @@ export type SprintPhase = 'ready' | 'ignition' | 'sustain' | 'recovery';
 export type SprintInput = {
   phase: string; nitro: boolean; boost: boolean; speed: number; cap: number; dt: number;
   enabled: boolean; quality: VfxQuality; reducedMotion: boolean; ultra?: boolean;
+  chain?: number; // charges spent in the running NITRO burst (car.nitroBurst)
 };
+// NITRO ×1/×2/×3 scale the sprint frame: longer, brighter flames, denser speed lines, wider FOV. Presentation only.
+export const NITRO_CHAIN_LIFT: readonly number[] = [1, 1.2, 1.4];
 type SprintChannel = { phase: SprintPhase; intensity: number; ignition: number; age: number; release: number };
 const finite = (value: number, fallback = 0): number => Number.isFinite(value) ? value : fallback;
 const unit = (value: number): number => Math.max(0, Math.min(1, finite(value)));
@@ -79,12 +82,14 @@ const channel = (): SprintChannel => ({ phase: 'ready', intensity: 0, ignition: 
 export function createSprintVfx() {
   const nitro = channel(), boost = channel();
   const frame = { nitro, boost, power: 0, fov: 0, blur: 0, particles: 0, nitroMix: 0 };
+  let lift = 1;
   const clear = (part: SprintChannel): void => {
     part.phase = 'ready'; part.intensity = part.ignition = part.age = part.release = 0;
   };
   const reset = (): typeof frame => {
     clear(nitro); clear(boost);
     frame.power = frame.fov = frame.blur = frame.particles = frame.nitroMix = 0;
+    lift = 1;
     return frame;
   };
   const advance = (part: SprintChannel, active: boolean, dt: number, speedScale: number): void => {
@@ -122,6 +127,10 @@ export function createSprintVfx() {
       // Independent channels never add; simultaneous activation is capped at one.
       frame.power = unit(Math.max(nitro.intensity, boost.intensity * 0.8));
       frame.nitroMix = nitro.intensity > 0 ? unit(nitro.intensity / Math.max(0.01, frame.power)) : 0;
+      // Only a chained NITRO goes past one; eased so a new charge swells and the end of NITRO settles back.
+      const level = Math.min(3, Math.max(1, Math.round(finite(input.chain ?? 1, 1))));
+      lift += ((input.nitro ? NITRO_CHAIN_LIFT[level - 1]! : 1) - lift) * Math.min(1, dt * 8);
+      frame.power *= 1 + (lift - 1) * frame.nitroMix;
       const tier = input.quality === 'high' ? 1 : input.quality === 'medium' ? 0.65 : 0.3;
       const comfort = input.reducedMotion;
       frame.particles = frame.power * (comfort ? 0.2 : tier);
