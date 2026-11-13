@@ -42,10 +42,11 @@ progress::-moz-progress-bar {
   --progress-colors: linear-gradient(90deg, #ffd27a, #ff9d4d, #fff1a8, #ffd27a);
 }
 
-/* sheen sweeps left → right; the colour layer shifts exactly one 300% tile so the loop is seamless */
+/* Both layers travel one way only, start → end (left → right): the sheen sweeps across, and the colour
+   layer shifts exactly one 300% tile, so each loop restarts seamlessly instead of reversing. */
 @keyframes progress-flow {
-  from { background-position: 150% 0, 0 0; }
-  to { background-position: -50% 0, 150% 0; }
+  from { background-position: 150% 0, 150% 0; }
+  to { background-position: -50% 0, 0 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
