@@ -34,6 +34,16 @@ exactly. Topics whose work often starts before a scoped file is open:
 Every course needs its own in-race song, and that song must not match any other course.
 It plays after the race starts. Selecting the course on the home screen keeps the shared intro.
 
+## Garage equipment compatibility
+
+Every new or updated Garage item, including paints, cosmetics, and vehicle-mounted VFX,
+must preview and equip correctly on every selectable car. Use the shared equipment catalog
+and application path. Fit model-dependent effects to the active car's geometry or attachment
+points so the same equipment also works when a new car is added.
+
+Verify each changed item on every selectable car. Check the Garage preview and the equipped
+appearance after switching cars, including the home showcase and races where the item appears.
+
 ## Workflow (every feature and bug fix)
 
 Follow `docs/regression-first-workflow.md`: trace the shared root cause; failing test (RED) →
