@@ -83,9 +83,11 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
     update() {
       for (const rider of riders) if (rider.parent !== glbBody) {
         glbBody!.add(rider); rider.geometry = glbBody!.geometry;
-        // GLB body space (quantized, uniformly scaled, unrotated) → procedural body space, for shaders that read it
-        const { position: at, scale } = parts.body!, s = scale.x;
-        frameOf(rider)?.set((glbBody!.position.x - at.x) / s, (glbBody!.position.y - at.y) / s, (glbBody!.position.z - at.z) / s, glbBody!.scale.x / s);
+        // GLB body space (quantized, uniformly scaled, unrotated) → procedural body space, for shaders that read it.
+        // The instance's display scale (CARS) is folded in; its x may differ, so only x of the sweep stretches slightly.
+        const { position: at, scale } = parts.body!, s = scale.x, shown = instance.scale;
+        frameOf(rider)?.set((glbBody!.position.x * shown.x - at.x) / s, (glbBody!.position.y * shown.y - at.y) / s,
+          (glbBody!.position.z * shown.z - at.z) / s, glbBody!.scale.x * shown.y / s);
       }
       for (const [target, source] of pairs) {
         target.position.copy(source.position);
