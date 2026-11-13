@@ -10,6 +10,9 @@ import { isRaining, racePreset, sprayRate } from './board-effects.ts';
 
 // Shared by all car models and their wakes: every thrust stream starts at its actual port.
 export const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]];
+const UNSCALED = new THREE.Vector3(1, 1, 1);
+// A dressed GLB shows at the Roadster's measured size (car-display-size.ts), carrying its authored thrusters with it.
+const liftPort = (pose, port, y, out) => out.set(LIFT_PORTS[port][0], y, LIFT_PORTS[port][1]).multiply(pose?.userData.displayScale ?? UNSCALED);
 
 const COUNT = 480;
 export const RING_POOL_CAPACITY = 48; // densest 900 m view of one colour: 18 with trains and rows (tests/ring-rows.test.js)
@@ -259,9 +262,8 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
           const jet = cores.children[source * LIFT_PORTS.length + port];
           jet.visible = enabled && !!pose && strengths[source] >= 0.01 && pose.visible;
           if (!jet.visible) continue;
-          const [x, z] = LIFT_PORTS[port];
           pose.updateWorldMatrix(true, false);
-          jet.position.set(x, 0.19, z).applyMatrix4(pose.matrixWorld);
+          liftPort(pose, port, 0.19, jet.position).applyMatrix4(pose.matrixWorld);
           pose.getWorldQuaternion(jet.quaternion);
           jet.scale.set(1, 0.65 + strengths[source] * 0.75, 1);
           jet.material.uniforms.power.value = strengths[source] * (reducedMotion ? 0.65 : 1);
@@ -276,10 +278,11 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         emissions[source] = Math.min(12, emissions[source] + dt * strengths[source] * (reducedMotion ? 65 : source === 0 ? 240 : 90));
         while (emissions[source] >= 1) {
           const [x, z] = LIFT_PORTS[nozzles[source]];
+          liftPort(pose, nozzles[source], 0.19, nozzlePosition);
           nozzles[source] = (nozzles[source] + 1) % LIFT_PORTS.length;
           const angle = Math.random() * Math.PI * 2;
           const radius = Math.sqrt(Math.random()) * 0.12;
-          nozzlePosition.set(x + Math.cos(angle) * radius, 0.19, z + Math.sin(angle) * radius);
+          nozzlePosition.x += Math.cos(angle) * radius; nozzlePosition.z += Math.sin(angle) * radius;
           nozzleVelocity.set(Math.cos(angle) * 0.8, -18 - Math.random() * 4, Math.sin(angle) * 0.8);
           if (pose) {
             nozzlePosition.applyMatrix4(pose.matrixWorld);
