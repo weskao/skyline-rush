@@ -231,14 +231,14 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:84
     for (const [id,category] of [['thruster-void','thruster'],['airflow-vortex','airflow'],['nitro-trail-gold','nitro-trail'],['launch-flare-ring','launch-flare']]) {
       const card=page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
       await card.scrollIntoViewIfNeeded();
-      await expect(card.locator('.garage-vfx-actions button')).toHaveCount(1);
+      await expect(card.locator('.garage-skin-action')).toBeDisabled();
       const preview=card.getByRole('button',{name:/preview|預覽/i});
       await expect(preview).toHaveAttribute('aria-pressed','false');
       await card.locator('.garage-vfx-art').click();
       await expect(card).toHaveAttribute('data-preview-active','true');
       await expect(page.locator('#garage-preview')).toHaveAttribute(`data-skin-preview-${category}`,id);
       await expect(preview).toHaveAttribute('aria-pressed','true');
-      await expect(card.locator('.garage-vfx-actions button')).not.toHaveText(/preview|預覽/i);
+      await expect(card.locator('.garage-skin-action')).toBeEnabled();
       const hue=await card.evaluate(el=>getComputedStyle(el).getPropertyValue('--card-hue').trim());
       expect(hue).toMatch(/^\d+$/);
     }

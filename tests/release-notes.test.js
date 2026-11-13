@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import packageMeta from '../package.json' with { type: 'json' };
 import {
   CURRENT_RELEASE, NOTES_SEEN_KEY, RELEASE_NOTES, RECENT_RELEASE_LIMIT, releaseForVersion, recentReleases,
-  compareVersions, shouldAnnounce, markAnnouncementSeen, releaseText, releaseImage, releaseHeroVideo, UPCOMING, resolveUpcoming
+  compareVersions, shouldAnnounce, markAnnouncementSeen, releaseText, releaseHighlightCopy, releaseImage, releaseHeroVideo, UPCOMING, resolveUpcoming
 } from '../src/release-notes.ts';
 import { checkReleaseNotes, copyProblems, reviewHash, playerFacingChanges, releaseEntryFor } from '../scripts/check-release-notes.mjs';
 
@@ -95,6 +95,15 @@ test('every stored release, shown or archived, is complete in both languages wit
         assert.ok(path && fs.existsSync(new URL(`../public/${path}`, import.meta.url)), `${release.version} image ${locale}`);
       }
     }
+  }
+});
+
+test('the published vehicle redesign uses the current car name in both languages', () => {
+  const redesign = releaseForVersion('0.30.0').highlights.find(item => item.id === 'roadster-redesign');
+  for (const [locale, name] of [['en', 'Stratosway R2'], ['zh-TW', '天航 R2']]) {
+    const copy = releaseHighlightCopy(redesign, locale);
+    assert.ok(copy.title.includes(name));
+    assert.ok(copy.description.includes(name));
   }
 });
 

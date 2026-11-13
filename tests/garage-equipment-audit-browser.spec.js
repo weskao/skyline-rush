@@ -67,7 +67,11 @@ async function captureGarage(page) {
 async function captureRace(page, quality = 'high') {
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
-  for (const id of HEAVIEST) await page.locator(`#garage-vfx-catalog [data-skin="${id}"]`).getByRole('button', { name: /try|試用/i }).click();
+  for (const id of HEAVIEST) {
+    const card = page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
+    await card.locator('.garage-skin-preview-hitarea').click();
+    await card.locator('.garage-skin-action').click();
+  }
   await page.locator('#garage-close').click();
   const shots = {};
   await page.locator('#start-button').click();

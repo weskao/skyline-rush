@@ -58,6 +58,13 @@
   [667×375](https://chatgpt.com/library?file_id=libfile_dc7de2ff17048191b174df66183385d9&account_id=personal),
   [Roadster](https://chatgpt.com/library?file_id=libfile_a7b861aeb0d48191b202ea5c086d904f&account_id=personal)
   and [Crimson GT](https://chatgpt.com/library?file_id=libfile_25b33aaaa7808191958f2f29208c8bdd&account_id=personal).
+- [x] Synced `develop` at `6d2ec20a`. Git resolved the overlapping `TODO.md`
+  edits automatically. Strict typecheck, trial build and 80 focused tests passed.
+- [x] The [previous full run](https://github.com/weskao/skyline-rush/actions/runs/43444542248)
+  failed Browser shard 1 because the current release had no standalone picture
+  for the pointer test. The release media fixture now supplies one. Both the
+  image/video pointer and highlight-video Playwright tests passed in headless
+  Chromium with WebGL disabled for this media-only check.
 - [ ] Complete physical iOS Safari and Android Chrome acceptance, then
   record exact-head full CI before a direct merge to `develop`.
 
@@ -72,6 +79,18 @@
 - [x] Short landscape keeps the one-line strip (no overlay scroll) and a 詳情 tap opens the full details as a panel over the summary column, clear of the actions; tapping again closes it. `overlay-landscape-fit` passes at 667×375, 740×360, 844×390, 932×430 and the fold.
 - [x] Typecheck, module-size, production build and unit suite passed (2,757 passed, 3 skipped); Chromium screenshots reviewed for all six viewports.
 - [ ] Check the 詳情 panel on a physical iPhone in landscape and the exact-commit GitHub CI quality gate.
+
+# 2026-11-13 — Garage equipment preview and current vehicle names
+
+- [x] Render the current model name in the historical What's New highlight and its image-viewer label.
+- [x] Require a live preview before confirming any Garage VFX. Keep trial access temporary and show trial status on the card.
+- [ ] Verify exact-commit CI and physical-device touch.
+
+# 2026-11-13 — Garage selection feedback
+
+- [x] Add a shared press animation to car and paint cards and distinguish the previewed paint from the equipped paint.
+- [x] Browser RED reproduced the missing press effect. GREEN verifies click, keyboard, Reduced Motion, and explicit paint saving.
+- [ ] Check exact-commit CI.
 
 # 2026-11-13 — Shared Garage paints and car names
 
@@ -1683,7 +1702,12 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
   - [ ] Spec v2 (2026-11-08): Coast and every map (Dune, Monsoon, Skyfall, Volcanic, Stormline, Frostbite) are accepted by the concept-board parity review against their panels (spec v2 §8.1; [Task 5](docs/designs/3d-pipeline/phases/task-5-coast-pbr-road.md), [Task 6](docs/designs/3d-pipeline/phases/task-6-new-tracks-showcase.md)). Shared lighting/post, wet-road reflections, thruster glow and spray are in scope.
     - [x] Coast by-project items with evidence (2026-11-09, branch `feature/3d-pipeline-concept-target`, HEAD `e28f9dfc`): look brief, KTX2 road tiers, close-scenery GLB in deterministic chunks, UV0/tangent/parity RED tests, eviction without duplicate draws, contact shadow, HDRI lighting, Ultra tier settings, plume, spray and Ultra blur. Details per box: Task 5 doc.
     - [x] Coast wet road (env map + lights-only mirror, chosen by benchmark), bloom/sun per HDRI, thruster glow, GPU-synced per-tier cost and Ultra on every map (2026-11-09, 5e6bb634..HEAD). Details per box: Task 5 doc.
-    - [ ] Coast full-scene upgrade (owner, 2026-11-09: Coast is **not yet at the owner's standard**): the skyline buildings, sea surface, sky (HDRI/sky dome) and distant terrain are still the old procedural look and must be rebuilt as realistic 3D/PBR, not only the road and close scenery. Parity review and owner sign-off wait for it. Details: Task 5 doc; gap list and open owner decisions D1–D3 (buildings, bridge towers, sky source): `docs/designs/3d-pipeline/phases/coast-full-scene-gap.md`.
+    - [ ] Coast full-scene upgrade (owner, 2026-11-09: Coast is **not yet at the owner's standard**): the sea surface, sky and distant terrain are still the old procedural look and must be rebuilt as realistic 3D/PBR, not only the road and close scenery; the skyline buildings and bridge towers leave Coast. Parity review and owner sign-off wait for it. Details: Task 5 doc; gap list and owner decisions D1–D3: `docs/designs/3d-pipeline/phases/coast-full-scene-gap.md`.
+      - [x] Owner decisions (2026-11-13): D1 remove the skyline buildings from Coast (Neon keeps its city); D2 remove the bridge towers from Coast (other classic tracks keep theirs); D3 the visible sky is the existing Poly Haven HDRIs at a higher resolution.
+      - [ ] Sky (D3): higher-resolution HDRI on a sky dome per preset, sun disc and directional light aligned to the HDRI sun.
+      - [ ] Sea: realistic water surface (waves, sky and sun reflection, shoreline foam), fog following each preset.
+      - [ ] Distant terrain and the mid band: scan-based far headlands and coastline matching the close cliffs.
+      - [ ] Remove the city and bridge towers from Coast in the `?look=3d` look (D1, D2).
     - [x] Coast by-device on one Mac (2026-11-09): every map High/Ultra p50/p95 at desktop and 844×390 viewports, 10 min sustained Coast rain at 60 fps with no thermal warning (`sustained-fps-browser.spec.js`), Roadster panels on Ultra. The parity review found the GLB Roadster washing out white in rain; fixed in 75295f87 (it now uses the softened car map). Details: Task 5 doc.
     - [ ] Coast open items: exact-HEAD full CI and the full local browser suite on the final HEAD; real-phone captures and phone thermal run; owner sign-off on the §8.1 sheet (re-drafted with Ultra + Roadster panels in the ignored `audits/task5/parity/`).
     - [x] Phase 3 look gated for the develop merge (owner, 2026-11-09): on develop the whole Phase 3 pass (Coast HDRI/bloom/sun, KTX2 road, scenery GLB, wet mirror, plume tail, thruster glow, spray, contact shadow, Ultra option and blur) is behind `?look=3d` (`src/look-gate.ts`), separate from and combinable with `?model=roadster`; without it every map and Settings render as develop did, and a saved Ultra stays saved. RED→GREEN `tests/look-gate.test.js` (module missing), develop-look browser specs failed on the old code (Coast GLB `attached`; Ultra option listed) → GREEN. Details: Task 5 doc.

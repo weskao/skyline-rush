@@ -104,6 +104,7 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
   await page.locator('#garage-studio-open').click();
   for (const id of HEAVIEST) {
     const card = page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
+    await card.locator('.garage-skin-preview-hitarea').click();
     await card.getByRole('button', { name: /try|試用/i }).click();
     await expect(card).toHaveAttribute('data-state', 'equipped');
     await expect(card).toHaveAttribute('data-owned', 'false');
