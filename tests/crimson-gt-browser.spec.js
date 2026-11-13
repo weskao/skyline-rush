@@ -425,3 +425,33 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     });
   });
 }
+
+test('Garage airflow previews and equipped styles follow Crimson GT onto Coming Soon tracks', async ({ gameplayPage: page, gameplayURL }) => {
+  test.setTimeout(ciTimeout(90000));
+  const { errors } = await prepare(page, gameplayURL, { storage: GT });
+  await modelReady(page);
+  await expect.poll(() => instances(page)).toEqual({ home: expect.any(String) });
+  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  const style = () => page.evaluate(() => {
+    const { composer } = window.gameScene;
+    const flow = composer.passes.find(pass => pass.scene?.isScene)?.scene.getObjectByName('Airflow showcase')?.children[0];
+    const model = flow?.parent.parent.children.find(part => part.userData.garageModel)?.userData.garageModel;
+    return [model, flow?.material.uniforms.skinPattern.value];
+  });
+  await expect.poll(style, { timeout: ciTimeout(20000) }).toEqual(['crimson-gt', 0]);
+  await page.locator('#garage-button').click();
+  for (const [pattern, id] of ['airflow-basic', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism'].entries()) {
+    await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
+    await expect.poll(style).toEqual(['crimson-gt', pattern]);
+  }
+  await page.locator('#garage-close').click();
+  await expect.poll(style).toEqual(['crimson-gt', 0]);
+
+  await page.locator('#garage-button').click();
+  await page.locator('[data-skin="airflow-vortex"] .garage-skin-action').click();
+  await page.locator('#garage-close').click();
+  await expect.poll(style).toEqual(['crimson-gt', 2]);
+  await page.locator('[data-upcoming-track="monsoon-ruins"]').click();
+  await expect.poll(style, { timeout: ciTimeout(20000) }).toEqual(['crimson-gt', 2]);
+  expect(errors).toEqual([]);
+});

@@ -6,6 +6,7 @@ import { previewPlayer, showcaseCameraPose, type CameraPose } from './track-prev
 import { vfxSettings, type VfxSettings } from './vfx-settings.ts';
 import type { PaintPreset } from './appearance.ts';
 import type { PreviewTrackId } from './upcoming-tracks.ts';
+import type { SkinId } from './garage-skin-catalog.ts';
 import type { GarageModelHost } from './garage-model.ts';
 
 export type UpcomingEnvironment = {
@@ -42,6 +43,7 @@ export function createUpcomingShowcase(
   const cachedStages = new Map<PreviewTrackId, Stage>();
   const MAX_CACHED_STAGES = 2;
   let paint: PaintPreset | null = null;
+  let airflowSkin: SkinId | undefined;
   let previousTime = NaN;
   const origin = new THREE.Vector3();
   const driver = { speed: 105, boosting: true, nitroTime: 1, miniBoost: 0, impact: null, altitude: 0, trick: null };
@@ -114,6 +116,7 @@ export function createUpcomingShowcase(
     cars.forEach(car => scene.add(car));
     applyCarReflections(cars[0]!, carEnvironment);
     const aero = createAeroVFX(scene, cars[0]!);
+    aero.setSkins({ airflow: airflowSkin });
     const sunlight = new THREE.DirectionalLight('#f3e7d2', 2.3);
     sunlight.position.set(-30, 70, -65);
     scene.add(new THREE.HemisphereLight('#c1e5ff', '#1e283a', 1.9), sunlight);
@@ -173,6 +176,11 @@ export function createUpcomingShowcase(
     get activeTrack(): PreviewTrackId | null { return stage?.id ?? null; },
     get modelHost(): GarageModelHost | null { return stage?.host ?? null; },
     setTrack, setPaint, update,
+    setAirflowSkin(id: SkinId | undefined): void {
+      if (airflowSkin === id) return;
+      airflowSkin = id;
+      for (const item of cachedStages.values()) item.aero.setSkins({ airflow: id });
+    },
     dispose(): void { for (const item of cachedStages.values()) disposeStage(item); cachedStages.clear(); },
   };
 }

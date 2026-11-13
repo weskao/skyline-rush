@@ -71,7 +71,7 @@ frame and on every track change, so no per-module warmup flag is needed. Keep it
 
 ## Fit airflow when the displayed model changes
 
-Sample the neutral-pose shell in vehicle-local coordinates before animating the wheels and wing. Refit when a GLB or LOD attaches and restore the procedural fit on removal. Reuse the warmed airflow material and dispose replaced geometry. The same fit serves Home, Garage Studio, Coming Soon and races. The model swap and fallback regression lives in `tests/garage-model-rig.test.js`.
+Sample the neutral-pose shell in vehicle-local coordinates before animating the wheels and wing. Refit when a GLB or LOD attaches and restore the procedural fit on removal. Reuse the warmed airflow material and dispose replaced geometry. The same fit serves Home, Garage Studio, Coming Soon and races. The model swap and fallback regression lives in `tests/garage-model-rig.test.js`. Skin animation must use the fitted paths’ outward directions and reuse the same mesh when the skin changes. Refresh cached Coming Soon stages when the selected airflow skin changes.
 
 ## One NaN pixel is a black frame
 

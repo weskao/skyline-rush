@@ -81,8 +81,8 @@ export function streamGeometry({ bounds: { min, max }, sections }: AirflowProfil
     return Number.isFinite(top) ? { left, right, top } : { left: min.x, right: max.x, top: max.y };
   };
   const stations = Array.from({ length: SECTIONS + 1 }, (_, i) => ({ t: i / SECTIONS, ...sample(i / SECTIONS) }));
-  const paths: { points: Point[]; type: number }[] = [];
-  const add = (points: Point[], type: number): void => { paths.push({ points, type }); };
+  const paths: { points: Point[]; type: number; side: number }[] = [];
+  const add = (points: Point[], type: number, side = 0): void => { paths.push({ points, type, side }); };
 
   for (const lane of [-.68, -.34, 0, .34, .68]) {
     const roof = stations.map(({ t, left, right, top }): Point => [
@@ -98,26 +98,33 @@ export function streamGeometry({ bounds: { min, max }, sections }: AirflowProfil
     for (const height of [.34, .6, .83]) {
       const points = stations.map(({ t, left, right, top }): Point => [outside({ left, right }), Math.max(.25, top * height), z(t)]);
       add([[center + side * width * .33, flank(0, height), z(-.32)], ...points,
-        [outside(sample(1)) + side * width * .23, flank(1, height), z(1.74)]], 0);
+        [outside(sample(1)) + side * width * .23, flank(1, height), z(1.74)]], 0, side);
     }
     for (const t of [.23, .79]) {
       const x = outside(sample(t));
       add([[x, flank(t, .38), z(t - .13)], [x + side * .06, flank(t, .75), z(t)],
-        [x + side * .11, flank(t, .45), z(t + .14)], [x + side * width * .16, flank(t, .38), z(t + .5)]], 2);
+        [x + side * .11, flank(t, .45), z(t + .14)], [x + side * width * .16, flank(t, .38), z(t + .5)]], 2, side);
     }
     for (const t of [.36, .5, .65]) {
       add([[center + side * width * .94, .12, z(t - .2)], [center + side * width * .53, .14, z(t - .1)],
         [center + side * width * .29, .17, z(t)], [center + side * width * .12, .2, z(t + .12)],
-        [center + side * width * .12, .18, z(1.02)], [center + side * width * .18, .25, z(1.3)]], 1);
+        [center + side * width * .12, .18, z(1.02)], [center + side * width * .18, .25, z(1.3)]], 1, side);
     }
     const tail = sample(.96), x = outside(tail), y = tail.top + CLEARANCE;
     add([[x, y, z(.9)], [x, y, z(1.03)], [x + side * width * .08, y * .94, z(1.2)],
-      [x + side * width * .13, y * 1.1, z(1.4)], [x, y * .94, z(1.8)]], 2);
+      [x + side * width * .13, y * 1.1, z(1.4)], [x, y * .94, z(1.8)]], 2, side);
   }
-  const pieces = paths.map(({ points, type }, index) => {
+  const pieces = paths.map(({ points, type, side }, index) => {
     const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)), false, 'centripetal');
     const geo = new THREE.TubeGeometry(curve, 64, type === 1 ? .014 : .011, 4, false);
     geo.setAttribute('flowType', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count).fill(type), 1));
+    // Animated skin offsets lift roof lines, push flank lines outward and keep suction lines flat.
+    const outward = new Float32Array(geo.attributes.position.count * 2);
+    for (let i = 0; i < outward.length; i += 2) {
+      outward[i] = side;
+      outward[i + 1] = side === 0 ? 1 : 0;
+    }
+    geo.setAttribute('flowOutward', new THREE.BufferAttribute(outward, 2));
     geo.setAttribute('lane', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count).fill(index / paths.length), 1));
     return geo;
   });

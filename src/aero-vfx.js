@@ -27,15 +27,22 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   vehicle.add(local);
   const flow = new THREE.Mesh(streamGeometry(proceduralProfile), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])), wakeRange: { value: new THREE.Vector2() }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
-    vertexShader: `attribute float flowType; attribute float lane; varying vec2 vUv; varying float vType; varying float vLane;
-      uniform float time; uniform float turbulence; uniform float downforce;uniform float skinPattern; uniform vec2 wakeRange;
+    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])), wakeRange: { value: new THREE.Vector2() }, rippleScale: { value: new THREE.Vector2() }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
+    vertexShader: `attribute float flowType; attribute float lane; attribute vec2 flowOutward; varying vec2 vUv; varying float vType; varying float vLane;
+      uniform float time; uniform float turbulence; uniform float downforce;uniform float skinPattern; uniform vec2 wakeRange, rippleScale;
       void main(){vUv=uv;vType=flowType;vLane=lane;vec3 p=position;
         float wake=smoothstep(wakeRange.x,wakeRange.y,p.z);p.x+=sin(time*2.+p.z*3.+lane*9.)*wake*turbulence*.13;
         p.y+=wake*downforce*.25;
-        float phase=p.z*(2.+skinPattern)+time*(1.+skinPattern*.7)+lane*6.28;
-        if(skinPattern>.5) p.x+=sin(phase)*(.025+skinPattern*.024)*(1.+wake);
-        if(skinPattern>1.5) p.y+=cos(phase)*(.045+skinPattern*.012);
+        float along=(position.z-wakeRange.x)/(wakeRange.y-wakeRange.x);
+        float phase=along*(7.+skinPattern*3.)+time*(1.+skinPattern*.7)+lane*6.28;
+        if(skinPattern>.5){
+          float ripple=(.5+.5*sin(phase))*(.025+skinPattern*.024)*(1.+wake);
+          p.xy+=flowOutward*rippleScale*ripple;
+          if(skinPattern>1.5&&flowType!=1.){
+            vec2 tangent=vec2(flowOutward.y,-flowOutward.x);
+            p.xy+=tangent*rippleScale*cos(phase)*(.045+skinPattern*.012);
+          }
+        }
         gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
     fragmentShader: `varying vec2 vUv; varying float vType; varying float vLane;
       uniform float time,power,speed,density,length,suction,downforce,nitroMix,skinPattern;uniform vec3 skinTint;uniform vec4 trailAccent;
@@ -56,22 +63,24 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   local.add(flow);
   const pressure = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide,
-    uniforms: { power: { value: 0 }, time: { value: 0 } },
+    uniforms: { power: { value: 0 }, time: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) } },
     vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: `varying vec2 vUv;uniform float power,time;void main(){vec2 p=vUv*2.-1.;
+    fragmentShader: `varying vec2 vUv;uniform float power,time;uniform vec3 skinTint;void main(){vec2 p=vUv*2.-1.;
       float edge=pow(max(0.,1.-dot(p,p)*.65),3.);float wave=.7+.3*sin(length(p)*25.+time*6.);
-      gl_FragColor=vec4(.08,.55,.8,edge*wave*power*.15);}`,
+      gl_FragColor=vec4(vec3(.08,.55,.8)*skinTint,edge*wave*power*.15);}`,
   }));
   pressure.rotation.x = -Math.PI / 2; pressure.position.y = 0.11;
   local.add(pressure);
-  function placePressure(profile) {
+  function placeAirflow(profile) {
     const { min, max } = profile.bounds;
     pressure.position.x = (min.x + max.x) * .5;
     pressure.position.z = (min.z + max.z) * .5;
     pressure.scale.set((max.x - min.x) * .86, (max.z - min.z) * .92, 1);
-    flow.material.uniforms.wakeRange.value.set(max.z, max.z + (max.z - min.z) * .72);
+    const { wakeRange, rippleScale } = flow.material.uniforms;
+    wakeRange.value.set(max.z, max.z + (max.z - min.z) * .72);
+    rippleScale.value.set(clamp((max.x - min.x) / 2.4, .4, 1.4), clamp(max.y / 1.4, .4, 1.4));
   }
-  placePressure(proceduralProfile);
+  placeAirflow(proceduralProfile);
   const rear = new THREE.Group(); rear.name = 'Rear ports'; local.add(rear); // garage-model.ts moves it onto a dressed GLB's nozzles
 
   const jetGeometry = new THREE.CylinderGeometry(1, 4.8, 1, 20, 24, true);
@@ -190,6 +199,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       voidPulse = patterns.thruster === 3; // its beams replace the nozzle flames
       voidBeams.setSelected(voidPulse);
       flow.material.uniforms.skinTint.value.fromArray(palette.airflow);
+      pressure.material.uniforms.skinTint.value.fromArray(palette.airflow);
       flow.material.uniforms.skinPattern.value = patterns.airflow;
       glow.tint.fromArray(palette.thruster);
       for (const jet of jets) {
@@ -216,7 +226,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       const profile = model ? measureAirflowProfile(model, vehicle) : proceduralProfile;
       flow.geometry.dispose();
       flow.geometry = streamGeometry(profile);
-      placePressure(profile);
+      placeAirflow(profile);
     },
     inspectCosmetics() {
       return { voidBeams: voidBeams.mesh.visible, launchPattern,
