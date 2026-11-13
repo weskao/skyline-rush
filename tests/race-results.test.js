@@ -309,3 +309,11 @@ test('NEXT appears for the final unlock and hides on the last track', () => {
   assert.ok(progress.unlocked.has(last), 'the final track is unlocked by that podium');
   assert.equal(settle(podium(last), { progress }).settlement.next, null);
 });
+
+test('only the first unlock of a track earns the unlock sound', () => {
+  const { context, settlement } = settle(classic({ position:2 }));
+  assert.equal(settlement.unlockedTrack, true);
+  const replay = settle(classic({ position:2 }), { progress:context.progress }).settlement;
+  assert.equal(replay.next, 'neon');
+  assert.equal(replay.unlockedTrack, false);
+});
