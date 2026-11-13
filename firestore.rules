@@ -17,15 +17,6 @@ service cloud.firestore {
       'stormline-megacity@t1l1', 'volcanic-crown@t1l1', 'monsoon-ruins@t1l1']); // CourseGraph sprints: `<track>@t<topology>l<layout>`
   }
 
-  // Rules stop at 1000 evaluated expressions per write, and each map lookup counts: the old keys().hasAny([id])
-  // form rejected a player holding every star and best (already 10 stars + 14 bests before stage 2). One
-  // A defaulted lookup avoids evaluating a separate presence check for every optional field.
-  // Invalid present values still fail the same bounds. This keeps full saves under the 1000-expression limit.
-  // 0 < best < 604800 s (one week) in a single lookup.
-  function validBest(values, id) {
-    return math.abs(values.get(id, 302400) - 302400) < 302400;
-  }
-
   function validMedal(values, id) {
     // A missing medal uses a valid default. A present non-string fails matches().
     return values.get(id, '2000-01-01T00:00:00.000Z')
@@ -37,30 +28,61 @@ service cloud.firestore {
     return stars.values().hasOnly([1, 2, 3]);
   }
 
-  function validBests(bests) {
-    return validBest(bests, 'coast') && validBest(bests, 'neon') && validBest(bests, 'canyon')
-      && validBest(bests, 'aurora') && validBest(bests, 'spiral') && validBest(bests, 'taipei')
-      && validBest(bests, 'tokyo') && validBest(bests, 'alpine') && validBest(bests, 'coastal')
-      && validBest(bests, 'cosmic')
-      && validBest(bests, 'coast@2') && validBest(bests, 'neon@2')
-      && validBest(bests, 'canyon@2') && validBest(bests, 'spiral@2')
-      && validBest(bests, 'coast@3') && validBest(bests, 'neon@3')
-      && validBest(bests, 'canyon@3') && validBest(bests, 'spiral@3')
-      && validBest(bests, 'aurora@2') && validBest(bests, 'taipei@2')
-      && validBest(bests, 'tokyo@2') && validBest(bests, 'alpine@2')
-      && validBest(bests, 'coastal@2') && validBest(bests, 'cosmic@2')
-      && validBest(bests, 'coast@4') && validBest(bests, 'neon@4')
-      && validBest(bests, 'canyon@4') && validBest(bests, 'spiral@4')
-      && validBest(bests, 'coast@5') && validBest(bests, 'neon@5')
-      && validBest(bests, 'canyon@5') && validBest(bests, 'aurora@4') && validBest(bests, 'spiral@5')
-      && validBest(bests, 'coast@6') && validBest(bests, 'neon@6')
-      && validBest(bests, 'canyon@6') && validBest(bests, 'aurora@5') && validBest(bests, 'spiral@6')
-      && validBest(bests, 'aurora@3') && validBest(bests, 'taipei@3')
-      && validBest(bests, 'tokyo@3') && validBest(bests, 'alpine@3')
-      && validBest(bests, 'coastal@3') && validBest(bests, 'cosmic@3')
-      && validBest(bests, 'frostbite-canyon@t1l1') && validBest(bests, 'dune-tempest@t1l1')
-      && validBest(bests, 'skyfall-archipelago@t1l1') && validBest(bests, 'stormline-megacity@t1l1')
-      && validBest(bests, 'volcanic-crown@t1l1') && validBest(bests, 'monsoon-ruins@t1l1');
+  // Rules stop at 1000 evaluated expressions per write. Each best is one defaulted lookup, 0 < best < 604800 s
+  // (a missing id takes the valid default), written inline: a per-id helper call cost one extra expression per
+  // id, and at 50 ids that rejected every cloud save (2026-11-13). Measured on the emulator: 60 ids fit, 70 do
+  // not. tests/record-layout.test.js caps the list at 60; more ids need a new budget measurement first.
+  function validBests(b) {
+    return math.abs(b.get('coast', 302400) - 302400) < 302400
+      && math.abs(b.get('neon', 302400) - 302400) < 302400
+      && math.abs(b.get('canyon', 302400) - 302400) < 302400
+      && math.abs(b.get('aurora', 302400) - 302400) < 302400
+      && math.abs(b.get('spiral', 302400) - 302400) < 302400
+      && math.abs(b.get('taipei', 302400) - 302400) < 302400
+      && math.abs(b.get('tokyo', 302400) - 302400) < 302400
+      && math.abs(b.get('alpine', 302400) - 302400) < 302400
+      && math.abs(b.get('coastal', 302400) - 302400) < 302400
+      && math.abs(b.get('cosmic', 302400) - 302400) < 302400
+      && math.abs(b.get('coast@2', 302400) - 302400) < 302400
+      && math.abs(b.get('coast@3', 302400) - 302400) < 302400
+      && math.abs(b.get('neon@2', 302400) - 302400) < 302400
+      && math.abs(b.get('neon@3', 302400) - 302400) < 302400
+      && math.abs(b.get('canyon@2', 302400) - 302400) < 302400
+      && math.abs(b.get('canyon@3', 302400) - 302400) < 302400
+      && math.abs(b.get('spiral@2', 302400) - 302400) < 302400
+      && math.abs(b.get('spiral@3', 302400) - 302400) < 302400
+      && math.abs(b.get('aurora@2', 302400) - 302400) < 302400
+      && math.abs(b.get('taipei@2', 302400) - 302400) < 302400
+      && math.abs(b.get('tokyo@2', 302400) - 302400) < 302400
+      && math.abs(b.get('alpine@2', 302400) - 302400) < 302400
+      && math.abs(b.get('coastal@2', 302400) - 302400) < 302400
+      && math.abs(b.get('cosmic@2', 302400) - 302400) < 302400
+      && math.abs(b.get('coast@4', 302400) - 302400) < 302400
+      && math.abs(b.get('neon@4', 302400) - 302400) < 302400
+      && math.abs(b.get('canyon@4', 302400) - 302400) < 302400
+      && math.abs(b.get('spiral@4', 302400) - 302400) < 302400
+      && math.abs(b.get('coast@5', 302400) - 302400) < 302400
+      && math.abs(b.get('neon@5', 302400) - 302400) < 302400
+      && math.abs(b.get('canyon@5', 302400) - 302400) < 302400
+      && math.abs(b.get('aurora@4', 302400) - 302400) < 302400
+      && math.abs(b.get('spiral@5', 302400) - 302400) < 302400
+      && math.abs(b.get('coast@6', 302400) - 302400) < 302400
+      && math.abs(b.get('neon@6', 302400) - 302400) < 302400
+      && math.abs(b.get('canyon@6', 302400) - 302400) < 302400
+      && math.abs(b.get('aurora@5', 302400) - 302400) < 302400
+      && math.abs(b.get('spiral@6', 302400) - 302400) < 302400
+      && math.abs(b.get('aurora@3', 302400) - 302400) < 302400
+      && math.abs(b.get('taipei@3', 302400) - 302400) < 302400
+      && math.abs(b.get('tokyo@3', 302400) - 302400) < 302400
+      && math.abs(b.get('alpine@3', 302400) - 302400) < 302400
+      && math.abs(b.get('coastal@3', 302400) - 302400) < 302400
+      && math.abs(b.get('cosmic@3', 302400) - 302400) < 302400
+      && math.abs(b.get('frostbite-canyon@t1l1', 302400) - 302400) < 302400
+      && math.abs(b.get('dune-tempest@t1l1', 302400) - 302400) < 302400
+      && math.abs(b.get('skyfall-archipelago@t1l1', 302400) - 302400) < 302400
+      && math.abs(b.get('stormline-megacity@t1l1', 302400) - 302400) < 302400
+      && math.abs(b.get('volcanic-crown@t1l1', 302400) - 302400) < 302400
+      && math.abs(b.get('monsoon-ruins@t1l1', 302400) - 302400) < 302400;
   }
 
   function validMedals(medals) {
