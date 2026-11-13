@@ -81,6 +81,13 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     rear 3/4 0.877, rear 0.882. Wing raised: 0.936 / 0.865 / 0.871 / 0.837. **0.90 is met in the side view only**;
     the measured ceilings and their reasons per view are in `assets-src/crimson-gt/asset-brief.md`. The mattes were
     not tuned.
+  - 2026-11-13, iteration 9 probes (not adopted): four variants of the inferred dimensions (stowed endplate
+    height, nose, tail plan, endplate + tail) built headless in scratch copies and measured with the same gate.
+    Best gain at rest on the three views below 0.90 is +.004; the nose and tail variants each regress a view. The
+    owner kept iteration 8, so the GLBs, master and manifest are unchanged. Table in the asset brief.
+  - 2026-11-13, master: the `.blend` in `4ca197b1` (wave3 audit branch) is an older build (22,540 triangles, no
+    cabin, hood vents, stowed-wing endplates or flake textures). Owner decision: develop's iteration 8 master is
+    the one to build from. The merge of that branch (`114af6ea`) left the master unchanged.
 - [x] Materials: a deep-red metallic clearcoat that responds to `PAINTS`, emissive light blade and rear bar,
   dark glass, five-spoke wheels.
   - 2026-11-13: all 6 `PAINTS` tint the GLB body (`tests/crimson-gt-browser.spec.js`).
@@ -133,10 +140,16 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
 - [x] `npm test`, `npm run typecheck`, `npm run build` and `node --test tests/module-size.test.js` (2026-11-13).
 - [x] Regression with the new car (2026-11-13): `HERO_CAR=crimson-gt` equips the GT in the Phase 2b track matrix
   (`tests/hero-roadster-tracks-browser.spec.js`, which now asserts the dressed model is the equipped car's), the
-  Phase 2c equipment spec and the equipment audit (`GARAGE_EQUIPMENT_AUDIT=1`). MATRIX_RESULT
+  Phase 2c equipment spec and the equipment audit (`GARAGE_EQUIPMENT_AUDIT=1`). On a detached checkout of
+  `6d2ec20a`: the two matrix specs 26/26 (10 tracks and the six-course carousel on desktop and on a phone, 4 equipment tests, 5.1 min) and
+  the audit 3/3 (9.9 min). Tier cost with the heaviest loadout, NITRO + FLY: High 432 draw calls / 178,751
+  triangles, Medium 429 / 189,509, Low 418 / 166,096. Twelve contact sheets, desktop and phone, are in the ignored
+  `../audits/garage-equipment-crimson-gt/`; the phone paint sheet was read and every cell shows the GT. An earlier
+  run on the branch checkout failed one Coast test because the checkout was fast-forwarded mid-run (see
+  `.claude/rules/browser-test-stability.md`); that run is not counted.
   The equipment spec's showcase test assumed the Roadster's default paint; it now reads the equipped car's default
   (the GT's factory red). Under `HERO_CAR` the audit's "procedural" and "GLB" columns both show the GT, and its paint
-  rows are the six `PAINTS` (the factory colour is covered by the GT spec).
+  rows are the `PAINTS` (seven since Deep Crimson became a shared paint; the factory colour is covered by the GT spec).
 - [ ] `make verify` and exact-HEAD full CI: VERIFY_RESULT
 - [x] What's New entry (2026-11-13): the shipped entry is stamped 0.31.0 (2026-11-10) and a new `UPCOMING` entry
   announces the Crimson GT (en, zh-TW). Release-notes tests 30/30; `node scripts/check-release-notes.mjs 0.31.0`
@@ -144,14 +157,17 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
 - [ ] What's New review at `/release`: fresh-eyes review, owner approval and the real-game media a new car needs.
 
 ## By device (repeat per machine; evidence in the ignored `../audits/`)
-- [ ] Live Blender MCP scene query before the first Blender edit (Task 4's per-device setup).
+- [x] Live Blender MCP scene query before the first Blender edit (Task 4's per-device setup).
   - 2026-11-13, one Mac: the transport answered a scene query, but the live session held another checkout's master
     with unsaved changes, so the rebuilt master was not loaded there. Builds ran headless.
+  - 2026-11-13, same Mac, later: `get_addon_status` and `get_scene_info` answered (Blender 5.2 LTS, the default
+    scene, no file open). No live edit followed: the iteration 9 probes ran headless on scratch copies and were
+    not adopted, so the master is unchanged. Another machine repeats the query before its first edit.
 - [x] Concept-board parity review (spec v2 §8.1) of the four studio panels on a real-GPU desktop: drafted
   2026-11-13 at `f0599b86` on one Mac desktop (Apple GPU through Metal, not SwiftShader). Composites and the scored
   sheet are in the ignored `../audits/crimson-gt/parity/`. Result: 0 match, 4 close (silhouette and proportions, light
   signatures, atmosphere, colour grade), 3 gap (paint depth and reflections, ground material, effects). Each gap
   names its cause and a proposal; none is accepted yet.
 - [ ] Real-phone screenshots and frame-time p50/p95 for the new car versus the Roadster (`make phone-diag`): not
-  captured; the checklist is in the ignored `../audits/crimson-gt/phone-checklist.md`.
+  captured, needs the owner's phone; the checklist is in the ignored `../audits/crimson-gt/phone-checklist.md`.
 - [ ] Owner visual sign-off on the scored parity sheet.
