@@ -3,6 +3,7 @@ import type { ClassicRoad } from './classic-road-routes.ts';
 import { seededRng } from './rng.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 import { coastChunkWindow, coastFarWindow, createCoastModelLayer, type CoastModelLayer, type ShoreSink } from './coast-scenery-glb.ts';
+import { coastGullWindow, createCoastSeagulls } from './coast-seagulls.ts';
 
 // Shared Coast palette, separate from the five authored World Tour routes.
 export const COAST_PALETTE = Object.freeze({
@@ -38,6 +39,7 @@ export function createCoastScenery(scene: THREE.Scene) {
     group.add(mesh);
   }
   let model: CoastModelLayer | null = null;
+  let gulls: ReturnType<typeof createCoastSeagulls> | null = null; // fly with the scan coast only
   const distances = new Float64Array(TOTAL);
   let previousRoute: ClassicRoad | undefined, previousTier:VfxQuality|null=null;
   let origin = 0, previousDistance = 0, previousSeed: number | undefined;
@@ -62,7 +64,7 @@ export function createCoastScenery(scene: THREE.Scene) {
   }
   return {
     group,
-    update(route:ClassicRoad,distance:number,quality:VfxQuality,seed?:number) {
+    update(route:ClassicRoad,distance:number,quality:VfxQuality,seed?:number,time=0) {
       if (!Number.isFinite(distance)) return;
       const count=DENSITY[quality];
       const nextOrigin = seed === undefined ? 0 : -route.point(Math.floor(distance / 500) * 500)[1];
@@ -83,6 +85,9 @@ export function createCoastScenery(scene: THREE.Scene) {
       const window = model ? coastChunkWindow(distance, quality) : null;
       if (model && window) model.place(route, window, origin, seed, coastFarWindow(distance, quality));
       for (const mesh of model?.meshes ?? []) mesh.visible = !!window;
+      const flocks = gulls ? coastGullWindow(distance, quality) : null;
+      if (gulls) gulls.mesh.visible = !!flocks;
+      if (gulls && flocks) { gulls.place(route, flocks, origin, seed); gulls.setTime(time); }
       for(const mesh of meshes) {
         mesh.visible = !window; // Medium+ with the GLB: the scans replace the procedural rocks and trees
         mesh.count=count;
@@ -98,15 +103,19 @@ export function createCoastScenery(scene: THREE.Scene) {
       model?.dispose();
       model = createCoastModelLayer(source, shore);
       for (const mesh of model.meshes) { mesh.visible = false; group.add(mesh); }
+      gulls ??= createCoastSeagulls();
+      gulls.mesh.visible = false; group.add(gulls.mesh);
     },
     detachModel() {
       model?.dispose(); model = null;
+      gulls?.dispose(); gulls = null;
       for (const mesh of meshes) mesh.visible = true;
     },
     hide() {group.visible=false;},
     show() {group.visible=true;},
     dispose() {
       model?.dispose(); model = null;
+      gulls?.dispose(); gulls = null;
       scene.remove(group);
       for(const mesh of meshes) {mesh.geometry.dispose();mesh.material.dispose();}
     },

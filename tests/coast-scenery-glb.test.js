@@ -35,7 +35,7 @@ function fakeGlb() {
   return root;
 }
 
-const layerMeshes = kit => kit.group.children.filter(o => o.isInstancedMesh && !PROCEDURAL.includes(o.name));
+const layerMeshes = kit => kit.group.children.filter(o => o.isInstancedMesh && !PROCEDURAL.includes(o.name) && o.name !== 'Coast seagulls'); // coast-seagulls.ts is not a GLB piece
 const matrixOf = (mesh, i) => { const m = new THREE.Matrix4(); mesh.getMatrixAt(i, m); return m; };
 
 test('the chunk plan covers every manifest piece and is keyed by absolute chunk index and endless seed', () => {
