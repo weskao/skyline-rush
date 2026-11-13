@@ -87,3 +87,50 @@ test('the final simulation step still captures a drift that ends at the finish l
   bridge.finish(race, false);
   assert.equal(demo.getSnapshot().missions['mission-drift'].progress, 1);
 });
+
+
+test('finished races use the configured distance, track challenge, AI difficulty and real placement', () => {
+  const demo = createWave3LocalDemo();
+  let sequence = 0;
+  const bridge = createWave3RaceEventBridge(demo, () => `race-reward-${++sequence}`);
+  const finish = (trackId, length, difficulty, position, rivalCount, mode = 'custom') => {
+    const race = { ...aRace(mode), phase: 'finished', trackId, length,
+      config: { difficulty }, rivals: Array.from({ length: rivalCount }),
+      result: { success: true, time: 60, position } };
+    return bridge.finish(race, false);
+  };
+  assert.equal(finish('coast', 5000, 'normal', 1, 0, 'time').deltaDemoPoints, 20);
+  assert.equal(finish('coast', 5000, 'normal', 1, 7).deltaDemoPoints, 28);
+  assert.equal(finish('coast', 5000, 'normal', 8, 7).deltaDemoPoints, 18);
+  assert.equal(finish('canyon', 6000, 'normal', 1, 7).deltaDemoPoints, 35);
+  assert.equal(finish('canyon', 6000, 'hard', 1, 7).deltaDemoPoints, 43);
+  assert.equal(finish('harbor-circuit', 10000, 'normal', 2, 7, 'circuit').deltaDemoPoints, 38);
+  assert.equal(finish('coast', 5000, 'hard', 1, 0).deltaDemoPoints, 20);
+  assert.equal(demo.getSnapshot().demoPoints, 222);
+});
+
+test('a timed stunt settles the distance driven and replaying its receipt never adds points', () => {
+  const demo = createWave3LocalDemo();
+  const bridge = createWave3RaceEventBridge(demo, () => 'timed-stunt-0001');
+  const race = { ...aRace('stunt'), phase: 'finished', length: 5000,
+    player: { distance: 2500, driftPayout: null, longestCombo: 0 },
+    result: { success: true, time: 120, endReason: 'timer' }, rivals: [] };
+  assert.equal(bridge.finish(race, false).deltaDemoPoints, 15);
+  assert.equal(bridge.finish(race, false).deltaDemoPoints, 0);
+  assert.equal(demo.getSnapshot().demoPoints, 35);
+});
+
+test('multi-stage custom rewards use cumulative distance and average finishing position once', () => {
+  const demo = createWave3LocalDemo();
+  let sequence = 0;
+  const bridge = createWave3RaceEventBridge(demo, () => `multi-stage-${++sequence}`);
+  const race = { ...aRace('custom'), phase: 'finished', length: 5000, trackId: 'coast',
+    config: { difficulty: 'normal' }, rivals: Array.from({ length: 7 }),
+    result: { success: true, time: 60, position: 1 } };
+  const series = { cup: null, stunt: null, sprintSeries: { count: 3,
+    results: [8, 7, 1].map(position => ({ position, time: 60, score: 0 })) } };
+  assert.equal(bridge.finish({ ...race }, true, series).deltaDemoPoints, 0);
+  assert.equal(bridge.finish(race, false, series).deltaDemoPoints, 34);
+  assert.equal(bridge.finish(race, false, series).deltaDemoPoints, 0);
+  assert.equal(demo.getSnapshot().demoPoints, 54);
+});

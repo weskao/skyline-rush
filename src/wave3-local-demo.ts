@@ -135,7 +135,7 @@ export function createWave3LocalDemo(options: { now?: () => number } = {}): Wave
     settleCompletion(completion) {
       if (!validCompletion(completion)) return result('invalid');
       if (!completion.eligible || !DEMO_ELIGIBLE_MODES.has(completion.mode)) return result('ineligible');
-      const attempt = demoSettlement(demoPoints, completion.completionId, settled);
+      const attempt = demoSettlement(demoPoints, completion.completionId, settled, completion.demoRace);
       if (attempt.status === 'completed') { demoPoints = attempt.credits; publish(); }
       return result(attempt.status, attempt.delta);
     },

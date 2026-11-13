@@ -34,7 +34,53 @@ body:not([data-phase="finished"]) .wave3-demo-results { display: none; }
 .wave3-demo-results__mark img { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); object-fit: contain; }
 .wave3-demo-results__status { margin: 5px 0; color: #d6e7f4; }
 .wave3-demo-results__points { margin: 3px 0; font-weight: 750; color: #ffd38d; font-variant-numeric: tabular-nums; }
-.wave3-demo-results__points[hidden] { display: none; }
+.wave3-demo-results__credit {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; align-items: center; justify-content: space-between; gap: 5px 12px; flex-wrap: wrap;
+  padding: 5px 9px; border: 1px solid #c49d5e70; border-radius: 8px;
+  background: linear-gradient(110deg, #49321d, #242743 73%);
+}
+.wave3-demo-results__credit[hidden], .wave3-demo-results__points[hidden], .wave3-demo-results__balance[hidden] { display: none; }
+.wave3-demo-results__balance { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.wave3-demo-results__balance-label { color: #d6e7f4; font-size: 11px; }
+.wave3-demo-results__balance-value { color: #fff3c9; font: 800 17px/1.1 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.wave3-demo-results__credit[data-reward-reveal] .wave3-demo-results__points {
+  animation: wave3-reward-pop 580ms cubic-bezier(.2, .8, .25, 1) both; transform-origin: left center;
+}
+.wave3-demo-results__credit[data-reward-reveal] .wave3-demo-results__balance-value {
+  animation: wave3-reward-glow 850ms ease-out both;
+}
+.wave3-demo-results__credit[data-reward-reveal]::before,
+.wave3-demo-results__credit[data-reward-reveal]::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+}
+.wave3-demo-results__credit[data-reward-reveal]::before {
+  background: radial-gradient(ellipse at 14% 50%, #ffd07180, transparent 64%);
+  animation: wave3-reward-burst 700ms ease-out both;
+}
+.wave3-demo-results__credit[data-reward-reveal]::after {
+  width: 36%; background: linear-gradient(90deg, transparent, #fff2b962, transparent);
+  animation: wave3-reward-sweep 790ms 60ms ease-out both;
+}
+body[data-vfx-quality="low"] .wave3-demo-results__credit[data-reward-reveal]::before,
+body[data-vfx-quality="low"] .wave3-demo-results__credit[data-reward-reveal]::after { display: none; }
+@keyframes wave3-reward-pop {
+  0% { opacity: .5; transform: translateY(4px) scale(.92); }
+  42% { opacity: 1; transform: translateY(0) scale(1.12); }
+  100% { transform: none; }
+}
+@keyframes wave3-reward-glow {
+  0%, 100% { text-shadow: none; }
+  35%, 70% { text-shadow: 0 0 9px #ffd77f; }
+}
+@keyframes wave3-reward-burst {
+  from { opacity: 1; transform: scale(.72); }
+  to { opacity: 0; transform: scale(1.45); }
+}
+@keyframes wave3-reward-sweep {
+  from { transform: translateX(-120%) skewX(-22deg); }
+  to { transform: translateX(310%) skewX(-22deg); }
+}
 .wave3-demo-results__progress-title { margin: 6px 0 3px; font: 650 11px system-ui, sans-serif; color: #aed7eb; }
 .wave3-demo-results__missions { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 4px 10px; }
 .wave3-demo-results__progress-title { grid-column: 1 / -1; }
@@ -73,7 +119,10 @@ body:not([data-phase="finished"]) .wave3-demo-results { display: none; }
   .wave3-demo-results__mark { width: 24px; height: 24px; font-size: 15px; }
   .wave3-demo-results__mark img { inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); }
   .wave3-demo-results__heading { font-size: 12px; letter-spacing: 0; white-space: nowrap; }
+  .wave3-demo-results__credit { gap: 2px; flex: 0 1 auto; padding: 3px 7px; }
   .wave3-demo-results__points { flex: none; margin: 0; white-space: nowrap; }
+  .wave3-demo-results__balance-label { font-size: 10px; }
+  .wave3-demo-results__balance-value { font-size: 13px; }
   .wave3-demo-results__status { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
   /* Keep detailed settlement text available to screen readers even when visually condensed. */
   .wave3-demo-results--earned .wave3-demo-results__status,
@@ -109,5 +158,6 @@ body.vfx-comfort .wave3-demo-results__banner::after { display: none; }
   .wave3-demo-results__banner { height: 24px; margin: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .wave3-demo-results__banner::after { animation: none; display: none; }
+  .wave3-demo-results__banner::after,
+  .wave3-demo-results__credit::before, .wave3-demo-results__credit::after { animation: none; display: none; }
 }

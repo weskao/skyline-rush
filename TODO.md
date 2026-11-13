@@ -1,3 +1,9 @@
+# 2026-11-13 — Wave 3 local demo race rewards
+
+- [x] RED → GREEN for distance, authored hazards, AI difficulty, placement, timed distance, multi-stage settlement, duplicate receipts and the result wallet balance.
+- [x] Show the credited amount and roll the local balance from its previous value after the results panel appears. Respect reduced motion and the player's VFX settings.
+- [ ] Verify the final branch commit's full GitHub Actions quality gate and review the reveal on a physical phone.
+
 # 2026-11-13 — Classic track corners
 
 - [x] Author distinct Coast, Neon Downtown, Canyon Skyway and Aurora Pass corner sequences, preserving their shortcuts, tunnels, gaps and ice.
