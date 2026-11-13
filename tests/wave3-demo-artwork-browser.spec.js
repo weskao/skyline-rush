@@ -16,19 +16,20 @@ async function checkImage(image, nativePx, cssPx) {
   await image.evaluate(el => el.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
   await expect(image).toHaveJSProperty('naturalWidth', nativePx);
   await expect(image).toHaveJSProperty('naturalHeight', nativePx);
-  const size = await image.evaluate(async el => {
-    // Native dimensions are already awaited above. decode() here races the
-    // IntersectionObserver replacing still artwork with the animated GIF.
-    // CSS animation changes the visual box, not the intended 3x layout size.
-    const style = getComputedStyle(el);
-    const url = new URL(el.currentSrc);
-    const base = new URL('feature-assets/', location.href).pathname;
-    return {
-      width: el.offsetWidth, height: el.offsetHeight, fit: style.objectFit,
-      url: url.pathname, base, loaded: el.complete && el.naturalWidth > 0,
-    };
-  });
-  expect(size.loaded).toBe(true);
+  // The IntersectionObserver still -> animated src swap briefly empties `currentSrc` and resets `complete`,
+  // so measure only a loaded frame instead of one sampled instant. CSS animation changes the visual box,
+  // not the intended 3x layout size.
+  let size;
+  await expect.poll(async () => {
+    size = await image.evaluate(el => {
+      if (!el.complete || !el.naturalWidth || !el.currentSrc) return null;
+      return {
+        width: el.offsetWidth, height: el.offsetHeight, fit: getComputedStyle(el).objectFit,
+        url: new URL(el.currentSrc).pathname, base: new URL('feature-assets/', location.href).pathname,
+      };
+    });
+    return size !== null;
+  }, { message: 'artwork loaded' }).toBe(true);
   expect([size.width, size.height]).toEqual([cssPx, cssPx]);
   expect(size.fit).toBe('contain');
   expect(size.url.startsWith(size.base), size.url + ' must use Vite base path').toBe(true);
@@ -225,7 +226,9 @@ for (const viewport of screens) {
     await page.setViewportSize(viewport);
     await page.goto('/');
     const home = page.locator('#intro [data-wave3-wallet]');
-    await checkImage(home.locator('[data-wave3-demo-art="demo-points"] img'), 216, 22);
+    // Short landscape compacts the Home wallet (Wave3CurrencyStrip.vue) so the pinned row clears the track cards.
+    const shortLandscape = viewport.height <= 500 && viewport.width > viewport.height;
+    await checkImage(home.locator('[data-wave3-demo-art="demo-points"] img'), 216, shortLandscape ? 14 : 22);
     await expect(home.locator('[data-currency="demo-points"]')).toHaveAttribute('aria-label', /Demo points|試玩點數/);
     await page.locator('#garage-button').click();
     await page.locator('[data-wave3-open-store]').click();

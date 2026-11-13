@@ -4,6 +4,8 @@
 - [x] Preserve 96px Rewards/Missions artwork and reserve room for its transforms. The keyframe regression failed on Drift at 390×844 before the repair and passed at that viewport afterward.
 - [ ] Verify the real 5 km demo flow reflects reward, redemption and reset in the Home wallet.
 - [x] Local typecheck, module-size gate, locked and trial builds, and unit suite (2,673 passed, three skipped).
+- [x] CI run 43368533938 failed only A-03 at 844×390 (Home Demo Points 14px ≠ expected 22px). The short-landscape wallet is intentionally 14px, so A-03 now expects 14px there and 22px elsewhere, still asserting exact size.
+- [x] `checkImage` in `tests/wave3-demo-artwork-browser.spec.js` sampled `complete`/`currentSrc` once and raced the still → animated src swap (`loaded` false or an empty URL under parallel load: 1/42 and 1/56 failures with `--repeat-each`). It now polls until a loaded frame exists before measuring: 84/84 passed with `--repeat-each=6`.
 - [ ] Confirm exact-HEAD full CI and its quality gate on the feature branch.
 
 # 2026-11-11 — Premium currency PNG artwork and 8-frame sprite integration
