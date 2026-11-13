@@ -32,6 +32,8 @@ export type ExperienceSnapshot = Readonly<{
   demoInventory: readonly string[];
   equippedPreview: string | null;
   updatedAt: number;
+  /** Session-only status, excluded from the v1 disk snapshot. */
+  persistence?: 'memory-only';
 }>;
 export type GameEvent = Readonly<{
   schemaVersion: typeof WAVE3_EXPERIENCE_VERSION;
@@ -50,6 +52,16 @@ export type DemoRaceMetrics = Readonly<{
   position?: number;
   rivalCount: number;
 }>;
+export type DemoOperationScope = Readonly<{ accountId: string; generation: string; session: number }>;
+export const sameDemoScope = (a: DemoOperationScope, b: DemoOperationScope): boolean =>
+  a.accountId === b.accountId && a.generation === b.generation && a.session === b.session;
+export type DemoRedemptionQuote = Readonly<{
+  scope: DemoOperationScope; expiresAt: number; catalogVersion: number; currency: DemoCurrency; cost: number;
+}>;
+export const DEMO_QUOTE_LIFETIME_MS = 60_000;
+export const DEMO_REPLAY_LIMIT = 1024;
+export const DEMO_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+
 export type RaceCompletion = Readonly<{
   schemaVersion: typeof WAVE3_EXPERIENCE_VERSION;
   completionId: string;
@@ -59,24 +71,30 @@ export type RaceCompletion = Readonly<{
   eligible: boolean;
   accountId?: string;
   demoRace?: DemoRaceMetrics;
+  scope?: DemoOperationScope;
+  telemetry?: Readonly<{ drift: number; combo: number }>;
 }>;
 export type ExperienceResult = Readonly<{
   status: Wave3Status;
+  operationId?: string;
   snapshot: ExperienceSnapshot;
   deltaDemoPoints: number;
   deltaDemoCoins?: number;
   deltaDemoDiamonds?: number;
 }>;
 
+type DemoMutation<T> = T | Promise<T>;
+
 /** UI seam; a future server implementation must never trust local-demo receipts. */
 export type Wave3ExperiencePort = Readonly<{
   getSnapshot(): ExperienceSnapshot;
+  getOperationScope(): DemoOperationScope;
   subscribe(listener: (snapshot: ExperienceSnapshot) => void): () => void;
-  recordGameEvent(event: GameEvent): ExperienceResult;
-  settleCompletion(completion: RaceCompletion): ExperienceResult;
-  claimMission(missionId: string): ExperienceResult;
-  redeemPreview(itemId: string): ExperienceResult;
-  equipPreview(itemId: string): ExperienceResult;
-  resetDemo(): ExperienceSnapshot;
+  recordGameEvent(event: GameEvent): DemoMutation<ExperienceResult>;
+  settleCompletion(completion: RaceCompletion): DemoMutation<ExperienceResult>;
+  claimMission(missionId: string, periodId?: number, scope?: DemoOperationScope): DemoMutation<ExperienceResult>;
+  redeemPreview(itemId: string, quote?: DemoRedemptionQuote): DemoMutation<ExperienceResult>;
+  equipPreview(itemId: string, scope?: DemoOperationScope): DemoMutation<ExperienceResult>;
+  resetDemo(): DemoMutation<ExperienceSnapshot>;
   setAccount(accountId: string | null): ExperienceSnapshot;
 }>;

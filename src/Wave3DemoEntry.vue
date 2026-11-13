@@ -3,20 +3,12 @@ import { ref } from 'vue';
 import Wave3DemoStore from './Wave3DemoStore.vue';
 import Wave3DemoCollection from './Wave3DemoCollection.vue';
 import { wave3DemoExperience } from './wave3-race-events.ts';
-import { garageSkinEntry, garageSkinState, selectGarageSkin, equipWave3DemoSkin, resetWave3DemoSkin } from '#garage-skin-runtime';
-import type { SkinId } from './garage-skin-catalog.ts';
+import { garageSkinEntry, garageSkinState, selectGarageSkin } from '#garage-skin-runtime';
 
 defineProps<{ locale: string }>();
 const page = ref<'home' | 'store' | 'collection'>('home');
-function equip(id: SkinId) {
-  const snapshot = wave3DemoExperience.getSnapshot();
-  if (snapshot.mode !== 'local-demo' || snapshot.authority !== 'local' ||
-      !snapshot.demoInventory.includes(id) || snapshot.equippedPreview !== id) return;
-  equipWave3DemoSkin(id, snapshot.accountId);
-}
-function reset() {
-  wave3DemoExperience.resetDemo();
-  resetWave3DemoSkin();
+async function reset() {
+  await wave3DemoExperience.resetDemo();
   page.value = 'home';
 }
 const returnToRace = () => document.querySelector<HTMLButtonElement>('#garage-close')?.click();
@@ -40,7 +32,7 @@ const returnToRace = () => document.querySelector<HTMLButtonElement>('#garage-cl
         @preview="selectGarageSkin" @open-collection="page = 'collection'" />
       <Wave3DemoCollection v-else :port="wave3DemoExperience" :locale="locale"
         :trial-access="garageSkinEntry" :skin-revision="garageSkinState.revision"
-        @preview="selectGarageSkin" @equipped-preview="equip"
+        @preview="selectGarageSkin"
         @open-store="page = 'store'" @return-to-race="returnToRace" />
     </template>
   </section>

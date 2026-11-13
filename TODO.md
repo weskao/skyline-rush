@@ -1,5 +1,28 @@
 # 2026-11-13 — Wave 3 trial coins, diamonds and cosmetic offers
 
+## Wave 3 local demo economy E2E (feature/wave3-demo-economy)
+
+- [x] Baseline `de82fc03`, with the original BDD/SDD plan synchronized at `56f7db22`.
+  RED reproduced a stale UTC claim paying +10 points/+40 coins, checkpoint
+  rejection after 1,025 events and near 64 KiB, three publishes for one finish,
+  and a finish surviving a reset. Focused tests cover the fixes, v1 restoration,
+  week/day rollback, shared-lock redemption, expiry and write failure.
+- [x] Deterministic reconciliation with a fresh adapter reload after every step.
+  Points / coins / diamonds in plan order:
+  `20/0/0 → 40/70/0 → 40/70/0 → 60/110/0 → 200/390/0 → 210/430/0 →
+  220/430/5 → 195/430/5 → 195/280/5 → 195/280/5 → 495/840/15 →
+  495/840/0 → 495/840/0 → 20/0/0`.
+- [x] Transaction design: one profile-scoped Web Lock and one v1 checkpoint per
+  mutation. A reset writes a fresh, empty generation so another tab can reject
+  its old race or confirmation. A browser without usable locks or storage keeps
+  a session-only wallet and shows a save warning. Redemption quotes expire after
+  60 seconds. Durable replays prioritize recent finishes before telemetry.
+- [ ] Run and review full browser coverage, screenshots, physical iOS Safari
+  and Android Chrome, and exact-head GitHub Actions before integration into
+  `develop`. Browser specs: `wave3-early-access-browser.spec.js`,
+  `wave3-economy-transactions-browser.spec.js`, and
+  `wave3-demo-results-layout-browser.spec.js`.
+
 - [x] Extend the existing frontend-first design with BDD scenarios, trial economy rules and verified-economy handoff.
 - [x] RED → GREEN covers race credit, first finish, daily and weekly claims, currency-specific redemption, old and extended v1 checkpoints, reset and account isolation.
 - [x] Focused Wave 3 and module-size tests passed. Both locked and trial Vite builds passed bundle audits.

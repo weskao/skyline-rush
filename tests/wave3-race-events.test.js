@@ -134,3 +134,39 @@ test('multi-stage custom rewards use cumulative distance and average finishing p
   assert.equal(bridge.finish(race, false, series).deltaDemoPoints, 0);
   assert.equal(demo.getSnapshot().demoPoints, 54);
 });
+
+test('one finished race publishes mission progress, first-finish flag and all balances together', () => {
+  const demo = createWave3LocalDemo();
+  const commits = [];
+  demo.subscribe(snapshot => commits.push(snapshot));
+  const bridge = createWave3RaceEventBridge(demo, () => 'atomic-race-0001');
+  const race = aRace('time');
+  race.player.driftPayout = { time: 28, nitro: .15 };
+  bridge.capture(race);
+  race.phase = 'finished';
+  race.result = { success: true, time: 60 };
+  const receipt = bridge.finish(race, false);
+  assert.equal(commits.length, 1);
+  assert.equal(commits[0], receipt.snapshot);
+  assert.equal(commits[0].missions['mission-time:daily'].progress, 1);
+  assert.equal(commits[0].missions['mission-race:daily'].progress, 0);
+  assert.equal(commits[0].missions['mission-drift:daily'].progress, 1);
+  assert.deepEqual(commits[0].demoEconomy, { coins: 70, diamonds: 0, firstFinishes: ['coast'] });
+  const replay = bridge.finish(race, false);
+  assert.deepEqual([replay.deltaDemoPoints, replay.deltaDemoCoins, replay.deltaDemoDiamonds], [0, 0, 0]);
+  assert.equal(commits.length, 1);
+});
+
+test('reset or a round trip through another account invalidates a race already underway', () => {
+  for (const change of [port => port.resetDemo(), port => { port.setAccount('other'); port.setAccount(null); }]) {
+    const demo = createWave3LocalDemo();
+    const bridge = createWave3RaceEventBridge(demo, () => 'stale-race-0001');
+    const race = aRace();
+    bridge.capture(race);
+    change(demo);
+    race.phase = 'finished';
+    race.result = { success: true, time: 60 };
+    assert.equal(bridge.finish(race, false), null);
+    assert.equal(demo.getSnapshot().demoPoints, 20);
+  }
+});

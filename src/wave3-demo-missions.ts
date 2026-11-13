@@ -1,3 +1,4 @@
+import { DEMO_REPLAY_LIMIT } from './wave3-experience-contract.ts';
 import type { GameEvent, MissionProgress } from './wave3-experience-contract.ts';
 import { DEMO_ELIGIBLE_MODES } from './wave3-demo-settlement.ts';
 
@@ -16,10 +17,14 @@ export type MissionPeriodState = Readonly<{
   accountId:string;dayStart:number;weekStart:number;
   counts:Readonly<Record<string,number>>;seenEventIds:readonly string[];
 }>;
-const DAY_MS=86400000, MAX_EVENT_AGE=300000, MAX_SEEN=1024;
+const DAY_MS=86400000, MAX_EVENT_AGE=300000;
 export function missionPeriodBounds(now:number):{dayStart:number;weekStart:number}{
   const dayStart=Math.floor(now/DAY_MS)*DAY_MS;
   return {dayStart,weekStart:dayStart-((new Date(dayStart).getUTCDay()+6)%7)*DAY_MS};
+}
+export function missionPeriodId(missionId: string, now: number): number {
+  const bounds = missionPeriodBounds(now);
+  return missionId.endsWith(':daily') ? bounds.dayStart : missionId.endsWith(':weekly') ? bounds.weekStart : 0;
 }
 export function createMissionPeriodState(accountId:string,now:number):MissionPeriodState{
   return {accountId,...missionPeriodBounds(now),counts:{},seenEventIds:[]};
@@ -44,7 +49,7 @@ export function reduceMissionEvent(state:MissionPeriodState,event:GameEvent,now:
     counts[d.id]=Math.min(d.goal,base+Number(event.occurredAt>=boundary&&matches(d.family,event)));
   }
   return {accountId:state.accountId,dayStart,weekStart,counts,
-    seenEventIds:[...state.seenEventIds.slice(-(MAX_SEEN-1)),event.eventId]};
+    seenEventIds:[...state.seenEventIds.slice(-(DEMO_REPLAY_LIMIT-1)),event.eventId]};
 }
 export function projectMissionState(state:MissionPeriodState,now:number):Record<string,MissionProgress>{
   const bounds=missionPeriodBounds(now);

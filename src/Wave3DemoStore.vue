@@ -4,7 +4,8 @@ import GarageArtworkImage from './GarageArtworkImage.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
 import { SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
-import type { DemoCurrency, ExperienceSnapshot, Wave3ExperiencePort, Wave3Status } from './wave3-experience-contract.ts';
+import { DEMO_QUOTE_LIFETIME_MS } from './wave3-experience-contract.ts';
+import type { DemoCurrency, DemoRedemptionQuote, ExperienceSnapshot, Wave3ExperiencePort, Wave3Status } from './wave3-experience-contract.ts';
 import {
   WAVE3_DEMO_ITEMS, WAVE3_DEMO_STORE_ART, demoItemStatus, demoItemStatusText,
   demoRedemptionState,
@@ -33,7 +34,7 @@ const filter = ref<'all' | SkinCategory>('all');
 const categories = ['all', ...SKIN_CATEGORIES] as const;
 const selectedId = ref<SkinId>(WAVE3_DEMO_ITEMS[0]!.id);
 const confirmationId = ref<SkinId | null>(null);
-const confirmationAccount = ref('');
+const quote = ref<DemoRedemptionQuote | null>(null);
 const confirmationButton = ref<HTMLButtonElement | null>(null);
 const message = ref('');
 
@@ -44,7 +45,7 @@ watch(() => props.port, (port, _, onCleanup) => {
   const stop = port.subscribe(next => {
     if (next.accountId !== snapshot.value.accountId) {
       confirmationId.value = null;
-      confirmationAccount.value = '';
+      quote.value = null;
       message.value = '';
     }
     snapshot.value = next;
@@ -56,6 +57,9 @@ const items = computed(() => WAVE3_DEMO_ITEMS.filter(item => filter.value === 'a
 const selected = computed(() => WAVE3_DEMO_ITEMS.find(item => item.id === selectedId.value));
 const redeemState = computed(() => selected.value
   ? demoRedemptionState(selected.value.id, snapshot.value) : 'invalid');
+const secondaryWallet = computed(() => (['coins', 'diamonds'] as const).map(currency => ({
+  currency, value: demoBalance(snapshot.value, currency), label: currencyLabel(currency),
+})));
 const canRequestRedemption = computed(() => redeemState.value === 'ready' || redeemState.value.startsWith('insufficient-demo-'));
 const selectedBalance = computed(() => selected.value?.currency ? demoBalance(snapshot.value, selected.value.currency) : null);
 const statusFor = (id: SkinId) => {
@@ -83,41 +87,38 @@ function feedback(status: DemoRedeemState | Wave3Status): string {
     case 'insufficient-demo-points': return tr('Not enough demo points. Finish a race or claim a demo mission.', '試玩點數不足，請完成比賽或領取試玩任務。');
     case 'insufficient-demo-coins': return tr('Not enough demo coins. Finish races or claim the daily race mission.', '試玩金幣不足，請完成競速或領取每日競速任務。');
     case 'insufficient-demo-diamonds': return tr('Not enough demo diamonds. Claim the weekly race mission.', '試玩鑽石不足，請領取每週競速任務。');
-    case 'duplicate': return tr('Already demo unlocked. No points were deducted.', '已試玩取得，不會重複扣點。');
+    case 'duplicate': return tr('Already demo unlocked. Your balances are unchanged.', '已試玩取得，餘額未變更。');
+    case 'expired': return tr('Confirmation expired. Review the current price and try again.', '確認已過期，請查看目前售價後重新兌換。');
     case 'unavailable': return tr('Only local demo redemption is available.', '僅支援本機試玩兌換。');
     case 'preview-only': return tr('This item can only be previewed.', '此項目僅供預覽。');
     default: return tr('Demo redemption is unavailable.', '目前無法進行試玩兌換。');
   }
 }
 function requestRedemption(): void {
-  if (!selected.value) return;
-  const state = demoRedemptionState(selected.value.id, props.port.getSnapshot());
+  const item = selected.value;
+  if (!item?.currency || item.demoPrice === null) return;
+  const current = props.port.getSnapshot();
+  const state = demoRedemptionState(item.id, current);
   if (state !== 'ready') { message.value = feedback(state); return; }
-  confirmationId.value = selected.value.id;
-  confirmationAccount.value = snapshot.value.accountId;
+  snapshot.value = current;
+  confirmationId.value = item.id;
+  quote.value = { scope: props.port.getOperationScope(), expiresAt: Date.now() + DEMO_QUOTE_LIFETIME_MS,
+    catalogVersion: current.catalogVersion, currency: item.currency, cost: item.demoPrice };
   message.value = '';
   void nextTick(() => confirmationButton.value?.focus());
 }
 function cancelRedemption(): void {
   confirmationId.value = null;
-  confirmationAccount.value = '';
+  quote.value = null;
 }
-function confirmRedemption(): void {
+async function confirmRedemption(): Promise<void> {
   const id = confirmationId.value;
-  if (!id) return;
-  const current = props.port.getSnapshot();
-  if (current.accountId !== confirmationAccount.value) {
-    cancelRedemption();
-    snapshot.value = current;
-    message.value = tr('Account changed. Please select again.', '帳號已切換，請重新選取。');
-    return;
-  }
-  const state = demoRedemptionState(id, current);
-  if (state !== 'ready') { cancelRedemption(); snapshot.value = current; message.value = feedback(state); return; }
-  const result = props.port.redeemPreview(id);
+  const request = quote.value;
+  if (!id || !request) return;
+  cancelRedemption();
+  const result = await props.port.redeemPreview(id, request);
   snapshot.value = result.snapshot;
   message.value = feedback(result.status);
-  cancelRedemption();
 }
 </script>
 
@@ -131,10 +132,15 @@ function confirmRedemption(): void {
         <p>{{ tr('Earn local demo rewards and redeem temporary cosmetic previews.',
           '取得可重設的本機試玩獎勵，兌換暫時外觀。') }}</p>
       </div>
-      <div class="demo-wallet" role="status" aria-live="polite">
+      <div class="demo-wallet" data-demo-balance="points" role="status" aria-live="polite">
         <Wave3DemoArt id="demo-points" :alt="tr('Demo points', '試玩點數')" />
         <strong>{{ snapshot.demoPoints }}</strong>
         <span>{{ tr('Demo points', '試玩點數') }}</span>
+      </div>
+      <div class="demo-secondary-wallet">
+        <span v-for="row in secondaryWallet" :key="row.currency" :data-demo-balance="row.currency">
+          {{ row.label }} <strong>{{ row.value }}</strong>
+        </span>
       </div>
     </header>
 
@@ -188,15 +194,20 @@ function confirmRedemption(): void {
       </div>
     </section>
 
-    <section v-if="confirmationId" class="demo-confirm" role="group"
+    <section v-if="confirmationId && quote" class="demo-confirm" role="group"
       :aria-label="tr('Confirm demo redemption', '確認試玩兌換')">
-      <p v-if="selected">{{ tr('Confirm local redemption for', '確認以本機試玩餘額兌換') }}
-        {{ priceText(selected) }}{{ tr('?', '？') }}</p>
+      <p v-if="selected">{{ selected.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }} · {{ priceText(selected) }}</p>
+      <p>{{ tr('Available', '可用') }} {{ demoBalance(snapshot, quote.currency) }} ·
+        {{ tr('Remaining', '兌換後') }} {{ Math.max(0, demoBalance(snapshot, quote.currency) - quote.cost) }}
+        {{ currencyLabel(quote.currency) }}</p>
       <div class="demo-actions">
         <button ref="confirmationButton" type="button" @click="confirmRedemption">{{ tr('Confirm demo redeem', '確認試玩兌換') }}</button>
         <button type="button" @click="cancelRedemption">{{ tr('Cancel', '取消') }}</button>
       </div>
     </section>
+    <p v-if="snapshot.persistence === 'memory-only'" class="demo-message" role="status">
+      {{ tr('This device could not save this session’s progress.', '此裝置未能儲存本次進度。') }}
+    </p>
     <p class="demo-message" role="status" aria-live="polite">{{ message }}</p>
     <p class="demo-disclaimer">{{ tr('This device only · Resettable · No Firebase sign-in required',
       '僅限此裝置 · 可重設 · 無須 Firebase 登入') }}</p>
@@ -238,6 +249,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .demo-state { padding: 3px 7px; border: 1px solid #8c71bc; border-radius: 20px; font-size: 11px; color: #f0dfff; }
 .demo-item[data-demo-status="demo-unlocked"] .demo-state { border-color: #27e6bb; color: #9bffe9; }
 .demo-item small { color: #aacde2; font-size: 11px; }
+.demo-secondary-wallet { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; }
 .demo-detail, .demo-confirm { margin-top: 10px; padding: 12px; border: 1px solid #356c8f;
   border-radius: 12px; background: #0e2942; }
 .demo-detail h4 { margin: 0 0 6px; }

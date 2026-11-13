@@ -109,7 +109,10 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   // Drive the real simulation; never alter window.gameplay, timers, or settlement state.
   test.setTimeout(ciTimeout(240000));
   await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto('/');
+  await expect(page.locator('#intro [data-wave3-wallet] [data-currency="demo-points"] strong')).toHaveText('20');
   await page.locator('#race-overlay').evaluate(overlay => {
     window.rewardBalanceFrames = [];
     new MutationObserver(() => {
@@ -214,10 +217,14 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await expect(page.locator('[data-wave3-demo-store] .demo-wallet strong')).toHaveText('20');
   await expect(page.locator('[data-wave3-demo-store] [data-demo-id="thruster-ion"]')).not.toHaveAttribute('data-demo-status', 'demo-unlocked');
   expect(await page.evaluate(key => localStorage.getItem(key), modeHistoryKey)).toBe(beforeResetHistory);
-  expect(await page.evaluate(key => localStorage.getItem(key), demoKey)).toBeNull();
+  await expect.poll(() => page.evaluate(key => {
+    const entry = JSON.parse(localStorage.getItem(key) || 'null');
+    return [entry?.snapshot.demoPoints, entry?.snapshot.demoInventory, entry?.checkpoint.settledCompletions];
+  }, demoKey)).toEqual([20, [], []]);
   await page.locator('#garage-close').click();
   await expect(homeWallet).toBeVisible();
   await expect(homePoints).toHaveText('20');
+  expect(pageErrors).toEqual([]);
 });
 
 test('real Garage cannot grant paid entitlements or stale demo claims through repeated visits', async ({ page }) => {

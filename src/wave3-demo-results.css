@@ -1,5 +1,5 @@
 /* Optional standalone result card: never changes the original stars, badges or action buttons. */
-body:not([data-phase="finished"]) .wave3-demo-results { display: none; }
+body:not([data-phase="finished"]) .wave3-demo-results, .wave3-demo-results[hidden] { display: none; }
 .wave3-demo-results {
   /* The reward is a part of the finished-race summary, not a viewport toast.
      Never use fixed here: .overlay-content animates with transform on reveal. */

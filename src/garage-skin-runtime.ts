@@ -60,8 +60,8 @@ export function equipWave3DemoSkin(id: unknown, expectedAccount: string): boolea
   const skin = findSkin(id);
   if (!trialMode || !skin || skin.default || expectedAccount !== accountId) return false;
   const prior = demoApplied?.category === skin.category ? demoApplied.prior : session.active(skin.category);
-  if (demoApplied?.category !== skin.category) resetWave3DemoSkin();
   if (!session.equip(skin.id)) return false;
+  if (demoApplied?.category !== skin.category) resetWave3DemoSkin();
   demoApplied = { category: skin.category, prior };
   publish();
   return true;
