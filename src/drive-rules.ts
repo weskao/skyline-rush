@@ -16,6 +16,14 @@ export const GROUND_FUEL_REGEN = 13; // fuel/s on the road with FLY and BOOST re
 export const UPHILL_FUEL_REGEN = 6.5; // fuel/s on an uphill section
 export const GLIDE_FUEL_REGEN = 4; // fuel/s while airborne with FLY and boost released
 
+// DRIFT: brake + steer on the ground at speed; tuning in docs/superpowers/specs/2026-11-13-drift-balance-design.md.
+export const DRIFT_MIN_SPEED = 45; // m/s needed to start or hold a drift
+export const DRIFT_BLEED = 1.5; // m/s^2 lost while drifting (normal braking is 35)
+// Payout on release for the highest threshold reached: seconds drifted, nitro charges, mini-boost seconds.
+export const DRIFT_REWARDS = [{ time: 2, nitro: 0.7, boost: 1.6 }, { time: 1.2, nitro: 0.45, boost: 1.1 }, { time: 0.6, nitro: 0.25, boost: 0.7 }] as const;
+/** Reward tiers (0-3) a drift held `time` seconds has reached; read per frame, so it allocates nothing. */
+export const driftTier = (time: number): number => DRIFT_REWARDS.reduce((tier, reward) => tier + Number(time >= reward.time), 0);
+
 // SLIPSTREAM: right behind a rival or traffic car (same lane, in draft range) long enough pays once per engagement.
 export const SLIPSTREAM_TIME = 1.5; // seconds in the draft before it pays
 export const SLIPSTREAM_CAP_BONUS = 6; // m/s added to the speed cap while the draft is active

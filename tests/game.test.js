@@ -805,8 +805,8 @@ test('drift payout emits one feedback event even when an existing boost is longe
   advance(race, 1.1, DRIFT);
   stepRace(race, {}, 1 / 60);
   assert.ok(race.player.miniBoost > 1);
-  assert.equal(race.player.nitro, 0.15);
-  assert.deepEqual(race.player.driftPayout, { time: race.elapsed, nitro: 0.15 });
+  assert.equal(race.player.nitro, 0.25);
+  assert.deepEqual(race.player.driftPayout, { time: race.elapsed, nitro: 0.25 });
   const payout = race.player.driftPayout;
   stepRace(race, {}, 1 / 60);
   assert.equal(race.player.driftPayout, payout);
@@ -820,13 +820,13 @@ test('no drift below 45 m/s: brake plus steer hard-brakes', () => {
   assert.ok(race.player.speed < 44 - 15);
 });
 
-test('brake plus steer at speed drifts, bleeding only 3 m/s^2, with the steer direction', () => {
+test('brake plus steer at speed drifts, bleeding only 1.5 m/s^2, with the steer direction', () => {
   const race = driftingRace();
   assert.equal(race.player.drift, null);
   advance(race, 0.5, { brake: true, steer: -0.1 });
   assert.equal(race.player.drift.dir, -1);
   assert.ok(Math.abs(race.player.drift.time - 0.5) < 0.02);
-  assert.ok(Math.abs(race.player.speed - (80 - 1.5)) < 0.1);
+  assert.ok(Math.abs(race.player.speed - (80 - 0.75)) < 0.1);
 });
 
 test('the pad input shape (brake + analog steer, nothing else) drifts; brake alone and steer alone do not', () => {
@@ -842,7 +842,7 @@ test('the pad input shape (brake + analog steer, nothing else) drifts; brake alo
 });
 
 test('releasing a drift pays nitro and a mini boost by the highest time threshold reached', () => {
-  const rewards = [[0.95, 0, 0], [1.05, 0.15, 0.5], [2.05, 0.3, 0.8], [3.05, 0.5, 1.2]];
+  const rewards = [[0.55, 0, 0], [0.65, 0.25, 0.7], [1.25, 0.45, 1.1], [2.05, 0.7, 1.6]];
   for (const [time, nitro, boost] of rewards) {
     const race = driftingRace();
     advance(race, time, DRIFT);
@@ -857,11 +857,11 @@ test('releasing a drift pays nitro and a mini boost by the highest time threshol
 test('drift nitro counts toward the cap and the overflow becomes fuel', () => {
   const race = driftingRace();
   Object.assign(race.player, { nitro: 2.9, fuel: 50 });
-  advance(race, 3.05, DRIFT);
+  advance(race, 2.05, DRIFT);
   const fuel = race.player.fuel;
   stepRace(race, {}, 1 / 60);
   assert.equal(race.player.nitro, NITRO_MAX);
-  assert.ok(race.player.fuel - fuel > 10); // 0.4 overflow x 32 fuel
+  assert.ok(race.player.fuel - fuel > 10); // 0.6 overflow x 32 fuel
 });
 
 test('the mini boost lifts the speed cap past MAX_SPEED without burning fuel', () => {
