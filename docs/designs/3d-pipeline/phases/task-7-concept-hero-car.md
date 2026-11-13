@@ -128,16 +128,32 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   stays a local save.
 - [x] The Low tier requests only `crimson-gt-low.glb`; rival cars stay procedural (one GLB root in a race); a
   missing GLB falls back to the procedural car with no page error. The car never swaps during a race.
-- [ ] Preload and compile the equipped car before GO: the shader-program count stayed constant over the first
-  seconds of a Coast race, but `tests/shader-warmup-browser.spec.js` (boost, afterimages, top speed) has not been run
-  with the GT equipped, and a race started before the GLB arrives runs on the procedural car.
+- [x] Preload and compile the equipped car before GO (2026-11-13): `tests/shader-warmup-browser.spec.js` runs with
+  the GT equipped (boost, afterimages, top speed), with and without `?look=3d`: 2/2, no program compiles mid-race.
+  A race started before the GLB arrives stays on the procedural car and compiles nothing; the GT dresses the car
+  once the race is left (`tests/crimson-gt-browser.spec.js`).
 - [x] `npm test`, `npm run typecheck`, `npm run build` and `node --test tests/module-size.test.js` (2026-11-13).
-- [ ] Regression: rerun the Phase 2b all-track matrix and the Phase 2c equipment audit with the new car;
-  `make verify`, and exact-HEAD full CI.
-- [ ] What's New entry and release notes; update the `UPCOMING` notes per the repo's release rules.
+- [x] Regression with the new car (2026-11-13): `HERO_CAR=crimson-gt` equips the GT in the Phase 2b track matrix
+  (`tests/hero-roadster-tracks-browser.spec.js`, which now asserts the dressed model is the equipped car's), the
+  Phase 2c equipment spec and the equipment audit (`GARAGE_EQUIPMENT_AUDIT=1`). MATRIX_RESULT
+  The equipment spec's showcase test assumed the Roadster's default paint; it now reads the equipped car's default
+  (the GT's factory red). Under `HERO_CAR` the audit's "procedural" and "GLB" columns both show the GT, and its paint
+  rows are the six `PAINTS` (the factory colour is covered by the GT spec).
+- [ ] `make verify` and exact-HEAD full CI: VERIFY_RESULT
+- [x] What's New entry (2026-11-13): the shipped entry is stamped 0.31.0 (2026-11-10) and a new `UPCOMING` entry
+  announces the Crimson GT (en, zh-TW). Release-notes tests 30/30; `node scripts/check-release-notes.mjs 0.31.0`
+  clean.
+- [ ] What's New review at `/release`: fresh-eyes review, owner approval and the real-game media a new car needs.
 
 ## By device (repeat per machine; evidence in the ignored `../audits/`)
 - [ ] Live Blender MCP scene query before the first Blender edit (Task 4's per-device setup).
-- [ ] Concept-board parity review (spec v2 §8.1) of the four studio panels on a real-GPU desktop.
-- [ ] Real-phone screenshots and frame-time p50/p95 for the new car versus the Roadster (`make phone-diag`).
+  - 2026-11-13, one Mac: the transport answered a scene query, but the live session held another checkout's master
+    with unsaved changes, so the rebuilt master was not loaded there. Builds ran headless.
+- [x] Concept-board parity review (spec v2 §8.1) of the four studio panels on a real-GPU desktop: drafted
+  2026-11-13 at `f0599b86` on one Mac desktop (Apple GPU through Metal, not SwiftShader). Composites and the scored
+  sheet are in the ignored `../audits/crimson-gt/parity/`. Result: 0 match, 4 close (silhouette and proportions, light
+  signatures, atmosphere, colour grade), 3 gap (paint depth and reflections, ground material, effects). Each gap
+  names its cause and a proposal; none is accepted yet.
+- [ ] Real-phone screenshots and frame-time p50/p95 for the new car versus the Roadster (`make phone-diag`): not
+  captured; the checklist is in the ignored `../audits/crimson-gt/phone-checklist.md`.
 - [ ] Owner visual sign-off on the scored parity sheet.
