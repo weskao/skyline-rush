@@ -23,6 +23,8 @@ SOURCES = {
     'coast_rocks_01': ('model', '2k', None),
     'coast_rocks_05': ('model', '2k', None),
     'rock_face_01': ('model', '2k', None),
+    # Fynbos shrub from the same South African coast as the cliff scans; baked to impostor cards (coast-greenery).
+    'searsia_lucida': ('model', '1k', None),
     'asphalt_02': ('texture', '4k', ['Diffuse', 'nor_gl', 'Rough', 'AO']),
     'asphalt_track': ('texture', '4k', ['Diffuse', 'nor_gl', 'Rough', 'AO']),
     'palm_bark': ('texture', '2k', ['Diffuse', 'nor_gl', 'Rough']),
@@ -37,6 +39,7 @@ SOURCES = {
 SURVEY = {
     'hdris': ['sunset', 'overcast', 'clear', 'midday', 'coast', 'sea', 'beach'],
     'textures': ['metal', 'galvanized', 'steel', 'bark', 'palm', 'leaf'],
+    'models': ['shrub', 'bush', 'fynbos'],  # cliff-top greenery (assets-src/coast-greenery)
 }
 
 

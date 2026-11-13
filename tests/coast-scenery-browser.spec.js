@@ -9,6 +9,7 @@ test.use({ gameplaySearch: '?look=3d' });
 // CPU-only CI draws a ?look=3d High frame in ~0.5 s; the 3 s countdown (~70 clamped frames) outlasts the 30 s default.
 const racing = page => expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
 const status = page => page.locator('#world').getAttribute('data-coast-scenery');
+const boats = page => page.locator('#world').getAttribute('data-coast-boats');
 const layer = page => page.evaluate(() => {
   const pieces = {};
   window.gameScene.scene.getObjectByName('Coast scenic details').traverse(o => { if (o.isInstancedMesh) pieces[o.name] = { visible: o.visible, count: o.count }; });
@@ -41,6 +42,9 @@ test('Coast High attaches the scenery GLB before GO and compiles nothing after i
   const pieces = await layer(page);
   expect(pieces['Coast shoreline rocks'].visible).toBe(false);
   expect(pieces.guard_rail.count).toBeGreaterThan(0);
+  // The boats on the open water (coast-boats.glb) join before GO too: their one program is part of `before` below.
+  await expect.poll(() => boats(page), { timeout: ciTimeout(40000) }).toBe('attached');
+  await expect.poll(async () => { const fleet = await layer(page); return ['sailboat_a', 'sailboat_b', 'motorboat'].reduce((sum, name) => sum + (fleet[name]?.visible ? fleet[name].count : 0), 0); }).toBeGreaterThanOrEqual(4);
   await page.locator('#start-button').click();
   await racing(page);
   await page.waitForTimeout(ciTimeout(300));
@@ -80,12 +84,13 @@ test('Coast Low never fetches the scenery GLB and keeps the procedural rocks and
   await withQuality(page, 'low');
   await page.waitForTimeout(ciTimeout(1500));
   expect(await status(page)).toBeNull(); // settled: Low never requests, so nothing can arrive later
+  expect(await boats(page)).toBeNull(); // settled: as above
   const pieces = await layer(page);
   expect(pieces['Coast shoreline rocks'].visible).toBe(true);
-  expect(Object.keys(pieces).some(name => name.startsWith('cliff_'))).toBe(false);
+  expect(Object.keys(pieces).some(name => /^(cliff_|sailboat_|motorboat)/.test(name))).toBe(false);
   expect(await skyline(page)).toEqual({ city: true, towers: [true, true, true] }); // owner decision 2026-11-14: Low keeps them
   // This document's own fetches; the fixture's first (default-tier) page may have requested it before the reload.
-  const requests = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => n.includes('coast-scenery.glb')));
+  const requests = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-(scenery|boats|greenery)\.glb/.test(n)));
   expect(requests).toEqual([]);
 });
 
@@ -144,10 +149,11 @@ test.describe('without ?look=3d', () => {
     await withQuality(page, 'high');
     await page.waitForTimeout(ciTimeout(1500));
     expect(await status(page)).toBeNull(); // settled: nothing is ever requested, so nothing can arrive later
+    expect(await boats(page)).toBeNull(); // settled: as above
     expect(await page.locator('#world').getAttribute('data-coast-road')).toBeNull(); // settled: as above
     const pieces = await layer(page);
     expect(pieces['Coast shoreline rocks'].visible).toBe(true);
-    expect(Object.keys(pieces).some(name => name.startsWith('cliff_'))).toBe(false);
+    expect(Object.keys(pieces).some(name => /^(cliff_|sailboat_|motorboat)/.test(name))).toBe(false);
     const look = await page.evaluate(() => {
       const { scene, composer } = window.gameScene, grade = composer.passes.find(pass => pass.uniforms?.saturation).uniforms;
       return { env: scene.environmentIntensity, grade: [grade.saturation.value, grade.contrast.value, ...grade.tint.value.toArray()] };
@@ -155,7 +161,7 @@ test.describe('without ?look=3d', () => {
     expect(await skyline(page)).toEqual({ city: true, towers: [true, true, true] }); // D1, D2 apply to the gated look only
     expect(look).toEqual({ env: 0.42, grade: [1, 1, 1, 1, 1] }); // RoomEnvironment, identity grade: no HDRI look
     // The basis transcoder is not Coast's: the always-on 3D pickups (pickup-models.ts, meshopt + KTX2) load it on every track.
-    const fetched = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-scenery\.glb|\.ktx2|environments\/.*\.hdr/.test(n)));
+    const fetched = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-(scenery|boats|greenery)\.glb|\.ktx2|environments\/.*\.hdr/.test(n)));
     expect(fetched).toEqual([]);
   });
 });

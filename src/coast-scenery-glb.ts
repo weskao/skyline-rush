@@ -16,14 +16,16 @@ export const PIECE_DEPTH: Readonly<Record<CoastPiece, number>> = {
 };
 /** Upper bound of placements per chunk; sizes the instance pools. */
 const MAX_PER_CHUNK: Readonly<Record<CoastPiece, number>> = {
-  sea_arch: 1, cliff_a: 1, cliff_b: 1, rock_a: 4, rock_b: 3, palm_a: 1, palm_b: 1, guard_rail: 20,
+  sea_arch: 1, cliff_a: 1, cliff_b: 1, rock_a: 6, rock_b: 3, palm_a: 3, palm_b: 3, guard_rail: 20,
 };
 /** Rails are thin: beyond the nearest chunks they are sub-pixel and the procedural rail lights carry the line. */
 export const RAIL_CHUNKS = 4;
 const AHEAD: Readonly<Record<Exclude<VfxQuality, 'low'>, number>> = { medium: 4, high: 6 };
 const MAX_CHUNKS = 2 + AHEAD.high;
 const RAIL_LENGTH = 12;
-const CURB = 12.4, CLEAR = 20, SEA = -6, ALONG_ROAD = Math.PI / 2;
+const CURB = 12.4, CLEAR = 20, ALONG_ROAD = Math.PI / 2;
+/** Height of the sea plane the scans stand in (and the boats of coast-boats.ts float on). */
+export const SEA = -6;
 
 /** `offset` is lateral metres from the road centre; `yaw` is relative to the road heading (pi/2 = model x along the road). */
 export interface Placement { piece: CoastPiece; along: number; offset: number; y: number; yaw: number; scale: number }
@@ -42,7 +44,7 @@ export function coastChunkPlan(chunk: number, seed?: number): Placement[] {
     const piece: CoastPiece = r() < .5 ? 'rock_a' : 'rock_b', scale = 2.5 + r() * 2.5;
     out.push({ piece, along: r() * COAST_CHUNK_METRES, offset: side() * (CLEAR + PIECE_DEPTH[piece] * scale + r() * 25), y: SEA - .15 * scale - r() * .1 * scale, yaw: r() * Math.PI * 2, scale });
   }
-  if (r() < .6) { // palm islet: a broad rock with a palm rooted just below its crown
+  for (let k = 0; k < 3; k++) if (r() < .6) { // up to three palm islets: a broad rock with a palm rooted just below its crown
     const palm: CoastPiece = r() < .5 ? 'palm_a' : 'palm_b', rockScale = 4 + r(), palmScale = .9 + r() * .3;
     const offset = side() * (CLEAR + Math.max(PIECE_DEPTH.rock_a * rockScale, PIECE_DEPTH[palm] * palmScale) + 3 + r() * 15);
     const along = 10 + r() * 100, yaw = r() * Math.PI * 2;

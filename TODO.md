@@ -5392,3 +5392,13 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Current merge tree real Chrome/WebGL review: white flare, countdown and GO with left steering on Coast and Alpine at 1440x900; Coast at emulated 390x844 and 844x390. Car occludes the glow; no hard pool edge or page errors observed. Eight local-only screenshots: `artifacts/merge-flare-review-20261113/`.
 - [ ] Remaining `make verify` stages: full browser and World Tour suites. The sandboxed run passed typecheck and unit tests, then Chrome could not launch; rerun browser stages with the required process permissions.
 - [ ] Physical-phone review and exact-merge-commit GitHub `quality-gate`; emulation and earlier commit CI do not close these gates.
+
+## 2026-11-14 — Coast boats on the open sea (`feature/coast-sailboats`)
+
+- [x] RED → GREEN: `tests/coast-boats.test.js` failed first on the missing `src/coast-boats.ts`; the new `tests/coast-assets.test.js` boats case failed with only `coast-scenery` loaded. Both green: plan is deterministic per slot and seed, every course point stays off the road, the close shore and every sea scan, poses are finite and repeat each lap.
+- [x] Asset: `assets-src/coast-boats/` (project-modelled, `build.py` + `.blend` master) → `public/models/coast-boats/coast-boats.glb`, 2,287 triangles, 25,772 bytes, 3 draws, one vertex-colour material, no textures.
+- [x] Runtime: one InstancedMesh per boat model, joined outside a race through the same late-model path as the scenery GLB (warm-up compile before GO); nothing loads on Low or without `?look=3d`.
+- [x] Local gates: `npm test` 2857 pass / 0 fail / 3 skipped; `npm run typecheck`; `node --test tests/module-size.test.js` 3 pass; `npm run build`; `PLAYWRIGHT_PORT=5371 npx playwright test tests/coast-scenery-browser.spec.js` 7 passed (attach before GO with no compile after it, draw caps 540/380, Low and no-`?look=3d` fetch nothing).
+- [x] Perf, High at 1440x900, same frame with the boat meshes hidden vs shown: home showcase 491 → 494 draw calls, 507,510 → 518,732 triangles; race +3 draw calls and about +9–11k triangles (14 boats in the window).
+- [x] Real Chrome/WebGL screenshots inspected (home showcase, race at 2/6/11/17 s, close-ups of each boat); local-only, not committed.
+- [ ] Not checked: Medium screenshots, phones (portrait and landscape), full `npm run test:browser` / `make verify`, exact-HEAD GitHub `quality-gate` (branch not pushed).

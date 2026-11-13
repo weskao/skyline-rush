@@ -31,9 +31,9 @@ const cc0 = (asset: string, creator: string) => ({ license: 'CC0-1.0', creator, 
 
 export const COAST_ENV_VARIANTS: Readonly<Record<CoastEnvName, CoastEnvVariant>> = Object.freeze({
   day: { file: 'kloofendal_48d_partly_cloudy_puresky_1k.hdr', credit: cc0('kloofendal_48d_partly_cloudy_puresky', 'Greg Zaal, Jarod Guest'),
-    intensity: 0.9, exposure: 1.07, grade: { saturation: 1.08, contrast: 1.05, tint: [1, 0.99, 0.96] },
-    bloom: { strength: 0.36, threshold: 1.15 }, sun: { color: '#fff1dc', intensity: 2.6 },
-    sky: { sunDirection: [0.5544, 0.7417, 0.3776], range: 2.5, gain: 1, disc: 0.7 } },
+    intensity: 0.9, exposure: 0.8, grade: { saturation: 1.3, contrast: 1.12, tint: [1.04, 1, 0.92] },
+    bloom: { strength: 0.36, threshold: 1.15 }, sun: { color: '#ffe2b0', intensity: 2.6 },
+    sky: { sunDirection: [0.5544, 0.7417, 0.3776], range: 2.5, gain: 0.55, disc: 0.7 } },
   dusk: { file: 'qwantani_sunset_puresky_1k.hdr', credit: cc0('qwantani_sunset_puresky', 'Greg Zaal, Jarod Guest'),
     intensity: 0.8, exposure: 1.1, grade: { saturation: 1.12, contrast: 1.08, tint: [1.04, 0.98, 0.93] },
     bloom: { strength: 0.55, threshold: 0.95 }, radianceCap: 4, sun: { color: '#ffad72', intensity: 2.1 },

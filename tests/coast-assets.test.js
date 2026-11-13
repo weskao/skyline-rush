@@ -247,6 +247,28 @@ test('D1, D2: the skyline buildings and bridge towers leave Coast with the cones
   fallback.dispose();
 });
 
+test('the boats GLB loads beside the scenery only with a boat clock, and joins the scene outside a race like it', async () => {
+  const log = [], settle = [], clock = { value: 0 }, dataset = {};
+  const cache = { load: id => { log.push(['load', id]); return new Promise(done => settle.push(() => done({ kind: 'model', id, instance: () => id, release: () => log.push(['release', id]) }))); } };
+  const scenery = { attachModel() {}, detachModel() {}, attachBoats: (source, time) => log.push(['boats', source, time]), detachBoats: () => log.push(['no boats']) };
+  const assets = createCoastAssets({ scenery, cache, boatClock: clock, dataset });
+  assets.update('coast', 'low', false);
+  assert.deepEqual(log, [], 'Low loads nothing');
+  assets.update('coast', 'high', true);
+  assert.deepEqual(log, [['load', 'coast-scenery'], ['load', 'coast-boats']]);
+  assert.equal(dataset.coastBoats, 'loading');
+  settle.forEach(done => done()); await tick();
+  assert.equal(assets.update('coast', 'high', true), false, 'never attach (and compile) after GO');
+  assert.equal(dataset.coastBoats, 'waiting-for-race-end');
+  assert.equal(assets.update('coast', 'high', false), true, 'attach outside racing → warm the boat program');
+  assert.deepEqual(log.at(-1), ['boats', 'coast-boats', clock], 'the boats sail on the clock they were given');
+  assert.equal(dataset.coastBoats, 'attached');
+  assert.equal(assets.update('coast', 'high', false), false, 'only once');
+  assets.dispose();
+  assert.deepEqual(log.slice(-3), [['no boats'], ['release', 'coast-boats'], ['release', 'coast-scenery']], 'leave the scene before the cache frees the GLB');
+  assert.equal(dataset.coastBoats, 'off');
+});
+
 test('world.js hands the procedural sky dome, sun disc, sea plane, sea lines, mountains, city and towers to the Coast assets', async () => {
   const { readFileSync } = await import('node:fs');
   assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers \}, canvas\.dataset\)/);
