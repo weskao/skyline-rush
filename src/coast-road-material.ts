@@ -58,7 +58,7 @@ export function createCoastRoadMaterial(maps: Record<MaterialMap, THREE.Texture>
   const wetness = { value: 0 };
   const material = new THREE.MeshStandardMaterial({
     name: 'coast_asphalt', map: maps.baseColor, normalMap: maps.normal, aoMap: maps.packed, roughnessMap: maps.packed,
-    roughness: 1, metalness: 0,
+    color: '#a0a0a0', roughness: 1, metalness: 0,
   });
   material.onBeforeCompile = shader => {
     const frag = shader.fragmentShader;
