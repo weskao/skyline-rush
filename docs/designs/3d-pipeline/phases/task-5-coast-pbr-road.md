@@ -50,8 +50,16 @@ Ultra without the gate); the shader-warmup and black-frame specs run both looks.
   - [x] Owner decisions (2026-11-13): D1 remove the skyline buildings from Coast (the board has none; Neon keeps
     its city), D2 remove the bridge towers from Coast (other classic tracks keep theirs), D3 the visible sky is
     the existing Poly Haven HDRIs at a higher resolution.
-  - [ ] Skyline buildings and bridge towers: removed from Coast in the `?look=3d` look (D1, D2); no realistic
-    towers are built.
+  - [x] Skyline buildings and bridge towers: removed from Coast in the `?look=3d` look (D1, D2); no realistic
+    towers are built. They leave on Medium+ once the scan coast is attached; Low keeps both (owner decision
+    2026-11-14), as do other tracks, a failed GLB load and pages without the gate. `66d6ca94`. Tests:
+    `tests/coast-assets.test.js` ("D1, D2"), `tests/coast-scenery-browser.spec.js` ("draw-call cap" on High, the
+    Low test, "without ?look=3d"). Gates: `npm test` 2801 pass / 0 fail / 3 skipped, typecheck, build,
+    module-size. Real WebGL (desktop High / Ultra / Low, phone-size Medium): High draw calls home 650 to 491,
+    race 469 to 307, rain 500 to 322; 76 programs before and after GO; Low unchanged (city and towers drawn).
+    The browser cap is now home 540, race 380. Not done: the "without ?look=3d" browser test fails on its
+    last assertion (the Basis transcoder is fetched; the pickup models request it and this branch does not
+    touch them), not checked on `develop` itself.
   - [x] Sea: a water surface (baked FFT-ocean normal and foam map, Fresnel reflection of the sky dome on screen, sun
     glitter under that sky's sun, foam where the placed rocks, cliffs and arch stand in the water, haze into the dome
     horizon) in day, rain, sunset and fog, behind `?look=3d` on Medium+. `c3dbb1dc` (wave map, build script,
