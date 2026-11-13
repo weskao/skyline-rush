@@ -15,6 +15,14 @@ const layer = page => page.evaluate(() => {
   return pieces;
 });
 
+/** The skyline group (160 buildings, 18 windows each) and the three bridge towers (the groups with a cable tube). */
+const skyline = page => page.evaluate(() => {
+  const { scene } = window.gameScene;
+  const city = scene.children.find(o => o.isGroup && o.children.some(c => c.isInstancedMesh && c.instanceMatrix.count === 160 * 18));
+  const towers = scene.children.filter(o => o.isGroup && o.children.some(c => c.geometry?.type === 'TubeGeometry'));
+  return { city: city.visible, towers: towers.map(tower => tower.visible && tower.children.every(c => c.material.visible)) };
+});
+
 async function withQuality(page, quality) {
   // The dev server alone fills the default 250-entry resource-timing buffer; keep every fetch of the reloaded document.
   await page.addInitScript(() => performance.setResourceTimingBufferSize(20000));
@@ -43,9 +51,9 @@ test('Coast High attaches the scenery GLB before GO and compiles nothing after i
   expect(errors).toEqual([]);
 });
 
-// Set before the far coast was added (full-scene step 3). Measured on High 2026-11-14: home 652, race 482 to 507.
-// The bridge towers (about 170 calls) leave Coast in step 4: lower the cap with them.
-const DRAW_CALL_CAP = { home: 700, race: 560 };
+// Measured on High 2026-11-14 with the far coast in and the city and bridge towers out (full-scene steps 3 and 4):
+// home 491, race 257 to 322. Before step 4 the same frames were 650 and 469 to 500.
+const DRAW_CALL_CAP = { home: 540, race: 380 };
 test('Coast High stays under the draw-call cap on the home showcase and in a race', async ({ gameplayPage: page }) => {
   test.setTimeout(ciTimeout(90000));
   const calls = () => page.evaluate(() => window.gameScene.renderer.info.render.calls);
@@ -59,6 +67,7 @@ test('Coast High stays under the draw-call cap on the home showcase and in a rac
   });
   expect(far.headlands).toBeGreaterThanOrEqual(6);
   expect(far.cones).toBe(false);
+  expect(await skyline(page)).toEqual({ city: false, towers: [false, false, false] }); // D1, D2
   expect(await calls()).toBeLessThanOrEqual(DRAW_CALL_CAP.home);
   await page.locator('#start-button').click();
   await racing(page);
@@ -74,6 +83,7 @@ test('Coast Low never fetches the scenery GLB and keeps the procedural rocks and
   const pieces = await layer(page);
   expect(pieces['Coast shoreline rocks'].visible).toBe(true);
   expect(Object.keys(pieces).some(name => name.startsWith('cliff_'))).toBe(false);
+  expect(await skyline(page)).toEqual({ city: true, towers: [true, true, true] }); // owner decision 2026-11-14: Low keeps them
   // This document's own fetches; the fixture's first (default-tier) page may have requested it before the reload.
   const requests = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => n.includes('coast-scenery.glb')));
   expect(requests).toEqual([]);
@@ -142,6 +152,7 @@ test.describe('without ?look=3d', () => {
       const { scene, composer } = window.gameScene, grade = composer.passes.find(pass => pass.uniforms?.saturation).uniforms;
       return { env: scene.environmentIntensity, grade: [grade.saturation.value, grade.contrast.value, ...grade.tint.value.toArray()] };
     });
+    expect(await skyline(page)).toEqual({ city: true, towers: [true, true, true] }); // D1, D2 apply to the gated look only
     expect(look).toEqual({ env: 0.42, grade: [1, 1, 1, 1, 1] }); // RoomEnvironment, identity grade: no HDRI look
     const fetched = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-scenery\.glb|\.ktx2|basis_transcoder|environments\/.*\.hdr/.test(n)));
     expect(fetched).toEqual([]);

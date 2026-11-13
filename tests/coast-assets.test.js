@@ -217,7 +217,37 @@ test('the procedural cones leave Coast once the scan coast is attached on Medium
   assert.equal(mountains.material.visible, true);
 });
 
-test('world.js hands the procedural sky dome, sun disc, sea plane, sea lines and mountains to the Coast assets', async () => {
+test('D1, D2: the skyline buildings and bridge towers leave Coast with the cones on Medium+; Low, other tracks and a missing GLB keep them', async () => {
+  const rig = () => {
+    const city = { visible: true }, steel = new THREE.MeshStandardMaterial(), trim = new THREE.MeshBasicMaterial(), tower = new THREE.Group();
+    tower.add(new THREE.Mesh(new THREE.BoxGeometry(), steel), new THREE.Mesh(new THREE.BoxGeometry(), trim));
+    return { city, towers: [tower], shown: () => [city.visible, steel.visible, trim.visible] };
+  };
+  const handle = { kind: 'model', instance: () => new THREE.Group(), release() {} };
+  const r = rig(), assets = createCoastAssets({ scenery, cache: { load: async () => handle }, city: r.city, towers: r.towers });
+  assets.update('coast', 'high', false);
+  assert.deepEqual(r.shown(), [true, true, true], 'until the scan coast is attached');
+  await tick();
+  assets.update('coast', 'high', false);
+  assert.deepEqual(r.shown(), [false, false, false], 'the board has no city or towers: the sea arch is the landmark');
+  assets.update('coast', 'low', false);
+  assert.deepEqual(r.shown(), [true, true, true], 'owner decision 2026-11-14: Low keeps the develop look');
+  assets.update('coast', 'medium', false);
+  assert.deepEqual(r.shown(), [false, false, false]);
+  r.city.visible = true; // world.js sets it on every track change
+  assets.update('neon', 'high', false);
+  assert.deepEqual(r.shown(), [true, true, true], 'Neon keeps its city, the other classics their towers');
+  assets.update('coast', 'high', false);
+  assets.dispose();
+  assert.deepEqual(r.shown().slice(1), [true, true], 'the tower materials are handed back');
+  const failed = rig(), fallback = createCoastAssets({ scenery, cache: { load: async () => ({ kind: 'fallback', fallback: 'procedural-scenery', reason: 'network' }) }, city: failed.city, towers: failed.towers });
+  const warn = console.warn; console.warn = () => {};
+  try { fallback.update('coast', 'high', false); await tick(); fallback.update('coast', 'high', false); } finally { console.warn = warn; }
+  assert.deepEqual(failed.shown(), [true, true, true], 'a failed load is the procedural Coast, city and towers included');
+  fallback.dispose();
+});
+
+test('world.js hands the procedural sky dome, sun disc, sea plane, sea lines, mountains, city and towers to the Coast assets', async () => {
   const { readFileSync } = await import('node:fs');
-  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scenery: coastScenery, road, sky, sun, sea, seaLines, mountains \}, canvas\.dataset\)/);
+  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers \}, canvas\.dataset\)/);
 });

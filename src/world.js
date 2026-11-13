@@ -246,7 +246,7 @@ export function createWorld(canvas) {
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
   const coastScenery = createCoastScenery(scene), classicScenery = createClassicTrackScenery(scene);
-  const coastAssets = createWorldCoastAssets(renderer, { scenery: coastScenery, road, sky, sun, sea, seaLines, mountains }, canvas.dataset); // ?look=3d Medium+ Coast: scenery GLB + KTX2 asphalt + wet mirror + HDRI sky dome + water; else null
+  const coastAssets = createWorldCoastAssets(renderer, { scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers }, canvas.dataset); // ?look=3d Medium+ Coast: scan coast (no city or towers) + KTX2 asphalt + wet mirror + HDRI sky dome + water; else null
   // Inspect car occlusion only when the showroom angle changes.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
   const showcaseRay = new THREE.Raycaster();
