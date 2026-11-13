@@ -188,12 +188,12 @@ test('saved medals are validated and storage failures never throw', async () => 
 
 test('paints unlock at 0 / 3 / 6 / 10 / 16 / 24 total stars and stay visual only', async () => {
   const { PAINTS, ownedPaints } = await import('../src/appearance.ts');
-  assert.deepEqual(Object.fromEntries(Object.entries(PAINTS).map(([id, paint]) => [id, paint.stars])), { pearl: 0, aurora: 3, glacier: 6, coral: 10, cobalt: 16, obsidian: 24 });
-  assert.deepEqual(ownedPaints(0), ['pearl']);
-  assert.deepEqual(ownedPaints(5), ['pearl', 'aurora']);
-  assert.deepEqual(ownedPaints(23), ['pearl', 'aurora', 'glacier', 'coral', 'cobalt']);
+  assert.deepEqual(Object.fromEntries(Object.entries(PAINTS).map(([id, paint]) => [id, paint.stars])), { pearl: 0, crimson: 0, aurora: 3, glacier: 6, coral: 10, cobalt: 16, obsidian: 24 });
+  assert.deepEqual(ownedPaints(0), ['pearl', 'crimson']);
+  assert.deepEqual(ownedPaints(5), ['pearl', 'crimson', 'aurora']);
+  assert.deepEqual(ownedPaints(23), ['pearl', 'crimson', 'aurora', 'glacier', 'coral', 'cobalt']);
   assert.deepEqual(ownedPaints(30), Object.keys(PAINTS));
-  assert.deepEqual(ownedPaints(NaN), ['pearl']);
+  assert.deepEqual(ownedPaints(NaN), ['pearl', 'crimson']);
 });
 
 test('best stars are kept per track and summed; invalid saved stars are ignored', async () => {

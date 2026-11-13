@@ -103,15 +103,15 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   - the equipped car is shown on the Home showcase and in races, with no URL flag
   - keyboard (Enter on a native button), touch on phone portrait 390x844 and landscape 844x390, and car names in
     every supported language (`tests/i18n.test.js`)
-  - each car remembers its own paint; the GT lists its factory colour first
+  - each car remembers its own paint and both use the same collection
   - 2026-11-13 fix: on a dev server started with `3d=1` (`?model=roadster&look=3d`) the Roadster GLB covered the
     equipped GT. The equipped car's own model now wins (`carModel() ?? forced` in `src/garage-model.ts`); the flag
     dresses only the Roadster. RED (`Expected "crimson-gt", Received "roadster2"`) → GREEN in
     `tests/crimson-gt-browser.spec.js`; rule 13 in `.claude/rules/3d-asset-pipeline.md`.
 - [x] Car picker focus order (2026-11-13): `tests/crimson-gt-browser.spec.js` "keyboard: Tab walks the cars in
   catalog order, Enter equips the focused car, and the paints come after the picker".
-- [x] Factory colour card (2026-11-13): `factory@3x.webp` (960×510, 3× the 320×170 card) shares the
-  painted collection's close-up composition in factory crimson. The full-car render now appears in the car
+- [x] Deep Crimson card (2026-11-13): `crimson@3x.webp` (960×510, 3× the 320×170 card) shares the
+  painted collection's close-up composition and is available for all cars. The full-car render now appears in the car
   picker beside the Roadster. Browser coverage checks the art, labels and responsive bounds at 390×844,
   844×390 and 1440×900. See the [artwork notes](../../../../public/feature-assets/garage-vfx-skins/paint-cards/README.md).
 - [ ] Car picker locked/trial/owned states: not built, both cars are open (waits for the unlock rule).

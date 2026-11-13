@@ -1,8 +1,8 @@
 // Player car catalog (Task 7): which cars exist, which one is equipped, and each car's own paint memory.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PAINTS } from '../src/appearance.ts';
-import { CARS, FACTORY_PAINT, carPaints, defaultPaint, equipCar, equippedCar, equippedCarModel, isCar, loadCar, loadCarPaint, reloadCar, saveCarPaint, savedCar } from '../src/car-catalog.ts';
+import { PAINTS, ownedPaints } from '../src/appearance.ts';
+import { CARS, defaultPaint, equipCar, equippedCar, equippedCarModel, isCar, loadCar, loadCarPaint, reloadCar, saveCarPaint, savedCar } from '../src/car-catalog.ts';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
 import { createWorldGarageModel, dressesRaceCar } from '../src/garage-model.ts';
 
@@ -10,7 +10,7 @@ const memoryStorage = (initial = {}) => {
   const data = new Map(Object.entries(initial));
   return { getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); }, data };
 };
-const OWNED = ['pearl', 'aurora', 'cobalt'];
+const OWNED = ['pearl', 'crimson', 'aurora', 'cobalt'];
 
 test('two cars: the procedural Roadster and the Crimson GT model from the manifest', () => {
   assert.deepEqual(Object.keys(CARS), ['roadster', 'crimson-gt']);
@@ -38,34 +38,44 @@ test('the equipped car is saved and read back', () => {
   assert.equal(loadCar(storage), 'roadster');
 });
 
-test('Crimson GT lists its factory red ahead of the six paints; the Roadster list is unchanged', () => {
-  assert.equal(carPaints('roadster'), PAINTS);
-  assert.deepEqual(Object.keys(carPaints('crimson-gt')), [FACTORY_PAINT, ...Object.keys(PAINTS)]);
-  assert.equal(carPaints('crimson-gt')[FACTORY_PAINT].paint, '#9a1424');
-  assert.equal(carPaints('crimson-gt')[FACTORY_PAINT].stars, 0);
+test('every car can equip the shared Deep Crimson paint at zero stars', () => {
+  const available = ownedPaints(0);
+  assert.deepEqual(available, ['pearl', 'crimson']);
+  assert.equal(PAINTS.crimson.paint, '#9a1424');
+  for (const car of Object.keys(CARS)) {
+    const storage = memoryStorage();
+    saveCarPaint(car, 'crimson', storage);
+    assert.equal(loadCarPaint(car, available, storage), 'crimson');
+  }
   assert.equal(defaultPaint('roadster'), 'pearl');
-  assert.equal(defaultPaint('crimson-gt'), FACTORY_PAINT);
+  assert.equal(defaultPaint('crimson-gt'), 'crimson');
+});
+
+test('a previously saved factory finish loads as the shared Deep Crimson paint', () => {
+  const storage = memoryStorage({ 'skyline-rush-car-paints': '{"crimson-gt":"factory"}' });
+  assert.equal(loadCarPaint('crimson-gt', ownedPaints(0), storage), 'crimson');
+  assert.equal(loadCarPaint('roadster', ownedPaints(0), storage), 'pearl');
 });
 
 test('paint is remembered per car; the Roadster keeps the existing save key', () => {
   const storage = memoryStorage({ 'skyline-rush-paint': '"aurora"' });
   assert.equal(loadCarPaint('roadster', OWNED, storage), 'aurora', 'existing Roadster paint still loads');
-  assert.equal(loadCarPaint('crimson-gt', OWNED, storage), FACTORY_PAINT, 'a car with no choice shows its factory colour');
+  assert.equal(loadCarPaint('crimson-gt', OWNED, storage), 'crimson', 'a car with no choice shows its default colour');
   saveCarPaint('crimson-gt', 'cobalt', storage);
   assert.equal(loadCarPaint('crimson-gt', OWNED, storage), 'cobalt');
   assert.equal(loadCarPaint('roadster', OWNED, storage), 'aurora', 'the GT choice never touches the Roadster');
   saveCarPaint('roadster', 'pearl', storage);
   assert.equal(JSON.parse(storage.data.get('skyline-rush-paint')), 'pearl');
   assert.equal(loadCarPaint('crimson-gt', OWNED, storage), 'cobalt');
-  saveCarPaint('crimson-gt', FACTORY_PAINT, storage);
-  assert.equal(loadCarPaint('crimson-gt', OWNED, storage), FACTORY_PAINT, 'back to the factory colour');
+  saveCarPaint('crimson-gt', 'crimson', storage);
+  assert.equal(loadCarPaint('crimson-gt', OWNED, storage), 'crimson', 'back to its default colour');
 });
 
 test('a saved paint the player does not own, or a damaged save, falls back to the car default', () => {
-  assert.equal(loadCarPaint('crimson-gt', ['pearl'], memoryStorage({ 'skyline-rush-car-paints': '{"crimson-gt":"obsidian"}' })), FACTORY_PAINT);
-  assert.equal(loadCarPaint('crimson-gt', OWNED, memoryStorage({ 'skyline-rush-car-paints': '"cobalt"' })), FACTORY_PAINT);
-  assert.equal(loadCarPaint('crimson-gt', OWNED, memoryStorage({ 'skyline-rush-car-paints': '{"crimson-gt":"toString"}' })), FACTORY_PAINT);
-  assert.equal(loadCarPaint('roadster', OWNED, memoryStorage({ 'skyline-rush-paint': '"factory"' })), 'pearl', 'the Roadster has no factory entry');
+  assert.equal(loadCarPaint('crimson-gt', ['pearl'], memoryStorage({ 'skyline-rush-car-paints': '{"crimson-gt":"obsidian"}' })), 'crimson');
+  assert.equal(loadCarPaint('crimson-gt', OWNED, memoryStorage({ 'skyline-rush-car-paints': '"cobalt"' })), 'crimson');
+  assert.equal(loadCarPaint('crimson-gt', OWNED, memoryStorage({ 'skyline-rush-car-paints': '{"crimson-gt":"toString"}' })), 'crimson');
+  assert.equal(loadCarPaint('roadster', OWNED, memoryStorage({ 'skyline-rush-paint': '"factory"' })), 'pearl', 'the legacy GT-only ID was never a valid Roadster selection');
 });
 
 test('world adapter: no model for the Roadster, the equipped GT without any URL flag, the Roadster again after switching back', () => {

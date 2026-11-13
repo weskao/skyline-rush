@@ -1,19 +1,19 @@
-// Garage car picker (src/GarageCarPicker.vue) and the Crimson GT's factory finish in the paint list.
+// Garage car picker (src/GarageCarPicker.vue) and the shared Deep Crimson paint.
 export const GARAGE_CARS_COPY = {
   en: {
     'garage.cars': 'Car',
     'garage.cars.pick': 'Choose your car',
-    'car.roadster': 'Roadster',
-    'car.crimson-gt': 'Crimson GT',
+    'car.roadster': 'Stratosway R2',
+    'car.crimson-gt': 'Vantaire GT',
     'car.inUse': 'In use',
-    'paint.factory': 'Factory Crimson',
+    'paint.crimson': 'Deep Crimson',
   },
   'zh-TW': {
     'garage.cars': '車款',
     'garage.cars.pick': '選擇車款',
-    'car.roadster': '敞篷跑車',
-    'car.crimson-gt': '深紅跑車',
+    'car.roadster': '天航 R2',
+    'car.crimson-gt': '夜鋒 GT',
     'car.inUse': '使用中',
-    'paint.factory': '原廠深紅',
+    'paint.crimson': '深紅',
   },
 } as const;
