@@ -1,6 +1,9 @@
 ---
 paths:
   - "src/game.js"
+  - "src/drive-rules.ts"
+  - "src/classic-road-routes.ts"
+  - "tests/drift-*.test.js"
   - "src/world.js"
   - "src/vehicle-pose.js"
   - "src/geometry.js"
@@ -60,6 +63,17 @@ Keep the arcade driving feel; do not replace it with a new physics engine.
   track-specific offsets, blurring/shaking the camera less, or damping away genuine
   orientation errors. Trace the numerical and rendering data flow and fix its shared
   root cause first; reuse existing helpers rather than adding a second pose system.
+
+## Drift handling is global (all tracks, now and future)
+
+- Drift tuning lives only in `src/drive-rules.ts` (`DRIFT_*`, `driftTier`) and the shared
+  `stepRace` drift block; a track or course never adds its own drift constants or rules.
+- Any track-specific lateral force (like `classicCornerPush`) skips the car while `drifting`, so a
+  drift slides at exactly `DRIFT_LATERAL` x the steering rate on every road. Only hazards that push
+  every car (crosswind sections) still act during a drift.
+- Guard: `tests/drift-all-tracks.test.js` iterates `RACE_TRACKS`, `COURSE_TRACKS`, the circuit and
+  Endless, so a newly registered track is checked without edits; a track it cannot cover is a gap
+  to fix in the test, not a skip.
 
 ## Required regression evidence for edits
 
