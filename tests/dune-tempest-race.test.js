@@ -485,5 +485,5 @@ test('firestore.rules accepts the Dune topology-keyed best', () => {
   const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
   const listed = [...rules.match(/function bestIds\(\) \{[^}]*\}/)[0].matchAll(/'([^']+)'/g)].map(m => m[1]);
   assert.ok(listed.includes(KEY));
-  assert.match(rules, new RegExp(`validBest\\(bests, '${KEY}'\\)`));
+  assert.ok(rules.includes(`math.abs(b.get('${KEY}', 302400) - 302400) < 302400`), 'validBests checks the key inline');
 });

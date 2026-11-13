@@ -51,7 +51,9 @@ layouts, rival takes and PERFECT LINE groups (`tests/catch-up-items.test.js`; de
 **Long-form courses** (`topology: 'course-graph' | 'course-graph-runtime'`; user, 2026-11-09): rings and pickups scale
 with length, `itemScale(track) = length / mean classic length` (`race-tracks.ts`). Classic tracks use their own `itemDensity`
 (default 1; the first five maps, Coast → Sky Spiral, carry 1.4 since the user's 2026-11-13 request). Changing it is a
-layout change: bump that track's `layoutVersion`, add the new `<track>@<layout>` ids to `firestore.rules`, re-lock
+layout change: bump that track's `layoutVersion`, add the new `<track>@<layout>` ids to `firestore.rules` (to `bestIds()` and as one inline
+check in `validBests`; Firestore stops at 1000 evaluated expressions per write, 60 ids is the measured cap, and only
+the CI `cloud-save` emulator job catches an overrun, not `npm test`, so run `npm run test:cloud` first), re-lock
 `tests/course-item-density.test.js`, the `ring-variety` baseline and the legacy replay fixture. Classic traffic uses a `trafficDensity` inside the classic range (0.65–1.5), never 0.
 On graph runtimes (`src/course-items.ts`) the shared layout is re-keyed to `(edgeId, localS)` on the ground route.
 Every alternate branch gets the shortcut reward line above plus the dense mix, rivals take items on their own edges, and traffic
