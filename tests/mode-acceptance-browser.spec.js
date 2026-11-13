@@ -127,7 +127,7 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('#tutorial-exit').click();
     await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
     await expect(page.locator('#race-status')).toHaveText('RACING');
-    for (const selector of ['#race-info', '.position-stat', '#race-status']) await inViewport(page, selector);
+    for (const selector of ['#race-info', '.position-stat', '#distance']) await inViewport(page, selector);
     await page.screenshot({ path: `test-results/mode-acceptance-time-hud-${name}.png` });
     await teleportToFinish(page);
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');

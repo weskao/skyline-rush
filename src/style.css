@@ -135,9 +135,6 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 .time { display: block; margin-top: 17px; font-size: 13px; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
 .race-progress { width: 300px; padding-top: 4px; position: absolute; left: 50%; transform: translateX(-50%); }
 .progress-labels { display: flex; justify-content: space-between; color: #e4e4e0; font-size: 8px; letter-spacing: 1.3px; }
-.progress-track { background: rgb(210 220 225 / .3); height: 2px; margin-top: 12px; position: relative; }
-#progress-fill { display: block; width: 0; height: 100%; background: var(--accent); }
-.finish-flag { position: absolute; right: 0; top: -3px; width: 8px; height: 8px; border: 1px solid #dedfd9; }
 .leaderboard { width: 175px; }
 .racer { display: flex; gap: 10px; align-items: center; font-size: 9px; color: #d7dce0; height: 31px; border-bottom: 1px solid rgb(225 231 235 / .1); }
 .racer > span:first-child { opacity: .7; width: 9px; font-variant-numeric: tabular-nums; }
@@ -356,7 +353,6 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .racer.is-player { color: #ffae94; }
 .position-stat { text-shadow: 0 2px 12px #071426; }
 .race-progress { padding: 11px 13px 15px; background: rgb(7 23 42 / .55); border: 1px solid rgb(155 194 222 / .16); border-radius: 4px; width: 330px; }
-.progress-track { height: 3px; }
 .flight-director { position: fixed; top: 37%; left: calc(50% - 150px); width: 300px; text-align: center; z-index: 2; pointer-events: none; opacity: 0; color: var(--blue); transform: rotate(var(--flight-bank, 0deg)); transition: opacity .3s, transform .2s ease-out; text-shadow: 0 1px 7px #071426; }
 .flight-director > span { font-size: 8px; letter-spacing: 3px; }
 .flight-director > svg { display: block; width: 100%; height: 100px; stroke: currentColor; stroke-width: 1; filter: drop-shadow(0 1px 3px #0b2137); }
@@ -1343,14 +1339,14 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 @media (max-width:400px) and (max-height:700px) {
  .race-route-map {display:block;}
 }
-/* Short screens: telemetry fills the right column, so the map sits on the bottom row beside the 2x2 thumb-action cluster
+/* Short portrait: telemetry fills the right column, so the map sits on the bottom row beside the 2x2 thumb-action cluster
    (mirrored for a right-hand layout). The slot is that cluster's width: 2 cells x the chosen size (TOUCH_SCALE in main.js)
    + up to 12px column gap + 8px clearance. Portrait counts as short up to 760px: eight competitive leaderboard rows push
    the RACING bar to ~321px, leaving the right column above the telemetry 1px short of the map on a 320x740 phone. */
 .race-route-map { --cluster-scale: 1; }
 body:has(#touch-controls[data-size="S"]) .race-route-map { --cluster-scale: .85; }
 body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15; }
-@media (max-height:500px) and (orientation:landscape), (max-width:760px) and (min-height:501px) and (max-height:760px) {
+@media (max-width:760px) and (min-height:501px) and (max-height:760px) {
  .race-route-map { --cluster: calc(2 * var(--touch-cell) * var(--cluster-scale) + 20px); display:block; top:auto; bottom:max(18px, var(--safe-bottom)); right:calc(max(var(--thumb-edge), var(--safe-right)) + var(--cluster)); }
  body:has(#touch-controls[data-hand="right"]) .race-route-map { right:auto; left:calc(max(var(--thumb-edge), var(--safe-left)) + var(--cluster)); }
 }
@@ -1761,8 +1757,10 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .cloud-player-details p { margin: 3px 0 0; font-size: 13px; color: #c5d7e2; }
 #cloud-sync-now:not(:disabled) { border-color: #66c6d5; }
 
-body[data-race-mode="endless"] #race-route-map,
-body[data-race-mode="endless"] .progress-track { display: none; }
+/* No finish, so no course map: the box keeps only its distance caption (the rolling map is the exception, below). */
+body[data-race-mode="endless"] #race-route-map:not([data-streaming]) > svg { display: none; }
+body[data-race-mode="endless"] #race-route-map:not([data-streaming]) { height: auto; padding-bottom: 0; border: 0; background: none; }
+body[data-race-mode="endless"] #race-route-map:not([data-streaming]) > .progress-bar { position: static; }
 
 /* Touch landscape under 761px wide: what the shared landscape race HUD blocks above do not reset from the portrait phone
    rules. POSITION and the leaderboard fill the left column (to 226px), the gauges the right; the progress bar and flight
@@ -2028,33 +2026,44 @@ body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* 
 @keyframes route-player-pulse { from { transform:scale(.7); opacity:.95; } to { transform:scale(1.5); opacity:0; } }
 @media (prefers-reduced-motion:reduce) { .race-route-map .route-player-halo { animation:none; opacity:.85; } }
 
-/* Edge-docked race HUD: nothing persistent sits on the road view. The progress bar is a slim strip in the top bar (the
-   .race-progress container stays put as the anchor of mode rows); the ROAD/FLIGHT chip and the collision chip are one-line
+/* Edge-docked race HUD: nothing persistent sits on the road view. Progress lives on the live map: its orange trail is the
+   bar and the caption under it (.progress-bar) carries the distance; the phase word shows only outside racing. The
+   .race-progress container stays put as the anchor of mode rows; the ROAD/FLIGHT chip and the collision chip are one-line
    chips that src/race-feedback-placement.ts docks at an edge on layout changes only. Guard: tests/race-hud-overlap-browser.spec.js. */
 .race-progress { padding: 0; background: none; border: 0; }
-.progress-bar {
-  position: fixed; z-index: 3; top: calc(46px + var(--safe-top)); left: 50%; transform: translateX(-50%);
-  width: clamp(140px, calc(100vw - 800px), 300px); padding: 4px 8px 5px; box-sizing: border-box;
-  background: rgb(7 23 42 / .45); border-radius: 6px; pointer-events: none;
-}
-.progress-bar .progress-labels { font-size: 8px; letter-spacing: .6px; white-space: nowrap; gap: 6px; }
-.progress-bar .progress-track { margin-top: 5px; }
-.progress-bar .finish-flag { width: 6px; height: 6px; top: -2px; }
-@media (hover: none) and (pointer: coarse) and (min-width: 761px) { .progress-bar { top: calc(25px + var(--safe-top)); width: 250px; } }
-/* Short landscape: between the wordmark and the toolbar (345px wide, 12px in), like the callout's top-bar slot. */
+.race-route-map { padding-bottom: 13px; }
+.race-route-map > .progress-bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 2px 2px; pointer-events: none; }
+.race-route-map .progress-labels { justify-content: center; flex-wrap: wrap; column-gap: 4px; font-size: 8px; line-height: 11px;
+  letter-spacing: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+body[data-phase="racing"] #race-status { display: none; }
+/* zh-TW lifts the caption to 10px, and "2.82 / 5.00 KM" (66px) outgrows the 59-67px maps on narrow portrait and short landscape: the unit yields there. */
+@media (max-width: 400px) and (min-height: 501px) { .race-route-map .unit { display: none; } }
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) { .race-route-map .unit { display: none; } }
+.race-route-map .route-travelled { stroke: var(--accent); stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+/* HUD settings can hide the map drawing; the distance caption is essential and stays. */
+body[data-hud-map-visible="false"] #race-route-map > svg { display: none; }
+body[data-hud-map-visible="false"] #race-route-map { height: auto; padding-bottom: 0; border: 0; background: none; }
+body[data-hud-map-visible="false"] #race-route-map > .progress-bar { position: static; }
+/* Touch short landscape: the map takes the top-right corner, level with the toolbar, which shifts left by the map's width;
+   AIRFLOW/VFX join that row beside the logo, whose wordmark yields its width to them (the toolbar's width varies by
+   locale, so they anchor to the logo, not to it). Guard: tests/race-map-corner-browser.spec.js. */
 @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
-  .progress-bar { top: calc(25px + var(--safe-top)); left: calc(239px + var(--safe-left)); right: calc(367px + var(--safe-right)); width: auto; transform: none; }
+  body:not([data-phase="ready"]) .race-route-map { top: 12px; bottom: auto; left: auto; right: max(12px, var(--safe-right)); width: 67px; height: 88px; }
+  body:not([data-phase="ready"]) .toolbar { margin-right: 75px; }
+  body:not([data-phase="ready"]) .aero-tools { top: 17px; right: auto; left: calc(max(12px, var(--safe-left)) + 46px); }
+  body:not([data-phase="ready"]) .vfx-settings { left: 0; right: auto; } /* left-anchored now, so the panel opens rightwards */
+  body:not([data-phase="ready"]) .brand > span { display: none; }
+  /* Buttons mode lifts the telemetry above the steering buttons, up into the map's rows: it stops short of the map. */
+  body:not([data-phase="ready"]):has(#touch-controls[data-steer-mode="buttons"]) .telemetry { right: max(40px, calc(max(12px, var(--safe-right)) + 75px)); }
 }
 @media (pointer: coarse) and (max-height: 500px) and (max-width: 760px) and (orientation: landscape) {
-  .progress-bar { top: calc(31px + var(--safe-top)); left: calc(187px + var(--safe-left)); right: calc(357px + var(--safe-right)); }
+  body:not([data-phase="ready"]) .aero-tools { top: 21px; left: calc(max(12px, var(--safe-left)) + 37px); } /* .aero-tools already carries margin-top: var(--safe-top) */
 }
-/* Portrait: the top bar is full, so the strip takes the row under it, left of AIRFLOW/VFX (140px wide, 16px in). */
-@media (max-width: 760px) and (min-height: 501px) {
-  body .progress-bar { top: calc(70px + var(--safe-top)); left: calc(23px + var(--safe-left)); right: calc(166px + var(--safe-right)); width: auto; transform: none; padding: 3px 8px 4px; }
-  .progress-bar .progress-labels { line-height: 1.2; }
-  body[data-phase="paused"] .progress-bar { visibility: hidden; } /* the pause panel says where you are; the wider pause toolbar needs the row */
+/* Paused adds the language picker to AIRFLOW/VFX, too wide for the top row at 640px: the group drops under the toolbar. */
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="paused"] .aero-tools { top: 68px; left: auto; right: calc(max(12px, var(--safe-right)) + 75px); }
+  body[data-phase="paused"] .vfx-settings { left: auto; right: 0; }
 }
-body[data-fold-axis="vertical"] .progress-bar { right: calc(100vw - var(--fold-pane-left-end) + 10px); }
 
 body:not([data-phase="ready"]) .mode-indicator[data-peripheral] {
   position: fixed; z-index: 3; top: calc(8px + var(--safe-top)); right: max(12px, var(--safe-right)); bottom: auto; left: auto;

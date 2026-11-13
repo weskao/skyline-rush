@@ -1,3 +1,13 @@
+# 2026-11-14 — Race map holds progress; top-right on phone landscape; HALFWAY callout
+
+- [x] The standalone progress strip is gone: the live map paints the road already driven orange (`.route-travelled`, rewritten only when the 0.5% step changes) and its caption shows `x.xx / y.yy KM`; the phase word shows only outside racing. Endless keeps the rolling map or the bare caption.
+- [x] Touch short landscape: the map takes the top-right corner, the toolbar shifts left by its width, AIRFLOW/VFX sit on the top row beside the logo (pause drops them under the toolbar; the VFX panel opens rightwards).
+- [x] HALFWAY callout with the distance left and a rising chime, once per finite race (never Endless or Circuit). RED → GREEN in `tests/callouts.test.js`, `tests/race-audio-events.test.js`, `tests/route-map.test.js`.
+- [x] Guard `tests/race-map-corner-browser.spec.js` (en/zh-TW at 844×390, 740×360, 640×360, 874×339, plus 390×844 and 1440×900). Its first run caught the English toolbar (345px) running into AIRFLOW/VFX and the VFX panel opening off-screen; fixed.
+- [x] Unit 2,765 passed (3 skipped), typecheck, module-size, build; browser: corner, hud-overlap, endless, mode-acceptance, main-ui-parity, legacy-minimap, hud-settings 55/55. Chromium screenshots reviewed at 844×390, 640×360, 390×844, 1440×900.
+- [x] Second browser round caught three more: zh-TW's 10px caption ran past the 59px portrait map (RED 313 vs ≥318; the narrow maps now drop the ` KM` unit), Buttons-mode flight telemetry overlapped the corner map at 844×390/874×339 (telemetry now clears the map width), and Phase 4 counted the new trail polyline (spec updated for the extra line).
+- [ ] Notch insets on a physical iPhone in landscape (Chromium cannot emulate `env(safe-area-inset-*)`) and the exact-commit GitHub quality gate.
+
 # 2026-11-13 — Demo reward (試玩獎勵) results card fully visible
 
 - [x] RED: zh-TW guard reported the card scrolling 262/198px on desktop/tablet (missions and fine print cut) and four lines hidden in short landscape. GREEN: no height cap; crest moved into the header, mission tiles and fine print visible at 1440×900, 768×1024, 390×844, 360×740.

@@ -23,8 +23,9 @@ for (const [label, viewport, locale, touch] of [
       await page.locator('#start-button').click();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
       await expect(page.locator('#speed')).not.toHaveText('0');
-      await expect(page.locator('#race-route-map')).toBeHidden();
-      await expect(page.locator('.progress-track')).toBeHidden();
+      // No finish line, so no driven-route trail: the rolling map (or, without one, the bare caption) carries the distance.
+      await expect(page.locator('#race-route-map .route-travelled')).toBeHidden();
+      await expect(page.locator('#distance')).toBeVisible();
       await page.evaluate(() => {
         const race = window.gameplay.race;
         Object.assign(race.player, { distance: 15000, speed: 75, x: 0, cooldown: 2 });

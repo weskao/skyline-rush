@@ -31,12 +31,6 @@ progress::-moz-progress-bar {
   box-shadow: var(--progress-glow);
   animation: progress-flow 2.4s linear infinite;
 }
-#progress-fill {
-  border-radius: 999px;
-  background: var(--progress-sheen) no-repeat 0 0 / 200% 100%, var(--progress-colors) 0 0 / 300% 100%;
-  box-shadow: var(--progress-glow);
-  animation: progress-flow 2.4s linear infinite;
-}
 
 .tutorial-coach[data-step="complete"] progress {
   --progress-colors: linear-gradient(90deg, #ffd27a, #ff9d4d, #fff1a8, #ffd27a);
@@ -50,8 +44,8 @@ progress::-moz-progress-bar {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  progress::-webkit-progress-value, #progress-fill { animation: none; }
+  progress::-webkit-progress-value { animation: none; }
   progress::-moz-progress-bar { animation: none; }
 }
-.vfx-comfort progress::-webkit-progress-value, .vfx-comfort #progress-fill { animation: none; }
+.vfx-comfort progress::-webkit-progress-value { animation: none; }
 .vfx-comfort progress::-moz-progress-bar { animation: none; }
