@@ -70,6 +70,11 @@
   Playwright ledger, concurrent confirmation, and save-failure tests. The
   first local ledger attempt hit a Chromium renderer crash at Garage re-entry;
   an isolated rerun with shared-memory usage disabled passed all 14 steps.
+- [x] Integrated `develop` at `245c0cab` (Race and Garage sound feedback). Seven
+  Wave 3 files conflicted; the audio cues and `missionReady` flag now ride on the
+  async, scope-checked demo port, and result audio awaits the receipt. Strict
+  typecheck, build, `npm test` (2,808 passed, 3 skipped) and 8 Playwright tests
+  (audio feedback desktop/phone/muted landscape, Wave 3 ledger) passed.
 - [ ] Await full regression for the latest integration commit. The preceding
   candidate [3d5b377e](https://github.com/weskao/skyline-rush/commit/3d5b377e31c362d773e328a5c4e4490238aa3215)
   is tracked in [CI 43458160566](https://github.com/weskao/skyline-rush/actions/runs/43458160566).
@@ -82,6 +87,13 @@
 - [x] RED → GREEN covers race credit, first finish, daily and weekly claims, currency-specific redemption, old and extended v1 checkpoints, reset and account isolation.
 - [x] Focused Wave 3 and module-size tests passed. Both locked and trial Vite builds passed bundle audits.
 - [ ] Confirm the exact-HEAD full CI gate and verify the finish, compact result details and redemption on physical phones.
+
+# 2026-11-13 — Race and Garage sound feedback
+
+- [x] Add transaction, equipment, and race-result feedback to the existing SFX mix.
+- [x] Add one-shot race cues for driving rewards, route entry, objective warnings and mode-specific endings.
+- [x] Verify cue selection, synth timing, mute, result priority and repeat prevention with focused Node tests.
+- [ ] Verify the desktop and mobile browser flow, exact-commit full regression and physical-device mix.
 
 # 2026-11-13 — Demo reward (試玩獎勵) results card fully visible
 

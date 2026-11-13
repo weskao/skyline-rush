@@ -37,6 +37,7 @@ interface GarageDependencies {
   getWorld(): GarageWorld | null | undefined;
   canOpen(): boolean;
   clearControls(): void;
+  cue?(name: string): void;
   getEquippedPaint(): string;
   setEquippedPaint(id: string): void;
   getStars(): number;
@@ -55,7 +56,7 @@ export function garagePresentation(
 
 // Preserve the existing WebGL canvas, paint entitlement source and race state.
 export function setupGarageUI({
-  getWorld, canOpen, clearControls, getEquippedPaint, setEquippedPaint, getStars, availablePaints, subscribeAccount,
+  getWorld, canOpen, clearControls, cue, getEquippedPaint, setEquippedPaint, getStars, availablePaints, subscribeAccount,
 }: GarageDependencies) {
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const garageScreen = $<HTMLDialogElement>('#garage-screen');
@@ -192,14 +193,17 @@ export function setupGarageUI({
     // Restore is a saved equip action, not a temporary preview; each car's default finish is always owned.
     const standard = defaultPaint(equippedCar());
     if (!owned().includes(standard)) return;
+    const changed = getEquippedPaint() !== standard;
     setEquippedPaint(standard);
     previewPaint(standard);
+    if (changed) cue?.('equip-confirmed');
   });
   $('#garage-equip').addEventListener('click', () => {
     // Guard the data boundary, not only the disabled UI: a locked paint is never persisted.
     if (!garagePresentation(previewing, getEquippedPaint(), getStars(), PAINTS, owned()).canEquip) return;
     setEquippedPaint(previewing);
     previewPaint(getEquippedPaint());
+    cue?.('equip-confirmed');
   });
   $('#garage-screen .paint-options').addEventListener('click', event => {
     const id = (event.target as Element).closest<HTMLElement>('[data-paint]')?.dataset.paint;
@@ -210,12 +214,14 @@ export function setupGarageUI({
     if (!isCar(id) || id === equippedCar()) return;
     equipCar(id); // both cars are open to everyone: picking one equips it
     wearCar();
+    cue?.('equip-confirmed');
   }));
   $('#garage-button').addEventListener('click', () => {
     const world = getWorld();
     if (!world || !canOpen() || garageScreen.open) return;
     clearControls();
     garageScreen.showModal();
+    cue?.('ui');
     preview.append($('#world'));
     preview.after(dock);
     world.resize();
@@ -225,7 +231,7 @@ export function setupGarageUI({
     setCamera(defaultGarageCamera());
     pushPage('home');
   });
-  $('#garage-studio-open').addEventListener('click', () => pushPage('studio'));
+  $('#garage-studio-open').addEventListener('click', () => { pushPage('studio'); cue?.('ui'); });
   $('#garage-studio-back').addEventListener('click', () => {
     if (history.state?.[historyKey] === 'studio') history.back();
     else showPage('home');

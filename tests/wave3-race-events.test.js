@@ -207,3 +207,16 @@ test('a recovered Cup retains its demo account and generation across a reload', 
   after.setAccount(null);
   assert.equal(createWave3RaceEventBridge(after).finish(race(), false, recovered).status, 'completed');
 });
+
+test('a settlement marks missions becoming claimable only on the run that crosses the goal', () => {
+  const demo = createWave3LocalDemo();
+  let count = 0;
+  const bridge = createWave3RaceEventBridge(demo, () => 'race-mission-ready-' + ++count);
+  const finish = () => {
+    const race = aRace();
+    race.phase = 'finished'; race.result = { success:true, time:60 };
+    return bridge.finish(race, false);
+  };
+  assert.equal(finish().missionReady, true);
+  assert.notEqual(finish().missionReady, true);
+});

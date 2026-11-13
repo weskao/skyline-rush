@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { inject, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
 import { getLocale, onLocaleChange } from './i18n.ts';
@@ -10,6 +10,7 @@ import { formatDemoReward } from './wave3-currency-view.ts';
 import { demoMissionBonus } from './wave3-demo-settlement.ts';
 import type { Wave3ExperiencePort, ExperienceSnapshot, MissionProgress } from './wave3-experience-contract.ts';
 
+const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = defineProps<{ experience?: Wave3ExperiencePort | null }>();
 const locale = ref(getLocale());
 const snapshot = ref<ExperienceSnapshot | null>(null);
@@ -54,6 +55,7 @@ async function claim(id: string): Promise<void> {
   const scope = port.getOperationScope();
   const result = await port.claimMission(id, missionPeriodId(id, snapshot.value!.updatedAt), scope);
   snapshot.value = result.snapshot;
+  if (result.status === 'completed' && result.deltaDemoPoints > 0) cue('reward-credited');
   feedback.value = result.status === 'completed'
     ? formatDemoReward({ points: result.deltaDemoPoints, coins: result.deltaDemoCoins,
         diamonds: result.deltaDemoDiamonds }, locale.value)
@@ -195,11 +197,15 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 .garage-mission-claim:focus-visible{outline:3px solid white;outline-offset:2px}
 .garage-mission-feedback {font-size:12px;min-height:1em;color:#a6f5d8;font-weight:750;font-variant-numeric:tabular-nums}
 .garage-period-heading {margin-top:16px}
-.garage-period-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,225px),1fr));gap:10px}
-.garage-period-card{display:grid;gap:6px;min-width:0;border:1px solid #385375;border-radius:10px;background:#14253d;padding:10px}
-.garage-period-card strong{font-size:12px;overflow-wrap:anywhere}
-.garage-period-card small{color:#abbfd5;font-size:11px}
-@media (max-width:420px){.garage-period-grid{grid-template-columns:1fr}}
+/* Quest-row layout: title | count, then bar | status. Two short lines per card, two cards per row on phones. */
+.garage-period-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:7px}
+.garage-period-card{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:4px 8px;min-width:0;border:1px solid #385375;border-radius:10px;background:#14253d;padding:7px 9px}
+/* Three tracks so the long status only narrows the bar, and the short count only narrows the title. */
+.garage-period-card strong{grid-area:1/1/2/3;font-size:12px;line-height:1.3;overflow-wrap:anywhere}
+.garage-period-card small{grid-area:2/2/3/4;justify-self:end;color:#abbfd5;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.garage-period-card small ~ small{grid-area:1/3}
+.garage-period-card progress{grid-area:2/1}
+.garage-period-card > :nth-child(n+5){grid-column:1/-1;justify-self:center}
 
 /* Independent object-specific motion: telemetry orbit and trophy illumination. */
 .garage-mission-card,.garage-trophy-card{position:relative;isolation:isolate}

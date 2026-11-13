@@ -81,6 +81,7 @@ export type ExperienceResult = Readonly<{
   deltaDemoPoints: number;
   deltaDemoCoins?: number;
   deltaDemoDiamonds?: number;
+  missionReady?: boolean;
 }>;
 
 type DemoMutation<T> = T | Promise<T>;

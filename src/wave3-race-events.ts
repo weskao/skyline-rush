@@ -1,10 +1,11 @@
 import { wave3DemoExperience } from './wave3-browser-experience.ts';
+import { missionStatus } from './wave3-demo-missions.ts';
 export { wave3DemoExperience };
 import { cupStandings } from './championship-cup.ts';
 import { raceTrack } from './race-tracks.ts';
 import type { RaceSeries } from './race-results.ts';
 import { WAVE3_EXPERIENCE_VERSION, sameDemoScope } from './wave3-experience-contract.ts';
-import type { Wave3ExperiencePort, DemoOperationScope, ExperienceResult, DemoRaceMetrics } from './wave3-experience-contract.ts';
+import type { Wave3ExperiencePort, DemoOperationScope, ExperienceResult, ExperienceSnapshot, DemoRaceMetrics } from './wave3-experience-contract.ts';
 
 /** Only real simulation transitions are observed. No DOM or server calls in a frame. */
 type ObservedRace = {
@@ -38,8 +39,15 @@ function rewardMetrics(race: ObservedRace, series?: RaceSeries): DemoRaceMetrics
   return { legs, position, difficulty: race.config?.difficulty, rivalCount: race.rivals?.length ?? 0 };
 }
 
+/** Flags a settlement that turned at least one mission claimable, for the result cue. */
+function withMissionReady(receipt: ExperienceResult, before: ExperienceSnapshot): ExperienceResult {
+  const missionReady = receipt.status === 'completed' && Object.entries(receipt.snapshot.missions)
+    .some(([id, mission]) => missionStatus(mission) === 'claimable' && missionStatus(before.missions[id] ?? null) !== 'claimable');
+  return missionReady ? { ...receipt, missionReady } : receipt;
+}
+
 export function createWave3RaceEventBridge<T extends ReturnType<Wave3ExperiencePort['settleCompletion']>>(
-  experience: Pick<Wave3ExperiencePort, 'getOperationScope'> & {
+  experience: Pick<Wave3ExperiencePort, 'getOperationScope' | 'getSnapshot'> & {
     settleCompletion: (completion: Parameters<Wave3ExperiencePort['settleCompletion']>[0]) => T;
   },
   idFactory: () => string = id,
@@ -94,11 +102,14 @@ export function createWave3RaceEventBridge<T extends ReturnType<Wave3ExperienceP
       const eligible = !intermediateStage && race.result.success !== false &&
         typeof race.result.time === 'number' && Number.isFinite(race.result.time) && race.result.time > 0;
       state.finishedAt ??= now();
-      return experience.settleCompletion({ schemaVersion: WAVE3_EXPERIENCE_VERSION,
+      const before = experience.getSnapshot();
+      const receipt = experience.settleCompletion({ schemaVersion: WAVE3_EXPERIENCE_VERSION,
         completionId: state.completionId, accountId: state.scope.accountId, scope: state.scope,
         trackId: race.trackId, mode: race.mode, occurredAt: state.finishedAt, eligible,
         telemetry: { drift: state.driftCount, combo: state.comboCount },
         ...(eligible ? { demoRace: rewardMetrics(race, series) } : {}) });
+      const mark = (result: ExperienceResult): ExperienceResult => withMissionReady(result, before);
+      return (receipt instanceof Promise ? receipt.then(mark) : mark(receipt)) as T;
     },
   };
 }
