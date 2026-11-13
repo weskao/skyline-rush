@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Color } from 'three';
+import { Color, Euler, Vector3 } from 'three';
 import { createCoastLook } from '../src/coast-look.ts';
 import { COAST_ENV_VARIANTS } from '../src/coast-lighting.ts';
+import { COAST_SUN_AZIMUTH, coastSkyYaw, coastSunDirection } from '../src/coast-sky.ts';
 import { setLook3d } from '../src/look-gate.ts';
 
 setLook3d(true); // the Phase 3 look (`?look=3d`); tests/look-gate.test.js covers the develop look without it
@@ -106,4 +107,26 @@ test('Coast Medium+ tunes bloom for the light blades and matches the sun to the 
   sun.color.set('#9fb4ff'); sun.intensity = 0.8; // world.js track block: Neon's palette, set before coastLook.update
   look.update('neon', 'track', 'high');
   assert.deepEqual([look.bloomThreshold(1.1), sun.intensity, sun.color.getHexString()], [1.1, 0.8, '9fb4ff'], 'another track keeps the sun its block just set');
+});
+
+test('the key light and the environment turn with the sky dome to the HDRI sun; Coast Low and other tracks get them back', async () => {
+  const room = { id: 'room' }, textures = {};
+  const envs = { get: n => textures[n], preload: names => { for (const n of names) textures[n] = { id: n }; return Promise.resolve(); } };
+  const scene = { environment: room, environmentIntensity: 0.42, environmentRotation: new Euler() };
+  const lens = { uniforms: { saturation: { value: 1 }, contrast: { value: 1 }, tint: { value: new Color(1, 1, 1) } } };
+  const sun = { color: new Color('#ffb88a'), intensity: 1.8, position: new Vector3(-170, 100, -190) }; // upcoming-lighting.ts
+  const look = createCoastLook({ scene, renderer: { toneMappingExposure: 1.12 }, lens, room, roomIntensity: 0.42, envs, sun });
+  for (const name of ['dusk', 'day']) {
+    look.update('coast', name, 'high'); await settle();
+    assert.ok(sun.position.clone().normalize().distanceTo(coastSunDirection(name)) < 1e-6, `${name}: the light shines from the HDRI sun`);
+    assert.ok(Math.abs(Math.atan2(sun.position.z, sun.position.x) - COAST_SUN_AZIMUTH) < 1e-6);
+    assert.ok(Math.abs(sun.position.length() - Math.hypot(170, 100, 190)) < 1e-6, 'same distance: only the direction changes');
+    assert.equal(scene.environmentRotation.y, coastSkyYaw(name), 'reflections and image-based light turn with the dome');
+  }
+  look.update('coast', 'dusk', 'low');
+  assert.deepEqual([sun.position.toArray(), scene.environmentRotation.y], [[-170, 100, -190], 0], 'Coast Low: the palette light and the unturned room');
+  look.update('coast', 'rain', 'high'); await settle();
+  sun.position.set(-400, 230, 260); // world.js track block: a World Tour sun, set before coastLook.update
+  look.update('coastal', 'track', 'high');
+  assert.deepEqual([sun.position.toArray(), scene.environmentRotation.y], [[-400, 230, 260], 0], 'another track keeps its own light; no room is left turned');
 });

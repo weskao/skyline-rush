@@ -110,6 +110,27 @@ test('lift cores follow tilted nozzle transforms and fade completely on release/
   assert.ok(cores.children.every(core => !core.visible));
 });
 
+// develop 56536093 shows every car GLB at the measured Roadster size, carrying its authored thrusters off LIFT_PORTS.
+test('lift cores and gas leave a dressed GLB\'s scaled thrusters, not the unscaled contract ports', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  t.mock.method(Math, 'random', () => 0); // no nozzle jitter: each puff leaves the port's exact centre
+  const scene = new Scene(), pose = new Group();
+  pose.userData.displayScale = new Vector3(1.1, 1.02, 1.02); // garage-model.ts dress(): the instance's display scale
+  scene.add(pose);
+  const effects = createEffects(scene, () => 0), race = createRace();
+  race.phase = 'racing'; race.player.thrusting = true;
+  effects.update(race, 0.1, 0, false, false, [pose]);
+  const cores = scene.getObjectByName('Lift gas cores').children;
+  [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]].forEach(([x, z], i) =>
+    assert.ok(cores[i].position.distanceTo(new Vector3(x * 1.1, 0.19 * 1.02, z * 1.02)) < 1e-6, `core ${i}: ${cores[i].position.toArray()}`));
+  const { position, alpha } = scene.children.find(object => object.isPoints).geometry.attributes;
+  const born = [...alpha.array.keys()].filter(i => alpha.array[i] > 0);
+  assert.ok(born.length, 'gas leaves the nozzles');
+  // Its sideways and downward velocity move x and y; z (along the car) is still the scaled port's.
+  for (const i of born) assert.ok([-1.3 * 1.02, 1.45 * 1.02].some(z => Math.abs(position.getZ(i) - z) < 1e-6), `puff ${i} at z ${position.getZ(i)}`);
+});
+
 function raceScene(t) {
   globalThis.devicePixelRatio = 1;
   t.after(() => { delete globalThis.devicePixelRatio; });
