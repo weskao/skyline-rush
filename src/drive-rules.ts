@@ -22,7 +22,8 @@ export const DRIFT_BLEED = 1.5; // m/s^2 lost while drifting (normal braking is 
 // Payout on release for the highest threshold reached: seconds drifted, nitro charges, mini-boost seconds.
 export const DRIFT_REWARDS = [{ time: 2, nitro: 0.7, boost: 1.6 }, { time: 1.2, nitro: 0.45, boost: 1.1 }, { time: 0.6, nitro: 0.25, boost: 0.7 }] as const;
 /** Reward tiers (0-3) a drift held `time` seconds has reached; read per frame, so it allocates nothing. */
-export const driftTier = (time: number): number => DRIFT_REWARDS.reduce((tier, reward) => tier + Number(time >= reward.time), 0);
+export const DRIFT_FIRST_TIER = DRIFT_REWARDS[DRIFT_REWARDS.length - 1].time; // s until a drift pays anything
+export const driftTier =(time: number): number => DRIFT_REWARDS.reduce((tier, reward) => tier + Number(time >= reward.time), 0);
 
 // SLIPSTREAM: right behind a rival or traffic car (same lane, in draft range) long enough pays once per engagement.
 export const SLIPSTREAM_TIME = 1.5; // seconds in the draft before it pays

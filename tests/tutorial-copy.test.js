@@ -12,7 +12,12 @@ test('all bilingual interactive tutorial strings are retained in the public UI c
   assert.ok(english.includes('tutorial.freeDrive'), 'the completion banner must be localized');
   assert.ok(english.includes('tutorial.barrelRollReadyToLand'));
   assert.ok(english.includes('tutorial.drift'));
-  assert.match(UI.en['tutorial.drift'], /0.15 NITRO/);
+  assert.match(UI.en['tutorial.drift'], /0\.6s \(\+0\.25 NITRO/);
+  assert.match(UI['zh-TW']['tutorial.drift'], /0\.6 秒/);
+  for (const key of ['tutorial.driftRetry.short', 'tutorial.driftRetry.shortSlide']) {
+    assert.match(UI.en[key], /0\.6s/, key);
+    assert.match(UI['zh-TW'][key], /0\.6 秒/, key);
+  }
   assert.match(UI['zh-TW']['tutorial.drift'], /甩尾/);
   assert.ok(english.includes('tutorial.barrelRollFlicked'), 'new airborne reverse-steer coaching must be localized');
   for (const locale of ['en', 'zh-TW']) {

@@ -31,7 +31,7 @@ test('driftTier counts the reward thresholds reached', () => {
 });
 
 // Every consumer reads driftTier/DRIFT_REWARDS, so a retune is one edit (literal 1/2/3 s once lived in six files).
-const TIER_READERS = ['race-hud.ts', 'callouts.ts', 'effects.js', 'audio.js'];
+const TIER_READERS = ['race-hud.ts', 'callouts.ts', 'effects.js', 'audio.js', 'tutorial-cues.ts', 'interactive-tutorial.ts'];
 test('drift feedback reads tier thresholds from DRIFT_REWARDS, never literal seconds', () => {
   for (const file of TIER_READERS) {
     const source = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');

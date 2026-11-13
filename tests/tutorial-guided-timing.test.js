@@ -107,9 +107,10 @@ test('drift and air chain cues name the next action at the right moment', () => 
   const cue = (step, fields, extra = {}) => tutorialCue({ ...base, step, car: car(fields), ...extra });
   assert.deepEqual(cue('drift', { speed: 30 }), { key: 'tutorial.cue.driftSpeed', actions: ['brake'] });
   assert.deepEqual(cue('drift', {}), { key: 'tutorial.cue.driftStart', actions: ['brake', 'left', 'right'] });
-  assert.deepEqual(cue('drift', { drift: { time: 0.4 } }), { key: 'tutorial.cue.driftHold', actions: ['brake'], count: 0.6 });
-  assert.deepEqual(cue('drift', { drift: { time: 1.2 } }), { key: 'tutorial.cue.driftRelease', actions: ['brake'], n: 1 });
-  assert.deepEqual(cue('drift', { drift: { time: 3.1 } }), { key: 'tutorial.cue.driftMax', actions: ['brake'] });
+  assert.deepEqual(cue('drift', { drift: { time: 0.4 } }), { key: 'tutorial.cue.driftHold', actions: ['brake'], count: 0.2 });
+  assert.deepEqual(cue('drift', { drift: { time: 0.7 } }), { key: 'tutorial.cue.driftRelease', actions: ['brake'], n: 1 });
+  assert.deepEqual(cue('drift', { drift: { time: 1.3 } }), { key: 'tutorial.cue.driftRelease', actions: ['brake'], n: 2 });
+  assert.deepEqual(cue('drift', { drift: { time: 2.1 } }), { key: 'tutorial.cue.driftMax', actions: ['brake'] });
   assert.equal(cue('airChain', {}).key, 'tutorial.cue.chainFly');
   assert.deepEqual(cue('airChain', { altitude: 2, thrusting: true }), { key: 'tutorial.cue.chainBoost', actions: ['boost'] });
   assert.deepEqual(cue('airChain', { altitude: 2, thrusting: true, flightBoosted: true, poweredFlightTime: 0.1 }), { key: 'tutorial.cue.chainHold', actions: ['fly', 'boost'], count: 0.3 });
