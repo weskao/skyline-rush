@@ -166,17 +166,18 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-vfx-catalog { border-top: 1px solid #35536a; margin-top: 14px; padding-top: 10px; }
 .garage-vfx-catalog h3 { margin: 0 0 6px; font-size: 15px; }
 .garage-vfx-live-loadout {
-  padding: 10px 8px; border: 1px solid #467a93; border-radius: 12px;
+  padding: 8px 6px; border: 1px solid #467a93; border-radius: 12px;
   background: linear-gradient(160deg, #162d43, #0c1c2e 82%);
 }
-.garage-vfx-live-loadout h4 { margin: 0 0 8px; font-size: 13px; color: #e2f8ff; }
+.garage-vfx-live-loadout h4 { margin: 0 0 6px; font-size: 13px; color: #e2f8ff; }
+/* Four tiles as one 2x2 block: the 226px tablet/landscape column still fits two 104px art frames. */
 .garage-vfx-loadout-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 138px), 1fr));
-  gap: 8px; padding: 0; margin: 0; list-style: none;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px; padding: 0; margin: 0; list-style: none;
 }
 .garage-vfx-loadout-tile {
   display: flex; flex-direction: column; align-items: center; min-width: 0;
-  gap: 4px; padding: 8px 4px; box-sizing: border-box; text-align: center;
+  gap: 2px; padding: 5px 2px 6px; box-sizing: border-box; text-align: center;
   border: 1px solid #315875; border-radius: 10px;
   background: radial-gradient(ellipse at center 30%, #26719c28, transparent 70%), #102438;
 }
@@ -313,10 +314,11 @@ const statusText = (id: SkinId, locale: string) => {
 }
 .garage-art-showcase { margin: 18px 0 10px; padding-top: 14px; border-top: 1px solid #46688b; }
 .garage-art-showcase h4 { color: #d4ddff; letter-spacing: .04em; }
+/* 104px = 88px art frame + 7px card padding + borders: three badges fit the 328px list of a 360px phone. */
 .garage-art-badges {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 115px), 1fr));
-  gap: clamp(8px, 1.5vw, 13px);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 104px), 1fr));
+  gap: 6px;
   align-items: stretch;
 }
 .garage-art-showcase { min-width: 0; }
