@@ -26,8 +26,8 @@ import { skyJumpGap } from './sky-track.ts'; import { dropCar, stepDeck, stepRiv
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
-import { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN } from './drive-rules.ts';
-export { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN } from './drive-rules.ts';
+import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, DRIFT_REWARDS, driftCredit } from './drive-rules.ts';
+export { MAX_SPEED, NITRO_TIME, NITRO_EXTEND, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
 export const STEER_RAMP = 0.15;
@@ -44,14 +44,8 @@ export const GAP_RESPAWN = 5; // m past the gap where the car is put back
 export const CROSSWIND_SPEED = 4; // m/s sideways push
 export const ICE_RAMP_FACTOR = 4; // steering takes this many times longer to respond on ice
 
-export const NITRO_EXTEND = 2; // seconds added by a press during NITRO
 export const NITRO_FUEL_PER_CHARGE = 32; // overflow conversion: each 0.25 charge = 8 fuel
 export const NITRO_FUEL_BONUS = 20; // fuel per charge banked below the cap: each 0.25 charge = 5 fuel
-
-export const DRIFT_MIN_SPEED = 45; // m/s needed to start or hold a drift
-export const DRIFT_BLEED = 3; // m/s^2 lost while drifting (normal braking is 35)
-// Payout on release for the highest threshold reached: seconds drifted, nitro charges, mini-boost seconds.
-export const DRIFT_REWARDS = [{ time: 3, nitro: 0.5, boost: 1.2 }, { time: 2, nitro: 0.3, boost: 0.8 }, { time: 1, nitro: 0.15, boost: 0.5 }];
 
 // AIR TRICK: a steer press opposite to one begun moments earlier, while flying, is a barrel roll; landing it pays nitro.
 export const TRICK_FLICK_WINDOW = 0.3; // s between the starts of the two presses
@@ -284,13 +278,7 @@ export function stepRace(race, input, dt) {
   car.braking = brake;
   // NITRO is edge-triggered: one press spends one full charge; a press during NITRO extends it, never stacks speed.
   if (input.nitro === true && !car.nitroHeld && car.nitro >= 1) {
-    car.nitro -= 1;
-    if (car.nitroTime > 0) car.nitroTime += NITRO_EXTEND;
-    else {
-      car.nitroTime = NITRO_TIME;
-      car.nitroUses++;
-      car.nitroBurst = 0;
-    }
+    if (pressNitro(car)) car.nitroBurst = 0;
     car.nitroChain = Math.max(car.nitroChain, ++car.nitroBurst); // charges spent in this one burst
   }
   car.nitroHeld = input.nitro === true;
@@ -304,17 +292,17 @@ export function stepRace(race, input, dt) {
       Math.abs((other.altitude || 0) - car.altitude) < SLIPSTREAM_ALTITUDE;
   };
   if (stepSlipstream(slip, race.traffic.some(drafts) || race.rivals.some(drafts), dt)) addNitro(car, SLIPSTREAM_NITRO);
-  // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; releasing it pays out by drift time.
+  // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; each tier reached pays NITRO, the release a mini boost.
   if (brake && steer !== 0 && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED &&
       car.railContactSide !== Math.sign(steer)) {
-    car.drift ??= { time: 0, dir: Math.sign(steer) };
+    car.drift ??= { time: 0, dir: Math.sign(steer), nitro: 0 };
     car.drift.time += dt;
+    const owed = driftCredit(car.drift); if (owed > 0) addNitro(car, owed);
   } else if (car.drift) {
     const reward = DRIFT_REWARDS.find(r => car.drift.time >= r.time);
     if (reward) {
-      addNitro(car, reward.nitro);
       car.miniBoost = Math.max(car.miniBoost, reward.boost);
-      car.driftPayout = { time: race.elapsed, nitro: reward.nitro };
+      car.driftPayout = { time: race.elapsed, nitro: car.drift.nitro };
     }
     car.drift = null;
   }
@@ -340,7 +328,7 @@ export function stepRace(race, input, dt) {
   // Linear ramp: full deflection takes STEER_RAMP seconds (longer on ice), like an analog stick.
   const ramp = STEER_RAMP * (car.section === 'ice' ? ICE_RAMP_FACTOR : 1);
   car.steering += clamp(steer - car.steering, -dt / ramp, dt / ramp);
-  let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * dt;
+  let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * (drifting ? DRIFT_LATERAL : 1) * dt;
   if (car.altitude < .1 && !race.endless?.practice) lateralPosition += classicCornerPush(race.trackId, car.distance, car.speed) * dt;
   if (car.section === 'crosswind') lateralPosition += (section.dir ?? 1) * CROSSWIND_SPEED * dt;
   if (input.laneAssist === true && steer === 0 && car.cooldown === 0 && car.speed > 5) {

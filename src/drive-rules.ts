@@ -10,11 +10,39 @@ export const BOOST_ACCEL = 12; // m/s² on top of the throttle
 export const NITRO_ACCEL = 40; // m/s² on top of the throttle
 export const OVER_CAP_DECEL = 18; // m/s² shed while above the current cap
 export const NITRO_TIME = 2.5; // seconds one charge lasts
+export const NITRO_EXTEND = NITRO_TIME; // seconds a press during NITRO adds: a full charge, so chaining wastes no time
+/** One NITRO press, the same for the player and the rivals: spends a charge, starts a burst or extends the running
+ * one without stacking speed. True when a new burst began. */
+export function pressNitro(car: { nitro: number; nitroTime: number; nitroUses: number }): boolean {
+  car.nitro -= 1;
+  if (car.nitroTime > 0) { car.nitroTime += NITRO_EXTEND; return false; }
+  car.nitroTime = NITRO_TIME;
+  car.nitroUses++;
+  return true;
+}
 export const FLY_DRAIN = 15; // fuel/s while thrusting (Phase 1: more room to fly while preserving ground recharge)
 export const BOOST_DRAIN = 10; // fuel/s while boosting on the road
 export const GROUND_FUEL_REGEN = 13; // fuel/s on the road with FLY and BOOST released
 export const UPHILL_FUEL_REGEN = 6.5; // fuel/s on an uphill section
 export const GLIDE_FUEL_REGEN = 4; // fuel/s while airborne with FLY and boost released
+// DRIFT: brake + steer on the ground at speed; tuning in docs/superpowers/specs/2026-11-13-drift-balance-design.md.
+export const DRIFT_MIN_SPEED = 45; // m/s needed to start or hold a drift
+export const DRIFT_BLEED = 1.5; // m/s^2 lost while drifting (normal braking is 35)
+// Share of the steering slide kept while drifting (user, 2026-11-14): at 1 a full-lock drift crossed the 20 m road
+// at 9 m/s and hit the far rail before the 2 s tier; 0.8 leaves ~14 m over 2 s.
+export const DRIFT_LATERAL = 0.8;
+// Per threshold: seconds drifted, total NITRO charges by then (credited as each tier is reached), mini-boost seconds on release.
+export const DRIFT_REWARDS = [{ time: 2, nitro: 0.35, boost: 1.6 }, { time: 1.2, nitro: 0.22, boost: 1.1 }, { time: 0.6, nitro: 0.1, boost: 0.7 }] as const;
+/** NITRO a drift is still owed for the tiers it has reached; marks it credited. */
+export function driftCredit(drift: { time: number; nitro: number }): number {
+  const total = DRIFT_REWARDS.find(reward => drift.time >= reward.time)?.nitro ?? 0;
+  const owed = total - drift.nitro;
+  drift.nitro = total;
+  return owed;
+}
+/** Reward tiers (0-3) a drift held `time` seconds has reached; read per frame, so it allocates nothing. */
+export const DRIFT_FIRST_TIER = DRIFT_REWARDS[DRIFT_REWARDS.length - 1].time; // s until a drift pays anything
+export const driftTier =(time: number): number => DRIFT_REWARDS.reduce((tier, reward) => tier + Number(time >= reward.time), 0);
 
 // SLIPSTREAM: right behind a rival or traffic car (same lane, in draft range) long enough pays once per engagement.
 export const SLIPSTREAM_TIME = 1.5; // seconds in the draft before it pays

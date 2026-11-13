@@ -5,7 +5,7 @@ import { expect } from '@playwright/test';
 // Task 4b `?model=roadster`: the one roadster2 GLB dresses the player's car on the Home showcase and in every race
 // (src/garage-model.ts). The procedural car still owns the pose, collisions, road contact, camera and VFX ports.
 const GLB = /\/models\/roadster2\/roadster2(-low)?\.glb$/;
-const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]]; // src/effects.js
+const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]]; // src/lift-ports.js
 const REAR_PORT_X = [-0.62, -0.22, 0.22, 0.62]; // src/aero-vfx.js REAR_PORTS (y .64, z 2.39)
 
 async function prepare(page, url, quality = 'high') {

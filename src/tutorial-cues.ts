@@ -1,4 +1,5 @@
 import { CHAIN_POWERED_SECONDS } from './air-chain.ts';
+import { DRIFT_REWARDS, DRIFT_FIRST_TIER, driftTier } from './drive-rules.ts';
 
 /** Live "do this now" toast for a lesson: what the engine shows the player is doing, and which control comes next. */
 export interface TutorialCue { key: string; actions: readonly string[]; n?: number; count?: number }
@@ -22,9 +23,10 @@ const tenth = (seconds: number): number => Math.round(Math.max(0, seconds) * 10)
 function driftCue({ car, driftEntry }: CueState): TutorialCue {
   const time = car.drift?.time;
   if (time !== undefined) {
-    // The engine pays a tier on release: 1 s, 2 s, 3 s (DRIFT_REWARDS).
-    if (time < 1) return { key: 'tutorial.cue.driftHold', actions: ['brake'], count: tenth(1 - time) };
-    return time < 3 ? { key: 'tutorial.cue.driftRelease', actions: ['brake'], n: Math.floor(time) } : { key: 'tutorial.cue.driftMax', actions: ['brake'] };
+    // The engine credits each DRIFT_REWARDS tier's NITRO as it is reached; the release pays the mini boost.
+    const tier = driftTier(time);
+    if (tier === 0) return { key: 'tutorial.cue.driftHold', actions: ['brake'], count: tenth(DRIFT_FIRST_TIER - time) };
+    return tier < DRIFT_REWARDS.length ? { key: 'tutorial.cue.driftRelease', actions: ['brake'], n: tier } : { key: 'tutorial.cue.driftMax', actions: ['brake'] };
   }
   if (car.altitude === 0 && car.speed < driftEntry) return { key: 'tutorial.cue.driftSpeed', actions: ['brake'] };
   return { key: 'tutorial.cue.driftStart', actions: ['brake', 'left', 'right'] };

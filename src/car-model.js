@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { canopy, carShell } from './geometry.ts';
-import { LIFT_PORTS } from './effects.js';
+import { LIFT_PORTS } from './lift-ports.js';
 import { roadsterBody, roadsterCanopy, addRoadsterTrim, addRoadsterWheelDetail, poseRoadsterWing, stepRoadsterWing } from './roadster-fidelity.js';
 import { EXTRA_RACE_STYLES, TRAFFIC_STYLES } from './vehicle-fleet-styles.js';
 const box = new THREE.BoxGeometry(1, 1, 1);
