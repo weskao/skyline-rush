@@ -219,6 +219,42 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt'],
     budgets: { triangles: 3_000, bytes: 120_000, textureMaxPx: 0 },
   },
+  // Coast cliff-top shrubs (Medium+, with coast-scenery): Poly Haven CC0 fynbos scans baked to impostor cards, three
+  // crossed cards per node on one 1K atlas. Instanced on the scan cliffs by coast-greenery.ts; without it, no shrubs.
+  'coast-greenery': {
+    id: 'coast-greenery',
+    url: 'models/coast-greenery/coast-greenery.glb',
+    source: {
+      master: 'assets-src/coast-greenery/coast-greenery.blend',
+      script: 'assets-src/coast-greenery/build.py',
+      masterSha256: '2f8dadca87c29b42405ab3847bbab4e8d096b382078cdb12f28d65ef89b80253',
+      scriptSha256: '94645eab2a881bcb8cf3e86713d3f1242eae3b4cdf79f1325b117bdd72667c73',
+    },
+    glb: { sha256: '860a6a1f726b39e11fcdd70201824227c151823a9c96305441c070302a225074', bytes: 163_824 },
+    license: {
+      id: 'CC0-1.0',
+      creator: 'Poly Haven: James Ray Cock (modelling), Jenelle van Heerden (photography) (searsia_lucida); impostor bake by Skyline Rush project',
+      sourceUrl: 'https://polyhaven.com/a/searsia_lucida',
+    },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        'python3 -I scripts/assets/fetch_polyhaven.py fetch',
+        '$BLENDER_BIN --background --factory-startup --python assets-src/coast-greenery/build.py',
+        'node scripts/assets/export-glb.mjs coast-greenery',
+        'node scripts/assets/optimize-glb.mjs coast-greenery',
+        'node scripts/assets/check-glb.mjs coast-greenery --promote',
+      ],
+    },
+    nodes: ['shrub_a', 'shrub_b', 'shrub_c'],
+    materials: ['coast_shrub'],
+    lods: [],
+    fallback: 'procedural-scenery',
+    decoders: ['meshopt', 'ktx2'],
+    budgets: { triangles: 100, bytes: 700_000, textureMaxPx: 1024 },
+  },
   // Road power-ups: one mesh and one baked 512 px PBR set per tier, shared by the guide preview and the GPU-instanced
   // track pool. Shapes in each build.py; materials, bake and review sheets in scripts/assets/pickup_kit.py.
   'pickup-cell': pickupModel('cell', 3000, {

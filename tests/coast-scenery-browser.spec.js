@@ -90,7 +90,7 @@ test('Coast Low never fetches the scenery GLB and keeps the procedural rocks and
   expect(Object.keys(pieces).some(name => /^(cliff_|sailboat_|motorboat)/.test(name))).toBe(false);
   expect(await skyline(page)).toEqual({ city: true, towers: [true, true, true] }); // owner decision 2026-11-14: Low keeps them
   // This document's own fetches; the fixture's first (default-tier) page may have requested it before the reload.
-  const requests = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-(scenery|boats)\.glb/.test(n)));
+  const requests = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-(scenery|boats|greenery)\.glb/.test(n)));
   expect(requests).toEqual([]);
 });
 
@@ -161,7 +161,7 @@ test.describe('without ?look=3d', () => {
     expect(await skyline(page)).toEqual({ city: true, towers: [true, true, true] }); // D1, D2 apply to the gated look only
     expect(look).toEqual({ env: 0.42, grade: [1, 1, 1, 1, 1] }); // RoomEnvironment, identity grade: no HDRI look
     // The basis transcoder is not Coast's: the always-on 3D pickups (pickup-models.ts, meshopt + KTX2) load it on every track.
-    const fetched = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-(scenery|boats)\.glb|\.ktx2|environments\/.*\.hdr/.test(n)));
+    const fetched = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-(scenery|boats|greenery)\.glb|\.ktx2|environments\/.*\.hdr/.test(n)));
     expect(fetched).toEqual([]);
   });
 });

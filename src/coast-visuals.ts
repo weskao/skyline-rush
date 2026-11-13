@@ -5,6 +5,7 @@ import type { VfxQuality } from './vfx-settings.ts';
 import { createCoastBoatLayer, type CoastBoatLayer } from './coast-boats.ts';
 import { coastChunkWindow, coastFarWindow, createCoastModelLayer, type CoastModelLayer, type ShoreSink } from './coast-scenery-glb.ts';
 import { coastGullWindow, createCoastSeagulls } from './coast-seagulls.ts';
+import { createCoastGreenery, type CoastGreenery } from './coast-greenery.ts';
 
 // Shared Coast palette, separate from the five authored World Tour routes.
 export const COAST_PALETTE = Object.freeze({
@@ -39,9 +40,10 @@ export function createCoastScenery(scene: THREE.Scene) {
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     group.add(mesh);
   }
-  let model: CoastModelLayer | null = null;
+  let model: CoastModelLayer | null = null, greenery: CoastGreenery | null = null;
   let gulls: ReturnType<typeof createCoastSeagulls> | null = null; // fly with the scan coast only
   let boats: { layer: CoastBoatLayer; clock: { value: number } } | null = null;
+  const dropModel = () => { greenery?.dispose(); greenery = null; gulls?.dispose(); gulls = null; model?.dispose(); model = null; };
   const distances = new Float64Array(TOTAL);
   let previousRoute: ClassicRoad | undefined, previousTier:VfxQuality|null=null;
   let origin = 0, previousDistance = 0, previousSeed: number | undefined;
@@ -86,7 +88,8 @@ export function createCoastScenery(scene: THREE.Scene) {
       previousRoute=route;
       const window = model ? coastChunkWindow(distance, quality) : null;
       if (model && window) model.place(route, window, origin, seed, coastFarWindow(distance, quality));
-      for (const mesh of model?.meshes ?? []) mesh.visible = !!window;
+      if (window) greenery?.sync(); // shrubs follow the cliffs the layer just placed
+      for (const mesh of [...model?.meshes ?? [], ...greenery?.meshes ?? []]) mesh.visible = !!window;
       const flocks = gulls ? coastGullWindow(distance, quality) : null;
       if (gulls) gulls.mesh.visible = !!flocks;
       if (gulls && flocks) { gulls.place(route, flocks, origin, seed); gulls.setTime(time); }
@@ -103,15 +106,15 @@ export function createCoastScenery(scene: THREE.Scene) {
     },
     /** Medium+ draws this parsed coast-scenery.glb instead of the procedural rocks/trees; the caller keeps ownership. */
     attachModel(source:THREE.Object3D, shore?:ShoreSink) {
-      model?.dispose();
+      dropModel();
       model = createCoastModelLayer(source, shore);
-      for (const mesh of model.meshes) { mesh.visible = false; group.add(mesh); }
+      greenery = createCoastGreenery(source, model.meshes);
+      for (const mesh of [...model.meshes, ...greenery.meshes]) { mesh.visible = false; group.add(mesh); }
       gulls ??= createCoastSeagulls();
       gulls.mesh.visible = false; group.add(gulls.mesh);
     },
     detachModel() {
-      model?.dispose(); model = null;
-      gulls?.dispose(); gulls = null;
+      dropModel();
       for (const mesh of meshes) mesh.visible = true;
     },
     /** Medium+ sails this parsed coast-boats.glb on the open water, on `clock` (seconds); the caller keeps ownership. */
@@ -124,8 +127,7 @@ export function createCoastScenery(scene: THREE.Scene) {
     hide() {group.visible=false;},
     show() {group.visible=true;},
     dispose() {
-      model?.dispose(); model = null;
-      gulls?.dispose(); gulls = null;
+      dropModel();
       boats?.layer.dispose(); boats = null;
       scene.remove(group);
       for(const mesh of meshes) {mesh.geometry.dispose();mesh.material.dispose();}
