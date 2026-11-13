@@ -110,12 +110,10 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     `tests/crimson-gt-browser.spec.js`; rule 13 in `.claude/rules/3d-asset-pipeline.md`.
 - [x] Car picker focus order (2026-11-13): `tests/crimson-gt-browser.spec.js` "keyboard: Tab walks the cars in
   catalog order, Enter equips the focused car, and the paints come after the picker".
-- [x] Factory colour card (2026-11-13): `factory@3x.webp` (960x510, 3x the 320x170 card) is rendered from the car's
-  own master by `assets-src/crimson-gt/card/render_card.py`; the plain swatch is gone
-  (`tests/garage-paint-presentation.test.js`, RED before the change). Browser test "factory card" at 390x844,
-  844x390 and 1440x900: native size, opaque, same frame as the other paint cards, name below. It is a render, so it
-  is darker and less stylised than the six painted cards; the flake is rendered at a third of its strength for the
-  card only.
+- [x] Factory colour card (2026-11-13): `factory@3x.webp` (960×510, 3× the 320×170 card) shares the
+  painted collection's close-up composition in factory crimson. The full-car render now appears in the car
+  picker beside the Roadster. Browser coverage checks the art, labels and responsive bounds at 390×844,
+  844×390 and 1440×900. See the [artwork notes](../../../../public/feature-assets/garage-vfx-skins/paint-cards/README.md).
 - [ ] Car picker locked/trial/owned states: not built, both cars are open (waits for the unlock rule).
 - [x] Local save for the equipped car (`skyline-rush-car`) and each car's paint (`skyline-rush-car-paints`), with a
   backward-compatible load: no entry means the Roadster, whose paint stays in `skyline-rush-paint`. No change to

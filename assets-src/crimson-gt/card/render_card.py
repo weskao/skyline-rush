@@ -1,9 +1,9 @@
-"""Renders the Garage "factory" paint card from the Crimson GT master itself: the car's own body in its factory red,
+"""Renders the original Crimson GT factory paint concept from the car master: the car's own body in factory red,
 framed like the six painted cards (front three-quarter close-up on the dark showroom blue). The master is the
 source; nothing is saved back into it.
 
   "$BLENDER_BIN" --background --python assets-src/crimson-gt/card/render_card.py -- <out.png>
-  cwebp -q 90 <out.png> -o public/feature-assets/garage-vfx-skins/paint-cards/factory@3x.webp
+  cwebp -q 90 <out.png> -o <out.webp>
 
 960x510 is 3x the 320x170 card (.claude/rules/raster-artwork.md).
 """
