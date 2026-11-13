@@ -7,7 +7,7 @@ import { createGarageModel, garageModelId } from '../src/garage-model.ts';
 import { REAR_PORTS, createAeroVFX } from '../src/aero-vfx.js';
 import { createGaragePaintSweep } from '../src/garage-paint-shader.ts';
 import { createGraceFade } from '../src/grace-fade.ts';
-import { CARS } from '../src/car-catalog.ts';
+import { fitToRoadsterSize } from '../src/car-display-size.ts';
 
 const settle = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setTimeout(r, 0)); };
 const drawn = object => object.layers.test(new THREE.Camera().layers);
@@ -174,7 +174,7 @@ test('a GLB without lift fans (the probe) keeps the procedural flight fans drawn
 
 test('dressing leaves the procedural car pose, collision parts and VFX ports untouched', async () => {
   const ctx = setup();
-  const { car, model, host } = ctx;
+  const { car, model, host, original } = ctx;
   car.position.set(3, 1.5, -40);
   car.quaternion.setFromEuler(new THREE.Euler(0.05, 0.4, -0.02));
   car.updateMatrixWorld(true);
@@ -187,7 +187,9 @@ test('dressing leaves the procedural car pose, collision parts and VFX ports unt
   assert.ok(instance, 'dressed');
   assert.deepEqual(instance.position.toArray(), [0, 0, 0]);
   assert.deepEqual(instance.quaternion.toArray(), [0, 0, 0, 1]);
-  assert.deepEqual(instance.scale.toArray(), [1, 1, 1]);
+  const fitted = original.clone(true);
+  fitToRoadsterSize(fitted); // the only transform: the measured display size (car-display-size.ts)
+  assert.deepEqual(instance.scale.toArray(), fitted.scale.toArray());
   const after = snapshot();
   assert.deepEqual(after.slice(0, before.length), before, 'procedural car and its children keep their world transforms');
 });
@@ -227,7 +229,8 @@ test('the launch flare body glow wraps the GLB body while dressed, across a re-d
     assert.ok(glow.parent === glbBody(car), `${quality}: glow rides on the GLB body`); // identity: a failing equal would print the whole scene
     assert.ok(glow.geometry === glbBody(car).geometry, `${quality}: glow wraps the GLB silhouette`);
     assert.equal(drawn(glow), true, `${quality}: glow is drawn`);
-    const v = new THREE.Vector3(0.4, -0.3, 0.9), expected = mapped(v);
+    // x is scaled to the width on its own (car-display-size.ts); bodyFrame carries the shared y/z factor
+    const v = new THREE.Vector3(0, -0.3, 0.9), expected = mapped(v);
     const shader = v.clone().multiplyScalar(frame.w).add(new THREE.Vector3(frame.x, frame.y, frame.z));
     assert.ok(shader.distanceTo(expected) < 1e-6, `${quality}: bodyFrame ${frame.toArray()} maps into the procedural body frame`);
   }
@@ -333,8 +336,8 @@ test('rear-port VFX move to a GLB that authors its nozzles ahead of the contract
   model.sync(true, 'high', host);
   await settle();
   const near = (actual, expected) => actual.forEach((v, i) => assert.ok(Math.abs(v - expected[i]) < 1e-9, `${actual} vs ${expected}`));
-  // the GT instance is shown scaled (CARS scale), so its nozzles sit at the scaled pivots in car space
-  const scale = CARS['crimson-gt'].scale;
+  // the GT instance is shown scaled (car-display-size.ts), so its nozzles sit at the scaled pivots in car space
+  const scale = car.children.find(c => c.userData.garageModel).scale.toArray();
   near(rear.position.toArray(), [-0.62, 0.58, 1.98].map((v, axis) => v * scale[axis] - REAR_PORTS[0].position[axis]));
   model.sync(false, 'high', null);
   near(rear.position.toArray(), [0, 0, 0]);
@@ -438,9 +441,9 @@ test('airflow follows the displayed silhouette across fitting, LOD swaps and the
   assert.deepEqual(pressureBounds(), procedural, 'undressing restores the procedural fit');
 });
 
-// Owner, 2026-11-13: the Crimson GT is shown at the Roadster's size by scaling its instance, never its GLB.
-test('a car with a display scale shows its GLB instance scaled; the launch flare frame follows; roadster2 stays 1:1', async () => {
-  for (const [id, scale] of [['crimson-gt', CARS['crimson-gt'].scale], ['roadster2', [1, 1, 1]]]) {
+// Owner, 2026-11-13: every player car is shown at the Roadster's size by scaling its instance, never its GLB.
+test('a player car shows its GLB instance at the measured Roadster size; the launch flare frame follows', async () => {
+  for (const id of ['crimson-gt', 'roadster2']) {
     const car = makeCar(CAR_STYLES.roadster), scene = new THREE.Scene();
     scene.add(car);
     const aero = createAeroVFX(scene, car);
@@ -453,7 +456,10 @@ test('a car with a display scale shows its GLB instance scaled; the launch flare
     await settle();
     model.sync(true, 'high', { name: 'home', car, keep: aero.group, scene });
     const instance = glbBody(car).parent;
-    assert.deepEqual(instance.scale.toArray(), scale, `${id}: instance scale`);
+    const fitted = original.clone(true);
+    fitToRoadsterSize(fitted);
+    assert.deepEqual(instance.scale.toArray(), fitted.scale.toArray(), `${id}: instance scale`);
+    assert.equal(instance.scale.y, instance.scale.z, `${id}: wheels stay round`);
     assert.deepEqual(original.scale.toArray(), [1, 1, 1], `${id}: the cached original is untouched`);
     // y/z (one shared scale, so wheel spin stays round) map exactly into procedural body space
     car.updateMatrixWorld(true);

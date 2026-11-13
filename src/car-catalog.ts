@@ -8,12 +8,11 @@ import { readStored, writeStored, type HistoryStorage } from './history-storage.
 export type CarId = 'roadster' | 'crimson-gt';
 /** model: MODEL_MANIFEST id drawn over the procedural car, or null for the procedural Roadster itself.
  *  factory: the finish shown until the player picks a paint for this car.
- *  scale: x, y, z applied to the model's instance (never its GLB) so it shows at the Roadster's size; y and z
- *  stay equal so the wheels spin round (tests/crimson-gt-model.test.js measures both GLBs). */
-interface CarEntry { model: string | null; factory?: PaintPreset; scale?: readonly [number, number, number] }
+ *  No size field: car-display-size.ts measures each GLB and shows it at the Roadster's size. */
+interface CarEntry { model: string | null; factory?: PaintPreset }
 export const CARS: Readonly<Record<CarId, CarEntry>> = {
   roadster: { model: null },
-  'crimson-gt': { model: 'crimson-gt', scale: [1.052, 1.19, 1.19], factory: { name: 'Factory Crimson', paint: '#9a1424', light: [2.4, 0.02, 0.05], stars: 0, metalness: 0.74, roughness: 0.17 } },
+  'crimson-gt': { model: 'crimson-gt', factory: { name: 'Factory Crimson', paint: '#9a1424', light: [2.4, 0.02, 0.05], stars: 0, metalness: 0.74, roughness: 0.17 } },
 };
 /** Paint id of a car's factory finish: always owned, listed only for cars that have one. */
 export const FACTORY_PAINT = 'factory';

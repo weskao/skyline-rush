@@ -10,7 +10,7 @@ import { REAR_PORTS } from '../src/aero-vfx.js';
 import { LIFT_PORTS } from '../src/effects.js';
 import { Box3 } from 'three';
 import { glbJson, parse } from '../scripts/assets/check-glb.mjs';
-import { CARS } from '../src/car-catalog.ts';
+import { fitToRoadsterSize } from '../src/car-display-size.ts';
 
 const entry = MODEL_MANIFEST['crimson-gt'];
 const WHEELS = { wheel_fl: [-1.05, 0.46, -1.35], wheel_fr: [1.05, 0.46, -1.35], wheel_rl: [-1.05, 0.46, 1.42], wheel_rr: [1.05, 0.46, 1.42] };
@@ -98,10 +98,10 @@ for (const lod of ['high', 'low']) {
 }
 
 // Owner, 2026-11-13: the GT read much smaller than the Roadster on every screen. The GLB stays as authored; the
-// garage adapter scales its instance by CARS['crimson-gt'].scale (src/garage-model.ts) so both cars show one size.
-const shown = async (url, scale = [1, 1, 1]) => {
+// garage adapter measures every player GLB and scales its instance to the Roadster (src/car-display-size.ts).
+const shown = async url => {
   const { scene } = await parse(readFileSync(new URL(`../public/${url}`, import.meta.url)));
-  scene.scale.set(...scale);
+  fitToRoadsterSize(scene);
   scene.updateMatrixWorld(true);
   return new Box3().setFromObject(scene);
 };
@@ -109,7 +109,7 @@ const shown = async (url, scale = [1, 1, 1]) => {
 for (const lod of ['high', 'low']) {
   test(`crimson-gt ${lod} GLB is shown at the Roadster's size: width, roof and length within 3% of roadster2, tyres on the ground`, async () => {
     const roadster = await shown(lod === 'low' ? MODEL_MANIFEST.roadster2.lods[0].url : MODEL_MANIFEST.roadster2.url);
-    const gt = await shown(lod === 'low' ? entry.lods[0].url : entry.url, CARS['crimson-gt'].scale);
+    const gt = await shown(lod === 'low' ? entry.lods[0].url : entry.url);
     const extent = box => ({ width: box.max.x - box.min.x, roof: box.max.y, length: box.max.z - box.min.z });
     const want = extent(roadster), got = extent(gt);
     for (const key of ['width', 'roof', 'length']) {

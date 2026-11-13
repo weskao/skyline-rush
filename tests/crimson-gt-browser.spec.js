@@ -1,11 +1,12 @@
 import { test, captureHooks, glbRoots, programs, modelInstances as instances, dressedAs as dressed } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PAINTS } from '../src/appearance.ts';
 import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
-import { CARS } from '../src/car-catalog.ts';
+import { parse } from '../scripts/assets/check-glb.mjs';
+import { fitToRoadsterSize } from '../src/car-display-size.ts';
 
 // Task 7: Crimson GT is the second player car. The Garage car picker equips it with no URL flag; its GLB then dresses
 // the Garage, the Home showcase and the race car, wears every paint and skin, and the choice is saved locally.
@@ -13,8 +14,18 @@ const GLB = /\/models\/(crimson-gt|roadster2)\/[\w-]+\.glb$/;
 const FACTORY_RED = '9a1424';
 const REAR_PORT_X = [-0.62, -0.22, 0.22, 0.62]; // src/aero-vfx.js REAR_PORTS (y .64, z 2.39)
 const NOZZLE = [0.31, 1.975]; // the GT's nozzles: one rigid offset (0, -.33, -.415) from the contract ports
-/** A GLB point in car space: the GT instance is shown scaled to the Roadster's size (src/car-catalog.ts `scale`). */
-const shown = point => point.map((v, axis) => Math.round(v * CARS['crimson-gt'].scale[axis] * 1e3) / 1e3 + 0);
+/** The GT instance's display scale, measured from the shipped GLB the way src/car-display-size.ts does in the game. */
+let gtScale = null;
+const scaleOf = async () => {
+  if (!gtScale) {
+    const { scene } = await parse(readFileSync(new URL('../public/models/crimson-gt/crimson-gt.glb', import.meta.url)));
+    fitToRoadsterSize(scene);
+    gtScale = scene.scale.toArray();
+  }
+  return gtScale;
+};
+/** A GLB point in car space: the GT instance is shown scaled to the Roadster's size. */
+const shown = async point => { const scale = await scaleOf(); return point.map((v, axis) => Math.round(v * scale[axis] * 1e3) / 1e3 + 0); };
 
 async function prepare(page, url, { quality = 'high', storage = {} } = {}) {
   await page.addInitScript(([q, extra]) => {
@@ -162,14 +173,16 @@ test('race: the equipped GT dresses Home and carries into the race with the rear
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
   expect(await glbRoots(page)).toBe(1);
+  const raceScale = await page.evaluate(() => window.gameScene.player.children.find(c => c.userData.garageModel).scale.toArray());
+  expect(raceScale.map(v => v.toFixed(4)), 'the race GT is measured to the Roadster size').toEqual((await scaleOf()).map(v => v.toFixed(4)));
   const nozzles = await page.evaluate(() => {
     const car = window.gameScene.player;
     return [1, 2, 3, 4].map(i => car.worldToLocal(car.getObjectByName(`nozzle_rear_0${i}`).getWorldPosition(car.position.clone())).toArray().map(v => Math.round(v * 1e3) / 1e3));
   });
-  expect(nozzles).toEqual(REAR_PORT_X.map(x => shown([x, ...NOZZLE])));
+  expect(nozzles).toEqual(await Promise.all(REAR_PORT_X.map(x => shown([x, ...NOZZLE]))));
   const ports = await page.evaluate(() => window.gameScene.player.getObjectByName('Rear ports').position.toArray().map(v => Math.round(v * 1e3) / 1e3 + 0)); // + 0: a rounded -0 is 0
   const port = [REAR_PORT_X[0], 0.64, 2.39], nozzle = [REAR_PORT_X[0], ...NOZZLE];
-  expect(ports, 'the rear-port VFX moved onto the nozzles').toEqual(nozzle.map((v, axis) => Math.round((v * CARS['crimson-gt'].scale[axis] - port[axis]) * 1e3) / 1e3 + 0));
+  expect(ports, 'the rear-port VFX moved onto the nozzles').toEqual(nozzle.map((v, axis) => Math.round((v * gtScale[axis] - port[axis]) * 1e3) / 1e3 + 0));
   const before = await programs(page);
   const wheel = () => page.evaluate(() => window.gameScene.player.getObjectByName('wheel_fl_spin').quaternion.toArray().join());
   const parked = await wheel();
@@ -254,8 +267,8 @@ test('the GT wing rests stowed, tilts and raises with the procedural wing, and t
   await expect.poll(async () => { const rig = await wingRig(page); return rig.wing[0][1] === 1.08 && follows(rig); }, { timeout: ciTimeout(10000) }).toBe(true);
   const rest = await wingRig(page); // settled: polled above
   expect(rest.wing[0].slice(0, 3), 'the contract pivot').toEqual([0, 1.08, 2.25]);
-  expect(rest.hinge, 'stowed: the leading edge lies just above the tail deck').toEqual(shown([0, 0.86, 1.63]));
-  expect(rest.rear, 'stowed: the blade lies flat').toBeCloseTo(shown([0, 0.83, 0])[1], 2);
+  expect(rest.hinge, 'stowed: the leading edge lies just above the tail deck').toEqual(await shown([0, 0.86, 1.63]));
+  expect(rest.rear, 'stowed: the blade lies flat').toBeCloseTo((await shown([0, 0.83, 0]))[1], 2);
   expect([rest.fans, rest.jets]).toEqual([false, false]);
   await attach(page, 'gt-wing-stowed');
 
@@ -272,7 +285,7 @@ test('the GT wing rests stowed, tilts and raises with the procedural wing, and t
   await expect(page.locator('#garage-preview')).toHaveAttribute('data-garage-mode', 'flight');
   await expect.poll(async () => { const rig = await wingRig(page); return rig.wing[0][1] === 1.24 && follows(rig) && rig.fans && rig.jets; }, { timeout: ciTimeout(10000) }).toBe(true);
   const raised = await wingRig(page); // settled: polled above
-  expect(raised.hinge, 'raised: one raise travel (.16) above the stowed hinge').toEqual(shown([0, 1.02, 1.63]));
+  expect(raised.hinge, 'raised: one raise travel (.16) above the stowed hinge').toEqual(await shown([0, 1.02, 1.63]));
   expect(raised.folded, 'endplates stay on the raised blade').toBe(0);
   await attach(page, 'gt-wing-raised');
   expect(errors).toEqual([]);

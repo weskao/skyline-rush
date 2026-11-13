@@ -10,10 +10,10 @@ import { bindGarageRig, type GarageRig } from './garage-model-rig.ts';
 import { applyCarReflections } from './car-reflections.ts';
 import { CARS, equippedCarModel } from './car-catalog.ts';
 import { REAR_PORTS } from './aero-vfx.js';
+import { fitToRoadsterSize } from './car-display-size.ts';
 
 const MODEL_PARAMS: Readonly<Record<string, string>> = { probe: 'pipeline-probe', roadster: 'roadster2' };
 const EQUIPPED_MODELS = new Set(Object.values(CARS).map(car => car.model));
-const MODEL_SCALES = new Map(Object.values(CARS).flatMap(car => car.model && car.scale ? [[car.model, car.scale]] : []));
 const HIDDEN_LAYER = 31; // no camera enables it; the frame loop rewrites `visible` on car parts, never `layers`
 
 /** Player-car GLBs also dress the Home showcase and race car; the probe stays Garage-only. */
@@ -71,7 +71,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     let node = instance?.getObjectByName('nozzle_rear_01');
     if (!node) return;
     for (; node && node !== instance; node = node.parent ?? undefined) rear.position.add(node.position); // unrotated, unscaled pivots
-    rear.position.multiply(instance!.scale); // the instance's display scale (CARS) carries the nozzles outward
+    rear.position.multiply(instance!.scale); // the instance's display scale (car-display-size.ts) carries the nozzles outward
     rear.position.x -= REAR_PORTS[0].position[0]; rear.position.y -= REAR_PORTS[0].position[1]; rear.position.z -= REAR_PORTS[0].position[2];
   }
 
@@ -90,8 +90,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     pending.add(host); // request() and the per-frame sync() never dress one host twice at once
     const instance = from.instance();
     instance.userData.garageModel = id;
-    const scale = MODEL_SCALES.get(id);
-    if (scale) instance.scale.set(...scale); // before the airflow fit and the rig, which measure the shown size
+    if (dressesRaceCar(id)) fitToRoadsterSize(instance); // before the airflow fit and the rig, which measure the shown size
     const carMap = carMapOf(host.car); // without it the GLB mirrors the full scene HDRI: washed white in Coast rain
     if (carMap) applyCarReflections(instance, carMap); // before compiling, so no program changes after GO
     const rig = bindGarageRig(host.car, instance); // rig.update() only after compiling: compileAsync skips hidden parts (lift fans)
