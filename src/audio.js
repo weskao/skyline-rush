@@ -1,13 +1,15 @@
+import { FEEDBACK_SOUNDS, STINGERS } from './feedback-sounds.ts';
 import { musicForMode } from './mode-audio.ts'; import { driftTier } from './drive-rules.ts';
 import { createRaceAudioEvents } from './race-audio-events.ts';
 import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
 
-export function createSound() {
+/** @param {(race: any) => number | null} gapWarning */
+export function createSound(gapWarning = () => null) {
   let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
   let music, warm, hats, snares, song = null, step = 0, nextStep = 0, madeAt = -Infinity;
   let enabled = false, musicOn = false, hidden = false;
   // Slider levels map to gain on a squared curve so the lower half of the slider stays audibly useful.
-  let effectsLevel = 1, musicLevel = 1;
+  let effectsLevel = 1, musicLevel = 1, duckUntil = 0, duckFrom = 0;
   const voices = new Set();
   const raceEvents = createRaceAudioEvents();
 
@@ -19,6 +21,7 @@ export function createSound() {
   function silenceCues() {
     for (const voice of voices) voice.stop();
     voices.clear();
+    duckUntil = 0;
   }
   function voice(type, frequency, endFrequency, time, duration, volume, attack, destination, cue = true) {
     const source = context.createOscillator();
@@ -100,7 +103,19 @@ export function createSound() {
     source.start(now);
     track(source, [band, envelope], now + duration + .02);
   }
-  function cue(name) {
+  function cue(name, startAfter = 0) {
+    if (!enabled || hidden || !context || context.state !== 'running') return;
+    const notes = FEEDBACK_SOUNDS[name];
+    if (notes) {
+      if (voices.size + notes.length > 24) return;
+      for (const [from, to, duration, delay, volume] of notes) tone(from, to, duration, startAfter + delay, volume);
+      if (STINGERS.has(name)) {
+        const end = Math.max(...notes.map(([, , duration, delay]) => duration + delay));
+        duckFrom = context.currentTime + Math.max(0, startAfter - .05);
+        duckUntil = context.currentTime + startAfter + end;
+      }
+      return;
+    }
     if (name === 'go') { tone(660, 880, 0.4); tone(990, 1320, 0.4, 0, 0.025); }
     else if (name === 'finish') [523, 659, 784, 1047].forEach((pitch, i) => tone(pitch, pitch, 0.35, i * 0.13));
     else if (name === 'boost' || name === 'whoosh') {
@@ -233,7 +248,7 @@ export function createSound() {
     hidden = next;
     if (!context) return;
     // Not awaited: before the first user gesture resume() can stay pending; a later gesture retries it.
-    if (hidden) context.suspend().catch(() => {});
+    if (hidden) { silenceCues(); context.suspend().catch(() => {}); }
     else context.resume().catch(() => {});
   }
   function fail() {
@@ -270,7 +285,9 @@ export function createSound() {
     running: () => context?.state === 'running',
     update(race) {
       const car = race.player;
-      const { silence, sounds, active, boosting } = raceEvents.update(race, enabled);
+      const audible = enabled && !hidden && context?.state === 'running';
+      const { silence, sounds, active, boosting } = raceEvents.update(race, audible,
+        race.phase === 'racing' ? gapWarning(race) : null);
       if (silence) silenceCues();
       for (const sound of sounds) {
         if (typeof sound === 'string') cue(sound);
@@ -285,7 +302,8 @@ export function createSound() {
         windGain.gain.setTargetAtTime(active ? (car.speed / 102) ** 2 * 0.07 : 0, now, 0.1);
         const skid = car.drift ? 0.035 + driftTier(car.drift.time) * 0.012 : car.braking ? 0.035 : 0;
         skidGain.gain.setTargetAtTime(active && car.altitude < 0.2 && car.speed > 15 ? skid : 0, now, 0.06);
-        music.gain.setTargetAtTime(!musicOn ? 0 : musicLevel * (race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65), now, 0.1);
+        const musicMix = race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65;
+        music.gain.setTargetAtTime(musicOn ? musicLevel * musicMix * (now >= duckFrom && now < duckUntil ? .43 : 1) : 0, now, 0.1);
         const name = !musicOn ? null : musicForMode(race);
         if (name !== song) { song = name; step = 0; }
         // Schedule ~0.2 s ahead from the frame loop; after a stalled frame, resume from now instead of bursting.

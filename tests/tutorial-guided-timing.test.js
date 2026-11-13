@@ -162,3 +162,15 @@ test('brake lesson cue: red gate ahead, then keep holding while braking', () => 
   assert.deepEqual(cue(false), { key: 'tutorial.cue.brakeAhead', actions: ['brake'] });
   assert.deepEqual(cue(true), { key: 'tutorial.cue.brakeHold', actions: ['brake'] });
 });
+
+test('completing the last tutorial lesson replaces the regular gate chime', () => {
+  const heard = [];
+  const chime = createClearChime(name => heard.push(name));
+  const tutorial = { clears:0, complete:false };
+  chime(tutorial);
+  tutorial.clears++;
+  chime(tutorial);
+  tutorial.clears++; tutorial.complete = true;
+  chime(tutorial); chime(tutorial);
+  assert.deepEqual(heard, ['gate-clear', 'tutorial-complete']);
+});

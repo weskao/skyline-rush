@@ -21,7 +21,7 @@ test('home displays three compact resource icons with genuine demo points', asyn
       .toHaveAttribute('src', /demo-points@3x\.webp$/);
     for (const [currency, asset] of [['coins', 'coin'], ['diamonds', 'diamond']]) {
       const item = wallet.locator('[data-currency="' + currency + '"]');
-      await expect(item).toHaveAttribute('data-available', 'false');
+      await expect(item).toHaveAttribute('data-available', 'true');
       await expect(item.locator('strong')).toHaveText('0');
       const art = item.locator('.wallet-artwork img');
       await expect(art).toHaveAttribute('src', new RegExp('wallet-' + asset + '@3x\\.webp$'));
@@ -71,7 +71,7 @@ test('compact home wallet localizes accessible resource names without creating p
   }
   await expect(wallet.locator('[data-currency="coins"] strong')).toHaveText('0');
   await wallet.getByRole('button', { name: /鑽石/ }).hover();
-  await expect(page.getByRole('region', { name: '鑽石' })).toContainText('尚未開放');
+  await expect(page.getByRole('region', { name: '試玩鑽石' })).toContainText('本機試玩');
   await expect(wallet.locator('.wallet-label, .wallet-quantity small')).toHaveCount(0);
 });
 
@@ -82,7 +82,7 @@ test('compact artwork retains fallback text with reduced motion', async ({ page 
   const wallet=page.locator('#intro [data-wave3-wallet]');
   const diamond=wallet.locator('[data-currency="diamonds"]');
   await expect(diamond.locator('.artwork-fallback')).toBeVisible();
-  await expect(diamond).toHaveAttribute('aria-label', /Diamonds.*Coming soon/);
+  await expect(diamond).toHaveAttribute('aria-label', /Demo diamonds.*Local demo/i);
   await expect(diamond.locator('strong')).toHaveText('0');
 });
 
@@ -128,14 +128,14 @@ test.describe('wallet on touch screens', () => {
       await page.setViewportSize(viewport);
       await page.goto('/');
       const wallet = page.locator('#intro [data-wave3-wallet]');
-      const coins = wallet.getByRole('button', { name: /Coins/ });
-      const diamonds = wallet.getByRole('button', { name: /Diamonds/ });
-      const coinCard = page.getByRole('region', { name: 'Coins' });
-      const diamondCard = page.getByRole('region', { name: 'Diamonds' });
+      const coins = wallet.getByRole('button', { name: /Demo coins/i });
+      const diamonds = wallet.getByRole('button', { name: /Demo diamonds/i });
+      const coinCard = page.getByRole('region', { name: 'Demo coins' });
+      const diamondCard = page.getByRole('region', { name: 'Demo diamonds' });
 
       await expect(coinCard).toBeHidden();
       await coins.tap();
-      await expect(coinCard).toContainText('Coming soon');
+      await expect(coinCard).toContainText('Local demo');
       await expect(coinCard).toContainText('0');
       await diamonds.tap();
       await expect(coinCard).toBeHidden();

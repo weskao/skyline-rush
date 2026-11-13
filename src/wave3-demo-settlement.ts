@@ -1,12 +1,31 @@
 import { COURSE_RUNTIMES } from './course-runtimes.ts';
 import { raceTrack } from './race-tracks.ts';
-import type { DemoRaceMetrics } from './wave3-experience-contract.ts';
+import type { DemoCurrency, DemoRaceMetrics, ExperienceSnapshot } from './wave3-experience-contract.ts';
 
-/** Test-only demo fixtures. Never infer a paid price or real entitlement from these. */
-export const DEMO_REDEMPTION_COSTS: Readonly<Record<string, number>> = Object.freeze({
-  'thruster-ion': 25,
-  'thruster-plasma': 100,
+type DemoOffer = Readonly<{ currency: DemoCurrency; cost: number }>;
+const DEMO_OFFERS: Readonly<Record<string, DemoOffer>> = {
+  'thruster-ion': { currency: 'points', cost: 25 },
+  'thruster-plasma': { currency: 'points', cost: 100 },
+  'nitro-trail-cyan': { currency: 'coins', cost: 150 },
+  'airflow-slipstream': { currency: 'coins', cost: 500 },
+  'nitro-trail-gold': { currency: 'coins', cost: 1200 },
+  'thruster-void': { currency: 'diamonds', cost: 15 },
+  'airflow-prism': { currency: 'diamonds', cost: 25 },
+};
+
+export const demoOffer = (itemId: string): DemoOffer | undefined =>
+  Object.hasOwn(DEMO_OFFERS, itemId) ? DEMO_OFFERS[itemId] : undefined;
+export const demoBalance = (snapshot: ExperienceSnapshot, currency: DemoCurrency): number =>
+  currency === 'points' ? snapshot.demoPoints : snapshot.demoEconomy?.[currency] ?? 0;
+export const insufficientDemo = (currency: DemoCurrency): `insufficient-demo-${DemoCurrency}` =>
+  `insufficient-demo-${currency}`;
+export const canAwardFirstFinish = (trackId: string): boolean =>
+  /^[a-z0-9-]{4,64}$/.test(trackId) && Number.isFinite(raceTrack(trackId)?.length);
+export const demoMissionBonus = (missionId: string) => ({
+  coins: missionId === 'mission-race:daily' ? 40 : 0,
+  diamonds: missionId === 'mission-race:weekly' ? 5 : 0,
 });
+
 export const DEMO_START_POINTS = 20;
 export const DEMO_RACE_REWARD = 20;
 export const DEMO_MISSION_CLAIM_REWARD = 10;
@@ -23,7 +42,7 @@ function routeFactor(trackId: string): number {
   return track?.sections.some(section => TRACK_HAZARDS.has(section.type)) ? 1.1 : 1;
 }
 
-function demoRaceReward(metrics?: DemoRaceMetrics): number {
+export function demoRaceReward(metrics?: DemoRaceMetrics): number {
   if (!metrics?.legs.length) return DEMO_RACE_REWARD;
   let distance = 0;
   let weightedChallenge = 0;
@@ -39,21 +58,4 @@ function demoRaceReward(metrics?: DemoRaceMetrics): number {
   const position = metrics.position ?? 0;
   const rankFactor = competitive && position <= metrics.rivalCount + 1 ? PLACEMENT_FACTORS[position - 1] ?? 1 : 1;
   return Math.round((10 + 2 * distanceKm) * trackFactor * aiFactor * rankFactor);
-}
-
-/** Local-only, atomically applied to the in-memory state (not a server transaction). */
-export function demoSettlement(credits: number, completionId: string, completedIds: Set<string>, metrics?: DemoRaceMetrics) {
-  if (completedIds.has(completionId)) return { status: 'duplicate' as const, credits, delta: 0 };
-  completedIds.add(completionId);
-  const delta = demoRaceReward(metrics);
-  return { status: 'completed' as const, credits: credits + delta, delta };
-}
-
-export function demoRedemption(credits: number, itemId: string, redeemed: Set<string>) {
-  if (!Object.hasOwn(DEMO_REDEMPTION_COSTS, itemId)) return { status: 'invalid' as const, credits, delta: 0 };
-  if (redeemed.has(itemId)) return { status: 'duplicate' as const, credits, delta: 0 };
-  const price = DEMO_REDEMPTION_COSTS[itemId]!;
-  if (credits < price) return { status: 'insufficient-demo-points' as const, credits, delta: 0 };
-  redeemed.add(itemId);
-  return { status: 'completed' as const, credits: credits - price, delta: -price };
 }

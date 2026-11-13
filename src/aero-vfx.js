@@ -250,7 +250,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       const calm = reducedMotion || settings.comfortable;
       quality = settings.quality === 'low' ? 0.25 : settings.quality === 'medium' ? 0.5 : 1;
       if (calm) quality = Math.min(quality, 0.5);
-      time += dt;
+      if (!calm) time += dt; // Reduced Motion/Comfortable: shader clocks and the showroom emission sweep hold still
       const rollEnabled = enabled && !calm && settings.quality !== 'low' && settings.airflowDensity > 0 && settings.airflowOpacity > 0;
       const rolling = active && car.altitude > 0 && car.trick && !car.trick.done && car.trick.time < TRICK_ROLL_TIME;
       rollStrength = rollEnabled ? THREE.MathUtils.damp(rollStrength, rolling ? 1 : 0, rolling ? 35 : 8, dt) : 0;

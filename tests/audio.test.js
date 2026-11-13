@@ -355,3 +355,39 @@ test('road supplies have distinct timbres and capacity-sized tails, with bounded
   sound.cue('pickup-overcharge');
   assert.equal(nodes.length, capped, 'rapid collections respect the voice cap');
 });
+
+test('reward and victory play distinct notes on SFX and mute cancels their tails', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  sound.setMusic(false);
+  const cueVoices = start => nodes.slice(start).filter(node => node.kind === 'oscillator' && node.started !== undefined);
+  let start = nodes.length;
+  sound.cue('reward-credited');
+  const reward = cueVoices(start);
+  assert.equal(reward.length, 2);
+  assert.ok(reward[1].frequency.value > reward[0].frequency.value);
+  start = nodes.length;
+  sound.cue('victory');
+  const victory = cueVoices(start);
+  assert.ok(victory.length >= 5);
+  assert.ok(Math.max(...victory.map(node => node.stopped)) >= 1.5);
+  sound.setEnabled(false);
+  assert.ok(victory.every(node => node.stopped === undefined));
+  start = nodes.length;
+  sound.cue('reward-credited');
+  assert.deepEqual(cueVoices(start), []);
+});
+
+test('backgrounding cancels pending stingers and suppresses new sounds', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const start = nodes.length;
+  sound.cue('victory');
+  const scheduled = nodes.slice(start).filter(node => node.kind === 'oscillator');
+  assert.ok(scheduled.length >= 5);
+  sound.setHidden(true);
+  assert.ok(scheduled.every(node => node.stopped === undefined));
+  const hidden = nodes.length;
+  sound.cue('reward-credited');
+  assert.equal(nodes.length, hidden);
+});

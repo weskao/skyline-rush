@@ -41,7 +41,8 @@ for (const viewport of [
   { width: 1440, height: 900 }, // desktop
 ]) {
   test.describe(`Wave 3 earned results layout ${viewport.width}x${viewport.height}`, () => {
-    test.use({ viewport, hasTouch: viewport.width < 900 });
+    test.use({ viewport, hasTouch: viewport.width < 900,
+      reducedMotion: viewport.width === 667 ? 'reduce' : 'no-preference' });
 
     test('reward stays with the result summary and clear of action targets', async ({ gameplayPage: page }) => {
       await selectLocale(page, 'zh-TW');
@@ -91,6 +92,14 @@ for (const viewport of [
         // The strip itself is the tap target; the details rise as a panel and close again.
         await reward.click({ position: { x: 20, y: 10 } });
         await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        const coins = reward.locator('.wave3-demo-results__coin-credit');
+        await expect(coins).toBeVisible();
+        await expect(coins.locator('.wave3-demo-results__balance-value')).toHaveText(/^\d+$/);
+        if (viewport.width === 667) {
+          await expect(coins).not.toHaveAttribute('data-reward-reveal', '');
+          const amount = await coins.locator('.wave3-demo-results__points').textContent();
+          await expect(coins.locator('.wave3-demo-results__balance-value')).toHaveText(amount.match(/\d+/)[0]);
+        }
       } else await expect(toggle).toBeHidden();
       await expect.poll(() => page.evaluate(clipped), { timeout: ciTimeout(3000) }).toEqual([]);
       if (SHOTS) {

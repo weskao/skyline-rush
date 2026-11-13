@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { inject, computed } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
 import { GARAGE_SKINS, SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
@@ -7,6 +7,7 @@ import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, se
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
+const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 defineProps<{ locale: string }>();
 const animatedArtworkSrc = (id: string): string =>
   `${import.meta.env.BASE_URL}feature-assets/garage-animated/${id}@3x.gif`;
@@ -83,18 +84,6 @@ const statusText = (id: SkinId, locale: string) => {
     'zh-TW': { trial: '免費試用', equipped: '已裝備', owned: '已擁有', locked: '未解鎖' } } as const)[locale === 'zh-TW' ? 'zh-TW' : 'en'][state];
 };
 
-function actionLabel(id: SkinId, category: SkinCategory, locale: string): string {
-  const entry = view(id);
-  if (!entry?.canEquip) return statusText(id, locale);
-  if (!isPreviewOnly(id, category)) return locale === 'zh-TW' ? '先選卡片' : 'Select card';
-  if (entry.owned) return locale === 'zh-TW' ? '套用' : 'Equip';
-  return locale === 'zh-TW' ? '免費試用' : 'Try free';
-}
-
-function confirmPreview(id: SkinId, category: SkinCategory): void {
-  if (isPreviewOnly(id, category) && view(id)?.canEquip) equipGarageSkin(id);
-}
-
 </script>
 
 <template>
@@ -102,9 +91,7 @@ function confirmPreview(id: SkinId, category: SkinCategory): void {
   <section id="garage-vfx-catalog" class="garage-vfx-catalog" data-preview-contract="live-shared-aero" :data-release-mode="GARAGE_RELEASE_MODE"
     aria-labelledby="garage-vfx-catalog-heading">
     <h3 id="garage-vfx-catalog-heading">{{ locale === 'zh-TW' ? '外觀特效收藏' : 'VFX collection' }}</h3>
-    <p class="garage-vfx-message">{{ locale === 'zh-TW'
-      ? '點選卡片即時預覽，再按「套用」或「免費試用」確認。離開車庫會還原未確認的預覽。'
-      : 'Select a card to preview it, then choose Equip or Try free. Leaving the Garage restores the equipped effect.' }}</p>
+    <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '點選卡片可預覽，按「試用」暫時裝備。重新載入後仍會記住你在此帳號最後的選擇，但這不是擁有權；試用結束後會還原為預設。' : 'Select a card to preview, then Try to equip temporarily. Your last pick is remembered on reload for this account, but it is not ownership; it returns to default when the trial ends.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
     <section id="garage-vfx-live-loadout" class="garage-vfx-live-loadout" :aria-label="locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance'">
       <h4>{{ locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance' }}</h4>
       <ul class="garage-vfx-loadout-grid">
@@ -152,13 +139,11 @@ function confirmPreview(id: SkinId, category: SkinCategory): void {
             <strong>{{ skin.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
             <small class="garage-skin-status">{{ statusText(skin.id, locale) }}</small>
             <small class="garage-skin-preview-label" :aria-hidden="!isPreviewOnly(skin.id, skin.category)">{{ locale === 'zh-TW' ? '預覽中' : 'Previewing' }}</small>
-            <span class="garage-selection-flash" aria-hidden="true"></span>
           </button>
           <div class="garage-vfx-actions">
-            <button class="garage-skin-action" type="button"
-              :disabled="!isPreviewOnly(skin.id, skin.category) || !view(skin.id)?.canEquip"
-              @click.stop="confirmPreview(skin.id, skin.category)">
-              {{ actionLabel(skin.id, skin.category, locale) }}
+            <button class="garage-skin-action" type="button" :disabled="!view(skin.id)?.canEquip"
+              @click.stop="equipGarageSkin(skin.id) && cue('equip-confirmed')">
+              {{ view(skin.id)?.state === 'equipped' ? (locale === 'zh-TW' ? '已裝備' : 'Equipped') : view(skin.id)?.owned ? (locale === 'zh-TW' ? '裝備' : 'Equip') : GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '免費試用' : 'Try free') : (locale === 'zh-TW' ? '未解鎖' : 'Locked') }}
             </button>
           </div>
         </li>
@@ -216,13 +201,14 @@ function confirmPreview(id: SkinId, category: SkinCategory): void {
 .garage-vfx-message { font-size: 12px; line-height: 1.45; color: #c2d4e3; margin: 6px 0 10px; }
 .garage-vfx-category { margin: 12px 0; }
 .garage-vfx-category h4 { font-size: 13px; margin: 0 0 6px; }
+/* 114px = 112px art frame + borders: three cards fit the 358px list of a 390px phone, art stays native 96px. */
 .garage-vfx-category ul {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 138px), 1fr));
-  gap: 10px; padding: 0; margin: 0; list-style: none;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 114px), 1fr));
+  gap: 6px; padding: 0; margin: 0; list-style: none;
 }
 .garage-vfx-category li.garage-skin-card {
   box-sizing: border-box; position: relative; isolation: isolate;
-  min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
   padding: 0; text-align: center;
   border: 1px solid hsl(var(--card-hue) 63% 59% / .5);
   border-radius: 14px 6px 14px 6px;
@@ -238,8 +224,8 @@ function confirmPreview(id: SkinId, category: SkinCategory): void {
 }
 .garage-skin-preview-hitarea {
   position: relative; z-index: 1; flex: 1; width: 100%; min-height: 0;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  border: 0; border-radius: inherit; overflow: hidden; padding: 12px 4px 8px; color: inherit;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  border: 0; border-radius: inherit; padding: 2px 0 4px; color: inherit;
   text-align: center; background: transparent; cursor: pointer; touch-action: manipulation;
 }
 /* Press feedback belongs to the whole card, never a dimmed box around its upper part. */
@@ -274,21 +260,20 @@ function confirmPreview(id: SkinId, category: SkinCategory): void {
 }
 .garage-vfx-fallback { color: #c4e7f0; font-size: 12px; overflow-wrap: anywhere; }
 .garage-skin-card strong {
-  min-height: 35px; font-size: 12px; line-height: 1.5; color: #ecf6ff;
+  padding: 0 4px; font-size: 12px; line-height: 1.3; color: #ecf6ff;
   font-weight: 750; overflow-wrap: anywhere; pointer-events: none;
 }
-.garage-skin-preview-label {
-  display: block; min-height: 15px; font-size: 11px; font-weight: 750;
-  color: #bdefff; opacity: 0; pointer-events: none;
-}
-.garage-skin-card[data-preview-only="true"] .garage-skin-preview-label { opacity: 1; }
-.garage-skin-status {
+/* One state pill per card: "Previewing" takes the status pill's place instead of its own row. */
+.garage-skin-status, .garage-skin-preview-label {
   font-size: 11px; min-height: 19px; padding: 1px 7px; border-radius: 999px;
   background: hsl(var(--card-hue) 82% 54% / .13);
   color: hsl(var(--card-hue) 91% 80%); border: 1px solid hsl(var(--card-hue) 60% 61% / .28);
   pointer-events: none;
 }
-.garage-vfx-actions { position: relative; z-index: 2; width: 100%; display: flex; justify-content: center; margin-top: auto; padding: 0 8px 10px; box-sizing: border-box; }
+.garage-skin-preview-label { display: none; font-weight: 750; color: #bdefff; }
+.garage-skin-card[data-preview-only="true"] .garage-skin-preview-label { display: block; }
+.garage-skin-card[data-preview-only="true"] .garage-skin-status { display: none; }
+.garage-vfx-actions { position: relative; z-index: 2; width: 100%; display: flex; justify-content: center; margin-top: auto; padding: 0 5px 5px; box-sizing: border-box; }
 .garage-vfx-actions .garage-skin-action {
   display: block; min-height: 44px; width: 100%; border-radius: 10px 4px 10px 4px;
   border: 1px solid hsl(var(--card-hue) 82% 67% / .85);
@@ -311,7 +296,7 @@ function confirmPreview(id: SkinId, category: SkinCategory): void {
     0 0 23px hsl(var(--card-hue) 88% 58% / .32), inset 0 0 20px hsl(var(--card-hue) 80% 48% / .15);
 }
 .garage-skin-card[data-preview-active="true"]::before {
-  content: '◉'; position: absolute; top: 7px; right: 9px;
+  content: '◉'; position: absolute; top: 4px; right: 6px;
   z-index: 2; font-size: 13px; color: hsl(var(--card-hue) 95% 78%);
   pointer-events: none;
 }
