@@ -46,13 +46,16 @@ Ultra without the gate); the shader-warmup and black-frame specs run both looks.
   no longer holds for the shipped Medium+ look. Each item below follows the owner decisions at the top (realistic
   first, licensed sources in the manifest, procedural only as Low/load-failure fallback) and the shared rules (no
   change to the track frame, lanes, collisions or ports; deterministic chunks; budgets; no compile after GO).
-  Gap list, constraints and the open owner decisions D1–D3: [coast-full-scene-gap.md](coast-full-scene-gap.md).
-  - [ ] Owner decisions D1 (Coast skyline buildings: the board has none), D2 (bridge towers), D3 (sky source).
-  - [ ] Skyline buildings: realistic 3D/PBR towers (facade materials, windows, night emissive) instead of the
-    procedural blocks.
+  Gap list, constraints and the owner decisions D1–D3: [coast-full-scene-gap.md](coast-full-scene-gap.md).
+  - [x] Owner decisions (2026-11-13): D1 remove the skyline buildings from Coast (the board has none; Neon keeps
+    its city), D2 remove the bridge towers from Coast (other classic tracks keep theirs), D3 the visible sky is
+    the existing Poly Haven HDRIs at a higher resolution.
+  - [ ] Skyline buildings and bridge towers: removed from Coast in the `?look=3d` look (D1, D2); no realistic
+    towers are built.
   - [ ] Sea: a realistic water surface (waves/normal detail, sky and sun reflection, shoreline/foam) in day, rain
     and sunset.
-  - [ ] Sky: HDRI or sky dome matched to each Coast preset (day, rain, sunset), consistent with the lighting HDRIs.
+  - [ ] Sky (D3): each Coast preset's Poly Haven lighting HDRI (day, rain, sunset) shown at a higher resolution on
+    a sky dome, with the sun disc and directional light aligned to the HDRI sun.
   - [ ] Distant terrain and remaining procedural props: realistic far hills/coastline, matching the close scans.
   - [ ] The concept-board parity review and owner sign-off below wait for these items.
 - [ ] Full verification and exact-HEAD CI, no silent map topology changes.
