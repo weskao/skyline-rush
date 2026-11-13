@@ -169,3 +169,85 @@ test('Medium keeps env-map-only wet asphalt: no mirror pass', async () => {
   assert.equal(reflection.strength, 0);
   assets.dispose();
 });
+
+test('the sky dome controller gets the track, preset, tier and Ultra flag every frame, and is disposed with the assets', () => {
+  const calls = [];
+  const sky = { update: (...args) => { calls.push(args); }, dispose: () => calls.push('dispose') };
+  const assets = createCoastAssets({ scenery, cache: never, sky });
+  assert.equal(assets.update('coast', 'high', false, 'dusk', true), false, 'a sky swap is a texture swap: no shader warmup');
+  assets.update('coast', 'medium', true, 'rain', false);
+  assert.deepEqual(calls, [['coast', 'dusk', 'high', true], ['coast', 'rain', 'medium', false]]);
+  assets.dispose();
+  assert.equal(calls.at(-1), 'dispose');
+});
+
+test('the water controller runs after the sky every frame, lends its shore mask to the scenery layer, and is disposed with the assets', async () => {
+  const calls = [], shore = { begin() {}, stamp() {}, end() {} };
+  const sky = { update: () => { calls.push('sky'); }, dispose: () => calls.push('sky dispose') };
+  const sea = { shore, update: (...args) => { calls.push(args); }, dispose: () => calls.push('sea dispose') };
+  const handle = { kind: 'model', instance: () => new THREE.Group(), release() {} };
+  const attached = [];
+  const assets = createCoastAssets({ scenery: { attachModel: (...args) => attached.push(args), detachModel() {} }, cache: { load: async () => handle }, sky, sea });
+  assert.equal(assets.update('coast', 'high', false, 'dusk', true), false, 'the water program exists from creation: no shader warmup');
+  assert.deepEqual(calls, ['sky', ['coast', 'dusk', 'high']], 'the water reads the dome the sky just updated');
+  await tick();
+  assets.update('coast', 'high', false, 'dusk', true);
+  assert.equal(attached[0][1], shore, 'the scenery layer stamps its sea-level footprints into the water mask');
+  assets.dispose();
+  assert.deepEqual(calls.slice(-2), ['sea dispose', 'sky dispose']);
+});
+
+test('the procedural cones leave Coast once the scan coast is attached on Medium+, and come back everywhere else', async () => {
+  const mountains = { material: { visible: true } };
+  const handle = { kind: 'model', instance: () => new THREE.Group(), release() {} };
+  const assets = createCoastAssets({ scenery, cache: { load: async () => handle }, mountains });
+  assets.update('coast', 'high', false);
+  assert.equal(mountains.material.visible, true, 'cones until the GLB is attached (and for good if it fails to load)');
+  await tick();
+  assets.update('coast', 'high', false);
+  assert.equal(mountains.material.visible, false, 'the far headlands replace them');
+  assets.update('coast', 'low', false);
+  assert.equal(mountains.material.visible, true, 'Low draws no GLB: it keeps the cones');
+  assets.update('coast', 'medium', false);
+  assert.equal(mountains.material.visible, false);
+  assets.update('neon', 'high', false);
+  assert.equal(mountains.material.visible, true, 'other tracks keep their mountains');
+  assets.update('coast', 'high', false);
+  assets.dispose();
+  assert.equal(mountains.material.visible, true);
+});
+
+test('D1, D2: the skyline buildings and bridge towers leave Coast with the cones on Medium+; Low, other tracks and a missing GLB keep them', async () => {
+  const rig = () => {
+    const city = { visible: true }, steel = new THREE.MeshStandardMaterial(), trim = new THREE.MeshBasicMaterial(), tower = new THREE.Group();
+    tower.add(new THREE.Mesh(new THREE.BoxGeometry(), steel), new THREE.Mesh(new THREE.BoxGeometry(), trim));
+    return { city, towers: [tower], shown: () => [city.visible, steel.visible, trim.visible] };
+  };
+  const handle = { kind: 'model', instance: () => new THREE.Group(), release() {} };
+  const r = rig(), assets = createCoastAssets({ scenery, cache: { load: async () => handle }, city: r.city, towers: r.towers });
+  assets.update('coast', 'high', false);
+  assert.deepEqual(r.shown(), [true, true, true], 'until the scan coast is attached');
+  await tick();
+  assets.update('coast', 'high', false);
+  assert.deepEqual(r.shown(), [false, false, false], 'the board has no city or towers: the sea arch is the landmark');
+  assets.update('coast', 'low', false);
+  assert.deepEqual(r.shown(), [true, true, true], 'owner decision 2026-11-14: Low keeps the develop look');
+  assets.update('coast', 'medium', false);
+  assert.deepEqual(r.shown(), [false, false, false]);
+  r.city.visible = true; // world.js sets it on every track change
+  assets.update('neon', 'high', false);
+  assert.deepEqual(r.shown(), [true, true, true], 'Neon keeps its city, the other classics their towers');
+  assets.update('coast', 'high', false);
+  assets.dispose();
+  assert.deepEqual(r.shown().slice(1), [true, true], 'the tower materials are handed back');
+  const failed = rig(), fallback = createCoastAssets({ scenery, cache: { load: async () => ({ kind: 'fallback', fallback: 'procedural-scenery', reason: 'network' }) }, city: failed.city, towers: failed.towers });
+  const warn = console.warn; console.warn = () => {};
+  try { fallback.update('coast', 'high', false); await tick(); fallback.update('coast', 'high', false); } finally { console.warn = warn; }
+  assert.deepEqual(failed.shown(), [true, true, true], 'a failed load is the procedural Coast, city and towers included');
+  fallback.dispose();
+});
+
+test('world.js hands the procedural sky dome, sun disc, sea plane, sea lines, mountains, city and towers to the Coast assets', async () => {
+  const { readFileSync } = await import('node:fs');
+  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers \}, canvas\.dataset\)/);
+});
