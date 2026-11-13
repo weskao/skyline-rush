@@ -25,8 +25,8 @@ const returnToRace = () => document.querySelector<HTMLButtonElement>('#garage-cl
 <template>
   <section class="wave3-demo-entry" data-wave3-demo-entry :aria-label="locale === 'zh-TW' ? '試玩外觀與收藏' : 'Demo cosmetics and collection'">
     <template v-if="page === 'home'">
-      <p>{{ locale === 'zh-TW' ? '本機試玩：完成比賽賺取試玩點數，兌換暫時外觀；並非永久收藏。' :
-        'Local demo: race for disposable demo points and temporary cosmetic previews. No permanent ownership.' }}</p>
+      <p>{{ locale === 'zh-TW' ? '完成賽事與挑戰，取得本機試玩獎勵並兌換暫時外觀。' :
+        'Race and complete challenges to earn local demo rewards and redeem temporary cosmetics.' }}</p>
       <nav class="wave3-demo-entry-actions">
         <button type="button" data-wave3-open-store @click="page = 'store'">{{ locale === 'zh-TW' ? '開啟試玩商城' : 'Open Demo Store' }}</button>
         <button type="button" data-wave3-open-collection @click="page = 'collection'">{{ locale === 'zh-TW' ? '試玩收藏' : 'Demo Collection' }}</button>

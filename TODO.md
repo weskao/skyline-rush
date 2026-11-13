@@ -1,3 +1,10 @@
+# 2026-11-13 — Wave 3 trial coins, diamonds and cosmetic offers
+
+- [x] Extend the existing frontend-first design with BDD scenarios, trial economy rules and verified-economy handoff.
+- [x] RED → GREEN covers race credit, first finish, daily and weekly claims, currency-specific redemption, old and extended v1 checkpoints, reset and account isolation.
+- [x] Focused Wave 3 and module-size tests passed. Both locked and trial Vite builds passed bundle audits.
+- [ ] Confirm the exact-HEAD full CI gate and verify the finish, compact result details and redemption on physical phones.
+
 # 2026-11-13 — Demo reward (試玩獎勵) results card fully visible
 
 - [x] RED: zh-TW guard reported the card scrolling 262/198px on desktop/tablet (missions and fine print cut) and four lines hidden in short landscape. GREEN: no height cap; crest moved into the header, mission tiles and fine print visible at 1440×900, 768×1024, 390×844, 360×740.

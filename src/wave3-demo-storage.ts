@@ -1,4 +1,4 @@
-import { WAVE3_CATALOG_VERSION, WAVE3_EXPERIENCE_VERSION } from './wave3-experience-contract.ts';
+import { DEMO_BALANCE_LIMIT, WAVE3_CATALOG_VERSION, WAVE3_EXPERIENCE_VERSION, validDemoEconomy } from './wave3-experience-contract.ts';
 import type { ExperienceSnapshot } from './wave3-experience-contract.ts';
 import type { Wave3DemoCheckpoint } from './wave3-local-demo.ts';
 
@@ -17,15 +17,21 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 const exact = (value: Record<string, unknown>, keys: readonly string[]) =>
   Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
-const nonnegativeInt = (value: unknown, limit = 1_000_000_000): value is number =>
+const nonnegativeInt = (value: unknown, limit = DEMO_BALANCE_LIMIT): value is number =>
   Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) <= limit;
 const account = (id: string | null): string | null => id === null ? 'guest' : ACCOUNT.test(id) ? id : null;
 const withinTime = (time: unknown, min: number, max: number): time is number =>
   typeof time === 'number' && Number.isSafeInteger(time) && time >= min && time <= max;
 
 function validSnapshot(value: unknown, id: string, savedAt: number): value is ExperienceSnapshot {
-  if (!isRecord(value) || !exact(value, ['version', 'catalogVersion', 'mode', 'authority',
-    'syncState', 'accountId', 'missions', 'demoPoints', 'demoInventory', 'equippedPreview', 'updatedAt'])) return false;
+  if (!isRecord(value)) return false;
+  const keys = ['version', 'catalogVersion', 'mode', 'authority',
+    'syncState', 'accountId', 'missions', 'demoPoints', 'demoInventory', 'equippedPreview', 'updatedAt'];
+  if (Object.hasOwn(value, 'demoEconomy')) {
+    if (!validDemoEconomy(value.demoEconomy)) return false;
+    keys.push('demoEconomy');
+  }
+  if (!exact(value, keys)) return false;
   if (value.version !== WAVE3_EXPERIENCE_VERSION || value.catalogVersion !== WAVE3_CATALOG_VERSION ||
     value.mode !== 'local-demo' || value.authority !== 'local' || value.syncState !== 'local-only' ||
     value.accountId !== id || !nonnegativeInt(value.demoPoints) ||

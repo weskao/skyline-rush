@@ -1,6 +1,6 @@
-import { WAVE3_CATALOG_VERSION, WAVE3_EXPERIENCE_VERSION } from './wave3-experience-contract.ts';
+import { DEMO_BALANCE_LIMIT, WAVE3_CATALOG_VERSION, WAVE3_EXPERIENCE_VERSION, validDemoEconomy } from './wave3-experience-contract.ts';
 import type { ExperienceSnapshot, ExperienceResult, Wave3ExperiencePort, GameEvent, RaceCompletion, Wave3Status } from './wave3-experience-contract.ts';
-import { DEMO_ELIGIBLE_MODES, DEMO_MISSION_CLAIM_REWARD, DEMO_REDEMPTION_COSTS, DEMO_START_POINTS, demoRedemption, demoSettlement } from './wave3-demo-settlement.ts';
+import { DEMO_ELIGIBLE_MODES, DEMO_MISSION_CLAIM_REWARD, DEMO_START_POINTS, canAwardFirstFinish, demoMissionBonus, demoOffer, demoRaceReward, insufficientDemo } from './wave3-demo-settlement.ts';
 import { MISSION_DEFINITIONS, createMissionPeriodState, missionPeriodBounds, projectMissionState, reduceMissionEvent } from './wave3-demo-missions.ts';
 
 export type Wave3DemoCheckpoint = Readonly<{
@@ -26,6 +26,7 @@ export function createWave3LocalDemo(options: { now?: () => number } = {}): Wave
   const now = options.now ?? Date.now;
   const listeners = new Set<(value: ExperienceSnapshot) => void>();
   let accountId = 'guest', demoPoints = DEMO_START_POINTS, equippedPreview: string | null = null;
+  let coins = 0, diamonds = 0, firstFinishes = new Set<string>();
   let seenEvents = new Set<string>(), settled = new Set<string>(), redeemed = new Set<string>();
   let period = createMissionPeriodState(accountId, now());
   const blankMissions = () => Object.fromEntries(Object.entries(GOALS).map(([id, goal]) =>
@@ -49,11 +50,23 @@ export function createWave3LocalDemo(options: { now?: () => number } = {}): Wave
     mode: 'local-demo' as const, authority: 'local' as const, syncState: 'local-only' as const,
     accountId, demoPoints, equippedPreview, updatedAt: now(),
     demoInventory: Object.freeze([...redeemed]),
+    demoEconomy: Object.freeze({ coins, diamonds, firstFinishes: Object.freeze([...firstFinishes]) }),
     missions: Object.freeze(Object.fromEntries(Object.entries(missions).map(([id, progress]) => [id, Object.freeze({ ...progress })]))),
     });
   };
   const publish = () => { const value = snapshot(); for (const fn of listeners) fn(value); return value; };
-  const result = (status: Wave3Status, deltaDemoPoints = 0): ExperienceResult => ({ status, deltaDemoPoints, snapshot: snapshot() });
+  const result = (status: Wave3Status, deltaDemoPoints = 0, deltaDemoCoins = 0, deltaDemoDiamonds = 0): ExperienceResult =>
+    ({ status, deltaDemoPoints, deltaDemoCoins, deltaDemoDiamonds, snapshot: snapshot() });
+  const credit = (points: number, coinReward: number, diamondReward = 0): ExperienceResult => {
+    const earnedPoints = Math.min(DEMO_BALANCE_LIMIT - demoPoints, points);
+    const earnedCoins = Math.min(DEMO_BALANCE_LIMIT - coins, coinReward);
+    const earnedDiamonds = Math.min(DEMO_BALANCE_LIMIT - diamonds, diamondReward);
+    demoPoints += earnedPoints;
+    coins += earnedCoins;
+    diamonds += earnedDiamonds;
+    return { status: 'completed', deltaDemoPoints: earnedPoints, deltaDemoCoins: earnedCoins,
+      deltaDemoDiamonds: earnedDiamonds, snapshot: publish() };
+  };
   const validScope = (value: { accountId?: string }) => value.accountId === undefined || value.accountId === accountId;
   const validEvent = (e: GameEvent) => e && e.schemaVersion === WAVE3_EXPERIENCE_VERSION && validId(e.eventId) &&
     validId(e.completionId) && validId(e.trackId) && validTime(e.occurredAt) &&
@@ -63,6 +76,7 @@ export function createWave3LocalDemo(options: { now?: () => number } = {}): Wave
     typeof c.mode === 'string' && typeof c.eligible === 'boolean' && validScope(c);
   const reset = () => {
     demoPoints = DEMO_START_POINTS; equippedPreview = null;
+    coins = 0; diamonds = 0; firstFinishes = new Set();
     seenEvents = new Set(); settled = new Set(); redeemed = new Set();
     period = createMissionPeriodState(accountId, now());
     missions = blankMissions();
@@ -74,9 +88,10 @@ export function createWave3LocalDemo(options: { now?: () => number } = {}): Wave
     if (!incoming || incoming.mode !== 'local-demo' || incoming.authority !== 'local' ||
       incoming.syncState !== 'local-only' || incoming.accountId !== accountId ||
       incoming.version !== WAVE3_EXPERIENCE_VERSION || incoming.catalogVersion !== WAVE3_CATALOG_VERSION ||
-      !Number.isSafeInteger(incoming.demoPoints) || incoming.demoPoints < 0 || incoming.demoPoints > 1_000_000_000 ||
+      !Number.isSafeInteger(incoming.demoPoints) || incoming.demoPoints < 0 || incoming.demoPoints > DEMO_BALANCE_LIMIT ||
+      (Object.hasOwn(incoming, 'demoEconomy') && !validDemoEconomy(incoming.demoEconomy)) ||
       !Array.isArray(incoming.demoInventory) || incoming.demoInventory.length > 256 ||
-      !incoming.demoInventory.every(id => Object.hasOwn(DEMO_REDEMPTION_COSTS, id)) ||
+      !incoming.demoInventory.every(id => demoOffer(id)) ||
       new Set(incoming.demoInventory).size !== incoming.demoInventory.length ||
       (incoming.equippedPreview !== null && !incoming.demoInventory.includes(incoming.equippedPreview)) ||
       !incoming.missions || ![Object.keys(GOALS).sort().join('|'), Object.keys(BASE_GOALS).sort().join('|')]
@@ -98,6 +113,9 @@ export function createWave3LocalDemo(options: { now?: () => number } = {}): Wave
       if (!validCheckpoint(value)) return null;
       const incoming = value.snapshot;
       demoPoints = incoming.demoPoints;
+      coins = incoming.demoEconomy?.coins ?? 0;
+      diamonds = incoming.demoEconomy?.diamonds ?? 0;
+      firstFinishes = new Set(incoming.demoEconomy?.firstFinishes);
       redeemed = new Set(incoming.demoInventory);
       equippedPreview = incoming.equippedPreview;
       seenEvents = new Set(value.seenEvents);
@@ -135,22 +153,36 @@ export function createWave3LocalDemo(options: { now?: () => number } = {}): Wave
     settleCompletion(completion) {
       if (!validCompletion(completion)) return result('invalid');
       if (!completion.eligible || !DEMO_ELIGIBLE_MODES.has(completion.mode)) return result('ineligible');
-      const attempt = demoSettlement(demoPoints, completion.completionId, settled, completion.demoRace);
-      if (attempt.status === 'completed') { demoPoints = attempt.credits; publish(); }
-      return result(attempt.status, attempt.delta);
+      if (settled.has(completion.completionId)) return result('duplicate');
+      const points = demoRaceReward(completion.demoRace);
+      settled.add(completion.completionId);
+      const first = firstFinishes.size < 128 && !firstFinishes.has(completion.trackId) &&
+        canAwardFirstFinish(completion.trackId);
+      if (first) firstFinishes.add(completion.trackId);
+      return credit(points, 2 * points + (first ? 30 : 0));
     },
     claimMission(missionId) {
       const mission = Object.hasOwn(missions, missionId) ? missions[missionId] : null;
       if (!mission) return result('invalid');
       if (mission.claimed) return result('duplicate');
       if (mission.progress < mission.goal) return result('ineligible');
-      mission.claimed = true; demoPoints += mission.rewardDemoPoints; publish();
-      return result('completed', mission.rewardDemoPoints);
+      mission.claimed = true;
+      const bonus = demoMissionBonus(missionId);
+      return credit(mission.rewardDemoPoints, bonus.coins, bonus.diamonds);
     },
     redeemPreview(itemId) {
-      const attempt = demoRedemption(demoPoints, itemId, redeemed);
-      if (attempt.status === 'completed') { demoPoints = attempt.credits; publish(); }
-      return result(attempt.status, attempt.delta);
+      const offer = demoOffer(itemId);
+      if (!offer) return result('invalid');
+      if (redeemed.has(itemId)) return result('duplicate');
+      const { currency, cost } = offer;
+      const balance = currency === 'points' ? demoPoints : currency === 'coins' ? coins : diamonds;
+      if (balance < cost) return result(insufficientDemo(currency));
+      if (currency === 'points') demoPoints -= cost;
+      if (currency === 'coins') coins -= cost;
+      if (currency === 'diamonds') diamonds -= cost;
+      redeemed.add(itemId);
+      return { status: 'completed', snapshot: publish(), deltaDemoPoints: currency === 'points' ? -cost : 0,
+        deltaDemoCoins: currency === 'coins' ? -cost : 0, deltaDemoDiamonds: currency === 'diamonds' ? -cost : 0 };
     },
     equipPreview(itemId) {
       if (!redeemed.has(itemId)) return result('ineligible');

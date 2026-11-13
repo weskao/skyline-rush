@@ -120,6 +120,8 @@ body[data-vfx-quality="low"] .wave3-demo-results__credit[data-reward-reveal]::af
   .wave3-demo-results__points { flex: none; margin: 0; white-space: nowrap; }
   .wave3-demo-results__balance-label { font-size: 10px; }
   .wave3-demo-results__balance-value { font-size: 13px; }
+  .wave3-demo-results:not([data-open]) .wave3-demo-results__coin-credit { display: none; }
+  .wave3-demo-results[data-open] .wave3-demo-results__coin-credit { margin-bottom: 6px; }
   .wave3-demo-results__status { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
   /* Collapsed strip: detailed settlement text stays available to screen readers. */
   .wave3-demo-results--earned:not([data-open]) .wave3-demo-results__status,

@@ -4,12 +4,14 @@ import GarageArtworkImage from './GarageArtworkImage.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
 import { SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
-import type { ExperienceSnapshot, Wave3ExperiencePort, Wave3Status } from './wave3-experience-contract.ts';
+import type { DemoCurrency, ExperienceSnapshot, Wave3ExperiencePort, Wave3Status } from './wave3-experience-contract.ts';
 import {
   WAVE3_DEMO_ITEMS, WAVE3_DEMO_STORE_ART, demoItemStatus, demoItemStatusText,
   demoRedemptionState,
 } from './wave3-demo-catalog.ts';
-import type { DemoTrialAccess, DemoRedeemState } from './wave3-demo-catalog.ts';
+import type { DemoTrialAccess, DemoRedeemState, Wave3DemoItem } from './wave3-demo-catalog.ts';
+import { demoBalance } from './wave3-demo-settlement.ts';
+import { demoCurrencyLabel } from './wave3-currency-view.ts';
 
 const props = withDefaults(defineProps<{
   port: Wave3ExperiencePort;
@@ -22,6 +24,10 @@ const emit = defineEmits<{
   (event: 'open-collection'): void;
 }>();
 const tr = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
+const currencyLabel = (currency: DemoCurrency) => demoCurrencyLabel(currency, props.locale);
+const priceText = (item: Wave3DemoItem) => item.currency && item.demoPrice !== null
+  ? `${item.demoPrice.toLocaleString(props.locale === 'zh-TW' ? 'zh-TW' : 'en-US')} ${currencyLabel(item.currency)}`
+  : tr('Preview only', '僅供預覽');
 const snapshot = ref<ExperienceSnapshot>(props.port.getSnapshot());
 const filter = ref<'all' | SkinCategory>('all');
 const categories = ['all', ...SKIN_CATEGORIES] as const;
@@ -50,6 +56,8 @@ const items = computed(() => WAVE3_DEMO_ITEMS.filter(item => filter.value === 'a
 const selected = computed(() => WAVE3_DEMO_ITEMS.find(item => item.id === selectedId.value));
 const redeemState = computed(() => selected.value
   ? demoRedemptionState(selected.value.id, snapshot.value) : 'invalid');
+const canRequestRedemption = computed(() => redeemState.value === 'ready' || redeemState.value.startsWith('insufficient-demo-'));
+const selectedBalance = computed(() => selected.value?.currency ? demoBalance(snapshot.value, selected.value.currency) : null);
 const statusFor = (id: SkinId) => {
   void props.skinRevision; // Re-render when the integration owner's trial session changes.
   return demoItemStatus(id, snapshot.value, props.trialAccess?.(id));
@@ -73,6 +81,8 @@ function feedback(status: DemoRedeemState | Wave3Status): string {
   switch (status) {
     case 'completed': return tr('Demo unlocked. Open Demo Collection to equip.', '試玩取得成功，請前往試玩收藏裝備。');
     case 'insufficient-demo-points': return tr('Not enough demo points. Finish a race or claim a demo mission.', '試玩點數不足，請完成比賽或領取試玩任務。');
+    case 'insufficient-demo-coins': return tr('Not enough demo coins. Finish races or claim the daily race mission.', '試玩金幣不足，請完成競速或領取每日競速任務。');
+    case 'insufficient-demo-diamonds': return tr('Not enough demo diamonds. Claim the weekly race mission.', '試玩鑽石不足，請領取每週競速任務。');
     case 'duplicate': return tr('Already demo unlocked. No points were deducted.', '已試玩取得，不會重複扣點。');
     case 'unavailable': return tr('Only local demo redemption is available.', '僅支援本機試玩兌換。');
     case 'preview-only': return tr('This item can only be previewed.', '此項目僅供預覽。');
@@ -118,8 +128,8 @@ function confirmRedemption(): void {
       <div class="demo-title">
         <span class="demo-kicker">{{ tr('LOCAL · NO PAYMENT', '本機試玩 · 無付款') }}</span>
         <h3>{{ tr('Demo Store', '試玩商城') }}</h3>
-        <p>{{ tr('Disposable demo points and temporary cosmetic previews only. No real purchases or permanent ownership.',
-          '僅供使用可重設的試玩點數與暫時外觀預覽，不含真實交易或永久擁有權。') }}</p>
+        <p>{{ tr('Earn local demo rewards and redeem temporary cosmetic previews.',
+          '取得可重設的本機試玩獎勵，兌換暫時外觀。') }}</p>
       </div>
       <div class="demo-wallet" role="status" aria-live="polite">
         <Wave3DemoArt id="demo-points" :alt="tr('Demo points', '試玩點數')" />
@@ -155,7 +165,7 @@ function confirmRedemption(): void {
         </span>
         <strong>{{ item.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
         <span class="demo-state">{{ demoItemStatusText(statusFor(item.id), locale) }}</span>
-        <small v-if="item.demoPrice !== null">{{ item.demoPrice }} {{ tr('demo points', '試玩點數') }}</small>
+        <small v-if="item.demoPrice !== null">{{ priceText(item) }}</small>
         <small v-else>{{ tr('No demo redemption', '不開放試玩兌換') }}</small>
       </button>
     </div>
@@ -164,12 +174,15 @@ function confirmRedemption(): void {
       <div>
         <h4>{{ selected.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</h4>
         <p>{{ demoItemStatusText(statusFor(selected.id), locale) }} ·
-          {{ selected.demoPrice === null ? tr('Preview only', '僅供預覽') : `${selected.demoPrice} ${tr('demo points', '試玩點數')}` }}
+          {{ priceText(selected) }}
+        </p>
+        <p v-if="selected.currency && selected.currency !== 'points'" class="demo-selected-balance" role="status">
+          {{ tr('Available', '可用') }} {{ selectedBalance }} {{ currencyLabel(selected.currency) }}
         </p>
       </div>
       <div class="demo-actions">
         <button type="button" @click="emit('preview', selected.id)">{{ tr('Inspect preview', '檢視預覽') }}</button>
-        <button type="button" :disabled="redeemState !== 'ready' && redeemState !== 'insufficient-demo-points'"
+        <button type="button" :disabled="!canRequestRedemption"
           @click="requestRedemption">{{ tr('Demo redeem', '試玩兌換') }}</button>
         <button type="button" @click="emit('open-collection')">{{ tr('Demo Collection', '試玩收藏') }}</button>
       </div>
@@ -177,8 +190,8 @@ function confirmRedemption(): void {
 
     <section v-if="confirmationId" class="demo-confirm" role="group"
       :aria-label="tr('Confirm demo redemption', '確認試玩兌換')">
-      <p>{{ tr('Redeem this cosmetic for demo points? This is not a real purchase.',
-        '使用試玩點數兌換此外觀？這不是真實購買。') }}</p>
+      <p v-if="selected">{{ tr('Confirm local redemption for', '確認以本機試玩餘額兌換') }}
+        {{ priceText(selected) }}{{ tr('?', '？') }}</p>
       <div class="demo-actions">
         <button ref="confirmationButton" type="button" @click="confirmRedemption">{{ tr('Confirm demo redeem', '確認試玩兌換') }}</button>
         <button type="button" @click="cancelRedemption">{{ tr('Cancel', '取消') }}</button>
