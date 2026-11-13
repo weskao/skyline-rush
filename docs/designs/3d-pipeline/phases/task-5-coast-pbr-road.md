@@ -52,8 +52,17 @@ Ultra without the gate); the shader-warmup and black-frame specs run both looks.
     the existing Poly Haven HDRIs at a higher resolution.
   - [ ] Skyline buildings and bridge towers: removed from Coast in the `?look=3d` look (D1, D2); no realistic
     towers are built.
-  - [ ] Sea: a realistic water surface (waves/normal detail, sky and sun reflection, shoreline/foam) in day, rain
-    and sunset.
+  - [x] Sea: a water surface (baked FFT-ocean normal and foam map, Fresnel reflection of the sky dome on screen, sun
+    glitter under that sky's sun, foam where the placed rocks, cliffs and arch stand in the water, haze into the dome
+    horizon) in day, rain, sunset and fog, behind `?look=3d` on Medium+. `c3dbb1dc` (wave map, build script,
+    manifest), `1e528477` (runtime). Tests: `tests/coast-sea.test.js`, `tests/coast-assets.test.js` ("water"),
+    `tests/shader-safety.test.js` (now lints the sea shaders). Gates: `npm test` 2796 pass / 0 fail / 3 skipped,
+    typecheck, build, module-size. Real WebGL (`COAST_CAPTURE=1 COAST_PANELS=1`, desktop High / Ultra / Low and a
+    phone-size viewport on Medium): `data-coast-sea` = `water`, `procedural` on Low; one more program (76, was 75),
+    constant across the day to rain swap; draw calls unchanged or lower (the sea lines are not drawn); 60 fps.
+    Captures in ignored `../audits/task5/`. Limits: the wave map is generated (a water surface cannot be scanned);
+    the foam footprint is each piece's bounding ellipse; a floating-origin rebase shifts the wave pattern for one
+    frame. Not verified: a real phone GPU.
   - [x] Sky (D3): each Coast preset's Poly Haven lighting HDRI (day, rain, sunset, fog) shown at a higher resolution
     on a sky dome (4K; 8K on Ultra), with the sun disc and directional light aligned to the HDRI sun, behind
     `?look=3d`. `d7137534` (KTX2 textures, manifest), `ddf48900` (runtime). Tests: `tests/coast-sky.test.js`,
