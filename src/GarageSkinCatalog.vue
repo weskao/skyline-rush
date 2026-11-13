@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { inject, computed } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
 import { GARAGE_SKINS, SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
@@ -7,6 +7,7 @@ import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, se
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
+const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 defineProps<{ locale: string }>();
 const animatedArtworkSrc = (id: string): string =>
   `${import.meta.env.BASE_URL}feature-assets/garage-animated/${id}@3x.gif`;
@@ -92,7 +93,7 @@ function actionLabel(id: SkinId, category: SkinCategory, locale: string): string
 }
 
 function confirmPreview(id: SkinId, category: SkinCategory): void {
-  if (isPreviewOnly(id, category) && view(id)?.canEquip) equipGarageSkin(id);
+  if (isPreviewOnly(id, category) && view(id)?.canEquip && equipGarageSkin(id)) cue('equip-confirmed');
 }
 
 </script>

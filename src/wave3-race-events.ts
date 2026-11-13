@@ -1,5 +1,6 @@
 import { createWave3LocalDemo } from './wave3-local-demo.ts';
 import { createWave3DemoStorage } from './wave3-demo-storage.ts';
+import { missionStatus } from './wave3-demo-missions.ts';
 import { cupStandings } from './championship-cup.ts';
 import { raceTrack } from './race-tracks.ts';
 import type { RaceSeries } from './race-results.ts';
@@ -70,7 +71,8 @@ export function createWave3RaceEventBridge(experience: Wave3ExperiencePort, idFa
     finish(race: ObservedRace, intermediateStage: boolean, series?: RaceSeries): ExperienceResult | null {
       if (race.phase !== 'finished' || !race.result) return null;
       const state = memory(race);
-      if (state.accountId !== experience.getSnapshot().accountId) return null;
+      const before = experience.getSnapshot();
+      if (state.accountId !== before.accountId) return null;
       const eligible = !intermediateStage && race.result.success !== false &&
         typeof race.result.time === 'number' && Number.isFinite(race.result.time) && race.result.time > 0;
       if (eligible) {
@@ -78,10 +80,13 @@ export function createWave3RaceEventBridge(experience: Wave3ExperiencePort, idFa
         state.pending.length = 0;
         emit(race, state, 'finish', 'end');
       }
-      return experience.settleCompletion({ schemaVersion: WAVE3_EXPERIENCE_VERSION,
+      const receipt = experience.settleCompletion({ schemaVersion: WAVE3_EXPERIENCE_VERSION,
         completionId: state.completionId, accountId: state.accountId,
         trackId: race.trackId, mode: race.mode, occurredAt: Date.now(), eligible,
         ...(eligible ? { demoRace: rewardMetrics(race, series) } : {}) });
+      const missionReady = receipt.status === 'completed' && Object.entries(receipt.snapshot.missions)
+        .some(([id, mission]) => missionStatus(mission) === 'claimable' && missionStatus(before.missions[id] ?? null) !== 'claimable');
+      return missionReady ? { ...receipt, missionReady } : receipt;
     },
   };
 }

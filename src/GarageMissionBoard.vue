@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { inject, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
 import { getLocale, onLocaleChange } from './i18n.ts';
@@ -8,6 +8,7 @@ import type { Wave3PreviewItem } from './garage-wave3-preview-catalog.ts';
 import { MISSION_DEFINITIONS, missionPeriodBounds, missionStatus, trophyTier } from './wave3-demo-missions.ts';
 import type { Wave3ExperiencePort, ExperienceSnapshot, MissionProgress } from './wave3-experience-contract.ts';
 
+const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = defineProps<{ experience?: Wave3ExperiencePort | null }>();
 const locale = ref(getLocale());
 const snapshot = ref<ExperienceSnapshot | null>(null);
@@ -49,6 +50,7 @@ const TROPHY_LEVELS: Readonly<Record<string, number>> =
 function claim(id: string): void {
   if (!available.value || stateOf(id) !== 'claimable' || !props.experience) return;
   const result = props.experience.claimMission(id);
+  if (result.status === 'completed' && result.deltaDemoPoints > 0) cue('reward-credited');
   feedback.value = result.status === 'completed'
     ? label(`+${result.deltaDemoPoints} demo points`, `+${result.deltaDemoPoints} 試玩點數`)
     : label('Demo claim unavailable or already processed.', '試玩領取尚未開放或已處理。');

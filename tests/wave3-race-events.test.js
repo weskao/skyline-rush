@@ -134,3 +134,16 @@ test('multi-stage custom rewards use cumulative distance and average finishing p
   assert.equal(bridge.finish(race, false, series).deltaDemoPoints, 0);
   assert.equal(demo.getSnapshot().demoPoints, 54);
 });
+
+test('a settlement marks missions becoming claimable only on the run that crosses the goal', () => {
+  const demo = createWave3LocalDemo();
+  let count = 0;
+  const bridge = createWave3RaceEventBridge(demo, () => 'race-mission-ready-' + ++count);
+  const finish = () => {
+    const race = aRace();
+    race.phase = 'finished'; race.result = { success:true, time:60 };
+    return bridge.finish(race, false);
+  };
+  assert.equal(finish().missionReady, true);
+  assert.notEqual(finish().missionReady, true);
+});

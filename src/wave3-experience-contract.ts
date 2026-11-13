@@ -45,7 +45,7 @@ export type RaceCompletion = Readonly<{
   accountId?: string;
   demoRace?: DemoRaceMetrics;
 }>;
-export type ExperienceResult = Readonly<{ status: Wave3Status; snapshot: ExperienceSnapshot; deltaDemoPoints: number }>;
+export type ExperienceResult = Readonly<{ status: Wave3Status; snapshot: ExperienceSnapshot; deltaDemoPoints: number; missionReady?: boolean }>;
 
 /** UI seam; a future server implementation must never trust local-demo receipts. */
 export type Wave3ExperiencePort = Readonly<{
