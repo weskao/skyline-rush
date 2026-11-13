@@ -5,6 +5,18 @@
 - [x] Typecheck, module-size, production build and unit suite passed (2,757 passed, 3 skipped); Chromium screenshots reviewed for all six viewports.
 - [ ] Check the 詳情 panel on a physical iPhone in landscape and the exact-commit GitHub CI quality gate.
 
+# 2026-11-13 — Garage equipment preview and current vehicle names
+
+- [x] Render the current model name in the historical What's New highlight and its image-viewer label.
+- [x] Require a live preview before confirming any Garage VFX. Keep trial access temporary and show trial status on the card.
+- [ ] Verify exact-commit CI and physical-device touch.
+
+# 2026-11-13 — Garage selection feedback
+
+- [x] Add a shared press animation to car and paint cards and distinguish the previewed paint from the equipped paint.
+- [x] Browser RED reproduced the missing press effect. GREEN verifies click, keyboard, Reduced Motion, and explicit paint saving.
+- [ ] Check exact-commit CI.
+
 # 2026-11-13 — Shared Garage paints and car names
 
 - [x] Share all paints across both cars and make Deep Crimson available at zero stars. Keep each car's default and saved paint.
