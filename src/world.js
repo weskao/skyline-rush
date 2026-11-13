@@ -408,7 +408,7 @@ export function createWorld(canvas) {
   }
   const effectFrame = s => trackFrame(trackId, s);
   const circuitScene = createCircuitScene(scene), frostbiteScene = createFrostbiteRaceScene(scene), courseScene = createCourseRaceScene(scene), measuredScenes = createMeasuredCourseScenes(scene);
-  const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : framedRoad(trackId, endlessActive) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s), { camera, renderer, pickupEnvironment: carEnvironment });
+  const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : framedRoad(trackId, endlessActive) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s), { camera, renderer, pickupEnvironment: carEnvironment, player });
   const aero = createAeroVFX(scene, player, shadow);
   const garageModel = createWorldGarageModel(canvas, renderer, camera), homeModelHost = { name: 'home', car: player, keep: aero.group, scene, fitAirflow: aero.fitAirflow }; // idle for the procedural Roadster; ?model= or the equipped car's GLB
   const sprintVisual = createSprintVfx();

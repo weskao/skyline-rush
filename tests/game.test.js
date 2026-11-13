@@ -805,8 +805,8 @@ test('drift payout emits one feedback event even when an existing boost is longe
   advance(race, 1.1, DRIFT);
   stepRace(race, {}, 1 / 60);
   assert.ok(race.player.miniBoost > 1);
-  assert.equal(race.player.nitro, 0.15);
-  assert.deepEqual(race.player.driftPayout, { time: race.elapsed, nitro: 0.15 });
+  assert.equal(race.player.nitro, 0.1);
+  assert.deepEqual(race.player.driftPayout, { time: race.elapsed, nitro: 0.1 });
   const payout = race.player.driftPayout;
   stepRace(race, {}, 1 / 60);
   assert.equal(race.player.driftPayout, payout);
@@ -820,13 +820,13 @@ test('no drift below 45 m/s: brake plus steer hard-brakes', () => {
   assert.ok(race.player.speed < 44 - 15);
 });
 
-test('brake plus steer at speed drifts, bleeding only 3 m/s^2, with the steer direction', () => {
+test('brake plus steer at speed drifts, bleeding only 1.5 m/s^2, with the steer direction', () => {
   const race = driftingRace();
   assert.equal(race.player.drift, null);
   advance(race, 0.5, { brake: true, steer: -0.1 });
   assert.equal(race.player.drift.dir, -1);
   assert.ok(Math.abs(race.player.drift.time - 0.5) < 0.02);
-  assert.ok(Math.abs(race.player.speed - (80 - 1.5)) < 0.1);
+  assert.ok(Math.abs(race.player.speed - (80 - 0.75)) < 0.1);
 });
 
 test('the pad input shape (brake + analog steer, nothing else) drifts; brake alone and steer alone do not', () => {
@@ -841,27 +841,31 @@ test('the pad input shape (brake + analog steer, nothing else) drifts; brake alo
   assert.equal(race.player.drift, null);
 });
 
-test('releasing a drift pays nitro and a mini boost by the highest time threshold reached', () => {
-  const rewards = [[0.95, 0, 0], [1.05, 0.15, 0.5], [2.05, 0.3, 0.8], [3.05, 0.5, 1.2]];
+test('a drift credits NITRO the moment each tier is reached and pays the mini boost on release', () => {
+  const rewards = [[0.55, 0, 0], [0.65, 0.1, 0.7], [1.25, 0.22, 1.1], [2.05, 0.35, 1.6]];
   for (const [time, nitro, boost] of rewards) {
     const race = driftingRace();
     advance(race, time, DRIFT);
-    assert.equal(race.player.nitro, 0, 'nothing is paid while drifting');
+    assert.ok(Math.abs(race.player.nitro - nitro) < 1e-9, `nitro while drifting at ${time}s`);
+    assert.equal(race.player.miniBoost, 0, 'the boost waits for the release');
     stepRace(race, {}, 1 / 60);
     assert.equal(race.player.drift, null);
-    assert.ok(Math.abs(race.player.nitro - nitro) < 1e-9, `nitro at ${time}s`);
+    assert.ok(Math.abs(race.player.nitro - nitro) < 1e-9, `release adds no NITRO at ${time}s`);
     assert.ok(Math.abs(race.player.miniBoost - boost) < 0.05, `mini boost at ${time}s`);
   }
 });
 
 test('drift nitro counts toward the cap and the overflow becomes fuel', () => {
-  const race = driftingRace();
-  Object.assign(race.player, { nitro: 2.9, fuel: 50 });
-  advance(race, 3.05, DRIFT);
-  const fuel = race.player.fuel;
-  stepRace(race, {}, 1 / 60);
-  assert.equal(race.player.nitro, NITRO_MAX);
-  assert.ok(race.player.fuel - fuel > 10); // 0.4 overflow x 32 fuel
+  const after = nitro => {
+    const race = driftingRace();
+    Object.assign(race.player, { nitro, fuel: 50 });
+    advance(race, 2.05, DRIFT);
+    stepRace(race, {}, 1 / 60);
+    return race.player;
+  };
+  const capped = after(2.9), free = after(0);
+  assert.equal(capped.nitro, NITRO_MAX);
+  assert.ok(Math.abs(capped.fuel - free.fuel - 0.25 * (32 - NITRO_FUEL_BONUS)) < 0.1); // 0.25 overflow pays 32/charge, not 20
 });
 
 test('the mini boost lifts the speed cap past MAX_SPEED without burning fuel', () => {
@@ -876,7 +880,7 @@ test('the mini boost lifts the speed cap past MAX_SPEED without burning fuel', (
   assert.ok(race.player.miniBoost === 0 && race.player.speed <= MAX_SPEED + 1e-9);
 });
 
-test('hitting a car or a barrier mid-drift cancels the build-up and loses the reward', () => {
+test('hitting a car or a barrier mid-drift keeps the NITRO already credited but loses the release boost', () => {
   for (const crash of [
     race => { race.traffic = [{ x: race.player.x, distance: race.player.distance + 1, speed: 0 }]; },
     race => { Object.assign(race.player, { x: ROAD_LIMIT, steering: 1 }); },
@@ -891,7 +895,7 @@ test('hitting a car or a barrier mid-drift cancels the build-up and loses the re
     race.traffic = [];
     Object.assign(race.player, { speed: 80, cooldown: 0 });
     stepRace(race, {}, 1 / 60);
-    assert.equal(race.player.nitro, 0);
+    assert.ok(Math.abs(race.player.nitro - 0.35) < 1e-9);
     assert.equal(race.player.miniBoost, 0);
   }
 });
@@ -910,10 +914,11 @@ test('no drift in the air, and taking off mid-drift cancels it', () => {
   assert.equal(race.player.drift, null);
   advance(race, 4, {});
   assert.equal(race.player.altitude, 0);
-  assert.equal(race.player.nitro, 0);
+  assert.ok(Math.abs(race.player.nitro - 0.35) < 1e-9, 'tiers reached before take-off stay credited');
+  assert.equal(race.player.miniBoost, 0);
 });
 
-test('falling into a gap cancels a held drift without a release reward', () => {
+test('falling into a gap cancels a held drift without a release boost', () => {
   const race = racingOn('canyon');
   race.rivals = [];
   race.pickups = [];
@@ -926,7 +931,7 @@ test('falling into a gap cancels a held drift without a release reward', () => {
   assert.equal(race.player.falls, 1);
   assert.equal(race.player.drift, null);
   advance(race, 0.2);
-  assert.equal(race.player.nitro, 0);
+  assert.ok(Math.abs(race.player.nitro - 0.35) < 1e-9, 'tiers reached before the fall stay credited');
   assert.equal(race.player.miniBoost, 0);
 });
 

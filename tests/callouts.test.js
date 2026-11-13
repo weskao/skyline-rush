@@ -48,7 +48,7 @@ test('fractional refill and drift spark thresholds produce distinct readable fee
   race.player.nitro = 0.5;
   assert.equal(callouts.update(race).title, '+0.5');
   assert.equal(callouts.update(race).detail, 'NITRO CHARGE');
-  for (const [time, tier] of [[1, 'BLUE'], [2, 'ORANGE'], [3, 'PURPLE']]) {
+  for (const [time, tier] of [[0.61, 'BLUE'], [1.21, 'ORANGE'], [2.01, 'PURPLE']]) { // just past each DRIFT_REWARDS threshold
     race.elapsed += 1.3;
     race.player.drift = { time };
     assert.equal(callouts.update(race).title, `DRIFT · ${tier}`);
@@ -105,7 +105,7 @@ test('queued drift feedback describes the earned tier after the player has relea
   const race = running(), callouts = createCallouts();
   callouts.update(race);
   race.player.perfectLines = 1;
-  race.player.drift = { time: 1.1 };
+  race.player.drift = { time: 0.7 };
   callouts.update(race);
   race.player.drift = null;
   race.elapsed = 1.3;
@@ -189,7 +189,7 @@ test('callouts resolve in the active locale, with parameterized tiers, combo and
     const near = callouts.update(race);
     assert.deepEqual([near.title, near.detail], ['驚險閃避 ×2', '擦身而過 · 集氣 +42%']);
     race.elapsed = 1.3;
-    race.player.drift = { time: 2.4 };
+    race.player.drift = { time: 1.5 }; // second tier
     const drift = callouts.update(race);
     assert.deepEqual([drift.title, drift.detail], ['漂移 · 橘色', '火花等級達成']);
     race.elapsed = 2.6;
