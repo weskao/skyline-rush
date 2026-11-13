@@ -119,7 +119,8 @@ test.describe('without ?look=3d', () => {
       return { env: scene.environmentIntensity, grade: [grade.saturation.value, grade.contrast.value, ...grade.tint.value.toArray()] };
     });
     expect(look).toEqual({ env: 0.42, grade: [1, 1, 1, 1, 1] }); // RoomEnvironment, identity grade: no HDRI look
-    const fetched = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-scenery\.glb|\.ktx2|basis_transcoder|environments\/.*\.hdr/.test(n)));
+    // The basis transcoder is not Coast's: the always-on 3D pickups (pickup-models.ts, meshopt + KTX2) load it on every track.
+    const fetched = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-scenery\.glb|\.ktx2|environments\/.*\.hdr/.test(n)));
     expect(fetched).toEqual([]);
   });
 });

@@ -55,6 +55,22 @@ Write every assertion so that runner speed cannot change its outcome.
   *real engine's* respawn; separate deterministic unit tests cover natural falls at several
   simulation frame rates. Do not use wall-clock sleeps or bigger timeouts to hide movement.
 
+## Judge a feature in its own frame, by its own assets
+
+Trap (2026-11-14): three merges changed intended behaviour and left sibling browser specs red on develop for a
+day, unseen because each develop push cancelled the previous full CI run. Classic tracks now curve
+(`fbbfb8e5`), Endless shows a rolling minimap (same commit) and pickups are always-on meshopt + KTX2 GLBs (`e30ee752`).
+
+- **Poses on a classic road are road-relative.** Hazards and gates turn with the road
+  (`hazard-render.ts` `yawAt`), so a world yaw of 0 or a world-x sweep only held while the road was straight.
+  Read the heading from `classicRoadRoute(trackId).heading(distance)`, the source the renderer uses, and
+  measure lateral sweeps on the ground plane (`tests/hazard-captures-browser.spec.js`).
+- **An absence check names the feature's own files.** A shared decoder (`basis/basis_transcoder.*`,
+  meshopt) belongs to whichever system loads it first; "no Coast KTX2" is `.ktx2` files, not the transcoder
+  (`tests/coast-scenery-browser.spec.js`).
+- A merge that changes a shared HUD, road or asset rule runs the browser specs that assert it before it lands
+  (`git grep` the selector or asset name in `tests/*browser.spec.js`); do not rely on develop's CI to finish.
+
 ## Budgets and retries
 
 - Wrap fixed waits and timeouts in `ciTimeout()`. This is enforced by the same test file.
