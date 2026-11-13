@@ -11,6 +11,7 @@ import Wave3CurrencyStrip from './Wave3CurrencyStrip.vue';
 import { RACE_TRACKS } from './game.js';
 import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
 import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
+import './progress-bars.css';
 import { look3d } from './look-gate.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
 import GaragePanel from './GaragePanel.vue';

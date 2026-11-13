@@ -21,7 +21,6 @@ const artworkBase = `${import.meta.env.BASE_URL}feature-assets/garage-vfx-skins/
         </span>
         <span class="garage-car-name">{{ text('car.' + id) }}</span>
         <span class="garage-car-badge" aria-hidden="true">✓ {{ text('car.inUse') }}</span>
-        <span class="garage-selection-flash" aria-hidden="true"></span>
       </button>
     </div>
   </section>
