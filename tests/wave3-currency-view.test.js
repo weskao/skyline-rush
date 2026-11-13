@@ -16,20 +16,28 @@ test('shows only genuine local F01 demo points, with localized readable quantiti
   assert.equal(zh[0].state, 'local-demo');
   assert.deepEqual(en.map(x => x.id), ['demo-points', 'coins', 'diamonds']);
   assert.deepEqual(en.slice(1).map(x => x.amount), [null, null]);
-  assert.deepEqual(en.slice(1).map(x => x.display), ['—', '—']);
+  assert.deepEqual(en.slice(1).map(x => x.display), ['0', '0']);
   assert.ok(en.slice(1).every(x => x.state === 'unavailable'));
 });
 
-test('zero is a real local balance, but unavailable balances never masquerade as zero', () => {
-  assert.equal(projectWave3Currency(local(0))[0].display, '0');
-  for (const invalid of [null, undefined, {},
+test('missing balances use zero without creating paid credits', () => {
+  for (const snapshot of [null, undefined, { ...local(), demoPoints: undefined }, local(0)]) {
+    const rows = projectWave3Currency(snapshot);
+    assert.deepEqual(rows.map(row => row.display), ['0', '0', '0']);
+    assert.deepEqual(rows.slice(1).map(row => row.amount), [null, null]);
+  }
+});
+
+test('invalid demo data keeps the error placeholder local to that balance', () => {
+  for (const invalid of [{},
     { ...local(999999), authority: 'verified' },
-    { ...local(999999), syncState: 'synced' },
+    { ...local(999999), syncState: 'unavailable' },
     { ...local(999999), mode: 'server' },
     local(-1), local(NaN), local(3.5), local(Number.MAX_SAFE_INTEGER + 1)]) {
     const rows = projectWave3Currency(invalid);
     assert.deepEqual(rows.map(row => row.amount), [null, null, null]);
-    assert.ok(rows.every(row => row.display === '—'));
+    assert.deepEqual(rows.map(row => row.display), ['—', '0', '0']);
+    assert.equal(rows[0].state, 'unavailable');
   }
 });
 

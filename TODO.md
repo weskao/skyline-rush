@@ -126,6 +126,11 @@ Design and numbers: `docs/designs/road-pickups/README.md`.
 
 ---
 
+## 2026-11-13 — Home wallet balance and resource details
+
+- [x] Empty balances show zero and invalid demo data shows a dash. Unit and browser regressions reproduced the previous behavior. Typecheck, both production build modes, and eight Home wallet browser checks passed, including desktop hover and keyboard and touch in portrait and short landscape.
+- [ ] Verify the full race-to-wallet reward flow and exact-commit GitHub quality gate. Local wallet browser checks ran with WebGL disabled, and the Garage Studio preview requires WebGL.
+
 # Wave 3 — resource HUD and artwork acceptance (2026-11-11)
 
 - [x] Read-only demo wallet projection: local F01 only, account isolation, no invented paid coins/diamonds. Local TDD RED (missing module) → GREEN (3/3) verified.
