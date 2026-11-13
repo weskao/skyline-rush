@@ -8,6 +8,49 @@
 - [x] Equipment follow-up verification: local typecheck, production build and 2,682 unit tests passed (3 skipped). Chromium passed the live Crimson GT test covering all four Garage previews, cancel-to-equipped, trial equip and a second Coming Soon track.
 - [ ] Confirm the full exact-commit GitHub quality gate and physical phone review.
 
+## 2026-11-13 — Race camera presence: closer chase, drift swing, grounded first person (`feature/race-camera-presence`)
+
+Table and pure math: `src/race-camera.ts` (`RACE_CAMERA`); `src/world.js` only applies it. Traps and re-tuning steps:
+`.claude/rules/race-camera.md`.
+
+- [x] Scope: both race views (`world.cycleCamera()`: chase, first person) on classic and framed roads; controls, tracks,
+  FLY, tutorial cues, the ready-screen showcase and Garage cameras unchanged. No art or physics change.
+- [x] Chase: 7.6 m back / 2.5 m up (was 12.5 / 5); portrait 12 m / 3 m (was 14.5 / 5) aiming below the road so the car
+  sits mid-frame above the HUD readouts. Speed adds up to 1.4 m pull-back and 0.115 deg FOV per m/s; FLY lifts 1.5 m.
+- [x] Drift: the camera orbits against the car's drift yaw (50% landscape, 25% portrait) with lag (4.5 /s out, 3 /s back),
+  so the flank shows and the view re-centres within 1.5 s. The chase horizon no longer rolls in flight.
+- [x] First person: eye 1.0 m high over the nose tip (was 1.7 m; inside the cabin shell on World Tour / Sky Spiral),
+  speed shake and a NITRO/BOOST kick scaled by the Camera shake setting; reduced motion disables swing and shake.
+- [x] RED: `node --test tests/race-camera.test.js` against the old numbers: 2 pass / 10 fail (back 12.5, frame fill
+  0.211, no swing, eye 1.7). Added while tuning from real frames, each RED first: portrait rear bumper at 0.702 of the
+  height (under the readouts), portrait `follow` missing (drift at the road edge clipped), eye 1.35 m ahead (cabin
+  shell in view), nose 26.6 deg below the horizon (bonnet bloom washed out the lower half on phone landscape).
+- [x] GREEN: `tests/race-camera.test.js` 14/14; `tests/module-size.test.js` 3/3 (`src/world.js` stays at 1019 lines);
+  `tests/legacy-js-names.test.js` pass; `npm test` 2707 tests / 2704 pass / 3 skipped / 0 fail; `npm run typecheck`
+  clean; `npm run build` OK.
+- [x] Real WebGL frames viewed before/after (headless Chrome, Apple M4 Metal): Coast, Tokyo, Sky Spiral x desktop
+  1440x900, phone portrait 390x844, phone landscape 844x390 x cruise, drift, NITRO, FLY, first-person cruise and NITRO
+  (54 + 54 frames). Road ahead, rings and rivals stay visible; no cabin or bonnet in first person.
+- [x] Frame time on Coast and Tokyo, desktop and portrait, cruise / NITRO / first person: 16.7 ms median, 16.7-16.8 ms
+  p95 before and after (vsync-capped); draw calls 374 -> 388 Coast cruise, 517 -> 514 Tokyo cruise. The camera block no
+  longer allocates a Vector3 per frame.
+- [x] Browser regression on the garage trial build (`node scripts/build-garage-browser.mjs`, then `npx playwright test`
+  with the challenge-medals, circuit, crimson-gt, event-lab, handoff, hazard-captures, high-speed-vfx, settle-once,
+  responsive, tokyo-finish-controls, shader-warmup, black-frame and hero-roadster-race browser specs): 157 passed /
+  1 skipped / 0 failed of 158 (19.0 min). The skip is the existing touch-only case in `tokyo-finish-controls`.
+- [x] Tutorial and airflow browser specs (`interactive-tutorial`, `tutorial-hand-layout`, `airflow-wake`): 28 passed /
+  1 failed of 29. Tutorial camera cues and touch practice pass on every viewport.
+- [ ] `tests/interactive-tutorial-browser.spec.js:284` "paused practice 750x342: the pause screen is readable beside the
+  full coach" fails (`pauseLayoutClear` false). It fails the same way with develop's `src/world.js` (784b9f94) built
+  in, so it predates this branch: a DOM layout overlap on short landscape, not the camera. Not fixed here.
+- [ ] `npm run test:browser` full suite and `make verify` (World Tour long-run) on the final build
+- [ ] Other cars and paints in first person beyond the measured Roadster / Crimson GT bounds; Daily, Circuit, CourseGraph
+  courses and Endless frames (they share the framed path but were not captured)
+- [ ] Physical iPhone / Android, portrait and landscape: framing against the real HUD and safe areas, shake comfort,
+  frame time under thermal load
+- [ ] Exact-HEAD remote CI after push (feature branches run the focused gate: unit + cloud-save); no PR, merge or
+  deployment performed
+
 ## 2026-11-12 — Per-supply collection audio (`feature/pickup-3d-artwork-ui`)
 
 - [x] Scope: the four road/air energy supplies (cell, can, tank, overcharge) select distinct sounds on actual collection, once per object; reuse the existing Web Audio SFX bus, mute/volume, pause/restart cleanup and 24-voice cap. No art, input geometry, ring sound or reward changes; audio presentation is identical across visual quality tiers.

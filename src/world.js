@@ -16,6 +16,7 @@ import { roadRibbon, setRoadRow } from './geometry.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
 import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
+import { raceCameraView, rigBack, rigHeight, rigFov, rigShake, stepCameraSwing } from './race-camera.ts';
 import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
@@ -412,7 +413,7 @@ export function createWorld(canvas) {
   const desiredCamera = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
   const smoothLook = new THREE.Vector3(0, 2, -25);
-  let cameraMode = 0;
+  let cameraMode = 0, cameraSwing = 0;
   let initialized = false, lastRace = null, trackId, carBank = 0, seenFall = null, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); const courseOriginPoint = [0, 0, 0]; // Frostbite span: a respawn (up to ~500 m back) cuts the camera; the lift carries it
   let classicTile=NaN,classicTrack='',classicSections=null,classicQuality='',classicTouch=null;
   let photoView = null, photoCapture = null, garageCamera = null, garageHomePreview = false, garagePose = null, garageLighting = 'bright';
@@ -814,7 +815,7 @@ export function createWorld(canvas) {
       const sprintFrame = sprintVisual.update(sprintInput);
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), garageHomePreview ? garageHomeVisual : visual, reducedMotion, sprintFrame, garageHomePreview);
       const boostStrength = race.phase === 'racing' ? sprintFrame.power : 0;
-      const portrait = camera.aspect < 0.8;
+      const portrait = camera.aspect < 0.8, view = raceCameraView(cameraMode, portrait);
       if (photoView && race.phase === 'paused') {
         desiredCamera.set(player.position.x + Math.sin(photoView.angle) * 14,
           player.position.y + 5, player.position.z + Math.cos(photoView.angle) * 14);
@@ -861,25 +862,21 @@ export function createWorld(canvas) {
       } else if (preview) {
         desiredCamera.set(portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, portrait ? 13.8 : 11.8);
         lookTarget.set(portrait ? 1 : -1.4, 1.4, -3.5);
-      } else if (cameraMode === 1) {
-        if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) desiredCamera.copy(player.position).add(new THREE.Vector3(0, 1.7, 0));
-        else desiredCamera.set(visualCar.x, visualCar.altitude + 1.7, -0.95);
-        if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
-          const f=race.course?graphLookAhead(race.course,visualCar.x,65):trackFrame(trackId,distance+lookAheadDistance(trackId,distance,65,endlessActive),car.span),p=f.point,o=race.course?courseOriginPoint:trackPoint(trackId,distance);
-          lookTarget.set((race.course?p[0]-o[0]:p.x-o.x)+f.right[0]*visualCar.x,(race.course?p[1]-o[1]:p.y-o.y)+visualCar.altitude+1.5,(race.course?p[2]-o[2]:p.z-o.z)+f.right[2]*visualCar.x);
-        }
-        else lookTarget.set(visualCar.x + roadCenter(distance + 65) - center, visualCar.altitude + 1.5, -65);
       } else {
+        const first = cameraMode === 1, back = rigBack(view, visualCar.speed), height = rigHeight(view, visualCar.altitude);
+        cameraSwing = reducedMotion ? 0 : stepCameraSwing(cameraSwing, player.userData.driftYaw ?? 0, view, dt);
         if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
           const frame = race.course ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(distance) : trackFrame(trackId,distance,car.span);
-          const back = new THREE.Vector3(...frame.forward).multiplyScalar(- (portrait ? 14.5 : 12.5));
-          desiredCamera.copy(player.position).add(back).add(new THREE.Vector3(0,5,0));
-        } else desiredCamera.set(visualCar.x * 0.74, visualCar.altitude * 0.85 + (visualCar.altitude > 2 ? 4.4 : 4.8), portrait ? 13.5 : 11.6);
-        if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
-          const f=race.course?graphLookAhead(race.course,visualCar.x,34):trackFrame(trackId,distance+lookAheadDistance(trackId,distance,34,endlessActive),car.span),p=f.point,o=race.course?courseOriginPoint:trackPoint(trackId,distance);
-          lookTarget.set((race.course?p[0]-o[0]:p.x-o.x)+f.right[0]*visualCar.x,(race.course?p[1]-o[1]:p.y-o.y)+visualCar.altitude+1.5,(race.course?p[2]-o[2]:p.z-o.z)+f.right[2]*visualCar.x);
+          desiredCamera.fromArray(frame.forward).multiplyScalar(-back).applyAxisAngle(camera.up, cameraSwing).add(player.position).y += height;
+          const f=race.course?graphLookAhead(race.course,visualCar.x,view.ahead):trackFrame(trackId,distance+lookAheadDistance(trackId,distance,view.ahead,endlessActive),car.span),p=f.point,o=race.course?courseOriginPoint:trackPoint(trackId,distance);
+          lookTarget.set((race.course?p[0]-o[0]:p.x-o.x)+f.right[0]*visualCar.x,(race.course?p[1]-o[1]:p.y-o.y)+visualCar.altitude+view.look,(race.course?p[2]-o[2]:p.z-o.z)+f.right[2]*visualCar.x);
+        } else if (first) {
+          desiredCamera.set(visualCar.x * view.follow, visualCar.altitude + height, back);
+          lookTarget.set(visualCar.x + roadCenter(distance + view.ahead) - center, visualCar.altitude + view.look, -view.ahead);
+        } else {
+          desiredCamera.set(visualCar.x * view.follow + Math.sin(cameraSwing) * back, visualCar.altitude * 0.85 + height, Math.cos(cameraSwing) * back);
+          lookTarget.set(visualCar.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, visualCar.altitude * 0.85 + view.look, -25);
         }
-        else lookTarget.set(visualCar.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, visualCar.altitude * 0.85 + 1.5, -25);
       }
       desiredCamera.z -= reducedMotion ? 0 : (presentation.goPush || 0) * 1.4;
       const impactAge = car.impact ? race.elapsed - car.impact.time : 10; const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
@@ -906,9 +903,12 @@ export function createWorld(canvas) {
         smoothLook.copy(lookTarget);
       }
       camera.lookAt(smoothLook);
-      carBank = THREE.MathUtils.damp(carBank, !reducedMotion && visualCar.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt);
+      carBank = THREE.MathUtils.damp(carBank, !reducedMotion && cameraMode === 1 && visualCar.altitude > 1 ? -(input.steer || 0) * 0.025 : 0, 5, dt); // flight banks first person only: the chase horizon stays level
       camera.rotation.z += carBank;
-      const targetFov = preview ? 50 : reducedMotion ? 64 : 57 + visualCar.speed * 0.115 + sprintFovOffset(sprintFrame, visual) - impact * 4;
+      // Applied after lookAt, so the shake never feeds the smoothed camera position.
+      const shake = reducedMotion || race.phase !== 'racing' ? 0 : rigShake(view, visualCar.speed, boostStrength, visual.enabled ? visual.shake : 0);
+      if (shake) { camera.rotateX(Math.sin(time * 53) * shake); camera.rotateY(Math.sin(time * 37) * shake * 0.6); }
+      const targetFov = preview ? 50 : reducedMotion ? 64 : rigFov(view, visualCar.speed) + sprintFovOffset(sprintFrame, visual) - impact * 4;
       camera.fov = photoView && race.phase === 'paused' ? photoView.fov : camera.fov + (targetFov - camera.fov) * smoothing;
       camera.updateProjectionMatrix();
       lens.uniforms.boost.value = reducedMotion || !visual.enabled ? 0 : sprintFrame.blur * visual.motionBlur;
