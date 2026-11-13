@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { Scene, Group, Mesh, BoxGeometry, Vector3 } from 'three';
 import { createRace } from '../src/game.js';
 import { createAeroVFX, dashSamples } from '../src/aero-vfx.js';
@@ -389,4 +390,31 @@ test('AIRFLOW off (V) hides the streamline showcase during BOOST/NITRO; the NITR
   assert.ok(off.ribbon, 'NITRO trail (and its Garage skin) still shows with AIRFLOW off');
   assert.ok(off.jets, 'thruster jets still show with AIRFLOW off');
   assert.ok(on.flow, 'AIRFLOW on: streamlines still show while sprinting');
+});
+
+test('NITRO chain lifts sprint flames, speed lines and FOV per charge, eases back after NITRO', async () => {
+  const { createSprintVfx, NITRO_CHAIN_LIFT } = await import('../src/vfx-settings.ts');
+  const base = { phase: 'racing', nitro: true, boost: false, speed: 110, cap: 110, dt: 0.05,
+    enabled: true, quality: 'high', reducedMotion: false };
+  const settle = (sprint, input) => { let s; for (let i = 0; i < 40; i++) s = sprint.update(input); return { ...s }; };
+  const levels = [1, 2, 3].map(chain => settle(createSprintVfx(), { ...base, chain }));
+  assert.deepEqual(NITRO_CHAIN_LIFT, [1, 1.2, 1.4]);
+  levels.forEach((s, i) => {
+    assert.ok(Math.abs(s.power - NITRO_CHAIN_LIFT[i]) < 1e-3, `×${i + 1} power ${s.power}`);
+    assert.ok(Math.abs(s.fov - NITRO_CHAIN_LIFT[i]) < 1e-3, `×${i + 1} fov ${s.fov}`);
+  });
+  assert.equal(settle(createSprintVfx(), { ...base, chain: 99 }).power, levels[2].power, 'chain clamps at ×3');
+  assert.equal(settle(createSprintVfx(), { ...base, chain: NaN }).power, levels[0].power, 'invalid chain reads as ×1');
+  const boostOnly = settle(createSprintVfx(), { ...base, nitro: false, boost: true, chain: 3 });
+  assert.ok(boostOnly.power <= 1, 'BOOST alone never takes the NITRO chain lift');
+  const sprint = createSprintVfx();
+  settle(sprint, { ...base, chain: 3 });
+  assert.ok(sprint.update({ ...base, chain: 1 }).power > 1, 'a level change eases instead of snapping');
+  assert.ok(settle(sprint, { ...base, nitro: false, chain: 3 }).power < 1e-3, 'NITRO end fades the lift away');
+  assert.equal(settle(createSprintVfx(), { ...base, chain: 3, reducedMotion: true }).fov, 0, 'comfort keeps the camera still');
+});
+
+test('world feeds the player NITRO chain into the sprint VFX', () => {
+  const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
+  assert.match(world, /chain: car\.nitroTime > 0 \? car\.nitroBurst : 0/);
 });

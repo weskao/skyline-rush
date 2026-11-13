@@ -710,7 +710,7 @@ test('NITRO spends one charge for 2.5 s with a MAX_SPEED + 30 cap and much stron
   assert.ok(nitro.player.speed < top);
 });
 
-test('holding NITRO fires once; pressing again extends it by 2 s without stacking speed', () => {
+test('holding NITRO fires once; pressing again extends it by a full charge without stacking speed', () => {
   const race = racing();
   Object.assign(race.player, { speed: MAX_SPEED + 30, nitro: 3 });
   advance(race, 0.5, { throttle: true, nitro: true });
@@ -719,7 +719,7 @@ test('holding NITRO fires once; pressing again extends it by 2 s without stackin
   const remaining = race.player.nitroTime;
   press(race, { throttle: true });
   assert.equal(race.player.nitro, 1);
-  assert.ok(Math.abs(race.player.nitroTime - (remaining + 2 - 2 / 60)) < 1e-9);
+  assert.ok(Math.abs(race.player.nitroTime - (remaining + 2.5 - 2 / 60)) < 1e-9);
   assert.equal(race.player.nitroUses, 1);
   advance(race, 1, { throttle: true, boost: true });
   assert.ok(race.player.speed <= MAX_SPEED + 30);
@@ -752,7 +752,7 @@ test('nitro caps at 3 charges: a 0.5 pickup at 2.9 banks 0.1 for 2 fuel and conv
   assert.equal(race.player.fuel, 100);
 });
 
-test('using one charge takes 3 to 2 and three presses chain into one 6.5 s burst via the extend rule', () => {
+test('using one charge takes 3 to 2 and three presses chain into one 7.5 s burst: chaining wastes no time', () => {
   const race = racing();
   Object.assign(race.player, { speed: 60, nitro: 3 });
   press(race);
@@ -760,7 +760,7 @@ test('using one charge takes 3 to 2 and three presses chain into one 6.5 s burst
   press(race);
   press(race);
   assert.equal(race.player.nitro, 0);
-  assert.ok(Math.abs(race.player.nitroTime - (2.5 + 2 + 2 - 6 / 60)) < 1e-9);
+  assert.ok(Math.abs(race.player.nitroTime - (2.5 * 3 - 6 / 60)) < 1e-9);
 });
 
 test('the race result records NITRO activations and the longest near-miss combo', () => {

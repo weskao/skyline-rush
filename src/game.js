@@ -26,8 +26,8 @@ import { skyJumpGap } from './sky-track.ts'; import { dropCar, stepDeck, stepRiv
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
-import { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, DRIFT_REWARDS, driftCredit } from './drive-rules.ts';
-export { MAX_SPEED, NITRO_TIME, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
+import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, DRIFT_REWARDS, driftCredit } from './drive-rules.ts';
+export { MAX_SPEED, NITRO_TIME, NITRO_EXTEND, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
 export const STEER_RAMP = 0.15;
@@ -44,7 +44,6 @@ export const GAP_RESPAWN = 5; // m past the gap where the car is put back
 export const CROSSWIND_SPEED = 4; // m/s sideways push
 export const ICE_RAMP_FACTOR = 4; // steering takes this many times longer to respond on ice
 
-export const NITRO_EXTEND = 2; // seconds added by a press during NITRO
 export const NITRO_FUEL_PER_CHARGE = 32; // overflow conversion: each 0.25 charge = 8 fuel
 export const NITRO_FUEL_BONUS = 20; // fuel per charge banked below the cap: each 0.25 charge = 5 fuel
 
@@ -279,13 +278,7 @@ export function stepRace(race, input, dt) {
   car.braking = brake;
   // NITRO is edge-triggered: one press spends one full charge; a press during NITRO extends it, never stacks speed.
   if (input.nitro === true && !car.nitroHeld && car.nitro >= 1) {
-    car.nitro -= 1;
-    if (car.nitroTime > 0) car.nitroTime += NITRO_EXTEND;
-    else {
-      car.nitroTime = NITRO_TIME;
-      car.nitroUses++;
-      car.nitroBurst = 0;
-    }
+    if (pressNitro(car)) car.nitroBurst = 0;
     car.nitroChain = Math.max(car.nitroChain, ++car.nitroBurst); // charges spent in this one burst
   }
   car.nitroHeld = input.nitro === true;

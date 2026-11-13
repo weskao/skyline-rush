@@ -10,6 +10,16 @@ export const BOOST_ACCEL = 12; // m/s² on top of the throttle
 export const NITRO_ACCEL = 40; // m/s² on top of the throttle
 export const OVER_CAP_DECEL = 18; // m/s² shed while above the current cap
 export const NITRO_TIME = 2.5; // seconds one charge lasts
+export const NITRO_EXTEND = NITRO_TIME; // seconds a press during NITRO adds: a full charge, so chaining wastes no time
+/** One NITRO press, the same for the player and the rivals: spends a charge, starts a burst or extends the running
+ * one without stacking speed. True when a new burst began. */
+export function pressNitro(car: { nitro: number; nitroTime: number; nitroUses: number }): boolean {
+  car.nitro -= 1;
+  if (car.nitroTime > 0) { car.nitroTime += NITRO_EXTEND; return false; }
+  car.nitroTime = NITRO_TIME;
+  car.nitroUses++;
+  return true;
+}
 export const FLY_DRAIN = 15; // fuel/s while thrusting (Phase 1: more room to fly while preserving ground recharge)
 export const BOOST_DRAIN = 10; // fuel/s while boosting on the road
 export const GROUND_FUEL_REGEN = 13; // fuel/s on the road with FLY and BOOST released

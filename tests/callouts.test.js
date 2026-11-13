@@ -334,3 +334,9 @@ test('a new airborne roll displaces an older low-priority refill without droppin
   race.elapsed = 1.2;
   assert.equal(callouts.update(race)?.title, 'TRICK +0.25');
 });
+
+test('the NITRO extend callout states the seconds a press during NITRO really adds, in every locale', async () => {
+  const { NITRO_EXTEND } = await import('../src/drive-rules.ts');
+  for (const [locale, copy] of Object.entries(GAME))
+    assert.match(copy['callout.nitro.extend'], new RegExp(`^\\+${String(NITRO_EXTEND).replace('.', '\\.')}\\D`), locale);
+});
