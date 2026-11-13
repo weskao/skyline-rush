@@ -43,40 +43,24 @@ test('Garage paint respects Reduced Motion even on High', async ({page}) => {
   expect(animation).toBe('none');
 });
 
-test('Garage selection confirms vehicle and paint presses and keeps previews separate from equipped paint', async ({ page }) => {
+test('Garage selection has no press sweep and keeps previews separate from equipped paint', async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: true })));
   await page.goto('/');
   await page.locator('#garage-button').click();
-  const car = page.locator('[data-car="roadster"]');
   const paint = page.locator('[data-paint="crimson"]');
   const pearl = page.locator('[data-paint="pearl"]');
-  // Observe the animation at the moment the click bubbles. A later query can miss a short effect on software WebGL.
-  await page.locator('#garage-screen').evaluate(garage => {
-    garage.addEventListener('click', event => {
-      const card = event.target.closest('[data-car], [data-paint]');
-      if (card) card.dataset.animated = String(Boolean(card.querySelector('.garage-selection-flash')?.getAnimations().length));
-    });
-  });
 
-  await car.click();
-  await expect(car).toHaveAttribute('data-animated', 'true');
-  await car.evaluate(node => { delete node.dataset.animated; });
-  await car.focus();
-  await page.keyboard.press('Enter');
-  await expect(car).toHaveAttribute('data-animated', 'true');
-
+  await page.locator('[data-car="roadster"]').click();
   await paint.click();
-  await expect(paint).toHaveAttribute('data-animated', 'true');
+  await page.locator('[data-skin="thruster-ion"] .garage-skin-preview-hitarea').click();
+  // Selected cards get no shimmer sweep overlay.
+  await expect(page.locator('#garage-screen .garage-selection-flash')).toHaveCount(0);
+
   await expect(paint).toHaveAttribute('aria-pressed', 'true');
   await expect(paint.getByText('Previewing')).toBeVisible();
   await expect(pearl).toHaveAttribute('data-state', 'equipped');
-  expect(await page.evaluate(() => localStorage.getItem('skyline-rush-paint'))).toBeNull();
-
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await paint.click();
-  await expect(paint).toHaveAttribute('data-animated', 'false');
-  await expect(paint.getByText('Previewing')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('skyline-rush-paint'))).toBeNull(); // settled: absence check
   await page.locator('#garage-equip').click();
   await expect(paint).toHaveAttribute('data-state', 'equipped');
   await expect(paint.getByText('Previewing')).toHaveCount(0);

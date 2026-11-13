@@ -44,19 +44,6 @@ const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equi
 
 const isPreviewingPaint = (id: string): boolean =>
   id === garageView.selected && id !== garageStudioView.equippedPaint;
-
-function animateSelection(event: MouseEvent): void {
-  const flash = (event.target as Element).closest('button:is([data-car], [data-paint], .garage-skin-preview-hitarea)')
-    ?.querySelector('.garage-selection-flash');
-  if (!flash) return;
-  flash.getAnimations().forEach(animation => animation.cancel());
-  if (getComputedStyle(flash).display === 'none') return;
-  flash.animate([
-    { opacity: .9, transform: 'translateX(-100%)' },
-    { opacity: .72, offset: .38 },
-    { opacity: 0, transform: 'translateX(100%)' },
-  ], { duration: 420, easing: 'cubic-bezier(.2, .75, .25, 1)' });
-}
 </script>
 
 <template>
@@ -88,7 +75,7 @@ function animateSelection(event: MouseEvent): void {
           <button type="button" id="garage-reset">{{ copy.reset }}</button>
         </nav>
       </section>
-      <aside class="garage-collection" @click="animateSelection">
+      <aside class="garage-collection">
         <GarageCarPicker :locale="locale" />
         <h3>{{ copy.collection }}</h3>
         <GarageSourceArtGallery ref="storeCatalog" category="garage-store-readiness" />
@@ -103,7 +90,6 @@ function animateSelection(event: MouseEvent): void {
           <span class="garage-paint-name" :data-i18n="`paint.${id}`">{{ t('paint.' + id, undefined, locale) }}</span>
           <span class="garage-paint-badge">{{ copy[paintState(id)] }}</span>
         </span>
-        <span class="garage-selection-flash" aria-hidden="true"></span>
       </button>
     </div>
     <p id="garage-status" class="collection-note" role="status">{{ garageView.status }}</p>

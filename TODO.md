@@ -65,6 +65,16 @@
   for the pointer test. The release media fixture now supplies one. Both the
   image/video pointer and highlight-video Playwright tests passed in headless
   Chromium with WebGL disabled for this media-only check.
+- [x] Integrated `develop` at `37ad97e0` with no conflicts. The merged tree
+  passed strict typecheck, the trial build, 39 focused unit tests, and the
+  Playwright ledger, concurrent confirmation, and save-failure tests. The
+  first local ledger attempt hit a Chromium renderer crash at Garage re-entry;
+  an isolated rerun with shared-memory usage disabled passed all 14 steps.
+- [ ] Await full regression for the latest integration commit. The preceding
+  candidate [3d5b377e](https://github.com/weskao/skyline-rush/commit/3d5b377e31c362d773e328a5c4e4490238aa3215)
+  is tracked in [CI 43458160566](https://github.com/weskao/skyline-rush/actions/runs/43458160566).
+  Use the [branch workflow history](https://github.com/weskao/skyline-rush/actions?query=branch%3Afeature%2Fwave3-demo-economy)
+  for the new commit.
 - [ ] Complete physical iOS Safari and Android Chrome acceptance, then
   record exact-head full CI before a direct merge to `develop`.
 
