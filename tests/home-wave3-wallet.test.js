@@ -16,6 +16,8 @@ test('three icons and numbers move from Garage to tiny Home row', () => {
   assert.match(app, /:experience="wave3DemoExperience"/);
   assert.doesNotMatch(garage, /<Wave3CurrencyStrip/);
   assert.doesNotMatch(mission, /class="garage-demo-balance"/);
+  assert.doesNotMatch(mission, /Balance \$\{result\.snapshot\.demoPoints\}|目前 \$\{result\.snapshot\.demoPoints\}/);
+  assert.match(mission, /claimMission\(id\)/);
   assert.match(wallet, /data-compact/);
   assert.match(wallet, /\.wave3-wallet-strip\[data-compact="true"\]/);
   assert.match(wallet, /22px/);

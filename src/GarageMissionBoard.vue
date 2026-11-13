@@ -50,7 +50,7 @@ function claim(id: string): void {
   if (!available.value || stateOf(id) !== 'claimable' || !props.experience) return;
   const result = props.experience.claimMission(id);
   feedback.value = result.status === 'completed'
-    ? label(`+${result.deltaDemoPoints} demo points · Balance ${result.snapshot.demoPoints}`, `+${result.deltaDemoPoints} 試玩點數 · 目前 ${result.snapshot.demoPoints}`)
+    ? label(`+${result.deltaDemoPoints} demo points`, `+${result.deltaDemoPoints} 試玩點數`)
     : label('Demo claim unavailable or already processed.', '試玩領取尚未開放或已處理。');
 }
 let stopLocale: (() => void) | undefined;
