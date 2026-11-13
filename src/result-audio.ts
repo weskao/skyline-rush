@@ -12,7 +12,9 @@ export function playResultFeedbackOnce(cue: PlayCue, race: RaceOutcome, result: 
   if (heard.has(race)) return;
   heard.add(race);
   // The instant/comfortable reveal may occur in the same frame as the finish chime.
-  playResultFeedback(cue, race, result, getWave3DemoReceipt(race), instantReveal ? .8 : .18);
+  // The demo receipt settles asynchronously (Web Lock + checkpoint), so the cues wait for it.
+  void Promise.resolve(getWave3DemoReceipt(race))
+    .then(receipt => playResultFeedback(cue, race, result, receipt, instantReveal ? .8 : .18));
 }
 
 export function playResultFeedback(

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { GARAGE_SKINS, findSkin } from '../src/garage-skin-catalog.ts';
-import { DEMO_REDEMPTION_COSTS } from '../src/wave3-demo-settlement.ts';
+import { demoOffer } from '../src/wave3-demo-settlement.ts';
 import { createWave3LocalDemo } from '../src/wave3-local-demo.ts';
 import {
   WAVE3_DEMO_ITEMS, WAVE3_DEMO_STORE_ART, findDemoItem, demoItemStatus,
@@ -25,18 +25,20 @@ test('demo items use existing real nondefault skin IDs, unique and never grant o
     assert.deepEqual(item.name, findSkin(item.id)?.name);
     assert.ok(!Object.hasOwn(item, 'owned'));
     assert.ok(!Object.hasOwn(item, 'canBuy'));
-    assert.equal(item.demoPrice, DEMO_REDEMPTION_COSTS[item.id] ?? null);
+    assert.equal(item.demoPrice, demoOffer(item.id)?.cost ?? null);
+    assert.equal(item.currency, demoOffer(item.id)?.currency ?? null);
   }
   assert.equal(findDemoItem('thruster-basic'), null, 'default equipment is not a store SKU');
   assert.equal(findDemoItem('__proto__'), null);
   assert.equal(findDemoItem('deleted-id'), null);
 });
 
-test('only pinned F01 demo redemption SKUs have a local demo price', () => {
+test('existing point offers and explicit trial coin and diamond offers have a single price', () => {
   assert.equal(findDemoItem('thruster-ion')?.demoPrice, 25);
   assert.equal(findDemoItem('thruster-plasma')?.demoPrice, 100);
   assert.equal(findDemoItem('airflow-vortex')?.demoPrice, null);
-  assert.equal(WAVE3_DEMO_ITEMS.filter(item => item.demoPrice !== null).length, Object.keys(DEMO_REDEMPTION_COSTS).length);
+  assert.deepEqual(WAVE3_DEMO_ITEMS.filter(item => item.currency === 'coins').map(item => item.demoPrice).sort((a, b) => a - b), [150, 500, 1200]);
+  assert.deepEqual(WAVE3_DEMO_ITEMS.filter(item => item.currency === 'diamonds').map(item => item.demoPrice), [15, 25]);
 });
 
 test('existing six store illustrations are for presentation, never purchasable SKUs', () => {

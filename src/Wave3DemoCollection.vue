@@ -66,7 +66,7 @@ function preview(id: SkinId): void {
   message.value = '';
   emit('preview', id);
 }
-function equipSelected(): void {
+async function equipSelected(): Promise<void> {
   const id = selectedId.value;
   if (!id || !canEquipDemoPreview(id, props.port.getSnapshot())) {
     message.value = tr('Only active demo-unlocked items can be equipped here. Garage trials remain separate.',
@@ -79,11 +79,11 @@ function equipSelected(): void {
     message.value = tr('Account changed. Select an item again.', '帳號已切換，請重新選取。');
     return;
   }
-  const result = props.port.equipPreview(id);
+  const result = await props.port.equipPreview(id, props.port.getOperationScope());
   snapshot.value = result.snapshot;
   if (result.status === 'completed') {
-    message.value = tr('Demo preview equipped. Return to racing to see it after Garage integration.',
-      '已切換試玩裝備。車庫完成接線後，返回比賽即可查看。');
+    message.value = tr('Demo preview equipped. Return to racing to see it in action.',
+      '已切換試玩裝備。返回比賽即可查看效果。');
     emit('equipped-preview', id);
   } else {
     message.value = result.status === 'duplicate'

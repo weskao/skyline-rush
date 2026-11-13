@@ -136,6 +136,9 @@ const currencyArt = (kind: string) => {
         <small v-if="!compact">{{ row.note }}</small>
       </span>
     </button>
+    <span v-if="snapshot?.persistence === 'memory-only'" class="wallet-save-warning" role="status"
+      :title="label('This device could not save this session’s progress.', '此裝置未能儲存本次進度。')"
+      :aria-label="label('This device could not save this session’s progress.', '此裝置未能儲存本次進度。')">⚠</span>
     <Teleport to="body">
       <section v-if="activeRow" :id="cardId" ref="card" class="wallet-detail"
         :aria-label="activeRow.label" :data-kind="activeRow.id" :style="cardStyle"
@@ -146,6 +149,9 @@ const currencyArt = (kind: string) => {
         </header>
         <p class="wallet-detail-note">{{ activeRow.note }}</p>
         <p>{{ activeRow.detail }}</p>
+        <p v-if="snapshot?.persistence === 'memory-only'" role="status">
+          {{ label('This device could not save this session’s progress.', '此裝置未能儲存本次進度。') }}
+        </p>
       </section>
     </Teleport>
   </section>

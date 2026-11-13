@@ -77,6 +77,29 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     });
   }
 
+  test('a coin offer discloses its cost and only debits on confirmation', async ({ page }) => {
+    await page.goto(url);
+    await page.evaluate(() => {
+      for (let index = 1; index <= 3; index++) window.__wave3DemoFixture.grantRace(index);
+    });
+    const store = page.locator('[data-wave3-demo-store]');
+    await store.locator('[data-demo-id="nitro-trail-cyan"]').click();
+    await expect(store.locator('.demo-selected-balance')).toHaveText('Available 150 Demo coins');
+    await store.getByRole('button', { name: 'Demo redeem' }).click();
+    await expect(store.getByRole('group', { name: 'Confirm demo redemption' })).toContainText('150 Demo coins');
+    await store.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(store.locator('.demo-selected-balance')).toHaveText('Available 150 Demo coins');
+    await store.getByRole('button', { name: 'Demo redeem' }).click();
+    await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
+    await expect(store.locator('.demo-selected-balance')).toHaveText('Available 0 Demo coins');
+    await expect(store.locator('.demo-wallet strong')).toHaveText('80');
+    await store.getByRole('button', { name: 'Demo Collection' }).click();
+    const collection = page.locator('[data-wave3-demo-collection]');
+    await collection.locator('[data-demo-id="nitro-trail-cyan"]').click();
+    await collection.getByRole('button', { name: 'Equip demo preview' }).click();
+    await expect(collection.locator('[data-demo-id="nitro-trail-cyan"]')).toContainText('Demo equipped');
+  });
+
   test('trial expiry, bilingual copy and missing image fallback work without granting', async ({ page }) => {
     await page.route('**/feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', route => route.abort());
     await page.goto(url);
