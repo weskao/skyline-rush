@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const SECTIONS = 24;
-const CLEARANCE = .18;
+export const CLEARANCE = .18;
+/** Equipped airflow skin motion per pattern p: base + p * step, in units of the fitted motion scale. */
+export const SKIN_MOTION = { ripple: [.025, .024], sway: [.045, .012] } as const;
 type Section = { left: number; right: number; top: number };
 type AirflowProfile = { bounds: THREE.Box3; sections: Section[] };
 type Point = [x: number, y: number, z: number];
@@ -67,6 +69,20 @@ export function measureAirflowProfile(model: THREE.Object3D, vehicle = model): A
     }
   }
   return { bounds, sections };
+}
+
+// Skin motion is authored for a car this size (procedural Roadster, rounded); other cars scale it.
+const MOTION_REFERENCE = { width: 2.4, height: 1.4 };
+
+/** Every size-dependent airflow number, derived from the measured shell. No per-car constants. */
+export function airflowFrame({ bounds: { min, max } }: AirflowProfile) {
+  const width = max.x - min.x, length = max.z - min.z, centerX = (min.x + max.x) * .5;
+  return {
+    pressure: { x: centerX, z: (min.z + max.z) * .5, width: width * .86, length: length * .92 },
+    wakeRange: [max.z, max.z + length * .72] as const,
+    motionScale: [width / MOTION_REFERENCE.width, Math.max(0, max.y) / MOTION_REFERENCE.height] as const,
+    trail: { x: centerX, y: max.y * .4, z: max.z, halfWidth: width * .26 }, // dash ribbon / roll wake leave the tail
+  };
 }
 
 /** A single draw for roof, flank, underbody and wake paths. Only positions depend on the model. */

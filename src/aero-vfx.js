@@ -6,7 +6,7 @@ import { createNitroTrail } from '#garage-nitro-trail';
 import { TRICK_ROLL_TIME } from './game.js';
 import { plumeLook, thrusterGlow } from './board-effects.ts';
 import { createThrusterGlow } from './thruster-glow.ts';
-import { measureAirflowProfile, streamGeometry } from './airflow-geometry.ts';
+import { SKIN_MOTION, airflowFrame, measureAirflowProfile, streamGeometry } from './airflow-geometry.ts';
 
 export const REAR_PORTS = [-0.62, -0.22, 0.22, 0.62].map(x => ({ position: [x, 0.64, 2.39], direction: [0, 0, 1], size: 0.065 }));
 const MAX_PARTICLES = 512, MAX_GHOSTS = 8;
@@ -31,16 +31,16 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
     vertexShader: `attribute float flowType; attribute float lane; attribute vec2 flowOutward; varying vec2 vUv; varying float vType; varying float vLane;
       uniform float time; uniform float turbulence; uniform float downforce;uniform float skinPattern; uniform vec2 wakeRange, rippleScale;
       void main(){vUv=uv;vType=flowType;vLane=lane;vec3 p=position;
-        float wake=smoothstep(wakeRange.x,wakeRange.y,p.z);p.x+=sin(time*2.+p.z*3.+lane*9.)*wake*turbulence*.13;
-        p.y+=wake*downforce*.25;
+        float wake=smoothstep(wakeRange.x,wakeRange.y,p.z);p.x+=sin(time*2.+p.z*3.+lane*9.)*wake*turbulence*.13*rippleScale.x;
+        p.y+=wake*downforce*.25*rippleScale.y;
         float along=(position.z-wakeRange.x)/(wakeRange.y-wakeRange.x);
         float phase=along*(7.+skinPattern*3.)+time*(1.+skinPattern*.7)+lane*6.28;
         if(skinPattern>.5){
-          float ripple=(.5+.5*sin(phase))*(.025+skinPattern*.024)*(1.+wake);
+          float ripple=(.5+.5*sin(phase))*(${SKIN_MOTION.ripple[0]}+skinPattern*${SKIN_MOTION.ripple[1]})*(1.+wake);
           p.xy+=flowOutward*rippleScale*ripple;
           if(skinPattern>1.5&&flowType!=1.){
             vec2 tangent=vec2(flowOutward.y,-flowOutward.x);
-            p.xy+=tangent*rippleScale*cos(phase)*(.045+skinPattern*.012);
+            p.xy+=tangent*rippleScale*cos(phase)*(${SKIN_MOTION.sway[0]}+skinPattern*${SKIN_MOTION.sway[1]});
           }
         }
         gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
@@ -72,14 +72,17 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   pressure.rotation.x = -Math.PI / 2; pressure.position.y = 0.11;
   local.add(pressure);
   function placeAirflow(profile) {
-    const { min, max } = profile.bounds;
-    pressure.position.x = (min.x + max.x) * .5;
-    pressure.position.z = (min.z + max.z) * .5;
-    pressure.scale.set((max.x - min.x) * .86, (max.z - min.z) * .92, 1);
-    const { wakeRange, rippleScale } = flow.material.uniforms;
-    wakeRange.value.set(max.z, max.z + (max.z - min.z) * .72);
-    rippleScale.value.set(clamp((max.x - min.x) / 2.4, .4, 1.4), clamp(max.y / 1.4, .4, 1.4));
+    const frame = airflowFrame(profile), { wakeRange, rippleScale } = flow.material.uniforms;
+    pressure.position.x = frame.pressure.x;
+    pressure.position.z = frame.pressure.z;
+    pressure.scale.set(frame.pressure.width, frame.pressure.length, 1);
+    wakeRange.value.fromArray(frame.wakeRange);
+    rippleScale.value.fromArray(frame.motionScale);
+    trailAnchor.set(frame.trail.x, frame.trail.y, frame.trail.z);
+    trailHalfWidth = frame.trail.halfWidth;
   }
+  const trailAnchor = new THREE.Vector3();
+  let trailHalfWidth = 0;
   placeAirflow(proceduralProfile);
   const rear = new THREE.Group(); rear.name = 'Rear ports'; local.add(rear); // garage-model.ts moves it onto a dressed GLB's nozzles
 
@@ -334,8 +337,8 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         const start = Math.max(0, 1 - 60 / previous.distanceTo(current));
         sample.lerpVectors(previous, current, start);
         sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, start);
-        ribbonFrom.set(0, 0.55, 2.5).applyQuaternion(sampleRotation).add(sample);
-        ribbonSide.set(0.65, 0, 0).applyQuaternion(sampleRotation);
+        ribbonFrom.copy(trailAnchor).applyQuaternion(sampleRotation).add(sample);
+        ribbonSide.set(trailHalfWidth, 0, 0).applyQuaternion(sampleRotation);
         dashSamples(previous, current, 0.8 / quality, 16, t => {
           const slot = segmentCursor, s = segments[slot]; segmentCursor = (slot + 1) % segments.length;
           s.roll = !boost && !showcaseRibbon;
@@ -344,8 +347,8 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
           s.a.copy(ribbonFrom); s.left.copy(ribbonSide);
           sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
           sample.lerpVectors(previous, current, t);
-          s.b.set(0, 0.55, 2.5).applyQuaternion(sampleRotation).add(sample);
-          s.right.set(0.65, 0, 0).applyQuaternion(sampleRotation);
+          s.b.copy(trailAnchor).applyQuaternion(sampleRotation).add(sample);
+          s.right.set(trailHalfWidth, 0, 0).applyQuaternion(sampleRotation);
           s.life = s.maxLife = Math.min(0.6, settings.trailLength / Math.max(30, car.speed));
           ribbonFrom.copy(s.b); ribbonSide.copy(s.right);
         });
