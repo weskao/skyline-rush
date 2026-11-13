@@ -9,6 +9,10 @@ test('three icons and numbers move from Garage to tiny Home row', () => {
   const mission = source('GarageMissionBoard.vue');
   const wallet = source('Wave3CurrencyStrip.vue');
   assert.match(app, /<Wave3CurrencyStrip[^>]*compact/);
+  assert.match(app, /class="home-intro-topbar"/);
+  const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  assert.match(css, /\.home-intro-topbar\s*\{/);
+  assert.match(css, /flex-wrap:wrap/);
   assert.match(app, /:experience="wave3DemoExperience"/);
   assert.doesNotMatch(garage, /<Wave3CurrencyStrip/);
   assert.doesNotMatch(mission, /class="garage-demo-balance"/);

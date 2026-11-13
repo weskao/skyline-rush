@@ -34,6 +34,10 @@ test('home displays three compact resource icons with genuine demo points', asyn
       return { width: r.width, height: r.height, rows: [...el.children].map(ch => Math.round(ch.getBoundingClientRect().top)) };
     });
     expect(metrics.height).toBeLessThanOrEqual(36);
+    if (viewport.width >= 1001) {
+      const homeRowHeight = await page.locator('.home-intro-topbar').evaluate(el => el.getBoundingClientRect().height);
+      expect(homeRowHeight).toBeLessThanOrEqual(42);
+    }
     expect(metrics.width).toBeLessThanOrEqual(290);
     expect(new Set(metrics.rows).size).toBe(1);
     expect(await page.locator('#intro').evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
