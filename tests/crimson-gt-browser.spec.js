@@ -66,23 +66,24 @@ const attach = async (page, name) => {
   if (process.env.CRIMSON_GT_SHOTS) { mkdirSync(process.env.CRIMSON_GT_SHOTS, { recursive: true }); copyFileSync(path, join(process.env.CRIMSON_GT_SHOTS, `${name}.png`)); }
 };
 
-test('Garage picker: Roadster by default, Crimson GT in factory red, six paints, per-car paint and reload persistence', async ({ gameplayPage: page, gameplayURL }) => {
+test('Garage picker: both cars share the paints, with per-car paint and reload persistence', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(90000));
   const { requests, errors } = await prepare(page, gameplayURL, { storage: { 'skyline-rush-stars': { coast: 3 } } }); // 3 stars: Aurora is owned
   await page.locator('#garage-button').click();
   await expect(carButton(page, 'roadster')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(6);
+  await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(7);
   expect(requests).toEqual([]); // the Roadster stays procedural: no GLB
   expect((await paintHex(page)).glb).toBeNull();
   const roadsterAirflow = await airflowBounds(page);
+  await expect(carButton(page, 'roadster')).toHaveAccessibleName('Stratosway R2');
+  await expect(carButton(page, 'crimson-gt')).toHaveAccessibleName('Vantaire GT');
 
   await carButton(page, 'crimson-gt').click();
   await expect(carButton(page, 'crimson-gt')).toHaveAttribute('aria-pressed', 'true');
   await modelReady(page);
   expect(requests).toEqual(['/models/crimson-gt/crimson-gt.glb']); // settled: model state polled above
   await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(7);
-  await expect(page.locator('#garage-screen [data-paint]').first()).toHaveAttribute('data-paint', 'factory');
-  await expect(page.locator('[data-paint="factory"]')).toHaveAttribute('data-state', 'equipped');
+  await expect(page.locator('[data-paint="crimson"]')).toHaveAttribute('data-state', 'equipped');
   await expect.poll(() => paintHex(page)).toEqual({ model: 'crimson-gt', glb: FACTORY_RED, proc: FACTORY_RED });
   await expect.poll(() => airflowBounds(page)).not.toEqual(roadsterAirflow);
   await attach(page, 'gt-garage-factory');
@@ -114,14 +115,21 @@ test('Garage picker: Roadster by default, Crimson GT in factory red, six paints,
   await expect.poll(() => glbRoots(page)).toBe(0);
   await expect.poll(() => airflowBounds(page)).toEqual(roadsterAirflow);
   await expect.poll(async () => (await paintHex(page)).proc).toBe(PAINTS.pearl.paint.slice(1)); // the Roadster kept its own paint
-  await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(6);
+  await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(7);
+  const crimson = page.locator('[data-paint="crimson"]');
+  await expect(crimson).toHaveAttribute('data-state', 'owned');
+  await crimson.click();
+  await page.locator('#garage-equip').click();
+  await expect(crimson).toHaveAttribute('data-state', 'equipped');
+  await expect.poll(async () => (await paintHex(page)).proc).toBe(FACTORY_RED);
+  expect(await saved(page, 'skyline-rush-paint')).toBe('crimson');
   await carButton(page, 'crimson-gt').click();
   await modelReady(page);
   await expect.poll(async () => (await paintHex(page)).glb).toBe(PAINTS.aurora.paint.slice(1)); // and the GT remembers Aurora
   await page.locator('#garage-studio-open').click();
   await page.locator('#garage-restore-default').click();
   await expect.poll(async () => (await paintHex(page)).proc).toBe(FACTORY_RED);
-  expect(await saved(page, 'skyline-rush-car-paints')).toEqual({ 'crimson-gt': 'factory' });
+  expect(await saved(page, 'skyline-rush-car-paints')).toEqual({ 'crimson-gt': 'crimson' });
   expect(errors).toEqual([]);
 });
 
@@ -377,7 +385,8 @@ for (const [name, viewport] of [['phone portrait', { width: 390, height: 844 }],
       await page.locator('#garage-button').tap();
       const gt = carButton(page, 'crimson-gt');
       await gt.scrollIntoViewIfNeeded();
-      await expect(gt).toContainText('深紅跑車');
+      await expect(gt).toContainText('夜鋒 GT');
+      await expect(carButton(page, 'roadster')).toHaveAccessibleName('天航 R2');
       await expect(carButton(page, 'roadster')).toContainText('使用中');
       const box = await gt.boundingBox();
       expect(box.height).toBeGreaterThanOrEqual(44);
@@ -386,7 +395,7 @@ for (const [name, viewport] of [['phone portrait', { width: 390, height: 844 }],
       await gt.tap();
       await expect(gt).toHaveAttribute('aria-pressed', 'true');
       await modelReady(page);
-      await expect(page.locator('[data-paint="factory"]')).toContainText('原廠深紅');
+      await expect(page.locator('[data-paint="crimson"]')).toContainText('深紅');
       await attach(page, `gt-garage-${name.replace(' ', '-')}`);
       expect(errors).toEqual([]);
     });
@@ -439,23 +448,23 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
   });
 }
 
-// The factory finish uses the same full-bleed 960×510 layout as the rest of the paint collection.
+// Deep Crimson uses the same full-bleed 960×510 layout as the rest of the paint collection.
 for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
-  test.describe(`factory card ${viewport.width}x${viewport.height}`, () => {
+  test.describe(`Deep Crimson card ${viewport.width}x${viewport.height}`, () => {
     test.use({ viewport });
-    test('the factory red card is native 3x, opaque, and uses the same layout as the paint collection', async ({ gameplayPage: page, gameplayURL }) => {
+    test('the shared Deep Crimson card is native 3x, opaque, and uses the same layout as the paint collection', async ({ gameplayPage: page, gameplayURL }) => {
       const { errors } = await prepare(page, gameplayURL, { storage: GT });
       await page.locator('#garage-button').click();
-      const button = page.locator('#garage-screen [data-paint="factory"]');
+      const button = page.locator('#garage-screen [data-paint="crimson"]');
       await button.scrollIntoViewIfNeeded();
       const image = button.locator('img.garage-paint-image');
       await expect(image).toBeVisible();
-      await expect(image).toHaveAttribute('src', /paint-cards\/factory@3x\.webp$/);
+      await expect(image).toHaveAttribute('src', /paint-cards\/crimson@3x\.webp$/);
       await expect(image).toHaveJSProperty('naturalWidth', 960);
       await expect(image).toHaveJSProperty('naturalHeight', 510);
       const facts = await page.evaluate(() => {
         const rect = selector => { const { left, top, right, bottom, width, height } = document.querySelector(selector).getBoundingClientRect(); return { left, top, right, bottom, width, height }; };
-        const img = document.querySelector('[data-paint="factory"] img.garage-paint-image');
+        const img = document.querySelector('[data-paint="crimson"] img.garage-paint-image');
         const canvas = Object.assign(document.createElement('canvas'), { width: img.naturalWidth, height: img.naturalHeight });
         const context = canvas.getContext('2d');
         context.drawImage(img, 0, 0);
@@ -467,12 +476,12 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
         }
         return {
           minAlpha, redShare: red / (data.length / 4),
-          image: rect('[data-paint="factory"] img.garage-paint-image'), preview: rect('[data-paint="factory"] .garage-paint-preview'),
-          button: rect('[data-paint="factory"]'), name: rect('[data-paint="factory"] .garage-paint-name'), pearl: rect('[data-paint="pearl"] .garage-paint-preview'),
+          image: rect('[data-paint="crimson"] img.garage-paint-image'), preview: rect('[data-paint="crimson"] .garage-paint-preview'),
+          button: rect('[data-paint="crimson"]'), name: rect('[data-paint="crimson"] .garage-paint-name'), pearl: rect('[data-paint="pearl"] .garage-paint-preview'),
         };
       });
       expect(facts.minAlpha, 'full-bleed card, no transparent edge').toBe(255);
-      expect(facts.redShare, 'factory crimson covers a visible portion of the card').toBeGreaterThan(0.1);
+      expect(facts.redShare, 'Deep Crimson covers a visible portion of the card').toBeGreaterThan(0.1);
       expect(Math.abs(facts.image.width - facts.preview.width)).toBeLessThan(1);
       expect(Math.abs(facts.image.height - facts.preview.height)).toBeLessThan(1);
       expect(Math.abs(facts.preview.width - facts.pearl.width), 'same frame as the paint cards').toBeLessThan(1);

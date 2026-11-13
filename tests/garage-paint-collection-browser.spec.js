@@ -8,9 +8,9 @@ for (const quality of ['low', 'medium', 'high']) {
     await page.goto('/');
     await page.locator('#garage-button').click();
     const options = page.locator('.garage-collection .paint-options button');
-    await expect(options).toHaveCount(6);
+    await expect(options).toHaveCount(7);
     await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', quality);
-    const paints = ['pearl', 'aurora', 'glacier', 'coral', 'cobalt', 'obsidian'];
+    const paints = ['pearl', 'crimson', 'aurora', 'glacier', 'coral', 'cobalt', 'obsidian'];
     for (const id of paints) {
       const button = page.locator(`[data-paint="${id}"]`);
       const preview = button.locator('.garage-paint-preview');

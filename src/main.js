@@ -28,7 +28,7 @@ import { setupTouchControlsUI } from './touch-controls-ui.ts';
 import { starTotal } from './history.ts';
 import { recordGhost, ghostAt } from './ghost.ts';
 import { createPresentation } from './presentation.ts';
-import { carPaints, equippedCar, loadCarPaint, saveCarPaint } from './car-catalog.ts';
+import { equippedCar, loadCarPaint, saveCarPaint } from './car-catalog.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
 import { drainSteps, SIM_STEP } from './frame-pacing.ts';
@@ -249,7 +249,7 @@ const historyDialog = setupHistoryDialog({
   calm: calmMotion,
   motionOptions,
 });
-const { showGarage, adoptCar, syncSkins } = setupGarageUI({
+const { showGarage, adoptCar, syncSkins, previewPaint } = setupGarageUI({
   getWorld: () => world,
   canOpen: () => race.phase === 'ready',
   clearControls: () => controls.clear(),
@@ -537,7 +537,7 @@ try {
   requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(vfx.settings());
-  world.previewAppearance(carPaints(equippedCar())[equippedPaint]);
+  previewPaint(equippedPaint);
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad(), !!import.meta.env.VITE_DIAG);
   const fps = setupFpsUI(scale => world.setRenderScale(scale));

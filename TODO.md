@@ -12,6 +12,12 @@
 - [x] Typecheck, module-size, production build and unit suite passed (2,757 passed, 3 skipped); Chromium screenshots reviewed for all six viewports.
 - [ ] Check the 詳情 panel on a physical iPhone in landscape and the exact-commit GitHub CI quality gate.
 
+# 2026-11-13 — Shared Garage paints and car names
+
+- [x] Share all paints across both cars and make Deep Crimson available at zero stars. Keep each car's default and saved paint.
+- [x] Use Stratosway R2 and Vantaire GT in English and localized names in Traditional Chinese. RED → GREEN covers zero-star access, the legacy factory save and both locales.
+- [ ] Confirm full GitHub Actions on the final commit.
+
 # 2026-11-13 — Garage vehicle thumbnails and factory paint artwork
 
 - [x] Match the factory crimson swatch to the existing paint cards and show the full Roadster and Crimson GT on their picker buttons.

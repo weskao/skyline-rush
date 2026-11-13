@@ -18,7 +18,7 @@ test('local-only build exposes every track and paint without writing storage', (
     assert.equal(allLocal.length, 16, 'all six approved previews are available only in local-unlocked');
     assert.deepEqual(devPaints(), Object.keys(PAINTS));
     assert.deepEqual(prodTracks(), ['coast']);
-    assert.deepEqual(prodPaints(0), ['pearl']);
+    assert.deepEqual(prodPaints(0), ['pearl', 'crimson']);
     assert.deepEqual(prodPaints(24), Object.keys(PAINTS));
   } finally {
     if (original) Object.defineProperty(globalThis, 'localStorage', original);
