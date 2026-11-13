@@ -6,7 +6,7 @@ import { createRoomEnvironment } from './room-environment.ts';
 import { createWeatherPoints } from './weather-points.ts';
 import { createSectionSignMaterials } from './section-sign-materials.ts';
 import { createCoastLook } from './coast-look.ts';
-import { applyTrackLighting, upcomingRaceLighting, upcomingRaceBloom, UPCOMING_BLOOM_THRESHOLD, UPCOMING_HOME_BLOOM } from './upcoming-lighting.ts';
+import { applyTrackLighting, configureBloom, upcomingRaceLighting, upcomingRaceBloom, UPCOMING_BLOOM_THRESHOLD, UPCOMING_HOME_BLOOM } from './upcoming-lighting.ts';
 import { createClassicBackdrop } from './classic-backdrop.ts';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -17,7 +17,7 @@ import { roadRibbon, setRoadRow } from './geometry.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
 import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
-import { raceCameraView, rigBack, rigHeight, rigFov, rigShake, stepCameraSwing } from './race-camera.ts';
+import { raceCameraView, rigBack, rigHeight, rigFov, rigShake, stepCameraSwing, frameChaseSightline } from './race-camera.ts';
 import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
@@ -527,13 +527,13 @@ export function createWorld(canvas) {
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null, motion = null) {
       garageModel?.frame(visual.quality === 'low' ? 'low' : 'high', race.phase, garageHomePreview || !!garageCamera, garageCamera ? garageStage?.modelHost ?? null : null, race.phase === 'ready' ? upcomingStage.modelHost : null, homeModelHost);
-      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.01; bloom.threshold = 1.1; if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; } // r186 bloom is stronger in the Studio's bright environment.
+      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; configureBloom(bloom, visual.quality, .01, 1.1); if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; } // r186 bloom is stronger in the Studio's bright environment.
       // The original home showcase owns only scenery and camera; no race state or entry.
       if (race.phase === 'ready' && upcomingStage.scene) {
         renderPass.scene = upcomingStage.scene;
         upcomingStage.update(camera, idleTime, visual, motionPreference.matches || visual.comfortable);
         lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0;
-        bloom.enabled = visual.quality !== 'low'; bloom.strength = UPCOMING_HOME_BLOOM; bloom.threshold = UPCOMING_BLOOM_THRESHOLD;
+        configureBloom(bloom, visual.quality, UPCOMING_HOME_BLOOM, UPCOMING_BLOOM_THRESHOLD);
         renderer.info.reset(); composer.render(dt); return;
       }
       renderPass.scene = scene;
@@ -868,6 +868,7 @@ export function createWorld(canvas) {
           desiredCamera.fromArray(frame.forward).multiplyScalar(-back).applyAxisAngle(camera.up, cameraSwing).add(player.position).y += height;
           const f=race.course?graphLookAhead(race.course,visualCar.x,view.ahead):trackFrame(trackId,distance+lookAheadDistance(trackId,distance,view.ahead,endlessActive),car.span),p=f.point,o=race.course?courseOriginPoint:trackPoint(trackId,distance);
           lookTarget.set((race.course?p[0]-o[0]:p.x-o.x)+f.right[0]*visualCar.x,(race.course?p[1]-o[1]:p.y-o.y)+visualCar.altitude+view.look,(race.course?p[2]-o[2]:p.z-o.z)+f.right[2]*visualCar.x);
+          if (trackId === 'volcanic-crown' && portrait && !first) frameChaseSightline(desiredCamera, lookTarget, player.position, camera.aspect, view.fov);
         } else if (first) {
           desiredCamera.set(visualCar.x * view.follow, visualCar.altitude + height, back);
           lookTarget.set(visualCar.x + roadCenter(distance + view.ahead) - center, visualCar.altitude + view.look, -view.ahead);
@@ -916,9 +917,8 @@ export function createWorld(canvas) {
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
       const boostGlow = reducedMotion || !visual.enabled ? 0 : visual.bloom * (boostStrength * .25 + feedback.ignition * .2);
-      bloom.threshold = lighting ? UPCOMING_BLOOM_THRESHOLD : coastLook.bloomThreshold(1.1);
-      bloom.strength = lighting ? upcomingRaceBloom(boostGlow) : TOUR_IDS.has(trackId) ? .085 : (trackId === 'coast' ? coastLook.bloomStrength(COAST_LIGHTING.bloom) : .42) + boostGlow;
-      bloom.enabled = visual.quality !== 'low';
+      const bloomStrength = lighting ? upcomingRaceBloom(boostGlow) : TOUR_IDS.has(trackId) ? .085 : (trackId === 'coast' ? coastLook.bloomStrength(COAST_LIGHTING.bloom) : .42) + boostGlow;
+      configureBloom(bloom, visual.quality, bloomStrength, lighting ? UPCOMING_BLOOM_THRESHOLD : coastLook.bloomThreshold(1.1));
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
       renderer.info.reset(); // Exclude warmup draws and previous frames.
       composer.render(dt);

@@ -2,7 +2,9 @@
 
 - [x] Tune road and vehicle reflections, scene light levels and bloom across all six Coming Soon tracks. The showcase light regression failed on stacked key lights before the change and passed for all six scenes after it.
 - [x] Volcanic Crown: preserve the ground lane under the vent shortcut and align the visible road with the shared driving frame. RED reproduced the opaque deck and a join hole. GREEN passed the deck and mesh-ray regressions plus the existing Volcanic route, fork, obstacle and lighting tests.
-- [ ] Record browser coverage on desktop and both phone orientations, then verify the exact commit's CI.
+- [x] Desktop WebGL samples cover all six Home and race scenes. Volcanic Crown before/after probes reproduced the missing car around 11.32 km and the opaque deck at 7.08 km. Phone-sized portrait and landscape probes covered both locations.
+- [x] Keep the car inside the portrait chase camera through the Volcanic gorge join. RED projected the body off-screen at 11.32 km. GREEN keeps room around the silhouette.
+- [ ] Verify the loaded GLB on hardware and the exact commit's full GitHub CI.
 
 # 2026-11-13 — Model-adaptive airflow
 

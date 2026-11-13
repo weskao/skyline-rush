@@ -158,3 +158,20 @@ test('Volcanic road mesh stays below the car and leaves no holes at edge joins',
       }
     }
   }));
+
+test('Volcanic chase camera keeps the car in frame at the gorge join on portrait phones', async () => {
+  const { PerspectiveCamera, Vector3 } = await import('three');
+  const { RACE_CAMERA, frameChaseSightline } = await import('../src/race-camera.ts');
+  const { lookAheadDistance } = await import('../src/track-paths.ts');
+  const view = RACE_CAMERA.chasePortrait, camera = new PerspectiveCamera(view.fov, 390 / 844);
+  const distance = 11321, lane = 8.5;
+  const f = volcanicFrame(distance);
+  const car = new Vector3(f.point.x, f.point.y, f.point.z).addScaledVector(new Vector3(...f.right), lane);
+  camera.position.copy(car).addScaledVector(new Vector3(...f.forward), -view.back).y += view.height;
+  const next = volcanicFrame(distance + lookAheadDistance(VOLCANIC_ID, distance, view.ahead));
+  const look = new Vector3(next.point.x + next.right[0] * lane, next.point.y + view.look, next.point.z + next.right[2] * lane);
+  frameChaseSightline(camera.position, look, car, camera.aspect, view.fov);
+  camera.lookAt(look);
+  camera.updateMatrixWorld();
+  assert.ok(Math.abs(car.clone().project(camera).x) < .65, 'the rear silhouette needs room on both sides');
+});

@@ -1,3 +1,4 @@
+import type { Vector3 } from 'three';
 // In-race camera rig: one tunable table plus the pure math that reads it. src/world.js owns the Three.js camera
 // and only applies these numbers; the ready-screen showcase views live in src/track-preview.ts.
 import { MAX_SPEED } from './drive-rules.ts';
@@ -55,6 +56,21 @@ export const rigHeight = (view: RaceCameraView, altitude: number): number => vie
 
 /** Base FOV for the speed; the sprint kick and impact pinch are added by the caller. */
 export const rigFov = (view: RaceCameraView, speed: number): number => view.fov + Math.max(0, finite(speed)) * view.speedFov;
+
+/**
+ * Keep the chase car inside a narrow viewport when the road immediately bends
+ * away from the car's heading. Preserve the look target's height and distance.
+ */
+export function frameChaseSightline(eye: Vector3, look: Vector3, car: Vector3, aspect: number, verticalFov: number): void {
+  const heading = Math.atan2(car.x - eye.x, car.z - eye.z);
+  const dx = look.x - eye.x, dz = look.z - eye.z;
+  const offset = Math.atan2(Math.sin(Math.atan2(dx, dz) - heading), Math.cos(Math.atan2(dx, dz) - heading));
+  const limit = Math.atan(.5 * aspect * Math.tan(verticalFov * Math.PI / 360));
+  if (Math.abs(offset) <= limit) return;
+  const angle = heading + Math.sign(offset) * limit, reach = Math.hypot(dx, dz);
+  look.x = eye.x + Math.sin(angle) * reach;
+  look.z = eye.z + Math.cos(angle) * reach;
+}
 
 /**
  * Camera orbit around the car (radians, same sense as the car's yaw). It trails the drift yaw towards the opposite

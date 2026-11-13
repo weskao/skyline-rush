@@ -28,3 +28,10 @@ export function applyTrackLighting(id: string, upcoming: ReturnType<typeof upcom
 export const UPCOMING_BLOOM_THRESHOLD = 1.65;
 export const UPCOMING_HOME_BLOOM = .07;
 export const upcomingRaceBloom = (boostGlow: number) => .09 + Math.min(.09, boostGlow * .4);
+
+export function configureBloom(pass: { enabled: boolean; strength: number; threshold: number },
+  quality: string, strength: number, threshold: number): void {
+  pass.enabled = quality !== 'low';
+  pass.strength = strength;
+  pass.threshold = threshold;
+}
