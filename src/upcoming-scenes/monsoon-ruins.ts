@@ -255,9 +255,9 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   scene.add(group);
   const stone = new THREE.MeshStandardMaterial({ color: color.stone, roughness: .94, flatShading: true });
   const shadow = new THREE.MeshStandardMaterial({ color: color.darkStone, roughness: .98 });
-  const mud = new THREE.MeshStandardMaterial({ color: color.mud, roughness: .38, metalness: .12, side: THREE.DoubleSide });
+  const mud = new THREE.MeshStandardMaterial({ color: color.mud, roughness: .68, metalness: .06, side: THREE.DoubleSide });
   const water = new THREE.MeshStandardMaterial({ color: color.water, transparent: true, opacity: .78,
-    roughness: .2, metalness: .18, side: THREE.DoubleSide, depthWrite: false });
+    roughness: .4, metalness: .07, side: THREE.DoubleSide, depthWrite: false });
   const foam = new THREE.MeshBasicMaterial({ color: '#c2ece9', transparent: true, opacity: .73, depthWrite: false });
   const ground = new THREE.Mesh(ribbon(45, -180, 14), mud);
   ground.name = 'monsoon-ground-road';
@@ -288,7 +288,7 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
   group.add(landing);
   for (const z of [18, -15, -37, -80, -103, -140]) {
     const puddle = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 5),
-      new THREE.MeshStandardMaterial({ color: '#a1d2c6', roughness: .13, metalness: .4,
+      new THREE.MeshStandardMaterial({ color: '#a1d2c6', roughness: .38, metalness: .12,
         transparent: true, opacity: .42, side: THREE.DoubleSide, depthWrite: false }));
     puddle.name = 'wet-road reflective puddle';
     puddle.rotation.x = -Math.PI / 2;
@@ -306,8 +306,8 @@ export function createUpcomingEnvironment(scene: THREE.Scene): Environment {
     new THREE.MeshStandardMaterial({ color: '#3b8c65', roughness: .87, side: THREE.DoubleSide }));
   const mist = makeMist(group);
   const rain = makeRain(group);
-  group.add(new THREE.HemisphereLight('#b5d7c6', '#193b30', 2.3));
-  const day = new THREE.DirectionalLight('#d6ebe1', 2.6);
+  group.add(new THREE.HemisphereLight('#b5d7c6', '#193b30', .98));
+  const day = new THREE.DirectionalLight('#d6ebe1', .9);
   day.position.set(-30, 95, 40);
   group.add(day);
   let disposed = false;

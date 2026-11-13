@@ -6,6 +6,7 @@ import { createRoomEnvironment } from './room-environment.ts';
 import { createWeatherPoints } from './weather-points.ts';
 import { createSectionSignMaterials } from './section-sign-materials.ts';
 import { createCoastLook } from './coast-look.ts';
+import { applyTrackLighting, upcomingRaceLighting, upcomingRaceBloom, UPCOMING_BLOOM_THRESHOLD, UPCOMING_HOME_BLOOM } from './upcoming-lighting.ts';
 import { createClassicBackdrop } from './classic-backdrop.ts';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -28,7 +29,7 @@ import { createCarBounds } from './car-bounds.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts';
 import { createCircuitScene } from './circuit-scene.ts';
-import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { fitText } from './sign-text.ts'; import { MEASURED_COURSE_IDS, MEASURED_COURSE_SUN, createMeasuredCourseScenes } from './measured-course-scenes.ts';
+import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { fitText } from './sign-text.ts'; import { MEASURED_COURSE_IDS, createMeasuredCourseScenes } from './measured-course-scenes.ts';
 import { createCourseRaceScene } from './course-race-scene.ts'; import { graphOrigin, graphCarVisual, graphLookAhead, graphFinishVisual } from './course-render-pose.ts'; import { courseItemFrame, courseItemPoint } from './course-items.ts'; import { isCourseRuntime } from './course-runtimes.ts';
 import { FROSTBITE_ID, FROSTBITE_SPAN, frostbiteObjectSpan, frostbiteSpanLift } from './courses/frostbite-race.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
@@ -120,7 +121,7 @@ export function createWorld(canvas) {
   roadsideLamps.forEach(light=>{light.visible=false;scene.add(light);});
   sunlight.position.set(-170, 100, -190);
   scene.add(sunlight);
-  const coastLook = createCoastLook({ scene, renderer, lens, room: environment.texture, roomIntensity: 0.42, baseUrl: import.meta.env.BASE_URL, bloom, sun: sunlight });
+  const coastLook = createCoastLook({ scene, renderer, lens, room: environment.texture, roomIntensity: 0.42, baseUrl: import.meta.env.BASE_URL, sun: sunlight });
   const { sky, sun, sea, seaLines, mountains } = createClassicBackdrop(scene, box, put);
   const city = new THREE.Group();
   scene.add(city);
@@ -220,13 +221,13 @@ export function createWorld(canvas) {
   applyCarReflections(player, carEnvironment);
   const graceFade = createGraceFade(player); // before aero VFX attach to it
   const rearLight = player.userData.rearLight;
-  const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); scene.add(car); return car; });
+  const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); applyCarReflections(car, carEnvironment); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
   // ×2 covers the double-traffic daily modifier.
   const traffic = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2))) }, (_, i) => {
     const car = makeCar(TRAFFIC_CAR_STYLES[i % TRAFFIC_CAR_STYLES.length], trafficColors[i % trafficColors.length]);
-    car.scale.setScalar(0.96);
+    car.scale.setScalar(0.96); applyCarReflections(car, carEnvironment);
     scene.add(car);
     return car;
   });
@@ -526,17 +527,18 @@ export function createWorld(canvas) {
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null, motion = null) {
       garageModel?.frame(visual.quality === 'low' ? 'low' : 'high', race.phase, garageHomePreview || !!garageCamera, garageCamera ? garageStage?.modelHost ?? null : null, race.phase === 'ready' ? upcomingStage.modelHost : null, homeModelHost);
-      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.01; if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; } // r186 bloom is stronger in the Studio's bright environment.
+      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.01; bloom.threshold = 1.1; if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; } // r186 bloom is stronger in the Studio's bright environment.
       // The original home showcase owns only scenery and camera; no race state or entry.
       if (race.phase === 'ready' && upcomingStage.scene) {
         renderPass.scene = upcomingStage.scene;
         upcomingStage.update(camera, idleTime, visual, motionPreference.matches || visual.comfortable);
         lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0;
-        bloom.enabled = visual.quality !== 'low'; bloom.strength = 0.14;
+        bloom.enabled = visual.quality !== 'low'; bloom.strength = UPCOMING_HOME_BLOOM; bloom.threshold = UPCOMING_BLOOM_THRESHOLD;
         renderer.info.reset(); composer.render(dt); return;
       }
       renderPass.scene = scene;
-      endlessActive=!!race.endless;
+      endlessActive = !!race.endless;
+      const lighting = upcomingRaceLighting(race.trackId);
       const preview = race.phase === 'ready';
       const car = race.player;
       const alpha = race.phase === 'racing' ? motion?.alpha ?? 1 : 1, visualCar = poseFor(player, car, motion?.previous?.player, alpha);
@@ -554,14 +556,9 @@ export function createWorld(canvas) {
         sky.material.uniforms.warmth.value = palette.warmth; sky.material.uniforms.aurora.value = trackId === 'aurora' || trackId === FROSTBITE_ID ? 1 : 0;
         sky.material.uniforms.cloudOpacity.value = trackId==='cosmic'?0:trackId==='tokyo'?.14:trackId==='alpine'?.45:trackId==='coastal'?.32:trackId==='taipei'?.36:1;
         sky.material.uniforms.cloudTint.value.set(trackId==='alpine'?'#647575':trackId==='coastal'?'#82989a':trackId==='taipei'?'#77898b':trackId==='tokyo'?'#394354':'#4d3d60');
-        sunlight.color.set(palette.sun);
-        sunlight.intensity = TOUR_IDS.has(trackId) ? .75 : MEASURED_COURSE_SUN[trackId] ?? (trackId === 'coast' ? COAST_LIGHTING.sun : trackId === 'neon' ? .8 : trackId === 'aurora' || trackId === FROSTBITE_ID ? 1.2 : 2.3);
-        sunlight.position.set(TOUR_IDS.has(trackId)?-400:-170,TOUR_IDS.has(trackId)?230:100,TOUR_IDS.has(trackId)?260:-190);
-        renderer.toneMappingExposure=TOUR_IDS.has(trackId)?.86:trackId==='coast'?COAST_LIGHTING.exposure:1.12;
-        ambient.intensity = TOUR_IDS.has(trackId) ? (trackId==='cosmic'?.62:.98) : trackId==='coast'?COAST_LIGHTING.ambient:trackId==='neon'?1.1:1.7;
+        applyTrackLighting(trackId, lighting, TOUR_IDS.has(trackId), palette.sun, sunlight, ambient, renderer);
         sun.visible = trackId === 'coast' || trackId === 'canyon';
-        // Sky Spiral draws its own dome. The shared sky, sea and peaks would sit in front of it.
-        sky.visible = sea.visible = mountains.visible = trackId !== 'spiral';
+        sky.visible = trackId !== 'spiral'; // Sky Spiral draws its own dome.
         sea.material.uniforms.ground.value.set(palette.ground); sea.material.uniforms.fogColor.value.set(palette.fog);
         sea.material.uniforms.water.value = trackId === 'coast' || trackId === 'neon' ? 1 : 0;
         seaLines.visible = trackId === 'coast'; mountains.material.color.set(palette.rock);
@@ -584,6 +581,7 @@ export function createWorld(canvas) {
       if(trackId==='coast'){coastScenery.show();coastScenery.update(distance,visual.quality,race.endless ? race.seed : undefined);} else coastScenery.hide();
       if (coastAssets?.update(trackId, visual.quality, race.phase === 'racing', visualPreset, visual.ultra)) warmupPending = true; // new materials compile before GO
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,distance,visual.quality); else classicScenery.hide();
+      sea.visible = mountains.visible = sky.visible && (!lighting || endlessActive); // Finite courses own their rebased terrain.
       const graphCentre = race.course ? graphOrigin(race.course) : null;
       if (graphCentre) for (let axis = 0; axis < 3; axis++) courseOriginPoint[axis] = graphCentre[axis];
       const origin = graphCentre ? aeroOrigin.set(...graphCentre) : trackId === 'spiral' || framedRoad(trackId, endlessActive) ? trackPoint(trackId,distance) : null, center = origin ? origin.x : roadCenter(distance);
@@ -917,7 +915,9 @@ export function createWorld(canvas) {
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      bloom.strength = TOUR_IDS.has(trackId) ? .085 : (trackId==='coast'?coastLook.bloomStrength(COAST_LIGHTING.bloom):.42) + (reducedMotion || !visual.enabled ? 0 : boostStrength * visual.bloom * .25 + feedback.ignition * visual.bloom * .2);
+      const boostGlow = reducedMotion || !visual.enabled ? 0 : visual.bloom * (boostStrength * .25 + feedback.ignition * .2);
+      bloom.threshold = lighting ? UPCOMING_BLOOM_THRESHOLD : coastLook.bloomThreshold(1.1);
+      bloom.strength = lighting ? upcomingRaceBloom(boostGlow) : TOUR_IDS.has(trackId) ? .085 : (trackId === 'coast' ? coastLook.bloomStrength(COAST_LIGHTING.bloom) : .42) + boostGlow;
       bloom.enabled = visual.quality !== 'low';
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }
       renderer.info.reset(); // Exclude warmup draws and previous frames.

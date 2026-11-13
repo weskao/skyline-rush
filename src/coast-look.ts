@@ -8,9 +8,8 @@ interface GradeUniforms { uniforms: { saturation: { value: number }; contrast: {
 interface Options {
   scene: Pick<Scene, 'environment' | 'environmentIntensity'>; renderer: Pick<WebGLRenderer, 'toneMappingExposure'>;
   lens: GradeUniforms; room: Texture | null; roomIntensity: number; envs?: Envs; baseUrl?: string;
-  /** World bloom pass (threshold only: world.js writes the strength every frame through `bloomStrength`) and key
-   *  light (world.js sets each track's sun on a track change, just before `update`). Optional in tests. */
-  bloom?: { threshold: number }; sun?: { color: Color; intensity: number };
+  /** world.js sets each track's key light on a track change, just before `update`. */
+  sun?: { color: Color; intensity: number };
 }
 
 /**
@@ -18,16 +17,14 @@ interface Options {
  * string compare unless the track/preset/tier changed. Everything it touches is a texture or uniform swap, so no
  * lit shader recompiles after GO; Low and every other track keep RoomEnvironment and an identity grade.
  */
-export function createCoastLook({ scene, renderer, lens, room, roomIntensity, envs, baseUrl = '/', bloom, sun }: Options) {
+export function createCoastLook({ scene, renderer, lens, room, roomIntensity, envs, baseUrl = '/', sun }: Options) {
   const environments: Envs = envs ?? createCoastEnvironments(renderer as WebGLRenderer, baseUrl); // tests inject `envs`; the real renderer is a full WebGLRenderer
   const grade = lens.uniforms;
   let key = '';
-  const threshold = bloom?.threshold ?? 0;
   let applied: CoastEnvName | null = null, palette: { color: Color; intensity: number } | null = null; // Coast's own sun
   function applyRoom(onCoast: boolean) {
     scene.environment = room; scene.environmentIntensity = roomIntensity;
     grade.saturation.value = grade.contrast.value = 1; grade.tint.value.setRGB(1, 1, 1);
-    if (bloom) bloom.threshold = threshold;
     if (sun && palette && onCoast) { sun.color.copy(palette.color); sun.intensity = palette.intensity; } // leaving Coast: the new track's block already set it
     applied = palette = null;
   }
@@ -35,7 +32,6 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
     const v = COAST_ENV_VARIANTS[name];
     scene.environment = texture; scene.environmentIntensity = v.intensity; renderer.toneMappingExposure = v.exposure;
     grade.saturation.value = v.grade.saturation; grade.contrast.value = v.grade.contrast; grade.tint.value.setRGB(...v.grade.tint);
-    if (bloom) bloom.threshold = v.bloom.threshold;
     if (sun) { palette ??= { color: sun.color.clone(), intensity: sun.intensity }; sun.color.set(v.sun.color); sun.intensity = v.sun.intensity; }
     applied = name;
   }
@@ -55,6 +51,7 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
     },
     /** Bloom strength before boost feedback: the variant's while its HDRI is on screen, else world.js's own. */
     bloomStrength: (fallback: number): number => applied ? COAST_ENV_VARIANTS[applied].bloom.strength : fallback,
+    bloomThreshold: (fallback: number): number => applied ? COAST_ENV_VARIANTS[applied].bloom.threshold : fallback,
     dispose() { (environments as { dispose?: () => void }).dispose?.(); },
   };
 }

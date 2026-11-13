@@ -86,7 +86,10 @@ export function createVolcanicCrownRaceScene(scene: THREE.Scene) {
   craterGlow.name = 'pooled-crater-glow';
   group.add(craterGlow);
   const materials = {
-    deck: new THREE.MeshStandardMaterial({ color: '#34383d', roughness: .75, emissive: '#fb5a21', emissiveIntensity: .18 }),
+    // The elevated shortcut crosses over an active ground lane. Its open-look surface
+    // keeps the lower car visible while the edge beacons and deck still mark the upper route.
+    deck: new THREE.MeshStandardMaterial({ color: '#54434a', roughness: .82, emissive: '#fb5a21',
+      emissiveIntensity: .14, transparent: true, opacity: .38, depthWrite: false }),
     pylons: new THREE.MeshStandardMaterial({ color: '#ff8d4e', emissive: '#ff642b', emissiveIntensity: .65 }),
   };
   const extraGeometry: THREE.BufferGeometry[] = [];

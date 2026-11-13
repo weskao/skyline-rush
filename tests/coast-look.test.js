@@ -90,20 +90,20 @@ test('Coast Medium+ tunes bloom for the light blades and matches the sun to the 
   const envs = { get: n => textures[n], preload: names => { for (const n of names) textures[n] = { id: n }; return Promise.resolve(); } };
   const scene = { environment: room, environmentIntensity: 0.42 }, renderer = { toneMappingExposure: 1.12 };
   const lens = { uniforms: { saturation: { value: 1 }, contrast: { value: 1 }, tint: { value: new Color(1, 1, 1) } } };
-  const bloom = { threshold: 1.1 }, sun = { color: new Color('#ffb88a'), intensity: 1.8 }; // world.js set Coast's palette sun
-  const look = createCoastLook({ scene, renderer, lens, room, roomIntensity: 0.42, envs, bloom, sun });
+  const sun = { color: new Color('#ffb88a'), intensity: 1.8 }; // world.js set Coast's palette sun
+  const look = createCoastLook({ scene, renderer, lens, room, roomIntensity: 0.42, envs, sun });
   assert.equal(look.bloomStrength(0.3), 0.3, 'before the HDRI lands world.js keeps its own bloom');
   look.update('coast', 'rain', 'high'); await settle();
   const v = COAST_ENV_VARIANTS.rain;
   assert.equal(look.bloomStrength(0.3), v.bloom.strength, 'world.js adds boost feedback on top of the variant strength');
-  assert.equal(bloom.threshold, v.bloom.threshold);
+  assert.equal(look.bloomThreshold(1.1), v.bloom.threshold);
   assert.equal(sun.color.getHexString(), new Color(v.sun.color).getHexString());
   assert.equal(sun.intensity, v.sun.intensity);
   look.update('coast', 'rain', 'low');
-  assert.deepEqual([bloom.threshold, sun.intensity, sun.color.getHexString()], [1.1, 1.8, 'ffb88a'], 'Coast Low: the palette sun and bloom come back');
+  assert.deepEqual([look.bloomThreshold(1.1), sun.intensity, sun.color.getHexString()], [1.1, 1.8, 'ffb88a'], 'Coast Low: the palette sun and bloom come back');
   assert.equal(look.bloomStrength(0.3), 0.3);
   look.update('coast', 'dusk', 'high'); await settle();
   sun.color.set('#9fb4ff'); sun.intensity = 0.8; // world.js track block: Neon's palette, set before coastLook.update
   look.update('neon', 'track', 'high');
-  assert.deepEqual([bloom.threshold, sun.intensity, sun.color.getHexString()], [1.1, 0.8, '9fb4ff'], 'another track keeps the sun its block just set');
+  assert.deepEqual([look.bloomThreshold(1.1), sun.intensity, sun.color.getHexString()], [1.1, 0.8, '9fb4ff'], 'another track keeps the sun its block just set');
 });

@@ -46,7 +46,7 @@ export function createDuneTempestVisualChunk(parent: THREE.Object3D, edgeId: str
     : [[startS, endS]];
   for (const [from, to] of parts) {
     const ribbon = buildDuneRoadChunk(sample, edgeId, from, to, edge.width, spacing);
-    addMesh('Dune road', ribbon.positions, ribbon.roadIndices, 0xd4a064);
+    addMesh('Dune road', ribbon.positions, ribbon.roadIndices, 0xab7546);
     addMesh('Dune shoulder', ribbon.positions, ribbon.shoulderIndices, 0xb77b49);
     const terrain = buildDuneTerrainChunk(sample, edgeId, from, to, edge.width,
       initialQuality === 'low' ? 110 : 145, spacing * 1.5);
@@ -129,7 +129,7 @@ export function createDuneTempestVisualChunk(parent: THREE.Object3D, edgeId: str
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(initial.slice(), 3));
     const dust = new THREE.Points(geometry, new THREE.PointsMaterial({
-      color: 0xe5bd83, size: 1.35, transparent: true, opacity: .35,
+      color: 0xe5bd83, size: 1.35, transparent: true, opacity: .24,
       depthWrite: false, sizeAttenuation: true,
     }));
     dust.name = 'Dune sandstorm ' + zone.id;
