@@ -137,7 +137,30 @@ test.describe('touch sprint artwork', () => {
         if (action === 'boost') expect(rim).toBe('#efae65');
         const effect = button.locator('.sprint-ready-effect');
         await expect(effect).toHaveCSS('pointer-events', 'none');
-        await expect(effect).toHaveCSS('clip-path', /^polygon/);
+        const artwork = await button.evaluate(element => {
+          const rect = element.getBoundingClientRect();
+          const flame = element.querySelector('.sprint-ready-effect').getBoundingClientRect();
+          const bezel = getComputedStyle(element, '::before');
+          return {
+            rimInsets: [bezel.top, bezel.right, bezel.bottom, bezel.left],
+            flameOutsets: [rect.top - flame.top, flame.right - rect.right, flame.bottom - rect.bottom, rect.left - flame.left],
+            inViewport: flame.left >= 0 && flame.top >= 0 && flame.right <= innerWidth && flame.bottom <= innerHeight,
+            overlapsNeighbor: [...element.closest('#touch-controls').querySelectorAll('.touch-actions button, .touch-pedals button')]
+              .filter(neighbor => neighbor !== element)
+              .some(neighbor => {
+                const box = neighbor.getBoundingClientRect();
+                return flame.left < box.right && flame.right > box.left && flame.top < box.bottom && flame.bottom > box.top;
+              }),
+          };
+        });
+        expect(artwork.rimInsets).toEqual(['-1px', '-1px', '-1px', '-1px']);
+        for (const outset of artwork.flameOutsets) {
+          expect(outset).toBeGreaterThan(0);
+          expect(outset).toBeLessThanOrEqual(8);
+        }
+        expect(artwork.inViewport).toBe(true);
+        expect(artwork.overlapsNeighbor).toBe(false);
+        await expect(effect).toHaveCSS('clip-path', 'none');
         const box = await button.boundingBox();
         expect(box.width).toBeGreaterThanOrEqual(44);
         expect(box.height).toBeGreaterThanOrEqual(44);
@@ -152,6 +175,10 @@ test.describe('touch sprint artwork', () => {
         await expect(button.locator('svg').first()).toHaveAttribute('viewBox', '0 0 24 24');
         await expect(button).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
       }
+    }
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    for (const effect of await touch.locator('.sprint-ready-effect').all()) {
+      await expect(effect).toHaveCSS('display', 'none');
     }
     await expect(page.locator('#error-message')).toBeHidden();
   });

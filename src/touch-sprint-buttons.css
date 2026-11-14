@@ -1,6 +1,7 @@
 #touch-controls .touch-actions > :is(.touch-nitro, .touch-boost) {
   --cut: polygon(7px 0, calc(100% - 7px) 0, 100% 7px, 100% calc(100% - 7px), calc(100% - 7px) 100%, 7px 100%, 0 calc(100% - 7px), 0 7px);
   isolation: isolate;
+  overflow: visible;
   opacity: var(--touch-opacity, 1);
   border-color: transparent;
   background: transparent;
@@ -24,13 +25,13 @@
 }
 
 #touch-controls :is(.touch-nitro, .touch-boost)::before {
-  inset: 0;
+  inset: -1px;
   z-index: -2;
   background: linear-gradient(148deg, color-mix(in srgb, var(--rim), white 36%), var(--rim) 28%, #162035 75%, var(--rim));
 }
 
 #touch-controls :is(.touch-nitro, .touch-boost)::after {
-  inset: 2px;
+  inset: 1px;
   z-index: -1;
   background: linear-gradient(160deg, #ffffff26, transparent 30%), linear-gradient(180deg, var(--face-top), var(--face-bottom) 85%);
 }
@@ -44,6 +45,8 @@
 
 #touch-controls .touch-nitro {
   --rim: #be87f5;
+  --flame: #ab44ff;
+  --flame-tip: #f5ccff;
   --face-top: #42275d;
   --face-bottom: #160d28;
   color: #fff5ff;
@@ -57,6 +60,8 @@
 
 #touch-controls .touch-boost {
   --rim: #d69b55;
+  --flame: #ff6928;
+  --flame-tip: #ffe3a0;
   --face-top: #55321c;
   --face-bottom: #281a12;
   color: #fff7eb;
@@ -79,19 +84,18 @@
   --face-bottom: #1c2836;
 }
 
-/* The sweep and sparks are clipped independently of the rectangular touch target. */
+/* Draw behind the whole bezel, within the clearance of the neighboring controls. */
 #touch-controls .sprint-ready-effect {
   position: absolute;
-  inset: 0;
-  clip-path: var(--cut);
+  inset: -8px;
+  z-index: -3;
   pointer-events: none;
   opacity: 0;
-  background-image:
-    radial-gradient(circle at 48% 23%, white 0 1px, transparent 3px),
-    radial-gradient(circle at 57% 72%, white 0 1px, transparent 3px),
-    radial-gradient(circle at 63% 36%, var(--rim) 0 2px, transparent 5px),
-    linear-gradient(122deg, transparent 39%, var(--rim) 47%, #fff 50%, var(--rim) 52%, transparent 60%);
-  background-size: 240% 100%;
-  background-repeat: no-repeat;
-  mix-blend-mode: screen;
+  background: linear-gradient(120deg, var(--flame), var(--flame-tip) 25%, var(--flame) 48%, var(--flame-tip) 64%, var(--flame));
+  background-size: 180% 150%;
+  mask: url('./sprint-ready-flame.svg') center / 100% 100% no-repeat;
+}
+
+@media (forced-colors: active), (prefers-reduced-motion: reduce) {
+  #touch-controls .sprint-ready-effect { display: none; }
 }

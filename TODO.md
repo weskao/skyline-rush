@@ -1,3 +1,9 @@
+# 2026-11-14 — Full sprint buttons and perimeter ignition
+
+- [x] Show the complete NITRO and BOOST bezel in the HUD and video preview. At readiness, animate a bounded flame around all four sides while keeping the label, road and adjacent controls readable on phone portrait and landscape.
+- [x] Browser RED reproduced the inset bezel. GREEN at 390×844, 844×390 and 568×320 verifies the full touch targets, flame clearance, and reduced motion. Type checks, production build, and 2,920 unit tests passed (3 skipped).
+- [ ] Complete the full browser quality gate on the exact commit and review on physical iOS and Android devices.
+
 # 2026-11-14 — Music on but silent; intro from page open (`fix/music-autoplay-recovery`)
 
 Report: music setting on but nothing playing; music should start as soon as the page opens, announcement dialog or not. Rules: `.claude/rules/audio-playback.md` (new), `.claude/rules/performance-review.md` (checkShaderErrors).
