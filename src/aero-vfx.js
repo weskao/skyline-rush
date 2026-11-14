@@ -6,6 +6,7 @@ import { createNitroTrail } from '#garage-nitro-trail';
 import { TRICK_ROLL_TIME } from './game.js';
 import { plumeLook, thrusterGlow } from './board-effects.ts';
 import { createThrusterGlow } from './thruster-glow.ts';
+import { createSprintPlume } from './sprint-plume.ts';
 import { SKIN_MOTION, airflowFrame, measureAirflowProfile, streamGeometry } from './airflow-geometry.ts';
 
 export const REAR_PORTS = [-0.62, -0.22, 0.22, 0.62].map(x => ({ position: [x, 0.64, 2.39], direction: [0, 0, 1], size: 0.065 }));
@@ -85,37 +86,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   const trailAnchor = new THREE.Vector3();
   let trailHalfWidth = placeAirflow(proceduralProfile);
   const rear = new THREE.Group(); rear.name = 'Rear ports'; local.add(rear); // garage-model.ts moves it onto a dressed GLB's nozzles
-
-  const jetGeometry = new THREE.CylinderGeometry(1, 4.8, 1, 20, 24, true);
-  jetGeometry.rotateX(-Math.PI / 2); jetGeometry.translate(0, 0, 0.5);
-  const jetMaterial = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 }, tail: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
-    vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: `varying vec2 vUv;uniform float time,power,brightness,diamonds,extreme,nitroMix,skinPattern,tail;uniform vec3 skinTint;uniform vec4 trailAccent;
-      void main(){float t=clamp(1.-vUv.y,0.,1.); // MSAA slivers extrapolate vUv far past the rim; unclamped, the core overflows to Inf and a zero fade makes NaN
-        float cells=pow(max(0.,.5+.5*cos(t*48.)),5.)*diamonds;
-        float breakup=.75+.25*sin(vUv.x*52.+t*31.-time*16.);
-        float core=exp(-t*7.);float fade=pow(max(0.,1.-t),1.7)*smoothstep(0.,.025,t);
-        vec3 color=mix(vec3(.62,.84,1.),vec3(1.),core+cells*.5);
-        color=mix(color,vec3(.6,.38,1.),extreme*t*.25);
-        color=mix(color,vec3(1.,.38,.78),tail*smoothstep(.2,1.,t)); // board plume (Medium+): the blue-white core fades to magenta
-        color=mix(color*skinTint,mix(vec3(.68,.42,1.),trailAccent.rgb,trailAccent.a),clamp(nitroMix,0.,1.)*(.65+.27*trailAccent.a)); // skin tints the base; NITRO is purple or the trail skin's colour
-        float shape=1.;
-        if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
-        if(skinPattern>1.5) shape=.25+.75*abs(sin(vUv.x*6.28*3.+t*28.-time*11.));
-        if(skinPattern>2.5) shape=step(.45,fract(t*7.+time*3.+vUv.x*3.));
-        gl_FragColor=vec4(color*brightness*(1.+core+cells),fade*(.15+core*.55+cells*.35)*breakup*power*shape);}`,
-  });
-  const jets = REAR_PORTS.map((port, i) => {
-    const jet = new THREE.Mesh(jetGeometry, jetMaterial.clone());
-    jet.name = `Cold gas nozzle ${i + 1}`;
-    jet.position.fromArray(port.position);
-    jet.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...port.direction));
-    rear.add(jet);
-    return jet;
-  });
-  jetMaterial.dispose();
+  const plume = createSprintPlume(rear, REAR_PORTS, vehicle, ground); // the four jets (src/sprint-plume.ts)
   const voidBeams = createVoidPulseBeams(rear, REAR_PORTS);
   const nitroTrail = createNitroTrail(rear, REAR_PORTS);
   const glow = createThrusterGlow(rear, REAR_PORTS);
@@ -164,6 +135,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
   const shockColor = new THREE.Color('#bdeeff'), nitroShockColor = new THREE.Color('#b98aff');
   let hadPosition = false, wasBoosting = false, wasNitro = false, time = 0, reveal = 0, strength = 0, rollStrength = 0, wakeStrength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
+  const plumeFrame = { time: 0, power: 0, nitroMix: 0, reach: 0, brightness: 1, diamonds: 0, extreme: 0, tail: 0, quality: 1, enabled: false, calm: false, voidPulse: false, racing: false, grounded: true }; // reused: no object per frame
   let quality = 1, settings, delta, launchSkinActive = false, launchPattern = 0, voidPulse = false, lastPhase = 'ready', demoPulseClock = 2.2;
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
@@ -187,7 +159,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
     segments.forEach(s => { s.life = 0; }); ribbonAlpha.fill(0); ribbonGeo.attributes.alpha.needsUpdate = true;
     ghosts.forEach(g => { g.life = 0; g.mesh.visible = false; });
     glow.update(0);
-    jets.forEach(jet => { jet.visible = false; }); flow.visible = pressure.visible = shock.visible = false;
+    plume.reset(); flow.visible = pressure.visible = shock.visible = false;
     voidBeams.update(time, 0, 0, false); nitroTrail.update(time, 0, 0, false); flare.reset(); demoPulseClock = 2.2;
     hadPosition = wasBoosting = wasNitro = false; strength = rollStrength = wakeStrength = reveal = emission = ghostDistance = 0; shockAge = 1; lastImpact = null; lastPhase = 'ready';
   }
@@ -205,10 +177,6 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       pressure.material.uniforms.skinTint.value.fromArray(palette.airflow);
       flow.material.uniforms.skinPattern.value = patterns.airflow;
       glow.tint.fromArray(palette.thruster);
-      for (const jet of jets) {
-        jet.material.uniforms.skinTint.value.fromArray(palette.thruster);
-        jet.material.uniforms.skinPattern.value = patterns.thruster;
-      }
       vapor.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
       ribbon.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
       ribbon.material.uniforms.skinPattern.value = patterns['nitro-trail'];
@@ -216,7 +184,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       flare.setSkin(ids?.['launch-flare']);
       const trail = palette['nitro-trail'], skinned = trail.some(v => v !== 1);
       flow.material.uniforms.trailAccent.value.set(.5 * trail[0], .8 * trail[1], trail[2], skinned ? 1 : 0); // the ribbon's colour
-      for (const jet of jets) jet.material.uniforms.trailAccent.value.copy(flow.material.uniforms.trailAccent.value);
+      plume.setSkin(palette.thruster, patterns.thruster, flow.material.uniforms.trailAccent.value, patterns['nitro-trail']);
       nitroTrail.setStyle(patterns['nitro-trail'], [.5 * trail[0], .8 * trail[1], trail[2]]);
       if (skinned) nitroShockColor.setRGB(.5 * trail[0], .8 * trail[1], trail[2]);
       else nitroShockColor.set('#b98aff');
@@ -234,7 +202,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
     inspectCosmetics() {
       return { voidBeams: voidBeams.mesh.visible, launchPattern,
         launchPreviewActive: flare.active || (shock.visible && shock.material.opacity > 0),
-        thrusterPattern: jets[0].material.uniforms.skinPattern.value,
+        thrusterPattern: plume.jets[0].material.uniforms.skinPattern.value,
         airflowPattern: flow.material.uniforms.skinPattern.value,
         trailPattern: ribbon.material.uniforms.skinPattern.value };
     },
@@ -302,16 +270,13 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       voidBeams.update(time, strength, quality, enabled && !calm);
       nitroTrail.update(time, studioDemo && preview ? 0.85 : strength * nitroMix, quality, enabled && !calm); // Studio previews the trail without NITRO
       ribbon.material.uniforms.time.value = time;
-      const plume = plumeLook(settings.quality);
+      const look = plumeLook(settings.quality), jet = plumeFrame;
       glow.update(enabled && !voidPulse ? thrusterGlow(settings.quality, active, car.altitude > 0, strength) : 0);
-      jets.forEach((jet, i) => {
-        jet.visible = enabled && strength > 0.005 && !voidPulse;
-        jet.scale.set(REAR_PORTS[i].size, REAR_PORTS[i].size, settings.exhaustLength * strength * (0.65 + car.speed / 200) * plume.stretch);
-        const u = jet.material.uniforms;
-        u.time.value = time + i * 0.13; u.power.value = strength; u.tail.value = plume.tail;
-        u.brightness.value = Math.min(settings.coreBrightness, calm ? 0.9 : 3);
-        u.diamonds.value = settings.machDiamonds; u.extreme.value = settings.preset === 'extreme' ? 1 : 0; u.nitroMix.value = nitroMix;
-      });
+      jet.time = time; jet.power = strength; jet.nitroMix = nitroMix; jet.tail = look.tail; jet.enabled = enabled; jet.voidPulse = voidPulse;
+      jet.reach = settings.exhaustLength * strength * (0.65 + car.speed / 200) * look.stretch;
+      jet.brightness = Math.min(settings.coreBrightness, calm ? 0.9 : 3);
+      jet.diamonds = settings.machDiamonds; jet.extreme = settings.preset === 'extreme' ? 1 : 0;
+      plume.update(jet);
       delta = car.speed;
       if (wakeStrength > 0.01 && enabled && dt > 0) {
         emission += dt * 35 * quality * settings.vaporDensity;
