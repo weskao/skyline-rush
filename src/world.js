@@ -781,7 +781,7 @@ export function createWorld(canvas) {
       finish.visible = graphFinish ? graphFinish.separation < 1400 : trackId === CIRCUIT_ID || (!race.endless && race.length - distance < 1400);
       if (effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
         curvedClassic ? { ...visual, classicRoute, roadDistance: distance, worldPoint: classicPosition, worldFrame: effectFrame } :
-        framedRoad(trackId, endlessActive) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin,item) => race.course && item ? courseItemPoint(race.course,item,x,y,courseOriginPoint) : trackLocalPosition(trackId,s,x,y,origin), worldFrame: race.course ? (s,item) => courseItemFrame(race.course,item) : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual)) warmupPending = true; // loaded pickup models compile before GO
+        framedRoad(trackId, endlessActive) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin,item) => race.course && item ? courseItemPoint(race.course,item,x,y,courseOriginPoint) : trackLocalPosition(trackId,s,x,y,origin), worldFrame: race.course ? (s,item) => courseItemFrame(race.course,item) : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual, origin)) warmupPending = true; // loaded pickup models compile before GO
       Object.assign(sprintInput, {
         phase: race.phase, nitro: car.nitroTime > 0, chain: car.nitroTime > 0 ? car.nitroBurst : 0, boost: !!(car.boosting || car.miniBoost > 0),
         speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion, ultra: visual.ultra,
