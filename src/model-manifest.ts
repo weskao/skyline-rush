@@ -255,6 +255,45 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt', 'ktx2'],
     budgets: { triangles: 100, bytes: 700_000, textureMaxPx: 1024 },
   },
+  // Task 5b Neon Downtown city kit: 20 modelled modules on one material and one 2K atlas. Each `<module>` node is the
+  // pivot, its `<module>_lod<n>` children the meshes; contract in assets-src/neon-city/asset-brief.md.
+  'neon-city': {
+    id: 'neon-city',
+    url: 'models/neon-city/neon-city.glb',
+    source: {
+      master: 'assets-src/neon-city/neon-city.blend',
+      script: 'assets-src/neon-city/build.py',
+      masterSha256: '6cea94d5ccccd15f4b5d7d4996cd5286ae90f5db50d89c92a8b01cb1f45ee29c',
+      scriptSha256: 'e376588ca25905afb88b2c976a186fdf515a5e5f0102f81ac6d112994cc12dad',
+    },
+    glb: { sha256: '439fd216b0965ba27356a9e2a486feb7af7cc0002b8ba5c40d1addaf4cacae97', bytes: 991_444 },
+    license: {
+      id: 'CC0-1.0',
+      creator: 'Poly Haven: Charlotte Baglioni, Dario Barresi, Amal Kumar, Dimitrios Savva, Rob Tuytel (wall, tile, plank, roof, bark and metal sets in assets-src/neon-city/sources.json); modules and atlas by Skyline Rush project',
+      sourceUrl: 'https://polyhaven.com/a/roof_tiles_14',
+    },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        'python3 -I assets-src/neon-city/fetch_sources.py',
+        '$BLENDER_BIN --background --factory-startup --python assets-src/neon-city/build.py',
+        'node scripts/assets/export-glb.mjs neon-city',
+        'node scripts/assets/optimize-glb.mjs neon-city',
+        'node scripts/assets/check-glb.mjs neon-city --promote',
+      ],
+    },
+    nodes: [
+      ...['tower_glass_a', 'tower_glass_b', 'block_retail_a', 'block_office_b', 'shop_market_a', 'shop_market_b', 'cherry_tree'].flatMap(m => [m, `${m}_lod0`, `${m}_lod1`, `${m}_lod2`]),
+      ...['sign_blade_a', 'sign_blade_b', 'sign_stack_a', 'billboard_a', 'billboard_b', 'street_lamp', 'traffic_light', 'railing', 'kerb_redwhite', 'skyline_tower_a', 'skyline_tower_b', 'skyline_tower_c', 'skyline_spire'].flatMap(m => [m, `${m}_lod0`, `${m}_lod1`]),
+    ],
+    materials: ['neon_city'],
+    lods: [],
+    fallback: 'procedural-scenery',
+    decoders: ['meshopt', 'ktx2'],
+    budgets: { triangles: 11_000, bytes: 1_300_000, textureMaxPx: 2048 },
+  },
   // Road power-ups: one mesh and one baked 512 px PBR set per tier, shared by the guide preview and the GPU-instanced
   // track pool. Shapes in each build.py; materials, bake and review sheets in scripts/assets/pickup_kit.py.
   'pickup-cell': pickupModel('cell', 3000, {

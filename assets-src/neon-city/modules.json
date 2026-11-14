@@ -1,0 +1,26 @@
+{
+ "emissiveStrength": 6,
+ "sectors": ["boulevard", "underpass", "night_market", "expressway", "canal_bridge", "violet_plaza"],
+ "modules": {
+  "tower_glass_a": {"group": "building", "triangles": [700, 320, 200], "sectors": ["boulevard", "violet_plaza"]},
+  "tower_glass_b": {"group": "building", "triangles": [500, 240, 200], "sectors": ["boulevard"]},
+  "block_retail_a": {"group": "building", "triangles": [550, 150, 120], "sectors": ["boulevard", "violet_plaza"]},
+  "block_office_b": {"group": "building", "triangles": [550, 150, 130], "sectors": ["boulevard", "underpass"]},
+  "shop_market_a": {"group": "building", "triangles": [340, 120, 80], "sectors": ["night_market"]},
+  "shop_market_b": {"group": "building", "triangles": [380, 120, 80], "sectors": ["night_market"]},
+  "sign_blade_a": {"group": "sign", "triangles": [60, 16], "sectors": ["boulevard", "night_market"]},
+  "sign_blade_b": {"group": "sign", "triangles": [80, 20], "sectors": ["boulevard", "violet_plaza"]},
+  "sign_stack_a": {"group": "sign", "triangles": [130, 40], "sectors": ["night_market"]},
+  "billboard_a": {"group": "sign", "triangles": [260, 70], "sectors": ["boulevard", "expressway"]},
+  "billboard_b": {"group": "sign", "triangles": [80, 12], "sectors": ["boulevard", "violet_plaza"]},
+  "street_lamp": {"group": "furniture", "triangles": [130, 40], "sectors": ["boulevard", "underpass", "expressway", "canal_bridge"]},
+  "traffic_light": {"group": "furniture", "triangles": [400, 60], "sectors": ["boulevard"]},
+  "railing": {"group": "furniture", "triangles": [200, 70], "sectors": ["boulevard", "underpass", "night_market", "canal_bridge", "violet_plaza"]},
+  "cherry_tree": {"group": "furniture", "triangles": [3200, 900, 80], "sectors": ["boulevard", "night_market", "canal_bridge", "violet_plaza"]},
+  "kerb_redwhite": {"group": "furniture", "triangles": [12, 6], "sectors": ["underpass", "night_market", "violet_plaza"]},
+  "skyline_tower_a": {"group": "skyline", "triangles": [60, 24], "sectors": ["boulevard", "expressway", "canal_bridge"]},
+  "skyline_tower_b": {"group": "skyline", "triangles": [50, 24], "sectors": ["boulevard", "expressway", "canal_bridge"]},
+  "skyline_tower_c": {"group": "skyline", "triangles": [120, 70], "sectors": ["boulevard", "expressway", "canal_bridge"]},
+  "skyline_spire": {"group": "skyline", "triangles": [110, 44], "sectors": ["boulevard", "expressway", "canal_bridge"]}
+ }
+}
