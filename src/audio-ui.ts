@@ -12,6 +12,7 @@ interface SoundEngine {
   setEnabled(on: boolean, level: number): boolean;
   cue(name: string): void;
   running(): boolean;
+  setHidden(hidden: boolean): void;
 }
 interface AudioDependencies {
   audio: AudioSettings;
@@ -39,11 +40,12 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
       muteAllText: t(on ? 'audio.muteAll' : 'audio.unmuteAll'),
     });
   }
-  function setAudio(kind: Channel, on: boolean, level: number = volume[kind]): void {
+  /** `save` is the player's own toggle or slider; an automatic unlock shows the engine's state but never saves it. */
+  function setAudio(kind: Channel, on: boolean, level: number = volume[kind], save = true): void {
     volume[kind] = level;
     audio[kind] = kind === 'music' ? sound.setMusic(on, level) : sound.setEnabled(on, level);
     const key = AUDIO_KEYS[kind];
-    try {
+    if (save) try {
       localStorage.setItem(key, audio[kind] ? 'on' : 'off');
       localStorage.setItem(key + '-volume', String(Math.round(level * 100)));
     } catch { /* In-memory audio remains operable when storage is blocked. */ }
@@ -57,8 +59,9 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
   }
   function unlockAudio(): void {
     if (!sound.running() && (audio.music || audio.sfx)) {
-      setAudio('music', audio.music);
-      setAudio('sfx', audio.sfx);
+      // A failed engine start must not turn the saved choice off for every later visit.
+      setAudio('music', audio.music, volume.music, false);
+      setAudio('sfx', audio.sfx, volume.sfx, false);
     }
   }
   /** Show a level being dragged without saving it; the release saves it through setAudio. */
@@ -86,6 +89,8 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
   document.querySelector('#mute-all')!.addEventListener('click', toggleSound);
   // Any tap, drag, click or key starts audio, so blocked autoplay never waits on a prompt.
   onUserActivation(unlockAudio);
+  // A page can come back (bfcache, app switch) without a visibilitychange; resync the engine from the live flag.
+  for (const type of ['pageshow', 'focus']) window.addEventListener(type, () => sound.setHidden(document.hidden));
   showAudio();
   unlockAudio(); // plays at once where the browser allows autoplay
   return { showAudio, toggleSound };
