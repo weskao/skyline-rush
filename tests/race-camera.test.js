@@ -22,8 +22,8 @@ const frameFill = (back, height, fov) =>
   (deg(Math.atan(height / (back - CAR_HALF_LENGTH))) - deg(Math.atan((height - CAR_HEIGHT) / (back + CAR_HALF_LENGTH)))) / fov;
 const horizontalFov = (fov, aspect) => 2 * deg(Math.atan(Math.tan(fov * Math.PI / 360) * aspect));
 /** Where a point `ahead` m in front of the camera and `y` m above the road lands on screen: 0 top, 1 bottom. */
-const screenY = (view, speed, ahead, y, sprint = 0) => {
-  const eye = rigHeight(view, 0), pitch = Math.atan((eye - view.look) / (rigBack(view, speed, sprint) + view.ahead));
+const screenY = (view, speed, ahead, y, sprint = 0, punch = 0) => {
+  const eye = rigHeight(view, 0), pitch = Math.atan((eye - view.look) / (rigBack(view, speed, sprint, punch) + view.ahead));
   return 0.5 + 0.5 * Math.tan(Math.atan((eye - y) / ahead) - pitch) / Math.tan(rigFov(view, speed) * Math.PI / 360);
 };
 const settle = (swing, yaw, view, seconds, fps = 60) => {
@@ -70,10 +70,11 @@ test('portrait chase stays further back: the narrow horizontal FOV still holds t
 test('portrait chase looks down enough to hold the car mid-frame, above the HUD readouts', () => {
   // On a 390x844 phone the altitude and speed readouts start 60% down the screen; the old rig left the car under them.
   // sprint 1: the NITRO/BOOST pull-back must not drop the car under the readouts either.
-  for (const [speed, sprint] of [[60, 0], [MAX_SPEED, 0], [MAX_SPEED, 1], [MAX_SPEED + NITRO_CAP_BONUS, 0], [MAX_SPEED + NITRO_CAP_BONUS, 1]]) {
-    const back = rigBack(portrait, speed, sprint), bumper = screenY(portrait, speed, back - CAR_HALF_LENGTH, 0, sprint);
-    assert.ok(bumper < 0.61, `rear bumper at ${bumper.toFixed(3)} of the height at ${speed} m/s, sprint ${sprint}`);
-    assert.ok(screenY(portrait, speed, back, CAR_HEIGHT, sprint) > 0.42, 'the car stays in the lower half, not floating mid-sky');
+  // punch 1: the ignition surge on top of the full pull-back is the furthest the camera ever gets.
+  for (const [speed, sprint, punch] of [[60, 0, 0], [MAX_SPEED, 0, 0], [MAX_SPEED, 1, 0], [MAX_SPEED, 1, 1], [MAX_SPEED + NITRO_CAP_BONUS, 0, 0], [MAX_SPEED + NITRO_CAP_BONUS, 1, 1]]) {
+    const back = rigBack(portrait, speed, sprint, punch), bumper = screenY(portrait, speed, back - CAR_HALF_LENGTH, 0, sprint, punch);
+    assert.ok(bumper < 0.61, `rear bumper at ${bumper.toFixed(3)} of the height at ${speed} m/s, sprint ${sprint}, punch ${punch}`);
+    assert.ok(screenY(portrait, speed, back, CAR_HEIGHT, sprint, punch) > 0.42, 'the car stays in the lower half, not floating mid-sky');
     assert.ok(screenY(portrait, speed, 1e6, 0) > 0.36, 'the horizon keeps the road ahead and the rings in view');
   }
 });
@@ -162,14 +163,15 @@ test('shake: first person trembles with speed; the chase stays calm and a NITRO/
   assert.equal(rigShake(first, NaN, NaN), 0);
 });
 
-test('NITRO/BOOST ignition: one short, low-frequency kick that dies out', () => {
+// 0.135 degrees on the default setting (the first sprint-pulse tune) was too faint to read as an ignition.
+test('NITRO/BOOST ignition: one felt, low-frequency kick that dies out', () => {
   assert.equal(typeof rig.rigKick, 'function', 'the ignition kick lives in the rig module');
   for (const view of [chase, portrait, first]) for (const setting of [0.15, 0.3, 1]) {
     const samples = Array.from({ length: 121 }, (_, i) => rig.rigKick(view, i / 240, setting)); // 0 to 0.5 s
     const peak = Math.max(...samples.map(Math.abs));
     assert.equal(samples[0], 0, 'starts from rest: nothing pops on the ignition frame');
-    assert.ok(deg(peak) >= 0.1 && deg(peak) <= 0.4, `setting ${setting} peaks at ${deg(peak).toFixed(3)} degrees`);
-    assert.ok(samples.slice(60).every(value => value === 0), 'over within a quarter of a second');
+    assert.ok(deg(peak) >= (setting === 0.15 ? 0.4 : 0.1) && deg(peak) <= 0.9, `setting ${setting} peaks at ${deg(peak).toFixed(3)} degrees`);
+    assert.ok(samples.slice(84).every(value => value === 0), 'over within 0.35 s');
     const live = samples.slice(1, 60), flips = live.filter((value, i) => i > 0 && value * live[i - 1] < 0).length;
     assert.ok(flips <= 2, `${flips} direction changes: a 4 to 6 Hz jolt, not a buzz`);
     const rebound = Math.max(...samples.slice(samples.findIndex((value, i) => i > 0 && value <= 0)).map(Math.abs));
@@ -189,8 +191,12 @@ test('NITRO/BOOST pulls the chase camera back so the car surges ahead; first per
     assert.equal(rigBack(view, MAX_SPEED, NaN), rigBack(view, MAX_SPEED, 0));
     assert.equal(rigBack(view, MAX_SPEED), rigBack(view, MAX_SPEED, 0));
     assert.ok(rigBack(view, top, 1) < (view === chase ? OLD.landscape : OLD.portrait).back, 'still closer than the old rig');
+    // The ignition surge: the car leaps further ahead for a moment, then the camera catches up to the held pull-back.
+    const surge = rigBack(view, MAX_SPEED, 1, 1) - rigBack(view, MAX_SPEED, 1);
+    assert.ok(surge >= 0.6 && surge <= 1.2, `surge ${surge} m`);
+    assert.equal(rigBack(view, MAX_SPEED, 1, NaN), rigBack(view, MAX_SPEED, 1));
   }
-  assert.equal(rigBack(first, top, 1), rigBack(first, top, 0));
+  assert.equal(rigBack(first, top, 1, 1), rigBack(first, top, 0));
 });
 
 test('world.js takes its race camera numbers from the table', () => {

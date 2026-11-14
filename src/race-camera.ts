@@ -20,6 +20,8 @@ export interface RaceCameraView {
   /** Metres further back per m/s, and at a full NITRO/BOOST (the car surges ahead of the camera). */
   speedBack: number;
   sprintBack: number;
+  /** Extra metres at the peak of the ignition punch: the car leaps ahead, then the camera catches up to `sprintBack`. */
+  punchBack: number;
   /** Extra eye height once fully airborne (reached at `flyAltitude` m). */
   flyLift: number;
   flyAltitude: number;
@@ -33,18 +35,18 @@ export interface RaceCameraView {
   kick: number;
 }
 
-const SHARED = { speedFov: 0.115, flyAltitude: 6, swingIn: 4.5, swingOut: 3, kick: 0.035 };
-/** The kick is one damped swing: seconds it lasts, its frequency, and the most it may turn the camera (0.4 degrees). */
-const KICK_TIME = 0.25, KICK_HZ = 5, KICK_LIMIT = 0.007;
+const SHARED = { speedFov: 0.115, flyAltitude: 6, swingIn: 4.5, swingOut: 3, kick: 0.085 };
+/** The kick is one damped swing: seconds it lasts, its frequency, and the most it may turn the camera (1.2 degrees). */
+const KICK_TIME = 0.35, KICK_HZ = 4, KICK_LIMIT = 0.021;
 
 export const RACE_CAMERA: Record<'chase' | 'chasePortrait' | 'first', RaceCameraView> = {
-  chase: { ...SHARED, back: 7.6, height: 2.5, look: 1.5, ahead: 34, follow: 0.74, fov: 57, speedBack: 0.012, sprintBack: 0.9, flyLift: 1.5, swing: 0.5, speedShake: 0 },
+  chase: { ...SHARED, back: 7.6, height: 2.5, look: 1.5, ahead: 34, follow: 0.74, fov: 57, speedBack: 0.012, sprintBack: 0.9, punchBack: 1, flyLift: 1.5, swing: 0.5, speedShake: 0 },
   // Portrait's horizontal FOV is about half of landscape's: further back, wider, straight behind the car and a smaller swing
   // keep a sideways car in frame. It aims below the road so the car sits mid-frame, above the HUD readouts.
-  chasePortrait: { ...SHARED, back: 12, height: 3, look: -4, ahead: 34, follow: 0.95, fov: 61, speedBack: 0.012, sprintBack: 0.9, flyLift: 1.5, swing: 0.25, speedShake: 0 },
+  chasePortrait: { ...SHARED, back: 12, height: 3, look: -4, ahead: 34, follow: 0.95, fov: 61, speedBack: 0.012, sprintBack: 0.9, punchBack: 1, flyLift: 1.5, swing: 0.25, speedShake: 0 },
   // Seated eye height over the nose tip: ahead of the cabin shell and far enough forward that the sunlit bonnet (which
   // blooms into a white wash on phones) stays under the frame. It looks down the road, so no swing, pull-back or lift.
-  first: { ...SHARED, back: -2.3, height: 1, look: 0.95, ahead: 65, follow: 1, fov: 60, speedBack: 0, sprintBack: 0, flyLift: 0, swing: 0, speedShake: 0.009 },
+  first: { ...SHARED, back: -2.3, height: 1, look: 0.95, ahead: 65, follow: 1, fov: 60, speedBack: 0, sprintBack: 0, punchBack: 0, flyLift: 0, swing: 0, speedShake: 0.009 },
 };
 
 const finite = (value: number, fallback = 0) => Number.isFinite(value) ? value : fallback;
@@ -54,9 +56,9 @@ const unit = (value: number) => Math.min(1, Math.max(0, finite(value)));
 export const raceCameraView = (mode: number, portrait: boolean): RaceCameraView =>
   mode === 1 ? RACE_CAMERA.first : portrait ? RACE_CAMERA.chasePortrait : RACE_CAMERA.chase;
 
-/** `sprint` is the eased NITRO/BOOST share (0–1) from createSprintVfx, so the pull-back never steps. */
-export const rigBack = (view: RaceCameraView, speed: number, sprint = 0): number =>
-  view.back + Math.max(0, finite(speed)) * view.speedBack + unit(sprint) * view.sprintBack;
+/** `sprint` and `punch` are the eased NITRO/BOOST share and ignition punch (0–1) from createSprintVfx: the pull-back never steps. */
+export const rigBack = (view: RaceCameraView, speed: number, sprint = 0, punch = 0): number =>
+  view.back + Math.max(0, finite(speed)) * view.speedBack + unit(sprint) * view.sprintBack + unit(punch) * view.punchBack;
 
 export const rigHeight = (view: RaceCameraView, altitude: number): number => view.height + unit(altitude / view.flyAltitude) * view.flyLift;
 

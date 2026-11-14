@@ -26,11 +26,16 @@ a different camera (`track-showcase.md`, `src/track-preview.ts`).
   player's Camera shake setting and is applied after `lookAt`, never to the smoothed position.
 - **Sprint judder.** NITRO/BOOST never feed a sustained shake: the old rig shook at 8.4 Hz for the
   whole sprint (±0.14° default, ±1.25° on the strongest setting) and read as judder on desktop.
-  `rigShake` takes speed only. The ignition is one damped pitch kick (`rigKick`, ≈0.25 s, 5 Hz,
-  capped at 0.4°) on the `kick` clock that `createSprintVfx` restarts only on a fresh ignition;
-  the FOV share eases in over 0.3 s; the pull-back is the sprint share of `rigBack`
-  (`sprintBack`). Every number stays in `RACE_CAMERA`, no sway or world-space push in `world.js`.
-  A portrait `sprintBack` must keep the rear bumper above the HUD (portrait HUD test, sprint 1).
+  `rigShake` takes speed only. The ignition is one damped pitch kick (`rigKick`, ≈0.35 s, 4 Hz,
+  ≈0.5° peak on the default setting, capped at 1.2°) on the `kick` clock that `createSprintVfx`
+  restarts only on a fresh ignition; the FOV share eases in over 0.3 s; the pull-back is the
+  sprint share of `rigBack` (`sprintBack`). Every number stays in `RACE_CAMERA`, no sway or
+  world-space push in `world.js`.
+- **Sprint without impact.** Removing the shake alone left NITRO/BOOST flat (0.135° kick). The
+  impact is one smooth transient, never a sustained shake: `sprintPunch` (0.2 s in, gone at
+  0.8 s) on the same `kick` clock drives `frame.punch`, which overshoots the FOV (`PUNCH_FOV`),
+  surges the chase back (`punchBack`) and flashes the radial blur. A portrait `sprintBack` +
+  `punchBack` must keep the rear bumper above the HUD (portrait HUD test, sprint 1, punch 1).
 
 ## Changing a number
 

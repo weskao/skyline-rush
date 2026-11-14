@@ -837,7 +837,7 @@ export function createWorld(canvas) {
         desiredCamera.fromArray(classicPosition(distance - (portrait ? 13.8 : 11.8), portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, distance));
         lookTarget.fromArray(classicPosition(distance + 3.5, portrait ? 1 : -1.4, 1.4, distance));
       } else {
-        const first = cameraMode === 1, back = rigBack(view, visualCar.speed, sprintFrame.fov), height = rigHeight(view, visualCar.altitude);
+        const first = cameraMode === 1, back = rigBack(view, visualCar.speed, sprintFrame.fov, sprintFrame.punch), height = rigHeight(view, visualCar.altitude);
         cameraSwing = reducedMotion ? 0 : stepCameraSwing(cameraSwing, player.userData.driftYaw ?? 0, view, dt);
         if (curvedClassic) {
           const heading = roadHeading(distance);
