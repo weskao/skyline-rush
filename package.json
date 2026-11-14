@@ -15,7 +15,7 @@
     "test:cloud": "npx -y firebase-tools@15.34.1 emulators:exec --project skyline-rush-weskao --only auth,firestore 'playwright test -c playwright.cloud.config.js && node --test tests/firestore-rules.test.js'",
     "pretest:browser": "node scripts/build-garage-browser.mjs",
     "test:browser": "playwright test",
-    "test:layout": "npm run build && playwright test tests/race-modes-browser.spec.js tests/home-shortcuts-browser.spec.js && playwright test tests/i18n-browser.spec.js tests/responsive-browser.spec.js -g \"intro bottom edge|start layout\"",
+    "test:layout": "npm run build && playwright test tests/race-modes-browser.spec.js tests/home-shortcuts-browser.spec.js --workers=4 && playwright test tests/i18n-browser.spec.js tests/responsive-browser.spec.js --workers=4 -g \"intro bottom edge|start layout\"",
     "typecheck": "npm run typecheck:ts && npm run typecheck:vue && npm run typecheck:js",
     "typecheck:ts": "tsc --noEmit --project tsconfig.json",
     "typecheck:js": "tsc --noEmit --project jsconfig.json",

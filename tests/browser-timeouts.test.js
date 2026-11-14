@@ -65,6 +65,14 @@ test('World Tour rejects invalid worktree ports before creating a server command
   }
 });
 
+// The gate blocks every home-screen push: 4 local workers ran it in 107-135 s against 187 s on one (2026-11-14).
+test('the pre-push layout gate runs both Playwright halves on 4 workers', () => {
+  const script = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).scripts['test:layout'];
+  const runs = script.split('&&').filter(part => part.includes('playwright test'));
+  assert.equal(runs.length, 2);
+  for (const run of runs) assert.match(run, /--workers=4\b/, run.trim());
+});
+
 test('the pre-push layout gate runs on a free port, not the default one a stray server may hold', async () => {
   const hook = readFileSync(new URL('../.githooks/pre-push', import.meta.url), 'utf8');
   const pick = hook.match(/^PLAYWRIGHT_PORT=\$\((.+)\)$/m);
