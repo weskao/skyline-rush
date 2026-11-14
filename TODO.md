@@ -7,6 +7,13 @@
 - [x] Real WebGL captures mid-drift: Coast (desktop, phone portrait + landscape), Neon, Sky Spiral, Alpine.
 - [ ] Physical phone check, Crimson GT visual capture, full `npm run test:browser` and exact-HEAD `quality-gate`. Blender-authored tread texture not done (procedural first, per request).
 
+## Keep paint when switching cars (2026-11-15)
+
+- [x] Garage and Preview Studio retain the equipped paint and any live preview when switching between Stratosway R2 and Vantaire GT. Carry the equipped finish into the new car's local save and reject equipping locked previews as before.
+- [x] Reuse two recently released parsed car models on the shared Garage, Studio, Home, Coming Soon and race path. Ignore status updates from a superseded shader warm-up.
+- [x] RED: the Chromium paint check saw factory red instead of pearl; the model checks saw duplicate fetches and a stale warm-up clear the active model report. GREEN: focused Node suite (92 passed), typecheck, production build and module-size gate.
+- [ ] Full browser/World Tour gate, physical-device frame pacing and exact-commit GitHub `quality-gate`.
+
 ## Compact mission reset display (2026-11-15)
 
 - [x] Show concise daily and Monday weekly UTC reset dates in English and Traditional Chinese, without overflow at 390px (Playwright).

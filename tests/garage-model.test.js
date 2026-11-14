@@ -131,6 +131,28 @@ test('close while loading cancels the load; reopening loads again', async () => 
   assert.equal(cache.log.filter(l => l.startsWith('load')).length, 2);
 });
 
+test('switching cars while a model is compiling leaves the replacement in charge of the view', async () => {
+  const dataset = {}, cache = fakeCache();
+  const home = host();
+  let finishOldCompile, startOldCompile;
+  const oldCompiling = new Promise(resolve => { startOldCompile = resolve; });
+  const oldCompile = new Promise(resolve => { finishOldCompile = resolve; });
+  const previous = createGarageModel({ id: 'pipeline-probe', dataset, cache, compile: () => { startOldCompile(); return oldCompile; } });
+  previous.sync(true, 'high', home);
+  await oldCompiling;
+  previous.dispose();
+
+  const replacement = createGarageModel({ id: 'roadster2', dataset, cache, compile: async () => {} });
+  replacement.sync(true, 'high', home);
+  await settle();
+  const shown = home.car.children.find(part => part.userData.garageModel === 'roadster2');
+  assert.ok(shown);
+  finishOldCompile();
+  await settle();
+  assert.deepEqual(JSON.parse(dataset.garageModelInstances), { home: shown.uuid });
+  assert.equal(drawn(home.body), false);
+});
+
 test('fallback keeps the procedural car and reports the reason', async () => {
   const { model, dataset } = setup({ fail: 'missing' });
   const home = host();

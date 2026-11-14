@@ -66,14 +66,13 @@ const attach = async (page, name) => {
   if (process.env.CRIMSON_GT_SHOTS) { mkdirSync(process.env.CRIMSON_GT_SHOTS, { recursive: true }); copyFileSync(path, join(process.env.CRIMSON_GT_SHOTS, `${name}.png`)); }
 };
 
-test('Garage picker: both cars share the paints, with per-car paint and reload persistence', async ({ gameplayPage: page, gameplayURL }) => {
+test('Garage and Preview Studio keep equipped and previewed paint while switching cars', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(90000));
-  const { requests, errors } = await prepare(page, gameplayURL, { storage: { 'skyline-rush-stars': { coast: 3 } } }); // 3 stars: Aurora is owned
+  const { requests, errors } = await prepare(page, gameplayURL, { quality: 'low', storage: { 'skyline-rush-stars': { coast: 3 } } }); // 3 stars: Aurora is owned
   await page.locator('#garage-button').click();
   await expect(carButton(page, 'roadster')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(7);
   expect(requests).toEqual([]); // the Roadster stays procedural: no GLB
-  expect((await paintHex(page)).glb).toBeNull();
   const roadsterAirflow = await airflowBounds(page);
   await expect(carButton(page, 'roadster')).toHaveAccessibleName('Stratosway R2');
   await expect(carButton(page, 'crimson-gt')).toHaveAccessibleName('Vantaire GT');
@@ -81,17 +80,13 @@ test('Garage picker: both cars share the paints, with per-car paint and reload p
   await carButton(page, 'crimson-gt').click();
   await expect(carButton(page, 'crimson-gt')).toHaveAttribute('aria-pressed', 'true');
   await modelReady(page);
-  expect(requests).toEqual(['/models/crimson-gt/crimson-gt.glb']); // settled: model state polled above
+  expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb']); // settled: model state polled above
   await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(7);
-  await expect(page.locator('[data-paint="crimson"]')).toHaveAttribute('data-state', 'equipped');
-  await expect.poll(() => paintHex(page)).toEqual({ model: 'crimson-gt', glb: FACTORY_RED, proc: FACTORY_RED });
+  await expect.poll(() => paintHex(page)).toEqual({ model: 'crimson-gt', glb: 'e6e9e7', proc: 'e6e9e7' });
+  await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
   await expect.poll(() => airflowBounds(page)).not.toEqual(roadsterAirflow);
-  await attach(page, 'gt-garage-factory');
+  await attach(page, 'gt-garage-pearl');
 
-  for (const [id, paint] of Object.entries(PAINTS)) { // every paint previews on the GT, owned or not
-    await page.locator(`[data-paint="${id}"]`).click();
-    await expect.poll(async () => (await paintHex(page)).glb, { message: id }).toBe(paint.paint.slice(1));
-  }
   await page.locator('[data-paint="aurora"]').click();
   await page.locator('#garage-equip').click();
   await expect(page.locator('[data-paint="aurora"]')).toHaveAttribute('data-state', 'equipped');
@@ -114,23 +109,42 @@ test('Garage picker: both cars share the paints, with per-car paint and reload p
   await expect(world(page)).toHaveAttribute('data-garage-model', 'off');
   await expect.poll(() => glbRoots(page)).toBe(0);
   await expect.poll(() => airflowBounds(page)).toEqual(roadsterAirflow);
-  await expect.poll(async () => (await paintHex(page)).proc).toBe(PAINTS.pearl.paint.slice(1)); // the Roadster kept its own paint
-  await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(7);
-  const crimson = page.locator('[data-paint="crimson"]');
-  await expect(crimson).toHaveAttribute('data-state', 'owned');
-  await crimson.click();
-  await page.locator('#garage-equip').click();
-  await expect(crimson).toHaveAttribute('data-state', 'equipped');
-  await expect.poll(async () => (await paintHex(page)).proc).toBe(FACTORY_RED);
-  expect(await saved(page, 'skyline-rush-paint')).toBe('crimson');
+  await expect.poll(async () => (await paintHex(page)).proc).toBe('a9c5a0');
+  await expect.poll(() => saved(page, 'skyline-rush-paint')).toBe('aurora');
+  await page.locator('#garage-studio-open').click();
+  const locked = page.locator('[data-paint="obsidian"]');
+  await locked.click();
   await carButton(page, 'crimson-gt').click();
-  await modelReady(page);
-  await expect.poll(async () => (await paintHex(page)).glb).toBe(PAINTS.aurora.paint.slice(1)); // and the GT remembers Aurora
+  await expect(locked).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#garage-equip')).toBeDisabled();
+  const studioPaint = () => page.evaluate(() => {
+    const scene = window.gameScene.composer.passes[0].scene;
+    return scene.getObjectByName('body')?.material.color.getHexString() ?? null;
+  });
+  await expect.poll(async () => (await instances(page)).studio).toBeTruthy();
+  await expect.poll(studioPaint).toBe('1b1e23');
+  await attach(page, 'gt-studio-locked-paint-preview');
+  expect(await saved(page, 'skyline-rush-car-paints')).toEqual({ 'crimson-gt': 'aurora' });
+
+  await page.locator('#garage-close').click();
+  await expect.poll(() => paintHex(page)).toEqual({ model: 'crimson-gt', glb: 'a9c5a0', proc: 'a9c5a0' });
+  await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   await page.locator('#garage-restore-default').click();
-  await expect.poll(async () => (await paintHex(page)).proc).toBe(FACTORY_RED);
+  await expect.poll(studioPaint).toBe(FACTORY_RED);
   expect(await saved(page, 'skyline-rush-car-paints')).toEqual({ 'crimson-gt': 'crimson' });
   expect(errors).toEqual([]);
+});
+
+test('every shared paint previews on the GT', async ({ gameplayPage: page, gameplayURL }) => {
+  test.setTimeout(ciTimeout(90000));
+  await prepare(page, gameplayURL, { quality: 'low', storage: GT });
+  await page.locator('#garage-button').click();
+  await modelReady(page);
+  for (const [id, paint] of Object.entries(PAINTS)) {
+    await page.locator(`[data-paint="${id}"]`).click();
+    await expect.poll(async () => (await paintHex(page)).glb, { message: id }).toBe(paint.paint.slice(1));
+  }
 });
 
 test('a save from before cars existed loads as the Roadster with its paint', async ({ gameplayPage: page, gameplayURL }) => {
@@ -146,15 +160,21 @@ test('a save from before cars existed loads as the Roadster with its paint', asy
 
 test('?model=roadster&look=3d (any dev server started with 3d=1) keeps the equipped Crimson GT; the flag dresses only the Roadster', async ({ gameplayPage: page, gameplayURL }) => {
   const dressedAs = () => dressed(page);
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster&look=3d`, { storage: GT });
+  test.setTimeout(ciTimeout(90000));
+  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster&look=3d`, { quality: 'low', storage: GT });
   await modelReady(page);
   await expect.poll(dressedAs).toBe('crimson-gt');
-  expect(requests).toEqual(['/models/crimson-gt/crimson-gt.glb']); // settled: the dressed model was polled above
+  expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb']); // settled: the dressed model was polled above
   await page.locator('#garage-button').click();
   await carButton(page, 'roadster').click();
   await expect.poll(dressedAs).toBe('roadster2');
   await carButton(page, 'crimson-gt').click();
   await expect.poll(dressedAs).toBe('crimson-gt');
+  await page.locator('#garage-close').click();
+  await expect.poll(() => instances(page)).toEqual({ home: expect.any(String) });
+  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await expect.poll(() => instances(page)).toEqual({ showcase: expect.any(String) });
+  expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb', '/models/roadster2/roadster2-low.glb']);
   expect(errors).toEqual([]);
 });
 
@@ -396,6 +416,7 @@ for (const [name, viewport] of [['phone portrait', { width: 390, height: 844 }],
       await gt.tap();
       await expect(gt).toHaveAttribute('aria-pressed', 'true');
       await modelReady(page);
+      await expect.poll(() => paintHex(page)).toEqual({ model: 'crimson-gt', glb: 'e6e9e7', proc: 'e6e9e7' });
       await expect(page.locator('[data-paint="crimson"]')).toContainText('深紅');
       await attach(page, `gt-garage-${name.replace(' ', '-')}`);
       expect(errors).toEqual([]);

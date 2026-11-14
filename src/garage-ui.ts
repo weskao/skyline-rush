@@ -134,15 +134,14 @@ export function setupGarageUI({
     updateGarageView({ selected: id });
     showGarage();
   }
-  function wearCar(): void {
-    setEquippedPaint(loadCarPaint(equippedCar(), availablePaints(getStars()))); // each car remembers its own paint
-    previewPaint(getEquippedPaint());
-    inspectStudioAfterFrame();
-  }
   /** After Cloud Save or a backup import: wear the car it restored into storage, if it is another one. */
   function adoptCar(): void {
     const before = equippedCar();
-    if (reloadCar() !== before) wearCar(); else showGarage();
+    const restored = reloadCar();
+    if (restored === before) { showGarage(); return; }
+    setEquippedPaint(loadCarPaint(restored, owned()));
+    previewPaint(getEquippedPaint());
+    inspectStudioAfterFrame();
   }
   function syncWorldCamera(): void {
     const studio = garageStudioView.page === 'studio';
@@ -213,7 +212,10 @@ export function setupGarageUI({
     const id = button.dataset.car;
     if (!isCar(id) || id === equippedCar()) return;
     equipCar(id); // both cars are open to everyone: picking one equips it
-    wearCar();
+    // Save the equipped finish for the new car while leaving its live preview alone.
+    setEquippedPaint(getEquippedPaint());
+    showGarage();
+    inspectStudioAfterFrame();
     cue?.('equip-confirmed');
   }));
   $('#garage-button').addEventListener('click', () => {
