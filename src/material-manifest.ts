@@ -53,4 +53,35 @@ export const MATERIAL_MANIFEST: Record<string, MaterialManifestEntry> = {
       gpuBytes: { medium: 4_500_000, high: 17_500_000, ultra: 17_500_000 },
     },
   },
+  // Task 5b step 4: Neon Downtown wet city asphalt, a drop-in for coast-asphalt (assets-src/neon-asphalt/README.md).
+  'neon-asphalt': {
+    id: 'neon-asphalt',
+    tileMetres: 24,
+    packing: { r: 'ambient occlusion', g: 'dry roughness', b: 'puddle mask' },
+    license: { id: 'CC0-1.0', creator: 'Dimitrios Savva', sourceUrl: 'https://polyhaven.com/a/asphalt_track' },
+    source: {
+      master: 'assets-src/neon-asphalt/neon-asphalt.blend',
+      script: 'assets-src/neon-asphalt/bake.py',
+      masterSha256: '0ff54850ab42b0f1626c4011e43b59f1426041ab28a6fe323b3b1f4920d7933b',
+      scriptSha256: 'aac90de7bb3cbaa03b4f160f0ae88a4fffe187cf0a2d0f3a464121b7eba5acb2',
+      inputSha256: {
+        'asphalt_track_diff_4k.jpg': '5719cb6a2cacdcd22edc82118be79a54b24c681aa2a6c1c3bf6a00d50f68c6c9',
+        'asphalt_track_nor_gl_4k.png': 'b4a8aa21b43c27faeb349ae43cff15f753b08078173a8c38a9eecfac2eedcdf1',
+        'asphalt_track_rough_4k.jpg': '2666b02ff3293dad8b44b6b69131d09a51ca25d087133d3ccf5a0e820e5fac33',
+        'asphalt_track_ao_4k.jpg': '1bd099b091e50af2f00881a17e2203476285f520699a39a194708cbb988127b9',
+      },
+    },
+    files: [
+      { map: 'baseColor', resolution: 1024, url: 'materials/neon-asphalt/asphalt_basecolor_1k.ktx2', bytes: 917_342, sha256: '6ec00f9a89f4979c97435bcb85b4b0c66870c80b33c91195a03daea09a7dbb90', colorSpace: 'srgb' },
+      { map: 'normal', resolution: 1024, url: 'materials/neon-asphalt/asphalt_normal_1k.ktx2', bytes: 617_599, sha256: '02371d47dab66dc3f100539c39bf00a7fee30dacfa1896f3fde79848d6b7f661', colorSpace: 'linear' },
+      { map: 'packed', resolution: 1024, url: 'materials/neon-asphalt/asphalt_packed_1k.ktx2', bytes: 494_718, sha256: '2907da9590db49e0da98460ab775dbb5329e5470dad563ac9e65309a00ea02b1', colorSpace: 'linear' },
+      { map: 'baseColor', resolution: 2048, url: 'materials/neon-asphalt/asphalt_basecolor_2k.ktx2', bytes: 3_692_563, sha256: 'eab658d2fcaf89589a3f06467032e6fc4b73c83978f817eea3126e1e4c7447f6', colorSpace: 'srgb' },
+      { map: 'normal', resolution: 2048, url: 'materials/neon-asphalt/asphalt_normal_2k.ktx2', bytes: 3_059_005, sha256: 'faed186420bb76171afd0baa67df83fd3fc75c48722197c3767acbe1e88c56c3', colorSpace: 'linear' },
+      { map: 'packed', resolution: 2048, url: 'materials/neon-asphalt/asphalt_packed_2k.ktx2', bytes: 1_959_317, sha256: '35cbe880a49cbe91f2674ce51d337e40ef807cd3611ccdef8a50d628f1a6f0ed', colorSpace: 'linear' },
+    ],
+    budgets: {
+      downloadBytes: { 1024: 3_300_000, 2048: 13_000_000 },
+      gpuBytes: { medium: 4_500_000, high: 17_500_000, ultra: 17_500_000 },
+    },
+  },
 };
