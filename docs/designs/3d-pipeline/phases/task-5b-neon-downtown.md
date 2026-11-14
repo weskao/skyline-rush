@@ -59,12 +59,19 @@ To do, in order:
   views, pink-violet neon, wet road, no lightning. Save it under `../concept-art/`, record its generator and
   redistribution licence in that folder's `README.md`, and add its panel row there. It is concept art: mood only,
   never a geometry source or in-game evidence. Owner approves the panel before step 1.
+  Open (2026-11-14): the text-to-image skill's generator (Pollinations) answers HTTP 401, an API key is required
+  and none is configured. Needs the owner's key or another approved generator; no panel exists yet.
 - [ ] **1 Look brief.** Per panel view: camera, time of day, weather and the spec v2 §8.1 items each shot scores,
   recorded before any change (as `coast-look-brief.md` did). It also fixes which of the two looks (night, rain
   night) each race preset shows.
-- [ ] **2 Per-track look config.** Replace the `trackId === 'coast'` checks in the lighting plan and the asset host
-  with a per-track entry (environment, road set, scenery layer), so Neon opts in without a second copy of the Coast
-  code. RED first: Neon without `?look=3d`, Neon on Low, and Coast under `?look=3d` all render as before.
+- [x] **2a Per-track look config.** The `trackId === 'coast'` checks in the lighting plan (`src/coast-lighting.ts`,
+  `src/coast-look.ts`) and the asset host (`src/coast-assets.ts`) read a per-track entry (environment, road set,
+  scenery layer) from `src/track-look.ts`. RED → GREEN: `tests/track-look.test.js` (Neon without `?look=3d`, Neon on
+  Low and Coast under `?look=3d` plan as before; a track without an entry loads nothing; a borrowed sun returns only
+  to its own track). Coast unchanged in the browser: `tests/coast-scenery-browser.spec.js` and
+  `tests/coast-visual-browser.spec.js`, 13 of 13.
+- [ ] **2b Neon's own entry** in `src/track-look.ts`, and the bloom pick in `src/world.js` (still
+  `trackId === 'coast'`). Open: the entry names Neon's HDRIs, road set and scenery GLB, which steps 3–6 produce.
 - [ ] **3 Night lighting and sky.** Two CC0 night-city HDRIs (night, rain night), PMREM 256 so no program changes
   mid-race,
   shown on the sky dome; key light matched to the HDRI; bloom threshold set under the neon signs and windows and
@@ -95,8 +102,9 @@ To do, in order:
 
 - [x] Desktop Apple silicon baseline for Neon's current look: every selectable map on High and Ultra with p50/p95,
   draw calls and triangles (one Mac, 2026-11-09, Task 5).
-- [ ] Re-verify the Blender / MCP live scene query on the machine that builds the kit (Phase 0 passes are never
-  reused across devices).
+- [x] Re-verify the Blender / MCP live scene query on the machine that builds the kit (Phase 0 passes are never
+  reused across devices). One Mac, 2026-11-14: addon status and a live scene read both answered; report in
+  `../audits/`.
 - [ ] Desktop p50/p95, draw calls and triangles for the new Neon look, per tier, against the baseline above.
 - [ ] Phone (`make phone-diag`), portrait and landscape: p50/p95 and a sustained run. Not verified for Coast either.
 - [ ] Parity review (spec v2 §8.1) against the N1 reference on a real-GPU desktop; owner sign-off on the scored

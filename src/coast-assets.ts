@@ -15,6 +15,7 @@ import { coastRoadFiles, coastRoadTier, coastWetness, createCoastRoadMaterial, t
 import { createWetReflection, wetReflectionStrength } from './wet-reflection.ts';
 import { look3d } from './look-gate.ts';
 import { withGreenery } from './coast-greenery.ts';
+import { trackLook, type TrackLook } from './track-look.ts';
 
 interface Clock { value: number }
 interface Scenery {
@@ -67,14 +68,15 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
     reflection.render(renderer, scene, camera, road.mesh.matrixWorld?.elements[13] ?? 0);
   };
 
-  /** One coast GLB: fetched once for Coast on Medium+, in the scene only from outside a race on. */
-  function lateModel(id: 'coast-scenery' | 'coast-boats', status: 'coastScenery' | 'coastBoats', attach: (source: Object3D) => void, detach: () => void) {
+  /** One GLB a track's look entry names under `slot`: fetched once on Medium+, in the scene only from outside a race on. */
+  function lateModel(id: 'coast-scenery' | 'coast-boats', slot: 'scenery' | 'boats', status: 'coastScenery' | 'coastBoats', attach: (source: Object3D) => void, detach: () => void) {
     let requested = false, handle: ModelHandle | null = null;
     const part = {
       attached: false,
+      wanted: (look: TrackLook | undefined, quality: VfxQuality): boolean => look?.[slot] === id && quality !== 'low',
       /** True when the model just joined the scene: its programs need the warmup. */
-      update(trackId: string, quality: VfxQuality, racing: boolean): boolean {
-        if (!requested && trackId === 'coast' && quality !== 'low') {
+      update(look: TrackLook | undefined, quality: VfxQuality, racing: boolean): boolean {
+        if (!requested && part.wanted(look, quality)) {
           requested = true;
           dataset[status] = 'loading';
           cache.load(id, { signal: controller.signal }).then(result => {
@@ -100,8 +102,8 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
     };
     return part;
   }
-  const scan = lateModel('coast-scenery', 'coastScenery', source => scenery.attachModel(source, sea?.shore), () => scenery.detachModel());
-  const boats = boatClock && lateModel('coast-boats', 'coastBoats', source => scenery.attachBoats(source, boatClock), () => scenery.detachBoats());
+  const scan = lateModel('coast-scenery', 'scenery', 'coastScenery', source => scenery.attachModel(source, sea?.shore), () => scenery.detachModel());
+  const boats = boatClock && lateModel('coast-boats', 'boats', 'coastBoats', source => scenery.attachBoats(source, boatClock), () => scenery.detachBoats());
 
   function loadRoad(tier: MaterialTier, { load, anisotropy }: Road): void {
     roads.set(tier, 'loading');
@@ -116,9 +118,9 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
     });
   }
 
-  function updateRoad(trackId: string, quality: VfxQuality, racing: boolean, preset: string, ultra: boolean): boolean {
+  function updateRoad(look: TrackLook | undefined, quality: VfxQuality, racing: boolean, preset: string, ultra: boolean): boolean {
     if (!road) return false;
-    const tier = trackId === 'coast' ? coastRoadTier(quality, ultra) : null;
+    const tier = look?.road === 'coast-asphalt' ? coastRoadTier(quality, ultra) : null; // the one road set shipped
     if (tier && !roads.has(tier)) loadRoad(tier, road);
     const ready = tier ? roads.get(tier) : undefined;
     const want = typeof ready === 'object' ? ready : null;
@@ -144,14 +146,15 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
   return {
     /** Per frame; true when new materials joined the scene and the caller must run its shader warmup. */
     update(trackId: string, quality: VfxQuality, racing: boolean, preset = 'track', ultra = false): boolean {
-      const joined = scan.update(trackId, quality, racing), sailing = boats?.update(trackId, quality, racing) ?? false;
-      const drawn = scan.attached && trackId === 'coast' && quality !== 'low';
+      const look = trackLook(trackId), onScan = scan.wanted(look, 'high'); // this track's look draws the scan coast
+      const joined = scan.update(look, quality, racing), sailing = boats?.update(look, quality, racing) ?? false;
+      const drawn = scan.attached && onScan && quality !== 'low';
       if (mountains) mountains.material.visible = !drawn;
-      if (city && trackId === 'coast') city.visible = !drawn; // world.js sets it on a track change only
+      if (city && onScan) city.visible = !drawn; // world.js sets it on a track change only
       if (drawn !== bare) showTowers(!(bare = drawn));
       sky?.update(trackId, preset, quality, ultra); // its program exists from creation: nothing to warm up
       sea?.update(trackId, preset, quality); // after the sky: the water shows only under the dome it mirrors
-      return updateRoad(trackId, quality, racing, preset, ultra) || joined || sailing;
+      return updateRoad(look, quality, racing, preset, ultra) || joined || sailing;
     },
     dispose(): void {
       controller.abort();

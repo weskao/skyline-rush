@@ -23,18 +23,20 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
   const environments: Envs = envs ?? createCoastEnvironments(renderer as WebGLRenderer, baseUrl); // tests inject `envs`; the real renderer is a full WebGLRenderer
   const grade = lens.uniforms;
   let key = '';
-  let applied: CoastEnvName | null = null, palette: { color: Color; intensity: number; position?: Vector3 } | null = null; // Coast's own sun
-  function applyRoom(onCoast: boolean) {
+  let applied: CoastEnvName | null = null, palette: { color: Color; intensity: number; position?: Vector3 } | null = null; // the track's own sun
+  let paletteTrack = ''; // the track `palette` was saved on
+  function applyRoom(trackId: string) {
     scene.environment = room; scene.environmentIntensity = roomIntensity;
     grade.saturation.value = grade.contrast.value = 1; grade.tint.value.setRGB(1, 1, 1);
     if (scene.environmentRotation) scene.environmentRotation.y = 0;
-    if (sun && palette && onCoast) { // leaving Coast: the new track's block already set it
+    if (sun && palette && trackId === paletteTrack) { // on another track its own block already set the sun
       sun.color.copy(palette.color); sun.intensity = palette.intensity;
       if (palette.position) sun.position?.copy(palette.position);
     }
     applied = palette = null;
   }
-  function applyVariant(name: CoastEnvName, texture: Texture) {
+  function applyVariant(name: CoastEnvName, texture: Texture, trackId: string) {
+    if (trackId !== paletteTrack) { palette = null; paletteTrack = trackId; }
     const v = COAST_ENV_VARIANTS[name];
     scene.environment = texture; scene.environmentIntensity = v.intensity; renderer.toneMappingExposure = v.exposure;
     grade.saturation.value = v.grade.saturation; grade.contrast.value = v.grade.contrast; grade.tint.value.setRGB(...v.grade.tint);
@@ -52,12 +54,12 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
       const next = plan.kind === 'room' ? 'room' : plan.variant;
       if (next === key) return;
       key = next;
-      if (plan.kind === 'room') return applyRoom(trackId === 'coast');
+      if (plan.kind === 'room') return applyRoom(trackId);
       const ready = environments.get(plan.variant);
-      if (ready) return applyVariant(plan.variant, ready);
+      if (ready) return applyVariant(plan.variant, ready, trackId);
       void environments.preload([plan.variant]).then(() => {
         const texture = environments.get(plan.variant);
-        if (key === next && texture) applyVariant(plan.variant, texture);
+        if (key === next && texture) applyVariant(plan.variant, texture, trackId);
       });
     },
     /** Bloom strength before boost feedback: the variant's while its HDRI is on screen, else world.js's own. */

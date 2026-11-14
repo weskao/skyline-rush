@@ -1,5 +1,6 @@
 import type { VfxQuality } from './vfx-settings.ts';
 import { look3d } from './look-gate.ts';
+import { trackLook } from './track-look.ts';
 
 /** PMREM cube size; equals RoomEnvironment's, so swapping `scene.environment` never recompiles a lit shader. */
 export const PMREM_CUBE_SIZE = 256;
@@ -48,17 +49,18 @@ export const COAST_ENV_VARIANTS: Readonly<Record<CoastEnvName, CoastEnvVariant>>
     sky: { sunDirection: [0.7724, 0.3869, 0.5037], range: 4, gain: 0.34, disc: 0 } },
 });
 
-const PRESET_TO_ENV: Readonly<Record<string, CoastEnvName | undefined>> = { track: 'day', day: 'day', dusk: 'dusk', rain: 'rain', fog: 'fog' };
+const envVariant = (trackId: string, preset: string): CoastEnvName | null => {
+  const env = trackLook(trackId)?.env;
+  return env && Object.hasOwn(env, preset) ? env[preset] ?? null : null;
+};
 
-/** Env variant for a race visual preset; null (night, snow, aurora) leaves the current environment alone. */
-export function coastEnvVariant(preset: string): CoastEnvName | null {
-  return PRESET_TO_ENV[preset] ?? null;
-}
+/** Coast's env variant for a race visual preset; null (night, snow, aurora) leaves the current environment alone. */
+export const coastEnvVariant = (preset: string): CoastEnvName | null => envVariant('coast', preset);
 
 export type CoastEnvPlan = { kind: 'room' } | { kind: 'hdri'; variant: CoastEnvName };
 
-/** Low, every non-Coast track and pages without `?look=3d` keep RoomEnvironment (the develop path); Medium+ Coast loads the HDRI. */
+/** Low, every track without a look entry (track-look.ts) and pages without `?look=3d` keep RoomEnvironment (the develop path); Medium+ loads the track's HDRI. */
 export function coastEnvPlan(trackId: string, preset: string, quality: VfxQuality): CoastEnvPlan {
-  const variant = trackId === 'coast' && quality !== 'low' && look3d() ? coastEnvVariant(preset) : null;
+  const variant = quality !== 'low' && look3d() ? envVariant(trackId, preset) : null;
   return variant ? { kind: 'hdri', variant } : { kind: 'room' };
 }
