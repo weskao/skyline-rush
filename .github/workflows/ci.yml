@@ -95,25 +95,14 @@ jobs:
       - run: npm test
       # Always prove the public (default) artifact excludes unreleased Garage modules and assets.
       - run: npm run build
-      # The 3D pickups are always on: prove on the default build that the live guide preview and the in-race
-      # models really load and draw in Chrome, and keep the screenshots as evidence.
-      - name: Smoke-test 3D guide and race model parity
-        if: github.ref == 'refs/heads/feature/pickup-3d-artwork-ui' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
-        run: npx playwright test tests/pickup-3d-browser.spec.js tests/pickup-3d-collection-browser.spec.js
-      - name: Upload real 3D model preview and race screenshots
-        if: always() && (github.ref == 'refs/heads/feature/pickup-3d-artwork-ui' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
-        uses: actions/upload-artifact@v4
-        with:
-          name: pickup-3d-visual-evidence
-          path: |
-            test-results/**/real-3d-pickups-*.png
-            test-results/**/pickup-collect-*.png
-          if-no-files-found: ignore
+      # No pickup-3d Playwright smoke here: both specs are *browser.spec.js, so the browser shards run them (and upload
+      # their screenshots) on main/develop; rerunning them in this job added 4.4 minutes for no new evidence.
 
-  # CPU-only WebGL makes the serial suite take about 6.4 runner-hours. Playwright's own --shard cuts equal contiguous
+  # CPU-only WebGL makes the serial suite take about 12 runner-hours. Playwright's own --shard cuts equal contiguous
   # slices, so 16 of them ran 14 to 48 min; scripts/ci-shards.mjs packs tests by the durations in
-  # tests/ci-durations.json instead (13 shards ≈ 30 min each; the longest single test is 12 min).
-  # 13 + 5 world-tour + unit + cloud = GitHub Free's 20 concurrent jobs; a 21st job would queue.
+  # tests/ci-durations.json instead (16 shards ≈ 46 min each; the longest single test is 6 min).
+  # 16 + 2 world-tour + unit + cloud = GitHub Free's 20 concurrent jobs; a 21st job would queue. World Tour is
+  # 51 runner-minutes in all, so its shards went from 5 to 2 and the 3 freed jobs shorten the browser shards.
   # Refresh durations after big suite changes: node scripts/ci-shards.mjs refresh <main run id>.
   browser-tests:
     needs: changes
@@ -122,7 +111,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -210,6 +199,15 @@ jobs:
             test-results/**/garage-dense-*.png
             test-results/**/garage-inspection-*.png
           if-no-files-found: ignore
+      - name: Upload real 3D pickup preview and race screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pickup-3d-visual-evidence-${{ matrix.shard }}
+          path: |
+            test-results/**/real-3d-pickups-*.png
+            test-results/**/pickup-collect-*.png
+          if-no-files-found: ignore
       # No layout rerun here: the layout script's specs are part of this suite already (playwright.config.js matches
       # every *browser.spec.js), so rerunning them added 30 minutes to one shard. The pre-push hook keeps it locally.
 
@@ -245,13 +243,13 @@ jobs:
     needs: changes
     if: "${{ needs.changes.outputs.code == 'true' && !startsWith(github.ref, 'refs/tags/') && !(github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'docs: release ')) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.full_regression == true) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-regression]'))) }}"
     runs-on: ubuntu-latest
-    # CPU-only WebGL renders the ~250 per-map camera tests (about 150k frames) at ~9 fps, over two hours on one
-    # runner. Contiguous slices ran 4 to 36 min because the slow camera views sit together; duration-packed,
-    # 5 shards run ≈ 26 min each (see browser-tests).
+    # CPU-only WebGL renders the 134 per-map camera tests in about 51 runner-minutes. Contiguous slices ran 4 to
+    # 36 min because the slow camera views sit together; duration-packed, 2 shards run ≈ 26 min each, well inside
+    # the browser shards' wall time (see browser-tests for the 20-job budget).
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
