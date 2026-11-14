@@ -41,12 +41,13 @@ export const CONTACT_FRAGMENT = `varying vec2 vPoint;
     #include <colorspace_fragment>
   }`;
 
-export const BODY_VERTEX = `uniform vec2 zRange,yRange;uniform float inflate;
+export const BODY_VERTEX = `uniform vec2 zRange,yRange;uniform float inflate;uniform mat4 vehicleFromBody;
   varying vec3 vNormal,vView;varying vec2 vBody;
   void main(){
     vec4 mv=modelViewMatrix*vec4(position+normal*inflate,1.);
-    vBody=vec2((position.z-zRange.x)/max(1e-4,zRange.y-zRange.x),
-      (position.y-yRange.x)/max(1e-4,yRange.y-yRange.x));
+    vec3 local=(vehicleFromBody*vec4(position,1.)).xyz;
+    vBody=vec2((local.z-zRange.x)/max(1e-4,zRange.y-zRange.x),
+      (local.y-yRange.x)/max(1e-4,yRange.y-yRange.x));
     vNormal=normalMatrix*normal;vView=-mv.xyz;
     gl_Position=projectionMatrix*mv;
   }`;
@@ -62,22 +63,22 @@ export const BODY_FRAGMENT = `uniform vec3 primary,secondary;
     vec3 accent=secondary;
     if(tier<.5){
       float u=p.x+.038*sin(p.y*27.+p.x*14.)+.016*sin(p.y*55.);
-      band=exp(-abs(u-front)*25.);
-      echo=exp(-abs(u-front+.14)*18.)*.45;
+      band=exp(-abs(u-front)*15.);
+      echo=exp(-abs(u-front+.14)*13.)*.55;
     }else if(tier<1.5){
       float hot=smoothstep(.44,.93,p.x);
-      band=hot*exp(-abs(p.x-front)*12.)*(.65+.35*sin(p.y*21.-progress*15.));
+      band=hot*exp(-abs(p.x-mix(.5,1.12,progress))*9.)*(.72+.28*sin(p.y*21.-progress*15.));
       echo=hot*(1.-p.y)*.32;
     }else if(tier<2.5){
-      band=exp(-abs(p.y-front)*18.);
-      echo=exp(-abs(p.y-front+.22)*17.)*.65;
+      band=exp(-abs(p.y-front)*12.);
+      echo=exp(-abs(p.y-front+.22)*12.)*.72;
     }else{
-      band=exp(-abs(p.x-front)*17.)+exp(-abs(p.x-(1.-front))*19.);
+      band=exp(-abs(p.x-front)*13.)+exp(-abs(p.x-(1.-front))*14.);
       echo=exp(-abs(p.y-front+.14)*12.)*.52;
       accent=.55+.42*cos(p.x*5.+p.y*4.-progress*4.+vec3(0.,2.1,4.2));
     }
-    float life=smoothstep(0.,.09,progress)*pow(max(0.,1.-progress),1.4)*strength;
-    float alpha=(band*(.36+.47*rim)+echo*.50+rim*.30)*life;
+    float life=smoothstep(0.,.09,progress)*pow(max(0.,1.-progress),.95)*strength;
+    float alpha=(band*(.66+.29*rim)+echo*.55+rim*.25)*life;
     gl_FragColor=vec4(mix(primary,accent,clamp(echo+.34*band+.23*rim,0.,1.))*(1.+.35*band),min(.69,alpha));
     #include <colorspace_fragment>
   }`;

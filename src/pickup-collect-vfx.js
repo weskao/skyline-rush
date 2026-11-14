@@ -2,7 +2,8 @@
 // own choreography (MOTIONS) on the same pooled meshes, so four distinct effects cost no extra shader or draw call.
 import * as THREE from 'three';
 import { PICKUP_GROUND_LIFT } from './pickup-art.js';
-import { BODY_FRAGMENT, BODY_VERTEX, CONTACT_FRAGMENT, CONTACT_VERTEX } from './pickup-collect-shaders.js';
+import { CONTACT_FRAGMENT, CONTACT_VERTEX } from './pickup-collect-shaders.js';
+import { createPickupVehicleFit } from './pickup-vehicle-fit.js';
 
 // `rings` and `particles` are the High-quality budgets; `motion` names the tier's choreography in MOTIONS.
 export const PICKUP_COLLECTION_STYLES = Object.freeze({
@@ -146,28 +147,12 @@ const MOTIONS = {
   },
 };
 
-function energyMaterial(vertexShader, fragmentShader, uniforms = {}) {
+function energyMaterial(vertexShader, fragmentShader) {
   return new THREE.ShaderMaterial({
     vertexShader, fragmentShader, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     uniforms: { primary: { value: new THREE.Color() }, secondary: { value: new THREE.Color() },
-      progress: { value: 0 }, strength: { value: 0 }, tier: { value: 0 }, ...uniforms },
+      progress: { value: 0 }, strength: { value: 0 }, tier: { value: 0 } },
   });
-}
-
-// The garage rig reuses this rider on the displayed GLB body. Its bounds are in that geometry's own units.
-function createBodySweep(player) {
-  const body = player?.userData.body;
-  if (!body?.isMesh) return null;
-  const material = energyMaterial(BODY_VERTEX, BODY_FRAGMENT, {
-    zRange: { value: new THREE.Vector2() }, yRange: { value: new THREE.Vector2() }, inflate: { value: 0 },
-  });
-  const shell = new THREE.Mesh(body.geometry, material);
-  shell.name = 'Pickup body sweep';
-  shell.userData.followsBody = true;
-  shell.renderOrder = 11;
-  shell.visible = false;
-  body.add(shell);
-  return shell;
 }
 
 export function createPickupCollectVfx(scene, player) {
@@ -192,9 +177,10 @@ export function createPickupCollectVfx(scene, player) {
   const slots = Object.fromEntries(TIERS.map(tier => [tier, []]));
   const next = Object.fromEntries(TIERS.map(tier => [tier, 0]));
 
-  const body = createBodySweep(player);
-  let bodySlot = null, fittedGeometry = null;
-  const inverse = new THREE.Quaternion(), roadRotation = new THREE.Quaternion();
+  const vehicleFit = createPickupVehicleFit(player);
+  let bodySlot = null;
+  const inverse = new THREE.Matrix4(), roadRotation = new THREE.Quaternion();
+  const contactScale = new THREE.Vector3();
   const right = new THREE.Vector3(), up = new THREE.Vector3(), back = new THREE.Vector3(), basis = new THREE.Matrix4();
 
   for (const [tierIndex, tier] of TIERS.entries()) {
@@ -220,7 +206,7 @@ export function createPickupCollectVfx(scene, player) {
       contact.name = 'Pickup contact pulse';
       contact.renderOrder = 10;
       contact.visible = false;
-      contact.scale.setScalar(CONTACT_RADII[tierIndex]);
+      contact.matrixAutoUpdate = false;
       materials.add(contactMaterial);
       group.add(contact);
       materials.add(flashSprite.material);
@@ -282,10 +268,10 @@ export function createPickupCollectVfx(scene, player) {
   function place(slot, { distance = 0, center = 0, roadCenter = () => 0, worldPoint, car, pose }) {
     const { group, event, tier } = slot, follow = slot.follow && (pose || car);
     if (follow && pose) {
-      pose.getWorldPosition(group.position);
-      pose.getWorldQuaternion(group.quaternion);
+      vehicleFit.place(group, pose);
       return;
     }
+    group.scale.setScalar(1);
     const at = follow ? car : event, altitude = at.altitude ?? 0;
     const baseY = follow ? altitude + .3 : altitude + .85 + (altitude < .5 ? PICKUP_GROUND_LIFT[tier] : 0);
     if (worldPoint) group.position.fromArray(worldPoint(at.distance, at.x, baseY, distance, follow ? undefined : event));
@@ -302,32 +288,13 @@ export function createPickupCollectVfx(scene, player) {
     roadRotation.identity();
     if (road) roadRotation.setFromRotationMatrix(basis.makeBasis(
       right.fromArray(road.right), up.fromArray(road.up), back.fromArray(road.forward).negate()));
-    inverse.copy(group.quaternion).invert();
-    contact.position.sub(group.position).applyQuaternion(inverse);
-    contact.quaternion.copy(inverse).multiply(roadRotation).multiply(CONTACT_PLANE);
+    group.updateMatrix();
+    inverse.copy(group.matrix).invert();
+    contact.matrix.compose(contact.position, roadRotation.multiply(CONTACT_PLANE), contactScale.setScalar(CONTACT_RADII[slot.tierIndex]));
+    contact.matrix.premultiply(inverse);
+    contact.matrixWorldNeedsUpdate = true;
     contact.material.uniforms.progress.value = slot.age / CONTACT_SPANS[slot.tierIndex];
     contact.material.uniforms.strength.value = slot.quality === 'medium' ? .72 : 1;
-  }
-
-  function updateBody(frame) {
-    if (!body) return;
-    const slot = bodySlot;
-    body.visible = !!slot && slot.age < slot.style.life && !slot.reducedMotion && !frame.reducedMotion && frame.enabled !== false;
-    if (!body.visible) return;
-    const uniforms = body.material.uniforms;
-    if (fittedGeometry !== body.geometry) {
-      fittedGeometry = body.geometry;
-      if (!fittedGeometry.boundingBox) fittedGeometry.computeBoundingBox();
-      const { min, max } = fittedGeometry.boundingBox;
-      uniforms.zRange.value.set(min.z, max.z);
-      uniforms.yRange.value.set(min.y, max.y);
-      uniforms.inflate.value = (max.z - min.z) * .005;
-    }
-    uniforms.primary.value.set(slot.style.color);
-    uniforms.secondary.value.set(SECONDARY[slot.tierIndex]);
-    uniforms.tier.value = slot.tierIndex;
-    uniforms.progress.value = Math.min(1, slot.age / slot.style.life);
-    uniforms.strength.value = slot.quality === 'low' ? .55 : .9;
   }
 
   function update(dt, frame = {}) {
@@ -359,7 +326,7 @@ export function createPickupCollectVfx(scene, player) {
       MOTIONS[slot.style.motion](slot, slot.age, progress);
       if (shards.count) shards.instanceMatrix.needsUpdate = true;
     }
-    updateBody(frame);
+    vehicleFit.updateBody(bodySlot, frame, bodySlot ? SECONDARY[bodySlot.tierIndex] : 0);
   }
 
   return {
@@ -368,15 +335,14 @@ export function createPickupCollectVfx(scene, player) {
       sum + slots[tier].filter(slot => slot.age < slot.style.life).length, 0),
     reset() {
       bodySlot = null;
-      if (body) body.visible = false;
+      vehicleFit.reset();
       for (const tier of TIERS) for (const slot of slots[tier]) {
         slot.age = Infinity; slot.event = null; slot.group.visible = slot.contact.visible = false; slot.shards.count = 0;
       }
     },
     dispose() {
       root.removeFromParent();
-      body?.removeFromParent();
-      body?.material.dispose();
+      vehicleFit.dispose();
       for (const material of materials) material.dispose();
       for (const geometry of geometries) geometry.dispose();
       texture.dispose();

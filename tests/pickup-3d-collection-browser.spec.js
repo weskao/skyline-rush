@@ -1,4 +1,4 @@
-import { test } from './helpers/gameplay-browser.js';
+import { dressedAs, test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -20,17 +20,27 @@ const running = (page, tier) => page.evaluate(name => {
   const stage = scene.getObjectByName('Pickup collect VFX')?.children.find(group => group.userData.tier === name && group.visible);
   if (!stage) return null;
   const shards = stage.children.find(mesh => mesh.isInstancedMesh);
+  const shell = player.getObjectByName('Pickup body sweep');
+  const bounds = player.userData.visualBounds;
+  const ring = stage.getObjectByName('energy shockwave 0');
+  const tailOffset = name === 'can' && bounds
+    ? player.worldToLocal(ring.getWorldPosition(ring.position.clone())).z - bounds.max.z
+    : null;
   return {
     shockwaves: stage.children.filter(mesh => mesh.name.includes('energy shockwave') && mesh.visible).length,
     shards: shards.visible ? shards.count : 0,
     beam: stage.children.find(mesh => mesh.name === 'energy beam').visible,
     contact: stage.getObjectByName('Pickup contact pulse').visible,
-    bodySweep: player.getObjectByName('Pickup body sweep').visible,
+    bodySweep: shell.visible,
+    bodyMesh: shell.parent.name,
+    tailOffset,
     fromCar: stage.position.distanceTo(player.getWorldPosition(stage.position.clone())),
   };
 }, tier);
 
 test('each tier plays its own collection effect on the car and its WebGL frame is captured', async ({ gameplayPage: page }) => {
+  const expectedModel = process.env.PICKUP_TEST_MODEL;
+  if (expectedModel) await expect.poll(() => dressedAs(page), { timeout: ciTimeout(15000) }).toBe(expectedModel);
   await startRace(page);
   for (const tier of TIERS) {
     await take(page, tier);
@@ -39,6 +49,8 @@ test('each tier plays its own collection effect on the car and its WebGL frame i
     expect(state.shockwaves).toBeGreaterThanOrEqual(1);
     expect(state.shards).toBeGreaterThan(0);
     expect(state.bodySweep).toBe(true);
+    if (expectedModel) expect(state.bodyMesh).toBe('body');
+    if (tier === 'can') expect(state.tailOffset).toBeGreaterThan(0);
     expect(state.fromCar, tier + ' effect rides the car instead of staying at the item 8 m ahead').toBeLessThan(3);
     await test.info().attach('pickup-collect-' + tier + '.png', {
       body: await page.screenshot(), contentType: 'image/png',

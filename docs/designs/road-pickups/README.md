@@ -61,8 +61,11 @@ Collision volumes, rewards, placement, respawn timers and balance are unchanged.
 
 Each tier plays its own choreography on the same pooled meshes. A player pickup sends a short
 contact pulse out from the authored item in the local road frame, then the rings, shards and
-car-body sweep follow the rendered car. The body sweep reuses the garage rig's body rider and
-fits the equipped body's geometry, including the authored GLB. A rival's quieter cue stays at the item.
+car-body sweep follow the rendered car. The shared airflow fit supplies the displayed car's
+neutral bounds whenever a GLB or LOD changes. Those bounds scale and center the rings and particles,
+and place the canister's exhaust behind the tail. The body sweep rides the garage rig's active
+body mesh and reads its positions in the car's coordinate frame, including nested or rotated meshes.
+New cars using the shared car model contract inherit the fit. A rival's quieter cue stays at the item.
 
 | Tier | Motion | Rings | Shards | Length | What it does |
 | --- | --- | ---: | ---: | ---: | --- |

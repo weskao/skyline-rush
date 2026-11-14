@@ -304,3 +304,73 @@ test('enabling reduced motion during a pickup immediately leaves one faint ring'
   assert.equal(stage.getObjectByName('energy shards').visible, false);
   vfx.dispose();
 });
+
+test('vehicle pickup effects fit a wide, long, offset model and refit after a car swap', () => {
+  const scene = new THREE.Scene(), car = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 4));
+  body.position.y = .5;
+  car.userData.body = body;
+  car.add(body);
+  scene.add(car);
+  const vfx = createPickupCollectVfx(scene, car);
+  const event = { distance: 12, x: -5 };
+  const show = tier => {
+    vfx.reset();
+    vfx.spawn(tier, event, { follow: true });
+    vfx.update(.12, { pose: car, distance: 12 });
+    return vfx.group.children.find(stage => stage.visible);
+  };
+
+  car.userData.visualBounds = new THREE.Box3(new THREE.Vector3(-1, 0, -4), new THREE.Vector3(3, 2, 6));
+  const wide = show('can');
+  const ring = wide.getObjectByName('energy shockwave 0');
+  const at = new THREE.Vector3();
+  ring.getWorldPosition(at);
+  assert.ok(at.z > 6, 'heat ring leaves the actual tail of a longer vehicle');
+  assert.ok(Math.abs(at.x - 1) < 1e-6, 'heat ring is centered across the displayed vehicle');
+  const shards = wide.getObjectByName('energy shards'), instance = new THREE.Matrix4();
+  shards.getMatrixAt(0, instance);
+  const firstEmber = new THREE.Vector3().setFromMatrixPosition(instance);
+  shards.localToWorld(firstEmber);
+  assert.ok(firstEmber.z > 6 && firstEmber.x < 1, 'the ember starts behind the same tail');
+  const contact = wide.getObjectByName('Pickup contact pulse');
+  assert.ok(contact.getWorldPosition(at).distanceTo(new THREE.Vector3(-5, .08, 0)) < 1e-6, 'pickup point remains in course coordinates');
+
+  car.userData.visualBounds = new THREE.Box3(new THREE.Vector3(-3, 0, -2), new THREE.Vector3(-1, 1, 2));
+  const compact = show('can');
+  compact.getObjectByName('energy shockwave 0').getWorldPosition(at);
+  assert.ok(at.z > 2 && at.z < 3, 'replacement body uses its own tail');
+  assert.ok(Math.abs(at.x + 2) < 1e-6, 'replacement body uses its own center');
+
+  vfx.reset();
+  vfx.spawn('can', event, { rival: true });
+  vfx.update(.12, { pose: car, distance: 12 });
+  vfx.group.children.find(stage => stage.visible).getObjectByName('energy shockwave 0').getWorldPosition(at);
+  assert.ok(Math.abs(at.x + 5) < 1e-6, 'rival effect is independent of the player body');
+  vfx.dispose();
+});
+
+test('the body sweep travels in vehicle coordinates even for a rotated nested body mesh', () => {
+  const scene = new THREE.Scene(), car = new THREE.Group(), mount = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(6, 2, 2));
+  mount.position.set(1, 3, 5);
+  mount.rotation.y = Math.PI / 2;
+  mount.scale.set(2, 1, .5);
+  mount.add(body);
+  car.add(mount);
+  car.position.set(21, 7, 43);
+  car.rotation.y = -.6;
+  car.userData.body = body;
+  scene.add(car);
+  const vfx = createPickupCollectVfx(scene, car);
+  vfx.spawn('cell', { distance: 10, x: 0 }, { follow: true });
+  vfx.update(.1, { pose: car });
+  const shell = body.getObjectByName('Pickup body sweep');
+  const { vehicleFromBody, zRange, yRange } = shell.material.uniforms;
+  assert.ok(vehicleFromBody, 'shader has the displayed mesh-to-vehicle transform');
+  const nose = new THREE.Vector3(3, 1, 0).applyMatrix4(vehicleFromBody.value);
+  assert.ok(nose.distanceTo(new THREE.Vector3(1, 4, -1)) < 1e-6);
+  assert.ok(zRange.value.distanceTo(new THREE.Vector2(-1, 11)) < 1e-6);
+  assert.ok(yRange.value.distanceTo(new THREE.Vector2(2, 4)) < 1e-6);
+  vfx.dispose();
+});

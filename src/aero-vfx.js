@@ -72,6 +72,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   pressure.rotation.x = -Math.PI / 2; pressure.position.y = 0.11;
   local.add(pressure);
   function placeAirflow(profile) {
+    vehicle.userData.visualBounds = profile.bounds; // neutral-pose bounds also fit the pickup VFX
     const frame = airflowFrame(profile), { wakeRange, rippleScale } = flow.material.uniforms;
     pressure.position.x = frame.pressure.x;
     pressure.position.z = frame.pressure.z;
@@ -79,11 +80,10 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
     wakeRange.value.fromArray(frame.wakeRange);
     rippleScale.value.fromArray(frame.motionScale);
     trailAnchor.set(frame.trail.x, frame.trail.y, frame.trail.z);
-    trailHalfWidth = frame.trail.halfWidth;
+    return frame.trail.halfWidth;
   }
   const trailAnchor = new THREE.Vector3();
-  let trailHalfWidth = 0;
-  placeAirflow(proceduralProfile);
+  let trailHalfWidth = placeAirflow(proceduralProfile);
   const rear = new THREE.Group(); rear.name = 'Rear ports'; local.add(rear); // garage-model.ts moves it onto a dressed GLB's nozzles
 
   const jetGeometry = new THREE.CylinderGeometry(1, 4.8, 1, 20, 24, true);
@@ -229,7 +229,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       const profile = model ? measureAirflowProfile(model, vehicle) : proceduralProfile;
       flow.geometry.dispose();
       flow.geometry = streamGeometry(profile);
-      placeAirflow(profile);
+      trailHalfWidth = placeAirflow(profile);
     },
     inspectCosmetics() {
       return { voidBeams: voidBeams.mesh.visible, launchPattern,

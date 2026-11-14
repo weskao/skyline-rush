@@ -42,7 +42,7 @@ async function dressed(id, size, hostName) {
   await settle();
   const instance = car.children.find(child => child.userData.garageModel === id);
   assert.ok(instance, `${id} dressed on ${hostName}`);
-  return { instance, original, aero, shown: measureAirflowProfile(instance, new THREE.Group()).bounds };
+  return { car, instance, original, aero, shown: measureAirflowProfile(instance, new THREE.Group()).bounds };
 }
 
 test('no car carries a hand-tuned display scale', () => {
@@ -54,8 +54,9 @@ for (const id of ['crimson-gt', 'roadster2']) {
   for (const [label, size] of Object.entries(SIZES)) {
     test(`${id} as ${label} shows at the Roadster's size on every screen`, async () => {
       for (const hostName of ['home', 'studio', 'showcase']) {
-        const { instance, original, aero, shown } = await dressed(id, size, hostName);
+        const { car, instance, original, aero, shown } = await dressed(id, size, hostName);
         const got = extent(shown);
+        assert.deepEqual(car.userData.visualBounds, shown, `${hostName} car effects see the dressed model's neutral bounds`);
         assert.equal(instance.scale.y, instance.scale.z, 'y and z share one factor: wheels stay round');
         assert.deepEqual(original.scale.toArray(), [1, 1, 1], 'the cached original GLB is untouched');
         assert.ok(Math.abs(got.width / reference.width - 1) < .01, `${hostName} width ${got.width.toFixed(3)} vs ${reference.width.toFixed(3)}`);
