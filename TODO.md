@@ -5429,3 +5429,9 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Perf, High at 1440x900, same frame with the boat meshes hidden vs shown: home showcase 491 → 494 draw calls, 507,510 → 518,732 triangles; race +3 draw calls and about +9–11k triangles (14 boats in the window).
 - [x] Real Chrome/WebGL screenshots inspected (home showcase, race at 2/6/11/17 s, close-ups of each boat); local-only, not committed.
 - [ ] Not checked: Medium screenshots, phones (portrait and landscape), full `npm run test:browser` / `make verify`, exact-HEAD GitHub `quality-gate` (branch not pushed).
+
+## 2026-11-14 — Deterministic downwash surface-flow regression
+
+- [x] RED on Node 22: seed 691 reproduces the `air spreads beyond the nozzle footprint` failure from CI run 43558845907. The old assertion measured only lateral displacement and missed the longitudinal component of the wall jet.
+- [x] GREEN: `node --test tests/effects.test.js tests/module-size.test.js` passes all 21 checks. The regression tracks the same particles through visible, two-dimensional motion at road level. Runtime rendering is untouched.
+- [ ] Verify GitHub `quality-gate` on the feature and integration commits.
