@@ -12,6 +12,8 @@
 - [x] Show concise daily and Monday weekly UTC reset dates in English and Traditional Chinese, without overflow at 390px (Playwright).
 - [x] Browser RED: original ISO timestamps failed the compact-display assertion. GREEN: `npx playwright test tests/wave3-demo-missions-browser.spec.js` passed 5/5; production trial build and typecheck passed; module-size passed 3/3.
 - [ ] `make verify` was interrupted during the unit suite after stalling; full browser/World Tour gates, real-game visual review and exact-commit CI remain pending. No audio or quality-tier changes needed for static text.
+- [x] Localization follow-up: group one shared `00:00 UTC` with short localized daily and Monday dates. The rendered Vue output reproduced the old long copy (RED) and passed in both locales with exact UTC timestamps (GREEN). Focused mission, i18n and module-size tests: 30/30. Typecheck and locked/trial builds passed.
+- [ ] Follow-up browser layout and exact-commit `quality-gate` acceptance.
 
 # 2026-11-14 — Pickup body sweep on the Stratosway R2 (`feature/pickup-collection-vfx`)
 

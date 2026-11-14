@@ -2,7 +2,7 @@
 import { inject, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
-import { getLocale, onLocaleChange } from './i18n.ts';
+import { formatDate, getLocale, onLocaleChange } from './i18n.ts';
 import { WAVE3_PREVIEW_CATALOG, filterWave3PreviewItems } from './garage-wave3-preview-catalog.ts';
 import type { Wave3PreviewItem } from './garage-wave3-preview-catalog.ts';
 import { MISSION_DEFINITIONS, missionPeriodBounds, missionPeriodId, missionStatus, trophyTier } from './wave3-demo-missions.ts';
@@ -41,11 +41,17 @@ const statusName = (id: string) => ({
 const periodRows = computed(() => MISSION_DEFINITIONS.map(def => ({
   ...def, art: missions.find(item => item.id === 'mission-' + def.family)!,
 })));
-const utcReset = (cadence: 'daily' | 'weekly') => {
+const resetSchedule = computed(() => {
   const { dayStart, weekStart } = missionPeriodBounds(now.value);
-  return new Date(cadence === 'daily' ? dayStart + 86400000 : weekStart + 7 * 86400000)
-    .toISOString().slice(0, 10);
-};
+  const dayMs = 86400000;
+  const dateOptions = { timeZone: 'UTC', month: locale.value === 'zh-TW' ? 'numeric' : 'short', day: 'numeric' } as const;
+  return [
+    { label: label('Daily', '每日'), date: new Date(dayStart + dayMs), options: dateOptions },
+    { label: label('Weekly', '每週'), date: new Date(weekStart + 7 * dayMs), options: { ...dateOptions, weekday: 'short' as const } },
+  ].map(({ label, date, options }) => ({
+    label, datetime: date.toISOString(), date: formatDate(date, options, locale.value),
+  }));
+});
 const earnedCount = computed(() => available.value ? missions.filter(m => progressOf(m.id)?.claimed).length : 0);
 const earnedTier = computed(() => trophyTier(earnedCount.value));
 const TROPHY_LEVELS: Readonly<Record<string, number>> =
@@ -127,11 +133,15 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
     </div>
     <p class="garage-mission-feedback" role="status" aria-live="polite">{{ feedback }}</p>
     <div class="garage-mission-heading garage-period-heading">
-      <h4>{{ label('UTC challenges', 'UTC 每日／每週挑戰') }}</h4>
+      <h4>{{ label('Daily & weekly challenges', '每日／每週挑戰') }}</h4>
       <span class="garage-mission-coming">{{ label('Device clock · unverified', '裝置時間 · 未驗證') }}</span>
     </div>
-    <p class="garage-mission-notice">{{ label('Daily reset', '每日重設') }}: {{ utcReset('daily') }} ·
-      {{ label('Weekly reset (Mon)', '每週重設（週一）') }}: {{ utcReset('weekly') }} · 00:00 UTC</p>
+    <p class="garage-mission-notice garage-period-reset">
+      <strong>{{ label('Reset', '重設') }} 00:00 UTC</strong>
+      <span v-for="reset in resetSchedule" :key="reset.label">
+        {{ ' ' + reset.label }} <time :datetime="reset.datetime">{{ reset.date }}</time>
+      </span>
+    </p>
     <div class="garage-period-grid">
       <article v-for="item in periodRows" :key="item.id" class="garage-period-card"
         :data-mission-id="item.id" :data-mission-state="stateOf(item.id)">
@@ -206,6 +216,10 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
 .garage-mission-claim:focus-visible{outline:3px solid white;outline-offset:2px}
 .garage-mission-feedback {font-size:12px;min-height:1em;color:#a6f5d8;font-weight:750;font-variant-numeric:tabular-nums}
 .garage-period-heading {margin-top:16px}
+.garage-period-reset { display:flex; flex-wrap:wrap; gap:2px 12px; margin:4px 0 8px; }
+.garage-period-reset > * { white-space:nowrap; }
+.garage-period-reset strong { color:#e7f5ff; }
+.garage-period-reset time { font-variant-numeric:tabular-nums; }
 /* Quest card: title | count, bar | status, reward chips, claim. Two cards per row on phones.
    Each part takes its columns from its own class and its row from document order: never place a part by
    sibling position or a fixed row, or a line added later lands on another (the reward sat on the title). */
