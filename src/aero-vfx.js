@@ -72,7 +72,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   pressure.rotation.x = -Math.PI / 2; pressure.position.y = 0.11;
   local.add(pressure);
   function placeAirflow(profile) {
-    vehicle.userData.visualBounds = profile.bounds; // neutral-pose bounds also fit the pickup VFX
+    Object.assign(vehicle.userData, { visualBounds: profile.bounds, pickupProfile: profile }); // also fits the pickup VFX
     const frame = airflowFrame(profile), { wakeRange, rippleScale } = flow.material.uniforms;
     pressure.position.x = frame.pressure.x;
     pressure.position.z = frame.pressure.z;

@@ -3,6 +3,8 @@
 - [x] Add separate effects for the pickup location and the equipped car. Verify road-space placement on a banked CourseGraph edge, shell geometry fit, rival cues, reset, VFX Off and reduced motion in `tests/pickup-collect-vfx.test.js`.
 - [x] Give all four tiers distinct contact and body motions in the shared race renderer. The two new regression tests failed on the original renderer and passed after implementation.
 - [x] Fit pickup rings, particles and tail exhaust to the equipped model’s neutral bounds, and sweep the body in vehicle coordinates. Regression tests cover longer, wider, offset and rotated bodies, model swaps and the unchanged road contact position.
+- [x] Integrate the approved four collection animations and model absorption. RED → GREEN covers the road-parallel gold hoops under pitch/roll, all four shrinking models, the triple-tank pool, fitted streaks and original prism rotation.
+- [x] Local source checks: `npm run typecheck`, `npm run build`, `npm test` (2,916 passed, 3 skipped), and Chromium on the dressed Crimson GT for all four individual effects.
 - [ ] Complete full browser CI and physical-phone visual review on this branch.
 
 # 2026-11-14 — Browser CI regressions on develop and audio integration

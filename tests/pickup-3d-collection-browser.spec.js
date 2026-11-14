@@ -29,10 +29,12 @@ const running = (page, tier) => page.evaluate(name => {
   const shell = player.getObjectByName('Pickup body sweep');
   const bounds = player.userData.visualBounds;
   const ring = stage.getObjectByName('energy shockwave 0');
-  const tailOffset = name === 'can' && bounds
-    ? player.worldToLocal(ring.getWorldPosition(ring.position.clone())).z - bounds.max.z
+  const streaks = stage.getObjectByName('Pickup body streaks');
+  const tailOffset = name === 'can' && bounds && streaks?.visible
+    ? player.worldToLocal(streaks.localToWorld(ring.position.clone().fromBufferAttribute(streaks.geometry.attributes.position, 0))).z - bounds.max.z
     : null;
   return {
+    streaks: streaks?.visible === true,
     shockwaves: stage.children.filter(mesh => mesh.name.includes('energy shockwave') && mesh.visible).length,
     shards: shards.visible ? shards.count : 0,
     beam: stage.children.find(mesh => mesh.name === 'energy beam').visible,
@@ -50,8 +52,15 @@ test('each tier plays its own collection effect on the car and its WebGL frame i
   for (const tier of TIERS) {
     await take(page, tier);
     let state = null;
-    await expect.poll(async () => (state = await running(page, tier)) !== null, { timeout: ciTimeout(4000) }).toBe(true);
-    expect(state.shockwaves).toBeGreaterThanOrEqual(1);
+    await expect.poll(async () => {
+      state = await running(page, tier);
+      if (!state) return false;
+      if (tier === 'cell') return state.streaks;
+      if (tier === 'can') return state.streaks && state.tailOffset !== null;
+      return state.shockwaves > 0;
+    }, { timeout: ciTimeout(4000) }).toBe(true);
+    if (tier === 'cell' || tier === 'can') expect(state.streaks).toBe(true);
+    else expect(state.shockwaves).toBeGreaterThanOrEqual(1);
     expect(state.shards).toBeGreaterThan(0);
     expect(state.bodySweep).toBe(true);
     if (expectedModel) expect(state.bodyMesh).toBe('body');

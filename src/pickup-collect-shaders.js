@@ -82,3 +82,37 @@ export const BODY_FRAGMENT = `uniform vec3 primary,secondary;
     gl_FragColor=vec4(mix(primary,accent,clamp(echo+.34*band+.23*rim,0.,1.))*(1.+.35*band),min(.69,alpha));
     #include <colorspace_fragment>
   }`;
+
+export const STREAK_VERTEX = `varying vec2 vUv;
+  void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
+
+export const STREAK_FRAGMENT = `varying vec2 vUv;uniform vec3 tint,core;uniform float age,power;
+  void main(){
+    float d=abs(vUv.y*2.-1.), center=exp(-d*d*30.), halo=exp(-d*d*5.);
+    float ends=smoothstep(0.,.10,vUv.x)*(1.-smoothstep(.76,1.,vUv.x));
+    float wave=.55+.45*pow(max(0.,.5+.5*sin(vUv.x*34.-age*29.)),3.);
+    gl_FragColor=vec4(mix(tint,core,center*.74),min(.9,(center*.72+halo*.34)*ends*power*wave));
+    #include <colorspace_fragment>
+  }`;
+
+export const HOOP_VERTEX = `uniform float width,halo;varying vec2 vUv;varying vec3 vNormal,vView;
+  void main(){
+    vUv=uv;vec3 axis=vec3(normalize(position.xy),0.);
+    vec4 at=modelViewMatrix*vec4(axis+(position-axis)*width*mix(1.,2.65,halo),1.);
+    vView=-at.xyz;vNormal=normalMatrix*normal;gl_Position=projectionMatrix*at;
+  }`;
+
+export const HOOP_FRAGMENT = `uniform vec3 tint,core;uniform float age,power,prism,phase,halo;
+  varying vec2 vUv;varying vec3 vNormal,vView;
+  void main(){
+    float angle=vUv.x*6.2831853;
+    float side=clamp(dot(normalize(vView+vec3(0.,0.,1e-5)),normalize(vNormal)),0.,1.);
+    float wave=.5+.5*cos(angle*2.-age*9.+phase);
+    float head=pow(max(0.,.5+.5*cos(angle-age*7.+phase)),10.);
+    vec3 spectrum=.52+.47*cos(angle+vec3(0.,2.0944,4.1888)-age*3.5+phase);
+    vec3 color=mix(mix(tint,spectrum,prism),core,(.13+.33*side)*(.86-.21*prism));
+    float profile=(.35+.65*pow(max(0.,side),.8))*(.72+.28*wave);
+    float alpha=mix(profile, pow(max(0.,side),2.)*.14,halo)*power;
+    gl_FragColor=vec4(color*(1.+.35*head),min(.9,alpha));
+    #include <colorspace_fragment>
+  }`;

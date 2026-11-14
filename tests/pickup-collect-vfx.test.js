@@ -4,16 +4,17 @@ import * as THREE from 'three';
 import { createPickupCollectVfx, PICKUP_COLLECTION_STYLES } from '../src/pickup-collect-vfx.js';
 import { createRace } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
+import { drawnMarkers } from '../src/marker-pool.js';
 
 const tiers = ['cell', 'can', 'tank', 'overcharge'];
 
 test('premium pickup collection has four increasingly expressive bounded tier designs', () => {
   assert.deepEqual(Object.keys(PICKUP_COLLECTION_STYLES), tiers);
-  assert.deepEqual(tiers.map(t => PICKUP_COLLECTION_STYLES[t].rings), [2, 2, 3, 3]);
+  assert.deepEqual(tiers.map(t => PICKUP_COLLECTION_STYLES[t].rings), [2, 2, 2, 3]);
   assert.equal(new Set(tiers.map(t => PICKUP_COLLECTION_STYLES[t].motion)).size, 4, 'one choreography per tier');
   const lives = tiers.map(t => PICKUP_COLLECTION_STYLES[t].life);
   assert.deepEqual(lives, [...lives].sort((a, b) => a - b), 'rarer tiers play longer');
-  assert.ok(lives.at(-1) <= 1, 'even the rarest effect is over within a second');
+  assert.ok(lives.at(-1) <= 1.1, 'even the rarest effect is over in about a second');
   assert.deepEqual(tiers.map(t => PICKUP_COLLECTION_STYLES[t].particles), [18, 24, 30, 42]);
   assert.equal(PICKUP_COLLECTION_STYLES.overcharge.rainbow, true);
   assert.ok(PICKUP_COLLECTION_STYLES.tank.beam && PICKUP_COLLECTION_STYLES.overcharge.beam);
@@ -23,7 +24,8 @@ test('pool preallocates geometry, reuses capacity, animates and cleans up finite
   const scene = new THREE.Scene(), vfx = createPickupCollectVfx(scene);
   const group = scene.getObjectByName('Pickup collect VFX');
   assert.equal(vfx.activeCount(), 0);
-  assert.equal(group.children.length, 8, 'two concurrent effect slots for each tier');
+  assert.deepEqual(tiers.map(tier => group.children.filter(slot => slot.userData.tier === tier).length), [2, 2, 3, 2],
+    'three overlapping tanks, two slots for every other tier');
   const geometryIds = new Set();
   group.traverse(mesh => { if (mesh.geometry && !mesh.isSprite) geometryIds.add(mesh.geometry.uuid); });
   assert.ok(geometryIds.size <= 4, 'four reused 3D geometry types, not one per animation');
@@ -372,5 +374,97 @@ test('the body sweep travels in vehicle coordinates even for a rotated nested bo
   assert.ok(nose.distanceTo(new THREE.Vector3(1, 4, -1)) < 1e-6);
   assert.ok(zRange.value.distanceTo(new THREE.Vector2(-1, 11)) < 1e-6);
   assert.ok(yRange.value.distanceTo(new THREE.Vector2(2, 4)) < 1e-6);
+  vfx.dispose();
+});
+
+test('tank gold hoops rise together with the road normal even when the fitted car pitches and rolls', () => {
+  const scene = new THREE.Scene(), car = new THREE.Object3D();
+  car.userData.visualBounds = new THREE.Box3(new THREE.Vector3(-2, .1, -3), new THREE.Vector3(2, 1.6, 4));
+  car.rotation.set(.34, .41, -.47);
+  scene.add(car);
+  const vfx = createPickupCollectVfx(scene, car);
+  const roadNormal = new THREE.Vector3(.18, 1, .1).normalize();
+  vfx.spawn('tank', { distance: 10, x: 0 }, { follow: true });
+  vfx.update(.27, { pose: car, roadNormal });
+  const stage = vfx.group.children.find(group => group.visible);
+  const rings = stage.children.filter(mesh => mesh.name.startsWith('energy shockwave') && mesh.visible);
+  assert.equal(rings.length, 2, 'two staggered gold hoops');
+  for (const ring of rings) {
+    ring.updateWorldMatrix(true, false);
+    const normal = new THREE.Vector3(0, 0, 1).transformDirection(ring.matrixWorld);
+    assert.ok(Math.abs(normal.dot(roadNormal)) > .99999, 'the hoop is parallel to the road');
+    const back = new THREE.Vector3(0, 0, 1).applyQuaternion(car.quaternion).projectOnPlane(roadNormal).normalize();
+    const longAxis = new THREE.Vector3(0, 1, 0).transformDirection(ring.matrixWorld);
+    assert.ok(Math.abs(longAxis.dot(back)) > .99999, 'the oval is aligned to the car heading');
+    assert.ok(new THREE.Vector3().setFromMatrixColumn(ring.matrixWorld, 1).length() > 3, 'the hoop fits the long car');
+  }
+  const firstHeight = rings[0].getWorldPosition(new THREE.Vector3()).dot(roadNormal);
+  vfx.update(.14, { pose: car, roadNormal });
+  assert.ok(rings[0].getWorldPosition(new THREE.Vector3()).dot(roadNormal) > firstHeight);
+  vfx.dispose();
+});
+
+test('the race draws each collected pickup model shrinking toward the car and retires it before respawn', () => {
+  globalThis.devicePixelRatio = 1;
+  try {
+    const scene = new THREE.Scene(), pose = new THREE.Object3D();
+    scene.add(pose);
+    const effects = createEffects(scene, () => 0);
+    const race = createRace('coast');
+    race.phase = 'racing'; race.rings = []; race.traffic = [];
+    race.player.distance = 20;
+    race.pickups = tiers.map(tier => ({ tier, distance: 24, x: 1.4, altitude: 0 }));
+    const tick = dt => effects.update(race, dt, 0, false, false, [pose]);
+    const shown = () => drawnMarkers(scene.getObjectByName('Nitro pickups'));
+    tick(.01);
+    const idle = shown();
+    for (const pickup of race.pickups) { pickup.taken = true; pickup.downUntil = 3; }
+    tick(.08);
+    const absorbing = shown();
+    assert.equal(absorbing.length, 4, 'all four models have their own collection transition');
+    absorbing.forEach((model, i) => {
+      assert.ok(model.scale.x < idle[i].scale.x);
+      assert.ok(model.position.distanceTo(pose.position) < idle[i].position.distanceTo(pose.position));
+    });
+    tick(.25);
+    assert.equal(shown().length, 0, 'collected models are gone once the transfer completes');
+    effects.dispose();
+  } finally { delete globalThis.devicePixelRatio; }
+});
+
+test('rapid repeated tank takes keep a separate fading pair for all three pickups', () => {
+  const vfx = createPickupCollectVfx(new THREE.Scene());
+  const spawn = distance => vfx.spawn('tank', { distance, x: 0 }, { follow: true });
+  spawn(1);
+  vfx.update(.3);
+  spawn(2);
+  vfx.update(.3);
+  spawn(3);
+  vfx.update(.09);
+  assert.equal(vfx.activeCount(), 3);
+  vfx.update(.3);
+  assert.equal(vfx.activeCount(), 2, 'the oldest tank expires without cutting the newer ones');
+  vfx.dispose();
+});
+
+test('the player cell and can add distinct body streaks and overcharge uses iridescent gyro tubes', () => {
+  const scene = new THREE.Scene(), car = new THREE.Object3D(), camera = new THREE.PerspectiveCamera();
+  scene.add(car);
+  camera.position.set(4, 6, 9);
+  const vfx = createPickupCollectVfx(scene, car, camera);
+  for (const tier of ['cell', 'can', 'overcharge']) vfx.spawn(tier, { distance: 10, x: 0 }, { follow: true });
+  vfx.update(.20, { pose: car });
+  const stage = tier => vfx.group.children.find(group => group.visible && group.userData.tier === tier);
+  for (const tier of ['cell', 'can']) {
+    const streak = stage(tier).getObjectByName('Pickup body streaks');
+    assert.ok(streak?.visible, tier + ' uses its own ribbons');
+    const z = streak.geometry.attributes.position.array.filter((_, index) => index % 3 === 2);
+    if (tier === 'cell') assert.ok(Math.max(...z) < 2.5 && Math.min(...z) < 0, 'blue current travels over the body');
+    else assert.ok(Math.min(...z) > 2.2 && Math.max(...z) > 5, 'two jets start at the fitted tail and trail away');
+  }
+  const ring = stage('overcharge').getObjectByName('energy shockwave 0');
+  assert.ok(ring.material.uniforms?.prism.value > .5, 'gyro tubes have a traveling prism highlight');
+  assert.ok(Math.abs(ring.rotation.x - (-Math.PI / 2 + .2 * 1.6)) < 1e-8, 'the original pitch direction is preserved');
+  assert.ok(Math.abs(ring.rotation.z - .2 * 2.4) < 1e-8, 'the original roll direction is preserved');
   vfx.dispose();
 });

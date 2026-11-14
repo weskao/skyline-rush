@@ -59,30 +59,26 @@ Collision volumes, rewards, placement, respawn timers and balance are unchanged.
 
 ## Collection effects
 
-Each tier plays its own choreography on the same pooled meshes. A player pickup sends a short
-contact pulse out from the authored item in the local road frame, then the rings, shards and
-car-body sweep follow the rendered car. The shared airflow fit supplies the displayed car's
-neutral bounds whenever a GLB or LOD changes. Those bounds scale and center the rings and particles,
-and place the canister's exhaust behind the tail. The body sweep rides the garage rig's active
-body mesh and reads its positions in the car's coordinate frame, including nested or rotated meshes.
-New cars using the shared car model contract inherit the fit. A rival's quieter cue stays at the item.
+A player take keeps the authored 3D model in the existing instance pool for a short transfer.
+The model spins and shrinks toward the displayed car. The contact pulse stays on the item's road
+frame. The neutral vehicle profile fits the body streaks, gold hoops and rear jets when the
+model or LOD changes. Rivals keep a smaller cue at the item.
 
-| Tier | Motion | Rings | Shards | Length | What it does |
-| --- | --- | ---: | ---: | ---: | --- |
-| `cell` | `arcSnap` | 2 | 18 | 0.50 s | Cyan electrical pulse, inward needles, and a short jagged sweep from nose to tail |
-| `can` | `afterburn` | 2 | 24 | 0.65 s | Two-lobed orange pressure pulse, a tail-only heat sweep, and two exhaust jets |
-| `tank` | `surge` | 3 | 30 | 0.78 s | Gold hexagonal pulse, ascending scan rings, and two bands up the body |
-| `overcharge` | `prismNova` | 3 | 42 | 0.90 s | Faceted rainbow pulse, crossing body bands, spinning rings, and a prismatic starburst |
+| Tier | Transfer | Effect duration | Car feedback |
+| --- | ---: | ---: | --- |
+| `cell` | 0.145 s | 0.60 s | Blue electrical ribbons sweep from the nose toward the tail |
+| `can` | 0.170 s | 0.80 s | Twin orange exhaust jets and embers flare behind the fitted tail |
+| `tank` | 0.205 s | 0.95 s | Two gold ovals rise in sequence, parallel to the road surface and aligned with the projected vehicle heading |
+| `overcharge` | 0.230 s | 1.08 s | Three iridescent hoops spin on their original axes and expand in sequence with an outward shard burst |
 
-Two slots per tier (eight at most). The contact pulse uses one depth-tested plane per active
-player pickup, and one shared mesh sweeps the player's body using the latest pickup's palette.
-Medium quality draws 65% of the shards and up to two rings, with a dimmer pulse. Low draws 26%
-of the shards and one ring, omits the contact pulse and dims the body sweep. Reduced motion
-uses a still ring and a faint glow. The effect remains local to the pickup and car, and the
-flash is capped in size and opacity.
+The latest pickup drives the body sweep while older effects fade. Three tank slots cover a
+triple pickup, and the other tiers keep two slots each. A fast sequence reuses these bounded
+pools. High quality adds soft halos to the gold and prism hoops. Medium limits streaks, hoops
+and particles. Low uses the simpler pulse and ring, while reduced motion uses one still ring
+and a faint glow.
 
-`effects.js` uses the pickup's `downUntil` as the take generation, so a respawned pickup gets a new
-effect and one take never plays twice.
+The take generation is identified by the pickup's `downUntil`. Each take plays once, and the
+same item can play again after respawning.
 
 ## Building a model
 
