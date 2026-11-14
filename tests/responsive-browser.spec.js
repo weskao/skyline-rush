@@ -1,44 +1,37 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
-import { CATALOGS } from '../src/i18n.ts';
 import { ciTimeout } from './helpers/ci.js';
 import { selectLocale } from './helpers/locale-browser.js';
+import { resizeTo } from './helpers/viewport.js';
+import { START_LAYOUT_SIZES, AIRFLOW_START_CLASSES, readAirflowStart, expectAirflowStartClear } from './helpers/responsive-start.js';
+import { HOME_VERSION_SIZES, readHomeVersion, expectHomeVersion } from './helpers/responsive-home-version.js';
+import { SAFE_AREA_PROFILES, readSafeArea, expectSafeArea } from './helpers/responsive-safe-areas.js';
+import { RACE_HUD_CLASSES, bootAirflowRace, readHudBoxes, expectHudBlocksApart } from './helpers/responsive-hud.js';
 
-for (const [width, height] of [[320, 740], [390, 844], [844, 390], [1440, 900]]) {
-  for (const locale of ['en', 'zh-TW']) {
-    test(`home version stays vertically centered beside the footer tagline at ${width}x${height} in ${locale}`, async ({ page }) => {
-      await page.setViewportSize({ width, height });
-      await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
-      await page.goto('/');
-      await selectLocale(page, locale);
-      await expect(page.locator('html')).toHaveAttribute('lang', locale);
-      await page.evaluate(() => document.fonts.ready);
-      const opener = page.locator('#whats-new-open');
-      const [tagline, version] = await Promise.all([
-        page.locator('[data-i18n="footer.tagline"]').boundingBox(), opener.boundingBox(),
-      ]);
-      if (height <= 500 && width > height) {
-        // Landscape phones move the version chip into the top bar beside the brand.
-        expect(tagline).toBeNull();
-        expect(version.y + version.height).toBeLessThanOrEqual(82);
-      } else {
-        expect(Math.abs(tagline.y + tagline.height / 2 - version.y - version.height / 2)).toBeLessThanOrEqual(1);
-        expect(tagline.x + tagline.width).toBeLessThanOrEqual(version.x);
-      }
-      expect(version.height).toBeGreaterThanOrEqual(44);
-      await opener.click();
-      await expect(page.locator('#whats-new-screen')).toBeVisible();
-      await page.locator('#release-close').click();
-    });
-  }
+// One boot per locale: the page resizes through the sizes (the browser context, hasTouch included, is the same for all of them).
+for (const locale of ['en', 'zh-TW']) {
+  test(`home version stays vertically centered beside the footer tagline in ${locale} at ${HOME_VERSION_SIZES.map(size => size.join('x')).join(' ')}`, async ({ page }) => {
+    test.setTimeout(ciTimeout(60000));
+    const [[width, height]] = HOME_VERSION_SIZES;
+    await page.setViewportSize({ width, height });
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
+    await page.goto('/');
+    await selectLocale(page, locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    await page.evaluate(() => document.fonts.ready);
+    for (const [w, h] of HOME_VERSION_SIZES) {
+      await test.step(`${w}x${h}`, async () => {
+        if (w !== width || h !== height) await resizeTo(page, w, h);
+        expectHomeVersion(await readHomeVersion(page), w, h, locale);
+        await page.locator('#whats-new-open').click();
+        await expect(page.locator('#whats-new-screen')).toBeVisible();
+        await page.locator('#release-close').click();
+      });
+    }
+  });
 }
 
-for (const [width, height, hasTouch] of [
-  [320, 568, true], [390, 844, true], [568, 320, true], [844, 390, true],
-  [768, 1024, true], [768, 600, true], [761, 501, false], [760, 501, true],
-  [1024, 768, true], [900, 600, false],
-  [1280, 720, false], [1440, 900, false], [1804, 504, false], [2560, 1440, false],
-]) {
+for (const [width, height, hasTouch] of START_LAYOUT_SIZES) {
   test.describe(`start layout ${width}x${height}`, () => {
     test.use({ viewport: { width, height }, hasTouch });
 
@@ -96,29 +89,34 @@ for (const [width, height, hasTouch] of [
       // Big viewports render few frames on CI and each frame's step is clamped, so the countdown can outlast the default.
       await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
     });
+  });
+}
+
+// The airflow showcase boots once per touch class and resizes the same page; a >= 900 px size starts the race, so it comes last.
+for (const { hasTouch, sizes } of AIRFLOW_START_CLASSES) {
+  const [[width, height]] = sizes;
+  test.describe(`start layout airflow ${sizes.map(size => size.join('x')).join(' ')}`, () => {
+    test.use({ viewport: { width, height }, hasTouch });
 
     test('airflow showcase keeps Start clear of the car and the panels', async ({ page }) => {
+      test.setTimeout(ciTimeout(60000));
       await page.goto('/');
       await page.evaluate(() => document.fonts.ready);
       await page.keyboard.press('v');
       await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
-      const start = await page.locator('#start-button').boundingBox();
-      expect(start.x).toBeGreaterThanOrEqual(0);
-      expect(start.x + start.width).toBeLessThanOrEqual(width);
-      expect(start.y + start.height).toBeLessThanOrEqual(height);
-      for (const selector of ['.airflow-hud', '.aero-tools', '.bottomline']) {
-        const panel = page.locator(selector);
-        if (!await panel.isVisible()) continue;
-        const box = await panel.boundingBox();
-        expect(start.x + start.width <= box.x || box.x + box.width <= start.x ||
-          start.y + start.height <= box.y || box.y + box.height <= start.y, `Start overlaps ${selector}`).toBe(true);
-      }
-      // shortcut: the showcase car's projection isn't exposed to the page, so this checks the 40-68% column it is drawn in
-      // from 900 px up (narrower screens draw it above Start); assert real car bounds if world gains a QA hook.
-      if (width >= 900) {
-        expect(start.x, 'Start covers the showcased car').toBeGreaterThanOrEqual(width * 0.68);
-        await page.locator('#start-button').click();
-        await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
+      for (const [w, h] of sizes) {
+        await test.step(`${w}x${h}`, async () => {
+          if (w !== width || h !== height) await resizeTo(page, w, h);
+          const found = await readAirflowStart(page);
+          expectAirflowStartClear(found, w, h);
+          // shortcut: the showcase car's projection isn't exposed to the page, so this checks the 40-68% column it is drawn in
+          // from 900 px up (narrower screens draw it above Start); assert real car bounds if world gains a QA hook.
+          if (w >= 900) {
+            expect(found.start.x, `${w}x${h} Start covers the showcased car`).toBeGreaterThanOrEqual(w * 0.68);
+            await page.locator('#start-button').click();
+            await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
+          }
+        });
       }
     });
   });
@@ -265,61 +263,25 @@ for (const [width, height] of [[844, 390], [874, 339]]) {
   });
 }
 
-// zh-TW runs the tight viewports only: its CJK font stack widens HUD text (the place-change arrow once did), the roomy ones add no signal.
-const ZH_TW_HUD_SIZES = ['844x390', '780x360', '874x339', '750x342', '1024x768', '390x844', '375x667', '320x568'];
-// Device insets: iPhone landscape keeps a home-indicator inset below the page, a notch or Android 15's bars a top one.
-const NOTCH = { top: 47, bottom: 34, left: 0, right: 0 };
-const ANDROID_15_BUTTONS = { top: 48, bottom: 48, left: 0, right: 0 };
-const LANDSCAPE_ISLAND = { left: 62, right: 62, top: 0, bottom: 21 };
-for (const locale of ['en-US', 'zh-TW']) for (const [width, height, hasTouch, insets] of [[844, 390, true, { left: 47, right: 47, top: 0, bottom: 21 }],
-  [874, 339, true, LANDSCAPE_ISLAND],
-  // Landscape phones under 761px wide (Android Chrome with its bars, Safari with toolbars) once got the portrait phone HUD.
-  [740, 360, true], [750, 342, true], [780, 360, true], [814, 380, true], [480, 1040, true], [658, 320, true], [640, 360, true], [1440, 900, false], [1024, 768, true], [820, 1180, true], [390, 844, true, NOTCH], [412, 892, true, ANDROID_15_BUTTONS],
-  [375, 667, true], [360, 780, true], [320, 568, true]]) {
-  if (locale === 'zh-TW' && !ZH_TW_HUD_SIZES.includes(`${width}x${height}`)) continue;
-  test.describe(`race HUD ${width}x${height}${locale === 'zh-TW' ? ' zh-TW' : ''}`, () => {
+// One booted race per class: the first size is the fresh boot, the rest resize the same page (tests/helpers/viewport.js).
+// hasTouch / isMobile / locale are fixed per browser context, so each class below keeps its own test.
+for (const { name, locale, hasTouch, sizes } of RACE_HUD_CLASSES) {
+  const [[width, height, insets]] = sizes;
+  test.describe(`race HUD ${name}`, () => {
     test.use({ viewport: { width, height }, hasTouch, isMobile: hasTouch, locale });
 
-    // AIRFLOW on: its telemetry panel once covered the speed readout on phones (375x667 Android report).
     test('racing HUD blocks stay apart', async ({ page, context }) => {
-      if (insets) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets });
-      await page.goto('/');
-      await page.waitForTimeout(700);
-      if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-      await page.keyboard.press('v');
-      await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
-      await page.locator('#start-button').click();
-      await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
-      await expect(page.locator('#race-status')).toHaveText(CATALOGS[locale === 'zh-TW' ? 'zh-TW' : 'en']['phase.racing']);
-      await expect(page.locator('#countdown')).toBeHidden();
-      // The live map only steps aside on short screens with no free HUD slot.
-      await expect(page.locator('.race-route-map')).toBeVisible();
-      const blocks = ['.position-stat', '.leaderboard', '.race-route-map', '.race-progress', '.mode-indicator', '.speedometer',
-        '.flight-telemetry', '.aero-tools', '.airflow-hud', '.brand', '#controls-button', '#pause-button',
-        // .touch-pad is left out: it is the invisible slide zone the pointer-transparent HUD sits on.
-        ...['fly', 'boost', 'nitro', 'throttle'].map(action => `[data-control="${action}"]`)];
-      // One synchronous evaluate with the place-change arrow forced on: it widens POSITION for a moment,
-      // and sampling it by luck made this test flaky.
-      const boxes = await page.evaluate(selectors => {
-        const arrow = document.querySelector('#position-change');
-        const [hidden, text] = [arrow.hidden, arrow.textContent];
-        Object.assign(arrow, { hidden: false, textContent: '\u2193' });
-        const rects = selectors.flatMap(selector => {
-          const el = document.querySelector(selector);
-          if (!el || !el.checkVisibility({ opacityProperty: true })) return [];
-          const { x, y, width, height } = el.getBoundingClientRect();
-          return [[selector, { x, y, width, height }]];
+      test.setTimeout(ciTimeout(75000));
+      await bootAirflowRace(page, context, locale, insets);
+      for (const [w, h, sizeInsets] of sizes) {
+        await test.step(`${w}x${h}`, async () => {
+          if (w !== width || h !== height) {
+            await resizeTo(page, w, h, sizeInsets ?? null);
+            await expect(page.locator('#countdown'), `${w}x${h} countdown`).toBeHidden();
+            await expect(page.locator('.race-route-map'), `${w}x${h} live map`).toBeVisible();
+          }
+          expectHudBlocksApart(await readHudBoxes(page), w, h);
         });
-        Object.assign(arrow, { hidden, textContent: text });
-        return rects;
-      }, blocks);
-      const apart = (a, b) => a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
-      const overlaps = boxes.flatMap(([name, box], i) => boxes.slice(i + 1).filter(([, other]) => !apart(box, other)).map(([other]) => `${name} × ${other}`));
-      expect(overlaps).toEqual([]);
-      for (const [name, box] of boxes) {
-        expect(box.y + box.height, `${name} below the screen`).toBeLessThanOrEqual(height);
-        expect(box.x, `${name} off the left edge`).toBeGreaterThanOrEqual(0);
-        expect(box.x + box.width, `${name} off the right edge`).toBeLessThanOrEqual(width);
       }
     });
   });
@@ -379,57 +341,25 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 66
   });
 }
 
-// Insets are 0 on Android 14 and on iOS standalone once the status bar sits outside the web view.
-// Android 15 draws edge-to-edge, and a notch or Dynamic Island reports its own inset.
 test.describe('device safe areas', () => {
   test.use({ hasTouch: true, isMobile: true });
 
-  // One test per device: nine WebGL home loads in one test overran the timeout on slow runners.
-  const profiles = [
-    ['notch iphone', { top: 47, bottom: 34, left: 0, right: 0 }, 390, 844],
-    ['dynamic island', { top: 59, bottom: 34, left: 0, right: 0 }, 402, 874],
-    ['android 15 gesture', { top: 24, bottom: 24, left: 0, right: 0 }, 412, 915],
-    ['android 15 buttons', { top: 48, bottom: 48, left: 0, right: 0 }, 412, 892],
-    ['android 14', { top: 0, bottom: 0, left: 0, right: 0 }, 412, 915],
-    ['notch landscape', { top: 0, bottom: 21, left: 47, right: 47 }, 844, 390],
-    ['android 15 landscape buttons', { top: 24, bottom: 0, left: 0, right: 48 }, 915, 412],
-    ['ipad portrait', { top: 24, bottom: 20, left: 0, right: 0 }, 820, 1180],
-    ['ipad landscape', { top: 24, bottom: 20, left: 0, right: 0 }, 1180, 820],
-  ];
-  for (const [name, insets, width, height] of profiles) {
-    test(`scene stays full-bleed and controls clear the ${name} inset`, async ({ page, context }) => {
-      await page.setViewportSize({ width, height });
-      const cdp = await context.newCDPSession(page);
-      await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets });
-      await page.goto('./');
-      await page.evaluate(() => document.fonts.ready);
-      await page.locator('#intro').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
-      const world = await page.locator('#world').boundingBox();
-      expect(world.x, name).toBeLessThanOrEqual(1);
-      expect(world.y, name).toBeLessThanOrEqual(1);
-      expect(world.x + world.width, name).toBeGreaterThanOrEqual(width - 1);
-      expect(world.y + world.height, name).toBeGreaterThanOrEqual(height - 1);
-      const bar = await page.locator('.topbar').boundingBox();
-      expect(bar.y, `${name} top bar`).toBeGreaterThanOrEqual(insets.top - 1);
-      expect(bar.y, `${name} top bar`).toBeLessThanOrEqual(insets.top + 1);
-      const brand = await page.locator('.brand').boundingBox();
-      expect(brand.x, `${name} brand`).toBeGreaterThanOrEqual(insets.left - 1);
-      const camera = await page.locator('#camera-button').boundingBox();
-      expect(camera.x + camera.width, `${name} camera`).toBeLessThanOrEqual(width - insets.right + 1);
-      expect(camera.y, `${name} camera`).toBeGreaterThanOrEqual(insets.top - 1);
-      // touch tablets hide the footer by design
-      if (height >= 500 && await page.locator('.bottomline').isVisible()) {
-        const line = await page.locator('.bottomline').boundingBox();
-        const gap = height - (line.y + line.height);
-        expect(gap, `${name} footer`).toBeGreaterThanOrEqual(insets.bottom - 1);
-        expect(gap, `${name} footer`).toBeLessThanOrEqual(Math.max(22, insets.bottom) + 2);
-      }
-      const start = await page.locator('#start-button').boundingBox();
-      expect(start.y, `${name} start`).toBeGreaterThanOrEqual(insets.top - 1);
-      expect(start.y + start.height, `${name} start`).toBeLessThanOrEqual(height - insets.bottom + 1);
-      await cdp.detach();
-    });
-  }
+  // One booted page walks every device profile (resizeTo sets the viewport and its insets); nine fresh loads in one test overran the timeout on slow runners.
+  test('scene stays full-bleed and controls clear every device inset', async ({ page, context }) => {
+    test.setTimeout(ciTimeout(60000));
+    const [[, firstInsets, firstWidth, firstHeight]] = SAFE_AREA_PROFILES;
+    await page.setViewportSize({ width: firstWidth, height: firstHeight });
+    await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: firstInsets });
+    await page.goto('./');
+    await page.evaluate(() => document.fonts.ready);
+    for (const [name, insets, width, height] of SAFE_AREA_PROFILES) {
+      await test.step(`${name} ${width}x${height}`, async () => {
+        if (width !== firstWidth || height !== firstHeight || insets !== firstInsets) await resizeTo(page, width, height, insets);
+        await page.locator('#intro').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+        expectSafeArea(await readSafeArea(page), name, insets, width, height);
+      });
+    }
+  });
 
   // Chromium never matches the iOS-only @supports block, so the test applies its real rules by hand.
   test('iOS footer and version sit in the home-indicator inset, clear of the bar', async ({ page, context }) => {
