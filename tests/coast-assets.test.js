@@ -271,5 +271,5 @@ test('the boats GLB loads beside the scenery only with a boat clock, and joins t
 
 test('world.js hands the procedural sky dome, sun disc, sea plane, sea lines, mountains, city and towers to the Coast assets', async () => {
   const { readFileSync } = await import('node:fs');
-  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers \}, canvas\.dataset\)/);
+  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, replaced: \[[^\]]+\] \}, canvas\.dataset\)/);
 });
