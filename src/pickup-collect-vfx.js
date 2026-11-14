@@ -343,7 +343,8 @@ export function createPickupCollectVfx(scene, player) {
       contact.visible = group.visible && slot.contactEnabled && !reducedMotion && slot.age < CONTACT_SPANS[slot.tierIndex];
       if (contact.visible) placeContact(slot, frame);
       slot.beam.visible = false;
-      slot.rings.forEach((ring, i) => { ring.visible = i < slot.ringCount; });
+      const ringCount = reducedMotion ? 1 : slot.ringCount;
+      slot.rings.forEach((ring, i) => { ring.visible = i < ringCount; });
       shards.count = reducedMotion ? 0 : slot.particles;
       shards.visible = shards.count > 0;
       if (reducedMotion) { // one still ring and a soft glow keep the tier's identity without movement

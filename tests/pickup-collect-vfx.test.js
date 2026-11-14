@@ -290,3 +290,17 @@ test('a new car pickup paints its fitted shell; rival cues and reduced motion ne
   vfx.dispose();
   assert.equal(shell.parent, null);
 });
+
+test('enabling reduced motion during a pickup immediately leaves one faint ring', () => {
+  const vfx = createPickupCollectVfx(new THREE.Scene());
+  vfx.spawn('overcharge', { distance: 10, x: 0 }, { follow: true });
+  vfx.update(.18);
+  const stage = vfx.group.children.find(s => s.visible);
+  const rings = () => stage.children.filter(child => child.name.startsWith('energy shockwave') && child.visible);
+  assert.equal(rings().length, 3);
+  vfx.update(.02, { reducedMotion: true });
+  assert.equal(rings().length, 1, 'previously active rings must hide immediately');
+  assert.equal(stage.getObjectByName('Pickup contact pulse').visible, false);
+  assert.equal(stage.getObjectByName('energy shards').visible, false);
+  vfx.dispose();
+});
