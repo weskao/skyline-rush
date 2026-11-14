@@ -1,3 +1,10 @@
+# 2026-11-14 — Browser CI regressions on develop and audio integration
+
+- [x] Reproduced period challenge card overlap at 390×844. Verified the existing layout fix on both trees and native mission/trophy image dimensions at 390×844, 844×390 and 1440×900 on the audio integration tree.
+- [x] Verified the live minimap retains one route, one progress trail and moving racer markers. Verified the 740×360 overlay actions without scrolling, the preset storage isolation flow, the tilt flow and bilingual footer alignment at 390×844 and 844×390 in Chromium.
+- [x] Reproduced the missing NITRO callout at 568×320 after the race HUD appears. With compact sizing and the clear area above the road available for placement, the callout is visible and clear of the road, HUD and controls.
+- [ ] Confirm the full GitHub `quality-gate` on both updated branch heads.
+
 # 2026-11-14 — NITRO/BOOST camera: sprint pulse, no sustained shake (`fix/sprint-camera-shake`)
 
 Report: firing NITRO or BOOST shook the screen too hard on desktop. User picked 方案 B 衝刺脈衝. Root cause: `rigShake` fed the sprint strength into a continuous 8.4 Hz rotation in `src/world.js` for the whole sprint, plus a 10 Hz ignition sway and a world-Z push, and the FOV share jumped on the ignition frame. Rule: `.claude/rules/race-camera.md` "Sprint judder".

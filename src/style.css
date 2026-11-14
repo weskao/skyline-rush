@@ -1870,6 +1870,9 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 .driving-message[data-peripheral]:empty { display: none; }
 @media (max-width: 760px) { .event-callout[data-peripheral] span { display: block; margin: 0; } }
 .event-callout[data-peripheral][data-compact="true"] span { display: block; margin: 0; }
+@media (max-width: 640px) and (max-height: 360px) and (orientation: landscape) {
+  .event-callout[data-peripheral][data-compact="true"] { max-width: 68px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .event-callout[data-peripheral], .driving-message[data-peripheral] { animation: none !important; transition: none !important; }
 }
@@ -2208,8 +2211,8 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
    Regression: overlay-landscape-fit-browser.spec.js (360–390px heights / fold). */
 @media (max-height: 400px) and (orientation: landscape) {
   body[data-phase="finished"]:not([data-tutorial]) .overlay-content h2 { margin-bottom: 4px; }
-  body[data-phase="finished"]:not([data-tutorial]) .overlay-summary > p { margin-bottom: 2px; }
-  body[data-phase="finished"]:not([data-tutorial]) .result-stats { margin: 2px 0; gap: 4px 18px; }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-summary > p { margin-bottom: 0; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-stats { margin: 0; gap: 4px 18px; }
   body[data-phase="finished"]:not([data-tutorial]) .result-style { margin: 0; gap: 2px 10px; }
   body[data-phase="finished"]:not([data-tutorial]) .wave3-demo-results { margin-top: 0; }
 }

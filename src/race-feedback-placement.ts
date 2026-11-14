@@ -128,7 +128,7 @@ export function createRoadSafeFeedback(chip: HTMLElement, warning: HTMLElement, 
       const nitroReward = chip.dataset.kind === 'nitro' || chip.dataset.kind === 'refill';
       // A callout raised while the collision chip is still up (its wait can be cut short) keeps off it too.
       place(chip, nitroReward ? 'right' : 'left', ((nitroReward ? nitro : score)?.getBoundingClientRect().top ?? viewport.height * .43) + 10,
-        [warningBox, impactBox].filter(box => box !== null));
+        [warningBox, impactBox].filter(box => box !== null), true);
     } finally { placing = false; }
   };
   window.addEventListener('resize', refresh, { passive: true });

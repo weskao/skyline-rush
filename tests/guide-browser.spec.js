@@ -172,6 +172,7 @@ test('road pickup gallery keeps its artwork animated by default but stops for re
   await openGuide(page);
   await page.locator('[data-guide-device="items"]').click();
   const stage = page.locator('.pickup-animation-stage').first();
+  await stage.scrollIntoViewIfNeeded();
   await expect(stage.locator('.pickup-3d-canvas')).toBeVisible();
   await expect(stage).toHaveAttribute('data-live', 'true', { timeout: ciTimeout(8000) });
   await expect(stage).toHaveAttribute('data-motion', 'running');

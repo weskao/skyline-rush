@@ -52,7 +52,8 @@ for (const { segments, ...viewport } of [
     }
     const hinge = [FOLD[0].width, FOLD[1].left];
     await page.locator('#start-button').click();
-    await expect(page.locator('#race-status')).toHaveText('RACING');
+    await page.evaluate(() => { window.gameplay.race.countdown = .01; });
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     await page.locator('#pause-button').click();
     await expect(page.locator('#resume-button')).toBeVisible();
     // Polled: overlay-in / enter() transforms move the panel for a few frames.
