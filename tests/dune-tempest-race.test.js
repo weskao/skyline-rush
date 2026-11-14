@@ -8,16 +8,17 @@ import { routeLength } from '../src/course-route-frame.ts';
 import { RACE_TRACKS, COURSE_TRACKS, raceTrack, assertTrackMode } from '../src/race-tracks.ts';
 import { FROSTBITE_ID, FROSTBITE_TRACK } from '../src/courses/frostbite-race.ts';
 import { upcomingReadiness } from '../src/upcoming-tracks.ts';
-import { createRace, startRace, stepRace, racePosition, sprintGaps, gapChargeWarning } from '../src/game.js';
-import { chooseBranchByLateral, createCourseRuntime, placeCourseCar } from '../src/course-race.ts';
+import { createRace, stepRace, racePosition, sprintGaps, gapChargeWarning } from '../src/game.js';
+import { createCourseRuntime, placeCourseCar } from '../src/course-race.ts';
 import * as courseStep from '../src/course-race-step.ts';
 import { chooseCourseNextEdge } from '../src/course-ai-standings.ts';
 import { readFileSync } from 'node:fs';
 import { recordTrackId, recordTrackIds, parseRecordTrackId } from '../src/record-layout.ts';
 import { recordGhost, validGhost, GHOST_RATE } from '../src/ghost.ts';
 
+import { AIR, SWITCHBACKS, PATHS, botRace, courseOf, laneFor } from './helpers/dune-tempest-race-helpers.js';
+
 const groundLength = graph.groundRoute.reduce((sum, id) => sum + routeLength(graph, id), 0);
-const AIR = 'canyon-air-crossing';
 
 test('Dune track: measured ground-route length, classic traffic, topology v1', () => {
   assert.equal(DUNE_TEMPEST_ID, 'dune-tempest');
@@ -84,37 +85,6 @@ test('registry: Dune is a gated course runtime, Frostbite unchanged, never in RA
 });
 
 // ---- Task 5: the shared race loop on the CourseGraph runtime ----
-const PLAYER_DEADBAND = 2.5;
-const courseOf = race => { assert.ok(race.course, 'createRace attaches race.course'); return race.course; };
-const laneFor = (incoming, edge) => [0, -5, 5].find(x => chooseBranchByLateral(graph, incoming, x, PLAYER_DEADBAND) === edge);
-const pathEdges = (first, third, second = 'canyon-switchbacks') => ['sunset-start', 'dune-s-bends', first, 'rock-gate-descent',
-  'canyon-approach', second, 'stone-ring-corridor', 'sandstorm-climb', third, 'stone-ring-outlet', 'finish-sprint'];
-const PATHS = [['winding-wadi', 'natural-arch-pass'], ['winding-wadi', 'dry-wash-cut'],
-  ['dune-crest-cut', 'natural-arch-pass'], ['dune-crest-cut', 'dry-wash-cut']];
-
-// Throttle + BOOST bot holding x on the side of its chosen branch before split1/split2/split3 and centred elsewhere.
-// Toward the flight edge it drops BOOST on canyon-approach (the tank refills on the ground) and, on the flight edge,
-// pulses FLY with a vertical-speed P-controller holding ~2.5 m until the gap ends, then glides onto the landing pad.
-const gapEnd = () => DUNE_TEMPEST_RACE.noRoad[AIR][0][1];
-function botRace(hz, [first, third], { second = 'canyon-switchbacks', pilot = true, trace = null, traffic = true } = {}) {
-  const race = createRace(DUNE_TEMPEST_ID), dt = 1 / hz;
-  if (!traffic) { for (const car of race.traffic) race.course.cars.delete(car.id); race.traffic = []; }
-  startRace(race);
-  while (race.phase === 'countdown') stepRace(race, {}, dt);
-  const you = courseOf(race).cars.get('YOU'), edges = [you.travel.currentEdgeId], checkpoints = [0];
-  const lane = { 'dune-s-bends': laneFor('dune-s-bends', first), 'canyon-approach': laneFor('canyon-approach', second),
-    'sandstorm-climb': laneFor('sandstorm-climb', third) };
-  for (let i = 0; race.phase === 'racing' && i < hz * 400; i++) {
-    const edge = you.travel.currentEdgeId, air = edge === AIR, p = race.player;
-    p.x = lane[edge] ?? 0;
-    const fly = pilot && air && you.travel.localS < gapEnd() && p.verticalSpeed < Math.min(7, 3 * (2.5 - p.altitude));
-    stepRace(race, { throttle: true, boost: !(second === AIR && (edge === 'canyon-approach' || air)), fly }, dt);
-    trace?.(race, you);
-    if (edges.at(-1) !== you.travel.currentEdgeId) edges.push(you.travel.currentEdgeId);
-    if (checkpoints.at(-1) !== you.travel.nextCheckpoint) checkpoints.push(you.travel.nextCheckpoint);
-  }
-  return { race, edges, checkpoints };
-}
 
 // User, 2026-11-09: rings, pickups and traffic now ride the graph (course-item-density.test.js); hazards and sections
 // still come from the spec only.
@@ -129,40 +99,6 @@ test('createRace(dune-tempest) attaches the course runtime with graph-keyed item
   assert.equal(race.length, DUNE_TEMPEST_TRACK.length);
 });
 
-// Measured at 60 Hz on the shared engine (no physics change), throttle + BOOST held: 139.16 s winding-wadi/natural-arch-pass
-// (the ground route, 13,930 m), 136.30 s winding-wadi/dry-wash-cut, 136.35 s dune-crest-cut/natural-arch-pass, 133.48 s
-// dune-crest-cut/dry-wash-cut; rivals finish in 159-200 s. The planned 150 s floor was an unmeasured hypothesis (Frostbite
-// precedent): the floor sits below the shortest measured path and above a skipped branch (canyon-switchbacks alone is
-// 3,672 m ≈ 37 s), the ceiling catches a stall.
-const BOT_MIN = 120, BOT_MAX = 330;
-test('a throttle+BOOST bot finishes START → FINISH on all four ground-only paths at 60 Hz', () => {
-  for (const [first, third] of PATHS) {
-    const { race, edges, checkpoints } = botRace(60, [first, third]), label = `${first}/${third}`;
-    assert.equal(race.phase, 'finished', label);
-    assert.deepEqual(edges, pathEdges(first, third), label);
-    assert.deepEqual(checkpoints, [0, 1, 2, 3, 4], `${label}: cp1..cp4 in order`);
-    assert.equal(race.course.rejections, 0, label);
-    const { position, time } = race.result;
-    assert.ok(Number.isInteger(position) && position >= 1 && position <= 8, `${label} position ${position}`);
-    assert.equal(position, 1 + race.rivals.filter(r => r.finishTime !== null && r.finishTime < time).length, label);
-    assert.ok(time >= BOT_MIN && time <= BOT_MAX, `${label} finish ${time}s`);
-  }
-});
-
-// Measured on the ground route: 139.276 / 139.159 / 139.102 s at 30 / 60 / 120 Hz (spread 0.17 s; ≤ 0.17 s on all
-// four paths). The finish is interpolated at the gate; the spread is the engine's own per-Hz integration. Traffic is
-// left out: car contacts are frame-discrete in the shared engine (2026-11-09: 1.1 s spread with traffic, 0.02 s without;
-// rings and pickups change nothing), so they would measure collisions, not the graph integration.
-const HZ_TOLERANCE = 0.5; // s
-test('the bot finish time agrees at 30, 60 and 120 Hz', () => {
-  const times = [30, 60, 120].map(hz => {
-    const { race } = botRace(hz, PATHS[0], { traffic: false });
-    assert.equal(race.phase, 'finished', `${hz} Hz`);
-    assert.equal(race.course.rejections, 0, `${hz} Hz`);
-    return race.result.time;
-  });
-  for (const time of times) assert.ok(Math.abs(time - times[1]) <= HZ_TOLERANCE, `30/60/120 Hz: ${times.join(' / ')} s`);
-});
 
 test('every rival finishes on a ground branch (never the flight edge) with graph standings', () => {
   const race = createRace(DUNE_TEMPEST_ID), seen = new Map(race.rivals.map(r => [r.id, new Set()])), course = courseOf(race);
@@ -213,7 +149,6 @@ test('cars on parallel branches never contact, draft or bump; the same edge stil
 });
 
 // ---- Task 6: flight gap, hazards and recovery (Q1: the flight edge ships in Phase 1) ----
-const SWITCHBACKS = 'canyon-switchbacks';
 const raceAt = () => { const race = createRace(DUNE_TEMPEST_ID); race.phase = 'racing'; return race; };
 const seat = (race, car, id, edge, s, odometer, extra = {}) => {
   Object.assign(car, { distance: odometer, x: 0, speed: 60, ...extra });
@@ -242,36 +177,6 @@ test('no FLY on the flight edge: falls in the gap, recovered on canyon-switchbac
   assert.equal(race.phase, 'finished', 'finishes via canyon-switchbacks after the fall');
 });
 
-// Measured with the FLY-pulse controller (no physics change) at 60 Hz: 116.653 s winding-wadi/natural-arch-pass, 113.792 s
-// winding-wadi/dry-wash-cut, 114.226 s dune-crest-cut/natural-arch-pass, 111.365 s dune-crest-cut/dry-wash-cut (30 / 120 Hz
-// within 0.07 s); lowest altitude over the gap 2.38 m, landing at localS 1057–1061 on the [983.3, 1088.3] pad, tank 100 →
-// ≥ 87 over the crossing. The air floor sits below the shortest measured air path and above one that skipped the
-// 1,088 m flight edge (~11 s); the ground paths keep BOT_MIN.
-const AIR_BOT_MIN = 100;
-test('a FLY-pulse bot crosses the gap, lands on the pad and finishes: all 8 paths, rejections 0', () => {
-  const landingTo = routeLength(graph, AIR);
-  for (const [first, third] of PATHS) for (const second of [SWITCHBACKS, AIR]) {
-    let landing = null, lowInGap = Infinity;
-    const { race, edges, checkpoints } = botRace(60, [first, third], { second, trace: (r, you) => {
-      const { currentEdgeId: edge, localS: s } = you.travel, p = r.player;
-      if (edge !== AIR) return;
-      if (s >= 60 && s < gapEnd()) lowInGap = Math.min(lowInGap, p.altitude);
-      if (landing === null && p.landing && p.landing.time === r.elapsed) landing = s;
-    } });
-    const label = `${first}/${second}/${third}`;
-    assert.equal(race.phase, 'finished', label);
-    assert.deepEqual(edges, pathEdges(first, third, second), label);
-    assert.deepEqual(checkpoints, [0, 1, 2, 3, 4], label);
-    assert.equal(race.course.rejections, 0, label);
-    assert.equal(race.player.falls, 0, label);
-    if (second === AIR) {
-      assert.ok(lowInGap >= 1, `${label}: lowest altitude over the gap ${lowInGap}`);
-      assert.ok(landing !== null && landing >= gapEnd() && landing <= landingTo, `${label}: landed at ${landing}`);
-    }
-    const min = second === AIR ? AIR_BOT_MIN : BOT_MIN;
-    assert.ok(race.result.time >= min && race.result.time <= BOT_MAX, `${label} finish ${race.result.time}s`);
-  }
-});
 
 // Review Focus 4: the frame of a recovery collects no gate, hazard or score, even with a hazard between the
 // recovery edge's start and the recovery slot (inside a naive prev→new sweep window).

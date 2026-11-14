@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { SKYFALL_COURSE, SKYFALL_OBSTACLES, SKYFALL_GROUND_PATH, hasSkyfallRoadContact } from '../src/courses/skyfall-archipelago.ts';
+import { SKYFALL_COURSE, SKYFALL_OBSTACLES, SKYFALL_GROUND_PATH } from '../src/courses/skyfall-archipelago.ts';
 import { PLAYABLE_COURSE_GRAPH as graph } from '../src/courses/skyfall-archipelago-runtime-adapter.ts';
 import { COURSE_RUNTIMES, isCourseRuntime } from '../src/course-runtimes.ts';
 import { routeLength } from '../src/course-route-frame.ts';
@@ -10,17 +10,13 @@ import { DUNE_TEMPEST_TRACK } from '../src/courses/dune-tempest-race.ts';
 import { FROSTBITE_TRACK } from '../src/courses/frostbite-race.ts';
 import { upcomingReadiness } from '../src/upcoming-tracks.ts';
 import { createRace, startRace, stepRace, CAR_HEIGHT } from '../src/game.js';
-import { chooseBranchByLateral, placeCourseCar } from '../src/course-race.ts';
+import { placeCourseCar } from '../src/course-race.ts';
 import { recordTrackId, recordTrackIds, parseRecordTrackId } from '../src/record-layout.ts';
 import { validGhost, GHOST_RATE } from '../src/ghost.ts';
 
 // Plan Task 13: Skyfall Archipelago on the shared CourseGraph runtime (spec §4, Q5 one sampler, Q6 band, Q8 ground AI).
-const ID = 'skyfall-archipelago';
-const entry = () => { const e = COURSE_RUNTIMES[ID]; assert.ok(e, 'Skyfall registered in COURSE_RUNTIMES'); return e; };
-const spec = () => entry().spec;
-const AIRS = ['a-air', 'b-air', 'c-air'];
-const GROUNDS = ['a-ground', 'b-ground', 'c-ground'];
-const INCOMING = ['approach', 'midway-one', 'midway-two'];
+import { ID, entry, spec, AIRS, GROUNDS, INCOMING, laneFor, botRace } from './helpers/skyfall-archipelago-race-helpers.js';
+
 const groundLength = SKYFALL_GROUND_PATH.reduce((sum, id) => sum + routeLength(graph, id), 0);
 
 test('Skyfall track: measured ground-route length, classic traffic, topology v1, own seed', () => {
@@ -87,60 +83,11 @@ test('createRace(skyfall-archipelago) attaches the course runtime with graph-key
   assert.equal(race.length, entry().track.length);
 });
 
-// Bot: throttle; holds the lane that picks its branch on each incoming edge; toward a flight edge it drops BOOST on
-// the incoming and flight edge and pulses FLY (vertical-speed P-controller holding ~2.5 m) until the gap ends.
-const laneFor = (incoming, edge) => [0, -5, 5].find(x => chooseBranchByLateral(graph, incoming, x, 2.5) === edge);
-const PATHS = [0, 1, 2, 3, 4, 5, 6, 7].map(bits => [0, 1, 2].map(i => (bits >> i) & 1 ? AIRS[i] : GROUNDS[i]));
-function botRace(hz, path, { pilot = true, trace = null } = {}) {
-  const race = createRace(ID), dt = 1 / hz;
-  startRace(race);
-  while (race.phase === 'countdown') stepRace(race, {}, dt);
-  const you = race.course.cars.get('YOU'), edges = [you.travel.currentEdgeId], checkpoints = [0];
-  const lane = Object.fromEntries(INCOMING.map((id, i) => [id, laneFor(id, path[i])]));
-  const towardAir = Object.fromEntries(INCOMING.map((id, i) => [id, AIRS.includes(path[i])]));
-  for (let i = 0; race.phase === 'racing' && i < hz * 400; i++) {
-    const edge = you.travel.currentEdgeId, air = AIRS.includes(edge), p = race.player;
-    p.x = lane[edge] ?? 0;
-    const gapEnd = air ? spec().noRoad[edge][0][1] : 0;
-    const fly = pilot && air && you.travel.localS < gapEnd && p.verticalSpeed < Math.min(7, 3 * (2.5 - p.altitude));
-    stepRace(race, { throttle: true, boost: !(air || towardAir[edge]), fly }, dt);
-    trace?.(race, you);
-    if (edges.at(-1) !== you.travel.currentEdgeId) edges.push(you.travel.currentEdgeId);
-    if (checkpoints.at(-1) !== you.travel.nextCheckpoint) checkpoints.push(you.travel.nextCheckpoint);
-  }
-  return { race, edges, checkpoints };
-}
-const expectedEdges = path => ['approach', path[0], 'midway-one', path[1], 'midway-two', path[2], 'descent'];
-
 test('every split has a lane for its ground and its flight edge', () => {
   INCOMING.forEach((id, i) => {
     assert.notEqual(laneFor(id, GROUNDS[i]), undefined, `${id} → ${GROUNDS[i]}`);
     assert.notEqual(laneFor(id, AIRS[i]), undefined, `${id} → ${AIRS[i]}`);
   });
-});
-
-// Measured at 60 Hz (no physics change): ground route 162.76 s; one flight edge 151.15-155.14 s, two 139.68-144.13 s,
-// all three 132.10 s; lowest altitude over every gap 2.53 m; landings at a/b/c-air 869.9 / 630.8-632.1 / 990.4-991.4 m. The floor sits below the shortest measured path and
-// above one that skipped a 2.9 km ground edge (~29 s); the ceiling catches a stall (Dune precedent).
-const BOT_MIN = 120, BOT_MAX = 330;
-test('all 8 path combinations finish with FLY pulses: a/b/c-merge then FINISH, landing on road only, 0 rejections', () => {
-  for (const path of PATHS) {
-    const landings = [], label = path.join('/');
-    const { race, edges, checkpoints } = botRace(60, path, { trace: (r, you) => {
-      const p = r.player;
-      if (p.landing && p.landing.time === r.elapsed) landings.push([you.travel.currentEdgeId, you.travel.localS]);
-    } });
-    assert.equal(race.phase, 'finished', label);
-    assert.deepEqual(edges, expectedEdges(path), label);
-    assert.deepEqual(checkpoints, [0, 1, 2, 3], `${label}: a-merge, b-merge, c-merge in order`);
-    assert.equal(race.course.rejections, 0, label);
-    assert.equal(race.player.falls, 0, label);
-    for (const [edge, s] of landings) assert.equal(hasSkyfallRoadContact(edge, s), true, `${label}: landed off-road on ${edge} at ${s}`);
-    for (const air of path.filter(id => AIRS.includes(id))) {
-      assert.ok(landings.some(([edge, s]) => edge === air && s >= spec().noRoad[air][0][1]), `${label}: landed on the ${air} pad`);
-    }
-    assert.ok(race.result.time >= BOT_MIN && race.result.time <= BOT_MAX, `${label} finish ${race.result.time}s`);
-  }
 });
 
 const HZ_TOLERANCE = 0.5; // s; measured 162.902 / 162.759 / 162.687 s at 30 / 60 / 120 Hz
