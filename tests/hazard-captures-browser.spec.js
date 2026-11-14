@@ -64,9 +64,11 @@ for (const [name, viewport, hasTouch] of [
         }, { meshName: c.mesh });
         const expectDrawn = !(c.track === 'tokyo' && time === 3);
         await expect.poll(async () => (await read()).count, { message: `${name} ${c.id} t=${time}` }).toBe(expectDrawn ? 1 : 0);
+        // The pin teleports the car; on Neon's lap the road has turned 225° by this gate, so the chase camera needs
+        // a few frames to ease round before the frame is judged.
+        if (expectDrawn) await expect.poll(async () => (await read()).inFrame, { message: `${c.id} inside the camera frame` }).toBe(true);
         const sample = await read();
         samples.push(sample);
-        if (expectDrawn) expect(sample.inFrame, `${c.id} inside the camera frame`).toBe(true);
         await saveArtifact(page, { path: `artifacts/hazard-captures/${name}-${c.id}-t${time}.jpeg`, quality: 75 });
       }
       const [first, second] = samples;

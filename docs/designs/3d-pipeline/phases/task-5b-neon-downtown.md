@@ -74,7 +74,16 @@ To do, in order:
 - [x] **1 Look brief.** `../neon-look-brief.md`: per view the camera, capture recipe and the spec v2 §8.1 items it
   scores, the six sectors in driving order, recorded before any look change. Presets: `track` and `rain` show rain
   night, `night` shows the same look dry, `day` / `dusk` / `fog` keep today's lighting (N2).
-- [ ] **1b Route reshape (N7).** Done when all of these hold:
+- [x] **1b Route reshape (N7).** One 4000 m lap, driven once per sprint (not a multi-lap race). Evidence:
+  `tests/neon-loop.test.js` (9 tests, RED first: closed clockwise lap, sector order, peak curvature 0.00845 rad/m
+  against the old 0.01214, no self-crossing, second lap repeats, `offset`, sections, closed home map, skyline clear
+  of the road), `tests/neon-parity.test.js` re-pinned at layout 7, `npm test` 2961 of 2961 run, `npm run build`,
+  real WebGL frames round the lap (boulevard, underpass, expressway, bridge, last corner, finish gate on the start
+  line; no page error). Rings 69 → 98 (two tunnels gone); bot ring take 68.6% → 63.3%, NITRO/min 24.55 → 24.33
+  (`tests/ring-variety.test.js` re-locked). Done when all of these hold:
+  - [ ] Owner to confirm: Endless, Event Lab and Daily Neon records start fresh on road layout 3 (`neon@3`); the
+    older ones stay stored and readable.
+  - [ ] Owner to deploy `firestore.rules` (`neon@7` added, 51 ids, cap 60).
   - The Neon centreline is a closed clockwise loop: the finish point is the start point, the heading turns through
     360°, and the sectors come in the order of the schematic. Unit test on `classicRoadRoute('neon')`.
   - The track is not longer than today (4000 m) and no corner is tighter than today's tightest.

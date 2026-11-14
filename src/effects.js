@@ -322,7 +322,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         p.y += p.vy * dt;
         p.vy -= p.gravity * dt;
         p.distance += p.forward * dt;
-        if (p.y < 0.08 && Math.abs(p.x - (classicRoute?.centerAtZ(-p.distance) ?? roadCenter(p.distance))) < 12) {
+        if (p.y < 0.08 && (classicRoute ? classicRoute.offset(p.x, -p.distance) : Math.abs(p.x - roadCenter(p.distance))) < 12) {
           p.y = 0.08;
           if (p.kind === 1 && !p.grounded) {
             // The deck redirects the downwash into a broad, slowing wall jet.

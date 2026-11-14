@@ -12,11 +12,23 @@ shortcuts and both Coast scenery tiers. The home and finite-race maps use
 rolling window of the same route. Keep the road ribbon, props and map
 streaming bounded and reuse the SVG elements.
 
-The finite records use layout 5 (Coast, Neon and Canyon) or 4 (Aurora).
-Endless and Event Lab use layout 2 for these four roads. Historical bests,
-history and Ghost keys stay readable, and only records for the active layout
-are compared. Update the Firestore best-id allowlist with any new finite
+The finite records use layout 6 (Coast and Canyon), 7 (Neon) or 5 (Aurora).
+Endless and Event Lab use road layout 2 for Coast, Canyon and Aurora and road
+layout 3 for Neon (`roadRecordLayout` in `src/record-layout.ts`). Historical
+bests, history and Ghost keys stay readable, and only records for the active
+layout are compared. Update the Firestore best-id allowlist with any new finite
 layout keys.
+
+Neon Downtown is a closed clockwise lap (layout 7, 2026-11-14): `buildLoop` in
+`src/classic-road-routes.ts` turns a list of `[metres, turn in degrees]` legs
+into a 4000 m loop whose finish line is its start line. `point` wraps by lap and
+`heading` adds a full turn per lap, so Endless and Elimination stream the same
+lap again. A lap's `x` is not a function of `z`: anything that asks "how far is
+this spot from the road" (skyline plots, the rain splash guard) uses
+`road.offset(x, z)`, never `|x - centre(z)|`, and scenery turns to
+`road.heading`. Tests: `tests/neon-loop.test.js`, `tests/neon-parity.test.js`.
+Changing the legs is a layout change: bump `layoutVersion`, and bump Neon's road
+layout too if Endless distances stop being comparable.
 
 Sky Spiral uses `skyPoint`/`skyFrame` for the helix, sweepers and jump approaches.
 The 2D map uses the same lateral coordinates and highlights the elevated exit.

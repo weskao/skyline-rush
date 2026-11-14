@@ -36,7 +36,9 @@ test('classic turns continue beyond the finish with metre-based progress and no 
       for (let d = start; d < start + 180; d += 4) {
         const a = trackPoint(id, d, true), b = trackPoint(id, d + 4, true);
         close(Math.hypot(b.x - a.x, b.z - a.z), 4, .025);
-        assert.ok(Math.abs(heading(id, d + 4, true) - heading(id, d, true)) < .045, id + ' turn is continuous');
+        // A closed lap (Neon) turns through a full circle, so compare headings across the ±π wrap of atan2.
+        const turn = heading(id, d + 4, true) - heading(id, d, true);
+        assert.ok(Math.abs(Math.atan2(Math.sin(turn), Math.cos(turn))) < .045, id + ' turn is continuous');
       }
     }
     const futureTurns = Array.from({ length: 70 }, (_, i) => Math.abs(heading(id, length + 20 * i, true)));
