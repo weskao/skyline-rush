@@ -10,12 +10,12 @@ import { isRaining, racePreset, sprayRate } from './board-effects.ts';
 import { createDriftCharge } from './drift-charge-vfx.js';
 import { LIFT_PORTS, liftPort } from './lift-ports.js';
 
-const COUNT = 480;
+const COUNT = 480, flatShadow = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
 export const RING_POOL_CAPACITY = 48; // densest 900 m view of one colour: 18 with trains and rows (tests/ring-rows.test.js)
 
 // `renderer` + `pickupEnvironment` let the pickups load their authored models and reflections; `camera` faces their halos.
 // `player`: the player's car, which glows and hops as each drift tier pays (drift-charge-vfx.js).
-export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvironment, player } = {}) {
+export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvironment, player, roadShadow } = {}) {
   const particles = Array.from({ length: COUNT }, () => ({ life: 0 }));
   const positions = new Float32Array(COUNT * 3);
   const colors = new Float32Array(COUNT * 3);
@@ -105,7 +105,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   const pickupMarkers = createPickupMarkers(128, { renderer, envMap: pickupEnvironment }), pickupPool = pickupMarkers.pool;
   const gates = ringPool.group, marker = new THREE.Object3D(), gateFrames = new WeakMap(), rivalCues = createRivalCues();
   scene.add(gates, ...pickupMarkers.objects);
-  const collectVfx = createPickupCollectVfx(scene, player);
+  const collectVfx = createPickupCollectVfx(scene, player, camera), roadNormal = new THREE.Vector3();
   // ITEM-12: a light column over each ring that grants a held item, one per ring slot; same program as the plain rings.
   const beamGeometry = new THREE.CylinderGeometry(0.08, 0.08, 14, 8, 1, true);
   const beamMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(...gold), transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -161,6 +161,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       const enabled = options.enabled !== false;
       const active = enabled && !preview && race.phase === 'racing' && dt > 0;
       const lowQuality = options.quality === 'low';
+      const pickupFrame = { distance, center, roadCenter, worldPoint: options.worldPoint, worldFrame: options.worldFrame, enabled, reducedMotion, car, pose: vehicles?.[0], roadNormal: roadNormal.set(0, 0, 1).applyQuaternion(roadShadow?.quaternion ?? flatShadow) };
       points.visible = enabled;
       let beam = 0;
       for (let source = 0; source < 2; source++) {
@@ -177,7 +178,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
             if (previousRace === race && active) {
               burst(item, reducedMotion ? 6 : lowQuality ? 12 : 32,
                 source === 0 ? pickupColors[item.tier] : ringColors[ringType], car.speed);
-              if (source === 0) collectVfx.spawn(item.tier, item, { quality: options.quality, reducedMotion, follow: true });
+              if (source === 0) collectVfx.spawn(item.tier, item, { quality: options.quality, reducedMotion, follow: true, markerTime: flowTime });
             }
           }
           if (collected || item.downUntil > race.elapsed || item.distance <= distance || item.distance > distance + 900) continue; // gone until it respawns
@@ -206,8 +207,8 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
             light.visible = true; light.position.copy(mesh.position); light.position.y += 7;
           }
         }
+        if (source === 0) { collectVfx.drawAbsorbing(marker, pool, pickupFrame, dt); pickupMarkers.end(); }
         pool.end();
-        if (source === 0) pickupMarkers.end();
       }
       for (; beam < beams.children.length; beam++) beams.children[beam].visible = false;
       // A rival taking an item or firing NITRO nearby: a smaller burst than the player's, in the item's colour (rival-cues.ts throttles it).
@@ -217,7 +218,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         if (cue.kind === 'take' && pickupColors[cue.item])
           collectVfx.spawn(cue.item, pickupCueSource(cue, race.pickups), { quality: options.quality, reducedMotion, rival: true });
       }
-      collectVfx.update(dt, { distance, center, roadCenter, worldPoint: options.worldPoint, worldFrame: options.worldFrame, enabled, reducedMotion, car, pose: vehicles?.[0] });
+      collectVfx.update(dt, pickupFrame);
       beamMaterial.opacity = reducedMotion ? 0.3 : 0.3 + Math.sin(flowTime * 4) * 0.1;
       previousRace = race;
       if (active && !reducedMotion && car.drift && car.altitude < 0.2) {
