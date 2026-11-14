@@ -180,15 +180,13 @@ export function createGarageStage(environment: THREE.Texture, carEnvironment: TH
     aero.group.traverse(object => {
       if (object instanceof THREE.Mesh) releaseVfx(object.geometry);
     });
-    // Scene-owned Aero particles and shock meshes are not children of the car.
-    for (const object of scene.children) {
-      if (object === car || stageMeshes.includes(object as THREE.Mesh)) continue;
+    aero.worldEffects.traverse(object => {
       if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.LineSegments) {
         releaseVfx(object.geometry);
         const materials = Array.isArray(object.material) ? object.material : [object.material];
         materials.forEach(material => material.dispose());
       }
-    }
+    });
     // The car model borrows global box, lamp, spoke and body geometry from car-model.js.
     // Disposing those would invalidate race meshes sharing the same WebGL context.
     for (const mesh of stageMeshes) {
@@ -206,7 +204,8 @@ export function createGarageStage(environment: THREE.Texture, carEnvironment: TH
   return {
     scene, update, inspectBounds, setPaint, dispose,
     modelHost: { name: 'studio' as const, car, keep: aero.group as THREE.Object3D, scene, fitAirflow: aero.fitAirflow }, // ?model=probe (garage-model.ts)
-    inspectCosmetics() { return aero.inspectCosmetics(); },
+    inspectCosmetics: aero.inspectCosmetics,
+    setEffectsVisible: aero.setVisible,
     setSkins(ids: Partial<Record<SkinCategory, SkinId>>) { aero.setSkins(ids); },
     configureVFX(settings: VfxSettings) { previewSettings = { ...settings, airflow: settings.enabled }; },
   };

@@ -32,17 +32,17 @@ session.setTrial({ enabled: trialMode, expiresAt: trialMode ? freeTrialExpiry : 
 const restorePicks = () => restoreSkinPicks(browserSkinPickStorage(), accountId, id => session.equip(id));
 restorePicks();
 export const garageSkinState = reactive({ revision: 0 });
-const listeners = new Set<() => void>();
+const listeners = new Set<(equipped: boolean) => void>();
 let expiryTimer: ReturnType<typeof setTimeout> | undefined;
 function clearExpiryTimer() {
   if (expiryTimer !== undefined) clearTimeout(expiryTimer);
   expiryTimer = undefined;
 }
-function publish() {
+function publish(equipped = false) {
   garageSkinState.revision++;
-  for (const listener of listeners) listener();
+  for (const listener of listeners) listener(equipped);
 }
-export const subscribeGarageSkins = (listener: () => void): (() => void) => {
+export const subscribeGarageSkins = (listener: (equipped: boolean) => void): (() => void) => {
   listeners.add(listener);
   return () => listeners.delete(listener);
 };
@@ -62,7 +62,7 @@ export function equipGarageSkin(id: unknown): boolean {
   if (!session.equip(id)) return false;
   if (demoApplied?.category === findSkin(id)?.category) clearDemoSelection();
   rememberSkinPick(browserSkinPickStorage(), accountId, id);
-  publish();
+  publish(true);
   return true;
 }
 /** Session-only VFX, gated by both the local demo scope and the existing trial entitlement. */
@@ -73,7 +73,7 @@ export function equipWave3DemoSkin(id: unknown, expectedAccount: string): boolea
   if (!session.equip(skin.id)) return false;
   if (demoApplied?.category !== skin.category) resetWave3DemoSkin();
   demoApplied = { category: skin.category, prior, itemId: skin.id };
-  publish();
+  publish(true);
   return true;
 }
 export function resetWave3DemoSkin(): void {

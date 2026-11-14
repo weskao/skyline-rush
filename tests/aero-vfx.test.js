@@ -93,7 +93,7 @@ test('repeated boost cycles stay bounded, release fades and restart clears every
   assert.ok(vapor.geometry.attributes.alpha.array.some(a => a > 0));
   vfx.reset();
   assert.ok(vapor.geometry.attributes.alpha.array.every(a => a === 0));
-  assert.ok(scene.children.filter(child => child.isLineSegments).every(child => !child.visible));
+  assert.ok(vfx.worldEffects.children.filter(child => child.isLineSegments).every(child => !child.visible));
 });
 
 test('NITRO and drift rewards ignite the existing exhaust without a held BOOST input', () => {
@@ -177,7 +177,7 @@ test('real roll uses world-space streak edges without enabling attached airflow 
   const f = rollingTrace();
   assert.ok(live(f.ribbon.geometry).length > 0);
   assert.ok(f.ribbon.geometry.attributes.rollWake.array.some(x => x === 1));
-  assert.equal(f.ribbon.parent, f.scene);
+  assert.equal(f.ribbon.parent.parent, f.scene, 'the ribbon remains world-space, independent of the car pose');
   const local = f.scene.getObjectByName('Airflow showcase');
   assert.equal(local.children.find(x => x.geometry?.attributes.flowType).visible, false);
   assert.ok(local.getObjectByName('Rear ports').children.filter(x => x.name.startsWith('Cold gas')).every(x => !x.visible));

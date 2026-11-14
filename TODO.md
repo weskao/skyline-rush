@@ -1,3 +1,10 @@
+# 2026-11-15 — Garage and Studio cosmetic preview toggle
+
+- [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.
+- [x] Applying equipment while hidden shows a localized toast and highlights the toggle. Reduced Motion and Comfortable keep the highlight static.
+- [x] RED: Studio and Coming Soon tests reproduced missing visibility controls. GREEN: 87 focused checks, 2,967 unit tests (3 skipped), typecheck and production build.
+- [ ] Exact-head GitHub quality gate and physical iOS / Android verification.
+
 # 2026-11-15 — CI GLB loading on software WebGL
 
 - [x] Reproduced the Crimson GT `fallback:timeout` and measured GLB decode finishing after the original combined deadline. Added regression checks for separate download/decode deadlines, decoder fallback and shared KTX2 workers on the same renderer. The focused loader, provider, Garage, pickup and module-size suite passed (48 tests).

@@ -13,7 +13,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { createLensPass } from './lens-pass.ts';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { roadRibbon } from './geometry.ts';
+import { roadRibbon, putInstance as put } from './geometry.ts';
 import { classicRoadRoute, legacyClassicRoad } from './classic-road-routes.ts';
 import { createClassicRoadRender } from './classic-road-render.ts';
 import { createEffects } from './effects.js';
@@ -59,19 +59,8 @@ import { createGraceFade, graceOpacity } from './grace-fade.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const box = new THREE.BoxGeometry(1, 1, 1);
-const matrix = new THREE.Matrix4();
-const rotation = new THREE.Quaternion();
-const position = new THREE.Vector3();
-const scale = new THREE.Vector3();
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
 const framedRoad = (id, endless = false) => TOUR_IDS.has(id) || id === CIRCUIT_ID || (!endless && (id === FROSTBITE_ID || MEASURED_COURSE_IDS.has(id) || isCourseRuntime(id)));
-function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
-  position.set(x, y, z);
-  scale.set(sx, sy, sz);
-  rotation.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, angle);
-  matrix.compose(position, rotation, scale);
-  mesh.setMatrixAt(index, matrix);
-}
 export function createWorld(canvas) {
   // Scoped continuation: finite career/Ghost path API still clamps at the finish.
   let endlessActive=false, curvedClassic = false, classicRoute = legacyClassicRoad;
@@ -414,7 +403,7 @@ export function createWorld(canvas) {
   const sprintVisual = createSprintVfx();
   // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
   const sprintInput = { phase: 'ready', nitro: false, chain: 0, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
-  let visual = vfxSettings(), garageHomeVisual = { ...visual, airflow: true };
+  let visual = vfxSettings(), garageHomeVisual = { ...visual, airflow: true }, garageHiddenVisual = { ...visual, enabled: false };
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
   const desiredCamera = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
@@ -495,7 +484,16 @@ export function createWorld(canvas) {
   }
   return {
     resize, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture, carEnvironment); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; syncGarageLighting(); }, setCosmeticSkins(ids) { aero.setSkins(ids); upcomingStage.setAirflowSkin(ids?.airflow); }, setGaragePose(pose) { garagePose = pose; syncGarageLighting(); }, setGarageLighting(level) { garageLighting = level; syncGarageLighting(); },
-    setGarageSkinPreview(ids, home = false) { garagePreviewSkins = ids; garageHomePreview = home && !garageCamera; garageStage?.setSkins(ids); if (garageHomePreview) { aero.setSkins(ids); upcomingStage.setAirflowSkin(ids?.airflow); } }, inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : aero.inspectCosmetics(); },
+    setGarageSkinPreview(ids, home = false, visible = true) {
+      garagePreviewSkins = ids;
+      garageHomePreview = home && !garageCamera;
+      garageStage?.setSkins(ids);
+      garageStage?.setEffectsVisible(visible);
+      aero.setVisible(!garageHomePreview || visible);
+      if (garageHomePreview) aero.setSkins(ids);
+      upcomingStage.setGaragePreview(garageHomePreview ? ids : null, !garageHomePreview || visible);
+    },
+    inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : upcomingStage.inspectCosmetics() ?? aero.inspectCosmetics(); },
         inspectGarageStudio() { if (garageStage && garageCamera) return garageStage.inspectBounds(camera); if (!garageHomePreview) return null; const { minX, maxX, minY, maxY } = projectedCarBounds(camera.position, smoothLook); return { minX, maxX, minY, maxY, inFrame: minX > -.94 && maxX < .94 && minY > -.94 && maxY < .94 }; }, // Home: QA reads how much of the showroom the car fills
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint); upcomingStage.setPaint(paint);
@@ -506,7 +504,7 @@ export function createWorld(canvas) {
       adaptiveScale = scale; this.configureVFX(visual);
     },
     configureVFX(options) {
-      visual=vfxSettings(options); garageHomeVisual = { ...visual, airflow: true }; garageStage?.configureVFX(visual);
+      visual=vfxSettings(options); garageHomeVisual = { ...visual, airflow: true }; garageHiddenVisual = { ...visual, enabled: false }; garageStage?.configureVFX(visual);
       const nextRatio=renderPixelRatioForQuality(visual.quality,devicePixelRatio,adaptiveScale);
       const samples=msaaSamples(visual.quality);
       if(samples!==composer.renderTarget1.samples) composer.reset(sceneTarget(samples));
@@ -779,9 +777,10 @@ export function createWorld(canvas) {
         finish.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up), new THREE.Vector3(...frame.forward).negate()));
       } else { finish.position.fromArray(classicPosition(race.length, 0, 0, distance)); finish.rotation.set(0, curvedClassic ? -roadHeading(race.length) : 0, 0); }
       finish.visible = graphFinish ? graphFinish.separation < 1400 : trackId === CIRCUIT_ID || (!race.endless && race.length - distance < 1400);
+      const effectsVisual = garageHomePreview && !aero.group.visible ? garageHiddenVisual : visual;
       if (effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
-        curvedClassic ? { ...visual, classicRoute, roadDistance: distance, worldPoint: classicPosition, worldFrame: effectFrame } :
-        framedRoad(trackId, endlessActive) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin,item) => race.course && item ? courseItemPoint(race.course,item,x,y,courseOriginPoint) : trackLocalPosition(trackId,s,x,y,origin), worldFrame: race.course ? (s,item) => courseItemFrame(race.course,item) : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual, origin)) warmupPending = true; // loaded pickup models compile before GO
+        curvedClassic ? { ...effectsVisual, classicRoute, roadDistance: distance, worldPoint: classicPosition, worldFrame: effectFrame } :
+        framedRoad(trackId, endlessActive) || trackId === 'spiral' ? { ...effectsVisual, worldPoint: (s,x,y,origin,item) => race.course && item ? courseItemPoint(race.course,item,x,y,courseOriginPoint) : trackLocalPosition(trackId,s,x,y,origin), worldFrame: race.course ? (s,item) => courseItemFrame(race.course,item) : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : effectsVisual, origin)) warmupPending = true; // loaded pickup models compile before GO
       Object.assign(sprintInput, {
         phase: race.phase, nitro: car.nitroTime > 0, chain: car.nitroTime > 0 ? car.nitroBurst : 0, boost: !!(car.boosting || car.miniBoost > 0),
         speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion, ultra: visual.ultra,

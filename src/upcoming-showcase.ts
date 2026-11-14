@@ -6,7 +6,7 @@ import { previewPlayer, showcaseCameraPose, type CameraPose } from './track-prev
 import { vfxSettings, type VfxSettings } from './vfx-settings.ts';
 import type { PaintPreset } from './appearance.ts';
 import type { PreviewTrackId } from './upcoming-tracks.ts';
-import type { SkinId } from './garage-skin-catalog.ts';
+import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import type { GarageModelHost } from './garage-model.ts';
 
 export type UpcomingEnvironment = {
@@ -44,6 +44,12 @@ export function createUpcomingShowcase(
   const MAX_CACHED_STAGES = 2;
   let paint: PaintPreset | null = null;
   let airflowSkin: SkinId | undefined;
+  let garageSkins: Partial<Record<SkinCategory, SkinId>> | null = null;
+  let effectsVisible = true;
+  function syncEffects(aero: Stage['aero']): void {
+    aero.setSkins(garageSkins ?? { airflow: airflowSkin });
+    aero.setVisible(effectsVisible);
+  }
   let previousTime = NaN;
   const origin = new THREE.Vector3();
   const driver = { speed: 105, boosting: true, nitroTime: 1, miniBoost: 0, impact: null, altitude: 0, trick: null };
@@ -65,10 +71,7 @@ export function createUpcomingShowcase(
       });
     };
     collect(aero.group, true);
-    for (const item of scene.children) {
-      if (item === environment.group || cars.includes(item as THREE.Group)) continue;
-      if (item instanceof THREE.Mesh || item instanceof THREE.Points || item instanceof THREE.LineSegments) collect(item, true);
-    }
+    collect(aero.worldEffects, true);
     for (const car of cars) collect(car, false);
     geometries.forEach(geometry => geometry.dispose());
     materials.forEach(material => material.dispose());
@@ -116,7 +119,7 @@ export function createUpcomingShowcase(
     cars.forEach(car => scene.add(car));
     cars.forEach(car => applyCarReflections(car, carEnvironment));
     const aero = createAeroVFX(scene, cars[0]!);
-    aero.setSkins({ airflow: airflowSkin });
+    syncEffects(aero);
     const sunlight = new THREE.DirectionalLight('#f3e7d2', .85);
     sunlight.position.set(-30, 70, -65);
     scene.add(new THREE.HemisphereLight('#c1e5ff', '#1e283a', .95), sunlight);
@@ -176,10 +179,16 @@ export function createUpcomingShowcase(
     get activeTrack(): PreviewTrackId | null { return stage?.id ?? null; },
     get modelHost(): GarageModelHost | null { return stage?.host ?? null; },
     setTrack, setPaint, update,
+    inspectCosmetics() { return stage?.aero.inspectCosmetics(); },
+    setGaragePreview(ids: typeof garageSkins, visible = true): void {
+      garageSkins = ids;
+      effectsVisible = visible;
+      for (const item of cachedStages.values()) syncEffects(item.aero);
+    },
     setAirflowSkin(id: SkinId | undefined): void {
       if (airflowSkin === id) return;
       airflowSkin = id;
-      for (const item of cachedStages.values()) item.aero.setSkins({ airflow: id });
+      if (!garageSkins) for (const item of cachedStages.values()) syncEffects(item.aero);
     },
     dispose(): void { for (const item of cachedStages.values()) disposeStage(item); cachedStages.clear(); },
   };
