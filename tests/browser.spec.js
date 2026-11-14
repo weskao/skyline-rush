@@ -2,7 +2,13 @@ import { test, expect, chromium } from './helpers/test.js';
 import { saveArtifact } from './helpers/artifact.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { slow, ciTimeout } from './helpers/ci.js';
+import { resizeTo } from './helpers/viewport.js';
 import { recordTrackId } from '../src/record-layout.ts';
+
+// Core browser flows. Touch-controls geometry and gestures run once per layout class: the portrait phone test boots at
+// 390x844 and resizes the live page to 320x740 (tests/helpers/viewport.js), landscape boots 844x390 alone; only the
+// saved-controls tests that need a fresh load per size stay per size. Pure control-settings validation is unit-tested
+// in tests/control-settings.test.js and tests/typed-control-settings.test.js.
 
 
 // Where autoplay is blocked (CI runners), the music prompt appears after 600ms over the settings buttons.
@@ -791,37 +797,30 @@ const visibleBounds = page => page.locator('#touch-controls button, .touch-pad, 
     return { name: element.getAttribute('aria-label') ?? element.className, pad: element.classList.contains('touch-pad'), left, right, top, bottom, width, height };
   }));
 
+// Drag 30px right inside the pad, let the bank settle, return |--flight-bank|, then lift the finger (race already running).
+const dragBank = async (page, send) => {
+  await slideFrom(send, await centerOf(page.locator('.touch-pad'), 0.3), 30, 0);
+  await page.waitForTimeout(500);
+  const value = Math.abs(await bank(page));
+  await send('touchEnd');
+  return value;
+};
+const chooseInPanel = async (page, key, value) => {
+  await dismissMusicPrompt(page);
+  await page.locator('#controls-button').tap();
+  await page.locator(`[data-controls="${key}"][value="${value}"]`).check();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#controls-panel')).toBeHidden();
+};
+const savedControls = page => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')));
+// The pad stays EDGE_SWIPE_PX off the side edge: a touch starting there is the iOS back/forward swipe, whose
+// release WebKit never reports, and it pinned the steering for the rest of the race.
+const EDGE_SWIPE_PX = 20;
+
+// These two need a fresh load per size (a corrupt or reset save, then a reload), so an in-page resize would save no boot.
 for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
   test.describe(`touch controls ${width}x${height}`, () => {
     test.use({ viewport: { width, height }, hasTouch: true, isMobile: true });
-
-    test('slide pad steers by direction, releases straight and brakes on a downward pull', async ({ page, context }) => {
-      const send = await touchDriver(page, context);
-      await startTouchRace(page);
-      const pad = page.locator('.touch-pad');
-      const control = page.locator('#touch-controls');
-      await expect(control).toHaveAttribute('data-steer-mode', 'slide');
-      await expect(pad).toBeVisible();
-      const start = await centerOf(pad, 0.3);
-      await slideFrom(send, start, 45, 0);
-      await expect.poll(() => bank(page)).toBeLessThan(-1); // --flight-bank is -steering * 5deg: right steer is negative
-      const [ring, knob] = await Promise.all([page.locator('.pad-ring').boundingBox(), page.locator('.pad-knob').boundingBox()]);
-      expect(knob.x + knob.width / 2 - (ring.x + ring.width / 2)).toBeGreaterThan(30);
-      await send('touchEnd');
-      await expect.poll(async () => Math.abs(await bank(page))).toBeLessThan(0.5);
-      await slideFrom(send, start, -45, 0);
-      await expect.poll(() => bank(page)).toBeGreaterThan(1);
-      await send('touchEnd');
-      await expect.poll(async () => Math.abs(await bank(page))).toBeLessThan(0.5);
-      await expect(control).not.toHaveAttribute('data-pad-brake');
-      await expect.poll(() => speedOf(page)).toBeGreaterThan(60);
-      const before = await speedOf(page);
-      await slideFrom(send, start, 0, 60);
-      await expect(control).toHaveAttribute('data-pad-brake', 'true');
-      await expect.poll(() => speedOf(page)).toBeLessThan(before - 10);
-      await send('touchEnd');
-      await expect(control).not.toHaveAttribute('data-pad-brake');
-    });
 
     test('Controls panel switches mode, hand and size, persists them and can reset', async ({ page }) => {
       const errors = [];
@@ -881,6 +880,55 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       await expect(page.locator('#race-status')).toHaveText('RACING');
       expect(errors).toEqual([]);
     });
+  });
+}
+
+// Every other touch-controls test boots once at the first size of its layout class, then resizes the live page
+// through the rest (tests/helpers/viewport.js), repeating the same assertions with the size in each message.
+for (const sizes of [[[390, 844], [320, 740]], [[844, 390]]]) {
+  const [[bootWidth, bootHeight]] = sizes;
+  test.describe(`touch controls ${sizes.map(size => size.join('x')).join(' + ')}`, () => {
+    test.use({ viewport: { width: bootWidth, height: bootHeight }, hasTouch: true, isMobile: true });
+    // A test that boots more than once returns to the boot size before each load.
+    const atBootSize = page => page.setViewportSize({ width: bootWidth, height: bootHeight });
+    const eachSize = async (page, body) => {
+      for (const [width, height] of sizes) {
+        await test.step(`${width}x${height}`, async () => {
+          await resizeTo(page, width, height);
+          await body(width, height, `${width}x${height}`);
+        });
+      }
+    };
+
+    test('slide pad steers by direction, releases straight and brakes on a downward pull', async ({ page, context }) => {
+      const send = await touchDriver(page, context);
+      await startTouchRace(page);
+      const pad = page.locator('.touch-pad');
+      const control = page.locator('#touch-controls');
+      await expect(control).toHaveAttribute('data-steer-mode', 'slide');
+      await eachSize(page, async (width, height, size) => {
+        await expect(pad, size).toBeVisible();
+        const start = await centerOf(pad, 0.3);
+        await slideFrom(send, start, 45, 0);
+        await expect.poll(() => bank(page), { message: size }).toBeLessThan(-1); // --flight-bank is -steering * 5deg: right steer is negative
+        const [ring, knob] = await Promise.all([page.locator('.pad-ring').boundingBox(), page.locator('.pad-knob').boundingBox()]);
+        expect(knob.x + knob.width / 2 - (ring.x + ring.width / 2), size).toBeGreaterThan(30);
+        await send('touchEnd');
+        await expect.poll(async () => Math.abs(await bank(page)), { message: size }).toBeLessThan(0.5);
+        await slideFrom(send, start, -45, 0);
+        await expect.poll(() => bank(page), { message: size }).toBeGreaterThan(1);
+        await send('touchEnd');
+        await expect.poll(async () => Math.abs(await bank(page)), { message: size }).toBeLessThan(0.5);
+        await expect(control, size).not.toHaveAttribute('data-pad-brake');
+        await expect.poll(() => speedOf(page), { message: size }).toBeGreaterThan(60);
+        const before = await speedOf(page);
+        await slideFrom(send, start, 0, 60);
+        await expect(control, size).toHaveAttribute('data-pad-brake', 'true');
+        await expect.poll(() => speedOf(page), { message: size }).toBeLessThan(before - 10);
+        await send('touchEnd');
+        await expect(control, size).not.toHaveAttribute('data-pad-brake');
+      });
+    });
 
     test('AUTO accelerator is on by default and the FLY button holds while the finger is down', async ({ page, context }) => {
       const send = await touchDriver(page, context);
@@ -888,44 +936,32 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       await expect(page.locator('#assist-button')).toHaveAttribute('aria-pressed', 'true');
       await page.getByRole('button', { name: 'Start race' }).tap();
       await expect(page.locator('#race-status')).toHaveText('RACING');
-      await expect.poll(() => speedOf(page)).toBeGreaterThan(40); // no gas touch: AUTO is accelerating
-      const fly = page.getByRole('button', { name: 'Hold to fly', exact: true });
-      await send('touchStart', { id: 1, ...await centerOf(fly) });
-      await expect(fly).toHaveAttribute('aria-pressed', 'true');
-      await send('touchEnd');
-      await expect(fly).toHaveAttribute('aria-pressed', 'false');
+      await eachSize(page, async (width, height, size) => {
+        await expect.poll(() => speedOf(page), { message: size }).toBeGreaterThan(40); // no gas touch: AUTO is accelerating
+        const fly = page.getByRole('button', { name: 'Hold to fly', exact: true });
+        await send('touchStart', { id: 1, ...await centerOf(fly) });
+        await expect(fly, size).toHaveAttribute('aria-pressed', 'true');
+        await send('touchEnd');
+        await expect(fly, size).toHaveAttribute('aria-pressed', 'false');
+      });
     });
-
-    // Drag 30px right inside the pad, let the bank settle, return |--flight-bank|, then lift the finger (race already running).
-    const dragBank = async (page, send) => {
-      await slideFrom(send, await centerOf(page.locator('.touch-pad'), 0.3), 30, 0);
-      await page.waitForTimeout(500);
-      const value = Math.abs(await bank(page));
-      await send('touchEnd');
-      return value;
-    };
-    const chooseInPanel = async (page, key, value) => {
-      await dismissMusicPrompt(page);
-      await page.locator('#controls-button').tap();
-      await page.locator(`[data-controls="${key}"][value="${value}"]`).check();
-      await page.keyboard.press('Escape');
-      await expect(page.locator('#controls-panel')).toBeHidden();
-    };
-    const savedControls = page => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')));
 
     test('slide sensitivity radio changes how far a drag steers', async ({ page, context }) => {
       const send = await touchDriver(page, context);
       const measured = {};
       for (const lock of [40, 80]) {
+        await atBootSize(page);
         await page.goto('/');
         await chooseInPanel(page, 'fullLock', lock);
         expect(await savedControls(page)).toMatchObject({ fullLock: lock });
         await page.getByRole('button', { name: 'Start race' }).tap();
         await expect(page.locator('#race-status')).toHaveText('RACING');
-        measured[lock] = await dragBank(page, send);
+        await eachSize(page, async (width, height, size) => { (measured[size] ??= {})[lock] = await dragBank(page, send); });
       }
-      expect(measured[80], 'Low still steers').toBeGreaterThan(0.5);
-      expect(measured[40]).toBeGreaterThan(measured[80] * 1.6);
+      for (const [size, bySize] of Object.entries(measured)) {
+        expect(bySize[80], `${size} Low still steers`).toBeGreaterThan(0.5);
+        expect(bySize[40], size).toBeGreaterThan(bySize[80] * 1.6);
+      }
     });
 
     test('FLY behavior radio switches to toggle', async ({ page, context }) => {
@@ -935,19 +971,21 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       expect(await savedControls(page)).toMatchObject({ flyMode: 'toggle' });
       await page.getByRole('button', { name: 'Start race' }).tap();
       await expect(page.locator('#race-status')).toHaveText('RACING');
-      const fly = page.locator('[data-control="fly"]');
-      await expect(fly).toHaveAttribute('aria-label', 'Tap to fly');
-      const point = await centerOf(fly);
-      await send('touchStart', { id: 1, ...point });
-      await send('touchEnd');
-      await expect(fly).toHaveAttribute('aria-pressed', 'true');
-      await expect(fly).toHaveAttribute('aria-label', 'Tap to land');
-      await page.waitForTimeout(300);
-      await expect(fly).toHaveAttribute('aria-pressed', 'true');
-      await send('touchStart', { id: 1, ...point });
-      await send('touchEnd');
-      await expect(fly).toHaveAttribute('aria-pressed', 'false');
-      await expect(fly).toHaveAttribute('aria-label', 'Tap to fly');
+      await eachSize(page, async (width, height, size) => {
+        const fly = page.locator('[data-control="fly"]');
+        await expect(fly, size).toHaveAttribute('aria-label', 'Tap to fly');
+        const point = await centerOf(fly);
+        await send('touchStart', { id: 1, ...point });
+        await send('touchEnd');
+        await expect(fly, size).toHaveAttribute('aria-pressed', 'true');
+        await expect(fly, size).toHaveAttribute('aria-label', 'Tap to land');
+        await page.waitForTimeout(300);
+        await expect(fly, size).toHaveAttribute('aria-pressed', 'true');
+        await send('touchStart', { id: 1, ...point });
+        await send('touchEnd');
+        await expect(fly, size).toHaveAttribute('aria-pressed', 'false');
+        await expect(fly, size).toHaveAttribute('aria-label', 'Tap to fly');
+      });
     });
 
     test('right hand in Buttons mode mirrors the steering buttons', async ({ page }) => {
@@ -957,14 +995,17 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
         return box.x + box.width / 2;
       };
       for (const hand of ['left', 'right']) {
+        await atBootSize(page);
         await useControls(page, { mode: 'buttons', hand });
         await startTouchRace(page);
-        await expect(page.locator('.touch-pad')).toBeHidden();
-        const steer = hand === 'right' ? (x => x > width / 2) : (x => x < width / 2);
-        const actions = hand === 'right' ? (x => x < width / 2) : (x => x > width / 2);
-        for (const name of ['Steer left', 'Steer right', 'Brake']) expect(steer(await centerX(name)), `${hand} ${name}`).toBe(true);
-        // Landscape centers the FLY/BOOST cluster between steering and pedals (it straddles the midline), so only portrait puts it wholly opposite the steering.
-        for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'Nitro button'] : []]) expect(actions(await centerX(name)), `${hand} ${name}`).toBe(true);
+        await eachSize(page, async (width, height, size) => {
+          await expect(page.locator('.touch-pad'), size).toBeHidden();
+          const steer = hand === 'right' ? (x => x > width / 2) : (x => x < width / 2);
+          const actions = hand === 'right' ? (x => x < width / 2) : (x => x > width / 2);
+          for (const name of ['Steer left', 'Steer right', 'Brake']) expect(steer(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
+          // Landscape centers the FLY/BOOST cluster between steering and pedals (it straddles the midline), so only portrait puts it wholly opposite the steering.
+          for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'Nitro button'] : []]) expect(actions(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
+        });
       }
     });
 
@@ -973,46 +1014,49 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       await useControls(page, { mode: 'buttons' });
       await startTouchRace(page);
       const [left, brake] = ['Steer left', 'Brake'].map(name => page.getByRole('button', { name, exact: true }));
-      const [arrow, top] = await Promise.all([centerOf(left), brake.boundingBox()]);
       const pressed = async () => [await left.getAttribute('aria-pressed'), await brake.getAttribute('aria-pressed')];
-      await send('touchStart', { id: 1, ...arrow });
-      await expect.poll(pressed).toEqual(['true', 'false']);
-      // Halfway up the gap between the arrow and BRAKE: a resting or slipping thumb never brakes.
-      await send('touchMove', { id: 1, x: arrow.x, y: (top.y + top.height + (arrow.y - (await left.boundingBox()).height / 2)) / 2 });
-      await expect.poll(pressed).toEqual(['true', 'false']);
-      await send('touchMove', { id: 1, x: arrow.x, y: top.y + top.height / 2 });
-      await expect.poll(pressed).toEqual(['true', 'true']);
-      await send('touchMove', { id: 1, ...arrow });
-      await expect.poll(pressed).toEqual(['true', 'false']);
-      await send('touchEnd');
-      await expect.poll(pressed).toEqual(['false', 'false']);
+      await eachSize(page, async (width, height, size) => {
+        const [arrow, top] = await Promise.all([centerOf(left), brake.boundingBox()]);
+        await send('touchStart', { id: 1, ...arrow });
+        await expect.poll(pressed, { message: size }).toEqual(['true', 'false']);
+        // Halfway up the gap between the arrow and BRAKE: a resting or slipping thumb never brakes.
+        await send('touchMove', { id: 1, x: arrow.x, y: (top.y + top.height + (arrow.y - (await left.boundingBox()).height / 2)) / 2 });
+        await expect.poll(pressed, { message: size }).toEqual(['true', 'false']);
+        await send('touchMove', { id: 1, x: arrow.x, y: top.y + top.height / 2 });
+        await expect.poll(pressed, { message: size }).toEqual(['true', 'true']);
+        await send('touchMove', { id: 1, ...arrow });
+        await expect.poll(pressed, { message: size }).toEqual(['true', 'false']);
+        await send('touchEnd');
+        await expect.poll(pressed, { message: size }).toEqual(['false', 'false']);
+      });
     });
 
     test('thumb controls stay off the corner and BRAKE sits above the steering row', async ({ page }) => {
       await useControls(page, { mode: 'buttons' });
       await startTouchRace(page);
       const box = name => page.getByRole('button', { name, exact: true }).boundingBox();
-      const [left, right, brake, fly] = await Promise.all(['Steer left', 'Steer right', 'Brake', 'Hold to fly'].map(box));
-      // The thumb pivots on the side edge: the outermost buttons keep a 24px margin instead of hugging the corner.
-      expect(width - (fly.x + fly.width)).toBeGreaterThanOrEqual(24);
-      expect(left.x).toBeGreaterThanOrEqual(24);
-      // Rarely used BRAKE: above the row the thumb rests on, behind a gap, and slimmer than the steering buttons.
-      for (const steer of [left, right]) expect(steer.y - (brake.y + brake.height)).toBeGreaterThanOrEqual(12);
-      expect(brake.height).toBeLessThan(left.height);
-      expect(brake.height).toBeGreaterThanOrEqual(44);
+      await eachSize(page, async (width, height, size) => {
+        const [left, right, brake, fly] = await Promise.all(['Steer left', 'Steer right', 'Brake', 'Hold to fly'].map(box));
+        // The thumb pivots on the side edge: the outermost buttons keep a 24px margin instead of hugging the corner.
+        expect(width - (fly.x + fly.width), `${size} FLY margin`).toBeGreaterThanOrEqual(24);
+        expect(left.x, `${size} left margin`).toBeGreaterThanOrEqual(24);
+        // Rarely used BRAKE: above the row the thumb rests on, behind a gap, and slimmer than the steering buttons.
+        for (const steer of [left, right]) expect(steer.y - (brake.y + brake.height), `${size} BRAKE gap`).toBeGreaterThanOrEqual(12);
+        expect(brake.height, `${size} BRAKE slimmer`).toBeLessThan(left.height);
+        expect(brake.height, `${size} BRAKE target`).toBeGreaterThanOrEqual(44);
+      });
     });
 
-    // The pad stays EDGE_SWIPE_PX off the side edge: a touch starting there is the iOS back/forward swipe, whose
-    // release WebKit never reports, and it pinned the steering for the rest of the race.
-    const EDGE_SWIPE_PX = 20;
     test('slide pad covers the bottom 45% of the steering half, clear of the edge-swipe zone', async ({ page }) => {
       await startTouchRace(page);
-      await expect(page.locator('#touch-controls')).toHaveAttribute('data-hand', 'left');
-      const box = await page.locator('.touch-pad').boundingBox();
-      expect(Math.abs(box.height - height * 0.45)).toBeLessThanOrEqual(2);
-      expect(Math.abs(box.y + box.height - height)).toBeLessThanOrEqual(2);
-      expect(Math.abs(box.x - EDGE_SWIPE_PX)).toBeLessThanOrEqual(1);
-      expect(box.x + box.width).toBeLessThanOrEqual(width / 2);
+      await eachSize(page, async (width, height, size) => {
+        await expect(page.locator('#touch-controls'), size).toHaveAttribute('data-hand', 'left');
+        const box = await page.locator('.touch-pad').boundingBox();
+        expect(Math.abs(box.height - height * 0.45), `${size} height`).toBeLessThanOrEqual(2);
+        expect(Math.abs(box.y + box.height - height), `${size} bottom`).toBeLessThanOrEqual(2);
+        expect(Math.abs(box.x - EDGE_SWIPE_PX), `${size} edge`).toBeLessThanOrEqual(1);
+        expect(box.x + box.width, `${size} half`).toBeLessThanOrEqual(width / 2);
+      });
     });
 
     test('handedness right mirrors the pad and the action buttons', async ({ page }) => {
@@ -1021,51 +1065,57 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
         return [name, box.x + box.width / 2];
       })));
       for (const hand of ['left', 'right']) {
+        await atBootSize(page);
         await useControls(page, { hand });
         await startTouchRace(page);
-        await expect(page.locator('#touch-controls')).toHaveAttribute('data-hand', hand);
-        const box = await page.locator('.touch-pad').boundingBox();
-        if (hand === 'right') {
-          expect(box.x).toBeGreaterThanOrEqual(width / 2 - 1);
-          expect(Math.abs(box.x + box.width - (width - EDGE_SWIPE_PX))).toBeLessThanOrEqual(1);
-        } else {
-          expect(Math.abs(box.x - EDGE_SWIPE_PX)).toBeLessThanOrEqual(1);
-          expect(box.x + box.width).toBeLessThanOrEqual(width / 2);
-        }
-        for (const [name, x] of Object.entries(await actionCenters())) {
-          if (hand === 'right') expect(x, `${hand} ${name}`).toBeLessThan(width / 2);
-          else expect(x, `${hand} ${name}`).toBeGreaterThan(width / 2);
-        }
+        await eachSize(page, async (width, height, size) => {
+          await expect(page.locator('#touch-controls'), size).toHaveAttribute('data-hand', hand);
+          const box = await page.locator('.touch-pad').boundingBox();
+          if (hand === 'right') {
+            expect(box.x, `${size} pad`).toBeGreaterThanOrEqual(width / 2 - 1);
+            expect(Math.abs(box.x + box.width - (width - EDGE_SWIPE_PX)), `${size} pad edge`).toBeLessThanOrEqual(1);
+          } else {
+            expect(Math.abs(box.x - EDGE_SWIPE_PX), `${size} pad edge`).toBeLessThanOrEqual(1);
+            expect(box.x + box.width, `${size} pad half`).toBeLessThanOrEqual(width / 2);
+          }
+          for (const [name, x] of Object.entries(await actionCenters())) {
+            if (hand === 'right') expect(x, `${size} ${hand} ${name}`).toBeLessThan(width / 2);
+            else expect(x, `${size} ${hand} ${name}`).toBeGreaterThan(width / 2);
+          }
+        });
       }
     });
 
     for (const mode of ['slide', 'buttons']) {
       test(`${mode} mode: every visible control stays onscreen with a 44px touch target`, async ({ page }) => {
         test.setTimeout(90000 * slow);
-        for (const size of ['M', 'L']) {
-          await useControls(page, { mode, size });
+        for (const touchSize of ['M', 'L']) {
+          await atBootSize(page);
+          await useControls(page, { mode, size: touchSize });
           await page.goto('/');
           await page.getByRole('button', { name: 'Start race' }).tap();
           await expect(page.locator('#touch-controls')).toBeVisible();
-          const bounds = await visibleBounds(page);
-          const touchButtons = bounds.filter(bound => !bound.pad && !/Auto|Audio|camera|Pause|Restart|Controls/i.test(bound.name));
-          // The HUD owns NITRO's accessible state label; geometry checks should not depend on charge timing.
-          const names = touchButtons.map(bound => bound.name.replace(/^NITRO .+$/, 'NITRO')).sort();
-          expect(names, `${mode} ${size}`).toEqual((mode === 'slide'
-            ? ['Accelerate', 'NITRO', 'Hold to boost', 'Hold to fly']
-            : ['Accelerate', 'NITRO', 'Brake', 'Hold to boost', 'Hold to fly', 'Steer left', 'Steer right']).sort());
-          expect(bounds.some(bound => bound.pad)).toBe(mode === 'slide');
-          for (const bound of bounds) {
-            const label = `${mode} ${size} ${bound.name}`;
-            expect(bound.left, label).toBeGreaterThanOrEqual(0);
-            expect(bound.top, label).toBeGreaterThanOrEqual(0);
-            expect(bound.right, label).toBeLessThanOrEqual(width);
-            expect(bound.bottom, label).toBeLessThanOrEqual(height);
-            if (!bound.pad) {
-              expect(bound.width, label).toBeGreaterThanOrEqual(44);
-              expect(bound.height, label).toBeGreaterThanOrEqual(44);
+          await eachSize(page, async (width, height, size) => {
+            const bounds = await visibleBounds(page);
+            const touchButtons = bounds.filter(bound => !bound.pad && !/Auto|Audio|camera|Pause|Restart|Controls/i.test(bound.name));
+            // The HUD owns NITRO's accessible state label; geometry checks should not depend on charge timing.
+            const names = touchButtons.map(bound => bound.name.replace(/^NITRO .+$/, 'NITRO')).sort();
+            expect(names, `${size} ${mode} ${touchSize}`).toEqual((mode === 'slide'
+              ? ['Accelerate', 'NITRO', 'Hold to boost', 'Hold to fly']
+              : ['Accelerate', 'NITRO', 'Brake', 'Hold to boost', 'Hold to fly', 'Steer left', 'Steer right']).sort());
+            expect(bounds.some(bound => bound.pad), `${size} ${mode} ${touchSize} pad`).toBe(mode === 'slide');
+            for (const bound of bounds) {
+              const label = `${size} ${mode} ${touchSize} ${bound.name}`;
+              expect(bound.left, label).toBeGreaterThanOrEqual(0);
+              expect(bound.top, label).toBeGreaterThanOrEqual(0);
+              expect(bound.right, label).toBeLessThanOrEqual(width);
+              expect(bound.bottom, label).toBeLessThanOrEqual(height);
+              if (!bound.pad) {
+                expect(bound.width, label).toBeGreaterThanOrEqual(44);
+                expect(bound.height, label).toBeGreaterThanOrEqual(44);
+              }
             }
-          }
+          });
         }
       });
     }
