@@ -7,15 +7,22 @@ import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
 export function createSound(gapWarning = () => null) {
   let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
   let music, warm, hats, snares, song = null, step = 0, nextStep = 0, madeAt = -Infinity;
-  let enabled = false, musicOn = false, hidden = false;
+  let enabled = false, musicOn = false, hidden = false, current = null, resumedAt = -Infinity;
   // Slider levels map to gain on a squared curve so the lower half of the slider stays audibly useful.
   let effectsLevel = 1, musicLevel = 1, duckUntil = 0, duckFrom = 0;
   const voices = new Set();
+  const notes = new Map(); // queued music sources → start time, so a song change or mute can drop the ones not yet heard
+  const ignore = () => {};
+  // Loading stalls the main thread (shader warm-up ≈ 0.6 s desktop, 1.5 s at 6× CPU) but not the audio thread, so the
+  // intro is queued this far ahead before the 3D world exists; update() then continues from nextStep.
+  const PRELUDE = 8;
+  // Node tests have no document; a browser can show the page again without firing visibilitychange.
+  const pageHidden = () => typeof document === 'undefined' ? hidden : document.hidden;
   const raceEvents = createRaceAudioEvents();
 
-  function track(source, nodes, end, cue = true) {
-    if (cue) voices.add(source);
-    source.onended = () => { voices.delete(source); source.disconnect(); nodes.forEach(node => node.disconnect()); };
+  function track(source, nodes, end, cue = true, at = 0) {
+    if (cue) voices.add(source); else notes.set(source, at);
+    source.onended = () => { voices.delete(source); notes.delete(source); source.disconnect(); nodes.forEach(node => node.disconnect()); };
     source.stop(end);
   }
   function silenceCues() {
@@ -34,7 +41,7 @@ export function createSound(gapWarning = () => null) {
     envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration);
     source.connect(envelope).connect(destination);
     source.start(time);
-    track(source, [envelope], time + duration + 0.02, cue);
+    track(source, [envelope], time + duration + 0.02, cue, time);
   }
   function tone(frequency, endFrequency, duration, delay = 0, volume = 0.045) {
     if (!enabled || voices.size >= 24) return;
@@ -48,7 +55,25 @@ export function createSound(gapWarning = () => null) {
     envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration);
     source.connect(envelope).connect(destination);
     source.start(time, Math.random() * 0.5);
-    track(source, [envelope], time + duration + 0.02, false);
+    track(source, [envelope], time + duration + 0.02, false, time);
+  }
+  // Drops queued notes not yet started (a stale prelude or the old song) so the next one starts now; sounding ones ring out.
+  function cutMusic() {
+    const now = context.currentTime;
+    for (const [note, at] of notes) if (at > now) { note.stop(); notes.delete(note); }
+    nextStep = 0;
+  }
+  // Queues the current song `ahead` seconds; after a stalled frame it resumes from now instead of bursting.
+  function schedule(ahead, sprint = 1) {
+    const now = context.currentTime, tune = TRACKS[song];
+    for (nextStep = Math.max(nextStep, now + 0.03); nextStep < now + ahead; nextStep += 15 / (tune.bpm * sprint), step = (step + 1) % LOOP_STEPS) playStep(tune, step, nextStep);
+  }
+  // Only the intro is queued ahead: a race song follows sprint tempo and its mode, so it stays with the frame loop.
+  function prelude() {
+    if (!musicOn || (current && musicForMode(current) !== 'intro')) return;
+    if (song !== 'intro') { song = 'intro'; step = 0; cutMusic(); }
+    music.gain.setTargetAtTime(musicLevel * 0.65, context.currentTime, 0.1); // the home-screen mix update() keeps
+    schedule(PRELUDE);
   }
   function playStep(tune, index, time) {
     const bar = Math.floor(index / 16), beat = index % 16, chord = tune.chords[bar % 8], sixteenth = 15 / tune.bpm;
@@ -211,6 +236,7 @@ export function createSound(gapWarning = () => null) {
     if (!context) {
       madeAt = tap ? performance.now() : -Infinity;
       nextStep = 0;
+      notes.clear(); // the old context's sources never end
       // iOS mutes web audio while the silent switch is on unless the page asks for media playback.
       try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* Keep the browser's default session. */ }
       context = new AudioContext();
@@ -242,7 +268,7 @@ export function createSound(gapWarning = () => null) {
       hats = filtered('highpass', 7000);
       snares = filtered('bandpass', 1800);
     }
-    setHidden(hidden);
+    setHidden(pageHidden());
   }
   // A 'playback' session keeps iOS playing after the tab or app goes to the background, so stop the clock there.
   function setHidden(next) {
@@ -275,6 +301,8 @@ export function createSound(gapWarning = () => null) {
     try {
       if (next) open();
       musicOn = next && !!context;
+      if (context && !musicOn) { music.gain.cancelScheduledValues(0); music.gain.setValueAtTime(0, context.currentTime); cutMusic(); }
+      if (musicOn) prelude();
     } catch { fail(); }
     return musicOn;
   }
@@ -284,8 +312,15 @@ export function createSound(gapWarning = () => null) {
     setMusic,
     setHidden,
     running: () => context?.state === 'running',
+    diagnostics: () => ({ state: context?.state ?? 'none', hidden, documentHidden: pageHidden(), musicOn, currentTime: context?.currentTime ?? null }),
     update(race) {
       const car = race.player;
+      current = race;
+      // A single resume() on return can fail; retry once a second (allocation-free per frame) after the first gesture.
+      if (context && (enabled || musicOn) && !hidden && context.state !== 'running' && navigator.userActivation?.hasBeenActive !== false) {
+        const time = performance.now();
+        if (time - resumedAt >= 1000) { resumedAt = time; context.resume().catch(ignore); }
+      }
       const audible = enabled && !hidden && context?.state === 'running';
       const { silence, sounds, active, boosting } = raceEvents.update(race, audible,
         race.phase === 'racing' ? gapWarning(race) : null);
@@ -306,12 +341,11 @@ export function createSound(gapWarning = () => null) {
         const musicMix = race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65;
         music.gain.setTargetAtTime(musicOn ? musicLevel * musicMix * (now >= duckFrom && now < duckUntil ? .43 : 1) : 0, now, 0.1);
         const name = !musicOn ? null : musicForMode(race);
-        if (name !== song) { song = name; step = 0; }
-        // Schedule ~0.2 s ahead from the frame loop; after a stalled frame, resume from now instead of bursting.
+        if (name !== song) { song = name; step = 0; cutMusic(); }
         const urgency = race.mode === 'checkpoint' && race.checkpoint?.timeLeft < 10 ? 1.1 :
           race.mode === 'stunt' && race.stuntLimit - race.elapsed < 20 ? 1.08 : 1;
         const sprint = active && song && song !== 'intro' ? sprintFactor(car.distance, race.length) * urgency : 1;
-        if (song) for (nextStep = Math.max(nextStep, now + 0.03); nextStep < now + 0.2; nextStep += 15 / (TRACKS[song].bpm * sprint), step = (step + 1) % LOOP_STEPS) playStep(TRACKS[song], step, nextStep);
+        if (song) schedule(0.2, sprint);
       }
     },
     dispose() { silenceCues(); context?.close().catch(() => {}); },

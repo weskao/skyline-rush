@@ -10,7 +10,7 @@ function installAudio(t) {
   const nodes = [];
   const param = () => ({ value: 0, setValueAtTime(value) { this.value = value; },
     setTargetAtTime(value) { this.value = value; }, linearRampToValueAtTime(value) { this.value = value; },
-    exponentialRampToValueAtTime(value) { this.value = value; } });
+    exponentialRampToValueAtTime(value) { this.value = value; }, cancelScheduledValues() {} });
   const node = kind => {
     const result = { kind, frequency: param(), gain: param(), Q: param(), threshold: param(), ratio: param(),
       connect(destination) { this.destination = destination; return destination; }, disconnect() {}, start(time) { this.started = time; }, stop(time) { this.stopped = time; } };
@@ -99,7 +99,10 @@ function heardFrequencies(t, trackId, phase) {
   race.player.speed = 40;
   assert.equal(sound.setMusic(true), true);
   sound.update(race);
-  return nodes.filter(item => item.kind === 'oscillator').map(item => item.frequency.value);
+  // The opening bar identifies the song: notes starting in the first 0.25 s and not cancelled by a song change
+  // (stop() with no time). The intro's later lead notes legitimately reach course pitches.
+  return nodes.filter(item => item.kind === 'oscillator' && 'stopped' in item && item.stopped !== undefined && item.started < 0.25)
+    .map(item => item.frequency.value);
 }
 
 test('selecting Sky Spiral on the menu keeps the shared intro', t => {
@@ -236,7 +239,8 @@ test('Checkpoint Rush plays its own soundtrack instead of the general racing pad
   race.phase='racing';
   sound.setMusic(true);
   sound.update(race);
-  const frequencies = nodes.filter(n=>n.kind==='oscillator').map(n=>n.frequency.value);
+  // Intro notes queued before the first update and cancelled by it (stop() with no time) are never heard.
+  const frequencies = nodes.filter(n=>n.kind==='oscillator' && n.stopped !== undefined).map(n=>n.frequency.value);
   assert.ok(frequencies.some(hz=>Math.abs(hz-midiHz(60))<0.05));
   assert.equal(frequencies.some(hz=>Math.abs(hz-midiHz(55))<0.05),false);
 });
@@ -390,4 +394,163 @@ test('backgrounding cancels pending stingers and suppresses new sounds', t => {
   const hidden = nodes.length;
   sound.cue('reward-credited');
   assert.equal(nodes.length, hidden);
+});
+
+// --- Music from the first moment (prelude), stale hidden flag, resume retry, diagnostics ---
+// A prelude note is any music oscillator: cues are sine tones and none play here; the engine hum starts without a time.
+const musicNotes = nodes => nodes.filter(node => node.kind === 'oscillator' && typeof node.started === 'number' && node.type !== 'sine');
+const musicBus = nodes => nodes.filter(node => node.kind === 'gain' && node.destination?.kind === 'compressor')[1];
+function trackContexts() {
+  const made = [];
+  globalThis.AudioContext = class extends globalThis.AudioContext { constructor() { super(); made.push(this); } };
+  return made;
+}
+// The mock Web Audio boundary plus the contexts the engine makes, so a test can drive their clocks.
+function installTracked(t) {
+  const { nodes } = installAudio(t);
+  const made = trackContexts();
+  const sound = createSound();
+  t.after(() => sound.dispose());
+  return { nodes, made, sound };
+}
+
+test('switching music on queues 8 s of the intro at once, before any frame or 3D world exists', t => {
+  const { nodes, sound } = installAudio(t);
+  assert.equal(sound.setMusic(true), true);
+  const onsets = musicNotes(nodes).map(node => node.started);
+  assert.ok(onsets.length > 0, 'notes are queued without waiting for update()');
+  assert.ok(Math.min(...onsets) < 0.1, 'the intro starts right away');
+  assert.ok(Math.max(...onsets) >= 7.5, `the intro covers a long loading stall (last onset ${Math.max(...onsets)} s)`);
+  assert.ok(musicBus(nodes).gain.value > 0, 'the music bus is audible before the first frame');
+  assert.ok(nodes.some(node => node.kind === 'oscillator' && node.frequency.value > 0 && Math.abs(node.frequency.value - midiHz(57)) < 0.05),
+    'it is the shared intro (pad MIDI 57)');
+});
+
+test('the frame loop continues the queued intro on the same beat grid without overlap or a skipped step', t => {
+  const { nodes, made, sound } = installTracked(t);
+  const race = createRace();
+  const start = nodes.length;
+  sound.setMusic(true);
+  for (let time = 0; time <= 10; time += 1 / 60) { made[0].currentTime = time; sound.update(race); }
+  const notes = musicNotes(nodes.slice(start));
+  const sixteenth = 15 / 120;
+  const seen = new Set();
+  for (const note of notes) {
+    const key = `${note.type}@${note.started.toFixed(4)}@${note.frequency.value.toFixed(2)}`;
+    assert.equal(seen.has(key), false, `no note is scheduled twice (${key})`);
+    seen.add(key);
+    const steps = (note.started - notes[0].started) / sixteenth;
+    assert.ok(Math.abs(steps - Math.round(steps)) < 1e-6, `every onset sits on the sixteenth grid (${note.started})`);
+  }
+  const onsets = [...new Set(notes.map(note => note.started))].sort((a, b) => a - b);
+  assert.ok(onsets.at(-1) > 9.8, 'the frame loop keeps the intro going past the prelude');
+  for (let i = 1; i < onsets.length; i++) assert.ok(onsets[i] - onsets[i - 1] <= 2 * sixteenth + 1e-6, `no gap at ${onsets[i - 1]} s`);
+});
+
+test('switching music off during the queued intro silences it at once and drops every note not yet started', t => {
+  const { nodes, made: tracked, sound: fresh } = installTracked(t);
+  const start = nodes.length;
+  fresh.setMusic(true);
+  const queued = musicNotes(nodes.slice(start));
+  assert.ok(queued.some(note => note.started > 2), 'notes are queued beyond two seconds');
+  tracked[0].currentTime = 2;
+  fresh.setMusic(false);
+  assert.equal(musicBus(nodes.slice(start)).gain.value, 0, 'the music bus is silent immediately, not on the next frame');
+  for (const note of queued.filter(note => note.started > 2)) assert.equal(note.stopped, undefined, `queued note at ${note.started} s is cancelled`);
+});
+
+test('starting a race while the intro is queued switches to the course song at once', t => {
+  const { nodes, made: tracked, sound: fresh } = installTracked(t);
+  const start = nodes.length;
+  fresh.setMusic(true);
+  const intro = musicNotes(nodes.slice(start));
+  assert.ok(intro.some(note => note.started > 3.5), 'the intro was queued past the start');
+  tracked[0].currentTime = 3;
+  const race = createRace('spiral');
+  race.phase = 'racing';
+  const before = nodes.length;
+  fresh.update(race);
+  for (const note of intro.filter(note => note.started > 3.05)) assert.equal(note.stopped, undefined, `stale intro note at ${note.started} s is dropped`);
+  const course = nodes.slice(before).filter(node => node.kind === 'oscillator' && Math.abs(node.frequency.value - midiHz(56)) < 0.05);
+  assert.ok(course.length && Math.min(...course.map(node => node.started)) < 3.1, 'the Sky Spiral pad starts now, not after the prelude');
+});
+
+test('switching music on mid-race does not queue the intro over the race song', t => {
+  const { nodes, sound } = installAudio(t);
+  const race = createRace('spiral');
+  race.phase = 'racing';
+  sound.setMusic(true);
+  sound.update(race);
+  sound.setMusic(false);
+  sound.update(race);
+  const start = nodes.length;
+  sound.setMusic(true);
+  assert.equal(musicNotes(nodes.slice(start)).length, 0, 'the race song resumes from the frame loop, not an intro prelude');
+});
+
+test('opening audio trusts the live page visibility over a stale hidden flag', t => {
+  globalThis.document = { hidden: false };
+  t.after(() => { delete globalThis.document; });
+  let now = 0;
+  t.mock.method(performance, 'now', () => now);
+  const { sound } = installAudio(t);
+  const made = trackContexts();
+  sound.setMusic(true);
+  assert.equal(sound.running(), true);
+  document.hidden = true;
+  sound.setHidden(true);
+  assert.equal(sound.running(), false);
+  document.hidden = false; // the page came back without a visibilitychange event
+  for (let tap = 0; tap < 4; tap++) { now += 1300; sound.setMusic(true); sound.setEnabled(true); }
+  assert.equal(sound.running(), true, 'a tap resumes audio instead of re-suspending it');
+  assert.ok(made.length <= 2, `taps do not keep rebuilding contexts (${made.length} made)`);
+});
+
+test('update retries a stuck resume at most once a second while sound should play and the page is visible', t => {
+  let now = 0;
+  t.mock.method(performance, 'now', () => now);
+  const { sound } = installAudio(t);
+  let resumes = 0;
+  globalThis.AudioContext = class extends globalThis.AudioContext {
+    state = 'suspended';
+    resume() { resumes++; return new Promise(() => {}); }
+  };
+  const race = createRace();
+  sound.setMusic(true);
+  const opened = resumes;
+  const frames = seconds => { for (let i = 0; i < seconds * 60; i++) { now += 1000 / 60; sound.update(race); } };
+  frames(3);
+  assert.ok(resumes - opened >= 2 && resumes - opened <= 3, `retried once per second (${resumes - opened} in 3 s)`);
+  sound.setHidden(true);
+  const hidden = resumes;
+  frames(3);
+  assert.equal(resumes, hidden, 'no retry while hidden');
+  sound.setHidden(false);
+  sound.setMusic(false);
+  sound.setEnabled(false);
+  const silent = resumes;
+  frames(3);
+  assert.equal(resumes, silent, 'no retry while both channels are off');
+});
+
+test('diagnostic builds can read the live audio state', t => {
+  const { sound } = installAudio(t);
+  sound.setMusic(true);
+  assert.deepEqual(sound.diagnostics(), { state: 'running', hidden: false, documentHidden: false, musicOn: true, currentTime: 0 });
+});
+
+test('sprint readiness plays two distinct SFX phrases and respects mute', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const pitches = name => {
+    const start = nodes.length;
+    sound.cue(name);
+    return nodes.slice(start).filter(node => node.kind === 'oscillator').map(node => node.frequency.value);
+  };
+  const nitro = pitches('nitro-ready'), boost = pitches('boost-ready');
+  assert.equal(nitro.length, 3);
+  assert.equal(boost.length, 3);
+  assert.ok(Math.min(...nitro) > Math.max(...boost));
+  sound.setEnabled(false);
+  assert.deepEqual(pitches('boost-ready'), []);
 });

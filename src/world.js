@@ -19,9 +19,10 @@ import { createClassicRoadRender } from './classic-road-render.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
 import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
-import { raceCameraView, rigBack, rigHeight, rigFov, rigShake, rigKick, stepCameraSwing, frameChaseSightline } from './race-camera.ts';
+import { raceCameraView, rigBack, rigLook, rigHeight, rigFov, rigShake, rigKick, rigRumble, stepCameraSwing, frameChaseSightline } from './race-camera.ts';
 import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
+import { createRenderer } from './webgl-renderer.ts';
 import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
@@ -46,7 +47,7 @@ import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
 import { createSkyScene } from './sky-scene.js';
 import { skyPosition as finiteSkyPosition, skyFrame as finiteSkyFrame } from './sky-track.ts';
 import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
-import { poseFor, smoothDriftYaw } from './vehicle-render-motion.js';
+import { poseFor, smoothDriftYaw, squatPitch, rearAxleLift } from './vehicle-render-motion.js';
 import { trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition, lookAheadDistance } from './track-paths.ts';
 import { HERO_PREVIEWS,SHOWCASE_BACKS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { sectionSignKey } from './section-signs.ts';
@@ -82,8 +83,7 @@ export function createWorld(canvas) {
   const skyPosition=(d,x=0,y=0,o=0)=>finiteSkyPosition(d,x,y,o,endlessActive),skyFrame=d=>finiteSkyFrame(d,endlessActive),
     trackPoint=(id,d)=>finitePoint(id,d,endlessActive),trackFrame=(id,d,span=false)=>finiteFrame(id,d,endlessActive,span),
     trackLocalPosition=(id,d,x=0,y=0,o=0)=>finitePosition(id,d,x,y,o,endlessActive);
-  // No canvas MSAA: the composer's final pass only blits a full-screen quad here; edges are resolved in sceneTarget.
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  const renderer = createRenderer(canvas);
   renderer.info.autoReset=false; // Combine scene and composer submissions per frame for QA.
   let renderPixelRatio=Math.min(devicePixelRatio,1.5);
   let adaptiveScale = 1;
@@ -418,7 +418,7 @@ export function createWorld(canvas) {
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
   const desiredCamera = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
-  const smoothLook = new THREE.Vector3(0, 2, -25);
+  const smoothLook = new THREE.Vector3(0, 2, -25), rumble = new THREE.Vector3(); // rumble: the world offset added after lookAt last frame
   let cameraMode = 0, cameraSwing = 0;
   let initialized = false, lastRace = null, trackId, carBank = 0, seenFall = null, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); const courseOriginPoint = [0, 0, 0]; // Frostbite span: a respawn (up to ~500 m back) cuts the camera; the lift carries it
   const classicRoadRender = createClassicRoadRender({ road, laneLines, curbs, edgeLines, railLights, tunnelRoofs, tunnelWalls, shortcutDeck, surfaceMarks }, segments, put, SHORTCUT_TOLERANCE);
@@ -467,8 +467,8 @@ export function createWorld(canvas) {
       const bank = isPlayer ? -(pose.steering || 0) * (pose.altitude > 0.8 ? 0.12 : 0.045) : 0;
       const trick = !(motionPreference.matches || visual.comfortable) && car.trick;
       const trickRoll = trick ? trick.dir * Math.PI * 2 * THREE.MathUtils.smoothstep(trick.time, 0, TRICK_ROLL_TIME) : 0;
-      const pitch = car.thrusting ? -0.06 : Math.min(0.08, -(pose.verticalSpeed || 0) * 0.006);
-      orientCarOnRoad(mesh, frame, bank + trickRoll, pitch, driftYaw);
+      const pitch = car.thrusting ? -0.06 : Math.min(0.08, -(pose.verticalSpeed || 0) * 0.006), squat = isPlayer ? squatPitch(sprintVisual.frame.squat) : 0, squatLift = rearAxleLift(mesh, squat);
+      orientCarOnRoad(mesh, frame, bank + trickRoll, pitch + squat, driftYaw).translateY(squatLift); mesh.userData.altitude += squatLift; // NITRO/BOOST squat on the rear tyres; the shadow stays on the road
     } else {
       mesh.position.set(roadCenter(pose.distance) - center + pose.x, pose.altitude || 0, -relative);
       const driftYaw = mesh.userData.driftYaw = smoothDriftYaw(mesh.userData.driftYaw ?? 0, car.drift, dt);
@@ -786,10 +786,9 @@ export function createWorld(canvas) {
         phase: race.phase, nitro: car.nitroTime > 0, chain: car.nitroTime > 0 ? car.nitroBurst : 0, boost: !!(car.boosting || car.miniBoost > 0),
         speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion, ultra: visual.ultra,
       });
-      const sprintFrame = sprintVisual.update(sprintInput);
+      const portrait = camera.aspect < 0.8, view = raceCameraView(cameraMode, portrait), sprintFrame = sprintVisual.update(sprintInput), chaseFov = reducedMotion ? 64 : rigFov(view, visualCar.speed) + sprintFovOffset(sprintFrame, visual); // chaseFov drives the dolly: no impact pinch
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), garageHomePreview ? garageHomeVisual : visual, reducedMotion, sprintFrame, garageHomePreview);
       const boostStrength = race.phase === 'racing' ? sprintFrame.power : 0;
-      const portrait = camera.aspect < 0.8, view = raceCameraView(cameraMode, portrait);
       if (photoView && race.phase === 'paused') {
         desiredCamera.set(player.position.x + Math.sin(photoView.angle) * 14,
           player.position.y + 5, player.position.z + Math.cos(photoView.angle) * 14);
@@ -837,7 +836,7 @@ export function createWorld(canvas) {
         desiredCamera.fromArray(classicPosition(distance - (portrait ? 13.8 : 11.8), portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, distance));
         lookTarget.fromArray(classicPosition(distance + 3.5, portrait ? 1 : -1.4, 1.4, distance));
       } else {
-        const first = cameraMode === 1, back = rigBack(view, visualCar.speed, sprintFrame.fov, sprintFrame.punch), height = rigHeight(view, visualCar.altitude);
+        const first = cameraMode === 1, back = rigBack(view, chaseFov), look = rigLook(view, chaseFov), height = rigHeight(view, visualCar.altitude);
         cameraSwing = reducedMotion ? 0 : stepCameraSwing(cameraSwing, player.userData.driftYaw ?? 0, view, dt);
         if (curvedClassic) {
           const heading = roadHeading(distance);
@@ -845,19 +844,19 @@ export function createWorld(canvas) {
           desiredCamera.x += Math.sin(cameraSwing - heading) * back;
           desiredCamera.z += Math.cos(cameraSwing - heading) * back;
           const ahead = lookAheadDistance(trackId, distance, view.ahead, endlessActive);
-          lookTarget.fromArray(classicPosition(distance + ahead, visualCar.x * view.follow, visualCar.altitude + view.look, distance));
+          lookTarget.fromArray(classicPosition(distance + ahead, visualCar.x * view.follow, visualCar.altitude + look, distance));
         } else if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
           const frame = race.course ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(distance) : trackFrame(trackId,distance,car.span);
           desiredCamera.fromArray(frame.forward).multiplyScalar(-back).applyAxisAngle(camera.up, cameraSwing).add(player.position).y += height;
           const f=race.course?graphLookAhead(race.course,visualCar.x,view.ahead):trackFrame(trackId,distance+lookAheadDistance(trackId,distance,view.ahead,endlessActive),car.span),p=f.point,o=race.course?courseOriginPoint:trackPoint(trackId,distance);
-          lookTarget.set((race.course?p[0]-o[0]:p.x-o.x)+f.right[0]*visualCar.x,(race.course?p[1]-o[1]:p.y-o.y)+visualCar.altitude+view.look,(race.course?p[2]-o[2]:p.z-o.z)+f.right[2]*visualCar.x);
+          lookTarget.set((race.course?p[0]-o[0]:p.x-o.x)+f.right[0]*visualCar.x,(race.course?p[1]-o[1]:p.y-o.y)+visualCar.altitude+look,(race.course?p[2]-o[2]:p.z-o.z)+f.right[2]*visualCar.x);
           if (trackId === 'volcanic-crown' && portrait && !first) frameChaseSightline(desiredCamera, lookTarget, player.position, camera.aspect, view.fov);
         } else if (first) {
           desiredCamera.set(visualCar.x * view.follow, visualCar.altitude + height, back);
-          lookTarget.set(visualCar.x + roadCenter(distance + view.ahead) - center, visualCar.altitude + view.look, -view.ahead);
+          lookTarget.set(visualCar.x + roadCenter(distance + view.ahead) - center, visualCar.altitude + look, -view.ahead);
         } else {
           desiredCamera.set(visualCar.x * view.follow + Math.sin(cameraSwing) * back, visualCar.altitude * 0.85 + height, Math.cos(cameraSwing) * back);
-          lookTarget.set(visualCar.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, visualCar.altitude * 0.85 + view.look, -25);
+          lookTarget.set(visualCar.x * 0.7 + (roadCenter(distance + 30) - center) * 0.35, visualCar.altitude * 0.85 + look, -25);
         }
       }
       desiredCamera.z -= reducedMotion ? 0 : (presentation.goPush || 0) * 1.4;
@@ -874,7 +873,7 @@ export function createWorld(canvas) {
         if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance);
         frameShowcaseCar(distance);
       }
-      const smoothing = 1 - Math.exp(-dt * 7); if (trackId === FROSTBITE_ID && !endlessActive) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
+      const smoothing = 1 - Math.exp(-dt * 7); camera.position.sub(rumble); if (trackId === FROSTBITE_ID && !endlessActive) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
       if (!initialized || (car.fall !== seenFall && (trackId === FROSTBITE_ID || !!race.course))) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; } seenFall = car.fall;
       camera.position.lerp(desiredCamera, smoothing); smoothLook.lerp(lookTarget, smoothing);
       // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.
@@ -889,7 +888,8 @@ export function createWorld(canvas) {
       const shakeSetting = reducedMotion || race.phase !== 'racing' || !visual.enabled ? 0 : visual.shake, shake = rigShake(view, visualCar.speed, shakeSetting);
       camera.rotateX(Math.sin(time * 53) * shake + rigKick(view, sprintFrame.kick, shakeSetting));
       if (shake) camera.rotateY(Math.sin(time * 37) * shake * 0.6);
-      const targetFov = preview ? 50 : reducedMotion ? 64 : rigFov(view, visualCar.speed) + sprintFovOffset(sprintFrame, visual) - impact * 4;
+      camera.position.add(rigRumble(view, visualCar.speed, sprintFrame.fov, shakeSetting, time, rumble).applyQuaternion(camera.quaternion)); // a translation: the view never turns
+      const targetFov = preview ? 50 : chaseFov - (reducedMotion ? 0 : impact * 4);
       camera.fov = photoView && race.phase === 'paused' ? photoView.fov : camera.fov + (targetFov - camera.fov) * smoothing;
       camera.updateProjectionMatrix();
       lens.uniforms.boost.value = reducedMotion || !visual.enabled ? 0 : sprintFrame.blur * visual.motionBlur;

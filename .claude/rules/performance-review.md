@@ -68,6 +68,10 @@ frame and on every track change, so no per-module warmup flag is needed. Keep it
   prop, light or track keeps both green; extend them when adding an event that first shows
   something. Diagnose with `renderer.info.programs` and `renderer.properties.get(material)
   .currentProgram.cacheKey` to name the offending material.
+- Production builds skip three.js's `renderer.debug.checkShaderErrors` (a synchronous info-log read
+  per program that defeats parallel compile): third frame 7% sooner on desktop, 15% at 6x CPU
+  throttle (2026-11-14). Make every race renderer through `createRenderer` (`src/webgl-renderer.ts`);
+  dev and VITE_DIAG builds keep the check. Guard: `tests/webgl-renderer.test.js`.
 
 ## Fit airflow when the displayed model changes
 

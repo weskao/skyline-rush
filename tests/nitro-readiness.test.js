@@ -38,3 +38,10 @@ test('invalid charge is sanitized and does not fire a false READY cue', () => {
   assert.equal(f.update({ charge: Number.NaN, phase: 'racing', active: false }).state, 'charging');
   assert.equal(f.update({ charge: Infinity, phase: 'racing', active: false }).cueReady, false);
 });
+
+test('refilling a usable charge during a NITRO burst cues once and can extend the burst', () => {
+  const nitro = createNitroReadiness();
+  nitro.update({ charge: .75, phase: 'racing', active: true });
+  assert.deepEqual(nitro.update({ charge: 1.05, phase: 'racing', active: true }), { state: 'active', cueReady: true });
+  assert.equal(nitro.update({ charge: 1.05, phase: 'racing', active: false }).cueReady, false);
+});

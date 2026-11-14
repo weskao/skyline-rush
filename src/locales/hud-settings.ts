@@ -1,4 +1,4 @@
-// VFX panel: the race HUD layout choice, its optional widgets, NITRO READY cues and reset.
+// VFX panel: the race HUD layout choice, its optional widgets, NITRO and BOOST ready cues and reset.
 // Audio panel: the 3x HUD source-artwork gallery (HudSourceArtwork.vue).
 export const HUD_SETTINGS_COPY = {
   en: {
@@ -8,8 +8,8 @@ export const HUD_SETTINGS_COPY = {
     'hudSettings.leaderboard': 'Show leaderboard',
     'hudSettings.map': 'Show minimap',
     'hudSettings.telemetry': 'Show secondary stats',
-    'hudSettings.readySound': 'NITRO READY sound',
-    'hudSettings.readyAnimation': 'NITRO READY animation',
+    'hudSettings.readySound': 'NITRO / BOOST ready sound',
+    'hudSettings.readyAnimation': 'NITRO / BOOST ready animation',
     'hudSettings.reset': 'Reset HUD to default',
     'hudArt.summary': 'UI 3× Artwork',
     'hudArt.note': 'Source preview only · does not change the HUD layout or button behavior.',
@@ -21,8 +21,8 @@ export const HUD_SETTINGS_COPY = {
     'hudSettings.leaderboard': '顯示排行榜',
     'hudSettings.map': '顯示小地圖',
     'hudSettings.telemetry': '顯示額外統計',
-    'hudSettings.readySound': 'NITRO 就緒提示音',
-    'hudSettings.readyAnimation': 'NITRO 就緒動畫',
+    'hudSettings.readySound': 'NITRO／BOOST 就緒提示音',
+    'hudSettings.readyAnimation': 'NITRO／BOOST 就緒動畫',
     'hudSettings.reset': '重設為預設介面',
     'hudArt.summary': '操作圖示素材',
     'hudArt.note': '素材展示不改變既有 HUD 配置或按鈕功能。',

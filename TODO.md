@@ -1,3 +1,25 @@
+# 2026-11-14 — Music on but silent; intro from page open (`fix/music-autoplay-recovery`)
+
+Report: music setting on but nothing playing; music should start as soon as the page opens, announcement dialog or not. Rules: `.claude/rules/audio-playback.md` (new), `.claude/rules/performance-review.md` (checkShaderErrors).
+
+- [x] A — `prelude()` queues 8 s of intro once music is on, before `createWorld`; `update()` continues from `nextStep`; song change and mute call `cutMusic()`. First note from navigation (headless Chrome, `--autoplay-policy=no-user-gesture-required`, 5-run medians): desktop 781 → 417 ms, 6x CPU 3904 → 1323 ms; music queued 7.3 s / 5.9 s past the end of frame 1, longest gap 250 ms (one song step), 1 context.
+- [x] B — `open()` reads live `document.hidden`; `pageshow` / `focus` resync. C — `update()` retries `resume()` at most once a second (visible, sound or music on, not running, after a gesture). D — auto-unlock never writes storage. E — VITE_DIAG snapshot carries `sound.diagnostics()`.
+- [x] F — production renderer skips `checkShaderErrors` (`src/webgl-renderer.ts`). Third frame, F vs A-only, two alternating 5-run batches: desktop 661 vs 730, 650 vs 681 ms; 6x 2982 vs 3150, 2837 vs 3643 ms (pooled medians −7.1% / −14.6%). Kept (≥ 5%).
+- [x] RED on old code: `audio.test.js` 6 fail, `audio-ui.test.js` 3 fail, `webgl-renderer.test.js` 2 fail; browser `music-autoplay` (first note 947 ms vs frame 621 ms), `music-gesture` blocked tap (`sameTap` false), B repro (`suspended`). GREEN: all of them; stress `CI=1 --repeat-each=8 --workers=4 --retries=0` 24/24.
+- [x] `npm test` 2921 pass / 0 fail / 3 skipped, `npm run typecheck`, `npm run build`; `shader-warmup`, `black-frame`, `audio-feedback`, `ring-sfx`, `item-feedback`, `hud-settings` browser specs green.
+- [ ] Real iPhone Safari and home-screen app: autoplay-blocked first tap, return from background without `visibilitychange`, silent switch, mute during the prelude.
+- [ ] Full `npm run test:browser` / `make verify` and exact-HEAD remote `quality-gate` (runs on `develop` only).
+
+# 2026-11-14 — NITRO and BOOST readiness cues
+
+- [x] Add distinct, clipped readiness flashes and SFX to the sprint buttons. Match the existing engine gates, suppress repeat cues while held or paused, and respect the existing HUD and accessibility settings.
+- [ ] Confirm full GitHub quality gate and physical-device sound and motion review.
+
+# 2026-11-14 — Touch NITRO and BOOST artwork
+
+- [x] Apply separate purple NITRO and amber BOOST artwork within their existing touch targets. Preserve FLY and throttle appearance and driving layout.
+- [ ] Confirm full GitHub quality gate and physical iOS/Android touch and safe-area review.
+
 # 2026-11-14 — Road supply collection effects
 
 - [x] Add separate effects for the pickup location and the equipped car. Verify road-space placement on a banked CourseGraph edge, shell geometry fit, rival cues, reset, VFX Off and reduced motion in `tests/pickup-collect-vfx.test.js`.
@@ -7,6 +29,32 @@
 - [x] Local source checks: `npm run typecheck`, `npm run build`, `npm test` (2,916 passed, 3 skipped), and Chromium on the dressed Crimson GT for all four individual effects.
 - [x] Replace the tank column and stretched ring halo with the approved gold tube, feathered halo and soft chassis light. Regression verifies both hoops at High, Medium and Low and keeps the single static reduced-motion cue.
 - [ ] Complete full browser CI and physical-phone visual review on this branch.
+
+# 2026-11-14 — NITRO/BOOST sense of speed: dolly zoom, road rumble, ignition squat (`feature/sprint-camera-feel`)
+
+Report: at high speed and in NITRO/BOOST the car shrank on screen (speed read as "the car gets smaller"), most on phones. Cause: a wider FOV at the same distance shrinks the car, and `rigBack` also pulled back with speed (0.012 m per m/s), sprint (+0.9 m) and punch (+1 m). User approved the three changes and rewriting the "Sprint judder" rule (rotation stays forbidden, bounded translation allowed). Rule: `.claude/rules/race-camera.md` "Shrinking car (dolly zoom)", "Sprint judder", "Sprint without impact".
+
+- [x] Dolly zoom: `rigBack(view, fov)` derives the chase distance from the chase FOV (speed + sprint + punch, never the impact pinch), pivoting on the rear bumper; `rigLook(view, fov)` re-aims so horizon and bumper keep their rows. `speedBack`/`sprintBack`/`punchBack` removed, `dolly` 1 chase / 0 first person (eye fixed). Portrait `height` 3 → 2.5 and `follow` 0.95 → 0.97 (bumper above the HUD and the classic road-edge drift once the dolly moves in).
+- [x] Road rumble: `rigRumble` camera-local x/y translation, 1–3 Hz waves + 17 Hz buzz, ∝ speed², +80% at a full sprint, × Camera shake setting, capped 5 cm; 0 with Reduced Motion, VFX off, first person. `world.js` adds it after `lookAt` and removes it before the next lerp.
+- [x] Ignition squat: `frame.squat` (sprint envelope 5/3 faster: peak 0.12 s, gone 0.48 s, before the 0.2 s camera punch; × speed share; 0 in comfort; no re-squat on a flicker). `squatPitch` ≈1.95° at full share, `rearAxleLift` pivots on each car's own rear wheels; the ground shadow takes the lift back. Player only, 3D road path.
+- [x] RED on the old code: `tests/race-camera.test.js` 8 failures (portrait bumper 0.614 at standstill, classic drift 2.61 m of 3.47 m, no `rigLook`/`rigRumble`, unbounded dolly, landscape fill/closer tests calling the new `rigBack(view, fov)`, world.js wiring); `tests/aero-vfx.test.js` + `tests/vehicle-render-motion.test.js` 3 failures (no `squat`, no `squatPitch`, world.js wiring). GREEN after (54/54 focused).
+- [x] Replaced assertions (say so): "speed pulls the chase camera back slightly" and "NITRO/BOOST pulls the chase camera back" are gone with the pull-back; replaced by "dolly zoom" (car within ±10% of cruise from standstill to a ×3 NITRO punch on default and strongest FOV, landscape and portrait), "dolly never brings the eye into the car" (≥ 1.8 m behind the bumper at the widest FOV, bounded, NaN-safe) and "road rumble". Portrait HUD bound 0.61 → 0.6, now checked from standstill to the ×3 punch on both FOV settings; classic road-edge test now also at standstill.
+- [x] Real WebGL, same instrument before (develop 4859dfd8, pinned worktree) and after (`SPRINT_CAMERA_CAPTURE=1 … tests/sprint-camera-capture-browser.spec.js`; projected 2 × 1.2 × 4.8 m box, centre lane, ghosted through traffic; output in gitignored `docs/designs/3d-pipeline/audits/sprint-camera/`). Car size vs cruise (width / height):
+
+  | View, track | held BOOST before → after | NITRO ignition (min–max) before → after | NITRO top before → after |
+  | --- | --- | --- | --- |
+  | 1440×900 Coast | 79 / 77% → 101 / 103% | 63–70 / 61–68% → 101–102 / 104–105% | 69 / 67% → 100 / 103% |
+  | 1440×900 Sky Spiral | 77 / 75% → 100 / 103% | 64–70 / 61–68% → 101–103 / 105–111% | 76 / 73% → 104 / 108% |
+  | 390×844 Coast | 83 / 81% → 101 / 103% | 70–75 / 68–74% → 99–101 / 102–104% | 74 / 73% → 99 / 102% |
+  | 390×844 Sky Spiral | 82 / 82% → 99 / 101% | 68–75 / 66–73% → 100–101 / 103–104% | 75 / 74% → 111 / 110% |
+  | 844×390 Coast | 78 / 77% → 101 / 103% | 63–70 / 61–68% → 99–101 / 102–104% | 60 / 57% → 99 / 102% |
+  | 844×390 Sky Spiral | 78 / 77% → 99 / 102% | 63–69 / 61–67% → 101–102 / 105–107% | 70 / 68% → 104 / 108% |
+  | 1440×900 Crimson GT Coast / Spiral | 79 / 77%, 78 / 76% → 101 / 103%, 97 / 100% | — | 69 / 67%, 71 / 69% → 99 / 103%, 112 / 118% |
+
+  Cruise car is larger too (desktop box 0.150 × 0.211 → 0.220 × 0.329 of the screen; eye 9.0 → 7.1 m). Over 10% only on Sky Spiral at NITRO top (helix curve: the box is seen at an angle, frames look the same size). Portrait rear bumper ≤ 0.61 in every sample (0.593–0.601 held), above the readouts. Frames inspected: squat visible on the GT's ignition, first person unchanged, no clipping; 0 page errors.
+- [x] Frame time (rAF, local Chrome GPU, 2 s samples): p50 16.4–17.2 ms before and after; p95 18–23 ms before and after (no measurable change).
+- [x] `npm test` 2911 pass / 0 fail / 3 skipped (Firestore emulator), `npm run typecheck`, `npm run build`, `node --test tests/module-size.test.js tests/legacy-js-names.test.js` 4/4; `src/world.js` stays at 1001 lines.
+- [ ] Not verified: physical phone feel (iPhone portrait/landscape), FLY and drift frames under the dolly (unit-tested only), the flat legacy road path (Endless practice) does not squat (left unchanged), exact-HEAD GitHub quality gate (feature branches do not run full CI).
 
 # 2026-11-14 — Browser CI regressions on develop and audio integration
 

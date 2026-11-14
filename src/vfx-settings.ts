@@ -81,15 +81,16 @@ const channel = (): SprintChannel => ({ phase: 'ready', intensity: 0, ignition: 
 
 export function createSprintVfx() {
   const nitro = channel(), boost = channel();
-  /** `fov`: eased sprint share for the camera (FOV, pull-back). `kick`: seconds since the last fresh ignition. `punch`: its 0–1 surge. */
-  const frame = { nitro, boost, power: 0, fov: 0, blur: 0, particles: 0, nitroMix: 0, kick: 1, punch: 0 };
+  /** `fov`: eased sprint share for the camera (FOV, dolly, rumble). `kick`: seconds since the last fresh ignition. `punch`: its 0–1 surge.
+   * `squat`: the car's 0–1 nose lift on that ignition, peaking before the punch so the camera follows late. */
+  const frame = { nitro, boost, power: 0, fov: 0, blur: 0, particles: 0, nitroMix: 0, kick: 1, punch: 0, squat: 0 };
   let lift = 1;
   const clear = (part: SprintChannel): void => {
     part.phase = 'ready'; part.intensity = part.ignition = part.age = part.release = 0;
   };
   const reset = (): typeof frame => {
     clear(nitro); clear(boost);
-    frame.power = frame.fov = frame.blur = frame.particles = frame.nitroMix = frame.punch = 0; frame.kick = 1;
+    frame.power = frame.fov = frame.blur = frame.particles = frame.nitroMix = frame.punch = frame.squat = 0; frame.kick = 1;
     lift = 1;
     return frame;
   };
@@ -116,6 +117,8 @@ export function createSprintVfx() {
   };
   return {
     reset,
+    /** The last frame: world.js poses the car before this frame's update. */
+    frame,
     update(input: SprintInput): typeof frame {
       // A paused game must not consume an ignition window or advance a fade.
       if (input.phase === 'paused') return frame;
@@ -142,6 +145,7 @@ export function createSprintVfx() {
       const target = comfort ? 0 : frame.power, step = dt / 0.3;
       frame.fov = comfort || Math.abs(target - frame.fov) <= step ? target : frame.fov + Math.sign(target - frame.fov) * step;
       frame.punch = comfort ? 0 : frame.power * sprintPunch(frame.kick);
+      frame.squat = comfort ? 0 : speedScale * sprintPunch(frame.kick * SQUAT_LEAD); // NITRO and BOOST squat alike
       frame.blur = comfort ? 0 : Math.min(1, (frame.power + 0.5 * frame.punch) * tier * (input.ultra && look3d() ? 0.96 : 0.6)); // Ultra only (`?look=3d`): stronger lens radial blur, same pass
       return frame;
     },
@@ -150,6 +154,8 @@ export function createSprintVfx() {
 
 /** Ignition punch envelope `age` seconds after a fresh NITRO/BOOST: eased in over 0.2 s, gone at 0.8 s. */
 const PUNCH_IN = 0.2, PUNCH_TIME = 0.8, PUNCH_FOV = 0.8;
+/** The squat runs the punch envelope this much faster: peak at 0.12 s, settled at 0.48 s. */
+const SQUAT_LEAD = 5 / 3;
 export function sprintPunch(age: number): number {
   if (!(age >= 0 && age < PUNCH_TIME)) return 0;
   if (age < PUNCH_IN) { const x = age / PUNCH_IN; return x * x * (3 - 2 * x); }
