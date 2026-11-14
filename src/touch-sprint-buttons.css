@@ -71,3 +71,27 @@
 @media (forced-colors: active) {
   #touch-controls .touch-actions > :is(.touch-nitro, .touch-boost) { border-color: ButtonText; }
 }
+
+#touch-controls .touch-boost[data-boost-state="ready"] { --rim: #efae65; --face-top: #734520; }
+#touch-controls .touch-boost:is([data-boost-state="charging"], [data-boost-state="disabled"]) {
+  --rim: #8794a8;
+  --face-top: #384558;
+  --face-bottom: #1c2836;
+}
+
+/* The sweep and sparks are clipped independently of the rectangular touch target. */
+#touch-controls .sprint-ready-effect {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--cut);
+  pointer-events: none;
+  opacity: 0;
+  background-image:
+    radial-gradient(circle at 48% 23%, white 0 1px, transparent 3px),
+    radial-gradient(circle at 57% 72%, white 0 1px, transparent 3px),
+    radial-gradient(circle at 63% 36%, var(--rim) 0 2px, transparent 5px),
+    linear-gradient(122deg, transparent 39%, var(--rim) 47%, #fff 50%, var(--rim) 52%, transparent 60%);
+  background-size: 240% 100%;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+}

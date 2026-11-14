@@ -1,3 +1,8 @@
+# 2026-11-14 — NITRO and BOOST readiness cues
+
+- [x] Add distinct, clipped readiness flashes and SFX to the sprint buttons. Match the existing engine gates, suppress repeat cues while held or paused, and respect the existing HUD and accessibility settings.
+- [ ] Confirm full GitHub quality gate and physical-device sound and motion review.
+
 # 2026-11-14 — Touch NITRO and BOOST artwork
 
 - [x] Apply separate purple NITRO and amber BOOST artwork within their existing touch targets. Preserve FLY and throttle appearance and driving layout.

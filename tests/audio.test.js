@@ -391,3 +391,19 @@ test('backgrounding cancels pending stingers and suppresses new sounds', t => {
   sound.cue('reward-credited');
   assert.equal(nodes.length, hidden);
 });
+
+test('sprint readiness plays two distinct SFX phrases and respects mute', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const pitches = name => {
+    const start = nodes.length;
+    sound.cue(name);
+    return nodes.slice(start).filter(node => node.kind === 'oscillator').map(node => node.frequency.value);
+  };
+  const nitro = pitches('nitro-ready'), boost = pitches('boost-ready');
+  assert.equal(nitro.length, 3);
+  assert.equal(boost.length, 3);
+  assert.ok(Math.min(...nitro) > Math.max(...boost));
+  sound.setEnabled(false);
+  assert.deepEqual(pitches('boost-ready'), []);
+});

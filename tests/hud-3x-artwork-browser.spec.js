@@ -124,6 +124,7 @@ test.describe('touch sprint artwork', () => {
     await page.locator('#start-button').tap();
     const touch = page.locator('#touch-controls');
     await expect(touch).toBeVisible();
+    await expect(touch.locator('.touch-boost')).toHaveAttribute('data-boost-state', 'ready');
     for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 568, height: 320 }]) {
       await page.setViewportSize(viewport);
       for (const action of ['nitro', 'boost']) {
@@ -131,7 +132,10 @@ test.describe('touch sprint artwork', () => {
         await expect(button.locator('svg')).toHaveAttribute('viewBox', '0 0 28 28');
         await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
         const rim = await button.evaluate(element => getComputedStyle(element).getPropertyValue('--rim').trim());
-        if (action === 'boost') expect(rim).toBe('#d69b55');
+        if (action === 'boost') expect(rim).toBe('#efae65');
+        const effect = button.locator('.sprint-ready-effect');
+        await expect(effect).toHaveCSS('pointer-events', 'none');
+        await expect(effect).toHaveCSS('clip-path', /^polygon/);
         const box = await button.boundingBox();
         expect(box.width).toBeGreaterThanOrEqual(44);
         expect(box.height).toBeGreaterThanOrEqual(44);

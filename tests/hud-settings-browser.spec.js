@@ -47,7 +47,7 @@ for (const [name, viewport, hasTouch] of DEVICES) test.describe(name, () => {
       await click(panel.getByRole('checkbox', { name: label }));
       await expect(page.locator('body')).toHaveAttribute(`data-hud-${flag}-visible`, 'false');
     }
-    for (const label of ['NITRO READY sound', 'NITRO READY animation']) {
+    for (const label of ['NITRO / BOOST ready sound', 'NITRO / BOOST ready animation']) {
       const box = panel.getByRole('checkbox', { name: label });
       await click(box);
       await expect(box).not.toBeChecked();
