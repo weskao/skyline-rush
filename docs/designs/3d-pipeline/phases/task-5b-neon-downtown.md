@@ -107,11 +107,30 @@ To do, in order:
   - [x] Entry with the road set and its wetness table (`neon: { road: 'neon-asphalt', wetness: { track, rain } }`);
     the asset host loads any entry's road set and keys its cache by set and tier. `tests/track-look.test.js`
     (*Neon's entry puts its own asphalt set on the road*), RED first.
-  - [ ] HDRIs (step 3), scenery GLB (steps 5 to 7) and the bloom pick: not wired yet.
+  - [x] HDRIs: `env: { track: 'nightRain', rain: 'nightRain', night: 'night' }`; `day`, `dusk` and `fog` keep
+    RoomEnvironment (N2). The bloom pick in `src/world.js` asks the look on every track
+    (`coastLook.bloomStrength(trackId === 'coast' ? COAST_LIGHTING.bloom : .42)`). `tests/neon-lighting.test.js`.
+  - [ ] Scenery GLB (steps 5 to 7): not wired yet.
 - [ ] **3 Night lighting and sky.** Two CC0 night-city HDRIs (night, rain night), PMREM 256 so no program changes
   mid-race,
   shown on the sky dome; key light matched to the HDRI; bloom threshold set under the neon signs and windows and
   over the sky.
+  - [x] Assets: `assets-src/neon-sky/` (CC0 Poly Haven Shanghai Bund, licence record, build script, measured key
+    light and sky data), two 1K environment maps and four dome KTX2 files. Commit `5a33367e`;
+    `tests/neon-sky-manifest.test.js`.
+  - [x] Runtime: variants `night` and `nightRain` in `src/coast-lighting.ts`, dome rows in
+    `src/coast-sky-manifest.ts`. `sky.ahead` turns the far skyline (HDRI longitude 30 degrees) straight ahead of the
+    grid; the key light, the environment and the dome turn together. Sign texels are capped at the dome's range so
+    the wet road does not mirror them as white blots. RED first: `tests/neon-lighting.test.js` (8 tests);
+    `tests/neon-look-browser.spec.js` (*lit by its rain-night HDRI*, *keeps RoomEnvironment and the procedural sky
+    when its HDRI files cannot load*).
+  - [x] Fix found by the fallback spec: another track's HDRI stayed up while Neon's own was loading, and for good
+    when it failed (Coast's daylight on the night city). `src/coast-look.ts` returns to RoomEnvironment on a track
+    change until the track's own HDRI lands. Guard: `tests/neon-lighting.test.js` (*another track's HDRI never
+    lights Neon*), RED on the old code.
+  - [ ] Look-dev by eye and owner art approval: key intensity (2.7 night, 1.55 rain night), bloom and dome gain are
+    measured starting values. The lit skyline blooms in the centre sightline until the step 5 city blocks stand in
+    front of it. Coast's water plane still shows on Neon under the dome until step 7 hides it.
 - [ ] **4 Wet road.** Blender-baked KTX2 city asphalt (base colour sRGB; normal and roughness/AO linear) with lane
   paint and a puddle mask, `wetness` driven by the rain preset. Signs, windows and tunnel light strips join the wet
   mirror layer as opaque unlit meshes.

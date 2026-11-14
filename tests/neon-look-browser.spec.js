@@ -102,6 +102,39 @@ test('Neon High falls back to the procedural road when its asphalt cannot load',
   expect(errors).toEqual([]);
 });
 
+// Step 3: the rain-night HDRI lights Neon's rainy default, and its dome replaces the procedural sky.
+const skyStatus = page => page.evaluate(() => {
+  const { scene } = window.gameScene, dome = scene.getObjectsByProperty('renderOrder', -1).find(o => o.material?.map && o.material.side === 1);
+  return { sky: document.querySelector('#world').dataset.coastSky, env: scene.environmentIntensity, dome: !!dome?.visible };
+});
+test('Neon High is lit by its rain-night HDRI and shows that sky, through a race', async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(120000));
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await neon(page, 'high');
+  await expect.poll(() => skyStatus(page), { timeout: ciTimeout(40000) }).toEqual({ sky: 'nightRain:4096', env: 0.55, dome: true });
+  const fetched = (await lookAssets(page)).filter(url => url.includes('shanghai_bund')).map(url => url.split('/').pop()).sort();
+  expect(fetched).toEqual(['shanghai_bund_rain_1k.hdr', 'shanghai_bund_rain_sky_4k.ktx2']);
+  await page.locator('#start-button').click();
+  await racing(page);
+  await expect.poll(() => skyStatus(page)).toEqual({ sky: 'nightRain:4096', env: 0.55, dome: true });
+  expect(errors).toEqual([]);
+});
+
+test('Neon High keeps RoomEnvironment and the procedural sky when its HDRI files cannot load', async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(120000));
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route('**/environments/**/shanghai_bund*', route => route.abort());
+  await page.route('**/environments/shanghai_bund*', route => route.abort());
+  await neon(page, 'high');
+  await expect.poll(() => skyStatus(page), { timeout: ciTimeout(40000) }).toEqual({ sky: 'fallback:nightRain', env: 0.42, dome: false });
+  await page.locator('#start-button').click();
+  await racing(page);
+  await expect.poll(() => skyStatus(page)).toEqual({ sky: 'fallback:nightRain', env: 0.42, dome: false });
+  expect(errors).toEqual([]);
+});
+
 // Open until steps 5 to 7 replace the box skyline and remove the towers: the procedural scene measured home 162 to
 // 163 and race 562 to 564 on High (2026-11-14). Remove the fixme in the commit that brings the race under the cap.
 test('Neon High stays under the draw-call cap on the home showcase and in a race', async ({ gameplayPage: page }) => {

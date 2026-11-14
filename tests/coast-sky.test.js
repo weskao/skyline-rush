@@ -48,7 +48,8 @@ test('each variant records the sun of its own lighting HDRI, so the light and di
 
 test('one yaw per variant turns its HDRI sun to the same place over the sea, left of the driving direction', () => {
   assert.ok(COAST_SUN_AZIMUTH < -Math.PI / 2 && COAST_SUN_AZIMUTH > -Math.PI * 0.75, 'ahead (-z) and to the left (-x), inside the chase camera view');
-  for (const [name, v] of Object.entries(COAST_ENV_VARIANTS)) {
+  // A variant with `sky.ahead` (Neon's city panoramas) faces its skyline instead: tests/neon-lighting.test.js.
+  for (const [name, v] of Object.entries(COAST_ENV_VARIANTS).filter(([, variant]) => variant.sky.ahead === undefined)) {
     const world = coastSunDirection(name), hdri = new THREE.Vector3(...v.sky.sunDirection).normalize();
     assert.ok(Math.abs(Math.atan2(world.z, world.x) - COAST_SUN_AZIMUTH) < 1e-6, `${name}: azimuth`);
     assert.ok(Math.abs(world.y - hdri.y) < 1e-6 && Math.abs(world.length() - 1) < 1e-9, `${name}: the HDRI's own elevation is kept`);

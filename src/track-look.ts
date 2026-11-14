@@ -17,7 +17,7 @@ export interface TrackLook {
 const TRACK_LOOKS: Readonly<Record<string, TrackLook>> = {
   coast: { env: { track: 'day', day: 'day', dusk: 'dusk', rain: 'rain', fog: 'fog' }, road: 'coast-asphalt', wetness: { rain: .85, dusk: .35, fog: .25 }, scenery: 'coast-scenery', boats: 'coast-boats' },
   // N2: night and rain night only; `track` is Neon's rainy default (board-effects.ts RAINY_TRACKS).
-  neon: { env: {}, road: 'neon-asphalt', wetness: { track: .85, rain: .85 } },
+  neon: { env: { track: 'nightRain', rain: 'nightRain', night: 'night' }, road: 'neon-asphalt', wetness: { track: .85, rain: .85 } },
 };
 
 export const trackLook = (trackId: string): TrackLook | undefined => Object.hasOwn(TRACK_LOOKS, trackId) ? TRACK_LOOKS[trackId] : undefined;

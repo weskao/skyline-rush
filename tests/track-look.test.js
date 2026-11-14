@@ -104,6 +104,6 @@ test('the sun a look borrowed goes back only to the track it was borrowed from',
   assert.equal(sun.intensity, 1);
   look.update('coast', 'track', 'high');
   sun.intensity = 3; // world.js sets the next track's sun on a track change, just before update
-  look.update('neon', 'track', 'high');
+  look.update('canyon', 'track', 'high');
   assert.equal(sun.intensity, 3, 'the new track keeps the sun its own block set');
 });

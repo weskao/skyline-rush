@@ -91,7 +91,7 @@ for (const [name, env] of Object.entries(ENVS)) {
   test(`${name}: 4K and 8K domes, and the whole environment fits the bytes of Coast's largest`, () => {
     assert.deepEqual(env.files.map(f => f.width), [4096, 8192]);
     const total = env.environment.bytes + env.files.reduce((sum, f) => sum + f.bytes, 0);
-    const coast = Math.max(...Object.keys(COAST_SKY_MANIFEST.skies).map(coastBytes));
+    const coast = Math.max(...['day', 'dusk', 'rain', 'fog'].map(coastBytes)); // the manifest lists Neon's own two as well
     assert.ok(total <= coast, `${total} bytes > Coast's ${coast}`);
   });
 
