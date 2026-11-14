@@ -5546,3 +5546,12 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Local gates: `npm test` 2942 pass / 0 fail / 3 skipped; `npm run typecheck`; `node --test tests/module-size.test.js` 3 pass; `npm run build`.
 - [x] Real Chrome screenshots inspected (zh-TW Studio, each car selected, phone portrait/landscape emulation and desktop); local-only, not committed.
 - [ ] Not checked: full `npm run test:browser` / `make verify` (skipped at the user's request), physical phones, exact-HEAD GitHub `quality-gate`.
+
+## 2026-11-14 — Develop browser regressions (CI 43589945683)
+
+- [x] Reproduced the first-visit audio failure on the original browser spec. The updated spec verifies audible playback, both default switches on and no stored preference until the player changes one.
+- [x] Split the Store gallery flow by viewport and verify each filter selection and its displayed 3× artwork. Desktop and both phone orientations passed in headless Chromium with `CI=1` and zero retries.
+- [x] Verify that every locked track still previews and rejects mouse and keyboard starts at 1440×900 and 390×844. Both flows passed with the CI-scaled budget and zero retries.
+- [x] Verify FLY's held and released artwork and all seven editable touch controls across a reload. Both flows passed with `CI=1` and zero retries.
+- [x] `npm test`: 2,951 passed, 3 skipped. Typecheck, module-size checks and production build passed.
+- [ ] Verify the full GitHub `quality-gate` on the repair commit.

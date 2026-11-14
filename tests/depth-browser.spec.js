@@ -120,6 +120,8 @@ test('fresh progress locks tracks, empty History works and Escape restores menu 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) test.describe(`locked previews ${viewport.width}`, () => {
   test.use({ viewport });
   test('all tracks preview while locked starts stay blocked', async ({ page }) => {
+    // Every track switch rebuilds the preview before the next card can be exercised.
+    test.setTimeout(ciTimeout(120000));
     await open(page);
     const ids = await page.locator('[data-track]').evaluateAll(buttons => buttons.map(button => button.dataset.track));
     for (const id of ids.slice(1)) {
@@ -132,8 +134,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await expect(page.locator('#world')).toHaveAttribute('aria-label', new RegExp(await card.locator('strong').innerText()));
       await expect(page.locator('#start-button')).toBeDisabled();
       await expect(page.locator('#track-note')).toContainText('Finish top 3');
-      await page.locator('#start-button').evaluate(button => button.click());
-      await page.locator('body').click({ position: { x: 2, y: 2 } });
+      const start = await page.locator('#start-button').boundingBox();
+      await page.mouse.click(start.x + start.width / 2, start.y + start.height / 2);
+      await page.mouse.click(2, 2);
       await page.keyboard.press('Enter');
       await page.keyboard.press('Backspace');
       await expect(page.locator('.start-hint')).toBeHidden();

@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 
 test('Garage source artwork is available at native 3x resolution with 1x CSS display without granting capabilities', async ({ page }) => {
   await page.goto('/');
@@ -26,10 +27,10 @@ test('Garage source artwork is available at native 3x resolution with 1x CSS dis
   await expect(source).not.toContainText(/buy now|purchase|claim reward|立即購買|立即領取/i);
 });
 
-test('Store 3x artwork appears directly in Garage and opens its 6-image interactive gallery', async ({ page }) => {
-  const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
-  for (const viewport of [{width:1440,height:900}, {width:390,height:844}, {width:844,height:390}]) {
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+  test(`Store 3x artwork opens its 6-image interactive gallery at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize(viewport);
     await page.goto('/');
     await page.locator('#garage-button').click();
@@ -58,17 +59,24 @@ test('Store 3x artwork appears directly in Garage and opens its 6-image interact
     await expect(selectedArt).toHaveAttribute('width', '72');
     await expect(selectedArt).toHaveAttribute('height', '72');
     await expect(selectedArt).toHaveJSProperty('naturalWidth', 216);
-    await gallery.locator('[data-wave3-filter="store"]').click();
-    await gallery.locator('[data-wave3-asset="store-cart"]').click();
+    const storeFilter = gallery.getByRole('button', { name: 'Store UI', exact: true });
+    await storeFilter.click();
+    await expect(storeFilter).toHaveAttribute('aria-pressed', 'true');
+    await expect(gallery.locator('[data-wave3-asset]')).toHaveCount(4);
+    await expect(gallery.locator('[data-wave3-selected]')).toHaveAttribute('data-wave3-selected', 'store-cart');
     const cartArt = gallery.locator('[data-wave3-preview-image="store-cart"] img[data-image="store-cart-detail"]');
     await expect(cartArt).toHaveJSProperty('naturalWidth', 216);
+    const box = gallery.locator('[data-wave3-asset="store-box"]');
+    await box.click({ timeout: ciTimeout(10000) });
+    await expect(box).toHaveAttribute('aria-pressed', 'true');
+    await expect(gallery.locator('[data-wave3-selected]')).toHaveAttribute('data-wave3-selected', 'store-box');
     await expect(gallery.getByRole('button',{name:/buy now|purchase|claim|checkout/i})).toHaveCount(0);
     await test.info().attach(`garage-store-applied-${viewport.width}x${viewport.height}.png`, {
       body: await gallery.screenshot(), contentType: 'image/png',
     });
-  }
-  expect(errors).toEqual([]);
-});
+    expect(errors).toEqual([]);
+  });
+}
 
 test('Store preview summary has bilingual art fallback without granting an Economy entitlement', async ({ page }) => {
   // Both the primary 3x PNG and its WebP fallback fail, so only the text fallback remains.

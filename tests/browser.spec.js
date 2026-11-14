@@ -381,15 +381,18 @@ test('a saved music-off choice stays silent after the first gesture and keeps so
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
 });
 
-test('a first visit with nothing stored plays music after the first gesture and stores both channels as on', async ({ page }) => {
+test('a first visit starts music on the first gesture and leaves audio preferences unset', async ({ page }) => {
   await page.addInitScript(blockAutoplay);
   await page.addInitScript(measureAudio);
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Start race' })).toBeVisible();
   await page.keyboard.press('Shift');
   await expect.poll(() => level(page), { intervals: [50] }).toBeGreaterThan(0.001);
-  expect(await stored(page, 'skyline-rush-music')).toBe('on');
-  expect(await stored(page, 'skyline-rush-sound')).toBe('on');
+  await page.locator('#settings-button').click();
+  await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'true');
+  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
+  expect(await stored(page, 'skyline-rush-music')).toBeNull();
+  expect(await stored(page, 'skyline-rush-sound')).toBeNull();
 });
 
 test('countdown lights, automatic accelerator and brake work without holding the gas', async ({ page }) => {
