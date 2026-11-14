@@ -17,11 +17,8 @@ export interface RaceCameraView {
   /** Vertical FOV at rest, and the degrees added per m/s. */
   fov: number;
   speedFov: number;
-  /** Metres further back per m/s, and at a full NITRO/BOOST (the car surges ahead of the camera). */
-  speedBack: number;
-  sprintBack: number;
-  /** Extra metres at the peak of the ignition punch: the car leaps ahead, then the camera catches up to `sprintBack`. */
-  punchBack: number;
+  /** Share of the dolly zoom: as the FOV widens the eye moves in so the car keeps its screen size (0 = fixed eye). */
+  dolly: number;
   /** Extra eye height once fully airborne (reached at `flyAltitude` m). */
   flyLift: number;
   flyAltitude: number;
@@ -31,6 +28,8 @@ export interface RaceCameraView {
   swingOut: number;
   /** Shake amplitude in radians at top speed, before the player's Camera shake setting. */
   speedShake: number;
+  /** Road rumble: metres of eye translation at top speed per unit of the Camera shake setting, capped at RUMBLE_LIMIT. */
+  rumble: number;
   /** NITRO/BOOST ignition kick: radians of pitch per unit of the Camera shake setting, capped at KICK_LIMIT. */
   kick: number;
 }
@@ -38,15 +37,20 @@ export interface RaceCameraView {
 const SHARED = { speedFov: 0.115, flyAltitude: 6, swingIn: 4.5, swingOut: 3, kick: 0.085 };
 /** The kick is one damped swing: seconds it lasts, its frequency, and the most it may turn the camera (1.2 degrees). */
 const KICK_TIME = 0.35, KICK_HZ = 4, KICK_LIMIT = 0.021;
+/** The dolly pivots on the rear bumper (m behind the origin) and stops widening at DOLLY_MAX_FOV degrees. */
+const DOLLY_PIVOT = 2.4, DOLLY_MAX_FOV = 170;
+/** Rumble: extra share at a full NITRO/BOOST, the most it may move the eye (m), its slow road waves and fine tyre buzz (Hz). */
+const RUMBLE_SPRINT = 0.8, RUMBLE_LIMIT = 0.05, RUMBLE_HZ = [1.3, 2.1, 2.9, 1.7, 2.6] as const, RUMBLE_BUZZ_HZ = 17;
 
 export const RACE_CAMERA: Record<'chase' | 'chasePortrait' | 'first', RaceCameraView> = {
-  chase: { ...SHARED, back: 7.6, height: 2.5, look: 1.5, ahead: 34, follow: 0.74, fov: 57, speedBack: 0.012, sprintBack: 0.9, punchBack: 1, flyLift: 1.5, swing: 0.5, speedShake: 0 },
+  chase: { ...SHARED, back: 7.6, height: 2.5, look: 1.5, ahead: 34, follow: 0.74, fov: 57, dolly: 1, flyLift: 1.5, swing: 0.5, speedShake: 0, rumble: 0.12 },
   // Portrait's horizontal FOV is about half of landscape's: further back, wider, straight behind the car and a smaller swing
-  // keep a sideways car in frame. It aims below the road so the car sits mid-frame, above the HUD readouts.
-  chasePortrait: { ...SHARED, back: 12, height: 3, look: -4, ahead: 34, follow: 0.95, fov: 61, speedBack: 0.012, sprintBack: 0.9, punchBack: 1, flyLift: 1.5, swing: 0.25, speedShake: 0 },
+  // keep a sideways car in frame. It aims below the road so the car sits mid-frame, above the HUD readouts; the lower eye
+  // keeps the rear bumper above them once the dolly has moved in.
+  chasePortrait: { ...SHARED, back: 12, height: 2.5, look: -4, ahead: 34, follow: 0.97, fov: 61, dolly: 1, flyLift: 1.5, swing: 0.25, speedShake: 0, rumble: 0.12 },
   // Seated eye height over the nose tip: ahead of the cabin shell and far enough forward that the sunlit bonnet (which
-  // blooms into a white wash on phones) stays under the frame. It looks down the road, so no swing, pull-back or lift.
-  first: { ...SHARED, back: -2.3, height: 1, look: 0.95, ahead: 65, follow: 1, fov: 60, speedBack: 0, sprintBack: 0, punchBack: 0, flyLift: 0, swing: 0, speedShake: 0.009 },
+  // blooms into a white wash on phones) stays under the frame. It looks down the road, so no swing, dolly, lift or rumble.
+  first: { ...SHARED, back: -2.3, height: 1, look: 0.95, ahead: 65, follow: 1, fov: 60, dolly: 0, flyLift: 0, swing: 0, speedShake: 0.009, rumble: 0 },
 };
 
 const finite = (value: number, fallback = 0) => Number.isFinite(value) ? value : fallback;
@@ -56,9 +60,20 @@ const unit = (value: number) => Math.min(1, Math.max(0, finite(value)));
 export const raceCameraView = (mode: number, portrait: boolean): RaceCameraView =>
   mode === 1 ? RACE_CAMERA.first : portrait ? RACE_CAMERA.chasePortrait : RACE_CAMERA.chase;
 
-/** `sprint` and `punch` are the eased NITRO/BOOST share and ignition punch (0–1) from createSprintVfx: the pull-back never steps. */
-export const rigBack = (view: RaceCameraView, speed: number, sprint = 0, punch = 0): number =>
-  view.back + Math.max(0, finite(speed)) * view.speedBack + unit(sprint) * view.sprintBack + unit(punch) * view.punchBack;
+const halfTan = (fov: number) => Math.tan(fov * Math.PI / 360);
+const dollyFov = (view: RaceCameraView, fov: number) => Math.min(DOLLY_MAX_FOV, Math.max(view.fov, finite(fov, view.fov)));
+/**
+ * Dolly zoom: distance behind the car for the chase FOV (speed + sprint + punch, no impact pinch). The eye moves in as
+ * the FOV widens so the car keeps its standstill size while the background stretches; a narrower FOV never pulls back.
+ */
+export const rigBack = (view: RaceCameraView, fov: number): number =>
+  view.back + view.dolly * (view.back - DOLLY_PIVOT) * (halfTan(view.fov) / halfTan(dollyFov(view, fov)) - 1);
+
+/** Look-at height for the dolly: re-aims the closer, wider camera so the horizon and the rear bumper keep their screen rows. */
+export function rigLook(view: RaceCameraView, fov: number): number {
+  const f = dollyFov(view, fov), spread = 1 + view.dolly * (halfTan(f) / halfTan(view.fov) - 1);
+  return view.height - (view.height - view.look) * (rigBack(view, f) + view.ahead) / (view.back + view.ahead) * spread;
+}
 
 export const rigHeight = (view: RaceCameraView, altitude: number): number => view.height + unit(altitude / view.flyAltitude) * view.flyLift;
 
@@ -93,11 +108,25 @@ export function stepCameraSwing(swing: number, driftYaw: number, view: RaceCamer
 
 /**
  * Continuous speed tremble in radians; `strength` is the player's Camera shake setting (0–1). A NITRO/BOOST is not an
- * input: a shake held for the whole sprint reads as judder, so the sprint shows in the FOV, the pull-back and rigKick.
+ * input: a shake held for the whole sprint reads as judder, so the sprint shows in the FOV, the dolly, rigKick and rigRumble.
  */
 export function rigShake(view: RaceCameraView, speed: number, strength: number): number {
   const pace = unit(speed / MAX_SPEED);
   return unit(strength) * pace * pace * view.speedShake;
+}
+
+/**
+ * Road rumble written to `out` (camera-local metres, z 0): slow 1-3 Hz road waves plus a fine tyre buzz, growing with the
+ * square of the speed and with the eased sprint share. A translation, not a rotation: the car and the road move a few cm
+ * while the horizon stays still, so it never reads as the old judder. `strength` is the Camera shake setting.
+ */
+export function rigRumble(view: RaceCameraView, speed: number, sprint: number, strength: number, time: number, out: Vector3): Vector3 {
+  const pace = unit(speed / MAX_SPEED), amp = Math.min(RUMBLE_LIMIT, unit(strength) * view.rumble * (1 + RUMBLE_SPRINT * unit(sprint))) * pace * pace;
+  if (!(amp > 0)) return out.set(0, 0, 0);
+  const t = 2 * Math.PI * finite(time), [a, b, c, d, e] = RUMBLE_HZ;
+  const y = 0.9 * (Math.sin(a * t) + 0.6 * Math.sin(b * t + 1.7) + 0.4 * Math.sin(c * t + 4.1)) / 2 + 0.1 * Math.sin(RUMBLE_BUZZ_HZ * t);
+  const x = (Math.sin(d * t + 0.6) + 0.5 * Math.sin(e * t + 2.3)) / 1.5;
+  return out.set(0.45 * amp * x, 0.85 * amp * y, 0); // |(x, y)| <= amp
 }
 
 /** Pitch in radians `age` seconds after a NITRO/BOOST ignition: one damped swing from rest, 0 once it is over. */
