@@ -41,11 +41,11 @@ export const CONTACT_FRAGMENT = `varying vec2 vPoint;
     #include <colorspace_fragment>
   }`;
 
-export const BODY_VERTEX = `uniform vec2 zRange,yRange;uniform float inflate;uniform mat4 vehicleFromBody;
+export const BODY_VERTEX = `uniform vec2 zRange,yRange;uniform float inflate;uniform mat4 vehicleInverse;
   varying vec3 vNormal,vView;varying vec2 vBody;
   void main(){
     vec4 mv=modelViewMatrix*vec4(position+normal*inflate,1.);
-    vec3 local=(vehicleFromBody*vec4(position,1.)).xyz;
+    vec3 local=(vehicleInverse*modelMatrix*vec4(position,1.)).xyz; // per mesh: body and every painted part
     vBody=vec2((local.z-zRange.x)/max(1e-4,zRange.y-zRange.x),
       (local.y-yRange.x)/max(1e-4,yRange.y-yRange.x));
     vNormal=normalMatrix*normal;vView=-mv.xyz;
@@ -53,7 +53,7 @@ export const BODY_VERTEX = `uniform vec2 zRange,yRange;uniform float inflate;uni
   }`;
 
 export const BODY_FRAGMENT = `uniform vec3 primary,secondary;
-  uniform float progress,strength,tier;
+  uniform float progress,strength,tier,paintLight;
   varying vec3 vNormal,vView;varying vec2 vBody;
   void main(){
     vec2 p=clamp(vBody,0.,1.);
@@ -79,7 +79,12 @@ export const BODY_FRAGMENT = `uniform vec3 primary,secondary;
     }
     float life=smoothstep(0.,.09,progress)*pow(max(0.,1.-progress),.95)*strength;
     float alpha=(band*(.66+.29*rim)+echo*.55+rim*.25)*life;
-    gl_FragColor=vec4(mix(primary,accent,clamp(echo+.34*band+.23*rim,0.,1.))*(1.+.35*band),min(.69,alpha));
+    vec3 tint=mix(primary,accent,clamp(echo+.34*band+.23*rim,0.,1.))*(1.+.35*band);
+    // Light paint: a pale tint barely differs from the body, so deepen it (cube = saturate) and lay it on thicker.
+    vec3 deep=min(tint,vec3(1.));
+    tint=mix(tint,deep*deep*deep,paintLight);
+    // Same visible change as on a dark paint: a light body needs roughly 2.6x the cover to read as tinted.
+    gl_FragColor=vec4(tint,min(.69+.13*paintLight,alpha*(1.+1.6*paintLight)));
     #include <colorspace_fragment>
   }`;
 
