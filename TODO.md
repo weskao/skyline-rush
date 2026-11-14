@@ -1,3 +1,18 @@
+# 2026-11-15 — CI GLB loading on software WebGL
+
+- [x] Reproduced the Crimson GT `fallback:timeout` and measured GLB decode finishing after the original combined deadline. Added regression checks for separate download/decode deadlines, decoder fallback and shared KTX2 workers on the same renderer. The focused loader, provider, Garage, pickup and module-size suite passed (48 tests).
+- [ ] Verify the actual Crimson GT/Phase 3 and Roadster/Taipei browser scenarios and the full GitHub quality gate. The local Chromium renderer crashed during the final validation attempt.
+
+# 2026-11-14 — Dune Tempest road and scenery clearance
+
+- [x] Reproduced and fixed terrain and road intersections on Dune Tempest. The geometry regression failed on the old renderer and now passes across 14 edges, five lane samples every 3 m, all three graphics tiers, and both flight pads. The revised routes preserve the four canyon hairpins and all checkpoint connections.
+- [x] Compared the Home and in-race 14-edge minimaps in Chromium and captured the canyon hairpin before/after. Added a browser regression for both maps.
+- [x] Browser shard 8 (`43579368704`): reproduced the 932×430 race-map matrix timing out after repeated WebGL boots. Split by touch size while retaining every viewport, locale, steering mode and hand. All four affected 932×430 cases passed in software Chromium with CI timing and retries disabled. Browser timing and module-size guards passed (16 tests).
+- [x] Integrated with develop: retained car-model cache reuse and separate GLB download/decode deadlines, real mouse input in the batched locked-preview test, and the shared responsive minimap matrix. The GLB regression failed on the old loader and passed on the integrated tree. All 123 focused tests, typecheck and locked production build passed.
+- [ ] Complete full viewport and physical-device visual coverage.
+- [ ] Complete the full GitHub quality gate.
+- [x] Stabilize Browser Tests shard 9 (`43563563658`): the 1440×900 locked-preview sweep exhausted its 135-second budget on both attempts, around the final Coast start. Batches cover every locked classic preview and input at 1440×900 and 390×844 and still verify a Coast start from a locked preview. Local Chromium with CI settings and retries disabled passed all six cases (22–44 seconds each). Unit tests: 2,909 passed, 3 skipped. Typecheck and production build passed.
+
 ## Final tutorial NITRO cue (2026-11-15)
 
 - [x] Show the final NITRO action in the same on-screen cue as THROTTLE, with the bound desktop key or touch button copy. Hide the press prompt and touch outline during the sprint and while waiting for release after an interrupted attempt.
