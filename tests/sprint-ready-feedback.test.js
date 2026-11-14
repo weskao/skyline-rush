@@ -8,7 +8,7 @@ function fixture(t, preferences) {
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: storage });
   t.after(() => previous ? Object.defineProperty(globalThis, 'localStorage', previous) : delete globalThis.localStorage);
   const events = [];
-  const button = name => ({ dataset: {}, querySelector: () => ({ animate: (_keyframes, { pseudoElement }) => {
+  const button = name => ({ dataset: {}, style: { writes: [], setProperty(property, value) { this.writes.push([property, value]); } }, querySelector: () => ({ animate: (_keyframes, { pseudoElement }) => {
     events.push(`${name}${pseudoElement}`);
     return { cancel: () => events.push(`${name}${pseudoElement}:cancel`) };
   } }) });
@@ -58,4 +58,11 @@ test('the sustained flame follows motion and the race phase without reading stor
   feedback.reset();
   feedback.update('racing', car, false, false, true);
   assert.equal(nitro.dataset.flame, 'on');
+});
+
+test('the NITRO charge fill is written only when its 2% step changes', t => {
+  const { nitro, boost, feedback, car } = fixture(t, { sound: true, animation: true });
+  for (const charge of [.2, .2, .201, .219, .22, .22, 1.5, 2]) feedback.update('racing', { ...car, nitro: charge }, false, false, true);
+  assert.deepEqual(nitro.style.writes, [['--charge', '0.2'], ['--charge', '0.22'], ['--charge', '1']]);
+  assert.deepEqual(boost.style.writes, []);
 });

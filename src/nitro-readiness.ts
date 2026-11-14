@@ -23,6 +23,11 @@ export function createNitroReadiness() {
   };
 }
 
+/** Share of the first charge, floored to 2% steps so the HUD writes the fill only when a step changes. */
+export function nitroFill(charge: number): number {
+  return Number.isFinite(charge) ? Math.floor(Math.min(1, Math.max(0, charge)) * 50) / 50 : 0;
+}
+
 interface BoostFrame {
   fuel: number;
   phase: string;
