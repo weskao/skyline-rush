@@ -6,6 +6,7 @@ export const GARAGE_CARS_COPY = {
     'car.roadster': 'Stratosway R2',
     'car.crimson-gt': 'Vantaire GT',
     'car.inUse': 'In use',
+    'car.select': 'Select',
     'paint.crimson': 'Deep Crimson',
   },
   'zh-TW': {
@@ -14,6 +15,7 @@ export const GARAGE_CARS_COPY = {
     'car.roadster': '天航 R2',
     'car.crimson-gt': '夜鋒 GT',
     'car.inUse': '使用中',
+    'car.select': '選用',
     'paint.crimson': '深紅',
   },
 } as const;

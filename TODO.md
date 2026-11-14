@@ -5538,3 +5538,11 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] RED on Node 22: seed 691 reproduces the `air spreads beyond the nozzle footprint` failure from CI run 43558845907. The old assertion measured only lateral displacement and missed the longitudinal component of the wall jet.
 - [x] GREEN: `node --test tests/effects.test.js tests/module-size.test.js` passes all 21 checks. The regression tracks the same particles through visible, two-dimensional motion at road level. Runtime rendering is untouched.
 - [ ] Verify GitHub `quality-gate` on the feature and integration commits.
+
+## 2026-11-14 — Garage car picker: premium cards and an unmistakable selection (`feature/garage-car-picker-polish`)
+
+- [x] RED → GREEN: `tests/crimson-gt-browser.spec.js` "the car in use is unmistakable and the other car offers a select pill" failed 3 of 3 viewports on the old styles (the car not in use had no visible pill); `-g "car picker"` now 8 passed at 390x844, 844x390 and 1440x900.
+- [x] `src/GarageCarPicker.vue`: cards share the paint-collection card language; the car in use gets a lit cyan frame, glow ring and filled "In use" pill, the other car steps back and shows a "Select" pill (`car.select`, en and zh-TW). Same component serves the Garage home and the Studio, both cars.
+- [x] Local gates: `npm test` 2942 pass / 0 fail / 3 skipped; `npm run typecheck`; `node --test tests/module-size.test.js` 3 pass; `npm run build`.
+- [x] Real Chrome screenshots inspected (zh-TW Studio, each car selected, phone portrait/landscape emulation and desktop); local-only, not committed.
+- [ ] Not checked: full `npm run test:browser` / `make verify` (skipped at the user's request), physical phones, exact-HEAD GitHub `quality-gate`.

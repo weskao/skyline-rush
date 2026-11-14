@@ -446,6 +446,30 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       }
       await attach(page, `car-picker-${viewport.width}x${viewport.height}`);
     });
+
+    test('the car in use is unmistakable and the other car offers a select pill', async ({ gameplayPage: page, gameplayURL }) => {
+      await prepare(page, gameplayURL);
+      await page.locator('#garage-button').click();
+      const look = id => carButton(page, id).evaluate(card => {
+        const style = getComputedStyle(card), pill = card.querySelector('.garage-car-badge'), pillStyle = getComputedStyle(pill);
+        return { frame: style.borderTopColor, glow: style.boxShadow, height: card.getBoundingClientRect().height,
+          pillShown: pillStyle.visibility === 'visible' && pill.getBoundingClientRect().width > 0,
+          pillFilled: pillStyle.backgroundImage !== 'none', pillText: pill.textContent.trim() };
+      });
+      for (const [inUse, other] of [['crimson-gt', 'roadster'], ['roadster', 'crimson-gt']]) {
+        await carButton(page, inUse).click();
+        await expect(carButton(page, inUse)).toHaveAttribute('aria-pressed', 'true');
+        await expect(carButton(page, other)).toHaveAttribute('aria-pressed', 'false');
+        // The frame colour and glow ease in: poll until they settle on the selected look.
+        await expect.poll(async () => { const [on, off] = [await look(inUse), await look(other)]; return on.frame !== off.frame && on.glow !== off.glow; }).toBe(true);
+        const [on, off] = [await look(inUse), await look(other)];
+        expect(on.pillShown && off.pillShown).toBe(true);
+        expect([on.pillFilled, off.pillFilled]).toEqual([true, false]);
+        expect(on.pillText).not.toBe(off.pillText);
+        expect(on.height).toBe(off.height);
+      }
+      await attach(page, `car-picker-selected-${viewport.width}x${viewport.height}`);
+    });
   });
 }
 
