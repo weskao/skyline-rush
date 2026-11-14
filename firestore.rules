@@ -13,7 +13,7 @@ service cloud.firestore {
       'coast@5', 'neon@5', 'canyon@5', 'aurora@4', 'spiral@5',
       'coast@6', 'neon@6', 'canyon@6', 'aurora@5', 'spiral@6',
       'aurora@3', 'taipei@3', 'tokyo@3', 'alpine@3', 'coastal@3', 'cosmic@3',
-      'frostbite-canyon@t1l1', 'dune-tempest@t1l1', 'skyfall-archipelago@t1l1',
+      'frostbite-canyon@t1l1', 'dune-tempest@t1l1', 'dune-tempest@t2l1', 'skyfall-archipelago@t1l1',
       'stormline-megacity@t1l1', 'volcanic-crown@t1l1', 'monsoon-ruins@t1l1']); // CourseGraph sprints: `<track>@t<topology>l<layout>`
   }
 
@@ -79,6 +79,7 @@ service cloud.firestore {
       && math.abs(b.get('cosmic@3', 302400) - 302400) < 302400
       && math.abs(b.get('frostbite-canyon@t1l1', 302400) - 302400) < 302400
       && math.abs(b.get('dune-tempest@t1l1', 302400) - 302400) < 302400
+      && math.abs(b.get('dune-tempest@t2l1', 302400) - 302400) < 302400
       && math.abs(b.get('skyfall-archipelago@t1l1', 302400) - 302400) < 302400
       && math.abs(b.get('stormline-megacity@t1l1', 302400) - 302400) < 302400
       && math.abs(b.get('volcanic-crown@t1l1', 302400) - 302400) < 302400

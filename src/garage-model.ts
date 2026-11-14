@@ -182,10 +182,18 @@ interface Ktx2Like { setTranscoderPath(path: string): Ktx2Like; detectSupport(re
 type Ktx2Class = new () => Ktx2Like;
 const importKtx2 = async (): Promise<Ktx2Class> => (await import('three/examples/jsm/loaders/KTX2Loader.js')).KTX2Loader as unknown as Ktx2Class;
 
-/** One KTX2Loader per world, on the existing renderer; the transcoder is served from `public/basis/`. */
-export function createKtx2Provider(renderer: unknown, baseUrl: string, load: () => Promise<Ktx2Class> = importKtx2) {
+const ktx2Providers = new WeakMap<object, () => Promise<Ktx2Like>>();
+
+/** Share the worker pool across the car, scenery and pickups on the same renderer. */
+export function createKtx2Provider(renderer: object, baseUrl: string, load: () => Promise<Ktx2Class> = importKtx2) {
+  const existing = ktx2Providers.get(renderer);
+  if (existing) return existing;
   let loader: Promise<Ktx2Like> | undefined;
-  return (): Promise<Ktx2Like> => (loader ??= load().then(Ktx2 => new Ktx2().setTranscoderPath(`${baseUrl}basis/`).detectSupport(renderer as never)));
+  const provide = () => (loader ??= load()
+    .then(Ktx2 => new Ktx2().setTranscoderPath(`${baseUrl}basis/`).detectSupport(renderer as never))
+    .catch(error => { loader = undefined; throw error; }));
+  ktx2Providers.set(renderer, provide);
+  return provide;
 }
 
 /** World wiring. Idle until a model is wanted: the equipped car's own model first, else `?model=`. GLTFLoader is imported only then. */

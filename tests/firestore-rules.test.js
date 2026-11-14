@@ -45,7 +45,7 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
   await assertSucceeds(setDoc(save, { ...progress, unlocked: tracks, stars: Object.fromEntries(tracks.map(id => [id, 3])), bests: everyBest,
     medals: { 'first-win': stamp, 'clean-run': stamp, 'perfect-five': stamp, 'nitro-chain': stamp } }));
   // ... and with every CourseGraph sprint best (topology-keyed) on top of it.
-  const courseBests = Object.fromEntries(Object.keys(COURSE_TRACKS).map((id, i) => [recordTrackId(id), 120 + i]));
+  const courseBests = Object.fromEntries(Object.keys(COURSE_TRACKS).flatMap(recordTrackIds).map((id, i) => [id, 120 + i]));
   assert.ok(Object.keys(courseBests).length >= 3, 'Frostbite, Dune and Skyfall');
   await assertSucceeds(setDoc(save, { ...progress, unlocked: tracks, stars: Object.fromEntries(tracks.map(id => [id, 3])),
     bests: { ...everyBest, ...courseBests }, car: 'crimson-gt',

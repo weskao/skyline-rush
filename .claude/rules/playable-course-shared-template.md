@@ -190,3 +190,10 @@ joins. Geometry and vehicle pose read that same frame. The vent deck uses a
 translucent surface over the ground lane, with solid contact supplied by the race
 section. Validate road clearance with rays against the rendered triangles near joins
 and inspect the lower lane from chase view on both sides of the deck.
+
+For Dune Tempest, keep the sand in one world-space height field. Road-relative terrain
+strips can fold across the inside of a hairpin or reach over another route. Shape the
+floor against all solid road edges and both flight pads before streaming road chunks.
+Keep the pads and fork surfaces level where they meet other lanes, and check the
+actual mesh along the centre and both shoulders at every quality. Both minimaps
+must use the same authored graph as race movement after a route edit.

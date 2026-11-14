@@ -24,7 +24,7 @@ export function plainGeometry(mesh: Mesh): BufferGeometry {
   return geometry.applyMatrix4(mesh.matrixWorld);
 }
 
-async function load(renderer: unknown, baseUrl: string): Promise<Shared | null> {
+async function load(renderer: object, baseUrl: string): Promise<Shared | null> {
   const { createModelCache } = await import('./asset-model-loader.ts');
   const cache = createModelCache({ baseUrl, loadKtx2: createKtx2Provider(renderer, baseUrl) });
   const results = await Promise.all(PICKUP_TIERS.map(tier => cache.load(`pickup-${tier}`)));
@@ -45,7 +45,7 @@ async function load(renderer: unknown, baseUrl: string): Promise<Shared | null> 
 }
 
 /** Resolves to null when the models cannot be loaded; the caller keeps the procedural pickups (pickup-art.js). */
-export function acquirePickupModels(renderer: unknown, envMap: Texture | null,
+export function acquirePickupModels(renderer: object, envMap: Texture | null,
   baseUrl: string = import.meta.env.BASE_URL): Promise<PickupModels | null> {
   users++;
   const mine = (shared ??= load(renderer, baseUrl).catch(() => null));
