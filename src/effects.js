@@ -9,6 +9,7 @@ import { createRivalCues } from './rival-cues.ts';
 import { isRaining, racePreset, sprayRate } from './board-effects.ts';
 import { createDriftCharge } from './drift-charge-vfx.js';
 import { LIFT_PORTS, liftPort } from './lift-ports.js';
+import { blue, bonusStyles, gas, gold, mist, orange, pickupColors, purple, ringColors } from './effects-palette.ts';
 
 const COUNT = 480, flatShadow = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
 export const RING_POOL_CAPACITY = 48; // densest 900 m view of one colour: 18 with trains and rows (tests/ring-rows.test.js)
@@ -84,12 +85,6 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   const emissions = new Float64Array(RACE_DRIVER_IDS.length), strengths = new Float64Array(RACE_DRIVER_IDS.length);
   const nozzles = new Uint8Array(RACE_DRIVER_IDS.length);
   const nozzlePosition = new THREE.Vector3(), nozzleVelocity = new THREE.Vector3();
-  const orange = [2.5, 0.85, 0.15], mist = [0.58, 0.64, 0.68], gas = [0.8, 0.87, 0.92];
-  const blue = [0.15, 0.8, 2.5], gold = [2.5, 1.8, 0.15], purple = [1.2, 0.3, 2.5], red = [2.5, 0.1, 0.15];
-  const spectrum = [red, orange, gold, [0.15, 2, 0.65], blue, purple];
-  const pickupColors = { cell: blue, can: orange, tank: gold, overcharge: spectrum };
-  const bonusStyles = { 'speed-pad': 'slipstream', 'air-pad': 'charge', 'recovery-pad': 'nitro', 'score-pad': 'risk', emp: 'mystery' };
-  const ringColors = { charge: [0.1, 1.8, 2.5], nitro: gold, slipstream: purple, risk: red, mystery: spectrum };
   const gateBasis = new THREE.Matrix4(), gateRight = new THREE.Vector3(), gateUp = new THREE.Vector3(), gateBack = new THREE.Vector3();
   const ringGeometry = new THREE.TorusGeometry(1, 0.012, 6, 64);
   const rainbow = new Float32Array(ringGeometry.attributes.position.count * 3), tint = new THREE.Color();
