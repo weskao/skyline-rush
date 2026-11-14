@@ -1,3 +1,13 @@
+# 2026-11-14 — Thumb button bezel edges and NITRO/BOOST charging looks (`fix/sprint-button-bezel`)
+
+Rule: `.claude/rules/touch-sprint-buttons.md`.
+
+- [x] Root cause: the rim gradient's fixed `#162035` stop matched the faces and road (1.02–1.18:1), erasing the right, bottom and lower-right edges of all four buttons (pixel probe before the fix, every size and DPR). The shaded stop is now the rim darkened 30%.
+- [x] NITRO charging fills to `--charge` (`nitroFill`, 2% steps, written on a step change only); BOOST charging is dim amber, braking stays grey.
+- [x] RED → GREEN: bezel guard failed on the old CSS, fill-write test failed on the old feedback code. `npm test` 2924 pass / 0 fail / 3 skipped; `npm run typecheck`; `npm run build`; module-size.
+- [ ] After screenshots, phone portrait + landscape, Reduced Motion and touch-opacity: not run (browser tests skipped by request).
+- [ ] Exact-HEAD GitHub `quality-gate`.
+
 # 2026-11-14 — Full sprint buttons and perimeter ignition
 
 - [x] Show the complete NITRO and BOOST bezel in the HUD and video preview. At readiness, animate a bounded flame around all four sides while keeping the label, road and adjacent controls readable on phone portrait and landscape.
