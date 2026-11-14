@@ -13,7 +13,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { createLensPass } from './lens-pass.ts';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { roadRibbon } from './geometry.ts';
+import { roadRibbon, putInstance as put } from './geometry.ts';
 import { classicRoadRoute, legacyClassicRoad } from './classic-road-routes.ts';
 import { createClassicRoadRender } from './classic-road-render.ts';
 import { createEffects } from './effects.js';
@@ -59,19 +59,8 @@ import { createGraceFade, graceOpacity } from './grace-fade.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const box = new THREE.BoxGeometry(1, 1, 1);
-const matrix = new THREE.Matrix4();
-const rotation = new THREE.Quaternion();
-const position = new THREE.Vector3();
-const scale = new THREE.Vector3();
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
 const framedRoad = (id, endless = false) => TOUR_IDS.has(id) || id === CIRCUIT_ID || (!endless && (id === FROSTBITE_ID || MEASURED_COURSE_IDS.has(id) || isCourseRuntime(id)));
-function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
-  position.set(x, y, z);
-  scale.set(sx, sy, sz);
-  rotation.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, angle);
-  matrix.compose(position, rotation, scale);
-  mesh.setMatrixAt(index, matrix);
-}
 export function createWorld(canvas) {
   // Scoped continuation: finite career/Ghost path API still clamps at the finish.
   let endlessActive=false, curvedClassic = false, classicRoute = legacyClassicRoad;
