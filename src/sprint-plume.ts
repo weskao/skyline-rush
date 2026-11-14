@@ -37,11 +37,12 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
     uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 }, tail: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) }, reach: { value: 1 }, thick: { value: 1 } },
     // `thick` 0 is the old cone (nozzle radius widening 4.8x over the whole length); 1 never draws thinner than plumeRadius.
-    vertexShader: `varying vec2 vUv;varying float vD;uniform float reach,thick;
+    vertexShader: `varying vec2 vUv;varying float vD,vSpread;uniform float reach,thick;
       void main(){vUv=uv;float d=position.z*reach;vD=d;float cone=${NOZZLE}*(1.+3.8*position.z);
         float radius=mix(cone,max(cone,${NOZZLE}+(${glsl(PLUME.fat)}-${NOZZLE})*d/(d+${glsl(PLUME.half)})),thick);
+        vSpread=cone/radius; // the thin cone's light spread over the fat flame: per pixel no brighter than the area it covers allows
         gl_Position=projectionMatrix*modelViewMatrix*vec4(position.xy*radius,position.z,1.);}`,
-    fragmentShader: `varying vec2 vUv;varying float vD;uniform float time,power,brightness,diamonds,extreme,nitroMix,skinPattern,tail,thick;uniform vec3 skinTint;uniform vec4 trailAccent;
+    fragmentShader: `varying vec2 vUv;varying float vD,vSpread;uniform float time,power,brightness,diamonds,extreme,nitroMix,skinPattern,tail,thick;uniform vec3 skinTint;uniform vec4 trailAccent;
       void main(){float t=clamp(1.-vUv.y,0.,1.); // MSAA slivers extrapolate vUv far past the rim; unclamped, the core overflows to Inf and a zero fade makes NaN
         float cells=pow(max(0.,.5+.5*cos(t*48.)),5.)*diamonds;
         float breakup=.75+.25*sin(vUv.x*52.+t*31.-time*16.);
@@ -55,7 +56,7 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
         if(skinPattern>1.5) shape=.25+.75*abs(sin(vUv.x*6.28*3.+t*28.-time*11.));
         if(skinPattern>2.5) shape=step(.45,fract(t*7.+time*3.+vUv.x*3.));
-        gl_FragColor=vec4(color*brightness*(1.+core+cells),fade*(.15+core*.55+cells*.35+body*.45)*breakup*power*shape);}`,
+        gl_FragColor=vec4(color*brightness*(1.+core+cells)*vSpread,fade*(.15+core*.55+cells*.35+body*.45)*breakup*power*shape);}`,
   });
   const jets = ports.map((port, i) => {
     const jet = new THREE.Mesh(jetGeometry, jetMaterial.clone());
