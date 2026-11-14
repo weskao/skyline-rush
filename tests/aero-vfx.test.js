@@ -322,7 +322,7 @@ test('sprint FOV: NITRO+BOOST widens the camera by the full FOV setting on every
   const settle = input => {
     const sprint = createSprintVfx();
     let frame;
-    for (let i = 0; i < 10; i++) frame = sprint.update(input);
+    for (let i = 0; i < 20; i++) frame = sprint.update(input); // 1 s: past the ignition punch
     return frame;
   };
   const offsets = {}, comfort = {};
@@ -362,6 +362,30 @@ test('sprint camera: the FOV share ramps in over 0.3 s and the kick clock restar
   for (let i = 0; i < 40; i++) frame = sprint.update(idle);
   assert.equal(frame.fov, 0, 'back to rest after the recovery');
   assert.equal(createSprintVfx().update({ ...held, reducedMotion: true }).fov, 0, 'Reduced Motion never widens the camera');
+});
+
+// The sprint pulse alone (0.3 s ramp, faint kick) left NITRO/BOOST without an impact: one smooth ignition punch.
+test('sprint camera: a fresh ignition punches the FOV past the held sprint, then settles; comfort and repeats do not', async () => {
+  const { createSprintVfx, sprintFovOffset } = await import('../src/vfx-settings.ts');
+  const sprint = createSprintVfx(), dt = 1 / 60, visual = vfxSettings();
+  const idle = { phase: 'racing', nitro: false, boost: false, speed: 110, cap: 110, dt, enabled: true, quality: 'high', reducedMotion: false };
+  const held = { ...idle, boost: true };
+  assert.equal(sprint.update(idle).punch, 0, 'no punch while nothing fires');
+  const offsets = [], punches = [], blurs = [];
+  for (let i = 0; i < 90; i++) { const frame = sprint.update(held); offsets.push(sprintFovOffset(frame, visual)); punches.push(frame.punch); blurs.push(frame.blur); }
+  // The camera FOV as src/world.js smooths it (rate 7/s): what the player sees.
+  const camera = []; for (const target of offsets) camera.push((camera.at(-1) ?? 0) + (target - (camera.at(-1) ?? 0)) * (1 - Math.exp(-7 * dt)));
+  const held1 = camera.at(-1), peak = Math.max(...camera);
+  assert.ok(punches[0] < 0.2, `ignition frame punch ${punches[0]}: eased in, not a step`);
+  assert.ok(peak - held1 >= 1.5 && peak - held1 <= 3.5, `FOV overshoot ${(peak - held1).toFixed(2)} deg past the held ${held1.toFixed(2)}`);
+  assert.ok(camera.slice(1).every((value, i) => Math.abs(value - camera[i]) <= 45 * dt), 'a punch, never a snap: under 45 deg/s');
+  assert.equal(punches.at(-1), 0, 'gone 1.5 s after the ignition');
+  assert.ok(Math.max(...blurs) > blurs.at(-1) * 1.3, 'the radial blur flashes on the ignition');
+  const settled = sprint.update(held);
+  assert.ok(Math.abs(settled.blur - 0.6 * settled.power) < 1e-9, `held radial blur unchanged: ${settled.blur} at power ${settled.power}`);
+  sprint.update(idle);
+  assert.ok(sprint.update(held).punch < 0.01, 'a flickering BOOST does not punch again');
+  assert.equal(createSprintVfx().update({ ...held, reducedMotion: true }).punch, 0, 'Reduced Motion never punches');
 });
 
 test('cyan NITRO trail replaces the standard purple from the first NITRO frame', async () => {

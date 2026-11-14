@@ -1,3 +1,11 @@
+# 2026-11-14 — NITRO/BOOST impact: ignition punch on top of the sprint pulse (`fix/sprint-camera-shake`)
+
+Report: after the sprint-pulse fix, high-speed NITRO/BOOST no longer felt thrilling. Cause: the only ignition cue left was a 0.135° kick and a 0.3 s FOV ramp. Rule: `.claude/rules/race-camera.md` "Sprint without impact". Plan sent to Telegram before the change.
+
+- [x] Fix: `sprintPunch` envelope (0.2 s ease-in, gone at 0.8 s) on the fresh-ignition `kick` clock → `frame.punch` (0 in Reduced Motion, scaled by sprint power). FOV overshoot `PUNCH_FOV` 0.8 × FOV setting; chase surge `punchBack` 1 m (first person 0); radial blur flash `(power + 0.5 × punch)`, held factor stays 0.6 (High-unchanged contract in `tests/board-effects.test.js`); kick 0.35 s / 4 Hz, `kick` 0.085, cap 1.2°. Still no sustained sprint shake.
+- [x] RED on the previous code: `node --test tests/race-camera.test.js tests/aero-vfx.test.js` 3 failures (kick peak 0.202° at default < 0.4°, surge 0 m, no `punch`). GREEN after the fix (40/40). Tier-FOV and Ultra-blur tests now sample 1 s after ignition (past the punch) instead of 0.5 s / 0.4 s.
+- [ ] Real WebGL frames and physical-phone feel check (desktop, phone portrait and landscape; Coast and Sky Spiral; BOOST, NITRO, first person).
+
 # 2026-11-14 — NITRO/BOOST camera: sprint pulse, no sustained shake (`fix/sprint-camera-shake`)
 
 Report: firing NITRO or BOOST shook the screen too hard on desktop. User picked 方案 B 衝刺脈衝. Root cause: `rigShake` fed the sprint strength into a continuous 8.4 Hz rotation in `src/world.js` for the whole sprint, plus a 10 Hz ignition sway and a world-Z push, and the FOV share jumped on the ignition frame. Rule: `.claude/rules/race-camera.md` "Sprint judder".
