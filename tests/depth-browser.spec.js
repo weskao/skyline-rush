@@ -2,6 +2,7 @@ import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { layoutVersion } from '../src/record-layout.ts';
+import { resizeTo } from './helpers/viewport.js';
 
 const records = Array.from({ length: 12 }, (_, i) => ({
   date: `2026-01-${String(i + 1).padStart(2, '0')}T12:00:00Z`, track: 'coast',
@@ -21,6 +22,8 @@ const seed = page => page.addInitScript(runs => {
   localStorage.setItem('skyline-rush-history', JSON.stringify(runs));
 }, seeded);
 
+// Old-layout tag: desktop alone; the touch sizes run in the phone test, which resizes the same boot (small phone, landscape).
+const oldLayoutSizes = { desktop: [], phone: [{ width: 320, height: 740 }, { width: 844, height: 390 }] };
 for (const [name, viewport, hasTouch] of [
   ['desktop', { width: 1440, height: 900 }, false],
   ['phone', { width: 390, height: 844 }, true],
@@ -55,7 +58,9 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.getByRole('button', { name: 'History', exact: true })).toBeFocused();
   });
 
-  for (const locale of ['en', 'zh-TW']) test(`History old-layout tag ends before the expand chevron (${locale})`, async ({ page }) => {
+  // Touch contexts fold: phone boots once and re-measures the tag at small phone and landscape (hasTouch is per context).
+  if (name in oldLayoutSizes) for (const locale of ['en', 'zh-TW']) test(`History old-layout tag ends before the expand chevron (${locale})`, async ({ page }) => {
+    test.setTimeout(ciTimeout(oldLayoutSizes[name].length ? 40000 : 30000));
     await page.addInitScript(([runs, lang]) => {
       localStorage.setItem('skyline-rush-history', JSON.stringify(runs));
       localStorage.setItem('skyline-rush-locale', lang);
@@ -64,17 +69,20 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('.history-button').click();
     const row = page.locator('.history-run', { hasText: locale === 'en' ? 'OLD LAYOUT' : '舊版配置' });
     await expect(row).toHaveCount(1);
-    const box = await row.locator('summary').evaluate(summary => {
-      const tag = [...summary.children].find(child => /OLD LAYOUT|舊版配置/.test(child.textContent));
-      const range = document.createRange();
-      range.selectNodeContents(tag);
-      const text = range.getBoundingClientRect(); // the glyphs, even when they overflow the tag's own box
-      const style = getComputedStyle(summary);
-      const chevronLeft = summary.getBoundingClientRect().right - parseFloat(style.paddingRight) - 8; // last grid column is the 8px chevron
-      return { textLeft: text.left, textRight: text.right, chevronLeft, summaryLeft: summary.getBoundingClientRect().left };
+    for (const [index, size] of [viewport, ...oldLayoutSizes[name]].entries()) await test.step(`${size.width}x${size.height}`, async () => {
+      if (index) await resizeTo(page, size.width, size.height);
+      const box = await row.locator('summary').evaluate(summary => {
+        const tag = [...summary.children].find(child => /OLD LAYOUT|舊版配置/.test(child.textContent));
+        const range = document.createRange();
+        range.selectNodeContents(tag);
+        const text = range.getBoundingClientRect(); // the glyphs, even when they overflow the tag's own box
+        const style = getComputedStyle(summary);
+        const chevronLeft = summary.getBoundingClientRect().right - parseFloat(style.paddingRight) - 8; // last grid column is the 8px chevron
+        return { textLeft: text.left, textRight: text.right, chevronLeft, summaryLeft: summary.getBoundingClientRect().left };
+      });
+      expect(box.textRight, `${size.width}x${size.height}: tag ends before the chevron`).toBeLessThanOrEqual(box.chevronLeft - 4);
+      expect(box.textLeft, `${size.width}x${size.height}: tag starts inside the row`).toBeGreaterThanOrEqual(box.summaryLeft);
     });
-    expect(box.textRight).toBeLessThanOrEqual(box.chevronLeft - 4);
-    expect(box.textLeft).toBeGreaterThanOrEqual(box.summaryLeft);
   });
 
   test('track selection changes the real scene and restart retains the chosen track', async ({ page }) => {
