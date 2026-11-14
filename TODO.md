@@ -4,6 +4,7 @@
 - [x] Compared the Home and in-race 14-edge minimaps in Chromium and captured the canyon hairpin before/after. Added a browser regression for both maps.
 - [ ] Complete full viewport and physical-device visual coverage.
 - [ ] Complete the full GitHub quality gate.
+- [x] Stabilize Browser Tests shard 9 (`43563563658`): the 1440×900 locked-preview sweep exhausted its 135-second budget on both attempts, around the final Coast start. Batches cover every locked classic preview and input at 1440×900 and 390×844 and still verify a Coast start from a locked preview. Local Chromium with CI settings and retries disabled passed all six cases (22–44 seconds each). Unit tests: 2,909 passed, 3 skipped. Typecheck and production build passed.
 
 # 2026-11-14 — Road supply collection effects
 

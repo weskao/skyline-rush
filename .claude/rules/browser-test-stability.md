@@ -73,6 +73,7 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
 
 ## Budgets and retries
 
+- **Split WebGL preview sweeps into small batches.** Each track switch rebuilds the scene. Keep all catalog entries covered, but let Playwright schedule bounded cases independently. The desktop locked-preview sweep exhausted the 135-second budget as Coast started in CI run `43563563658`.
 - Wrap fixed waits and timeouts in `ciTimeout()`. This is enforced by the same test file.
 - **A test must fit its budget with room to spare on CI.** CI steps the game at about 1/4 speed (each slow
   frame is clamped to 0.05 s), so a flow that plays N s of game time needs about 4N s of wall clock. A test

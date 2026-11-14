@@ -1,6 +1,7 @@
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { layoutVersion } from '../src/record-layout.ts';
 
 const records = Array.from({ length: 12 }, (_, i) => ({
@@ -117,33 +118,39 @@ test('fresh progress locks tracks, empty History works and Escape restores menu 
   await expect(page.getByRole('button', { name: 'History', exact: true })).toBeFocused();
 });
 
+const lockedTracks = Object.keys(RACE_TRACKS).filter(id => id !== 'coast');
+const previewsPerTest = 3; // Each selection rebuilds a real WebGL scene on the CPU-only runner.
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) test.describe(`locked previews ${viewport.width}`, () => {
   test.use({ viewport });
-  test('all tracks preview while locked starts stay blocked', async ({ page }) => {
-    await open(page);
-    const ids = await page.locator('[data-track]').evaluateAll(buttons => buttons.map(button => button.dataset.track));
-    for (const id of ids.slice(1)) {
-      const card = page.locator(`[data-track="${id}"]`);
-      await expect(card).toBeEnabled();
-      await expect(card).toHaveCSS('opacity', '0.65');
-      await card.click();
-      await expect(card).toHaveCSS('opacity', '0.85');
-      await expect(card).toHaveAttribute('aria-pressed', 'true');
-      await expect(page.locator('#world')).toHaveAttribute('aria-label', new RegExp(await card.locator('strong').innerText()));
-      await expect(page.locator('#start-button')).toBeDisabled();
-      await expect(page.locator('#track-note')).toContainText('Finish top 3');
-      await page.locator('#start-button').evaluate(button => button.click());
-      await page.locator('body').click({ position: { x: 2, y: 2 } });
-      await page.keyboard.press('Enter');
-      await page.keyboard.press('Backspace');
-      await expect(page.locator('.start-hint')).toBeHidden();
-      await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-    }
-    await page.locator('[data-track="coast"]').click();
-    await expect(page.locator('#start-button')).toBeEnabled();
-    await page.locator('#start-button').click();
-    await expect(page.locator('body')).not.toHaveAttribute('data-phase', 'ready');
-  });
+  for (let offset = 0; offset < lockedTracks.length; offset += previewsPerTest) {
+    const ids = lockedTracks.slice(offset, offset + previewsPerTest);
+    test(`${ids.join(', ')} preview while locked starts stay blocked`, async ({ page }) => {
+      await open(page);
+      for (const id of ids) {
+        const card = page.locator(`[data-track="${id}"]`);
+        await expect(card).toBeEnabled();
+        await expect(card).toHaveCSS('opacity', '0.65');
+        await card.click();
+        await expect(card).toHaveCSS('opacity', '0.85');
+        await expect(card).toHaveAttribute('aria-pressed', 'true');
+        await expect(page.locator('#world')).toHaveAttribute('aria-label', new RegExp(await card.locator('strong').innerText()));
+        await expect(page.locator('#start-button')).toBeDisabled();
+        await expect(page.locator('#track-note')).toContainText('Finish top 3');
+        await page.locator('#start-button').evaluate(button => button.click());
+        await page.mouse.click(2, 2); // Move focus off the track card before testing global shortcuts.
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Backspace');
+        await expect(page.locator('.start-hint')).toBeHidden();
+        await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+      }
+      if (offset + ids.length === lockedTracks.length) {
+        await page.locator('[data-track="coast"]').click();
+        await expect(page.locator('#start-button')).toBeEnabled();
+        await page.locator('#start-button').click();
+        await expect(page.locator('body')).toHaveAttribute('data-phase', /^(countdown|racing)$/);
+      }
+    });
+  }
 });
 
 test('track changes render four distinct sky palettes in the WebGL framebuffer', async ({ page }) => {
