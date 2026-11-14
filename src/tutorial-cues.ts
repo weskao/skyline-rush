@@ -55,9 +55,13 @@ function barrelRollCue({ car, phase }: CueState): TutorialCue {
 }
 
 export function tutorialCue(state: CueState): TutorialCue | null {
+  if (state.step === 'nitro') {
+    const key = state.phase === 'retry' ? 'tutorial.cue.nitroRelease'
+      : state.phase === 'sprinting' || state.phase === 'finishing' ? 'tutorial.cue.nitroActive' : 'tutorial.cue.nitro';
+    return { key, actions: ['nitro'] };
+  }
   if (state.phase === 'finishing') return { key: 'tutorial.cue.finishing', actions: [] };
   if (state.step === 'throttle') return state.car.speed > 5 ? null : { key: 'tutorial.cue.throttle', actions: ['throttle'] };
-  if (state.step === 'nitro' && state.phase === 'ready') return { key: 'tutorial.cue.nitro', actions: ['nitro'] };
   if (state.step === 'brake') return { key: state.car.braking ? 'tutorial.cue.brakeHold' : 'tutorial.cue.brakeAhead', actions: ['brake'] };
   if (state.step === 'drift') return driftCue(state);
   if (state.step === 'airChain') return airChainCue(state);

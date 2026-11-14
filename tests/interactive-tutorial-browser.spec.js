@@ -172,7 +172,10 @@ test('NITRO practice recovers after braking and demands a fresh charged sprint',
 });
 
 test('the final NITRO prompt uses the rebound key in the same cue as THROTTLE', async ({ page }) => {
-  await page.addInitScript(map => localStorage.setItem('skyline-rush-keymap', JSON.stringify(map)), { ...DEFAULT_KEY_MAP, nitro: ['KeyJ'] });
+  await page.addInitScript(map => {
+    localStorage.setItem('skyline-rush-keymap', JSON.stringify(map));
+    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' }));
+  }, { ...DEFAULT_KEY_MAP, nitro: ['KeyJ'] });
   await begin(page);
   const cue = page.locator('#tutorial-cue');
   await expect(cue).toHaveAttribute('data-cue', 'tutorial.cue.throttle');
@@ -184,14 +187,24 @@ test('the final NITRO prompt uses the rebound key in the same cue as THROTTLE', 
   await expect(cue).toBeHidden();
   await page.locator('#resume-button').click();
   await expect(cue.locator('kbd')).toHaveText('J');
-  await keyStep(page, 'j', 'complete');
+  const readyCue = await cue.elementHandle();
+  await page.keyboard.down('j');
+  await expect(cue).toHaveAttribute('data-cue', 'tutorial.cue.nitroActive');
+  await expect(cue.locator('kbd')).toHaveText('J');
+  await expect(cue).toContainText('NITRO active');
+  expect(await readyCue.evaluate(element => element.isConnected)).toBe(true);
+  await page.keyboard.up('j');
+  await step(page, 'complete');
   await expect(cue).toBeHidden();
 });
 
 test.describe('touch NITRO interruption', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   test('brake and NITRO touches interrupt practice and a new touch spends a fresh charge', async ({ page, context }) => {
-    await page.addInitScript(() => localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', flyMode: 'hold' })));
+    await page.addInitScript(() => {
+      localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', flyMode: 'hold' }));
+      localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' }));
+    });
     await begin(page);
     const cue = page.locator('#tutorial-cue');
     await expect(cue).toHaveAttribute('data-cue', 'tutorial.cue.throttle');
@@ -214,7 +227,7 @@ test.describe('touch NITRO interruption', () => {
       await touch('touchStart', [await point('brake', 1), await point('nitro', 2)]);
       await expect(page.locator('#tutorial-instruction')).toContainText('Sprint interrupted', { timeout: ciTimeout(15000) });
       await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '0');
-      await expect(cue).toBeHidden();
+      await expect(cue.getByText('Release NITRO to retry')).toBeVisible();
       await expect(nitro).not.toHaveClass(/tutorial-target/);
       await touch('touchEnd', []);
       await expect(page.locator('#tutorial-instruction')).toContainText('Activate NITRO');
@@ -222,6 +235,8 @@ test.describe('touch NITRO interruption', () => {
       await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '1');
       await touch('touchStart', [await point('nitro', 3)]);
       await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '0');
+      await expect(cue.getByText('NITRO active', { exact: false })).toBeVisible();
+      await expect(nitro).not.toHaveClass(/tutorial-target/);
       await touch('touchEnd', []);
       await step(page, 'complete');
     } finally {

@@ -126,7 +126,7 @@ export function tutorialCueView(cue: TutorialCue | null | undefined, touch: bool
 
 /** Phone controls that pulse now. NITRO needs a fresh press; the air chain accepts either BOOST or NITRO in flight. */
 export function tutorialTouchControls(step: string | null, cue: TutorialCue | null | undefined, action: string | null): string[] {
-  if (step === 'nitro') return cue?.actions.includes('nitro') ? ['nitro'] : [];
+  if (step === 'nitro') return cue?.key === 'tutorial.cue.nitro' ? ['nitro'] : [];
   if (step !== 'airChain' || !cue) return action ? [action] : [];
   if (cue.key === 'tutorial.cue.chainFly') return ['fly'];
   return cue.actions.includes('boost') ? ['boost', 'nitro'] : [];

@@ -70,7 +70,7 @@ test('the NITRO cue shows the current keyboard binding or a touch instruction', 
 
 test('every cue variant has copy in both languages', () => {
   for (const lang of ['en', 'zh-TW']) {
-    for (const name of ['nitro', 'brakeAhead', 'brakeHold', 'brakeAheadSlide', 'brakeHoldSlide', 'chainFlyToggle', 'chainBoostToggle', 'chainHoldToggle',
+    for (const name of ['nitro', 'nitroActive', 'nitroRelease', 'brakeAhead', 'brakeHold', 'brakeAheadSlide', 'brakeHoldSlide', 'chainFlyToggle', 'chainBoostToggle', 'chainHoldToggle',
       'chainLandingToggle', 'rollFlyToggle', 'rollClimbToggle', 'rollReleaseToggle', 'rollSpinToggle']) {
       assert.ok(TUTORIAL_COPY[lang]['tutorial.cue.' + name], `${lang} ${name}`);
     }

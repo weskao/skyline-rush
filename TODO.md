@@ -5,6 +5,7 @@
 - [x] Chromium checks with the real Vue coach, tutorial controller and game CSS passed at 1440×900, 390×844 and 844×390, including clearing and restoring the prompt on a retry.
 - [x] Full-game Chromium regressions passed for the rebound desktop key, pause/resume, the portrait cue, landscape input and releasing and re-pressing NITRO after an interruption. The desktop test passed on its isolated rerun after a software WebGL countdown timeout.
 - [ ] Full browser suite, World Tour, physical-device checks and exact-commit GitHub `quality-gate`.
+- [x] Follow-up: keep the NITRO cue and bound desktop key visible through the sprint, finishing effect and interrupted attempts. Update the text in place and outline the touch button only when a new press is needed. RED reproduced the missing retry cue. GREEN: 2,969 unit tests passed (3 skipped), typecheck and locked build passed, and the Vue coach with the real tutorial controller passed Chromium checks at 1440×900, 390×844 and 844×390. Full-game runs on software WebGL reached the opening countdown but stalled before the first cue.
 
 # 2026-11-14 — Drift skid marks stay on the road until the race ends (`feature/skid-marks`)
 

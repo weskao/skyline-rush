@@ -17,7 +17,7 @@ import { rewardParts } from './tutorial-ui.ts';
     <svg v-for="n in 3" :key="n" viewBox="0 0 24 24" :style="{ '--n': n }"><path d="M9 5l7 7-7 7" /></svg>
   </div>
   <!-- Live cue: the next control and its timing; the countdown digits are decorative. -->
-  <div v-if="coachView.visible && coachView.cue" id="tutorial-cue" :key="coachView.cueId" class="tutorial-cue" :data-cue="coachView.cueId" role="status" aria-live="polite">
+  <div v-if="coachView.visible && coachView.cue" id="tutorial-cue" :key="coachView.step === 'nitro' ? coachView.step : coachView.cueId" class="tutorial-cue" :data-cue="coachView.cueId" role="status" aria-live="polite">
     <span v-if="coachView.cueKeys.length" class="tutorial-cue-keys"><kbd v-for="key in coachView.cueKeys" :key="key">{{ key }}</kbd></span>
     <strong>{{ coachView.cue }}</strong>
     <b v-if="coachView.cueCount" class="tutorial-cue-count" aria-hidden="true">{{ coachView.cueCount }}</b>
