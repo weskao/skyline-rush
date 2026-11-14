@@ -58,7 +58,9 @@ test('live minimap does not duplicate secret corridors and moves marker position
   await seed(page);await page.goto('/');
   await page.locator('#start-button').click();
   const map=page.locator('#race-route-map svg');
-  await expect(map.locator('polyline')).toHaveCount(1);
+  await expect(map.locator('polyline.route-overview-line')).toHaveCount(1);
+  await expect(map.locator('polyline.route-travelled')).toHaveCount(1);
+  await expect(map.locator('polyline:not(.route-overview-line, .route-travelled)')).toHaveCount(0);
   await expect(map.locator('[data-racer]')).toHaveCount(8);
   const marker=map.locator('[data-racer="YOU"]');
   const start=await marker.getAttribute('cy');

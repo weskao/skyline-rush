@@ -2,34 +2,36 @@ import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { CATALOGS } from '../src/i18n.ts';
 import { ciTimeout } from './helpers/ci.js';
+import { selectLocale } from './helpers/locale-browser.js';
 
-test('home version stays vertically centered beside the footer tagline in both languages', async ({ page }) => {
-  for (const [width, height] of [[320, 740], [390, 844], [844, 390], [1440, 900]]) {
-    await page.setViewportSize({ width, height });
-    await page.goto('/');
-    await page.evaluate(() => document.fonts.ready);
-    for (const locale of ['en', 'zh-TW']) {
-      await page.locator('#locale-select').selectOption(locale, { force: true });
+for (const [width, height] of [[320, 740], [390, 844], [844, 390], [1440, 900]]) {
+  for (const locale of ['en', 'zh-TW']) {
+    test(`home version stays vertically centered beside the footer tagline at ${width}x${height} in ${locale}`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
+      await page.goto('/');
+      await selectLocale(page, locale);
+      await expect(page.locator('html')).toHaveAttribute('lang', locale);
+      await page.evaluate(() => document.fonts.ready);
+      const opener = page.locator('#whats-new-open');
       const [tagline, version] = await Promise.all([
-        page.locator('[data-i18n="footer.tagline"]').boundingBox(),
-        page.locator('#whats-new-open').boundingBox(),
+        page.locator('[data-i18n="footer.tagline"]').boundingBox(), opener.boundingBox(),
       ]);
-      await page.screenshot({ path: test.info().outputPath(`footer-${width}-${locale}.png`), animations: 'disabled' });
       if (height <= 500 && width > height) {
-        // Landscape phones hide the taglines and move the version chip into the top bar beside the brand.
-        expect(tagline, `${width}px ${locale} landscape hides the footer tagline`).toBeNull();
-        expect(version.y + version.height, `${width}px ${locale} version sits in the top bar`).toBeLessThanOrEqual(82);
+        // Landscape phones move the version chip into the top bar beside the brand.
+        expect(tagline).toBeNull();
+        expect(version.y + version.height).toBeLessThanOrEqual(82);
       } else {
-        expect(Math.abs(tagline.y + tagline.height / 2 - version.y - version.height / 2), `${width}px ${locale} footer alignment`).toBeLessThanOrEqual(1);
+        expect(Math.abs(tagline.y + tagline.height / 2 - version.y - version.height / 2)).toBeLessThanOrEqual(1);
         expect(tagline.x + tagline.width).toBeLessThanOrEqual(version.x);
       }
       expect(version.height).toBeGreaterThanOrEqual(44);
-      await page.locator('#whats-new-open').click();
+      await opener.click();
       await expect(page.locator('#whats-new-screen')).toBeVisible();
       await page.locator('#release-close').click();
-    }
+    });
   }
-});
+}
 
 for (const [width, height, hasTouch] of [
   [320, 568, true], [390, 844, true], [568, 320, true], [844, 390, true],

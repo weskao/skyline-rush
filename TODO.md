@@ -1,3 +1,10 @@
+# 2026-11-14 — Browser CI regressions on develop and audio integration
+
+- [x] Reproduced period challenge card overlap at 390×844. Verified the existing layout fix on both trees and native mission/trophy image dimensions at 390×844, 844×390 and 1440×900 on the audio integration tree.
+- [x] Verified the live minimap retains one route, one progress trail and moving racer markers. Verified the 740×360 overlay actions without scrolling, the preset storage isolation flow, the tilt flow and bilingual footer alignment at 390×844 and 844×390 in Chromium.
+- [x] Reproduced the missing NITRO callout at 568×320 after the race HUD appears. With compact sizing and the clear area above the road available for placement, the callout is visible and clear of the road, HUD and controls.
+- [ ] Confirm the full GitHub `quality-gate` on both updated branch heads.
+
 # 2026-11-14 — Audio feedback integration CI
 
 - [x] Inspect the two full CI runs (`43459368880` and `43462172499`). Both passed all three audio scenarios; shared browser failures blocked `quality-gate`.
