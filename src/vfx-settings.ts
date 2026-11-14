@@ -20,7 +20,7 @@ export const VFX_RANGES = {
   speedLines: ['Speed line density', 0, 1, 0.05, 0.45],
   motionBlur: ['Motion blur strength', 0, 1, 0.05, 0.25],
   fov: ['Camera FOV offset', 0, 14, 1, 7],
-  shake: ['Camera shake', 0, 1, 0.05, 0.15],
+  shake: ['Camera shake', 0, 1, 0.05, 0.2],
   bloom: ['Bloom intensity', 0, 1.5, 0.05, 0.55],
 } as const satisfies Record<string, readonly [string, number, number, number, number]>;
 export type VfxRangeKey = keyof typeof VFX_RANGES;

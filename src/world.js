@@ -19,7 +19,7 @@ import { createClassicRoadRender } from './classic-road-render.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
 import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
-import { raceCameraView, rigBack, rigLook, rigHeight, rigFov, rigShake, rigKick, rigRumble, stepCameraSwing, frameChaseSightline } from './race-camera.ts';
+import { raceCameraView, rigBack, rigLook, rigHeight, rigFov, rigShake, rigKick, rigRumble, rigJolt, rumbleFloor, stepCameraSwing, frameChaseSightline } from './race-camera.ts';
 import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { createRenderer } from './webgl-renderer.ts';
@@ -418,7 +418,7 @@ export function createWorld(canvas) {
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
   const desiredCamera = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
-  const smoothLook = new THREE.Vector3(0, 2, -25), rumble = new THREE.Vector3(); // rumble: the world offset added after lookAt last frame
+  const smoothLook = new THREE.Vector3(0, 2, -25), rumble = new THREE.Vector3(), jolt = new THREE.Vector3(); // rumble: the world offset (rumble + jolt) added after lookAt last frame
   let cameraMode = 0, cameraSwing = 0;
   let initialized = false, lastRace = null, trackId, carBank = 0, seenFall = null, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); const courseOriginPoint = [0, 0, 0]; // Frostbite span: a respawn (up to ~500 m back) cuts the camera; the lift carries it
   const classicRoadRender = createClassicRoadRender({ road, laneLines, curbs, edgeLines, railLights, tunnelRoofs, tunnelWalls, shortcutDeck, surfaceMarks }, segments, put, SHORTCUT_TOLERANCE);
@@ -862,11 +862,7 @@ export function createWorld(canvas) {
       desiredCamera.z -= reducedMotion ? 0 : (presentation.goPush || 0) * 1.4;
       const impactAge = car.impact ? race.elapsed - car.impact.time : 10; const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
       const landingAge = car.landing ? race.elapsed - car.landing.time : 10; const landing = landingAge < 0.55 ? Math.exp(-landingAge * 8) * Math.min(1, car.landing.speed / 14) : 0;
-      if (!reducedMotion && race.phase === 'racing') {
-        desiredCamera.x += Math.sin(time * 61) * impact * 0.27;
-        desiredCamera.y += Math.sin(time * 47) * impact * 0.15 - landing * 0.3;
-        desiredCamera.z += impact * 0.65;
-      }
+      if (!reducedMotion && race.phase === 'racing') { desiredCamera.y -= landing * 0.3; desiredCamera.z += impact * 0.65; } // smooth sink and recoil; the shake is rigJolt, after the lerp
       if(preview && !garageCamera) {
         // Preserve scenery clearance, then fit the complete car within the
         // actual viewport, regardless of track and selected camera angle.
@@ -888,7 +884,8 @@ export function createWorld(canvas) {
       const shakeSetting = reducedMotion || race.phase !== 'racing' || !visual.enabled ? 0 : visual.shake, shake = rigShake(view, visualCar.speed, shakeSetting);
       camera.rotateX(Math.sin(time * 53) * shake + rigKick(view, sprintFrame.kick, shakeSetting));
       if (shake) camera.rotateY(Math.sin(time * 37) * shake * 0.6);
-      camera.position.add(rigRumble(view, visualCar.speed, sprintFrame.fov, shakeSetting, time, rumble).applyQuaternion(camera.quaternion)); // a translation: the view never turns
+      const floor = rumbleFloor(camera.position.distanceTo(player.position), camera.fov, canvas.height); // one rendered row at the car
+      camera.position.add(rigRumble(view, visualCar.speed, sprintFrame.fov, shakeSetting, time, rumble, floor, dt).add(rigJolt(view, impact, landing, shakeSetting, time, jolt)).applyQuaternion(camera.quaternion)); // translations: the view never turns
       const targetFov = preview ? 50 : chaseFov - (reducedMotion ? 0 : impact * 4);
       camera.fov = photoView && race.phase === 'paused' ? photoView.fov : camera.fov + (targetFov - camera.fov) * smoothing;
       camera.updateProjectionMatrix();

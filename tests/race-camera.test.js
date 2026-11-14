@@ -19,7 +19,7 @@ const PHONE_PORTRAIT = 390 / 844;
 const OLD = { landscape: { back: 12.5, height: 5 }, portrait: { back: 14.5, height: 5 }, firstHeight: 1.7, fov: 57 };
 
 const chase = raceCameraView(0, false), portrait = raceCameraView(0, true), first = raceCameraView(1, false);
-const TOP = MAX_SPEED + NITRO_CAP_BONUS, DEFAULT_FOV = VFX_RANGES.fov[4], STRONGEST_FOV = VFX_RANGES.fov[2];
+const TOP = MAX_SPEED + NITRO_CAP_BONUS, DEFAULT_FOV = VFX_RANGES.fov[4], STRONGEST_FOV = VFX_RANGES.fov[2], DEFAULT_SHAKE = VFX_RANGES.shake[4];
 /** The rig at a speed plus the sprint's FOV degrees (sprintFovOffset): FOV, dolly distance, look height and eye height. */
 const rigAt = (view, speed, sprintFov = 0) => {
   const fov = rigFov(view, speed) + sprintFov;
@@ -219,14 +219,19 @@ test('shake: first person trembles with speed; the chase stays calm and a NITRO/
   assert.equal(rigShake(first, NaN, NaN), 0);
 });
 
-// 0.135 degrees on the default setting (the first sprint-pulse tune) was too faint to read as an ignition.
+// 0.135 degrees on the default setting (the first sprint-pulse tune) was too faint to read as an ignition; 0.51 degrees on
+// the old 0.15 default still read as flat, so the default is 0.2 (0.68 degrees).
+test('Camera shake defaults to 0.2: the strongest default whose full-sprint rumble stays under 4 cm', () => {
+  assert.equal(DEFAULT_SHAKE, 0.2);
+});
+
 test('NITRO/BOOST ignition: one felt, low-frequency kick that dies out', () => {
   assert.equal(typeof rig.rigKick, 'function', 'the ignition kick lives in the rig module');
-  for (const view of [chase, portrait, first]) for (const setting of [0.15, 0.3, 1]) {
+  for (const view of [chase, portrait, first]) for (const setting of [DEFAULT_SHAKE, 0.3, 1]) {
     const samples = Array.from({ length: 121 }, (_, i) => rig.rigKick(view, i / 240, setting)); // 0 to 0.5 s
     const peak = Math.max(...samples.map(Math.abs));
     assert.equal(samples[0], 0, 'starts from rest: nothing pops on the ignition frame');
-    assert.ok(deg(peak) >= (setting === 0.15 ? 0.4 : 0.1) && deg(peak) <= 0.9, `setting ${setting} peaks at ${deg(peak).toFixed(3)} degrees`);
+    assert.ok(deg(peak) >= (setting === DEFAULT_SHAKE ? 0.6 : 0.1) && deg(peak) <= 0.9, `setting ${setting} peaks at ${deg(peak).toFixed(3)} degrees`);
     assert.ok(samples.slice(84).every(value => value === 0), 'over within 0.35 s');
     const live = samples.slice(1, 60), flips = live.filter((value, i) => i > 0 && value * live[i - 1] < 0).length;
     assert.ok(flips <= 2, `${flips} direction changes: a 4 to 6 Hz jolt, not a buzz`);
@@ -245,7 +250,7 @@ test('road rumble: a small smooth translation that grows with speed and the spri
   const out = new Vector3(), dt = 1 / 240;
   const trace = (view, speed, sprint, setting) => Array.from({ length: 6 / dt }, (_, i) => rig.rigRumble(view, speed, sprint, setting, i * dt, out).clone());
   const peak = samples => Math.max(...samples.map(v => v.length()));
-  const cruise = trace(chase, MAX_SPEED, 0, 0.15), sprint = trace(chase, TOP, 1, 0.15);
+  const cruise = trace(chase, MAX_SPEED, 0, DEFAULT_SHAKE), sprint = trace(chase, TOP, 1, DEFAULT_SHAKE);
   assert.ok(sprint.every(v => v.z === 0), 'camera-local x/y only: it never moves towards the car');
   assert.ok(peak(cruise) >= 0.008 && peak(cruise) <= 0.03, `cruise rumble ${peak(cruise).toFixed(4)} m on the default setting`);
   assert.ok(peak(sprint) >= 1.4 * peak(cruise) && peak(sprint) <= 0.04, `sprint rumble ${peak(sprint).toFixed(4)} m: more, still a few cm`);
@@ -258,17 +263,77 @@ test('road rumble: a small smooth translation that grows with speed and the spri
     const speedMax = Math.max(...samples.slice(1).map((v, i) => v.distanceTo(samples[i]) / dt));
     assert.ok(speedMax < 35 * peak(samples), `peak rate ${(speedMax / peak(samples)).toFixed(1)} x amplitude per second`);
   }
-  assert.ok(peak(trace(chase, MAX_SPEED / 2, 0, 0.15)) < 0.5 * peak(cruise), 'grows with speed');
+  assert.ok(peak(trace(chase, MAX_SPEED / 2, 0, DEFAULT_SHAKE)) < 0.5 * peak(cruise), 'grows with speed');
   assert.equal(peak(trace(chase, 0, 1, 1)), 0, 'standing still');
   assert.equal(peak(trace(chase, TOP, 1, 0)), 0, 'the Camera shake setting at 0 turns it off');
   assert.equal(peak(trace(first, TOP, 1, 1)), 0, 'first person keeps its own speed tremble only');
   assert.equal(rig.rigRumble(chase, NaN, NaN, NaN, NaN, out).length(), 0);
 });
 
+// A low-quality phone frame is ~290-390 rows tall: the default cruise rumble (2.2 cm at 7.6 m) moves the car under one
+// row there, which only shimmers at the edges. rumbleFloor is one row at the car's distance; the rumble never drops below
+// it while the Camera shake setting is on, and the sprint share and the 5 cm cap still apply on top.
+test('road rumble: at least one rendered row of motion on a low-resolution frame', () => {
+  assert.equal(typeof rig.rumbleFloor, 'function', 'the pixel floor lives in the rig module');
+  const row = rig.rumbleFloor(7.6, 57, 292); // low tier x 0.75 adaptive scale on a 390-px-tall landscape phone
+  assert.ok(Math.abs(row - 2 * 7.6 * Math.tan(28.5 * Math.PI / 180) / 292) < 1e-9, `one row is ${row.toFixed(4)} m`);
+  assert.ok(rig.rumbleFloor(7.6, 57, 2160) < row / 7, 'a 4K-tall frame needs far less');
+  for (const bad of [[NaN, 57, 292], [7.6, 57, 0], [7.6, NaN, 292], [-1, 57, 292]]) assert.equal(rig.rumbleFloor(...bad), 0);
+  const out = new Vector3(), peak = (view, speed, sprint, setting, floor) =>
+    Math.max(...Array.from({ length: 6 * 240 }, (_, i) => rig.rigRumble(view, speed, sprint, setting, i / 240, out, floor).length()));
+  const plain = peak(chase, MAX_SPEED, 0, DEFAULT_SHAKE, 0), floored = peak(chase, MAX_SPEED, 0, DEFAULT_SHAKE, row);
+  assert.ok(plain < row, `without the floor the cruise rumble (${plain.toFixed(4)} m) is under one row (${row.toFixed(4)} m)`);
+  assert.ok(floored >= 0.85 * row, `with it the cruise rumble reaches ${floored.toFixed(4)} m`);
+  assert.ok(peak(chase, TOP, 1, DEFAULT_SHAKE, row) > 1.4 * floored, 'a sprint still adds on top of the floor');
+  assert.ok(peak(chase, TOP, 1, 1, 1) <= 0.05, 'the 5 cm cap still holds');
+  assert.equal(peak(chase, TOP, 1, 0, row), 0, 'the Camera shake setting at 0 still turns it off');
+  assert.equal(peak(first, TOP, 1, 1, row), 0, 'first person still has no rumble');
+  assert.ok(peak(chase, MAX_SPEED / 2, 0, DEFAULT_SHAKE, row) < 0.5 * floored, 'still grows with speed');
+});
+
+// The 17 Hz tyre buzz needs more than 2 x 17 frames a second: at 30 fps it folds back to a 13 Hz wobble, at 24 fps a 7 Hz
+// one, which reads as a frame-pacing bug. Below 42.5 fps (2.5 samples per buzz cycle) the buzz is dropped.
+test('road rumble: the tyre buzz is dropped when the frame rate cannot carry it', () => {
+  const out = new Vector3(), y = (dt, t) => rig.rigRumble(chase, MAX_SPEED, 0, DEFAULT_SHAKE, t, out, 0, dt).y;
+  const times = Array.from({ length: 300 }, (_, i) => i / 300);
+  const buzz = dt => Math.max(...times.map(t => Math.abs(y(dt, t) - y(1 / 30, t))));
+  assert.ok(buzz(1 / 60) > 0.001, `60 fps keeps the buzz (${buzz(1 / 60).toFixed(4)} m)`);
+  assert.equal(buzz(1 / 120), buzz(1 / 60), '120 fps keeps the same buzz');
+  assert.equal(buzz(1 / 24), 0, '24 fps drops it like 30 fps');
+  assert.ok(Math.max(...times.map(t => Math.abs(y(0, t) - y(1 / 60, t)))) === 0, 'an unknown frame time (0, paused) keeps it');
+});
+
+// world.js used to add the hit / touchdown shake to desiredCamera, before the 1 - e^(-7 dt) lerp: that low-pass kept about
+// 11% of a 9.7 Hz shake, so a 0.27 m hit moved the view ~5 cm (mostly slow drift) and a 0.3 m landing dip ~11 cm.
+// rigJolt is applied after lookAt like the rumble, scaled by the Camera shake setting, and dies with the event.
+test('hit and touchdown jolt: a short shake applied after the camera lerp', () => {
+  assert.equal(typeof rig.rigJolt, 'function', 'the jolt lives in the rig module');
+  const out = new Vector3(), dt = 1 / 240, span = Array.from({ length: 240 }, (_, i) => i * dt);
+  const trace = (view, impact, landing, setting) => span.map(t => rig.rigJolt(view, impact, landing, setting, 10 + t, out).clone());
+  const peak = (samples, axis) => Math.max(...samples.map(v => Math.abs(v[axis])));
+  for (const view of [chase, portrait, first]) {
+    const hit = trace(view, 1, 0, DEFAULT_SHAKE), land = trace(view, 0, 1, DEFAULT_SHAKE);
+    assert.ok(hit.every(v => v.z === 0) && land.every(v => v.z === 0), 'camera-local x/y only');
+    assert.ok(peak(hit, 'x') >= 0.08 && peak(hit, 'x') <= 0.12, `a full hit shakes ${peak(hit, 'x').toFixed(3)} m sideways`);
+    assert.ok(peak(hit, 'y') >= 0.04, `and ${peak(hit, 'y').toFixed(3)} m vertically`);
+    assert.ok(peak(land, 'y') >= 0.06 && peak(land, 'x') === 0, `a full landing thumps ${peak(land, 'y').toFixed(3)} m vertically only`);
+    const flips = hit.slice(1).filter((v, i) => v.x * hit[i].x < 0).length;
+    assert.ok(flips >= 10, `${flips} direction changes in a second: a shake, not a drift`);
+    assert.ok(peak(trace(view, 0.5, 0, DEFAULT_SHAKE), 'x') < 0.6 * peak(hit, 'x'), 'scales with the hit');
+    assert.ok(peak(trace(view, 1, 1, 1), 'x') <= 0.2 && peak(trace(view, 1, 1, 1), 'y') <= 0.2, 'capped at 20 cm');
+    assert.ok(peak(trace(view, 1, 0, 0.3), 'x') > peak(hit, 'x'), 'a stronger setting jolts harder');
+    assert.equal(peak(trace(view, 1, 1, 0), 'x') + peak(trace(view, 1, 1, 0), 'y'), 0, 'the Camera shake setting at 0 turns it off');
+    assert.equal(peak(trace(view, 0, 0, 1), 'x') + peak(trace(view, 0, 0, 1), 'y'), 0, 'nothing without an event');
+  }
+  assert.equal(rig.rigJolt(chase, NaN, NaN, NaN, NaN, out).length(), 0);
+});
+
 test('world.js takes its race camera numbers from the table', () => {
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
-  for (const name of ['raceCameraView', 'rigBack', 'rigLook', 'rigHeight', 'rigFov', 'rigShake', 'rigKick', 'rigRumble', 'stepCameraSwing'])
+  for (const name of ['raceCameraView', 'rigBack', 'rigLook', 'rigHeight', 'rigFov', 'rigShake', 'rigKick', 'rigRumble', 'rigJolt', 'rumbleFloor', 'stepCameraSwing'])
     assert.ok(world.includes(`${name}(`), `world.js calls ${name}`);
+  assert.ok(!/time \* 61|time \* 47/.test(world), 'no hit / landing shake added to desiredCamera before the lerp');
+  assert.ok(world.indexOf('rigJolt(') > world.indexOf('camera.lookAt(smoothLook)'), 'the jolt is added after lookAt');
   assert.ok(!/speedBack|sprintBack|punchBack/.test(world + readFileSync(new URL('../src/race-camera.ts', import.meta.url), 'utf8')), 'no pull-back left');
   // The rumble is added after lookAt (a translation: the view does not turn) and taken off before the next lerp, so it
   // never feeds the smoothed camera position.
