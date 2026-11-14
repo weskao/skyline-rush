@@ -24,6 +24,8 @@ const running = (page, tier) => page.evaluate(name => {
     shockwaves: stage.children.filter(mesh => mesh.name.includes('energy shockwave') && mesh.visible).length,
     shards: shards.visible ? shards.count : 0,
     beam: stage.children.find(mesh => mesh.name === 'energy beam').visible,
+    contact: stage.getObjectByName('Pickup contact pulse').visible,
+    bodySweep: player.getObjectByName('Pickup body sweep').visible,
     fromCar: stage.position.distanceTo(player.getWorldPosition(stage.position.clone())),
   };
 }, tier);
@@ -36,6 +38,7 @@ test('each tier plays its own collection effect on the car and its WebGL frame i
     await expect.poll(async () => (state = await running(page, tier)) !== null, { timeout: ciTimeout(4000) }).toBe(true);
     expect(state.shockwaves).toBeGreaterThanOrEqual(1);
     expect(state.shards).toBeGreaterThan(0);
+    expect(state.bodySweep).toBe(true);
     expect(state.fromCar, tier + ' effect rides the car instead of staying at the item 8 m ahead').toBeLessThan(3);
     await test.info().attach('pickup-collect-' + tier + '.png', {
       body: await page.screenshot(), contentType: 'image/png',
@@ -52,5 +55,7 @@ test('reduced-motion collection stays restrained without the rare beam or partic
   await expect.poll(async () => (state = await running(page, 'overcharge')) !== null, { timeout: ciTimeout(4000) }).toBe(true);
   expect(state.shards).toBe(0);
   expect(state.beam).toBe(false);
+  expect(state.contact).toBe(false);
+  expect(state.bodySweep).toBe(false);
   expect(state.shockwaves).toBe(1);
 });

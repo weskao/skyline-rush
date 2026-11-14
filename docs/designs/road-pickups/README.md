@@ -59,21 +59,24 @@ Collision volumes, rewards, placement, respawn timers and balance are unchanged.
 
 ## Collection effects
 
-Each tier plays its own choreography on the same pooled meshes (no extra shader, material or draw
-call per tier). The player's effect follows the car's rendered pose; a rival's quieter cue stays
-where the item was.
+Each tier plays its own choreography on the same pooled meshes. A player pickup sends a short
+contact pulse out from the authored item in the local road frame, then the rings, shards and
+car-body sweep follow the rendered car. The body sweep reuses the garage rig's body rider and
+fits the equipped body's geometry, including the authored GLB. A rival's quieter cue stays at the item.
 
 | Tier | Motion | Rings | Shards | Length | What it does |
 | --- | --- | ---: | ---: | ---: | --- |
-| `cell` | `arcSnap` | 2 | 18 | 0.50 s | Two rings contract onto the car while jagged needles discharge into it |
-| `can` | `afterburn` | 2 | 24 | 0.65 s | Heat rings and two ember jets are blown out behind the car |
-| `tank` | `surge` | 3 | 30 | 0.78 s | Scan rings climb the car inside a soft pillar, a double helix winds up |
-| `overcharge` | `prismNova` | 3 | 42 | 0.90 s | Three gyro rings on different axes, a prismatic starburst and a tall beam |
+| `cell` | `arcSnap` | 2 | 18 | 0.50 s | Cyan electrical pulse, inward needles, and a short jagged sweep from nose to tail |
+| `can` | `afterburn` | 2 | 24 | 0.65 s | Two-lobed orange pressure pulse, a tail-only heat sweep, and two exhaust jets |
+| `tank` | `surge` | 3 | 30 | 0.78 s | Gold hexagonal pulse, ascending scan rings, and two bands up the body |
+| `overcharge` | `prismNova` | 3 | 42 | 0.90 s | Faceted rainbow pulse, crossing body bands, spinning rings, and a prismatic starburst |
 
-Two slots per tier (eight at most). Medium quality draws 65% of the shards and two rings, Low 26%
-and one ring. Reduced motion shows one still ring and a faint glow, no shards and no beam. Every
-effect stays on or behind the car and below the driver's sightline; the flash is capped in size and
-opacity so it never whites out the centre of the screen.
+Two slots per tier (eight at most). The contact pulse uses one depth-tested plane per active
+player pickup, and one shared mesh sweeps the player's body using the latest pickup's palette.
+Medium quality draws 65% of the shards and up to two rings, with a dimmer pulse. Low draws 26%
+of the shards and one ring, omits the contact pulse and dims the body sweep. Reduced motion
+uses a still ring and a faint glow. The effect remains local to the pickup and car, and the
+flash is capped in size and opacity.
 
 `effects.js` uses the pickup's `downUntil` as the take generation, so a respawned pickup gets a new
 effect and one take never plays twice.

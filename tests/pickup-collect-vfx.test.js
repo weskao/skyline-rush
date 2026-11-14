@@ -25,7 +25,7 @@ test('pool preallocates geometry, reuses capacity, animates and cleans up finite
   assert.equal(vfx.activeCount(), 0);
   assert.equal(group.children.length, 8, 'two concurrent effect slots for each tier');
   const geometryIds = new Set();
-  group.traverse(mesh => { if (mesh.geometry) geometryIds.add(mesh.geometry.uuid); });
+  group.traverse(mesh => { if (mesh.geometry && !mesh.isSprite) geometryIds.add(mesh.geometry.uuid); });
   assert.ok(geometryIds.size <= 4, 'four reused 3D geometry types, not one per animation');
   assert.ok(group.children.every(stage => stage.children.filter(mesh => mesh.isInstancedMesh).every(mesh => mesh.count >= 1)),
     'each instanced shader has a parked example for pre-race WebGL warmup');
@@ -219,4 +219,74 @@ test('a rival pickup on a branching course retains its original graph item for w
     assert.ok(accessed.includes(item), 'use the authored pickup edge and branch metadata, not the generic rival cue');
     effects.dispose();
   } finally { delete globalThis.devicePixelRatio; }
+});
+
+test('a player collection leaves a short 3D pulse at the authored pickup while the other effect follows the car', () => {
+  const vfx = createPickupCollectVfx(new THREE.Scene());
+  const item = { distance: 120, x: 2, altitude: 0, edgeId: 'banked-branch' };
+  const pose = new THREE.Object3D();
+  pose.position.set(9, 1, -6);
+  const up = [0, Math.SQRT1_2, Math.SQRT1_2];
+  const frame = {
+    pose, distance: 124,
+    worldPoint: (s, x, y, origin, source) => {
+      assert.equal(source, item);
+      return [x, y, origin - s];
+    },
+    worldFrame: () => ({ right: [1, 0, 0], up, forward: [0, Math.SQRT1_2, -Math.SQRT1_2] }),
+  };
+  vfx.spawn('tank', item, { follow: true });
+  vfx.update(.08, frame);
+  const stage = vfx.group.children.find(s => s.visible);
+  const pulse = stage.getObjectByName('Pickup contact pulse');
+  assert.ok(pulse?.visible, 'the collection point has its own effect');
+  const position = () => pulse.getWorldPosition(new THREE.Vector3());
+  assert.ok(position().distanceTo(new THREE.Vector3(2, .08, 4)) < 1e-6);
+  const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(pulse.getWorldQuaternion(new THREE.Quaternion()));
+  assert.ok(normal.distanceTo(new THREE.Vector3(...up)) < 1e-6, 'pulse lies against the banked course');
+  pose.position.set(-8, 2, -3);
+  pose.rotation.y = .6;
+  vfx.update(.08, { ...frame, distance: 130 });
+  assert.ok(position().distanceTo(new THREE.Vector3(2, .08, 10)) < 1e-6, 'only the road origin moves the contact pulse');
+  vfx.update(.3, { ...frame, distance: 130 });
+  assert.ok(stage.visible && !pulse.visible, 'contact expires before the car choreography');
+  vfx.dispose();
+});
+
+test('a new car pickup paints its fitted shell; rival cues and reduced motion never paint the player', () => {
+  const scene = new THREE.Scene();
+  const car = new THREE.Group(), body = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 4));
+  car.userData.body = body;
+  car.add(body);
+  scene.add(car);
+  const vfx = createPickupCollectVfx(scene, car);
+  const shell = body.getObjectByName('Pickup body sweep');
+  assert.ok(shell?.userData.followsBody, 'the existing garage rig can bind this sweep to the dressed GLB body');
+  const event = { distance: 80, x: 0, altitude: 0 };
+  const frame = { distance: 80, pose: car };
+  vfx.spawn('tank', event, { follow: true });
+  vfx.update(.14, frame);
+  assert.ok(shell.visible);
+  assert.deepEqual(shell.material.uniforms.zRange.value.toArray(), [-2, 2]);
+  const tankColor = shell.material.uniforms.primary.value.clone();
+  vfx.spawn('overcharge', event, { rival: true });
+  vfx.update(.03, frame);
+  assert.ok(shell.material.uniforms.primary.value.equals(tankColor));
+  assert.equal(vfx.group.children.find(s => s.userData.tier === 'overcharge').getObjectByName('Pickup contact pulse').visible, false);
+  vfx.spawn('cell', event, { follow: true, reducedMotion: true });
+  vfx.update(.03, { ...frame, reducedMotion: true });
+  assert.equal(shell.visible, false);
+  assert.equal(vfx.group.children.find(s => s.userData.tier === 'cell').getObjectByName('Pickup contact pulse').visible, false);
+
+  shell.geometry = new THREE.BoxGeometry(1, 2, 8); // the garage rig swaps the shell's reference on dress
+  vfx.spawn('can', event, { follow: true });
+  vfx.update(.12, frame);
+  assert.ok(shell.visible);
+  assert.deepEqual(shell.material.uniforms.zRange.value.toArray(), [-4, 4]);
+  vfx.update(.02, { ...frame, enabled: false });
+  assert.equal(shell.visible, false);
+  vfx.reset();
+  assert.equal(vfx.activeCount(), 0);
+  vfx.dispose();
+  assert.equal(shell.parent, null);
 });

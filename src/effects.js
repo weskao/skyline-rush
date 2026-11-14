@@ -105,7 +105,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   const pickupMarkers = createPickupMarkers(128, { renderer, envMap: pickupEnvironment }), pickupPool = pickupMarkers.pool;
   const gates = ringPool.group, marker = new THREE.Object3D(), gateFrames = new WeakMap(), rivalCues = createRivalCues();
   scene.add(gates, ...pickupMarkers.objects);
-  const collectVfx = createPickupCollectVfx(scene);
+  const collectVfx = createPickupCollectVfx(scene, player);
   // ITEM-12: a light column over each ring that grants a held item, one per ring slot; same program as the plain rings.
   const beamGeometry = new THREE.CylinderGeometry(0.08, 0.08, 14, 8, 1, true);
   const beamMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(...gold), transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -217,7 +217,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         if (cue.kind === 'take' && pickupColors[cue.item])
           collectVfx.spawn(cue.item, pickupCueSource(cue, race.pickups), { quality: options.quality, reducedMotion, rival: true });
       }
-      collectVfx.update(dt, { distance, center, roadCenter, worldPoint: options.worldPoint, enabled, car, pose: vehicles?.[0] });
+      collectVfx.update(dt, { distance, center, roadCenter, worldPoint: options.worldPoint, worldFrame: options.worldFrame, enabled, reducedMotion, car, pose: vehicles?.[0] });
       beamMaterial.opacity = reducedMotion ? 0.3 : 0.3 + Math.sin(flowTime * 4) * 0.1;
       previousRace = race;
       if (active && !reducedMotion && car.drift && car.altitude < 0.2) {

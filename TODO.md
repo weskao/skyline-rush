@@ -1,3 +1,9 @@
+# 2026-11-14 — Road supply collection effects
+
+- [x] Add separate effects for the pickup location and the equipped car. Verify road-space placement on a banked CourseGraph edge, shell geometry fit, rival cues, reset, VFX Off and reduced motion in `tests/pickup-collect-vfx.test.js`.
+- [x] Give all four tiers distinct contact and body motions in the shared race renderer. The two new regression tests failed on the original renderer and passed after implementation.
+- [ ] Complete full browser CI and physical-phone visual review on this branch.
+
 # 2026-11-14 — Browser CI regressions on develop and audio integration
 
 - [x] Reproduced period challenge card overlap at 390×844. Verified the existing layout fix on both trees and native mission/trophy image dimensions at 390×844, 844×390 and 1440×900 on the audio integration tree.
