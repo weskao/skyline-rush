@@ -1,79 +1,66 @@
 import { test,expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
+import { openWorldTour,homePreview,previewLandmark,airflowAngles,landmarkAt } from './helpers/showcase-world-tour.js';
 
-for(const id of ['taipei','tokyo','alpine','coastal','cosmic']) {
-  test(`${id}: home preview is a full, dynamic four-car airborne showcase with matching scale`,async({page},info)=>{
-    const errors=[];
-    page.on('pageerror',error=>errors.push(error.message));
-    await page.goto('/tests/fixtures/world-tour-mid-race.html');
-    await page.waitForFunction(()=>window.worldTourReady===true);
-    const result=await page.evaluate(async id=>{
-      // Compare to the real original course preview rendered by exactly the
-      // same world, geometry and camera. Then switch to a World Tour course.
-      const baseline=window.worldTourPreviewProbe('coast').actors[0];
-      await new Promise(requestAnimationFrame);
-      const first=window.worldTourPreviewProbe(id).actors;
-      await new Promise(resolve=>setTimeout(resolve,200));
-      const later=window.worldTourPreviewProbe(id).actors;
-      return {baseline,first,later};
-    },id);
-    expect(result.first).toHaveLength(4);
-    expect(result.first.every(car=>car.visible)).toBe(true);
+// CI: one page boot per family of maps (about 11 s each on software WebGL) instead of one per map; every map keeps its own
+// test.step with the assertions it had as a test of its own. Values read by the old fresh-boot tests match the folded ones to
+// < 1e-3 (compared once; see tests/helpers/showcase-world-tour.js for the shared probes).
+const MAPS=['taipei','tokyo','alpine','coastal','cosmic'];
+
+test('every World Tour home preview is a full, dynamic four-car airborne showcase with matching scale',async({page},info)=>{
+  test.setTimeout(ciTimeout(100000));
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await openWorldTour(page);
+  for(const id of MAPS) await test.step(id,async()=>{
+    const result=await homePreview(page,id);
+    expect(result.first,`${id} actors`).toHaveLength(4);
+    expect(result.first.every(car=>car.visible),`${id} all cars visible`).toBe(true);
     expect(result.first.filter(car=>Math.abs(car.x)<1 && Math.abs(car.y)<1 &&
-      car.z>-1 && car.z<1).length).toBeGreaterThanOrEqual(3);
-    expect(result.first[0].jetsVisible).toBe(true);
-    expect(result.first[1].jetsVisible).toBe(true);
+      car.z>-1 && car.z<1).length,`${id} cars in frustum`).toBeGreaterThanOrEqual(3);
+    expect(result.first[0].jetsVisible,`${id} player jets`).toBe(true);
+    expect(result.first[1].jetsVisible,`${id} rival jets`).toBe(true);
     // The player is the original vehicle model: same three-quarter home
     // camera distance => comparable projected on-screen vehicle width.
     const ratio=result.first[0].screenWidth/result.baseline.screenWidth;
-    expect(ratio,'player car should be about the same size as other maps').toBeGreaterThan(.65);
-    expect(ratio,'player car should not dominate the preview').toBeLessThan(1.5);
-    expect(result.later[0].screenWidth).toBeGreaterThan(0);
-    expect(errors).toEqual([]);
+    expect(ratio,`${id}: player car should be about the same size as other maps`).toBeGreaterThan(.65);
+    expect(ratio,`${id}: player car should not dominate the preview`).toBeLessThan(1.5);
+    expect(result.later[0].screenWidth,`${id} later screen width`).toBeGreaterThan(0);
     await page.screenshot({path:info.outputPath(`world-tour-${id}-flying-showcase.png`)});
   });
-}
+  expect(errors).toEqual([]);
+});
 
-for(const [id,kind] of [['taipei','office'],['tokyo','tower'],['alpine','mountain'],['coastal','lighthouse'],['cosmic','cosmic-gate']]) {
-  for(const [layout,viewport] of [['landscape',{width:640,height:360}],['portrait',{width:390,height:844}]]) {
-    test(`${id}: ${layout} home preview frames its signature landmark`,async({page},info)=>{
-      await page.setViewportSize(viewport);
-      await page.goto('/tests/fixtures/world-tour-mid-race.html');
-      await page.waitForFunction(()=>window.worldTourReady===true);
-      const landmark=await page.evaluate(([id,kind])=>{
-        let probe;for(let i=0;i<3;i++)probe=window.worldTourPreviewProbe(id);
-        return probe.landmarks.find(entry=>entry.kind===kind);
-      },[id,kind]);
-      expect(landmark.visible&&landmark.inFront).toBe(true);
-      expect(landmark.maxY,'landmark top stays in frame').toBeLessThan(.98);
+const LANDMARKS=[['taipei','office'],['tokyo','tower'],['alpine','mountain'],['coastal','lighthouse'],['cosmic','cosmic-gate']];
+for(const [layout,viewport] of [['landscape',{width:640,height:360}],['portrait',{width:390,height:844}]]) {
+  test(`every World Tour ${layout} home preview frames its signature landmark`,async({page},info)=>{
+    test.setTimeout(ciTimeout(100000));
+    await openWorldTour(page,viewport);
+    for(const [id,kind] of LANDMARKS) await test.step(id,async()=>{
+      const landmark=await previewLandmark(page,id,kind);
+      expect(landmark.visible&&landmark.inFront,`${id} ${layout} visible in front`).toBe(true);
+      expect(landmark.maxY,`${id} ${layout} landmark top stays in frame`).toBeLessThan(.98);
       // Landscape home UI covers the left half: the landmark sits right of it.
       if(layout==='landscape'){
-        expect(landmark.minX).toBeGreaterThan(.04);
-        expect(landmark.maxX).toBeLessThan(.98);
-      }else expect(Math.abs((landmark.minX+landmark.maxX)/2)).toBeLessThan(1);
-      expect(landmark.unobstructed,'roadside props must not hide the landmark').toBeGreaterThan(.6);
+        expect(landmark.minX,`${id} landscape right of the home UI`).toBeGreaterThan(.04);
+        expect(landmark.maxX,`${id} landscape inside the frame`).toBeLessThan(.98);
+      }else expect(Math.abs((landmark.minX+landmark.maxX)/2),`${id} portrait centred`).toBeLessThan(1);
+      expect(landmark.unobstructed,`${id} ${layout}: roadside props must not hide the landmark`).toBeGreaterThan(.6);
       await page.screenshot({path:info.outputPath(`world-tour-${id}-${layout}-landmark-showcase.png`)});
     });
-  }
+  });
 }
 
 // Each World Tour road uses a curved/elevated local tangent. Probe the actual
 // WebGL vehicle, not just the shared camera helper, when AIRFLOW is enabled.
-for (const id of ['taipei','tokyo','alpine','coastal','cosmic']) {
-  test(`${id}: AIRFLOW grounds the hero and keeps all six preview camera angles usable`,async({page})=>{
-    await page.goto('/tests/fixtures/world-tour-mid-race.html');
-    await page.waitForFunction(()=>window.worldTourReady===true);
-    const result=await page.evaluate(id=>{
-      const flying=window.worldTourPreviewProbe(id,{airflow:false,view:'drive'}).actors[0];
-      const grounded=window.worldTourPreviewProbe(id,{airflow:true,view:'drive'},24).actors[0];
-      const angles={};
-      for(const view of ['drive','front','rear','left','right','orbit']) {
-        angles[view]=window.worldTourPreviewProbe(id,{airflow:true,view},18).actors[0];
-      }
-      return {flying,grounded,angles};
-    },id);
-    expect(result.flying.jetsVisible).toBe(true);
-    expect(result.flying.worldY-result.grounded.worldY,'AIRFLOW must lower the car to the road surface').toBeGreaterThan(.8);
-    expect(result.grounded.jetsVisible).toBe(false);
+test('every World Tour map: AIRFLOW grounds the hero and keeps all six preview camera angles usable',async({page})=>{
+  test.setTimeout(ciTimeout(60000));
+  await openWorldTour(page);
+  for(const id of MAPS) await test.step(id,async()=>{
+    const result=await airflowAngles(page,id);
+    expect(result.flying.jetsVisible,`${id} flying jets`).toBe(true);
+    expect(result.flying.worldY-result.grounded.worldY,`${id}: AIRFLOW must lower the car to the road surface`).toBeGreaterThan(.8);
+    expect(result.grounded.jetsVisible,`${id} grounded jets`).toBe(false);
     expect(result.grounded.bodyClearShare,`${id}: unobstructed grounded showroom vehicle`).toBeGreaterThanOrEqual(.75);
     for(const [view,actor] of Object.entries(result.angles)) {
       expect(actor.bodyClearShare,`${id}/${view}: vehicle body must not be blocked or offscreen`).toBeGreaterThanOrEqual(.75);
@@ -83,33 +70,32 @@ for (const id of ['taipei','tokyo','alpine','coastal','cosmic']) {
       expect(Number.isFinite(actor.x)&&Number.isFinite(actor.y),`${id}/${view}: valid camera projection`).toBe(true);
     }
   });
-}
+});
 
 // In-race approach: the chase camera keeps the signature landmark in view and
 // clear of roadside props on its kerb (the plaza), not just on the home screen.
-for(const [id,kind,stops] of [['taipei','office',[1250,1400,1550]],['tokyo','tower',[2980,3080,3180]],
-  ['alpine','mountain',[5750,5900]],['coastal','lighthouse',[850,950]],['cosmic','cosmic-gate',[3820,3920]]]) {
-  test(`${id}: racing toward the ${kind} keeps it in view and unobstructed`,async({page})=>{
-    await page.setViewportSize({width:1280,height:720});
-    await page.goto('/tests/fixtures/world-tour-mid-race.html');
-    await page.waitForFunction(()=>window.worldTourReady===true);
-    for(const at of stops){
-      const landmark=await page.evaluate(async([id,kind,at])=>{
-        for(let i=0;i<40;i++){await new Promise(requestAnimationFrame);window.worldTourProbe(id,at);}
-        return window.worldTourLandmarks().find(entry=>entry.kind===kind);
-      },[id,kind,at]);
-      expect(landmark.visible&&landmark.inFront,`${id} @${at}m`).toBe(true);
-      expect(landmark.minX,`${id} @${at}m on screen`).toBeLessThan(1);
-      expect(landmark.maxX,`${id} @${at}m on screen`).toBeGreaterThan(-1);
-      expect(landmark.unobstructed,`${id} @${at}m unobstructed`).toBeGreaterThan(.6);
-    }
+// Two pages: five maps in one outran the folded-test budget (about 150 CI seconds).
+const APPROACHES=[['taipei','office',[1250,1400,1550]],['tokyo','tower',[2980,3080,3180]],
+  ['alpine','mountain',[5750,5900]],['coastal','lighthouse',[850,950]],['cosmic','cosmic-gate',[3820,3920]]];
+for(const group of [APPROACHES.slice(0,2),APPROACHES.slice(2)]) {
+  test(`racing toward the landmark keeps it in view and unobstructed: ${group.map(([id])=>id).join(', ')}`,async({page})=>{
+    test.setTimeout(ciTimeout(100000));
+    await openWorldTour(page,{width:1280,height:720});
+    for(const [id,kind,stops] of group) await test.step(id,async()=>{
+      for(const at of stops){
+        const landmark=await landmarkAt(page,id,kind,at);
+        expect(landmark.visible&&landmark.inFront,`${id} @${at}m`).toBe(true);
+        expect(landmark.minX,`${id} @${at}m on screen`).toBeLessThan(1);
+        expect(landmark.maxX,`${id} @${at}m on screen`).toBeGreaterThan(-1);
+        expect(landmark.unobstructed,`${id} @${at}m unobstructed`).toBeGreaterThan(.6);
+      }
+    });
   });
 }
 
 // The road ends at the arch, so rivals past it must leave instead of parking there.
 test('rivals that crossed the finish do not stay parked at the arch',async({page})=>{
-  await page.goto('/tests/fixtures/world-tour-mid-race.html');
-  await page.waitForFunction(()=>window.worldTourReady===true);
+  await openWorldTour(page);
   for(const id of ['taipei','tokyo','alpine','coastal','cosmic','spiral']){
     const actors=await page.evaluate(id=>window.worldTourFinishProbe(id),id);
     expect(actors[0].visible,`${id} player`).toBe(true);
