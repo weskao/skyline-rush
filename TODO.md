@@ -1,3 +1,10 @@
+# 2026-11-14 — Dune Tempest road and scenery clearance
+
+- [x] Reproduced and fixed terrain and road intersections on Dune Tempest. The geometry regression failed on the old renderer and now passes across 14 edges, five lane samples every 3 m, all three graphics tiers, and both flight pads. The revised routes preserve the four canyon hairpins and all checkpoint connections.
+- [x] Compared the Home and in-race 14-edge minimaps in Chromium and captured the canyon hairpin before/after. Added a browser regression for both maps.
+- [ ] Complete full viewport and physical-device visual coverage.
+- [ ] Complete the full GitHub quality gate.
+
 # 2026-11-14 — Road supply collection effects
 
 - [x] Add separate effects for the pickup location and the equipped car. Verify road-space placement on a banked CourseGraph edge, shell geometry fit, rival cues, reset, VFX Off and reduced motion in `tests/pickup-collect-vfx.test.js`.

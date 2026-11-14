@@ -69,35 +69,3 @@ export function duneSurfaceIntervals(start: number, end: number, length: number,
   }
   return pads;
 }
-
-/** Deterministic native 3D sand terrain with exact chunk joins.
- * Map-owned visuals only: shared runtime must own terrain collisions and recovery.
- */
-export function buildDuneTerrainChunk(sample: Sample, edgeId: string, startS: number, endS: number,
-  width: number, extent = 120, spacing = 12) {
-  if (![startS,endS,width,extent,spacing].every(Number.isFinite) ||
-    startS < 0 || endS <= startS || width <= 0 || extent <= width / 2 + 6 || spacing <= 0) {
-    throw new RangeError('Invalid Dune terrain bounds');
-  }
-  const segments = Math.ceil((endS-startS) / spacing), columns = 5;
-  const positions: number[] = [], indices: number[] = [];
-  const shoulder = width / 2 + 6;
-  for (let row = 0; row <= segments; row++) {
-    const s = startS + (endS-startS) * row/segments;
-    const f = sample(edgeId,s);
-    for (const side of [-1,1]) for (let column = 0; column < columns; column++) {
-      const outward = shoulder + (extent-shoulder)*column/(columns-1);
-      const lateral = outward*side, blend = Math.min(1,Math.max(0,(outward-shoulder)/45));
-      const p = f.point.map((v,axis)=>v+f.right[axis]*lateral);
-      const wave = (Math.sin(p[0]*.037)*Math.cos(p[2]*.025)+.6*Math.sin((p[0]+p[2])*.023))*blend;
-      const lift = -.20 + Math.max(0,outward-shoulder-10)*.08 + 2.1*wave;
-      positions.push(...p.map((v,axis)=>v+f.up[axis]*lift));
-    }
-    if (row === 0) continue;
-    for (let side=0;side<2;side++) for(let col=0;col<columns-1;col++) {
-      const a=((row-1)*2+side)*columns+col, b=(row*2+side)*columns+col;
-      indices.push(a,a+1,b,a+1,b+1,b);
-    }
-  }
-  return {positions,indices};
-}

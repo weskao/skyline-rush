@@ -5,6 +5,7 @@ import { duneSurfaceIntervals } from './dune-tempest-geometry.ts';
 
 /** The existing authored 3D graph is the source of truth. This does not register a race. */
 export const PLAYABLE_COURSE_GRAPH: CourseGraph = validateCourseGraph(DUNE_TEMPEST_GRAPH);
+export const DUNE_TAKEOFF_PAD_METRES = 60;
 
 // Keep map-owned safety/visual metadata alongside the canonical graph. The shared
 // measured-motion, signed-gate and road samplers remain responsible for runtime authority.
@@ -21,10 +22,8 @@ export const DUNE_TEMPEST_RUNTIME_METADATA = {
       throw new Error(`Dune flight edge ${edge.id}: invalid ground recovery edge`);
     }
     const lengthMeters = routeLength(PLAYABLE_COURSE_GRAPH, edge.id);
-    // Preserve the 60 m real takeoff pad used by dune-tempest-chunk.ts;
-    // the gap is not a solid/drivable bridge.
     const solidRoadIntervals = duneSurfaceIntervals(0, lengthMeters, lengthMeters,
-      60, landing.clearLengthMeters);
+      DUNE_TAKEOFF_PAD_METRES, landing.clearLengthMeters);
     return {
       edgeId: edge.id, lengthMeters, takeoff, landing,
       recoveryEdgeId: fallback.id, solidRoadIntervals,

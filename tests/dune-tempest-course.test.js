@@ -22,7 +22,7 @@ const walk = (at, seen = new Set()) => {
 
 test('Dune Tempest has versioned, one-way, uniquely located START and FINISH', () => {
   assert.equal(course.id, 'dune-tempest');
-  assert.equal(course.topologyVersion, 1);
+  assert.equal(course.topologyVersion, 2);
   assert.equal(course.targetMainLengthMeters, 13500);
   assert.equal(course.nodes.start.kind, 'start');
   assert.equal(course.nodes.finish.kind, 'finish');

@@ -5,6 +5,7 @@ import { DUNE_TEMPEST_ID } from './courses/dune-tempest-race.ts';
 import { SKYFALL_ARCHIPELAGO_ID } from './courses/skyfall-archipelago-race.ts';
 import { createSkyfallWorld } from './courses/skyfall-world.ts';
 import { createDuneTempestVisualChunk } from './courses/dune-tempest-chunk.ts';
+import { createDuneTerrain } from './courses/dune-tempest-terrain.ts';
 
 type Quality = 'low' | 'medium' | 'high';
 type Chunk = ReturnType<typeof createDuneTempestVisualChunk>;
@@ -17,6 +18,7 @@ export function createCourseRaceScene(scene: THREE.Scene) {
   root.name = 'CourseGraph race scenery';
   scene.add(root);
   const live = new Map<string, Chunk>();
+  let dune: ReturnType<typeof createDuneTerrain> | null = null;
   let skyfall: ReturnType<typeof createSkyfallWorld> | null = null;
   let quality: Quality | null = null;
   const clear = () => {
@@ -26,7 +28,12 @@ export function createCourseRaceScene(scene: THREE.Scene) {
     skyfall = null;
     root.visible = false;
   };
-  const hide = () => { clear(); quality = null; };
+  const hide = () => {
+    clear();
+    dune?.dispose();
+    dune = null;
+    quality = null;
+  };
   const update = (race: RaceView, tier: Quality, time = race.elapsed ?? 0, reducedMotion = false) => {
     if (!race.course || (race.trackId !== DUNE_TEMPEST_ID && race.trackId !== SKYFALL_ARCHIPELAGO_ID)) {
       hide(); return;
@@ -53,6 +60,10 @@ export function createCourseRaceScene(scene: THREE.Scene) {
     }
     if (skyfall) hide();
     if (quality !== tier) { clear(); quality = tier; }
+    if (!dune) {
+      dune = createDuneTerrain();
+      root.add(dune.group);
+    }
     root.visible = true;
     const active = new Set<string>();
     const lengths = new Map<string, number>();
@@ -92,6 +103,7 @@ export function createCourseRaceScene(scene: THREE.Scene) {
     if (player) {
       const f = sampleRoute(graph, player.travel.currentEdgeId, player.travel.localS);
       root.position.set(-f.point[0], -f.point[1], -f.point[2]);
+      dune.update(f.point[0], f.point[2]);
     }
   };
   const dispose = () => { hide(); root.removeFromParent(); };

@@ -13,13 +13,14 @@ import { chooseBranchByLateral, createCourseRuntime, placeCourseCar } from '../s
 import * as courseStep from '../src/course-race-step.ts';
 import { chooseCourseNextEdge } from '../src/course-ai-standings.ts';
 import { readFileSync } from 'node:fs';
+import { mergeProgress } from '../src/cloud-progress-merge.ts';
 import { recordTrackId, recordTrackIds, parseRecordTrackId } from '../src/record-layout.ts';
 import { recordGhost, validGhost, GHOST_RATE } from '../src/ghost.ts';
 
 const groundLength = graph.groundRoute.reduce((sum, id) => sum + routeLength(graph, id), 0);
 const AIR = 'canyon-air-crossing';
 
-test('Dune track: measured ground-route length, classic traffic, topology v1', () => {
+test('Dune track: measured ground-route length, classic traffic, topology v2', () => {
   assert.equal(DUNE_TEMPEST_ID, 'dune-tempest');
   assert.equal(DUNE_TEMPEST_TRACK.length, Math.floor(groundLength));
   assert.ok(DUNE_TEMPEST_TRACK.length > 13_000 && DUNE_TEMPEST_TRACK.length < 14_500);
@@ -43,7 +44,7 @@ test('Dune race spec: authored gate band, flight noRoad = complement of solid ro
   const gaps = DUNE_TEMPEST_RACE.noRoad[AIR];
   assert.equal(gaps.length, expected.length);
   expected.forEach(([a, b], i) => { assert.ok(Math.abs(gaps[i][0] - a) < 1e-9); assert.ok(Math.abs(gaps[i][1] - b) < 1e-9); });
-  assert.ok(Math.abs(gaps[0][0] - 60) < 1e-9 && Math.abs(gaps[0][1] - 983.306) < 1e-3);
+  assert.ok(Math.abs(gaps[0][0] - 60) < 1e-9 && Math.abs(gaps[0][1] - 994.907) < 1e-3);
   assert.deepEqual(Object.keys(DUNE_TEMPEST_RACE.noRoad), [AIR]);
   assert.deepEqual(DUNE_TEMPEST_RACE.recoveryEdge, { [AIR]: 'canyon-switchbacks' });
 });
@@ -419,7 +420,7 @@ test('pulsed need: no-warning fuel crosses, margin covers the measured usage, a 
 });
 
 // ---- Task 7: topology-keyed results without Ghost (Q4) ----
-const KEY = 'dune-tempest@t1l1';
+const KEY = 'dune-tempest@t2l1', OLD_KEY = 'dune-tempest@t1l1';
 const memory = () => {
   const store = new Map();
   globalThis.localStorage = { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) };
@@ -435,11 +436,14 @@ async function settleDune(race, trace) {
   return { settled, ghosts };
 }
 
-test('Dune records live under one topology-keyed id', () => {
+test('Dune times use the new topology while older times remain syncable', () => {
   assert.equal(recordTrackId(DUNE_TEMPEST_ID), KEY);
-  assert.deepEqual(recordTrackIds(DUNE_TEMPEST_ID), [KEY]);
+  assert.deepEqual(recordTrackIds(DUNE_TEMPEST_ID), [OLD_KEY, KEY]);
+  assert.deepEqual(mergeProgress({ bests: { [OLD_KEY]: 100, [KEY]: 110 } }, null).bests,
+    { [OLD_KEY]: 100, [KEY]: 110 });
   assert.deepEqual(parseRecordTrackId(KEY), { trackId: DUNE_TEMPEST_ID, layout: 1 });
-  assert.equal(parseRecordTrackId('dune-tempest@t2l1'), null);
+  assert.deepEqual(parseRecordTrackId(OLD_KEY), { trackId: DUNE_TEMPEST_ID, layout: 1 });
+  assert.equal(parseRecordTrackId('dune-tempest@t3l1'), null);
   assert.equal(recordTrackId('coast'), 'coast@6', 'Classic still uses a layout version without a topology prefix');
 });
 

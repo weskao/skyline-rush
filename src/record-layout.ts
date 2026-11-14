@@ -40,7 +40,10 @@ export function recordTrackId(trackId: string, config?: unknown): string {
 /** Every record id a track has had: bare (layout 1) through its current layout. Older ones stay readable. */
 export function recordTrackIds(trackId: string): string[] {
   const course = courseRecordId(trackId);
-  if (course) return [course];
+  if (course) {
+    const { topologyVersion, layoutVersion = 1 } = COURSE_TRACKS[trackId];
+    return Array.from({ length: topologyVersion }, (_, index) => `${trackId}@t${index + 1}l${layoutVersion}`);
+  }
   return Array.from({ length: layoutVersion(trackId) }, (_, i) => i ? `${trackId}@${i + 1}` : trackId);
 }
 
@@ -49,7 +52,7 @@ export function parseRecordTrackId(id: unknown, config?: unknown): { trackId: st
   if (typeof id !== 'string') return null;
   const [trackId, version, ...rest] = id.split('@');
   const course = courseRecordId(trackId);
-  if (course) return id === course ? { trackId, layout: COURSE_TRACKS[trackId].layoutVersion ?? 1 } : null;
+  if (course) return recordTrackIds(trackId).includes(id) ? { trackId, layout: COURSE_TRACKS[trackId].layoutVersion ?? 1 } : null;
   if (version === undefined) return trackId ? { trackId, layout: 1 } : null;
   const layout = Number(version);
   return !rest.length && trackId && layout > 1 && layout <= raceLayout(trackId, config) && String(layout) === version ? { trackId, layout } : null;

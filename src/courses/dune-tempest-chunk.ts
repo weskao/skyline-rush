@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { buildDuneChasmTerrain } from './dune-tempest-chasm.ts';
 import { DUNE_TEMPEST_COURSE, DUNE_TEMPEST_GRAPH } from './dune-tempest.ts';
-import { buildDuneRoadChunk, buildDuneTerrainChunk, positionDuneHazards,
+import { DUNE_TAKEOFF_PAD_METRES } from './dune-tempest-runtime-adapter.ts';
+import { buildDuneRoadChunk, positionDuneHazards,
   duneSurfaceIntervals, duneWeatherBudget } from './dune-tempest-geometry.ts';
 
 type Quality = 'low' | 'medium' | 'high';
@@ -27,7 +27,6 @@ export function createDuneTempestVisualChunk(parent: THREE.Object3D, edgeId: str
   group.name = 'Dune chunk ' + edgeId;
   parent.add(group);
   let disposed = false;
-  const spacing = initialQuality === 'low' ? 16 : initialQuality === 'medium' ? 10 : 6;
   const addMesh = (name: string, positions: number[], indices: number[], color: number) => {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -42,27 +41,12 @@ export function createDuneTempestVisualChunk(parent: THREE.Object3D, edgeId: str
 
   // Never cover the canyon air crossing with a fake, continuously solid bridge.
   const parts = edge.mode === 'flight'
-    ? duneSurfaceIntervals(startS, endS, length, 60, authoredEdge.landing?.clearLengthMeters ?? 105)
+    ? duneSurfaceIntervals(startS, endS, length, DUNE_TAKEOFF_PAD_METRES, authoredEdge.landing!.clearLengthMeters)
     : [[startS, endS]];
   for (const [from, to] of parts) {
-    const ribbon = buildDuneRoadChunk(sample, edgeId, from, to, edge.width, spacing);
+    const ribbon = buildDuneRoadChunk(sample, edgeId, from, to, edge.width, 1.5);
     addMesh('Dune road', ribbon.positions, ribbon.roadIndices, 0xab7546);
     addMesh('Dune shoulder', ribbon.positions, ribbon.shoulderIndices, 0xb77b49);
-    const terrain = buildDuneTerrainChunk(sample, edgeId, from, to, edge.width,
-      initialQuality === 'low' ? 110 : 145, spacing * 1.5);
-    addMesh('Dune open terrain', terrain.positions, terrain.indices, 0xd99445);
-  }
-
-  if (edge.mode === 'flight') {
-    const gapFrom = Math.max(startS, 60);
-    const gapTo = Math.min(endS, length - (authoredEdge.landing?.clearLengthMeters ?? 105));
-    if (gapTo > gapFrom) {
-      const fromNode = DUNE_TEMPEST_GRAPH.nodes.find(node => node.id === edge.from)!;
-      const toNode = DUNE_TEMPEST_GRAPH.nodes.find(node => node.id === edge.to)!;
-      const terrain = buildDuneChasmTerrain(sample, edgeId, gapFrom, gapTo, length, edge.width,
-        Math.min(fromNode.at[1], toNode.at[1]), spacing * 2);
-      addMesh('Dune chasm floor', terrain.positions, terrain.indices, 0x945b3c);
-    }
   }
 
   const placed = positionDuneHazards(DUNE_TEMPEST_COURSE.hazards, edgeId, length, sample);
@@ -93,14 +77,16 @@ export function createDuneTempestVisualChunk(parent: THREE.Object3D, edgeId: str
   for (const landmark of DUNE_TEMPEST_COURSE.landmarks.filter(x => x.edgeId === edgeId)) {
     const s = landmark.atFraction * length;
     if (s < startS || (s >= endS && endS !== length)) continue;
-    const frame = sample(edgeId, s), radius = landmark.id === 'monumental-stone-ring' ? 35 : 25;
+    const frame = sample(edgeId, s);
+    const stoneRing = landmark.id === 'monumental-stone-ring';
+    const radius = stoneRing ? 35 : Math.max(25, edge.width / 2 + 11);
     const arch = new THREE.Group();
     arch.name = 'Dune landmark ' + landmark.id;
-    const offset = landmark.id === 'monumental-stone-ring' ? 54 : 0;
+    const offset = stoneRing ? 85 : 0;
     arch.position.set(...frame.point);
     arch.position.addScaledVector(new THREE.Vector3(...frame.right), offset);
     arch.position.addScaledVector(new THREE.Vector3(...frame.up), 5);
-    arch.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1), new THREE.Vector3(...frame.forward));
+    arch.rotation.y = Math.atan2(-frame.forward[0], -frame.forward[2]);
     const stone = new THREE.MeshStandardMaterial({color:0x966047, roughness:1, flatShading:true});
     const torus = new THREE.Mesh(new THREE.TorusGeometry(radius, 5, 8, 32, Math.PI), stone);
     torus.name = 'Natural stone arch';
