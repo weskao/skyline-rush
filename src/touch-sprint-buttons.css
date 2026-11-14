@@ -1,5 +1,15 @@
-#touch-controls .touch-actions > :is(.touch-nitro, .touch-boost) {
+/* Registered so state colours cross-fade; browsers without @property switch instantly. */
+@property --rim { syntax: '<color>'; inherits: true; initial-value: #8794a8; }
+@property --face-top { syntax: '<color>'; inherits: true; initial-value: #384558; }
+@property --face-bottom { syntax: '<color>'; inherits: true; initial-value: #1c2836; }
+
+/* Right-thumb cluster: NITRO, GAS, BOOST and FLY share one chamfered bezel. */
+#touch-controls :is(.touch-actions, .touch-pedals) > :is(.touch-nitro, .touch-boost, .touch-fly, .touch-gas) {
   --cut: polygon(7px 0, calc(100% - 7px) 0, 100% 7px, 100% calc(100% - 7px), calc(100% - 7px) 100%, 7px 100%, 0 calc(100% - 7px), 0 7px);
+  /* Flame reach as a share of the button. Keep in step with scripts/generate-sprint-flame.py. */
+  --flame-top: .7;
+  --flame-side: .18;
+  --flame-bottom: .1;
   isolation: isolate;
   overflow: visible;
   opacity: var(--touch-opacity, 1);
@@ -11,32 +21,38 @@
   font-weight: 800;
   letter-spacing: .035em;
   text-shadow: 0 1px 1px #090717;
+  transition: --rim .2s, --face-top .2s, --face-bottom .2s;
 }
 
-#touch-controls :is(.touch-nitro, .touch-boost):not(.is-positioned) { position: relative; }
+#touch-controls :is(.touch-actions, .touch-pedals) > button:not(.is-positioned) { position: relative; }
+
+/* A flame passes behind its neighbours: BOOST sits under NITRO, both sit under FLY and GAS. */
+#touch-controls .touch-boost { z-index: 0; }
+#touch-controls .touch-nitro { z-index: 1; }
+#touch-controls :is(.touch-fly, .touch-gas) { z-index: 2; }
 
 /* Clip the artwork only. The whole rectangular button still receives pointer input. */
-#touch-controls :is(.touch-nitro, .touch-boost)::before,
-#touch-controls :is(.touch-nitro, .touch-boost)::after {
+#touch-controls :is(.touch-actions, .touch-pedals) > button::before,
+#touch-controls :is(.touch-actions, .touch-pedals) > button::after {
   content: '';
   position: absolute;
   pointer-events: none;
   clip-path: var(--cut);
 }
 
-#touch-controls :is(.touch-nitro, .touch-boost)::before {
+#touch-controls :is(.touch-actions, .touch-pedals) > button::before {
   inset: -1px;
   z-index: -2;
   background: linear-gradient(148deg, color-mix(in srgb, var(--rim), white 36%), var(--rim) 28%, #162035 75%, var(--rim));
 }
 
-#touch-controls :is(.touch-nitro, .touch-boost)::after {
+#touch-controls :is(.touch-actions, .touch-pedals) > button::after {
   inset: 1px;
   z-index: -1;
   background: linear-gradient(160deg, #ffffff26, transparent 30%), linear-gradient(180deg, var(--face-top), var(--face-bottom) 85%);
 }
 
-#touch-controls :is(.touch-nitro, .touch-boost) > svg {
+#touch-controls :is(.touch-actions, .touch-pedals) > button > svg:not(.touch-fly-lock) {
   width: 22px;
   height: 22px;
   flex: none;
@@ -45,23 +61,27 @@
 
 #touch-controls .touch-nitro {
   --rim: #be87f5;
-  --flame: #ab44ff;
+  --flame-core: #fff;
   --flame-tip: #f5ccff;
+  --flame: #ab44ff;
+  --flame-edge: #5a1fd0;
   --face-top: #42275d;
   --face-bottom: #160d28;
   color: #fff5ff;
 }
 
 #touch-controls .touch-nitro[data-nitro-state="charging"] { opacity: calc(var(--touch-opacity, 1) * .74); }
-#touch-controls .touch-nitro[data-nitro-state="ready"] { --rim: #d695ff; --face-top: #684080; }
-#touch-controls .touch-nitro[data-nitro-state="active"] { --rim: #ebc9ff; --face-top: #8d54b8; }
+#touch-controls .touch-nitro[data-nitro-state="ready"] { --rim: #d695ff; --face-top: #684080; --flame-rest: .55; --flame-alpha: .92; }
+#touch-controls .touch-nitro[data-nitro-state="active"] { --rim: #f3dcff; --face-top: #a05fd0; --face-bottom: #3a1a66; }
 #touch-controls .touch-nitro[data-nitro-state="disabled"] { --rim: #8794a8; --face-top: #384558; --face-bottom: #1c2836; }
 #touch-controls .touch-nitro[data-nitro-state="disabled"] > svg { filter: grayscale(1); }
 
 #touch-controls .touch-boost {
   --rim: #d69b55;
-  --flame: #ff6928;
-  --flame-tip: #ffe3a0;
+  --flame-core: #fffbe0;
+  --flame-tip: #ffd76a;
+  --flame: #ff6a1f;
+  --flame-edge: #c2200a;
   --face-top: #55321c;
   --face-bottom: #281a12;
   color: #fff7eb;
@@ -73,29 +93,91 @@
   --face-bottom: #452515;
 }
 
-@media (forced-colors: active) {
-  #touch-controls .touch-actions > :is(.touch-nitro, .touch-boost) { border-color: ButtonText; }
-}
-
-#touch-controls .touch-boost[data-boost-state="ready"] { --rim: #efae65; --face-top: #734520; }
+/* BOOST is ready whenever fuel is left, so its resting flame is only embers at the base. */
+#touch-controls .touch-boost[data-boost-state="ready"] { --rim: #efae65; --face-top: #734520; --flame-rest: .3; --flame-alpha: .8; }
 #touch-controls .touch-boost:is([data-boost-state="charging"], [data-boost-state="disabled"]) {
   --rim: #8794a8;
   --face-top: #384558;
   --face-bottom: #1c2836;
 }
 
-/* Draw behind the whole bezel, within the clearance of the neighboring controls. */
+#touch-controls :is([data-nitro-state="active"], [data-boost-state="active"]) { --flame-rest: 1; --flame-alpha: 1; --flame-loop: .7s; }
+
+#touch-controls .touch-fly {
+  --rim: #83ceeb;
+  --face-top: #1f4d66;
+  --face-bottom: #0c2030;
+  color: #d8f6ff;
+}
+
+#touch-controls .touch-fly:is(.is-held, [aria-pressed="true"]) { --rim: #c9f4ff; --face-top: #2f86ad; --face-bottom: #123c55; }
+#touch-controls .touch-fly:disabled {
+  --rim: #8794a8;
+  --face-top: #384558;
+  --face-bottom: #1c2836;
+  opacity: calc(var(--touch-opacity, 1) * .8);
+  color: #a4adb5;
+}
+
+#touch-controls .touch-gas {
+  --rim: #6fe0a0;
+  --face-top: #1f6a47;
+  --face-bottom: #0c2a1e;
+  color: #e9fff2;
+}
+
+#touch-controls .touch-gas.is-held { --rim: #b8ffd6; --face-top: #2fa56c; --face-bottom: #14452f; }
+
+#controls-panel .controls-preview-keys .touch-nitro { color: #fff5ff; border-color: #be87f5; }
+#controls-panel .controls-preview-keys .touch-gas { background: #1f6a47; color: #e9fff2; border-color: #6fe0a0; }
+
+@media (forced-colors: active) {
+  #touch-controls :is(.touch-actions, .touch-pedals) > :is(.touch-nitro, .touch-boost, .touch-fly, .touch-gas) { border-color: ButtonText; }
+}
+
+/* Flame box around the whole button, behind the bezel. sprint-ready-feedback.ts sets data-flame. */
 #touch-controls .sprint-ready-effect {
+  --flame-box: calc(1 + var(--flame-top) + var(--flame-bottom));
+  --button-top: calc(var(--flame-top) / var(--flame-box) * 100%);
   position: absolute;
-  inset: -8px;
+  inset: calc(var(--flame-top) * -100%) calc(var(--flame-side) * -100%) calc(var(--flame-bottom) * -100%);
   z-index: -3;
+  display: none;
   pointer-events: none;
+}
+
+#touch-controls [data-flame="on"] > .sprint-ready-effect { display: block; }
+
+/* One alpha-only flipbook strip masks a heat gradient: white-hot at the button, coloured at the tips. */
+#touch-controls .sprint-ready-effect::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 68% at 50% 67%, var(--flame-core) 38%, var(--flame-tip) 50%, var(--flame) 72%, var(--flame-edge));
+  mask: url('./sprint-flame-strip.webp') 0 0 / 1600% 100% no-repeat;
+  opacity: var(--flame-alpha, 0);
+  /* Squash toward the button's top edge: the tongues shorten, the side glow stays. */
+  transform: scaleY(var(--flame-rest, .2));
+  transform-origin: 50% var(--button-top);
+  transition: opacity .25s, transform .3s ease-out;
+}
+
+#touch-controls :is([data-nitro-state="ready"], [data-nitro-state="active"], [data-boost-state="ready"], [data-boost-state="active"]) > .sprint-ready-effect::before {
+  animation: sprint-flame var(--flame-loop, 1.15s) steps(16, jump-none) infinite;
+}
+
+@keyframes sprint-flame { to { mask-position: 100% 0; } }
+
+/* Shock ring on the button outline; sprint-ready-feedback.ts plays it at the readiness cue. */
+#touch-controls .sprint-ready-effect::after {
+  content: '';
+  position: absolute;
+  inset: var(--button-top) calc(var(--flame-side) / (1 + 2 * var(--flame-side)) * 100%) calc(var(--flame-bottom) / var(--flame-box) * 100%);
+  border: 2px solid var(--flame-tip);
+  border-radius: 9px;
   opacity: 0;
-  background: linear-gradient(120deg, var(--flame), var(--flame-tip) 25%, var(--flame) 48%, var(--flame-tip) 64%, var(--flame));
-  background-size: 180% 150%;
-  mask: url('./sprint-ready-flame.svg') center / 100% 100% no-repeat;
 }
 
 @media (forced-colors: active), (prefers-reduced-motion: reduce) {
-  #touch-controls .sprint-ready-effect { display: none; }
+  #touch-controls [data-flame] > .sprint-ready-effect { display: none; }
 }

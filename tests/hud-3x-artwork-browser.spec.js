@@ -117,7 +117,7 @@ test('if the NITRO source fails the engine meter and translated state remain usa
 test.describe('touch sprint artwork', () => {
   test.use({ hasTouch: true, isMobile: true });
 
-  test('NITRO and BOOST keep their full hitboxes and leave FLY and throttle alone', async ({ page }) => {
+  test('the thumb cluster shares one bezel and sprint flames burn beyond NITRO and BOOST', async ({ page }) => {
     test.setTimeout(ciTimeout(90000));
     await page.goto('/');
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
@@ -126,41 +126,76 @@ test.describe('touch sprint artwork', () => {
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     const touch = page.locator('#touch-controls');
     await expect(touch).toBeVisible();
-    await expect(touch.locator('.touch-boost')).toHaveAttribute('data-boost-state', 'ready');
+    const boost = touch.locator('.touch-boost');
+    await expect(boost).toHaveAttribute('data-boost-state', 'ready');
+    await expect(boost).toHaveAttribute('data-flame', 'on');
+    const rim = button => button.evaluate(element => getComputedStyle(element).getPropertyValue('--rim').trim());
+    await expect.poll(() => rim(boost)).toBe('rgb(239, 174, 101)');
+
+    // The live BOOST embers step through the 16-frame strip.
+    const strip = await boost.evaluate(async element => {
+      const style = getComputedStyle(element.querySelector('.sprint-ready-effect'), '::before');
+      const image = new Image();
+      image.src = (style.maskImage || style.webkitMaskImage).slice(5, -2);
+      await image.decode();
+      const first = style.maskPosition || style.webkitMaskPosition;
+      await new Promise(resolve => setTimeout(resolve, 250));
+      return { width: image.naturalWidth, height: image.naturalHeight, moved: (style.maskPosition || style.webkitMaskPosition) !== first };
+    });
+    expect(strip).toEqual({ width: 4608, height: 384, moved: true });
+
+    // Sustained flame size per state, read from unmanaged copies so the HUD loop cannot rewrite them.
+    const flames = await touch.evaluate(root => {
+      const read = (selector, attribute, state, held = false) => {
+        const copy = root.querySelector(selector).cloneNode(true);
+        copy.setAttribute(attribute, state);
+        copy.classList.toggle('is-held', held);
+        root.querySelector('.touch-actions').append(copy);
+        const result = {
+          rest: Number(getComputedStyle(copy).getPropertyValue('--flame-rest') || 0),
+          burning: getComputedStyle(copy.querySelector('.sprint-ready-effect'), '::before').animationName !== 'none',
+        };
+        copy.remove();
+        return result;
+      };
+      return {
+        nitroCharging: read('.touch-nitro', 'data-nitro-state', 'charging'),
+        nitroReady: read('.touch-nitro', 'data-nitro-state', 'ready'),
+        nitroActive: read('.touch-nitro', 'data-nitro-state', 'active'),
+        boostReady: read('.touch-boost', 'data-boost-state', 'ready'),
+        boostActive: read('.touch-boost', 'data-boost-state', 'active'),
+        boostHeldEmpty: read('.touch-boost', 'data-boost-state', 'charging', true),
+        gasRim: (() => {
+          // Auto-throttle holds GAS, so read the resting green from an unheld copy.
+          const copy = root.querySelector('.touch-gas').cloneNode(true);
+          copy.classList.remove('is-held');
+          root.querySelector('.touch-pedals').append(copy);
+          const value = getComputedStyle(copy).getPropertyValue('--rim').trim();
+          copy.remove();
+          return value;
+        })(),
+      };
+    });
+    expect(flames.gasRim).toBe('rgb(111, 224, 160)');
+    expect(flames.nitroCharging).toEqual({ rest: 0, burning: false });
+    expect(flames.boostHeldEmpty).toEqual({ rest: 0, burning: false });
+    expect(flames.nitroReady).toEqual({ rest: .55, burning: true });
+    expect(flames.boostReady).toEqual({ rest: .3, burning: true });
+    expect(flames.nitroActive).toEqual({ rest: 1, burning: true });
+    expect(flames.boostActive).toEqual({ rest: 1, burning: true });
+
     for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 568, height: 320 }]) {
       await page.setViewportSize(viewport);
-      for (const action of ['nitro', 'boost']) {
+      for (const action of ['nitro', 'boost', 'fly', 'throttle']) {
         const button = touch.locator(`[data-control="${action}"]`);
-        await expect(button.locator('svg')).toHaveAttribute('viewBox', '0 0 28 28');
+        const sprint = action === 'nitro' || action === 'boost';
+        await expect(button.locator('svg').first()).toHaveAttribute('viewBox', sprint ? '0 0 28 28' : '0 0 24 24');
         await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-        const rim = await button.evaluate(element => getComputedStyle(element).getPropertyValue('--rim').trim());
-        if (action === 'boost') expect(rim).toBe('#efae65');
-        const effect = button.locator('.sprint-ready-effect');
-        await expect(effect).toHaveCSS('pointer-events', 'none');
-        const artwork = await button.evaluate(element => {
-          const rect = element.getBoundingClientRect();
-          const flame = element.querySelector('.sprint-ready-effect').getBoundingClientRect();
-          const bezel = getComputedStyle(element, '::before');
-          return {
-            rimInsets: [bezel.top, bezel.right, bezel.bottom, bezel.left],
-            flameOutsets: [rect.top - flame.top, flame.right - rect.right, flame.bottom - rect.bottom, rect.left - flame.left],
-            inViewport: flame.left >= 0 && flame.top >= 0 && flame.right <= innerWidth && flame.bottom <= innerHeight,
-            overlapsNeighbor: [...element.closest('#touch-controls').querySelectorAll('.touch-actions button, .touch-pedals button')]
-              .filter(neighbor => neighbor !== element)
-              .some(neighbor => {
-                const box = neighbor.getBoundingClientRect();
-                return flame.left < box.right && flame.right > box.left && flame.top < box.bottom && flame.bottom > box.top;
-              }),
-          };
+        const bezel = await button.evaluate(element => {
+          const style = getComputedStyle(element, '::before');
+          return [style.top, style.right, style.bottom, style.left];
         });
-        expect(artwork.rimInsets).toEqual(['-1px', '-1px', '-1px', '-1px']);
-        for (const outset of artwork.flameOutsets) {
-          expect(outset).toBeGreaterThan(0);
-          expect(outset).toBeLessThanOrEqual(8);
-        }
-        expect(artwork.inViewport).toBe(true);
-        expect(artwork.overlapsNeighbor).toBe(false);
-        await expect(effect).toHaveCSS('clip-path', 'none');
+        expect(bezel).toEqual(['-1px', '-1px', '-1px', '-1px']);
         const box = await button.boundingBox();
         expect(box.width).toBeGreaterThanOrEqual(44);
         expect(box.height).toBeGreaterThanOrEqual(44);
@@ -169,12 +204,39 @@ test.describe('touch sprint artwork', () => {
           return element.contains(document.elementFromPoint(rect.left + 2, rect.top + 2));
         });
         expect(cornerHitsButton).toBe(true);
+        if (!sprint) continue;
+        const effect = button.locator('.sprint-ready-effect');
+        await expect(effect).toHaveCSS('pointer-events', 'none');
+        await expect(effect).toHaveCSS('clip-path', 'none');
+        const flame = await button.evaluate(element => {
+          const rect = element.getBoundingClientRect();
+          const fire = element.querySelector('.sprint-ready-effect').getBoundingClientRect();
+          const neighbors = [...element.closest('#touch-controls').querySelectorAll('.touch-actions button, .touch-pedals button')]
+            .filter(neighbor => neighbor !== element);
+          return {
+            height: rect.height,
+            outsets: { top: rect.top - fire.top, right: fire.right - rect.right, bottom: fire.bottom - rect.bottom, left: rect.left - fire.left },
+            inViewport: fire.left >= 0 && fire.top >= 0 && fire.right <= innerWidth && fire.bottom <= innerHeight,
+            // Where the fire reaches a neighbour, a touch at the middle of the shared area must land on that neighbour.
+            stolenTouches: neighbors.filter(neighbor => {
+              const box = neighbor.getBoundingClientRect();
+              const left = Math.max(fire.left, box.left), right = Math.min(fire.right, box.right);
+              const top = Math.max(fire.top, box.top), bottom = Math.min(fire.bottom, box.bottom);
+              return left < right && top < bottom && !neighbor.contains(document.elementFromPoint((left + right) / 2, (top + bottom) / 2));
+            }).length,
+          };
+        });
+        expect(flame.outsets.top).toBeGreaterThanOrEqual(flame.height * .4);
+        expect(flame.outsets.left).toBeGreaterThanOrEqual(8);
+        expect(flame.outsets.right).toBeGreaterThanOrEqual(8);
+        expect(flame.outsets.bottom).toBeGreaterThan(0);
+        expect(flame.inViewport).toBe(true);
+        expect(flame.stolenTouches).toBe(0);
       }
-      for (const action of ['fly', 'throttle']) {
-        const button = touch.locator(`[data-control="${action}"]`);
-        await expect(button.locator('svg').first()).toHaveAttribute('viewBox', '0 0 24 24');
-        await expect(button).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-      }
+      // A flame passes behind its neighbours: BOOST under NITRO, both under FLY and GAS.
+      const stacking = await touch.evaluate(root => ['boost', 'nitro', 'fly', 'throttle']
+        .map(action => getComputedStyle(root.querySelector(`[data-control="${action}"]`)).zIndex));
+      expect(stacking).toEqual(['0', '1', '2', '2']);
     }
     await page.emulateMedia({ reducedMotion: 'reduce' });
     for (const effect of await touch.locator('.sprint-ready-effect').all()) {

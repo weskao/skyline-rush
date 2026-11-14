@@ -4,21 +4,30 @@ import { createBoostReadiness, createNitroReadiness } from './nitro-readiness.ts
 export type SprintReadyCue = 'nitro-ready' | 'boost-ready';
 interface SprintCar { nitro: number; fuel: number; boosting: boolean; braking: boolean }
 
+// Neither list has a keyframe at offset 1: each settles on the resting CSS of its state.
+const BURST: Keyframe[] = [
+  { opacity: 0, transform: 'scale(.9, .2)', offset: 0 },
+  { opacity: 1, transform: 'scale(1.1, 1.25)', offset: .22 },
+  { opacity: 1, transform: 'scale(1, .95)', offset: .5 },
+];
+const RING: Keyframe[] = [
+  { opacity: .9, transform: 'scale(1)', offset: 0 },
+  { opacity: 0, transform: 'scale(1.5)', offset: .99 },
+];
+
 function readyFlame(button: HTMLButtonElement | undefined) {
   const effect = button?.querySelector('.sprint-ready-effect');
-  let animation: Animation | undefined;
+  let animations: Animation[] = [];
+  const cancel = () => { for (const animation of animations) animation.cancel(); animations = []; };
   return {
     play() {
-      animation?.cancel();
-      animation = effect?.animate([
-        { opacity: 0, transform: 'scale(.82)', backgroundPosition: '0% 100%' },
-        { opacity: 1, transform: 'scale(.97, 1)', backgroundPosition: '28% 48%', offset: .18 },
-        { opacity: .78, transform: 'scale(1, .93)', backgroundPosition: '57% 70%', offset: .38 },
-        { opacity: .94, transform: 'scale(.96, 1)', backgroundPosition: '82% 33%', offset: .52 },
-        { opacity: 0, transform: 'scale(.86, .94)', backgroundPosition: '100% 0%' },
-      ], { duration: 930 });
+      cancel();
+      if (effect) animations = [
+        effect.animate(BURST, { duration: 900, easing: 'ease-out', pseudoElement: '::before' }),
+        effect.animate(RING, { duration: 560, easing: 'ease-out', pseudoElement: '::after' }),
+      ];
     },
-    cancel() { animation?.cancel(); animation = undefined; },
+    cancel,
   };
 }
 
@@ -26,13 +35,22 @@ export function createSprintReadyFeedback(nitroButton: HTMLButtonElement | undef
   cue: (name: SprintReadyCue, delay?: number) => void) {
   const nitro = createNitroReadiness(), boost = createBoostReadiness();
   const nitroFlame = readyFlame(nitroButton), boostFlame = readyFlame(boostButton);
+  let lastNitro = '', lastBoost = '', lastLit: boolean | undefined;
   return {
     update(phase: string, car: SprintCar, nitroActive: boolean, boostHeld: boolean, motion: boolean) {
       const n = nitro.update({ phase, charge: car.nitro, active: nitroActive });
       const b = boost.update({ phase, fuel: car.fuel, boosting: car.boosting, braking: car.braking, held: boostHeld });
       if (nitroButton && nitroButton.dataset.nitroState !== n.state) nitroButton.dataset.nitroState = n.state;
       if (boostButton && boostButton.dataset.boostState !== b.state) boostButton.dataset.boostState = b.state;
-      if (!motion || phase !== 'racing') { nitroFlame.cancel(); boostFlame.cancel(); }
+      const lit = motion && phase === 'racing';
+      if (!lit) { nitroFlame.cancel(); boostFlame.cancel(); }
+      // The CSS flame follows data-flame. Storage is read on a state change, never per frame.
+      if (n.state !== lastNitro || b.state !== lastBoost || lit !== lastLit) {
+        lastNitro = n.state; lastBoost = b.state; lastLit = lit;
+        const flame = lit && readHudFeedback().animation ? 'on' : 'off';
+        if (nitroButton && nitroButton.dataset.flame !== flame) nitroButton.dataset.flame = flame;
+        if (boostButton && boostButton.dataset.flame !== flame) boostButton.dataset.flame = flame;
+      }
       if (n.cueReady || b.cueReady) {
         const preferences = readHudFeedback();
         if (n.cueReady && preferences.sound) cue('nitro-ready');
@@ -42,6 +60,6 @@ export function createSprintReadyFeedback(nitroButton: HTMLButtonElement | undef
       }
       return n.state;
     },
-    reset() { nitro.reset(); boost.reset(); nitroFlame.cancel(); boostFlame.cancel(); },
+    reset() { nitro.reset(); boost.reset(); nitroFlame.cancel(); boostFlame.cancel(); lastLit = undefined; },
   };
 }

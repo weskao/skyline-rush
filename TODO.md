@@ -2,7 +2,12 @@
 
 - [x] Show the complete NITRO and BOOST bezel in the HUD and video preview. At readiness, animate a bounded flame around all four sides while keeping the label, road and adjacent controls readable on phone portrait and landscape.
 - [x] Browser RED reproduced the inset bezel. GREEN at 390×844, 844×390 and 568×320 verifies the full touch targets, flame clearance, and reduced motion. Type checks, production build, and 2,920 unit tests passed (3 skipped).
-- [ ] Complete the full browser quality gate on the exact commit and review on physical iOS and Android devices.
+- [x] Sprint button flames (`feature/nitro-boost-touch-buttons`): the single SVG flame is replaced by a generated WebP strip (`src/sprint-flame-strip.webp`, 4608×384, 99,234 bytes, `scripts/generate-sprint-flame.py --check` prints `ok`) driving a perimeter flame at NITRO ready/active and BOOST embers/blaze; design `docs/superpowers/specs/2026-11-14-sprint-button-flames-design.md`.
+- [x] RED → GREEN: `tests/sprint-ready-feedback.test.js` 3 failed on the old source, 3 pass now; `tests/hud-3x-artwork-browser.spec.js -g "thumb cluster"` failed on a build of HEAD (`data-flame` missing), 1 passed on the new build (390×844, 844×390, 568×320, stacking, touch targets, reduced motion).
+- [x] Ignition cues rewritten in `src/feedback-sounds.ts` (`nitro-ready` rising sweep, `boost-ready` low thump plus rising growl); `tests/audio.test.js` unchanged and green (41 pass with the sprint test). `node --test tests/module-size.test.js` and `npm run typecheck` pass.
+- [ ] Exact-HEAD GitHub `quality-gate` (commit carries `[full-regression]`).
+- [ ] Visual review of the flames at phone size in a real race (screen recording) and on physical iOS and Android devices; the new ignition sounds have only been checked by unit tests, never heard.
+- [ ] Full local `npm run test:browser` / `make verify` not run (CI is the gate).
 
 # 2026-11-14 — NITRO and BOOST readiness cues
 
