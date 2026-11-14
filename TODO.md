@@ -1,3 +1,8 @@
+# 2026-11-14 — Touch NITRO and BOOST artwork
+
+- [x] Apply separate purple NITRO and amber BOOST artwork within their existing touch targets. Preserve FLY and throttle appearance and driving layout.
+- [ ] Confirm full GitHub quality gate and physical iOS/Android touch and safe-area review.
+
 # 2026-11-14 — Road supply collection effects
 
 - [x] Add separate effects for the pickup location and the equipped car. Verify road-space placement on a banked CourseGraph edge, shell geometry fit, rival cues, reset, VFX Off and reduced motion in `tests/pickup-collect-vfx.test.js`.

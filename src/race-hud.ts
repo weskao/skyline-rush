@@ -151,7 +151,7 @@ export function createRaceHud(options: HudOptions) {
       const feedback = readHudFeedback();
       if (feedback.sound) options.onNitroReady();
       if (nitroButton && feedback.animation && visual.enabled && !visual.comfortable && !reducedMotion.matches) {
-        nitroButton.animate([{ boxShadow: '0 0 0 0 rgb(255 213 128 / .8)' }, { boxShadow: '0 0 0 12px rgb(255 213 128 / 0)' }], { duration: 650 });
+        nitroButton.firstElementChild?.animate([{ opacity: .6 }, { opacity: 1 }], { duration: 320, easing: 'ease-out' });
       }
     }
     if (nitroMeter.dataset.nitroState !== state) nitroMeter.dataset.nitroState = state;
