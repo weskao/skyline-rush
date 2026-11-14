@@ -44,7 +44,7 @@ const periodRows = computed(() => MISSION_DEFINITIONS.map(def => ({
 const utcReset = (cadence: 'daily' | 'weekly') => {
   const { dayStart, weekStart } = missionPeriodBounds(now.value);
   return new Date(cadence === 'daily' ? dayStart + 86400000 : weekStart + 7 * 86400000)
-    .toISOString().replace('.000Z', ' UTC');
+    .toISOString().slice(0, 10);
 };
 const earnedCount = computed(() => available.value ? missions.filter(m => progressOf(m.id)?.claimed).length : 0);
 const earnedTier = computed(() => trophyTier(earnedCount.value));
@@ -131,7 +131,7 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
       <span class="garage-mission-coming">{{ label('Device clock · unverified', '裝置時間 · 未驗證') }}</span>
     </div>
     <p class="garage-mission-notice">{{ label('Daily reset', '每日重設') }}: {{ utcReset('daily') }} ·
-      {{ label('Weekly reset (Monday)', '每週重設（週一）') }}: {{ utcReset('weekly') }}</p>
+      {{ label('Weekly reset (Mon)', '每週重設（週一）') }}: {{ utcReset('weekly') }} · 00:00 UTC</p>
     <div class="garage-period-grid">
       <article v-for="item in periodRows" :key="item.id" class="garage-period-card"
         :data-mission-id="item.id" :data-mission-state="stateOf(item.id)">

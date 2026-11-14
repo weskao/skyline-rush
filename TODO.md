@@ -7,6 +7,12 @@
 - [x] Real WebGL captures mid-drift: Coast (desktop, phone portrait + landscape), Neon, Sky Spiral, Alpine.
 - [ ] Physical phone check, Crimson GT visual capture, full `npm run test:browser` and exact-HEAD `quality-gate`. Blender-authored tread texture not done (procedural first, per request).
 
+## Compact mission reset display (2026-11-15)
+
+- [x] Show concise daily and Monday weekly UTC reset dates in English and Traditional Chinese, without overflow at 390px (Playwright).
+- [x] Browser RED: original ISO timestamps failed the compact-display assertion. GREEN: `npx playwright test tests/wave3-demo-missions-browser.spec.js` passed 5/5; production trial build and typecheck passed; module-size passed 3/3.
+- [ ] `make verify` was interrupted during the unit suite after stalling; full browser/World Tour gates, real-game visual review and exact-commit CI remain pending. No audio or quality-tier changes needed for static text.
+
 # 2026-11-14 — Pickup body sweep on the Stratosway R2 (`feature/pickup-collection-vfx`)
 
 Report: R2 showed almost no body animation on pickup while the Crimson GT turned gold/pink. Rule: `.claude/rules/pickup-body-sweep.md` (new).

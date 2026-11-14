@@ -28,3 +28,24 @@ test('missing art and reduced-motion bilingual UTC fallback remain usable',async
   await expect(board.locator('.artwork-fallback').first()).toBeVisible();
   await expect(board.locator('progress').first()).toHaveAttribute('aria-label',/0 \/ 1/);
 });
+
+test('reset dates stay compact and accurate in both languages',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.clock.setFixedTime(new Date('2026-11-14T12:00:00Z'));
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const notice=page.locator('.garage-period-heading + p');
+  await expect(notice).toContainText('2026-11-15');
+  await expect(notice).toContainText('2026-11-16');
+  await expect(notice).toContainText('00:00 UTC');
+  await expect(notice).not.toContainText('T00:00:00');
+  await expect(notice).toContainText('Daily');
+  await expect(notice).toContainText('Weekly');
+  await page.locator('#garage-close').click();
+  await selectLocale(page,'zh-TW');
+  await page.locator('#garage-button').click();
+  await expect(notice).toContainText('每日');
+  await expect(notice).toContainText('每週');
+  await expect(notice).toContainText('週一');
+  expect(await notice.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+});
