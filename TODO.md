@@ -1,3 +1,13 @@
+# 2026-11-14 — Pickup body sweep on the Stratosway R2 (`feature/pickup-collection-vfx`)
+
+Report: R2 showed almost no body animation on pickup while the Crimson GT turned gold/pink. Rule: `.claude/rules/pickup-body-sweep.md` (new).
+
+- [x] Root cause: additive tint clipped to white on R2's near-white paint; the same alpha reads faintly on light paint; R2's chase view is mostly painted wing/trim outside `body`. Live uniforms showed matching ranges/inflate on both cars.
+- [x] Fix: alpha-blended tint, per-frame `paintLight` from the carrying body's paint (deeper, thicker tint on light paints), a shared-material `Pickup paint sweep` on every procedural paint mesh, `vehicleInverse * modelMatrix` mapping. No car id or paint constant.
+- [x] RED on old code: *tints every paint* (blending 2 ≠ 1, then missing `paintLight`), *covers every painted part* (no paint sweep). GREEN: `pickup-collect-vfx.test.js`, `shader-safety`, `module-size`, `garage-model-rig`; `npm test` 2943 pass / 0 fail / 3 skipped, typecheck, build.
+- [x] Real WebGL side-by-side capture (R2 default paint vs Crimson GT): R2 now tints orange (can), gold (tank), magenta (overcharge); GT unchanged in read. Side-by-side demo with SFX (1x + 0.5x) sent to Telegram.
+- [ ] Physical phone check, other Garage paints on every car, full `npm run test:browser` and exact-HEAD `quality-gate`.
+
 # 2026-11-14 — Thumb button bezel edges and NITRO/BOOST charging looks (`fix/sprint-button-bezel`)
 
 Rule: `.claude/rules/touch-sprint-buttons.md`.
@@ -5528,3 +5538,20 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] RED on Node 22: seed 691 reproduces the `air spreads beyond the nozzle footprint` failure from CI run 43558845907. The old assertion measured only lateral displacement and missed the longitudinal component of the wall jet.
 - [x] GREEN: `node --test tests/effects.test.js tests/module-size.test.js` passes all 21 checks. The regression tracks the same particles through visible, two-dimensional motion at road level. Runtime rendering is untouched.
 - [ ] Verify GitHub `quality-gate` on the feature and integration commits.
+
+## 2026-11-14 — Garage car picker: premium cards and an unmistakable selection (`feature/garage-car-picker-polish`)
+
+- [x] RED → GREEN: `tests/crimson-gt-browser.spec.js` "the car in use is unmistakable and the other car offers a select pill" failed 3 of 3 viewports on the old styles (the car not in use had no visible pill); `-g "car picker"` now 8 passed at 390x844, 844x390 and 1440x900.
+- [x] `src/GarageCarPicker.vue`: cards share the paint-collection card language; the car in use gets a lit cyan frame, glow ring and filled "In use" pill, the other car steps back and shows a "Select" pill (`car.select`, en and zh-TW). Same component serves the Garage home and the Studio, both cars.
+- [x] Local gates: `npm test` 2942 pass / 0 fail / 3 skipped; `npm run typecheck`; `node --test tests/module-size.test.js` 3 pass; `npm run build`.
+- [x] Real Chrome screenshots inspected (zh-TW Studio, each car selected, phone portrait/landscape emulation and desktop); local-only, not committed.
+- [ ] Not checked: full `npm run test:browser` / `make verify` (skipped at the user's request), physical phones, exact-HEAD GitHub `quality-gate`.
+
+## 2026-11-14 — Develop browser regressions (CI 43589945683)
+
+- [x] Reproduced the first-visit audio failure on the original browser spec. The updated spec verifies audible playback, both default switches on and no stored preference until the player changes one.
+- [x] Split the Store gallery flow by viewport and verify each filter selection and its displayed 3× artwork. Desktop and both phone orientations passed in headless Chromium with `CI=1` and zero retries.
+- [x] Verify that every locked track still previews and rejects mouse and keyboard starts at 1440×900 and 390×844. Both flows passed with the CI-scaled budget and zero retries.
+- [x] Verify FLY's held and released artwork and all seven editable touch controls across a reload. Both flows passed with `CI=1` and zero retries.
+- [x] `npm test`: 2,951 passed, 3 skipped. Typecheck, module-size checks and production build passed.
+- [ ] Verify the full GitHub `quality-gate` on the repair commit.

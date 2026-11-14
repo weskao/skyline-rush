@@ -256,6 +256,53 @@ test('a player collection leaves a short 3D pulse at the authored pickup while t
   vfx.dispose();
 });
 
+test('the body sweep tints every paint, including the near-white Stratosway R2', () => {
+  const car = new THREE.Group(), body = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 4));
+  car.userData.body = body;
+  car.add(body);
+  body.material.color.set('#e6e9e7'); // R2 default paint
+  const vfx = createPickupCollectVfx(new THREE.Scene(), car);
+  const shell = body.getObjectByName('Pickup body sweep'), { material } = shell;
+  // Additive light on a light paint clips to white and the sweep vanishes; an alpha-blended tint shows on any paint.
+  assert.equal(material.blending, THREE.NormalBlending);
+  assert.equal(material.depthWrite, false);
+  const paintLight = () => {
+    vfx.reset();
+    vfx.spawn('tank', { distance: 10, x: 0 }, { follow: true });
+    vfx.update(.1, { pose: car });
+    return material.uniforms.paintLight.value;
+  };
+  assert.ok(paintLight() > .95, 'a near-white paint gets the deep, stronger tint');
+  body.material.color.set('#8c1010');
+  assert.ok(paintLight() < .05, 'a dark paint (Crimson GT) keeps the plain tint');
+  const dressed = new THREE.Mesh(body.geometry, new THREE.MeshStandardMaterial({ color: '#f4f4f4' }));
+  dressed.add(shell); // the garage rig re-parents the shell onto the GLB body
+  assert.ok(paintLight() > .95, 'the paint is read from whichever body carries the shell');
+  vfx.dispose();
+});
+
+test('the sweep covers every painted part of a procedural car, not only its body mesh', () => {
+  const car = new THREE.Group(), paint = new THREE.MeshStandardMaterial({ color: '#e6e9e7' });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 4), paint);
+  const wing = new THREE.Mesh(new THREE.BoxGeometry(2, .1, .5), paint), glass = new THREE.Mesh(new THREE.BoxGeometry(1, .5, 1));
+  wing.position.set(0, 1.1, 2);
+  car.userData.body = body;
+  car.add(body, wing, glass);
+  const vfx = createPickupCollectVfx(new THREE.Scene(), car);
+  const extra = wing.getObjectByName('Pickup paint sweep');
+  assert.ok(extra, 'the painted wing (R2: most of the rear view) carries the sweep too');
+  assert.equal(extra.material, body.getObjectByName('Pickup body sweep').material, 'one shared material, one program');
+  assert.equal(extra.userData.followsBody, undefined, 'not a garage rider: a dressed GLB hides it with its procedural part');
+  assert.equal(glass.children.length, 0, 'unpainted parts keep their own look');
+  vfx.spawn('can', { distance: 10, x: 0 }, { follow: true });
+  vfx.update(.1, { pose: car });
+  assert.ok(extra.visible);
+  vfx.reset();
+  assert.equal(extra.visible, false);
+  vfx.dispose();
+  assert.equal(extra.parent, null);
+});
+
 test('a new car pickup paints its fitted shell; rival cues and reduced motion never paint the player', () => {
   const scene = new THREE.Scene();
   const car = new THREE.Group(), body = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 4));
@@ -369,9 +416,9 @@ test('the body sweep travels in vehicle coordinates even for a rotated nested bo
   vfx.spawn('cell', { distance: 10, x: 0 }, { follow: true });
   vfx.update(.1, { pose: car });
   const shell = body.getObjectByName('Pickup body sweep');
-  const { vehicleFromBody, zRange, yRange } = shell.material.uniforms;
-  assert.ok(vehicleFromBody, 'shader has the displayed mesh-to-vehicle transform');
-  const nose = new THREE.Vector3(3, 1, 0).applyMatrix4(vehicleFromBody.value);
+  const { vehicleInverse, zRange, yRange } = shell.material.uniforms;
+  assert.ok(vehicleInverse, 'shader maps each drawn mesh (modelMatrix) into the vehicle frame');
+  const nose = new THREE.Vector3(3, 1, 0).applyMatrix4(shell.matrixWorld).applyMatrix4(vehicleInverse.value);
   assert.ok(nose.distanceTo(new THREE.Vector3(1, 4, -1)) < 1e-6);
   assert.ok(zRange.value.distanceTo(new THREE.Vector2(-1, 11)) < 1e-6);
   assert.ok(yRange.value.distanceTo(new THREE.Vector2(2, 4)) < 1e-6);

@@ -50,6 +50,8 @@ test('desktop remaps swap conflicts, reject reserved keys, persist and drive AIR
 test.describe('touch controls', () => {
   test.use({ hasTouch: true, viewport: { width: 844, height: 390 } });
   test('slide steers, classic buttons work, mirror and every editable button persist', async ({ page, context }) => {
+    // This flow starts two full races and moves every touch control between them.
+    test.setTimeout(ciTimeout(120000));
     const session = await context.newCDPSession(page);
     const touch = (type, ...touchPoints) => session.send('Input.dispatchTouchEvent', { type, touchPoints });
     await open(page);
