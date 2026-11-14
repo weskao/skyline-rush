@@ -91,11 +91,18 @@ To do, in order:
   the three sections. Section extents and collision stay as they are.
 - [ ] **7 Waterfront and towers** (N3, N4): hide the sea plane and the bridge towers on Neon and fill the former
   waterfront side with step 5 city blocks and far skyline.
-- [ ] **8 Guards.** Parity tests: course frame, lanes, tunnel extents, shortcut, ring layout and gameplay-prop
-  positions unchanged; no missing GLB; Low and load failure fall back; no shader compiled after GO
-  (shader-warmup and black-frame specs); chunk eviction without leaks or duplicate draws; the N6 draw-call cap on
-  High (home 540, race 380) as a Neon browser test;
-  `tests/module-size.test.js`.
+- [x] **8a Gameplay parity pins.** Course frame, lanes, tunnel extents, shortcut, ring and pickup layout and
+  gameplay-prop positions pinned at layout 6, before any Neon asset: `tests/neon-parity.test.js` (4 tests).
+- [x] **8b Fallback and develop-look guards on today's scene.** `tests/neon-look-browser.spec.js`: Neon on Low under
+  `?look=3d` and Neon on High without the gate keep sea, towers, skyline, RoomEnvironment and an identity grade, and
+  fetch no HDRI, KTX2 or Coast/Neon model; Neon on High under the gate compiles nothing after GO and draws no Coast
+  scenery. 24 of 24 under CI timing (`--repeat-each=8 --workers=4 --retries=0`).
+- [ ] **8c N6 draw-call cap** on High (home 540, race 380). The test exists in `tests/neon-look-browser.spec.js` as
+  `test.fixme`: the procedural Neon scene draws 162 to 163 at home and 562 to 564 in a race (one Mac, 2026-11-14),
+  so the race cap is met only once steps 5 to 7 replace the box skyline and remove the towers.
+- [ ] **8d Asset guards**, written with the assets they guard (steps 3 to 6): no missing GLB; load failure falls
+  back; Neon in the shader-warmup and black-frame specs under the gate; chunk eviction without leaks or duplicate
+  draws; `tests/module-size.test.js` on the new modules.
 - [ ] **9 Licence review** of every source, owner art approval, `make verify`, exact-HEAD CI.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
