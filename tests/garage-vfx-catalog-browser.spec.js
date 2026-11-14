@@ -397,7 +397,9 @@ for (const [width, height] of COMPACT_VIEWPORTS) {
     const periods = page.locator('.garage-mission-board .garage-period-card');
     await periods.first().scrollIntoViewIfNeeded();
     const period = await measureCards(periods);
-    expect(period.tallest, 'period card height').toBeLessThanOrEqual(72);
+    // Three rows: title | count, bar | status, reward chips. 72 only held while the reward was drawn over row 1
+    // (tests/garage-period-card-layout-browser.spec.js); 86 is a two-line title plus the reward row.
+    expect(period.tallest, 'period card height').toBeLessThanOrEqual(90);
     expect(period.perRow, 'period cards per row').toBeGreaterThanOrEqual(period.listWidth >= 307 ? 2 : 1);
     expect([period.inside, period.unclipped], 'period cards fit their grid').toEqual([true, true]);
   });
