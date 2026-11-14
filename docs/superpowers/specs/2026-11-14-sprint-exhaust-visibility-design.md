@@ -135,8 +135,10 @@ plus the new parts become one module with one reason to change. All parts are ch
    RED on the current code.
 2. New plume unit test: at full sprint power each jet's outer glow is at least 20 px wide 1 m
    behind the nozzles in both phone orientations (through the rig), on Low, Medium and High, on the
-   Realistic preset, for every thruster skin, and the four cores do not touch. RED on the current
-   jets (about 8 px).
+   Realistic preset, for every thruster skin, and the four cores do not touch. It also asserts the
+   flame rule above (radius at least 0.20 m by 0.6 m, at least 28 px wide there). RED on the current
+   jets: about 8 px at the nozzle, 0.095 to 0.136 m and 15 to 19 px at 0.6 m. (Measured after
+   approval: at 1 m today's cone is already 19 to 34 px, so the 0.6 m rule is the real guard.)
 3. Flare and road glow follow the modes above (Off, Reduced Motion, Low, flight, trail skin, void).
 4. Every selectable car: the plume sits on the nozzles in the race, the Garage preview and the
    Home showcase, after switching cars.
