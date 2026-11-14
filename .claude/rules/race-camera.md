@@ -23,7 +23,7 @@ a different camera (`track-showcase.md`, `src/track-preview.ts`).
   a x3 NITRO punch on the strongest FOV setting), and it follows the car's lateral position almost
   fully so a drift at the road edge fits the narrow width.
 - **Horizon.** The chase camera never rolls; only first person banks in flight.
-- **Comfort.** Reduced motion disables the drift swing, the shake and the rumble. Shake and rumble
+- **Comfort.** Reduced motion disables the drift swing, the shake, the rumble and the jolt. Shake, jolt and rumble
   scale with the player's Camera shake setting and are applied after `lookAt`, never to the
   smoothed position (`world.js` removes last frame's rumble before the lerp).
 - **Shrinking car (dolly zoom).** A wider FOV at the same distance shrinks the car: the old rig also
@@ -37,13 +37,27 @@ a different camera (`track-showcase.md`, `src/track-preview.ts`).
 - **Sprint judder.** NITRO/BOOST never feed a sustained *rotation*: the old rig shook at 8.4 Hz
   for the whole sprint (±0.14° default, ±1.25° on the strongest setting) and read as judder on
   desktop. `rigShake` takes speed only. The ignition is one damped pitch kick (`rigKick`, ≈0.35 s,
-  4 Hz, ≈0.5° peak on the default setting, capped at 1.2°) on the `kick` clock that
+  4 Hz, ≈0.68° peak on the default setting, capped at 1.2°) on the `kick` clock that
   `createSprintVfx` restarts only on a fresh ignition; the FOV share eases in over 0.3 s.
   A sustained *translation* is allowed, bounded: `rigRumble` moves the eye a few cm in camera x/y
   (1–3 Hz road waves + a small 17 Hz buzz, ∝ speed², +80% at a full sprint, capped at 5 cm), so
   the car and road tremble while the horizon stays still. Guard: the road-rumble test (z 0, peak
   ≤ 4 cm on the default setting, < 0.75° of car motion, peak rate < 35× amplitude). Every number
   stays in `RACE_CAMERA` / `race-camera.ts`, no sway or world-space push in `world.js`.
+  The default Camera shake is 0.2 (kick ≈0.68°, full-sprint rumble 3.97 cm): the strongest value
+  that keeps the 4 cm guard. Saved settings store the whole object, so a player's saved 0.15 stays.
+- **Shake fed into the lerp.** `world.js` used to add the hit / touchdown shake (9.7 and 7.5 Hz,
+  0.27 / 0.15 m; 0.3 m landing dip) to `desiredCamera`, before `lerp(…, 1 - e^(-7 dt))`. That
+  first-order low-pass keeps ~11% of a 9.7 Hz shake: a full hit moved the view ~5 cm, mostly slow
+  drift. Any oscillation goes after `lookAt` as a camera-local translation (`rigJolt`, scaled by the
+  Camera shake setting, ≤ 20 cm), sharing the `rumble` vector that is removed before the next lerp;
+  only smooth offsets (landing sink, hit recoil) may feed `desiredCamera`. Guard: the jolt test.
+- **Sub-pixel rumble.** A low-tier phone frame is ~290–390 rows tall, so the default cruise rumble
+  moved the car under one row and only shimmered at edges. `rumbleFloor` (one row at the car's
+  distance, from `canvas.height` and the live FOV) lifts the top-speed rumble to at least that while
+  the setting is on; the sprint share and the 5 cm cap still apply.
+- **Buzz aliasing.** The 17 Hz tyre buzz needs > 2 × 17 fps: at 30 fps it folds into a 13 Hz wobble,
+  at 24 fps a 7 Hz one. `rigRumble` drops it when the frame time is longer than 1 / 42.5 s.
 - **Sprint without impact.** Removing the shake alone left NITRO/BOOST flat (0.135° kick). The
   impact is one smooth transient, never a sustained shake: `sprintPunch` (0.2 s in, gone at
   0.8 s) on the same `kick` clock drives `frame.punch`, which overshoots the FOV (`PUNCH_FOV`;

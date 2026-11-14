@@ -1,3 +1,13 @@
+# 2026-11-14 — Hit / landing jolt, low-res rumble and Camera shake 0.2 (`feature/camera-impact-shake`)
+
+Rule: `.claude/rules/race-camera.md` (Shake fed into the lerp, Sub-pixel rumble, Buzz aliasing).
+
+- [x] Root cause: `world.js` added the hit shake (0.27 / 0.15 m, 9.7 / 7.5 Hz) and the 0.3 m landing dip to `desiredCamera` before the `1 - e^(-7 dt)` lerp; measured peak eye motion after the lerp 0.053 m (hit) and 0.110 m (landing) at 60 fps. `rigJolt` now adds it after `lookAt` (camera-local, × Camera shake, ≤ 0.2 m); landing sink and hit recoil stay smooth.
+- [x] `rumbleFloor` lifts the top-speed rumble to one rendered row at the car; the 17 Hz buzz is dropped above a 1 / 42.5 s frame time. Default Camera shake 0.15 → 0.2 (kick 0.51° → 0.68°, full-sprint rumble 2.98 → 3.97 cm, under the 4 cm guard).
+- [x] RED → GREEN: `tests/race-camera.test.js` 6 failed on the old code, 21/21 pass now. `npm test` 2938 pass / 0 fail / 3 skipped; `npm run typecheck`; `node --test tests/module-size.test.js` (`world.js` 1001 → 998, ceiling lowered).
+- [ ] Real WebGL frames / feel check (desktop, phone portrait + landscape, low tier): not run by request; existing saved settings keep `shake: 0.15` (no migration).
+- [ ] Exact-HEAD GitHub `quality-gate`.
+
 # 2026-11-14 — Full sprint buttons and perimeter ignition
 
 - [x] Show the complete NITRO and BOOST bezel in the HUD and video preview. At readiness, animate a bounded flame around all four sides while keeping the label, road and adjacent controls readable on phone portrait and landscape.
