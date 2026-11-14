@@ -1,0 +1,97 @@
+#touch-controls .touch-actions > :is(.touch-nitro, .touch-boost) {
+  --cut: polygon(7px 0, calc(100% - 7px) 0, 100% 7px, 100% calc(100% - 7px), calc(100% - 7px) 100%, 7px 100%, 0 calc(100% - 7px), 0 7px);
+  isolation: isolate;
+  opacity: var(--touch-opacity, 1);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .035em;
+  text-shadow: 0 1px 1px #090717;
+}
+
+#touch-controls :is(.touch-nitro, .touch-boost):not(.is-positioned) { position: relative; }
+
+/* Clip the artwork only. The whole rectangular button still receives pointer input. */
+#touch-controls :is(.touch-nitro, .touch-boost)::before,
+#touch-controls :is(.touch-nitro, .touch-boost)::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  clip-path: var(--cut);
+}
+
+#touch-controls :is(.touch-nitro, .touch-boost)::before {
+  inset: 0;
+  z-index: -2;
+  background: linear-gradient(148deg, color-mix(in srgb, var(--rim), white 36%), var(--rim) 28%, #162035 75%, var(--rim));
+}
+
+#touch-controls :is(.touch-nitro, .touch-boost)::after {
+  inset: 2px;
+  z-index: -1;
+  background: linear-gradient(160deg, #ffffff26, transparent 30%), linear-gradient(180deg, var(--face-top), var(--face-bottom) 85%);
+}
+
+#touch-controls :is(.touch-nitro, .touch-boost) > svg {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  pointer-events: none;
+}
+
+#touch-controls .touch-nitro {
+  --rim: #be87f5;
+  --face-top: #42275d;
+  --face-bottom: #160d28;
+  color: #fff5ff;
+}
+
+#touch-controls .touch-nitro[data-nitro-state="charging"] { opacity: calc(var(--touch-opacity, 1) * .74); }
+#touch-controls .touch-nitro[data-nitro-state="ready"] { --rim: #d695ff; --face-top: #684080; }
+#touch-controls .touch-nitro[data-nitro-state="active"] { --rim: #ebc9ff; --face-top: #8d54b8; }
+#touch-controls .touch-nitro[data-nitro-state="disabled"] { --rim: #8794a8; --face-top: #384558; --face-bottom: #1c2836; }
+#touch-controls .touch-nitro[data-nitro-state="disabled"] > svg { filter: grayscale(1); }
+
+#touch-controls .touch-boost {
+  --rim: #d69b55;
+  --face-top: #55321c;
+  --face-bottom: #281a12;
+  color: #fff7eb;
+}
+
+#touch-controls .touch-boost.is-held {
+  --rim: #ffca85;
+  --face-top: #a46426;
+  --face-bottom: #452515;
+}
+
+@media (forced-colors: active) {
+  #touch-controls .touch-actions > :is(.touch-nitro, .touch-boost) { border-color: ButtonText; }
+}
+
+#touch-controls .touch-boost[data-boost-state="ready"] { --rim: #efae65; --face-top: #734520; }
+#touch-controls .touch-boost:is([data-boost-state="charging"], [data-boost-state="disabled"]) {
+  --rim: #8794a8;
+  --face-top: #384558;
+  --face-bottom: #1c2836;
+}
+
+/* The sweep and sparks are clipped independently of the rectangular touch target. */
+#touch-controls .sprint-ready-effect {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--cut);
+  pointer-events: none;
+  opacity: 0;
+  background-image:
+    radial-gradient(circle at 48% 23%, white 0 1px, transparent 3px),
+    radial-gradient(circle at 57% 72%, white 0 1px, transparent 3px),
+    radial-gradient(circle at 63% 36%, var(--rim) 0 2px, transparent 5px),
+    linear-gradient(122deg, transparent 39%, var(--rim) 47%, #fff 50%, var(--rim) 52%, transparent 60%);
+  background-size: 240% 100%;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+}

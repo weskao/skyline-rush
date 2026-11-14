@@ -140,7 +140,7 @@ const hud = createRaceHud({
   getControlPrefs: () => touchUI.prefs(),
   flyKeyLabel: () => keyLabel(keymap.getKeyMap().fly[0]),
   getVisual: () => vfx.settings(),
-  onNitroReady: () => sound.cue('item-ready'),
+  onSprintReady: sound.cue,
   timeTrialGhost: race => ghosts.mode(race),
   isAutoThrottle: () => autoThrottle,
   getGoUntil: () => goUntil,

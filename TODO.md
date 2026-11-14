@@ -10,6 +10,16 @@ Report: music setting on but nothing playing; music should start as soon as the 
 - [ ] Real iPhone Safari and home-screen app: autoplay-blocked first tap, return from background without `visibilitychange`, silent switch, mute during the prelude.
 - [ ] Full `npm run test:browser` / `make verify` and exact-HEAD remote `quality-gate` (runs on `develop` only).
 
+# 2026-11-14 — NITRO and BOOST readiness cues
+
+- [x] Add distinct, clipped readiness flashes and SFX to the sprint buttons. Match the existing engine gates, suppress repeat cues while held or paused, and respect the existing HUD and accessibility settings.
+- [ ] Confirm full GitHub quality gate and physical-device sound and motion review.
+
+# 2026-11-14 — Touch NITRO and BOOST artwork
+
+- [x] Apply separate purple NITRO and amber BOOST artwork within their existing touch targets. Preserve FLY and throttle appearance and driving layout.
+- [ ] Confirm full GitHub quality gate and physical iOS/Android touch and safe-area review.
+
 # 2026-11-14 — Road supply collection effects
 
 - [x] Add separate effects for the pickup location and the equipped car. Verify road-space placement on a banked CourseGraph edge, shell geometry fit, rival cues, reset, VFX Off and reduced motion in `tests/pickup-collect-vfx.test.js`.

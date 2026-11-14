@@ -113,3 +113,46 @@ test('if the NITRO source fails the engine meter and translated state remain usa
   await expect(page.locator('#nitro-status')).not.toBeEmpty();
   await expect(page.locator('#nitro-meter')).toHaveAttribute('role', 'meter');
 });
+
+test.describe('touch sprint artwork', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  test('NITRO and BOOST keep their full hitboxes and leave FLY and throttle alone', async ({ page }) => {
+    test.setTimeout(ciTimeout(90000));
+    await page.goto('/');
+    if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+    await page.locator('button[data-race-mode="free"]').tap();
+    await page.locator('#start-button').tap();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
+    const touch = page.locator('#touch-controls');
+    await expect(touch).toBeVisible();
+    await expect(touch.locator('.touch-boost')).toHaveAttribute('data-boost-state', 'ready');
+    for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 568, height: 320 }]) {
+      await page.setViewportSize(viewport);
+      for (const action of ['nitro', 'boost']) {
+        const button = touch.locator(`[data-control="${action}"]`);
+        await expect(button.locator('svg')).toHaveAttribute('viewBox', '0 0 28 28');
+        await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+        const rim = await button.evaluate(element => getComputedStyle(element).getPropertyValue('--rim').trim());
+        if (action === 'boost') expect(rim).toBe('#efae65');
+        const effect = button.locator('.sprint-ready-effect');
+        await expect(effect).toHaveCSS('pointer-events', 'none');
+        await expect(effect).toHaveCSS('clip-path', /^polygon/);
+        const box = await button.boundingBox();
+        expect(box.width).toBeGreaterThanOrEqual(44);
+        expect(box.height).toBeGreaterThanOrEqual(44);
+        const cornerHitsButton = await button.evaluate(element => {
+          const rect = element.getBoundingClientRect();
+          return element.contains(document.elementFromPoint(rect.left + 2, rect.top + 2));
+        });
+        expect(cornerHitsButton).toBe(true);
+      }
+      for (const action of ['fly', 'throttle']) {
+        const button = touch.locator(`[data-control="${action}"]`);
+        await expect(button.locator('svg').first()).toHaveAttribute('viewBox', '0 0 24 24');
+        await expect(button).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      }
+    }
+    await expect(page.locator('#error-message')).toBeHidden();
+  });
+});
