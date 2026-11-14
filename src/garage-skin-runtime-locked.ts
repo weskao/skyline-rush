@@ -8,6 +8,6 @@ const economy = createGarageEconomyState();
 export const garageEconomySnapshot = economy.snapshot;
 export const currentGarageSkins = (): Record<SkinCategory, SkinId> => ({ ...DEFAULT_SKINS });
 export const selectedGarageSkins = currentGarageSkins;
-export const subscribeGarageSkins = (_listener: () => void): (() => void) => () => {};
+export const subscribeGarageSkins = (_listener: (equipped: boolean) => void): (() => void) => () => {};
 export const cancelGarageSkinPreview = (): void => {};
 export const setGarageSkinAccount = (_uid: string | null): void => {};

@@ -126,17 +126,20 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   const segments = Array.from({ length: 64 }, () => ({ life: 0, roll: false, a: new THREE.Vector3(), b: new THREE.Vector3(), left: new THREE.Vector3(), right: new THREE.Vector3() }));
   const { vapor, particleGeo, ribbon, ribbonGeo, ribbonPositions, ribbonAlpha, ribbonKinds } =
     createAeroWakeMeshes(positions, alphas, sizes, segments.length);
-  scene.add(vapor, ribbon);
+  // Keep world-space drawables under one visibility gate, separate from the car-local rig.
+  const worldEffects = new THREE.Group();
+  scene.add(worldEffects);
+  worldEffects.add(vapor, ribbon);
   let segmentCursor = 0;
   const ribbonFrom = new THREE.Vector3(), ribbonSide = new THREE.Vector3(), corner = new THREE.Vector3();
   const ghostGeometry = new THREE.EdgesGeometry(vehicle.userData.body.geometry, 24);
   const ghosts = Array.from({ length: MAX_GHOSTS }, () => {
     const mesh = new THREE.LineSegments(ghostGeometry, new THREE.LineBasicMaterial({ color: '#85cfff', transparent: true, opacity: 0, depthWrite: false }));
-    mesh.visible = false; scene.add(mesh);
+    mesh.visible = false; worldEffects.add(mesh);
     return { mesh, position: new THREE.Vector3(), life: 0 };
   });
   const shock = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 64), new THREE.MeshBasicMaterial({ color: '#bdeeff', transparent: true, depthWrite: false, side: THREE.DoubleSide, opacity: 0 }));
-  shock.name = 'Ignition shockwave'; shock.visible = false; scene.add(shock);
+  shock.name = 'Ignition shockwave'; shock.visible = false; worldEffects.add(shock);
   const flare = createLaunchFlare(local, vehicle, ground); // premium launch flares: badge-matched burst + body glow
   const shockPosition = new THREE.Vector3();
   const previous = new THREE.Vector3(), current = new THREE.Vector3(), sample = new THREE.Vector3(), direction = new THREE.Vector3();
@@ -172,6 +175,12 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   }
   return {
     reset,
+    worldEffects,
+    setVisible(visible) {
+      if (local.visible === visible) return;
+      if (!visible) reset(); // also hides the launch flare's glow attached directly to the car body
+      local.visible = worldEffects.visible = visible;
+    },
     setSkins(ids) {
       // Event-driven cosmetic updates reuse existing materials, geometries and GPU buffers.
       const palette = skinVfxPalette(ids ?? {}), patterns = skinVfxPattern(ids ?? {});
@@ -211,13 +220,14 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       trailHalfWidth = placeAirflow(profile);
     },
     inspectCosmetics() {
-      return { voidBeams: voidBeams.mesh.visible, launchPattern,
+      return { effectsVisible: local.visible, voidBeams: voidBeams.mesh.visible, launchPattern,
         launchPreviewActive: flare.active || (shock.visible && shock.material.opacity > 0),
         thrusterPattern: jets[0].material.uniforms.skinPattern.value,
         airflowPattern: flow.material.uniforms.skinPattern.value,
         trailPattern: ribbon.material.uniforms.skinPattern.value };
     },
     update(race, dt, origin, options, reducedMotion, sprintFrame = null, studioDemo = false) {
+      if (!local.visible) return { strength: 0, ignition: 0, nozzle: direction, reveal: 0 };
       settings = options;
       dt = clamp(Number.isFinite(dt) ? dt : 0, 0, 0.1);
       const car = race.player, active = race.phase === 'racing', preview = race.phase === 'ready';

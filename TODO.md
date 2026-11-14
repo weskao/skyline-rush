@@ -1,3 +1,10 @@
+# 2026-11-15 — Garage and Studio cosmetic preview toggle
+
+- [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.
+- [x] Applying equipment while hidden shows a localized toast and highlights the toggle. Reduced Motion and Comfortable keep the highlight static.
+- [x] RED: Studio and Coming Soon tests reproduced missing visibility controls. GREEN: 87 focused checks, 2,967 unit tests (3 skipped), typecheck and production build.
+- [ ] Exact-head GitHub quality gate and physical iOS / Android verification.
+
 # 2026-11-14 — Drift skid marks stay on the road until the race ends (`feature/skid-marks`)
 
 - [x] `src/skid-marks.js`: procedural rubber ribbon per rear tyre (tread alpha map, fade in/out, darker the longer the slide), laid from the active car's own rear wheels, kept through the finish and cleared by `effects.reset()` on the next race; 6,000-quad ring buffer (~1.8 km of drift per tyre), one draw call, partial uploads only.

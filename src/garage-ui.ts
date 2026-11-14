@@ -24,9 +24,9 @@ interface GarageWorld {
   /** Sun (bright) / moon (dim) lighting for Garage Home and the Studio; racing is unaffected. */
   setGarageLighting?(level: GarageLighting): void;
   setCosmeticSkins?(ids: Record<SkinCategory, SkinId>): void;
-  setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>, home?: boolean): void;
+  setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>, home?: boolean, visible?: boolean): void;
   inspectCosmeticPreview?(): {
-    voidBeams: boolean; launchPattern: number; launchPreviewActive: boolean;
+    effectsVisible: boolean; voidBeams: boolean; launchPattern: number; launchPreviewActive: boolean;
     thrusterPattern: number; airflowPattern: number; trailPattern: number;
   };
   inspectGarageStudio?(): { minX: number; maxX: number; minY: number; maxY: number; inFrame: boolean } | null;
@@ -76,14 +76,19 @@ export function setupGarageUI({
     const inGarage = garageScreen.open;
     const selected = inGarage ? selectedGarageSkins() : equipped;
     getWorld()?.setCosmeticSkins?.(equipped);
-    getWorld()?.setGarageSkinPreview?.(selected, inGarage && garageStudioView.page === 'home');
+    getWorld()?.setGarageSkinPreview?.(
+      selected, inGarage && garageStudioView.page === 'home', !inGarage || garageStudioView.effectsVisible,
+    );
     for (const category of SKIN_CATEGORIES) {
       preview.setAttribute(`data-skin-preview-${category}`, selected[category]);
       preview.setAttribute(`data-skin-equipped-${category}`, equipped[category]);
     }
     inspectStudioAfterFrame();
   }
-  subscribeGarageSkins(syncSkins);
+  subscribeGarageSkins(equipped => {
+    syncSkins();
+    if (equipped && garageScreen.open && !garageStudioView.effectsVisible) garageStudioView.effectsReminder++;
+  });
   subscribeAccount(accountId => { setGarageSkinAccount(accountId); setWave3DemoAccount(accountId); });
   function inspectStudioAfterFrame() {
     if (pendingStudioInspection || !garageScreen.open) return;
@@ -103,6 +108,7 @@ export function setupGarageUI({
       }
       const cosmetics = getWorld()?.inspectCosmeticPreview?.();
       if (cosmetics) {
+        preview.dataset.gpuEffectsVisible = String(cosmetics.effectsVisible);
         preview.dataset.gpuVoidBeams = String(cosmetics.voidBeams);
         preview.dataset.gpuLaunchPattern = String(cosmetics.launchPattern);
         preview.dataset.launchPreviewActive = String(cosmetics.launchPreviewActive);
@@ -253,7 +259,8 @@ export function setupGarageUI({
     getWorld()?.resize();
     cancelGarageSkinPreview();
     previewPaint(getEquippedPaint());
-    updateGarageStudioView({ page: 'home' });
+    updateGarageStudioView({ page: 'home', effectsReminder: 0 });
+    syncSkins(); // The locked build has no preview session to publish a reset.
     clearControls();
     $('#garage-button').focus({ preventScroll: true });
   });
@@ -271,6 +278,11 @@ export function setupGarageUI({
     const lighting: GarageLighting = garageStudioView.lighting === 'bright' ? 'dim' : 'bright';
     updateGarageStudioView({ lighting });
     getWorld()?.setGarageLighting?.(lighting);
+  });
+  $('#garage-effects-toggle').addEventListener('click', () => {
+    updateGarageStudioView({ effectsVisible: !garageStudioView.effectsVisible, effectsReminder: 0 });
+    syncSkins();
+    cue?.('ui');
   });
   $('#garage-rotate-left').addEventListener('click', () => setCamera(dragGarageCamera(camera, -40, 0)));
   $('#garage-rotate-right').addEventListener('click', () => setCamera(dragGarageCamera(camera, 40, 0)));
