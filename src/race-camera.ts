@@ -12,6 +12,8 @@ export interface RaceCameraView {
   /** Look-at point: height above the car and distance down the road. */
   look: number;
   ahead: number;
+  /** Metres the look-at height drops at a full NITRO/BOOST share: shows the exhaust under the car, the eye does not move. */
+  sprintLook: number;
   /** Classic flat roads: share of the car's lateral position the camera follows (1 = always straight behind). */
   follow: number;
   /** Vertical FOV at rest, and the degrees added per m/s. */
@@ -49,14 +51,14 @@ const RUMBLE_SPRINT = 0.8, RUMBLE_LIMIT = 0.05, RUMBLE_HZ = [1.3, 2.1, 2.9, 1.7,
 const RUMBLE_BUZZ_DT = 1 / (2.5 * RUMBLE_BUZZ_HZ);
 
 export const RACE_CAMERA: Record<'chase' | 'chasePortrait' | 'first', RaceCameraView> = {
-  chase: { ...SHARED, back: 7.6, height: 2.5, look: 1.5, ahead: 34, follow: 0.74, fov: 57, dolly: 1, flyLift: 1.5, swing: 0.5, speedShake: 0, rumble: 0.12 },
+  chase: { ...SHARED, back: 7.6, height: 2.5, look: 1.5, ahead: 34, sprintLook: 3.5, follow: 0.74, fov: 57, dolly: 1, flyLift: 1.5, swing: 0.5, speedShake: 0, rumble: 0.12 },
   // Portrait's horizontal FOV is about half of landscape's: further back, wider, straight behind the car and a smaller swing
   // keep a sideways car in frame. It aims below the road so the car sits mid-frame, above the HUD readouts; the lower eye
   // keeps the rear bumper above them once the dolly has moved in.
-  chasePortrait: { ...SHARED, back: 12, height: 2.5, look: -4, ahead: 34, follow: 0.97, fov: 61, dolly: 1, flyLift: 1.5, swing: 0.25, speedShake: 0, rumble: 0.12 },
+  chasePortrait: { ...SHARED, back: 12, height: 2.5, look: -4, ahead: 34, sprintLook: 0, follow: 0.97, fov: 61, dolly: 1, flyLift: 1.5, swing: 0.25, speedShake: 0, rumble: 0.12 },
   // Seated eye height over the nose tip: ahead of the cabin shell and far enough forward that the sunlit bonnet (which
   // blooms into a white wash on phones) stays under the frame. It looks down the road, so no swing, dolly, lift or rumble.
-  first: { ...SHARED, back: -2.3, height: 1, look: 0.95, ahead: 65, follow: 1, fov: 60, dolly: 0, flyLift: 0, swing: 0, speedShake: 0.009, rumble: 0 },
+  first: { ...SHARED, back: -2.3, height: 1, look: 0.95, ahead: 65, sprintLook: 0, follow: 1, fov: 60, dolly: 0, flyLift: 0, swing: 0, speedShake: 0.009, rumble: 0 },
 };
 
 const finite = (value: number, fallback = 0) => Number.isFinite(value) ? value : fallback;
@@ -75,10 +77,13 @@ const dollyFov = (view: RaceCameraView, fov: number) => Math.min(DOLLY_MAX_FOV, 
 export const rigBack = (view: RaceCameraView, fov: number): number =>
   view.back + view.dolly * (view.back - DOLLY_PIVOT) * (halfTan(view.fov) / halfTan(dollyFov(view, fov)) - 1);
 
-/** Look-at height for the dolly: re-aims the closer, wider camera so the horizon and the rear bumper keep their screen rows. */
-export function rigLook(view: RaceCameraView, fov: number): number {
+/**
+ * Look-at height for the dolly: re-aims the closer, wider camera so the horizon and the rear bumper keep their screen rows.
+ * `sprint` (the eased NITRO/BOOST share, clamped to 0-1) lowers it by `sprintLook`, lifting the nozzles off the bottom edge.
+ */
+export function rigLook(view: RaceCameraView, fov: number, sprint = 0): number {
   const f = dollyFov(view, fov), spread = 1 + view.dolly * (halfTan(f) / halfTan(view.fov) - 1);
-  return view.height - (view.height - view.look) * (rigBack(view, f) + view.ahead) / (view.back + view.ahead) * spread;
+  return view.height - (view.height - view.look) * (rigBack(view, f) + view.ahead) / (view.back + view.ahead) * spread - view.sprintLook * unit(sprint);
 }
 
 export const rigHeight = (view: RaceCameraView, altitude: number): number => view.height + unit(altitude / view.flyAltitude) * view.flyLift;
