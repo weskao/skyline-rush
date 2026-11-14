@@ -32,6 +32,21 @@ test('throttle lesson: the car stands still after GO until THROTTLE, and the arr
   assert.ok(session.race.player.speed > 0 && session.race.player.speed < 1, 'speed builds at the normal throttle rate');
 });
 
+test('the final lesson cues NITRO when a new press is needed', () => {
+  const session = createInteractiveTutorial();
+  skipTo(session, 'nitro');
+  const pressNitro = { key: 'tutorial.cue.nitro', actions: ['nitro'] };
+  assert.deepEqual(session.cue, pressNitro);
+  tick(session, { nitro: true, brake: true });
+  assert.equal(session.coachPhase, 'retry');
+  assert.equal(session.cue, null, 'holding NITRO during a retry requires a release first');
+  tick(session);
+  assert.deepEqual(session.cue, pressNitro, 'the press cue returns after the charge refills');
+  tick(session, { nitro: true });
+  assert.equal(session.coachPhase, 'sprinting');
+  assert.equal(session.cue, null, 'the sprint is underway');
+});
+
 test('a gate ring hit stays visible to the audio and effects that run after the step', () => {
   const session = createInteractiveTutorial();
   skipTo(session, 'left');

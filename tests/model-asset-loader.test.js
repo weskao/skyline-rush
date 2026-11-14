@@ -246,6 +246,34 @@ test('disposal: resources dispose exactly once when the last handle releases; do
   assert.equal(calls.length, 2, 'released entry is removed; next load re-fetches');
 });
 
+test('an opted-in cache reuses two idle models and disposes them on eviction or teardown', async () => {
+  const { fetch, calls } = fakeFetch();
+  const manifest = Object.fromEntries(['a', 'b', 'c'].map(suffix => {
+    const entry = validEntry(`probe-${suffix}`);
+    return [entry.id, entry];
+  }));
+  const cache = cacheWith(fetch, undefined, { manifest, retainReleasedModels: true });
+  const first = await cache.load('probe-a');
+  const firstWheel = first.instance().getObjectByName('wheel_fl');
+  const counts = trackDisposals(first.instance());
+  first.release();
+  const second = await cache.load('probe-b');
+  const secondCounts = trackDisposals(second.instance());
+  second.release();
+
+  const again = await cache.load('probe-a');
+  assert.equal(calls.length, 2, 'switching back avoids a new fetch and parse');
+  assert.equal(again.instance().getObjectByName('wheel_fl').geometry, firstWheel.geometry);
+  assert.ok([...counts.values()].every(n => n === 0));
+  again.release();
+  const third = await cache.load('probe-c');
+  const thirdCounts = trackDisposals(third.instance());
+  third.release();
+  assert.ok([...secondCounts.values()].every(n => n === 1), 'the older idle entry was evicted');
+  cache.dispose();
+  assert.ok([...counts.values(), ...thirdCounts.values()].every(n => n === 1), 'world disposal frees the retained models');
+});
+
 test('single GLTFLoader backend; no renderer, no KTX2Loader construction and no Draco in the loader module', () => {
   const src = readFileSync(new URL('../src/asset-model-loader.ts', import.meta.url), 'utf8');
   assert.equal(src.match(/new GLTFLoader\(/g)?.length, 1);

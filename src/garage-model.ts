@@ -131,7 +131,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
       if (held) for (const host of [...dressed.keys()]) undress(host); // mid-race: procedural until the race stops
       else await Promise.all([...wanted].map(host => dress(host, result))); // a later dress replaces an earlier one
       old?.release(); // only after no host shows an old instance
-      report();
+      if (open && handle === result) report();
     } catch (error) {
       if (!(error instanceof DOMException && error.name === 'AbortError')) throw error;
     }
@@ -195,12 +195,19 @@ export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick
   const loadKtx2 = createKtx2Provider(renderer, baseUrl);
   let cache: Promise<ModelCache> | undefined;
   let id: string | null = null, model: ReturnType<typeof createGarageModel> | null = null;
+  const modelCache: Pick<ModelCache, 'load'> = {
+    async load(key, options) {
+      cache ??= import('./asset-model-loader.ts').then(({ createModelCache }) =>
+        createModelCache({ baseUrl, loadKtx2, retainReleasedModels: true }));
+      return (await cache).load(key, options);
+    },
+  };
   function use(next: string | null): void {
     model?.dispose(); // the cars are procedural again before another model dresses them
     id = next;
     model = next === null ? null : createGarageModel({
       id: next, dataset: canvas.dataset,
-      cache: { load: async (key, options) => (await (cache ??= import('./asset-model-loader.ts').then(({ createModelCache }) => createModelCache({ baseUrl, loadKtx2 })))).load(key, options) },
+      cache: modelCache,
       compile: (object, scene) => renderer.compileAsync(object, camera, scene),
     });
   }
@@ -219,6 +226,10 @@ export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick
       model.sync(garageOpen || everywhere, quality, shown, garageOpen ? 'garage' : phase === 'racing' ? 'race' : 'drive');
     },
     release: (host: GarageModelHost): void => model?.release(host),
-    dispose() { canvas.removeEventListener('webglcontextrestored', restored); model?.dispose(); },
+    dispose() {
+      canvas.removeEventListener('webglcontextrestored', restored);
+      model?.dispose();
+      if (cache) void cache.then(loaded => loaded.dispose());
+    },
   };
 }

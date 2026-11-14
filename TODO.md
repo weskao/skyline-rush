@@ -1,3 +1,35 @@
+## Final tutorial NITRO cue (2026-11-15)
+
+- [x] Show the final NITRO action in the same on-screen cue as THROTTLE, with the bound desktop key or touch button copy. Hide the press prompt and touch outline during the sprint and while waiting for release after an interrupted attempt.
+- [x] RED: the ready lesson returned no cue, and touch and desktop had no separate cue copy. GREEN: 91 focused tests passed. Typecheck, locked build and the full unit suite passed (2,967 passed, 3 skipped).
+- [x] Chromium checks with the real Vue coach, tutorial controller and game CSS passed at 1440×900, 390×844 and 844×390, including clearing and restoring the prompt on a retry.
+- [x] Full-game Chromium regressions passed for the rebound desktop key, pause/resume, the portrait cue, landscape input and releasing and re-pressing NITRO after an interruption. The desktop test passed on its isolated rerun after a software WebGL countdown timeout.
+- [ ] Full browser suite, World Tour, physical-device checks and exact-commit GitHub `quality-gate`.
+
+# 2026-11-14 — Drift skid marks stay on the road until the race ends (`feature/skid-marks`)
+
+- [x] `src/skid-marks.js`: procedural rubber ribbon per rear tyre (tread alpha map, fade in/out, darker the longer the slide), laid from the active car's own rear wheels, kept through the finish and cleared by `effects.reset()` on the next race; 6,000-quad ring buffer (~1.8 km of drift per tyre), one draw call, partial uploads only.
+- [x] Floating origin: stored relative to the race's first origin (scene + origin = absolute, as aero-vfx.js); projected onto the ground-shadow plane so body roll cannot sink a trail (first capture had y −0.02 … −0.06 m; RED test *marks lie on the road under a rolled car*).
+- [x] `effects.js` at the 400-line limit: colour tables moved first to `effects-palette.ts` (move-only commit).
+- [x] `tests/skid-marks.test.js` 7/7 (persist, origin shift, wheel fit + scale, fades, capacity, racing-only via effects, road plane); `shader-warmup-browser.spec.js` now drifts and asserts no mid-race compile (6/6 with black-frame). `npm test` 2959 pass / 0 fail / 3 skipped, typecheck, build.
+- [x] Real WebGL captures mid-drift: Coast (desktop, phone portrait + landscape), Neon, Sky Spiral, Alpine.
+- [ ] Physical phone check, Crimson GT visual capture, full `npm run test:browser` and exact-HEAD `quality-gate`. Blender-authored tread texture not done (procedural first, per request).
+
+## Keep paint when switching cars (2026-11-15)
+
+- [x] Garage and Preview Studio retain the equipped paint and any live preview when switching between Stratosway R2 and Vantaire GT. Carry the equipped finish into the new car's local save and reject equipping locked previews as before.
+- [x] Reuse two recently released parsed car models on the shared Garage, Studio, Home, Coming Soon and race path. Ignore status updates from a superseded shader warm-up.
+- [x] RED: the Chromium paint check saw factory red instead of pearl; the model checks saw duplicate fetches and a stale warm-up clear the active model report. GREEN: focused Node suite (92 passed), typecheck, production build and module-size gate.
+- [ ] Full browser/World Tour gate, physical-device frame pacing and exact-commit GitHub `quality-gate`.
+
+## Compact mission reset display (2026-11-15)
+
+- [x] Show concise daily and Monday weekly UTC reset dates in English and Traditional Chinese, without overflow at 390px (Playwright).
+- [x] Browser RED: original ISO timestamps failed the compact-display assertion. GREEN: `npx playwright test tests/wave3-demo-missions-browser.spec.js` passed 5/5; production trial build and typecheck passed; module-size passed 3/3.
+- [ ] `make verify` was interrupted during the unit suite after stalling; full browser/World Tour gates, real-game visual review and exact-commit CI remain pending. No audio or quality-tier changes needed for static text.
+- [x] Localization follow-up: group one shared `00:00 UTC` with short localized daily and Monday dates. The rendered Vue output reproduced the old long copy (RED) and passed in both locales with exact UTC timestamps (GREEN). Focused mission, i18n and module-size tests: 30/30. Typecheck and locked/trial builds passed.
+- [ ] Follow-up browser layout and exact-commit `quality-gate` acceptance.
+
 # 2026-11-14 — Pickup body sweep on the Stratosway R2 (`feature/pickup-collection-vfx`)
 
 Report: R2 showed almost no body animation on pickup while the Crimson GT turned gold/pink. Rule: `.claude/rules/pickup-body-sweep.md` (new).
@@ -5546,3 +5578,12 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Local gates: `npm test` 2942 pass / 0 fail / 3 skipped; `npm run typecheck`; `node --test tests/module-size.test.js` 3 pass; `npm run build`.
 - [x] Real Chrome screenshots inspected (zh-TW Studio, each car selected, phone portrait/landscape emulation and desktop); local-only, not committed.
 - [ ] Not checked: full `npm run test:browser` / `make verify` (skipped at the user's request), physical phones, exact-HEAD GitHub `quality-gate`.
+
+## 2026-11-14 — Develop browser regressions (CI 43589945683)
+
+- [x] Reproduced the first-visit audio failure on the original browser spec. The updated spec verifies audible playback, both default switches on and no stored preference until the player changes one.
+- [x] Split the Store gallery flow by viewport and verify each filter selection and its displayed 3× artwork. Desktop and both phone orientations passed in headless Chromium with `CI=1` and zero retries.
+- [x] Verify that every locked track still previews and rejects mouse and keyboard starts at 1440×900 and 390×844. Both flows passed with the CI-scaled budget and zero retries.
+- [x] Verify FLY's held and released artwork and all seven editable touch controls across a reload. Both flows passed with `CI=1` and zero retries.
+- [x] `npm test`: 2,951 passed, 3 skipped. Typecheck, module-size checks and production build passed.
+- [ ] Verify the full GitHub `quality-gate` on the repair commit.

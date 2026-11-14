@@ -6,7 +6,10 @@ import { RACE_TRACKS } from '../src/game.js';
 import { CATALOGS } from '../src/i18n.ts';
 import { ciTimeout } from './helpers/ci.js';
 import { strayEnglish } from './helpers/i18n-english.js';
+import { resizeTo } from './helpers/viewport.js';
 
+// Proves the real flow in both locales on desktop + phone (layout and string audit per screen, live switch) and the intro scroller edge at seven desktop sizes (one boot per locale).
+// Locale detection, track names and catalog completeness live in tests/i18n.test.js; nothing was moved out of this spec.
 // Both locales x desktop + phone through the real flow. Screenshots go to I18N_SHOT_DIR (default test-results/i18n-shots), never artifacts/.
 const SHOT_DIR = process.env.I18N_SHOT_DIR ?? 'test-results/i18n-shots';
 const LOCALES = [['en', 'en-US', 'en'], ['zh-TW', 'zh-TW', 'zh-TW']]; // [catalog, Playwright (system) locale, <html lang>]
@@ -462,25 +465,38 @@ const introLines = page => page.locator('#intro').evaluate(intro => {
   }
   return { edge, lines, scrollable: intro.scrollHeight - intro.clientHeight };
 });
-for (const [locale, system] of LOCALES) for (const [width, height] of [[1440, 900], [1600, 900], [1280, 900], [1920, 1080], [1440, 800], [1366, 768], [1280, 720]]) {
-  test.describe(`intro bottom edge ${locale} ${width}x${height}`, () => {
-    test.use({ locale: system, viewport: { width, height } });
+// One boot per locale: the seven desktop sizes share a layout class, so the page boots at the first size and resizeTo walks the rest.
+const INTRO_SIZES = [[1440, 900], [1600, 900], [1280, 900], [1920, 1080], [1440, 800], [1366, 768], [1280, 720]];
+for (const [locale, system] of LOCALES) {
+  test.describe(`intro bottom edge ${locale} desktop sizes`, () => {
+    test.use({ locale: system, viewport: { width: INTRO_SIZES[0][0], height: INTRO_SIZES[0][1] } });
     test('no text line is cut by the scroller edge, and the last line is reachable', async ({ page }) => {
+      test.setTimeout(ciTimeout(60000)); // folded 7 sizes: ~80 CI s estimated
       await page.goto('/');
       await page.evaluate(() => document.fonts.ready);
       const intro = page.locator('#intro');
-      await intro.evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+      const settleIntro = () => intro.evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
       const cut = ({ edge, lines }) => lines.filter(line => line.top < edge - 0.5 && line.bottom > edge + 0.5).map(line => `"${line.text}" ${Math.round(line.top)}..${Math.round(line.bottom)} edge ${Math.round(edge)}`);
-      const first = await introLines(page);
-      if (height >= 900) {
-        expect(cut(first), 'lines cut by the intro bottom edge').toEqual([]);
-        expect(first.scrollable, 'intro content fits without scrolling').toBeLessThanOrEqual(0);
+      for (const [i, [width, height]] of INTRO_SIZES.entries()) {
+        await test.step(`${width}x${height}`, async () => {
+          if (i) {
+            await resizeTo(page, width, height);
+            await intro.evaluate(el => { el.scrollTop = 0; });
+          }
+          await settleIntro();
+          const size = `${locale} ${width}x${height}`;
+          const first = await introLines(page);
+          if (height >= 900) {
+            expect.soft(cut(first), `${size}: lines cut by the intro bottom edge`).toEqual([]);
+            expect.soft(first.scrollable, `${size}: intro content fits without scrolling`).toBeLessThanOrEqual(0);
+          }
+          await intro.evaluate(el => { el.scrollTop = el.scrollHeight; });
+          const last = await introLines(page);
+          const lowest = last.lines.reduce((a, b) => (b.bottom > a.bottom ? b : a));
+          expect.soft(lowest.text, `${size}: the flight tip is the last line`).toBe((await page.locator('.flight-tip').innerText()).trim().slice(0, 24));
+          expect.soft(lowest.bottom, `${size}: last line fully visible once scrolled`).toBeLessThanOrEqual(last.edge + 0.5);
+        });
       }
-      await intro.evaluate(el => { el.scrollTop = el.scrollHeight; });
-      const last = await introLines(page);
-      const lowest = last.lines.reduce((a, b) => (b.bottom > a.bottom ? b : a));
-      expect(lowest.text, 'the flight tip is the last line').toBe((await page.locator('.flight-tip').innerText()).trim().slice(0, 24));
-      expect(lowest.bottom, 'last line fully visible once scrolled').toBeLessThanOrEqual(last.edge + 0.5);
     });
   });
 }

@@ -1,10 +1,17 @@
 import { test, expect } from '@playwright/test';
 import { PORTRAIT_CAR_TOP } from './showcase-car-zone.js';
 import { RACE_TRACKS } from '../src/game.js';
+import { resizeTo } from './helpers/viewport.js';
+import { ciTimeout } from './helpers/ci.js';
 
 // Real WebGL camera placement for the six ready-screen views: the dock label alone
 // (showcase-camera-browser.spec.js) cannot catch a camera that ends up somewhere else.
 // Every map, current and future: a new track joins these checks by being added to RACE_TRACKS.
+// CI: one page boot per map (about 11 s each on software WebGL). The viewport x AIRFLOW matrix of a map runs inside one test
+// (test.step per combination, same assertions as before; resizeTo resizes the live page), and the race-camera check runs every map
+// in one page. Camera values read by the old fresh-boot tests match the folded ones to < 1e-5 on every combination, except
+// 390x844 AIRFLOW on of taipei and tokyo (portrait + AIRFLOW after an earlier combination moves their car by ~0.05 NDC): those
+// keep a fresh boot (FRESH_BOOT below). Pure pose maths lives in tests/showcase-camera.test.js.
 const TRACKS = [...Object.keys(RACE_TRACKS), 'harbor-circuit'];
 // neon, canyon and aurora run the same camera path as coast (no road frame, landmark or occluders: world.js showcaseOccluders).
 const CAMERA_TRACKS = TRACKS.filter(id => !['neon', 'canyon', 'aurora'].includes(id));
@@ -31,30 +38,49 @@ function expectBelowCardBand(result, label) {
   expect.soft((1 - result.carBounds.maxY) / 2, `${label} car top, as a share of the screen height`).toBeGreaterThanOrEqual(PORTRAIT_CAR_TOP);
 }
 
-// One test per map: all maps in one test outran the 180 s CI timeout on software WebGL.
-for (const id of CAMERA_TRACKS) {
-  for (const viewport of VIEWPORTS) {
-    for (const airflow of [false, true]) {
-      test(`${id}: fixed views face the car from their own side at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
-        await openProbe(page, viewport);
-        for (const [view, expected] of Object.entries(FIXED)) {
-          const result = await page.evaluate(([id, view, airflow]) => window.showcaseCameraProbe(id, view, { airflow }), [id, view, airflow]);
-          const label = `${id}/${view}`;
-          expect.soft(gap(result.bearing, expected), `${label} bearing ${result.bearing.toFixed(1)}°`).toBeLessThan(25);
-          expectWholeCar(result, label);
-          if (airflow && viewport.width < viewport.height) expectBelowCardBand(result, label);
-          // Landscape home panel covers the left half (NDC x < .04), as in the drive shot; AIRFLOW hides it, so the car centres.
-          if (airflow) expect.soft(Math.abs(result.x), `${label} car centred with the home panel hidden`).toBeLessThan(0.15);
-          else if (viewport.width > viewport.height) expect.soft(result.carBounds.minX, `${label} car clear of the home panel`).toBeGreaterThan(0.04);
-        }
-      });
-    }
+const sizeLabel = (viewport, airflow) => `${viewport.width}x${viewport.height} AIRFLOW ${airflow ? 'on' : 'off'}`;
+// Combinations whose values differ after an earlier combination ran in the same page (see the note at the top): fresh boot each.
+const FRESH_BOOT = { taipei: [[VIEWPORTS[2], true]], tokyo: [[VIEWPORTS[2], true]] };
+const isFresh = (id, viewport, airflow) => (FRESH_BOOT[id] ?? []).some(([v, a]) => v === viewport && a === airflow);
+// Runs `check(viewport, airflow)` for every combination of the map in one page; freshBoot picks the fresh-boot combinations instead.
+async function runCombos(page, id, viewports, check, freshBoot) {
+  let first = true;
+  for (const viewport of viewports) for (const airflow of [false, true]) {
+    if (isFresh(id, viewport, airflow) !== freshBoot) continue;
+    if (first) await openProbe(page, viewport); else await resizeTo(page, viewport.width, viewport.height);
+    first = false;
+    await test.step(sizeLabel(viewport, airflow), () => check(viewport, airflow));
+  }
+}
+async function checkFixedViews(page, id, viewport, airflow) {
+  for (const [view, expected] of Object.entries(FIXED)) {
+    const result = await page.evaluate(([id, view, airflow]) => window.showcaseCameraProbe(id, view, { airflow }), [id, view, airflow]);
+    const label = `${id}/${view} ${sizeLabel(viewport, airflow)}`;
+    expect.soft(gap(result.bearing, expected), `${label} bearing ${result.bearing.toFixed(1)}°`).toBeLessThan(25);
+    expectWholeCar(result, label);
+    if (airflow && viewport.width < viewport.height) expectBelowCardBand(result, label);
+    // Landscape home panel covers the left half (NDC x < .04), as in the drive shot; AIRFLOW hides it, so the car centres.
+    if (airflow) expect.soft(Math.abs(result.x), `${label} car centred with the home panel hidden`).toBeLessThan(0.15);
+    else if (viewport.width > viewport.height) expect.soft(result.carBounds.minX, `${label} car clear of the home panel`).toBeGreaterThan(0.04);
   }
 }
 
-for (const id of TRACKS) {
-  test(`${id}: the showcase angle never reaches the race camera, AIRFLOW on or off`, async ({ page }) => {
-    await openProbe(page, VIEWPORTS[0]);
+// One test per map: all maps in one test outran the 180 s CI timeout on software WebGL.
+for (const id of CAMERA_TRACKS) {
+  test(`${id}: fixed views face the car from their own side at every viewport, AIRFLOW on and off`, async ({ page }) => {
+    test.setTimeout(ciTimeout(60_000));
+    await runCombos(page, id, VIEWPORTS, (viewport, airflow) => checkFixedViews(page, id, viewport, airflow), false);
+  });
+  if (FRESH_BOOT[id]) test(`${id}: fixed views face the car from their own side at 390x844, AIRFLOW on (fresh boot)`, async ({ page }) => {
+    test.setTimeout(ciTimeout(60_000));
+    await runCombos(page, id, VIEWPORTS, (viewport, airflow) => checkFixedViews(page, id, viewport, airflow), true);
+  });
+}
+
+test('the showcase angle never reaches the race camera on any map, AIRFLOW on or off', async ({ page }) => {
+  test.setTimeout(ciTimeout(90_000));
+  await openProbe(page, VIEWPORTS[0]);
+  for (const id of TRACKS) {
     for (const airflow of [false, true]) {
       const { bearing: chase } = await page.evaluate(([id, airflow]) => window.showcaseCameraProbe(id, 'drive', { airflow, racing: true, seconds: 0 }), [id, airflow]);
       for (const view of [...Object.keys(FIXED), 'orbit']) {
@@ -62,8 +88,8 @@ for (const id of TRACKS) {
         expect.soft(gap(bearing, chase), `${id}/${view} AIRFLOW ${airflow} race bearing ${bearing.toFixed(1)}° vs chase ${chase.toFixed(1)}°`).toBeLessThan(2);
       }
     }
-  });
-}
+  }
+});
 
 const spread = values => Math.max(...values) - Math.min(...values);
 // Turn rate, 9 m radius and the 360 degree sweep are pure pose maths (tests/showcase-camera.test.js); the whole-car framing of every
@@ -96,31 +122,35 @@ for (const [viewport, airflow] of [[VIEWPORTS[0], false], [VIEWPORTS[2], true]])
 }
 
 // Low detail (above) draws the fewest roadside props; High draws them all, the hardest case for a clear view of the car.
-for (const id of CAMERA_TRACKS) {
-  for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
-    for (const airflow of [false, true]) {
-      test(`${id}: every view keeps the whole car in frame and unblocked at High detail at ${viewport.width}x${viewport.height}, AIRFLOW ${airflow ? 'on' : 'off'}`, async ({ page }) => {
-        test.setTimeout(HEAVY_TIMEOUT);
-        await openProbe(page, viewport);
-        for (const view of ['drive', ...Object.keys(FIXED), 'orbit']) {
-          const orbit = view === 'orbit';
-          const result = await page.evaluate(([id, view, airflow, orbit]) => window.showcaseCameraProbe(id, view,
-            { airflow, quality: 'high', seconds: orbit ? 41.5 : 2, every: orbit ? 0.5 : 0 }), [id, view, airflow, orbit]);
-          for (const [i, s] of (orbit ? result.samples.slice(3) : [result]).entries())
-            expectWholeCar(s, `${id}/${view}${orbit ? ` sample ${i}` : ''} AIRFLOW ${airflow ? 'on' : 'off'}`);
-          if (view === 'drive') {
-            // Drive is the curated three-quarter chase shot: the camera stays behind the car, inside the planner's edge margins.
-            const { minX, maxX, minY, maxY } = result.carBounds, label = `${id}/drive AIRFLOW ${airflow ? 'on' : 'off'}`;
-            expect.soft(Math.abs(result.bearing), `${label} bearing ${result.bearing.toFixed(1)}°`).toBeLessThan(90);
-            expect.soft(minX, `${label} left edge`).toBeGreaterThan(-0.94);
-            expect.soft(maxX, `${label} right edge`).toBeLessThan(0.94);
-            expect.soft(minY, `${label} bottom edge`).toBeGreaterThan(-0.90);
-            expect.soft(maxY, `${label} top edge`).toBeLessThan(0.90);
-          }
-        }
-      });
+async function checkHighDetail(page, id, viewport, airflow) {
+  for (const view of ['drive', ...Object.keys(FIXED), 'orbit']) {
+    const orbit = view === 'orbit';
+    const result = await page.evaluate(([id, view, airflow, orbit]) => window.showcaseCameraProbe(id, view,
+      { airflow, quality: 'high', seconds: orbit ? 41.5 : 2, every: orbit ? 0.5 : 0 }), [id, view, airflow, orbit]);
+    const size = sizeLabel(viewport, airflow);
+    for (const [i, s] of (orbit ? result.samples.slice(3) : [result]).entries())
+      expectWholeCar(s, `${id}/${view}${orbit ? ` sample ${i}` : ''} ${size}`);
+    if (view === 'drive') {
+      // Drive is the curated three-quarter chase shot: the camera stays behind the car, inside the planner's edge margins.
+      const { minX, maxX, minY, maxY } = result.carBounds, label = `${id}/drive ${size}`;
+      expect.soft(Math.abs(result.bearing), `${label} bearing ${result.bearing.toFixed(1)}°`).toBeLessThan(90);
+      expect.soft(minX, `${label} left edge`).toBeGreaterThan(-0.94);
+      expect.soft(maxX, `${label} right edge`).toBeLessThan(0.94);
+      expect.soft(minY, `${label} bottom edge`).toBeGreaterThan(-0.90);
+      expect.soft(maxY, `${label} top edge`).toBeLessThan(0.90);
     }
   }
+}
+for (const id of CAMERA_TRACKS) {
+  const viewports = [VIEWPORTS[0], VIEWPORTS[2]];
+  test(`${id}: every view keeps the whole car in frame and unblocked at High detail at 1440x900 and 390x844, AIRFLOW on and off`, async ({ page }) => {
+    test.setTimeout(HEAVY_TIMEOUT);
+    await runCombos(page, id, viewports, (viewport, airflow) => checkHighDetail(page, id, viewport, airflow), false);
+  });
+  if (FRESH_BOOT[id]) test(`${id}: every view keeps the whole car in frame and unblocked at High detail at 390x844, AIRFLOW on (fresh boot)`, async ({ page }) => {
+    test.setTimeout(HEAVY_TIMEOUT);
+    await runCombos(page, id, viewports, (viewport, airflow) => checkHighDetail(page, id, viewport, airflow), true);
+  });
 }
 
 // Garage uses the same course and camera dock: preserve the home shot's scene context.

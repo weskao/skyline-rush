@@ -2,6 +2,14 @@ import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { PORTRAIT_CAR_TOP } from './showcase-car-zone.js';
 import { selectLocale } from './helpers/locale-browser.js';
+import { resizeTo } from './helpers/viewport.js';
+import { ciTimeout } from './helpers/ci.js';
+
+// CI: one app boot per layout family (about 11 s each on software WebGL). The telemetry card matrix and the five World Tour maps run
+// inside one test each (test.step per size or map, the assertions of the former per-size tests). The dock tests stay one boot per size
+// (an in-page resize lays the dock out differently from a fresh boot at 320x568, 760x501 and 768x1024), and the dock-to-Start
+// checks end by starting a race. Boxes read by the former fresh-boot tests match the
+// folded ones within 0.5 px (compared once before the per-size tests were removed).
 
 test('ready screen offers a discoverable camera dock across all tracks',async({page})=>{
   await page.goto('/');
@@ -62,30 +70,32 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:32
 }
 
 const worldTourMaps=['taipei','tokyo','alpine','coastal','cosmic'];
-for(const id of worldTourMaps) {
-  for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
-    test(`${id}: AIRFLOW on-road preview keeps every camera button usable at ${viewport.width}px`,async({page},info)=>{
-      await page.setViewportSize(viewport);
-      await page.addInitScript(()=>{
-        localStorage.setItem('skyline-rush-unlocked',JSON.stringify(['coast','neon','canyon','aurora','spiral','taipei','tokyo','alpine','coastal','cosmic']));
-        localStorage.setItem('skyline-rush-music','off');
-      });
-      await page.goto('/');
+// Desktop renders the biggest frames: two pages of at most three maps keep each folded test inside its budget.
+for(const [viewport,maps] of [[{width:1440,height:900},worldTourMaps.slice(0,3)],[{width:1440,height:900},worldTourMaps.slice(3)],[{width:390,height:844},worldTourMaps]]) {
+  test(`AIRFLOW on-road preview keeps every camera button usable at ${viewport.width}px: ${maps.join(', ')}`,async({page},info)=>{
+    test.setTimeout(ciTimeout(100000));
+    await page.setViewportSize(viewport);
+    await page.addInitScript(()=>{
+      localStorage.setItem('skyline-rush-unlocked',JSON.stringify(['coast','neon','canyon','aurora','spiral','taipei','tokyo','alpine','coastal','cosmic']));
+      localStorage.setItem('skyline-rush-music','off');
+    });
+    await page.goto('/');
+    for(const id of maps) await test.step(id,async()=>{
       await page.locator(`[data-track="${id}"]`).click();
       const airflow=page.locator('#airflow-toggle');
       await airflow.click(); // never force-click past an overlay
-      await expect(airflow).toHaveAttribute('aria-pressed','true');
+      await expect(airflow,`${id}: AIRFLOW on`).toHaveAttribute('aria-pressed','true');
       const dock=page.locator('#showcase-camera-dock');
       await expect(dock).toBeVisible();
       for(const mode of ['front','rear','left','right','orbit','drive']) {
         await page.locator('#showcase-camera-next').click();
-        await expect(dock).toHaveAttribute('data-view',mode);
+        await expect(dock,`${id}: next camera is ${mode}`).toHaveAttribute('data-view',mode);
       }
       await page.screenshot({path:info.outputPath(`${id}-airflow-${viewport.width}.png`),animations:'disabled'});
       await airflow.click();
-      await expect(airflow).toHaveAttribute('aria-pressed','false');
+      await expect(airflow,`${id}: AIRFLOW off`).toHaveAttribute('aria-pressed','false');
     });
-  }
+  });
 }
 
 
@@ -121,15 +131,17 @@ for (const [width, height] of [[320, 568], [390, 844], [760, 501], [768, 1024], 
 
 // Portrait phones: the showcase car fills the middle of the screen edge to edge, so the AIRFLOW
 // telemetry card must sit in the sky band above it (the car side of the line is in showcase-camera-views-browser.spec.js).
-for (const [width, height, top] of [[320, 568, 0], [390, 844, 0], [390, 844, 59], [430, 932, 59]]) {
-  test(`AIRFLOW telemetry card stays above the showcase car at ${width}x${height}, top inset ${top}`, async ({ page, context }) => {
-    await page.setViewportSize({ width, height });
-    if (top) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: { top, bottom: 34, left: 0, right: 0 } });
-    await page.goto('/');
-    await page.evaluate(() => document.fonts.ready);
-    await page.locator('#airflow-toggle').click();
-    await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
-    const overlaps = (a, b) => !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
+test('AIRFLOW telemetry card stays above the showcase car at every portrait phone size and top inset', async ({ page }) => {
+  test.setTimeout(ciTimeout(90000));
+  const cases = [[320, 568, 0], [390, 844, 0], [390, 844, 59], [430, 932, 59]];
+  await page.setViewportSize({ width: cases[0][0], height: cases[0][1] });
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  await page.locator('#airflow-toggle').click();
+  await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
+  const overlaps = (a, b) => !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
+  for (const [width, height, top] of cases) await test.step(`${width}x${height}, top inset ${top}`, async () => {
+    if (width !== cases[0][0] || height !== cases[0][1] || top) await resizeTo(page, width, height, { top, bottom: top ? 34 : 0, left: 0, right: 0 });
     for (const locale of ['en', 'zh-TW']) {
       await page.locator('#locale-select').selectOption(locale, { force: true });
       await expect(page.locator('#airflow-hud')).toHaveCSS('opacity', '1');
@@ -144,7 +156,7 @@ for (const [width, height, top] of [[320, 568, 0], [390, 844, 0], [390, 844, 59]
       }
     }
   });
-}
+});
 
 
 test('language switches relabel live AIRFLOW values before the next HUD tick', async ({ page }) => {
