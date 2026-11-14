@@ -6,7 +6,12 @@ import { resizeTo } from './helpers/viewport.js';
 import { START_LAYOUT_SIZES, AIRFLOW_START_CLASSES, readAirflowStart, expectAirflowStartClear } from './helpers/responsive-start.js';
 import { HOME_VERSION_SIZES, readHomeVersion, expectHomeVersion } from './helpers/responsive-home-version.js';
 import { SAFE_AREA_PROFILES, readSafeArea, expectSafeArea } from './helpers/responsive-safe-areas.js';
+import { RACE_MAP_SIZES, CONTROL_COMBOS, mapInsets, startControlCombo, readMapLayout, mapHits } from './helpers/responsive-map.js';
 import { RACE_HUD_CLASSES, bootAirflowRace, readHudBoxes, expectHudBlocksApart } from './helpers/responsive-hud.js';
+
+// Responsive layout: every size below is still checked, but each layout class boots once and walks its sizes with resizeTo (the
+// size lists live in tests/helpers/responsive-*.js, pinned by tests/responsive-matrix.test.js). Intro, landscape-home and
+// paint-guard tests keep one boot per size because they start a race or reload.
 
 // One boot per locale: the page resizes through the sizes (the browser context, hasTouch included, is the same for all of them).
 for (const locale of ['en', 'zh-TW']) {
@@ -287,56 +292,34 @@ for (const { name, locale, hasTouch, sizes } of RACE_HUD_CLASSES) {
   });
 }
 
-// The short-screen live map sits on the bottom row beside the thumb clusters, so its slot must follow every
-// touch size, steering mode and hand (a fixed offset once overlapped the Large throttle/BOOST by 6-13px).
-const CONTROL_COMBOS = ['S', 'M', 'L'].flatMap(size => ['slide', 'buttons'].flatMap(mode => ['left', 'right'].map(hand => ({ size, mode, hand, version: 1 }))));
-for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 667], [360, 640], [320, 568], [844, 390], [874, 339], [812, 375], [932, 430]]) {
-  test.describe(`race map clears touch controls ${width}x${height}${locale === 'zh-TW' ? ' zh-TW' : ''}`, () => {
+// The short-screen live map must follow every touch size, steering mode and hand. Each combo reloads once (the app reads it
+// at load), reaches the countdown HUD once, then the same page walks the seven viewports; the first size is the fresh boot.
+// zh-TW only changes HUD text widths, so it runs the Large size, the tightest slot. Split so no test passes ~150 estimated CI seconds.
+const MAP_CLASSES = [
+  ...['S', 'M', 'L'].map(size => ({ locale: 'en-US', combos: CONTROL_COMBOS.filter(combo => combo.size === size) })),
+  { locale: 'zh-TW', combos: CONTROL_COMBOS.filter(combo => combo.size === 'L') },
+];
+for (const { locale, combos } of MAP_CLASSES) {
+  test.describe(`race map clears touch controls ${locale} ${combos[0].size}`, () => {
+    const [[width, height]] = RACE_MAP_SIZES;
     test.use({ viewport: { width, height }, hasTouch: true, isMobile: true, locale });
 
-    test('every touch size, steering mode and hand', async ({ page, context }) => {
+    test('every touch size, steering mode and hand', async ({ page }) => {
       test.setTimeout(ciTimeout(90000));
-      if (height < 380) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 62, right: 62, top: 0, bottom: 21 } });
       // Music off up front: its prompt opens 600ms after load and would sit over START.
       await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
       await page.goto('/');
-      const others = ['.position-stat', '.leaderboard', '.race-progress', '.mode-indicator', '.speedometer', '.flight-telemetry', '.aero-tools',
-        '#controls-button', '#pause-button', ...['left', 'right', 'brake', 'fly', 'boost', 'nitro', 'throttle'].map(action => `[data-control="${action}"]`)];
-      const hits = [];
-      // zh-TW only changes HUD text widths, so it runs the Large size, the tightest slot.
-      for (const combo of CONTROL_COMBOS.filter(({ size }) => locale === 'en-US' || size === 'L')) {
-        await page.evaluate(value => localStorage.setItem('skyline-rush-controls', value), JSON.stringify(combo));
-        await page.reload();
-        await page.locator('#start-button').click();
-        // The countdown already lays out the race HUD (telemetry only turns visible), and skipping its 3s keeps 112 layouts quick.
-        await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
-        const tag = `${combo.size}/${combo.mode}/${combo.hand}`;
-        const result = await page.evaluate(selectors => {
-          const box = el => { const { x, y, width, height } = el.getBoundingClientRect(); return { x, y, width, height }; };
-          const map = document.querySelector('.race-route-map');
-          const [steer, brake] = ['.touch-steer', '[data-control="brake"]'].map(selector => document.querySelector(selector));
-          return { map: map.checkVisibility() ? box(map) : null, events: getComputedStyle(map).pointerEvents,
-            steer: steer.checkVisibility() ? box(steer) : null, brake: brake.checkVisibility() ? box(brake) : null,
-            others: selectors.flatMap(selector => [...document.querySelectorAll(selector)].filter(el => el.checkVisibility()).map(el => [selector, box(el)])) };
-        }, others);
-        if (!result.map) { hits.push(`${tag}: map hidden`); continue; }
-        if (result.events !== 'none') hits.push(`${tag}: map takes pointer events`);
-        // A phone caps BRAKE short of its row: it must keep to the outer screen edge for either hand (the map slot relies on it).
-        if (result.brake) {
-          const [s, b] = [result.steer, result.brake];
-          const gap = combo.hand === 'left' ? b.x - s.x : (s.x + s.width) - (b.x + b.width);
-          if (Math.abs(gap) > 0.5) hits.push(`${tag}: brake ${Math.round(gap)}px off the outer edge`);
-        }
-        const m = result.map;
-        if (m.x < 0 || m.y < 0 || m.x + m.width > width + 0.5 || m.y + m.height > height + 0.5) hits.push(`${tag}: map off screen`);
-        // Portrait Buttons mode: [<][>] take the bottom row, so the map shares the BRAKE row; any higher and it covers the player's car.
-        if (result.brake && height > width && m.y < result.brake.y - 0.5) hits.push(`${tag}: map rises ${Math.round(result.brake.y - m.y)}px above the BRAKE row onto the car`);
-        for (const [name, b] of result.others) {
-          const apart = m.x + m.width <= b.x + 0.5 || b.x + b.width <= m.x + 0.5 || m.y + m.height <= b.y + 0.5 || b.y + b.height <= m.y + 0.5;
-          if (!apart) hits.push(`${tag}: map × ${name} ${Math.round(Math.min(m.x + m.width - b.x, b.x + b.width - m.x))}px`);
+      for (const combo of combos) {
+        // Back at the boot size before the reload, so every combo starts like a fresh page there.
+        await resizeTo(page, width, height, mapInsets(height));
+        await startControlCombo(page, combo);
+        for (const [w, h] of RACE_MAP_SIZES) {
+          await test.step(`${combo.size}/${combo.mode}/${combo.hand} ${w}x${h}`, async () => {
+            if (w !== width || h !== height) await resizeTo(page, w, h, mapInsets(h));
+            expect(mapHits(await readMapLayout(page), combo, w, h)).toEqual([]);
+          });
         }
       }
-      expect(hits).toEqual([]);
     });
   });
 }

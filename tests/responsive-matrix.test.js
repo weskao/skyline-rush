@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { RACE_HUD_CLASSES } from './helpers/responsive-hud.js';
 import { AIRFLOW_START_CLASSES, START_LAYOUT_SIZES } from './helpers/responsive-start.js';
 import { SAFE_AREA_PROFILES } from './helpers/responsive-safe-areas.js';
+import { RACE_MAP_SIZES, CONTROL_COMBOS } from './helpers/responsive-map.js';
 import { HOME_VERSION_SIZES } from './helpers/responsive-home-version.js';
 
 // tests/responsive-browser.spec.js folds viewport matrices into one booted page per class. These lists are the
@@ -26,4 +27,10 @@ test('the safe-area and home-version matrices keep their profiles', () => {
   assert.deepEqual(SAFE_AREA_PROFILES.map(p => p[0]), ['notch iphone', 'dynamic island', 'android 15 gesture', 'android 15 buttons', 'android 14',
     'notch landscape', 'android 15 landscape buttons', 'ipad portrait', 'ipad landscape']);
   assert.deepEqual(HOME_VERSION_SIZES.map(key), ['320x740', '390x844', '844x390', '1440x900']);
+});
+
+test('the race map matrix keeps its seven sizes and twelve touch combos', () => {
+  assert.deepEqual(RACE_MAP_SIZES.map(key), ['375x667', '360x640', '320x568', '844x390', '874x339', '812x375', '932x430']);
+  assert.equal(CONTROL_COMBOS.length, 12);
+  assert.equal(new Set(CONTROL_COMBOS.map(c => `${c.size}${c.mode}${c.hand}`)).size, 12);
 });
