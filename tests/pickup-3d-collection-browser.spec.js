@@ -3,9 +3,15 @@ import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
 
 const TIERS = ['cell', 'can', 'tank', 'overcharge'];
+const expectedModel = process.env.PICKUP_TEST_MODEL;
+if (expectedModel === 'roadster2') test.use({ gameplaySearch: '?model=roadster' });
 async function startRace(page) {
   await page.locator('#start-button').click();
   if (await page.locator('#tutorial-exit').isVisible()) await page.locator('#tutorial-exit').click();
+  // This spec seeds pickups and tests the renderer. Let the next real game tick start the race.
+  await page.evaluate(() => {
+    if (window.gameplay.race.phase === 'countdown') window.gameplay.race.countdown = 0;
+  });
   await expect(page.locator('#race-status')).toHaveText('RACING');
 }
 // A pickup the player has just taken: the renderer starts that tier's collection effect on its next frame.
@@ -39,7 +45,6 @@ const running = (page, tier) => page.evaluate(name => {
 }, tier);
 
 test('each tier plays its own collection effect on the car and its WebGL frame is captured', async ({ gameplayPage: page }) => {
-  const expectedModel = process.env.PICKUP_TEST_MODEL;
   if (expectedModel) await expect.poll(() => dressedAs(page), { timeout: ciTimeout(15000) }).toBe(expectedModel);
   await startRace(page);
   for (const tier of TIERS) {
