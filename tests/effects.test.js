@@ -4,6 +4,7 @@ import { Scene, Group, Vector3 } from 'three';
 import { createRace, MAGNET_RANGE } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 import { drawnMarkers } from '../src/marker-pool.js';
+import { seededRng } from '../src/rng.ts';
 
 test('a nonpositive first frame cannot revive dormant particles with uninitialized data', t => {
   globalThis.devicePixelRatio = 1;
@@ -67,13 +68,23 @@ test('downwash descends and carries forward momentum after leaving a moving car'
 
 test('downwash turns into an outward surface flow when it reaches the road', t => {
   const { effects, race, attributes } = flight(t, 0.05, 0);
+  // This seed includes mostly longitudinal spread, which a lateral-only measurement misses.
+  t.mock.method(Math, 'random', seededRng(691, 'downwash'));
   effects.update(race, 0.04, 0, false, false);
+  const { alpha, position } = attributes;
+  const atContact = [...alpha.array.keys()].filter(i => alpha.getX(i) > 0);
+  assert.ok(atContact.length > 0, 'downwash reaches the road');
+  const contactPositions = position.array.slice();
   race.player.thrusting = false;
   for (let i = 0; i < 8; i++) effects.update(race, 0.025, 0, false, false);
-  const surface = [...attributes.alpha.array].flatMap((alpha, i) =>
-    alpha > 0 && attributes.position.array[i * 3 + 1] < 0.3 ? [Math.abs(attributes.position.array[i * 3])] : []);
-  assert.ok(surface.length > 0, 'surface wash remains briefly visible');
-  assert.ok(Math.max(...surface) > 1.25, 'air spreads beyond the nozzle footprint');
+  for (const i of atContact) {
+    assert.ok(alpha.getX(i) > 0, 'surface wash remains briefly visible');
+    assert.ok(contactPositions[i * 3 + 1] < 0.3, 'particle started at road level');
+    assert.equal(position.getY(i), contactPositions[i * 3 + 1], 'particle stays at road level');
+    const dx = position.getX(i) - contactPositions[i * 3];
+    const dz = position.getZ(i) - contactPositions[i * 3 + 2];
+    assert.ok(Math.hypot(dx, dz) > 0.45, 'air spreads away from its road contact point');
+  }
 });
 
 test('reset clears visible vapor immediately and a paused frame leaves it empty', t => {
