@@ -127,6 +127,7 @@ test('Garage and Preview Studio keep equipped and previewed paint while switchin
   expect(await saved(page, 'skyline-rush-car-paints')).toEqual({ 'crimson-gt': 'aurora' });
 
   await page.locator('#garage-close').click();
+  await expect(page.locator('#garage-screen')).toBeHidden();
   await expect.poll(() => paintHex(page)).toEqual({ model: 'crimson-gt', glb: 'a9c5a0', proc: 'a9c5a0' });
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();

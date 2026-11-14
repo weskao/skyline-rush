@@ -65,6 +65,7 @@ export function setupGarageUI({
   const dock = $('#showcase-camera-dock');
   const dockParent = dock.parentElement!, dockNext = dock.nextSibling;
   const historyKey = '__skylineGaragePage';
+  let leavingGarage = false;
   let previewing = getEquippedPaint();
   const owned = (): string[] => availablePaints(getStars());
   let camera = defaultGarageCamera();
@@ -175,11 +176,15 @@ export function setupGarageUI({
     showPage(page);
   }
   function leaveGarage(): void {
-    if (!garageScreen.open) return;
-    // Home and Studio are same-document history entries: Back returns to the correct prior screen.
+    if (!garageScreen.open || leavingGarage) return;
+    // Walk our same-document entries one at a time; some browsers collapse a multi-entry jump.
+    leavingGarage = true;
+    continueGarageExit();
+  }
+  function continueGarageExit(): void {
     const page = history.state?.[historyKey];
-    if (page === 'home' || page === 'studio') history.go(page === 'studio' ? -2 : -1);
-    else garageScreen.close();
+    if (page === 'home' || page === 'studio') history.back();
+    else { leavingGarage = false; garageScreen.close(); }
   }
   function releaseContact(id: number): void {
     const hadPointer = contacts.delete(id);
@@ -242,6 +247,7 @@ export function setupGarageUI({
   garageScreen.addEventListener('cancel', event => { event.preventDefault(); leaveGarage(); });
   window.addEventListener('popstate', () => {
     if (!garageScreen.open) return;
+    if (leavingGarage) { continueGarageExit(); return; }
     const page = history.state?.[historyKey];
     if (page === 'home' || page === 'studio') showPage(page);
     else garageScreen.close();
