@@ -21,6 +21,7 @@ export interface ModelCacheOptions {
   manifest?: Record<string, ModelManifestEntry>;
   fetch?: (url: string, init: { signal: AbortSignal }) => Promise<Response>;
   timeoutMs?: number;
+  decodeTimeoutMs?: number;
   loadMeshopt?: () => Promise<unknown>;
   /** A KTX2Loader already given its transcoder path and `detectSupport(renderer)` by the world; absent → 'decoder-unavailable'. */
   loadKtx2?: () => Promise<unknown>;
@@ -99,7 +100,7 @@ function inspect(scene: Object3D, entry: ModelManifestEntry): Loaded {
 }
 
 export function createModelCache(options: ModelCacheOptions): ModelCache {
-  const { baseUrl, manifest = MODEL_MANIFEST, timeoutMs = 15000, loadMeshopt = defaultLoadMeshopt } = options;
+  const { baseUrl, manifest = MODEL_MANIFEST, timeoutMs = 15000, decodeTimeoutMs = 30000, loadMeshopt = defaultLoadMeshopt } = options;
   const loadKtx2 = options.loadKtx2 ?? (() => Promise.reject(new Error('no KTX2 provider')));
   const doFetch = options.fetch ?? ((url, init) => globalThis.fetch(url, init));
   const slots = new Map<string, Slot>();
@@ -110,25 +111,35 @@ export function createModelCache(options: ModelCacheOptions): ModelCache {
   const meshoptDecoder = (): Promise<unknown> => (meshopt ??= loadMeshopt().catch(error => { meshopt = undefined; throw error; }));
   const ktx2Loader = (): Promise<unknown> => (ktx2 ??= loadKtx2().catch(error => { ktx2 = undefined; throw error; }));
 
-  async function fetchAndParse(entry: ModelManifestEntry, url: string, signal: AbortSignal): Promise<Loaded> {
+  async function fetchGlb(url: string, signal: AbortSignal): Promise<ArrayBuffer> {
     const response = await doFetch(url, { signal }).catch(() => { throw new Fail('network'); });
     if (!response.ok) throw new Fail('missing');
-    const buffer = await response.arrayBuffer().catch(() => { throw new Fail('network'); });
+    return response.arrayBuffer().catch(() => { throw new Fail('network'); });
+  }
+
+  async function decodeGlb(buffer: ArrayBuffer, entry: ModelManifestEntry, signal: AbortSignal): Promise<Loaded> {
     const wantsMeshopt = entry.decoders.includes('meshopt');
     const wantsKtx2 = entry.decoders.includes('ktx2');
     const unavailable = (): never => { throw new Fail('decoder-unavailable'); };
     const decoder = wantsMeshopt ? await meshoptDecoder().catch(unavailable) : undefined;
     const ktx2 = wantsKtx2 ? await ktx2Loader().catch(unavailable) : undefined;
+    signal.throwIfAborted();
     const parsed = await parseGlb(buffer, decoder, ktx2).catch(() => { throw new Fail('invalid'); });
     if (!wantsMeshopt && parsed.required.includes('EXT_meshopt_compression')) throw new Fail('invalid');
     if (!wantsKtx2 && parsed.required.includes('KHR_texture_basisu')) throw new Fail('invalid');
-    return inspect(parsed.scene, entry);
+    const loaded = inspect(parsed.scene, entry);
+    if (signal.aborted) {
+      for (const resource of loaded.resources) resource.dispose();
+      signal.throwIfAborted();
+    }
+    return loaded;
   }
 
   function begin(key: string, entry: ModelManifestEntry, url: string): Slot {
     const controller = new AbortController();
     const slot: Slot = { work: Promise.resolve('network'), controller, waiters: 0, settled: false, refs: 0 };
-    slot.work = withTimeout(signal => fetchAndParse(entry, url, signal), timeoutMs, controller)
+    slot.work = withTimeout(signal => fetchGlb(url, signal), timeoutMs, controller)
+      .then(buffer => withTimeout(signal => decodeGlb(buffer, entry, signal), decodeTimeoutMs, controller))
       .catch((error: unknown) => (error instanceof Fail ? error.reason : 'invalid') as FallbackReason)
       .then(result => {
         slot.settled = true;

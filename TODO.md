@@ -1,3 +1,8 @@
+# 2026-11-15 — CI GLB loading on software WebGL
+
+- [x] Reproduced the Crimson GT `fallback:timeout` and measured GLB decode finishing after the original combined deadline. Added regression checks for separate download/decode deadlines, decoder fallback and shared KTX2 workers on the same renderer. The focused loader, provider, Garage, pickup and module-size suite passed (48 tests).
+- [ ] Verify the actual Crimson GT/Phase 3 and Roadster/Taipei browser scenarios and the full GitHub quality gate. The local Chromium renderer crashed during the final validation attempt.
+
 # 2026-11-14 — Dune Tempest road and scenery clearance
 
 - [x] Reproduced and fixed terrain and road intersections on Dune Tempest. The geometry regression failed on the old renderer and now passes across 14 edges, five lane samples every 3 m, all three graphics tiers, and both flight pads. The revised routes preserve the four canyon hairpins and all checkpoint connections.

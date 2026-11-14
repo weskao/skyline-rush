@@ -87,6 +87,42 @@ test('slow GLB times out, aborts the fetch and ignores the late response', async
   assert.equal((await retry).kind, 'model');
 });
 
+test('a downloaded GLB can finish decoding after the network deadline', async ({ mock }) => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  const { MeshoptDecoder } = await import('three/examples/jsm/libs/meshopt_decoder.module.js');
+  await MeshoptDecoder.ready;
+  const { fetch, calls } = fakeFetch();
+  const entry = { ...validEntry(), decoders: ['meshopt'] };
+  const decoderStarted = Promise.withResolvers();
+  const decoderReady = Promise.withResolvers();
+  const cache = cacheWith(fetch, entry, { loadMeshopt: () => {
+    decoderStarted.resolve();
+    return decoderReady.promise;
+  } });
+  const pending = cache.load(entry.id);
+  await decoderStarted.promise;
+  mock.timers.tick(51);
+  decoderReady.resolve(MeshoptDecoder);
+  const result = await pending;
+  assert.equal(result.kind, 'model');
+  assert.equal(calls[0].signal.aborted, false);
+  result.release();
+});
+
+test('a decoder that never becomes ready still falls back at its own deadline', async ({ mock }) => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  const entry = { ...validEntry(), decoders: ['meshopt'] };
+  const decoderStarted = Promise.withResolvers();
+  const cache = cacheWith(fakeFetch().fetch, entry, { decodeTimeoutMs: 80, loadMeshopt: () => {
+    decoderStarted.resolve();
+    return new Promise(() => {});
+  } });
+  const pending = cache.load(entry.id);
+  await decoderStarted.promise;
+  mock.timers.tick(80);
+  assert.deepEqual(await pending, { kind: 'fallback', id: entry.id, fallback: entry.fallback, reason: 'timeout' });
+});
+
 test('failures are not cached: the next load fetches again', async () => {
   let status = 404;
   const { fetch, calls } = fakeFetch(() => (status === 404 ? new Response('', { status }) : new Response(makeGlb())));
