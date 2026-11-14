@@ -121,7 +121,9 @@ test.describe('touch sprint artwork', () => {
     test.setTimeout(ciTimeout(90000));
     await page.goto('/');
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+    await page.locator('button[data-race-mode="free"]').tap();
     await page.locator('#start-button').tap();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     const touch = page.locator('#touch-controls');
     await expect(touch).toBeVisible();
     await expect(touch.locator('.touch-boost')).toHaveAttribute('data-boost-state', 'ready');
