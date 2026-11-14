@@ -320,6 +320,38 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     glb: 'fe33592ca9471de4e30c883b176dee8166314ca20bc3313962d52395c7cc98ec',
     bytes: 283232,
   }),
+  // Neon Downtown landmarks (Task 5b): nine modelled pieces, each a pivot with a `_lod0` and a `_lod1` mesh, one
+  // material on three shared atlases. Placement data: assets-src/neon-landmarks/asset-brief.md, "Integration contract".
+  'neon-landmarks': {
+    id: 'neon-landmarks',
+    url: 'models/neon-landmarks/neon-landmarks.glb',
+    source: {
+      master: 'assets-src/neon-landmarks/neon-landmarks.blend',
+      script: 'assets-src/neon-landmarks/build.py',
+      masterSha256: '67e9cd19e4a8fd4eb589a5126599b15f2824a29fc01a58922e2edc96b937f483',
+      scriptSha256: '0bca4a2276363ed2778b7c24ddb8edc2beec42ecc0c7dd57307575a69e4d334d',
+    },
+    glb: { sha256: '407483eb81450385072d6a9b5b9755a8e346bbab35c5f5db251168d8ab92ec20', bytes: 1451000 },
+    license: { id: 'owned', creator: 'Skyline Rush project (modelled and textured in assets-src/neon-landmarks/build.py; no outside source)' },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        '$BLENDER_BIN --background --factory-startup --python assets-src/neon-landmarks/build.py',
+        'node scripts/assets/export-glb.mjs neon-landmarks',
+        'node scripts/assets/optimize-glb.mjs neon-landmarks',
+        'node scripts/assets/check-glb.mjs neon-landmarks --promote',
+      ],
+    },
+    nodes: ['rail_portal', 'rail_segment', 'expressway_pier', 'expressway_rail', 'canal_arch', 'canal_bridge_rail', 'canal_bank', 'plaza_sculpture', 'boulevard_footbridge']
+      .flatMap(piece => [piece, `${piece}_lod0`, `${piece}_lod1`]),
+    materials: ['neon_landmarks'],
+    lods: [],
+    fallback: 'procedural-scenery',
+    decoders: ['meshopt', 'ktx2'],
+    budgets: { triangles: 16_000, bytes: 4_000_000, textureMaxPx: 2048 },
+  },
 };
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
