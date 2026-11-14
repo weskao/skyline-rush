@@ -8,6 +8,7 @@ import { createParticleBurst } from './effects-particle-burst.js';
 import { createRivalCues } from './rival-cues.ts';
 import { isRaining, racePreset, sprayRate } from './board-effects.ts';
 import { createDriftCharge } from './drift-charge-vfx.js';
+import { createSkidMarks } from './skid-marks.js';
 import { LIFT_PORTS, liftPort } from './lift-ports.js';
 import { blue, bonusStyles, gas, gold, mist, orange, pickupColors, purple, ringColors } from './effects-palette.ts';
 
@@ -109,6 +110,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   for (let i = 0; i < 7; i++) beams.add(new THREE.Mesh(beamGeometry, beamMaterial));
   scene.add(beams);
   const driftColors = [blue, orange, purple], driftCharge = player ? createDriftCharge(player, driftColors, scene) : null;
+  const skids = player ? createSkidMarks(scene, player, roadShadow) : null, skidOrigin = new THREE.Vector3();
   let previousRace = null, seen = new WeakMap(), driftEmission = 0, sprayEmission = 0, spraySide = 1;
   function emit(x, y, distance, vx, vy, forward, size, life, color, gravity, kind = 0, opacity = 0.85, radialX = Math.sign(vx)) {
     Object.assign(particles[cursor], { x, y, distance, vx, vy, forward, size, life, maxLife: life, color, gravity, kind, opacity, radialX, grounded: false, phase: cursor * 2.39996 });
@@ -144,7 +146,8 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   magnetRing.scale.setScalar(MAGNET_RANGE);
   scene.add(magnetRing);
   return {
-    update(race, dt, center, preview, reducedMotion, vehicles, options = {}) {
+    // `origin`: the scene's floating origin (scene + origin = absolute; world.js), defaulting to the flat road's.
+    update(race, dt, center, preview, reducedMotion, vehicles, options = {}, origin = null) {
       dt = Math.max(0, dt);
       flowTime += dt;
       // Loaded pickup models replace the stand-ins only between races: their shaders compile before GO, never mid-race.
@@ -158,6 +161,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       const lowQuality = options.quality === 'low';
       const pickupFrame = { distance, center, roadCenter, worldPoint: options.worldPoint, worldFrame: options.worldFrame, enabled, reducedMotion, car, pose: vehicles?.[0], roadNormal: roadNormal.set(0, 0, 1).applyQuaternion(roadShadow?.quaternion ?? flatShadow) };
       points.visible = enabled;
+      if (skids) skids.mesh.visible = enabled;
       let beam = 0;
       for (let source = 0; source < 2; source++) {
         const items = source === 0 ? race.pickups : race.rings;
@@ -229,6 +233,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       } else driftEmission = 0;
       // A tier just paid: a burst off both rear tyres in its colour. Kept under reduced motion as the payout cue.
       const fired = driftCharge?.update(car.drift, dt, active, reducedMotion) ?? 0;
+      skids?.update(enabled && !preview && (race.phase === 'racing' || race.phase === 'paused') && car.altitude < 0.2 ? car.drift : null, origin ?? skidOrigin.set(center, 0, -distance)); // kept to the race's end
       if (fired && car.altitude < 0.2) for (const side of [-1, 1]) for (let i = reducedMotion ? 3 : lowQuality ? 5 : 10; i > 0; i--) {
         const { x, d } = rearWheel(side, car, center, originZ, vehicles);
         emit(x, 0.2, d, side * (1 + Math.random() * 3), 2 + Math.random() * 2, car.speed * 0.9, 0.16, 0.45, driftColors[fired - 1], 6);
@@ -373,7 +378,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       return rewarm; // true: new pickup materials entered the scene, the caller warms their shaders
     },
     dispose() {
-      gates.removeFromParent(); beams.removeFromParent(); ringPool.dispose(); pickupMarkers.dispose(); collectVfx.dispose(); driftCharge?.dispose();
+      gates.removeFromParent(); beams.removeFromParent(); ringPool.dispose(); pickupMarkers.dispose(); collectVfx.dispose(); driftCharge?.dispose(); skids?.dispose();
       ringGeometry.dispose(); beamGeometry.dispose(); beamMaterial.dispose();
       for (const mat of Object.values(ringMaterials)) mat.dispose();
     },
@@ -385,7 +390,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       magnetRing.visible = false;
       lastImpact = lastLanding = lastShieldBlock = null;
       seen = new WeakMap(); previousRace = null; driftEmission = sprayEmission = 0;
-      collectVfx.reset(); driftCharge?.reset();
+      collectVfx.reset(); driftCharge?.reset(); skids?.reset();
       cursor = 0;
       emissions.fill(0); strengths.fill(0); nozzles.fill(0);
       cores.children.forEach(jet => { jet.visible = false; });

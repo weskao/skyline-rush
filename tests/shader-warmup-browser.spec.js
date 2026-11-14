@@ -21,6 +21,13 @@ const noMidRaceCompile = async ({ gameplayPage: page }) => {
   await page.evaluate(() => { const { player } = window.gameplay.race; player.nitroTime = 4; player.speed = 90; player.cooldown = 1.5; });
   await page.waitForTimeout(1500);
   expect(await programs(page)).toBe(before);
+  // A drift lays skid marks (src/skid-marks.js): their ribbon was drawn by the warmup too.
+  await page.evaluate(() => { window.gameplay.race.player.speed = 70; });
+  await page.keyboard.down('ArrowDown'); await page.keyboard.down('ArrowLeft');
+  await expect.poll(() => page.evaluate(() => window.gameScene.scene.getObjectByName('Skid marks').geometry.drawRange.count),
+    { message: 'the drift left marks', timeout: ciTimeout(10000) }).toBeGreaterThan(0);
+  await page.keyboard.up('ArrowLeft'); await page.keyboard.up('ArrowDown');
+  expect(await programs(page)).toBe(before);
   // Task 5 board effects: rain wheel spray (pooled particles), the wet road and the magenta plume tail are uniforms only.
   await page.evaluate(() => { const race = window.gameplay.race; race.mode = 'free'; race.session = { ...race.session, presentation: { visualPreset: 'rain' } }; race.player.boosting = true; });
   await page.waitForTimeout(ciTimeout(1500));

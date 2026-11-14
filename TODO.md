@@ -1,3 +1,12 @@
+# 2026-11-14 — Drift skid marks stay on the road until the race ends (`feature/skid-marks`)
+
+- [x] `src/skid-marks.js`: procedural rubber ribbon per rear tyre (tread alpha map, fade in/out, darker the longer the slide), laid from the active car's own rear wheels, kept through the finish and cleared by `effects.reset()` on the next race; 6,000-quad ring buffer (~1.8 km of drift per tyre), one draw call, partial uploads only.
+- [x] Floating origin: stored relative to the race's first origin (scene + origin = absolute, as aero-vfx.js); projected onto the ground-shadow plane so body roll cannot sink a trail (first capture had y −0.02 … −0.06 m; RED test *marks lie on the road under a rolled car*).
+- [x] `effects.js` at the 400-line limit: colour tables moved first to `effects-palette.ts` (move-only commit).
+- [x] `tests/skid-marks.test.js` 7/7 (persist, origin shift, wheel fit + scale, fades, capacity, racing-only via effects, road plane); `shader-warmup-browser.spec.js` now drifts and asserts no mid-race compile (6/6 with black-frame). `npm test` 2959 pass / 0 fail / 3 skipped, typecheck, build.
+- [x] Real WebGL captures mid-drift: Coast (desktop, phone portrait + landscape), Neon, Sky Spiral, Alpine.
+- [ ] Physical phone check, Crimson GT visual capture, full `npm run test:browser` and exact-HEAD `quality-gate`. Blender-authored tread texture not done (procedural first, per request).
+
 # 2026-11-14 — Pickup body sweep on the Stratosway R2 (`feature/pickup-collection-vfx`)
 
 Report: R2 showed almost no body animation on pickup while the Crimson GT turned gold/pink. Rule: `.claude/rules/pickup-body-sweep.md` (new).
