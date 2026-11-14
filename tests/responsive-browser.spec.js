@@ -332,7 +332,9 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 66
   test.describe(`race map clears touch controls ${width}x${height}${locale === 'zh-TW' ? ' zh-TW' : ''}`, () => {
     test.use({ viewport: { width, height }, hasTouch: true, isMobile: true, locale });
 
-    test('every touch size, steering mode and hand', async ({ page, context }) => {
+    // A software-WebGL boot for every size in one test can exhaust its budget before the last combo.
+    // zh-TW changes HUD text widths, so the Large controls cover its tightest slot.
+    for (const size of locale === 'en-US' ? ['S', 'M', 'L'] : ['L']) test(`size ${size}, both steering modes and hands`, async ({ page, context }) => {
       test.setTimeout(ciTimeout(90000));
       if (height < 380) await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 62, right: 62, top: 0, bottom: 21 } });
       // Music off up front: its prompt opens 600ms after load and would sit over START.
@@ -341,8 +343,7 @@ for (const locale of ['en-US', 'zh-TW']) for (const [width, height] of [[375, 66
       const others = ['.position-stat', '.leaderboard', '.race-progress', '.mode-indicator', '.speedometer', '.flight-telemetry', '.aero-tools',
         '#controls-button', '#pause-button', ...['left', 'right', 'brake', 'fly', 'boost', 'nitro', 'throttle'].map(action => `[data-control="${action}"]`)];
       const hits = [];
-      // zh-TW only changes HUD text widths, so it runs the Large size, the tightest slot.
-      for (const combo of CONTROL_COMBOS.filter(({ size }) => locale === 'en-US' || size === 'L')) {
+      for (const combo of CONTROL_COMBOS.filter(combo => combo.size === size)) {
         await page.evaluate(value => localStorage.setItem('skyline-rush-controls', value), JSON.stringify(combo));
         await page.reload();
         await page.locator('#start-button').click();

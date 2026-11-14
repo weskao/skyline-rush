@@ -2,6 +2,7 @@
 
 - [x] Reproduced and fixed terrain and road intersections on Dune Tempest. The geometry regression failed on the old renderer and now passes across 14 edges, five lane samples every 3 m, all three graphics tiers, and both flight pads. The revised routes preserve the four canyon hairpins and all checkpoint connections.
 - [x] Compared the Home and in-race 14-edge minimaps in Chromium and captured the canyon hairpin before/after. Added a browser regression for both maps.
+- [x] Browser shard 8 (`43579368704`): reproduced the 932×430 race-map matrix timing out after repeated WebGL boots. Split by touch size while retaining every viewport, locale, steering mode and hand. All four affected 932×430 cases passed in software Chromium with CI timing and retries disabled. Browser timing and module-size guards passed (16 tests).
 - [ ] Complete full viewport and physical-device visual coverage.
 - [ ] Complete the full GitHub quality gate.
 - [x] Stabilize Browser Tests shard 9 (`43563563658`): the 1440×900 locked-preview sweep exhausted its 135-second budget on both attempts, around the final Coast start. Batches cover every locked classic preview and input at 1440×900 and 390×844 and still verify a Coast start from a locked preview. Local Chromium with CI settings and retries disabled passed all six cases (22–44 seconds each). Unit tests: 2,909 passed, 3 skipped. Typecheck and production build passed.
