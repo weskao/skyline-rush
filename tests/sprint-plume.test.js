@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Group, Scene, Mesh, BoxGeometry, Vector3, NormalBlending } from 'three';
+import { Group, Scene, Mesh, BoxGeometry, Object3D, Vector3, Vector4, Quaternion, NormalBlending, AdditiveBlending } from 'three';
 import { REAR_PORTS, createAeroVFX } from '../src/aero-vfx.js';
 import * as plumeModule from '../src/sprint-plume.ts';
 import { createRace } from '../src/game.js';
@@ -76,24 +76,27 @@ test("phone width: each jet's glow is at least 28 px wide 0.6 m and 20 px wide 1
 });
 
 /** A held NITRO at top speed through the real createAeroVFX. */
-function heldNitro(settings, skins) {
+function heldNitro(settings, skins, { altitude = 0, reducedMotion = false } = {}) {
   const scene = new Scene(), vehicle = new Group();
   vehicle.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   scene.add(vehicle);
   const vfx = createAeroVFX(scene, vehicle), race = createRace(), origin = new Vector3();
-  race.phase = 'racing'; race.player.nitroTime = 30; race.player.speed = MAX_SPEED + NITRO_CAP_BONUS;
+  race.phase = 'racing'; race.player.nitroTime = 30; race.player.speed = MAX_SPEED + NITRO_CAP_BONUS; race.player.altitude = altitude;
   if (skins) vfx.setSkins(skins);
   const options = vfxSettings(settings);
-  for (let i = 0; i < 20; i++) vfx.update(race, 0.05, origin, options, false);
-  return { jets: jetsOf(scene.getObjectByName('Rear ports')), core: scene.getObjectByName('Sprint plume core') };
+  for (let i = 0; i < 20; i++) vfx.update(race, 0.05, origin, options, reducedMotion);
+  const part = name => scene.getObjectByName(name);
+  return { jets: jetsOf(part('Rear ports')), core: part('Sprint plume core'), flare: part('Sprint nozzle flare'), glow: part('Sprint road glow') };
 }
 
 test('the real jets carry the profile on every tier, preset and thruster skin', () => {
   const thrusters = GARAGE_SKINS.filter(skin => skin.category === 'thruster').map(skin => skin.id);
   assert.ok(thrusters.length >= 4 && thrusters.includes('thruster-void'));
   for (const quality of ['low', 'medium', 'high']) for (const preset of ['cinematic', 'realistic', 'extreme']) for (const id of thrusters) {
-    const { jets, core } = heldNitro({ quality, preset }, { thruster: id }), name = `${quality}, ${preset}, ${id}`;
+    const { jets, core, flare, glow } = heldNitro({ quality, preset }, { thruster: id }), name = `${quality}, ${preset}, ${id}`;
     assert.equal(jets.length, 4);
+    assert.ok(flare?.visible, `${name}: the nozzle flare shows on every tier and skin`);
+    assert.equal(glow?.visible, quality !== 'low', `${name}: the road glow is Medium and High only`);
     assert.ok(core?.isInstancedMesh && core.count === 4, `${name}: one instanced core per nozzle`);
     if (id === 'thruster-void') {
       assert.ok(jets.every(jet => !jet.visible) && !core.visible, `${name}: the void beams replace jets and core`);
@@ -131,4 +134,111 @@ test('the core is drawn over daylight: normal blending, no depth write, hidden f
   plume.update(frame());
   plume.reset();
   assert.ok(!core.visible, 'reset hides the core');
+});
+
+/** A plume on a car over a level road. `ground` is a plane whose +z is the road's up, as createAeroVFX passes it. */
+function rig({ roll = 0, pitch = 0, ground = true } = {}) {
+  const vehicle = new Group(), parent = new Group(), road = new Object3D();
+  road.rotation.x = -Math.PI / 2; vehicle.rotation.set(pitch, 0, roll); vehicle.add(parent);
+  const plume = createSprintPlume(parent, REAR_PORTS, vehicle, ground ? road : undefined), part = name => parent.getObjectByName(name);
+  return { vehicle, parent, plume, jets: plume.jets, core: part('Sprint plume core'), flare: part('Sprint nozzle flare'), glow: part('Sprint road glow') };
+}
+/** [jets, core, flare, road glow] */
+const shown = ({ jets, core, flare, glow }) => [jets.some(jet => jet.visible), core.visible, flare.visible, glow.visible];
+
+test('modes: which parts show on each tier, off the road, on the void skin and with VFX Off', () => {
+  const cases = [['VFX Off', { enabled: false }, [false, false, false, false]], ['no sprint', { power: 0 }, [false, false, false, false]],
+    ['Low', { quality: 0.25 }, [true, true, true, false]], ['Medium', { quality: 0.5 }, [true, true, true, true]], ['High', {}, [true, true, true, true]],
+    ['airborne', { grounded: false }, [true, true, true, false]], ['not racing', { racing: false }, [true, true, true, false]],
+    ['void skin', { voidPulse: true }, [false, false, true, true]]];
+  for (const [name, over, expected] of cases) {
+    const parts = rig();
+    parts.plume.update(frame(over));
+    assert.deepEqual(shown(parts), expected, name);
+    parts.plume.reset();
+    assert.deepEqual(shown(parts), [false, false, false, false], `${name}: reset hides everything`);
+  }
+});
+
+test('x3 chain: power above 1 makes the flare no bigger and the core no more opaque', () => {
+  const state = power => { const parts = rig(); parts.plume.update(frame({ power })); const flare = parts.flare.material.uniforms;
+    return [flare.size.value, flare.fade.value, parts.core.material.uniforms.alpha.value, parts.glow.material.uniforms.fade.value]; };
+  assert.deepEqual(state(1.4), state(1));
+  assert.ok(Math.abs(state(1)[0] - PLUME.flare) < 1e-9 && Math.abs(state(0.5)[0] - PLUME.flare * 0.775) < 1e-9, 'flare size is PLUME.flare * (0.55 + 0.45 * power)');
+});
+
+test('trail skin: its NITRO trail replaces the fat flame and the road glow; BOOST and calm modes keep them', () => {
+  const tint = [1, 0.5, 0.25], accent = new Vector4(1, 0.25, 0.5, 1);
+  const state = (trailStyle, over) => {
+    const parts = rig();
+    parts.plume.setSkin(tint, 0, accent, trailStyle);
+    parts.plume.update(frame(over));
+    for (const mesh of [parts.core, parts.flare, parts.glow]) {
+      assert.deepEqual(mesh.material.uniforms.skinTint.value.toArray(), tint, `${mesh.name} takes the thruster tint`);
+      assert.ok(mesh.material.uniforms.trailAccent.value.equals(accent), `${mesh.name} takes the trail accent`);
+      assert.equal(mesh.material.uniforms.nitroMix.value, over.nitroMix);
+    }
+    return { thick: parts.jets.map(jet => jet.material.uniforms.thick.value), core: parts.core.material.uniforms.alpha.value,
+      glow: parts.glow.material.uniforms.fade.value, flare: parts.flare.material.uniforms.fade.value };
+  };
+  const nitro = state(2, { nitroMix: 1 }), boost = state(2, { nitroMix: 0 }), calm = state(2, { nitroMix: 1, calm: true }), plain = state(0, { nitroMix: 1 });
+  assert.deepEqual([nitro.thick, nitro.core, nitro.glow], [[0, 0, 0, 0], 0, 0], 'NITRO with a trail skin: the old cone, no core, no glow');
+  assert.ok(nitro.flare > 0, 'the nozzle flare stays');
+  for (const [name, kept] of [['BOOST', boost], ['calm', calm], ['no trail skin', plain]]) {
+    assert.deepEqual(kept.thick, [1, 1, 1, 1], name);
+    assert.equal(kept.core, 0.85, name);
+    assert.ok(kept.glow > 0, name);
+  }
+  assert.ok(Math.abs(calm.flare - 0.6 * boost.flare) < 1e-9 && Math.abs(calm.glow - 0.6 * boost.glow) < 1e-9, 'Reduced Motion / Comfortable: 0.6 times');
+});
+
+// Trap: the car banks, and squats on its rear tyres during the very sprint that shows the glow. A plane 7 m long that
+// leans with the car sinks under the road behind it and the depth test removes it.
+test('lean: the road glow lies on the road while the car banks and squats', () => {
+  const q = new Quaternion(), corner = new Vector3();
+  const normal = parts => { parts.vehicle.updateMatrixWorld(true); return new Vector3(0, 0, 1).applyQuaternion(parts.glow.getWorldQuaternion(q)).toArray(); };
+  const near = (actual, expected, name) => actual.forEach((value, i) => assert.ok(Math.abs(value - expected[i]) < 1e-6, `${name}: ${actual} vs ${expected}`));
+  const heights = parts => { const at = parts.glow.geometry.attributes.position;
+    return Array.from({ length: at.count }, (_, i) => parts.glow.localToWorld(corner.fromBufferAttribute(at, i)).y); };
+  for (const [name, lean] of [['banked', { roll: 0.2 }], ['squatting', { pitch: 0.05 }], ['nose down', { pitch: -0.05, roll: -0.1 }]]) {
+    const parts = rig(lean);
+    parts.parent.position.set(0, 0.1, 0.2); // garage-model.ts moves `Rear ports` onto a dressed GLB's nozzles
+    parts.plume.update(frame());
+    near(normal(parts), [0, 1, 0], name);
+    near(heights(parts), [0.04, 0.04, 0.04, 0.04], `${name}: 4 cm above the road at every corner`);
+  }
+  const loose = rig({ roll: 0.2, ground: false });
+  loose.parent.position.set(0, 0.1, 0.2);
+  loose.plume.update(frame());
+  near(normal(loose), [-Math.sin(0.2), Math.cos(0.2), 0], 'no ground: flat in the car frame');
+  loose.vehicle.rotation.set(0, 0, 0);
+  loose.plume.update(frame());
+  loose.vehicle.updateMatrixWorld(true);
+  near(heights(loose), [0.04, 0.04, 0.04, 0.04], 'no ground: 4 cm above the car frame floor');
+});
+
+test('layers: flare and road glow are additive and depth-tested, three meshes join the jets hidden', () => {
+  const { parent, core, flare, glow } = rig();
+  assert.deepEqual(parent.children.filter(child => !child.name.startsWith('Cold gas nozzle')).map(child => child.name).sort(),
+    ['Sprint nozzle flare', 'Sprint plume core', 'Sprint road glow'], 'three extra draw calls at most');
+  assert.ok([core, flare, glow].every(mesh => !mesh.visible), 'hidden from creation: the world warm-up compiles them');
+  assert.ok(flare.isInstancedMesh && flare.count === 4, 'one flare per nozzle in one draw call');
+  assert.ok(glow.isMesh && !glow.isInstancedMesh);
+  assert.equal(glow.renderOrder, 1);
+  assert.deepEqual([glow.geometry.parameters.width, glow.geometry.parameters.height], [PLUME.glowWidth, PLUME.glowLength]);
+  for (const { name, material } of [flare, glow]) assert.deepEqual([material.blending, material.transparent, material.depthTest, material.depthWrite], [AdditiveBlending, true, true, false], name);
+  assert.match(flare.material.vertexShader, /centre\.xyz-=normalize\(centre\.xyz\)\*/, 'pulled towards the eye in view space: the tail must not cut the flare in half');
+  for (const { material } of [flare, glow]) assert.doesNotMatch(material.fragmentShader, /brightness/, 'no coreBrightness term');
+});
+
+test('createAeroVFX tells the plume about the tier, the road and Reduced Motion', () => {
+  const road = heldNitro({ quality: 'high', preset: 'realistic' }), air = heldNitro({ quality: 'high', preset: 'realistic' }, undefined, { altitude: 6 });
+  assert.deepEqual(shown(road), [true, true, true, true]);
+  assert.deepEqual(shown(air), [true, true, true, false], 'airborne: no road to light');
+  const calm = heldNitro({ quality: 'high', preset: 'realistic' }, undefined, { reducedMotion: true });
+  assert.deepEqual(shown(calm), [true, true, true, true], 'Reduced Motion keeps a static plume');
+  assert.ok(Math.abs(calm.flare.material.uniforms.fade.value - 0.6 * road.flare.material.uniforms.fade.value) < 1e-9, 'at 0.6 times');
+  // Low + Realistic, the 2-core phone: flare size and fade are the ones High + Extreme gets.
+  const phone = heldNitro({ quality: 'low', preset: 'realistic' }).flare.material.uniforms, desk = heldNitro({ quality: 'high', preset: 'extreme' }).flare.material.uniforms;
+  assert.deepEqual([phone.size.value, phone.fade.value], [desk.size.value, desk.fade.value]);
 });

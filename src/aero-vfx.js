@@ -276,6 +276,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       jet.reach = settings.exhaustLength * strength * (0.65 + car.speed / 200) * look.stretch;
       jet.brightness = Math.min(settings.coreBrightness, calm ? 0.9 : 3);
       jet.diamonds = settings.machDiamonds; jet.extreme = settings.preset === 'extreme' ? 1 : 0;
+      jet.quality = quality; jet.calm = calm; jet.racing = active; jet.grounded = car.altitude <= 0;
       plume.update(jet);
       delta = car.speed;
       if (wakeStrength > 0.01 && enabled && dt > 0) {
