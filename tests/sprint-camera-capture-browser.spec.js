@@ -10,15 +10,16 @@ import { QUALITY_STORAGE_KEY, initialDeviceVisuals } from '../src/device-quality
 //   SPRINT_CAMERA_CAPTURE=1 LABEL=<x> VIEWPORT=desktop|portrait|landscape [CORES=2|4] [HERO_CAR=crimson-gt] npx playwright test tests/sprint-camera-capture-browser.spec.js
 // Exhaust evidence (.claude/rules/sprint-plume.md): `plume` is where the nozzles and the first 2 m behind them land on
 // screen; `contrast` reads the WebGL pixels on the four jet axes against the road beside them and against the same
-// pixels with the exhaust hidden (a page screenshot would also read the HUD and the touch buttons). A LABEL starting
-// with `after` asserts the acceptance numbers. Frostbite's observatory climb is the sloped course (classic `uphill`
+// pixels with the exhaust hidden (a page screenshot would also read the HUD and the touch buttons), and `area`, the
+// share of the frame the exhaust changes. A LABEL starting with `after` asserts the acceptance numbers, with CORES=2
+// against the `before` run of the same view. Frostbite's observatory climb is the sloped course (classic `uphill`
 // sections are flat road marks), so the dev server runs all-unlocked.
 // CORES=2|4 races on the settings a phone picks for itself (src/device-quality.ts: 2 cores get Low + Realistic, 4 get
 // Medium); unset keeps this browser's own High, which is not what a phone shows.
 // Output stays in the gitignored audits/ dir (machine-specific timings and screenshots).
 const LABEL = process.env.LABEL ?? 'capture', VIEW = process.env.VIEWPORT ?? 'desktop', CORES = Number(process.env.CORES) || 0;
 const AUTO = CORES ? initialDeviceVisuals({ device: { cores: CORES, width: 390, height: 844, pixelRatio: 3 } }).settings : null;
-const OUT = `docs/designs/3d-pipeline/audits/sprint-camera/${LABEL}-${VIEW}${CORES ? `-cores${CORES}` : ''}${process.env.HERO_CAR ? `-${process.env.HERO_CAR}` : ''}`;
+const dir = label => `docs/designs/3d-pipeline/audits/sprint-camera/${label}-${VIEW}${CORES ? `-cores${CORES}` : ''}${process.env.HERO_CAR ? `-${process.env.HERO_CAR}` : ''}`, OUT = dir(LABEL);
 const VIEWPORTS = {
   desktop: { viewport: { width: 1440, height: 900 } },
   portrait: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
@@ -100,6 +101,18 @@ for (const track of ['coast', 'neon', 'spiral', CLIMB]) test(`${LABEL} ${VIEW}: 
         resolve({ area: +(100 * changed / (W * H)).toFixed(2), core, road, bare, vsRoad: apart(core, road), added: apart(core, bare), samples: sums.core[3] });
       };
     });
+    window.sampleCar = async seconds => {
+      const race = window.gameplay.race, until = race.elapsed + seconds, cars = [], frames = [];
+      let last = performance.now();
+      while (race.elapsed < until) {
+        await new Promise(requestAnimationFrame);
+        const now = performance.now(); frames.push(now - last); last = now; cars.push(window.carOnScreen());
+      }
+      frames.sort((a, b) => a - b);
+      const pick = key => ({ min: Math.min(...cars.map(c => c[key])), max: Math.max(...cars.map(c => c[key])) });
+      return { width: pick('width'), height: pick('height'), bumper: pick('bumper'), fov: pick('fov'),
+        frameP50: frames[Math.floor(frames.length / 2)], frameP95: frames[Math.floor(frames.length * 0.95)] };
+    };
   });
   const hold = (fields, seconds) => page.evaluate(async ([fields, seconds]) => {
     const player = window.gameplay.race.player, until = window.gameplay.race.elapsed + seconds;
@@ -140,4 +153,10 @@ for (const track of ['coast', 'neon', 'spiral', CLIMB]) test(`${LABEL} ${VIEW}: 
   if (!LABEL.startsWith('after')) return;
   expect(rows.nitroTop.plume.carInside, 'the car stays inside the frame at NITRO top speed').toBe(true);
   if (track === 'coast' || track === 'neon') expect(rows.nitroTop.contrast.vsRoad, 'the plume core stands off the road beside it').toBeGreaterThanOrEqual(40);
+  // Today's exhaust already clears that contrast floor; on the phone tier it was small: 1 to 3% of the frame.
+  const before = `${dir('before')}/${track}.json`;
+  if (CORES === 2 && fs.existsSync(before)) for (const key of ['boost', 'nitroTop']) {
+    const was = JSON.parse(fs.readFileSync(before, 'utf8')).rows[key].contrast.area;
+    expect(rows[key].contrast.area, `${key}: the exhaust covers at least twice the ${was}% of the frame it did`).toBeGreaterThanOrEqual(2 * was);
+  }
 });
