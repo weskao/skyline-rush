@@ -1,3 +1,15 @@
+# 2026-11-14 — Music on but silent; intro from page open (`fix/music-autoplay-recovery`)
+
+Report: music setting on but nothing playing; music should start as soon as the page opens, announcement dialog or not. Rules: `.claude/rules/audio-playback.md` (new), `.claude/rules/performance-review.md` (checkShaderErrors).
+
+- [x] A — `prelude()` queues 8 s of intro once music is on, before `createWorld`; `update()` continues from `nextStep`; song change and mute call `cutMusic()`. First note from navigation (headless Chrome, `--autoplay-policy=no-user-gesture-required`, 5-run medians): desktop 781 → 417 ms, 6x CPU 3904 → 1323 ms; music queued 7.3 s / 5.9 s past the end of frame 1, longest gap 250 ms (one song step), 1 context.
+- [x] B — `open()` reads live `document.hidden`; `pageshow` / `focus` resync. C — `update()` retries `resume()` at most once a second (visible, sound or music on, not running, after a gesture). D — auto-unlock never writes storage. E — VITE_DIAG snapshot carries `sound.diagnostics()`.
+- [x] F — production renderer skips `checkShaderErrors` (`src/webgl-renderer.ts`). Third frame, F vs A-only, two alternating 5-run batches: desktop 661 vs 730, 650 vs 681 ms; 6x 2982 vs 3150, 2837 vs 3643 ms (pooled medians −7.1% / −14.6%). Kept (≥ 5%).
+- [x] RED on old code: `audio.test.js` 6 fail, `audio-ui.test.js` 3 fail, `webgl-renderer.test.js` 2 fail; browser `music-autoplay` (first note 947 ms vs frame 621 ms), `music-gesture` blocked tap (`sameTap` false), B repro (`suspended`). GREEN: all of them; stress `CI=1 --repeat-each=8 --workers=4 --retries=0` 24/24.
+- [x] `npm test` 2921 pass / 0 fail / 3 skipped, `npm run typecheck`, `npm run build`; `shader-warmup`, `black-frame`, `audio-feedback`, `ring-sfx`, `item-feedback`, `hud-settings` browser specs green.
+- [ ] Real iPhone Safari and home-screen app: autoplay-blocked first tap, return from background without `visibilitychange`, silent switch, mute during the prelude.
+- [ ] Full `npm run test:browser` / `make verify` and exact-HEAD remote `quality-gate` (runs on `develop` only).
+
 # 2026-11-14 — Road supply collection effects
 
 - [x] Add separate effects for the pickup location and the equipped car. Verify road-space placement on a banked CourseGraph edge, shell geometry fit, rival cues, reset, VFX Off and reduced motion in `tests/pickup-collect-vfx.test.js`.
