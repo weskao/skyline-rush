@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { captureRaceMotion, interpolateMotion, smoothDriftYaw } from '../src/vehicle-render-motion.js';
 
 const car = (distance = 0, x = 0, altitude = 0) => ({ distance, x, altitude, speed: 60, steering: 0, verticalSpeed: 0 });
@@ -87,4 +88,37 @@ test('car presentation reuses one mesh-owned render buffer and preserves exact s
   assert.equal(physics.x, 4);
   assert.equal(physics.nitroTime, 1);
   assert.equal(poseFor(mesh, physics, previous, 1), physics);
+});
+
+// NITRO/BOOST ignition squat: presentation only. Pitching a car about its origin would sink the rear tyres into the road;
+// the lift pivots it on the rear tyres' contact instead, read from each car's own wheels.
+test('ignition squat lifts the nose 1-2 degrees on the rear tyres of every car, never sinking them into the road', async () => {
+  const { squatPitch, rearAxleLift } = await import('../src/vehicle-render-motion.js');
+  const { makeCar, CAR_STYLES } = await import('../src/car-model.js');
+  const { orientCarOnRoad } = await import('../src/vehicle-pose.ts');
+  const { Vector3 } = await import('three');
+  const deg = radians => radians * 180 / Math.PI;
+  assert.ok(deg(squatPitch(1)) >= 1 && deg(squatPitch(1)) <= 2, `${deg(squatPitch(1)).toFixed(2)} deg at full squat`);
+  assert.equal(squatPitch(0), 0);
+  assert.equal(squatPitch(3), squatPitch(1), 'capped');
+  assert.equal(squatPitch(NaN), 0);
+  const road = { right: [1, 0, 0], up: [0, 1, 0], forward: [0, 0, -1] };
+  const wheelY = (mesh, rear) => mesh.userData.wheels.filter(w => (w.position.z > 0) === rear).map(w => w.getWorldPosition(new Vector3()).y);
+  for (const [name, style] of Object.entries(CAR_STYLES)) {
+    const car = makeCar(style), pitch = squatPitch(1);
+    orientCarOnRoad(car, road); car.updateMatrixWorld(true);
+    const rearRest = wheelY(car, true), frontRest = wheelY(car, false);
+    orientCarOnRoad(car, road, 0, pitch).translateY(rearAxleLift(car, pitch)); car.updateMatrixWorld(true);
+    wheelY(car, true).forEach((y, i) => assert.ok(Math.abs(y - rearRest[i]) < 0.002, `${name}: rear tyre moved ${(y - rearRest[i]).toFixed(4)} m`));
+    wheelY(car, false).forEach((y, i) => assert.ok(y - frontRest[i] > 0.03 && y - frontRest[i] < 0.1, `${name}: nose lifts ${(y - frontRest[i]).toFixed(3)} m`));
+    assert.equal(rearAxleLift(car, 0), 0);
+  }
+});
+
+test('world.js poses the player with the ignition squat', () => {
+  const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
+  assert.match(world, /squatPitch\(sprintVisual\.frame\.squat\)/, 'the squat share comes from the sprint frame');
+  assert.match(world, /squatLift = rearAxleLift\(mesh, squat\)/);
+  assert.match(world, /orientCarOnRoad\([^;]*\+ squat[^;]*\)\.translateY\(squatLift\)/, 'pitched on the rear tyres');
+  assert.match(world, /mesh\.userData\.altitude \+= squatLift/, 'the ground shadow stays on the road under the lifted car');
 });

@@ -388,6 +388,28 @@ test('sprint camera: a fresh ignition punches the FOV past the held sprint, then
   assert.equal(createSprintVfx().update({ ...held, reducedMotion: true }).punch, 0, 'Reduced Motion never punches');
 });
 
+// The car squats on the ignition (nose up, src/vehicle-render-motion.js) before the camera's punch peaks: the camera follows late.
+test('car squat: a fresh ignition lifts the nose ahead of the camera punch, then settles; comfort, VFX off and repeats do not', async () => {
+  const { createSprintVfx } = await import('../src/vfx-settings.ts');
+  const sprint = createSprintVfx(), dt = 1 / 60;
+  const idle = { phase: 'racing', nitro: false, boost: false, speed: 110, cap: 110, dt, enabled: true, quality: 'high', reducedMotion: false };
+  const held = { ...idle, boost: true };
+  assert.equal(sprint.update(idle).squat, 0, 'no squat while nothing fires');
+  assert.equal(sprint.frame, sprint.update(idle), 'the frame is readable before this frame\'s update (world.js poses the car first)');
+  const squats = [], punches = [];
+  for (let i = 0; i < 60; i++) { const frame = sprint.update(held); squats.push(frame.squat); punches.push(frame.punch); }
+  const peak = Math.max(...squats), peakAt = squats.indexOf(peak) * dt, punchAt = punches.indexOf(Math.max(...punches)) * dt;
+  assert.ok(peak >= 0.9 && peak <= 1, `full squat at top speed: ${peak.toFixed(3)}`);
+  assert.ok(squats[0] < 0.3, 'eased in, not a step');
+  assert.ok(peakAt <= 0.15 && punchAt - peakAt >= 0.05, `body peaks at ${peakAt.toFixed(3)} s, the camera punch at ${punchAt.toFixed(3)} s`);
+  assert.ok(squats.slice(Math.ceil(0.5 / dt)).every(value => value === 0), 'settled within 0.5 s');
+  sprint.update(idle);
+  assert.ok(sprint.update(held).squat < 0.01, 'a flickering BOOST does not squat again');
+  assert.equal(createSprintVfx().update({ ...held, reducedMotion: true }).squat, 0, 'Reduced Motion never squats');
+  const off = createSprintVfx(); off.update(held);
+  assert.equal(off.update({ ...held, enabled: false }).squat, 0, 'VFX off resets the squat');
+});
+
 test('cyan NITRO trail replaces the standard purple from the first NITRO frame', async () => {
   const { createSprintVfx } = await import('../src/vfx-settings.ts');
   const firstFrame = skin => {
