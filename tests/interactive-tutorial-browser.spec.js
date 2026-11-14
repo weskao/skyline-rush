@@ -2,6 +2,7 @@ import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { DRIFT_ENTRY_KMH } from './helpers/tutorial-practice.js';
+import { DEFAULT_KEY_MAP } from '../src/key-map.ts';
 
 // Keep tutorial input/physics tests on real browser controls, but avoid software-WebGL
 // frame starvation on shared CI runners. Renderer/quality coverage lives in separate specs.
@@ -21,6 +22,14 @@ const begin = async page => {
   await expect(page.locator('#tutorial-open')).toBeVisible();
   await page.locator('#tutorial-open').click();
   await step(page, 'throttle');
+};
+const skipToNitro = async (page, method) => {
+  const skip = page.locator('#tutorial-skip-step');
+  // Landing on the ground clears by itself after FLY is skipped.
+  for (const next of ['left', 'right', 'brake', 'drift', 'fly', 'boost', 'airChain', 'barrelRoll', 'nitro']) {
+    await skip[method]();
+    await step(page, next);
+  }
 };
 const career = page => page.evaluate(() => Object.fromEntries(Object.entries(localStorage).filter(([key]) => /history|best|unlocked|stars|medals|ghost|daily/.test(key))));
 const keyStep = async (page, key, next) => {
@@ -162,17 +171,36 @@ test('NITRO practice recovers after braking and demands a fresh charged sprint',
   await expect(page.locator('#tutorial-retry')).toBeVisible();
 });
 
+test('the final NITRO prompt uses the rebound key in the same cue as THROTTLE', async ({ page }) => {
+  await page.addInitScript(map => localStorage.setItem('skyline-rush-keymap', JSON.stringify(map)), { ...DEFAULT_KEY_MAP, nitro: ['KeyJ'] });
+  await begin(page);
+  const cue = page.locator('#tutorial-cue');
+  await expect(cue).toHaveAttribute('data-cue', 'tutorial.cue.throttle');
+  await skipToNitro(page, 'click');
+  await expect(cue).toBeVisible();
+  await expect(cue.getByText('Press NITRO')).toBeVisible();
+  await expect(cue.locator('kbd')).toHaveText('J');
+  await page.locator('#pause-button').click();
+  await expect(cue).toBeHidden();
+  await page.locator('#resume-button').click();
+  await expect(cue.locator('kbd')).toHaveText('J');
+  await keyStep(page, 'j', 'complete');
+  await expect(cue).toBeHidden();
+});
+
 test.describe('touch NITRO interruption', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   test('brake and NITRO touches interrupt practice and a new touch spends a fresh charge', async ({ page, context }) => {
     await page.addInitScript(() => localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', flyMode: 'hold' })));
     await begin(page);
-    // Skipping FLY leaves the car on the road, so LAND passes by itself within a frame: tapping Skip there would
-    // race it and skip BOOST instead. Wait for BOOST directly.
-    for (const next of ['left', 'right', 'brake', 'drift', 'fly', 'boost', 'airChain', 'barrelRoll', 'nitro']) {
-      await page.locator('#tutorial-skip-step').tap();
-      await step(page, next);
-    }
+    const cue = page.locator('#tutorial-cue');
+    await expect(cue).toHaveAttribute('data-cue', 'tutorial.cue.throttle');
+    await skipToNitro(page, 'tap');
+    await expect(cue.getByText('Tap NITRO')).toBeVisible();
+    await expect(cue.locator('kbd')).toHaveCount(0);
+    const nitro = page.locator('#touch-controls [data-control="nitro"]');
+    await expect(nitro).toHaveClass(/tutorial-target/);
+    await page.setViewportSize({ width: 844, height: 390 });
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode', 'buttons');
     const session = await context.newCDPSession(page);
     const point = async (action, id) => {
@@ -186,8 +214,11 @@ test.describe('touch NITRO interruption', () => {
       await touch('touchStart', [await point('brake', 1), await point('nitro', 2)]);
       await expect(page.locator('#tutorial-instruction')).toContainText('Sprint interrupted', { timeout: ciTimeout(15000) });
       await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '0');
+      await expect(cue).toBeHidden();
+      await expect(nitro).not.toHaveClass(/tutorial-target/);
       await touch('touchEnd', []);
       await expect(page.locator('#tutorial-instruction')).toContainText('Activate NITRO');
+      await expect(cue.getByText('Tap NITRO')).toBeVisible();
       await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '1');
       await touch('touchStart', [await point('nitro', 3)]);
       await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '0');

@@ -1,3 +1,11 @@
+## Final tutorial NITRO cue (2026-11-15)
+
+- [x] Show the final NITRO action in the same on-screen cue as THROTTLE, with the bound desktop key or touch button copy. Hide the press prompt and touch outline during the sprint and while waiting for release after an interrupted attempt.
+- [x] RED: the ready lesson returned no cue, and touch and desktop had no separate cue copy. GREEN: 91 focused tests passed. Typecheck, locked build and the full unit suite passed (2,967 passed, 3 skipped).
+- [x] Chromium checks with the real Vue coach, tutorial controller and game CSS passed at 1440×900, 390×844 and 844×390, including clearing and restoring the prompt on a retry.
+- [x] Full-game Chromium regressions passed for the rebound desktop key, pause/resume, the portrait cue, landscape input and releasing and re-pressing NITRO after an interruption. The desktop test passed on its isolated rerun after a software WebGL countdown timeout.
+- [ ] Full browser suite, World Tour, physical-device checks and exact-commit GitHub `quality-gate`.
+
 # 2026-11-14 — Drift skid marks stay on the road until the race ends (`feature/skid-marks`)
 
 - [x] `src/skid-marks.js`: procedural rubber ribbon per rear tyre (tread alpha map, fade in/out, darker the longer the slide), laid from the active car's own rear wheels, kept through the finish and cleared by `effects.reset()` on the next race; 6,000-quad ring buffer (~1.8 km of drift per tyre), one draw call, partial uploads only.
