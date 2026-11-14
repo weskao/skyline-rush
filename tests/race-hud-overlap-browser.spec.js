@@ -1,6 +1,9 @@
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
+import { resizeTo } from './helpers/viewport.js';
+// CI speed: the four touch sizes without a fold share one booted page per (locale, HUD) pair and are resized in place; each size is
+// also freshly booted in one pair. Desktop and the two fold layouts keep their own boot (touch/fold are fixed per browser context).
 
 // Real bounding boxes of every top-level in-race HUD block must never intersect or touch (gap >= 2 CSS px),
 // while racing with an event callout up, then with a collision report up, and while paused, in both HUD modes and
@@ -15,18 +18,6 @@ const HUD = ['.brand', '.route-heading', '.toolbar', '.aero-tools', '.airflow-hu
 // The pause panel is meant to cover the HUD; it must only stay clear of the top-bar controls and language picker.
 const PAUSE_PANEL = '.race-overlay .overlay-content';
 const PAUSE_CLEAR_OF = ['.brand', '.toolbar', '.aero-tools'];
-
-const VIEWPORTS = [
-  { name: 'desktop', width: 1440, height: 900, touch: false },
-  { name: 'tablet', width: 1024, height: 768, touch: true },
-  { name: 'phone portrait', width: 390, height: 844, touch: true },
-  { name: 'small phone', width: 320, height: 740, touch: true },
-  { name: 'phone landscape', width: 844, height: 390, touch: true },
-  { name: 'vertical fold', width: 844, height: 390, touch: true, segments: [
-    { left: 0, top: 0, width: 410, height: 390 }, { left: 434, top: 0, width: 410, height: 390 }] },
-  { name: 'horizontal fold', width: 600, height: 900, touch: true, segments: [
-    { left: 0, top: 0, width: 600, height: 430 }, { left: 0, top: 460, width: 600, height: 440 }] },
-];
 
 /**
  * Runs in the page as one synchronous snapshot (no frame can run inside it): names every intersecting or touching pair of
@@ -98,61 +89,113 @@ const test = gameplayTest.extend({
   },
 });
 
-for (const viewport of VIEWPORTS) {
-  test.describe(`${viewport.name} ${viewport.width}x${viewport.height}`, () => {
-    test.use({ viewport: { width: viewport.width, height: viewport.height }, hasTouch: viewport.touch, fold: viewport.segments ? { segments: viewport.segments } : null });
+const SIZES = {
+  desktop: { name: 'desktop', width: 1440, height: 900, touch: false },
+  tablet: { name: 'tablet', width: 1024, height: 768, touch: true },
+  phone: { name: 'phone portrait', width: 390, height: 844, touch: true },
+  small: { name: 'small phone', width: 320, height: 740, touch: true },
+  landscape: { name: 'phone landscape', width: 844, height: 390, touch: true },
+  vertical: { name: 'vertical fold', width: 844, height: 390, touch: true, segments: [
+    { left: 0, top: 0, width: 410, height: 390 }, { left: 434, top: 0, width: 410, height: 390 }] },
+  horizontal: { name: 'horizontal fold', width: 600, height: 900, touch: true, segments: [
+    { left: 0, top: 0, width: 600, height: 430 }, { left: 0, top: 460, width: 600, height: 440 }] },
+};
+// Viewport segments are injected per browser context (the fixture below), so each fold keeps its own boot. The four
+// touch sizes share one booted page per (locale, HUD) pair: the test resizes in place and re-raises the callout and the
+// collision report at each size. Every size is also reached by a fresh boot in one of the four pairs (BOOT_AT).
+const LOCALE_HUDS = [['en', 'hybrid'], ['en', 'competitive'], ['zh-TW', 'hybrid'], ['zh-TW', 'competitive']];
+const TOUCH_SIZES = [SIZES.tablet, SIZES.phone, SIZES.small, SIZES.landscape];
+const BOOT_AT = [SIZES.tablet, SIZES.landscape, SIZES.phone, SIZES.small];
+const GROUPS = [
+  { name: 'desktop', sizes: [SIZES.desktop], boots: [SIZES.desktop], pairs: LOCALE_HUDS },
+  { name: 'vertical fold', sizes: [SIZES.vertical], boots: [SIZES.vertical], pairs: LOCALE_HUDS },
+  { name: 'horizontal fold', sizes: [SIZES.horizontal], boots: [SIZES.horizontal], pairs: LOCALE_HUDS },
+  // Two tests, one per locale: each stays well inside its timeout on the slow runner.
+  { name: 'touch en', sizes: TOUCH_SIZES, boots: BOOT_AT.slice(0, 2), pairs: LOCALE_HUDS.slice(0, 2) },
+  { name: 'touch zh-TW', sizes: TOUCH_SIZES, boots: BOOT_AT.slice(2), pairs: LOCALE_HUDS.slice(2) },
+];
 
-    test('in-race HUD blocks never overlap or touch, racing and paused, en/zh-TW, hybrid/competitive', async ({ gameplayPage: page }) => {
-      test.setTimeout(ciTimeout(240_000));
+/** Reloads into a fresh race for one locale and HUD mode, at the page's current size. */
+async function bootRace(page, locale, hud, segments) {
+  await page.evaluate(setup => sessionStorage.setItem('hud-overlap-setup', JSON.stringify(setup)), { locale, hud });
+  await page.reload();
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+  await expect(page.locator('html')).toHaveAttribute('lang', locale);
+  await page.locator('#start-button').click();
+  if (segments) await expect(page.locator('#touch-controls')).toHaveAttribute('data-fold-axis', /vertical|horizontal/);
+  await expect.poll(() => page.evaluate(() => window.gameplay.race.phase), { timeout: ciTimeout(20_000) }).toBe('racing');
+}
+
+/** Racing with an event callout up, then with a collision report up, then paused: pushes every violation, named by size. */
+async function measureHud(page, viewport, locale, hud, failures) {
+  const label = `${viewport.width}x${viewport.height}/${locale}/${hud}`;
+  // A NITRO activation raises the event callout, the transient overlay most likely to land on other blocks.
+  await page.evaluate(() => Object.assign(window.gameplay.race.player, { x: 0, speed: 80, nitroTime: 4 }));
+  // Polled every frame: a callout lives ~0.85s of race time, shorter than the default poll interval on a slow runner.
+  await page.waitForFunction(() => !document.querySelector('#event-callout').hidden, null, { polling: 'raf', timeout: ciTimeout(5_000) });
+  const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
+  // The callout stays off the road view: the same centre rectangle pickPeripheralSlot (src/race-feedback-placement.ts) avoids.
+  const road = { left: viewport.width * 0.325, right: viewport.width * 0.675, top: viewport.height * 0.2, bottom: viewport.height * 0.72 };
+  // The progress bar (.progress-bar; mode rows stay in .race-progress) and ROAD/FLIGHT mode chip dock at the edges too (persistent blocks must never sit on the road view).
+  // Phones show only the three nearby leaderboard rows, docked beside POSITION off the road view; desktop and tablet keep all eight.
+  const phone = viewport.touch && (viewport.width <= 760 || viewport.height <= 500);
+  const calloutArgs = { ...args, keep: ['.event-callout'], clearOf: { '.event-callout': road, '.progress-bar': road, '.mode-indicator': road, ...(phone ? { '.leaderboard': road } : {}) } };
+  for (const pair of await page.evaluate(collisions, calloutArgs)) failures.push(`${label}/racing: ${pair}`);
+  // Compact, not a panel: the slim progress bar and the one-line mode chip each stay at most COMPACT_HEIGHT px tall.
+  for (const [selector, height] of await page.evaluate(selectors => selectors.map(selector => {
+    const element = document.querySelector(selector);
+    return [selector, element && element.getClientRects().length ? element.getBoundingClientRect().height : Infinity];
+  }), ['.progress-bar', '.mode-indicator'])) if (!(height <= COMPACT_HEIGHT)) failures.push(`${label}/racing: ${selector} ${height.toFixed(0)}px tall`);
+  const board = await page.evaluate(() => {
+    const element = document.querySelector('.leaderboard');
+    if (!element.getClientRects().length || getComputedStyle(element).visibility === 'hidden') return null;
+    const rows = [...element.querySelectorAll('.racer')].filter(row => row.getClientRects().length);
+    return { height: element.getBoundingClientRect().height, rows: rows.length, player: rows.some(row => row.classList.contains('is-player')) };
+  });
+  if (board && phone && !(board.height <= LEADERBOARD_PHONE_HEIGHT && board.rows === 3 && board.player))
+    failures.push(`${label}/racing: phone leaderboard ${board.height.toFixed(0)}px tall, ${board.rows} rows, player ${board.player}`);
+  if (board && !phone && board.rows !== 8) failures.push(`${label}/racing: leaderboard shows ${board.rows} of 8 rows`);
+  // A vehicle hit's report: the same record game.js writes in its collision handler.
+  await page.evaluate(() => {
+    const { race } = window.gameplay, car = race.player;
+    car.impact = { kind: 'vehicle', intensity: 1, side: 1, speedLost: 8, x: car.x, altitude: 0, distance: car.distance, time: race.elapsed };
+  });
+  await expect(page.locator('#impact-report')).not.toHaveAttribute('hidden', '', { timeout: ciTimeout(5_000) });
+  // The collision chip docks at an edge like the callout, never centred over the road. Only a short landscape, whose edges
+  // are all HUD, may have it yield (style.visibility hidden); the red collision vignette and speed readout still show the hit.
+  const yielded = await page.locator('#impact-report').evaluate(element => element.style.visibility === 'hidden');
+  if (yielded && viewport.height > 500) failures.push(`${label}/impact: chip yielded on a ${viewport.width}x${viewport.height} screen`);
+  for (const pair of await page.evaluate(collisions, { ...args, keep: yielded ? [] : ['.impact-report'], clearOf: { '.impact-report': road } })) failures.push(`${label}/impact: ${pair}`);
+  await page.locator('#pause-button').click();
+  await expect(page.locator(PAUSE_PANEL)).toBeVisible();
+  for (const pair of await page.evaluate(collisions, args)) failures.push(`${label}/paused: ${pair}`);
+}
+
+for (const group of GROUPS) {
+  const first = group.sizes[0];
+  test.describe(group.sizes.length === 1 ? `${first.name} ${first.width}x${first.height}` : `${group.name} sizes`, () => {
+    test.use({ viewport: { width: first.width, height: first.height }, hasTouch: first.touch, fold: first.segments ? { segments: first.segments } : null });
+
+    test(`in-race HUD blocks never overlap or touch, racing and paused, ${[...new Set(group.pairs.map(([locale]) => locale))].join('/')}, ${[...new Set(group.pairs.map(([, hud]) => hud))].join('/')}`, async ({ gameplayPage: page }) => {
+      test.setTimeout(ciTimeout(group.sizes.length === 1 ? 240_000 : 150_000));
       const failures = [];
-      for (const locale of ['en', 'zh-TW']) for (const hud of ['hybrid', 'competitive']) {
-        await page.evaluate(setup => sessionStorage.setItem('hud-overlap-setup', JSON.stringify(setup)), { locale, hud });
-        await page.reload();
-        if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-        await expect(page.locator('html')).toHaveAttribute('lang', locale);
-        await page.locator('#start-button').click();
-        if (viewport.segments) await expect(page.locator('#touch-controls')).toHaveAttribute('data-fold-axis', /vertical|horizontal/);
-        await expect.poll(() => page.evaluate(() => window.gameplay.race.phase), { timeout: ciTimeout(20_000) }).toBe('racing');
-        // A NITRO activation raises the event callout, the transient overlay most likely to land on other blocks.
-        await page.evaluate(() => Object.assign(window.gameplay.race.player, { x: 0, speed: 80, nitroTime: 4 }));
-        // Polled every frame: a callout lives ~0.85s of race time, shorter than the default poll interval on a slow runner.
-        await page.waitForFunction(() => !document.querySelector('#event-callout').hidden, null, { polling: 'raf', timeout: ciTimeout(5_000) });
-        const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
-        // The callout stays off the road view: the same centre rectangle pickPeripheralSlot (src/race-feedback-placement.ts) avoids.
-        const road = { left: viewport.width * 0.325, right: viewport.width * 0.675, top: viewport.height * 0.2, bottom: viewport.height * 0.72 };
-        // The progress bar (.progress-bar; mode rows stay in .race-progress) and ROAD/FLIGHT mode chip dock at the edges too (persistent blocks must never sit on the road view).
-        // Phones show only the three nearby leaderboard rows, docked beside POSITION off the road view; desktop and tablet keep all eight.
-        const phone = viewport.touch && (viewport.width <= 760 || viewport.height <= 500);
-        const calloutArgs = { ...args, keep: ['.event-callout'], clearOf: { '.event-callout': road, '.progress-bar': road, '.mode-indicator': road, ...(phone ? { '.leaderboard': road } : {}) } };
-        for (const pair of await page.evaluate(collisions, calloutArgs)) failures.push(`${locale}/${hud}/racing: ${pair}`);
-        // Compact, not a panel: the slim progress bar and the one-line mode chip each stay at most COMPACT_HEIGHT px tall.
-        for (const [selector, height] of await page.evaluate(selectors => selectors.map(selector => {
-          const element = document.querySelector(selector);
-          return [selector, element && element.getClientRects().length ? element.getBoundingClientRect().height : Infinity];
-        }), ['.progress-bar', '.mode-indicator'])) if (!(height <= COMPACT_HEIGHT)) failures.push(`${locale}/${hud}/racing: ${selector} ${height.toFixed(0)}px tall`);
-        const board = await page.evaluate(() => {
-          const element = document.querySelector('.leaderboard');
-          if (!element.getClientRects().length || getComputedStyle(element).visibility === 'hidden') return null;
-          const rows = [...element.querySelectorAll('.racer')].filter(row => row.getClientRects().length);
-          return { height: element.getBoundingClientRect().height, rows: rows.length, player: rows.some(row => row.classList.contains('is-player')) };
-        });
-        if (board && phone && !(board.height <= LEADERBOARD_PHONE_HEIGHT && board.rows === 3 && board.player))
-          failures.push(`${locale}/${hud}/racing: phone leaderboard ${board.height.toFixed(0)}px tall, ${board.rows} rows, player ${board.player}`);
-        if (board && !phone && board.rows !== 8) failures.push(`${locale}/${hud}/racing: leaderboard shows ${board.rows} of 8 rows`);
-        // A vehicle hit's report: the same record game.js writes in its collision handler.
-        await page.evaluate(() => {
-          const { race } = window.gameplay, car = race.player;
-          car.impact = { kind: 'vehicle', intensity: 1, side: 1, speedLost: 8, x: car.x, altitude: 0, distance: car.distance, time: race.elapsed };
-        });
-        await expect(page.locator('#impact-report')).not.toHaveAttribute('hidden', '', { timeout: ciTimeout(5_000) });
-        // The collision chip docks at an edge like the callout, never centred over the road. Only a short landscape, whose edges
-        // are all HUD, may have it yield (style.visibility hidden); the red collision vignette and speed readout still show the hit.
-        const yielded = await page.locator('#impact-report').evaluate(element => element.style.visibility === 'hidden');
-        if (yielded && viewport.height > 500) failures.push(`${locale}/${hud}/impact: chip yielded on a ${viewport.width}x${viewport.height} screen`);
-        for (const pair of await page.evaluate(collisions, { ...args, keep: yielded ? [] : ['.impact-report'], clearOf: { '.impact-report': road } })) failures.push(`${locale}/${hud}/impact: ${pair}`);
-        await page.locator('#pause-button').click();
-        await expect(page.locator(PAUSE_PANEL)).toBeVisible();
-        for (const pair of await page.evaluate(collisions, args)) failures.push(`${locale}/${hud}/paused: ${pair}`);
+      for (const [index, [locale, hud]] of group.pairs.entries()) {
+        const boot = group.boots[index % group.boots.length];
+        // The page boots at `boot` (a fresh layout), then visits every other size of the group in place.
+        await resizeTo(page, boot.width, boot.height);
+        await bootRace(page, locale, hud, boot.segments);
+        for (const viewport of [boot, ...group.sizes.filter(size => size !== boot)]) {
+          await test.step(`${viewport.width}x${viewport.height} ${locale}/${hud}`, async () => {
+            if (viewport !== boot) {
+              await resizeTo(page, viewport.width, viewport.height);
+              // Resume the frozen race and clear last size's transient reports so the next ones are the game's own.
+              await page.locator('#resume-button').click();
+              await expect.poll(() => page.evaluate(() => window.gameplay.race.phase), { timeout: ciTimeout(10_000) }).toBe('racing');
+              await page.evaluate(() => { for (const id of ['event-callout', 'impact-report']) document.getElementById(id).hidden = true; });
+            }
+            await measureHud(page, viewport, locale, hud, failures);
+          });
+        }
       }
       expect(failures).toEqual([]);
     });
