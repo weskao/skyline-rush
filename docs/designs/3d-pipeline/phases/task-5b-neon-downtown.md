@@ -103,7 +103,11 @@ To do, in order:
   to its own track). Coast unchanged in the browser: `tests/coast-scenery-browser.spec.js` and
   `tests/coast-visual-browser.spec.js`, 13 of 13.
 - [ ] **2b Neon's own entry** in `src/track-look.ts`, and the bloom pick in `src/world.js` (still
-  `trackId === 'coast'`). Open: the entry names Neon's HDRIs, road set and scenery GLB, which steps 3–6 produce.
+  `trackId === 'coast'`).
+  - [x] Entry with the road set and its wetness table (`neon: { road: 'neon-asphalt', wetness: { track, rain } }`);
+    the asset host loads any entry's road set and keys its cache by set and tier. `tests/track-look.test.js`
+    (*Neon's entry puts its own asphalt set on the road*), RED first.
+  - [ ] HDRIs (step 3), scenery GLB (steps 5 to 7) and the bloom pick: not wired yet.
 - [ ] **3 Night lighting and sky.** Two CC0 night-city HDRIs (night, rain night), PMREM 256 so no program changes
   mid-race,
   shown on the sky dome; key light matched to the HDRI; bloom threshold set under the neon signs and windows and
@@ -111,6 +115,14 @@ To do, in order:
 - [ ] **4 Wet road.** Blender-baked KTX2 city asphalt (base colour sRGB; normal and roughness/AO linear) with lane
   paint and a puddle mask, `wetness` driven by the rain preset. Signs, windows and tunnel light strips join the wet
   mirror layer as opaque unlit meshes.
+  - [x] Asset: `assets-src/neon-asphalt/` (CC0 Poly Haven Asphalt Track, editable master, bake and preview
+    scripts), six KTX2 files in `public/materials/neon-asphalt/`, 2.03 MB at 1K and 8.71 MB at 2K. Commit
+    `c1972971`; `tests/neon-asphalt-material.test.js`. Lane paint stays the instanced `laneLines` geometry, as on
+    Coast.
+  - [x] Runtime: Neon on Medium+ under the gate wears the set, soaked on `track` and `rain`, dry on `night`; a failed
+    load keeps the procedural road. `tests/track-look.test.js` and `tests/neon-look-browser.spec.js` (*wears its own
+    KTX2 asphalt*, *falls back to the procedural road*), desktop and phone.
+  - [ ] Signs, windows and tunnel strips in the mirror layer: they arrive with the kit (steps 5 and 6).
 - [ ] **5 City kit in Blender** (`assets-src/neon-city/`): modelled, not photoscanned.
   - [ ] Close buildings: 4–6 facade modules with storefronts, baked emissive window atlas and CC0 PBR wall sets,
     each with LODs and a stable pivot.

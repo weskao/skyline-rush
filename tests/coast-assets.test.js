@@ -15,7 +15,7 @@ function fakes(result = 'model') {
 
 test('the scenery GLB is fetched once, only for Coast on Medium+', async () => {
   const f = fakes(), assets = createCoastAssets({ scenery: f.scenery, cache: f.cache });
-  assets.update('neon', 'high', false);
+  assets.update('canyon','high', false);
   assets.update('coast', 'low', false);
   assert.deepEqual(f.log, [], 'Low and other tracks load nothing');
   assets.update('coast', 'medium', false);
@@ -79,7 +79,7 @@ const tick = () => new Promise(r => setTimeout(r, 0));
 test('Coast Medium+ swaps in the KTX2 asphalt outside racing; Low and other tracks keep the procedural road', async () => {
   const r = roadFakes(), dataset = {}, assets = createCoastAssets({ scenery, cache: never, road: r.road, dataset });
   assets.update('coast', 'low', false);
-  assets.update('neon', 'high', false);
+  assets.update('canyon','high', false);
   assert.deepEqual(r.log, [], 'Low and other tracks fetch no textures');
   assets.update('coast', 'medium', true);
   assert.deepEqual(r.log.sort(), ['1024:baseColor', '1024:normal', '1024:packed']);
@@ -90,7 +90,7 @@ test('Coast Medium+ swaps in the KTX2 asphalt outside racing; Low and other trac
   assert.equal(r.mesh.material.name, 'coast_asphalt');
   assert.equal(dataset.coastRoad, 'medium');
   assert.equal(assets.update('coast', 'medium', false), false);
-  assets.update('neon', 'medium', false);
+  assets.update('canyon','medium', false);
   assert.equal(r.mesh.material, r.defaultMaterial, 'other tracks get the procedural road back');
   assets.update('coast', 'low', false);
   assert.equal(r.mesh.material, r.defaultMaterial, 'Low keeps the current road');
@@ -210,7 +210,7 @@ test('the procedural cones leave Coast once the scan coast is attached on Medium
   assert.equal(mountains.material.visible, true, 'Low draws no GLB: it keeps the cones');
   assets.update('coast', 'medium', false);
   assert.equal(mountains.material.visible, false);
-  assets.update('neon', 'high', false);
+  assets.update('canyon','high', false);
   assert.equal(mountains.material.visible, true, 'other tracks keep their mountains');
   assets.update('coast', 'high', false);
   assets.dispose();
@@ -235,7 +235,7 @@ test('D1, D2: the skyline buildings and bridge towers leave Coast with the cones
   assets.update('coast', 'medium', false);
   assert.deepEqual(r.shown(), [false, false, false]);
   r.city.visible = true; // world.js sets it on every track change
-  assets.update('neon', 'high', false);
+  assets.update('canyon','high', false);
   assert.deepEqual(r.shown(), [true, true, true], 'Neon keeps its city, the other classics their towers');
   assets.update('coast', 'high', false);
   assets.dispose();

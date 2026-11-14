@@ -68,6 +68,40 @@ test('Neon High compiles nothing after GO and draws no Coast scenery', async ({ 
   expect(errors).toEqual([]);
 });
 
+// Steps 4 and 8d: the wet city asphalt. The page opens on Coast and loads Coast's road first, so the set on the road
+// is read from the canvas status, and Neon's own files from the document's fetches.
+const roadStatus = page => page.evaluate(() => {
+  const { coastRoad, coastRoadSet } = document.querySelector('#world').dataset, drawn = [];
+  window.gameScene.scene.traverse(o => { if (o.material?.name === 'coast_asphalt') drawn.push(!!o.material.map?.isCompressedTexture); });
+  return { coastRoad, coastRoadSet, drawn };
+});
+test('Neon High wears its own KTX2 asphalt and keeps it through a race', async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(120000));
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await neon(page, 'high');
+  await expect.poll(() => roadStatus(page), { timeout: ciTimeout(40000) }).toEqual({ coastRoad: 'high', coastRoadSet: 'neon-asphalt', drawn: [true] });
+  const fetched = (await lookAssets(page)).filter(url => url.includes('materials/neon-asphalt/')).map(url => url.split('/').pop()).sort();
+  expect(fetched).toEqual(['asphalt_basecolor_2k.ktx2', 'asphalt_normal_2k.ktx2', 'asphalt_packed_2k.ktx2']);
+  await page.locator('#start-button').click();
+  await racing(page);
+  await expect.poll(() => roadStatus(page)).toEqual({ coastRoad: 'high', coastRoadSet: 'neon-asphalt', drawn: [true] });
+  expect(errors).toEqual([]);
+});
+
+test('Neon High falls back to the procedural road when its asphalt cannot load', async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(120000));
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route('**/materials/neon-asphalt/**', route => route.abort());
+  await neon(page, 'high');
+  await expect.poll(() => roadStatus(page), { timeout: ciTimeout(40000) }).toEqual({ coastRoad: 'fallback', coastRoadSet: 'none', drawn: [] });
+  await page.locator('#start-button').click();
+  await racing(page);
+  await expect.poll(() => roadStatus(page)).toEqual({ coastRoad: 'fallback', coastRoadSet: 'none', drawn: [] });
+  expect(errors).toEqual([]);
+});
+
 // Open until steps 5 to 7 replace the box skyline and remove the towers: the procedural scene measured home 162 to
 // 163 and race 562 to 564 on High (2026-11-14). Remove the fixme in the commit that brings the race under the cap.
 test('Neon High stays under the draw-call cap on the home showcase and in a race', async ({ gameplayPage: page }) => {

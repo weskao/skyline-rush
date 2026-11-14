@@ -54,7 +54,7 @@ interface Deps {
 export function createCoastAssets({ scenery, cache, boatClock, road, reflection, sky, sea, mountains, city, towers, dataset = {} }: Deps) {
   const controller = new AbortController();
   const procedural = road?.mesh.material;
-  const roads = new Map<MaterialTier, CoastRoad | 'loading' | 'failed'>();
+  const roads = new Map<string, CoastRoad | 'loading' | 'failed'>(); // by road set and tier
   let mirrored = false, wasRacing = false, retag = false; // the mirror re-tags light sources on turn-on and race start
   let bare = false; // the scan coast is drawn: no cones, city or towers
   // world.js writes tower.visible every frame, so the towers are hidden through their own materials.
@@ -105,39 +105,41 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
   const scan = lateModel('coast-scenery', 'scenery', 'coastScenery', source => scenery.attachModel(source, sea?.shore), () => scenery.detachModel());
   const boats = boatClock && lateModel('coast-boats', 'boats', 'coastBoats', source => scenery.attachBoats(source, boatClock), () => scenery.detachBoats());
 
-  function loadRoad(tier: MaterialTier, { load, anisotropy }: Road): void {
-    roads.set(tier, 'loading');
-    const files = coastRoadFiles(TIERS[tier]);
+  function loadRoad(id: string, tier: MaterialTier, key: string, { load, anisotropy }: Road): void {
+    roads.set(key, 'loading');
+    const files = coastRoadFiles(TIERS[tier], id);
     Promise.all([files.baseColor, files.normal, files.packed].map(load)).then(([baseColor, normal, packed]) => {
       const made = createCoastRoadMaterial({ baseColor: baseColor!, normal: normal!, packed: packed! }, anisotropy, { detail: tier === 'ultra', ...reflection && { reflection: reflection.uniforms } });
-      if (controller.signal.aborted) made.dispose(); else roads.set(tier, made);
+      if (controller.signal.aborted) made.dispose(); else roads.set(key, made);
     }, error => {
-      roads.set(tier, 'failed');
+      roads.set(key, 'failed');
       dataset.coastRoad = 'fallback';
-      console.warn(`[coast-assets] coast-asphalt ${tier} → procedural road (${error})`);
+      dataset.coastRoadSet = 'none';
+      console.warn(`[coast-assets] ${id} ${tier} → procedural road (${error})`);
     });
   }
 
   function updateRoad(look: TrackLook | undefined, quality: VfxQuality, racing: boolean, preset: string, ultra: boolean): boolean {
     if (!road) return false;
-    const tier = look?.road === 'coast-asphalt' ? coastRoadTier(quality, ultra) : null; // the one road set shipped
-    if (tier && !roads.has(tier)) loadRoad(tier, road);
-    const ready = tier ? roads.get(tier) : undefined;
+    const tier = look ? coastRoadTier(quality, ultra) : null, key = `${look?.road}:${tier}`;
+    if (tier && !roads.has(key)) loadRoad(look!.road, tier, key, road);
+    const ready = tier ? roads.get(key) : undefined;
     const want = typeof ready === 'object' ? ready : null;
-    want?.setWetness(coastWetness(preset));
+    want?.setWetness(coastWetness(preset, look!.wetness));
     const target = want?.material ?? procedural!, swap = road.mesh.material !== target && !racing;
     if (swap) {
       road.mesh.material = target;
       dataset.coastRoad = want ? tier! : 'procedural';
-      for (const [other, entry] of roads) if (other !== tier && typeof entry === 'object') { entry.dispose(); roads.delete(other); } // frees the tier left behind
+      dataset.coastRoadSet = want ? look!.road : 'none';
+      for (const [other, entry] of roads) if (other !== key && typeof entry === 'object') { entry.dispose(); roads.delete(other); } // frees the set or tier left behind
     }
-    updateMirror(!!want && road.mesh.material === want.material, quality, preset, racing);
+    updateMirror(!!want && road.mesh.material === want.material, quality, preset, racing, look?.wetness);
     return swap && !!want;
   }
 
   /** Mirror only while the KTX2 asphalt that samples it is on the road; never while a swap waits for the race end. */
-  function updateMirror(onRoad: boolean, quality: VfxQuality, preset: string, racing: boolean): void {
-    const strength = onRoad ? wetReflectionStrength(quality, preset) : 0;
+  function updateMirror(onRoad: boolean, quality: VfxQuality, preset: string, racing: boolean, wetness?: TrackLook['wetness']): void {
+    const strength = onRoad ? wetReflectionStrength(quality, preset, wetness) : 0;
     reflection?.setStrength(strength);
     if (strength > 0 && (!mirrored || (racing && !wasRacing))) retag = true;
     mirrored = strength > 0; wasRacing = racing;
