@@ -65,18 +65,23 @@ export const MOTIONS = {
       shard(slot, i, .6 * (1 - p), .6 * (1 - p), 2.6 * (1 - p));
     }
   },
-  // High-capacity tank: a reservoir filling. Scan rings climb the car inside a soft pillar; a double helix winds up.
+  // Gold tubes rise through the fitted car above a soft light at the chassis.
   surge(slot, age, p) {
     const k = slot.visualWeight, strand = Math.max(1, slot.particles >> 1);
-    slot.rings.forEach((ring, i) => animateTankHoop(ring, age, i, k, slot.quality === 'high'));
+    slot.rings.forEach((ring, i) => animateTankHoop(ring, age, i, k, true));
     flash(slot, .6 * (1 - age / .3), 2.4, 0, .1, 0);
-    beam(slot, age, .5, .24, 3.2);
+    const glow = slot.tankGlow;
+    glow.visible = age < .49;
+    glow.material.opacity = .47 * k * Math.min(1, age / .07) * bump(age, .10, .134);
+    glow.position.set(0, .065, .10);
+    glow.rotation.x = FLAT;
+    glow.scale.set(1.98, 3.53, 1);
     for (let i = 0; i < slot.particles; i++) {
       const n = i >> 1, q = Math.min(1, Math.max(0, p * 1.7 - n / strand * .45));
       const a = (i & 1) * Math.PI + n * .55 + age * 6, r = (1.55 - .5 * q) * k;
       scratch.position.set(Math.cos(a) * r, q * 2.5, Math.sin(a) * r);
       scratch.rotation.set(age * 5, a, 0);
-      shard(slot, i, Math.sin(Math.PI * q) * 1.3);
+      shard(slot, i, Math.sin(Math.PI * q) * .53);
     }
   },
   // Overcharge core: a prism nova. Three gyro rings on different axes, a 3D starburst and a tall prismatic beam.

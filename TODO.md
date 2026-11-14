@@ -5,6 +5,7 @@
 - [x] Fit pickup rings, particles and tail exhaust to the equipped model’s neutral bounds, and sweep the body in vehicle coordinates. Regression tests cover longer, wider, offset and rotated bodies, model swaps and the unchanged road contact position.
 - [x] Integrate the approved four collection animations and model absorption. RED → GREEN covers the road-parallel gold hoops under pitch/roll, all four shrinking models, the triple-tank pool, fitted streaks and original prism rotation.
 - [x] Local source checks: `npm run typecheck`, `npm run build`, `npm test` (2,916 passed, 3 skipped), and Chromium on the dressed Crimson GT for all four individual effects.
+- [x] Replace the tank column and stretched ring halo with the approved gold tube, feathered halo and soft chassis light. Regression verifies both hoops at High, Medium and Low and keeps the single static reduced-motion cue.
 - [ ] Complete full browser CI and physical-phone visual review on this branch.
 
 # 2026-11-14 — Browser CI regressions on develop and audio integration

@@ -1,10 +1,41 @@
 import * as THREE from 'three';
-import { HOOP_VERTEX, HOOP_FRAGMENT } from './pickup-collect-shaders.js';
+import { HOOP_VERTEX, HOOP_FRAGMENT, TANK_HOOP_VERTEX, TANK_HOOP_FRAGMENT, TANK_HALO_VERTEX, TANK_HALO_FRAGMENT } from './pickup-collect-shaders.js';
 
 const FLAT = -Math.PI / 2;
 const GOLD = [0xffb82f, 0xffc657];
 const PRISM = [0x73f5ff, 0xa57aff, 0xff7ed6];
 const SMOOTH = THREE.MathUtils.smoothstep;
+
+// A closed strip uses its UVs to draw the projected ellipse on the GPU.
+export function createTankHaloGeometry() {
+  return new THREE.PlaneGeometry(1, 1, 64, 1);
+}
+
+export function createTankHoop(geometry, haloGeometry, index, materials) {
+  const uniforms = {
+    tint: { value: new THREE.Color(GOLD[index]) },
+    core: { value: new THREE.Color(0xfff0ad) },
+    age: { value: 0 }, power: { value: 0 }, phase: { value: index * 1.8 },
+    tubeWidth: { value: .088 }, lift: { value: 0 },
+  };
+  const material = new THREE.ShaderMaterial({
+    vertexShader: TANK_HOOP_VERTEX, fragmentShader: TANK_HOOP_FRAGMENT, uniforms,
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  const haloMaterial = new THREE.ShaderMaterial({
+    vertexShader: TANK_HALO_VERTEX, fragmentShader: TANK_HALO_FRAGMENT, uniforms,
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+    side: THREE.DoubleSide, forceSinglePass: true,
+  });
+  materials.add(material);
+  materials.add(haloMaterial);
+  const ring = new THREE.Mesh(geometry, material);
+  const halo = new THREE.Mesh(haloGeometry, haloMaterial);
+  halo.name = 'Pickup tank halo';
+  halo.frustumCulled = ring.frustumCulled = false;
+  ring.add(halo);
+  return ring;
+}
 
 export function createPickupHoop(geometry, slotTier, index, materials) {
   const prism = slotTier === 'overcharge';
@@ -35,7 +66,10 @@ export function paintPickupHoop(ring, age, power, width, halo) {
   if (!uniforms) return;
   uniforms.age.value = age;
   uniforms.power.value = ring.material.opacity;
-  uniforms.width.value = width / (.045 * ring.scale.x);
+  if (uniforms.tubeWidth) {
+    uniforms.tubeWidth.value = width;
+    uniforms.lift.value = ring.position.y * ring.parent.scale.y;
+  } else uniforms.width.value = width / (.045 * ring.scale.x);
   ring.children[0].visible = halo;
 }
 
@@ -46,7 +80,7 @@ export function animateTankHoop(ring, age, index, strength, halo) {
   ring.position.set(0, .09 + 1.4 * 1.23 * rise, .10);
   ring.rotation.set(FLAT, 0, 0);
   ring.scale.set(1.34 * spread, 2.52 * spread, 1.34);
-  const power = Math.min(1, phase / .13) * (1 - phase ** 2) * (.94 - index * .08) * strength;
+  const power = Math.min(1, age / .068) * Math.min(1, phase / .13) * (1 - phase ** 2) * (.94 - index * .08) * strength;
   paintPickupHoop(ring, age, power, index === 0 ? .088 : .072, halo);
 }
 

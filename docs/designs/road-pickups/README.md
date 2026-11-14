@@ -73,9 +73,10 @@ model or LOD changes. Rivals keep a smaller cue at the item.
 
 The latest pickup drives the body sweep while older effects fade. Three tank slots cover a
 triple pickup, and the other tiers keep two slots each. A fast sequence reuses these bounded
-pools. High quality adds soft halos to the gold and prism hoops. Medium limits streaks, hoops
-and particles. Low uses the simpler pulse and ring, while reduced motion uses one still ring
-and a faint glow.
+pools. Both gold hoops retain their feathered halo in each standard graphics tier. A brief soft light
+under the chassis accompanies them. High quality adds halos to the prism hoops. Medium limits
+streaks and particles. Low uses simpler cues for the other tiers. Reduced motion uses one still
+ring and a faint glow.
 
 The take generation is identified by the pickup's `downUntil`. Each take plays once, and the
 same item can play again after respawning.

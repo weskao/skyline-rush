@@ -17,7 +17,8 @@ test('premium pickup collection has four increasingly expressive bounded tier de
   assert.ok(lives.at(-1) <= 1.1, 'even the rarest effect is over in about a second');
   assert.deepEqual(tiers.map(t => PICKUP_COLLECTION_STYLES[t].particles), [18, 24, 30, 42]);
   assert.equal(PICKUP_COLLECTION_STYLES.overcharge.rainbow, true);
-  assert.ok(PICKUP_COLLECTION_STYLES.tank.beam && PICKUP_COLLECTION_STYLES.overcharge.beam);
+  assert.equal(PICKUP_COLLECTION_STYLES.tank.beam, false);
+  assert.equal(PICKUP_COLLECTION_STYLES.overcharge.beam, true);
 });
 
 test('pool preallocates geometry, reuses capacity, animates and cleans up finite 3D VFX', () => {
@@ -28,7 +29,7 @@ test('pool preallocates geometry, reuses capacity, animates and cleans up finite
     'three overlapping tanks, two slots for every other tier');
   const geometryIds = new Set();
   group.traverse(mesh => { if (mesh.geometry && !mesh.isSprite) geometryIds.add(mesh.geometry.uuid); });
-  assert.ok(geometryIds.size <= 4, 'four reused 3D geometry types, not one per animation');
+  assert.ok(geometryIds.size <= 5, 'five reused geometries, including the gold halo strip');
   assert.ok(group.children.every(stage => stage.children.filter(mesh => mesh.isInstancedMesh).every(mesh => mesh.count >= 1)),
     'each instanced shader has a parked example for pre-race WebGL warmup');
   const particle = { x: 2.5, altitude: 0, distance: 250, tier: 'overcharge' };
@@ -467,4 +468,28 @@ test('the player cell and can add distinct body streaks and overcharge uses irid
   assert.ok(Math.abs(ring.rotation.x - (-Math.PI / 2 + .2 * 1.6)) < 1e-8, 'the original pitch direction is preserved');
   assert.ok(Math.abs(ring.rotation.z - .2 * 2.4) < 1e-8, 'the original roll direction is preserved');
   vfx.dispose();
+});
+
+test('tank renders the approved gold tube and soft halo on both hoops instead of a solid column', () => {
+  for (const quality of ['high', 'medium', 'low']) {
+    const scene = new THREE.Scene(), car = new THREE.Group();
+    car.userData.visualBounds = new THREE.Box3(new THREE.Vector3(-2, 0, -3), new THREE.Vector3(2, 1.6, 4));
+    scene.add(car);
+    const vfx = createPickupCollectVfx(scene, car);
+    vfx.spawn('tank', { distance: 10, x: 0 }, { follow: true, quality });
+    vfx.update(.25, { pose: car });
+    const stage = vfx.group.children.find(slot => slot.visible);
+    assert.equal(stage.getObjectByName('energy beam').visible, false, 'the old solid gold column must not compete with the hoops');
+    const glow = stage.getObjectByName('Pickup tank ground glow');
+    assert.ok(glow?.visible && glow.material.opacity > 0, 'a soft glow lights the underside');
+    const rings = stage.children.filter(mesh => mesh.name.startsWith('energy shockwave') && mesh.visible);
+    assert.equal(rings.length, 2, quality + ' keeps both signature hoops');
+    for (const ring of rings) {
+      assert.ok(ring.material.uniforms.tubeWidth.value > .065, 'world-unit tube thickness is independent of vehicle dimensions');
+      assert.ok(ring.getObjectByName('Pickup tank halo')?.visible, 'a separate soft ribbon gives the core a feathered edge');
+    }
+    vfx.update(.3, { pose: car });
+    assert.equal(glow.visible, false, 'the soft base fades before the last hoop');
+    vfx.dispose();
+  }
 });

@@ -5,14 +5,14 @@ import { animatePickup, PICKUP_GROUND_LIFT } from './pickup-art.js';
 import { CONTACT_FRAGMENT, CONTACT_VERTEX } from './pickup-collect-shaders.js';
 import { createPickupVehicleFit } from './pickup-vehicle-fit.js';
 import { flash, MOTIONS, scratch } from './pickup-collect-motion.js';
-import { createPickupHoop, paintPickupHoop } from './pickup-collect-hoops.js';
+import { createPickupHoop, createTankHoop, createTankHaloGeometry, paintPickupHoop } from './pickup-collect-hoops.js';
 import { createPickupStreaks } from './pickup-collect-streaks.js';
 
 // `rings` and `particles` are the High-quality budgets; `motion` names the tier's choreography in MOTIONS.
 export const PICKUP_COLLECTION_STYLES = Object.freeze({
   cell: Object.freeze({ color: 0x40d9ff, rings: 2, particles: 18, beam: false, rainbow: false, life: .60, motion: 'arcSnap' }),
   can: Object.freeze({ color: 0xff9b3b, rings: 2, particles: 24, beam: false, rainbow: false, life: .80, motion: 'afterburn' }),
-  tank: Object.freeze({ color: 0xffd34e, rings: 2, particles: 30, beam: true, rainbow: false, life: .95, motion: 'surge' }),
+  tank: Object.freeze({ color: 0xffd34e, rings: 2, particles: 30, beam: false, rainbow: false, life: .95, motion: 'surge' }),
   overcharge: Object.freeze({ color: 0xef81ff, rings: 3, particles: 42, beam: true, rainbow: true, life: 1.08, motion: 'prismNova' }),
 });
 // Rival cues omit CourseGraph edge identifiers; retain the original authored item if present.
@@ -61,6 +61,7 @@ export function createPickupCollectVfx(scene, player, camera) {
     new THREE.CylinderGeometry(.17, .55, 1, 12, 1, true),
     new THREE.PlaneGeometry(2, 2),
   ];
+  const tankHaloGeometry = createTankHaloGeometry();
   const texture = glowTexture(), materials = new Set();
   const makeMaterial = (color, extra = {}) => {
     const material = new THREE.MeshBasicMaterial({
@@ -109,7 +110,8 @@ export function createPickupCollectVfx(scene, player, camera) {
       materials.add(flashSprite.material);
       const rings = [];
       for (let i = 0; i < style.rings; i++) {
-        const ring = style.beam ? createPickupHoop(geometries[0], tier, i, materials)
+        const ring = tier === 'tank' ? createTankHoop(geometries[0], tankHaloGeometry, i, materials)
+          : style.beam ? createPickupHoop(geometries[0], tier, i, materials)
           : new THREE.Mesh(geometries[0], makeMaterial(style.color));
         ring.name = 'energy shockwave ' + i;
         group.add(ring); rings.push(ring);
@@ -118,6 +120,12 @@ export function createPickupCollectVfx(scene, player, camera) {
       pillar.name = 'energy beam';
       pillar.position.y = 1.3;
       group.add(pillar);
+      const tankGlow = tier === 'tank' && new THREE.Mesh(geometries[3], makeMaterial(0xffc134, { map: texture }));
+      if (tankGlow) {
+        tankGlow.name = 'Pickup tank ground glow';
+        tankGlow.visible = false;
+        group.add(tankGlow);
+      }
       const shards = new THREE.InstancedMesh(geometries[1], makeMaterial(style.color), MAX_PARTICLES);
       shards.name = 'energy shards';
       shards.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -135,8 +143,8 @@ export function createPickupCollectVfx(scene, player, camera) {
       group.add(shards);
       root.add(group);
       slots[tier].push({
-        tier, tierIndex, style, group, contact, flash: flashSprite, rings, beam: pillar, shards,
-        streaks: camera && !style.beam ? createPickupStreaks(group, tier) : null,
+        tier, tierIndex, style, group, contact, flash: flashSprite, rings, beam: pillar, tankGlow, shards,
+        streaks: camera && (tier === 'cell' || tier === 'can') ? createPickupStreaks(group, tier) : null,
         age: Infinity, event: null, follow: false, particles: 0, ringCount: 0, reducedMotion: false, strength: 1,
       });
     }
@@ -164,7 +172,7 @@ export function createPickupCollectVfx(scene, player, camera) {
     slot.strength = rival ? .65 : 1;
     const density = reducedMotion ? 0 : quality === 'low' ? .26 : quality === 'medium' ? .65 : 1;
     slot.particles = Math.min(MAX_PARTICLES, Math.round(slot.style.particles * density * (rival ? .5 : 1)));
-    slot.ringCount = reducedMotion || quality === 'low' ? 1 : quality === 'medium' ? Math.min(2, slot.style.rings) : slot.style.rings;
+    slot.ringCount = reducedMotion || (quality === 'low' && tier !== 'tank') ? 1 : quality === 'medium' ? Math.min(2, slot.style.rings) : slot.style.rings;
     slot.group.visible = true;
     return true;
   }
@@ -218,6 +226,7 @@ export function createPickupCollectVfx(scene, player, camera) {
       contact.visible = group.visible && slot.contactEnabled && !reducedMotion && slot.age < CONTACT_SPANS[slot.tierIndex];
       if (contact.visible) placeContact(slot, frame);
       slot.beam.visible = false;
+      if (slot.tankGlow) slot.tankGlow.visible = false;
       const ringCount = reducedMotion ? 1 : slot.ringCount;
       slot.rings.forEach((ring, i) => { ring.visible = i < ringCount; });
       shards.count = reducedMotion ? 0 : slot.particles;
@@ -279,6 +288,7 @@ export function createPickupCollectVfx(scene, player, camera) {
       for (const tier of TIERS) for (const slot of slots[tier]) slot.streaks?.dispose();
       for (const material of materials) material.dispose();
       for (const geometry of geometries) geometry.dispose();
+      tankHaloGeometry.dispose();
       texture.dispose();
     },
   };
