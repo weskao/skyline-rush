@@ -1,3 +1,13 @@
+# 2026-11-14 — Pickup body sweep on the Stratosway R2 (`feature/pickup-collection-vfx`)
+
+Report: R2 showed almost no body animation on pickup while the Crimson GT turned gold/pink. Rule: `.claude/rules/pickup-body-sweep.md` (new).
+
+- [x] Root cause: additive tint clipped to white on R2's near-white paint; the same alpha reads faintly on light paint; R2's chase view is mostly painted wing/trim outside `body`. Live uniforms showed matching ranges/inflate on both cars.
+- [x] Fix: alpha-blended tint, per-frame `paintLight` from the carrying body's paint (deeper, thicker tint on light paints), a shared-material `Pickup paint sweep` on every procedural paint mesh, `vehicleInverse * modelMatrix` mapping. No car id or paint constant.
+- [x] RED on old code: *tints every paint* (blending 2 ≠ 1, then missing `paintLight`), *covers every painted part* (no paint sweep). GREEN: `pickup-collect-vfx.test.js`, `shader-safety`, `module-size`, `garage-model-rig`; `npm test` 2942 pass (only fail: the uncommitted capture spec's raw timeouts), typecheck, build.
+- [x] Real WebGL side-by-side capture (R2 default paint vs Crimson GT): R2 now tints orange (can), gold (tank), magenta (overcharge); GT unchanged in read.
+- [ ] Physical phone check, other Garage paints on every car, full `npm run test:browser` and exact-HEAD `quality-gate`.
+
 # 2026-11-14 — Music on but silent; intro from page open (`fix/music-autoplay-recovery`)
 
 Report: music setting on but nothing playing; music should start as soon as the page opens, announcement dialog or not. Rules: `.claude/rules/audio-playback.md` (new), `.claude/rules/performance-review.md` (checkShaderErrors).
