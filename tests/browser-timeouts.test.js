@@ -163,18 +163,24 @@ test('a slow-frame shim stalls each frame once, not each animation-frame callbac
   assert.deepEqual(offenders, [], 'Stall only when the frame timestamp changes (stalledFrame); see .claude/rules/browser-test-stability.md');
 });
 
-// The Garage slides in (history-in); a rect read mid-slide is shifted and can be off by a float32 ULP: the car picker
-// thumbnail measured 144.00001526 px in 1 of 30 runs (2026-11-15). These specs open it with openGarage() first.
-test('Garage geometry is measured after the slide-in settles', () => {
-  const offenders = ['crimson-gt-browser.spec.js', 'garage-home-pose-browser.spec.js'].flatMap(file => {
+// Overlays enter with a transform; a rect read mid-entry is shifted and can be off by a float32 ULP: the Garage car picker
+// thumbnail measured 144.00001526 px in 1 of 30 runs, the paused Race again button 43.99998474 px (2026-11-15).
+// After opening the Garage, pause, results or history, a spec settles the overlay (settled()/openGarage()) before measuring.
+const OVERLAY_OPENER = /#garage-button'\)\.(?:click|tap)\(|#pause-button'\)\.(?:click|tap)\(|data-open-history[^;]*\.(?:click|tap)\(|#race-overlay'\)\)\.toBeVisible\(/;
+const OVERLAY_SETTLE = /\b(?:settled|openGarage)\(/;
+const RECT_READ = /getBoundingClientRect|\.boundingBox\(\)/;
+
+test('overlay geometry is measured after the entry animation settles', () => {
+  const offenders = FILES.flatMap(file => {
     let opened = 0;
     return readFileSync(new URL(file, import.meta.url), 'utf8').split('\n').flatMap((line, i) => {
       if (/\btest\(['`]/.test(line)) opened = 0;
-      if (/#garage-button'\)\.(click|tap)\(\)/.test(line)) opened = i + 1;
-      return opened && /getBoundingClientRect|boundingBox\(\)/.test(line) ? [`tests/${file}:${i + 1} (Garage opened on line ${opened})`] : [];
+      if (OVERLAY_SETTLE.test(line)) opened = 0;
+      else if (OVERLAY_OPENER.test(line)) opened = i + 1;
+      return opened && RECT_READ.test(line) ? [`tests/${file}:${i + 1} (overlay opened on line ${opened})`] : [];
     });
   });
-  assert.deepEqual(offenders, [], 'Open the Garage with openGarage() from tests/helpers/test.js before measuring it');
+  assert.deepEqual(offenders, [], 'await settled(<overlay locator>) or openGarage() from tests/helpers/test.js before measuring');
 });
 
 // The keyboard full-practice tests ran on the 135 s default while their touch twins had 720 s; a passing CI run took
@@ -195,4 +201,37 @@ test('a ?look=3d spec gives its countdown an explicit CI budget', () => {
       line.includes("toHaveText('RACING')") ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []) : [];
   });
   assert.deepEqual(offenders, [], "Pass { timeout: ciTimeout(30000) } to the RACING wait (.claude/rules/browser-test-stability.md)");
+});
+
+// A spec that spawns its own server on a fixed default port collides with PLAYWRIGHT_PORT: Vite --strictPort exited on
+// EADDRINUSE and the readiness poll accepted the preview server already there, which has no diag relay (404, no beat).
+test('a spec that spawns a server takes a free port and fails loudly when the server exits', () => {
+  const offenders = FILES.flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    if (!/\bspawn\([^)]*vite/.test(source)) return [];
+    return [
+      ...(/process\.env\.\w+\s*\|\|\s*\d{4,5}\b/.test(source) ? [`tests/${file}: defaults its server port to a fixed number`] : []),
+      ...(!/\.exitCode\b/.test(source) ? [`tests/${file}: readiness never checks whether the spawned server exited`] : []),
+    ];
+  });
+  assert.deepEqual(offenders, [], 'Listen on port 0 for a free port and throw if server.exitCode !== null (diag-relay-browser.spec.js)');
+});
+
+// "Something changed" passed on the live loop's own HUD tick, then a one-shot read asserted all eight minimap markers had
+// moved before the stepped frames were drawn (volcanic-crown, 2 in 3 runs). Poll the asserted condition itself.
+test('browser specs poll the condition they assert, not a weaker change that a one-shot read then judges', () => {
+  const offenders = FILES.flatMap(file => readFileSync(new URL(file, import.meta.url), 'utf8').split('\n')
+    .flatMap((line, i, lines) => /await expect\.poll\(.*\)\.not\.toEqual\(/.test(line) && /=\s*await page\.evaluate\(/.test(lines[i + 1] ?? '')
+      ? [`tests/${file}:${i + 2}: ${lines[i + 1].trim()}`] : []));
+  assert.deepEqual(offenders, [], 'Put the final assertion inside expect.poll (.claude/rules/browser-test-stability.md)');
+});
+
+// In-race cues share confirmation pitches (a cell pickup starts at 880 Hz); a slow runner left the race driving long enough
+// to collect pickups, so "the result chime played once" counted 4 (audio-feedback, 1 in 6 runs at 6 workers).
+test('a spec counting Web Audio notes by pitch leaves out notes scheduled during the race', () => {
+  const offenders = FILES.filter(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    return source.includes('OscillatorNode.prototype.start') && /\.filter\(note => note === /.test(source) && !/\['countdown', 'racing'\]\.includes\(document\.body\.dataset\.phase\)/.test(source);
+  }).map(file => `tests/${file}`);
+  assert.deepEqual(offenders, [], "Skip notes while data-phase is 'countdown' or 'racing' (audio-feedback-browser.spec.js)");
 });

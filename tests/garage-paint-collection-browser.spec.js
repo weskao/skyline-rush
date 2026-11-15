@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 import { mkdir } from 'node:fs/promises';
 
 for (const quality of ['low', 'medium', 'high']) {
@@ -6,7 +6,7 @@ for (const quality of ['low', 'medium', 'high']) {
     await page.setViewportSize({width: 390, height: 844});
     await page.addInitScript(q => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: q, enabled: true })), quality);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const options = page.locator('.garage-collection .paint-options button');
     await expect(options).toHaveCount(7);
     await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', quality);

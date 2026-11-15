@@ -28,7 +28,9 @@ for (const [name, viewport, hasTouch, muted] of [
         };
         const start = OscillatorNode.prototype.start;
         OscillatorNode.prototype.start = function (...args) {
-          if (this.type === 'sine') window.feedbackNotes.push(frequencies.get(this.frequency));
+          // In-race cues share these pitches (a cell pickup starts at 880 Hz) and fire for as long as a slow runner
+          // leaves the race driving; confirmations play outside it. data-phase lags sound.update by a frame.
+          if (this.type === 'sine' && !['countdown', 'racing'].includes(document.body.dataset.phase)) window.feedbackNotes.push(frequencies.get(this.frequency));
           return start.apply(this, args);
         };
       }, muted);

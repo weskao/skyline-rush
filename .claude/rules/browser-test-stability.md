@@ -95,11 +95,28 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   the line, 12 for the 0.6 s results reveal at 0.05 s each) cost 39 stalls: 11.9 s, past the 10 s expect, while
   a real slow device took 5.4 s. Key the stall on the frame timestamp (`stalledFrame`); enforced by
   `tests/browser-timeouts.test.js` (*slow-frame shim*).
-- **Measure the Garage after its slide-in.** `#garage-screen` opens with `history-in` (translateX 22px). A rect
-  read mid-slide is shifted and goes through float32 transform math: a 144 px thumbnail measured
-  144.00001526 in 1 of 30 runs while `offsetWidth` stayed 144. Open it with `openGarage()` from
-  `tests/helpers/test.js`; never loosen a pixel bound to absorb it. Enforced by the same test file
-  (*Garage geometry*) for the specs it lists.
+- **Measure an overlay after its entry animation.** The Garage (`history-in`, translateX 22px), history, pause
+  and results (`enter()` in `src/motion.ts`) all open with a transform. A rect read mid-entry is shifted and goes
+  through float32 transform math: a 144 px Garage thumbnail measured 144.00001526 in 1 of 30 runs, the paused
+  Race again button 43.99998474 px, while `offsetWidth`/`offsetHeight` stayed exact. Open the Garage with
+  `openGarage()` and follow pause/results/history with `await settled(<overlay locator>)` (both in
+  `tests/helpers/test.js`); never loosen a pixel bound to absorb it. Enforced by the same test file
+  (*overlay geometry*) for every spec that opens one of them and then calls `getBoundingClientRect`/`boundingBox`.
+- **Poll the condition you assert, not a weaker proxy.** `expect.poll(...).not.toEqual(before)` passes on the
+  first change, which can be the live loop's own HUD tick (`updateUI` runs every 0.075 s) from before your
+  stepped frames were drawn; a one-shot read on the next line then judged all eight minimap markers and found
+  near-grid racers on Volcanic's wide map still on the same rounded 0.01 (2 in 3 runs). Put the full assertion
+  inside the poll. Enforced by the same test file (*weaker change*).
+- **A spec that spawns its own server takes a free port.** The diag relay spec spawned Vite on a fixed
+  `DIAG_RELAY_PORT || 5191` with `--strictPort`; when `PLAYWRIGHT_PORT` held that port, Vite exited on
+  EADDRINUSE and the readiness poll accepted the preview server, which has no relay (404 instead of 403, no
+  beat). Listen on port 0 for the default, poll an endpoint only your server answers, and throw when
+  `server.exitCode !== null`. Enforced by the same test file (*spawns a server*).
+- **Count a confirmation sound by its own moment, not by a pitch the race also plays.** In-race cues share
+  confirmation pitches (a cell pickup starts at 880 Hz). The slower the runner, the longer the race drives
+  before the spec teleports to the finish, so "the result chime played once" counted 4. Skip notes while
+  `data-phase` is `countdown` or `racing` (it lags `sound.update` by one frame). Enforced by the same test file
+  (*Web Audio notes*).
 - **Seeded positions stay clear of the field.** Teleporting the player back to the first rings put
   it in the pack: rivals step first and take the ring, traffic knocks the car off it. Seed ahead of
   every car (`race.rivals`) and pass traffic with `player.effects.ghost` (game seconds).

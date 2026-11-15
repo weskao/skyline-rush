@@ -2,6 +2,7 @@ import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
+import { settled } from './helpers/test.js';
 // CI speed: the four touch sizes without a fold share one booted page per (locale, HUD) pair and are resized in place; each size is
 // also freshly booted in one pair. Desktop and the two fold layouts keep their own boot (touch/fold are fixed per browser context).
 
@@ -268,6 +269,7 @@ for (const { width, height, hud } of [{ width: 844, height: 390, hud: 'hybrid' }
       await expect(page.locator('.leaderboard')).toBeVisible();
       const target = await page.locator('.leaderboard').boundingBox();
       await page.locator('#pause-button').click();
+      await settled(page.locator('.overlay-content'));
       await page.locator('#controls-button').click();
       await page.locator('[data-controls="mode"][value="buttons"]').check();
       await page.locator('[data-controls="hand"][value="right"]').check();
