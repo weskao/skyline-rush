@@ -39,14 +39,16 @@ for (const { viewport, touch, reducedMotion } of [
       await expect(screen).toHaveAttribute('data-page', 'studio');
       await expect(toggle).toHaveAttribute('aria-pressed', 'false');
       await expect(preview).toHaveAttribute('data-gpu-effects-visible', 'false');
+      await openGarageSection(page, 'paints');
       await activate(page.locator('[data-paint="crimson"]'));
       await expect(page.locator('[data-paint="crimson"]')).toHaveAttribute('aria-pressed', 'true');
-      await expect(notice).toBeEmpty();
+      await expect(notice).toHaveText('Preview effects hidden');
 
+      await openGarageSection(page, 'effects');
       const skin = page.locator('[data-skin="thruster-void"]');
       await activate(skin.locator('.garage-skin-preview-hitarea'));
       await expect(skin).toHaveAttribute('data-preview-active', 'true');
-      await expect(notice).toBeEmpty();
+      await expect(notice).toHaveText('Preview effects hidden');
       await activate(skin.locator('.garage-skin-action'));
       await expect(preview).toHaveAttribute('data-skin-equipped-thruster', 'thruster-void');
       await expect(preview).toHaveAttribute('data-gpu-void-beams', 'false');

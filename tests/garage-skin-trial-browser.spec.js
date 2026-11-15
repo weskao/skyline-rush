@@ -51,6 +51,7 @@ test('VFX Try free equips directly and closing restores an unconfirmed preview',
   await expect(showroom).toHaveAttribute('data-skin-preview-thruster', 'thruster-basic');
 
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
   await expect(action).toBeEnabled();
   await expect(action).toHaveText('Try free');
   await action.click();
