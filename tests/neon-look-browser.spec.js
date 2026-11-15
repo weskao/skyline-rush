@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, programs } from './helpers/gameplay-browser.js';
+import { captureHooks, test, programs } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expectClean, watch } from './helpers/black-frames.js';
 
@@ -230,10 +230,13 @@ test('Neon Low keeps the procedural scene: sea, towers, skyline and no look asse
   expect(await lookAssets(page)).toEqual([]);
 });
 
-test('Neon High loads the detailed city with the legacy URL as on a plain link', async ({ gameplayPage: page, gameplayURL }) => {
-  test.setTimeout(ciTimeout(90000));
-  await page.goto(`${gameplayURL}?3d=1&look=3d&model=roadster`);
-  await neon(page, 'high');
-  await expect.poll(() => kits(page), { timeout: ciTimeout(60000) }).toBe('attached attached');
-  await expect.poll(() => cityLook(page)).toEqual({ skyline: false, towers: false, kit: true });
+test('Neon High uses its rain-night lighting with the legacy URL', async ({ page, gameplayURL }) => {
+  await captureHooks(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon']));
+    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high' }));
+  });
+  await page.goto(`${gameplayURL}?raced=neon&3d=1&look=3d&model=roadster`);
+  await expect(page.locator('#world')).toHaveAttribute('aria-label', /Neon Downtown/);
+  await expect.poll(() => skyStatus(page), { timeout: ciTimeout(40000) }).toEqual({ sky: 'nightRain:4096', env: 0.55, dome: true });
 });
