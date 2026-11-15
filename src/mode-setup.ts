@@ -2,6 +2,45 @@
 // The DOM controller (race-select-ui.ts) renders them; nothing here touches storage.
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
+interface LobbyStartInput {
+  canRace: boolean;
+  daily: boolean;
+  mode: string;
+  unlocked: number;
+  cupCount: number;
+  previousTrackName: string;
+  previewName: string | null;
+}
+
+/** Home's track badge, Start action and reason beside the button. */
+export function lobbyStartState(input: LobbyStartInput, t: Translate) {
+  const { canRace, daily, mode, unlocked, cupCount, previousTrackName, previewName } = input;
+  if (previewName !== null) return {
+    disabled: true,
+    trackStatusKey: 'lobby.preview',
+    startLabelKey: 'track.comingSoon',
+    accessNote: t('track.comingSoonInfo', { track: previewName }),
+  };
+
+  const trackLocked = !canRace && !daily;
+  const cupLocked = mode === 'cup' && unlocked < cupCount;
+  const disabled = trackLocked || (cupLocked && !daily);
+  const reasons: string[] = [];
+  if (cupLocked) reasons.push(t('mode.cupLocked', { n: cupCount }));
+  if (trackLocked) reasons.push(t('track.unlockHint', { track: previousTrackName }));
+  return {
+    disabled,
+    trackStatusKey: trackLocked ? 'track.locked' : 'track.open',
+    startLabelKey: disabled ? 'track.locked' : 'start.race',
+    accessNote: reasons.join(' '),
+  };
+}
+
+export function lobbyDriverLabel(rivalCount: number, preview: boolean, t: Translate): string {
+  if (preview) return t('track.comingSoon');
+  return rivalCount === 0 ? t('mode.solo') : t('mode.driverCount', { n: rivalCount + 1 });
+}
+
 /** The rule values a fresh Custom/Free race starts with; Restore defaults returns to exactly these. */
 export const DEFAULT_RULES = Object.freeze({ rivals: 7, traffic: 'normal', difficulty: 'normal', items: true, activeItems: false,
   itemRules: undefined, collision: 'normal', hazards: 'off', stages: 1, bonusGates: false, riskLines: 'on', themes: false });
