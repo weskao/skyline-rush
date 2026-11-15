@@ -6,6 +6,7 @@ import { presentationPlacementBadge, placementBadgeArtwork } from './finish-plac
 import { stuntMedal, stuntHeatContinues } from './stunt-attack.ts';
 import { sprintTotal, type SprintSeries } from './sprint-series.ts';
 import { cupStandings, cupComplete, cupTotalTime, type CupState } from './championship-cup.ts';
+import type { Settlement } from './race-results.ts';
 import type { ChallengeMedalId } from './history-challenge-medals.ts';
 import type { StuntRun } from './stunt-attack.ts';
 
@@ -25,6 +26,7 @@ export interface ResultView {
   copy: string;
   /** Result stat rows (static markup built from translated strings and numbers). */
   stats: string;
+  standings?: ReturnType<typeof cupStandings>;
   nextStage?: string;
   nextTrack?: string;
   style?: { aria: string; html: string };
@@ -66,9 +68,11 @@ function cupView(_race: FinishedRace, { cup }: FinishedResult): ResultView {
     title: t(complete ? standings[0]!.name === 'YOU' ? 'mode.cupWon' : 'mode.cupComplete' : 'mode.cupStage', {
       n: finishedCup.results.length, total: finishedCup.tracks.length,
     }),
-    copy: standings.map(({ name, points }, i) => `${i + 1}. ${name} · ${points} ${t('mode.cupPts')}`).join('  ·  '),
+    copy: '',
+    standings,
     nextStage: complete ? '' : t('mode.cupNext', { track: trackName(finishedCup.tracks[finishedCup.results.length]!, getLocale()) }),
-    stats: row(t('mode.cupPts'), you.points) + row(t('mode.totalTime'), timeString(cupTotalTime(finishedCup))),
+    stats: row(t('race.position'), `${standings.indexOf(you) + 1} / ${standings.length}`)
+      + row(t('mode.totalTime'), timeString(cupTotalTime(finishedCup))) + row(t('mode.cupPts'), you.points),
     counts: [],
   };
 }
@@ -173,9 +177,23 @@ export function setupResultScreen(afterRender: () => void = () => {}) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const title = $('#overlay-title'), copy = $('#overlay-copy'), stats = $('#result-stats');
   const nextStage = $('#next-stage'), nextTrack = $('#next-track'), style = $('#result-style');
+  const standings = $('#result-standings');
   return function render(view: ResultView): ResultCount[] {
     title.textContent = view.title;
     copy.textContent = view.copy;
+    copy.hidden = !view.copy;
+    standings.hidden = !view.standings;
+    standings.replaceChildren(...(view.standings ?? []).map(({ name, points }, index) => {
+      const entry = document.createElement('li');
+      const label = document.createElement('span');
+      const score = document.createElement('strong');
+      const player = name === 'YOU';
+      label.textContent = `${index + 1}. ${player ? t('hud.you') : name}`;
+      score.textContent = `${points} ${t('mode.cupPts')}`;
+      if (player) entry.setAttribute('aria-current', 'true');
+      entry.append(label, score);
+      return entry;
+    }));
     if (view.nextStage !== undefined) nextStage.textContent = view.nextStage;
     if (view.nextTrack !== undefined) nextTrack.textContent = view.nextTrack;
     stats.innerHTML = view.stats;
@@ -188,5 +206,43 @@ export function setupResultScreen(afterRender: () => void = () => {}) {
     if (!view.counts.length) return [];
     const targets = [stats.children[1]!.querySelector('strong')!, stats.children[2]!.querySelector('strong')!, $('#result-style > strong')];
     return view.counts.map(({ value, format }, i) => ({ element: targets[i] as HTMLElement, value, format: FORMATS[format] }));
+  };
+}
+
+/** Highlights and focuses the same action the result's visible controls offer. */
+export function setupOverlayActions() {
+  const button = (id: string) => document.getElementById(id) as HTMLButtonElement;
+  const resume = button('resume-button'), again = button('again-button'), leave = button('pause-leave');
+  const photo = button('photo-open');
+  const nextStage = button('next-stage'), nextTrack = button('next-button'), choose = button('choose-track');
+  const links = document.getElementById('result-links')!;
+  const standings = document.getElementById('result-standings')!;
+  const copy = document.getElementById('overlay-copy')!;
+  let primary = resume;
+  function setPrimary(action: HTMLButtonElement) {
+    delete primary.dataset.primaryAction;
+    primary = action;
+    primary.dataset.primaryAction = '';
+  }
+  return {
+    pause(practice: boolean, mode: string) {
+      resume.hidden = false;
+      again.hidden = leave.hidden = practice;
+      photo.hidden = practice || mode !== 'free';
+      nextStage.hidden = nextTrack.hidden = links.hidden = standings.hidden = true;
+      copy.hidden = false;
+      setPrimary(resume);
+      if (!document.querySelector('dialog[open]')) resume.focus({ preventScroll: true });
+    },
+    finish(settlement: Settlement, mode: string) {
+      resume.hidden = leave.hidden = photo.hidden = true;
+      again.hidden = links.hidden = false;
+      nextStage.hidden = !settlement.intermediateStage;
+      nextTrack.hidden = !settlement.next;
+      if (settlement.next) nextTrack.dataset.next = settlement.next;
+      setPrimary(settlement.intermediateStage ? nextStage : settlement.next ? nextTrack :
+        settlement.series.cup || mode === 'free' ? choose : again);
+    },
+    focus() { primary.focus({ preventScroll: true }); },
   };
 }

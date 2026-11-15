@@ -6,15 +6,8 @@ import type { ReleaseClipView } from './ui-state-contracts.ts';
 import { createReleaseMediaCache } from './release-media-cache.ts';
 import { onUserActivation } from './user-activation.ts';
 
-// Pure keyboard navigation, independently testable without a DOM.
-export function releaseTabIndex(index: number, count: number, key: string): number | null {
-  const steps: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
-  const step = steps[key];
-  if (step) return (index + step + count) % count;
-  if (key === 'Home') return 0;
-  if (key === 'End') return count - 1;
-  return null;
-}
+import { dialogNavigation, dialogTabIndex as releaseTabIndex } from './dialog-navigation.ts';
+export { releaseTabIndex };
 
 // The DOM controller owns only the event-driven release dialog.
 // Gameplay, control state and notice restoration stay owned by main.js.
@@ -28,9 +21,11 @@ interface ReleaseNotesUIOptions {
 export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClose, reducedMotion }: ReleaseNotesUIOptions) {
   const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
   const releaseDialog = document.querySelector<HTMLDialogElement>('#whats-new-screen')!;
+  const navigation = dialogNavigation(releaseDialog);
   const releaseOpen = document.querySelector<HTMLButtonElement>('#whats-new-open')!;
   const releasePanel = $('#release-panel');
   const portrait = matchMedia('(orientation: portrait)');
+  const compact = matchMedia('(orientation: landscape) and (max-height: 420px)');
   const RECENT_RELEASES = recentReleases();
   let releaseIndex = 0;
   let releaseOpener: HTMLElement | null = null;
@@ -50,7 +45,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   // Clips download ahead only while the notes are open, so the hero and any enlarged clip start at once; highlight clips
   // draw only their poster and play button. A reader who moved on meanwhile keeps their view (the stale view just updates unseen).
   function loadVisibleClips() {
-    if (!releaseDialog.open) return;
+    if (!releaseDialog.open || compact.matches) return;
     for (const view of [releaseView.heroVideo, ...releaseView.entries.map(entry => entry.video)]) {
       if (view && !view.src) mediaCache.load(view.source).then(src => { view.src = src; if (view === releaseView.heroVideo) nextTick(syncReleaseVideo); });
     }
@@ -79,6 +74,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     const hero = releaseImage(release.image, locale);
     updateReleaseView({
       tabs,
+      compact: compact.matches,
       panelLabel: 'release-tab-' + releaseIndex,
       version: versionLabel(release.version),
       date: releaseDay(release.date, { year: 'numeric', month: 'long', day: 'numeric' }),
@@ -108,7 +104,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   function syncReleaseVideo() {
     const video = document.querySelector<HTMLVideoElement>('#release-video');
     if (!video) return;
-    if (releaseDialog.open && !reducedMotion.matches && video.offsetParent) video.play().catch(() => { /* autoplay refused: the poster stays */ });
+    if (releaseDialog.open && !compact.matches && !reducedMotion.matches && video.offsetParent) video.play().catch(() => { /* autoplay refused: the poster stays */ });
     else video.pause();
   }
   // iPhone refuses even a muted clip in Low Power Mode until the player touches the page: the first tap or key anywhere starts
@@ -140,7 +136,8 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     releaseShownHere = true;
     releaseIndex = 0;
     renderReleaseNotes();
-    releaseDialog.showModal();
+    navigation.open();
+    releaseDialog.scrollTop = 0;
     loadVisibleClips();
     $('#release-close').focus({ preventScroll: true });
     return true;
@@ -151,7 +148,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     if (!canAutoOpen() || !canOpen() || document.querySelector('dialog[open]')) return;
     openReleaseNotes();
   }
-  function closeReleaseNotes() { if (releaseDialog.open) releaseDialog.close(); }
+  const closeReleaseNotes = () => navigation.close();
   releaseOpen.addEventListener('click', () => openReleaseNotes(releaseOpen));
   $('#release-close').addEventListener('click', closeReleaseNotes);
   $('#release-continue').addEventListener('click', closeReleaseNotes);
@@ -166,8 +163,9 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     selectRelease(target);
   });
   releaseDialog.addEventListener('cancel', event => { event.preventDefault(); closeReleaseNotes(); });
-  releaseDialog.addEventListener('keydown', event => event.stopPropagation());
-  portrait.addEventListener('change', () => { if (releaseDialog.open) renderReleaseNotes(); }); // a turned phone gets the matching clip
+  for (const layout of [portrait, compact]) layout.addEventListener('change', () => {
+    if (releaseDialog.open) renderReleaseNotes(); // a turned phone gets the matching clip
+  });
   releaseDialog.addEventListener('close', () => {
     syncReleaseVideo();
     updateReleaseView({ openHasUpdate: false });

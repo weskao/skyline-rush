@@ -1,3 +1,10 @@
+# 2026-11-16 — Race navigation and responsive game dialogs integration
+
+- [x] Reconcile the DOM contract with the responsive lobby and the pause/results action order, retaining the new dialog and control checks. Keep Photo Studio visibility in the existing pause/results controller so it follows race mode and phase.
+- [x] CI RED (run 43712128237) showed Next Track below the first 360 × 740 results screen. Compact the decorative podium badge and style summary so both reward credits and the primary action fit. The regression also checks History focus returns to its results opener before the player taps Next Track.
+- [x] Local focused Node checks passed (47), including module size, CSS fingerprint, input, cloud status and dialog state.
+- [ ] Full exact-commit GitHub quality gate and physical iOS/Android verification.
+
 # 2026-11-15 — One NITRO / BOOST / FLY palette (`feature/hud-sprint-colors`)
 
 - [x] `:root` tokens in `src/style.css`: `--nitro #ffd166` (gold, 42°, matches the ring gold), `--boost #ff7f3f` (red-orange, 20°), `--fly #83ceeb` (cyan), each with `-text` / `-deep` variants. They drive the touch buttons and every state, the NITRO/BOOST icons, the Controls preview, the NITRO meter, HUD text and callout, the BOOST status, the speed ticks, key hints (home legend, guide, tutorial cue, Controls bindings) and the default 3D NITRO trail and shock (`src/aero-vfx.js`). Trail skins still replace the default.
@@ -17,6 +24,26 @@
 - [x] RED: first race bearings were 57°, 153° and 98° from the rear, and the next race retained first person. GREEN: all four Chromium tests in `tests/home-race-camera-browser.spec.js` passed at desktop 1440×900, touch portrait 390×844 and touch landscape 844×390, with real WebGL captures (`home-camera.png` / `race-camera.png`) and no page errors during the camera handoffs.
 - [x] Module-size and type checks, locked production build and the full unit suite passed (2,974 passed, 3 skipped).
 - [ ] Full browser/World Tour suites, physical iOS/Android checks and exact-commit GitHub `quality-gate`.
+
+# 2026-11-15 — Race Results Navigation
+
+- [x] Pause gives Continue keyboard focus, with Retry and Leave as secondary actions. Escape or the close button returns the leave confirmation to its opener. Clearing controls releases pointer capture and ignores key repeats until a fresh press.
+- [x] The settled result selects Next Stage, Next Track, Retry or Choose Track. Cup standings use one row per driver. Finished summaries prioritize placement, time, record and local demo credits in portrait and retain separate summary and action columns in landscape.
+- [x] A queued cloud save stays pending until its own outcome is known. Results without an eligible history entry do not advertise a backup. Wave 3 reuses the receipt keyed to the finished race, with existing demo balance, mission and progression storage.
+- [x] RED → GREEN with `node --test tests/input.test.js tests/result-cloud-status.test.js`. Reproduced residual key repeat, native pointer capture and an older cloud acknowledgement advancing the new result. Module-size gate passed.
+- [ ] Complete the local browser viewport matrix, physical iOS/Android input checks and full `make verify`.
+- [ ] Confirm the exact feature head's CI quality gate, then rerun integration verification on the merged develop commit.
+
+# 2026-11-15 — Responsive game dialogs (`feature/responsive-game-dialogs`)
+
+- [x] History leads with the track filter and recent races. Daily, Medals and Cloud have dedicated tabs and direct home shortcuts. The Daily Play action and cloud account, sync and backup handlers are retained.
+- [x] Photo Studio has a desktop sidebar, portrait bottom panel and short-landscape side panel. Orbit stays visible, advanced tools collapse, and the Back / Save PNG actions stay outside the scroll area. Closing restores the paused scene and opener.
+- [x] Event Lab switches between Route and Objects on narrow or short screens, retains Use this course above the scroll area, and places validation at the edited object. The open editor follows the visual viewport when the keyboard reduces it.
+- [x] Short-landscape What's New keeps the version and poster-based Play preview. The preview loads the bundled clip on activation. Browser Back closes the top-level modal or the nested viewer and restores its opener.
+- [x] `node --test tests/module-size.test.js` passed 3/3. Added browser cases to mode-history, cloud-entry, event-lab, photo-studio and release-video and extended the existing race-modes Photo Studio case.
+- [x] CI 43710794607: reproduced both unit failures, recorded the responsive CSS and dialog order in the UI contract, and verified Photo Studio clears its body class and photo camera before Back, Escape or browser history closes it. Local typecheck, production build and unit suite passed (2,975 passed, 3 skipped). A browser check matched all 233 recorded IDs, tags, classes and DOM positions.
+- [ ] Complete the browser RED/GREEN matrix and full `make verify`. Local Chromium encountered launch restrictions, renderer crashes and navigation timeouts. Complete real-device iOS/Android keyboard, safe-area and back-gesture checks, and verify the exact branch commit in GitHub Actions.
+- Base `4d45cc460b4d1c45ed26017ef9737802a5a1d63e`. Integration owns pause/results entry points. DOM changes share visual quality tiers and retain existing UI and photo cues.
 
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 

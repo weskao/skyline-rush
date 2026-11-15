@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onUnmounted, ref } from 'vue';
+import { getLocale, onLocaleChange, t } from './i18n.ts';
 import { releaseView } from './release-view-state.ts';
 import ReleaseMediaViewer, { type ZoomedMedia } from './ReleaseMediaViewer.vue';
 import ReleasePlayBadge from './ReleasePlayBadge.vue';
 import type { ReleaseClipView } from './ui-state-contracts.ts';
 import CloseButton from './CloseButton.vue';
+const locale = ref(getLocale());
+onUnmounted(onLocaleChange(value => { locale.value = value; }));
 const viewer = ref<InstanceType<typeof ReleaseMediaViewer> | null>(null);
 function hideBrokenThumbnail(index: number) {
   const entry = releaseView.entries[index];
@@ -24,7 +27,7 @@ function viewerClosed(time: number | null) {
   const inline = heroVideo();
   if (!inline) return;
   if (fromHero && time !== null) inline.currentTime = time;
-  if (resumeHero) inline.play().catch(() => { /* autoplay refused: the poster stays */ });
+  if (resumeHero && !releaseView.compact && document.querySelector('#whats-new-screen[open]')) inline.play().catch(() => { /* autoplay refused: the poster stays */ });
 }
 const zoomImage = (src: string, label: string, event: Event) => enlarge({ kind: 'image', src, label }, event.currentTarget as HTMLElement);
 const clipMedia = (clip: ReleaseClipView, label: string): ZoomedMedia => ({ kind: 'video', src: clip.src || clip.source, poster: clip.poster, source: clip.source, label });
@@ -53,9 +56,15 @@ function zoomHero() {
       </button>
     </div>
     <section id="release-panel" class="release-panel" role="tabpanel" tabindex="0" :aria-labelledby="releaseView.panelLabel">
-      <div v-if="releaseView.heroVideo" class="release-hero-frame">
+      <div class="release-meta"><span id="release-version">{{ releaseView.version }}</span><span id="release-date">{{ releaseView.date }}</span></div>
+      <button v-if="releaseView.compact && releaseView.heroVideo" id="release-preview" type="button" class="release-preview"
+        @click="playClip(releaseView.heroVideo, releaseView.zoom.video, $event)">
+        <img :src="releaseView.heroVideo.poster" alt="">
+        <span>{{ t('release.playPreview', undefined, locale) }}</span>
+      </button>
+      <div v-if="releaseView.heroVideo" class="release-hero-frame" :hidden="releaseView.compact">
         <video :key="releaseView.heroVideo.source" id="release-video" class="release-hero release-video" :data-variant="releaseView.heroVideo.variant" :data-source="releaseView.heroVideo.source"
-          :src="releaseView.heroVideo.src || undefined" :poster="releaseView.heroVideo.poster" muted loop playsinline preload="none" disablepictureinpicture
+          :src="releaseView.compact ? undefined : releaseView.heroVideo.src || undefined" :poster="releaseView.heroVideo.poster" muted loop playsinline preload="none" disablepictureinpicture
           :controls="releaseView.heroVideo.controls" :aria-hidden="releaseView.heroVideo.controls ? undefined : 'true'" @error="releaseView.heroVideo = null"
           @click="releaseView.heroVideo.controls || zoomHero()"></video>
         <button id="release-video-zoom" type="button" class="release-zoom-corner" :aria-label="releaseView.zoom.video" @click="zoomHero">
@@ -66,7 +75,6 @@ function zoomHero() {
         @click="zoomImage(releaseView.heroSrc, releaseView.zoom.image, $event)">
         <img id="release-hero" class="release-hero" alt="" :src="releaseView.heroSrc || undefined" :hidden="!releaseView.heroSrc || !!releaseView.heroVideo" @error="releaseView.heroSrc = ''">
       </button>
-      <div class="release-meta"><span id="release-version">{{ releaseView.version }}</span><span id="release-date">{{ releaseView.date }}</span></div>
       <div id="release-items" class="release-entries">
         <article v-for="(entry, index) in releaseView.entries" :key="index" class="release-entry" :data-kind="entry.kind">
           <button v-if="entry.video" type="button" class="release-zoom release-play" :aria-label="entry.playLabel" @click="playClip(entry.video, entry.title, $event)">
@@ -91,17 +99,18 @@ function zoomHero() {
 .release-zoom[hidden] { display: none; }
 /* Tapping a picture or clip, or getting focus back when its enlarged view closes, never flashes a focus ring. */
 .release-zoom, .release-zoom-corner, .release-hero-frame video, .release-play { -webkit-tap-highlight-color: transparent; }
-.release-zoom:focus-visible, .release-zoom-corner:focus-visible, .release-hero-frame video:focus-visible, .release-play:focus-visible { outline: none; }
 /* Hugs the centered clip so the enlarge button sits on its corner: 480 px wide landscape, height-sized portrait. */
 .release-hero-frame { position: relative; width: min(100%, 480px); margin-inline: auto; }
+.release-hero-frame[hidden] { display: none; }
 .release-hero-frame:has(video[data-variant="mobile"]) { width: fit-content; }
 /* A tap on the playing hero enlarges it, like a picture; with controls (reduced motion) the clip keeps its own pointer. */
 .release-hero-frame video:not([controls]) { cursor: zoom-in; }
 /* A highlight's poster is a play action, not a zoom. */
 .release-play { position: relative; display: block; width: 100%; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; }
 .release-play :deep(.release-play-badge) { --badge: 36px; }
-/* Short landscape screens hide the hero clip to save height (style.css); its enlarge button goes with it. */
-@media (max-height: 420px) { .release-hero-frame { display: none; } }
+.release-preview { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 10px; padding: 4px 12px 4px 4px; border: 1px solid #5c7488; border-radius: 8px; background: #1b3044; color: #eefbff; font: inherit; cursor: pointer; }
+.release-preview img { width: 72px; height: 44px; object-fit: cover; border-radius: 4px; }
+.release-preview:focus-visible, .release-zoom:focus-visible, .release-zoom-corner:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .release-zoom-corner { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; padding: 0; border: 1px solid rgb(150 227 255 / .35); border-radius: 50%;
   background: rgb(8 16 28 / .78); color: #eefbff; display: grid; place-items: center; cursor: pointer; }
 /* Drawn, not a "⤢" glyph: fallback fonts (Android) offset the glyph inside the circle. */

@@ -47,6 +47,42 @@ test('pause action fires once on a held key and clears throttle', () => {
   assert.equal(controls.read().throttle, false);
 });
 
+test('cleared driving keys wait for a fresh press instead of resuming on repeat', () => {
+  const target = new EventTarget();
+  const controls = createControls(target);
+  send(target, 'keydown', { code: 'KeyW' });
+  controls.clear();
+  send(target, 'keydown', { code: 'KeyW', repeat: true });
+  assert.equal(controls.read().throttle, false);
+  send(target, 'keyup', { code: 'KeyW' });
+  send(target, 'keydown', { code: 'KeyW' });
+  assert.equal(controls.read().throttle, true);
+});
+
+test('clearing driving input also releases native pointer capture', () => {
+  const target = new EventTarget();
+  const gas = new EventTarget();
+  const pad = new EventTarget();
+  const captured = new Map();
+  for (const element of [gas, pad]) {
+    element.hasPointerCapture = id => captured.get(id) === element;
+    element.setPointerCapture = id => captured.set(id, element);
+    element.releasePointerCapture = id => captured.delete(id);
+  }
+  const controls = createControls(target);
+  controls.bindButton(gas, 'throttle');
+  controls.bindSlidePad(pad);
+  for (const [element, pointerId] of [[gas, 1], [pad, 2]]) {
+    const down = new Event('pointerdown', { cancelable: true });
+    Object.defineProperty(down, 'isTrusted', { value: true });
+    element.dispatchEvent(Object.assign(down, { pointerId, clientX: 20, clientY: 20 }));
+  }
+  assert.equal(captured.size, 2);
+  controls.clear();
+  assert.equal(controls.read().throttle, false);
+  assert.equal(captured.size, 0);
+});
+
 test('camera, audio, airflow and auto accelerator shortcuts preserve held driving inputs', () => {
   const target = new EventTarget();
   const actions = [];

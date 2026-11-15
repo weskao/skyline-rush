@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { openLobbyModes } from './helpers/home-lobby.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
@@ -61,6 +62,7 @@ for (const [name, viewport, hasTouch, locale, trackIds, more = []] of layouts) {
         await page.addLocatorHandler(page.locator('#music-prompt'), () => page.locator('#music-no').click());
         await page.goto(`${gameplayURL}?perf`);
         await page.locator(`[data-track="${trackId}"]`).click();
+        await openLobbyModes(page);
         await page.locator('button[data-race-mode="free"]').click();
         await page.locator('#start-button').click();
         await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
@@ -94,6 +96,16 @@ for (const [name, viewport, hasTouch, locale, trackIds, more = []] of layouts) {
           await expect(page.locator('#world')).toBeVisible();
           // A fresh boot opens the panel unscrolled; the previous size's scrollIntoViewIfNeeded must not carry over.
           if (index) await page.evaluate(() => document.querySelectorAll('#photo-screen, #photo-screen *').forEach(element => { element.scrollTop = 0; }));
+          if (name === 'phone') {
+            const panel = await page.locator('#photo-screen').boundingBox();
+            expect(panel.y + panel.height).toBeGreaterThanOrEqual(size.height - (insets?.bottom ?? 0) - 16);
+          }
+          const advanced = page.locator('#photo-screen summary');
+          await expect(page.locator('#photo-fov')).toBeHidden();
+          await advanced.press('Enter');
+          await expect(page.locator('#photo-fov')).toBeVisible();
+          await expect(page.locator('#photo-save')).toBeInViewport({ ratio: 1 });
+          await advanced.press('Enter');
           await page.screenshot({ path: `test-results/race-mode-photo-${name}-${trackId}-${size.width}x${size.height}${insets ? '-insets' : ''}.png` });
           for (const selector of backgroundUI) await expect(page.locator(selector), `${label}: ${selector} must not overlay the photo`).toBeHidden();
           const car = await projectedCar(page), panel = await page.locator('#photo-screen').boundingBox();
@@ -124,6 +136,14 @@ for (const [name, viewport, hasTouch, locale, trackIds, more = []] of layouts) {
           const flips = await page.evaluate(() => window.photoFlips);
           expect(flips.map(flip => flip.open), `${label}: open, Close, open, Escape`).toEqual([true, false, true, false]);
           for (const flip of flips) expect(flip.studio, `${label}: body.photo-studio at the [open] flip ${JSON.stringify(flips)}`).toBe(flip.open);
+          await expect(page.locator('#photo-open')).toBeFocused();
+          if (index === 0) {
+            await page.locator('#photo-open').click();
+            await page.goBack();
+            await expect(page.locator('#photo-screen')).toBeHidden();
+            await expect(page.locator('#photo-open')).toBeFocused();
+            await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+          }
           await page.locator('#resume-button').click();
           await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
           await page.keyboard.down('ArrowUp');
