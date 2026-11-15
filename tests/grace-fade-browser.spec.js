@@ -28,6 +28,12 @@ async function checkContactFeedback({ page, gameplayURL }, testInfo) {
   await expect(report).toBeVisible();
   await expect(report).toContainText('VEHICLE');
   expect(await bodyOpacity(page)).toBe(1); // settled: the crash report confirms the collision frame rendered
+  // Move to the recovery phase of this real hit without waiting on the software renderer's race clock.
+  await page.evaluate(() => {
+    const { player, elapsed } = window.gameplay.race;
+    player.impact.time = elapsed - 1;
+    player.cooldown = 0.5;
+  });
   await expect(report).toContainText('CONTACT PROTECTION');
   await expect(report).toBeVisible();
   const recovery = await page.screenshot({ path: testInfo.outputPath('contact-protection.png') });
