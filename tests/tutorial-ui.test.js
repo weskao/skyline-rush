@@ -90,3 +90,11 @@ test('the landing lesson shows no FLY outline, ripple target or key chip', () =>
   assert.equal(tutorialHighlight('barrelRoll', 'ready').action, 'fly');
   assert.equal(tutorialTouchTarget('fly', 'ready', 'buttons', 'fly'), '#touch-controls [data-control="fly"]');
 });
+
+test('the ready NITRO cue names the action thumb opposite the steering hand', () => {
+  const cue = { key: 'tutorial.cue.nitro', actions: ['nitro'] };
+  for (const mode of ['buttons', 'slide', 'tilt']) {
+    assert.match(tutorialCueView(cue, true, 'hold', DEFAULT_KEY_MAP, mode, 'right').cue, /left thumb/);
+    assert.match(tutorialCueView(cue, true, 'hold', DEFAULT_KEY_MAP, mode, 'left').cue, /right thumb/);
+  }
+});
