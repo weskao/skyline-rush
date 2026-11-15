@@ -327,7 +327,6 @@ export function createWorld(canvas) {
     lookTarget.y+=framingLookY;
   }
 
-
   function showroomClearShare(eye, look, projection = null) {
     if(!showcaseOccluders?.visible) return 1;
     const probe=projection||showcaseProbe;
@@ -493,6 +492,7 @@ export function createWorld(canvas) {
       if (garageHomePreview) aero.setSkins(ids);
       upcomingStage.setGaragePreview(garageHomePreview ? ids : null, !garageHomePreview || visible);
     },
+    getGarageCameraYaw() { return garageStage?.getCameraYaw(); },
     inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : upcomingStage.inspectCosmetics() ?? aero.inspectCosmetics(); },
         inspectGarageStudio() { if (garageStage && garageCamera) return garageStage.inspectBounds(camera); if (!garageHomePreview) return null; const { minX, maxX, minY, maxY } = projectedCarBounds(camera.position, smoothLook); return { minX, maxX, minY, maxY, inFrame: minX > -.94 && maxX < .94 && minY > -.94 && maxY < .94 }; }, // Home: QA reads how much of the showroom the car fills
     previewAppearance(paint) {

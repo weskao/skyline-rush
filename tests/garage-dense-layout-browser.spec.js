@@ -15,14 +15,14 @@ for (const size of sizes) {
         const { x, y, width, height, right, bottom } = document.querySelector(sel).getBoundingClientRect();
         return { x, y, width, height, right, bottom };
       };
-      const controls = document.querySelector('.garage-camera-controls');
+      const angles = document.querySelector('.garage-camera-angles');
       return {
         screen: rect('#garage-screen'),
         preview: rect('#garage-preview'),
         header: rect('.garage-heading'),
         entry: rect('#garage-studio-open'),
         collection: rect('#garage-screen .garage-collection'),
-        navWrap: getComputedStyle(controls).flexWrap,
+        angleWrap: getComputedStyle(angles).flexWrap,
         collectionScrollable: getComputedStyle(document.querySelector('#garage-screen .garage-collection')).overflowY,
       };
     });
@@ -41,7 +41,7 @@ for (const size of sizes) {
     const studio = await measure();
     expect(studio.preview.width).toBeGreaterThan(size.width * .63);
     expect(studio.preview.height).toBeGreaterThan(size.height * .31);
-    expect(studio.navWrap).toBe('nowrap');
+    expect(studio.angleWrap).toBe('nowrap');
     expect(studio.collectionScrollable).toBe('auto');
     await expect(page.locator('button[data-garage-mode="ground"]')).toBeVisible();
     await expect(page.locator('button[data-garage-mode="flight"]')).toBeVisible();

@@ -54,7 +54,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await expect(wing).toHaveAttribute('aria-pressed', 'false');
       await expect(preview).toHaveAttribute('data-garage-wing', 'false');
     }
+    await wing.click();
     await page.locator('#garage-reset').click();
-    await expect(wing).toHaveAttribute('aria-pressed', 'false');
+    await expect(wing).toHaveAttribute('aria-pressed', 'true');
+    await expect(preview).toHaveAttribute('data-garage-mode', 'flight');
   });
 }
