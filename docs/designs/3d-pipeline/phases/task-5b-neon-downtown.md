@@ -70,7 +70,8 @@ To do, in order:
 - [x] **0 Concept set (N1, N7).** Nine owner-supplied images in `../concept-art/neon-downtown/` (two overviews, six
   sector frames, one route schematic), listed in that folder's `README.md` with the panel row. They replace the two
   generated views, which were deleted before being committed. Never in-game evidence.
-  - [ ] Generator and redistribution licence of the set: the owner has not supplied them.
+  - [x] Generator and redistribution licence of the set: generated with ChatGPT; the owner confirms the set is
+    licensed for this repository (owner, 2026-11-15).
 - [x] **1 Look brief.** `../neon-look-brief.md`: per view the camera, capture recipe and the spec v2 §8.1 items it
   scores, the six sectors in driving order, recorded before any look change. Presets: `track` and `rain` show rain
   night, `night` shows the same look dry, `day` / `dusk` / `fog` keep today's lighting (N2).
@@ -81,7 +82,7 @@ To do, in order:
   real WebGL frames round the lap (boulevard, underpass, expressway, bridge, last corner, finish gate on the start
   line; no page error). Rings 69 → 98 (two tunnels gone); bot ring take 68.6% → 63.3%, NITRO/min 24.55 → 24.33
   (`tests/ring-variety.test.js` re-locked). Done when all of these hold:
-  - [ ] Owner to confirm: Endless, Event Lab and Daily Neon records start fresh on road layout 3 (`neon@3`); the
+  - [x] Owner confirmed (2026-11-15): Endless, Event Lab and Daily Neon records start fresh on road layout 3 (`neon@3`); the
     older ones stay stored and readable.
   - [ ] Owner to deploy `firestore.rules` (`neon@7` added, 51 ids, cap 60).
   - The Neon centreline is a closed clockwise loop: the finish point is the start point, the heading turns through
@@ -162,7 +163,8 @@ To do, in order:
     `src/neon-scenery-plan.ts`, `src/neon-scenery.ts`; `tests/neon-scenery-plan.test.js` (9 tests),
     `tests/neon-scenery.test.js` (8 tests), RED first. Real WebGL: `tests/neon-look-browser.spec.js` (*draws both kits
     in place of the procedural city, through a race, with no NaN pixel*).
-  - [ ] Practice mode drives the legacy straight road, which has no sectors: it keeps the procedural city.
+  - [x] Practice mode drives the legacy straight road, which has no sectors: it keeps the procedural city (accepted
+    by the owner, 2026-11-15).
   - [ ] Look-dev by eye and owner art approval. Known from the first captures: street furniture is drawn only near
     the car (N6) and appears at about 360 to 600 m; the pavement is one flat dark material; the kit's kerb doubles
     the procedural kerb through the market; the emissive values are a first pass.
@@ -197,8 +199,8 @@ To do, in order:
   - [ ] Race: 443 calls at the start and up to 670 mid-lap, against 380 (the procedural race drew 562 to 564). The
     kits are 46 of them plus 18 in the mirror pass. The cars are the rest: 108 traffic cars are separate meshes (19
     each) and draw 129 to 430, the player 84, the rivals about 106. No scenery budget meets the cap, so the test
-    stays `test.fixme` with these numbers. **Owner decision needed:** instance the traffic (its own task, all
-    classic tracks) or set a Neon race cap.
+    stays `test.fixme` with these numbers. **Owner decision (2026-11-15):** instance the traffic, on every classic
+    track, as its own branch (`feature/traffic-instancing`); the fixme goes when that lands here.
 - [x] **8d Asset guards**, written with the assets they guard (steps 3 to 6). No missing GLB:
   `tests/neon-city-glb.test.js`, `tests/neon-landmarks-glb.test.js`. Load failure falls back:
   `tests/neon-look-browser.spec.js` (*keeps the procedural city when neon-city / neon-landmarks cannot load*),
