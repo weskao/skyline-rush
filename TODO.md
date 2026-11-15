@@ -18,7 +18,9 @@
 - [x] `tests/traffic-fleet.test.js`: per style the baked car has the triangles, bounds and materials of `makeCar()`; visible-only upload, pose, paint, per-frame cull bound, parked idle instance, softened reflections.
 - [x] Driven Neon and Coast races, High: draw calls and frame p50/p95 before and after are in the local audits report (per-device numbers stay out of the repo).
 - [x] Real WebGL: same paused frame drawn instanced and with per-car models at the same poses on Neon, Coast, Sky Spiral, Alpine and Frostbite Canyon; pixels changed stay at the scene's own frame-to-frame noise. Before/after captures for 10 classic tracks and 6 courses at 1440×900, 390×844 and 844×390, no page error.
-- [ ] Physical phone check, full `npm run test:browser`, World Tour config and exact-HEAD `quality-gate` (branch not pushed).
+- [x] Merged with develop 468217c2: the spec read 22 on a cold Vite cache (4 of 4 cold runs, deterministic). Cause: pause froze the race but the chase camera kept easing to its rig, and a rival's wheel rim crossed the frustum edge between the baseline and the readings (not traffic: the hooked traffic draws were 21 throughout). `pausedRace()` now waits for the camera to come to rest; cold cache 3 of 3 pass, `CI=1 --repeat-each=8 --workers=4 --retries=0` 16 of 16.
+- [x] World Tour config 49 of 49 on the merge.
+- [ ] Physical phone check, full `npm run test:browser` and exact-HEAD `quality-gate`.
 
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 

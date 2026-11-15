@@ -21,6 +21,12 @@ Write every assertion so that runner speed cannot change its outcome.
   switch, 2026-11-04).
 - **Pause freezes the race clock.** Timed labels such as COLLECTED (1.2 s) stay up while paused.
   Judge whichever label the frozen state legitimately shows, not one fixed string.
+- **Pause does not freeze the camera.** The chase camera keeps easing to its rig (about 1.6 s at
+  60 fps), so the frustum moves under a draw-count, culling or screen-position read. Trap
+  (2026-11-16): Neon traffic measured 22 calls instead of 21 whenever the race paused early (cold
+  Vite cache); a rival's wheel rim crossed the frustum edge between the baseline and the reading.
+  Wait for the camera to come to rest first: `pausedRace()` in `tests/helpers/traffic-browser.js`
+  asserts it.
 
 ## Poll anything a UI action changes asynchronously
 
