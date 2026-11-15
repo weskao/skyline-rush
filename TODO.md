@@ -1,5 +1,8 @@
 # 2026-11-15 — Garage Home and Preview Studio layout (`feature/garage-studio-layout`)
 
+- [x] CI run 43710388109: at 768×1024 the Garage catalog squeezed 96 px VFX art to 93 px. Increased the grid's minimum catalog width to 272 px to preserve the two-column layout, scroll track and native-size art. The existing compact-tiles browser check passes in English and Traditional Chinese at that viewport, with all loadout, badge and trophy assertions intact.
+- [ ] Verify the full GitHub quality gate and the separate home-shortcuts timeout from run 43710388109.
+
 - [x] Base `4d45cc460b4d1c45ed26017ef9737802a5a1d63e`. Reproduced the missing Cars/Paints navigation on the base trial build before changing production code.
 - [x] Garage keeps one scrollable catalog with separate Cars, Paints, Effects, Missions, demo Store and Collection entries. Paints retain an always-visible status/action row and one-step undo. Existing paint entitlement and car save routes are reused.
 - [x] Compact Studio groups its presets and Reset in the Angles panel. Desktop exposes presets directly. Reused the camera implementation and regressions from `fix/studio-camera-orbit-persistence` at `a208263`, including preset/zoom/gesture continuity and preserving display pose on reset.
