@@ -5602,3 +5602,10 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Verify FLY's held and released artwork and all seven editable touch controls across a reload. Both flows passed with `CI=1` and zero retries.
 - [x] `npm test`: 2,951 passed, 3 skipped. Typecheck, module-size checks and production build passed.
 - [ ] Verify the full GitHub `quality-gate` on the repair commit.
+
+## 2026-11-15 — Garage probe GPU memory regression (CI 43620970826)
+
+- [x] RED: the model cache kept the Garage-only probe after its last handle released, leaving two geometries allocated in CI. Limit idle retention to race-car models so switching equipped cars can still reuse their parsed assets.
+- [x] The browser regression checks the original renderer through probe load, Garage close and both track switches. The procedural pickup fallback keeps pickup texture loading out of both samples.
+- [x] `npm test`: 2,972 passed, 3 skipped. Typecheck, module-size checks and production build passed.
+- [ ] Verify the full GitHub `quality-gate` for this commit.

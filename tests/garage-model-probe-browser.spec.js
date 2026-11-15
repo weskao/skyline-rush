@@ -95,12 +95,20 @@ test('quality: the low tier loads the main URL (no LOD) and shows the probe', as
 
 test('track switch after closing the Garage returns GPU memory to the no-probe baseline', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(120000));
-  const cycle = async () => {
+  // Pickups can switch from procedural to textured GLBs between samples. Use their real fallback in both runs.
+  await page.route('**/models/pickup-*/*.glb', route => route.abort());
+  const cycle = async (probe = false) => {
     await page.locator('#garage-button').click();
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'home');
-    await page.waitForTimeout(ciTimeout(1200)); // both runs render the Garage Home for the same time
+    if (probe) {
+      await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(15000) });
+      await expect.poll(async () => (await homeCar(page)).probe).toBeGreaterThan(0);
+    } else {
+      await expect.poll(async () => (await homeCar(page)).roadster).toBeGreaterThan(0);
+    }
     await page.locator('#garage-close').click();
     await expect(page.locator('#garage-screen')).not.toHaveAttribute('open', '');
+    if (probe) await expect(world(page)).toHaveAttribute('data-garage-model', 'off');
     const tracks = page.locator('[data-track]');
     const original = await page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
     const other = await tracks.evaluateAll((buttons, id) => buttons.map(b => b.dataset.track).find(t => t !== id), original);
@@ -121,13 +129,8 @@ test('track switch after closing the Garage returns GPU memory to the no-probe b
   const baseline = await stable();
 
   await page.goto(`${gameplayURL}?model=probe`);
-  await page.locator('#garage-button').click();
-  await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(15000) });
-  await page.locator('#garage-close').click();
-  await expect(world(page)).toHaveAttribute('data-garage-model', 'off');
-  await page.goto(`${gameplayURL}?model=probe`);
-  await cycle();
-  expect(await stable()).toEqual(baseline);
+  await cycle(true); // keep the renderer alive from probe load through both track switches
+  await expect.poll(() => memory(page), { timeout: ciTimeout(20000) }).toEqual(baseline);
 });
 
 test('context loss: the model survives restore without a re-fetch and warmup runs again', async ({ gameplayPage: page, gameplayURL }) => {
