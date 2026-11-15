@@ -1897,7 +1897,6 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 #upcoming-scene-fallback { position: absolute; z-index: 1; right: 4%; top: 15%; max-width: 45vw; padding: 8px 12px; border: 1px solid #9cdff7; border-radius: 8px; color: #e3f5ff; font-size: 12px; background: #081b2be8; }
 .intro .track-select button.upcoming-track-card { border-color: rgb(123 215 241 / .42); }
 .intro .track-select button.upcoming-track-card[aria-pressed="true"] { border-color: #a3eaff; box-shadow: inset 0 0 0 1px #a3eaff, 0 7px 27px rgb(71 179 239 / .22); }
-.upcoming-track-card .upcoming-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .intro .track-select button.upcoming-track-card small { color: #a3eaff; font-weight: 700; }
 .intro #start-button { width: 236px; min-width: 236px; max-width: 236px; gap: 8px; }
 .intro #start-button > span { letter-spacing: .06em; }
@@ -2018,7 +2017,6 @@ body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* 
 #upcoming-scene-fallback { position: absolute; z-index: 1; right: 4%; top: 15%; max-width: 45vw; padding: 8px 12px; border: 1px solid #9cdff7; border-radius: 8px; color: #e3f5ff; font-size: 12px; background: #081b2be8; }
 .intro .track-select button.upcoming-track-card { border-color: rgb(123 215 241 / .42); }
 .intro .track-select button.upcoming-track-card[aria-pressed="true"] { border-color: #a3eaff; box-shadow: inset 0 0 0 1px #a3eaff, 0 7px 27px rgb(71 179 239 / .22); }
-.upcoming-track-card .upcoming-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .intro .track-select button.upcoming-track-card small { color: #a3eaff; font-weight: 700; }
 .intro #start-button { width: 236px; min-width: 236px; max-width: 236px; gap: 8px; }
 .intro #start-button > span { letter-spacing: .06em; }

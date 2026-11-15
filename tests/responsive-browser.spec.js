@@ -252,6 +252,45 @@ for (const [width, height] of [[743, 340], [844, 390]]) {
   });
 }
 
+// Phone landscape squeezed the track cards to 58-66 px: the route drew over a 22px sky strip, the Coming Soon teaser art
+// was unreadable and the KM / status row was cut off, collapsed or expanded. Now a square route box, name and KM + status
+// sit over the sky / teaser art, which backs the whole card.
+test.describe('landscape track cards show the whole card', () => {
+  test.use({ viewport: { width: 743, height: 340 }, hasTouch: true, isMobile: true, locale: 'zh-TW' });
+
+  test('route, name and KM row fit inside each card at 743x340 844x390 932x430, collapsed and expanded', async ({ page }) => {
+    test.setTimeout(ciTimeout(60000));
+    await page.goto('/');
+    const toggle = page.locator('#lobby-tracks-toggle');
+    await expect(toggle).toBeVisible();
+    for (const [width, height] of [[743, 340], [844, 390], [932, 430]]) {
+      await resizeTo(page, width, height);
+      for (const expanded of ['false', 'true']) {
+        if (await toggle.getAttribute('aria-expanded') !== expanded) await toggle.click();
+        await expect(toggle).toHaveAttribute('aria-expanded', expanded);
+        await expect(page.locator('[data-track="coast"] .route-overview')).toBeVisible();
+        const { cards, garageTop } = await page.evaluate(() => {
+          const box = el => el.getBoundingClientRect();
+          const cards = [...document.querySelectorAll('.track-select button')].slice(0, 2).map(button => {
+            const card = box(button), sky = box(button.querySelector('.track-preview'));
+            const route = box(button.querySelector('.track-route-map')), km = box(button.querySelector(':scope > span:last-child'));
+            return { bottom: card.bottom, skyHeight: sky.height, cardHeight: card.height, routeHeight: route.height, km: km.bottom, kmHeight: km.height };
+          });
+          return { cards, garageTop: box(document.querySelector('#garage-button')).top };
+        });
+        for (const [i, c] of cards.entries()) {
+          const at = `${width}x${height} expanded=${expanded} card ${i}`;
+          expect(c.skyHeight, `${at}: sky / teaser art shrunk to an unreadable strip`).toBeGreaterThanOrEqual(c.cardHeight - 4);
+          expect(c.routeHeight, `${at}: route box too short to read`).toBeGreaterThanOrEqual(36);
+          expect(c.kmHeight, `${at}: KM row collapsed`).toBeGreaterThan(8);
+          expect(c.km, `${at}: KM row cut off`).toBeLessThanOrEqual(c.bottom - 2);
+          expect(c.bottom, `${at}: pinned Garage row covers the first card row`).toBeLessThanOrEqual(garageTop);
+        }
+      }
+    }
+  });
+});
+
 // 874x339 is iPhone landscape Safari with its toolbar showing (402 pt screen minus ~63 pt of chrome).
 for (const [width, height] of [[844, 390], [874, 339]]) {
   test.describe(`touch race HUD ${width}x${height}`, () => {
