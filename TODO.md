@@ -1,3 +1,10 @@
+# 2026-11-15 — World Tour software-WebGL triangle budget
+
+- [x] CI run 43680210905 uploaded all 35 records but exceeded the desktop Medium triangle budget on all five World Tour routes. The full pickup models were drawn up to 900 m away. Road pickups past 150 m now use a lower-polygon version of the same parts and keep their tint, scale and halo. Near pickups, collection and the guide still use full detail.
+- [x] RED: the real effects scene exceeded the distant pickup triangle budget. GREEN: all four tiers pass the distance, triangle count, dimensions, glow and detail-return regression. Full Node suite: 2,973 passed, 3 skipped. Typecheck, module size and locked production build passed.
+- [x] All five desktop Medium Playwright WebGL captures passed the existing triangle and draw-call ceilings. Local triangles before → after: Tokyo 82,411 → 60,127, Alpine 70,841 → 57,345, Taipei 92,051 → 74,179, Coastal 73,983 → 60,189, Cosmic 72,763 → 59,207.
+- [ ] Verify the full GitHub quality gate for the pushed commit and physical-device rendering.
+
 # 2026-11-15 — CI GLB loading on software WebGL
 
 - [x] Reproduced the Crimson GT `fallback:timeout` and measured GLB decode finishing after the original combined deadline. Added regression checks for separate download/decode deadlines, decoder fallback and shared KTX2 workers on the same renderer. The focused loader, provider, Garage, pickup and module-size suite passed (48 tests).

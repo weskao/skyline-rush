@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Scene } from 'three';
+import { Scene, Vector3 } from 'three';
 import { createRace } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 import { drawnMarkers } from '../src/marker-pool.js';
@@ -19,15 +19,47 @@ function denseScene(t) {
 }
 
 // Denser layouts put far more rings and pickups in view than the old 7 + 40 mesh pools held: every one in
-// range must be drawn, with one draw call per material (5 ring types, 4 pickup tiers), never one per marker.
-test('D1: every ring and pickup within 900 m is drawn through one instanced draw per material', t => {
+// range must be drawn, with one draw per ring type or pickup tier and detail level.
+test('D1: every ring and pickup within 900 m is drawn in instanced batches', t => {
   const { scene } = denseScene(t);
   const rings = scene.getObjectByName('Race rings'), pickups = scene.getObjectByName('Nitro pickups');
   assert.equal(drawnMarkers(rings).length, 40);
   assert.equal(drawnMarkers(pickups).length, 120);
   assert.ok(rings.children.filter(m => m.visible).length <= 5, 'ring draw calls');
-  assert.ok(pickups.children.filter(m => m.visible).length <= 4, 'pickup draw calls');
+  assert.ok(pickups.children.filter(m => m.visible).length <= 8, 'four pickup tiers with at most two geometry levels each');
   assert.ok([...rings.children, ...pickups.children].every(m => m.isInstancedMesh));
+});
+
+test('distant pickups cost fewer triangles and regain full detail as the car approaches', t => {
+  const { scene, race, effects } = denseScene(t);
+  const tiers = ['cell', 'can', 'tank', 'overcharge'];
+  race.pickups = tiers.flatMap((tier, index) => [60 + index, 500 + index]
+    .map(distance => ({ tier, distance, x: 0, altitude: 0 })));
+  race.rings = [];
+  effects.update(race, 0, 0, false, true);
+
+  const group = scene.getObjectByName('Nitro pickups');
+  const markers = drawnMarkers(group);
+  assert.deepEqual(markers.map(marker => -marker.position.z), [60, 500, 61, 501, 62, 502, 63, 503]);
+  const triangles = geometry => (geometry.index?.count ?? geometry.attributes.position.count) / 3;
+  const size = geometry => {
+    geometry.computeBoundingBox();
+    return geometry.boundingBox.getSize(new Vector3());
+  };
+  for (let index = 0; index < markers.length; index += 2) {
+    const [near, far] = markers.slice(index, index + 2);
+    assert.ok(triangles(far.geometry) <= 650, `${tiers[index / 2]} must fit the distant triangle budget`);
+    assert.ok(triangles(near.geometry) > triangles(far.geometry) * 3, 'keep the near model detailed');
+    assert.ok(far.material.emissive.equals(near.material.emissive), 'keep the tier glow');
+    assert.deepEqual(far.scale.toArray(), near.scale.toArray(), 'keep the model scale');
+    assert.ok(size(far.geometry).distanceTo(size(near.geometry)) < .15, 'keep the model silhouette dimensions');
+  }
+  assert.equal(scene.getObjectByName('Pickup aura').count, markers.length, 'every pickup keeps its halo');
+
+  race.player.distance = 420;
+  effects.update(race, 0, 420, false, true);
+  assert.deepEqual(drawnMarkers(group).map(marker => marker.geometry), markers
+    .filter((_, index) => index % 2 === 0).map(marker => marker.geometry));
 });
 
 // Every material within 900 m used to draw even when all its markers were off-screen (behind a bend, past

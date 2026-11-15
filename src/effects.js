@@ -98,7 +98,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
     new THREE.MeshBasicMaterial({ color: new THREE.Color(...(type === 'mystery' ? [1, 1, 1] : color)), vertexColors: type === 'mystery', transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false })]));
   // One instanced pool per material, each warmed by its parked instance (marker-pool.js); capacity covers the densest 900 m view.
   const ringPool = createMarkerPool('Race rings', ringGeometry, ringMaterials, RING_POOL_CAPACITY);
-  const pickupMarkers = createPickupMarkers(128, { renderer, envMap: pickupEnvironment }), pickupPool = pickupMarkers.pool;
+  const pickupMarkers = createPickupMarkers(128, { renderer, envMap: pickupEnvironment, distant: true }), pickupPool = pickupMarkers.pool;
   const gates = ringPool.group, marker = new THREE.Object3D(), gateFrames = new WeakMap(), rivalCues = createRivalCues();
   scene.add(gates, ...pickupMarkers.objects);
   const collectVfx = createPickupCollectVfx(scene, player, camera), roadNormal = new THREE.Vector3();
@@ -200,7 +200,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
           if (source === 1 && item.spin && !reducedMotion) mesh.rotateY(0.6 * Math.sin(item.spin * race.elapsed + item.spinPhase));
           if (source === 1) mesh.scale.setScalar(item.radius);
           mesh.updateMatrix();
-          pool.add(source === 0 ? item.tier : ringType, mesh.matrix);
+          pool.add(source === 0 ? pickupMarkers.key(item.tier, item.distance - distance) : ringType, mesh.matrix);
           if (source === 1 && beam < beams.children.length && (item.type === 'emp' || (item.type === 'mystery' && !!race.config?.activeItems))) {
             const light = beams.children[beam++];
             light.visible = true; light.position.copy(mesh.position); light.position.y += 7;
