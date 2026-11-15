@@ -65,6 +65,12 @@ class Scans:
         return px.reshape(h, w, 4)[::-1, :, :3].copy()
 
 
+def luminance(srgb):
+    """Linear luminance of sRGB-encoded values (how colour and emissive are painted)."""
+    lin = np.where(srgb <= 0.04045, srgb / 12.92, ((srgb + 0.055) / 1.055) ** 2.4).clip(0, 1)
+    return (lin * (0.2126, 0.7152, 0.0722)).sum(axis=2)
+
+
 class Cell:
     def __init__(self, name, px, metres, tile=(False, False), solid=False):
         self.name, (self.w, self.h), (self.mw, self.mh), self.tile, self.solid = name, px, metres, tile, solid
@@ -136,10 +142,16 @@ class Cell:
 
     def emissive_range(self, strength):
         """(lit-area mean, peak) linear luminance after the material's emissive strength."""
-        lin = np.where(self.emi <= 0.04045, self.emi / 12.92, ((self.emi + 0.055) / 1.055) ** 2.4).clip(0, 1)
-        lum = (lin * (0.2126, 0.7152, 0.0722)).sum(axis=2) * strength
+        lum = luminance(self.emi) * strength
         lit = lum[lum > 0.02 * strength]
         return (round(float(lit.mean()), 2), round(float(lum.max()), 2)) if lit.size else (0.0, 0.0)
+
+    def facade(self):
+        """Night read of a tower face: `lit`, the share of glazing whose emissive shows (linear luminance over 0.012,
+        0.02 at the city's runtime strength), and `relief`, std over mean of the base colour's luminance: the storey
+        and mullion lines the key light can catch."""
+        base = luminance(self.col)
+        return dict(lit=round(float((luminance(self.emi) > 0.012).mean()), 3), relief=round(float(base.std() / base.mean()), 3))
 
 
 class Atlas:

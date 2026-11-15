@@ -83,3 +83,17 @@ test('neon-city: modules stand on their pivot, in metres, street side toward +Z'
   assert.ok(shop.max.z > -shop.min.z, 'the shop awning is on the +Z face');
   assert.ok(lamp.max.y > 8 && lamp.max.y < 10 && spire.max.y > 200, 'metres, not centimetres');
 });
+
+// The skyline towers read as dark boxes with pink edge trim from the expressway (2026-11-16): their faces were a 1.5 m
+// grid of 2 px windows on flat black glass, a quarter of the face, which fell to one dark tone at distance with no
+// storey line for the key light. Measured by build.py on the painted cells (summary.json): before, lit 0.07 to 0.12
+// and relief 0.
+test('neon-city: the skyline towers show lit glazing and storey lines at night, not dark boxes with neon trim', () => {
+  const path = new URL('../assets-src/neon-city/summary.json', import.meta.url);
+  assert.ok(existsSync(path), 'build.py writes summary.json');
+  const { facade } = JSON.parse(readFileSync(path, 'utf8'));
+  for (const cell of ['sky_a', 'sky_b', 'sky_c']) {
+    const { lit, relief } = facade?.[cell] ?? {};
+    assert.ok(lit >= 0.15 && relief >= 0.3, `${cell}: lit glazing ${lit}, storey relief ${relief}`);
+  }
+});
