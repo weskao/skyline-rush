@@ -10,7 +10,7 @@ export interface PlumeFrame { time: number; power: number; nitroMix: number; rea
   extreme: number; tail: number; quality: number; enabled: boolean; calm: boolean; voidPulse: boolean; racing: boolean; grounded: boolean }
 
 /** The flame in metres behind the nozzle. Fixed: as fat and as bright on Low + Realistic as on High + Extreme, whatever the tail length. */
-export const PLUME = { nozzle: 0.065, fat: 0.26, half: 0.2, coreMax: 0.09, coreLength: 1.8, flare: 0.45, glowWidth: 2.4, glowLength: 7 } as const;
+export const PLUME = { nozzle: 0.065, fat: 0.3, half: 0.12, coreMax: 0.1, coreLength: 2.4, flare: 0.45, glowWidth: 2.4, glowLength: 7 } as const;
 /** Radius of a jet's glow `metres` behind its nozzle. */
 export function plumeRadius(metres: number): number { return PLUME.nozzle + (PLUME.fat - PLUME.nozzle) * metres / (metres + PLUME.half); }
 /** Radius of a jet's opaque core: the nozzle's at the exit, `coreMax` a quarter of the way, closed at `coreLength`. */
@@ -35,14 +35,14 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
   const jetGeometry = tube(20, 24);
   const jetMaterial = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 }, tail: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) }, reach: { value: 1 }, thick: { value: 1 } },
+    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 }, tail: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) }, reach: { value: 1 }, thick: { value: 1 }, glare: { value: 1 } },
     // `thick` 0 is the old cone (nozzle radius widening 4.8x over the whole length); 1 never draws thinner than plumeRadius.
     vertexShader: `varying vec2 vUv;varying float vD,vSpread;uniform float reach,thick;
       void main(){vUv=uv;float d=position.z*reach;vD=d;float cone=${NOZZLE}*(1.+3.8*position.z);
         float radius=mix(cone,max(cone,${NOZZLE}+(${glsl(PLUME.fat)}-${NOZZLE})*d/(d+${glsl(PLUME.half)})),thick);
         vSpread=cone*cone/(radius*radius); // the chase camera sees the jet end-on: the thin cone's light spread over the fat disc
         gl_Position=projectionMatrix*modelViewMatrix*vec4(position.xy*radius,position.z,1.);}`,
-    fragmentShader: `varying vec2 vUv;varying float vD,vSpread;uniform float time,power,brightness,diamonds,extreme,nitroMix,skinPattern,tail,thick;uniform vec3 skinTint;uniform vec4 trailAccent;
+    fragmentShader: `varying vec2 vUv;varying float vD,vSpread;uniform float time,power,brightness,diamonds,extreme,nitroMix,skinPattern,tail,thick,glare;uniform vec3 skinTint;uniform vec4 trailAccent;
       void main(){float t=clamp(1.-vUv.y,0.,1.); // MSAA slivers extrapolate vUv far past the rim; unclamped, the core overflows to Inf and a zero fade makes NaN
         float cells=pow(max(0.,.5+.5*cos(t*48.)),5.)*diamonds;
         float breakup=.75+.25*sin(vUv.x*52.+t*31.-time*16.);
@@ -51,13 +51,14 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         color=mix(color,vec3(.6,.38,1.),extreme*t*.25);
         color=mix(color,vec3(1.,.38,.78),tail*smoothstep(.2,1.,t)); // board plume (Medium+): the blue-white core fades to magenta
         color=mix(color*skinTint,${NITRO_TINT}); // skin tints the base
-        float body=thick*(1.-smoothstep(0.,2.,clamp(vD,0.,2.))); // the first 2 m stay dense whatever the tail length
+        float body=thick*(1.-smoothstep(0.,3.,clamp(vD,0.,3.))); // the first 2 m stay dense whatever the tail length
         float shape=1.;
         if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
         if(skinPattern>1.5) shape=.25+.75*abs(sin(vUv.x*6.28*3.+t*28.-time*11.));
         if(skinPattern>2.5) shape=step(.45,fract(t*7.+time*3.+vUv.x*3.));
         // Under the bloom threshold: the fat flame emits half (two faces, overlapping neighbours), no fragment above 1.
-        gl_FragColor=vec4(min(color*brightness*(1.+core+cells)*vSpread*(1.-.5*thick),vec3(1.)),fade*(.15+core*.55+cells*.35+body*.45)*breakup*power*shape);}`,
+        vec3 light=color*brightness*(1.+core+cells)*mix(1.,vSpread*(1.-.5*thick),glare);
+        gl_FragColor=vec4(light/max(1.,max(light.r,max(light.g,light.b))),fade*(.15+core*.55+cells*.35+body*.45)*breakup*power*shape);}`,
   });
   const jets = ports.map((port, i) => {
     const jet = new THREE.Mesh(jetGeometry, jetMaterial.clone());
@@ -135,8 +136,8 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         jet.visible = on;
         jet.scale.z = frame.reach;
         const u = jet.material.uniforms;
-        u.reach!.value = frame.reach; u.thick!.value = 1 - skinFade;
-        u.time!.value = frame.time + i * 0.13; u.power!.value = frame.power; u.tail!.value = frame.tail;
+        u.reach!.value = frame.reach; u.thick!.value = 1 - skinFade; u.glare!.value = frame.quality > 0.25 ? 1 : 0;
+        u.time!.value = frame.time + i * 0.13; u.power!.value = Math.sqrt(frame.power); u.tail!.value = frame.tail;
         u.brightness!.value = frame.brightness; u.diamonds!.value = frame.diamonds; u.extreme!.value = frame.extreme; u.nitroMix!.value = frame.nitroMix;
       });
       core.visible = on; flare.visible = lit; glow.visible = lit && frame.quality > 0.25 && frame.racing && frame.grounded;
