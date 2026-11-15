@@ -44,7 +44,10 @@ export function setupGuideUI({
     renderKeyMap();
     guideScreen.scrollTop = 0;
     guideScreen.showModal();
-    void nextTick(() => applyI18n(guideScreen));
+    void nextTick(() => {
+      applyI18n(guideScreen);
+      if (firstStart && guideScreen.open) $('#guide-cancel').focus({ preventScroll: true });
+    });
   }
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-guide-device]')) {
     button.addEventListener('click', () => {
@@ -75,6 +78,7 @@ export function setupGuideUI({
     else closeGuide();
   }
   $('#guide-close').addEventListener('click', dismissGuide);
+  $('#guide-cancel').addEventListener('click', dismissGuide);
   $('#guide-practice').addEventListener('click', () => onPractice(guideView.firstStart));
   $('#tutorial-open').addEventListener('click', () => onPractice(false));
   $('#tutorial-retry').addEventListener('click', () => onPractice());

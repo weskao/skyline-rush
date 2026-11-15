@@ -22,7 +22,8 @@ function touchTip(action: typeof quickControls[number]['name']): string {
   <dialog id="guide-screen" class="history-screen guide-screen" aria-labelledby="guide-title" aria-describedby="guide-intro">
     <header class="guide-header">
       <h2 id="guide-title" data-i18n="guide.title">Start your engines!</h2>
-      <CloseButton id="guide-close" label="Close driving guide" data-i18n-aria-label="guide.closeAria" autofocus />
+      <CloseButton :hidden="!guideView.firstStart" id="guide-cancel" label="Close driving guide" data-i18n-aria-label="guide.closeAria" autofocus />
+      <button :hidden="guideView.firstStart" id="guide-close" class="controls-reset" autofocus data-i18n="guide.close">Got it</button>
     </header>
     <ul id="guide-quick" aria-label="Quick driving controls" data-i18n-aria-label="guide.quick.label" class="guide-quick" :hidden="guideView.selectedDevice === 'items'">
       <li v-for="control in quickControls" :key="control.name">
