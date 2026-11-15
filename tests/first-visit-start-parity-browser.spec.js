@@ -10,7 +10,7 @@ for (const [width, height, touch] of [[1440, 900, false], [390, 844, true], [844
       await page.addInitScript(() => localStorage.setItem('skyline-rush-unlocked', '["coast","neon"]'));
       await page.goto('/', { waitUntil: 'domcontentloaded' });
       await page.locator('[data-track="neon"]').click();
-      await page.locator('[data-race-mode="time"]').click();
+      await page.locator('button[data-race-mode="time"]').click();
       await page.locator('#start-button').click();
       const guide = page.locator('#guide-screen');
       await expect(guide).toBeVisible();
@@ -35,7 +35,7 @@ test('closing the first choice and returning from practice keep the selected rac
   await page.addInitScript(() => localStorage.setItem('skyline-rush-unlocked', '["coast","neon"]'));
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.locator('[data-track="neon"]').click();
-  await page.locator('[data-race-mode="time"]').click();
+  await page.locator('button[data-race-mode="time"]').click();
   await page.locator('#start-button').click();
   await page.keyboard.press('Escape');
   await expect(page.locator('#start-button')).toBeFocused();
@@ -49,7 +49,7 @@ test('closing the first choice and returning from practice keep the selected rac
   await expect(page.locator('#tutorial-coach')).toBeHidden();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   await expect(page.locator('[data-track="neon"]')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('button[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(12000) });
 });
