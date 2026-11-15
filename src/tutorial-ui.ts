@@ -1,6 +1,6 @@
 import { nextTick } from 'vue';
 import { updateCoachView } from './tutorial-coach-state.ts';
-import { t } from './i18n.ts';
+import { applyI18n, t } from './i18n.ts';
 import { TUTORIAL_STEPS } from './interactive-tutorial.ts';
 import { trackProgressBottom } from './hud-progress-offset.ts';
 import { keyLabel } from './keymap-ui.ts';
@@ -26,7 +26,7 @@ interface TutorialDependencies {
   getRace(): { phase: string };
   getTouchMatches(): boolean;
   getInputPrefs(): { mode: string };
-  getControlPrefs(): { flyMode: string };
+  getControlPrefs(): { flyMode: string; hand: 'left' | 'right' };
   showKeyMap(): void;
   getKeyMap(): KeyMap;
   /** Plays a named sound effect (audio.js); muted audio stays silent there. */
@@ -113,11 +113,13 @@ export function rewardParts(text: string): { text: string; reward: boolean }[] {
 }
 const NO_CUE = { cue: '', cueId: '', cueKeys: [] as string[], cueCount: '' };
 /** Toast fields for a live cue: localized text, the bound desktop keys and the countdown. */
-export function tutorialCueView(cue: TutorialCue | null | undefined, touch: boolean, flyMode: string, keyMap: KeyMap, steerMode = 'buttons'): typeof NO_CUE {
+export function tutorialCueView(cue: TutorialCue | null | undefined, touch: boolean, flyMode: string, keyMap: KeyMap, steerMode = 'buttons', steeringHand?: 'left' | 'right'): typeof NO_CUE {
   if (!cue) return NO_CUE;
   const key = controlVariant(cue.key, { touch, steerMode, flyMode });
+  const textKey = key === 'tutorial.touch.nitro' && steeringHand
+    ? `tutorial.touch.nitro.${steeringHand === 'right' ? 'left' : 'right'}` : key;
   return {
-    cue: t(key, cue.n === undefined ? undefined : { n: cue.n }), cueId: key,
+    cue: t(textKey, cue.n === undefined ? undefined : { n: cue.n }), cueId: key,
     cueKeys: touch ? [] : cue.actions.map(action => keyMap[action as DriveAction]?.[0]).filter((code): code is string => !!code)
       .map(code => keyLabel(code).replace(/^(Left|Right) Shift$/, 'Shift')),
     cueCount: cue.count === undefined ? '' : cue.count.toFixed(1) + 's',
@@ -130,6 +132,12 @@ export function tutorialTouchControls(step: string | null, cue: TutorialCue | nu
   if (step !== 'airChain' || !cue) return action ? [action] : [];
   if (cue.key === 'tutorial.cue.chainFly') return ['fly'];
   return cue.actions.includes('boost') ? ['boost', 'nitro'] : [];
+}
+
+export function updateTutorialActions(firstStart: boolean): void {
+  document.querySelector<HTMLElement>('#tutorial-exit')!.dataset.i18n = firstStart ? 'tutorial.skip' : 'tutorial.exit';
+  document.querySelector<HTMLElement>('#tutorial-done')!.dataset.i18n = firstStart ? 'start.race' : 'tutorial.done';
+  applyI18n(document.querySelector('#tutorial-coach')!);
 }
 
 export function setupTutorialUI({
@@ -154,7 +162,7 @@ export function setupTutorialUI({
     const passed = race.phase === 'racing' ? tutorial.clearedStep ?? null : null;
     // While the pass toast is up it holds the cue's place; a paused race shows the pause screen instead.
     const cue = race.phase === 'racing' && !tutorial.complete && !passed ? tutorial.cue : null;
-    const view = [passed, tutorial.step, tutorial.coachPhase, tutorial.coachReason, tutorial.guide, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode, cue?.key, cue?.n, cue?.count].join('/');
+    const view = [passed, tutorial.step, tutorial.coachPhase, tutorial.coachReason, tutorial.guide, race.phase, touch, inputPrefs.mode, controlPrefs.flyMode, controlPrefs.hand, cue?.key, cue?.n, cue?.count].join('/');
     if (!force && tutorialView === view) return;
     tutorialView = view;
     const step = tutorial.step;
@@ -178,7 +186,7 @@ export function setupTutorialUI({
       celebration: done ? t('tutorial.freeDrive') : '',
       guide: done || race.phase === 'countdown' ? '' : tutorial.guide ?? '', // the arrow starts at GO, with the throttle cue
       skipHidden: done || race.phase === 'paused',
-      ...tutorialCueView(cue, touch, controlPrefs.flyMode, keyMap, inputPrefs.mode),
+      ...tutorialCueView(cue, touch, controlPrefs.flyMode, keyMap, inputPrefs.mode, controlPrefs.hand),
       passed: passed ? t('tutorial.passed', { action: lessonTitle(passed) }) : '',
       passedReward: passed && tutorial.clearedReward ? t('tutorial.passedReward', { n: tutorial.clearedReward }) : '',
     });
@@ -196,5 +204,6 @@ export function setupTutorialUI({
       }
     }
   }
+  window.addEventListener('resize', () => renderTutorial(true));
   return { renderTutorial, resetTutorialView: () => { tutorialView = ''; } };
 }

@@ -789,6 +789,8 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 .touch-controls .touch-nitro.is-held { background: #7a613c; }
 .touch-controls button.is-positioned { position: fixed; transform: translate(-50%, -50%); width: calc(54px * var(--touch-scale, 1)); }
 .layout-toolbar { position: fixed; left: 50%; top: 80px; transform: translateX(-50%); z-index: 12; width: max-content; max-width: calc(100vw - 24px); display: flex; align-items: center; gap: 14px; padding: 10px; background: #102b40; border: 1px solid #8ab8ce; border-radius: 10px; font-size: 12px; }
+.layout-toolbar strong, .layout-hint { display: block; }
+.layout-toolbar strong { color: #a3e8fb; margin-bottom: 3px; }
 .layout-toolbar button { min-height: 44px; padding: 8px 12px; border-radius: 6px; border: 1px solid #a9dced; background: #284b62; }
 body.layout-editing #touch-controls { display: grid; }
 .layout-editing .touch-controls button { transition: none; outline: 1px dashed #d4e5f1; outline-offset: 3px; cursor: move; }

@@ -209,7 +209,7 @@ test.describe('touch NITRO interruption', () => {
     const cue = page.locator('#tutorial-cue');
     await expect(cue).toHaveAttribute('data-cue', 'tutorial.cue.throttle');
     await skipToNitro(page, 'tap');
-    await expect(cue.getByText('Tap NITRO')).toBeVisible();
+    await expect(cue).toContainText('Tap NITRO with your right thumb');
     await expect(cue.locator('kbd')).toHaveCount(0);
     const nitro = page.locator('#touch-controls [data-control="nitro"]');
     await expect(nitro).toHaveClass(/tutorial-target/);
@@ -231,7 +231,7 @@ test.describe('touch NITRO interruption', () => {
       await expect(nitro).not.toHaveClass(/tutorial-target/);
       await touch('touchEnd', []);
       await expect(page.locator('#tutorial-instruction')).toContainText('Activate NITRO');
-      await expect(cue.getByText('Tap NITRO')).toBeVisible();
+      await expect(cue).toContainText('Tap NITRO with your right thumb');
       await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '1');
       await touch('touchStart', [await point('nitro', 3)]);
       await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '0');
@@ -375,6 +375,7 @@ test.describe('first visit without storage', () => {
     await page.addInitScript(() => Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Blocked','SecurityError');}}));
     await page.goto('/');
     await page.locator('#start-button').click();
+    await page.locator('#guide-practice').click();
     await keyboardToNitro(page);
     await keyStep(page,'e','complete');
     await expect(page.locator('#tutorial-done')).toHaveText('Start race');

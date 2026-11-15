@@ -5618,3 +5618,12 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Give each World Tour map its own AIRFLOW case with all six views. Run the HUD interaction matrix at Low quality and allow the live race countdown to finish on slower runners.
 - [x] `npm test`: 2,974 passed, 3 skipped. Typecheck, module-size checks, production build and World Tour shard selection passed.
 - [ ] Verify the full GitHub `quality-gate` for this commit.
+
+## 2026-11-15 — Driving Controls Onboarding
+
+- [x] Base `4d45cc460b4d1c45ed26017ef9737802a5a1d63e`. Reuse the Guide, tutorial race snapshot, input controls, bindings, and orientation layout keys. Keep locked courses behind the existing Start gate.
+- [x] First Start offers Practice First or Race Now. Closing returns to the selection. Tutorial Skip and Start Race take the original race snapshot to the starting grid. Back to Home restores it in place.
+- [x] Reuse game icons for the compact guide and add the live NITRO thumb cue. Expose separate Steering, Touch Layout and Keyboard groups. Label the current editor orientation and cancel an unfinished drag on rotation.
+- [x] NITRO cue RED and GREEN via `node --test tests/tutorial-ui.test.js`. The old cue omitted the action thumb. The updated cue passes for buttons, slide and tilt with either hand.
+- [ ] Verify the onboarding, orientation and tutorial browser regressions across desktop and mobile portrait/landscape. Initial Chromium attempts stalled during launch or navigation in the local execution environment. Verify physical-device gestures and motion permission separately.
+- [ ] Verify the full GitHub `quality-gate` for this commit. The feature branch requests full regression so Browser and World Tour cover the change before integration.
