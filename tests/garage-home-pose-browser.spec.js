@@ -1,11 +1,11 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 
 // The Garage home page carries the Studio's ground / flight / wing pose buttons, and the showroom keeps
 // as much of the screen as possible: pose buttons and camera dock share one row beneath it.
 for (const size of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
   test(`Garage home shows the three pose buttons under the showroom ${size.width}x${size.height}`, async ({ page }) => {
     await page.setViewportSize(size);
-    await page.goto('/');    await page.locator('#garage-button').click();
+    await page.goto('/');    await openGarage(page);
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'home');
 
     const ground = page.locator('button[data-garage-mode="ground"]');
@@ -13,8 +13,6 @@ for (const size of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { 
     const wing = page.locator('#garage-wing');
     for (const button of [ground, flight, wing]) await expect(button).toBeVisible();
     await expect(ground).toHaveAttribute('aria-pressed', 'true');
-    // The dialog slides in (history-in, translateX 22px); measure the settled layout, not a mid-slide frame.
-    await page.locator('#garage-screen').evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)));
 
     const box = async locator => locator.boundingBox();
     const preview = await box(page.locator('#garage-preview'));
