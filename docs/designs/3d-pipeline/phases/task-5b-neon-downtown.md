@@ -603,13 +603,98 @@ Measured 2026-11-16 on one desktop machine; per-device numbers and captures are 
 
 Still wrong:
 
-- The clock tower's brick is near-black at night; only its faces read (`feature/neon-landmark-light`). Alongside
-  the square it sits at the edge of the view: it reads from the bends before it.
+- The clock tower's brick was near-black at night, only its faces reading (lit in step 15). Alongside the square
+  it sits at the edge of the view: it reads from the bends before it.
 - The square and the plaza court stand on the plain paving slab: no pattern, steps or kerb.
 - After the S-bends (8288 to 8737) the street has shops and lamps only, with the glass skyline straight behind one
   rank of roofs.
 - The road railing runs into the gate's plinths; the recessed shops leave a 4 m notch at the shortcut sign.
 - The underpass straight's podium shopfronts are the same along both sides; only the blocks above vary.
+
+## Step 14: harbour sky and white road glare (2026-11-16)
+
+Branch `feature/neon-harbour-sky`. Seen on the first 10 km lap tour: down the harbour straight the sky was a wall of
+blurred yellow buildings and the wet road and the car's hood were white. Only the Neon night and rain-night rows of
+`COAST_ENV_VARIANTS` and the four Neon domes change; Coast's rows and domes are untouched.
+
+- **Cause, sky:** the source panorama's near floodlit embankment buildings (lon -180 to -84, up to about 43 degrees)
+  sit at about 10 times the median of the rest of the dome, and the harbour heading looks straight at them.
+- **Cause, glare:** the key light was measured on the 1k map, about 90% of it that wall, so it was a sun at 27 to 31
+  degrees straight down the heading. Switching off the bloom, the environment, the wet-road mirror and the dome one
+  at a time left the glare; only the key removed it.
+- **Fix, in the asset build** (`assets-src/neon-sky/build.py`): `FILL` replaces the wedge on the domes with shifted
+  whole columns of the far skyline (nothing mirrored, no iconic tower copied); the key is aimed from the filled sky
+  (55 degrees at night, 76 in rain) at the same irradiance on the road. The 1k environment maps are byte-identical,
+  so the city keeps the wall's glow as ambient. The dome gain of step 8 did not move.
+- **Prevention:** `.claude/rules/3d-asset-pipeline.md` item 16; guards below.
+
+### Evidence
+
+Measured 2026-11-16 on one desktop machine; captures and per-probe numbers in the ignored
+`../audits/neon-harbour-sky/`.
+
+- [x] RED first, then GREEN: `tests/neon-sky-manifest.test.js` (*no heading's sky is a floodlit wall*, *the key
+  light is not the floodlit wall*), `tests/neon-lighting.test.js` (dome pins and the key direction follow the
+  manifest).
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build`.
+- [x] Before and after captures compared by region at High under `?look=3d`, rain night: harbour road ahead mean
+  luma 210 with 1.3% clipped to 104 with none; car 162 with 5.1% clipped to 72; the other sectors within capture
+  noise. Not approved; see below.
+- [ ] Draw calls: not measured. The change replaces four textures and two light parameters and adds no mesh,
+  material, light or pass.
+- [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
+  2026-11-16.
+- [ ] No capture of Coast, of Neon without `?look=3d`, of Ultra (8K dome) or of a phone.
+- [ ] Owner art approval of the harbour sky.
+
+Still wrong:
+
+- The far skyline on the dome is soft, bokeh more than a skyline, at High (4K dome); Ultra was not captured.
+- On a dry night the view ahead over the gantries is near-black, with the skyline only to the left.
+- The wet road at the harbour keeps a warm tan sheen from the overhead key; the puddles do not reflect the neon.
+- The fill leaves faint vertical haze columns at its seams and one repeated tower 150 degrees from its source.
+
+## Step 15: harbour and oldtown landmarks lit for game night (2026-11-16)
+
+Branch `feature/neon-landmark-light`. The container stacks, the ship, the oldtown gate and the clock tower were
+silhouettes at night: their walls' emissive was zero. No real-time light, draw call, node or material is added.
+
+- **Baked work light** (`assets-src/neon-landmarks/build/lighting.py`): yard masts, berth floods and warm street
+  floods exist only while Blender bakes a `work` pass into the sectors emissive atlas, then are deleted. The atlas
+  stores albedo times that light, so each texel keeps its own material. Lamp texels take none, so their level and
+  bloom margin are unchanged. Lamp spill plus work light is capped (`LIT_MAX` 0.35 stored, 0.525 at runtime, under
+  the 0.9 bloom threshold).
+- **Ship:** hull albedo raised; deck cargo repacked so its containers carry 10.74 texels per metre (5.02 before)
+  against the stack's 12.08.
+- `harbour_gantry` and `lantern_span` are unchanged. Kit A's atlases are byte-identical.
+- GLB structure unchanged (45 nodes, 27 meshes, 2 materials, 7 images, 0 lights); 3 880 908 to 3 959 896 bytes of
+  a 4 000 000 limit; 29 990 of 32 000 triangles.
+
+### Evidence
+
+Measured 2026-11-16 on one desktop machine; captures and numbers in the ignored `../audits/neon-landmark-light/`.
+
+- [x] RED first, then GREEN: `tests/neon-landmarks-glb.test.js` (*the harbour and oldtown walls show their material
+  at game night*, *the containers on the ship deck carry the stack's texel density*) and the manifest pins.
+- [x] Wall `lit` in `contract.json` `surfaces`, 0 before: stack containers 0.055, ship containers 0.099, hull 0.039,
+  gate brick 0.058, gate stone 0.107, tower brick 0.071, tower stone 0.088.
+- [x] Sectors emissive: no white texel, none over the bloom; a WebGL probe of each piece (road and hero view,
+  night and rain night) shows the over-bloom share and white pixels equal to before.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build`.
+- [x] Captures looked at, per piece: the stack's colourways and the tower's and gate's brick now read. Not
+  approved; see below.
+- [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
+  2026-11-16. The pre-push layout gate did run on this branch's push.
+- [ ] Draw calls in a race with the relit pieces: not re-measured (structure unchanged).
+- [ ] Owner art approval; phone.
+
+Still wrong:
+
+- The stack's white boxes read flat pale grey at hero distance, their corrugation softer than the colour map's.
+- The ship's stern and funnel are still dark and its deckhouse bright; at road distance the hull is a dark navy
+  mass with a red boot line.
+- The baked light is fixed to the authored half of mirrored pieces and ignores the runtime key direction.
+- GLB headroom is 40 104 bytes: the next landmark change needs a budget decision first.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
