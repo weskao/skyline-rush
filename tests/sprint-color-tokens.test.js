@@ -10,6 +10,7 @@ const style = read('src/style.css');
 const buttons = read('src/touch-sprint-buttons.css');
 const app = read('src/App.vue');
 const aero = read('src/aero-vfx.js');
+const plume = read('src/sprint-plume.ts'); // the jet shaders moved here from aero-vfx.js
 const hud = read('src/race-hud.ts');
 
 const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
@@ -100,10 +101,10 @@ test('desktop key hints and Controls key bindings take the action colours', () =
 });
 
 test('the default 3D NITRO trail and shock are NITRO gold; trail skins still replace them', () => {
-  assert.doesNotMatch(aero, /vec3\(\.72,\.4,1\.\)|vec3\(\.68,\.42,1\.\)|#b98aff|NITRO purple|NITRO is purple/i);
+  assert.doesNotMatch(aero + plume, /vec3\(\.72,\.4,1\.\)|vec3\(\.68,\.42,1\.\)|#b98aff|NITRO purple|NITRO is purple/i);
   // GLSL literal of each channel, written the way the shaders do: 1 → "1.", 0.82 → ".82".
   const glsl = c => { const v = String(+(c / 255).toFixed(2)); return v === '1' ? '1.' : v.replace(/^0/, ''); };
   const shader = `mix(vec3(${rgb(tokens['--nitro']).map(glsl).join(',')}),trailAccent.rgb,trailAccent.a)`;
-  assert.equal(aero.split(shader).length - 1, 2, `flow and jet shaders mix ${shader}`);
+  assert.equal((aero + plume).split(shader).length - 1, 2, `flow (aero-vfx) and jet (sprint-plume) shaders mix ${shader}`);
   assert.equal(aero.split(`'${tokens['--nitro']}'`).length - 1, 2, 'the standard shock ring is the --nitro hex');
 });
