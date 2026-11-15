@@ -73,7 +73,7 @@
   #showcase-camera-name { font-size: 11px; }
 }
 .showcase-camera-actions > button { width: 44px; height: 44px; }
-.intro .upcoming-thumb img { object-position: center 60%; }
+.intro .upcoming-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 60%; }
 
 details.performance-notice {
   top: calc(156px + var(--safe-top));

@@ -11,6 +11,18 @@ const seed = page => page.addInitScript(ids => {
   localStorage.setItem('skyline-rush-unlocked', JSON.stringify(ids));
   localStorage.setItem('skyline-rush-music', 'off');
 }, ids);
+test('classic track cards render their own teaser artwork', async ({ page }) => {
+  await seed(page);
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  for (const id of ids) {
+    const artwork = page.locator(`[data-track="${id}"] .track-preview.upcoming-thumb img`);
+    await expect(artwork).toHaveAttribute('src', new RegExp(`track-teasers/${id}\\.jpg$`));
+    await artwork.scrollIntoViewIfNeeded();
+    await expect(artwork).toHaveJSProperty('naturalWidth', 568);
+    await expect(artwork).toHaveJSProperty('naturalHeight', 205);
+    await expect(artwork).toHaveCSS('object-fit', 'cover');
+  }
+});
 test('all home route previews and bilingual names are available without exposing classic shortcuts', async ({ page }) => {
   await seed(page);
   await page.goto('/');
