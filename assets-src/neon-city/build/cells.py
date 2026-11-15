@@ -12,6 +12,7 @@ WARM, COOL, RED, GREEN = (1.0, 0.80, 0.52), (0.78, 0.90, 1.0), (1.0, 0.10, 0.08)
 SWATCHES = {"neon_pink": PINK, "neon_violet": VIOLET, "neon_cyan": CYAN, "neon_amber": AMBER, "neon_red": RED,
             "neon_green": GREEN, "lamp_warm": (1.0, 0.84, 0.60)}
 GLASS, FRAME = (0.03, 0.04, 0.06), (0.09, 0.10, 0.12)
+UNLIT = (0.012, 0.03, 0.075)  # emission of an unlit room behind glass: city glow on the far wall
 GLYPHS = 9
 
 
@@ -89,6 +90,26 @@ def curtain(c, rng, cols, rows, palette, lit, glass, spandrel=0.9):
     for q in range(cols + 1):
         c.rect(q * bw - 0.05, 0, q * bw + 0.05, c.mh, col=FRAME, emi=0, rough=0.4, metal=1.0, height=0.06)
     c.halo(0.25, 0.2)
+
+
+def wet_glass(c, rng, cols, rows, line, spandrel=0.9):
+    """Rain at night on a wall painted by curtain(): each pane tilted and tinted a little so reflections break up as on
+    real glazing, rain streaks down the glass in the roughness, droplet bumps, and a cool ceiling line at every floor
+    head (lit or not), the floor lines of frame 03. Takes its own random stream: the shared one stays as reviewed."""
+    bw, fh = c.mw / cols, c.mh / rows
+    glass = (c.metal > 0.8) & (c.rough < 0.2)  # vision glass; frames are rougher, spandrels less metallic
+    for r in range(rows):
+        for q in range(cols):
+            s = c.span(q * bw, r * fh + spandrel, (q + 1) * bw, (r + 1) * fh)
+            c.col[s] *= rng.uniform(0.82, 1.15)
+            c.nxy[s] += rng.normal(0, 0.035, 2).astype(np.float32)
+            dark = glass[s] & (c.emi[s].max(-1) < 0.02)  # unlit rooms: a dim blue depth so the glass reads blue, not black
+            c.emi[s][dark] = np.asarray(UNLIT, np.float32) * rng.uniform(0.4, 1.3)
+        s = c.span(0, (r + 1) * fh - 0.16, c.mw, (r + 1) * fh - 0.07)
+        c.emi[s] = np.maximum(c.emi[s], np.asarray(COOL, np.float32) * line)
+    streak = blur(np.kron(rng.random((-(-c.h // 16), c.w)).astype(np.float32), np.ones((16, 1), np.float32))[:c.h], 2, (True, True))
+    c.rough[:] = np.where(glass, 0.04 + 0.2 * streak ** 2, c.rough)
+    c.height += 0.006 * (rng.random((c.h, c.w)) > 0.96)
 
 
 def punched(c, rng, cols, rows, win, palette, lit, panes=2):
@@ -265,7 +286,7 @@ def paint_all(atlas):
     for name, (asset, px, metres, tint) in walls.items():
         atlas.cell(name, (px, px), (metres, metres), both).scan(scans, asset, 2, 2, tint=tint)
     atlas.cells["rooftile"].rough[:] = np.clip(atlas.cells["rooftile"].rough * 0.6, 0.2, 1)   # wet glazed tiles
-    atlas.cell("bark", (128, 128), (1.6, 1.6), both).scan(scans, "sakura_bark", 1, 1, tint=(0.75, 0.68, 0.66))
+    atlas.cell("bark", (128, 128), (1.6, 1.6), both).scan(scans, "sakura_bark", 1, 1, tint=(0.42, 0.37, 0.38), rough=(0.2, 0.75))  # rain-dark
     for name, colour, rough in (("steel_dark", (0.07, 0.075, 0.085), (0.3, 0.55)), ("steel_light", (0.42, 0.44, 0.47), (0.25, 0.5))):
         c = atlas.cell(name, (128, 128), (2.0, 2.0), both)
         c.scan(scans, "metal_plate_02", 1, 1, rough=rough)
@@ -278,11 +299,16 @@ def paint_all(atlas):
         c = atlas.cell(name, (32, 32), (1e6, 1e6), solid=True)
         c.col[:], c.emi[:], c.rough[:] = np.asarray(colour) * 0.9, colour, 0.4
 
+    fx = np.random.default_rng(20261115)  # stream of the 2026-11-15 rework (blossom, glass): the shared one stays as reviewed
     c = atlas.cell("blossom", (256, 256), (3.0, 3.0), both)
     n1, n2 = noise(rng, c, 64)[..., None], noise(rng, c, 12)[..., None]
-    c.col[:] = np.clip((0.97, 0.66, 0.80) + (n1 - 0.5) * (0.3, 0.7, 0.5) + (n2 - 0.5) * (0.25, 0.45, 0.35), 0, 1)
-    c.col[:] = np.where(n1 < 0.4, (0.60, 0.24, 0.40), c.col)                                 # gaps between clusters
-    c.emi[:], c.rough[:], c.height[:] = c.col * (0.32, 0.22, 0.28), 0.85, n1[..., 0] * 0.12
+    florets = np.clip((noise(fx, c, 128)[..., None] - 0.42) * 4, 0, 1) * (n1 > 0.42)          # petal tips catching the light, ~2 cm
+    tone = np.clip((n1 - 0.38) * 3.2 + (n2 - 0.5) * 0.6, 0, 1)
+    lift = c.grid()[1][..., None] / c.mh  # puff v: underside 0, top 1
+    c.col[:] = np.clip(((0.64, 0.3, 0.5) + tone * (0.34, 0.36, 0.32) + florets * (0.02, 0.22, 0.14)) * (0.78 + 0.3 * lift), 0, 0.95)
+    c.ao[:] = (0.75 + 0.25 * tone[..., 0]) * (0.75 + 0.25 * lift[..., 0])                         # gaps, shaded underside
+    c.emi[:] = c.col * (0.32, 0.2, 0.27) * (0.6 + 0.6 * tone)                                 # neon spill on wet petals
+    c.rough[:], c.height[:] = 0.5 + 0.3 * (1 - tone[..., 0]), n1[..., 0] * 0.12 + florets[..., 0] * 0.025
 
     c = atlas.cell("kerb", (256, 64), (4.0, 1.0), (True, False))
     c.scan(scans, "concrete_wall_008", 2, 1, rough=(0.25, 0.5))
@@ -307,13 +333,17 @@ def paint_all(atlas):
 
     cool, warm, vio = [WARM, WARM, (1.0, 0.72, 0.4), COOL], [WARM, (1.0, 0.7, 0.38), COOL, (0.9, 0.95, 1.0)], [WARM, WARM, (1.0, 0.72, 0.4), VIOLET]
     c = atlas.cell("curtain_a", (240, 504), (6.0, 14.4), both)
-    curtain(c, rng, 4, 4, cool, 0.42, (0.16, 0.24, 0.36))
+    curtain(c, rng, 4, 4, cool, 0.42, (0.2, 0.31, 0.47))
     # Frame 03: the round tower is mostly dark glass. Rooms are switched off after painting, by bay, so the shared
     # random stream (and every cell painted after this one) stays as reviewed.
     for row, bays in enumerate(((0, 1), (2, 3), (0, 1, 2), (3,))):
         for bay in bays:
             c.emi[c.span(bay * 1.5, row * 3.6, (bay + 1) * 1.5, (row + 1) * 3.6)] = 0
-    curtain(atlas.cell("curtain_b", (320, 504), (8.0, 14.4), both), rng, 4, 4, [WARM, WARM, (1.0, 0.72, 0.4), (1.0, 0.7, 0.85)], 0.36, (0.2, 0.17, 0.33))
+    c.emi *= 0.8
+    wet_glass(c, fx, 4, 4, 0.34)
+    c = atlas.cell("curtain_b", (320, 504), (8.0, 14.4), both)
+    curtain(c, rng, 4, 4, [WARM, WARM, (1.0, 0.72, 0.4), (1.0, 0.7, 0.85)], 0.36, (0.13, 0.15, 0.24))
+    wet_glass(c, fx, 4, 4, 0.24)
     c = atlas.cell("office_grid", (432, 504), (12.0, 14.0), both)
     c.scan(scans, "concrete_wall_008", 4, 5, tint=(0.8, 0.8, 0.84))
     punched(c, rng, 4, 4, (2.0, 1.7), warm, 0.45)

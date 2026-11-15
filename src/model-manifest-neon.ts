@@ -11,10 +11,10 @@ export const NEON_MODELS: Record<string, ModelManifestEntry> = {
     source: {
       master: 'assets-src/neon-city/neon-city.blend',
       script: 'assets-src/neon-city/build.py',
-      masterSha256: '6cea94d5ccccd15f4b5d7d4996cd5286ae90f5db50d89c92a8b01cb1f45ee29c',
+      masterSha256: 'bd5bbe634a98c8e344302eafaba6813c94c684980a2c14a29cdbf2a7761e5bd9',
       scriptSha256: 'e376588ca25905afb88b2c976a186fdf515a5e5f0102f81ac6d112994cc12dad',
     },
-    glb: { sha256: '439fd216b0965ba27356a9e2a486feb7af7cc0002b8ba5c40d1addaf4cacae97', bytes: 991_444 },
+    glb: { sha256: '0b1914f5bde8d1955d8f662be5b9a6cd55657bf40d21822ef3a2aa2f26a274c6', bytes: 1_093_972 },
     license: {
       id: 'CC0-1.0',
       creator: 'Poly Haven: Charlotte Baglioni, Dario Barresi, Amal Kumar, Dimitrios Savva, Rob Tuytel (wall, tile, plank, roof, bark and metal sets in assets-src/neon-city/sources.json); modules and atlas by Skyline Rush project',

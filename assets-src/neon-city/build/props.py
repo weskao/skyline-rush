@@ -119,22 +119,49 @@ def railing(k, lod):
         k.box((-0.19, -0.18, 1.3), (0.19, 0.18, 1.36), "steel_light")
 
 
+# Blossom groups (centre, radii) over the boughs: LOD 1 draws each as one mass, LOD 0 breaks it into three clusters
+# with gaps between them, so the crown reads as sprays on branches rather than one opaque cloud (the kit has no alpha).
+BLOSSOM = (((2.15, -0.95, 4.65), (1.0, 0.85, 0.62)), ((-2.1, 1.0, 4.55), (1.0, 0.85, 0.62)),
+           ((0.5, -1.5, 5.1), (0.95, 0.8, 0.6)), ((-0.3, 1.45, 5.2), (0.95, 0.8, 0.6)),
+           ((0.2, 0.0, 5.65), (1.15, 1.05, 0.65)), ((1.5, -1.45, 4.2), (0.75, 0.65, 0.5)),
+           ((-1.45, 1.5, 4.2), (0.75, 0.65, 0.5)), ((1.35, 0.65, 5.0), (0.9, 0.8, 0.58)),
+           ((-1.3, -0.7, 5.05), (0.9, 0.8, 0.58)))
+FORK = (0.16, 0.05, 2.3)
+BOUGHS = (((1.0, -0.35, 3.2), (1.9, -0.8, 4.0), (2.35, -1.05, 4.5)), ((-0.8, 0.45, 3.15), (-1.8, 0.85, 3.95), (-2.25, 1.05, 4.4)),
+          ((0.35, -0.6, 3.4), (0.5, -1.2, 4.4), (0.5, -1.5, 4.9)), ((-0.05, 0.6, 3.5), (-0.2, 1.15, 4.5), (-0.3, 1.45, 5.0)),
+          ((0.2, 0.0, 3.6), (0.25, 0.05, 4.7), (0.2, 0.0, 5.4)))
+TWIGS = (((1.0, -0.35, 3.2), (1.5, -1.4, 4.0)), ((-0.8, 0.45, 3.15), (-1.4, 1.45, 4.0)), ((0.2, 0.0, 3.6), (1.25, 0.6, 4.8)),
+         ((0.2, 0.0, 3.6), (-1.2, -0.65, 4.85)), ((1.9, -0.8, 4.0), (2.55, -0.35, 4.3)), ((-1.8, 0.85, 3.95), (-2.5, 0.45, 4.2)))
+SPRAYS = (((2.65, -0.35, 4.3), (0.45, 0.4, 0.32)), ((-2.6, 0.45, 4.2), (0.45, 0.4, 0.32)), ((0.9, 1.65, 4.55), (0.5, 0.42, 0.34)),
+          ((-0.85, -1.7, 4.6), (0.5, 0.42, 0.34)), ((2.0, 0.35, 5.35), (0.5, 0.45, 0.34)), ((-2.0, -0.25, 5.2), (0.5, 0.45, 0.34)))
+
+
 def cherry_tree(k, lod):
-    """Blossoming street tree, about 6.5 m: leaning trunk, three boughs, opaque blossom masses."""
-    sides, sub = (7, 5, 3)[lod], (3, 2, 1)[lod]
-    top = 3.0 if lod < 2 else 4.5  # no boughs at LOD 2: the trunk itself reaches into the canopy
-    k.tube([(0, 0, 0), (0.05, 0.02, 1.1), (0.22, 0.05, 2.2), (0.3, 0.1, top)], [0.27, 0.2, 0.17, 0.15], sides, "bark", caps=(False, False))
-    if lod == 0:
-        k.prism(7, 0.42, 0.27, 0, 0.3, "bark", centre=(0.0, 0.0))
-    for path, radii in (([(0.3, 0.1, 3.0), (1.0, -0.3, 3.9), (1.6, -0.5, 4.5)], [0.13, 0.09, 0.05]),
-                        ([(0.3, 0.1, 3.0), (-0.6, 0.5, 3.9), (-1.3, 0.8, 4.6)], [0.13, 0.09, 0.05]),
-                        ([(0.3, 0.1, 3.0), (0.2, -0.4, 4.1), (0.1, -0.9, 5.0)], [0.12, 0.08, 0.05]))[:3 if lod < 2 else 0]:
-        k.tube(path, radii, max(sides - 2, 3), "bark", caps=(False, False))
-    puffs = [((0.2, 0.0, 5.3), (1.5, 1.4, 1.0)), ((1.7, -0.6, 4.7), (1.2, 1.1, 0.75)), ((-1.5, 0.9, 4.8), (1.25, 1.1, 0.8)),
-             ((0.1, -1.4, 5.1), (1.15, 1.0, 0.7)), ((0.6, 1.3, 5.2), (1.1, 1.05, 0.7)), ((-1.1, -0.7, 5.5), (1.0, 0.95, 0.65)),
-             ((1.3, 0.7, 5.7), (0.95, 0.9, 0.6)), ((2.5, -0.2, 4.3), (0.8, 0.75, 0.5)), ((-2.3, 0.3, 4.4), (0.85, 0.8, 0.5))]
-    for i, (centre, radii) in enumerate(puffs if lod < 2 else [((0.15, 0.0, 5.0), (2.7, 2.3, 1.2)), ((0.3, 0.2, 5.6), (1.5, 1.4, 0.8))]):
-        k.puff(centre, radii, sub, "blossom", seed=3.0 + i * 1.7)
+    """Blossoming street tree, about 6.4 m: a dark wet trunk forking at 2.3 m into five boughs, blossom in sprays.
+    LOD 0: 33 clusters with gaps the boughs show through; LOD 1: one mass per spray group; LOD 2: a two-lump cap."""
+    sides = (7, 5, 4)[lod]
+    trunk = [(0, 0, 0), (0.04, 0.02, 0.9), (0.1, 0.03, 1.7), FORK] if lod < 2 else [(0, 0, 0), (0.1, 0.03, 2.2), (0.2, 0.05, 4.5)]
+    k.tube(trunk, [0.24, 0.19, 0.16, 0.14][:len(trunk)], sides, "bark", caps=(False, False))
+    if lod == 2:
+        for i, (centre, radii) in enumerate((((0.15, 0.0, 5.0), (2.7, 2.2, 1.15)), ((0.3, 0.2, 5.6), (1.5, 1.4, 0.75)))):
+            k.puff(centre, radii, 1, "blossom", seed=3.0 + i * 1.7)
+        return
+    for path in BOUGHS:
+        k.tube([FORK, *path][:4 if lod == 0 else 3], [0.11, 0.075, 0.05, 0.03], 5 if lod == 0 else 3, "bark", caps=(False, False))
+    if lod == 1:
+        for i, (centre, radii) in enumerate(BLOSSOM):
+            k.puff(centre, radii, 2, "blossom", seed=3.0 + i * 1.7)
+        return
+    k.prism(7, 0.4, 0.25, 0, 0.3, "bark")  # root flare
+    for path in TWIGS:
+        k.tube(path, [0.05, 0.025], 3, "bark", caps=(False, False))
+    for g, (centre, radii) in enumerate(BLOSSOM):
+        for j in range(3):  # three clusters 0.6 r out from the group centre, 0.55 r across: gaps between them
+            a = g * 1.9 + j * 2.094
+            c = (centre[0] + math.cos(a) * 0.6 * radii[0], centre[1] + math.sin(a) * 0.6 * radii[1], centre[2] + (j - 1) * 0.25 * radii[2])
+            k.puff(c, (radii[0] * 0.58, radii[1] * 0.58, radii[2] * 0.7), 2, "blossom", seed=3.0 + g * 1.7 + j * 0.9)
+    for i, (centre, radii) in enumerate(SPRAYS):
+        k.puff(centre, radii, 2, "blossom", seed=11.0 + i * 1.3)
 
 
 def kerb_redwhite(k, lod):
@@ -188,15 +215,51 @@ def skyline_tower_c(k, lod):
         k.prism(8, 9.0, 7.0, 144, 156, "glass_dark", phase=-math.pi / 2 - math.pi / 8, cap="glass_dark")
 
 
+LEAN = 2.5  # m the spire's top leans toward -x
+
+
+def spire_half(t):
+    """Half-size of the spire at height t (0 ground, 1 at 192 m): 16 m curving in (concave) to 10 m, a broad sail."""
+    return 10 + 6 * (1 - t) ** 1.5
+
+
+def spire_ring(t, chamfer, shrink=0.0):
+    """Plan at height t, counter-clockwise from the front-left corner: a square leaning toward -x, corners chamfered."""
+    h, cx, c = spire_half(t) - shrink, -LEAN * t * t, chamfer
+    pts = ((-h + c, -h), (h - c, -h), (h, -h + c), (h, h - c), (h - c, h), (-h + c, h), (-h, h - c), (-h, -h + c)) if c else ((-h, -h), (h, -h), (h, h), (-h, h))
+    return [(cx + x, y) for x, y in pts]
+
+
+def spire_loft(k, lo, hi, cells):
+    """Faces between two rings of (x, y, z) points; cells[i] dresses edge i. sky_a keeps its window size: u spans the
+    face's width in the 32 m cell and v its height in the 96 m tile, so window columns run out as the faces narrow."""
+    n = len(lo)
+    for i, cell in enumerate(cells):
+        a0, b0, b1, a1 = lo[i], lo[(i + 1) % n], hi[(i + 1) % n], hi[i]
+        uvs = ((0, 0),) * 4
+        if cell == "sky_a":
+            w0, w1, v0 = math.dist(a0[:2], b0[:2]) / 64, math.dist(a1[:2], b1[:2]) / 64, (a0[2] % 96) / 96
+            v1 = v0 + (a1[2] - a0[2]) / 96
+            uvs = ((0.5 - w0, v0), (0.5 + w0, v0), (0.5 + w1, v1), (0.5 - w1, v1))
+        k.face((a0, b0, b1, a1), cell, uvs)
+
+
 def skyline_spire(k, lod):
-    """The pink-crowned spire of frame 03: a 30 m square shaft tapering to 14 m at 192 m, pink edge lines,
-    a glowing crown and three antenna masts, 252 m in all."""
-    r0, r1, phase = 15 * math.sqrt(2), 7 * math.sqrt(2), -3 * math.pi / 4
-    k.prism(4, r0, r1, 0, 192, "sky_a", phase=phase)
-    k.prism(4, r1 + 0.6, 4.0, 192, 214, "neon_pink", phase=phase, cap="neon_pink")
-    if lod == 0:
-        for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1)):  # edge lines: a three-sided tube up each corner
-            k.tube([(sx * 15.2, sy * 15.2, 0.07), (sx * 7.2, sy * 7.2, 192)], [1.1, 0.8], 3, "neon_pink", caps=(False, False), smooth=False)
-        k.prism(4, r1 + 1.2, r1 + 1.2, 189, 193, "neon_pink", phase=phase)
-    for x, y, top in ((0, 0, 252), (-2.2, 1.2, 238), (2.0, -1.4, 230))[:3 if lod == 0 else 1]:
-        k.tube([(x, y, 212), (x, y, top)], [0.45, 0.15], 3, "steel_light", smooth=False)
+    """The sail spire of frame 03: a 32 m shaft whose sides curve in to 20 m at 192 m and lean toward -x, a pink neon
+    chamfer up every corner, a dark crown cut on the slant (high side -x) with a glowing top, a red sign under it and
+    three pink-lit masts, 252 m in all. LOD 1: the same profile, square, in two lifts, one mast."""
+    chamfer, levels = (1.3, (0.0, 0.25, 0.5, 0.75, 1.0)) if lod == 0 else (0.0, (0.0, 0.5, 1.0))
+    cells = ("sky_a", "neon_pink") * 4 if chamfer else ("sky_a",) * 4
+    rings = [[(x, y, t * 192) for x, y in spire_ring(t, chamfer)] for t in levels]
+    for lo, hi in zip(rings, rings[1:]):
+        spire_loft(k, lo, hi, cells)
+    slant = lambda x: 204 - 0.8 * (x + LEAN)  # noqa: E731  crown top: 212 m on the -x side, 196 m on +x
+    top = [(x, y, slant(x)) for x, y in spire_ring(1, chamfer * 0.8, shrink=0.8)]
+    spire_loft(k, rings[-1], top, ["glass_dark" if c == "sky_a" else c for c in cells])
+    k.face(top, "neon_pink", ((0, 0),) * len(top))
+    # Red sign 170-180 m up the street face, 0.4 m proud of it: the face is planar between the 144 m and 192 m rings.
+    y = lambda z: -(spire_half(0.75) + (spire_half(1) - spire_half(0.75)) * (z - 144) / 48) - 0.4  # noqa: E731
+    cx = -LEAN * (175 / 192) ** 2
+    k.quad((cx - 3.5, y(170), 170), (cx + 3.5, y(170), 170), (cx + 3.5, y(180), 180), (cx - 3.5, y(180), 180), "sign_small_a")
+    for x, yy, h in ((-LEAN - 4.0, 0.0, 252), (-LEAN - 1.6, 1.2, 240), (-LEAN + 1.0, -1.0, 232))[:3 if lod == 0 else 1]:
+        k.tube([(x, yy, slant(x) - 0.5), (x, yy, h)], [0.45, 0.15], 3, "neon_pink", smooth=False)
