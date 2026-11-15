@@ -56,6 +56,7 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
   const touch = $('#touch-controls');
   const panel = $('#controls-panel');
   const tiltStatus = $('#tilt-status');
+  const layoutOrientation = $('#layout-orientation');
   const touchButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-control]')];
   const controlInputs = [...document.querySelectorAll<HTMLInputElement>('[data-controls]')];
   // In-memory source of truth: input.ts reads it on every pointermove, so storage is only touched on load/change.
@@ -190,7 +191,9 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
   $('#controls-reset').addEventListener('click', () => { tiltRequest++; controls.clear(); controlPrefs = controlSettings(); orientedLayouts = normalizeOrientationLayouts(null); applyControls(); cueUi(); });
 
   function editLayout(editing: boolean): void {
+    cancelLayoutDrag();
     editingLayout = editing;
+    if (editing) showLayoutOrientation();
     controls.clear(); padTouch = null; drawPad();
     document.body.classList.toggle('layout-editing', editing);
     $('#layout-toolbar').hidden = !editing;
@@ -200,35 +203,69 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
   }
   $('#layout-edit').addEventListener('click', () => editLayout(true));
   $('#layout-done').addEventListener('click', () => editLayout(false));
-  $('#layout-reset').addEventListener('click', () => { controlPrefs = { ...controlPrefs, layout: {} }; orientedLayouts = normalizeOrientationLayouts(null); applyControls(); });
-  let drag: { button: HTMLButtonElement; id: number; x: number; y: number; origins: { action: keyof ControlPreferences['layout']; x: number; y: number; width: number; height: number }[] } | null = null;
+  $('#layout-reset').addEventListener('click', () => {
+    orientedLayouts = { ...orientedLayouts, [currentOrientation()]: {} };
+    applyControls();
+  });
+
+  type Layout = ControlPreferences['layout'];
+  type TouchAction = keyof Layout;
+  let drag: {
+    button: HTMLButtonElement;
+    id: number;
+    x: number;
+    y: number;
+    original: Layout;
+    orientation: ReturnType<typeof currentOrientation>;
+    origins: { action: TouchAction; x: number; y: number; width: number; height: number }[];
+  } | null = null;
+  function cancelLayoutDrag(): void {
+    if (!drag) return;
+    const { button, id, original, orientation } = drag;
+    drag = null;
+    orientedLayouts = { ...orientedLayouts, [orientation]: original };
+    if (button.hasPointerCapture(id)) button.releasePointerCapture(id);
+  }
+  function showLayoutOrientation(): void {
+    say(layoutOrientation, () => t(`layout.${currentOrientation()}`));
+  }
   for (const button of touchButtons) {
     button.addEventListener('pointerdown', event => {
       if (!editingLayout || drag) return;
       event.preventDefault();
-      // Moving either member moves its whole thumb cluster; the pad remains input-owned.
-      const steer = ['left', 'right', 'brake'].includes(button.dataset.control!);
-      const peers = touchButtons.filter(peer => steer === ['left', 'right', 'brake'].includes(peer.dataset.control!));
-      drag = { button, id: event.pointerId, x: event.clientX, y: event.clientY, origins: peers.map(peer => {
-        const rect = peer.getBoundingClientRect();
-        return { action: peer.dataset.control as keyof ControlPreferences['layout'],
-          x: rect.left + rect.width / 2, y: rect.top + rect.height / 2,
-          width: peer.offsetWidth, height: peer.offsetHeight };
-      }) };
+      // Move the whole thumb cluster while the pad remains input-owned.
+      const isSteer = (peer: HTMLButtonElement) => ['left', 'right', 'brake'].includes(peer.dataset.control!);
+      const peers = touchButtons.filter(peer => isSteer(button) === isSteer(peer) && peer.getClientRects().length);
+      const orientation = currentOrientation();
+      drag = { button, id: event.pointerId, x: event.clientX, y: event.clientY, orientation,
+        original: orientedLayouts[orientation], origins: peers.map(peer => {
+          const rect = peer.getBoundingClientRect();
+          return { action: peer.dataset.control as TouchAction,
+            x: rect.left + rect.width / 2, y: rect.top + rect.height / 2,
+            width: peer.offsetWidth, height: peer.offsetHeight };
+        }) };
       button.setPointerCapture(event.pointerId);
     });
     button.addEventListener('pointermove', event => {
-      if (!editingLayout || event.pointerId !== drag?.id) return;
-      const offsetX = event.clientX - drag.x, offsetY = event.clientY - drag.y;
-      const next = { ...orientedLayouts[currentOrientation()] };
-      for (const origin of drag.origins) {
-        next[origin.action] = layoutPoint(origin.x + offsetX, origin.y + offsetY,
+      if (button !== drag?.button || event.pointerId !== drag.id || currentOrientation() !== drag.orientation) return;
+      const { x, y, original, orientation, origins } = drag;
+      const next = { ...original };
+      for (const origin of origins) {
+        next[origin.action] = layoutPoint(origin.x + event.clientX - x, origin.y + event.clientY - y,
           { width: origin.width, height: origin.height }, controlPrefs.hand, { width: innerWidth, height: innerHeight }, currentFoldableLayout());
       }
-      orientedLayouts = { ...orientedLayouts, [currentOrientation()]: next };
+      orientedLayouts = { ...orientedLayouts, [orientation]: next };
       applyControls(false);
     });
-    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) button.addEventListener(type, event => { if (event.pointerId === drag?.id) { drag = null; applyControls(); } });
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
+      button.addEventListener(type, event => {
+        if (button !== drag?.button || event.pointerId !== drag.id) return;
+        const commit = type === 'pointerup' && currentOrientation() === drag.orientation;
+        if (commit) drag = null;
+        else cancelLayoutDrag();
+        applyControls(commit);
+      });
+    }
   }
   let lastOrientation = currentOrientation();
   let lastWidth = innerWidth;
@@ -240,13 +277,10 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     // Address-bar height changes keep held input. Geometry and physical rotation invalidate it.
     if (orientation !== lastOrientation || Math.abs(innerWidth - lastWidth) > 16 || foldChanged ||
       event.type === 'orientationchange' || event.currentTarget === window.screen.orientation) {
+      cancelLayoutDrag();
       controls.clear(); clearButtonPresses(); padTouch = null; drawPad();
-      if (drag) {
-        const { button, id } = drag;
-        drag = null;
-        if (button.hasPointerCapture(id)) button.releasePointerCapture(id);
-      }
     }
+    if (editingLayout && orientation !== lastOrientation) showLayoutOrientation();
     lastOrientation = orientation;
     lastWidth = innerWidth;
     applyControls(false); // Never overwrite stored custom coordinates on a resize.
@@ -260,9 +294,9 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     window.matchMedia(query).addEventListener('change', onViewportChange);
   }
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { controls.clear(); padTouch = null; drawPad(); }
+    if (document.hidden) { cancelLayoutDrag(); applyControls(false); controls.clear(); padTouch = null; drawPad(); }
   });
-  window.addEventListener('pagehide', () => { controls.clear(); padTouch = null; });
+  window.addEventListener('pagehide', () => { cancelLayoutDrag(); controls.clear(); padTouch = null; });
 
   return {
     prefs: (): ControlPreferences => controlPrefs,

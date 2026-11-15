@@ -2,18 +2,12 @@ import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 
 // ITEM-12 feedback and 12B acceptance (misses, blocked storage, touch layout) in the real game.
-// With storage blocked the guide's seen flag cannot be read, so the first Start of a page load runs the guided
-// practice and Skip continues straight into the chosen race (main.js start/beginTutorial). Play is never blocked.
-const skipFirstRunTutorial = async page => {
-  await expect(page.locator('body')).toHaveAttribute('data-tutorial', 'active');
-  await page.locator('#tutorial-exit').click();
-};
 const startWithItems = async (page, { blockedStorage = false } = {}) => {
   await page.locator('button[data-race-mode="free"]').click();
   await page.locator('#race-mode-rules > summary').click();
   await page.locator('[data-race-rule="itemRules"]').evaluate(node => { node.value = 'active'; node.dispatchEvent(new Event('change', { bubbles: true })); });
   await page.locator('#start-button').click();
-  if (blockedStorage) await skipFirstRunTutorial(page);
+  if (blockedStorage) await page.locator('#guide-start-race').click();
   await expect(page.locator('#item-status')).toContainText('EMPTY');
 };
 const programs = page => page.evaluate(() => window.gameScene.renderer.info.programs.length);
