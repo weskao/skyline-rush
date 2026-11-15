@@ -155,13 +155,13 @@ for (const [axis, viewport] of [['vertical', { width: 844, height: 390 }], ['hor
       await expect(body).toHaveAttribute('data-fold-axis', axis);
       for (const selector of ['#start-button', '#garage-button', '#showcase-camera-next', '#daily-card', '[data-track="coast"]'])
         await expectInsidePane(page.locator(selector), panes);
-      await page.screenshot({ path: test.info().outputPath(`fold-home-${axis}.png`) });
+      await page.screenshot({ path: test.info().outputPath(`foldable-home-${axis}.png`) });
       await page.locator('#garage-button').click();
       for (const selector of ['#garage-close', '#garage-preview', '[data-paint="factory"]'])
         await expectInsidePane(page.locator(selector), panes);
       await page.locator('#garage-studio-open').click();
       await expectInsidePane(page.locator('#garage-studio-back'), panes);
-      await page.screenshot({ path: test.info().outputPath(`fold-studio-${axis}.png`) });
+      await page.screenshot({ path: test.info().outputPath(`foldable-studio-${axis}.png`) });
       await page.locator('#garage-close').click();
       await page.locator('.intro .history-button').click();
       await expectInsidePane(page.locator('#history-screen'), panes);
@@ -173,7 +173,7 @@ for (const [axis, viewport] of [['vertical', { width: 844, height: 390 }], ['hor
       await expect(page.locator('#countdown')).toBeHidden();
       for (const selector of ['#speed', '#fuel-meter', '#race-route-map'])
         await expectInsidePane(page.locator(selector), panes);
-      await page.screenshot({ path: test.info().outputPath(`fold-race-${axis}.png`) });
+      await page.screenshot({ path: test.info().outputPath(`foldable-race-${axis}.png`) });
       await page.locator('#pause-button').click();
       await expectInsidePane(page.locator('#resume-button'), panes);
       await page.locator('#resume-button').click();

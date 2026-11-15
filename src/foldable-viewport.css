@@ -295,3 +295,31 @@ body[data-phase="ready"][data-fold-axis="horizontal"] #app > .bottomline {
   display: block;
 }
 body[data-fold-axis="horizontal"] #app > .bottomline > span { display: none; }
+
+/* Keep Garage, History and Practice reachable even when mode and track settings fill the pane. */
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro {
+  padding-bottom: 62px;
+}
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro .intro-actions {
+  position: fixed;
+  z-index: 3;
+  left: calc(var(--fold-home-left) + var(--fold-gap-left) + 8px);
+  bottom: calc(var(--fold-home-bottom) + var(--fold-gap-bottom));
+  width: calc(var(--fold-home-width) - var(--fold-gap-left) - var(--fold-gap-right) - 16px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding-top: 7px;
+  background: rgb(5 18 31 / .94);
+}
+body[data-phase="ready"][data-fold-axis="horizontal"]:not(.airflow-active) #intro .intro-actions {
+  width: calc(var(--fold-home-width) - var(--fold-gap-left) - var(--fold-gap-right) - var(--fold-rail-width) - 24px);
+}
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .intro-actions > button {
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding-inline: 4px;
+  justify-content: center;
+  white-space: normal;
+}
