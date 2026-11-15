@@ -66,7 +66,7 @@ test('each piece is one pooled draw per LOD band: LOD 0 around the car, its last
 test('the pools hold exactly what the plan puts in the window; spare instances are parked, never zero-scaled', () => {
   const { kit, pools } = rig();
   const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
-  for (const [distance, quality] of [[1000, 'high'], [1000, 'medium'], [2500, 'high'], [3400, 'high'], [20, 'high']]) {
+  for (const [distance, quality] of [[1000, 'high'], [1000, 'medium'], [3500, 'high'], [5000, 'high'], [5560, 'high'], [6500, 'high'], [7700, 'high'], [9400, 'high'], [20, 'high']]) { // every sector
     kit.update(route, distance, quality);
     const want = expected(distance, quality);
     for (const mesh of pools()) {
@@ -87,16 +87,16 @@ test('two laps evict chunks without new draws, leaks or disposing the GLB resour
   const { scene, kit, city, landmarks, pools } = rig(), disposed = [];
   for (const source of [city, landmarks]) source.traverse(o => { if (o.isMesh) { o.geometry.addEventListener('dispose', () => disposed.push(o.name)); o.material.addEventListener('dispose', () => disposed.push(o.name)); } });
   const layer = pools(), towers = kit.group.getObjectByName('tower_glass_a:near');
-  for (let d = 0; d < 8200; d += 13) {
+  for (let d = 0; d < 20500; d += 31) {
     kit.update(route, d, 'high');
     const want = expected(d, 'high');
-    for (const piece of ['tower_glass_a', 'shop_market_a', 'expressway_rail', 'rail_segment', 'street_lamp']) for (const band of ['near', 'far'])
+    for (const piece of ['tower_glass_a', 'shop_market_a', 'expressway_rail', 'rail_segment', 'street_lamp', 'canal_bank', 'block_retail_a']) for (const band of ['near', 'far'])
       assert.equal(kit.group.getObjectByName(`${piece}:${band}`)?.count ?? 0, want[`${piece}:${band}`] ?? 0, `${piece}:${band} at ${d} m`);
   }
   assert.deepEqual(pools(), layer, 'the same pooled meshes while driving');
   const local = () => positions(towers).map(v => v.toArray().map(n => +n.toFixed(3)).join());
   kit.update(route, 250, 'high'); const first = local();
-  kit.update(route, 4250, 'high');
+  kit.update(route, 10250, 'high');
   assert.deepEqual(local(), first, 'a tower stands on the same plot every lap');
   assert.equal(scene.children.length, 1);
   assert.deepEqual(disposed, []);
@@ -117,7 +117,7 @@ test('street sides face the road on both sides, parapets turn their -X to it, an
     sides.add(Math.sign(route.offset(pivot.x - 30, pivot.z, 64) - route.offset(pivot.x + 30, pivot.z, 64)));
   }
   assert.equal(sides.size, 2, 'both sides of the boulevard are built');
-  kit.update(route, 1900, 'high'); // the expressway sweeper
+  kit.update(route, 3500, 'high'); // the expressway sweeper
   const rails = pool('expressway_rail:near');
   for (let i = 0; i < rails.count; i++) {
     const inner = along(rails, i, 0, -4);
@@ -128,10 +128,10 @@ test('street sides face the road on both sides, parapets turn their -X to it, an
   let joined = 0;
   for (const [front] of ends) if (ends.some(([, back]) => front.distanceTo(back) < .05)) joined++;
   assert.ok(joined >= rails.count - 2, 'each 12 m parapet is stretched to meet the next one through the sweeper');
-  kit.update(route, 500, 'high');
+  kit.update(route, 720, 'high');
   const portals = positions(pool('rail_portal:near')).map(v => [v.x, v.z]);
-  for (const lap of [478, 682]) assert.ok(portals.some(([x, z]) => Math.hypot(x - route.point(lap)[0], z - route.point(lap)[1]) < 1e-3), `portal at ${lap}`); // instance matrices are 32-bit
-  const [x, z] = route.point(500);
+  for (const lap of [698, 902]) assert.ok(portals.some(([x, z]) => Math.hypot(x - route.point(lap)[0], z - route.point(lap)[1]) < 1e-3), `portal at ${lap}`); // instance matrices are 32-bit
+  const [x, z] = route.point(720);
   assert.deepEqual(kit.group.position.toArray().map(n => +n.toFixed(6)), [-x, 0, -z].map(n => +n.toFixed(6)), 'the kit follows the car like the road does');
   kit.dispose();
 });
@@ -164,7 +164,7 @@ test('N6: street furniture is one draw, LOD 0 and no far pool; buildings and lan
 // rain fog's view, while the buildings behind it already stood there. It now appears with them, at the window's end.
 test('no street furniture pops in: every piece in the chunk window is drawn, as far ahead as the buildings', () => {
   const { kit, pool } = rig();
-  for (const quality of ['high', 'medium']) for (let distance = 0; distance < 4000; distance += 97) {
+  for (const quality of ['high', 'medium']) for (let distance = 0; distance < 10000; distance += 97) {
     kit.update(route, distance, quality);
     const window = neonChunkWindow(distance, quality), want = {};
     for (let chunk = window.first; chunk < window.first + window.count; chunk++) for (const p of neonChunkPlan(chunk)) want[p.piece] = (want[p.piece] ?? 0) + 1;
@@ -190,7 +190,7 @@ test('kit emissive: the neon tubes reach the bloom and the brightest texel stays
   kit.dispose();
 });
 
-test('N3: one ground mesh puts land under the city sectors and leaves the canal open under the expressway and the bridge', () => {
+test('N3: one ground mesh puts land under the city sectors and leaves the water open under the expressway, the harbour and the bridge', () => {
   const { kit } = rig();
   kit.update(route, 100, 'high');
   const ground = kit.group.getObjectByName('Neon ground'), at = ground.geometry.getAttribute('position'), v = new THREE.Vector3();
@@ -198,11 +198,11 @@ test('N3: one ground mesh puts land under the city sectors and leaves the canal 
   const top = [];
   for (let i = 0; i < at.count; i++) { v.fromBufferAttribute(at, i); if (v.y > -1) top.push(v.clone()); else assert.ok(Math.abs(v.y - NEON_GROUND.y + NEON_GROUND.depth) < 1e-4, 'the quay wall'); }
   const gap = lap => Math.min(...top.map(p => Math.hypot(p.x - route.point(lap)[0], p.z - route.point(lap)[1])));
-  for (const lap of [100, 600, 1200, 3300, 3800]) assert.ok(gap(lap) < 16, `land beside the road at ${lap}`);
-  for (const lap of [1800, 2100, 2400, 2800]) assert.ok(gap(lap) > 60, `open water at ${lap}`);
+  for (const lap of [100, 800, 2000, 2700, 7300, 8000, 9000, 9800]) assert.ok(gap(lap) < 16, `land beside the road at ${lap}`);
+  for (const lap of [3000, 3600, 4400, 5000, 5800, 6500, 6900]) assert.ok(gap(lap) > 60, `open water at ${lap}`);
   for (const p of top) assert.ok(route.offset(p.x, p.z, 16) >= NEON_GROUND.inner - .2, 'never over the carriageway');
   const before = ground.geometry;
-  kit.update(route, 2000, 'high');
+  kit.update(route, 5000, 'high');
   assert.equal(kit.group.getObjectByName('Neon ground').geometry, before, 'built once per route');
   let freed = false; before.addEventListener('dispose', () => { freed = true; });
   kit.dispose();
@@ -232,7 +232,7 @@ test('the land takes the pavement set: planar UVs of one tile per 7.2 m, and a m
 test('one kit alone draws its own pools; detaching it removes them', () => {
   const scene = new THREE.Scene(), kit = createNeonScenery(scene);
   kit.attachKit('landmarks', fakeKit('landmarks'));
-  kit.update(route, 500, 'high');
+  kit.update(route, 720, 'high');
   const names = kit.group.children.filter(o => o.isInstancedMesh).map(o => o.name.split(':')[0]);
   assert.deepEqual([...new Set(names)].sort(), piecesOf('landmarks').sort());
   assert.equal(kit.group.getObjectByName('rail_portal:near').count, 2);

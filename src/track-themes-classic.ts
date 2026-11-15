@@ -16,14 +16,18 @@ export const CLASSIC_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown
   // Neon Downtown: roadworks barriers sliding between two lanes on a slow 6 s cycle, a coned-off lane, a diversion
   // and neon gates that swing on a quicker 4 s beat, opening one lane while closing the other.
   neon: [
-    place('neon', 'neon-works-1', 'barrier', 760, 4.6, sweep(6)), // on the straight out of the rail underpass (470–690 m)
-    ...closure('neon', 'neon-lane-closure', 2380, -7.5),
-    place('neon', 'neon-works-2', 'barrier', 2520, -4.6, sweep(6, Math.PI)),
-    place('neon', 'neon-branch-1', 'branch-marker', 2600, 0, { seed: 1 }), // risky right: past the swinging gate
-    place('neon', 'neon-gate-1', 'gate', 2700, 4.6, sweep(4)),
-    ...closure('neon', 'neon-diversion', 3480, 7.5),
-    place('neon', 'neon-works-3', 'barrier', 3600, -4.6, sweep(6)),
-    place('neon', 'neon-gate-2', 'gate', 3720, -4.6, sweep(4, Math.PI)),
+    place('neon', 'neon-works-1', 'barrier', 980, 4.6, sweep(6)), // on the straight out of the rail underpass (690–910 m)
+    place('neon', 'neon-gate-4', 'gate', 1850, 4.6, sweep(4, Math.PI)), // night market: between the kerb line and the shortcut corridor
+    ...closure('neon', 'neon-outer-closure', 3950, -7.5), // expressway: the outside lane of the sweep; the burn lane is the inside one
+    ...closure('neon', 'neon-lane-closure', 6040, -7.5), // onto the canal bridge
+    place('neon', 'neon-works-2', 'barrier', 6362, -4.6, sweep(6, Math.PI)),
+    place('neon', 'neon-branch-1', 'branch-marker', 6442, 0, { seed: 1 }), // risky right: past the swinging gate
+    place('neon', 'neon-gate-1', 'gate', 6542, 4.6, sweep(4)),
+    place('neon', 'neon-works-4', 'barrier', 6880, 4.6, sweep(6, Math.PI)), // off the canal bridge, before the old town
+    place('neon', 'neon-gate-3', 'gate', 7813, -4.6, sweep(4)), // old town: where the two big S-bends cross over
+    ...closure('neon', 'neon-diversion', 9480, 7.5),
+    place('neon', 'neon-works-3', 'barrier', 9600, -4.6, sweep(6)),
+    place('neon', 'neon-gate-2', 'gate', 9720, -4.6, sweep(4, Math.PI)),
   ],
   // Canyon Skyway: warned rockfall and cliff-side debris, kept clear of the broken-bridge gaps. A precision
   // launch ramp 36 m before each broken bridge is the risky line: hit it fast and the car jumps the gap without FLY.

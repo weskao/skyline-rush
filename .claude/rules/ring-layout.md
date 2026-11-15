@@ -34,8 +34,14 @@ pre-2026-11-07 baseline (user: more variety, but collecting must not get much ha
 - Sky Spiral's 5 spinning hoops and Cosmic Orbit's two climbing 3-hoop gates (`track-themes-classic.ts`,
   `track-themes-world-tour.ts`, themed races)
 - the mixed Gauntlet's hoop over each barricade (`gauntlet-course.ts`, merged by `withHoops`)
-- Neon Downtown's five sector lines (`src/neon-ring-lines.ts`, a track's `ringLines`; owner brief, 2026-11-15): each
-  its own PERFECT LINE, the random rings give way 40 m either side. Guard: `tests/neon-highlights.test.js`. A line
+- Neon Downtown's seven sector lines (`src/neon-ring-lines.ts`, a track's `ringLines`; owner brief, 2026-11-15): each
+  its own PERFECT LINE, the random rings give way 100 m before it (`LINE_LEAD`: at 40 m a random ring in a far lane
+  cost the line's first ring) and 40 m after. From 300 to 100 m before a line (`APPROACH`) the random rings lead
+  into it: on the road, in the lane of its first ring, never a risk ring (a ring in the air or in the far lane
+  there still cost the first ring). Guard: `tests/neon-highlights.test.js`. A track may set its own `shapeOdds`
+  (row, train odds per slot) and `ringDensity` (ring slots only, pickups unchanged): Neon's 10 km rolls fewer rows
+  and more trains, or rows pass one shape in three game-wide (`tests/ring-rows.test.js`), and 1.45 times the ring
+  slots, because the lines take 2.9 km of the lap from the random rings (22 rings a km or more). A line
   that runs through a landmark moves, never the landmark; swings go with a bend's corner push, not against it. The
   lines do not scale with the grid, so a change re-pins Neon in `tests/scaled-layout.test.js`, the parity, density
   and variety locks and the replay fixture; a mixed-Gauntlet hoop still replaces a line ring within 30 m

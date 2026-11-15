@@ -113,7 +113,7 @@ test('stepRace runs the spawner: a Classic player held far behind finds catch-up
 
 test('catch-up tuning derives limits, timing and distance thresholds from total course length', () => {
   assert.equal(typeof catchUp.catchUpSettings, 'function', 'length-aware tuning must be exposed by shared catch-up code');
-  const short = catchUp.catchUpSettings(racing('neon').length);
+  const short = catchUp.catchUpSettings(racing('coast').length); // Coast, 5 km: Neon was the short track until its lap grew to 10 km (2026-11-15)
   const reference = catchUp.catchUpSettings(racing('canyon').length);
   const long = catchUp.catchUpSettings(racing('cosmic').length);
   const future = catchUp.catchUpSettings(12000);

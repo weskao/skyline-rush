@@ -37,6 +37,10 @@ export interface TrackConfig {
   layoutVersion?: number;
   /** Classic per-car ring/pickup slot multiplier (default 1; `itemScale` in `race-tracks.ts`). */
   itemDensity?: number;
+  /** Ring-slot multiplier on top of `itemDensity` (default 1; pickups do not scale): makes up for authored lines, sparser than the random rings they replace. */
+  ringDensity?: number;
+  /** Per-slot odds of a full-width row and of a six-ring train (default 0.08 and 0.25, `ring-layout.ts`). */
+  shapeOdds?: readonly [number, number];
   /** Rival top-speed multiplier for this track (default 1); a long course where throttle alone would win sets it higher. */
   rivalPace?: number;
   /** Optional per-grid-slot throttle pace gap. Normal AI keeps its usual skill unless this course needs more field separation. */

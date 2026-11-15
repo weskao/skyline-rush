@@ -44,7 +44,10 @@ for (const variant of variants) test.describe(variant.name, () => {
     const near = await line.getAttribute('points');
     expect(near).not.toBe(sprint);
 
-    const distance = { coast: 50290, neon: 52300, aurora: 50110 }[id];
+    // Each metre sits just before a bend. Neon's lap went from 4 km to 10 km (2026-11-15): 52300 was 300 m into the
+    // lap, before the first right-hander; on the 10 km lap it is the straight market corridor, so it is 50580 now
+    // (the rail underpass right-hander, 663-942 m).
+    const distance = { coast: 50290, neon: 50580, aurora: 50110 }[id];
     await page.evaluate(d => {
       const { player } = window.gameplay.race;
       player.effects.ghost = 10;

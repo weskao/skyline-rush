@@ -480,7 +480,7 @@ function sectionOf(trackId, type, index = 0) {
 
 test('the track table holds all ten tracks and coast matches the original race', () => {
   assert.deepEqual(Object.keys(RACE_TRACKS), TRACK_IDS);
-  assert.deepEqual(TRACK_IDS.map(id => RACE_TRACKS[id].length), [5000, 4000, 6000, 5500, 5600, 6200, 6800, 7600, 5800, 8000]);
+  assert.deepEqual(TRACK_IDS.map(id => RACE_TRACKS[id].length), [5000, 10000, 6000, 5500, 5600, 6200, 6800, 7600, 5800, 8000]);
   assert.equal(RACE_LENGTH, RACE_TRACKS.coast.length);
   assert.deepEqual(createRace(), createRace('coast'));
   const coast = createRace();
@@ -974,7 +974,9 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
         types.add(ring.type);
       });
       const groups = Object.values(Object.groupBy(rings, ring => ring.group));
-      for (const group of groups) if (!group.some(ring => ring.row || ring.train !== undefined)) assert.ok(group.length >= 3 && group.length <= 5 && group.every(ring => ring.groupSize === group.length), `${id} group ${group[0].group}: ${group.length} rings`);
+      // An authored line (a track's ringLines) is one group of its own length: Neon's harbour line has 7 rings, oldtown 11.
+      const lines = RACE_TRACKS[id].ringLines ?? [], lineOf = group => lines.find(line => group.every(ring => line.some(spot => spot[0] === ring.distance)));
+      for (const group of groups) if (!group.some(ring => ring.row || ring.train !== undefined)) assert.ok((lineOf(group) ? group.length === lineOf(group).length : group.length >= 3 && group.length <= 5) && group.every(ring => ring.groupSize === group.length), `${id} group ${group[0].group}: ${group.length} rings`);
       assert.deepEqual([...new Set(rings.map(ring => ring.group))].sort((a, b) => a - b), groups.map((_, i) => i)); // group ids 0..n-1
     }
     assert.deepEqual(types, new Set(['charge', 'nitro', 'slipstream', 'risk', 'mystery']));
@@ -1476,14 +1478,16 @@ function hold(race, seconds, input, altitude) {
   }
 }
 
-test('every track has exactly one flight-only shortcut corridor above an edge lane', () => {
+test('every track has exactly one flight-only shortcut corridor above an edge lane; the 10 km Neon lap has two', () => {
   for (const id of TRACK_IDS) {
     const shortcuts = RACE_TRACKS[id].sections.filter(section => section.type === 'shortcut');
-    assert.equal(shortcuts.length, 1, id);
-    const [{ from, to, x, altitude }] = shortcuts;
-    assert.ok(to - from >= 450 && to - from <= 550, id);
-    assert.ok([LANES[0], LANES[3]].includes(x), id);
-    assert.equal(altitude, 6, id);
+    assert.equal(shortcuts.length, id === 'neon' ? 2 : 1, id); // owner, 2026-11-15: a second corridor over the old town, on the other edge lane
+    for (const { from, to, x, altitude } of shortcuts) {
+      assert.ok(to - from >= 450 && to - from <= 550, id);
+      assert.ok([LANES[0], LANES[3]].includes(x), id);
+      assert.equal(altitude, 6, id);
+    }
+    assert.equal(new Set(shortcuts.map(s => s.x)).size, shortcuts.length, `${id}: one corridor per edge lane`);
   }
 });
 

@@ -143,13 +143,16 @@ const roads: Readonly<Record<string, ClassicRoad>> = {
     [2110, 2790, -32], [3020, 3460, 46], [3500, 3970, -47],
     [4160, 4700, 31], [4750, 4910, -22],
   ]),
-  // Neon: one clockwise lap of the district, 4000 m (concept-art/neon-downtown/09-closed-loop-schematic.png).
+  // Neon: one clockwise lap of the district, 10 km in eight sectors (owner decision N7 as amended 2026-11-15; lap plan:
+  // docs/designs/3d-pipeline/phases/task-5b-neon-downtown.md step 11). No corner is tighter than the 279 m right-handers.
   neon: buildLoop([
-    [443, 0], [279, 90], // Neon Boulevard north, then the right-hander under the railway
-    [74, 0], [139, -32], [246, 64], [247, -64], [139, 32], [90, 0], // night-market S-bends, heading east
-    [673, 135], [656, 0], // elevated expressway sweeper onto the canal arch bridge, heading south-west
-    [214, 45], [407, 0], // off the bridge into Violet Plaza, heading west
-    [279, 90], [114, 0], // last corner back onto the boulevard
+    [663, 0], [279, 90], [358, 0], // Neon Boulevard north, then the right-hander under the railway
+    [139, -32], [246, 64], [247, -64], [139, 32], [780, 0], // night-market S-bends, then the market straight, heading east
+    [1500, 90], // elevated expressway: one long sweep over the water, east round to south
+    [1237, 0], [400, 90], // harbour straight along the waterfront, then round to the west
+    [1050, 0], // canal arch bridge, heading west
+    [300, 90], [160, -50], [315, 100], [315, -100], [160, 50], [39, 0], [300, -90], // old town: north through linked S-bends, left onto the plaza
+    [980, 0], [279, 90], [114, 0], // Violet Plaza, heading west, and the last corner back onto the boulevard
   ]),
   // Canyon: long bends against the crosswind and a straight approach and landing at each broken span.
   canyon: buildRoad(6000, [

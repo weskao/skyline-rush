@@ -37,7 +37,7 @@ licence are **not recorded yet**, as for the board.
 | `06-elevated-expressway.jpg` | Fast long curve on the elevated expressway, cyan guard rails, piers, a descending ramp |
 | `07-canal-arch-bridge.jpg` | Bridge approach, steel arch, reflections on the canal banks |
 | `08-violet-plaza-return.jpg` | Violet Plaza and its sculpture, the last corner, sightline back to the boulevard |
-| `09-closed-loop-schematic.png` | The closed clockwise route and its six sectors, not to scale; completes what `02` crops |
+| `09-closed-loop-schematic.png` | The closed clockwise route and its six sectors, not to scale; completes what `02` crops. **Out of date since 2026-11-15:** the lap is 10 km in eight sectors (harbour after the expressway, oldtown after the canal bridge; `../phases/task-5b-neon-downtown.md`, step 11). No panel shows the harbour or oldtown yet |
 
 ## Panels → phases
 

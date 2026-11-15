@@ -21,7 +21,7 @@ layout keys.
 
 Neon Downtown is a closed clockwise lap (layout 7, 2026-11-14): `buildLoop` in
 `src/classic-road-routes.ts` turns a list of `[metres, turn in degrees]` legs
-into a 4000 m loop whose finish line is its start line. `point` wraps by lap and
+into a 10 000 m loop (4000 m until 2026-11-15) whose finish line is its start line. `point` wraps by lap and
 `heading` adds a full turn per lap, so Endless and Elimination stream the same
 lap again. A lap's `x` is not a function of `z`: anything that asks "how far is
 this spot from the road" (skyline plots, the rain splash guard) uses
