@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, captureHooks, seedHeroCar } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -53,6 +54,7 @@ async function captureGarage(page) {
   for (const combo of COMBOS) {
     await setCombo(page, combo);
     for (const [i, item] of ITEMS.entries()) {
+      await openGarageSection(page, item.group === 'paint' ? 'paints' : 'effects');
       await page.locator(item.select).click();
       if (item.id.startsWith('launch-flare-') && !item.id.endsWith('basic')) await expect.poll(() => flareShown(page), { timeout: ciTimeout(10000) }).toBe(true);
       else await page.waitForTimeout(ciTimeout(400));
@@ -68,6 +70,7 @@ async function captureRace(page, quality = 'high') {
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   for (const id of HEAVIEST) {
+    await openGarageSection(page, 'effects');
     const card = page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
     await card.locator('.garage-skin-preview-hitarea').click();
     await card.locator('.garage-skin-action').click();

@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 
 // Both Garage pages must show the real player car with live, selectable Aero VFX.
@@ -8,6 +9,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await page.locator('#garage-button').click();
     const screen = page.locator('#garage-screen');
     const preview = page.locator('#garage-preview');
+    await openGarageSection(page, 'effects');
     const catalog = page.locator('#garage-vfx-catalog');
     const car = page.locator('#garage-preview #world');
     await expect(screen).toHaveAttribute('data-page', 'home');
@@ -64,6 +66,7 @@ test('all 16 cosmetics drive distinct GPU patterns in the live Preview Studio', 
   const preview = page.locator('#garage-preview');
   for (const { category, field, skins } of cases) {
     for (const [mode, skin] of skins.entries()) {
+      await openGarageSection(page, 'effects');
       const card = page.locator(`#garage-vfx-catalog [data-skin="${skin}"]`);
       await card.getByRole('button', { name: /preview|預覽/i }).click();
       await expect(preview).toHaveAttribute(field, String(mode));
@@ -88,6 +91,7 @@ test('new original Gold/Crimson/Cyan/Magenta/White launch flares and Purple trai
   ];
   const preview = page.locator('#garage-preview');
   for (const [id, name, mode] of cases) {
+    await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${id}"]`).getByRole('button', { name: /preview|預覽/i }).click();
     await expect(preview).toHaveAttribute(name, mode);
     await expect(page.locator(`[data-skin="${id}"]`)).toHaveAttribute('data-preview-active', 'true');
@@ -103,6 +107,7 @@ test('four airflow appearances have distinct 3x image sources and live car rende
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   for(const [mode,id] of ['airflow-basic','airflow-slipstream','airflow-vortex','airflow-prism'].entries()){
+    await openGarageSection(page, 'effects');
     const card=page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
     const img=card.locator('img');
     await expect(img).toHaveAttribute('data-static-src',new RegExp(`raster/${id}@3x\\.png$`));

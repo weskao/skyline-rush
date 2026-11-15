@@ -1,3 +1,4 @@
+import { openStudioAngles } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
@@ -12,6 +13,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await expect(page.locator(`button[data-garage-mode="${mode}"]`)).toHaveAttribute('aria-pressed', 'true');
       await expect(preview).toHaveAttribute('data-garage-mode', mode);
       for (const angle of ['side', 'front', 'rear', 'top', 'cinematic']) {
+        await openStudioAngles(page);
         await page.locator(`[data-garage-angle="${angle}"]`).click();
         await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
         if (angle === 'side') {
@@ -42,6 +44,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await expect(wing).toHaveAttribute('aria-pressed', 'true');
       await expect(preview).toHaveAttribute('data-garage-wing', 'true');
       for (const angle of ['side', 'rear', 'cinematic']) {
+        await openStudioAngles(page);
         await page.locator(`[data-garage-angle="${angle}"]`).click();
         await expect(preview, 'an angle preset keeps the wing choice').toHaveAttribute('data-garage-wing', 'true');
         await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
@@ -54,7 +57,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await expect(wing).toHaveAttribute('aria-pressed', 'false');
       await expect(preview).toHaveAttribute('data-garage-wing', 'false');
     }
+    await wing.click();
+    await openStudioAngles(page);
     await page.locator('#garage-reset').click();
-    await expect(wing).toHaveAttribute('aria-pressed', 'false');
+    await expect(wing).toHaveAttribute('aria-pressed', 'true');
+    await expect(preview).toHaveAttribute('data-garage-mode', 'flight');
   });
 }

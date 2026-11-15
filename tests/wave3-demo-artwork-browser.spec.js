@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { existsSync } from 'node:fs';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -71,6 +72,7 @@ for (const viewport of screens) for (const locale of ['en', 'zh-TW']) {
     if (locale === 'zh-TW') await selectLocale(page, locale);
     await page.locator('#garage-button').click();
 
+    await openGarageSection(page, 'missions');
     const board = page.locator('.garage-mission-board');
     await expect(board).toBeVisible();
     await expect(board).toContainText(locale === 'en' ? 'Mission center' : '任務中心');
@@ -96,6 +98,7 @@ for (const viewport of screens) for (const locale of ['en', 'zh-TW']) {
       body: await board.screenshot(), contentType: 'image/png',
     });
 
+    await openGarageSection(page, 'store');
     const store = page.locator('#garage-art-source-garage-store-readiness');
     await store.locator('summary').click();
     await expect(store.locator('[data-wave3-asset]')).toHaveCount(6);
@@ -113,6 +116,7 @@ for (const viewport of screens) for (const locale of ['en', 'zh-TW']) {
 test('Canvas verifies original source alpha bounds independently of displayed GIFs', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const gallery = page.locator('#garage-art-source-garage-store-readiness');
   await gallery.locator('summary').click();
   for (const id of storeIds) {
@@ -148,10 +152,12 @@ test('corrupted Store WebP and missing mission art keep localized text, not PNG 
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'missions');
   const mission = page.locator('[data-mission-id="mission-race"]');
   await expect(mission.locator('.artwork-fallback')).toBeVisible();
   await expect(mission).toContainText('競速挑戰');
 
+  await openGarageSection(page, 'store');
   const gallery = page.locator('#garage-art-source-garage-store-readiness');
   await gallery.locator('summary').click();
   const tag = gallery.locator('[data-wave3-asset="store-tag"]');
@@ -167,6 +173,7 @@ test('reduced motion retains static art and VFX-Off hides the CSS sweep', async 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const store = page.locator('#garage-art-source-garage-store-readiness');
   await store.locator('summary').click();
   const box = store.locator('[data-wave3-asset="store-box"] img');

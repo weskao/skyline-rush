@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
@@ -6,6 +7,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.setViewportSize(viewport);
     await page.goto('/');
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'store');
     const catalog = page.locator('#garage-art-source-garage-store-readiness');
     await page.locator('[data-garage-store-open]').click();
     await expect(catalog).toHaveAttribute('open', '');
@@ -34,6 +36,7 @@ test('Store supports zh-TW and prevents keyboard or mouse purchases', async ({ p
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const catalog = page.locator('#garage-art-source-garage-store-readiness');
   await catalog.locator('summary').click();
   await expect(catalog.locator('[data-store-catalog]')).toContainText('商店展示');
@@ -48,6 +51,7 @@ test('Store falls back to original source artwork when independent PNG is unavai
   await page.route('**/store-tag@3x.png', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const catalog = page.locator('#garage-art-source-garage-store-readiness');
   await catalog.locator('summary').click();
   const img = catalog.locator('[data-wave3-asset="store-tag"] img');
@@ -60,6 +64,7 @@ test('Store motion is disabled when the OS requests reduced motion', async ({ pa
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const catalog = page.locator('#garage-art-source-garage-store-readiness');
   await catalog.locator('summary').click();
   const transition = await catalog.locator('[data-wave3-asset="store-star"]').evaluate(el => getComputedStyle(el).transitionDuration);
@@ -69,6 +74,7 @@ test('Store motion is disabled when the OS requests reduced motion', async ({ pa
 test('all six standalone Store PNGs preserve the restored WebP source pixels exactly', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const catalog = page.locator('#garage-art-source-garage-store-readiness');
   await catalog.locator('summary').click();
   const ids = ['store-cart','store-box','store-bundle','store-tag','store-star','store-collection'];
@@ -106,6 +112,7 @@ for (const [locale, unavailable, coming] of [
     await page.goto('/');
     if (locale !== 'en') await selectLocale(page, locale);
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'store');
     await page.locator('[data-garage-store-open]').click();
     const catalog = page.locator('#garage-art-source-garage-store-readiness');
     const heading = catalog.locator('.garage-source-detail-heading span');

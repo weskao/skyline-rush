@@ -1,3 +1,4 @@
+import { openStudioAngles } from './helpers/garage-browser.js';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -76,6 +77,7 @@ test('camera switch: Home dock views and Home ↔ Studio reuse the instances wit
   await page.locator('#garage-studio-open').click();
   await expect.poll(async () => (await instances(page)).studio ?? null).not.toBeNull();
   const { studio } = await instances(page);
+  await openStudioAngles(page);
   await page.locator('[data-garage-angle="front"]').click();
   await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame', 'true');
   await attach(page, 'probe-garage-studio');

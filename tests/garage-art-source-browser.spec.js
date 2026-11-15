@@ -1,9 +1,11 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
 test('Garage source artwork is available at native 3x resolution with 1x CSS display without granting capabilities', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const source = page.locator('#garage-art-source-garage-store-readiness');
   await expect(source).toBeVisible();
   const entry = source.locator('summary img[data-image="store-collection-summary"]');
@@ -34,6 +36,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await page.setViewportSize(viewport);
     await page.goto('/');
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'store');
     const gallery = page.locator('#garage-art-source-garage-store-readiness');
     await expect(gallery).toBeVisible();
     await expect(gallery).toHaveAttribute('data-economy-preview','art-only');
@@ -83,6 +86,7 @@ test('Store preview summary has bilingual art fallback without granting an Econo
   await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.{png,webp}', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const entry = page.locator('#garage-art-source-garage-store-readiness summary');
   await expect(entry.getByRole('img',{name:'Collection art'})).toBeVisible();
   await entry.click();
@@ -97,6 +101,7 @@ test('failed selected Store concept image keeps readable text and no purchase CT
   await page.route('**/feature-assets/garage-store-readiness/raster/store-star@3x.webp', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const gallery = page.locator('#garage-art-source-garage-store-readiness');
   await gallery.locator('summary').click();
   await gallery.locator('[data-wave3-asset="store-star"]').click();
@@ -111,6 +116,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.setViewportSize(viewport);
     await page.goto('/');
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'missions');
     const gallery = page.locator('#garage-art-source-garage-rewards-and-missions');
     await gallery.locator('summary').click();
     const cards = gallery.locator('.garage-badge-card');

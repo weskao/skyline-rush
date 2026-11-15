@@ -1,3 +1,13 @@
+# 2026-11-15 — Garage Home and Preview Studio layout (`feature/garage-studio-layout`)
+
+- [x] Base `4d45cc460b4d1c45ed26017ef9737802a5a1d63e`. Reproduced the missing Cars/Paints navigation on the base trial build before changing production code.
+- [x] Garage keeps one scrollable catalog with separate Cars, Paints, Effects, Missions, demo Store and Collection entries. Paints retain an always-visible status/action row and one-step undo. Existing paint entitlement and car save routes are reused.
+- [x] Compact Studio groups its presets and Reset in the Angles panel. Desktop exposes presets directly. Reused the camera implementation and regressions from `fix/studio-camera-orbit-persistence` at `a208263`, including preset/zoom/gesture continuity and preserving display pose on reset.
+- [x] Mission entry counts claimable rewards. Demo Store uses receipt deltas for transaction feedback, and Collection places equip feedback beside its action. Existing audio confirmations cover equip, undo and demo transactions. The DOM layout is shared by all quality tiers.
+- [x] Module-size, Garage/Studio unit guards, iOS touch guard and browser hygiene checks passed (37 tests).
+- [ ] Complete release and trial build verification, the full browser/World Tour gate and exact-head remote CI. Local software Chromium and build processes hit resource limits during the broad run.
+- [ ] Verify portrait/landscape on physical iOS and Android. Missing production artwork is assigned to H.
+
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
 - [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.

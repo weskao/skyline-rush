@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { expect } from '@playwright/test';
 import { captureHooks, test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -53,6 +54,7 @@ for (const [name, viewport, hasTouch, muted] of [
 
       await page.locator('#choose-track').click();
       await page.locator('#garage-button').click();
+      await openGarageSection(page, 'missions');
       const mission = page.locator('[data-mission-id="mission-race:daily"]');
       await mission.getByRole('button', { name:/claim demo reward/i }).click();
       await expect(mission).toHaveAttribute('data-mission-state', 'claimed');

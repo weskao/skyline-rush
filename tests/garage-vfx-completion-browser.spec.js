@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
@@ -8,6 +9,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.locator('#garage-studio-open').click();
 
     for (const id of ['airflow-basic', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism']) {
+      await openGarageSection(page, 'effects');
       const item = page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
       await item.scrollIntoViewIfNeeded();
       const image = item.locator('.artwork-img');
@@ -46,6 +48,7 @@ test('previewing a skin is visibly distinct from equipping it', async ({ page })
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
+  await openGarageSection(page, 'effects');
   const basic = page.locator('[data-skin="thruster-basic"]');
   const ion = page.locator('[data-skin="thruster-ion"]');
   await expect(basic).toHaveAttribute('data-state', 'equipped');
@@ -64,6 +67,7 @@ test('preview glow respects reduced motion without changing ownership', async ({
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
+  await openGarageSection(page, 'effects');
   const ion = page.locator('[data-skin="thruster-ion"]');
   await ion.locator('.garage-skin-preview-hitarea').click();
   const name = await ion.locator('.garage-vfx-art').evaluate(el => getComputedStyle(el, '::after').animationName);

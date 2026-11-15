@@ -1,3 +1,4 @@
+import { openGarageSection, openStudioAngles } from './helpers/garage-browser.js';
 import { test, captureHooks, glbRoots, programs, modelInstances as instances, dressedAs as dressed } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -87,6 +88,7 @@ test('Garage and Preview Studio keep equipped and previewed paint while switchin
   await expect.poll(() => airflowBounds(page)).not.toEqual(roadsterAirflow);
   await attach(page, 'gt-garage-pearl');
 
+  await openGarageSection(page, 'paints');
   await page.locator('[data-paint="aurora"]').click();
   await page.locator('#garage-equip').click();
   await expect(page.locator('[data-paint="aurora"]')).toHaveAttribute('data-state', 'equipped');
@@ -112,9 +114,12 @@ test('Garage and Preview Studio keep equipped and previewed paint while switchin
   await expect.poll(async () => (await paintHex(page)).proc).toBe('a9c5a0');
   await expect.poll(() => saved(page, 'skyline-rush-paint')).toBe('aurora');
   await page.locator('#garage-studio-open').click();
+  await openGarageSection(page, 'paints');
   const locked = page.locator('[data-paint="obsidian"]');
   await locked.click();
+  await openGarageSection(page, 'cars');
   await carButton(page, 'crimson-gt').click();
+  await openGarageSection(page, 'paints');
   await expect(locked).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#garage-equip')).toBeDisabled();
   const studioPaint = () => page.evaluate(() => {
@@ -131,6 +136,7 @@ test('Garage and Preview Studio keep equipped and previewed paint while switchin
   await expect.poll(() => paintHex(page)).toEqual({ model: 'crimson-gt', glb: 'a9c5a0', proc: 'a9c5a0' });
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
+  await openGarageSection(page, 'paints');
   await page.locator('#garage-restore-default').click();
   await expect.poll(studioPaint).toBe(FACTORY_RED);
   expect(await saved(page, 'skyline-rush-car-paints')).toEqual({ 'crimson-gt': 'crimson' });
@@ -142,6 +148,7 @@ test('every shared paint previews on the GT', async ({ gameplayPage: page, gamep
   await prepare(page, gameplayURL, { quality: 'low', storage: GT });
   await page.locator('#garage-button').click();
   await modelReady(page);
+  await openGarageSection(page, 'paints');
   for (const [id, paint] of Object.entries(PAINTS)) {
     await page.locator(`[data-paint="${id}"]`).click();
     await expect.poll(async () => (await paintHex(page)).glb, { message: id }).toBe(paint.paint.slice(1));
@@ -186,6 +193,7 @@ test('Preview Studio frames the Crimson GT from the front, side and rear', async
   await page.locator('#garage-studio-open').click();
   await expect.poll(async () => (await instances(page)).studio ?? null).not.toBeNull();
   for (const angle of ['front', 'side', 'rear', 'cinematic']) {
+    await openStudioAngles(page);
     await page.locator(`[data-garage-angle="${angle}"]`).click();
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame', 'true');
     await attach(page, `gt-studio-${angle}`);
@@ -327,6 +335,7 @@ test('every Garage skin previews on the Crimson GT', async ({ gameplayPage: page
   await modelReady(page);
   expect(GARAGE_SKINS).toHaveLength(22);
   for (const { id, category } of GARAGE_SKINS) {
+    await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
     await expect(page.locator('#garage-preview'), id).toHaveAttribute(`data-skin-preview-${category}`, id);
     if (process.env.CRIMSON_GT_SHOTS) await attach(page, `gt-skin-${id}`); // local review sheet: all 22 on the GT
@@ -336,7 +345,7 @@ test('every Garage skin previews on the Crimson GT', async ({ gameplayPage: page
   expect(errors).toEqual([]);
 });
 
-test('keyboard: Tab walks the cars in catalog order, Enter equips the focused car, and the paints come after the picker', async ({ gameplayPage: page, gameplayURL }) => {
+test('keyboard: Tab walks the cars in catalog order, Enter equips the focused car, and the Paints section is keyboard accessible', async ({ gameplayPage: page, gameplayURL }) => {
   const { errors } = await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
   await carButton(page, 'roadster').focus();
@@ -346,17 +355,14 @@ test('keyboard: Tab walks the cars in catalog order, Enter equips the focused ca
   await expect(carButton(page, 'crimson-gt')).toHaveAttribute('aria-pressed', 'true');
   await modelReady(page);
   await expect(carButton(page, 'crimson-gt'), 'equipping keeps the focus on the picked car').toBeFocused();
-  await page.keyboard.press('Tab');
-  // The Store gallery sits between the picker and the paints: Tab leaves the cars forward, and the paints come later.
-  await expect.poll(() => page.evaluate(() => {
-    const after = (a, b) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-    const gt = document.querySelector('#garage-screen [data-car="crimson-gt"]');
-    return { leftCars: !document.activeElement.matches('[data-car]') && after(gt, document.activeElement), paintsFollow: after(gt, document.querySelector('#garage-screen [data-paint]')) };
-  })).toEqual({ leftCars: true, paintsFollow: true });
-  await page.keyboard.press('Shift+Tab');
-  await expect(carButton(page, 'crimson-gt')).toBeFocused();
   await page.keyboard.press('Shift+Tab');
   await expect(carButton(page, 'roadster')).toBeFocused();
+  const paints = page.locator('[data-garage-section="paints"]');
+  await paints.focus();
+  await page.keyboard.press('Enter');
+  await expect(paints).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-paint="pearl"]')).toBeVisible();
+  await expect(carButton(page, 'crimson-gt')).toBeHidden();
   expect(errors).toEqual([]);
 });
 
@@ -502,6 +508,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     test('the shared Deep Crimson card is native 3x, opaque, and uses the same layout as the paint collection', async ({ gameplayPage: page, gameplayURL }) => {
       const { errors } = await prepare(page, gameplayURL, { storage: GT });
       await page.locator('#garage-button').click();
+      await openGarageSection(page, 'paints');
       const button = page.locator('#garage-screen [data-paint="crimson"]');
       await button.scrollIntoViewIfNeeded();
       const image = button.locator('img.garage-paint-image');
@@ -559,6 +566,7 @@ test('Garage airflow previews and equipped styles follow Crimson GT onto Coming 
   await expect.poll(style, { timeout: ciTimeout(20000) }).toEqual(['crimson-gt', 0]);
   await page.locator('#garage-button').click();
   for (const [pattern, id] of ['airflow-basic', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism'].entries()) {
+    await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
     await expect.poll(style).toEqual(['crimson-gt', pattern]);
   }
@@ -566,6 +574,7 @@ test('Garage airflow previews and equipped styles follow Crimson GT onto Coming 
   await expect.poll(style).toEqual(['crimson-gt', 0]);
 
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
   await page.locator('[data-skin="airflow-vortex"] .garage-skin-preview-hitarea').click();
   await page.locator('[data-skin="airflow-vortex"] .garage-skin-action').click();
   await page.locator('#garage-close').click();

@@ -1,3 +1,4 @@
+import { openStudioAngles } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 import { decodePngRgba } from './helpers/png-rgba.js';
@@ -75,6 +76,7 @@ for(const id of IDS) for(const viewport of SCREEN_SIZES) {
     // Studio owns five camera presets, while Home/Garage use the six-view shared dock.
     const chosen=viewport.width===1440?angles:angles.slice(0,2);
     for(const angle of chosen) {
+      await openStudioAngles(page);
       const button=page.locator('[data-garage-angle="'+angle+'"]');
       await button.click();
       await expect(button).toHaveAttribute('aria-pressed','true');

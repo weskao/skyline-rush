@@ -1,9 +1,11 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1440,height:900}]){
   test('Wave3 missions connect to the real local demo port at '+viewport.width+'x'+viewport.height,async({page})=>{
     await page.setViewportSize(viewport);await page.goto('/');
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'missions');
     const board=page.locator('.garage-mission-board');
     await expect(board).toBeVisible();
     await expect(board).toHaveAttribute('data-rewards-authority','local-demo');
@@ -21,6 +23,7 @@ test('missing art and reduced-motion bilingual UTC fallback remain usable',async
   await page.route('**/feature-assets/garage-rewards-and-missions/raster/*.webp',route=>route.abort());
   await page.goto('/');await selectLocale(page,'zh-TW');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'missions');
   const board=page.locator('.garage-mission-board');
   await expect(board.locator('.garage-period-heading + p')).toContainText('重設 00:00 UTC');
   await expect(board).toContainText('非正式成就');

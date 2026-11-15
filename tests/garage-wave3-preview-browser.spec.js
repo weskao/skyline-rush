@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
@@ -5,6 +6,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
   test(`Wave3 garage-store-readiness read-only cards browse safely at ${viewport.width}x${viewport.height}`,async({page})=>{
     await page.setViewportSize(viewport); await page.goto('/');
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'store');
     const gallery=page.locator('#garage-art-source-garage-store-readiness');
     await expect(gallery).toBeVisible();
     await expect(gallery).not.toHaveAttribute('open','');
@@ -31,6 +33,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
 }
 test('Wave3 garage-store-readiness filters and locale switch keep all buttons nontransactional',async({page})=>{
   await page.goto('/');await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const gallery=page.locator('#garage-art-source-garage-store-readiness');
   await gallery.locator('summary').click();
   await gallery.locator('[data-wave3-filter="collection"]').click();
@@ -40,6 +43,7 @@ test('Wave3 garage-store-readiness filters and locale switch keep all buttons no
   await expect(page.locator('#garage-screen')).not.toBeVisible();
   await selectLocale(page,'zh-TW');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const localized=page.locator('#garage-art-source-garage-store-readiness');
   await localized.locator('summary').click();
   await expect(localized.locator('[data-store-phase="coming-soon"]')).toHaveText('商店 · 即將推出 — 僅供預覽');
@@ -55,6 +59,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
     await page.setViewportSize(viewport);
     await page.goto('/');
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'store');
     const gallery = page.locator('#garage-art-source-garage-store-readiness');
     await gallery.locator('summary').click();
     for (const id of storeAssets) {
@@ -131,6 +136,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
 test('Store entrance icon loads native WebP without any PNG fallback', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const entryIcon = page.locator('#garage-art-source-garage-store-readiness summary [data-wave3-entry-icon] img');
   await expect(entryIcon).toHaveAttribute('src', /store-collection@3x\.webp$/);
   await expect(entryIcon).toHaveJSProperty('naturalWidth', 216);
@@ -140,6 +146,7 @@ test('Store preview keeps readable Coming Soon when the real 3x entrance icon fa
   await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.webp', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const gallery = page.locator('#garage-art-source-garage-store-readiness');
   await expect(gallery.locator('summary')).toBeVisible();
   await expect(gallery.locator('summary [data-wave3-entry-icon] .artwork-fallback')).toBeVisible();
@@ -152,6 +159,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
   test(`Wave3 garage-rewards-and-missions read-only cards browse safely at ${viewport.width}x${viewport.height}`,async({page})=>{
     await page.setViewportSize(viewport); await page.goto('/');
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'missions');
     const gallery=page.locator('#garage-art-source-garage-rewards-and-missions');
     await expect(gallery).toBeVisible();
     await expect(gallery).not.toHaveAttribute('open','');
@@ -178,6 +186,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
 }
 test('Wave3 garage-rewards-and-missions filters and locale switch keep all buttons nontransactional',async({page})=>{
   await page.goto('/');await page.locator('#garage-button').click();
+  await openGarageSection(page, 'missions');
   const gallery=page.locator('#garage-art-source-garage-rewards-and-missions');
   await gallery.locator('summary').click();
   await gallery.locator('[data-wave3-filter="trophy"]').click();
@@ -187,6 +196,7 @@ test('Wave3 garage-rewards-and-missions filters and locale switch keep all butto
   await expect(page.locator('#garage-screen')).not.toBeVisible();
   await selectLocale(page,'zh-TW');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'missions');
   const localized=page.locator('#garage-art-source-garage-rewards-and-missions');
   await localized.locator('summary').click();
   await expect(localized.locator('[data-wave3-description]')).toContainText(/[一-龥]/);

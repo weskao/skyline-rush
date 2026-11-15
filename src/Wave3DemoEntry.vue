@@ -1,34 +1,44 @@
 <script setup lang="ts">
-import { inject, ref } from 'vue';
+import { inject, nextTick, ref } from 'vue';
 import Wave3DemoStore from './Wave3DemoStore.vue';
 import Wave3DemoCollection from './Wave3DemoCollection.vue';
 import { wave3DemoExperience } from './wave3-race-events.ts';
 import { garageSkinEntry, garageSkinState, selectGarageSkin } from '#garage-skin-runtime';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
-defineProps<{ locale: string }>();
+const props = defineProps<{ locale: string; embedded?: boolean }>();
+const emit = defineEmits<{ navigate: [page: 'home' | 'store' | 'collection'] }>();
+const screen = ref<HTMLElement>();
 const page = ref<'home' | 'store' | 'collection'>('home');
 async function reset() {
   await wave3DemoExperience.resetDemo();
   cue('reset-confirmed');
-  page.value = 'home';
+  navigate('home');
 }
-function navigate(next: typeof page.value) {
+function navigate(next: typeof page.value, interactive = true) {
   if (page.value === next) return;
   page.value = next;
+  if (!interactive) return;
+  emit('navigate', next);
+  if (props.embedded) void nextTick(() => {
+    const catalog = screen.value?.closest('.garage-catalog-scroll');
+    if (catalog) catalog.scrollTop = 0;
+    screen.value?.focus({ preventScroll: true });
+  });
   cue('ui');
 }
+defineExpose({ navigate });
 const returnToRace = () => document.querySelector<HTMLButtonElement>('#garage-close')?.click();
 </script>
 
 <template>
-  <section class="wave3-demo-entry" data-wave3-demo-entry :aria-label="locale === 'zh-TW' ? '試玩外觀與收藏' : 'Demo cosmetics and collection'">
+  <section ref="screen" tabindex="-1" class="wave3-demo-entry" data-wave3-demo-entry :aria-label="locale === 'zh-TW' ? '試玩外觀與收藏' : 'Demo cosmetics and collection'">
     <template v-if="page === 'home'">
       <p>{{ locale === 'zh-TW' ? '完成賽事與挑戰，取得本機試玩獎勵並兌換暫時外觀。' :
         'Race and complete challenges to earn local demo rewards and redeem temporary cosmetics.' }}</p>
       <nav class="wave3-demo-entry-actions">
-        <button type="button" data-wave3-open-store @click="navigate('store')">{{ locale === 'zh-TW' ? '開啟試玩商城' : 'Open Demo Store' }}</button>
-        <button type="button" data-wave3-open-collection @click="navigate('collection')">{{ locale === 'zh-TW' ? '試玩收藏' : 'Demo Collection' }}</button>
+        <button v-if="!embedded" type="button" data-wave3-open-store @click="navigate('store')">{{ locale === 'zh-TW' ? '開啟試玩商城' : 'Open Demo Store' }}</button>
+        <button v-if="!embedded" type="button" data-wave3-open-collection @click="navigate('collection')">{{ locale === 'zh-TW' ? '試玩收藏' : 'Demo Collection' }}</button>
         <button type="button" data-wave3-reset @click="reset">{{ locale === 'zh-TW' ? '重設本機試玩' : 'Reset local demo' }}</button>
       </nav>
     </template>

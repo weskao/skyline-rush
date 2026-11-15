@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 
 for (const { viewport, touch, reducedMotion } of [
@@ -18,6 +19,7 @@ for (const { viewport, touch, reducedMotion } of [
       const screen = page.locator('#garage-screen');
       const preview = page.locator('#garage-preview');
       const toggle = screen.getByRole('button', { name: 'Show equipment effects' });
+      await openGarageSection(page, 'effects');
       const loadout = page.locator('#garage-vfx-live-loadout');
       const notice = page.locator('#garage-vfx-notice');
       const activate = locator => touch ? locator.tap() : locator.click();

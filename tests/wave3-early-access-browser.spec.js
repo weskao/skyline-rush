@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -21,10 +22,12 @@ test('fresh guest can open the real Garage, missions and demo entry without sign
   await page.route(/https:\/\/(?:identitytoolkit|securetoken|firestore)\.googleapis\.com\//,
     route => route.abort('failed'));
   await openGarage(page);
+  await openGarageSection(page, 'missions');
   await expect(page.locator('.garage-mission-board')).toBeVisible();
   await expect(page.locator('[data-mission-id="mission-race"]')).toBeVisible();
-  await expect(page.locator('[data-wave3-demo-entry]')).toBeVisible();
   await expect(page.locator('[data-wave3-open-store]')).toBeEnabled();
+  await openStore(page);
+  await expect(page.locator('[data-wave3-demo-entry]')).toBeVisible();
   await expect(page.locator('[data-garage-store-entry]')).toContainText(/coming soon/i);
   await expect(page.locator('#garage-screen')).not.toContainText(/purchase confirmed|server verified/i);
 });
@@ -163,6 +166,7 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await expect(homeWallet.locator('[data-currency="coins"] strong')).toHaveText('70');
   await expect(homeWallet.locator('[data-currency="diamonds"] strong')).toHaveText('0');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'missions');
   const board = page.locator('.garage-mission-board');
   await expect(board).toHaveAttribute('data-rewards-authority', 'local-demo');
   await expect(page.locator('#garage-screen [data-wave3-wallet]')).toHaveCount(0);
@@ -252,6 +256,7 @@ test('real Garage cannot grant paid entitlements or stale demo claims through re
 test('portrait phone exposes keyboard-accessible real mission progress and demo navigation', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openGarage(page);
+  await openGarageSection(page, 'missions');
   const board = page.locator('.garage-mission-board');
   await expect(board).toHaveAttribute('data-mission-state', 'local-demo');
   await expect(board.locator('progress')).toHaveCount(12);

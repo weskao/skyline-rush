@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
@@ -6,6 +7,7 @@ for (const [width, height] of [[390, 844], [844, 390], [1440, 900]]) {
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'missions');
     const board = page.locator('.garage-mission-board');
     await expect(board).toBeVisible();
     await expect(board).toHaveAttribute('data-mission-state', 'local-demo');
@@ -30,6 +32,7 @@ test('Garage Missions stay truthful in Traditional Chinese and fall back on miss
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'missions');
   const board = page.locator('.garage-mission-board');
   await expect(board).toContainText('任務中心');
   await expect(board).toContainText('試玩進度與獎盃僅儲存在本機');
@@ -43,6 +46,7 @@ test('Garage shows all eight WebPs in the actual interface without opening the c
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'missions');
   const board = page.locator('.garage-mission-board');
   // Mission cards only: the period cards share data-mission-id and carry small currency icons.
   await expect(board.locator('.garage-mission-card img')).toHaveCount(4);
@@ -63,6 +67,7 @@ test('Garage trophy display preserves Traditional Chinese and missing-image fall
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'missions');
   const trophy = page.locator('.garage-mission-board [data-trophy-id="trophy-gold"]');
   await expect(trophy).toContainText('金級獎盃');
   await expect(trophy).toContainText('僅供展示');

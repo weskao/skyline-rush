@@ -19,6 +19,7 @@ interface GarageWorld {
   previewAppearance(paint: Paint): void;
   resize(): void;
   setGarageCamera(camera: GarageCamera | null): void;
+  getGarageCameraYaw?(): number | undefined;
   /** Home page only: poses the track-showcase car like the Studio's ground / flight / wing buttons. */
   setGaragePose?(pose: GaragePose | null): void;
   /** Sun (bright) / moon (dim) lighting for Garage Home and the Studio; racing is unaffected. */
@@ -67,9 +68,10 @@ export function setupGarageUI({
   const historyKey = '__skylineGaragePage';
   let leavingGarage = false;
   let previewing = getEquippedPaint();
+  let previousPaint: string | null = null;
   const owned = (): string[] => availablePaints(getStars());
   let camera = defaultGarageCamera();
-  let autoPaused = false;
+  let orbitBeforeGesture = false;
   const contacts = new Map<number, { x: number; y: number }>();
   let pendingStudioInspection = false;
   function syncSkins(): void {
@@ -129,6 +131,7 @@ export function setupGarageUI({
     updateGarageStudioView({ ownedPaints: owned(), equippedPaint: getEquippedPaint(), car: equippedCar() });
     updateGarageView({
       status: t('garage.status.' + state, { name, stars: need, have: stars }),
+      canUndo: previousPaint !== null && owned().includes(previousPaint) && previousPaint !== getEquippedPaint(),
       equipDisabled: !canEquip,
       equipLabel: t('garage.btn.' + (state === 'owned' ? 'equip' : state), { name, stars: need }),
     });
@@ -145,6 +148,7 @@ export function setupGarageUI({
   function adoptCar(): void {
     const before = equippedCar();
     const restored = reloadCar();
+    previousPaint = null;
     if (restored === before) { showGarage(); return; }
     setEquippedPaint(loadCarPaint(restored, owned()));
     previewPaint(getEquippedPaint());
@@ -166,6 +170,13 @@ export function setupGarageUI({
     updateGarageStudioView({ angle, autoRotate: camera.autoRotate, mode: camera.mode, wing: camera.wing });
     syncWorldCamera();
     inspectStudioAfterFrame();
+  }
+  const currentCameraYaw = () => camera.autoRotate ? getWorld()?.getGarageCameraYaw?.() ?? camera.yaw : camera.yaw;
+  function rotateCamera(dx: number, dy: number): void {
+    setCamera(dragGarageCamera({ ...camera, yaw: currentCameraYaw() }, dx, dy));
+  }
+  function zoomCamera(multiplier: number): void {
+    setCamera(zoomGarageCamera(camera, multiplier), garageStudioView.angle);
   }
   function showPage(page: 'home' | 'studio'): void {
     if (page === 'home') contacts.clear();
@@ -195,24 +206,38 @@ export function setupGarageUI({
   function releaseContact(id: number): void {
     const hadPointer = contacts.delete(id);
     if (!hadPointer || contacts.size !== 0 || !garageScreen.open) return;
-    if (garageStudioView.page === 'studio') setCamera(releaseGarageOrbit(camera, autoPaused));
+    if (garageStudioView.page === 'studio' && camera.autoRotate !== orbitBeforeGesture) {
+      setCamera(releaseGarageOrbit(camera, orbitBeforeGesture));
+    }
     clearControls();
   }
 
+  function equipPaint(id: string): void {
+    previousPaint = getEquippedPaint() === id ? previousPaint : getEquippedPaint();
+    setEquippedPaint(id);
+    previewPaint(id);
+  }
+  $('#garage-paint-undo').addEventListener('click', () => {
+    const restore = previousPaint;
+    if (!restore || !owned().includes(restore)) return;
+    previousPaint = null;
+    setEquippedPaint(restore);
+    previewPaint(restore);
+    $(`[data-paint="${restore}"]`).focus({ preventScroll: true });
+    cue?.('equip-confirmed');
+  });
   $('#garage-restore-default').addEventListener('click', () => {
     // Restore is a saved equip action, not a temporary preview; each car's default finish is always owned.
     const standard = defaultPaint(equippedCar());
     if (!owned().includes(standard)) return;
     const changed = getEquippedPaint() !== standard;
-    setEquippedPaint(standard);
-    previewPaint(standard);
+    equipPaint(standard);
     if (changed) cue?.('equip-confirmed');
   });
   $('#garage-equip').addEventListener('click', () => {
     // Guard the data boundary, not only the disabled UI: a locked paint is never persisted.
     if (!garagePresentation(previewing, getEquippedPaint(), getStars(), PAINTS, owned()).canEquip) return;
-    setEquippedPaint(previewing);
-    previewPaint(getEquippedPaint());
+    equipPaint(previewing);
     cue?.('equip-confirmed');
   });
   $('#garage-screen .paint-options').addEventListener('click', event => {
@@ -240,7 +265,6 @@ export function setupGarageUI({
     world.resize();
     previewPaint(getEquippedPaint());
     world.setGarageLighting?.(garageStudioView.lighting);
-    autoPaused = false;
     setCamera(defaultGarageCamera());
     pushPage('home');
   });
@@ -266,6 +290,7 @@ export function setupGarageUI({
     getWorld()?.setGaragePose?.(null);
     getWorld()?.resize();
     cancelGarageSkinPreview();
+    previousPaint = null;
     previewPaint(getEquippedPaint());
     updateGarageStudioView({ page: 'home', effectsReminder: 0 });
     syncSkins(); // The locked build has no preview session to publish a reset.
@@ -275,7 +300,7 @@ export function setupGarageUI({
   garageScreen.addEventListener('keydown', event => event.stopPropagation());
   document.querySelectorAll<HTMLButtonElement>('[data-garage-angle]').forEach(button =>
     button.addEventListener('click', () => setCamera(
-      { ...garagePreset(button.dataset.garageAngle!), mode: camera.mode, wing: camera.wing }, button.dataset.garageAngle ?? '',
+      { ...garagePreset(button.dataset.garageAngle!), zoom: camera.zoom, mode: camera.mode, wing: camera.wing }, button.dataset.garageAngle ?? '',
     )));
   document.querySelectorAll<HTMLButtonElement>('[data-garage-mode]').forEach(button =>
     button.addEventListener('click', () => setCamera(
@@ -292,17 +317,17 @@ export function setupGarageUI({
     syncSkins();
     cue?.('ui');
   });
-  $('#garage-rotate-left').addEventListener('click', () => setCamera(dragGarageCamera(camera, -40, 0)));
-  $('#garage-rotate-right').addEventListener('click', () => setCamera(dragGarageCamera(camera, 40, 0)));
-  $('#garage-zoom-in').addEventListener('click', () => setCamera(zoomGarageCamera(camera, .85)));
-  $('#garage-zoom-out').addEventListener('click', () => setCamera(zoomGarageCamera(camera, 1.15)));
-  $('#garage-reset').addEventListener('click', () => setCamera(defaultGarageCamera()));
-  $('#garage-auto-rotate').addEventListener('click', () => {
-    autoPaused = camera.autoRotate;
-    setCamera(toggleGarageOrbit(camera));
-  });
+  $('#garage-rotate-left').addEventListener('click', () => rotateCamera(-40, 0));
+  $('#garage-rotate-right').addEventListener('click', () => rotateCamera(40, 0));
+  $('#garage-zoom-in').addEventListener('click', () => zoomCamera(.85));
+  $('#garage-zoom-out').addEventListener('click', () => zoomCamera(1.15));
+  $('#garage-reset').addEventListener('click', () => setCamera(
+    { ...garagePreset('cinematic'), mode: camera.mode, wing: camera.wing }, 'cinematic',
+  ));
+  $('#garage-auto-rotate').addEventListener('click', () => setCamera(toggleGarageOrbit({ ...camera, yaw: currentCameraYaw() })));
   preview.addEventListener('pointerdown', event => {
     if (garageStudioView.page !== 'studio' || event.pointerType === 'mouse' && event.button !== 0) return;
+    if (contacts.size === 0) orbitBeforeGesture = camera.autoRotate;
     contacts.set(event.pointerId, { x: event.clientX, y: event.clientY });
     preview.setPointerCapture(event.pointerId);
     event.preventDefault();
@@ -311,13 +336,13 @@ export function setupGarageUI({
     const old = contacts.get(event.pointerId);
     if (!old || garageStudioView.page !== 'studio') return;
     const now = { x: event.clientX, y: event.clientY };
-    if (contacts.size === 1) setCamera(dragGarageCamera(camera, now.x - old.x, now.y - old.y));
+    if (contacts.size === 1) rotateCamera(now.x - old.x, now.y - old.y);
     else {
       const other = [...contacts].find(([id]) => id !== event.pointerId)?.[1];
       if (other) {
         const before = Math.hypot(old.x - other.x, old.y - other.y);
         const after = Math.hypot(now.x - other.x, now.y - other.y);
-        if (after > 4) setCamera(zoomGarageCamera(camera, before / after));
+        if (after > 4) zoomCamera(before / after);
       }
     }
     contacts.set(event.pointerId, now);
@@ -328,16 +353,16 @@ export function setupGarageUI({
   preview.addEventListener('wheel', event => {
     if (garageStudioView.page !== 'studio') return;
     event.preventDefault();
-    setCamera(zoomGarageCamera(camera, Math.exp(Math.sign(event.deltaY) * .1)));
+    zoomCamera(Math.exp(Math.sign(event.deltaY) * .1));
   }, { passive: false });
   preview.addEventListener('keydown', event => {
     if (garageStudioView.page !== 'studio') return;
-    if (event.key === 'ArrowLeft') setCamera(dragGarageCamera(camera, -25, 0));
-    else if (event.key === 'ArrowRight') setCamera(dragGarageCamera(camera, 25, 0));
-    else if (event.key === 'ArrowUp') setCamera(dragGarageCamera(camera, 0, -25));
-    else if (event.key === 'ArrowDown') setCamera(dragGarageCamera(camera, 0, 25));
-    else if (event.key === '+' || event.key === '=') setCamera(zoomGarageCamera(camera, .85));
-    else if (event.key === '-') setCamera(zoomGarageCamera(camera, 1.15));
+    if (event.key === 'ArrowLeft') rotateCamera(-25, 0);
+    else if (event.key === 'ArrowRight') rotateCamera(25, 0);
+    else if (event.key === 'ArrowUp') rotateCamera(0, -25);
+    else if (event.key === 'ArrowDown') rotateCamera(0, 25);
+    else if (event.key === '+' || event.key === '=') zoomCamera(.85);
+    else if (event.key === '-') zoomCamera(1.15);
     else return;
     event.preventDefault();
   });

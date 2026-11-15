@@ -1,3 +1,4 @@
+import { openStudioAngles } from './helpers/garage-browser.js';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -94,6 +95,7 @@ test(`${LABEL} ${VIEW}: Garage Studio paint and glass baseline`, async ({ gamepl
   const preview = page.locator('#garage-preview');
   await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'studio');
   for (const angle of ['front', 'side', 'rear']) {
+    await openStudioAngles(page);
     await page.locator(`[data-garage-angle="${angle}"]`).click();
     await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
     await page.waitForTimeout(ciTimeout(700)); // settle the camera before the comparison shot

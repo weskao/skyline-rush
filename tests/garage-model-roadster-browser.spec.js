@@ -1,3 +1,4 @@
+import { openGarageSection, openStudioAngles } from './helpers/garage-browser.js';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -59,6 +60,7 @@ test('Garage Home shows the Roadster GLB; wheels, wing, flight and paint follow 
   await attach(page, 'roadster-home-flight');
 
   const before = (await paintHex(page)).glb;
+  await openGarageSection(page, 'paints');
   await page.locator('[data-paint]:not([data-paint="pearl"])').first().click();
   await expect.poll(async () => { const p = await paintHex(page); return p.glb === p.proc && p.glb !== before; }).toBe(true);
   expect(errors).toEqual([]);
@@ -71,6 +73,7 @@ test('Preview Studio front/side/rear/orbit show the GLB in frame', async ({ game
   await page.locator('#garage-studio-open').click();
   await expect.poll(async () => JSON.parse((await world(page).getAttribute('data-garage-model-instances')) ?? '{}').studio ?? null).not.toBeNull();
   for (const angle of ['front', 'side', 'rear', 'cinematic']) {
+    await openStudioAngles(page);
     await page.locator(`[data-garage-angle="${angle}"]`).click();
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame', 'true');
     await attach(page, `roadster-studio-${angle}`);

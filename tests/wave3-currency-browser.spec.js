@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -92,6 +93,7 @@ test('home wallet never obstructs Garage VFX touch previews', async ({ page }) =
   await page.locator('#garage-button').click();
   await expect(page.locator('#garage-screen [data-wave3-wallet]')).toHaveCount(0);
   await page.locator('#garage-studio-open').click();
+  await openGarageSection(page, 'effects');
   const ion = page.locator('#garage-vfx-catalog [data-skin="thruster-ion"] .garage-skin-preview-hitarea');
   await ion.click({ timeout: ciTimeout(15000) });
   await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-preview-thruster', 'thruster-ion');

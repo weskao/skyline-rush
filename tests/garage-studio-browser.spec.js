@@ -1,3 +1,4 @@
+import { openGarageSection, openStudioAngles } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
@@ -60,9 +61,13 @@ test('scenario 2 — Orbit works with accessible camera buttons and drag', async
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
+  await openStudioAngles(page);
   await page.locator('[data-garage-angle="top"]').click();
   await expect(page.locator('[data-garage-angle="top"]')).toHaveAttribute('aria-pressed', 'true');
+  await openStudioAngles(page);
   await page.locator('#garage-reset').click();
+  await expect(page.locator('#garage-auto-rotate')).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('#garage-auto-rotate').click();
   await expect(page.locator('#garage-auto-rotate')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#garage-preview').focus();
   await page.keyboard.press('ArrowLeft');
@@ -76,10 +81,108 @@ test('scenario 2 — Orbit works with accessible camera buttons and drag', async
   await expect(page.locator('#garage-preview')).toHaveAttribute('data-camera-zoom', '1.080');
 });
 
+test('Studio drag preserves the selected orbit mode when released', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: false })));
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.locator('#garage-button').click();
+  await page.locator('#garage-studio-open').click();
+  const preview = page.locator('#garage-preview');
+  const orbit = page.locator('#garage-auto-rotate');
+  const box = await preview.boundingBox();
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  for (const view of ['preset', 'keyboard', 'orbit']) {
+    if (view === 'preset') await page.locator('[data-garage-angle="side"]').click();
+    else {
+      await openStudioAngles(page);
+      await page.locator('#garage-reset').click();
+      if (view === 'keyboard') await preview.press('ArrowLeft');
+      else await orbit.click();
+    }
+    const autoRotate = String(view === 'orbit');
+    await expect(orbit).toHaveAttribute('aria-pressed', autoRotate);
+    const yaw = await preview.getAttribute('data-camera-yaw');
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 50, y - 15);
+    await expect(preview).not.toHaveAttribute('data-camera-yaw', yaw);
+    await expect(orbit).toHaveAttribute('aria-pressed', 'false');
+    const adjustedYaw = await preview.getAttribute('data-camera-yaw');
+    await page.mouse.up();
+    await expect(orbit).toHaveAttribute('aria-pressed', autoRotate);
+    await expect(preview).toHaveAttribute('data-camera-yaw', adjustedYaw);
+  }
+});
+
+for (const size of [{ width: 320, height: 740 }, { width: 667, height: 375 }]) {
+  test(`Studio exposes the primary camera controls without scrolling at ${size.width}×${size.height}`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await page.addInitScript(locale => {
+      localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: false }));
+      localStorage.setItem('skyline-rush-locale', locale);
+    }, size.width === 320 ? 'zh-TW' : 'en');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.locator('#garage-button').click();
+    await page.locator('#garage-studio-open').click();
+    for (const control of ['garage-auto-rotate', 'garage-zoom-in', 'garage-zoom-out', 'garage-angle-menu']) {
+      const button = page.locator('#' + control);
+      await expect(button).toBeInViewport({ ratio: .99 });
+      const box = await button.boundingBox();
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+    await page.locator('[data-garage-mode="flight"]').click();
+    await page.locator('#garage-wing').click();
+    await page.locator('#garage-auto-rotate').click();
+    await page.locator('#garage-zoom-in').click();
+    await openStudioAngles(page);
+    await page.locator('[data-garage-angle="side"]').click();
+    const preview = page.locator('#garage-preview');
+    await expect(preview).toHaveAttribute('data-camera-zoom', '0.850');
+    await expect(page.locator('[data-garage-angle="side"]')).toHaveAttribute('aria-pressed', 'true');
+    await openStudioAngles(page);
+    await page.locator('#garage-reset').click();
+    await expect(page.locator('#garage-auto-rotate')).toHaveAttribute('aria-pressed', 'false');
+    await expect(preview).toHaveAttribute('data-camera-zoom', '1.000');
+    await expect(preview).toHaveAttribute('data-garage-mode', 'flight');
+    await expect(preview).toHaveAttribute('data-garage-wing', 'true');
+    await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
+  });
+}
+
+for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }]) {
+  test(`Studio pinch keeps the adjusted zoom in a fixed view ${viewport.width}×${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: false })));
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.locator('#garage-button').click();
+    await page.locator('#garage-studio-open').click();
+    await openStudioAngles(page);
+    await page.locator('[data-garage-angle="front"]').click();
+    const preview = page.locator('#garage-preview');
+    const orbit = page.locator('#garage-auto-rotate');
+    await expect(orbit).toHaveAttribute('aria-pressed', 'false');
+    const box = await preview.boundingBox();
+    const x = Math.round(box.x + box.width / 2);
+    const y = Math.round(box.y + box.height / 2);
+    const left = { id: 1, x: x - 35, y };
+    const right = { id: 2, x: x + 35, y };
+    const session = await page.context().newCDPSession(page);
+    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [left, right] });
+    await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [left, { ...right, x: x + 55 }] });
+    await expect(preview).toHaveAttribute('data-camera-zoom', '0.778');
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect(orbit).toHaveAttribute('aria-pressed', 'false');
+    await expect(preview).toHaveAttribute('data-camera-zoom', '0.778');
+    await expect(preview).toHaveAttribute('data-camera-yaw', '3.142');
+  });
+}
+
 test('scenario 3 — Paint migration preserves original entitlement after preview and close', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
+  await openGarageSection(page, 'paints');
   await page.locator('[data-paint="obsidian"]').click();
   await expect(page.locator('#garage-equip')).toBeDisabled();
   await page.locator('#garage-close').click();
@@ -107,8 +210,10 @@ test('studio design — paint states and default restoration reflect actual owne
   await page.locator('#garage-studio-open').click();
   await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
   await expect(page.locator('[data-paint="obsidian"]')).toHaveAttribute('data-state', 'locked');
+  await openGarageSection(page, 'paints');
   await page.locator('[data-paint="obsidian"]').click();
   await expect(page.locator('#garage-equip')).toBeDisabled();
+  await openGarageSection(page, 'paints');
   await page.locator('#garage-restore-default').click();
   await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#garage-preview #world')).toBeVisible();
@@ -135,6 +240,7 @@ test('restoring default paint persists an equipped owned finish across close and
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   await expect(page.locator('[data-paint="aurora"]')).toHaveAttribute('data-state', 'equipped');
+  await openGarageSection(page, 'paints');
   await page.locator('#garage-restore-default').click();
   await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-paint')))).toBe('pearl');
@@ -150,6 +256,7 @@ test('locked paint state is announced in active language without pretending it i
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   await expect(page.locator('[data-paint="obsidian"]')).toHaveAttribute('aria-label', /未解鎖/);
+  await openGarageSection(page, 'paints');
   await page.locator('[data-paint="obsidian"]').click();
   await expect(page.locator('#garage-equip')).toBeDisabled();
   await expect(page.locator('#garage-restore-default')).toBeVisible();
@@ -162,6 +269,9 @@ test('camera remains in frame across all preset angles and zoom boundaries', asy
   await page.locator('#garage-studio-open').click();
   const preview = page.locator('#garage-preview');
   for (const angle of ['front', 'rear', 'side', 'top', 'cinematic']) {
+    await openStudioAngles(page);
+    await page.locator('#garage-reset').click();
+    await openStudioAngles(page);
     await page.locator(`[data-garage-angle="${angle}"]`).click();
     for (let i = 0; i < 7; i++) await page.locator('#garage-zoom-in').click();
     await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
@@ -183,3 +293,30 @@ test('Studio entry advertises itself with a sheen and glow, and stills under Red
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect.poll(animations).toEqual(['none', 'none']);
 });
+
+for (const viewport of [{ width: 320, height: 740 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+  test(`Studio opens an angle panel and returns focus at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.locator('#garage-button').click();
+    await page.locator('#garage-studio-open').click();
+    const trigger = page.getByRole('button', { name: 'Angles', exact: true });
+    const side = page.locator('[data-garage-angle="side"]');
+    for (const control of [trigger, page.locator('#garage-zoom-out'), page.locator('#garage-zoom-in'), page.locator('#garage-auto-rotate')]) {
+      await expect(control).toBeInViewport({ ratio: .99 });
+      const box = await control.boundingBox();
+      expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
+    }
+    await expect(side).toBeHidden();
+    await expect(page.locator('#garage-reset')).toBeHidden();
+    await trigger.click();
+    await side.click();
+    await expect(side).toHaveAttribute('aria-pressed', 'true');
+    await expect(trigger).toBeFocused();
+    await expect(side).toBeHidden();
+    await page.locator('#garage-studio-back').click();
+    await expect(page.locator('#garage-studio-open')).toBeFocused();
+    await page.locator('#garage-close').click();
+    await expect(page.locator('#garage-button')).toBeFocused();
+  });
+}

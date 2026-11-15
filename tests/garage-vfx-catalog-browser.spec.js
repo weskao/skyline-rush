@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
@@ -7,6 +8,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await page.goto('/');
     await page.locator('#garage-button').click();
     await page.locator('#garage-studio-open').click();
+    await openGarageSection(page, 'effects');
     const catalog = page.locator('#garage-vfx-catalog');
     await expect(catalog).toBeVisible();
     await expect(catalog).toHaveAttribute('data-preview-contract', 'live-shared-aero');
@@ -23,6 +25,7 @@ test('selected artwork animates at original 3x dimensions while retaining WebP f
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
+  await openGarageSection(page, 'effects');
   const ion = page.locator('[data-skin="thruster-ion"] img');
   await ion.scrollIntoViewIfNeeded();
   await expect(ion).toHaveAttribute('data-static-src', /raster\/thruster-ion@3x\.webp$/);
@@ -40,6 +43,7 @@ test('unavailable GIF and original WebP fall back to category SVG, without grant
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
+  await openGarageSection(page, 'effects');
   const ion = page.locator('[data-skin="thruster-ion"]');
   await ion.scrollIntoViewIfNeeded(); // lazy art loads (and can fail) only once scrolled in
   await expect(ion.locator('img')).toHaveAttribute('src', /thruster\.svg$/);
@@ -54,6 +58,7 @@ test('missing GIF, WebP and SVG shows accessible text fallback without unlocking
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
+  await openGarageSection(page, 'effects');
   const ion = page.locator('[data-skin="thruster-ion"]');
   await ion.scrollIntoViewIfNeeded(); // lazy art loads (and can fail) only once scrolled in
   await expect(ion.locator('.garage-vfx-fallback')).toBeVisible();
@@ -79,6 +84,7 @@ test('skins catalog copies switch between English and Traditional Chinese', asyn
 test('eleven original 3x badge/rarity artworks appear in a non-entitlement showcase', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
   const gallery = page.locator('#garage-vfx-art-badges');
   await expect(gallery).toBeVisible();
   await expect(gallery.locator('img')).toHaveCount(11);
@@ -95,6 +101,7 @@ test('badge reference art falls back to visible accessible label if the 3x image
   await page.route('**/feature-assets/garage-vfx-skins/raster/badge-equipped@3x.png', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
   const card = page.locator('#garage-vfx-art-badges figure').first();
   await card.scrollIntoViewIfNeeded();
   await expect(card.locator('img')).toHaveCount(0);
@@ -109,6 +116,7 @@ test('failed badge artwork remains accessible and localized in Traditional Chine
   await page.goto('/');
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
   const card = page.locator('#garage-vfx-art-badges figure').first();
   await card.scrollIntoViewIfNeeded();
   await expect(card.locator('img')).toHaveCount(0);
@@ -122,6 +130,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await page.setViewportSize(viewport);
     await page.goto('/');
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'effects');
     const badges = page.locator('#garage-vfx-art-badges');
     const names = ['badge-equipped', 'badge-favorite', 'badge-limited'];
     for (const id of names) {
@@ -186,6 +195,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.setViewportSize(viewport);
     await page.goto('/');
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'effects');
     const tiles = page.locator('#garage-vfx-art-badges .garage-badge-card');
     await expect(tiles).toHaveCount(11);
     const colors = [];
@@ -229,6 +239,7 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:84
     await page.goto('/');
     await page.locator('#garage-button').click();
     for (const [id,category] of [['thruster-void','thruster'],['airflow-vortex','airflow'],['nitro-trail-gold','nitro-trail'],['launch-flare-ring','launch-flare']]) {
+      await openGarageSection(page, 'effects');
       const card=page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
       await card.scrollIntoViewIfNeeded();
       await expect(card.locator('.garage-vfx-actions button')).toHaveCount(1);
@@ -264,6 +275,7 @@ test('paint swatch card keeps full-surface Preview and one shared game-like acti
   await page.setViewportSize({width:1440,height:900});
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'paints');
   const paint=page.locator('#garage-screen [data-paint="cobalt"]');
   await expect(paint).toHaveAttribute('type','button');
   await paint.focus();
@@ -285,6 +297,7 @@ test('clicking a skin card lights the whole card the same way in every category'
   await page.locator('#garage-button').click();
   const looks = [];
   for (const id of ['thruster-void', 'airflow-vortex', 'nitro-trail-red', 'launch-flare-red']) {
+    await openGarageSection(page, 'effects');
     const card = page.locator(`#garage-vfx-catalog [data-skin="${id}"]`), hit = card.locator('.garage-skin-preview-hitarea');
     await card.scrollIntoViewIfNeeded();
     const idle = await card.evaluate(el => getComputedStyle(el).boxShadow);
@@ -317,6 +330,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     const ids = ['badge-locked', 'badge-new', 'badge-trial', 'rarity-common', 'rarity-rare',
       'rarity-epic', 'rarity-legendary', 'rarity-mythic'];
     for (const id of ids) {
+      await openGarageSection(page, 'effects');
       const tile = page.locator(`#garage-vfx-art-badges [data-badge-art="${id}"]`);
       await tile.scrollIntoViewIfNeeded();
       await expect(tile).toHaveAttribute('data-artwork-restored', 'true');
@@ -379,6 +393,7 @@ for (const [width, height] of COMPACT_VIEWPORTS) {
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.locator('#garage-button').click();
+    await openGarageSection(page, 'effects');
     const skins = page.locator('#garage-vfx-catalog [data-skin^="launch-flare-"]');
     await skins.first().scrollIntoViewIfNeeded();
     const skin = await measureCards(skins);
@@ -394,6 +409,7 @@ for (const [width, height] of COMPACT_VIEWPORTS) {
     // The Garage column is ~260px beside the 3D preview on tablets and landscape phones: two cards there.
     expect(skin.perRow, 'skin cards per row').toBeGreaterThanOrEqual(skin.listWidth >= 354 ? 3 : 2);
     expect([skin.inside, skin.unclipped], 'skin cards fit their list').toEqual([true, true]);
+    await openGarageSection(page, 'missions');
     const periods = page.locator('.garage-mission-board .garage-period-card');
     await periods.first().scrollIntoViewIfNeeded();
     const period = await measureCards(periods);
