@@ -64,7 +64,7 @@ export const NEON_PIECES = {
   sign_blade_a: prop(8, true), sign_blade_b: prop(8, true), sign_stack_a: prop(6, true), billboard_a: city(2, 8), billboard_b: city(2, 8),
   street_lamp: prop(6, true), traffic_light: prop(1, true), railing: prop(24, false), kerb_redwhite: prop(60, false),
   // The far skyline is always LOD 0: its LOD 1 switch is 600 m out, past the window.
-  skyline_tower_a: city(2, 4, false, 99), skyline_tower_b: city(2, 4, false, 99), skyline_tower_c: city(2, 4, false, 99), skyline_spire: city(2, 4, false, 99),
+  skyline_tower_a: city(2, 8, false, 99), skyline_tower_b: city(2, 8, false, 99), skyline_tower_c: city(2, 8, false, 99), skyline_spire: city(2, 8, false, 99),
   rail_portal: landmark(2, 2), rail_segment: landmark(11, 1, true), expressway_pier: landmark(4), expressway_rail: landmark(22, 1, true),
   canal_arch: landmark(1, 2, true), canal_bridge_rail: landmark(22, 1, true), canal_bank: landmark(24), plaza_sculpture: landmark(1, 2, true), boulevard_footbridge: landmark(1, 1, true),
   harbour_gantry: landmark(1, 2, true), container_stack: landmark(5), cargo_ship: landmark(1, 2),
@@ -75,7 +75,7 @@ export type NeonPiece = keyof typeof NEON_PIECES;
 /** `offset` is lateral metres from the centre line, positive on the driver's right. `yaw` is relative to the road
  *  heading: 0 puts the model's -Z along the driving direction. A tile (`span` metres of road) is stretched along its
  *  NEON_TILE axis to reach the next one, so a row has no gap on the outside of a corner. */
-export interface NeonPlacement { piece: NeonPiece; along: number; offset: number; y: number; yaw: number; span?: number }
+export interface NeonPlacement { piece: NeonPiece; along: number; offset: number; y: number; yaw: number; span?: number; /** Uniform; 1 when absent. */ scale?: number }
 /** Modelled length of the tiling pieces and the local axis it lies on. */
 export const NEON_TILE: Partial<Record<NeonPiece, { length: number; axis: 'x' | 'z' }>> = {
   railing: { length: 10, axis: 'x' }, kerb_redwhite: { length: 4, axis: 'x' },
@@ -84,6 +84,8 @@ export const NEON_TILE: Partial<Record<NeonPiece, { length: number; axis: 'x' | 
 
 /** Metres from a building's pivot to its street face (+Z in the kit). */
 const FRONT = { tower_glass_a: 13.4, tower_glass_b: 10.2, block_retail_a: 7.5, block_office_b: 7.6, shop_market_a: 5.12, shop_market_b: 4.96 } as const;
+/** Roof height of the low blocks (neon-city brief), where the boulevard stands a screen. */
+const ROOF: Partial<Record<keyof typeof FRONT, number>> = { block_retail_a: 21.7, block_office_b: 36.2 };
 const HALF_PI = Math.PI / 2, SKYLINE = ['skyline_tower_a', 'skyline_tower_b', 'skyline_tower_c', 'skyline_spire'] as const;
 /** The sculpture's court: no street-line building or pavement tree on the left of the plaza straight here (`landmarks`
  *  dresses it). The oldtown square: no shop on the street line. */
@@ -91,6 +93,17 @@ const COURT: readonly [number, number] = [9340, 9460], SQUARE: readonly [number,
 /** Oldtown (assets-src/neon-landmarks/asset-brief.md): the gate just after the canal bridge, its plinths clear of
  *  the quay; a lantern string every 24 m through the S-bends, ending before the rooftop shortcut (8290). */
 const OLD_GATE = 7058, LANTERNS: readonly [number, number] = [7345, 8288], OLD_LINE = 17.5;
+/** Past the S-bends, beside the rooftop shortcut, the strings run along both pavements instead (16.2 m out, lowest
+ *  lantern 14 m up: clear of the corridor and the flight ceiling), each pole clear of the last string over the road. */
+const GARLANDS: readonly [number, number] = [8300, 8720], GARLAND_LINE = 16.2, GARLAND_HALF = 15.42;
+/** Stone aprons (the quay piece, its railing on the road side, amber bollards to the square) along the street edge of
+ *  the oldtown square and of the sculpture court, open on the sculpture's axis. The street railing gives way to them. */
+const APRONS: readonly (readonly [number, number])[] = [[7625, 7685], [9340, 9364], [9436, 9460]], APRON_LINE = -17.1;
+/** The street railing also stops at the gate's plinths (2.71 m each side of it, and 0.2 m). */
+const railGaps = (side: number): readonly (readonly [number, number])[] => [[OLD_GATE - 2.91, OLD_GATE + 2.91], ...(side < 0 ? APRONS : [])];
+/** world.js stands the rooftop shortcut's section sign 65 m before it (8290), 17 m left of the centre line. */
+const OLD_SIGN = 8225, OLD_LANE = 1.6;
+const within = (metres: number, [from, to]: readonly [number, number]): boolean => metres >= from && metres < to;
 /** Its shop rows, bend by bend: [from, to, inside of the bend (1 right, -1 left, 0 straight)]. They end where the
  *  first plaza block (plot centre 8750, 12.3 m each way) begins. */
 const OLD_STREET: readonly (readonly [number, number, number])[] = [[7066, 7338, 1], [7338, 7498, -1], [7498, 7813, 1], [7813, 8128, -1], [8128, 8288, 1], [8288, 8327, 0], [8327, 8627, -1], [8627, 8737, 0]];
@@ -100,23 +113,24 @@ const OLD_STREET: readonly (readonly [number, number, number])[] = [[7066, 7338,
  *  rises and falls as a half sine to 1/124 m (measured on the route; tests/neon-scenery-plan.test.js checks the
  *  gaps against it). What is left at the end of a row is spread along it. */
 const OLD_SHOPS: readonly (readonly [number, number])[] = [-1, 1].flatMap(side => OLD_STREET.flatMap(([from, to, inside]) => {
-  const ends = [0];
-  for (;;) {
-    const bend = side * inside * Math.sin(Math.PI * ends.at(-1)! / (to - from)) / 124; // toward this side when positive
-    const next = ends.at(-1)! + NEON_CHUNK_METRES / 13 / (1 - bend * (bend > 0 ? OLD_LINE + 9.3 : OLD_LINE));
-    if (next > to - from) break;
-    ends.push(next);
-  }
-  const fit = (to - from) / ends.at(-1)!;
-  return ends.slice(1).map((end, k) => [from + (end + ends[k]!) / 2 * fit, side] as const);
+  // The rooftop shortcut's sign stands in a lane between two shops (world.js: its 8 m panel, 13 to 21 m out).
+  const runs = side < 0 && within(OLD_SIGN, [from, to]) ? [[from, OLD_SIGN - OLD_LANE / 2], [OLD_SIGN + OLD_LANE / 2, to]] : [[from, to]];
+  return runs.flatMap(([a, b]) => {
+    const ends = [a!];
+    for (;;) {
+      const bend = side * inside * Math.sin(Math.PI * (ends.at(-1)! - from) / (to - from)) / 124; // toward this side when positive
+      const next = ends.at(-1)! + NEON_CHUNK_METRES / 13 / (1 - bend * (bend > 0 ? OLD_LINE + 9.3 : OLD_LINE));
+      if (next > b!) break;
+      ends.push(next);
+    }
+    const fit = (b! - a!) / (ends.at(-1)! - a!);
+    return ends.slice(1).map((end, k) => [a! + ((end + ends[k]!) / 2 - a!) * fit, side] as const);
+  });
 }));
 /** The blocks of the straight after the rail tunnel, in plot order; the right side starts one on. */
 const STRAIGHT = ['block_office_b', 'block_retail_a', 'tower_glass_b'] as const, PLOT = NEON_CHUNK_METRES / 4;
-/** world.js stands the rooftop shortcut's section sign 65 m before it (8290), 17 m left of the centre line. */
-const OLD_SIGN = 8225;
-const within = (metres: number, [from, to]: readonly [number, number]): boolean => metres >= from && metres < to;
 
-type Put = (piece: NeonPiece, lap: number, offset: number, yaw: number, y?: number) => void;
+type Put = (piece: NeonPiece, lap: number, offset: number, yaw: number, y?: number, scale?: number) => void;
 interface Chunk { r: () => number; put: Put; tile: (piece: NeonPiece, lap: number, offset: number, yaw: number, span: number, y?: number) => void;
   /** `count` evenly spaced lap positions in this chunk, with the sector each one is in. */
   row: (count: number, place: (lap: number, sector: NeonSector, index: number) => void) => void;
@@ -137,6 +151,9 @@ function buildings({ r, put, row }: Chunk, side: number, facing: number): void {
       : roll < .37 ? 'tower_glass_a' : roll < .58 ? 'tower_glass_b' : roll < .8 ? 'block_retail_a' : 'block_office_b';
     put(piece, lap, side * (line + FRONT[piece]), facing);
     if (corner) return;
+    const roof = ROOF[piece];
+    if (sector === 'boulevard' && roof && extra >= .3) put('billboard_a', lap, side * (line + FRONT[piece]), -side * (HALF_PI - .6), roof); // its street has no screen
+    if (sector === 'underpass') streetFront(put, piece, lap, side, line, facing);
     if (dressed < .6) put(sector === 'plaza' || dressed < .3 ? 'sign_blade_b' : 'sign_blade_a', lap - 6, side * (line - .75), facing);
     if (extra < .3 && piece !== 'tower_glass_a' && piece !== 'tower_glass_b') put('billboard_b', lap + 7, side * (line - .3), facing);
   });
@@ -148,10 +165,19 @@ function buildings({ r, put, row }: Chunk, side: number, facing: number): void {
   });
 }
 
+/** The straight after the rail tunnel: its three blocks share one podium shopfront, so each kind gets its own street
+ *  front: trees before the offices, a stacked sign before the shops, a screen before the glass tower. */
+function streetFront(put: Put, piece: keyof typeof FRONT, lap: number, side: number, line: number, facing: number): void {
+  if (piece === 'block_office_b') for (const d of [-9, 9]) put('cherry_tree', lap + d, side * OLD_LINE, lap + d);
+  else if (piece === 'block_retail_a') put('sign_stack_a', lap + 4, side * (line - 1.5), facing);
+  else put('billboard_a', lap + 2, side * 19, -side * (HALF_PI - .35));
+}
+
 function furniture({ r, put, tile, row }: Chunk, side: number, facing: number): void {
   row(3, (lap, sector) => { // lamps: on the pavement, or on the bridges' parapet wall
     const wall = sector === 'harbour' ? (lap >= QUAY[1] ? PARAPET_TOP.expressway : null) : PARAPET_TOP[sector];
     if (wall !== null && !within(lap, UNDERPASS) && !within(lap, LANTERNS)) put('street_lamp', lap, side * (wall === undefined ? 15.2 : PARAPET), facing, wall ?? 0);
+    if (within(lap, GARLANDS)) put('lantern_span', lap, side * GARLAND_LINE, HALF_PI);
   });
   row(3, (lap, sector, i) => { // trees between the lamps; one per chunk in the narrow shop streets, none under the lanterns
     const at = lap + NEON_CHUNK_METRES / 6;
@@ -161,12 +187,31 @@ function furniture({ r, put, tile, row }: Chunk, side: number, facing: number): 
     if (sector !== 'oldtown') put('cherry_tree', at, side * 18.5, yaw);
     else if (i === 1 && !within(at, LANTERNS)) put('cherry_tree', at, side * 15, yaw);
   });
-  row(12, (lap, sector) => { if (!onWater(sector) && !within(lap, UNDERPASS)) tile('railing', lap, side * 14.1, facing, NEON_CHUNK_METRES / 12); });
+  row(12, (lap, sector) => {
+    if (onWater(sector) || within(lap, UNDERPASS)) return;
+    const half = NEON_CHUNK_METRES / 24;
+    let from = lap - half;
+    for (const [a, b] of railGaps(side)) if (b > from && a < lap + half) {
+      if (a - from > .5) tile('railing', (from + a) / 2, side * 14.1, facing, a - from);
+      from = Math.max(from, b);
+    }
+    if (from === lap - half) tile('railing', lap, side * 14.1, facing, NEON_CHUNK_METRES / 12);
+    else if (lap + half - from > .5) tile('railing', (from + lap + half) / 2, side * 14.1, facing, lap + half - from);
+  });
   row(30, (lap, sector) => { if (sector === 'market') tile('kerb_redwhite', lap, side * KERB, facing, NEON_CHUNK_METRES / 30, KERB_Y); });
+  // Across the water a second rank between those, and every tower sunk to its own height and turned a quarter at a
+  // time, so the far shore is not one row of equal boxes squared to the road. Drawn only there: land keeps its rolls.
+  const across = (piece: NeonPiece, pick: number, lap: number, offset: number): void => put(piece, lap, side * offset, facing + Math.floor(pick * 16 % 4) * HALF_PI, -6 - (pick * 64 % 1) * 60);
   row(2, (lap, sector) => { // far skyline: behind the blocks on land, across the water elsewhere; sunk so it meets either
-    const piece = SKYLINE[Math.floor(r() * SKYLINE.length)]!, out = r(), yard = side > 0 && within(lap, NEON_YARD);
+    const pick = r(), piece = SKYLINE[Math.floor(pick * SKYLINE.length)]!, out = r(), yard = side > 0 && within(lap, NEON_YARD);
     if (sector === 'harbour' && !yard) return; // open sea left of the straight and round the corner: no tower in the water
-    put(piece, lap, side * (onWater(sector) && !yard ? 320 + out * 260 : 170 + out * 70), facing, -6);
+    if (onWater(sector) && !yard) return across(piece, pick, lap, 320 + out * 260);
+    put(piece, lap, side * (170 + out * 70), facing, -6);
+  });
+  row(2, (lap, sector) => {
+    if (!onWater(sector) || sector === 'harbour') return;
+    const pick = r();
+    across(SKYLINE[Math.floor(pick * SKYLINE.length)]!, pick, lap + NEON_CHUNK_METRES / 4, 300 + r() * 300);
   });
 }
 
@@ -191,7 +236,8 @@ function landmarks({ put, row, every, once }: Chunk): void {
   once(6500, () => put('canal_arch', 6500, 0, 0));
   // The sculpture's court, the finale of the lap: three glass towers close it behind the sculpture, the middle one
   // set back, a screen in each gap between them and a row of trees down each side.
-  once(9400, () => put('plaza_sculpture', 9400, -30, 0));
+  once(9400, () => put('plaza_sculpture', 9400, -30, 0, 0, 1.5)); // half again its modelled 15 m: it closes the lap
+  for (const [from, to] of APRONS) every(from + 6, to, 12, lap => put('canal_bank', lap, APRON_LINE, 0));
   for (const d of [-38, 0, 38]) once(9400 + d, () => put('tower_glass_a', 9400 + d, -(d ? 46 : 54) - FRONT.tower_glass_a, HALF_PI));
   for (const d of [-19, 19]) once(9400 + d, () => put('billboard_a', 9400 + d, -46, HALF_PI - .35));
   for (const d of [-27, 27]) once(9400 + d, () => { for (const offset of [-20, -31, -42]) put('cherry_tree', 9400 + d, offset, d + offset); });
@@ -209,15 +255,14 @@ function oldtown({ put, every, once }: Chunk): void {
   const shop = (k: number) => k * 5 % 7 < 4 ? 'shop_market_a' : 'shop_market_b'; // a fixed mix: no run longer than two
   OLD_SHOPS.forEach(([lap, side], k) => once(lap, () => {
     if (side < 0 && lap > SQUARE[0] - 4 && lap < SQUARE[1] + 4) return;
-    const recess = side < 0 && Math.abs(lap - OLD_SIGN) < 5.5 ? 4 : 0; // clear of the sign's 8 m panel, 13 to 21 m out
-    put(shop(k), lap, side * (OLD_LINE + recess + FRONT[shop(k)]), -side * HALF_PI);
+    put(shop(k), lap, side * (OLD_LINE + FRONT[shop(k)]), -side * HALF_PI);
   }));
   once(OLD_GATE, () => put('oldtown_gate', OLD_GATE, 0, 0));
   every(LANTERNS[0], LANTERNS[1], 24, lap => put('lantern_span', lap, 0, 0));
   const { lap: at, offset, across } = NEON_SQUARE, back = -offset + across / 2;
   once(at, () => {
-    put('clock_tower', at, -45, Math.PI); // its -X faces the road
-    for (const d of [-18, 18]) put('lantern_span', at + d, offset, 0);
+    put('clock_tower', at + 23, -30, Math.PI); // the square's far end, ahead in the approach, its four dials over the roofs
+    for (const d of [-18, 0]) put('lantern_span', at + d, offset, 0);
     for (const d of [-10, 10]) for (const o of [-30, -57]) put('cherry_tree', at + d, o, d + o);
     for (let k = 0; k < 10; k++) put(shop(k), at - 26 + 6 * k, -(back + FRONT[shop(k)]), HALF_PI); // the back row faces the road
     for (let k = 0; k < 4; k++) { // an end terrace each side, fronts to the square
@@ -232,7 +277,7 @@ export function neonChunkPlan(chunk: number, seed?: number): NeonPlacement[] {
   const out: NeonPlacement[] = [];
   const tools: Chunk = {
     r: seededRng(seed ?? 0, 'neon-kit-v1:' + (seed === undefined ? lapChunk : chunk)),
-    put: (piece, lap, offset, yaw, y = 0) => { out.push({ piece, along: lap - base, offset, y, yaw }); },
+    put: (piece, lap, offset, yaw, y = 0, scale) => { out.push({ piece, along: lap - base, offset, y, yaw, ...(scale ? { scale } : {}) }); },
     tile: (piece, lap, offset, yaw, span, y = 0) => { out.push({ piece, along: lap - base, offset, y, yaw, span }); },
     row: (count, place) => { for (let i = 0; i < count; i++) { const lap = base + (i + .5) * NEON_CHUNK_METRES / count; place(lap, neonSector(lap), i); } },
     every: (from, to, pitch, place) => { for (let lap = from + Math.max(0, Math.ceil((base - from) / pitch)) * pitch; lap < Math.min(to, end); lap += pitch) place(lap); },

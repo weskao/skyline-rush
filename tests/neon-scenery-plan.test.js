@@ -171,6 +171,12 @@ test('harbour: piers under the causeway, the quay promenade on the sea side, the
 const neon = RACE_TRACKS.neon, RINGS = neon.ringLines.flat().map(([distance]) => distance);
 /** Section signs stand 65 m before each section (classic-road-render.ts). */
 const SIGNS = neon.sections.map(s => s.from - 65);
+const route = classicRoadRoute('neon');
+/** Degrees between the driver's heading at lap `from` and a placement. */
+const bearing = (from, p) => {
+  const [x, z] = route.point(from), [fx, fz] = route.point(from + 1), [px, pz] = route.point(p.lap, p.offset);
+  return (Math.atan2(px - x, pz - z) - Math.atan2(fx - x, fz - z) + 3 * Math.PI) % (2 * Math.PI) / Math.PI * 180 - 180;
+};
 test('harbour landmarks: three gantries over the straight, containers along the yard quay, the ship moored under a boom', () => {
   for (const seed of [undefined, 4]) {
     const plan = lap(seed), gantries = of(plan, 'harbour_gantry'), stacks = of(plan, 'container_stack'), [ship] = of(plan, 'cargo_ship');
@@ -199,7 +205,6 @@ test('oldtown: timber shops on a 17.5 m line down both sides with no gap on the 
     for (let i = 1; i < row.length; i++) {
       const a = row[i - 1], b = row[i], where = `side ${side}, lap ${a.lap.toFixed(0)} to ${b.lap.toFixed(0)}`;
       if (side < 0 && a.lap < 7625 && b.lap > 7685) continue; // the square opens off the street
-      if (side < 0 && a.lap < SHORTCUT_SIGN && b.lap > SHORTCUT_SIGN) { assert.ok(b.lap - a.lap < 28, `${where}: two shops stand back for the sign`); continue; }
       const gap = line => { const [ax, az] = road.point(a.lap, side * line), [bx, bz] = road.point(b.lap, side * line); return Math.hypot(bx - ax, bz - az) - WIDTH; };
       assert.ok(gap(17.5) > -.4 && gap(17.5) < 3, `${where}: ${gap(17.5).toFixed(2)} m between the fronts`);
       assert.ok(gap(26.8) > -.6, `${where}: the backs run ${(-gap(26.8)).toFixed(2)} m into each other`);
@@ -213,11 +218,16 @@ test('oldtown: timber shops on a 17.5 m line down both sides with no gap on the 
 // world.js stands a section sign 65 m before each section, 17 m left of the centre line: a pole and an 8 m panel
 // (13 to 21 m out, 4.25 to 5.75 m up). The rooftop shortcut's would otherwise stand half inside the 17.5 m shop row.
 const SHORTCUT_SIGN = RACE_TRACKS.neon.sections.find(s => s.type === 'shortcut' && neonSector(s.from) === 'oldtown').from - 65;
-test('oldtown: the two shops behind the rooftop shortcut sign stand back from it, leaving no gap in the row', () => {
+// Owner brief 2026-11-16: the two shops stood 4 m back, a notch in the row. The row stays on its line and opens a lane for the panel.
+test('oldtown: the rooftop shortcut sign stands in a lane between two shops of the unbroken row', () => {
   assert.equal(SHORTCUT_SIGN, 8225);
+  const road = classicRoadRoute('neon'), [sx, sz] = road.point(SHORTCUT_SIGN, -17.5);
   for (const seed of [undefined, 1001]) {
-    const near = lap(seed).filter(p => p.piece in BUILDINGS && p.offset < 0 && p.offset > -40 && Math.abs(p.lap - SHORTCUT_SIGN) < 5.5); // half a shop and a metre
-    assert.deepEqual(near.map(p => +(-p.offset - BUILDINGS[p.piece]).toFixed(2)), [21.5, 21.5], 'fronts half a metre behind the panel');
+    const row = lap(seed).filter(p => p.piece in BUILDINGS && p.offset < 0 && p.offset > -40 && Math.abs(p.lap - SHORTCUT_SIGN) < 15).sort((a, b) => a.lap - b.lap);
+    for (const p of row) near(-p.offset - BUILDINGS[p.piece], 17.5, `shop at ${p.lap.toFixed(1)} on the street line`);
+    const clear = row.map(p => { const [x, z] = road.point(p.lap, -17.5); return Math.hypot(x - sx, z - sz) - 4.45; });
+    assert.ok(clear.every(d => d >= .5), `a shop front within half a metre of the panel: ${clear.map(d => d.toFixed(2))}`);
+    assert.ok(Math.min(...clear) < 1.5, `the lane is a lane, not a gap: ${Math.min(...clear).toFixed(2)} m`);
   }
 });
 
@@ -235,8 +245,10 @@ test('oldtown landmarks: the gate at the sector entry, a lantern string every 24
     for (const s of shortcuts) assert.ok(p.lap < s.from || p.lap > s.to, `${p.piece} at ${p.lap} over the shortcut corridor`);
   }
   assert.equal(towers.length, 1);
-  near(tower.lap, 7655, 'tower'); near(tower.yaw, Math.PI, 'its -X faces the road');
-  assert.ok(tower.offset <= -45 && inSquare(tower), `45 m or more out, on the square (${tower.offset})`);
+  near(tower.yaw, Math.PI, 'its -X faces the road');
+  assert.ok(inSquare(tower) && tower.lap > 7655 && tower.offset <= -30, `on the square, at its far end (${tower.lap}, ${tower.offset})`);
+  // Owner brief 2026-11-16: 45 m out at the square's middle it stood at the edge of view and passed small.
+  for (const [from, most] of [[7450, 20], [7550, 20], [7630, 45]]) assert.ok(Math.abs(bearing(from, tower)) <= most, `from ${from} the tower is ${bearing(from, tower).toFixed(0)} degrees off the heading`);
   for (const p of plan) { // nothing stands in a plinth (18.6 m out, 2.71 m deep), a pole (15.42 m out) or the tower (10.6 m square)
     if (p === gate || p === tower || p.piece === 'railing' || p.piece.startsWith('skyline')) continue;
     const front = Math.abs(p.offset) - (BUILDINGS[p.piece] ?? 0), where = `${p.piece} at lap ${p.lap.toFixed(0)}, ${p.offset} m`;
@@ -260,6 +272,11 @@ test('the oldtown square is a place: the tower between two lantern strings and f
     assert.ok(ends[0].length >= 3 && ends[0].every(p => p.lap < 7625), 'the near terrace, fronts toward the square');
     assert.ok(ends[1].length >= 3 && ends[1].every(p => p.lap > 7685), 'the far terrace, fronts toward the oncoming driver');
     assert.ok(!plan.some(p => p.piece in BUILDINGS && p.offset < 0 && p.offset > -30 && Math.abs(p.lap - 7655) < 30), 'no shop between the street and the square');
+    const [tower] = of(plan, 'clock_tower');
+    for (const p of inside) if (p !== tower) assert.ok(Math.abs(p.lap - tower.lap) >= 5.3 + (p.piece === 'cherry_tree' ? 3.4 : .45) || Math.abs(p.offset - tower.offset) >= 5.3 + 3.4, `${p.piece} at ${p.lap.toFixed(0)} in the tower`);
+    // Its street edge is a stone apron (the quay piece: promenade, amber bollards, its railing on the road side), not bare paving.
+    const apron = of(plan, 'canal_bank').filter(p => p.lap > 7600 && p.lap < 7700);
+    assert.deepEqual(apron.map(p => [+p.lap.toFixed(3), p.offset, p.yaw]), [7631, 7643, 7655, 7667, 7679].map(lap => [lap, -17.1, 0]));
   }
 });
 
@@ -318,6 +335,83 @@ test('the underpass straight is not one block repeated: three kinds a side, no t
     sides[0].forEach((piece, i) => assert.notEqual(piece, sides[1][i], `plot ${i}: the same block on both sides`));
     assert.ok(plan.some(p => p.piece.startsWith('sign_blade') && p.lap >= 950 && p.lap < 1280), 'signs on the straight');
   }
+});
+
+// Owner brief 2026-11-16, the plain stretches of the lap seen from the driver's seat. Placement and dressing only.
+const tiles = (plan, side) => of(plan, 'railing').filter(p => Math.sign(p.offset) === side).map(p => [p.lap - p.span / 2, p.lap + p.span / 2]);
+test('the street railing stops at the oldtown gate plinths and at the stone aprons, and runs on unbroken elsewhere', () => {
+  const plan = lap(), [gate] = of(plan, 'oldtown_gate'), plinth = [gate.lap - 2.71 - .2, gate.lap + 2.71 + .2];
+  for (const side of [-1, 1]) {
+    const runs = tiles(plan, side);
+    assert.ok(!runs.some(([a, b]) => b > plinth[0] + 1e-6 && a < plinth[1] - 1e-6), `side ${side}: a railing runs into a gate plinth`);
+    for (const end of plinth) assert.ok(runs.some(([a, b]) => Math.abs(a - end) < 1e-6 || Math.abs(b - end) < 1e-6), `side ${side}: the railing meets the plinth at ${end}`);
+  }
+  for (const apron of of(plan, 'canal_bank').filter(p => Math.abs(p.offset + 17.1) < 1e-6)) {
+    assert.ok(!tiles(plan, -1).some(([a, b]) => b > apron.lap - 6 + 1e-6 && a < apron.lap + 6 - 1e-6), `a street railing through the apron at ${apron.lap}`);
+  }
+  const length = side => tiles(plan, side).reduce((sum, [a, b]) => sum + b - a, 0);
+  assert.ok(Math.abs(length(1) - length(-1) - 60 - 48) < 1e-6, 'the left gives up only the square and the court aprons (60 m and 48 m)');
+});
+
+test('beside the rooftop shortcut (8288 to 8737) the lantern strings run on along both pavements, clear of the corridor and the flight ceiling', () => {
+  const plan = lap(), lamps = of(plan, 'street_lamp'), trees = of(plan, 'cherry_tree');
+  for (const side of [-1, 1]) {
+    const strings = of(plan, 'lantern_span').filter(p => Math.abs(p.offset - side * 16.2) < 1e-6);
+    assert.ok(strings.length >= 9 && strings[0].lap < 8340 && strings.at(-1).lap > 8690, `side ${side}: ${strings.length} strings`);
+    for (const p of strings) {
+      near(Math.abs(p.yaw), Math.PI / 2, 'strung along the street');
+      assert.ok(p.lap - 15.42 >= 8288 && p.lap + 15.42 <= 8737, `string at ${p.lap.toFixed(0)} leaves the street`);
+      for (const pole of [p.lap - 15.42, p.lap + 15.42]) for (const q of [...lamps, ...trees].filter(q => Math.sign(q.offset) === side))
+        assert.ok(Math.abs(q.lap - pole) >= (q.piece === 'cherry_tree' ? 3.6 : 2), `pole at ${pole.toFixed(0)} in a ${q.piece}`);
+    }
+    for (let i = 1; i < strings.length; i++) assert.ok(strings[i].lap - strings[i - 1].lap <= 42, 'no bare run between the strings');
+  }
+  // The corridor (x -7.5 m, 6 m up, 2.5 m tolerance) and the 13.2 m flight ceiling: the string's lowest lantern is 14 m up, 16 m out.
+  for (const p of of(plan, 'lantern_span')) if (p.offset) assert.ok(Math.abs(p.offset) - .45 > 7.5 + 2.5 + 5, `string at ${p.offset}`);
+});
+
+test('the sculpture reads as the finale: half again its modelled size, a stone apron along the court with an opening on its axis', () => {
+  for (const seed of [undefined, 9]) {
+    const plan = lap(seed), [sculpture] = of(plan, 'plaza_sculpture');
+    assert.equal(sculpture.scale, 1.5, 'a 22.6 m sculpture');
+    assert.ok(Math.atan2(15.07 * sculpture.scale, Math.abs(9280 - sculpture.lap)) > .17, 'tall in the view from the plaza entry');
+    assert.ok(-sculpture.offset - 7 * sculpture.scale >= 16, 'its plinth clear of the pavement');
+    const apron = of(plan, 'canal_bank').filter(p => p.lap > 9300);
+    assert.deepEqual(apron.map(p => [+p.lap.toFixed(3), p.offset, p.yaw]), [9346, 9358, 9442, 9454].map(lap => [lap, -17.1, 0]));
+    for (const p of plan) if (p.scale !== undefined) assert.equal(p.piece, 'plaza_sculpture', 'only the sculpture is scaled');
+  }
+});
+
+test('the underpass straight: each block kind has its own street front, so the shared podium never repeats unbroken', () => {
+  for (const seed of [undefined, 4]) {
+    const plan = lap(seed), dressing = { block_office_b: 'cherry_tree', block_retail_a: 'sign_stack_a', tower_glass_b: 'billboard_a' };
+    const blocks = plan.filter(p => p.piece in dressing && p.lap >= 950 && p.lap < 1280 && Math.abs(p.offset) < 40);
+    assert.ok(blocks.length >= 18);
+    for (const b of blocks) assert.ok(plan.some(p => p.piece === dressing[b.piece] && Math.sign(p.offset) === Math.sign(b.offset) && Math.abs(p.lap - b.lap) <= 10 && Math.abs(p.offset) < 22),
+      `${b.piece} at ${b.lap.toFixed(0)} has no ${dressing[b.piece]}`);
+  }
+});
+
+test('the boulevard roofline: a screen on the roof of the low blocks that have no street screen', () => {
+  const ROOF = { block_retail_a: 21.7, block_office_b: 36.2 };
+  for (const seed of [undefined, 6]) {
+    const plan = lap(seed), roofs = of(plan, 'billboard_a').filter(p => p.y > 0);
+    assert.ok(roofs.length >= 8, `${roofs.length} rooftop screens`);
+    for (const p of roofs) {
+      assert.equal(neonSector(p.lap), 'boulevard');
+      const block = plan.find(b => b.piece in ROOF && Math.abs(b.lap - p.lap) < 1e-6 && b.offset === p.offset);
+      assert.ok(block && p.y === ROOF[block.piece], `screen at ${p.lap.toFixed(0)} on a roof`);
+    }
+  }
+});
+
+test('across the water the skyline has depth: two ranks, staggered heights and turned towers, still 300 m or more out', () => {
+  const towers = lap().filter(p => p.piece.startsWith('skyline') && p.lap >= 2900 && p.lap < 4300);
+  const heights = new Set(towers.map(p => Math.round(p.y / 10))), turns = new Set(towers.map(p => Math.round(Math.abs(p.yaw) / (Math.PI / 2))));
+  assert.ok(towers.length >= 60, `${towers.length} towers along the expressway`);
+  assert.ok(heights.size >= 5 && Math.min(...towers.map(p => p.y)) <= -50 && Math.max(...towers.map(p => p.y)) >= -12, 'sunk to staggered heights');
+  assert.ok(turns.size >= 3, 'not every tower squares up to the road');
+  for (const p of towers) assert.ok(Math.abs(p.offset) >= 300, `${p.offset}`);
 });
 
 test('chunk window: one chunk behind, more ahead on High than Medium, nothing on Low', () => {
