@@ -54,6 +54,18 @@ RANGES = {"night": 4.0, "rain": 3.0}
 # The 1k environment maps are below legibility and are not softened.
 SOFTEN = {"sigmaDeg": 0.25, "fullDeg": 22.0, "fadeDeg": 26.0, "featherDeg": 1.0,
           "boxes": [{"lonDeg": [-166.0, -156.0], "elDeg": [35.0, 41.0]}]}
+# Wedge fill (domes only): the near floodlit embankment buildings fill lon -180..-84 and +150..180 up to about 43 degrees,
+# which the harbour (heading 180, lon -180..-120 ahead) faced as a wall of blurred yellow buildings at 15x the rest of
+# the sky. Below `fullDeg` (fading out by `fadeDeg`) those longitudes take whole columns of the far skyline and its sky,
+# shifted (never mirrored or resampled, so nothing blurs and no axis of symmetry shows) from `sourceLonDeg`, at least
+# 150 degrees from where they land so a chase camera never sees one span twice; `featherDeg` blends each edge. No
+# iconic tower (lon +31..+58) is copied. The 1k environment maps keep the wall: its glow lights the city.
+FILL = {"featherDeg": 3.0, "fullDeg": 50.0, "fadeDeg": 62.0,
+        "pieces": [{"lonDeg": [138.0, 228.0], "sourceLonDeg": [-70.0, 20.0]},
+                   {"lonDeg": [228.0, 280.0], "sourceLonDeg": [65.0, 117.0]}]}
+# Luminance per 30-degree longitude bin, elevation 0..45 (what a chase camera sees of the dome): `sky.bandByLon` on the
+# shipped dome, `sky.sourceBandByLon` before the fill.
+BAND_BIN_DEG, BAND_TOP_DEG = 30, 45
 SIZES = {"4k": 4096, "8k": 8192}
 
 
@@ -155,6 +167,35 @@ def soften_signs(sky):
     return out
 
 
+def fill_wedge(img, upper_only):
+    """FILL on an equirect (rows zenith first; the whole sphere or its upper half), as whole shifted source columns."""
+    h, w, _ = img.shape
+    lon = ((np.arange(w) + 0.5) / w - 0.5) * 360
+    el = np.degrees(elevations(h, upper_only))[:, None, None]
+    f = FILL["featherDeg"]
+    total, acc = np.zeros(w, dtype=np.float32), np.zeros_like(img)
+    for piece in FILL["pieces"]:
+        d0, d1 = piece["lonDeg"]
+        s0, s1 = piece["sourceLonDeg"]
+        assert s1 - s0 == d1 - d0 and abs((d0 - s0 + 180) % 360 - 180) >= 150, piece
+        rel = (lon - d0 + 180) % 360 - 180                       # degrees past the piece start, wrapped
+        weight = (np.clip(rel / f + 0.5, 0, 1) * np.clip((d1 - d0 - rel) / f + 0.5, 0, 1)).astype(np.float32)
+        col = np.rint(((s0 + rel + 180) % 360) / 360 * w - 0.5).astype(int) % w
+        acc += img[:, col] * weight[None, :, None]
+        total += weight
+    t = np.clip((FILL["fadeDeg"] - el) / (FILL["fadeDeg"] - FILL["fullDeg"]), 0, 1).astype(np.float32)
+    return (img * (1 - t * total[None, :, None]) + t * acc).astype(np.float32)
+
+
+def band_by_lon(sky):
+    """BAND_BIN_DEG longitude bins from -180 of the upper hemisphere's mean luminance, elevation 0..BAND_TOP_DEG."""
+    h, w, _ = sky.shape
+    rows = h - int(round(h * BAND_TOP_DEG / 90))
+    lum = sky[rows:] @ LUMA
+    edges = [round(i * w * BAND_BIN_DEG / 360) for i in range(360 // BAND_BIN_DEG + 1)]
+    return [round(float(lum[:, a:b].mean()), 3) for a, b in zip(edges, edges[1:])]
+
+
 def grade_rain(rgb, haze, upper_only):
     g = RAIN_GRADE
     lum = (rgb @ LUMA)[..., None]
@@ -229,13 +270,25 @@ def main():
     rain_path = os.path.join(OUT_ENV, f"{ASSET}_rain_1k.hdr")
     rain_full = grade_rain(full, haze, upper_only=False)
     save_hdr(rain_full, rain_path)
-    for name, img, path in (("night", full, os.path.join(OUT_ENV, name1k)), ("rain", rain_full, rain_path)):
+    # The key light shines from the direction measured on the filled sky the player sees, not on the shipped map: the
+    # wall's vector irradiance made a sun at el 27 degrees straight down the harbour, a pinpoint specular that whited
+    # out the wet road and the car. Its colour and the irradiance it adds to the road (intensity x sin(elevation)) stay
+    # the shipped map's, since the map still lights the city with the wall's glow; `source` keeps the raw measurement.
+    filled = fill_wedge(full, upper_only=False)
+    aim = {"night": key_light(filled), "rain": key_light(grade_rain(filled, haze, upper_only=False))}
+    for name, img, path in (("night", full, os.path.join(OUT_ENV, name1k)), ("rain", None, rain_path)):
         e = envs[name]
         e["file"], e["inputSha256"][name1k] = os.path.basename(path), digest1k
         e["environment"] = entry_file(path)
-        e["key"] = key_light(load_full(path) if name == "rain" else img)   # rain: measured on the shipped (RGBE) file
+        src = key_light(load_full(path) if img is None else img)   # rain: measured on the shipped (RGBE) file
+        scale = src["direction"][1] / aim[name]["direction"][1]
+        e["fill"] = FILL
+        e["key"] = {**src, "direction": aim[name]["direction"], "elevationDeg": aim[name]["elevationDeg"],
+                    "intensity": round(src["intensity"] * scale, 4), "irradiance": round(src["irradiance"] * scale, 4),
+                    "source": {"direction": src["direction"], "elevationDeg": src["elevationDeg"],
+                               "intensity": src["intensity"]}}
     envs["rain"]["hazeColor"] = [round(float(v), 4) for v in haze]
-    del full, rain_full
+    del full, rain_full, filled
 
     rng = np.random.default_rng(SEED)
     for label, width in SIZES.items():
@@ -247,9 +300,12 @@ def main():
             e = envs[env_name]
             sky = night if env_name == "night" else grade_rain(night, haze, upper_only=True)
             e["inputSha256"][name] = digest
-            if label == "4k":
+            if label == "4k":   # measured before the fill: the horizon glow (and so `gain`) is the whole city's
                 e["sky"] = {**measure(sky), "disc": 0, "p995": round(float(np.quantile(sky @ LUMA, 0.995)), 4),
-                            "p90Band0to40": band_p90(sky)}
+                            "p90Band0to40": band_p90(sky), "sourceBandByLon": band_by_lon(sky)}
+            sky = fill_wedge(sky, upper_only=True)
+            if label == "4k":
+                e["sky"]["bandByLon"] = band_by_lon(sky)
             stem = ASSET if env_name == "night" else f"{ASSET}_rain"
             png = os.path.join(OUT_PNG, f"{stem}_sky_{label}.png")
             write_png(png, encode_srgb8(sky, e["range"], rng))

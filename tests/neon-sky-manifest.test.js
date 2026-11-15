@@ -109,6 +109,31 @@ for (const [name, env] of Object.entries(ENVS)) {
   });
 }
 
+// Trap (2026-11-16): the source's near floodlit embankment buildings (lon -180..-84, up to 43 degrees) sat at 8x the rest
+// of the sky, and the harbour drives straight at them: a wall of blurred yellow buildings instead of a night sky.
+const median = values => [...values].sort((a, b) => a - b)[values.length >> 1];
+for (const [name, env] of Object.entries(ENVS)) {
+  test(`${name}: no heading's sky is a floodlit wall: every 30-degree bin of the dome stays within 3x the median`, () => {
+    const { bandByLon, sourceBandByLon } = env.sky;
+    assert.equal(bandByLon?.length, 12, 'twelve 30-degree bins, elevation 0..45, measured on the shipped dome');
+    assert.ok(Math.max(...sourceBandByLon) > 3 * median(sourceBandByLon), 'the source has the wall the fill replaces');
+    bandByLon.forEach((v, i) => assert.ok(v <= 3 * median(bandByLon), `lon ${-180 + 30 * i}: ${v} > 3x median ${median(bandByLon)}`));
+  });
+
+  // Same wall, the key light (2026-11-16): measured on the shipped map, its vector irradiance (90% the wall's) made a sun
+  // at 27-31 degrees straight down the harbour, and its specular whited out the wet road and the car (road-ahead mean
+  // 210/255, 1.3% clipped; 112 with the key off). The key aims from the filled sky and keeps the road's irradiance.
+  test(`${name}: the key light is not the floodlit wall: aimed from the filled sky, same irradiance on the road`, () => {
+    const { key } = env, { source } = key ?? {};
+    assert.ok(source?.elevationDeg < 35, 'the shipped map alone puts the key low, on the wall');
+    assert.ok(key.elevationDeg >= 45, `key at ${key.elevationDeg} degrees: a low key glints white off the wet road`);
+    const flat = v => Math.hypot(v[0], v[2]), dot = key.direction.reduce((s, v, i) => s + v * source.direction[i], 0);
+    assert.ok(dot < Math.cos(25 * Math.PI / 180) && flat(key.direction) < flat(source.direction), 'moved off the wall');
+    const road = k => k.intensity * Math.sin(k.elevationDeg * Math.PI / 180);
+    assert.ok(Math.abs(road(key) / road(source) - 1) < 5e-3, 'the road keeps the irradiance of the measured key');
+  });
+}
+
 test('night ships the 1k download unchanged, as Coast does', () => {
   assert.equal(ENVS.night.environment.sha256, SOURCE.files[0].sha256);
 });
