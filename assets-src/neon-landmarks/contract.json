@@ -106,7 +106,7 @@
     "neon_landmarks_sectors": {
       "white_texels": 0,
       "bloom_texels": 0,
-      "max_luminance": 0.829
+      "max_luminance": 0.742
     }
   },
   "pieces": {
@@ -601,11 +601,11 @@
       "surfaces": {
         "crane": {
           "texel_density": 10.89,
-          "lit": 0.0024
+          "lit": 0.0023
         },
         "hazard": {
           "texel_density": 15.86,
-          "lit": 0.0032
+          "lit": 0.0031
         },
         "concrete": {
           "texel_density": 6.71,
@@ -617,7 +617,7 @@
         },
         "grating": {
           "texel_density": 19.16,
-          "lit": 0.0007
+          "lit": 0.0006
         }
       }
     },
@@ -667,7 +667,7 @@
       "surfaces": {
         "containers": {
           "texel_density": 12.08,
-          "lit": 0.0784
+          "lit": 0.0549
         }
       }
     },
@@ -728,7 +728,7 @@
         },
         "boot": {
           "texel_density": 4.83,
-          "lit": 0.0447
+          "lit": 0.0448
         },
         "deckhouse": {
           "texel_density": 10.74,
@@ -736,7 +736,7 @@
         },
         "deck": {
           "texel_density": 4.83,
-          "lit": 0.1298
+          "lit": 0.1297
         }
       }
     },
@@ -794,7 +794,7 @@
         },
         "stone": {
           "texel_density": 18.79,
-          "lit": 0.1067
+          "lit": 0.1065
         },
         "steel_arch": {
           "texel_density": 13.42,

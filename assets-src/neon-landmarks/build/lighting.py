@@ -18,7 +18,8 @@ from mathutils import Vector
 
 LED = (0.82, 0.9, 1.0)     # harbour yard LED floods: cool white, apart from the sodium of the deck and crane lamps
 STREET = (1.0, 0.8, 0.58)  # oldtown street floods: warm, under the lantern gold so the brick keeps its own red
-LIT_MAX = 0.55             # stored luminance cap of lamp spill + work light: x 1.5 at runtime stays under 0.9 (bloom)
+LIT_MAX = 0.35             # stored luminance cap of lamp spill + work light: x 1.5 at runtime = 0.525, leaving the
+                           # key light headroom under 0.9 (bloom); at 0.55 the white box tops bloomed at hero distance
 WORK_SAMPLES = 64
 
 
@@ -33,7 +34,7 @@ def area(at, aim, power, size, color):
 WORK = {
     # four high masts on the yard diagonals: both long walls (the stack stands either way round) and both ends
     # powers calibrated on the measured `lit` (contract.json surfaces): linear in power, under LIT_MAX
-    "container_stack": [spot((x, y, 24.0), (0, 0, 4.0), 50000, 75, LED) for x in (-18.0, 18.0) for y in (-22.0, 22.0)],
+    "container_stack": [spot((x, y, 24.0), (0, 0, 4.0), 35000, 75, LED) for x in (-18.0, 18.0) for y in (-22.0, 22.0)],
     # floods along both berths: the hull is mirrored (its +x half carries both), the cargo is not, and its -x side
     # faces the road
     "cargo_ship": [spot((s * 34.0, y, 20.0), (s * 12.0, y, 7.0), 40000, 95, LED) for s in (-1, 1) for y in (-52.0, -17.0, 17.0, 52.0)],
