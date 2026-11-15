@@ -130,7 +130,8 @@ test.describe('touch sprint artwork', () => {
     await expect(boost).toHaveAttribute('data-boost-state', 'ready');
     await expect(boost).toHaveAttribute('data-flame', 'on');
     const rim = button => button.evaluate(element => getComputedStyle(element).getPropertyValue('--rim').trim());
-    await expect.poll(() => rim(boost)).toBe('rgb(239, 174, 101)');
+    // Ready rim = color-mix(--boost #ff7f3f, white 15%) (style.css tokens).
+    await expect.poll(() => rim(boost)).toBe('color(srgb 1 0.573333 0.36)');
 
     // The live BOOST embers step through the 16-frame strip.
     const strip = await boost.evaluate(async element => {
