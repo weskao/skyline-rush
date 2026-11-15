@@ -52,40 +52,25 @@
   font-size: 12px;
   line-height: 1.35;
 }
-/* Shared custom dropdown between the arrows. A long view name ("Driving camera") wraps between words
-   instead of being clipped by the ellipsis the shared button uses. */
-.showcase-camera-actions .custom-select { flex: 1 1 0; }
-.showcase-camera-actions .custom-select > button {
-  width: 100%;
+/* ‹ name › stepper: the arrows switch the view, the name between them is centred and only a label (no dropdown).
+   A long name ("Driving camera") wraps between words, never inside one; CJK names stay on one line. */
+#showcase-camera-name {
+  flex: 1 1 0;
+  min-width: 0;
   min-height: 44px;
-  padding: 3px 20px 3px 6px;
-  border: 1px solid #8ddcf466;
-  border-radius: 6px;
-  background-color: #1c3d51;
-  background-position: right 3px center;
+  display: grid;
+  place-items: center;
   color: #effaff;
-  font: inherit;
   font-size: 12px;
   line-height: 1.15;
-  text-align: center;
-  white-space: normal;
+  word-break: keep-all;
 }
-.showcase-camera-actions .custom-select > [role="listbox"] { right: auto; left: 50%; translate: -50%; }
-/* Every dock has a set width (148-210px or the panel's), so a size container is safe. In the 148/158/190px docks the
-   arrows leave too little room for "Driving" (the row overflowed the 148px dock off screen), so the picker takes a
-   full-width row above them; the 210px rail (196px inside) keeps one row so it never grows into the Daily card. */
+/* Every dock has a set width (148-210px or the panel's), so a size container is safe. The 148/158px AIRFLOW docks
+   leave about 40px between the arrows, so the row tightens and the name steps down a size there. */
 .showcase-camera-dock { container-type: inline-size; }
 @container (max-width: 180px) {
-  .showcase-camera-actions { flex-wrap: wrap; row-gap: 4px; }
-  .showcase-camera-actions .custom-select { flex-basis: 100%; order: -1; }
-}
-/* The dock's backdrop-filter traps the list in its stacking context: while open, lift the whole dock over the
-   rules row and tool row (topbar level, like the topbar's own dropdowns), so no option is painted over. */
-#showcase-camera-dock:has(.custom-select > [aria-expanded="true"]) { z-index: 7; }
-/* The scrolling layout leaves the dock static, where z-index does nothing: position it only while open (no offset, no
-   shift), so the closed dock still scrolls under the pinned action row. Rail and AIRFLOW docks are already fixed. */
-@media (max-width: 1000px) and (min-height: 501px), (max-width: 1000px) and (orientation: portrait) {
-  body[data-phase="ready"]:not(.airflow-active) #showcase-camera-dock:has(.custom-select > [aria-expanded="true"]) { position: relative; }
+  .showcase-camera-actions { gap: 2px; }
+  #showcase-camera-name { font-size: 11px; }
 }
 .showcase-camera-actions > button { width: 44px; height: 44px; }
 .intro .upcoming-thumb img { object-position: center 60%; }
@@ -195,9 +180,44 @@ details.performance-notice {
   .intro:has(.home-resource-strip) .race-mode-heading { padding-inline-end: 210px; }
   .intro .race-mode-heading:has(#lobby-modes-toggle[aria-expanded="false"]) + .race-mode-tabs { display: none; }
   .intro .track-select { margin-top: 0; }
-  .intro:has(.race-mode-picker) .track-select button { height: 58px; }
-  .intro:has(.race-mode-picker) .track-select .track-preview { height: 22px; }
-  .intro:has(.race-mode-picker) .track-select button > span.track-route-map { height: 19px; }
+  /* Collapsed or expanded, a card shows everything portrait does: a square route map beside the name and
+     KM + status. The old 58-66px stacked card drew the route over the sky and cut the KM row; side by side the card
+     stays ~50px, so the first row still clears the pinned Garage row under iPhone Chrome's toolbar (667x375). */
+  .intro:has(.race-mode-picker) .track-select button {
+    display: grid;
+    grid-template: auto auto / 42px minmax(0, 1fr);
+    align-content: center;
+    column-gap: 8px;
+    flex-basis: 168px;
+    height: auto;
+    padding: 3px 4px;
+  }
+  #lobby-tracks-toggle[aria-expanded="true"] + .track-select button { flex: 1 0 168px; }
+  /* The sky / teaser art backs the whole card, dimmed under the text; a 4px strip made the Coming Soon art unreadable. */
+  .intro:has(.race-mode-picker) .track-select .track-preview {
+    position: absolute;
+    inset: 0;
+    grid-area: auto;
+    height: auto;
+    margin: 0;
+    opacity: .5;
+    -webkit-mask-image: linear-gradient(90deg, transparent 10%, #000 70%);
+    mask-image: linear-gradient(90deg, transparent 10%, #000 70%);
+  }
+  .intro:has(.race-mode-picker) .track-select button > :is(strong, span:last-child) { position: relative; line-height: 1.2; text-shadow: 0 1px 3px rgb(3 10 20 / .9); }
+  .intro:has(.race-mode-picker) .track-select button > span.track-route-map {
+    grid-area: 1 / 1 / 3;
+    position: relative;
+    inset: auto;
+    width: 42px;
+    height: 42px;
+    margin: 0;
+    background: var(--map-bg, rgb(4 14 29 / .48));
+  }
+  .intro .track-select button > :is(strong, span:last-child) { grid-column: 2; }
+  .intro .track-select button > strong { align-self: end; }
+  .intro .track-select button > span:last-child { align-self: start; }
+  .intro .track-select button > span:last-child { font-size: 10px; }
   .intro .track-note { margin: 2px 0; }
   .intro #lobby-tracks-toggle { margin-top: 2px; }
   details.performance-notice { top: calc(128px + var(--safe-top)); z-index: 2; }

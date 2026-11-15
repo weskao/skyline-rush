@@ -22,6 +22,9 @@ paths:
 - Pushing to a branch whose CI is in progress cancels that run (`cancel-in-progress`); wait for it to
   finish, or accept that the superseded run shows as cancelled, not failed (`quality-gate` uses
   `!cancelled()`, never `always()`; `tests/ci-quality-gate.test.js` pins it).
+- Keep Playwright titles and describe names free of `›`, line breaks and surrounding whitespace.
+  Playwright splits or trims those characters in `--test-list` before matching tests. A camera
+  stepper title containing `‹ ›` stopped browser shards before they ran (run `43765608754`).
 - A commit on `main` is not a deploy; publication rules are in `.github/workflows/ci.yml`.
 - CI runs and optional screenshot artifacts are evidence for review, not substitutes for real
   vehicle/road contact or manual interaction testing on devices.

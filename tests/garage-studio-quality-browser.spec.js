@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { chooseGarageAngle } from './helpers/garage-angle.js';
 
 test('Garage Studio bloom does not wash out the dark background', async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
@@ -6,7 +7,7 @@ test('Garage Studio bloom does not wash out the dark background', async ({ page 
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
-  await page.locator('[data-garage-angle="front"]').click();
+  await chooseGarageAngle(page, 'front');
   await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame', 'true');
   const shot = await page.locator('#garage-preview #world').screenshot();
   const background = await page.evaluate(async b64 => {

@@ -43,3 +43,14 @@ test('Studio wing toggle opens and stows the airbrake without touching the orbit
   assert.equal(moved.wing, true, 'drag, zoom and Ground/Flight keep the wing choice');
   assert.equal(toggleGarageOrbit(open).wing, true);
 });
+
+test('Studio ‹ › steps the five presets, wraps, and starts from an end when the camera is free', async () => {
+  const { GARAGE_ANGLES, stepGarageAngle } = await import('../src/garage-camera.ts');
+  assert.deepEqual(GARAGE_ANGLES, ['front', 'rear', 'side', 'top', 'cinematic']);
+  assert.equal(stepGarageAngle('front', 1), 'rear');
+  assert.equal(stepGarageAngle('cinematic', 1), 'front');
+  assert.equal(stepGarageAngle('front', -1), 'cinematic');
+  assert.equal(stepGarageAngle('', 1), 'front');
+  assert.equal(stepGarageAngle('', -1), 'cinematic');
+  for (const angle of GARAGE_ANGLES) assert.notDeepEqual(garagePreset(angle), defaultGarageCamera(), angle);
+});

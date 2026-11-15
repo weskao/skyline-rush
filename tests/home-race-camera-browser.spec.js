@@ -56,10 +56,7 @@ test('a fresh race resets its camera and Home restores its selection after leavi
   const dock = page.locator('#showcase-camera-dock');
   const raceCamera = page.locator('#camera-button');
   const start = page.locator('#start-button');
-  const selector = page.locator('#showcase-camera-select');
-  const picker = page.locator('#showcase-camera-select + .custom-select');
-  await picker.getByRole('combobox').click();
-  await picker.getByRole('option', { name: 'Orbit', exact: true }).click();
+  await page.locator('#showcase-camera-prev').click(); // Drive wraps back to the last view
   await expect(dock).toHaveAttribute('data-view', 'orbit');
   await start.click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
@@ -75,5 +72,5 @@ test('a fresh race resets its camera and Home restores its selection after leavi
   await page.reload();
   await expect(dock).toBeVisible();
   await expect(dock).toHaveAttribute('data-view', 'orbit');
-  await expect(selector).toHaveValue('orbit');
+  await expect(page.locator('#showcase-camera-name')).toHaveText('Orbit');
 });

@@ -1,6 +1,7 @@
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
+import { chooseGarageAngle } from './helpers/garage-angle.js';
 
 // Task 4 `?model=roadster`: the authored Roadster GLB replaces the procedural car in the Garage and follows its
 // wheels, active wing, flight pose and paint (src/garage-model-rig.ts). Production (no query) is unchanged.
@@ -71,7 +72,7 @@ test('Preview Studio front/side/rear/orbit show the GLB in frame', async ({ game
   await page.locator('#garage-studio-open').click();
   await expect.poll(async () => JSON.parse((await world(page).getAttribute('data-garage-model-instances')) ?? '{}').studio ?? null).not.toBeNull();
   for (const angle of ['front', 'side', 'rear', 'cinematic']) {
-    await page.locator(`[data-garage-angle="${angle}"]`).click();
+    await chooseGarageAngle(page, angle);
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame', 'true');
     await attach(page, `roadster-studio-${angle}`);
   }
