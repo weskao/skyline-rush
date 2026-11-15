@@ -21,4 +21,12 @@ export const test = base.extend({
   },
 });
 
+// The Garage dialog slides in (history-in, translateX 22px). A rect read mid-slide is shifted and goes through
+// float32 transform math, so a 144 px thumbnail measured 144.00001526. Measure the Garage only after this resolves.
+export const openGarage = async (page, action = 'click') => {
+  await page.locator('#garage-button')[action]();
+  await expect(page.locator('#garage-screen')).toBeVisible();
+  await page.locator('#garage-screen').evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)));
+};
+
 export { expect, chromium };

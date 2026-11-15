@@ -340,6 +340,8 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }
       for (const id of ['#tutorial-title', '#tutorial-progress', '#tutorial-instruction']) await expect(page.locator(id)).toBeVisible();
       await expect(page.locator('#tutorial-coach button:visible')).toHaveText(['退出']);
       await expect.poll(() => pauseLayoutClear(page)).toBe(true);
+      // Short landscape fits without scrolling, so no font's line height can push Resume off the bottom edge.
+      if (viewport.width > viewport.height) await expect.poll(() => page.locator('#race-overlay').evaluate(o => o.scrollHeight <= o.clientHeight)).toBe(true);
       await page.locator('#resume-button').tap();
       await expect(page.locator('#tutorial-instruction')).toBeVisible();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');

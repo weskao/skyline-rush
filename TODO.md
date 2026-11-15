@@ -1,3 +1,16 @@
+# 2026-11-15 — One NITRO / BOOST / FLY palette (`feature/hud-sprint-colors`)
+
+- [x] `:root` tokens in `src/style.css`: `--nitro #ffd166` (gold, 42°, matches the ring gold), `--boost #ff7f3f` (red-orange, 20°), `--fly #83ceeb` (cyan), each with `-text` / `-deep` variants. They drive the touch buttons and every state, the NITRO/BOOST icons, the Controls preview, the NITRO meter, HUD text and callout, the BOOST status, the speed ticks, key hints (home legend, guide, tutorial cue, Controls bindings) and the default 3D NITRO trail and shock (`src/aero-vfx.js`). Trail skins still replace the default.
+- [x] The shared charge bar turns BOOST colour only while BOOST drains: a new `body.boost-draining` class set from `car.boosting` (`body.boosting` also covers NITRO and the tunnel mini-boost). Low-fuel red still wins over it.
+- [x] RED: `tests/sprint-color-tokens.test.js` failed 7/7 on the old code. GREEN: 7/7. Updated tests that pinned the old colours: purple → gold in `garage-skin-replacement` and `aero-vfx`. `touch-sprint-bezel` now resolves `var()`/`color-mix()` and still checks all 15 state blocks (a weak-rim mutation fails it). `main-ui-contract.json` cssBlob updated with a reason.
+- [x] Unit, typecheck, build: `npm test` 2981 pass / 0 fail, `npm run typecheck` and `npm run build` clean, module-size gate green.
+- [x] Browser specs touching the changed UI (main-ui-parity, browser, controls-preview, handoff, guide, hud-dom, hud-3x-artwork, interactive-tutorial, keyboard-settings, i18n, nitro-fly): 129/130 pass. `hud-3x-artwork` pinned the old BOOST ready rim `#efae65`; it now expects `color-mix(--boost, white 15%)`. The one failure, `interactive-tutorial` "paused practice 750x342", fails the same way on the untouched base `4d45cc46`, so it is pre-existing and out of scope here.
+- [x] Garage specs after `node scripts/build-garage-browser.mjs` (cosmetics-preview, equipment-audit, vfx-catalog, hero-roadster-equipment, wave3 economy/store/early-access): 62 pass, 3 skipped, 0 fail. Trail skins still replace the default gold NITRO trail (`garage-skin-replacement.test.js`).
+- [x] WebGL screenshots (production build, Chrome) on phone portrait 390×844 and landscape 844×390 (touch) and desktop 1440×900: BOOST held, NITRO ready/active, flying, low fuel. Sampled pixels: speed ticks `#ff7f3f` while BOOST drains and `#ffd166` during NITRO; charge bar orange only while BOOST drains, cyan during NITRO, and the low-fuel red pulse wins over BOOST; home key hints FLY `#83ceeb` / BOOST `#ff7f3f` / NITRO `#ffd166`.
+- [ ] Exact-HEAD GitHub `quality-gate` and a physical phone check.
+- [x] `can` pickup vs BOOST red-orange (`feature/pickup-can-glow`): **not confusable, no asset change.** The baked `can` accent is already amber: `0xFF9D35` = 31° (`scripts/assets/pickup_kit.py` TIERS, `src/pickup-art.js` PICKUP_ACCENTS), against `--boost` 20° and tank gold `0xFFCF48` 44° / `--nitro` 42°. Real race captures on Coast (dev server, Chrome, GLB pickups loaded, BOOST held so the charge bar is BOOST orange), with the game loop frozen on the frame where a `can` sat 20–22 m ahead. Hue of saturated glowing pixels in the projected `can` box vs the `#fuel-fill` bar: phone portrait 390×844 touch, `can` median 35.5° (p25 34.5°; bar empty, 0%). Phone landscape 844×390 touch, `can` 30.8° (p25 28.8°) vs bar 20.0°. Desktop 1440×900, `can` 31.1° (p25 29.5°) vs bar 20.0°. The rendered `can` stays ≥ 10.8° from BOOST at the median and ≥ 8.8° at p25. On screen it reads as a yellow-orange object with steel armour, not the red-orange HUD bar. Screenshots and the capture script are local session evidence (not committed).
+- Not changed: the legacy amber NITRO/BOOST rules in `src/style.css` (`.controls-preview-keys .touch-nitro`, `.touch-controls .touch-nitro*`, `.touch-controls .touch-boost` border/colour) are dead because `#touch-controls` / `#controls-panel` ID rules override them. The tutorial's combined `fly boost nitro` key cue keeps the default cyan, because its `kbd`s carry no per-action marker.
+
 # 2026-11-15 — Instanced traffic (`feature/traffic-instancing`)
 
 - [x] `src/traffic-fleet.ts`: each traffic style's `makeCar()` model is baked into one geometry per material and drawn through a `marker-pool.js` pool. Traffic costs 21 draw calls at any car count (3 styles x 7 materials), 6 more in the `?look=3d` wet-road mirror pass. `world.js` poses plain `Object3D`s through `updateCar` (997 → 995 lines, ceiling lowered). Simulation, collision and VFX untouched.
@@ -13,6 +26,13 @@
 - [x] Applying equipment while hidden shows a localized toast and highlights the toggle. Reduced Motion and Comfortable keep the highlight static.
 - [x] RED: Studio and Coming Soon tests reproduced missing visibility controls. GREEN: 87 focused checks, 2,967 unit tests (3 skipped), typecheck and production build.
 - [ ] Exact-head GitHub quality gate and physical iOS / Android verification.
+
+# 2026-11-15 — World Tour software-WebGL triangle budget
+
+- [x] CI run 43680210905 uploaded all 35 records but exceeded the desktop Medium triangle budget on all five World Tour routes. The full pickup models were drawn up to 900 m away. Road pickups past 150 m now use a lower-polygon version of the same parts and keep their tint, scale and halo. Near pickups, collection and the guide still use full detail.
+- [x] RED: the real effects scene exceeded the distant pickup triangle budget. GREEN: all four tiers pass the distance, triangle count, dimensions, glow and detail-return regression. Full Node suite: 2,973 passed, 3 skipped. Typecheck, module size and locked production build passed.
+- [x] All five desktop Medium Playwright WebGL captures passed the existing triangle and draw-call ceilings. Local triangles before → after: Tokyo 82,411 → 60,127, Alpine 70,841 → 57,345, Taipei 92,051 → 74,179, Coastal 73,983 → 60,189, Cosmic 72,763 → 59,207.
+- [ ] Verify the full GitHub quality gate for the pushed commit and physical-device rendering.
 
 # 2026-11-15 — CI GLB loading on software WebGL
 
@@ -5619,3 +5639,18 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Verify FLY's held and released artwork and all seven editable touch controls across a reload. Both flows passed with `CI=1` and zero retries.
 - [x] `npm test`: 2,951 passed, 3 skipped. Typecheck, module-size checks and production build passed.
 - [ ] Verify the full GitHub `quality-gate` on the repair commit.
+
+## 2026-11-15 — Browser CI regressions (43635027262)
+
+- [x] RED: the model-cache regression reproduced a retained Garage probe. The original World Tour AIRFLOW sweep and fold-open landscape HUD case also exhausted their budgets on software WebGL.
+- [x] Restrict idle GLB retention to race-car models. The browser regression checks WebGL memory after loading the probe, closing the Garage and switching tracks without reloading the renderer. Both samples use the procedural pickup fallback to keep pickup texture loading out of the comparison.
+- [x] Give each World Tour map its own AIRFLOW case with all six views. Run the HUD interaction matrix at Low quality and allow the live race countdown to finish on slower runners.
+- [x] `npm test`: 2,974 passed, 3 skipped. Typecheck, module-size checks, production build and World Tour shard selection passed.
+- [ ] Verify the full GitHub `quality-gate` for this commit.
+
+## 2026-11-15 — Garage probe GPU memory regression (CI 43620970826)
+
+- [x] RED: the model cache kept the Garage-only probe after its last handle released, leaving two geometries allocated in CI. Limit idle retention to race-car models so switching equipped cars can still reuse their parsed assets.
+- [x] The browser regression checks the original renderer through probe load, Garage close and both track switches. The procedural pickup fallback keeps pickup texture loading out of both samples.
+- [x] `npm test`: 2,972 passed, 3 skipped. Typecheck, module-size checks and production build passed.
+- [ ] Verify the full GitHub `quality-gate` for this commit.

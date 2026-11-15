@@ -51,18 +51,17 @@ for(const [layout,viewport] of [['landscape',{width:640,height:360}],['portrait'
   });
 }
 
-// Each World Tour road uses a curved/elevated local tangent. Probe the actual
-// WebGL vehicle, not just the shared camera helper, when AIRFLOW is enabled.
-test('every World Tour map: AIRFLOW grounds the hero and keeps all six preview camera angles usable',async({page})=>{
-  test.setTimeout(ciTimeout(60000));
-  await openWorldTour(page);
-  for(const id of MAPS) await test.step(id,async()=>{
-    const result=await airflowAngles(page,id);
+// Each probe renders all six camera angles. Give each track a fresh browser budget on software WebGL.
+for (const id of MAPS) {
+  test(`AIRFLOW grounds the hero and keeps all six preview camera angles usable: ${id}`, async ({ page }) => {
+    test.setTimeout(ciTimeout(60000));
+    await openWorldTour(page);
+    const result = await airflowAngles(page, id);
     expect(result.flying.jetsVisible,`${id} flying jets`).toBe(true);
     expect(result.flying.worldY-result.grounded.worldY,`${id}: AIRFLOW must lower the car to the road surface`).toBeGreaterThan(.8);
     expect(result.grounded.jetsVisible,`${id} grounded jets`).toBe(false);
     expect(result.grounded.bodyClearShare,`${id}: unobstructed grounded showroom vehicle`).toBeGreaterThanOrEqual(.75);
-    for(const [view,actor] of Object.entries(result.angles)) {
+    for (const [view, actor] of Object.entries(result.angles)) {
       expect(actor.bodyClearShare,`${id}/${view}: vehicle body must not be blocked or offscreen`).toBeGreaterThanOrEqual(.75);
       expect(actor.visible,`${id}/${view}: hero still visible`).toBe(true);
       expect(actor.jetsVisible,`${id}/${view}: no flying jets in AIRFLOW`).toBe(false);
@@ -70,7 +69,7 @@ test('every World Tour map: AIRFLOW grounds the hero and keeps all six preview c
       expect(Number.isFinite(actor.x)&&Number.isFinite(actor.y),`${id}/${view}: valid camera projection`).toBe(true);
     }
   });
-});
+}
 
 // In-race approach: the chase camera keeps the signature landmark in view and
 // clear of roadside props on its kerb (the plaza), not just on the home screen.

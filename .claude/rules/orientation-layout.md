@@ -34,6 +34,14 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   iOS simulator or a device in that orientation (`make phone-diag`), not a desktop viewport of
   the same size.
 
+- **Linux CI fonts are not the phone's fonts.** A `line-height: normal` line box takes its height from the
+  font: Avenir Next (macOS and iOS) gives ~22 px at 16 px, the Linux CI fallback ~18.5 px. At 750×342 and
+  743×340 the paused-practice screen overflowed its 197 px overlay by 20 px and cut Resume by 0.4–2.4 px on
+  Mac and iPhone fonts while every CI shard stayed green (2026-11-15). Short-landscape practice now hides the
+  route label (as portrait practice and short-landscape results do) and uses 10 px overlay padding, so the
+  pause screen fits without scrolling. Guard: the no-scroll check for landscape sizes in
+  `tests/interactive-tutorial-browser.spec.js` (*paused practice*). Size a short-landscape overlay with slack,
+  never to the pixel a CI screenshot shows.
 - **Wave 3 results stay out of the landscape overlay flow.** The extra mission/result card must
   not push Race Again, Next, History or Cloud Sign in below the viewport. Keep the card
   independently bounded and preserve `tests/overlay-landscape-fit-browser.spec.js` at

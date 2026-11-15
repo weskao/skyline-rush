@@ -288,7 +288,7 @@ test('an opted-in cache reuses two idle models and disposes them on eviction or 
     const entry = validEntry(`probe-${suffix}`);
     return [entry.id, entry];
   }));
-  const cache = cacheWith(fetch, undefined, { manifest, retainReleasedModels: true });
+  const cache = cacheWith(fetch, undefined, { manifest, retainReleasedModels: () => true });
   const first = await cache.load('probe-a');
   const firstWheel = first.instance().getObjectByName('wheel_fl');
   const counts = trackDisposals(first.instance());
@@ -308,6 +308,27 @@ test('an opted-in cache reuses two idle models and disposes them on eviction or 
   assert.ok([...secondCounts.values()].every(n => n === 1), 'the older idle entry was evicted');
   cache.dispose();
   assert.ok([...counts.values(), ...thirdCounts.values()].every(n => n === 1), 'world disposal frees the retained models');
+});
+
+test('a shared cache releases a Garage-only model while keeping an equipped car reusable', async () => {
+  const { fetch, calls } = fakeFetch();
+  const [probe, car] = ['probe', 'car'].map(validEntry);
+  const cache = cacheWith(fetch, probe, {
+    manifest: { [probe.id]: probe, [car.id]: car },
+    retainReleasedModels: id => id === car.id,
+  });
+  const preview = await cache.load(probe.id);
+  const previewDisposals = trackDisposals(preview.instance());
+  preview.release();
+  assert.ok([...previewDisposals.values()].every(count => count === 1), 'closing the Garage frees the probe resources');
+
+  const equipped = await cache.load(car.id);
+  const equippedDisposals = trackDisposals(equipped.instance());
+  equipped.release();
+  assert.ok([...equippedDisposals.values()].every(count => count === 0), 'the equipped car stays cached');
+  (await cache.load(car.id)).release();
+  assert.equal(calls.length, 2, 'equipping the same car again does not re-fetch it');
+  cache.dispose();
 });
 
 test('single GLTFLoader backend; no renderer, no KTX2Loader construction and no Draco in the loader module', () => {

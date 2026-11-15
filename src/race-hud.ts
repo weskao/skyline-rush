@@ -198,6 +198,7 @@ export function createRaceHud(options: HudOptions) {
     const visual = getVisual();
     document.body.classList.toggle('low-charge', car.fuel < 20);
     document.body.classList.toggle('boosting', (car.boosting || nitroActive || (car.miniBoost > 0 && car.boostTunnelEvent)) && race.phase === 'racing');
+    document.body.classList.toggle('boost-draining', car.boosting && race.phase === 'racing'); // BOOST alone, not NITRO or tunnel mini-boost: tints the charge bar
     const tunnelBoost = car.miniBoost > 0 && car.boostTunnelEvent &&
       race.elapsed - car.boostTunnelEvent.time < 3.6;
     const boost = (car.boosting || nitroActive || tunnelBoost) && race.phase === 'racing';
