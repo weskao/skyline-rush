@@ -26,6 +26,10 @@ const onWater = (sector: NeonSector): boolean => sector === 'expressway' || sect
 const PARAPET = 13.2, PARAPET_TOP: Partial<Record<NeonSector, number>> = { expressway: .55, canal: .25 };
 /** Lap runs of the expressway parapet (the sweeper, then the harbour corner) and of the canal bridge's. */
 const EXPRESSWAY_RAILS: readonly (readonly [number, number])[] = [[2857, 4351], [5594, 5988]], CANAL_RAILS: readonly [number, number] = [5990, 7038];
+/** The canal's far shore (concept frame 07): the round glass tower with the cyan crown and the slab tower with the
+ *  magenta edges in turn, `pitch` metres apart and 1.4 to 2 times their street size (147 to 210 m and 128 to 183 m:
+ *  the tall towers of the view), in front of the skyline's two ranks, which keep to their pink and cyan kinds here. */
+const CANAL_SHORE = { from: 6010, to: 7030, pitch: 90, line: 300 } as const, CANAL_SKYLINE = ['skyline_tower_b', 'skyline_tower_c', 'skyline_spire', 'skyline_tower_b'] as const;
 /** The harbour straight: a quay promenade on the sea side (left) instead of a parapet (canal_bank: 6.5 m deep, its
  *  inner edge just outside the kerb, its wall and bollard lamps to the open water), so no street lamp stands there. */
 const QUAY: readonly [number, number] = [4357, 5588], QUAY_LINE = 16.2;
@@ -203,7 +207,7 @@ function furniture({ r, put, tile, row }: Chunk, side: number, facing: number): 
   // time, so the far shore is not one row of equal boxes squared to the road. Drawn only there: land keeps its rolls.
   const across = (piece: NeonPiece, pick: number, lap: number, offset: number): void => put(piece, lap, side * offset, facing + Math.floor(pick * 16 % 4) * HALF_PI, -6 - (pick * 64 % 1) * 60);
   row(2, (lap, sector) => { // far skyline: behind the blocks on land, across the water elsewhere; sunk so it meets either
-    const pick = r(), piece = SKYLINE[Math.floor(pick * SKYLINE.length)]!, out = r(), yard = side > 0 && within(lap, NEON_YARD);
+    const pick = r(), piece = (sector === 'canal' ? CANAL_SKYLINE : SKYLINE)[Math.floor(pick * SKYLINE.length)]!, out = r(), yard = side > 0 && within(lap, NEON_YARD);
     if (sector === 'harbour' && !yard) return; // open sea left of the straight and round the corner: no tower in the water
     if (onWater(sector) && !yard) return across(piece, pick, lap, 320 + out * 260);
     put(piece, lap, side * (170 + out * 70), facing, -6);
@@ -211,7 +215,7 @@ function furniture({ r, put, tile, row }: Chunk, side: number, facing: number): 
   row(2, (lap, sector) => {
     if (!onWater(sector) || sector === 'harbour') return;
     const pick = r();
-    across(SKYLINE[Math.floor(pick * SKYLINE.length)]!, pick, lap + NEON_CHUNK_METRES / 4, 300 + r() * 300);
+    across((sector === 'canal' ? CANAL_SKYLINE : SKYLINE)[Math.floor(pick * SKYLINE.length)]!, pick, lap + NEON_CHUNK_METRES / 4, 300 + r() * 300);
   });
 }
 
@@ -221,6 +225,10 @@ function waterside({ put, tile, every, once }: Chunk, side: number): void {
   for (const [from, to] of EXPRESSWAY_RAILS) every(from, to, 12, lap => tile('expressway_rail', lap, side * PARAPET, rail, 12));
   every(CANAL_RAILS[0], CANAL_RAILS[1], 12, lap => tile('canal_bridge_rail', lap, side * PARAPET, rail, 12));
   if (side < 0) every(QUAY[0], QUAY[1], 12, lap => put('canal_bank', lap, side * QUAY_LINE, rail));
+  every(CANAL_SHORE.from, CANAL_SHORE.to, CANAL_SHORE.pitch, lap => { // no roll: sizes and depths staggered by the tower's number
+    const k = Math.round((lap - CANAL_SHORE.from) / CANAL_SHORE.pitch) + (side > 0 ? 1 : 0);
+    put(k % 2 ? 'tower_glass_b' : 'tower_glass_a', lap, side * (CANAL_SHORE.line + k * 7 % 4 * 18), -side * HALF_PI, -6 - k * 5 % 4 * 6, 1.4 + k * 3 % 7 * .1);
+  });
   for (let k = 0; k < 12; k++) { // the quays where the land ends: +X toward the water
     once(NEON_SHORE[0], () => put('canal_bank', NEON_SHORE[0], side * (18 + 12 * k), HALF_PI));
     once(NEON_SHORE[1], () => put('canal_bank', NEON_SHORE[1], side * (18 + 12 * k), -HALF_PI));
