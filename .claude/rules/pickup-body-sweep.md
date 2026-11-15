@@ -34,7 +34,8 @@ car or paint needs no edit here. Check one light and one dark paint in a real We
 The can uses the marker's fitted absorption point. Keep the flash and instanced spark
 cluster at that point, and keep the old road burst, `afterburn`, contact decal and rear
 streaks out of the can path. Road-anchored particles outlive the car passing the pickup at
-speed.
+speed. The can's old rear streaks now live on as the mini-boost start cue
+(`mini-boost-streaks.md`), never as a pickup effect.
 
 - **Embers fly in vehicle space.** During the absorb delay the embers start at the can's spot,
   captured once in the car group's local space (`canFrom`, after `updateWorldMatrix`), and

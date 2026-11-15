@@ -22,6 +22,12 @@ export function pressNitro(car: { nitro: number; nitroTime: number; nitroUses: n
 }
 export const FLY_DRAIN = 15; // fuel/s while thrusting (Phase 1: more room to fly while preserving ground recharge)
 export const BOOST_DRAIN = 10; // fuel/s while boosting on the road
+/** Every mini-boost source goes through here: refresh the boost (never shortened) and record one event for the
+ * start cue (mini-boost-cue.ts). `tier`: the drift tier that paid (1-3), 0 for the other sources. */
+export function grantMiniBoost(car: { miniBoost: number; miniBoostEvent: unknown }, seconds: number, time: number, tier = 0): void {
+  car.miniBoost = Math.max(car.miniBoost, seconds);
+  car.miniBoostEvent = { time, tier };
+}
 export const GROUND_FUEL_REGEN = 13; // fuel/s on the road with FLY and BOOST released
 export const UPHILL_FUEL_REGEN = 6.5; // fuel/s on an uphill section
 export const GLIDE_FUEL_REGEN = 4; // fuel/s while airborne with FLY and boost released

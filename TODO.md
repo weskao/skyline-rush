@@ -1,3 +1,11 @@
+# 2026-11-16 — Mini-boost start streaks (`feature/mini-boost-trails`)
+
+- [x] The energy can's old pair of rear streaks now plays once (0.8 s) when a mini-boost starts: drift release (tier colour), slipstream ring, boost tunnel and chain landing (neutral whitish cyan). Player only. Chained rings never restart a running play, and braking never starts one. Medium draws 4 lines. Low, Reduced Motion and disabled effects draw none. The can stays streak-free. Rule: `.claude/rules/mini-boost-streaks.md`.
+- [x] RED: `tests/mini-boost-streaks.test.js` 6/6 failed on stub modules. GREEN: 6/6, plus 25 pickup VFX tests. `npm test` 2,984 passed, 3 skipped, 0 failed; typecheck, production build and module-size gate pass. The legacy replay fixture was re-recorded only for the new `miniBoostEvent` field (simulation hashes without it match the old fixture, 47/47).
+- [x] Real WebGL (Chromium): `tests/mini-boost-streaks-browser.spec.js` 3/3 (desktop 1280×720, phone 390×844 portrait and 844×390 landscape); shader-warmup and black-frame specs 6/6. Frozen A/B frames show both bundles beside the boost plumes in the Taipei tunnel and after a chain landing.
+- [ ] Physical iPhone / Android check, `make verify`, full `npm run test:browser` and the exact-HEAD GitHub quality gate.
+- [ ] Phone portrait: the near end of the ribbons crosses the speed readout for part of the 0.8 s play; review on a device.
+
 # 2026-11-16 — Home camera picker: shared custom dropdown, uncut labels (`develop`)
 
 - [x] `#showcase-camera-select` drops `data-native-select`, so `customSelect` draws it like the language picker. The arrow-button rules are scoped to `.showcase-camera-actions > button`; they used to restyle the dropdown button too (40×40, 25px font, no chevron).

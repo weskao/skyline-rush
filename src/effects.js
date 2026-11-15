@@ -5,10 +5,12 @@ import { createMarkerPool } from './marker-pool.js';
 import { createPickupMarkers } from './pickup-markers.js';
 import { createPickupCollectVfx, pickupCueSource } from './pickup-collect-vfx.js';
 import { createParticleBurst } from './effects-particle-burst.js';
+import { PARTICLE_FRAGMENT, PARTICLE_VERTEX } from './effects-particle-shaders.js';
 import { createRivalCues } from './rival-cues.ts';
 import { isRaining, racePreset, sprayRate } from './board-effects.ts';
 import { createDriftCharge } from './drift-charge-vfx.js';
 import { createSkidMarks } from './skid-marks.js';
+import { createMiniBoostStreaks } from './mini-boost-streaks.js';
 import { LIFT_PORTS, liftPort } from './lift-ports.js';
 import { blue, bonusStyles, gas, gold, mist, orange, pickupColors, purple, ringColors } from './effects-palette.ts';
 
@@ -32,30 +34,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   const material = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.NormalBlending,
     uniforms: { pixelRatio: { value: Math.min(devicePixelRatio, 1.5) } },
-    vertexShader: `attribute vec3 color; attribute float size; attribute float alpha;
-      attribute float kind; attribute vec3 velocity;
-      varying vec3 vColor; varying float vAlpha; varying float vKind; varying vec2 vDirection;
-      uniform float pixelRatio;
-      void main(){ vColor=color; vAlpha=alpha; vKind=kind;
-        vec4 p=modelViewMatrix*vec4(position,1.);
-        vec4 clip=projectionMatrix*p;
-        vec4 tip=projectionMatrix*(p+modelViewMatrix*vec4(velocity*.03,0.));
-        vec2 direction=tip.xy/max(.01,tip.w)-clip.xy/max(.01,clip.w);
-        vDirection=length(direction)>.00001 ? normalize(direction) : vec2(0.,1.);
-        gl_PointSize=clamp(size*220.*pixelRatio/max(1.,-p.z),0.,85.); gl_Position=clip; }`,
-    fragmentShader: `varying vec3 vColor; varying float vAlpha; varying float vKind; varying vec2 vDirection;
-      void main(){ vec2 uv=(gl_PointCoord-.5)*2.; uv.y=-uv.y;
-        float d=length(uv);
-        if(vKind>.5 && vKind<1.5) {
-          vec2 flow=vec2(dot(uv,vec2(vDirection.y,-vDirection.x)),dot(uv,vDirection));
-          d=length(flow*vec2(4.5,1.));
-        } else if(vKind>1.5) {
-          vec2 flow=vec2(dot(uv,vec2(vDirection.y,-vDirection.x)),dot(uv,vDirection));
-          d=length(flow*vec2(2.8,1.));
-        }
-        if(d>1.) discard;
-        float soft=exp(-d*d*4.)*(1.-smoothstep(.65,1.,d));
-        gl_FragColor=vec4(vColor,soft*vAlpha); }`,
+    vertexShader: PARTICLE_VERTEX, fragmentShader: PARTICLE_FRAGMENT,
   });
   const points = new THREE.Points(geometry, material);
   points.frustumCulled = false;
@@ -111,6 +90,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   scene.add(beams);
   const driftColors = [blue, orange, purple], driftCharge = player ? createDriftCharge(player, driftColors, scene) : null;
   const skids = player ? createSkidMarks(scene, player, roadShadow) : null, skidOrigin = new THREE.Vector3();
+  const miniBoostStreaks = camera ? createMiniBoostStreaks(scene, driftColors) : null; // the player's mini-boost start cue
   let previousRace = null, seen = new WeakMap(), driftEmission = 0, sprayEmission = 0, spraySide = 1;
   function emit(x, y, distance, vx, vy, forward, size, life, color, gravity, kind = 0, opacity = 0.85, radialX = Math.sign(vx)) {
     Object.assign(particles[cursor], { x, y, distance, vx, vy, forward, size, life, maxLife: life, color, gravity, kind, opacity, radialX, grounded: false, phase: cursor * 2.39996 });
@@ -233,6 +213,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       } else driftEmission = 0;
       // A tier just paid: a burst off both rear tyres in its colour. Kept under reduced motion as the payout cue.
       const fired = driftCharge?.update(car.drift, dt, active, reducedMotion) ?? 0;
+      miniBoostStreaks?.update(car, vehicles?.[0], camera, dt, { active, enabled, quality: options.quality, reducedMotion });
       skids?.update(enabled && !preview && (race.phase === 'racing' || race.phase === 'paused') && car.altitude < 0.2 ? car.drift : null, origin ?? skidOrigin.set(center, 0, -distance)); // kept to the race's end
       if (fired && car.altitude < 0.2) for (const side of [-1, 1]) for (let i = reducedMotion ? 3 : lowQuality ? 5 : 10; i > 0; i--) {
         const { x, d } = rearWheel(side, car, center, originZ, vehicles);
@@ -378,7 +359,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       return rewarm; // true: new pickup materials entered the scene, the caller warms their shaders
     },
     dispose() {
-      gates.removeFromParent(); beams.removeFromParent(); ringPool.dispose(); pickupMarkers.dispose(); collectVfx.dispose(); driftCharge?.dispose(); skids?.dispose();
+      gates.removeFromParent(); beams.removeFromParent(); ringPool.dispose(); pickupMarkers.dispose(); collectVfx.dispose(); driftCharge?.dispose(); skids?.dispose(); miniBoostStreaks?.dispose();
       ringGeometry.dispose(); beamGeometry.dispose(); beamMaterial.dispose();
       for (const mat of Object.values(ringMaterials)) mat.dispose();
     },
@@ -390,7 +371,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       magnetRing.visible = false;
       lastImpact = lastLanding = lastShieldBlock = null;
       seen = new WeakMap(); previousRace = null; driftEmission = sprayEmission = 0;
-      collectVfx.reset(); driftCharge?.reset(); skids?.reset();
+      collectVfx.reset(); driftCharge?.reset(); skids?.reset(); miniBoostStreaks?.reset();
       cursor = 0;
       emissions.fill(0); strengths.fill(0); nozzles.fill(0);
       cores.children.forEach(jet => { jet.visible = false; });
