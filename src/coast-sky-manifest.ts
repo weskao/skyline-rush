@@ -59,8 +59,8 @@ export const COAST_SKY_MANIFEST = {
         'shanghai_bund_8k.hdr': 'fbc2e9859e6bfaf78a870f137c74ddad8f17b33d7b45f8b41fbd40def6bd05ef',
       },
       files: [
-        { width: 4096, url: 'environments/sky/shanghai_bund_sky_4k.ktx2', bytes: 1_955_941, sha256: 'cb4d20532d7b47d36e71d9a1c773d57570c973e967a4128d85004e1c400c61c4' },
-        { width: 8192, url: 'environments/sky/shanghai_bund_sky_8k.ktx2', bytes: 6_605_216, sha256: 'b87203171345579df56ade2176f0a2925c184855bd37de92ec9c07521cd7925b' },
+        { width: 4096, url: 'environments/sky/shanghai_bund_sky_4k.ktx2', bytes: 1_728_936, sha256: '5b1219ed1d49c5cfc06ad97c186dbe4936a01d1c61c12d7c4f88c2471c1c22cf' },
+        { width: 8192, url: 'environments/sky/shanghai_bund_sky_8k.ktx2', bytes: 5_905_218, sha256: 'aad359c684a34e258ca1bd0af238c87e1bef98235e4e70da240c63a104f5163a' },
       ],
     },
     nightRain: {
@@ -69,8 +69,8 @@ export const COAST_SKY_MANIFEST = {
         'shanghai_bund_8k.hdr': 'fbc2e9859e6bfaf78a870f137c74ddad8f17b33d7b45f8b41fbd40def6bd05ef',
       },
       files: [
-        { width: 4096, url: 'environments/sky/shanghai_bund_rain_sky_4k.ktx2', bytes: 1_708_337, sha256: '6017286a1955e2dba4a28df3da9f5c23491eb5a9693a524350279a35c96a8116' },
-        { width: 8192, url: 'environments/sky/shanghai_bund_rain_sky_8k.ktx2', bytes: 5_878_156, sha256: '948fd303b3107b9008b6868efb4cd8fe16a7d4b63ca6800aed03280455cc46d0' },
+        { width: 4096, url: 'environments/sky/shanghai_bund_rain_sky_4k.ktx2', bytes: 1_473_741, sha256: 'dfb3ff63e9adac1ccc345d0c1f5582ed83c8e07c3f360e57bc66a429ca6cd9d7' },
+        { width: 8192, url: 'environments/sky/shanghai_bund_rain_sky_8k.ktx2', bytes: 5_201_534, sha256: 'f2b7452a32bda62f303105bef00d3d7b81a5ebc39ae710a9a36e07c9074955ad' },
       ],
     },
   } satisfies Record<CoastEnvName, { inputSha256: Record<string, string>; files: SkyFile[] }>,
