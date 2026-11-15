@@ -6,6 +6,7 @@ import { STORMLINE_ID, STORMLINE_TRACK } from './courses/stormline-megacity-race
 import { VOLCANIC_ID, VOLCANIC_TRACK } from './courses/volcanic-crown-race.ts';
 import { MONSOON_ID, MONSOON_TRACK } from './courses/monsoon-ruins-race.ts';
 import { COURSE_RUNTIMES } from './course-runtimes.ts';
+import { NEON_RING_LINES } from './neon-ring-lines.ts';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
 // `x` / `altitude` place a shortcut corridor.
@@ -24,6 +25,7 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 7, itemDensity: OPENING_ITEMS, ringOdds: BOOST_ODDS, introRivals: true, // an early, easy map
     // Layout 7 (owner, 2026-11-14): one clockwise lap. The only tunnel is the rail underpass in the first right-hander.
     sections: [{ from: 470, to: 690, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 }],
+    ringLines: NEON_RING_LINES, // owner brief, 2026-11-15: one highlight per sector
   },
   canyon: {
     name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 6, itemDensity: OPENING_ITEMS, openingNitroRings: 2, // volume was enough; only the first NITRO came late

@@ -34,6 +34,11 @@ pre-2026-11-07 baseline (user: more variety, but collecting must not get much ha
 - Sky Spiral's 5 spinning hoops and Cosmic Orbit's two climbing 3-hoop gates (`track-themes-classic.ts`,
   `track-themes-world-tour.ts`, themed races)
 - the mixed Gauntlet's hoop over each barricade (`gauntlet-course.ts`, merged by `withHoops`)
+- Neon Downtown's five sector lines (`src/neon-ring-lines.ts`, a track's `ringLines`; owner brief, 2026-11-15): each
+  its own PERFECT LINE, the random rings give way 40 m either side. Guard: `tests/neon-highlights.test.js`. A line
+  that runs through a landmark moves, never the landmark; swings go with a bend's corner push, not against it. The
+  lines do not scale with the grid, so a change re-pins Neon in `tests/scaled-layout.test.js`, the parity, density
+  and variety locks and the replay fixture; a mixed-Gauntlet hoop still replaces a line ring within 30 m
 - each shortcut corridor's reward line: a cell every 60 m from `from + 30` and a tank halfway (`createPickups`)
 - each long-form shortcut or hidden path also gets the dense mix below, in that same window. Classic `RACE_TRACKS` corridors do not
 - trains (6 consecutive rings) and full-width rows still occurring in every race
