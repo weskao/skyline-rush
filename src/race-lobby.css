@@ -91,6 +91,7 @@ details.performance-notice {
 .performance-notice button { display: block; margin: 0 0 8px auto; min-height: 44px; }
 
 @media (min-width: 1001px) and (min-height: 501px) and (max-height: 1160px) {
+  #lobby-tracks-toggle[aria-expanded="true"] + .track-select { max-height: 168px; }
   .intro .race-mode-heading { margin-bottom: 4px; }
   #lobby-tracks-toggle { margin-top: 3px; }
 }
