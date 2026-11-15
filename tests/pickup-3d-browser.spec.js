@@ -49,9 +49,11 @@ test('the guide previews the same four authored models that the race draws, with
   if (await tutorial.isVisible()) await tutorial.click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   const models = await sceneModels();
-  expect(models.map(model => model.tier)).toEqual(TIERS);
-  expect(new Set(models.map(model => model.geometry)).size).toBe(4);
-  expect(models.every(model => model.textured && model.instanced)).toBe(true);
+  const detail = models.filter(model => model.textured);
+  expect(detail.map(model => model.tier)).toEqual(TIERS);
+  expect(models.filter(model => !model.textured).map(model => model.tier)).toEqual(TIERS.map(tier => tier + '-distant'));
+  expect(new Set(models.map(model => model.geometry)).size).toBe(8);
+  expect(models.every(model => model.instanced)).toBe(true);
   expect(await page.evaluate(() => !!window.gameScene.scene.getObjectByName('Pickup aura')?.isInstancedMesh)).toBe(true);
   await test.info().attach('real-3d-pickups-race.png', {
     body: await page.screenshot(), contentType: 'image/png',
