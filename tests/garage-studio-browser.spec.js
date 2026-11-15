@@ -186,7 +186,7 @@ test('Studio entry advertises itself with a sheen and glow, and stills under Red
 
 // Studio picks its five angles with the same ‹ name › stepper as the Home/Garage dock, not a row of angle buttons.
 for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
-  test(`Studio camera angle is a ‹ › stepper ${viewport.width}x${viewport.height}`, async ({ page }) => {
+  test(`Studio camera angle uses a two-arrow stepper ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
     const name = page.locator('#garage-angle-name');

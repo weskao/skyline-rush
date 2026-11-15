@@ -20,6 +20,13 @@ test('listedTests yields the testDir-relative "file › describe › title" form
   assert.throws(() => listedTests({ errors: [{ message: 'boom' }], suites: [] }), /boom/);
 });
 
+test('listedTests names titles that Playwright would split or trim in a test list', () => {
+  for (const [group, title] of [['Studio', 'angle ‹ › stepper'], ['Camera › Studio', 'angle stepper'], ['Studio', ' angle stepper']]) {
+    const report = { suites: [{ title: 'camera.spec.js', suites: [{ title: group, specs: [{ file: 'camera.spec.js', title }] }] }] };
+    assert.throws(() => listedTests(report), /camera\.spec\.js.*cannot be matched by Playwright --test-list/);
+  }
+});
+
 test('parseLog reads list-reporter durations from a CI log', () => {
   const log = [
     'browser-tests (1)\tRun\t2026-10-30T21:50:53.8Z   ✓   1 tests/a-browser.spec.js:20:3 › grp › one (23.5s)',
