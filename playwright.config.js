@@ -5,6 +5,10 @@ const slow = process.env.CI ? 3 : 1;
 const port = process.env.PLAYWRIGHT_PORT || '5178';
 if (!/^\d{1,5}$/.test(port) || Number(port) < 1 || Number(port) > 65535) throw new Error('Invalid Playwright port');
 
+// Serve the Pages artifact at its real base when verifying a production Pages build.
+const pages = process.env.PLAYWRIGHT_PAGES === '1';
+const baseURL = `http://127.0.0.1:${port}${pages ? '/skyline-rush/' : ''}`;
+
 export default defineConfig({
   testDir: './tests',
   testMatch: '**/*browser.spec.js',
@@ -22,7 +26,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['list'], ['github'], ['./tests/helpers/budget-reporter.js']] : 'list',
   use: {
     channel: 'chrome',
-    baseURL: `http://127.0.0.1:${port}`,
+    baseURL,
     viewport: { width: 1440, height: 900 },
     // The UI follows the system language; pin English so English assertions never depend on the host.
     locale: 'en-US',
@@ -32,8 +36,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: `npm run preview -- --port ${port} --strictPort${process.env.COAST_PREVIEW_DIR ? ` --outDir=${process.env.COAST_PREVIEW_DIR}` : ''}`,
-    url: `http://127.0.0.1:${port}`,
+    command: `npm run preview -- --port ${port} --strictPort${pages ? ' --base=/skyline-rush/' : ''}${process.env.COAST_PREVIEW_DIR ? ` --outDir=${process.env.COAST_PREVIEW_DIR}` : ''}`,
+    url: baseURL,
     reuseExistingServer: false,
   },
 });
