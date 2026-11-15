@@ -91,7 +91,9 @@ To do, in order:
   (`tests/ring-variety.test.js` re-locked). Done when all of these hold:
   - [x] Owner confirmed (2026-11-15): Endless, Event Lab and Daily Neon records start fresh on road layout 3 (`neon@3`); the
     older ones stay stored and readable.
-  - [ ] Owner to deploy `firestore.rules` (`neon@7` added, 51 ids, cap 60).
+  - [x] `firestore.rules` deployed (2026-11-16, owner-approved) from `develop` `4fa797bb` (`neon@7` added, 51 ids, cap 60):
+    rules tests 3/3 on the local emulator, then `firebase deploy --only firestore:rules` released the rules. Not checked: a
+    signed-in production cloud save holding a `neon@7` best.
   - The Neon centreline is a closed clockwise loop: the finish point is the start point, the heading turns through
     360°, and the sectors come in the order of the schematic. Unit test on `classicRoadRoute('neon')`.
   - The track is not longer than today (4000 m) and no corner is tighter than today's tightest.
