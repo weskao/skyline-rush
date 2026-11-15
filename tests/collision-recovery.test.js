@@ -140,7 +140,7 @@ for (const hz of [30, 60, 120]) {
     for (const reverse of [false, true]) {
       const { race, player, leader } = packedRoad(reverse);
       for (let frame = 0; frame < hz * 3; frame++) {
-        tick(race, hz);
+        stepRace(race, { throttle: true, laneAssist: true }, 1 / hz);
         assert.ok(race.traffic.every(other => !overlap(player, other)), `frame ${frame}: no vehicle overlap`);
         assert.ok(Math.abs(player.x) < 0.28, `frame ${frame}: no forced lane change (${player.x})`);
         assert.ok(leader.distance - player.distance >= 4.4, `frame ${frame}: no pass through the lead car`);

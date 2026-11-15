@@ -38,12 +38,17 @@ async function checkContactFeedback({ page, gameplayURL }, testInfo) {
   await expect(report).toBeVisible();
   const recovery = await page.screenshot({ path: testInfo.outputPath('contact-protection.png') });
   await testInfo.attach('contact-protection', { body: recovery, contentType: 'image/png' });
-  await expect.poll(() => page.evaluate(() => {
+  const following = await page.evaluate(() => {
     const { player, traffic: [leader] } = window.gameplay.race;
-    return player.collisions === 1 && Math.abs(player.x) < 0.3 && leader.distance - player.distance >= 4.4 &&
-      Math.abs(player.speed - leader.speed) < 0.2;
-  })).toBe(true);
-  await page.evaluate(() => { window.gameplay.race.player.effects.ghost = 3; });
+    const state = { collisions: player.collisions, x: player.x, gap: leader.distance - player.distance,
+      paceDelta: Math.abs(player.speed - leader.speed) };
+    player.effects.ghost = 3;
+    return state;
+  });
+  expect(following.collisions).toBe(1);
+  expect(Math.abs(following.x)).toBeLessThan(0.3);
+  expect(following.gap).toBeGreaterThanOrEqual(4.4);
+  expect(following.paceDelta).toBeLessThan(0.2);
   await expect(page.locator('#ghost-phase-status')).toBeVisible();
   await expect.poll(() => bodyOpacity(page)).toBeLessThan(0.8);
   const ghost = await page.screenshot({ path: testInfo.outputPath('ghost-phase.png') });

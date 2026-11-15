@@ -2,7 +2,7 @@
 
 - [x] Collision grace applies the penalty once while vehicle and scenery bodies still separate. Shield blocks preserve speed and combo. Ghost Phase uses a steady translucent body, visible tail lights, a body sweep and a countdown; already-overlapping contacts clear safely when it expires.
 - [x] RED: simulation reproduced skipped contacts, overlapping shield blocks and false hits at phase expiry. GREEN: 30/60/120 Hz Coast contact, solid scenery and Dune CourseGraph hazard regressions; GLB material isolation, HUD timing and module-size guards. Recorded 41 changed legacy replay snapshots after confirming all 46 scenarios passed on the original base.
-- [x] Dense traffic: check the proposed separation against both sides of the pack. When boxed in, hold the lane behind the lead car; a held rear bumper or side contact does not re-arm the impact. Steering can leave the queue as soon as a lane opens.
+- [x] Dense traffic: check the proposed separation against both sides of the pack. When boxed in, hold the lane behind the lead car; a held rear bumper or side contact does not re-arm the impact. Steering can leave the queue as soon as a lane opens. AUTO lane assist pauses while following so it cannot steer into a neighbouring car when grace expires.
 - [x] RED: the old solver overlapped a third car or missed a fast sweep. GREEN: packed traffic at 30/60/120 Hz, order reversal, shield and Ghost Phase, side contact, road edge and CourseGraph odometer continuity.
 - [ ] Exact-commit GitHub quality gate and physical-device verification.
 

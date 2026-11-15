@@ -55,6 +55,7 @@ export function contact(race, kind, obstacleX, intensity, retention, sideways = 
 }
 
 const following = new WeakMap();
+export const isFollowingVehicle = car => following.has(car);
 const vehicleContacts = new WeakMap();
 const paceOf = other => other.pace ?? other.speed;
 

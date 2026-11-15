@@ -9,7 +9,7 @@ import { avoidObstacles, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collis
 import { seededRng, RACE_STREAMS } from './rng.ts';
 import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
 import { stepPlayerHazards } from './hazard-race.ts';
-import { contact, resolvePlayerContacts, trackPhaseExit } from './player-contacts.js';
+import { contact, isFollowingVehicle, resolvePlayerContacts, trackPhaseExit } from './player-contacts.js';
 import { raceHazards, themedExtras } from './track-themes.ts'; import { mixedCourse, withHoops } from './gauntlet-course.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
@@ -316,7 +316,7 @@ export function stepRace(race, input, dt) {
   let lateralPosition = car.x + car.steering * Math.min(9, car.speed * 0.22) * (drifting ? DRIFT_LATERAL : 1) * dt;
   if (car.altitude < .1 && !drifting && !race.endless?.practice) lateralPosition += classicCornerPush(race.trackId, car.distance, car.speed) * dt;
   if (car.section === 'crosswind') lateralPosition += (section.dir ?? 1) * CROSSWIND_SPEED * dt;
-  if (input.laneAssist === true && steer === 0 && car.cooldown === 0 && car.speed > 5) {
+  if (input.laneAssist === true && steer === 0 && car.cooldown === 0 && car.speed > 5 && !isFollowingVehicle(car)) {
     const lane = LANES.reduce((best, centre) => Math.abs(centre - car.x) < Math.abs(best - car.x) ? centre : best);
     lateralPosition += (lane - lateralPosition) * (1 - Math.exp(-3 * dt));
   }
