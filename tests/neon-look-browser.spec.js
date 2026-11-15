@@ -207,7 +207,7 @@ const SECTOR_PROBES = {
   'harbour mole': 5480, canal: 6450, 'oldtown gate': 7030, 'oldtown lanterns': 7400, oldtown: 7600, 'oldtown exit': 8200, plaza: 9350,
 };
 test('Neon High stays under the draw-call cap in every sector of a race', async ({ gameplayPage: page }) => {
-  test.setTimeout(ciTimeout(120000));
+  test.setTimeout(ciTimeout(180000)); // 14 probes: the 10-probe budget (120 s) scaled with the probe count
   await neon(page, 'high');
   await expect.poll(() => kits(page), { timeout: ciTimeout(60000) }).toBe('attached attached');
   await page.locator('#start-button').click();
