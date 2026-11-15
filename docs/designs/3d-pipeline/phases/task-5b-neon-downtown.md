@@ -395,7 +395,75 @@ Rules, on top of step 10's:
   | Harbour | 5560 | 55.2 m left (seaward) | 40 by 72 m | a mole: two rows of quay pieces back to back, 13 m wide, from the quay 72 m out |
   | Oldtown | 7655 | 42 m left (outside of the second S-bend) | 60 by 40 m | an open square: no building, one screen facing the oncoming driver, trees set back |
 
+### As placed (`src/neon-ring-lines.ts`, `src/ring-layout.ts`)
+
+49 gates in seven lines. What changed from the plan while placing:
+
+- **Harbour:** seven rings 125 m apart (one a second at NITRO speed) from 4560 to 5310, six NITRO and a charge, all
+  in the windward lane (x -7.5): the wind pushes a car that stops steering off the line, never onto it. The first
+  ring is 60 m into the wind, so the car is in the lane before the push starts.
+- **Oldtown:** eleven rings 70 to 80 m apart from 7350 to 8210, one lane over per ring, always to the outside of the
+  bend it sits in, NITRO where a swing ends at the kerb. A 170 m gap clears the swinging gate at 7813; the last ring
+  (slipstream) points at the rooftop corridor.
+- **Approach rings** (`APPROACH`, 300 m): from 300 to 100 m before a line the random rings sit on the road, in the
+  lane of the line's first ring, and are never a risk ring. Without it a ring in the air or in the far lane cost the
+  first ring of a line on most seeds.
+- **`ringDensity: 1.45`** (rings only): the seven lines take 2.9 km of the lap from the random rings, so 2.5 times
+  the slots gave 19 rings a km. Pickups did not move.
+- **`shapeOdds: [0.04, 0.4]`:** fewer random rows, more trains; with the default odds over 10 km, rows passed one
+  shape in three game-wide (`tests/ring-rows.test.js`).
+
 ### Evidence
+
+Measured 2026-11-15 on one desktop machine; per-device numbers and captures are in the ignored `../audits/neon-10km/`.
+
+- [x] Route, RED first: `tests/neon-loop.test.js` re-pinned to 10 000 m, eight sectors of 600 to 1800 m, one tunnel
+  of 220 m, peak curvature 0.00845 rad/m, closed and not self-crossing. Route and scenery landed in one commit
+  because the scenery tests pin against the route.
+- [x] Seven lines, RED first: `tests/neon-highlights.test.js`, 15 tests (harbour lane and wind, oldtown weave,
+  approach rings, no gap over 600 m).
+- [x] Locks re-pinned with measured numbers (4 km → 10 km with five lines → seven lines): rings 67 → 190 → 233,
+  pickups 163 → 375 → 375 (`tests/neon-parity.test.js`, `tests/course-item-density.test.js`); bot ring take 75.4% →
+  69.7% → 69.8% and NITRO/min 24.11 → 23.56 → 23.98 over the same 12 seeds (`tests/ring-variety.test.js`); Neon
+  singles per grid size 34 / 35 / 39 / 53 → 44 / 58 / 70 / 131 → 63 / 77 / 89 / 156 (`tests/scaled-layout.test.js`);
+  `tests/ring-authored-sequences.test.js` (seven lines; the mixed-Gauntlet hoop at 8138 stands in for the oldtown
+  ring at 8140); `tests/game.test.js` (an authored line is one group of its own length);
+  `tests/fixtures/legacy-race-replay.json` (the three Neon keys). The other fifteen tracks' ring and pickup counts
+  did not change.
+- [x] Density, default seed: 23.3 rings a km (16.75 on the 4 km lap) and 37.5 pickups a km (40.75). Over 12 seeds:
+  229.7 rings a race (215 at least), 12.5 trains and 3.3 rows a race (1.3 and 2).
+- [x] Reachable: the bot laps in 87.0 s (36.1 s) and takes every line whole on the default seed and on the 12 seeds.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test`, `npm run build`.
+- [x] Real WebGL, `--retries=0`: 231 tests pass in the 32 browser specs that name Neon (4 capture-only tests skip
+  by design), among them `tests/neon-look-browser.spec.js` (12, with the procedural city without `?look=3d` and on
+  Low), `tests/ring-sfx-browser.spec.js` and `tests/phase5-world-tour-browser.spec.js`; `npm run test:layout`, 59 of
+  59. Two locks were stale and are re-pinned: the bend metre in `tests/classic-corners-browser.spec.js` (52300 →
+  50580) and the HUD race length in `tests/depth-browser.spec.js` (4.00 → 10.00). Not run: `make verify`, the cloud
+  emulator spec.
+- [x] High draw calls in a race under `?look=3d`, cap 380 (`tests/neon-look-browser.spec.js`): grid 330, boulevard
+  191, underpass 178, market 173, expressway 164, harbour 179, harbour mole 167, canal 175, oldtown 177, plaza 203.
+- [x] Captures looked at: one per sector, the home showcase and the minimap, High, `?look=3d`. Not approved; what
+  looks wrong is under *Open for the owner*.
+- [ ] Owner art approval of the harbour and oldtown (both provisional).
+- [ ] Owner playtest of the 10 km lap.
+- [ ] Phone, portrait and landscape (`make phone-diag`).
+
+Open for the owner:
+
+- **Concept art** for the harbour (lap 4351 to 5988; landmark footprint at 5560, 55 m seaward, 40 by 72 m) and for
+  oldtown (lap 7038 to 8750; footprint at 7655, 42 m left, 60 by 40 m), and a replacement for
+  `09-closed-loop-schematic.png` with the eight sectors.
+- **Harbour:** reads as a causeway over open water, not a harbour (railing and bollards only; no land, cranes or
+  ships). The HDRI panorama fills the horizon, blurred and oversized, with nothing in front of it; the car and the
+  road ahead bloom to white there. The skyline towers stand in the sea. The mole stand-in is a low dark slab.
+- **Oldtown:** looks like the boulevard (the same retail fronts, office blocks and cherry trees), nothing old. Bare
+  ground inside the bends where the buildings are cleared; the square is a gap with one billboard.
+- **Underpass straight** (942 to 1280): identical apartment blocks on both sides.
+- Both shortcut corridors draw as a flat pink translucent ramp.
+- A mixed Gauntlet hoop at 8138 replaces the oldtown ring at 8140; that line pays PERFECT LINE on its other ten.
+- Endless, Elimination and Event Lab build their own rings and have no sector lines (as in step 10).
+- `firestore.rules`, the hazard schema (`maxDistance` 100 000) and Event Lab needed no change: the record id stays
+  `neon@7` and a 10 km sprint is inside every bound.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
