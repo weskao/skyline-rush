@@ -143,7 +143,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         await expect(card).toHaveAttribute('aria-pressed', 'true');
         await expect(page.locator('#world')).toHaveAttribute('aria-label', new RegExp(await card.locator('strong').innerText()));
         await expect(page.locator('#start-button')).toBeDisabled();
-        await expect(page.locator('#track-note')).toContainText('Finish top 3');
+        await expect(page.locator('#lobby-access-note')).toContainText('Finish top 3');
         const start = await page.locator('#start-button').boundingBox();
         await page.mouse.click(start.x + start.width / 2, start.y + start.height / 2);
         await page.mouse.click(2, 2); // Move focus off the track card before testing global shortcuts.

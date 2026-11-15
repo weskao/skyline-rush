@@ -21,6 +21,12 @@ Write every assertion so that runner speed cannot change its outcome.
   switch, 2026-11-04).
 - **Pause freezes the race clock.** Timed labels such as COLLECTED (1.2 s) stay up while paused.
   Judge whichever label the frozen state legitimately shows, not one fixed string.
+- **Pause does not freeze the camera.** The chase camera keeps easing to its rig (about 1.6 s at
+  60 fps), so the frustum moves under a draw-count, culling or screen-position read. Trap
+  (2026-11-16): Neon traffic measured 22 calls instead of 21 whenever the race paused early (cold
+  Vite cache); a rival's wheel rim crossed the frustum edge between the baseline and the reading.
+  Wait for the camera to come to rest first: `pausedRace()` in `tests/helpers/traffic-browser.js`
+  asserts it.
 
 ## Poll anything a UI action changes asynchronously
 
@@ -68,6 +74,10 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
 - **An absence check names the feature's own files.** A shared decoder (`basis/basis_transcoder.*`,
   meshopt) belongs to whichever system loads it first; "no Coast KTX2" is `.ktx2` files, not the transcoder
   (`tests/coast-scenery-browser.spec.js`).
+- **A control's name is unique only inside its landmark.** Home's race setup and the VFX panel both have a
+  "Showcase camera" combobox (`498d84d0`), so a page-wide `getByRole('combobox', { name })` hit strict mode in
+  `browser.spec.js` and `custom-controls-browser.spec.js` (2026-11-16). Scope role locators to the landmark
+  that owns the control (`getByRole('complementary', { name: 'Airflow and visual effects' })`).
 - A merge that changes a shared HUD, road or asset rule runs the browser specs that assert it before it lands
   (`git grep` the selector or asset name in `tests/*browser.spec.js`); do not rely on develop's CI to finish.
 

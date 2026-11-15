@@ -20,6 +20,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const vfxControls = [...document.querySelectorAll<HTMLInputElement>('[data-vfx]')];
   const airflowHud = $('#airflow-hud');
+  const cameraSelect = $<HTMLSelectElement>('#showcase-camera-select');
   // Initial quality selection is performed once; manual/previous settings win.
   let storedVisuals: unknown = null;
   try { const raw = localStorage.getItem(QUALITY_STORAGE_KEY); if (raw) storedVisuals = JSON.parse(raw); }
@@ -45,6 +46,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
     }
     const dock = $('#showcase-camera-dock');
     const viewIndex = SHOWCASE_VIEWS.indexOf(visual.view);
+    cameraSelect.value = visual.view;
     $('#showcase-camera-name').textContent = t('vfx.view.' + visual.view);
     dock.setAttribute('data-view', visual.view);
     $('#showcase-camera-dots').replaceChildren(...SHOWCASE_VIEWS.map((_view, i) => {
@@ -61,7 +63,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
     stopMotionIfCalm();
     airflowHud.setAttribute('aria-hidden', String(!visual.airflow || !visual.enabled));
     showAeroMode();
-    try { localStorage.setItem('skyline-rush-vfx', JSON.stringify(visual)); } catch { /* Settings remain usable in memory. */ }
+    try { localStorage.setItem(QUALITY_STORAGE_KEY, JSON.stringify(visual)); } catch { /* Settings remain usable in memory. */ }
   }
   function toggleAirflow(): void {
     if (!visual.enabled) return;
@@ -79,6 +81,10 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
     visual = vfxSettings({ ...visual, view: stepView(visual.view, delta) });
     showVFX();
   }
+  cameraSelect.addEventListener('change', () => {
+    visual = vfxSettings({ ...visual, view: cameraSelect.value });
+    showVFX();
+  });
   $('#showcase-camera-prev').addEventListener('click', () => stepShowcaseView(-1));
   $('#showcase-camera-next').addEventListener('click', () => stepShowcaseView(1));
   $('#airflow-toggle').addEventListener('click', toggleAirflow);

@@ -30,15 +30,22 @@ function merge(parts) {
   return result;
 }
 
-const box = (x, y, z, color, at = [0, 0, 0]) =>
-  piece(new RoundedBoxGeometry(x, y, z, 2, Math.min(.11, x / 6, y / 6, z / 6)), color, at);
-const tube = (r, h, color, at = [0, 0, 0], rotation = [0, 0, 0], sides = 16) =>
-  piece(new THREE.CylinderGeometry(r, r, h, sides), color, at, rotation);
-const ring = (r, w, color, at = [0, 0, 0], rotation = [Math.PI / 2, 0, 0]) =>
-  piece(new THREE.TorusGeometry(r, w, 8, 32), color, at, rotation);
-const bead = (r, color, at) => piece(new THREE.SphereGeometry(r, 8, 6), color, at);
+function primitives(distant) {
+  return {
+    box: (x, y, z, color, at = [0, 0, 0]) => piece(distant
+      ? new THREE.BoxGeometry(x, y, z)
+      : new RoundedBoxGeometry(x, y, z, 2, Math.min(.11, x / 6, y / 6, z / 6)), color, at),
+    tube: (r, h, color, at = [0, 0, 0], rotation = [0, 0, 0], sides = 16) =>
+      piece(new THREE.CylinderGeometry(r, r, h, distant ? Math.min(sides, 6) : sides), color, at, rotation),
+    ring: (r, w, color, at = [0, 0, 0], rotation = [Math.PI / 2, 0, 0]) =>
+      piece(new THREE.TorusGeometry(r, w, distant ? 3 : 8, distant ? 12 : 32), color, at, rotation),
+    bead: (r, color, at) => piece(new THREE.SphereGeometry(r, distant ? 4 : 8, distant ? 3 : 6), color, at),
+  };
+}
 
-function energyCell() {
+const closeParts = primitives(false), distantParts = primitives(true);
+
+function energyCell({ box, tube, ring, bead }) {
   return merge([
     box(.79, 1.22, .67, STEEL),
     box(.68, 1.10, .72, DARK),
@@ -57,7 +64,7 @@ function energyCell() {
   ]);
 }
 
-function energyCan() {
+function energyCan({ box, tube, ring, bead }) {
   return merge([
     tube(.43, 1.34, 0x6c758c),
     tube(.36, 1.17, 0xcf6120),
@@ -78,7 +85,7 @@ function energyCan() {
   ]);
 }
 
-function highCapacityTank() {
+function highCapacityTank({ box, tube, ring, bead }) {
   return merge([
     box(1.77, 1.45, .74, DARK),
     ...[-.46, .46].flatMap(x => [
@@ -99,7 +106,7 @@ function highCapacityTank() {
   ]);
 }
 
-function overchargeCore() {
+function overchargeCore({ tube, ring, bead }) {
   const crystal = piece(new THREE.IcosahedronGeometry(.72, 1), WHITE);
   const facets = [0x65eaff, 0xf269ff, 0xffd25f, 0x9e89ff, 0x7cffc1, 0xff8a9d];
   const colors = crystal.attributes.color;
@@ -124,8 +131,9 @@ function overchargeCore() {
 }
 
 const BUILDERS = Object.freeze({ cell: energyCell, can: energyCan, tank: highCapacityTank, overcharge: overchargeCore });
-export const createPickupGeometry = tier => BUILDERS[tier]();
-export const createPickupGeometries = () => Object.fromEntries(Object.entries(BUILDERS).map(([tier, build]) => [tier, build()]));
+export const createPickupGeometry = tier => BUILDERS[tier](closeParts);
+export const createPickupGeometries = (distant = false) => Object.fromEntries(
+  Object.entries(BUILDERS).map(([tier, build]) => [tier, build(distant ? distantParts : closeParts)]));
 export const createPickupMaterial = tier => {
   const accent = ACCENTS[tier];
   if (accent === undefined) throw new RangeError('Unknown pickup material: ' + tier);

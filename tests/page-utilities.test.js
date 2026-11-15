@@ -28,10 +28,63 @@ test('a body-level :has() rule styles a class or id, never "everything but": tha
   const unscoped = selectors.filter(s => /(?:^|\s)(?:html|body|:root)[^\s]*:has\(/.test(s) && !scoped(subject(s)));
   assert.deepEqual(unscoped, []);
   assert.match(css, /body\.photo-studio #app > :not\(#world\):not\(#photo-screen\)/);
-  const photo = readFileSync(new URL('../src/photo-ui.ts', import.meta.url), 'utf8');
-  assert.match(photo, /classList\.add\('photo-studio'\)/);
-  assert.match(photo, /classList\.remove\('photo-studio'\)/);
-  // The page comes back in the same frame the dialog hides, as :has([open]) did: not a task later on 'close'.
-  assert.match(photo, /'cancel', leaveStudio/);
-  assert.match(photo, /leaveStudio\(\); photoDialog\.close\(\)/);
+});
+
+test('Photo Studio restores the scene before it closes through Back, Escape or browser history', t => {
+  const classes = new Set();
+  const window = new EventTarget();
+  const history = {
+    state: null,
+    pushState(state) { this.state = state; },
+    back() { this.state = null; },
+  };
+  const nodes = new Map(['#photo-screen', '#photo-status', '#photo-open', '.photo-tools', '#photo-advanced',
+    '#photo-orbit', '#photo-fov', '#photo-sky', '#photo-close', '#photo-save'].map(id => [id, new EventTarget()]));
+  const dialog = nodes.get('#photo-screen');
+  const opener = nodes.get('#photo-open');
+  const open = () => opener.dispatchEvent(new Event('click'));
+  const returnToRace = () => window.dispatchEvent(new Event('popstate'));
+  let photoView, sceneAtClose;
+  dialog.showModal = () => { dialog.open = true; };
+  dialog.close = () => {
+    sceneAtClose = { studio: classes.has('photo-studio'), photoView };
+    dialog.open = false;
+  };
+  nodes.get('#photo-orbit').focus = () => {};
+  globalThis.window = window;
+  globalThis.history = history;
+  globalThis.document = {
+    body: { classList: { add: name => classes.add(name), remove: name => classes.delete(name) } },
+    querySelector: id => nodes.get(id),
+  };
+  t.after(() => {
+    delete globalThis.window;
+    delete globalThis.history;
+    delete globalThis.document;
+  });
+  setupPhotoUI({
+    getRace: () => ({ mode: 'free', phase: 'paused' }),
+    getWorld: () => ({ setPhotoView: view => { photoView = view; } }),
+    cue: () => {},
+  });
+
+  for (const close of [
+    () => nodes.get('#photo-close').dispatchEvent(new Event('click')),
+    () => {
+      const escape = new Event('cancel', { cancelable: true });
+      dialog.dispatchEvent(escape);
+      assert.equal(escape.defaultPrevented, true, 'Escape uses the same close path as Back');
+    },
+    () => history.back(),
+  ]) {
+    open();
+    assert.equal(dialog.open, true);
+    assert.equal(classes.has('photo-studio'), true);
+    assert.notEqual(photoView, null);
+    close();
+    assert.equal(history.state, null);
+    returnToRace();
+    assert.equal(dialog.open, false);
+    assert.deepEqual(sceneAtClose, { studio: false, photoView: null }, 'restore the paused UI and camera before closing');
+  }
 });

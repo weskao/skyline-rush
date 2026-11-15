@@ -3,6 +3,7 @@ import { RACE_TRACKS } from './game.js';
 import { UPCOMING_TRACKS, isUpcomingTrack, upcomingTrackName } from './upcoming-tracks.ts';
 import { ENDLESS_COPY } from './locales/endless.ts';
 import { UI } from './locales/ui.ts';
+import { DRIVING_CONTROLS_COPY } from './locales/driving-controls-copy.ts';
 import { GAME } from './locales/game.ts';
 import { EVENT_LAB } from './locales/event-lab.ts';
 import { CHALLENGE_MEDAL_COPY } from './locales/challenge-medals.ts';
@@ -34,7 +35,7 @@ export function saveLocale(locale: string, storage?: LocaleStorage): void {
 }
 
 export const CATALOGS = Object.freeze(Object.fromEntries(
-  SUPPORTED_LOCALES.map(l => [l, Object.freeze({ ...UI[l], ...GAME[l], ...EVENT_LAB[l], ...ENDLESS_COPY[l], ...CIRCUIT_COPY[l], ...CHALLENGE_MEDAL_COPY[l] })]),
+  SUPPORTED_LOCALES.map(l => [l, Object.freeze({ ...UI[l], ...DRIVING_CONTROLS_COPY[l], ...GAME[l], ...EVENT_LAB[l], ...ENDLESS_COPY[l], ...CIRCUIT_COPY[l], ...CHALLENGE_MEDAL_COPY[l] })]),
 )) as unknown as Readonly<Record<Locale, Record<string, string>>>;
 
 // Any Chinese tag (zh, zh-CN, zh-Hans, zh-HK, zh-Hant...) maps to the one Chinese catalog we ship.

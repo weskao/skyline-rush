@@ -253,7 +253,7 @@ test('disposing marker pools releases every tier material, including types no lo
   race.rings = ['charge', 'nitro', 'slipstream', 'risk', 'mystery'].map((type, i) => ({ type, radius: 4.8, x: 0, altitude: 8, distance: 100 + i * 20 }));
   update();
   const groups = [scene.getObjectByName('Nitro pickups'), scene.getObjectByName('Race rings')];
-  const materials = new Set(groups.flatMap(group => drawnMarkers(group).map(mesh => mesh.material)));
+  const materials = new Set(groups.flatMap(group => group.children.map(mesh => mesh.material)));
   const geometries = new Set(groups.flatMap(group => group.children.map(mesh => mesh.geometry)));
   const disposed = new Map();
   for (const resource of [...materials, ...geometries]) resource.addEventListener('dispose', () => disposed.set(resource, (disposed.get(resource) || 0) + 1));
@@ -263,8 +263,8 @@ test('disposing marker pools releases every tier material, including types no lo
   update();
   assert.ok(groups.every(group => new Set(drawnMarkers(group).map(mesh => mesh.material)).size === 1));
   effects.dispose?.();
-  assert.equal(geometries.size, 5, 'four distinct pickup models and one shared ring geometry');
-  assert.equal(disposed.size, materials.size + geometries.size, 'every material and all five geometries are released');
+  assert.equal(geometries.size, 9, 'four close and four distant pickup geometries plus one shared ring geometry');
+  assert.equal(disposed.size, materials.size + geometries.size, 'close and distant geometry and materials are all released');
   assert.ok([...disposed.values()].every(count => count === 1));
   assert.ok(groups.every(group => group.parent === null), 'scene disposal will not dispose these resources twice');
 });

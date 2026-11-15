@@ -133,7 +133,7 @@
       ],
       "lods": {
         "rail_portal_lod0": {
-          "triangles": 1016,
+          "triangles": 1032,
           "min": [
             -22.0,
             -0.4,
@@ -146,7 +146,7 @@
           ]
         },
         "rail_portal_lod1": {
-          "triangles": 420,
+          "triangles": 436,
           "min": [
             -22.0,
             -0.4,
@@ -184,7 +184,7 @@
       ],
       "lods": {
         "rail_segment_lod0": {
-          "triangles": 196,
+          "triangles": 236,
           "min": [
             -14.9,
             -0.4,
@@ -197,7 +197,7 @@
           ]
         },
         "rail_segment_lod1": {
-          "triangles": 196,
+          "triangles": 236,
           "min": [
             -14.9,
             -0.4,
@@ -601,23 +601,38 @@
       "surfaces": {
         "crane": {
           "texel_density": 10.89,
-          "lit": 0.0023
+          "lit": 0.0007,
+          "relief_light": 1.0,
+          "relief_dark": 0.938,
+          "lit_end": 0.0
         },
         "hazard": {
           "texel_density": 15.86,
-          "lit": 0.0031
+          "lit": 0.0006,
+          "relief_light": 0.957,
+          "relief_dark": 0.728,
+          "lit_end": 0.0
         },
         "concrete": {
           "texel_density": 6.71,
-          "lit": 0.0033
+          "lit": 0.0012,
+          "relief_light": 1.183,
+          "relief_dark": 1.089,
+          "lit_end": 0.0
         },
         "cladding": {
           "texel_density": 12.21,
-          "lit": 0.0001
+          "lit": 0.0001,
+          "relief_light": 1.389,
+          "relief_dark": 3.373,
+          "lit_end": 0.0
         },
         "grating": {
           "texel_density": 19.16,
-          "lit": 0.0006
+          "lit": 0.0005,
+          "relief_light": 0.542,
+          "relief_dark": 0.484,
+          "lit_end": 0.0
         }
       }
     },
@@ -667,7 +682,10 @@
       "surfaces": {
         "containers": {
           "texel_density": 12.08,
-          "lit": 0.0549
+          "lit": 0.0603,
+          "relief_light": 0.972,
+          "relief_dark": 1.048,
+          "lit_end": 0.0358
         }
       }
     },
@@ -720,23 +738,38 @@
       "surfaces": {
         "containers": {
           "texel_density": 10.74,
-          "lit": 0.0989
+          "lit": 0.0618,
+          "relief_light": 0.951,
+          "relief_dark": 1.009,
+          "lit_end": 0.0034
         },
         "hull": {
           "texel_density": 5.09,
-          "lit": 0.0385
+          "lit": 0.0557,
+          "relief_light": 0.995,
+          "relief_dark": 1.042,
+          "lit_end": 0.0444
         },
         "boot": {
           "texel_density": 4.83,
-          "lit": 0.0448
+          "lit": 0.0877,
+          "relief_light": 1.015,
+          "relief_dark": 1.009,
+          "lit_end": 0.0511
         },
         "deckhouse": {
           "texel_density": 10.74,
-          "lit": 0.4437
+          "lit": 0.464,
+          "relief_light": 0.774,
+          "relief_dark": 0.816,
+          "lit_end": 0.1287
         },
         "deck": {
           "texel_density": 4.83,
-          "lit": 0.1297
+          "lit": 0.0619,
+          "relief_light": 1.367,
+          "relief_dark": 1.518,
+          "lit_end": 0.0006
         }
       }
     },
@@ -790,19 +823,31 @@
       "surfaces": {
         "brick": {
           "texel_density": 20.13,
-          "lit": 0.0581
+          "lit": 0.0648,
+          "relief_light": 0.957,
+          "relief_dark": 1.186,
+          "lit_end": 0.0751
         },
         "stone": {
           "texel_density": 18.79,
-          "lit": 0.1065
+          "lit": 0.1035,
+          "relief_light": 1.011,
+          "relief_dark": 1.007,
+          "lit_end": 0.1111
         },
         "steel_arch": {
           "texel_density": 13.42,
-          "lit": 0.004
+          "lit": 0.0038,
+          "relief_light": 0.681,
+          "relief_dark": 0.534,
+          "lit_end": 0.0006
         },
         "iron": {
           "texel_density": 16.1,
-          "lit": 0.0007
+          "lit": 0.0007,
+          "relief_light": 1.223,
+          "relief_dark": 1.781,
+          "lit_end": 0.0028
         }
       }
     },
@@ -903,15 +948,24 @@
       "surfaces": {
         "brick": {
           "texel_density": 20.13,
-          "lit": 0.0708
+          "lit": 0.0699,
+          "relief_light": 1.035,
+          "relief_dark": 1.391,
+          "lit_end": 0.0675
         },
         "stone": {
           "texel_density": 18.49,
-          "lit": 0.0881
+          "lit": 0.0671,
+          "relief_light": 1.001,
+          "relief_dark": 1.07,
+          "lit_end": 0.0665
         },
         "patina": {
           "texel_density": 18.79,
-          "lit": 0.0016
+          "lit": 0.0015,
+          "relief_light": 0.987,
+          "relief_dark": 1.0,
+          "lit_end": 0.0014
         }
       }
     }

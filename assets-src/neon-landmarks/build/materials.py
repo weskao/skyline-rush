@@ -20,7 +20,8 @@ def srgb(*rgb):
 MATS = {
     "concrete":   dict(color=srgb(0.47, 0.46, 0.45), rough=0.62, metal=0, grain=0.25, streak=0.35),
     "stone":      dict(color=srgb(0.36, 0.37, 0.41), rough=0.42, metal=0, grain=0.20, streak=0.15, grid=(1.2, 0.5)),
-    "tile":       dict(color=srgb(0.42, 0.30, 0.18), rough=0.36, metal=0, grain=0.15, grid=(0.3, 0.55)),
+    # 0.6 m glazed panels with the rain staining of a road tunnel: the 0.3 m joints vanished at speed (2026-11-16)
+    "tile":       dict(color=srgb(0.42, 0.30, 0.18), rough=0.36, metal=0, grain=0.15, streak=0.3, grid=(0.6, 0.7)),
     "paving":     dict(color=srgb(0.33, 0.33, 0.37), rough=0.28, metal=0, grain=0.18, grid=(0.6, 0.45)),
     "ballast":    dict(color=srgb(0.20, 0.19, 0.18), rough=0.90, metal=0, grain=0.50),
     "steel_dark": dict(color=srgb(0.16, 0.18, 0.22), rough=0.42, metal=0, grain=0.15, streak=0.2),

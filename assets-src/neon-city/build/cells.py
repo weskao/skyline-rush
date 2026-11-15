@@ -264,14 +264,19 @@ def billboard(c, rng, a, b, ink):
 
 
 def skyline(c, rng, palette, lit, strips=None):
-    """Far tower face at 4 px per metre: a grid of 2 px windows lit in clusters."""
-    floors, bays = c.h // 6, c.w // 4
-    on = rng.random((floors, bays)) < lit * (0.35 + 1.3 * noise(rng, c, 8)[::6, ::4][:floors, :bays])
+    """Far tower face at 4 px per metre: a curtain wall of 4 m storeys and 2 m bays, glazing lit in clusters behind
+    aluminium spandrels and mullions. The earlier 1.5 m grid of 2 px windows covered a quarter of the face and fell
+    to a flat dark box at distance, with no storey line for the key light to catch (2026-11-16)."""
+    floors, bays = c.h // 16, c.w // 8
+    on = rng.random((floors, bays)) < lit * (0.35 + 1.3 * noise(rng, c, 8)[::16, ::8][:floors, :bays])
     tones = np.asarray(palette, np.float32)[rng.integers(len(palette), size=(floors, bays))] * rng.uniform(0.3, 0.6, (floors, bays, 1))
-    cellmask = np.zeros((6, 4), np.float32)
-    cellmask[1:4, 1:3] = 1
-    c.emi[:] = np.kron(on[..., None] * tones, cellmask[..., None])[:c.h, :c.w]
-    c.col[:], c.rough[:], c.metal[:] = (0.035, 0.04, 0.055), 0.3, 0.5
+    unlit = np.asarray(COOL, np.float32) * 0.1   # a dark office still shows its glass: corridor light, the sky in it
+    glass = np.zeros((16, 8), np.float32)
+    glass[1:12, 1:8] = 1                          # rows 12-15 and 0: the slab's spandrel; column 0: the mullion
+    pane = np.kron(np.ones((floors, bays), np.float32), glass)[:c.h, :c.w, None]
+    c.emi[:] = np.kron(np.where(on[..., None], tones, unlit), glass[..., None])[:c.h, :c.w]
+    c.col[:] = pane * np.float32((0.035, 0.04, 0.055)) + (1 - pane) * np.float32((0.11, 0.115, 0.12))
+    c.rough[:], c.metal[:] = 0.3 + 0.15 * (1 - pane[..., 0]), 0.5 + 0.3 * (1 - pane[..., 0])
     for x, colour in strips or ():
         c.rect(x - 0.5, 0, x + 0.5, c.mh, emi=np.asarray(colour) * 0.9)
 

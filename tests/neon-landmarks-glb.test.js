@@ -138,12 +138,15 @@ test('seven KTX2 atlases, colour maps sRGB and the data maps linear, none over 2
   assert.equal(used.size, 7, 'no atlas shared between the kits');
 });
 
-test('the nine placed pieces keep the atlases they shipped with before the harbour and oldtown pieces (b414abef)', () => {
+// Re-pinned (2026-11-16): the atlases changed on purpose with the landmark light pass. The rail underpass bays (defect c)
+// are built in kit A, and the lamp spill now tone-maps the light before the albedo multiply (build.py), so every kit A
+// texel moved. The kit's stats did not: white texels 0, bloom 4608, max luminance 0.957 (tests below).
+test('the nine placed pieces keep the atlases of the landmark light pass, over those of b414abef', () => {
   const sha = path => createHash('sha256').update(read(`assets-src/neon-landmarks/textures/${path}`)).digest('hex');
   assert.deepEqual(Object.fromEntries(['basecolor.jpg', 'emissive.png', 'orm.png'].map(map => [map, sha(`neon_landmarks_${map}`)])), {
-    'basecolor.jpg': '3b7e784afa2b14eb43bf720e2a84c79dce0f2877c8d0963870f5ffe427daedae',
-    'emissive.png': '66564cb73bab549699ffb1480900ede91c3d65cde12fe790e743e77a413c99e2',
-    'orm.png': '7ca35ce9575ccffc0afef7088281012f423a45dc55916d41fa25341d2ddd641b',
+    'basecolor.jpg': '868bc1a3fcbf245476f9ac9f5b39c580a5f81518eb549e3b2290ce6d33ef92d3',
+    'emissive.png': 'e33e19ac2fcfecf91872f96a867581f94dca083f7d20e204a667aa41d048c901',
+    'orm.png': '8f1a6afa54d1586073e59d40a50d6af86aa7a1c4412346d059d1b552fa80bff7',
   });
 });
 
@@ -172,6 +175,28 @@ test('the harbour and oldtown walls show their material at game night: a baked f
   for (const [name, floors] of Object.entries(LIT_FLOOR)) for (const [surface, floor] of Object.entries(floors)) {
     const lit = contract.pieces[name].surfaces?.[surface]?.lit;
     assert.ok(lit >= floor, `${name} ${surface}: median emissive ${lit} at game strength, floor ${floor}`);
+  }
+});
+
+// The cargo ship read as a dark navy mass with a black stern (2026-11-16): no quay flood reached the transom or the
+// funnel (median runtime emissive 0.0000 on both, 0.0076 on the deckhouse's aft face) and the hull side sat at 0.04.
+// `lit_end` = `lit` on the faces turned fore or aft (normal within 60 degrees of +-y).
+test('the cargo ship shows its hull, stern and funnel at game night, not a dark mass', () => {
+  const { lit, lit_end: end } = contract.pieces.cargo_ship.surfaces?.hull ?? {};
+  assert.ok(lit >= 0.055, `cargo_ship hull side: median emissive ${lit}`);
+  assert.ok(end >= 0.03, `cargo_ship transom and funnel ends: median emissive ${end}`);
+});
+
+// The stack's white boxes read flat pale grey at hero distance (2026-11-16): their baked light ran into the hard
+// LIT_MAX clamp (18 % of the white wall texels) and the sectors emissive shipped at half size, so the night light, which
+// is all a wall shows in the dark, kept 0.76 of the corrugation the base colour carries against 1.37 on the coloured
+// boxes. A softer roll-off alone kept 0.76: white paint under the near masts spanned 0.19 to 0.50 stored against the
+// 0.35 ceiling, so any curve under it flattens half of them. `relief` = local contrast of the emissive over that of
+// the base colour, light = top quarter of the albedo.
+test('the light containers keep their corrugation in the night light, as the coloured ones do', () => {
+  for (const name of ['container_stack', 'cargo_ship']) {
+    const { relief_light: light, relief_dark: dark } = contract.pieces[name].surfaces?.containers ?? {};
+    assert.ok(light >= 0.95 && light >= 0.85 * dark, `${name}: relief light ${light}, dark ${dark}`);
   }
 });
 
@@ -217,6 +242,20 @@ test('each spanning piece keeps its clear opening over the road on both LODs', a
     assert.equal(crossing(list, box), 0, `${lod}: geometry inside the ${2 * half} x ${height} m opening`);
   }
   assert.deepEqual(spanning.map(([name]) => name).sort(), ['boulevard_footbridge', 'canal_arch', 'expressway_pier', 'harbour_gantry', 'lantern_span', 'oldtown_gate', 'rail_portal', 'rail_segment']);
+});
+
+// The rail underpass read as plain walls with an orange strip at speed (2026-11-16): tile and ribs only, nothing across
+// the module between its joint frames 12 m apart. A bay needs structure turned toward the driver: faces across the road
+// (glTF z = -Blender y) inside the module, on the wall (|x| past the clear half, under the ribs) and over the road.
+test('the rail underpass shows a structural bay every 6 m on its walls and ceiling, not plain tile', async () => {
+  const { gltf } = await loaded;
+  const across = triangles(gltf, 'rail_segment_lod0').filter(t => {
+    const n = t.getNormal(new Vector3()), m = t.getMidpoint(new Vector3());
+    return Math.abs(n.z) > 0.7 && t.getArea() > 0.05 && Math.abs(m.z) < 4;
+  });
+  const wall = across.filter(t => Math.abs(t.getMidpoint(new Vector3()).x) > 13.5 && t.getMidpoint(new Vector3()).y < 5.6);
+  const ceiling = across.filter(t => Math.abs(t.getMidpoint(new Vector3()).x) < 13.5 && t.getMidpoint(new Vector3()).y > 5.6);
+  assert.ok(wall.length >= 8 && ceiling.length >= 8, `faces across the road mid-module: wall ${wall.length}, ceiling ${ceiling.length}`);
 });
 
 test('side modules stay outside the kerb above the road and tile at their repeat spacing', async () => {

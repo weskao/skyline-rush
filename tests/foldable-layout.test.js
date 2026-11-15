@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveFoldableLayout, placeInVisibleSegment } from '../src/foldable-layout.ts';
+import { resolveFoldableLayout, placeInVisibleSegment, viewportFoldableLayout } from '../src/foldable-layout.ts';
 
 const viewport = { width: 844, height: 390 };
 const panels = [
@@ -42,4 +42,32 @@ test('unfolding with saved full-viewport ratios changes placement, not persisted
   assert.notEqual(folded.x, ratio.x * viewport.width);
   assert.deepEqual(ratio, { x: 0.5, y: 0.85 });
   assert.equal(resolveFoldableLayout({ width: 390, height: 844 }, undefined), null);
+});
+
+test('uses current split viewport segments ahead of an older browser API', () => {
+  const current = { width: 600, height: 900 };
+  const stacked = [
+    { left: 0, top: 0, width: 600, height: 430 }, { left: 0, top: 460, width: 600, height: 440 },
+  ];
+  const layout = viewportFoldableLayout({
+    innerWidth: current.width, innerHeight: current.height, viewport: { segments: stacked },
+    getWindowSegments: () => panels,
+  });
+  assert.equal(layout?.axis, 'horizontal');
+  assert.deepEqual(layout?.segments, stacked);
+});
+
+test('the cover screen and a continuous inner screen use native single-segment geometry', () => {
+  assert.equal(viewportFoldableLayout({
+    innerWidth: 844, innerHeight: 390, viewport: { segments: [{ left: 0, top: 0, ...viewport }] },
+    getWindowSegments: () => panels,
+  }), null);
+});
+
+test('compatibility sources still work with absent or unavailable current API', () => {
+  const screen = { innerWidth: 844, innerHeight: 390 };
+  assert.equal(viewportFoldableLayout(screen), null);
+  assert.equal(viewportFoldableLayout({ ...screen, visualViewport: { segments: panels } })?.axis, 'vertical');
+  const source = { ...screen, get viewport() { throw new Error('transition'); }, getWindowSegments() { return panels; } };
+  assert.equal(viewportFoldableLayout(source)?.axis, 'vertical');
 });

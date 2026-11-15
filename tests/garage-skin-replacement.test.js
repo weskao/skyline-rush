@@ -55,7 +55,7 @@ test('the Studio never loops the standard shock ring; BOOST ignition in a race s
   assert.equal(ring.visible, true, 'a later BOOST ignition is not a launch and keeps its ring');
 });
 
-test('a NITRO trail skin replaces the standard purple on the airflow, the nozzles and the NITRO ring', () => {
+test('a NITRO trail skin replaces the standard gold on the airflow, the nozzles and the NITRO ring', () => {
   const { scene, car, aero, race, origin, settings } = rig();
   const flow = car.getObjectByName('Airflow showcase').children[0];
   const jets = car.getObjectByName('Rear ports').children.filter(child => child.name.startsWith('Cold gas nozzle'));
@@ -65,15 +65,15 @@ test('a NITRO trail skin replaces the standard purple on the airflow, the nozzle
     aero.update(race, 0.05, origin, settings, false);
     race.player.nitroTime = 2; aero.update(race, 0.05, origin, settings, false);
   };
-  // Purple is the NITRO colour only while no trail skin overrides it, over the whole streamline (no tail-only accent).
-  assert.match(flow.material.fragmentShader, /mix\(vec3\(\.72,\.4,1\.\),trailAccent\.rgb,trailAccent\.a\)/);
+  // Gold (the --nitro token) is the NITRO colour only while no trail skin overrides it, over the whole streamline (no tail-only accent).
+  assert.match(flow.material.fragmentShader, /mix\(vec3\(1\.,\.82,\.4\),trailAccent\.rgb,trailAccent\.a\)/);
   assert.doesNotMatch(flow.material.fragmentShader, /trailAccent\.a\*[^;]*vUv\.x/, 'skin colour covers the fronts too');
-  for (const jet of jets) assert.match(jet.material.fragmentShader, /mix\(vec3\(\.68,\.42,1\.\),trailAccent\.rgb,trailAccent\.a\)/);
+  for (const jet of jets) assert.match(jet.material.fragmentShader, /mix\(vec3\(1\.,\.82,\.4\),trailAccent\.rgb,trailAccent\.a\)/);
   aero.setSkins({});
   nitro();
   const standardRing = ring.material.color.toArray();
-  assert.ok(standardRing[2] > standardRing[1], 'standard NITRO ring stays violet');
-  for (const jet of jets) assert.equal(jet.material.uniforms.trailAccent.value.w, 0, 'standard nozzles keep purple');
+  assert.ok(standardRing[0] > standardRing[1] && standardRing[1] > standardRing[2], 'standard NITRO ring stays gold');
+  for (const jet of jets) assert.equal(jet.material.uniforms.trailAccent.value.w, 0, 'standard nozzles keep gold');
   aero.setSkins({ 'nitro-trail': 'nitro-trail-gold' });
   nitro();
   const accent = flow.material.uniforms.trailAccent.value;

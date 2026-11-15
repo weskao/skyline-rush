@@ -68,7 +68,11 @@ def main():
             summary[ob.name] = {"triangles": tris, "x": [round(min(xs), 2), round(max(xs), 2)],
                                 "z": [round(-max(ys), 2), round(-min(ys), 2)], "height": round(max(zs), 2)}
     emissive = {name: c.emissive_range(strength) for name, c in atlas.cells.items() if c.emi.max() > 0}
-    print("NEON_CITY_SUMMARY " + json.dumps({"atlasFill": round(fill, 3), "modules": summary, "emissive": emissive}, sort_keys=True))
+    facade = {name: c.facade() for name, c in atlas.cells.items() if name.startswith("sky_")}
+    report = json.dumps({"atlasFill": round(fill, 3), "modules": summary, "emissive": emissive, "facade": facade}, sort_keys=True)
+    print("NEON_CITY_SUMMARY " + report)
+    with open(os.path.join(HERE, "summary.json"), "w", encoding="utf-8") as f:   # read by tests/neon-city-glb.test.js
+        f.write(report + "\n")
     if over:
         raise SystemExit("over budget (modules.json):\n  " + "\n  ".join(over))
     bpy.data.libraries.write(os.path.join(HERE, "neon-city.blend"), {scene}, path_remap="RELATIVE", compress=False)

@@ -1,0 +1,356 @@
+/* The browser's segments, in CSS pixels, are shared by the scene, HUD and top-layer dialogs. */
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) {
+  --fold-scene-right: calc(100vw - var(--fold-scene-left) - var(--fold-scene-width));
+  --fold-scene-bottom: calc(100dvh - var(--fold-scene-top) - var(--fold-scene-height));
+  --fold-home-right: calc(100vw - var(--fold-home-left) - var(--fold-home-width));
+  --fold-home-bottom: calc(100dvh - var(--fold-home-top) - var(--fold-home-height));
+  --fold-gap-left: max(12px, var(--safe-left));
+  --fold-gap-right: max(12px, var(--safe-right));
+  --fold-gap-top: max(12px, var(--safe-top));
+  --fold-gap-bottom: max(12px, var(--safe-bottom));
+}
+
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #app > #world {
+  inset: var(--fold-scene-top) auto auto var(--fold-scene-left);
+  width: var(--fold-scene-width);
+  height: var(--fold-scene-height);
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #upcoming-scene {
+  inset: var(--fold-scene-top) var(--fold-scene-right) var(--fold-scene-bottom) var(--fold-scene-left);
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #upcoming-scene img {
+  width: min(94%, 760px);
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #upcoming-scene-fallback { max-width: 92%; }
+
+body[data-fold-axis="vertical"] .topbar { gap: 0; }
+body[data-fold-axis="vertical"] .topbar .route-heading { display: none; }
+body[data-fold-axis="vertical"] .toolbar {
+  margin: 0;
+  max-width: calc(var(--fold-scene-width) - var(--fold-gap-right) - 8px);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+body[data-fold-axis="vertical"] .brand { max-width: calc(var(--fold-home-width) - var(--fold-gap-left) - 8px); }
+body[data-fold-axis="vertical"] .aero-tools {
+  left: auto;
+  right: var(--fold-gap-right);
+  top: max(84px, calc(var(--safe-top) + 72px));
+  max-width: calc(var(--fold-scene-width) - var(--fold-gap-right) - 8px);
+}
+body[data-fold-axis="vertical"] .vfx-settings {
+  right: 0;
+  left: auto;
+  max-width: calc(var(--fold-scene-width) - 24px);
+  max-height: calc(var(--fold-scene-height) - 136px);
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not([data-phase="ready"]) .telemetry .flight-telemetry {
+  transform: none;
+}
+body[data-fold-axis="vertical"]:not([data-phase="ready"]) .telemetry .flight-telemetry {
+  position: fixed;
+  top: max(158px, calc(var(--safe-top) + 150px));
+  right: calc(100vw - var(--fold-pane-left-end) + 12px);
+  max-width: calc(var(--fold-home-width) - var(--fold-gap-left) - 100px);
+}
+body[data-fold-axis="vertical"] .flight-director {
+  left: calc(var(--fold-scene-left) + var(--fold-scene-width) / 2);
+  transform: translateX(-50%);
+}
+body[data-fold-axis="vertical"][data-phase="ready"] .bottomline {
+  top: auto;
+  bottom: var(--fold-gap-bottom);
+  right: var(--fold-gap-right);
+  left: auto;
+}
+body[data-fold-axis="vertical"] .bottomline > span { display: none; }
+
+/* Reflow inside the existing Home scroller. No stacking context or transform is added to a pinned rail. */
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro {
+  inset: calc(var(--fold-home-top) + var(--fold-intro-top, 12px))
+    calc(var(--fold-home-right) + var(--fold-gap-right))
+    calc(var(--fold-home-bottom) + var(--fold-gap-bottom))
+    calc(var(--fold-home-left) + var(--fold-gap-left));
+  zoom: 1;
+  margin: 0;
+  width: auto;
+  max-width: none;
+  max-height: none;
+  overflow: auto;
+  padding: 8px;
+  mask-image: none;
+  animation: none;
+  display: block;
+  scrollbar-width: thin;
+}
+body[data-fold-axis="vertical"] { --fold-intro-top: max(76px, calc(var(--safe-top) + 64px)); }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro :is(h1, .intro-copy, .intro-controls, .flight-tip, .start-hint) { display: none; }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro .intro-actions {
+  position: static;
+  display: flex;
+  flex-wrap: wrap;
+  width: auto;
+  margin-top: 8px;
+  padding: 0;
+  gap: 8px;
+  background: none;
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro .intro-primary { display: contents; }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro #start-button {
+  position: relative;
+  inset: auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  height: 48px;
+}
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro :is(.showcase-camera-dock, .daily-card) {
+  position: static;
+  inset: auto;
+  width: 100%;
+  margin: 8px 0 0;
+}
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]).airflow-active #start-button {
+  inset: auto calc(var(--fold-scene-right) + var(--fold-gap-right)) calc(var(--fold-scene-bottom) + 48px) auto;
+  max-width: calc(var(--fold-scene-width) - 24px);
+  margin: 0;
+}
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]).airflow-active .showcase-camera-dock {
+  inset: auto calc(var(--fold-scene-right) + var(--fold-gap-right)) calc(var(--fold-scene-bottom) + 108px) auto;
+  width: min(228px, calc(var(--fold-scene-width) - 24px));
+}
+
+/* Garage owns its internal grid. Standard native modals fit one pane and scroll their own contents. */
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) dialog:not(#garage-screen) {
+  position: fixed;
+  inset: calc(var(--fold-scene-top) + var(--fold-gap-top))
+    calc(var(--fold-scene-right) + var(--fold-gap-right))
+    calc(var(--fold-scene-bottom) + var(--fold-gap-bottom))
+    calc(var(--fold-scene-left) + var(--fold-gap-left));
+  margin: auto;
+  max-width: calc(var(--fold-scene-width) - var(--fold-gap-left) - var(--fold-gap-right));
+  max-height: calc(var(--fold-scene-height) - var(--fold-gap-top) - var(--fold-gap-bottom));
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #garage-screen.garage-screen {
+  --fold-garage-first-row: calc(var(--fold-pane-top-end) - max(7px, var(--safe-top)) - 58px);
+  --fold-garage-gap: calc(var(--fold-pane-bottom-start) - var(--fold-pane-top-end) + 14px);
+}
+body[data-fold-axis="vertical"] #garage-screen .garage-heading {
+  width: calc(var(--fold-pane-left-end) - var(--fold-gap-left) - 8px);
+}
+body[data-fold-axis="vertical"] #garage-screen #garage-close { position: absolute; right: var(--fold-gap-right); top: max(7px, var(--safe-top)); }
+body[data-fold-axis="vertical"] #garage-screen .garage-layout {
+  display: grid;
+  grid-template-columns: minmax(0, calc(var(--fold-pane-left-end) - max(7px, var(--safe-left)) - 8px)) minmax(0, 1fr);
+  gap: calc(var(--fold-pane-right-start) - var(--fold-pane-left-end) + 16px);
+}
+body[data-fold-axis="vertical"] #garage-screen[data-page="home"] .garage-visual {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto auto;
+}
+body[data-fold-axis="vertical"] #garage-screen[data-page="home"] #showcase-camera-dock {
+  grid-area: 3 / 1;
+  justify-self: stretch;
+}
+body[data-fold-axis="vertical"] #garage-screen .garage-mode-controls { flex-wrap: wrap; }
+body[data-fold-axis="vertical"] #garage-screen .garage-mode-controls button { min-width: 44px; }
+body[data-fold-axis="vertical"] #garage-screen .garage-mode-label { display: none; }
+body[data-fold-axis="horizontal"] #garage-screen .garage-layout {
+  display: grid;
+  grid-template: minmax(0, var(--fold-garage-first-row)) minmax(0, 1fr) / minmax(0, 1fr);
+  gap: var(--fold-garage-gap);
+}
+body[data-fold-axis="horizontal"] #garage-screen .garage-visual { overflow-y: auto; }
+
+/* Race phase. The roadmap and rank live at the edge of a pane; countdown belongs to the scene. */
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) .countdown {
+  left: calc(var(--fold-scene-left) + var(--fold-scene-width) / 2);
+  top: calc(var(--fold-scene-top) + max(112px, var(--fold-scene-height) * .30));
+  max-width: calc(var(--fold-scene-width) - 32px);
+  font-size: clamp(50px, calc(var(--fold-scene-height) * .18), 112px);
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) .countdown > span { font-size: 11px; text-wrap: balance; }
+body[data-fold-axis="vertical"][data-phase] .race-progress {
+  position: fixed;
+  inset: max(230px, calc(var(--safe-top) + 210px)) auto auto var(--fold-gap-left);
+  transform: none;
+  width: min(200px, calc(var(--fold-home-width) - var(--fold-gap-left) - 8px));
+}
+body[data-fold-axis="vertical"] .race-info .race-route-map {
+  top: max(130px, calc(var(--safe-top) + 112px));
+  bottom: auto;
+  left: auto;
+  right: var(--fold-gap-right);
+}
+body[data-fold-axis="vertical"] .leaderboard#leaderboard {
+  position: fixed;
+  inset: max(98px, calc(var(--safe-top) + 90px)) calc(var(--fold-scene-width) + var(--fold-scene-right) + 12px) auto auto;
+  width: min(128px, calc(var(--fold-home-width) - 124px));
+}
+body[data-fold-axis="horizontal"] .race-info .race-route-map {
+  top: max(120px, calc(var(--safe-top) + 108px));
+  bottom: auto;
+  right: var(--fold-gap-right);
+  left: auto;
+}
+body[data-fold-axis="horizontal"][data-phase] .race-progress {
+  position: fixed;
+  top: calc(var(--fold-pane-bottom-start) + 12px);
+  left: var(--fold-gap-left);
+  right: auto;
+  width: min(220px, 45vw);
+  transform: none;
+}
+body[data-fold-axis="horizontal"]:not([data-phase="ready"]) .telemetry:has(.speedometer) {
+  bottom: auto;
+  top: calc(var(--fold-pane-bottom-start) + 80px);
+}
+body[data-fold-axis="horizontal"] .aero-tools { top: 88px; }
+body[data-fold-axis="horizontal"] .vfx-settings { max-height: calc(var(--fold-scene-height) - 136px); }
+body[data-fold-axis="horizontal"] .leaderboard#leaderboard {
+  position: fixed;
+  top: calc(var(--fold-pane-bottom-start) + 12px);
+  left: auto;
+  right: var(--fold-gap-right);
+  width: min(144px, 35vw);
+}
+body[data-fold-axis="horizontal"][data-phase] .race-overlay {
+  inset: calc(var(--fold-pane-bottom-start) + 8px) 0 0;
+  padding: 8px var(--fold-gap-right) var(--fold-gap-bottom) var(--fold-gap-left);
+  overflow-y: auto;
+  align-items: safe center;
+}
+body[data-fold-axis="vertical"]:not([data-tutorial]) .race-overlay { padding-inline: 0; overflow-y: auto; }
+body[data-fold-axis="vertical"]:not([data-tutorial]) .overlay-content {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, var(--fold-pane-left-end)) minmax(0, 1fr);
+  column-gap: calc(var(--fold-pane-right-start) - var(--fold-pane-left-end));
+}
+body[data-fold-axis="vertical"]:not([data-tutorial]) .overlay-summary { min-width: 0; padding-inline: var(--fold-gap-left) 12px; }
+body[data-fold-axis="vertical"]:not([data-tutorial]) .overlay-actions { min-width: 0; padding-inline: 12px var(--fold-gap-right); }
+body[data-fold-axis="vertical"][data-tutorial] .race-overlay .overlay-content {
+  margin: 0 12px 0 auto;
+  max-width: calc(var(--fold-scene-width) - 24px);
+}
+
+/* Short screens use the existing three nearby rows with a stable rank and visible gaps. */
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape), (max-width: 760px) and (min-height: 501px) {
+  #leaderboard .racer,
+  #leaderboard .racer > span:last-child { font-size: 11px; letter-spacing: 0; }
+  #leaderboard .racer { height: 16px; min-height: 16px; gap: 3px; }
+  #leaderboard .racer > strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #leaderboard .racer > span:last-child { white-space: nowrap; }
+  #leaderboard .racer.is-player > span:last-child { display: none; }
+}
+@media (pointer: coarse) and (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
+  #leaderboard .racer > strong { display: none; }
+  #leaderboard .racer > span:last-child { display: block; }
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #leaderboard .racer:not([data-near]) { display: none; }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #leaderboard .racer,
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #leaderboard .racer > span:last-child { font-size: 11px; }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #leaderboard .racer { height: 16px; min-height: 16px; gap: 3px; }
+
+#touch-controls[data-fold-axis="horizontal"] .touch-pad {
+  top: max(55%, calc(var(--fold-pane-bottom-start) + 12px));
+  bottom: var(--safe-bottom);
+}
+#touch-controls[data-fold-axis]:not([data-fold-axis=""]) :is(.touch-nitro, .touch-boost) { --flame-top: .28; --flame-side: .10; --flame-bottom: .08; }
+
+/* Keep Start, camera and Daily visible while the setup list scrolls independently. */
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro {
+  --fold-rail-width: min(210px, calc(var(--fold-scene-width) - var(--fold-gap-right) - 16px));
+  padding-bottom: 8px;
+  z-index: auto;
+}
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro #start-button,
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro :is(.showcase-camera-dock, .daily-card) {
+  position: fixed;
+  z-index: 3;
+  left: auto;
+  right: var(--fold-gap-right);
+  top: auto;
+  width: var(--fold-rail-width);
+}
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro #start-button { bottom: calc(var(--fold-gap-bottom) + 36px); }
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro #showcase-camera-dock {
+  bottom: calc(var(--fold-gap-bottom) + 92px);
+  padding: 4px 5px;
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .showcase-camera-dock :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .showcase-camera-dock .showcase-camera-actions { flex-wrap: nowrap; }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .showcase-camera-actions .custom-select { flex-basis: 0; order: 0; }
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro #showcase-camera-dock:has([aria-expanded="true"]) {
+  position: fixed;
+  z-index: 7;
+}
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro .daily-card { bottom: calc(var(--fold-gap-bottom) + 154px); }
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro .daily-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  padding: 3px 6px;
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .daily-card-copy { grid-template-columns: minmax(0, 1fr); }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .daily-card-copy :is(h2, strong) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .daily-card :is(small, .daily-card-icon, .daily-card-start svg) { display: none; }
+
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #leaderboard {
+  align-self: start;
+  padding: 0 6px;
+  background: rgb(7 23 42 / .84);
+  border: 0;
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #leaderboard .racer > span:last-child { display: block; }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #leaderboard .racer.is-player > span:last-child { display: none; }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) .flight-telemetry .stat-label { font-size: 11px; }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) .driving-message[data-peripheral] { font-size: 11px; }
+
+body[data-phase="ready"][data-fold-axis="horizontal"]:not(.airflow-active) #intro {
+  right: calc(var(--fold-home-right) + var(--fold-gap-right) + var(--fold-rail-width) + 8px);
+}
+body[data-phase="ready"][data-fold-axis="horizontal"] #intro .intro-wordmark { display: none; }
+body[data-phase="ready"][data-fold-axis="horizontal"] #intro .race-mode-picker { margin-top: 6px; }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .track-select > button {
+  max-width: calc(100% - 12px);
+}
+body[data-phase="ready"][data-fold-axis="horizontal"] #app > .bottomline {
+  left: auto;
+  right: var(--fold-gap-right);
+  top: calc(var(--fold-pane-top-end) - 48px);
+  bottom: auto;
+  display: block;
+}
+body[data-fold-axis="horizontal"] #app > .bottomline > span { display: none; }
+
+/* Keep Garage, History and Practice reachable even when mode and track settings fill the pane. */
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro {
+  padding-bottom: 62px;
+}
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro .intro-actions {
+  position: fixed;
+  z-index: 3;
+  left: calc(var(--fold-home-left) + var(--fold-gap-left) + 8px);
+  bottom: calc(var(--fold-home-bottom) + var(--fold-gap-bottom));
+  width: calc(var(--fold-home-width) - var(--fold-gap-left) - var(--fold-gap-right) - 16px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding-top: 7px;
+  background: rgb(5 18 31 / .94);
+}
+body[data-phase="ready"][data-fold-axis="horizontal"]:not(.airflow-active) #intro .intro-actions {
+  width: calc(var(--fold-home-width) - var(--fold-gap-left) - var(--fold-gap-right) - var(--fold-rail-width) - 24px);
+}
+body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .intro-actions > button {
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding-inline: 4px;
+  justify-content: center;
+  white-space: normal;
+}

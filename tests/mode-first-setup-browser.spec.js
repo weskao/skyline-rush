@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
+import { openLobbyModes } from './helpers/home-lobby.js';
 
 // 10A UX-01: Choose Mode → Choose Track → Rules → Start on one screen, with real pointer/keyboard input.
 async function closeMusicPrompt(page) {
@@ -64,7 +65,7 @@ test('switching language live re-renders the rules row without changing mode or 
   await page.locator('#locale-select').selectOption('zh-TW', { force: true }); // the drawn custom select mirrors this native one, as in i18n-browser.spec.js
   await expect(page.locator('#mode-rules-summary')).toContainText('單人挑戰');
   await expect(page.locator('#race-rules-step')).toHaveText('3 · 規則');
-  await expect(page.locator('#track-step')).toHaveText('2 · 賽道');
+  await expect(page.locator('#lobby-tracks-toggle > span:first-child')).toHaveText('賽道');
   await expect(page.locator('button[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#locale-select').selectOption('en', { force: true });
   await expect(page.locator('#mode-rules-summary')).toContainText('Solo run');
@@ -140,6 +141,7 @@ for (const [name, viewport, safe] of [['phone notch', { width: 390, height: 844 
     await page.goto('/');
     await closeMusicPrompt(page);
     await page.evaluate(values => { for (const [side, value] of Object.entries(values)) document.documentElement.style.setProperty(`--safe-${side}`, `${value}px`); }, safe);
+    if (!await page.locator('button[data-race-mode="classic"]').isVisible()) await page.locator('#lobby-modes-toggle').tap();
     for (const selector of ['button[data-race-mode="classic"]', '#rules-restore', '#start-button']) {
       await page.locator(selector).scrollIntoViewIfNeeded();
       const box = await page.locator(selector).boundingBox();
@@ -188,6 +190,7 @@ for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['lan
     await page.setViewportSize(viewport);
     await page.goto('/');
     await closeMusicPrompt(page);
+    await openLobbyModes(page);
     let checked = 0;
     for (const mode of ['circuit', 'custom', 'time', 'gauntlet']) {
       await page.locator(`button[data-race-mode="${mode}"]`).click();

@@ -30,8 +30,8 @@ export function setupKeyMapUI({ clearControls, say }: KeyMapOptions) {
 
   function showKeyMap(): void {
     // Start-screen legend: one kbd group per key slot, "/" between groups.
-    for (const keys of document.querySelectorAll<HTMLElement>('.intro-controls [data-keys], #guide-screen [data-keys], #tutorial-input[data-keys]')) {
-      const groups = keyLegendGroups(keys.dataset.keys!.split(' '), keyMap);
+    for (const keys of document.querySelectorAll<HTMLElement>('.intro-controls [data-keys], #guide-screen [data-keys], [data-guide-quick-keys], #tutorial-input[data-keys]')) {
+      const groups = keyLegendGroups((keys.dataset.keys ?? keys.dataset.guideQuickKeys)!.split(' '), keyMap);
       keys.replaceChildren(...groups.flatMap((group, i) => [...(i ? ['/'] : []), ...group.map(label => {
         const key = document.createElement('kbd'); key.textContent = label; return key;
       })]));
