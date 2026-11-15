@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
+import { chooseGarageAngle } from './helpers/garage-angle.js';
 
 test('phone Studio entry text and shine stay inside the button in both locales', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -60,8 +61,7 @@ test('scenario 2 — Orbit works with accessible camera buttons and drag', async
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
-  await page.locator('[data-garage-angle="top"]').click();
-  await expect(page.locator('[data-garage-angle="top"]')).toHaveAttribute('aria-pressed', 'true');
+  await chooseGarageAngle(page, 'top');
   await page.locator('#garage-reset').click();
   await expect(page.locator('#garage-auto-rotate')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#garage-preview').focus();
@@ -162,7 +162,7 @@ test('camera remains in frame across all preset angles and zoom boundaries', asy
   await page.locator('#garage-studio-open').click();
   const preview = page.locator('#garage-preview');
   for (const angle of ['front', 'rear', 'side', 'top', 'cinematic']) {
-    await page.locator(`[data-garage-angle="${angle}"]`).click();
+    await chooseGarageAngle(page, angle);
     for (let i = 0; i < 7; i++) await page.locator('#garage-zoom-in').click();
     await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
     for (let i = 0; i < 9; i++) await page.locator('#garage-zoom-out').click(); // 0.75 × 1.15⁹ ≥ 2.4 (8 clicks stop at 2.294)
@@ -183,3 +183,39 @@ test('Studio entry advertises itself with a sheen and glow, and stills under Red
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect.poll(animations).toEqual(['none', 'none']);
 });
+
+// Studio picks its five angles with the same ‹ name › stepper as the Home/Garage dock, not a row of angle buttons.
+for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
+  test(`Studio camera angle is a ‹ › stepper ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    const name = page.locator('#garage-angle-name');
+    for (const locale of ['en', 'zh-TW']) {
+      if (locale !== 'en') await selectLocale(page, locale); // the locale picker sits behind the Garage dialog
+      await page.locator('#garage-button').click();
+      await page.locator('#garage-studio-open').click();
+      await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'studio');
+      await expect(name).toBeVisible();
+      await expect(page.locator('[data-garage-angle]')).toHaveCount(0);
+      await expect(name, 'the opening orbit is not one of the presets').not.toHaveAttribute('data-angle', /./);
+      for (const angle of ['front', 'rear', 'side', 'top', 'cinematic', 'front']) {
+        await page.locator('#garage-angle-next').click();
+        await expect(name).toHaveAttribute('data-angle', angle);
+        await expect(page.locator('#garage-auto-rotate')).toHaveAttribute('aria-pressed', 'false');
+        const [prev, label, next] = await Promise.all(['#garage-angle-prev', '#garage-angle-name', '#garage-angle-next'].map(s => page.locator(s).boundingBox()));
+        expect(prev.width >= 44 && prev.height >= 44 && next.width >= 44 && next.height >= 44, 'arrows keep 44px targets').toBe(true);
+        expect(prev.x + prev.width <= label.x + 1 && label.x + label.width <= next.x + 1, `${locale} ${angle}: name sits between the arrows`).toBe(true);
+        expect(await name.evaluate(el => el.scrollWidth > el.clientWidth), `${locale} ${angle}: name is cut`).toBe(false);
+      }
+      await page.locator('#garage-angle-prev').click();
+      await expect(name).toHaveAttribute('data-angle', 'cinematic');
+      await expect(name).toHaveText(locale === 'en' ? '3/4 view' : '斜後方');
+      await page.locator('#garage-reset').click();
+      await expect(name).not.toHaveAttribute('data-angle', /./);
+      await page.locator('#garage-angle-prev').click(); // from the free orbit, ‹ starts at the last preset
+      await expect(name).toHaveAttribute('data-angle', 'cinematic');
+      await page.locator('#garage-studio-back').click();
+      await page.locator('#garage-close').click();
+    }
+  });
+}

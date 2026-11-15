@@ -8,6 +8,7 @@ import { PAINTS } from '../src/appearance.ts';
 import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
 import { parseGlb } from '../scripts/assets/check-glb.mjs';
 import { fitToRoadsterSize } from '../src/car-display-size.ts';
+import { chooseGarageAngle } from './helpers/garage-angle.js';
 
 // Task 7: Crimson GT is the second player car. The Garage car picker equips it with no URL flag; its GLB then dresses
 // the Garage, the Home showcase and the race car, wears every paint and skin, and the choice is saved locally.
@@ -187,7 +188,7 @@ test('Preview Studio frames the Crimson GT from the front, side and rear', async
   await page.locator('#garage-studio-open').click();
   await expect.poll(async () => (await instances(page)).studio ?? null).not.toBeNull();
   for (const angle of ['front', 'side', 'rear', 'cinematic']) {
-    await page.locator(`[data-garage-angle="${angle}"]`).click();
+    await chooseGarageAngle(page, angle);
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame', 'true');
     await attach(page, `gt-studio-${angle}`);
   }

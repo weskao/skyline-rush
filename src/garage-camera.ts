@@ -16,6 +16,15 @@ export const GARAGE_MAX_ZOOM = 2.4;
 export const GARAGE_EXHAUST_REACH = 13;
 export const defaultGarageCamera = (): GarageCamera => ({ yaw: .7, pitch: .27, zoom: 1, autoRotate: true, mode: 'ground', wing: false });
 
+/** Studio presets in ‹ › order. */
+export const GARAGE_ANGLES = ['front', 'rear', 'side', 'top', 'cinematic'] as const;
+/** Next/previous preset; a free camera ('' after drag or reset) starts from the first or last one. */
+export function stepGarageAngle(angle: string, delta: 1 | -1): string {
+  const i = GARAGE_ANGLES.indexOf(angle as typeof GARAGE_ANGLES[number]);
+  const from = i < 0 ? (delta > 0 ? -1 : 0) : i;
+  return GARAGE_ANGLES[(from + delta + GARAGE_ANGLES.length) % GARAGE_ANGLES.length]!;
+}
+
 export function garagePreset(view: string): GarageCamera {
   const angles: Record<string, [number, number]> = {
     front: [Math.PI, .2], rear: [0, .2], side: [Math.PI / 2, .2],

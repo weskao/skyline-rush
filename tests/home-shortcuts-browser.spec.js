@@ -236,18 +236,15 @@ test('Garage NEW tag is a top-corner overlay and never covered (desktop, phone, 
   });
 });
 
-test('keyboard can choose a showcase angle directly without starting a race', async ({ page }) => {
+test('keyboard can step the showcase angle without starting a race', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  const camera = page.locator('#showcase-camera-select + .custom-select').getByRole('combobox');
-  await expect(camera).toBeVisible({ timeout: ciTimeout(2500) });
-  await camera.focus();
-  await page.keyboard.press('End'); // opens the list
-  await page.keyboard.press('End'); // highlights the last view
-  await page.keyboard.press('Enter');
+  const previous = page.locator('#showcase-camera-prev');
+  await expect(previous).toBeVisible({ timeout: ciTimeout(2500) });
+  await previous.focus();
+  await page.keyboard.press('Enter'); // Drive wraps back to the last view
   await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view', 'orbit');
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   await selectLocale(page, 'zh-TW');
-  await expect(camera).toHaveAccessibleName('展示鏡頭');
-  await expect(camera).toHaveText('環繞');
+  await expect(page.locator('#showcase-camera-name')).toHaveText('環繞');
 });

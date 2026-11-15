@@ -1,7 +1,9 @@
 import { test, expect } from './helpers/test.js';
 import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
+import { GARAGE_ANGLES } from '../src/garage-camera.ts';
 import { decodePngRgba } from './helpers/png-rgba.js';
 import { ciTimeout } from './helpers/ci.js';
+import { chooseGarageAngle } from './helpers/garage-angle.js';
 
 const IDS = Object.keys(UPCOMING_TRACKS);
 const HOME_VIEWS = ['front','rear','left','right','orbit','drive'];
@@ -71,13 +73,11 @@ for(const id of IDS) for(const viewport of SCREEN_SIZES) {
     }
     await page.locator('#garage-studio-open').click();
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page','studio');
-    const angles=await page.locator('[data-garage-angle]').evaluateAll(buttons=>buttons.map(b=>b.dataset.garageAngle));
+    const angles=GARAGE_ANGLES;
     // Studio owns five camera presets, while Home/Garage use the six-view shared dock.
     const chosen=viewport.width===1440?angles:angles.slice(0,2);
     for(const angle of chosen) {
-      const button=page.locator('[data-garage-angle="'+angle+'"]');
-      await button.click();
-      await expect(button).toHaveAttribute('aria-pressed','true');
+      await chooseGarageAngle(page,angle);
       await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame','true');
       await assertDrawn(page,id+' Studio '+angle,angle===chosen.at(-1));
     }
