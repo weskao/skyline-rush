@@ -696,6 +696,79 @@ Still wrong:
 - The baked light is fixed to the authored half of mirrored pieces and ignores the runtime key direction.
 - GLB headroom is 40 104 bytes: the next landmark change needs a budget decision first.
 
+## Step 16: plain stretches dressed from the driver's seat (2026-11-16)
+
+Branch `feature/neon-scenery-richness`. Placement only (`src/neon-scenery-plan.ts`; `src/neon-scenery.ts` lets a
+placement carry one uniform `scale`). No asset, collision, ring or VFX port moves. It closes step 13's list.
+
+- **Clock tower:** moved to the far end of the square (lap 7678, 30 m out), so it stays within 20 degrees of the
+  heading on the approach and 45 degrees alongside. It stood 45 m out at the square's middle and slid out of view.
+- **Square and plaza court:** stone aprons of `canal_bank`; the sculpture at 1.5 times its modelled size.
+- **After the S-bends (8300 to 8720):** 20 lantern strings along both pavements, clear of the rooftop shortcut.
+- **Gate and sign:** the railing stops at the gate plinths; the shops run unbroken past the shortcut sign.
+- **Underpass straight:** each block kind has its own street front. **Boulevard:** roof screens on the low blocks.
+- **Skyline over the water:** a second rank, staggered and turned, still 300 m or more out.
+- **Prevention:** `.claude/rules/3d-asset-pipeline.md` item 19.
+
+### Evidence
+
+Measured 2026-11-16 on one desktop machine; captures and per-probe numbers in the ignored
+`../audits/neon-scenery-richness/`.
+
+- [x] RED first, then GREEN: `tests/neon-scenery-plan.test.js` (the tower's bearing, the railing at the gate and
+  aprons, the pavement strings, the sculpture, the underpass fronts, the boulevard roofline, the skyline's depth).
+- [x] `tests/neon-parity.test.js` hashes unchanged.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build`.
+- [x] High draw calls under `?look=3d`, read by a capture probe: race 332 at most (rain, underpass), cap 380; home
+  255, cap 540.
+- [x] Before and after captures looked at, night and rain night, 19 probes. Not approved; see below.
+- [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
+  2026-11-16.
+- [ ] Owner art approval; owner playtest; phone.
+
+Still wrong:
+
+- The sculpture is hidden until lap 9340; the tower is small from 7450.
+- The railing's stop at the gate is proven by test only, not seen in a capture.
+- The ground screen at lap 1050 is near-white; the boulevard roofline still repeats.
+- The underpass podium needs geometry variants, not only dressing.
+
+## Step 17: sky sharpness, far shore and harbour road (2026-11-16)
+
+Branch `feature/neon-sky-polish`. It closes step 14's list. Only Neon's domes, 1k maps and lighting rows change;
+`src/coast-sea.ts` gains a `mirrorLod` uniform whose Coast values reproduce the old sampling.
+
+- **Soft skyline, cause:** `SOFTEN` blurred every texel below 22 degrees to hide LED text. It now masks by chroma
+  and peak, so only the LED facades are softened (sharpness at night 0.447 of a source 0.574).
+- **Tan wet road, cause:** the domes hid the floodlit wall but the 1k maps kept it, and the wet road mirrors the 1k
+  map. The fill now applies to both, with the removed light returned overhead so the horizontal irradiance holds
+  (night 2.085 to 2.076).
+- **Fill:** a low far shore of whole shifted columns; no repeated tower within one view.
+- **Key and water:** key re-aimed from the filled sky; the night water mirrors the skyline sharper.
+- **Prevention:** `.claude/rules/3d-asset-pipeline.md` items 17 and 18.
+
+### Evidence
+
+Measured 2026-11-16 on one desktop machine; captures and per-probe numbers in the ignored
+`../audits/neon-sky-polish/`.
+
+- [x] RED first, then GREEN: `tests/neon-sky-manifest.test.js` (*the 1k map's sky is not a floodlit wall either*,
+  *keeps the download's horizontal irradiance*, *only LED facades are softened*), `tests/coast-sea.test.js`
+  (*mirrors the skyline sharper*), and the dome, 1k and lighting pins.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build`.
+- [x] Captures compared by region at High under `?look=3d`: rain harbour road 128/105/82 to 80/77/86; dry-night
+  harbour road-ahead luma 36 to 44; nothing clipped. Race draw calls 316 at most. Not approved; see below.
+- [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
+  2026-11-16.
+- [ ] No capture of Coast with the new uniform, of Ultra (8K dome) or of a phone.
+- [ ] Owner art approval of the sky.
+
+Still wrong:
+
+- Cloud brightness steps at two fill seams; some lamps soften to blobs.
+- The harbour's far shore is low, and its dry-night road is still the darkest on the lap.
+- Rain's horizontal irradiance rose (1.434 to 1.613).
+
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
 - [x] Desktop Apple silicon baseline for Neon's current look: every selectable map on High and Ultra with p50/p95,

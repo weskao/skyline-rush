@@ -210,7 +210,7 @@ Not yet placed (the 10 km route is built elsewhere; lap distances follow from it
 | `cargo_ship` | 25.8 x 157 m | -12.9 .. 12.9 | -3.0 .. 39.7 | -80.95 .. 75.82 | water side, ship centre line 40 m out, pivot at the waterline | 1, under a gantry boom |
 | `oldtown_gate` | 37.2 x 5.4 m | -18.6 .. 18.6 | -0.2 .. 21.3 | -2.71 .. 2.71 | straddle, centre line at road level, yaw = heading; the plinths reach 18.6 m from the centre line | 1, at the sector entry just after the canal bridge |
 | `lantern_span` | 30.8 x 0.9 m | -15.42 .. 15.42 | -0.3 .. 18.5 | -0.45 .. 0.45 | straddle, centre line at road level, yaw = heading at the pivot | one per 24 m through the S-bends |
-| `clock_tower` | 10.6 x 10.6 m | -5.3 .. 5.3 | 0.0 .. 50.5 | -5.3 .. 5.3 | side, inside of an S-bend, 45 m or more out, ground level | 1; at 50.5 m it reads above the low roofs |
+| `clock_tower` | 10.6 x 10.6 m | -5.3 .. 5.3 | 0.0 .. 50.5 | -5.3 .. 5.3 | side, at the far end of the square it stands on, 30 m or more out, within 20 degrees of the heading on the approach (rule item 19), ground level | 1; at 50.5 m it reads above the low roofs |
 
 ### Clear openings and repeat spacing
 
