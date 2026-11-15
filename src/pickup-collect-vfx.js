@@ -11,7 +11,7 @@ import { createPickupStreaks } from './pickup-collect-streaks.js';
 // `rings` and `particles` are the High-quality budgets; `motion` names the tier's choreography in MOTIONS.
 export const PICKUP_COLLECTION_STYLES = Object.freeze({
   cell: Object.freeze({ color: 0x40d9ff, rings: 2, particles: 18, beam: false, rainbow: false, life: .60, motion: 'arcSnap' }),
-  can: Object.freeze({ color: 0xff9b3b, rings: 2, particles: 24, beam: false, rainbow: false, life: .80, motion: 'afterburn' }),
+  can: Object.freeze({ color: 0xff9b3b, rings: 1, particles: 8, beam: false, rainbow: false, life: .27, motion: 'canSparks' }),
   tank: Object.freeze({ color: 0xffd34e, rings: 2, particles: 30, beam: false, rainbow: false, life: .95, motion: 'surge' }),
   overcharge: Object.freeze({ color: 0xef81ff, rings: 3, particles: 42, beam: true, rainbow: true, life: 1.08, motion: 'prismNova' }),
 });
@@ -20,7 +20,7 @@ export const pickupCueSource = (cue, pickups) =>
   pickups.find(item => item.tier === cue.item && item.distance === cue.distance && item.x === cue.x) ?? cue;
 
 const TIERS = Object.keys(PICKUP_COLLECTION_STYLES);
-const CONTACT_SPANS = [.22, .29, .36, .43], CONTACT_RADII = [1.8, 2.25, 2.75, 3.4];
+const CONTACT_SPANS = [.22, 0, .36, .43], CONTACT_RADII = [1.8, 0, 2.75, 3.4];
 const SECONDARY = [0xbbf9ff, 0xffd076, 0xfff1a0, 0x79ecff];
 const ABSORB_SPANS = [.145, .17, .205, .23];
 const MAX_PARTICLES = 42;
@@ -144,7 +144,7 @@ export function createPickupCollectVfx(scene, player, camera) {
       root.add(group);
       slots[tier].push({
         tier, tierIndex, style, group, contact, flash: flashSprite, rings, beam: pillar, tankGlow, shards,
-        streaks: camera && (tier === 'cell' || tier === 'can') ? createPickupStreaks(group, tier) : null,
+        streaks: camera && tier === 'cell' ? createPickupStreaks(group) : null,
         age: Infinity, event: null, follow: false, particles: 0, ringCount: 0, reducedMotion: false, strength: 1,
       });
     }
@@ -166,6 +166,7 @@ export function createPickupCollectVfx(scene, player, camera) {
     slot.follow = follow;
     slot.age = 0;
     slot.markerTime = follow && !rival ? markerTime : undefined;
+    slot.delay = tier === 'can' && slot.markerTime !== undefined && !reducedMotion ? ABSORB_SPANS[slot.tierIndex] : 0;
     slot.releaseAt = undefined;
     slot.visualWeight = 1;
     slot.reducedMotion = reducedMotion;
@@ -212,24 +213,24 @@ export function createPickupCollectVfx(scene, player, camera) {
 
   function update(dt, frame = {}) {
     for (const tier of TIERS) for (const slot of slots[tier]) {
-      if (!Number.isFinite(slot.age) || slot.age >= slot.style.life) continue;
+      if (!Number.isFinite(slot.age)) continue;
       slot.age += Math.max(0, dt);
-      const progress = Math.min(1, slot.age / slot.style.life);
+      const age = slot.age - slot.delay, progress = Math.max(0, age / slot.style.life);
       if (progress >= 1) { slot.age = Infinity; slot.group.visible = slot.contact.visible = false; continue; }
       const { group, contact, shards, strength, streaks } = slot;
       const reducedMotion = slot.reducedMotion || frame.reducedMotion;
       group.visible = frame.enabled !== false;
       place(slot, frame);
-      slot.visualWeight = strength * (slot.releaseAt === undefined ? 1
+      slot.visualWeight = strength * (tier === 'can' || slot.releaseAt === undefined ? 1
         : 1 - .94 * THREE.MathUtils.smoothstep(slot.age - slot.releaseAt, 0, .16));
       if (streaks) streaks.mesh.visible = false;
       contact.visible = group.visible && slot.contactEnabled && !reducedMotion && slot.age < CONTACT_SPANS[slot.tierIndex];
       if (contact.visible) placeContact(slot, frame);
       slot.beam.visible = false;
       if (slot.tankGlow) slot.tankGlow.visible = false;
-      const ringCount = reducedMotion ? 1 : slot.ringCount;
+      const ringCount = reducedMotion ? 1 : tier === 'can' ? 0 : slot.ringCount;
       slot.rings.forEach((ring, i) => { ring.visible = i < ringCount; });
-      shards.count = reducedMotion ? 0 : slot.particles;
+      shards.count = reducedMotion || age < 0 ? 0 : slot.particles;
       shards.visible = shards.count > 0;
       if (reducedMotion) { // one still ring and a soft glow keep the tier's identity without movement
         flash(slot, .22 * (1 - progress), 1.2, 0, .5, 0);
@@ -239,8 +240,13 @@ export function createPickupCollectVfx(scene, player, camera) {
         paintPickupHoop(slot.rings[0], 0, .16 * strength, .045, false);
         continue;
       }
+      if (age < 0) { slot.flash.material.opacity = 0; continue; }
+      if (tier === 'can') {
+        shards.position.set(0, .5, 0);
+        if (slot.follow && frame.pose) shards.position.copy(group.worldToLocal(vehicleFit.absorbTarget(frame.pose, target)));
+      }
       shards.material.opacity = .9 * Math.pow(1 - progress, 1.25) * strength;
-      MOTIONS[slot.style.motion](slot, slot.age, progress);
+      MOTIONS[slot.style.motion](slot, age, progress);
       if (shards.count) shards.instanceMatrix.needsUpdate = true;
       if (streaks) {
         streaks.update(slot, camera, vehicleFit.sections(frame.pose));
@@ -274,7 +280,7 @@ export function createPickupCollectVfx(scene, player, camera) {
   return {
     group: root, spawn, update, drawAbsorbing,
     activeCount: () => TIERS.reduce((sum, tier) =>
-      sum + slots[tier].filter(slot => slot.age < slot.style.life).length, 0),
+      sum + slots[tier].filter(slot => Number.isFinite(slot.age)).length, 0),
     reset() {
       bodySlot = null;
       vehicleFit.reset();

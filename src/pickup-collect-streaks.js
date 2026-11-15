@@ -7,9 +7,8 @@ const clamp = THREE.MathUtils.clamp;
 const envelope = (age, life) => Math.min(1, age / .07) * (1 - age / life) ** 1.18;
 
 // One dynamic mesh per playing effect. Each strip faces the camera and follows the fitted body frame.
-export function createPickupStreaks(group, tier) {
-  const electric = tier === 'cell';
-  const lines = electric ? 7 : 8;
+export function createPickupStreaks(group) {
+  const lines = 7;
   const positions = new Float32Array(lines * (STEPS + 1) * 6);
   const uv = [], indices = [];
   for (let line = 0; line < lines; line++) for (let i = 0; i <= STEPS; i++) {
@@ -25,8 +24,8 @@ export function createPickupStreaks(group, tier) {
     vertexShader: STREAK_VERTEX, fragmentShader: STREAK_FRAGMENT,
     transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true,
     uniforms: {
-      tint: { value: new THREE.Color(electric ? 0x36baff : 0xff7832) },
-      core: { value: new THREE.Color(electric ? 0xc4f9ff : 0xffe0a3) },
+      tint: { value: new THREE.Color(0x36baff) },
+      core: { value: new THREE.Color(0xc4f9ff) },
       age: { value: 0 }, power: { value: 0 },
     },
   });
@@ -38,21 +37,15 @@ export function createPickupStreaks(group, tier) {
   const points = Array.from({ length: STEPS + 1 }, () => new THREE.Vector3());
   const eye = new THREE.Vector3(), width = new THREE.Vector3(), view = new THREE.Vector3();
 
-  function point(q, line, age, progress, out, sections) {
+  function point(q, line, age, out, sections) {
     const side = line % 2 ? 1 : -1;
-    if (electric) {
-      const front = lerp(-2.25, 2.28, 1 - (1 - Math.min(1, age / .46)) ** 2);
-      const z = Math.max(-2.43, front - (1 - q) * (line < 3 ? 3.4 : 2.3));
-      const jitter = Math.sin(q * 34 + line * 2.4 + age * 38) * .08 + Math.sin(q * 77 + line + age * 24) * .045;
-      const section = sections?.[clamp(Math.floor((z + 2.45) / 4.7 * sections.length), 0, sections.length - 1)];
-      const edge = side < 0 ? section?.left : section?.right;
-      out.set(line < 3 ? (line - 1) * .58 + jitter : (Number.isFinite(edge) ? edge : side * 1.18) + side * (.08 + Math.abs(jitter)),
-        line < 3 ? (Number.isFinite(section?.top) ? section.top : 1.32) + .08 : .5 + .19 * (line % 3) + jitter, z);
-      return;
-    }
-    const reach = q * (2.2 + 6.4 * progress), phase = q * 12 - age * 24 + line * .85;
-    out.set(side * (.58 + reach * .11 + (line >> 1) * .045) + Math.sin(phase) * (.025 + q * .27),
-      .38 + q * (.15 + .37 * progress) + Math.sin(phase * 1.2) * q * .28, 2.33 + reach);
+    const front = lerp(-2.25, 2.28, 1 - (1 - Math.min(1, age / .46)) ** 2);
+    const z = Math.max(-2.43, front - (1 - q) * (line < 3 ? 3.4 : 2.3));
+    const jitter = Math.sin(q * 34 + line * 2.4 + age * 38) * .08 + Math.sin(q * 77 + line + age * 24) * .045;
+    const section = sections?.[clamp(Math.floor((z + 2.45) / 4.7 * sections.length), 0, sections.length - 1)];
+    const edge = side < 0 ? section?.left : section?.right;
+    out.set(line < 3 ? (line - 1) * .58 + jitter : (Number.isFinite(edge) ? edge : side * 1.18) + side * (.08 + Math.abs(jitter)),
+      line < 3 ? (Number.isFinite(section?.top) ? section.top : 1.32) + .08 : .5 + .19 * (line % 3) + jitter, z);
   }
 
   return {
@@ -66,8 +59,8 @@ export function createPickupStreaks(group, tier) {
       group.worldToLocal(eye);
       const count = slot.quality === 'medium' ? 4 : lines;
       for (let line = 0; line < count; line++) {
-        for (let i = 0; i <= STEPS; i++) point(i / STEPS, line, age, age / style.life, points[i], sections);
-        const radius = electric ? (line < 3 ? .135 : .074) : (line < 4 ? .23 : .12);
+        for (let i = 0; i <= STEPS; i++) point(i / STEPS, line, age, points[i], sections);
+        const radius = line < 3 ? .135 : .074;
         for (let i = 0; i <= STEPS; i++) {
           const p = points[i];
           view.subVectors(eye, p);

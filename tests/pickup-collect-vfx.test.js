@@ -10,12 +10,12 @@ const tiers = ['cell', 'can', 'tank', 'overcharge'];
 
 test('premium pickup collection has four increasingly expressive bounded tier designs', () => {
   assert.deepEqual(Object.keys(PICKUP_COLLECTION_STYLES), tiers);
-  assert.deepEqual(tiers.map(t => PICKUP_COLLECTION_STYLES[t].rings), [2, 2, 2, 3]);
+  assert.deepEqual(tiers.filter(tier => tier !== 'can').map(tier => PICKUP_COLLECTION_STYLES[tier].rings), [2, 2, 3]);
   assert.equal(new Set(tiers.map(t => PICKUP_COLLECTION_STYLES[t].motion)).size, 4, 'one choreography per tier');
-  const lives = tiers.map(t => PICKUP_COLLECTION_STYLES[t].life);
+  const lives = tiers.filter(tier => tier !== 'can').map(tier => PICKUP_COLLECTION_STYLES[tier].life);
   assert.deepEqual(lives, [...lives].sort((a, b) => a - b), 'rarer tiers play longer');
   assert.ok(lives.at(-1) <= 1.1, 'even the rarest effect is over in about a second');
-  assert.deepEqual(tiers.map(t => PICKUP_COLLECTION_STYLES[t].particles), [18, 24, 30, 42]);
+  assert.deepEqual(tiers.filter(tier => tier !== 'can').map(tier => PICKUP_COLLECTION_STYLES[tier].particles), [18, 30, 42]);
   assert.equal(PICKUP_COLLECTION_STYLES.overcharge.rainbow, true);
   assert.equal(PICKUP_COLLECTION_STYLES.tank.beam, false);
   assert.equal(PICKUP_COLLECTION_STYLES.overcharge.beam, true);
@@ -142,8 +142,6 @@ test('each tier plays its own choreography on the shared pooled meshes', () => {
   assert.equal(new Set(tiers.map(tier => at[tier].signature)).size, 4, 'no two tiers move their rings alike');
   const spread = (points, axis) => Math.max(...points.map(p => p[axis])) - Math.min(...points.map(p => p[axis]));
   assert.ok(at.cell.rings.every(ring => ring.scale.x < 2.7), 'cell: the rings contract onto the car');
-  assert.ok(at.can.shardPoints.every(p => p.z > 1.3), 'can: every ember is thrown out behind the car');
-  assert.ok(at.can.rings.every(ring => ring.position.z > 1.3), 'can: the heat rings trail behind the car');
   assert.ok(spread(at.tank.shardPoints, 'y') > 1 && spread(at.tank.shardPoints, 'x') < 3.2, 'tank: a tall narrow helix');
   assert.ok(new Set(at.overcharge.rings.map(ring => ring.rotation.x.toFixed(2))).size > 1, 'overcharge: rings spin on different axes');
   assert.ok(at.overcharge.shardPoints.every(p => p.y > 0), 'overcharge: nothing bursts down through the road');
@@ -169,7 +167,7 @@ test("the player's effect rides the car; a rival's stays at the item", () => {
   vfx.update(.1, frame);
   const stage = tier => vfx.group.children.find(s => s.visible && s.userData.tier === tier);
   assert.deepEqual(stage('can').position.toArray(), pose.position.toArray(), 'anchored on the rendered car');
-  assert.ok(stage('can').quaternion.angleTo(pose.quaternion) < 1e-6, 'and turned with it, so "behind" stays behind');
+  assert.ok(stage('can').quaternion.angleTo(pose.quaternion) < 1e-6, 'and turned with the rendered pose');
   assert.equal(stage('tank').position.z, 30, 'a rival cue is left where the item was');
   pose.position.x = 3;
   pose.updateMatrixWorld();
@@ -372,31 +370,20 @@ test('vehicle pickup effects fit a wide, long, offset model and refit after a ca
   };
 
   car.userData.visualBounds = new THREE.Box3(new THREE.Vector3(-1, 0, -4), new THREE.Vector3(3, 2, 6));
+  const flashPosition = stage => stage.getObjectByName('energy flash').getWorldPosition(new THREE.Vector3());
   const wide = show('can');
-  const ring = wide.getObjectByName('energy shockwave 0');
-  const at = new THREE.Vector3();
-  ring.getWorldPosition(at);
-  assert.ok(at.z > 6, 'heat ring leaves the actual tail of a longer vehicle');
-  assert.ok(Math.abs(at.x - 1) < 1e-6, 'heat ring is centered across the displayed vehicle');
-  const shards = wide.getObjectByName('energy shards'), instance = new THREE.Matrix4();
-  shards.getMatrixAt(0, instance);
-  const firstEmber = new THREE.Vector3().setFromMatrixPosition(instance);
-  shards.localToWorld(firstEmber);
-  assert.ok(firstEmber.z > 6 && firstEmber.x < 1, 'the ember starts behind the same tail');
-  const contact = wide.getObjectByName('Pickup contact pulse');
-  assert.ok(contact.getWorldPosition(at).distanceTo(new THREE.Vector3(-5, .08, 0)) < 1e-6, 'pickup point remains in course coordinates');
+  assert.ok(flashPosition(wide).distanceTo(new THREE.Vector3(2.88, 1.24, 2.1)) < 1e-6,
+    'the can flash uses the fitted absorption target');
 
   car.userData.visualBounds = new THREE.Box3(new THREE.Vector3(-3, 0, -2), new THREE.Vector3(-1, 1, 2));
-  const compact = show('can');
-  compact.getObjectByName('energy shockwave 0').getWorldPosition(at);
-  assert.ok(at.z > 2 && at.z < 3, 'replacement body uses its own tail');
-  assert.ok(Math.abs(at.x + 2) < 1e-6, 'replacement body uses its own center');
+  assert.ok(flashPosition(show('can')).distanceTo(new THREE.Vector3(-1.12, .62, .44)) < 1e-6,
+    'the replacement body uses its own absorption target');
 
   vfx.reset();
   vfx.spawn('can', event, { rival: true });
   vfx.update(.12, { pose: car, distance: 12 });
-  vfx.group.children.find(stage => stage.visible).getObjectByName('energy shockwave 0').getWorldPosition(at);
-  assert.ok(Math.abs(at.x + 5) < 1e-6, 'rival effect is independent of the player body');
+  assert.equal(flashPosition(vfx.group.children.find(stage => stage.visible)).x, -5,
+    'the rival effect stays at the item');
   vfx.dispose();
 });
 
@@ -495,7 +482,7 @@ test('rapid repeated tank takes keep a separate fading pair for all three pickup
   vfx.dispose();
 });
 
-test('the player cell and can add distinct body streaks and overcharge uses iridescent gyro tubes', () => {
+test('the cell keeps its body streaks and overcharge keeps its iridescent gyro tubes', () => {
   const scene = new THREE.Scene(), car = new THREE.Object3D(), camera = new THREE.PerspectiveCamera();
   scene.add(car);
   camera.position.set(4, 6, 9);
@@ -503,13 +490,11 @@ test('the player cell and can add distinct body streaks and overcharge uses irid
   for (const tier of ['cell', 'can', 'overcharge']) vfx.spawn(tier, { distance: 10, x: 0 }, { follow: true });
   vfx.update(.20, { pose: car });
   const stage = tier => vfx.group.children.find(group => group.visible && group.userData.tier === tier);
-  for (const tier of ['cell', 'can']) {
-    const streak = stage(tier).getObjectByName('Pickup body streaks');
-    assert.ok(streak?.visible, tier + ' uses its own ribbons');
-    const z = streak.geometry.attributes.position.array.filter((_, index) => index % 3 === 2);
-    if (tier === 'cell') assert.ok(Math.max(...z) < 2.5 && Math.min(...z) < 0, 'blue current travels over the body');
-    else assert.ok(Math.min(...z) > 2.2 && Math.max(...z) > 5, 'two jets start at the fitted tail and trail away');
-  }
+  const streak = stage('cell').getObjectByName('Pickup body streaks');
+  assert.ok(streak?.visible);
+  const z = streak.geometry.attributes.position.array.filter((_, index) => index % 3 === 2);
+  assert.ok(Math.max(...z) < 2.5 && Math.min(...z) < 0, 'blue current travels over the body');
+  assert.equal(stage('can').getObjectByName('Pickup body streaks')?.visible ?? false, false);
   const ring = stage('overcharge').getObjectByName('energy shockwave 0');
   assert.ok(ring.material.uniforms?.prism.value > .5, 'gyro tubes have a traveling prism highlight');
   assert.ok(Math.abs(ring.rotation.x - (-Math.PI / 2 + .2 * 1.6)) < 1e-8, 'the original pitch direction is preserved');
@@ -539,4 +524,111 @@ test('tank renders the approved gold tube and soft halo on both hoops instead of
     assert.equal(glow.visible, false, 'the soft base fades before the last hoop');
     vfx.dispose();
   }
+});
+
+test('a can collects into one small flash with a bounded cluster that contracts and fades in .27 s', () => {
+  const scene = new THREE.Scene(), pose = new THREE.Group(), camera = new THREE.PerspectiveCamera();
+  scene.add(pose);
+  const vfx = createPickupCollectVfx(scene, pose, camera);
+  const frame = { pose, distance: 100, center: 0, roadCenter: () => 0, enabled: true };
+  const event = { tier: 'can', distance: 100, x: 2, altitude: 0 };
+  for (const [quality, count] of [['high', 8], ['medium', 5], ['low', 2]]) {
+    vfx.spawn('can', event, { follow: true, markerTime: 0, quality });
+    const markers = [];
+    const draw = () => vfx.drawAbsorbing(new THREE.Object3D(), {
+      add: (_tier, matrix) => markers.push(matrix.clone()),
+    }, frame, 0);
+    draw();
+    vfx.update(.16, frame);
+    draw();
+    assert.equal(markers.length, 2, 'can is still absorbed at .16 s');
+    const at = new THREE.Vector3(1.08, .87, .42);
+    const position = matrix => new THREE.Vector3().setFromMatrixPosition(matrix);
+    assert.ok(markers[1].getMaxScaleOnAxis() < markers[0].getMaxScaleOnAxis() * .15);
+    assert.ok(position(markers[1]).distanceTo(at) < position(markers[0]).distanceTo(at));
+    const can = vfx.group.children.find(stage => stage.visible);
+    const flash = can.getObjectByName('energy flash'), sparks = can.getObjectByName('energy shards');
+    assert.equal(flash.material.opacity, 0, 'wait for the model to reach the body');
+    assert.equal(sparks.visible, false);
+    vfx.update(.03, frame); draw();
+    assert.equal(markers.length, 2, 'the marker is gone when the flash starts');
+    assert.ok(flash.material.opacity > .5 && flash.scale.x <= 1.3);
+    assert.ok(flash.getWorldPosition(new THREE.Vector3()).distanceTo(at) < 1e-6);
+    assert.equal(sparks.count, count);
+    assert.ok(!can.getObjectByName('Pickup contact pulse').visible);
+    assert.ok(!can.getObjectByName('Pickup body streaks')?.visible);
+    assert.ok(!can.children.some(mesh => mesh.name.startsWith('energy shockwave') && mesh.visible));
+    const sparkReach = () => {
+      const matrix = new THREE.Matrix4();
+      return Math.max(...Array.from({ length: sparks.count }, (_, i) => {
+        sparks.getMatrixAt(i, matrix);
+        return position(matrix).length();
+      }));
+    };
+    const reach = sparkReach();
+    assert.ok(reach <= 1, 'no spark begins far from the point of contact');
+    const opacity = sparks.material.opacity;
+    vfx.update(.20, frame);
+    assert.ok(sparkReach() < reach * .55, 'sparks gather into the contact point');
+    assert.equal(flash.material.opacity, 0, 'one flash, with no second peak');
+    assert.ok(sparks.material.opacity < opacity * .25);
+    vfx.update(.09, frame);
+    assert.equal(vfx.activeCount(), 0, 'the complete spark cluster expires by .30 s after absorption');
+  }
+  vfx.dispose();
+});
+
+test('two cans keep their own flashes through a mixed pickup, and Reduced Motion keeps a still cue', () => {
+  const vfx = createPickupCollectVfx(new THREE.Scene());
+  const event = { distance: 100, x: 0 };
+  const can = () => vfx.group.children.filter(stage => stage.visible && stage.userData.tier === 'can');
+  const flashes = () => can().map(stage => stage.getObjectByName('energy flash').material.opacity);
+  vfx.spawn('can', event, { follow: true, markerTime: 0 });
+  vfx.update(.09);
+  vfx.spawn('can', { ...event, distance: 108 }, { follow: true, markerTime: 0 });
+  vfx.update(.10);
+  assert.ok(flashes()[0] > .5);
+  assert.equal(flashes()[1], 0);
+  vfx.spawn('tank', event, { follow: true });
+  vfx.update(.09);
+  assert.ok(flashes()[1] > .5, 'the second can flashes even when a tank has taken over the body sweep');
+  const tank = vfx.group.children.find(stage => stage.visible && stage.userData.tier === 'tank');
+  vfx.update(.20);
+  assert.equal(tank.children.filter(mesh => mesh.name.startsWith('energy shockwave') && mesh.visible).length, 2);
+  assert.equal(can().length, 1, 'the older can expires independently');
+  vfx.update(.09);
+  assert.equal(can().length, 0);
+  assert.ok(tank.visible);
+
+  vfx.spawn('can', event, { follow: true, markerTime: 0, reducedMotion: true });
+  vfx.update(.04);
+  const stage = can()[0];
+  assert.ok(flashes()[0] > 0 && flashes()[0] < .25);
+  const ring = stage.getObjectByName('energy shockwave 0');
+  assert.ok(ring.visible);
+  ring.updateMatrix();
+  const pose = ring.matrix.clone();
+  vfx.update(.10); ring.updateMatrix();
+  assert.ok(ring.matrix.equals(pose));
+  assert.equal(stage.getObjectByName('energy shards').visible, false);
+  assert.equal(stage.getObjectByName('Pickup contact pulse').visible, false);
+  vfx.dispose();
+});
+
+test('a can never emits road debris at cruising or sprint speed, even alongside a different pickup', () => {
+  globalThis.devicePixelRatio = 1;
+  try {
+    for (const speed of [30, 90]) {
+      const scene = new THREE.Scene(), effects = createEffects(scene, () => 0), race = createRace('coast');
+      race.phase = 'racing'; race.player.speed = speed; race.pickups = []; race.rings = [];
+      const tick = () => effects.update(race, .05, 0, false, false);
+      const add = tier => race.pickups.push({ tier, x: 0, distance: 8, altitude: 0, taken: true, downUntil: 3 });
+      const alphas = scene.children.find(object => object.isPoints).geometry.attributes.alpha.array;
+      tick(); add('can'); tick(); add('can'); tick();
+      assert.equal(alphas.filter(alpha => alpha > 0).length, 0, `no road debris at ${speed} m/s`);
+      add('cell'); tick();
+      assert.equal(alphas.filter(alpha => alpha > 0).length, 32, 'the cell still emits its normal debris');
+      effects.dispose();
+    }
+  } finally { delete globalThis.devicePixelRatio; }
 });

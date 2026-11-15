@@ -1,3 +1,9 @@
+# 2026-11-15 — Energy can pickup sparks (`fix/energy-can-pickup-sparks`)
+
+- [x] The energy can keeps its .17 s absorption. A fitted orange flash and 2/5/8 pooled embers gather at the contact point and expire after .27 s. Reduced Motion keeps a still ring and soft glow.
+- [x] RED: five can-specific regressions on the base renderer, including 64 road particles after two takes at 30 m/s. GREEN: 78 focused pickup, effects, economy, shader safety, browser timing and module-size checks. Tank and overcharge guards still pass.
+- [ ] Complete the WebGL visual matrix, physical-device review and exact-commit GitHub quality gate.
+
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
 - [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.

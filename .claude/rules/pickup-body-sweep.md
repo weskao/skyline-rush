@@ -28,3 +28,11 @@ things only worked on a dark paint:
 
 Guards: `tests/pickup-collect-vfx.test.js` (*tints every paint*, *covers every painted part*). A new
 car or paint needs no edit here. Check one light and one dark paint in a real WebGL capture.
+
+## Energy can contact spark
+
+The can uses the marker's fitted absorption point. Keep the orange flash and instanced
+spark cluster at that point, and keep the old road burst, contact decal and rear streaks
+out of the can path. Road-anchored particles outlive the car passing the pickup at speed.
+`tests/pickup-collect-vfx.test.js` guards the absorption timing, contracting cluster and
+independent flashes when pickups overlap.
