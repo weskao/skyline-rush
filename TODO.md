@@ -1,3 +1,19 @@
+# 2026-11-16 — Collision recovery: contact aligned with race models
+
+- [x] Coast, about 300 m: the Roadster could visually intersect a flanking traffic car during contact protection. The old 1.7 m lateral test ignored the rendered hull and tire clearance. Use measured neutral envelopes for player contacts with traffic and rivals, including separate front and rear extents. Use the same clearance when traffic steers around the player or when Ghost Phase ends.
+- [x] Regression coverage: measured procedural models and fitted player GLBs in both LODs, a short hatch versus a commuter, braking five-car packs at 30/60/120 Hz with and without lane assist, rear pressure, solid separation by a rail and Ghost Phase exit/re-entry.
+- [x] Shallow flank contact keeps a lighter penalty while separating the full visible bodies. This restored the existing 24-layout Frostbite pace checks without changing rival tuning.
+- [x] Circuit finishers remain in the standings and leave the active race scene and collision roster. The direct finish-line regression and the existing five-lap and eighth-place tests pass.
+- [ ] Exact-head GitHub quality gate and physical-device driving checks.
+
+# 2026-11-15 — Collision recovery and Ghost Phase
+
+- [x] Collision grace applies the penalty once while vehicle and scenery bodies still separate. Shield blocks preserve speed and combo. Ghost Phase uses a steady translucent body, visible tail lights, a body sweep and a countdown; already-overlapping contacts clear safely when it expires.
+- [x] RED: simulation reproduced skipped contacts, overlapping shield blocks and false hits at phase expiry. GREEN: 30/60/120 Hz Coast contact, solid scenery and Dune CourseGraph hazard regressions; GLB material isolation, HUD timing and module-size guards. Recorded 41 changed legacy replay snapshots after confirming all 46 scenarios passed on the original base.
+- [x] Dense traffic: check the proposed separation against both sides of the pack. When boxed in, hold the lane behind the lead car; a held rear bumper or side contact does not re-arm the impact. Steering can leave the queue as soon as a lane opens. AUTO lane assist pauses while following so it cannot steer into a neighbouring car when grace expires.
+- [x] RED: the old solver overlapped a third car or missed a fast sweep. GREEN: packed traffic at 30/60/120 Hz, order reversal, shield and Ghost Phase, side contact, road edge and CourseGraph odometer continuity.
+- [ ] Exact-commit GitHub quality gate and physical-device verification.
+
 # 2026-11-16 — Mini-boost start streaks (`feature/mini-boost-trails`)
 
 - [x] The energy can's old pair of rear streaks now plays once (0.8 s) when a mini-boost starts: drift release (tier colour), slipstream ring, boost tunnel and chain landing (neutral whitish cyan). Player only. Chained rings never restart a running play, and braking never starts one. Medium draws 4 lines. Low, Reduced Motion and disabled effects draw none. The can stays streak-free. Rule: `.claude/rules/mini-boost-streaks.md`.

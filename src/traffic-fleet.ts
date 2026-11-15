@@ -5,10 +5,11 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TRAFFIC_CAR_STYLES, makeCar } from './car-model.js';
+import { TRAFFIC_DISPLAY_SCALE, trafficBodyIndex } from './vehicle-contact-size.js';
 import { createMarkerPool } from './marker-pool.js';
 
 export const TRAFFIC_COLORS = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
-const SCALE = 0.96, PAINT = 'paint';
+const PAINT = 'paint';
 type Shapes = Record<string, THREE.BufferGeometry>;
 type Materials = Record<string, THREE.Material>;
 
@@ -44,7 +45,7 @@ export function createTrafficFleet(parent: THREE.Object3D, count: number) {
   const colors = TRAFFIC_COLORS.map(color => new THREE.Color(color));
   // The parked instance carries a colour so the instanced-colour program is warmed before racing (pickup-aura.js).
   for (const paint of paints) paint.setColorAt(0, colors[0]!);
-  const cars = Array.from({ length: count }, () => { const car = new THREE.Object3D(); car.scale.setScalar(SCALE); return car; });
+  const cars = Array.from({ length: count }, () => { const car = new THREE.Object3D(); car.scale.setScalar(TRAFFIC_DISPLAY_SCALE); return car; });
   const drawn: number[] = pool.group.userData.drawn; // [mesh, slot, ...] of this frame
   parent.add(pool.group);
   return {
@@ -53,7 +54,7 @@ export function createTrafficFleet(parent: THREE.Object3D, count: number) {
     sync(): void {
       pool.begin();
       for (let i = 0; i < count; i++) {
-        const car = cars[i]!, style = i % styles, paint = paints[style]!;
+        const car = cars[i]!, style = trafficBodyIndex(i), paint = paints[style]!;
         if (!car.visible) continue;
         car.updateMatrix();
         for (const key of keys[style]!) pool.add(key, car.matrix);
