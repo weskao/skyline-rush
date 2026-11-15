@@ -1,3 +1,10 @@
+# 2026-11-15 — Home showcase and race camera handoff
+
+- [x] Coast: Start opens on the rear chase camera from the first rendered frame after right, front or orbit Home views. Leaving a race and reloading restores the last showcase view from local storage. A fresh Start resets the previous race's first-person selection.
+- [x] RED: first race bearings were 57°, 153° and 98° from the rear, and the next race retained first person. GREEN: all four Chromium tests in `tests/home-race-camera-browser.spec.js` passed at desktop 1440×900, touch portrait 390×844 and touch landscape 844×390, with real WebGL captures (`home-camera.png` / `race-camera.png`) and no page errors during the camera handoffs.
+- [x] Module-size and type checks, locked production build and the full unit suite passed (2,974 passed, 3 skipped).
+- [ ] Full browser/World Tour suites, physical iOS/Android checks and exact-commit GitHub `quality-gate`.
+
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
 - [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.

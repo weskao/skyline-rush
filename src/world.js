@@ -516,6 +516,7 @@ export function createWorld(canvas) {
       resize();
     },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
+    resetRaceCamera() { initialized = false; cameraMode = cameraSwing = carBank = 0; },
     setPhotoView(options) {
       raceVisuals.photo(options ? options.sky : null);
       if (!options) {
@@ -796,7 +797,6 @@ export function createWorld(canvas) {
         desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
       } else if (preview && visual.view !== 'drive') {
-        // The selected view wins over curated showcase framing on every map, but only on the ready screen: it never moves the race camera.
         const pose = showcaseCameraPose(trackId,visual.view,time,portrait||garageHomePreview||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
         const frame = curvedClassic || framedRoad(trackId, endlessActive) ? trackFrame(trackId,distance)
           : trackId === 'spiral' ? skyFrame(distance) : null;
@@ -868,7 +868,7 @@ export function createWorld(canvas) {
         if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance);
         frameShowcaseCar(distance);
       }
-      const smoothing = 1 - Math.exp(-dt * 7); camera.position.sub(rumble); if (trackId === FROSTBITE_ID && !endlessActive) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
+      const smoothing = !initialized && !preview ? 1 : 1 - Math.exp(-dt * 7); camera.position.sub(rumble); if (trackId === FROSTBITE_ID && !endlessActive) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
       if (!initialized || (car.fall !== seenFall && (trackId === FROSTBITE_ID || !!race.course))) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; } seenFall = car.fall;
       camera.position.lerp(desiredCamera, smoothing); smoothLook.lerp(lookTarget, smoothing);
       // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.

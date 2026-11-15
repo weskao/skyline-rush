@@ -61,7 +61,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
     stopMotionIfCalm();
     airflowHud.setAttribute('aria-hidden', String(!visual.airflow || !visual.enabled));
     showAeroMode();
-    try { localStorage.setItem('skyline-rush-vfx', JSON.stringify(visual)); } catch { /* Settings remain usable in memory. */ }
+    try { localStorage.setItem(QUALITY_STORAGE_KEY, JSON.stringify(visual)); } catch { /* Settings remain usable in memory. */ }
   }
   function toggleAirflow(): void {
     if (!visual.enabled) return;
