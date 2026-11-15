@@ -36,9 +36,10 @@ test('a Neon race has the same four lanes, rings and pickups', () => {
   // Step 10 (owner brief, 2026-11-15): five authored sector lines (34 rings) replace the random rings across their
   // spans, so 98 rings (a41b116b654c6772) became 67. Pickups did not move. Layout 7 never shipped, so it stays 7.
   // 10 km lap (2026-11-15): 2.5 times the slots on 2.5 times the road and the five lines at their new lap metres,
-  // 67 rings (ebf031e91b3b1ade) became 190, 163 pickups (242e47c4fbcaeb56) became 375.
-  assert.equal(race.rings.length, 190);
-  assert.equal(sha(race.rings.map(r => [r.distance, r.x, r.altitude, r.radius, r.type])), 'f650b0fc26092d8b', 'ring layout');
+  // 67 rings (ebf031e91b3b1ade) became 190, 163 pickups (242e47c4fbcaeb56) became 375. Step 11, seven lines and
+  // ringDensity 1.45: 190 rings (f650b0fc26092d8b) became 233; the pickups did not move.
+  assert.equal(race.rings.length, 233);
+  assert.equal(sha(race.rings.map(r => [r.distance, r.x, r.altitude, r.radius, r.type])), '1dd141562c959fbe', 'ring layout');
   assert.equal(race.pickups.length, 375);
   assert.equal(sha(race.pickups.map(p => [p.distance, p.x, p.altitude, p.tier])), 'a5fb40d8f56d59ef', 'pickup layout');
 });

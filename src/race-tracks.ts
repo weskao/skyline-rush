@@ -32,9 +32,12 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
       { from: 4500, to: 5300, type: 'crosswind', dir: 1 }, { from: 8290, to: 8750, type: 'shortcut', x: -7.5, altitude: 6 },
     ],
     ringLines: NEON_RING_LINES, // owner brief, 2026-11-15: one highlight per sector
-    // Fewer random rows, the same trains: 10 km of the default odds tipped the game-wide share of rows over one in
-    // three shapes (tests/ring-rows.test.js). The sum is the default 0.33, so no train moves.
-    shapeOdds: [0.04, 0.29],
+    // Seven lines take 2.9 km of the lap from the random rings, so the rest carries 1.45 times the slots: 23 rings a
+    // km (the owner asked for 22 or more; 17 before). Rings only: pickups keep the classic density per km.
+    ringDensity: 1.45,
+    // Fewer random rows, more trains: 10 km of the default odds tipped the game-wide share of rows over one in three
+    // shapes (tests/ring-rows.test.js), and a train is the readable way to add rings.
+    shapeOdds: [0.04, 0.4],
   },
   canyon: {
     name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 6, itemDensity: OPENING_ITEMS, openingNitroRings: 2, // volume was enough; only the first NITRO came late

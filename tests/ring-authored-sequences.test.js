@@ -28,19 +28,22 @@ const NEON_LINES = [
   [720, 2.5, 1.5], [780, 7.5, 1.5], [840, 7.5, 1.5], [900, 2.5, 1.5], [940, -2.5, 2.5], // rail underpass
   [1294, -7.5, 2.5], [1364, 0, 2.5], [1434, 7.5, 2.5], [1504, 0, 2.5], [1574, -7.5, 2.5], // night market
   [3000, 7.5, 2.5], [3125, 7.5, 2.5], [3250, 7.5, 2.5], [3375, 7.5, 2.5], [3500, 7.5, 2.5], // expressway
+  [4560, -7.5, 2.5], [4685, -7.5, 2.5], [4810, -7.5, 2.5], [4935, -7.5, 2.5], [5060, -7.5, 2.5], [5185, -7.5, 2.5], [5310, -7.5, 2.5], // harbour
   [6380, 0, 6.5], [6440, 0, 8], [6500, 0, 9.5], [6560, 0, 8.5], [6620, 0, 7.5], // canal bridge
+  [7350, -2.5, 2.5], [7420, 2.5, 2.5], [7490, 7.5, 2.5], [7570, 2.5, 2.5], [7650, -2.5, 2.5], [7730, -7.5, 2.5], [7900, -2.5, 2.5], [7980, 2.5, 2.5],
+  [8060, 7.5, 2.5], [8140, 2.5, 2.5], [8210, -2.5, 2.5], // oldtown
   [9220, 2.5, 2.5], [9280, -2.5, 2.5], [9340, -7.5, 2.5], [9400, -7.5, 2.5], [9460, -7.5, 2.5], [9520, -2.5, 2.5], [9580, 2.5, 2.5],
   [9650, 2.5, 2.5], [9720, 7.5, 2.5], [9820, 2.5, 2.5], [9920, -7.5, 2.5], [9920, 7.5, 2.5], // Violet Plaza
 ];
 
-test('Neon Downtown keeps its five sector ring lines in every race that reads the track layout', () => forSeeds(seed => {
+test('Neon Downtown keeps its seven sector ring lines in every race that reads the track layout', () => forSeeds(seed => {
   for (const config of [undefined, { mode: 'custom', themes: true }, { mode: 'gauntlet', layout: 'mixed' }, { mode: 'time' }]) {
     const { rings } = createRace('neon', config), hoops = mixedCourse('neon', RACE_TRACKS.neon, LANES, config ?? { mode: 'classic' })?.hoops ?? [];
     // The older authored rule wins: a mixed-Gauntlet hoop replaces any ring within 30 m (`withHoops`). On the 10 km lap
-    // (2026-11-15) the hoops stand at 2112, 4055, 5478, 6858 and 8138, clear of these five lines (on the 4 km lap the
-    // hoop at 2663 stood in for the canal crown ring).
+    // (2026-11-15) the hoops stand at 2112, 4055, 5478, 6858 and 8138: the last one stands in for the oldtown ring at
+    // 8140 (on the 4 km lap the hoop at 2663 stood in for the canal crown ring).
     const replaced = NEON_LINES.filter(([d]) => hoops.some(h => Math.abs(h.distance - d) <= 30));
-    assert.deepEqual(replaced, [], `seed ${seed} ${JSON.stringify(config)}`);
+    assert.deepEqual(replaced, hoops.length ? [[8140, 2.5, 2.5]] : [], `seed ${seed} ${JSON.stringify(config)}`);
     for (const spot of NEON_LINES) if (!replaced.includes(spot)) assert.ok(has(rings, spot), `seed ${seed} ${JSON.stringify(config)} ring ${spot}`);
   }
 }));

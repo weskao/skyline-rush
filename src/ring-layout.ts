@@ -71,6 +71,9 @@ const SHAPE_CLEARANCE = 40; // m from any road section or hoop; also what a rand
 // m a random ring keeps before an authored line: 0.85 s at NITRO speed, time to cross the road to its first ring.
 // Trap (2026-11-15): at 40 m a random ring in the far lane 59 m before a line cost the line on that seed.
 const LINE_LEAD = 100;
+// m before a line in which random rings lead into it: on the road, in the lane of its first ring. Trap (2026-11-15):
+// a ring up in the air or in the far lane 100 to 250 m out still cost the first ring (a glide sinks slowly).
+const APPROACH = 300;
 const OPENING_SINGLES = 2; // the first slots stay single, so openingNitroRings still opens on a nitro ring
 
 export const ringRow = (distance: number, type: string): RaceRing[] =>
@@ -132,6 +135,16 @@ export function createRings(track: TrackConfig, riskLines = true, count = ITEMS_
   // to it, so the line reads as one target. Each line is its own group, numbered after the random ones.
   const lines = track.ringLines ?? [], inLine = (r: RaceRing) => lines.some(l => r.distance >= l[0]![0] - LINE_LEAD && r.distance <= l.at(-1)![0] + SHAPE_CLEARANCE);
   const free = (shape: RaceRing[]) => !shape.some(inLine), gates = shaped.gates.filter(free), trains = shaped.trains.filter(free);
+  for (const shape of [...gates, ...trains]) {
+    const line = lines.find(l => shape.some(r => r.distance >= l[0]![0] - APPROACH && r.distance < l[0]![0] - LINE_LEAD));
+    if (!line) continue;
+    const to = line[0]![1], lane = to === 'row' ? null : ROW_LANES.reduce((best, l) => Math.abs(l - to) < Math.abs(best - to) ? l : best);
+    for (const r of shape) {
+      r.altitude = Math.min(r.altitude, ROW_ALTITUDE);
+      if (!r.row && lane !== null) r.x = lane;
+      if (r.type === 'risk') Object.assign(r, { type: 'nitro', radius: RING_RADIUS }); // no free risk ring on the road
+    }
+  }
   const first = assignGroups(gates, trains, random);
   const authored = lines.flatMap((line, i) => line.flatMap(([distance, x, altitude, type]) =>
     (x === 'row' ? ringRow(distance, type) : [ring(distance, x, altitude, type)]).map(r => Object.assign(r, { group: first + i, groupSize: line.length }))));

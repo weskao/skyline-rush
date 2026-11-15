@@ -974,7 +974,9 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
         types.add(ring.type);
       });
       const groups = Object.values(Object.groupBy(rings, ring => ring.group));
-      for (const group of groups) if (!group.some(ring => ring.row || ring.train !== undefined)) assert.ok(group.length >= 3 && group.length <= 5 && group.every(ring => ring.groupSize === group.length), `${id} group ${group[0].group}: ${group.length} rings`);
+      // An authored line (a track's ringLines) is one group of its own length: Neon's harbour line has 7 rings, oldtown 11.
+      const lines = RACE_TRACKS[id].ringLines ?? [], lineOf = group => lines.find(line => group.every(ring => line.some(spot => spot[0] === ring.distance)));
+      for (const group of groups) if (!group.some(ring => ring.row || ring.train !== undefined)) assert.ok((lineOf(group) ? group.length === lineOf(group).length : group.length >= 3 && group.length <= 5) && group.every(ring => ring.groupSize === group.length), `${id} group ${group[0].group}: ${group.length} rings`);
       assert.deepEqual([...new Set(rings.map(ring => ring.group))].sort((a, b) => a - b), groups.map((_, i) => i)); // group ids 0..n-1
     }
     assert.deepEqual(types, new Set(['charge', 'nitro', 'slipstream', 'risk', 'mystery']));
