@@ -228,3 +228,5 @@ export function instances(geometry, mat, count, scene) {
   return mesh;
 }
 
+
+export { isCircuitFinisher } from './vehicle-contact-size.js';

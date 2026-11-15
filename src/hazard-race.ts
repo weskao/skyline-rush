@@ -10,7 +10,7 @@ import type { RiskRules } from './risk-lines.ts';
 
 export type RaceHazard = Hazard & { halfWidth?: number; halfLength?: number; height?: number; placement?: HazardPlacement };
 interface Car { distance: number; x: number; altitude?: number; speed: number }
-interface PlayerCar extends Car { altitude: number; cooldown: number; score: number; nearMisses: number }
+interface PlayerCar extends Car { altitude: number; cooldown: number; score: number; nearMisses: number; effects?: { ghost: number } }
 type Contact = (race: unknown, kind: 'barrier', obstacleX: number, intensity: number, retention: number) => void;
 
 const BARRIER_HALF_WIDTH = 1.55; // drawn gauntlet barrier: 3.1 m wide
@@ -65,8 +65,15 @@ export function stepPlayerHazards(race: { hazards: RaceHazard[]; elapsed: number
     if (hazard.distance > car.distance) break;
     if (hazard.distance <= previousDistance || hazard.hit || hazard.passed) continue;
     const { effect, x: obstacleX } = hazardTouch(hazard, car, race.elapsed);
-    if (effect === 'block' && car.cooldown === 0) {
+    if (effect === 'block') {
+      const type = hazard.placement?.type;
+      if (type !== 'rail-crossing' && (car.effects?.ghost ?? 0) > 0) { hazard.passed = true; continue; }
+      const side = Math.sign(car.x - obstacleX) || -1;
       contact(race, 'barrier', obstacleX, 0.7, 0.6);
+      const clearance = (hazard.halfWidth ?? BARRIER_HALF_WIDTH) + 0.86;
+      const near = obstacleX + side * clearance, far = obstacleX - side * clearance;
+      if (Math.abs(near) <= ROAD_LIMIT) car.x = near;
+      else if (Math.abs(far) <= ROAD_LIMIT) car.x = far;
       hazard.hit = true;
       continue;
     }

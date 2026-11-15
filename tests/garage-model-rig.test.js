@@ -367,8 +367,7 @@ test('a GLB without rear nozzle nodes leaves the rear-port VFX on the contract p
   assert.deepEqual(aero.group.getObjectByName('Rear ports').position.toArray(), [0, 0, 0]);
 });
 
-// develop 51e25a03: post-hit grace pulses the player car translucent (grace-fade.ts); a GLB-dressed player car pulses too.
-test('post-hit grace fades every GLB material with the procedural car, leaving the cached original alone', async () => {
+test('Ghost Phase fades the GLB body with the procedural car and preserves its rear lights and cached model', async () => {
   const ctx = setup();
   const fade = createGraceFade(ctx.car); // world.js: when the player car is built, before any GLB dresses it
   ctx.model.sync(true, 'high', ctx.host);
@@ -376,11 +375,14 @@ test('post-hit grace fades every GLB material with the procedural car, leaving t
   ctx.model.sync(true, 'high', ctx.host);
   const materials = [], base = new Map();
   glbBody(ctx.car).parent.traverse(o => { if (o.isMesh) { materials.push(o.material); base.set(o.material, o.material.opacity); } });
-  assert.ok(materials.every(m => m.transparent), 'blending from dress time, so the first hit compiles nothing');
+  assert.ok(materials.every(m => m.transparent), 'blending from dress time, so Ghost Phase compiles nothing');
   for (const opacity of [0.4, 0.7, 1]) {
     fade(opacity);
     ctx.model.sync(true, 'high', ctx.host);
-    for (const m of materials) assert.ok(Math.abs(m.opacity - base.get(m) * opacity) < 1e-9, `${m.name} at ${opacity}: ${m.opacity}`);
+    for (const m of materials) {
+      const expected = m.name === 'roadster_light' ? base.get(m) : base.get(m) * opacity;
+      assert.ok(Math.abs(m.opacity - expected) < 1e-9, `${m.name} at ${opacity}: ${m.opacity}`);
+    }
   }
   ctx.original.traverse(o => { if (o.isMesh) assert.ok(!o.material.transparent && o.material.opacity === (o.name === 'glass' ? 0.5 : 1), o.name); });
 });

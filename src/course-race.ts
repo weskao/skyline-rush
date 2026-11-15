@@ -54,6 +54,19 @@ function writePose(graph: CourseGraph, car: CourseCar): void {
   placeOnFrame(pose.point, f, 0, t.lateral, t.altitude);
   for (let i = 0; i < 3; i++) { pose.forward[i] = f.forward[i]; pose.right[i] = f.right[i]; pose.up[i] = f.up[i]; }
 }
+/** Correct a contact within the measured edge without changing its checkpoint state. */
+export function setCourseContact(rt: CourseRuntime, id: string, x: number, distance: number): void {
+  const car = carOf(rt, id), travel = car.travel;
+  if (travel.finished || (travel.lateral === x && car.last.distance === distance)) return;
+  const delta = distance - car.last.distance;
+  const localS = Math.max(0, travel.localS + delta);
+  car.edgeStart += delta - (localS - travel.localS);
+  car.travel = { ...travel, localS, lateral: x };
+  car.last.x = x;
+  car.last.distance = distance;
+  writePose(rt.spec.graph, car);
+}
+
 /** Index of the first mandatory checkpoint still ahead of `node` (the node itself included). */
 function checkpointsBefore(graph: CourseGraph, node: string): number {
   const reaches = (from: string, to: string): boolean =>

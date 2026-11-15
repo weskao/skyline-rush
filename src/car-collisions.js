@@ -1,6 +1,7 @@
 import { carGap, courseHazardBlockers } from './course-race-step.ts';
 import { ROAD_LIMIT } from './game.js';
 import { hazardReach, hazardTouch, nudge } from './hazard-race.ts';
+import { bodiesShareHeight, isCircuitFinisher, vehicleContactSize } from './vehicle-contact-size.js';
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 // Index of the first scenery part (sorted by `from`, each under 20 m deep) that can still reach distance d.
@@ -10,14 +11,19 @@ function firstProp(props, d) {
   return lo;
 }
 
-// Car body against scenery parts (sorted by distance); the swept range catches thin parts at high speed.
-export function hitProp(props, car, previousDistance) {
+// Scenery contact checks the swept body, including thin parts at high speed.
+export function propTouches(prop, car, previousDistance) {
   const altitude = car.altitude || 0;
-  for (let i = firstProp(props, previousDistance - 2.2); i < props.length; i++) {
-    const p = props[i];
-    if (p.from > car.distance + 2.2) break;
-    if (p.to > previousDistance - 2.2 && p.right > car.x - 0.85 && p.left < car.x + 0.85 &&
-      p.top > altitude && p.bottom < altitude + 1.8) return p;
+  const { front = 2.2, rear = 2.2, halfWidth = 0.85 } = car.body ?? {};
+  return prop.from <= car.distance + front && prop.to > previousDistance - rear &&
+    prop.right > car.x - halfWidth && prop.left < car.x + halfWidth && prop.top > altitude && prop.bottom < altitude + 1.8;
+}
+
+export function hitProp(props, car, previousDistance, skip) {
+  for (let i = firstProp(props, previousDistance - (car.body?.rear ?? 2.2)); i < props.length; i++) {
+    const prop = props[i];
+    if (prop.from > car.distance + (car.body?.front ?? 2.2)) break;
+    if (propTouches(prop, car, previousDistance) && !skip?.(prop)) return prop;
   }
   return null;
 }
@@ -38,18 +44,24 @@ function laneFree(x) {
   return true;
 }
 // A car alongside, or one ahead this car closes on within ~3 s, blocks its own width.
-function carBlocker(race, other, altitude, pace, car, carPace, look) {
+function carBlocker(race, other, pace, car, carPace, look) {
+  if (isCircuitFinisher(race, car)) return;
   const gap = carGap(race, other, car) ?? -Infinity; // cars on different graph branches never block
-  if (gap > -4.4 && gap < Math.min(look, 4.4 + (pace - carPace) * 3) && Math.abs((car.altitude || 0) - altitude) < 1.8) {
-    blockers.push(car.x - AI_HALF_WIDTH, car.x + AI_HALF_WIDTH);
+  if (!bodiesShareHeight(other, car)) return;
+  const player = car === race.player;
+  const a = player ? vehicleContactSize(race, other) : null, b = player ? vehicleContactSize(race, car) : null;
+  const front = a && b ? a.front + b.rear : 4.4, rear = a && b ? a.rear + b.front : 4.4;
+  if (gap > -rear && gap < Math.min(look, front + (pace - carPace) * 3)) {
+    const halfWidth = a && b ? a.halfWidth + b.halfWidth - AI_HALF_WIDTH : AI_HALF_WIDTH;
+    blockers.push(car.x - halfWidth, car.x + halfWidth);
   }
 }
 export function avoidObstacles(race, other, pace, dt) {
   const { props, hazards } = race, d = other.distance, altitude = other.altitude || 0, look = Math.max(AI_LOOKAHEAD, pace * AI_LOOK_TIME);
   blockers.length = 0;
-  for (const car of race.traffic) if (car !== other) carBlocker(race, other, altitude, pace, car, car.speed, look);
-  for (const car of race.rivals) if (car !== other) carBlocker(race, other, altitude, pace, car, car.pace ?? car.speed, look);
-  carBlocker(race, other, altitude, pace, race.player, race.player.speed, look);
+  for (const car of race.traffic) if (car !== other) carBlocker(race, other, pace, car, car.speed, look);
+  for (const car of race.rivals) if (car !== other) carBlocker(race, other, pace, car, car.pace ?? car.speed, look);
+  carBlocker(race, other, pace, race.player, race.player.speed, look);
   for (let i = firstProp(props, d); i < props.length && props[i].from < d + look; i++) {
     const p = props[i];
     if (p.to > d - 2.2 && p.top > altitude && p.bottom < altitude + 1.8) blockers.push(p.left, p.right);
@@ -74,12 +86,14 @@ export function avoidObstacles(race, other, pace, dt) {
   other.x += clamp(target - other.x, -shift * dt, shift * dt);
 }
 
+export const knockX = (x, side, intensity) => clamp(x + side * (0.4 + intensity * 0.6), -ROAD_LIMIT, ROAD_LIMIT);
+
 // The one collision response every car shares (player, rivals, traffic): speed loss, a sideways knock, a short grace.
 export function knock(race, car, side, intensity, retention) {
   const retainedSpeed = race.config.collision === 'relaxed' ? Math.max(retention, 0.8) : retention;
   const speedLost = car.speed * (1 - retainedSpeed);
   car.speed *= retainedSpeed;
-  car.x = clamp(car.x + side * (0.4 + intensity * 0.6), -ROAD_LIMIT, ROAD_LIMIT);
+  car.x = knockX(car.x, side, intensity);
   car.cooldown = 1.5;
   return speedLost;
 }
@@ -104,6 +118,7 @@ export function aiImpacts(race, other, before, pace) {
   }
 }
 export function bumpCars(race, a, b) {
+  if (isCircuitFinisher(race, a) || isCircuitFinisher(race, b)) return;
   if ((a.cooldown > 0 && b.cooldown > 0) || Math.abs(carGap(race, a, b) ?? Infinity) >= 4.4 || Math.abs(a.x - b.x) >= 1.7 ||
     Math.abs((a.altitude || 0) - (b.altitude || 0)) >= 1.8) return;
   const side = Math.sign(a.x - b.x) || -1, intensity = clamp(Math.abs(a.speed - b.speed) / 70, 0.25, 1);

@@ -1,6 +1,7 @@
 ---
 paths:
   - "src/game.js"
+  - "src/player-contacts.js"
   - "src/drive-rules.ts"
   - "src/classic-road-routes.ts"
   - "tests/drift-*.test.js"
@@ -51,6 +52,14 @@ Keep the arcade driving feel; do not replace it with a new physics engine.
   Keep existing airborne, jump-gap and stunt behavior intact.
 
 ## Stable boundaries and simulation
+
+- Player collision recovery suppresses repeat penalties, while vehicle and scenery contact still
+  separates their bodies. Only Ghost Phase allows overlap. At expiry, exempt the contacts already
+  overlapping until they clear; newly touched objects are solid on the first unphased frame.
+  Check both proposed lanes before separating a pair: a third car may occupy the landing space. If
+  the leading car blocks both sides, limit the player's travel and pace to the available gap.
+  Sustained contact stays part of the original encounter until the cars separate.
+  `tests/collision-recovery.test.js` covers these rules at the simulation boundary.
 
 - A continuous steering hold into one rail must not cause repeated hard hits every time
   the collision cooldown expires. Track sustained contact, reset it only after adequate
