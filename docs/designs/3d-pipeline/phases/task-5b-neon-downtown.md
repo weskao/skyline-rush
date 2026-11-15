@@ -769,6 +769,55 @@ Still wrong:
 - The harbour's far shore is low, and its dry-night road is still the darkest on the lap.
 - Rain's horizontal irradiance rose (1.434 to 1.613).
 
+## Step 18: landmark and city kit rebuild (2026-11-16)
+
+Branch `feature/neon-landmark-polish`. It closes step 15's list except the baked light's direction. No real-time
+light, draw call, node or material is added; pivots, clear spans and footprints do not move.
+
+- **City kit towers:** a lit curtain wall in place of dark boxes with edge trim (`assets-src/neon-city/`).
+- **White containers flat, cause:** the tone curve ran on albedo times light, so the lamp spill pushed white paint
+  past the roll-off. `build.py` now tone-maps the light and multiplies the albedo afterwards. This path is shared,
+  so kit A's atlases changed and were re-pinned RED first; their white, bloom and peak stats did not move.
+- **Cargo ship:** stern and funnel floods; masts 18000 to 15000 W for the deck cargo's relief, and five hull floods
+  whose cones end under the cargo so the hull is lifted without touching it.
+- **Rail underpass:** a structural bay every 6 m on walls and ceiling (kit A).
+- **Bytes:** the GLB came out over its limit, so the occlusion-roughness slot of this asset alone takes a stronger
+  UASTC RDO (`scripts/assets/optimize-glb.mjs`). 3 959 896 to 3 849 128 bytes; the 4 000 000 limit did not move.
+- The same merge brings `develop` in. `tests/fixtures/legacy-race-replay.json` keeps `develop`'s hash for every
+  track; Neon's three are re-recorded from the merged code (the 10 km lap on `develop`'s contact rules).
+
+### Evidence
+
+Measured 2026-11-16 on one desktop machine; build logs and RED logs in the ignored `../audits/neon-landmark-polish/`.
+
+- [x] RED first, then GREEN: `tests/neon-landmarks-glb.test.js` (*the cargo ship shows its hull, stern and funnel*,
+  *the light containers keep their corrugation*, *a structural bay every 6 m*), `tests/optimize-glb-steps.test.js`,
+  `tests/neon-city-glb.test.js` and the manifest pins.
+- [x] `contract.json`: ship containers relief 0.877 to 0.951 (floor 0.95), hull `lit` 0.0557 (floor 0.055), hull
+  ends 0.0444 (floor 0.03); stack containers relief 0.972. Sectors emissive: no white texel, none over the bloom.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build` on the merge.
+- [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
+  2026-11-16.
+- [x] Draw calls on High with the rebuilt pieces, 13 probes per weather: race 332 at most in rain (underpass,
+  700 m) and 296 at night, home 259 (caps 380 and 540).
+- [x] WebGL captures looked at, night and rain: underpass 800 m (ribs and bays read), expressway 3300 m (towers
+  carry lit windows), harbour 4950 to 5450 m (containers, gantries, ship hull and deckhouse read).
+- [ ] Owner art approval; phone.
+
+Still wrong:
+
+- Dry night, harbour straight (seen at 4950, 5200 and, in one of two runs, 5450 m): the night key light glints
+  off the player car's rear deck and blooms into a white bar about as wide as the car. With the key light off
+  the white pixels on the car go from about 1300 to 0; with the environment off they stay. Rain shows about 20.
+  Lowering the key to 40% still leaves 300 to 400, so strength is not the fix. The straight heads toward the
+  key that step 17 re-aimed; the earlier key sat diagonal to every straight. A fix means re-aiming the key and
+  sky yaw or changing how the car paint takes the key, and both change the look of every sector: owner's call.
+
+- Two guards hold by thin margins (relief 0.951 of 0.95, hull 0.0557 of 0.055): the next lighting change to the
+  ship re-measures both.
+- The baked light is the same for every yaw and ignores the runtime key direction; a fix needs a shader change.
+- The occlusion-roughness atlases carry stronger compression; not compared by eye against the old ones.
+
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
 - [x] Desktop Apple silicon baseline for Neon's current look: every selectable map on High and Ultra with p50/p95,
