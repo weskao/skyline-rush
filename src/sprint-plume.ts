@@ -138,7 +138,8 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         jet.scale.z = frame.reach;
         const u = jet.material.uniforms;
         u.reach!.value = frame.reach; u.thick!.value = 1 - skinFade; u.glare!.value = frame.quality > 0.25 ? 1 : 0; // configureBloom: no bloom on Low
-        u.time!.value = frame.time + i * 0.13; u.power!.value = Math.sqrt(frame.power); // a held BOOST (power ~0.65) still reads as a sprint u.tail!.value = frame.tail;
+        u.time!.value = frame.time + i * 0.13; u.tail!.value = frame.tail;
+        u.power!.value = Math.sqrt(frame.power); // a held BOOST (power ~0.65) still reads as a sprint
         u.brightness!.value = frame.brightness; u.diamonds!.value = frame.diamonds; u.extreme!.value = frame.extreme; u.nitroMix!.value = frame.nitroMix;
       });
       core.visible = on; flare.visible = lit; glow.visible = lit && frame.quality > 0.25 && frame.racing && frame.grounded;

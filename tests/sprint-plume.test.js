@@ -40,6 +40,17 @@ test('the rear exhaust lives in its own module', () => {
 
 // Trap (2026-11-14): each jet left at a 6.5 cm radius and stayed under 0.14 m for its first 0.6 m (15 to 19 px on a
 // phone), additive only, so a held NITRO/BOOST barely showed. The flame is fat by 0.6 m whatever the tail length.
+// Trap (2026-11-16): a trailing `//` comment swallowed `u.tail = frame.tail` on the same line; the board plume's magenta tail never lit.
+test('every frame value reaches every jet', () => {
+  const parent = new Group(), plume = createSprintPlume(parent, REAR_PORTS);
+  plume.update(frame({ power: 0.64, brightness: 0.7, diamonds: 0.3, extreme: 0.4, nitroMix: 0.6, tail: 0.8 }));
+  for (const jet of jetsOf(parent)) {
+    const u = jet.material.uniforms;
+    assert.deepEqual([u.power.value, u.brightness.value, u.diamonds.value, u.extreme.value, u.nitroMix.value, u.tail.value, u.reach.value],
+      [0.8, 0.7, 0.3, 0.4, 0.6, 0.8, 5], jet.name);
+  }
+});
+
 test('flame shape: fat by 0.6 m whatever the length or brightness, four separate cores', () => {
   assert.equal(plumeRadius(0), REAR_PORTS[0].size);
   assert.ok(plumeRadius(0.6) >= 0.2 && plumeRadius(3) <= 0.3);
