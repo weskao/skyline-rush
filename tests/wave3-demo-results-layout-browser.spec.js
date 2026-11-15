@@ -90,10 +90,26 @@ for (const viewport of [
       expect(Math.abs(after.x - before.x)).toBeLessThan(3);
       expect(Math.abs(after.y - before.y)).toBeLessThan(3);
       const toggle = page.locator('.wave3-demo-results__toggle');
+      if (viewport.width === 360) {
+        // No scrolling to see rank, time, record, both awarded resources or the primary action.
+        await expect.poll(() => page.evaluate(() => {
+          const overlay = document.querySelector('#race-overlay');
+          const box = overlay.getBoundingClientRect();
+          return ['#result-stats > div:nth-child(1)', '#result-stats > div:nth-child(2)',
+            '#result-stats > div:nth-child(3)', '.wave3-demo-results__credit:not(.wave3-demo-results__coin-credit)',
+            '.wave3-demo-results__coin-credit', '#next-button'].filter(selector => {
+            const node = document.querySelector(selector);
+            const r = node.getBoundingClientRect();
+            return !r.width || !r.height || r.top < box.top || r.bottom > box.bottom ||
+              !node.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+          });
+        })).toEqual([]);
+      }
       if (viewport.height <= 500) {
         // The strip itself is the tap target; the details rise as a panel and close again.
         await reward.click({ position: { x: 20, y: 10 } });
         await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        await page.locator('#next-button').click({ trial: true });
         const coins = reward.locator('.wave3-demo-results__coin-credit');
         await expect(coins).toBeVisible();
         await expect(coins.locator('.wave3-demo-results__balance-value')).toHaveText(/^\d+$/);

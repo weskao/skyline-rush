@@ -1,3 +1,12 @@
+# 2026-11-15 — Race Results Navigation
+
+- [x] Pause gives Continue keyboard focus, with Retry and Leave as secondary actions. Escape or the close button returns the leave confirmation to its opener. Clearing controls releases pointer capture and ignores key repeats until a fresh press.
+- [x] The settled result selects Next Stage, Next Track, Retry or Choose Track. Cup standings use one row per driver. Finished summaries prioritize placement, time, record and local demo credits in portrait and retain separate summary and action columns in landscape.
+- [x] A queued cloud save stays pending until its own outcome is known. Results without an eligible history entry do not advertise a backup. Wave 3 reuses the receipt keyed to the finished race, with existing demo balance, mission and progression storage.
+- [x] RED → GREEN with `node --test tests/input.test.js tests/result-cloud-status.test.js`. Reproduced residual key repeat, native pointer capture and an older cloud acknowledgement advancing the new result. Module-size gate passed.
+- [ ] Complete the local browser viewport matrix, physical iOS/Android input checks and full `make verify`.
+- [ ] Confirm the exact feature head's CI quality gate, then rerun integration verification on the merged develop commit.
+
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
 - [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.

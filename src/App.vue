@@ -15,6 +15,7 @@ import './progress-bars.css';
 import './touch-sprint-buttons.css';
 import { look3d } from './look-gate.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
+import CloseButton from './CloseButton.vue';
 import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';
 import ReleaseNotesPanel from './ReleaseNotesPanel.vue';
@@ -268,9 +269,27 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     <div class="impact-report" id="impact-report" role="status" hidden><span class="impact-icon"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></span><div><strong id="impact-title">CONTACT</strong><span><span data-i18n="impact.stabilizing">STABILIZING ·</span> <b id="impact-loss">0</b> <span data-i18n="impact.lost">KM/H LOST</span></span></div></div>
 
     <section class="race-overlay" id="race-overlay" aria-labelledby="overlay-title" hidden>
-      <div class="overlay-content"><div class="overlay-summary"><span class="overlay-route">SKYLINE RUSH / COASTAL RUN</span><h2 id="overlay-title">Take a breather.</h2><p id="overlay-copy">The skyline can wait.</p><span id="new-best" class="new-best" data-i18n="result.newBest" hidden>NEW BEST</span><div id="result-stats" class="result-stats" hidden></div><div id="result-style" class="result-style" hidden></div></div><div class="overlay-actions"><button type="button" class="text-button" id="photo-open" hidden data-i18n="photo.open">PHOTO STUDIO</button><button class="primary-button" id="resume-button" aria-label="Resume race" data-i18n-aria-label="resume.aria"><span data-i18n="resume.label">Back to the race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="primary-button next-button" id="next-stage" hidden>Next stage</button><button class="primary-button next-button" id="next-button" hidden><span><span data-i18n="result.next">Next ·</span> <b id="next-track"></b></span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button><button class="text-button" id="again-button"><span data-i18n="result.again">Race again</span> <svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button><div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track" data-i18n="track.choose">Choose track</button><button class="text-button" data-open-history data-i18n="nav.history">History</button></div>
-        <!-- Cloud backup of this race (finished phase only, see style.css); text and button come from cloud-ui.ts. -->
-        <div class="result-cloud" id="result-cloud" :hidden="cloudView.resultHidden" :data-state="cloudView.resultState"><p id="result-cloud-status" role="status" aria-live="polite" :aria-busy="cloudView.resultBusy">{{ cloudView.resultText }}</p><SignInButton id="result-cloud-login" label-key="cloud.login" :hidden="cloudView.resultSignInHidden" :disabled="cloudView.resultSignInDisabled">Sign in with Google</SignInButton></div></div></div>
+      <div class="overlay-content">
+        <div class="overlay-summary">
+          <span class="overlay-route">SKYLINE RUSH / COASTAL RUN</span>
+          <h2 id="overlay-title">Take a breather.</h2>
+          <p id="overlay-copy">The skyline can wait.</p>
+          <span id="new-best" class="new-best" data-i18n="result.newBest" hidden>NEW BEST</span>
+          <div id="result-stats" class="result-stats" hidden></div>
+          <ol id="result-standings" class="result-standings" role="list" tabindex="0" data-i18n-aria-label="mode.cupStandings" hidden></ol>
+          <div id="result-style" class="result-style" hidden></div>
+        </div>
+        <div class="overlay-actions">
+          <button class="primary-button" id="resume-button" aria-label="Resume race" data-i18n-aria-label="resume.aria"><span data-i18n="resume.label">Continue racing</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+          <button class="primary-button next-button" id="next-stage" hidden>Next stage</button>
+          <button class="primary-button next-button" id="next-button" hidden><span><span data-i18n="result.next">Next ·</span> <b id="next-track"></b></span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+          <button class="text-button" id="again-button"><span data-i18n="result.again">Race again</span> <svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button>
+          <button type="button" class="text-button" id="pause-leave" data-i18n="leave.action" hidden>Leave race</button>
+          <button type="button" class="text-button" id="photo-open" hidden data-i18n="photo.open">PHOTO STUDIO</button>
+          <div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track" data-i18n="track.choose">Choose track</button><button class="text-button" data-open-history data-i18n="nav.history">History</button></div>
+          <div class="result-cloud" id="result-cloud" :hidden="cloudView.resultHidden" :data-state="cloudView.resultState"><p id="result-cloud-status" role="status" aria-live="polite" :aria-busy="cloudView.resultBusy">{{ cloudView.resultText }}</p><SignInButton id="result-cloud-login" label-key="cloud.login" :hidden="cloudView.resultSignInHidden" :disabled="cloudView.resultSignInDisabled">Sign in with Google</SignInButton></div>
+        </div>
+      </div>
     </section>
     <div id="error-message" class="error-message" role="alert" hidden></div>
   </main>
@@ -299,6 +318,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
   <GaragePanel />
 
   <dialog id="leave-screen" class="history-screen leave-screen" aria-labelledby="leave-title" aria-describedby="leave-copy">
+    <CloseButton id="leave-close" label="Close leave race confirmation" data-i18n-aria-label="leave.close" />
     <h2 id="leave-title" data-i18n="leave.title">Leave this race?</h2>
     <p id="leave-copy" data-i18n="leave.copy">Your race is paused. If you leave now, this run won’t be saved.</p>
     <div class="leave-actions">

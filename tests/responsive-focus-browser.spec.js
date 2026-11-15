@@ -107,6 +107,14 @@ for (const [width, height] of VIEWPORTS) test.describe(`${width}x${height}`, () 
     await page.keyboard.press('Escape');
     await expect(leave).toBeHidden();
     await expect(brand, 'Escape returns focus to the brand link that opened it').toBeFocused();
+
+    const opener = page.locator('#pause-leave');
+    await opener.click();
+    await expect(leave).toBeVisible();
+    await page.locator('#leave-close').click();
+    await expect(leave).toBeHidden();
+    await expect(opener).toBeFocused();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
 
     await page.mouse.click(brandBox.x + brandBox.width / 2, brandBox.y + brandBox.height / 2);

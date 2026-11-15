@@ -22,6 +22,6 @@ test('the shared close button shows × and requires an accessible name', () => {
   assert.match(component, /defineProps<\{ label: string \}>/);
   assert.match(component, /:aria-label="label"[^>]*>×<\/button>/);
   const uses = markup.flatMap(([, text]) => [...text.matchAll(/<CloseButton\b[^>]*>/g)].map(match => match[0]));
-  assert.equal(uses.length, 5, uses.join('\n'));
+  assert.equal(uses.length, 6, uses.join('\n'));
   for (const use of uses) assert.match(use, /\blabel=|:label=/, use);
 });

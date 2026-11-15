@@ -51,3 +51,15 @@ The finished screen, paused screen and ready screen are not exempt from input te
 Scope: all routes, including Tokyo (東京夜行) and Sky Spiral. Do not fix a blocked
 control by disabling the overlay entirely, suppressing errors, or bypassing
 event propagation without proving the cause.
+
+- The pause overlay focuses Continue, and a finished overlay focuses its visible primary
+  action from the settled result. The leave dialog explicitly focuses its opener before
+  `showModal()` so both Escape and the close button return focus on touch browsers.
+  Clearing driving input also releases native pointer capture and ignores queued keyboard
+  repeats until a fresh press. Guards: `tests/input.test.js`,
+  `tests/responsive-focus-browser.spec.js` and `tests/overlay-landscape-fit-browser.spec.js`.
+- Cloud status applies to a recorded result only. Intermediate heats and missed objectives
+  cannot claim a race backup, and an older acknowledgement cannot mark a newer result
+  synced. The Wave 3 receipt stays keyed to the same finished race and renders without
+  settling again. Guards: `tests/result-cloud-status.test.js`,
+  `tests/result-cloud-browser.spec.js` and `tests/cup-heat-flow-browser.spec.js`.

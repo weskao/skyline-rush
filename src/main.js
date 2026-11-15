@@ -47,7 +47,7 @@ import { setupReleaseNotesUI } from './release-notes-ui.ts';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.ts';
 import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-progress.ts';
 import { settleRaceAndDemo, captureWave3RaceTelemetry } from './race-results.ts';
-import { resultView, setupResultScreen, animateResultCounts } from './result-screen.ts';
+import { resultView, setupResultScreen, setupOverlayActions, animateResultCounts } from './result-screen.ts';
 import { playResultFeedbackOnce } from './result-audio.ts';
 import { renderWave3DemoResults } from './wave3-demo-results-integration.ts';
 import { createRaceHud } from './race-hud.ts';
@@ -155,6 +155,7 @@ function leaveIntro() {
   animation.finished.catch(() => {}).then(() => { ui.intro.inert = false; ui.intro.hidden = race.phase !== 'ready'; });
 }
 const renderResult = setupResultScreen(() => renderWave3DemoResults(race, getLocale()));
+const overlayActions = setupOverlayActions();
 const notice = setupPerformanceNotice({ downgraded: vfx.deviceSelection.downgraded, quality: vfx.deviceSelection.settings.quality });
 
 const { renderReleaseNotes, maybeShowReleaseNotes } = setupReleaseNotesUI({
@@ -466,33 +467,26 @@ function phaseUI() {
     ui['restart-button'].hidden = true;
     ui['pause-button'].disabled = tutorial.complete;
   }
-  ui['assist-button'].disabled = ui['again-button'].hidden = !!tutorial; // "Race again" means nothing in practice
+  ui['assist-button'].disabled = !!tutorial;
   $('#photo-open').hidden = !!tutorial || phase !== 'paused' || race.mode !== 'free';
   if (phase === 'paused') {
     $('#new-best').hidden = true;
     enter($('.overlay-content'), 'translateY(12px)');
-    ui['resume-button'].hidden = false;
-    $('#next-button').hidden = true;
-    $('#next-stage').hidden = true;
+    overlayActions.pause(!!tutorial);
     ui['result-stats'].hidden = true;
     $('#result-style').hidden = true;
-    $('#result-links').hidden = true;
   } else if (phase === 'finished') {
     controls.clear();
     const settled = settleRaceAndDemo(race, { series: { sprintSeries, cup, stunt }, progress, ghosts, daily, trace: traceRace === race ? trace : null });
     ({ sprintSeries, cup } = settled.series);
     if (cup) cupRecovery.remember(cup);
     const { best, record, medals } = settled;
-    $('#next-button').hidden = !settled.next;
-    if (settled.next) $('#next-button').dataset.next = settled.next;
-    $('#next-stage').hidden = !settled.intermediateStage;
-    cloud.saveRaceProgress(race.mode !== 'free');
+    overlayActions.finish(settled, race.mode);
+    cloud.saveRaceProgress(settled.recorded);
     showTracks();
-    ui['resume-button'].hidden = true;
     ui['result-stats'].hidden = false;
     $('#new-best').hidden = !record;
     $('#result-style').hidden = race.mode !== 'classic';
-    $('#result-links').hidden = false;
     lastResult = { race, best, record, medals, challengeMedals: settled.challengeMedals, series: sprintSeries, cup, stunt, next: settled.next, settled };
   }
   phaseText();
@@ -525,7 +519,7 @@ function updateUI(now, input) {
       ui['race-overlay'].hidden = false;
       enter($('.overlay-content'), 'translateX(48px)', 'slow');
       playResultFeedbackOnce(sound.cue, race, lastResult.settled, calmMotion());
-      ui['again-button'].focus({ preventScroll: true });
+      overlayActions.focus();
     }
     animateResultCounts(resultCounts, presentationState.count);
   }

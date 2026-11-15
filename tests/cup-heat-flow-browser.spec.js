@@ -24,6 +24,11 @@ for (const [name, viewport, hasTouch] of [
       await expect(page.locator('#race-overlay')).toBeVisible();
     };
     await finish();
+    const standings = page.locator('#result-standings');
+    await expect(standings.getByRole('listitem')).toHaveCount(8);
+    await expect(standings.locator('[aria-current="true"]')).toContainText('YOU');
+    await expect(page.locator('#next-stage')).toBeFocused();
+    await expect(page.locator('#result-cloud')).toBeHidden();
     expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).cup.results.length, key)).toBe(1);
     // Global restart retries the finished heat; it must remove the old points before racing again.
     await page.locator('#restart-button').click();
@@ -43,6 +48,8 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('#sprint-stage')).toHaveText('錦標賽第 3 / 3 站');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     await finish();
+    await expect(page.locator('#choose-track')).toBeFocused();
+    await expect(page.locator('#result-cloud')).toBeVisible();
     expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), key)).toBeNull();
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-mode-history-v1')).length)).toBe(1);
     expect(await page.evaluate(() => localStorage.getItem('skyline-rush-stars'))).toBeNull();

@@ -35,6 +35,8 @@ export interface Settlement {
   unlockedTrack: boolean;
   /** A heat inside a sprint series, cup or stunt run with more to come. */
   intermediateStage: boolean;
+  /** Whether this outcome contributes a history result eligible for cloud backup. */
+  recorded: boolean;
   series: RaceSeries;
 }
 
@@ -138,5 +140,6 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     const challenge = recordChallengeMedals(stunt ? { ...race, result: { ...race.result, time: stunt.elapsed }, styleAttack: stunt } : race, progress.challengeMedals);
     progress.challengeMedals = challenge.state; challengeMedals = challenge.awarded;
   }
-  return { best, record, medals, challengeMedals, next, unlockedTrack, intermediateStage, series: { sprintSeries, cup, stunt } };
+  const recorded = race.mode !== 'free' && !intermediateStage && (race.mode === 'classic' || race.result.success !== false);
+  return { best, record, medals, challengeMedals, next, unlockedTrack, intermediateStage, recorded, series: { sprintSeries, cup, stunt } };
 }
