@@ -1,3 +1,12 @@
+# 2026-11-16 — Home camera picker: shared custom dropdown, uncut labels (`develop`)
+
+- [x] `#showcase-camera-select` drops `data-native-select`, so `customSelect` draws it like the language picker. The arrow-button rules are scoped to `.showcase-camera-actions > button`; they used to restyle the dropdown button too (40×40, 25px font, no chevron).
+- [x] Labels are not cut: "Driving camera" wraps between words, never inside one. A size container stacks the picker on its own full-width row in the 148/158/190px docks. The 148px AIRFLOW dock had overflowed past the right edge. The 210px rail keeps one row.
+- [x] `customSelect` opens the list upward when there is no room below and caps it to the room on that side (`--list-room`). While the list is open, the dock is lifted to z 7 (positioned only in the scrolling layout), so the rules row and tool row no longer paint over it.
+- [x] RED: the new `showcase-camera-browser.spec.js` dropdown test failed 6/6 (no combobox). Two later screenshot checks added a no-mid-word-break assertion and an option hit-test (`elementFromPoint`), after the screenshots showed "Drivin g camer a" and a covered list.
+- [x] `npm test` 2996 pass / 0 fail, typecheck, build, main-ui contract (cssBlob updated), module-size. Production-build screenshots at 1440×900, 844×390, 390×844 zh-TW, AIRFLOW 667×375 and 390×844: label uncut and every option on screen and uncovered.
+- [ ] Browser specs were not run at the user's request: the new test, plus `home-shortcuts` and `home-race-camera`, both updated to use the combobox. Physical phone check and exact-HEAD `quality-gate` are also still open. Pre-existing, not changed: at AIRFLOW 667×375 the tool row overlaps the dock's "CAMERA VIEW" heading.
+
 # 2026-11-15 — One NITRO / BOOST / FLY palette (`feature/hud-sprint-colors`)
 
 - [x] `:root` tokens in `src/style.css`: `--nitro #ffd166` (gold, 42°, matches the ring gold), `--boost #ff7f3f` (red-orange, 20°), `--fly #83ceeb` (cyan), each with `-text` / `-deep` variants. They drive the touch buttons and every state, the NITRO/BOOST icons, the Controls preview, the NITRO meter, HUD text and callout, the BOOST status, the speed ticks, key hints (home legend, guide, tutorial cue, Controls bindings) and the default 3D NITRO trail and shock (`src/aero-vfx.js`). Trail skins still replace the default.

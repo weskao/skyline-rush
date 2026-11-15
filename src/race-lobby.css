@@ -28,7 +28,7 @@
 .lobby-picker-toggle::after { content: '＋'; margin-inline-start: auto; color: var(--accent); }
 .lobby-picker-toggle[aria-expanded="true"]::after { content: '−'; }
 .lobby-picker-toggle:disabled::after { visibility: hidden; }
-.lobby-picker-toggle:focus-visible, #showcase-camera-select:focus-visible { outline: 2px solid #9de4ff; outline-offset: 2px; }
+.lobby-picker-toggle:focus-visible { outline: 2px solid #9de4ff; outline-offset: 2px; }
 .intro .race-mode-heading { align-items: center; }
 .intro .race-mode-tabs {
   display: flex;
@@ -52,19 +52,42 @@
   font-size: 12px;
   line-height: 1.35;
 }
-#showcase-camera-select {
-  min-width: 0;
+/* Shared custom dropdown between the arrows. A long view name ("Driving camera") wraps between words
+   instead of being clipped by the ellipsis the shared button uses. */
+.showcase-camera-actions .custom-select { flex: 1 1 0; }
+.showcase-camera-actions .custom-select > button {
   width: 100%;
   min-height: 44px;
+  padding: 3px 20px 3px 6px;
   border: 1px solid #8ddcf466;
   border-radius: 6px;
-  background: #1c3d51;
+  background-color: #1c3d51;
+  background-position: right 3px center;
   color: #effaff;
-  padding-inline: 6px;
   font: inherit;
   font-size: 12px;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
 }
-.showcase-camera-actions button { width: 44px; height: 44px; }
+.showcase-camera-actions .custom-select > [role="listbox"] { right: auto; left: 50%; translate: -50%; }
+/* Every dock has a set width (148-210px or the panel's), so a size container is safe. In the 148/158/190px docks the
+   arrows leave too little room for "Driving" (the row overflowed the 148px dock off screen), so the picker takes a
+   full-width row above them; the 210px rail (196px inside) keeps one row so it never grows into the Daily card. */
+.showcase-camera-dock { container-type: inline-size; }
+@container (max-width: 180px) {
+  .showcase-camera-actions { flex-wrap: wrap; row-gap: 4px; }
+  .showcase-camera-actions .custom-select { flex-basis: 100%; order: -1; }
+}
+/* The dock's backdrop-filter traps the list in its stacking context: while open, lift the whole dock over the
+   rules row and tool row (topbar level, like the topbar's own dropdowns), so no option is painted over. */
+#showcase-camera-dock:has(.custom-select > [aria-expanded="true"]) { z-index: 7; }
+/* The scrolling layout leaves the dock static, where z-index does nothing: position it only while open (no offset, no
+   shift), so the closed dock still scrolls under the pinned action row. Rail and AIRFLOW docks are already fixed. */
+@media (max-width: 1000px) and (min-height: 501px), (max-width: 1000px) and (orientation: portrait) {
+  body[data-phase="ready"]:not(.airflow-active) #showcase-camera-dock:has(.custom-select > [aria-expanded="true"]) { position: relative; }
+}
+.showcase-camera-actions > button { width: 44px; height: 44px; }
 .intro .upcoming-thumb img { object-position: center 60%; }
 
 details.performance-notice {

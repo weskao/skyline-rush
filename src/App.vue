@@ -233,7 +233,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <span class="showcase-camera-heading" data-i18n="showcase.heading">CAMERA VIEW</span>
         <div class="showcase-camera-actions">
           <button type="button" id="showcase-camera-prev" aria-label="Previous camera view" data-i18n-aria-label="showcase.previous">‹</button>
-          <select id="showcase-camera-select" data-native-select aria-label="Showcase camera" data-i18n-aria-label="vfx.view">
+          <select id="showcase-camera-select" aria-label="Showcase camera" data-i18n-aria-label="vfx.view">
             <option v-for="view in SHOWCASE_VIEWS" :key="view" :value="view" :data-i18n="`vfx.view.${view}`">{{ view }}</option>
           </select>
           <span class="lobby-visually-hidden" id="showcase-camera-name" role="status" aria-live="polite"></span>

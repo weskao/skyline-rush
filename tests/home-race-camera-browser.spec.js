@@ -57,7 +57,9 @@ test('a fresh race resets its camera and Home restores its selection after leavi
   const raceCamera = page.locator('#camera-button');
   const start = page.locator('#start-button');
   const selector = page.locator('#showcase-camera-select');
-  await selector.selectOption('orbit');
+  const picker = page.locator('#showcase-camera-select + .custom-select');
+  await picker.getByRole('combobox').click();
+  await picker.getByRole('option', { name: 'Orbit', exact: true }).click();
   await expect(dock).toHaveAttribute('data-view', 'orbit');
   await start.click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
