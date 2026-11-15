@@ -137,6 +137,8 @@ async function expectHomeEntriesReachable(page, width, height) {
 
 // Compact rows may draw smaller than 44px but must still answer a 44px-tall tap (drawn box or hit area).
 async function expectCompactTouchTargets(page, width, height) {
+  const modes = page.locator('#lobby-modes-toggle');
+  if (!await page.locator('[data-race-mode="classic"]').isVisible()) await modes.click();
   await page.locator('button[data-race-mode="custom"]').evaluate(el => el.click());
   await page.locator('#race-mode-rules > summary').scrollIntoViewIfNeeded();
   const groups = ['.aero-tools > button, .aero-tools > details > summary, .aero-tools > .custom-select > button',
@@ -232,4 +234,18 @@ test('Garage NEW tag is a top-corner overlay and never covered (desktop, phone, 
     expect(await hit(), `${name}: tag covered halfway`).toBe(true);
     await page.locator('#intro').evaluate(el => { el.scrollTop = 0; });
   });
+});
+
+test('keyboard can choose a showcase angle directly without starting a race', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const camera = page.locator('#showcase-camera-select');
+  await expect(camera).toBeVisible({ timeout: ciTimeout(2500) });
+  await camera.focus();
+  await page.keyboard.press('End');
+  await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view', 'orbit');
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+  await selectLocale(page, 'zh-TW');
+  await expect(camera).toHaveAccessibleName('展示鏡頭');
+  await expect(camera.locator('option:checked')).toHaveText('環繞');
 });

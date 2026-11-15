@@ -14,6 +14,7 @@ test('landscape language controls remain clickable while the quality notice is v
   await expect(page.locator('#performance-notice')).toBeVisible();
   await selectLocale(page, 'zh-TW');
   await expect(page.locator('#performance-notice-text')).toContainText('低');
+  await page.locator('#performance-notice summary').click();
   await page.locator('#performance-notice-dismiss').click();
   await expect(page.locator('#performance-notice')).toBeHidden();
 });
@@ -83,4 +84,18 @@ test('?look=3d: Ultra quality is selectable, saved across reloads, and switching
   await expect(page.locator('select[data-vfx="quality"]')).toHaveValue('ultra');
   await page.locator('select[data-vfx="quality"]').selectOption('high', { force: true });
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx')).ultra)).toBe(false);
+});
+
+test('automatic graphics choice is a short disclosure with keyboard-accessible details', async ({ page }) => {
+  await constrained(page);
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const notice = page.locator('#performance-notice');
+  const summary = notice.locator('summary');
+  await expect(summary).toBeVisible({ timeout: ciTimeout(2500) });
+  await expect(notice.locator('#performance-notice-text')).toBeHidden();
+  await summary.focus();
+  await page.keyboard.press('Enter');
+  await expect(notice.locator('#performance-notice-text')).toBeVisible();
+  await notice.locator('#performance-notice-dismiss').click();
+  await expect(notice).toBeHidden();
 });

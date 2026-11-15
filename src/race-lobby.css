@@ -1,0 +1,196 @@
+/* Home lobby. Keep the scroll panel and its fixed landscape actions free of new stacking contexts. */
+.lobby-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.lobby-picker-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 4px 10px;
+  border: 1px solid #53738a;
+  border-radius: 6px;
+  color: #edf7fb;
+  background: #142b40;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.lobby-picker-toggle > span { color: #aed1df; }
+#lobby-track-status { margin-inline-start: auto; font-size: 10px; }
+#lobby-tracks-toggle::after { margin-inline-start: 0; }
+.lobby-picker-toggle::after { content: '＋'; margin-inline-start: auto; color: var(--accent); }
+.lobby-picker-toggle[aria-expanded="true"]::after { content: '−'; }
+.lobby-picker-toggle:disabled::after { visibility: hidden; }
+.lobby-picker-toggle:focus-visible, #showcase-camera-select:focus-visible { outline: 2px solid #9de4ff; outline-offset: 2px; }
+.intro .race-mode-heading { align-items: center; }
+.intro .race-mode-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  mask-image: none;
+}
+.intro .race-mode-tabs button { flex: 0 0 auto; min-height: 44px; padding-inline: 8px; }
+.intro .race-mode-heading:has([aria-expanded="true"]) + .race-mode-tabs { flex-wrap: wrap; }
+#lobby-tracks-toggle { width: min(550px, 100%); margin-top: 6px; }
+#lobby-tracks-toggle[aria-expanded="true"] + .track-select { flex-wrap: wrap; }
+#lobby-tracks-toggle[aria-expanded="true"] + .track-select button { flex: 1 0 128px; }
+#lobby-access-note {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 6px 8px;
+  background: #17283a;
+  color: #ffdaac;
+  border-radius: 5px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+#showcase-camera-select {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #8ddcf466;
+  border-radius: 6px;
+  background: #1c3d51;
+  color: #effaff;
+  padding-inline: 6px;
+  font: inherit;
+  font-size: 12px;
+}
+.showcase-camera-actions button { width: 44px; height: 44px; }
+.intro .upcoming-thumb img { object-position: center 60%; }
+
+details.performance-notice {
+  top: max(114px, calc(var(--safe-top) + 104px));
+  width: max-content;
+  max-width: min(300px, calc(100vw - 32px));
+  padding: 0 10px;
+  display: block;
+  pointer-events: auto;
+}
+.performance-notice summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+}
+.performance-notice summary::before { content: '＋'; color: var(--accent); }
+.performance-notice[open] summary::before { content: '−'; }
+.performance-notice p { padding-bottom: 8px; }
+.performance-notice button { display: block; margin: 0 0 8px auto; min-height: 44px; }
+
+@media (min-width: 1001px) and (min-height: 501px) and (max-height: 1160px) {
+  .intro h1 { display: none; }
+  .intro .race-mode-heading { margin-bottom: 4px; }
+  #lobby-tracks-toggle { margin-top: 3px; }
+}
+@media (max-width: 1000px) and (min-height: 501px) {
+  body[data-phase="ready"]:not(.airflow-active) .intro {
+    top: calc(114px + var(--safe-top));
+    padding-bottom: 32px;
+    scroll-padding-bottom: 32px;
+  }
+  body[data-phase="ready"] .brand { visibility: visible; }
+  .intro :is(.intro-wordmark, h1, .intro-copy, .intro-controls, .flight-tip, .start-hint) { display: none; }
+  .intro .home-intro-topbar { margin-bottom: 6px; }
+  .intro .race-mode-picker:not(.race-rules-row) { margin-top: 0; padding: 5px; }
+  .intro .race-mode-heading { margin-bottom: 3px; }
+  .intro #lobby-tracks-toggle { margin-bottom: 6px; }
+  .intro .track-select button { min-height: 64px; }
+  .intro .track-select .track-preview { height: 24px; margin-bottom: 4px; }
+  .intro .track-select .track-route-map { height: 26px; margin: 0; }
+  .intro .intro-actions { display: flex; gap: 8px 12px; margin-top: 8px; }
+  .intro .intro-primary { display: contents; }
+  .intro .intro-actions > .text-button { margin: 0; }
+  .intro .track-note { margin: 5px 0; font-size: 11px; }
+}
+@media (max-width: 760px) and (min-height: 501px) {
+  body[data-phase="ready"]:not(.airflow-active) .intro { top: calc(114px + var(--safe-top)); }
+  body[data-phase="ready"]:not(.airflow-active) .intro .intro-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .intro .intro-actions #start-button, #lobby-access-note { grid-column: 1 / -1; }
+  .intro .intro-actions #start-button { width: 100%; min-width: 0; max-width: none; height: 48px; }
+  .intro .intro-actions :is(.history-button, .garage-button, .practice-button) {
+    justify-content: center;
+    white-space: nowrap;
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 4px;
+  }
+  body[data-phase="ready"] .intro .showcase-camera-dock { margin-block: 6px; }
+}
+@media (max-width: 760px) and (min-height: 501px) and (max-height: 680px) {
+  #lobby-modes-toggle[aria-expanded="false"] { width: 100%; }
+  .race-mode-heading:has(#lobby-modes-toggle[aria-expanded="false"]) + .race-mode-tabs,
+  #lobby-tracks-toggle[aria-expanded="false"] + .track-select { display: none; }
+  .intro #mode-description { display: none; }
+  .intro .track-note { display: none; }
+  .intro #lobby-tracks-toggle[aria-expanded="true"] ~ .track-note { display: block; }
+  .intro #mode-eligibility { display: none; }
+  .intro #rules-restore { display: none; }
+  body:not([data-race-mode="classic"]) .intro #rules-restore { display: inline-flex; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  body { --z: 1; }
+  .intro .intro-actions { z-index: 4; }
+  body[data-phase="ready"]:not(.airflow-active) .intro #start-button { height: 44px; }
+  body[data-phase="ready"]:not(.airflow-active) .showcase-camera-dock {
+    bottom: calc(var(--edge-bottom) + 48px);
+    padding-block: 2px;
+  }
+  body[data-phase="ready"]:not(.airflow-active) .daily-card {
+    bottom: calc(var(--edge-bottom) + 100px);
+    padding-block: 3px;
+  }
+  .intro #lobby-access-note { margin: 0; }
+  body:not(.airflow-active) .intro .intro-actions:has(#lobby-access-note:not([hidden])) { flex-wrap: wrap; }
+  .intro .intro-actions #lobby-access-note { width: 100%; }
+  .intro .race-mode-picker:not(.race-rules-row) { padding: 2px 4px; }
+  .intro .race-mode-heading { margin-bottom: 0; }
+  .intro .race-mode-heading:has(#lobby-modes-toggle[aria-expanded="false"]) + .race-mode-tabs { display: none; }
+    .intro .track-select { margin-top: 0; }
+  .intro .track-select button { height: 58px; }
+  .intro .track-select .track-preview { height: 22px; }
+  .intro .track-select button > span.track-route-map { height: 19px; }
+  .intro .track-note { margin: 2px 0; }
+  .intro #lobby-tracks-toggle { margin-top: 2px; }
+  details.performance-notice { top: max(102px, calc(var(--safe-top) + 92px)); }
+}
+@media (max-height: 319px) and (orientation: landscape) {
+  .intro .home-intro-topbar:has(.home-resource-strip) {
+    position: absolute;
+    top: 4px;
+    right: 10px;
+    z-index: 2;
+  }
+  .intro:has(.home-resource-strip) .race-mode-heading { padding-inline-end: 98px; }
+  .intro #lobby-modes-toggle { width: 100%; }
+  .intro :is(#mode-description, #mode-eligibility, .track-note),
+  body[data-race-mode="classic"] .intro #rules-restore { display: none; }
+  .intro #lobby-tracks-toggle[aria-expanded="true"] ~ .track-note { display: block; }
+  #lobby-tracks-toggle[aria-expanded="false"] + .track-select { display: none; }
+  .intro .race-rules-row { margin-top: 0; }
+  .intro .race-rules-head { min-height: 22px; }
+  .intro #race-rules-step { position: absolute; clip-path: inset(50%); }
+  .intro .race-rules-head + .mode-conflicts { padding-bottom: 2px; }
+  .intro .intro-actions { padding-top: 2px; }
+  .intro .race-rules-text small { font-size: 11px; }
+  body[data-phase="ready"]:not(.airflow-active) .daily-card { padding-inline: 6px; }
+  .daily-card-start { padding-inline: 8px; }
+  .daily-card-start svg { display: none; }
+  details.performance-notice { right: max(16px, var(--safe-right)); top: 96px; z-index: 8; }
+  details.performance-notice:not([open]) { max-width: 210px; }
+}

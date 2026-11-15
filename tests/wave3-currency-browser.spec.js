@@ -134,6 +134,7 @@ test.describe('wallet on touch screens', () => {
       const diamondCard = page.getByRole('region', { name: 'Demo diamonds' });
 
       await expect(coinCard).toBeHidden();
+      if (!await coins.isVisible()) await wallet.locator('summary').tap();
       await coins.tap();
       await expect(coinCard).toContainText('Local demo');
       await expect(coinCard).toContainText('0');
@@ -152,4 +153,22 @@ test.describe('wallet on touch screens', () => {
       await expect(coinCard).toBeHidden();
     });
   }
+});
+
+test.describe('ultra-short landscape wallet', () => {
+  test.use({ viewport: { width: 756, height: 265 }, hasTouch: true, isMobile: true });
+
+  test('a single Resources entry reveals the three original balances', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const entry = page.getByText('Resources', { exact: true });
+    await expect(entry).toBeInViewport({ ratio: 1 });
+    const wallet = page.locator('#intro [data-wave3-wallet]');
+    await expect(wallet.getByRole('button', { name: /Demo coins/i })).toBeHidden();
+    await entry.tap();
+    await expect(wallet.locator('[data-currency="coins"] strong')).toHaveText('0');
+    await expect(wallet.locator('[data-currency="diamonds"] strong')).toHaveText('0');
+    await wallet.getByRole('button', { name: /Demo coins/i }).tap();
+    await expect(page.getByRole('region', { name: 'Demo coins' })).toBeVisible();
+  });
 });

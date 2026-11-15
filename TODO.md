@@ -5632,3 +5632,11 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] The browser regression checks the original renderer through probe load, Garage close and both track switches. The procedural pickup fallback keeps pickup texture loading out of both samples.
 - [x] `npm test`: 2,972 passed, 3 skipped. Typecheck, module-size checks and production build passed.
 - [ ] Verify the full GitHub `quality-gate` for this commit.
+
+## 2026-11-15 — Responsive Race Lobby (`feature/responsive-race-lobby`)
+
+- [x] Base `9275d52bb4ce64a8407479af779230354f5764d4`. Reproduced on the earlier `4d45cc4` develop build via the normal locked entry: at 756×265 Start measured 37.4 px tall and Garage/Practice 31.7 px. Practice was offscreen at 320×568 and Start was offscreen at 768×840. Classic's static 4-driver label disagreed with 7 AI in the rules.
+- [x] Keep full-size action targets, safe-area-aware short landscape positioning, and the existing WebKit fixed-rail paint guards. Show the selected mode and track, expand the existing catalogs in place, place the specific access reason beside Start, and use the actual race field for driver counts. Retain the canonical 568×205 teaser art and route maps.
+- [x] Add direct camera selection to the existing showcase control path and a compact graphics disclosure. Trial wallets reuse the existing balance projections and icons, with a Resources disclosure at very short heights. Daily uses its existing session and track rules. Existing action sounds and quality tiers apply. The additional controls are static DOM, so they do not need tier-specific rendering or additional sound.
+- [x] Focused Node tests and module-size passed. A Chromium layout fixture confirmed 44 px primary actions at 756×265 and first-screen positioning at 320×568, 768×840 and 840×768. It does not exercise WebGL or the live simulation.
+- [ ] Sign off the real-game Playwright layout and end-to-end matrix, phone Safari/Chrome paint and physical input, and the branch HEAD's GitHub `quality-gate`. Integrate the direct camera control with `fix/home-race-camera` and retain that branch's camera state and race-start behavior. Fold geometry and hinge detection are part of the separate foldable work.

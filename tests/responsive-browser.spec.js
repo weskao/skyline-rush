@@ -206,8 +206,9 @@ for (const [name, width, height, insets] of [['Chrome', 743, 340, { left: 62, ri
         expect(dock.y + dock.height, `${locale} dock above Start`).toBeLessThanOrEqual(start.y);
         expect(daily.y + daily.height, `${locale} daily above dock`).toBeLessThanOrEqual(dock.y);
         expect(daily.y, `${locale} rail runs into the AIRFLOW / VFX row`).toBeGreaterThanOrEqual(tools.y + tools.height);
-        expect(card.y + card.height, `${locale} pinned row covers the track cards`).toBeLessThanOrEqual(garage.y);
-        expect(start.height, `${locale} Start stays a usable tap target`).toBeGreaterThanOrEqual(36);
+        if (card) expect(card.y + card.height, `${locale} pinned row covers the track cards`).toBeLessThanOrEqual(garage.y);
+        else await expect(page.locator('#lobby-tracks-toggle')).toHaveAttribute('aria-expanded', 'false');
+        expect(start.height, `${locale} Start stays a usable tap target`).toBeGreaterThanOrEqual(44);
       }
       // iOS WebKit (not desktop engines) clips a fixed box to a scroller that is, or holds, its nearest stacking context:
       // Start, Daily and the dock were invisible yet tappable on iPhone Chrome. Only a fixed ancestor lifts them out.
@@ -450,3 +451,37 @@ test.describe('airflow panel in landscape', () => {
     expect(left).toBeGreaterThanOrEqual(62);
   });
 });
+
+for (const [width, height] of [[756, 265], [320, 568], [768, 840], [840, 768]]) {
+  test.describe(`lobby first screen ${width}x${height}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: true, isMobile: true });
+
+    test('primary actions have 44px hit areas before scrolling in both locales', async ({ page }, testInfo) => {
+      await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      for (const locale of ['en', 'zh-TW']) {
+        await page.locator('#locale-select').selectOption(locale, { force: true });
+        await expect(page.locator('html')).toHaveAttribute('lang', locale);
+        await page.evaluate(() => document.fonts.ready);
+        const targets = await page.evaluate(() => ['#start-button', '#garage-button', '#practice-button'].map(selector => {
+          const target = document.querySelector(selector);
+          const { x, y, width, height } = target.getBoundingClientRect();
+          const hits = [[2, 2], [width - 2, 2], [width / 2, height / 2], [2, height - 2], [width - 2, height - 2]]
+            .every(([dx, dy]) => target.contains(document.elementFromPoint(x + dx, y + dy)));
+          return { selector, width, height, hits };
+        }));
+        for (const { selector, width, height, hits } of targets) {
+          expect(width, `${locale} ${selector} width`).toBeGreaterThanOrEqual(44);
+          expect(height, `${locale} ${selector} height`).toBeGreaterThanOrEqual(44);
+          expect(hits, `${locale} ${selector} receives taps`).toBe(true);
+        }
+        await expect(page.locator('#mode-rules-summary')).toBeInViewport({ ratio: 1 });
+        await expect(page.locator('#lobby-mode-name')).toBeInViewport({ ratio: 1 });
+        await expect(page.locator('#lobby-track-name')).toBeInViewport({ ratio: 1 });
+        await page.screenshot({ path: testInfo.outputPath(`lobby-${width}x${height}-${locale}.png`), animations: 'disabled' });
+      }
+      await page.locator('#start-button').tap();
+      await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
+    });
+  });
+}

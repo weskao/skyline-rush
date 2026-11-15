@@ -140,6 +140,7 @@ for (const [name, viewport, safe] of [['phone notch', { width: 390, height: 844 
     await page.goto('/');
     await closeMusicPrompt(page);
     await page.evaluate(values => { for (const [side, value] of Object.entries(values)) document.documentElement.style.setProperty(`--safe-${side}`, `${value}px`); }, safe);
+    if (!await page.locator('[data-race-mode="classic"]').isVisible()) await page.locator('#lobby-modes-toggle').tap();
     for (const selector of ['button[data-race-mode="classic"]', '#rules-restore', '#start-button']) {
       await page.locator(selector).scrollIntoViewIfNeeded();
       const box = await page.locator(selector).boundingBox();

@@ -68,7 +68,7 @@ createApp(App).provide('game-audio-cue', sound.cue).mount('#app');
 // Saved choice > system language > English; only a click on the switch persists (saveLocale below).
 setLocale(resolveInitialLocale());
 applyI18n(); applyDocumentLocale(); // before customSelect, so the drawn selects copy translated text
-for (const select of document.querySelectorAll('select')) customSelect(select);
+for (const select of document.querySelectorAll('select:not([data-native-select])')) customSelect(select);
 const $ =selector => document.querySelector(selector);
 // Event messages (tilt, key map, errors) remember how to re-render, so a language switch translates the live text.
 const said = new Map();
@@ -200,7 +200,7 @@ const raceSelect = setupRaceSelectUI({
   cueUi: () => sound.cue('ui'),
   reducedMotion, showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false, isUpcomingEnterable,
 });
-const { centerSelectedTrack, selectedRace, cupCount } = raceSelect;
+const { centerSelectedTrack, selectedRace, cupCount, focusLobbyTrack } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
   canResume: () => !!world && race.phase === 'ready' && !contextLost && !document.querySelector('dialog[open]'),
   resume: saved => {
@@ -263,7 +263,7 @@ function chooseTrack() {
   controls.clear(); sprintSeries = null; cup = null; stunt = null; daily = null; goUntil = 0; raceSelect.restoreLastTrack();
   hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
-  document.querySelector(`[data-track="${race.trackId}"], [data-race-mode="${race.mode}"]`).focus({ preventScroll: true });
+  focusLobbyTrack();
   centerSelectedTrack();
 }
 $('#choose-track').addEventListener('click', chooseTrack);

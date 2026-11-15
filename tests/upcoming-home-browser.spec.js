@@ -58,7 +58,7 @@ test('CTA copy is translated without resizing its hit target', async ({ page }) 
   const widthEn = await button.evaluate(e => e.getBoundingClientRect().width);
   await selectLocale(page, 'zh-TW');
   await expect(button.locator('span')).toHaveText('即將推出');
-  await expect(page.locator('[data-upcoming-track="dune-tempest"] small')).toHaveText('即將推出');
+  await expect(page.locator('[data-upcoming-track="dune-tempest"] small')).toHaveText('預覽');
   await expect(page.locator('[data-upcoming-track="dune-tempest"] strong')).toHaveText('沙暴裂谷');
   const widthZh = await button.evaluate(e => e.getBoundingClientRect().width);
   expect(Math.abs(widthEn - widthZh)).toBeLessThan(1);
