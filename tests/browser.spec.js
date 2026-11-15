@@ -17,8 +17,9 @@ const dismissMusicPrompt = async page => {
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
 };
 
+// The VFX panel's dropdowns; Home's race setup has its own "Showcase camera" picker.
 const pick = async (page, name, option) => {
-  await page.getByRole('combobox', { name, exact: true }).click();
+  await page.getByRole('complementary', { name: 'Airflow and visual effects' }).getByRole('combobox', { name, exact: true }).click();
   await page.getByRole('option', { name: option, exact: true }).click();
 };
 
