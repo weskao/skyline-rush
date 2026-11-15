@@ -233,6 +233,19 @@ To do, in order:
   `src/world.js` unchanged at 1001). New browser tests 40 of 40 under CI timing
   (`--repeat-each=8 --workers=4 --retries=0`).
 - [ ] **9 Licence review** of every source, owner art approval, `make verify`, exact-HEAD CI.
+  - [x] Licence review at `d2a76328`: every `assets-src/neon-*/` folder has a record. `neon-asphalt`,
+    `neon-pavement`, `neon-sky` and the seven `neon-city` texture sets are CC0 Poly Haven; `neon-landmarks` is
+    project-owned. Shipped files, masters and build scripts match their recorded sha256. The `neon-city` input
+    hashes live in `assets-src/neon-city/sources.json` (model manifests carry no `inputSha256`, as for Coast); the
+    1k sky source hash is in `assets-src/neon-sky/sources.json` only.
+  - [ ] `make verify` at `d2a76328`: red. Typecheck and unit tests pass, World Tour 49 of 49, browser 1114 passed
+    and 3 failed: `result-actions-browser.spec.js` (*every frame is slow*), `interactive-tutorial-browser.spec.js`
+    (*paused practice 750x342*) and a sub-pixel flake in `crimson-gt-browser.spec.js` (*car picker 390x844*). The
+    first two fail the same way on `develop` `4d45cc46` on the same machine (3 of 3 each), so they are not from this
+    branch; the third was not compared. Open until they are fixed on `develop`.
+  - [ ] Exact-HEAD CI: a feature branch runs the reduced CI only (run 43689372679 for `d2a76328`: unit tests and
+    `quality-gate` green, browser and World Tour jobs skipped). The full run needs `develop`.
+  - [ ] Owner art approval (steps 3, 5, 6 and 7).
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
@@ -241,7 +254,12 @@ To do, in order:
 - [x] Re-verify the Blender / MCP live scene query on the machine that builds the kit (Phase 0 passes are never
   reused across devices). One Mac, 2026-11-14: addon status and a live scene read both answered; report in
   `../audits/`.
-- [ ] Desktop p50/p95, draw calls and triangles for the new Neon look, per tier, against the baseline above.
-- [ ] Phone (`make phone-diag`), portrait and landscape: p50/p95 and a sustained run. Not verified for Coast either.
-- [ ] Parity review (spec v2 §8.1) against the N1 reference on a real-GPU desktop; owner sign-off on the scored
-  sheet.
+- [x] Desktop p50/p95, draw calls and triangles for the new Neon look, per tier, with and without `?look=3d`, home
+  and race (one real-GPU Mac, 2026-11-15, `d2a76328`; table in `../audits/`). High with the look stays under both
+  N6 caps; triangles rise by about 80k to 110k on High and Ultra.
+- [ ] Phone (`make phone-diag`), portrait and landscape: p50/p95 and a sustained run. Needs the owner's hardware.
+  Not verified for Coast either.
+- [x] Parity sheet scored by an agent from eight real-GPU desktop captures (grid, six sectors, home) against concept
+  frames 03 to 08; sheet and captures in `../audits/`. Lowest scores: signage on the expressway and the canal, and
+  the plaza sculpture out of frame.
+- [ ] Owner sign-off on the scored sheet (spec v2 §8.1).
