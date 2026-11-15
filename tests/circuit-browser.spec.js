@@ -1,5 +1,5 @@
 import { test } from './helpers/gameplay-browser.js';
-import { expect } from './helpers/test.js';
+import { expect, settled } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -61,6 +61,7 @@ for (const [name, viewport, hasTouch, locale] of [
     await expect(page.locator('#overlay-title')).toHaveText(locale === 'en' ? 'Circuit complete' : '環道賽完成');
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-mode-history-v1')).at(-1).lapCount)).toBe(lapCount);
     await expect(page.locator('#race-overlay')).toBeVisible();
+    await settled(page.locator('.overlay-content'));
     expect(await page.locator('#result-stats').evaluate(element => {
       const bounds = element.getBoundingClientRect();
       return [...element.children].every(child => {

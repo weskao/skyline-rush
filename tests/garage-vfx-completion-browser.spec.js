@@ -1,10 +1,10 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
   test(`Airflow variants use independent native 3x transparent PNG thumbnails at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     await page.locator('#garage-studio-open').click();
 
     for (const id of ['airflow-basic', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism']) {

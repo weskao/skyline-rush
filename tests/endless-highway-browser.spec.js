@@ -1,7 +1,7 @@
 import { test } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
-import { expect } from './helpers/test.js';
+import { expect, settled } from './helpers/test.js';
 
 for (const [label, viewport, locale, touch] of [
   ['desktop-en', { width: 1440, height: 900 }, 'en', false],
@@ -95,6 +95,7 @@ for (const [label, viewport, locale, touch] of [
       await expect(page.locator('#overlay-title')).toHaveText(locale === 'en' ? 'SURVIVAL RUN COMPLETE' : '生存挑戰完成');
       await expect(page.locator('#result-stats')).toContainText('1000000.');
       await expect(page.locator('#race-overlay')).toBeVisible();
+      await settled(page.locator('.overlay-content'));
       expect(await page.locator('#result-stats').evaluate(element => {
         const bounds = element.getBoundingClientRect();
         return [...element.children].every(child => {

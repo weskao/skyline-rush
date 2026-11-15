@@ -34,8 +34,9 @@ for (const id of courses) {
       const race = window.gameplay.race;
       for (let i = 0; i < 180 && race.phase === 'racing'; i++) stepRace(race, { throttle: true }, 1 / 60);
     });
-    await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('#race-route-map [data-racer]')].map(node => `${node.getAttribute('data-racer')}:${node.getAttribute('cx')},${node.getAttribute('cy')}`))).not.toEqual(before.markers);
-    const after = await page.evaluate(() => [...document.querySelectorAll('#race-route-map [data-racer]')].map(node => `${node.getAttribute('data-racer')}:${node.getAttribute('cx')},${node.getAttribute('cy')}`));
-    expect(after.filter((spot, index) => spot !== before.markers[index])).toHaveLength(8);
+    // Poll for all eight: "any marker changed" was already true from the live loop's own HUD tick before the stepped
+    // frames were drawn, and near-grid racers on Volcanic's wide map had not yet moved a rounded 0.01 (2 in 3 runs).
+    await expect.poll(async () => (await page.evaluate(() => [...document.querySelectorAll('#race-route-map [data-racer]')].map(node => `${node.getAttribute('data-racer')}:${node.getAttribute('cx')},${node.getAttribute('cy')}`)))
+      .filter((spot, index) => spot !== before.markers[index]).length).toBe(8);
   });
 }

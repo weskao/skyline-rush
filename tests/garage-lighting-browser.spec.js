@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { openGarage } from './helpers/test.js';
 
 // The race car reflects its own softened map, and the Garage sun/moon toggle dims only the Garage/Studio preview.
 const lightingState = page => page.evaluate(() => {
@@ -21,7 +22,7 @@ for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) 
     expect(race.intensities).toHaveLength(1);
     expect(race.gain).toBe(1);
 
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const toggle = page.locator('#garage-lighting');
     await expect(toggle).toBeInViewport();
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');

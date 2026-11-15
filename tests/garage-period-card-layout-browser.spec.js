@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { WAVE3_CATALOG_VERSION, WAVE3_EXPERIENCE_VERSION } from '../src/wave3-experience-contract.ts';
 
@@ -52,7 +52,7 @@ for (const locale of ['en', 'zh-TW']) {
       await seedDemo(page);
       await page.goto('/');
       await selectLocale(page, locale);
-      await page.locator('#garage-button').click();
+      await openGarage(page);
       const board = page.locator('.garage-mission-board');
       const card = id => board.locator(`.garage-period-card[data-mission-id="${id}"]`);
       await expect(card('mission-race:daily')).toHaveAttribute('data-mission-state', 'claimable');
