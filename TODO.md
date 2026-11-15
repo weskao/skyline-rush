@@ -5683,3 +5683,16 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Confirm five targeted regressions fail their assertions when reintroduced: preview bypass, missing Daily exception, off-by-one Cup threshold, missing player in the driver count, and ignored saved camera angle.
 - [x] Focused Node suite: 66 passed. Module-size, typecheck and the locked production build passed. The lobby controller uses the tested presentation logic; the browser specs still cover layout and the first rendered chase frame.
 - [ ] Exact-commit GitHub quality gate.
+
+## Foldable race HUD (`feature/foldable-race-hud`)
+
+- [x] RED: the focused segment, input and feedback tests reproduced missing segment API compatibility, retained pointer capture and missing peripheral slots on the split geometry. The current-API browser case on the base bundle received an empty fold axis.
+- [x] GREEN: 65 focused checks passed, including module-size, segment projection, input release and feedback geometry.
+- [ ] Complete browser replay and screenshots for home, Garage/Studio, dialogs, split race HUD, pause/results and the four HUD backgrounds. Verify physical foldable and iOS rotation plus exact-head GitHub CI.
+
+### Foldable race HUD merge verification
+
+- [x] RED: the source SHA's full CI reproduced stuck visual presses on rotation, fold HUD overlap, a removed Garage paint selector and an invalid short-phone leaderboard expectation. The merged browser replay also reproduced the clipped paint before scrolling its existing collection into view.
+- [x] Resolve the Home CSS and spec conflicts while retaining both features and all integration notes. Place flight resources away from the minimap and leaderboard, keep Daily and Garage controls apart, and clear pressed styles on the same geometry change that clears input.
+- [x] The first candidate passed the locked production build, typecheck and 78 focused Node checks, including module-size and browser guards. A 600×900 browser replay measured the Home camera dock overlapping Daily by 22 px. The latest develop camera dropdown is kept, and the fold rail gives its controls one row with a dedicated gap above Start.
+- [ ] Finish the browser replay and full unit run, and verify the exact merge candidate's GitHub quality gate and physical-device rotation.
