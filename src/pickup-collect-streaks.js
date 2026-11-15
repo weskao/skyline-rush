@@ -4,11 +4,12 @@ import { STREAK_VERTEX, STREAK_FRAGMENT } from './pickup-collect-shaders.js';
 const STEPS = 32;
 const lerp = THREE.MathUtils.lerp;
 const clamp = THREE.MathUtils.clamp;
-const envelope = (age, life) => Math.min(1, age / .07) * (1 - age / life) ** 1.18;
+export const streakEnvelope = (age, life) => Math.min(1, age / .07) * (1 - age / life) ** 1.18;
 
-// One dynamic mesh per playing effect. Each strip faces the camera and follows the fitted body frame.
-export function createPickupStreaks(group) {
-  const lines = 7;
+/** Up to `lines` camera-facing ribbons in `group`'s frame, one dynamic mesh. `draw` lays each ribbon along
+ * `point(q, line, age, out)` (q: 0 → 1 along it) with a half-width of `radius(line)`, tapered at both ends.
+ * Shared by the electric cell's body streaks and the mini-boost start cue (mini-boost-streaks.js). */
+export function createStreakRibbons(group, lines, name, tint, core) {
   const positions = new Float32Array(lines * (STEPS + 1) * 6);
   const uv = [], indices = [];
   for (let line = 0; line < lines; line++) for (let i = 0; i <= STEPS; i++) {
@@ -24,48 +25,32 @@ export function createPickupStreaks(group) {
     vertexShader: STREAK_VERTEX, fragmentShader: STREAK_FRAGMENT,
     transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true,
     uniforms: {
-      tint: { value: new THREE.Color(0x36baff) },
-      core: { value: new THREE.Color(0xc4f9ff) },
+      tint: { value: new THREE.Color(tint) },
+      core: { value: new THREE.Color(core) },
       age: { value: 0 }, power: { value: 0 },
     },
   });
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = 'Pickup body streaks';
+  mesh.name = name;
   mesh.frustumCulled = false;
   mesh.visible = false;
   group.add(mesh);
   const points = Array.from({ length: STEPS + 1 }, () => new THREE.Vector3());
   const eye = new THREE.Vector3(), width = new THREE.Vector3(), view = new THREE.Vector3();
 
-  function point(q, line, age, out, sections) {
-    const side = line % 2 ? 1 : -1;
-    const front = lerp(-2.25, 2.28, 1 - (1 - Math.min(1, age / .46)) ** 2);
-    const z = Math.max(-2.43, front - (1 - q) * (line < 3 ? 3.4 : 2.3));
-    const jitter = Math.sin(q * 34 + line * 2.4 + age * 38) * .08 + Math.sin(q * 77 + line + age * 24) * .045;
-    const section = sections?.[clamp(Math.floor((z + 2.45) / 4.7 * sections.length), 0, sections.length - 1)];
-    const edge = side < 0 ? section?.left : section?.right;
-    out.set(line < 3 ? (line - 1) * .58 + jitter : (Number.isFinite(edge) ? edge : side * 1.18) + side * (.08 + Math.abs(jitter)),
-      line < 3 ? (Number.isFinite(section?.top) ? section.top : 1.32) + .08 : .5 + .19 * (line % 3) + jitter, z);
-  }
-
   return {
     mesh,
-    update(slot, camera, sections) {
-      const { age, style, visualWeight } = slot;
-      const power = envelope(age, style.life) * visualWeight;
-      mesh.visible = !!camera && power > .005 && slot.follow && slot.quality !== 'low';
-      if (!mesh.visible) return;
+    draw(camera, count, age, power, point, radius) {
       camera.getWorldPosition(eye);
       group.worldToLocal(eye);
-      const count = slot.quality === 'medium' ? 4 : lines;
       for (let line = 0; line < count; line++) {
-        for (let i = 0; i <= STEPS; i++) point(i / STEPS, line, age, points[i], sections);
-        const radius = line < 3 ? .135 : .074;
+        for (let i = 0; i <= STEPS; i++) point(i / STEPS, line, age, points[i]);
+        const r = radius(line);
         for (let i = 0; i <= STEPS; i++) {
           const p = points[i];
           view.subVectors(eye, p);
           width.subVectors(points[Math.min(STEPS, i + 1)], points[Math.max(0, i - 1)])
-            .cross(view).normalize().multiplyScalar(radius * (.38 + .62 * Math.sin(i / STEPS * Math.PI)));
+            .cross(view).normalize().multiplyScalar(r * (.38 + .62 * Math.sin(i / STEPS * Math.PI)));
           const offset = (line * (STEPS + 1) + i) * 6;
           positions[offset] = p.x - width.x;
           positions[offset + 1] = p.y - width.y;
@@ -81,5 +66,37 @@ export function createPickupStreaks(group) {
       material.uniforms.power.value = power;
     },
     dispose() { geometry.dispose(); material.dispose(); },
+  };
+}
+
+// One dynamic mesh per playing effect. Each strip faces the camera and follows the fitted body frame.
+export function createPickupStreaks(group) {
+  const lines = 7;
+  const ribbons = createStreakRibbons(group, lines, 'Pickup body streaks', 0x36baff, 0xc4f9ff);
+  let sections;
+
+  function point(q, line, age, out) {
+    const side = line % 2 ? 1 : -1;
+    const front = lerp(-2.25, 2.28, 1 - (1 - Math.min(1, age / .46)) ** 2);
+    const z = Math.max(-2.43, front - (1 - q) * (line < 3 ? 3.4 : 2.3));
+    const jitter = Math.sin(q * 34 + line * 2.4 + age * 38) * .08 + Math.sin(q * 77 + line + age * 24) * .045;
+    const section = sections?.[clamp(Math.floor((z + 2.45) / 4.7 * sections.length), 0, sections.length - 1)];
+    const edge = side < 0 ? section?.left : section?.right;
+    out.set(line < 3 ? (line - 1) * .58 + jitter : (Number.isFinite(edge) ? edge : side * 1.18) + side * (.08 + Math.abs(jitter)),
+      line < 3 ? (Number.isFinite(section?.top) ? section.top : 1.32) + .08 : .5 + .19 * (line % 3) + jitter, z);
+  }
+  const radius = line => line < 3 ? .135 : .074;
+
+  return {
+    mesh: ribbons.mesh,
+    update(slot, camera, bodySections) {
+      const { age, style, visualWeight } = slot;
+      const power = streakEnvelope(age, style.life) * visualWeight;
+      ribbons.mesh.visible = !!camera && power > .005 && slot.follow && slot.quality !== 'low';
+      if (!ribbons.mesh.visible) return;
+      sections = bodySections;
+      ribbons.draw(camera, slot.quality === 'medium' ? 4 : lines, age, power, point, radius);
+    },
+    dispose: ribbons.dispose,
   };
 }
