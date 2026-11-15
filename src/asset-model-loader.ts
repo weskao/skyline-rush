@@ -22,8 +22,8 @@ export interface ModelCacheOptions {
   fetch?: (url: string, init: { signal: AbortSignal }) => Promise<Response>;
   timeoutMs?: number;
   decodeTimeoutMs?: number;
-  /** Allow two idle models so a car switch can reuse both parsed assets. */
-  retainReleasedModels?: boolean;
+  /** Keep up to two idle models whose IDs pass this predicate, so equipped cars can reuse parsed assets. */
+  retainReleasedModels?: (id: string) => boolean;
   loadMeshopt?: () => Promise<unknown>;
   /** A KTX2Loader already given its transcoder path and `detectSupport(renderer)` by the world; absent → 'decoder-unavailable'. */
   loadKtx2?: () => Promise<unknown>;
@@ -109,7 +109,7 @@ export function createModelCache(options: ModelCacheOptions): ModelCache {
   const loadKtx2 = options.loadKtx2 ?? (() => Promise.reject(new Error('no KTX2 provider')));
   const doFetch = options.fetch ?? ((url, init) => globalThis.fetch(url, init));
   const slots = new Map<string, Slot>();
-  let retainReleasedModels = options.retainReleasedModels ?? false;
+  let retainReleasedModels = options.retainReleasedModels;
   const idle = new Map<string, IdleModel>();
   let meshopt: Promise<unknown> | undefined;
   let ktx2: Promise<unknown> | undefined;
@@ -176,7 +176,7 @@ export function createModelCache(options: ModelCacheOptions): ModelCache {
         released = true;
         if (--slot.refs > 0) return;
         const entry = { slot, loaded };
-        if (!retainReleasedModels) { releaseSlot(key, entry); return; }
+        if (!retainReleasedModels?.(id)) { releaseSlot(key, entry); return; }
         idle.set(key, entry);
         if (idle.size > MAX_IDLE_MODELS) {
           const oldest = idle.keys().next().value!;
@@ -188,7 +188,7 @@ export function createModelCache(options: ModelCacheOptions): ModelCache {
 
   return {
     dispose() {
-      retainReleasedModels = false;
+      retainReleasedModels = undefined;
       for (const [key, entry] of idle) releaseSlot(key, entry);
     },
     async load(id, { signal, quality } = {}) {

@@ -80,9 +80,12 @@ for (const group of GROUPS) {
   test.describe(names, () => {
     test.use({ viewport: first, hasTouch, isMobile: hasTouch });
     for (const phase of ['ready', 'racing']) test(`${names} ${phase}: Race HUD is set from the VFX panel`, async ({ page }) => {
-      if (group.length > 1) test.setTimeout(ciTimeout(90_000));
+      // The live race keeps rendering through the countdown and every pointer assertion.
+      if (phase === 'racing' || group.length > 1) test.setTimeout(ciTimeout(90_000));
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
+      // HUD layout and pointer targets are independent of graphics quality. Keep the live race light on software WebGL.
+      await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' })));
       await page.goto('/');
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
       for (const [index, [name, viewport]] of group.entries()) await test.step(`${name} ${viewport.width}x${viewport.height}`, async () => {
@@ -91,7 +94,7 @@ for (const group of GROUPS) {
         if (phase === 'ready' || index === 0) await expectAudioPanelOnly(page);
         if (phase === 'racing' && index === 0) {
           await page.locator('#start-button').click();
-          await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(10_000) });
+          await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(25_000) });
         }
         await setRaceHudFromVfxPanel(page, name, viewport, phase);
       });
