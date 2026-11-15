@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
+import { openLobbyModes } from './helpers/home-lobby.js';
 // CI speed: each mode's three touch sizes (390x844, 320x740, 844x390) share one booted race and are resized in place; each size is
 // also freshly booted in two of the six modes. Desktop stays a separate test (hasTouch/isMobile are fixed per browser context).
 
@@ -9,6 +10,7 @@ import { resizeTo } from './helpers/viewport.js';
 // Endless shows its contacts/milestone line instead of RACING, so wait on the phase.
 const racing = page => expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
 async function pickMode(page, mode) {
+  await openLobbyModes(page);
   await page.locator(`button[data-race-mode="${mode}"]`).click();
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', mode);
 }

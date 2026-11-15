@@ -56,7 +56,8 @@ test('a fresh race resets its camera and Home restores its selection after leavi
   const dock = page.locator('#showcase-camera-dock');
   const raceCamera = page.locator('#camera-button');
   const start = page.locator('#start-button');
-  await page.locator('#showcase-camera-prev').click();
+  const selector = page.locator('#showcase-camera-select');
+  await selector.selectOption('orbit');
   await expect(dock).toHaveAttribute('data-view', 'orbit');
   await start.click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
@@ -72,4 +73,5 @@ test('a fresh race resets its camera and Home restores its selection after leavi
   await page.reload();
   await expect(dock).toBeVisible();
   await expect(dock).toHaveAttribute('data-view', 'orbit');
+  await expect(selector).toHaveValue('orbit');
 });

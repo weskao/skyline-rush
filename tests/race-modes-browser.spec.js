@@ -157,7 +157,7 @@ test('Championship Cup honestly requires three previously unlocked tracks', asyn
   await page.locator('button[data-race-mode="cup"]').click();
   await expect(page.locator('button[data-race-mode="cup"]')).toHaveAttribute('aria-pressed','true');
   await expect(page.locator('#start-button')).toBeDisabled();
-  await expect(page.locator('#track-note')).toContainText('Unlock at least 3 tracks');
+  await expect(page.locator('#lobby-access-note')).toContainText('Unlock at least 3 tracks');
 });
 
 test('Cup length cannot bypass locked tracks with Enter',async({page})=>{
@@ -166,7 +166,7 @@ test('Cup length cannot bypass locked tracks with Enter',async({page})=>{
  await page.locator('#cup-length').evaluate(select=>{
    select.value='5';select.dispatchEvent(new Event('change',{bubbles:true}));
  });
- await expect(page.locator('#track-note')).toContainText('Unlock at least 5 tracks');
+ await expect(page.locator('#lobby-access-note')).toContainText('Unlock at least 5 tracks');
  await expect(page.locator('#start-button')).toBeDisabled();
  await page.keyboard.press('Enter');
  await expect(page.locator('body')).toHaveAttribute('data-phase','ready');
@@ -340,4 +340,43 @@ test('paused Free Drive supports orbit, lighting and local PNG export', async ({
   await page.locator('#photo-close').click();
   await expect(page.locator('#photo-screen')).not.toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('lobby summaries reflect race data and show access reasons beside Start', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.route-drivers')).toHaveText('8 DRIVERS', { timeout: ciTimeout(2500) });
+  await expect(page.locator('#mode-rules-summary')).toContainText('7 AI');
+  await expect(page.locator('#lobby-mode-name')).toHaveText('Classic Race');
+  await expect(page.locator('#lobby-track-name')).toHaveText('Coast');
+
+  const tracks = page.locator('#lobby-tracks-toggle');
+  await tracks.focus();
+  await page.keyboard.press('Enter');
+  await expect(tracks).toHaveAttribute('aria-expanded', 'true');
+  const coast = page.locator('[data-track="coast"]');
+  await page.keyboard.press('Tab');
+  await expect(coast).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('[data-track="neon"]')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#lobby-track-name')).toHaveText('Neon Downtown');
+  await expect(page.locator('#start-button')).toBeDisabled();
+  await expect(page.locator('#start-button')).toHaveAccessibleDescription(/Coast/);
+  await expect(page.locator('#lobby-access-note')).toBeInViewport();
+
+  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await expect(page.locator('#lobby-track-name')).toHaveText('Dune Tempest');
+  await expect(page.locator('#start-button')).toBeDisabled();
+  await expect(page.locator('#start-button')).toHaveAccessibleDescription(/Preview only/);
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+
+  await coast.click();
+  const modes = page.locator('#lobby-modes-toggle');
+  await modes.click();
+  await expect(modes).toHaveAttribute('aria-expanded', 'true');
+  await page.locator('button[data-race-mode="time"]').click();
+  await expect(page.locator('#lobby-mode-name')).toHaveText('Time Attack');
+  await expect(page.locator('.route-drivers')).toHaveText('SOLO');
+  await expect(page.locator('#start-button')).toBeEnabled();
 });

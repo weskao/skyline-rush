@@ -15,7 +15,7 @@ export function claimNoticeOnce(downgraded: boolean, storage?: StorageLike): boo
 }
 
 export function setupPerformanceNotice({ downgraded, quality }: { downgraded: boolean; quality: string }) {
-  const notice = document.querySelector<HTMLElement>('#performance-notice')!;
+  const notice = document.querySelector<HTMLDetailsElement>('#performance-notice')!;
   const text = document.querySelector<HTMLElement>('#performance-notice-text')!;
   const title = document.querySelector<HTMLElement>('#performance-notice-title')!;
   const dismiss = document.querySelector<HTMLElement>('#performance-notice-dismiss')!;
@@ -28,7 +28,7 @@ export function setupPerformanceNotice({ downgraded, quality }: { downgraded: bo
     text.textContent = message.body;
     dismiss.textContent = message.dismiss;
   }
-  const hide = (): void => { notice.hidden = true; };
+  const hide = (): void => { notice.open = false; notice.hidden = true; };
   dismiss.addEventListener('click', () => { dismissed = true; hide(); });
   if (claimNoticeOnce(downgraded)) {
     shown = true;

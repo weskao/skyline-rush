@@ -10,9 +10,10 @@ import { wave3DemoExperience } from '#wave3-demo-race';
 import Wave3CurrencyStrip from './Wave3CurrencyStrip.vue';
 import { RACE_TRACKS } from './game.js';
 import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
-import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
+import { SHOWCASE_VIEWS, VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
 import './progress-bars.css';
 import './touch-sprint-buttons.css';
+import './race-lobby.css';
 import { look3d } from './look-gate.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
 import GaragePanel from './GaragePanel.vue';
@@ -112,15 +113,14 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
   </section>
 
   <main>
-    <section class="performance-notice" id="performance-notice" role="status" aria-live="polite" aria-labelledby="performance-notice-title" hidden>
-      <span class="performance-notice-eyebrow" data-i18n="notice.eyebrow">DEVICE / GRAPHICS</span>
-      <strong id="performance-notice-title"></strong>
+    <details class="performance-notice" id="performance-notice" hidden>
+      <summary><span id="performance-notice-title"></span></summary>
       <p id="performance-notice-text"></p>
       <button type="button" id="performance-notice-dismiss">Got it</button>
-    </section>
-    <section class="intro" id="intro" aria-labelledby="intro-title">
+    </details>
+    <section class="intro" id="intro" aria-label="Race setup" data-i18n-aria-label="lobby.title">
       <div class="home-intro-topbar">
-        <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers" data-i18n="intro.drivers">4 DRIVERS</span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals" :aria-label="homeStatusView.medalLabel" :class="{ 'has-medals': homeStatusView.hasMedals }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">{{ homeStatusView.medalCount }}</span></button></div>
+        <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers"></span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals" :aria-label="homeStatusView.medalLabel" :class="{ 'has-medals': homeStatusView.hasMedals }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">{{ homeStatusView.medalCount }}</span></button></div>
         <Wave3CurrencyStrip v-if="GARAGE_RELEASE_MODE === 'trial'" compact
           class="home-resource-strip" :experience="wave3DemoExperience" :locale="homeWalletLocale" />
       </div>
@@ -128,8 +128,11 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <h1 id="intro-title"><span data-i18n="intro.title.1">The road is just </span><br><span data-i18n="intro.title.2">the </span><em data-i18n="intro.title.3">beginning.</em></h1>
       <p class="intro-copy"><span data-i18n="intro.copy.1">Own the highway. Then leave it behind.</span><br><span data-i18n="intro.copy.2">Fire your thrusters and take the race to the sky.</span></p>
       <div class="race-mode-picker" id="race-mode-picker" role="group" aria-label="Game mode" data-i18n-aria-label="mode.heading">
-        <div class="race-mode-heading"><span data-i18n="mode.step.mode">1 · Mode</span><small id="mode-description"></small></div>
-        <div class="race-mode-tabs">
+        <div class="race-mode-heading">
+          <button class="lobby-picker-toggle" id="lobby-modes-toggle" type="button" aria-expanded="false" aria-controls="lobby-mode-options"><span data-i18n="lobby.mode">Mode</span><strong id="lobby-mode-name"></strong></button>
+          <small id="mode-description"></small>
+        </div>
+        <div class="race-mode-tabs" id="lobby-mode-options">
           <button type="button" data-race-mode="classic" aria-pressed="true" data-i18n="mode.classic">Classic Race</button>
           <button type="button" data-race-mode="custom" aria-pressed="false" data-i18n="mode.custom">Custom Race</button>
           <button type="button" data-race-mode="free" aria-pressed="false" data-i18n="mode.free">Free Drive</button>
@@ -144,8 +147,8 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
           <button type="button" data-race-mode="eventlab" aria-pressed="false" data-i18n="mode.eventlab">Event Lab</button>
         </div>
       </div>
-      <p class="setup-step" id="track-step" data-i18n="mode.step.track">2 · Track</p>
-      <div class="track-select" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="id === 'coast'"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
+      <button class="lobby-picker-toggle" id="lobby-tracks-toggle" type="button" aria-expanded="false" aria-controls="lobby-track-options"><span data-i18n="lobby.track">Track</span><strong id="lobby-track-name"></strong><span id="lobby-track-status"></span></button>
+      <div class="track-select" id="lobby-track-options" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="id === 'coast'"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
         <button v-for="(track, id) in UPCOMING_TRACKS" :key="id" type="button" class="upcoming-track-card" :data-upcoming-track="id" aria-pressed="false"><i class="track-preview upcoming-thumb" aria-hidden="true"><img :src="`${BASE_URL}${track.image}`" alt="" loading="lazy" /></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.names.en }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
       </div>
       <p id="track-note" class="track-note"></p>
@@ -218,6 +221,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         </details>
       </section>
       <div class="intro-actions">
+        <p id="lobby-access-note" role="status" hidden></p>
         <div class="intro-primary"><button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
         <button type="button" class="text-button garage-button" id="garage-button"><span data-i18n="nav.garage">Garage</span><span class="garage-new-tag" lang="en" aria-hidden="true">NEW</span></button></div>
         <button class="text-button history-button" data-open-history data-i18n="nav.history">History</button>
@@ -229,7 +233,10 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <span class="showcase-camera-heading" data-i18n="showcase.heading">CAMERA VIEW</span>
         <div class="showcase-camera-actions">
           <button type="button" id="showcase-camera-prev" aria-label="Previous camera view" data-i18n-aria-label="showcase.previous">‹</button>
-          <span id="showcase-camera-name" role="status" aria-live="polite"></span>
+          <select id="showcase-camera-select" data-native-select aria-label="Showcase camera" data-i18n-aria-label="vfx.view">
+            <option v-for="view in SHOWCASE_VIEWS" :key="view" :value="view" :data-i18n="`vfx.view.${view}`">{{ view }}</option>
+          </select>
+          <span class="lobby-visually-hidden" id="showcase-camera-name" role="status" aria-live="polite"></span>
           <button type="button" id="showcase-camera-next" aria-label="Next camera view" data-i18n-aria-label="showcase.next">›</button>
         </div>
         <span class="showcase-camera-dots" id="showcase-camera-dots" aria-hidden="true"></span>
