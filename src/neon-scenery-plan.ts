@@ -17,6 +17,12 @@ export const neonSector = (metres: number): NeonSector => SECTORS.reduce((sector
  *  these two quay lines, 3 m before the first parapet and 3 m after the last. */
 export const NEON_SHORE: readonly [number, number] = [1654, 2989];
 const onWater = (sector: NeonSector): boolean => sector === 'expressway' || sector === 'canal';
+/** Both bridges' parapets run on this line. Their concrete wall is 0.6 m wide, its top 0.55 m up on the expressway
+ *  and 0.25 m on the canal bridge (neon-landmarks.glb): the lamps there stand on it, not on the water outside. */
+const PARAPET = 13.2, PARAPET_TOP: Partial<Record<NeonSector, number>> = { expressway: .55, canal: .25 };
+/** The market kerb lies on the road edge, its lip against the procedural white line (11.5 m, 0.12 m wide) and its
+ *  back under the procedural barrier (classic-road-render.ts), so it reads as one kerb; 2 cm up off the asphalt. */
+const KERB = 11.56 + .5, KERB_Y = .02;
 /** The land beside the road: from just inside the kerbs' outer edge to `reach`, with a quay wall `depth` down. */
 export const NEON_GROUND = { inner: 12.6, reach: 260, y: -.03, depth: 8 } as const;
 /** The procedural tunnel section (tests/neon-parity.test.js) with the portals' 8 m forecourts. */
@@ -30,13 +36,14 @@ interface Piece { kit: NeonKit; /** Meshes `<piece>_lod0` .. `_lod<lods - 1>`. *
   /** Lights the street: redrawn in the wet road's mirror pass (N6: one more draw, so not the unlit pieces). */ mirror: boolean }
 const city = (lods: number, cap: number, mirror = true, near = 1, far = true): Piece => ({ kit: 'city', lods, cap, near, far, mirror });
 const landmark = (cap: number, near = 1, mirror = false): Piece => ({ kit: 'landmarks', lods: 2, cap, near, far: true, mirror });
-/** Street furniture: one draw, LOD 0 for `near` chunks ahead and not drawn past them (N6 draw-call cap). */
-const prop = (cap: number, mirror: boolean, lods = 2, near = 2): Piece => city(lods, cap, mirror, near, false);
+/** Street furniture: one draw (N6 draw-call cap), LOD 0 through the whole window with no far band, so it stands
+ *  out there with the buildings instead of popping in a few hundred metres ahead of the car. */
+const prop = (cap: number, mirror: boolean, lods = 2): Piece => city(lods, cap, mirror, 99, false);
 export const NEON_PIECES = {
   tower_glass_a: city(3, 8), tower_glass_b: city(3, 8), block_retail_a: city(3, 8), block_office_b: city(3, 8),
   shop_market_a: city(3, 26), shop_market_b: city(3, 26), cherry_tree: prop(6, false, 3),
   sign_blade_a: prop(8, true), sign_blade_b: prop(8, true), sign_stack_a: prop(6, true), billboard_a: city(2, 8), billboard_b: city(2, 8),
-  street_lamp: prop(6, true, 2, 3), traffic_light: prop(1, true), railing: prop(24, false), kerb_redwhite: prop(60, false),
+  street_lamp: prop(6, true), traffic_light: prop(1, true), railing: prop(24, false), kerb_redwhite: prop(60, false),
   // The far skyline is always LOD 0: its LOD 1 switch is 600 m out, past the window.
   skyline_tower_a: city(2, 4, false, 99), skyline_tower_b: city(2, 4, false, 99), skyline_tower_c: city(2, 4, false, 99), skyline_spire: city(2, 4, false, 99),
   rail_portal: landmark(2, 2), rail_segment: landmark(11), expressway_pier: landmark(4), expressway_rail: landmark(22, 1, true),
@@ -65,7 +72,7 @@ export function neonChunkPlan(chunk: number, seed?: number): NeonPlacement[] {
   const lapChunk = ((chunk % LAP_CHUNKS) + LAP_CHUNKS) % LAP_CHUNKS, base = lapChunk * NEON_CHUNK_METRES, end = base + NEON_CHUNK_METRES;
   const r = seededRng(seed ?? 0, 'neon-kit-v1:' + (seed === undefined ? lapChunk : chunk)), out: NeonPlacement[] = [];
   const put = (piece: NeonPiece, lap: number, offset: number, yaw: number, y = 0): void => { out.push({ piece, along: lap - base, offset, y, yaw }); };
-  const tile = (piece: NeonPiece, lap: number, offset: number, yaw: number, span: number): void => { out.push({ piece, along: lap - base, offset, y: 0, yaw, span }); };
+  const tile = (piece: NeonPiece, lap: number, offset: number, yaw: number, span: number, y = 0): void => { out.push({ piece, along: lap - base, offset, y, yaw, span }); };
   /** `count` evenly spaced lap positions in this chunk, with the sector each one is in. */
   const row = (count: number, place: (lap: number, sector: NeonSector, index: number) => void): void => {
     for (let i = 0; i < count; i++) { const lap = base + (i + .5) * NEON_CHUNK_METRES / count; place(lap, neonSector(lap), i); }
@@ -96,8 +103,9 @@ export function neonChunkPlan(chunk: number, seed?: number): NeonPlacement[] {
       put(piece, lap, side * (17 + FRONT[piece]), facing);
       if (i % 4 === 1) put('sign_stack_a', lap + 4.6, side * 15.6, facing);
     });
-    row(3, (lap, sector) => { // lamps: on the pavement, or outside the parapet over the water
-      if (!within(lapOf(lap), UNDERPASS)) put('street_lamp', lap, side * (onWater(sector) ? 13.9 : 15.2), facing);
+    row(3, (lap, sector) => { // lamps: on the pavement, or on the bridges' parapet wall
+      const wall = PARAPET_TOP[sector];
+      if (!within(lapOf(lap), UNDERPASS)) put('street_lamp', lap, side * (wall === undefined ? 15.2 : PARAPET), facing, wall ?? 0);
     });
     row(3, (lap, sector, i) => { // trees between the lamps; one per chunk in the narrow market street
       const at = lap + NEON_CHUNK_METRES / 6;
@@ -106,14 +114,14 @@ export function neonChunkPlan(chunk: number, seed?: number): NeonPlacement[] {
       else if (i === 1) put('cherry_tree', at, side * 15, r() * Math.PI * 2);
     });
     row(12, (lap, sector) => { if (!onWater(sector) && !within(lapOf(lap), UNDERPASS)) tile('railing', lap, side * 14.1, facing, NEON_CHUNK_METRES / 12); });
-    row(30, (lap, sector) => { if (sector === 'market') tile('kerb_redwhite', lap, side * 13.2, facing, NEON_CHUNK_METRES / 30); });
+    row(30, (lap, sector) => { if (sector === 'market') tile('kerb_redwhite', lap, side * KERB, facing, NEON_CHUNK_METRES / 30, KERB_Y); });
     row(2, (lap, sector) => { // far skyline: behind the blocks on land, across the water elsewhere; sunk so it meets either
       put(SKYLINE[Math.floor(r() * SKYLINE.length)]!, lap, side * (onWater(sector) ? 320 + r() * 260 : 170 + r() * 70), facing, -6);
     });
     // Landmark rows (assets-src/neon-landmarks/asset-brief.md): local -X faces the road on both sides.
     const rail = side > 0 ? 0 : Math.PI;
-    every(1663, 2330, 12, lap => tile('expressway_rail', lap, side * 13.2, rail, 12));
-    every(2336, 2986, 12, lap => tile('canal_bridge_rail', lap, side * 13.2, rail, 12));
+    every(1663, 2330, 12, lap => tile('expressway_rail', lap, side * PARAPET, rail, 12));
+    every(2336, 2986, 12, lap => tile('canal_bridge_rail', lap, side * PARAPET, rail, 12));
     for (let k = 0; k < 12; k++) { // the quays where the land ends: +X toward the water
       once(NEON_SHORE[0], () => put('canal_bank', NEON_SHORE[0], side * (18 + 12 * k), HALF_PI));
       once(NEON_SHORE[1], () => put('canal_bank', NEON_SHORE[1], side * (18 + 12 * k), -HALF_PI));

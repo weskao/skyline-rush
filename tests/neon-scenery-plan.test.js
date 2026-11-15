@@ -1,8 +1,15 @@
 // Task 5b steps 5 to 7: where the Neon Downtown kits stand, against the two asset briefs' integration contracts.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { NEON_CHUNK_METRES, NEON_LAP, NEON_PIECES, NEON_SHORE, NEON_TILE, neonChunkPlan, neonChunkWindow, neonSector } from '../src/neon-scenery-plan.ts';
+import { readFileSync } from 'node:fs';
+import { Vector3 } from 'three';
+import { NEON_CHUNK_METRES, NEON_GROUND, NEON_LAP, NEON_PIECES, NEON_SHORE, NEON_TILE, neonChunkPlan, neonChunkWindow, neonSector } from '../src/neon-scenery-plan.ts';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
+import { ROAD_LIMIT } from '../src/game.js';
+import { parseGlb } from '../scripts/assets/check-glb.mjs';
+
+const landmarksGlb = await parseGlb(readFileSync(new URL('../public/models/neon-landmarks/neon-landmarks.glb', import.meta.url)));
+landmarksGlb.scene.updateMatrixWorld(true);
 
 const LAP_CHUNKS = 33;
 /** Every placement of one lap, with its lap position. */
@@ -51,12 +58,54 @@ test('no chunk asks for more of a piece than its pool holds, and every piece sta
   assert.deepEqual([...seen].sort(), Object.keys(NEON_PIECES).sort());
 });
 
-test('nothing but the centre-line landmarks stands inside the kerbs, and building fronts keep a pavement', () => {
+test('nothing but the centre-line landmarks and the market kerb stands inside the kerbs, and building fronts keep a pavement', () => {
   for (const seed of [undefined, 5]) for (const p of lap(seed)) {
     if (CENTRE.includes(p.piece)) { assert.equal(p.offset, 0, p.piece); continue; }
+    if (p.piece === 'kerb_redwhite') continue; // the road edge itself: its own test below
     assert.ok(Math.abs(p.offset) >= 13.2, `${p.piece} at ${p.offset} m, lap ${p.lap.toFixed(0)}`); // kerb outer edge 12.675 m
     if (p.piece in BUILDINGS) assert.ok(Math.abs(p.offset) - BUILDINGS[p.piece] >= 16.9, `${p.piece} front at lap ${p.lap.toFixed(0)}`);
     if (p.piece in BUILDINGS) near(p.yaw, -Math.sign(p.offset) * Math.PI / 2, `${p.piece} street side`);
+  }
+});
+
+// The procedural road under the kits (classic-road-render.ts): white edge line 0.12 m wide at 11.5 m, kerb barrier
+// 0.55 m wide and 0.76 m tall at 12.4 m. game.js keeps a car's centre within ROAD_LIMIT and its body within 1 m more.
+const EDGE_LINE_OUTER = 11.5 + .12 / 2, BARRIER = [12.4 - .55 / 2, 12.4 + .55 / 2];
+test('the market kerb is drawn once: on the road edge in front of the barrier, never on the pavement or under a car', () => {
+  const kerbs = of(lap(), 'kerb_redwhite');
+  assert.ok(kerbs.length > 0);
+  for (const p of kerbs) { // the kit kerb is 1 m across (neon-city brief), its lip on the road side
+    const inner = Math.abs(p.offset) - .5, outer = Math.abs(p.offset) + .5, where = `kerb at lap ${p.lap.toFixed(0)}`;
+    assert.ok(inner >= EDGE_LINE_OUTER - 1e-6 && inner >= ROAD_LIMIT + 1, `${where}: clear of the edge line and the car (${inner})`);
+    assert.ok(inner < BARRIER[0], `${where}: shows in front of the barrier, not doubled behind it (${inner})`);
+    assert.ok(outer <= BARRIER[1], `${where}: ends inside the barrier, off the pavement (${outer})`);
+    assert.ok(p.y > 0 && p.y <= .03, `${where}: just above the asphalt, so its 1 cm lip never fights it (${p.y})`);
+  }
+});
+
+const parapets = (() => { // neon-landmarks.glb: the rail's concrete wall is 0.6 m wide; a lamp column (0.44 m) stands on it
+  const top = {};
+  for (const piece of ['expressway_rail', 'canal_bridge_rail']) {
+    const mesh = landmarksGlb.scene.getObjectByName(`${piece}_lod1`), at = mesh.geometry.attributes.position, v = new Vector3();
+    let y = -Infinity;
+    for (let i = 0; i < at.count; i++) { v.fromBufferAttribute(at, i).applyMatrix4(mesh.matrixWorld); if (Math.abs(Math.abs(v.x) - .3) < .02) y = Math.max(y, v.y); }
+    top[piece] = y;
+  }
+  return top;
+})();
+test('no street lamp stands over open water: on land on the pavement, on the expressway and the canal bridge on the parapet wall', () => {
+  const plan = lap(), rails = { expressway: 'expressway_rail', canal: 'canal_bridge_rail' };
+  for (const p of of(plan, 'street_lamp')) {
+    const where = `lamp at lap ${p.lap.toFixed(0)}`, rail = rails[neonSector(p.lap)];
+    if (!rail) {
+      assert.ok(p.lap < NEON_SHORE[0] || p.lap >= NEON_SHORE[1], `${where}: on land`);
+      assert.ok(Math.abs(p.offset) > NEON_GROUND.inner && p.y === 0, `${where}: on the pavement`);
+      continue;
+    }
+    const wall = of(plan, rail).find(r => Math.sign(r.offset) === Math.sign(p.offset) && Math.abs(r.lap - p.lap) <= r.span / 2);
+    assert.ok(wall, `${where}: a parapet beside it`);
+    assert.ok(Math.abs(Math.abs(p.offset) - Math.abs(wall.offset)) <= .3 - .22, `${where}: its column on the wall (${p.offset})`);
+    assert.ok(Math.abs(p.y - parapets[rail]) <= .02, `${where}: stands on the wall top ${parapets[rail]}, not at ${p.y}`);
   }
 });
 

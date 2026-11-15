@@ -6,6 +6,8 @@ import { createNeonScenery } from '../src/neon-scenery.ts';
 import { NEON_CHUNK_METRES, NEON_GROUND, NEON_PIECES, neonChunkPlan, neonChunkWindow } from '../src/neon-scenery-plan.ts';
 import { classicRoadRoute } from '../src/classic-road-routes.ts';
 import { REFLECT_LAYER } from '../src/wet-reflection.ts';
+import { COAST_ENV_VARIANTS } from '../src/coast-lighting.ts';
+import { trackLook } from '../src/track-look.ts';
 
 const route = classicRoadRoute('neon');
 const piecesOf = kit => Object.keys(NEON_PIECES).filter(piece => NEON_PIECES[piece].kit === kit);
@@ -147,17 +149,44 @@ test('step 4: the lit pieces around the car are on the wet mirror layer; far ban
   kit.dispose();
 });
 
-test('N6: street furniture is one draw, LOD 0 near the car and nothing beyond; buildings and landmarks keep a far band', () => {
+const FURNITURE = ['street_lamp', 'traffic_light', 'railing', 'kerb_redwhite', 'cherry_tree', 'sign_blade_a', 'sign_blade_b', 'sign_stack_a'];
+test('N6: street furniture is one draw, LOD 0 and no far pool; buildings and landmarks keep a far band', () => {
   const { kit, pool } = rig();
-  for (const piece of ['street_lamp', 'traffic_light', 'railing', 'kerb_redwhite', 'cherry_tree', 'sign_blade_a', 'sign_blade_b', 'sign_stack_a']) {
+  for (const piece of FURNITURE) {
     assert.equal(NEON_PIECES[piece].far, false, piece);
     assert.equal(pool(`${piece}:far`), undefined, `${piece} has no far pool`);
   }
   for (const piece of ['tower_glass_a', 'block_office_b', 'shop_market_b', 'billboard_a', 'expressway_rail', 'rail_segment', 'canal_bank']) assert.ok(pool(`${piece}:far`), `${piece} far pool`);
-  assert.ok(NEON_PIECES.street_lamp.near >= 3, 'the lamp row still recedes down the street');
-  kit.update(route, 100, 'high'); // boulevard: lamps in every chunk of the window
-  const lamps = pool('street_lamp:near'), drawn = Array.from({ length: 2 + NEON_PIECES.street_lamp.near }, (_, k) => neonChunkPlan(k - 1).filter(p => p.piece === 'street_lamp').length).reduce((a, b) => a + b, 0);
-  assert.equal(lamps.count, drawn, 'only the chunks of its near band');
+  kit.dispose();
+});
+
+// Fault (2026-11-15): furniture drew only 2 chunks ahead (lamps 3), so it popped in 240 to 480 m out, well inside the
+// rain fog's view, while the buildings behind it already stood there. It now appears with them, at the window's end.
+test('no street furniture pops in: every piece in the chunk window is drawn, as far ahead as the buildings', () => {
+  const { kit, pool } = rig();
+  for (const quality of ['high', 'medium']) for (let distance = 0; distance < 4000; distance += 97) {
+    kit.update(route, distance, quality);
+    const window = neonChunkWindow(distance, quality), want = {};
+    for (let chunk = window.first; chunk < window.first + window.count; chunk++) for (const p of neonChunkPlan(chunk)) want[p.piece] = (want[p.piece] ?? 0) + 1;
+    for (const piece of FURNITURE) assert.equal(pool(`${piece}:near`).count, want[piece] ?? 0, `${piece} at ${distance} m on ${quality}`);
+  }
+  kit.dispose();
+});
+
+// The race bloom (nightRain, the Neon env) and the two kits' lit texels at emissiveIntensity 1, linear luminance:
+// city from its brief's table (strength 6: brightest blade-sign texel 5.98, cyan tube 4.0), landmarks from the
+// lamp colours in its brief (cyan, its brightest lamp, sRGB 0.10, 0.95, 1.00). Fault (2026-11-15): city 2.4 put the
+// sign and storefront peaks at 2.7x the bloom threshold, so the street fronts and the centre sightline washed white.
+const linear = c => c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
+const CYAN = .2126 * linear(.10) + .7152 * linear(.95) + .0722 * linear(1);
+const LIT = { city: { neon: 4 / 6, peak: 5.98 / 6 }, landmarks: { neon: CYAN, peak: CYAN } };
+test('kit emissive: the neon tubes reach the bloom and the brightest texel stays within twice its threshold', () => {
+  const { kit, city, landmarks } = rig(), { threshold } = COAST_ENV_VARIANTS[trackLook('neon').env.track].bloom;
+  for (const [name, source] of [['city', city], ['landmarks', landmarks]]) {
+    const intensity = source.getObjectByName(`${piecesOf(name)[0]}_lod0`).material.emissiveIntensity;
+    assert.ok(LIT[name].neon * intensity >= threshold, `${name} ${intensity}: its neon glows (${(LIT[name].neon * intensity).toFixed(2)} >= ${threshold})`);
+    assert.ok(LIT[name].peak * intensity <= 2 * threshold, `${name} ${intensity}: its brightest texel ${(LIT[name].peak * intensity).toFixed(2)} stays within ${2 * threshold}`);
+  }
   kit.dispose();
 });
 
