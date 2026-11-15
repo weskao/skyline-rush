@@ -28,8 +28,11 @@ const noNaN = async ({ gameplayPage: page }) => {
   await expectClean(page, 'rain spray and wet road');
 };
 
-test('no NaN pixel reaches the bloom through the airflow showcase, nitro and its fade-out', noNaN);
-test.describe('?look=3d', () => {
-  test.use({ gameplaySearch: '?look=3d' }); // the Phase 3 look (src/look-gate.ts): HDRI grade, wet road, spray, plume tail
-  test('no NaN pixel reaches the bloom with the Phase 3 look', noNaN);
-});
+for (const quality of ['low', 'high']) {
+  test.describe(`${quality} quality`, () => {
+    test.beforeEach(async ({ page }) => {
+      await page.addInitScript(quality => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality })), quality);
+    });
+    test('no NaN pixel reaches the bloom through airflow, nitro and rain', noNaN);
+  });
+}

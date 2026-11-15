@@ -12,9 +12,10 @@ const memoryStorage = (initial = {}) => {
 };
 const OWNED = ['pearl', 'crimson', 'aurora', 'cobalt'];
 
-test('two cars: the procedural Roadster and the Crimson GT model from the manifest', () => {
+test('two cars: the Roadster and Crimson GT GLBs from the manifest', () => {
   assert.deepEqual(Object.keys(CARS), ['roadster', 'crimson-gt']);
-  assert.equal(CARS.roadster.model, null, 'the Roadster stays procedural');
+  assert.equal(CARS.roadster.model, 'roadster2');
+  assert.ok(MODEL_MANIFEST[CARS.roadster.model]);
   assert.ok(MODEL_MANIFEST[CARS['crimson-gt'].model], 'the GT model is a manifest entry');
   assert.equal(dressesRaceCar(CARS['crimson-gt'].model), true, 'the GT dresses the Home showcase and the race car');
   assert.ok(isCar('crimson-gt') && !isCar('toString') && !isCar(undefined));
@@ -34,7 +35,7 @@ test('the equipped car is saved and read back', () => {
   assert.equal(equippedCarModel(), 'crimson-gt');
   assert.equal(loadCar(storage), 'crimson-gt');
   equipCar('roadster', storage);
-  assert.equal(equippedCarModel(), null);
+  assert.equal(equippedCarModel(), 'roadster2');
   assert.equal(loadCar(storage), 'roadster');
 });
 

@@ -17,10 +17,10 @@ test('Neon traffic costs a fixed number of draw calls at any car count', async (
   expect(await place(page, 0, POOL), 'no car in view draws nothing').toBe(none);
 });
 
-test.describe('?look=3d wet road', () => {
+test.describe('High quality wet road', () => {
   test('the mirror pass draws traffic lamps instanced too', async ({ gameplayPage: page, gameplayURL }) => {
     test.setTimeout(ciTimeout(120000));
-    await pausedRace(page, gameplayURL, 'coast', '?look=3d');
+    await pausedRace(page, gameplayURL, 'coast');
     await expect.poll(() => page.locator('#world').getAttribute('data-coast-road'), { timeout: ciTimeout(60000) }).not.toBe('procedural');
     await page.evaluate(() => { const race = window.gameplay.race; race.mode = 'free'; race.session = { ...race.session, presentation: { visualPreset: 'rain' } }; });
     await page.waitForTimeout(ciTimeout(1500)); // the wet look fades in

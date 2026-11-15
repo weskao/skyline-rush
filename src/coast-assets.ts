@@ -1,6 +1,6 @@
 // Task 5 runtime assets for Coast on Medium+: the close-scenery GLB (Poly Haven scans), the boats on the open water
 // (coast-boats.ts), the KTX2 asphalt road, the HDRI sky dome (coast-sky.ts) and the water that mirrors it (coast-sea.ts).
-// Low and every other track never fetch anything. New materials join the scene only outside 'racing': the world's
+// Low and tracks without a look entry never fetch track assets. New materials join the scene only outside 'racing': the world's
 // warmupShaders pass must build their programs before GO (performance-review.md). Weather is a uniform, never a swap.
 import type { BufferGeometry, Camera, Material, Matrix4, Mesh, Object3D, Scene, Texture, Vector3 } from 'three';
 import type { ShoreSink } from './coast-scenery-glb.ts';
@@ -13,7 +13,6 @@ import type { VfxQuality } from './vfx-settings.ts';
 import { createKtx2Provider } from './garage-model.ts';
 import { coastRoadFiles, coastRoadTier, coastWetness, createCoastRoadMaterial, type CoastRoad, type ReflectionUniforms } from './coast-road-material.ts';
 import { createWetReflection, wetReflectionStrength } from './wet-reflection.ts';
-import { look3d } from './look-gate.ts';
 import { withGreenery } from './coast-greenery.ts';
 import { trackLook, type TrackLook } from './track-look.ts';
 import type { ClassicRoad } from './classic-road-routes.ts';
@@ -214,15 +213,16 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
 interface Ktx2TextureLoader { loadAsync(url: string): Promise<Texture> }
 interface WorldRenderer { capabilities: { getMaxAnisotropy(): number; maxTextureSize: number } }
 
-/** World wiring: one model cache and KTX2 transcoder for the Coast assets, imported only when first needed.
- *  null without `?look=3d` (look-gate.ts): no loader, mirror hook or fetch, the develop road and scenery. */
+/** World wiring: the track model cache is loaded on demand and shares the renderer's KTX2 transcoder. */
 export function createWorldCoastAssets(renderer: WorldRenderer,
   targets: { scene: Object3D; scenery: Scenery & { group: { position: Vector3 } }; road: Road['mesh'] } & Pick<Parameters<typeof createCoastSky>[0], 'sky' | 'sun'> & Pick<Parameters<typeof createCoastSea>[0], 'sea' | 'seaLines'> & Pick<Deps, 'mountains' | 'city' | 'towers' | 'replaced'>,
   dataset: Deps['dataset'], baseUrl = import.meta.env.BASE_URL) {
-  if (!look3d()) return null;
   const loadKtx2 = createKtx2Provider(renderer, baseUrl);
-  // shortcut: `?model=` Garage QA builds its own cache and KTX2 loader; share one if both ever ship by default.
-  const real = import('./asset-model-loader.ts').then(({ createModelCache }) => createModelCache({ baseUrl, loadKtx2 }));
+  let models: Promise<ModelCache> | undefined;
+  const loadModel: ModelCache['load'] = async (id, options) => {
+    models ??= import('./asset-model-loader.ts').then(({ createModelCache }) => createModelCache({ baseUrl, loadKtx2 }));
+    return (await models).load(id, options);
+  };
   const loadTexture = async (url: string) => ((await loadKtx2()) as unknown as Ktx2TextureLoader).loadAsync(modelUrl(url, baseUrl));
   const road: Road = {
     mesh: targets.road,
@@ -231,5 +231,5 @@ export function createWorldCoastAssets(renderer: WorldRenderer,
   };
   const sky = createCoastSky({ sky: targets.sky, sun: targets.sun, load: loadTexture, maxTextureSize: renderer.capabilities.maxTextureSize, dataset });
   const sea = createCoastSea({ sea: targets.sea, seaLines: targets.seaLines, dome: sky.dome, origin: targets.scenery.group.position, load: loadTexture, dataset });
-  return createCoastAssets({ scenery: targets.scenery, boatClock: targets.sea.material.uniforms.time!, road, sky, sea, mountains: targets.mountains, city: targets.city, towers: targets.towers, neon: createNeonScenery(targets.scene), replaced: targets.replaced, dataset, reflection: createWetReflection(), cache: withGreenery({ load: async (id, options) => (await real).load(id, options) }) });
+  return createCoastAssets({ scenery: targets.scenery, boatClock: targets.sea.material.uniforms.time!, road, sky, sea, mountains: targets.mountains, city: targets.city, towers: targets.towers, neon: createNeonScenery(targets.scene), replaced: targets.replaced, dataset, reflection: createWetReflection(), cache: withGreenery({ load: loadModel }) });
 }

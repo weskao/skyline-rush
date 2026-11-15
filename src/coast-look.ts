@@ -28,8 +28,10 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
   const grade = lens.uniforms;
   let key = '';
   let applied: CoastEnvName | null = null, palette: { color: Color; intensity: number; position?: Vector3 } | null = null; // the track's own sun
-  let paletteTrack = ''; // the track `palette` was saved on
+  let paletteTrack = ''; // the track the procedural lighting was saved on
+  let baseExposure = renderer.toneMappingExposure;
   function applyRoom(trackId: string) {
+    if (applied && trackId === paletteTrack && renderer.toneMappingExposure === COAST_ENV_VARIANTS[applied].exposure) renderer.toneMappingExposure = baseExposure;
     scene.environment = room; scene.environmentIntensity = roomIntensity;
     grade.saturation.value = grade.contrast.value = 1; grade.tint.value.setRGB(1, 1, 1);
     if (scene.environmentRotation) scene.environmentRotation.y = 0;
@@ -42,6 +44,7 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
   }
   function applyVariant(name: CoastEnvName, texture: Texture, trackId: string) {
     if (trackId !== paletteTrack) { palette = null; paletteTrack = trackId; }
+    if (!applied || renderer.toneMappingExposure !== COAST_ENV_VARIANTS[applied].exposure) baseExposure = renderer.toneMappingExposure;
     const v = COAST_ENV_VARIANTS[name];
     scene.environment = texture; scene.environmentIntensity = v.intensity; renderer.toneMappingExposure = v.exposure;
     grade.saturation.value = v.grade.saturation; grade.contrast.value = v.grade.contrast; grade.tint.value.setRGB(...v.grade.tint);

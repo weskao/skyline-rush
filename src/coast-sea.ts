@@ -1,4 +1,4 @@
-// Coast water (full-scene step 2): under `?look=3d` on Medium+ the classic sea plane draws this surface instead of its
+// Coast water (full-scene step 2): on Medium+ the classic sea plane draws this surface instead of its
 // two-sine shader. Three scrolling lookups of one baked ocean normal/foam map (coast-sea-manifest.ts) tilt the surface;
 // it mirrors the sky dome texture that is on screen (coast-sky.ts) by Fresnel, glitters under that sky's sun, fades into
 // the dome's own horizon texels, and foams where the placed rocks, cliffs and arch stand in it (the shore mask the

@@ -4,9 +4,7 @@ import { Color, Euler, Vector3 } from 'three';
 import { createCoastLook } from '../src/coast-look.ts';
 import { COAST_ENV_VARIANTS } from '../src/coast-lighting.ts';
 import { COAST_SUN_AZIMUTH, coastSkyYaw, coastSunDirection } from '../src/coast-sky.ts';
-import { setLook3d } from '../src/look-gate.ts';
 
-setLook3d(true); // the Phase 3 look (`?look=3d`); tests/look-gate.test.js covers the develop look without it
 
 function rig() {
   const room = { id: 'room' }, textures = {}, loads = [];
@@ -129,4 +127,13 @@ test('the key light and the environment turn with the sky dome to the HDRI sun; 
   sun.position.set(-400, 230, 260); // world.js track block: a World Tour sun, set before coastLook.update
   look.update('coastal', 'track', 'high');
   assert.deepEqual([sun.position.toArray(), scene.environmentRotation.y], [[-400, 230, 260], 0], 'another track keeps its own light; no room is left turned');
+});
+
+test('switching from HDRI to Low on the same track restores the procedural exposure', async () => {
+  const { renderer, look } = rig();
+  look.update('neon', 'track', 'high');
+  await settle();
+  assert.notEqual(renderer.toneMappingExposure, 1.12);
+  look.update('neon', 'track', 'low');
+  assert.equal(renderer.toneMappingExposure, 1.12);
 });

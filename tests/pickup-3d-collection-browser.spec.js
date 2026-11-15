@@ -4,7 +4,6 @@ import { ciTimeout } from './helpers/ci.js';
 
 const TIERS = ['cell', 'can', 'tank', 'overcharge'];
 const expectedModel = process.env.PICKUP_TEST_MODEL;
-if (expectedModel === 'roadster2') test.use({ gameplaySearch: '?model=roadster' });
 async function startRace(page) {
   await page.locator('#start-button').click();
   if (await page.locator('#tutorial-exit').isVisible()) await page.locator('#tutorial-exit').click();

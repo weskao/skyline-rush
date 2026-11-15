@@ -1,4 +1,4 @@
-// Task 5b step 3, runtime half: Neon Downtown under `?look=3d` on Medium+ is lit by the two night HDRIs that
+// Task 5b step 3, runtime half: Neon Downtown on Medium+ is lit by the two night HDRIs that
 // assets-src/neon-sky/build.py ships (N2: night and rain night only). The lighting table, the dome manifest and the
 // track entry must agree with that build's manifest; Low and pages without the gate stay as tests/track-look.test.js
 // pins them.
@@ -11,7 +11,6 @@ import { COAST_ENV_VARIANTS, coastEnvPlan } from '../src/coast-lighting.ts';
 import { createCoastLook } from '../src/coast-look.ts';
 import { coastSkyFile, coastSkyYaw, coastSunDirection } from '../src/coast-sky.ts';
 import { COAST_SKY_MANIFEST } from '../src/coast-sky-manifest.ts';
-import { setLook3d } from '../src/look-gate.ts';
 
 const SHIPPED = JSON.parse(readFileSync(new URL('../assets-src/neon-sky/manifest.json', import.meta.url), 'utf8')).environments;
 const VARIANTS = [['night', SHIPPED.night], ['nightRain', SHIPPED.rain]];
@@ -19,8 +18,6 @@ const SKYLINE_LONGITUDE = 30; // degrees in the HDRI frame: the far Pudong skyli
 const LUMA = [0.2126, 0.7152, 0.0722], HORIZON_SHARE = 0.4; // 0.4: the canal reads as night; 0.6 still hazed it (2026-11-15 captures)
 
 test('Neon Medium+ plans the rain-night HDRI on its rainy default and in rain, the night HDRI at night, nothing else', t => {
-  t.after(() => setLook3d(false));
-  setLook3d(true);
   for (const quality of ['medium', 'high']) {
     for (const preset of ['track', 'rain']) assert.deepEqual(coastEnvPlan('neon', preset, quality), { kind: 'hdri', variant: 'nightRain' }, `${preset} ${quality}`);
     assert.deepEqual(coastEnvPlan('neon', 'night', quality), { kind: 'hdri', variant: 'night' }, quality);
@@ -112,8 +109,6 @@ test('rain night is the dimmer of the two, and both bloom their lights harder th
 // Trap (2026-11-15): the page opens on Coast, so Coast's day HDRI is up when Neon is selected. While Neon's own HDRI
 // was loading, and for good when it failed, the night city stayed lit by Coast's daylight (environmentIntensity 0.9).
 test('another track\'s HDRI never lights Neon: RoomEnvironment until its own lands, and for good when it fails', async t => {
-  t.after(() => setLook3d(false));
-  setLook3d(true);
   const room = { id: 'room' }, textures = { day: { id: 'day' } }, releases = [];
   const envs = { get: name => textures[name], preload: () => new Promise(resolve => releases.push(resolve)) };
   const scene = { environment: room, environmentIntensity: 0.42 };
@@ -133,8 +128,6 @@ test('another track\'s HDRI never lights Neon: RoomEnvironment until its own lan
 });
 
 test('the bloom of a Neon race is its variant\'s once the HDRI is up, and world.js asks the look for it on every track', async t => {
-  t.after(() => setLook3d(false));
-  setLook3d(true);
   const sun = { color: new Color('#112233'), intensity: 1, position: new Vector3(0, 10, 0) };
   const scene = { environment: null, environmentIntensity: 1, environmentRotation: { y: 0 } };
   const look = createCoastLook({
@@ -161,8 +154,6 @@ test('the bloom of a Neon race is its variant\'s once the HDRI is up, and world.
 // light, no bloom: 81 vs 47 of 255) and bloomed white. Under a city panorama the cars reflect that night sky instead,
 // turned with it; every other look keeps the studio. A GPU copy into the same map: no car program recompiles.
 test('under the Neon HDRI the cars reflect its night sky; the studio room comes back everywhere else', async t => {
-  t.after(() => setLook3d(false));
-  setLook3d(true);
   const painted = [];
   const look = createCoastLook({
     scene: { environment: null, environmentIntensity: 1 }, renderer: { toneMappingExposure: 1 }, room: null, roomIntensity: 0.42,

@@ -3,9 +3,8 @@ import { test, programs } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expectClean, watch } from './helpers/black-frames.js';
 
-// Task 5b step 8: what must hold on Neon Downtown whatever its `?look=3d` art becomes. Written before any Neon asset
+// Task 5b step 8: what must hold on Neon Downtown on Medium and above. Written before any Neon asset
 // landed, so each test passes on the procedural scene and keeps guarding once the kit, road and HDRIs arrive.
-test.use({ gameplaySearch: '?look=3d' });
 const racing = page => expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
 // N6: the same caps as Coast (tests/coast-scenery-browser.spec.js).
 const DRAW_CALL_CAP = { home: 540, race: 380 };
@@ -45,7 +44,7 @@ const DEVELOP_LOOK = { city: true, towers: [true, true, true], lit: true, sea: t
 const kits = page => page.evaluate(() => { const { neonCity, neonLandmarks } = document.querySelector('#world').dataset; return `${neonCity} ${neonLandmarks}`; });
 const cityLook = async page => { const { city, lit, kit } = await procedural(page); return { skyline: city, towers: lit, kit: kit > 0 }; };
 // This document's own fetches of look assets: any HDRI or KTX2 file, any Coast or Neon model. Only meaningful where
-// the page never opens the gated look at all (Low, or no gate): on High it opens on Coast and loads Coast's set.
+// the page never opens the detailed look (Low): on High it opens on Coast and loads Coast's set.
 const lookAssets = page => page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /\.ktx2|environments\/.*\.hdr|models\/(coast|neon)-/.test(n)));
 
 /** Coast scan pieces still drawn: the page opens on Coast, so its GLBs are loaded and must be hidden on Neon. */
@@ -224,19 +223,17 @@ test('Neon High stays under the draw-call cap in every sector of a race', async 
   for (const [sector, peak] of Object.entries(peaks)) expect(peak, sector).toBeLessThanOrEqual(DRAW_CALL_CAP.race);
 });
 
-test('Neon Low keeps the procedural scene under ?look=3d: sea, towers, skyline and no look asset fetched', async ({ gameplayPage: page }) => {
+test('Neon Low keeps the procedural scene: sea, towers, skyline and no look asset fetched', async ({ gameplayPage: page }) => {
   await neon(page, 'low');
   await page.waitForTimeout(ciTimeout(1500));
   expect(await procedural(page)).toEqual(DEVELOP_LOOK);
   expect(await lookAssets(page)).toEqual([]);
 });
 
-test.describe('without ?look=3d', () => {
-  test.use({ gameplaySearch: '' });
-  test('Neon High keeps the develop look: sea, towers, skyline, RoomEnvironment and no look asset fetched', async ({ gameplayPage: page }) => {
-    await neon(page, 'high');
-    await page.waitForTimeout(ciTimeout(1500));
-    expect(await procedural(page)).toEqual(DEVELOP_LOOK);
-    expect(await lookAssets(page)).toEqual([]);
-  });
+test('Neon High loads the detailed city with the legacy URL as on a plain link', async ({ gameplayPage: page, gameplayURL }) => {
+  test.setTimeout(ciTimeout(90000));
+  await page.goto(`${gameplayURL}?3d=1&look=3d&model=roadster`);
+  await neon(page, 'high');
+  await expect.poll(() => kits(page), { timeout: ciTimeout(60000) }).toBe('attached attached');
+  await expect.poll(() => cityLook(page)).toEqual({ skyline: false, towers: false, kit: true });
 });

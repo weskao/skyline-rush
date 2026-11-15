@@ -23,7 +23,7 @@ test(`${LABEL}: Coast frame cost per quality tier`, async ({ gameplayPage: page,
   const errors = [], rows = [];
   page.on('pageerror', error => errors.push(error.message));
   for (const [tier, vfx] of Object.entries(TIERS)) {
-    await openTier(page, `${gameplayURL}?look=3d`, vfx, ciTimeout);
+    await openTier(page, gameplayURL, vfx, ciTimeout);
     if (tier !== 'low') await expect.poll(() => page.locator('#world').getAttribute('data-coast-road'), { timeout: ciTimeout(60000) }).not.toBe('procedural');
     await page.locator('#start-button').click();
     await page.waitForFunction(() => document.body.dataset.phase === 'racing', null, { timeout: ciTimeout(30000) });

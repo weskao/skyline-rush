@@ -30,7 +30,7 @@ export const test = base.extend({
       await use(server.resolvedUrls.local[0]);
     } finally { await server.close(); }
   }, { scope: 'worker' }],
-  // `?look=3d` (src/look-gate.ts): `test.use({ gameplaySearch: '?look=3d' })` opens the Phase 3 look; '' is the develop look.
+  // Optional URL search for flows that use query parameters.
   gameplaySearch: ['', { option: true }],
   gameplayPage: async ({ page, gameplayURL, gameplaySearch }, use) => {
     await captureHooks(page);
@@ -41,17 +41,16 @@ export const test = base.extend({
   },
 });
 
-// HERO_CAR=crimson-gt reruns a `?model=roadster` matrix (Task 4b tracks, Task 4c equipment) with that car equipped:
-// the flag dresses only a car without its own model, so an equipped GT keeps its GLB through the same flows.
+// HERO_CAR=crimson-gt reruns the track and equipment matrices with that car equipped.
 export const seedHeroCar = async page => {
   if (process.env.HERO_CAR) await page.addInitScript(car => localStorage.setItem('skyline-rush-car', JSON.stringify(car)), process.env.HERO_CAR);
 };
-/** MODEL_MANIFEST id those matrices must see on the car: the equipped car's own GLB, else `?model=roadster`'s. */
-export const HERO_MODEL = (process.env.HERO_CAR && CARS[process.env.HERO_CAR].model) || 'roadster2';
+/** MODEL_MANIFEST id those matrices must see on the car: the equipped car's GLB. */
+export const HERO_MODEL = (process.env.HERO_CAR && CARS[process.env.HERO_CAR]?.model) || CARS.roadster.model;
 /** MODEL_MANIFEST id of the GLB dressing the main scene's player car, or null while it is procedural. */
 export const dressedAs = page => page.evaluate(() => window.gameScene.player.children.find(part => part.userData.garageModel)?.userData.garageModel ?? null);
 
-// `?model=roadster` (Task 4b): GLB roots in the main Home/race scene (Coming Soon and Garage stages have their own scenes),
+// GLB roots in the main Home/race scene (Coming Soon and Garage stages have their own scenes),
 // compiled shader programs, and the hosts currently dressed (`#world[data-garage-model-instances]`).
 export const glbRoots = page => page.evaluate(() => { let n = 0; window.gameScene.scene.traverse(o => { if (o.userData.garageModel) n++; }); return n; });
 export const programs = page => page.evaluate(() => window.gameScene.renderer.info.programs.length);

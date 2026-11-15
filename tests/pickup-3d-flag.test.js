@@ -8,10 +8,7 @@ import { createPickupGeometries, createPickupMaterials, PICKUP_SIZES } from '../
 const file = path => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
 const exists = path => existsSync(new URL('../' + path, import.meta.url));
 
-test('the 3D pickups need no flag: make 3d=1 only keeps the roadster preview redirect', () => {
-  const makefile = file('Makefile');
-  assert.match(makefile, /ifeq\s*\(\s*\$\(3d\)\s*,\s*1\s*\)/);
-  assert.match(makefile, /export DEV_3D\s*:?=\s*1/);
+test('the 3D pickups need no flag', () => {
   assert.equal(exists('src/pickup-3d-config.js'), false, 'the build-time switch module is gone');
   for (const path of ['Makefile', '.github/workflows/ci.yml', 'src/effects.js', 'src/world.js', 'src/Pickup3DPreview.vue',
     'src/CollectiblesGuide.vue', 'src/pickup-markers.js', 'src/pickup-preview-stage.ts'])

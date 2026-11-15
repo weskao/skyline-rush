@@ -1,4 +1,4 @@
-// Coast seagulls (`?look=3d`, Medium+): a few flocks circling over the sea and the cliffs, never over the road. One
+// Coast seagulls (Medium+): a few flocks circling over the sea and the cliffs, never over the road. One
 // InstancedMesh for every bird in view; each bird is an orbit (centre in its instance matrix; radius, phase, angular
 // speed and size in one instanced vec4) that the vertex shader flies from a single time uniform: the circle, the bank
 // into the turn and the wing beats cost no CPU per frame. Buffers are rewritten only when the slot window moves.

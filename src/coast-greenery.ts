@@ -1,4 +1,4 @@
-// Cliff greenery for the `?look=3d` Coast (Medium+): grass blended into the up-facing surfaces of the scan cliffs and
+// Cliff greenery for Coast (Medium+): grass blended into the up-facing surfaces of the scan cliffs and
 // rocks, and shrub impostor cards (coast-greenery.glb, baked from Poly Haven fynbos scans) instanced on the cliff tops.
 // Self-contained: it reads the scan pieces the model layer (coast-scenery-glb.ts) already placed and adds one
 // instanced draw per shrub variant. Everything joins the scene with the scans, before GO, so the warmup builds it.
