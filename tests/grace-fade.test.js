@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { createGraceFade, graceOpacity, GRACE_PULSE_HZ } from '../src/grace-fade.ts';
+import { createGraceFade, graceOpacity } from '../src/grace-fade.ts';
 import { CAR_STYLES, makeCar } from '../src/car-model.js';
 
 const materialsOf = root => {
@@ -11,21 +11,12 @@ const materialsOf = root => {
   return [...found];
 };
 
-test('the car is solid outside the post-hit grace and translucent inside it', () => {
-  assert.equal(graceOpacity(0, 3, false), 1);
-  assert.equal(graceOpacity(0, 3, true), 1);
-  for (let t = 0; t < 1; t += 0.01) {
-    const o = graceOpacity(1.2, t, false);
-    assert.ok(o >= 0.3 && o <= 0.7, `pulse stays clearly see-through, got ${o} at ${t}`);
-  }
-  assert.equal(graceOpacity(1.2, 0.13, true), graceOpacity(1.2, 0.4, true), 'reduced motion: a steady tint, no pulse');
-  assert.ok(graceOpacity(1.2, 0.4, true) < 1);
-});
-
-test('the pulse never flashes faster than 3 Hz and eases back to solid as the grace ends', () => {
-  assert.ok(GRACE_PULSE_HZ <= 3, 'WCAG 2.3.1 general flash threshold');
-  assert.ok(graceOpacity(0.001, 0.5, false) > 0.99, 'no pop to solid on the last frame');
-  assert.ok(graceOpacity(0.001, 0.5, true) > 0.99);
+test('recovery leaves the car solid while Ghost Phase uses a steady translucent body', () => {
+  assert.equal(graceOpacity({ cooldown: 1.5, effects: { ghost: 0 } }, false), 1);
+  const steady = graceOpacity({ cooldown: 0, effects: { ghost: 2 } }, false);
+  assert.ok(steady > 0.3 && steady < 0.8);
+  assert.equal(graceOpacity({ cooldown: 1, effects: { ghost: 1 } }, true), steady);
+  assert.ok(graceOpacity({ effects: { ghost: 0.001 } }, false) > 0.99);
 });
 
 test('the fade scales the car body opacity and restores every material exactly', () => {
@@ -36,10 +27,11 @@ test('the fade scales the car body opacity and restores every material exactly',
   car.add(new THREE.Mesh(new THREE.BoxGeometry(), vfx)); // aero VFX attach later and keep their own opacity
   fade(0.4);
   for (const [m, base] of before) {
-    if (m instanceof THREE.ShaderMaterial) continue;
+    if (m instanceof THREE.ShaderMaterial || m === car.getObjectByName('Rear LED core').material) continue;
     assert.ok(m.transparent, `${m.type} blends`);
     assert.ok(Math.abs(m.opacity - base * 0.4) < 1e-9, `${m.type} scaled from ${base}`);
   }
+  assert.equal(car.getObjectByName('Rear LED core').material.opacity, 1);
   assert.equal(vfx.opacity, 0.6);
   fade(1);
   for (const [m, base] of before) assert.equal(m.opacity, base);
@@ -51,8 +43,8 @@ test('materials blend from creation, so the first hit compiles no new shader mid
   for (const m of materialsOf(car)) assert.ok(m.transparent, `${m.type} is transparent before any hit`);
 });
 
-test('the race renderer drives the player fade from the grace cooldown', () => {
+test('the race renderer drives the player phase effect from live race state', () => {
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
-  assert.match(world, /createGraceFade\(player\)/);
-  assert.match(world, /graceOpacity\(car\.cooldown, race\.elapsed, reducedMotion\)/);
+  assert.match(world, /createGhostPhase\(player\)/);
+  assert.match(world, /ghostPhase\.update\(car, [^;]+reducedMotion\)/);
 });

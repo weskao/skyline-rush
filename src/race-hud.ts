@@ -7,6 +7,7 @@ import { racePosition, sprintGaps, gapChargeWarning, MAX_SPEED, driftTier } from
 import { ghostAt, type GhostRun } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
 import { createRoadSafeFeedback } from './race-feedback-placement.ts';
+import { createImpactHud } from './impact-hud.ts';
 import type { ControlPreferences } from './control-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
 import { createModePanels, type ModePanelOptions } from './race-hud-modes.ts';
@@ -76,6 +77,7 @@ export function createRaceHud(options: HudOptions) {
   nitroHud.querySelector('img')?.addEventListener('error', () => nitroHud.querySelector('img')?.remove(), { once: true });
   // Include the dynamically inserted NITRO status in the initial collision geometry.
   const feedbackPlacement = createRoadSafeFeedback(eventCallout, ui['driving-message']!, $<HTMLElement>('#impact-report'), $<HTMLElement>('.mode-indicator'));
+  const updateImpact = createImpactHud(ui['impact-report']!, feedbackPlacement.refresh);
   const nitroSegments = [...nitroHud.querySelectorAll<HTMLElement>('.nitro-segment')];
   const nitroStatus = $('#nitro-status');
   const nitroMeter = $('#nitro-meter');
@@ -344,13 +346,7 @@ export function createRaceHud(options: HudOptions) {
     setHudText(ui['climb-rate']!, `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`);
     ui['height-indicator']!.style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
     updateBoostAndFeedback(race, car, nitroActive, flying, calm);
-    const impactWasHidden = ui['impact-report']!.hidden;
-    setHudHidden(ui['impact-report']!, race.phase !== 'racing' || impactAge > 1.1);
-    if (!ui['impact-report']!.hidden) {
-      setHudText(ui['impact-title']!, L[car.impact.kind === 'barrier' ? 'hud.barrier' : 'hud.vehicle']!);
-      setHudText(ui['impact-loss']!, String(Math.round(car.impact.speedLost * 3.6)));
-      if (impactWasHidden) feedbackPlacement.refresh(); // event-driven: measured once per hit, never per frame
-    }
+    updateImpact(car, race.elapsed, race.phase === 'racing');
     updateTouchButtons(race, input, tap);
     options.updatePadHint(race.phase, race.elapsed);
     setHudText(ui['speed-caption']!, L[race.phase === 'ready' ? 'hud.readyTakeoff' : car.boosting ? 'hud.boostEngaged' : options.isAutoThrottle() ? 'hud.autoOverride' : 'hud.tagline']!);

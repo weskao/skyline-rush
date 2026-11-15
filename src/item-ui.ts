@@ -1,6 +1,7 @@
 import type { BonusCar } from './bonus-gates.ts';
 import { useHeldItem } from './game.js';
 import type { ActiveItemCar, ActiveItem } from './active-items.ts';
+import { EFFECT_TIMES } from './ring-layout.ts';
 import { t } from './i18n.ts';
 import { setHiddenIfChanged, setTextIfChanged } from './hud-dom.ts';
 
@@ -19,6 +20,9 @@ export const itemRuleValue = (rules: ItemSettings): string => typeof rules.itemR
 export function setupItemUI({ getRace, cue }: { getRace: () => ItemRace; cue: (name: string) => void }) {
   const slot = document.getElementById('item-slot')!;
   const status = document.getElementById('item-status')!;
+  const phaseStatus = document.getElementById('ghost-phase-status')!;
+  const phaseTime = document.getElementById('ghost-phase-time')!;
+  const phaseFill = document.getElementById('ghost-phase-fill')!;
   const bonus = document.getElementById('bonus-status')!;
   const button = document.getElementById('activate-item') as HTMLButtonElement;
   let previousRace: ItemRace | null = null;
@@ -50,14 +54,25 @@ export function setupItemUI({ getRace, cue }: { getRace: () => ItemRace; cue: (n
     const car = race.player;
     if (race !== previousRace) { previousHeld = null; wasCooling = false; previousRace = race; lastBonus = undefined; warned = undefined; }
     updateBonus(race);
-    setHiddenIfChanged(slot, !race.config.activeItems || race.phase === 'ready');
+    const activeItems = race.config.activeItems === true;
+    const phase = car.effects.ghost > 0 && (race.phase === 'racing' || race.phase === 'paused');
+    setHiddenIfChanged(slot, race.phase === 'ready' || !(activeItems || phase));
     if (slot.hidden) return;
+    setHiddenIfChanged(button, !activeItems);
+    setHiddenIfChanged(phaseStatus, !phase);
+    setHiddenIfChanged(status, phase && !car.heldItem);
+    if (phase) {
+      setTextIfChanged(phaseTime, t('mode.itemPhase', { sec: Math.ceil(car.effects.ghost) }));
+      const fill = `scaleX(${Math.min(1, car.effects.ghost / EFFECT_TIMES.ghost).toFixed(3)})`;
+      if (phaseFill.style.transform !== fill) phaseFill.style.transform = fill;
+    }
     const effect = car.heldItem ?? powers.find(item => (car.effects[item] ?? 0) > 0) ?? null;
     const cooling = car.itemCooldown > 0;
     const key = cooling ? 'mode.itemCooling' : car.heldItem ? 'mode.itemReady' : effect ? 'mode.itemActive' : 'mode.itemEmpty';
     setTextIfChanged(status, t(key, { item: effect ? t('mode.item.' + effect) : '',
       sec: Math.ceil(cooling ? car.itemCooldown : effect ? car.effects[effect] ?? 0 : 0) }));
-    if (slot.dataset.item !== (effect ?? '')) slot.dataset.item = effect ?? '';
+    const shownIcon = phase ? 'ghost' : effect ?? '';
+    if (slot.dataset.item !== shownIcon) slot.dataset.item = shownIcon;
     const disabled = !car.heldItem || race.phase !== 'racing' || cooling;
     if (button.disabled !== disabled) button.disabled = disabled;
     if (race.phase === 'racing') {

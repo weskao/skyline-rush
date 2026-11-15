@@ -1,3 +1,9 @@
+# 2026-11-15 — Collision recovery and Ghost Phase
+
+- [x] Collision grace applies the penalty once while vehicle and scenery bodies still separate. Shield blocks preserve speed and combo. Ghost Phase uses a steady translucent body, visible tail lights, a body sweep and a countdown; already-overlapping contacts clear safely when it expires.
+- [x] RED: simulation reproduced skipped contacts, overlapping shield blocks and false hits at phase expiry. GREEN: 30/60/120 Hz Coast contact, solid scenery and Dune CourseGraph hazard regressions; GLB material isolation, HUD timing and module-size guards. Recorded 41 changed legacy replay snapshots after confirming all 46 scenarios passed on the original base.
+- [ ] Desktop/mobile WebGL evidence, full local regression and exact-commit GitHub quality gate.
+
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
 - [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.

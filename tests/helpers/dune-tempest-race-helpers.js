@@ -20,9 +20,10 @@ export const PATHS = [['winding-wadi', 'natural-arch-pass'], ['winding-wadi', 'd
 // Toward the flight edge it drops BOOST on canyon-approach (the tank refills on the ground) and, on the flight edge,
 // pulses FLY with a vertical-speed P-controller holding ~2.5 m until the gap ends, then glides onto the landing pad.
 export const gapEnd = () => DUNE_TEMPEST_RACE.noRoad[AIR][0][1];
-export function botRace(hz, [first, third], { second = 'canyon-switchbacks', pilot = true, trace = null, traffic = true } = {}) {
+export function botRace(hz, [first, third], { second = 'canyon-switchbacks', pilot = true, trace = null, traffic = true, rivals = true } = {}) {
   const race = createRace(DUNE_TEMPEST_ID), dt = 1 / hz;
   if (!traffic) { for (const car of race.traffic) race.course.cars.delete(car.id); race.traffic = []; }
+  if (!rivals) { for (const car of race.rivals) race.course.cars.delete(car.id); race.rivals = []; }
   startRace(race);
   while (race.phase === 'countdown') stepRace(race, {}, dt);
   const you = courseOf(race).cars.get('YOU'), edges = [you.travel.currentEdgeId], checkpoints = [0];

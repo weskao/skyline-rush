@@ -452,6 +452,7 @@ test('review fixes: full-lock rail hit at boost speed is still a collision, lane
   assert.equal(race.player.x, 4.5);
 
   race = racing();
+  race.rivals = []; // isolate lane assist from the solid contacts allowed during grace
   Object.assign(race.player, { speed: 40, x: 3.6, cooldown: 1 });
   advance(race, 0.5, { throttle: true, laneAssist: true });
   assert.equal(race.player.x, 3.6);

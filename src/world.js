@@ -55,7 +55,7 @@ import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { createRampPool, drawRamps } from './ramp-view.ts'; import { createHazardRenderer } from './hazard-render.ts';
 import { createWorldGarageModel } from './garage-model.ts';
-import { createGraceFade, graceOpacity } from './grace-fade.ts';
+import { createGhostPhase } from './grace-fade.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const box = new THREE.BoxGeometry(1, 1, 1);
@@ -213,7 +213,7 @@ export function createWorld(canvas) {
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
   applyCarReflections(player, carEnvironment);
-  const graceFade = createGraceFade(player); // before aero VFX attach to it
+  const ghostPhase = createGhostPhase(player); // before aero VFX attach to it
   const rearLight = player.userData.rearLight;
   const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); applyCarReflections(car, carEnvironment); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
@@ -745,7 +745,7 @@ export function createWorld(canvas) {
         });
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt, false, {}, poseFor(mesh, race.traffic[i], motion?.previous?.traffic?.[i], alpha)); });
       }
-      graceFade(preview || race.phase === 'finished' ? 1 : graceOpacity(car.cooldown, race.elapsed, reducedMotion));
+      ghostPhase.update(car, !preview && race.phase !== 'finished', reducedMotion);
       ghostCar.visible = !preview && !!ghost;
       rearLight.update(race, motionDt, reducedMotion || !visual.enabled);
       if (ghostCar.visible) { // samples carry no span flag: a Frostbite ghost inside the Rift corridor box is drawn on the span

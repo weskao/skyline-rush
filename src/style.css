@@ -2325,3 +2325,6 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 
 /* The rolling Endless minimap follows the current road window and has no finite finish. */
 body[data-race-mode="endless"] #race-route-map[data-streaming] { display: block; }
+
+.impact-report[data-contact="recovery"], .impact-report[data-contact="shielded"] { border-color: #8cd5ef; color: #d8f6ff; }
+.impact-icon[hidden], #impact-detail[hidden] { display: none; }

@@ -1,5 +1,7 @@
 export const RACE_PRESENTATION_COPY = {
   en: {
+    'impact.protection': 'CONTACT PROTECTION',
+    'impact.shielded': 'SHIELD BLOCKED',
     'mode.conflict.noRivals': 'No AI opponents, so difficulty has no effect',
     'mode.conflict.lapsCircuitOnly': 'Laps run only on Harbor Circuit; sprint tracks use stages',
     'mode.conflict.eliminationRivals': 'Elimination always races 7 AI opponents',
@@ -39,6 +41,8 @@ export const RACE_PRESENTATION_COPY = {
     'mode.setupStages': '{n} sprint stage(s)',
   },
   'zh-TW': {
+    'impact.protection': '撞後保護',
+    'impact.shielded': '護盾擋撞',
     'mode.conflict.noRivals': '沒有 AI 對手，難度設定不會生效',
     'mode.conflict.lapsCircuitOnly': '圈數只適用於港灣環道，衝刺賽道請改用賽段',
     'mode.conflict.eliminationRivals': '淘汰賽固定與 7 名 AI 對手競速',

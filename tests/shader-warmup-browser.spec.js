@@ -17,8 +17,8 @@ const noMidRaceCompile = async ({ gameplayPage: page }) => {
   const before = await programs(page);
   expect(before).toBeGreaterThan(0);
   expect(await glbRoots(page), 'the race car wears its model').toBe(model ? 1 : 0);
-  // cooldown: the post-hit grace fades the car, which must not need a new (transparent) program either.
-  await page.evaluate(() => { const { player } = window.gameplay.race; player.nitroTime = 4; player.speed = 90; player.cooldown = 1.5; });
+  // Ghost Phase fades the car and draws its outline without compiling a new program.
+  await page.evaluate(() => { const { player } = window.gameplay.race; player.nitroTime = 4; player.speed = 90; player.effects.ghost = 3; });
   await page.waitForTimeout(1500);
   expect(await programs(page)).toBe(before);
   // A drift lays skid marks (src/skid-marks.js): their ribbon was drawn by the warmup too.

@@ -21,14 +21,12 @@ test('a throttle+BOOST bot finishes START → FINISH on all four ground-only pat
   }
 });
 
-// Measured on the ground route: 139.276 / 139.159 / 139.102 s at 30 / 60 / 120 Hz (spread 0.17 s; ≤ 0.17 s on all
-// four paths). The finish is interpolated at the gate; the spread is the engine's own per-Hz integration. Traffic is
-// left out: car contacts are frame-discrete in the shared engine (2026-11-09: 1.1 s spread with traffic, 0.02 s without;
-// rings and pickups change nothing), so they would measure collisions, not the graph integration.
+// This compares graph integration and finish interpolation in a solo time trial.
+// The separate fleet tests above exercise contacts and finish order with rivals and traffic enabled.
 const HZ_TOLERANCE = 0.5; // s
-test('the bot finish time agrees at 30, 60 and 120 Hz', () => {
+test('the solo bot finish time agrees at 30, 60 and 120 Hz', () => {
   const times = [30, 60, 120].map(hz => {
-    const { race } = botRace(hz, PATHS[0], { traffic: false });
+    const { race } = botRace(hz, PATHS[0], { traffic: false, rivals: false });
     assert.equal(race.phase, 'finished', `${hz} Hz`);
     assert.equal(race.course.rejections, 0, `${hz} Hz`);
     return race.result.time;

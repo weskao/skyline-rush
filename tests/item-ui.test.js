@@ -9,6 +9,9 @@ test('item HUD announces pickup/cooldown once, keeps activation paused-safe and 
   const nodes = {
     'item-slot': { hidden: true, dataset: {} },
     'item-status': { textContent: '' },
+    'ghost-phase-status': { hidden: true },
+    'ghost-phase-time': { textContent: '' },
+    'ghost-phase-fill': { style: {} },
     'bonus-status': { hidden: true, textContent: '' },
     'activate-item': { disabled: true, addEventListener: (name, listener) => listeners.set(name, listener) },
   };
@@ -38,6 +41,16 @@ test('item HUD announces pickup/cooldown once, keeps activation paused-safe and 
     ui.activate(); ui.update(race);
     for (let i = 0; i < 8; i++) tickItemCooldown(race.player, .1);
     ui.update(race);
+    assert.equal(nodes['ghost-phase-status'].hidden, false);
+    assert.equal(nodes['ghost-phase-time'].textContent, 'GHOST PHASE · 3s');
+    assert.equal(nodes['item-slot'].dataset.item, 'ghost');
+    assert.equal(nodes['item-status'].hidden, true);
+    race.player.effects.ghost = 1.5;
+    ui.update(race);
+    assert.equal(nodes['ghost-phase-fill'].style.transform, 'scaleX(0.500)');
+    race.player.effects.ghost = 0;
+    ui.update(race);
+    assert.equal(nodes['ghost-phase-status'].hidden, true);
     assert.match(nodes['item-status'].textContent, /ACTIVE/);
     race.rings = [{ type: 'speed-pad', distance: 100, hit: false }];
     race.player.distance = 0;

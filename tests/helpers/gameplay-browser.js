@@ -8,7 +8,7 @@ export async function captureHooks(page) {
   for (const [file, anchor, replacement] of [
     ['main.js', 'let race = createRace();', 'let race = createRace(); window.gameplay = { get race() { return race; } };'],
     ['world.js', 'scene.add(player);', 'scene.add(player); window.gameScene = { scene, player, renderer, camera, composer };'],
-  ]) await page.route(`**/src/${file}`, async route => {
+  ]) await page.route(url => url.pathname === `/src/${file}`, async route => {
     const response = await route.fetch();
     const source = await response.text();
     if (!source.includes(anchor)) throw new Error(`Missing capture anchor in ${file}`);

@@ -10,14 +10,18 @@ function firstProp(props, d) {
   return lo;
 }
 
-// Car body against scenery parts (sorted by distance); the swept range catches thin parts at high speed.
-export function hitProp(props, car, previousDistance) {
+// Scenery contact checks the swept body, including thin parts at high speed.
+export function propTouches(prop, car, previousDistance) {
   const altitude = car.altitude || 0;
+  return prop.from <= car.distance + 2.2 && prop.to > previousDistance - 2.2 &&
+    prop.right > car.x - 0.85 && prop.left < car.x + 0.85 && prop.top > altitude && prop.bottom < altitude + 1.8;
+}
+
+export function hitProp(props, car, previousDistance, skip) {
   for (let i = firstProp(props, previousDistance - 2.2); i < props.length; i++) {
-    const p = props[i];
-    if (p.from > car.distance + 2.2) break;
-    if (p.to > previousDistance - 2.2 && p.right > car.x - 0.85 && p.left < car.x + 0.85 &&
-      p.top > altitude && p.bottom < altitude + 1.8) return p;
+    const prop = props[i];
+    if (prop.from > car.distance + 2.2) break;
+    if (propTouches(prop, car, previousDistance) && !skip?.(prop)) return prop;
   }
   return null;
 }

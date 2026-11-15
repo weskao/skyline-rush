@@ -5,17 +5,18 @@ import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RI
 export { RING_RADIUS, RISK_RING_RADIUS, ITEMS_PER_CAR, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
 import { attachCourse, stepCoursePlayer, stepCourseCars, carGap, progressGap, courseFinished, courseGapWarning, recycleCourseTraffic } from './course-race-step.ts'; import { finishRace } from './race-finish.js';
-import { hitProp, clearOf, avoidObstacles, knock, aiRetention, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
+import { avoidObstacles, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
 import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
-import { stepPlayerHazards, hazardReach, hazardTouch, nudge } from './hazard-race.ts';
+import { stepPlayerHazards } from './hazard-race.ts';
+import { contact, resolvePlayerContacts, trackPhaseExit } from './player-contacts.js';
 import { raceHazards, themedExtras } from './track-themes.ts'; import { mixedCourse, withHoops } from './gauntlet-course.ts';
 import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
 import { createElimination, stepElimination } from './elimination.ts';
 import { bankItem, activateItem, tickItemCooldown, ringsForItemRule } from './active-items.ts';
-import { decorateBonusGates, collectBonusGate, applyEMPPulse, recoveryRetention, bonusScore } from './bonus-gates.ts';
+import { decorateBonusGates, collectBonusGate, applyEMPPulse, bonusScore } from './bonus-gates.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
 import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
 import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts'; import { spawnCatchUp } from './catch-up-items.ts';
@@ -62,7 +63,6 @@ export const SHORTCUT_PYLON_OFFSET = 2.2; // m from the centre, alternating side
 export const shortcutPylons = section => Array.from({ length: Math.ceil((section.to - section.from - 50) / SHORTCUT_PYLON_SPACING) }, (_, i) => ({
   distance: section.from + 50 + i * SHORTCUT_PYLON_SPACING, x: section.x + (i % 2 ? 1 : -1) * SHORTCUT_PYLON_OFFSET, altitude: section.altitude,
 }));
-const PYLON_HALF_WIDTH = 1.2; // m
 
 export const MAGNET_RANGE = 12; // m
 export const FREEZE_RIVAL_SPEED = 0.5; // rival speed multiplier while frozen
@@ -226,22 +226,6 @@ export function useHeldItem(race) {
 
 export { racePosition, sprintGaps } from './race-standings.ts';
 
-function contact(race, kind, obstacleX, intensity, retention) {
-  const car = race.player;
-  if (car.effects.shield > 0) { // the shield eats this hit: no damage, brief grace to clear the obstacle
-    car.effects.shield = 0; car.shieldBlock = { x: car.x, altitude: car.altitude, distance: car.distance, time: race.elapsed };
-    car.cooldown = 1;
-    return;
-  }
-  const side = Math.sign(car.x - obstacleX) || -1, x = car.x;
-  const speedLost = knock(race, car, side, intensity, recoveryRetention(car, retention));
-  car.impact = { kind, intensity, side, speedLost, x, altitude: car.altitude, distance: car.distance, time: race.elapsed };
-  car.collisions++;
-  car.combo = 0;
-  car.drift = null; // a crash loses the drift build-up
-  car.trick = null;
-}
-
 export function stepRace(race, input, dt) {
   if (!Number.isFinite(dt) || dt <= 0 || dt > 0.1) return;
   if (race.phase === 'countdown') {
@@ -324,6 +308,7 @@ export function stepRace(race, input, dt) {
   car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
   car.nitroTime = Math.max(0, car.nitroTime - dt);
   car.miniBoost = Math.max(0, car.miniBoost - dt);
+  trackPhaseExit(race, dt);
   for (const name of MYSTERY_EFFECTS) car.effects[name] = Math.max(0, car.effects[name] - dt);
   // Linear ramp: full deflection takes STEER_RAMP seconds (longer on ice), like an analog stick.
   const ramp = STEER_RAMP * (car.section === 'ice' ? ICE_RAMP_FACTOR : 1);
@@ -442,40 +427,7 @@ export function stepRace(race, input, dt) {
   }
   for (let i = 0; i < traffic.length; i++) for (let j = i + 1; j < traffic.length; j++) bumpCars(race, traffic[i], traffic[j]);
 
-  if (car.cooldown === 0) {
-    const obstacle = car.effects.ghost > 0 ? null : [...race.traffic, ...race.rivals].find(other =>
-      Math.abs(carGap(race, car, other) ?? Infinity) < 4.4 && Math.abs(other.x - car.x) < 1.7 &&
-      Math.abs((other.altitude || 0) - car.altitude) < 1.8,
-    );
-    const prop = car.effects.ghost > 0 ? null : hitProp(race.props, car, previousDistance);
-    const pylon = car.section === 'shortcut' && shortcutPylons(section).find(p => p.distance > previousDistance && p.distance <= car.distance &&
-      Math.abs(p.x - car.x) < PYLON_HALF_WIDTH && Math.abs(p.altitude - car.altitude) < SHORTCUT_TOLERANCE);
-    if (obstacle) {
-      const side = Math.sign(car.x - obstacle.x) || -1, intensity = clamp(Math.abs(car.speed - obstacle.speed) / 70, 0.25, 1);
-      contact(race, 'vehicle', obstacle.x, intensity, nitro ? 0.7 : 0.45);
-      if (!(obstacle.cooldown > 0)) knock(race, obstacle, -side, intensity, aiRetention(obstacle)); // the other car feels it too
-    } else if (prop) {
-      contact(race, 'barrier', (prop.left + prop.right) / 2, clamp(car.speed / 100, 0.25, 1), nitro ? 0.7 : 0.45);
-      car.x = clearOf(prop, car.x);
-    } else if (roofHit) {
-      contact(race, 'barrier', Math.sign(car.x) * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75); // pushed toward the centre
-    } else if (pylon) {
-      contact(race, 'barrier', pylon.x, clamp(car.speed / 100, 0.25, 1), 0.75);
-    } else if (Math.abs(lateralPosition) > ROAD_LIMIT && car.altitude < 1.3 && car.speed > 12 && car.railContactSide !== Math.sign(lateralPosition)) {
-      const side = Math.sign(lateralPosition);
-      if (Math.abs(car.steering) < 0.9 && Math.abs(car.steering * Math.min(9, car.speed * 0.22)) / car.speed < SCRAPE_RATIO) {
-        car.x = side * (ROAD_LIMIT - 0.3);
-        if (car.scrapeCooldown === 0) {
-          car.speed *= 0.92;
-          car.scrapeCooldown = 0.5;
-          car.scrape = { side, x: car.x, time: race.elapsed };
-        }
-      } else {
-        contact(race, 'barrier', side * (ROAD_LIMIT + 1), clamp(car.speed / 100, 0.25, 1), 0.75);
-        car.railContactSide = side;
-      }
-    }
-  }
+  resolvePlayerContacts(race, previousDistance, lateralPosition, roofHit, section, nitro);
   for (const traffic of race.traffic) {
     const gap = traffic.distance - traffic.speed * dt - previousDistance;
     const clearance = Math.abs(traffic.x - car.x);

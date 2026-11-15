@@ -5,7 +5,7 @@ import { chooseCourseNextEdge } from './course-ai-standings.ts';
 import { routeLength, sampleRoute } from './course-route-frame.ts';
 import { COURSE_RUNTIMES, isCourseRuntime } from './course-runtimes.ts';
 import { chooseBranchByLateral, courseCarGap, courseNoRoadAt, courseRemaining, createCourseRuntime, placeCourseCar,
-  rankCourseRuntime, recoverCourseCar, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
+  rankCourseRuntime, recoverCourseCar, setCourseContactX, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
 import { dropCar, type FallingCar } from './road-falls.ts';
 import { knock } from './car-collisions.js';
 import { attachCourseItems, groundAt, groundOffset, projectCourseItems, type CourseItem } from './course-items.ts';
@@ -13,11 +13,11 @@ import { placeSectionBurst } from './shortcut-rewards.ts';
 import { raceTrack } from './race-tracks.ts';
 import { rivalTakes, type RivalCollector, type TakeItem } from './rival-items.ts';
 // Read only inside functions, so the game.js ↔ course-race-step.ts import cycle cannot hit the TDZ.
-import { FLY_DRAIN, GAP_CLEARANCE, GAP_LIFT_RESERVE, GAP_SLOWDOWN, GAP_WARN_DISTANCE, GLIDE_FUEL_REGEN } from './game.js';
+import { FLY_DRAIN, GAP_CLEARANCE, GAP_LIFT_RESERVE, GAP_SLOWDOWN, GAP_WARN_DISTANCE, GLIDE_FUEL_REGEN, ROAD_LIMIT } from './game.js';
 
 interface Car { distance: number; id?: string }
 interface RaceCar extends Car { x: number; altitude: number; finishTime?: number | null }
-type Player = RaceCar & FallingCar & { fuel: number };
+type Player = RaceCar & FallingCar & { fuel: number; effects?: { ghost: number } };
 type Rival = RaceCar & RivalCollector & { pace: number; speed: number; cooldown?: number };
 interface CourseRef { course?: CourseRuntime; player: object }
 interface CourseHost extends CourseRef {
@@ -36,6 +36,10 @@ const travelOf = (rt: CourseRuntime, id: string) => {
   if (!car) throw new Error(`Unknown course car: ${id}`);
   return car.travel;
 };
+
+export function syncCourseContact(race: CourseRef, car: RaceCar): void {
+  setCourseContactX(race.course!, idOf(race, car), car.x);
+}
 
 /** H1: graph courses get a runtime; rings, pickups and traffic move onto its edges (Q3 follow-up), hazards and sections
  * come from the spec. Every other track is left untouched. */
@@ -105,8 +109,13 @@ export function stepCoursePlayer(race: CourseHost, dt: number, contact: Contact)
     return false;
   }
   if (event === 'crossed') projectCourseItems(race, prevEdge, edgeStart); // before game.js's ring/pickup loops
-  const hazard = event !== 'finished' && player.cooldown === 0 ? hazardCrossed(rt, PLAYER_ID, prevEdge, prevS, player.x, player.altitude) : null;
-  if (hazard) contact(race, 'barrier', hazard.lateral, 0.7, 0.6); // stepPlayerHazards' block response
+  const hazard = event !== 'finished' && !(player.effects && player.effects.ghost > 0) ? hazardCrossed(rt, PLAYER_ID, prevEdge, prevS, player.x, player.altitude) : null;
+  if (hazard) {
+    contact(race, 'barrier', hazard.lateral, 0.7, 0.6);
+    const side = hazard.safePassSide === 'left' ? -1 : 1;
+    player.x = Math.max(-ROAD_LIMIT, Math.min(ROAD_LIMIT, hazard.lateral + side * (hazard.radius + 0.86)));
+    syncCourseContact(race, player);
+  }
   return false;
 }
 

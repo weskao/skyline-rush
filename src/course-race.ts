@@ -54,6 +54,15 @@ function writePose(graph: CourseGraph, car: CourseCar): void {
   placeOnFrame(pose.point, f, 0, t.lateral, t.altitude);
   for (let i = 0; i < 3; i++) { pose.forward[i] = f.forward[i]; pose.right[i] = f.right[i]; pose.up[i] = f.up[i]; }
 }
+/** A contact changes lateral position after the measured sweep. Keep the pose and next sweep in sync. */
+export function setCourseContactX(rt: CourseRuntime, id: string, x: number): void {
+  const car = carOf(rt, id);
+  if (car.travel.finished || car.travel.lateral === x) return;
+  car.travel = { ...car.travel, lateral: x };
+  car.last.x = x;
+  writePose(rt.spec.graph, car);
+}
+
 /** Index of the first mandatory checkpoint still ahead of `node` (the node itself included). */
 function checkpointsBefore(graph: CourseGraph, node: string): number {
   const reaches = (from: string, to: string): boolean =>

@@ -1,5 +1,6 @@
 export const ITEM_SETTINGS_COPY = {
   en: {
+    'mode.itemPhase': 'GHOST PHASE · {sec}s',
     'mode.item.emp': 'EMP',
     'mode.bonusGates': 'Bonus gates · temporary boosts and double style score',
     'mode.bonus.speed-pad': 'SPEED', 'mode.bonus.air-pad': 'AIR +25', 'mode.bonus.recovery-pad': 'RECOVERY',
@@ -15,6 +16,7 @@ export const ITEM_SETTINGS_COPY = {
     'mode.itemActive': 'ACTIVE · {item} · {sec}s',
   },
   'zh-TW': {
+    'mode.itemPhase': '幽靈穿透・{sec} 秒',
     'mode.item.emp': '電磁脈衝',
     'mode.bonusGates': '獎勵圓環・短暫增益與特技雙倍分數',
     'mode.bonus.speed-pad': '加速', 'mode.bonus.air-pad': '補氣 +25', 'mode.bonus.recovery-pad': '碰撞恢復',
