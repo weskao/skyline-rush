@@ -1,5 +1,8 @@
 import { reactive } from 'vue';
 
+export const historySections = ['races', 'daily', 'medals', 'cloud'] as const;
+export type HistorySection = typeof historySections[number];
+
 interface HistoryRun {
   fields: string[];
   best: boolean;
@@ -14,6 +17,7 @@ interface HistoryModeRow {
   text: string;
 }
 interface HistoryView {
+  section: HistorySection;
   challengeMedals: Array<{ id: string; name: string; detail: string; awarded: boolean; status: string }>;
   challengeMedalCount: string;
   challengeMedalPeaks: string;
@@ -34,6 +38,7 @@ interface HistoryView {
   historyRuns: HistoryRun[];
 }
 export const historyView = reactive<HistoryView>({
+  section: 'races',
   challengeMedals: [], challengeMedalCount: '', challengeMedalPeaks: '',
   modeHistoryEmpty: true, modeRuns: [],
   dailyStatus: 'No daily challenge is available yet.', dailyStartDisabled: true,

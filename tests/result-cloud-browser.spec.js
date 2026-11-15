@@ -41,10 +41,14 @@ async function cloudPage(page, { user = null } = {}) {
 const setMock = (page, values) => page.evaluate(values => Object.assign(window.cloudMock, values), values);
 const release = page => page.evaluate(() => { for (const resolve of window.cloudMock.held.splice(0)) resolve(); });
 
-async function finishRace(page, start = '#start-button') {
+async function finishRace(page, start = '#start-button', collisions = 0) {
   await page.locator(start).click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
-  await page.evaluate(() => { const race = window.gameplay.race; race.elapsed = 80; Object.assign(race.player, { distance: race.length - 10, speed: 60 }); });
+  await page.evaluate(collisions => {
+    const race = window.gameplay.race;
+    race.elapsed = 80;
+    Object.assign(race.player, { distance: race.length - 10, speed: 60, collisions });
+  }, collisions);
   await expect(page.locator('#again-button')).toBeVisible();
 }
 const status = page => page.locator('#result-cloud-status');
@@ -147,4 +151,30 @@ test('results cloud line follows the language switch', async ({ gameplayPage }) 
   await selectLocale(page, 'zh-TW');
   await expect(status(page)).toHaveText('登入即可將紀錄備份到雲端。');
   await expect(login(page)).toHaveAccessibleName('使用 Google 登入');
+});
+
+test('a failed clean time trial offers a visible retry without claiming a cloud save or a demo credit', async ({ gameplayPage }) => {
+  const page = await cloudPage(gameplayPage, { user: { uid: 'player_test_001', email: 'player@example.com' } });
+  await expect.poll(() => page.evaluate(() => window.cloudMock.calls)).toBe(1);
+  await page.locator('button[data-race-mode="time"]').click();
+  await page.locator('#time-trial-rules > summary').click();
+  await page.locator('#clean-trial').check();
+  await finishRace(page, '#start-button', 1);
+  await expect(page.locator('#overlay-title')).toHaveText('Clean run invalidated.');
+  await expect(page.locator('#again-button')).toBeFocused();
+  await expect(page.locator('#result-cloud')).toBeHidden();
+  await expect(page.locator('.wave3-demo-results--ineligible')).toBeVisible();
+  await expect(page.locator('.wave3-demo-results__points:visible')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.cloudMock.calls)).toBe(1);
+  await shot(page, 'time-trial-invalid', '1440x900');
+  await finishRace(page, '#again-button');
+  await expect(page.locator('#again-button')).toBeFocused();
+  await expect(page.locator('#next-button')).toBeHidden();
+  await expect(page.locator('#next-stage')).toBeHidden();
+  await expect(status(page)).toHaveText('Race saved to the cloud.');
+  await expect(page.locator('.wave3-demo-results--earned')).toContainText('Time trial 1/');
+  await selectLocale(page, 'zh-TW');
+  await expect(page.locator('.wave3-demo-results--earned')).toContainText('計時賽 1/');
+  await expect.poll(() => page.evaluate(() => window.cloudMock.calls)).toBe(2);
+  await shot(page, 'time-trial-earned', '1440x900');
 });

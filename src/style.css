@@ -1571,22 +1571,26 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .elimination-hud[data-urgent="true"]{border-color:#ffb19d;color:#fff0e9;background:#873a44ee;}
 
 /* Paused Free Drive Photo Studio: keep the scenery visible, no new dependencies. */
-.photo-screen { position: fixed; inset: max(12px, var(--safe-top)) auto auto max(12px, var(--safe-left)); margin: 0; width: min(360px, calc(100vw - max(12px, var(--safe-left)) - max(12px, var(--safe-right)))); max-width: none; max-height: calc(100dvh - max(12px, var(--safe-top)) - max(12px, var(--safe-bottom))); overflow: auto; border: 1px solid #82dbe2bb; border-radius: 12px; padding: 0; background: #102637ed; color: #ecf9f5; box-shadow: 0 12px 48px #0008; }
+.photo-screen { position: fixed; inset: max(12px, var(--safe-top)) auto auto max(12px, var(--safe-left)); margin: 0; width: min(360px, calc(100vw - max(12px, var(--safe-left)) - max(12px, var(--safe-right)))); max-width: none; max-height: calc(100dvh - max(12px, var(--safe-top)) - max(12px, var(--safe-bottom))); overflow: hidden; border: 1px solid #82dbe2bb; border-radius: 12px; padding: 0; background: #102637ed; color: #ecf9f5; box-shadow: 0 12px 48px #0008; }
 .photo-screen::backdrop { background: transparent; }
-.photo-panel { display: grid; gap: 12px; padding: 18px; font-size: 13px; }
+.photo-panel { display: flex; flex-direction: column; max-height: inherit; padding: 12px; font-size: 13px; }
+.photo-tools { display: grid; gap: 8px; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 4px; }
 .photo-panel h2 { margin: 0; font-size: 18px; letter-spacing: .12em; }
 .photo-panel p { margin: 0; line-height: 1.5; }
-.photo-panel label { display: grid; gap: 5px; }
-.photo-panel input { width: 100%; }
-.photo-panel select { min-height: 38px; }
-.photo-actions { display: flex; gap: 10px; }
+.photo-panel label { display: grid; gap: 4px; }
+.photo-panel input { width: 100%; min-height: 28px; }
+.photo-panel .custom-select > button, .photo-panel select { min-height: 44px; }
+#photo-advanced > summary { display: list-item; align-content: center; min-height: 44px; cursor: pointer; }
+#photo-advanced[open] > label + label { margin-top: 8px; }
+.photo-actions { display: flex; flex: none; gap: 8px; padding-top: 8px; }
 .photo-actions button { min-height: 44px; flex: 1; border-radius: 6px; border: 1px solid #81e9e7; background: #21536a; color: #efffff; font-weight: 700; }
 .photo-actions button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-@media (max-width: 400px) {
-  .photo-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 12px; }
-  .photo-panel > :not(label), .photo-panel > label:has(#photo-sky) { grid-column: 1 / -1; }
+@media (orientation: portrait) and (max-width: 600px) {
+  .photo-screen { inset: auto max(12px, var(--safe-right)) max(12px, var(--safe-bottom)) max(12px, var(--safe-left)); width: auto; max-height: min(38dvh, calc(100dvh - var(--safe-top) - var(--safe-bottom) - 24px)); }
 }
-@media (max-height: 500px) and (min-width: 761px) { .photo-screen { width: 300px; } }
+@media (orientation: landscape) and (max-height: 500px) {
+  .photo-screen { width: min(280px, 41vw); }
+}
 
 .photo-screen[open] { z-index: 120; }
 /* Photo Studio shows only its controls and the canvas; closing restores existing phase/layout state.
@@ -1609,8 +1613,12 @@ body.photo-studio #perf-overlay { display: none; }
 .daily-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; max-width: min(100%, 550px); margin: 14px 0 0; padding: 10px 10px 10px 12px; border: 1px solid rgb(245 207 156 / .4); border-radius: 10px; background: linear-gradient(100deg, rgb(245 207 156 / .16), rgb(10 25 43 / .86) 58%); backdrop-filter: blur(8px); box-shadow: inset 3px 0 0 #f5cf9c; }
 .daily-card-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; background: rgb(245 207 156 / .16); color: #f5cf9c; }
 .daily-card-icon svg { width: 20px; height: 20px; fill: currentColor; }
-.daily-card-copy { display: grid; gap: 2px; min-width: 0; }
+.daily-card-copy { position: relative; display: grid; gap: 2px; min-width: 0; }
 .daily-card h2 { margin: 0; color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+#daily-card-open { padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: start; cursor: pointer; }
+#daily-card-open::after { content: ''; position: absolute; inset: 0; min-height: 44px; }
+#daily-card-open:hover { text-decoration: underline; }
+#daily-card-open:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 .daily-card strong { color: #f4f0e9; font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
 .daily-card small { color: #c2d3de; font-size: 11px; }
 .daily-card-start { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 8px 0 16px; border: 1px solid var(--accent); border-radius: 4px; background: rgb(255 137 102 / .14); color: var(--accent); font: 700 15px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; }
@@ -1695,7 +1703,10 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .build-version.has-update .release-unread { display: inline-block; }
 .release-screen {
   --rp: 24px;
-  width: min(600px, calc(100% - 24px)); max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  --top: max(12px, var(--safe-top)); --right: max(12px, var(--safe-right));
+  --bottom: max(12px, var(--safe-bottom)); --left: max(12px, var(--safe-left));
+  position: fixed; inset: var(--top) var(--right) var(--bottom) var(--left);
+  width: min(600px, calc(100vw - var(--left) - var(--right))); max-height: calc(100dvh - var(--top) - var(--bottom));
   padding: var(--rp) var(--rp) 0; border: 1px solid rgb(150 227 255 / .22); border-radius: 18px; overflow-y: auto;
   /* The glows paint on the dialog box itself, so they stay put while the notes scroll. */
   background:
@@ -1753,7 +1764,15 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
   .release-header h2 { font-size: 32px; }
   .release-meta span:first-child { font-size: 22px; }
 }
-@media (max-height: 420px) { .release-hero { display: none; } .release-intro { display: none; } .release-versions { margin-top: 4px; } }
+@media (max-height: 420px) and (orientation: landscape) {
+  .release-screen { --rp: 12px; }
+  .release-header small { display: none; }
+  .release-intro { margin-top: 4px; }
+  .release-versions { margin-top: 4px; }
+  .release-panel { margin-top: 4px; }
+  .release-meta { margin: 4px 0 8px; }
+  .release-footer { padding-block: 4px; }
+}
 @media (prefers-reduced-motion: reduce) { .release-screen, .release-entry, .release-tab { animation: none !important; transition: none !important; } }
 /* A release clip shows whole, never cropped like the hero banner; a portrait phone clip stays short enough to leave the notes in view. */
 .release-video { width: min(100%, 480px); max-height: none; aspect-ratio: 16 / 10; margin-inline: auto; object-fit: contain; background: #06101c; }
@@ -2330,6 +2349,9 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 /* The compact wallet shares the short landscape panel's height budget with the track carousel. */
 @media (max-height: 500px) and (orientation: landscape) {
   .intro .home-intro-topbar { margin: 0; }
+  .intro .home-intro-topbar .route-label { display: flex; flex: 0 1 auto; min-height: 44px; gap: 8px; }
+  .intro .home-intro-topbar .route-label > span { display: none; }
+  .intro .home-intro-topbar .medal-chip { margin: 0; }
   .intro:has(.home-resource-strip) .track-select button { height: 66px; padding-block: 4px; }
   .intro:has(.home-resource-strip) .track-select .track-preview { height: 26px; }
   .intro:has(.home-resource-strip) .track-select button > span.track-route-map { top: 6px; height: 24px; }
@@ -2337,3 +2359,69 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 
 /* The rolling Endless minimap follows the current road window and has no finite finish. */
 body[data-race-mode="endless"] #race-route-map[data-streaming] { display: block; }
+
+/* Race navigation: the current primary action stays distinct from the secondary controls. */
+.race-overlay [data-primary-action].text-button {
+  min-height: 48px; padding-inline: 12px;
+  color: #142333; background: var(--accent); border: 1px solid transparent; border-radius: 4px;
+  font-weight: 700;
+}
+.race-overlay [data-primary-action].text-button:hover { background: #ffb394; }
+.race-overlay :is(.primary-button, .text-button, .sign-in-button):focus-visible { outline: 2px solid #95e2f6; outline-offset: 2px; }
+.leave-screen #leave-close { margin: 0 0 4px auto; }
+
+body[data-phase="paused"]:not([data-tutorial]) .overlay-actions {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
+  width: min(100%, 380px); margin-inline: auto;
+}
+body[data-phase="paused"]:not([data-tutorial]) .overlay-actions :is(#resume-button, #photo-open) { grid-column: 1 / -1; }
+body[data-phase="paused"]:not([data-tutorial]) .overlay-actions :is(.primary-button, .text-button) { margin: 0; }
+body[data-phase="paused"]:not([data-tutorial]) .overlay-actions .text-button {
+  min-height: 44px; border: 1px solid rgb(255 255 255 / .2); border-radius: 4px;
+}
+body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-action]) { display: flex; flex-direction: column; gap: 6px; }
+.result-links:has(> [data-primary-action]) { order: -1; }
+
+.result-standings {
+  width: min(100%, 420px); margin: 8px auto; padding: 0;
+  list-style: none; color: #d6e7f4; text-align: left;
+  font: 12px/1.35 system-ui, sans-serif; font-variant-numeric: tabular-nums;
+}
+.result-standings li {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 6px 10px; border-bottom: 1px solid rgb(214 231 244 / .18);
+}
+.result-standings li[aria-current="true"] { color: #fff0c7; background: rgb(255 211 141 / .14); }
+.result-standings strong { white-space: nowrap; }
+.result-standings:focus-visible { outline: 2px solid #95e2f6; outline-offset: 2px; }
+
+@media (max-width: 760px) and (orientation: portrait) {
+  body[data-phase="finished"] .race-overlay { align-items: safe center; padding-block: 10px max(12px, var(--safe-bottom)); }
+  body[data-phase="finished"] .overlay-content { width: calc(100% - 32px); }
+  body[data-phase="finished"] .overlay-content h2 { font-size: clamp(34px, 10vw, 48px); margin: 6px 0; }
+  body[data-phase="finished"] .overlay-summary > p { margin-bottom: 6px; line-height: 1.4; }
+  body[data-phase="finished"] .new-best { padding: 4px 8px; }
+  body[data-phase="finished"] .result-stats { margin: 8px 0; gap: 4px 16px; }
+  body[data-phase="finished"] .result-stats > div { gap: 2px; }
+  body[data-phase="finished"] .result-style { margin: 4px 0; gap: 2px; }
+  body[data-phase="finished"] .overlay-actions { display: flex; flex-direction: column; gap: 6px; }
+  body[data-phase="finished"] .overlay-actions > :is(.primary-button, .text-button) { width: 100%; min-width: 0; margin: 0; }
+  body[data-phase="finished"] .result-cloud { margin-top: 4px; }
+}
+@media (max-width: 380px) and (orientation: portrait) {
+  /* Keep the podium metrics, both credits and Next visible before the secondary actions scroll in. */
+  body[data-phase="finished"] .result-trophy-art { max-width: 48px; max-height: 48px; }
+  body[data-phase="finished"] .result-style {
+    grid-template-columns: auto auto; justify-content: center; align-items: center; gap: 2px 10px;
+  }
+  body[data-phase="finished"] .result-style small { grid-column: 1 / -1; line-height: 1.4; }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="paused"]:not([data-tutorial]) .overlay-actions { align-self: center; }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > #next-stage,
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > #again-button[data-primary-action] { grid-column: 1 / -1; }
+  body:not([data-tutorial]) .overlay-summary > .result-standings { flex-basis: 100%; min-width: 0; margin: 4px auto; }
+  .result-standings { max-height: 124px; overflow-y: auto; font-size: 11px; }
+  .result-standings li { padding: 3px 8px; }
+}

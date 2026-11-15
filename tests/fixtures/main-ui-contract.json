@@ -1,6 +1,6 @@
 {
-  "reference": "main bd71ac8 plus intentional camera layout correction cda325e; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient; mode HUD offset: phone route map and short-landscape mode indicator sit below the race progress block that mode HUD rows grow; every-device race HUD spacing (main 266210c/f83b67e); one-row held-item slot at ≤400 px; Wave 2 eight-car HUD spacing and short-landscape speedometer corrections (feature/race-difficulty-eight-car-grid 1fce652); short-landscape callout in the top-bar strip on touch only, mouse keeps the left gutter (fix/race-callout-landscape, fix/hud-callout-landscape); Race HUD moved into the VFX panel: its reset shares the #vfx-reset style, and touch tablets cap the mid-race VFX panel below the lowered tool row (feature/race-hud-vfx-panel); home Garage button NEW highlight and Start + Garage pinned row with Practice scrolling below on phones, so Garage now precedes Practice in element order (f7691cc1); 900-966px desktops set the tagline on one 32px line so the wrapped Practice row fits without the intro scrolling (fix/home-intro-garage-fit); desktop (>=1001px) Garage NEW tag pinned to the button corner so the 1440x900 Start row stays on one line (feature/garage-skin-pick-memory 4c409785); Garage NEW tag pinned to its corner on all devices, above the rules row but below expanded dropdowns (77a368ee); Garage 900px compact intro layout retained alongside single-line NEW Garage action row (feature/garage-vfx-skins); 900px desktop header and 44px footer clearance (118px top, 60px bottom with -6px margin) (feature/garage-vfx-skins CI fix); results/pause copy selector retargeted to .overlay-summary > p for the phone-landscape two-column panel; NITRO/BOOST/FLY colour tokens on :root drive the NITRO meter, HUD text, charge bar, BOOST status, speed ticks, Controls preview and per-action key hints (feature/hud-sprint-colors); home camera picker uses the shared custom dropdown: arrow-button rules scoped to direct children, lists open upward and cap to the viewport room",
-  "cssBlob": "912db02181861ddcd8a7f6026caa5d3476cacd96",
+  "reference": "main bd71ac8 plus intentional camera layout correction cda325e; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient; mode HUD offset: phone route map and short-landscape mode indicator sit below the race progress block that mode HUD rows grow; every-device race HUD spacing (main 266210c/f83b67e); one-row held-item slot at \u2264400 px; Wave 2 eight-car HUD spacing and short-landscape speedometer corrections (feature/race-difficulty-eight-car-grid 1fce652); short-landscape callout in the top-bar strip on touch only, mouse keeps the left gutter (fix/race-callout-landscape, fix/hud-callout-landscape); Race HUD moved into the VFX panel: its reset shares the #vfx-reset style, and touch tablets cap the mid-race VFX panel below the lowered tool row (feature/race-hud-vfx-panel); home Garage button NEW highlight and Start + Garage pinned row with Practice scrolling below on phones, so Garage now precedes Practice in element order (f7691cc1); 900-966px desktops set the tagline on one 32px line so the wrapped Practice row fits without the intro scrolling (fix/home-intro-garage-fit); desktop (>=1001px) Garage NEW tag pinned to the button corner so the 1440x900 Start row stays on one line (feature/garage-skin-pick-memory 4c409785); Garage NEW tag pinned to its corner on all devices, above the rules row but below expanded dropdowns (77a368ee); Garage 900px compact intro layout retained alongside single-line NEW Garage action row (feature/garage-vfx-skins); 900px desktop header and 44px footer clearance (118px top, 60px bottom with -6px margin) (feature/garage-vfx-skins CI fix); results/pause copy selector retargeted to .overlay-summary > p for the phone-landscape two-column panel; NITRO/BOOST/FLY colour tokens on :root drive the NITRO meter, HUD text, charge bar, BOOST status, speed ticks, Controls preview and per-action key hints (feature/hud-sprint-colors); home camera picker uses the shared custom dropdown: arrow-button rules scoped to direct children, lists open upward and cap to the viewport room; responsive game dialogs (Photo Studio and Daily shortcut styles, safe-area release notes, and intentional release, Photo Studio and History element order); lobby mode and track toggles replace the old track step; pause and results prioritize the primary action before Photo Studio",
+  "cssBlob": "81fe93973acc348816e77d915a458face393150c",
   "elements": [
     {
       "id": "whats-new-screen",
@@ -44,13 +44,6 @@
       ]
     },
     {
-      "id": "release-hero",
-      "tag": "img",
-      "classes": [
-        "release-hero"
-      ]
-    },
-    {
       "id": "release-version",
       "tag": "span",
       "classes": []
@@ -59,6 +52,13 @@
       "id": "release-date",
       "tag": "span",
       "classes": []
+    },
+    {
+      "id": "release-hero",
+      "tag": "img",
+      "classes": [
+        "release-hero"
+      ]
     },
     {
       "id": "release-items",
@@ -474,15 +474,51 @@
       ]
     },
     {
+      "id": "lobby-modes-toggle",
+      "tag": "button",
+      "classes": [
+        "lobby-picker-toggle"
+      ]
+    },
+    {
+      "id": "lobby-mode-name",
+      "tag": "strong",
+      "classes": []
+    },
+    {
       "id": "mode-description",
       "tag": "small",
       "classes": []
     },
     {
-      "id": "track-step",
-      "tag": "p",
+      "id": "lobby-mode-options",
+      "tag": "div",
       "classes": [
-        "setup-step"
+        "race-mode-tabs"
+      ]
+    },
+    {
+      "id": "lobby-tracks-toggle",
+      "tag": "button",
+      "classes": [
+        "lobby-picker-toggle"
+      ]
+    },
+    {
+      "id": "lobby-track-name",
+      "tag": "strong",
+      "classes": []
+    },
+    {
+      "id": "lobby-track-status",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "lobby-track-options",
+      "tag": "div",
+      "classes": [
+        "track-select"
       ]
     },
     {
@@ -912,17 +948,17 @@
       ]
     },
     {
+      "id": "result-standings",
+      "tag": "ol",
+      "classes": [
+        "result-standings"
+      ]
+    },
+    {
       "id": "result-style",
       "tag": "div",
       "classes": [
         "result-style"
-      ]
-    },
-    {
-      "id": "photo-open",
-      "tag": "button",
-      "classes": [
-        "text-button"
       ]
     },
     {
@@ -955,6 +991,20 @@
     },
     {
       "id": "again-button",
+      "tag": "button",
+      "classes": [
+        "text-button"
+      ]
+    },
+    {
+      "id": "pause-leave",
+      "tag": "button",
+      "classes": [
+        "text-button"
+      ]
+    },
+    {
+      "id": "photo-open",
       "tag": "button",
       "classes": [
         "text-button"
@@ -1014,12 +1064,12 @@
       "classes": []
     },
     {
-      "id": "photo-save",
+      "id": "photo-close",
       "tag": "button",
       "classes": []
     },
     {
-      "id": "photo-close",
+      "id": "photo-save",
       "tag": "button",
       "classes": []
     },
@@ -1050,10 +1100,119 @@
       ]
     },
     {
+      "id": "history-track",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "history-empty",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "history-runs",
+      "tag": "div",
+      "classes": [
+        "history-runs"
+      ]
+    },
+    {
+      "id": "history-trend-label",
+      "tag": "figcaption",
+      "classes": []
+    },
+    {
+      "id": "history-chart",
+      "tag": "svg",
+      "classes": []
+    },
+    {
       "id": "career-summary",
       "tag": "p",
       "classes": [
         "career-summary"
+      ]
+    },
+    {
+      "id": "mode-history",
+      "tag": "section",
+      "classes": [
+        "history-extra"
+      ]
+    },
+    {
+      "id": "mode-history-title",
+      "tag": "h3",
+      "classes": []
+    },
+    {
+      "id": "mode-history-notice",
+      "tag": "p",
+      "classes": [
+        "mode-history-disclaimer"
+      ]
+    },
+    {
+      "id": "mode-history-filter",
+      "tag": "select",
+      "classes": []
+    },
+    {
+      "id": "mode-history-empty",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "mode-history-runs",
+      "tag": "div",
+      "classes": [
+        "mode-history-runs"
+      ]
+    },
+    {
+      "id": "daily-challenge",
+      "tag": "section",
+      "classes": [
+        "history-extra"
+      ]
+    },
+    {
+      "id": "daily-title",
+      "tag": "h3",
+      "classes": []
+    },
+    {
+      "id": "daily-status",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "daily-start",
+      "tag": "button",
+      "classes": [
+        "controls-reset"
+      ]
+    },
+    {
+      "id": "daily-board",
+      "tag": "div",
+      "classes": []
+    },
+    {
+      "id": "achievements-title",
+      "tag": "h3",
+      "classes": []
+    },
+    {
+      "id": "achievement-status",
+      "tag": "p",
+      "classes": []
+    },
+    {
+      "id": "achievement-list",
+      "tag": "ul",
+      "classes": [
+        "achievement-list"
       ]
     },
     {
@@ -1150,115 +1309,6 @@
       "classes": []
     },
     {
-      "id": "history-track",
-      "tag": "select",
-      "classes": []
-    },
-    {
-      "id": "history-trend-label",
-      "tag": "figcaption",
-      "classes": []
-    },
-    {
-      "id": "history-chart",
-      "tag": "svg",
-      "classes": []
-    },
-    {
-      "id": "history-empty",
-      "tag": "p",
-      "classes": []
-    },
-    {
-      "id": "history-runs",
-      "tag": "div",
-      "classes": [
-        "history-runs"
-      ]
-    },
-    {
-      "id": "mode-history",
-      "tag": "section",
-      "classes": [
-        "history-extra"
-      ]
-    },
-    {
-      "id": "mode-history-title",
-      "tag": "h3",
-      "classes": []
-    },
-    {
-      "id": "mode-history-notice",
-      "tag": "p",
-      "classes": [
-        "mode-history-disclaimer"
-      ]
-    },
-    {
-      "id": "mode-history-filter",
-      "tag": "select",
-      "classes": []
-    },
-    {
-      "id": "mode-history-empty",
-      "tag": "p",
-      "classes": []
-    },
-    {
-      "id": "mode-history-runs",
-      "tag": "div",
-      "classes": [
-        "mode-history-runs"
-      ]
-    },
-    {
-      "id": "daily-challenge",
-      "tag": "section",
-      "classes": [
-        "history-extra"
-      ]
-    },
-    {
-      "id": "daily-title",
-      "tag": "h3",
-      "classes": []
-    },
-    {
-      "id": "daily-status",
-      "tag": "p",
-      "classes": []
-    },
-    {
-      "id": "daily-start",
-      "tag": "button",
-      "classes": [
-        "controls-reset"
-      ]
-    },
-    {
-      "id": "daily-board",
-      "tag": "div",
-      "classes": []
-    },
-    {
-      "id": "achievements-title",
-      "tag": "h3",
-      "classes": []
-    },
-    {
-      "id": "achievement-status",
-      "tag": "p",
-      "classes": []
-    },
-    {
-      "id": "achievement-list",
-      "tag": "ul",
-      "classes": [
-        "achievement-list"
-      ]
-    },
-    {
       "id": "garage-screen",
       "tag": "dialog",
       "classes": [
@@ -1305,6 +1355,13 @@
       "classes": [
         "history-screen",
         "leave-screen"
+      ]
+    },
+    {
+      "id": "leave-close",
+      "tag": "button",
+      "classes": [
+        "close-button"
       ]
     },
     {

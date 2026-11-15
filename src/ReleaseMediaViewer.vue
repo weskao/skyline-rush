@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue';
+import { nextTick, onMounted, ref } from 'vue';
 import CloseButton from './CloseButton.vue';
 import ReleasePlayBadge from './ReleasePlayBadge.vue';
+import { dialogNavigation } from './dialog-navigation.ts';
 
 // `startAt` carries a clip on from the frame the inline hero reached.
 export interface ZoomedMedia { kind: 'image' | 'video'; src: string; label: string; poster?: string; source?: string; startAt?: number }
@@ -20,6 +21,8 @@ const userPaused = ref(false);
 const ready = ref(false);
 let opener: HTMLElement | null = null;
 let closing = false;
+let navigation: ReturnType<typeof dialogNavigation>;
+onMounted(() => { navigation = dialogNavigation(dialog.value!); });
 
 // The view and its backdrop fade together; reduced motion skips it.
 function fade(view: HTMLDialogElement, opacity: number[], duration: number): Promise<unknown> | null {
@@ -37,7 +40,7 @@ function open(next: ZoomedMedia, from: HTMLElement): void {
   media.value = next;
   const view = dialog.value;
   if (!view) return;
-  view.showModal();
+  navigation.open();
   fade(view, [0, 1], 220);
   // Refused autoplay (iOS Low Power Mode) falls back to the still with controls instead of an empty view.
   if (next.kind === 'video' && !still.value) nextTick(() => {
@@ -60,8 +63,9 @@ function close(): void {
   if (!view?.open || closing) return;
   closing = true;
   const faded = fade(view, [1, 0], 180);
-  if (!faded) return view.close();
-  faded.then(() => view.close(), () => view.close());
+  if (!faded) return navigation.close();
+  const hide = () => navigation.close();
+  void faded.then(hide, hide);
 }
 // Space and Enter pause a focused clip; with native controls (reduced motion) the keys stay the browser's.
 function onKey(event: KeyboardEvent): void {
@@ -81,6 +85,7 @@ function cancel(event: Event): void {
 }
 function restore(): void {
   closing = false;
+  clip.value?.pause();
   const time = clip.value?.currentTime;
   emit('closed', media.value?.kind === 'video' && Number.isFinite(time) ? time ?? null : null);
   media.value = null;
@@ -102,7 +107,7 @@ defineExpose({ open });
 </template>
 <style scoped>
 .release-media-viewer { box-sizing: border-box; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; background: transparent; cursor: zoom-out;
-  padding: calc(max(12px, env(safe-area-inset-top)) + 56px) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+  padding: calc(max(12px, var(--safe-top)) + 56px) max(16px, var(--safe-right)) max(16px, var(--safe-bottom)) max(16px, var(--safe-left)); }
 .release-media-viewer[open] { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; }
 .release-media-viewer::backdrop { background: rgb(2 6 14 / .9); }
 .release-media-viewer, .release-media-viewer img, .release-media-viewer video { -webkit-tap-highlight-color: transparent; }
@@ -116,5 +121,5 @@ defineExpose({ open });
 /* A tap on a clip pauses it (the backdrop and pictures keep zoom-out: a tap closes). */
 .release-media-viewer video:not([controls]) { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .release-media-viewer img, .release-media-viewer video { transition: none; } }
-.release-viewer-close { position: fixed; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
+.release-viewer-close { position: fixed; top: max(12px, var(--safe-top)); right: max(12px, var(--safe-right)); }
 </style>

@@ -26,6 +26,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
   const keys = new Set<string>();
   const pointers = new Map<number, HeldAction[]>();
   const slides: SlideBinding[] = [];
+  const captures = new Map<number, HTMLElement>();
   const actionButtons = new Map<DriveAction, ControlButton>();
   let brakeButton: ControlButton | null = null;
   let tiltEnabled = false, tiltBase: number | null = null, tiltAngle: number | null = null, tiltSteer = 0, tiltAt = 0;
@@ -42,7 +43,16 @@ export function createControls(target: ControlTarget = window, onAction: (action
   // iOS shows its long-press magnifier loupe despite user-select: none; only a cancelled touchstart stops it.
   // Pointer events still fire, and these controls never rely on the click a touchstart cancel suppresses.
   const holdWithoutLoupe = (element: EventTarget) => listen(element, 'touchstart', event => event.preventDefault(), { passive: false });
+  function capturePointer(element: HTMLElement, event: PointerEvent): void {
+    if (!event.isTrusted || !element.setPointerCapture) return;
+    element.setPointerCapture(event.pointerId);
+    captures.set(event.pointerId, element);
+  }
   function clear() {
+    for (const [id, element] of captures) {
+      if (element.hasPointerCapture(id)) element.releasePointerCapture(id);
+    }
+    captures.clear();
     keys.clear(); pointers.clear(); flyLatched = false;
     tiltBase = null; tiltSteer = 0;
     for (const slide of slides) { slide.pointerId = null; slide.pad.reset(); }
@@ -55,7 +65,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
     if (event.code === 'Space' && nativeControl) return;
     if (drivingKeys[event.code]) {
       event.preventDefault();
-      keys.add(event.code);
+      if (!event.repeat) keys.add(event.code);
     } else if (actionKeys[event.code as keyof typeof actionKeys] && !event.repeat) {
       if (event.code === 'Enter' && (nativeControl || (event.target as Element | null)?.closest?.('a[href]'))) return; // links activate on Enter too
       event.preventDefault();
@@ -112,7 +122,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
         if (control === 'fly' && flyMode === 'toggle') { flyLatched = !flyLatched; pointers.set(event.pointerId, []); }
         else pointers.set(event.pointerId, [control]);
         // Synthetic accessibility/test events do not own a native pointer to capture.
-        if (typeof button.hasPointerCapture === 'function' && event.isTrusted) button.setPointerCapture(event.pointerId);
+        capturePointer(button, event);
       });
       listen<PointerEvent>(button, 'pointermove', event => {
         if (!pointers.has(event.pointerId) || event.pointerType !== 'touch' || defaultSettings()?.editing) return;
@@ -136,7 +146,10 @@ export function createControls(target: ControlTarget = window, onAction: (action
         pointers.set(event.pointerId, held);
       });
       for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-        listen<PointerEvent>(button, type, event => pointers.delete(event.pointerId));
+        listen<PointerEvent>(button, type, event => {
+          if (captures.get(event.pointerId) === button) captures.delete(event.pointerId);
+          pointers.delete(event.pointerId);
+        });
       }
     },
     bindSlidePad(element: HTMLElement, { getSettings = defaultSettings }: { getSettings?: () => ControlSettings } = {}) {
@@ -150,7 +163,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
         syncLock();
         slide.pad.down(event.clientX, event.clientY);
         // Synthetic accessibility/test events do not own a native pointer to capture.
-        if (typeof element.hasPointerCapture === 'function' && event.isTrusted) element.setPointerCapture(event.pointerId);
+        capturePointer(element, event);
       });
       listen<PointerEvent>(element, 'pointermove', event => {
         if (event.pointerId !== slide.pointerId) return;
@@ -159,6 +172,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
       });
       for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
         listen<PointerEvent>(element, type, event => {
+          if (captures.get(event.pointerId) === element) captures.delete(event.pointerId);
           if (event.pointerId !== slide.pointerId) return;
           slide.pointerId = null;
           slide.pad.up();

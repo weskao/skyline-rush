@@ -70,6 +70,8 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
   let profileSync: Promise<unknown> = Promise.resolve();
   let lastCloudSync: Date | null = null;
   let resultSignIn: SignInOutcome = 'idle';
+  let resultRevision = 0;
+  let syncRevision = 0;
 
   function announceCloud(key: string): void {
     cloudStatusKey = key;
@@ -86,7 +88,7 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
   /** Runs the provider sign-in; a signed-in user then syncs through the auth observer below. */
   async function signIn(): Promise<SignInOutcome> {
     try { await services.signInToCloud(); return 'done'; }
-    catch (error) { console.error('Cloud sign-in failed:', error); announceCloud('cloud.failed'); return signInOutcome(error); }
+    catch (error) { console.error('Cloud sign-in failed:', error); return signInOutcome(error); }
   }
   function showCloudSession(): void {
     const user = cloudUser;
@@ -113,10 +115,12 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
       announceCloud('cloud.otherAccount');
       return Promise.resolve();
     }
+    const revision = ++syncRevision;
     cloudPending = true;
     writeCloudSyncStatus(uid, { pending: true });
     const deviceSaved = saveLocalProgress(getProgress());
     if (!navigator.onLine) {
+      updateCloudView({ syncDisabled: false });
       announceCloud(cloudFailureStatus({ code: 'unavailable' }, deviceSaved));
       return Promise.resolve();
     }
@@ -125,7 +129,9 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
     const synced = cloudSync.catch(() => {})
       .then(() => !cloudDeleting && cloudUser?.uid === uid ? services.syncCloudProgress(getProgress) : null);
     cloudSync = synced.then(merged => {
-      if (!merged || cloudUser?.uid !== uid) return;
+      // The latest queued save reads current progress. An older response must never
+      // overwrite a newer result or change its pending cloud status.
+      if (!merged || revision !== syncRevision || cloudUser?.uid !== uid || cloudDeleting) return;
       if (!saveLocalProgress(merged)) throw new Error('Could not restore cloud progress locally');
       applyProgress(merged);
       cloudPending = false;
@@ -135,10 +141,10 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
       showCloudSession();
       announceCloud('cloud.saved');
     }).catch(error => {
-      if (cloudUser?.uid === uid && !cloudDeleting)
+      if (revision === syncRevision && cloudUser?.uid === uid && !cloudDeleting)
         announceCloud(cloudFailureStatus(error, deviceSaved));
     }).finally(() => {
-      if (cloudUser?.uid === uid && cloudOwner === uid && !cloudDeleting)
+      if (revision === syncRevision && cloudUser?.uid === uid && cloudOwner === uid && !cloudDeleting)
         updateCloudView({ syncDisabled: false });
     });
     return cloudSync;
@@ -182,13 +188,16 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
   $('#cloud-sync-now').addEventListener('click', () => { if (cloudUser && cloudOwner === cloudUser.uid) saveCloudProgress(); });
   $('#cloud-login').addEventListener('click', async () => {
     updateCloudView({ loginDisabled: true });
-    await signIn();
+    if (await signIn() !== 'done') announceCloud('cloud.failed');
     updateCloudView({ loginDisabled: false });
   });
   $('#result-cloud-login').addEventListener('click', async () => {
+    const revision = resultRevision;
     resultSignIn = 'pending';
     showResultCloud();
-    resultSignIn = await signIn();
+    const outcome = await signIn();
+    if (revision !== resultRevision) return;
+    resultSignIn = outcome;
     showResultCloud();
   });
   $('#cloud-logout').addEventListener('click', () => {
@@ -282,9 +291,10 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
   return {
     /** A finished race: sync it, and show the results cloud line unless the mode saves nothing (Free Drive). */
     saveRaceProgress(recorded: boolean): Promise<unknown> {
+      resultRevision++;
       resultSignIn = 'idle';
       updateCloudView({ resultHidden: !recorded });
-      const saving = saveCloudProgress();
+      const saving = recorded ? saveCloudProgress() : Promise.resolve();
       showResultCloud();
       return saving;
     },
