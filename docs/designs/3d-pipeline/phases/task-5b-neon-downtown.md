@@ -465,6 +465,91 @@ Open for the owner:
 - `firestore.rules`, the hazard schema (`maxDistance` 100 000) and Event Lab needed no change: the record id stays
   `neon@7` and a 10 km sprint is inside every bound.
 
+## Step 12: the harbour landmarks placed (owner brief, 2026-11-15)
+
+Branch `feature/neon-landmark-placement`. Replaces step 11's provisional harbour: the quay on the right, the mole
+stand-in and the harbour row of the reserved-footprint table. Oldtown (its gate, lantern span and clock tower, and
+its reserved footprint) moved to `feature/neon-oldtown-dressing`. The near-black containers, hull and brick, and any
+rebuild of `neon-landmarks.glb`, moved to `feature/neon-landmark-light`. Nothing here changes without `?look=3d`, on
+Low or on another track.
+
+### As placed (`src/neon-scenery-plan.ts`, `src/neon-scenery.ts`)
+
+| Piece | Lap metres | Side, offset | Instances |
+| --- | --- | --- | --- |
+| `harbour_gantry` | 4980, 5240, 5500 (260 m apart) | over the road, 0 m, yaw π | 3 |
+| `container_stack` | every 30 m from 4372 to 5588 | right, 27 m, yaw alternating 0 / π | 41 |
+| `cargo_ship` | 5560, under the last boom | left (seaward), 40 m, 6 m down to the sea plane | 1 |
+| Yard land | 4351 to 5594 (`NEON_YARD`) | right, 12.6 to 260 m | part of the one ground draw |
+| Quay promenade | every 12 m from 4357 to 5587 | left only, 16.2 m | 103 |
+
+- The gantries clear every ring and section sign by 40 m or more.
+- The ship's footprint clears the road by 27 m or more.
+- Collision, VFX ports, rings and shortcut corridors did not move.
+- The skyline keeps its draw order. On the harbour it stands only on the yard: 170 to 240 m right of the straight.
+  None stands on the left (open sea), or round the corner past the yard, where the right looks 213 to 452 m over
+  open water.
+- Cars on night and rain night reflect a PMREM of the night HDRI, not the world-fixed studio room. That room had
+  bloomed them white on the harbour (car luminance 190 → 110) and the boulevard (106–151 → 69).
+
+### Evidence
+
+Measured 2026-11-15 on one desktop machine; per-device numbers and captures are in the ignored
+`../audits/neon-landmark-placement/`.
+
+- [x] RED first, then GREEN:
+  - `tests/neon-scenery-plan.test.js`: the yard, the quay on one side, the landmark rows and their clearances, and no
+    tower in the sea round the corner (RED at lap 5633, 420 m out);
+  - `tests/neon-scenery.test.js`: yard land on the right, open water on the left;
+  - `tests/neon-highlights.test.js` and `tests/neon-landmarks-glb.test.js`: the unplaced list is the three oldtown
+    pieces;
+  - `tests/neon-lighting.test.js`: the car sky.
+- [x] `tests/neon-parity.test.js` hashes unchanged.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` (3127 pass, 0 fail) and
+  `npm run build`.
+- [x] High draw calls in a race under `?look=3d`, cap 380 (`tests/neon-look-browser.spec.js`, 12 of 12 pass). The
+  harbour probes moved to the yard and the pieces:
+
+  | Probe | Calls |
+  | --- | --- |
+  | grid | 329 |
+  | boulevard | 191 |
+  | underpass | 179 |
+  | market | 173 |
+  | expressway | 164 |
+  | harbour yard 4400 | 169 |
+  | harbour gantry 4960 | 184 |
+  | harbour ship 5480 | 187 |
+  | harbour corner 5750 | 178 |
+  | canal | 174 |
+  | oldtown | 190 |
+  | plaza | 206 |
+
+  At step 11's metres the harbour went from 183 to 172 at 4700, 168 to 170 at 5400, and 184 to 169 at 5750.
+- [x] Captures looked at against step 11's: the yard, a gantry, under a gantry, the ship, the corner, the expressway,
+  the canal and the plaza. Not approved; see below.
+- [ ] Owner art approval of the harbour.
+- [ ] Owner playtest.
+- [ ] Phone, portrait and landscape (`make phone-diag`).
+
+Still wrong:
+
+- **Harbour sky.** Heading 180°, the straight looks into the brightest wedge of the panorama: longitude −180° to
+  −120°, 5 to 15 times the rest of its horizon band, the floodlit Bund fronts. It shows blurred and oversized. The
+  sky region measures 122–144 (59–103 in the other sectors), down from 142–147.
+  - Turning the sky (`sky.ahead`) does not fix it. The lap drives every heading. The least-driven 60° (210–270°,
+    240 m) would cost the grid its Pudong skyline and put the canal and plaza heading (270°, 2370 m) on the wedge's
+    edge.
+  - Lowering the dome gain dims every sector; halving it gave 108.
+  - What remains is a dome rebuild that softens that wedge (`assets-src/neon-sky`), with `sky.horizon` still measured
+    on the untouched source so the item-15 gain lock holds.
+- **Glow ahead.** The road ahead and the car's hood still glow where the wet road and the car paint mirror that
+  wedge: the ahead region is at 155–205 with 3–9% of its pixels white (85–104 elsewhere).
+- **Near-black pieces.** The containers, the hull and the gantry undersides are near-black
+  (`feature/neon-landmark-light`). The ship's windows are a flat, even grid.
+- **Canal towers.** Seen from the corner, the canal's across-the-water skyline still stands in the sea (canal sector,
+  not changed here).
+
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
 - [x] Desktop Apple silicon baseline for Neon's current look: every selectable map on High and Ultra with p50/p95,
