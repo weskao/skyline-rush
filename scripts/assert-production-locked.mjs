@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { PAINTS } from '../src/appearance.ts';
 
 // Each marker is a string its development-only module needs at runtime, so minification cannot strip it.
 const RELEASE_LEAK_MARKERS = {
@@ -39,7 +40,7 @@ const leaked = assetLeak.concat(Object.entries(RELEASE_LEAK_MARKERS).flatMap(([m
 // These Garage cards ship in every release mode, outside the unpublished VFX fence.
 const publicArtwork = {
   'garage-public/car-picker': ['roadster', 'crimson-gt'],
-  'garage-public/paint-cards': ['pearl', 'crimson', 'aurora', 'glacier', 'coral', 'cobalt', 'obsidian'],
+  'garage-public/paint-cards': Object.keys(PAINTS),
   'garage-rewards-and-missions/raster': [
     'mission-race', 'mission-time', 'mission-drift', 'mission-combo',
     'trophy-bronze', 'trophy-silver', 'trophy-gold', 'trophy-platinum',

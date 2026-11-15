@@ -1,4 +1,7 @@
 import { test, expect } from './helpers/test.js';
+import { PAINTS } from '../src/appearance.ts';
+
+const paintCount = Object.keys(PAINTS).length;
 
 // npm run test:browser builds trial by default. For a locked dist, set the mode explicitly.
 const trial = [undefined, 'trial'].includes(process.env.GARAGE_VFX_RELEASE_MODE);
@@ -43,7 +46,7 @@ for (const viewport of viewports) {
 
       await Promise.all([
         expectDecoded(page.locator('.garage-car-options [data-car] img'), 2, 432, 198, baseURL),
-        expectDecoded(page.locator('.paint-options [data-paint] img'), 7, 960, 510, baseURL),
+        expectDecoded(page.locator('.paint-options [data-paint] img'), paintCount, 960, 510, baseURL),
         expectDecoded(board.locator('.garage-mission-card img'), 4, 288, 288, baseURL),
         expectDecoded(board.locator('.garage-trophy-card img'), 4, 288, 288, baseURL),
       ]);

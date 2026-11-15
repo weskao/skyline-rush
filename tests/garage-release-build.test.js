@@ -172,21 +172,25 @@ test('trial-only live mission UI and race port cannot leak into locked releases'
 });
 
 test('production audit rejects missing public Garage artwork in locked and Pages trial bundles', async t => {
-  const { mkdtempSync, mkdirSync, rmSync } = await import('node:fs');
+  const { copyFileSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
   const { spawnSync } = await import('node:child_process');
-  const { fileURLToPath } = await import('node:url');
-  const script = fileURLToPath(new URL('../scripts/assert-production-locked.mjs', import.meta.url));
   const root = mkdtempSync(join(tmpdir(), 'garage-public-artwork-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  mkdirSync(join(root, 'dist'));
+  for (const directory of ['dist', 'scripts', 'src']) mkdirSync(join(root, directory));
+  const script = join(root, 'scripts', 'assert-production-locked.mjs');
+  copyFileSync(new URL('../scripts/assert-production-locked.mjs', import.meta.url), script);
+  const catalog = readFileSync(new URL('../src/appearance.ts', import.meta.url), 'utf8');
+  writeFileSync(join(root, 'package.json'), '{"type":"module"}');
+  writeFileSync(join(root, 'src', 'appearance.ts'), catalog + '\nPAINTS["test-violet"] = { ...PAINTS.pearl };\n');
 
   for (const mode of ['coming-soon', 'trial']) {
     const result = spawnSync(process.execPath, [script], {
       cwd: root, env: { ...process.env, GARAGE_VFX_RELEASE_MODE: mode }, encoding: 'utf8',
     });
     assert.match(result.stderr, /public Garage artwork missing: .*roadster@3x\.webp/, mode);
+    assert.match(result.stderr, /public Garage artwork missing: .*paint-cards\/test-violet@3x\.webp/, mode);
     assert.match(result.stderr, /public Garage artwork missing: .*crimson@3x\.webp/, mode);
     assert.match(result.stderr, /public Garage artwork missing: .*mission-race@3x\.webp/, mode);
     assert.match(result.stderr, /public Garage artwork missing: .*trophy-gold@3x\.webp/, mode);

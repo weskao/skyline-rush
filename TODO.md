@@ -5626,3 +5626,8 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Move only the two model and seven paint WebPs to `garage-public/`, preserving every Git blob. Reuse the existing mission and trophy WebPs. Keep a color swatch and the existing paint name if the paint image fails.
 - [x] Keep the unpublished VFX fence and the trial store alias. Require all 17 public WebPs in the production audit.
 - [ ] Full browser suite, physical phones in both orientations and exact-HEAD GitHub `quality-gate` are separate acceptance gates.
+
+### Follow-up — Future Garage paint colors
+
+- [x] RED: a temporary paint ID in the shared catalog was ignored by the production audit. GREEN: the same fixture identifies its missing WebP in locked and Pages trial mode.
+- [x] Both the release audit and the Garage artwork browser test read the paint catalog. The raster-artwork rule records the stable ID, bilingual names, WebP naming and load fallback.

@@ -40,6 +40,7 @@ Every new or updated Garage item, including paints, cosmetics, and vehicle-mount
 must preview and equip correctly on every selectable car. Use the shared equipment catalog
 and application path. Fit model-dependent effects to the active car's geometry or attachment
 points so the same equipment also works when a new car is added.
+For new paint IDs, names and artwork, follow `.claude/rules/raster-artwork.md`.
 
 Changing car models carries forward the equipped paint and any live paint preview. Persist
 only the equipped paint for the new car, and let the shared model loader warm the replacement
