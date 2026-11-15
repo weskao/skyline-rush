@@ -15,6 +15,7 @@ import { setLook3d } from '../src/look-gate.ts';
 const SHIPPED = JSON.parse(readFileSync(new URL('../assets-src/neon-sky/manifest.json', import.meta.url), 'utf8')).environments;
 const VARIANTS = [['night', SHIPPED.night], ['nightRain', SHIPPED.rain]];
 const SKYLINE_LONGITUDE = 30; // degrees in the HDRI frame: the far Pudong skyline (assets-src/neon-sky/README.md)
+const LUMA = [0.2126, 0.7152, 0.0722], HORIZON_SHARE = 0.4; // 0.4: the canal reads as night; 0.6 still hazed it (2026-11-15 captures)
 
 test('Neon Medium+ plans the rain-night HDRI on its rainy default and in rain, the night HDRI at night, nothing else', t => {
   t.after(() => setLook3d(false));
@@ -41,7 +42,13 @@ for (const [name, shipped] of VARIANTS) {
     assert.deepEqual([...v.sky.sunDirection], shipped.key.direction, 'the key light shines from the measured key, not from one bright sign');
     assert.equal(v.sun.color, shipped.key.color);
     assert.ok(v.sun.intensity > 0 && v.sun.intensity <= shipped.key.intensity, 'the measured key, scaled by the environment intensity');
-    assert.ok(Math.abs(v.sky.gain - Math.min(1, v.bloom.threshold / shipped.sky.p90Band0to40)) < 5e-3, 'the lit skyline sits at the bloom threshold');
+    // Trap (2026-11-15): Coast's rule (gain = threshold / p90Band0to40) put the measured horizon glow at 1.15x (rain)
+    // and 1.35x (night) the bloom threshold. Over the canal and the expressway, where no building hides the dome, the
+    // whole horizon bloomed into a white haze (canal frame mean 148/255; 71 with the dome hidden). A city panorama
+    // keeps its horizon glow at HORIZON_SHARE of the threshold; the whole dome stays under the bloom (tests/coast-sky.test.js).
+    const horizon = LUMA.reduce((sum, weight, i) => sum + weight * shipped.sky.horizon[i], 0);
+    assert.ok(Math.abs(v.sky.gain - HORIZON_SHARE * v.bloom.threshold / horizon) < 5e-3, 'the horizon glow sits at HORIZON_SHARE of the bloom threshold');
+    assert.ok(horizon * v.sky.gain <= v.bloom.threshold / 2, 'the dome horizon never reaches the bloom');
     assert.ok(v.radianceCap >= 1 && v.radianceCap <= v.sky.range, 'sign texels are capped so the wet road does not mirror them as white blots');
   });
 
