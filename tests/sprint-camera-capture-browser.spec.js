@@ -47,9 +47,12 @@ for (const track of ['coast', 'neon', 'spiral', CLIMB]) test(`${LABEL} ${VIEW}: 
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(20000) });
   await installPlumeProbes(page);
+  // Rivals stay 80 m back: a rival between the chase camera and the car hid the whole plume (area 0, Sky Spiral BOOST).
+  await page.evaluate(() => { window.clearRivals = () => { const { player, rivals } = window.gameplay.race; for (const rival of rivals) rival.distance = Math.min(rival.distance, player.distance - 80); }; });
+  const clear = () => page.evaluate(() => window.clearRivals());
   const hold = (fields, seconds) => page.evaluate(async ([fields, seconds]) => {
     const player = window.gameplay.race.player, until = window.gameplay.race.elapsed + seconds;
-    while (window.gameplay.race.elapsed < until) { Object.assign(player, { x: 0 }, fields); player.effects.ghost = 5; await new Promise(requestAnimationFrame); }
+    while (window.gameplay.race.elapsed < until) { Object.assign(player, { x: 0 }, fields); player.effects.ghost = 5; window.clearRivals(); await new Promise(requestAnimationFrame); }
   }, [fields, seconds]);
   const shot = name => page.screenshot({ path: `${OUT}/${track}-${name}.png` });
   const onScreen = () => page.evaluate(async () => ({ ...window.carOnScreen(), plume: window.plumeOnScreen(), contrast: await window.plumeContrast() }));
@@ -63,6 +66,7 @@ for (const track of ['coast', 'neon', 'spiral', CLIMB]) test(`${LABEL} ${VIEW}: 
   rows.cruise = await onScreen();
   rows.cruiseFrames = await page.evaluate(() => window.sampleCar(2));
   await shot('cruise');
+  await clear();
   await page.evaluate(() => Object.assign(window.gameplay.race.player, { speed: 88, miniBoost: 3 }));
   await page.waitForTimeout(110); await shot('boost-ignition');
   rows.boostIgnition = await page.evaluate(() => window.sampleCar(0.9));

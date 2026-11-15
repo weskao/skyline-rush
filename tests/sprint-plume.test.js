@@ -40,6 +40,17 @@ test('the rear exhaust lives in its own module', () => {
 
 // Trap (2026-11-14): each jet left at a 6.5 cm radius and stayed under 0.14 m for its first 0.6 m (15 to 19 px on a
 // phone), additive only, so a held NITRO/BOOST barely showed. The flame is fat by 0.6 m whatever the tail length.
+// Trap (2026-11-16): a trailing `//` comment swallowed `u.tail = frame.tail` on the same line; the board plume's magenta tail never lit.
+test('every frame value reaches every jet', () => {
+  const parent = new Group(), plume = createSprintPlume(parent, REAR_PORTS);
+  plume.update(frame({ power: 0.64, brightness: 0.7, diamonds: 0.3, extreme: 0.4, nitroMix: 0.6, tail: 0.8 }));
+  for (const jet of jetsOf(parent)) {
+    const u = jet.material.uniforms;
+    assert.deepEqual([u.power.value, u.brightness.value, u.diamonds.value, u.extreme.value, u.nitroMix.value, u.tail.value, u.reach.value],
+      [0.8, 0.7, 0.3, 0.4, 0.6, 0.8, 5], jet.name);
+  }
+});
+
 test('flame shape: fat by 0.6 m whatever the length or brightness, four separate cores', () => {
   assert.equal(plumeRadius(0), REAR_PORTS[0].size);
   assert.ok(plumeRadius(0.6) >= 0.2 && plumeRadius(3) <= 0.3);
@@ -160,9 +171,18 @@ test('modes: which parts show on each tier, off the road, on the void skin and w
   }
 });
 
-test('x3 chain: power above 1 makes the flare no bigger and the core no more opaque', () => {
+// Bloom runs above Low only (configureBloom in src/upcoming-lighting.ts). The white-out dimming then cost the phone tier
+// half its exhaust area (2-core landscape BOOST 1.2-1.6x the old cone, floor 2x): with no bloom halo the jet carries its own.
+test('the jet dims under the bloom threshold only where bloom runs: Low keeps its own halo', () => {
+  const glare = quality => { const parts = rig(); parts.plume.update(frame({ quality })); return parts.jets.map(jet => jet.material.uniforms.glare?.value); };
+  assert.deepEqual(glare(0.25), [0, 0, 0, 0], 'Low: no bloom, no dimming');
+  for (const quality of [0.5, 1]) assert.deepEqual(glare(quality), [1, 1, 1, 1], `quality ${quality}: dimmed under the bloom threshold`);
+});
+
+test('x3 chain: power above 1 makes the flare no bigger, the core no more opaque and the jets no brighter', () => {
   const state = power => { const parts = rig(); parts.plume.update(frame({ power })); const flare = parts.flare.material.uniforms;
-    return [flare.size.value, flare.fade.value, parts.core.material.uniforms.alpha.value, parts.glow.material.uniforms.fade.value]; };
+    return [flare.size.value, flare.fade.value, parts.core.material.uniforms.alpha.value, parts.glow.material.uniforms.fade.value,
+      ...parts.jets.map(jet => jet.material.uniforms.power.value)]; }; // jets: the veil guard runs at chain 1 only
   assert.deepEqual(state(1.4), state(1));
   assert.ok(Math.abs(state(1)[0] - PLUME.flare) < 1e-9 && Math.abs(state(0.5)[0] - PLUME.flare * 0.775) < 1e-9, 'flare size is PLUME.flare * (0.55 + 0.45 * power)');
 });
