@@ -69,3 +69,10 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   Release steering, throttle and native pointer capture when rotating or changing segments.
   Custom layouts stay viewport-relative and keep their independent portrait and landscape keys.
   Guards: `tests/foldable-layout-browser.spec.js` and `tests/foldable-layout.test.js`.
+
+- **Short-landscape track cards keep the portrait anatomy.** A fixed 58 px stacked card drew the route over a 22 px
+  sky strip, cut the KM / status row and shrank Coming Soon teaser art to an unreadable strip (2026-11-16). In
+  `max-height: 500px` landscape the card is a 2-row grid: a square route map beside name and KM + status, with the
+  sky / teaser art backing the whole card. Its height (~50 px) is budgeted against the pinned Garage row under the
+  iPhone Chrome toolbar (667×375, 1 px slack); a taller card needs a smaller gap elsewhere, never an overlap.
+  Guard: *landscape track cards show the whole card* and the toolbar test in `tests/responsive-browser.spec.js`.
