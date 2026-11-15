@@ -10,35 +10,47 @@ const luminance = rgb => {
 };
 const contrast = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (hi + .05) / (lo + .05); };
 
-// Resolve one gradient stop of the rim for a given --rim colour (srgb color-mix with white/black, or a literal).
-function resolveStop(stop, rim) {
-  const literal = stop.match(/^#[0-9a-f]{6}/);
-  if (literal) return hex(literal[0]);
-  const mix = stop.match(/^color-mix\(in srgb, var\(--rim\), (white|black) (\d+)%\)/);
-  if (mix) { const t = Number(mix[2]) / 100, to = mix[1] === 'white' ? 255 : 0; return rim.map(c => c * (1 - t) + to * t); }
-  assert.match(stop, /^var\(--rim\)/, `unrecognised rim stop: ${stop}`);
-  return rim;
+// Top-level comma split: "a, color-mix(b, c) 5%" -> ["a", "color-mix(b, c) 5%"].
+function split(list) {
+  const parts = [''];
+  let depth = 0;
+  for (const char of list) {
+    depth += char === '(' ? 1 : char === ')' ? -1 : 0;
+    if (char === ',' && depth === 0) parts.push(''); else parts[parts.length - 1] += char;
+  }
+  return parts.map(part => part.trim());
+}
+// State colours come from the :root NITRO / BOOST / FLY tokens in style.css.
+const tokens = Object.fromEntries([...readFileSync(new URL('../src/style.css', import.meta.url), 'utf8')
+  .matchAll(/(--(?:nitro|boost|fly)(?:-[a-z]+)?): (#[0-9a-f]{6});/g)].map(m => [m[1], hex(m[2])]));
+// Resolve a colour: a literal, white/black, var(--token) or an srgb color-mix of those (gradient stop positions dropped).
+function resolve(value, vars) {
+  const expr = value.replace(/ \d+%$/, '');
+  if (/^#[0-9a-f]{6}$/.test(expr)) return hex(expr);
+  if (expr === 'white' || expr === 'black') return [0, 0, 0].map(() => expr === 'white' ? 255 : 0);
+  const ref = expr.match(/^var\((--[a-z-]+)\)$/);
+  if (ref) { assert.ok(vars[ref[1]], `unknown ${ref[1]}`); return vars[ref[1]]; }
+  const mix = expr.match(/^color-mix\(in srgb, (.*)\)$/);
+  assert.ok(mix, `unrecognised colour: ${value}`);
+  const [from, to] = split(mix[1]), [, other, share] = to.match(/^(.*) (\d+)%$/), t = Number(share) / 100;
+  const a = resolve(from, vars), b = resolve(other, vars);
+  return a.map((c, i) => c * (1 - t) + b[i] * t);
 }
 
 test('every point of the bezel rim stands out from every button face and the dark road behind it', () => {
   const rule = css.match(/> button::before \{[^}]*background: linear-gradient\(148deg, (.*)\);/);
   assert.ok(rule, 'rim gradient not found');
-  const stops = [''];
-  let depth = 0;
-  for (const char of rule[1]) {
-    depth += char === '(' ? 1 : char === ')' ? -1 : 0;
-    if (char === ',' && depth === 0) stops.push(''); else stops[stops.length - 1] += char;
-  }
-  stops.forEach((stop, i) => { stops[i] = stop.trim(); });
+  const stops = split(rule[1]);
   // Each state block's rim against the face it borders (the shaded side meets --face-bottom) and the darkest road the cluster sits on.
-  const blocks = [...css.matchAll(/\{([^{}]*--rim: #[0-9a-f]{6}[^{}]*)\}/g)].map(m => m[1]);
+  const blocks = [...css.matchAll(/\{([^{}]*--rim: [^;]+;[^{}]*)\}/g)].map(m => m[1]);
   assert.ok(blocks.length >= 10, 'state colours not found');
   const weak = [];
   for (const block of blocks) {
-    const rim = block.match(/--rim: (#[0-9a-f]{6})/)[1];
-    const faces = [...block.matchAll(/--face-bottom: (#[0-9a-f]{6})/g)].map(m => m[1]);
+    const rim = block.match(/--rim: ([^;]+);/)[1];
+    const vars = { ...tokens, '--rim': resolve(rim, tokens) };
+    const faces = [...block.matchAll(/--face-bottom: ([^;]+);/g)].map(m => m[1]);
     for (const stop of stops) for (const face of [...faces, '#0b1520']) {
-      const ratio = contrast(resolveStop(stop, hex(rim)), hex(face));
+      const ratio = contrast(resolve(stop, vars), resolve(face, tokens));
       // A fixed #162035 stop made the lower-right edges vanish on every button and DPR (ratio ~1.1).
       if (ratio < 1.6) weak.push(`${rim} ${stop} vs ${face}: ${ratio.toFixed(2)}`);
     }

@@ -41,8 +41,9 @@ test('a default scene has four different instanced PBR pickups, their halo and t
     const scene = new Scene(), effects = createEffects(scene, () => 0);
     try {
       const pool = scene.getObjectByName('Nitro pickups');
-      assert.deepEqual(pool.children.map(child => child.name), ['cell', 'can', 'tank', 'overcharge']);
-      assert.equal(new Set(pool.children.map(child => child.geometry.uuid)).size, 4);
+      const tiers = ['cell', 'can', 'tank', 'overcharge'];
+      assert.deepEqual(pool.children.map(child => child.name), [...tiers, ...tiers.map(tier => tier + '-distant')]);
+      assert.equal(new Set(pool.children.map(child => child.geometry.uuid)).size, 8);
       assert.ok(pool.children.every(child => child.isInstancedMesh && child.material.isMeshStandardMaterial));
       assert.ok(scene.getObjectByName('Pickup aura')?.isInstancedMesh, 'one instanced halo pool');
       assert.ok(scene.getObjectByName('Pickup collect VFX'), 'collection effects are always built before racing');

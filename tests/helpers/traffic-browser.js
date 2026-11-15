@@ -19,18 +19,21 @@ export async function pausedRace(page, gameplayURL, trackId, search = '') {
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(30000) });
   await page.locator('#pause-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
-  // The chase camera eases on for a few frames after the pause, and a rival's wheel on the frustum edge then joins
-  // the frame: one more draw call that a before/after difference would count as traffic. Wait for a steady frame.
-  await page.evaluate(() => new Promise(resolve => {
-    let last = -1, same = 0, frames = 0;
-    const step = () => {
-      const { calls } = window.gameScene.renderer.info.render;
-      same = calls === last ? same + 1 : 0; last = calls;
-      if (same >= 20 || ++frames > 300) resolve(); else requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }));
+  expect(await cameraSettled(page), 'the paused chase camera comes to rest').toBe(true);
 }
+
+// Pause freezes the race, not the chase camera: it keeps easing to its rig (about 1.6 s at 60 fps) and moves the frustum.
+// A draw count read meanwhile gains or loses meshes at the frustum edge: a rival's wheel rim made Neon traffic 22, not 21.
+const cameraSettled = page => page.evaluate(async () => {
+  const { camera } = window.gameScene, pose = () => [...camera.matrixWorld.elements, ...camera.projectionMatrix.elements];
+  for (let frame = 0, last = pose(); frame < 600; frame++) {
+    await new Promise(requestAnimationFrame);
+    const now = pose();
+    if (now.every((value, i) => Math.abs(value - last[i]) < 1e-6)) return true;
+    last = now;
+  }
+  return false;
+});
 
 // The paused race still renders every frame, so the cars stay where this puts them: `shown` of them spread over the
 // drawn window ahead of the player (-55 to 900 m), the rest beyond it. Graph courses seat traffic on their own edges:

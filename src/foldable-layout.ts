@@ -46,3 +46,26 @@ export function placeInVisibleSegment(point: FoldablePoint, button: FoldableSize
   return candidates.reduce((nearest, candidate) =>
     (candidate.x - point.x) ** 2 + (candidate.y - point.y) ** 2 < (nearest.x - point.x) ** 2 + (nearest.y - point.y) ** 2 ? candidate : nearest);
 }
+
+interface SegmentSource {
+  innerWidth: number;
+  innerHeight: number;
+  viewport?: { segments?: unknown } | null;
+  visualViewport?: (VisualViewport & { segments?: unknown }) | { segments: unknown } | null;
+  getWindowSegments?(): unknown;
+}
+
+export function viewportFoldableLayout(source: SegmentSource): FoldableLayout | null {
+  const size = { width: source.innerWidth, height: source.innerHeight };
+  for (const read of [() => source.viewport?.segments, () => source.visualViewport && 'segments' in source.visualViewport
+    ? source.visualViewport.segments : undefined, () => source.getWindowSegments?.()]) {
+    try {
+      const segments = read();
+      // An explicit single segment is the current viewport, even if an older API still reports a split.
+      if (Array.isArray(segments) && segments.length === 1 && isRect(segments[0])) return null;
+      const layout = resolveFoldableLayout(size, segments);
+      if (layout) return layout;
+    } catch { /* A browser can report unavailable geometry during the transition. */ }
+  }
+  return null;
+}
