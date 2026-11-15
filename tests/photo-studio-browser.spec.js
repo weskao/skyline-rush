@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { openLobbyModes } from './helpers/home-lobby.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
@@ -62,6 +63,7 @@ for (const [name, viewport, hasTouch, locale, trackIds, more = []] of layouts) {
         await page.addLocatorHandler(page.locator('#music-prompt'), () => page.locator('#music-no').click());
         await page.goto(`${gameplayURL}?perf`);
         await page.locator(`[data-track="${trackId}"]`).click();
+        await openLobbyModes(page);
         await page.locator('button[data-race-mode="free"]').click();
         await page.locator('#start-button').click();
         await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');

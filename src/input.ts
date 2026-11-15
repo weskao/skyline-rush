@@ -64,7 +64,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
     if (event.code === 'Space' && nativeControl) return;
     if (drivingKeys[event.code]) {
       event.preventDefault();
-      keys.add(event.code);
+      if (!event.repeat) keys.add(event.code);
     } else if (actionKeys[event.code as keyof typeof actionKeys] && !event.repeat) {
       if (event.code === 'Enter' && (nativeControl || (event.target as Element | null)?.closest?.('a[href]'))) return; // links activate on Enter too
       event.preventDefault();
@@ -146,8 +146,8 @@ export function createControls(target: ControlTarget = window, onAction: (action
       });
       for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
         listen<PointerEvent>(button, type, event => {
+          if (captures.get(event.pointerId) === button) captures.delete(event.pointerId);
           pointers.delete(event.pointerId);
-          captures.delete(event.pointerId);
         });
       }
     },
@@ -171,7 +171,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
       });
       for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
         listen<PointerEvent>(element, type, event => {
-          captures.delete(event.pointerId);
+          if (captures.get(event.pointerId) === element) captures.delete(event.pointerId);
           if (event.pointerId !== slide.pointerId) return;
           slide.pointerId = null;
           slide.pad.up();

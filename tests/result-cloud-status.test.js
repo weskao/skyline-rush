@@ -60,7 +60,7 @@ test('every results cloud message exists in English and Traditional Chinese', ()
 
 test('main.js hands the finished race to Cloud Save once; the results block is not its code', () => {
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
-  assert.match(main, /cloud\.saveRaceProgress\(race\.mode !== 'free'\)/);
+  assert.match(main, /cloud\.saveRaceProgress\(settled\.recorded\)/);
   assert.doesNotMatch(main, /result-cloud/);
 });
 
@@ -130,5 +130,32 @@ test('results sign-in cancelled by closing the popup stays neutral and keeps the
     assert.equal(cloudView.resultState, 'signed-out');
     assert.equal(cloudView.resultSignInHidden, false);
     assert.equal(cloudView.resultSignInDisabled, false);
+  });
+});
+
+test('an older upload finishing cannot show a newer result as saved while its upload is pending', async () => {
+  await withController(async () => {
+    let onUser;
+    const uploads = [];
+    const services = {
+      watchCloudUser(callback) { onUser = callback; },
+      syncCloudProgress: () => new Promise(resolve => uploads.push(resolve)),
+      syncGoogleAccountDetails: async () => true,
+    };
+    const cloud = setupCloudUI({ services, getProgress: progress, applyProgress() {} });
+    onUser({ uid: 'player_test_001' });
+    await flush();
+    uploads.shift()(progress());
+    await flush();
+    const first = cloud.saveRaceProgress(true);
+    const second = cloud.saveRaceProgress(true);
+    await flush();
+    uploads.shift()(progress());
+    await first;
+    await flush();
+    assert.equal(cloudView.resultState, 'syncing');
+    uploads.shift()(progress());
+    await second;
+    assert.equal(cloudView.resultState, 'synced');
   });
 });
