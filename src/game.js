@@ -26,7 +26,7 @@ import { skyJumpGap } from './sky-track.ts'; import { dropCar, stepDeck, stepRiv
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
-import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, DRIFT_FLIP_GRACE, DRIFT_REWARDS, driftCredit } from './drive-rules.ts';
+import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, DRIFT_FLIP_GRACE, DRIFT_REWARDS, driftCredit, driftTier, grantMiniBoost } from './drive-rules.ts';
 export { MAX_SPEED, NITRO_TIME, NITRO_EXTEND, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
@@ -172,7 +172,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
       section: null, inShortcut: false, falls: 0, fall: null, span: false,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
-      drift: null, driftPayout: null, miniBoost: 0, boostTunnelClaimed: [], boostTunnelEvent: null, trick: null, trickPayout: null, flick: null, steerSign: 0,
+      drift: null, driftPayout: null, miniBoost: 0, miniBoostEvent: null, boostTunnelClaimed: [], boostTunnelEvent: null, trick: null, trickPayout: null, flick: null, steerSign: 0,
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
       heldItem: null, itemCooldown: 0,
     },
@@ -195,7 +195,7 @@ function collectRing(race, ring, index) {
   car.score += 150;
   if (ring.type === 'charge') car.fuel = Math.min(100, car.fuel + RING_FUEL);
   else if (ring.type === 'nitro') addNitro(car, RING_NITRO.nitro);
-  else if (ring.type === 'slipstream') car.miniBoost = Math.max(car.miniBoost, SLIPSTREAM_BOOST);
+  else if (ring.type === 'slipstream') grantMiniBoost(car, SLIPSTREAM_BOOST, race.elapsed);
   else if (ring.type === 'risk') {
     addNitro(car, RING_NITRO.risk);
     car.score += race.risk.ringScore;
@@ -301,7 +301,7 @@ export function stepRace(race, input, dt) {
   } else if (car.drift && !(canDrift && steer === 0 && (car.drift.grace += dt) <= DRIFT_FLIP_GRACE)) { // neutral mid-flip: held, unpaid
     const reward = DRIFT_REWARDS.find(r => car.drift.time >= r.time);
     if (reward) {
-      car.miniBoost = Math.max(car.miniBoost, reward.boost);
+      grantMiniBoost(car, reward.boost, race.elapsed, driftTier(car.drift.time));
       car.driftPayout = { time: race.elapsed, nitro: car.drift.nitro };
     }
     car.drift = null;
@@ -311,7 +311,7 @@ export function stepRace(race, input, dt) {
   if (car.section === 'boost-tunnel' && !car.boostTunnelClaimed.includes(section.from) &&
       car.speed >= 20 && car.altitude < 2.5 && !brake) {
     car.boostTunnelClaimed.push(section.from);
-    car.miniBoost = Math.max(car.miniBoost, 3.5);
+    grantMiniBoost(car, 3.5, race.elapsed);
     addNitro(car, 0.25);
     car.boostTunnelEvent = { time: race.elapsed, distance: car.distance };
   }
@@ -384,7 +384,7 @@ export function stepRace(race, input, dt) {
     // Reward an earned, controlled NITRO/BOOST-to-flight-to-road transition once per landing.
     const chain = earnsAirChain(car, DRIFT_MIN_SPEED) && race.modifier !== 'no-flight';
     car.landing = { speed: Math.abs(car.verticalSpeed), time: race.elapsed, distance: car.distance, x: car.x, chain };
-    if (chain) car.miniBoost = Math.max(car.miniBoost, 1.2);
+    if (chain) grantMiniBoost(car, 1.2, race.elapsed);
     car.poweredFlightTime = 0;
     car.flightBoosted = false;
     if (car.trick?.done && car.section !== 'gap') { // touching down over a gap is a fall, not a landing

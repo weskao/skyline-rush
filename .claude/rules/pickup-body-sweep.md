@@ -34,5 +34,6 @@ car or paint needs no edit here. Check one light and one dark paint in a real We
 The can uses the marker's fitted absorption point. Keep the orange flash and instanced
 spark cluster at that point, and keep the old road burst, contact decal and rear streaks
 out of the can path. Road-anchored particles outlive the car passing the pickup at speed.
+The can's old rear streaks now live on as the mini-boost start cue (`mini-boost-streaks.md`), never as a pickup effect.
 `tests/pickup-collect-vfx.test.js` guards the absorption timing, contracting cluster and
 independent flashes when pickups overlap.
