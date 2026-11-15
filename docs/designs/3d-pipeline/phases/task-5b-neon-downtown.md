@@ -388,7 +388,8 @@ Rules, on top of step 10's:
 - **Oldtown (provisional):** on land, city kit only: retail and office blocks on a 20 m building line (22 m
   elsewhere), a blade sign on nine fronts in ten, cherry trees down both sides, no tower and no screen.
 - **Reserved footprints** (`NEON_RESERVED`) for the two landmarks the concept art will define, with a stand-in from
-  the existing kit until then:
+  the existing kit until then. Superseded: steps 12 and 13 placed both landmarks, so the stand-ins and
+  `NEON_RESERVED` are gone; the table is the record of what step 11 shipped:
 
   | Sector | Centre, lap metres | Offset from the centre line | Along by across | Stand-in |
   | --- | --- | --- | --- | --- |
@@ -502,7 +503,7 @@ Measured 2026-11-15 on one desktop machine; per-device numbers and captures are 
     tower in the sea round the corner (RED at lap 5633, 420 m out);
   - `tests/neon-scenery.test.js`: yard land on the right, open water on the left;
   - `tests/neon-highlights.test.js` and `tests/neon-landmarks-glb.test.js`: the unplaced list is the three oldtown
-    pieces;
+    pieces (empty since step 13);
   - `tests/neon-lighting.test.js`: the car sky.
 - [x] `tests/neon-parity.test.js` hashes unchanged.
 - [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` (3127 pass, 0 fail) and
@@ -549,6 +550,66 @@ Still wrong:
   (`feature/neon-landmark-light`). The ship's windows are a flat, even grid.
 - **Canal towers.** Seen from the corner, the canal's across-the-water skyline still stands in the sea (canal sector,
   not changed here).
+
+## Step 13: oldtown dressed, its landmarks placed (owner brief, 2026-11-15)
+
+Branch `feature/neon-oldtown-dressing`. Replaces step 11's provisional oldtown and the oldtown row of the
+reserved-footprint table: with step 12 every landmark piece is placed, so `NEON_LANDMARKS_NOT_PLACED` is empty and
+`NEON_RESERVED` is gone (the square's footprint is `NEON_SQUARE`). Nothing here changes without `?look=3d`, on Low or
+on another track.
+
+### As placed (`src/neon-scenery-plan.ts`)
+
+| Piece | Lap metres | Side, offset | Instances |
+| --- | --- | --- | --- |
+| `oldtown_gate` | 7058 (the sector starts at 7038) | over the road, 0 m | 1 |
+| `lantern_span` | every 24 m from 7345 to 8281 | over the road, 0 m | 40 |
+| `lantern_span` | 7637 and 7673 | over the square, 42 m left | 2 |
+| `clock_tower` | 7655 | 45 m left, on the square, facing the road | 1 |
+
+- **Oldtown (7066 to 8737):** unbroken rows of the kit's lowest pieces, the timber shops, 17.5 m from the centre
+  line, spaced along each row's own line so the inside of a bend has no bare ground. No block, tower, blade sign or
+  screen in the sector; no street lamp under the lanterns.
+- **Square:** the tower between two lantern strings and four trees, a back row of ten shops and an end terrace of
+  four at each side, open to the street.
+- **Plaza court:** the sculpture moved in from 36 to 30 m left; three glass towers close the court behind it, a
+  screen in each gap, a row of trees down each side.
+- **Underpass straight (950 to 1280):** three kinds of block cycled per plot, the right side one on, so no two
+  neighbours or facing plots match.
+- The lantern spans stop before the rooftop shortcut (8290); no straddling piece stands within 10 m of a gameplay
+  prop or over a shortcut corridor. The two shops behind the shortcut's section sign (8225) stand back 4 m.
+- Collision, VFX ports, rings and shortcut corridors did not move.
+
+### Evidence
+
+Measured 2026-11-16 on one desktop machine; per-device numbers and captures are in the ignored
+`../audits/neon-oldtown-dressing/`.
+
+- [x] RED first, then GREEN: `tests/neon-scenery-plan.test.js` (the gate, the lantern spans and their clearances,
+  the square, no gap in a shop row, the stood-back shops at the sign), `tests/neon-landmarks-glb.test.js` and
+  `tests/neon-highlights.test.js` (the unplaced list; empty once merged with step 12).
+- [x] `tests/neon-parity.test.js` hashes unchanged.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build`.
+- [x] High draw calls in a race under `?look=3d`, cap 380, read by a capture probe with the car held at each point:
+  grid 332 at most, underpass straight 192, oldtown 171 to 201 (181 to 195 before), plaza court 208; home 254 (cap
+  540).
+- [x] Captures looked at against step 11's: the gate approach, the lantern bends, the square and tower, the sign,
+  the rooftop corridor, the plaza court and the underpass straight. Not approved; see below.
+- [ ] `tests/neon-look-browser.spec.js` with its four new probes (16 in all): not run, on the owner's instruction of
+  2026-11-16 that no browser spec runs.
+- [ ] Owner art approval of oldtown, the square and the plaza court.
+- [ ] Owner playtest.
+- [ ] Phone, portrait and landscape (`make phone-diag`).
+
+Still wrong:
+
+- The clock tower's brick is near-black at night; only its faces read (`feature/neon-landmark-light`). Alongside
+  the square it sits at the edge of the view: it reads from the bends before it.
+- The square and the plaza court stand on the plain paving slab: no pattern, steps or kerb.
+- After the S-bends (8288 to 8737) the street has shops and lamps only, with the glass skyline straight behind one
+  rank of roofs.
+- The road railing runs into the gate's plinths; the recessed shops leave a 4 m notch at the shortcut sign.
+- The underpass straight's podium shopfronts are the same along both sides; only the blocks above vary.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
