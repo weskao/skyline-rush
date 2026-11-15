@@ -22,6 +22,8 @@ test('short landscape cloud shortcut opens the Cloud tab and Back restores its t
   await page.setViewportSize({ width: 844, height: 390 });
   await page.goto('/');
   const entry = page.locator('#cloud-open');
+  await expect(entry).toBeVisible();
+  await expect(page.locator('#medal-chip')).toBeVisible();
   await entry.click();
   const dialog = page.locator('#history-screen');
   await expect(dialog.getByRole('tab', { name: 'Cloud save' })).toHaveAttribute('aria-selected', 'true');
