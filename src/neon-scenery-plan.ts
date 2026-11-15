@@ -26,9 +26,15 @@ const onWater = (sector: NeonSector): boolean => sector === 'expressway' || sect
 const PARAPET = 13.2, PARAPET_TOP: Partial<Record<NeonSector, number>> = { expressway: .55, canal: .25 };
 /** Lap runs of the expressway parapet (the sweeper, then the harbour corner) and of the canal bridge's. */
 const EXPRESSWAY_RAILS: readonly (readonly [number, number])[] = [[2857, 4351], [5594, 5988]], CANAL_RAILS: readonly [number, number] = [5990, 7038];
-/** The harbour straight: a quay promenade each side instead of a parapet (canal_bank: 6.5 m deep, its inner edge
- *  just outside the kerb, its wall and bollard lamps to the open water), so no street lamp stands there. */
+/** The harbour straight: a quay promenade on the sea side (left) instead of a parapet (canal_bank: 6.5 m deep, its
+ *  inner edge just outside the kerb, its wall and bollard lamps to the open water), so no street lamp stands there. */
 const QUAY: readonly [number, number] = [4357, 5588], QUAY_LINE = 16.2;
+/** The container yard: land on the right of the harbour straight (neon-scenery.ts lays it), its edge 278 m or more
+ *  from any other part of the loop. Gantries 260 m apart, clear of the rings and section signs by 40 m; containers on
+ *  their 27 m pivot line, clear of the gantries' stair towers (21.4 m); the ship 40 m out under the last boom, its
+ *  pivot on the sea plane (classic-backdrop.ts). Sizes: assets-src/neon-landmarks/asset-brief.md. */
+export const NEON_YARD: readonly [number, number] = [4351, 5594];
+const GANTRIES = [4980, 5240, 5500], SHIP = { lap: 5560, offset: -40, y: -6 }, STACKS = { from: 4372, pitch: 30, offset: 27 };
 /** The market kerb lies on the road edge, its lip against the procedural white line (11.5 m, 0.12 m wide) and its
  *  back under the procedural barrier (classic-road-render.ts), so it reads as one kerb; 2 cm up off the asphalt. */
 const KERB = 11.56 + .5, KERB_Y = .02;
@@ -40,10 +46,9 @@ export const NEON_GROUND = { inner: 12.6, reach: 260, y: -.03, depth: 8, tile: 7
 const UNDERPASS: readonly [number, number] = [682, 918], EMBANKMENT: readonly [number, number] = [650, 950];
 /** Corners tight enough that 30 m plots on the inside (1 right, -1 left) would run into each other. */
 const TIGHT: readonly (readonly [number, number, number])[] = [[663, 942, 1], [7038, 7338, 1], [7338, 7498, -1], [7498, 7813, 1], [7813, 8128, -1], [8128, 8288, 1], [8327, 8627, -1], [9607, 9886, 1]];
-/** Where the two landmarks the owner's concept art will define are to stand (Blender, a later task): centre `lap`
- *  and `offset` from the centre line, `along` by `across` metres. Until then the existing kit stands in: a mole of
- *  quay pieces off the end of the harbour straight, an open square with a screen and trees in oldtown. */
-export const NEON_RESERVED = { harbour: { lap: 5560, offset: -55.2, along: 40, across: 72 }, oldtown: { lap: 7655, offset: -42, along: 60, across: 40 } } as const;
+/** Where the oldtown landmark is to stand: centre `lap` and `offset` from the centre line, `along` by `across` metres.
+ *  Until it is placed the existing kit stands in: an open square with a screen and trees. */
+export const NEON_RESERVED = { oldtown: { lap: 7655, offset: -42, along: 60, across: 40 } } as const;
 
 export type NeonKit = 'city' | 'landmarks';
 interface Piece { kit: NeonKit; /** Meshes `<piece>_lod0` .. `_lod<lods - 1>`. */ lods: number; /** Most placements in one chunk. */ cap: number;
@@ -63,6 +68,7 @@ export const NEON_PIECES = {
   skyline_tower_a: city(2, 4, false, 99), skyline_tower_b: city(2, 4, false, 99), skyline_tower_c: city(2, 4, false, 99), skyline_spire: city(2, 4, false, 99),
   rail_portal: landmark(2, 2), rail_segment: landmark(11, 1, true), expressway_pier: landmark(4), expressway_rail: landmark(22, 1, true),
   canal_arch: landmark(1, 2, true), canal_bridge_rail: landmark(22, 1, true), canal_bank: landmark(24), plaza_sculpture: landmark(1, 2, true), boulevard_footbridge: landmark(1, 1, true),
+  harbour_gantry: landmark(1, 2, true), container_stack: landmark(5), cargo_ship: landmark(1, 2),
 } as const satisfies Record<string, Piece>;
 export type NeonPiece = keyof typeof NEON_PIECES;
 
@@ -129,7 +135,9 @@ function furniture({ r, put, tile, row }: Chunk, side: number, facing: number): 
   row(12, (lap, sector) => { if (!onWater(sector) && !within(lap, UNDERPASS)) tile('railing', lap, side * 14.1, facing, NEON_CHUNK_METRES / 12); });
   row(30, (lap, sector) => { if (sector === 'market') tile('kerb_redwhite', lap, side * KERB, facing, NEON_CHUNK_METRES / 30, KERB_Y); });
   row(2, (lap, sector) => { // far skyline: behind the blocks on land, across the water elsewhere; sunk so it meets either
-    put(SKYLINE[Math.floor(r() * SKYLINE.length)]!, lap, side * (onWater(sector) ? 320 + r() * 260 : 170 + r() * 70), facing, -6);
+    const piece = SKYLINE[Math.floor(r() * SKYLINE.length)]!, out = r(), yard = side > 0 && within(lap, NEON_YARD);
+    if (sector === 'harbour' && side < 0) return; // the harbour's left is open sea to the horizon: no tower in the water
+    put(piece, lap, side * (onWater(sector) && !yard ? 320 + out * 260 : 170 + out * 70), facing, -6);
   });
 }
 
@@ -138,7 +146,7 @@ function waterside({ put, tile, every, once }: Chunk, side: number): void {
   const rail = side > 0 ? 0 : Math.PI;
   for (const [from, to] of EXPRESSWAY_RAILS) every(from, to, 12, lap => tile('expressway_rail', lap, side * PARAPET, rail, 12));
   every(CANAL_RAILS[0], CANAL_RAILS[1], 12, lap => tile('canal_bridge_rail', lap, side * PARAPET, rail, 12));
-  every(QUAY[0], QUAY[1], 12, lap => put('canal_bank', lap, side * QUAY_LINE, rail));
+  if (side < 0) every(QUAY[0], QUAY[1], 12, lap => put('canal_bank', lap, side * QUAY_LINE, rail));
   for (let k = 0; k < 12; k++) { // the quays where the land ends: +X toward the water
     once(NEON_SHORE[0], () => put('canal_bank', NEON_SHORE[0], side * (18 + 12 * k), HALF_PI));
     once(NEON_SHORE[1], () => put('canal_bank', NEON_SHORE[1], side * (18 + 12 * k), -HALF_PI));
@@ -154,9 +162,13 @@ function landmarks({ put, row, every, once }: Chunk): void {
   once(6500, () => put('canal_arch', 6500, 0, 0));
   once(9400, () => put('plaza_sculpture', 9400, -36, 0));
   for (const lap of [150, 330]) once(lap, () => put('boulevard_footbridge', lap, 0, 0));
-  // Stand-ins on the reserved footprints: two rows of quay back to back make a mole; a screen faces the old square.
-  const mole = NEON_RESERVED.harbour.lap, square = NEON_RESERVED.oldtown;
-  for (const [shift, yaw] of [[-3.5, -HALF_PI], [3.5, HALF_PI]] as const) for (let k = 0; k < 6; k++) once(mole + shift, () => put('canal_bank', mole + shift, -(QUAY_LINE + 9 + 12 * k), yaw));
+  // The harbour: gantries straddling the road, booms over the sea on the left (yaw heading + 180), the yard's stacks
+  // turned end for end, the ship under the last boom.
+  for (const lap of GANTRIES) once(lap, () => put('harbour_gantry', lap, 0, Math.PI));
+  every(STACKS.from, QUAY[1], STACKS.pitch, lap => put('container_stack', lap, STACKS.offset, Math.round((lap - STACKS.from) / STACKS.pitch) % 2 ? Math.PI : 0));
+  once(SHIP.lap, () => put('cargo_ship', SHIP.lap, SHIP.offset, 0, SHIP.y));
+  // Stand-in on the reserved footprint: a screen faces the old square.
+  const square = NEON_RESERVED.oldtown;
   once(square.lap, () => put('billboard_a', square.lap, square.offset, HALF_PI - .6));
 }
 

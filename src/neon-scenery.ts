@@ -3,7 +3,7 @@
 // seed changes. The model cache handle owns the GLB geometry and materials; this layer owns its pools and the ground.
 import * as THREE from 'three';
 import type { ClassicRoad } from './classic-road-routes.ts';
-import { NEON_CHUNK_METRES, NEON_GROUND, NEON_LAP, NEON_MAX_CHUNKS, NEON_PIECES, NEON_SHORE, NEON_TILE, neonChunkPlan, neonChunkWindow, type NeonKit, type NeonPiece, type NeonPlacement } from './neon-scenery-plan.ts';
+import { NEON_CHUNK_METRES, NEON_GROUND, NEON_LAP, NEON_MAX_CHUNKS, NEON_PIECES, NEON_SHORE, NEON_TILE, NEON_YARD, neonChunkPlan, neonChunkWindow, type NeonKit, type NeonPiece, type NeonPlacement } from './neon-scenery-plan.ts';
 import { REFLECT_LAYER } from './wet-reflection.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
@@ -50,27 +50,33 @@ function createKitPools(source: THREE.Object3D, kit: NeonKit) {
   };
 }
 
-/** The land of the city sectors: a strip each side of the road from the far quay line round to the near one, with a
- *  wall down into the canal along its outer edges and across both ends. One draw. */
+/** The land of the city sectors: a strip each side of the road from the far quay line round to the near one, and the
+ *  harbour's container yard on the right of its straight, each with a wall down into the water along its outer edges
+ *  and across both ends. One draw. */
 function groundGeometry(route: ClassicRoad): THREE.BufferGeometry {
-  const { inner, reach, y, depth, tile } = NEON_GROUND, STEP = 16, from = NEON_SHORE[1], length = NEON_LAP - from + NEON_SHORE[0];
-  const rows = Math.ceil(length / STEP), across = [-reach, -reach, -inner, inner, reach, reach], positions: number[] = [], uvs: number[] = [], index: number[] = [];
+  const { inner, reach, y, depth, tile } = NEON_GROUND, STEP = 16, positions: number[] = [], uvs: number[] = [], index: number[] = [];
   // Planar UVs, one pavement tile per `tile` metres; a wall vertex is pushed one wall height along u so it is not a smear.
   const vertex = (x: number, z: number, wall: boolean): void => { positions.push(x, wall ? y - depth : y, z); uvs.push((x + (wall ? depth : 0)) / tile, z / tile); };
-  for (let row = 0; row <= rows; row++) {
-    const lap = from + Math.min(length, row * STEP);
-    across.forEach((offset, k) => { const [x, z] = route.point(lap, offset); vertex(x, z, k === 0 || k === 5); });
-    if (!row) continue;
-    for (const k of [0, 1, 3, 4]) { // wall, land, (the road), land, wall
-      const a = (row - 1) * 6 + k, b = a + 6;
-      index.push(a, b, a + 1, a + 1, b, b + 1);
+  /** `across`: offsets of one row; a repeated end offset is its wall foot. No land between a negative and a positive one. */
+  const strip = (from: number, length: number, across: readonly number[]): void => {
+    const n = across.length, first = positions.length / 3, rows = Math.ceil(length / STEP), wall = (k: number) => across[k] === across[k === 0 ? 1 : k - 1] && (k === 0 || k === n - 1);
+    const lo = wall(0) ? 1 : 0, hi = wall(n - 1) ? n - 2 : n - 1;
+    for (let row = 0; row <= rows; row++) {
+      const lap = from + Math.min(length, row * STEP);
+      across.forEach((offset, k) => { const [x, z] = route.point(lap, offset); vertex(x, z, wall(k)); });
+      if (row) for (let k = 0; k < n - 1; k++) if (!(across[k]! < 0 && across[k + 1]! > 0)) { // wall, land, (the road), land, wall
+        const a = first + (row - 1) * n + k, b = a + n;
+        index.push(a, b, a + 1, a + 1, b, b + 1);
+      }
     }
-  }
-  for (const row of [0, rows]) { // the quay across each end, under the bridge deck too
-    const top = row * 6 + 1, base = positions.length / 3;
-    for (const k of [0, 3]) vertex(positions[(top + k) * 3]!, positions[(top + k) * 3 + 2]!, true);
-    index.push(top, top + 3, base, base, top + 3, base + 1);
-  }
+    for (const row of [0, rows]) { // the quay across each end, under the bridge deck too
+      const top = first + row * n, base = positions.length / 3;
+      for (const k of [lo, hi]) vertex(positions[(top + k) * 3]!, positions[(top + k) * 3 + 2]!, true);
+      index.push(top + lo, top + hi, base, base, top + hi, base + 1);
+    }
+  };
+  strip(NEON_SHORE[1], NEON_LAP - NEON_SHORE[1] + NEON_SHORE[0], [-reach, -reach, -inner, inner, reach, reach]);
+  strip(NEON_YARD[0], NEON_YARD[1] - NEON_YARD[0], [inner, reach, reach]);
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));

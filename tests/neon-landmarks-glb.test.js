@@ -215,9 +215,12 @@ test('side modules stay outside the kerb above the road and tile at their repeat
   }
 });
 
-test('the harbour and oldtown pieces are in the kit but not yet placed: one list names them until a change places them', () => {
+// Landmark placement step (2026-11-15): the three harbour pieces stand on the lap; the oldtown three stay listed until
+// their own change (feature/neon-oldtown-dressing) places them.
+test('the harbour pieces are placed; the oldtown pieces are in the kit but not yet placed: one list names them', () => {
   const placed = Object.keys(NEON_PIECES).filter(piece => NEON_PIECES[piece].kit === 'landmarks');
-  assert.deepEqual([...NEON_LANDMARKS_NOT_PLACED].sort(), [...NEW_PIECES].sort());
+  assert.deepEqual([...NEON_LANDMARKS_NOT_PLACED].sort(), NEW_SECTORS.oldtown.slice().sort());
+  for (const piece of NEW_SECTORS.harbour) assert.ok(piece in NEON_PIECES, `${piece} is placed`);
   for (const piece of NEON_LANDMARKS_NOT_PLACED) assert.ok(!(piece in NEON_PIECES), `${piece} is placed now: remove it from NEON_LANDMARKS_NOT_PLACED`);
   assert.deepEqual([...placed, ...NEON_LANDMARKS_NOT_PLACED].sort(), pieces.map(([name]) => name).sort(), 'every kit piece is placed or listed as not yet placed');
   for (const [sector, names] of Object.entries(NEW_SECTORS)) for (const name of names) assert.equal(contract.pieces[name].sector, sector, name);

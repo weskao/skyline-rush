@@ -144,8 +144,8 @@ test('step 4: the lit pieces around the car are on the wet mirror layer; far ban
     assert.ok(mesh.layers.isEnabled(0), 'and every pool draws in the main view');
   }
   // N6: the mirror redraws every pool on its layer, so only what lights the street is on it.
-  for (const piece of ['kerb_redwhite', 'cherry_tree', 'skyline_spire', 'railing', 'expressway_pier', 'canal_bank', 'rail_portal']) assert.equal(NEON_PIECES[piece].mirror, false, piece);
-  for (const piece of ['sign_blade_a', 'billboard_b', 'shop_market_a', 'street_lamp', 'tower_glass_a', 'expressway_rail', 'canal_bridge_rail', 'plaza_sculpture', 'rail_segment']) assert.equal(NEON_PIECES[piece].mirror, true, piece); // rail_segment: the underpass lamps
+  for (const piece of ['kerb_redwhite', 'cherry_tree', 'skyline_spire', 'railing', 'expressway_pier', 'canal_bank', 'rail_portal', 'container_stack', 'cargo_ship']) assert.equal(NEON_PIECES[piece].mirror, false, piece);
+  for (const piece of ['sign_blade_a', 'billboard_b', 'shop_market_a', 'street_lamp', 'tower_glass_a', 'expressway_rail', 'canal_bridge_rail', 'plaza_sculpture', 'rail_segment', 'harbour_gantry']) assert.equal(NEON_PIECES[piece].mirror, true, piece); // rail_segment: the underpass lamps; the gantry: its floods over the road
   kit.dispose();
 });
 
@@ -190,16 +190,20 @@ test('kit emissive: the neon tubes reach the bloom and the brightest texel stays
   kit.dispose();
 });
 
-test('N3: one ground mesh puts land under the city sectors and leaves the water open under the expressway, the harbour and the bridge', () => {
+test('N3: one ground mesh puts land under the city sectors and the harbour yard, and leaves the water open under the expressway, the harbour quay and the bridge', () => {
   const { kit } = rig();
   kit.update(route, 100, 'high');
   const ground = kit.group.getObjectByName('Neon ground'), at = ground.geometry.getAttribute('position'), v = new THREE.Vector3();
   assert.ok(ground.isMesh && !ground.isInstancedMesh);
   const top = [];
   for (let i = 0; i < at.count; i++) { v.fromBufferAttribute(at, i); if (v.y > -1) top.push(v.clone()); else assert.ok(Math.abs(v.y - NEON_GROUND.y + NEON_GROUND.depth) < 1e-4, 'the quay wall'); }
-  const gap = lap => Math.min(...top.map(p => Math.hypot(p.x - route.point(lap)[0], p.z - route.point(lap)[1])));
+  const gap = (lap, offset = 0) => Math.min(...top.map(p => Math.hypot(p.x - route.point(lap, offset)[0], p.z - route.point(lap, offset)[1])));
   for (const lap of [100, 800, 2000, 2700, 7300, 8000, 9000, 9800]) assert.ok(gap(lap) < 16, `land beside the road at ${lap}`);
-  for (const lap of [3000, 3600, 4400, 5000, 5800, 6500, 6900]) assert.ok(gap(lap) > 60, `open water at ${lap}`);
+  for (const lap of [3000, 3600, 5800, 6500, 6900]) assert.ok(gap(lap) > 60, `open water at ${lap}`);
+  for (const lap of [4400, 5000, 5500]) { // the harbour straight: the container yard on the right, the sea on the left
+    assert.ok(gap(lap, 13) < 16 && gap(lap, 250) < 16, `yard land on the right at ${lap}`);
+    assert.ok(gap(lap, -60) > 60, `open water on the left at ${lap}`);
+  }
   for (const p of top) assert.ok(route.offset(p.x, p.z, 16) >= NEON_GROUND.inner - .2, 'never over the carriageway');
   const before = ground.geometry;
   kit.update(route, 5000, 'high');
