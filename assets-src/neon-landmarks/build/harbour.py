@@ -143,10 +143,10 @@ def harbour_gantry(b):
         _lamp(b, "flood", xc, 4.0, BOOM - 0.35, w=1.0, d=0.6)
 
 
-def _containers(b, x0, y0, z0, nx, nz, pri, skip="", lod=(0, 1)):
+def _containers(b, x0, y0, z0, nx, nz, pri, skip="", lod=(0, 1), only=""):
     """A block nx containers wide (x) and nz high, one bay (12 m) long, its corner on the cell lattice."""
     b.box("containers", (x0 * CELL[0] + 0.02, (x0 + nx) * CELL[0] - 0.02), (y0 * CELL[1] + 0.15, (y0 + 1) * CELL[1] - 0.15),
-          (z0 * CELL[2] + 0.005, (z0 + nz) * CELL[2] - 0.005), skip="-z" + skip, pri=pri, mirror="", lod=lod)
+          (z0 * CELL[2] + 0.005, (z0 + nz) * CELL[2] - 0.005), skip="-z" + skip, only=only, pri=pri, mirror="", lod=lod)
 
 
 def _end_detail(b, x0, y, z0, face, reefer=False):
@@ -199,6 +199,21 @@ def station(y, i):
     return SHIP[-1][i]
 
 
+def _cargo(b, c, x0, tiers, beside, behind, ahead):
+    """One bay of deck cargo on one side: a block 4 containers wide, cut at the heights of its neighbours (the other
+    side, the bays behind and ahead) so a face hidden by one is dropped or, in the 0.3 m bay gap, kept at a low texel
+    density. The walls take the quay stack's density (0.4 vs 0.45; 0.18 smeared the ribs at hero distance), the
+    tops a third of it: from the quay and the road they are seen edge on."""
+    inner = "+x" if x0 < 0 else "-x"
+    cuts = sorted({0, tiers} | {h for h in (beside, behind, ahead) if 0 < h < tiers})
+    for lo, hi in zip(cuts, cuts[1:]):
+        gap = "-y" * (behind >= hi) + "+y" * (ahead >= hi)
+        _containers(b, x0, c, HATCH + lo, 4, hi - lo, 0.4, "+z" + inner * (beside >= hi) + gap)
+        if gap:
+            _containers(b, x0, c, HATCH + lo, 4, hi - lo, 0.06, only=gap, lod=(0, 0))
+    _containers(b, x0, c, HATCH + tiers - 1, 4, 1, 0.12, only="+z")
+
+
 def deck(y):
     return station(y, 3)
 
@@ -218,10 +233,11 @@ def cargo_ship(b):
     for z in [0.2 * k for k in range(1, 16)]:                                                   # draft marks every 20 cm
         for y in (-60.0, -2.0, 40.0):
             b.box("marking", (12.0, 12.02), (y, y + (0.5 if z % 1 < 0.05 else 0.25)), (z, z + 0.1), only="+x", swatch=True, lod=(0, 0))
-    for c, (port, starboard) in zip(range(-4, 4), BAYS):
+    for i, (c, (port, starboard)) in enumerate(zip(range(-4, 4), BAYS)):
         b.box("deck", (0, 10.4), (c * CELL[1] + 0.3, (c + 1) * CELL[1] - 0.3), (10.4, HATCH * CELL[2]), skip="-z", pri=0.18)   # hatch
-        _containers(b, -4, c, HATCH, 4, port, 0.18)
-        _containers(b, 0, c, HATCH, 4, starboard, 0.18)
+        near = lambda side: (BAYS[i - 1][side] if i else 0, BAYS[i + 1][side] if i + 1 < len(BAYS) else 0)
+        _cargo(b, c, -4, port, starboard, *near(0))
+        _cargo(b, c, 0, starboard, port, *near(1))
     for c in range(-3, 4):                                                                       # lashing bridges at the bay gaps
         y = c * CELL[1]
         b.box("steel_dark", (0, 10.4), (y - 0.25, y + 0.25), (HATCH * CELL[2] + 2.3, HATCH * CELL[2] + 2.6), swatch=True, lod=(0, 0))

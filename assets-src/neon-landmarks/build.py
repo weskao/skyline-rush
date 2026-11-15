@@ -26,6 +26,7 @@ from mathutils import Matrix
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / "build"))
+import lighting  # noqa: E402
 import materials  # noqa: E402
 import sector_materials  # noqa: E402
 from geo import Builder, keep_faces, lod_mesh, mirror_and_triangulate  # noqa: E402
@@ -277,6 +278,12 @@ def bake_atlases(scene, kit, rigs, spec):
     # keeping each texel's hue. The floor returns the residual noise to 0, since the runtime multiplies the atlas.
     target = SPILL_PEAK * (level / np.percentile(lit[lit > 0], 99.5)) ** SPILL_GAMMA
     spill *= np.clip(target - 0.02, 0, 0.6) / np.maximum(level, 1e-9)
+    if lighting.lit(spec["pieces"]):   # the sector kit's bake-only floods; the first kit has none and bakes as before
+        lights = lighting.place(scene, spec["pieces"], STATION)
+        work = bake(scene, kit, rigs, "work", SIZE // 2, lighting.WORK_SAMPLES, kind="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"})
+        lighting.remove(lights)
+        work = dilate(smooth(work, half_covered), half_covered, steps=3)
+        spill = lighting.combine(spill, work.repeat(2, axis=0).repeat(2, axis=1), albedo, emit)
     maps = dilate(np.concatenate([albedo * (0.6 + 0.4 * occlusion), emit + spill, occlusion, rough, metal], axis=2), covered)
     row = int(SWATCH_ROW * SIZE)
     assert len(spec["mats"]) <= CELLS, "one swatch cell per material"
@@ -295,7 +302,7 @@ def bake_atlases(scene, kit, rigs, spec):
         normal = dilate(normal, half_covered)
         normal[int(SWATCH_ROW * SIZE // 2):] = (0.5, 0.5, 1.0)   # flat cells: flat
         images.append(save_texture(f"{name}_normal", normal, "Non-Color", "PNG"))
-    return images, emissive_stats(emissive)
+    return images, emissive_stats(emissive), emissive
 
 
 def measure(mesh):
@@ -331,11 +338,12 @@ def bake_kit(scene, spec):
     for material in sources:
         other_half.materials.append(material)
     shade = add_object(scene, "other_half", other_half)   # lights and shadows the authored half; never baked itself
-    images, stats = bake_atlases(scene, kit, rigs, spec)
+    images, stats, emissive = bake_atlases(scene, kit, rigs, spec)
     material = materials.delivery_material(*images[:3], name=spec["material"], normal=images[3] if spec["normal"] else None)
     for obj in (kit, shade):
         bpy.data.objects.remove(obj)
-    return full, material, stats
+    surfaces = {name: lighting.measure(mesh, emissive, SIZE, list(spec["mats"]), GAME_EMISSIVE) for name, mesh in full.items()} if lighting.lit(spec["pieces"]) else {}
+    return full, material, stats, surfaces
 
 
 def lamps_of(spec, mesh):
@@ -351,7 +359,7 @@ def main():
     scene = start_scene()
     baked = [(spec, *bake_kit(scene, spec)) for spec in KITS]   # one kit at a time: no light crosses between them
     contract, lamps, levels = {}, {}, {}
-    for spec, full, material, _ in baked:
+    for spec, full, material, _, surfaces in baked:
         for lamp, mat in spec["mats"].items():
             if mat.get("emit") and "lamp" not in mat:
                 lamps[lamp] = [round(float(c), 2) for c in encode_srgb(np.array(mat["color"]))]
@@ -362,6 +370,8 @@ def main():
             pivot.empty_display_size = 2
             scene.collection.objects.link(pivot)
             entry = contract[name] = dict(PLACEMENT[name], pivot=name, material=spec["material"], lamps=lamps_of(spec, mesh), lods={})
+            if name in surfaces:   # per material: atlas texels per metre and the median runtime emissive (lighting.py)
+                entry["surfaces"] = surfaces[name]
             for lod in (0, 1):
                 data = lod_mesh(mesh, lod, f"{name}_lod{lod}")
                 data.materials.clear()
@@ -376,7 +386,7 @@ def main():
         glb="public/models/neon-landmarks/neon-landmarks.glb", materials=[spec["material"] for spec in KITS],
         axes="Y up, metres, -Z = driving direction, +X = driver's right",
         lamps=lamps, lamp_levels=levels,
-        emissive=dict(game_strength=GAME_EMISSIVE, bloom_threshold=BLOOM_THRESHOLD, **{spec["material"]: stats for spec, *_, stats in baked}),
+        emissive=dict(game_strength=GAME_EMISSIVE, bloom_threshold=BLOOM_THRESHOLD, **{spec["material"]: stats for spec, _, _, stats, _ in baked}),
         pieces=contract), indent=2) + "\n", encoding="utf-8")
     for line in (f"{name}: " + ", ".join(f"{lod} {m['triangles']} tris" for lod, m in entry["lods"].items()) for name, entry in contract.items()):
         print(line)
