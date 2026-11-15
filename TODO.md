@@ -5,6 +5,7 @@
 - [x] Event Lab switches between Route and Objects on narrow or short screens, retains Use this course above the scroll area, and places validation at the edited object. The open editor follows the visual viewport when the keyboard reduces it.
 - [x] Short-landscape What's New keeps the version and poster-based Play preview. The preview loads the bundled clip on activation. Browser Back closes the top-level modal or the nested viewer and restores its opener.
 - [x] `node --test tests/module-size.test.js` passed 3/3. Added browser cases to mode-history, cloud-entry, event-lab, photo-studio and release-video and extended the existing race-modes Photo Studio case.
+- [x] CI 43710794607: reproduced both unit failures, recorded the responsive CSS and dialog order in the UI contract, and verified Photo Studio clears its body class and photo camera before Back, Escape or browser history closes it. Local typecheck, production build and unit suite passed (2,975 passed, 3 skipped). A browser check matched all 233 recorded IDs, tags, classes and DOM positions.
 - [ ] Complete the browser RED/GREEN matrix and full `make verify`. Local Chromium encountered launch restrictions, renderer crashes and navigation timeouts. Complete real-device iOS/Android keyboard, safe-area and back-gesture checks, and verify the exact branch commit in GitHub Actions.
 - Base `4d45cc460b4d1c45ed26017ef9737802a5a1d63e`. Integration owns pause/results entry points. DOM changes share visual quality tiers and retain existing UI and photo cues.
 
