@@ -136,7 +136,7 @@ function furniture({ r, put, tile, row }: Chunk, side: number, facing: number): 
   row(30, (lap, sector) => { if (sector === 'market') tile('kerb_redwhite', lap, side * KERB, facing, NEON_CHUNK_METRES / 30, KERB_Y); });
   row(2, (lap, sector) => { // far skyline: behind the blocks on land, across the water elsewhere; sunk so it meets either
     const piece = SKYLINE[Math.floor(r() * SKYLINE.length)]!, out = r(), yard = side > 0 && within(lap, NEON_YARD);
-    if (sector === 'harbour' && side < 0) return; // the harbour's left is open sea to the horizon: no tower in the water
+    if (sector === 'harbour' && !yard) return; // open sea left of the straight and round the corner: no tower in the water
     put(piece, lap, side * (onWater(sector) && !yard ? 320 + out * 260 : 170 + out * 70), facing, -6);
   });
 }

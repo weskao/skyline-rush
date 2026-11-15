@@ -155,7 +155,8 @@ test('harbour: piers under the causeway, the quay promenade on the sea side, the
     assert.ok(!(p.piece in BUILDINGS) && !['cherry_tree', 'railing', 'kerb_redwhite'].includes(p.piece), `${p.piece} on the quay at ${p.lap.toFixed(0)}`);
     if (p.piece === 'street_lamp') assert.ok(p.lap >= 5588, 'the quay has its own bollard lamps: street lamps only on the corner parapet');
     if (p.piece === 'expressway_rail') assert.ok(p.lap >= 5588, 'no parapet hides the water along the quay');
-    if (p.piece.startsWith('skyline')) assert.ok(p.offset > 0, `no tower in the open sea (${p.offset.toFixed(0)} m at ${p.lap.toFixed(0)})`);
+    // The corner's right looks 213-452 m over open water to the canal bridge: a tower there stood in the sea too.
+    if (p.piece.startsWith('skyline')) assert.ok(p.offset > 0 && p.lap < NEON_YARD[1], `no tower in the open sea (${p.offset.toFixed(0)} m at ${p.lap.toFixed(0)})`);
   }
 });
 
