@@ -8,7 +8,7 @@ import { createRace, startRace, stepRace, setLayoutSeed, RACE_TRACKS, MAX_SPEED 
 import { botInput } from '../scripts/pickup-economy.mjs';
 import { classicRoadRoute } from '../src/classic-road-routes.ts';
 import { CLASSIC_THEMED_PLACEMENTS } from '../src/track-themes-classic.ts';
-import { NEON_RESERVED } from '../src/neon-scenery-plan.ts';
+import { NEON_CHUNK_METRES, NEON_RESERVED, neonChunkPlan } from '../src/neon-scenery-plan.ts';
 
 const SEEDS = [undefined, 1, 2, 3, 99];
 const forSeeds = run => {
@@ -214,12 +214,16 @@ test('the approach: a random ring in the 300 m before a line is on the road, in 
   assert.ok(led >= 7, `${label}: ${led} approach rings`);
 }));
 
+/** Lap metres of the harbour hero pieces as placed (src/neon-scenery-plan.ts). */
+const HARBOUR_LANDMARKS = Array.from({ length: 83 }, (_, chunk) => neonChunkPlan(chunk).filter(p => p.piece === 'harbour_gantry' || p.piece === 'cargo_ship')
+  .map(p => chunk * NEON_CHUNK_METRES + p.along)).flat();
 // Step 11: no stretch of the lap longer than 600 m without a ring line, a section, a gameplay prop or a landmark.
 test('nothing for more than 600 m never happens: lines, sections, props and landmarks cover the lap', () => {
   const track = RACE_TRACKS.neon, spans = [
     ...track.ringLines.map(line => [line[0][0], line.at(-1)[0]]), ...track.sections.map(s => [s.from, s.to]),
     ...CLASSIC_THEMED_PLACEMENTS.neon.map(p => [p.distance, p.distance]),
-    ...[150, 330, 698, 902, 6500, SCULPTURE, NEON_RESERVED.harbour.lap, NEON_RESERVED.oldtown.lap].map(d => [d, d]), // footbridges, portals, arch, sculpture, stand-ins
+    ...[150, 330, 698, 902, 6500, SCULPTURE, NEON_RESERVED.oldtown.lap].map(d => [d, d]), // footbridges, portals, arch, sculpture, stand-in
+    ...HARBOUR_LANDMARKS.map(d => [d, d]), // the harbour gantries and ship
   ].sort((a, b) => a[0] - b[0]);
   let reach = spans[0][0], worst = [spans[0][0] + track.length - Math.max(...spans.map(s => s[1])), 'the finish line'];
   for (const [from, to] of spans) { if (from - reach > worst[0]) worst = [from - reach, `${reach} to ${from}`]; reach = Math.max(reach, to); }

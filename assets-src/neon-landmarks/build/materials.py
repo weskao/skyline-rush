@@ -1,8 +1,10 @@
 """Materials of the Neon landmark kit.
 
-MATS are the authored surfaces: procedural, project-made, no outside source. They exist only to be baked: the
-kit ships one material, `neon_landmarks`, that reads three atlases (base colour, emissive, occlusion-roughness-
-metal). The order of MATS is the order of the flat-colour swatch cells along the top of the atlas.
+MATS are the authored surfaces of the nine pieces of the 4000 m lap: procedural, project-made, no outside source.
+They exist only to be baked into `neon_landmarks`, which reads three atlases (base colour, emissive,
+occlusion-roughness-metal). The order of MATS is the order of the flat-colour swatch cells along the top of the
+atlas. The harbour and oldtown pieces bake their own set (sector_materials.py); show_channel and
+delivery_material serve both.
 """
 import bpy
 
@@ -54,12 +56,19 @@ def _noise(nt, position, scale, stretch=(1, 1, 1)):
     return noise.outputs[0]
 
 
+def _cell(nt, geometry, spacing):
+    """Position divided by the grid spacing: one number, or (x, y, z) for a box grid."""
+    scaled = nt.nodes.new("ShaderNodeVectorMath")
+    scaled.operation = "MULTIPLY"
+    scaled.inputs[1].default_value = [1 / s for s in (spacing if isinstance(spacing, tuple) else (spacing,) * 3)]
+    nt.links.new(geometry.outputs["Position"], scaled.inputs[0])
+    return scaled
+
+
 def _joints(nt, geometry, spacing):
     """1 on the joint lines of a `spacing` grid, 0 elsewhere. Only the two axes in the face's plane draw lines."""
-    scaled = nt.nodes.new("ShaderNodeVectorMath")
-    scaled.operation = "SCALE"
-    scaled.inputs["Scale"].default_value = 1 / spacing
-    nt.links.new(geometry.outputs["Position"], scaled.inputs[0])
+    spacing = spacing if isinstance(spacing, tuple) else (spacing,) * 3
+    scaled = _cell(nt, geometry, spacing)
     fract = nt.nodes.new("ShaderNodeVectorMath")
     fract.operation = "FRACTION"
     nt.links.new(scaled.outputs[0], fract.inputs[0])
@@ -69,7 +78,7 @@ def _joints(nt, geometry, spacing):
     line = 0.0
     for axis in range(3):
         in_plane = _math(nt, "LESS_THAN", _math(nt, "ABSOLUTE", normal.outputs[axis]), 0.7)
-        on_joint = _math(nt, "LESS_THAN", cell.outputs[axis], 0.02 / spacing + 0.012)
+        on_joint = _math(nt, "LESS_THAN", cell.outputs[axis], 0.02 / spacing[axis] + 0.012)
         line = _math(nt, "MAXIMUM", _math(nt, "MULTIPLY", in_plane, on_joint), line)
     return line
 
@@ -91,9 +100,10 @@ def source_material(name):
         streak = _noise(nt, geometry.outputs["Position"], 0.9, stretch=(1, 1, 0.06))
         wet = _math(nt, "SUBTRACT", 1.15, _math(nt, "MULTIPLY", streak, spec["streak"] * 1.3), clamp=True)
         shade = _math(nt, "MULTIPLY", shade, wet)
-    if spec.get("grid"):
-        joint = _joints(nt, geometry, spec["grid"][0])
-        shade = _math(nt, "MULTIPLY", shade, _math(nt, "SUBTRACT", 1.0, _math(nt, "MULTIPLY", joint, spec["grid"][1])))
+    grid = spec.get("grid")
+    if grid:
+        joint = _joints(nt, geometry, grid[0])
+        shade = _math(nt, "MULTIPLY", shade, _math(nt, "SUBTRACT", 1.0, _math(nt, "MULTIPLY", joint, grid[1])))
         rough = _math(nt, "ADD", rough, _math(nt, "MULTIPLY", joint, 0.3), clamp=True)
     color = nt.nodes.new("ShaderNodeVectorMath")
     color.operation = "SCALE"
@@ -120,23 +130,23 @@ def show_channel(mat, rig, channel, image):
     for link in list(color.links):
         nt.links.remove(link)
     rig["emission"].inputs["Strength"].default_value = 1.0
-    lit = channel == "spill" and not rig["power"]
+    lit = channel == "normal" or channel == "spill" and not rig["power"]
+    value = rig["emit" if channel == "spill" else channel] if channel != "normal" else 0.0
     if channel == "spill":
-        color.default_value, rig["emission"].inputs["Strength"].default_value = rig["emit"], rig["power"]
+        rig["emission"].inputs["Strength"].default_value = rig["power"]
+    if isinstance(value, float):
+        color.default_value = (value, value, value, 1)
+    elif isinstance(value, tuple):
+        color.default_value = value
     else:
-        value = rig[channel]
-        if isinstance(value, float):
-            color.default_value = (value, value, value, 1)
-        elif isinstance(value, tuple):
-            color.default_value = value
-        else:
-            nt.links.new(value, color)
+        nt.links.new(value, color)
     nt.links.new((rig["diffuse"] if lit else rig["emission"]).outputs[0], rig["output"].inputs["Surface"])
 
 
-def delivery_material(base, emissive, orm):
-    """The one shipped material, wired the way the glTF exporter maps 1:1 (same subset as Coast scenery)."""
-    mat = bpy.data.materials.new("neon_landmarks")
+def delivery_material(base, emissive, orm, name="neon_landmarks", normal=None):
+    """A shipped material, wired the way the glTF exporter maps 1:1 (same subset as Coast scenery, plus a
+    tangent-space normal map when given)."""
+    mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     mat.use_backface_culling = True
     nt = mat.node_tree
@@ -160,4 +170,8 @@ def delivery_material(base, emissive, orm):
     occlusion = nt.nodes.new("ShaderNodeGroup")
     occlusion.node_tree = group
     nt.links.new(split.outputs["Red"], occlusion.inputs["Occlusion"])
+    if normal:
+        bump = nt.nodes.new("ShaderNodeNormalMap")
+        nt.links.new(image(normal), bump.inputs["Color"])
+        nt.links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
     return mat

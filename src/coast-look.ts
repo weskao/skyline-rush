@@ -4,11 +4,15 @@ import { COAST_ENV_VARIANTS, coastEnvPlan, type CoastEnvName } from './coast-lig
 import { coastSkyYaw, coastSunDirection } from './coast-sky.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
-interface Envs { get(name: CoastEnvName): Texture | undefined; preload(names: readonly CoastEnvName[]): Promise<unknown> }
+interface Envs { get(name: CoastEnvName): Texture | undefined; preload(names: readonly CoastEnvName[]): Promise<unknown>;
+  /** The cars' reflection map shows this variant's sky, or (null) the studio room it was made with. */
+  paintCars?(name: CoastEnvName | null): void }
 interface GradeUniforms { uniforms: { saturation: { value: number }; contrast: { value: number }; tint: { value: Color } } }
 interface Options {
   scene: Pick<Scene, 'environment' | 'environmentIntensity'> & { environmentRotation?: { y: number } }; renderer: Pick<WebGLRenderer, 'toneMappingExposure'>;
   lens: GradeUniforms; room: Texture | null; roomIntensity: number; envs?: Envs; baseUrl?: string;
+  /** The reflection map every car holds (car-reflections.ts); a `carSky` variant repaints it in place. */
+  cars?: Texture;
   /** world.js sets each track's key light on a track change, just before `update`. With an HDRI the light shines from
    *  that HDRI's sun, turned (as the environment and the sky dome are) to Coast's sun azimuth. */
   sun?: { color: Color; intensity: number; position?: Vector3 };
@@ -19,8 +23,8 @@ interface Options {
  * string compare unless the track/preset/tier changed. Everything it touches is a texture or uniform swap, so no
  * lit shader recompiles after GO; Low and every other track keep RoomEnvironment and an identity grade.
  */
-export function createCoastLook({ scene, renderer, lens, room, roomIntensity, envs, baseUrl = '/', sun }: Options) {
-  const environments: Envs = envs ?? createCoastEnvironments(renderer as WebGLRenderer, baseUrl); // tests inject `envs`; the real renderer is a full WebGLRenderer
+export function createCoastLook({ scene, renderer, lens, room, roomIntensity, envs, baseUrl = '/', sun, cars }: Options) {
+  const environments: Envs = envs ?? createCoastEnvironments(renderer as WebGLRenderer, baseUrl, cars); // tests inject `envs`; the real renderer is a full WebGLRenderer
   const grade = lens.uniforms;
   let key = '';
   let applied: CoastEnvName | null = null, palette: { color: Color; intensity: number; position?: Vector3 } | null = null; // the track's own sun
@@ -29,6 +33,7 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
     scene.environment = room; scene.environmentIntensity = roomIntensity;
     grade.saturation.value = grade.contrast.value = 1; grade.tint.value.setRGB(1, 1, 1);
     if (scene.environmentRotation) scene.environmentRotation.y = 0;
+    environments.paintCars?.(null);
     if (sun && palette && trackId === paletteTrack) { // on another track its own block already set the sun
       sun.color.copy(palette.color); sun.intensity = palette.intensity;
       if (palette.position) sun.position?.copy(palette.position);
@@ -41,6 +46,7 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
     scene.environment = texture; scene.environmentIntensity = v.intensity; renderer.toneMappingExposure = v.exposure;
     grade.saturation.value = v.grade.saturation; grade.contrast.value = v.grade.contrast; grade.tint.value.setRGB(...v.grade.tint);
     if (scene.environmentRotation) scene.environmentRotation.y = coastSkyYaw(name);
+    environments.paintCars?.(v.carSky ? name : null);
     if (sun) {
       palette ??= { color: sun.color.clone(), intensity: sun.intensity, position: sun.position?.clone() };
       sun.color.set(v.sun.color); sun.intensity = v.sun.intensity;
