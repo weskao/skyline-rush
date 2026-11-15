@@ -10,7 +10,7 @@ export interface PlumeFrame { time: number; power: number; nitroMix: number; rea
   extreme: number; tail: number; quality: number; enabled: boolean; calm: boolean; voidPulse: boolean; racing: boolean; grounded: boolean }
 
 /** The flame in metres behind the nozzle. Fixed: as fat and as bright on Low + Realistic as on High + Extreme, whatever the tail length. */
-export const PLUME = { nozzle: 0.065, fat: 0.3, half: 0.12, coreMax: 0.1, coreLength: 2.4, flare: 0.45, glowWidth: 2.4, glowLength: 7 } as const;
+export const PLUME = { nozzle: 0.065, fat: 0.3, half: 0.12, coreMax: 0.09, coreLength: 1.8, flare: 0.45, glowWidth: 2.4, glowLength: 7 } as const;
 /** Radius of a jet's glow `metres` behind its nozzle. */
 export function plumeRadius(metres: number): number { return PLUME.nozzle + (PLUME.fat - PLUME.nozzle) * metres / (metres + PLUME.half); }
 /** Radius of a jet's opaque core: the nozzle's at the exit, `coreMax` a quarter of the way, closed at `coreLength`. */
@@ -51,14 +51,15 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         color=mix(color,vec3(.6,.38,1.),extreme*t*.25);
         color=mix(color,vec3(1.,.38,.78),tail*smoothstep(.2,1.,t)); // board plume (Medium+): the blue-white core fades to magenta
         color=mix(color*skinTint,${NITRO_TINT}); // skin tints the base
-        float body=thick*(1.-smoothstep(0.,3.,clamp(vD,0.,3.))); // the first 2 m stay dense whatever the tail length
+        float body=thick*(1.-smoothstep(0.,3.,clamp(vD,0.,3.))); // the first 3 m stay dense whatever the tail length
         float shape=1.;
         if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
         if(skinPattern>1.5) shape=.25+.75*abs(sin(vUv.x*6.28*3.+t*28.-time*11.));
         if(skinPattern>2.5) shape=step(.45,fract(t*7.+time*3.+vUv.x*3.));
-        // Under the bloom threshold: the fat flame emits half (two faces, overlapping neighbours), no fragment above 1.
+        // glare 1 (bloom, Medium/High): under the bloom threshold, the fat flame emits half (two faces, overlapping neighbours).
+        // 0 (Low, no bloom): full light and a denser tail, the jet's own halo. No channel above 1, hue kept.
         vec3 light=color*brightness*(1.+core+cells)*mix(1.,vSpread*(1.-.5*thick),glare);
-        gl_FragColor=vec4(light/max(1.,max(light.r,max(light.g,light.b))),fade*(.15+core*.55+cells*.35+body*.45)*breakup*power*shape);}`,
+        gl_FragColor=vec4(light/max(1.,max(light.r,max(light.g,light.b))),fade*(mix(.3,.15,glare)+core*.55+cells*.35+body*.45)*breakup*power*shape);}`,
   });
   const jets = ports.map((port, i) => {
     const jet = new THREE.Mesh(jetGeometry, jetMaterial.clone());
@@ -136,8 +137,8 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         jet.visible = on;
         jet.scale.z = frame.reach;
         const u = jet.material.uniforms;
-        u.reach!.value = frame.reach; u.thick!.value = 1 - skinFade; u.glare!.value = frame.quality > 0.25 ? 1 : 0;
-        u.time!.value = frame.time + i * 0.13; u.power!.value = Math.sqrt(frame.power); u.tail!.value = frame.tail;
+        u.reach!.value = frame.reach; u.thick!.value = 1 - skinFade; u.glare!.value = frame.quality > 0.25 ? 1 : 0; // configureBloom: no bloom on Low
+        u.time!.value = frame.time + i * 0.13; u.power!.value = Math.sqrt(frame.power); // a held BOOST (power ~0.65) still reads as a sprint u.tail!.value = frame.tail;
         u.brightness!.value = frame.brightness; u.diamonds!.value = frame.diamonds; u.extreme!.value = frame.extreme; u.nitroMix!.value = frame.nitroMix;
       });
       core.visible = on; flare.visible = lit; glow.visible = lit && frame.quality > 0.25 && frame.racing && frame.grounded;

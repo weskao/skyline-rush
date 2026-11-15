@@ -160,6 +160,14 @@ test('modes: which parts show on each tier, off the road, on the void skin and w
   }
 });
 
+// Bloom runs above Low only (configureBloom in src/upcoming-lighting.ts). The white-out dimming then cost the phone tier
+// half its exhaust area (2-core landscape BOOST 1.2-1.6x the old cone, floor 2x): with no bloom halo the jet carries its own.
+test('the jet dims under the bloom threshold only where bloom runs: Low keeps its own halo', () => {
+  const glare = quality => { const parts = rig(); parts.plume.update(frame({ quality })); return parts.jets.map(jet => jet.material.uniforms.glare?.value); };
+  assert.deepEqual(glare(0.25), [0, 0, 0, 0], 'Low: no bloom, no dimming');
+  for (const quality of [0.5, 1]) assert.deepEqual(glare(quality), [1, 1, 1, 1], `quality ${quality}: dimmed under the bloom threshold`);
+});
+
 test('x3 chain: power above 1 makes the flare no bigger and the core no more opaque', () => {
   const state = power => { const parts = rig(); parts.plume.update(frame({ power })); const flare = parts.flare.material.uniforms;
     return [flare.size.value, flare.fade.value, parts.core.material.uniforms.alpha.value, parts.glow.material.uniforms.fade.value]; };
