@@ -5,7 +5,6 @@ lit faces and the silhouette. Footprints are centred on the origin, the street s
 """
 import math
 
-ROUND_R = 1.5 / math.sin(math.pi / 24)  # 24 sides of exactly 3 m: two sides per 6 m curtain_a cell
 PITCH = math.tan(math.radians(28))      # market roof slope
 
 
@@ -25,37 +24,74 @@ def roof_units(k, spots):
         k.box((x - w / 2, y - d / 2, z), (x + w / 2, y + d / 2, z + h), "steel_dark", fit=True)
 
 
+def rounded_plan(half, r, segs):
+    """Rounded-square plan centred on the origin, counter-clockwise from above: four quarter arcs of radius r in
+    `segs` chords each, joined by flat runs of 2 (half - r); the last edge is the front (-y) run."""
+    pts, c = [], half - r
+    for q, (cx, cy) in enumerate(((c, -c), (c, c), (-c, c), (-c, -c))):
+        for s in range(segs + 1):
+            a = -math.pi / 2 + q * math.pi / 2 + math.pi / 2 * s / segs
+            pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    return pts
+
+
+def plan_walls(k, pts, z0, z1, cell, voffs=None, run=True):
+    """Walls round a closed plan. run: the cell runs on round the corners (u carries the distance walked), so
+    mullions stay continuous; otherwise each face shows whole tiles (fewer cuts, far LODs). voffs[i] shifts edge i's
+    cell by whole floors to break the repeat between faces."""
+    walked = 0.0
+    for i, a in enumerate(pts):
+        b = pts[(i + 1) % len(pts)]
+        k.wall(a, b, z0, z1, cell, uoff=walked % k.atlas.cells[cell].mw if run else 0.0, voff=voffs[i] if voffs else 0.0)
+        walked += math.dist(a, b)
+
+
+def plan_cap(k, pts, z, cell):
+    """Flat roof over a plan, the cell fitted once across it."""
+    half = max(abs(v) for p in pts for v in p)
+    k.face([(x, y, z) for x, y in pts], cell, [(0.5 + 0.45 * x / half, 0.5 + 0.45 * y / half) for x, y in pts])
+
+
 def tower_glass_a(k, lod):
-    """Round glass tower with a cyan crown ring (frame 03, left of centre) on a glazed podium."""
+    """Rounded glass tower of frame 03 (left of centre): dark blue wet glass with floor lines on a 23 m rounded-square
+    plan, a cyan crown line round the roof edge, a setback glass penthouse, on a glazed podium."""
     k.walls(24, 24, 0, 4.5, ("store_glass", "store_glass", "granite", "store_glass"))
     k.floor(-12, -12, 12, 12, 4.5, "roof_flat", fit=lod > 0)
-    n, z0, z1 = (24, 12, 8)[lod], 4.5, 4.5 + 6 * 14.4
-    phase = -math.pi / 2 - math.pi / n
-    pt = lambda i: (ROUND_R * math.cos(phase + 2 * math.pi * i / n), ROUND_R * math.sin(phase + 2 * math.pi * i / n))  # noqa: E731
-    for i in range(n):
-        k.wall(pt(i), pt(i + 1), z0, z1, "curtain_a", uoff=(i % 2) * 3.0 if lod == 0 else 0.0)
-    k.prism(n, ROUND_R + 0.3, ROUND_R + 0.3, z1 - 0.2, z1 + 1.2, "neon_cyan", phase, cap="roof_flat")
+    segs, z0, z1 = (4, 2, 1)[lod], 4.5, 4.5 + 6 * 14.4
+    plan = rounded_plan(11.5, 6.0, segs)
+    # LOD 0: each side (flat run and the arc after it) starts its cell on another floor, so no two faces show the same
+    # rooms side by side; the far LODs keep whole tiles.
+    voffs = [(0.0, 7.2, 3.6, 10.8)[(i // (segs + 1)) % 4] for i in range(len(plan))] if lod == 0 else None
+    plan_walls(k, plan, z0, z1, "curtain_a", voffs, run=lod == 0)
+    crown = rounded_plan(11.8, 6.3, segs)
+    for i, a in enumerate(crown):
+        k.wall(a, crown[(i + 1) % len(crown)], z1 - 0.2, z1 + 1.2, "neon_cyan")
+    plan_cap(k, crown, z1 + 1.2, "roof_flat")
     if lod < 2:
         band(k, 24, 24, 4.5, 4.85, "neon_cyan", lod)
-        k.prism(12, ROUND_R * 0.55, ROUND_R * 0.55, z1 + 1.2, z1 + 5.0, "glass_dark", cap="roof_flat")
+        top = rounded_plan(6.3, 3.3, 2)
+        plan_walls(k, top, z1 + 1.2, z1 + 5.0, "glass_dark")
+        plan_cap(k, top, z1 + 5.0, "roof_flat")
     if lod == 0:
-        k.prism(12, ROUND_R * 0.55 + 0.2, ROUND_R * 0.55 + 0.2, z1 + 4.5, z1 + 5.1, "neon_cyan")
+        ring = rounded_plan(6.5, 3.5, 2)
+        for i, a in enumerate(ring):
+            k.wall(a, ring[(i + 1) % len(ring)], z1 + 4.5, z1 + 5.1, "neon_cyan")
         k.tube([(0, 0, z1 + 5.0), (0, 0, z1 + 14.0)], [0.25, 0.08], 5, "steel_dark")
         k.box((-3, -13.4, 3.45), (3, -12, 3.62), "steel_dark", skip="b", fit=True)  # entrance canopy
 
 
 def tower_glass_b(k, lod):
-    """Rectangular glass tower with vertical pink strips and a pink crown (frame 03, far left)."""
+    """Rectangular glass tower of frame 03 (far left): dark wet glass with warm offices and floor lines, a pink neon
+    line up each street corner and a pink crown."""
     k.walls(28, 20, 0, 4.5, ("store_violet", "store_violet", "granite", "store_violet"))
     k.floor(-14, -10, 14, 10, 4.5, "roof_flat", fit=lod > 0)
     z1 = 4.5 + 5 * 14.4
-    k.walls(24, 16, 4.5, z1, "curtain_b")
-    for x in (-12.0, 12.0) if lod else (-12.0, -4.0, 4.0, 12.0):  # pink strips up the street face
+    plan_walls(k, [(-12, -8), (12, -8), (12, 8), (-12, 8)], 4.5, z1, "curtain_b", (0.0, 7.2, 3.6, 10.8) if lod == 0 else None)
+    for x in (-12.0, 12.0):  # pink corner lines up the street face
         k.box((x - 0.3, -8.35, 4.5), (x + 0.3, -8.0, z1), "neon_pink", skip="btu" if lod == 0 else "blrtu")
     if lod == 0:
-        for y in (-8.0, 8.0):
-            for x, skip in ((-12.35, "rtu"), (12.0, "ltu")):
-                k.box((x, y - 0.3, 4.5), (x + 0.35, y + 0.3, z1), "neon_pink", skip=skip)
+        for x, skip in ((-12.35, "rtu"), (12.0, "ltu")):  # ... wrapping round onto the sides
+            k.box((x, -8.0, 4.5), (x + 0.35, -7.4, z1), "neon_pink", skip=skip)
     band(k, 24, 16, z1 - 0.6, z1 + 0.3, "neon_pink", lod)
     k.floor(-12, -8, 12, 8, z1, "roof_flat", fit=lod > 0)
     if lod < 2:

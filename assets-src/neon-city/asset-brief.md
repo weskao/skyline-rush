@@ -76,8 +76,8 @@ Per-LOD triangle budgets live in `modules.json`; `build.py` and `tests/neon-city
 
 | Module | LOD 0 | LOD 1 | LOD 2 |
 | --- | --- | --- | --- |
-| `tower_glass_a` | 535 (700) | 246 (320) | 144 (200) |
-| `tower_glass_b` | 371 (500) | 178 (240) | 142 (200) |
+| `tower_glass_a` | 681 (700) | 294 (320) | 192 (200) |
+| `tower_glass_b` | 361 (500) | 178 (240) | 142 (200) |
 | `block_retail_a` | 418 (550) | 106 (150) | 90 (120) |
 | `block_office_b` | 436 (550) | 114 (150) | 98 (130) |
 | `shop_market_a` | 244 (340) | 88 (120) | 52 (80) |
@@ -90,14 +90,14 @@ Per-LOD triangle budgets live in `modules.json`; `build.py` and `tests/neon-city
 | `street_lamp` | 96 (130) | 30 (40) | |
 | `traffic_light` | 302 (400) | 45 (60) | |
 | `railing` | 152 (200) | 54 (70) | |
-| `cherry_tree` | 2,996 (3,200) | 786 (900) | 58 (80) |
+| `cherry_tree` | 2,882 (3,200) | 810 (900) | 56 (80) |
 | `kerb_redwhite` | 10 (12) | 4 (6) | |
 | `skyline_tower_a` | 43 (60) | 18 (24) | |
 | `skyline_tower_b` | 36 (50) | 18 (24) | |
 | `skyline_tower_c` | 92 (120) | 54 (70) | |
-| `skyline_spire` | 79 (110) | 33 (44) | |
+| `skyline_spire` | 109 (110) | 35 (44) | |
 
-GLB: 9,156 triangles in all 47 LOD meshes (budget 11,000), 991,444 bytes (budget 1,300,000), max texture
+GLB: 9,328 triangles in all 47 LOD meshes (budget 11,000), 1,093,972 bytes (budget 1,300,000), max texture
 2048 px (budget 2048). One material, four textures: colour 2048 ETC1S sRGB, emissive 2048 sRGB, normal 1024
 linear, occlusion/roughness/metal 1024 linear (one ORM image for both slots). Atlas fill 98.2%.
 
@@ -131,10 +131,10 @@ is visible together. The real figure depends on placement and LOD distances and 
 | Billboards (`billboard_a`, `billboard_b`) | 0.88, 0.67 | 4.92, 4.72 |
 | Storefront glass (retail, office) | 1.04–1.29 | 5.46–5.67 |
 | Market shopfronts, lanterns | 1.09–1.11, 1.45 | 3.47–3.75, 2.42 |
-| Glass-tower windows (`tower_glass_a`, `_b`) | 0.38, 0.33 | 0.75, 0.61 |
+| Glass-tower windows (`tower_glass_a`, `_b`) | 0.27, 0.32 | 0.51, 0.61 |
 | Office and retail upper windows | 0.33, 0.22 | 0.70, 0.30 |
 | Skyline windows (towers a, b, c) | 0.74–0.82 | 1.28–1.46 |
-| Cherry blossom | 0.20 | 0.30 |
+| Cherry blossom | 0.19 | 0.36 |
 
   Neon, signs, shopfronts and lamps exceed 1 and are the bloom sources. Tower and skyline windows stay near or
   below 1 so the skyline does not bloom into one mass. `billboard_b`'s mean is below 1 because most of the
@@ -160,12 +160,12 @@ Footprint is the LOD 0 bounding box in module space (three.js axes, metres); +Z 
 | `street_lamp` | 0–1 | −0.22 … 0.22 | −0.22 … 3.3 | 9.1 | boulevard, underpass, expressway, canal_bridge |
 | `traffic_light` | 0–1 | −0.42 … 0.4 | −0.26 … 5.5 | 6.91 | boulevard |
 | `railing` | 0–1 | −5 … 5 | −0.19 … 0.19 | 1.36 | boulevard, underpass, night_market, canal_bridge, violet_plaza |
-| `cherry_tree` | 0–2 | −3.22 … 3.36 | −2.41 … 2.38 | 6.36 | boulevard, night_market, canal_bridge, violet_plaza |
+| `cherry_tree` | 0–2 | −3.09 … 3.35 | −2.38 … 2.29 | 6.37 | boulevard, night_market, canal_bridge, violet_plaza |
 | `kerb_redwhite` | 0–1 | −2 … 2 | −0.5 … 0.5 | 0.09 | underpass, night_market, violet_plaza |
 | `skyline_tower_a` | 0–1 | −16.5 … 16.5 | −16.5 … 16.5 | 226 | boulevard, expressway, canal_bridge |
 | `skyline_tower_b` | 0–1 | −16.5 … 16.5 | −10.5 … 10.5 | 169 | boulevard, expressway, canal_bridge |
 | `skyline_tower_c` | 0–1 | −17.55 … 17.55 | −17.55 … 17.55 | 156 | boulevard, expressway, canal_bridge |
-| `skyline_spire` | 0–1 | −16.15 … 16.15 | −15.75 … 16.3 | 252 | boulevard, expressway, canal_bridge |
+| `skyline_spire` | 0–1 | −16 … 16 | −16 … 16 | 252 | boulevard, expressway, canal_bridge |
 
 Node names are exactly `<module>` and `<module>_lod0` … `<module>_lod<last>`; the manifest `nodes` array lists
 all 67. Sector membership is data in `modules.json` (`sectors` per module) and is a suggestion for dressing,
@@ -202,11 +202,16 @@ not a rule.
 
 ## Known shortfalls against the concept
 
-- **Cherry tree**: the canopy is opaque faceted puffs, not airy blossom (the kit has no alpha). LOD 0 is the
-  heaviest mesh in the kit (2,996 triangles); LOD 2 is a two-lump cap on a straight trunk.
-- **Spire**: a straight taper; frame 03's has a concave, curved profile.
+- **Cherry tree**: LOD 0 breaks the crown into 33 clusters on five boughs with gaps between them, shaded dark
+  underneath and lit on top, but they are still opaque puffs, not frame 03's airy sprays of single flowers (the
+  kit has no alpha, and Poly Haven has no CC0 cherry-blossom scan, so the blossom stays painted). The boughs are
+  straight segments. LOD 0 is the heaviest mesh in the kit (2,882 triangles); LOD 2 is a two-lump cap.
+- **Spire**: concave and leaning with a slanted crown, but the 32 m footprint (pinned by placement) keeps it
+  slimmer than frame 03's broad sail; the triangle budget (110) is spent, so the crown has no neon trim of its own.
+  The sign is a lit panel, not readable lettering.
 - **Kerb**: flat ramp with red and white paint; no ribbing and no white border line.
-- **Glass towers**: brighter and warmer than frame 03's dark, moody glass, and the window tile repeats every
+- **Glass towers**: closer to frame 03's blue glass (unlit rooms glow dim blue, rain streaks and per-pane
+  tilt break the reflections), but more offices are lit than in the frame and the window tile still repeats every
   16 bays.
 - **Roof and awning overhangs** are single-sided: seen from below and behind, they vanish.
 - **`shop_market_b`**: the sign board is partly hidden by its lean-to roof from low angles.

@@ -131,7 +131,7 @@ class Kit:
             self.face([(x, y, z1) for x, y in hi], cap, [(0.5 + 0.4 * math.cos(6.283 * j / sides), 0.5 + 0.4 * math.sin(6.283 * j / sides)) for j in range(sides)])
 
     def puff(self, centre, radii, subdiv, cell, seed):
-        """Lumpy blossom mass: a displaced icosphere, each face mapped along its dominant axis."""
+        """Lumpy blossom mass: a displaced icosphere, v up its height, so the cell paints a shaded underside and a lit top."""
         bm, centre = bmesh.new(), Vector(centre)
         bmesh.ops.create_icosphere(bm, subdivisions=subdiv, radius=1.0)
         for f in bm.faces:
@@ -139,10 +139,8 @@ class Kit:
             for d in dirs:
                 k = 1 + 0.12 * math.sin(d.x * 5.1 + seed) * math.sin(d.y * 4.3 + seed * 1.7) + 0.08 * math.sin(d.z * 7.9 + seed * 0.6)
                 pts.append(centre + Vector((d.x * radii[0], d.y * radii[1], d.z * radii[2])) * k)
-            n = f.normal
-            axis = max(range(3), key=lambda i: abs(n[i]))
-            a, b = [i for i in range(3) if i != axis]
-            self.face(pts, cell, [(0.5 + 0.45 * d[a], 0.5 + 0.45 * d[b]) for d in dirs], smooth=True)
+            a = 0 if abs(f.normal.x) >= abs(f.normal.y) else 1  # u runs round the side, v up it: the cell's light gradient
+            self.face(pts, cell, [(0.5 + 0.45 * d[1 - a], 0.5 + 0.45 * d.z) for d in dirs], smooth=True)
         bm.free()
 
     def build(self, name, mat):
