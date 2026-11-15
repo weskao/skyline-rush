@@ -181,7 +181,7 @@ test('language switches relabel live AIRFLOW values before the next HUD tick', a
 // is clipped: the button shows each view's full name and the open list stays inside the viewport.
 for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [760, 501], [768, 1024], [844, 390]]) {
   // The dock is a ‹ name › stepper: no dropdown, the name sits centred between the arrows and is never cut.
-  test(`home camera dock is a ‹ › stepper with uncut labels at ${width}x${height}`, async ({ page }, info) => {
+  test(`home camera dock uses a two-arrow stepper with uncut labels at ${width}x${height}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height });
     await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
     await page.goto('/');
