@@ -139,6 +139,11 @@ plus the new parts become one module with one reason to change. All parts are ch
    flame rule above (radius at least 0.20 m by 0.6 m, at least 28 px wide there). RED on the current
    jets: about 8 px at the nozzle, 0.095 to 0.136 m and 15 to 19 px at 0.6 m. (Measured after
    approval: at 1 m today's cone is already 19 to 34 px, so the 0.6 m rule is the real guard.)
+   Evidence: `tests/sprint-plume.test.js` *phone width: each jet's glow is at least 28 px wide 0.6 m
+   and 20 px wide 1 m behind the nozzles* and *the real jets carry the profile on every tier, preset
+   and thruster skin*, RED on the old cone and GREEN since Task 4. The fat flame then whited out the
+   car's rear in a racing frame (bloom), guarded by `tests/sprint-plume-veil-browser.spec.js`
+   (`.claude/rules/sprint-plume.md`).
 3. Flare and road glow follow the modes above (Off, Reduced Motion, Low, flight, trail skin, void).
 4. Every selectable car: the plume sits on the nozzles in the race, the Garage preview and the
    Home showcase, after switching cars.

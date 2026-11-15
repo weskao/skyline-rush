@@ -66,6 +66,15 @@ a different camera (`track-showcase.md`, `src/track-preview.ts`).
   (`squatPitch` + `rearAxleLift` in `src/vehicle-render-motion.js`, read from each car's own
   wheels) and peaks before the punch, so the camera follows late. Presentation only; the flat
   legacy road path (Endless practice) does not squat.
+- **Exhaust under the frame (2026-11-14).** On a landscape phone at NITRO top speed the nozzles sat at
+  row 0.80 with only 19.5% of the frame (1.35 m of plume) under them, so a held sprint barely
+  showed. `sprintLook` (3.5 m on the landscape chase) lowers the look-at height by the eased sprint
+  share, clamped at 1 for a x3 chain: nozzle row 0.80 to 0.74, car size 98%. It re-aims, never pulls
+  back: a 0.8 m pull-back showed about as much plume (1.75 m) but shrank the car to 80% (the
+  shrinking-car trap above). Portrait stays 0: its guards (horizon below row 0.36, car top below row
+  0.42) leave no room and it already shows about 5 m of plume; first person has no plume to show.
+  Reduced Motion re-aims by 0. Guard: *sprint re-aim: a held NITRO/BOOST lifts the landscape nozzles
+  off the bottom edge without moving the eye*. The plume itself: `sprint-plume.md`.
 
 ## Changing a number
 
