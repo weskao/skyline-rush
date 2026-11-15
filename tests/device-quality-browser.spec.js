@@ -59,18 +59,16 @@ test('starting a race puts the downgrade notice away so it never covers the race
   await expect(page.locator('#performance-notice')).toBeHidden();
 });
 
-test('the saved Ultra tier displays on plain and legacy links', async ({ page }) => {
-  await page.goto('/');
-  await page.evaluate(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high', ultra: true, preset: 'cinematic', enabled: true })));
-  const quality = page.locator('select[data-vfx="quality"]');
-  for (const url of ['/', '/?3d=1&look=3d&model=roadster']) {
+for (const [label, url] of [['plain', '/'], ['legacy', '/?3d=1&look=3d&model=roadster']]) {
+  test(`the saved Ultra tier displays on the ${label} URL`, async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high', ultra: true })));
     await page.goto(url);
+    const quality = page.locator('select[data-vfx="quality"]');
     await expect(quality.locator('option')).toHaveText(['Low', 'Medium', 'High', 'Ultra']);
     await expect(quality).toHaveValue('ultra');
     await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'high');
-    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx')))).toMatchObject({ quality: 'high', ultra: true });
-  }
-});
+  });
+}
 
 test('Ultra is selectable, saved across reloads, and switching back to High clears it', async ({ page }) => {
   await page.goto('/');

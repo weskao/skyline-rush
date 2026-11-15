@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, programs } from './helpers/gameplay-browser.js';
+import { captureHooks, test, programs } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 
 // Task 5: Coast Medium+ draws the coast-scenery.glb scans (cliffs, rocks, palms, sea arch, rails) instead of the
@@ -142,10 +142,12 @@ test('switching Coast to rain mid-race only moves uniforms: no program compiles'
 });
 
 for (const [label, search] of [['plain', ''], ['legacy', '?3d=1&look=3d&model=roadster']]) {
-  test(`Coast applies quality to the ${label} URL and restores Low graphics`, async ({ gameplayPage: page, gameplayURL }) => {
+  test(`Coast applies quality to the ${label} URL and restores Low graphics`, async ({ page, gameplayURL }) => {
     test.setTimeout(ciTimeout(90000));
+    await captureHooks(page);
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high' })));
     await page.goto(gameplayURL + search);
-    await withQuality(page, 'high');
+    if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
     await expect.poll(() => status(page), { timeout: ciTimeout(40000) }).toBe('attached');
     const world = page.locator('#world');
     await expect(world).toHaveAttribute('data-coast-road', 'high', { timeout: ciTimeout(40000) });
