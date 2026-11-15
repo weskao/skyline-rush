@@ -5,6 +5,7 @@ import { createPickupCollectVfx, PICKUP_COLLECTION_STYLES } from '../src/pickup-
 import { createRace } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 import { drawnMarkers } from '../src/marker-pool.js';
+import { orange } from '../src/effects-palette.ts';
 
 const tiers = ['cell', 'can', 'tank', 'overcharge'];
 
@@ -609,6 +610,39 @@ test('can embers fly from the can into the car in vehicle space and end at the a
   assert.ok(Math.max(...embers().map(p => p.distanceTo(at))) < .2, 'all embers are in the body by .15 s');
   vfx.update(.03, frame);
   assert.ok(stage.getObjectByName('energy flash').material.opacity > .5, 'they end in the contact flash');
+  vfx.dispose();
+});
+
+// The can's collection sparks shared the crash burst's orange (effects-palette.ts), so a take read as a hit. Can sparks are a
+// warm white-yellow; only the flash's rim stays orange. Crash orange and the other tiers keep their colours.
+test('can collection sparks are warm white-yellow with an orange rim, apart from the crash orange', () => {
+  // hex and material colours are judged as authored (sRGB); texture bytes and the HDR palette are read raw
+  const hsl = color => color.isColor && color.raw ? color.getHSL({}) : new THREE.Color(color).getHSL({}, THREE.SRGBColorSpace);
+  const warmWhite = (color, what) => {
+    const { h, s, l } = hsl(color);
+    assert.ok(h * 360 >= 40 && h * 360 <= 60 && l >= .8, `${what} is warm white-yellow (h ${(h * 360).toFixed(0)}, l ${l.toFixed(2)})`);
+  };
+  assert.deepEqual(orange, [2.5, .85, .15], 'the crash burst keeps its orange');
+  const crashHue = new THREE.Color(...orange).getHSL({}).h * 360;
+  assert.deepEqual(['cell', 'tank', 'overcharge'].map(tier => PICKUP_COLLECTION_STYLES[tier].color), [0x40d9ff, 0xffd34e, 0xef81ff]);
+  warmWhite(PICKUP_COLLECTION_STYLES.can.color, 'the can style');
+  const vfx = createPickupCollectVfx(new THREE.Scene());
+  const stage = vfx.group.children.find(child => child.userData.tier === 'can');
+  const flash = stage.getObjectByName('energy flash').material, shards = stage.getObjectByName('energy shards').material;
+  warmWhite(shards.color, 'the embers');
+  warmWhite(stage.getObjectByName('Pickup contact pulse').material.uniforms.secondary.value, 'the body sweep');
+  const { image: { data, width } } = flash.map, texel = (x, y) => {
+    const at = (y * width + x) * 4;
+    return Object.assign(new THREE.Color(data[at] / 255 * flash.color.r, data[at + 1] / 255 * flash.color.g, data[at + 2] / 255 * flash.color.b), { raw: true });
+  };
+  const mid = width >> 1;
+  warmWhite(texel(mid, mid), 'the flash core');
+  let rim = mid;
+  while (rim < width - 1 && data[(mid * width + rim + 1) * 4 + 3] > 8) rim++; // last visible texel on the centre row
+  const edge = hsl(texel(rim, mid)).h * 360;
+  assert.ok(edge < 38 && Math.abs(edge - crashHue) < 15, `the flash rim is orange (h ${edge.toFixed(0)})`);
+  const cellFlash = vfx.group.children.find(child => child.userData.tier === 'cell').getObjectByName('energy flash').material;
+  assert.notEqual(cellFlash.map, flash.map, 'other tiers keep the plain white glow');
   vfx.dispose();
 });
 

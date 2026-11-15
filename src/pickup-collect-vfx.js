@@ -11,7 +11,7 @@ import { createPickupStreaks } from './pickup-collect-streaks.js';
 // `rings` and `particles` are the High-quality budgets; `motion` names the tier's choreography in MOTIONS.
 export const PICKUP_COLLECTION_STYLES = Object.freeze({
   cell: Object.freeze({ color: 0x40d9ff, rings: 2, particles: 18, beam: false, rainbow: false, life: .60, motion: 'arcSnap' }),
-  can: Object.freeze({ color: 0xff9b3b, rings: 1, particles: 8, beam: false, rainbow: false, life: .27, motion: 'canSparks' }),
+  can: Object.freeze({ color: 0xfff0b8, rings: 1, particles: 8, beam: false, rainbow: false, life: .27, motion: 'canSparks' }),
   tank: Object.freeze({ color: 0xffd34e, rings: 2, particles: 30, beam: false, rainbow: false, life: .95, motion: 'surge' }),
   overcharge: Object.freeze({ color: 0xef81ff, rings: 3, particles: 42, beam: true, rainbow: true, life: 1.08, motion: 'prismNova' }),
 });
@@ -21,20 +21,25 @@ export const pickupCueSource = (cue, pickups) =>
 
 const TIERS = Object.keys(PICKUP_COLLECTION_STYLES);
 const CONTACT_SPANS = [.22, 0, .36, .43], CONTACT_RADII = [1.8, 0, 2.75, 3.4];
-const SECONDARY = [0xbbf9ff, 0xffd076, 0xfff1a0, 0x79ecff];
+// The can is warm white-yellow (its flash keeps an orange rim, CAN_RIM): the crash burst owns plain orange.
+const SECONDARY = [0xbbf9ff, 0xffe7a8, 0xfff1a0, 0x79ecff];
 const ABSORB_SPANS = [.145, .17, .205, .23];
 const MAX_PARTICLES = 42;
 const PRISM = [0x6ceaff, 0xf88aff, 0xffd35c, 0x91a5ff, 0x7cffcb, 0xff7398];
 const FLAT = -Math.PI / 2;
 const CONTACT_PLANE = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), FLAT);
-// One tiny radial-alpha texture for every flash and halo. GPU uploads occur at scene construction, not on collection.
-export function glowTexture() {
+const CAN_CORE = [255, 246, 214], CAN_EDGE = [255, 140, 40];
+const CAN_RIM = r => { const t = THREE.MathUtils.smoothstep(r, .2, .75); return CAN_CORE.map((c, i) => c + (CAN_EDGE[i] - c) * t); };
+// One tiny radial-alpha texture for every flash and halo (`tint(radius)` colours it, white by default). GPU uploads occur
+// at scene construction, not on collection.
+export function glowTexture(tint = null) {
   const side = 32, pixels = new Uint8Array(side * side * 4);
   for (let y = 0; y < side; y++) for (let x = 0; x < side; x++) {
     const u = (x + .5 - side / 2) / (side / 2);
     const v = (y + .5 - side / 2) / (side / 2);
     const d2 = u * u + v * v, at = (y * side + x) * 4;
-    pixels[at] = pixels[at + 1] = pixels[at + 2] = 255;
+    if (tint) pixels.set(tint(Math.sqrt(d2)).map(Math.round), at);
+    else pixels[at] = pixels[at + 1] = pixels[at + 2] = 255;
     pixels[at + 3] = Math.round(255 * Math.pow(Math.max(0, 1 - d2), 3));
   }
   const texture = new THREE.DataTexture(pixels, side, side, THREE.RGBAFormat);
@@ -62,7 +67,7 @@ export function createPickupCollectVfx(scene, player, camera) {
     new THREE.PlaneGeometry(2, 2),
   ];
   const tankHaloGeometry = createTankHaloGeometry();
-  const texture = glowTexture(), materials = new Set();
+  const texture = glowTexture(), canTexture = glowTexture(CAN_RIM), materials = new Set();
   const makeMaterial = (color, extra = {}) => {
     const material = new THREE.MeshBasicMaterial({
       color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
@@ -95,7 +100,7 @@ export function createPickupCollectVfx(scene, player, camera) {
       group.userData.tier = tier;
       group.visible = false;
       const flashSprite = new THREE.Sprite(new THREE.SpriteMaterial({
-        color: style.color, map: texture, transparent: true, opacity: 0,
+        color: tier === 'can' ? 0xffffff : style.color, map: tier === 'can' ? canTexture : texture, transparent: true, opacity: 0,
         depthWrite: false, blending: THREE.AdditiveBlending,
       }));
       flashSprite.name = 'energy flash';
@@ -311,6 +316,7 @@ export function createPickupCollectVfx(scene, player, camera) {
       for (const geometry of geometries) geometry.dispose();
       tankHaloGeometry.dispose();
       texture.dispose();
+      canTexture.dispose();
     },
   };
 }
