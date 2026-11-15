@@ -48,6 +48,7 @@ controls. Move the event-driven UI to Vue gradually; keep the hot paths plain JS
 ## Preview Studio camera gestures
 
 - Read the camera's active orbit state when the first pointer starts a gesture. When the last pointer is released, restore that state and keep the adjusted pose. Fixed presets and keyboard rotation can both disable orbit independently of the orbit button. Guard: `tests/garage-studio-browser.spec.js`.
+- When an orbit stops or manual rotation takes over, start from the renderer's current angle. Keep orbit, zoom and camera reset visible without horizontal scrolling. Camera reset restores framing while preserving the displayed vehicle pose.
 
 ## Types
 
