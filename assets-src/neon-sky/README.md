@@ -54,7 +54,7 @@ Pinned by `tests/neon-sky-manifest.test.js`.
 | Key light intensity (measured) | 4.5252 | 2.8193 |
 | Ambient (mean hemisphere radiance) | 1.3838 | 0.8754 |
 | Horizon glow (linear RGB) | [2.379, 2.219, 2.131] | [1.524, 1.368, 1.272] |
-| `p90Band0to40` (for `sky.gain`) | 1.6703 | 1.2121 |
+| `p90Band0to40` (Coast's gain rule, not used) | 1.6703 | 1.2121 |
 
 Paths are relative to `public/`. URLs, bytes and sha256 of every file are in the manifest.
 
@@ -71,8 +71,10 @@ What the runtime must know:
   scaled by the environment's `intensity`/`exposure`, as Coast's hand-tuned `sun.intensity` is.
 - **`sky.sunDirection`** keeps Coast's field (centroid of the brightest 0.02 % of the 4K hemisphere) but at night it
   is a lamp or LED facade near el 17-19 degrees; do not use it to place a sun disc (`disc` is 0).
-- **`sky.gain`**: Coast's rule puts the 90th percentile of the elevation 0..40 band at the bloom threshold, so
-  `gain = threshold / p90Band0to40`, capped at 1; the LED towers and lamps above it are what blooms.
+- **`sky.gain`**: `gain = 0.4 x threshold / luminance(sky.horizon)`, so the whole dome, its brightest texels included,
+  stays under the bloom; Neon's own kit lights are what blooms. Coast's rule (`threshold / p90Band0to40`) put this glow at 1.15x (rain) and 1.35x
+  (night) the threshold: over the canal, where no building hides the dome, the horizon bloomed into a white haze.
+  `p90Band0to40` is kept in the manifest for comparison only.
 - **Yaw.** The far skyline (the reason for this HDRI) is centred near lon +30 degrees in the HDRI frame; the near
   embankment buildings fill roughly lon -180..-110 and +150..180 up to about 43 degrees. Pick the dome/environment
   yaw (as `coastSkyYaw` does for Coast) so the skyline sits ahead and the near buildings hide behind Neon's own city.

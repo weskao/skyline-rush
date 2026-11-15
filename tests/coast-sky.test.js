@@ -35,7 +35,10 @@ test('each variant records the sun of its own lighting HDRI, so the light and di
     assert.ok(Math.abs(sun.length() - 1) < 1e-3, `${name}: unit vector`);
     assert.ok(sun.y > 0, `${name}: above the horizon`);
     assert.ok(v.sky.range >= 1 && v.sky.range <= 8, `${name}: decode range`);
-    assert.ok(v.sky.gain > 0 && v.sky.gain <= 1 && v.sky.range * v.sky.gain >= v.bloom.threshold - 1e-9, `${name}: the sky's top end reaches the bloom threshold, its body stays under`);
+    // A city panorama (`sky.ahead`) keeps its whole dome under the bloom: at Coast's exposure its horizon glow bloomed
+    // into a white haze over Neon's canal (tests/neon-lighting.test.js); the city's own lights are the bloom there.
+    const reaches = v.sky.range * v.sky.gain >= v.bloom.threshold - 1e-9;
+    assert.ok(v.sky.gain > 0 && v.sky.gain <= 1 && (v.sky.ahead === undefined ? reaches : !reaches), `${name}: a sun sky's top end reaches the bloom threshold, a city panorama stays under it`);
   }
   for (const name of ['day', 'dusk']) { // the two skies with a visible sun disc
     const v = COAST_ENV_VARIANTS[name];
