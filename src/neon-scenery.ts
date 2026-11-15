@@ -8,9 +8,11 @@ import { REFLECT_LAYER } from './wet-reflection.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
 const PARKED = new THREE.Matrix4().makeTranslation(0, -1000, 0);
-/** emissiveIntensity under the race bloom (threshold 1.1). The GLBs carry their offline-render strengths (city 6,
- *  landmarks 1 to 3): at those the market fronts and the wet road clip to white in a real frame. */
-const EMISSIVE: Record<NeonKit, number> = { city: 2.4, landmarks: 2 };
+/** emissiveIntensity under the Neon race bloom (nightRain, threshold 0.9). The GLBs carry their offline-render
+ *  strengths (city 6, landmarks 1 to 3), which clip to white. Each kit's neon tubes stay above the threshold so they
+ *  glow, and its brightest texel (a blade sign, the cyan parapet band) within twice it, so the street fronts and the
+ *  centre sightline keep their colour (tests/neon-scenery.test.js, *kit emissive*). */
+const EMISSIVE: Record<NeonKit, number> = { city: 1.7, landmarks: 1.5 };
 /** A far tower is left out when it would stand this close to another part of the loop (skyline-scenery.ts CLEAR). */
 const CLEAR = 64, FAR_OFFSET = 100;
 
