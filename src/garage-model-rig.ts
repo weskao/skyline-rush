@@ -51,7 +51,7 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
   const parts = car.userData as CarParts;
   const pairs = boundPairs(car, instance);
   const finish = parts.body?.material as Material | undefined;
-  // Post-hit grace (grace-fade.ts) makes the player car's materials transparent when it is built and fades them.
+  // Ghost Phase can fade the race car. Studio cars keep their normal GLB material setup.
   const fades = finish?.transparent === true;
   const owned = new Map<Material, Tinted>(); // per instance; all of them when fading, so the cached original keeps its opacity
   instance.traverse(object => {
@@ -62,9 +62,9 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
   });
   const paints = [...owned.values()].filter(m => m.name.endsWith('_paint'));
   const lights = [...owned.values()].filter(m => m.name.endsWith('_light'));
-  // Blending from bind time, which is before compile: turning it on at the first hit would compile programs mid-race.
+  // Blending from bind time, which is before compile: turning it on at item activation would compile programs mid-race.
   const faded: [Material, number][] = fades ? [...owned.values()].map(m => { m.transparent = true; return [m, m.opacity]; }) : [];
-  const solid = finish?.opacity || 1; // the procedural body's opacity outside grace (dressing happens before GO)
+  const solid = finish?.opacity || 1; // the procedural body's opacity outside Ghost Phase (dressing happens before GO)
   let fade = 1;
   // Task 4c: a Garage-only paint shader hook (the Studio sweep, garage-paint-shader.ts) carries over to the GLB paint.
   if (finish && Object.hasOwn(finish, 'onBeforeCompile')) for (const paint of paints) {
@@ -104,7 +104,7 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
       if (led?.emissive) for (const light of lights) { light.emissive?.copy(led.emissive); light.emissiveIntensity = led.emissiveIntensity; }
       if (faded.length && finish!.opacity / solid !== fade) {
         fade = finish!.opacity / solid;
-        for (const [material, base] of faded) material.opacity = base * fade;
+        for (const [material, base] of faded) material.opacity = material.name.endsWith('_light') ? base : base * fade;
       }
     },
     dispose() {

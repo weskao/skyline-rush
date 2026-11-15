@@ -1,3 +1,27 @@
+# 2026-11-16 — Collision recovery: contact aligned with race models
+
+- [x] Coast, about 300 m: the Roadster could visually intersect a flanking traffic car during contact protection. The old 1.7 m lateral test ignored the rendered hull and tire clearance. Use measured neutral envelopes for player contacts with traffic and rivals, including separate front and rear extents. Use the same clearance when traffic steers around the player or when Ghost Phase ends.
+- [x] Regression coverage: measured procedural models and fitted player GLBs in both LODs, a short hatch versus a commuter, braking five-car packs at 30/60/120 Hz with and without lane assist, rear pressure, solid separation by a rail and Ghost Phase exit/re-entry.
+- [x] Shallow flank contact keeps a lighter penalty while separating the full visible bodies. This restored the existing 24-layout Frostbite pace checks without changing rival tuning.
+- [x] Circuit finishers remain in the standings and leave the active race scene and collision roster. The direct finish-line regression and the existing five-lap and eighth-place tests pass.
+- [ ] Exact-head GitHub quality gate and physical-device driving checks.
+
+# 2026-11-15 — Collision recovery and Ghost Phase
+
+- [x] Collision grace applies the penalty once while vehicle and scenery bodies still separate. Shield blocks preserve speed and combo. Ghost Phase uses a steady translucent body, visible tail lights, a body sweep and a countdown; already-overlapping contacts clear safely when it expires.
+- [x] RED: simulation reproduced skipped contacts, overlapping shield blocks and false hits at phase expiry. GREEN: 30/60/120 Hz Coast contact, solid scenery and Dune CourseGraph hazard regressions; GLB material isolation, HUD timing and module-size guards. Recorded 41 changed legacy replay snapshots after confirming all 46 scenarios passed on the original base.
+- [x] Dense traffic: check the proposed separation against both sides of the pack. When boxed in, hold the lane behind the lead car; a held rear bumper or side contact does not re-arm the impact. Steering can leave the queue as soon as a lane opens. AUTO lane assist pauses while following so it cannot steer into a neighbouring car when grace expires.
+- [x] RED: the old solver overlapped a third car or missed a fast sweep. GREEN: packed traffic at 30/60/120 Hz, order reversal, shield and Ghost Phase, side contact, road edge and CourseGraph odometer continuity.
+- [ ] Exact-commit GitHub quality gate and physical-device verification.
+
+# 2026-11-16 — Mini-boost start streaks (`feature/mini-boost-trails`)
+
+- [x] The energy can's old pair of rear streaks now plays once (0.8 s) when a mini-boost starts: drift release (tier colour), slipstream ring, boost tunnel and chain landing (neutral whitish cyan). Player only. Chained rings never restart a running play, and braking never starts one. Medium draws 4 lines. Low, Reduced Motion and disabled effects draw none. The can stays streak-free. Rule: `.claude/rules/mini-boost-streaks.md`.
+- [x] RED: `tests/mini-boost-streaks.test.js` 6/6 failed on stub modules. GREEN: 6/6, plus 25 pickup VFX tests. `npm test` 2,984 passed, 3 skipped, 0 failed; typecheck, production build and module-size gate pass. The legacy replay fixture was re-recorded only for the new `miniBoostEvent` field (simulation hashes without it match the old fixture, 47/47).
+- [x] Real WebGL (Chromium): `tests/mini-boost-streaks-browser.spec.js` 3/3 (desktop 1280×720, phone 390×844 portrait and 844×390 landscape); shader-warmup and black-frame specs 6/6. Frozen A/B frames show both bundles beside the boost plumes in the Taipei tunnel and after a chain landing.
+- [ ] Physical iPhone / Android check, `make verify`, full `npm run test:browser` and the exact-HEAD GitHub quality gate.
+- [ ] Phone portrait: the near end of the ribbons crosses the speed readout for part of the 0.8 s play; review on a device.
+
 # 2026-11-16 — Home camera picker: shared custom dropdown, uncut labels (`develop`)
 
 - [x] `#showcase-camera-select` drops `data-native-select`, so `customSelect` draws it like the language picker. The arrow-button rules are scoped to `.showcase-camera-actions > button`; they used to restyle the dropdown button too (40×40, 25px font, no chevron).
@@ -49,6 +73,14 @@
 - [x] World Tour config 49 of 49 on the merge.
 - [ ] Physical phone check, full `npm run test:browser` and exact-HEAD `quality-gate`.
 
+# 2026-11-15 — Energy can pickup sparks (`fix/energy-can-pickup-sparks`)
+
+- [x] The energy can keeps its .17 s absorption. A fitted orange flash and 2/5/8 pooled embers gather at the contact point and expire after .27 s. Reduced Motion keeps a still ring and soft glow.
+- [x] RED: five can-specific regressions on the base renderer, including 64 road particles after two takes at 30 m/s. GREEN: 78 focused pickup, effects, economy, shader safety, browser timing and module-size checks. Tank and overcharge guards still pass.
+- [x] Follow-up punch, each RED then GREEN: light haptic per tier (can 9 ms, tank 14, overcharge 20, cells none); fuel-bar flash with "+N" right of the reading (clear of the label in both phone orientations, still under Reduced Motion); camera kick at 20% of the NITRO ignition for a can, clamped to `KICK_LIMIT`; embers fly from the can into the car in vehicle space within .15 s and still reach it at 90 m/s; warm white-yellow can core with an orange rim, apart from the crash orange. `car.pickup` kept out of the legacy replay hash (47/47 unchanged).
+- [x] Real WebGL captures (desktop, 390×844, 844×390) show embers mid-flight and the warm-white contact flash with no orange; pickup-3d-collection, pickup-feedback, shader-warmup, black-frame, motion and pickup-3d browser specs pass; layout suites pass.
+- [ ] Physical-device review (haptic feel on Android, iOS) and exact-commit GitHub quality gate.
+
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
 - [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.
@@ -77,6 +109,31 @@
 - [ ] Complete full viewport and physical-device visual coverage.
 - [ ] Complete the full GitHub quality gate.
 - [x] Stabilize Browser Tests shard 9 (`43563563658`): the 1440×900 locked-preview sweep exhausted its 135-second budget on both attempts, around the final Coast start. Batches cover every locked classic preview and input at 1440×900 and 390×844 and still verify a Coast start from a locked preview. Local Chromium with CI settings and retries disabled passed all six cases (22–44 seconds each). Unit tests: 2,909 passed, 3 skipped. Typecheck and production build passed.
+
+# 2026-11-14 — Sprint exhaust visibility (`feature/sprint-exhaust-visibility`)
+
+- [x] 1. Sprint re-aim (`sprintLook` 3.5 m, landscape chase only): `tests/race-camera.test.js` *sprint re-aim* RED on `e23f410a`, GREEN since Task 2. Real frames: landscape NITRO nozzle row 0.80 → 0.734–0.740 (Coast, Spiral, climb), car w/h within 6.9%, portrait unchanged.
+- [x] 2. Fat plume: `tests/sprint-plume.test.js` *phone width* and *the real jets carry the profile* RED on the old cone, GREEN since Task 4.
+- [x] 3. Modes (Off, Reduced Motion, Low, flight, trail skin, void): unit tests *modes*, *trail skin*, *lean*, *only where bloom runs*; real frames show the flare and hide the road glow in the air.
+- [x] 4a. Every car in the race: the plume parts are children of `Rear ports`, whose placement on each car's nozzles is guarded (`crimson-gt-browser`, `hero-roadster-race-browser`, green with the Task 6 guard specs on `c2921842`); race frames on both cars, both phone orientations.
+- [ ] 4b. Garage preview and Home showcase on both cars, after switching cars, both phone orientations: not captured (browser runs stopped at the owner's request).
+- [x] 5. Real WebGL frames before/after (`sprint-camera-capture-browser.spec.js`): desktop, phone portrait and landscape, CORES=2/4, both cars; every `after` set passes car inside, contrast ≥ 40 and CORES=2 area ≥ 2× `before` (landscape BOOST 2.01–2.68×, NITRO 2.62–2.97×; portrait 2.07–3.22×; GT landscape 2.47–3.74×). Crimson GT's landscape NITRO nozzle row is 0.777 (was 0.848; its nozzles sit lower than the Roadster's). Owner review of the frames pending.
+- [ ] 6. GPU frame cost, held NITRO on Coast, p50 ms before → after (M4 Pro, shared machine, one interleaved round): 844x390 Low 4.4 → 4.7, Medium 5.8 → 6.0, High 5.8 → 5.8; 1440x900 Low 5.9 → 5.7, Medium 7.8 → 7.1, High 6.8 → 7.5. Five of six rows within max(5%, 0.3 ms); 1440x900 High is over (+0.7 ms, also over in an earlier run). Fix: shorter glow/core on High, re-measured.
+- [x] 7a. `node --test tests/module-size.test.js` 3/3 (no ceiling raised), `npm test` 2983 pass / 0 fail / 3 skipped, typecheck, `npm run build` on `5b90bdb3`.
+- [ ] 7b. `npm run test:browser` and `make verify`: not run (owner's request).
+- [x] 8. Prevention: `.claude/rules/race-camera.md` *Exhaust under the frame*, `.claude/rules/sprint-plume.md` (thin/additive/gated, white-out, phone-tier starvation, lost uniform), each with its guard; veil spec (High, landscape phone) Roadster 44.3, GT 69.7 (≤ 80).
+- [ ] Not run: physical phone, exact-HEAD GitHub `quality-gate`. What's New entry not written (needs a real-game clip and `/review-release-notes`).
+
+# 2026-11-16 — Plume core bar removed (`fix/plume-core-bar`)
+
+- [x] Cause: the normal-blended `Sprint plume core` (a 9 cm × 1.8 m opaque tube per nozzle) drew a solid grey bar inside each nozzle ring on the Standard, Ion and Plasma thrusters, in the Garage and in races; Void pulse hides jets and core. Close-up race frames on develop `d2185ea8` (High, 1440×900) with each part hidden in turn: the bar disappears with the core alone hidden; the jets alone still read clearly.
+- [x] RED → GREEN: `tests/sprint-plume.test.js` *no solid bar in the nozzle* failed on `d2185ea8` (core mesh present) and passes with the core removed.
+- [x] `node --test tests/module-size.test.js` 3/3, `npm test` 3038 pass / 0 fail / 3 skipped, typecheck, `npm run build`.
+- [x] Prevention: `.claude/rules/sprint-plume.md` *Solid core bar*; every plume part must blend additively.
+- [ ] Browser specs (`sprint-plume-veil`, `sprint-camera-capture` area/contrast floors) and Garage/Home frames on both cars and phone orientations: not run (owner's request). The core was part of the daylight-contrast floor; re-capture before merging.
+- [ ] Not run: physical phone, exact-HEAD GitHub `quality-gate`.
+- [x] Showroom pulse (owner's pick over a fixed race length or a hold-to-preview button): Garage/Home plume was 0.83 m vs Preview Studio's 4.70 m (default settings). `tests/sprint-plume.test.js` *showroom plume: loops…* RED on `e4329420` (0.83 m), GREEN after: every showroom loops from idle to ≥ 95% of the race length with the 2.2 s ignition demo; Reduced Motion holds Studio at full length.
+- [ ] Showroom pulse in real Garage/Studio frames, both cars, both phone orientations: delegated recording, not yet reviewed.
 
 ## Final tutorial NITRO cue (2026-11-15)
 

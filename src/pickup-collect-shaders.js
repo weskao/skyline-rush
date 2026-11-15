@@ -20,11 +20,6 @@ export const CONTACT_FRAGMENT = `varying vec2 vPoint;
       float split=abs(sin(a*3.+r*13.+sin(r*36.)*.42));
       mark=pow(max(0.,1.-split),7.)*exp(-abs(r-front+.10)*12.);
       arc*=.52+.48*abs(sin(a*7.+progress*7.));
-    }else if(tier<1.5){
-      float vent=.5+.5*cos(a*2.);
-      float heat=r+(sin(a*13.+progress*13.)+sin(a*7.-r*32.))*.026;
-      mark=vent*exp(-abs(heat-front+.12)*12.);
-      arc*=.52+.48*vent;
     }else if(tier<2.5){
       float hex=r*cos(mod(a+TAU/12.,TAU/6.)-TAU/12.);
       arc=exp(-abs(hex-front*.87)*63.);
@@ -66,9 +61,9 @@ export const BODY_FRAGMENT = `uniform vec3 primary,secondary;
       band=exp(-abs(u-front)*15.);
       echo=exp(-abs(u-front+.14)*13.)*.55;
     }else if(tier<1.5){
-      float hot=smoothstep(.44,.93,p.x);
-      band=hot*exp(-abs(p.x-mix(.5,1.12,progress))*9.)*(.72+.28*sin(p.y*21.-progress*15.));
-      echo=hot*(1.-p.y)*.32;
+      vec2 fromContact=p-vec2(.61,.62);
+      vec2 spread=fromContact*vec2(5.,3.);
+      band=.55*exp(-dot(spread,spread));
     }else if(tier<2.5){
       band=exp(-abs(p.y-front)*12.);
       echo=exp(-abs(p.y-front+.22)*12.)*.72;

@@ -7,12 +7,15 @@ import { racePosition, sprintGaps, gapChargeWarning, MAX_SPEED, driftTier } from
 import { ghostAt, type GhostRun } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
 import { createRoadSafeFeedback } from './race-feedback-placement.ts';
+import { createImpactHud } from './impact-hud.ts';
 import type { ControlPreferences } from './control-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
 import { createModePanels, type ModePanelOptions } from './race-hud-modes.ts';
 import { createHaptics } from './haptics.ts';
 import { createSprintReadyFeedback, type SprintReadyCue } from './sprint-ready-feedback.ts';
 import { orderRaceLeaderboard, graphRivalGap } from './course-hud-standings.ts';
+import { PICKUP_HAPTIC_MS } from './pickup-feedback.ts';
+import { createPickupFuelCue } from './pickup-fuel-cue.ts';
 
 // The in-race HUD, written every HUD tick (~13 Hz) from the frame loop. It stays imperative:
 // elements are looked up once, text/hidden are written only when they change, no Vue reactivity.
@@ -64,6 +67,7 @@ export function createRaceHud(options: HudOptions) {
   boostStatus.id = 'boost-status';
   boostStatus.className = 'boost-status';
   $('.fuel-stat').append(boostStatus);
+  const fuelCue = createPickupFuelCue(ui['fuel-value']!.parentElement!, () => !getVisual().comfortable && !reducedMotion.matches);
   const callouts = createCallouts();
   const haptic = createHaptics();
   const eventCallout = $('#event-callout');
@@ -76,6 +80,7 @@ export function createRaceHud(options: HudOptions) {
   nitroHud.querySelector('img')?.addEventListener('error', () => nitroHud.querySelector('img')?.remove(), { once: true });
   // Include the dynamically inserted NITRO status in the initial collision geometry.
   const feedbackPlacement = createRoadSafeFeedback(eventCallout, ui['driving-message']!, $<HTMLElement>('#impact-report'), $<HTMLElement>('.mode-indicator'));
+  const updateImpact = createImpactHud(ui['impact-report']!, feedbackPlacement.refresh);
   const nitroSegments = [...nitroHud.querySelectorAll<HTMLElement>('.nitro-segment')];
   const nitroStatus = $('#nitro-status');
   const nitroMeter = $('#nitro-meter');
@@ -96,7 +101,7 @@ export function createRaceHud(options: HudOptions) {
   let previousBoost = false;
   let shownCallout: ReturnType<typeof callouts.update> = null;
   let lastDrivingMessage = '';
-  let feedbackCar: unknown, lastImpact: unknown, lastDriftPayout: unknown, lastTrickPayout: unknown, lastNitroTime = 0;
+  let feedbackCar: unknown, lastImpact: unknown, lastDriftPayout: unknown, lastTrickPayout: unknown, lastPickup: unknown, lastNitroTime = 0;
 
   function updateSpeedAndPosition(now: number, race: HudRace, car: HudRace, calm: boolean): void {
     setHudText(ui.speed!, String(Math.round(car.speed * 3.6)));
@@ -139,7 +144,8 @@ export function createRaceHud(options: HudOptions) {
     ui['fuel-fill']!.style.transform = `scaleX(${car.fuel / 100})`;
     ui['fuel-meter']!.setAttribute('aria-valuenow', String(Math.round(car.fuel)));
     ui['fuel-meter']!.setAttribute('aria-valuetext', `${car.fuel < 20 ? L['hud.lowCharge'] : ''}${Math.round(car.fuel)}%`);
-    ui['fuel-meter']!.dataset.refilling = String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
+    const pickup = fuelCue.update(race.phase === 'racing', race.elapsed, car.pickup);
+    ui['fuel-meter']!.dataset.refilling = pickup ? 'pickup' : String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
     previousFuel = car.fuel;
     setHudText(hudNodes['style-score']!, race.mode === 'gauntlet' ? t('mode.hazardHud', { n: race.hazards.filter((h: HudRace) => h.passed).length, total: race.hazards.length, score: Math.floor(car.score) }) : interpolate(L['hud.style']!, { n: Math.floor(car.score) }));
     setHudText(ui.altitude!, car.altitude.toFixed(1));
@@ -212,11 +218,12 @@ export function createRaceHud(options: HudOptions) {
       const burst = car.nitroTime > lastNitroTime || (boost && !previousBoost);
       const driftPaid = car.driftPayout && car.driftPayout !== lastDriftPayout;
       const trickPaid = car.trickPayout?.nitro > 0 && car.trickPayout !== lastTrickPayout;
+      const pickupPulse = car.pickup && car.pickup !== lastPickup ? PICKUP_HAPTIC_MS[car.pickup.tier] ?? 0 : 0;
       if (hit || burst || driftPaid || trickPaid) {
         haptic(hit ? [18, 30, 18] : trickPaid ? [12, 20, 12] : burst ? 25 : 15);
-      }
+      } else if (pickupPulse) haptic(pickupPulse);
     }
-    feedbackCar = car; lastImpact = car.impact; lastNitroTime = car.nitroTime;
+    feedbackCar = car; lastImpact = car.impact; lastNitroTime = car.nitroTime; lastPickup = car.pickup;
     lastDriftPayout = car.driftPayout;
     lastTrickPayout = car.trickPayout;
     previousBoost = boost;
@@ -345,13 +352,7 @@ export function createRaceHud(options: HudOptions) {
     setHudText(ui['climb-rate']!, `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`);
     ui['height-indicator']!.style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
     updateBoostAndFeedback(race, car, nitroActive, flying, calm);
-    const impactWasHidden = ui['impact-report']!.hidden;
-    setHudHidden(ui['impact-report']!, race.phase !== 'racing' || impactAge > 1.1);
-    if (!ui['impact-report']!.hidden) {
-      setHudText(ui['impact-title']!, L[car.impact.kind === 'barrier' ? 'hud.barrier' : 'hud.vehicle']!);
-      setHudText(ui['impact-loss']!, String(Math.round(car.impact.speedLost * 3.6)));
-      if (impactWasHidden) feedbackPlacement.refresh(); // event-driven: measured once per hit, never per frame
-    }
+    updateImpact(car, race.elapsed, race.phase === 'racing');
     updateTouchButtons(race, input, tap);
     options.updatePadHint(race.phase, race.elapsed);
     setHudText(ui['speed-caption']!, L[race.phase === 'ready' ? 'hud.readyTakeoff' : car.boosting ? 'hud.boostEngaged' : options.isAutoThrottle() ? 'hud.autoOverride' : 'hud.tagline']!);

@@ -1,5 +1,7 @@
 export const RACE_PRESENTATION_COPY = {
   en: {
+    'impact.protection': 'CONTACT PROTECTION',
+    'impact.shielded': 'SHIELD BLOCKED',
     'lobby.title': 'Race setup',
     'lobby.mode': 'Mode',
     'lobby.track': 'Track',
@@ -43,6 +45,8 @@ export const RACE_PRESENTATION_COPY = {
     'mode.setupStages': '{n} sprint stage(s)',
   },
   'zh-TW': {
+    'impact.protection': '撞後保護',
+    'impact.shielded': '護盾擋撞',
     'lobby.title': '賽事設定',
     'lobby.mode': '模式',
     'lobby.track': '賽道',

@@ -13,6 +13,10 @@
       <svg class="item-freeze" viewBox="0 0 48 48"><path d="M24 8v32M10 16l28 16M10 32l28-16M19 12l5 5 5-5M19 36l5-5 5 5M11 22l7-2-2-7M37 26l-7 2 2 7" /></svg>
     </span>
     <span id="item-status" role="status"></span>
+    <div id="ghost-phase-status" class="ghost-phase-status" hidden>
+      <output id="ghost-phase-time" role="status"></output>
+      <div class="ghost-phase-meter" aria-hidden="true"><i id="ghost-phase-fill"></i></div>
+    </div>
     <button type="button" id="activate-item" data-i18n="mode.itemActivate" disabled>USE · Q</button>
   </div>
 </template>
@@ -27,5 +31,9 @@
 .item-slot[data-item="ghost"] .item-ghost,
 .item-slot[data-item="freeze"] .item-freeze,
 .item-slot[data-item="emp"] .item-emp { display: block; }
+.ghost-phase-status { flex: 0 0 auto; white-space: nowrap; color: #d3e9ff; }
+.ghost-phase-status[hidden] { display: none; }
+.ghost-phase-meter { height: 3px; overflow: hidden; border-radius: 2px; background: #355874; }
+.ghost-phase-meter i { display: block; width: 100%; height: 100%; background: #98caff; transform-origin: left; }
 .item-slot button { min-height: 44px; }
 </style>

@@ -7,6 +7,7 @@ import { RACE_CAMERA, raceCameraView, rigBack, rigHeight, rigFov, rigShake, step
 import { CAR_HEIGHT, ROAD_LIMIT } from '../src/game.js';
 import { MAX_SPEED, NITRO_CAP_BONUS } from '../src/drive-rules.ts';
 import { VFX_RANGES, NITRO_CHAIN_LIFT, sprintFovOffset, createSprintVfx } from '../src/vfx-settings.ts';
+import { PICKUP_KICK_SHARE } from '../src/pickup-feedback.ts';
 
 const deg = radians => radians * 180 / Math.PI;
 const CAR_HALF_LENGTH = 2.4, CAR_WIDTH = 2; // src/aero-vfx.js rear ports sit at z 2.39; wheels span about 2 m
@@ -276,6 +277,28 @@ test('NITRO/BOOST ignition: one felt, low-frequency kick that dies out', () => {
   assert.equal(rig.rigKick(chase, 0.05, 0), 0, 'the Camera shake setting at 0 turns it off');
   for (const age of [NaN, -1, Infinity]) assert.equal(rig.rigKick(chase, age, 1), 0);
   assert.equal(rig.rigKick(chase, 0.05, NaN), 0);
+});
+
+// A player pickup reuses the ignition kick at its tier's share (pickup-feedback.ts): a can is a 20% nudge, through the same
+// Camera shake setting and the same KICK_LIMIT, never a second shake.
+test('a player pickup pushes the camera with a share of the ignition kick, through the Camera shake setting', () => {
+  const peak = (setting, pickup, ignition = Infinity) => Math.max(...Array.from({ length: 121 }, (_, i) => Math.abs(rig.rigKick(chase, ignition, setting, pickup, 10 + i / 240))));
+  for (const view of [chase, portrait, first]) {
+    const full = Math.max(...Array.from({ length: 121 }, (_, i) => Math.abs(rig.rigKick(view, i / 240, DEFAULT_SHAKE))));
+    const can = Math.max(...Array.from({ length: 121 }, (_, i) => Math.abs(rig.rigKick(view, Infinity, DEFAULT_SHAKE, { tier: 'can', time: 10 }, 10 + i / 240))));
+    assert.ok(Math.abs(can / full - PICKUP_KICK_SHARE.can) < 0.01, `can peak ${(can / full).toFixed(3)} of the ignition kick`);
+  }
+  const can = { tier: 'can', time: 10 };
+  assert.ok(peak(DEFAULT_SHAKE, { tier: 'tank', time: 10 }) > peak(DEFAULT_SHAKE, can), 'tank pushes harder than a can');
+  assert.equal(peak(DEFAULT_SHAKE, { tier: 'cell', time: 10 }), 0, 'cells (dense reward lines) do not push');
+  assert.equal(peak(0, can), 0, 'the Camera shake setting at 0 turns it off');
+  assert.equal(peak(DEFAULT_SHAKE, null), 0, 'no pickup, no push');
+  assert.equal(rig.rigKick(chase, Infinity, DEFAULT_SHAKE, can, 10 + 0.36), 0, 'over within 0.35 s');
+  assert.equal(rig.rigKick(chase, Infinity, DEFAULT_SHAKE, can, 9.9), 0, 'nothing before the take');
+  // an overcharge taken right on an ignition still stays inside the one limit
+  const both = Array.from({ length: 121 }, (_, i) => Math.abs(rig.rigKick(first, i / 240, 1, { tier: 'overcharge', time: 10 }, 10 + i / 240)));
+  assert.ok(Math.max(...both) <= 0.021 + 1e-12, 'stacked kicks stay under KICK_LIMIT');
+  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /rigKick\(view, sprintFrame\.kick, shakeSetting, car\.pickup, race\.elapsed\)/);
 });
 
 // Road rumble replaces nothing: the sustained rotational shake stays gone. A translation moves near things (car, road) a

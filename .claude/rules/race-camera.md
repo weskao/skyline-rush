@@ -39,6 +39,8 @@ a different camera (`track-showcase.md`, `src/track-preview.ts`).
   desktop. `rigShake` takes speed only. The ignition is one damped pitch kick (`rigKick`, ≈0.35 s,
   4 Hz, ≈0.68° peak on the default setting, capped at 1.2°) on the `kick` clock that
   `createSprintVfx` restarts only on a fresh ignition; the FOV share eases in over 0.3 s.
+  A player pickup adds the same swing from `car.pickup.time` at its tier's `PICKUP_KICK_SHARE`
+  (`src/pickup-feedback.ts`: can 20%, cells none); the sum clamps to `KICK_LIMIT`. No second shake.
   A sustained *translation* is allowed, bounded: `rigRumble` moves the eye a few cm in camera x/y
   (1–3 Hz road waves + a small 17 Hz buzz, ∝ speed², +80% at a full sprint, capped at 5 cm), so
   the car and road tremble while the horizon stays still. Guard: the road-rumble test (z 0, peak
@@ -66,6 +68,15 @@ a different camera (`track-showcase.md`, `src/track-preview.ts`).
   (`squatPitch` + `rearAxleLift` in `src/vehicle-render-motion.js`, read from each car's own
   wheels) and peaks before the punch, so the camera follows late. Presentation only; the flat
   legacy road path (Endless practice) does not squat.
+- **Exhaust under the frame (2026-11-14).** On a landscape phone at NITRO top speed the nozzles sat at
+  row 0.80 with only 19.5% of the frame (1.35 m of plume) under them, so a held sprint barely
+  showed. `sprintLook` (3.5 m on the landscape chase) lowers the look-at height by the eased sprint
+  share, clamped at 1 for a x3 chain: nozzle row 0.80 to 0.74, car size 98%. It re-aims, never pulls
+  back: a 0.8 m pull-back showed about as much plume (1.75 m) but shrank the car to 80% (the
+  shrinking-car trap above). Portrait stays 0: its guards (horizon below row 0.36, car top below row
+  0.42) leave no room and it already shows about 5 m of plume; first person has no plume to show.
+  Reduced Motion re-aims by 0. Guard: *sprint re-aim: a held NITRO/BOOST lifts the landscape nozzles
+  off the bottom edge without moving the eye*. The plume itself: `sprint-plume.md`.
 
 ## Changing a number
 
