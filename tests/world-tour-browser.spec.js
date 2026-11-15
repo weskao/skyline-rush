@@ -23,7 +23,16 @@ test('classic track cards render their own teaser artwork', async ({ page }) => 
     return [new URL(image.currentSrc).pathname.split('/').pop(), image.naturalWidth,
       image.naturalHeight, getComputedStyle(image).objectFit];
   })));
-  expect(rendered).toEqual(ids.map(id => [`${id}.jpg`, 568, 205, 'cover']));
+  expect(rendered).toEqual(ids.map(id => [`${id}.jpg`, 1136, 410, 'cover']));
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 430, height: 932 }, { width: 844, height: 390 }]) {
+    await page.setViewportSize(viewport);
+    await page.locator('#lobby-tracks-toggle').evaluate(toggle => toggle.setAttribute('aria-expanded', 'true'));
+    const density = await artwork.evaluateAll(images => images.map(image => {
+      const { width, height } = image.getBoundingClientRect();
+      return width && height ? Math.min(image.naturalWidth / width, image.naturalHeight / height) : 0;
+    }));
+    expect(Math.min(...density)).toBeGreaterThanOrEqual(3);
+  }
 });
 test('all home route previews and bilingual names are available without exposing classic shortcuts', async ({ page }) => {
   await seed(page);
