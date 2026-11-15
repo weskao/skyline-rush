@@ -101,7 +101,9 @@ test('a race still reaches its results when every frame is slow', async ({ gamep
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.evaluate(() => {
     const raf = window.requestAnimationFrame.bind(window);
-    window.requestAnimationFrame = callback => raf(time => { const end = performance.now() + 300; while (performance.now() < end); callback(time); });
+    // One 300 ms stall per frame, shared by every rAF callback in it (the results credit roll runs its own loop).
+    let stalledFrame;
+    window.requestAnimationFrame = callback => raf(time => { if (time !== stalledFrame) { stalledFrame = time; const end = performance.now() + 300; while (performance.now() < end); } callback(time); });
     const race = window.gameplay.race;
     race.elapsed = 80;
     Object.assign(race.player, { distance: race.length - 10, speed: 60 });

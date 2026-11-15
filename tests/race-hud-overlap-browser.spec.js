@@ -77,7 +77,7 @@ const test = gameplayTest.extend({
   // Runs before gameplayPage navigates, so locale, HUD mode and fold segments apply on first paint.
   page: async ({ page, fold }, use) => {
     await page.addInitScript(segments => {
-      if (segments) Object.defineProperty(window, 'getWindowSegments', { configurable: true, value: () => segments });
+      if (segments) Object.defineProperty(window, 'viewport', { configurable: true, value: { segments } });
       const pending = sessionStorage.getItem('hud-overlap-setup');
       if (pending) {
         const { locale, hud } = JSON.parse(pending);
@@ -135,7 +135,9 @@ async function measureHud(page, viewport, locale, hud, failures) {
   await page.waitForFunction(() => !document.querySelector('#event-callout').hidden, null, { polling: 'raf', timeout: ciTimeout(5_000) });
   const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
   // The callout stays off the road view: the same centre rectangle pickPeripheralSlot (src/race-feedback-placement.ts) avoids.
-  const road = { left: viewport.width * 0.325, right: viewport.width * 0.675, top: viewport.height * 0.2, bottom: viewport.height * 0.72 };
+  const scene = await page.locator('#world').boundingBox();
+  const road = { left: scene.x + scene.width * 0.325, right: scene.x + scene.width * 0.675,
+    top: scene.y + scene.height * 0.2, bottom: scene.y + scene.height * 0.72 };
   // The progress bar (.progress-bar; mode rows stay in .race-progress) and ROAD/FLIGHT mode chip dock at the edges too (persistent blocks must never sit on the road view).
   // Phones show only the three nearby leaderboard rows, docked beside POSITION off the road view; desktop and tablet keep all eight.
   const phone = viewport.touch && (viewport.width <= 760 || viewport.height <= 500);
@@ -152,9 +154,9 @@ async function measureHud(page, viewport, locale, hud, failures) {
     const rows = [...element.querySelectorAll('.racer')].filter(row => row.getClientRects().length);
     return { height: element.getBoundingClientRect().height, rows: rows.length, player: rows.some(row => row.classList.contains('is-player')) };
   });
-  if (board && phone && !(board.height <= LEADERBOARD_PHONE_HEIGHT && board.rows === 3 && board.player))
+  if (board && (phone || viewport.segments) && !(board.height <= LEADERBOARD_PHONE_HEIGHT && board.rows === 3 && board.player))
     failures.push(`${label}/racing: phone leaderboard ${board.height.toFixed(0)}px tall, ${board.rows} rows, player ${board.player}`);
-  if (board && !phone && board.rows !== 8) failures.push(`${label}/racing: leaderboard shows ${board.rows} of 8 rows`);
+  if (board && !phone && !viewport.segments && board.rows !== 8) failures.push(`${label}/racing: leaderboard shows ${board.rows} of 8 rows`);
   // A vehicle hit's report: the same record game.js writes in its collision handler.
   await page.evaluate(() => {
     const { race } = window.gameplay, car = race.player;
@@ -295,5 +297,52 @@ for (const { width, height, hud } of [{ width: 844, height: 390, hud: 'hybrid' }
         pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP, keep: yielded ? [] : ['.impact-report'] });
       expect(pairs.filter(pair => EDGE_HUD.some(selector => pair.startsWith(`${selector} ×`) || pair.includes(`× ${selector} `)))).toEqual([]);
     });
+  });
+}
+
+const foldHudTest = gameplayTest.extend({
+  page: async ({ page }, use) => {
+    await page.addInitScript(segments => {
+      Object.defineProperty(window, 'viewport', { configurable: true, value: { segments } });
+      localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' }));
+    }, SIZES.horizontal.segments);
+    await use(page);
+  },
+});
+foldHudTest.use({ unlockedAccess: true, hasTouch: true, viewport: { width: 600, height: 900 }, reducedMotion: 'reduce' });
+
+for (const [track, selector] of [
+  ['coast', '[data-track="coast"]'],
+  ['tokyo', '[data-track="tokyo"]'],
+  ['frostbite-canyon', '[data-upcoming-track="frostbite-canyon"]'],
+  ['volcanic-crown', '[data-upcoming-track="volcanic-crown"]'],
+]) {
+  foldHudTest(`${track} retains legible controls and telemetry on a stacked fold`, async ({ gameplayPage: page }) => {
+    await page.locator(selector).click();
+    await page.locator('#start-button').click();
+    await page.evaluate(() => { window.gameplay.race.countdown = .01; });
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
+    await expect(page.locator('#countdown')).toBeHidden();
+    await expect(page.locator('#world')).toBeVisible();
+    for (const selector of ['#speed', '#position', '#timer', '#fuel-meter']) {
+      const widget = page.locator(selector);
+      await expect(widget).toBeVisible();
+      await expect.poll(async () => {
+        const box = await widget.boundingBox();
+        return (box.y >= 0 && box.y + box.height <= 430) || (box.y >= 460 && box.y + box.height <= 900);
+      }).toBe(true);
+    }
+    for (const control of ['nitro', 'boost', 'fly']) {
+      const button = page.locator(`[data-control="${control}"]`);
+      await expect(button).toBeVisible();
+      await expect.poll(() => button.evaluate(element => {
+        const r = element.getBoundingClientRect();
+        const rim = getComputedStyle(element, '::before');
+        const flame = element.querySelector('.sprint-ready-effect');
+        return r.width >= 44 && r.height >= 44 && r.top >= 461 && r.bottom < innerHeight &&
+          rim.clipPath.includes('polygon') && (!flame || getComputedStyle(flame).display === 'none');
+      })).toBe(true);
+    }
+    await page.screenshot({ path: foldHudTest.info().outputPath(`foldable-hud-${track}.png`), animations: 'disabled' });
   });
 }

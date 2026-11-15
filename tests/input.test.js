@@ -436,3 +436,25 @@ test('holding a touch button or the slide pad cancels touchstart, so iOS shows n
   controls.destroy();
   assert.equal(send(gas, 'touchstart').defaultPrevented, false);
 });
+
+test('clearing during a fold releases both captured thumbs and ignores their subsequent moves', () => {
+  const controls = createControls(new EventTarget());
+  const steer = new EventTarget(), gas = new EventTarget(), released = [];
+  for (const button of [steer, gas]) {
+    button.hasPointerCapture = () => true;
+    button.releasePointerCapture = id => released.push(id);
+  }
+  controls.bindButton(steer, 'left');
+  controls.bindButton(gas, 'throttle');
+  send(steer, 'pointerdown', { pointerId: 4, pointerType: 'touch' });
+  send(gas, 'pointerdown', { pointerId: 8, pointerType: 'touch' });
+  assert.equal(controls.read().steer, -1);
+  assert.equal(controls.read().throttle, true);
+  controls.clear();
+  assert.deepEqual(released, [4, 8]);
+  send(steer, 'pointermove', { pointerId: 4, pointerType: 'touch' });
+  send(gas, 'pointermove', { pointerId: 8, pointerType: 'touch' });
+  assert.equal(controls.read().steer, 0);
+  assert.equal(controls.read().throttle, false);
+  controls.destroy();
+});

@@ -76,3 +76,26 @@ test('10C: filtered challenge records stay within a narrow phone-portrait Histor
   expect(overflow).toBeLessThanOrEqual(2);
   await page.screenshot({path:'test-results/race-mode-history-phone.png'});
 });
+
+test('History opens at recent races and keyboard switches directly to the Daily board', async ({ page }) => {
+  await page.goto('/');
+  const entry = page.locator('.history-button');
+  await entry.click();
+  const dialog = page.locator('#history-screen');
+  const races = dialog.getByRole('tab', { name: 'History' });
+  await expect(races).toHaveAttribute('aria-selected', 'true');
+  await expect(dialog.getByRole('combobox', { name: 'History track' })).toBeInViewport();
+  await expect(dialog.locator('#cloud-title')).toBeHidden();
+  await races.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(dialog.getByRole('tab', { name: 'Daily challenge' })).toBeFocused();
+  await expect(dialog.locator('#daily-board')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(entry).toBeFocused();
+  await page.locator('#daily-card-open').click();
+  await expect(dialog.locator('#daily-board')).toBeVisible();
+  await page.goBack();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#daily-card-open')).toBeFocused();
+});

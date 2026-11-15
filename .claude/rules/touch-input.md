@@ -50,3 +50,7 @@ Any new mobile surface must be covered by `tests/ios-touch-guard.test.js` and
 `tests/ios-touch-guard-browser.spec.js`; verify actual iPhone Safari/Chrome
 long-press, taps, scroll, and controls in the ready, racing, paused and results
 phases before claiming physical-device acceptance. CSS alone is not sufficient.
+
+## Touch layout editor rotation
+
+Bind each layout drag to its starting orientation. Commit on pointer-up in that orientation. Rotation, capture loss and pointer cancellation restore the last saved layout. The editor must continue displaying the current orientation and keep its peer layout intact. Guard: `tests/controls-preview-browser.spec.js`.

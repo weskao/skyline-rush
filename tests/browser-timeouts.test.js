@@ -154,6 +154,29 @@ test('browser specs never poll game state with a counted wall-clock sleep', () =
   assert.deepEqual(offenders, [], 'Poll per frame until the game decides, bounded by race.elapsed (see .claude/rules/browser-test-stability.md)');
 });
 
+// A shim that stalled every requestAnimationFrame callback charged the results credit roll's second rAF loop too:
+// 17 slow frames cost 39 x 300 ms, past the 10 s expect (result-actions slow-frame test, 2026-11-15).
+test('a slow-frame shim stalls each frame once, not each animation-frame callback', () => {
+  const offenders = FILES.flatMap(file => [...readFileSync(new URL(file, import.meta.url), 'utf8')
+    .matchAll(/window\.requestAnimationFrame\s*=[\s\S]{0,300}?while\s*\(performance\.now\(\)/g)]
+    .filter(([shim]) => !shim.includes('stalledFrame')).map(([shim]) => `tests/${file}: ${shim.split('\n')[0].trim()}`));
+  assert.deepEqual(offenders, [], 'Stall only when the frame timestamp changes (stalledFrame); see .claude/rules/browser-test-stability.md');
+});
+
+// The Garage slides in (history-in); a rect read mid-slide is shifted and can be off by a float32 ULP: the car picker
+// thumbnail measured 144.00001526 px in 1 of 30 runs (2026-11-15). These specs open it with openGarage() first.
+test('Garage geometry is measured after the slide-in settles', () => {
+  const offenders = ['crimson-gt-browser.spec.js', 'garage-home-pose-browser.spec.js'].flatMap(file => {
+    let opened = 0;
+    return readFileSync(new URL(file, import.meta.url), 'utf8').split('\n').flatMap((line, i) => {
+      if (/\btest\(['`]/.test(line)) opened = 0;
+      if (/#garage-button'\)\.(click|tap)\(\)/.test(line)) opened = i + 1;
+      return opened && /getBoundingClientRect|boundingBox\(\)/.test(line) ? [`tests/${file}:${i + 1} (Garage opened on line ${opened})`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Open the Garage with openGarage() from tests/helpers/test.js before measuring it');
+});
+
 // The keyboard full-practice tests ran on the 135 s default while their touch twins had 720 s; a passing CI run took
 // 1.7 min, so slower runners timed out mid-lesson (develop, 2026-11-07). The shared flow helper owns the budget.
 test('every full practice run declares the full-practice budget', () => {

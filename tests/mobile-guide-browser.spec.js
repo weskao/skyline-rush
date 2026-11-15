@@ -8,6 +8,7 @@ test.describe('390x844 first tap', () => {
   test('first Start tap opens touch practice with a reachable Skip into the race', async ({ page }) => {
     await page.goto('/');
     await page.locator('#start-button').tap();
+    await page.locator('#guide-practice').tap();
     await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', 'throttle');
     await expect(page.locator('#touch-controls [data-control="throttle"]')).toHaveClass(/tutorial-target/);
     await expect(page.locator('#touch-controls [data-control="throttle"]')).toHaveCSS('animation-name', 'tutorial-target-ripple'); // the press-now button pulses

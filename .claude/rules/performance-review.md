@@ -34,6 +34,16 @@ batching/culling; real WebGL screenshots on all affected courses incl. pause/res
 switch, WebGL recovery, low-power devices, narrow phone/landscape. Final report names untested
 devices and remaining uncertainty.
 
+## Traffic is one instanced fleet
+
+Each traffic car used to be its own `makeCar()` group: 15 draw calls per car in view, 1,549 with 108 cars.
+`src/traffic-fleet.ts` bakes each traffic style into one geometry per material and draws every car as an
+instance of a `marker-pool.js` pool: 21 calls at any car count, 6 more in the wet-road mirror pass. `world.js`
+poses plain `Object3D`s through `updateCar` and calls `trafficFleet.sync()` once per frame. Culling stays on:
+the pool rebuilds each mesh's bound from that frame's cars. A traffic car that needs a moving part (brake
+light, indicator, spinning wheel) gets an instanced attribute or its own pooled mesh, never a group per car.
+Guards: `tests/traffic-fleet.test.js`, `tests/traffic-instancing-browser.spec.js`.
+
 ## Home map switching: preserve the last two Coming Soon stages
 
 The 3D swipe snapshots temporarily select the neighbor and then return to the selected track.

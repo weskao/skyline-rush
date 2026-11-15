@@ -52,7 +52,16 @@ export function customSelect(select: HTMLSelectElement): () => void {
     list.hidden = !open;
     button.setAttribute('aria-expanded', String(open));
     trackDropdown(box, open, () => toggle(false));
-    if (open) highlight(select.selectedIndex);
+    if (open) {
+      // A picker near the bottom (Home camera dock) opens upward and every list fits the room on its side,
+      // so no option is cut off by the viewport. Home's zoom is <= 1, so screen px are a safe cap in CSS px.
+      const { top, bottom } = box.getBoundingClientRect();
+      const below = innerHeight - bottom - 8, above = top - 8;
+      const up = list.scrollHeight > below && above > below;
+      box.classList.toggle('opens-up', up);
+      list.style.setProperty('--list-room', `${Math.max(0, up ? above : below)}px`);
+      highlight(select.selectedIndex);
+    }
     else button.removeAttribute('aria-activedescendant');
   };
   const commit = (i: number): void => {

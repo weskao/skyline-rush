@@ -1,7 +1,8 @@
 export const EVENT_LAB = {
   en: {
     'mode.eventlab': 'Event Lab', 'mode.description.eventlab': 'Make a course and race your own layout.',
-    'lab.title': 'Create your course', 'lab.close': 'Close',
+    'lab.title': 'Create your course', 'lab.close': 'Close Event Lab',
+    'lab.route': 'Route', 'lab.objects': 'Objects',
     'lab.intro': 'Solo driving · your layout, your personal records.',
     'lab.slalom': 'Slalom template', 'lab.collect': 'Collection template', 'lab.checkpoints': 'Checkpoint template', 'lab.jumps': 'Jumps template',
     'lab.undo': 'Undo', 'lab.redo': 'Redo', 'lab.reset': 'Reset',
@@ -27,7 +28,8 @@ export const EVENT_LAB = {
   },
   'zh-TW': {
     'mode.eventlab': '賽道工坊', 'mode.description.eventlab': '設計自己的配置，親自上路挑戰。',
-    'lab.title': '打造你的賽道', 'lab.close': '關閉',
+    'lab.title': '打造你的賽道', 'lab.close': '關閉賽道工坊',
+    'lab.route': '路線', 'lab.objects': '物件',
     'lab.intro': '單人駕駛 · 專屬配置，獨立個人紀錄。',
     'lab.slalom': '繞障樣板', 'lab.collect': '收集樣板', 'lab.checkpoints': '檢查點樣板', 'lab.jumps': '飛躍樣板',
     'lab.undo': '復原', 'lab.redo': '重做', 'lab.reset': '重設',
