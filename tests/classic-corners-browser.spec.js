@@ -33,6 +33,8 @@ for (const variant of variants) test.describe(variant.name, () => {
     if (id === 'coast') {
       await expect.poll(() => page.locator('#world').getAttribute('data-coast-scenery'), { timeout: ciTimeout(35000) }).toBe('attached');
     }
+    const modes = page.locator('#lobby-modes-toggle');
+    if (await modes.isVisible()) await modes.click();
     await page.locator('button[data-race-mode="endless"]').click();
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(40000) });
