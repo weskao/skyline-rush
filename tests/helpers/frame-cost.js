@@ -22,3 +22,14 @@ export const gpuName = page => page.evaluate(() => {
   const gl = window.gameScene.renderer.getContext(), info = gl.getExtension('WEBGL_debug_renderer_info');
   return info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : 'unknown';
 });
+
+/** Opens `url` on the given VFX tier with the guide, tutorial, music and sound out of the way; the caller starts the race. */
+export const openTier = async (page, url, vfx, wait = ms => ms) => {
+  await page.evaluate(settings => {
+    for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
+    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ ...settings, preset: 'cinematic', enabled: true }));
+  }, vfx);
+  await page.goto(url);
+  for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(wait(400)); }
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+};
