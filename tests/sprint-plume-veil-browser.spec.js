@@ -3,11 +3,13 @@ import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { installPlumeProbes } from './helpers/plume-probe.js';
 
-// Trap (2026-11-14, .claude/rules/sprint-plume.md): the fat jet carried the hot core's HDR gain over its whole width.
-// Paused, the frame read well; racing, the NITRO bloom boost spread it into a lavender wash over the car's rear on a
-// landscape phone, and the four jets merged into one blob. The same live frame is drawn without and with the exhaust;
+// Trap (2026-11-14, .claude/rules/sprint-plume.md): the fat jet carried the thin cone's HDR gain over its whole width;
+// two faces per jet and the overlapping neighbours summed past the bloom threshold. Paused, the frame read well; racing,
+// the NITRO bloom boost spread it into a white wash over the car's rear on a landscape phone and merged the four jets. The same live frame is drawn without and with the exhaust;
 // the car's rear face above the nozzles must stay close to its bare colour on every selectable car.
-const VEIL = 0; // placeholder: measured below
+// `veil` (0-255 RGB distance): 268 Roadster / 296 GT with the white-out, 50-58 with the jets' mouths in front of the
+// lower bumper, 9-17 for the old thin cone. 80 leaves room for a software renderer.
+const VEIL = 80;
 test.use({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 
 for (const car of ['roadster', 'crimson-gt']) test(`NITRO on High leaves the ${car}'s rear readable on a landscape phone`, async ({ gameplayPage: page }) => {
@@ -30,25 +32,6 @@ for (const car of ['roadster', 'crimson-gt']) test(`NITRO on High leaves the ${c
     while (race.elapsed < until) { Object.assign(player, { x: 0, speed: 118, nitroTime: 30 }); player.effects.ghost = 5; await new Promise(requestAnimationFrame); }
     return window.plumeContrast();
   });
-  const parts = {};
-  for (const only of ['Cold gas nozzle', 'Sprint plume core', 'Sprint nozzle flare', 'Sprint road glow', 'NITRO trail', 'Void', 'Thruster glow', 'Nozzle heat']) parts[only] = await page.evaluate(async only => {
-    const rear = window.gameScene.player.getObjectByName('Rear ports');
-    for (const part of rear.children) if (part.material) part.material.visible = part.name.startsWith(only);
-    const r = await window.plumeContrast();
-    for (const part of rear.children) if (part.material) part.material.visible = true;
-    return r.veil;
-  }, only);
-  parts.oldThin = await page.evaluate(async () => {
-    const rear = window.gameScene.player.getObjectByName('Rear ports'), jets = rear.children.filter(p => p.name.startsWith('Cold gas'));
-    for (const part of rear.children) if (part.material) part.material.visible = part.name.startsWith('Cold gas');
-    const update = window.gameScene.composer.render; window.gameScene.composer.render = function (...a) { for (const j of jets) j.material.uniforms.thick.value = 0; return update.apply(this, a); };
-    await new Promise(requestAnimationFrame);
-    const r = await window.plumeContrast();
-    window.gameScene.composer.render = update;
-    for (const part of rear.children) if (part.material) part.material.visible = true;
-    return r.veil;
-  });
-  console.log('PARTS', car, JSON.stringify(parts), await page.evaluate(() => window.gameScene.player.getObjectByName('Rear ports').children.map(c => c.name).join('|')));
   await page.keyboard.up('w');
   test.info().annotations.push({ type: 'plume', description: JSON.stringify(contrast) });
   expect(contrast.vsRoad, 'the plume still stands off the road').toBeGreaterThanOrEqual(40);
