@@ -26,8 +26,8 @@ const onWater = (sector: NeonSector): boolean => sector === 'expressway' || sect
 const PARAPET = 13.2, PARAPET_TOP: Partial<Record<NeonSector, number>> = { expressway: .55, canal: .25 };
 /** Lap runs of the expressway parapet (the sweeper, then the harbour corner) and of the canal bridge's. */
 const EXPRESSWAY_RAILS: readonly (readonly [number, number])[] = [[2857, 4351], [5594, 5988]], CANAL_RAILS: readonly [number, number] = [5990, 7038];
-/** The canal's far shore (concept frame 07): the round glass tower with the cyan crown and the one with the magenta
- *  floor bands in turn, `pitch` metres apart and 1.4 to 2 times their street size (127 to 182 m and 107 to 153 m:
+/** The canal's far shore (concept frame 07): the round glass tower with the cyan crown and the slab tower with the
+ *  magenta edges in turn, `pitch` metres apart and 1.4 to 2 times their street size (147 to 210 m and 128 to 183 m:
  *  the tall towers of the view), in front of the skyline's two ranks, which keep to their pink and cyan kinds here. */
 const CANAL_SHORE = { from: 6010, to: 7030, pitch: 90, line: 300 } as const, CANAL_SKYLINE = ['skyline_tower_b', 'skyline_tower_c', 'skyline_spire', 'skyline_tower_b'] as const;
 /** The harbour straight: a quay promenade on the sea side (left) instead of a parapet (canal_bank: 6.5 m deep, its
