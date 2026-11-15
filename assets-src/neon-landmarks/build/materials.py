@@ -1,8 +1,10 @@
 """Materials of the Neon landmark kit.
 
-MATS are the authored surfaces: procedural, project-made, no outside source. They exist only to be baked: the
-kit ships one material, `neon_landmarks`, that reads three atlases (base colour, emissive, occlusion-roughness-
-metal). The order of MATS is the order of the flat-colour swatch cells along the top of the atlas.
+MATS are the authored surfaces of the nine pieces of the 4000 m lap: procedural, project-made, no outside source.
+They exist only to be baked into `neon_landmarks`, which reads three atlases (base colour, emissive,
+occlusion-roughness-metal). The order of MATS is the order of the flat-colour swatch cells along the top of the
+atlas. The harbour and oldtown pieces bake their own set (sector_materials.py); show_channel and
+delivery_material serve both.
 """
 import bpy
 
@@ -30,24 +32,7 @@ MATS = {
     "cyan":       dict(color=srgb(0.10, 0.95, 1.0), rough=0.5, metal=0, emit=25),
     "violet":     dict(color=srgb(0.74, 0.22, 1.0), rough=0.5, metal=0, emit=160),
     "pink":       dict(color=srgb(1.0, 0.16, 0.72), rough=0.5, metal=0, emit=120),
-    # harbour and oldtown sectors (10 km lap). `cells` = container size (m): each cell takes one PALETTE colour
-    "crane":      dict(color=srgb(0.66, 0.65, 0.60), rough=0.48, metal=0, grain=0.15, streak=0.45, grid=(3.0, 0.15)),
-    "containers": dict(color=srgb(1, 1, 1), rough=0.55, metal=0, grain=0.18, streak=0.4, cells=(2.5, 12.3, 2.6)),
-    "hull":       dict(color=srgb(0.10, 0.12, 0.16), rough=0.42, metal=0, grain=0.12, streak=0.5),
-    "hull_red":   dict(color=srgb(0.40, 0.09, 0.07), rough=0.55, metal=0, grain=0.2, streak=0.2),
-    "deckhouse":  dict(color=srgb(0.72, 0.72, 0.69), rough=0.45, metal=0, grain=0.1, streak=0.35, grid=(2.8, 0.2)),
-    "brick":      dict(color=srgb(0.44, 0.25, 0.18), rough=0.72, metal=0, grain=0.3, streak=0.3, grid=(0.5, 0.35)),
-    "lacquer":    dict(color=srgb(0.44, 0.07, 0.05), rough=0.32, metal=0, grain=0.15, streak=0.2),
-    "roof_tile":  dict(color=srgb(0.17, 0.18, 0.20), rough=0.3, metal=0, grain=0.25, grid=(0.4, 0.5)),
-    "patina":     dict(color=srgb(0.30, 0.50, 0.44), rough=0.45, metal=0, grain=0.3, streak=0.45),
-    "glass":      dict(color=srgb(0.05, 0.07, 0.09), rough=0.08, metal=0),
-    "lantern":    dict(color=srgb(1.0, 0.45, 0.16), rough=0.5, metal=0, emit=60),
-    "neon_red":   dict(color=srgb(1.0, 0.22, 0.12), rough=0.5, metal=0, emit=90),
-    "window":     dict(color=srgb(1.0, 0.82, 0.55), rough=0.5, metal=0, emit=25),
 }
-# weathered shipping-container paints, picked by eye; no line's livery
-PALETTE = [srgb(*c) for c in ((0.46, 0.13, 0.09), (0.12, 0.22, 0.40), (0.14, 0.33, 0.20), (0.64, 0.32, 0.09), (0.47, 0.48, 0.47),
-                              (0.70, 0.70, 0.66), (0.33, 0.09, 0.09), (0.11, 0.36, 0.37))]
 
 
 def _math(nt, op, a, b=None, clamp=False):
@@ -78,24 +63,6 @@ def _cell(nt, geometry, spacing):
     scaled.inputs[1].default_value = [1 / s for s in (spacing if isinstance(spacing, tuple) else (spacing,) * 3)]
     nt.links.new(geometry.outputs["Position"], scaled.inputs[0])
     return scaled
-
-
-def _palette(nt, geometry, spacing):
-    """One PALETTE colour per grid cell, picked by a hash of the cell index (shipping containers)."""
-    floor = nt.nodes.new("ShaderNodeVectorMath")
-    floor.operation = "FLOOR"
-    nt.links.new(_cell(nt, geometry, spacing).outputs[0], floor.inputs[0])
-    noise = nt.nodes.new("ShaderNodeTexWhiteNoise")
-    nt.links.new(floor.outputs[0], noise.inputs["Vector"])
-    ramp = nt.nodes.new("ShaderNodeValToRGB")
-    ramp.color_ramp.interpolation = "CONSTANT"
-    stops = ramp.color_ramp.elements
-    while len(stops) < len(PALETTE):
-        stops.new(0.5)
-    for i, (stop, colour) in enumerate(zip(stops, PALETTE)):
-        stop.position, stop.color = i / len(PALETTE), (*colour, 1)
-    nt.links.new(noise.outputs["Value"], ramp.inputs["Fac"])
-    return ramp.outputs["Color"]
 
 
 def _joints(nt, geometry, spacing):
@@ -133,7 +100,7 @@ def source_material(name):
         streak = _noise(nt, geometry.outputs["Position"], 0.9, stretch=(1, 1, 0.06))
         wet = _math(nt, "SUBTRACT", 1.15, _math(nt, "MULTIPLY", streak, spec["streak"] * 1.3), clamp=True)
         shade = _math(nt, "MULTIPLY", shade, wet)
-    grid = spec.get("grid") or (spec.get("cells") and (spec["cells"], 0.6))
+    grid = spec.get("grid")
     if grid:
         joint = _joints(nt, geometry, grid[0])
         shade = _math(nt, "MULTIPLY", shade, _math(nt, "SUBTRACT", 1.0, _math(nt, "MULTIPLY", joint, grid[1])))
@@ -141,8 +108,6 @@ def source_material(name):
     color = nt.nodes.new("ShaderNodeVectorMath")
     color.operation = "SCALE"
     color.inputs[0].default_value = spec["color"]
-    if spec.get("cells"):
-        nt.links.new(_palette(nt, geometry, spec["cells"]), color.inputs[0])
     if isinstance(shade, float):
         color.inputs["Scale"].default_value = shade
     else:
@@ -165,23 +130,23 @@ def show_channel(mat, rig, channel, image):
     for link in list(color.links):
         nt.links.remove(link)
     rig["emission"].inputs["Strength"].default_value = 1.0
-    lit = channel == "spill" and not rig["power"]
+    lit = channel == "normal" or channel == "spill" and not rig["power"]
+    value = rig["emit" if channel == "spill" else channel] if channel != "normal" else 0.0
     if channel == "spill":
-        color.default_value, rig["emission"].inputs["Strength"].default_value = rig["emit"], rig["power"]
+        rig["emission"].inputs["Strength"].default_value = rig["power"]
+    if isinstance(value, float):
+        color.default_value = (value, value, value, 1)
+    elif isinstance(value, tuple):
+        color.default_value = value
     else:
-        value = rig[channel]
-        if isinstance(value, float):
-            color.default_value = (value, value, value, 1)
-        elif isinstance(value, tuple):
-            color.default_value = value
-        else:
-            nt.links.new(value, color)
+        nt.links.new(value, color)
     nt.links.new((rig["diffuse"] if lit else rig["emission"]).outputs[0], rig["output"].inputs["Surface"])
 
 
-def delivery_material(base, emissive, orm):
-    """The one shipped material, wired the way the glTF exporter maps 1:1 (same subset as Coast scenery)."""
-    mat = bpy.data.materials.new("neon_landmarks")
+def delivery_material(base, emissive, orm, name="neon_landmarks", normal=None):
+    """A shipped material, wired the way the glTF exporter maps 1:1 (same subset as Coast scenery, plus a
+    tangent-space normal map when given)."""
+    mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     mat.use_backface_culling = True
     nt = mat.node_tree
@@ -205,4 +170,8 @@ def delivery_material(base, emissive, orm):
     occlusion = nt.nodes.new("ShaderNodeGroup")
     occlusion.node_tree = group
     nt.links.new(split.outputs["Red"], occlusion.inputs["Occlusion"])
+    if normal:
+        bump = nt.nodes.new("ShaderNodeNormalMap")
+        nt.links.new(image(normal), bump.inputs["Color"])
+        nt.links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
     return mat

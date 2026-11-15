@@ -1,4 +1,4 @@
-"""The Neon Downtown landmark pieces: the nine of the 4000 m lap here, the harbour and oldtown six in sectors.py. Metres; +X = the driver's right, +Y = the driving direction, +Z = up.
+"""The nine Neon Downtown landmark pieces. Metres; +X = the driver's right, +Y = the driving direction, +Z = up.
 
 Spanning pieces (pivot on the road centre line at road level) keep the road clear: nothing closer than
 CLEAR_HALF to the centre line below the piece's clear height (asset-brief.md, "Clearances"). Side pieces
@@ -12,7 +12,6 @@ from mathutils import Vector
 
 from geo import Builder
 from materials import MATS
-from sectors import cargo_ship, clock_tower, container_stack, harbour_gantry, lantern_span, oldtown_gate
 
 CLEAR_HALF = 14.0   # road half 12 + kerb to 12.675 + the procedural tunnel wall's outer face at 13.1
 CLEAR_HEIGHT = 5.6   # underpass: lowest steel over the road. The game stops a car's roof at 4 m; frame 04 is taller still
@@ -224,9 +223,6 @@ PIECES = {
     "expressway_pier": (expressway_pier, "xy"), "expressway_rail": (expressway_rail, "y"),
     "canal_arch": (canal_arch, "xy"), "canal_bridge_rail": (canal_bridge_rail, "y"), "canal_bank": (canal_bank, "y"),
     "plaza_sculpture": (plaza_sculpture, ""), "boulevard_footbridge": (boulevard_footbridge, "xy"),
-    # harbour and oldtown sectors of the 10 km lap (sectors.py)
-    "harbour_gantry": (harbour_gantry, "y"), "container_stack": (container_stack, ""), "cargo_ship": (cargo_ship, "x"),
-    "oldtown_gate": (oldtown_gate, "x"), "lantern_span": (lantern_span, "x"), "clock_tower": (clock_tower, "xy"),
 }
 
 

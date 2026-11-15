@@ -46,26 +46,33 @@ export const NEON_MODELS: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt', 'ktx2'],
     budgets: { triangles: 11_000, bytes: 1_300_000, textureMaxPx: 2048 },
   },
-  // Landmarks: fifteen modelled pieces, each a pivot with a `_lod0` and a `_lod1` mesh, one material on three shared
-  // atlases. Placement data: assets-src/neon-landmarks/asset-brief.md, "Integration contract".
-  // The triangle budget counts both LODs of every piece: 24k = the nine placed pieces (12.4k) plus the six
-  // harbour/oldtown pieces (8.0k), with headroom for one more. Unplaced pieces are never drawn.
+  // Landmarks: fifteen modelled pieces, each a pivot with a `_lod0` and a `_lod1` mesh. The nine placed pieces share
+  // one material on three atlases; the six harbour/oldtown pieces share a second material on their own four (with a
+  // normal map, from CC0 scans). Placement data: assets-src/neon-landmarks/asset-brief.md, "Integration contract".
+  // The triangle budget counts both LODs of every piece: 24k -> 32k in the second look-dev pass = the nine placed
+  // pieces (12.4k) plus the six harbour/oldtown pieces (17.5k measured: real lattice, stairs, hull and masonry
+  // detail), with headroom for small fixes. Unplaced pieces are never drawn; a placed one draws one LOD at a time.
   'neon-landmarks': {
     id: 'neon-landmarks',
     url: 'models/neon-landmarks/neon-landmarks.glb',
     source: {
       master: 'assets-src/neon-landmarks/neon-landmarks.blend',
       script: 'assets-src/neon-landmarks/build.py',
-      masterSha256: 'f1eea76e4538310757f082a6c53627c2f01b3f7b63ae71a9d128f2c844f898ed',
-      scriptSha256: '733187bd4724d71a82cfe6a9176c9d85683cec7ca5251fdff0fa8bfd2febf949',
+      masterSha256: 'b87e0d14436283368655ff1fed89b7ff949fc737c37a2a10a3fe4220f4e45306',
+      scriptSha256: '90d08e6b00019d9bae8465bed347e72f394bf830e11a94f2ad97cd085d3204f0',
     },
-    glb: { sha256: '9e58ac7eb681d1d50331a23c580c25c03c36ba7e19b868fce4f3ca1a889b3a81', bytes: 1_715_072 },
-    license: { id: 'owned', creator: 'Skyline Rush project (modelled and textured in assets-src/neon-landmarks/build.py; no outside source)' },
+    glb: { sha256: '7dab678257f2134be5f06f6d70513177be9c8bf726b0a210d8b343acebb60834', bytes: 3_880_908 },
+    license: {
+      id: 'CC0-1.0',
+      creator: 'Poly Haven: Amal Kumar, Charlotte Baglioni, Dario Barresi, Dimitrios Savva, Rob Tuytel (metal, container, brick, stone and concrete sets of the harbour/oldtown atlas in assets-src/neon-landmarks/sources.json); pieces, the nine-piece atlas and the bake by Skyline Rush project',
+      sourceUrl: 'https://polyhaven.com/a/container_side',
+    },
     provenance: {
       blender: '5.2.3',
       exporter: '5.2.41',
       gltfTransform: '4.5.1',
       commands: [
+        'python3 -I assets-src/neon-landmarks/fetch_sources.py',
         '$BLENDER_BIN --background --factory-startup --python assets-src/neon-landmarks/build.py',
         'node scripts/assets/export-glb.mjs neon-landmarks',
         'node scripts/assets/optimize-glb.mjs neon-landmarks',
@@ -74,10 +81,10 @@ export const NEON_MODELS: Record<string, ModelManifestEntry> = {
     },
     nodes: ['rail_portal', 'rail_segment', 'expressway_pier', 'expressway_rail', 'canal_arch', 'canal_bridge_rail', 'canal_bank', 'plaza_sculpture', 'boulevard_footbridge', ...NEON_LANDMARKS_NOT_PLACED]
       .flatMap(piece => [piece, `${piece}_lod0`, `${piece}_lod1`]),
-    materials: ['neon_landmarks'],
+    materials: ['neon_landmarks', 'neon_landmarks_sectors'],
     lods: [],
     fallback: 'procedural-scenery',
     decoders: ['meshopt', 'ktx2'],
-    budgets: { triangles: 24_000, bytes: 4_000_000, textureMaxPx: 2048 },
+    budgets: { triangles: 32_000, bytes: 4_000_000, textureMaxPx: 2048 },
   },
 };

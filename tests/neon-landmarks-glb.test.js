@@ -3,6 +3,7 @@
 // The runtime that places the pieces is another change; this file only pins what that change may rely on.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { Box3, Triangle, Vector3 } from 'three';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
@@ -19,7 +20,14 @@ const spanning = pieces.filter(([, piece]) => piece.kind === 'span');
 // The two sectors of the 10 km lap (2026-11-15). Modelled here, placed by a later change.
 const NEW_SECTORS = { harbour: ['harbour_gantry', 'container_stack', 'cargo_ship'], oldtown: ['oldtown_gate', 'lantern_span', 'clock_tower'] };
 const NEW_PIECES = Object.values(NEW_SECTORS).flat();
-const NEW_NEAR_BUDGET = 9000; // all six near LODs; the nine of the 4000 m lap keep their own 12000
+// All six near LODs; the nine of the 4000 m lap keep their own 12000. 9000 -> 14000 (second look-dev pass, measured
+// 13058): real lattice, stairs and hull detail. Each hero piece stands once on the lap, the near LOD inside ~150 m only.
+const NEW_NEAR_BUDGET = 14_000;
+// [LOD0, LOD1] per piece, re-pinned in the second look-dev pass (were 300 to 2000 / 300 to 1200): the hero pieces,
+// each placed once (ship, tower, gate) or three times as a span (gantry), may carry real structure up to 6000 near;
+// the repeated container stack and lantern span stay at 1500. LOD1 is at most 40 % of LOD0 (asserted below).
+const NEW_BUDGETS = { harbour_gantry: [6000, 2400], cargo_ship: [6000, 2400], oldtown_gate: [6000, 2400], clock_tower: [6000, 2400],
+  container_stack: [1500, 600], lantern_span: [1500, 600] };
 
 // Road numbers measured in the code the pieces stand next to. A change there must re-open the clearances below.
 const roadRender = read('src/classic-road-render.ts').toString();
@@ -61,13 +69,17 @@ test('the manifest entry and the shipped GLB agree, inside the budgets', async (
   assert.ok(existsSync(new URL(`../${contract.glb}`, import.meta.url)), `${contract.glb} is missing`);
   const { buffer } = await loaded;
   assert.deepEqual(checkGlb(await summarize(buffer), entry), []);
-  assert.deepEqual(entry.materials, [contract.material]);
+  assert.deepEqual(entry.materials, contract.materials);
   assert.deepEqual([...entry.nodes].sort(), pieces.flatMap(([name, piece]) => [name, ...Object.keys(piece.lods)]).sort());
 });
 
-test('every piece is an unmoved pivot with one mesh per LOD on the one shared material', async () => {
+test('every piece is an unmoved pivot with one mesh per LOD on its kit material', async () => {
   const { gltf, json } = await loaded;
-  assert.equal(json.materials.length, 1, 'one material for the whole kit');
+  // second look-dev pass: the six harbour and oldtown pieces bake their own atlas set onto their own material, so the
+  // nine placed pieces keep the atlases they shipped with (one draw per piece either way)
+  assert.deepEqual(contract.materials, ['neon_landmarks', 'neon_landmarks_sectors']);
+  assert.deepEqual(json.materials.map(material => material.name), contract.materials, 'one material per kit');
+  for (const [name, piece] of pieces) assert.equal(piece.material, contract.materials[NEW_PIECES.includes(name) ? 1 : 0], name);
   assert.equal(pieces.length, 15);
   assert.deepEqual(NEW_PIECES.filter(name => !contract.pieces[name]), [], 'the harbour and oldtown pieces are in the kit');
   for (const [name, piece] of pieces) {
@@ -78,7 +90,7 @@ test('every piece is an unmoved pivot with one mesh per LOD on the one shared ma
     assert.deepEqual(Object.keys(piece.lods), [`${name}_lod0`, `${name}_lod1`]);
     for (const child of pivot.children) {
       assert.ok(child.isMesh && !Array.isArray(child.material), `${child.name}: one primitive, one draw`);
-      assert.equal(child.material.name, contract.material);
+      assert.equal(child.material.name, piece.material);
     }
   }
 });
@@ -94,23 +106,77 @@ test('triangle budgets per piece and LOD, as measured by the build', async () =>
       return count;
     });
     assert.ok(lod1 <= lod0, `${name}: the far LOD is never heavier`);
-    if (NEW_PIECES.includes(name)) nearNew += lod0; else near += lod0;
+    if (NEW_PIECES.includes(name)) {
+      assert.deepEqual(piece.budget_triangles, NEW_BUDGETS[name], `${name}: budget re-pinned here, with its reason`);
+      assert.ok(lod1 <= 0.4 * lod0, `${name}: far LOD ${lod1} over 40 % of ${lod0}`);
+      nearNew += lod0;
+    } else near += lod0;
   }
   assert.ok(near <= 12000, `the nine near LODs of the 4000 m lap: ${near} triangles`);
   assert.ok(nearNew <= NEW_NEAR_BUDGET, `the six harbour and oldtown near LODs: ${nearNew} triangles`);
 });
 
-test('three KTX2 atlases, colour maps sRGB and the data map linear, none over 2048 px', async () => {
+test('seven KTX2 atlases, colour maps sRGB and the data maps linear, none over 2048 px', async () => {
   const { buffer, json } = await loaded;
   const summary = await summarize(buffer);
   assert.deepEqual(summary.colorSpaceErrors, []);
   assert.ok(summary.maxTexturePx <= 2048, `${summary.maxTexturePx} px`);
-  assert.equal(json.images.length, 3, 'base colour, emissive, occlusion-roughness-metal');
+  assert.equal(json.images.length, 7, 'base colour, emissive, occlusion-roughness-metal per kit, and the sectors normal map');
   assert.ok(json.textures.every(texture => texture.extensions?.KHR_texture_basisu), 'KTX2 only');
-  const [material] = json.materials, pbr = material.pbrMetallicRoughness;
-  for (const slot of [pbr.baseColorTexture, material.emissiveTexture, pbr.metallicRoughnessTexture, material.occlusionTexture]) assert.ok(slot);
-  assert.equal(material.occlusionTexture.index, pbr.metallicRoughnessTexture.index, 'occlusion shares the roughness-metal atlas');
-  assert.deepEqual(material.emissiveFactor, [1, 1, 1], 'the runtime scales the glow; the asset ships it at 1');
+  const used = new Set();
+  for (const material of json.materials) {
+    const pbr = material.pbrMetallicRoughness;
+    for (const slot of [pbr.baseColorTexture, material.emissiveTexture, pbr.metallicRoughnessTexture, material.occlusionTexture]) {
+      assert.ok(slot, material.name);
+      used.add(slot.index);
+    }
+    assert.equal(material.occlusionTexture.index, pbr.metallicRoughnessTexture.index, 'occlusion shares the roughness-metal atlas');
+    assert.deepEqual(material.emissiveFactor, [1, 1, 1], 'the runtime scales the glow; the asset ships it at 1');
+    assert.equal(Boolean(material.normalTexture), material.name === 'neon_landmarks_sectors', `${material.name}: normal map only on the sectors kit`);
+    if (material.normalTexture) used.add(material.normalTexture.index);
+  }
+  assert.equal(used.size, 7, 'no atlas shared between the kits');
+});
+
+test('the nine placed pieces keep the atlases they shipped with before the harbour and oldtown pieces (b414abef)', () => {
+  const sha = path => createHash('sha256').update(read(`assets-src/neon-landmarks/textures/${path}`)).digest('hex');
+  assert.deepEqual(Object.fromEntries(['basecolor.jpg', 'emissive.png', 'orm.png'].map(map => [map, sha(`neon_landmarks_${map}`)])), {
+    'basecolor.jpg': '3b7e784afa2b14eb43bf720e2a84c79dce0f2877c8d0963870f5ffe427daedae',
+    'emissive.png': '66564cb73bab549699ffb1480900ede91c3d65cde12fe790e743e77a413c99e2',
+    'orm.png': '7ca35ce9575ccffc0afef7088281012f423a45dc55916d41fa25341d2ddd641b',
+  });
+});
+
+test('at the game landmark strength no lamp texel clips to white, and no sectors texel reaches the Neon bloom', () => {
+  const strength = Number(read('src/neon-scenery.ts').toString().match(/landmarks: ([\d.]+) \}/)?.[1]);
+  const threshold = Number(read('src/coast-lighting.ts').toString().match(/nightRain:[\s\S]*?threshold: ([\d.]+)/)?.[1]);
+  assert.deepEqual([contract.emissive.game_strength, contract.emissive.bloom_threshold], [strength, threshold], 'build.py measured against the runtime numbers');
+  for (const material of contract.materials) assert.equal(contract.emissive[material].white_texels, 0, material);
+  assert.equal(contract.emissive.neon_landmarks_sectors.bloom_texels, 0, 'the lamps glow through the bloom pass only where the runtime adds light');
+  assert.ok(contract.emissive.neon_landmarks_sectors.max_luminance < threshold);
+  for (const [lamp, level] of Object.entries(contract.lamp_levels)) {
+    const linear = c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4); // lamps are listed in sRGB
+    const [r, g, b] = contract.lamps[lamp].map(c => linear(c) * level * strength);
+    assert.ok(0.299 * r + 0.587 * g + 0.114 * b < threshold, `${lamp}: level ${level} blooms at game strength`);
+  }
+});
+
+test('the scanned surfaces of the sectors kit are CC0, recorded with URL and hash; the downloads stay out of the repo', () => {
+  const sources = JSON.parse(read('assets-src/neon-landmarks/sources.json'));
+  assert.equal(sources.licence, 'CC0-1.0');
+  assert.ok(sources.sets.length >= 1);
+  for (const set of sources.sets) {
+    assert.equal(set.licence, 'CC0-1.0', set.id);
+    assert.match(set.url, /^https:\/\/polyhaven\.com\/a\//, set.id);
+    assert.ok(set.metres > 0 && set.authors.length > 0, set.id);
+    for (const file of set.files) {
+      assert.match(file.sha256, /^[0-9a-f]{64}$/, file.path);
+      assert.ok(!existsSync(new URL(`../assets-src/neon-landmarks/${file.path}`, import.meta.url)), `${file.path} is committed`);
+    }
+  }
+  assert.equal(entry.license.id, 'CC0-1.0', 'the GLB carries CC0 scans: the manifest says so');
+  for (const author of new Set(sources.sets.flatMap(set => set.authors))) assert.ok(entry.license.creator.includes(author), author);
+  assert.ok(entry.provenance.commands.includes('python3 -I assets-src/neon-landmarks/fetch_sources.py'));
 });
 
 test('each spanning piece keeps its clear opening over the road on both LODs', async () => {

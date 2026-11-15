@@ -10,6 +10,9 @@ Per-face tags, kept as mesh attributes until build.py finishes the piece:
                   share texels
   swatch          1 = all faces of the part share one small patch of the atlas (thin bars and rods)
   pri             texel-density weight of a unique-UV part (1 = the kit's base density)
+
+world_uv=True adds a second UV layer, "world": the same planar projection in plain metres (no `pri`), where the
+scanned texture sets of the harbour and oldtown pieces are sampled at their real size. It never ships.
 """
 import math
 
@@ -24,8 +27,8 @@ def _dirs(spec):
 
 
 class Builder:
-    def __init__(self, name, materials, mirror=""):
-        self.name, self.materials, self.mirror = name, materials, mirror
+    def __init__(self, name, materials, mirror="", world_uv=False):
+        self.name, self.materials, self.mirror, self.world_uv = name, materials, mirror, world_uv
         self.bm = bmesh.new()
         ints = self.bm.faces.layers.int
         self.layers = {k: ints.new(k) for k in ("lod_lo", "lod_hi", "mir", "swatch")}
@@ -134,12 +137,15 @@ class Builder:
         """Writes the mesh with world-scale planar UVs: every flat face is its own island (coplanar neighbours
         join), scaled by its `pri`. The atlas pack in build.py places the islands; nothing is stretched."""
         uv = self.bm.loops.layers.uv.new("UVMap")
+        world = self.bm.loops.layers.uv.new("world") if self.world_uv else None
         for f in self.bm.faces:
             n = Vector([round(c, 3) for c in f.normal]).normalized()   # rounded: coplanar faces share one basis
             t = (Vector((0, 0, 1)) if abs(n.z) < 0.9 else Vector((1, 0, 0))).cross(n).normalized()
             s = n.cross(t)
             for loop in f.loops:
                 loop[uv].uv = (loop.vert.co.dot(t) * f[self.pri], loop.vert.co.dot(s) * f[self.pri])
+                if world:
+                    loop[world].uv = (loop.vert.co.dot(t), loop.vert.co.dot(s))
         self.bm.to_mesh(mesh)
         self.bm.free()
 
@@ -189,6 +195,8 @@ def lod_mesh(mesh, lod, name):
     for key in ("lod_lo", "lod_hi", "mir", "swatch", "copy", "piece"):
         ints.remove(ints[key])
     bm.faces.layers.float.remove(bm.faces.layers.float["pri"])
+    if "world" in bm.loops.layers.uv:
+        bm.loops.layers.uv.remove(bm.loops.layers.uv["world"])
     bm.to_mesh(out)
     bm.free()
     out.polygons.foreach_set("use_smooth", [True] * len(out.polygons))

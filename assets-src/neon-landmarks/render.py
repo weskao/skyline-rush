@@ -24,10 +24,12 @@ OUT_NEW = ROOT / "docs/designs/3d-pipeline/audits/neon-new-landmarks"
 FRAMES = ROOT / "docs/designs/3d-pipeline/concept-art/neon-downtown"
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 LOD = 1 if "--lod1" in ARGS else 0
+GAME = "--game" in ARGS   # the runtime landmark strength (src/neon-scenery.ts) through an ACES curve at exposure 1.12
+RAIN = "--rain" in ARGS   # rain night: mirror-wet ground, a low veil in the air, a lighter sky
 WIDTH, HEIGHT = 960, 540
 TIGHTEST = 118.0   # metres: the smallest radius on the Neon route, the worst case for every repeated joint
 CAR = (1.9, 4.4, 1.2)   # metres: width, length, height of a car; flying, its roof stops at 12 + 1.2 (FLIGHT_TOP)
-GLOW = 3.0         # preview brightness of the emissive atlas; the runtime sets its own (asset-brief.md)
+GLOW = 1.5 if GAME else 3.0   # emissive atlas brightness: the preview default, or the runtime landmark strength
 
 
 def route(radius=None):
@@ -167,11 +169,12 @@ def harbour(scene, mats):
     ribbon(scene, mats["water"], at, -250, 900, 400, top=-4, depth=0.2)
     block(scene, mats["wet"], frame(at, -250, -70, -4), (110, 2300, 4))   # quay, near edge 15 m left of the centre line
     for k, s in enumerate(range(-150, 860, 30)):
-        place(scene, "container_stack", frame(at, s, -25, yaw=math.pi * (k % 2)))
+        place(scene, "container_stack", frame(at, s, -27, yaw=math.pi * (k % 2)))
     for s in (0, 260, 520):
         place(scene, "harbour_gantry", frame(at, s))
     place(scene, "cargo_ship", frame(at, 260, 40))
     cars(scene, mats, at, 0)
+    cars(scene, mats, at, 260)
     return at
 
 
@@ -191,6 +194,7 @@ def oldtown(scene, mats):
         place(scene, "lantern_span", frame(at, s))
     place(scene, "clock_tower", frame(at, 60, 50))
     cars(scene, mats, at, -40)
+    cars(scene, mats, at, 60)
     return at
 
 
@@ -207,13 +211,18 @@ SHOTS = {
         ("road", (-24, -8, 2.0), (0, -30, 6.5), 24), ("near", (-20, -16, 1.7), (0, -30, 7), 28)]),
     "footbridge": (footbridge, "03-start-finish-boulevard.jpg", [
         ("grid", (-75, 0, 2.2), (0, 0, 9), 24), ("side", (-45, -45, 9), (0, 0, 11), 28)]),
+    # the first views are the ones the first look-dev pass rendered (same cameras for before/after); the rest add a
+    # driver's-eye approach (1.2 m) or a hero angle where the set had none
     "harbour": (harbour, None, [
         ("approach", (-120, 3, 2.2), (100, 0, 12), 24), ("crane", (-35, -9, 3), (0, 0, 16), 20),
         ("side", (-60, -130, 35), (260, 10, 8), 24), ("ship", (180, 95, 12), (260, 40, 10), 28),
-        ("stack", (-40, -2, 3), (-10, -20, 6), 24)]),
+        ("stack", (-40, -2, 3), (-10, -20, 6), 24), ("ship_road", (190, 4, 1.2), (260, 40, 14), 24),
+        ("crane_hero", (-20, -60, 8), (10, 0, 30), 22)]),
     "oldtown": (oldtown, None, [
         ("gate", (-110, 2, 2.2), (-40, 0, 10), 24), ("bends", (-90, -50, 40), (120, 0, 5), 22),
-        ("tower", (20, 5, 3), (60, 50, 25), 24), ("lanterns", (30, -3, 2), (90, 0, 9), 22)]),
+        ("tower", (20, 5, 3), (60, 50, 25), 24), ("lanterns", (30, -3, 2), (90, 0, 9), 22),
+        ("gate_hero", (-66, -10, 5), (-40, 0, 12), 22), ("tower_road", (0, 3, 1.2), (60, 50, 22), 24),
+        ("span_hero", (-2, -9, 3), (14, 0, 15), 22)]),
 }
 
 
@@ -247,27 +256,41 @@ def sheet(reference, render, out):
 def main():
     bpy.ops.wm.open_mainfile(filepath=str(HERE / "neon-landmarks.blend"))
     scene = next(s for s in bpy.data.scenes if s.objects)   # opening a library file adds an empty scene beside it
-    scene.cycles.samples, scene.cycles.max_bounces, scene.view_settings.exposure = 32, 4, 2.0   # CPU, denoised
+    # CPU, denoised. The game mode keeps the runtime's exposure; the preview lifts it so the unlit forms read.
+    scene.cycles.samples, scene.cycles.max_bounces = 32, 4
+    scene.view_settings.view_transform, scene.view_settings.exposure = ("ACES 1.3", math.log2(1.12)) if GAME else ("AgX", 2.0)
     render = scene.render
     render.resolution_x, render.resolution_y, render.resolution_percentage = WIDTH, HEIGHT, 100
     render.image_settings.file_format, render.image_settings.quality = "JPEG", 90
     background = next(n for n in scene.world.node_tree.nodes if n.type == "BACKGROUND")
-    background.inputs["Color"].default_value = (0.02, 0.025, 0.06, 1)   # night sky: enough to read the unlit forms
+    sky = (0.05, 0.055, 0.08) if RAIN else (0.02, 0.025, 0.06)   # the rain veil lifts the sky a little
+    background.inputs["Color"].default_value = (*(c * (3.0 if GAME else 1.0) for c in sky), 1)   # enough to read the unlit forms
     # as in the game, the emissive atlas glows and reflects but lights nothing: its lamp light is already baked in
-    tree = bpy.data.materials["neon_landmarks"].node_tree
-    path, glow = tree.nodes.new("ShaderNodeLightPath"), tree.nodes.new("ShaderNodeMath")
-    glow.operation, glow.inputs[0].default_value, glow.inputs[2].default_value = "MULTIPLY_ADD", -GLOW, GLOW
-    tree.links.new(path.outputs["Is Diffuse Ray"], glow.inputs[1])
-    tree.links.new(glow.outputs[0], next(n for n in tree.nodes if n.type == "BSDF_PRINCIPLED").inputs["Emission Strength"])
+    for material in bpy.data.materials:
+        if material.name.startswith("neon_landmarks"):   # both kits
+            tree = material.node_tree
+            path, glow = tree.nodes.new("ShaderNodeLightPath"), tree.nodes.new("ShaderNodeMath")
+            glow.operation, glow.inputs[0].default_value, glow.inputs[2].default_value = "MULTIPLY_ADD", -GLOW, GLOW
+            tree.links.new(path.outputs["Is Diffuse Ray"], glow.inputs[1])
+            tree.links.new(glow.outputs[0], next(n for n in tree.nodes if n.type == "BSDF_PRINCIPLED").inputs["Emission Strength"])
+    wet = 0.02 if RAIN else 0.06
     mats = dict(road=flat("road", (0.02, 0.02, 0.025), 0.22), ground=flat("ground", (0.03, 0.03, 0.035), 0.5),
-                water=flat("water", (0.01, 0.015, 0.02), 0.04), wet=flat("wet", (0.015, 0.015, 0.02), 0.06),
+                water=flat("water", (0.01, 0.015, 0.02), 0.04), wet=flat("wet", (0.015, 0.015, 0.02), wet),
                 car=flat("car", (0.5, 0.5, 0.52), 0.4), plaster=flat("plaster", (0.06, 0.05, 0.045), 0.7))
+    veil = bpy.data.materials.new("veil")   # volume only: no surface shader, so the box itself is not drawn
+    veil.use_nodes = True
+    nodes = veil.node_tree.nodes
+    nodes.remove(next(n for n in nodes if n.type == "BSDF_PRINCIPLED"))
+    volume = nodes.new("ShaderNodeVolumePrincipled")
+    volume.inputs["Color"].default_value, volume.inputs["Density"].default_value = (0.6, 0.65, 0.75, 1), 0.003
+    veil.node_tree.links.new(volume.outputs[0], next(n for n in nodes if n.type == "OUTPUT_MATERIAL").inputs["Volume"])
     for mesh in bpy.data.meshes:
         mesh.use_fake_user = True   # the pivots and LOD objects of the master are cleared below; the meshes stay
     OUT.mkdir(parents=True, exist_ok=True)
-    OUT_NEW.mkdir(parents=True, exist_ok=True)
+    out_new = OUT_NEW / "after" if "--after" in ARGS else OUT_NEW
+    out_new.mkdir(parents=True, exist_ok=True)
     wanted = [a for a in ARGS if not a.startswith("--")] or list(SHOTS)
-    suffix = "_lod1" if LOD else ""
+    suffix = ("_lod1" if LOD else "") + ("_game" if GAME else "") + ("_rain" if RAIN else "")
     for shot in wanted:
         build, reference, views = SHOTS[shot]
         for obj in list(bpy.data.objects):
@@ -276,6 +299,8 @@ def main():
         moon = bpy.data.objects.new("moon", bpy.data.lights.new("moon", "SUN"))
         moon.data.energy, moon.data.color, moon.rotation_euler = 0.2, (0.6, 0.7, 1.0), (math.radians(50), 0, math.radians(-40))
         scene.collection.objects.link(moon)
+        if RAIN:   # a thin veil of rain in the air around the shot: lamps get halos, the distance greys out
+            block(scene, veil, Matrix.Translation((0, 300, -10)), (1600, 1600, 260))
         camera = bpy.data.objects.new("camera", bpy.data.cameras.new("camera"))
         camera.data.clip_end = 3000
         scene.collection.objects.link(camera)
@@ -284,7 +309,7 @@ def main():
             eye, target = frame(at, *eye).translation, frame(at, *target).translation
             camera.location, camera.data.lens = eye, lens
             camera.rotation_euler = (target - eye).to_track_quat("-Z", "Y").to_euler()
-            render.filepath = str((OUT if reference else OUT_NEW) / f"{shot}_{view}{suffix}.jpg")
+            render.filepath = str((OUT if reference else out_new) / f"{shot}_{view}{suffix}.jpg")
             bpy.ops.render.render(write_still=True, scene=scene.name)
             if index == 0 and reference:
                 sheet(FRAMES / reference, render.filepath, OUT / f"{shot}_vs_frame{suffix}.jpg")
