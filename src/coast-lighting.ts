@@ -30,6 +30,9 @@ export interface CoastEnvVariant {
     /** A city panorama has a skyline to face, not a sun to place: the HDRI longitude, in degrees, that is turned
      *  straight ahead of the grid (-z). Without it the sun turns to COAST_SUN_AZIMUTH (coast-sky.ts). */
     readonly ahead?: number };
+  /** The cars reflect this sky, turned with it, instead of the studio room (car-reflections.ts): a city panorama at
+   *  night, where the room's world-fixed light panels whited out the car on some headings. */
+  readonly carSky?: true;
 }
 
 const cc0 = (asset: string, creator: string) => ({ license: 'CC0-1.0', creator, sourceUrl: `https://polyhaven.com/a/${asset}` }) as const;
@@ -58,11 +61,11 @@ export const COAST_ENV_VARIANTS: Readonly<Record<CoastEnvName, CoastEnvVariant>>
   night: { file: 'shanghai_bund_1k.hdr', credit: cc0('shanghai_bund', 'Greg Zaal'),
     intensity: 0.6, exposure: 0.9, grade: { saturation: 1.15, contrast: 1.1, tint: [0.98, 1, 1.04] },
     bloom: { strength: 0.55, threshold: 0.95 }, radianceCap: 4, sun: { color: '#ffdec0', intensity: 2.7 },
-    sky: { sunDirection: [-0.7865, 0.4607, -0.4112], range: 4, gain: 0.169, disc: 0, ahead: 30 } },
+    sky: { sunDirection: [-0.7865, 0.4607, -0.4112], range: 4, gain: 0.169, disc: 0, ahead: 30 }, carSky: true },
   nightRain: { file: 'shanghai_bund_rain_1k.hdr', credit: cc0('shanghai_bund', 'Greg Zaal'),
     intensity: 0.55, exposure: 0.95, grade: { saturation: 1.05, contrast: 1.08, tint: [0.98, 1, 1.03] },
     bloom: { strength: 0.6, threshold: 0.9 }, radianceCap: 3, sun: { color: '#ffe4cf', intensity: 1.55 },
-    sky: { sunDirection: [-0.7504, 0.5086, -0.4222], range: 3, gain: 0.258, disc: 0, ahead: 30 } },
+    sky: { sunDirection: [-0.7504, 0.5086, -0.4222], range: 3, gain: 0.258, disc: 0, ahead: 30 }, carSky: true },
 });
 
 const envVariant = (trackId: string, preset: string): CoastEnvName | null => {

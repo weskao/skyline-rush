@@ -116,7 +116,7 @@ export function createWorld(canvas) {
   roadsideLamps.forEach(light=>{light.visible=false;scene.add(light);});
   sunlight.position.set(-170, 100, -190);
   scene.add(sunlight);
-  const coastLook = createCoastLook({ scene, renderer, lens, room: environment.texture, roomIntensity: 0.42, baseUrl: import.meta.env.BASE_URL, sun: sunlight });
+  const coastLook = createCoastLook({ scene, renderer, lens, room: environment.texture, roomIntensity: 0.42, baseUrl: import.meta.env.BASE_URL, sun: sunlight, cars: carEnvironment });
   const { sky, sun, sea, seaLines, mountains } = createClassicBackdrop(scene, box, put);
   const city = new THREE.Group();
   scene.add(city);

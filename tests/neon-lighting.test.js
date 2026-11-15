@@ -115,3 +115,27 @@ test('the bloom of a Neon race is its variant\'s once the HDRI is up, and world.
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
   assert.match(world, /coastLook\.bloomStrength\(trackId === 'coast' \? COAST_LIGHTING\.bloom : \.42\)/);
 });
+
+// Trap (2026-11-15): the cars reflect one studio room (car-reflections.ts), fixed in the world. On the harbour heading
+// its light panels lay along the roof and the deck, so the car alone read twice as bright as on the expressway (no
+// light, no bloom: 81 vs 47 of 255) and bloomed white. Under a city panorama the cars reflect that night sky instead,
+// turned with it; every other look keeps the studio. A GPU copy into the same map: no car program recompiles.
+test('under the Neon HDRI the cars reflect its night sky; the studio room comes back everywhere else', async t => {
+  t.after(() => setLook3d(false));
+  setLook3d(true);
+  const painted = [];
+  const look = createCoastLook({
+    scene: { environment: null, environmentIntensity: 1 }, renderer: { toneMappingExposure: 1 }, room: null, roomIntensity: 0.42,
+    lens: { uniforms: { saturation: { value: 1 }, contrast: { value: 1 }, tint: { value: new Color() } } },
+    envs: { get: name => ({ name }), preload: async () => {}, paintCars: name => painted.push(name) },
+  });
+  look.update('neon', 'track', 'high');
+  look.update('neon', 'night', 'high');
+  look.update('coast', 'day', 'high');
+  look.update('neon', 'day', 'high');
+  assert.deepEqual(painted, ['nightRain', 'night', null, null]);
+  for (const name of ['night', 'nightRain']) assert.equal(COAST_ENV_VARIANTS[name].carSky, true, name);
+  for (const name of ['day', 'dusk', 'rain', 'fog']) assert.equal(COAST_ENV_VARIANTS[name].carSky, undefined, `Coast ${name} keeps the studio`);
+  const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
+  assert.match(world, /createCoastLook\(\{[^}]*cars: carEnvironment/, 'the look repaints the map every car already holds');
+});
