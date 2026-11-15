@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { animatePickup, PICKUP_GROUND_LIFT } from './pickup-art.js';
 import { CONTACT_FRAGMENT, CONTACT_VERTEX } from './pickup-collect-shaders.js';
 import { createPickupVehicleFit } from './pickup-vehicle-fit.js';
-import { flash, MOTIONS, scratch } from './pickup-collect-motion.js';
+import { canEmbers, flash, MOTIONS, scratch } from './pickup-collect-motion.js';
 import { createPickupHoop, createTankHoop, createTankHaloGeometry, paintPickupHoop } from './pickup-collect-hoops.js';
 import { createPickupStreaks } from './pickup-collect-streaks.js';
 
@@ -78,7 +78,13 @@ export function createPickupCollectVfx(scene, player, camera) {
   let bodySlot = null;
   const inverse = new THREE.Matrix4(), roadRotation = new THREE.Quaternion();
   const contactScale = new THREE.Vector3();
-  const target = new THREE.Vector3();
+  const target = new THREE.Vector3(), flight = new THREE.Vector3();
+  // Where the race draws the item model before it is absorbed (drawAbsorbing), in world space.
+  const itemPoint = (event, { distance = 0, center = 0, roadCenter = () => 0, worldPoint }, out) => {
+    const y = (event.altitude ?? 0) + .85;
+    return worldPoint ? out.fromArray(worldPoint(event.distance, event.x, y, distance, event))
+      : out.set(roadCenter(event.distance) + event.x - center, y, distance - event.distance);
+  };
   const right = new THREE.Vector3(), up = new THREE.Vector3(), back = new THREE.Vector3(), basis = new THREE.Matrix4();
 
   for (const [tierIndex, tier] of TIERS.entries()) {
@@ -146,6 +152,7 @@ export function createPickupCollectVfx(scene, player, camera) {
         tier, tierIndex, style, group, contact, flash: flashSprite, rings, beam: pillar, tankGlow, shards,
         streaks: camera && tier === 'cell' ? createPickupStreaks(group) : null,
         age: Infinity, event: null, follow: false, particles: 0, ringCount: 0, reducedMotion: false, strength: 1,
+        canFrom: tier === 'can' ? new THREE.Vector3() : null, canFromSet: false,
       });
     }
   }
@@ -168,6 +175,7 @@ export function createPickupCollectVfx(scene, player, camera) {
     slot.markerTime = follow && !rival ? markerTime : undefined;
     slot.delay = tier === 'can' && slot.markerTime !== undefined && !reducedMotion ? ABSORB_SPANS[slot.tierIndex] : 0;
     slot.releaseAt = undefined;
+    slot.canFromSet = false;
     slot.visualWeight = 1;
     slot.reducedMotion = reducedMotion;
     slot.strength = rival ? .65 : 1;
@@ -230,7 +238,8 @@ export function createPickupCollectVfx(scene, player, camera) {
       if (slot.tankGlow) slot.tankGlow.visible = false;
       const ringCount = reducedMotion ? 1 : tier === 'can' ? 0 : slot.ringCount;
       slot.rings.forEach((ring, i) => { ring.visible = i < ringCount; });
-      shards.count = reducedMotion || age < 0 ? 0 : slot.particles;
+      const flying = age < 0 && tier === 'can' && slot.follow && !!frame.pose; // embers stream in with the can
+      shards.count = reducedMotion || (age < 0 && !flying) ? 0 : slot.particles;
       shards.visible = shards.count > 0;
       if (reducedMotion) { // one still ring and a soft glow keep the tier's identity without movement
         flash(slot, .22 * (1 - progress), 1.2, 0, .5, 0);
@@ -240,13 +249,19 @@ export function createPickupCollectVfx(scene, player, camera) {
         paintPickupHoop(slot.rings[0], 0, .16 * strength, .045, false);
         continue;
       }
-      if (age < 0) { slot.flash.material.opacity = 0; continue; }
+      if (age < 0 && !flying) { slot.flash.material.opacity = 0; continue; }
       if (tier === 'can') {
         shards.position.set(0, .5, 0);
+        group.updateWorldMatrix(true, false);
         if (slot.follow && frame.pose) shards.position.copy(group.worldToLocal(vehicleFit.absorbTarget(frame.pose, target)));
       }
       shards.material.opacity = .9 * Math.pow(1 - progress, 1.25) * strength;
-      MOTIONS[slot.style.motion](slot, age, progress);
+      if (flying) {
+        // The can's spot is captured once, in the car's frame, on the first frame of the take.
+        if (!slot.canFromSet) slot.canFromSet = !!group.worldToLocal(itemPoint(slot.event, frame, slot.canFrom));
+        slot.flash.material.opacity = 0;
+        canEmbers(slot, slot.age / slot.delay, flight.copy(slot.canFrom).sub(shards.position));
+      } else MOTIONS[slot.style.motion](slot, age, progress);
       if (shards.count) shards.instanceMatrix.needsUpdate = true;
       if (streaks) {
         streaks.update(slot, camera, vehicleFit.sections(frame.pose));
@@ -256,15 +271,15 @@ export function createPickupCollectVfx(scene, player, camera) {
     vehicleFit.updateBody(bodySlot, frame, bodySlot ? SECONDARY[bodySlot.tierIndex] : 0);
   }
 
-  function drawAbsorbing(marker, pool, { distance, center, roadCenter, worldPoint, pose, reducedMotion, enabled }, dt) {
+  function drawAbsorbing(marker, pool, frame, dt) {
+    const { pose, reducedMotion, enabled } = frame;
     if (!enabled || reducedMotion || !pose) return;
     for (const tier of TIERS) for (const slot of slots[tier]) {
       const { event, markerTime, tierIndex } = slot;
       const age = slot.age + Math.max(0, dt);
       const span = ABSORB_SPANS[tierIndex];
       if (markerTime === undefined || slot.reducedMotion || age >= span) continue;
-      if (worldPoint) marker.position.fromArray(worldPoint(event.distance, event.x, (event.altitude ?? 0) + .85, distance, event));
-      else marker.position.set(roadCenter(event.distance) + event.x - center, (event.altitude ?? 0) + .85, distance - event.distance);
+      itemPoint(event, frame, marker.position);
       animatePickup(marker, event, markerTime, false);
       vehicleFit.absorbTarget(pose, target);
       const q = age / span, pull = q * q * (2.3 - 1.3 * q);

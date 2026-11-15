@@ -24,6 +24,21 @@ function beam(slot, age, span, level, rise) {
   slot.beam.scale.set(.9 * slot.strength, 1 + age * rise, .9 * slot.strength);
 }
 
+// Energy can, while the model is absorbed (`f` 0 to 1): embers leave the can and streak into the car. `from` is the can
+// relative to the absorption point, in the car's own frame, so the flight never trails behind a fast car.
+export function canEmbers(slot, f, from) {
+  for (let i = 0; i < slot.particles; i++) {
+    const start = (i % 4) * .07, q = Math.min(1, Math.max(0, (f - start) / (.88 - start)));
+    const left = 1 - q * q * (3 - 2 * q), a = i * GOLDEN, spread = .18 * Math.sin(Math.PI * q);
+    scratch.position.copy(from).multiplyScalar(left);
+    scratch.position.x += Math.cos(a) * spread;
+    scratch.position.y += Math.sin(a) * spread;
+    scratch.lookAt(0, 0, 0); // long axis along the flight
+    const size = .5 - .2 * q;
+    shard(slot, i, size, size, size * (1 + 2.6 * Math.sin(Math.PI * q)));
+  }
+}
+
 // Local space follows the car (or sits at the item for a rival): +Y up, +Z behind. Rings beyond the slot's
 // quality budget are already hidden; a motion hides more by clearing `visible`.
 export const MOTIONS = {

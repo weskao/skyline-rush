@@ -549,7 +549,7 @@ test('a can collects into one small flash with a bounded cluster that contracts 
     const can = vfx.group.children.find(stage => stage.visible);
     const flash = can.getObjectByName('energy flash'), sparks = can.getObjectByName('energy shards');
     assert.equal(flash.material.opacity, 0, 'wait for the model to reach the body');
-    assert.equal(sparks.visible, false);
+    assert.ok(sparks.visible && sparks.count === count, 'embers fly in with the can');
     vfx.update(.03, frame); draw();
     assert.equal(markers.length, 2, 'the marker is gone when the flash starts');
     assert.ok(flash.material.opacity > .5 && flash.scale.x <= 1.3);
@@ -575,6 +575,40 @@ test('a can collects into one small flash with a bounded cluster that contracts 
     vfx.update(.09, frame);
     assert.equal(vfx.activeCount(), 0, 'the complete spark cluster expires by .30 s after absorption');
   }
+  vfx.dispose();
+});
+
+// The embers ride the car: the world here is car-relative (worldPoint z = origin - s), so at 90 m/s the item itself
+// slides 1.5 m back per frame. Embers anchored to it would trail behind; in vehicle space they fly into the body.
+test('can embers fly from the can into the car in vehicle space and end at the absorption point', () => {
+  const scene = new THREE.Scene(), pose = new THREE.Group();
+  scene.add(pose);
+  const vfx = createPickupCollectVfx(scene, pose, new THREE.PerspectiveCamera());
+  const event = { tier: 'can', distance: 104, x: -1.5, altitude: 0 };
+  const frame = { pose, distance: 100, enabled: true, worldPoint: (s, x, y, origin) => [x, y, origin - s] };
+  const can = new THREE.Vector3(-1.5, .85, -4), at = new THREE.Vector3(1.08, .87, .42);
+  vfx.spawn('can', event, { follow: true, markerTime: 0 });
+  const stage = vfx.group.children.find(child => child.visible), sparks = stage.getObjectByName('energy shards');
+  const embers = () => {
+    sparks.updateMatrixWorld(true);
+    const matrix = new THREE.Matrix4();
+    return Array.from({ length: sparks.count }, (_, i) => {
+      sparks.getMatrixAt(i, matrix);
+      return new THREE.Vector3().setFromMatrixPosition(matrix).applyMatrix4(sparks.matrixWorld);
+    });
+  };
+  vfx.update(1 / 120, frame);
+  assert.equal(sparks.count, 8, 'embers fly while the can is absorbed');
+  assert.ok(embers().every(p => p.distanceTo(can) < .45), 'every ember starts at the can');
+  const start = can.distanceTo(at);
+  for (let t = 1 / 120; t < .155; t += 1 / 60) {
+    frame.distance += 1.5;
+    vfx.update(1 / 60, frame);
+    assert.ok(embers().every(p => p.distanceTo(at) <= start + .45), 'no ember falls behind the car');
+  }
+  assert.ok(Math.max(...embers().map(p => p.distanceTo(at))) < .2, 'all embers are in the body by .15 s');
+  vfx.update(.03, frame);
+  assert.ok(stage.getObjectByName('energy flash').material.opacity > .5, 'they end in the contact flash');
   vfx.dispose();
 });
 
