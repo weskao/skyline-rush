@@ -6,7 +6,9 @@ import { ITEM_RESPAWN } from './rival-items.ts';
 export const MAGNET_RANGE = 12; // m
 
 interface TakeItem { distance: number; x: number; altitude: number; tier: string; taken?: boolean; downUntil?: number }
-interface TakeCar { distance: number; x: number; altitude: number; nitro: number; effects: { magnet: number } }
+interface TakeCar { distance: number; x: number; altitude: number; nitro: number; fuel: number; effects: { magnet: number }; pickup: PickupEvent | null }
+/** The player's latest take, a new object each time: the HUD, haptics and camera react to it. `fuel` is what it added. */
+export interface PickupEvent { tier: string; fuel: number; time: number }
 type AddNitro<C> = (car: C, amount: number, fuelBonus?: number) => void;
 
 export function takePickups<C extends TakeCar>(race: { elapsed: number; pickups: TakeItem[] }, car: C, previousDistance: number, addNitro: AddNitro<C>): void {
@@ -19,8 +21,10 @@ export function takePickups<C extends TakeCar>(race: { elapsed: number; pickups:
       Math.hypot(pickup.distance - car.distance, pickup.x - car.x, pickup.altitude - car.altitude) < MAGNET_RANGE;
     if (crossed || pulled) {
       pickup.taken = true; pickup.downUntil = race.elapsed + ITEM_RESPAWN;
+      const fuel = car.fuel;
       if (pickup.tier === 'overcharge') addNitro(car, NITRO_MAX - car.nitro, 0);
       else addNitro(car, NITRO_PICKUPS[pickup.tier]!);
+      car.pickup = { tier: pickup.tier, fuel: car.fuel - fuel, time: race.elapsed };
     }
   }
 }

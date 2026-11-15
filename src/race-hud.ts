@@ -13,6 +13,7 @@ import { createModePanels, type ModePanelOptions } from './race-hud-modes.ts';
 import { createHaptics } from './haptics.ts';
 import { createSprintReadyFeedback, type SprintReadyCue } from './sprint-ready-feedback.ts';
 import { orderRaceLeaderboard, graphRivalGap } from './course-hud-standings.ts';
+import { PICKUP_HAPTIC_MS } from './pickup-feedback.ts';
 
 // The in-race HUD, written every HUD tick (~13 Hz) from the frame loop. It stays imperative:
 // elements are looked up once, text/hidden are written only when they change, no Vue reactivity.
@@ -96,7 +97,7 @@ export function createRaceHud(options: HudOptions) {
   let previousBoost = false;
   let shownCallout: ReturnType<typeof callouts.update> = null;
   let lastDrivingMessage = '';
-  let feedbackCar: unknown, lastImpact: unknown, lastDriftPayout: unknown, lastTrickPayout: unknown, lastNitroTime = 0;
+  let feedbackCar: unknown, lastImpact: unknown, lastDriftPayout: unknown, lastTrickPayout: unknown, lastPickup: unknown, lastNitroTime = 0;
 
   function updateSpeedAndPosition(now: number, race: HudRace, car: HudRace, calm: boolean): void {
     setHudText(ui.speed!, String(Math.round(car.speed * 3.6)));
@@ -211,11 +212,12 @@ export function createRaceHud(options: HudOptions) {
       const burst = car.nitroTime > lastNitroTime || (boost && !previousBoost);
       const driftPaid = car.driftPayout && car.driftPayout !== lastDriftPayout;
       const trickPaid = car.trickPayout?.nitro > 0 && car.trickPayout !== lastTrickPayout;
+      const pickupPulse = car.pickup && car.pickup !== lastPickup ? PICKUP_HAPTIC_MS[car.pickup.tier] ?? 0 : 0;
       if (hit || burst || driftPaid || trickPaid) {
         haptic(hit ? [18, 30, 18] : trickPaid ? [12, 20, 12] : burst ? 25 : 15);
-      }
+      } else if (pickupPulse) haptic(pickupPulse);
     }
-    feedbackCar = car; lastImpact = car.impact; lastNitroTime = car.nitroTime;
+    feedbackCar = car; lastImpact = car.impact; lastNitroTime = car.nitroTime; lastPickup = car.pickup;
     lastDriftPayout = car.driftPayout;
     lastTrickPayout = car.trickPayout;
     previousBoost = boost;

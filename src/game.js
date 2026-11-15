@@ -165,7 +165,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
     stuntLimit: config.mode === 'stunt' ? config.duration : null,
     player: {
       distance: playerSlot.distance, x: playerSlot.x, speed: 0, altitude: 0, verticalSpeed: 0,
-      fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, collisions: 0, cooldown: 0,
+      fuel: 100, thrusting: false, exhausted: false, fuelOuts: 0, rewardFuel: 0, pickup: null, collisions: 0, cooldown: 0,
       impact: null, landing: null, steering: 0, railContactSide: 0, boosting: false, braking: false,
       nearMiss: null, nearMisses: 0, combo: 0, scrape: null, scrapeCooldown: 0, flyBuffer: 0,
       poweredFlightTime: 0, flightBoosted: false,
