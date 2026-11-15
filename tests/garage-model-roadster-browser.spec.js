@@ -1,4 +1,4 @@
-import { test } from './helpers/gameplay-browser.js';
+import { captureHooks, test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { chooseGarageAngle } from './helpers/garage-angle.js';
@@ -7,7 +7,8 @@ import { chooseGarageAngle } from './helpers/garage-angle.js';
 // wheels, active wing, flight pose and paint (src/garage-model-rig.ts).
 const GLB = /\/models\/roadster2\/roadster2(-low)?\.glb$/;
 
-async function prepare(page, url, viewportName = 'desktop', quality = 'high') {
+async function prepare(page, url, quality = 'high') {
+  await captureHooks(page);
   await page.addInitScript(q => {
     for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: q, enabled: true, comfortable: false }));
@@ -17,7 +18,7 @@ async function prepare(page, url, viewportName = 'desktop', quality = 'high') {
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(url);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  return { requests, errors, viewportName };
+  return { requests, errors };
 }
 
 const world = page => page.locator('#world');
@@ -40,7 +41,7 @@ const attach = async (page, name) => {
   await test.info().attach(name, { path });
 };
 
-test('Garage Home shows the Roadster GLB; wheels, wing, flight and paint follow the procedural car', async ({ gameplayPage: page, gameplayURL }) => {
+test('Garage Home shows the Roadster GLB; wheels, wing, flight and paint follow the procedural car', async ({ page, gameplayURL }) => {
   const { requests, errors } = await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
   await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
@@ -65,7 +66,7 @@ test('Garage Home shows the Roadster GLB; wheels, wing, flight and paint follow 
   expect(errors).toEqual([]);
 });
 
-test('Preview Studio front/side/rear/orbit show the GLB in frame', async ({ gameplayPage: page, gameplayURL }) => {
+test('Preview Studio front/side/rear/orbit show the GLB in frame', async ({ page, gameplayURL }) => {
   await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
   await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
@@ -79,8 +80,8 @@ test('Preview Studio front/side/rear/orbit show the GLB in frame', async ({ game
 });
 
 for (const [label, search] of [['plain', ''], ['legacy', '?3d=1&look=3d&model=roadster']]) {
-  test(`Low loads only the Roadster low LOD on the ${label} URL`, async ({ gameplayPage: page, gameplayURL }) => {
-    const { requests, errors } = await prepare(page, gameplayURL + search, 'desktop', 'low');
+  test(`Low loads only the Roadster low LOD on the ${label} URL`, async ({ page, gameplayURL }) => {
+    const { requests, errors } = await prepare(page, gameplayURL + search, 'low');
     await page.locator('#garage-button').click();
     await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(15000) });
     expect(requests.map(u => new URL(u).pathname)).toEqual(['/models/roadster2/roadster2-low.glb']); // settled: model state polled above
@@ -90,7 +91,7 @@ for (const [label, search] of [['plain', ''], ['legacy', '?3d=1&look=3d&model=ro
   });
 }
 
-test('missing roadster GLB falls back to the procedural Roadster without a page error', async ({ gameplayPage: page, gameplayURL }) => {
+test('missing roadster GLB falls back to the procedural Roadster without a page error', async ({ page, gameplayURL }) => {
   await page.route(GLB, route => route.fulfill({ status: 404, body: '' }));
   const { errors } = await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
@@ -101,7 +102,7 @@ test('missing roadster GLB falls back to the procedural Roadster without a page 
 
 test.describe('phone portrait', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-  test('Roadster GLB in Garage Home and Studio on a phone', async ({ gameplayPage: page, gameplayURL }) => {
+  test('Roadster GLB in Garage Home and Studio on a phone', async ({ page, gameplayURL }) => {
     await prepare(page, gameplayURL);
     await page.locator('#garage-button').click();
     await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
