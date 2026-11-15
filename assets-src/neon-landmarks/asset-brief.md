@@ -1,9 +1,13 @@
 # Neon landmarks — asset brief
 
-One GLB (`public/models/neon-landmarks/neon-landmarks.glb`, manifest id `neon-landmarks`) with the nine
-modelled pieces that give the Neon Downtown lap its four sector landmarks and the boulevard footbridge
-(Task 5b steps 6 and 7, asset half). The runtime that places them, hides the sea plane and the old towers,
-and draws the canal water is a separate change; this folder delivers assets and data only.
+One GLB (`public/models/neon-landmarks/neon-landmarks.glb`, manifest id `neon-landmarks`) with the fifteen
+modelled pieces that give the Neon Downtown lap its sector landmarks and the boulevard footbridge
+(Task 5b steps 6 and 7, asset half), plus six pieces for the two sectors of the 10 km lap: `harbour` (after
+the expressway, a waterfront NITRO straight of 800 m or more with the road on water) and `oldtown` (after the
+canal bridge, linked S-bends between older low buildings). The runtime that places them, hides the sea
+plane and the old towers, and draws the canal water is a separate change; this folder delivers assets and
+data only. The six new pieces are not placed yet: `NEON_LANDMARKS_NOT_PLACED` in `src/model-manifest-neon.ts`
+lists them, and `tests/neon-landmarks-glb.test.js` fails when one is placed without leaving that list.
 
 `contract.json` (written by `build.py`) is the machine-readable form of the "Integration contract" below;
 `tests/neon-landmarks-glb.test.js` holds the shipped GLB to it.
@@ -25,6 +29,15 @@ inferred.
 | `canal_bank` | 07 | Stone quay wall, promenade, railing, amber bollard lamp |
 | `plaza_sculpture` | 08 | Six faceted steel blades on a violet-lit stepped plinth |
 | `boulevard_footbridge` | 03 | Concrete footbridge on two round columns, pink strips under the deck |
+| `harbour_gantry` | none | Ship-to-shore crane straddling the road as a gate: 34 m rail gauge, cyan portal outline, boom out over the water with trolley, spreader and amber floods, red obstruction lamps |
+| `container_stack` | none | Quay block of 40 ft containers, 1 to 4 high in a stepped skyline; each container its own paint from one material (8-colour palette keyed on the container lattice), amber reefer status panels |
+| `cargo_ship` | none | Moored 150 m container ship: lofted hull with red boot-top, uneven cargo, accommodation block with lit and dark windows, masts, deck lamp posts every bay |
+| `oldtown_gate` | none | Timber gateway on two piers with a lifted-end roof, red neon tube following the arch, invented-glyph amber plaque, lanterns at the pier heads |
+| `lantern_span` | none | Two poles with a sagging cable and ten warm paper lanterns across the road |
+| `clock_tower` | none | Brick shaft with quoins, four lit dials (10:10), warm belfry, patina roof and spire, amber uplights |
+
+The harbour and oldtown pieces have no concept frame; they are designed from the brief (realism first,
+night and rain night) and reviewed in `render.py` shots on wet ground beside car-sized boxes.
 
 Not in the kit: the train, road and deck slabs, canal water, ground, buildings, trees, signs. No piece carries
 text, a brand or a logo.
@@ -34,7 +47,10 @@ text, a brand or a logo.
 Everything is project work, modelled and textured by `build.py` (`build/geo.py`, `build/pieces.py`,
 `build/materials.py`); the three atlases under `textures/` are baked from procedural Blender materials.
 No third-party geometry, texture, HDRI or font is used, so there is no outside source to record. Manifest
-licence: `owned`. Master, script and GLB sha256 are in `src/model-manifest.ts`.
+licence: `owned`. Master, script and GLB sha256 are in `src/model-manifest.ts`. The harbour and oldtown
+pieces (`build/sectors.py`) are made here the same way: no CC0 scan or outside texture was used, so the
+"photoscanned or high-res PBR first" look-dev goal is not met for them yet (follow-up: CC0 scanned steel,
+brick and roof-tile sets in place of the procedural bake).
 
 Reference only (no pixels or geometry taken from them):
 
@@ -60,7 +76,8 @@ Then record the new master, script and GLB sha256 and the GLB byte count in `src
 it holds no UI state, absolute path or `.blend1` backup; Blender prints "Library file, loading empty scene"
 when it opens, which is expected.
 
-Preview renders (git-ignored, `docs/designs/3d-pipeline/audits/neon-landmarks/`), each shot beside its frame:
+Preview renders (git-ignored, `docs/designs/3d-pipeline/audits/neon-landmarks/`), each shot beside its frame;
+the `harbour` and `oldtown` shots go to `audits/neon-new-landmarks/` without a frame:
 
 ```sh
 $BLENDER_BIN --background --factory-startup --python assets-src/neon-landmarks/render.py -- [--lod1] [shot ...]
@@ -69,8 +86,10 @@ $BLENDER_BIN --background --factory-startup --python assets-src/neon-landmarks/r
 ## Budgets
 
 Budget N6 allows the whole Neon race 380 draw calls on High. Each piece is one mesh and one material per
-LOD; all eighteen meshes share the material `neon_landmarks`. Drawn as one `InstancedMesh` per piece and
-LOD, the kit costs at most 18 draws with every piece and both LODs in view, and 2 to 6 in any one sector.
+LOD; all thirty meshes share the material `neon_landmarks`. Drawn as one `InstancedMesh` per piece and
+LOD, the nine placed pieces cost at most 18 draws with every piece and both LODs in view, and 2 to 6 in any
+one sector. The runtime builds pools only for placed pieces, so the six unplaced ones add no draw call; once
+placed, harbour adds up to 6 draws in its sector and oldtown up to 6 in its.
 
 | Piece | Budget LOD0 / LOD1 (triangles) | Measured LOD0 / LOD1 |
 | --- | --- | --- |
@@ -84,12 +103,25 @@ LOD, the kit costs at most 18 draws with every piece and both LODs in view, and 
 | `plaza_sculpture` | 900 / 900 | 720 / 720 |
 | `boulevard_footbridge` | 900 / 450 | 720 / 320 |
 | All near LODs | 12000 | 7188 |
+| `harbour_gantry` | 1400 / 1000 | 980 / 832 |
+| `container_stack` | 300 / 300 | 156 / 156 |
+| `cargo_ship` | 2000 / 1200 | 976 / 832 |
+| `oldtown_gate` | 1100 / 700 | 642 / 518 |
+| `lantern_span` | 1100 / 500 | 1024 / 392 |
+| `clock_tower` | 1000 / 700 | 828 / 660 |
+| New near LODs | 9000 | 4606 |
 
 | File budget | Allowed | Measured |
 | --- | --- | --- |
-| Triangles, both LODs of every piece | 16000 | 12420 |
-| GLB bytes | 4000000 | 1451000 |
+| Triangles, both LODs of every piece | 24000 (was 16000) | 20416 (was 12420) |
+| GLB bytes | 4000000 | 1715072 (was 1451000) |
 | Largest texture | 2048 px | 2048 px |
+
+The triangle budget rose from 16000 to 24000 for the six new pieces (7996 triangles, both LODs) with
+headroom for one more; unplaced pieces are loaded but never drawn. The atlases stayed at 2048 / 2048 /
+1024 px: the new pieces' unique-UV area (about 1700 weighted m², 40% of the original nine's 4371) lowers
+the texel density of every piece by about 15%. Thin parts (cables, rails, lamp panels, the containers'
+colour) use flat swatch cells, 27 of the 32.
 
 Textures (KTX2 in the GLB): base colour 2048 px sRGB, emissive 2048 px sRGB, occlusion-roughness-metal
 1024 px linear. The third atlas is an addition to the two the plan names: without it the steel arch and
@@ -112,6 +144,12 @@ tunnel wall outer face 13.1 m and roof top 4.5 m; `TUNNEL_CEILING = 4` and `CAR_
 | `boulevard_footbridge` | 14.0 x 14.0 m | kerb 12.675 m, flight top 13.2 m | 1.33 m, 0.8 m |
 | `expressway_pier` | everything at or below -1.5 m | road surface | 1.5 m |
 | `expressway_rail`, `canal_bridge_rail` | nothing above the road within 12.675 m of the centre line | kerb | 0.23 m |
+| `harbour_gantry` | 15.5 x 21.0 m | kerb 12.675 m, flight top 13.2 m | 2.83 m, 7.8 m |
+| `oldtown_gate` | 14.0 x 15.0 m | kerb 12.675 m, flight top 13.2 m | 1.33 m, 1.8 m |
+| `lantern_span` | 14.0 x 14.0 m (lowest point of the cable sag) | kerb 12.675 m, flight top 13.2 m | 1.33 m, 0.8 m |
+
+The oldtown spans are high, not low: `TUNNEL_CEILING` only caps flight inside `tunnel` sections, so
+anything lower than 13.2 m over an open road would hit a flying car.
 
 Above its clear height the arch closes over the road: the ribs lean in to 11 m from the centre line at the
 crown (34.8 m up) and the bracing starts 21 m up. The underpass shell stands outside the procedural tunnel
@@ -144,6 +182,17 @@ Bounds are min .. max in metres about the pivot, in delivered axes (x right, y u
 | `plaza_sculpture` | `plaza_sculpture_lod0`, `_lod1` | -7.0 .. 7.0 | 0.0 .. 15.07 | -7.0 .. 7.0 | Violet Plaza, 3200-3607 | 1: 30 m or more left of the centre line near 3400 |
 | `boulevard_footbridge` | `boulevard_footbridge_lod0`, `_lod1` | -22.0 .. 22.0 | -0.2 .. 17.38 | -2.84 .. 2.84 | start-finish boulevard, 0-443 | 2: about 150 and 330 on the centre line |
 
+Not yet placed (the 10 km route is built elsewhere; lap distances follow from it):
+
+| Pivot | Footprint | x | y | z | Side / straddle | Count and spacing |
+| --- | --- | --- | --- | --- | --- | --- |
+| `harbour_gantry` | 36 x 25 m legs and sills (boom to +74 m) | -38.0 .. 74.0 | -8.0 .. 77.0 | -16.0 .. 16.0 | straddle, pivot on the centre line at road level, yaw = heading (boom over the water on the right; heading + 180 deg if the water is on the left) | 3 per straight, 260 m apart (2.2 s at 118 m/s); the rail beams reach 8 m below the road onto piles |
+| `container_stack` | 10 x 24.4 m | -4.98 .. 4.98 | 0.0 .. 10.4 | -12.18 .. 12.18 | land side, pivot 25 m from the centre line (near face 20 m, clear of the gantry legs at 17.9 m) | one per 30 m along the quay, yaw alternately heading and heading + 180 deg |
+| `cargo_ship` | 26 x 156 m | -13.0 .. 13.0 | -3.0 .. 40.8 | -80.04 .. 75.68 | water side, ship centre line 40 m out, pivot at the waterline | 1, under a gantry boom |
+| `oldtown_gate` | 42 x 5.2 m | -21.0 .. 21.0 | -0.2 .. 21.96 | -2.6 .. 2.6 | straddle, centre line at road level, yaw = heading | 1, at the sector entry just after the canal bridge |
+| `lantern_span` | 30.6 x 0.8 m | -15.32 .. 15.32 | 0.0 .. 18.2 | -0.42 .. 0.42 | straddle, centre line at road level, yaw = heading at the pivot | one per 24 m through the S-bends |
+| `clock_tower` | 9.2 x 9.5 m | -4.6 .. 4.6 | 0.0 .. 50.5 | -4.75 .. 4.75 | side, inside of an S-bend, 45 m or more out, ground level | 1; at 50.5 m it reads above the low roofs |
+
 ### Clear openings and repeat spacing
 
 - Underpass: 28.0 m wide, 5.6 m high, for the whole 204 m between the portal mouths (470 to 690 m with the
@@ -171,6 +220,13 @@ terms). The runtime only scales the whole map with `emissiveIntensity`; it adds 
 | cyan | 0.10, 0.95, 1.00 | expressway band and markers, arch rib edges, bridge deck edge and lanterns |
 | violet | 0.74, 0.22, 1.00 | sculpture plinth rings |
 | pink | 1.00, 0.16, 0.72 | footbridge soffit and deck-edge strips |
+| lantern | 1.00, 0.45, 0.16 | oldtown paper lanterns (span, gate pier heads), belfry |
+| neon_red | 1.00, 0.22, 0.12 | gate arch tube, crane and ship obstruction lamps |
+| window | 1.00, 0.82, 0.55 | crane cab, ship accommodation, tower slits |
+
+`contract.json` lists each piece's lamps and this table under `lamps`. Amber also lights the gantry floods,
+the reefer panels, the ship's deck lamps, the gate plaque and the tower uplights; oldtown uses warm lamps
+only, against the cyan and violet of the rest of the lap.
 
 Suggested `emissiveIntensity`: 1.0 without bloom, up to 3.0 with it; the preview renders use 3.0. Suggested
 LOD switch: 120 m for the 12 m modules and the footbridge, 250 m for the portal, arch and sculpture. Neither
@@ -200,3 +256,15 @@ WebGL.
   reads taller and more open than the frame's squat bridge, and its ends are free, not built into
   buildings.
 - **Bank (07).** Quay wall, coping, railing and bollard lamps only: no steps, planters or trees.
+
+## Harbour and oldtown: departures from the brief
+
+Judged on the `render.py` shots (Cycles, night, wet stand-in ground, car-sized boxes), not in WebGL.
+
+- **Gate silhouette.** The oldtown gate's roof beam over a tie beam reads close to a shrine gate. It is a
+  generic post-and-lintel type with an invented plaque glyph, but a later pass may want a less specific
+  silhouette (a brick arch or a plain timber portal).
+- **Container stack instead of a block.** One stack module (10 x 24 m) repeats along the quay instead of a
+  single large block: it keeps the triangles low and lets the alternating yaw break the skyline.
+- **Gantry as a gate.** A real ship-to-shore crane stands on the quay, not over a road; here its 34 m
+  gauge straddles the road (legs at 17 m) and the land leg stands on the quay.

@@ -30,7 +30,24 @@ MATS = {
     "cyan":       dict(color=srgb(0.10, 0.95, 1.0), rough=0.5, metal=0, emit=25),
     "violet":     dict(color=srgb(0.74, 0.22, 1.0), rough=0.5, metal=0, emit=160),
     "pink":       dict(color=srgb(1.0, 0.16, 0.72), rough=0.5, metal=0, emit=120),
+    # harbour and oldtown sectors (10 km lap). `cells` = container size (m): each cell takes one PALETTE colour
+    "crane":      dict(color=srgb(0.66, 0.65, 0.60), rough=0.48, metal=0, grain=0.15, streak=0.45, grid=(3.0, 0.15)),
+    "containers": dict(color=srgb(1, 1, 1), rough=0.55, metal=0, grain=0.18, streak=0.4, cells=(2.5, 12.3, 2.6)),
+    "hull":       dict(color=srgb(0.10, 0.12, 0.16), rough=0.42, metal=0, grain=0.12, streak=0.5),
+    "hull_red":   dict(color=srgb(0.40, 0.09, 0.07), rough=0.55, metal=0, grain=0.2, streak=0.2),
+    "deckhouse":  dict(color=srgb(0.72, 0.72, 0.69), rough=0.45, metal=0, grain=0.1, streak=0.35, grid=(2.8, 0.2)),
+    "brick":      dict(color=srgb(0.44, 0.25, 0.18), rough=0.72, metal=0, grain=0.3, streak=0.3, grid=(0.5, 0.35)),
+    "lacquer":    dict(color=srgb(0.44, 0.07, 0.05), rough=0.32, metal=0, grain=0.15, streak=0.2),
+    "roof_tile":  dict(color=srgb(0.17, 0.18, 0.20), rough=0.3, metal=0, grain=0.25, grid=(0.4, 0.5)),
+    "patina":     dict(color=srgb(0.30, 0.50, 0.44), rough=0.45, metal=0, grain=0.3, streak=0.45),
+    "glass":      dict(color=srgb(0.05, 0.07, 0.09), rough=0.08, metal=0),
+    "lantern":    dict(color=srgb(1.0, 0.45, 0.16), rough=0.5, metal=0, emit=60),
+    "neon_red":   dict(color=srgb(1.0, 0.22, 0.12), rough=0.5, metal=0, emit=90),
+    "window":     dict(color=srgb(1.0, 0.82, 0.55), rough=0.5, metal=0, emit=25),
 }
+# weathered shipping-container paints, picked by eye; no line's livery
+PALETTE = [srgb(*c) for c in ((0.46, 0.13, 0.09), (0.12, 0.22, 0.40), (0.14, 0.33, 0.20), (0.64, 0.32, 0.09), (0.47, 0.48, 0.47),
+                              (0.70, 0.70, 0.66), (0.33, 0.09, 0.09), (0.11, 0.36, 0.37))]
 
 
 def _math(nt, op, a, b=None, clamp=False):
@@ -54,12 +71,37 @@ def _noise(nt, position, scale, stretch=(1, 1, 1)):
     return noise.outputs[0]
 
 
+def _cell(nt, geometry, spacing):
+    """Position divided by the grid spacing: one number, or (x, y, z) for a box grid."""
+    scaled = nt.nodes.new("ShaderNodeVectorMath")
+    scaled.operation = "MULTIPLY"
+    scaled.inputs[1].default_value = [1 / s for s in (spacing if isinstance(spacing, tuple) else (spacing,) * 3)]
+    nt.links.new(geometry.outputs["Position"], scaled.inputs[0])
+    return scaled
+
+
+def _palette(nt, geometry, spacing):
+    """One PALETTE colour per grid cell, picked by a hash of the cell index (shipping containers)."""
+    floor = nt.nodes.new("ShaderNodeVectorMath")
+    floor.operation = "FLOOR"
+    nt.links.new(_cell(nt, geometry, spacing).outputs[0], floor.inputs[0])
+    noise = nt.nodes.new("ShaderNodeTexWhiteNoise")
+    nt.links.new(floor.outputs[0], noise.inputs["Vector"])
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.interpolation = "CONSTANT"
+    stops = ramp.color_ramp.elements
+    while len(stops) < len(PALETTE):
+        stops.new(0.5)
+    for i, (stop, colour) in enumerate(zip(stops, PALETTE)):
+        stop.position, stop.color = i / len(PALETTE), (*colour, 1)
+    nt.links.new(noise.outputs["Value"], ramp.inputs["Fac"])
+    return ramp.outputs["Color"]
+
+
 def _joints(nt, geometry, spacing):
     """1 on the joint lines of a `spacing` grid, 0 elsewhere. Only the two axes in the face's plane draw lines."""
-    scaled = nt.nodes.new("ShaderNodeVectorMath")
-    scaled.operation = "SCALE"
-    scaled.inputs["Scale"].default_value = 1 / spacing
-    nt.links.new(geometry.outputs["Position"], scaled.inputs[0])
+    spacing = spacing if isinstance(spacing, tuple) else (spacing,) * 3
+    scaled = _cell(nt, geometry, spacing)
     fract = nt.nodes.new("ShaderNodeVectorMath")
     fract.operation = "FRACTION"
     nt.links.new(scaled.outputs[0], fract.inputs[0])
@@ -69,7 +111,7 @@ def _joints(nt, geometry, spacing):
     line = 0.0
     for axis in range(3):
         in_plane = _math(nt, "LESS_THAN", _math(nt, "ABSOLUTE", normal.outputs[axis]), 0.7)
-        on_joint = _math(nt, "LESS_THAN", cell.outputs[axis], 0.02 / spacing + 0.012)
+        on_joint = _math(nt, "LESS_THAN", cell.outputs[axis], 0.02 / spacing[axis] + 0.012)
         line = _math(nt, "MAXIMUM", _math(nt, "MULTIPLY", in_plane, on_joint), line)
     return line
 
@@ -91,13 +133,16 @@ def source_material(name):
         streak = _noise(nt, geometry.outputs["Position"], 0.9, stretch=(1, 1, 0.06))
         wet = _math(nt, "SUBTRACT", 1.15, _math(nt, "MULTIPLY", streak, spec["streak"] * 1.3), clamp=True)
         shade = _math(nt, "MULTIPLY", shade, wet)
-    if spec.get("grid"):
-        joint = _joints(nt, geometry, spec["grid"][0])
-        shade = _math(nt, "MULTIPLY", shade, _math(nt, "SUBTRACT", 1.0, _math(nt, "MULTIPLY", joint, spec["grid"][1])))
+    grid = spec.get("grid") or (spec.get("cells") and (spec["cells"], 0.6))
+    if grid:
+        joint = _joints(nt, geometry, grid[0])
+        shade = _math(nt, "MULTIPLY", shade, _math(nt, "SUBTRACT", 1.0, _math(nt, "MULTIPLY", joint, grid[1])))
         rough = _math(nt, "ADD", rough, _math(nt, "MULTIPLY", joint, 0.3), clamp=True)
     color = nt.nodes.new("ShaderNodeVectorMath")
     color.operation = "SCALE"
     color.inputs[0].default_value = spec["color"]
+    if spec.get("cells"):
+        nt.links.new(_palette(nt, geometry, spec["cells"]), color.inputs[0])
     if isinstance(shade, float):
         color.inputs["Scale"].default_value = shade
     else:

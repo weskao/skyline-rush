@@ -2,6 +2,10 @@
 import type { ModelManifestEntry } from './model-manifest.ts';
 
 // Hashes/bytes come from `node scripts/assets/check-glb.mjs <id>` and shasum of the committed sources.
+/** Landmark kit pieces for the harbour and oldtown sectors of the 10 km lap: in the GLB, not yet placed by
+ *  src/neon-scenery-plan.ts. Placing one removes it here (tests/neon-landmarks-glb.test.js). */
+export const NEON_LANDMARKS_NOT_PLACED = ['harbour_gantry', 'container_stack', 'cargo_ship', 'oldtown_gate', 'lantern_span', 'clock_tower'];
+
 export const NEON_MODELS: Record<string, ModelManifestEntry> = {
   // City kit: 20 modelled modules on one material and one 2K atlas. Each `<module>` node is the pivot, its
   // `<module>_lod<n>` children the meshes; contract in assets-src/neon-city/asset-brief.md.
@@ -42,18 +46,20 @@ export const NEON_MODELS: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt', 'ktx2'],
     budgets: { triangles: 11_000, bytes: 1_300_000, textureMaxPx: 2048 },
   },
-  // Landmarks: nine modelled pieces, each a pivot with a `_lod0` and a `_lod1` mesh, one material on three shared
+  // Landmarks: fifteen modelled pieces, each a pivot with a `_lod0` and a `_lod1` mesh, one material on three shared
   // atlases. Placement data: assets-src/neon-landmarks/asset-brief.md, "Integration contract".
+  // The triangle budget counts both LODs of every piece: 24k = the nine placed pieces (12.4k) plus the six
+  // harbour/oldtown pieces (8.0k), with headroom for one more. Unplaced pieces are never drawn.
   'neon-landmarks': {
     id: 'neon-landmarks',
     url: 'models/neon-landmarks/neon-landmarks.glb',
     source: {
       master: 'assets-src/neon-landmarks/neon-landmarks.blend',
       script: 'assets-src/neon-landmarks/build.py',
-      masterSha256: '67e9cd19e4a8fd4eb589a5126599b15f2824a29fc01a58922e2edc96b937f483',
-      scriptSha256: '0bca4a2276363ed2778b7c24ddb8edc2beec42ecc0c7dd57307575a69e4d334d',
+      masterSha256: 'f1eea76e4538310757f082a6c53627c2f01b3f7b63ae71a9d128f2c844f898ed',
+      scriptSha256: '733187bd4724d71a82cfe6a9176c9d85683cec7ca5251fdff0fa8bfd2febf949',
     },
-    glb: { sha256: '407483eb81450385072d6a9b5b9755a8e346bbab35c5f5db251168d8ab92ec20', bytes: 1451000 },
+    glb: { sha256: '9e58ac7eb681d1d50331a23c580c25c03c36ba7e19b868fce4f3ca1a889b3a81', bytes: 1_715_072 },
     license: { id: 'owned', creator: 'Skyline Rush project (modelled and textured in assets-src/neon-landmarks/build.py; no outside source)' },
     provenance: {
       blender: '5.2.3',
@@ -66,12 +72,12 @@ export const NEON_MODELS: Record<string, ModelManifestEntry> = {
         'node scripts/assets/check-glb.mjs neon-landmarks --promote',
       ],
     },
-    nodes: ['rail_portal', 'rail_segment', 'expressway_pier', 'expressway_rail', 'canal_arch', 'canal_bridge_rail', 'canal_bank', 'plaza_sculpture', 'boulevard_footbridge']
+    nodes: ['rail_portal', 'rail_segment', 'expressway_pier', 'expressway_rail', 'canal_arch', 'canal_bridge_rail', 'canal_bank', 'plaza_sculpture', 'boulevard_footbridge', ...NEON_LANDMARKS_NOT_PLACED]
       .flatMap(piece => [piece, `${piece}_lod0`, `${piece}_lod1`]),
     materials: ['neon_landmarks'],
     lods: [],
     fallback: 'procedural-scenery',
     decoders: ['meshopt', 'ktx2'],
-    budgets: { triangles: 16_000, bytes: 4_000_000, textureMaxPx: 2048 },
+    budgets: { triangles: 24_000, bytes: 4_000_000, textureMaxPx: 2048 },
   },
 };

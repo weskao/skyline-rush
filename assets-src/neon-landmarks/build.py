@@ -1,4 +1,5 @@
-"""Builds the Neon Downtown landmark kit (Task 5b steps 6 and 7): nine modelled pieces, two LODs each, one
+"""Builds the Neon Downtown landmark kit (Task 5b steps 6 and 7, and the harbour and oldtown sectors of the 10 km
+lap): fifteen modelled pieces, two LODs each, one
 material on three baked atlases. Everything is made here; there is no outside source.
 
   blender --background --factory-startup --python assets-src/neon-landmarks/build.py
@@ -23,6 +24,7 @@ sys.path.insert(0, str(HERE / "build"))
 from geo import keep_faces, lod_mesh, mirror_and_triangulate  # noqa: E402
 from materials import MATS, delivery_material, show_channel, source_material  # noqa: E402
 from pieces import CLEAR_HALF, CLEAR_HEIGHT, MODULE, PIECES, build_half  # noqa: E402
+from sectors import PORTAL  # noqa: E402
 
 SIZE = 2048          # base colour and emissive atlas; the occlusion-roughness-metal atlas is half that
 STATION = 300.0      # spacing of the pieces while baking: no light or shadow crosses from one to the next
@@ -52,6 +54,23 @@ PLACEMENT = {
                             place="1: pivot at plaza ground level, 30 m or more left of the centre line near 3400 m"),
     "boulevard_footbridge": dict(kind="span", budget_triangles=[900, 450], sector="start-finish boulevard", range_m=[0, 443], clear=[CLEAR_HALF, 14.0],
                                  place="2: pivot on the centre line, about 150 m and 330 m (the second also covers the 3886 to 4000 approach)"),
+    # 10 km lap (2026-11-15): modelled, not placed yet (src/model-manifest-neon.ts NEON_LANDMARKS_NOT_PLACED). No lap
+    # distances: the route is being built elsewhere. Footprints and spacing: asset-brief.md "Placement note".
+    "harbour_gantry": dict(kind="span", budget_triangles=[1400, 1000], sector="harbour", clear=[15.5, PORTAL - 1.0], spacing_m=260,
+                           place="3 down the NITRO straight, 260 m apart (2.2 s at 118 m/s), pivot on the centre line at road level, yaw = heading: "
+                                 "the boom reaches out over +X (the water); heading + 180 deg if the water is on the left. Rail beams reach -8 m."),
+    "container_stack": dict(kind="side", budget_triangles=[300, 300], sector="harbour", offset_m=25.0, spacing_m=30,
+                            place="land side of the straight, pivot 25 m from the centre line (near face 20 m, clear of the gantry legs at 17.9 m), one per 30 m (5.7 m lanes), "
+                                  "yaw alternately heading and heading + 180 deg so the stepped tops do not repeat"),
+    "cargo_ship": dict(kind="side", budget_triangles=[2000, 1200], sector="harbour", offset_m=40.0,
+                       place="1: water side, centre line of the ship 40 m from the road's (under a gantry's boom), pivot at the waterline, "
+                             "yaw = heading or heading + 180 deg; 150 m long"),
+    "oldtown_gate": dict(kind="span", budget_triangles=[1100, 700], sector="oldtown", clear=[14.0, 15.0],
+                         place="1: the sector entry, just after the canal bridge, pivot on the centre line at road level, yaw = heading"),
+    "lantern_span": dict(kind="span", budget_triangles=[1100, 500], sector="oldtown", clear=[14.0, 14.0], spacing_m=24,
+                         place="through the S-bends, one per 24 m, pivot on the centre line at road level, yaw = heading at the pivot"),
+    "clock_tower": dict(kind="side", budget_triangles=[1000, 700], sector="oldtown", offset_m=45.0,
+                        place="1: inside of an S-bend, 45 m or more from the centre line, ground level; 50.5 m tall, it reads above the roofs"),
 }
 
 
@@ -253,14 +272,17 @@ def main():
     shade = add_object(scene, "other_half", other_half)   # lights and shadows the authored half; never baked itself
     material = delivery_material(*bake_atlases(scene, kit, rigs))
 
-    contract = {}
+    contract, names = {}, list(MATS)
     for obj in (kit, shade):
         bpy.data.objects.remove(obj)
     for name, mesh in full.items():
         pivot = bpy.data.objects.new(name, None)
         pivot.empty_display_size = 2
         scene.collection.objects.link(pivot)
-        entry = contract[name] = dict(PLACEMENT[name], pivot=name, lods={})
+        used = np.zeros(len(mesh.polygons), np.int32)
+        mesh.polygons.foreach_get("material_index", used)
+        lamps = [lamp for lamp in names if MATS[lamp].get("emit") and names.index(lamp) in set(used.tolist())]
+        entry = contract[name] = dict(PLACEMENT[name], pivot=name, lamps=lamps, lods={})
         for lod in (0, 1):
             data = lod_mesh(mesh, lod, f"{name}_lod{lod}")
             data.materials.clear()
@@ -271,7 +293,9 @@ def main():
             assert len(data.polygons) <= entry["budget_triangles"][lod], f"{data.name}: {len(data.polygons)} triangles is over budget"
     (HERE / "contract.json").write_text(json.dumps(dict(
         glb="public/models/neon-landmarks/neon-landmarks.glb", material="neon_landmarks",
-        axes="Y up, metres, -Z = driving direction, +X = driver's right", pieces=contract), indent=2) + "\n", encoding="utf-8")
+        axes="Y up, metres, -Z = driving direction, +X = driver's right",
+        lamps={lamp: [round(float(c), 2) for c in encode_srgb(np.array(spec["color"]))] for lamp, spec in MATS.items() if spec.get("emit")},
+        pieces=contract), indent=2) + "\n", encoding="utf-8")
     for line in (f"{name}: " + ", ".join(f"{lod} {m['triangles']} tris" for lod, m in entry["lods"].items()) for name, entry in contract.items()):
         print(line)
     # libraries.write keeps the file free of UI state and of the absolute paths a normal save records

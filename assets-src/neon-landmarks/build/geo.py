@@ -31,8 +31,9 @@ class Builder:
         self.layers = {k: ints.new(k) for k in ("lod_lo", "lod_hi", "mir", "swatch")}
         self.pri = self.bm.faces.layers.float.new("pri")
 
-    def _tag(self, faces, mat, lod=(0, 1), pri=1.0, swatch=False, skip="", only="", mirror=None):
-        bmesh.ops.recalc_face_normals(self.bm, faces=faces)
+    def _tag(self, faces, mat, lod=(0, 1), pri=1.0, swatch=False, skip="", only="", mirror=None, recalc=True):
+        if recalc:   # closed parts; an open loft keeps the winding it was built with
+            bmesh.ops.recalc_face_normals(self.bm, faces=faces)
         mir = self.mirror if mirror is None else mirror
         bits = ("x" in mir) | 2 * ("y" in mir)
         assert lod[0] == 0 or swatch, "a part that only exists in a far LOD must not take atlas space"
@@ -90,6 +91,23 @@ class Builder:
         faces = [(4 * i + j, 4 * i + (j + 1) % 4, 4 * i + 4 + (j + 1) % 4, 4 * i + 4 + j) for i in range(len(rings) - 1) for j in range(4)]
         last = 4 * (len(rings) - 1)
         self._add(verts, faces + [(0, 1, 2, 3), (last, last + 1, last + 2, last + 3)], mat, **kw)
+
+    def loft(self, mats, rings, caps=True, closed=False, cap=None, **kw):
+        """Skin through rings of equal length (open sections: a ship hull, a roof). mats = one material per
+        section segment (ring point i to i + 1), None = no face. Faces point to the right of each segment seen
+        along the ring travel (a section drawn keel to deck on the +x side, rings marching along +y, faces out).
+        caps close the first ring (facing back) and the last (facing on) in `cap`; closed = the last ring point
+        joins the first."""
+        n = len(rings[0])
+        for seg, mat in enumerate(mats):
+            if mat is None:
+                continue
+            verts = [p for ring in rings for p in (ring[seg], ring[(seg + 1) % n])]
+            faces = [(2 * i, 2 * i + 2, 2 * i + 3, 2 * i + 1) for i in range(len(rings) - 1)]
+            self._add(verts, faces, mat, recalc=False, **kw)
+        if caps:
+            self._add(rings[0], [tuple(range(n))], cap, recalc=False, **kw)
+            self._add(rings[-1], [tuple(reversed(range(n)))], cap, recalc=False, **kw)
 
     def ring(self, mat, r0, r1, z0, z1, n=32, **kw):
         """Flat ring around the z axis (inner radius r0, outer r1)."""

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Vector3 } from 'three';
 import { NEON_CHUNK_METRES, NEON_GROUND, NEON_LAP, NEON_PIECES, NEON_SHORE, NEON_TILE, neonChunkPlan, neonChunkWindow, neonSector } from '../src/neon-scenery-plan.ts';
+import { NEON_LANDMARKS_NOT_PLACED } from '../src/model-manifest-neon.ts';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
 import { ROAD_LIMIT } from '../src/game.js';
 import { parseGlb } from '../scripts/assets/check-glb.mjs';
@@ -21,7 +22,8 @@ const CENTRE = ['rail_portal', 'rail_segment', 'expressway_pier', 'canal_arch', 
 
 test('the pieces are the modules of both manifests, with their LOD counts', () => {
   for (const [kit, id] of [['city', 'neon-city'], ['landmarks', 'neon-landmarks']]) {
-    const nodes = MODEL_MANIFEST[id].nodes, pieces = Object.keys(NEON_PIECES).filter(piece => NEON_PIECES[piece].kit === kit);
+    // not-yet-placed landmarks are guarded in neon-landmarks-glb.test.js until a change places them
+    const nodes = MODEL_MANIFEST[id].nodes.filter(node => !NEON_LANDMARKS_NOT_PLACED.includes(node.replace(/_lod\d$/, ''))), pieces = Object.keys(NEON_PIECES).filter(piece => NEON_PIECES[piece].kit === kit);
     assert.deepEqual(pieces.sort(), nodes.filter(node => !/_lod\d$/.test(node)).sort(), id);
     for (const piece of pieces) assert.equal(NEON_PIECES[piece].lods, nodes.filter(node => node.startsWith(`${piece}_lod`)).length, piece);
   }

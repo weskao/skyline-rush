@@ -2,6 +2,43 @@
   "glb": "public/models/neon-landmarks/neon-landmarks.glb",
   "material": "neon_landmarks",
   "axes": "Y up, metres, -Z = driving direction, +X = driver's right",
+  "lamps": {
+    "amber": [
+      1.0,
+      0.62,
+      0.18
+    ],
+    "cyan": [
+      0.1,
+      0.95,
+      1.0
+    ],
+    "violet": [
+      0.74,
+      0.22,
+      1.0
+    ],
+    "pink": [
+      1.0,
+      0.16,
+      0.72
+    ],
+    "lantern": [
+      1.0,
+      0.45,
+      0.16
+    ],
+    "neon_red": [
+      1.0,
+      0.22,
+      0.12
+    ],
+    "window": [
+      1.0,
+      0.82,
+      0.55
+    ]
+  },
   "pieces": {
     "rail_portal": {
       "kind": "span",
@@ -20,6 +57,9 @@
       ],
       "place": "2: pivot 8 m inside each end of the tunnel section (478 and 682). Entry: yaw = road heading. Exit: heading + 180 deg.",
       "pivot": "rail_portal",
+      "lamps": [
+        "amber"
+      ],
       "lods": {
         "rail_portal_lod0": {
           "triangles": 1016,
@@ -67,6 +107,9 @@
       "repeat_m": 11.75,
       "place": "16: pivots at 491.875 + 11.75 k, yaw = road heading at the pivot. Any step from 11.2 to 12 m closes.",
       "pivot": "rail_segment",
+      "lamps": [
+        "amber"
+      ],
       "lods": {
         "rail_segment_lod0": {
           "triangles": 196,
@@ -110,6 +153,9 @@
       "repeat_m": 36.0,
       "place": "every 36 m, pivot on the centre line at road level; the pier hangs below it",
       "pivot": "expressway_pier",
+      "lamps": [
+        "amber"
+      ],
       "lods": {
         "expressway_pier_lod0": {
           "triangles": 156,
@@ -154,6 +200,9 @@
       "offset_m": 13.2,
       "place": "both sides, 13.2 m from the centre line, one per 12 m of the rail's own line; right side yaw = heading, left side heading + 180 deg",
       "pivot": "expressway_rail",
+      "lamps": [
+        "cyan"
+      ],
       "lods": {
         "expressway_rail_lod0": {
           "triangles": 220,
@@ -200,6 +249,10 @@
       ],
       "place": "1: pivot at mid-span on the centre line, 2658 m; spans 2598 to 2718, blocks and deck to +/-66.5 m",
       "pivot": "canal_arch",
+      "lamps": [
+        "amber",
+        "cyan"
+      ],
       "lods": {
         "canal_arch_lod0": {
           "triangles": 3768,
@@ -244,6 +297,9 @@
       "offset_m": 13.2,
       "place": "both sides, 13.2 m from the centre line, one per 12 m; right side yaw = heading, left side heading + 180 deg",
       "pivot": "canal_bridge_rail",
+      "lamps": [
+        "cyan"
+      ],
       "lods": {
         "canal_bridge_rail_lod0": {
           "triangles": 220,
@@ -287,6 +343,9 @@
       "repeat_m": 12.0,
       "place": "along each canal bank, one per 12 m, local +X toward the water, pivot at promenade level",
       "pivot": "canal_bank",
+      "lamps": [
+        "amber"
+      ],
       "lods": {
         "canal_bank_lod0": {
           "triangles": 172,
@@ -329,6 +388,9 @@
       ],
       "place": "1: pivot at plaza ground level, 30 m or more left of the centre line near 3400 m",
       "pivot": "plaza_sculpture",
+      "lamps": [
+        "violet"
+      ],
       "lods": {
         "plaza_sculpture_lod0": {
           "triangles": 720,
@@ -375,6 +437,9 @@
       ],
       "place": "2: pivot on the centre line, about 150 m and 330 m (the second also covers the 3886 to 4000 approach)",
       "pivot": "boulevard_footbridge",
+      "lamps": [
+        "pink"
+      ],
       "lods": {
         "boulevard_footbridge_lod0": {
           "triangles": 720,
@@ -400,6 +465,279 @@
             22.0,
             17.38,
             2.84
+          ]
+        }
+      }
+    },
+    "harbour_gantry": {
+      "kind": "span",
+      "budget_triangles": [
+        1400,
+        1000
+      ],
+      "sector": "harbour",
+      "clear": [
+        15.5,
+        21.0
+      ],
+      "spacing_m": 260,
+      "place": "3 down the NITRO straight, 260 m apart (2.2 s at 118 m/s), pivot on the centre line at road level, yaw = heading: the boom reaches out over +X (the water); heading + 180 deg if the water is on the left. Rail beams reach -8 m.",
+      "pivot": "harbour_gantry",
+      "lamps": [
+        "amber",
+        "cyan",
+        "neon_red",
+        "window"
+      ],
+      "lods": {
+        "harbour_gantry_lod0": {
+          "triangles": 980,
+          "min": [
+            -38.0,
+            -8.0,
+            -16.0
+          ],
+          "max": [
+            74.0,
+            77.0,
+            16.0
+          ]
+        },
+        "harbour_gantry_lod1": {
+          "triangles": 832,
+          "min": [
+            -38.0,
+            -8.0,
+            -16.0
+          ],
+          "max": [
+            74.0,
+            77.0,
+            16.0
+          ]
+        }
+      }
+    },
+    "container_stack": {
+      "kind": "side",
+      "budget_triangles": [
+        300,
+        300
+      ],
+      "sector": "harbour",
+      "offset_m": 25.0,
+      "spacing_m": 30,
+      "place": "land side of the straight, pivot 25 m from the centre line (near face 20 m, clear of the gantry legs at 17.9 m), one per 30 m (5.7 m lanes), yaw alternately heading and heading + 180 deg so the stepped tops do not repeat",
+      "pivot": "container_stack",
+      "lamps": [
+        "amber"
+      ],
+      "lods": {
+        "container_stack_lod0": {
+          "triangles": 156,
+          "min": [
+            -4.98,
+            0.0,
+            -12.18
+          ],
+          "max": [
+            4.98,
+            10.4,
+            12.18
+          ]
+        },
+        "container_stack_lod1": {
+          "triangles": 156,
+          "min": [
+            -4.98,
+            0.0,
+            -12.18
+          ],
+          "max": [
+            4.98,
+            10.4,
+            12.18
+          ]
+        }
+      }
+    },
+    "cargo_ship": {
+      "kind": "side",
+      "budget_triangles": [
+        2000,
+        1200
+      ],
+      "sector": "harbour",
+      "offset_m": 40.0,
+      "place": "1: water side, centre line of the ship 40 m from the road's (under a gantry's boom), pivot at the waterline, yaw = heading or heading + 180 deg; 150 m long",
+      "pivot": "cargo_ship",
+      "lamps": [
+        "amber",
+        "neon_red",
+        "window"
+      ],
+      "lods": {
+        "cargo_ship_lod0": {
+          "triangles": 976,
+          "min": [
+            -13.0,
+            -3.0,
+            -80.04
+          ],
+          "max": [
+            13.0,
+            40.8,
+            75.68
+          ]
+        },
+        "cargo_ship_lod1": {
+          "triangles": 832,
+          "min": [
+            -13.0,
+            -3.0,
+            -80.04
+          ],
+          "max": [
+            13.0,
+            40.8,
+            75.68
+          ]
+        }
+      }
+    },
+    "oldtown_gate": {
+      "kind": "span",
+      "budget_triangles": [
+        1100,
+        700
+      ],
+      "sector": "oldtown",
+      "clear": [
+        14.0,
+        15.0
+      ],
+      "place": "1: the sector entry, just after the canal bridge, pivot on the centre line at road level, yaw = heading",
+      "pivot": "oldtown_gate",
+      "lamps": [
+        "amber",
+        "lantern",
+        "neon_red"
+      ],
+      "lods": {
+        "oldtown_gate_lod0": {
+          "triangles": 642,
+          "min": [
+            -21.0,
+            -0.2,
+            -2.6
+          ],
+          "max": [
+            21.0,
+            21.96,
+            2.6
+          ]
+        },
+        "oldtown_gate_lod1": {
+          "triangles": 518,
+          "min": [
+            -21.0,
+            -0.2,
+            -2.6
+          ],
+          "max": [
+            21.0,
+            21.96,
+            2.6
+          ]
+        }
+      }
+    },
+    "lantern_span": {
+      "kind": "span",
+      "budget_triangles": [
+        1100,
+        500
+      ],
+      "sector": "oldtown",
+      "clear": [
+        14.0,
+        14.0
+      ],
+      "spacing_m": 24,
+      "place": "through the S-bends, one per 24 m, pivot on the centre line at road level, yaw = heading at the pivot",
+      "pivot": "lantern_span",
+      "lamps": [
+        "lantern"
+      ],
+      "lods": {
+        "lantern_span_lod0": {
+          "triangles": 1024,
+          "min": [
+            -15.32,
+            0.0,
+            -0.42
+          ],
+          "max": [
+            15.32,
+            18.2,
+            0.42
+          ]
+        },
+        "lantern_span_lod1": {
+          "triangles": 392,
+          "min": [
+            -15.32,
+            0.0,
+            -0.32
+          ],
+          "max": [
+            15.32,
+            18.2,
+            0.32
+          ]
+        }
+      }
+    },
+    "clock_tower": {
+      "kind": "side",
+      "budget_triangles": [
+        1000,
+        700
+      ],
+      "sector": "oldtown",
+      "offset_m": 45.0,
+      "place": "1: inside of an S-bend, 45 m or more from the centre line, ground level; 50.5 m tall, it reads above the roofs",
+      "pivot": "clock_tower",
+      "lamps": [
+        "amber",
+        "lantern",
+        "window"
+      ],
+      "lods": {
+        "clock_tower_lod0": {
+          "triangles": 828,
+          "min": [
+            -4.6,
+            0.0,
+            -4.75
+          ],
+          "max": [
+            4.6,
+            50.5,
+            4.75
+          ]
+        },
+        "clock_tower_lod1": {
+          "triangles": 660,
+          "min": [
+            -4.6,
+            0.0,
+            -4.75
+          ],
+          "max": [
+            4.6,
+            50.5,
+            4.75
           ]
         }
       }

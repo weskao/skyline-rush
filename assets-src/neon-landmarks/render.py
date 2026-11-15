@@ -1,4 +1,6 @@
 """Preview renders of the Neon landmark kit in context, each next to the concept frame it was read from.
+The harbour and oldtown pieces have no concept frame: they render on wet ground beside car-sized boxes (one at
+road level, one at the top of the flight band) into audits/neon-new-landmarks/.
 
   blender --background --factory-startup --python assets-src/neon-landmarks/render.py -- [--lod1] [shot ...]
 
@@ -18,11 +20,13 @@ from mathutils import Matrix, Vector
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 OUT = ROOT / "docs/designs/3d-pipeline/audits/neon-landmarks"
+OUT_NEW = ROOT / "docs/designs/3d-pipeline/audits/neon-new-landmarks"
 FRAMES = ROOT / "docs/designs/3d-pipeline/concept-art/neon-downtown"
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 LOD = 1 if "--lod1" in ARGS else 0
 WIDTH, HEIGHT = 960, 540
 TIGHTEST = 118.0   # metres: the smallest radius on the Neon route, the worst case for every repeated joint
+CAR = (1.9, 4.4, 1.2)   # metres: width, length, height of a car; flying, its roof stops at 12 + 1.2 (FLIGHT_TOP)
 GLOW = 3.0         # preview brightness of the emissive atlas; the runtime sets its own (asset-brief.md)
 
 
@@ -33,6 +37,19 @@ def route(radius=None):
             return Vector((0, s, 0)), 0.0
         a = s / radius
         return Vector((radius * (1 - math.cos(a)), radius * math.sin(a), 0)), -a
+    return at
+
+
+def sbend(radius=90.0, length=120.0):
+    """Linked S-bends: the right-hand arc of route(radius) for `length` metres, then a left-hand arc."""
+    right = route(radius)
+    def at(s):
+        if s <= length:
+            return right(s)
+        p, h = right(length)
+        a = h + (s - length) / radius
+        centre = p - radius * Vector((math.cos(h), math.sin(h), 0))
+        return centre + radius * Vector((math.cos(a), math.sin(a), 0)), a
     return at
 
 
@@ -63,6 +80,22 @@ def ribbon(scene, material, at, s0, s1, half, top=0.0, depth=1.5):
     scene.collection.objects.link(obj)
     solid = obj.modifiers.new("depth", "SOLIDIFY")
     solid.thickness, solid.offset = depth, -1
+
+
+def block(scene, material, matrix, size):
+    """Stand-in box, size = (across, along, up), standing on the matrix origin: a car, a quay, a low building."""
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1, matrix=matrix @ Matrix.Translation((0, 0, size[2] / 2)) @ Matrix.Diagonal((*size, 1)))
+    mesh = bpy.data.meshes.new("standin")
+    bm.to_mesh(mesh)
+    bm.free()
+    mesh.materials.append(material)
+    scene.collection.objects.link(bpy.data.objects.new("standin", mesh))
+
+
+def cars(scene, mats, at, s):
+    block(scene, mats["car"], frame(at, s - 30, 4), CAR)
+    block(scene, mats["car"], frame(at, s - 4, -4, 12.0), CAR)
 
 
 def side_modules(scene, piece, at, s0, s1, radius=None, offset=13.2):
@@ -127,6 +160,40 @@ def footbridge(scene, mats):
     return at
 
 
+def harbour(scene, mats):
+    """Waterfront NITRO straight: the road on water, the quay and its containers on the left, the ship on the right."""
+    at = route()
+    ribbon(scene, mats["wet"], at, -250, 900, 12.7, depth=2.0)
+    ribbon(scene, mats["water"], at, -250, 900, 400, top=-4, depth=0.2)
+    block(scene, mats["wet"], frame(at, -250, -70, -4), (110, 2300, 4))   # quay, near edge 15 m left of the centre line
+    for k, s in enumerate(range(-150, 860, 30)):
+        place(scene, "container_stack", frame(at, s, -25, yaw=math.pi * (k % 2)))
+    for s in (0, 260, 520):
+        place(scene, "harbour_gantry", frame(at, s))
+    place(scene, "cargo_ship", frame(at, 260, 40))
+    cars(scene, mats, at, 0)
+    return at
+
+
+def oldtown(scene, mats):
+    """Linked S-bends between low buildings: the gate at the entry, a lantern span per 24 m, the tower inside bend 1."""
+    at = sbend()
+    ribbon(scene, mats["wet"], at, -150, 330, 12.7)
+    ribbon(scene, mats["wet"], at, -150, 330, 150, top=-0.05)
+    rng = np.random.default_rng(7)
+    for s in range(-120, 320, 16):
+        for side in (1, -1):
+            if side > 0 and 20 < s < 100:
+                continue   # the tower's square
+            block(scene, mats["plaster"], frame(at, s, side * 25), (12, 14, float(rng.uniform(8, 14))))
+    place(scene, "oldtown_gate", frame(at, -40))
+    for s in range(-10, 320, 24):
+        place(scene, "lantern_span", frame(at, s))
+    place(scene, "clock_tower", frame(at, 60, 50))
+    cars(scene, mats, at, -40)
+    return at
+
+
 # shot -> (scene builder, concept frame, views). A view = name, eye and target as (s, lateral, height), lens mm.
 # The first view of a shot is the one matched to the frame and goes on the comparison sheet.
 SHOTS = {
@@ -140,6 +207,13 @@ SHOTS = {
         ("road", (-24, -8, 2.0), (0, -30, 6.5), 24), ("near", (-20, -16, 1.7), (0, -30, 7), 28)]),
     "footbridge": (footbridge, "03-start-finish-boulevard.jpg", [
         ("grid", (-75, 0, 2.2), (0, 0, 9), 24), ("side", (-45, -45, 9), (0, 0, 11), 28)]),
+    "harbour": (harbour, None, [
+        ("approach", (-120, 3, 2.2), (100, 0, 12), 24), ("crane", (-35, -9, 3), (0, 0, 16), 20),
+        ("side", (-60, -130, 35), (260, 10, 8), 24), ("ship", (180, 95, 12), (260, 40, 10), 28),
+        ("stack", (-40, -2, 3), (-10, -20, 6), 24)]),
+    "oldtown": (oldtown, None, [
+        ("gate", (-110, 2, 2.2), (-40, 0, 10), 24), ("bends", (-90, -50, 40), (120, 0, 5), 22),
+        ("tower", (20, 5, 3), (60, 50, 25), 24), ("lanterns", (30, -3, 2), (90, 0, 9), 22)]),
 }
 
 
@@ -186,10 +260,12 @@ def main():
     tree.links.new(path.outputs["Is Diffuse Ray"], glow.inputs[1])
     tree.links.new(glow.outputs[0], next(n for n in tree.nodes if n.type == "BSDF_PRINCIPLED").inputs["Emission Strength"])
     mats = dict(road=flat("road", (0.02, 0.02, 0.025), 0.22), ground=flat("ground", (0.03, 0.03, 0.035), 0.5),
-                water=flat("water", (0.01, 0.015, 0.02), 0.04))
+                water=flat("water", (0.01, 0.015, 0.02), 0.04), wet=flat("wet", (0.015, 0.015, 0.02), 0.06),
+                car=flat("car", (0.5, 0.5, 0.52), 0.4), plaster=flat("plaster", (0.06, 0.05, 0.045), 0.7))
     for mesh in bpy.data.meshes:
         mesh.use_fake_user = True   # the pivots and LOD objects of the master are cleared below; the meshes stay
     OUT.mkdir(parents=True, exist_ok=True)
+    OUT_NEW.mkdir(parents=True, exist_ok=True)
     wanted = [a for a in ARGS if not a.startswith("--")] or list(SHOTS)
     suffix = "_lod1" if LOD else ""
     for shot in wanted:
@@ -208,9 +284,9 @@ def main():
             eye, target = frame(at, *eye).translation, frame(at, *target).translation
             camera.location, camera.data.lens = eye, lens
             camera.rotation_euler = (target - eye).to_track_quat("-Z", "Y").to_euler()
-            render.filepath = str(OUT / f"{shot}_{view}{suffix}.jpg")
+            render.filepath = str((OUT if reference else OUT_NEW) / f"{shot}_{view}{suffix}.jpg")
             bpy.ops.render.render(write_still=True, scene=scene.name)
-            if index == 0:
+            if index == 0 and reference:
                 sheet(FRAMES / reference, render.filepath, OUT / f"{shot}_vs_frame{suffix}.jpg")
             print("rendered", shot, view, flush=True)
 

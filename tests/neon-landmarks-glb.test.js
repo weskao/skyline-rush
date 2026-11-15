@@ -6,6 +6,8 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { Box3, Triangle, Vector3 } from 'three';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
+import { NEON_LANDMARKS_NOT_PLACED } from '../src/model-manifest-neon.ts';
+import { NEON_PIECES } from '../src/neon-scenery-plan.ts';
 import { CAR_HEIGHT, LANES, ROAD_LIMIT, TUNNEL_CEILING } from '../src/game.js';
 import { checkGlb, glbJson, parseGlb, summarize } from '../scripts/assets/check-glb.mjs';
 
@@ -14,6 +16,10 @@ const contract = JSON.parse(read('assets-src/neon-landmarks/contract.json'));
 const entry = MODEL_MANIFEST['neon-landmarks'];
 const pieces = Object.entries(contract.pieces);
 const spanning = pieces.filter(([, piece]) => piece.kind === 'span');
+// The two sectors of the 10 km lap (2026-11-15). Modelled here, placed by a later change.
+const NEW_SECTORS = { harbour: ['harbour_gantry', 'container_stack', 'cargo_ship'], oldtown: ['oldtown_gate', 'lantern_span', 'clock_tower'] };
+const NEW_PIECES = Object.values(NEW_SECTORS).flat();
+const NEW_NEAR_BUDGET = 9000; // all six near LODs; the nine of the 4000 m lap keep their own 12000
 
 // Road numbers measured in the code the pieces stand next to. A change there must re-open the clearances below.
 const roadRender = read('src/classic-road-render.ts').toString();
@@ -62,7 +68,8 @@ test('the manifest entry and the shipped GLB agree, inside the budgets', async (
 test('every piece is an unmoved pivot with one mesh per LOD on the one shared material', async () => {
   const { gltf, json } = await loaded;
   assert.equal(json.materials.length, 1, 'one material for the whole kit');
-  assert.equal(pieces.length, 9);
+  assert.equal(pieces.length, 15);
+  assert.deepEqual(NEW_PIECES.filter(name => !contract.pieces[name]), [], 'the harbour and oldtown pieces are in the kit');
   for (const [name, piece] of pieces) {
     const pivot = gltf.scene.getObjectByName(name);
     assert.ok(pivot && !pivot.isMesh, `${name}: pivot node`);
@@ -78,7 +85,7 @@ test('every piece is an unmoved pivot with one mesh per LOD on the one shared ma
 
 test('triangle budgets per piece and LOD, as measured by the build', async () => {
   const { gltf } = await loaded;
-  let near = 0;
+  let near = 0, nearNew = 0;
   for (const [name, piece] of pieces) {
     const [lod0, lod1] = Object.entries(piece.lods).map(([lod, measured], level) => {
       const count = triangles(gltf, lod).length;
@@ -87,9 +94,10 @@ test('triangle budgets per piece and LOD, as measured by the build', async () =>
       return count;
     });
     assert.ok(lod1 <= lod0, `${name}: the far LOD is never heavier`);
-    near += lod0;
+    if (NEW_PIECES.includes(name)) nearNew += lod0; else near += lod0;
   }
-  assert.ok(near <= 12000, `all nine near LODs: ${near} triangles`);
+  assert.ok(near <= 12000, `the nine near LODs of the 4000 m lap: ${near} triangles`);
+  assert.ok(nearNew <= NEW_NEAR_BUDGET, `the six harbour and oldtown near LODs: ${nearNew} triangles`);
 });
 
 test('three KTX2 atlases, colour maps sRGB and the data map linear, none over 2048 px', async () => {
@@ -108,7 +116,9 @@ test('three KTX2 atlases, colour maps sRGB and the data map linear, none over 20
 test('each spanning piece keeps its clear opening over the road on both LODs', async () => {
   const { gltf } = await loaded;
   const opening = { rail_portal: [TUNNEL_WALL_OUTER, TUNNEL_ROOF_TOP], rail_segment: [TUNNEL_WALL_OUTER, TUNNEL_ROOF_TOP],
-    canal_arch: [KERB_OUTER, FLIGHT_TOP], boulevard_footbridge: [KERB_OUTER, FLIGHT_TOP] };
+    canal_arch: [KERB_OUTER, FLIGHT_TOP], boulevard_footbridge: [KERB_OUTER, FLIGHT_TOP],
+    // no tunnel section under them, so a flying car may pass: they clear the flight top like the arch
+    harbour_gantry: [KERB_OUTER, FLIGHT_TOP], oldtown_gate: [KERB_OUTER, FLIGHT_TOP], lantern_span: [KERB_OUTER, FLIGHT_TOP] };
   for (const [name, piece] of spanning) for (const lod of Object.keys(piece.lods)) {
     const list = triangles(gltf, lod);
     if (name === 'expressway_pier') { // carries the deck from below: nothing above the deck soffit
@@ -120,7 +130,7 @@ test('each spanning piece keeps its clear opening over the road on both LODs', a
     const box = new Box3(new Vector3(-half + QUANTIZE, QUANTIZE, -1000), new Vector3(half - QUANTIZE, height - QUANTIZE, 1000));
     assert.equal(crossing(list, box), 0, `${lod}: geometry inside the ${2 * half} x ${height} m opening`);
   }
-  assert.deepEqual(spanning.map(([name]) => name).sort(), ['boulevard_footbridge', 'canal_arch', 'expressway_pier', 'rail_portal', 'rail_segment']);
+  assert.deepEqual(spanning.map(([name]) => name).sort(), ['boulevard_footbridge', 'canal_arch', 'expressway_pier', 'harbour_gantry', 'lantern_span', 'oldtown_gate', 'rail_portal', 'rail_segment']);
 });
 
 test('side modules stay outside the kerb above the road and tile at their repeat spacing', async () => {
@@ -136,5 +146,29 @@ test('side modules stay outside the kerb above the road and tile at their repeat
     }
     if (name === 'rail_segment') assert.ok(box.max.z - box.min.z >= piece.repeat_m + 1.2, 'segments overlap under the joint frame');
     if (name === 'plaza_sculpture') assert.ok(box.max.y >= 12 && box.max.y <= 18 && Math.abs(box.min.y) < QUANTIZE, `sculpture ${box.max.y} m tall on the ground`);
+  }
+});
+
+test('the harbour and oldtown pieces are in the kit but not yet placed: one list names them until a change places them', () => {
+  const placed = Object.keys(NEON_PIECES).filter(piece => NEON_PIECES[piece].kit === 'landmarks');
+  assert.deepEqual([...NEON_LANDMARKS_NOT_PLACED].sort(), [...NEW_PIECES].sort());
+  for (const piece of NEON_LANDMARKS_NOT_PLACED) assert.ok(!(piece in NEON_PIECES), `${piece} is placed now: remove it from NEON_LANDMARKS_NOT_PLACED`);
+  assert.deepEqual([...placed, ...NEON_LANDMARKS_NOT_PLACED].sort(), pieces.map(([name]) => name).sort(), 'every kit piece is placed or listed as not yet placed');
+  for (const [sector, names] of Object.entries(NEW_SECTORS)) for (const name of names) assert.equal(contract.pieces[name].sector, sector, name);
+});
+
+test('lamps come from the kit table at full value; the brightness is set in code; oldtown glows warm', () => {
+  const lamps = contract.lamps;
+  for (const [lamp, rgb] of Object.entries(lamps)) assert.equal(Math.max(...rgb), 1, `${lamp}: lamp colour at full value`);
+  const old = { rail_portal: ['amber'], rail_segment: ['amber'], expressway_pier: ['amber'], expressway_rail: ['cyan'], canal_arch: ['amber', 'cyan'],
+    canal_bridge_rail: ['cyan'], canal_bank: ['amber'], plaza_sculpture: ['violet'], boulevard_footbridge: ['pink'] };
+  for (const [name, piece] of pieces) {
+    assert.ok(piece.lamps.every(lamp => lamp in lamps), `${name}: ${piece.lamps}`);
+    if (old[name]) assert.deepEqual(piece.lamps, old[name], name);
+    else assert.ok(piece.lamps.length > 0, `${name}: lit at night`);
+  }
+  for (const name of NEW_SECTORS.oldtown) for (const lamp of contract.pieces[name].lamps) {
+    const [r, g, b] = lamps[lamp];
+    assert.ok(r > g && g > b, `${name}: ${lamp} is warm, against the violet and cyan of the rest of the lap`);
   }
 });
