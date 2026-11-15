@@ -1,0 +1,408 @@
+{
+  "glb": "public/models/neon-landmarks/neon-landmarks.glb",
+  "material": "neon_landmarks",
+  "axes": "Y up, metres, -Z = driving direction, +X = driver's right",
+  "pieces": {
+    "rail_portal": {
+      "kind": "span",
+      "budget_triangles": [
+        1400,
+        600
+      ],
+      "sector": "rail underpass",
+      "range_m": [
+        470,
+        690
+      ],
+      "clear": [
+        14.0,
+        5.6
+      ],
+      "place": "2: pivot 8 m inside each end of the tunnel section (478 and 682). Entry: yaw = road heading. Exit: heading + 180 deg.",
+      "pivot": "rail_portal",
+      "lods": {
+        "rail_portal_lod0": {
+          "triangles": 1016,
+          "min": [
+            -22.0,
+            -0.4,
+            -9.5
+          ],
+          "max": [
+            22.0,
+            10.68,
+            8.09
+          ]
+        },
+        "rail_portal_lod1": {
+          "triangles": 420,
+          "min": [
+            -22.0,
+            -0.4,
+            -9.5
+          ],
+          "max": [
+            22.0,
+            10.68,
+            8.09
+          ]
+        }
+      }
+    },
+    "rail_segment": {
+      "kind": "span",
+      "budget_triangles": [
+        300,
+        300
+      ],
+      "sector": "rail underpass",
+      "range_m": [
+        486,
+        674
+      ],
+      "clear": [
+        14.0,
+        5.6
+      ],
+      "repeat_m": 11.75,
+      "place": "16: pivots at 491.875 + 11.75 k, yaw = road heading at the pivot. Any step from 11.2 to 12 m closes.",
+      "pivot": "rail_segment",
+      "lods": {
+        "rail_segment_lod0": {
+          "triangles": 196,
+          "min": [
+            -14.9,
+            -0.4,
+            -7.5
+          ],
+          "max": [
+            14.9,
+            7.3,
+            6.0
+          ]
+        },
+        "rail_segment_lod1": {
+          "triangles": 196,
+          "min": [
+            -14.9,
+            -0.4,
+            -7.5
+          ],
+          "max": [
+            14.9,
+            7.3,
+            6.0
+          ]
+        }
+      }
+    },
+    "expressway_pier": {
+      "kind": "span",
+      "budget_triangles": [
+        250,
+        250
+      ],
+      "sector": "elevated expressway",
+      "range_m": [
+        1657,
+        2330
+      ],
+      "repeat_m": 36.0,
+      "place": "every 36 m, pivot on the centre line at road level; the pier hangs below it",
+      "pivot": "expressway_pier",
+      "lods": {
+        "expressway_pier_lod0": {
+          "triangles": 156,
+          "min": [
+            -13.4,
+            -16.0,
+            -1.55
+          ],
+          "max": [
+            13.4,
+            -1.5,
+            1.55
+          ]
+        },
+        "expressway_pier_lod1": {
+          "triangles": 156,
+          "min": [
+            -13.4,
+            -16.0,
+            -1.55
+          ],
+          "max": [
+            13.4,
+            -1.5,
+            1.55
+          ]
+        }
+      }
+    },
+    "expressway_rail": {
+      "kind": "side",
+      "budget_triangles": [
+        300,
+        250
+      ],
+      "sector": "elevated expressway",
+      "range_m": [
+        1657,
+        2330
+      ],
+      "repeat_m": 12.0,
+      "offset_m": 13.2,
+      "place": "both sides, 13.2 m from the centre line, one per 12 m of the rail's own line; right side yaw = heading, left side heading + 180 deg",
+      "pivot": "expressway_rail",
+      "lods": {
+        "expressway_rail_lod0": {
+          "triangles": 220,
+          "min": [
+            -0.75,
+            -1.6,
+            -6.0
+          ],
+          "max": [
+            0.45,
+            1.42,
+            6.0
+          ]
+        },
+        "expressway_rail_lod1": {
+          "triangles": 188,
+          "min": [
+            -0.75,
+            -1.6,
+            -6.0
+          ],
+          "max": [
+            0.45,
+            1.42,
+            6.0
+          ]
+        }
+      }
+    },
+    "canal_arch": {
+      "kind": "span",
+      "budget_triangles": [
+        4500,
+        3500
+      ],
+      "sector": "canal arch bridge",
+      "range_m": [
+        2330,
+        2986
+      ],
+      "clear": [
+        13.5,
+        14.0
+      ],
+      "place": "1: pivot at mid-span on the centre line, 2658 m; spans 2598 to 2718, blocks and deck to +/-66.5 m",
+      "pivot": "canal_arch",
+      "lods": {
+        "canal_arch_lod0": {
+          "triangles": 3768,
+          "min": [
+            -19.5,
+            -10.0,
+            -66.5
+          ],
+          "max": [
+            19.5,
+            36.1,
+            66.5
+          ]
+        },
+        "canal_arch_lod1": {
+          "triangles": 3000,
+          "min": [
+            -19.5,
+            -10.0,
+            -66.5
+          ],
+          "max": [
+            19.5,
+            36.1,
+            66.5
+          ]
+        }
+      }
+    },
+    "canal_bridge_rail": {
+      "kind": "side",
+      "budget_triangles": [
+        300,
+        200
+      ],
+      "sector": "canal arch bridge",
+      "range_m": [
+        2330,
+        2986
+      ],
+      "repeat_m": 12.0,
+      "offset_m": 13.2,
+      "place": "both sides, 13.2 m from the centre line, one per 12 m; right side yaw = heading, left side heading + 180 deg",
+      "pivot": "canal_bridge_rail",
+      "lods": {
+        "canal_bridge_rail_lod0": {
+          "triangles": 220,
+          "min": [
+            -0.75,
+            -1.3,
+            -6.0
+          ],
+          "max": [
+            0.43,
+            1.32,
+            6.0
+          ]
+        },
+        "canal_bridge_rail_lod1": {
+          "triangles": 132,
+          "min": [
+            -0.75,
+            -1.3,
+            -6.0
+          ],
+          "max": [
+            0.43,
+            1.32,
+            6.0
+          ]
+        }
+      }
+    },
+    "canal_bank": {
+      "kind": "side",
+      "budget_triangles": [
+        250,
+        150
+      ],
+      "sector": "canal arch bridge",
+      "range_m": [
+        2330,
+        2986
+      ],
+      "repeat_m": 12.0,
+      "place": "along each canal bank, one per 12 m, local +X toward the water, pivot at promenade level",
+      "pivot": "canal_bank",
+      "lods": {
+        "canal_bank_lod0": {
+          "triangles": 172,
+          "min": [
+            -3.5,
+            -8.0,
+            -6.0
+          ],
+          "max": [
+            3.0,
+            1.43,
+            6.0
+          ]
+        },
+        "canal_bank_lod1": {
+          "triangles": 100,
+          "min": [
+            -3.5,
+            -8.0,
+            -6.0
+          ],
+          "max": [
+            3.0,
+            1.43,
+            6.0
+          ]
+        }
+      }
+    },
+    "plaza_sculpture": {
+      "kind": "side",
+      "budget_triangles": [
+        900,
+        900
+      ],
+      "sector": "Violet Plaza",
+      "range_m": [
+        3200,
+        3607
+      ],
+      "place": "1: pivot at plaza ground level, 30 m or more left of the centre line near 3400 m",
+      "pivot": "plaza_sculpture",
+      "lods": {
+        "plaza_sculpture_lod0": {
+          "triangles": 720,
+          "min": [
+            -7.0,
+            0.0,
+            -7.0
+          ],
+          "max": [
+            7.0,
+            15.07,
+            7.0
+          ]
+        },
+        "plaza_sculpture_lod1": {
+          "triangles": 720,
+          "min": [
+            -7.0,
+            0.0,
+            -7.0
+          ],
+          "max": [
+            7.0,
+            15.07,
+            7.0
+          ]
+        }
+      }
+    },
+    "boulevard_footbridge": {
+      "kind": "span",
+      "budget_triangles": [
+        900,
+        450
+      ],
+      "sector": "start-finish boulevard",
+      "range_m": [
+        0,
+        443
+      ],
+      "clear": [
+        14.0,
+        14.0
+      ],
+      "place": "2: pivot on the centre line, about 150 m and 330 m (the second also covers the 3886 to 4000 approach)",
+      "pivot": "boulevard_footbridge",
+      "lods": {
+        "boulevard_footbridge_lod0": {
+          "triangles": 720,
+          "min": [
+            -22.0,
+            -0.2,
+            -2.84
+          ],
+          "max": [
+            22.0,
+            17.38,
+            2.84
+          ]
+        },
+        "boulevard_footbridge_lod1": {
+          "triangles": 320,
+          "min": [
+            -22.0,
+            -0.2,
+            -2.84
+          ],
+          "max": [
+            22.0,
+            17.38,
+            2.84
+          ]
+        }
+      }
+    }
+  }
+}

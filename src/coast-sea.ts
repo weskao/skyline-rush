@@ -12,7 +12,7 @@ import { coastSunDirection } from './coast-sky.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
 /** Sun glitter as a factor on the preset's key light: the overcast skies have almost no sun to mirror. */
-const GLITTER: Readonly<Record<CoastEnvName, number>> = { day: 1, dusk: 1, rain: .3, fog: .08 };
+const GLITTER: Readonly<Record<CoastEnvName, number>> = { day: 1, dusk: 1, rain: .3, fog: .08, night: 0, nightRain: 0 }; // no sun at night: the water mirrors the sky only
 export const SHORE_MASK_METRES = 1280; // the High chunk window (960 m) plus the arch offsets
 const MASK = 512, TEXEL = SHORE_MASK_METRES / MASK, FOAM_REACH = 6;
 
