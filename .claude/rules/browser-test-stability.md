@@ -74,6 +74,10 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
 - **An absence check names the feature's own files.** A shared decoder (`basis/basis_transcoder.*`,
   meshopt) belongs to whichever system loads it first; "no Coast KTX2" is `.ktx2` files, not the transcoder
   (`tests/coast-scenery-browser.spec.js`).
+- **A control's name is unique only inside its landmark.** Home's race setup and the VFX panel both have a
+  "Showcase camera" combobox (`498d84d0`), so a page-wide `getByRole('combobox', { name })` hit strict mode in
+  `browser.spec.js` and `custom-controls-browser.spec.js` (2026-11-16). Scope role locators to the landmark
+  that owns the control (`getByRole('complementary', { name: 'Airflow and visual effects' })`).
 - A merge that changes a shared HUD, road or asset rule runs the browser specs that assert it before it lands
   (`git grep` the selector or asset name in `tests/*browser.spec.js`); do not rely on develop's CI to finish.
 
