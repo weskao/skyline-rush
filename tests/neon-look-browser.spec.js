@@ -201,9 +201,15 @@ test('Neon High with its kits stays under the draw-call cap on the home showcase
 // lap (src/neon-scenery-plan.ts SECTORS); a teleport leaves the rivals behind, so the grid is not optional.
 // 10 km lap (2026-11-15): eight sectors. The harbour is probed where its placed pieces crowd the view: the yard's
 // first stacks with the three gantries ahead, a gantry overhead, the ship under the last boom, the corner behind it.
-const SECTOR_PROBES = { grid: null, boulevard: 200, underpass: 800, market: 1500, expressway: 3500, 'harbour yard': 4400, 'harbour gantry': 4960, 'harbour ship': 5480, 'harbour corner': 5750, canal: 6450, oldtown: 7600, plaza: 9350 };
+// Oldtown dressing: the varied underpass straight, the gate from its approach, the lantern spans in the first S-bend,
+// the square with the clock tower (7600), the shop rows at the exit and the sculpture court (9350).
+const SECTOR_PROBES = {
+  grid: null, boulevard: 200, underpass: 800, 'underpass straight': 1050, market: 1500, expressway: 3500,
+  'harbour yard': 4400, 'harbour gantry': 4960, 'harbour ship': 5480, 'harbour corner': 5750, canal: 6450,
+  'oldtown gate': 7030, 'oldtown lanterns': 7400, oldtown: 7600, 'oldtown exit': 8200, plaza: 9350,
+};
 test('Neon High stays under the draw-call cap in every sector of a race', async ({ gameplayPage: page }) => {
-  test.setTimeout(ciTimeout(120000));
+  test.setTimeout(ciTimeout(200000)); // 16 probes: the 10-probe budget (120 s) scaled with the probe count
   await neon(page, 'high');
   await expect.poll(() => kits(page), { timeout: ciTimeout(60000) }).toBe('attached attached');
   await page.locator('#start-button').click();
