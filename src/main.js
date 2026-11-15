@@ -5,7 +5,7 @@ import { setupCloudUI } from './cloud-ui.ts';
 import { setupGuideUI } from './guide-ui.ts';
 import { setupAudioUI } from './audio-ui.ts';
 import { setupControlPanels } from './controls-panels-ui.ts';
-import { setupTutorialUI } from './tutorial-ui.ts';
+import { setupTutorialUI, updateTutorialActions } from './tutorial-ui.ts';
 import { updateCoachView } from './tutorial-coach-state.ts';
 import { createApp } from 'vue';
 import App from './App.vue';
@@ -260,7 +260,7 @@ const { showGarage, adoptCar, syncSkins, previewPaint } = setupGarageUI({
   getStars: () => starTotal(progress.stars), availablePaints, subscribeAccount: cloud.subscribeAccount, cue: sound.cue,
 });
 function chooseTrack() {
-  if (tutorial) { endTutorial(); return; }
+  if (tutorial) { endTutorial(false); return; }
   controls.clear(); sprintSeries = null; cup = null; stunt = null; daily = null; goUntil = 0; raceSelect.restoreLastTrack();
   hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
@@ -280,7 +280,7 @@ const { showSwipeHint, cancelSwipe } = setupTrackSwipeUI({
   isEditingLayout: () => touchUI.isEditing(),
   touchMatches: () => touchPreference.matches,
 });
-setupRaceNavigation({ phase: () => race.phase, pause, clearControls: () => controls.clear(), chooseTrack });
+setupRaceNavigation({ phase: () => race.phase, pause, clearControls: () => controls.clear(), chooseTrack, isPracticing: () => !!tutorial });
 
 const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
 
@@ -290,8 +290,7 @@ function start() {
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
-  // First Start presents the live practice; Skip / completion returns to this selected race.
-  if (!hasSeenGuide()) { raceAfterTutorial = true; beginTutorial(); sound.cue('ui'); return; }
+  if (offerFirstStart()) return;
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
   cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? cupRecovery.start(race.trackId,cupCount()) : null;
@@ -610,15 +609,14 @@ $('#world').addEventListener('webglcontextrestored', () => {
   contextLost = false;
   $('#error-message').hidden = true;
 });
-function beginTutorial() {
+function beginTutorial(firstStart = raceAfterTutorial) {
   if (!world || contextLost || (!tutorial && !['ready', 'paused'].includes(race.phase))) return;
+  raceAfterTutorial = firstStart;
   if (!tutorial) tutorialReturn = { race, pausedPhase, goUntil, hud: hud.memory() };
   closeGuide(); // marks this player as having seen the guide, even for first-start practice
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear(); clearButtonPresses(); toggleControls(false); toggleSettings(false);
-  $('#tutorial-exit').dataset.i18n = raceAfterTutorial ? 'tutorial.skip' : 'tutorial.exit';
-  $('#tutorial-done').dataset.i18n = raceAfterTutorial ? 'start.race' : 'tutorial.done';
-  applyI18n($('#tutorial-coach'));
+  updateTutorialActions(raceAfterTutorial);
   tutorial = createInteractiveTutorial(); race = tutorial.race;
   race.phase = 'countdown'; // the same 3-2-1 → GO as a race, so equipped Launch Flare charges and bursts here too
   touchUI.applyControls(false);
@@ -630,7 +628,7 @@ function beginTutorial() {
   showTracks(); phaseUI(); previousPhase = race.phase;
   renderTutorial(true); focusRace();
 }
-function endTutorial() {
+function endTutorial(continueToRace) {
   if (!tutorial) return;
   ({ race, pausedPhase, goUntil } = tutorialReturn); hud.restoreMemory(tutorialReturn.hud);
   tutorial = null; tutorialReturn = null; resetTutorialView();
@@ -638,11 +636,12 @@ function endTutorial() {
   delete document.body.dataset.tutorial; delete document.body.dataset.tutorialReward;
   touchUI.applyControls(false);
   updateCoachView({ visible: false });
-  for (const target of document.querySelectorAll('.tutorial-target')) target.classList.remove('tutorial-target');
   hud.forgetFlightMode();
   showTracks(); phaseUI(); previousPhase = race.phase; showAssist();
   (race.phase === 'paused' ? ui['resume-button'] : ui['start-button']).focus({ preventScroll: true });
-  if (raceAfterTutorial) { raceAfterTutorial = false; start(); }
+  const shouldRace = raceAfterTutorial && continueToRace;
+  raceAfterTutorial = false;
+  if (shouldRace) start();
 }
 const { renderTutorial, resetTutorialView } = setupTutorialUI({
   getTutorial: () => tutorial,
@@ -652,15 +651,15 @@ const { renderTutorial, resetTutorialView } = setupTutorialUI({
   getControlPrefs: () => touchUI.prefs(),
   showKeyMap: () => keymap.showKeyMap(), getKeyMap: () => keymap.getKeyMap(), cue: name => sound.cue(name),
 });
-for (const id of ['guide-practice', 'tutorial-open', 'tutorial-retry']) $(`#${id}`).addEventListener('click', beginTutorial);
-for (const id of ['tutorial-exit', 'tutorial-done']) $(`#${id}`).addEventListener('click', endTutorial);
-window.addEventListener('resize', () => { if (tutorial) renderTutorial(true); });
-const { closeGuide, hasSeenGuide } = setupGuideUI({
+const { closeGuide, offerFirstStart } = setupGuideUI({
   beforeOpen: () => {
     if (touchUI.isEditing()) touchUI.editLayout(false);
     controls.clear(); toggleControls(false); toggleSettings(false);
     notice.hide();
   },
+  getSteeringMode: () => touchUI.inputPrefs().mode,
+  onPractice: beginTutorial,
+  onRace: start, onPracticeExit: () => endTutorial(true),
   touchMatches: () => touchPreference.matches,
   renderKeyMap: () => keymap.showKeyMap(),
   isTutorialActive: () => !!tutorial,

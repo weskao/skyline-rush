@@ -5,6 +5,8 @@ export interface GarageView {
   equipLabel: string;
 }
 export interface GuideView {
+  firstStart: boolean;
+  steerMode: 'slide' | 'buttons' | 'tilt';
   selectedDevice: 'desktop' | 'mobile' | 'items';
   practiceKey: string;
   practiceText: string;
