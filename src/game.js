@@ -1,7 +1,7 @@
 import { classicCornerPush } from './classic-road-routes.ts';
 import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
 import { earnsAirChain } from './air-chain.ts';
-import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
+import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX } from './ring-layout.ts';
 export { RING_RADIUS, RISK_RING_RADIUS, ITEMS_PER_CAR, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
 import { attachCourse, stepCoursePlayer, stepCourseCars, carGap, progressGap, courseFinished, courseGapWarning, recycleCourseTraffic } from './course-race-step.ts'; import { finishRace } from './race-finish.js';
@@ -64,7 +64,7 @@ export const shortcutPylons = section => Array.from({ length: Math.ceil((section
 }));
 const PYLON_HALF_WIDTH = 1.2; // m
 
-export const MAGNET_RANGE = 12; // m
+import { takePickups } from './pickup-take.ts'; export { MAGNET_RANGE } from './pickup-take.ts';
 export const FREEZE_RIVAL_SPEED = 0.5; // rival speed multiplier while frozen
 
 import { SLIPSTREAM_CAP_BONUS, SLIPSTREAM_NITRO, SLIPSTREAM_MIN_GAP, SLIPSTREAM_MAX_GAP,
@@ -490,19 +490,7 @@ export function stepRace(race, input, dt) {
       car.nearMiss = { time: race.elapsed, combo: car.combo, charge };
     }
   }
-  for (const pickup of race.pickups) { // sorted by distance
-    if (pickup.distance > car.distance + MAGNET_RANGE) break;
-    if (pickup.taken || pickup.downUntil > race.elapsed) continue; // gone: another car took it (respawns)
-    const crossed = pickup.distance <= car.distance && pickup.distance > previousDistance &&
-      Math.abs(pickup.x - car.x) < 1.7 && Math.abs(pickup.altitude - car.altitude) < 1.8;
-    const pulled = car.effects.magnet > 0 &&
-      Math.hypot(pickup.distance - car.distance, pickup.x - car.x, pickup.altitude - car.altitude) < MAGNET_RANGE;
-    if (crossed || pulled) {
-      pickup.taken = true; pickup.downUntil = race.elapsed + ITEM_RESPAWN;
-      if (pickup.tier === 'overcharge') addNitro(car, NITRO_MAX - car.nitro, 0);
-      else addNitro(car, NITRO_PICKUPS[pickup.tier]);
-    }
-  }
+  takePickups(race, car, previousDistance, addNitro);
   let rowTaken = NaN; const fell = car.fall?.time === race.elapsed; // a respawn jump skips the rings it covers; a ring row pays once per car
   for (const ring of race.rings) { // sorted by distance
     if (ring.distance > car.distance) break;
