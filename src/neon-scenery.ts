@@ -115,7 +115,7 @@ export function createNeonScenery(scene: THREE.Object3D) {
       if (Math.abs(placement.offset) > FAR_OFFSET && route.offset(x, z, CLEAR) < CLEAR) return false;
       p.set(x, placement.y, z);
       q.setFromAxisAngle(up, placement.yaw - route.heading(distance));
-      s.setScalar(1);
+      s.setScalar(placement.scale ?? 1);
     }
     transform.compose(p, q, s);
     return true;
