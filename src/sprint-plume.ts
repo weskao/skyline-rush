@@ -11,6 +11,13 @@ export interface PlumeFrame { time: number; power: number; nitroMix: number; rea
 
 /** The flame in metres behind the nozzle. Fixed: as fat and as bright on Low + Realistic as on High + Extreme, whatever the tail length. */
 export const PLUME = { nozzle: 0.065, fat: 0.3, half: 0.12, flare: 0.45, glowWidth: 2.4, glowLength: 7 } as const;
+/** Showrooms (Garage/Home, Preview Studio): the plume loops with the 2.2 s ignition demo between `idle` and the length
+ *  Preview Studio's `speed` driver gets; `idlePower` is the old showroom floor. */
+export const SHOWROOM = { speed: 105, idle: 0.25, idlePower: 0.32 } as const;
+/** 0 idle to 1 full over one demo loop, `clock` s since the ignition: up in 0.35 s, held, back to idle by the next one. */
+export function showroomPulse(clock: number): number {
+  return THREE.MathUtils.smoothstep(clock, 0, 0.35) * (1 - THREE.MathUtils.smoothstep(clock, 1.5, 2.2));
+}
 /** Radius of a jet's glow `metres` behind its nozzle. */
 export function plumeRadius(metres: number): number { return PLUME.nozzle + (PLUME.fat - PLUME.nozzle) * metres / (metres + PLUME.half); }
 

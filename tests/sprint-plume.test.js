@@ -9,6 +9,7 @@ import { MAX_SPEED, NITRO_CAP_BONUS } from '../src/drive-rules.ts';
 import { VFX_RANGES, vfxSettings, sprintFovOffset } from '../src/vfx-settings.ts';
 import { RACE_CAMERA, rigBack, rigLook, rigHeight, rigFov } from '../src/race-camera.ts';
 import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
+import { plumeLook } from '../src/board-effects.ts';
 
 const { createSprintPlume, PLUME, plumeRadius } = plumeModule;
 const JET_UNIFORMS = ['time', 'power', 'brightness', 'diamonds', 'extreme', 'nitroMix', 'tail', 'skinTint', 'skinPattern', 'trailAccent'];
@@ -236,4 +237,37 @@ test('createAeroVFX tells the plume about the tier, the road and Reduced Motion'
   // Low + Realistic, the 2-core phone: flare size and fade are the ones High + Extreme gets.
   const phone = heldNitro({ quality: 'low', preset: 'realistic' }).flare.material.uniforms, desk = heldNitro({ quality: 'high', preset: 'extreme' }).flare.material.uniforms;
   assert.deepEqual([phone.size.value, phone.fade.value], [desk.size.value, desk.fade.value]);
+});
+
+// User, 2026-11-16: the Garage/Home showroom plume stood at about 0.8 m, 17% of a race NITRO, so the exhaust length
+// slider showed almost nothing there. Showrooms now loop it with the 2.2 s ignition demo: short idle, up to the
+// length Preview Studio's 105 m/s driver gets, back to idle.
+function showroom(phase, calm = false) {
+  const scene = new Scene(), vehicle = new Group();
+  vehicle.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  scene.add(vehicle);
+  const vfx = createAeroVFX(scene, vehicle), race = createRace(), options = vfxSettings({ airflow: true }), origin = new Vector3();
+  race.phase = phase; // 'ready': Garage/Home (world.js); 'racing' + boosting at 105 m/s: Preview Studio (garage-stage.ts)
+  if (phase === 'racing') Object.assign(race.player, { speed: 105, boosting: true });
+  const jet = jetsOf(scene.getObjectByName('Rear ports'))[0], reach = [], power = [];
+  for (let i = 0; i < 90; i++) {
+    vfx.update(race, 0.05, origin, options, calm, null, true);
+    reach.push(jet.visible ? jet.scale.z : 0); power.push(jet.material.uniforms.power.value);
+  }
+  const full = options.exhaustLength * (0.65 + 105 / 200) * plumeLook(options.quality).stretch;
+  return { reach: reach.slice(-44), power: power.slice(-44), full }; // the last 2.2 s: one loop
+}
+
+test('showroom plume: loops from a short idle to the race length with the ignition demo', () => {
+  for (const phase of ['ready', 'racing']) {
+    const { reach, power, full } = showroom(phase), top = Math.max(...reach), low = Math.min(...reach);
+    assert.ok(top >= 0.95 * full, `${phase}: reaches ${top.toFixed(2)} m of the race ${full.toFixed(2)} m`);
+    assert.ok(low > 0 && low <= 0.35 * full, `${phase}: idles at ${low.toFixed(2)} m, still lit`);
+    assert.ok(Math.max(...power) > 0.9 && Math.min(...power) < 0.6, `${phase}: brightness follows the length`);
+  }
+});
+
+test('showroom plume holds still under Reduced Motion: Preview Studio keeps the full length', () => {
+  const { reach, full } = showroom('racing', true);
+  assert.ok(reach.every(value => Math.abs(value - full) < 1e-6), 'no pulse, the race length');
 });

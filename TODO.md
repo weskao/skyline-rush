@@ -116,6 +116,8 @@
 - [x] Prevention: `.claude/rules/sprint-plume.md` *Solid core bar*; every plume part must blend additively.
 - [ ] Browser specs (`sprint-plume-veil`, `sprint-camera-capture` area/contrast floors) and Garage/Home frames on both cars and phone orientations: not run (owner's request). The core was part of the daylight-contrast floor; re-capture before merging.
 - [ ] Not run: physical phone, exact-HEAD GitHub `quality-gate`.
+- [x] Showroom pulse (owner's pick over a fixed race length or a hold-to-preview button): Garage/Home plume was 0.83 m vs Preview Studio's 4.70 m (default settings). `tests/sprint-plume.test.js` *showroom plume: loops…* RED on `e4329420` (0.83 m), GREEN after: every showroom loops from idle to ≥ 95% of the race length with the 2.2 s ignition demo; Reduced Motion holds Studio at full length.
+- [ ] Showroom pulse in real Garage/Studio frames, both cars, both phone orientations: delegated recording, not yet reviewed.
 
 ## Final tutorial NITRO cue (2026-11-15)
 

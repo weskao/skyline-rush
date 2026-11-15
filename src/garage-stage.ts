@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CAR_STYLES, makeCar, poseWing } from './car-model.js';
 import { createAeroVFX } from './aero-vfx.js';
+import { SHOWROOM } from './sprint-plume.ts';
 import { vfxSettings } from './vfx-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
@@ -59,7 +60,7 @@ export function createGarageStage(environment: THREE.Texture, carEnvironment: TH
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
   const towardsCamera = new THREE.Vector3();
-  const previewDriver = { speed: 105, boosting: true, nitroTime: 1, miniBoost: 0,
+  const previewDriver = { speed: SHOWROOM.speed, boosting: true, nitroTime: 1, miniBoost: 0,
     impact: null, altitude: 0, trick: null };
   const previewRace = { phase: 'racing', player: previewDriver };
   let previewSettings: VfxSettings = vfxSettings({ airflow: true });

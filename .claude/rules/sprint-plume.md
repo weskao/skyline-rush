@@ -61,6 +61,12 @@ instanced nozzle flare, plus one road glow. Every part blends additively: the ex
 
 - **Trail-skin cross-fade.** While a trail skin's streaks show, the jets' thickness and the road glow
   fade with `nitroMix` (no hard swap) so nothing stacks to white; BOOST and calm modes keep the base plume.
+- **Showroom pulse (2026-11-16).** Garage/Home ran the plume at a 0.32 strength floor and speed 0: about 0.8 m,
+  17% of a race NITRO, so the exhaust length slider showed nearly nothing there. Every showroom (`studioDemo`:
+  Garage/Home, Preview Studio, showcase) now loops the jets with the 2.2 s ignition demo (`showroomPulse`,
+  `SHOWROOM`): from `idle` (a quarter) up to the length the Studio's `SHOWROOM.speed` driver gets, and back; brightness
+  follows from `idlePower` to 1. Reduced Motion / Comfortable: no pulse (Studio holds the full length). Races never
+  pulse. Guards: `tests/sprint-plume.test.js` (*showroom plume* x2).
 - **x3 chain.** `frame.power` reaches 1.4; flare size and the jets' `power` clamp at 1 (the veil spec
   runs at chain 1 only, so an unclamped jet would add ~18% light past its guard).
 - **Lean.** The road glow lies on the road plane through the car's contact-shadow plane (`ground`) while the car
