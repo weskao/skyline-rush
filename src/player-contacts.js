@@ -130,8 +130,14 @@ function resolveVehicles(race, previousDistance, previousX, retention, exit) {
       if (previousGap >= front) follow(race, other, gap, front + FOLLOW_CLEARANCE, retention);
       continue;
     }
+    const lateralGap = Math.abs(car.x - other.x);
     const side = Math.sign(car.x - other.x) || -1;
     const intensity = clamp(Math.abs(car.speed - other.speed) / 70, 0.25, 1);
+    // The outer hull can brush even where the original collision core was clear.
+    // Blend the penalty by penetration so touching a fender feels like a scrape.
+    const core = 1.7;
+    const severity = clamp((width - lateralGap) / (width - core), 0, 1);
+    const impactRetention = 1 - (1 - retention) * severity * severity;
     const fresh = car.cooldown === 0 && !contacts?.has(other);
     let positions = separation(race, car, body, other, size, side, intensity, fresh, opponents, exit) ??
       (Math.abs(car.x - other.x) < 0.5 ? separation(race, car, body, other, size, -side, intensity, fresh, opponents, exit) : null);
@@ -158,7 +164,7 @@ function resolveVehicles(race, previousDistance, previousX, retention, exit) {
       positions = { x: car.x, ox: other.x };
     }
     const movesSideways = !blockedSteer && (positions.x !== car.x || positions.ox !== other.x);
-    if (fresh && contact(race, 'vehicle', other.x, intensity, retention, movesSideways) && movesSideways && !(other.cooldown > 0)) {
+    if (fresh && contact(race, 'vehicle', other.x, intensity, impactRetention, movesSideways) && movesSideways && !(other.cooldown > 0)) {
       knock(race, other, -side, intensity, aiRetention(other));
     }
     if (!contacts) vehicleContacts.set(car, contacts = new Set());

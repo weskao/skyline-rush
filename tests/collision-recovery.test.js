@@ -390,3 +390,15 @@ test('a trailing car cannot drive into the player while a packed leader is braki
     assert.ok(!bodyOverlap(player, rear, 3), `frame ${frame}: the trailing car clips the boxed-in player`);
   }
 });
+
+test('shallow hull contact makes room without the full speed penalty of a direct hit', () => {
+  const race = raceAt(0);
+  const { player } = race;
+  const commuter = traffic(2.10, 300.1, 40);
+  commuter.laneShift = 0;
+  race.traffic = [commuter];
+  player.speed = 40;
+  tick(race);
+  assert.ok(!bodyOverlap(player, commuter, 0));
+  assert.ok(player.speed > 35, 'a glancing rub should keep at least seven eighths of the speed');
+});

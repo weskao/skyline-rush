@@ -2,6 +2,7 @@
 
 - [x] Coast, about 300 m: the Roadster could visually intersect a flanking traffic car during contact protection. The old 1.7 m lateral test ignored the rendered hull and tire clearance. Use measured neutral envelopes for player contacts with traffic and rivals, including separate front and rear extents. Use the same clearance when traffic steers around the player or when Ghost Phase ends.
 - [x] Regression coverage: measured procedural models and fitted player GLBs in both LODs, a short hatch versus a commuter, braking five-car packs at 30/60/120 Hz with and without lane assist, rear pressure, solid separation by a rail and Ghost Phase exit/re-entry.
+- [x] Shallow flank contact keeps a lighter penalty while separating the full visible bodies. This restored the existing 24-layout Frostbite pace checks without changing rival tuning.
 - [x] Circuit finishers remain in the standings and leave the active race scene and collision roster. The direct finish-line regression and the existing five-lap and eighth-place tests pass.
 - [ ] Exact-head GitHub quality gate and physical-device driving checks.
 
