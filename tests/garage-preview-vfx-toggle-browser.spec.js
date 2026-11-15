@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 
 for (const { viewport, touch, reducedMotion } of [
   { viewport: { width: 1440, height: 900 }, touch: false, reducedMotion: 'no-preference' },
@@ -14,7 +14,7 @@ for (const { viewport, touch, reducedMotion } of [
         localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: true }));
       });
       await page.goto('/');
-      await page.locator('#garage-button').click();
+      await openGarage(page);
       const screen = page.locator('#garage-screen');
       const preview = page.locator('#garage-preview');
       const toggle = screen.getByRole('button', { name: 'Show equipment effects' });

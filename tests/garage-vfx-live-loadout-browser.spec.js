@@ -1,11 +1,11 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
   test('Garage shows four live 3x VFX artwork slots at ' + viewport.width + 'x' + viewport.height, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     await page.locator('#garage-studio-open').click();
     const loadout = page.locator('#garage-vfx-live-loadout');
     await loadout.scrollIntoViewIfNeeded();

@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, settled } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -65,6 +65,7 @@ test.describe('touch controls', () => {
     await touch('touchEnd');
     await expect.poll(() => bank(page)).toBeGreaterThan(-0.1);
     await page.locator('#pause-button').click();
+    await settled(page.locator('.overlay-content'));
     await expect(page.locator('#race-status')).toHaveText('PAUSED');
     await page.locator('#controls-button').click();
     await page.locator('[data-controls="mode"][value="buttons"]').check();
@@ -106,6 +107,7 @@ test.describe('touch controls', () => {
     await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuemax', '3');
     await expect(page.locator('.nitro-segment')).toHaveCount(3);
     await page.locator('#pause-button').click();
+    await settled(page.locator('.overlay-content'));
     await page.locator('#controls-button').click();
     await page.locator('[data-controls="hand"][value="left"]').check();
     await page.locator('#layout-edit').click();
@@ -120,6 +122,7 @@ test.describe('touch controls', () => {
     await open(page);
     await start(page);
     await page.locator('#pause-button').click();
+    await settled(page.locator('.overlay-content'));
     await page.locator('#controls-button').click();
     await page.locator('#layout-edit').click();
     const session = await context.newCDPSession(page);

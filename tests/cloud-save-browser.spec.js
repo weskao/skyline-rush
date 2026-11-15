@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, settled } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 test('History exposes cloud recovery and sign-in on a narrow phone', async ({ page }) => {
@@ -26,6 +26,7 @@ test('Cloud save buttons share one height and centre line on a desktop row', asy
   await page.goto('/');
   await page.locator('#intro [data-open-history=""]').click();
   await page.locator('#history-tab-cloud').click();
+  await settled(page.locator('#history-screen'));
   const dialog = page.locator('#history-screen');
   const boxes = await dialog.locator('#cloud-title ~ button:visible').evaluateAll(els => els.map(el => el.getBoundingClientRect().toJSON()));
   expect(boxes.length).toBeGreaterThan(1);

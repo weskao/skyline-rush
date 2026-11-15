@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { chooseGarageAngle } from './helpers/garage-angle.js';
 
@@ -28,7 +28,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
   test(`scenario 1 — Full-screen entry stays within safe viewport ${viewport.width}×${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'home');
     // The BEFORE capture is the actual legacy Garage Home WebGL, never a generated mockup.
     const before = await page.locator('#garage-preview #world').screenshot();
@@ -192,7 +192,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     const name = page.locator('#garage-angle-name');
     for (const locale of ['en', 'zh-TW']) {
       if (locale !== 'en') await selectLocale(page, locale); // the locale picker sits behind the Garage dialog
-      await page.locator('#garage-button').click();
+      await openGarage(page);
       await page.locator('#garage-studio-open').click();
       await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'studio');
       await expect(name).toBeVisible();

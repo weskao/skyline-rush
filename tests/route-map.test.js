@@ -38,7 +38,8 @@ test('markers interpolate the same path and clamp invalid progress', () => {
     assert.deepEqual(routeMarker(id, -50), routeMarker(id, 0));
     assert.deepEqual(routeMarker(id, Infinity), routeMarker(id, 0));
     assert.deepEqual(routeMarker(id, RACE_TRACKS[id].length + 10), routeMarker(id, RACE_TRACKS[id].length));
-    assert.notDeepEqual(routeMarker(id, 0), routeMarker(id, RACE_TRACKS[id].length));
+    // Neon is a closed lap (layout 7): its finish line is its start line.
+    (id === 'neon' ? assert.deepEqual : assert.notDeepEqual)(routeMarker(id, 0), routeMarker(id, RACE_TRACKS[id].length), id);
   }
 });
 
@@ -221,15 +222,30 @@ test('every Coming Soon race map has a stroke colour so the course is visible', 
 test('a streamed classic minimap follows the actual bends after the original finish', async () => {
   const { createRouteMap } = await import('../src/route-map.ts');
   await withFakeDom(() => {
-    const { element, updateDrivers } = createRouteMap('neon', { live: true, streaming: true });
+    const { element, updateDrivers } = createRouteMap('coast', { live: true, streaming: true });
     const line = element.find('route-overview-line')[0];
     updateDrivers([{ id: 'YOU', distance: 205 }]);
     const first = line.attrs.points, marker = element.find('route-player-pointer')[0].attrs.transform;
-    updateDrivers([{ id: 'YOU', distance: 4205 }]);
+    updateDrivers([{ id: 'YOU', distance: RACE_TRACKS.coast.length + 205 }]);
     assert.notEqual(line.attrs.points, first, 'the mirrored next stretch has the opposite bends');
     assert.notEqual(element.find('route-player-pointer')[0].attrs.transform, marker);
     assert.equal(element.find('route-finish').length, 0);
     assert.ok(line.attrs.points.split(' ').length >= 20);
+  });
+});
+
+test('a streamed Neon minimap draws the same lap again after the finish line', async () => {
+  const { createRouteMap } = await import('../src/route-map.ts');
+  await withFakeDom(() => {
+    const { element, updateDrivers } = createRouteMap('neon', { live: true, streaming: true });
+    const line = element.find('route-overview-line')[0];
+    updateDrivers([{ id: 'YOU', distance: 605 }]);
+    const first = line.attrs.points;
+    updateDrivers([{ id: 'YOU', distance: 1905 }]);
+    assert.notEqual(line.attrs.points, first, 'the window follows the car round the lap');
+    updateDrivers([{ id: 'YOU', distance: RACE_TRACKS.neon.length + 605 }]);
+    assert.equal(line.attrs.points, first, 'the second lap is the first lap');
+    assert.equal(element.find('route-finish').length, 0);
   });
 });
 

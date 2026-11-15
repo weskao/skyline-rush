@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { settled } from './helpers/test.js';
 
 // 13C Responsive (TODO 1788): at every supported size, an open setup dialog keeps Tab/Shift+Tab inside and hands
 // focus back to its opener, a setup popover never strands focus, and the in-race End action is reachable by pointer.
@@ -92,6 +93,7 @@ for (const [width, height] of VIEWPORTS) test.describe(`${width}x${height}`, () 
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
     await page.locator('#pause-button').click();
+    await settled(page.locator('.overlay-content'));
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
     // The pause menu's way out: the brand link must be on screen and on top, even on the narrowest phone.
     const brand = page.locator('.brand'), brandBox = await brand.boundingBox();

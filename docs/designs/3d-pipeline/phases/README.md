@@ -13,6 +13,7 @@ Index for [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](..
 | 4c | Phase 2c | Phase 3c | [task-4c-garage-equipment-vfx.md](task-4c-garage-equipment-vfx.md) |
 | 4d | Phase 2d (Roadster close-out) | Phase 3d | owner gates in task-4b / task-4c, then default-on |
 | 5 | Phase 3 | — | [task-5-coast-pbr-road.md](task-5-coast-pbr-road.md) |
+| 5b | Proposed (not in spec v2): Neon Downtown | — | `task-5b-neon-downtown.md` |
 | 6 | Phase 4–5 | — | [task-6-new-tracks-showcase.md](task-6-new-tracks-showcase.md) |
 | 7 | Phase 6 (concept hero car) | Phase 7 | [task-7-concept-hero-car.md](task-7-concept-hero-car.md) |
 

@@ -47,6 +47,14 @@ test('low LOD: simplify then halve textures before the KTX2 passes, keeping the 
   for (const step of low.slice(0, 2)) assert.ok(step.slice(3).every(a => /^--[a-z-]+(=\S+)?$/.test(a)), step.join(' '));
 });
 
+test('neon-landmarks squeezes its occlusion-roughness atlases with a stronger UASTC RDO to stay under the 4 MB budget', () => {
+  const steps = optimizeSteps({ ...validEntry(), id: 'neon-landmarks', decoders: ['meshopt', 'ktx2'] }, 'raw.glb', 'out.glb');
+  const occlusion = steps.find(s => s.includes('--slots=occlusionTexture'));
+  assert.deepEqual([occlusion[0], ...occlusion.slice(3)], ['uastc', '--slots=occlusionTexture', '--level=2', '--zstd=18', '--rdo', '--rdo-lambda=12']);
+  assert.ok(steps.every(s => s === occlusion || !s.includes('--rdo-lambda=12')), 'only the occlusion slot gets the stronger RDO');
+  assert.ok(occlusion.slice(3).every(a => /^--[a-z-]+(=\S+)?$/.test(a)), occlusion.join(' '));
+});
+
 test('coast-scenery encodes its AO/roughness data slots as ETC1S; normals stay UASTC', () => {
   const steps = optimizeSteps({ ...validEntry(), id: 'coast-scenery', decoders: ['meshopt', 'ktx2'] }, 'raw.glb', 'out.glb');
   assert.deepEqual(steps.map(s => [s[0], s.find(a => a.startsWith('--slots='))]), [

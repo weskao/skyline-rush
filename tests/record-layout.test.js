@@ -15,7 +15,8 @@ import { GHOST_RATE } from '../src/ghost.ts';
 // 2026-11-02: more rings on every map, every timed record gets a new key) moved those five to layout 3 and
 // Aurora and the World Tour to layout 2. Scaled layouts (user, 2026-11-02: 4 rings and pickups per car, re-rolled
 // every race) bump every track once more. Every older id stays readable as an old-layout record.
-const NEWEST = ['coast', 'neon', 'canyon', 'spiral']; // layout 6 (user, 2026-11-13: 40% more rings and pickups on the first five maps)
+const NEWEST = ['coast', 'canyon', 'spiral']; // layout 6 (user, 2026-11-13: 40% more rings and pickups on the first five maps)
+// Neon is layout 7 (owner decision N7, 2026-11-14: the route became a closed clockwise loop); its road layout is 3.
 const TWICE = [CIRCUIT_ID]; // layout 4; Aurora is layout 5
 const ONCE = [ 'taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']; // layout 3
 const memory = (initial = {}) => {
@@ -30,6 +31,8 @@ const ghost = (trackId, time, config) => {
 
 test('layout versions track the current road and item layouts', () => {
   for (const id of NEWEST) assert.equal(layoutVersion(id), 6, id);
+  assert.equal(layoutVersion('neon'), 7);
+  assert.equal(recordTrackId('neon'), 'neon@7');
   for (const id of TWICE) assert.equal(layoutVersion(id), 4, id);
   assert.equal(layoutVersion('aurora'), 5);
   for (const id of ONCE) assert.equal(layoutVersion(id), 3, id);
@@ -103,7 +106,7 @@ test('AC1 Classic settlement: a new-layout run is a record against old bests; th
 
 test('Classic history: every new run carries its track\'s current layout', () => {
   const storage = memory();
-  assert.equal(recordRace({ trackId: 'neon', length: 4000, result: { position: 1, time: 50 } }, storage).layout, 6);
+  assert.equal(recordRace({ trackId: 'neon', length: 4000, result: { position: 1, time: 50 } }, storage).layout, 7);
   assert.equal(recordRace({ trackId: 'aurora', length: 4000, result: { position: 1, time: 50 } }, storage).layout, 5);
 });
 
@@ -272,7 +275,8 @@ test('re-authored roads get fresh Sprint and Endless records without deleting th
   assert.equal(loadBests(storage)['coast@4'], 30);
 
   const { config } = createRace('neon', { mode: 'endless' });
-  const legacy = JSON.stringify(['neon', config]), current = JSON.stringify(['neon@2', config]);
+  // Neon's loop (layout 7) is road layout 3: distances on the layout-2 road stay stored under `neon@2`.
+  const legacy = JSON.stringify(['neon', config]), current = JSON.stringify(['neon@3', config]);
   const old = memory({ 'skyline-rush-mode-bests-v1': JSON.stringify({ [legacy]: 20000 }) });
   assert.equal(loadModeBest('neon', config, old), null);
   assert.deepEqual(recordModeRace({ mode: 'endless', trackId: 'neon', config, result: { time: 60, distance: 4000 } }, old),

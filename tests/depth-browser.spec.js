@@ -100,7 +100,7 @@ for (const [name, viewport, hasTouch] of [
     }
     await page.getByRole('button', { name: 'Start race', exact: true }).click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
-    await expect(page.locator('#race-length')).toHaveText('4.00');
+    await expect(page.locator('#race-length')).toHaveText('10.00'); // Neon's lap: 4 km until 2026-11-15, 10 km since
     if (hasTouch) {
       const gauge = await page.locator('.fuel-stat').boundingBox();
       const nitro = await page.locator('[data-control="nitro"]').boundingBox();
@@ -108,7 +108,7 @@ for (const [name, viewport, hasTouch] of [
     }
     await page.getByRole('button', { name: 'Restart race', exact: true }).click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
-    await expect(page.locator('#race-length')).toHaveText('4.00');
+    await expect(page.locator('#race-length')).toHaveText('10.00');
     expect(errors).toEqual([]);
   });
 });

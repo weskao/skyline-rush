@@ -1,0 +1,245 @@
+{
+ "licence": "CC0-1.0",
+ "site": "https://polyhaven.com",
+ "sets": [
+  {
+   "id": "rusty_painted_metal",
+   "use": "rust colour of worn patches (crane, hull, containers)",
+   "title": "Rusty Painted Metal",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "metres": 2.2,
+   "url": "https://polyhaven.com/a/rusty_painted_metal",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rusty_painted_metal/rusty_painted_metal_diff_1k.jpg",
+     "path": "rusty_painted_metal/rusty_painted_metal_diff_1k.jpg",
+     "bytes": 471866,
+     "sha256": "b086937b45c3628116a838363364a29bd3c5d2542cff906ec1d92d681ee80e15"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rusty_painted_metal/rusty_painted_metal_nor_gl_1k.jpg",
+     "path": "rusty_painted_metal/rusty_painted_metal_nor_gl_1k.jpg",
+     "bytes": 484158,
+     "sha256": "f3372e2f60517df2d0e02c1472eb24071d95182d771c30b7ecd8e1b5142768bb"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rusty_painted_metal/rusty_painted_metal_arm_1k.jpg",
+     "path": "rusty_painted_metal/rusty_painted_metal_arm_1k.jpg",
+     "bytes": 372615,
+     "sha256": "cd3ef3750348bd8afa552ac41120310f740cd4bfd3c303d81e68e3100bdf7fdd"
+    }
+   ]
+  },
+  {
+   "id": "container_side",
+   "use": "container walls (corrugated)",
+   "title": "Container Side",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "metres": 1.94,
+   "url": "https://polyhaven.com/a/container_side",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/container_side/container_side_diff_1k.jpg",
+     "path": "container_side/container_side_diff_1k.jpg",
+     "bytes": 667470,
+     "sha256": "9d6a8a9a243b6111f9d13af12d90325f0f1d52e45c2e1731f2d496702f024452"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/container_side/container_side_nor_gl_1k.jpg",
+     "path": "container_side/container_side_nor_gl_1k.jpg",
+     "bytes": 538519,
+     "sha256": "1e9e54d5816c97e5abeb448c3468b1eafb4add9acb41fcdc26817563c8f21f22"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/container_side/container_side_arm_1k.jpg",
+     "path": "container_side/container_side_arm_1k.jpg",
+     "bytes": 387982,
+     "sha256": "c5238fd9c6d234b1c6c9a62e2b1b97343636a4e42abd429e03faf58a613318b7"
+    }
+   ]
+  },
+  {
+   "id": "metal_plate_02",
+   "use": "hull plating, worn steel",
+   "title": "Metal Plate 02",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "metres": 2.0,
+   "url": "https://polyhaven.com/a/metal_plate_02",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate_02/metal_plate_02_diff_1k.jpg",
+     "path": "metal_plate_02/metal_plate_02_diff_1k.jpg",
+     "bytes": 625917,
+     "sha256": "6e80877d0e9d5973d96298c6091df7ace906b0a6760afc4f3592e4855f3f1d4c"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate_02/metal_plate_02_nor_gl_1k.jpg",
+     "path": "metal_plate_02/metal_plate_02_nor_gl_1k.jpg",
+     "bytes": 183264,
+     "sha256": "58736fbb8aa4fc6690cf8152b174db65caf22a766375b625fb0087e1bc955bc7"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate_02/metal_plate_02_arm_1k.jpg",
+     "path": "metal_plate_02/metal_plate_02_arm_1k.jpg",
+     "bytes": 1075839,
+     "sha256": "e099a8385d53f4a515b7e0ce94f85d88657fcac49c23979474f5394b22dd550b"
+    }
+   ]
+  },
+  {
+   "id": "box_profile_metal_sheet",
+   "use": "machinery house, deckhouse cladding, tower roof (roof metal)",
+   "title": "Box Profile Metal Sheet",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "metres": 2.0,
+   "url": "https://polyhaven.com/a/box_profile_metal_sheet",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/box_profile_metal_sheet/box_profile_metal_sheet_diff_1k.jpg",
+     "path": "box_profile_metal_sheet/box_profile_metal_sheet_diff_1k.jpg",
+     "bytes": 346711,
+     "sha256": "c2c3643bb2e07554f805f56525ec2ffbc23117be95e324af46ac98f56fa7961f"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/box_profile_metal_sheet/box_profile_metal_sheet_nor_gl_1k.jpg",
+     "path": "box_profile_metal_sheet/box_profile_metal_sheet_nor_gl_1k.jpg",
+     "bytes": 550993,
+     "sha256": "9cc5ca3135164dbc4eef21cf12ea488b02ce7ec252dc2b803be14eb7c3719fcb"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/box_profile_metal_sheet/box_profile_metal_sheet_arm_1k.jpg",
+     "path": "box_profile_metal_sheet/box_profile_metal_sheet_arm_1k.jpg",
+     "bytes": 667506,
+     "sha256": "f5bd4d7d11f3042d50dfb38bfea7af01ec00142a527a452f37090dd1c7f93bf8"
+    }
+   ]
+  },
+  {
+   "id": "red_bricks_04",
+   "use": "brick (gate piers, clock tower)",
+   "title": "Red Bricks 04",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "metres": 2.5,
+   "url": "https://polyhaven.com/a/red_bricks_04",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/red_bricks_04/red_bricks_04_diff_1k.jpg",
+     "path": "red_bricks_04/red_bricks_04_diff_1k.jpg",
+     "bytes": 283965,
+     "sha256": "c3a51662fd3e859242d949843e88e8ca7ae50dd3bb57c4cad5b544d0a16111cd"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/red_bricks_04/red_bricks_04_nor_gl_1k.jpg",
+     "path": "red_bricks_04/red_bricks_04_nor_gl_1k.jpg",
+     "bytes": 339216,
+     "sha256": "cb9d3da93ef192ddbe5f649b15bd940fe2631bb8715002ff31a0f19294b354da"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/red_bricks_04/red_bricks_04_arm_1k.jpg",
+     "path": "red_bricks_04/red_bricks_04_arm_1k.jpg",
+     "bytes": 271822,
+     "sha256": "cd09ad1d86122a5eae9c18034025be95664ba031ac2739cc34371efe112fd69b"
+    }
+   ]
+  },
+  {
+   "id": "large_sandstone_blocks",
+   "use": "stone (quoins, plinths, string courses)",
+   "title": "Large Sandstone Blocks",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "metres": 3.0,
+   "url": "https://polyhaven.com/a/large_sandstone_blocks",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/large_sandstone_blocks/large_sandstone_blocks_diff_1k.jpg",
+     "path": "large_sandstone_blocks/large_sandstone_blocks_diff_1k.jpg",
+     "bytes": 750937,
+     "sha256": "2ad242551c841b0c3227bdaec693acc4a4fff3fee6a9576aa501310af2595ee9"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/large_sandstone_blocks/large_sandstone_blocks_nor_gl_1k.jpg",
+     "path": "large_sandstone_blocks/large_sandstone_blocks_nor_gl_1k.jpg",
+     "bytes": 714290,
+     "sha256": "7b258af6729615a78aff76ceaa153b23011bd1df39b370b7a7e06ad6193b5d82"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/large_sandstone_blocks/large_sandstone_blocks_arm_1k.jpg",
+     "path": "large_sandstone_blocks/large_sandstone_blocks_arm_1k.jpg",
+     "bytes": 690450,
+     "sha256": "dddb167a8616b8a280a104014ab7a8bc761b3af3b18d88df315944405389f1cf"
+    }
+   ]
+  },
+  {
+   "id": "concrete_wall_008",
+   "use": "concrete (rail beams, pole bases)",
+   "title": "Concrete Wall 008",
+   "authors": [
+    "Charlotte Baglioni",
+    "Dario Barresi"
+   ],
+   "metres": 2.71,
+   "url": "https://polyhaven.com/a/concrete_wall_008",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_008/concrete_wall_008_diff_1k.jpg",
+     "path": "concrete_wall_008/concrete_wall_008_diff_1k.jpg",
+     "bytes": 623051,
+     "sha256": "a203166d280d3cfc6a91bbc9ffdae406eb9555b4a4f658cd92619063eb17c147"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_008/concrete_wall_008_nor_gl_1k.jpg",
+     "path": "concrete_wall_008/concrete_wall_008_nor_gl_1k.jpg",
+     "bytes": 511519,
+     "sha256": "83cd3fa2c7cbf4c81402386065daf8fa6f72e1f1f77e02ccb1eedb28496909ae"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_008/concrete_wall_008_arm_1k.jpg",
+     "path": "concrete_wall_008/concrete_wall_008_arm_1k.jpg",
+     "bytes": 667023,
+     "sha256": "12b8b88bd0a9b303150f45cf0080371d78b7f04744d4ab14030b8958ec7dc2e3"
+    }
+   ]
+  }
+ ]
+}

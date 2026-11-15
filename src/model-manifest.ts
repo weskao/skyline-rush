@@ -1,4 +1,6 @@
 // Phase 2 model manifest. Contract: docs/designs/3d-pipeline/phase2-model-contracts.md §1.
+import { NEON_MODELS } from './model-manifest-neon.ts';
+
 export const FALLBACK_KEYS = ['procedural-car', 'procedural-scenery', 'procedural-pickup'] as const;
 export type FallbackKey = (typeof FALLBACK_KEYS)[number];
 export const DECODERS = ['meshopt', 'ktx2'] as const;
@@ -281,6 +283,7 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     glb: 'fe33592ca9471de4e30c883b176dee8166314ca20bc3313962d52395c7cc98ec',
     bytes: 283232,
   }),
+  ...NEON_MODELS, // Task 5b city kit and landmarks
 };
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;

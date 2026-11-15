@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
@@ -121,7 +121,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
   test(`restored Equipped/Favorite/Limited badge artwork has full symmetric alpha silhouettes and separate readable labels at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const badges = page.locator('#garage-vfx-art-badges');
     const names = ['badge-equipped', 'badge-favorite', 'badge-limited'];
     for (const id of names) {
@@ -185,7 +185,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
   test(`all eleven badges reuse the same responsive neon card, 3x art and localized caption at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const tiles = page.locator('#garage-vfx-art-badges .garage-badge-card');
     await expect(tiles).toHaveCount(11);
     const colors = [];
@@ -282,7 +282,7 @@ test('paint swatch card keeps full-surface Preview and one shared game-like acti
 test('clicking a skin card lights the whole card the same way in every category', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
-  await page.locator('#garage-button').click();
+  await openGarage(page);
   const looks = [];
   for (const id of ['thruster-void', 'airflow-vortex', 'nitro-trail-red', 'launch-flare-red']) {
     const card = page.locator(`#garage-vfx-catalog [data-skin="${id}"]`), hit = card.locator('.garage-skin-preview-hitarea');
@@ -313,7 +313,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
   test(`all eight regenerated badge/rarity WebPs show complete native 3x silhouettes at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const ids = ['badge-locked', 'badge-new', 'badge-trial', 'rarity-common', 'rarity-rare',
       'rarity-epic', 'rarity-legendary', 'rarity-mythic'];
     for (const id of ids) {
@@ -378,7 +378,7 @@ for (const [width, height] of COMPACT_VIEWPORTS) {
   test(`skin and period cards stay compact, unclipped and touchable at ${width}x${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const skins = page.locator('#garage-vfx-catalog [data-skin^="launch-flare-"]');
     await skins.first().scrollIntoViewIfNeeded();
     const skin = await measureCards(skins);

@@ -15,7 +15,9 @@ const KTX2_PASSES = [
 // Per-asset slot overrides. coast-scenery: the scans' AO/roughness (ARM) and the rail roughness are low-contrast data
 // maps; ETC1S (still linear) keeps each near 150 KB instead of ~800 KB UASTC. Normals stay UASTC: gltf-transform never
 // applies RDO to normal maps, so they are the bulk of that GLB.
+// neon-landmarks: two 2048 px occlusion-roughness atlases; a stronger UASTC RDO (lambda 12) keeps the GLB under 4 MB.
 const KTX2_SLOT_OVERRIDES = {
+  'neon-landmarks': { occlusionTexture: ['uastc', 'occlusionTexture', '--level=2', '--zstd=18', '--rdo', '--rdo-lambda=12'] },
   'coast-scenery': { occlusionTexture: ['etc1s', 'occlusionTexture'], metallicRoughnessTexture: ['etc1s', 'metallicRoughnessTexture'] },
 };
 

@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 import { chooseGarageAngle } from './helpers/garage-angle.js';
 
 const sizes = [
@@ -9,7 +9,7 @@ for (const size of sizes) {
   test(`Garage Home and Studio reclaim viewport ${size.width}x${size.height}`, async ({ page }) => {
     await page.setViewportSize(size);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
 
     const measure = () => page.evaluate(() => {
       const rect = sel => {

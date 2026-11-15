@@ -14,12 +14,16 @@ const RADIUS = 2400, COLUMNS = 64, ROWS = 16, SKIRT = 0.2; // inside the procedu
 const DISC_DISTANCE = 2300, DISC_GAIN = 6; // in front of the dome; HDR so the disc blooms
 
 const hdriAzimuth = (name: CoastEnvName): number => Math.atan2(COAST_ENV_VARIANTS[name].sky.sunDirection[2], COAST_ENV_VARIANTS[name].sky.sunDirection[0]);
-/** rotation.y for the dome, and for scene.environmentRotation, that turns this HDRI's sun to COAST_SUN_AZIMUTH. */
-export const coastSkyYaw = (name: CoastEnvName): number => hdriAzimuth(name) - COAST_SUN_AZIMUTH;
-/** Unit world direction to the turned HDRI sun: the HDRI's elevation at the shared azimuth. */
+/** rotation.y for the dome, and for scene.environmentRotation, that turns this HDRI's sun to COAST_SUN_AZIMUTH, or
+ *  the longitude a city panorama names (`sky.ahead`) straight ahead of the grid. */
+export function coastSkyYaw(name: CoastEnvName): number {
+  const { ahead } = COAST_ENV_VARIANTS[name].sky;
+  return ahead === undefined ? hdriAzimuth(name) - COAST_SUN_AZIMUTH : ahead * Math.PI / 180 + Math.PI / 2;
+}
+/** Unit world direction to the turned HDRI sun: the HDRI's elevation at the azimuth the yaw leaves it on. */
 export function coastSunDirection(name: CoastEnvName, target = new THREE.Vector3()): THREE.Vector3 {
-  const [x, y, z] = COAST_ENV_VARIANTS[name].sky.sunDirection, flat = Math.hypot(x, z);
-  return target.set(Math.cos(COAST_SUN_AZIMUTH) * flat, y, Math.sin(COAST_SUN_AZIMUTH) * flat).normalize(); // the manifest rounds to 4 places
+  const [x, y, z] = COAST_ENV_VARIANTS[name].sky.sunDirection, flat = Math.hypot(x, z), azimuth = hdriAzimuth(name) - coastSkyYaw(name);
+  return target.set(Math.cos(azimuth) * flat, y, Math.sin(azimuth) * flat).normalize(); // the manifest rounds to 4 places
 }
 
 export const coastSkyWidth = (ultra: boolean, maxTextureSize: number): SkyWidth => ultra && maxTextureSize >= 8192 ? 8192 : 4096;

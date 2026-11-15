@@ -6,7 +6,7 @@ import type { VfxQuality } from './vfx-settings.ts';
 export const CLASSIC_SCENIC_TRACKS = ['neon', 'canyon', 'aurora'] as const;
 type Theme = typeof CLASSIC_SCENIC_TRACKS[number];
 const DENSITY: Record<VfxQuality, number> = { low: 8, medium: 16, high: 24 };
-const TOTAL = DENSITY.high, STEP = 60;
+const TOTAL = DENSITY.high, STEP = 60, UP = new THREE.Vector3(0, 1, 0);
 type Mesh = THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
 interface Kit {
   group: THREE.Group;
@@ -70,9 +70,11 @@ export function createClassicTrackScenery(scene: THREE.Scene) {
     kits[id] = { group, meshes, slots: Array(TOTAL).fill(NaN), previousQuality: null, previousFirst: null };
   }
   const place = (id: Theme, route: ClassicRoad, index: number, distance: number): void => {
-    const side = index % 2 ? 1 : -1;
-    const [x,z] = route.point(distance, side * (49 + (index * 11 % 33)));
+    const side = index % 2 ? 1 : -1, lane = side * (49 + (index * 11 % 33));
+    const [x,z] = route.point(distance, lane);
     const [body, trim, accent, detail] = kits[id].meshes;
+    // A lap turns through every bearing, so its props turn with the road. Open roads keep them square to the start.
+    rotation.setFromAxisAngle(UP, route.lap ? -route.heading(distance) : 0);
     // Same sector, opposite kerb from the skyline body, still 30 m+ clear of the road.
     const [near, dz] = route.point(distance, -side * (38 + index % 4 * 3));
     if (id === 'neon') compose(detail, index, near, 12, dz, .8, 7, 14);
@@ -84,7 +86,8 @@ export function createClassicTrackScenery(scene: THREE.Scene) {
       compose(body, index, x, height / 2, z, width, height, 14);
       compose(trim, index, x, height + .8, z, width + 1, 1.6, 15);
       // A thin illuminated fascia faces the driveable corridor.
-      compose(accent, index, x - side * (width / 2 + .3), height * .63, z, .35, height * .48, 5);
+      const [fx, fz] = route.lap ? route.point(distance, lane - side * (width / 2 + .3)) : [x - side * (width / 2 + .3), z];
+      compose(accent, index, fx, height * .63, fz, .35, height * .48, 5);
     } else if (id === 'canyon') {
       const height = 21 + index % 5 * 6;
       compose(body, index, x, height * .44, z, 14 + index % 3 * 4, height, 19);

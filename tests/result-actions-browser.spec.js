@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { settled } from './helpers/test.js';
 
 // Teleports the running race over the line; rivalsFirst finishes all three rivals ahead (P4).
 async function finishRace(page, { rivalsFirst = false, racing = 'RACING' } = {}) {
@@ -51,6 +52,7 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     await page.locator('#pause-button').click();
+    await settled(page.locator('.overlay-content'));
     await expect(page.locator('#again-button')).toBeVisible();
     expect((await page.locator('#again-button').boundingBox()).height).toBeGreaterThanOrEqual(44);
     await page.locator('#resume-button').click();
@@ -58,6 +60,7 @@ for (const [name, viewport, hasTouch] of [
     await page.evaluate(() => { const race = window.gameplay.race; race.elapsed = 80; Object.assign(race.player, { distance: race.length - 10, speed: 60 }); });
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');
     await expect(page.locator('#race-overlay')).toBeVisible();
+    await settled(page.locator('.overlay-content'));
     await expect(page.locator('#again-button')).toBeVisible();
     expect((await page.locator('#again-button').boundingBox()).height).toBeGreaterThanOrEqual(44);
     await page.locator('#again-button').click();

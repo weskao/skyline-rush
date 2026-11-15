@@ -176,7 +176,7 @@ test('ENV-04 a themed course marks a safe/risky branch ahead of a hazard, risky 
 test('Neon roadworks barriers slide on their own cycle, slower than the neon gates', () => {
   const neon = themedHazards('neon'), gate = neon.find(h => h.id === 'neon-gate-1').placement.movementPattern;
   const works = neon.filter(h => h.id.startsWith('neon-works'));
-  assert.equal(works.length, 3);
+  assert.equal(works.length, 4); // 10 km lap (2026-11-15): a fourth off the canal bridge, so no 600 m goes by without something to do
   for (const h of works) {
     const move = h.placement.movementPattern;
     assert.equal(move.kind, 'sweep', `${h.id} is animated`);

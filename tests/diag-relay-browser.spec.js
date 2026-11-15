@@ -1,13 +1,20 @@
 import { test, expect } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ciTimeout } from './helpers/ci.js';
 
 // Boots its own VITE_DIAG=1 dev server: the shared config serves the production preview, which has no relay by design.
-const port = Number(process.env.DIAG_RELAY_PORT || 5191);
-const base = `http://127.0.0.1:${port}`;
+// A fixed default once equalled PLAYWRIGHT_PORT: --strictPort made this Vite exit and every request hit the preview.
+const freePort = () => new Promise((resolve, reject) => {
+  const probe = createServer().once('error', reject).listen(0, '127.0.0.1', () => {
+    const { port: free } = probe.address();
+    probe.close(() => resolve(free));
+  });
+});
+let port, base;
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1';
 let server, dir;
 
@@ -15,12 +22,18 @@ test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile
 test.setTimeout(ciTimeout(120000));
 
 test.beforeAll(async () => {
+  port = Number(process.env.DIAG_RELAY_PORT) || await freePort();
+  base = `http://127.0.0.1:${port}`;
   dir = mkdtempSync(join(tmpdir(), 'diag-relay-'));
   server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', String(port), '--strictPort'],
     { env: { ...process.env, VITE_DIAG: '1', DIAG_LOG_DIR: dir }, stdio: 'ignore' });
-  await expect.poll(() => fetch(base).then(response => response.ok, () => false), { timeout: ciTimeout(60000) }).toBe(true);
+  // Only the relay answers GET /__diag/log with 405; any other server on the port (the preview) answers 404.
+  await expect.poll(() => {
+    if (server.exitCode !== null) throw new Error(`diag relay Vite exited (code ${server.exitCode}): port ${port} is taken by another server, e.g. PLAYWRIGHT_PORT`);
+    return fetch(`${base}/__diag/log`).then(response => response.status, () => 0);
+  }, { timeout: ciTimeout(60000) }).toBe(405);
 });
-test.afterAll(() => { server?.kill(); rmSync(dir, { recursive: true, force: true }); });
+test.afterAll(() => { server?.kill(); if (dir) rmSync(dir, { recursive: true, force: true }); });
 
 const entries = () => readdirSync(dir).flatMap(name => readFileSync(join(dir, name), 'utf8').trim().split('\n')).map(line => JSON.parse(line));
 const kinds = () => new Set(entries().map(entry => entry.kind));

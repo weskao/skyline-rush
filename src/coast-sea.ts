@@ -12,7 +12,11 @@ import { coastSunDirection } from './coast-sky.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
 /** Sun glitter as a factor on the preset's key light: the overcast skies have almost no sun to mirror. */
-const GLITTER: Readonly<Record<CoastEnvName, number>> = { day: 1, dusk: 1, rain: .3, fog: .08 };
+const GLITTER: Readonly<Record<CoastEnvName, number>> = { day: 1, dusk: 1, rain: .3, fog: .08, night: 0, nightRain: 0 }; // no sun at night: the water mirrors the sky only
+/** Dome mip the mirror samples: base + far x (0 near, 1 at 1500 m). Coast's sunlit water blurs the sky; Neon's night
+ *  water mirrors its city lights as lights (a mip or two down they smeared into one dim, flat glow). */
+const MIRROR_LOD: Readonly<Record<CoastEnvName, readonly [number, number]>> = {
+  day: [2, 3], dusk: [2, 3], rain: [2, 3], fog: [2, 3], night: [.5, 1.5], nightRain: [1, 1.5] };
 export const SHORE_MASK_METRES = 1280; // the High chunk window (960 m) plus the arch offsets
 const MASK = 512, TEXEL = SHORE_MASK_METRES / MASK, FOAM_REACH = 6;
 
@@ -49,7 +53,7 @@ const VERTEX = `varying vec3 p; varying vec3 ambient; uniform sampler2D sky; uni
 // Guarded for tests/shader-safety.test.js: every pow() base is max(0., ...), no exp(), no normalize() of a vector
 // that can be zero, atan() never at (0, 0).
 const FRAGMENT = `varying vec3 p; varying vec3 ambient;
-  uniform sampler2D waves,sky,shore; uniform float time,skyYaw,skyScale; uniform vec2 offset; uniform vec3 shoreRect,sunDirection,sunColor;
+  uniform sampler2D waves,sky,shore; uniform float time,skyYaw,skyScale; uniform vec2 offset,mirrorLod; uniform vec3 shoreRect,sunDirection,sunColor;
   vec3 skyAt(vec3 d,float lod){ // the dome's mapping (coast-sky.ts); explicit lod, so no seam where atan wraps
     return textureLod(sky,vec2((atan(d.z,d.x+1e-5)+skyYaw)*.15915494+.5,1.-asin(clamp(d.y,0.,1.))*.63661977),lod).rgb*skyScale;}
   void main(){vec3 toEye=cameraPosition-p;float dist=length(toEye);vec3 v=toEye/max(dist,1e-3);
@@ -62,7 +66,7 @@ const FRAGMENT = `varying vec3 p; varying vec3 ambient;
     float fresnel=(.02+.98*pow(max(0.,1.-dot(n,v)),5.))*(1.-.4*smoothstep(80.,900.,dist)); // far waves face the eye more than a flat plane does
     vec3 r=reflect(-v,n);r.y=abs(r.y);
     vec3 light=ambient+sunColor*max(0.,dot(n,sunDirection))*.3;
-    vec3 col=mix(mix(vec3(.02,.46,.42),vec3(.005,.05,.16),smoothstep(15.,300.,dist))*light,skyAt(r,2.+3.*far),fresnel);
+    vec3 col=mix(mix(vec3(.02,.46,.42),vec3(.005,.05,.16),smoothstep(15.,300.,dist))*light,skyAt(r,mirrorLod.x+mirrorLod.y*far),fresnel);
     col+=sunColor*pow(max(0.,dot(n,normalize(v+sunDirection))),mix(900.,320.,far))*mix(3.,.6,far);
     float edge=texture2D(shore,(uv-shoreRect.xy)*shoreRect.z).r;
     float surf=smoothstep(.45,.9,edge*(.65+.35*sin(edge*10.+time*1.4))+(a.z+b.z)*.3);
@@ -96,6 +100,7 @@ export function createCoastSea({ sea, seaLines, dome, origin, load, dataset = {}
     time: sea.material.uniforms.time!, waves: { value: flat as THREE.Texture }, sky: { value: dark as THREE.Texture | null }, shore: { value: mask.texture },
     skyYaw: { value: 0 }, skyScale: { value: 1 }, offset: { value: new THREE.Vector2() }, shoreRect: { value: mask.rect },
     sunDirection: { value: new THREE.Vector3(0, 1, 0) }, sunColor: { value: new THREE.Color(0, 0, 0) },
+    mirrorLod: { value: new THREE.Vector2(2, 3) },
   };
   const material = new THREE.ShaderMaterial({ uniforms, vertexShader: VERTEX, fragmentShader: FRAGMENT });
   const water = new THREE.Mesh(sea.geometry, material);
@@ -127,6 +132,7 @@ export function createCoastSea({ sea, seaLines, dome, origin, load, dataset = {}
         const v = COAST_ENV_VARIANTS[lit = plan.variant];
         coastSunDirection(lit, uniforms.sunDirection.value);
         uniforms.sunColor.value.set(v.sun.color).multiplyScalar(v.sun.intensity * GLITTER[lit]);
+        uniforms.mirrorLod.value.set(...MIRROR_LOD[lit]);
       }
       uniforms.sky.value = dome.material.map; uniforms.skyScale.value = dome.material.color.r; uniforms.skyYaw.value = dome.rotation.y;
       // shortcut: a floating-origin rebase (endless, every 500 m) shifts the wave pattern for one frame; carry the

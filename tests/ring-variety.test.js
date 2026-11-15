@@ -9,8 +9,15 @@ import { ringVariety } from '../scripts/ring-variety.mjs';
 // User, 2026-11-13: the first five maps carry 40% more ring slots, so the bot takes a smaller share of more rings
 // while its NITRO/min rises; their baseline is re-measured then (was coast 70.6/19.52, neon 73.9/23.04,
 // canyon 75.8/19.3, aurora 82.1/19.38, spiral 78.7/20.31).
+// Neon layout 7 (owner decision N7, 2026-11-14): the closed loop keeps one 220 m tunnel instead of three, so 98
+// rings instead of 69; re-measured on the same 12 seeds (was 68.6/24.55).
+// Neon sector highlights (owner brief, 2026-11-15): five authored lines replace the random rings across their spans,
+// so the bot takes a larger share of fewer rings; re-measured on the same 12 seeds (was 63.3/24.33).
+// Neon 10 km lap (owner, 2026-11-15): the lines are 23% of the lap instead of 58%, and the bot takes the random rings
+// between them at the rate it does on every track; re-measured on the same 12 seeds (was 75.4/24.11). Seven lines,
+// approach rings and ringDensity 1.45 (same day): 233 rings instead of 190; re-measured (was 69.7/23.56).
 const BASELINE = {
-  coast: [64.6, 21.78], neon: [68.6, 24.55], canyon: [74.7, 22.48], aurora: [76.5, 20.85], spiral: [73.1, 22.83],
+  coast: [64.6, 21.78], neon: [69.8, 23.98], canyon: [74.7, 22.48], aurora: [76.5, 20.85], spiral: [73.1, 22.83],
   taipei: [78.2, 19.23], tokyo: [80.3, 19.8], alpine: [82.4, 17.19], coastal: [78.2, 19.53], cosmic: [81.8, 18.31],
 };
 const rows = Object.keys(RACE_TRACKS).map(id => ringVariety(id, 12));
