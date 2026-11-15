@@ -16,12 +16,18 @@ const inCorridor = (race, p) => race.sections.some(s => s.type === 'shortcut' &&
 // The scattered pickups: not the overcharge, not a shortcut corridor's own reward line.
 const pickupsOf = race => race.pickups.filter(p => p.tier !== 'overcharge' && !p.run && !inCorridor(race, p));
 
+// Owner brief, 2026-11-15: Neon's five authored sector lines (31 gates, src/neon-ring-lines.ts) are the same on every
+// grid, and the rolled slots inside their spans give way to them. So Neon carries the lines plus the rolled slots that
+// are left, measured per grid size (it was 7 / 14 / 21 / 56, the slot count).
+const WITH_LINES = { neon: { 1: 34, 2: 35, 3: 39, 8: 53 } };
+const singlesFor = (id, cars) => WITH_LINES[id]?.[cars] ?? slotsFor(id, cars);
+
 test('L1: a race carries ITEMS_PER_CAR single rings per car on the grid, on every track', () => {
   for (const id of TRACKS) for (const rivals of [0, 1, 2, 7]) {
     const race = createRace(id, { mode: 'custom', rivals });
-    assert.equal(singles(race).length, slotsFor(id, rivals + 1), `${id} with ${rivals + 1} car(s)`);
+    assert.equal(singles(race).length, singlesFor(id, rivals + 1), `${id} with ${rivals + 1} car(s)`);
   }
-  for (const id of TRACKS) assert.equal(singles(createRace(id)).length, slotsFor(id, 8), `${id} classic grid of 8`);
+  for (const id of TRACKS) assert.equal(singles(createRace(id)).length, singlesFor(id, 8), `${id} classic grid of 8`);
 });
 
 test('L2: a slot is a single ring, a 6-ring train or a 4-ring full-width row', () => {
@@ -39,7 +45,10 @@ test('L3: rings and pickups spread from start to finish, never bunched on one st
     for (const items of [singles(race), pickupsOf(race)]) {
       const stops = [0, ...items.map(item => item.distance), length];
       const longest = Math.max(...stops.slice(1).map((d, i) => d - stops[i]));
-      assert.ok(longest < 2 * length / items.length + 300, `${id} seed ${seed}: ${longest} m empty in ${items.map(i => Math.round(i.distance))}`);
+      // The allowance comes from the grid's slot count, which is the ring count everywhere but on a track with authored
+      // lines: Neon's lines add rings without filling the stretches between them (602 m at most on a grid of one).
+      const count = items[0]?.radius && WITH_LINES[id] ? slotsFor(id, rivals + 1) : items.length;
+      assert.ok(longest < 2 * length / count + 300, `${id} seed ${seed}: ${longest} m empty in ${items.map(i => Math.round(i.distance))}`);
       assert.ok(items.every(item => item.distance > 0 && item.distance < length), id);
     }
   }

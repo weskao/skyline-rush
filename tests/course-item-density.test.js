@@ -49,8 +49,9 @@ for (const id of Object.keys(COURSE_TRACKS)) {
 test('classic tracks keep their item counts (the length scale applies to course topologies; classic uses itemDensity)', () => {
   const counts = Object.fromEntries(classic.map(r => [r.trackId, [r.rings.length, r.pickups.length]]));
   assert.deepEqual(counts, {
-    coast: [121, 152], neon: [98, 163], canyon: [77, 139], aurora: [64, 143], spiral: [92, 157], // first five: itemDensity 1.4 (user, 2026-11-13)
+    coast: [121, 152], neon: [67, 163], canyon: [77, 139], aurora: [64, 143], spiral: [92, 157], // first five: itemDensity 1.4 (user, 2026-11-13)
     // Neon layout 7 (2026-11-14): one tunnel of 220 m instead of three of 1600 m frees ring slots, hence 69 → 98.
+    // Owner brief, 2026-11-15: five authored sector lines (34 rings) replace the random rings across their spans, 98 → 67.
     taipei: [70, 101], tokyo: [49, 108], alpine: [43, 110], coastal: [55, 103], cosmic: [66, 106],
   });
 });

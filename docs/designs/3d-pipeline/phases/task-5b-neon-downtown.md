@@ -247,6 +247,83 @@ To do, in order:
     `quality-gate` green, browser and World Tour jobs skipped). The full run needs `develop`.
   - [ ] Owner art approval (steps 3, 5, 6 and 7).
 
+## Step 10: one gameplay highlight per sector (owner brief, 2026-11-15)
+
+Gameplay data, not art: it applies with and without `?look=3d` and on every tier. Only mechanics the game already
+has. Road, length, sections, pickups, gameplay props, collision and the record id (`neon@7`, never shipped) stay.
+
+### Lap plan (written before any ring was placed)
+
+One lap is about 36 s for a car that never lifts. The lap alternates a sector that pays with a sector that spends:
+
+| Lap metres | Sector | The player | NITRO | FLY fuel |
+| --- | --- | --- | --- | --- |
+| 0 to 443 | Boulevard | Launches; random rings as today | first charge from the random rings | full at the start; free to fly |
+| 443 to 722 | Rail underpass | Stays on the road under the 4 m roof and takes the inside line | **earns**: a NITRO ring at the exit, and the line's PERFECT LINE | **charged**: the roof forbids FLY, so the road and four charge rings refill it |
+| 722 to 1130 | Night market | Swings from kerb to kerb between the traffic lanes | **earns**: a NITRO ring at each kerb | charge rings on the centre line |
+| 1150 to 1650 | Market shortcut (as today) | Optional corridor flight over the right lane | cells and a tank, as today | free inside the corridor |
+| 1657 to 2330 | Expressway | Holds one lane, flat out | **spends**: a full-width NITRO gate starts the burn, then one ring per 140 m keeps it alive | not used; refills on the road |
+| 2330 to 2986 | Canal bridge | Takes off before the arch and flies the centre line over the deck | **earns most**: the richest line of the lap, a risk ring at the crown | **spent**: about 4 s of flight |
+| 2986 to 4000 | Violet Plaza and home | Bows out toward the sculpture, clips the inside of the last corner, crosses the line | spends what the bridge paid; a slipstream gate 80 m before the line | refills on the road |
+
+Rules the five lines share:
+- Each line is authored: the same rings on every seed, in every mode that reads the track layout. The random layout
+  keeps the boulevard, the shortcut corridor and the gaps between the lines.
+- Each line clears the random rings across its own span (30 m before its first ring to 30 m after its last), so it
+  reads as one target, and is its own PERFECT LINE.
+- Ring heights and lanes stay clear of the landmarks: under the 4 m roof in the underpass, inside the arch's clear
+  height (14 m) and width (13.5 m) on the bridge. A ring line that would run through a landmark moves; the landmark
+  does not.
+- The expressway is a 630 m constant right-hand sweep (about 0.0037 rad/m), not a geometric straight, and the centre
+  line is fixed. The burn line follows one lane through it, which is straight in lane coordinates.
+
+### As placed (`src/neon-ring-lines.ts`)
+
+| Sector | Lap metres | Gates | Rings and reward |
+| --- | --- | --- | --- |
+| Rail underpass | 500 to 720 | 5 | four charge rings 1.5 m up on the inside lanes (x 2.5, 7.5, 7.5, 2.5), then a NITRO ring at 720, 30 m past the roof |
+| Night market | 790 to 1070 | 5 | kerb, centre, kerb every 70 m: NITRO at x -7.5, 7.5, -7.5, charge on the centre line |
+| Expressway | 1800 to 2300 | 5 | one lane (x 7.5) every 125 m: NITRO, NITRO, charge, NITRO, charge |
+| Canal bridge | 2538 to 2778 | 5 | centre line in the air, 6.5, 8, 9.5, 8.5 and 7.5 m up: charge, NITRO, risk at the crown (2658), NITRO, charge |
+| Violet Plaza | 3220 to 3920 | 11 | bows to x -7.5 past the sculpture court (3340 to 3460), back to the inside of the last corner (NITRO at 3720), a full-width slipstream gate at 3920 |
+
+31 gates, 34 rings. Each line is one PERFECT LINE group. What changed from the plan while placing:
+
+- The clearance is 40 m (`SHAPE_CLEARANCE`, the distance a shape already keeps from a section), not 30 m.
+- The market swings go with the S-bends and sit 70 m apart: against the corner push, or at 60 m, a car at NITRO speed
+  cannot reach the next ring.
+- The expressway has no full-width gate. A row at the start made the bot miss the next ring, and with two authored
+  rows a race, rows outnumber trains across the game (`tests/ring-rows.test.js`). Rings sit every 125 m, one second
+  at NITRO speed, not 140 m.
+- The first bridge ring is 6.5 m up and the far side comes down gently: a gliding car overflies a lower ring.
+- The plaza gate is 80 m before the line, as planned.
+
+Evidence (2026-11-15, one Mac):
+
+- [x] Five lines in the course data, RED first: `tests/neon-highlights.test.js`, 9 tests; 8 failed on the old layout
+  by assertion, the ninth guards the other nine tracks' ring layouts (unchanged).
+- [x] Locks re-pinned with measured numbers: `tests/neon-parity.test.js` (rings 98 → 67), `tests/course-item-density.test.js`,
+  `tests/ring-variety.test.js` (bot ring take 63.3% → 75.4%, NITRO/min 24.33 → 24.11 over 12 seeds),
+  `tests/scaled-layout.test.js` (Neon singles per grid size), `tests/fixtures/legacy-race-replay.json` (the three Neon
+  keys), `tests/ring-authored-sequences.test.js` (the lines on five seeds and four race configs).
+- [x] Reachable: the bot takes every line whole on the default seed. Over 12 seeds it takes 56, 60, 51, 60 and 120 of
+  60, 60, 60, 60 and 132 gates; every miss is one of a line's first rings, reached from a random ring in a far lane.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` (3104 of 3107 pass, 3 skipped),
+  `npm run build`.
+- [x] Real WebGL: `tests/neon-look-browser.spec.js`, `tests/ring-sfx-browser.spec.js` and
+  `tests/phase5-world-tour-browser.spec.js`, 37 of 37. High draw calls in a race: grid 335, boulevard 195, underpass
+  201, market 181, expressway 182, canal 176, plaza 223 (cap 380).
+- [ ] Owner playtest of the lap.
+- [ ] Phone, portrait and landscape (`make phone-diag`).
+
+Open for the owner:
+
+- Neon carries 67 rings, not 98: a line clears the random rings across its span. Trains fell from 5.4 to 1.3 a race
+  and the lines do not scale with the grid (a solo custom race has 34 single rings, not 7).
+- A mixed Gauntlet hoop at 2663 replaces the bridge's crown ring (`withHoops`, the older authored rule); that line
+  pays PERFECT LINE on its other four rings.
+- Endless, Elimination and Event Lab build their own rings and have no sector lines.
+
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
 - [x] Desktop Apple silicon baseline for Neon's current look: every selectable map on High and Ultra with p50/p95,

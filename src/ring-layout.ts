@@ -38,7 +38,8 @@ const ring = (distance: number, x: number, altitude: number, type: string): Race
 
 // Consecutive groups of 3-5 gates (the last group absorbs the remainder; fewer than 3 make one group); a full-width
 // row is one gate, a train its own group.
-function assignGroups(gates: RaceRing[][], trains: RaceRing[][], random: () => number): void {
+/** Numbers the PERFECT LINE groups from 0 and returns the next free id. */
+function assignGroups(gates: RaceRing[][], trains: RaceRing[][], random: () => number): number {
   let group = 0;
   for (let i = 0; i < gates.length; group++) {
     const left = gates.length - i;
@@ -48,6 +49,7 @@ function assignGroups(gates: RaceRing[][], trains: RaceRing[][], random: () => n
     i += size;
   }
   for (const train of trains) { for (const r of train) Object.assign(r, { group, groupSize: train.length }); group++; }
+  return group;
 }
 
 // User, 2026-11-02: a few ring slots become a run of consecutive rings (on the road or in the air) or a full-width row
@@ -65,7 +67,7 @@ export const TRAIN_SPACING = 25; // m
 // Balance: a train pays mostly charge and slipstream, one nitro; its PERFECT LINE adds the usual +1 NITRO.
 const TRAIN_TYPES = ['charge', 'slipstream', 'charge', 'nitro', 'slipstream', 'charge'];
 const ROW_ODDS = 0.08, TRAIN_ODDS = 0.25; // per slot
-const SHAPE_CLEARANCE = 40; // m from any road section or hoop
+const SHAPE_CLEARANCE = 40; // m from any road section or hoop; also what a random ring keeps from an authored line
 const OPENING_SINGLES = 2; // the first slots stay single, so openingNitroRings still opens on a nitro ring
 
 export const ringRow = (distance: number, type: string): RaceRing[] =>
@@ -122,11 +124,17 @@ export function createRings(track: TrackConfig, riskLines = true, count = ITEMS_
     }
     return ring(distance, x, altitude, type);
   });
-  const { gates, trains } = shapeSlots(rings, track, seed, avoid);
+  const shaped = shapeSlots(rings, track, seed, avoid);
+  // Authored lines: a random gate or train that reaches into a line's span, SHAPE_CLEARANCE either side, gives way
+  // to it, so the line reads as one target. Each line is its own group, numbered after the random ones.
+  const lines = track.ringLines ?? [], inLine = (r: RaceRing) => lines.some(l => r.distance >= l[0]![0] - SHAPE_CLEARANCE && r.distance <= l.at(-1)![0] + SHAPE_CLEARANCE);
+  const free = (shape: RaceRing[]) => !shape.some(inLine), gates = shaped.gates.filter(free), trains = shaped.trains.filter(free);
+  const first = assignGroups(gates, trains, random);
+  const authored = lines.flatMap((line, i) => line.flatMap(([distance, x, altitude, type]) =>
+    (x === 'row' ? ringRow(distance, type) : [ring(distance, x, altitude, type)]).map(r => Object.assign(r, { group: first + i, groupSize: line.length }))));
   // Risk lines off: the same layout (shapes included), nitro rings.
-  if (!riskLines) for (const r of rings) if (r.type === 'risk') Object.assign(r, { type: 'nitro', radius: RING_RADIUS });
-  assignGroups(gates, trains, random);
-  return [...gates.flat(), ...trains.flat()].sort((a, b) => a.distance - b.distance); // stable: a row keeps its lane order
+  if (!riskLines) for (const r of [...rings, ...authored]) if (r.type === 'risk') Object.assign(r, { type: 'nitro', radius: RING_RADIUS });
+  return [...gates.flat(), ...trains.flat(), ...authored].sort((a, b) => a.distance - b.distance); // stable: a row keeps its lane order
 }
 
 /** A pickup slot and the 0-3 cells trailing it down its line, 8 m apart (user, 2026-11-02: runs of 1-4); a trailing

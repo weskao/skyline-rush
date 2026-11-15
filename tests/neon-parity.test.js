@@ -31,8 +31,10 @@ test('the Neon course frame is where it was: centre line and heading every 50 m'
 test('a Neon race has the same four lanes, rings and pickups', () => {
   const race = createRace('neon');
   assert.deepEqual([...new Set(race.traffic.map(car => car.homeX))].sort((a, b) => a - b), [-7.5, -2.5, 2.5, 7.5]);
-  assert.equal(race.rings.length, 98);
-  assert.equal(sha(race.rings.map(r => [r.distance, r.x, r.altitude, r.radius, r.type])), 'a41b116b654c6772', 'ring layout');
+  // Step 10 (owner brief, 2026-11-15): five authored sector lines (34 rings) replace the random rings across their
+  // spans, so 98 rings (a41b116b654c6772) became 67. Pickups did not move. Layout 7 never shipped, so it stays 7.
+  assert.equal(race.rings.length, 67);
+  assert.equal(sha(race.rings.map(r => [r.distance, r.x, r.altitude, r.radius, r.type])), 'ebf031e91b3b1ade', 'ring layout');
   assert.equal(race.pickups.length, 163);
   assert.equal(sha(race.pickups.map(p => [p.distance, p.x, p.altitude, p.tier])), '242e47c4fbcaeb56', 'pickup layout');
 });

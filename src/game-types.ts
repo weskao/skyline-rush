@@ -14,6 +14,8 @@ export interface TrackSection {
   /** Shortcut over a road with a solid deck (Frostbite): cars can neither rise nor sink through its slab. */
   deck?: boolean;
 }
+/** One authored gate: lap metres, lane x (or 'row' for a full-width row at road height), altitude, ring type. */
+export type RingSpot = readonly [distance: number, x: number | 'row', altitude: number, type: string];
 export interface TrackConfig {
   name: string;
   length: number;
@@ -27,6 +29,8 @@ export interface TrackConfig {
   ringAltitudes?: readonly number[];
   /** The first N rings are nitro rings, so the first NITRO comes early without adding rings. */
   openingNitroRings?: number;
+  /** Authored ring lines: each is its own PERFECT LINE, the same on every seed, and replaces the random rings across its span. */
+  ringLines?: readonly (readonly RingSpot[])[];
   /** An opening map: Easy and Normal rivals drive at the gentler 'intro' skill (`src/rival-driver.ts`), so a new player can place. */
   introRivals?: boolean;
   /** Ring/pickup layout generation for timed records (`src/record-layout.ts`); omitted = 1. Bump it whenever a layout change makes older times incomparable. */
