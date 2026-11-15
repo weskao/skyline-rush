@@ -14,4 +14,10 @@ test('cosmetic selection cannot rebuild GPU resources or alter race simulation d
   assert.match(source, /skinTint\.value\.fromArray/);
   const setter = source.slice(source.indexOf('setSkins(ids)'), source.indexOf('group: local'));
   assert.doesNotMatch(setter, /new THREE\.|\.geometry\s*=|\.player\s*=|\.speed\s*=/);
+  // The rear exhaust moved to src/sprint-plume.ts: its skin setter obeys the same rule.
+  const plume = readFileSync(new URL('../src/sprint-plume.ts', import.meta.url), 'utf8');
+  assert.match(source, /plume\.setSkin\(/);
+  const plumeSetter = plume.slice(plume.indexOf('setSkin('), plume.indexOf('update(frame'));
+  assert.match(plumeSetter, /skinTint!?\.value\.fromArray/);
+  assert.doesNotMatch(plumeSetter, /new THREE\.|\.geometry\s*=/);
 });

@@ -71,7 +71,7 @@ test('Pages deploy pins a reviewed garage release mode instead of inheriting mut
 
 test('unpublished skin IDs must be absent from shared race shader and covered by production leak markers', async () => {
   const { readFileSync } = await import('node:fs');
-  const shader = readFileSync(new URL('../src/aero-vfx.js', import.meta.url), 'utf8');
+  const shader = ['aero-vfx.js', 'sprint-plume.ts'].map(file => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8')).join('\n'); // the jets' shader lives in sprint-plume.ts
   const gate = readFileSync(new URL('../scripts/assert-production-locked.mjs', import.meta.url), 'utf8');
   for (const id of ['thruster-ion', 'airflow-slipstream', 'nitro-trail-cyan', 'launch-flare-blue']) {
     assert.doesNotMatch(shader, new RegExp(id));

@@ -72,7 +72,7 @@ test('Reduced Motion and Comfortable freeze every exhaust and airflow shader clo
     vfx.update(race, .05, new Vector3(), options, calm, null, true);
     const first = clocks();
     vfx.update(race, .05, new Vector3(), options, calm, null, true);
-    assert.ok(first.length >= 4, 'jets, airflow, pressure and ribbon clocks found');
+    assert.ok(first.length >= 6, 'jets, plume core/flare/glow, airflow, pressure and ribbon clocks found');
     if (calm || comfortable) assert.deepEqual(clocks(), first, `calm=${calm} comfortable=${comfortable}`);
     else assert.notDeepEqual(clocks(), first, 'full motion keeps animating');
   }

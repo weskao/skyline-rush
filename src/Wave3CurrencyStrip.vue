@@ -25,6 +25,8 @@ const rows = computed(() => projectWave3Currency(snapshot.value, props.locale));
 const label = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
 const wallet = ref<HTMLElement | null>(null);
 const card = ref<HTMLElement | null>(null);
+const resourceList = ref<HTMLDetailsElement | null>(null);
+const resourcesLabel = () => label('Resources', '資源');
 const activeId = ref<Wave3CurrencyRow['id'] | null>(null);
 const activeRow = computed(() => rows.value.find(row => row.id === activeId.value));
 const cardId = useId();
@@ -37,7 +39,9 @@ function closeCard(): void {
 }
 
 function showCard(id: Wave3CurrencyRow['id'], pin = false): void {
-  const bounds = wallet.value?.getBoundingClientRect();
+  const list = resourceList.value;
+  const anchor = list?.open ? list.nextElementSibling : wallet.value;
+  const bounds = anchor?.getBoundingClientRect();
   if (!bounds) return;
 
   // Place the card in viewport coordinates, outside the scrollable Home panel.
@@ -78,14 +82,20 @@ function leaveWallet(event: PointerEvent | FocusEvent): void {
 }
 
 function dismissOutside(event: PointerEvent): void {
-  if (activeId.value && !inWallet(event.target)) closeCard();
+  if (inWallet(event.target)) return;
+  if (activeId.value) closeCard();
+  if (resourceList.value) resourceList.value.open = false;
 }
 
 function dismissOnEscape(event: KeyboardEvent): void {
-  if (event.key !== 'Escape' || !activeId.value) return;
+  if (event.key !== 'Escape' || (!activeId.value && !resourceList.value?.open)) return;
   event.preventDefault();
   event.stopPropagation();
-  closeCard();
+  if (activeId.value) closeCard();
+  else if (resourceList.value) {
+    resourceList.value.open = false;
+    resourceList.value.querySelector('summary')?.focus();
+  }
 }
 
 function dismissOnScroll(event: Event): void {
@@ -117,25 +127,30 @@ const currencyArt = (kind: string) => {
     :data-compact="String(compact)"
     :data-wallet-authority="rows[0]?.state"
     :aria-label="label('Player resources', '玩家資源')">
-    <button v-for="row in rows" :key="row.id" type="button" class="wallet-currency"
-      :data-currency="row.id" :data-available="row.state === 'local-demo'"
-      :aria-label="row.label + ': ' + row.display + ' · ' + row.note"
-      :aria-expanded="activeId === row.id" :aria-controls="activeId === row.id ? cardId : undefined"
-      @pointerenter="hoverRow($event, row.id)" @focus="focusRow($event, row.id)" @click="toggleRow(row.id)">
-      <Wave3DemoArt v-if="row.id === 'demo-points'" id="demo-points" />
-      <span v-else class="wallet-artwork" :data-wallet-art="row.id">
-        <GarageArtworkImage :src="currencyArt(row.id)" :size="48" :alt="''" :fallback-text="row.label" loading="eager" />
-        <span v-if="!compact" class="wallet-orbit" aria-hidden="true"></span>
-        <span v-if="!compact" class="wallet-facet" aria-hidden="true"></span>
-      </span>
-      <span class="wallet-quantity">
-        <span v-if="!compact" class="wallet-label">{{ row.label }}</span>
-        <strong v-if="row.id === 'demo-points'" :key="balanceRevision" class="wallet-credit-value"
-          role="status" aria-live="polite" aria-atomic="true">{{ row.display }}</strong>
-        <strong v-else>{{ row.display }}</strong>
-        <small v-if="!compact">{{ row.note }}</small>
-      </span>
-    </button>
+    <details v-if="compact" ref="resourceList" class="wallet-resources" @toggle="closeCard">
+      <summary>{{ resourcesLabel() }}</summary>
+    </details>
+    <div class="wallet-resources-list">
+      <button v-for="row in rows" :key="row.id" type="button" class="wallet-currency"
+        :data-currency="row.id" :data-available="row.state === 'local-demo'"
+        :aria-label="row.label + ': ' + row.display + ' · ' + row.note"
+        :aria-expanded="activeId === row.id" :aria-controls="activeId === row.id ? cardId : undefined"
+        @pointerenter="hoverRow($event, row.id)" @focus="focusRow($event, row.id)" @click="toggleRow(row.id)">
+        <Wave3DemoArt v-if="row.id === 'demo-points'" id="demo-points" />
+        <span v-else class="wallet-artwork" :data-wallet-art="row.id">
+          <GarageArtworkImage :src="currencyArt(row.id)" :size="48" :alt="''" :fallback-text="row.label" loading="eager" />
+          <span v-if="!compact" class="wallet-orbit" aria-hidden="true"></span>
+          <span v-if="!compact" class="wallet-facet" aria-hidden="true"></span>
+        </span>
+        <span class="wallet-quantity">
+          <span v-if="!compact" class="wallet-label">{{ row.label }}</span>
+          <strong v-if="row.id === 'demo-points'" :key="balanceRevision" class="wallet-credit-value"
+            role="status" aria-live="polite" aria-atomic="true">{{ row.display }}</strong>
+          <strong v-else>{{ row.display }}</strong>
+          <small v-if="!compact">{{ row.note }}</small>
+        </span>
+      </button>
+    </div>
     <span v-if="snapshot?.persistence === 'memory-only'" class="wallet-save-warning" role="status"
       :title="label('This device could not save this session’s progress.', '此裝置未能儲存本次進度。')"
       :aria-label="label('This device could not save this session’s progress.', '此裝置未能儲存本次進度。')">⚠</span>
@@ -226,6 +241,9 @@ const currencyArt = (kind: string) => {
 @media (prefers-reduced-motion:reduce){.wallet-artwork::before{animation:none}}
 
 
+.wallet-resources { display: none; }
+.wallet-resources-list { display: contents; }
+
 /* Home-only miniature currency chips: no large cards, labels, or extra orbit effects. */
 .wave3-wallet-strip[data-compact="true"] {
   display:flex; flex-wrap:nowrap; align-items:center; gap:5px;
@@ -272,17 +290,35 @@ const currencyArt = (kind: string) => {
   .wave3-wallet-strip[data-compact="true"] { gap:3px; }
   .wave3-wallet-strip[data-compact="true"] .wallet-currency { min-width:59px; padding:2px 6px 2px 3px; }
 }
+@media (pointer: coarse) {
+  .wave3-wallet-strip[data-compact="true"] .wallet-currency { min-height: 44px; }
+}
 @media (max-height: 500px) and (orientation: landscape) {
-  .wave3-wallet-strip[data-compact="true"] .wallet-currency {
-    height: 16px; min-height: 16px; padding-block: 0;
+  .wave3-wallet-strip[data-compact="true"] .wallet-artwork {
+    flex-basis: 14px; width: 14px; height: 14px;
   }
-  .wave3-wallet-strip[data-compact="true"] :is(.wallet-artwork, :deep(.wave3-demo-art)) {
-    width: 14px; min-width: 14px; height: 14px; flex-basis: 14px;
+  .wave3-wallet-strip[data-compact="true"] :deep(.wave3-demo-art) {
+    width: 14px; min-width: 14px; height: 14px;
   }
   .wave3-wallet-strip[data-compact="true"] :deep(.artwork-img) {
-    width: 14px !important; height: 14px !important;
+    width: 14px!important; height: 14px!important;
   }
-  .wave3-wallet-strip[data-compact="true"] .wallet-quantity strong { font-size: 11px; }
+}
+@media (max-height: 340px) and (orientation: landscape), (max-width: 760px) and (max-height: 500px) and (orientation: landscape) {
+  .wallet-resources { display: block; }
+  .wallet-resources summary {
+    display: flex; align-items: center; min-height: 44px; padding-inline: 10px;
+    border: 1px solid #53738a; border-radius: 6px; color: #edf7fb;
+    background: #142b40; cursor: pointer; font-size: 12px; font-weight: 750;
+  }
+  .wallet-resources summary::after { content: '＋'; margin-inline-start: 7px; }
+  .wallet-resources[open] summary::after { content: '−'; }
+  .wallet-resources:not([open]) + .wallet-resources-list { display: none; }
+  .wallet-resources-list {
+    position: absolute; top: 100%; right: 0;
+    display: flex; gap: 4px; padding: 4px;
+    border-radius: 8px; background: #142b40;
+  }
 }
 
 .wallet-detail {

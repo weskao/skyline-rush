@@ -229,4 +229,4 @@ export function instances(geometry, mat, count, scene) {
 }
 
 
-export { TRAFFIC_DISPLAY_SCALE, isCircuitFinisher, trafficBodyIndex } from './vehicle-contact-size.js';
+export { isCircuitFinisher } from './vehicle-contact-size.js';

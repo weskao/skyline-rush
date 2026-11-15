@@ -14,6 +14,23 @@
 - [x] RED: the old solver overlapped a third car or missed a fast sweep. GREEN: packed traffic at 30/60/120 Hz, order reversal, shield and Ghost Phase, side contact, road edge and CourseGraph odometer continuity.
 - [ ] Exact-commit GitHub quality gate and physical-device verification.
 
+# 2026-11-16 — Mini-boost start streaks (`feature/mini-boost-trails`)
+
+- [x] The energy can's old pair of rear streaks now plays once (0.8 s) when a mini-boost starts: drift release (tier colour), slipstream ring, boost tunnel and chain landing (neutral whitish cyan). Player only. Chained rings never restart a running play, and braking never starts one. Medium draws 4 lines. Low, Reduced Motion and disabled effects draw none. The can stays streak-free. Rule: `.claude/rules/mini-boost-streaks.md`.
+- [x] RED: `tests/mini-boost-streaks.test.js` 6/6 failed on stub modules. GREEN: 6/6, plus 25 pickup VFX tests. `npm test` 2,984 passed, 3 skipped, 0 failed; typecheck, production build and module-size gate pass. The legacy replay fixture was re-recorded only for the new `miniBoostEvent` field (simulation hashes without it match the old fixture, 47/47).
+- [x] Real WebGL (Chromium): `tests/mini-boost-streaks-browser.spec.js` 3/3 (desktop 1280×720, phone 390×844 portrait and 844×390 landscape); shader-warmup and black-frame specs 6/6. Frozen A/B frames show both bundles beside the boost plumes in the Taipei tunnel and after a chain landing.
+- [ ] Physical iPhone / Android check, `make verify`, full `npm run test:browser` and the exact-HEAD GitHub quality gate.
+- [ ] Phone portrait: the near end of the ribbons crosses the speed readout for part of the 0.8 s play; review on a device.
+
+# 2026-11-16 — Home camera picker: shared custom dropdown, uncut labels (`develop`)
+
+- [x] `#showcase-camera-select` drops `data-native-select`, so `customSelect` draws it like the language picker. The arrow-button rules are scoped to `.showcase-camera-actions > button`; they used to restyle the dropdown button too (40×40, 25px font, no chevron).
+- [x] Labels are not cut: "Driving camera" wraps between words, never inside one. A size container stacks the picker on its own full-width row in the 148/158/190px docks. The 148px AIRFLOW dock had overflowed past the right edge. The 210px rail keeps one row.
+- [x] `customSelect` opens the list upward when there is no room below and caps it to the room on that side (`--list-room`). While the list is open, the dock is lifted to z 7 (positioned only in the scrolling layout), so the rules row and tool row no longer paint over it.
+- [x] RED: the new `showcase-camera-browser.spec.js` dropdown test failed 6/6 (no combobox). Two later screenshot checks added a no-mid-word-break assertion and an option hit-test (`elementFromPoint`), after the screenshots showed "Drivin g camer a" and a covered list.
+- [x] `npm test` 2996 pass / 0 fail, typecheck, build, main-ui contract (cssBlob updated), module-size. Production-build screenshots at 1440×900, 844×390, 390×844 zh-TW, AIRFLOW 667×375 and 390×844: label uncut and every option on screen and uncovered.
+- [ ] Browser specs were not run at the user's request: the new test, plus `home-shortcuts` and `home-race-camera`, both updated to use the combobox. Physical phone check and exact-HEAD `quality-gate` are also still open. Pre-existing, not changed: at AIRFLOW 667×375 the tool row overlaps the dock's "CAMERA VIEW" heading.
+
 # 2026-11-15 — One NITRO / BOOST / FLY palette (`feature/hud-sprint-colors`)
 
 - [x] `:root` tokens in `src/style.css`: `--nitro #ffd166` (gold, 42°, matches the ring gold), `--boost #ff7f3f` (red-orange, 20°), `--fly #83ceeb` (cyan), each with `-text` / `-deep` variants. They drive the touch buttons and every state, the NITRO/BOOST icons, the Controls preview, the NITRO meter, HUD text and callout, the BOOST status, the speed ticks, key hints (home legend, guide, tutorial cue, Controls bindings) and the default 3D NITRO trail and shock (`src/aero-vfx.js`). Trail skins still replace the default.
@@ -26,6 +43,43 @@
 - [ ] Exact-HEAD GitHub `quality-gate` and a physical phone check.
 - [x] `can` pickup vs BOOST red-orange (`feature/pickup-can-glow`): **not confusable, no asset change.** The baked `can` accent is already amber: `0xFF9D35` = 31° (`scripts/assets/pickup_kit.py` TIERS, `src/pickup-art.js` PICKUP_ACCENTS), against `--boost` 20° and tank gold `0xFFCF48` 44° / `--nitro` 42°. Real race captures on Coast (dev server, Chrome, GLB pickups loaded, BOOST held so the charge bar is BOOST orange), with the game loop frozen on the frame where a `can` sat 20–22 m ahead. Hue of saturated glowing pixels in the projected `can` box vs the `#fuel-fill` bar: phone portrait 390×844 touch, `can` median 35.5° (p25 34.5°; bar empty, 0%). Phone landscape 844×390 touch, `can` 30.8° (p25 28.8°) vs bar 20.0°. Desktop 1440×900, `can` 31.1° (p25 29.5°) vs bar 20.0°. The rendered `can` stays ≥ 10.8° from BOOST at the median and ≥ 8.8° at p25. On screen it reads as a yellow-orange object with steel armour, not the red-orange HUD bar. Screenshots and the capture script are local session evidence (not committed).
 - Not changed: the legacy amber NITRO/BOOST rules in `src/style.css` (`.controls-preview-keys .touch-nitro`, `.touch-controls .touch-nitro*`, `.touch-controls .touch-boost` border/colour) are dead because `#touch-controls` / `#controls-panel` ID rules override them. The tutorial's combined `fly boost nitro` key cue keeps the default cyan, because its `kbd`s carry no per-action marker.
+
+# 2026-11-15 — Home showcase and race camera handoff
+
+- [x] Coast: Start opens on the rear chase camera from the first rendered frame after right, front or orbit Home views. Leaving a race and reloading restores the last showcase view from local storage. A fresh Start resets the previous race's first-person selection.
+- [x] RED: first race bearings were 57°, 153° and 98° from the rear, and the next race retained first person. GREEN: all four Chromium tests in `tests/home-race-camera-browser.spec.js` passed at desktop 1440×900, touch portrait 390×844 and touch landscape 844×390, with real WebGL captures (`home-camera.png` / `race-camera.png`) and no page errors during the camera handoffs.
+- [x] Module-size and type checks, locked production build and the full unit suite passed (2,974 passed, 3 skipped).
+- [ ] Full browser/World Tour suites, physical iOS/Android checks and exact-commit GitHub `quality-gate`.
+
+# 2026-11-15 — Responsive game dialogs (`feature/responsive-game-dialogs`)
+
+- [x] History leads with the track filter and recent races. Daily, Medals and Cloud have dedicated tabs and direct home shortcuts. The Daily Play action and cloud account, sync and backup handlers are retained.
+- [x] Photo Studio has a desktop sidebar, portrait bottom panel and short-landscape side panel. Orbit stays visible, advanced tools collapse, and the Back / Save PNG actions stay outside the scroll area. Closing restores the paused scene and opener.
+- [x] Event Lab switches between Route and Objects on narrow or short screens, retains Use this course above the scroll area, and places validation at the edited object. The open editor follows the visual viewport when the keyboard reduces it.
+- [x] Short-landscape What's New keeps the version and poster-based Play preview. The preview loads the bundled clip on activation. Browser Back closes the top-level modal or the nested viewer and restores its opener.
+- [x] `node --test tests/module-size.test.js` passed 3/3. Added browser cases to mode-history, cloud-entry, event-lab, photo-studio and release-video and extended the existing race-modes Photo Studio case.
+- [x] CI 43710794607: reproduced both unit failures, recorded the responsive CSS and dialog order in the UI contract, and verified Photo Studio clears its body class and photo camera before Back, Escape or browser history closes it. Local typecheck, production build and unit suite passed (2,975 passed, 3 skipped). A browser check matched all 233 recorded IDs, tags, classes and DOM positions.
+- [ ] Complete the browser RED/GREEN matrix and full `make verify`. Local Chromium encountered launch restrictions, renderer crashes and navigation timeouts. Complete real-device iOS/Android keyboard, safe-area and back-gesture checks, and verify the exact branch commit in GitHub Actions.
+- Base `4d45cc460b4d1c45ed26017ef9737802a5a1d63e`. Integration owns pause/results entry points. DOM changes share visual quality tiers and retain existing UI and photo cues.
+
+# 2026-11-15 — Instanced traffic (`feature/traffic-instancing`)
+
+- [x] `src/traffic-fleet.ts`: each traffic style's `makeCar()` model is baked into one geometry per material and drawn through a `marker-pool.js` pool. Traffic costs 21 draw calls at any car count (3 styles x 7 materials), 6 more in the `?look=3d` wet-road mirror pass. `world.js` poses plain `Object3D`s through `updateCar` (997 → 995 lines, ceiling lowered). Simulation, collision and VFX untouched.
+- [x] RED: `tests/traffic-instancing-browser.spec.js` measured 44 / 173 / 775 / 1,549 traffic draw calls with 3 / 12 / 54 / 108 cars in view on Neon, and 98 for 6 cars in the Coast rain mirror test. GREEN: 21 at every count, 27 with the mirror.
+- [x] `tests/traffic-fleet.test.js`: per style the baked car has the triangles, bounds and materials of `makeCar()`; visible-only upload, pose, paint, per-frame cull bound, parked idle instance, softened reflections.
+- [x] Driven Neon and Coast races, High: draw calls and frame p50/p95 before and after are in the local audits report (per-device numbers stay out of the repo).
+- [x] Real WebGL: same paused frame drawn instanced and with per-car models at the same poses on Neon, Coast, Sky Spiral, Alpine and Frostbite Canyon; pixels changed stay at the scene's own frame-to-frame noise. Before/after captures for 10 classic tracks and 6 courses at 1440×900, 390×844 and 844×390, no page error.
+- [x] Merged with develop 468217c2: the spec read 22 on a cold Vite cache (4 of 4 cold runs, deterministic). Cause: pause froze the race but the chase camera kept easing to its rig, and a rival's wheel rim crossed the frustum edge between the baseline and the readings (not traffic: the hooked traffic draws were 21 throughout). `pausedRace()` now waits for the camera to come to rest; cold cache 3 of 3 pass, `CI=1 --repeat-each=8 --workers=4 --retries=0` 16 of 16.
+- [x] World Tour config 49 of 49 on the merge.
+- [ ] Physical phone check, full `npm run test:browser` and exact-HEAD `quality-gate`.
+
+# 2026-11-15 — Energy can pickup sparks (`fix/energy-can-pickup-sparks`)
+
+- [x] The energy can keeps its .17 s absorption. A fitted orange flash and 2/5/8 pooled embers gather at the contact point and expire after .27 s. Reduced Motion keeps a still ring and soft glow.
+- [x] RED: five can-specific regressions on the base renderer, including 64 road particles after two takes at 30 m/s. GREEN: 78 focused pickup, effects, economy, shader safety, browser timing and module-size checks. Tank and overcharge guards still pass.
+- [x] Follow-up punch, each RED then GREEN: light haptic per tier (can 9 ms, tank 14, overcharge 20, cells none); fuel-bar flash with "+N" right of the reading (clear of the label in both phone orientations, still under Reduced Motion); camera kick at 20% of the NITRO ignition for a can, clamped to `KICK_LIMIT`; embers fly from the can into the car in vehicle space within .15 s and still reach it at 90 m/s; warm white-yellow can core with an orange rim, apart from the crash orange. `car.pickup` kept out of the legacy replay hash (47/47 unchanged).
+- [x] Real WebGL captures (desktop, 390×844, 844×390) show embers mid-flight and the warm-white contact flash with no orange; pickup-3d-collection, pickup-feedback, shader-warmup, black-frame, motion and pickup-3d browser specs pass; layout suites pass.
+- [ ] Physical-device review (haptic feel on Android, iOS) and exact-commit GitHub quality gate.
 
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
@@ -5661,3 +5715,49 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] The browser regression checks the original renderer through probe load, Garage close and both track switches. The procedural pickup fallback keeps pickup texture loading out of both samples.
 - [x] `npm test`: 2,972 passed, 3 skipped. Typecheck, module-size checks and production build passed.
 - [ ] Verify the full GitHub `quality-gate` for this commit.
+
+## 2026-11-15 — Responsive Race Lobby (`feature/responsive-race-lobby`)
+
+- [x] Base `9275d52bb4ce64a8407479af779230354f5764d4`. Reproduced on the earlier `4d45cc4` develop build via the normal locked entry: at 756×265 Start measured 37.4 px tall and Garage/Practice 31.7 px. Practice was offscreen at 320×568 and Start was offscreen at 768×840. Classic's static 4-driver label disagreed with 7 AI in the rules.
+- [x] Keep full-size action targets, safe-area-aware short landscape positioning, and the existing WebKit fixed-rail paint guards. Show the selected mode and track, expand the existing catalogs in place, place the specific access reason beside Start, and use the actual race field for driver counts. Retain the canonical 568×205 teaser art and route maps.
+- [x] Add direct camera selection to the existing showcase control path and a compact graphics disclosure. Trial wallets reuse the existing balance projections and icons, with a Resources disclosure at very short heights. Daily uses its existing session and track rules. Existing action sounds and quality tiers apply. The additional controls are static DOM, so they do not need tier-specific rendering or additional sound.
+- [x] Focused Node tests and module-size passed. A Chromium layout fixture confirmed 44 px primary actions at 756×265 and first-screen positioning at 320×568, 768×840 and 840×768. It does not exercise WebGL or the live simulation.
+- [ ] Sign off the real-game Playwright layout and end-to-end matrix, phone Safari/Chrome paint and physical input, and the branch HEAD's GitHub `quality-gate`. Integrate the direct camera control with `fix/home-race-camera` and retain that branch's camera state and race-start behavior. Fold geometry and hinge detection are part of the separate foldable work.
+
+## 2026-11-16 — Responsive Race Lobby and home camera integration
+
+- [x] Retain the direct showcase selector with the saved home angle and the dedicated Start reset to the rear chase camera. Keep both change records when resolving the TODO merge conflict.
+- [x] Fix the first-visit graphics disclosure intercepting AIRFLOW and VFX. Align the short-landscape wallet with the mode picker, preserve compact wallet artwork, and keep track cards and rules dropdowns clear of the pinned actions.
+- [x] The browser selector regression reproduced three ambiguous mode locators. The module-size, selector and browser budget suites passed after the fixes (20 checks). The trial build passed the production unlock audit.
+- [ ] Exact-commit GitHub quality gate and physical iOS/Android verification.
+
+## 2026-11-16 — Home race lobby and showcase camera unit coverage
+
+- [x] Add nine focused cases for Start eligibility, locked-track and Cup messages, the Daily unlock exception, preview gating, actual grid size, and saved Home camera angles.
+- [x] Confirm five targeted regressions fail their assertions when reintroduced: preview bypass, missing Daily exception, off-by-one Cup threshold, missing player in the driver count, and ignored saved camera angle.
+- [x] Focused Node suite: 66 passed. Module-size, typecheck and the locked production build passed. The lobby controller uses the tested presentation logic; the browser specs still cover layout and the first rendered chase frame.
+- [ ] Exact-commit GitHub quality gate.
+
+## Foldable race HUD (`feature/foldable-race-hud`)
+
+- [x] RED: the focused segment, input and feedback tests reproduced missing segment API compatibility, retained pointer capture and missing peripheral slots on the split geometry. The current-API browser case on the base bundle received an empty fold axis.
+- [x] GREEN: 65 focused checks passed, including module-size, segment projection, input release and feedback geometry.
+- [ ] Complete browser replay and screenshots for home, Garage/Studio, dialogs, split race HUD, pause/results and the four HUD backgrounds. Verify physical foldable and iOS rotation plus exact-head GitHub CI.
+
+### Foldable race HUD merge verification
+
+- [x] RED: the source SHA's full CI reproduced stuck visual presses on rotation, fold HUD overlap, a removed Garage paint selector and an invalid short-phone leaderboard expectation. The merged browser replay also reproduced the clipped paint before scrolling its existing collection into view.
+- [x] Resolve the Home CSS and spec conflicts while retaining both features and all integration notes. Place flight resources away from the minimap and leaderboard, keep Daily and Garage controls apart, and clear pressed styles on the same geometry change that clears input.
+- [x] The first candidate passed the locked production build, typecheck and 78 focused Node checks, including module-size and browser guards. A 600×900 browser replay measured the Home camera dock overlapping Daily by 22 px. The latest develop camera dropdown is kept, and the fold rail gives its controls one row with a dedicated gap above Start.
+- [ ] Finish the browser replay and full unit run, and verify the exact merge candidate's GitHub quality gate and physical-device rotation.
+
+## 2026-11-15 — Driving Controls Onboarding
+
+- [x] Base `4d45cc460b4d1c45ed26017ef9737802a5a1d63e`. Reuse the Guide, tutorial race snapshot, input controls, bindings, and orientation layout keys. Keep locked courses behind the existing Start gate.
+- [x] First Start offers Practice First or Race Now. Closing returns to the selection. Tutorial Skip and Start Race take the original race snapshot to the starting grid. Back to Home restores it in place.
+- [x] Reuse game icons for the compact guide and add the live NITRO thumb cue. Expose separate Steering, Touch Layout and Keyboard groups. Label the current editor orientation and cancel an unfinished drag on rotation.
+- [x] NITRO cue RED and GREEN via `node --test tests/tutorial-ui.test.js`. The old cue omitted the action thumb. The updated cue passes for buttons, slide and tilt with either hand.
+- [ ] Verify the onboarding, orientation and tutorial browser regressions across desktop and mobile portrait/landscape. Initial Chromium attempts stalled during launch or navigation in the local execution environment. Verify physical-device gestures and motion permission separately.
+- [ ] Verify the full GitHub `quality-gate` for this commit. The feature branch requests full regression so Browser and World Tour cover the change before integration.
+
+- [x] Reproduced the paused Guide focus failure and the stale DOM-order expectation from CI 43711779738. Restore focus explicitly and record the requested order while retaining the develop CSS contract.

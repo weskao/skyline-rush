@@ -24,6 +24,21 @@ function beam(slot, age, span, level, rise) {
   slot.beam.scale.set(.9 * slot.strength, 1 + age * rise, .9 * slot.strength);
 }
 
+// Energy can, while the model is absorbed (`f` 0 to 1): embers leave the can and streak into the car. `from` is the can
+// relative to the absorption point, in the car's own frame, so the flight never trails behind a fast car.
+export function canEmbers(slot, f, from) {
+  for (let i = 0; i < slot.particles; i++) {
+    const start = (i % 4) * .07, q = Math.min(1, Math.max(0, (f - start) / (.88 - start)));
+    const left = 1 - q * q * (3 - 2 * q), a = i * GOLDEN, spread = .18 * Math.sin(Math.PI * q);
+    scratch.position.copy(from).multiplyScalar(left);
+    scratch.position.x += Math.cos(a) * spread;
+    scratch.position.y += Math.sin(a) * spread;
+    scratch.lookAt(0, 0, 0); // long axis along the flight
+    const size = .5 - .2 * q;
+    shard(slot, i, size, size, size * (1 + 2.6 * Math.sin(Math.PI * q)));
+  }
+}
+
 // Local space follows the car (or sits at the item for a rival): +Y up, +Z behind. Rings beyond the slot's
 // quality budget are already hidden; a motion hides more by clearing `visible`.
 export const MOTIONS = {
@@ -45,24 +60,15 @@ export const MOTIONS = {
       shard(slot, i, 2.4 * (1 - q) + .3, .3, .3);
     }
   },
-  // Energy can: a pressurised vent. Heat rings and two ember jets blow out behind the car.
-  afterburn(slot, age, p) {
-    const k = slot.visualWeight;
-    slot.rings.forEach((ring, i) => {
-      const phase = age - i * .09;
-      ring.visible &&= phase > 0;
-      ring.position.set(0, .45, 2.45 + Math.max(0, phase) * 6);
-      ring.rotation.set(0, 0, phase * 3); // upright, facing back along the road
-      ring.scale.setScalar((.45 + Math.max(0, phase) * 2.6) * k);
-      ring.material.opacity = .8 * Math.max(0, 1 - phase / (slot.style.life - i * .09)) ** 2 * k;
-    });
-    flash(slot, 1 - age / .2, 1.45, 0, .45, 2.3);
+  // Energy can: one contact flash and a small cluster of embers gathering into it.
+  canSparks(slot, age, p) {
+    const at = slot.shards.position;
+    flash(slot, .86 * Math.max(0, 1 - age / .09), .95, at.x, at.y, at.z);
     for (let i = 0; i < slot.particles; i++) {
-      const side = i % 2 ? 1 : -1, spread = (i * 7 % 11) / 11 - .5, lift = .6 + (i % 3) * .9;
-      scratch.position.set(side * (.7 + (.25 + spread * 1.6) * age), Math.max(.05, .35 + lift * age - 1.6 * age * age),
-        2.25 + (4 + (i % 5) * 1.2) * age);
-      scratch.rotation.set(0, 0, 0);
-      shard(slot, i, .6 * (1 - p), .6 * (1 - p), 2.6 * (1 - p));
+      const angle = i * GOLDEN, reach = (.24 + (i % 4) * .13) * (1 - easeOut(p));
+      scratch.position.set(reach * (.5 + .4 * Math.cos(angle)), reach * (.4 + .6 * Math.sin(angle)), Math.cos(angle) * reach);
+      scratch.rotation.set(0, angle, i);
+      shard(slot, i, (.7 + (i % 3) * .2) * (1 - p));
     }
   },
   // Gold tubes rise through the fitted car above a soft light at the chassis.

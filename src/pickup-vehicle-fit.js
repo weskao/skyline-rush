@@ -6,13 +6,39 @@ import { BODY_FRAGMENT, BODY_VERTEX } from './pickup-collect-shaders.js';
 const DESIGN_WIDTH = 2.4, DESIGN_HEIGHT = 1.4, DESIGN_NOSE = -2.45, DESIGN_TAIL = 2.25;
 const DESIGN_LENGTH = DESIGN_TAIL - DESIGN_NOSE;
 
+const offset = new THREE.Vector3(), scale = new THREE.Vector3();
+const right = new THREE.Vector3(), up = new THREE.Vector3(), back = new THREE.Vector3();
+const roadBasis = new THREE.Matrix4();
+
+/** Places `group` in the car frame (+Y up, +Z tail, design size) fitted to `pose`'s measured bounds; with `roadNormal`,
+ * levelled onto the road. Shared by the pickup effects and the mini-boost streaks (mini-boost-streaks.js). */
+export function placeInCarFrame(group, pose, roadNormal) {
+  const bounds = pose.userData.visualBounds;
+  if (bounds) {
+    const { min, max } = bounds;
+    scale.set((max.x - min.x) / DESIGN_WIDTH, Math.max(.05, (max.y - min.y) / DESIGN_HEIGHT), (max.z - min.z) / DESIGN_LENGTH);
+    offset.set((min.x + max.x) * .5, min.y, max.z - DESIGN_TAIL * scale.z);
+  } else {
+    scale.setScalar(1);
+    offset.setScalar(0);
+  }
+  pose.updateWorldMatrix(true, false);
+  pose.matrixWorld.decompose(group.position, group.quaternion, group.scale);
+  group.scale.multiply(scale);
+  group.position.copy(offset).applyMatrix4(pose.matrixWorld);
+  if (!roadNormal) return;
+  up.copy(roadNormal).normalize();
+  back.setFromMatrixColumn(pose.matrixWorld, 2).projectOnPlane(up);
+  if (back.lengthSq() < 1e-8) back.setFromMatrixColumn(pose.matrixWorld, 0).cross(up);
+  back.normalize();
+  right.crossVectors(up, back).normalize();
+  group.quaternion.setFromRotationMatrix(roadBasis.makeBasis(right, up, back));
+}
+
 export function createPickupVehicleFit(player) {
   const originalBody = player?.userData.body;
-  const offset = new THREE.Vector3(), scale = new THREE.Vector3();
   const vehicleFromBody = new THREE.Matrix4(), vehicleBounds = new THREE.Box3();
   const localSize = new THREE.Vector3();
-  const right = new THREE.Vector3(), up = new THREE.Vector3(), back = new THREE.Vector3();
-  const roadBasis = new THREE.Matrix4();
   let shell, shells = [], uniforms, sectionSource, fittedSections;
   if (originalBody?.isMesh) {
     uniforms = {
@@ -43,29 +69,6 @@ export function createPickupVehicleFit(player) {
     originalBody.add(shell);
   }
 
-  function place(group, pose, roadNormal) {
-    const bounds = pose.userData.visualBounds;
-    if (bounds) {
-      const { min, max } = bounds;
-      scale.set((max.x - min.x) / DESIGN_WIDTH, Math.max(.05, (max.y - min.y) / DESIGN_HEIGHT), (max.z - min.z) / DESIGN_LENGTH);
-      offset.set((min.x + max.x) * .5, min.y, max.z - DESIGN_TAIL * scale.z);
-    } else {
-      scale.setScalar(1);
-      offset.setScalar(0);
-    }
-    pose.updateWorldMatrix(true, false);
-    pose.matrixWorld.decompose(group.position, group.quaternion, group.scale);
-    group.scale.multiply(scale);
-    group.position.copy(offset).applyMatrix4(pose.matrixWorld);
-    if (!roadNormal) return;
-    up.copy(roadNormal).normalize();
-    back.setFromMatrixColumn(pose.matrixWorld, 2).projectOnPlane(up);
-    if (back.lengthSq() < 1e-8) back.setFromMatrixColumn(pose.matrixWorld, 0).cross(up);
-    back.normalize();
-    right.crossVectors(up, back).normalize();
-    group.quaternion.setFromRotationMatrix(roadBasis.makeBasis(right, up, back));
-  }
-
   function absorbTarget(pose, target) {
     const bounds = pose.userData.visualBounds;
     if (bounds) {
@@ -92,7 +95,8 @@ export function createPickupVehicleFit(player) {
 
   function updateBody(slot, frame, secondary) {
     if (!shell) return;
-    const visible = !!slot && slot.age < slot.style.life && !slot.reducedMotion && !frame.reducedMotion && frame.enabled !== false;
+    const age = slot ? slot.age - slot.delay : Infinity;
+    const visible = !!slot && age >= 0 && age < slot.style.life && !slot.reducedMotion && !frame.reducedMotion && frame.enabled !== false;
     for (const mesh of shells) mesh.visible = visible;
     if (!visible) return;
     const geometry = shell.geometry;
@@ -112,12 +116,12 @@ export function createPickupVehicleFit(player) {
     uniforms.primary.value.set(slot.style.color);
     uniforms.secondary.value.set(secondary);
     uniforms.tier.value = slot.tierIndex;
-    uniforms.progress.value = slot.age / slot.style.life;
+    uniforms.progress.value = age / slot.style.life;
     uniforms.strength.value = slot.quality === 'low' ? .55 : .9;
   }
 
   return {
-    place, updateBody, absorbTarget, sections,
+    place: placeInCarFrame, updateBody, absorbTarget, sections,
     reset() { for (const mesh of shells) mesh.visible = false; },
     dispose() { for (const mesh of shells) mesh.removeFromParent(); shell?.material.dispose(); },
   };

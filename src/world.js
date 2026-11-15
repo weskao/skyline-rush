@@ -36,7 +36,8 @@ import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { f
 import { createCourseRaceScene } from './course-race-scene.ts'; import { graphOrigin, graphCarVisual, graphLookAhead, graphFinishVisual } from './course-render-pose.ts'; import { courseItemFrame, courseItemPoint } from './course-items.ts'; import { isCourseRuntime } from './course-runtimes.ts';
 import { FROSTBITE_ID, FROSTBITE_SPAN, frostbiteObjectSpan, frostbiteSpanLift } from './courses/frostbite-race.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
-import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, stepWing, TRAFFIC_DISPLAY_SCALE, isCircuitFinisher, trafficBodyIndex } from './car-model.js';
+import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, makeCar, stepWing, isCircuitFinisher } from './car-model.js';
+import { createTrafficFleet } from './traffic-fleet.ts';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
 import { landmarkBounds } from './landmark-bounds.ts';
@@ -217,14 +218,9 @@ export function createWorld(canvas) {
   const rearLight = player.userData.rearLight;
   const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); applyCarReflections(car, carEnvironment); scene.add(car); return car; });
   const flightVehicles = [player, ...rivals];
-  const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
-  // ×2 covers the double-traffic daily modifier.
-  const traffic = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2))) }, (_, i) => {
-    const car = makeCar(TRAFFIC_CAR_STYLES[trafficBodyIndex(i)], trafficColors[i % trafficColors.length]);
-    car.scale.setScalar(TRAFFIC_DISPLAY_SCALE); applyCarReflections(car, carEnvironment);
-    scene.add(car);
-    return car;
-  });
+  // ×2 covers the double-traffic daily modifier. Instanced (traffic-fleet.ts): `traffic` holds poses, not meshes.
+  const trafficFleet = createTrafficFleet(scene, Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2)))), traffic = trafficFleet.cars;
+  applyCarReflections(trafficFleet.group, carEnvironment);
   // Best-run ghost: the player's shape in one translucent material.
   const ghostCar = makeCar(CAR_STYLES.roadster);
   const ghostMaterial = new THREE.MeshBasicMaterial({ color: '#8fd3ff', transparent: true, opacity: 0.3, depthWrite: false });
@@ -468,6 +464,7 @@ export function createWorld(canvas) {
       mesh.rotation.z = trick ? bank + trick.dir * Math.PI * 2 * THREE.MathUtils.smoothstep(trick.time, 0, TRICK_ROLL_TIME) : THREE.MathUtils.damp(bankFrom, bank, 8, dt);
       mesh.rotation.x = THREE.MathUtils.damp(mesh.rotation.x, car.thrusting ? -0.06 : Math.min(0.08, -(pose.verticalSpeed || 0) * 0.006), 7, dt);
     }
+    if (!mesh.userData.jets) return; // a traffic pose: its instanced car has no moving parts
     mesh.userData.jets.visible = !!car.thrusting;
     mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(car.braking ? 2.3 : 1);
     const { wing } = mesh.userData;
@@ -516,6 +513,7 @@ export function createWorld(canvas) {
       resize();
     },
     cycleCamera() { cameraMode = (cameraMode + 1) % 2; return cameraMode; },
+    resetRaceCamera() { initialized = false; cameraMode = cameraSwing = carBank = 0; },
     setPhotoView(options) {
       raceVisuals.photo(options ? options.sky : null);
       if (!options) {
@@ -745,6 +743,7 @@ export function createWorld(canvas) {
         });
         traffic.forEach((mesh, i) => { mesh.visible = i < race.traffic.length; if (mesh.visible) updateCar(mesh, race.traffic[i], distance, center, time, motionDt, false, {}, poseFor(mesh, race.traffic[i], motion?.previous?.traffic?.[i], alpha)); });
       }
+      trafficFleet.sync();
       ghostPhase.update(car, !preview && race.phase !== 'finished', reducedMotion);
       ghostCar.visible = !preview && !!ghost;
       rearLight.update(race, motionDt, reducedMotion || !visual.enabled);
@@ -796,7 +795,6 @@ export function createWorld(canvas) {
         desiredCamera.set(player.position.x + (portrait ? 10 : 8), player.position.y + 3.2, player.position.z + 6);
         lookTarget.copy(player.position); lookTarget.y += 0.8;
       } else if (preview && visual.view !== 'drive') {
-        // The selected view wins over curated showcase framing on every map, but only on the ready screen: it never moves the race camera.
         const pose = showcaseCameraPose(trackId,visual.view,time,portrait||garageHomePreview||visual.enabled&&visual.airflow); // centred unless the landscape home panel shows
         const frame = curvedClassic || framedRoad(trackId, endlessActive) ? trackFrame(trackId,distance)
           : trackId === 'spiral' ? skyFrame(distance) : null;
@@ -835,7 +833,7 @@ export function createWorld(canvas) {
         desiredCamera.fromArray(classicPosition(distance - (portrait ? 13.8 : 11.8), portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, distance));
         lookTarget.fromArray(classicPosition(distance + 3.5, portrait ? 1 : -1.4, 1.4, distance));
       } else {
-        const first = cameraMode === 1, back = rigBack(view, chaseFov), look = rigLook(view, chaseFov), height = rigHeight(view, visualCar.altitude);
+        const first = cameraMode === 1, back = rigBack(view, chaseFov), look = rigLook(view, chaseFov, sprintFrame.fov), height = rigHeight(view, visualCar.altitude);
         cameraSwing = reducedMotion ? 0 : stepCameraSwing(cameraSwing, player.userData.driftYaw ?? 0, view, dt);
         if (curvedClassic) {
           const heading = roadHeading(distance);
@@ -868,7 +866,7 @@ export function createWorld(canvas) {
         if(TOUR_IDS.has(trackId))avoidShowcaseObstruction(distance);
         frameShowcaseCar(distance);
       }
-      const smoothing = 1 - Math.exp(-dt * 7); camera.position.sub(rumble); if (trackId === FROSTBITE_ID && !endlessActive) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
+      const smoothing = !initialized && !preview ? 1 : 1 - Math.exp(-dt * 7); camera.position.sub(rumble); if (trackId === FROSTBITE_ID && !endlessActive) { nextLift.fromArray(frostbiteSpanLift(distance, !!car.span)); camera.position.add(nextLift).sub(spanLift); smoothLook.add(nextLift).sub(spanLift); spanLift.copy(nextLift); } // a span car moves fast in road-local space: no lerp lag
       if (!initialized || (car.fall !== seenFall && (trackId === FROSTBITE_ID || !!race.course))) { camera.position.copy(desiredCamera); smoothLook.copy(lookTarget); initialized = true; } seenFall = car.fall;
       camera.position.lerp(desiredCamera, smoothing); smoothLook.lerp(lookTarget, smoothing);
       // A paused photo needs immediate framing; dt-based camera smoothing is zero on pause.
@@ -881,7 +879,7 @@ export function createWorld(canvas) {
       camera.rotation.z += carBank;
       // Applied after lookAt, so the shake never feeds the smoothed camera position.
       const shakeSetting = reducedMotion || race.phase !== 'racing' || !visual.enabled ? 0 : visual.shake, shake = rigShake(view, visualCar.speed, shakeSetting);
-      camera.rotateX(Math.sin(time * 53) * shake + rigKick(view, sprintFrame.kick, shakeSetting));
+      camera.rotateX(Math.sin(time * 53) * shake + rigKick(view, sprintFrame.kick, shakeSetting, car.pickup, race.elapsed));
       if (shake) camera.rotateY(Math.sin(time * 37) * shake * 0.6);
       const floor = rumbleFloor(camera.position.distanceTo(player.position), camera.fov, canvas.height); // one rendered row at the car
       camera.position.add(rigRumble(view, visualCar.speed, sprintFrame.fov, shakeSetting, time, rumble, floor, dt).add(rigJolt(view, impact, landing, shakeSetting, time, jolt)).applyQuaternion(camera.quaternion)); // translations: the view never turns
