@@ -85,6 +85,44 @@ for (const locale of ['en', 'zh-TW']) {
   }
 }
 
+// Every other layout keeps the map in the top-right corner too, right under the toolbar row (and AIRFLOW/VFX where they
+// share it), right-aligned with the toolbar; the leaderboard yields and joins POSITION on the left, as in short landscape.
+// Short portrait (501-760px tall) used to park the map in the bottom row and desktop/tablet ~300px down. Rules: src/style.css
+// "Live map: top-right corner".
+const CORNER = [
+  { width: 1440, height: 900, touch: false }, { width: 1280, height: 720, touch: false }, { width: 1024, height: 480, touch: false },
+  { width: 1024, height: 768, touch: true }, { width: 820, height: 1180, touch: true }, { width: 884, height: 1104, touch: true },
+  { width: 1104, height: 884, touch: true }, { width: 390, height: 844, touch: true }, { width: 430, height: 932, touch: true },
+  { width: 344, height: 882, touch: true }, { width: 375, height: 667, touch: true }, { width: 320, height: 568, touch: true },
+];
+const CORNER_CLEAR = ['.toolbar', '.aero-tools', '.position-stat', '.leaderboard', '.mode-indicator', '.flight-telemetry', '.telemetry', '#touch-controls'];
+for (const { width, height, touch } of CORNER) {
+  test.describe(`corner ${width}x${height}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
+
+    test('the live map sits top-right under the toolbar row in both HUD modes', async ({ page }) => {
+      for (const hud of ['hybrid', 'competitive']) {
+        await page.addInitScript(mode => localStorage.setItem('skyline-rush-hud-mode', mode), hud);
+        await startRace(page);
+        const box = await boxes(page, ['.race-route-map', ...CORNER_CLEAR]);
+        const map = box['.race-route-map'];
+        expect(map, `${hud}: map visible`).not.toBeNull();
+        const toolbar = box['.toolbar'];
+        // AIRFLOW/VFX belong to the top row when they sit right under the toolbar (tablets drop them below POSITION).
+        const aero = box['.aero-tools'];
+        const rowBottom = Math.max(toolbar.bottom, aero && aero.top < toolbar.bottom + 30 ? aero.bottom : 0);
+        // The toolbar overruns its 12px margin on a 320px phone (ends 5px from the edge); the map keeps the 12px.
+        expect(Math.abs(map.right - Math.min(toolbar.right, width - 12)), `${hud}: right-aligned with the toolbar`).toBeLessThanOrEqual(1);
+        expect(map.top - rowBottom, `${hud}: right under the toolbar row`).toBeGreaterThanOrEqual(2);
+        expect(map.top - rowBottom, `${hud}: right under the toolbar row`).toBeLessThanOrEqual(12);
+        const hits = CORNER_CLEAR.filter(selector => box[selector] && overlaps(map, box[selector]));
+        expect(hits, `${hud}: map overlaps`).toEqual([]);
+        if (box['.leaderboard']) expect(box['.leaderboard'].right, `${hud}: leaderboard left of the map`).toBeLessThan(map.left);
+      }
+    });
+  });
+}
+
 // zh-TW lifts the caption to 10px (Han strokes blur below it), the width that overflowed the 59px portrait map.
 for (const locale of ['en', 'zh-TW']) for (const { width, height, touch } of [{ width: 390, height: 844, touch: true }, { width: 1440, height: 900, touch: false }]) {
   gameplayTest.describe(`${locale} ${width}x${height}`, () => {

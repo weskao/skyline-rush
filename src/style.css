@@ -129,7 +129,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
 .build-version { grid-column: 2; grid-row: 1; text-align: center; font-size: 11px; letter-spacing: 1.5px; color: #a5b2bd; font-variant-numeric: tabular-nums; display: none; }
 body[data-phase="ready"] .build-version { display: block; }
 body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bottom, 0px)); }
-.race-info { position: fixed; z-index: 3; inset: 135px 40px auto; display: flex; justify-content: space-between; gap: 35px; pointer-events: none; }
+.race-info { position: fixed; z-index: 3; inset: 135px 40px auto; display: flex; justify-content: flex-start; gap: 35px; pointer-events: none; }
 .position-stat > div { display: flex; align-items: baseline; gap: 9px; margin-top: 6px; }
 .position-stat strong { font: 700 66px/.9 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; }
 .position-stat > div > span { font-size: 15px; color: #bec8cf; }
@@ -1243,7 +1243,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-spiral-direction { stroke:#fff6d9; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; vector-effect:non-scaling-stroke; }
 .route-start { fill:#78dfa0; }
 .route-finish { fill:#fff; stroke:#16233d; stroke-width:1; }
-.race-route-map { position:fixed; top:300px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
+.race-route-map { position:fixed; top:140px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
 .race-route-map svg { width:100%; height:100%; overflow:visible; }
 .route-driver { stroke:#09172b; stroke-width:1.35; fill:#f7c34d; }
 .route-driver-you { fill:#fff; stroke:#09e5ff; stroke-width:2.1; }
@@ -1263,7 +1263,8 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 @media (max-width: 760px) and (min-height: 501px) {
   .leaderboard:has(.racer:nth-child(8)) .racer { height: 19px; min-height: 19px; }
 }
-/* The live map sits below the leaderboard (desktop) or the progress bar (portrait). */
+/* Live map: top-right corner on every layout, 8px under the toolbar row (and AIRFLOW/VFX where they share it), right-aligned
+   with the toolbar; the leaderboard sits beside POSITION on the left instead. Guard: tests/race-map-corner-browser.spec.js. */
 @media (max-width:760px){ .race-route-map {top:272px;right:23px;width:77px;height:94px;} .track-route-map {height:48px;} }
 @media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
 /* Short screens: telemetry and touch buttons fill the sides, so the map moves to the bottom row (see the short-screen blocks below). */
@@ -1337,36 +1338,19 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 @media(max-width:760px) {
  .track-select button > span.track-route-map { height:54px; }
- .race-route-map { width:75px;height:88px;right:18px;top:max(272px, calc(var(--race-progress-bottom, 0px) + 10px)); } /* below the progress bar, which mode HUD rows grow */
+ .race-route-map { width:75px;height:88px;right:max(12px, var(--safe-right));top:108px; } /* AIRFLOW/VFX end at 100px */
 }
 @media(max-width:400px) {
- .race-route-map {width:59px;height:72px;right:14px;top:max(270px, calc(var(--race-progress-bottom, 0px) + 8px));}
+ .race-route-map {width:59px;height:72px;}
 }
 @media(max-height:500px) and (min-width:761px) {
- .race-route-map {width:67px;height:73px;}
+ .race-route-map {width:67px;height:73px;top:128px;} /* AIRFLOW/VFX end at 120px */
  .track-select button > span.track-route-map {
    position:absolute;top:8px;left:8px;right:8px;width:auto;height:28px;
  }
 }
 @media (max-width:400px) and (max-height:700px) {
  .race-route-map {display:block;}
-}
-/* Short portrait: telemetry fills the right column, so the map sits on the bottom row beside the 2x2 thumb-action cluster
-   (mirrored for a right-hand layout). The slot is that cluster's width: 2 cells x the chosen size (TOUCH_SCALE in main.js)
-   + up to 12px column gap + 8px clearance. Portrait counts as short up to 760px: eight competitive leaderboard rows push
-   the RACING bar to ~321px, leaving the right column above the telemetry 1px short of the map on a 320x740 phone. */
-.race-route-map { --cluster-scale: 1; }
-body:has(#touch-controls[data-size="S"]) .race-route-map { --cluster-scale: .85; }
-body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15; }
-@media (max-width:760px) and (min-height:501px) and (max-height:760px) {
- .race-route-map { --cluster: calc(2 * var(--touch-cell) * var(--cluster-scale) + 20px); display:block; top:auto; bottom:max(18px, var(--safe-bottom)); right:calc(max(var(--thumb-edge), var(--safe-right)) + var(--cluster)); }
- body:has(#touch-controls[data-hand="right"]) .race-route-map { right:auto; left:calc(max(var(--thumb-edge), var(--safe-left)) + var(--cluster)); }
-}
-/* Short portrait, Buttons mode: [<][>] fill the bottom row, so the map rises 8px above them into the BRAKE row, right beside
-   the 20vw-capped BRAKE (60px is the portrait steering-button height). It shrinks to 70% there so it stays off the player's car. */
-@media (max-width:760px) and (min-height:501px) and (max-height:760px) {
- body:has(#touch-controls[data-steer-mode="buttons"]) .race-route-map { width:41px; height:50px; bottom:calc(max(var(--thumb-lift), var(--safe-bottom)) + 60px * var(--cluster-scale) + 8px); left:calc(max(var(--thumb-edge), var(--safe-left)) + 20vw + 8px); right:auto; }
- body:has(#touch-controls[data-steer-mode="buttons"][data-hand="right"]) .race-route-map { left:auto; right:calc(max(var(--thumb-edge), var(--safe-right)) + 20vw + 8px); }
 }
 /* Keep a map on short screens: it is passive and never intercepts inputs. */
 
@@ -1833,10 +1817,6 @@ body[data-fold-axis="vertical"] .leaderboard { left: calc(var(--fold-pane-right-
   body[data-fold-axis="vertical"] .event-callout { right: calc(100vw - var(--fold-pane-left-end) + 10px); }
 }
 body[data-fold-axis="vertical"] .impact-report { left: auto; right: calc(100vw - var(--fold-pane-left-end) + 10px); transform: none; }
-body[data-fold-axis="horizontal"] .race-route-map {
-  top: clamp(80px, max(30vh, calc(var(--race-progress-bottom, 0px) + 8px)), calc(var(--fold-pane-top-end) - 96px));
-  bottom: auto;
-}
 /* Portrait competitive: eight leaderboard rows reach 262px, so the RACING bar flows on its own row under the taller of
    POSITION and the leaderboard instead of a fixed 114px offset; the map and callout follow --race-progress-bottom.
    Hybrid shows fewer rows and keeps the fixed offset (a flowing bar ran into the telemetry on a 320x568 phone). */
@@ -1848,10 +1828,9 @@ body[data-fold-axis="horizontal"] .race-route-map {
 /* CJK NITRO availability remains legible during countdown, pause and racing. */
 html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 
-/* Touch tablets: the live map sits 8px under the AIRFLOW bar (242-276px); 288px left 1px to the zh-TW flight telemetry
-   on a 1024x768 iPad. The callout drops 8px under the centred mode panel instead of the desktop 206px slot inside it. */
+/* Touch tablets: the live map sits 8px under the toolbar (13-57px); AIRFLOW/VFX drop below POSITION here. The callout drops 8px under the centred mode panel instead of the desktop 206px slot inside it. */
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
-  .race-route-map { top: 284px; }
+  .race-route-map { top: 65px; right: max(12px, var(--safe-right)); }
   .event-callout { top: calc(max(144px, calc(var(--race-progress-bottom, 0px) + 8px)) + 70px); }
 }
 
