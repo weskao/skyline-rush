@@ -18,8 +18,9 @@ const pickupsOf = race => race.pickups.filter(p => p.tier !== 'overcharge' && !p
 
 // Owner brief, 2026-11-15: Neon's five authored sector lines (31 gates, src/neon-ring-lines.ts) are the same on every
 // grid, and the rolled slots inside their spans give way to them. So Neon carries the lines plus the rolled slots that
-// are left, measured per grid size (it was 7 / 14 / 21 / 56, the slot count).
-const WITH_LINES = { neon: { 1: 34, 2: 35, 3: 39, 8: 53 } };
+// are left, measured per grid size (it was 7 / 14 / 21 / 56, the slot count). 10 km lap (2026-11-15): 2.5 times the
+// slots, the same 31 gates: 34 / 35 / 39 / 53 became 44 / 58 / 70 / 131.
+const WITH_LINES = { neon: { 1: 44, 2: 58, 3: 70, 8: 131 } };
 const singlesFor = (id, cars) => WITH_LINES[id]?.[cars] ?? slotsFor(id, cars);
 
 test('L1: a race carries ITEMS_PER_CAR single rings per car on the grid, on every track', () => {

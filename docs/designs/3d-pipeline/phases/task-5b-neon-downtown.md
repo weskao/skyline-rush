@@ -50,6 +50,13 @@ is opt-in behind `?look=3d` (`src/look-gate.ts`); Low tier and load failure keep
   - N5 is refined: one rail underpass replaces the three tunnels.
   - N2 stands. Every frame in the set is rain night; `night` is the same look, dry.
 
+- [x] **N7 amended (owner, 2026-11-15): one 10 000 m lap.** 4000 m is too short: the bot laps it in 36 s. The lap
+  becomes 10 000 m, still one closed clockwise lap driven once, never two laps. Two sectors join the six: `harbour`
+  after the expressway and `oldtown` after the canal bridge. The owner delegated their design; their names, shapes
+  and dressing are provisional until the owner supplies concept art, and they are drawn with the existing kits (no
+  new GLB). This replaces "as long as the track does not get much longer" above and the 4000 m limit of step 1b.
+  `09-closed-loop-schematic.png` still shows the six-sector lap and is out of date. Work: step 11.
+
 N3 and N4 apply to the `?look=3d` look on Medium+; without the gate, and on Low, Neon keeps its sea and towers, as
 Coast does for D1 and D2. The N7 route is not gated: a road cannot differ by look, so every player gets it.
 
@@ -323,6 +330,72 @@ Open for the owner:
 - A mixed Gauntlet hoop at 2663 replaces the bridge's crown ring (`withHoops`, the older authored rule); that line
   pays PERFECT LINE on its other four rings.
 - Endless, Elimination and Event Lab build their own rings and have no sector lines.
+
+## Step 11: the 10 km lap, eight sectors (N7 amended, 2026-11-15)
+
+The route and the rings change for everyone, on every tier and with or without `?look=3d`; the art stays behind the
+gate. The record id stays `neon@7` (never shipped). Steps 1b and 10 above record the 4000 m lap as it was built;
+where their lap metres differ from this step, this step holds.
+
+### Sectors (`src/neon-scenery-plan.ts`, `NEON_SECTORS`; legs in `src/classic-road-routes.ts`)
+
+| Lap metres | Length | Sector | Road shape |
+| --- | --- | --- | --- |
+| 0 to 650 | 650 m (+114 m home) | Neon Boulevard | 663 m straight from the line |
+| 650 to 1280 | 630 m | Rail underpass | 279 m right-hander (radius 178 m) under the rail tunnel, 690 to 910 (220 m), then a 358 m straight |
+| 1280 to 2851 | 1571 m | Night market | four linked bends, 1300 to 2071 (radius 220 to 249 m), then a 780 m straight |
+| 2851 to 4351 | 1500 m | Expressway | one constant right-hand sweep (radius 955 m), over water |
+| 4351 to 5988 | 1637 m | Harbour (provisional) | 1237 m dead straight on the waterfront, then a 400 m right-hander (radius 255 m) |
+| 5988 to 7038 | 1050 m | Canal bridge | straight; the arch at 6500 |
+| 7038 to 8750 | 1712 m | Oldtown (provisional) | 300 m right-hander, four linked S-bends 7338 to 8288 (radius 181 to 183 m), a 300 m left-hander to 8627 |
+| 8750 to 10 000 | 1250 m | Violet Plaza and home | 980 m straight (from 8627), the last right-hander 9607 to 9886, 114 m to the line |
+
+Peak curvature stays 0.00845 rad/m (the two 279 m corners, as before); the loop closes in position and heading and
+does not cross itself (`tests/neon-loop.test.js`).
+
+### Lap plan (written before the harbour and oldtown rings were placed)
+
+One lap is about 90 s for a car that never lifts. A sector that pays is followed by one that spends, and no two
+neighbours ask for the same thing:
+
+| Sector | The player | NITRO | FLY fuel | Why it differs from its neighbours |
+| --- | --- | --- | --- | --- |
+| Boulevard | Launches through traffic; random rings, two footbridges (150, 330) | first charge from the random rings | full; free to fly | the only open, unscripted sector |
+| Rail underpass | Stays on the road under the 4 m roof, low rings on the inside of the corner | **earns**: a NITRO ring at the exit (940) | **charged**: the roof forbids FLY | the only sector that forbids flight |
+| Night market | Swings kerb to kerb through the bends (1294 to 1574); a swinging gate at 1850; the shortcut corridor 2200 to 2700 over the right lane | **earns**: a NITRO ring at each kerb; cells and a tank in the corridor | free inside the corridor | steering from edge to edge, then an optional flight |
+| Expressway | Holds the inside lane of the sweep flat out (3000 to 3500); a closed outer lane at 3950 | **spends**: one ring a second keeps the burn alive | not used; refills | one lane, a constant corner push |
+| Harbour | Crosswind from the sea, 4500 to 5300; holds the windward lane on the long straight against it | **spends most**: the longest burn of the lap, ending on a charge | not used: the wind carries a flying car off the line | a straight where the road does not turn but the car is pushed; steering against wind, not a corner |
+| Canal bridge | A closed lane at 6040, road works; takes off and flies the centre line over the arch (crown 6500); a gate at 6542 | **earns most**: the richest line of the lap, a risk ring at the crown | **spent**: about 4 s of flight | the only line in the air |
+| Oldtown | Weaves apex to apex through the four S-bends (7338 to 8288); a swinging gate at 7813; a rooftop corridor 8290 to 8750 over the left lane with its reward line | **earns**: a NITRO ring on alternate apexes; cells and a tank in the corridor | spent in the corridor (optional) | rhythm: tighter and more bends than the market, and the hidden path is on the other side of the road |
+| Violet Plaza and home | Bows out round the sculpture (9400), a diversion at 9480, clips the last corner, crosses the line | **spends** what oldtown paid; a slipstream gate 80 m before the line | refills | the sprint to the flag |
+
+Rules, on top of step 10's:
+- Seven authored lines: step 10's five, moved with their sectors and otherwise unchanged, plus a NITRO burn on the
+  harbour straight and a weave through oldtown. They do not scale with the grid.
+- A random ring keeps 100 m before a line (`LINE_LEAD`) and 40 m after it. At 40 m before, a random ring in a far
+  lane cost the first ring of a line on most seeds once the lines were spread over 10 km.
+- No stretch of more than 600 m without a ring line, a section, a gameplay prop or a landmark.
+- Rings: at least 22 per km on the default seed. Pickups keep the classic density per km.
+
+### Scenery under `?look=3d` (`src/neon-scenery-plan.ts`)
+
+- The six approved sectors keep their kit and landmarks at their new lap metres: portals 698 and 902, rail segments
+  from 711.875, expressway piers and parapet from 2857, arch 6500, sculpture 9400, footbridges 150 and 330.
+- Water runs from 2848 to 7041: the expressway, the harbour and the canal bridge.
+- **Harbour (provisional):** the expressway piers continue under the causeway; a quay promenade (`canal_bank`) runs
+  down both sides of the straight, its wall and bollard lamps to the open water; the expressway parapet carries the
+  corner up to the canal bridge.
+- **Oldtown (provisional):** on land, city kit only: retail and office blocks on a 20 m building line (22 m
+  elsewhere), a blade sign on nine fronts in ten, cherry trees down both sides, no tower and no screen.
+- **Reserved footprints** (`NEON_RESERVED`) for the two landmarks the concept art will define, with a stand-in from
+  the existing kit until then:
+
+  | Sector | Centre, lap metres | Offset from the centre line | Along by across | Stand-in |
+  | --- | --- | --- | --- | --- |
+  | Harbour | 5560 | 55.2 m left (seaward) | 40 by 72 m | a mole: two rows of quay pieces back to back, 13 m wide, from the quay 72 m out |
+  | Oldtown | 7655 | 42 m left (outside of the second S-bend) | 60 by 40 m | an open square: no building, one screen facing the oncoming driver, trees set back |
+
+### Evidence
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 

@@ -13,8 +13,10 @@ import { ringVariety } from '../scripts/ring-variety.mjs';
 // rings instead of 69; re-measured on the same 12 seeds (was 68.6/24.55).
 // Neon sector highlights (owner brief, 2026-11-15): five authored lines replace the random rings across their spans,
 // so the bot takes a larger share of fewer rings; re-measured on the same 12 seeds (was 63.3/24.33).
+// Neon 10 km lap (owner, 2026-11-15): the lines are 23% of the lap instead of 58%, and the bot takes the random rings
+// between them at the rate it does on every track; re-measured on the same 12 seeds (was 75.4/24.11).
 const BASELINE = {
-  coast: [64.6, 21.78], neon: [75.4, 24.11], canyon: [74.7, 22.48], aurora: [76.5, 20.85], spiral: [73.1, 22.83],
+  coast: [64.6, 21.78], neon: [69.7, 23.56], canyon: [74.7, 22.48], aurora: [76.5, 20.85], spiral: [73.1, 22.83],
   taipei: [78.2, 19.23], tokyo: [80.3, 19.8], alpine: [82.4, 17.19], coastal: [78.2, 19.53], cosmic: [81.8, 18.31],
 };
 const rows = Object.keys(RACE_TRACKS).map(id => ringVariety(id, 12));

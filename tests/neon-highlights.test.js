@@ -12,10 +12,10 @@ const forSeeds = run => {
   try { for (const seed of SEEDS) { setLayoutSeed(seed === undefined ? undefined : () => seed); run(createRace('neon'), `seed ${seed}`); } } finally { setLayoutSeed(); }
 };
 // Lap metres of each line's stretch (its first ring - 40 m to its last + 40 m), and the landmarks it has to respect.
-const STRETCH = { underpass: [460, 750], market: [750, 1111], expressway: [1760, 2341], canal: [2498, 2819], plaza: [3180, 3961] };
-const TUNNEL = [470, 690], ROOF = 4, CAR_HEIGHT = 1.2;
-const ARCH = { from: 2591.5, to: 2724.5, crown: 2658, halfWidth: 13.5, height: 14 };
-const SCULPTURE = 3400, FINISH = 4000, NITRO_SPEED = 118, HALF_CHARGE = 1.25; // s of NITRO a nitro ring pays
+const STRETCH = { underpass: [680, 970], market: [1254, 1615], expressway: [2960, 3541], canal: [6340, 6661], plaza: [9180, 9961] };
+const TUNNEL = [690, 910], ROOF = 4, CAR_HEIGHT = 1.2;
+const ARCH = { from: 6433.5, to: 6566.5, crown: 6500, halfWidth: 13.5, height: 14 };
+const SCULPTURE = 9400, FINISH = 10000, NITRO_SPEED = 118, HALF_CHARGE = 1.25; // s of NITRO a nitro ring pays
 
 /** One gate per distance in [from, to): a full-width row is one gate. */
 const gatesIn = (race, [from, to]) => Object.values(Object.groupBy(race.rings.filter(r => r.distance >= from && r.distance < to), r => r.distance));
@@ -130,6 +130,15 @@ test('the five lines are the same on every seed, and no random ring sits inside 
   // 30 single rings and the finish row of 4: nothing else in the five stretches.
   assert.equal(layouts[0].length, RACE_TRACKS.neon.ringLines.flat().length + 3, 'only authored rings in the five stretches');
 });
+
+// Fault (2026-11-15, the 10 km lap): with five lines in 10 km instead of 4 km a random ring 40 m before a line, in a
+// far lane or the air, cost the first ring of that line on most seeds. A random ring now keeps 100 m (LINE_LEAD).
+test('no random ring sits in the 100 m before a line: the car has time to line up for its first ring', () => forSeeds((race, label) => {
+  for (const line of RACE_TRACKS.neon.ringLines) {
+    const first = line[0][0], lead = race.rings.filter(r => r.distance >= first - 100 && r.distance < first);
+    assert.deepEqual(lead.map(r => r.distance), [], `${label}: before the line at ${first} m`);
+  }
+}));
 
 test('a clean lap of the bot takes every ground line whole; the bridge line needs FLY fuel in hand', () => {
   const race = createRace('neon'), car = race.player, bot = { boost: false, climb: false };

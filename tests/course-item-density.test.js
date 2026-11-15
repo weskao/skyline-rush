@@ -49,10 +49,21 @@ for (const id of Object.keys(COURSE_TRACKS)) {
 test('classic tracks keep their item counts (the length scale applies to course topologies; classic uses itemDensity)', () => {
   const counts = Object.fromEntries(classic.map(r => [r.trackId, [r.rings.length, r.pickups.length]]));
   assert.deepEqual(counts, {
-    coast: [121, 152], neon: [67, 163], canyon: [77, 139], aurora: [64, 143], spiral: [92, 157], // first five: itemDensity 1.4 (user, 2026-11-13)
+    coast: [121, 152], neon: [190, 375], canyon: [77, 139], aurora: [64, 143], spiral: [92, 157], // first five: itemDensity 1.4 (user, 2026-11-13)
     // Neon layout 7 (2026-11-14): one tunnel of 220 m instead of three of 1600 m frees ring slots, hence 69 → 98.
     // Owner brief, 2026-11-15: five authored sector lines (34 rings) replace the random rings across their spans, 98 → 67.
+    // Owner, 2026-11-15: one 10 km lap, 2.5 times the slots: 67 → 190 rings, 163 → 375 pickups.
     taipei: [70, 101], tokyo: [49, 108], alpine: [43, 110], coastal: [55, 103], cosmic: [66, 106],
+  });
+});
+
+// Trap (2026-11-15): the long-form scale divides by the mean classic length, so lengthening one classic track (Neon,
+// 4 km to 10 km) thinned every long-form course. The mean is frozen in race-tracks.ts; these counts must not move.
+test('long-form courses keep their item counts when a classic track changes length', () => {
+  const counts = Object.fromEntries(Object.keys(COURSE_TRACKS).map(id => { const r = createRace(id, { mode: 'classic' }); return [id, [r.rings.length, r.pickups.length]]; }));
+  assert.deepEqual(counts, {
+    'frostbite-canyon': [178, 267], 'stormline-megacity': [236, 324], 'volcanic-crown': [252, 441], 'monsoon-ruins': [193, 330],
+    'dune-tempest': [332, 384], 'skyfall-archipelago': [345, 428],
   });
 });
 

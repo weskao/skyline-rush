@@ -35,7 +35,10 @@ pre-2026-11-07 baseline (user: more variety, but collecting must not get much ha
   `track-themes-world-tour.ts`, themed races)
 - the mixed Gauntlet's hoop over each barricade (`gauntlet-course.ts`, merged by `withHoops`)
 - Neon Downtown's five sector lines (`src/neon-ring-lines.ts`, a track's `ringLines`; owner brief, 2026-11-15): each
-  its own PERFECT LINE, the random rings give way 40 m either side. Guard: `tests/neon-highlights.test.js`. A line
+  its own PERFECT LINE, the random rings give way 100 m before it (`LINE_LEAD`: at 40 m a random ring in a far lane
+  cost the line's first ring) and 40 m after. Guard: `tests/neon-highlights.test.js`. A track may set its own
+  `shapeOdds` (row, train odds per slot): Neon's 10 km keeps the default sum with fewer rows, or rows pass one
+  shape in three game-wide (`tests/ring-rows.test.js`). A line
   that runs through a landmark moves, never the landmark; swings go with a bend's corner push, not against it. The
   lines do not scale with the grid, so a change re-pins Neon in `tests/scaled-layout.test.js`, the parity, density
   and variety locks and the replay fixture; a mixed-Gauntlet hoop still replaces a line ring within 30 m

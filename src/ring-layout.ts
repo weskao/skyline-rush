@@ -67,7 +67,10 @@ export const TRAIN_SPACING = 25; // m
 // Balance: a train pays mostly charge and slipstream, one nitro; its PERFECT LINE adds the usual +1 NITRO.
 const TRAIN_TYPES = ['charge', 'slipstream', 'charge', 'nitro', 'slipstream', 'charge'];
 const ROW_ODDS = 0.08, TRAIN_ODDS = 0.25; // per slot
-const SHAPE_CLEARANCE = 40; // m from any road section or hoop; also what a random ring keeps from an authored line
+const SHAPE_CLEARANCE = 40; // m from any road section or hoop; also what a random ring keeps past the end of an authored line
+// m a random ring keeps before an authored line: 0.85 s at NITRO speed, time to cross the road to its first ring.
+// Trap (2026-11-15): at 40 m a random ring in the far lane 59 m before a line cost the line on that seed.
+const LINE_LEAD = 100;
 const OPENING_SINGLES = 2; // the first slots stay single, so openingNitroRings still opens on a nitro ring
 
 export const ringRow = (distance: number, type: string): RaceRing[] =>
@@ -76,7 +79,7 @@ export const ringTrain = (distance: number, x: number, air: boolean): RaceRing[]
   TRAIN_TYPES.map((type, i) => ({ ...ring(distance + i * TRAIN_SPACING, x, air ? TRAIN_AIR : ROW_ALTITUDE, type), train: i }));
 
 function shapeSlots(slots: RaceRing[], track: TrackConfig, seed: number, avoid: readonly number[]) {
-  const random = seededRng(seed, RACE_STREAMS.ringShapes), span = (TRAIN_TYPES.length - 1) * TRAIN_SPACING;
+  const random = seededRng(seed, RACE_STREAMS.ringShapes), span = (TRAIN_TYPES.length - 1) * TRAIN_SPACING, [rowOdds, trainOdds] = track.shapeOdds ?? [ROW_ODDS, TRAIN_ODDS];
   const clear = (from: number, to: number) => to < track.length - 100
     && !track.sections.some(s => to >= s.from - SHAPE_CLEARANCE && from <= s.to + SHAPE_CLEARANCE)
     && avoid.every(a => a < from - SHAPE_CLEARANCE || a > to + SHAPE_CLEARANCE);
@@ -85,9 +88,9 @@ function shapeSlots(slots: RaceRing[], track: TrackConfig, seed: number, avoid: 
     const roll = random(), air = random() < TRAIN_AIR_ODDS, d = slot.distance; // both drawn every slot: shapes never shift
     // Risk lines keep their narrow single rings (and their frequency): only other slots take a shape.
     if (i < OPENING_SINGLES || slot.type === 'risk') gates.push([slot]);
-    else if (roll < ROW_ODDS && clear(d, d)) gates.push(ringRow(d, slot.type));
+    else if (roll < rowOdds && clear(d, d)) gates.push(ringRow(d, slot.type));
     // A train also keeps SHAPE_CLEARANCE from the previous one: chains, not a bunch (Circuit has a slot every 45 m).
-    else if (roll < ROW_ODDS + TRAIN_ODDS && clear(d, d + span) && d > (trains.at(-1)?.at(-1)?.distance ?? -Infinity) + SHAPE_CLEARANCE) {
+    else if (roll < rowOdds + trainOdds && clear(d, d + span) && d > (trains.at(-1)?.at(-1)?.distance ?? -Infinity) + SHAPE_CLEARANCE) {
       trains.push(ringTrain(d, slot.x, air));
     } else gates.push([slot]);
   });
@@ -125,9 +128,9 @@ export function createRings(track: TrackConfig, riskLines = true, count = ITEMS_
     return ring(distance, x, altitude, type);
   });
   const shaped = shapeSlots(rings, track, seed, avoid);
-  // Authored lines: a random gate or train that reaches into a line's span, SHAPE_CLEARANCE either side, gives way
+  // Authored lines: a random gate or train that reaches into a line's span, LINE_LEAD before it and SHAPE_CLEARANCE after, gives way
   // to it, so the line reads as one target. Each line is its own group, numbered after the random ones.
-  const lines = track.ringLines ?? [], inLine = (r: RaceRing) => lines.some(l => r.distance >= l[0]![0] - SHAPE_CLEARANCE && r.distance <= l.at(-1)![0] + SHAPE_CLEARANCE);
+  const lines = track.ringLines ?? [], inLine = (r: RaceRing) => lines.some(l => r.distance >= l[0]![0] - LINE_LEAD && r.distance <= l.at(-1)![0] + SHAPE_CLEARANCE);
   const free = (shape: RaceRing[]) => !shape.some(inLine), gates = shaped.gates.filter(free), trains = shaped.trains.filter(free);
   const first = assignGroups(gates, trains, random);
   const authored = lines.flatMap((line, i) => line.flatMap(([distance, x, altitude, type]) =>
