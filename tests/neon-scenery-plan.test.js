@@ -176,6 +176,7 @@ test('oldtown: timber shops on a 17.5 m line down both sides with no gap on the 
     for (let i = 1; i < row.length; i++) {
       const a = row[i - 1], b = row[i], where = `side ${side}, lap ${a.lap.toFixed(0)} to ${b.lap.toFixed(0)}`;
       if (side < 0 && a.lap < 7625 && b.lap > 7685) continue; // the square opens off the street
+      if (side < 0 && a.lap < SHORTCUT_SIGN && b.lap > SHORTCUT_SIGN) { assert.ok(b.lap - a.lap < 28, `${where}: two shops stand back for the sign`); continue; }
       const gap = line => { const [ax, az] = road.point(a.lap, side * line), [bx, bz] = road.point(b.lap, side * line); return Math.hypot(bx - ax, bz - az) - WIDTH; };
       assert.ok(gap(17.5) > -.4 && gap(17.5) < 3, `${where}: ${gap(17.5).toFixed(2)} m between the fronts`);
       assert.ok(gap(26.8) > -.6, `${where}: the backs run ${(-gap(26.8)).toFixed(2)} m into each other`);
@@ -184,6 +185,17 @@ test('oldtown: timber shops on a 17.5 m line down both sides with no gap on the 
   const trees = old.filter(p => p.piece === 'cherry_tree'), lamps = old.filter(p => p.piece === 'street_lamp');
   assert.ok(trees.length >= 10 && lamps.length >= 20, 'trees and lamps on the corners either side of the S-bends');
   for (const p of [...trees.filter(p => !inSquare(p)), ...lamps]) assert.ok(p.lap < 7338 || p.lap >= 8288, `${p.piece} under the lanterns at ${p.lap.toFixed(0)}`);
+});
+
+// world.js stands a section sign 65 m before each section, 17 m left of the centre line: a pole and an 8 m panel
+// (13 to 21 m out, 4.25 to 5.75 m up). The rooftop shortcut's would otherwise stand half inside the 17.5 m shop row.
+const SHORTCUT_SIGN = RACE_TRACKS.neon.sections.find(s => s.type === 'shortcut' && neonSector(s.from) === 'oldtown').from - 65;
+test('oldtown: the two shops behind the rooftop shortcut sign stand back from it, leaving no gap in the row', () => {
+  assert.equal(SHORTCUT_SIGN, 8225);
+  for (const seed of [undefined, 1001]) {
+    const near = lap(seed).filter(p => p.piece in BUILDINGS && p.offset < 0 && p.offset > -40 && Math.abs(p.lap - SHORTCUT_SIGN) < 5.5); // half a shop and a metre
+    assert.deepEqual(near.map(p => +(-p.offset - BUILDINGS[p.piece]).toFixed(2)), [21.5, 21.5], 'fronts half a metre behind the panel');
+  }
 });
 
 test('oldtown landmarks: the gate at the sector entry, a lantern string every 24 m through the S-bends, the clock tower on the square', () => {

@@ -109,6 +109,8 @@ const OLD_SHOPS: readonly (readonly [number, number])[] = [-1, 1].flatMap(side =
 }));
 /** The blocks of the straight after the rail tunnel, in plot order; the right side starts one on. */
 const STRAIGHT = ['block_office_b', 'block_retail_a', 'tower_glass_b'] as const, PLOT = NEON_CHUNK_METRES / 4;
+/** world.js stands the rooftop shortcut's section sign 65 m before it (8290), 17 m left of the centre line. */
+const OLD_SIGN = 8225;
 const within = (metres: number, [from, to]: readonly [number, number]): boolean => metres >= from && metres < to;
 
 type Put = (piece: NeonPiece, lap: number, offset: number, yaw: number, y?: number) => void;
@@ -200,7 +202,8 @@ function oldtown({ put, every, once }: Chunk): void {
   const shop = (k: number) => k * 5 % 7 < 4 ? 'shop_market_a' : 'shop_market_b'; // a fixed mix: no run longer than two
   OLD_SHOPS.forEach(([lap, side], k) => once(lap, () => {
     if (side < 0 && lap > SQUARE[0] - 4 && lap < SQUARE[1] + 4) return;
-    put(shop(k), lap, side * (OLD_LINE + FRONT[shop(k)]), -side * HALF_PI);
+    const recess = side < 0 && Math.abs(lap - OLD_SIGN) < 5.5 ? 4 : 0; // clear of the sign's 8 m panel, 13 to 21 m out
+    put(shop(k), lap, side * (OLD_LINE + recess + FRONT[shop(k)]), -side * HALF_PI);
   }));
   once(OLD_GATE, () => put('oldtown_gate', OLD_GATE, 0, 0));
   every(LANTERNS[0], LANTERNS[1], 24, lap => put('lantern_span', lap, 0, 0));
