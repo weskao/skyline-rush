@@ -1481,7 +1481,7 @@ function hold(race, seconds, input, altitude) {
 test('every track has exactly one flight-only shortcut corridor above an edge lane; the 10 km Neon lap has two', () => {
   for (const id of TRACK_IDS) {
     const shortcuts = RACE_TRACKS[id].sections.filter(section => section.type === 'shortcut');
-    assert.equal(shortcuts.length, id === 'neon' ? 2 : 1, id); // owner, 2026-11-15: a second corridor over the old town, on the other edge lane
+    assert.equal(shortcuts.length, id === 'neon' ? 2 : 1, id); // design delegated by the owner, 2026-11-15: a second corridor over the old town, on the other edge lane
     for (const { from, to, x, altitude } of shortcuts) {
       assert.ok(to - from >= 450 && to - from <= 550, id);
       assert.ok([LANES[0], LANES[3]].includes(x), id);
