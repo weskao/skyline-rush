@@ -1,10 +1,10 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844,height:390}]){
   test(`Wave3 garage-store-readiness read-only cards browse safely at ${viewport.width}x${viewport.height}`,async({page})=>{
     await page.setViewportSize(viewport); await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const gallery=page.locator('#garage-art-source-garage-store-readiness');
     await expect(gallery).toBeVisible();
     await expect(gallery).not.toHaveAttribute('open','');
@@ -54,7 +54,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
   test(`all six store icons display complete transparent 3x art without cropping on ${viewport.width}x${viewport.height}`, async ({page}) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const gallery = page.locator('#garage-art-source-garage-store-readiness');
     await gallery.locator('summary').click();
     for (const id of storeAssets) {
@@ -151,7 +151,7 @@ test('Store preview keeps readable Coming Soon when the real 3x entrance icon fa
 for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844,height:390}]){
   test(`Wave3 garage-rewards-and-missions read-only cards browse safely at ${viewport.width}x${viewport.height}`,async({page})=>{
     await page.setViewportSize(viewport); await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const gallery=page.locator('#garage-art-source-garage-rewards-and-missions');
     await expect(gallery).toBeVisible();
     await expect(gallery).not.toHaveAttribute('open','');

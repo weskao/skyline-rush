@@ -16,10 +16,12 @@ const inCorridor = (race, p) => race.sections.some(s => s.type === 'shortcut' &&
 // The scattered pickups: not the overcharge, not a shortcut corridor's own reward line.
 const pickupsOf = race => race.pickups.filter(p => p.tier !== 'overcharge' && !p.run && !inCorridor(race, p));
 
-// Owner brief, 2026-11-15: Neon's five authored sector lines (31 gates, src/neon-ring-lines.ts) are the same on every
+// Owner brief, 2026-11-15: Neon's authored sector lines (five, 31 gates, then seven, 49: src/neon-ring-lines.ts) are the same on every
 // grid, and the rolled slots inside their spans give way to them. So Neon carries the lines plus the rolled slots that
-// are left, measured per grid size (it was 7 / 14 / 21 / 56, the slot count).
-const WITH_LINES = { neon: { 1: 34, 2: 35, 3: 39, 8: 53 } };
+// are left, measured per grid size (it was 7 / 14 / 21 / 56, the slot count). 10 km lap (2026-11-15): 2.5 times the
+// slots, the same 31 gates: 34 / 35 / 39 / 53 became 44 / 58 / 70 / 131. Seven lines and ringDensity 1.45 (step 11):
+// 63 / 77 / 89 / 156.
+const WITH_LINES = { neon: { 1: 63, 2: 77, 3: 89, 8: 156 } };
 const singlesFor = (id, cars) => WITH_LINES[id]?.[cars] ?? slotsFor(id, cars);
 
 test('L1: a race carries ITEMS_PER_CAR single rings per car on the grid, on every track', () => {

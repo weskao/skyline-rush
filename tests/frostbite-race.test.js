@@ -123,7 +123,7 @@ test('race camera shortens look-ahead through sharp classic corners and Frostbit
         assert.ok(actual > 5 && actual <= reach && turn <= 22.5 * Math.PI / 180, `${id}@${d}`);
       }
     }
-  assert.ok(lookAheadDistance('neon', 550, 65) < 65); // Neon layout 7: the underpass right-hander
+  assert.ok(lookAheadDistance('neon', 770, 65) < 65); // Neon layout 7, 10 km lap: the underpass right-hander (663-942)
   const hairpin = [...Array(400).keys()].map(i => i * 30).find(d => lookAheadDistance(FROSTBITE_ID, d, 34) < 34);
   assert.ok(hairpin !== undefined);
   const reach = lookAheadDistance(FROSTBITE_ID, hairpin, 34), f = trackFrame(FROSTBITE_ID, hairpin).forward, g = trackFrame(FROSTBITE_ID, hairpin + reach).forward;

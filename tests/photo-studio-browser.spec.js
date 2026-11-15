@@ -3,6 +3,7 @@ import { test } from './helpers/gameplay-browser.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
+import { settled } from './helpers/test.js';
 
 // Photo Studio opens from a paused Free Roam race: clean preview, car not covered by the panel, safe-area insets, frozen
 // race clock, body.photo-studio flips with [open], Escape keeps the pause, resume drives on. The photo camera orbits the
@@ -69,6 +70,7 @@ for (const [name, viewport, hasTouch, locale, trackIds, more = []] of layouts) {
         await page.keyboard.up('ArrowUp');
         await expect(page.locator('#perf-overlay')).toContainText('FRAME');
         await page.locator('#pause-button').click();
+        await settled(page.locator('.overlay-content'));
         await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
         for (const [index, size] of [viewport, ...more].entries()) await test.step(`${size.width}x${size.height}${size.insets ? ' safe area' : ''}`, async () => {
           const insets = size.insets, label = `${size.width}x${size.height}${insets ? ' with insets' : ''}`;

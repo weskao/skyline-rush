@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 const screens = [
@@ -69,7 +69,7 @@ for (const viewport of screens) for (const locale of ['en', 'zh-TW']) {
     await page.setViewportSize(viewport);
     await page.goto('/');
     if (locale === 'zh-TW') await selectLocale(page, locale);
-    await page.locator('#garage-button').click();
+    await openGarage(page);
 
     const board = page.locator('.garage-mission-board');
     await expect(board).toBeVisible();

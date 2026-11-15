@@ -186,19 +186,20 @@ walls and above its roof, so the runtime hides those in the 3D look or they cove
 
 ### Nodes, size and placement
 
-Bounds are min .. max in metres about the pivot, in delivered axes (x right, y up, z back along the road).
+Bounds are min .. max in metres about the pivot, in delivered axes (x right, y up, z back along the road). Lap
+distances are those of the 10 km lap (2026-11-15); the meshes did not change.
 
 | Pivot | Meshes | x | y | z | Sector, lap distance (m) | Placement |
 | --- | --- | --- | --- | --- | --- | --- |
-| `rail_portal` | `rail_portal_lod0`, `_lod1` | -22.0 .. 22.0 | -0.4 .. 10.68 | -9.5 .. 8.09 | rail underpass, 470-690 | 2: at 478 with yaw = road heading (entry), at 682 with heading + 180 deg (exit) |
-| `rail_segment` | `rail_segment_lod0`, `_lod1` | -14.9 .. 14.9 | -0.4 .. 7.3 | -7.5 .. 6.0 | rail underpass, 486-674 | 16: at 491.875 + 11.75 k, yaw = heading at the pivot |
-| `expressway_pier` | `expressway_pier_lod0`, `_lod1` | -13.4 .. 13.4 | -16.0 .. -1.5 | -1.55 .. 1.55 | elevated expressway, 1657-2330 | every 36 m on the centre line; hangs below the road |
-| `expressway_rail` | `expressway_rail_lod0`, `_lod1` | -0.75 .. 0.45 | -1.6 .. 1.42 | -6.0 .. 6.0 | elevated expressway, 1657-2330 | both sides, 13.2 m out, one per 12 m of the rail's own line |
-| `canal_arch` | `canal_arch_lod0`, `_lod1` | -19.5 .. 19.5 | -10.0 .. 36.1 | -66.5 .. 66.5 | canal arch bridge, 2330-2986 | 1: at 2658 (mid-span) on the straight |
-| `canal_bridge_rail` | `canal_bridge_rail_lod0`, `_lod1` | -0.75 .. 0.43 | -1.3 .. 1.32 | -6.0 .. 6.0 | canal arch bridge, 2330-2986 | both sides, 13.2 m out, one per 12 m |
-| `canal_bank` | `canal_bank_lod0`, `_lod1` | -3.5 .. 3.0 | -8.0 .. 1.43 | -6.0 .. 6.0 | canal arch bridge, 2330-2986 | along each bank, one per 12 m, +X toward the water |
-| `plaza_sculpture` | `plaza_sculpture_lod0`, `_lod1` | -7.0 .. 7.0 | 0.0 .. 15.07 | -7.0 .. 7.0 | Violet Plaza, 3200-3607 | 1: 30 m or more left of the centre line near 3400 |
-| `boulevard_footbridge` | `boulevard_footbridge_lod0`, `_lod1` | -22.0 .. 22.0 | -0.2 .. 17.38 | -2.84 .. 2.84 | start-finish boulevard, 0-443 | 2: about 150 and 330 on the centre line |
+| `rail_portal` | `rail_portal_lod0`, `_lod1` | -22.0 .. 22.0 | -0.4 .. 10.68 | -9.5 .. 8.09 | rail underpass, 690-910 | 2: at 698 with yaw = road heading (entry), at 902 with heading + 180 deg (exit) |
+| `rail_segment` | `rail_segment_lod0`, `_lod1` | -14.9 .. 14.9 | -0.4 .. 7.3 | -7.5 .. 6.0 | rail underpass, 706-894 | 16: at 711.875 + 11.75 k, yaw = heading at the pivot |
+| `expressway_pier` | `expressway_pier_lod0`, `_lod1` | -13.4 .. 13.4 | -16.0 .. -1.5 | -1.55 .. 1.55 | elevated expressway and harbour causeway, 2851-5988 | every 36 m on the centre line; hangs below the road |
+| `expressway_rail` | `expressway_rail_lod0`, `_lod1` | -0.75 .. 0.45 | -1.6 .. 1.42 | -6.0 .. 6.0 | elevated expressway 2857-4351, harbour corner 5594-5988 | both sides, 13.2 m out, one per 12 m of the rail's own line |
+| `canal_arch` | `canal_arch_lod0`, `_lod1` | -19.5 .. 19.5 | -10.0 .. 36.1 | -66.5 .. 66.5 | canal arch bridge, 5988-7038 | 1: at 6500 (mid-span) on the straight |
+| `canal_bridge_rail` | `canal_bridge_rail_lod0`, `_lod1` | -0.75 .. 0.43 | -1.3 .. 1.32 | -6.0 .. 6.0 | canal arch bridge, 5990-7038 | both sides, 13.2 m out, one per 12 m |
+| `canal_bank` | `canal_bank_lod0`, `_lod1` | -3.5 .. 3.0 | -8.0 .. 1.43 | -6.0 .. 6.0 | canal banks, the harbour quay and its mole stand-in (provisional) | along each bank and down both sides of the harbour straight, one per 12 m, +X toward the water |
+| `plaza_sculpture` | `plaza_sculpture_lod0`, `_lod1` | -7.0 .. 7.0 | 0.0 .. 15.07 | -7.0 .. 7.0 | Violet Plaza, 8750-10 000 | 1: 30 m or more left of the centre line near 9400 |
+| `boulevard_footbridge` | `boulevard_footbridge_lod0`, `_lod1` | -22.0 .. 22.0 | -0.2 .. 17.38 | -2.84 .. 2.84 | start-finish boulevard, 0-650 | 2: about 150 and 330 on the centre line |
 
 Not yet placed (the 10 km route is built elsewhere; lap distances follow from it):
 
