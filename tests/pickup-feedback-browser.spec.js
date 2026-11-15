@@ -42,3 +42,40 @@ test.describe('pickup haptics on a phone', () => {
     }
   });
 });
+
+// The cue extends the fuel meter's existing data-refilling state; "+N" is the fuel the take actually added.
+const fuelCue = page => page.evaluate(() => {
+  const gain = document.getElementById('fuel-gain'), box = gain?.getBoundingClientRect();
+  const label = document.querySelector('.fuel-heading .stat-label').getBoundingClientRect();
+  return {
+    refilling: document.getElementById('fuel-meter').dataset.refilling,
+    shown: !!gain && !gain.hidden && box.width > 0 && getComputedStyle(gain).visibility === 'visible',
+    text: gain?.textContent,
+    inView: !!box && box.left >= 0 && box.top >= 0 && box.right <= innerWidth && box.bottom <= innerHeight,
+    clearOfLabel: !box || box.left >= label.right || box.right <= label.left || box.top >= label.bottom || box.bottom <= label.top,
+    moves: (gain?.getAnimations() ?? []).some(a => a.effect.getKeyframes().some(k => k.transform && k.transform !== 'none')),
+  };
+});
+for (const [name, viewport, reducedMotion] of [
+  ['desktop', { width: 1440, height: 900 }, 'no-preference'],
+  ['phone portrait', { width: 390, height: 844 }, 'no-preference'],
+  ['phone landscape', { width: 844, height: 390 }, 'no-preference'],
+  ['phone portrait, Reduced Motion', { width: 390, height: 844 }, 'reduce'],
+]) test.describe(`pickup fuel cue, ${name}`, () => {
+  test.use({ viewport, hasTouch: name.startsWith('phone') });
+  test('a can flashes the fuel bar and shows the fuel it added, then clears', async ({ gameplayPage: page }) => {
+    await page.emulateMedia({ reducedMotion });
+    await startRace(page);
+    // phones hide the telemetry while the GO countdown shows (style.css :has(#countdown))
+    await expect(page.locator('#fuel-meter')).toBeVisible({ timeout: ciTimeout(5000) });
+    await offer(page, 'can');
+    await expect.poll(() => fuelCue(page)).toMatchObject({ refilling: 'pickup', shown: true, text: '+10', inView: true, clearOfLabel: true });
+    expect((await fuelCue(page)).moves).toBe(reducedMotion !== 'reduce');
+    await test.info().attach(`pickup-fuel-cue-${name}.png`, { body: await page.screenshot(), contentType: 'image/png' });
+    await expect.poll(() => fuelCue(page), { timeout: ciTimeout(6000) }).toMatchObject({ shown: false });
+    expect((await fuelCue(page)).refilling).not.toBe('pickup'); // settled: the cue cleared in the poll above
+    await offer(page, 'can', 100);
+    await expect.poll(async () => (await takenBy(page))?.fuel).toBe(0);
+    expect(await fuelCue(page)).toMatchObject({ shown: false }); // settled: a take that added no fuel shows no "+0"
+  });
+});

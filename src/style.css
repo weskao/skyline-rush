@@ -2325,3 +2325,15 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 
 /* The rolling Endless minimap follows the current road window and has no finite finish. */
 body[data-race-mode="endless"] #race-route-map[data-streaming] { display: block; }
+
+/* Player pickup (pickup-fuel-cue.ts): the fuel bar flashes and "+N" rides right of the reading, clear of the label.
+   Appended after the byte-locked main CSS contract. Reduced Motion keeps a still highlight and a still "+N", with no sweep or pop. */
+.fuel-heading > span { position: relative; }
+.fuel-gain { position: absolute; left: calc(100% + 3px); top: -2px; color: #fff4d6; font: 700 12px/1 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 0 6px rgb(255 214 130 / .85); pointer-events: none; }
+.fuel-gain[hidden] { display: none; }
+.fuel-track[data-refilling="pickup"] > i { filter: brightness(1.6); box-shadow: 0 0 8px rgb(255 228 160 / .85); }
+.fuel-track[data-refilling="pickup"]::after { opacity: .9; animation: fuel-refill .45s ease-out; }
+.vfx-comfort .fuel-track[data-refilling="pickup"]::after { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .fuel-track[data-refilling="pickup"]::after { opacity: 0; }
+}

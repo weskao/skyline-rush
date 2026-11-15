@@ -5,3 +5,5 @@
 export const PICKUP_HAPTIC_MS: Readonly<Record<string, number>> = { cell: 0, can: 9, tank: 14, overcharge: 20 };
 /** Share of the NITRO/BOOST ignition kick (race-camera.ts rigKick). */
 export const PICKUP_KICK_SHARE: Readonly<Record<string, number>> = { cell: 0, can: 0.2, tank: 0.35, overcharge: 0.5 };
+/** Seconds the fuel bar flashes and shows "+N" after a take that added fuel (race-hud.ts). */
+export const PICKUP_FUEL_CUE = 0.9;

@@ -14,6 +14,7 @@ import { createHaptics } from './haptics.ts';
 import { createSprintReadyFeedback, type SprintReadyCue } from './sprint-ready-feedback.ts';
 import { orderRaceLeaderboard, graphRivalGap } from './course-hud-standings.ts';
 import { PICKUP_HAPTIC_MS } from './pickup-feedback.ts';
+import { createPickupFuelCue } from './pickup-fuel-cue.ts';
 
 // The in-race HUD, written every HUD tick (~13 Hz) from the frame loop. It stays imperative:
 // elements are looked up once, text/hidden are written only when they change, no Vue reactivity.
@@ -65,6 +66,7 @@ export function createRaceHud(options: HudOptions) {
   boostStatus.id = 'boost-status';
   boostStatus.className = 'boost-status';
   $('.fuel-stat').append(boostStatus);
+  const fuelCue = createPickupFuelCue(ui['fuel-value']!.parentElement!, () => !getVisual().comfortable && !reducedMotion.matches);
   const callouts = createCallouts();
   const haptic = createHaptics();
   const eventCallout = $('#event-callout');
@@ -140,7 +142,8 @@ export function createRaceHud(options: HudOptions) {
     ui['fuel-fill']!.style.transform = `scaleX(${car.fuel / 100})`;
     ui['fuel-meter']!.setAttribute('aria-valuenow', String(Math.round(car.fuel)));
     ui['fuel-meter']!.setAttribute('aria-valuetext', `${car.fuel < 20 ? L['hud.lowCharge'] : ''}${Math.round(car.fuel)}%`);
-    ui['fuel-meter']!.dataset.refilling = String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
+    const pickup = fuelCue.update(race.phase === 'racing', race.elapsed, car.pickup);
+    ui['fuel-meter']!.dataset.refilling = pickup ? 'pickup' : String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
     previousFuel = car.fuel;
     setHudText(hudNodes['style-score']!, race.mode === 'gauntlet' ? t('mode.hazardHud', { n: race.hazards.filter((h: HudRace) => h.passed).length, total: race.hazards.length, score: Math.floor(car.score) }) : interpolate(L['hud.style']!, { n: Math.floor(car.score) }));
     setHudText(ui.altitude!, car.altitude.toFixed(1));
