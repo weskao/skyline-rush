@@ -11,6 +11,13 @@
 - [x] `can` pickup vs BOOST red-orange (`feature/pickup-can-glow`): **not confusable, no asset change.** The baked `can` accent is already amber: `0xFF9D35` = 31° (`scripts/assets/pickup_kit.py` TIERS, `src/pickup-art.js` PICKUP_ACCENTS), against `--boost` 20° and tank gold `0xFFCF48` 44° / `--nitro` 42°. Real race captures on Coast (dev server, Chrome, GLB pickups loaded, BOOST held so the charge bar is BOOST orange), with the game loop frozen on the frame where a `can` sat 20–22 m ahead. Hue of saturated glowing pixels in the projected `can` box vs the `#fuel-fill` bar: phone portrait 390×844 touch, `can` median 35.5° (p25 34.5°; bar empty, 0%). Phone landscape 844×390 touch, `can` 30.8° (p25 28.8°) vs bar 20.0°. Desktop 1440×900, `can` 31.1° (p25 29.5°) vs bar 20.0°. The rendered `can` stays ≥ 10.8° from BOOST at the median and ≥ 8.8° at p25. On screen it reads as a yellow-orange object with steel armour, not the red-orange HUD bar. Screenshots and the capture script are local session evidence (not committed).
 - Not changed: the legacy amber NITRO/BOOST rules in `src/style.css` (`.controls-preview-keys .touch-nitro`, `.touch-controls .touch-nitro*`, `.touch-controls .touch-boost` border/colour) are dead because `#touch-controls` / `#controls-panel` ID rules override them. The tutorial's combined `fly boost nitro` key cue keeps the default cyan, because its `kbd`s carry no per-action marker.
 
+# 2026-11-15 — Home showcase and race camera handoff
+
+- [x] Coast: Start opens on the rear chase camera from the first rendered frame after right, front or orbit Home views. Leaving a race and reloading restores the last showcase view from local storage. A fresh Start resets the previous race's first-person selection.
+- [x] RED: first race bearings were 57°, 153° and 98° from the rear, and the next race retained first person. GREEN: all four Chromium tests in `tests/home-race-camera-browser.spec.js` passed at desktop 1440×900, touch portrait 390×844 and touch landscape 844×390, with real WebGL captures (`home-camera.png` / `race-camera.png`) and no page errors during the camera handoffs.
+- [x] Module-size and type checks, locked production build and the full unit suite passed (2,974 passed, 3 skipped).
+- [ ] Full browser/World Tour suites, physical iOS/Android checks and exact-commit GitHub `quality-gate`.
+
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
 - [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.

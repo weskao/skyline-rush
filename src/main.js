@@ -149,6 +149,7 @@ const hud = createRaceHud({
   motionOptions, touchPreference, reducedMotion,
 });
 function leaveIntro() {
+  world.resetRaceCamera(); ui['camera-button'].setAttribute('aria-pressed', 'false');
   if (calmMotion()) return;
   ui.intro.inert = true;
   const animation = ui.intro.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-36px)' }], motionOptions('base'));
