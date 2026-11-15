@@ -41,6 +41,10 @@ must preview and equip correctly on every selectable car. Use the shared equipme
 and application path. Fit model-dependent effects to the active car's geometry or attachment
 points so the same equipment also works when a new car is added.
 
+Changing car models carries forward the equipped paint and any live paint preview. Persist
+only the equipped paint for the new car, and let the shared model loader warm the replacement
+before drawing it. Guards: `tests/crimson-gt-browser.spec.js` and `tests/garage-model.test.js`.
+
 Verify each changed item on every selectable car. Check the Garage preview and the equipped
 appearance after switching cars, including the home showcase and races where the item appears.
 

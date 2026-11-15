@@ -32,15 +32,21 @@ export interface RaceCameraView {
   rumble: number;
   /** NITRO/BOOST ignition kick: radians of pitch per unit of the Camera shake setting, capped at KICK_LIMIT. */
   kick: number;
+  /** Hit / touchdown jolt: metres of eye translation at a full event per unit of the Camera shake setting, capped at JOLT_LIMIT. */
+  jolt: number;
 }
 
-const SHARED = { speedFov: 0.115, flyAltitude: 6, swingIn: 4.5, swingOut: 3, kick: 0.085 };
+const SHARED = { speedFov: 0.115, flyAltitude: 6, swingIn: 4.5, swingOut: 3, kick: 0.085, jolt: 0.5 };
 /** The kick is one damped swing: seconds it lasts, its frequency, and the most it may turn the camera (1.2 degrees). */
 const KICK_TIME = 0.35, KICK_HZ = 4, KICK_LIMIT = 0.021;
+/** The most a hit or a touchdown may move the eye (m). */
+const JOLT_LIMIT = 0.2;
 /** The dolly pivots on the rear bumper (m behind the origin) and stops widening at DOLLY_MAX_FOV degrees. */
 const DOLLY_PIVOT = 2.4, DOLLY_MAX_FOV = 170;
 /** Rumble: extra share at a full NITRO/BOOST, the most it may move the eye (m), its slow road waves and fine tyre buzz (Hz). */
 const RUMBLE_SPRINT = 0.8, RUMBLE_LIMIT = 0.05, RUMBLE_HZ = [1.3, 2.1, 2.9, 1.7, 2.6] as const, RUMBLE_BUZZ_HZ = 17;
+/** Longest frame (s) that still carries the buzz: 2.5 samples per cycle, or it folds back into a slow wobble. */
+const RUMBLE_BUZZ_DT = 1 / (2.5 * RUMBLE_BUZZ_HZ);
 
 export const RACE_CAMERA: Record<'chase' | 'chasePortrait' | 'first', RaceCameraView> = {
   chase: { ...SHARED, back: 7.6, height: 2.5, look: 1.5, ahead: 34, follow: 0.74, fov: 57, dolly: 1, flyLift: 1.5, swing: 0.5, speedShake: 0, rumble: 0.12 },
@@ -118,15 +124,36 @@ export function rigShake(view: RaceCameraView, speed: number, strength: number):
 /**
  * Road rumble written to `out` (camera-local metres, z 0): slow 1-3 Hz road waves plus a fine tyre buzz, growing with the
  * square of the speed and with the eased sprint share. A translation, not a rotation: the car and the road move a few cm
- * while the horizon stays still, so it never reads as the old judder. `strength` is the Camera shake setting.
+ * while the horizon stays still, so it never reads as the old judder. `strength` is the Camera shake setting. `floor`
+ * (rumbleFloor) lifts the top-speed amplitude to one rendered row; `dt` is the frame time, and the buzz is dropped when the
+ * frame rate cannot carry it (0 = unknown, keeps it).
  */
-export function rigRumble(view: RaceCameraView, speed: number, sprint: number, strength: number, time: number, out: Vector3): Vector3 {
-  const pace = unit(speed / MAX_SPEED), amp = Math.min(RUMBLE_LIMIT, unit(strength) * view.rumble * (1 + RUMBLE_SPRINT * unit(sprint))) * pace * pace;
+export function rigRumble(view: RaceCameraView, speed: number, sprint: number, strength: number, time: number, out: Vector3, floor = 0, dt = 0): Vector3 {
+  const pace = unit(speed / MAX_SPEED), on = unit(strength) > 0 && view.rumble > 0;
+  const amp = on ? Math.min(RUMBLE_LIMIT, Math.max(unit(strength) * view.rumble, finite(floor)) * (1 + RUMBLE_SPRINT * unit(sprint))) * pace * pace : 0;
   if (!(amp > 0)) return out.set(0, 0, 0);
-  const t = 2 * Math.PI * finite(time), [a, b, c, d, e] = RUMBLE_HZ;
-  const y = 0.9 * (Math.sin(a * t) + 0.6 * Math.sin(b * t + 1.7) + 0.4 * Math.sin(c * t + 4.1)) / 2 + 0.1 * Math.sin(RUMBLE_BUZZ_HZ * t);
+  const t = 2 * Math.PI * finite(time), [a, b, c, d, e] = RUMBLE_HZ, buzz = finite(dt) > RUMBLE_BUZZ_DT ? 0 : 0.1;
+  const y = 0.9 * (Math.sin(a * t) + 0.6 * Math.sin(b * t + 1.7) + 0.4 * Math.sin(c * t + 4.1)) / 2 + buzz * Math.sin(RUMBLE_BUZZ_HZ * t);
   const x = (Math.sin(d * t + 0.6) + 0.5 * Math.sin(e * t + 2.3)) / 1.5;
   return out.set(0.45 * amp * x, 0.85 * amp * y, 0); // |(x, y)| <= amp
+}
+
+/** Metres of eye motion that move something `distance` m away by one row of a `rows`-tall frame at `fov` degrees. */
+export function rumbleFloor(distance: number, fov: number, rows: number): number {
+  const metres = 2 * distance * Math.tan(fov * Math.PI / 360) / rows;
+  return distance > 0 && rows > 0 && Number.isFinite(metres) && metres > 0 ? metres : 0;
+}
+
+/**
+ * Hit / touchdown jolt written to `out` (camera-local metres, z 0). `impact` and `landing` are world.js's 0–1 event
+ * envelopes: a hit shakes both axes at ~8-10 Hz, a landing thumps y. Applied after lookAt like the rumble, because the
+ * camera lerp (1 - e^(-7 dt)) keeps only ~11% of a 9.7 Hz shake. `strength` is the Camera shake setting.
+ */
+export function rigJolt(view: RaceCameraView, impact: number, landing: number, strength: number, time: number, out: Vector3): Vector3 {
+  const amp = Math.min(JOLT_LIMIT, unit(strength) * view.jolt), hit = unit(impact), thump = unit(landing), t = finite(time);
+  if (!(amp > 0) || hit + thump === 0) return out.set(0, 0, 0);
+  const y = (0.6 * hit * Math.sin(t * 47) + 0.8 * thump * Math.sin(t * 41)) / Math.max(1, 0.6 * hit + 0.8 * thump);
+  return out.set(amp * hit * Math.sin(t * 61), amp * y, 0);
 }
 
 /** Pitch in radians `age` seconds after a NITRO/BOOST ignition: one damped swing from rest, 0 once it is over. */

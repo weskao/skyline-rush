@@ -52,6 +52,7 @@ const PAD_BRAKE_COPY = new Set(['tutorial.brake', 'tutorial.brakeRetry.noBrake',
   ...['brakeAhead', 'brakeHold', 'driftSpeed', 'driftStart', 'driftRelease', 'driftMax'].map(cue => 'tutorial.cue.' + cue)]);
 function controlVariant(key: string, { touch, steerMode, flyMode }: HintControls): string {
   if (!touch) return key;
+  if (key === 'tutorial.cue.nitro') return 'tutorial.touch.nitro';
   if (flyMode === 'toggle' && TOGGLE_FLY_COPY.has(key)) return key + 'Toggle';
   return steerMode !== 'buttons' && PAD_BRAKE_COPY.has(key) ? key + 'Slide' : key;
 }
@@ -123,9 +124,9 @@ export function tutorialCueView(cue: TutorialCue | null | undefined, touch: bool
   };
 }
 
-/** Phone controls that pulse now. The air chain follows its live cue so toast and ripple never disagree: FLY to take off,
- * then BOOST + NITRO (either counts, game.js) while FLY is held, nothing while releasing or landing. */
+/** Phone controls that pulse now. NITRO needs a fresh press; the air chain accepts either BOOST or NITRO in flight. */
 export function tutorialTouchControls(step: string | null, cue: TutorialCue | null | undefined, action: string | null): string[] {
+  if (step === 'nitro') return cue?.key === 'tutorial.cue.nitro' ? ['nitro'] : [];
   if (step !== 'airChain' || !cue) return action ? [action] : [];
   if (cue.key === 'tutorial.cue.chainFly') return ['fly'];
   return cue.actions.includes('boost') ? ['boost', 'nitro'] : [];

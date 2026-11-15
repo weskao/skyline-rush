@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, DynamicDrawUsage, Float32BufferAttribute } from 'three';
+import { BufferAttribute, BufferGeometry, DynamicDrawUsage, Float32BufferAttribute, Matrix4, Quaternion, Vector3, Object3D, type InstancedMesh } from 'three';
 
 export function carShell(sections: readonly (readonly [number, number, number, number])[]): BufferGeometry {
   const vertices: number[] = [];
@@ -58,4 +58,17 @@ export function setRoadRow(geometry: BufferGeometry, row: number, x: number, z: 
   (geometry.attributes.position.array as Float32Array).set([x - dx, 0, z - dz, x + dx, 0, z + dz], row * 6);
   const v = (distance - Math.floor(ribbonTile / ROAD_UV_PERIOD) * ROAD_UV_PERIOD) / ROAD_UV_METRES;
   (geometry.attributes.uv.array as Float32Array).set([0, v, 1, v], row * 4);
+}
+
+const matrix = new Matrix4();
+const rotation = new Quaternion();
+const position = new Vector3();
+const scale = new Vector3();
+
+export function putInstance(mesh: InstancedMesh, index: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, angle = 0) {
+  position.set(x, y, z);
+  scale.set(sx, sy, sz);
+  rotation.setFromAxisAngle(Object3D.DEFAULT_UP, angle);
+  matrix.compose(position, rotation, scale);
+  mesh.setMatrixAt(index, matrix);
 }

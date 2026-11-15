@@ -121,6 +121,6 @@ npx playwright test tests/pickup-3d-browser.spec.js tests/pickup-3d-collection-b
 make verify
 ```
 
-CI runs the two browser specs on the default build and uploads their real WebGL frames as
-`pickup-3d-visual-evidence`. Physical-phone art review and the exact-HEAD full CI are separate
+CI runs the two browser specs in the browser shards (main and develop) and uploads their real WebGL
+frames as `pickup-3d-visual-evidence-<shard>`. Physical-phone art review and the exact-HEAD full CI are separate
 gates; see `TODO.md` for what has been run.

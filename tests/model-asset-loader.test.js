@@ -87,6 +87,42 @@ test('slow GLB times out, aborts the fetch and ignores the late response', async
   assert.equal((await retry).kind, 'model');
 });
 
+test('a downloaded GLB can finish decoding after the network deadline', async ({ mock }) => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  const { MeshoptDecoder } = await import('three/examples/jsm/libs/meshopt_decoder.module.js');
+  await MeshoptDecoder.ready;
+  const { fetch, calls } = fakeFetch();
+  const entry = { ...validEntry(), decoders: ['meshopt'] };
+  const decoderStarted = Promise.withResolvers();
+  const decoderReady = Promise.withResolvers();
+  const cache = cacheWith(fetch, entry, { loadMeshopt: () => {
+    decoderStarted.resolve();
+    return decoderReady.promise;
+  } });
+  const pending = cache.load(entry.id);
+  await decoderStarted.promise;
+  mock.timers.tick(51);
+  decoderReady.resolve(MeshoptDecoder);
+  const result = await pending;
+  assert.equal(result.kind, 'model');
+  assert.equal(calls[0].signal.aborted, false);
+  result.release();
+});
+
+test('a decoder that never becomes ready still falls back at its own deadline', async ({ mock }) => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  const entry = { ...validEntry(), decoders: ['meshopt'] };
+  const decoderStarted = Promise.withResolvers();
+  const cache = cacheWith(fakeFetch().fetch, entry, { decodeTimeoutMs: 80, loadMeshopt: () => {
+    decoderStarted.resolve();
+    return new Promise(() => {});
+  } });
+  const pending = cache.load(entry.id);
+  await decoderStarted.promise;
+  mock.timers.tick(80);
+  assert.deepEqual(await pending, { kind: 'fallback', id: entry.id, fallback: entry.fallback, reason: 'timeout' });
+});
+
 test('failures are not cached: the next load fetches again', async () => {
   let status = 404;
   const { fetch, calls } = fakeFetch(() => (status === 404 ? new Response('', { status }) : new Response(makeGlb())));
@@ -244,6 +280,34 @@ test('disposal: resources dispose exactly once when the last handle releases; do
   assert.ok([...counts.values()].every(n => n === 1));
   await cache.load('probe-test');
   assert.equal(calls.length, 2, 'released entry is removed; next load re-fetches');
+});
+
+test('an opted-in cache reuses two idle models and disposes them on eviction or teardown', async () => {
+  const { fetch, calls } = fakeFetch();
+  const manifest = Object.fromEntries(['a', 'b', 'c'].map(suffix => {
+    const entry = validEntry(`probe-${suffix}`);
+    return [entry.id, entry];
+  }));
+  const cache = cacheWith(fetch, undefined, { manifest, retainReleasedModels: true });
+  const first = await cache.load('probe-a');
+  const firstWheel = first.instance().getObjectByName('wheel_fl');
+  const counts = trackDisposals(first.instance());
+  first.release();
+  const second = await cache.load('probe-b');
+  const secondCounts = trackDisposals(second.instance());
+  second.release();
+
+  const again = await cache.load('probe-a');
+  assert.equal(calls.length, 2, 'switching back avoids a new fetch and parse');
+  assert.equal(again.instance().getObjectByName('wheel_fl').geometry, firstWheel.geometry);
+  assert.ok([...counts.values()].every(n => n === 0));
+  again.release();
+  const third = await cache.load('probe-c');
+  const thirdCounts = trackDisposals(third.instance());
+  third.release();
+  assert.ok([...secondCounts.values()].every(n => n === 1), 'the older idle entry was evicted');
+  cache.dispose();
+  assert.ok([...counts.values(), ...thirdCounts.values()].every(n => n === 1), 'world disposal frees the retained models');
 });
 
 test('single GLTFLoader backend; no renderer, no KTX2Loader construction and no Draco in the loader module', () => {

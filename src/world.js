@@ -13,13 +13,13 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { createLensPass } from './lens-pass.ts';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { roadRibbon } from './geometry.ts';
+import { roadRibbon, putInstance as put } from './geometry.ts';
 import { classicRoadRoute, legacyClassicRoad } from './classic-road-routes.ts';
 import { createClassicRoadRender } from './classic-road-render.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
 import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
-import { raceCameraView, rigBack, rigLook, rigHeight, rigFov, rigShake, rigKick, rigRumble, stepCameraSwing, frameChaseSightline } from './race-camera.ts';
+import { raceCameraView, rigBack, rigLook, rigHeight, rigFov, rigShake, rigKick, rigRumble, rigJolt, rumbleFloor, stepCameraSwing, frameChaseSightline } from './race-camera.ts';
 import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
 import { createRenderer } from './webgl-renderer.ts';
@@ -59,19 +59,8 @@ import { createGraceFade, graceOpacity } from './grace-fade.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const box = new THREE.BoxGeometry(1, 1, 1);
-const matrix = new THREE.Matrix4();
-const rotation = new THREE.Quaternion();
-const position = new THREE.Vector3();
-const scale = new THREE.Vector3();
 const TOUR_IDS = new Set(['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']);
 const framedRoad = (id, endless = false) => TOUR_IDS.has(id) || id === CIRCUIT_ID || (!endless && (id === FROSTBITE_ID || MEASURED_COURSE_IDS.has(id) || isCourseRuntime(id)));
-function put(mesh, index, x, y, z, sx, sy, sz, angle = 0) {
-  position.set(x, y, z);
-  scale.set(sx, sy, sz);
-  rotation.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, angle);
-  matrix.compose(position, rotation, scale);
-  mesh.setMatrixAt(index, matrix);
-}
 export function createWorld(canvas) {
   // Scoped continuation: finite career/Ghost path API still clamps at the finish.
   let endlessActive=false, curvedClassic = false, classicRoute = legacyClassicRoad;
@@ -414,11 +403,11 @@ export function createWorld(canvas) {
   const sprintVisual = createSprintVfx();
   // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
   const sprintInput = { phase: 'ready', nitro: false, chain: 0, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
-  let visual = vfxSettings(), garageHomeVisual = { ...visual, airflow: true };
+  let visual = vfxSettings(), garageHomeVisual = { ...visual, airflow: true }, garageHiddenVisual = { ...visual, enabled: false };
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
   const desiredCamera = new THREE.Vector3();
   const lookTarget = new THREE.Vector3();
-  const smoothLook = new THREE.Vector3(0, 2, -25), rumble = new THREE.Vector3(); // rumble: the world offset added after lookAt last frame
+  const smoothLook = new THREE.Vector3(0, 2, -25), rumble = new THREE.Vector3(), jolt = new THREE.Vector3(); // rumble: the world offset (rumble + jolt) added after lookAt last frame
   let cameraMode = 0, cameraSwing = 0;
   let initialized = false, lastRace = null, trackId, carBank = 0, seenFall = null, spanLift = new THREE.Vector3(), nextLift = new THREE.Vector3(); const courseOriginPoint = [0, 0, 0]; // Frostbite span: a respawn (up to ~500 m back) cuts the camera; the lift carries it
   const classicRoadRender = createClassicRoadRender({ road, laneLines, curbs, edgeLines, railLights, tunnelRoofs, tunnelWalls, shortcutDeck, surfaceMarks }, segments, put, SHORTCUT_TOLERANCE);
@@ -495,7 +484,16 @@ export function createWorld(canvas) {
   }
   return {
     resize, setUpcomingTrack(id) { return upcomingStage.setTrack(id); }, setGarageCamera(snapshot) { if (!!garageCamera !== !!snapshot) initialized = false; garageCamera = snapshot; if (snapshot && !garageStage) { garageStage = createGarageStage(environment.texture, carEnvironment); garageWarmupPending = true; if (garagePaint) garageStage.setPaint(garagePaint); garageStage.configureVFX(visual); garageStage.setSkins(garagePreviewSkins); } if (!snapshot) renderPass.scene = scene; syncGarageLighting(); }, setCosmeticSkins(ids) { aero.setSkins(ids); upcomingStage.setAirflowSkin(ids?.airflow); }, setGaragePose(pose) { garagePose = pose; syncGarageLighting(); }, setGarageLighting(level) { garageLighting = level; syncGarageLighting(); },
-    setGarageSkinPreview(ids, home = false) { garagePreviewSkins = ids; garageHomePreview = home && !garageCamera; garageStage?.setSkins(ids); if (garageHomePreview) { aero.setSkins(ids); upcomingStage.setAirflowSkin(ids?.airflow); } }, inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : aero.inspectCosmetics(); },
+    setGarageSkinPreview(ids, home = false, visible = true) {
+      garagePreviewSkins = ids;
+      garageHomePreview = home && !garageCamera;
+      garageStage?.setSkins(ids);
+      garageStage?.setEffectsVisible(visible);
+      aero.setVisible(!garageHomePreview || visible);
+      if (garageHomePreview) aero.setSkins(ids);
+      upcomingStage.setGaragePreview(garageHomePreview ? ids : null, !garageHomePreview || visible);
+    },
+    inspectCosmeticPreview() { return garageCamera && garageStage ? garageStage.inspectCosmetics() : upcomingStage.inspectCosmetics() ?? aero.inspectCosmetics(); },
         inspectGarageStudio() { if (garageStage && garageCamera) return garageStage.inspectBounds(camera); if (!garageHomePreview) return null; const { minX, maxX, minY, maxY } = projectedCarBounds(camera.position, smoothLook); return { minX, maxX, minY, maxY, inFrame: minX > -.94 && maxX < .94 && minY > -.94 && maxY < .94 }; }, // Home: QA reads how much of the showroom the car fills
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint); upcomingStage.setPaint(paint);
@@ -506,7 +504,7 @@ export function createWorld(canvas) {
       adaptiveScale = scale; this.configureVFX(visual);
     },
     configureVFX(options) {
-      visual=vfxSettings(options); garageHomeVisual = { ...visual, airflow: true }; garageStage?.configureVFX(visual);
+      visual=vfxSettings(options); garageHomeVisual = { ...visual, airflow: true }; garageHiddenVisual = { ...visual, enabled: false }; garageStage?.configureVFX(visual);
       const nextRatio=renderPixelRatioForQuality(visual.quality,devicePixelRatio,adaptiveScale);
       const samples=msaaSamples(visual.quality);
       if(samples!==composer.renderTarget1.samples) composer.reset(sceneTarget(samples));
@@ -779,9 +777,10 @@ export function createWorld(canvas) {
         finish.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...frame.right), new THREE.Vector3(...frame.up), new THREE.Vector3(...frame.forward).negate()));
       } else { finish.position.fromArray(classicPosition(race.length, 0, 0, distance)); finish.rotation.set(0, curvedClassic ? -roadHeading(race.length) : 0, 0); }
       finish.visible = graphFinish ? graphFinish.separation < 1400 : trackId === CIRCUIT_ID || (!race.endless && race.length - distance < 1400);
+      const effectsVisual = garageHomePreview && !aero.group.visible ? garageHiddenVisual : visual;
       if (effects.update(race, motionDt, center, preview, reducedMotion, flightVehicles,
-        curvedClassic ? { ...visual, classicRoute, roadDistance: distance, worldPoint: classicPosition, worldFrame: effectFrame } :
-        framedRoad(trackId, endlessActive) || trackId === 'spiral' ? { ...visual, worldPoint: (s,x,y,origin,item) => race.course && item ? courseItemPoint(race.course,item,x,y,courseOriginPoint) : trackLocalPosition(trackId,s,x,y,origin), worldFrame: race.course ? (s,item) => courseItemFrame(race.course,item) : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : visual)) warmupPending = true; // loaded pickup models compile before GO
+        curvedClassic ? { ...effectsVisual, classicRoute, roadDistance: distance, worldPoint: classicPosition, worldFrame: effectFrame } :
+        framedRoad(trackId, endlessActive) || trackId === 'spiral' ? { ...effectsVisual, worldPoint: (s,x,y,origin,item) => race.course && item ? courseItemPoint(race.course,item,x,y,courseOriginPoint) : trackLocalPosition(trackId,s,x,y,origin), worldFrame: race.course ? (s,item) => courseItemFrame(race.course,item) : trackId === CIRCUIT_ID || trackId === 'spiral' ? effectFrame : undefined } : effectsVisual, origin)) warmupPending = true; // loaded pickup models compile before GO
       Object.assign(sprintInput, {
         phase: race.phase, nitro: car.nitroTime > 0, chain: car.nitroTime > 0 ? car.nitroBurst : 0, boost: !!(car.boosting || car.miniBoost > 0),
         speed: visualCar.speed, dt: motionDt, enabled: visual.enabled, quality: visual.quality, reducedMotion, ultra: visual.ultra,
@@ -862,11 +861,7 @@ export function createWorld(canvas) {
       desiredCamera.z -= reducedMotion ? 0 : (presentation.goPush || 0) * 1.4;
       const impactAge = car.impact ? race.elapsed - car.impact.time : 10; const impact = !preview && impactAge < 0.65 ? (1 - impactAge / 0.65) ** 2 * car.impact.intensity : 0;
       const landingAge = car.landing ? race.elapsed - car.landing.time : 10; const landing = landingAge < 0.55 ? Math.exp(-landingAge * 8) * Math.min(1, car.landing.speed / 14) : 0;
-      if (!reducedMotion && race.phase === 'racing') {
-        desiredCamera.x += Math.sin(time * 61) * impact * 0.27;
-        desiredCamera.y += Math.sin(time * 47) * impact * 0.15 - landing * 0.3;
-        desiredCamera.z += impact * 0.65;
-      }
+      if (!reducedMotion && race.phase === 'racing') { desiredCamera.y -= landing * 0.3; desiredCamera.z += impact * 0.65; } // smooth sink and recoil; the shake is rigJolt, after the lerp
       if(preview && !garageCamera) {
         // Preserve scenery clearance, then fit the complete car within the
         // actual viewport, regardless of track and selected camera angle.
@@ -888,7 +883,8 @@ export function createWorld(canvas) {
       const shakeSetting = reducedMotion || race.phase !== 'racing' || !visual.enabled ? 0 : visual.shake, shake = rigShake(view, visualCar.speed, shakeSetting);
       camera.rotateX(Math.sin(time * 53) * shake + rigKick(view, sprintFrame.kick, shakeSetting));
       if (shake) camera.rotateY(Math.sin(time * 37) * shake * 0.6);
-      camera.position.add(rigRumble(view, visualCar.speed, sprintFrame.fov, shakeSetting, time, rumble).applyQuaternion(camera.quaternion)); // a translation: the view never turns
+      const floor = rumbleFloor(camera.position.distanceTo(player.position), camera.fov, canvas.height); // one rendered row at the car
+      camera.position.add(rigRumble(view, visualCar.speed, sprintFrame.fov, shakeSetting, time, rumble, floor, dt).add(rigJolt(view, impact, landing, shakeSetting, time, jolt)).applyQuaternion(camera.quaternion)); // translations: the view never turns
       const targetFov = preview ? 50 : chaseFov - (reducedMotion ? 0 : impact * 4);
       camera.fov = photoView && race.phase === 'paused' ? photoView.fov : camera.fov + (targetFov - camera.fov) * smoothing;
       camera.updateProjectionMatrix();

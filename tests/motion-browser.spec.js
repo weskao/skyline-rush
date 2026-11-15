@@ -130,21 +130,26 @@ test.describe('touch button feedback', () => {
     await expect(page.locator('[data-control="throttle"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('[data-control="throttle"]')).toHaveCSS('filter', 'none');
     const button = page.locator('[data-control="fly"]');
+    const face = () => button.evaluate(element => getComputedStyle(element, '::after').backgroundImage);
+    const idleFace = await face();
+    expect(idleFace).toContain('linear-gradient');
     const box = await button.boundingBox();
     const session = await context.newCDPSession(page);
     await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 1, x: box.x + box.width / 2, y: box.y + box.height / 2 }] });
     await expect(button).toHaveAttribute('aria-pressed', 'true');
-    await expect(button).toHaveCSS('box-shadow', /rgb/);
+    await expect.poll(face).toContain('rgb(47, 134, 173)');
     await expect(button).toHaveCSS('filter', 'brightness(0.82)');
     await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect(button).toHaveAttribute('aria-pressed', 'false');
     await expect(button).toHaveCSS('filter', 'none');
+    await expect.poll(face).toBe(idleFace);
     await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 2, x: box.x + box.width / 2, y: box.y + box.height / 2 }] });
     await expect(button).toHaveCSS('filter', 'brightness(0.82)');
     await page.evaluate(() => window.dispatchEvent(new Event('blur')));
     await expect(page.locator('#race-status')).toHaveText('PAUSED');
     await expect(button).toHaveAttribute('aria-pressed', 'false');
     await expect(button).not.toHaveClass(/is-pressed/);
+    await expect.poll(face).toBe(idleFace);
     await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   });
 

@@ -1,5 +1,5 @@
 import { readHudFeedback } from './control-settings.ts';
-import { createBoostReadiness, createNitroReadiness } from './nitro-readiness.ts';
+import { createBoostReadiness, createNitroReadiness, nitroFill } from './nitro-readiness.ts';
 
 export type SprintReadyCue = 'nitro-ready' | 'boost-ready';
 interface SprintCar { nitro: number; fuel: number; boosting: boolean; braking: boolean }
@@ -35,13 +35,15 @@ export function createSprintReadyFeedback(nitroButton: HTMLButtonElement | undef
   cue: (name: SprintReadyCue, delay?: number) => void) {
   const nitro = createNitroReadiness(), boost = createBoostReadiness();
   const nitroFlame = readyFlame(nitroButton), boostFlame = readyFlame(boostButton);
-  let lastNitro = '', lastBoost = '', lastLit: boolean | undefined;
+  let lastNitro = '', lastBoost = '', lastLit: boolean | undefined, lastFill = -1;
   return {
     update(phase: string, car: SprintCar, nitroActive: boolean, boostHeld: boolean, motion: boolean) {
       const n = nitro.update({ phase, charge: car.nitro, active: nitroActive });
       const b = boost.update({ phase, fuel: car.fuel, boosting: car.boosting, braking: car.braking, held: boostHeld });
       if (nitroButton && nitroButton.dataset.nitroState !== n.state) nitroButton.dataset.nitroState = n.state;
       if (boostButton && boostButton.dataset.boostState !== b.state) boostButton.dataset.boostState = b.state;
+      const fill = nitroFill(car.nitro);
+      if (nitroButton && fill !== lastFill) { lastFill = fill; nitroButton.style.setProperty('--charge', String(fill)); }
       const lit = motion && phase === 'racing';
       if (!lit) { nitroFlame.cancel(); boostFlame.cancel(); }
       // The CSS flame follows data-flame. Storage is read on a state change, never per frame.

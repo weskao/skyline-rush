@@ -24,9 +24,9 @@ interface GarageWorld {
   /** Sun (bright) / moon (dim) lighting for Garage Home and the Studio; racing is unaffected. */
   setGarageLighting?(level: GarageLighting): void;
   setCosmeticSkins?(ids: Record<SkinCategory, SkinId>): void;
-  setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>, home?: boolean): void;
+  setGarageSkinPreview?(ids: Record<SkinCategory, SkinId>, home?: boolean, visible?: boolean): void;
   inspectCosmeticPreview?(): {
-    voidBeams: boolean; launchPattern: number; launchPreviewActive: boolean;
+    effectsVisible: boolean; voidBeams: boolean; launchPattern: number; launchPreviewActive: boolean;
     thrusterPattern: number; airflowPattern: number; trailPattern: number;
   };
   inspectGarageStudio?(): { minX: number; maxX: number; minY: number; maxY: number; inFrame: boolean } | null;
@@ -65,6 +65,7 @@ export function setupGarageUI({
   const dock = $('#showcase-camera-dock');
   const dockParent = dock.parentElement!, dockNext = dock.nextSibling;
   const historyKey = '__skylineGaragePage';
+  let leavingGarage = false;
   let previewing = getEquippedPaint();
   const owned = (): string[] => availablePaints(getStars());
   let camera = defaultGarageCamera();
@@ -76,14 +77,19 @@ export function setupGarageUI({
     const inGarage = garageScreen.open;
     const selected = inGarage ? selectedGarageSkins() : equipped;
     getWorld()?.setCosmeticSkins?.(equipped);
-    getWorld()?.setGarageSkinPreview?.(selected, inGarage && garageStudioView.page === 'home');
+    getWorld()?.setGarageSkinPreview?.(
+      selected, inGarage && garageStudioView.page === 'home', !inGarage || garageStudioView.effectsVisible,
+    );
     for (const category of SKIN_CATEGORIES) {
       preview.setAttribute(`data-skin-preview-${category}`, selected[category]);
       preview.setAttribute(`data-skin-equipped-${category}`, equipped[category]);
     }
     inspectStudioAfterFrame();
   }
-  subscribeGarageSkins(syncSkins);
+  subscribeGarageSkins(equipped => {
+    syncSkins();
+    if (equipped && garageScreen.open && !garageStudioView.effectsVisible) garageStudioView.effectsReminder++;
+  });
   subscribeAccount(accountId => { setGarageSkinAccount(accountId); setWave3DemoAccount(accountId); });
   function inspectStudioAfterFrame() {
     if (pendingStudioInspection || !garageScreen.open) return;
@@ -103,6 +109,7 @@ export function setupGarageUI({
       }
       const cosmetics = getWorld()?.inspectCosmeticPreview?.();
       if (cosmetics) {
+        preview.dataset.gpuEffectsVisible = String(cosmetics.effectsVisible);
         preview.dataset.gpuVoidBeams = String(cosmetics.voidBeams);
         preview.dataset.gpuLaunchPattern = String(cosmetics.launchPattern);
         preview.dataset.launchPreviewActive = String(cosmetics.launchPreviewActive);
@@ -134,15 +141,14 @@ export function setupGarageUI({
     updateGarageView({ selected: id });
     showGarage();
   }
-  function wearCar(): void {
-    setEquippedPaint(loadCarPaint(equippedCar(), availablePaints(getStars()))); // each car remembers its own paint
-    previewPaint(getEquippedPaint());
-    inspectStudioAfterFrame();
-  }
   /** After Cloud Save or a backup import: wear the car it restored into storage, if it is another one. */
   function adoptCar(): void {
     const before = equippedCar();
-    if (reloadCar() !== before) wearCar(); else showGarage();
+    const restored = reloadCar();
+    if (restored === before) { showGarage(); return; }
+    setEquippedPaint(loadCarPaint(restored, owned()));
+    previewPaint(getEquippedPaint());
+    inspectStudioAfterFrame();
   }
   function syncWorldCamera(): void {
     const studio = garageStudioView.page === 'studio';
@@ -176,11 +182,15 @@ export function setupGarageUI({
     showPage(page);
   }
   function leaveGarage(): void {
-    if (!garageScreen.open) return;
-    // Home and Studio are same-document history entries: Back returns to the correct prior screen.
+    if (!garageScreen.open || leavingGarage) return;
+    // Walk our same-document entries one at a time; some browsers collapse a multi-entry jump.
+    leavingGarage = true;
+    continueGarageExit();
+  }
+  function continueGarageExit(): void {
     const page = history.state?.[historyKey];
-    if (page === 'home' || page === 'studio') history.go(page === 'studio' ? -2 : -1);
-    else garageScreen.close();
+    if (page === 'home' || page === 'studio') history.back();
+    else { leavingGarage = false; garageScreen.close(); }
   }
   function releaseContact(id: number): void {
     const hadPointer = contacts.delete(id);
@@ -213,7 +223,10 @@ export function setupGarageUI({
     const id = button.dataset.car;
     if (!isCar(id) || id === equippedCar()) return;
     equipCar(id); // both cars are open to everyone: picking one equips it
-    wearCar();
+    // Save the equipped finish for the new car while leaving its live preview alone.
+    setEquippedPaint(getEquippedPaint());
+    showGarage();
+    inspectStudioAfterFrame();
     cue?.('equip-confirmed');
   }));
   $('#garage-button').addEventListener('click', () => {
@@ -240,6 +253,7 @@ export function setupGarageUI({
   garageScreen.addEventListener('cancel', event => { event.preventDefault(); leaveGarage(); });
   window.addEventListener('popstate', () => {
     if (!garageScreen.open) return;
+    if (leavingGarage) { continueGarageExit(); return; }
     const page = history.state?.[historyKey];
     if (page === 'home' || page === 'studio') showPage(page);
     else garageScreen.close();
@@ -253,7 +267,8 @@ export function setupGarageUI({
     getWorld()?.resize();
     cancelGarageSkinPreview();
     previewPaint(getEquippedPaint());
-    updateGarageStudioView({ page: 'home' });
+    updateGarageStudioView({ page: 'home', effectsReminder: 0 });
+    syncSkins(); // The locked build has no preview session to publish a reset.
     clearControls();
     $('#garage-button').focus({ preventScroll: true });
   });
@@ -271,6 +286,11 @@ export function setupGarageUI({
     const lighting: GarageLighting = garageStudioView.lighting === 'bright' ? 'dim' : 'bright';
     updateGarageStudioView({ lighting });
     getWorld()?.setGarageLighting?.(lighting);
+  });
+  $('#garage-effects-toggle').addEventListener('click', () => {
+    updateGarageStudioView({ effectsVisible: !garageStudioView.effectsVisible, effectsReminder: 0 });
+    syncSkins();
+    cue?.('ui');
   });
   $('#garage-rotate-left').addEventListener('click', () => setCamera(dragGarageCamera(camera, -40, 0)));
   $('#garage-rotate-right').addEventListener('click', () => setCamera(dragGarageCamera(camera, 40, 0)));

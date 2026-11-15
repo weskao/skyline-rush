@@ -39,3 +39,15 @@ test('both Playwright CI suites shard by measured duration, not contiguous slice
   const durations = JSON.parse(readFileSync(new URL('./ci-durations.json', import.meta.url), 'utf8'));
   assert.ok(Object.keys(durations).length > 500, 'durations table must be populated from a real CI run');
 });
+
+test('the CI matrix fits 20 concurrent jobs and the unit job reruns no browser spec', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const shards = [...workflow.matchAll(/^ +shard: \[([\d, ]+)\]$/gm)].map((m) => m[1].split(',').length);
+  assert.equal(shards.length, 2, 'browser-tests and world-tour-mid-race are the only matrices');
+  // unit-tests and cloud-save run beside both matrices; on GitHub Free a 21st job queues and sets the wall time.
+  assert.ok(shards[0] + shards[1] + 2 <= 20, `${shards.join(' + ')} + unit + cloud exceeds 20 concurrent jobs`);
+  // Every *browser.spec.js already runs in a shard; a second run in the unit job cost 4.4 minutes (pickup-3d, 2026-11).
+  const unit = workflow.slice(workflow.indexOf('\n  unit-tests:\n'), workflow.indexOf('\n  browser-tests:\n'));
+  assert.ok(unit.includes('npm test'), 'the unit job section was found');
+  assert.doesNotMatch(unit, /playwright test/, 'browser specs run once, in the shards');
+});

@@ -57,9 +57,20 @@ test('cue text follows the live settings: toggle FLY, slide pad and rebound keys
   assert.deepEqual(tutorialCueView({ key: 'tutorial.cue.brakeAhead', actions: ['brake'] }, false, 'hold', keyMap, 'buttons').cueKeys, ['B']);
 });
 
+test('the NITRO cue shows the current keyboard binding or a touch instruction', () => {
+  const keyMap = { ...DEFAULT_KEY_MAP, nitro: ['KeyJ'] };
+  const cue = { key: 'tutorial.cue.nitro', actions: ['nitro'] };
+  assert.deepEqual(tutorialCueView(cue, false, 'hold', keyMap).cueKeys, ['J']);
+  for (const mode of ['buttons', 'slide', 'tilt']) {
+    const touch = tutorialCueView(cue, true, 'hold', keyMap, mode);
+    assert.equal(touch.cueId, 'tutorial.touch.nitro');
+    assert.deepEqual(touch.cueKeys, []);
+  }
+});
+
 test('every cue variant has copy in both languages', () => {
   for (const lang of ['en', 'zh-TW']) {
-    for (const name of ['brakeAhead', 'brakeHold', 'brakeAheadSlide', 'brakeHoldSlide', 'chainFlyToggle', 'chainBoostToggle', 'chainHoldToggle',
+    for (const name of ['nitro', 'nitroActive', 'nitroRelease', 'brakeAhead', 'brakeHold', 'brakeAheadSlide', 'brakeHoldSlide', 'chainFlyToggle', 'chainBoostToggle', 'chainHoldToggle',
       'chainLandingToggle', 'rollFlyToggle', 'rollClimbToggle', 'rollReleaseToggle', 'rollSpinToggle']) {
       assert.ok(TUTORIAL_COPY[lang]['tutorial.cue.' + name], `${lang} ${name}`);
     }

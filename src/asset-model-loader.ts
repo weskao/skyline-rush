@@ -21,6 +21,9 @@ export interface ModelCacheOptions {
   manifest?: Record<string, ModelManifestEntry>;
   fetch?: (url: string, init: { signal: AbortSignal }) => Promise<Response>;
   timeoutMs?: number;
+  decodeTimeoutMs?: number;
+  /** Allow two idle models so a car switch can reuse both parsed assets. */
+  retainReleasedModels?: boolean;
   loadMeshopt?: () => Promise<unknown>;
   /** A KTX2Loader already given its transcoder path and `detectSupport(renderer)` by the world; absent → 'decoder-unavailable'. */
   loadKtx2?: () => Promise<unknown>;
@@ -28,6 +31,7 @@ export interface ModelCacheOptions {
 
 export interface ModelCache {
   load(id: string, options?: { signal?: AbortSignal; quality?: ModelQuality }): Promise<ModelResult>;
+  dispose(): void;
 }
 
 interface Disposable { dispose(): void }
@@ -35,6 +39,8 @@ interface Disposable { dispose(): void }
 interface Loaded { scene: Object3D; skinned: boolean; resources: Set<Disposable> }
 /** One shared fetch + parse per cache key, alive until released, failed or cancelled. */
 interface Slot { work: Promise<Loaded | FallbackReason>; controller: AbortController; waiters: number; settled: boolean; refs: number }
+interface IdleModel { slot: Slot; loaded: Loaded }
+const MAX_IDLE_MODELS = 2;
 
 class Fail extends Error {
   reason: FallbackReason; // no parameter property: Node's type stripping rejects it
@@ -99,10 +105,12 @@ function inspect(scene: Object3D, entry: ModelManifestEntry): Loaded {
 }
 
 export function createModelCache(options: ModelCacheOptions): ModelCache {
-  const { baseUrl, manifest = MODEL_MANIFEST, timeoutMs = 15000, loadMeshopt = defaultLoadMeshopt } = options;
+  const { baseUrl, manifest = MODEL_MANIFEST, timeoutMs = 15000, decodeTimeoutMs = 30000, loadMeshopt = defaultLoadMeshopt } = options;
   const loadKtx2 = options.loadKtx2 ?? (() => Promise.reject(new Error('no KTX2 provider')));
   const doFetch = options.fetch ?? ((url, init) => globalThis.fetch(url, init));
   const slots = new Map<string, Slot>();
+  let retainReleasedModels = options.retainReleasedModels ?? false;
+  const idle = new Map<string, IdleModel>();
   let meshopt: Promise<unknown> | undefined;
   let ktx2: Promise<unknown> | undefined;
 
@@ -110,25 +118,35 @@ export function createModelCache(options: ModelCacheOptions): ModelCache {
   const meshoptDecoder = (): Promise<unknown> => (meshopt ??= loadMeshopt().catch(error => { meshopt = undefined; throw error; }));
   const ktx2Loader = (): Promise<unknown> => (ktx2 ??= loadKtx2().catch(error => { ktx2 = undefined; throw error; }));
 
-  async function fetchAndParse(entry: ModelManifestEntry, url: string, signal: AbortSignal): Promise<Loaded> {
+  async function fetchGlb(url: string, signal: AbortSignal): Promise<ArrayBuffer> {
     const response = await doFetch(url, { signal }).catch(() => { throw new Fail('network'); });
     if (!response.ok) throw new Fail('missing');
-    const buffer = await response.arrayBuffer().catch(() => { throw new Fail('network'); });
+    return response.arrayBuffer().catch(() => { throw new Fail('network'); });
+  }
+
+  async function decodeGlb(buffer: ArrayBuffer, entry: ModelManifestEntry, signal: AbortSignal): Promise<Loaded> {
     const wantsMeshopt = entry.decoders.includes('meshopt');
     const wantsKtx2 = entry.decoders.includes('ktx2');
     const unavailable = (): never => { throw new Fail('decoder-unavailable'); };
     const decoder = wantsMeshopt ? await meshoptDecoder().catch(unavailable) : undefined;
     const ktx2 = wantsKtx2 ? await ktx2Loader().catch(unavailable) : undefined;
+    signal.throwIfAborted();
     const parsed = await parseGlb(buffer, decoder, ktx2).catch(() => { throw new Fail('invalid'); });
     if (!wantsMeshopt && parsed.required.includes('EXT_meshopt_compression')) throw new Fail('invalid');
     if (!wantsKtx2 && parsed.required.includes('KHR_texture_basisu')) throw new Fail('invalid');
-    return inspect(parsed.scene, entry);
+    const loaded = inspect(parsed.scene, entry);
+    if (signal.aborted) {
+      for (const resource of loaded.resources) resource.dispose();
+      signal.throwIfAborted();
+    }
+    return loaded;
   }
 
   function begin(key: string, entry: ModelManifestEntry, url: string): Slot {
     const controller = new AbortController();
     const slot: Slot = { work: Promise.resolve('network'), controller, waiters: 0, settled: false, refs: 0 };
-    slot.work = withTimeout(signal => fetchAndParse(entry, url, signal), timeoutMs, controller)
+    slot.work = withTimeout(signal => fetchGlb(url, signal), timeoutMs, controller)
+      .then(buffer => withTimeout(signal => decodeGlb(buffer, entry, signal), decodeTimeoutMs, controller))
       .catch((error: unknown) => (error instanceof Fail ? error.reason : 'invalid') as FallbackReason)
       .then(result => {
         slot.settled = true;
@@ -139,7 +157,14 @@ export function createModelCache(options: ModelCacheOptions): ModelCache {
     return slot;
   }
 
+  function releaseSlot(key: string, { slot, loaded }: IdleModel): void {
+    for (const resource of loaded.resources) resource.dispose();
+    if (slots.get(key) === slot) slots.delete(key);
+    idle.delete(key);
+  }
+
   function handleFor(id: string, key: string, slot: Slot, loaded: Loaded): ModelHandle {
+    idle.delete(key);
     slot.refs++;
     let released = false;
     return {
@@ -150,13 +175,22 @@ export function createModelCache(options: ModelCacheOptions): ModelCache {
         if (released) return;
         released = true;
         if (--slot.refs > 0) return;
-        for (const resource of loaded.resources) resource.dispose();
-        if (slots.get(key) === slot) slots.delete(key);
+        const entry = { slot, loaded };
+        if (!retainReleasedModels) { releaseSlot(key, entry); return; }
+        idle.set(key, entry);
+        if (idle.size > MAX_IDLE_MODELS) {
+          const oldest = idle.keys().next().value!;
+          releaseSlot(oldest, idle.get(oldest)!);
+        }
       },
     };
   }
 
   return {
+    dispose() {
+      retainReleasedModels = false;
+      for (const [key, entry] of idle) releaseSlot(key, entry);
+    },
     async load(id, { signal, quality } = {}) {
       const entry = manifest[id];
       if (!entry) throw new TypeError(`Unknown model id "${id}"`);

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createNitroReadiness } from '../src/nitro-readiness.ts';
+import { createNitroReadiness, nitroFill } from '../src/nitro-readiness.ts';
 
 test('NITRO uses one charge as action threshold; pause and lock are unavailable', () => {
   const f = createNitroReadiness();
@@ -44,4 +44,16 @@ test('refilling a usable charge during a NITRO burst cues once and can extend th
   nitro.update({ charge: .75, phase: 'racing', active: true });
   assert.deepEqual(nitro.update({ charge: 1.05, phase: 'racing', active: true }), { state: 'active', cueReady: true });
   assert.equal(nitro.update({ charge: 1.05, phase: 'racing', active: false }).cueReady, false);
+});
+
+test('the charging fill covers the first charge in floored 2% steps', () => {
+  assert.equal(nitroFill(0), 0);
+  assert.equal(nitroFill(0.459), 0.44);
+  assert.equal(nitroFill(0.46), 0.46);
+  // Never shows full before the charge is actually ready.
+  assert.equal(nitroFill(0.999), 0.98);
+  assert.equal(nitroFill(1), 1);
+  assert.equal(nitroFill(2.7), 1);
+  assert.equal(nitroFill(-1), 0);
+  assert.equal(nitroFill(Number.NaN), 0);
 });

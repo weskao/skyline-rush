@@ -5,6 +5,7 @@ import GarageArtworkTile from './GarageArtworkTile.vue';
 import { GARAGE_SKINS, SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
 import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, selectedGarageSkins, currentGarageSkins } from './garage-skin-runtime.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
+import { garageStudioView } from './garage-view-state.ts';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
@@ -92,7 +93,7 @@ const statusText = (id: SkinId, locale: string) => {
     aria-labelledby="garage-vfx-catalog-heading">
     <h3 id="garage-vfx-catalog-heading">{{ locale === 'zh-TW' ? '外觀特效收藏' : 'VFX collection' }}</h3>
     <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '點選卡片可預覽，按「試用」暫時裝備。重新載入後仍會記住你在此帳號最後的選擇，但這不是擁有權；試用結束後會還原為預設。' : 'Select a card to preview, then Try to equip temporarily. Your last pick is remembered on reload for this account, but it is not ownership; it returns to default when the trial ends.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
-    <section id="garage-vfx-live-loadout" class="garage-vfx-live-loadout" :aria-label="locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance'">
+    <section v-show="garageStudioView.effectsVisible" id="garage-vfx-live-loadout" class="garage-vfx-live-loadout" :aria-label="locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance'">
       <h4>{{ locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance' }}</h4>
       <ul class="garage-vfx-loadout-grid">
         <li v-for="item in liveLoadout" :key="item.category" class="garage-vfx-loadout-tile"

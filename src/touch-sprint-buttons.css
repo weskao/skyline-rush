@@ -43,7 +43,8 @@
 #touch-controls :is(.touch-actions, .touch-pedals) > button::before {
   inset: -1px;
   z-index: -2;
-  background: linear-gradient(148deg, color-mix(in srgb, var(--rim), white 36%), var(--rim) 28%, #162035 75%, var(--rim));
+  /* The shaded side stays a darker rim, never a near-background colour: #162035 here erased the lower-right edges. */
+  background: linear-gradient(148deg, color-mix(in srgb, var(--rim), white 36%), var(--rim) 28%, color-mix(in srgb, var(--rim), black 30%) 75%, var(--rim));
 }
 
 #touch-controls :is(.touch-actions, .touch-pedals) > button::after {
@@ -70,7 +71,14 @@
   color: #fff5ff;
 }
 
-#touch-controls .touch-nitro[data-nitro-state="charging"] { opacity: calc(var(--touch-opacity, 1) * .74); }
+/* Not pressable yet: a muted bezel whose face fills from the bottom to the charge (--charge, 0..1 in 2% steps from sprint-ready-feedback.ts). */
+#touch-controls .touch-nitro[data-nitro-state="charging"] { --rim: #8c76aa; --face-top: #2b2338; --face-bottom: #15111f; color: #b7aac8; }
+#touch-controls .touch-nitro[data-nitro-state="charging"]::after {
+  --level: calc(var(--charge, 0) * 100%);
+  background: linear-gradient(to top, #6c3fa3b3 var(--level), #d695ff var(--level), #d695ff calc(var(--level) + 1.5px), transparent 0),
+    linear-gradient(180deg, var(--face-top), var(--face-bottom) 85%);
+}
+#touch-controls .touch-nitro[data-nitro-state="charging"] > svg { filter: grayscale(.7); opacity: .7; }
 #touch-controls .touch-nitro[data-nitro-state="ready"] { --rim: #d695ff; --face-top: #684080; --flame-rest: .55; --flame-alpha: .92; }
 #touch-controls .touch-nitro[data-nitro-state="active"] { --rim: #f3dcff; --face-top: #a05fd0; --face-bottom: #3a1a66; }
 #touch-controls .touch-nitro[data-nitro-state="disabled"] { --rim: #8794a8; --face-top: #384558; --face-bottom: #1c2836; }
@@ -95,11 +103,14 @@
 
 /* BOOST is ready whenever fuel is left, so its resting flame is only embers at the base. */
 #touch-controls .touch-boost[data-boost-state="ready"] { --rim: #efae65; --face-top: #734520; --flame-rest: .3; --flame-alpha: .8; }
-#touch-controls .touch-boost:is([data-boost-state="charging"], [data-boost-state="disabled"]) {
+#touch-controls .touch-boost[data-boost-state="disabled"] {
   --rim: #8794a8;
   --face-top: #384558;
   --face-bottom: #1c2836;
 }
+/* Empty tank. Any refuel makes BOOST ready at once, so there is no progress to fill: a dark, dimmed amber instead of braking grey. */
+#touch-controls .touch-boost[data-boost-state="charging"] { --rim: #9a7650; --face-top: #2c2119; --face-bottom: #16100c; color: #b9a792; }
+#touch-controls .touch-boost[data-boost-state="charging"] > svg { filter: grayscale(.8); opacity: .55; }
 
 #touch-controls :is([data-nitro-state="active"], [data-boost-state="active"]) { --flame-rest: 1; --flame-alpha: 1; --flame-loop: .7s; }
 

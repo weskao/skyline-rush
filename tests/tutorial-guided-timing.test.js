@@ -32,6 +32,28 @@ test('throttle lesson: the car stands still after GO until THROTTLE, and the arr
   assert.ok(session.race.player.speed > 0 && session.race.player.speed < 1, 'speed builds at the normal throttle rate');
 });
 
+test('the final lesson keeps the NITRO control in its cue through retry and the entire sprint', () => {
+  const session = createInteractiveTutorial();
+  skipTo(session, 'nitro');
+  const pressNitro = { key: 'tutorial.cue.nitro', actions: ['nitro'] };
+  assert.deepEqual(session.cue, pressNitro);
+  tick(session, { nitro: true, brake: true });
+  assert.equal(session.coachPhase, 'retry');
+  assert.deepEqual(session.cue, { key: 'tutorial.cue.nitroRelease', actions: ['nitro'] });
+  tick(session);
+  assert.deepEqual(session.cue, pressNitro, 'the press cue returns after the charge refills');
+  tick(session, { nitro: true });
+  assert.equal(session.coachPhase, 'sprinting');
+  const sprintCue = { key: 'tutorial.cue.nitroActive', actions: ['nitro'] };
+  assert.deepEqual(session.cue, sprintCue);
+  for (let i = 0; i < 120 && session.coachPhase === 'sprinting'; i++) tick(session);
+  assert.equal(session.coachPhase, 'finishing');
+  assert.deepEqual(session.cue, sprintCue, 'the key stays visible as the effect plays out');
+  for (let i = 0; i < 120 && !session.complete; i++) tick(session);
+  assert.ok(session.complete);
+  assert.ok(!session.cue?.actions.includes('nitro'));
+});
+
 test('a gate ring hit stays visible to the audio and effects that run after the step', () => {
   const session = createInteractiveTutorial();
   skipTo(session, 'left');

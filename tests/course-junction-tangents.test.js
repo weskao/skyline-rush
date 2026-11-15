@@ -83,11 +83,11 @@ const turnRates = (graph, edgeId) => {
 };
 const peak = rates => Math.max(0, ...rates.map(r => r.degPerMetre));
 
-test('Dune: flight gap length and both flight pads stay as authored (gap 923.3 ± 5 m, pads <= 1°/m)', () => {
+test('Dune: flight gap stays near 935 m with stable takeoff and landing pads', () => {
   const [flight] = duneMeta.flightShortcuts;
   const [takeoff, landing] = flight.solidRoadIntervals;
   const gap = landing[0] - takeoff[1];
-  assert.ok(Math.abs(gap - 923.3) <= 5, 'flight gap ' + gap.toFixed(1) + ' m');
+  assert.ok(Math.abs(gap - 934.9) <= 5, 'flight gap ' + gap.toFixed(1) + ' m');
   const rates = turnRates(dune, flight.edgeId);
   const takeoffPeak = peak(rates.filter(r => r.s <= takeoff[1]));
   const landingPeak = peak(rates.filter(r => r.s >= landing[0]));

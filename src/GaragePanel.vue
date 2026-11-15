@@ -13,6 +13,7 @@ import { wave3DemoExperience } from '#wave3-demo-race';
 import Wave3DemoEntry from '#wave3-demo-ui';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageLightingToggle from './GarageLightingToggle.vue';
+import GarageEffectsToggle from './GarageEffectsToggle.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 const locale = ref(getLocale());
@@ -58,6 +59,7 @@ const isPreviewingPaint = (id: string): boolean =>
         <div id="garage-preview" class="garage-preview" tabindex="0" role="group" :aria-label="copy.hint" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown + -">
           <p v-show="garageStudioView.page === 'studio'" class="garage-hint">{{ copy.hint }}</p>
         </div>
+        <GarageEffectsToggle :locale="locale" />
         <div class="garage-mode-controls" role="group" :aria-label="copy.viewMode">
           <span class="garage-mode-label">{{ copy.viewMode }}</span>
           <button type="button" data-garage-mode="ground" :aria-pressed="garageStudioView.mode === 'ground'">{{ copy.ground }}</button>

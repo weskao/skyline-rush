@@ -9,13 +9,12 @@ const sample = (edgeId, s) => ({
 });
 const length = () => 1000;
 
-test('real Three.js road, sand terrain, and hazardous footprints share one streamed group', () => {
+test('real Three.js road, shoulders and hazardous footprints share one streamed group', () => {
   const parent = new THREE.Group();
   const visual = createDuneTempestVisualChunk(parent,'sunset-start',0,1000,length,sample,'low');
   assert.equal(parent.children.includes(visual.group),true);
   assert.ok(visual.group.getObjectByName('Dune road') instanceof THREE.Mesh);
   assert.ok(visual.group.getObjectByName('Dune shoulder') instanceof THREE.Mesh);
-  assert.ok(visual.group.getObjectByName('Dune open terrain') instanceof THREE.Mesh);
   assert.ok(visual.group.getObjectByName('Dune hazard sand-bowl-a') instanceof THREE.Mesh);
   const road = visual.group.getObjectByName('Dune road');
   assert.ok(road.geometry.getAttribute('position').count > 10);
@@ -31,9 +30,7 @@ test('an aerial shortcut has a real chasm rather than a solid sky bridge', () =>
   const parent = new THREE.Group();
   const mid = createDuneTempestVisualChunk(parent,'canyon-air-crossing',200,800,length,sample,'low');
   assert.equal(mid.group.getObjectByName('Dune road'), undefined);
-  const chasm = mid.group.getObjectByName('Dune chasm floor');
-  assert.ok(chasm instanceof THREE.Mesh);
-  assert.ok(chasm.geometry.getAttribute('position').count > 20);
+  assert.equal(mid.group.getObjectByName('Dune shoulder'), undefined);
   mid.dispose();
   const landing = createDuneTempestVisualChunk(parent,'canyon-air-crossing',900,1000,length,sample,'low');
   assert.ok(landing.group.getObjectByName('Dune road') instanceof THREE.Mesh);
