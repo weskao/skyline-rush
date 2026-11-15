@@ -11,8 +11,9 @@ export function layoutVersion(trackId: unknown): number {
   return track?.layoutVersion ?? 1;
 }
 
-/** Daily challenges and custom courses version the road independently of the stock item layout. */
-export const roadRecordLayout = (trackId: string): number => trackId === 'spiral' || classicRoadRoute(trackId) ? 2 : 1;
+/** Daily challenges and custom courses version the road independently of the stock item layout.
+ *  Neon is on road 3 since it became a closed lap (2026-11-14); the other authored roads are on 2. */
+export const roadRecordLayout = (trackId: string): number => trackId === 'neon' ? 3 : trackId === 'spiral' || classicRoadRoute(trackId) ? 2 : 1;
 
 /** The layout a race runs on; a Cup counts as its newest track. */
 export function raceLayout(trackId: string, config?: unknown): number {

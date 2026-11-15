@@ -1,0 +1,180 @@
+{
+ "script": "assets-src/neon-sky/build.py",
+ "scriptSha256": "a08eed0bd6d72c008a5f9f4e166600ba7e99403337164bca7a2dd063cb762362",
+ "encoder": "assets-src/coast-sky/build.py",
+ "encoderSha256": "0a8ee4abef388f7fdd0b8476434450fb5deb92a2df49129c258e3b384b6059a2",
+ "environments": {
+  "night": {
+   "file": "shanghai_bund_1k.hdr",
+   "credit": {
+    "license": "CC0-1.0",
+    "creator": "Greg Zaal",
+    "sourceUrl": "https://polyhaven.com/a/shanghai_bund"
+   },
+   "grade": null,
+   "soften": {
+    "sigmaDeg": 0.25,
+    "fullDeg": 22.0,
+    "fadeDeg": 26.0,
+    "featherDeg": 1.0,
+    "boxes": [
+     {
+      "lonDeg": [
+       -166.0,
+       -156.0
+      ],
+      "elDeg": [
+       35.0,
+       41.0
+      ]
+     }
+    ]
+   },
+   "range": 4.0,
+   "inputSha256": {
+    "shanghai_bund_1k.hdr": "77276a6b67cbf09611efc46e55871eead34e1fc6fa107db412207b91cf74697e",
+    "shanghai_bund_4k.hdr": "2e72825fd2502ae649f59035ecc9887c7d217dfe1a32e7915146d587fa2816e3",
+    "shanghai_bund_8k.hdr": "fbc2e9859e6bfaf78a870f137c74ddad8f17b33d7b45f8b41fbd40def6bd05ef"
+   },
+   "files": [
+    {
+     "width": 4096,
+     "url": "environments/sky/shanghai_bund_sky_4k.ktx2",
+     "bytes": 1955941,
+     "sha256": "cb4d20532d7b47d36e71d9a1c773d57570c973e967a4128d85004e1c400c61c4"
+    },
+    {
+     "width": 8192,
+     "url": "environments/sky/shanghai_bund_sky_8k.ktx2",
+     "bytes": 6605216,
+     "sha256": "b87203171345579df56ade2176f0a2925c184855bd37de92ec9c07521cd7925b"
+    }
+   ],
+   "environment": {
+    "url": "environments/shanghai_bund_1k.hdr",
+    "bytes": 1640377,
+    "sha256": "77276a6b67cbf09611efc46e55871eead34e1fc6fa107db412207b91cf74697e"
+   },
+   "key": {
+    "direction": [
+     -0.7865,
+     0.4607,
+     -0.4112
+    ],
+    "elevationDeg": 27.43,
+    "color": "#ffdec0",
+    "intensity": 4.5252,
+    "irradiance": 5.7061,
+    "ambient": 1.3838
+   },
+   "sky": {
+    "sunDirection": [
+     -0.8855,
+     0.3179,
+     -0.3389
+    ],
+    "sunElevationDeg": 18.54,
+    "peakLuminance": 12817.3,
+    "horizon": [
+     2.379,
+     2.219,
+     2.131
+    ],
+    "disc": 0,
+    "p995": 23.4926,
+    "p90Band0to40": 1.6703
+   }
+  },
+  "rain": {
+   "file": "shanghai_bund_rain_1k.hdr",
+   "credit": {
+    "license": "CC0-1.0",
+    "creator": "Greg Zaal",
+    "sourceUrl": "https://polyhaven.com/a/shanghai_bund"
+   },
+   "grade": {
+    "exposure": 0.7,
+    "veil": 0.65,
+    "falloffDeg": 14.0,
+    "saturation": 0.8
+   },
+   "soften": {
+    "sigmaDeg": 0.25,
+    "fullDeg": 22.0,
+    "fadeDeg": 26.0,
+    "featherDeg": 1.0,
+    "boxes": [
+     {
+      "lonDeg": [
+       -166.0,
+       -156.0
+      ],
+      "elDeg": [
+       35.0,
+       41.0
+      ]
+     }
+    ]
+   },
+   "range": 3.0,
+   "inputSha256": {
+    "shanghai_bund_1k.hdr": "77276a6b67cbf09611efc46e55871eead34e1fc6fa107db412207b91cf74697e",
+    "shanghai_bund_4k.hdr": "2e72825fd2502ae649f59035ecc9887c7d217dfe1a32e7915146d587fa2816e3",
+    "shanghai_bund_8k.hdr": "fbc2e9859e6bfaf78a870f137c74ddad8f17b33d7b45f8b41fbd40def6bd05ef"
+   },
+   "files": [
+    {
+     "width": 4096,
+     "url": "environments/sky/shanghai_bund_rain_sky_4k.ktx2",
+     "bytes": 1708337,
+     "sha256": "6017286a1955e2dba4a28df3da9f5c23491eb5a9693a524350279a35c96a8116"
+    },
+    {
+     "width": 8192,
+     "url": "environments/sky/shanghai_bund_rain_sky_8k.ktx2",
+     "bytes": 5878156,
+     "sha256": "948fd303b3107b9008b6868efb4cd8fe16a7d4b63ca6800aed03280455cc46d0"
+    }
+   ],
+   "environment": {
+    "url": "environments/shanghai_bund_rain_1k.hdr",
+    "bytes": 1477669,
+    "sha256": "04bf404053c3c56af402dbf4d63a29e063b01c2c7e49b0d508f5bff4a608c5a0"
+   },
+   "key": {
+    "direction": [
+     -0.7504,
+     0.5086,
+     -0.4222
+    ],
+    "elevationDeg": 30.57,
+    "color": "#ffe4cf",
+    "intensity": 2.8193,
+    "irradiance": 3.4757,
+    "ambient": 0.8754
+   },
+   "hazeColor": [
+    2.064,
+    1.782,
+    1.6043
+   ],
+   "sky": {
+    "sunDirection": [
+     -0.8711,
+     0.2928,
+     -0.3943
+    ],
+    "sunElevationDeg": 17.03,
+    "peakLuminance": 7022.4,
+    "horizon": [
+     1.524,
+     1.368,
+     1.272
+    ],
+    "disc": 0,
+    "p995": 12.6116,
+    "p90Band0to40": 1.2121
+   }
+  }
+ }
+}

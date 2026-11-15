@@ -50,7 +50,7 @@ test('Low and non-Coast tracks keep RoomEnvironment and an identity grade; leavi
   assert.deepEqual(loads, []);
   look.update('coast', 'track', 'high'); await settle();
   assert.equal(scene.environment.id, 'day');
-  look.update('neon', 'track', 'high');
+  look.update('canyon', 'track', 'high');
   assert.equal(scene.environment, room);
   assert.equal(scene.environmentIntensity, 0.42);
   assert.equal(lens.uniforms.saturation.value, 1);
@@ -64,9 +64,9 @@ test('a slow load never overrides a newer track or preset', async () => {
   const scene = { environment: room, environmentIntensity: 0.42 };
   const look = createCoastLook({ scene, renderer: { toneMappingExposure: 1 }, lens: { uniforms: { saturation: { value: 1 }, contrast: { value: 1 }, tint: { value: new Color() } } }, room, roomIntensity: 0.42, envs });
   look.update('coast', 'day', 'high');
-  look.update('neon', 'track', 'high');
+  look.update('canyon', 'track', 'high');
   releases[0](); await settle();
-  assert.equal(scene.environment, room, 'the stale day load must not land on neon');
+  assert.equal(scene.environment, room, 'the stale day load must not land on another track');
 });
 
 test('a failed load leaves the current environment in place', async () => {
@@ -104,8 +104,8 @@ test('Coast Medium+ tunes bloom for the light blades and matches the sun to the 
   assert.deepEqual([look.bloomThreshold(1.1), sun.intensity, sun.color.getHexString()], [1.1, 1.8, 'ffb88a'], 'Coast Low: the palette sun and bloom come back');
   assert.equal(look.bloomStrength(0.3), 0.3);
   look.update('coast', 'dusk', 'high'); await settle();
-  sun.color.set('#9fb4ff'); sun.intensity = 0.8; // world.js track block: Neon's palette, set before coastLook.update
-  look.update('neon', 'track', 'high');
+  sun.color.set('#9fb4ff'); sun.intensity = 0.8; // world.js track block: the next track's palette, set before coastLook.update
+  look.update('canyon', 'track', 'high');
   assert.deepEqual([look.bloomThreshold(1.1), sun.intensity, sun.color.getHexString()], [1.1, 0.8, '9fb4ff'], 'another track keeps the sun its block just set');
 });
 
