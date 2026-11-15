@@ -808,17 +808,65 @@ Measured 2026-11-16 on one desktop machine; build logs and RED logs in the ignor
 
 Still wrong:
 
-- Dry night, harbour straight (seen at 4950, 5200 and, in one of two runs, 5450 m): the night key light glints
-  off the player car's rear deck and blooms into a white bar about as wide as the car. With the key light off
-  the white pixels on the car go from about 1300 to 0; with the environment off they stay. Rain shows about 20.
-  Lowering the key to 40% still leaves 300 to 400, so strength is not the fix. The straight heads toward the
-  key that step 17 re-aimed; the earlier key sat diagonal to every straight. A fix means re-aiming the key and
-  sky yaw or changing how the car paint takes the key, and both change the look of every sector: owner's call.
+- Dry night, harbour straight, the white bar on the player car's rear deck: fixed in Step 19.
 
 - Two guards hold by thin margins (relief 0.951 of 0.95, hull 0.0557 of 0.055): the next lighting change to the
   ship re-measures both.
 - The baked light is the same for every yaw and ignores the runtime key direction; a fix needs a shader change.
 - The occlusion-roughness atlases carry stronger compression; not compared by eye against the old ones.
+
+## Step 19: the night key on a street axis (2026-11-16)
+
+Owner decision of 2026-11-16: turn the night key onto a street axis. It closes step 18's rear-deck glint.
+
+- **Cause, measured:** the bar is the player car's sloped rear deck mirroring the key into the chase camera. It
+  shows when the key stands 105 to 150 degrees off the heading, on either side (over the car's shoulder), under
+  about 76 degrees of elevation. Step 17's key (elevation 58.2) stood 119 degrees off the harbour heading. Step
+  18's reading ("the straight heads toward the key") had the angle wrong. A lane map at 5200 m with a probe key
+  gave 160 to 1300 px of luma >= 235 in the car box at 119 degrees and 70 to 240 at 135, and 0 to 7 at 0, 45,
+  90, 105, 150, 165 and 180. Raising the key at 119 degrees: 1486 px at 58, 165 at 65, 33 at 70, 5 at 77.
+- **Why not a diagonal key:** the lap drives all four street directions, so a diagonal key stands 135 degrees
+  off two of them and only moves the bar (measured on the west canal and plaza).
+- **Change:** `on_street_axis` (`assets-src/neon-sky/build.py`) turns night's key about the vertical onto the
+  street axis nearest its measured azimuth, a 29.1 degree turn to due east on the grid. Elevation, colour and
+  intensity are kept; `key.filled` in the manifest keeps the measured direction. The rebuild wrote every sky
+  file byte for byte as before: no texture, gain or sha256 pin changed. `src/coast-lighting.ts` takes the new
+  `sunDirection` for `night` only; Coast's four rows are untouched.
+- **Rain night is not turned.** Its key (elevation 76.7) was swept at four azimuths on every long straight, both
+  outer lanes: the car-box numbers did not move with the key, so the key is not what shows there.
+- **Prevention:** item 20 of `.claude/rules/3d-asset-pipeline.md` and the two guards below.
+
+### Evidence
+
+Measured 2026-11-16 on one desktop machine, High, 1280x720; captures, numbers and logs in the ignored
+`../audits/neon-landmark-polish/`.
+
+- [x] RED first, then GREEN: `tests/neon-lighting.test.js` (*the key light never stands over the car's shoulder on
+  a long straight*) failed on the old night row (harbour, 119.1 degrees off) and passes on the new one;
+  `tests/neon-sky-manifest.test.js` (*night's is turned onto the nearest street axis*) pins the build's rule.
+- [x] Sky rebuild: every shipped file identical; only `manifest.json` (`key`, `scriptSha256`) changed.
+- [x] Harbour, dry night, the five probes 4500 to 5450 m: car box 0 px at each (before: 1518, 1097 and 1011 at
+  4950, 5200 and 5450 m). Rain night, same probes: 0 to 26 (before 0 to 19).
+- [x] Every long straight, both outer lanes, night and rain: no white bar on the rear deck in any capture looked
+  at (north boulevard, harbour, west canal, underpass). The car's lit flank reads a little lighter at night.
+- [x] `npm run typecheck`, `node --test tests/module-size.test.js`, `npm test` and `npm run build`.
+- [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
+  2026-11-16.
+- [ ] Owner art approval of the turned key (facades, water highlights and shadows under it); phone; Medium and
+  Ultra.
+
+Still wrong:
+
+- White pixels that are not the key stay in the car box, steady across every key azimuth tried, in both
+  weathers: north boulevard (bonus rings, lane dashes and kerb lights behind the car; about 200 to 900 px
+  depending on where the rings stand) and the west canal and oldtown gate in the left lane (bollard lamps; about
+  50 to 160 px). The box measures the picture around the car, not only its paint. Not chased.
+- Rain, plaza, right lane: a probe key directly behind the car gave 126 px where the shipped key gives 2. Not
+  explained; the guard lets a key above 76.5 degrees stand anywhere.
+- The guard's numbers come from one car body (the Roadster GLB) on one machine at High; a new car body, key or
+  lap direction re-runs the lane sweep (item 20).
+- Cast shadows from the night key are too faint in the captures to read their new direction.
+- `assets-src/neon-sky/build.py` is 414 lines (400 before); asset build scripts are outside the module-size gate.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 

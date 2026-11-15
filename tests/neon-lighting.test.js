@@ -6,6 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Color, Object3D, Vector3 } from 'three';
+import { classicRoadRoute } from '../src/classic-road-routes.ts';
 import { COAST_ENV_VARIANTS, coastEnvPlan } from '../src/coast-lighting.ts';
 import { createCoastLook } from '../src/coast-look.ts';
 import { coastSkyFile, coastSkyYaw, coastSunDirection } from '../src/coast-sky.ts';
@@ -60,6 +61,45 @@ for (const [name, shipped] of VARIANTS) {
     assert.ok(skyline.distanceTo(new Vector3(0, 0, -1)) < 1e-6, 'the car drives toward -z');
     const key = new Vector3(...COAST_ENV_VARIANTS[name].sky.sunDirection).normalize().applyMatrix4(turned.matrixWorld);
     assert.ok(key.distanceTo(coastSunDirection(name)) < 1e-6, 'the light, the environment and the dome turn together');
+  });
+}
+
+// Trap (2026-11-16): the player car's sloped rear deck mirrors the key light into the chase camera when the key stands
+// over the car's shoulder. Night's key (elevation 58.19) sat 119 degrees off the harbour heading: a white bar as wide as
+// the car for the whole 1.2 km straight (1300 to 1600 px of luma >= 235 in the car's box at 1280x720, left lanes).
+// Numbers from the 2026-11-16 sweeps, key turned in a live High race, same elevation: glint at 119 and 135 degrees off
+// the heading on either side (1321 and 240 px), 0 to 3 px at 105 and at 150, so GLINT_BAND is the whole span between
+// the nearest clean angles. The lap drives all four street directions, so any diagonal key stands 135 degrees off two
+// of them; only a key on a street axis (0, 90 or 180 off every straight) clears the lap. Raising the key at 119 off:
+// 165 to 217 px at 65 degrees, 32 at 70, 3 to 5 at 77; rain night's own key (76.66, 118.6 off the west straights) read
+// the same as a key turned onto an axis on every straight. So the band applies under GLINT_CLEAR_ELEVATION, the lowest
+// elevation measured clean less 0.16 for rounding; 70 to 76.5 is unmeasured and counts as glinting.
+// LONG_STRAIGHT: over a second at race speed (about 85 m/s); corners and the 39 m link may flash (owner decision).
+const GLINT_BAND = [105, 150], GLINT_CLEAR_ELEVATION = 76.5, LONG_STRAIGHT = 100;
+const degrees = radians => radians * 180 / Math.PI;
+/** Straights of the Neon lap of LONG_STRAIGHT metres or more: metres from and to, and the world azimuth driven. */
+function longStraights() {
+  const road = classicRoadRoute('neon'), runs = [];
+  for (let s = 0; s < road.lap; s++) {
+    const heading = road.heading(s + 0.5), last = runs.at(-1);
+    if (last && heading === last.heading) last.to = s + 1; else runs.push({ from: s, to: s + 1, heading });
+  }
+  return runs.filter(run => run.to - run.from >= LONG_STRAIGHT).map(({ from, to }) => {
+    const [x0, z0] = road.point(from), [x1, z1] = road.point(to);
+    return { from, to, travel: degrees(Math.atan2(z1 - z0, x1 - x0)) };
+  });
+}
+
+for (const [name] of VARIANTS) {
+  test(`${name}: the key light never stands over the car's shoulder on a long straight (no white bar on the rear deck)`, () => {
+    const key = coastSunDirection(name), elevation = degrees(Math.asin(key.y)), azimuth = degrees(Math.atan2(key.z, key.x));
+    const straights = longStraights();
+    assert.equal(new Set(straights.map(s => Math.round((s.travel + 360) % 360 / 90) % 4)).size, 4, 'the lap drives all four street directions');
+    for (const { from, to, travel } of straights) {
+      const off = Math.abs((azimuth - travel + 540) % 360 - 180);
+      assert.ok(elevation >= GLINT_CLEAR_ELEVATION || off <= GLINT_BAND[0] || off >= GLINT_BAND[1],
+        `${from} to ${to} m drives azimuth ${travel.toFixed(0)}: the key (elevation ${elevation.toFixed(1)}) stands ${off.toFixed(1)} degrees off it`);
+    }
   });
 }
 

@@ -72,6 +72,10 @@ FILL = {"lonDeg": [114.0, 292.0], "fullDeg": 50.0, "fadeDeg": 62.0, "shoreDeg": 
 # Luminance per 30-degree longitude bin, elevation 0..45 (what a chase camera sees of the dome): `sky.bandByLon` on the
 # shipped dome, `sky.sourceBandByLon` before the fill.
 BAND_BIN_DEG, BAND_TOP_DEG = 30, 45
+# Street axes in the HDRI frame: the longitude the runtime turns straight ahead of the grid (`sky.ahead`) and every 90
+# degrees from it. The lap drives all four, so a key that can glint off the car is aimed along one (on_street_axis):
+# night's. Rain's key (el 76.7) measured clean where the filled sky puts it and stays there.
+AHEAD_DEG, STREET_KEY = 30.0, ("night",)
 SIZES = {"4k": 4096, "8k": 8192}
 
 
@@ -297,6 +301,13 @@ def key_light(full):
             "ambient": round(float((lum * domega).sum() / domega.sum() / w), 4)}
 
 
+def on_street_axis(direction):
+    """`direction` turned about the vertical onto the nearest street axis: same elevation, so same road irradiance."""
+    x, y, z = direction
+    lon = np.radians(AHEAD_DEG + 90 * round((np.degrees(np.arctan2(z, x)) - AHEAD_DEG) / 90))
+    return [round(float(v), 4) for v in (np.hypot(x, z) * np.cos(lon), y, np.hypot(x, z) * np.sin(lon))]
+
+
 def band_p90(sky):
     """90th percentile luminance of the band the chase camera sees (elevation 0..40 degrees): Coast's `sky.gain` puts
     it at the bloom threshold (gain = threshold / p90)."""
@@ -340,6 +351,8 @@ def main():
     # wall's vector irradiance made a sun at el 27 degrees straight down the harbour, a pinpoint specular that whited
     # out the wet road and the car. Its colour and the irradiance it adds to the road (intensity x sin(elevation)) stay
     # the download's (rain: its grade, through RGBE), whose light the 1k maps keep; `source` keeps that measurement.
+    # STREET_KEY then turns the key onto the nearest street axis: at night's 58 degrees the player car's rear deck
+    # mirrored it into the chase camera along the harbour, 119 degrees off the heading; `filled` keeps the measurement.
     raw_rain = os.path.join(OUT_PNG, "raw_rain_1k.hdr")
     save_hdr(grade_rain(full, haze, upper_only=False), raw_rain)
     aim = {"night": key_light(filled), "rain": key_light(grade_rain(filled, haze, upper_only=False))}
@@ -348,10 +361,11 @@ def main():
         e["file"], e["inputSha256"][name1k] = os.path.basename(path), digest1k
         e["environment"] = entry_file(path)
         e["irradiance"] = {"source": round(irradiance(src_img), 4), "shipped": round(irradiance(load_full(path)), 4)}
-        src = key_light(src_img)
-        scale = src["direction"][1] / aim[name]["direction"][1]
+        src, filled_key = key_light(src_img), aim[name]["direction"]
+        scale = src["direction"][1] / filled_key[1]
         e["fill"] = FILL
-        e["key"] = {**src, "direction": aim[name]["direction"], "elevationDeg": aim[name]["elevationDeg"],
+        e["key"] = {**src, "direction": on_street_axis(filled_key) if name in STREET_KEY else filled_key,
+                    "elevationDeg": aim[name]["elevationDeg"], "filled": {"direction": filled_key},
                     "intensity": round(src["intensity"] * scale, 4), "irradiance": round(src["irradiance"] * scale, 4),
                     "source": {"direction": src["direction"], "elevationDeg": src["elevationDeg"],
                                "intensity": src["intensity"]}}

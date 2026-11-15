@@ -132,6 +132,19 @@ for (const [name, env] of Object.entries(ENVS)) {
     const road = k => k.intensity * Math.sin(k.elevationDeg * Math.PI / 180);
     assert.ok(Math.abs(road(key) / road(source) - 1) < 5e-3, 'the road keeps the irradiance of the measured key');
   });
+
+  // Same key, its azimuth (2026-11-16): where the filled sky put night's key (el 58), the player car's rear deck mirrored
+  // it into the chase camera along the harbour, 119 degrees off the heading (tests/neon-lighting.test.js has the band).
+  // The build turns it onto the nearest street axis; rain's (el 76.7) measured clean and stays on the filled sky's.
+  test(`${name}: the key keeps the filled sky's elevation; night's is turned onto the nearest street axis`, () => {
+    const { direction, filled } = env.key, ahead = COAST_ENV_VARIANTS[name === 'rain' ? 'nightRain' : name].sky.ahead;
+    const azimuth = v => Math.atan2(v[2], v[0]) * 180 / Math.PI;
+    assert.equal(direction[1], filled?.direction[1], 'same elevation, so the same irradiance on the road');
+    if (name === 'rain') return assert.deepEqual(direction, filled.direction);
+    const offAxis = ((azimuth(direction) - ahead) % 90 + 90) % 90; // the runtime turns `sky.ahead` to -z: the street axes
+    assert.ok(Math.min(offAxis, 90 - offAxis) < 0.05, `${offAxis.toFixed(2)} degrees past a street axis`);
+    assert.ok(Math.abs((azimuth(direction) - azimuth(filled.direction) + 540) % 360 - 180) <= 45, 'the nearest axis');
+  });
 }
 
 // Same wall, the 1k maps (2026-11-16): shipped as downloaded, the wet road mirrored the wall in the rain harbour as a tan
