@@ -6,6 +6,7 @@ import { STORMLINE_ID, STORMLINE_TRACK } from './courses/stormline-megacity-race
 import { VOLCANIC_ID, VOLCANIC_TRACK } from './courses/volcanic-crown-race.ts';
 import { MONSOON_ID, MONSOON_TRACK } from './courses/monsoon-ruins-race.ts';
 import { COURSE_RUNTIMES } from './course-runtimes.ts';
+import { NEON_RING_LINES } from './neon-ring-lines.ts';
 
 // Special sections are { from, to, type } in metres; `dir` (+1 / -1) is the crosswind direction,
 // `x` / `altitude` place a shortcut corridor.
@@ -21,11 +22,22 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
   },
   neon: {
-    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 6, itemDensity: OPENING_ITEMS, ringOdds: BOOST_ODDS, introRivals: true, // an early, easy map
+    // Owner, 2026-11-15: 4000 m was a 36 s lap, so the lap is 10 km (one lap, never two). 2.5 times the road carries
+    // 2.5 times the item slots, so pickups keep their per-km density; layout 7 never shipped, so it stays 7.
+    name: 'Neon Downtown', length: 10000, trafficDensity: 1.5, seed: 2002, layoutVersion: 7, itemDensity: OPENING_ITEMS * 2.5, ringOdds: BOOST_ODDS, introRivals: true, // an early, easy map
+    // The only tunnel is the rail underpass in the first right-hander. One mechanic per sector: the market corridor,
+    // the sea wind across the harbour straight, the rooftop cut inside the old town's last left-hander.
     sections: [
-      { from: 600, to: 1100, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 },
-      { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
+      { from: 690, to: 910, type: 'tunnel' }, { from: 2200, to: 2700, type: 'shortcut', x: 7.5, altitude: 6 },
+      { from: 4500, to: 5300, type: 'crosswind', dir: 1 }, { from: 8290, to: 8750, type: 'shortcut', x: -7.5, altitude: 6 },
     ],
+    ringLines: NEON_RING_LINES, // owner brief, 2026-11-15: one highlight per sector
+    // Seven lines take 2.9 km of the lap from the random rings, so the rest carries 1.45 times the slots: 23 rings a
+    // km (the owner asked for 22 or more; 17 before). Rings only: pickups keep the classic density per km.
+    ringDensity: 1.45,
+    // Fewer random rows, more trains: 10 km of the default odds tipped the game-wide share of rows over one in three
+    // shapes (tests/ring-rows.test.js), and a train is the readable way to add rings.
+    shapeOdds: [0.04, 0.4],
   },
   canyon: {
     name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 6, itemDensity: OPENING_ITEMS, openingNitroRings: 2, // volume was enough; only the first NITRO came late
@@ -66,7 +78,9 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
 
 // User, 2026-11-09: a new course (any `topology`) keeps the classic per-km ring/pickup density: its per-car item count
 // scales by length / the mean classic length. Classic tracks use their own itemDensity (default 1).
-const CLASSIC_MEAN_LENGTH = Object.values(RACE_TRACKS).reduce((sum, track) => sum + track.length, 0) / Object.keys(RACE_TRACKS).length;
+// Frozen at the ten classic lengths as they stood when the long-form courses were tuned (Neon 4000 m): a classic track
+// changing length must not re-scale them (tests/course-item-density.test.js, *long-form courses keep their item counts*).
+const CLASSIC_MEAN_LENGTH = 6050;
 export const itemScale = (track: TrackConfig): number =>
   track.topology === 'course-graph' || track.topology === 'course-graph-runtime' ? track.length / CLASSIC_MEAN_LENGTH : track.itemDensity ?? 1;
 

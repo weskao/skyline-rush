@@ -1,0 +1,231 @@
+{
+ "licence": "CC0-1.0",
+ "site": "https://polyhaven.com",
+ "sets": [
+  {
+   "id": "concrete_wall_008",
+   "title": "Concrete Wall 008",
+   "authors": [
+    "Charlotte Baglioni",
+    "Dario Barresi"
+   ],
+   "url": "https://polyhaven.com/a/concrete_wall_008",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_008/concrete_wall_008_diff_1k.jpg",
+     "path": "concrete_wall_008/concrete_wall_008_diff_1k.jpg",
+     "bytes": 623051,
+     "sha256": "a203166d280d3cfc6a91bbc9ffdae406eb9555b4a4f658cd92619063eb17c147"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_008/concrete_wall_008_nor_gl_1k.jpg",
+     "path": "concrete_wall_008/concrete_wall_008_nor_gl_1k.jpg",
+     "bytes": 511519,
+     "sha256": "83cd3fa2c7cbf4c81402386065daf8fa6f72e1f1f77e02ccb1eedb28496909ae"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_008/concrete_wall_008_arm_1k.jpg",
+     "path": "concrete_wall_008/concrete_wall_008_arm_1k.jpg",
+     "bytes": 667023,
+     "sha256": "12b8b88bd0a9b303150f45cf0080371d78b7f04744d4ab14030b8958ec7dc2e3"
+    }
+   ]
+  },
+  {
+   "id": "granite_tile_04",
+   "title": "Granite Tile 04",
+   "authors": [
+    "Amal Kumar"
+   ],
+   "url": "https://polyhaven.com/a/granite_tile_04",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/granite_tile_04/granite_tile_04_diff_1k.jpg",
+     "path": "granite_tile_04/granite_tile_04_diff_1k.jpg",
+     "bytes": 918404,
+     "sha256": "b9398f9d9a2b0aa66cb869bbcff4582a686f90aaefb1b03dea872db15369de61"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/granite_tile_04/granite_tile_04_nor_gl_1k.jpg",
+     "path": "granite_tile_04/granite_tile_04_nor_gl_1k.jpg",
+     "bytes": 677810,
+     "sha256": "985ee06cbf14c8cfdcead64761bc8eaeebe489a5b5572f846d4d5de60407a075"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/granite_tile_04/granite_tile_04_arm_1k.jpg",
+     "path": "granite_tile_04/granite_tile_04_arm_1k.jpg",
+     "bytes": 930251,
+     "sha256": "ca6e89cd74746435614a361b97a167a037873bb92e980176ba97e1d9e9ab26ad"
+    }
+   ]
+  },
+  {
+   "id": "plastered_wall_05",
+   "title": "Plastered Wall 05",
+   "authors": [
+    "Charlotte Baglioni"
+   ],
+   "url": "https://polyhaven.com/a/plastered_wall_05",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plastered_wall_05/plastered_wall_05_diff_1k.jpg",
+     "path": "plastered_wall_05/plastered_wall_05_diff_1k.jpg",
+     "bytes": 557082,
+     "sha256": "b10e2fc12c6f6bb8a355fe7c5d6eab19222337414ce055df0701e75f5f603764"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plastered_wall_05/plastered_wall_05_nor_gl_1k.jpg",
+     "path": "plastered_wall_05/plastered_wall_05_nor_gl_1k.jpg",
+     "bytes": 1051165,
+     "sha256": "560ca5b81f8c37a1bf9d44f9d20adc983d1cad3a7c6aa23835a1e1c1b63da98f"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plastered_wall_05/plastered_wall_05_arm_1k.jpg",
+     "path": "plastered_wall_05/plastered_wall_05_arm_1k.jpg",
+     "bytes": 638749,
+     "sha256": "9b71c8e72e1f5ff6965b9a8b58f6de338045828001f22143d77e056f7c2ea464"
+    }
+   ]
+  },
+  {
+   "id": "black_painted_planks",
+   "title": "Black Painted Planks",
+   "authors": [
+    "Dimitrios Savva"
+   ],
+   "url": "https://polyhaven.com/a/black_painted_planks",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/black_painted_planks/black_painted_planks_diff_1k.jpg",
+     "path": "black_painted_planks/black_painted_planks_diff_1k.jpg",
+     "bytes": 617926,
+     "sha256": "47ce0f57b7ae902f4eb194e70569a0da34523f1df57ba2c4116216f403c301d2"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/black_painted_planks/black_painted_planks_nor_gl_1k.jpg",
+     "path": "black_painted_planks/black_painted_planks_nor_gl_1k.jpg",
+     "bytes": 696401,
+     "sha256": "3ea2d1add30314e45036fa8dc5f0f862588e9b260c45592ab332240b4e25a337"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/black_painted_planks/black_painted_planks_arm_1k.jpg",
+     "path": "black_painted_planks/black_painted_planks_arm_1k.jpg",
+     "bytes": 524505,
+     "sha256": "ed6635bccb61fb1b739fef4b6d7eb7dfa9fe5c0517ec317a251754b19e12cf1e"
+    }
+   ]
+  },
+  {
+   "id": "roof_tiles_14",
+   "title": "Roof Tiles 14",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "url": "https://polyhaven.com/a/roof_tiles_14",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/roof_tiles_14/roof_tiles_14_diff_1k.jpg",
+     "path": "roof_tiles_14/roof_tiles_14_diff_1k.jpg",
+     "bytes": 416642,
+     "sha256": "756217e3dfa9ddfd9d880a9f4938abca7fb7dfcf9b7184949894eed33868ae6f"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/roof_tiles_14/roof_tiles_14_nor_gl_1k.jpg",
+     "path": "roof_tiles_14/roof_tiles_14_nor_gl_1k.jpg",
+     "bytes": 533448,
+     "sha256": "b0478c93821c9cf83b9c0f1ed8c2d46e335b336a2236f7c220364bf0a8bbf30d"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/roof_tiles_14/roof_tiles_14_arm_1k.jpg",
+     "path": "roof_tiles_14/roof_tiles_14_arm_1k.jpg",
+     "bytes": 205773,
+     "sha256": "1970d2156abc65215155d8137bf37234c1cd2755936ba1f884774b719d815495"
+    }
+   ]
+  },
+  {
+   "id": "sakura_bark",
+   "title": "Sakura Bark",
+   "authors": [
+    "Charlotte Baglioni"
+   ],
+   "url": "https://polyhaven.com/a/sakura_bark",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sakura_bark/sakura_bark_diff_1k.jpg",
+     "path": "sakura_bark/sakura_bark_diff_1k.jpg",
+     "bytes": 959561,
+     "sha256": "07005839dad2b6f729fbcd1b7cf7260819e92b7b4e95bb241452b559dddb6e09"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sakura_bark/sakura_bark_nor_gl_1k.jpg",
+     "path": "sakura_bark/sakura_bark_nor_gl_1k.jpg",
+     "bytes": 1137033,
+     "sha256": "01c142d8547ff40219a4abca599842a990aceb4495984bc65aa744f677dd9cc1"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sakura_bark/sakura_bark_arm_1k.jpg",
+     "path": "sakura_bark/sakura_bark_arm_1k.jpg",
+     "bytes": 974157,
+     "sha256": "6818b30aced4603a5b581da2e2bac850179123baef670df55a8c8b22fd40fc4b"
+    }
+   ]
+  },
+  {
+   "id": "metal_plate_02",
+   "title": "Metal Plate 02",
+   "authors": [
+    "Rob Tuytel"
+   ],
+   "url": "https://polyhaven.com/a/metal_plate_02",
+   "licence": "CC0-1.0",
+   "files": [
+    {
+     "map": "Diffuse",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate_02/metal_plate_02_diff_1k.jpg",
+     "path": "metal_plate_02/metal_plate_02_diff_1k.jpg",
+     "bytes": 625917,
+     "sha256": "6e80877d0e9d5973d96298c6091df7ace906b0a6760afc4f3592e4855f3f1d4c"
+    },
+    {
+     "map": "nor_gl",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate_02/metal_plate_02_nor_gl_1k.jpg",
+     "path": "metal_plate_02/metal_plate_02_nor_gl_1k.jpg",
+     "bytes": 183264,
+     "sha256": "58736fbb8aa4fc6690cf8152b174db65caf22a766375b625fb0087e1bc955bc7"
+    },
+    {
+     "map": "arm",
+     "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate_02/metal_plate_02_arm_1k.jpg",
+     "path": "metal_plate_02/metal_plate_02_arm_1k.jpg",
+     "bytes": 1075839,
+     "sha256": "e099a8385d53f4a515b7e0ce94f85d88657fcac49c23979474f5394b22dd550b"
+    }
+   ]
+  }
+ ]
+}

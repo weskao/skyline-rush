@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 test('phone Studio entry text and shine stay inside the button in both locales', async ({ page }) => {
@@ -27,7 +27,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
   test(`scenario 1 — Full-screen entry stays within safe viewport ${viewport.width}×${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'home');
     // The BEFORE capture is the actual legacy Garage Home WebGL, never a generated mockup.
     const before = await page.locator('#garage-preview #world').screenshot();

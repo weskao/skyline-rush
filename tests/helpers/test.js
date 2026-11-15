@@ -21,12 +21,21 @@ export const test = base.extend({
   },
 });
 
-// The Garage dialog slides in (history-in, translateX 22px). A rect read mid-slide is shifted and goes through
-// float32 transform math, so a 144 px thumbnail measured 144.00001526. Measure the Garage only after this resolves.
+// Overlays enter with a transform (Garage/history `history-in` translateX 22px; pause and results `.overlay-content`
+// translateY 12px / translateX 48px). A rect read mid-entry is shifted and goes through float32 transform math: a 144 px
+// thumbnail measured 144.00001526 and a 44 px button 43.99998474. Resolves once the element is visible and every finite
+// animation on it and its ancestors has finished; measure anything inside an overlay only after this.
+export const settled = async locator => {
+  await expect(locator).toBeVisible();
+  await locator.evaluate(el => Promise.all(document.getAnimations().filter(animation => {
+    const target = animation.effect?.target;
+    return target?.contains(el) && animation.effect.getComputedTiming().endTime !== Infinity;
+  }).map(animation => animation.finished.catch(() => {}))));
+};
+
 export const openGarage = async (page, action = 'click') => {
   await page.locator('#garage-button')[action]();
-  await expect(page.locator('#garage-screen')).toBeVisible();
-  await page.locator('#garage-screen').evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)));
+  await settled(page.locator('#garage-screen'));
 };
 
 export { expect, chromium };

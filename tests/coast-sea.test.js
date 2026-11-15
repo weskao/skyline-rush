@@ -104,6 +104,27 @@ test('Coast Medium+ shows the water once its texture and the sky dome are up; it
   assert.equal(r.sea.children.length, 0);
 });
 
+// Neon's expressway and canal water read flat (2026-11-16): the mirror sampled the dome 2 to 5 mips down, so the city's
+// lights smeared into one dim glow. Night skies mirror sharper (a uniform, no new pass or program); Coast's are unchanged.
+test('Neon\'s night water mirrors the skyline sharper than Coast\'s day and dusk; a uniform, no recompile', async () => {
+  const r = rig();
+  r.coastSea.update('coast', 'dusk', 'medium');
+  await tick();
+  const u = r.water.material.uniforms, lod = () => u.mirrorLod?.value.toArray();
+  r.coastSea.update('coast', 'dusk', 'medium');
+  const version = r.water.material.version, coast = lod();
+  assert.deepEqual(coast, [2, 3], 'Coast keeps its mirror blur: base mip 2, plus 3 far away');
+  for (const preset of ['night', 'track']) {
+    r.coastSea.update('neon', preset, 'high');
+    assert.equal(r.water.visible, true, `Neon ${preset}`);
+    assert.ok(lod()[0] <= 1 && lod()[0] + lod()[1] <= 2.5, `Neon ${preset}: ${lod()} mirrors the city lights`);
+  }
+  r.coastSea.update('coast', 'dusk', 'medium');
+  assert.deepEqual(lod(), coast);
+  assert.equal(r.water.material.version, version, 'uniforms only');
+  assert.match(r.water.material.fragmentShader, /skyAt\(r,mirrorLod\.x\+mirrorLod\.y\*far\)/);
+});
+
 test('a failed texture load keeps the procedural sea', async () => {
   const warn = console.warn; console.warn = () => {};
   try {

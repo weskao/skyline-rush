@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
 // This is a DOM + live WebGL integration test, not a flattened design mockup.
@@ -161,7 +161,7 @@ for (const [axis, viewport] of [['vertical', { width: 844, height: 390 }], ['hor
       expect(daily.y + daily.height).toBeLessThanOrEqual(camera.y);
       expect(camera.y + camera.height).toBeLessThanOrEqual(start.y);
       await page.screenshot({ path: test.info().outputPath(`foldable-home-${axis}.png`) });
-      await page.locator('#garage-button').click();
+      await openGarage(page);
       for (const selector of ['#garage-close', '#garage-preview'])
         await expectInsidePane(page.locator(selector), panes);
       const paintCard = page.locator('[data-paint="crimson"]');

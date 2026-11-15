@@ -22,7 +22,8 @@ test('every variant names a shipped HDRI, with a sane grade and exposure', () =>
     assert.ok(existsSync(new URL('../public/environments/' + v.file, import.meta.url)), v.file + ' must be in public/environments');
     assert.equal(v.credit.license, 'CC0-1.0', name);
     assert.ok(v.credit.creator.length > 3, name + ' creator');
-    assert.equal(v.credit.sourceUrl, 'https://polyhaven.com/a/' + v.file.replace(/_1k\.hdr$/, ''), name + ' source URL names the asset');
+    const asset = v.file.replace(/_1k\.hdr$/, ''); // `_rain` is the recorded grade of a download (assets-src/neon-sky/manifest.json)
+    assert.equal(v.credit.sourceUrl, 'https://polyhaven.com/a/' + asset.replace(/_rain$/, ''), name + ' source URL names the asset');
     assert.ok(v.intensity > 0 && v.intensity <= 2, name + ' intensity');
     assert.ok(v.exposure >= 0.8 && v.exposure <= 1.4, name + ' exposure');
     assert.ok(v.grade.saturation >= 0.8 && v.grade.saturation <= 1.3, name + ' saturation');
@@ -39,7 +40,8 @@ test('Low keeps RoomEnvironment; Medium+ loads the HDRI; non-Coast and unsupport
   assert.deepEqual(coastEnvPlan('coast', 'rain', 'medium'), { kind: 'hdri', variant: 'rain' });
   assert.deepEqual(coastEnvPlan('coast', 'track', 'high'), { kind: 'hdri', variant: 'day' });
   assert.deepEqual(coastEnvPlan('coast', 'night', 'high'), { kind: 'room' });
-  assert.deepEqual(coastEnvPlan('neon', 'track', 'high'), { kind: 'room' });
+  assert.deepEqual(coastEnvPlan('canyon', 'track', 'high'), { kind: 'room' });
+  assert.deepEqual(coastEnvPlan('neon', 'day', 'high'), { kind: 'room' }, 'Neon has night skies only (tests/neon-lighting.test.js)');
 });
 
 test('the lens pass carries the colour-grade uniforms at identity by default (no recompile on change)', () => {

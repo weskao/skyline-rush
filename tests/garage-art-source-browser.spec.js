@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
 test('Garage source artwork is available at native 3x resolution with 1x CSS display without granting capabilities', async ({ page }) => {
@@ -33,7 +33,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const gallery = page.locator('#garage-art-source-garage-store-readiness');
     await expect(gallery).toBeVisible();
     await expect(gallery).toHaveAttribute('data-economy-preview','art-only');
@@ -110,7 +110,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
   test(`safe 3x Rewards/Missions reference cards fit at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const gallery = page.locator('#garage-art-source-garage-rewards-and-missions');
     await gallery.locator('summary').click();
     const cards = gallery.locator('.garage-badge-card');

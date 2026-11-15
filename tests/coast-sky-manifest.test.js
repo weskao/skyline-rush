@@ -20,11 +20,12 @@ test('the build script is pinned by hash and reads the sky sources from outside 
 for (const [name, sky] of Object.entries(COAST_SKY_MANIFEST.skies)) {
   const variant = COAST_ENV_VARIANTS[name], asset = variant.file.replace('_1k.hdr', '');
   test(`${name}: the dome shows the HDRI that lights the preset, a CC0 scan with creator and source URL`, () => {
-    assert.deepEqual(Object.keys(sky.inputSha256).sort(), [`${asset}_4k.hdr`, `${asset}_8k.hdr`]);
+    const source = asset.replace(/_rain$/, ''); // `_rain` is the recorded grade of a download (assets-src/neon-sky/manifest.json)
+    assert.deepEqual(Object.keys(sky.inputSha256).sort(), [`${source}_4k.hdr`, `${source}_8k.hdr`]);
     for (const hash of Object.values(sky.inputSha256)) assert.match(hash, /^[0-9a-f]{64}$/);
     assert.equal(variant.credit.license, 'CC0-1.0');
     assert.ok(variant.credit.creator.length > 0);
-    assert.equal(variant.credit.sourceUrl, `https://polyhaven.com/a/${asset}`);
+    assert.equal(variant.credit.sourceUrl, `https://polyhaven.com/a/${source}`);
     assert.deepEqual(sky.files.map(file => file.width), [4096, 8192]);
   });
   for (const file of sky.files) {

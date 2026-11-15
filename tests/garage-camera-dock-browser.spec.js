@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
 
 // The home showcase camera dock is reused (one id) on the Garage page to inspect the body from every angle.
 // The chosen view is showcase-only: AIRFLOW just toggles the effect and a race keeps the chase camera.
@@ -8,7 +8,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await page.goto('/');
     await expect(page.locator('#start-button')).toBeVisible();
     await expect(page.locator('#showcase-camera-dock')).toHaveCount(1);
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'home');
 
     const dock = page.locator('#garage-screen #showcase-camera-dock');

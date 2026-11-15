@@ -52,5 +52,26 @@ export const COAST_SKY_MANIFEST = {
         { width: 8192, url: 'environments/sky/kloofendal_overcast_puresky_sky_8k.ktx2', bytes: 6_073_131, sha256: '9b6ae531e5272c8ea5da5f82d2ee460b8796377f98a75006909956046536c2f1' },
       ],
     },
+    // Neon Downtown's two, built by assets-src/neon-sky/build.py with the encoder above (its manifest.json pins both).
+    night: {
+      inputSha256: {
+        'shanghai_bund_4k.hdr': '2e72825fd2502ae649f59035ecc9887c7d217dfe1a32e7915146d587fa2816e3',
+        'shanghai_bund_8k.hdr': 'fbc2e9859e6bfaf78a870f137c74ddad8f17b33d7b45f8b41fbd40def6bd05ef',
+      },
+      files: [
+        { width: 4096, url: 'environments/sky/shanghai_bund_sky_4k.ktx2', bytes: 1_682_348, sha256: '1aaa0ebc5a64a96a27aadf94da6573d8f0b9b3e76507e085ca2b6e134980cf97' },
+        { width: 8192, url: 'environments/sky/shanghai_bund_sky_8k.ktx2', bytes: 5_900_825, sha256: 'dc819ffd5af416a74e37d4911aae0f752904f60551263217d5b9a10126caa23e' },
+      ],
+    },
+    nightRain: {
+      inputSha256: {
+        'shanghai_bund_4k.hdr': '2e72825fd2502ae649f59035ecc9887c7d217dfe1a32e7915146d587fa2816e3',
+        'shanghai_bund_8k.hdr': 'fbc2e9859e6bfaf78a870f137c74ddad8f17b33d7b45f8b41fbd40def6bd05ef',
+      },
+      files: [
+        { width: 4096, url: 'environments/sky/shanghai_bund_rain_sky_4k.ktx2', bytes: 1_451_893, sha256: 'a0d2207f48ed25664ede6faafb50b5a18f8202149bd4b3a904de52b2c3088e0b' },
+        { width: 8192, url: 'environments/sky/shanghai_bund_rain_sky_8k.ktx2', bytes: 5_207_060, sha256: '7a67a9da146ed398fae0051d226afe8668be6d10253ccf25f5480b11a5fa3622' },
+      ],
+    },
   } satisfies Record<CoastEnvName, { inputSha256: Record<string, string>; files: SkyFile[] }>,
 };
