@@ -13,11 +13,13 @@ const seed = page => page.addInitScript(ids => {
 }, ids);
 test('classic track cards render their own teaser artwork', async ({ page }) => {
   await seed(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   for (const id of ids) {
-    const artwork = page.locator(`[data-track="${id}"] .track-preview.upcoming-thumb img`);
+    const card = page.locator(`[data-track="${id}"]`);
+    const artwork = card.locator('.track-preview.upcoming-thumb img');
     await expect(artwork).toHaveAttribute('src', new RegExp(`track-teasers/${id}\\.jpg$`));
-    await artwork.scrollIntoViewIfNeeded();
+    await card.scrollIntoViewIfNeeded();
     await expect(artwork).toHaveJSProperty('naturalWidth', 568);
     await expect(artwork).toHaveJSProperty('naturalHeight', 205);
     await expect(artwork).toHaveCSS('object-fit', 'cover');
