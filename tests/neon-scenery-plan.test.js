@@ -134,9 +134,11 @@ test('no street lamp stands over open water: on land on the pavement, on the exp
 
 test('N3, N7: the expressway, the harbour and the canal bridge stand over water; shops are the night market and oldtown only', () => {
   const plan = lap(), wet = p => p.lap >= 2851 && p.lap < 7038, yard = p => p.lap >= 4351 && p.lap < 5594 && p.offset > 0;
+  // The canal's glass towers stand on its far shore with the skyline, never in the water beside the bridge (their own test below).
+  const farShore = p => p.piece.startsWith('tower_glass') && neonSector(p.lap) === 'canal' && Math.abs(p.offset) >= 300;
   for (const p of plan) {
     if (p.piece in BUILDINGS || ['cherry_tree', 'railing', 'kerb_redwhite', 'traffic_light', 'sign_stack_a', 'billboard_a', 'billboard_b', 'sign_blade_a', 'sign_blade_b'].includes(p.piece))
-      assert.ok(!wet(p) || p.lap < 2851.5, `${p.piece} over the water at ${p.lap.toFixed(0)}`);
+      assert.ok(!wet(p) || p.lap < 2851.5 || farShore(p), `${p.piece} over the water at ${p.lap.toFixed(0)}`);
     if (p.piece === 'kerb_redwhite') assert.equal(neonSector(p.lap), 'market', p.piece);
     if (p.piece.startsWith('shop_market')) assert.ok(['market', 'oldtown'].includes(neonSector(p.lap)), `${p.piece} at ${p.lap.toFixed(0)}`);
     if (p.piece.startsWith('skyline') && yard(p)) assert.ok(p.offset >= 170 && p.offset <= 240, 'the yard skyline stands on the yard land (reach 260)');
@@ -378,7 +380,7 @@ test('the sculpture reads as the finale: half again its modelled size, a stone a
     assert.ok(-sculpture.offset - 7 * sculpture.scale >= 16, 'its plinth clear of the pavement');
     const apron = of(plan, 'canal_bank').filter(p => p.lap > 9300);
     assert.deepEqual(apron.map(p => [+p.lap.toFixed(3), p.offset, p.yaw]), [9346, 9358, 9442, 9454].map(lap => [lap, -17.1, 0]));
-    for (const p of plan) if (p.scale !== undefined) assert.equal(p.piece, 'plaza_sculpture', 'only the sculpture is scaled');
+    for (const p of plan) if (p.scale !== undefined) assert.ok(p.piece === 'plaza_sculpture' || p.piece.startsWith('tower_glass') && neonSector(p.lap) === 'canal' && Math.abs(p.offset) >= 300, `only the sculpture and the canal's far-shore towers are scaled (${p.piece} at ${p.lap.toFixed(0)})`);
   }
 });
 
@@ -412,6 +414,38 @@ test('across the water the skyline has depth: two ranks, staggered heights and t
   assert.ok(heights.size >= 5 && Math.min(...towers.map(p => p.y)) <= -50 && Math.max(...towers.map(p => p.y)) >= -12, 'sunk to staggered heights');
   assert.ok(turns.size >= 3, 'not every tower squares up to the road');
   for (const p of towers) assert.ok(Math.abs(p.offset) >= 300, `${p.offset}`);
+});
+
+// Concept frame 07 (canal arch bridge): a round glass tower with a cyan crown and warm window rows, a tower with
+// magenta floor bands and a pink spire behind the canal. Measured before (night, 6350): the canal had only the far
+// skyline, 320 to 580 m out and 23 to 58 % scene fog, 4.6 % magenta against the concept's 12 %.
+test('canal: a rank of the teal and the magenta glass tower on the far shore, the pink and cyan skyline behind it', () => {
+  for (const seed of [undefined, 7, 20261116]) {
+    const canal = lap(seed).filter(p => neonSector(p.lap) === 'canal'), glass = canal.filter(p => p.piece.startsWith('tower_glass'));
+    for (const side of [-1, 1]) {
+      const rank = glass.filter(p => Math.sign(p.offset) === side);
+      for (const piece of ['tower_glass_a', 'tower_glass_b']) assert.ok(rank.filter(p => p.piece === piece).length >= 5, `${piece} on side ${side}: ${rank.filter(p => p.piece === piece).length}`);
+      for (const p of rank) {
+        assert.ok(Math.abs(p.offset) >= 300 && Math.abs(p.offset) <= 360, `on the far shore, nearer than the skyline's far rank (${p.offset})`);
+        assert.ok(p.scale >= 1.4 && p.scale <= 2.001 && p.y <= -6 && p.y >= -24, `the tall towers of the view, sunk like the skyline (x${p.scale}, ${p.y})`);
+        near(p.yaw, -side * Math.PI / 2, 'its lit street face to the bridge');
+        assert.ok(p.lap >= 5988 + 12 && p.lap <= 7038 - 8, `${p.lap}`);
+      }
+      const laps = rank.map(p => p.lap).sort((a, b) => a - b);
+      for (let k = 1; k < laps.length; k++) assert.ok(laps[k] - laps[k - 1] >= 80, 'gaps between the towers: a skyline, not a wall');
+    }
+    assert.ok(new Set(glass.map(p => p.scale.toFixed(1))).size >= 4 && new Set(glass.map(p => Math.abs(p.offset))).size >= 3, 'staggered heights and depths');
+    for (const p of canal) if (p.piece.startsWith('skyline')) assert.ok(Math.abs(p.offset) >= 300, 'the skyline keeps its two ranks behind them');
+    assert.equal(canal.filter(p => p.piece === 'skyline_tower_a').length, 0, 'the warm plain tower is not part of the canal skyline');
+    for (const piece of ['skyline_tower_b', 'skyline_tower_c', 'skyline_spire']) assert.ok(canal.some(p => p.piece === piece), piece);
+    for (let chunk = 0; chunk < LAP_CHUNKS; chunk++) {
+      const counts = {};
+      for (const p of neonChunkPlan(chunk, seed)) counts[p.piece] = (counts[p.piece] ?? 0) + 1;
+      for (const [piece, n] of Object.entries(counts)) assert.ok(n <= NEON_PIECES[piece].cap, `${piece} x${n} in chunk ${chunk}`);
+    }
+  }
+  assert.ok(lap().every(p => !p.piece.startsWith('tower_glass') || !['expressway', 'harbour'].includes(neonSector(p.lap))), 'the canal only');
+  assert.ok(lap().some(p => p.piece === 'skyline_tower_a' && neonSector(p.lap) === 'expressway'), 'the expressway keeps all four skyline kinds');
 });
 
 test('chunk window: one chunk behind, more ahead on High than Medium, nothing on Low', () => {
