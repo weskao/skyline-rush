@@ -130,8 +130,8 @@ def show_channel(mat, rig, channel, image):
     for link in list(color.links):
         nt.links.remove(link)
     rig["emission"].inputs["Strength"].default_value = 1.0
-    lit = channel == "normal" or channel == "spill" and not rig["power"]
-    value = rig["emit" if channel == "spill" else channel] if channel != "normal" else 0.0
+    lit = channel in ("normal", "work") or channel == "spill" and not rig["power"]   # work: lighting.py, lamps dark
+    value = rig["emit" if channel == "spill" else channel] if channel not in ("normal", "work") else 0.0
     if channel == "spill":
         rig["emission"].inputs["Strength"].default_value = rig["power"]
     if isinstance(value, float):

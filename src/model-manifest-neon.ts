@@ -58,10 +58,10 @@ export const NEON_MODELS: Record<string, ModelManifestEntry> = {
     source: {
       master: 'assets-src/neon-landmarks/neon-landmarks.blend',
       script: 'assets-src/neon-landmarks/build.py',
-      masterSha256: 'b87e0d14436283368655ff1fed89b7ff949fc737c37a2a10a3fe4220f4e45306',
-      scriptSha256: '90d08e6b00019d9bae8465bed347e72f394bf830e11a94f2ad97cd085d3204f0',
+      masterSha256: 'ef29cf15fd1e87f495a15612f3b60ca1dddb8fb72e45dc5a90d7840d9510d83c',
+      scriptSha256: '5249f9738b1b3986bc09c9fff862b7d45b9d7c9ef2f1c04b5004fa339d5f42ab',
     },
-    glb: { sha256: '7dab678257f2134be5f06f6d70513177be9c8bf726b0a210d8b343acebb60834', bytes: 3_880_908 },
+    glb: { sha256: '3400074720244b5f1c53fe8a0ee0564244c10c8992a5953e1c3556eab397bd6a', bytes: 3_959_896 },
     license: {
       id: 'CC0-1.0',
       creator: 'Poly Haven: Amal Kumar, Charlotte Baglioni, Dario Barresi, Dimitrios Savva, Rob Tuytel (metal, container, brick, stone and concrete sets of the harbour/oldtown atlas in assets-src/neon-landmarks/sources.json); pieces, the nine-piece atlas and the bake by Skyline Rush project',

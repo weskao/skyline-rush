@@ -35,7 +35,8 @@ MATS = {
     "hazard":     dict(color=srgb(0.82, 0.60, 0.07), rough=0.55, scan="metal_plate_02", paint=0.7, rust=0.3, streak=0.3, normal=0.5, stripes=0.7),
     "concrete":   dict(color=(1, 1, 1), rough=0.8, scan="concrete_wall_008", raw=1.0, streak=0.3, normal=1.0),
     "containers": dict(color=(1, 1, 1), rough=0.55, scan="container_side", paint=0.6, rust=0.35, streak=0.4, normal=1.0, cells=CELL, ribs=0.35),
-    "hull":       dict(color=srgb(0.10, 0.12, 0.16), rough=0.45, scan="metal_plate_02", paint=0.9, rust=0.2, streak=0.6, normal=0.6, plates=(6.0, 6.0, 2.5)),
+    # dark navy, not 0.10 / 0.12 / 0.16: at 1 % linear albedo no flood shows the plating at night (build/lighting.py)
+    "hull":       dict(color=srgb(0.17, 0.21, 0.28), rough=0.45, scan="metal_plate_02", paint=0.9, rust=0.2, streak=0.6, normal=0.6, plates=(6.0, 6.0, 2.5)),
     "boot":       dict(color=srgb(0.40, 0.09, 0.07), rough=0.6, scan="metal_plate_02", paint=0.9, rust=0.15, streak=0.2, normal=0.6, plates=(6.0, 6.0, 2.5)),
     "deckhouse":  dict(color=srgb(0.76, 0.76, 0.73), rough=0.45, scan="metal_plate_02", paint=0.5, rust=0.08, streak=0.45, normal=0.4,
                        windows=(2.2, 2.8, 10.5), lamp="window", emit=20),

@@ -161,6 +161,26 @@ test('at the game landmark strength no lamp texel clips to white, and no sectors
   }
 });
 
+// Game night lit the harbour and oldtown walls with one key light from the sky, so a wall turned from it read as a
+// black silhouette: probe captures (2026-11-15) put the covered-pixel median of the ship at 0.02, the containers and
+// the tower at ~0.05. build/lighting.py bakes a quay and street flood into the emissive atlas (no runtime light, draw
+// call, node or material): each wall then shows its own material at night. Floors in runtime emissive luminance.
+const LIT_FLOOR = { container_stack: { containers: 0.05 }, cargo_ship: { containers: 0.05, hull: 0.03, boot: 0.03 },
+  clock_tower: { brick: 0.05, stone: 0.05 }, oldtown_gate: { brick: 0.05, stone: 0.05 } };
+
+test('the harbour and oldtown walls show their material at game night: a baked flood, not a black silhouette', () => {
+  for (const [name, floors] of Object.entries(LIT_FLOOR)) for (const [surface, floor] of Object.entries(floors)) {
+    const lit = contract.pieces[name].surfaces?.[surface]?.lit;
+    assert.ok(lit >= floor, `${name} ${surface}: median emissive ${lit} at game strength, floor ${floor}`);
+  }
+});
+
+test('the containers on the ship deck carry the stack\'s texel density: no smear at hero distance', () => {
+  const density = name => contract.pieces[name].surfaces?.containers?.texel_density;
+  // the deck boxes were packed at 0.18 against the stack's 0.45 (measured 5.02 against 12.54 texels per metre, 0.40x)
+  assert.ok(density('cargo_ship') >= 0.85 * density('container_stack'), `ship ${density('cargo_ship')}, stack ${density('container_stack')}`);
+});
+
 test('the scanned surfaces of the sectors kit are CC0, recorded with URL and hash; the downloads stay out of the repo', () => {
   const sources = JSON.parse(read('assets-src/neon-landmarks/sources.json'));
   assert.equal(sources.licence, 'CC0-1.0');

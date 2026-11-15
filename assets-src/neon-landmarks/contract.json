@@ -597,6 +597,28 @@
             16.0
           ]
         }
+      },
+      "surfaces": {
+        "crane": {
+          "texel_density": 10.89,
+          "lit": 0.0023
+        },
+        "hazard": {
+          "texel_density": 15.86,
+          "lit": 0.0031
+        },
+        "concrete": {
+          "texel_density": 6.71,
+          "lit": 0.0033
+        },
+        "cladding": {
+          "texel_density": 12.21,
+          "lit": 0.0001
+        },
+        "grating": {
+          "texel_density": 19.16,
+          "lit": 0.0006
+        }
       }
     },
     "container_stack": {
@@ -641,6 +663,12 @@
             12.22
           ]
         }
+      },
+      "surfaces": {
+        "containers": {
+          "texel_density": 12.08,
+          "lit": 0.0549
+        }
       }
     },
     "cargo_ship": {
@@ -663,7 +691,7 @@
       ],
       "lods": {
         "cargo_ship_lod0": {
-          "triangles": 3224,
+          "triangles": 3306,
           "min": [
             -12.9,
             -3.0,
@@ -687,6 +715,28 @@
             39.7,
             75.82
           ]
+        }
+      },
+      "surfaces": {
+        "containers": {
+          "texel_density": 10.74,
+          "lit": 0.0989
+        },
+        "hull": {
+          "texel_density": 5.09,
+          "lit": 0.0385
+        },
+        "boot": {
+          "texel_density": 4.83,
+          "lit": 0.0448
+        },
+        "deckhouse": {
+          "texel_density": 10.74,
+          "lit": 0.4437
+        },
+        "deck": {
+          "texel_density": 4.83,
+          "lit": 0.1297
         }
       }
     },
@@ -735,6 +785,24 @@
             21.3,
             2.61
           ]
+        }
+      },
+      "surfaces": {
+        "brick": {
+          "texel_density": 20.13,
+          "lit": 0.0581
+        },
+        "stone": {
+          "texel_density": 18.79,
+          "lit": 0.1065
+        },
+        "steel_arch": {
+          "texel_density": 13.42,
+          "lit": 0.004
+        },
+        "iron": {
+          "texel_density": 16.1,
+          "lit": 0.0007
         }
       }
     },
@@ -785,7 +853,8 @@
             0.42
           ]
         }
-      }
+      },
+      "surfaces": {}
     },
     "clock_tower": {
       "kind": "side",
@@ -829,6 +898,20 @@
             50.5,
             5.3
           ]
+        }
+      },
+      "surfaces": {
+        "brick": {
+          "texel_density": 20.13,
+          "lit": 0.0708
+        },
+        "stone": {
+          "texel_density": 18.49,
+          "lit": 0.0881
+        },
+        "patina": {
+          "texel_density": 18.79,
+          "lit": 0.0016
         }
       }
     }
