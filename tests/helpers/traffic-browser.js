@@ -19,6 +19,17 @@ export async function pausedRace(page, gameplayURL, trackId, search = '') {
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(30000) });
   await page.locator('#pause-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+  // The chase camera eases on for a few frames after the pause, and a rival's wheel on the frustum edge then joins
+  // the frame: one more draw call that a before/after difference would count as traffic. Wait for a steady frame.
+  await page.evaluate(() => new Promise(resolve => {
+    let last = -1, same = 0, frames = 0;
+    const step = () => {
+      const { calls } = window.gameScene.renderer.info.render;
+      same = calls === last ? same + 1 : 0; last = calls;
+      if (same >= 20 || ++frames > 300) resolve(); else requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }));
 }
 
 // The paused race still renders every frame, so the cars stay where this puts them: `shown` of them spread over the
