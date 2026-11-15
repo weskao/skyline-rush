@@ -3,8 +3,8 @@ way Coast's are, for two environments. Run from the repo root after `python3 -I 
 
   "$BLENDER_BIN" --background --factory-startup --python assets-src/neon-sky/build.py [-- <png-dir>] [--no-encode]
 
-  night  the HDRI as downloaded: public/environments/<id>_1k.hdr (environment map, PMREM 256 at runtime) and the
-         upper hemisphere as the sky dome, public/environments/sky/<id>_sky_{4k,8k}.ktx2.
+  night  the HDRI with the wedge fill (FILL): public/environments/<id>_1k.hdr (environment map, PMREM 256 at runtime)
+         and the upper hemisphere as the sky dome, public/environments/sky/<id>_sky_{4k,8k}.ktx2.
   rain   the same city, wetter and hazier: RAIN_GRADE below applied to every resolution of the same source (no
          rain-night city HDRI on Poly Haven fits), shipped as <id>_rain_1k.hdr and <id>_rain_sky_{4k,8k}.ktx2.
 
@@ -47,22 +47,28 @@ RAIN_GRADE = {"exposure": 0.7, "veil": 0.65, "falloffDeg": 14.0, "saturation": 0
 # 2.3 night and 1.5 rain), so the city glow stays linear and only the lamps and LED facades roll off in Coast's
 # shoulder. The 99.5th percentile (`sky.p995`, 12 to 24) is lamps; spending the 8 bits there would band the dark sky.
 RANGES = {"night": 4.0, "rain": 3.0}
-# No legible signage (look brief): the far skyline's LED towers carry vertical text about 1 degree tall, and the near
-# embankment buildings carry facade signs (17-18 degrees) and a rooftop sign (box below), all readable at 4K or 8K.
-# Those directions get a Gaussian blur of `sigmaDeg` (degrees, so 4K and 8K match): the band from the horizon to
-# `fullDeg`, fading out by `fadeDeg`, and each lon/el box with a `featherDeg` edge. Glow and silhouettes stay.
-# The 1k environment maps are below legibility and are not softened.
+# No legible signage (look brief): the far LED towers carry ~1 degree vertical text, the near embankment facade and
+# rooftop signs (box below) read at 4K/8K. Up to `fullDeg` (fading by `fadeDeg`) and in each box (`featherDeg` edge),
+# LED facades get a Gaussian blur of `sigmaDeg` (degrees, so 4K and 8K match): chroma (max - min) / max above
+# `signs.chroma` and max channel above `signs.peak`, grown by a `signs.growDeg` box (full where `signs.share` of it is
+# LED). Blurring the whole band halved the gradient (`sky.sharpness` vs `sourceSharpness`); 1k maps are not softened.
 SOFTEN = {"sigmaDeg": 0.25, "fullDeg": 22.0, "fadeDeg": 26.0, "featherDeg": 1.0,
+          "signs": {"chroma": 0.6, "peak": 3.0, "growDeg": 1.5, "share": 0.3},
           "boxes": [{"lonDeg": [-166.0, -156.0], "elDeg": [35.0, 41.0]}]}
-# Wedge fill (domes only): the near floodlit embankment buildings fill lon -180..-84 and +150..180 up to about 43 degrees,
-# which the harbour (heading 180, lon -180..-120 ahead) faced as a wall of blurred yellow buildings at 15x the rest of
-# the sky. Below `fullDeg` (fading out by `fadeDeg`) those longitudes take whole columns of the far skyline and its sky,
-# shifted (never mirrored or resampled, so nothing blurs and no axis of symmetry shows) from `sourceLonDeg`, at least
-# 150 degrees from where they land so a chase camera never sees one span twice; `featherDeg` blends each edge. No
-# iconic tower (lon +31..+58) is copied. The 1k environment maps keep the wall: its glow lights the city.
-FILL = {"featherDeg": 3.0, "fullDeg": 50.0, "fadeDeg": 62.0,
-        "pieces": [{"lonDeg": [138.0, 228.0], "sourceLonDeg": [-70.0, 20.0]},
-                   {"lonDeg": [228.0, 280.0], "sourceLonDeg": [65.0, 117.0]}]}
+# Wedge fill (domes and 1k maps): the near floodlit embankment buildings and trees fill lon -180..-68 and +114..180 up to
+# about 43 degrees at 8x the rest of the sky, and the harbour (heading 180) drives straight at them. `lonDeg` (wrapping)
+# below `fullDeg` (fading by `fadeDeg`) becomes a far shore: below `shoreDeg` whole shifted columns of the generic far
+# skyline (`pieces`; no LED, crown or iconic tower), then the city's horizon haze (per row, median of `hazeLonDeg`) up
+# to `hazeDeg`, then the pieces' clouds. 72 source degrees for 178 of wedge: a full-height copy repeated a tower in one
+# view. Feathers: `featherDeg` at the shore, `skyFeatherDeg` in the sky. The 1k maps keep the wall's horizontal
+# irradiance as overhead city glow (`glowDeg`, wall colour): the city stays lit, the wet road stops mirroring the wall.
+FILL = {"lonDeg": [114.0, 292.0], "fullDeg": 50.0, "fadeDeg": 62.0, "shoreDeg": [3.0, 8.0], "hazeDeg": [15.0, 25.0],
+        "hazeLonDeg": [-65.0, 114.0], "featherDeg": 1.0, "skyFeatherDeg": 8.0, "glowDeg": [40.0, 60.0],
+        "pieces": [{"lonDeg": [114.0, 149.0], "sourceLonDeg": [-18.0, 17.0]},
+                   {"lonDeg": [149.0, 186.0], "sourceLonDeg": [71.0, 108.0]},
+                   {"lonDeg": [186.0, 221.0], "sourceLonDeg": [-18.0, 17.0]},
+                   {"lonDeg": [221.0, 258.0], "sourceLonDeg": [71.0, 108.0]},
+                   {"lonDeg": [258.0, 292.0], "sourceLonDeg": [-18.0, 16.0]}]}
 # Luminance per 30-degree longitude bin, elevation 0..45 (what a chase camera sees of the dome): `sky.bandByLon` on the
 # shipped dome, `sky.sourceBandByLon` before the fill.
 BAND_BIN_DEG, BAND_TOP_DEG = 30, 45
@@ -159,7 +165,12 @@ def soften_signs(sky):
 
     def inside(x, lo, hi):
         return np.clip((x - lo + f) / f, 0, 1) * np.clip((hi + f - x) / f, 0, 1)
-    t = np.broadcast_to(np.clip((SOFTEN["fadeDeg"] - el) / (SOFTEN["fadeDeg"] - SOFTEN["fullDeg"]), 0, 1), band.shape[:2])
+    raw, sg = sky[top:].astype(np.float64), SOFTEN["signs"]
+    peak = raw.max(2)
+    led = ((peak - raw.min(2)) > sg["chroma"] * peak) & (peak > sg["peak"])
+    g = max(1, int(round(sg["growDeg"] * px_per_deg / 2)))
+    grown = np.clip(box(box(led.astype(np.float64), g, 1, True), g, 0, False) / sg["share"], 0, 1)
+    t = np.clip((SOFTEN["fadeDeg"] - el) / (SOFTEN["fadeDeg"] - SOFTEN["fullDeg"]), 0, 1) * grown
     for b in SOFTEN["boxes"]:
         t = np.maximum(t, inside(lon, *b["lonDeg"]) * inside(el, *b["elDeg"]))
     out = sky.copy()
@@ -167,24 +178,76 @@ def soften_signs(sky):
     return out
 
 
+def smooth(x, lo, hi):
+    """1 at or below `lo`, 0 at or above `hi`, linear between."""
+    return np.clip((hi - x) / (hi - lo), 0, 1).astype(np.float32)
+
+
 def fill_wedge(img, upper_only):
-    """FILL on an equirect (rows zenith first; the whole sphere or its upper half), as whole shifted source columns."""
+    """FILL on an equirect (rows zenith first; the whole sphere or its upper half)."""
     h, w, _ = img.shape
     lon = ((np.arange(w) + 0.5) / w - 0.5) * 360
-    el = np.degrees(elevations(h, upper_only))[:, None, None]
-    f = FILL["featherDeg"]
-    total, acc = np.zeros(w, dtype=np.float32), np.zeros_like(img)
-    for piece in FILL["pieces"]:
+    el = np.degrees(elevations(h, upper_only))[:, None]
+    f, sf, pieces = FILL["featherDeg"], FILL["skyFeatherDeg"], FILL["pieces"]
+    lo, hi = FILL["lonDeg"]
+    assert pieces[0]["lonDeg"][0] == lo and pieces[-1]["lonDeg"][1] == hi, FILL
+    shore = smooth(el, *FILL["shoreDeg"])                         # 1 on the shore, 0 in the sky
+
+    def ramp(rel, width, g, first, last):
+        """Lon weight of a span `width` wide, edges feathered `g`; the outer pieces run on under the sky feather."""
+        start = (rel > -sf) * 1.0 if first else np.clip(rel / g + 0.5, 0, 1)
+        end = (rel < width + sf) * 1.0 if last else np.clip((width - rel) / g + 0.5, 0, 1)
+        return (start * end).astype(np.float32)
+
+    def feathered(rel, width, first=False, last=False):
+        """Feather f on the shore, sf in the sky (`shore` mixes them by elevation)."""
+        return shore * ramp(rel, width, f, first, last)[None] + (1 - shore) * ramp(rel, width, sf, first, last)[None]
+
+    shifted = np.zeros_like(img)
+    for i, piece in enumerate(pieces):
         d0, d1 = piece["lonDeg"]
         s0, s1 = piece["sourceLonDeg"]
-        assert s1 - s0 == d1 - d0 and abs((d0 - s0 + 180) % 360 - 180) >= 150, piece
+        assert s1 - s0 == d1 - d0 and (i == 0 or d0 == pieces[i - 1]["lonDeg"][1]), piece
         rel = (lon - d0 + 180) % 360 - 180                       # degrees past the piece start, wrapped
-        weight = (np.clip(rel / f + 0.5, 0, 1) * np.clip((d1 - d0 - rel) / f + 0.5, 0, 1)).astype(np.float32)
         col = np.rint(((s0 + rel + 180) % 360) / 360 * w - 0.5).astype(int) % w
-        acc += img[:, col] * weight[None, :, None]
-        total += weight
-    t = np.clip((FILL["fadeDeg"] - el) / (FILL["fadeDeg"] - FILL["fullDeg"]), 0, 1).astype(np.float32)
-    return (img * (1 - t * total[None, :, None]) + t * acc).astype(np.float32)
+        shifted += img[:, col] * feathered(rel, d1 - d0, i == 0, i == len(pieces) - 1)[..., None]
+    rel = (lon - lo + 180) % 360 - 180
+    inside = np.minimum(feathered(rel, hi - lo), 1)
+    h0, h1 = FILL["hazeLonDeg"]
+    haze = np.median(img[:, (lon >= h0) & (lon <= h1)], axis=1)[:, None]
+    veil = ((1 - shore) * smooth(el, *FILL["hazeDeg"]))[..., None]  # haze share: 0 at the shore and in the clouds
+    fill = shifted * (1 - veil) + haze * veil
+    t = (smooth(el, FILL["fullDeg"], FILL["fadeDeg"]) * inside)[..., None]
+    return (img * (1 - t) + fill * t).astype(np.float32)
+
+
+def irradiance(full):
+    """Horizontal irradiance (luminance) of the upper hemisphere of a whole-sphere equirect."""
+    h = full.shape[0] // 2
+    lat = elevations(h, True).astype(np.float64)
+    domega = np.cos(lat) * (np.pi / 2 / h) * (2 * np.pi / full.shape[1])
+    return float(((full[:h].astype(np.float64) @ LUMA.astype(np.float64)) * (np.sin(lat) * domega)[:, None]).sum())
+
+
+def keep_irradiance(filled, source):
+    """`filled` (FILL on the 1k map) plus the removed light, in its colour, as overhead glow (FILL glowDeg): same Eh."""
+    h = filled.shape[0]
+    el = np.degrees(elevations(h, False))[:, None, None]
+    lost = (source - filled)[: h // 2].reshape(-1, 3).astype(np.float64).sum(0)
+    colour = (lost / float(lost @ LUMA)).astype(np.float32)
+    lobe = (1 - smooth(el, *FILL["glowDeg"])) * colour             # luminance 1 at the zenith cap
+    gain = (irradiance(source) - irradiance(filled)) / irradiance(np.broadcast_to(lobe, filled.shape))
+    out = (filled + gain * lobe).astype(np.float32)
+    assert abs(irradiance(out) / irradiance(source) - 1) < 1e-3
+    return out
+
+
+def sharpness(sky):
+    """Mean |gradient| of log luminance per degree (x, y) over the far skyline, lon -70..110, el 0..22."""
+    h, w, _ = sky.shape
+    lon = ((np.arange(w) + 0.5) / w - 0.5) * 360
+    band = np.log1p(sky[h - int(h * 22 / 90):, (lon > -70) & (lon < 110)].astype(np.float64) @ LUMA.astype(np.float64))
+    return [round(float(np.abs(np.diff(band, axis=a)).mean() * w / 360), 3) for a in (1, 0)]
 
 
 def band_by_lon(sky):
@@ -266,21 +329,26 @@ def main():
     name1k, path1k, digest1k = source("1k")
     full = load_full(path1k)
     haze = horizon_glow(full)
-    shutil.copyfile(path1k, os.path.join(OUT_ENV, name1k))       # night: the download as is, like Coast
-    rain_path = os.path.join(OUT_ENV, f"{ASSET}_rain_1k.hdr")
-    rain_full = grade_rain(full, haze, upper_only=False)
-    save_hdr(rain_full, rain_path)
-    # The key light shines from the direction measured on the filled sky the player sees, not on the shipped map: the
+    # Both 1k maps carry FILL (the wet road mirrored the wall as a tan sheen) with the wall's light kept overhead; rain
+    # is the recorded grade of the shipped night map.
+    filled = fill_wedge(full, upper_only=False)
+    shipped = keep_irradiance(filled, full)
+    night_path, rain_path = os.path.join(OUT_ENV, name1k), os.path.join(OUT_ENV, f"{ASSET}_rain_1k.hdr")
+    save_hdr(shipped, night_path)
+    save_hdr(grade_rain(load_full(night_path), haze, upper_only=False), rain_path)
+    # The key light shines from the direction measured on the filled sky the player sees, not on the download: the
     # wall's vector irradiance made a sun at el 27 degrees straight down the harbour, a pinpoint specular that whited
     # out the wet road and the car. Its colour and the irradiance it adds to the road (intensity x sin(elevation)) stay
-    # the shipped map's, since the map still lights the city with the wall's glow; `source` keeps the raw measurement.
-    filled = fill_wedge(full, upper_only=False)
+    # the download's (rain: its grade, through RGBE), whose light the 1k maps keep; `source` keeps that measurement.
+    raw_rain = os.path.join(OUT_PNG, "raw_rain_1k.hdr")
+    save_hdr(grade_rain(full, haze, upper_only=False), raw_rain)
     aim = {"night": key_light(filled), "rain": key_light(grade_rain(filled, haze, upper_only=False))}
-    for name, img, path in (("night", full, os.path.join(OUT_ENV, name1k)), ("rain", None, rain_path)):
+    for name, src_img, path in (("night", full, night_path), ("rain", load_full(raw_rain), rain_path)):
         e = envs[name]
         e["file"], e["inputSha256"][name1k] = os.path.basename(path), digest1k
         e["environment"] = entry_file(path)
-        src = key_light(load_full(path) if img is None else img)   # rain: measured on the shipped (RGBE) file
+        e["irradiance"] = {"source": round(irradiance(src_img), 4), "shipped": round(irradiance(load_full(path)), 4)}
+        src = key_light(src_img)
         scale = src["direction"][1] / aim[name]["direction"][1]
         e["fill"] = FILL
         e["key"] = {**src, "direction": aim[name]["direction"], "elevationDeg": aim[name]["elevationDeg"],
@@ -288,13 +356,15 @@ def main():
                     "source": {"direction": src["direction"], "elevationDeg": src["elevationDeg"],
                                "intensity": src["intensity"]}}
     envs["rain"]["hazeColor"] = [round(float(v), 4) for v in haze]
-    del full, rain_full, filled
+    del full, filled, shipped
 
     rng = np.random.default_rng(SEED)
     for label, width in SIZES.items():
         name, path, digest = source(label)
         night = load_upper(path)
         assert night.shape[:2] == (width // 4, width), f"{name}: expected {width}x{width // 2}, got {night.shape}"
+        raw = {} if label != "4k" else {"night": sharpness(night),
+                                         "rain": sharpness(grade_rain(night, haze, upper_only=True))}
         night = soften_signs(night)
         for env_name in ("night", "rain"):
             e = envs[env_name]
@@ -302,7 +372,8 @@ def main():
             e["inputSha256"][name] = digest
             if label == "4k":   # measured before the fill: the horizon glow (and so `gain`) is the whole city's
                 e["sky"] = {**measure(sky), "disc": 0, "p995": round(float(np.quantile(sky @ LUMA, 0.995)), 4),
-                            "p90Band0to40": band_p90(sky), "sourceBandByLon": band_by_lon(sky)}
+                            "p90Band0to40": band_p90(sky), "sourceBandByLon": band_by_lon(sky),
+                            "sourceSharpness": raw[env_name], "sharpness": sharpness(sky)}
             sky = fill_wedge(sky, upper_only=True)
             if label == "4k":
                 e["sky"]["bandByLon"] = band_by_lon(sky)

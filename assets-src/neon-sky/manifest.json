@@ -1,6 +1,6 @@
 {
  "script": "assets-src/neon-sky/build.py",
- "scriptSha256": "719d0b121cf40744bea7c90a108d94654534cbe0a001e000dd54927221e04c25",
+ "scriptSha256": "9e650345b1ef0a819faa684fdedfd52c89277ad1351653f4764d34f61eb62113",
  "encoder": "assets-src/coast-sky/build.py",
  "encoderSha256": "0a8ee4abef388f7fdd0b8476434450fb5deb92a2df49129c258e3b384b6059a2",
  "environments": {
@@ -17,6 +17,12 @@
     "fullDeg": 22.0,
     "fadeDeg": 26.0,
     "featherDeg": 1.0,
+    "signs": {
+     "chroma": 0.6,
+     "peak": 3.0,
+     "growDeg": 1.5,
+     "share": 0.3
+    },
     "boxes": [
      {
       "lonDeg": [
@@ -40,58 +46,113 @@
     {
      "width": 4096,
      "url": "environments/sky/shanghai_bund_sky_4k.ktx2",
-     "bytes": 1728936,
-     "sha256": "5b1219ed1d49c5cfc06ad97c186dbe4936a01d1c61c12d7c4f88c2471c1c22cf"
+     "bytes": 1682348,
+     "sha256": "1aaa0ebc5a64a96a27aadf94da6573d8f0b9b3e76507e085ca2b6e134980cf97"
     },
     {
      "width": 8192,
      "url": "environments/sky/shanghai_bund_sky_8k.ktx2",
-     "bytes": 5905218,
-     "sha256": "aad359c684a34e258ca1bd0af238c87e1bef98235e4e70da240c63a104f5163a"
+     "bytes": 5900825,
+     "sha256": "dc819ffd5af416a74e37d4911aae0f752904f60551263217d5b9a10126caa23e"
     }
    ],
    "environment": {
     "url": "environments/shanghai_bund_1k.hdr",
-    "bytes": 1640377,
-    "sha256": "77276a6b67cbf09611efc46e55871eead34e1fc6fa107db412207b91cf74697e"
+    "bytes": 1261024,
+    "sha256": "ba1d2cb4b0767e93ad42bfaefa1c40b2bdf7ea90a1f5c8d5c65ac7061802b9a4"
+   },
+   "irradiance": {
+    "source": 2.0849,
+    "shipped": 2.0756
    },
    "fill": {
-    "featherDeg": 3.0,
+    "lonDeg": [
+     114.0,
+     292.0
+    ],
     "fullDeg": 50.0,
     "fadeDeg": 62.0,
+    "shoreDeg": [
+     3.0,
+     8.0
+    ],
+    "hazeDeg": [
+     15.0,
+     25.0
+    ],
+    "hazeLonDeg": [
+     -65.0,
+     114.0
+    ],
+    "featherDeg": 1.0,
+    "skyFeatherDeg": 8.0,
+    "glowDeg": [
+     40.0,
+     60.0
+    ],
     "pieces": [
      {
       "lonDeg": [
-       138.0,
-       228.0
+       114.0,
+       149.0
       ],
       "sourceLonDeg": [
-       -70.0,
-       20.0
+       -18.0,
+       17.0
       ]
      },
      {
       "lonDeg": [
-       228.0,
-       280.0
+       149.0,
+       186.0
       ],
       "sourceLonDeg": [
-       65.0,
-       117.0
+       71.0,
+       108.0
+      ]
+     },
+     {
+      "lonDeg": [
+       186.0,
+       221.0
+      ],
+      "sourceLonDeg": [
+       -18.0,
+       17.0
+      ]
+     },
+     {
+      "lonDeg": [
+       221.0,
+       258.0
+      ],
+      "sourceLonDeg": [
+       71.0,
+       108.0
+      ]
+     },
+     {
+      "lonDeg": [
+       258.0,
+       292.0
+      ],
+      "sourceLonDeg": [
+       -18.0,
+       16.0
       ]
      }
     ]
    },
    "key": {
     "direction": [
-     0.4379,
-     0.8165,
-     -0.3762
+     -0.0081,
+     0.8498,
+     0.5271
     ],
-    "elevationDeg": 54.74,
+    "elevationDeg": 58.19,
     "color": "#ffdec0",
-    "intensity": 2.5533,
-    "irradiance": 3.2196,
+    "intensity": 2.4532,
+    "irradiance": 3.0934,
     "ambient": 1.3838,
     "source": {
      "direction": [
@@ -105,47 +166,55 @@
    },
    "sky": {
     "sunDirection": [
-     -0.8855,
-     0.3179,
-     -0.3389
+     -0.8728,
+     0.3737,
+     -0.314
     ],
-    "sunElevationDeg": 18.54,
-    "peakLuminance": 12817.3,
+    "sunElevationDeg": 21.94,
+    "peakLuminance": 54423.7,
     "horizon": [
-     2.379,
-     2.219,
-     2.131
+     2.37,
+     2.191,
+     2.089
     ],
     "disc": 0,
-    "p995": 23.4926,
-    "p90Band0to40": 1.6703,
+    "p995": 22.2232,
+    "p90Band0to40": 1.5064,
     "sourceBandByLon": [
-     4.31,
-     8.299,
-     0.827,
-     0.685,
-     0.701,
-     1.184,
+     4.308,
+     8.305,
+     0.824,
+     0.679,
+     0.698,
+     1.183,
      0.618,
-     0.911,
-     1.191,
-     0.67,
+     0.903,
+     1.208,
+     0.662,
      0.195,
-     2.377
+     2.37
+    ],
+    "sourceSharpness": [
+     0.574,
+     0.698
+    ],
+    "sharpness": [
+     0.447,
+     0.545
     ],
     "bandByLon": [
-     1.168,
-     0.622,
-     1.125,
-     0.789,
-     0.701,
-     1.184,
+     0.825,
+     0.923,
+     0.794,
+     0.596,
+     0.698,
+     1.183,
      0.618,
-     0.911,
-     1.191,
-     0.67,
-     0.123,
-     0.714
+     0.903,
+     1.208,
+     0.767,
+     0.762,
+     1.026
     ]
    }
   },
@@ -167,6 +236,12 @@
     "fullDeg": 22.0,
     "fadeDeg": 26.0,
     "featherDeg": 1.0,
+    "signs": {
+     "chroma": 0.6,
+     "peak": 3.0,
+     "growDeg": 1.5,
+     "share": 0.3
+    },
     "boxes": [
      {
       "lonDeg": [
@@ -190,58 +265,113 @@
     {
      "width": 4096,
      "url": "environments/sky/shanghai_bund_rain_sky_4k.ktx2",
-     "bytes": 1473741,
-     "sha256": "dfb3ff63e9adac1ccc345d0c1f5582ed83c8e07c3f360e57bc66a429ca6cd9d7"
+     "bytes": 1451893,
+     "sha256": "a0d2207f48ed25664ede6faafb50b5a18f8202149bd4b3a904de52b2c3088e0b"
     },
     {
      "width": 8192,
      "url": "environments/sky/shanghai_bund_rain_sky_8k.ktx2",
-     "bytes": 5201534,
-     "sha256": "f2b7452a32bda62f303105bef00d3d7b81a5ebc39ae710a9a36e07c9074955ad"
+     "bytes": 5207060,
+     "sha256": "7a67a9da146ed398fae0051d226afe8668be6d10253ccf25f5480b11a5fa3622"
     }
    ],
    "environment": {
     "url": "environments/shanghai_bund_rain_1k.hdr",
-    "bytes": 1477669,
-    "sha256": "04bf404053c3c56af402dbf4d63a29e063b01c2c7e49b0d508f5bff4a608c5a0"
+    "bytes": 1120064,
+    "sha256": "0a64e9b26d6f3da0970ab560e124ca35c882b8c91e084215dc46d50c1830f819"
+   },
+   "irradiance": {
+    "source": 1.4338,
+    "shipped": 1.613
    },
    "fill": {
-    "featherDeg": 3.0,
+    "lonDeg": [
+     114.0,
+     292.0
+    ],
     "fullDeg": 50.0,
     "fadeDeg": 62.0,
+    "shoreDeg": [
+     3.0,
+     8.0
+    ],
+    "hazeDeg": [
+     15.0,
+     25.0
+    ],
+    "hazeLonDeg": [
+     -65.0,
+     114.0
+    ],
+    "featherDeg": 1.0,
+    "skyFeatherDeg": 8.0,
+    "glowDeg": [
+     40.0,
+     60.0
+    ],
     "pieces": [
      {
       "lonDeg": [
-       138.0,
-       228.0
+       114.0,
+       149.0
       ],
       "sourceLonDeg": [
-       -70.0,
-       20.0
+       -18.0,
+       17.0
       ]
      },
      {
       "lonDeg": [
-       228.0,
-       280.0
+       149.0,
+       186.0
       ],
       "sourceLonDeg": [
-       65.0,
-       117.0
+       71.0,
+       108.0
+      ]
+     },
+     {
+      "lonDeg": [
+       186.0,
+       221.0
+      ],
+      "sourceLonDeg": [
+       -18.0,
+       17.0
+      ]
+     },
+     {
+      "lonDeg": [
+       221.0,
+       258.0
+      ],
+      "sourceLonDeg": [
+       71.0,
+       108.0
+      ]
+     },
+     {
+      "lonDeg": [
+       258.0,
+       292.0
+      ],
+      "sourceLonDeg": [
+       -18.0,
+       16.0
       ]
      }
     ]
    },
    "key": {
     "direction": [
-     0.1977,
-     0.9692,
-     -0.1471
+     0.1203,
+     0.973,
+     0.1968
     ],
-    "elevationDeg": 75.74,
+    "elevationDeg": 76.66,
     "color": "#ffe4cf",
-    "intensity": 1.4795,
-    "irradiance": 1.8239,
+    "intensity": 1.4737,
+    "irradiance": 1.8168,
     "ambient": 0.8754,
     "source": {
      "direction": [
@@ -260,47 +390,55 @@
    ],
    "sky": {
     "sunDirection": [
-     -0.8711,
-     0.2928,
-     -0.3943
+     -0.8647,
+     0.3271,
+     -0.3812
     ],
-    "sunElevationDeg": 17.03,
-    "peakLuminance": 7022.4,
+    "sunElevationDeg": 19.09,
+    "peakLuminance": 29764.7,
     "horizon": [
-     1.524,
-     1.368,
-     1.272
+     1.521,
+     1.361,
+     1.262
     ],
     "disc": 0,
-    "p995": 12.6116,
-    "p90Band0to40": 1.2121,
+    "p995": 12.046,
+    "p90Band0to40": 1.1377,
     "sourceBandByLon": [
-     2.683,
-     4.891,
-     0.704,
-     0.564,
-     0.533,
+     2.682,
+     4.895,
+     0.702,
+     0.561,
+     0.532,
      0.644,
      0.467,
-     0.618,
-     0.671,
-     0.469,
+     0.615,
+     0.676,
+     0.466,
      0.349,
-     1.376
+     1.373
+    ],
+    "sourceSharpness": [
+     0.299,
+     0.395
+    ],
+    "sharpness": [
+     0.229,
+     0.306
     ],
     "bandByLon": [
-     0.64,
-     0.481,
-     0.613,
-     0.58,
-     0.533,
+     0.514,
+     0.555,
+     0.504,
+     0.451,
+     0.532,
      0.644,
      0.467,
-     0.618,
-     0.671,
-     0.469,
-     0.306,
-     0.537
+     0.615,
+     0.676,
+     0.496,
+     0.5,
+     0.583
     ]
    }
   }
