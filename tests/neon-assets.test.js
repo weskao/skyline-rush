@@ -105,6 +105,54 @@ test('one kit failing to load keeps the whole procedural Neon', async () => {
   r.assets.dispose();
 });
 
+/** A host with a road and a Neon layer; texture fetches whose URL matches `failing` reject. */
+function paving(failing = /^$/) {
+  const urls = [], paved = [], dataset = {};
+  const neon = { attachKit() {}, detachKit() {}, update() {}, hide() {}, dispose() {}, pave: material => paved.push(material) };
+  const road = { mesh: { material: new THREE.MeshStandardMaterial() }, load: file => { urls.push(file.url); return failing.test(file.url) ? Promise.reject(new Error('offline')) : Promise.resolve(new THREE.Texture()); } };
+  const assets = createCoastAssets({ scenery, cache: { load: () => new Promise(() => {}) }, neon, road, dataset });
+  return { paved, dataset, assets, road, ground: () => urls.filter(url => url.includes('neon-pavement')).sort() };
+}
+
+test('the Neon land wears the pavement set at the road tier: fetched on Medium+, laid outside a race, wet with the road', async () => {
+  assert.equal(trackLook('neon').ground, 'neon-pavement');
+  assert.equal(trackLook('coast').ground, undefined);
+  const r = paving();
+  r.assets.update('coast', 'high', false); r.assets.update('neon', 'low', false);
+  assert.deepEqual(r.ground(), [], 'Coast and Low fetch no pavement');
+  r.assets.update('neon', 'high', true);
+  await tick();
+  assert.deepEqual(r.ground(), ['basecolor', 'normal', 'packed'].map(map => `materials/neon-pavement/pavement_${map}_2k.ktx2`));
+  assert.equal(r.assets.update('neon', 'high', true), false);
+  assert.deepEqual(r.paved, [], 'never a new program after GO');
+  assert.equal(r.assets.update('neon', 'high', false), true, 'the pavement program is warmed before GO');
+  assert.equal(r.paved.length, 1);
+  assert.equal(r.dataset.neonGround, 'high');
+  const pavement = r.paved[0], shader = { uniforms: {}, vertexShader: THREE.ShaderLib.standard.vertexShader, fragmentShader: THREE.ShaderLib.standard.fragmentShader };
+  assert.notEqual(pavement, r.road.mesh.material, 'its own set, not the asphalt');
+  pavement.onBeforeCompile(shader, null);
+  r.assets.update('neon', 'high', true, 'night');
+  assert.equal(shader.uniforms.wetness.value, 0, 'dry at night');
+  r.assets.update('neon', 'high', true, 'track');
+  assert.ok(shader.uniforms.wetness.value >= .7, 'soaked on the rainy default');
+  assert.equal(r.assets.update('neon', 'high', false), false, 'laid once');
+  let freed = false; pavement.addEventListener('dispose', () => { freed = true; });
+  r.assets.update('canyon', 'high', false);
+  assert.equal(r.paved.at(-1), null, 'another track: the bare paving back');
+  assert.ok(freed, 'and the set is released');
+  assert.equal(r.dataset.neonGround, 'procedural');
+  r.assets.dispose();
+});
+
+test('a pavement set that cannot load keeps the bare paving and the asphalt road', async () => {
+  const r = paving(/neon-pavement/);
+  await quiet(async () => { r.assets.update('neon', 'medium', false); await tick(); r.assets.update('neon', 'medium', false); });
+  assert.deepEqual(r.paved, []);
+  assert.equal(r.dataset.neonGround, 'fallback');
+  assert.deepEqual([r.dataset.coastRoad, r.dataset.coastRoadSet], ['medium', 'neon-asphalt']);
+  r.assets.dispose();
+});
+
 test('Coast is untouched by the Neon layer: its scan hides the cones, city and towers, never the Neon roadside', async () => {
   const r = rig();
   r.assets.update('coast', 'high', false);

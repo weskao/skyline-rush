@@ -53,11 +53,13 @@ function createKitPools(source: THREE.Object3D, kit: NeonKit) {
 /** The land of the city sectors: a strip each side of the road from the far quay line round to the near one, with a
  *  wall down into the canal along its outer edges and across both ends. One draw. */
 function groundGeometry(route: ClassicRoad): THREE.BufferGeometry {
-  const { inner, reach, y, depth } = NEON_GROUND, STEP = 16, from = NEON_SHORE[1], length = NEON_LAP - from + NEON_SHORE[0];
-  const rows = Math.ceil(length / STEP), across = [-reach, -reach, -inner, inner, reach, reach], positions: number[] = [], index: number[] = [];
+  const { inner, reach, y, depth, tile } = NEON_GROUND, STEP = 16, from = NEON_SHORE[1], length = NEON_LAP - from + NEON_SHORE[0];
+  const rows = Math.ceil(length / STEP), across = [-reach, -reach, -inner, inner, reach, reach], positions: number[] = [], uvs: number[] = [], index: number[] = [];
+  // Planar UVs, one pavement tile per `tile` metres; a wall vertex is pushed one wall height along u so it is not a smear.
+  const vertex = (x: number, z: number, wall: boolean): void => { positions.push(x, wall ? y - depth : y, z); uvs.push((x + (wall ? depth : 0)) / tile, z / tile); };
   for (let row = 0; row <= rows; row++) {
     const lap = from + Math.min(length, row * STEP);
-    across.forEach((offset, k) => { const [x, z] = route.point(lap, offset); positions.push(x, k === 0 || k === 5 ? y - depth : y, z); });
+    across.forEach((offset, k) => { const [x, z] = route.point(lap, offset); vertex(x, z, k === 0 || k === 5); });
     if (!row) continue;
     for (const k of [0, 1, 3, 4]) { // wall, land, (the road), land, wall
       const a = (row - 1) * 6 + k, b = a + 6;
@@ -66,11 +68,12 @@ function groundGeometry(route: ClassicRoad): THREE.BufferGeometry {
   }
   for (const row of [0, rows]) { // the quay across each end, under the bridge deck too
     const top = row * 6 + 1, base = positions.length / 3;
-    for (const k of [0, 3]) positions.push(positions[(top + k) * 3]!, y - depth, positions[(top + k) * 3 + 2]!);
+    for (const k of [0, 3]) vertex(positions[(top + k) * 3]!, positions[(top + k) * 3 + 2]!, true);
     index.push(top, top + 3, base, base, top + 3, base + 1);
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(index);
   geometry.computeVertexNormals();
   return geometry;
@@ -82,8 +85,9 @@ export function createNeonScenery(scene: THREE.Object3D) {
   group.visible = false;
   scene.add(group);
   const kits: Partial<Record<NeonKit, ReturnType<typeof createKitPools>>> = {};
-  // shortcut: bare dark paving; give it a tiled KTX2 set if the pavement reads flat in a close capture.
-  const ground = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial({ color: '#0d1118', roughness: .6, side: THREE.DoubleSide }));
+  // Bare dark paving until the asset host lays the look's KTX2 pavement set (`pave`), and when that set cannot load.
+  const bare = new THREE.MeshStandardMaterial({ color: '#0d1118', roughness: .6, side: THREE.DoubleSide });
+  const ground = new THREE.Mesh<THREE.BufferGeometry, THREE.Material>(new THREE.BufferGeometry(), bare);
   ground.name = 'Neon ground';
   ground.frustumCulled = false;
   group.add(ground);
@@ -136,6 +140,11 @@ export function createNeonScenery(scene: THREE.Object3D) {
       stale = true;
     },
     detachKit(kit: NeonKit): void { kits[kit]?.dispose(); delete kits[kit]; },
+    /** Puts the caller's pavement material on the land (the caller frees it); null brings the bare paving back. */
+    pave(material: THREE.Material | null): void {
+      if (material) { material.side = THREE.DoubleSide; material.name = 'neon_pavement'; } // the quay wall is seen from the water
+      ground.material = material ?? bare;
+    },
     /** Per frame. Low draws nothing: the caller keeps the procedural city there. */
     update(route: ClassicRoad, distance: number, quality: VfxQuality, seed?: number): void {
       const window = neonChunkWindow(distance, quality);
@@ -152,7 +161,7 @@ export function createNeonScenery(scene: THREE.Object3D) {
     dispose(): void {
       for (const kit of Object.values(kits)) kit.dispose();
       scene.remove(group);
-      ground.geometry.dispose(); ground.material.dispose();
+      ground.geometry.dispose(); bare.dispose();
     },
   };
 }

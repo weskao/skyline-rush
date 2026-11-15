@@ -117,30 +117,40 @@ const roadStatus = page => page.evaluate(() => {
   window.gameScene.scene.traverse(o => { if (o.material?.name === 'coast_asphalt') drawn.push(!!o.material.map?.isCompressedTexture); });
   return { coastRoad, coastRoadSet, drawn };
 });
-test('Neon High wears its own KTX2 asphalt and keeps it through a race', async ({ gameplayPage: page }) => {
+/** The land beside the road (neon-scenery.ts): the pavement set once it is in, else the bare paving. */
+const groundStatus = page => page.evaluate(() => {
+  const material = window.gameScene.scene.getObjectByName('Neon ground')?.material;
+  return { neonGround: document.querySelector('#world').dataset.neonGround, ktx2: !!material?.map?.isCompressedTexture };
+});
+test('Neon High wears its own KTX2 asphalt and pavement and keeps them through a race', async ({ gameplayPage: page }) => {
   test.setTimeout(ciTimeout(120000));
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await neon(page, 'high');
   await expect.poll(() => roadStatus(page), { timeout: ciTimeout(40000) }).toEqual({ coastRoad: 'high', coastRoadSet: 'neon-asphalt', drawn: [true] });
-  const fetched = (await lookAssets(page)).filter(url => url.includes('materials/neon-asphalt/')).map(url => url.split('/').pop()).sort();
-  expect(fetched).toEqual(['asphalt_basecolor_2k.ktx2', 'asphalt_normal_2k.ktx2', 'asphalt_packed_2k.ktx2']);
+  await expect.poll(() => groundStatus(page), { timeout: ciTimeout(40000) }).toEqual({ neonGround: 'high', ktx2: true });
+  const fetched = (await lookAssets(page)).filter(url => /materials\/neon-(asphalt|pavement)\//.test(url)).map(url => url.split('/').pop()).sort();
+  expect(fetched).toEqual(['asphalt_basecolor_2k.ktx2', 'asphalt_normal_2k.ktx2', 'asphalt_packed_2k.ktx2', 'pavement_basecolor_2k.ktx2', 'pavement_normal_2k.ktx2', 'pavement_packed_2k.ktx2']);
   await page.locator('#start-button').click();
   await racing(page);
   await expect.poll(() => roadStatus(page)).toEqual({ coastRoad: 'high', coastRoadSet: 'neon-asphalt', drawn: [true] });
+  await expect.poll(() => groundStatus(page)).toEqual({ neonGround: 'high', ktx2: true });
   expect(errors).toEqual([]);
 });
 
-test('Neon High falls back to the procedural road when its asphalt cannot load', async ({ gameplayPage: page }) => {
+test('Neon High falls back to the procedural road and the bare paving when its sets cannot load', async ({ gameplayPage: page }) => {
   test.setTimeout(ciTimeout(120000));
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.route('**/materials/neon-asphalt/**', route => route.abort());
+  await page.route('**/materials/neon-pavement/**', route => route.abort());
   await neon(page, 'high');
   await expect.poll(() => roadStatus(page), { timeout: ciTimeout(40000) }).toEqual({ coastRoad: 'fallback', coastRoadSet: 'none', drawn: [] });
+  await expect.poll(() => groundStatus(page), { timeout: ciTimeout(40000) }).toEqual({ neonGround: 'fallback', ktx2: false });
   await page.locator('#start-button').click();
   await racing(page);
   await expect.poll(() => roadStatus(page)).toEqual({ coastRoad: 'fallback', coastRoadSet: 'none', drawn: [] });
+  await expect.poll(() => groundStatus(page)).toEqual({ neonGround: 'fallback', ktx2: false });
   expect(errors).toEqual([]);
 });
 
@@ -186,20 +196,24 @@ test('Neon High with its kits stays under the draw-call cap on the home showcase
   expect(await calls(page)).toBeLessThanOrEqual(DRAW_CALL_CAP.home);
 });
 
-// Open: the cars alone exceed the race cap, so no scenery budget can meet it. Measured on High with the kits
-// (2026-11-15): 443 calls at the start and up to 670 mid-lap, of which the kits are 46 and their mirror pass 18; the
-// 108 traffic cars are not instanced (19 meshes each) and draw 129 to 430, the player 84 and the rivals about 106.
-// Remove the fixme in the commit that instances the traffic, or when the owner sets a Neon cap.
-test('Neon High stays under the draw-call cap in a race', async ({ gameplayPage: page }) => {
-  test.fixme(true, 'N6: the Neon race draws 443 to 670 calls against a cap of 380; non-instanced traffic is 129 to 430 of them');
-  test.setTimeout(ciTimeout(90000));
+// The start grid alone hides the worst case: before the traffic was instanced (traffic-fleet.ts) the start drew 443
+// calls and the plaza 670. Sample the grid, where every rival is in view, then one point inside every sector of the
+// lap (src/neon-scenery-plan.ts SECTORS); a teleport leaves the rivals behind, so the grid is not optional.
+const SECTOR_PROBES = { grid: null, boulevard: 200, underpass: 580, market: 1200, expressway: 2000, canal: 2658, plaza: 3400 };
+test('Neon High stays under the draw-call cap in every sector of a race', async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(120000));
   await neon(page, 'high');
   await expect.poll(() => kits(page), { timeout: ciTimeout(60000) }).toBe('attached attached');
   await page.locator('#start-button').click();
   await racing(page);
-  let peak = 0;
-  for (let i = 0; i < 6; i++) { await page.waitForTimeout(ciTimeout(300)); peak = Math.max(peak, await calls(page)); }
-  expect(peak).toBeLessThanOrEqual(DRAW_CALL_CAP.race);
+  const peaks = {};
+  for (const [sector, metres] of Object.entries(SECTOR_PROBES)) {
+    if (metres !== null) await page.evaluate(at => { window.gameplay.race.player.distance = at; }, metres);
+    peaks[sector] = 0;
+    for (let i = 0; i < 4; i++) { await page.waitForTimeout(ciTimeout(300)); peaks[sector] = Math.max(peaks[sector], await calls(page)); }
+  }
+  console.log('Neon race draw calls', JSON.stringify(peaks));
+  for (const [sector, peak] of Object.entries(peaks)) expect(peak, sector).toBeLessThanOrEqual(DRAW_CALL_CAP.race);
 });
 
 test('Neon Low keeps the procedural scene under ?look=3d: sea, towers, skyline and no look asset fetched', async ({ gameplayPage: page }) => {

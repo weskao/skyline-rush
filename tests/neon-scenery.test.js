@@ -144,8 +144,8 @@ test('step 4: the lit pieces around the car are on the wet mirror layer; far ban
     assert.ok(mesh.layers.isEnabled(0), 'and every pool draws in the main view');
   }
   // N6: the mirror redraws every pool on its layer, so only what lights the street is on it.
-  for (const piece of ['kerb_redwhite', 'cherry_tree', 'skyline_spire', 'railing', 'rail_segment', 'expressway_pier', 'canal_bank', 'rail_portal']) assert.equal(NEON_PIECES[piece].mirror, false, piece);
-  for (const piece of ['sign_blade_a', 'billboard_b', 'shop_market_a', 'street_lamp', 'tower_glass_a', 'expressway_rail', 'canal_bridge_rail', 'plaza_sculpture']) assert.equal(NEON_PIECES[piece].mirror, true, piece);
+  for (const piece of ['kerb_redwhite', 'cherry_tree', 'skyline_spire', 'railing', 'expressway_pier', 'canal_bank', 'rail_portal']) assert.equal(NEON_PIECES[piece].mirror, false, piece);
+  for (const piece of ['sign_blade_a', 'billboard_b', 'shop_market_a', 'street_lamp', 'tower_glass_a', 'expressway_rail', 'canal_bridge_rail', 'plaza_sculpture', 'rail_segment']) assert.equal(NEON_PIECES[piece].mirror, true, piece); // rail_segment: the underpass lamps
   kit.dispose();
 });
 
@@ -207,6 +207,26 @@ test('N3: one ground mesh puts land under the city sectors and leaves the canal 
   let freed = false; before.addEventListener('dispose', () => { freed = true; });
   kit.dispose();
   assert.ok(freed, 'the ground is the layer\'s own');
+});
+
+test('the land takes the pavement set: planar UVs of one tile per 7.2 m, and a material the layer never frees', () => {
+  const { kit } = rig();
+  kit.update(route, 100, 'high');
+  const ground = kit.group.getObjectByName('Neon ground'), bare = ground.material, at = ground.geometry.getAttribute('position'), uv = ground.geometry.getAttribute('uv');
+  assert.equal(NEON_GROUND.tile, 7.2, 'assets-src/neon-pavement/README.md: 12 slabs by 24 rows');
+  assert.equal(uv?.count, at.count);
+  for (let i = 0; i < at.count; i++) if (at.getY(i) > -1) // the land; the quay wall runs down its own way
+    assert.ok(Math.abs(uv.getX(i) - at.getX(i) / 7.2) < 1e-3 && Math.abs(uv.getY(i) - at.getZ(i) / 7.2) < 1e-3, `vertex ${i}`);
+  const pavement = new THREE.MeshStandardMaterial({ name: 'pavement' });
+  let freed = false; pavement.addEventListener('dispose', () => { freed = true; });
+  kit.pave(pavement);
+  assert.equal(ground.material, pavement);
+  assert.equal(pavement.side, THREE.DoubleSide, 'the quay wall is seen from the water side');
+  kit.pave(null);
+  assert.equal(ground.material, bare, 'no set: the bare paving again');
+  kit.pave(pavement);
+  kit.dispose();
+  assert.equal(freed, false, 'the asset host owns the set');
 });
 
 test('one kit alone draws its own pools; detaching it removes them', () => {

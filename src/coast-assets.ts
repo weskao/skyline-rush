@@ -49,7 +49,7 @@ interface Deps {
   city?: { visible: boolean }; towers?: Object3D[];
   /** Task 5b: the layer that draws the two Neon Downtown kits, and the procedural parts (box roadside, lamp posts,
    *  piers, tunnel shell) it replaces while both kits are in the scene. */
-  neon?: Pick<NeonScenery, 'attachKit' | 'detachKit' | 'update' | 'hide' | 'dispose'>; replaced?: Object3D[];
+  neon?: Pick<NeonScenery, 'attachKit' | 'detachKit' | 'pave' | 'update' | 'hide' | 'dispose'>; replaced?: Object3D[];
   /** QA state (the canvas dataset): coastScenery, coastBoats, neonCity, neonLandmarks = loading |
    *  waiting-for-race-end | attached | fallback:<reason> | off;
    *  coastRoad = medium | high | ultra (material tier) while the asphalt is on the road, else procedural | fallback. */
@@ -60,6 +60,7 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
   const controller = new AbortController();
   const procedural = road?.mesh.material;
   const roads = new Map<string, CoastRoad | 'loading' | 'failed'>(); // by road set and tier
+  let paved: CoastRoad | null = null, roadKey = '', groundKey = ''; // the set on the Neon land; the keys wanted now
   let mirrored = false, wasRacing = false, retag = false; // the mirror re-tags light sources on turn-on and race start
   let bare = false, dressed = false; // a scan coast or the Neon kits are drawn: no cones, city or towers; kits: no box roadside
   // world.js writes .visible on these every frame, so they are hidden through their own materials.
@@ -112,7 +113,7 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
   const cityKit = neon && lateModel('neon-city', 'scenery', 'neonCity', source => neon.attachKit('city', source), () => neon.detachKit('city'));
   const landmarks = neon && lateModel('neon-landmarks', 'landmarks', 'neonLandmarks', source => neon.attachKit('landmarks', source), () => neon.detachKit('landmarks'));
 
-  function loadRoad(id: string, tier: MaterialTier, key: string, { load, anisotropy }: Road): void {
+  function loadRoad(id: string, tier: MaterialTier, key: string, { load, anisotropy }: Road, failed: () => void): void {
     roads.set(key, 'loading');
     const files = coastRoadFiles(TIERS[tier], id);
     Promise.all([files.baseColor, files.normal, files.packed].map(load)).then(([baseColor, normal, packed]) => {
@@ -120,28 +121,52 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
       if (controller.signal.aborted) made.dispose(); else roads.set(key, made);
     }, error => {
       roads.set(key, 'failed');
-      dataset.coastRoad = 'fallback';
-      dataset.coastRoadSet = 'none';
-      console.warn(`[coast-assets] ${id} ${tier} → procedural road (${error})`);
+      failed();
+      console.warn(`[coast-assets] ${id} ${tier} → procedural (${error})`);
     });
+  }
+  /** The loaded set for `id` at this tier, requested on first use; null while it loads, after a failure and on Low. */
+  function roadSet(id: string | undefined, tier: MaterialTier | null, key: string, failed: () => void): CoastRoad | null {
+    if (!id || !tier) return null;
+    if (!roads.has(key)) loadRoad(id, tier, key, road!, failed);
+    const ready = roads.get(key);
+    return typeof ready === 'object' ? ready : null;
+  }
+  /** Frees the sets and tiers left behind: neither wanted by the road or the land now, nor still worn by either. */
+  function sweep(): void {
+    for (const [key, entry] of roads) if (key !== roadKey && key !== groundKey && typeof entry === 'object' && entry !== paved && entry.material !== road!.mesh.material) { entry.dispose(); roads.delete(key); }
   }
 
   function updateRoad(look: TrackLook | undefined, quality: VfxQuality, racing: boolean, preset: string, ultra: boolean): boolean {
     if (!road) return false;
-    const tier = look ? coastRoadTier(quality, ultra) : null, key = `${look?.road}:${tier}`;
-    if (tier && !roads.has(key)) loadRoad(look!.road, tier, key, road);
-    const ready = tier ? roads.get(key) : undefined;
-    const want = typeof ready === 'object' ? ready : null;
+    const tier = look ? coastRoadTier(quality, ultra) : null;
+    roadKey = `${look?.road}:${tier}`;
+    const want = roadSet(look?.road, tier, roadKey, () => { dataset.coastRoad = 'fallback'; dataset.coastRoadSet = 'none'; });
     want?.setWetness(coastWetness(preset, look!.wetness));
     const target = want?.material ?? procedural!, swap = road.mesh.material !== target && !racing;
     if (swap) {
       road.mesh.material = target;
       dataset.coastRoad = want ? tier! : 'procedural';
       dataset.coastRoadSet = want ? look!.road : 'none';
-      for (const [other, entry] of roads) if (other !== key && typeof entry === 'object') { entry.dispose(); roads.delete(other); } // frees the set or tier left behind
+      sweep();
     }
     updateMirror(!!want && road.mesh.material === want.material, quality, preset, racing, look?.wetness);
     return swap && !!want;
+  }
+
+  /** Task 5b: the look's pavement set on the Neon land, through the road's shader (wetness, puddles, mirror). Like
+   *  the road it is laid only outside a race; true when it just joined the scene and needs the warmup. */
+  function updateGround(look: TrackLook | undefined, quality: VfxQuality, racing: boolean, preset: string, ultra: boolean): boolean {
+    if (!road || !neon) return false;
+    const tier = look?.ground ? coastRoadTier(quality, ultra) : null;
+    groundKey = `${look?.ground}:${tier}`;
+    const want = roadSet(look?.ground, tier, groundKey, () => { dataset.neonGround = 'fallback'; });
+    want?.setWetness(coastWetness(preset, look!.wetness));
+    if (want === paved || racing) return false;
+    neon.pave((paved = want)?.material ?? null);
+    if (want || dataset.neonGround !== 'fallback') dataset.neonGround = want ? tier! : 'procedural';
+    sweep();
+    return !!want;
   }
 
   /** Mirror only while the KTX2 asphalt that samples it is on the road; never while a swap waits for the race end. */
@@ -169,7 +194,8 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
       if (kitted) neon!.update(route!, distance, quality, seed); else neon?.hide();
       sky?.update(trackId, preset, quality, ultra); // its program exists from creation: nothing to warm up
       sea?.update(trackId, preset, quality); // after the sky: the water shows only under the dome it mirrors
-      return updateRoad(look, quality, racing, preset, ultra) || joined || sailing || built || marked;
+      const laid = updateGround(look, quality, racing, preset, ultra);
+      return updateRoad(look, quality, racing, preset, ultra) || laid || joined || sailing || built || marked;
     },
     dispose(): void {
       controller.abort();

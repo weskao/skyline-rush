@@ -23,8 +23,9 @@ const PARAPET = 13.2, PARAPET_TOP: Partial<Record<NeonSector, number>> = { expre
 /** The market kerb lies on the road edge, its lip against the procedural white line (11.5 m, 0.12 m wide) and its
  *  back under the procedural barrier (classic-road-render.ts), so it reads as one kerb; 2 cm up off the asphalt. */
 const KERB = 11.56 + .5, KERB_Y = .02;
-/** The land beside the road: from just inside the kerbs' outer edge to `reach`, with a quay wall `depth` down. */
-export const NEON_GROUND = { inner: 12.6, reach: 260, y: -.03, depth: 8 } as const;
+/** The land beside the road: from just inside the kerbs' outer edge to `reach`, with a quay wall `depth` down.
+ *  `tile`: metres per repeat of the pavement set (assets-src/neon-pavement/README.md). */
+export const NEON_GROUND = { inner: 12.6, reach: 260, y: -.03, depth: 8, tile: 7.2 } as const;
 /** The procedural tunnel section (tests/neon-parity.test.js) with the portals' 8 m forecourts. */
 const UNDERPASS: readonly [number, number] = [462, 698];
 /** Right-handers tight enough that 30 m plots on the inside would run into each other. */
@@ -46,7 +47,7 @@ export const NEON_PIECES = {
   street_lamp: prop(6, true), traffic_light: prop(1, true), railing: prop(24, false), kerb_redwhite: prop(60, false),
   // The far skyline is always LOD 0: its LOD 1 switch is 600 m out, past the window.
   skyline_tower_a: city(2, 4, false, 99), skyline_tower_b: city(2, 4, false, 99), skyline_tower_c: city(2, 4, false, 99), skyline_spire: city(2, 4, false, 99),
-  rail_portal: landmark(2, 2), rail_segment: landmark(11), expressway_pier: landmark(4), expressway_rail: landmark(22, 1, true),
+  rail_portal: landmark(2, 2), rail_segment: landmark(11, 1, true), expressway_pier: landmark(4), expressway_rail: landmark(22, 1, true),
   canal_arch: landmark(1, 2, true), canal_bridge_rail: landmark(22, 1, true), canal_bank: landmark(24), plaza_sculpture: landmark(1, 2, true), boulevard_footbridge: landmark(1, 1, true),
 } as const satisfies Record<string, Piece>;
 export type NeonPiece = keyof typeof NEON_PIECES;

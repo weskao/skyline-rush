@@ -130,10 +130,14 @@ To do, in order:
     when it failed (Coast's daylight on the night city). `src/coast-look.ts` returns to RoomEnvironment on a track
     change until the track's own HDRI lands. Guard: `tests/neon-lighting.test.js` (*another track's HDRI never
     lights Neon*), RED on the old code.
-  - [ ] Look-dev by eye and owner art approval: key intensity (2.7 night, 1.55 rain night), bloom and dome gain are
-    measured starting values. The lit skyline blooms in the centre sightline until the step 5 city blocks stand in
-    front of it. Coast's water plane still shows on Neon under the dome until step 7 hides it.
-- [ ] **4 Wet road.** Blender-baked KTX2 city asphalt (base colour sRGB; normal and roughness/AO linear) with lane
+  - [x] Dome gain: the dome's horizon glow sat at 1.15x to 1.35x the bloom threshold (Coast's gain rule), so wherever
+    no building stood in front of it the horizon bloomed white. `sky.gain` is now 0.4 x threshold / luminance of
+    `sky.horizon` (night 0.169, rain night 0.258). Whole-frame mean luminance, same paused frame: home -19 %, market
+    -35 %, expressway -38 %, canal -41 %. Guards: `tests/neon-lighting.test.js` (*the dome horizon never reaches the
+    bloom*), `tests/coast-sky.test.js`; rule 15 in `.claude/rules/3d-asset-pipeline.md`. Commit `fdc3fd47`.
+  - [ ] Owner art approval of the lighting: key intensity (2.7 night, 1.55 rain night), bloom and the darker dome are
+    measured values, not yet judged by the owner.
+- [x] **4 Wet road.** Blender-baked KTX2 city asphalt (base colour sRGB; normal and roughness/AO linear) with lane
   paint and a puddle mask, `wetness` driven by the rain preset. Signs, windows and tunnel light strips join the wet
   mirror layer as opaque unlit meshes.
   - [x] Asset: `assets-src/neon-asphalt/` (CC0 Poly Haven Asphalt Track, editable master, bake and preview
@@ -146,15 +150,15 @@ To do, in order:
   - [x] Signs, billboards, shop and tower windows, lamps, the parapet lights, the canal arch and the sculpture in the
     mirror layer: the LOD 0 pools of those pieces are on `REFLECT_LAYER`. `tests/neon-scenery.test.js` (*step 4: the
     lit pieces around the car are on the wet mirror layer*).
-  - [ ] Underpass lamps in the mirror layer: left out, each mirrored pool is one more draw and the race is over the
-    N6 cap (step 8c). Revisit with that decision.
+  - [x] Underpass lamps in the mirror layer: `rail_segment` LOD 0 is on `REFLECT_LAYER` now that the race is under
+    the N6 cap (step 8c); one more draw in the underpass. Same test as above.
 - [ ] **5 City kit in Blender** (`assets-src/neon-city/`): modelled, not photoscanned.
   - [x] Close buildings: six modules (two glass towers, a retail and an office block, two tile-roofed market shops),
     three LODs each, ground pivots, one material on four shared KTX2 atlases, CC0 sources recorded with sha256.
     Commit `0e92ebc7`; `tests/neon-city-glb.test.js`.
   - [x] Neon sign and billboard kit: five pieces in the same GLB; the box accents are hidden while the kit is drawn.
-    The GLB's emissive strength (6) clips under the race bloom, so the layer sets 2.4 (`EMISSIVE` in
-    `src/neon-scenery.ts`).
+    The GLB's emissive strength (6) clips under the race bloom, so the layer sets 1.7 for the city and 1.5 for the
+    landmarks (`EMISSIVE` in `src/neon-scenery.ts`; `tests/neon-scenery.test.js`, *kit emissive*).
   - [x] Street furniture: lamp, traffic light, railing, kerb and cherry tree; the elevated rail is the hero landmark
     (step 6).
   - [x] Far skyline: four low-poly towers, one instanced draw each, in place of the unit boxes on Neon only.
@@ -165,9 +169,21 @@ To do, in order:
     in place of the procedural city, through a race, with no NaN pixel*).
   - [x] Practice mode drives the legacy straight road, which has no sectors: it keeps the procedural city (accepted
     by the owner, 2026-11-15).
-  - [ ] Look-dev by eye and owner art approval. Known from the first captures: street furniture is drawn only near
-    the car (N6) and appears at about 360 to 600 m; the pavement is one flat dark material; the kit's kerb doubles
-    the procedural kerb through the market; the emissive values are a first pass.
+  - [x] Fixed from the first captures: street furniture popped in 242 to 484 m ahead (it now draws LOD 0 through the
+    whole chunk window); the kit's kerb doubled the procedural barrier through the market; the pavement was one flat
+    dark material (now the KTX2 set below). The cherry tree, the spire and both glass towers were reworked toward
+    concept frame 03 (commit `4d64282a`). Triangles rise by up to about 84k in the plaza (cherry tree LOD 0).
+  - [x] Pavement: the land beside the road wears its own KTX2 set, `assets-src/neon-pavement/` (CC0 Poly Haven
+    Concrete Pavement, 2.05 MB at 1K and 7.91 MB at 2K, commit `230485c8`, `tests/neon-pavement-material.test.js`),
+    through the road's shader, tier, wetness and mirror: `ground: 'neon-pavement'` in `src/track-look.ts`, planar UVs
+    of one tile per 7.2 m. Like the road it is laid outside a race only; a failed load keeps the bare paving.
+    `tests/neon-assets.test.js` (*the Neon land wears the pavement set*, *a pavement set that cannot load*),
+    `tests/neon-scenery.test.js` (*the land takes the pavement set*), `tests/neon-look-browser.spec.js` (*asphalt and
+    pavement*, *falls back*), RED first.
+  - [ ] Look-dev by eye and owner art approval. Open: the cherry tree is still opaque puffs (the kit has no alpha
+    material; one would cost a draw call); the spire is limited by its 32 m footprint slot; the emissive values (1.7
+    city, 1.5 landmarks) were set before the darker dome and are not yet judged against it; the wet mirror on the
+    pavement is a fill-rate cost not yet measured on a phone.
 - [ ] **6 Rail underpass** (N5, N7): one Blender underpass GLB (rail bridge deck, abutments, amber lamps) on the
   `tunnel` section from step 1b. The section's extent and collision follow the route, not the art.
   - [x] Asset: `rail_portal` and `rail_segment` in `public/models/neon-landmarks/neon-landmarks.glb`, master in
@@ -184,8 +200,11 @@ To do, in order:
     mesh*), `tests/neon-scenery-plan.test.js` (*N3, N7*).
   - [x] Canal arch, bridge parapets, quay, expressway piers, plaza sculpture and footbridge at their lap positions.
     `tests/neon-scenery-plan.test.js` (*N5 and the landmarks contract*).
-  - [ ] Canal look: the water is still Coast's sea plane under the rain-night dome, and the frame washes out white
-    over the bridge with or without the kits (capture 2026-11-15). Belongs with the step 3 look-dev.
+  - [x] Canal haze: the white frame over the bridge was the sky dome blooming (72 % of the excess luminance; the sea
+    plane's reflection 2.5 %, fog 0), fixed by the step 3 dome gain. The sea plane stays as the canal water.
+  - [ ] Canal art gap: over open water the dome shows the HDRI's warm-gold embankment facades where the concept has a
+    violet sky behind teal and magenta towers. Options: skyline blocks in front of the dome on the water sectors, or
+    a tinted or cropped dome (`assets-src/neon-sky/build.py`). Owner to choose.
 - [x] **8a Gameplay parity pins.** Course frame, lanes, tunnel extents, shortcut, ring and pickup layout and
   gameplay-prop positions pinned at layout 6, before any Neon asset: `tests/neon-parity.test.js` (4 tests).
   Step 1b re-pins them once, at layout 7; after that no art step may move them.
@@ -193,14 +212,16 @@ To do, in order:
   `?look=3d` and Neon on High without the gate keep sea, towers, skyline, RoomEnvironment and an identity grade, and
   fetch no HDRI, KTX2 or Coast/Neon model; Neon on High under the gate compiles nothing after GO and draws no Coast
   scenery. 24 of 24 under CI timing (`--repeat-each=8 --workers=4 --retries=0`).
-- [ ] **8c N6 draw-call cap** on High (home 540, race 380).
+- [x] **8c N6 draw-call cap** on High (home 540, race 380).
   - [x] Home: 319 calls with both kits (one Mac, 2026-11-15). `tests/neon-look-browser.spec.js` (*stays under the
     draw-call cap on the home showcase*).
-  - [ ] Race: 443 calls at the start and up to 670 mid-lap, against 380 (the procedural race drew 562 to 564). The
-    kits are 46 of them plus 18 in the mirror pass. The cars are the rest: 108 traffic cars are separate meshes (19
-    each) and draw 129 to 430, the player 84, the rivals about 106. No scenery budget meets the cap, so the test
-    stays `test.fixme` with these numbers. **Owner decision (2026-11-15):** instance the traffic, on every classic
-    track, as its own branch (`feature/traffic-instancing`); the fixme goes when that lands here.
+  - [x] Race: before, 443 calls at the start and up to 670 mid-lap (the procedural race drew 562 to 564); 108
+    traffic cars as separate meshes drew 129 to 430 of them. **Owner decision (2026-11-15):** instance the traffic
+    on every classic track. Done in `src/traffic-fleet.ts` (commit `b9500c07`): traffic is 21 draws at any car
+    count, plus 6 in the mirror pass. After (one Mac, 2026-11-15): 337 on the grid with every rival in view, 167 to
+    219 at one point in each sector. The `test.fixme` is gone: `tests/neon-look-browser.spec.js` (*stays under the
+    draw-call cap in every sector of a race*). Not covered: the rivals in view in a mid-lap sector (a teleport
+    leaves them on the grid).
 - [x] **8d Asset guards**, written with the assets they guard (steps 3 to 6). No missing GLB:
   `tests/neon-city-glb.test.js`, `tests/neon-landmarks-glb.test.js`. Load failure falls back:
   `tests/neon-look-browser.spec.js` (*keeps the procedural city when neon-city / neon-landmarks cannot load*),

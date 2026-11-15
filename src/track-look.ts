@@ -14,12 +14,14 @@ export interface TrackLook {
   readonly boats?: string;
   /** Model-manifest id of the landmark kit drawn with a kit `scenery` (neon-scenery.ts). */
   readonly landmarks?: string;
+  /** Material-manifest id of the KTX2 set on the kit's land (neon-scenery.ts): the road's shader, tier and wetness. */
+  readonly ground?: string;
 }
 
 const TRACK_LOOKS: Readonly<Record<string, TrackLook>> = {
   coast: { env: { track: 'day', day: 'day', dusk: 'dusk', rain: 'rain', fog: 'fog' }, road: 'coast-asphalt', wetness: { rain: .85, dusk: .35, fog: .25 }, scenery: 'coast-scenery', boats: 'coast-boats' },
   // N2: night and rain night only; `track` is Neon's rainy default (board-effects.ts RAINY_TRACKS).
-  neon: { env: { track: 'nightRain', rain: 'nightRain', night: 'night' }, road: 'neon-asphalt', wetness: { track: .85, rain: .85 }, scenery: 'neon-city', landmarks: 'neon-landmarks' },
+  neon: { env: { track: 'nightRain', rain: 'nightRain', night: 'night' }, road: 'neon-asphalt', wetness: { track: .85, rain: .85 }, scenery: 'neon-city', landmarks: 'neon-landmarks', ground: 'neon-pavement' },
 };
 
 export const trackLook = (trackId: string): TrackLook | undefined => Object.hasOwn(TRACK_LOOKS, trackId) ? TRACK_LOOKS[trackId] : undefined;
