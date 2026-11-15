@@ -411,8 +411,8 @@ setupPhotoUI({ getRace: () => race, getWorld: () => world, cue: name => sound.cu
 ui['settings-button'].addEventListener('click', () => { toggleSettings(); sound.cue('ui'); });
 ui['camera-button'].addEventListener('click', changeCamera);
 ui['assist-button'].addEventListener('click', toggleAssist);
-document.querySelector('.toolbar').addEventListener('click', event => {
-  if (event.detail > 0) event.target.closest('button')?.blur();
+for (const bar of document.querySelectorAll('.toolbar, .aero-tools')) bar.addEventListener('click', event => {
+  if (event.detail > 0) event.target.closest('button:not([role="combobox"])')?.blur();
 });
 window.addEventListener('blur', () => {
   clearButtonPresses();
