@@ -149,7 +149,11 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         </div>
       </div>
       <button class="lobby-picker-toggle" id="lobby-tracks-toggle" type="button" aria-expanded="false" aria-controls="lobby-track-options"><span data-i18n="lobby.track">Track</span><strong id="lobby-track-name"></strong><span id="lobby-track-status"></span></button>
-      <div class="track-select" id="lobby-track-options" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose"><button v-for="(track, id) in RACE_TRACKS" :data-track="id" :aria-pressed="id === 'coast'"><i class="track-preview" :class="`preview-${id}`" aria-hidden="true"><i></i></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
+      <div class="track-select" id="lobby-track-options" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose">
+        <button v-for="(track, id) in RACE_TRACKS" :key="id" :data-track="id" :aria-pressed="id === 'coast'">
+          <i class="track-preview upcoming-thumb" :class="`preview-${id}`" aria-hidden="true"><img :src="`${BASE_URL}track-teasers/${id}.jpg`" alt="" loading="lazy" /></i>
+          <span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span>
+        </button>
         <button v-for="(track, id) in UPCOMING_TRACKS" :key="id" type="button" class="upcoming-track-card" :data-upcoming-track="id" aria-pressed="false"><i class="track-preview upcoming-thumb" aria-hidden="true"><img :src="`${BASE_URL}${track.image}`" alt="" loading="lazy" /></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.names.en }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
       </div>
       <p id="track-note" class="track-note"></p>

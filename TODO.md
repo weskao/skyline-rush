@@ -4,6 +4,12 @@
 - [x] GREEN: renamed the nine affected test cases by changing their two title templates, and made invalid titles fail with the offending test path. All 16 browser and two World Tour shard lists round-trip through Playwright, covering 1,255 and 49 unique tests respectively.
 - [ ] Verify the GitHub quality gate on the resulting develop commit.
 
+# 2026-11-16 — Classic track card artwork
+
+- [x] The first ten home track cards load individual 568 × 205 scenery JPEGs, sharing the same cropped thumbnail style as Coming Soon cards.
+- [x] RED: the asset test reported Coast's missing JPEG and the production browser test found no artwork on the Coast card. GREEN: all ten JPEG headers, dimensions and unique content pass the asset test.
+- [ ] Exact-commit GitHub quality gate and physical-device review.
+
 # 2026-11-16 — Collision recovery: contact aligned with race models
 
 - [x] Coast, about 300 m: the Roadster could visually intersect a flanking traffic car during contact protection. The old 1.7 m lateral test ignored the rendered hull and tire clearance. Use measured neutral envelopes for player contacts with traffic and rivals, including separate front and rear extents. Use the same clearance when traffic steers around the player or when Ghost Phase ends.
