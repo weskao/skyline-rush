@@ -450,3 +450,21 @@ test.describe('airflow panel in landscape', () => {
     expect(left).toBeGreaterThanOrEqual(62);
   });
 });
+
+test.describe('small phone readable race ranks', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+
+  test('nearby ranks and gaps stay readable when rotating into a short landscape', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#start-button').click();
+    for (const [width, height] of [[390, 844], [667, 375]]) {
+      await page.setViewportSize({ width, height });
+      const rows = page.locator('#leaderboard .racer:visible');
+      await expect(rows).toHaveCount(3);
+      const gaps = page.locator('#leaderboard .racer:not(.is-player) > span:last-child:visible');
+      await expect(gaps).toHaveCount(2);
+      for (const gap of await gaps.all())
+        await expect.poll(() => gap.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(11);
+    }
+  });
+});

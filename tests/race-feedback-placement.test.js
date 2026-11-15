@@ -50,3 +50,18 @@ test('a portrait collision chip with every edge column taken docks in the sky ba
   assert.ok(chip.bottom <= road.top, 'above the road');
   for (const block of obstacles) assert.equal(intersects(chip, block), false, JSON.stringify(block));
 });
+
+test('a split viewport reserves the scene in its actual pane and still has peripheral slots', () => {
+  const viewport = { width: 844, height: 390 };
+  const size = { width: 180, height: 26 };
+  const road = rect(567, 78, 711, 281);
+  const occupiedEdges = [rect(0, 0, 214, 390), rect(734, 0, 844, 390)];
+  const segments = [
+    { left: 0, top: 0, width: 410, height: 390 },
+    { left: 434, top: 0, width: 410, height: 390 },
+  ];
+  const slot = pickPeripheralSlot(viewport, size, occupiedEdges, { preferred: 'left', segments, road });
+  assert.ok(slot);
+  assert.ok(slot.left > 214 && slot.left + size.width <= 410);
+  assert.equal(intersects(box(slot, size.width, size.height), road), false);
+});

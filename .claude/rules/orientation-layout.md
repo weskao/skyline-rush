@@ -54,3 +54,10 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   card 45–177px past the overlay bottom at 1440×900, 1366×768 and 1024×768, where nobody could
   reach it (2026-11-14). `#race-overlay` scrolls there; a new summary row is checked at those
   sizes. Guard: the scrolled-to-end assertion in `tests/wave3-demo-results-layout-browser.spec.js`.
+
+- **A split viewport has two coordinate spaces.** Use the normalized Viewport Segments source
+  in `foldable-layout.ts` and its published variables for fixed rails and native dialogs.
+  The race camera belongs to one segment; feedback reserves the road inside that segment.
+  Release steering, throttle and native pointer capture when rotating or changing segments.
+  Custom layouts stay viewport-relative and keep their independent portrait and landscape keys.
+  Guards: `tests/foldable-layout-browser.spec.js` and `tests/foldable-layout.test.js`.

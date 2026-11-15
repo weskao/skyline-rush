@@ -5618,3 +5618,9 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Give each World Tour map its own AIRFLOW case with all six views. Run the HUD interaction matrix at Low quality and allow the live race countdown to finish on slower runners.
 - [x] `npm test`: 2,974 passed, 3 skipped. Typecheck, module-size checks, production build and World Tour shard selection passed.
 - [ ] Verify the full GitHub `quality-gate` for this commit.
+
+## Foldable race HUD (`feature/foldable-race-hud`)
+
+- [x] RED: the focused segment, input and feedback tests reproduced missing segment API compatibility, retained pointer capture and missing peripheral slots on the split geometry. The current-API browser case on the base bundle received an empty fold axis.
+- [x] GREEN: 65 focused checks passed, including module-size, segment projection, input release and feedback geometry.
+- [ ] Complete browser replay and screenshots for home, Garage/Studio, dialogs, split race HUD, pause/results and the four HUD backgrounds. Verify physical foldable and iOS rotation plus exact-head GitHub CI.

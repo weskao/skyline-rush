@@ -11,6 +11,7 @@ test.describe('dual-screen fold/unfold', () => {
         { left: 0, top: 0, width: 410, height: 390 },
         { left: 434, top: 0, width: 410, height: 390 },
       ];
+      Object.defineProperty(window, 'viewport', { configurable: true, value: undefined });
       Object.defineProperty(window, 'getWindowSegments', { configurable: true, value: () => window.__foldSegments });
       localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', hand: 'left', size: 'M' }));
       localStorage.setItem('skyline-rush-controls-layout-v2', JSON.stringify({
@@ -105,6 +106,7 @@ test.describe('ordinary viewport fallback acceptance', () => {
   test('stacked segments protect controls from a horizontal hinge', async ({ page }) => {
     await page.setViewportSize({ width: 600, height: 900 });
     await page.addInitScript(() => {
+      Object.defineProperty(window, 'viewport', { configurable: true, value: undefined });
       Object.defineProperty(window, 'getWindowSegments', { configurable: true, value: () => [
         { left: 0, top: 0, width: 600, height: 430 }, { left: 0, top: 460, width: 600, height: 440 },
       ] });
@@ -119,5 +121,100 @@ test.describe('ordinary viewport fallback acceptance', () => {
     const fly = await page.locator('[data-control="fly"]').boundingBox();
     expect(fly.y + fly.height <= 430 || fly.y >= 460).toBe(true);
     await page.screenshot({ path: test.info().outputPath('foldable-stacked-600x900.png'), animations: 'disabled' });
+  });
+});
+
+const seams = {
+  vertical: [{ left: 0, top: 0, width: 410, height: 390 }, { left: 434, top: 0, width: 410, height: 390 }],
+  horizontal: [{ left: 0, top: 0, width: 600, height: 430 }, { left: 0, top: 460, width: 600, height: 440 }],
+};
+
+async function expectInsidePane(locator, panes) {
+  await expect(locator).toBeVisible();
+  await expect.poll(async () => {
+    const box = await locator.boundingBox();
+    return !!box && panes.some(pane => box.x >= pane.left - 0.5 && box.y >= pane.top - 0.5 &&
+      box.x + box.width <= pane.left + pane.width + 0.5 && box.y + box.height <= pane.top + pane.height + 0.5);
+  }, { message: locator.toString() + ' fits a visible pane' }).toBe(true);
+}
+
+for (const [axis, viewport] of [['vertical', { width: 844, height: 390 }], ['horizontal', { width: 600, height: 900 }]]) {
+  test.describe(`current segments API · ${axis}`, () => {
+    test.use({ viewport, hasTouch: true });
+
+    test('home, Garage, history and race put interactive content away from the hinge', async ({ page }) => {
+      test.setTimeout(ciTimeout(120_000));
+      const panes = seams[axis];
+      await page.addInitScript(segments => {
+        Object.defineProperty(window, 'viewport', { configurable: true, value: { segments } });
+        localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', hand: 'right' }));
+      }, panes);
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto('/');
+      const body = page.locator('body');
+      await expect(body).toHaveAttribute('data-fold-axis', axis);
+      for (const selector of ['#start-button', '#garage-button', '#showcase-camera-next', '#daily-card', '[data-track="coast"]'])
+        await expectInsidePane(page.locator(selector), panes);
+      await page.screenshot({ path: test.info().outputPath(`fold-home-${axis}.png`) });
+      await page.locator('#garage-button').click();
+      for (const selector of ['#garage-close', '#garage-preview', '[data-paint="factory"]'])
+        await expectInsidePane(page.locator(selector), panes);
+      await page.locator('#garage-studio-open').click();
+      await expectInsidePane(page.locator('#garage-studio-back'), panes);
+      await page.screenshot({ path: test.info().outputPath(`fold-studio-${axis}.png`) });
+      await page.locator('#garage-close').click();
+      await page.locator('.intro .history-button').click();
+      await expectInsidePane(page.locator('#history-screen'), panes);
+      await page.keyboard.press('Escape');
+      await page.locator('#start-button').click();
+      for (const selector of ['#countdown', '#world', '#position', '#timer', '[data-control="throttle"]', '[data-control="left"]'])
+        await expectInsidePane(page.locator(selector), panes);
+      await expect(body).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(20_000) });
+      await expect(page.locator('#countdown')).toBeHidden();
+      for (const selector of ['#speed', '#fuel-meter', '#race-route-map'])
+        await expectInsidePane(page.locator(selector), panes);
+      await page.screenshot({ path: test.info().outputPath(`fold-race-${axis}.png`) });
+      await page.locator('#pause-button').click();
+      await expectInsidePane(page.locator('#resume-button'), panes);
+      await page.locator('#resume-button').click();
+      await expect(body).toHaveAttribute('data-phase', 'racing');
+    });
+  });
+}
+
+test.describe('rotation with two active touch pointers', () => {
+  test.use({ hasTouch: true, viewport: { width: 844, height: 390 } });
+
+  test('releases both hands and keeps per-orientation storage', async ({ page, context }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('skyline-rush-auto', 'off');
+      localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: 'buttons', hand: 'right' }));
+      localStorage.setItem('skyline-rush-controls-layout-v2', JSON.stringify({
+        version: 2, portrait: { nitro: { x: 0.78, y: 0.78 } }, landscape: { nitro: { x: 0.78, y: 0.76 } },
+      }));
+    });
+    await page.goto('/');
+    await page.locator('#start-button').click();
+    const key = 'skyline-rush-controls-layout-v2';
+    const saved = await page.evaluate(key => localStorage.getItem(key), key);
+    const left = page.locator('[data-control="left"]'), gas = page.locator('[data-control="throttle"]');
+    const points = await Promise.all([left, gas].map(async (button, id) => {
+      const box = await button.boundingBox();
+      return { id, x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    }));
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points });
+    await expect(left).toHaveClass(/is-held/);
+    await expect(gas).toHaveClass(/is-held/);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(left).not.toHaveClass(/is-held|is-pressed/);
+    await expect(gas).not.toHaveClass(/is-held|is-pressed/);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(() => page.evaluate(key => localStorage.getItem(key), key)).toBe(saved);
+    const next = await gas.boundingBox();
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: next.x + next.width / 2, y: next.y + next.height / 2 }] });
+    await expect(gas).toHaveClass(/is-held/);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect(gas).not.toHaveClass(/is-held/);
   });
 });

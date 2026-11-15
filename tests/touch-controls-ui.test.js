@@ -41,7 +41,7 @@ test('browser toolbar height changes preserve steering, but fold/rotation/width 
   const source = readFileSync(new URL('../src/touch-controls-ui.ts', import.meta.url), 'utf8');
   assert.match(source, /orientation !== lastOrientation/);
   assert.match(source, /Math\.abs\(innerWidth - lastWidth\) > 16/);
-  assert.match(source, /JSON\.stringify\(foldable\) !== previous/);
+  assert.match(source, /\|\| foldChanged/);
   assert.match(source, /controls\.clear\(\); padTouch = null; drawPad\(\)/);
   assert.doesNotMatch(source, /'resize', \(\) => \{ controls\.clear\(\);/);
 });
