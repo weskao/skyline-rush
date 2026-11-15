@@ -41,7 +41,8 @@ function replayHash(trackId, config, hz, seconds, modifier = null) {
   const dt = 1 / hz;
   for (let i = 0; race.phase === 'countdown' && i < hz * 5; i++) stepRace(race, {}, dt);
   for (let i = 0; i < hz * seconds; i++) stepRace(race, timeline(i / hz), dt);
-  const { player, rivals, traffic, result, elapsed, phase } = race;
+  const { player: { pickup: _event, ...player }, rivals, traffic, result, elapsed, phase } = race;
+  // player.pickup is the latest take's HUD/haptic/camera event (pickup-take.ts), not simulation state.
   return createHash('sha256').update(canonical({ player, rivals, traffic, result, elapsed, phase })).digest('hex');
 }
 
