@@ -88,3 +88,30 @@ test('Garage Studio frames the full Ground and Flight vehicle at all camera pres
         }
   } finally { stage.dispose(); }
 });
+
+test('Studio orbit starts at the selected angle, advances smoothly and resumes from the adjusted view', async () => {
+  const THREE = await import('three');
+  const { createGarageStage } = await import('../src/garage-stage.ts');
+  const stage = createGarageStage(new THREE.Texture(), new THREE.Texture());
+  const camera = new THREE.PerspectiveCamera(49, 1, .1, 100);
+  const orbit = { ...garagePreset('side'), autoRotate: true };
+  const direction = new THREE.Vector3();
+  const bearing = () => {
+    camera.getWorldDirection(direction);
+    return Math.atan2(-direction.x, -direction.z);
+  };
+  try {
+    stage.update(camera, orbit, 60, false);
+    const initial = bearing();
+    stage.update(camera, orbit, 60.05, false);
+    assert.ok(Math.abs(bearing() - initial - .0065) < .001);
+    stage.update(camera, zoomGarageCamera(orbit, .85), 60.10, false);
+    assert.ok(Math.abs(bearing() - initial - .013) < .001);
+    const fixed = dragGarageCamera(garagePreset('side'), 20, 0);
+    stage.update(camera, fixed, 60.15, false);
+    const adjusted = bearing();
+    stage.update(camera, { ...fixed, autoRotate: true }, 60.20, false);
+    assert.ok(Math.abs(bearing() - adjusted) < .001);
+    assert.ok(Math.abs(initial - Math.PI / 2) < .001);
+  } finally { stage.dispose(); }
+});
