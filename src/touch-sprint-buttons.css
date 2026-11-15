@@ -60,65 +60,76 @@
   pointer-events: none;
 }
 
+/* State colours derive from the :root NITRO / BOOST / FLY tokens (style.css); greys stay literal. */
 #touch-controls .touch-nitro {
-  --rim: #be87f5;
+  --rim: var(--nitro);
   --flame-core: #fff;
-  --flame-tip: #f5ccff;
-  --flame: #ab44ff;
-  --flame-edge: #5a1fd0;
-  --face-top: #42275d;
-  --face-bottom: #160d28;
-  color: #fff5ff;
+  --flame-tip: var(--nitro-text);
+  --flame: var(--nitro);
+  --flame-edge: color-mix(in srgb, var(--nitro), black 45%);
+  --face-top: var(--nitro-deep);
+  --face-bottom: color-mix(in srgb, var(--nitro-deep), black 65%);
+  color: var(--nitro-text);
 }
 
 /* Not pressable yet: a muted bezel whose face fills from the bottom to the charge (--charge, 0..1 in 2% steps from sprint-ready-feedback.ts). */
-#touch-controls .touch-nitro[data-nitro-state="charging"] { --rim: #8c76aa; --face-top: #2b2338; --face-bottom: #15111f; color: #b7aac8; }
+#touch-controls .touch-nitro[data-nitro-state="charging"] {
+  --rim: color-mix(in srgb, var(--nitro), #8794a8 55%);
+  --face-top: color-mix(in srgb, var(--nitro-deep), #1c2836 55%);
+  --face-bottom: color-mix(in srgb, var(--nitro-deep), black 75%);
+  color: color-mix(in srgb, var(--nitro-text), #8794a8 45%);
+}
 #touch-controls .touch-nitro[data-nitro-state="charging"]::after {
   --level: calc(var(--charge, 0) * 100%);
-  background: linear-gradient(to top, #6c3fa3b3 var(--level), #d695ff var(--level), #d695ff calc(var(--level) + 1.5px), transparent 0),
+  background: linear-gradient(to top, color-mix(in srgb, var(--nitro) 40%, transparent) var(--level), var(--nitro) var(--level), var(--nitro) calc(var(--level) + 1.5px), transparent 0),
     linear-gradient(180deg, var(--face-top), var(--face-bottom) 85%);
 }
 #touch-controls .touch-nitro[data-nitro-state="charging"] > svg { filter: grayscale(.7); opacity: .7; }
-#touch-controls .touch-nitro[data-nitro-state="ready"] { --rim: #d695ff; --face-top: #684080; --flame-rest: .55; --flame-alpha: .92; }
-#touch-controls .touch-nitro[data-nitro-state="active"] { --rim: #f3dcff; --face-top: #a05fd0; --face-bottom: #3a1a66; }
+#touch-controls .touch-nitro[data-nitro-state="ready"] { --rim: color-mix(in srgb, var(--nitro), white 25%); --face-top: color-mix(in srgb, var(--nitro), black 58%); --flame-rest: .55; --flame-alpha: .92; }
+#touch-controls .touch-nitro[data-nitro-state="active"] { --rim: color-mix(in srgb, var(--nitro), white 70%); --face-top: color-mix(in srgb, var(--nitro), black 45%); --face-bottom: color-mix(in srgb, var(--nitro), black 78%); }
 #touch-controls .touch-nitro[data-nitro-state="disabled"] { --rim: #8794a8; --face-top: #384558; --face-bottom: #1c2836; }
 #touch-controls .touch-nitro[data-nitro-state="disabled"] > svg { filter: grayscale(1); }
 
 #touch-controls .touch-boost {
-  --rim: #d69b55;
-  --flame-core: #fffbe0;
-  --flame-tip: #ffd76a;
-  --flame: #ff6a1f;
-  --flame-edge: #c2200a;
-  --face-top: #55321c;
-  --face-bottom: #281a12;
-  color: #fff7eb;
+  --rim: var(--boost);
+  --flame-core: #fff;
+  --flame-tip: var(--boost-text);
+  --flame: var(--boost);
+  --flame-edge: color-mix(in srgb, var(--boost), black 40%);
+  --face-top: var(--boost-deep);
+  --face-bottom: color-mix(in srgb, var(--boost-deep), black 55%);
+  color: var(--boost-text);
 }
 
 #touch-controls .touch-boost.is-held {
-  --rim: #ffca85;
-  --face-top: #a46426;
-  --face-bottom: #452515;
+  --rim: color-mix(in srgb, var(--boost), white 45%);
+  --face-top: color-mix(in srgb, var(--boost), black 40%);
+  --face-bottom: color-mix(in srgb, var(--boost), black 75%);
 }
 
 /* BOOST is ready whenever fuel is left, so its resting flame is only embers at the base. */
-#touch-controls .touch-boost[data-boost-state="ready"] { --rim: #efae65; --face-top: #734520; --flame-rest: .3; --flame-alpha: .8; }
+#touch-controls .touch-boost[data-boost-state="ready"] { --rim: color-mix(in srgb, var(--boost), white 15%); --face-top: color-mix(in srgb, var(--boost), black 60%); --flame-rest: .3; --flame-alpha: .8; }
 #touch-controls .touch-boost[data-boost-state="disabled"] {
   --rim: #8794a8;
   --face-top: #384558;
   --face-bottom: #1c2836;
 }
-/* Empty tank. Any refuel makes BOOST ready at once, so there is no progress to fill: a dark, dimmed amber instead of braking grey. */
-#touch-controls .touch-boost[data-boost-state="charging"] { --rim: #9a7650; --face-top: #2c2119; --face-bottom: #16100c; color: #b9a792; }
+/* Empty tank. Any refuel makes BOOST ready at once, so there is no progress to fill: a dark, dimmed BOOST tint instead of braking grey. */
+#touch-controls .touch-boost[data-boost-state="charging"] {
+  --rim: color-mix(in srgb, var(--boost), #8794a8 50%);
+  --face-top: color-mix(in srgb, var(--boost-deep), black 45%);
+  --face-bottom: color-mix(in srgb, var(--boost-deep), black 70%);
+  color: color-mix(in srgb, var(--boost-text), #8794a8 45%);
+}
 #touch-controls .touch-boost[data-boost-state="charging"] > svg { filter: grayscale(.8); opacity: .55; }
 
 #touch-controls :is([data-nitro-state="active"], [data-boost-state="active"]) { --flame-rest: 1; --flame-alpha: 1; --flame-loop: .7s; }
 
 #touch-controls .touch-fly {
-  --rim: #83ceeb;
-  --face-top: #1f4d66;
+  --rim: var(--fly);
+  --face-top: var(--fly-deep);
   --face-bottom: #0c2030;
-  color: #d8f6ff;
+  color: var(--fly-text);
 }
 
 #touch-controls .touch-fly:is(.is-held, [aria-pressed="true"]) { --rim: #c9f4ff; --face-top: #2f86ad; --face-bottom: #123c55; }
@@ -139,7 +150,7 @@
 
 #touch-controls .touch-gas.is-held { --rim: #b8ffd6; --face-top: #2fa56c; --face-bottom: #14452f; }
 
-#controls-panel .controls-preview-keys .touch-nitro { color: #fff5ff; border-color: #be87f5; }
+#controls-panel .controls-preview-keys .touch-nitro { color: var(--nitro-text); border-color: var(--nitro); }
 #controls-panel .controls-preview-keys .touch-gas { background: #1f6a47; color: #e9fff2; border-color: #6fe0a0; }
 
 @media (forced-colors: active) {
