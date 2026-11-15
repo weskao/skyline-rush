@@ -287,7 +287,7 @@ test('wave2 sprint state: combined effects are bounded, comfort and VFX off supp
   assert.equal(sprint.update({ ...base, phase: 'paused' }).power, 0, 'restart clears visual state');
 });
 
-test('wave2 renderer distinguishes purple NITRO from cyan BOOST with shared geometry and bounded repeated triggers', async () => {
+test('wave2 renderer distinguishes gold NITRO from cyan BOOST with shared geometry and bounded repeated triggers', async () => {
   const { createSprintVfx } = await import('../src/vfx-settings.ts');
   const { scene, vfx, race, options, vehicle } = fixture();
   const sprint = createSprintVfx();
@@ -302,8 +302,8 @@ test('wave2 renderer distinguishes purple NITRO from cyan BOOST with shared geom
   race.player.boosting = false; race.player.nitroTime = 1;
   state = sprint.update({ ...input, nitro: true, boost: false });
   vfx.update(race, 0.05, new Vector3(), options, false, state);
-  const violet = flow.material.uniforms.nitroMix.value;
-  assert.ok(violet > cyan, 'NITRO must be visually distinguishable from BOOST');
+  const gold = flow.material.uniforms.nitroMix.value;
+  assert.ok(gold > cyan, 'NITRO must be visually distinguishable from BOOST');
   race.player.boosting = true;
   for (let i = 0; i < 60; i++) {
     state = sprint.update({ ...input, nitro: i % 2 === 0, boost: true });
@@ -410,7 +410,7 @@ test('car squat: a fresh ignition lifts the nose ahead of the camera punch, then
   assert.equal(off.update({ ...held, enabled: false }).squat, 0, 'VFX off resets the squat');
 });
 
-test('cyan NITRO trail replaces the standard purple from the first NITRO frame', async () => {
+test('cyan NITRO trail replaces the standard gold from the first NITRO frame', async () => {
   const { createSprintVfx } = await import('../src/vfx-settings.ts');
   const firstFrame = skin => {
     const { vfx, race, options, vehicle } = fixture();
@@ -431,7 +431,7 @@ test('cyan NITRO trail replaces the standard purple from the first NITRO frame',
   assert.ok(g > r * 3 && b > r * 3, 'accent is cyan');
   assert.equal(cyan.mix, standard.mix, 'NITRO timing does not depend on the skin');
   assert.ok(cyan.mix > 0.5, 'NITRO colour from the first frame');
-  assert.match(cyan.shader, /mix\(vec3\(\.72,\.4,1\.\),trailAccent\.rgb,trailAccent\.a\)/, 'the skin colour takes the purple slot');
+  assert.match(cyan.shader, /mix\(vec3\(1\.,\.82,\.4\),trailAccent\.rgb,trailAccent\.a\)/, 'the skin colour takes the NITRO gold slot');
   assert.doesNotMatch(cyan.shader, /trailAccent\.a\*[^;]*vUv\.x/, 'whole streamline, not only the tails');
 });
 

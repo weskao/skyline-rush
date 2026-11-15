@@ -1,6 +1,7 @@
 import { test, captureHooks, glbRoots, programs, modelInstances as instances, dressedAs as dressed } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
+import { openGarage } from './helpers/test.js';
 import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PAINTS } from '../src/appearance.ts';
@@ -404,7 +405,7 @@ for (const [name, viewport] of [['phone portrait', { width: 390, height: 844 }],
     test.use({ viewport, isMobile: true, hasTouch: true, locale: 'zh-TW' });
     test('the car picker is reachable by touch, in Traditional Chinese, and equips the GT', async ({ gameplayPage: page, gameplayURL }) => {
       const { errors } = await prepare(page, gameplayURL);
-      await page.locator('#garage-button').tap();
+      await openGarage(page, 'tap');
       const gt = carButton(page, 'crimson-gt');
       await gt.scrollIntoViewIfNeeded();
       await expect(gt).toContainText('夜鋒 GT');
@@ -430,7 +431,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     test.use({ viewport });
     test('each car has a distinct, fully visible 3x thumbnail and a caption', async ({ gameplayPage: page, gameplayURL }) => {
       await prepare(page, gameplayURL);
-      await page.locator('#garage-button').click();
+      await openGarage(page);
       for (const id of ['roadster', 'crimson-gt']) {
         const button = carButton(page, id);
         const image = button.locator('img');
@@ -471,7 +472,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
 
     test('the car in use is unmistakable and the other car offers a select pill', async ({ gameplayPage: page, gameplayURL }) => {
       await prepare(page, gameplayURL);
-      await page.locator('#garage-button').click();
+      await openGarage(page);
       const look = id => carButton(page, id).evaluate(card => {
         const style = getComputedStyle(card), pill = card.querySelector('.garage-car-badge'), pillStyle = getComputedStyle(pill);
         return { frame: style.borderTopColor, glow: style.boxShadow, height: card.getBoundingClientRect().height,
@@ -501,7 +502,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     test.use({ viewport });
     test('the shared Deep Crimson card is native 3x, opaque, and uses the same layout as the paint collection', async ({ gameplayPage: page, gameplayURL }) => {
       const { errors } = await prepare(page, gameplayURL, { storage: GT });
-      await page.locator('#garage-button').click();
+      await openGarage(page);
       const button = page.locator('#garage-screen [data-paint="crimson"]');
       await button.scrollIntoViewIfNeeded();
       const image = button.locator('img.garage-paint-image');

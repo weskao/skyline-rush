@@ -54,7 +54,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         float ends=smoothstep(0.,.09,vUv.x)*(1.-smoothstep(.85,1.,vUv.x));
         float strength=vType>.5&&vType<1.5?suction*(.55+downforce*.45):vType>1.5?.35+downforce*.55:1.;
         vec3 color=mix(vec3(.18,.65,1.),vec3(.7,.95,1.),pulse*.6+point*.4)*skinTint;
-        color=mix(color,mix(vec3(.72,.4,1.),trailAccent.rgb,trailAccent.a),clamp(nitroMix,0.,1.)*.85); // an equipped trail skin replaces the NITRO purple
+        color=mix(color,mix(vec3(1.,.82,.4),trailAccent.rgb,trailAccent.a),clamp(nitroMix,0.,1.)*.85); // NITRO gold = the --nitro CSS token; an equipped trail skin replaces it
         float pattern=1.;
         if(skinPattern>.5) pattern=.6+.4*sin(vUv.y*11.+time*(2.+skinPattern));
         if(skinPattern>1.5) pattern=.35+.65*abs(sin(vUv.y*(12.+skinPattern*4.)+time*4.+vLane*8.));
@@ -101,7 +101,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         vec3 color=mix(vec3(.62,.84,1.),vec3(1.),core+cells*.5);
         color=mix(color,vec3(.6,.38,1.),extreme*t*.25);
         color=mix(color,vec3(1.,.38,.78),tail*smoothstep(.2,1.,t)); // board plume (Medium+): the blue-white core fades to magenta
-        color=mix(color*skinTint,mix(vec3(.68,.42,1.),trailAccent.rgb,trailAccent.a),clamp(nitroMix,0.,1.)*(.65+.27*trailAccent.a)); // skin tints the base; NITRO is purple or the trail skin's colour
+        color=mix(color*skinTint,mix(vec3(1.,.82,.4),trailAccent.rgb,trailAccent.a),clamp(nitroMix,0.,1.)*(.65+.27*trailAccent.a)); // skin tints the base; NITRO is --nitro gold or the trail skin's colour
         float shape=1.;
         if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
         if(skinPattern>1.5) shape=.25+.75*abs(sin(vUv.x*6.28*3.+t*28.-time*11.));
@@ -144,7 +144,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   const shockPosition = new THREE.Vector3();
   const previous = new THREE.Vector3(), current = new THREE.Vector3(), sample = new THREE.Vector3(), direction = new THREE.Vector3();
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
-  const shockColor = new THREE.Color('#bdeeff'), nitroShockColor = new THREE.Color('#b98aff');
+  const shockColor = new THREE.Color('#bdeeff'), nitroShockColor = new THREE.Color('#ffd166'); // --nitro (style.css)
   let hadPosition = false, wasBoosting = false, wasNitro = false, time = 0, reveal = 0, strength = 0, rollStrength = 0, wakeStrength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
   let quality = 1, settings, delta, launchSkinActive = false, launchPattern = 0, voidPulse = false, lastPhase = 'ready', demoPulseClock = 2.2;
   function emitAt(t) {
@@ -207,7 +207,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       for (const jet of jets) jet.material.uniforms.trailAccent.value.copy(flow.material.uniforms.trailAccent.value);
       nitroTrail.setStyle(patterns['nitro-trail'], [.5 * trail[0], .8 * trail[1], trail[2]]);
       if (skinned) nitroShockColor.setRGB(.5 * trail[0], .8 * trail[1], trail[2]);
-      else nitroShockColor.set('#b98aff');
+      else nitroShockColor.set('#ffd166');
       if (launchSkinActive) shockColor.setRGB(...palette['launch-flare']);
       else shockColor.set('#bdeeff');
       shock.material.color.copy(shockColor);

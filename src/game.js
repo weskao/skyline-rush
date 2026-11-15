@@ -320,9 +320,9 @@ export function stepRace(race, input, dt) {
     const lane = LANES.reduce((best, centre) => Math.abs(centre - car.x) < Math.abs(best - car.x) ? centre : best);
     lateralPosition += (lane - lateralPosition) * (1 - Math.exp(-3 * dt));
   }
+  const previousX = car.x;
   car.x = clamp(lateralPosition, -ROAD_LIMIT, ROAD_LIMIT);
-  // A continuous press against the same rail is one contact, not a fresh crash
-  // each time collision grace expires. Re-arm after the car pulls clear.
+  // Re-arm sustained rail contact only after the car pulls clear.
   if (Math.abs(car.x) < ROAD_LIMIT - 1.2) car.railContactSide = 0;
   car.cooldown = Math.max(0, car.cooldown - dt);
   car.scrapeCooldown = Math.max(0, car.scrapeCooldown - dt);
@@ -427,7 +427,7 @@ export function stepRace(race, input, dt) {
   }
   for (let i = 0; i < traffic.length; i++) for (let j = i + 1; j < traffic.length; j++) bumpCars(race, traffic[i], traffic[j]);
 
-  resolvePlayerContacts(race, previousDistance, lateralPosition, roofHit, section, nitro);
+  resolvePlayerContacts(race, previousDistance, previousX, lateralPosition, roofHit, section, nitro);
   for (const traffic of race.traffic) {
     const gap = traffic.distance - traffic.speed * dt - previousDistance;
     const clearance = Math.abs(traffic.x - car.x);

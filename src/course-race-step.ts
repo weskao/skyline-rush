@@ -5,7 +5,7 @@ import { chooseCourseNextEdge } from './course-ai-standings.ts';
 import { routeLength, sampleRoute } from './course-route-frame.ts';
 import { COURSE_RUNTIMES, isCourseRuntime } from './course-runtimes.ts';
 import { chooseBranchByLateral, courseCarGap, courseNoRoadAt, courseRemaining, createCourseRuntime, placeCourseCar,
-  rankCourseRuntime, recoverCourseCar, setCourseContactX, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
+  rankCourseRuntime, recoverCourseCar, setCourseContact, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
 import { dropCar, type FallingCar } from './road-falls.ts';
 import { knock } from './car-collisions.js';
 import { attachCourseItems, groundAt, groundOffset, projectCourseItems, type CourseItem } from './course-items.ts';
@@ -38,7 +38,7 @@ const travelOf = (rt: CourseRuntime, id: string) => {
 };
 
 export function syncCourseContact(race: CourseRef, car: RaceCar): void {
-  setCourseContactX(race.course!, idOf(race, car), car.x);
+  setCourseContact(race.course!, idOf(race, car), car.x, car.distance);
 }
 
 /** H1: graph courses get a runtime; rings, pickups and traffic move onto its edges (Q3 follow-up), hazards and sections

@@ -123,3 +123,156 @@ test('CourseGraph hazards clear the body along the safe side during grace', () =
   assert.equal(race.course.cars.get('YOU').travel.lateral, race.player.x);
   assert.equal(race.player.collisions, 0);
 });
+
+function packedRoad(reverse = false) {
+  const race = raceAt(0);
+  const { player } = race;
+  const leader = traffic(0, 304.45, 22);
+  const left = traffic(-2, 301, 22), right = traffic(2, 301, 22);
+  for (const other of [leader, left, right]) other.laneShift = 0;
+  const cars = [leader, left, right];
+  race.traffic = reverse ? cars.reverse() : cars;
+  return { race, player, leader, left, right };
+}
+
+for (const hz of [30, 60, 120]) {
+  test(`boxed in at ${hz} Hz: follows the lead car with one impact even after recovery expires`, () => {
+    for (const reverse of [false, true]) {
+      const { race, player, leader } = packedRoad(reverse);
+      for (let frame = 0; frame < hz * 3; frame++) {
+        tick(race, hz);
+        assert.ok(race.traffic.every(other => !overlap(player, other)), `frame ${frame}: no vehicle overlap`);
+        assert.ok(Math.abs(player.x) < 0.28, `frame ${frame}: no forced lane change (${player.x})`);
+        assert.ok(leader.distance - player.distance >= 4.4, `frame ${frame}: no pass through the lead car`);
+      }
+      assert.equal(player.collisions, 1);
+      assert.ok(player.cooldown === 0);
+      assert.ok(Math.abs(player.speed - leader.speed) < 0.2, 'follows actual lead pace');
+    }
+  });
+}
+
+test('the player can steer into a lane that becomes free and accelerate past the pack', () => {
+  const { race, player, leader, left } = packedRoad();
+  for (let i = 0; i < 30; i++) tick(race);
+  race.traffic = race.traffic.filter(other => other !== left);
+  for (let i = 0; i < 120; i++) stepRace(race, { throttle: true, steer: -0.4 }, 1 / 60);
+  assert.equal(player.collisions, 1);
+  assert.ok(player.x < -2 && player.distance > leader.distance + 4.4);
+});
+
+test('a new forward contact after leaving the queue can register a new impact', () => {
+  const { race, player, leader } = packedRoad();
+  for (let i = 0; i < 150; i++) tick(race);
+  assert.equal(player.collisions, 1);
+  leader.distance += 20;
+  tick(race);
+  leader.distance = player.distance + 4.45;
+  player.speed = 45;
+  tick(race);
+  assert.equal(player.collisions, 2);
+});
+
+test('a shield absorbs the first boxed-in contact while the lead car still blocks forward travel', () => {
+  const { race, player, leader } = packedRoad();
+  player.effects.shield = 10;
+  player.combo = 4;
+  for (let i = 0; i < 120; i++) tick(race);
+  assert.equal(player.effects.shield, 0);
+  assert.ok(player.shieldBlock);
+  assert.equal(player.collisions, 0);
+  assert.equal(player.combo, 4);
+  assert.ok(leader.distance - player.distance >= 4.4);
+});
+
+test('Ghost Phase clears several cars in a row while the protection timer is active', () => {
+  const { race, player, leader } = packedRoad();
+  race.traffic.push(traffic(0, leader.distance + 6, 22));
+  player.effects.ghost = 3;
+  player.cooldown = 1.5;
+  for (let i = 0; i < 40; i++) tick(race);
+  assert.equal(player.collisions, 0);
+  assert.ok(player.distance > Math.max(...race.traffic.map(other => other.distance)) + 4.4);
+});
+
+test('pack following keeps the graph odometer and actual road position in step', () => {
+  const race = raceAt(0, {}, 'dune-tempest');
+  const { course, player } = race;
+  const edge = course.spec.graph.groundRoute[0];
+  const cars = [...course.cars.keys()].filter(id => id.startsWith('traffic-')).slice(0, 3);
+  const [leader, left, right] = [traffic(0, 304.45, 22), traffic(-2, 301, 22), traffic(2, 301, 22)];
+  race.traffic = [leader, left, right];
+  placeCourseCar(course, 'YOU', edge, player.distance, player);
+  race.traffic.forEach((other, i) => {
+    other.id = cars[i];
+    other.laneShift = 0;
+    placeCourseCar(course, other.id, edge, other.distance, other);
+  });
+  for (let frame = 0; frame < 60; frame++) tick(race);
+  const you = course.cars.get('YOU');
+  assert.ok(course.cars.get(leader.id).travel.localS - you.travel.localS >= 4.4);
+  assert.ok(Math.abs(you.travel.localS + you.edgeStart - player.distance) < 1e-8);
+  assert.equal(course.rejections, 0);
+  assert.equal(player.collisions, 1);
+});
+
+test('holding the steering against a parallel car keeps one contact after the cooldown', () => {
+  const race = raceAt(0);
+  const { player } = race;
+  const other = traffic(1.66, 300.1, 40);
+  other.laneShift = 0;
+  race.traffic = [other];
+  player.speed = 40;
+  player.steering = 0.8;
+  for (let frame = 0; frame < 150; frame++) {
+    // Match the side car's pace and keep its own lane to isolate the sustained contact.
+    other.distance = player.distance + 0.1;
+    other.speed = other.cruise = player.speed = 40;
+    stepRace(race, { throttle: true, steer: 0.8 }, 1 / 60);
+    assert.ok(!overlap(player, other), `frame ${frame}: no side overlap`);
+  }
+  assert.equal(player.collisions, 1);
+});
+
+test('at a wall, steering into a boxed-in neighbour leaves the player on the road', () => {
+  const race = raceAt(10.2);
+  const { player } = race;
+  const neighbour = traffic(8.48, 300.1, 35);
+  const inside = traffic(6.77, 300.1, 35);
+  for (const other of [neighbour, inside]) other.laneShift = 0;
+  race.traffic = [neighbour, inside];
+  player.speed = 35;
+  player.steering = -1;
+  for (let i = 0; i < 150; i++) {
+    for (const other of race.traffic) other.distance = player.distance + 0.1;
+    player.speed = 35;
+    stepRace(race, { throttle: true, steer: -1 }, 1 / 60);
+    assert.ok(player.x <= 10.2 && player.x >= 10.18);
+    assert.ok(!overlap(player, neighbour));
+  }
+  assert.equal(player.collisions, 1);
+});
+
+test('a fast step cannot cross a full queue when the player starts outside the leader hitbox', () => {
+  const { race, player, leader, left, right } = packedRoad();
+  player.speed = 125;
+  leader.distance = 305;
+  left.distance = right.distance = 311;
+  stepRace(race, { throttle: true, nitro: true }, 0.1);
+  assert.ok(leader.distance - player.distance >= 4.4);
+  assert.equal(player.collisions, 1);
+});
+
+test('a boxed-in side brush keeps the last clear lane when neither car can slide sideways', () => {
+  const race = raceAt(0);
+  const { player } = race;
+  const left = traffic(-1.7, 300, 40), right = traffic(1.7, 300, 40), outer = traffic(3.4, 300, 40);
+  for (const other of [left, right, outer]) other.laneShift = 0;
+  race.traffic = [left, right, outer];
+  player.speed = 40;
+  player.steering = 1;
+  stepRace(race, { steer: 1, throttle: true }, 1 / 60);
+  assert.ok(race.traffic.every(other => !overlap(player, other)));
+  assert.ok(Math.abs(player.x) < 0.01);
+  assert.equal(player.collisions, 1);
+});

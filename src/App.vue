@@ -342,8 +342,8 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     <div class="touch-actions">
       <button class="touch-nitro" data-control="nitro" aria-label="Activate nitro" data-i18n-aria-label="touch.nitro">
         <svg viewBox="0 0 28 28" aria-hidden="true" fill="none">
-          <path d="M16.7 2.5 5.8 15.4h7.3l-2 10.1L22.4 12h-7.2z" fill="#fff4ff" stroke="#e4aaff" stroke-width="1.15" stroke-linejoin="round" />
-          <path d="M6 7.5H3.8M4.8 10.5H1.7M24 18h2.2m-3.6 3h2.6" stroke="#dc92ff" stroke-width="1.4" stroke-linecap="round" />
+          <path d="M16.7 2.5 5.8 15.4h7.3l-2 10.1L22.4 12h-7.2z" style="fill: var(--nitro-text); stroke: var(--nitro)" stroke-width="1.15" stroke-linejoin="round" />
+          <path d="M6 7.5H3.8M4.8 10.5H1.7M24 18h2.2m-3.6 3h2.6" style="stroke: var(--nitro)" stroke-width="1.4" stroke-linecap="round" />
         </svg>
         <span lang="en">NITRO</span>
         <span class="sprint-ready-effect" aria-hidden="true"></span>
@@ -351,9 +351,9 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <button class="touch-fly" data-control="fly" aria-label="Hold to fly" data-i18n-aria-label="hint.fly"><svg v-bind="ICON_ATTRS" v-html="icons.fly"></svg><svg class="touch-fly-lock" v-bind="ICON_ATTRS" v-html="icons.lock"></svg><span lang="en">FLY</span></button>
       <button class="touch-boost" data-control="boost" aria-label="Hold to boost" data-i18n-aria-label="touch.boost">
         <svg viewBox="0 0 28 28" aria-hidden="true" fill="none">
-          <path d="M11 7h4.7l6.2 7-6.2 7H11l6.2-7z" fill="#fff1c8" />
-          <path d="M18.5 7H23l4 7-4 7h-4.5l5.2-7z" fill="#ffc77e" />
-          <path d="M4.5 10h5M1 14h10m-6.5 4h5" stroke="#ffd29b" stroke-width="1.5" stroke-linecap="round" />
+          <path d="M11 7h4.7l6.2 7-6.2 7H11l6.2-7z" style="fill: var(--boost-text)" />
+          <path d="M18.5 7H23l4 7-4 7h-4.5l5.2-7z" style="fill: var(--boost)" />
+          <path d="M4.5 10h5M1 14h10m-6.5 4h5" style="stroke: var(--boost)" stroke-width="1.5" stroke-linecap="round" />
         </svg>
         <span lang="en">BOOST</span>
         <span class="sprint-ready-effect" aria-hidden="true"></span>

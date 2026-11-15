@@ -20,7 +20,9 @@ async function checkContactFeedback({ page, gameplayURL }, testInfo) {
     race.countdown = 0.01;
     Object.assign(race, { rivals: [], props: [], hazards: [], traffic: [] });
     Object.assign(player, { x: 0, distance: 300, speed: 55 });
-    race.traffic = [{ x: 0, homeX: 0, distance: 303, speed: 20, cruise: 20, altitude: 0, cooldown: 0, color: 0 }];
+    race.traffic = [[0, 304.45], [-2, 301], [2, 301]].map(([x, distance], color) => ({
+      x, homeX: x, distance, speed: 22, cruise: 22, altitude: 0, cooldown: 0, laneShift: 0, color,
+    }));
   });
   const report = page.locator('#impact-report');
   await expect(report).toBeVisible();
@@ -30,6 +32,11 @@ async function checkContactFeedback({ page, gameplayURL }, testInfo) {
   await expect(report).toBeVisible();
   const recovery = await page.screenshot({ path: testInfo.outputPath('contact-protection.png') });
   await testInfo.attach('contact-protection', { body: recovery, contentType: 'image/png' });
+  await expect.poll(() => page.evaluate(() => {
+    const { player, traffic: [leader] } = window.gameplay.race;
+    return player.collisions === 1 && Math.abs(player.x) < 0.3 && leader.distance - player.distance >= 4.4 &&
+      Math.abs(player.speed - leader.speed) < 0.2;
+  })).toBe(true);
   await page.evaluate(() => { window.gameplay.race.player.effects.ghost = 3; });
   await expect(page.locator('#ghost-phase-status')).toBeVisible();
   await expect.poll(() => bodyOpacity(page)).toBeLessThan(0.8);

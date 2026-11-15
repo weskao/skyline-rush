@@ -1,5 +1,7 @@
 @font-face { font-family: 'Barlow Condensed'; src: url('/fonts/barlow-condensed-bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
 :root { font-family: 'Avenir Next', 'Segoe UI', sans-serif; color: #f4f0e9; background: #040d1c; font-synthesis: none; --accent: #ff8966; --blue: #96e3ff; --muted: #c2c8cd; --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-spring: cubic-bezier(.2, 1.2, .3, 1); --dur-fast: 120ms; --dur-base: 240ms; --dur-slow: 480ms; }
+/* NITRO gold, BOOST red-orange, FLY cyan: touch buttons, bars, HUD text, key hints. The 3D NITRO trail (aero-vfx.js) mirrors --nitro; guard: tests/sprint-color-tokens.test.js. */
+:root { --nitro: #ffd166; --nitro-text: #ffe6a8; --nitro-deep: #4a3510; --boost: #ff7f3f; --boost-text: #ffd9c4; --boost-deep: #52230f; --fly: #83ceeb; --fly-text: #d8f6ff; --fly-deep: #1f4d66; }
 * { box-sizing: border-box; }
 html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
 /* On the root, not #app: a long press anywhere must never open the Copy/Select All menu. */
@@ -79,7 +81,11 @@ h1 em { font-weight: inherit; color: var(--accent); font-style: normal; }
 .primary-button svg { width: 20px; }
 .start-hint { margin-left: 16px; color: #b6bec5; font-size: 10px; }
 .start-hint kbd { border: none; padding: 0; min-width: 0; font-size: 9px; margin-left: 3px; }
-kbd { display: inline-flex; align-items: center; justify-content: center; font: 10px 'Avenir Next', 'Segoe UI', sans-serif; line-height: 1; min-width: 25px; height: 25px; padding: 0 6px; border: 1px solid rgb(230 236 240 / .3); border-radius: 3px; color: #e1e4e5; }
+kbd { display: inline-flex; align-items: center; justify-content: center; font: 10px 'Avenir Next', 'Segoe UI', sans-serif; line-height: 1; min-width: 25px; height: 25px; padding: 0 6px; border: 1px solid color-mix(in srgb, var(--key, #e6ecf0) 30%, transparent); border-radius: 3px; color: var(--key, #e1e4e5); }
+/* FLY / BOOST / NITRO keys wear their action colour on the home legend, guide, tutorial cue and Controls bindings. */
+:is([data-keys="fly"], [data-rebind="fly"]) { --key: var(--fly); }
+:is([data-keys="boost"], [data-rebind="boost"]) { --key: var(--boost); }
+:is([data-keys="nitro"], [data-rebind="nitro"]) { --key: var(--nitro); }
 .intro-controls { display: flex; flex-wrap: wrap; gap: 12px 27px; margin-top: 37px; }
 .intro-controls > div { display: flex; align-items: center; gap: 9px; color: #c0c8ce; font-size: 10px; }
 .keys { display: flex; gap: 3px; }
@@ -145,7 +151,8 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 .racer.is-player > i { background: var(--accent); }
 .event-callout { position: fixed; z-index: 3; top: 206px; left: 16px; right: 16px; margin: auto; width: fit-content; max-width: calc(100vw - 32px); padding: 4px 14px; text-align: center; pointer-events: none; color: #c3f7ff; background: rgb(7 26 40 / .45); border-radius: 999px; text-shadow: 0 2px 10px rgb(5 17 30 / .8); font: 700 clamp(18px, 2.6vw, 28px)/1.1 'Barlow Condensed', sans-serif; }
 .event-callout span { display: block; margin-top: 2px; font: 500 10px/1.5 'Avenir Next', 'Segoe UI', sans-serif; letter-spacing: 1px; }
-.event-callout[data-kind="perfect"], .event-callout[data-kind="nitro"], .event-callout[data-kind="refill"] { color: #ffe3ae; }
+.event-callout[data-kind="perfect"], .event-callout[data-kind="refill"] { color: #ffe3ae; }
+.event-callout[data-kind="nitro"] { color: var(--nitro-text); }
 /* Portrait: the callout and the warning under it follow the RACING bar, which drops below an eight-row leaderboard. */
 @media (max-width: 760px) and (min-height: 501px) {
   .event-callout { top: max(272px, calc(var(--race-progress-bottom, 0px) + 10px)); }
@@ -341,6 +348,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .airborne .mode-indicator { border-color: rgb(103 227 255 / .65); }
 .airborne #flight-state { color: var(--blue); }
 .airborne .fuel-track > i { background: #7ce7ff; }
+.boost-draining .fuel-track > i { background: var(--boost); } /* before every .low-charge rule: low-fuel red still wins */
 .low-charge .fuel-track > i { background: #ffb572; }
 .low-charge #flight-budget, .low-charge .fuel-caption { color: #ffd09e; }
 .fuel-stat { width: 195px; }
@@ -379,6 +387,8 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .speed-streaks { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: var(--streak-opacity, 0); transition: opacity .4s; }
 .speed-streaks > i { position: absolute; left: 50%; top: 50%; height: 1px; width: 18vw; background: linear-gradient(90deg, transparent, #9feaff); transform-origin: 0 0; animation: wind-rush .75s linear infinite; animation-delay: var(--delay); }
 .boosting .speed-ticks > i.active { background: var(--blue); }
+.boost-draining .speed-ticks > i.active { background: var(--boost); }
+.nitro-active .speed-ticks > i.active { background: var(--nitro); }
 .boosting .speed-number > strong { color: #b5edff; }
 .touch-actions { display: flex; gap: 6px; align-items: end; }
 .touch-controls .touch-boost { width: calc(44px * var(--touch-scale, 1)); height: calc(58px * var(--touch-scale, 1)); border-color: #ffba88; color: #ffcc9d; flex-direction: column; gap: 5px; font-size: 6px; letter-spacing: .7px; }
@@ -591,8 +601,9 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 .aero-channels > span { display: flex; justify-content: space-between; font-size: 8px; color: #89a8b6; }
 .aero-channels b { font-weight: 500; color: #d1e6f0; font-size: 8px; }
 .aero-disclaimer { font-size: 6px; letter-spacing: 1.2px; color: #90a8b9; padding-top: 7px; }
-.boost-status { display: block; margin-top: 8px; font-size: 8px; letter-spacing: 1.5px; color: #a0cee0; transition: color .25s; }
-.boost-status[data-state="active"] { color: #e0faff; text-shadow: 0 0 9px #58d7ff; }
+.boost-status { display: block; margin-top: 8px; font-size: 8px; letter-spacing: 1.5px; color: color-mix(in srgb, var(--boost-text), #8d9aa4 40%); transition: color .25s; }
+.boost-status[data-state="active"] { color: var(--boost-text); text-shadow: 0 0 9px var(--boost); }
+.nitro-active .boost-status[data-state="active"] { color: var(--nitro-text); text-shadow: 0 0 9px var(--nitro); }
 .speed-streaks { transition: opacity .35s ease-out; }
 .vfx-comfort .speed-streaks { display: none; }
 @media (max-width: 760px) {
@@ -771,7 +782,7 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 /* Control customization inherits the existing instrument panel. */
 .keymap-field { display: grid; grid-template-columns: 1fr; }
 .keymap-binding { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 44px; padding: 8px; text-align: left; border: 1px solid rgb(195 224 244 / .25); border-radius: 8px; background: transparent; font-size: 10px; }
-.keymap-binding b { color: #b4edff; font-size: 10px; font-weight: 500; text-align: right; }
+.keymap-binding b { color: var(--key, #b4edff); font-size: 10px; font-weight: 500; text-align: right; }
 .keymap-binding[aria-pressed="true"] { border-color: var(--accent); background: #243b50; }
 /* Live preview of the touch buttons: stays at the top of the panel while the size and opacity controls below are used. */
 .controls-preview { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 64px; margin: -4px 6px 6px; padding: 6px 10px; background: rgb(0 9 22 / .35); border: 1px solid rgb(195 224 244 / .14); border-radius: 8px; }
@@ -780,8 +791,8 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 .controls-preview-keys i { display: flex; align-items: center; justify-content: center; width: calc(34px * var(--touch-scale, 1)); height: calc(36px * var(--touch-scale, 1)); border: 1px solid rgb(210 226 238 / .3); border-radius: 6px; background: rgb(25 44 60 / .7); color: #f4f0e9; transition: width var(--dur-fast), height var(--dur-fast), opacity var(--dur-fast); }
 .controls-preview-keys svg { width: 55%; height: 55%; }
 .controls-preview-keys .touch-nitro { color: #f8d59a; border-color: #cba36c; }
-.controls-preview-keys .touch-fly { color: #aeebff; border-color: #83ceeb; }
-.controls-preview-keys .touch-boost { color: #ffcc9d; border-color: #ffba88; }
+.controls-preview-keys .touch-fly { color: var(--fly-text); border-color: var(--fly); }
+.controls-preview-keys .touch-boost { color: var(--boost-text); border-color: var(--boost); }
 .controls-preview-keys .touch-gas { background: #e7916f; color: #192b3a; border-color: #e7916f; }
 @media (prefers-reduced-motion: reduce) { .controls-preview-keys i { transition: none; } }
 .controls-note { margin: 8px; font-size: 11px; line-height: 1.5; color: #c9dfed; }
@@ -795,12 +806,12 @@ body.layout-editing #touch-controls { display: grid; }
 .layout-editing .touch-pad { pointer-events: none; }
 .layout-editing .telemetry { opacity: .35; pointer-events: none; }
 .layout-editing .aero-tools { visibility: hidden; }
-.nitro-hud { margin-top: 10px; font-size: 10px; letter-spacing: .3px; color: #f2d39e; }
+.nitro-hud { margin-top: 10px; font-size: 10px; letter-spacing: .3px; color: var(--nitro-text); }
 #nitro-status { white-space: nowrap; }
 .nitro-meter { display: flex; gap: 4px; margin-top: 5px; }
 .nitro-segment { flex: 1; height: 7px; overflow: hidden; border: 1px solid #ae946f; border-radius: 8px; background: #233748; }
-.nitro-segment i { display: block; position: relative; height: 100%; background: #f7c576; transform-origin: left; transition: transform var(--dur-base) var(--ease-out); }
-.nitro-segment.is-full { border-color: #ffe1aa; box-shadow: 0 0 7px rgb(247 197 118 / .5); }
+.nitro-segment i { display: block; position: relative; height: 100%; background: var(--nitro); transform-origin: left; transition: transform var(--dur-base) var(--ease-out); }
+.nitro-segment.is-full { border-color: var(--nitro-text); box-shadow: 0 0 7px color-mix(in srgb, var(--nitro) 50%, transparent); }
 .nitro-meter.is-max { animation: nitro-max 1.4s ease-in-out infinite alternate; }
 @keyframes nitro-max { to { opacity: .5; } }
 .vfx-comfort .nitro-meter, .vfx-comfort .nitro-segment i { animation: none; transition: none; }
@@ -898,7 +909,7 @@ body.layout-editing #touch-controls { display: grid; }
 .guide-keys > div { display: grid; grid-template-columns: minmax(180px, 1fr) 1.3fr; gap: 12px; padding-block: 12px; border-bottom: 1px solid #42596c; }
 .guide-keys dt { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .guide-keys dd { margin: 0; color: #c3d0dc; }
-.guide-screen kbd { display: inline-block; padding: 4px 8px; margin: 2px; border: 1px solid #899eaf; border-bottom-width: 3px; border-radius: 5px; color: #f4f0e9; background: #20364b; font: inherit; font-size: 13px; }
+.guide-screen kbd { display: inline-block; padding: 4px 8px; margin: 2px; border: 1px solid var(--key, #899eaf); border-bottom-width: 3px; border-radius: 5px; color: var(--key, #f4f0e9); background: #20364b; font: inherit; font-size: 13px; }
 .guide-note { color: #c3d0dc; font-size: 13px; }
 /* The guide's main call to action sits right under the intro, styled like the home Start button. */
 .guide-screen .tutorial-start { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 52px; margin: 16px 0 4px; padding: 0 20px; border: 0; border-radius: 8px; background: var(--accent); color: #142333; font-size: 15px; font-weight: 700; box-shadow: 0 8px 24px rgb(255 137 102 / .22); transition: background var(--dur-fast); }
@@ -915,8 +926,8 @@ body.layout-editing #touch-controls { display: grid; }
 .tutorial-copy { max-height: calc(55dvh - 174px); overflow: auto; overscroll-behavior: contain; }
 .tutorial-copy p { margin: 4px 0 10px; line-height: 1.5; font-size: 14px; }
 .tutorial-copy small { display: block; margin-top: 10px; color: #c3d0dc; font-size: 11px; line-height: 1.4; }
-#tutorial-input { font-weight: 700; font-size: 14px; color: #96e3ff; }
-#tutorial-input kbd { display: inline-block; min-width: 32px; padding: 5px 8px; margin: 2px; border: 1px solid #96e3ff; border-bottom-width: 3px; border-radius: 5px; background: #20364b; text-align: center; }
+#tutorial-input { font-weight: 700; font-size: 14px; color: var(--key, #96e3ff); }
+#tutorial-input kbd { display: inline-block; min-width: 32px; padding: 5px 8px; margin: 2px; border: 1px solid var(--key, #96e3ff); border-bottom-width: 3px; border-radius: 5px; background: #20364b; text-align: center; }
 .tutorial-target { outline: 3px solid #96e3ff; outline-offset: 4px; }
 .touch-pad.tutorial-target { outline-offset: -5px; background: rgb(150 227 255 / .08); }
 body[data-tutorial] :is(#race-route-map, #leaderboard, #practice-hud, #sprint-stage, #stunt-hud, #checkpoint-hud, #clean-trial-hud) { visibility: hidden; }
@@ -1986,7 +1997,7 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 .tutorial-reward { padding: 0; border-radius: 3px; background: none; color: #ffd27a; font-weight: inherit; text-shadow: 0 0 10px rgb(255 210 122 / .75); white-space: nowrap; animation: reward-glow 1.4s ease-in-out infinite; }
 .tutorial-pass .tutorial-reward { font-weight: 800; }
 @keyframes reward-glow { 50% { color: #fff4dc; text-shadow: 0 0 14px rgb(255 210 122 / .95); } }
-body[data-tutorial-reward="nitro"] #nitro-meter, body[data-tutorial-reward="nitro"] #touch-controls [data-control="nitro"] { outline: 2px solid #ffd27a; outline-offset: 3px; animation: reward-meter .7s ease-in-out 2; }
+body[data-tutorial-reward="nitro"] #nitro-meter, body[data-tutorial-reward="nitro"] #touch-controls [data-control="nitro"] { outline: 2px solid var(--nitro); outline-offset: 3px; animation: reward-meter .7s ease-in-out 2; }
 @keyframes reward-meter { 50% { outline-offset: 7px; filter: drop-shadow(0 0 10px rgb(255 210 122 / .9)); } }
 @media (max-width: 760px) and (min-height: 501px) { .tutorial-pass { top: calc(var(--tutorial-coach-bottom, 300px) + 40px); font-size: 15px; } }
 @media (max-height: 500px) and (orientation: landscape) { .tutorial-pass { top: 34%; left: 79%; max-width: calc(42vw - 32px); padding: 6px 12px; font-size: 14px; } }
@@ -1995,7 +2006,7 @@ body[data-tutorial-reward="nitro"] #nitro-meter, body[data-tutorial-reward="nitr
    pause screen starts below it on phones, right of it in landscape; neither covers the other. */
 body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* an open language/VFX list opens over the coach (12) */
 @media (max-width: 760px) and (min-height: 501px) { body[data-tutorial] .race-overlay { top: max(calc(var(--safe-top) + 190px), calc(var(--tutorial-coach-bottom, 0px) + 8px)); align-items: start; overflow: auto; } body[data-tutorial] .overlay-route { display: none; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 4px 0 6px; } body[data-tutorial] .overlay-summary > p { margin-bottom: 12px; } }
-@media (max-height: 500px) and (orientation: landscape) { body[data-tutorial] .race-overlay { justify-items: end; } body[data-tutorial] .overlay-content { width: calc(42vw - 36px); margin-right: 12px; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 6px 0 8px; } } /* right of the 58vw coach */
+@media (max-height: 500px) and (orientation: landscape) { body[data-tutorial] .race-overlay { justify-items: end; padding-block: 10px; } body[data-tutorial] .overlay-route { display: none; } body[data-tutorial] .overlay-content { width: calc(42vw - 36px); margin-right: 12px; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 6px 0 8px; } } /* right of the 58vw coach */
 
 /* Display-only 3x results artwork; no reward entitlement. */
 .result-trophy-art{display:inline-block;max-width:96px;vertical-align:middle;object-fit:contain;animation:reward-podium-reveal .52s ease-out both}

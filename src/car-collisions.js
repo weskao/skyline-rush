@@ -78,12 +78,14 @@ export function avoidObstacles(race, other, pace, dt) {
   other.x += clamp(target - other.x, -shift * dt, shift * dt);
 }
 
+export const knockX = (x, side, intensity) => clamp(x + side * (0.4 + intensity * 0.6), -ROAD_LIMIT, ROAD_LIMIT);
+
 // The one collision response every car shares (player, rivals, traffic): speed loss, a sideways knock, a short grace.
 export function knock(race, car, side, intensity, retention) {
   const retainedSpeed = race.config.collision === 'relaxed' ? Math.max(retention, 0.8) : retention;
   const speedLost = car.speed * (1 - retainedSpeed);
   car.speed *= retainedSpeed;
-  car.x = clamp(car.x + side * (0.4 + intensity * 0.6), -ROAD_LIMIT, ROAD_LIMIT);
+  car.x = knockX(car.x, side, intensity);
   car.cooldown = 1.5;
   return speedLost;
 }
