@@ -89,7 +89,7 @@ for (const track of ['coast', 'neon', 'spiral', CLIMB]) test(`${LABEL} ${VIEW}: 
   expect(errors).toEqual([]);
   if (!LABEL.startsWith('after')) return;
   expect(rows.nitroTop.plume.carInside, 'the car stays inside the frame at NITRO top speed').toBe(true);
-  if (track === 'coast' || track === 'neon') expect(rows.nitroTop.contrast.vsRoad, 'the plume core stands off the road beside it').toBeGreaterThanOrEqual(40);
+  if (track === 'coast' || track === 'neon') expect(rows.nitroTop.contrast.vsRoad, 'the plume stands off the road beside it').toBeGreaterThanOrEqual(40);
   // Today's exhaust already clears that contrast floor; on the phone tier it was small: 1 to 3% of the frame.
   const before = `${dir('before')}/${track}.json`;
   if (CORES === 2 && fs.existsSync(before)) for (const key of ['boost', 'nitroTop']) {
