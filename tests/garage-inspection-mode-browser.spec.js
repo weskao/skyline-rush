@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { chooseGarageAngle } from './helpers/garage-angle.js';
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
   test(`actual WebGL garage Ground/Flight 3D framing ${viewport.width}x${viewport.height}`, async ({ page }) => {
@@ -12,7 +13,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await expect(page.locator(`button[data-garage-mode="${mode}"]`)).toHaveAttribute('aria-pressed', 'true');
       await expect(preview).toHaveAttribute('data-garage-mode', mode);
       for (const angle of ['side', 'front', 'rear', 'top', 'cinematic']) {
-        await page.locator(`[data-garage-angle="${angle}"]`).click();
+        await chooseGarageAngle(page, angle);
         await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
         if (angle === 'side') {
           const frame = await page.screenshot();
@@ -42,7 +43,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await expect(wing).toHaveAttribute('aria-pressed', 'true');
       await expect(preview).toHaveAttribute('data-garage-wing', 'true');
       for (const angle of ['side', 'rear', 'cinematic']) {
-        await page.locator(`[data-garage-angle="${angle}"]`).click();
+        await chooseGarageAngle(page, angle);
         await expect(preview, 'an angle preset keeps the wing choice').toHaveAttribute('data-garage-wing', 'true');
         await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
       }
