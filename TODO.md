@@ -1,3 +1,17 @@
+# 2026-11-14 — Sprint exhaust visibility (`feature/sprint-exhaust-visibility`)
+
+- [x] 1. Sprint re-aim (`sprintLook` 3.5 m, landscape chase only): `tests/race-camera.test.js` *sprint re-aim* RED on `e23f410a`, GREEN since Task 2. Real frames: landscape NITRO nozzle row 0.80 → 0.734–0.740 (Coast, Spiral, climb), car w/h within 6.9%, portrait unchanged.
+- [x] 2. Fat plume: `tests/sprint-plume.test.js` *phone width* and *the real jets carry the profile* RED on the old cone, GREEN since Task 4.
+- [x] 3. Modes (Off, Reduced Motion, Low, flight, trail skin, void): unit tests *modes*, *trail skin*, *lean*, *only where bloom runs*; real frames show the flare and hide the road glow in the air.
+- [x] 4a. Every car in the race: the plume parts are children of `Rear ports`, whose placement on each car's nozzles is guarded (`crimson-gt-browser`, `hero-roadster-race-browser`, green with the Task 6 guard specs on `c2921842`); race frames on both cars, both phone orientations.
+- [ ] 4b. Garage preview and Home showcase on both cars, after switching cars, both phone orientations: not captured (browser runs stopped at the owner's request).
+- [x] 5. Real WebGL frames before/after (`sprint-camera-capture-browser.spec.js`): desktop, phone portrait and landscape, CORES=2/4, both cars; every `after` set passes car inside, contrast ≥ 40 and CORES=2 area ≥ 2× `before` (landscape BOOST 2.01–2.68×, NITRO 2.62–2.97×; portrait 2.07–3.22×; GT landscape 2.47–3.74×). Crimson GT's landscape NITRO nozzle row is 0.777 (was 0.848; its nozzles sit lower than the Roadster's). Owner review of the frames pending.
+- [ ] 6. GPU frame cost, held NITRO on Coast, p50 ms before → after (M4 Pro, shared machine, one interleaved round): 844x390 Low 4.4 → 4.7, Medium 5.8 → 6.0, High 5.8 → 5.8; 1440x900 Low 5.9 → 5.7, Medium 7.8 → 7.1, High 6.8 → 7.5. Five of six rows within max(5%, 0.3 ms); 1440x900 High is over (+0.7 ms, also over in an earlier run). Fix: shorter glow/core on High, re-measured.
+- [x] 7a. `node --test tests/module-size.test.js` 3/3 (no ceiling raised), `npm test` 2983 pass / 0 fail / 3 skipped, typecheck, `npm run build` on `5b90bdb3`.
+- [ ] 7b. `npm run test:browser` and `make verify`: not run (owner's request).
+- [x] 8. Prevention: `.claude/rules/race-camera.md` *Exhaust under the frame*, `.claude/rules/sprint-plume.md` (thin/additive/gated, white-out, phone-tier starvation, lost uniform), each with its guard; veil spec (High, landscape phone) Roadster 44.3, GT 69.7 (≤ 80).
+- [ ] Not run: physical phone, exact-HEAD GitHub `quality-gate`. What's New entry not written (needs a real-game clip and `/review-release-notes`).
+
 ## Final tutorial NITRO cue (2026-11-15)
 
 - [x] Show the final NITRO action in the same on-screen cue as THROTTLE, with the bound desktop key or touch button copy. Hide the press prompt and touch outline during the sprint and while waiting for release after an interrupted attempt.

@@ -1,4 +1,4 @@
-<!-- source-sha256: 0dd8a39a80964ec1db26a222ead3f4b2e02ccfd2a90d0cd6c1a0709515350585 generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
+<!-- source-sha256: 5b33d49c0c404e61040e2169856b7ad287086ac1f40dd0e765193417af35ef3a generated from README.md by scripts/readme-zh.mjs; edit README.md, then run the script -->
 # Skyline Rush
 
 [English](README.md) · **繁體中文**
@@ -147,7 +147,7 @@ make         # Installs dependencies on first run, then starts the Vite + Vue de
 
 場景包含泛光照明、日落水面、懸索橋、推進器蒸氣、碰撞火花與觸地漣漪。鏡頭運動與非必要的速度線會遵循你系統的減少動態效果偏好設定。音效為推力、碰撞與降落提供各自獨立的回饋。
 
-**VFX**（右上角）可選擇 Realistic、Cinematic 或 Extreme 外觀、Low / Medium / High 畫質（Low 會關閉泛光並繪製較少的景物）、Comfort mode（無閃光、震動、殘影或模糊）以及可選的觸覺回饋。其中的 **Race HUD** 區段可選擇 Immersive 或 Competitive（附有排行榜、小地圖與次要數據的開關），可開啟或關閉 NITRO READY 的音效與動畫，**Reset HUD to default** 則會恢復預設值。**Fine tuning** 把每種效果列為滑桿，**Reset visual settings** 會恢復預設值。**AIRFLOW**（或 V）會把場景切換為空氣動力學展示：車身上的流線、遙測面板、Low drag 或 High downforce，以及駕駛、前方、後方、側面或環繞的鏡頭。開始面板會讓位給展示畫面，只留下橘色的 **START RACE** 按鈕，停靠在車輛下方的底部中央；左右滑動場景即可切換賽道。第一次開啟 AIRFLOW 時，會有一個動畫指尖示範該手勢。流線僅在 AIRFLOW 開啟時出現：關閉時，BOOST 與 NITRO 會顯示推進器噴流、尾跡與速度線，但沒有流線。
+**VFX**（右上角）可選擇 Realistic、Cinematic 或 Extreme 外觀、Low / Medium / High 畫質（Low 會關閉泛光並繪製較少的景物）、Comfort mode（無閃光、震動、殘影或模糊）以及可選的觸覺回饋。其中的 **Race HUD** 區段可選擇 Immersive 或 Competitive（附有排行榜、小地圖與次要數據的開關），可開啟或關閉 NITRO READY 的音效與動畫，**Reset HUD to default** 則會恢復預設值。**Fine tuning** 把每種效果列為滑桿，**Reset visual settings** 會恢復預設值。**AIRFLOW**（或 V）會把場景切換為空氣動力學展示：車身上的流線、遙測面板、Low drag 或 High downforce，以及駕駛、前方、後方、側面或環繞的鏡頭。開始面板會讓位給展示畫面，只留下橘色的 **START RACE** 按鈕，停靠在車輛下方的底部中央；左右滑動場景即可切換賽道。第一次開啟 AIRFLOW 時，會有一個動畫指尖示範該手勢。流線僅在 AIRFLOW 開啟時出現：關閉時，BOOST 與 NITRO 會顯示推進器噴流（粗壯的火焰，帶有明亮的焰芯與噴嘴光暈，Medium 與 High 畫質下還有路面光暈）、尾跡與速度線，但沒有流線。
 
 起跑燈號會指示倒數與 GO。玩家駕駛一輛配有後推進器、主動式尾翼與動態車輪的跑車。AI 對手有各自獨特的輪廓與燈光特徵，而車流使用通勤車輛。轉向會漸進加入，放開加速推進後車輛會逐步減速。駕駛與工具列控制項提供適合觸控大小的點按目標。
 

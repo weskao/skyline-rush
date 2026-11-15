@@ -31,13 +31,23 @@ instanced opaque-looking core, one instanced nozzle flare, plus one road glow. E
   fragment exceeds 1. A per-fragment cap alone left 88 and 115: the sum is the problem, not one fragment.
   Guard: `tests/sprint-plume-veil-browser.spec.js` (both cars, landscape phone, High, live NITRO, `veil` at
   most 80). Judge any brightness change in a racing frame, never in a paused one.
+- **Bloom-only fix that starved the phone (2026-11-16).** Bloom runs above Low only (`configureBloom`,
+  `src/upcoming-lighting.ts`), but the white-out dimming applied on every tier: the 2-core phone tier (Low + Realistic)
+  then showed 1.2 to 1.6x the old cone's exhaust area on a landscape BOOST, under the 2x floor. Mechanism: the `glare`
+  uniform (1 above Low) gates the dimming; on Low the jet keeps full light and a denser tail (its own halo), each
+  colour scaled so no channel passes 1 (a per-channel clamp turned NITRO white). A held BOOST drives the jets by
+  `sqrt(power)`. Guards: `tests/sprint-plume.test.js` (*only where bloom runs*), the veil spec on High, and the capture
+  spec's CORES=2 floor. A dimming aimed at one tier's post-processing is gated on that tier.
+- **Uniform lost in a trailing comment (2026-11-16).** `u.power = …; // comment u.tail = frame.tail;` kept the
+  jets' `tail` at 0, so the board plume's magenta fade never lit; no test read the jets' uniforms back. One
+  statement per comment's line. Guard: *every frame value reaches every jet*.
 
 ## Modes
 
 | State | Jets | Core | Flare | Road glow |
 | --- | --- | --- | --- | --- |
 | VFX Off, or power 0 | off | off | off | off |
-| Low (quality 0.25) | on | on | on | off |
+| Low (quality 0.25) | on, full light (no bloom) | on | on | off |
 | Medium, High | on | on | on | on |
 | Airborne, or not racing (Garage, Home) | on | on | on | off |
 | Void pulse skin | off (its beams) | off | on | as above |
