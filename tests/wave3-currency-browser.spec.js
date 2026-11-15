@@ -31,7 +31,7 @@ test('home displays three compact resource icons with genuine demo points', asyn
     }
     const metrics = await wallet.evaluate(el => {
       const r = el.getBoundingClientRect();
-      return { width: r.width, height: r.height, rows: [...el.children].map(ch => Math.round(ch.getBoundingClientRect().top)) };
+      return { width: r.width, height: r.height, rows: [...el.querySelectorAll("button")].map(ch => Math.round(ch.getBoundingClientRect().top)) };
     });
     expect(metrics.height).toBeLessThanOrEqual(36);
     if (viewport.width >= 1001) {
@@ -47,17 +47,22 @@ test('home displays three compact resource icons with genuine demo points', asyn
 });
 
 for (const viewport of [{ width: 568, height: 320 }, { width: 756, height: 265 }]) {
-  test(`the compact Home wallet fits above the mode picker at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+  test(`the Home resource menu fits alongside the mode picker at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
     const wallet = page.locator('#intro [data-wave3-wallet]');
-    await expect(wallet).toBeVisible();
-    await expect(wallet.locator('img')).toHaveCount(3);
-    const [resources, modes] = await Promise.all([
-      wallet.boundingBox(), page.locator('#race-mode-picker').boundingBox(),
-    ]);
-    expect(resources.height, 'short landscape wallet keeps the track-card height budget').toBeLessThanOrEqual(22);
-    expect(resources.y + resources.height).toBeLessThanOrEqual(modes.y);
+    const resources = wallet.locator('summary');
+    const modes = page.locator('#lobby-modes-toggle');
+    await expect(resources).toBeVisible();
+    const [resourceBox, modeBox] = await Promise.all([resources.boundingBox(), modes.boundingBox()]);
+    expect(resourceBox.height).toBeGreaterThanOrEqual(44);
+    expect(resourceBox.x).toBeGreaterThanOrEqual(modeBox.x + modeBox.width);
+    await expect(wallet.locator('img').first()).toBeHidden();
+    await resources.click();
+    await expect(wallet.locator('[data-currency="coins"] strong')).toHaveText('0');
+    await expect(wallet.locator('[data-currency="demo-points"] strong')).toBeVisible();
+    await wallet.locator('[data-currency="coins"]').click();
+    await expect(page.getByRole('region', { name: 'Demo coins' })).toBeVisible();
   });
 }
 
@@ -134,6 +139,7 @@ test.describe('wallet on touch screens', () => {
       const diamondCard = page.getByRole('region', { name: 'Demo diamonds' });
 
       await expect(coinCard).toBeHidden();
+      if (!await coins.isVisible()) await wallet.locator('summary').tap();
       await coins.tap();
       await expect(coinCard).toContainText('Local demo');
       await expect(coinCard).toContainText('0');
@@ -152,4 +158,22 @@ test.describe('wallet on touch screens', () => {
       await expect(coinCard).toBeHidden();
     });
   }
+});
+
+test.describe('ultra-short landscape wallet', () => {
+  test.use({ viewport: { width: 756, height: 265 }, hasTouch: true, isMobile: true });
+
+  test('a single Resources entry reveals the three original balances', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const entry = page.getByText('Resources', { exact: true });
+    await expect(entry).toBeInViewport({ ratio: 1 });
+    const wallet = page.locator('#intro [data-wave3-wallet]');
+    await expect(wallet.getByRole('button', { name: /Demo coins/i })).toBeHidden();
+    await entry.tap();
+    await expect(wallet.locator('[data-currency="coins"] strong')).toHaveText('0');
+    await expect(wallet.locator('[data-currency="diamonds"] strong')).toHaveText('0');
+    await wallet.getByRole('button', { name: /Demo coins/i }).tap();
+    await expect(page.getByRole('region', { name: 'Demo coins' })).toBeVisible();
+  });
 });

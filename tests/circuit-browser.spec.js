@@ -2,6 +2,7 @@ import { test } from './helpers/gameplay-browser.js';
 import { expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { openLobbyModes } from './helpers/home-lobby.js';
 
 for (const [name, viewport, hasTouch, locale] of [
   ['phone-en', { width: 390, height: 844 }, true, 'en'],
@@ -22,6 +23,7 @@ for (const [name, viewport, hasTouch, locale] of [
       const config = normalizeRaceConfig({ mode: 'circuit', laps: lapCount });
       localStorage.setItem('skyline-rush-mode-bests-v1', JSON.stringify({ [circuitLapKey(config)]: 20 }));
     }, lapCount);
+    await openLobbyModes(page);
     await page.locator('button[data-race-mode="circuit"]').click();
     await expect(page.locator('#start-button')).toBeEnabled();
     await page.locator('#circuit-rules > summary').click();
@@ -77,6 +79,7 @@ for (const [name, viewport, hasTouch, locale] of [
     await page.locator('a.brand').click();
     await page.locator('#leave-end').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+    await openLobbyModes(page);
     await page.locator('button[data-race-mode="classic"]').click();
     await expect.poll(() => page.evaluate(() => window.gameplay.race.trackId)).toBe('coast');
     await page.locator('#start-button').click();

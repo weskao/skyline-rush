@@ -240,7 +240,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       await page.locator('#garage-close').click();
 
       // History with no runs yet.
-      await page.locator('[data-open-history]').first().click();
+      await page.locator('.history-button').click();
       await check(cx, 'history-empty');
       await page.locator('#history-screen .custom-select button').first().click();
       await check(cx, 'history-select-open');
@@ -315,8 +315,9 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       // Back to the intro: history and awards with a saved run, then switch language live and re-check every screen with stale text in mind.
       await page.reload();
       await dismissMusic(page);
-      await page.locator('[data-open-history]').first().click();
+      await page.locator('.history-button').click();
       await check(cx, 'history-with-run');
+      await page.locator('#history-tab-medals').click();
       await page.locator('#achievement-list').scrollIntoViewIfNeeded();
       await check(cx, 'awards');
       await page.locator('#history-close').click();
@@ -326,7 +327,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       await selectLocale(page, other);
       Object.assign(cx, { locale: other, htmlLang: other });
       await check(cx, `after-switch-to-${other}`);
-      await page.locator('[data-open-history]').first().click();
+      await page.locator('.history-button').click();
       await check(cx, 'after-switch-history');
       await page.locator('#history-close').click();
       await page.locator('#garage-button').click();

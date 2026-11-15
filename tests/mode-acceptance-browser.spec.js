@@ -121,10 +121,8 @@ for (const [name, viewport, hasTouch] of [
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
     await pickMode(page, 'time');
     await page.locator('#start-button').click();
-    // With storage blocked the guide's seen flag cannot be read, so the first Start of a page load runs the guided
-    // practice and Skip continues straight into the chosen race (main.js start/beginTutorial). Play is never blocked.
-    await expect(page.locator('body')).toHaveAttribute('data-tutorial', 'active');
-    await page.locator('#tutorial-exit').click();
+    // With storage blocked the first start still offers a direct route to the race.
+    await page.locator('#guide-start-race').click();
     await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
     await expect(page.locator('#race-status')).toHaveText('RACING');
     for (const selector of ['#race-info', '.position-stat', '#distance']) await inViewport(page, selector);

@@ -21,6 +21,12 @@ Write every assertion so that runner speed cannot change its outcome.
   switch, 2026-11-04).
 - **Pause freezes the race clock.** Timed labels such as COLLECTED (1.2 s) stay up while paused.
   Judge whichever label the frozen state legitimately shows, not one fixed string.
+- **Pause does not freeze the camera.** The chase camera keeps easing to its rig (about 1.6 s at
+  60 fps), so the frustum moves under a draw-count, culling or screen-position read. Trap
+  (2026-11-16): Neon traffic measured 22 calls instead of 21 whenever the race paused early (cold
+  Vite cache); a rival's wheel rim crossed the frustum edge between the baseline and the reading.
+  Wait for the camera to come to rest first: `pausedRace()` in `tests/helpers/traffic-browser.js`
+  asserts it.
 
 ## Poll anything a UI action changes asynchronously
 
@@ -68,6 +74,10 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
 - **An absence check names the feature's own files.** A shared decoder (`basis/basis_transcoder.*`,
   meshopt) belongs to whichever system loads it first; "no Coast KTX2" is `.ktx2` files, not the transcoder
   (`tests/coast-scenery-browser.spec.js`).
+- **A control's name is unique only inside its landmark.** Home's race setup and the VFX panel both have a
+  "Showcase camera" combobox (`498d84d0`), so a page-wide `getByRole('combobox', { name })` hit strict mode in
+  `browser.spec.js` and `custom-controls-browser.spec.js` (2026-11-16). Scope role locators to the landmark
+  that owns the control (`getByRole('complementary', { name: 'Airflow and visual effects' })`).
 - A merge that changes a shared HUD, road or asset rule runs the browser specs that assert it before it lands
   (`git grep` the selector or asset name in `tests/*browser.spec.js`); do not rely on develop's CI to finish.
 
@@ -90,6 +100,16 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   await wait(10)` burned 60 s on one missed ring and timed ring-sfx out (CI 42489399352). Write
   `while (!decided && race.elapsed < until) await new Promise(requestAnimationFrame)`. Enforced by
   `tests/browser-timeouts.test.js` (*counted wall-clock sleep*).
+- **A slow-frame shim stalls each frame once, not each `requestAnimationFrame` callback.** Since the results
+  credit roll runs its own rAF loop, a per-callback 300 ms stall made the 17 frames a finish needs (4 to cross
+  the line, 12 for the 0.6 s results reveal at 0.05 s each) cost 39 stalls: 11.9 s, past the 10 s expect, while
+  a real slow device took 5.4 s. Key the stall on the frame timestamp (`stalledFrame`); enforced by
+  `tests/browser-timeouts.test.js` (*slow-frame shim*).
+- **Measure the Garage after its slide-in.** `#garage-screen` opens with `history-in` (translateX 22px). A rect
+  read mid-slide is shifted and goes through float32 transform math: a 144 px thumbnail measured
+  144.00001526 in 1 of 30 runs while `offsetWidth` stayed 144. Open it with `openGarage()` from
+  `tests/helpers/test.js`; never loosen a pixel bound to absorb it. Enforced by the same test file
+  (*Garage geometry*) for the specs it lists.
 - **Seeded positions stay clear of the field.** Teleporting the player back to the first rings put
   it in the pack: rivals step first and take the ring, traffic knocks the car off it. Seed ahead of
   every car (`race.rivals`) and pass traffic with `player.effects.ghost` (game seconds).

@@ -2,6 +2,11 @@
 // expand the legacy UI shell module. UI spreads these keys into both locales.
 export const TUTORIAL_COPY = Object.freeze({
   en: {
+    "tutorial.practiceFirst": "Practice first",
+    "tutorial.raceDirect": "Race now",
+    "tutorial.leave.title": "Leave practice?",
+    "tutorial.leave.copy": "Return to your selected track and race mode.",
+    "tutorial.leave.keep": "Keep practicing",
     "tutorial.start": "Start interactive practice",
     "tutorial.exit": "Exit",
     "tutorial.skip": "Skip practice",
@@ -108,6 +113,8 @@ export const TUTORIAL_COPY = Object.freeze({
     "tutorial.slide.barrelRoll": "Take off with FLY, release it to glide, flick the slide pad left then right, then land",
     "tutorial.tilt.barrelRoll": "Take off with FLY, release it to glide, tilt left then right rapidly, then land",
     "tutorial.touch.nitro": "Tap NITRO",
+    "tutorial.touch.nitro.left": "Tap NITRO with your left thumb",
+    "tutorial.touch.nitro.right": "Tap NITRO with your right thumb",
     "tutorial.slide.left": "Slide left on the slide pad to reach the gate",
     "tutorial.slide.right": "Slide right on the slide pad to reach the gate",
     "tutorial.slide.brake": "Pull down on the slide pad through the gate",
@@ -138,6 +145,11 @@ export const TUTORIAL_COPY = Object.freeze({
     "tutorial.cue.rollSoftenToggle": "FALLING FAST! Tap FLY on, then off, to soften the landing",
   },
   'zh-TW': {
+    "tutorial.practiceFirst": "先練習",
+    "tutorial.raceDirect": "直接開賽",
+    "tutorial.leave.title": "要離開練習嗎？",
+    "tutorial.leave.copy": "返回原先選擇的賽道與比賽模式。",
+    "tutorial.leave.keep": "繼續練習",
     "tutorial.start": "開始互動練習",
     "tutorial.exit": "退出",
     "tutorial.skip": "跳過教學",
@@ -244,6 +256,8 @@ export const TUTORIAL_COPY = Object.freeze({
     "tutorial.slide.barrelRoll": "按 FLY 起飛後放開，滑翔時快速在滑動區先左後右，然後降落",
     "tutorial.tilt.barrelRoll": "按 FLY 起飛後放開，滑翔時快速左右傾斜，然後降落",
     "tutorial.touch.nitro": "點一下 NITRO",
+    "tutorial.touch.nitro.left": "用左手拇指點一下 NITRO",
+    "tutorial.touch.nitro.right": "用右手拇指點一下 NITRO",
     "tutorial.slide.left": "在滑動區向左滑，開進目標門",
     "tutorial.slide.right": "在滑動區向右滑，開進目標門",
     "tutorial.slide.brake": "通過目標門時在滑動區向下拉",

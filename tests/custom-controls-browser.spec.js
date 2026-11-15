@@ -12,7 +12,7 @@ test('every dropdown is a web listbox, never the OS select popup', async ({ page
   await openVFX(page);
   await expect(page.locator('select:visible')).toHaveCount(0);
   for (const name of ['Visual style', 'Quality', 'Aerodynamics', 'Showcase camera']) {
-    await expect(page.getByRole('combobox', { name, exact: true })).toBeVisible();
+    await expect(page.getByRole('complementary', { name: 'Airflow and visual effects' }).getByRole('combobox', { name, exact: true })).toBeVisible();
   }
 });
 

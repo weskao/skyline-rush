@@ -49,10 +49,11 @@ test('first visit keeps the home screen clear; Controls opens the keyboard guide
   await expect(page.locator('#tutorial-coach')).toBeHidden();
 });
 
-test('first Start opens practice; Skip races the selected track and is remembered', async ({ page }) => {
+test('first Start offers practice; Skip races the selected track and is remembered', async ({ page }) => {
   await page.goto('/');
   const track = await page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
   await page.locator('#start-button').click();
+  await page.locator('#guide-practice').click();
   await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', 'throttle');
   await expect(page.locator('#tutorial-exit')).toHaveText('Skip practice'); // not a second "Skip" beside Skip step
   await page.locator('#pause-button').click();
@@ -92,13 +93,15 @@ test('guide follows custom key bindings and remains usable with blocked storage'
 test('opening guide from paused controls does not resume the race', async ({ page }) => {
   await page.goto('/');
   await page.locator('#start-button').click();
-  await page.locator('#tutorial-exit').click();
-  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await page.locator('#guide-start-race').click();
+  await expect(page.locator('#race-status')).toHaveText(/COUNTDOWN|RACING/);
   await page.keyboard.press('Escape');
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
   await openGuide(page);
+  await expect(page.locator('#guide-close')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('#guide-screen')).toBeHidden();
+  await expect(page.locator('#controls-button')).toBeFocused();
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
 });
 

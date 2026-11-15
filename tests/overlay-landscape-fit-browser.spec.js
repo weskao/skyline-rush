@@ -45,7 +45,10 @@ for (const { segments, ...viewport } of [
 
   test('pause and podium results show every action without scrolling', async ({ gameplayPage: page }) => {
     if (segments) {
-      await page.addInitScript(value => Object.defineProperty(window, 'getWindowSegments', { configurable: true, value: () => value }), segments);
+      await page.addInitScript(value => {
+        Object.defineProperty(window, 'viewport', { configurable: true, value: undefined });
+        Object.defineProperty(window, 'getWindowSegments', { configurable: true, value: () => value });
+      }, segments);
       await page.reload();
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
       await expect(page.locator('body')).toHaveAttribute('data-fold-axis', 'vertical');

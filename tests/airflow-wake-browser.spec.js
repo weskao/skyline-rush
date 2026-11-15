@@ -11,6 +11,7 @@ test('airflow renders on every track with bounded resources and no shader errors
   const errors = [], records = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  await page.locator('#performance-notice summary').click();
   await page.locator('#performance-notice-dismiss').click();
   for (const track of Object.keys(RACE_TRACKS)) {
     await page.locator(`[data-track="${track}"]`).click();
@@ -70,6 +71,7 @@ test('flight flick triggers the roll wake without AIRFLOW preview', async ({ gam
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   if (mobile) await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#performance-notice summary').click();
   await page.locator('#performance-notice-dismiss').click();
   await page.locator('#start-button').click();
   await page.waitForFunction(() => window.gameplay.race.phase === 'racing');

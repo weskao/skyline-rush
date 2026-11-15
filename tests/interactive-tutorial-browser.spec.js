@@ -209,7 +209,7 @@ test.describe('touch NITRO interruption', () => {
     const cue = page.locator('#tutorial-cue');
     await expect(cue).toHaveAttribute('data-cue', 'tutorial.cue.throttle');
     await skipToNitro(page, 'tap');
-    await expect(cue.getByText('Tap NITRO')).toBeVisible();
+    await expect(cue).toContainText('Tap NITRO with your right thumb');
     await expect(cue.locator('kbd')).toHaveCount(0);
     const nitro = page.locator('#touch-controls [data-control="nitro"]');
     await expect(nitro).toHaveClass(/tutorial-target/);
@@ -231,7 +231,7 @@ test.describe('touch NITRO interruption', () => {
       await expect(nitro).not.toHaveClass(/tutorial-target/);
       await touch('touchEnd', []);
       await expect(page.locator('#tutorial-instruction')).toContainText('Activate NITRO');
-      await expect(cue.getByText('Tap NITRO')).toBeVisible();
+      await expect(cue).toContainText('Tap NITRO with your right thumb');
       await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '1');
       await touch('touchStart', [await point('nitro', 3)]);
       await expect(page.locator('#nitro-meter')).toHaveAttribute('aria-valuenow', '0');
@@ -340,6 +340,8 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }
       for (const id of ['#tutorial-title', '#tutorial-progress', '#tutorial-instruction']) await expect(page.locator(id)).toBeVisible();
       await expect(page.locator('#tutorial-coach button:visible')).toHaveText(['退出']);
       await expect.poll(() => pauseLayoutClear(page)).toBe(true);
+      // Short landscape fits without scrolling, so no font's line height can push Resume off the bottom edge.
+      if (viewport.width > viewport.height) await expect.poll(() => page.locator('#race-overlay').evaluate(o => o.scrollHeight <= o.clientHeight)).toBe(true);
       await page.locator('#resume-button').tap();
       await expect(page.locator('#tutorial-instruction')).toBeVisible();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
@@ -375,6 +377,7 @@ test.describe('first visit without storage', () => {
     await page.addInitScript(() => Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Blocked','SecurityError');}}));
     await page.goto('/');
     await page.locator('#start-button').click();
+    await page.locator('#guide-practice').click();
     await keyboardToNitro(page);
     await keyStep(page,'e','complete');
     await expect(page.locator('#tutorial-done')).toHaveText('Start race');
