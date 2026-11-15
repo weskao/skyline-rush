@@ -107,7 +107,7 @@ KITS = (
     dict(material="neon_landmarks", pieces=list(PIECES), build=build_half, mats=materials.MATS, module=materials, normal=False,
          swatch=lambda spec: (spec["color"], spec["color"] if spec.get("emit") else (0, 0, 0)), levels=False),
     dict(material="neon_landmarks_sectors", pieces=list(SECTORS), build=build_sector, mats=sector_materials.MATS, module=sector_materials,
-         normal=True, levels=True, half_emissive=True,   # its lamp spill is baked at half size anyway; keeps the GLB under 4 MB
+         normal=True, levels=True,   # full-size emissive: at half size the containers' corrugation left the night light
          swatch=lambda spec: (spec["flat"], tuple(c * spec["level"] for c in spec["color"]) if spec.get("level") else (0, 0, 0))),
 )
 
@@ -271,13 +271,15 @@ def bake_atlases(scene, kit, rigs, spec):
     # edge texels are only part covered there
     half_covered = bake(scene, kit, rigs, "mask", SIZE // 2, 1)[..., 0] > 0.5
     spill = dilate(smooth(spill, half_covered), half_covered, steps=3)
-    spill = albedo * spill.repeat(2, axis=0).repeat(2, axis=1)
-    level = spill.max(axis=2, keepdims=True)
+    irradiance = spill.repeat(2, axis=0).repeat(2, axis=1)
+    level = irradiance.max(axis=2, keepdims=True)
     lit = level[..., 0][covered]
-    # one exposure for all nine pieces leaves the underpass walls black beside the plinth ring: compress the range,
-    # keeping each texel's hue. The floor returns the residual noise to 0, since the runtime multiplies the atlas.
+    # one exposure for all nine pieces leaves the underpass walls black beside the plinth ring: compress the range of
+    # the light, keeping each texel's hue, then multiply the albedo. Tone-mapping albedo x light instead would also
+    # flatten the albedo's own relief (the white containers' corrugation) by the curve's exponent. The floor returns
+    # the residual noise to 0, since the runtime multiplies the atlas.
     target = SPILL_PEAK * (level / np.percentile(lit[lit > 0], 99.5)) ** SPILL_GAMMA
-    spill *= np.clip(target - 0.02, 0, 0.6) / np.maximum(level, 1e-9)
+    spill = albedo * irradiance * np.clip(target - 0.02, 0, 0.6) / np.maximum(level, 1e-9)
     if lighting.lit(spec["pieces"]):   # the sector kit's bake-only floods; the first kit has none and bakes as before
         lights = lighting.place(scene, spec["pieces"], STATION)
         work = bake(scene, kit, rigs, "work", SIZE // 2, lighting.WORK_SAMPLES, kind="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"})
@@ -302,7 +304,7 @@ def bake_atlases(scene, kit, rigs, spec):
         normal = dilate(normal, half_covered)
         normal[int(SWATCH_ROW * SIZE // 2):] = (0.5, 0.5, 1.0)   # flat cells: flat
         images.append(save_texture(f"{name}_normal", normal, "Non-Color", "PNG"))
-    return images, emissive_stats(emissive), emissive
+    return images, emissive_stats(emissive), emissive, maps[..., 0:3]
 
 
 def measure(mesh):
@@ -338,11 +340,11 @@ def bake_kit(scene, spec):
     for material in sources:
         other_half.materials.append(material)
     shade = add_object(scene, "other_half", other_half)   # lights and shadows the authored half; never baked itself
-    images, stats, emissive = bake_atlases(scene, kit, rigs, spec)
+    images, stats, emissive, albedo = bake_atlases(scene, kit, rigs, spec)
     material = materials.delivery_material(*images[:3], name=spec["material"], normal=images[3] if spec["normal"] else None)
     for obj in (kit, shade):
         bpy.data.objects.remove(obj)
-    surfaces = {name: lighting.measure(mesh, emissive, SIZE, list(spec["mats"]), GAME_EMISSIVE) for name, mesh in full.items()} if lighting.lit(spec["pieces"]) else {}
+    surfaces = {name: lighting.measure(mesh, emissive, SIZE, list(spec["mats"]), GAME_EMISSIVE, albedo) for name, mesh in full.items()} if lighting.lit(spec["pieces"]) else {}
     return full, material, stats, surfaces
 
 

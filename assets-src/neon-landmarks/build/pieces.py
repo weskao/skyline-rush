@@ -42,6 +42,10 @@ def _underpass_shell(b, y0, y1, clad0, clad1, wall=14.2):
         b.box("steel_dark", (x - 0.25, x + 0.25), (y0, y1), (CLEAR_HEIGHT + 0.1, 6.8), skip="+z", pri=0.6)
     b.box("amber", (wall - 0.12, wall), (clad0 + 1, clad1 - 1), (4.98, 5.1), swatch=True, skip="+x")
     b.box("steel_dark", (wall - 0.15, wall), (clad0 + 0.9, clad1 - 0.9), (5.1, 5.2), swatch=True, skip="+x")
+    # a concrete upstand at the wall foot and a cable tray under the ceiling edge: tile and ribs alone read as one
+    # plain wall at speed (2026-11-16)
+    b.box("concrete", (CLEAR_HALF + 0.02, wall), (clad0, clad1), (-0.4, 0.9), only="-x+z", pri=0.5)
+    b.box("steel_bare", (13.5, wall), (y0, y1), (5.95, 6.1), only="-x-z", pri=0.3)
 
 
 def _joint_frame(b, y0, y1, wall=14.2):
@@ -83,6 +87,10 @@ def rail_segment(b):
     b.box("concrete", (0, wall + 0.6), (-half, half), (7.1, 7.2), only="+z", pri=0.3)   # roof, seen from above
     _underpass_shell(b, -half, half, -half, half)
     _joint_frame(b, 5.2, 7.5)
+    # mid-module pilaster and cross beam: one bay every 6 m instead of 12, the rhythm a driver reads at speed.
+    # The beam's soffit stays over CLEAR_HEIGHT and 5 cm under the rib bottoms, so the two never share a plane
+    b.box("concrete", (CLEAR_HALF + 0.02, wall), (-0.35, 0.35), (0.9, 6.8), only="-x+y-y", pri=0.5)
+    b.box("concrete", (0, wall), (-0.3, 0.3), (CLEAR_HEIGHT + 0.05, 6.8), only="-z+y-y", pri=0.5)
 
 
 def expressway_pier(b):

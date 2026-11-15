@@ -69,9 +69,10 @@ MATS = {
 }
 for _spec in MATS.values():   # lamp lenses: a plain plastic or glass cover
     _spec.setdefault("rough", 0.5)
-# weathered shipping-container paints, picked by eye; no line's livery
+# weathered shipping-container paints, picked by eye; no line's livery. The white is a grimy one (0.60): at 0.70 its
+# baked flood ran past the LIT_MAX roll-off and the corrugation flattened (lighting.py, KNEE)
 PALETTE = [srgb(*c) for c in ((0.46, 0.13, 0.09), (0.12, 0.22, 0.40), (0.14, 0.33, 0.20), (0.64, 0.32, 0.09), (0.47, 0.48, 0.47),
-                              (0.70, 0.70, 0.66), (0.33, 0.09, 0.09), (0.11, 0.36, 0.37))]
+                              (0.60, 0.60, 0.57), (0.33, 0.09, 0.09), (0.11, 0.36, 0.37))]
 
 
 def lamp_of(name):
