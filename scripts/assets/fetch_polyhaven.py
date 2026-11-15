@@ -27,6 +27,7 @@ SOURCES = {
     'searsia_lucida': ('model', '1k', None),
     'asphalt_02': ('texture', '4k', ['Diffuse', 'nor_gl', 'Rough', 'AO']),
     'asphalt_track': ('texture', '4k', ['Diffuse', 'nor_gl', 'Rough', 'AO']),
+    'concrete_pavement': ('texture', '4k', ['Diffuse', 'nor_gl', 'Rough', 'AO']),   # Neon pavement (neon-pavement)
     'palm_bark': ('texture', '2k', ['Diffuse', 'nor_gl', 'Rough']),
     'metal_plate_02': ('texture', '2k', ['nor_gl', 'Rough']),
     # Sky-only HDRIs: 1k = per-time-of-day environment maps (Medium+; Low keeps RoomEnvironment);

@@ -84,4 +84,36 @@ export const MATERIAL_MANIFEST: Record<string, MaterialManifestEntry> = {
       gpuBytes: { medium: 4_500_000, high: 17_500_000, ultra: 17_500_000 },
     },
   },
+  // Neon Downtown ground: wet concrete slabs beside the road, same maps as neon-asphalt on a 7.2 m planar tile
+  // (assets-src/neon-pavement/README.md). Not wired into the scene yet.
+  'neon-pavement': {
+    id: 'neon-pavement',
+    tileMetres: 7.2,
+    packing: { r: 'ambient occlusion', g: 'dry roughness', b: 'puddle mask' },
+    license: { id: 'CC0-1.0', creator: 'Charlotte Baglioni', sourceUrl: 'https://polyhaven.com/a/concrete_pavement' },
+    source: {
+      master: 'assets-src/neon-pavement/neon-pavement.blend',
+      script: 'assets-src/neon-pavement/bake.py',
+      masterSha256: 'b9ca40a6b1aa2bdeadd14679d1b15337ef48eeb415ea504bb318b997f9134355',
+      scriptSha256: '7f18b5f7514ae9d4d2bcf8f9e8a9cc0bf507e233e32db0b325c07fb0642eb7c4',
+      inputSha256: {
+        'concrete_pavement_diff_4k.jpg': 'a1e3883c740fb73e24c8d4d181b8223382da967a4ffca01488a895d17676fb6b',
+        'concrete_pavement_nor_gl_4k.png': '5fe151952320d03a05513aa59d4249f5a73d00de6c803ab4b3145f2a64c0a9a3',
+        'concrete_pavement_rough_4k.jpg': '8da7c47876de509add8ac96270b71ae7ec070faf9dc36c9f0c0a75f70dac0619',
+        'concrete_pavement_ao_4k.jpg': 'c335500df3d0778abce52751c887b9906b4a75d434673352fe324ae64365aeb2',
+      },
+    },
+    files: [
+      { map: 'baseColor', resolution: 1024, url: 'materials/neon-pavement/pavement_basecolor_1k.ktx2', bytes: 567_062, sha256: 'b32d2370a732a692ce4b556af2d7fc78c6375df27891045947594bc9d31862eb', colorSpace: 'srgb' },
+      { map: 'normal', resolution: 1024, url: 'materials/neon-pavement/pavement_normal_1k.ktx2', bytes: 743_413, sha256: '8a929dbaf3384d8bd9d95c57650f6047b5c2de9f84d6bc0a00672f6df5bbf009', colorSpace: 'linear' },
+      { map: 'packed', resolution: 1024, url: 'materials/neon-pavement/pavement_packed_1k.ktx2', bytes: 737_102, sha256: 'f260cb00b01aaa8fdea5a44d58a6d3a41412b244a5d697612ecc785cd9b6398c', colorSpace: 'linear' },
+      { map: 'baseColor', resolution: 2048, url: 'materials/neon-pavement/pavement_basecolor_2k.ktx2', bytes: 2_192_973, sha256: '703b67083531db2516cae3f8e5624b612c1d756d70a90ce1eac40d1bd14a7ea0', colorSpace: 'srgb' },
+      { map: 'normal', resolution: 2048, url: 'materials/neon-pavement/pavement_normal_2k.ktx2', bytes: 2_881_521, sha256: '3e6f6707a96595924981ff051d3f8bbf11b3c881df683013b3919c3fd6f628e7', colorSpace: 'linear' },
+      { map: 'packed', resolution: 2048, url: 'materials/neon-pavement/pavement_packed_2k.ktx2', bytes: 2_834_730, sha256: '314e9c27cfe5167834a005812fb8f25d82dde3fb7157a561c0ee6df6b8bbd81d', colorSpace: 'linear' },
+    ],
+    budgets: {
+      downloadBytes: { 1024: 3_300_000, 2048: 13_000_000 },
+      gpuBytes: { medium: 4_500_000, high: 17_500_000, ultra: 17_500_000 },
+    },
+  },
 };
