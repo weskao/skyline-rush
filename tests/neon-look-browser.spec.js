@@ -200,7 +200,12 @@ test('Neon High with its kits stays under the draw-call cap on the home showcase
 // calls and the plaza 670. Sample the grid, where every rival is in view, then one point inside every sector of the
 // lap (src/neon-scenery-plan.ts SECTORS); a teleport leaves the rivals behind, so the grid is not optional.
 // 10 km lap (2026-11-15): eight sectors; the harbour is probed twice, on the quay straight and at the mole stand-in.
-const SECTOR_PROBES = { grid: null, boulevard: 200, underpass: 800, market: 1500, expressway: 3500, harbour: 5000, 'harbour mole': 5480, canal: 6450, oldtown: 7600, plaza: 9350 };
+// Oldtown dressing: the varied underpass straight, the gate from its approach, the lantern spans in the first S-bend,
+// the square with the clock tower (7600), the shop rows at the exit and the sculpture court (9350).
+const SECTOR_PROBES = {
+  grid: null, boulevard: 200, underpass: 800, 'underpass straight': 1050, market: 1500, expressway: 3500, harbour: 5000,
+  'harbour mole': 5480, canal: 6450, 'oldtown gate': 7030, 'oldtown lanterns': 7400, oldtown: 7600, 'oldtown exit': 8200, plaza: 9350,
+};
 test('Neon High stays under the draw-call cap in every sector of a race', async ({ gameplayPage: page }) => {
   test.setTimeout(ciTimeout(120000));
   await neon(page, 'high');

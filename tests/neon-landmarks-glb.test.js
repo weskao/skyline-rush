@@ -17,7 +17,7 @@ const contract = JSON.parse(read('assets-src/neon-landmarks/contract.json'));
 const entry = MODEL_MANIFEST['neon-landmarks'];
 const pieces = Object.entries(contract.pieces);
 const spanning = pieces.filter(([, piece]) => piece.kind === 'span');
-// The two sectors of the 10 km lap (2026-11-15). Modelled here, placed by a later change.
+// The two sectors of the 10 km lap (2026-11-15). The oldtown pieces are placed (neon-scenery-plan.ts); the harbour ones by a later change.
 const NEW_SECTORS = { harbour: ['harbour_gantry', 'container_stack', 'cargo_ship'], oldtown: ['oldtown_gate', 'lantern_span', 'clock_tower'] };
 const NEW_PIECES = Object.values(NEW_SECTORS).flat();
 // All six near LODs; the nine of the 4000 m lap keep their own 12000. 9000 -> 14000 (second look-dev pass, measured
@@ -215,9 +215,10 @@ test('side modules stay outside the kerb above the road and tile at their repeat
   }
 });
 
-test('the harbour and oldtown pieces are in the kit but not yet placed: one list names them until a change places them', () => {
+test('the oldtown pieces are placed; the harbour pieces are in the kit but not yet placed: one list names them until a change places them', () => {
   const placed = Object.keys(NEON_PIECES).filter(piece => NEON_PIECES[piece].kit === 'landmarks');
-  assert.deepEqual([...NEON_LANDMARKS_NOT_PLACED].sort(), [...NEW_PIECES].sort());
+  assert.deepEqual([...NEON_LANDMARKS_NOT_PLACED].sort(), [...NEW_SECTORS.harbour].sort());
+  for (const piece of NEW_SECTORS.oldtown) assert.ok(placed.includes(piece), `${piece} is placed`);
   for (const piece of NEON_LANDMARKS_NOT_PLACED) assert.ok(!(piece in NEON_PIECES), `${piece} is placed now: remove it from NEON_LANDMARKS_NOT_PLACED`);
   assert.deepEqual([...placed, ...NEON_LANDMARKS_NOT_PLACED].sort(), pieces.map(([name]) => name).sort(), 'every kit piece is placed or listed as not yet placed');
   for (const [sector, names] of Object.entries(NEW_SECTORS)) for (const name of names) assert.equal(contract.pieces[name].sector, sector, name);

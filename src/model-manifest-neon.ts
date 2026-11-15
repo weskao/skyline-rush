@@ -2,9 +2,9 @@
 import type { ModelManifestEntry } from './model-manifest.ts';
 
 // Hashes/bytes come from `node scripts/assets/check-glb.mjs <id>` and shasum of the committed sources.
-/** Landmark kit pieces for the harbour and oldtown sectors of the 10 km lap: in the GLB, not yet placed by
+/** Landmark kit pieces for the harbour sector of the 10 km lap: in the GLB, not yet placed by
  *  src/neon-scenery-plan.ts. Placing one removes it here (tests/neon-landmarks-glb.test.js). */
-export const NEON_LANDMARKS_NOT_PLACED = ['harbour_gantry', 'container_stack', 'cargo_ship', 'oldtown_gate', 'lantern_span', 'clock_tower'];
+export const NEON_LANDMARKS_NOT_PLACED = ['harbour_gantry', 'container_stack', 'cargo_ship'];
 
 export const NEON_MODELS: Record<string, ModelManifestEntry> = {
   // City kit: 20 modelled modules on one material and one 2K atlas. Each `<module>` node is the pivot, its
@@ -79,7 +79,7 @@ export const NEON_MODELS: Record<string, ModelManifestEntry> = {
         'node scripts/assets/check-glb.mjs neon-landmarks --promote',
       ],
     },
-    nodes: ['rail_portal', 'rail_segment', 'expressway_pier', 'expressway_rail', 'canal_arch', 'canal_bridge_rail', 'canal_bank', 'plaza_sculpture', 'boulevard_footbridge', ...NEON_LANDMARKS_NOT_PLACED]
+    nodes: ['rail_portal', 'rail_segment', 'expressway_pier', 'expressway_rail', 'canal_arch', 'canal_bridge_rail', 'canal_bank', 'plaza_sculpture', 'boulevard_footbridge', ...NEON_LANDMARKS_NOT_PLACED, 'oldtown_gate', 'lantern_span', 'clock_tower']
       .flatMap(piece => [piece, `${piece}_lod0`, `${piece}_lod1`]),
     materials: ['neon_landmarks', 'neon_landmarks_sectors'],
     lods: [],
