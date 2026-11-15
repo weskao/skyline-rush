@@ -1,4 +1,4 @@
-import { test } from './helpers/gameplay-browser.js';
+import { test, dressedAs } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { chooseGarageAngle } from './helpers/garage-angle.js';
@@ -35,7 +35,7 @@ const homeCar = page => page.evaluate(() => {
     if (!object.isMesh || !object.layers.test(camera.layers)) return;
     let node = object, inProbe = false, inVfx = false;
     while (node && node !== player) {
-      if (node.userData.garageModel) inProbe = true;
+      if (node.userData.garageModel === 'pipeline-probe') inProbe = true;
       // aero VFX and the flight lift fans (spinning under the GLB's static nozzles) stay drawn by design
       if (node.name === 'Airflow showcase' || node === player.userData.jets) inVfx = true;
       node = node.parent;
@@ -50,14 +50,12 @@ const attach = async (page, name) => {
   await test.info().attach(name, { path });
 };
 
-test('without ?model=probe the Garage never requests the GLB and keeps the Roadster', async ({ gameplayPage: page, gameplayURL }) => {
+test('without the probe query the Garage draws the equipped Roadster GLB', async ({ gameplayPage: page, gameplayURL }) => {
   const requests = await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
   await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'home');
-  await page.waitForTimeout(ciTimeout(1500)); // give a would-be load time to start
-  expect(requests).toEqual([]); // settled: absence check after the wait above
-  await expect(world(page)).not.toHaveAttribute('data-garage-model', /.+/);
-  await expect.poll(async () => (await homeCar(page)).probe).toBe(0);
+  await expect.poll(() => dressedAs(page)).toBe('roadster2');
+  expect(requests).toEqual([]); // settled: the equipped model was polled above
 });
 
 test('camera switch: Home dock views and Home ↔ Studio reuse the instances with one fetch', async ({ gameplayPage: page, gameplayURL }) => {
@@ -98,18 +96,14 @@ test('track switch after closing the Garage returns GPU memory to the no-probe b
   test.setTimeout(ciTimeout(120000));
   // Pickups can switch from procedural to textured GLBs between samples. Use their real fallback in both runs.
   await page.route('**/models/pickup-*/*.glb', route => route.abort());
-  const cycle = async (probe = false) => {
+  const cycle = async () => {
     await page.locator('#garage-button').click();
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'home');
-    if (probe) {
-      await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(15000) });
-      await expect.poll(async () => (await homeCar(page)).probe).toBeGreaterThan(0);
-    } else {
-      await expect.poll(async () => (await homeCar(page)).roadster).toBeGreaterThan(0);
-    }
+    await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(15000) });
+    await expect.poll(async () => (await homeCar(page)).probe).toBeGreaterThan(0);
     await page.locator('#garage-close').click();
     await expect(page.locator('#garage-screen')).not.toHaveAttribute('open', '');
-    if (probe) await expect(world(page)).toHaveAttribute('data-garage-model', 'off');
+    await expect(world(page)).toHaveAttribute('data-garage-model', 'off');
     const tracks = page.locator('[data-track]');
     const original = await page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
     const other = await tracks.evaluateAll((buttons, id) => buttons.map(b => b.dataset.track).find(t => t !== id), original);
@@ -125,12 +119,9 @@ test('track switch after closing the Garage returns GPU memory to the no-probe b
     return JSON.parse(last);
   };
 
-  await prepare(page, gameplayURL);
-  await cycle();
+  await prepare(page, `${gameplayURL}?model=probe`, { quality: 'low' });
   const baseline = await stable();
-
-  await page.goto(`${gameplayURL}?model=probe`);
-  await cycle(true); // keep the renderer alive from probe load through both track switches
+  await cycle(); // keep the renderer alive from probe load through both track switches
   await expect.poll(() => memory(page), { timeout: ciTimeout(20000) }).toEqual(baseline);
 });
 

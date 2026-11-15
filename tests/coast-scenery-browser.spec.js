@@ -4,9 +4,7 @@ import { ciTimeout } from './helpers/ci.js';
 
 // Task 5: Coast Medium+ draws the coast-scenery.glb scans (cliffs, rocks, palms, sea arch, rails) instead of the
 // procedural rocks/trees. The GLB attaches before GO and its programs are built by the warmup, never mid-race.
-// All of it is the Phase 3 look behind `?look=3d` (src/look-gate.ts); the last test checks the develop look without it.
-test.use({ gameplaySearch: '?look=3d' });
-// CPU-only CI draws a ?look=3d High frame in ~0.5 s; the 3 s countdown (~70 clamped frames) outlasts the 30 s default.
+// CPU-only CI draws a High frame in ~0.5 s; the 3 s countdown (~70 clamped frames) outlasts the 30 s default.
 const racing = page => expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(30000) });
 const status = page => page.locator('#world').getAttribute('data-coast-scenery');
 const boats = page => page.locator('#world').getAttribute('data-coast-boats');
@@ -143,25 +141,23 @@ test('switching Coast to rain mid-race only moves uniforms: no program compiles'
   expect(await page.locator('#world').getAttribute('data-coast-road')).toBe('high'); // settled: the road never swaps while racing
 });
 
-test.describe('without ?look=3d', () => {
-  test.use({ gameplaySearch: '' });
-  test('Coast High keeps the develop look: no scenery GLB, KTX2 asphalt or HDRI is fetched or drawn', async ({ gameplayPage: page }) => {
+for (const [label, search] of [['plain', ''], ['legacy', '?3d=1&look=3d&model=roadster']]) {
+  test(`Coast applies quality to the ${label} URL and restores Low graphics`, async ({ gameplayPage: page, gameplayURL }) => {
+    test.setTimeout(ciTimeout(90000));
+    await page.goto(gameplayURL + search);
     await withQuality(page, 'high');
-    await page.waitForTimeout(ciTimeout(1500));
-    expect(await status(page)).toBeNull(); // settled: nothing is ever requested, so nothing can arrive later
-    expect(await boats(page)).toBeNull(); // settled: as above
-    expect(await page.locator('#world').getAttribute('data-coast-road')).toBeNull(); // settled: as above
-    const pieces = await layer(page);
-    expect(pieces['Coast shoreline rocks'].visible).toBe(true);
-    expect(Object.keys(pieces).some(name => /^(cliff_|sailboat_|motorboat)/.test(name))).toBe(false);
-    const look = await page.evaluate(() => {
-      const { scene, composer } = window.gameScene, grade = composer.passes.find(pass => pass.uniforms?.saturation).uniforms;
-      return { env: scene.environmentIntensity, grade: [grade.saturation.value, grade.contrast.value, ...grade.tint.value.toArray()] };
-    });
-    expect(await skyline(page)).toEqual({ city: true, towers: [true, true, true] }); // D1, D2 apply to the gated look only
-    expect(look).toEqual({ env: 0.42, grade: [1, 1, 1, 1, 1] }); // RoomEnvironment, identity grade: no HDRI look
-    // The basis transcoder is not Coast's: the always-on 3D pickups (pickup-models.ts, meshopt + KTX2) load it on every track.
-    const fetched = await page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /coast-(scenery|boats|greenery)\.glb|\.ktx2|environments\/.*\.hdr/.test(n)));
-    expect(fetched).toEqual([]);
+    await expect.poll(() => status(page), { timeout: ciTimeout(40000) }).toBe('attached');
+    const world = page.locator('#world');
+    await expect(world).toHaveAttribute('data-coast-road', 'high', { timeout: ciTimeout(40000) });
+    await expect(world).toHaveAttribute('data-coast-sky', 'day:4096', { timeout: ciTimeout(40000) });
+    await expect.poll(() => skyline(page)).toEqual({ city: false, towers: [false, false, false] });
+    const path = test.info().outputPath(`coast-high-${label}.png`);
+    await page.screenshot({ path });
+    await test.info().attach(`coast-high-${label}`, { path, contentType: 'image/png' });
+    await page.locator('#vfx-panel > summary').click();
+    await page.locator('select[data-vfx="quality"]').selectOption('low', { force: true });
+    await expect(world).toHaveAttribute('data-coast-road', 'procedural');
+    await expect(world).toHaveAttribute('data-coast-sky', 'procedural');
+    await expect.poll(() => skyline(page)).toEqual({ city: true, towers: [true, true, true] });
   });
-});
+}

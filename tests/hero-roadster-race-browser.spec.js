@@ -2,7 +2,7 @@ import { test, glbRoots, programs, modelInstances as instances } from './helpers
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 
-// Task 4b `?model=roadster`: the one roadster2 GLB dresses the player's car on the Home showcase and in every race
+// The roadster2 GLB dresses the player's car on the Home showcase and in every race
 // (src/garage-model.ts). The procedural car still owns the pose, collisions, road contact, camera and VFX ports.
 const GLB = /\/models\/roadster2\/roadster2(-low)?\.glb$/;
 const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]]; // src/lift-ports.js
@@ -38,7 +38,7 @@ const startRace = async page => {
 };
 
 test('Home showcase wears the GLB without the Garage; AIRFLOW ON grounded, OFF hovering with the GLB lift fans', async ({ gameplayPage: page, gameplayURL }) => {
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { requests, errors } = await prepare(page, gameplayURL);
   await modelReady(page);
   await expect.poll(() => instances(page)).toEqual({ home: expect.any(String) });
   expect(await glbRoots(page)).toBe(1); // settled: instances polled above
@@ -56,7 +56,7 @@ test('Home showcase wears the GLB without the Garage; AIRFLOW ON grounded, OFF h
 
 test('race: the Home instance carries on; VFX ports, programs and flight fans follow the procedural car', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(90000));
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { requests, errors } = await prepare(page, gameplayURL);
   await modelReady(page);
   const { home } = await instances(page);
   await startRace(page);
@@ -112,7 +112,7 @@ test('race: the Home instance carries on; VFX ports, programs and flight fans fo
 test('restart, track switch and End race keep one GLB instance and return GPU memory to its baseline', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(150000));
   await page.addInitScript(() => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon'])));
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { requests, errors } = await prepare(page, gameplayURL, 'low');
   await modelReady(page);
   const memory = () => page.evaluate(() => { const { geometries, textures } = window.gameScene.renderer.info.memory; return { geometries, textures }; });
   const stable = async () => {
@@ -153,7 +153,7 @@ test('restart, track switch and End race keep one GLB instance and return GPU me
 });
 
 test('Coming Soon showcase: the one instance moves to the card car and back to the Home car', async ({ gameplayPage: page, gameplayURL }) => {
-  const { errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { errors } = await prepare(page, gameplayURL);
   await modelReady(page);
   await page.locator('[data-upcoming-track="dune-tempest"]').click();
   await expect.poll(async () => Object.keys(await instances(page))).toEqual(['showcase']);
@@ -172,7 +172,7 @@ test('Coming Soon showcase: the one instance moves to the card car and back to t
 
 test('missing GLB: Home and race keep the procedural Roadster without a page error', async ({ gameplayPage: page, gameplayURL }) => {
   await page.route(GLB, route => route.fulfill({ status: 404, body: '' }));
-  const { errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { errors } = await prepare(page, gameplayURL);
   await expect(world(page)).toHaveAttribute('data-garage-model', 'fallback:missing', { timeout: ciTimeout(15000) });
   await startRace(page);
   await page.waitForTimeout(ciTimeout(500));
@@ -183,7 +183,7 @@ test('missing GLB: Home and race keep the procedural Roadster without a page err
 });
 
 test('low quality tier loads only the low LOD for the Home showcase and the race', async ({ gameplayPage: page, gameplayURL }) => {
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster`, 'low');
+  const { requests, errors } = await prepare(page, gameplayURL, 'low');
   await modelReady(page);
   await startRace(page);
   await expect.poll(() => glbRoots(page)).toBe(1);
@@ -195,7 +195,7 @@ test('low quality tier loads only the low LOD for the Home showcase and the race
 test.describe('phone portrait', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   test('GLB Roadster on the Home showcase and in the race on a phone', async ({ gameplayPage: page, gameplayURL }) => {
-    const { errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+    const { errors } = await prepare(page, gameplayURL);
     await modelReady(page);
     await attach(page, 'phone-home');
     await startRace(page);

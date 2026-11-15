@@ -35,7 +35,7 @@ export function createUpcomingShowcase(
   factories: Partial<Record<PreviewTrackId, UpcomingEnvironmentFactory>>,
   environmentTexture: THREE.Texture,
   carEnvironment: THREE.Texture,
-  /** `?model=roadster` (garage-model.ts): takes the GLB off the player car before its materials are disposed. */
+  /** The player-car adapter (garage-model.ts) takes the GLB off the player car before its materials are disposed. */
   releaseModel: (host: GarageModelHost) => void = () => {},
 ) {
   let stage: Stage | null = null;

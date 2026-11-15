@@ -1,8 +1,4 @@
-// `?model=probe` Garage adapter (docs/designs/3d-pipeline/phase2-model-contracts.md §2): while the Garage is open,
-// a manifest model replaces the procedural Roadster in Garage Home and the Preview Studio. Production (no query)
-// never creates it. The model is held while the Garage stays open and released when it closes.
-// Task 4b (`?model=roadster`): the same adapter also dresses the Home showcase car and the race car, one car at a time.
-// Task 7: the equipped car's model (car-catalog.ts) is dressed the same way with no query; the Roadster has none.
+// Player car GLBs dress the equipped car across the showroom and races. The pipeline probe is Garage-only.
 import type { Camera, Material, Mesh, MeshStandardMaterial, Object3D, Scene, Texture, WebGLRenderer } from 'three';
 import type { ModelCache, ModelHandle } from './asset-model-loader.ts';
 import type { ModelQuality } from './model-manifest.ts';
@@ -12,12 +8,11 @@ import { CARS, equippedCarModel } from './car-catalog.ts';
 import { REAR_PORTS } from './aero-vfx.js';
 import { fitToRoadsterSize } from './car-display-size.ts';
 
-const MODEL_PARAMS: Readonly<Record<string, string>> = { probe: 'pipeline-probe', roadster: 'roadster2' };
 const EQUIPPED_MODELS = new Set(Object.values(CARS).map(car => car.model));
 const HIDDEN_LAYER = 31; // no camera enables it; the frame loop rewrites `visible` on car parts, never `layers`
 
 /** Player-car GLBs also dress the Home showcase and race car; the probe stays Garage-only. */
-export const dressesRaceCar = (id: string): boolean => id === MODEL_PARAMS.roadster || EQUIPPED_MODELS.has(id);
+export const dressesRaceCar = (id: string): boolean => EQUIPPED_MODELS.has(id);
 
 /** The softened map the host's procedural car reflects (car-reflections.ts), if one was applied to it. */
 function carMapOf(car: Object3D): Texture | null {
@@ -29,8 +24,7 @@ function carMapOf(car: Object3D): Texture | null {
 }
 
 export function garageModelId(search: string): string | null {
-  const value = new URLSearchParams(search).get('model');
-  return value && Object.hasOwn(MODEL_PARAMS, value) ? MODEL_PARAMS[value]! : null;
+  return new URLSearchParams(search).get('model') === 'probe' ? 'pipeline-probe' : null;
 }
 
 /** A car to dress: `keep` (aero VFX riding on the car) stays drawn, `scene` supplies lights for compiling. */
@@ -196,10 +190,10 @@ export function createKtx2Provider(renderer: object, baseUrl: string, load: () =
   return provide;
 }
 
-/** World wiring. Idle until a model is wanted: the equipped car's own model first, else `?model=`. GLTFLoader is imported only then. */
+/** World wiring. Load the equipped car on demand. The explicit pipeline probe can take the Roadster's place in Garage QA. */
 export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick<WebGLRenderer, 'compileAsync'>, camera: Camera,
   search = location.search, baseUrl = import.meta.env.BASE_URL, carModel: () => string | null = equippedCarModel) {
-  const forced = garageModelId(search);
+  const probe = garageModelId(search);
   const loadKtx2 = createKtx2Provider(renderer, baseUrl);
   let cache: Promise<ModelCache> | undefined;
   let id: string | null = null, model: ReturnType<typeof createGarageModel> | null = null;
@@ -225,7 +219,8 @@ export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick
     /** Per frame, before posing: dresses the car on screen. `studio` only while the Preview Studio camera is on;
      *  `showcase` only while the Coming Soon stage renders the Home preview; `home` is the Home/race player car. */
     frame(quality: ModelQuality, phase: string, garageOpen: boolean, studio: GarageModelHost | null, showcase: GarageModelHost | null, home: GarageModelHost): void {
-      const wanted = carModel() ?? forced; // `?model=` (every 3d=1 dev URL) dresses the procedural Roadster only, never over a car with its own model
+      const equipped = carModel();
+      const wanted = equipped === CARS.roadster.model ? probe ?? equipped : equipped;
       if (wanted !== id && phase !== 'racing') use(wanted); // the car changes in the Garage only; never rebuild mid-race
       if (!model || id === null) return;
       if (studio) { model.sync(true, quality, studio); return; }

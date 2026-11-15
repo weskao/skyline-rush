@@ -1,5 +1,4 @@
 import type { VfxQuality } from './vfx-settings.ts';
-import { look3d } from './look-gate.ts';
 import { trackLook } from './track-look.ts';
 
 /** PMREM cube size; equals RoomEnvironment's, so swapping `scene.environment` never recompiles a lit shader. */
@@ -78,8 +77,8 @@ export const coastEnvVariant = (preset: string): CoastEnvName | null => envVaria
 
 export type CoastEnvPlan = { kind: 'room' } | { kind: 'hdri'; variant: CoastEnvName };
 
-/** Low, every track without a look entry (track-look.ts) and pages without `?look=3d` keep RoomEnvironment (the develop path); Medium+ loads the track's HDRI. */
+/** Low, every track without a look entry (track-look.ts) keep RoomEnvironment (the develop path); Medium+ loads the track's HDRI. */
 export function coastEnvPlan(trackId: string, preset: string, quality: VfxQuality): CoastEnvPlan {
-  const variant = quality !== 'low' && look3d() ? envVariant(trackId, preset) : null;
+  const variant = quality !== 'low' ? envVariant(trackId, preset) : null;
   return variant ? { kind: 'hdri', variant } : { kind: 'room' };
 }

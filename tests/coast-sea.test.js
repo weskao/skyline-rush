@@ -1,4 +1,4 @@
-// Coast full-scene step 2: under `?look=3d` on Medium+ the sea is a water surface that mirrors the sky dome on screen,
+// Coast full-scene step 2: on Medium+ the sea is a water surface that mirrors the sky dome on screen,
 // glitters under that sky's sun, and foams where the placed rocks, cliffs and the arch meet it. Low, other tracks,
 // pages without the gate, a failed load and a missing sky keep today's procedural sea and its sea lines.
 import test from 'node:test';
@@ -12,10 +12,8 @@ import { coastChunkPlan, coastChunkWindow } from '../src/coast-scenery-glb.ts';
 import { createCoastSea, createShoreMask, SHORE_MASK_METRES } from '../src/coast-sea.ts';
 import { COAST_SEA_MANIFEST } from '../src/coast-sea-manifest.ts';
 import { coastSunDirection } from '../src/coast-sky.ts';
-import { setLook3d } from '../src/look-gate.ts';
 import { KTX2_MAGIC, ktx2 } from './helpers/ktx2.js';
 
-setLook3d(true);
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const read = path => readFileSync(new URL('../' + path, import.meta.url));
 const sha256 = buffer => createHash('sha256').update(buffer).digest('hex');
@@ -57,12 +55,9 @@ test('the water mesh and its program exist from creation, hidden, so the first s
   assert.equal(r.scene.children.includes(r.water), false, 'a child of the sea, so the sea draw-order slot and world.js visibility still apply');
 });
 
-test('Low, other tracks, non-HDRI presets and pages without ?look=3d keep the procedural sea and fetch nothing', async () => {
+test('Low, other tracks, non-HDRI presets keep the procedural sea and fetch nothing', async () => {
   const r = rig();
   for (const [track, preset, quality] of [['coast', 'day', 'low'], ['neon', 'day', 'high'], ['coast', 'night', 'high']]) r.coastSea.update(track, preset, quality);
-  setLook3d(false);
-  r.coastSea.update('coast', 'day', 'high');
-  setLook3d(true);
   await tick();
   assert.deepEqual(r.urls, []);
   assert.equal(r.water.visible, false);

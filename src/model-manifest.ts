@@ -84,7 +84,7 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt'],
     budgets: { triangles: 5000, bytes: 200_000, textureMaxPx: 0 },
   },
-  // Task 4/4b hero Roadster behind ?model=roadster: Garage, Home showcase and race car. Nodes are the rig contract (src/garage-model-rig.ts).
+  // Task 4/4b hero Roadster: Garage, Home showcase and race car. Nodes are the rig contract (src/garage-model-rig.ts).
   roadster2: {
     id: 'roadster2',
     url: 'models/roadster2/roadster2.glb',

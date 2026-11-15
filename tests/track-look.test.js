@@ -1,4 +1,4 @@
-// Task 5b step 2: the `?look=3d` look is a per-track entry (environment, road set, scenery layer), not a
+// Task 5b step 2: the detailed rendering uses a per-track entry (environment, road set, scenery layer), not a
 // `trackId === 'coast'` check, so a second track opts in without a copy of the Coast code.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,7 +8,6 @@ import { trackLook } from '../src/track-look.ts';
 import { coastEnvPlan } from '../src/coast-lighting.ts';
 import { createCoastLook } from '../src/coast-look.ts';
 import { createCoastAssets } from '../src/coast-assets.ts';
-import { setLook3d } from '../src/look-gate.ts';
 
 const source = file => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
 
@@ -25,12 +24,7 @@ test('the lighting plan, the look and the asset host read the entry, never the t
   for (const file of ['coast-lighting.ts', 'coast-look.ts', 'coast-assets.ts']) assert.doesNotMatch(source(file), /=== 'coast'/, file);
 });
 
-test('Neon without ?look=3d, Neon on Low and Coast under ?look=3d plan as before', t => {
-  t.after(() => setLook3d(false));
-  setLook3d(false);
-  for (const quality of ['low', 'medium', 'high']) for (const preset of ['track', 'night', 'rain'])
-    assert.deepEqual(coastEnvPlan('neon', preset, quality), { kind: 'room' }, `no gate: neon ${preset} ${quality}`);
-  setLook3d(true);
+test('Coast and Neon load their own HDRI only at Medium or higher', () => {
   for (const preset of ['track', 'night', 'rain']) assert.deepEqual(coastEnvPlan('neon', preset, 'low'), { kind: 'room' }, `Low: neon ${preset}`);
   assert.deepEqual(coastEnvPlan('coast', 'track', 'high'), { kind: 'hdri', variant: 'day' });
   assert.deepEqual(coastEnvPlan('coast', 'rain', 'medium'), { kind: 'hdri', variant: 'rain' });
@@ -90,8 +84,6 @@ test('a track without an entry never asks the asset host for a model or a road',
 });
 
 test('the sun a look borrowed goes back only to the track it was borrowed from', t => {
-  t.after(() => setLook3d(false));
-  setLook3d(true);
   const sun = { color: new Color('#112233'), intensity: 1, position: new Vector3(0, 10, 0) };
   const look = createCoastLook({
     scene: { environment: null, environmentIntensity: 1 }, renderer: { toneMappingExposure: 1 }, room: null, roomIntensity: 1, sun,

@@ -1,4 +1,4 @@
-// Coast boats (`?look=3d`, Medium+): sailboats and a motor boat out on the open water beside the road, from
+// Coast boats (Medium+): sailboats and a motor boat out on the open water beside the road, from
 // coast-boats.glb, one InstancedMesh per boat model. The plan is pure: 480 m slots keyed by absolute distance and the
 // endless seed, like the far coast. Each boat sails a closed, elongated loop around its anchor (out along the coast,
 // a slow turn, back), so its whole course is known up front and is checked in world space against the road, the close

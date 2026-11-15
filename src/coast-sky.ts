@@ -1,6 +1,6 @@
 // Coast visible sky (owner decision D3): the preset's own lighting HDRI, at 4K / 8K, on a dome mesh, so the sky the
 // player sees is the sky that lights the car. The dome hangs under the procedural sky mesh and replaces its draw; the
-// HDR sun disc moves onto the HDRI sun. Low, other tracks, presets without an HDRI, pages without `?look=3d` and a
+// HDR sun disc moves onto the HDRI sun. Low, other tracks, presets without an HDRI and a
 // failed load keep the procedural sky. The dome holds a 1 px map from creation, so the world's first shader warmup
 // builds its program; every sky after that is a texture swap, as the environment map is (coast-look.ts).
 import * as THREE from 'three';

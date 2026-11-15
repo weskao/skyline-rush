@@ -3,8 +3,8 @@ import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { chooseGarageAngle } from './helpers/garage-angle.js';
 
-// Task 4 `?model=roadster`: the authored Roadster GLB replaces the procedural car in the Garage and follows its
-// wheels, active wing, flight pose and paint (src/garage-model-rig.ts). Production (no query) is unchanged.
+// The authored Roadster GLB replaces the procedural car in the Garage and follows its
+// wheels, active wing, flight pose and paint (src/garage-model-rig.ts).
 const GLB = /\/models\/roadster2\/roadster2(-low)?\.glb$/;
 
 async function prepare(page, url, viewportName = 'desktop', quality = 'high') {
@@ -41,7 +41,7 @@ const attach = async (page, name) => {
 };
 
 test('Garage Home shows the Roadster GLB; wheels, wing, flight and paint follow the procedural car', async ({ gameplayPage: page, gameplayURL }) => {
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { requests, errors } = await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
   await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
   expect(requests).toHaveLength(1); // settled: model state polled above
@@ -66,7 +66,7 @@ test('Garage Home shows the Roadster GLB; wheels, wing, flight and paint follow 
 });
 
 test('Preview Studio front/side/rear/orbit show the GLB in frame', async ({ gameplayPage: page, gameplayURL }) => {
-  await prepare(page, `${gameplayURL}?model=roadster`);
+  await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
   await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
   await page.locator('#garage-studio-open').click();
@@ -78,19 +78,21 @@ test('Preview Studio front/side/rear/orbit show the GLB in frame', async ({ game
   }
 });
 
-test('low quality tier loads only the low LOD and still dresses the Garage car', async ({ gameplayPage: page, gameplayURL }) => {
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster`, 'desktop', 'low');
-  await page.locator('#garage-button').click();
-  await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(15000) });
-  expect(requests.map(u => new URL(u).pathname)).toEqual(['/models/roadster2/roadster2-low.glb']); // settled: model state polled above
-  await expect.poll(() => page.evaluate(() => ['body', 'wheel_fl_spin', 'wing_blade', 'thruster_04'].every(n => window.gameScene.player.getObjectByName(n)))).toBe(true);
-  await attach(page, 'roadster-low-lod-garage');
-  expect(errors).toEqual([]);
-});
+for (const [label, search] of [['plain', ''], ['legacy', '?3d=1&look=3d&model=roadster']]) {
+  test(`Low loads only the Roadster low LOD on the ${label} URL`, async ({ gameplayPage: page, gameplayURL }) => {
+    const { requests, errors } = await prepare(page, gameplayURL + search, 'desktop', 'low');
+    await page.locator('#garage-button').click();
+    await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(15000) });
+    expect(requests.map(u => new URL(u).pathname)).toEqual(['/models/roadster2/roadster2-low.glb']); // settled: model state polled above
+    await expect.poll(() => page.evaluate(() => ['body', 'wheel_fl_spin', 'wing_blade', 'thruster_04'].every(n => window.gameScene.player.getObjectByName(n)))).toBe(true);
+    await attach(page, `roadster-low-lod-${label}`);
+    expect(errors).toEqual([]);
+  });
+}
 
 test('missing roadster GLB falls back to the procedural Roadster without a page error', async ({ gameplayPage: page, gameplayURL }) => {
   await page.route(GLB, route => route.fulfill({ status: 404, body: '' }));
-  const { errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { errors } = await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
   await expect(world(page)).toHaveAttribute('data-garage-model', 'fallback:missing', { timeout: ciTimeout(15000) });
   await expect.poll(() => page.evaluate(() => window.gameScene.player.getObjectByName('wheel_fl') ?? null)).toBeNull();
@@ -100,7 +102,7 @@ test('missing roadster GLB falls back to the procedural Roadster without a page 
 test.describe('phone portrait', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   test('Roadster GLB in Garage Home and Studio on a phone', async ({ gameplayPage: page, gameplayURL }) => {
-    await prepare(page, `${gameplayURL}?model=roadster`);
+    await prepare(page, gameplayURL);
     await page.locator('#garage-button').click();
     await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
     await attach(page, 'roadster-phone-home');
