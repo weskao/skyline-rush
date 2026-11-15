@@ -179,9 +179,10 @@ test('the jet dims under the bloom threshold only where bloom runs: Low keeps it
   for (const quality of [0.5, 1]) assert.deepEqual(glare(quality), [1, 1, 1, 1], `quality ${quality}: dimmed under the bloom threshold`);
 });
 
-test('x3 chain: power above 1 makes the flare no bigger and the core no more opaque', () => {
+test('x3 chain: power above 1 makes the flare no bigger, the core no more opaque and the jets no brighter', () => {
   const state = power => { const parts = rig(); parts.plume.update(frame({ power })); const flare = parts.flare.material.uniforms;
-    return [flare.size.value, flare.fade.value, parts.core.material.uniforms.alpha.value, parts.glow.material.uniforms.fade.value]; };
+    return [flare.size.value, flare.fade.value, parts.core.material.uniforms.alpha.value, parts.glow.material.uniforms.fade.value,
+      ...parts.jets.map(jet => jet.material.uniforms.power.value)]; }; // jets: the veil guard runs at chain 1 only
   assert.deepEqual(state(1.4), state(1));
   assert.ok(Math.abs(state(1)[0] - PLUME.flare) < 1e-9 && Math.abs(state(0.5)[0] - PLUME.flare * 0.775) < 1e-9, 'flare size is PLUME.flare * (0.55 + 0.45 * power)');
 });

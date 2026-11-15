@@ -56,7 +56,8 @@ instanced opaque-looking core, one instanced nozzle flare, plus one road glow. E
 
 - **Trail-skin cross-fade.** While a trail skin's streaks show, the jets' thickness, the core and the road glow
   fade with `nitroMix` (no hard swap) so nothing stacks to white; BOOST and calm modes keep the base plume.
-- **x3 chain.** `frame.power` reaches 1.4; flare size and core alpha clamp at power 1.
+- **x3 chain.** `frame.power` reaches 1.4; flare size, core alpha and the jets' `power` clamp at 1 (the veil spec
+  runs at chain 1 only, so an unclamped jet would add ~18% light past its guard).
 - **Lean.** The road glow lies on the road plane through the car's contact-shadow plane (`ground`) while the car
   banks and squats, and moves back onto that plane 6 m behind it (`launch-flare-rendering.md`). Guard: *lean*.
 
