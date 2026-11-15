@@ -206,7 +206,7 @@ export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick
   const modelCache: Pick<ModelCache, 'load'> = {
     async load(key, options) {
       cache ??= import('./asset-model-loader.ts').then(({ createModelCache }) =>
-        createModelCache({ baseUrl, loadKtx2, retainReleasedModels: true }));
+        createModelCache({ baseUrl, loadKtx2, retainReleasedModels: dressesRaceCar }));
       return (await cache).load(key, options);
     },
   };

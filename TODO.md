@@ -5610,3 +5610,11 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Verify FLY's held and released artwork and all seven editable touch controls across a reload. Both flows passed with `CI=1` and zero retries.
 - [x] `npm test`: 2,951 passed, 3 skipped. Typecheck, module-size checks and production build passed.
 - [ ] Verify the full GitHub `quality-gate` on the repair commit.
+
+## 2026-11-15 — Browser CI regressions (43635027262)
+
+- [x] RED: the model-cache regression reproduced a retained Garage probe. The original World Tour AIRFLOW sweep and fold-open landscape HUD case also exhausted their budgets on software WebGL.
+- [x] Restrict idle GLB retention to race-car models. The browser regression checks WebGL memory after loading the probe, closing the Garage and switching tracks without reloading the renderer. Both samples use the procedural pickup fallback to keep pickup texture loading out of the comparison.
+- [x] Give each World Tour map its own AIRFLOW case with all six views. Run the HUD interaction matrix at Low quality and allow the live race countdown to finish on slower runners.
+- [x] `npm test`: 2,974 passed, 3 skipped. Typecheck, module-size checks, production build and World Tour shard selection passed.
+- [ ] Verify the full GitHub `quality-gate` for this commit.
