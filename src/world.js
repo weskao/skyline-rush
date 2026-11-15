@@ -879,7 +879,7 @@ export function createWorld(canvas) {
       camera.rotation.z += carBank;
       // Applied after lookAt, so the shake never feeds the smoothed camera position.
       const shakeSetting = reducedMotion || race.phase !== 'racing' || !visual.enabled ? 0 : visual.shake, shake = rigShake(view, visualCar.speed, shakeSetting);
-      camera.rotateX(Math.sin(time * 53) * shake + rigKick(view, sprintFrame.kick, shakeSetting));
+      camera.rotateX(Math.sin(time * 53) * shake + rigKick(view, sprintFrame.kick, shakeSetting, car.pickup, race.elapsed));
       if (shake) camera.rotateY(Math.sin(time * 37) * shake * 0.6);
       const floor = rumbleFloor(camera.position.distanceTo(player.position), camera.fov, canvas.height); // one rendered row at the car
       camera.position.add(rigRumble(view, visualCar.speed, sprintFrame.fov, shakeSetting, time, rumble, floor, dt).add(rigJolt(view, impact, landing, shakeSetting, time, jolt)).applyQuaternion(camera.quaternion)); // translations: the view never turns

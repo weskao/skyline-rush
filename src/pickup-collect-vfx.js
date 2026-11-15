@@ -4,14 +4,14 @@ import * as THREE from 'three';
 import { animatePickup, PICKUP_GROUND_LIFT } from './pickup-art.js';
 import { CONTACT_FRAGMENT, CONTACT_VERTEX } from './pickup-collect-shaders.js';
 import { createPickupVehicleFit } from './pickup-vehicle-fit.js';
-import { flash, MOTIONS, scratch } from './pickup-collect-motion.js';
+import { canEmbers, flash, MOTIONS, scratch } from './pickup-collect-motion.js';
 import { createPickupHoop, createTankHoop, createTankHaloGeometry, paintPickupHoop } from './pickup-collect-hoops.js';
 import { createPickupStreaks } from './pickup-collect-streaks.js';
 
 // `rings` and `particles` are the High-quality budgets; `motion` names the tier's choreography in MOTIONS.
 export const PICKUP_COLLECTION_STYLES = Object.freeze({
   cell: Object.freeze({ color: 0x40d9ff, rings: 2, particles: 18, beam: false, rainbow: false, life: .60, motion: 'arcSnap' }),
-  can: Object.freeze({ color: 0xff9b3b, rings: 2, particles: 24, beam: false, rainbow: false, life: .80, motion: 'afterburn' }),
+  can: Object.freeze({ color: 0xfff0b8, rings: 1, particles: 8, beam: false, rainbow: false, life: .27, motion: 'canSparks' }),
   tank: Object.freeze({ color: 0xffd34e, rings: 2, particles: 30, beam: false, rainbow: false, life: .95, motion: 'surge' }),
   overcharge: Object.freeze({ color: 0xef81ff, rings: 3, particles: 42, beam: true, rainbow: true, life: 1.08, motion: 'prismNova' }),
 });
@@ -20,21 +20,26 @@ export const pickupCueSource = (cue, pickups) =>
   pickups.find(item => item.tier === cue.item && item.distance === cue.distance && item.x === cue.x) ?? cue;
 
 const TIERS = Object.keys(PICKUP_COLLECTION_STYLES);
-const CONTACT_SPANS = [.22, .29, .36, .43], CONTACT_RADII = [1.8, 2.25, 2.75, 3.4];
-const SECONDARY = [0xbbf9ff, 0xffd076, 0xfff1a0, 0x79ecff];
+const CONTACT_SPANS = [.22, 0, .36, .43], CONTACT_RADII = [1.8, 0, 2.75, 3.4];
+// The can is warm white-yellow (its flash keeps an orange rim, CAN_RIM): the crash burst owns plain orange.
+const SECONDARY = [0xbbf9ff, 0xffe7a8, 0xfff1a0, 0x79ecff];
 const ABSORB_SPANS = [.145, .17, .205, .23];
 const MAX_PARTICLES = 42;
 const PRISM = [0x6ceaff, 0xf88aff, 0xffd35c, 0x91a5ff, 0x7cffcb, 0xff7398];
 const FLAT = -Math.PI / 2;
 const CONTACT_PLANE = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), FLAT);
-// One tiny radial-alpha texture for every flash and halo. GPU uploads occur at scene construction, not on collection.
-export function glowTexture() {
+const CAN_CORE = [255, 246, 214], CAN_EDGE = [255, 140, 40];
+const CAN_RIM = r => { const t = THREE.MathUtils.smoothstep(r, .2, .75); return CAN_CORE.map((c, i) => c + (CAN_EDGE[i] - c) * t); };
+// One tiny radial-alpha texture for every flash and halo (`tint(radius)` colours it, white by default). GPU uploads occur
+// at scene construction, not on collection.
+export function glowTexture(tint = null) {
   const side = 32, pixels = new Uint8Array(side * side * 4);
   for (let y = 0; y < side; y++) for (let x = 0; x < side; x++) {
     const u = (x + .5 - side / 2) / (side / 2);
     const v = (y + .5 - side / 2) / (side / 2);
     const d2 = u * u + v * v, at = (y * side + x) * 4;
-    pixels[at] = pixels[at + 1] = pixels[at + 2] = 255;
+    if (tint) pixels.set(tint(Math.sqrt(d2)).map(Math.round), at);
+    else pixels[at] = pixels[at + 1] = pixels[at + 2] = 255;
     pixels[at + 3] = Math.round(255 * Math.pow(Math.max(0, 1 - d2), 3));
   }
   const texture = new THREE.DataTexture(pixels, side, side, THREE.RGBAFormat);
@@ -62,7 +67,7 @@ export function createPickupCollectVfx(scene, player, camera) {
     new THREE.PlaneGeometry(2, 2),
   ];
   const tankHaloGeometry = createTankHaloGeometry();
-  const texture = glowTexture(), materials = new Set();
+  const texture = glowTexture(), canTexture = glowTexture(CAN_RIM), materials = new Set();
   const makeMaterial = (color, extra = {}) => {
     const material = new THREE.MeshBasicMaterial({
       color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
@@ -78,7 +83,13 @@ export function createPickupCollectVfx(scene, player, camera) {
   let bodySlot = null;
   const inverse = new THREE.Matrix4(), roadRotation = new THREE.Quaternion();
   const contactScale = new THREE.Vector3();
-  const target = new THREE.Vector3();
+  const target = new THREE.Vector3(), flight = new THREE.Vector3();
+  // Where the race draws the item model before it is absorbed (drawAbsorbing), in world space.
+  const itemPoint = (event, { distance = 0, center = 0, roadCenter = () => 0, worldPoint }, out) => {
+    const y = (event.altitude ?? 0) + .85;
+    return worldPoint ? out.fromArray(worldPoint(event.distance, event.x, y, distance, event))
+      : out.set(roadCenter(event.distance) + event.x - center, y, distance - event.distance);
+  };
   const right = new THREE.Vector3(), up = new THREE.Vector3(), back = new THREE.Vector3(), basis = new THREE.Matrix4();
 
   for (const [tierIndex, tier] of TIERS.entries()) {
@@ -89,7 +100,7 @@ export function createPickupCollectVfx(scene, player, camera) {
       group.userData.tier = tier;
       group.visible = false;
       const flashSprite = new THREE.Sprite(new THREE.SpriteMaterial({
-        color: style.color, map: texture, transparent: true, opacity: 0,
+        color: tier === 'can' ? 0xffffff : style.color, map: tier === 'can' ? canTexture : texture, transparent: true, opacity: 0,
         depthWrite: false, blending: THREE.AdditiveBlending,
       }));
       flashSprite.name = 'energy flash';
@@ -144,8 +155,9 @@ export function createPickupCollectVfx(scene, player, camera) {
       root.add(group);
       slots[tier].push({
         tier, tierIndex, style, group, contact, flash: flashSprite, rings, beam: pillar, tankGlow, shards,
-        streaks: camera && (tier === 'cell' || tier === 'can') ? createPickupStreaks(group, tier) : null,
+        streaks: camera && tier === 'cell' ? createPickupStreaks(group) : null,
         age: Infinity, event: null, follow: false, particles: 0, ringCount: 0, reducedMotion: false, strength: 1,
+        canFrom: tier === 'can' ? new THREE.Vector3() : null, canFromSet: false,
       });
     }
   }
@@ -166,7 +178,9 @@ export function createPickupCollectVfx(scene, player, camera) {
     slot.follow = follow;
     slot.age = 0;
     slot.markerTime = follow && !rival ? markerTime : undefined;
+    slot.delay = tier === 'can' && slot.markerTime !== undefined && !reducedMotion ? ABSORB_SPANS[slot.tierIndex] : 0;
     slot.releaseAt = undefined;
+    slot.canFromSet = false;
     slot.visualWeight = 1;
     slot.reducedMotion = reducedMotion;
     slot.strength = rival ? .65 : 1;
@@ -212,24 +226,25 @@ export function createPickupCollectVfx(scene, player, camera) {
 
   function update(dt, frame = {}) {
     for (const tier of TIERS) for (const slot of slots[tier]) {
-      if (!Number.isFinite(slot.age) || slot.age >= slot.style.life) continue;
+      if (!Number.isFinite(slot.age)) continue;
       slot.age += Math.max(0, dt);
-      const progress = Math.min(1, slot.age / slot.style.life);
+      const age = slot.age - slot.delay, progress = Math.max(0, age / slot.style.life);
       if (progress >= 1) { slot.age = Infinity; slot.group.visible = slot.contact.visible = false; continue; }
       const { group, contact, shards, strength, streaks } = slot;
       const reducedMotion = slot.reducedMotion || frame.reducedMotion;
       group.visible = frame.enabled !== false;
       place(slot, frame);
-      slot.visualWeight = strength * (slot.releaseAt === undefined ? 1
+      slot.visualWeight = strength * (tier === 'can' || slot.releaseAt === undefined ? 1
         : 1 - .94 * THREE.MathUtils.smoothstep(slot.age - slot.releaseAt, 0, .16));
       if (streaks) streaks.mesh.visible = false;
       contact.visible = group.visible && slot.contactEnabled && !reducedMotion && slot.age < CONTACT_SPANS[slot.tierIndex];
       if (contact.visible) placeContact(slot, frame);
       slot.beam.visible = false;
       if (slot.tankGlow) slot.tankGlow.visible = false;
-      const ringCount = reducedMotion ? 1 : slot.ringCount;
+      const ringCount = reducedMotion ? 1 : tier === 'can' ? 0 : slot.ringCount;
       slot.rings.forEach((ring, i) => { ring.visible = i < ringCount; });
-      shards.count = reducedMotion ? 0 : slot.particles;
+      const flying = age < 0 && tier === 'can' && slot.follow && !!frame.pose; // embers stream in with the can
+      shards.count = reducedMotion || (age < 0 && !flying) ? 0 : slot.particles;
       shards.visible = shards.count > 0;
       if (reducedMotion) { // one still ring and a soft glow keep the tier's identity without movement
         flash(slot, .22 * (1 - progress), 1.2, 0, .5, 0);
@@ -239,8 +254,19 @@ export function createPickupCollectVfx(scene, player, camera) {
         paintPickupHoop(slot.rings[0], 0, .16 * strength, .045, false);
         continue;
       }
+      if (age < 0 && !flying) { slot.flash.material.opacity = 0; continue; }
+      if (tier === 'can') {
+        shards.position.set(0, .5, 0);
+        group.updateWorldMatrix(true, false);
+        if (slot.follow && frame.pose) shards.position.copy(group.worldToLocal(vehicleFit.absorbTarget(frame.pose, target)));
+      }
       shards.material.opacity = .9 * Math.pow(1 - progress, 1.25) * strength;
-      MOTIONS[slot.style.motion](slot, slot.age, progress);
+      if (flying) {
+        // The can's spot is captured once, in the car's frame, on the first frame of the take.
+        if (!slot.canFromSet) slot.canFromSet = !!group.worldToLocal(itemPoint(slot.event, frame, slot.canFrom));
+        slot.flash.material.opacity = 0;
+        canEmbers(slot, slot.age / slot.delay, flight.copy(slot.canFrom).sub(shards.position));
+      } else MOTIONS[slot.style.motion](slot, age, progress);
       if (shards.count) shards.instanceMatrix.needsUpdate = true;
       if (streaks) {
         streaks.update(slot, camera, vehicleFit.sections(frame.pose));
@@ -250,15 +276,15 @@ export function createPickupCollectVfx(scene, player, camera) {
     vehicleFit.updateBody(bodySlot, frame, bodySlot ? SECONDARY[bodySlot.tierIndex] : 0);
   }
 
-  function drawAbsorbing(marker, pool, { distance, center, roadCenter, worldPoint, pose, reducedMotion, enabled }, dt) {
+  function drawAbsorbing(marker, pool, frame, dt) {
+    const { pose, reducedMotion, enabled } = frame;
     if (!enabled || reducedMotion || !pose) return;
     for (const tier of TIERS) for (const slot of slots[tier]) {
       const { event, markerTime, tierIndex } = slot;
       const age = slot.age + Math.max(0, dt);
       const span = ABSORB_SPANS[tierIndex];
       if (markerTime === undefined || slot.reducedMotion || age >= span) continue;
-      if (worldPoint) marker.position.fromArray(worldPoint(event.distance, event.x, (event.altitude ?? 0) + .85, distance, event));
-      else marker.position.set(roadCenter(event.distance) + event.x - center, (event.altitude ?? 0) + .85, distance - event.distance);
+      itemPoint(event, frame, marker.position);
       animatePickup(marker, event, markerTime, false);
       vehicleFit.absorbTarget(pose, target);
       const q = age / span, pull = q * q * (2.3 - 1.3 * q);
@@ -274,7 +300,7 @@ export function createPickupCollectVfx(scene, player, camera) {
   return {
     group: root, spawn, update, drawAbsorbing,
     activeCount: () => TIERS.reduce((sum, tier) =>
-      sum + slots[tier].filter(slot => slot.age < slot.style.life).length, 0),
+      sum + slots[tier].filter(slot => Number.isFinite(slot.age)).length, 0),
     reset() {
       bodySlot = null;
       vehicleFit.reset();
@@ -290,6 +316,7 @@ export function createPickupCollectVfx(scene, player, camera) {
       for (const geometry of geometries) geometry.dispose();
       tankHaloGeometry.dispose();
       texture.dispose();
+      canTexture.dispose();
     },
   };
 }

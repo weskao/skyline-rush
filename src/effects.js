@@ -175,7 +175,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
           if (collected && seen.get(item) !== takeToken) {
             seen.set(item, takeToken);
             if (previousRace === race && active) {
-              burst(item, reducedMotion ? 6 : lowQuality ? 12 : 32,
+              if (source === 1 || item.tier !== 'can') burst(item, reducedMotion ? 6 : lowQuality ? 12 : 32,
                 source === 0 ? pickupColors[item.tier] : ringColors[ringType], car.speed);
               if (source === 0) collectVfx.spawn(item.tier, item, { quality: options.quality, reducedMotion, follow: true, markerTime: flowTime });
             }
@@ -212,7 +212,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       for (; beam < beams.children.length; beam++) beams.children[beam].visible = false;
       // A rival taking an item or firing NITRO nearby: a smaller burst than the player's, in the item's colour (rival-cues.ts throttles it).
       for (const cue of rivalCues.update(race)) if (active) {
-        burst(cue, reducedMotion ? 4 : lowQuality ? 8 : 18,
+        if (cue.kind !== 'take' || cue.item !== 'can') burst(cue, reducedMotion ? 4 : lowQuality ? 8 : 18,
           cue.kind === 'nitro' ? gold : pickupColors[cue.item] ?? ringColors[cue.item] ?? gold, car.speed);
         if (cue.kind === 'take' && pickupColors[cue.item])
           collectVfx.spawn(cue.item, pickupCueSource(cue, race.pickups), { quality: options.quality, reducedMotion, rival: true });

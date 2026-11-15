@@ -92,7 +92,8 @@ export function createPickupVehicleFit(player) {
 
   function updateBody(slot, frame, secondary) {
     if (!shell) return;
-    const visible = !!slot && slot.age < slot.style.life && !slot.reducedMotion && !frame.reducedMotion && frame.enabled !== false;
+    const age = slot ? slot.age - slot.delay : Infinity;
+    const visible = !!slot && age >= 0 && age < slot.style.life && !slot.reducedMotion && !frame.reducedMotion && frame.enabled !== false;
     for (const mesh of shells) mesh.visible = visible;
     if (!visible) return;
     const geometry = shell.geometry;
@@ -112,7 +113,7 @@ export function createPickupVehicleFit(player) {
     uniforms.primary.value.set(slot.style.color);
     uniforms.secondary.value.set(secondary);
     uniforms.tier.value = slot.tierIndex;
-    uniforms.progress.value = slot.age / slot.style.life;
+    uniforms.progress.value = age / slot.style.life;
     uniforms.strength.value = slot.quality === 'low' ? .55 : .9;
   }
 
