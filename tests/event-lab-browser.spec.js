@@ -22,6 +22,8 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('#lab-export').click();
     const document = JSON.parse(await page.locator('#lab-json').inputValue());
     expect(document.version).toBe(1);
+    const objects = dialog.locator('.lab-switch button').nth(1);
+    if (await objects.isVisible()) await objects.click();
     const lane = page.locator('[data-lab-lane]').first();
     const before = await lane.inputValue();
     await lane.fill(before === '0' ? '1' : '0');
@@ -119,5 +121,34 @@ for (const [name, viewport, hasTouch] of [
     await expect.poll(() => page.evaluate(() => window.gameScene.scene.getObjectByName('launch-ramps').count)).toBeGreaterThan(0);
     await page.screenshot({ path: `artifacts/event-lab/${name}-${locale}-ramp.png` });
     expect(errors).toEqual([]);
+  });
+});
+
+test.describe('narrow Event Lab', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('keeps the action reachable at keyboard height and scopes validation to the edited object', async ({ gameplayPage: page }) => {
+    const entry = page.locator('button[data-race-mode="eventlab"]');
+    await entry.click();
+    const dialog = page.locator('#event-lab-dialog');
+    const objects = dialog.getByRole('button', { name: 'Objects', exact: true });
+    await expect(dialog.locator('.lab-map')).toBeVisible();
+    await expect(dialog.locator('.lab-objects')).toBeHidden();
+    await objects.click();
+    await expect(dialog.locator('.lab-map')).toBeHidden();
+    const lane = dialog.locator('[data-lab-lane]').first();
+    await lane.fill('9');
+    await page.setViewportSize({ width: 390, height: 360 });
+    await lane.press('Tab');
+    await expect(lane).toHaveAttribute('aria-invalid', 'true');
+    await expect(lane).toHaveAccessibleDescription(/lanes 0–3/);
+    await expect(dialog.locator('#lab-use')).toBeInViewport({ ratio: 1 });
+    await page.goBack();
+    await expect(dialog).toBeHidden();
+    await expect(entry).toBeFocused();
+    await entry.click();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(entry).toBeFocused();
   });
 });
