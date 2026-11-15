@@ -17,3 +17,17 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 320, height: 568 
     await expect(entry).toBeFocused();
   });
 }
+
+test('short landscape cloud shortcut opens the Cloud tab and Back restores its trigger', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto('/');
+  const entry = page.locator('#cloud-open');
+  await entry.click();
+  const dialog = page.locator('#history-screen');
+  await expect(dialog.getByRole('tab', { name: 'Cloud save' })).toHaveAttribute('aria-selected', 'true');
+  await expect(dialog.locator('#cloud-export')).toBeVisible();
+  await expect(dialog.locator('#history-runs')).toBeHidden();
+  await page.goBack();
+  await expect(dialog).toBeHidden();
+  await expect(entry).toBeFocused();
+});

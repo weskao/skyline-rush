@@ -42,6 +42,7 @@ for (const [name, viewport, hasTouch] of [
     expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).awards['time-clean'], key)).toBe(first);
     await page.reload();
     await page.locator('.history-button').click();
+    await page.locator('#history-tab-medals').click();
     await page.locator('#challenge-medals').scrollIntoViewIfNeeded();
     await expect(page.locator('#challenge-medal-count')).toContainText('1 / 5');
     await expect(page.locator('[data-challenge-medal]')).toHaveCount(5);
@@ -52,6 +53,7 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('#history-close').click();
     await selectLocale(page, locale);
     await page.locator('.history-button').click();
+    await page.locator('#history-tab-medals').click();
     await expect(page.locator('[data-challenge-medal="time-clean"] strong')).toHaveText(award);
     expect(errors).toEqual([]);
   });
@@ -82,7 +84,9 @@ test('blocked medal storage retains session collection and exports a usable back
   await expect(page.locator('#overlay-copy')).toContainText('Clean time trial');
   expect(await page.evaluate(key => localStorage.getItem(key), key)).toBeNull();
   await page.locator('#result-links [data-open-history]').click();
+  await page.locator('#history-tab-medals').click();
   await expect(page.locator('#challenge-medal-count')).toContainText('1 / 5');
+  await page.locator('#history-tab-cloud').click();
   const downloading = page.waitForEvent('download');
   await page.locator('#cloud-export').click();
   const { readFile } = await import('node:fs/promises');

@@ -1,3 +1,13 @@
+# 2026-11-15 — Responsive game dialogs (`feature/responsive-game-dialogs`)
+
+- [x] History leads with the track filter and recent races. Daily, Medals and Cloud have dedicated tabs and direct home shortcuts. The Daily Play action and cloud account, sync and backup handlers are retained.
+- [x] Photo Studio has a desktop sidebar, portrait bottom panel and short-landscape side panel. Orbit stays visible, advanced tools collapse, and the Back / Save PNG actions stay outside the scroll area. Closing restores the paused scene and opener.
+- [x] Event Lab switches between Route and Objects on narrow or short screens, retains Use this course above the scroll area, and places validation at the edited object. The open editor follows the visual viewport when the keyboard reduces it.
+- [x] Short-landscape What's New keeps the version and poster-based Play preview. The preview loads the bundled clip on activation. Browser Back closes the top-level modal or the nested viewer and restores its opener.
+- [x] `node --test tests/module-size.test.js` passed 3/3. Added browser cases to mode-history, cloud-entry, event-lab, photo-studio and release-video and extended the existing race-modes Photo Studio case.
+- [ ] Complete the browser RED/GREEN matrix and full `make verify`. Local Chromium encountered launch restrictions, renderer crashes and navigation timeouts. Complete real-device iOS/Android keyboard, safe-area and back-gesture checks, and verify the exact branch commit in GitHub Actions.
+- Base `4d45cc460b4d1c45ed26017ef9737802a5a1d63e`. Integration owns pause/results entry points. DOM changes share visual quality tiers and retain existing UI and photo cues.
+
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
 - [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.

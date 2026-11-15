@@ -373,3 +373,28 @@ test.describe('phone portrait', () => {
   test('a hero refused autoplay (iPhone Low Power Mode) starts inline on the first tap anywhere on the notes', ({ page, gameplayURL }) =>
     refusedHeroStartsOnFirstTouch(page, gameplayURL, target => target.tap()));
 });
+
+test.describe('short landscape', () => {
+  test.use({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
+
+  test('shows the version and poster without fetching video until the player opens the preview', async ({ page, gameplayURL }) => {
+    const requested = [];
+    page.on('request', request => { if (request.url().includes(CLIPS) && request.url().endsWith('.mp4')) requested.push(request.url()); });
+    await openNotes(page, gameplayURL, true);
+    const preview = page.getByRole('button', { name: 'Play preview' });
+    await expect(page.locator('#release-version')).toBeInViewport();
+    await expect(preview).toBeInViewport({ ratio: 1 });
+    await expect(preview.locator('img')).toHaveAttribute('src', /desktop\.en\.jpg$/);
+    expect(requested).toEqual([]);
+    await preview.press('Enter');
+    const clip = page.locator('#release-media-viewer video');
+    await expect.poll(() => playing(clip)).toBe(true);
+    await page.goBack();
+    await expect(page.locator('#release-media-viewer')).toBeHidden();
+    await expect(page.locator('#whats-new-screen')).toBeVisible();
+    await expect(preview).toBeFocused();
+    await page.goBack();
+    await expect(page.locator('#whats-new-screen')).toBeHidden();
+    await expect(page.locator('#whats-new-open')).toBeFocused();
+  });
+});

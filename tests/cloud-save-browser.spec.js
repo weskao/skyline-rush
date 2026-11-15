@@ -5,6 +5,7 @@ test('History exposes cloud recovery and sign-in on a narrow phone', async ({ pa
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto('/');
   await page.locator('#intro [data-open-history=""]').click();
+  await page.locator('#history-tab-cloud').click();
   const dialog = page.locator('#history-screen');
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('#cloud-title')).toHaveText('Cloud save');
@@ -16,6 +17,7 @@ test('History exposes cloud recovery and sign-in on a narrow phone', async ({ pa
   await dialog.locator('#history-close').click();
   await selectLocale(page, 'zh-TW');
   await page.locator('#intro [data-open-history=""]').click();
+  await page.locator('#history-tab-cloud').click();
   await expect(dialog.locator('#cloud-login')).toHaveAccessibleName('使用 Google 登入');
 });
 
@@ -23,6 +25,7 @@ test('Cloud save buttons share one height and centre line on a desktop row', asy
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');
   await page.locator('#intro [data-open-history=""]').click();
+  await page.locator('#history-tab-cloud').click();
   const dialog = page.locator('#history-screen');
   const boxes = await dialog.locator('#cloud-title ~ button:visible').evaluateAll(els => els.map(el => el.getBoundingClientRect().toJSON()));
   expect(boxes.length).toBeGreaterThan(1);

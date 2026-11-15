@@ -34,6 +34,7 @@ export interface ReleaseEntry {
   playLabel: string;
 }
 export interface ReleaseView {
+  compact: boolean;
   openHidden: boolean;
   openHasUpdate: boolean;
   tabs: ReleaseTab[];
