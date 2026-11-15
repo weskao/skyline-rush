@@ -2,6 +2,7 @@ import type { Vector3 } from 'three';
 // In-race camera rig: one tunable table plus the pure math that reads it. src/world.js owns the Three.js camera
 // and only applies these numbers; the ready-screen showcase views live in src/track-preview.ts.
 import { MAX_SPEED } from './drive-rules.ts';
+import { PICKUP_KICK_SHARE } from './pickup-feedback.ts';
 
 /** One row per race view. Metres and degrees unless noted; angles the camera turns by are radians. */
 export interface RaceCameraView {
@@ -156,8 +157,15 @@ export function rigJolt(view: RaceCameraView, impact: number, landing: number, s
   return out.set(amp * hit * Math.sin(t * 61), amp * y, 0);
 }
 
-/** Pitch in radians `age` seconds after a NITRO/BOOST ignition: one damped swing from rest, 0 once it is over. */
-export function rigKick(view: RaceCameraView, age: number, strength: number): number {
-  if (!(age >= 0 && age < KICK_TIME)) return 0;
-  return Math.min(KICK_LIMIT, unit(strength) * view.kick) * Math.sin(2 * Math.PI * KICK_HZ * age) * (1 - age / KICK_TIME) ** 2;
+const kickSwing = (age: number): number => age >= 0 && age < KICK_TIME ? Math.sin(2 * Math.PI * KICK_HZ * age) * (1 - age / KICK_TIME) ** 2 : 0;
+
+/**
+ * Pitch in radians `age` seconds after a NITRO/BOOST ignition: one damped swing from rest, 0 once it is over. A player
+ * pickup taken at `pickup.time` adds the same swing at its tier's PICKUP_KICK_SHARE; the sum stays within KICK_LIMIT.
+ */
+export function rigKick(view: RaceCameraView, age: number, strength: number, pickup: { tier: string; time: number } | null = null, elapsed = 0): number {
+  const swing = kickSwing(age) + (pickup ? (PICKUP_KICK_SHARE[pickup.tier] ?? 0) * kickSwing(elapsed - pickup.time) : 0);
+  if (!swing) return 0;
+  const pitch = Math.min(KICK_LIMIT, unit(strength) * view.kick) * swing;
+  return Math.max(-KICK_LIMIT, Math.min(KICK_LIMIT, pitch));
 }

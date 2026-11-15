@@ -39,6 +39,8 @@ a different camera (`track-showcase.md`, `src/track-preview.ts`).
   desktop. `rigShake` takes speed only. The ignition is one damped pitch kick (`rigKick`, ≈0.35 s,
   4 Hz, ≈0.68° peak on the default setting, capped at 1.2°) on the `kick` clock that
   `createSprintVfx` restarts only on a fresh ignition; the FOV share eases in over 0.3 s.
+  A player pickup adds the same swing from `car.pickup.time` at its tier's `PICKUP_KICK_SHARE`
+  (`src/pickup-feedback.ts`: can 20%, cells none); the sum clamps to `KICK_LIMIT`. No second shake.
   A sustained *translation* is allowed, bounded: `rigRumble` moves the eye a few cm in camera x/y
   (1–3 Hz road waves + a small 17 Hz buzz, ∝ speed², +80% at a full sprint, capped at 5 cm), so
   the car and road tremble while the horizon stays still. Guard: the road-rumble test (z 0, peak
