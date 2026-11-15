@@ -38,10 +38,9 @@ for(const id of IDS){
             if(obj.name?.includes('chunk-') && obj.name?.includes('world-tour-'))chunkCount++;
             if(obj.visible && obj.isMesh && obj.parent?.name?.includes('world-tour-'))visibleScenery++;
           });
-          const trafficRendered=scene.children.filter(obj=>obj.visible &&
-            Number.isFinite(obj.userData?.roadDistance) &&
-            obj.userData.roadDistance>race.player.distance+5 &&
-            obj.userData.roadDistance<race.player.distance+900).length;
+          // Traffic is instanced (traffic-fleet.ts): the painted mesh of each style holds one instance per car drawn.
+          const trafficRendered=scene.getObjectByName('Traffic').children.filter(mesh=>mesh.visible&&mesh.instanceColor)
+            .reduce((sum,mesh)=>sum+mesh.count,0);
           return {nodes,chunkCount,visibleScenery,trafficRendered,geometries:renderer.info.memory.geometries,
             textures:renderer.info.memory.textures,programs:renderer.info.programs?.length,
             props:race.props?.length||0,traffic:race.traffic.length,pickups:race.pickups.length,rings:race.rings.length,

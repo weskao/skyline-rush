@@ -1,3 +1,12 @@
+# 2026-11-15 — Instanced traffic (`feature/traffic-instancing`)
+
+- [x] `src/traffic-fleet.ts`: each traffic style's `makeCar()` model is baked into one geometry per material and drawn through a `marker-pool.js` pool. Traffic costs 21 draw calls at any car count (3 styles x 7 materials), 6 more in the `?look=3d` wet-road mirror pass. `world.js` poses plain `Object3D`s through `updateCar` (997 → 995 lines, ceiling lowered). Simulation, collision and VFX untouched.
+- [x] RED: `tests/traffic-instancing-browser.spec.js` measured 44 / 173 / 775 / 1,549 traffic draw calls with 3 / 12 / 54 / 108 cars in view on Neon, and 98 for 6 cars in the Coast rain mirror test. GREEN: 21 at every count, 27 with the mirror.
+- [x] `tests/traffic-fleet.test.js`: per style the baked car has the triangles, bounds and materials of `makeCar()`; visible-only upload, pose, paint, per-frame cull bound, parked idle instance, softened reflections.
+- [x] Driven Neon and Coast races, High: draw calls and frame p50/p95 before and after are in the local audits report (per-device numbers stay out of the repo).
+- [x] Real WebGL: same paused frame drawn instanced and with per-car models at the same poses on Neon, Coast, Sky Spiral, Alpine and Frostbite Canyon; pixels changed stay at the scene's own frame-to-frame noise. Before/after captures for 10 classic tracks and 6 courses at 1440×900, 390×844 and 844×390, no page error.
+- [ ] Physical phone check, full `npm run test:browser`, World Tour config and exact-HEAD `quality-gate` (branch not pushed).
+
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
 - [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.
