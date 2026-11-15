@@ -485,3 +485,27 @@ for (const [width, height] of [[756, 265], [320, 568], [768, 840], [840, 768]]) 
     });
   });
 }
+
+test.describe('small phone readable race ranks', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+
+  test('shows readable nearby gaps in portrait and keeps rank beside the timer on short landscape', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('skyline-rush-music', 'off');
+      localStorage.setItem('skyline-rush-hud-mode', 'competitive');
+    });
+    await page.goto('/');
+    await page.locator('#start-button').click();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(20_000) });
+    await expect(page.locator('#countdown')).toBeHidden();
+    await expect(page.locator('#leaderboard .racer:visible')).toHaveCount(3);
+    const gaps = page.locator('#leaderboard .racer:not(.is-player) > span:last-child:visible');
+    await expect(gaps).toHaveCount(2);
+    for (const gap of await gaps.all()) await expect(gap).toHaveCSS('font-size', '11px');
+
+    await resizeTo(page, 667, 375);
+    await expect(page.locator('#leaderboard')).toBeHidden();
+    await expect(page.locator('#position')).toBeInViewport({ ratio: 1 });
+    await expect(page.locator('#timer')).toBeInViewport({ ratio: 1 });
+  });
+});

@@ -115,7 +115,6 @@ const controls = createControls(window, action => {
   if (action === 'pause') toggleControls(false);
   ({ start, restart, pause, item: itemUI.activate, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: vfx.toggleAirflow })[action]?.();
 }, { getSettings: () => touchUI.inputPrefs(), getKeyMap: () => keymap.getKeyMap(), onTilt: () => touchUI.onTilt() });
-// Touch layout, slide pad, tilt and the Controls form live in touch-controls-ui.ts; showTracks() reads its ghost preference.
 const touchUI = setupTouchControlsUI({
   controls,
   getRacePhase: () => race.phase,
@@ -124,6 +123,7 @@ const touchUI = setupTouchControlsUI({
   cueUi: () => sound.cue('ui'),
   closeControlsPanel: () => toggleControls(false),
   refreshPhase: () => phaseUI(),
+  clearButtonPresses,
   reducedMotion,
 });
 const vfx = setupVfxUI({ getWorld: () => world, onAirflowShown: () => showSwipeHint(), onPanelOpen: () => notice.hide(), reducedMotion });

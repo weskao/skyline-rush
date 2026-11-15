@@ -14,6 +14,7 @@ import { SHOWCASE_VIEWS, VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
 import './progress-bars.css';
 import './touch-sprint-buttons.css';
 import './race-lobby.css';
+import './foldable-viewport.css';
 import { look3d } from './look-gate.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
 import GaragePanel from './GaragePanel.vue';
