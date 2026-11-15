@@ -6,7 +6,7 @@ import { raceTrack } from './race-tracks.ts';
 import { t, trackName, getLocale } from './i18n.ts';
 import { RACE_TRACKS } from './game.js';
 import { RULE_PRESETS } from './race-config.ts';
-import { DEFAULT_RULES, modeEligibility, modeRulesSummary, ruleConflicts } from './mode-setup.ts';
+import { DEFAULT_RULES, lobbyDriverLabel, lobbyStartState, modeEligibility, modeRulesSummary, ruleConflicts } from './mode-setup.ts';
 import { itemRuleValue } from './item-ui.ts';
 import { createCup, nextCupGrid, type CupState } from './championship-cup.ts';
 import { loadRecentCustom } from './recent-custom.ts';
@@ -153,7 +153,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
   function renderTrackButtons(race: Race): void {
     // Solo sessions show elapsed time rather than a false "01 / 04" ranking.
     const solo = race.rivals.length === 0;
-    $('.route-drivers').textContent = upcomingSelection ? t('track.comingSoon') : solo ? t('mode.solo') : t('mode.driverCount', { n: race.rivals.length + 1 });
+    $('.route-drivers').textContent = lobbyDriverLabel(race.rivals.length, Boolean(upcomingSelection), t);
     $('.position-stat .stat-label').textContent = t(solo ? 'mode.' + race.mode : 'race.position');
     $('.position-stat > div > span').textContent = solo ? '' : '/ ' + String(race.rivals.length + 1).padStart(2, '0');
     if (race.phase === 'ready') ui.position!.textContent = solo ? '—' : String(race.rivals.length + 1).padStart(2, '0');
@@ -186,10 +186,17 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     const startButton = ui['start-button'] as HTMLButtonElement;
     const upcoming = upcomingSelection ? upcomingTrackInfo(upcomingSelection) : null;
     const name = upcomingSelection ? upcomingTrackName(upcomingSelection, getLocale()) : trackName(race.trackId, getLocale());
-    startButton.disabled = Boolean(upcoming) || (!daily && (!canRace(race.trackId) || (selectedMode === 'cup' && unlockedTracks.size < cupCount())));
+    const tracks = Object.keys(RACE_TRACKS);
+    const trackIndex = tracks.indexOf(race.trackId);
+    const next = tracks[trackIndex + 1];
+    const { disabled, trackStatusKey, startLabelKey: labelKey, accessNote } = lobbyStartState({
+      canRace: canRace(race.trackId), daily: Boolean(daily), mode: selectedMode,
+      unlocked: unlockedTracks.size, cupCount: cupCount(),
+      previousTrackName: trackName(tracks[trackIndex - 1]!, getLocale()), previewName: upcoming ? name : null,
+    }, t);
+    startButton.disabled = disabled;
     $('#lobby-track-name').textContent = name;
-    $('#lobby-track-status').textContent = t(upcoming ? 'lobby.preview' : canRace(race.trackId) || daily ? 'track.open' : 'track.locked');
-    const labelKey = upcoming ? 'track.comingSoon' : startButton.disabled ? 'track.locked' : 'start.race';
+    $('#lobby-track-status').textContent = t(trackStatusKey);
     const actionLabel = startButton.querySelector<HTMLElement>('span')!;
     actionLabel.dataset.i18n = labelKey;
     actionLabel.textContent = t(labelKey);
@@ -204,17 +211,8 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     startButton.setAttribute('aria-describedby', startButton.disabled ? 'lobby-access-note' : 'track-note');
     $('.start-hint').hidden = startButton.disabled;
     $('#track-length').textContent = upcoming ? t('track.previewLength', { km: upcoming.length / 1000 }) : race.endless ? t('mode.endlessRoute') : race.mode === 'circuit' ? t('circuit.length', { laps: race.config.laps, km: race.length / 1000 }) : t('track.sprint', { km: Math.round(raceTrack(race.trackId)!.length / 100) / 10 });
-    const tracks = Object.keys(RACE_TRACKS);
-    const next = tracks[tracks.indexOf(race.trackId) + 1];
-    const previous = tracks[tracks.indexOf(race.trackId) - 1]!;
-    const reasons = [
-      upcoming ? t('track.comingSoonInfo', { track: name }) : '',
-      !upcoming && selectedMode === 'cup' && unlockedTracks.size < cupCount() ? t('mode.cupLocked', { n: cupCount() }) : '',
-      !upcoming && !daily && !canRace(race.trackId) ? t('track.unlockHint', { track: trackName(previous, getLocale()) }) : '',
-    ].filter(Boolean);
-    const accessNote = $('#lobby-access-note');
-    accessNote.textContent = reasons.join(' ');
-    accessNote.hidden = !reasons.length;
+    $('#lobby-access-note').textContent = accessNote;
+    $('#lobby-access-note').hidden = !accessNote;
     const nextUnlock = !upcoming && next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier
       ? t('track.unlockNext', { track: name, next: trackName(next, getLocale()) }) : '';
     $('#track-note').textContent = [t(`track.note.${upcomingSelection ?? race.trackId}`), nextUnlock].filter(Boolean).join(' ');

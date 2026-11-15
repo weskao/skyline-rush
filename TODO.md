@@ -5667,3 +5667,10 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Fix the first-visit graphics disclosure intercepting AIRFLOW and VFX. Align the short-landscape wallet with the mode picker, preserve compact wallet artwork, and keep track cards and rules dropdowns clear of the pinned actions.
 - [x] The browser selector regression reproduced three ambiguous mode locators. The module-size, selector and browser budget suites passed after the fixes (20 checks). The trial build passed the production unlock audit.
 - [ ] Exact-commit GitHub quality gate and physical iOS/Android verification.
+
+## 2026-11-16 — Home race lobby and showcase camera unit coverage
+
+- [x] Add nine focused cases for Start eligibility, locked-track and Cup messages, the Daily unlock exception, preview gating, actual grid size, and saved Home camera angles.
+- [x] Confirm five targeted regressions fail their assertions when reintroduced: preview bypass, missing Daily exception, off-by-one Cup threshold, missing player in the driver count, and ignored saved camera angle.
+- [x] Focused Node suite: 66 passed. Module-size, typecheck and the locked production build passed. The lobby controller uses the tested presentation logic; the browser specs still cover layout and the first rendered chase frame.
+- [ ] Exact-commit GitHub quality gate.

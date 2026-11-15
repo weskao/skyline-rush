@@ -50,3 +50,12 @@ test('Windows/Android Chromium with memory hints and missing hardware fields fal
  assert.equal(selectDeviceQuality({cores:2,memoryGiB:2,width:412,height:915,pixelRatio:3}),'low');
  assert.equal(selectDeviceQuality({width:1280,height:720,pixelRatio:1}),'high');
 });
+
+test('startup restores the saved Home showcase angle and falls back for an invalid angle', () => {
+ const device = {cores:2,memoryGiB:2};
+ for (const view of ['front', 'right', 'orbit']) {
+  assert.equal(initialDeviceVisuals({storedSettings:{quality:'low',view},device}).settings.view, view);
+ }
+ assert.equal(initialDeviceVisuals({storedSettings:{quality:'low',view:'overhead'},device}).settings.view, 'drive');
+ assert.equal(initialDeviceVisuals({device}).settings.view, 'drive');
+});

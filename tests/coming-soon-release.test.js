@@ -76,9 +76,7 @@ test('Coming Soon cards keep original selectable route-map and KM styling, not a
   assert.doesNotMatch(shell, /class="coming-soon-card"/);
   assert.match(select, /for \(const button of upcomingButtons\(\)\) button.addEventListener\('click'/);
   assert.match(select, /const id = button\.dataset\.upcomingTrack as UpcomingTrackId;\s*upcomingSelection = options\.isUpcomingEnterable\(id\) \? null : id;/);
-  assert.match(select, /labelKey = upcoming \? 'track.comingSoon'/);
   assert.match(select, /isUpcomingTrack\(id\) \? options\.isUpcomingEnterable\(id\) : unlockedTracks\.has\(id\)/, 'preview race is forbidden regardless of saved unlock');
-  assert.match(select, /startButton.disabled = Boolean\(upcoming\)/);
 });
 
 test('existing locale and navigation hooks describe all six Coming Soon previews', () => {
