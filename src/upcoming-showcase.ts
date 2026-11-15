@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { makeCar, CAR_STYLES } from './car-model.js';
 import { applyCarReflections } from './car-reflections.ts';
 import { createAeroVFX } from './aero-vfx.js';
+import { SHOWROOM } from './sprint-plume.ts';
 import { previewPlayer, showcaseCameraPose, type CameraPose } from './track-preview.ts';
 import { vfxSettings, type VfxSettings } from './vfx-settings.ts';
 import type { PaintPreset } from './appearance.ts';
@@ -52,7 +53,7 @@ export function createUpcomingShowcase(
   }
   let previousTime = NaN;
   const origin = new THREE.Vector3();
-  const driver = { speed: 105, boosting: true, nitroTime: 1, miniBoost: 0, impact: null, altitude: 0, trick: null };
+  const driver = { speed: SHOWROOM.speed, boosting: true, nitroTime: 1, miniBoost: 0, impact: null, altitude: 0, trick: null };
   const previewRace = { phase: 'racing', player: driver };
 
   function disposeStage(old: Stage): void {

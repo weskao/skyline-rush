@@ -7,7 +7,7 @@ paths:
 # Sprint plume: fat where the camera sees it, under the bloom threshold
 
 `src/sprint-plume.ts` draws the NITRO/BOOST exhaust: per rear port an additive jet (`Cold gas nozzle N`), one
-instanced opaque-looking core, one instanced nozzle flare, plus one road glow. Every part is a child of the
+instanced nozzle flare, plus one road glow. Every part blends additively: the exhaust is light, never a surface. Every part is a child of the
 `Rear ports` group, so `src/garage-model.ts` places it on each car's nozzles (race, Garage, Home, Coming Soon).
 `src/aero-vfx.js` fills one reused `PlumeFrame` per frame; the plume writes uniforms only.
 
@@ -17,9 +17,8 @@ instanced opaque-looking core, one instanced nozzle flare, plus one road glow. E
   wide over its first 0.6 m (15 to 19 px on a phone, about 8 px at the nozzle), additive only, so it washed
   out on a sunlit road; the nozzle glows and the board plume sat behind `?look=3d`, the road glow behind a trail
   skin. On the phone tier (2 cores: Low + Realistic) the exhaust changed 1 to 3% of the frame. Now: radius at
-  least 0.20 m by 0.6 m (`plumeRadius`, `PLUME.fat`/`half`) whatever the tail length, tier or preset; four
-  cores (`coreRadius`, at most 0.09 m, 10 cm apart) drawn with normal blending so daylight cannot wash them;
-  flare and road glow in the default look. Guards: `tests/sprint-plume.test.js` (*flame shape*, *phone width*:
+  least 0.20 m by 0.6 m (`plumeRadius`, `PLUME.fat`/`half`) whatever the tail length, tier or preset; flare and
+  road glow in the default look (a normal-blended core was tried too, then removed: see *Solid core bar*). Guards: `tests/sprint-plume.test.js` (*flame shape*, *phone width*:
   at least 28 px wide 0.6 m behind the nozzles in both phone orientations, *the real jets carry the profile*).
 - **White-out from the fat jet (2026-11-14).** The fat jet first carried the thin cone's HDR gain
   (`brightness x (1 + core + cells)`, up to 4.5) over its whole width. Two faces per jet and the overlapping
@@ -42,30 +41,42 @@ instanced opaque-looking core, one instanced nozzle flare, plus one road glow. E
   jets' `tail` at 0, so the board plume's magenta fade never lit; no test read the jets' uniforms back. One
   statement per comment's line. Guard: *every frame value reaches every jet*.
 
+- **Solid core bar (2026-11-16, removed).** An instanced core tube per nozzle (9 cm wide, 1.8 m long, normal blending,
+  alpha 0.85) was added so daylight could not wash the exhaust out. Seen from the chase camera or the Garage it read as
+  a solid grey bar inside each nozzle ring on the Standard, Ion and Plasma thrusters (Void pulse hides the jets). The
+  fat additive jet already carries the visibility on its own, so the core is gone. Never put a normal-blended mesh in
+  the plume. Guard: `tests/sprint-plume.test.js` (*no solid bar in the nozzle*).
+
 ## Modes
 
-| State | Jets | Core | Flare | Road glow |
-| --- | --- | --- | --- | --- |
-| VFX Off, or power 0 | off | off | off | off |
-| Low (quality 0.25) | on, full light (no bloom) | on | on | off |
-| Medium, High | on | on | on | on |
-| Airborne, or not racing (Garage, Home) | on | on | on | off |
-| Void pulse skin | off (its beams) | off | on | as above |
-| Reduced Motion / Comfortable (`calm`) | on, clock frozen | on | x0.6, no flicker | x0.6 |
-| NITRO with a trail skin (not calm) | thick fades to the old cone | alpha fades to 0 | on | fades to 0 |
+| State | Jets | Flare | Road glow |
+| --- | --- | --- | --- |
+| VFX Off, or power 0 | off | off | off |
+| Low (quality 0.25) | on, full light (no bloom) | on | off |
+| Medium, High | on | on | on |
+| Airborne, or not racing (Garage, Home) | on | on | off |
+| Void pulse skin | off (its beams) | on | as above |
+| Reduced Motion / Comfortable (`calm`) | on, clock frozen | x0.6, no flicker | x0.6 |
+| NITRO with a trail skin (not calm) | thick fades to the old cone | on | fades to 0 |
 
-- **Trail-skin cross-fade.** While a trail skin's streaks show, the jets' thickness, the core and the road glow
+- **Trail-skin cross-fade.** While a trail skin's streaks show, the jets' thickness and the road glow
   fade with `nitroMix` (no hard swap) so nothing stacks to white; BOOST and calm modes keep the base plume.
-- **x3 chain.** `frame.power` reaches 1.4; flare size, core alpha and the jets' `power` clamp at 1 (the veil spec
+- **Showroom pulse (2026-11-16).** Garage/Home ran the plume at a 0.32 strength floor and speed 0: about 0.8 m,
+  17% of a race NITRO, so the exhaust length slider showed nearly nothing there. Every showroom (`studioDemo`:
+  Garage/Home, Preview Studio, showcase) now loops the jets with the 2.2 s ignition demo (`showroomPulse`,
+  `SHOWROOM`): from `idle` (a quarter) up to the length the Studio's `SHOWROOM.speed` driver gets, and back; brightness
+  follows from `idlePower` to 1. Reduced Motion / Comfortable: no pulse (Studio holds the full length). Races never
+  pulse. Guards: `tests/sprint-plume.test.js` (*showroom plume* x2).
+- **x3 chain.** `frame.power` reaches 1.4; flare size and the jets' `power` clamp at 1 (the veil spec
   runs at chain 1 only, so an unclamped jet would add ~18% light past its guard).
 - **Lean.** The road glow lies on the road plane through the car's contact-shadow plane (`ground`) while the car
   banks and squats, and moves back onto that plane 6 m behind it (`launch-flare-rendering.md`). Guard: *lean*.
 
 ## Budget
 
-- At most three draw calls beyond the four jets: instanced core, instanced flare, road glow. All exist hidden
+- At most two draw calls beyond the four jets: instanced flare, road glow. All exist hidden
   from creation, so `warmupShaders` compiles them (`performance-review.md`); per frame, uniforms only, no
-  allocation. A new part is a fourth draw call: measure it first.
+  allocation. A new part is a third draw call: measure it first.
 - Frame cost: a held NITRO on Coast at 844x390 and 1440x900, Low/Medium/High; the median may rise by at most
   5% or 0.3 ms, whichever is larger. Over budget: cut overdraw first (glow size, core length).
 

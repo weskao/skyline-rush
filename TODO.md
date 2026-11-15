@@ -108,6 +108,17 @@
 - [x] 8. Prevention: `.claude/rules/race-camera.md` *Exhaust under the frame*, `.claude/rules/sprint-plume.md` (thin/additive/gated, white-out, phone-tier starvation, lost uniform), each with its guard; veil spec (High, landscape phone) Roadster 44.3, GT 69.7 (≤ 80).
 - [ ] Not run: physical phone, exact-HEAD GitHub `quality-gate`. What's New entry not written (needs a real-game clip and `/review-release-notes`).
 
+# 2026-11-16 — Plume core bar removed (`fix/plume-core-bar`)
+
+- [x] Cause: the normal-blended `Sprint plume core` (a 9 cm × 1.8 m opaque tube per nozzle) drew a solid grey bar inside each nozzle ring on the Standard, Ion and Plasma thrusters, in the Garage and in races; Void pulse hides jets and core. Close-up race frames on develop `d2185ea8` (High, 1440×900) with each part hidden in turn: the bar disappears with the core alone hidden; the jets alone still read clearly.
+- [x] RED → GREEN: `tests/sprint-plume.test.js` *no solid bar in the nozzle* failed on `d2185ea8` (core mesh present) and passes with the core removed.
+- [x] `node --test tests/module-size.test.js` 3/3, `npm test` 3038 pass / 0 fail / 3 skipped, typecheck, `npm run build`.
+- [x] Prevention: `.claude/rules/sprint-plume.md` *Solid core bar*; every plume part must blend additively.
+- [ ] Browser specs (`sprint-plume-veil`, `sprint-camera-capture` area/contrast floors) and Garage/Home frames on both cars and phone orientations: not run (owner's request). The core was part of the daylight-contrast floor; re-capture before merging.
+- [ ] Not run: physical phone, exact-HEAD GitHub `quality-gate`.
+- [x] Showroom pulse (owner's pick over a fixed race length or a hold-to-preview button): Garage/Home plume was 0.83 m vs Preview Studio's 4.70 m (default settings). `tests/sprint-plume.test.js` *showroom plume: loops…* RED on `e4329420` (0.83 m), GREEN after: every showroom loops from idle to ≥ 95% of the race length with the 2.2 s ignition demo; Reduced Motion holds Studio at full length.
+- [ ] Showroom pulse in real Garage/Studio frames, both cars, both phone orientations: delegated recording, not yet reviewed.
+
 ## Final tutorial NITRO cue (2026-11-15)
 
 - [x] Show the final NITRO action in the same on-screen cue as THROTTLE, with the bound desktop key or touch button copy. Hide the press prompt and touch outline during the sprint and while waiting for release after an interrupted attempt.

@@ -7,7 +7,7 @@ import { TRICK_ROLL_TIME } from './game.js';
 import { plumeLook, thrusterGlow } from './board-effects.ts';
 import { createThrusterGlow } from './thruster-glow.ts';
 import { createAeroWakeMeshes } from './aero-wake-meshes.js';
-import { createSprintPlume } from './sprint-plume.ts';
+import { createSprintPlume, SHOWROOM, showroomPulse } from './sprint-plume.ts';
 import { SKIN_MOTION, airflowFrame, measureAirflowProfile, streamGeometry } from './airflow-geometry.ts';
 
 export const REAR_PORTS = [-0.62, -0.22, 0.22, 0.62].map(x => ({ position: [x, 0.64, 2.39], direction: [0, 0, 1], size: 0.065 }));
@@ -261,8 +261,11 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       ribbon.material.uniforms.time.value = time;
       const look = plumeLook(settings.quality), jet = plumeFrame;
       glow.update(enabled && !voidPulse ? thrusterGlow(settings.quality, active, car.altitude > 0, strength) : 0);
-      jet.time = time; jet.power = strength; jet.nitroMix = nitroMix; jet.tail = look.tail; jet.enabled = enabled; jet.voidPulse = voidPulse;
-      jet.reach = settings.exhaustLength * strength * (0.65 + car.speed / 200) * look.stretch;
+      const pulse = studioDemo && enabled && !calm ? showroomPulse(demoPulseClock) : -1; // showrooms loop the plume with the ignition
+      jet.time = time; jet.nitroMix = nitroMix; jet.tail = look.tail; jet.enabled = enabled; jet.voidPulse = voidPulse;
+      jet.power = pulse < 0 ? strength : THREE.MathUtils.lerp(SHOWROOM.idlePower, 1, pulse);
+      jet.reach = settings.exhaustLength * look.stretch * (pulse < 0 ? strength * (0.65 + car.speed / 200)
+        : THREE.MathUtils.lerp(SHOWROOM.idle, 1, pulse) * (0.65 + SHOWROOM.speed / 200));
       jet.brightness = Math.min(settings.coreBrightness, calm ? 0.9 : 3);
       jet.diamonds = settings.machDiamonds; jet.extreme = settings.preset === 'extreme' ? 1 : 0;
       jet.quality = quality; jet.calm = calm; jet.racing = active; jet.grounded = car.altitude <= 0;
