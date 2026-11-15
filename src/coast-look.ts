@@ -57,6 +57,7 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
       if (plan.kind === 'room') return applyRoom(trackId);
       const ready = environments.get(plan.variant);
       if (ready) return applyVariant(plan.variant, ready, trackId);
+      if (applied && trackId !== paletteTrack) applyRoom(trackId); // never another track's sky while this one loads, or after it fails
       void environments.preload([plan.variant]).then(() => {
         const texture = environments.get(plan.variant);
         if (key === next && texture) applyVariant(plan.variant, texture, trackId);

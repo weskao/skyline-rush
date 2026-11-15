@@ -21,11 +21,9 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     sections: [{ from: 2200, to: 2700, type: 'shortcut', x: -7.5, altitude: 6 }],
   },
   neon: {
-    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 6, itemDensity: OPENING_ITEMS, ringOdds: BOOST_ODDS, introRivals: true, // an early, easy map
-    sections: [
-      { from: 600, to: 1100, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 },
-      { from: 1700, to: 2300, type: 'tunnel' }, { from: 2900, to: 3400, type: 'tunnel' },
-    ],
+    name: 'Neon Downtown', length: 4000, trafficDensity: 1.5, seed: 2002, layoutVersion: 7, itemDensity: OPENING_ITEMS, ringOdds: BOOST_ODDS, introRivals: true, // an early, easy map
+    // Layout 7 (owner, 2026-11-14): one clockwise lap. The only tunnel is the rail underpass in the first right-hander.
+    sections: [{ from: 470, to: 690, type: 'tunnel' }, { from: 1150, to: 1650, type: 'shortcut', x: 7.5, altitude: 6 }],
   },
   canyon: {
     name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 6, itemDensity: OPENING_ITEMS, openingNitroRings: 2, // volume was enough; only the first NITRO came late

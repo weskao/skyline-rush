@@ -5,7 +5,8 @@ import { trackLook } from './track-look.ts';
 /** PMREM cube size; equals RoomEnvironment's, so swapping `scene.environment` never recompiles a lit shader. */
 export const PMREM_CUBE_SIZE = 256;
 
-export type CoastEnvName = 'day' | 'dusk' | 'rain' | 'fog';
+/** Coast's four skies, then Neon Downtown's two (N2: night and rain night only). */
+export type CoastEnvName = 'day' | 'dusk' | 'rain' | 'fog' | 'night' | 'nightRain';
 export interface CoastEnvVariant {
   /** CC0 Poly Haven sky-only 1K HDRI under public/environments. */
   readonly file: string;
@@ -25,7 +26,10 @@ export interface CoastEnvVariant {
    *  (u = atan2(z, x) / 2pi + 0.5), the texture's decode range, and the HDR sun disc's size (0 = no disc in this sky).
    *  `gain` exposes the sky for the screen: it puts the 90th percentile of the sky the chase camera sees (elevation
    *  0 to 40 degrees) at the bloom threshold, so only the glow around the sun blooms. Lighting uses `intensity`. */
-  readonly sky: { readonly sunDirection: readonly [number, number, number]; readonly range: number; readonly gain: number; readonly disc: number };
+  readonly sky: { readonly sunDirection: readonly [number, number, number]; readonly range: number; readonly gain: number; readonly disc: number;
+    /** A city panorama has a skyline to face, not a sun to place: the HDRI longitude, in degrees, that is turned
+     *  straight ahead of the grid (-z). Without it the sun turns to COAST_SUN_AZIMUTH (coast-sky.ts). */
+    readonly ahead?: number };
 }
 
 const cc0 = (asset: string, creator: string) => ({ license: 'CC0-1.0', creator, sourceUrl: `https://polyhaven.com/a/${asset}` }) as const;
@@ -47,6 +51,17 @@ export const COAST_ENV_VARIANTS: Readonly<Record<CoastEnvName, CoastEnvVariant>>
     intensity: 0.75, exposure: 1.0, grade: { saturation: 0.9, contrast: 1.0, tint: [0.97, 0.99, 1.01] },
     bloom: { strength: 0.45, threshold: 1.0 }, sun: { color: '#dfe6ee', intensity: 1.1 },
     sky: { sunDirection: [0.7724, 0.3869, 0.5037], range: 4, gain: 0.34, disc: 0 } },
+  // Neon Downtown, from assets-src/neon-sky/manifest.json: `sunDirection` is its measured key direction (no sun at
+  // night, and the brightest texel is one sign), `sun` its key colour and intensity x the environment intensity,
+  // `gain` = bloom threshold / p90Band0to40. The cap keeps sign texels from mirroring as white blots on the wet road.
+  night: { file: 'shanghai_bund_1k.hdr', credit: cc0('shanghai_bund', 'Greg Zaal'),
+    intensity: 0.6, exposure: 0.9, grade: { saturation: 1.15, contrast: 1.1, tint: [0.98, 1, 1.04] },
+    bloom: { strength: 0.55, threshold: 0.95 }, radianceCap: 4, sun: { color: '#ffdec0', intensity: 2.7 },
+    sky: { sunDirection: [-0.7865, 0.4607, -0.4112], range: 4, gain: 0.569, disc: 0, ahead: 30 } },
+  nightRain: { file: 'shanghai_bund_rain_1k.hdr', credit: cc0('shanghai_bund', 'Greg Zaal'),
+    intensity: 0.55, exposure: 0.95, grade: { saturation: 1.05, contrast: 1.08, tint: [0.98, 1, 1.03] },
+    bloom: { strength: 0.6, threshold: 0.9 }, radianceCap: 3, sun: { color: '#ffe4cf', intensity: 1.55 },
+    sky: { sunDirection: [-0.7504, 0.5086, -0.4222], range: 3, gain: 0.743, disc: 0, ahead: 30 } },
 });
 
 const envVariant = (trackId: string, preset: string): CoastEnvName | null => {

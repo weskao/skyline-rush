@@ -16,7 +16,7 @@ export const CLASSIC_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown
   // Neon Downtown: roadworks barriers sliding between two lanes on a slow 6 s cycle, a coned-off lane, a diversion
   // and neon gates that swing on a quicker 4 s beat, opening one lane while closing the other.
   neon: [
-    place('neon', 'neon-works-1', 'barrier', 500, 4.6, sweep(6)),
+    place('neon', 'neon-works-1', 'barrier', 760, 4.6, sweep(6)), // on the straight out of the rail underpass (470–690 m)
     ...closure('neon', 'neon-lane-closure', 2380, -7.5),
     place('neon', 'neon-works-2', 'barrier', 2520, -4.6, sweep(6, Math.PI)),
     place('neon', 'neon-branch-1', 'branch-marker', 2600, 0, { seed: 1 }), // risky right: past the swinging gate
