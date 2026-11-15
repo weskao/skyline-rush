@@ -2,7 +2,9 @@
 
 - [x] The energy can keeps its .17 s absorption. A fitted orange flash and 2/5/8 pooled embers gather at the contact point and expire after .27 s. Reduced Motion keeps a still ring and soft glow.
 - [x] RED: five can-specific regressions on the base renderer, including 64 road particles after two takes at 30 m/s. GREEN: 78 focused pickup, effects, economy, shader safety, browser timing and module-size checks. Tank and overcharge guards still pass.
-- [ ] Complete the WebGL visual matrix, physical-device review and exact-commit GitHub quality gate.
+- [x] Follow-up punch, each RED then GREEN: light haptic per tier (can 9 ms, tank 14, overcharge 20, cells none); fuel-bar flash with "+N" right of the reading (clear of the label in both phone orientations, still under Reduced Motion); camera kick at 20% of the NITRO ignition for a can, clamped to `KICK_LIMIT`; embers fly from the can into the car in vehicle space within .15 s and still reach it at 90 m/s; warm white-yellow can core with an orange rim, apart from the crash orange. `car.pickup` kept out of the legacy replay hash (47/47 unchanged).
+- [x] Real WebGL captures (desktop, 390×844, 844×390) show embers mid-flight and the warm-white contact flash with no orange; pickup-3d-collection, pickup-feedback, shader-warmup, black-frame, motion and pickup-3d browser specs pass; layout suites pass.
+- [ ] Physical-device review (haptic feel on Android, iOS) and exact-commit GitHub quality gate.
 
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
