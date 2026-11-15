@@ -228,3 +228,5 @@ export function instances(geometry, mat, count, scene) {
   return mesh;
 }
 
+
+export { TRAFFIC_DISPLAY_SCALE, isCircuitFinisher, trafficBodyIndex } from './vehicle-contact-size.js';

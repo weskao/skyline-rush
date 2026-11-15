@@ -200,3 +200,17 @@ test('eighth-place Circuit finish records valid laps instead of breaking phaseUI
   assert.doesNotThrow(() => recordModeRace(race, storage));
   assert.equal(loadModeHistory(storage).at(-1).position, 8);
 });
+
+test('finished Circuit rivals do not block the live approach to the final timing line', () => {
+  const race = createRace(id, { mode: 'circuit', laps: 1 });
+  race.phase = 'racing';
+  race.pickups = []; race.rings = []; race.traffic = [];
+  const rival = race.rivals[0];
+  race.rivals = [rival];
+  Object.assign(rival, { x: race.player.x, homeX: race.player.x, distance: race.length, speed: 0, pace: 0, finishTime: 28 });
+  Object.assign(race.circuit.rivals[rival.name], { completed: 1, finishTime: 28 });
+  Object.assign(race.player, { distance: race.length - 6, speed: 80 });
+  for (let i = 0; i < 6; i++) stepRace(race, { throttle: true }, 1 / 60);
+  assert.ok(race.player.distance >= race.length, 'a parked finisher cannot hold the active car short of the line');
+  assert.equal(race.player.collisions, 0);
+});

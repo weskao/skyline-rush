@@ -400,8 +400,8 @@ test('lane assist leaves active steering unchanged in either direction', () => {
   }
 });
 
-test('vehicle collision width is 1.7 so a 1.8 m lateral gap is not a crash', () => {
-  for (const [gap, collisions] of [[1.8, 0], [1.6, 1]]) {
+test('a pass with body clearance is safe but a visibly overlapping flank is a crash', () => {
+  for (const [gap, collisions] of [[2.45, 0], [2.25, 1]]) {
     const race = racing();
     Object.assign(race.player, { speed: 65, x: 2.5 });
     race.traffic = [{ x: 2.5 + gap, distance: 2, speed: 25 }];

@@ -3,15 +3,18 @@ import { carGap, syncCourseContact } from './course-race-step.ts';
 import { recoveryRetention } from './bonus-gates.ts';
 import { ROAD_LIMIT, SCRAPE_RATIO, shortcutPylons } from './game.js';
 import { SHORTCUT_TOLERANCE } from './road-falls.ts';
+import { bodiesShareHeight, isCircuitFinisher, vehicleContactSize } from './vehicle-contact-size.js';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-const CAR_WIDTH = 1.7, CAR_LENGTH = 4.4;
-const SIDE_CLEARANCE = 0.005, FOLLOW_GAP = CAR_LENGTH + 0.01;
-const RELEASE_GAP = FOLLOW_GAP + 0.12;
+const SIDE_CLEARANCE = 0.01, FOLLOW_CLEARANCE = 0.03, RELEASE_CLEARANCE = 0.12;
 const PYLON_HALF_WIDTH = 1.2;
-const verticalOverlap = (a, b) => Math.abs((a.altitude || 0) - (b.altitude || 0)) < 1.8;
-const overlappingCars = (race, a, b) => Math.abs(carGap(race, a, b) ?? Infinity) < CAR_LENGTH &&
-  Math.abs(a.x - b.x) < CAR_WIDTH && verticalOverlap(a, b);
+const overlapsLength = (gap, a, b) => gap !== null && gap < a.front + b.rear && gap > -(a.rear + b.front);
+
+function overlappingCars(race, car, other) {
+  const a = vehicleContactSize(race, car), b = vehicleContactSize(race, other);
+  return Math.abs(car.x - other.x) < a.halfWidth + b.halfWidth && bodiesShareHeight(car, other) &&
+    overlapsLength(carGap(race, car, other), a, b);
+}
 
 // Only overlaps present when the timer ends may finish passing through. Scenery
 // parts are identified by bounds because Endless can regenerate the same chunk.
@@ -23,7 +26,7 @@ export function trackPhaseExit(race, dt) {
   const car = race.player;
   if (car.effects.ghost > dt) { phaseExits.delete(car); return; }
   if (car.effects.ghost > 0) {
-    const cars = new Set([...race.traffic, ...race.rivals].filter(other => overlappingCars(race, car, other)));
+    const cars = new Set([...race.traffic, ...race.rivals].filter(other => !isCircuitFinisher(race, other) && overlappingCars(race, car, other)));
     const props = race.props.filter(prop => propTouches(prop, car, car.distance));
     if (cars.size || props.length) phaseExits.set(car, { cars, props });
     return;
@@ -59,81 +62,103 @@ export const isFollowingVehicle = car => following.has(car);
 const vehicleContacts = new WeakMap();
 const paceOf = other => other.pace ?? other.speed;
 
-function spaceFree(race, car, x, partner, opponents, exit) {
+function spaceFree(race, car, body, x, partner, opponents, exit) {
   if (Math.abs(x) > ROAD_LIMIT) return false;
   for (const other of opponents) {
     if (other === car || other === partner || (car === race.player && exit?.cars.has(other))) continue;
-    if (Math.abs(x - other.x) < CAR_WIDTH && verticalOverlap(car, other) &&
-        Math.abs(carGap(race, car, other) ?? Infinity) < CAR_LENGTH) return false;
+    const otherBody = vehicleContactSize(race, other);
+    if (Math.abs(x - other.x) < body.halfWidth + otherBody.halfWidth && bodiesShareHeight(car, other) &&
+        overlapsLength(carGap(race, car, other), body, otherBody)) return false;
   }
-  return !hitProp(race.props, { distance: car.distance, altitude: car.altitude, x }, car.distance);
+  return !hitProp(race.props, { distance: car.distance, altitude: car.altitude, x, body }, car.distance);
 }
 
-function separation(race, car, other, side, intensity, fresh, opponents, exit) {
-  // Keep the existing knock in open space. Test both resulting positions before committing it.
+function separation(race, car, body, other, otherBody, side, intensity, fresh, opponents, exit) {
+  // Test both resulting positions against the road and other cars before moving either car.
   let x = fresh && !(car.effects.shield > 0) ? knockX(car.x, side, intensity) : car.x;
   let ox = fresh && !(other.cooldown > 0) ? knockX(other.x, -side, intensity) : other.x;
-  const half = CAR_WIDTH / 2 + SIDE_CLEARANCE;
+  const half = (body.halfWidth + otherBody.halfWidth + SIDE_CLEARANCE) / 2;
   if (side * (x - ox) < 2 * half) {
     const centre = clamp((x + ox) / 2, -ROAD_LIMIT + half, ROAD_LIMIT - half);
     x = centre + side * half;
     ox = centre - side * half;
   }
-  if (spaceFree(race, car, x, other, opponents, exit) && spaceFree(race, other, ox, car, opponents)) return { x, ox };
-  // A third car can block the partner's side, even when the player has room.
-  x = other.x + side * (CAR_WIDTH + 2 * SIDE_CLEARANCE);
-  return spaceFree(race, car, x, other, opponents, exit) ? { x, ox: other.x } : null;
+  if (spaceFree(race, car, body, x, other, opponents, exit) && spaceFree(race, other, otherBody, ox, car, opponents)) return { x, ox };
+  x = other.x + side * 2 * half;
+  return spaceFree(race, car, body, x, other, opponents, exit) ? { x, ox: other.x } : null;
 }
 
-// A held rear bumper is one encounter. Keep the existing lane when neither
-// lateral separation fits. Steering still decides when to leave that lane.
-function follow(race, other, gap, previousDistance, retention) {
+// A held rear bumper is one encounter. Steering still decides when to leave the lane.
+function follow(race, other, gap, followGap, retention) {
   const car = race.player;
   if (following.get(car) !== other && !vehicleContacts.get(car)?.has(other)) contact(race, 'vehicle', other.x,
     clamp(Math.abs(car.speed - paceOf(other)) / 70, 0.25, 1), retention, false);
   following.set(car, other);
   car.speed = Math.min(car.speed, paceOf(other));
-  car.distance = Math.max(previousDistance, car.distance + gap - FOLLOW_GAP);
+  car.distance += gap - followGap;
+  if (race.course) syncCourseContact(race, car);
 }
 
 function resolveVehicles(race, previousDistance, previousX, retention, exit) {
-  const car = race.player;
+  const car = race.player, body = vehicleContactSize(race, car);
   const leader = following.get(car);
-  const opponents = [...race.traffic, ...race.rivals];
+  const opponents = [...race.traffic, ...race.rivals.filter(other => !isCircuitFinisher(race, other))];
   let contacts = vehicleContacts.get(car);
   if (contacts) for (const other of contacts) {
     const gap = opponents.includes(other) ? carGap(race, car, other) : null;
-    if (gap === null || Math.abs(gap) > RELEASE_GAP || Math.abs(car.x - other.x) > CAR_WIDTH + 0.12 ||
-        !verticalOverlap(car, other)) contacts.delete(other);
+    const size = vehicleContactSize(race, other);
+    if (gap === null || gap > body.front + size.rear + FOLLOW_CLEARANCE + RELEASE_CLEARANCE ||
+        gap < -(body.rear + size.front + RELEASE_CLEARANCE) ||
+        Math.abs(car.x - other.x) > body.halfWidth + size.halfWidth + RELEASE_CLEARANCE ||
+        !bodiesShareHeight(car, other)) contacts.delete(other);
   }
   if (leader) {
-    const gap = opponents.includes(leader) ? carGap(race, car, leader) : null;
-    if (gap !== null && gap >= 0 && gap <= RELEASE_GAP && Math.abs(car.x - leader.x) < CAR_WIDTH && verticalOverlap(car, leader)) {
-      if (gap < FOLLOW_GAP) follow(race, leader, gap, previousDistance, retention);
+    const gap = opponents.includes(leader) && !exit?.cars.has(leader) ? carGap(race, car, leader) : null;
+    const size = vehicleContactSize(race, leader), followGap = body.front + size.rear + FOLLOW_CLEARANCE;
+    if (gap !== null && gap <= followGap + RELEASE_CLEARANCE &&
+        Math.abs(car.x - leader.x) < body.halfWidth + size.halfWidth && bodiesShareHeight(car, leader)) {
+      if (gap < followGap) follow(race, leader, gap, followGap, retention);
     } else following.delete(car);
   }
   for (const other of opponents) {
-    if (exit?.cars.has(other) || Math.abs(car.x - other.x) >= CAR_WIDTH || !verticalOverlap(car, other)) continue;
-    const gap = carGap(race, car, other);
-    if (gap === null || gap >= CAR_LENGTH) continue;
+    const size = vehicleContactSize(race, other), width = body.halfWidth + size.halfWidth;
+    if (exit?.cars.has(other) || Math.abs(car.x - other.x) >= width || !bodiesShareHeight(car, other)) continue;
+    const gap = carGap(race, car, other), front = body.front + size.rear, rear = body.rear + size.front;
+    if (gap === null || gap >= front) continue;
     const previousGap = gap + car.distance - previousDistance;
-    if (gap <= -CAR_LENGTH) {
-      if (previousGap >= CAR_LENGTH) follow(race, other, gap, previousDistance, retention);
+    if (gap <= -rear) {
+      if (previousGap >= front) follow(race, other, gap, front + FOLLOW_CLEARANCE, retention);
       continue;
     }
     const side = Math.sign(car.x - other.x) || -1;
     const intensity = clamp(Math.abs(car.speed - other.speed) / 70, 0.25, 1);
     const fresh = car.cooldown === 0 && !contacts?.has(other);
-    let positions = separation(race, car, other, side, intensity, fresh, opponents, exit) ??
-      (Math.abs(car.x - other.x) < 0.5 ? separation(race, car, other, -side, intensity, fresh, opponents, exit) : null);
-    const blockedSteer = !positions && Math.abs(previousX - other.x) + 1e-8 >= CAR_WIDTH &&
-      spaceFree(race, car, previousX, other, opponents, exit);
+    let positions = separation(race, car, body, other, size, side, intensity, fresh, opponents, exit) ??
+      (Math.abs(car.x - other.x) < 0.5 ? separation(race, car, body, other, size, -side, intensity, fresh, opponents, exit) : null);
+    const blockedSteer = !positions && Math.abs(previousX - other.x) + 1e-8 >= width &&
+      spaceFree(race, car, body, previousX, other, opponents, exit);
     if (blockedSteer) positions = { x: previousX, ox: other.x };
-    if (!positions) {
-      if (previousGap > 0) follow(race, other, gap, previousDistance, retention);
+    const flank = Math.abs(car.x - other.x) / width > Math.abs(gap) / (gap >= 0 ? front : rear);
+    if (!positions && flank) {
+      // In a tight pack split only the encroaching edge; a full shove can hit the
+      // opposite flank. The candidate must still clear every other solid car.
+      const x = other.x + side * (width + SIDE_CLEARANCE);
+      if (spaceFree(race, car, body, x, other, opponents, exit)) positions = { x, ox: other.x };
+    }
+    if (!positions && previousGap > 0) {
+      follow(race, other, gap, front + FOLLOW_CLEARANCE, retention);
       continue;
     }
-    if (fresh && contact(race, 'vehicle', other.x, intensity, retention, !blockedSteer) && !blockedSteer && !(other.cooldown > 0)) {
+    if (!positions) {
+      // A faster car can reach an already boxed-in player from behind. Keep the
+      // player out of the leader and put the trailing nose behind the rear bumper.
+      other.distance += -rear - FOLLOW_CLEARANCE - gap;
+      other.speed = Math.min(other.speed, car.speed);
+      if (typeof other.pace === 'number') other.pace = Math.min(other.pace, car.speed);
+      positions = { x: car.x, ox: other.x };
+    }
+    const movesSideways = !blockedSteer && (positions.x !== car.x || positions.ox !== other.x);
+    if (fresh && contact(race, 'vehicle', other.x, intensity, retention, movesSideways) && movesSideways && !(other.cooldown > 0)) {
       knock(race, other, -side, intensity, aiRetention(other));
     }
     if (!contacts) vehicleContacts.set(car, contacts = new Set());

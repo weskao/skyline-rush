@@ -36,7 +36,7 @@ import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { f
 import { createCourseRaceScene } from './course-race-scene.ts'; import { graphOrigin, graphCarVisual, graphLookAhead, graphFinishVisual } from './course-render-pose.ts'; import { courseItemFrame, courseItemPoint } from './course-items.ts'; import { isCourseRuntime } from './course-runtimes.ts';
 import { FROSTBITE_ID, FROSTBITE_SPAN, frostbiteObjectSpan, frostbiteSpanLift } from './courses/frostbite-race.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
-import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, stepWing } from './car-model.js';
+import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, TRAFFIC_CAR_STYLES, makeCar, stepWing, TRAFFIC_DISPLAY_SCALE, isCircuitFinisher, trafficBodyIndex } from './car-model.js';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
 import { landmarkBounds } from './landmark-bounds.ts';
@@ -220,8 +220,8 @@ export function createWorld(canvas) {
   const trafficColors = ['#6e879c', '#ded6c9', '#a15b60', '#8c99a4', '#48545e'];
   // ×2 covers the double-traffic daily modifier.
   const traffic = Array.from({ length: Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2))) }, (_, i) => {
-    const car = makeCar(TRAFFIC_CAR_STYLES[i % TRAFFIC_CAR_STYLES.length], trafficColors[i % trafficColors.length]);
-    car.scale.setScalar(0.96); applyCarReflections(car, carEnvironment);
+    const car = makeCar(TRAFFIC_CAR_STYLES[trafficBodyIndex(i)], trafficColors[i % trafficColors.length]);
+    car.scale.setScalar(TRAFFIC_DISPLAY_SCALE); applyCarReflections(car, carEnvironment);
     scene.add(car);
     return car;
   });
@@ -437,7 +437,7 @@ export function createWorld(canvas) {
     const relative = graphView ? graphView.separation : physicalGap(trackId, distance, pose.distance);
     // Tour and sky routes end at the finish and trackPoint clamps there, so cars
     // past it would pile up at the arch like parked cars; they leave the scene instead.
-    const pastFinish = graphView?.finished || (!endlessActive && (trackId === 'spiral' || TOUR_IDS.has(trackId) || trackId === FROSTBITE_ID || MEASURED_COURSE_IDS.has(trackId)) && pose.distance > lastRace.length);
+    const pastFinish = isCircuitFinisher(lastRace, car) || graphView?.finished || (!endlessActive && (trackId === 'spiral' || TOUR_IDS.has(trackId) || trackId === FROSTBITE_ID || MEASURED_COURSE_IDS.has(trackId)) && pose.distance > lastRace.length);
     mesh.visible = isPlayer || (graphView ? relative < 900 && !pastFinish : relative > -55 && relative < 900 && !pastFinish);
     if (!mesh.visible) return; mesh.userData.roadDistance = pose.distance; mesh.userData.span = !!car.span; mesh.userData.altitude = (pose.altitude || 0) - (car.span ? FROSTBITE_SPAN.altitude - SHORTCUT_TOLERANCE : 0); // the pose the shadow sits under (a span car's on the deck)
     if (curvedClassic || trackId === 'spiral' || framedRoad(trackId, endlessActive)) {

@@ -6,7 +6,12 @@ const bodyOpacity = page => page.evaluate(() => window.gameScene.player.userData
 
 async function checkContactFeedback({ page, gameplayURL }, testInfo) {
   test.setTimeout(ciTimeout(90000));
-  await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' })));
+  await page.addInitScript(() => {
+    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' }));
+    localStorage.setItem('skyline-rush-guide-seen', '1');
+    localStorage.setItem('skyline-rush-whats-new-seen-v1', '999.0.0');
+    localStorage.setItem('skyline-rush-music', 'off');
+  });
   await captureHooks(page);
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -20,7 +25,7 @@ async function checkContactFeedback({ page, gameplayURL }, testInfo) {
     race.countdown = 0.01;
     Object.assign(race, { rivals: [], props: [], hazards: [], traffic: [] });
     Object.assign(player, { x: 0, distance: 300, speed: 55 });
-    race.traffic = [[0, 304.45], [-2, 301], [2, 301]].map(([x, distance], color) => ({
+    race.traffic = [[0, 305.05], [-2.45, 301], [2.45, 301], [0, 313], [0, 322]].map(([x, distance], color) => ({
       x, homeX: x, distance, speed: 22, cruise: 22, altitude: 0, cooldown: 0, laneShift: 0, color,
     }));
   });
@@ -41,13 +46,15 @@ async function checkContactFeedback({ page, gameplayURL }, testInfo) {
   const following = await page.evaluate(() => {
     const { player, traffic: [leader] } = window.gameplay.race;
     const state = { collisions: player.collisions, x: player.x, gap: leader.distance - player.distance,
-      paceDelta: Math.abs(player.speed - leader.speed) };
+      paceDelta: Math.abs(player.speed - leader.speed),
+      flankClearance: Math.min(...window.gameplay.race.traffic.slice(1, 3).map(car => Math.abs(car.x - player.x))) };
     player.effects.ghost = 3;
     return state;
   });
   expect(following.collisions).toBe(1);
   expect(Math.abs(following.x)).toBeLessThan(0.3);
-  expect(following.gap).toBeGreaterThanOrEqual(4.4);
+  expect(following.gap).toBeGreaterThan(4.9);
+  expect(following.flankClearance).toBeGreaterThan(2.39);
   expect(following.paceDelta).toBeLessThan(0.2);
   await expect(page.locator('#ghost-phase-status')).toBeVisible();
   await expect.poll(() => bodyOpacity(page)).toBeLessThan(0.8);
