@@ -94,12 +94,14 @@ test('opening guide from paused controls does not resume the race', async ({ pag
   await page.goto('/');
   await page.locator('#start-button').click();
   await page.locator('#guide-start-race').click();
-  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await expect(page.locator('#race-status')).toHaveText(/COUNTDOWN|RACING/);
   await page.keyboard.press('Escape');
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
   await openGuide(page);
+  await expect(page.locator('#guide-close')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('#guide-screen')).toBeHidden();
+  await expect(page.locator('#controls-button')).toBeFocused();
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
 });
 

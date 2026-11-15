@@ -35,7 +35,7 @@ export function setupGuideUI({
   function selectGuideDevice(device: GuideDevice): void {
     updateGuideView({ selectedDevice: device });
   }
-  function openGuide(opener: HTMLElement, firstStart = false): void {
+  function openGuide(opener: HTMLElement, firstStart = false, focusPractice = false): void {
     const key = firstStart ? 'tutorial.practiceFirst' : guidePracticeLabelKey(practiceCompleted());
     updateGuideView({ firstStart, steerMode: getSteeringMode(), practiceKey: key, practiceText: t(key) });
     guideOpener = opener;
@@ -46,7 +46,10 @@ export function setupGuideUI({
     guideScreen.showModal();
     void nextTick(() => {
       applyI18n(guideScreen);
-      if (firstStart && guideScreen.open) $('#guide-cancel').focus({ preventScroll: true });
+      if (guideScreen.open) {
+        const focusTarget = firstStart ? '#guide-cancel' : focusPractice ? '#guide-practice' : '#guide-close';
+        $(focusTarget).focus({ preventScroll: true });
+      }
     });
   }
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-guide-device]')) {
@@ -57,8 +60,7 @@ export function setupGuideUI({
   }
   $('#guide-open').addEventListener('click', () => openGuide($('#controls-button')));
   $('#practice-button').addEventListener('click', event => {
-    openGuide(event.currentTarget as HTMLElement);
-    $('#guide-practice').focus();
+    openGuide(event.currentTarget as HTMLElement, false, true);
   });
   function practiceCompleted(): boolean {
     try { return localStorage.getItem('skyline-rush-tutorial-completed') === '1'; }
