@@ -69,7 +69,7 @@ export function setupGarageUI({
   let previewing = getEquippedPaint();
   const owned = (): string[] => availablePaints(getStars());
   let camera = defaultGarageCamera();
-  let autoPaused = false;
+  let orbitBeforeGesture = false;
   const contacts = new Map<number, { x: number; y: number }>();
   let pendingStudioInspection = false;
   function syncSkins(): void {
@@ -195,7 +195,9 @@ export function setupGarageUI({
   function releaseContact(id: number): void {
     const hadPointer = contacts.delete(id);
     if (!hadPointer || contacts.size !== 0 || !garageScreen.open) return;
-    if (garageStudioView.page === 'studio') setCamera(releaseGarageOrbit(camera, autoPaused));
+    if (garageStudioView.page === 'studio' && camera.autoRotate !== orbitBeforeGesture) {
+      setCamera(releaseGarageOrbit(camera, orbitBeforeGesture));
+    }
     clearControls();
   }
 
@@ -240,7 +242,6 @@ export function setupGarageUI({
     world.resize();
     previewPaint(getEquippedPaint());
     world.setGarageLighting?.(garageStudioView.lighting);
-    autoPaused = false;
     setCamera(defaultGarageCamera());
     pushPage('home');
   });
@@ -297,12 +298,10 @@ export function setupGarageUI({
   $('#garage-zoom-in').addEventListener('click', () => setCamera(zoomGarageCamera(camera, .85)));
   $('#garage-zoom-out').addEventListener('click', () => setCamera(zoomGarageCamera(camera, 1.15)));
   $('#garage-reset').addEventListener('click', () => setCamera(defaultGarageCamera()));
-  $('#garage-auto-rotate').addEventListener('click', () => {
-    autoPaused = camera.autoRotate;
-    setCamera(toggleGarageOrbit(camera));
-  });
+  $('#garage-auto-rotate').addEventListener('click', () => setCamera(toggleGarageOrbit(camera)));
   preview.addEventListener('pointerdown', event => {
     if (garageStudioView.page !== 'studio' || event.pointerType === 'mouse' && event.button !== 0) return;
+    if (contacts.size === 0) orbitBeforeGesture = camera.autoRotate;
     contacts.set(event.pointerId, { x: event.clientX, y: event.clientY });
     preview.setPointerCapture(event.pointerId);
     event.preventDefault();

@@ -36,8 +36,8 @@ export function zoomGarageCamera(state: GarageCamera, multiplier: number): Garag
 export const toggleGarageWing = (state: GarageCamera): GarageCamera => ({ ...state, wing: !state.wing });
 export const toggleGarageOrbit = (state: GarageCamera): GarageCamera => ({ ...state, autoRotate: !state.autoRotate });
 
-export const releaseGarageOrbit = (camera: GarageCamera, paused: boolean): GarageCamera =>
-  ({ ...camera, autoRotate: !paused });
+export const releaseGarageOrbit = (camera: GarageCamera, orbitBeforeGesture: boolean): GarageCamera =>
+  ({ ...camera, autoRotate: orbitBeforeGesture });
 
 /** Fit the entire car's bounding sphere in both FOV axes, including narrow phones. */
 export function garageFittedDistance(aspect: number, zoom: number, radius: number): number {

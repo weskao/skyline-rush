@@ -45,6 +45,10 @@ controls. Move the event-driven UI to Vue gradually; keep the hot paths plain JS
 - Write `textContent`, `hidden`, `dataset` only when the value changed.
 - A HUD change follows `performance-review.md`: measure frame cost before and after.
 
+## Preview Studio camera gestures
+
+- Read the camera's active orbit state when the first pointer starts a gesture. When the last pointer is released, restore that state and keep the adjusted pose. Fixed presets and keyboard rotation can both disable orbit independently of the orbit button. Guard: `tests/garage-studio-browser.spec.js`.
+
 ## Types
 
 - **Strict `tsconfig.json` is authoritative** for TypeScript sources and Vue scripts.

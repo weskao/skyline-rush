@@ -1,3 +1,9 @@
+# 2026-11-15 — Preview Studio fixed camera
+
+- [x] RED → GREEN in Chromium with CI timing and zero retries. Desktop drag and two-finger pinch at 390×844 and 844×390 all turned orbit on after release on the old code. They now preserve the fixed pose. The desktop test also verifies that a keyboard-adjusted fixed view stays fixed and a previously active orbit resumes.
+- [x] Camera, browser timing and module-size guards passed (22 checks). Typecheck and both the default production and trial builds passed.
+- [ ] Full GitHub `quality-gate` and physical iOS/Android touch verification.
+
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
 - [x] The Garage and Preview Studio share a preview-only toggle for equipment effects. The 3D car, paint and display pose stay visible. Classic and Coming Soon showrooms use the same Aero visibility gate.
