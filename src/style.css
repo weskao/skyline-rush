@@ -1995,7 +1995,7 @@ body[data-tutorial-reward="nitro"] #nitro-meter, body[data-tutorial-reward="nitr
    pause screen starts below it on phones, right of it in landscape; neither covers the other. */
 body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* an open language/VFX list opens over the coach (12) */
 @media (max-width: 760px) and (min-height: 501px) { body[data-tutorial] .race-overlay { top: max(calc(var(--safe-top) + 190px), calc(var(--tutorial-coach-bottom, 0px) + 8px)); align-items: start; overflow: auto; } body[data-tutorial] .overlay-route { display: none; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 4px 0 6px; } body[data-tutorial] .overlay-summary > p { margin-bottom: 12px; } }
-@media (max-height: 500px) and (orientation: landscape) { body[data-tutorial] .race-overlay { justify-items: end; } body[data-tutorial] .overlay-content { width: calc(42vw - 36px); margin-right: 12px; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 6px 0 8px; } } /* right of the 58vw coach */
+@media (max-height: 500px) and (orientation: landscape) { body[data-tutorial] .race-overlay { justify-items: end; padding-block: 10px; } body[data-tutorial] .overlay-route { display: none; } body[data-tutorial] .overlay-content { width: calc(42vw - 36px); margin-right: 12px; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 6px 0 8px; } } /* right of the 58vw coach */
 
 /* Display-only 3x results artwork; no reward entitlement. */
 .result-trophy-art{display:inline-block;max-width:96px;vertical-align:middle;object-fit:contain;animation:reward-podium-reveal .52s ease-out both}

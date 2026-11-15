@@ -90,6 +90,16 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   await wait(10)` burned 60 s on one missed ring and timed ring-sfx out (CI 42489399352). Write
   `while (!decided && race.elapsed < until) await new Promise(requestAnimationFrame)`. Enforced by
   `tests/browser-timeouts.test.js` (*counted wall-clock sleep*).
+- **A slow-frame shim stalls each frame once, not each `requestAnimationFrame` callback.** Since the results
+  credit roll runs its own rAF loop, a per-callback 300 ms stall made the 17 frames a finish needs (4 to cross
+  the line, 12 for the 0.6 s results reveal at 0.05 s each) cost 39 stalls: 11.9 s, past the 10 s expect, while
+  a real slow device took 5.4 s. Key the stall on the frame timestamp (`stalledFrame`); enforced by
+  `tests/browser-timeouts.test.js` (*slow-frame shim*).
+- **Measure the Garage after its slide-in.** `#garage-screen` opens with `history-in` (translateX 22px). A rect
+  read mid-slide is shifted and goes through float32 transform math: a 144 px thumbnail measured
+  144.00001526 in 1 of 30 runs while `offsetWidth` stayed 144. Open it with `openGarage()` from
+  `tests/helpers/test.js`; never loosen a pixel bound to absorb it. Enforced by the same test file
+  (*Garage geometry*) for the specs it lists.
 - **Seeded positions stay clear of the field.** Teleporting the player back to the first rings put
   it in the pack: rivals step first and take the ring, traffic knocks the car off it. Seed ahead of
   every car (`race.rivals`) and pass traffic with `player.effects.ghost` (game seconds).
