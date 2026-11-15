@@ -125,7 +125,7 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
 - [x] Deep Crimson card (2026-11-13): `crimson@3x.webp` (960×510, 3× the 320×170 card) shares the
   painted collection's close-up composition and is available for all cars. The full-car render now appears in the car
   picker beside the Roadster. Browser coverage checks the art, labels and responsive bounds at 390×844,
-  844×390 and 1440×900. See the [artwork notes](../../../../public/feature-assets/garage-vfx-skins/paint-cards/README.md).
+  844×390 and 1440×900. See the [artwork notes](../../../../public/feature-assets/garage-public/paint-cards/README.md).
 - [ ] Car picker locked/trial/owned states: not built, both cars are temporarily open (waits for the unlock rule,
   which the owner decides later, 2026-11-14).
 - [x] Local save for the equipped car (`skyline-rush-car`) and each car's paint (`skyline-rush-car-paints`), with a

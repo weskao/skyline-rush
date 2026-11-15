@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 const props = defineProps<{ id: string; color: string }>();
 // Vite BASE_URL supports both the local dev server and /skyline-rush/ Pages.
-const artwork = computed(() => import.meta.env.BASE_URL + 'feature-assets/garage-vfx-skins/paint-cards/' + props.id + '@3x.webp');
+const artwork = computed(() => import.meta.env.BASE_URL + 'feature-assets/garage-public/paint-cards/' + props.id + '@3x.webp');
+const failedArtwork = ref<string>();
 </script>
 
 <template>
-  <span class="garage-paint-preview" :data-finish="id" :style="{ '--paint-color': color }" aria-hidden="true">
-    <img class="garage-paint-image" :src="artwork" width="960" height="510" alt=""
-      loading="eager" decoding="async" />
+  <span class="garage-paint-preview" :data-finish="id" :class="{ 'garage-paint-preview--fallback': failedArtwork === artwork }"
+    :style="{ '--paint-color': color }" aria-hidden="true">
+    <img v-if="failedArtwork !== artwork" :key="artwork" class="garage-paint-image" :src="artwork" width="960" height="510" alt=""
+      loading="eager" decoding="async" @error="failedArtwork = artwork" />
     <span class="garage-paint-sheen"></span>
     <span class="garage-paint-reflection"></span>
   </span>
@@ -21,6 +23,7 @@ const artwork = computed(() => import.meta.env.BASE_URL + 'feature-assets/garage
   min-height: 92px; aspect-ratio: 960 / 510; overflow: hidden; border-radius: 11px 8px 6px 6px;
   background: radial-gradient(ellipse at 45% 32%, color-mix(in srgb, var(--paint-color) 34%, #0b2642), transparent 75%), #081828;
 }
+.garage-paint-preview--fallback { background: var(--paint-color); }
 .garage-paint-image { display: block; width: 100%; height: 100%; object-fit: cover;
   object-position: center; border-radius: inherit; }
 .garage-paint-sheen { position: absolute; z-index: 2; top: -50%; bottom: -50%; left: 0;

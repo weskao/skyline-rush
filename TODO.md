@@ -5618,3 +5618,11 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [x] Give each World Tour map its own AIRFLOW case with all six views. Run the HUD interaction matrix at Low quality and allow the live race countdown to finish on slower runners.
 - [x] `npm test`: 2,974 passed, 3 skipped. Typecheck, module-size checks, production build and World Tour shard selection passed.
 - [ ] Verify the full GitHub `quality-gate` for this commit.
+
+## 2026-11-15 — Garage public artwork (`fix/garage-public-artwork`)
+
+- Base `origin/develop`: `4d45cc460b4d1c45ed26017ef9737802a5a1d63e`.
+- [x] RED: the default `npm run build` removed the two car and seven paint WebPs with the VFX tree. The production audit incorrectly accepted the missing public files, and the locked mission board used PNG URLs for the existing WebPs. See `tests/garage-release-build.test.js` and `tests/garage-public-artwork-browser.spec.js`.
+- [x] Move only the two model and seven paint WebPs to `garage-public/`, preserving every Git blob. Reuse the existing mission and trophy WebPs. Keep a color swatch and the existing paint name if the paint image fails.
+- [x] Keep the unpublished VFX fence and the trial store alias. Require all 17 public WebPs in the production audit.
+- [ ] Full browser suite, physical phones in both orientations and exact-HEAD GitHub `quality-gate` are separate acceptance gates.

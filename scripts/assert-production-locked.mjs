@@ -1,6 +1,5 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { existsSync } from 'node:fs';
 
 // Each marker is a string its development-only module needs at runtime, so minification cannot strip it.
 const RELEASE_LEAK_MARKERS = {
@@ -37,6 +36,22 @@ const assetLeak = locked && existsSync('dist/feature-assets/garage-vfx-skins')
 const leaked = assetLeak.concat(Object.entries(RELEASE_LEAK_MARKERS).flatMap(([marker, what]) =>
   files.filter(path => readFileSync(path, 'utf8').includes(marker)).map(path => `${what} in ${path}`)));
 
+// These Garage cards ship in every release mode, outside the unpublished VFX fence.
+const publicArtwork = {
+  'garage-public/car-picker': ['roadster', 'crimson-gt'],
+  'garage-public/paint-cards': ['pearl', 'crimson', 'aurora', 'glacier', 'coral', 'cobalt', 'obsidian'],
+  'garage-rewards-and-missions/raster': [
+    'mission-race', 'mission-time', 'mission-drift', 'mission-combo',
+    'trophy-bronze', 'trophy-silver', 'trophy-gold', 'trophy-platinum',
+  ],
+};
+for (const [directory, ids] of Object.entries(publicArtwork)) {
+  for (const id of ids) {
+    const path = `dist/feature-assets/${directory}/${id}@3x.webp`;
+    if (!existsSync(path)) leaked.push(`public Garage artwork missing: ${path}`);
+  }
+}
+
 // Fail release if a public trial accidentally builds the locked UI or omits artwork.
 // This is an artifact-integrity check; it is not a server-side entitlement system.
 if (mode === 'trial') {
@@ -51,7 +66,7 @@ if (mode === 'trial') {
   }
 }
 if (leaked.length) {
-  console.error('Refusing production build: development-only code leaked:', leaked.join('; '));
+  console.error('Refusing production build: bundle audit failed:', leaked.join('; '));
   process.exitCode = 1;
 } else {
   console.log(`Production ${mode} bundle checked: no development-only unlock or diagnostic module found.`);

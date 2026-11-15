@@ -56,3 +56,11 @@ When adding or updating Garage, HUD, Store, Rewards or any other transparent ico
 - Follow RED → GREEN → `make verify` → full exact-HEAD CI and actual visual review;
   programmatic alpha insets do not prove that the original silhouette is artistically complete.
   Do not call it accepted while any required test or manual review remains pending.
+
+## Garage art in production builds
+
+Keep shared car-picker and paint-card WebPs under `public/feature-assets/garage-public/`.
+The locked build removes the entire `garage-vfx-skins/` tree. Both mission boards use
+the existing WebPs in `garage-rewards-and-missions/raster/`. Check the actual `dist`
+image URLs and decode dimensions with `tests/garage-public-artwork-browser.spec.js`
+on the default locked artifact and with `PLAYWRIGHT_PAGES=1` on the Pages trial artifact.

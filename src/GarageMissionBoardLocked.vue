@@ -11,7 +11,7 @@ const missions = filterWave3PreviewItems('garage-rewards-and-missions', 'mission
 const trophies = filterWave3PreviewItems('garage-rewards-and-missions', 'trophy');
 const title = (item: Wave3PreviewItem) => item.name[locale.value];
 const asset = (id: string) =>
-  `${import.meta.env.BASE_URL}feature-assets/garage-rewards-and-missions/raster/${id}@3x.png`;
+  `${import.meta.env.BASE_URL}feature-assets/garage-rewards-and-missions/raster/${id}@3x.webp`;
 let stopListening: (() => void) | undefined;
 onMounted(() => { locale.value = getLocale(); stopListening = onLocaleChange(next => { locale.value = next; }); });
 onUnmounted(() => stopListening?.());

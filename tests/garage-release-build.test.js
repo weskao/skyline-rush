@@ -121,8 +121,8 @@ test('release policy explains opt-in public session trial without permanent owne
   assert.match(policy, /no (?:purchase|checkout|payment)/i);
 });
 
-test('locked bundle audit refuses the skin pick storage key, other modes allow it', async () => {
-  const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs');
+test('locked bundle audit refuses the skin pick storage key, other modes allow it', async t => {
+  const { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
   const { spawnSync } = await import('node:child_process');
@@ -130,7 +130,13 @@ test('locked bundle audit refuses the skin pick storage key, other modes allow i
   const { SKIN_PICK_STORAGE_KEY } = await import('../src/garage-skin-preference.ts');
   const script = fileURLToPath(new URL('../scripts/assert-production-locked.mjs', import.meta.url));
   const root = mkdtempSync(join(tmpdir(), 'garage-pick-leak-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'dist'));
+  mkdirSync(join(root, 'dist', 'feature-assets'));
+  for (const directory of ['garage-public', 'garage-rewards-and-missions']) {
+    symlinkSync(fileURLToPath(new URL(`../public/feature-assets/${directory}`, import.meta.url)),
+      join(root, 'dist', 'feature-assets', directory), 'junction');
+  }
   writeFileSync(join(root, 'dist', 'index.js'), `localStorage.getItem("${SKIN_PICK_STORAGE_KEY}:"+id)`);
   const run = mode => spawnSync(process.execPath, [script], { cwd: root, env: { ...process.env, GARAGE_VFX_RELEASE_MODE: mode }, encoding: 'utf8' });
   const locked = run('coming-soon');
@@ -163,4 +169,27 @@ test('trial-only live mission UI and race port cannot leak into locked releases'
   const trial = selectGarageReleaseBuild('production', 'trial').aliases;
   assert.match(trial['#wave3-demo-mission-ui'], /GarageMissionBoard\.vue$/);
   assert.match(trial['#wave3-demo-race'], /wave3-race-events\.ts$/);
+});
+
+test('production audit rejects missing public Garage artwork in locked and Pages trial bundles', async t => {
+  const { mkdtempSync, mkdirSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const script = fileURLToPath(new URL('../scripts/assert-production-locked.mjs', import.meta.url));
+  const root = mkdtempSync(join(tmpdir(), 'garage-public-artwork-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  mkdirSync(join(root, 'dist'));
+
+  for (const mode of ['coming-soon', 'trial']) {
+    const result = spawnSync(process.execPath, [script], {
+      cwd: root, env: { ...process.env, GARAGE_VFX_RELEASE_MODE: mode }, encoding: 'utf8',
+    });
+    assert.match(result.stderr, /public Garage artwork missing: .*roadster@3x\.webp/, mode);
+    assert.match(result.stderr, /public Garage artwork missing: .*crimson@3x\.webp/, mode);
+    assert.match(result.stderr, /public Garage artwork missing: .*mission-race@3x\.webp/, mode);
+    assert.match(result.stderr, /public Garage artwork missing: .*trophy-gold@3x\.webp/, mode);
+    assert.equal(result.status, 1, mode);
+  }
 });
