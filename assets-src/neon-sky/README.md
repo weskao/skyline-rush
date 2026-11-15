@@ -27,17 +27,25 @@ the 8K UASTC encodes; peak memory about 2 GB.
 Processing, all in direction space so 1k, 4K and 8K agree:
 
 - **Sign soften (both domes).** The far LED towers carry vertical text and the near embankment buildings carry facade
-  and rooftop signs that read at 4K and 8K. `SOFTEN` blurs (Gaussian, sigma 0.25 degrees) the band from the horizon to
-  22 degrees (fading out by 26) and one box at lon -166..-156, el 35..41 (the rooftop sign). Glow and silhouettes
-  stay. The 1k environment maps are below legibility and are not softened.
-- **Wedge fill (domes only).** The near floodlit embankment buildings fill lon -180..-84 and +150..180 up to about
-  43 degrees at about 8x the rest of the sky (`sky.sourceBandByLon`), and the harbour drives straight at them: a wall
-  of blurred yellow buildings. `FILL` replaces lon 138..280 (wrapping) below 50 degrees, fading out by 62, with whole
-  columns of the far skyline and its sky shifted from lon -70..20 and 65..117: never mirrored or resampled, so nothing
-  blurs and no axis of symmetry shows; each piece lands at least 150 degrees from its source, so a chase camera never
-  sees one span twice; no iconic tower (lon +31..+58) is copied; 3-degree feathered edges. `sky.bandByLon` (mean
+  and rooftop signs that read at 4K and 8K. `SOFTEN` blurs (Gaussian, sigma 0.25 degrees) only the LED facades from
+  the horizon to 22 degrees (fading out by 26): texels with chroma (max - min) / max above 0.6 and a channel above
+  3.0, grown by a 1.5-degree box; plus one box at lon -166..-156, el 35..41 (the rooftop sign). Ordinary towers,
+  windows and the sky keep the download's edges. Blurring the whole band (the first version) halved the skyline's
+  log-luminance gradient, 0.565/0.688 to 0.265/0.253 per degree (x/y): the far skyline read soft at High. Now
+  `sky.sharpness` is 0.447/0.545 against `sky.sourceSharpness` 0.574/0.698 (night). The 1k maps are not softened.
+- **Wedge fill (domes and 1k maps).** The near floodlit embankment buildings and trees fill lon -180..-68 and
+  +114..180 up to about 43 degrees at about 8x the rest of the sky (`sky.sourceBandByLon`), and the harbour drives
+  straight at them. `FILL` replaces lon 114..292 (wrapping) below 50 degrees, fading out by 62, with a far shore:
+  below 3..8 degrees whole columns of the generic far skyline shifted (never resampled) from lon -18..17 and 71..108,
+  alternating in five pieces; then the city's horizon haze (per row, the median of lon -65..114) up to 15..25 degrees;
+  then the pieces' clouds. The source holds about 72 degrees of generic skyline for 178 of wedge: the first version's
+  full-height copy put the pink LED tower, the pink sign and the gold crown twice in one view, with glow halos at the
+  seams. The low shore repeats only lamps. Feathers are 1 degree at the shore and 8 in the sky. `sky.bandByLon` (mean
   luminance per 30-degree bin, el 0..45) is measured on the shipped dome and every bin stays within 3x the median.
-  The 1k environment maps keep the wall: its glow lights the city.
+- **1k maps carry the fill, keep the light.** The wet road mirrors the 1k map: with the wall in it, the rain harbour's
+  road read tan (RGB 128/105/82; 107 luma ahead, 17 with the environment off). The 1k maps now carry the same fill,
+  and the light it removed comes back as an overhead glow (el 40..60 up) in the wall's colour, so the horizontal
+  irradiance stays the download's (`irradiance.source` / `irradiance.shipped`, asserted within 0.1%).
 - **Rain grade (1k and domes).** `x' = exposure * mix(sat(x), haze, veil * exp(-|el| / falloff))` with exposure 0.7,
   saturation 0.8, veil 0.65, falloff 14 degrees; `haze` is the 1k source's own mean radiance 0..1 degree above the
   horizon (`hazeColor` in the manifest). The rain 1k HDR is written by the script's own RGBE + RLE writer (Blender's
@@ -51,19 +59,19 @@ Pinned by `tests/neon-sky-manifest.test.js`.
 
 | | `night` | `rain` |
 | --- | --- | --- |
-| Environment map (PMREM 256) | `environments/shanghai_bund_1k.hdr` (1,640,377 B) | `environments/shanghai_bund_rain_1k.hdr` (1,477,669 B) |
+| Environment map (PMREM 256) | `environments/shanghai_bund_1k.hdr` (1,261,024 B) | `environments/shanghai_bund_rain_1k.hdr` (1,120,064 B) |
 | Sky dome 4K | `environments/sky/shanghai_bund_sky_4k.ktx2` | `environments/sky/shanghai_bund_rain_sky_4k.ktx2` |
 | Sky dome 8K (Ultra) | `environments/sky/shanghai_bund_sky_8k.ktx2` | `environments/sky/shanghai_bund_rain_sky_8k.ktx2` |
 | `credit` | CC0-1.0, Greg Zaal, polyhaven.com/a/shanghai_bund | same |
 | Dome decode `sky.range` | 4.0 | 3.0 |
 | `sky.disc` | 0 (no sun) | 0 |
-| Key light direction (HDRI frame) | [0.4379, 0.8165, -0.3762], el 54.7 deg | [0.1977, 0.9692, -0.1471], el 75.7 deg |
+| Key light direction (HDRI frame) | [-0.0081, 0.8498, 0.5271], el 58.2 deg | [0.1203, 0.973, 0.1968], el 76.7 deg |
 | Key light colour | `#ffdec0` | `#ffe4cf` |
-| Key light intensity (same road irradiance) | 2.5533 | 1.4795 |
-| `key.source`: measured on the shipped map | [-0.7865, 0.4607, -0.4112], el 27.4 deg, 4.5252 | [-0.7504, 0.5086, -0.4222], el 30.6 deg, 2.8193 |
+| Key light intensity (same road irradiance) | 2.4532 | 1.4737 |
+| `key.source`: measured on the download (rain: its raw grade) | [-0.7865, 0.4607, -0.4112], el 27.4 deg, 4.5252 | [-0.7504, 0.5086, -0.4222], el 30.6 deg, 2.8193 |
 | Ambient (mean hemisphere radiance) | 1.3838 | 0.8754 |
-| Horizon glow (linear RGB) | [2.379, 2.219, 2.131] | [1.524, 1.368, 1.272] |
-| `p90Band0to40` (Coast's gain rule, not used) | 1.6703 | 1.2121 |
+| Horizon glow (linear RGB) | [2.37, 2.191, 2.089] | [1.521, 1.361, 1.262] |
+| `p90Band0to40` (Coast's gain rule, not used) | 1.5064 | 1.1377 |
 
 Paths are relative to `public/`. URLs, bytes and sha256 of every file are in the manifest.
 
@@ -73,15 +81,15 @@ What the runtime must know:
   `night` to `night`, and leaves `day` / `dusk` / `fog` on today's lighting.
 - **Dome format** is Coast's: 4:1 upper hemisphere, first row = zenith (`flipY = false`), sRGB UASTC + zstd, full
   mips; scene-linear radiance = sample x `range`. Same equirect convention: `u = atan2(z, x) / 2pi + 0.5`.
-- **Key light** is measured on the shipped 1k map (`key.source`): direction = vector irradiance of the upper hemisphere
+- **Key light** is measured on the downloaded 1k map (`key.source`): direction = vector irradiance of the upper hemisphere
   (where the light comes from on balance); intensity = its length, so a three.js `DirectionalLight` of that intensity
   adds the HDRI's directional part once more (Coast adds its sun the same way, then scales by hand); colour = radiance
   weighted toward that direction. On this map about 90% of that vector is the floodlit embankment wall at el 27-31
   degrees, straight down the harbour heading: its specular glinted white off the wet road and the car paint (road-ahead
   mean 210/255 with 1.3% clipped; 112 with the key off). So the shipped `key.direction` is the vector irradiance of
   the *filled* 1k sky (the sky the player sees), high overhead, and `key.intensity` is scaled by
-  sin(source elevation) / sin(elevation) so the road gets the same irradiance; colour and ambient stay the shipped
-  map's, which still lights the city with the wall's glow. Treat intensity as a starting value
+  sin(source elevation) / sin(elevation) so the road gets the same irradiance; colour and ambient stay the
+  download's, whose light the shipped 1k keeps as overhead glow. Treat intensity as a starting value
   scaled by the environment's `intensity`/`exposure`, as Coast's hand-tuned `sun.intensity` is.
 - **`sky.sunDirection`** keeps Coast's field (centroid of the brightest 0.02 % of the 4K hemisphere) but at night it
   is a lamp or LED facade near el 17-19 degrees; do not use it to place a sun disc (`disc` is 0).
@@ -90,10 +98,10 @@ What the runtime must know:
   (night) the threshold: over the canal, where no building hides the dome, the horizon bloomed into a white haze.
   `p90Band0to40` is kept in the manifest for comparison only.
 - **Yaw.** The far skyline (the reason for this HDRI) is centred near lon +30 degrees in the HDRI frame; the near
-  embankment buildings fill roughly lon -180..-84 and +150..180 up to about 43 degrees on the 1k maps (the domes
-  carry the wedge fill instead). Pick the dome/environment yaw (as `coastSkyYaw` does for Coast) so the skyline sits
+  embankment buildings filled roughly lon -180..-68 and +114..180 up to about 43 degrees (the domes and 1k maps carry
+  the wedge fill instead). Pick the dome/environment yaw (as `coastSkyYaw` does for Coast) so the skyline sits
   ahead and the near buildings hide behind Neon's own city.
 - **Budgets.** Each dome file is under Coast's `downloadBytes`; each environment's total (1k + 4K + 8K) is under
-  Coast's largest environment. The night 1k HDR alone (1.64 MB) is larger than any Coast 1k (max 1.44 MB).
+  Coast's largest environment. The 1k HDRs (1.26 and 1.12 MB) are under Coast's largest 1k (1.44 MB).
 - **Rain look** in the sky is haze only; wet road, droplets and the pink-violet grade stay in the runtime (`wetness`,
   `grade.tint`).

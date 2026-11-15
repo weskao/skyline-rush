@@ -57,7 +57,7 @@ test('two environments, night and rain, both credited to the licence record and 
     assert.deepEqual(env.inputSha256, downloads);
     assert.deepEqual(env.soften, ENVS.night.soften, 'one sign soften for both');
   }
-  assert.equal(ENVS.night.grade, null, 'night ships the HDRI as downloaded');
+  assert.equal(ENVS.night.grade, null, 'night is not graded');
   assert.deepEqual(Object.keys(ENVS.rain.grade).sort(), ['exposure', 'falloffDeg', 'saturation', 'veil']);
 });
 
@@ -134,9 +134,46 @@ for (const [name, env] of Object.entries(ENVS)) {
   });
 }
 
-test('night ships the 1k download unchanged, as Coast does', () => {
-  assert.equal(ENVS.night.environment.sha256, SOURCE.files[0].sha256);
+// Same wall, the 1k maps (2026-11-16): shipped as downloaded, the wet road mirrored the wall in the rain harbour as a tan
+// sheen (road-ahead RGB 128/105/82; 17/255 with the environment off, 105 with the key off). Both maps carry the fill and
+// keep the wall's light as overhead city glow, so the city is lit by the download's horizontal irradiance.
+const upperRows = ({ width, height, data }, fn) => {
+  for (let y = 0; y < height / 2; y++) {
+    const el = 90 - (y + 0.5) / height * 180;
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      fn(el, x, LUMA.reduce((sum, w, c) => sum + w * data[i + c], 0));
+    }
+  }
+};
+for (const [name, env] of Object.entries(ENVS)) {
+  test(`${name}: the 1k map's sky is not a floodlit wall either: every 30-degree bin within 3x the median`, () => {
+    const map = hdr('public/' + env.environment.url), sums = Array(12).fill(0), counts = Array(12).fill(0);
+    upperRows(map, (el, x, lum) => { if (el < 45) { const b = Math.floor(x * 12 / map.width); sums[b] += lum; counts[b]++; } });
+    const bins = sums.map((s, i) => s / counts[i]);
+    bins.forEach((v, i) => assert.ok(v <= 3 * median(bins), `lon ${-180 + 30 * i}: ${v.toFixed(3)} > 3x median ${median(bins).toFixed(3)}`));
+  });
+}
+
+test('night\'s 1k map keeps the download\'s horizontal irradiance: the wall\'s light moves overhead, not away', () => {
+  const map = hdr('public/' + ENVS.night.environment.url), { source, shipped } = ENVS.night.irradiance ?? {};
+  let eh = 0;
+  const dOmega = (Math.PI / map.height) * (2 * Math.PI / map.width), rad = Math.PI / 180;
+  upperRows(map, (el, x, lum) => { eh += lum * Math.sin(el * rad) * Math.cos(el * rad) * dOmega; });
+  assert.ok(Math.abs(eh / shipped - 1) < 0.01, `measured ${eh.toFixed(4)} vs recorded ${shipped}`);
+  assert.ok(Math.abs(shipped / source - 1) < 0.01, `shipped ${shipped} vs download ${source}`);
 });
+
+// Trap (2026-11-16): the sign soften blurred the whole band from the horizon to 22 degrees and halved the far skyline's
+// gradient, so it read soft at High whatever the dome's resolution (8K softened measured the same as 4K softened).
+for (const [name, env] of Object.entries(ENVS)) {
+  test(`${name}: the far skyline keeps the download's edges: only LED facades are softened`, () => {
+    const { sharpness, sourceSharpness } = env.sky;
+    assert.equal(sharpness?.length, 2, 'mean |gradient| of log luminance per degree, x and y, lon -70..110, el 0..22');
+    sharpness.forEach((v, i) => assert.ok(v >= 0.7 * sourceSharpness[i], `${'xy'[i]}: ${v} < 0.7 x the download's ${sourceSharpness[i]}`));
+    assert.ok(env.soften.signs.chroma > 0 && env.soften.signs.peak > 0, 'the soften keys on LED facades');
+  });
+}
 
 test('rain is the recorded grade of night: veiled toward the horizon glow, darker and flatter', () => {
   const night = hdr('public/' + ENVS.night.environment.url), rain = hdr('public/' + ENVS.rain.environment.url);
