@@ -1,4 +1,5 @@
 import { test } from './helpers/gameplay-browser.js';
+import { openLobbyModes } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { selectLocale } from './helpers/locale-browser.js';
 
@@ -12,6 +13,7 @@ for (const [name, viewport, hasTouch] of [
     page.on('pageerror', error => errors.push(error.message));
     await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon', 'canyon'])));
     await page.reload();
+    await openLobbyModes(page);
     await page.locator('button[data-race-mode="cup"]').click();
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
@@ -24,6 +26,11 @@ for (const [name, viewport, hasTouch] of [
       await expect(page.locator('#race-overlay')).toBeVisible();
     };
     await finish();
+    const standings = page.locator('#result-standings');
+    await expect(standings.getByRole('listitem')).toHaveCount(8);
+    await expect(standings.locator('[aria-current="true"]')).toContainText('YOU');
+    await expect(page.locator('#next-stage')).toBeFocused();
+    await expect(page.locator('#result-cloud')).toBeHidden();
     expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).cup.results.length, key)).toBe(1);
     // Global restart retries the finished heat; it must remove the old points before racing again.
     await page.locator('#restart-button').click();
@@ -43,6 +50,8 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('#sprint-stage')).toHaveText('錦標賽第 3 / 3 站');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     await finish();
+    await expect(page.locator('#choose-track')).toBeFocused();
+    await expect(page.locator('#result-cloud')).toBeVisible();
     expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), key)).toBeNull();
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-mode-history-v1')).length)).toBe(1);
     expect(await page.evaluate(() => localStorage.getItem('skyline-rush-stars'))).toBeNull();
@@ -56,9 +65,11 @@ test('a saved Cup becomes available after Classic unlocks its last required cour
     localStorage.setItem(key, JSON.stringify({ version: 1, cup: { tracks: ['coast', 'neon', 'canyon'], results: [] } }));
   }, key);
   await page.reload();
+  await openLobbyModes(page);
   await page.locator('button[data-race-mode="cup"]').click();
   await page.locator('#cup-rules > summary').click();
   await expect(page.locator('#cup-recovery')).toHaveCount(0);
+  await openLobbyModes(page);
   await page.locator('button[data-race-mode="classic"]').click();
   await page.locator('[data-track="neon"]').click();
   await page.locator('#start-button').click();
@@ -71,6 +82,7 @@ test('a saved Cup becomes available after Classic unlocks its last required cour
   });
   await expect(page.locator('#race-overlay')).toBeVisible();
   await page.locator('#choose-track').click();
+  await openLobbyModes(page);
   await page.locator('button[data-race-mode="cup"]').click();
   await expect(page.locator('#cup-resume')).toBeVisible();
 });

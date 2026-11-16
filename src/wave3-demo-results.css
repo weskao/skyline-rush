@@ -175,3 +175,11 @@ body.vfx-comfort .wave3-demo-results__banner::after { display: none; }
   .wave3-demo-results__banner::after,
   .wave3-demo-results__credit::before, .wave3-demo-results__credit::after { animation: none; display: none; }
 }
+
+@media (max-width: 480px) and (orientation: portrait) {
+  .wave3-demo-results__mark { width: 30px; height: 30px; font-size: 16px; }
+  .wave3-demo-results__banner { height: 30px; flex-basis: 90px; }
+  .wave3-demo-results__credit { margin-top: 4px; padding: 3px 7px; gap: 2px 8px; }
+  .wave3-demo-results__points { margin-block: 1px; }
+  .wave3-demo-results__balance-value { font-size: 14px; }
+}

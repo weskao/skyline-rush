@@ -4,6 +4,12 @@
 - [x] GREEN: renamed the nine affected test cases by changing their two title templates, and made invalid titles fail with the offending test path. All 16 browser and two World Tour shard lists round-trip through Playwright, covering 1,255 and 49 unique tests respectively.
 - [ ] Verify the GitHub quality gate on the resulting develop commit.
 
+# 2026-11-16 — Classic track card artwork
+
+- [x] The first ten home track cards load individual 568 × 205 scenery JPEGs, sharing the same cropped thumbnail style as Coming Soon cards.
+- [x] RED: the asset test reported Coast's missing JPEG and the production browser test found no artwork on the Coast card. GREEN: all ten JPEG headers, dimensions and unique content pass the asset test.
+- [ ] Exact-commit GitHub quality gate and physical-device review.
+
 # 2026-11-16 — Collision recovery: contact aligned with race models
 
 - [x] Coast, about 300 m: the Roadster could visually intersect a flanking traffic car during contact protection. The old 1.7 m lateral test ignored the rendered hull and tire clearance. Use measured neutral envelopes for player contacts with traffic and rivals, including separate front and rear extents. Use the same clearance when traffic steers around the player or when Ghost Phase ends.
@@ -36,6 +42,12 @@
 - [x] RED: the new `showcase-camera-browser.spec.js` dropdown test failed 6/6 (no combobox). Two later screenshot checks added a no-mid-word-break assertion and an option hit-test (`elementFromPoint`), after the screenshots showed "Drivin g camer a" and a covered list.
 - [x] `npm test` 2996 pass / 0 fail, typecheck, build, main-ui contract (cssBlob updated), module-size. Production-build screenshots at 1440×900, 844×390, 390×844 zh-TW, AIRFLOW 667×375 and 390×844: label uncut and every option on screen and uncovered.
 - [ ] Browser specs were not run at the user's request: the new test, plus `home-shortcuts` and `home-race-camera`, both updated to use the combobox. Physical phone check and exact-HEAD `quality-gate` are also still open. Pre-existing, not changed: at AIRFLOW 667×375 the tool row overlaps the dock's "CAMERA VIEW" heading.
+# 2026-11-16 — Race navigation and responsive game dialogs integration
+
+- [x] Reconcile the DOM contract with the responsive lobby and the pause/results action order, retaining the new dialog and control checks. Keep Photo Studio visibility in the existing pause/results controller so it follows race mode and phase.
+- [x] CI RED (run 43712128237) showed Next Track below the first 360 × 740 results screen. Compact the decorative podium badge and style summary so both reward credits and the primary action fit. The regression also checks History focus returns to its results opener before the player taps Next Track.
+- [x] Local focused Node checks passed (47), including module size, CSS fingerprint, input, cloud status and dialog state.
+- [ ] Full exact-commit GitHub quality gate and physical iOS/Android verification.
 
 # 2026-11-15 — One NITRO / BOOST / FLY palette (`feature/hud-sprint-colors`)
 
@@ -56,6 +68,17 @@
 - [x] RED: first race bearings were 57°, 153° and 98° from the rear, and the next race retained first person. GREEN: all four Chromium tests in `tests/home-race-camera-browser.spec.js` passed at desktop 1440×900, touch portrait 390×844 and touch landscape 844×390, with real WebGL captures (`home-camera.png` / `race-camera.png`) and no page errors during the camera handoffs.
 - [x] Module-size and type checks, locked production build and the full unit suite passed (2,974 passed, 3 skipped).
 - [ ] Full browser/World Tour suites, physical iOS/Android checks and exact-commit GitHub `quality-gate`.
+
+
+
+# 2026-11-15 — Race Results Navigation
+
+- [x] Pause gives Continue keyboard focus, with Retry and Leave as secondary actions. Escape or the close button returns the leave confirmation to its opener. Clearing controls releases pointer capture and ignores key repeats until a fresh press.
+- [x] The settled result selects Next Stage, Next Track, Retry or Choose Track. Cup standings use one row per driver. Finished summaries prioritize placement, time, record and local demo credits in portrait and retain separate summary and action columns in landscape.
+- [x] A queued cloud save stays pending until its own outcome is known. Results without an eligible history entry do not advertise a backup. Wave 3 reuses the receipt keyed to the finished race, with existing demo balance, mission and progression storage.
+- [x] RED → GREEN with `node --test tests/input.test.js tests/result-cloud-status.test.js`. Reproduced residual key repeat, native pointer capture and an older cloud acknowledgement advancing the new result. Module-size gate passed.
+- [ ] Complete the local browser viewport matrix, physical iOS/Android input checks and full `make verify`.
+- [ ] Confirm the exact feature head's CI quality gate, then rerun integration verification on the merged develop commit.
 
 # 2026-11-15 — Responsive game dialogs (`feature/responsive-game-dialogs`)
 
@@ -86,6 +109,16 @@
 - [x] Follow-up punch, each RED then GREEN: light haptic per tier (can 9 ms, tank 14, overcharge 20, cells none); fuel-bar flash with "+N" right of the reading (clear of the label in both phone orientations, still under Reduced Motion); camera kick at 20% of the NITRO ignition for a can, clamped to `KICK_LIMIT`; embers fly from the can into the car in vehicle space within .15 s and still reach it at 90 m/s; warm white-yellow can core with an orange rim, apart from the crash orange. `car.pickup` kept out of the legacy replay hash (47/47 unchanged).
 - [x] Real WebGL captures (desktop, 390×844, 844×390) show embers mid-flight and the warm-white contact flash with no orange; pickup-3d-collection, pickup-feedback, shader-warmup, black-frame, motion and pickup-3d browser specs pass; layout suites pass.
 - [ ] Physical-device review (haptic feel on Android, iOS) and exact-commit GitHub quality gate.
+
+# 2026-11-15 — Preview Studio fixed camera
+
+- [x] RED: primary orbit button was outside the scrollport at 320×740 and 667×375. The Three.js stage also jumped when re-enabling orbit after a manual angle change.
+- [x] Preserve rendered yaw on takeover, retain zoom on preset changes and keep primary actions visible. Camera reset returns to a fixed 3/4 view and preserves Ground/Flight and wing. Full unit suite: 2,975 passed, 3 skipped. Typecheck and locked/trial builds passed.
+- [ ] Confirm all responsive browser cases, physical touch behavior and exact-head GitHub CI.
+
+- [x] RED → GREEN in Chromium with CI timing and zero retries. Desktop drag and two-finger pinch at 390×844 and 844×390 all turned orbit on after release on the old code. They now preserve the fixed pose. The desktop test also verifies that a keyboard-adjusted fixed view stays fixed and a previously active orbit resumes.
+- [x] Camera, browser timing and module-size guards passed (22 checks). Typecheck and both the default production and trial builds passed.
+- [ ] Full GitHub `quality-gate` and physical iOS/Android touch verification.
 
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 
@@ -5792,3 +5825,16 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] Verify the full GitHub `quality-gate` for this commit. The feature branch requests full regression so Browser and World Tour cover the change before integration.
 
 - [x] Reproduced the paused Guide focus failure and the stale DOM-order expectation from CI 43711779738. Restore focus explicitly and record the requested order while retaining the develop CSS contract.
+
+## 2026-11-15 — Garage public artwork (`fix/garage-public-artwork`)
+
+- Base `origin/develop`: `4d45cc460b4d1c45ed26017ef9737802a5a1d63e`.
+- [x] RED: the default `npm run build` removed the two car and seven paint WebPs with the VFX tree. The production audit incorrectly accepted the missing public files, and the locked mission board used PNG URLs for the existing WebPs. See `tests/garage-release-build.test.js` and `tests/garage-public-artwork-browser.spec.js`.
+- [x] Move only the two model and seven paint WebPs to `garage-public/`, preserving every Git blob. Reuse the existing mission and trophy WebPs. Keep a color swatch and the existing paint name if the paint image fails.
+- [x] Keep the unpublished VFX fence and the trial store alias. Require all 17 public WebPs in the production audit.
+- [ ] Full browser suite, physical phones in both orientations and exact-HEAD GitHub `quality-gate` are separate acceptance gates.
+
+### Follow-up — Future Garage paint colors
+
+- [x] RED: a temporary paint ID in the shared catalog was ignored by the production audit. GREEN: the same fixture identifies its missing WebP in locked and Pages trial mode.
+- [x] Both the release audit and the Garage artwork browser test read the paint catalog. The raster-artwork rule records the stable ID, bilingual names, WebP naming and load fallback.
