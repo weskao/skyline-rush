@@ -13,6 +13,7 @@ import { UPCOMING_TRACKS } from './upcoming-tracks.ts';
 import { VFX_RANGES, vfxLabelKey } from './vfx-settings.ts';
 import './progress-bars.css';
 import './touch-sprint-buttons.css';
+import { MODE_ART } from './lobby-art.ts';
 import './race-lobby.css';
 import './foldable-viewport.css';
 import { icons, ICON_ATTRS } from './icons.ts';
@@ -121,32 +122,37 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <p id="performance-notice-text"></p>
       <button type="button" id="performance-notice-dismiss">Got it</button>
     </details>
-    <section class="intro" id="intro" aria-label="Race setup" data-i18n-aria-label="lobby.title">
+    <section class="intro lobby-compact" id="intro" aria-label="Race setup" data-i18n-aria-label="lobby.title">
       <div class="home-intro-topbar">
         <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers"></span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals" :aria-label="homeStatusView.medalLabel" :class="{ 'has-medals': homeStatusView.hasMedals }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">{{ homeStatusView.medalCount }}</span></button></div>
         <Wave3CurrencyStrip v-if="GARAGE_RELEASE_MODE === 'trial'" compact
           class="home-resource-strip" :experience="wave3DemoExperience" :locale="homeWalletLocale" />
       </div>
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
-      <h1 id="intro-title"><span id="lobby-hero-track"></span></h1>
+      <div class="lobby-race-heading">
+        <img :src="`${BASE_URL}feature-assets/race-lobby/coast-landmark@3x.webp`" alt="" width="480" height="180" decoding="async" data-track-art="coast" />
+        <img :src="`${BASE_URL}feature-assets/race-lobby/neon-landmark@3x.webp`" alt="" width="480" height="180" decoding="async" loading="lazy" data-track-art="neon" />
+        <h1 id="intro-title"><span id="lobby-hero-track"></span></h1>
+        <p id="lobby-race-distance" class="lobby-race-distance"></p>
+      </div>
       <div class="race-mode-picker" id="race-mode-picker" role="group" aria-label="Game mode" data-i18n-aria-label="mode.heading">
         <div class="race-mode-heading">
           <button class="lobby-picker-toggle" id="lobby-modes-toggle" type="button" aria-expanded="false" aria-controls="lobby-mode-options"><svg v-bind="ICON_ATTRS" v-html="icons.flag"></svg><span data-i18n="lobby.mode">Mode</span><strong id="lobby-mode-name"></strong></button>
           <small id="mode-description"></small>
         </div>
         <div class="race-mode-tabs" id="lobby-mode-options">
-          <button type="button" data-race-mode="classic" aria-pressed="true" data-i18n="mode.classic">Classic Race</button>
-          <button type="button" data-race-mode="custom" aria-pressed="false" data-i18n="mode.custom">Custom Race</button>
-          <button type="button" data-race-mode="free" aria-pressed="false" data-i18n="mode.free">Free Drive</button>
-          <button type="button" data-race-mode="time" aria-pressed="false" data-i18n="mode.time">Time Attack</button>
-          <button type="button" data-race-mode="gauntlet" aria-pressed="false" data-i18n="mode.gauntlet">Obstacle Run</button>
-          <button type="button" data-race-mode="checkpoint" aria-pressed="false" data-i18n="mode.checkpoint">Checkpoint Rush</button>
-          <button type="button" data-race-mode="cup" aria-pressed="false" data-i18n="mode.cup">Championship Cup</button>
-          <button type="button" data-race-mode="stunt" aria-pressed="false" data-i18n="mode.stunt">Stunt Attack</button>
-          <button type="button" data-race-mode="endless" aria-pressed="false" data-i18n="mode.endless">Endless Highway</button>
-          <button type="button" data-race-mode="circuit" aria-pressed="false" data-i18n="mode.circuit">Circuit Race</button>
-          <button type="button" data-race-mode="elimination" aria-pressed="false" data-i18n="mode.elimination">Elimination</button>
-          <button type="button" data-race-mode="eventlab" aria-pressed="false" data-i18n="mode.eventlab">Event Lab</button>
+          <button type="button" data-race-mode="classic" aria-pressed="true"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.classic"></svg><span data-i18n="mode.classic">Classic Race</span></button>
+          <button type="button" data-race-mode="custom" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.custom"></svg><span data-i18n="mode.custom">Custom Race</span></button>
+          <button type="button" data-race-mode="free" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.free"></svg><span data-i18n="mode.free">Free Drive</span></button>
+          <button type="button" data-race-mode="time" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.time"></svg><span data-i18n="mode.time">Time Attack</span></button>
+          <button type="button" data-race-mode="gauntlet" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.gauntlet"></svg><span data-i18n="mode.gauntlet">Obstacle Run</span></button>
+          <button type="button" data-race-mode="checkpoint" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.checkpoint"></svg><span data-i18n="mode.checkpoint">Checkpoint Rush</span></button>
+          <button type="button" data-race-mode="cup" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.cup"></svg><span data-i18n="mode.cup">Championship Cup</span></button>
+          <button type="button" data-race-mode="stunt" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.stunt"></svg><span data-i18n="mode.stunt">Stunt Attack</span></button>
+          <button type="button" data-race-mode="endless" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.endless"></svg><span data-i18n="mode.endless">Endless Highway</span></button>
+          <button type="button" data-race-mode="circuit" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.circuit"></svg><span data-i18n="mode.circuit">Circuit Race</span></button>
+          <button type="button" data-race-mode="elimination" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.elimination"></svg><span data-i18n="mode.elimination">Elimination</span></button>
+          <button type="button" data-race-mode="eventlab" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.eventlab"></svg><span data-i18n="mode.eventlab">Event Lab</span></button>
         </div>
       </div>
       <button class="lobby-picker-toggle" id="lobby-tracks-toggle" type="button" aria-expanded="false" aria-controls="lobby-track-options"><svg v-bind="ICON_ATTRS" v-html="icons.map"></svg><span data-i18n="lobby.track">Track</span><strong id="lobby-track-name"></strong><span id="lobby-track-status"></span></button>

@@ -100,7 +100,7 @@ function makeCredit(doc: Document, className: string, currency: Wave3DemoArtId):
   return credit;
 }
 
-/** Mount inside #race-overlay .overlay-summary, after #result-style. Does not modify original result rows or buttons. */
+/** Mount inside the result reward slot. Does not modify original result rows or buttons. */
 export function mountWave3DemoResults({ container, settlement, locale, raceMode, artworkUrl, bannerUrl }: DemoResultsMount): HTMLElement {
   const view = projectWave3DemoResults(settlement, { locale, raceMode });
   let region = container.querySelector<HTMLElement>('[data-wave3-demo-results]');
@@ -122,7 +122,9 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     const coinCredit = makeCredit(doc, 'wave3-demo-results__credit wave3-demo-results__coin-credit', 'wallet-coin');
     const details = make(doc, 'div', 'wave3-demo-results__details');
     details.id = 'wave3-demo-results-details';
-    details.append(coinCredit, status, make(doc, 'p', 'wave3-demo-results__distinction'),
+    const gains = make(doc, 'div', 'wave3-demo-results__gains');
+    gains.append(credit, coinCredit);
+    details.append(status, make(doc, 'p', 'wave3-demo-results__distinction'),
       make(doc, 'p', 'wave3-demo-results__disclaimer'), make(doc, 'div', 'wave3-demo-results__missions'));
     // Only shown on short landscape, where the card is a one-line strip and details open as a panel above it.
     const toggle = make(doc, 'button', 'wave3-demo-results__toggle');
@@ -135,7 +137,7 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
       toggle.setAttribute('aria-expanded', String(open));
       if (open) region!.dataset.open = ''; else delete region!.dataset.open;
     });
-    region.append(header, credit, details, toggle);
+    region.append(header, gains, details, toggle);
     container.append(region);
   }
   region.className = `wave3-demo-results wave3-demo-results--${view.state}`;

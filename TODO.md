@@ -1,3 +1,10 @@
+# Reference design follow-up
+
+- [x] Compact race selection, desktop track rail, new 3× Coast/Neon landmark art, twelve mode icons and a shared two-state Garage pose switch.
+- [x] Simplify live race toolbar and add pause settings. Show both earned currencies in the responsive results receipt, with the receipt beside the next action.
+- [x] RED/GREEN focused tests, source size and existing main CSS contract (19 passed). Verify production build, exact-head CI and physical device layouts separately.
+- [ ] Follow up on unified wallet, account and missions navigation, Garage secondary controls and Photo/Event Lab restructuring. Preserve original access and entitlements.
+
 # Skyline Rush responsive interface refresh
 
 - The lobby reads its title from the selected race and uses the existing 3D showcase and 3× track art. The desktop rail shows larger track cards, and the mobile layout preserves the safe-area Start rail and folded viewport segments.

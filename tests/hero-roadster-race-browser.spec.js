@@ -133,7 +133,7 @@ test('restart, track switch and End race keep one GLB instance and return GPU me
   };
   const cycle = async () => {
     await startRace(page);
-    await page.locator('#restart-button').click();
+    await page.keyboard.press('Backspace');
     await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
     await endRace();
     await pick(other);

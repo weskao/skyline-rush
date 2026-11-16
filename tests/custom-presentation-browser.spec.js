@@ -69,7 +69,7 @@ for (const [name, viewport, hasTouch] of [
     }));
     expect(scene).toEqual({ fog: .0016, exposure: .72, ghosts: 1, config: rules });
     await page.screenshot({ path: `artifacts/custom-presentation/${name}-night-ghost.png` });
-    await page.locator('#restart-button').click();
+    await page.keyboard.press('Backspace');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     expect(await page.evaluate(() => window.gameplay.race.session.presentation.visualPreset)).toBe('night');
     await page.locator('.brand').click();

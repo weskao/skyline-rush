@@ -320,3 +320,92 @@ details.performance-notice {
     overflow: hidden;
   }
 }
+
+/* The ready panel stays lightweight while the game scene renders behind it. */
+.lobby-race-heading {
+  position: relative; isolation: isolate; overflow: hidden; width: min(480px, 100%);
+  padding: 8px 12px; border: 1px solid #4b7183; border-radius: 8px;
+  background: linear-gradient(100deg, #0a182b, #122d41c9);
+}
+.lobby-race-heading > img {
+  display: none; position: absolute; inset: 0; width: 100%; height: 100%;
+  z-index: -1; object-fit: cover; opacity: .38; mask-image: linear-gradient(90deg, #0002, #000);
+}
+.lobby-compact[data-lobby-track="coast"] [data-track-art="coast"],
+.lobby-compact[data-lobby-track="neon"] [data-track-art="neon"] { display: block; }
+.lobby-compact .lobby-race-heading #intro-title {
+  display: block; margin: 0 0 3px; font-size: clamp(20px, 3.3vw, 40px); line-height: 1.05;
+}
+.lobby-compact .lobby-race-heading .lobby-race-distance { margin: 0; }
+.lobby-race-distance { margin: 0 0 8px; color: #d7edf8; font: 700 13px/1.25 system-ui, sans-serif; }
+.intro .race-mode-tabs button > svg { width: 18px; height: 18px; flex: none; }
+.intro .race-mode-tabs button { display: inline-flex; align-items: center; gap: 5px; }
+@media (max-width: 1000px), (max-height: 500px) {
+  .lobby-compact .race-mode-heading:has(#lobby-modes-toggle[aria-expanded="false"]) + .race-mode-tabs,
+  .lobby-compact #lobby-tracks-toggle[aria-expanded="false"] + .track-select { display: none; }
+  body:not(.airflow-active) .lobby-compact #lobby-tracks-toggle[aria-expanded="false"] ~ .track-note { display: none; }
+  .lobby-compact #mode-description { display: none; }
+  .lobby-compact .race-mode-heading:has([aria-expanded="true"]) #mode-description { display: block; }
+  .lobby-compact .race-mode-picker:has(#lobby-modes-toggle) { width: min(550px, 100%); }
+  .lobby-compact #lobby-modes-toggle { width: 100%; }
+  .lobby-compact #lobby-track-status { margin-inline-start: auto; }
+}
+@media (min-width: 1001px) and (min-height: 701px) {
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .lobby-compact {
+    display: flex; flex-direction: column; justify-content: end;
+    top: auto; bottom: max(60px, calc(var(--safe-bottom) + 44px));
+    max-height: calc(100dvh - 140px);
+  }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .lobby-compact .track-select { order: 2; }
+}
+body:not([data-phase="paused"]) #pause-settings,
+body[data-tutorial] #pause-settings { display: none; }
+#pause-settings > svg { width: 18px; height: 18px; vertical-align: middle; margin-inline-end: 5px; }
+body:is([data-phase="racing"], [data-phase="countdown"]):not([data-tutorial], .airflow-active) :is(.aero-tools, #restart-button, .settings, .controls-menu) { display: none; }
+
+@media (min-width: 1001px) and (min-height: 701px) {
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-content {
+    width: min(1100px, calc(100% - 48px)); grid-template-columns: minmax(0, 1fr) minmax(290px, .7fr);
+  }
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .result-stats strong { font-size: 44px; }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .lobby-compact .lobby-race-heading { flex: none; padding-block: 4px; }
+  .lobby-compact .lobby-race-heading #intro-title { font-size: clamp(18px, 2.8vw, 26px); }
+  .lobby-compact .home-intro-topbar:has(.home-resource-strip) { position: static; }
+  .lobby-compact:has(.home-resource-strip) .race-mode-heading { padding-inline-end: 0; }
+  .lobby-compact .lobby-race-heading { margin-block-end: 4px; }
+}
+
+/* The results column owns the receipt. Its short-screen disclosure rises above
+   the strip and remains clear of the next action below. */
+.result-rewards:not(:has(.wave3-demo-results:not([hidden]))),
+body:not([data-phase="finished"]) :is(.result-rewards, .result-style-details) { display: none; }
+.result-rewards { min-width: 0; grid-column: 1 / -1; }
+.result-rewards > .wave3-demo-results { margin-inline: auto; width: 100%; }
+.result-style-details > summary {
+  display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; color: #bae1ee;
+}
+.result-style-details > summary::before { content: '+'; margin-inline-end: 6px; }
+.result-style-details[open] > summary::before { content: '−'; }
+@media (max-height: 500px) and (orientation: landscape) {
+  .result-rewards > .wave3-demo-results { padding-inline: 4px; gap: 4px; max-height: none; }
+  .result-rewards .wave3-demo-results__heading { font-size: 10px; }
+  .result-rewards .wave3-demo-results__mark { display: none; }
+  .result-rewards .wave3-demo-results__points { font-size: 10px; }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-content:has(.result-rewards > .wave3-demo-results:not([hidden])) {
+    grid-template-columns: minmax(0, 1fr) minmax(246px, 41%);
+  }
+}
+
+/* Classic's default rules require no setup on compact home screens. */
+@media (max-width: 1000px), (max-height: 500px) {
+  body[data-race-mode="classic"] .lobby-compact:not(:has([aria-expanded="true"])) #race-rules-row { display: none; }
+}
+
+
+body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { display: block; }

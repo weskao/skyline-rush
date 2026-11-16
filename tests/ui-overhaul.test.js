@@ -45,3 +45,32 @@ test('reward credits use distinct currency icons and retain their amount text', 
   assert.match(results, /makeCredit\(doc, '[^']*', 'wallet-coin'\)/);
   assert.match(results, /put\(points, reward \?\? ''\)/);
 });
+
+test('a compact lobby hides full selectors until opened and exposes the race distance', () => {
+  const css = source('race-lobby.css');
+  assert.match(css, /\.lobby-compact[^{}]*#lobby-tracks-toggle\[aria-expanded="false"\][^{}]*\{ display: none; \}/);
+  assert.match(source('App.vue'), /id="lobby-race-distance"/);
+  assert.match(source('race-select-ui.ts'), /#lobby-race-distance/);
+});
+
+test('pause owns the settings action and the studio pose switch has two named states', () => {
+  assert.match(source('RaceOverlay.vue'), /id="pause-settings"/);
+  assert.match(source('GaragePanel.vue'), /id="garage-pose-action"[^>]*role="switch"[^>]*aria-checked="garageStudioView.mode === 'flight'"/);
+});
+
+test('earned points and coins both belong to the collapsed receipt', () => {
+  const results = source('wave3-demo-results-ui.ts');
+  assert.match(results, /gains\.append\(credit, coinCredit\)/);
+  assert.match(results, /details\.append\(status,/);
+});
+
+test('selected landmark art is 3x WebP and remains separate from the live race scene', () => {
+  const app = source('App.vue');
+  for (const track of ['coast', 'neon']) {
+    const file = readFileSync(new URL(`../public/feature-assets/race-lobby/${track}-landmark@3x.webp`, import.meta.url));
+    assert.equal(file.toString('ascii', 8, 12), 'WEBP');
+    assert.match(app, new RegExp(`${track}-landmark@3x\\.webp[^>]*data-track-art="${track}"`));
+  }
+  assert.match(app, /<canvas id="world"/);
+  assert.match(source('wave3-demo-results-integration.ts'), /#result-rewards/);
+});

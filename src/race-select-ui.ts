@@ -197,6 +197,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     startButton.disabled = disabled;
     $('#lobby-track-name').textContent = name;
     $('#lobby-hero-track').textContent = name;
+    $('#intro').dataset.lobbyTrack = upcomingSelection ?? race.trackId;
     $('#lobby-track-status').textContent = t(trackStatusKey);
     const actionLabel = startButton.querySelector<HTMLElement>('span')!;
     actionLabel.dataset.i18n = labelKey;
@@ -212,6 +213,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     startButton.setAttribute('aria-describedby', startButton.disabled ? 'lobby-access-note' : 'track-note');
     $('.start-hint').hidden = startButton.disabled;
     $('#track-length').textContent = upcoming ? t('track.previewLength', { km: upcoming.length / 1000 }) : race.endless ? t('mode.endlessRoute') : race.mode === 'circuit' ? t('circuit.length', { laps: race.config.laps, km: race.length / 1000 }) : t('track.sprint', { km: Math.round(raceTrack(race.trackId)!.length / 100) / 10 });
+    $('#lobby-race-distance').textContent = $('#track-length').textContent;
     $('#lobby-access-note').textContent = accessNote;
     $('#lobby-access-note').hidden = !accessNote;
     const nextUnlock = !upcoming && next && !unlockedTracks.has(next) && race.mode === 'classic' && !race.modifier

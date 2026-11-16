@@ -18,7 +18,17 @@ for (const [name, viewport, locale] of [
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto('/');
       const track = page.locator('[data-track="neon"]');
-      if (!await track.isVisible()) await page.locator('#lobby-tracks-toggle').click();
+      const modes = page.locator('#lobby-modes-toggle');
+      const tracks = page.locator('#lobby-tracks-toggle');
+      if (name !== 'desktop') {
+        await expect(track).toBeHidden();
+        await expect(page.locator('#lobby-race-distance')).toBeVisible();
+        await modes.click();
+        await expect(page.locator('[data-race-mode="classic"] > svg')).toBeVisible();
+        await tracks.click();
+        await expect(modes).toHaveAttribute('aria-expanded', 'false');
+      }
+      await expect(track).toBeVisible();
       await track.click();
       await expect(page.locator('#lobby-hero-track')).toHaveText(locale === 'zh-TW' ? '霓虹都會' : 'Neon Downtown');
       await expect(page.locator('#start-button')).toBeDisabled();
@@ -28,6 +38,7 @@ for (const [name, viewport, locale] of [
       await page.locator('[data-settings-destination="#controls-button"]').click();
       await expect(page.locator('#controls-panel')).toBeVisible();
       await page.keyboard.press('Escape');
+      await expect(page.locator('#controls-panel')).toBeHidden();
       await settings.click();
       await page.locator('[data-settings-destination="#vfx-panel > summary"]').click();
       await expect(page.locator('#vfx-panel')).toHaveAttribute('open', '');
@@ -42,6 +53,12 @@ for (const [name, viewport, locale] of [
       await settled(page.locator('#garage-screen'));
       await page.locator('#garage-studio-open').click();
       await expect(page.locator('#garage-auto-rotate > svg')).toBeVisible();
+      const pose = page.locator('#garage-pose-action');
+      await expect(pose.locator('svg')).toHaveCount(2);
+      await expect(pose).toHaveAttribute('aria-checked', 'false');
+      await pose.click();
+      await expect(pose).toHaveAttribute('aria-checked', 'true');
+      await expect(page.locator('#garage-preview')).toHaveAttribute('data-garage-mode', 'flight');
       await expect(page.locator('#garage-zoom-in')).toHaveAccessibleName(locale === 'zh-TW' ? '放大' : 'Zoom in');
       if (process.env.UI_OVERHAUL_SHOTS) await page.screenshot({ path: testInfo.outputPath('studio.png'), animations: 'disabled', scale: 'css' });
     });

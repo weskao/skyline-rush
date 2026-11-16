@@ -60,7 +60,7 @@ for (const [width, height, hasTouch] of START_LAYOUT_SIZES) {
       const railStart = height <= 500 && width > height;
       if (railStart) {
         // The pinned Garage row shares Start's baseline and never covers the track cards (a portrait max-height lifted it 32px at 320 tall).
-        const [card, garage, start] = await Promise.all(['.track-select button', '#garage-button', '#start-button']
+        const [card, garage, start] = await Promise.all(['#lobby-tracks-toggle', '#garage-button', '#start-button']
           .map(selector => intro.locator(selector).first().boundingBox()));
         expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
         expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row bottom matches Start').toBeLessThanOrEqual(2);
@@ -164,7 +164,7 @@ for (const [width, height] of [[844, 390], [667, 375]]) {
       const bar = 56;
       await page.evaluate(px => document.body.style.setProperty('--browser-bar', `${px}px`), bar);
       const [tools, daily, dock, start, card, garage] = await Promise.all(['.aero-tools', '#daily-card', '#showcase-camera-dock',
-        '#start-button', '.track-select button', '#garage-button'].map(selector => page.locator(selector).first().boundingBox()));
+        '#start-button', '#lobby-tracks-toggle', '#garage-button'].map(selector => page.locator(selector).first().boundingBox()));
       expect(Math.abs(start.y + start.height - (height - bar - 10)), 'Start sits 10px above the toolbar').toBeLessThanOrEqual(1);
       expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row follows Start').toBeLessThanOrEqual(2);
       expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
@@ -268,6 +268,11 @@ test.describe('landscape track cards show the whole card', () => {
       for (const expanded of ['false', 'true']) {
         if (await toggle.getAttribute('aria-expanded') !== expanded) await toggle.click();
         await expect(toggle).toHaveAttribute('aria-expanded', expanded);
+        if (expanded === 'false') {
+          await expect(page.locator('#lobby-track-options')).toBeHidden();
+          await expect(page.locator('#lobby-race-distance')).toBeVisible();
+          continue;
+        }
         await expect(page.locator('[data-track="coast"] .route-overview')).toBeVisible();
         const { cards, garageTop } = await page.evaluate(() => {
           const box = el => el.getBoundingClientRect();

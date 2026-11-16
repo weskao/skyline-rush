@@ -4,10 +4,22 @@ export function setupLobbyPickers(centerSelectedTrack: () => void): void {
     const toggle = document.getElementById(id)!;
     toggle.addEventListener('click', () => {
       const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      if (!expanded) {
+        const other = id === 'lobby-tracks-toggle' ? 'lobby-modes-toggle' : 'lobby-tracks-toggle';
+        document.getElementById(other)!.setAttribute('aria-expanded', 'false');
+      }
       toggle.setAttribute('aria-expanded', String(!expanded));
       if (!expanded && id === 'lobby-tracks-toggle') centerSelectedTrack();
     });
   }
+  document.getElementById('intro')!.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || document.querySelector('dialog[open]')) return;
+    const open = document.querySelector<HTMLButtonElement>('.lobby-picker-toggle[aria-expanded="true"]');
+    if (!open) return;
+    event.stopPropagation();
+    open.setAttribute('aria-expanded', 'false');
+    open.focus({ preventScroll: true });
+  });
 }
 
 export function focusLobbyTrack(trackId: string): void {

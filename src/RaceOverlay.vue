@@ -15,13 +15,18 @@ import { cloudView } from './cloud-view-state.ts';
       <span id="new-best" class="new-best" data-i18n="result.newBest" hidden>NEW BEST</span>
       <div id="result-stats" class="result-stats" hidden></div>
       <ol id="result-standings" class="result-standings" role="list" tabindex="0" data-i18n-aria-label="mode.cupStandings" hidden></ol>
-      <div id="result-style" class="result-style" hidden></div>
+      <details class="result-style-details" id="result-style-details" hidden>
+        <summary data-i18n="result.styleDetails">Driving style</summary>
+        <div id="result-style" class="result-style" hidden></div>
+      </details>
     </div>
     <div class="overlay-actions">
+      <div class="result-rewards" id="result-rewards"></div>
       <button class="primary-button" id="resume-button" aria-label="Resume race" data-i18n-aria-label="resume.aria"><span data-i18n="resume.label">Continue racing</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
       <button class="primary-button next-button" id="next-stage" hidden>Next stage</button>
       <button class="primary-button next-button" id="next-button" hidden><span><span data-i18n="result.next">Next ·</span> <b id="next-track"></b></span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
       <button class="text-button" id="again-button"><span data-i18n="result.again">Race again</span> <svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button>
+      <button type="button" class="text-button" id="pause-settings"><svg v-bind="ICON_ATTRS" v-html="icons.settings"></svg><span data-i18n="settings.game">Game settings</span></button>
       <button type="button" class="text-button" id="pause-leave" data-i18n="leave.action" hidden>Leave race</button>
       <button type="button" class="text-button" id="photo-open" hidden><svg v-bind="ICON_ATTRS" v-html="icons.camera"></svg><span data-i18n="photo.open">PHOTO STUDIO</span></button>
       <div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track" data-i18n="track.choose">Choose track</button><button class="text-button" data-open-history data-i18n="nav.progress">Progress</button></div>

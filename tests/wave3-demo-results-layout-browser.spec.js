@@ -16,8 +16,11 @@ const clipped = () => {
   if (card.dataset.open !== undefined) {
     const actions = document.querySelector('#race-overlay .overlay-actions').getBoundingClientRect();
     if (panel.top < 0 || panel.bottom > innerHeight) misses.push('details off screen');
-    if (panel.right > actions.left + 1 && panel.left < actions.right - 1 &&
-      panel.bottom > actions.top + 1 && panel.top < actions.bottom - 1) misses.push('details cover actions');
+    for (const control of actions.querySelectorAll(':scope > button:not([hidden]), :scope > .result-links button')) {
+      const r = control.getBoundingClientRect();
+      if (r.width && r.height && panel.right > r.left + 1 && panel.left < r.right - 1 &&
+        panel.bottom > r.top + 1 && panel.top < r.bottom - 1) misses.push('details cover actions');
+    }
   }
   for (const node of card.querySelectorAll('h3, p, h4, span, strong, progress')) {
     if (node.closest('[hidden]')) continue;
@@ -60,21 +63,17 @@ for (const viewport of [
 
       const geometry = () => page.evaluate(() => {
         const reward = document.querySelector('.wave3-demo-results--earned');
-        const summary = document.querySelector('#race-overlay .overlay-summary');
-        const actions = document.querySelector('#race-overlay .overlay-actions');
+        const slot = document.querySelector('#result-rewards');
         const b = reward.getBoundingClientRect();
-        const s = summary.getBoundingClientRect();
-        const a = actions.getBoundingClientRect();
+        const s = slot.getBoundingClientRect();
         return {
           // Relative only anchors the short-landscape details panel; never fixed/absolute.
-          inline: reward.parentElement === summary && ['static', 'relative'].includes(getComputedStyle(reward).position),
-          withinSummary: b.left >= s.left - 1 && b.right <= s.right + 1,
-          clearOfActions: b.right <= a.left + 1 || b.left >= a.right - 1 ||
-            b.bottom <= a.top + 1 || b.top >= a.bottom - 1,
+          inline: reward.parentElement === slot && ['static', 'relative'].includes(getComputedStyle(reward).position),
+          withinSlot: b.left >= s.left - 1 && b.right <= s.right + 1,
         };
       });
       await expect.poll(geometry, { timeout: ciTimeout(4000) }).toEqual({
-        inline: true, withinSummary: true, clearOfActions: true,
+        inline: true, withinSlot: true,
       });
       // The result entrance may slide the entire summary. The reward must retain
       // its relative position, rather than reanchoring after the transform ends.

@@ -137,7 +137,7 @@ for (const [modifier, label] of [['no-flight', 'No flight'], ['double-traffic', 
       await page.keyboard.down('Space');
       await expect(fly).toHaveAttribute('aria-pressed', 'false');
       await page.keyboard.up('Space');
-      await page.locator('#restart-button').click();
+      await page.keyboard.press('Backspace');
       await expect(fly).toBeDisabled();
       await expect(page.locator('#flight-instruction')).toHaveText('Daily challenge rule: FLY is unavailable');
       await page.locator('.brand').click();

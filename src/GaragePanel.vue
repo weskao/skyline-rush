@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { getLocale, onLocaleChange, t } from './i18n.ts';
 import { garageStudioView, garageView } from './garage-view-state.ts';
+import { GARAGE_POSE_ART } from './lobby-art.ts';
 import { GARAGE_ANGLES } from './garage-camera.ts';
 import { ICON_ATTRS, icons } from './icons.ts';
 import { PAINTS } from './appearance.ts';
@@ -45,7 +46,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   showroom: '3D 車輛展示間', title: '預覽工作室', open: '開啟全螢幕預覽', back: '返回車庫',
   hint: '拖曳旋轉，雙指或滾輪縮放', angles: ['車頭', '車尾', '側面', '俯視', '斜後方'], free: '自由視角', angle: '鏡頭角度', prevAngle: '上一個角度', nextAngle: '下一個角度',
   left: '向左旋轉', right: '向右旋轉', zoomIn: '放大', zoomOut: '縮小',
-  auto: '環繞', reset: '重設鏡頭', undo: '復原車漆', takeoff: '起飛', land: '降落', wing: '尾翼', collection: '車漆收藏',
+  auto: '環繞', reset: '重設鏡頭', undo: '復原車漆', ground: '平地', flight: '飛行', wing: '尾翼', collection: '車漆收藏',
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? '外觀特效即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '外觀特效免費試用中：重新載入後記住此帳號最後的選擇；不代表永久擁有' : '外觀特效已開放，裝備須具備擁有權', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
   cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆',
   preview: '試看', previewing: '試看中', cars: '車款', paints: '車漆', effects: '特效', missions: '任務',
@@ -54,7 +55,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   showroom: '3D vehicle showroom', title: 'PREVIEW STUDIO', open: 'Open full-screen Studio', back: 'Back to Garage',
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'], free: 'Free view', angle: 'Camera angle', prevAngle: 'Previous angle', nextAngle: 'Next angle',
   left: 'Rotate left', right: 'Rotate right', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
-  auto: 'Orbit', reset: 'Reset camera', undo: 'Undo paint', takeoff: 'Take off', land: 'Land', wing: 'Wing', collection: 'Paint collection',
+  auto: 'Orbit', reset: 'Reset camera', undo: 'Undo paint', ground: 'Ground', flight: 'Flight', wing: 'Wing', collection: 'Paint collection',
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Cosmetic VFX coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'Try VFX for free. Your last pick is remembered on reload for this account; no permanent ownership.' : 'Cosmetic VFX is available; equip requires ownership', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
   cosmetic: 'Appearance does not change performance', restore: 'Restore default paint',
   preview: 'Preview', previewing: 'Previewing', cars: 'Cars', paints: 'Paints', effects: 'Effects', missions: 'Missions',
@@ -62,7 +63,6 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
 });
 const angleName = computed(() => copy.value.angles[GARAGE_ANGLES.indexOf(garageStudioView.angle as typeof GARAGE_ANGLES[number])] ?? copy.value.free);
 const nextPose = computed(() => garageStudioView.mode === 'flight' ? 'ground' : 'flight');
-const poseAction = computed(() => nextPose.value === 'flight' ? copy.value.takeoff : copy.value.land);
 const sectionLabel = (id: typeof section.value) => id === 'collection' ? copy.value.collectionTab : copy.value[id];
 const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equipped'
   : garageStudioView.ownedPaints.includes(id) ? 'owned' : 'locked';
@@ -86,9 +86,12 @@ const isPreviewingPaint = (id: string): boolean =>
         <GarageEffectsToggle :locale="locale" />
         <div class="garage-preview-controls">
           <div class="garage-mode-controls">
-            <button id="garage-pose-action" type="button" :data-garage-mode="nextPose">
-              <svg viewBox="0 0 24 24" aria-hidden="true" v-html="nextPose === 'flight' ? icons.fly : icons.road"></svg>
-              {{ poseAction }}
+            <button id="garage-pose-action" type="button" role="switch" :aria-label="copy.flight"
+              :aria-checked="garageStudioView.mode === 'flight'" :data-garage-mode="nextPose">
+              <span v-for="pose in (['ground', 'flight'] as const)" :key="pose" :data-active="pose === garageStudioView.mode" aria-hidden="true">
+                <svg v-bind="ICON_ATTRS" viewBox="0 0 34 23"><path :d="GARAGE_POSE_ART.car"/><path :d="GARAGE_POSE_ART[pose]"/></svg>
+                {{ copy[pose] }}
+              </span>
             </button>
             <button type="button" id="garage-wing" role="switch" :aria-checked="garageStudioView.wing">
               {{ copy.wing }}<span class="garage-switch-track" aria-hidden="true"></span>
