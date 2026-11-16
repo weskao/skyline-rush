@@ -156,8 +156,11 @@ def hood_y(z, x):
     return pts[-1][1]
 
 
-def patch(zs, y_lo, y_hi, ny=4, proud=.008, depth=.03, side=1):
-    """Closed thin panel lying on the body side: at each z it spans y_lo(z)..y_hi(z), `proud` outside the surface."""
+def patch(z0, z1, y_lo, y_hi, ny=4, proud=.008, depth=.03, side=1):
+    """Closed thin panel lying on the body side from z0 to z1: at each z it spans y_lo(z)..y_hi(z), `proud` outside
+    the surface. Its sections sit on the body's own stations: a coarser grid let the convex flank poke through the
+    panel's chords and ragged its edges."""
+    zs = [z0] + [z for z in stations() if z0 + .005 < z < z1 - .005] + [z1]
     rings = []
     for z in zs:
         ys = [y_lo(z) + (y_hi(z) - y_lo(z)) * j / ny for j in range(ny + 1)]

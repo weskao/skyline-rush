@@ -18,9 +18,9 @@ from bake import bake  # noqa: E402
 FLAKE_PX, FLAKE_REPEAT, FLAKE_STRENGTH = 128, 48, .35   # one tile is about 15 cm of panel: flakes near 1.2 mm
 
 # Panel lines cut into the body HIGH copy: three.js-space boxes (x0, x1, y0, y1, z0, z1), 8 mm wide. Positions are
-# inferred: the concept panels are too small (189 px tall) to resolve shut lines.
+# inferred: the concept panels are too small (189 px tall) to resolve shut lines. No door cuts: a straight box only
+# grazes the scalloped flank, so it baked broken 30-90 degree slashes that read as cracks (owner, 2026-11-17).
 GROOVES = [
-    *[(s * .95, s * 1.3, .20, .76, z - .004, z + .004) for s in (-1, 1) for z in (-.62, .50)],   # door front/rear cuts
     (-.50, .50, .55, 1.0, -1.064, -1.056),                                                     # hood rear seam
 ]
 

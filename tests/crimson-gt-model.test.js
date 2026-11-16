@@ -8,8 +8,9 @@ import { readFileSync } from 'node:fs';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
 import { REAR_PORTS } from '../src/aero-vfx.js';
 import { LIFT_PORTS } from '../src/lift-ports.js';
-import { Box3 } from 'three';
+import { Box3, Vector3 } from 'three';
 import { glbJson, parseGlb } from '../scripts/assets/check-glb.mjs';
+import { decodePngRgba } from './helpers/png-rgba.js';
 import { fitToRoadsterSize } from '../src/car-display-size.ts';
 
 const entry = MODEL_MANIFEST['crimson-gt'];
@@ -118,6 +119,53 @@ for (const lod of ['high', 'low']) {
       const fender = Math.max(...lip.map(([x]) => Math.abs(x)));
       assert.ok(fender > widest - 0.03, `${name}: fender ${fender.toFixed(3)} m vs body ${widest.toFixed(3)} m`);
     }
+  });
+}
+
+// Owner, 2026-11-17: each flank showed two vertical cracks. The bake cut straight 8 mm door-groove boxes into the
+// scalloped side; they only grazed the curved skin, so the coat normal map carried broken 30-90 degree slashes
+// (assets-src/crimson-gt/bake.py GROOVES). Node cannot transcode the shipped KTX2, so every flank texel the shipped
+// body's UVs cover is read from the baked source atlas that was encoded into it.
+const NORMAL_ATLAS = new URL('../assets-src/crimson-gt/textures/crimson_gt_normal.png', import.meta.url);
+for (const lod of ['high', 'low']) {
+  test(`crimson-gt ${lod} GLB: the body flanks carry no crack in the baked coat normal, left or right`, async () => {
+    const { width, height, pixels } = decodePngRgba(readFileSync(NORMAL_ATLAS), { allowRgb: true });
+    const { scene } = await parseGlb(readFileSync(new URL(`../public/${lod === 'low' ? entry.lods[0].url : entry.url}`, import.meta.url)));
+    scene.updateMatrixWorld(true);
+    const body = scene.getObjectByName('body');
+    const pos = body.geometry.attributes.position, uv = body.geometry.attributes.uv, index = body.geometry.index;
+    const corner = (i) => new Vector3().fromBufferAttribute(pos, i).applyMatrix4(body.matrixWorld);
+    // A crack is a line: a texel tilted over 25 degrees is bake noise at the scallop fold, such texels on 3+ rows (2 cm
+    // apart) of one 2 cm z band on one side are a cut. The old door grooves reached 6 rows; the clean bake reaches 1.
+    const covered = { '-1': 0, '1': 0 }, bands = new Map();
+    for (let t = 0; t < index.count; t += 3) {
+      const ids = [0, 1, 2].map(k => index.getX(t + k));
+      const [a, b, c] = ids.map(corner);
+      const centre = a.clone().add(b).add(c).divideScalar(3);
+      const normal = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
+      // Flank between the arches, sill to shoulder; the bevelled arch lips and sill edge are not panel surface.
+      if (Math.abs(centre.x) < 0.85 || centre.y < 0.25 || centre.y > 0.74 || centre.z < -0.9 || centre.z > 0.95 || Math.abs(normal.x) < 0.5) continue;
+      const [p, q, r] = ids.map(i => [uv.getX(i) * width, uv.getY(i) * height]);
+      const d = (q[1] - r[1]) * (p[0] - r[0]) + (r[0] - q[0]) * (p[1] - r[1]);
+      if (Math.abs(d) < 1e-9) continue;
+      for (let y = Math.floor(Math.min(p[1], q[1], r[1])); y <= Math.max(p[1], q[1], r[1]); y++) {
+        for (let x = Math.floor(Math.min(p[0], q[0], r[0])); x <= Math.max(p[0], q[0], r[0]); x++) {
+          const l1 = ((q[1] - r[1]) * (x + 0.5 - r[0]) + (r[0] - q[0]) * (y + 0.5 - r[1])) / d;
+          const l2 = ((r[1] - p[1]) * (x + 0.5 - r[0]) + (p[0] - r[0]) * (y + 0.5 - r[1])) / d;
+          if (l1 < 0 || l2 < 0 || l1 + l2 > 1 || x >= width || y >= height) continue;
+          const at = 4 * (y * width + x), n = [0, 1, 2].map(k => pixels[at + k] / 255 * 2 - 1);
+          const tilt = Math.acos(Math.min(1, n[2] / Math.hypot(...n))) * 180 / Math.PI;
+          covered[Math.sign(centre.x)]++;
+          if (tilt <= 25) continue;
+          const at3 = v => l1 * a[v] + l2 * b[v] + (1 - l1 - l2) * c[v];
+          const band = `${centre.x > 0 ? 'right' : 'left'} z ${(Math.round(at3('z') * 50) / 50).toFixed(2)}`;
+          bands.set(band, (bands.get(band) ?? new Set()).add(Math.round(at3('y') * 50)));
+        }
+      }
+    }
+    assert.ok(covered['-1'] > 3000 && covered['1'] > 3000, `both flanks sampled: ${JSON.stringify(covered)}`);
+    const cracks = [...bands].filter(([, rows]) => rows.size >= 3).map(([band, rows]) => `${band}: ${rows.size} rows`);
+    assert.deepEqual(cracks, [], 'flank z bands with texels tilted over 25 degrees on 3+ rows (a baked crack)');
   });
 }
 
