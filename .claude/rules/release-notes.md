@@ -39,6 +39,9 @@ paths:
   play button and play only in the enlarged view after a tap. In the enlarged view a tap on the clip pauses and
   resumes it, a tap outside it, the × or Esc closes. Encode at balanced quality: fixed CRF 20, capped at
   4 MB (`scripts/record-whats-new-clip.mjs`); never coarsen the CRF to save bytes, shorten the clip instead. `checkReleaseNotes` refuses an unbundled hero or highlight clip.
+- Clips come from `scripts/record-whats-new-clip.mjs` as lossless PNG frames at device scale 2 on a paused virtual clock, never
+  Playwright `recordVideo` (a low-bitrate VP8 webm at scale 1: blurry on HiDPI screens, and CRF 20 cannot recover the lost
+  detail); guard: `tests/record-whats-new-clip.test.js`. `--bot` earns NITRO by driving and `--press` scripts NITRO or drift keys. It serves the shipped `coming-soon` Garage mode, never the dev `trial` mode (wallet chips, trial VFX).
 - Leave out what players never need: fine tuning details, code structure or refactors, tests and
   tooling, back-office, admin or server setup, and anything sensitive (links, accounts, keys,
   unannounced plans).
