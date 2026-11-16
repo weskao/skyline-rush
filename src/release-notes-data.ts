@@ -30,16 +30,16 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
           'zh-TW': `第二款車：${GARAGE_CARS_COPY['zh-TW']['car.crimson-gt']}`,
         },
         description: {
-          en: 'Switch cars in the Garage. Both cars share every paint and effect, and each remembers its own paint.',
-          'zh-TW': '在車庫即可切換車款。兩款車共用所有車漆與特效，並各自記住上次使用的車漆。'
+          en: 'Switch cars in the Garage. Every paint and effect fits both cars, and your paint comes along when you switch.',
+          'zh-TW': '在車庫即可切換車款。所有車漆與特效兩款車都能用，換車時車漆也會跟著帶過去。'
         }
       },
       {
         id: 'drift-flip', kind: 'improvement', image: null,
         title: { en: 'Drifts flow through corners', 'zh-TW': '漂移過彎更順暢' },
         description: {
-          en: 'Flip steering mid-drift to swing the other way without losing it, corners no longer push a drifting car wide, and the slide is quicker.',
-          'zh-TW': '漂移中可直接反打方向切換邊，漂移不會中斷；彎道不再把漂移中的車推向外側，側滑也更快。'
+          en: 'Flip your steering mid-drift to swing the other way without breaking it. Corners no longer push a drifting car wide, and you keep more speed through the slide.',
+          'zh-TW': '漂移中反打方向就能甩向另一側，漂移不會中斷；過彎不再被往外推，側滑時也保留更多車速。'
         }
       },
       {
@@ -64,8 +64,8 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         id: 'nitro-chain', kind: 'new', image: null,
         title: { en: 'Chain NITRO for a stronger burst', 'zh-TW': '連發 NITRO 推力更強' },
         description: {
-          en: 'Press NITRO again while it burns to add a full charge. Each chained charge pushes harder, up to ×3, and rivals chain theirs too.',
-          'zh-TW': 'NITRO 噴發中再按一次就多加一整格，連發越多推力越強，最高 ×3；對手也會連發。'
+          en: 'Press NITRO again while it burns to add a full charge. Chain up to three for a stronger push, shown on the HUD. Watch out: rivals chain theirs too.',
+          'zh-TW': 'NITRO 噴發中再按一次就多加一整格，最多連發三段、推力更強，畫面上也會顯示連發段數。小心，對手也會連發！'
         }
       },
       {
@@ -83,7 +83,7 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         title: { en: 'Pickups you can see and feel', 'zh-TW': '補給品更立體、更有感' },
         description: {
           en: 'Pickups now spin on the road as 3D models, each with its own burst and sound. The fuel bar flashes what you gained, and supported phones buzz lightly.',
-          'zh-TW': '補給品變成在路面旋轉的 3D 模型，各有專屬特效與音效；油量條會閃出補充量，支援的手機還會輕震。'
+          'zh-TW': '補給品變成在路面旋轉的 3D 模型，各有專屬特效與音效；油量條會閃出補充量，支援的手機還會輕微震動。'
         }
       },
       {
@@ -100,8 +100,8 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         },
         title: { en: 'See what your rivals are up to', 'zh-TW': '對手狀態一眼看穿' },
         description: {
-          en: 'Rival tail lights flare when they fire NITRO or BOOST, with a flame on Medium graphics and up. Rivals hit by FREEZE turn icy blue, and EMP makes them flicker.',
-          'zh-TW': '對手啟動 NITRO 或 BOOST 時尾燈會亮起，畫質「中」以上還有火焰；被凍結命中的對手會蒙上冰藍色，被電磁脈衝擊中則會閃爍。'
+          en: 'Rival tail lights flare when they fire NITRO or BOOST. Rivals slowed by FREEZE glow icy blue, and EMP lights them up yellow-green.',
+          'zh-TW': '對手啟動 NITRO 或 BOOST 時尾燈會亮起；被凍結減速的對手泛著冰藍光，被電磁脈衝擊中則泛出黃綠色電光。'
         }
       },
       {
@@ -116,7 +116,7 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         id: 'halfway', kind: 'new', image: { en: 'whats-new/halfway/halfway.en.webp', 'zh-TW': 'whats-new/halfway/halfway.zh-TW.webp' },
         title: { en: 'A clearer halfway signal', 'zh-TW': '賽事過半，抬眼就看見' },
         description: {
-          en: 'In a race with a finish line, a banner lights up at center screen when you pass halfway. A short chime plays and the banner shows the distance left.',
+          en: 'Pass the halfway mark and a banner lights up at the centre of the screen, showing the distance left, with a short chime.',
           'zh-TW': '跑過半程時，畫面中央會亮起提示，顯示距終點還有多遠，並響起短促的提示音。'
         }
       },
@@ -140,18 +140,10 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       },
       {
         id: 'classic-corners', kind: 'improvement', image: null,
-        title: { en: 'New corners and more rings on classic tracks', 'zh-TW': '經典賽道新彎道、更多圈' },
+        title: { en: 'New corners and more rings on classic tracks', 'zh-TW': '經典賽道新彎道，圓環與補給更多' },
         description: {
           en: 'Coast, Canyon Skyway and Aurora Pass get their own corners, Sky Spiral gains wide sweeping bends, and the first five tracks carry 40% more rings and pickups.',
-          'zh-TW': '海岸公路、峽谷天橋與極光山道有了各自的彎道，天際螺旋多了大弧度彎，前五條賽道的圈與補給品也多了四成。'
-        }
-      },
-      {
-        id: 'neon-lap', kind: 'improvement', image: null,
-        title: { en: 'Neon Downtown is one long 10 km lap', 'zh-TW': '霓虹都會變成 10 公里長圈' },
-        description: {
-          en: 'The city course now runs one big lap through eight districts. Tracks with a new layout keep a fresh set of best times.',
-          'zh-TW': '城市賽道改為穿過八個街區的一大圈。換了新路線的賽道會重新記錄最佳成績。'
+          'zh-TW': '海岸公路、峽谷天橋與極光山道有了各自的彎道，天際螺旋多了大弧度彎；前五條賽道的圓環與補給品也多了四成。'
         }
       },
       {
@@ -166,10 +158,28 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
             poster: { en: 'whats-new/neon-3d/neon-3d.mobile.en.jpg', 'zh-TW': 'whats-new/neon-3d/neon-3d.mobile.zh-TW.jpg' }
           }
         },
-        title: { en: 'Neon Downtown, rebuilt for rainy nights', 'zh-TW': '霓虹都會換上雨夜新貌' },
+        title: { en: 'Neon Downtown: a 10 km rainy-night lap', 'zh-TW': '霓虹都會：10 公里雨夜長圈' },
         description: {
-          en: 'On Medium graphics and up, race wet streets that mirror the neon, past detailed buildings, landmarks and a glass skyline under a violet storm sky.',
-          'zh-TW': '畫質設為「中」以上時，濕亮街道倒映霓虹，沿途有精緻建築與地標，運河對岸的玻璃高樓襯著紫色暴風雨天空。'
+          en: 'The city course is now one 10 km lap through eight districts, with fresh best times. On Medium graphics and up, wet streets mirror the neon past a busy harbour.',
+          'zh-TW': '城市賽道改為穿越八個街區的 10 公里大圈，最佳成績重新計算。畫質「中」以上，濕亮街道倒映霓虹，沿途經過熱鬧港口。'
+        }
+      },
+      {
+        id: 'coast-3d', kind: 'improvement', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/coast-3d/coast-3d.desktop.en.mp4', 'zh-TW': 'whats-new/coast-3d/coast-3d.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/coast-3d/coast-3d.desktop.en.jpg', 'zh-TW': 'whats-new/coast-3d/coast-3d.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/coast-3d/coast-3d.mobile.en.mp4', 'zh-TW': 'whats-new/coast-3d/coast-3d.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/coast-3d/coast-3d.mobile.en.jpg', 'zh-TW': 'whats-new/coast-3d/coast-3d.mobile.zh-TW.jpg' }
+          }
+        },
+        title: { en: 'Coast, rebuilt in 3D', 'zh-TW': '海岸公路換上 3D 新貌' },
+        description: {
+          en: 'On Medium graphics and up, race past sailboats and seagulls, grassy cliff tops and far headlands, beside a sea that mirrors a new sky.',
+          'zh-TW': '畫質「中」以上時，沿途有帆船與海鷗、長滿草叢的崖頂與遠方岬角，海面還會倒映全新的天空。'
         }
       },
       {
@@ -192,8 +202,8 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         id: 'garage-art', kind: 'fix', image: null,
         title: { en: 'Garage pictures and preview camera fixed', 'zh-TW': '車庫圖片與預覽鏡頭修正' },
         description: {
-          en: 'Car and paint pictures now show in the Garage and stay full size on tablets. The car preview camera keeps its angle and zoom when you change views.',
-          'zh-TW': '車庫的車款與車漆圖片會正常顯示，平板上也維持完整大小；車輛預覽鏡頭切換視角時會保留角度與縮放。'
+          en: 'Garage car and paint pictures show again, full size on tablets. The Studio camera is easier to steer, keeps its angle and zoom, and switches views with ‹ ›.',
+          'zh-TW': '車庫的車款與車漆圖片恢復正常顯示，平板上也維持完整大小；Studio 預覽鏡頭更好操作，會保留角度與縮放，按 ‹ › 即可切換視角。'
         }
       }
     ]
