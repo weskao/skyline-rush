@@ -92,8 +92,11 @@ STEP_EL_DEG, STEP_DEG, STEP_CLEAR_DEG = (27.0, 50.0), 8.0, 4.0
 # Street axes in the HDRI frame: the longitude the runtime turns straight ahead of the grid (`sky.ahead`) and every 90
 # degrees from it. The lap drives all four, so a key that can glint off the car is aimed along one (on_street_axis):
 # night's. Rain's key (el 76.7 when measured clean, 80.3 since the 1k haze took the towers' light) stays where the
-# filled sky puts it.
-AHEAD_DEG, STREET_KEY = 30.0, ("night",)
+# filled sky puts it. STREET_KEY also sets the turned key's elevation, the middle of what a live High race read clean
+# (px of luma >= 235 on the player car): a key straight ahead mirrors off the rear glass at 50, 54.6 and 56 degrees
+# (3911, 1366 and 365 px), one straight behind off the rear deck at 66 and 70 (161 and 1090); 58.2 to 62 read 0 both
+# ways. The filled sky's own elevation moves with the fill: 58.2, then 54.6 once the 1k haze carried the towers' light.
+AHEAD_DEG, STREET_KEY = 30.0, {"night": 60.0}
 SIZES = {"4k": 4096, "8k": 8192}
 
 
@@ -300,11 +303,11 @@ def key_light(full):
             "ambient": round(float((lum * domega).sum() / domega.sum() / w), 4)}
 
 
-def on_street_axis(direction):
-    """`direction` turned about the vertical onto the nearest street axis: same elevation, so same road irradiance."""
-    x, y, z = direction
-    lon = np.radians(AHEAD_DEG + 90 * round((np.degrees(np.arctan2(z, x)) - AHEAD_DEG) / 90))
-    return [round(float(v), 4) for v in (np.hypot(x, z) * np.cos(lon), y, np.hypot(x, z) * np.sin(lon))]
+def on_street_axis(direction, elevation_deg):
+    """The street axis nearest `direction`'s azimuth, at `elevation_deg`."""
+    x, _, z = direction
+    lon, el = np.radians(AHEAD_DEG + 90 * round((np.degrees(np.arctan2(z, x)) - AHEAD_DEG) / 90)), np.radians(elevation_deg)
+    return [round(float(v), 4) for v in (np.cos(el) * np.cos(lon), np.sin(el), np.cos(el) * np.sin(lon))]
 
 
 def band_p90(sky):
@@ -351,8 +354,9 @@ def main():
     # wall's vector irradiance made a sun at el 27 degrees straight down the harbour, a pinpoint specular that whited
     # out the wet road and the car. Its colour and the irradiance it adds to the road (intensity x sin(elevation)) stay
     # the download's (rain: its grade, through RGBE), whose light the 1k maps keep; `source` keeps that measurement.
-    # STREET_KEY then turns the key onto the nearest street axis: at night's 58 degrees the player car's rear deck
-    # mirrored it into the chase camera along the harbour, 119 degrees off the heading; `filled` keeps the measurement.
+    # STREET_KEY then turns the key onto the nearest street axis, at the elevation it names: where the filled sky put
+    # night's, the player car's rear deck mirrored it into the chase camera along the harbour, 119 degrees off the
+    # heading; `filled` keeps the measurement.
     raw_rain = os.path.join(OUT_PNG, "raw_rain_1k.hdr")
     save_hdr(grade_rain(full, glow, upper_only=False), raw_rain)
     aim = {"night": key_light(filled), "rain": key_light(grade_rain(filled, env_haze, upper_only=False))}
@@ -362,10 +366,11 @@ def main():
         e["environment"] = entry_file(path)
         e["irradiance"] = {"source": round(irradiance(src_img), 4), "shipped": round(irradiance(load_full(path)), 4)}
         src, filled_key = key_light(src_img), aim[name]["direction"]
-        scale = src["direction"][1] / filled_key[1]
+        direction = on_street_axis(filled_key, STREET_KEY[name]) if name in STREET_KEY else filled_key
+        scale = src["direction"][1] / direction[1]
         e["fill"] = FILL
-        e["key"] = {**src, "direction": on_street_axis(filled_key) if name in STREET_KEY else filled_key,
-                    "elevationDeg": aim[name]["elevationDeg"], "filled": {"direction": filled_key},
+        e["key"] = {**src, "direction": direction, "elevationDeg": STREET_KEY.get(name, aim[name]["elevationDeg"]),
+                    "filled": {"direction": filled_key},
                     "intensity": round(src["intensity"] * scale, 4), "irradiance": round(src["irradiance"] * scale, 4),
                     "source": {"direction": src["direction"], "elevationDeg": src["elevationDeg"],
                                "intensity": src["intensity"]}}

@@ -138,11 +138,15 @@ for (const [name, env] of Object.entries(ENVS)) {
   // Same key, its azimuth (2026-11-16): where the filled sky put night's key (el 58), the player car's rear deck mirrored
   // it into the chase camera along the harbour, 119 degrees off the heading (tests/neon-lighting.test.js has the band).
   // The build turns it onto the nearest street axis; rain's (el 76.7) measured clean and stays on the filled sky's.
-  test(`${name}: the key keeps the filled sky's elevation; night's is turned onto the nearest street axis`, () => {
-    const { direction, filled } = env.key, ahead = COAST_ENV_VARIANTS[name === 'rain' ? 'nightRain' : name].sky.ahead;
+  // On the axis its elevation matters too (2026-11-16, live High race, px of luma >= 235 on the player car): a key
+  // straight ahead mirrors off the rear glass at 50, 54.6 and 56 degrees (3911, 1366 and 365 px), one straight behind off
+  // the rear deck at 66 and 70 (161 and 1090); 58.2 to 62 read 0 both ways. The filled sky's own elevation moves with
+  // the fill (58.2, then 54.6 once the 1k haze carried the towers' light), so the build sets night's inside the window.
+  test(`${name}: rain's key is the filled sky's; night's is on the nearest street axis at an elevation the car does not mirror`, () => {
+    const { direction, filled, elevationDeg } = env.key, ahead = COAST_ENV_VARIANTS[name === 'rain' ? 'nightRain' : name].sky.ahead;
     const azimuth = v => Math.atan2(v[2], v[0]) * 180 / Math.PI;
-    assert.equal(direction[1], filled?.direction[1], 'same elevation, so the same irradiance on the road');
     if (name === 'rain') return assert.deepEqual(direction, filled.direction);
+    assert.ok(elevationDeg >= 58.2 && elevationDeg <= 62, `key at ${elevationDeg} degrees: outside 58.2..62 the car mirrors it`);
     const offAxis = ((azimuth(direction) - ahead) % 90 + 90) % 90; // the runtime turns `sky.ahead` to -z: the street axes
     assert.ok(Math.min(offAxis, 90 - offAxis) < 0.05, `${offAxis.toFixed(2)} degrees past a street axis`);
     assert.ok(Math.abs((azimuth(direction) - azimuth(filled.direction) + 540) % 360 - 180) <= 45, 'the nearest axis');
