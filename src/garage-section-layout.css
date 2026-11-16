@@ -162,11 +162,8 @@
   padding: 4px 6px;
   font-size: 12px;
 }
-#garage-screen .garage-pose-controls { display: flex; min-width: 0; align-items: center; gap: 5px; }
-
 @media (max-width: 650px) and (orientation: portrait) {
   #garage-screen[data-page] .garage-collection { flex: 0 0 clamp(222px, 39%, 330px); }
-  #garage-screen .garage-pose-controls { flex: 1; }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {

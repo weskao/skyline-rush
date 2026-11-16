@@ -144,17 +144,6 @@ body[data-fold-axis="vertical"] #garage-screen .garage-layout {
   grid-template-columns: minmax(0, calc(var(--fold-pane-left-end) - max(7px, var(--safe-left)) - 8px)) minmax(0, 1fr);
   gap: calc(var(--fold-pane-right-start) - var(--fold-pane-left-end) + 16px);
 }
-body[data-fold-axis="vertical"] #garage-screen[data-page="home"] .garage-visual {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto auto;
-}
-body[data-fold-axis="vertical"] #garage-screen[data-page="home"] #showcase-camera-dock {
-  grid-area: 3 / 1;
-  justify-self: stretch;
-}
-body[data-fold-axis="vertical"] #garage-screen .garage-mode-controls { flex-wrap: wrap; }
-body[data-fold-axis="vertical"] #garage-screen .garage-mode-controls button { min-width: 44px; }
-body[data-fold-axis="vertical"] #garage-screen .garage-mode-label { display: none; }
 body[data-fold-axis="horizontal"] #garage-screen .garage-layout {
   display: grid;
   grid-template: minmax(0, var(--fold-garage-first-row)) minmax(0, 1fr) / minmax(0, 1fr);

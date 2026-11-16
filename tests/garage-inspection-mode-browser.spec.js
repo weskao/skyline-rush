@@ -36,11 +36,11 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     await page.locator('#garage-studio-open').click();
     const preview = page.locator('#garage-preview');
     const wing = page.locator('#garage-wing');
-    await expect(wing).toHaveAttribute('aria-pressed', 'false');
+    await expect(wing).toHaveAttribute('aria-checked', 'false');
     for (const mode of ['ground', 'flight']) {
       await page.locator(`button[data-garage-mode="${mode}"]`).click();
       await wing.click();
-      await expect(wing).toHaveAttribute('aria-pressed', 'true');
+      await expect(wing).toHaveAttribute('aria-checked', 'true');
       await expect(preview).toHaveAttribute('data-garage-wing', 'true');
       for (const angle of ['side', 'rear', 'cinematic']) {
         await chooseGarageAngle(page, angle);
@@ -52,12 +52,12 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         body: await page.screenshot(), contentType: 'image/png',
       });
       await wing.click();
-      await expect(wing).toHaveAttribute('aria-pressed', 'false');
+      await expect(wing).toHaveAttribute('aria-checked', 'false');
       await expect(preview).toHaveAttribute('data-garage-wing', 'false');
     }
     await wing.click();
     await page.locator('#garage-reset').click();
-    await expect(wing).toHaveAttribute('aria-pressed', 'true');
+    await expect(wing).toHaveAttribute('aria-checked', 'true');
     await expect(preview).toHaveAttribute('data-garage-mode', 'flight');
   });
 }

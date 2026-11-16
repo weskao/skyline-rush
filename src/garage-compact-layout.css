@@ -9,5 +9,4 @@
 @media (max-width: 650px) and (orientation: portrait) {
   #garage-screen .garage-entry { max-width: 49vw; padding-inline: 6px; font-size: 11px; }
   #garage-screen .garage-heading h2 { font-size: 18px; }
-  #garage-screen .garage-mode-controls button { min-width: 0; padding-inline: 9px; }
 }
