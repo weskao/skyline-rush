@@ -34,6 +34,9 @@ for (const [name, width, height, segments] of layouts) {
       }
       await openSettingsSection(page, 'display');
       const dialog = page.locator('#settings-panel');
+      const airflow = dialog.locator('#airflow-toggle');
+      await expect(airflow).toHaveCSS('background-color', 'rgb(21, 43, 64)');
+      await expect(airflow).toHaveCSS('color', 'rgb(239, 247, 250)');
       const rect = await dialog.boundingBox();
       const panes = segments || [{ left: 0, top: 0, width, height }];
       expect(panes.some(pane => rect.x >= pane.left && rect.y >= pane.top &&

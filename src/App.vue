@@ -80,7 +80,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <template #driving><ControlsPanel /></template>
         <template #assist><button class="icon-button assist-button" id="assist-button" aria-label="Auto accelerate" data-i18n-aria-label="assist.aria" aria-pressed="false" title="Auto accelerator · F2" aria-keyshortcuts="F2"><svg v-bind="ICON_ATTRS" v-html="icons.assist"></svg><span data-i18n="assist.label">AUTO</span><kbd class="key-badge" aria-hidden="true">F2</kbd></button></template>
         <template #display>
-          <button id="airflow-toggle" aria-pressed="false" title="Toggle airflow · V" data-i18n-title="aero.toggleTitle"><kbd>V</kbd> <span data-i18n="aero.airflow">AIRFLOW</span></button>
+          <button id="airflow-toggle" aria-pressed="false" aria-keyshortcuts="V" title="Toggle airflow · V" data-i18n-title="aero.toggleTitle"><kbd aria-hidden="true">V</kbd> <span data-i18n="aero.airflow">AIRFLOW</span></button>
           <div id="vfx-panel">
             <div class="vfx-settings">
               <div class="vfx-heading"><span data-i18n="vfx.eyebrow">AEROSPACE / VISUAL LAB</span><strong data-i18n="vfx.headline">Shape the rush.</strong><small data-i18n="vfx.subline">Visual simulation · driving physics unchanged</small></div>
