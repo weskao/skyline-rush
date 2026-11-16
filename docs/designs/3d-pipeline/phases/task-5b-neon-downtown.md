@@ -900,11 +900,11 @@ Captures are observations, not approval. Captures, logs and numbers: ignored `..
 | # | Entry (step) | State | Evidence |
 | --- | --- | --- | --- |
 | 1 | Sculpture hidden until 9340 m (16) | a | `bc061622`; RED `red-sculpture.log`, GREEN `green-sculpture.log`; `14b`, `14c`, `14d` before and after, both weathers: a small violet glow at 9200 m, the lit plinth and lower blades from 9300 m, nothing in front of it at 9360 m |
-| 2 | Sculpture's upper blades stay dark steel (found here) | c | Lit only by baked ring spill: the first kit bakes without a work-light pass; a re-bake moves the nine-piece atlas and its pin. GLB 3 849 128 of 4 000 000 bytes, 29 990 of 32 000 triangles |
+| 2 | Sculpture's upper blades stay dark steel (found here) | a, step 21 | `a5f06b60`; the blades' median runtime emissive above half height 0.0 to 0.327, under the bloom (0.54 of 0.9); RED `red-landmarks.log`, GREEN `green-landmarks.log`; `14c`, `14d`, `14e` before and after, both weathers |
 | 3 | Clock tower small from 7450 m (13, 16) | c | 228 m out it stands about 55 px of 720; it reads at 7550 m and fills the view at 7630 m (`12`, `12b`, `12c`). Only the sculpture is scaled (`tests/neon-scenery-plan.test.js`), and the tower's bearing is guarded (rule 19) |
 | 4 | Ground screen at 1050 m near-white (16) | a | `922233ca`; RED `red-screen.log`, GREEN `green-screen.log`; `03c` before and after |
 | 5 | Boulevard roofline repeats (16) | b | Step 16's rooftop screens and open plots: `02`, `02b` show towers, blocks and screens at mixed heights |
-| 6 | Underpass straight: one podium shopfront both sides (13, 16) | c | Dressed per block kind in step 16 (`03`, `03c`: trees, stacked sign, screen). A second podium is new geometry: a city kit rebuild and a moved pin, 9 328 of 11 000 triangles and 1 104 960 of 1 300 000 bytes today. Not rebuilt in this step |
+| 6 | Underpass straight: one podium shopfront both sides (13, 16) | a, step 21 | `43a9ae67`; a round-arched arcade bay on `block_retail_a`, so each side alternates two bay shapes (0.57 / 0.257 against 0.772 / 0.789); city GLB 9 376 of 11 000 triangles, 1 144 956 of 1 300 000 bytes; RED `red-podium.log`, GREEN `green-podium.log`; `03`, `03c`, `03d` before and after, both weathers |
 | 7 | Harbour sky wedge, glow ahead, white road (12, 14) | b | Steps 14 and 17 (rules 16 and 18): harbour sky box 6 to 18 of 255 at night (`07` to `07e`), no frame with a white road |
 | 8 | Near-black containers, hull, gantry; flat ship windows (12) | b | Steps 15 and 18: colourways and corrugation read at `07`, `07c`; hull, deckhouse and lit windows at `07e` |
 | 9 | Far skyline on the dome soft at High (14, 17) | c | Sharpness 0.447 and 0.545 (the two dome sizes) against the source's 0.574 and 0.698: 78%, guard 70% (rule 17). The softness left is the panorama's own. Ultra not captured |
@@ -925,10 +925,10 @@ Captures are observations, not approval. Captures, logs and numbers: ignored `..
 | 23 | Across-the-water skyline stands in the sea (12) | c | The canal is over water (N3, N7) and the land is one mesh; the far towers are sunk 6 to 66 m and turned so they read as a far waterfront (`08b`). A bank under them is a second ground mesh |
 | 24 | Cherry tree reads as opaque puffs (18) | c | The city kit is one opaque material; cut-out blossom is a second material and alpha overdraw on up to 8 trees a chunk. Seen at `02b`, `03c` |
 | 25 | Emissive 1.7 city, 1.5 landmarks not judged against the darker dome (18) | b | Judged in this step's captures: tubes, blade signs and parapet bands keep their colour in every probe looked at. The two pieces that did not are entries 1 and 4 |
-| 26 | Ship's stern and funnel dark, deckhouse bright (15) | c | Still so at `07e`. Its two guards hold by 0.001 (relief 0.951 of 0.95) and 0.0007 (hull 0.0557 of 0.055): a re-light moves both |
-| 27 | Stack's white boxes flat pale grey (15) | c | Same atlas and budget as entry 2; the colourways and corrugation read (`07`, `07c`) |
+| 26 | Ship's stern and funnel dark, deckhouse bright (15) | a, step 21 | `a5f06b60`; funnel 0.023 to 0.366 (deckhouse 0.464), stern 0.0444 to 0.0888; the two thin guards now hold by 0.004 (relief 0.954 of 0.95) and 0.013 (hull 0.068 of 0.055); `07e`, `07h`, `07j` before and after |
+| 27 | Stack's white boxes flat pale grey (15) | c, step 21 | Lifted, not fixed: white relief 0.972 to 0.980 of the colour map's 1.0. More light costs relief (0.908 at +20% power, guard 0.95) and less light nears the lit floor (0.989 at lit 0.0561, floor 0.05); `07g` reads about the same before and after |
 | 28 | Baked light ignores the runtime key and yaw (15, 18) | c | Needs a shader change (step 18); baked lamps are local work lights, the key adds on top |
-| 29 | Landmark GLB headroom (15) | c | 150 872 bytes and 2 010 triangles left after step 18's rebuild; the next landmark change still needs the budget decision |
+| 29 | Landmark GLB headroom (15) | c | 117 424 bytes and 1 898 triangles left after step 21's re-bake (3 882 576 of 4 000 000 bytes, 30 102 of 32 000 triangles; entry 2's 29 990 was a stale count); the next landmark change still needs the budget decision |
 | 30 | Occlusion-roughness atlases, stronger compression, not compared by eye (18) | c | Not compared against the old atlases here either; no banding or blocking seen on the gantries, stacks or gate in this step's captures |
 | 31 | Rain, plaza, right lane: 126 px with a probe key behind the car (19) | c | Not reproduced with the shipped key: no white bar on the rear deck at `14` (night or rain). Still unexplained for a key that does not ship; a new key re-runs the lane sweep (rule 20) |
 | 32 | Cast shadows too faint to read (19) | c | The night key is 2.4532 and rain's 1.4737, fixed by the sky's road irradiance (rule 16); the street's own light is emissive and casts none |
@@ -961,13 +961,67 @@ Owner items:
 
 Accepted limits (entries marked c above), by what would lift them:
 
-- A landmark kit re-bake with a budget decision: entries 2, 26, 27, 29 (and the two thin guards).
-- A city kit rebuild: entries 6 and 24.
+- A landmark kit budget decision: entry 29. Entries 2 and 26 were fixed in step 21 inside the budget; entry 27
+  is held between two guards (step 21).
+- A city kit rebuild with a second material: entry 24. Entry 6 was fixed in step 21.
 - A new panorama or sky rebuild: entries 9 to 12, 14 and 22b.
 - A shader or lighting change: entries 13, 28 and 32.
 - A second ground mesh or mirror draw against the draw-call caps: entries 16 and 23.
 - Not captured in this audit: Medium, Ultra (8K dome), Coast, and Neon without `?look=3d`. The two fixes touch
   only the kit layer, which draws nothing outside the look.
+
+## Step 21: landmark re-light and a second podium (2026-11-16)
+
+Four of step 20's accepted limits, reopened: each is fixed inside the existing budgets or closed with the number
+that blocks it. No cap, ceiling, triangle or byte limit moved. Captures are observations, not approval. Captures,
+logs and numbers: ignored `../audits/neon-landmark-relight/` (`before-*` at `0cfa4dac`; `after-*` at `a5f06b60`;
+`podium-after-*` at `43a9ae67`; High, 1280x720, night and rain night, HUD hidden).
+
+- **Entry 2, sculpture blades (`a5f06b60`).** The piece's only baked light was its rings' spill, which ended under
+  the fan's upper half. Six violet uplights at the plinth are baked into the sculpture's own texels up to a stored
+  ceiling (`FILL`, `assets-src/neon-landmarks/build/lighting.py`): ceiling 0.12 x the piece's strength 4.5 = 0.54,
+  under the bloom threshold 0.9. Median runtime emissive above half height 0.0 to 0.327 (whole piece 0.140, light
+  paint 0.534). A first pass at 0.64 read milky in capture and was retuned. `14c`, `14d`, `14e`: the blades read
+  violet with their facets from about 100 m, in both weathers; before, dark steel over a lit base.
+- **Entry 26, ship (`a5f06b60`).** The funnel was hull navy beside a white deckhouse (0.023 against 0.464): it takes
+  the crane's light paint, and a stern flood lifts the hull end. Funnel 0.366, stern 0.0444 to 0.0888, hull 0.0557
+  to 0.068 (guard 0.055), ship containers' relief 0.951 to 0.954 (guard 0.95; 0.950 to 0.954 across 13 500 to
+  35 000 W, so the margin is structural). `07e`, `07h`: the funnel is a light block over the deckhouse and the hull
+  end reads blue; `07j`: the hull side a little brighter.
+- **Entry 27, stack's white boxes (`a5f06b60`): not fixed, closed on two guards.** White relief 0.972 to 0.980 of
+  the colour map's 1.0, lit 0.0603 to 0.0589 (floor 0.05). More light flattens the white: 0.908 at +20% power,
+  under the 0.95 guard. Less light restores it only as the stack goes dark: 0.989 at lit 0.0561. `07g` reads about
+  the same before and after; the corrugation shows in both.
+- **Confinement.** 976 153 emissive texels of the first atlas changed: 244 139 on the sculpture's triangles,
+  732 014 in gutters, none on another piece's triangles or within 4 texels of one. A zero-power bake reproduced
+  every committed texture bit for bit. Landmark GLB 3 882 576 of 4 000 000 bytes, 30 102 of 32 000 triangles,
+  30 draws. Rule item 23.
+- **Entry 6, podium (`43a9ae67`).** Both podium cells came from one painter: one flat-headed glazed shopfront in
+  two colours. A third 12 m shopfront does not fit the city atlas (98.2% full; a 768 x 288 cell overflows by
+  28 px), a 4 m bay does: `arcade()` paints a round-arched bay with a fanlight and a neon arch for
+  `block_retail_a`, in the spare width of a row. build.py measures each podium's bay shape (share of the run that
+  is opening at 1.8 m and at 3.2 m): 0.772 / 0.789 for the glazed fronts, 0.57 / 0.257 for the arcade. City GLB
+  1 104 960 to 1 144 956 of 1 300 000 bytes, 9 328 to 9 376 of 11 000 triangles (the block's podium is cut every
+  4 m: 16 more per LOD, 434 / 122 / 106 of 550 / 150 / 120), 47 draws. The painter takes no random numbers, so
+  every reviewed cell is painted as before; the atlas packing, and with it all four texture files, moved. `03`,
+  `03c`, `03d`: a row of warm arches with pink outlines alternates with the violet glazed fronts on both sides.
+  Rule item 24.
+
+### Evidence
+
+- [x] RED first, then GREEN. Landmarks: 3 of 18 fail on the old contract and atlas, then 51 of 51 with the
+  manifest, scenery and parity suites. Podium: 1 of 27 fail on the old cells (*three store_glass-shaped podiums in
+  a row*), then 70 of 70.
+- [x] `npm run typecheck`, `node --test tests/module-size.test.js` (3 of 3), `npm test` (3264 pass, 0 fail,
+  3 skipped) and `npm run build` at `43a9ae67`.
+- [x] Draw calls on High, the peak of six samples at this step's probes, before and after: night home 256 to 258,
+  the straight 164 to 170, harbour 156 to 162, sculpture 190 to 191; rain home 257 to 258, the straight 187 to 192,
+  harbour 169 to 174, sculpture 210 to 213 (caps 540 and 380). Within sample noise: no mesh, pool or material was
+  added. Step 20's 30-probe run was not repeated.
+- [x] Captures looked at, night and rain, before and after. Not approved.
+- [ ] Browser specs: not run (owner instruction of 2026-11-16).
+- [ ] Not captured: Medium, Ultra, the plaza and boulevard plots that also use `block_retail_a`, and LOD 1 and 2 of
+  the arcade up close.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
