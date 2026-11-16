@@ -93,6 +93,7 @@ test('14-step browser ledger follows real controls, profile reloads and an offli
   await expect(store(page).locator('.demo-confirm')).toContainText('Remaining 195 Demo points');
   await confirm(page);
   await check(8, [195, 430, 5]);
+  await expect(store(page).locator('.demo-message')).toContainText('−25 Demo points');
   await choose(page, 'nitro-trail-cyan');
   await request(page);
   await confirm(page);

@@ -14,6 +14,7 @@ import type { DemoCurrency, Wave3ExperiencePort, ExperienceSnapshot, MissionProg
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = defineProps<{ experience?: Wave3ExperiencePort | null }>();
 const locale = ref(getLocale());
+const emit = defineEmits<{ claimable: [count: number] }>();
 const snapshot = ref<ExperienceSnapshot | null>(null);
 const now = ref(Date.now());
 const feedback = ref('');
@@ -52,6 +53,9 @@ const resetSchedule = computed(() => {
     label, datetime: date.toISOString(), date: formatDate(date, options, locale.value),
   }));
 });
+const claimableCount = computed(() => [...missions, ...periodRows.value]
+  .filter(item => stateOf(item.id) === 'claimable').length);
+watch(claimableCount, count => emit('claimable', count), { immediate: true });
 const earnedCount = computed(() => available.value ? missions.filter(m => progressOf(m.id)?.claimed).length : 0);
 const earnedTier = computed(() => trophyTier(earnedCount.value));
 const TROPHY_LEVELS: Readonly<Record<string, number>> =

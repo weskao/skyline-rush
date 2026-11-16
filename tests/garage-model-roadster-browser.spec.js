@@ -1,4 +1,5 @@
 import { captureHooks, test } from './helpers/gameplay-browser.js';
+import { openGarageSection } from './helpers/garage-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { chooseGarageAngle } from './helpers/garage-angle.js';
@@ -61,6 +62,7 @@ test('Garage Home shows the Roadster GLB; wheels, wing, flight and paint follow 
   await attach(page, 'roadster-home-flight');
 
   const before = (await paintHex(page)).glb;
+  await openGarageSection(page, 'paints');
   await page.locator('[data-paint]:not([data-paint="pearl"])').first().click();
   await expect.poll(async () => { const p = await paintHex(page); return p.glb === p.proc && p.glb !== before; }).toBe(true);
   expect(errors).toEqual([]);

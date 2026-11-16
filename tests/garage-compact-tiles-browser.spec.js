@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
@@ -31,6 +32,7 @@ for (const locale of ['en', 'zh-TW']) for (const [width, height] of COMPACT_VIEW
     const tiles = { loadout: '.garage-vfx-loadout-tile', badge: '.garage-badge-card', trophy: '.garage-trophy-card' };
     const m = {};
     for (const key of Object.keys(sections)) {
+      await openGarageSection(page, key === 'trophy' ? 'missions' : 'effects');
       const section = page.locator(sections[key]);
       await section.evaluate(el => el.scrollIntoView({ block: 'center' }));
       // Lazy art decodes once scrolled in; wait for it so the screenshot shows the real tiles.

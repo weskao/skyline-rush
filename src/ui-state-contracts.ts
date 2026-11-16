@@ -1,6 +1,7 @@
 export interface GarageView {
   selected: string;
   status: string;
+  canUndo: boolean;
   equipDisabled: boolean;
   equipLabel: string;
 }

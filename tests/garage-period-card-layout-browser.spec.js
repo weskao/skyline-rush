@@ -1,4 +1,5 @@
 import { test, expect, openGarage } from './helpers/test.js';
+import { openGarageSection } from './helpers/garage-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { WAVE3_CATALOG_VERSION, WAVE3_EXPERIENCE_VERSION } from '../src/wave3-experience-contract.ts';
 
@@ -53,6 +54,7 @@ for (const locale of ['en', 'zh-TW']) {
       await page.goto('/');
       await selectLocale(page, locale);
       await openGarage(page);
+      await openGarageSection(page, 'missions');
       const board = page.locator('.garage-mission-board');
       const card = id => board.locator(`.garage-period-card[data-mission-id="${id}"]`);
       await expect(card('mission-race:daily')).toHaveAttribute('data-mission-state', 'claimable');

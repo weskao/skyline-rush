@@ -7,6 +7,7 @@ import type { CarId } from './car-catalog.ts';
 export const garageView = reactive<GarageView>({
   selected: 'pearl',
   status: 'Pearl · standard finish.',
+  canUndo: false,
   equipDisabled: true,
   equipLabel: 'Standard finish equipped',
 });
