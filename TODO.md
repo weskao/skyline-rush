@@ -6,6 +6,20 @@
 - [ ] Browser regression (`item-feedback-browser.spec.js`, `shader-warmup-browser.spec.js`, `black-frame-browser.spec.js`), real WebGL screenshots (desktop, phone portrait/landscape, Low/High, frozen rival in a practice race) and the in-browser frame-time numbers: not run; skipped on user instruction.
 - [ ] `npm test`: 5 environment failures in this worktree (no local `node_modules`: `typescript/bin/tsc`, `three/package.json` missing); recheck in a checkout with installed deps.
 
+# 2026-11-16 — Rival NITRO / BOOST drive cues (`feature/rival-vfx-cues`)
+
+Repro: a rival's NITRO burn (`nitroTime > 0`) or BOOST showed nothing on screen but a 0.08 rad wing tilt.
+Now (`src/rival-drive-vfx.ts`, wired in `src/world.js` line-neutral): NITRO = tail-light x1.8 + one additive
+flame sprite (Medium+) + one short additive trail (High/Ultra); BOOST = tail-light x1.3 only; VFX Off / Low =
+tail light only; Reduced Motion / Comfortable = steady glow. Depth-tested, hidden at build (warmup compiles them),
+fitted to each car's own rear bound.
+
+- [x] RED → GREEN: `node --test tests/rival-drive-vfx.test.js` (7 tests; RED on the API skeleton and old world.js)
+- [x] `node --test tests/module-size.test.js` (world.js stays 994), typecheck ts/js, `npm run build`
+- [ ] `npm test`: 3305 pass, 5 fail only from the worktree's empty `node_modules` (tsc/three path tests); rerun in a full install
+- [ ] Browser spec + WebGL screenshots (desktop, phone portrait/landscape, Low/High, rival on NITRO): not run, skipped at user request
+- [ ] Frame-time / draw-call measurement (static: +0 idle, +1 call per burning rival on Medium, +2 on High): not measured
+
 # 2026-11-16 — Shared race halfway announcement
 
 - [x] Coast and other finite routes: the peripheral halfway notice could queue behind rewards or be delayed by an impact. The shared presentation event now shows a short cue at the racing scene center, with a chime and remaining distance.
