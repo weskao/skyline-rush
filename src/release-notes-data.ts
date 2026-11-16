@@ -70,10 +70,38 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       },
       {
         id: 'pickups-3d', kind: 'new', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/pickups-3d/pickups-3d.desktop.en.mp4', 'zh-TW': 'whats-new/pickups-3d/pickups-3d.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/pickups-3d/pickups-3d.desktop.en.jpg', 'zh-TW': 'whats-new/pickups-3d/pickups-3d.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/pickups-3d/pickups-3d.mobile.en.mp4', 'zh-TW': 'whats-new/pickups-3d/pickups-3d.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/pickups-3d/pickups-3d.mobile.en.jpg', 'zh-TW': 'whats-new/pickups-3d/pickups-3d.mobile.zh-TW.jpg' }
+          }
+        },
         title: { en: 'Pickups you can see and feel', 'zh-TW': '補給品更立體、更有感' },
         description: {
           en: 'Pickups now spin on the road as 3D models, each with its own burst and sound. The fuel bar flashes what you gained, and supported phones buzz lightly.',
           'zh-TW': '補給品變成在路面旋轉的 3D 模型，各有專屬特效與音效；油量條會閃出補充量，支援的手機還會輕震。'
+        }
+      },
+      {
+        id: 'rival-cues', kind: 'new', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/rival-cues/rival-cues.desktop.en.mp4', 'zh-TW': 'whats-new/rival-cues/rival-cues.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-cues/rival-cues.desktop.en.jpg', 'zh-TW': 'whats-new/rival-cues/rival-cues.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/rival-cues/rival-cues.mobile.en.mp4', 'zh-TW': 'whats-new/rival-cues/rival-cues.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/rival-cues/rival-cues.mobile.en.jpg', 'zh-TW': 'whats-new/rival-cues/rival-cues.mobile.zh-TW.jpg' }
+          }
+        },
+        title: { en: 'See what your rivals are up to', 'zh-TW': '對手狀態一眼看穿' },
+        description: {
+          en: 'Rival tail lights flare when they fire NITRO or BOOST, with a flame on Medium graphics and up. Rivals hit by FREEZE turn icy blue, and EMP makes them flicker.',
+          'zh-TW': '對手啟動 NITRO 或 BOOST 時尾燈會亮起，畫質「中」以上還有火焰；被凍結命中的對手會蒙上冰藍色，被電磁脈衝擊中則會閃爍。'
         }
       },
       {
@@ -94,6 +122,16 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       },
       {
         id: 'race-camera', kind: 'improvement', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/race-camera/race-camera.desktop.en.mp4', 'zh-TW': 'whats-new/race-camera/race-camera.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/race-camera/race-camera.desktop.en.jpg', 'zh-TW': 'whats-new/race-camera/race-camera.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/race-camera/race-camera.mobile.en.mp4', 'zh-TW': 'whats-new/race-camera/race-camera.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/race-camera/race-camera.mobile.en.jpg', 'zh-TW': 'whats-new/race-camera/race-camera.mobile.zh-TW.jpg' }
+          }
+        },
         title: { en: 'A closer, punchier race camera', 'zh-TW': '更貼近、更有衝擊感的鏡頭' },
         description: {
           en: 'The chase view sits closer and swings into drifts. NITRO and BOOST hit with a camera punch and a bigger flame, and every race starts from behind the car.',
