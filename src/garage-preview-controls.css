@@ -1,0 +1,94 @@
+#garage-screen .garage-preview-controls {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+
+#garage-screen[data-page="home"] .garage-preview { min-height: 0; }
+
+#garage-screen .garage-mode-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+#garage-screen .garage-pose-controls {
+  display: flex;
+  border-radius: 10px;
+  background: #081522;
+  box-shadow: inset 0 0 0 1px #37546a;
+}
+
+#garage-screen .garage-mode-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 1px solid #43647b;
+  border-radius: 9px;
+  background: #13283a;
+  color: #e7f3fc;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#garage-screen .garage-pose-controls button { border-color: transparent; background: transparent; }
+#garage-screen .garage-pose-controls button[aria-pressed="true"] {
+  border-color: #6bd9fa;
+  background: linear-gradient(160deg, #244257, #122b3e);
+  box-shadow: inset 0 -2px 0 #6bd9fa;
+}
+#garage-screen .garage-pose-controls img { display: block; flex: none; }
+
+#garage-screen .garage-switch-track {
+  box-sizing: border-box;
+  width: 26px;
+  height: 16px;
+  padding: 2px;
+  border: 1px solid #8aa2b6;
+  border-radius: 999px;
+  background: #0a1724;
+}
+#garage-screen .garage-switch-track::after {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d7e4ee;
+  content: '';
+}
+#garage-screen #garage-wing[aria-checked="true"] .garage-switch-track { border-color: #6bd9fa; background: #67d4f2; }
+#garage-screen #garage-wing[aria-checked="true"] .garage-switch-track::after { margin-inline-start: auto; background: #112638; }
+
+/* The shared dock participates in the Garage toolbar's flex wrapping. Its home-page placement lives in style.css. */
+#garage-screen #showcase-camera-dock {
+  position: static;
+  flex: none;
+  display: block;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  visibility: visible;
+  container-type: normal;
+}
+#garage-screen[data-page="studio"] #showcase-camera-dock { display: none; }
+#garage-screen #showcase-camera-dock :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
+#garage-screen #showcase-camera-dock .showcase-camera-actions { width: auto; gap: 2px; }
+#garage-screen #showcase-camera-dock .showcase-camera-actions > button { width: 44px; height: 44px; }
+#garage-screen #showcase-camera-dock #showcase-camera-name { width: 6.5em; min-width: 0; }
+
+#garage-screen .garage-preview-controls button:focus-visible { outline: 2px solid #ffd880; outline-offset: -3px; }
+
+@media (max-width: 360px) {
+  #garage-screen .garage-mode-controls button { padding-inline: 4px; font-size: 11px; }
+}

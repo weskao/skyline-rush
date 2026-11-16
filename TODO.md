@@ -1,3 +1,10 @@
+# 2026-11-16 — Garage landscape preview controls
+
+- [x] RED: mobile Chromium measured 44 CSS px of vertical overlap between the pose controls and camera dock at 667×375 and 743×340.
+- [x] Use a wrapping toolbar, pair the Ground and Flight controls with 3× artwork, and expose the wing as an independent switch.
+- [x] Production and trial builds, TypeScript checks and the module-size gate passed. Unit suite: 3,314 passed, 3 skipped.
+- [ ] Complete physical iOS and Android validation and the exact-commit GitHub quality gate.
+
 # 2026-11-16 — Compact halfway strip (`develop`)
 
 Repro: the halfway card (two lines, gradient box, glow) covered 19.5% of the scene height on desktop and 13% in
