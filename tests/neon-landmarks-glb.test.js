@@ -141,11 +141,13 @@ test('seven KTX2 atlases, colour maps sRGB and the data maps linear, none over 2
 // Re-pinned (2026-11-16): the atlases changed on purpose with the landmark light pass. The rail underpass bays (defect c)
 // are built in kit A, and the lamp spill now tone-maps the light before the albedo multiply (build.py), so every kit A
 // texel moved. The kit's stats did not: white texels 0, bloom 4608, max luminance 0.957 (tests below).
+// Re-pinned again the same day for the sculpture's uplights (build/lighting.py FILL): the emissive atlas changed on
+// the sculpture's texels only (a bake with the uplights at 0 W gives e33e19ac..., the pin before), same stats.
 test('the nine placed pieces keep the atlases of the landmark light pass, over those of b414abef', () => {
   const sha = path => createHash('sha256').update(read(`assets-src/neon-landmarks/textures/${path}`)).digest('hex');
   assert.deepEqual(Object.fromEntries(['basecolor.jpg', 'emissive.png', 'orm.png'].map(map => [map, sha(`neon_landmarks_${map}`)])), {
     'basecolor.jpg': '868bc1a3fcbf245476f9ac9f5b39c580a5f81518eb549e3b2290ce6d33ef92d3',
-    'emissive.png': 'e33e19ac2fcfecf91872f96a867581f94dca083f7d20e204a667aa41d048c901',
+    'emissive.png': '88f5b41b2b581b2e274f0855e57e9e123f5a8a17c4390a4bd50e55a4d7e69a18',
     'orm.png': '8f1a6afa54d1586073e59d40a50d6af86aa7a1c4412346d059d1b552fa80bff7',
   });
 });
@@ -181,10 +183,27 @@ test('the harbour and oldtown walls show their material at game night: a baked f
 // The cargo ship read as a dark navy mass with a black stern (2026-11-16): no quay flood reached the transom or the
 // funnel (median runtime emissive 0.0000 on both, 0.0076 on the deckhouse's aft face) and the hull side sat at 0.04.
 // `lit_end` = `lit` on the faces turned fore or aft (normal within 60 degrees of +-y).
+// Second pass the same day: beside the white deckhouse (0.46) the stern (0.044) and the funnel (0.023) still read
+// dark. The funnel was hull navy, which no flood lifts: it is painted plate now (the ship's only `crane` surface),
+// and the stern flood is doubled. Floors: about 0.6 of the measured 0.089 (stern), 0.366 and 0.222 (funnel).
 test('the cargo ship shows its hull, stern and funnel at game night, not a dark mass', () => {
-  const { lit, lit_end: end } = contract.pieces.cargo_ship.surfaces?.hull ?? {};
-  assert.ok(lit >= 0.055, `cargo_ship hull side: median emissive ${lit}`);
-  assert.ok(end >= 0.03, `cargo_ship transom and funnel ends: median emissive ${end}`);
+  const { hull, crane: funnel } = contract.pieces.cargo_ship.surfaces ?? {};
+  assert.ok(hull?.lit >= 0.055, `cargo_ship hull side: median emissive ${hull?.lit}`);
+  assert.ok(hull?.lit_end >= 0.055, `cargo_ship transom: median emissive ${hull?.lit_end}`);
+  assert.ok(funnel?.lit >= 0.2 && funnel?.lit_end >= 0.13, `cargo_ship funnel: median emissive ${funnel?.lit}, ends ${funnel?.lit_end}`);
+});
+
+// The plaza sculpture's upper blades read as dark steel (2026-11-16): the rings' spill, the piece's only baked light,
+// ended under the fan's upper half (median runtime emissive 0.0 above half the piece's height, at its own strength).
+// build/lighting.py FILL bakes six plinth uplights into the sculpture's own texels, up to a stored ceiling that stays
+// under the bloom at that strength. `lit_upper` = `lit` on the material above half the piece's height (0.33 measured).
+test('the plaza sculpture carries its violet up the blades at game night, without adding bloom', () => {
+  const { fill, surfaces } = contract.pieces.plaza_sculpture;
+  const strength = Number(read('src/neon-scenery.ts').toString().match(/plaza_sculpture: ([\d.]+)/)?.[1]);
+  const threshold = Number(read('src/coast-lighting.ts').toString().match(/nightRain:[\s\S]*?threshold: ([\d.]+)/)?.[1]);
+  assert.equal(fill?.strength, strength, 'the fill is baked for the strength the runtime shows the piece at');
+  assert.ok(fill.ceiling * strength < threshold, `ceiling ${fill.ceiling} x ${strength} reaches the bloom (${threshold})`);
+  assert.ok(surfaces?.crystal?.lit_upper >= 0.2, `upper blades: median emissive ${surfaces?.crystal?.lit_upper}`);
 });
 
 // The stack's white boxes read flat pale grey at hero distance (2026-11-16): their baked light ran into the hard

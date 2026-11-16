@@ -382,6 +382,21 @@ test('the sculpture reads as the finale: half again its modelled size, a stone a
   }
 });
 
+// Closing audit 2026-11-16: the court's near tree row and the last pavement tree stood on the line from every lane to
+// the plinth, so the lit rings and lower blades stayed hidden until the car was alongside (rule 19: check it from the seat).
+test('the sculpture shows on the approach: from 200 m out no tree or screen stands between a lane and its plinth', () => {
+  assert.ok(Math.abs(bearing(9200, { lap: 9400, offset: 0 })) < .5, 'the plaza straight is straight on the approach');
+  for (const seed of [undefined, 9]) {
+    const plan = lap(seed), [sculpture] = of(plan, 'plaza_sculpture');
+    const dressing = plan.filter(p => (p.piece === 'cherry_tree' || p.piece.startsWith('billboard')) && p.offset < 0 && p.lap > 9300 && p.lap < sculpture.lap);
+    assert.ok(dressing.filter(p => p.piece === 'cherry_tree').length >= 3, 'the court keeps its near trees');
+    for (const from of [9200, 9250, 9300, 9340]) for (const lane of [-7.5, -2.5, 2.5, 7.5]) for (const p of dressing.filter(p => p.lap > from)) {
+      const sight = lane + (sculpture.offset - lane) * (p.lap - from) / (sculpture.lap - from); // the line to the plinth's middle, at p's lap
+      assert.ok(Math.abs(p.offset - sight) >= 3.4 + 2, `${p.piece} at ${p.lap.toFixed(0)}, ${p.offset} m: on the sightline from ${from}, lane ${lane} (${sight.toFixed(1)} m)`);
+    }
+  }
+});
+
 test('the underpass straight: each block kind has its own street front, so the shared podium never repeats unbroken', () => {
   for (const seed of [undefined, 4]) {
     const plan = lap(seed), dressing = { block_office_b: 'cherry_tree', block_retail_a: 'sign_stack_a', tower_glass_b: 'billboard_a' };
@@ -389,6 +404,20 @@ test('the underpass straight: each block kind has its own street front, so the s
     assert.ok(blocks.length >= 18);
     for (const b of blocks) assert.ok(plan.some(p => p.piece === dressing[b.piece] && Math.sign(p.offset) === Math.sign(b.offset) && Math.abs(p.lap - b.lap) <= 10 && Math.abs(p.offset) < 22),
       `${b.piece} at ${b.lap.toFixed(0)} has no ${dressing[b.piece]}`);
+  }
+});
+
+// Closing audit entry 6 (2026-11-16): every podium on the straight was one painter's flat-headed glazed bays, in two
+// colours (build.py's bay shape: 0.772 of the run open at eye height and 0.789 under the fascia on all three kinds),
+// so the shopfront repeated down both sides however the blocks above and the street dressing differed.
+test('the underpass straight: no three plots in a row on either side share one podium bay shape', () => {
+  const { podium } = JSON.parse(readFileSync(new URL('../assets-src/neon-city/summary.json', import.meta.url), 'utf8'));
+  const same = (a, b) => Math.abs(podium[a].low - podium[b].low) < .2 && Math.abs(podium[a].high - podium[b].high) < .2;
+  for (const seed of [undefined, 4]) for (const side of [-1, 1]) {
+    const row = lap(seed).filter(p => p.piece in podium && p.lap >= 950 && p.lap < 1280 && Math.abs(p.offset) < 40 && Math.sign(p.offset) === side).sort((a, b) => a.lap - b.lap);
+    assert.ok(row.length >= 9, `${row.length} podiums on side ${side}`);
+    for (let i = 2; i < row.length; i++) assert.ok(!same(row[i].piece, row[i - 1].piece) || !same(row[i].piece, row[i - 2].piece),
+      `side ${side}, ${row[i - 2].lap.toFixed(0)} to ${row[i].lap.toFixed(0)} m: three ${podium[row[i].piece].cell}-shaped podiums in a row (${podium[row[i].piece].low} / ${podium[row[i].piece].high})`);
   }
 });
 

@@ -15,10 +15,10 @@ export const NEON_MODELS: Record<string, ModelManifestEntry> = {
     source: {
       master: 'assets-src/neon-city/neon-city.blend',
       script: 'assets-src/neon-city/build.py',
-      masterSha256: '626803aab4223bc50ef77fbcc994793247c466c41bc0fa92a859b2bef93f11d0',
-      scriptSha256: 'ded95ad0faccd0294b10d209e9f4ad043d7d8116aa8936cfb4da43964e5a44e6',
+      masterSha256: '17b80ce0a72bb4a393a4bee7931d725b0293ada277920c415eb5d34dab1f7831',
+      scriptSha256: '710c052a3376cef76a411be56ec2a24be55a3e72edce8cb49fb8ef36c0bcf98f',
     },
-    glb: { sha256: '234cabd9c4c9f32a9ff88e13d87155f351db0e2f007a3c3c3f9364ebc84f9a4d', bytes: 1_104_960 },
+    glb: { sha256: '45d6ed39fe850b7fc27710afb705248aa0103e0a2e5bc7a7b2938b9665f3093c', bytes: 1_144_956 },
     license: {
       id: 'CC0-1.0',
       creator: 'Poly Haven: Charlotte Baglioni, Dario Barresi, Amal Kumar, Dimitrios Savva, Rob Tuytel (wall, tile, plank, roof, bark and metal sets in assets-src/neon-city/sources.json); modules and atlas by Skyline Rush project',
@@ -58,10 +58,10 @@ export const NEON_MODELS: Record<string, ModelManifestEntry> = {
     source: {
       master: 'assets-src/neon-landmarks/neon-landmarks.blend',
       script: 'assets-src/neon-landmarks/build.py',
-      masterSha256: '11e225975493f0da5fc9e731f1eaa6fc4f40e85386959a3e004e8074a6547b7f',
-      scriptSha256: '0543c8d40ba6a6da75aed3b752d2559668c474b5fc2d7e5714c2d34c92e51444',
+      masterSha256: '3d4bb09b28e75a0ee822ed117d1a48ac15bd2583da9c36cf637847fc1c1fd12b',
+      scriptSha256: '14054dafa87d3e5800b4b8265eb2ebbc803e0976506ff8e2f908178aa94c6f42',
     },
-    glb: { sha256: '7c62eda83c8750263d7fa41a8f7cf831b0963cbc597c1aa63602ef44220da4f9', bytes: 3_849_128 },
+    glb: { sha256: '8788bc792a5059198b1be04d30d58036aeb6ab96c3c0ce40ccecd69d5c78f0c0', bytes: 3_882_576 },
     license: {
       id: 'CC0-1.0',
       creator: 'Poly Haven: Amal Kumar, Charlotte Baglioni, Dario Barresi, Dimitrios Savva, Rob Tuytel (metal, container, brick, stone and concrete sets of the harbour/oldtown atlas in assets-src/neon-landmarks/sources.json); pieces, the nine-piece atlas and the bake by Skyline Rush project',
