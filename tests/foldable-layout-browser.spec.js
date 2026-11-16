@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect, openGarage } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -164,6 +165,7 @@ for (const [axis, viewport] of [['vertical', { width: 844, height: 390 }], ['hor
       await openGarage(page);
       for (const selector of ['#garage-close', '#garage-preview'])
         await expectInsidePane(page.locator(selector), panes);
+      await openGarageSection(page, 'paints');
       const paintCard = page.locator('[data-paint="crimson"]');
       await paintCard.scrollIntoViewIfNeeded();
       await expectInsidePane(paintCard, panes);

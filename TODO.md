@@ -155,6 +155,7 @@
 - [ ] Complete release and trial build verification, the full browser/World Tour gate and exact-head remote CI. Local software Chromium and build processes hit resource limits during the broad run.
 - [ ] Verify portrait/landscape on physical iOS and Android. Missing production artwork is assigned to H.
 - [x] Merged into develop: Studio keeps develop's ‹ › angle stepper (`eb16dbbb`). The feature's Angles panel, its CSS and the `openStudioAngles` test helper were dropped; Studio specs step angles through `tests/helpers/garage-angle.js`.
+- [x] Merged `fix/garage-studio-develop-integration`: the artwork and foldable browser specs open the Paints and Missions sections through `openGarageSection` before reading hidden cards.
 
 # 2026-11-15 — Garage and Studio cosmetic preview toggle
 

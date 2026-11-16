@@ -1,4 +1,5 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
+import { openGarageSection } from './helpers/garage-browser.js';
 import { PAINTS } from '../src/appearance.ts';
 
 const paintCount = Object.keys(PAINTS).length;
@@ -11,14 +12,14 @@ const viewports = [
   { width: 844, height: 390 },
 ];
 
-async function openGarage(page) {
+async function openArtworkGarage(page) {
   await page.addInitScript(() => {
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: true, comfortable: false }));
     localStorage.setItem('skyline-rush-music', 'off');
     localStorage.setItem('skyline-rush-sound', 'off');
   });
   await page.goto('./', { waitUntil: 'domcontentloaded' });
-  await page.locator('#garage-button').click();
+  await openGarage(page);
 }
 
 async function expectDecoded(images, count, width, height, baseURL) {
@@ -37,16 +38,18 @@ for (const viewport of viewports) {
     test.use({ viewport, hasTouch: viewport.width < 1000, isMobile: viewport.width < 1000 });
 
     test('dist artwork decodes and the demo store follows the build mode', async ({ page, baseURL }) => {
-      await openGarage(page);
+      await openArtworkGarage(page);
       const board = page.locator('.garage-mission-board');
       await expect(board).toHaveAttribute('data-rewards-authority', trial ? 'local-demo' : 'not-connected');
       const demoStore = page.locator('[data-wave3-open-store]');
       if (trial) await expect(demoStore).toBeEnabled();
       else await expect(demoStore).toHaveCount(0);
 
+      await expectDecoded(page.locator('.garage-car-options [data-car] img'), 2, 432, 198, baseURL);
+      await openGarageSection(page, 'paints');
+      await expectDecoded(page.locator('.paint-options [data-paint] img'), paintCount, 960, 510, baseURL);
+      await openGarageSection(page, 'missions');
       await Promise.all([
-        expectDecoded(page.locator('.garage-car-options [data-car] img'), 2, 432, 198, baseURL),
-        expectDecoded(page.locator('.paint-options [data-paint] img'), paintCount, 960, 510, baseURL),
         expectDecoded(board.locator('.garage-mission-card img'), 4, 288, 288, baseURL),
         expectDecoded(board.locator('.garage-trophy-card img'), 4, 288, 288, baseURL),
       ]);
@@ -56,7 +59,8 @@ for (const viewport of viewports) {
 
 test('a failed paint WebP leaves a colored swatch with the paint name', async ({ page }) => {
   await page.route('**/paint-cards/crimson@3x.webp', route => route.abort());
-  await openGarage(page);
+  await openArtworkGarage(page);
+  await openGarageSection(page, 'paints');
   const paint = page.locator('.paint-options [data-paint="crimson"]');
   await expect(paint.locator('.garage-paint-name')).toHaveText('Deep Crimson');
   await expect(paint.locator('img')).toHaveCount(0);
