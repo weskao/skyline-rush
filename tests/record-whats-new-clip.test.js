@@ -55,3 +55,9 @@ test('the clip recorder serves the shipped coming-soon Garage build, never the d
 test('--master never leaves a screen capture running after the recorder exits', () => {
   assert.match(code, /process\.once\('exit', \(\) => ffmpeg\.kill\('SIGKILL'\)\)/);
 });
+
+// The macOS screensaver started during a --master run (2026-11-16) and the race-camera takes recorded it instead of
+// the race. The recorder keeps the display awake for as long as it runs.
+test('--master keeps the display awake while it records', () => {
+  assert.match(code, /spawn\('caffeinate', \['-d', '-i', '-w', `\$\{process\.pid\}`\]/);
+});

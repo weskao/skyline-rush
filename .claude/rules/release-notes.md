@@ -48,7 +48,8 @@ paths:
   that caught another window, notification or private data. A headed Chrome offers Google Translate over zh-TW
   pages; the recorder injects `<meta name="google" content="notranslate">`, since no launch flag stops it. A run that
   throws must not orphan its ffmpeg (one kept recording screen + sound and hung the next take): the capture is killed on
-  process exit; before retrying a failed take, check `ps -axo pid,comm | grep ffmpeg` is empty.
+  process exit; before retrying a failed take, check `ps -axo pid,comm | grep ffmpeg` is empty. The macOS screensaver
+  once replaced a whole take, so `--master` runs `caffeinate -d -i -w <pid>`; still audit every take one frame per 2 s.
 - A track is named exactly as Home shows it: `TRACK_NAMES` in `src/i18n.ts` (en + zh-TW) is the only table, and
   a highlight names the same tracks in both languages. A draft once wrote 霓虹市區 / 峽谷天道 / 天空螺旋 beside the
   right English names (game: 霓虹都會 / 峽谷天橋 / 天際螺旋). `copyProblems` enforces it; guard: "track names read
