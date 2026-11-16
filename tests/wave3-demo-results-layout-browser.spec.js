@@ -152,3 +152,66 @@ for (const viewport of [
     });
   });
 }
+
+for (const [locale, raceMode] of [['zh-TW', 'classic'], ['en', 'classic'], ['en', 'time']]) {
+  test.describe(`demo mission progress layout (${locale}, ${raceMode})`, () => {
+    test.use({ viewport: { width: 360, height: 740 }, hasTouch: true, reducedMotion: 'reduce' });
+
+    test('claimed progress fits on one line with bars at the bottom of the reward details', async ({ page, gameplayURL }) => {
+      await page.route('**/demo-reward-layout', route => route.fulfill({
+        contentType: 'text/html',
+        body: '<body data-phase="finished"><main style="width:min(100%, 460px);margin:220px auto 0"></main></body>',
+      }));
+      await page.goto(new URL('demo-reward-layout', gameplayURL).href);
+      await page.evaluate(async ({ locale, raceMode }) => {
+        await import('/src/wave3-demo-results.css');
+        const { mountWave3DemoResults } = await import('/src/wave3-demo-results-ui.ts');
+        const missions = {
+          [raceMode === 'time' ? 'mission-time' : 'mission-race']: { progress: 1, goal: 1, claimed: true },
+          'mission-drift': { progress: 1, goal: 2, claimed: false },
+          'mission-combo': { progress: 1, goal: 1, claimed: true },
+        };
+        mountWave3DemoResults({
+          container: document.querySelector('main'), locale, raceMode,
+          settlement: { status: 'completed', snapshot: { mode: 'local-demo', authority: 'local', syncState: 'local-only', missions } },
+        });
+      }, { locale, raceMode });
+      const reward = page.locator('.wave3-demo-results--earned');
+      const progress = reward.getByRole('progressbar');
+      await expect(progress.first()).toHaveAccessibleName(locale === 'zh-TW' ? /1\/1.*已領取/ : /1\/1.*claimed/i);
+      await expect(progress).toHaveCount(3);
+      if (raceMode === 'time') {
+        // Font metrics vary across Chromium hosts. Allow for a wider English system font.
+        await page.addStyleTag({ content: '.wave3-demo-results__mission-label { letter-spacing: .25px; }' });
+      }
+
+      for (const viewport of [
+        { width: 320, height: 568 },
+        { width: 360, height: 740 },
+        { width: 667, height: 375 },
+        { width: 1024, height: 768 },
+      ]) {
+        await page.setViewportSize(viewport);
+        if (viewport.width === 667) await reward.getByRole('button', { name: /詳情|Details/ }).tap();
+        await expect.poll(() => reward.locator('.wave3-demo-results__missions').evaluate(missions => {
+          const section = missions.getBoundingClientRect();
+          const disclaimer = missions.parentElement.querySelector('.wave3-demo-results__disclaimer').getBoundingClientRect();
+          const cards = [...missions.querySelectorAll('.wave3-demo-results__mission')].map(card => {
+            const range = document.createRange();
+            const label = card.querySelector('.wave3-demo-results__mission-label');
+            range.selectNodeContents(label);
+            const lines = new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size;
+            const bar = card.querySelector('progress').getBoundingClientRect();
+            const style = getComputedStyle(card);
+            const innerBottom = card.getBoundingClientRect().bottom - parseFloat(style.paddingBottom) - parseFloat(style.borderBottomWidth);
+            return { lines, fits: label.scrollWidth <= label.clientWidth + 1, barAtBottom: Math.abs(bar.bottom - innerBottom) < 1 };
+          });
+          return { progressAtBottom: section.top >= disclaimer.bottom, cards };
+        }), { message: `${viewport.width}×${viewport.height}` }).toEqual({
+          progressAtBottom: true,
+          cards: Array.from({ length: 3 }, () => ({ lines: 1, fits: true, barAtBottom: true })),
+        });
+      }
+    });
+  });
+}
