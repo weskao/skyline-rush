@@ -252,7 +252,7 @@ def cargo_ship(b):
     for k in range(6):                                                                           # storey deck lines
         z = 10.5 + 2.8 * (k + 1) - 0.1
         b.box("steel_dark", (11.0, 11.12), (-66.0, -52.8), (z, z + 0.12), skip="-x", swatch=True, lod=(0, 0))
-    b.box("hull", (0, 2.8), (-66.0, -60.5), (27.3, 37.0), skip="-z", pri=0.4)                    # funnel
+    b.box("crane", (0, 2.8), (-66.0, -60.5), (27.3, 37.0), skip="-z", pri=0.4)                   # funnel: light grey; in the hull's navy it stayed black under any mast
     b.box("boot", (2.8, 2.84), (-65.6, -60.9), (34.6, 35.6), only="+x", swatch=True)            # funnel band
     b.hull("hazard", [(x, y, z) for x in (11.1, 12.9) for y in (-64.0, -57.0) for z in (17.4, 18.6)]   # lifeboats
            + [(12.0, y, 19.2) for y in (-63.6, -57.4)] + [(12.0, y, 16.9) for y in (-63.4, -57.6)], swatch=True)
