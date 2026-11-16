@@ -7,6 +7,7 @@ import { createPickupCollectVfx, pickupCueSource } from './pickup-collect-vfx.js
 import { createParticleBurst } from './effects-particle-burst.js';
 import { PARTICLE_FRAGMENT, PARTICLE_VERTEX } from './effects-particle-shaders.js';
 import { createRivalCues } from './rival-cues.ts';
+import { createRivalStatusTint } from './rival-status-tint.ts';
 import { isRaining, racePreset, sprayRate } from './board-effects.ts';
 import { createDriftCharge } from './drift-charge-vfx.js';
 import { createSkidMarks } from './skid-marks.js';
@@ -125,6 +126,8 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   magnetRing.visible = false;
   magnetRing.scale.setScalar(MAGNET_RANGE);
   scene.add(magnetRing);
+  const statusTint = createRivalStatusTint(RACE_DRIVER_IDS.length - 1); // Freeze / EMP on the rivals they slow
+  scene.add(statusTint.mesh);
   return {
     // `origin`: the scene's floating origin (scene + origin = absolute; world.js), defaulting to the flat road's.
     update(race, dt, center, preview, reducedMotion, vehicles, options = {}, origin = null) {
@@ -353,13 +356,14 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         // Fades over the final second; a gentle pulse unless motion is reduced.
         magnetRing.material.opacity = Math.min(1, magnet) * (reducedMotion ? .3 : .3 + Math.sin(flowTime * 5) * .08);
       }
+      statusTint.update(race, vehicles, dt, { quality: options.quality, reducedMotion, preview });
       if (race.phase === 'countdown' || race.phase === 'ready') {
         lastImpact = null; lastLanding = null; lastShieldBlock = null;
       }
       return rewarm; // true: new pickup materials entered the scene, the caller warms their shaders
     },
     dispose() {
-      gates.removeFromParent(); beams.removeFromParent(); ringPool.dispose(); pickupMarkers.dispose(); collectVfx.dispose(); driftCharge?.dispose(); skids?.dispose(); miniBoostStreaks?.dispose();
+      gates.removeFromParent(); beams.removeFromParent(); ringPool.dispose(); pickupMarkers.dispose(); collectVfx.dispose(); driftCharge?.dispose(); skids?.dispose(); miniBoostStreaks?.dispose(); statusTint.dispose();
       ringGeometry.dispose(); beamGeometry.dispose(); beamMaterial.dispose();
       for (const mat of Object.values(ringMaterials)) mat.dispose();
     },
@@ -371,7 +375,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       magnetRing.visible = false;
       lastImpact = lastLanding = lastShieldBlock = null;
       seen = new WeakMap(); previousRace = null; driftEmission = sprayEmission = 0;
-      collectVfx.reset(); driftCharge?.reset(); skids?.reset(); miniBoostStreaks?.reset();
+      collectVfx.reset(); driftCharge?.reset(); skids?.reset(); miniBoostStreaks?.reset(); statusTint.reset();
       cursor = 0;
       emissions.fill(0); strengths.fill(0); nozzles.fill(0);
       cores.children.forEach(jet => { jet.visible = false; });

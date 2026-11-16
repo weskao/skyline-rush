@@ -1,0 +1,99 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { Scene, Group, Mesh, BoxGeometry, MeshStandardMaterial, Color, Matrix4, Vector3, Quaternion } from 'three';
+import { createRace } from '../src/game.js';
+import { createEffects } from '../src/effects.js';
+
+// A Freeze or EMP that slows a rival (game.js FREEZE_RIVAL_SPEED) shows on that rival's car as a status tint.
+const shared = new MeshStandardMaterial({ color: '#c0392b' }); // one paint shared by every car, like makeCar may do
+function car(x, length = 4.6) {
+  const pose = new Group();
+  pose.add(new Mesh(new BoxGeometry(2, 1.2, length), shared));
+  pose.position.set(x, 0, -10);
+  return pose;
+}
+function setup(t, rivals = 3) {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  const scene = new Scene();
+  const effects = createEffects(scene, () => 0);
+  const race = createRace('coast');
+  race.phase = 'racing'; race.elapsed = 20;
+  race.rivals.length = rivals;
+  const vehicles = [car(0), ...race.rivals.map((_, i) => car(4 + i * 4, 4 + i))];
+  vehicles.forEach(pose => scene.add(pose));
+  const tint = scene.getObjectByName('Rival status tint');
+  const frame = (dt = 0.05, options = {}, reducedMotion = false) => effects.update(race, dt, 0, false, reducedMotion, vehicles, { quality: 'high', ...options });
+  return { effects, race, vehicles, tint, frame };
+}
+const colorOf = (tint, i) => { const c = new Color(); tint.getColorAt(i, c); return c; };
+const lit = (tint, i) => { const c = colorOf(tint, i); return c.r + c.g + c.b; };
+
+test('a Freeze tints every visible rival icy blue and leaves the shared car paint untouched', t => {
+  const { race, tint, frame, vehicles } = setup(t);
+  assert.ok(tint?.isInstancedMesh, 'one instanced tint for all rivals');
+  frame();
+  assert.equal(tint.visible, false, 'nothing to show before an item hits');
+  race.player.effects.freeze = 2;
+  for (let i = 0; i < 10; i++) frame();
+  assert.equal(tint.visible, true);
+  for (let i = 0; i < 3; i++) {
+    const c = colorOf(tint, i);
+    assert.ok(c.b > c.r * 2 && c.b > 0.5, `rival ${i + 1} reads icy blue (${c.toArray()})`);
+    // The shell sits on the rival and spans its own length (fitted per car).
+    const m = new Matrix4(); tint.getMatrixAt(i, m);
+    const p = new Vector3(), s = new Vector3(); m.decompose(p, new Quaternion(), s);
+    assert.ok(Math.abs(p.x - vehicles[i + 1].position.x) < 1e-6 && s.z > (4 + i) / 2, `rival ${i + 1} shell fits its car`);
+  }
+  assert.equal(shared.color.getHexString(), 'c0392b', 'shared paint never mutated');
+  assert.ok(vehicles.every(pose => pose.children[0].material === shared), 'car materials never swapped');
+});
+
+test('an EMP flickers a rival in a distinct colour; reduced motion keeps it steady', t => {
+  const { race, tint, frame } = setup(t);
+  race.rivals[1].empUntil = race.elapsed + 1.5;
+  const samples = [];
+  for (let i = 0; i < 20; i++) { frame(0.016); samples.push(lit(tint, 1)); }
+  const c = colorOf(tint, 1);
+  assert.ok(c.b < c.r || c.b < c.g, `EMP is not Freeze blue (${c.toArray()})`);
+  assert.equal(lit(tint, 0), 0, 'only the EMP-hit rival');
+  assert.ok(Math.max(...samples.slice(10)) - Math.min(...samples.slice(10)) > 0.3, 'flickers');
+  const calm = setup(t);
+  calm.race.rivals[1].empUntil = calm.race.elapsed + 1.5;
+  const steady = [];
+  for (let i = 0; i < 20; i++) { calm.frame(0.016, {}, true); steady.push(lit(calm.tint, 1)); }
+  assert.ok(steady[19] > 0 && steady.every((v, i) => i === 0 || v >= steady[i - 1]), 'reduced motion: fades in, never flickers');
+});
+
+test('the tint fades out when the effect ends instead of snapping off', t => {
+  const { race, tint, frame } = setup(t);
+  race.player.effects.freeze = 2;
+  for (let i = 0; i < 10; i++) frame();
+  const full = lit(tint, 0);
+  race.player.effects.freeze = 0;
+  frame(0.03);
+  const fading = lit(tint, 0);
+  assert.ok(fading > 0 && fading < full, `fading (${fading} of ${full})`);
+  for (let i = 0; i < 40; i++) frame();
+  assert.equal(tint.visible, false);
+});
+
+test('Low draws the tint only; Medium and up add the rim, all in one shader program', t => {
+  const { race, tint, frame } = setup(t);
+  race.player.effects.freeze = 2;
+  frame(0.05, { quality: 'low' });
+  assert.equal(tint.material.uniforms.rim.value, 0);
+  const material = tint.material;
+  frame(0.05, { quality: 'medium' });
+  assert.ok(tint.material.uniforms.rim.value > 0);
+  assert.equal(tint.material, material, 'quality changes a uniform, never the program');
+});
+
+test('a hidden rival gets no tint', t => {
+  const { race, tint, frame, vehicles } = setup(t);
+  vehicles[2].visible = false;
+  race.player.effects.freeze = 2;
+  for (let i = 0; i < 10; i++) frame();
+  assert.equal(lit(tint, 1), 0);
+  assert.ok(lit(tint, 0) > 0);
+});

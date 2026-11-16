@@ -1,3 +1,11 @@
+# 2026-11-16 — Rival Freeze / EMP status tint (`feature/rival-vfx-cues`)
+
+- [x] A rival slowed by the player's Freeze or EMP (`FREEZE_RIVAL_SPEED`) showed nothing. `src/rival-status-tint.ts` adds one instanced additive shell (1 draw call, 1 program, fitted per car from its own visible parts): Freeze = icy blue, EMP = electric yellow-green flicker (steady under reduced motion), fading out when the effect ends. Low = soft tint only; Medium+ adds a fresnel rim through a uniform, never a new program. Car materials are never touched.
+- [x] RED: `tests/rival-status-tint.test.js` failed on the old code (no tint mesh). GREEN: 5/5; module-size, shader-safety, effects, shader-warmup and legacy-js-names pass; typecheck and `npm run build` pass.
+- [x] CPU: `update` costs 0.19 µs/frame with no rival affected and 0.7 µs/frame with all 7 frozen (Node, 100k frames), with no heap growth. GPU: +1 draw call and 5,040 triangles when all are shown.
+- [ ] Browser regression (`item-feedback-browser.spec.js`, `shader-warmup-browser.spec.js`, `black-frame-browser.spec.js`), real WebGL screenshots (desktop, phone portrait/landscape, Low/High, frozen rival in a practice race) and the in-browser frame-time numbers: not run; skipped on user instruction.
+- [ ] `npm test`: 5 environment failures in this worktree (no local `node_modules`: `typescript/bin/tsc`, `three/package.json` missing); recheck in a checkout with installed deps.
+
 # 2026-11-16 — Shared race halfway announcement
 
 - [x] Coast and other finite routes: the peripheral halfway notice could queue behind rewards or be delayed by an impact. The shared presentation event now shows a short cue at the racing scene center, with a chime and remaining distance.
