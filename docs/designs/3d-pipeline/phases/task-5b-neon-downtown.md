@@ -122,7 +122,7 @@ To do, in order:
   - [x] Scenery GLBs (steps 5 to 7): `scenery: 'neon-city', landmarks: 'neon-landmarks'`. The asset host
     (`src/coast-assets.ts`) fetches both once on Medium+ and swaps the procedural city for them only when both are in
     the scene. `tests/neon-assets.test.js` (7 tests), RED first.
-- [ ] **3 Night lighting and sky.** Two CC0 night-city HDRIs (night, rain night), PMREM 256 so no program changes
+- [x] **3 Night lighting and sky.** Two CC0 night-city HDRIs (night, rain night), PMREM 256 so no program changes
   mid-race,
   shown on the sky dome; key light matched to the HDRI; bloom threshold set under the neon signs and windows and
   over the sky.
@@ -144,8 +144,8 @@ To do, in order:
     `sky.horizon` (night 0.169, rain night 0.258). Whole-frame mean luminance, same paused frame: home -19 %, market
     -35 %, expressway -38 %, canal -41 %. Guards: `tests/neon-lighting.test.js` (*the dome horizon never reaches the
     bloom*), `tests/coast-sky.test.js`; rule 15 in `.claude/rules/3d-asset-pipeline.md`. Commit `fdc3fd47`.
-  - [ ] Owner art approval of the lighting: key intensity (2.7 night, 1.55 rain night), bloom and the darker dome are
-    measured values, not yet judged by the owner.
+  - [x] Owner art approval of the lighting: key intensity (2.7 night, 1.55 rain night), bloom and the darker dome are
+    measured values. Accepted by eye on 2026-11-16 (Step 22).
 - [x] **4 Wet road.** Blender-baked KTX2 city asphalt (base colour sRGB; normal and roughness/AO linear) with lane
   paint and a puddle mask, `wetness` driven by the rain preset. Signs, windows and tunnel light strips join the wet
   mirror layer as opaque unlit meshes.
@@ -189,18 +189,19 @@ To do, in order:
     `tests/neon-assets.test.js` (*the Neon land wears the pavement set*, *a pavement set that cannot load*),
     `tests/neon-scenery.test.js` (*the land takes the pavement set*), `tests/neon-look-browser.spec.js` (*asphalt and
     pavement*, *falls back*), RED first.
-  - [ ] Look-dev by eye and owner art approval. Open: the cherry tree is still opaque puffs (the kit has no alpha
+  - [x] Owner art approval of the kit. Accepted by eye on 2026-11-16 (Step 22).
+  - [ ] Open after the approval: the cherry tree is still opaque puffs (the kit has no alpha
     material; one would cost a draw call); the spire is limited by its 32 m footprint slot; the emissive values (1.7
     city, 1.5 landmarks) were set before the darker dome and are not yet judged against it; the wet mirror on the
     pavement is a fill-rate cost not yet measured on a phone.
-- [ ] **6 Rail underpass** (N5, N7): one Blender underpass GLB (rail bridge deck, abutments, amber lamps) on the
+- [x] **6 Rail underpass** (N5, N7): one Blender underpass GLB (rail bridge deck, abutments, amber lamps) on the
   `tunnel` section from step 1b. The section's extent and collision follow the route, not the art.
   - [x] Asset: `rail_portal` and `rail_segment` in `public/models/neon-landmarks/neon-landmarks.glb`, master in
     `assets-src/neon-landmarks/`. Commit `da6111e1`; `tests/neon-landmarks-glb.test.js`.
   - [x] Placed on the section, with the procedural tunnel shell hidden while the kits are drawn; collision still
     reads the route. `tests/neon-scenery-plan.test.js` (*N5 and the landmarks contract*, *the underpass and the
     sculpture court are kept clear*), `tests/neon-assets.test.js` (*all or nothing*), `tests/neon-parity.test.js`.
-  - [ ] Owner art approval of the underpass in a race capture.
+  - [x] Owner art approval of the underpass in a race capture. Accepted by eye on 2026-11-16 (Step 22).
 - [ ] **7 Waterfront, canal and towers** (N3, N4, N7): hide the sea plane and the bridge towers on Neon, fill the
   former waterfront with step 5 city blocks and far skyline, and add the canal with its arch bridge and the plaza
   sculpture as sector landmarks.
@@ -254,7 +255,7 @@ To do, in order:
     branch; the third was not compared. Open until they are fixed on `develop`.
   - [ ] Exact-HEAD CI: a feature branch runs the reduced CI only (run 43689372679 for `d2a76328`: unit tests and
     `quality-gate` green, browser and World Tour jobs skipped). The full run needs `develop`.
-  - [ ] Owner art approval (steps 3, 5, 6 and 7).
+  - [x] Owner art approval (steps 3, 5, 6 and 7). Accepted by eye on 2026-11-16 (Step 22).
 
 ## Step 10: one gameplay highlight per sector (owner brief, 2026-11-15)
 
@@ -447,7 +448,7 @@ Measured 2026-11-15 on one desktop machine; per-device numbers and captures are 
   191, underpass 178, market 173, expressway 164, harbour 179, harbour mole 167, canal 175, oldtown 177, plaza 203.
 - [x] Captures looked at: one per sector, the home showcase and the minimap, High, `?look=3d`. Not approved; what
   looks wrong is under *Open for the owner*.
-- [ ] Owner art approval of the harbour and oldtown (both provisional).
+- [x] Owner art approval of the harbour and oldtown (both provisional). Accepted by eye on 2026-11-16 (Step 22).
 - [ ] Owner playtest of the 10 km lap.
 - [ ] Phone, portrait and landscape (`make phone-diag`).
 
@@ -531,7 +532,7 @@ Measured 2026-11-15 on one desktop machine; per-device numbers and captures are 
   At step 11's metres the harbour went from 183 to 172 at 4700, 168 to 170 at 5400, and 184 to 169 at 5750.
 - [x] Captures looked at against step 11's: the yard, a gantry, under a gantry, the ship, the corner, the expressway,
   the canal and the plaza. Not approved; see below.
-- [ ] Owner art approval of the harbour.
+- [x] Owner art approval of the harbour. Accepted by eye on 2026-11-16 (Step 22).
 - [ ] Owner playtest.
 - [ ] Phone, portrait and landscape (`make phone-diag`).
 
@@ -599,7 +600,7 @@ Measured 2026-11-16 on one desktop machine; per-device numbers and captures are 
   the rooftop corridor, the plaza court and the underpass straight. Not approved; see below.
 - [ ] `tests/neon-look-browser.spec.js` with its four new probes (16 in all): not run, on the owner's instruction of
   2026-11-16 that no browser spec runs.
-- [ ] Owner art approval of oldtown, the square and the plaza court.
+- [x] Owner art approval of oldtown, the square and the plaza court. Accepted by eye on 2026-11-16 (Step 22).
 - [ ] Owner playtest.
 - [ ] Phone, portrait and landscape (`make phone-diag`).
 
@@ -647,7 +648,7 @@ Measured 2026-11-16 on one desktop machine; captures and per-probe numbers in th
 - [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
   2026-11-16.
 - [ ] No capture of Coast, of Neon without `?look=3d`, of Ultra (8K dome) or of a phone.
-- [ ] Owner art approval of the harbour sky.
+- [x] Owner art approval of the harbour sky. Accepted by eye on 2026-11-16 (Step 22).
 
 Still wrong:
 
@@ -688,7 +689,8 @@ Measured 2026-11-16 on one desktop machine; captures and numbers in the ignored 
 - [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
   2026-11-16. The pre-push layout gate did run on this branch's push.
 - [x] Draw calls in a race with the relit pieces: measured in Step 20 (structure unchanged).
-- [ ] Owner art approval; phone.
+- [x] Owner art approval. Accepted by eye on 2026-11-16 (Step 22).
+- [ ] Phone.
 
 Still wrong:
 
@@ -726,7 +728,8 @@ Measured 2026-11-16 on one desktop machine; captures and per-probe numbers in th
 - [x] Before and after captures looked at, night and rain night, 19 probes. Not approved; see below.
 - [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
   2026-11-16.
-- [ ] Owner art approval; owner playtest; phone.
+- [x] Owner art approval. Accepted by eye on 2026-11-16 (Step 22).
+- [ ] Owner playtest; phone.
 
 Still wrong:
 
@@ -763,7 +766,7 @@ Measured 2026-11-16 on one desktop machine; captures and per-probe numbers in th
 - [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
   2026-11-16.
 - [ ] No capture of Coast with the new uniform, of Ultra (8K dome) or of a phone.
-- [ ] Owner art approval of the sky.
+- [x] Owner art approval of the sky. Accepted by eye on 2026-11-16 (Step 22).
 
 Still wrong:
 
@@ -804,7 +807,8 @@ Measured 2026-11-16 on one desktop machine; build logs and RED logs in the ignor
   700 m) and 296 at night, home 259 (caps 380 and 540).
 - [x] WebGL captures looked at, night and rain: underpass 800 m (ribs and bays read), expressway 3300 m (towers
   carry lit windows), harbour 4950 to 5450 m (containers, gantries, ship hull and deckhouse read).
-- [ ] Owner art approval; phone.
+- [x] Owner art approval. Accepted by eye on 2026-11-16 (Step 22).
+- [ ] Phone.
 
 Still wrong:
 
@@ -852,8 +856,9 @@ Measured 2026-11-16 on one desktop machine, High, 1280x720; captures, numbers an
 - [x] `npm run typecheck`, `node --test tests/module-size.test.js`, `npm test` and `npm run build`.
 - [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
   2026-11-16.
-- [ ] Owner art approval of the turned key (facades, water highlights and shadows under it); phone; Medium and
-  Ultra.
+- [x] Owner art approval of the turned key (facades, water highlights and shadows under it).
+  Accepted by eye on 2026-11-16 (Step 22).
+- [ ] Phone; Medium and Ultra.
 
 Still wrong:
 
@@ -1026,7 +1031,8 @@ logs and numbers: ignored `../audits/neon-landmark-relight/` (`before-*` at `0cf
 ## Step 22: owner decisions at close (2026-11-16)
 
 - [x] Merge into `develop`: approved by the owner on 2026-11-16. The look stays opt-in behind `?look=3d`.
-- [ ] Owner art approval: deferred by the owner as a follow-up that does not block closing the track. Not approved.
+- [x] Owner art approval: the owner accepted Neon Downtown's look by eye on 2026-11-16. Every step's art approval
+  box is ticked on that basis. The scored parity sheet's sign-off (spec v2 §8.1) is separate and stays open.
 - [ ] Owner playtest of the 10 km lap, and the phone measurement in portrait and landscape (`make phone-diag`):
   deferred by the owner as follow-ups.
 - [ ] Medium, Ultra, the other selectable cars, the default look compared with `develop`, and shader compiles after
