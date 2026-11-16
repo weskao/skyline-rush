@@ -1,3 +1,9 @@
+# 2026-11-16 — Browser CI follow-up
+
+- The lobby already scrolls. Removing the inner rules scroller lets the AI listbox open above the rules without clipping its first options. Chromium reproduced the old track-list interception and verified that selecting 0 AI updates the rules summary after the fix.
+- Resources and Photo Studio's Advanced tools use styled disclosures. Browser assertions now cover the localized Event Lab close button, successful ramp imports with no validation alerts, and GLB opacity during Ghost Phase.
+- Module-size and focused Node checks (31 passed), typecheck, and the browser trial build passed. Full WebGL browser coverage and the exact-commit GitHub quality gate are pending.
+
 # 2026-11-16 — Compact halfway strip (`develop`)
 
 Repro: the halfway card (two lines, gradient box, glow) covered 19.5% of the scene height on desktop and 13% in

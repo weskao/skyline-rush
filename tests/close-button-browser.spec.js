@@ -6,7 +6,7 @@ const PANELS = [
   ['History', '.history-button', '#history-screen', '#history-close', 'Close history'],
   ['Garage', '#garage-button', '#garage-screen', '#garage-close', 'Close garage'],
   ["What's new", '#whats-new-open', '#whats-new-screen', '#release-close', "Close what's new"],
-  ['Event Lab', 'button[data-race-mode="eventlab"]', '#event-lab-dialog', '#lab-close', 'Close'],
+  ['Event Lab', 'button[data-race-mode="eventlab"]', '#event-lab-dialog', '#lab-close', 'Close Event Lab'],
 ];
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {

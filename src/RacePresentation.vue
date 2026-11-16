@@ -38,5 +38,4 @@ const rulesSummary = computed(() => {
 .race-presentation-label select { min-height: 44px; max-width: 60%; }
 .race-presentation p { color: #aee7fa; font-size: 11px; line-height: 1.5; margin: 6px 0 0; }
 .race-presentation .race-setup-flow { font-weight: 700; margin-bottom: 6px; }
-:global(#race-mode-rules[open]) { max-height: 180px; overflow-y: auto; }
 </style>

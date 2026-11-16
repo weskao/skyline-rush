@@ -124,8 +124,12 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
   await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
   await page.waitForTimeout(ciTimeout(300));
   const before = await programs(page);
-  await page.evaluate(() => { window.gameplay.race.player.cooldown = 1.5; }); // a hit's post-hit grace (grace-fade.ts)
-  await expect.poll(async () => (await audit(page)).opacity, { timeout: ciTimeout(5000) }).toBeLessThan(0.75); // the GLB pulses too
+  await page.evaluate(() => {
+    const { player } = window.gameplay.race;
+    player.cooldown = 1.5;
+    player.effects.ghost = 2.5; // only Ghost Phase fades the body
+  });
+  await expect.poll(async () => (await audit(page)).opacity, { timeout: ciTimeout(5000) }).toBeLessThan(0.75);
   await page.keyboard.down('ShiftLeft');
   await page.waitForTimeout(ciTimeout(600));
   await page.keyboard.up('ShiftLeft');
