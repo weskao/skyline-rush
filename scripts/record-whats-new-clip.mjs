@@ -53,6 +53,7 @@ async function record(locale, system, shape, { width, height, mobile }) {
     localStorage.setItem('skyline-rush-guide-seen', '1');
     localStorage.setItem('skyline-rush-whats-new-seen-v1', '999.0.0');
     localStorage.setItem('skyline-rush-last-track', track);
+    localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', track])); // a fresh profile has only Coast
   }, opts.track);
   const page = await context.newPage();
   // Same read-only race handle the gameplay browser specs inject; the shipped app has none.
@@ -71,6 +72,8 @@ async function record(locale, system, shape, { width, height, mobile }) {
   await page.locator('#start-button').waitFor();
   await page.waitForTimeout(700); // the music prompt appears after 600 ms where autoplay is blocked
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+  const card = page.locator(`[data-track="${opts.track}"]`);
+  if (await card.getAttribute('aria-pressed') !== 'true') await card.click();
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(1500); // the car and scenery models finish loading in real time, before the clock stops
   const track = await page.evaluate(() => window.gameplay.race.trackId);
@@ -122,7 +125,7 @@ async function record(locale, system, shape, { width, height, mobile }) {
 
   const base = `${outDir}${slug}.${shape}.${locale}`;
   // Balanced quality, never coarsened to fit: CRF 20 with a 4 MB cap; shorten --seconds (or lower --scale) instead.
-  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', `${FPS}`, '-i', `${dir}/%05d.png`, '-an', '-c:v', 'libx264',
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', `${FPS}`, '-i', `${dir}/%05d.png`, '-an', '-vf', 'crop=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', // x264 needs even sizes (390 × 1.25 is not)
     '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', `${base}.mp4`]);
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', `${dir}/${String(Math.floor(seconds * FPS / 2)).padStart(5, '0')}.png`, '-frames:v', '1', '-q:v', '2', `${base}.jpg`]);
   await rm(dir, { recursive: true, force: true });
