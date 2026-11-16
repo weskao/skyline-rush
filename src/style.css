@@ -1442,6 +1442,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
  .intro:has(.race-mode-picker) { max-height: calc(100dvh - 126px - env(safe-area-inset-bottom)); overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; padding: 2px 6px 32px; } /* 6px matches the track strip's -6px bleed; 32px lets the last row scroll clear of the fade */
  /* Fades the scroll edge above the footer. Not with AIRFLOW: a mask also clips its fixed-position Start and camera dock. */
  body:not(.airflow-active) .intro:has(.race-mode-picker) { -webkit-mask-image: linear-gradient(#000 calc(100% - 28px), transparent); mask-image: linear-gradient(#000 calc(100% - 28px), transparent); }
+ .race-mode-rules[open] { max-height: 180px; overflow-y: auto; }
 }
 @media (max-width:370px) {
  .race-mode-tabs { grid-template-columns: repeat(2,minmax(min-content,1fr)); }
@@ -1563,9 +1564,7 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .photo-panel label { display: grid; gap: 4px; }
 .photo-panel input { width: 100%; min-height: 28px; }
 .photo-panel .custom-select > button, .photo-panel select { min-height: 44px; }
-#photo-advanced > summary { display: flex; align-items: center; justify-content: space-between; min-height: 44px; cursor: pointer; }
-#photo-advanced > summary::after { content: '＋'; color: var(--blue); }
-#photo-advanced[open] > summary::after { content: '−'; }
+#photo-advanced > summary { display: list-item; align-content: center; min-height: 44px; cursor: pointer; }
 #photo-advanced[open] > label + label { margin-top: 8px; }
 .photo-actions { display: flex; flex: none; gap: 8px; padding-top: 8px; }
 .photo-actions button { min-height: 44px; flex: 1; border-radius: 6px; border: 1px solid #81e9e7; background: #21536a; color: #efffff; font-weight: 700; }
@@ -2427,3 +2426,9 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
   .result-standings { max-height: 124px; overflow-y: auto; font-size: 11px; }
   .result-standings li { padding: 3px 8px; }
 }
+
+/* The lobby scrolls its rules as a unit so an open listbox can extend beyond a disclosure. */
+.intro .race-rules-row .race-mode-rules[open] { max-height: none; overflow: visible; }
+#photo-advanced > summary { display: flex; align-items: center; justify-content: space-between; }
+#photo-advanced > summary::after { content: '＋'; color: var(--blue); }
+#photo-advanced[open] > summary::after { content: '−'; }
