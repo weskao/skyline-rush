@@ -4,12 +4,18 @@ import { ciTimeout } from './helpers/ci.js';
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
   test(`Trial preview and equip preserve gameplay ownership on ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' })));
     await page.goto('/');
     await page.locator('#garage-button').click();
     await page.locator('#garage-studio-open').click();
     const catalog = page.locator('#garage-vfx-catalog');
     await expect(catalog).toHaveAttribute('data-preview-contract', 'live-shared-aero');
     const preview = page.locator('#garage-preview');
+    await expect.poll(async () => page.locator('#world').evaluate(world =>
+      !!JSON.parse(world.dataset.garageModelInstances ?? '{}').studio || !!world.dataset.garageModel?.startsWith('fallback:')),
+    { timeout: ciTimeout(20000) }).toBe(true);
+    await preview.evaluate(element => delete element.dataset.shaderPrograms);
+    await page.locator('#garage-angle-next').click();
     await expect(preview).toHaveAttribute('data-shader-programs', /\d+/);
     const programsBefore = Number(await preview.getAttribute('data-shader-programs'));
     const ion = catalog.locator('[data-skin="thruster-ion"]');

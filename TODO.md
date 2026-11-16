@@ -3,6 +3,7 @@
 - [x] RED: Vite redirected with `DEV_3D=1`, the Roadster was query-gated, a plain link had no Ultra option in Chromium, and dropping to Low retained Neon's HDRI exposure.
 - [x] Route the rendering through the selected quality and the equipped car. Coast and Neon use detailed scenery on Medium+, and the Roadster uses its low LOD on Low. Keep the Garage-only pipeline probe and procedural load fallbacks.
 - [x] GREEN: `npm test` 3,252 passed, 3 emulator tests skipped. Module-size and browser timeout guards, typecheck and production build passed.
+- [x] CI follow-up: legacy links still use saved quality. The pre-race countdown now uses elapsed time on slow renderers. Chromium reproduced the old countdown stall; the regression, Frostbite Reduced Motion and the landscape Garage trial passed locally. Full local unit suite: 3,252 passed, 3 emulator-only tests skipped.
 - [ ] Complete desktop and mobile WebGL review, full `make verify` and exact-commit GitHub CI.
 
 # 2026-11-16 — Playwright CI shard title matching
