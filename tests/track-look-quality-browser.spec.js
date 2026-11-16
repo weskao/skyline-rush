@@ -63,7 +63,7 @@ test('Neon switches scenery when the phone graphics setting changes', async ({ p
   const kitVisible = () => page.evaluate(() => window.gameScene?.scene.getObjectByName('Neon Downtown kit')?.visible);
   await expect.poll(kitVisible).toBe(false);
 
-  await page.locator('#vfx-panel summary').click();
+  await page.locator('#vfx-panel > summary').click();
   const panel = page.getByRole('complementary', { name: 'Airflow and visual effects' });
   const quality = panel.getByRole('combobox', { name: 'Quality', exact: true });
   await quality.click();
