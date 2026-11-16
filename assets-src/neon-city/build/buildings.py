@@ -6,6 +6,8 @@ lit faces and the silhouette. Footprints are centred on the origin, the street s
 import math
 
 PITCH = math.tan(math.radians(28))      # market roof slope
+# Podium shopfront cell of each tower and block; build.py measures its bay shape into summary.json.
+PODIUM = {"tower_glass_a": "store_glass", "tower_glass_b": "store_violet", "block_retail_a": "store_arcade", "block_office_b": "store_violet"}
 
 
 def band(k, w, d, z0, z1, cell, lod, proud=0.2, y=0.0):
@@ -17,6 +19,12 @@ def band(k, w, d, z0, z1, cell, lod, proud=0.2, y=0.0):
     for lo, hi, skip in (((-x - proud, y - yy - proud), (x + proud, y - yy), "b"), ((-x - proud, y + yy), (x + proud, y + yy + proud), "f"),
                          ((-x - proud, y - yy), (-x, y + yy), "rfb"), ((x, y - yy), (x + proud, y + yy), "lfb")):
         k.box((*lo, z0), (*hi, z1), cell, skip=skip)
+
+
+def podium(k, module, w, d, back):
+    """4.5 m shopfront podium: the module's PODIUM cell on the street face and both flanks, plain wall behind."""
+    cell = PODIUM[module]
+    k.walls(w, d, 0, 4.5, (cell, cell, back, cell))
 
 
 def roof_units(k, spots):
@@ -55,7 +63,7 @@ def plan_cap(k, pts, z, cell):
 def tower_glass_a(k, lod):
     """Rounded glass tower of frame 03 (left of centre): dark blue wet glass with floor lines on a 23 m rounded-square
     plan, a cyan crown line round the roof edge, a setback glass penthouse, on a glazed podium."""
-    k.walls(24, 24, 0, 4.5, ("store_glass", "store_glass", "granite", "store_glass"))
+    podium(k, "tower_glass_a", 24, 24, "granite")
     k.floor(-12, -12, 12, 12, 4.5, "roof_flat", fit=lod > 0)
     segs, z0, z1 = (4, 2, 1)[lod], 4.5, 4.5 + 6 * 14.4
     plan = rounded_plan(11.5, 6.0, segs)
@@ -83,7 +91,7 @@ def tower_glass_a(k, lod):
 def tower_glass_b(k, lod):
     """Rectangular glass tower of frame 03 (far left): dark wet glass with warm offices and floor lines, a pink neon
     line up each street corner and a pink crown."""
-    k.walls(28, 20, 0, 4.5, ("store_violet", "store_violet", "granite", "store_violet"))
+    podium(k, "tower_glass_b", 28, 20, "granite")
     k.floor(-14, -10, 14, 10, 4.5, "roof_flat", fit=lod > 0)
     z1 = 4.5 + 5 * 14.4
     plan_walls(k, [(-12, -8), (12, -8), (12, 8), (-12, 8)], 4.5, z1, "curtain_b", (0.0, 7.2, 3.6, 10.8) if lod == 0 else None)
@@ -105,8 +113,8 @@ def tower_glass_b(k, lod):
 
 
 def block_retail_a(k, lod):
-    """Five-storey stone block: glazed warm storefront, pink bands, violet-lit floors (frames 03 right, 08)."""
-    k.walls(24, 12, 0, 4.5, ("store_glass", "store_glass", "granite", "store_glass"))
+    """Five-storey stone block: warm stone arcade, pink bands, violet-lit floors (frames 03 right, 08)."""
+    podium(k, "block_retail_a", 24, 12, "granite")
     k.walls(24, 12, 4.5, 18.5, ("retail_upper", "retail_upper", "concrete", "retail_upper"))
     k.walls(24, 12, 18.5, 19.5, "granite")
     k.floor(-12, -6, 12, 6, 19.5 if lod == 2 else 19.1, "roof_flat", fit=lod > 0)
@@ -119,13 +127,13 @@ def block_retail_a(k, lod):
             x = -12 + i * 4
             k.box((x - 0.3, -6.22, 5.3), (x + 0.3, -6.0, 18.5), "granite", skip="btu")
         k.box((-12.25, -6.25, 18.5), (12.25, -6.0, 18.95), "granite", skip="b")
-        k.box((-2.4, -7.5, 3.42), (2.4, -6.0, 3.6), "steel_dark", skip="b", fit=True)
+        k.box((-2.4, -7.5, 3.85), (2.4, -6.0, 4.03), "steel_dark", skip="b", fit=True)  # marquee, clear of the arch crowns
         roof_units(k, [(-7, 1, 3.2, 2.2, 1.5, 19.1), (-2.5, 1.5, 2.2, 2.2, 1.2, 19.1), (6, 0.5, 4.5, 3.5, 2.6, 19.1)])
 
 
 def block_office_b(k, lod):
     """Nine-storey concrete office block with punched windows and a cyan roof line (frame 03, right)."""
-    k.walls(24, 12, 0, 4.5, ("store_violet", "store_violet", "concrete", "store_violet"))
+    podium(k, "block_office_b", 24, 12, "concrete")
     k.walls(24, 12, 4.5, 32.5, ("office_grid", "office_grid", "concrete", "office_grid"))
     k.walls(24, 12, 32.5, 33.5, "concrete")
     k.floor(-12, -6, 12, 6, 33.5 if lod == 2 else 33.1, "roof_flat", fit=lod > 0)

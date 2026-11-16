@@ -245,6 +245,21 @@ def save_texture(name, rgb, colorspace, file_format):
     return image
 
 
+def piece_texels(scene, kit, rigs, index):
+    """The atlas texels of one piece: a copy of the kit holding only its faces, baked as a mask."""
+    only = add_object(scene, "only", keep_faces(kit.data, "only", lambda f, ints: f[ints["piece"]] == index))
+    kit.select_set(False)
+    only.select_set(True)
+    bpy.context.view_layer.objects.active = only
+    texels = bake(scene, only, rigs, "mask", SIZE, 1)[..., 0] > 0.5
+    mesh = only.data
+    bpy.data.objects.remove(only)
+    bpy.data.meshes.remove(mesh)
+    kit.select_set(True)
+    bpy.context.view_layer.objects.active = kit
+    return texels
+
+
 def emissive_stats(emissive):
     """What the runtime makes of the stored emissive atlas (sRGB bytes) at GAME_EMISSIVE: texels that clip to white
     (every channel at 1 or over) and texels over the bloom threshold (luminance as the bloom pass weighs it)."""
@@ -280,12 +295,14 @@ def bake_atlases(scene, kit, rigs, spec):
     # the residual noise to 0, since the runtime multiplies the atlas.
     target = SPILL_PEAK * (level / np.percentile(lit[lit > 0], 99.5)) ** SPILL_GAMMA
     spill = albedo * irradiance * np.clip(target - 0.02, 0, 0.6) / np.maximum(level, 1e-9)
-    if lighting.lit(spec["pieces"]):   # the sector kit's bake-only floods; the first kit has none and bakes as before
+    if lighting.lit(spec["pieces"]):   # bake-only light: the sector kit's floods, the first kit's sculpture fill
         lights = lighting.place(scene, spec["pieces"], STATION)
         work = bake(scene, kit, rigs, "work", SIZE // 2, lighting.WORK_SAMPLES, kind="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"})
         lighting.remove(lights)
-        work = dilate(smooth(work, half_covered), half_covered, steps=3)
-        spill = lighting.combine(spill, work.repeat(2, axis=0).repeat(2, axis=1), albedo, emit)
+        work = dilate(smooth(work, half_covered), half_covered, steps=3).repeat(2, axis=0).repeat(2, axis=1)
+        fills = [(piece_texels(scene, kit, rigs, index), lighting.FILL[name]["ceiling"])
+                 for index, name in enumerate(spec["pieces"]) if name in lighting.FILL]
+        spill = lighting.fill(spill, work, albedo, emit, fills) if fills else lighting.combine(spill, work, albedo, emit)
     maps = dilate(np.concatenate([albedo * (0.6 + 0.4 * occlusion), emit + spill, occlusion, rough, metal], axis=2), covered)
     row = int(SWATCH_ROW * SIZE)
     assert len(spec["mats"]) <= CELLS, "one swatch cell per material"
@@ -344,7 +361,9 @@ def bake_kit(scene, spec):
     material = materials.delivery_material(*images[:3], name=spec["material"], normal=images[3] if spec["normal"] else None)
     for obj in (kit, shade):
         bpy.data.objects.remove(obj)
-    surfaces = {name: lighting.measure(mesh, emissive, SIZE, list(spec["mats"]), GAME_EMISSIVE, albedo) for name, mesh in full.items()} if lighting.lit(spec["pieces"]) else {}
+    strength = lambda name: lighting.FILL.get(name, {}).get("strength", GAME_EMISSIVE)   # as the runtime shows the piece
+    surfaces = {name: lighting.measure(mesh, emissive, SIZE, list(spec["mats"]), strength(name), albedo)
+                for name, mesh in full.items() if spec["levels"] or name in lighting.WORK} if lighting.lit(spec["pieces"]) else {}
     return full, material, stats, surfaces
 
 
@@ -374,6 +393,8 @@ def main():
             entry = contract[name] = dict(PLACEMENT[name], pivot=name, material=spec["material"], lamps=lamps_of(spec, mesh), lods={})
             if name in surfaces:   # per material: atlas texels per metre and the median runtime emissive (lighting.py)
                 entry["surfaces"] = surfaces[name]
+            if name in lighting.FILL:   # its own runtime strength and stored ceiling: the test holds both to the runtime
+                entry["fill"] = lighting.FILL[name]
             for lod in (0, 1):
                 data = lod_mesh(mesh, lod, f"{name}_lod{lod}")
                 data.materials.clear()

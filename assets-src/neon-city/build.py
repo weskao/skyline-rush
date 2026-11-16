@@ -69,7 +69,8 @@ def main():
                                 "z": [round(-max(ys), 2), round(-min(ys), 2)], "height": round(max(zs), 2)}
     emissive = {name: c.emissive_range(strength) for name, c in atlas.cells.items() if c.emi.max() > 0}
     facade = {name: c.facade() for name, c in atlas.cells.items() if name.startswith("sky_")}
-    report = json.dumps({"atlasFill": round(fill, 3), "modules": summary, "emissive": emissive, "facade": facade}, sort_keys=True)
+    podium = {name: {"cell": cell, **atlas.cells[cell].openings()} for name, cell in buildings.PODIUM.items()}
+    report = json.dumps({"atlasFill": round(fill, 3), "modules": summary, "emissive": emissive, "facade": facade, "podium": podium}, sort_keys=True)
     print("NEON_CITY_SUMMARY " + report)
     with open(os.path.join(HERE, "summary.json"), "w", encoding="utf-8") as f:   # read by tests/neon-city-glb.test.js
         f.write(report + "\n")

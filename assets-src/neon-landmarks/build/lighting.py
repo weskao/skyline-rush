@@ -1,5 +1,5 @@
-"""Bake-only work light for the sector kit (build.py): the quay floods on the harbour pieces and the warm street
-floods on the oldtown ones, baked into the emissive atlas beside the lamp spill.
+"""Bake-only work light (build.py): the quay floods on the harbour pieces, the warm street floods on the oldtown
+ones and the plaza sculpture's uplights (FILL), baked into the emissive atlas beside the lamp spill.
 
 At game night the runtime lights a piece with one key light from the sky's brightest direction and a dim
 hemisphere, so the side of a dark hull, container wall or brick pier turned from that key reads as a black
@@ -25,6 +25,11 @@ KNEE = 0.75                # the share of LIT_MAX passed unchanged; above it a s
                            # Trap: no curve under the ceiling keeps relief on texels lit far past it; keep a lit wall's
                            # range under the knee with the light's placement and power, not the curve
 WORK_SAMPLES = 64
+UPLIGHT = (0.55, 0.2, 1.0)  # plaza uplights: the plinth rings' violet; at (0.62, 0.3, 1.0) the blades read milky
+# A piece lit as a fill: on its own texels only (the other pieces of its kit keep their bake bit for bit), never
+# dimmed, up to a stored ceiling set for the piece's own runtime strength (src/neon-scenery.ts PIECE_EMISSIVE):
+# ceiling x strength stays under the bloom threshold, so the fill adds no bloom to what the rings already throw
+FILL = {"plaza_sculpture": dict(strength=4.5, ceiling=0.12)}
 
 
 def spot(at, aim, power, cone, color):
@@ -36,22 +41,31 @@ def area(at, aim, power, size, color):
 
 
 WORK = {
+    # six uplights on the plinth's edge, aimed up the fan: the rings' own spill ended under the blades' upper half
+    # (`lit_upper` 0.0 at the piece's 4.5), which read as dark steel. 3000 W: upper half 0.33, under the bloom
+    "plaza_sculpture": [spot((6.5 * math.cos(a), 6.5 * math.sin(a), 0.6), (0.4 * math.cos(a), 0.4 * math.sin(a), 10.0), 3000, 60, UPLIGHT)
+                        for a in (math.radians(30 + 60 * k) for k in range(6))],
     # four high masts on the yard diagonals: both long walls (the stack stands either way round) and both ends.
     # Powers calibrated on the measured `lit` (contract.json surfaces): linear in power, under LIT_MAX. Far masts: from
-    # 18-22 m off, the near corner took 3.4x the far one's light and the white boxes ran past the roll-off
-    "container_stack": [spot((x, y, 28.0), (0, 0, 4.0), 65000, 75, LED) for x in (-26.0, 26.0) for y in (-30.0, 30.0)],
+    # 18-22 m off, the near corner took 3.4x the far one's light and the white boxes ran past the roll-off. Set back
+    # again (43 m -> 81 m from the wall's middle) at the same `lit`: white-box relief 0.972 -> 0.980. Power is not the
+    # knob: +20 % at the old masts took the relief to 0.908, and the white walls' brightest texels pass the knee first
+    "container_stack": [spot((x, y, 40.0), (0, 0, 4.0), 207000, 50, LED) for x in (-52.0, 52.0) for y in (-56.0, 56.0)],
     # the cargo from high masts behind both berths, set back so a bay near a mast is not lit 2x its neighbour; the hull
     # from low floods on the quay edge, under the cargo (mirrored: its +x half carries both sides); the -x cargo faces
     # the road. The stern transom and the bow from low floods off each end, the funnel from a mast on the aft quarter: no
     # berth flood reached them, and they read black (2026-11-16). The stern flood stays under the deckhouse's aft face,
-    # which its own windows light; at 70000 and 35000 W the cargo masts ran the white boxes into the roll-off
-    # (relief 0.61, 0.86)
-    "cargo_ship": [spot((s * 40.0, y, 34.0), (s * 6.0, y, 18.0), 15000, 70, LED) for s in (-1, 1) for y in (-52.0, -17.0, 17.0, 52.0)]
+    # which its own windows light; at 70000 and 35000 W the cargo masts, then 34 m off, ran the white boxes into the
+    # roll-off (relief 0.61, 0.86). Now 53 m off: the cargo's relief stays 0.950 to 0.954 from 13500 W to 35000 W at
+    # either distance, so that guard's margin is the atlas's, not the light's. Stern flood 45000 -> 90000 W: the
+    # transom read black beside the white deckhouse (`lit_end` 0.044 -> 0.089); the funnel is repainted (harbour.py)
+    "cargo_ship": [spot((s * 58.0, y, 40.0), (s * 6.0, y, 18.0), 35000, 55, LED) for s in (-1, 1) for y in (-52.0, -17.0, 17.0, 52.0)]
                   + [spot((34.0, y, 3.0), (12.0, y, 6.0), 35000, 90, LED) for y in (-60.0, -30.0, 0.0, 30.0, 55.0)]
-                  # hull lift: the masts at 15000 W (kept low for the white boxes' relief) left the hull side at 0.0549,
-                  # under its 0.055 floor. A narrow cone aimed at z 3.5 ends under the cargo (z 10.4) so the boxes do not move
-                  + [spot((30.0, y, 1.5), (12.0, y, 3.5), 4000, 40, LED) for y in (-60.0, -30.0, 0.0, 30.0, 55.0)]
-                  + [spot((6.0, -100.0, 8.0), (3.0, -72.0, 5.0), 45000, 50, LED), spot((14.0, 104.0, 10.0), (3.0, 74.0, 5.0), 45000, 60, LED),
+                  # hull lift: the masts alone left the hull side at 0.0549, under its 0.055 floor. Narrow cones aimed at
+                  # z 3.5 end under the cargo (z 10.4) so the boxes do not move; every 12 m, since five cones 30 m apart
+                  # lit 13 m in 30 and left the median wall where it was (0.0557)
+                  + [spot((30.0, y, 1.5), (12.0, y, 3.5), 8000, 40, LED) for y in range(-66, 67, 12)]
+                  + [spot((6.0, -100.0, 8.0), (3.0, -72.0, 5.0), 90000, 50, LED), spot((14.0, 104.0, 10.0), (3.0, 74.0, 5.0), 45000, 60, LED),
                      spot((16.0, -84.0, 44.0), (1.4, -63.0, 31.0), 30000, 50, LED)],
     # inner face toward the road, the outer face, and each pier face from its own uplight fixture plus a street flood
     "oldtown_gate": [area((6.0, 0, 9.0), (15.0, 0, 9.0), 2000, (3.5, 14.0), STREET), area((28.0, 0, 9.0), (18.2, 0, 9.0), 1000, (3.5, 14.0), STREET)]
@@ -97,15 +111,26 @@ def remove(objects):
 LUMA = np.array([0.299, 0.587, 0.114])   # as build.emissive_stats and the bloom pass weigh it
 
 
-def combine(spill, work, albedo, emit):
+def combine(spill, work, albedo, emit, ceiling=LIT_MAX):
     """Lamp spill plus albedo x work light, the sum's luminance rolled off toward LIT_MAX with its hue kept: unchanged
     up to KNEE x LIT_MAX, then an exponential shoulder that never reaches the ceiling, so a hot spot keeps the relief
     of its texels instead of clipping to one flat level. Lamp texels (emit above 0) take no work light: their own
     level is set in code and must keep its margin under the bloom."""
     total = spill + albedo * work * (emit @ LUMA <= 0)[..., None]
-    lum, knee = total @ LUMA, KNEE * LIT_MAX
-    rolled = np.where(lum > knee, knee + (LIT_MAX - knee) * (1 - np.exp(-(lum - knee) / (LIT_MAX - knee))), lum)
+    lum, knee = total @ LUMA, KNEE * ceiling
+    rolled = np.where(lum > knee, knee + (ceiling - knee) * (1 - np.exp(-(lum - knee) / (ceiling - knee))), lum)
     return total * (rolled / np.maximum(lum, 1e-9))[..., None]
+
+
+def fill(spill, work, albedo, emit, pieces):
+    """The FILL pieces' work light: `pieces` = (texel mask, ceiling) each. A texel changes only inside its piece's
+    mask and only where the capped sum is brighter than the lamp spill it already had."""
+    out = spill.copy()
+    for mask, ceiling in pieces:
+        lit = combine(spill, work, albedo, emit, ceiling)
+        gain = mask & (lit @ LUMA > spill @ LUMA)
+        out[gain] = lit[gain]
+    return out
 
 
 # barycentric sample points inside a triangle (a 4 x 4 lattice folded into it)
@@ -133,7 +158,10 @@ def measure(mesh, emissive, size, names, game_strength, albedo):
     and stay dark on purpose. `relief_light` and `relief_dark`: the emissive's local contrast over the base colour's
     (`albedo`, linear, at the emissive's size) on the top quarter and the bottom half of the albedo: how much of the
     texture's corrugation and plating the night light keeps on the light and the dark paints. `lit_end`: `lit` on the
-    faces turned fore or aft (normal within 60 degrees of +-y; a ship's transom and funnel ends), when a material has any."""
+    faces turned fore or aft (normal within 60 degrees of +-y; a ship's transom and funnel ends), when a material has any.
+    `lit_upper`: `lit` on the part of the material above half the piece's height, any facing (a sculpture's upper
+    blades, a funnel), when it has any. `lit_light`: `lit` on the wall texels of the lightest quarter of the albedo
+    (the white boxes), to read against the ceiling."""
     tris = len(mesh.polygons)
     get = lambda key, kind=np.int32: (lambda a: (mesh.attributes[key].data.foreach_get("value", a), a)[1])(np.zeros(tris, kind))
     keep = (get("swatch") == 0) & (get("lod_lo") == 0)
@@ -158,7 +186,10 @@ def measure(mesh, emissive, size, names, game_strength, albedo):
     base = albedo.reshape(n, albedo.shape[0] // n, n, albedo.shape[0] // n, 3).mean(axis=(1, 3)) @ LUMA
     relief_e, relief_b = (_contrast(m)[texel[..., 1], texel[..., 0]] for m in (emissive @ LUMA, base))
     tone = base[texel[..., 1], texel[..., 0]]
-    median = lambda faces: round(_weighted_median(lum[faces].ravel(), np.repeat(area[faces] / len(_BARY), len(_BARY))), 4)
+    weight = np.repeat(area[:, None] / len(_BARY), len(_BARY), axis=1)
+    median = lambda faces, pick=slice(None): round(_weighted_median(lum[faces].ravel()[pick], weight[faces].ravel()[pick]), 4)
+    z = p[:, :1, 2] + _BARY[None, :, 0] * (p[:, 1:2, 2] - p[:, :1, 2]) + _BARY[None, :, 1] * (p[:, 2:3, 2] - p[:, :1, 2])
+    upper = z >= 0.5 * p[..., 2].max()
     out = {}
     for index in sorted(set(material[keep].tolist())):
         on = keep & (material == index)
@@ -166,7 +197,10 @@ def measure(mesh, emissive, size, names, game_strength, albedo):
         t = tone[walls].ravel()
         relief = lambda pick: round(float(relief_e[walls].ravel()[pick].mean() / max(relief_b[walls].ravel()[pick].mean(), 1e-6)), 3)
         out[names[index]] = dict(texel_density=round(float(np.sqrt(uv_area[walls].sum() / area[walls].sum())) * size, 2),
-                                 lit=median(walls), relief_light=relief(t >= np.percentile(t, 75)), relief_dark=relief(t <= np.percentile(t, 50)))
+                                 lit=median(walls), relief_light=relief(t >= np.percentile(t, 75)), relief_dark=relief(t <= np.percentile(t, 50)),
+                                 lit_light=median(walls, t >= np.percentile(t, 75)))
         if (on & end).any():
             out[names[index]]["lit_end"] = median(on & end)
+        if upper[on].any():
+            out[names[index]]["lit_upper"] = median(on, upper[on].ravel())
     return out

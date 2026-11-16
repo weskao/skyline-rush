@@ -642,8 +642,8 @@ Measured 2026-11-16 on one desktop machine; captures and per-probe numbers in th
 - [x] Before and after captures compared by region at High under `?look=3d`, rain night: harbour road ahead mean
   luma 210 with 1.3% clipped to 104 with none; car 162 with 5.1% clipped to 72; the other sectors within capture
   noise. Not approved; see below.
-- [ ] Draw calls: not measured. The change replaces four textures and two light parameters and adds no mesh,
-  material, light or pass.
+- [x] Draw calls: measured in Step 20. The change replaces four textures and two light parameters and adds no
+  mesh, material, light or pass.
 - [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
   2026-11-16.
 - [ ] No capture of Coast, of Neon without `?look=3d`, of Ultra (8K dome) or of a phone.
@@ -687,7 +687,7 @@ Measured 2026-11-16 on one desktop machine; captures and numbers in the ignored 
   approved; see below.
 - [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
   2026-11-16. The pre-push layout gate did run on this branch's push.
-- [ ] Draw calls in a race with the relit pieces: not re-measured (structure unchanged).
+- [x] Draw calls in a race with the relit pieces: measured in Step 20 (structure unchanged).
 - [ ] Owner art approval; phone.
 
 Still wrong:
@@ -770,6 +770,268 @@ Still wrong:
 - Cloud brightness steps at two fill seams; some lamps soften to blobs.
 - The harbour's far shore is low, and its dry-night road is still the darkest on the lap.
 - Rain's horizontal irradiance rose (1.434 to 1.613).
+
+## Step 18: landmark and city kit rebuild (2026-11-16)
+
+Branch `feature/neon-landmark-polish`. It closes step 15's list except the baked light's direction. No real-time
+light, draw call, node or material is added; pivots, clear spans and footprints do not move.
+
+- **City kit towers:** a lit curtain wall in place of dark boxes with edge trim (`assets-src/neon-city/`).
+- **White containers flat, cause:** the tone curve ran on albedo times light, so the lamp spill pushed white paint
+  past the roll-off. `build.py` now tone-maps the light and multiplies the albedo afterwards. This path is shared,
+  so kit A's atlases changed and were re-pinned RED first; their white, bloom and peak stats did not move.
+- **Cargo ship:** stern and funnel floods; masts 18000 to 15000 W for the deck cargo's relief, and five hull floods
+  whose cones end under the cargo so the hull is lifted without touching it.
+- **Rail underpass:** a structural bay every 6 m on walls and ceiling (kit A).
+- **Bytes:** the GLB came out over its limit, so the occlusion-roughness slot of this asset alone takes a stronger
+  UASTC RDO (`scripts/assets/optimize-glb.mjs`). 3 959 896 to 3 849 128 bytes; the 4 000 000 limit did not move.
+- The same merge brings `develop` in. `tests/fixtures/legacy-race-replay.json` keeps `develop`'s hash for every
+  track; Neon's three are re-recorded from the merged code (the 10 km lap on `develop`'s contact rules).
+
+### Evidence
+
+Measured 2026-11-16 on one desktop machine; build logs and RED logs in the ignored `../audits/neon-landmark-polish/`.
+
+- [x] RED first, then GREEN: `tests/neon-landmarks-glb.test.js` (*the cargo ship shows its hull, stern and funnel*,
+  *the light containers keep their corrugation*, *a structural bay every 6 m*), `tests/optimize-glb-steps.test.js`,
+  `tests/neon-city-glb.test.js` and the manifest pins.
+- [x] `contract.json`: ship containers relief 0.877 to 0.951 (floor 0.95), hull `lit` 0.0557 (floor 0.055), hull
+  ends 0.0444 (floor 0.03); stack containers relief 0.972. Sectors emissive: no white texel, none over the bloom.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build` on the merge.
+- [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
+  2026-11-16.
+- [x] Draw calls on High with the rebuilt pieces, 13 probes per weather: race 332 at most in rain (underpass,
+  700 m) and 296 at night, home 259 (caps 380 and 540).
+- [x] WebGL captures looked at, night and rain: underpass 800 m (ribs and bays read), expressway 3300 m (towers
+  carry lit windows), harbour 4950 to 5450 m (containers, gantries, ship hull and deckhouse read).
+- [ ] Owner art approval; phone.
+
+Still wrong:
+
+- Dry night, harbour straight, the white bar on the player car's rear deck: fixed in Step 19.
+
+- Two guards hold by thin margins (relief 0.951 of 0.95, hull 0.0557 of 0.055): the next lighting change to the
+  ship re-measures both.
+- The baked light is the same for every yaw and ignores the runtime key direction; a fix needs a shader change.
+- The occlusion-roughness atlases carry stronger compression; not compared by eye against the old ones.
+
+## Step 19: the night key on a street axis (2026-11-16)
+
+Owner decision of 2026-11-16: turn the night key onto a street axis. It closes step 18's rear-deck glint.
+
+- **Cause, measured:** the bar is the player car's sloped rear deck mirroring the key into the chase camera. It
+  shows when the key stands 105 to 150 degrees off the heading, on either side (over the car's shoulder), under
+  about 76 degrees of elevation. Step 17's key (elevation 58.2) stood 119 degrees off the harbour heading. Step
+  18's reading ("the straight heads toward the key") had the angle wrong. A lane map at 5200 m with a probe key
+  gave 160 to 1300 px of luma >= 235 in the car box at 119 degrees and 70 to 240 at 135, and 0 to 7 at 0, 45,
+  90, 105, 150, 165 and 180. Raising the key at 119 degrees: 1486 px at 58, 165 at 65, 33 at 70, 5 at 77.
+- **Why not a diagonal key:** the lap drives all four street directions, so a diagonal key stands 135 degrees
+  off two of them and only moves the bar (measured on the west canal and plaza).
+- **Change:** `on_street_axis` (`assets-src/neon-sky/build.py`) turns night's key about the vertical onto the
+  street axis nearest its measured azimuth, a 29.1 degree turn to due east on the grid. Elevation, colour and
+  intensity are kept; `key.filled` in the manifest keeps the measured direction. The rebuild wrote every sky
+  file byte for byte as before: no texture, gain or sha256 pin changed. `src/coast-lighting.ts` takes the new
+  `sunDirection` for `night` only; Coast's four rows are untouched.
+- **Rain night is not turned.** Its key (elevation 76.7) was swept at four azimuths on every long straight, both
+  outer lanes: the car-box numbers did not move with the key, so the key is not what shows there.
+- **Prevention:** item 20 of `.claude/rules/3d-asset-pipeline.md` and the two guards below.
+
+### Evidence
+
+Measured 2026-11-16 on one desktop machine, High, 1280x720; captures, numbers and logs in the ignored
+`../audits/neon-landmark-polish/`.
+
+- [x] RED first, then GREEN: `tests/neon-lighting.test.js` (*the key light never stands over the car's shoulder on
+  a long straight*) failed on the old night row (harbour, 119.1 degrees off) and passes on the new one;
+  `tests/neon-sky-manifest.test.js` (*night's is turned onto the nearest street axis*) pins the build's rule.
+- [x] Sky rebuild: every shipped file identical; only `manifest.json` (`key`, `scriptSha256`) changed.
+- [x] Harbour, dry night, the five probes 4500 to 5450 m: car box 0 px at each (before: 1518, 1097 and 1011 at
+  4950, 5200 and 5450 m). Rain night, same probes: 0 to 26 (before 0 to 19).
+- [x] Every long straight, both outer lanes, night and rain: no white bar on the rear deck in any capture looked
+  at (north boulevard, harbour, west canal, underpass). The car's lit flank reads a little lighter at night.
+- [x] `npm run typecheck`, `node --test tests/module-size.test.js`, `npm test` and `npm run build`.
+- [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
+  2026-11-16.
+- [ ] Owner art approval of the turned key (facades, water highlights and shadows under it); phone; Medium and
+  Ultra.
+
+Still wrong:
+
+- White pixels that are not the key stay in the car box, steady across every key azimuth tried, in both
+  weathers: north boulevard (bonus rings, lane dashes and kerb lights behind the car; about 200 to 900 px
+  depending on where the rings stand) and the west canal and oldtown gate in the left lane (bollard lamps; about
+  50 to 160 px). The box measures the picture around the car, not only its paint. Not chased.
+- Rain, plaza, right lane: a probe key directly behind the car gave 126 px where the shipped key gives 2. Not
+  explained; the guard lets a key above 76.5 degrees stand anywhere.
+- The guard's numbers come from one car body (the Roadster GLB) on one machine at High; a new car body, key or
+  lap direction re-runs the lane sweep (item 20).
+- Cast shadows from the night key are too faint in the captures to read their new direction.
+- `assets-src/neon-sky/build.py` is 414 lines (400 before); asset build scripts are outside the module-size gate.
+
+## Step 20: closing audit (2026-11-16)
+
+Every "Still wrong" entry of steps 12 to 19 and every open item that is not the owner's, checked against fresh
+WebGL captures of the lap under `?look=3d` (High, 1280x720, night and rain night, 30 probes each from the grid to
+the plaza court). One state per entry:
+
+- **(a)** fixed in this step, RED test first, capture before and after;
+- **(b)** already fixed by a later step, with the capture that shows it;
+- **(c)** closed as an accepted limit, with the measured constraint beside it.
+
+Captures are observations, not approval. Captures, logs and numbers: ignored `../audits/neon-closing-audit/`
+(`before-*` at `44995607`, `after-*` at this step's head).
+
+### Fixed in this step
+
+- **The plaza sculpture on the approach** (`bc061622`). The court's near tree row and the last pavement tree stood
+  on the line from every lane to the plinth, and at the landmark kit's strength (1.5) its only lamp, the violet
+  rings, sat at a third of the bloom threshold. The near row now splays back, the pavement trees stop 40 m before
+  the court, and the sculpture has its own strength (4.5) on a copy of the kit material. No draw added. Rule item
+  21; guards `tests/neon-scenery-plan.test.js` (*the sculpture shows on the approach*) and
+  `tests/neon-scenery.test.js` (*the sculpture has its own emissive strength*).
+- **The street screen beside the car** (`922233ca`). At the city kit's strength (1.7) the screen's graphics stood
+  at 1.55x the bloom threshold over 58 m2 of lit texels; passing it on the straight after the rail tunnel
+  (1150 m) 28% of its pixels were white (30% in rain). It now has its own strength (1.2): 9% white at night and 15% in
+  rain (the box includes the HUD's white text), the picture reads violet with white graphics. No draw added. Rule item 22; guard `tests/neon-scenery.test.js` (*the
+  street screen has its own emissive strength*).
+
+### Audit table
+
+| # | Entry (step) | State | Evidence |
+| --- | --- | --- | --- |
+| 1 | Sculpture hidden until 9340 m (16) | a | `bc061622`; RED `red-sculpture.log`, GREEN `green-sculpture.log`; `14b`, `14c`, `14d` before and after, both weathers: a small violet glow at 9200 m, the lit plinth and lower blades from 9300 m, nothing in front of it at 9360 m |
+| 2 | Sculpture's upper blades stay dark steel (found here) | a, step 21 | `a5f06b60`; the blades' median runtime emissive above half height 0.0 to 0.327, under the bloom (0.54 of 0.9); RED `red-landmarks.log`, GREEN `green-landmarks.log`; `14c`, `14d`, `14e` before and after, both weathers |
+| 3 | Clock tower small from 7450 m (13, 16) | c | 228 m out it stands about 55 px of 720; it reads at 7550 m and fills the view at 7630 m (`12`, `12b`, `12c`). Only the sculpture is scaled (`tests/neon-scenery-plan.test.js`), and the tower's bearing is guarded (rule 19) |
+| 4 | Ground screen at 1050 m near-white (16) | a | `922233ca`; RED `red-screen.log`, GREEN `green-screen.log`; `03c` before and after |
+| 5 | Boulevard roofline repeats (16) | b | Step 16's rooftop screens and open plots: `02`, `02b` show towers, blocks and screens at mixed heights |
+| 6 | Underpass straight: one podium shopfront both sides (13, 16) | a, step 21 | `43a9ae67`; a round-arched arcade bay on `block_retail_a`, so each side alternates two bay shapes (0.57 / 0.257 against 0.772 / 0.789); city GLB 9 376 of 11 000 triangles, 1 144 956 of 1 300 000 bytes; RED `red-podium.log`, GREEN `green-podium.log`; `03`, `03c`, `03d` before and after, both weathers |
+| 7 | Harbour sky wedge, glow ahead, white road (12, 14) | b | Steps 14 and 17 (rules 16 and 18): harbour sky box 6 to 18 of 255 at night (`07` to `07e`), no frame with a white road |
+| 8 | Near-black containers, hull, gantry; flat ship windows (12) | b | Steps 15 and 18: colourways and corrugation read at `07`, `07c`; hull, deckhouse and lit windows at `07e` |
+| 9 | Far skyline on the dome soft at High (14, 17) | c | Sharpness 0.447 and 0.545 (the two dome sizes) against the source's 0.574 and 0.698: 78%, guard 70% (rule 17). The softness left is the panorama's own. Ultra not captured |
+| 10 | Cloud steps at two fill seams, haze columns, one repeated tower (14, 17) | c | The source holds about 72 degrees of generic skyline for 178 of wedge, so the fill repeats; feathers 1 degree at the shore, 8 in the sky; every 30-degree bin within 3x the median (rule 16). Not seen in the 30 driven-heading probes |
+| 11 | Some dome lamps soften to blobs (17) | c | The sign mask works by chroma and peak (rule 17) and takes saturated lamps with the LED text; same guard as entry 9 |
+| 12 | Harbour far shore low (17) | c | The fill's shore is 3 to 8 degrees so no landmark repeats inside one 90-degree view (rule 18) |
+| 13 | Harbour dry-night road the darkest on the lap (17) | c | Road box luma 41 to 42 on the straight; 44 to 71 everywhere else. The key's intensity (2.4532) is set by the sky's road irradiance and its direction by the street axis (rules 16, 20); the quay has bollard lamps, not street lamps (`tests/neon-scenery-plan.test.js`) |
+| 14 | View ahead over the gantries near-black (14) | c | Sky box luma 6 to 7 at 4500 and 4720 m. The kit window is 6 chunks (723 m) and the plan keeps towers out of the open sea; the dome there is the filled shore of entry 12 |
+| 15 | Wet harbour road warm tan (14) | b | Step 17's filled 1k maps: rain road reads cool grey-violet, about 74/67/74 (`07b`, `07d` rain) |
+| 16 | Harbour puddles do not reflect neon (14) | c | They mirror the lamps and the sky; the mirror pass redraws only lit pieces (one draw each, N6) and the straight's stacks are unlit. On the boulevard and the plaza the puddles carry the neon (`02`, `14` rain) |
+| 17 | Rain's horizontal irradiance 1.434 to 1.613 (17) | c | Not a defect by capture: rain road box luma 68 to 119, no over-bright frame. The 1k map's irradiance is held to the download's within 0.1% by its guard |
+| 18 | Square and plaza court on plain paving (13) | b | Step 16's stone aprons, railing and bollards on the street edge (`12c`, `14d`). Inside, the land is the one ground mesh and pavement set (N3, one draw) |
+| 19 | Sparse after the S-bends, 8288 to 8737 m (13) | b | Step 16's lantern strings along both pavements (`13b`, `13c`) |
+| 20 | Railing at the gate plinths proven by test only (16) | b | Seen: the railing stops each side of the plinths (`11`, `11b`) |
+| 21 | 4 m notch at the shortcut sign (13) | b | The sign's lane is 1.6 m; the shop row reads unbroken past it (`13`) |
+| 22 | Canal: warm-gold embankment on the dome, not the concept's violet sky (12, parity sheet) | b | Choice: kit skyline in front of the dome, not a tinted dome. A tint is a sky rebuild (every pin moves, the 1k map and the key with it) for one sector; the towers carry the concept's teal and magenta, add no texture and leave Coast alone. `08`, `08b`, `08c`: towers frame both sides |
+| 22b | A small warm patch of dome still shows through the arch (found here) | c | The same choice: closing it is the sky rebuild above, or a tower on the road's own line, where the route and its rings run |
+| 23 | Across-the-water skyline stands in the sea (12) | c | The canal is over water (N3, N7) and the land is one mesh; the far towers are sunk 6 to 66 m and turned so they read as a far waterfront (`08b`). A bank under them is a second ground mesh |
+| 24 | Cherry tree reads as opaque puffs (18) | c | The city kit is one opaque material; cut-out blossom is a second material and alpha overdraw on up to 8 trees a chunk. Seen at `02b`, `03c` |
+| 25 | Emissive 1.7 city, 1.5 landmarks not judged against the darker dome (18) | b | Judged in this step's captures: tubes, blade signs and parapet bands keep their colour in every probe looked at. The two pieces that did not are entries 1 and 4 |
+| 26 | Ship's stern and funnel dark, deckhouse bright (15) | a, step 21 | `a5f06b60`; funnel 0.023 to 0.366 (deckhouse 0.464), stern 0.0444 to 0.0888; the two thin guards now hold by 0.004 (relief 0.954 of 0.95) and 0.013 (hull 0.068 of 0.055); `07e`, `07h`, `07j` before and after |
+| 27 | Stack's white boxes flat pale grey (15) | c, step 21 | Lifted, not fixed: white relief 0.972 to 0.980 of the colour map's 1.0. More light costs relief (0.908 at +20% power, guard 0.95) and less light nears the lit floor (0.989 at lit 0.0561, floor 0.05); `07g` reads about the same before and after |
+| 28 | Baked light ignores the runtime key and yaw (15, 18) | c | Needs a shader change (step 18); baked lamps are local work lights, the key adds on top |
+| 29 | Landmark GLB headroom (15) | c | 117 424 bytes and 1 898 triangles left after step 21's re-bake (3 882 576 of 4 000 000 bytes, 30 102 of 32 000 triangles; entry 2's 29 990 was a stale count); the next landmark change still needs the budget decision |
+| 30 | Occlusion-roughness atlases, stronger compression, not compared by eye (18) | c | Not compared against the old atlases here either; no banding or blocking seen on the gantries, stacks or gate in this step's captures |
+| 31 | Rain, plaza, right lane: 126 px with a probe key behind the car (19) | c | Not reproduced with the shipped key: no white bar on the rear deck at `14` (night or rain). Still unexplained for a key that does not ship; a new key re-runs the lane sweep (rule 20) |
+| 32 | Cast shadows too faint to read (19) | c | The night key is 2.4532 and rain's 1.4737, fixed by the sky's road irradiance (rule 16); the street's own light is emissive and casts none |
+| 33 | Steady white pixels, north boulevard and west canal left lane (19) | c | Not a defect: rings, lane dashes, kerb lights and bollard lamps in the measuring box. No white bar on the car in any capture looked at |
+| 34 | Guard numbers from one car body on one machine (19) | c | Rule 20: a new car body, key or lap direction re-runs the lane sweep |
+| 35 | `assets-src/neon-sky/build.py` 414 lines (19) | c | Asset build scripts are outside the module-size gate; unchanged here |
+| 36 | Draw calls not measured (14, 15) | b | Measured here, below |
+
+### Evidence
+
+- [x] RED first, then GREEN, for both fixes (logs named in the table).
+- [x] `npm run typecheck`, `node --test tests/module-size.test.js`, `npm test` and `npm run build` after each fix.
+- [x] Draw calls on High, 30 probes per weather, the peak of six samples each: race 350 at most in rain (plaza,
+  9200 m) and 315 at night, home 257 (caps 380 and 540). Before this step: 332 and 304, home 258. No mesh or pool
+  was added: the kit draws the same 23 and 22 pools at 9200 and 9300 m before and after; the rest of the
+  difference is how many rivals and effects are in the frame.
+- [x] Captures looked at, night and rain, before and after. Not approved.
+- [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
+  2026-11-16.
+
+### Open
+
+Owner items:
+
+- Art approval of the look (every step's art approval box, and the scored parity sheet).
+- Playtest of the 10 km lap.
+- Phone, portrait and landscape (`make phone-diag`).
+- Approval to merge; until then the look stays opt-in behind `?look=3d`.
+- The owner's instruction of 2026-11-16 keeps every browser spec not run.
+
+Accepted limits (entries marked c above), by what would lift them:
+
+- A landmark kit budget decision: entry 29. Entries 2 and 26 were fixed in step 21 inside the budget; entry 27
+  is held between two guards (step 21).
+- A city kit rebuild with a second material: entry 24. Entry 6 was fixed in step 21.
+- A new panorama or sky rebuild: entries 9 to 12, 14 and 22b.
+- A shader or lighting change: entries 13, 28 and 32.
+- A second ground mesh or mirror draw against the draw-call caps: entries 16 and 23.
+- Not captured in this audit: Medium, Ultra (8K dome), Coast, and Neon without `?look=3d`. The two fixes touch
+  only the kit layer, which draws nothing outside the look.
+
+## Step 21: landmark re-light and a second podium (2026-11-16)
+
+Four of step 20's accepted limits, reopened: each is fixed inside the existing budgets or closed with the number
+that blocks it. No cap, ceiling, triangle or byte limit moved. Captures are observations, not approval. Captures,
+logs and numbers: ignored `../audits/neon-landmark-relight/` (`before-*` at `0cfa4dac`; `after-*` at `a5f06b60`;
+`podium-after-*` at `43a9ae67`; High, 1280x720, night and rain night, HUD hidden).
+
+- **Entry 2, sculpture blades (`a5f06b60`).** The piece's only baked light was its rings' spill, which ended under
+  the fan's upper half. Six violet uplights at the plinth are baked into the sculpture's own texels up to a stored
+  ceiling (`FILL`, `assets-src/neon-landmarks/build/lighting.py`): ceiling 0.12 x the piece's strength 4.5 = 0.54,
+  under the bloom threshold 0.9. Median runtime emissive above half height 0.0 to 0.327 (whole piece 0.140, light
+  paint 0.534). A first pass at 0.64 read milky in capture and was retuned. `14c`, `14d`, `14e`: the blades read
+  violet with their facets from about 100 m, in both weathers; before, dark steel over a lit base.
+- **Entry 26, ship (`a5f06b60`).** The funnel was hull navy beside a white deckhouse (0.023 against 0.464): it takes
+  the crane's light paint, and a stern flood lifts the hull end. Funnel 0.366, stern 0.0444 to 0.0888, hull 0.0557
+  to 0.068 (guard 0.055), ship containers' relief 0.951 to 0.954 (guard 0.95; 0.950 to 0.954 across 13 500 to
+  35 000 W, so the margin is structural). `07e`, `07h`: the funnel is a light block over the deckhouse and the hull
+  end reads blue; `07j`: the hull side a little brighter.
+- **Entry 27, stack's white boxes (`a5f06b60`): not fixed, closed on two guards.** White relief 0.972 to 0.980 of
+  the colour map's 1.0, lit 0.0603 to 0.0589 (floor 0.05). More light flattens the white: 0.908 at +20% power,
+  under the 0.95 guard. Less light restores it only as the stack goes dark: 0.989 at lit 0.0561. `07g` reads about
+  the same before and after; the corrugation shows in both.
+- **Confinement.** 976 153 emissive texels of the first atlas changed: 244 139 on the sculpture's triangles,
+  732 014 in gutters, none on another piece's triangles or within 4 texels of one. A zero-power bake reproduced
+  every committed texture bit for bit. Landmark GLB 3 882 576 of 4 000 000 bytes, 30 102 of 32 000 triangles,
+  30 draws. Rule item 23.
+- **Entry 6, podium (`43a9ae67`).** Both podium cells came from one painter: one flat-headed glazed shopfront in
+  two colours. A third 12 m shopfront does not fit the city atlas (98.2% full; a 768 x 288 cell overflows by
+  28 px), a 4 m bay does: `arcade()` paints a round-arched bay with a fanlight and a neon arch for
+  `block_retail_a`, in the spare width of a row. build.py measures each podium's bay shape (share of the run that
+  is opening at 1.8 m and at 3.2 m): 0.772 / 0.789 for the glazed fronts, 0.57 / 0.257 for the arcade. City GLB
+  1 104 960 to 1 144 956 of 1 300 000 bytes, 9 328 to 9 376 of 11 000 triangles (the block's podium is cut every
+  4 m: 16 more per LOD, 434 / 122 / 106 of 550 / 150 / 120), 47 draws. The painter takes no random numbers, so
+  every reviewed cell is painted as before; the atlas packing, and with it all four texture files, moved. `03`,
+  `03c`, `03d`: a row of warm arches with pink outlines alternates with the violet glazed fronts on both sides.
+  Rule item 24.
+
+### Evidence
+
+- [x] RED first, then GREEN. Landmarks: 3 of 18 fail on the old contract and atlas, then 51 of 51 with the
+  manifest, scenery and parity suites. Podium: 1 of 27 fail on the old cells (*three store_glass-shaped podiums in
+  a row*), then 70 of 70.
+- [x] `npm run typecheck`, `node --test tests/module-size.test.js` (3 of 3), `npm test` (3264 pass, 0 fail,
+  3 skipped) and `npm run build` at `43a9ae67`.
+- [x] Draw calls on High, the peak of six samples at this step's probes, before and after: night home 256 to 258,
+  the straight 164 to 170, harbour 156 to 162, sculpture 190 to 191; rain home 257 to 258, the straight 187 to 192,
+  harbour 169 to 174, sculpture 210 to 213 (caps 540 and 380). Within sample noise: no mesh, pool or material was
+  added. Step 20's 30-probe run was not repeated.
+- [x] Captures looked at, night and rain, before and after. Not approved.
+- [ ] Browser specs: not run (owner instruction of 2026-11-16).
+- [ ] Not captured: Medium, Ultra, the plaza and boulevard plots that also use `block_retail_a`, and LOD 1 and 2 of
+  the arcade up close.
+
+## Step 22: owner decisions at close (2026-11-16)
+
+- [x] Merge into `develop`: approved by the owner on 2026-11-16. The look stays opt-in behind `?look=3d`.
+- [ ] Owner art approval: deferred by the owner as a follow-up that does not block closing the track. Not approved.
+- [ ] Owner playtest of the 10 km lap, and the phone measurement in portrait and landscape (`make phone-diag`):
+  deferred by the owner as follow-ups.
+- [ ] Medium, Ultra, the other selectable cars, the default look compared with `develop`, and shader compiles after
+  GO: not measured, on the owner's instruction (no browser runs). Not verified.
+- Accepted limits carried forward unchanged: Steps 20 and 21.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 

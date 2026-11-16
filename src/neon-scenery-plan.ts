@@ -181,7 +181,7 @@ function furniture({ r, put, tile, row }: Chunk, side: number, facing: number): 
   });
   row(3, (lap, sector, i) => { // trees between the lamps; one per chunk in the narrow shop streets, none under the lanterns
     const at = lap + NEON_CHUNK_METRES / 6;
-    if (onWater(sector) || sector === 'underpass' || (side < 0 && within(lapOf(at), COURT))) return;
+    if (onWater(sector) || sector === 'underpass' || (side < 0 && within(lapOf(at), [COURT[0] - 40, COURT[1]]))) return; // nor on the last 40 m of the sightline to the sculpture
     if (sector === 'market') { if (i === 1) put('cherry_tree', at, side * 15, r() * Math.PI * 2); return; }
     const yaw = r() * Math.PI * 2; // drawn for every plot, so thinning oldtown's trees never reshuffles what follows in the chunk
     if (sector !== 'oldtown') put('cherry_tree', at, side * 18.5, yaw);
@@ -235,12 +235,14 @@ function landmarks({ put, row, every, once }: Chunk): void {
   every(2869, 5988, 36, lap => put('expressway_pier', lap, 0, 0)); // under the expressway and the harbour causeway
   once(6500, () => put('canal_arch', 6500, 0, 0));
   // The sculpture's court, the finale of the lap: three glass towers close it behind the sculpture, the middle one
-  // set back, a screen in each gap between them and a row of trees down each side.
+  // set back, a screen in each gap between them and a row of trees each side.
   once(9400, () => put('plaza_sculpture', 9400, -30, 0, 0, 1.5)); // half again its modelled 15 m: it closes the lap
   for (const [from, to] of APRONS) every(from + 6, to, 12, lap => put('canal_bank', lap, APRON_LINE, 0));
   for (const d of [-38, 0, 38]) once(9400 + d, () => put('tower_glass_a', 9400 + d, -(d ? 46 : 54) - FRONT.tower_glass_a, HALF_PI));
   for (const d of [-19, 19]) once(9400 + d, () => put('billboard_a', 9400 + d, -46, HALF_PI - .35));
-  for (const d of [-27, 27]) once(9400 + d, () => { for (const offset of [-20, -31, -42]) put('cherry_tree', 9400 + d, offset, d + offset); });
+  once(9427, () => { for (const offset of [-20, -31, -42]) put('cherry_tree', 9427, offset, 27 + offset); });
+  // The near row splays back from the street, clear of every lane's sightline to the plinth from 200 m out.
+  for (const [lap, offset] of [[9346, -31], [9360, -36], [9373, -40]] as const) once(lap, () => put('cherry_tree', lap, offset, lap + offset));
   for (const lap of [150, 330]) once(lap, () => put('boulevard_footbridge', lap, 0, 0));
   // The harbour: gantries straddling the road, booms over the sea on the left (yaw heading + 180), the yard's stacks
   // turned end for end, the ship under the last boom.
