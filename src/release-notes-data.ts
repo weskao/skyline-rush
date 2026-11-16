@@ -31,6 +31,86 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
           en: 'Flip steering mid-drift to swing the other way without losing it, corners no longer push a drifting car wide, and the slide is quicker.',
           'zh-TW': '漂移中可直接反打方向切換邊，漂移不會中斷；彎道不再把漂移中的車推向外側，側滑也更快。'
         }
+      },
+      {
+        id: 'drift-tiers', kind: 'new', image: null,
+        title: { en: 'Drifts charge NITRO in three stages', 'zh-TW': '漂移分三段累積 NITRO' },
+        description: {
+          en: 'Hold a drift longer to earn NITRO at each of three stages. The car glows a new colour at every stage, and your tyres leave skid marks.',
+          'zh-TW': '漂移撐得越久，三個階段都能各自累積 NITRO；每到一段車身就換色發光，輪胎也會在路面留下胎痕。'
+        }
+      },
+      {
+        id: 'nitro-chain', kind: 'new', image: null,
+        title: { en: 'Chain NITRO for a stronger burst', 'zh-TW': '連發 NITRO 推力更強' },
+        description: {
+          en: 'Press NITRO again while it burns to add a full charge. Each chained charge pushes harder, up to ×3, and rivals chain theirs too.',
+          'zh-TW': 'NITRO 噴發中再按一次就多加一整格，連發越多推力越強，最高 ×3；對手也會連發。'
+        }
+      },
+      {
+        id: 'pickups-3d', kind: 'new', image: null,
+        title: { en: 'Pickups you can see and feel', 'zh-TW': '補給品更立體、更有感' },
+        description: {
+          en: 'Pickups now spin on the road as 3D models, each with its own burst and sound. The fuel bar flashes what you gained, and supported phones buzz lightly.',
+          'zh-TW': '補給品變成在路面旋轉的 3D 模型，各有專屬特效與音效；油量條會閃出補充量，支援的手機還會輕震。'
+        }
+      },
+      {
+        id: 'race-onboarding', kind: 'new', image: null,
+        title: { en: 'Practice first, or jump straight in', 'zh-TW': '先練習，或直接開跑' },
+        description: {
+          en: 'Your first Start asks whether to practise or race now. Controls are grouped into steering, touch layout and keyboard so they are easier to find.',
+          'zh-TW': '第一次按開始時，可選擇先練習或直接比賽；操作設定分成轉向、觸控配置與鍵盤三組，更好找。'
+        }
+      },
+      {
+        id: 'halfway', kind: 'new', image: null,
+        title: { en: 'A halfway call and a map that shows progress', 'zh-TW': '半程提示，地圖顯示進度' },
+        description: {
+          en: 'Reach the middle of a race to hear a chime and see the distance left. The route map fills in as you drive, and on landscape phones it sits top-right.',
+          'zh-TW': '跑到半程會響起提示音並顯示剩餘距離；路線地圖會隨你前進填色，手機橫放時移到右上角。'
+        }
+      },
+      {
+        id: 'race-camera', kind: 'improvement', image: null,
+        title: { en: 'A closer, punchier race camera', 'zh-TW': '更貼近、更有衝擊感的鏡頭' },
+        description: {
+          en: 'The chase view sits closer and swings into drifts. NITRO and BOOST hit with a camera punch and a bigger flame, and every race starts from behind the car.',
+          'zh-TW': '追車視角更貼近，漂移時會跟著擺動；NITRO 與 BOOST 啟動時鏡頭更有衝擊感、火焰更大，每場比賽都從車後視角開始。'
+        }
+      },
+      {
+        id: 'classic-corners', kind: 'improvement', image: null,
+        title: { en: 'New corners and more rings on classic tracks', 'zh-TW': '經典賽道新彎道、更多圈' },
+        description: {
+          en: 'Coast, Canyon Skyway and Aurora Pass get their own corners, Sky Spiral gains wide sweeping bends, and the first five tracks carry 40% more rings and pickups.',
+          'zh-TW': '海岸、峽谷天道與極光山道有了各自的彎道，天空螺旋多了大弧度彎，前五條賽道的圈與補給品也多了四成。'
+        }
+      },
+      {
+        id: 'neon-lap', kind: 'improvement', image: null,
+        title: { en: 'Neon Downtown is one long 10 km lap', 'zh-TW': '霓虹市區變成 10 公里長圈' },
+        description: {
+          en: 'The city course now runs one big lap through eight districts. Tracks with a new layout keep a fresh set of best times.',
+          'zh-TW': '城市賽道改為穿過八個街區的一大圈。換了新路線的賽道會重新記錄最佳成績。'
+        }
+      },
+      {
+        id: 'track-cards', kind: 'improvement', image: null,
+        title: { en: 'Illustrated cards for the classic tracks', 'zh-TW': '經典賽道換上插畫卡片' },
+        description: {
+          en: 'Each of the ten classic tracks now has its own illustration on the home screen.',
+          'zh-TW': '十條經典賽道在首頁都有了專屬插畫。'
+        }
+      },
+      {
+        id: 'smoother-traffic', kind: 'fix', image: null,
+        title: { en: 'Smoother racing in heavy traffic', 'zh-TW': '車多時跑起來更順' },
+        description: {
+          en: 'Busy roads run more smoothly, and the music now starts before the track finishes loading.',
+          'zh-TW': '車流多的路段更流暢，音樂也會在賽道載入完成前就開始播放。'
+        }
       }
     ]
   },
@@ -292,72 +372,6 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         id: 'iphone-magnifier', kind: 'fix', image: null,
         title: { en: 'No more magnifier on iPhone long-presses', 'zh-TW': 'iPhone 長按不再跳出放大鏡' },
         description: { en: 'Holding the screen or a touch button on iPhone no longer pops up the magnifier, so steering, boosting and braking are never interrupted.', 'zh-TW': '在 iPhone 上按住畫面或觸控按鈕時，不會再跳出放大鏡，轉向、加速和煞車都不會被打斷。' }
-      }
-    ]
-  },
-  {
-    version: '0.28.0', date: '2026-10-31', image: null,
-    highlights: [
-      {
-        id: 'endless-every-road', kind: 'new', image: null,
-        title: { en: 'Endless Highway on every road', 'zh-TW': '無盡公路，每條賽道都能跑' },
-        description: {
-          en: 'Keep driving past the old finish line on all ten roads. New scenery keeps appearing ahead of you, and Sky Spiral\'s loops simply carry on.',
-          'zh-TW': '十條賽道都能一路開過原本的終點線，前方的風景會不斷出現，天空螺旋的環道也會一圈接著一圈延伸下去。'
-        }
-      },
-      {
-        id: 'sky-spiral-landmarks', kind: 'improvement', image: null,
-        title: { en: 'Smoother Sky Spiral scenery', 'zh-TW': '天空螺旋的風景更自然' },
-        description: {
-          en: 'Sky Spiral landmarks now fade in softly instead of popping into view, and look the same every time the spiral loops around.',
-          'zh-TW': '天空螺旋的地標會柔和浮現，不再突然冒出來；螺旋繞到下一圈時，看起來也始終一致。'
-        }
-      },
-      {
-        id: 'barrel-roll-wake', kind: 'new', image: null,
-        title: { en: 'Barrel rolls leave a swirling trail', 'zh-TW': '翻滾時拖出旋轉氣流' },
-        description: {
-          en: 'Pull off a barrel roll and a swirl of air trails behind your car, so every roll looks as dramatic as it feels.',
-          'zh-TW': '做出翻滾時，車後會拖出一道旋轉的氣流，讓每一次翻滾都更有看頭。'
-        }
-      },
-      {
-        id: 'iphone-touch-release', kind: 'fix', image: null,
-        title: { en: 'iPhone touch controls let go reliably', 'zh-TW': 'iPhone 觸控按鈕能確實放開' },
-        description: {
-          en: 'On iPhone, lifting your finger now reliably releases a touch control, so your car no longer keeps steering or accelerating by itself.',
-          'zh-TW': '在 iPhone 上，手指一離開螢幕，觸控按鈕就會確實放開，車子不會再自己持續轉向或加速。'
-        }
-      }
-    ]
-  },
-  {
-    version: '0.27.0', date: '2026-10-30', image: null,
-    highlights: [
-      {
-        id: 'free-drive-road-end', kind: 'fix', image: null,
-        title: { en: 'Free Drive now ends at the road end', 'zh-TW': '自由駕駛開到路的盡頭就會結束' },
-        description: {
-          en: 'You no longer get stuck at the end of the road. Free Drive now finishes there and shows your time. It\'s just practice, so it won\'t count toward your records.',
-          'zh-TW': '再也不會卡在路的盡頭。自由駕駛開到終點就會結束並顯示你的時間，這只是練習，不會計入你的紀錄。'
-        }
-      },
-      {
-        id: 'no-frozen-screen', kind: 'fix', image: null,
-        title: { en: 'The game keeps going after a hiccup', 'zh-TW': '遇到小狀況，遊戲也不會當住' },
-        description: {
-          en: 'If something glitches, the screen keeps moving and the buttons keep working, so you can tap Race again without reloading the page.',
-          'zh-TW': '就算偶爾出了點狀況，畫面還是會繼續動、按鈕也都能按，不用重新整理頁面，就能直接點「再跑一次」。'
-        }
-      },
-      {
-        id: 'whats-new-enlarge', kind: 'improvement', image: null,
-        title: { en: 'See What\'s New pictures in full', 'zh-TW': '「新功能」的圖片可以完整放大看' },
-        description: {
-          en: 'Pictures and clips in What\'s New can now be opened bigger and shown in full, on any screen. Tap or click anywhere, or press Esc, to close.',
-          'zh-TW': '「新功能」裡的圖片和影片可以點開放大，完整呈現不被裁切，在各種螢幕上都能用。點畫面任何地方或按 Esc 就能關閉。'
-        }
       }
     ]
   },
