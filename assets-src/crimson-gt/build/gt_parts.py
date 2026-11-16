@@ -221,7 +221,8 @@ def build_car(c, mats):
         part("hood_vent_" + tag, c, *recess, G["gt_trim"])
         part("hood_vent_slats_" + tag, c, *slats, P)
     for side, tag in ((-1, "l"), (1, "r")):
-        part("side_intake_" + tag, c, *patch(.15, 1.03, lambda z: .50 - .22 * (z - .15) / .88, lambda z: .51 + .12 * (z - .15) / .88, side=side), G["gt_trim"])
+        # 12 rows: at 4 the panel chords cut under the convex flank and the body showed through its top by 15 mm.
+        part("side_intake_" + tag, c, *patch(.15, 1.03, lambda z: .50 - .22 * (z - .15) / .88, lambda z: .51 + .12 * (z - .15) / .88, ny=12, side=side), G["gt_trim"])
         part("corner_intake_" + tag, c, *patch(-2.16, -1.86, lambda z: SILL(z) + .015, lambda z: SILL(z) + .025 + .17 * (-1.86 - z) / .30, ny=2, side=side), G["gt_trim"])
         part("rocker_" + tag, c, *patch(-.92, 1.02, lambda z: .168, lambda z: .255, ny=2, proud=.012, side=side), G["gt_carbon"])
         # Mirror pod on a short stalk at the A-pillar base (front three-quarter panel).

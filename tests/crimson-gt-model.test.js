@@ -127,45 +127,113 @@ for (const lod of ['high', 'low']) {
 // (assets-src/crimson-gt/bake.py GROOVES). Node cannot transcode the shipped KTX2, so every flank texel the shipped
 // body's UVs cover is read from the baked source atlas that was encoded into it.
 const NORMAL_ATLAS = new URL('../assets-src/crimson-gt/textures/crimson_gt_normal.png', import.meta.url);
+const loadGlb = async lod => {
+  const { scene } = await parseGlb(readFileSync(new URL(`../public/${lod === 'low' ? entry.lods[0].url : entry.url}`, import.meta.url)));
+  scene.updateMatrixWorld(true);
+  return scene;
+};
+/** Calls visit(tilt degrees, world point, face centre) for every atlas texel under a face of `mesh` that passes keep. */
+function atlasTexels({ width, height, pixels }, mesh, keep, visit) {
+  const pos = mesh.geometry.attributes.position, uv = mesh.geometry.attributes.uv, index = mesh.geometry.index;
+  const corner = (i) => new Vector3().fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+  for (let t = 0; t < index.count; t += 3) {
+    const ids = [0, 1, 2].map(k => index.getX(t + k));
+    const [a, b, c] = ids.map(corner);
+    const centre = a.clone().add(b).add(c).divideScalar(3);
+    const normal = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
+    if (!keep(centre, normal)) continue;
+    const [p, q, r] = ids.map(i => [uv.getX(i) * width, uv.getY(i) * height]);
+    const d = (q[1] - r[1]) * (p[0] - r[0]) + (r[0] - q[0]) * (p[1] - r[1]);
+    if (Math.abs(d) < 1e-9) continue;
+    for (let y = Math.floor(Math.min(p[1], q[1], r[1])); y <= Math.max(p[1], q[1], r[1]); y++) {
+      for (let x = Math.floor(Math.min(p[0], q[0], r[0])); x <= Math.max(p[0], q[0], r[0]); x++) {
+        const l1 = ((q[1] - r[1]) * (x + 0.5 - r[0]) + (r[0] - q[0]) * (y + 0.5 - r[1])) / d;
+        const l2 = ((r[1] - p[1]) * (x + 0.5 - r[0]) + (p[0] - r[0]) * (y + 0.5 - r[1])) / d;
+        if (l1 < 0 || l2 < 0 || l1 + l2 > 1 || x >= width || y >= height) continue;
+        const at = 4 * (y * width + x), n = [0, 1, 2].map(k => pixels[at + k] / 255 * 2 - 1);
+        const tilt = Math.acos(Math.min(1, n[2] / Math.hypot(...n))) * 180 / Math.PI;
+        const at3 = v => l1 * a[v] + l2 * b[v] + (1 - l1 - l2) * c[v];
+        visit(tilt, { x: at3('x'), y: at3('y'), z: at3('z') }, centre);
+      }
+    }
+  }
+}
 for (const lod of ['high', 'low']) {
   test(`crimson-gt ${lod} GLB: the body flanks carry no crack in the baked coat normal, left or right`, async () => {
-    const { width, height, pixels } = decodePngRgba(readFileSync(NORMAL_ATLAS), { allowRgb: true });
-    const { scene } = await parseGlb(readFileSync(new URL(`../public/${lod === 'low' ? entry.lods[0].url : entry.url}`, import.meta.url)));
-    scene.updateMatrixWorld(true);
-    const body = scene.getObjectByName('body');
-    const pos = body.geometry.attributes.position, uv = body.geometry.attributes.uv, index = body.geometry.index;
-    const corner = (i) => new Vector3().fromBufferAttribute(pos, i).applyMatrix4(body.matrixWorld);
+    const atlas = decodePngRgba(readFileSync(NORMAL_ATLAS), { allowRgb: true });
+    const body = (await loadGlb(lod)).getObjectByName('body');
     // A crack is a line: a texel tilted over 25 degrees is bake noise at the scallop fold, such texels on 3+ rows (2 cm
     // apart) of one 2 cm z band on one side are a cut. The old door grooves reached 6 rows; the clean bake reaches 1.
     const covered = { '-1': 0, '1': 0 }, bands = new Map();
-    for (let t = 0; t < index.count; t += 3) {
-      const ids = [0, 1, 2].map(k => index.getX(t + k));
-      const [a, b, c] = ids.map(corner);
-      const centre = a.clone().add(b).add(c).divideScalar(3);
-      const normal = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
-      // Flank between the arches, sill to shoulder; the bevelled arch lips and sill edge are not panel surface.
-      if (Math.abs(centre.x) < 0.85 || centre.y < 0.25 || centre.y > 0.74 || centre.z < -0.9 || centre.z > 0.95 || Math.abs(normal.x) < 0.5) continue;
-      const [p, q, r] = ids.map(i => [uv.getX(i) * width, uv.getY(i) * height]);
-      const d = (q[1] - r[1]) * (p[0] - r[0]) + (r[0] - q[0]) * (p[1] - r[1]);
-      if (Math.abs(d) < 1e-9) continue;
-      for (let y = Math.floor(Math.min(p[1], q[1], r[1])); y <= Math.max(p[1], q[1], r[1]); y++) {
-        for (let x = Math.floor(Math.min(p[0], q[0], r[0])); x <= Math.max(p[0], q[0], r[0]); x++) {
-          const l1 = ((q[1] - r[1]) * (x + 0.5 - r[0]) + (r[0] - q[0]) * (y + 0.5 - r[1])) / d;
-          const l2 = ((r[1] - p[1]) * (x + 0.5 - r[0]) + (p[0] - r[0]) * (y + 0.5 - r[1])) / d;
-          if (l1 < 0 || l2 < 0 || l1 + l2 > 1 || x >= width || y >= height) continue;
-          const at = 4 * (y * width + x), n = [0, 1, 2].map(k => pixels[at + k] / 255 * 2 - 1);
-          const tilt = Math.acos(Math.min(1, n[2] / Math.hypot(...n))) * 180 / Math.PI;
-          covered[Math.sign(centre.x)]++;
-          if (tilt <= 25) continue;
-          const at3 = v => l1 * a[v] + l2 * b[v] + (1 - l1 - l2) * c[v];
-          const band = `${centre.x > 0 ? 'right' : 'left'} z ${(Math.round(at3('z') * 50) / 50).toFixed(2)}`;
-          bands.set(band, (bands.get(band) ?? new Set()).add(Math.round(at3('y') * 50)));
-        }
-      }
-    }
+    // Flank between the arches, sill to shoulder; the bevelled arch lips and sill edge are not panel surface.
+    const flank = (centre, normal) => Math.abs(centre.x) >= 0.85 && centre.y >= 0.25 && centre.y <= 0.74 && centre.z >= -0.9 && centre.z <= 0.95 && Math.abs(normal.x) >= 0.5;
+    atlasTexels(atlas, body, flank, (tilt, point, centre) => {
+      covered[Math.sign(centre.x)]++;
+      if (tilt <= 25) return;
+      const band = `${centre.x > 0 ? 'right' : 'left'} z ${(Math.round(point.z * 50) / 50).toFixed(2)}`;
+      bands.set(band, (bands.get(band) ?? new Set()).add(Math.round(point.y * 50)));
+    });
     assert.ok(covered['-1'] > 3000 && covered['1'] > 3000, `both flanks sampled: ${JSON.stringify(covered)}`);
     const cracks = [...bands].filter(([, rows]) => rows.size >= 3).map(([band, rows]) => `${band}: ${rows.size} rows`);
     assert.deepEqual(cracks, [], 'flank z bands with texels tilted over 25 degrees on 3+ rows (a baked crack)');
+  });
+}
+
+// Owner, 2026-11-17: the highlight along the flank scallop stepped and wavered. The scallop was one section point, so
+// it lofted into a one-edge fold that went from 14 to 68 degrees along the door: it crossed the bake bevel's angle
+// limit (30, assets-src/roadster2/bake.py) and the 50 degree sharp split mid-door, switching how the crease shades.
+// The cove is now sampled (gt_body.py COVE_LO/COVE_UP), so no visible flank fold reaches the limit. Its deepest part,
+// under the side intake, still meets it; the intake laid there is no longer bevel-baked (crimson-gt/bake.py BEVELLED),
+// or it bakes the same on-off steps as blocks and teeth into the trim.
+const BEVEL_LIMIT = 30;
+// The side intake's footprint (assets-src/crimson-gt/build/gt_parts.py side_intake_), 1 cm margin.
+const underIntake = c => c.z > 0.14 && c.z < 1.04 && c.y > 0.49 - 0.22 * (c.z - 0.15) / 0.88 && c.y < 0.52 + 0.12 * (c.z - 0.15) / 0.88;
+/** Largest dihedral (degrees) between faces of `mesh` that both pass `keep`, positions welded so split normals join. */
+function maxFold(mesh, keep) {
+  const pos = mesh.geometry.attributes.position, index = mesh.geometry.index, ids = new Map(), edges = new Map();
+  const at = i => new Vector3().fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+  const weld = v => { const key = v.toArray().map(c => Math.round(c * 1e4)).join(); if (!ids.has(key)) ids.set(key, ids.size); return ids.get(key); };
+  let worst = { angle: 0, at: null };
+  for (let t = 0; t < index.count; t += 3) {
+    const v = [0, 1, 2].map(k => at(index.getX(t + k)));
+    const normal = v[1].clone().sub(v[0]).cross(v[2].clone().sub(v[0]));
+    if (normal.lengthSq() < 1e-14) continue;
+    normal.normalize();
+    const centre = v[0].clone().add(v[1]).add(v[2]).divideScalar(3);
+    if (!keep(centre, normal)) continue;
+    const w = v.map(weld);
+    for (let k = 0; k < 3; k++) {
+      const key = [w[k], w[(k + 1) % 3]].sort((a, b) => a - b).join();
+      const other = edges.get(key);
+      if (!other) { edges.set(key, normal); continue; }
+      const angle = Math.acos(Math.max(-1, Math.min(1, other.dot(normal)))) * 180 / Math.PI;
+      if (angle > worst.angle) worst = { angle, at: centre.toArray().map(c => c.toFixed(2)).join(', ') };
+    }
+  }
+  return worst;
+}
+for (const lod of ['high', 'low']) {
+  test(`crimson-gt ${lod} GLB: no visible flank fold reaches the bake bevel limit, and the side intakes bake no bevel steps`, async () => {
+    const scene = await loadGlb(lod);
+    // Flank between the arches, rocker top to shoulder, outside the intake; the sill edge (y .19) and arch lips are
+    // deliberate creases.
+    const flank = (c, n) => Math.abs(c.x) > 0.85 && c.y > 0.25 && c.y < 0.74 && c.z > -0.9 && c.z < 0.95 && Math.abs(n.x) > 0.5 && !underIntake(c);
+    const fold = maxFold(scene.getObjectByName('body'), flank);
+    assert.ok(fold.angle > 0, 'flank faces found');
+    assert.ok(fold.angle < BEVEL_LIMIT, `body flank fold ${fold.angle.toFixed(1)} deg at ${fold.at}`);
+    const atlas = decodePngRgba(readFileSync(NORMAL_ATLAS), { allowRgb: true });
+    for (const name of ['side_intake_l', 'side_intake_r']) {
+      const intake = scene.getObjectByName(name);
+      assert.ok(intake, `${name} mesh`);
+      // The panel's face (its rim walls excluded): no baked bevel may tilt it.
+      let texels = 0, tilted = 0;
+      atlasTexels(atlas, intake, (c, n) => Math.abs(n.x) > 0.5, tilt => {
+        texels++;
+        if (tilt > 10) tilted++;
+      });
+      assert.ok(texels > 50, `${name} face sampled: ${texels} texels`);
+      assert.ok(tilted / texels < 0.02, `${name}: ${tilted} of ${texels} face texels tilted over 10 degrees`);
+    }
   });
 }
 

@@ -26,8 +26,10 @@ GROOVES = [
 
 # Only the panels get rounded edges. Wheels, nozzles, fans, rams and lamps are a few texels each in the atlas: their
 # bevel gradients cost 80 KB of UASTC and put the GLB over its 1.5 MB budget, for nothing visible at race distance.
+# The side intakes are left out: they lie in the deepest part of the scallop, whose folds sit right at the bevel's 30
+# degree limit, so the bevel switched on and off station by station and baked blocks and teeth into the trim.
 BEVELLED = ("body", "glass_canopy", "roof", "wing_aerofoil", "wing_endplates", "wing_pylons", "front_intake", "rear_fascia",
-            "side_intake", "corner_intake", "rocker", "mirror", "splitter", "diffuser")
+            "corner_intake", "rocker", "mirror", "splitter", "diffuser")
 
 
 def flake_layer(mats, normal):
