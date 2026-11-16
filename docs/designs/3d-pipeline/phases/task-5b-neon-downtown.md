@@ -1023,6 +1023,16 @@ logs and numbers: ignored `../audits/neon-landmark-relight/` (`before-*` at `0cf
 - [ ] Not captured: Medium, Ultra, the plaza and boulevard plots that also use `block_retail_a`, and LOD 1 and 2 of
   the arcade up close.
 
+## Step 22: owner decisions at close (2026-11-16)
+
+- [x] Merge into `develop`: approved by the owner on 2026-11-16. The look stays opt-in behind `?look=3d`.
+- [ ] Owner art approval: deferred by the owner as a follow-up that does not block closing the track. Not approved.
+- [ ] Owner playtest of the 10 km lap, and the phone measurement in portrait and landscape (`make phone-diag`):
+  deferred by the owner as follow-ups.
+- [ ] Medium, Ultra, the other selectable cars, the default look compared with `develop`, and shader compiles after
+  GO: not measured, on the owner's instruction (no browser runs). Not verified.
+- Accepted limits carried forward unchanged: Steps 20 and 21.
+
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
 - [x] Desktop Apple silicon baseline for Neon's current look: every selectable map on High and Ultra with p50/p95,
