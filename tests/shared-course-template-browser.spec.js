@@ -62,7 +62,7 @@ test('each new map shares the same AIRFLOW switch and Garage-to-Studio car pose 
     await page.locator('#garage-studio-open').click();
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'studio');
     await expect(page.locator('button[data-garage-mode="flight"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#garage-wing')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#garage-wing')).toHaveAttribute('aria-checked', 'true');
     await page.locator('#garage-studio-back').click();
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'home');
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-garage-mode', 'flight');

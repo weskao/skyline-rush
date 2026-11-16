@@ -44,7 +44,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   showroom: '3D 車輛展示間', title: '預覽工作室', open: '開啟全螢幕預覽', back: '返回車庫',
   hint: '拖曳旋轉，雙指或滾輪縮放', angles: ['車頭', '車尾', '側面', '俯視', '斜後方'], free: '自由視角', angle: '鏡頭角度', prevAngle: '上一個角度', nextAngle: '下一個角度',
   left: '向左旋轉', right: '向右旋轉', zoomIn: '放大', zoomOut: '縮小',
-  auto: '環繞', reset: '重設鏡頭', resetShort: '重設', undo: '復原車漆', viewMode: '展示姿態', ground: '平地展示', flight: '起飛展示', wing: '尾翼展開', collection: '車漆收藏',
+  auto: '環繞', reset: '重設鏡頭', resetShort: '重設', undo: '復原車漆', viewMode: '展示姿態', ground: '平地', flight: '起飛', wing: '尾翼', collection: '車漆收藏',
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? '外觀特效即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '外觀特效免費試用中：重新載入後記住此帳號最後的選擇；不代表永久擁有' : '外觀特效已開放，裝備須具備擁有權', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
   cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆',
   preview: '試看', previewing: '試看中', cars: '車款', paints: '車漆', effects: '特效', missions: '任務',
@@ -53,13 +53,14 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   showroom: '3D vehicle showroom', title: 'PREVIEW STUDIO', open: 'Open full-screen Studio', back: 'Back to Garage',
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'], free: 'Free view', angle: 'Camera angle', prevAngle: 'Previous angle', nextAngle: 'Next angle',
   left: 'Rotate left', right: 'Rotate right', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
-  auto: 'Orbit', reset: 'Reset camera', resetShort: 'Reset', undo: 'Undo paint', viewMode: 'Display pose', ground: 'Ground', flight: 'Flight', wing: 'Open wing', collection: 'Paint collection',
+  auto: 'Orbit', reset: 'Reset camera', resetShort: 'Reset', undo: 'Undo paint', viewMode: 'Display pose', ground: 'Ground', flight: 'Flight', wing: 'Wing', collection: 'Paint collection',
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Cosmetic VFX coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'Try VFX for free. Your last pick is remembered on reload for this account; no permanent ownership.' : 'Cosmetic VFX is available; equip requires ownership', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
   cosmetic: 'Appearance does not change performance', restore: 'Restore default paint',
   preview: 'Preview', previewing: 'Previewing', cars: 'Cars', paints: 'Paints', effects: 'Effects', missions: 'Missions',
   store: GARAGE_RELEASE_MODE === 'trial' ? 'Demo Store' : 'Store Preview', collectionTab: 'Collection', ready: 'ready to claim',
 });
 const angleName = computed(() => copy.value.angles[GARAGE_ANGLES.indexOf(garageStudioView.angle as typeof GARAGE_ANGLES[number])] ?? copy.value.free);
+const poseIcons = `${import.meta.env.BASE_URL}icons/garage-pose-`;
 const sectionLabel = (id: typeof section.value) => id === 'collection' ? copy.value.collectionTab : copy.value[id];
 const paintState = (id: string) => id === garageStudioView.equippedPaint ? 'equipped'
   : garageStudioView.ownedPaints.includes(id) ? 'owned' : 'locked';
@@ -81,14 +82,21 @@ const isPreviewingPaint = (id: string): boolean =>
           <p v-show="garageStudioView.page === 'studio'" class="garage-hint">{{ copy.hint }}</p>
         </div>
         <GarageEffectsToggle :locale="locale" />
-        <div class="garage-mode-controls">
-          <div class="garage-pose-controls" role="group" :aria-label="copy.viewMode">
-            <span class="garage-mode-label">{{ copy.viewMode }}</span>
-            <button type="button" data-garage-mode="ground" :aria-pressed="garageStudioView.mode === 'ground'">{{ copy.ground }}</button>
-            <button type="button" data-garage-mode="flight" :aria-pressed="garageStudioView.mode === 'flight'">{{ copy.flight }}</button>
-            <button type="button" id="garage-wing" :aria-pressed="garageStudioView.wing">{{ copy.wing }}</button>
+        <div class="garage-preview-controls">
+          <div class="garage-mode-controls">
+            <div class="garage-pose-controls" role="group" :aria-label="copy.viewMode">
+              <button type="button" data-garage-mode="ground" :aria-pressed="garageStudioView.mode === 'ground'">
+                <img :src="`${poseIcons}ground@3x.webp`" width="32" height="24" alt="" />{{ copy.ground }}
+              </button>
+              <button type="button" data-garage-mode="flight" :aria-pressed="garageStudioView.mode === 'flight'">
+                <img :src="`${poseIcons}flight@3x.webp`" width="32" height="24" alt="" />{{ copy.flight }}
+              </button>
+            </div>
+            <button type="button" id="garage-wing" role="switch" :aria-checked="garageStudioView.wing">
+              {{ copy.wing }}<span class="garage-switch-track" aria-hidden="true"></span>
+            </button>
+            <GarageLightingToggle :locale="locale" />
           </div>
-          <GarageLightingToggle :locale="locale" />
         </div>
         <nav v-show="garageStudioView.page === 'studio'" class="garage-camera-controls" :aria-label="locale === 'zh-TW' ? '鏡頭控制' : 'Camera controls'">
           <div class="garage-camera-actions">
@@ -194,11 +202,6 @@ const isPreviewingPaint = (id: string): boolean =>
 #garage-screen .garage-layout { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) clamp(272px, 27vw, 400px); gap: 8px; }
 #garage-screen .garage-visual { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 4px; }
 #garage-screen .garage-preview { flex: 1; position: relative; min-height: 110px; height: auto; margin: 0; border: 1px solid #42596c; border-radius: 12px; overflow: hidden; touch-action: none; background: #081c2e; }
-/* The home camera dock sits under the showroom on the Garage page (Studio has its own camera controls). */
-#garage-screen #showcase-camera-dock { position: static; inset: auto; flex: none; width: auto; margin: 0; padding: 4px 10px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 12px; visibility: visible; container-type: normal; } /* shrink-to-fit here: size containment would collapse it to 0 */
-#garage-screen[data-page="studio"] #showcase-camera-dock { display: none; }
-#garage-screen #showcase-camera-dock .showcase-camera-actions { width: auto; gap: 10px; }
-#garage-screen #showcase-camera-name { flex: none; width: 8.5em; } /* fixed, so the arrows stay put while stepping */
 #garage-screen #world { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
 #garage-screen .garage-hint { position: absolute; z-index: 2; bottom: 8px; left: 8px; max-width: calc(100% - 16px); margin: 0; padding: 4px 8px; border-radius: 6px; background: #071725b8; color: #c2d4e3; font-size: 11px; pointer-events: none; }
 #garage-screen .garage-camera-controls { display: flex; flex: none; gap: 6px; white-space: nowrap; }
@@ -225,15 +228,11 @@ const isPreviewingPaint = (id: string): boolean =>
   #garage-screen .garage-camera-controls { flex-direction: column; }
   #garage-screen .garage-camera-actions button { flex: 1; }
   #garage-screen .garage-camera-controls button { padding-inline: 8px; font-size: 12px; }
-  #garage-screen .garage-mode-label { display: none; }
-  #garage-screen .garage-mode-controls button { flex: 1; }
 }
 @media (max-height: 420px) and (orientation: landscape) {
   #garage-screen.garage-screen { gap: 5px; padding-block: 5px; }
   #garage-screen .garage-layout { grid-template-columns: minmax(0, 1fr) minmax(180px, 260px); gap: 8px; }
   #garage-screen .garage-hint { display: none; }
-  #garage-screen .garage-mode-label { display: none; }
-  #garage-screen .garage-mode-controls button { min-width: 80px; }
   #garage-screen .garage-camera-controls button { font-size: 11px; min-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) { #garage-screen, #garage-screen * { animation: none !important; transition: none !important; } }
@@ -248,11 +247,6 @@ const isPreviewingPaint = (id: string): boolean =>
 #garage-screen[data-page="studio"] .garage-camera-controls { background: #0a1724; border: 1px solid #24455a; border-radius: 8px; padding: 3px; }
 #garage-screen .garage-camera-controls button { background: #11283b; border-color: #35536a; color: #dfeef7; cursor: pointer; }
 #garage-screen .garage-camera-controls button[aria-pressed="true"] { background: #063e58; color: #68e4ff; border-color: #19cbf6; box-shadow: inset 0 0 0 1px #0084a5; }
-#garage-screen .garage-mode-controls { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-start; flex: none; gap: 5px; }
-#garage-screen .garage-mode-label { color: #a7c7db; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; margin-inline-end: 3px; }
-#garage-screen .garage-mode-controls button { min-height: 44px; min-width: 100px; padding: 8px 15px; border-radius: 999px; border: 1px solid #547188; color: #d5e8f6; background: #172a3e; font-weight: 800; cursor: pointer; }
-#garage-screen .garage-mode-controls button[aria-pressed="true"] { color: #041a29; background: linear-gradient(110deg, #83eeff, #49bff9); border-color: #b5f4ff; box-shadow: 0 0 17px #2fbcf258; }
-#garage-screen .garage-mode-controls button[data-garage-mode="flight"][aria-pressed="true"] { background: linear-gradient(110deg, #ffc58b, #f897dc); border-color: #ffdfbd; box-shadow: 0 0 18px #fa9c9d67; }
 #garage-screen .garage-collection { background: #0b1928; border: 1px solid #294455; border-radius: 12px; padding: 9px; }
 #garage-screen .paint-options { display: grid; gap: 8px; }
 #garage-screen .paint-options button { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 5px; min-height: 86px; padding: 7px; border-radius: 9px; background: #112436; border: 1px solid #365166; color: #e5f2fb; cursor: pointer; }
@@ -283,15 +277,7 @@ const isPreviewingPaint = (id: string): boolean =>
   #garage-screen .garage-paint-badge { font-size: 10px; }
 }
 
-/* Garage home: the pose buttons share one row with the camera dock under the showroom, so the car keeps the rest. */
-#garage-screen[data-page="home"] .garage-visual { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; align-items: center; gap: 4px 8px; }
-#garage-screen[data-page="home"] .garage-preview { grid-column: 1 / -1; align-self: stretch; }
-#garage-screen[data-page="home"] .garage-mode-controls { grid-area: 2 / 1; }
-#garage-screen[data-page="home"] #showcase-camera-dock { grid-area: 2 / 2; justify-self: end; padding: 0; }
-#garage-screen[data-page="home"] :is(.garage-mode-label, .showcase-camera-heading, .showcase-camera-dots) { display: none; }
 @media (max-width: 650px) and (orientation: portrait) {
-  #garage-screen[data-page="home"] .garage-visual { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; }
-  #garage-screen[data-page="home"] #showcase-camera-dock { grid-area: 3 / 1; justify-self: stretch; }
   #garage-screen[data-page="home"] .garage-collection { flex-basis: 34%; } /* the paint list scrolls; the car gets the height */
 }
 
@@ -302,3 +288,4 @@ const isPreviewingPaint = (id: string): boolean =>
 <style src="./garage-compact-layout.css"></style>
 
 <style src="./garage-section-layout.css"></style>
+<style src="./garage-preview-controls.css"></style>
