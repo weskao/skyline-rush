@@ -16,9 +16,19 @@ fitted to each car's own rear bound.
 
 - [x] RED → GREEN: `node --test tests/rival-drive-vfx.test.js` (7 tests; RED on the API skeleton and old world.js)
 - [x] `node --test tests/module-size.test.js` (world.js stays 994), typecheck ts/js, `npm run build`
-- [ ] `npm test`: 3305 pass, 5 fail only from the worktree's empty `node_modules` (tsc/three path tests); rerun in a full install
-- [ ] Browser spec + WebGL screenshots (desktop, phone portrait/landscape, Low/High, rival on NITRO): not run, skipped at user request
-- [ ] Frame-time / draw-call measurement (static: +0 idle, +1 call per burning rival on Medium, +2 on High): not measured
+- [x] `npm test` after `npm ci` in this worktree: 3312 pass, 0 fail (3 skipped); the 5 earlier failures were the empty `node_modules`
+- [x] Frame cost, Coast paused, every rival on BOOST within range, Apple M4 Pro (two runs each, p50/p95 ms): Low 428-429 calls before and after, p50 5.5-5.8 → 5.8-6.0 (noise); High 275-276 → 283 calls (+1 flame sprite per boosting rival), p50 9.3-10.7 → 10.4-10.9 (within run-to-run spread). No per-frame allocation: one material swap per rival.
+
+Scope change (user, 2026-11-16): BOOST now draws the NITRO flame sprite scaled down (0.65 strength, own shared
+material at 0.65 opacity, no trail) from Medium, only within `RIVAL_CUE_RANGE` (120 m, user kept 120 over the
+draft's 200), plus a one-off tail-light ignition flash (x1.4 decaying over 0.3 s) on the rising edge of `boosting`
+on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, the flash stays a single pulse.
+
+- [x] RED → GREEN: `node --test tests/rival-drive-vfx.test.js` 9 tests (4 RED on 50a623af: BOOST flame 0, no flash, no distance gate, world.js without `distance`)
+- [x] Browser guard `tests/rival-drive-vfx-browser.spec.js` (High: BOOST flame visible, smaller and dimmer than NITRO, none beyond the range; Low: none): RED with `BEFORE=HEAD` (BOOST flame false), GREEN after (2 passed)
+- [x] WebGL captures inspected, before/after (`RIVAL_VFX_EVIDENCE=<label>`, gitignored audits dir): desktop, phone portrait, phone landscape × Low/High, one rival on BOOST and one on NITRO. Low: no flame, correct. High: BOOST flame drawn and distinguishable from NITRO's
+- [ ] Visibility: on Coast's sunlit road the High BOOST flame (and the earlier NITRO flame) is faint at 16-22 m and barely noticeable on phones; the BOOST tail-light bloom reads stronger than the flame. Needs a user call on flame size/brightness (would change NITRO too)
+- [ ] Freeze/EMP tint browser regression and captures (section above): still not run
 
 # 2026-11-16 — Shared race halfway announcement
 
