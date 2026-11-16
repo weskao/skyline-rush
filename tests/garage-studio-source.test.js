@@ -19,3 +19,13 @@ test('Studio offers a wing toggle wired to the camera state and the stage', () =
   assert.match(read('garage-ui.ts'), /#garage-wing[\s\S]*toggleGarageWing/);
   assert.match(read('garage-stage.ts'), /state\.wing/);
 });
+
+test('Garage pose icons have accessible names even without visible text', () => {
+  const vue = readFileSync(new URL('../src/GaragePanel.vue', import.meta.url), 'utf8');
+  for (const pose of ['ground', 'flight']) {
+    const button = vue.match(new RegExp(`<button[^>]*data-garage-mode="${pose}"[^>]*>[\\s\\S]*?</button>`))?.[0];
+    assert.ok(button, `missing ${pose} control`);
+    assert.ok(button.includes(`:aria-label="copy.${pose}"`), `${pose} icon needs an accessible name`);
+    assert.doesNotMatch(button, /\{\{/, 'the pose button displays artwork without a visible label');
+  }
+});

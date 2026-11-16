@@ -84,12 +84,14 @@ const isPreviewingPaint = (id: string): boolean =>
         <GarageEffectsToggle :locale="locale" />
         <div class="garage-preview-controls">
           <div class="garage-mode-controls">
-            <div class="garage-pose-controls" role="group" :aria-label="copy.viewMode">
-              <button type="button" data-garage-mode="ground" :aria-pressed="garageStudioView.mode === 'ground'">
-                <img :src="`${poseIcons}ground@3x.webp`" width="32" height="24" alt="" />{{ copy.ground }}
+            <div class="garage-pose-controls" role="group" :aria-label="copy.viewMode" :data-pose="garageStudioView.mode">
+              <button type="button" data-garage-mode="ground" :aria-pressed="garageStudioView.mode === 'ground'"
+                :aria-label="copy.ground" :title="copy.ground">
+                <img :src="`${poseIcons}ground@3x.webp`" width="40" height="30" alt="" />
               </button>
-              <button type="button" data-garage-mode="flight" :aria-pressed="garageStudioView.mode === 'flight'">
-                <img :src="`${poseIcons}flight@3x.webp`" width="32" height="24" alt="" />{{ copy.flight }}
+              <button type="button" data-garage-mode="flight" :aria-pressed="garageStudioView.mode === 'flight'"
+                :aria-label="copy.flight" :title="copy.flight">
+                <img :src="`${poseIcons}flight@3x.webp`" width="40" height="30" alt="" />
               </button>
             </div>
             <button type="button" id="garage-wing" role="switch" :aria-checked="garageStudioView.wing">

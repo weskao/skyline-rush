@@ -68,7 +68,7 @@ test.describe('Garage landscape touch controls', () => {
         control.evaluate(button => {
           const { x, y, width, height } = button.getBoundingClientRect();
           const hit = button.contains(document.elementFromPoint(x + width / 2, y + height / 2));
-          return { x, y, width, height, hit, name: button.id || button.textContent.trim() };
+          return { x, y, width, height, hit, name: button.id || button.getAttribute('aria-label') };
         })));
       for (const bounds of targets) {
         expect(bounds.width).toBeGreaterThanOrEqual(44);
@@ -78,7 +78,12 @@ test.describe('Garage landscape touch controls', () => {
         expect(bounds.y + bounds.height).toBeLessThanOrEqual(height);
         expect(bounds.hit, `${bounds.name} receives pointer hits`).toBe(true);
       }
-      for (const pose of [ground, flight]) await expect(pose.locator('img')).toHaveJSProperty('naturalWidth', 96);
+      await expect(ground).toHaveAccessibleName('平地');
+      await expect(flight).toHaveAccessibleName('起飛');
+      for (const pose of [ground, flight]) {
+        await expect(pose).toHaveText('');
+        await expect(pose.locator('img')).toHaveJSProperty('naturalWidth', 120);
+      }
 
       await flight.tap();
       await expect(ground).toHaveAttribute('aria-pressed', 'false');

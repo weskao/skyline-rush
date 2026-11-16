@@ -17,10 +17,28 @@
 }
 
 #garage-screen .garage-pose-controls {
-  display: flex;
-  border-radius: 10px;
-  background: #081522;
-  box-shadow: inset 0 0 0 1px #37546a;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, 56px);
+  border-radius: 999px;
+  background: #071421;
+  box-shadow: inset 0 0 0 1px #48647c;
+}
+
+#garage-screen .garage-pose-controls::before {
+  position: absolute;
+  inset: 3px auto 3px 3px;
+  width: calc(50% - 6px);
+  border-radius: 999px;
+  background: linear-gradient(155deg, #375c73, #17354b);
+  box-shadow: inset 0 0 0 1px #8de8ff, 0 0 10px #68d9ff35;
+  transition: transform 160ms ease-out;
+  pointer-events: none;
+  content: '';
+}
+#garage-screen .garage-pose-controls[data-pose="flight"]::before { transform: translateX(calc(100% + 6px)); }
+@media (prefers-reduced-motion: reduce) {
+  #garage-screen .garage-pose-controls::before { transition: none; }
 }
 
 #garage-screen .garage-mode-controls button {
@@ -41,11 +59,12 @@
   cursor: pointer;
 }
 
-#garage-screen .garage-pose-controls button { border-color: transparent; background: transparent; }
-#garage-screen .garage-pose-controls button[aria-pressed="true"] {
-  border-color: #6bd9fa;
-  background: linear-gradient(160deg, #244257, #122b3e);
-  box-shadow: inset 0 -2px 0 #6bd9fa;
+#garage-screen .garage-pose-controls button {
+  position: relative;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
 }
 #garage-screen .garage-pose-controls img { display: block; flex: none; }
 
