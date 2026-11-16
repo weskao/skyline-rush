@@ -24,7 +24,7 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
     },
     highlights: [
       {
-        id: 'crimson-gt', kind: 'new', image: { en: 'whats-new/crimson-gt/crimson-gt.en.webp', 'zh-TW': 'whats-new/crimson-gt/crimson-gt.zh-TW.webp' },
+        id: 'crimson-gt', kind: 'new', image: 'whats-new/crimson-gt/crimson-gt.webp',
         title: {
           en: `A second car: ${GARAGE_CARS_COPY.en['car.crimson-gt']}`,
           'zh-TW': `第二款車：${GARAGE_CARS_COPY['zh-TW']['car.crimson-gt']}`,
