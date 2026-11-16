@@ -42,6 +42,11 @@ paths:
 - Clips come from `scripts/record-whats-new-clip.mjs` as lossless PNG frames at device scale 2 on a paused virtual clock, never
   Playwright `recordVideo` (a low-bitrate VP8 webm at scale 1: blurry on HiDPI screens, and CRF 20 cannot recover the lost
   detail); guard: `tests/record-whats-new-clip.test.js`. `--bot` earns NITRO by driving and `--press` scripts NITRO or drift keys. It serves the shipped `coming-soon` Garage mode, never the dev `trial` mode (wallet chips, trial VFX).
+- A track is named exactly as Home shows it: `TRACK_NAMES` in `src/i18n.ts` (en + zh-TW) is the only table, and
+  a highlight names the same tracks in both languages. A draft once wrote 霓虹市區 / 峽谷天道 / 天空螺旋 beside the
+  right English names (game: 霓虹都會 / 峽谷天橋 / 天際螺旋). `copyProblems` enforces it; guard: "track names read
+  exactly as Home shows them" in `tests/release-notes.test.js`. `TRACK_NAME_EXEMPT` lists reviewed entries written
+  before the check; a line leaves it only through a fresh review of that version, and nothing is ever added.
 - Leave out what players never need: fine tuning details, code structure or refactors, tests and
   tooling, back-office, admin or server setup, and anything sensitive (links, accounts, keys,
   unannounced plans).

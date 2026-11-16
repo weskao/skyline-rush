@@ -175,6 +175,16 @@ test('player copy stays short enough to read at a glance', () => {
   assert.match(copyProblems(entry('Faster.', '更快。'.repeat(40))).join('\n'), /too long/);
 });
 
+test('track names read exactly as Home shows them, in both languages', () => {
+  assert.deepEqual(copyProblems(entry('Neon Downtown and Canyon Skyway glow at night.', '霓虹都會與峽谷天橋入夜後更亮。')), []);
+  // Each pair once shipped in a draft: the right English name beside a Chinese name Home never shows.
+  for (const [en, zh] of [['Neon Downtown is one long lap.', '霓虹市區變成長圈。'], ['Canyon Skyway gets corners.', '峽谷天道有了彎道。'], ['Sky Spiral gains bends.', '天空螺旋多了大彎。']]) {
+    assert.match(copyProblems(entry(en, zh)).join('\n'), /track name/, zh);
+  }
+  assert.match(copyProblems(entry('A new night lap.', '霓虹都會有了夜間長圈。')).join('\n'), /track name/);
+  assert.deepEqual(copyProblems(entry('Coastal Horizon gets wind.', '海岸天際起風了。')), [], 'Coast inside Coastal Horizon is not Coast');
+});
+
 test('every stored release reads as player copy', () => {
   for (const release of RELEASE_NOTES) assert.deepEqual(copyProblems(release), [], release.version);
 });
