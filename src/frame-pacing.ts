@@ -111,3 +111,19 @@ export function drainSteps(accumulator: number, dt: number): { steps: number; ac
   while (accumulator >= SIM_STEP) { accumulator -= SIM_STEP; steps++; }
   return { steps, accumulator };
 }
+
+interface StartingGrid {
+  phase: string;
+  countdown: number;
+  standingStart?: boolean;
+  player: { speed: number };
+  rivals: { speed: number }[];
+}
+
+/** Count down in elapsed seconds while the grid is stationary. Race physics start on the next tick. */
+export function advanceCountdown(race: StartingGrid, elapsed: number): void {
+  race.countdown = Math.max(0, race.countdown - elapsed);
+  if (race.countdown >= 0.00001) return;
+  race.phase = 'racing';
+  if (!race.standingStart) for (const car of [race.player, ...race.rivals]) car.speed = Math.max(car.speed, 20);
+}

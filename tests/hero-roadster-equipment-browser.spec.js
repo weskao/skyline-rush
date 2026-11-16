@@ -5,7 +5,7 @@ import { PAINTS } from '../src/appearance.ts';
 import { defaultPaint } from '../src/car-catalog.ts';
 import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
 
-// Task 4c `?model=roadster`: every Garage paint and skin (read from the catalogs, so a new one joins automatically) shows
+// Task 4c Roadster GLB: every Garage paint and skin (read from the catalogs, so a new one joins automatically) shows
 // on the GLB car in Garage Home, Preview Studio, the Home showcase and the race, as uniforms on the existing VFX ports.
 async function prepare(page, url) {
   await page.addInitScript(() => {
@@ -68,7 +68,7 @@ async function previewEverything(page) {
 
 test('Garage Home and Preview Studio: every paint and skin on the GLB car, without new programs or geometry', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(180000));
-  const errors = await prepare(page, `${gameplayURL}?model=roadster`);
+  const errors = await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
   await modelReady(page);
   await expect.poll(() => audit(page)).not.toBeNull();
@@ -99,7 +99,7 @@ test('Garage Home and Preview Studio: every paint and skin on the GLB car, witho
 
 test('race with the heaviest skin of each category: launch flare wraps the GLB, no program compiles after GO', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(150000));
-  const errors = await prepare(page, `${gameplayURL}?model=roadster`);
+  const errors = await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   for (const id of HEAVIEST) {
@@ -139,7 +139,7 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
 });
 
 test('Home and Coming Soon showcases wear the selected paint on the GLB', async ({ gameplayPage: page, gameplayURL }) => {
-  const errors = await prepare(page, `${gameplayURL}?model=roadster`);
+  const errors = await prepare(page, gameplayURL);
   // A locked paint previewed in the Garage reverts on close, so a one-shot read raced it (make verify, 2026-11-08):
   // judge the equipped paint (a fresh profile wears its car's default: the 0-star paint, or the GT's factory red
   // under HERO_CAR=crimson-gt), polled, on both cars.
@@ -158,7 +158,7 @@ test('Home and Coming Soon showcases wear the selected paint on the GLB', async 
 test.describe('phone portrait', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   test('Garage Home flare and Studio sweep on the GLB car on a phone', async ({ gameplayPage: page, gameplayURL }) => {
-    const errors = await prepare(page, `${gameplayURL}?model=roadster`);
+    const errors = await prepare(page, gameplayURL);
     await page.locator('#garage-button').click();
     await modelReady(page);
     await page.locator(`[data-skin="${PREMIUM_FLARE}"] .garage-skin-preview-hitarea`).click();

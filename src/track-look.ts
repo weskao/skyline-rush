@@ -1,4 +1,4 @@
-// Which tracks have a `?look=3d` look (look-gate.ts) and what it is made of. The lighting plan (coast-lighting.ts)
+// Which tracks have dedicated materials and scenery at Medium and above. The lighting plan (coast-lighting.ts)
 // and the asset host (coast-assets.ts) read this entry, so a track opts in here, not with a second copy of them.
 import type { CoastEnvName } from './coast-lighting.ts';
 

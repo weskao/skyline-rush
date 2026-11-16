@@ -5,12 +5,12 @@ import { loadPaint, savePaint } from './history-achievements.ts';
 import { readStored, writeStored, type HistoryStorage } from './history-storage.ts';
 
 export type CarId = 'roadster' | 'crimson-gt';
-/** model: MODEL_MANIFEST id drawn over the procedural car, or null for the procedural Roadster itself.
+/** model: MODEL_MANIFEST id drawn over the procedural fallback.
  *  defaultPaint: a shared paint shown until the player picks one for this car.
  *  No size field: car-display-size.ts measures each GLB and shows it at the Roadster's size. */
-interface CarEntry { model: string | null; defaultPaint: string }
+interface CarEntry { model: string; defaultPaint: string }
 export const CARS: Readonly<Record<CarId, CarEntry>> = {
-  roadster: { model: null, defaultPaint: 'pearl' },
+  roadster: { model: 'roadster2', defaultPaint: 'pearl' },
   'crimson-gt': { model: 'crimson-gt', defaultPaint: 'crimson' },
 };
 export const CAR_KEY = 'skyline-rush-car';
@@ -44,7 +44,7 @@ export function saveCarPaint(car: CarId, id: string, storage?: HistoryStorage): 
 let equipped: CarId | undefined;
 /** Read once from storage, then held here: the world asks every frame (garage-model.ts). */
 export const equippedCar = (): CarId => equipped ??= loadCar();
-export const equippedCarModel = (): string | null => CARS[equippedCar()].model;
+export const equippedCarModel = (): string => CARS[equippedCar()].model;
 /** Cloud Save or a backup import wrote the car into storage (cloud-progress.ts): hold that one. */
 export const reloadCar = (storage?: HistoryStorage): CarId => equipped = loadCar(storage);
 export function equipCar(id: CarId, storage?: HistoryStorage): void {

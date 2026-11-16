@@ -1,6 +1,5 @@
 // Visual controls only: none of these values are consumed by the race simulation.
 // Index 0 is the English label; the UI translates it through the `vfx.<key>` catalog entry (vfxLabelKey).
-import { look3d } from './look-gate.ts';
 export const vfxLabelKey = (key: string): string => `vfx.${key}`;
 export const SHOWCASE_VIEWS = Object.freeze(['drive','front','rear','left','right','orbit'] as const);
 export const VFX_RANGES = {
@@ -146,7 +145,7 @@ export function createSprintVfx() {
       frame.fov = comfort || Math.abs(target - frame.fov) <= step ? target : frame.fov + Math.sign(target - frame.fov) * step;
       frame.punch = comfort ? 0 : frame.power * sprintPunch(frame.kick);
       frame.squat = comfort ? 0 : speedScale * sprintPunch(frame.kick * SQUAT_LEAD); // NITRO and BOOST squat alike
-      frame.blur = comfort ? 0 : Math.min(1, (frame.power + 0.5 * frame.punch) * tier * (input.ultra && look3d() ? 0.96 : 0.6)); // Ultra only (`?look=3d`): stronger lens radial blur, same pass
+      frame.blur = comfort ? 0 : Math.min(1, (frame.power + 0.5 * frame.punch) * tier * (input.ultra ? 0.96 : 0.6)); // Ultra: stronger lens radial blur, same pass
       return frame;
     },
   };

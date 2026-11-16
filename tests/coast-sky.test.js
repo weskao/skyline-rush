@@ -1,6 +1,6 @@
 // Coast full-scene step 1 (owner decision D3): the visible sky is each preset's Poly Haven lighting HDRI at a higher
 // resolution on a dome mesh, with the sun disc and the directional light aligned to the HDRI sun. Low, other tracks,
-// presets without an HDRI, pages without `?look=3d` and a failed load keep today's procedural sky.
+// presets without an HDRI and a failed load keep today's procedural sky.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -8,10 +8,8 @@ import * as THREE from 'three';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import { COAST_ENV_VARIANTS } from '../src/coast-lighting.ts';
 import { COAST_SUN_AZIMUTH, coastSkyFile, coastSkyWidth, coastSkyYaw, coastSunDirection, createCoastSky, createSkyDomeGeometry } from '../src/coast-sky.ts';
-import { setLook3d } from '../src/look-gate.ts';
 import { isLightSource } from '../src/wet-reflection.ts';
 
-setLook3d(true);
 const degrees = radians => radians * 180 / Math.PI;
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
@@ -143,14 +141,11 @@ test('Ultra asks for 8K; switching preset swaps the texture without a new progra
   assert.ok(r.sun.scale.x < 0.01, 'no disc in an overcast sky');
 });
 
-test('Low, other tracks, presets without an HDRI and pages without ?look=3d load nothing and keep the procedural sky', async () => {
+test('Low, other tracks, presets without an HDRI load nothing and keep the procedural sky', async () => {
   const r = rig();
   r.coastSky.update('coast', 'day', 'low', false);
   r.coastSky.update('neon', 'day', 'high', false);
   r.coastSky.update('coast', 'night', 'high', false);
-  setLook3d(false);
-  r.coastSky.update('coast', 'day', 'high', false);
-  setLook3d(true);
   assert.deepEqual(r.loads, []);
   assert.ok(r.sky.material.visible && !r.dome.visible);
 });

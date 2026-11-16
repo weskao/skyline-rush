@@ -1,4 +1,4 @@
-// Task 4 `?model=roadster`: the GLB Roadster follows the procedural car's animated parts and paint.
+// The equipped Roadster: the GLB Roadster follows the procedural car's animated parts and paint.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -58,8 +58,8 @@ async function dressed() {
   return { ...ctx, glb: name => ctx.car.getObjectByName(name) };
 }
 
-test('garageModelId: ?model=roadster opts in to the roadster2 GLB', () => {
-  assert.equal(garageModelId('?model=roadster'), 'roadster2');
+test('the old Roadster query has no model override', () => {
+  assert.equal(garageModelId('?3d=1&model=roadster&look=3d'), null);
   assert.equal(garageModelId('?model=Roadster'), null);
 });
 

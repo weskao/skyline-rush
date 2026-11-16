@@ -4,9 +4,9 @@ import { ciTimeout } from './helpers/ci.js';
 
 const TRACKS = ['coast', 'neon', 'canyon', 'aurora'];
 const variants = [
-  { name: 'desktop', track: 'neon', viewport: { width: 1280, height: 800 }, search: '' },
-  { name: 'phone portrait 3D', track: 'coast', viewport: { width: 390, height: 844 }, search: '?model=roadster&look=3d', touch: true },
-  { name: 'phone landscape 3D', track: 'aurora', viewport: { width: 844, height: 390 }, search: '?model=roadster&look=3d', touch: true },
+  { name: 'desktop', track: 'neon', viewport: { width: 1280, height: 800 } },
+  { name: 'phone portrait', track: 'coast', viewport: { width: 390, height: 844 }, touch: true },
+  { name: 'phone landscape', track: 'aurora', viewport: { width: 844, height: 390 }, touch: true },
 ];
 
 for (const variant of variants) test.describe(variant.name, () => {
@@ -21,7 +21,7 @@ for (const variant of variants) test.describe(variant.name, () => {
       localStorage.setItem('skyline-rush-unlocked', JSON.stringify(ids));
       localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'medium' }));
     }, TRACKS);
-    await page.goto(gameplayURL + variant.search);
+    await page.goto(gameplayURL);
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
 
     const id = variant.track;
@@ -33,6 +33,8 @@ for (const variant of variants) test.describe(variant.name, () => {
     if (id === 'coast') {
       await expect.poll(() => page.locator('#world').getAttribute('data-coast-scenery'), { timeout: ciTimeout(35000) }).toBe('attached');
     }
+    const modes = page.locator('#lobby-modes-toggle');
+    if (await modes.isVisible()) await modes.click();
     await page.locator('button[data-race-mode="endless"]').click();
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(40000) });

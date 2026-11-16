@@ -166,5 +166,5 @@ test('Coast is untouched by the Neon layer: its scan hides the cones, city and t
 test('world.js hands the scene, the procedural Neon parts and the route to the asset host without growing', () => {
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
   assert.match(world, /createWorldCoastAssets\(renderer, \{ scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, replaced: \[classicScenery\.groups\.neon, poles, lamps, pillars, tunnelRoofs, tunnelWalls\] \}, canvas\.dataset\)/);
-  assert.match(world, /coastAssets\?\.update\(trackId, visual\.quality, race\.phase === 'racing', visualPreset, visual\.ultra, curvedClassic \? classicRoute : undefined, distance, race\.endless \? race\.seed : undefined\)/);
+  assert.match(world, /coastAssets\.update\(trackId, visual\.quality, race\.phase === 'racing', visualPreset, visual\.ultra, curvedClassic \? classicRoute : undefined, distance, race\.endless \? race\.seed : undefined\)/);
 });

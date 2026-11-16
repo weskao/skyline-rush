@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -74,7 +75,10 @@ test('P01 desktop shows the magenta upper aurora band above the canyon walls', a
 test('Reduced Motion holds the Frostbite showroom still', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openPreview(page, 'p01', VIEWPORTS[0]);
-  await page.waitForTimeout(1500);
+  // Wait until the model is attached or the procedural fallback has been selected.
+  await expect.poll(async () => page.locator('#world').evaluate(world =>
+    !!JSON.parse(world.dataset.garageModelInstances ?? '{}').showcase || !!world.dataset.garageModel?.startsWith('fallback:')),
+  { timeout: ciTimeout(30000) }).toBe(true);
   const first = await frame(page);
   await page.waitForTimeout(1200);
   // Scenery and the shared car exhaust (aero-vfx freezes its shader clock under Reduced Motion) both hold still.

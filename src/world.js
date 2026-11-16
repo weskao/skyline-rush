@@ -41,7 +41,7 @@ import { createTrafficFleet } from './traffic-fleet.ts';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
 import { landmarkBounds } from './landmark-bounds.ts';
-import { createContactShadow, shadowOpacity } from './contact-shadow.ts';
+import { createContactShadow } from './contact-shadow.ts';
 import { isRaining, racePreset } from './board-effects.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
 import { TRACK_PALETTES, applyTrackSurfaceStyle } from './track-palettes.ts';
@@ -227,11 +227,11 @@ export function createWorld(canvas) {
   ghostCar.traverse(object => { if (object.material) { [].concat(object.material).forEach(mat => mat.dispose()); object.material = ghostMaterial; } });
   ghostCar.userData.jets.visible = ghostCar.visible = false; ghostCar.name = 'ghost-car';
   scene.add(ghostCar);
-  const { shadow, texture: shadowTexture } = createContactShadow(scene);
+  const { shadow, update: updateContactShadow, dispose: disposeContactShadow } = createContactShadow(scene);
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
   const coastScenery = createCoastScenery(scene), classicScenery = createClassicTrackScenery(scene);
-  const coastAssets = createWorldCoastAssets(renderer, { scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, replaced: [classicScenery.groups.neon, poles, lamps, pillars, tunnelRoofs, tunnelWalls] }, canvas.dataset); // ?look=3d Medium+ Coast: scan coast (no city or towers) + KTX2 asphalt + wet mirror + HDRI sky dome + water; else null
+  const coastAssets = createWorldCoastAssets(renderer, { scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, replaced: [classicScenery.groups.neon, poles, lamps, pillars, tunnelRoofs, tunnelWalls] }, canvas.dataset); // Coast and Neon use their own visual assets on Medium and above.
   // Inspect car occlusion only when the showroom angle changes.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
   const showcaseRay = new THREE.Raycaster();
@@ -394,7 +394,7 @@ export function createWorld(canvas) {
   const circuitScene = createCircuitScene(scene), frostbiteScene = createFrostbiteRaceScene(scene), courseScene = createCourseRaceScene(scene), measuredScenes = createMeasuredCourseScenes(scene);
   const effects = createEffects(scene, (s) => trackId === CIRCUIT_ID ? 0 : framedRoad(trackId, endlessActive) ? trackPoint(trackId,s).x : trackId === 'spiral' ? skyPosition(s)[0] : roadCenter(s), { camera, renderer, pickupEnvironment: carEnvironment, player, roadShadow: shadow });
   const aero = createAeroVFX(scene, player, shadow);
-  const garageModel = createWorldGarageModel(canvas, renderer, camera), homeModelHost = { name: 'home', car: player, keep: aero.group, scene, fitAirflow: aero.fitAirflow }; // idle for the procedural Roadster; ?model= or the equipped car's GLB
+  const garageModel = createWorldGarageModel(canvas, renderer, camera), homeModelHost = { name: 'home', car: player, keep: aero.group, scene, fitAirflow: aero.fitAirflow };
   const sprintVisual = createSprintVfx();
   // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
   const sprintInput = { phase: 'ready', nitro: false, chain: 0, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
@@ -583,7 +583,7 @@ export function createWorld(canvas) {
       raceVisuals.apply(visualPreset); const blizzard = preview ? 0 : blizzardLevel(trackId, visualCar.distance, !!race.config.themes); raceVisuals.blizzard(blizzard);
       const distance = preview ? previewDistance(trackId) : visualCar.distance;
       if(trackId==='coast'){coastScenery.show();coastScenery.update(classicRoute,distance,visual.quality,race.endless ? race.seed : undefined,reducedMotion ? 0 : race.elapsed + idleTime);} else coastScenery.hide();
-      if (coastAssets?.update(trackId, visual.quality, race.phase === 'racing', visualPreset, visual.ultra, curvedClassic ? classicRoute : undefined, distance, race.endless ? race.seed : undefined)) warmupPending = true; // new materials compile before GO
+      if (coastAssets.update(trackId, visual.quality, race.phase === 'racing', visualPreset, visual.ultra, curvedClassic ? classicRoute : undefined, distance, race.endless ? race.seed : undefined)) warmupPending = true; // new materials compile before GO
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,classicRoute,distance,visual.quality); else classicScenery.hide();
       sea.visible = mountains.visible = sky.visible && (!lighting || endlessActive); // Finite courses own their rebased terrain.
       const graphCentre = race.course ? graphOrigin(race.course) : null;
@@ -766,7 +766,7 @@ export function createWorld(canvas) {
       const { roadDistance, altitude: lift, span } = player.userData; // Classic: equals player.position.y; banked/sloped roads: height above the road
       if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) placeGroundShadow(shadow, graphCentre ? race.course.cars.get('YOU').pose : trackId === 'spiral' ? skyFrame(roadDistance) : trackFrame(trackId, roadDistance, span), player.position, lift);
       else { shadow.position.set(player.position.x, 0.03, player.position.z); shadow.rotation.set(-Math.PI / 2, 0, 0); }
-      shadow.scale.setScalar(1 + lift * 0.04); shadow.material.opacity = shadowOpacity(lift);
+      updateContactShadow(lift, visual.quality);
       const graphFinish = graphCentre ? graphFinishVisual(race.course, courseOriginPoint) : null;
       if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
         if (graphFinish) finish.position.fromArray(graphFinish.position);
@@ -976,7 +976,7 @@ export function createWorld(canvas) {
     dispose() {
       coastLook.dispose(); garageModel?.dispose(); upcomingStage.dispose(); garageStage?.dispose(); stopLocaleSigns(); // the GLB leaves the cars before their materials are disposed
       canvas.removeEventListener('webglcontextrestored', restoreWarmup);
-      circuitScene.dispose(); frostbiteScene.dispose(); courseScene.dispose(); measuredScenes.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastAssets?.dispose(); coastScenery.dispose(); classicScenery.dispose();
+      circuitScene.dispose(); frostbiteScene.dispose(); courseScene.dispose(); measuredScenes.dispose(); skyScene.dispose(); worldTourScene.dispose(); coastAssets.dispose(); coastScenery.dispose(); classicScenery.dispose();
       effects.dispose();
       scene.traverse(object => {
         if (object.geometry) object.geometry.dispose();
@@ -986,7 +986,7 @@ export function createWorld(canvas) {
       signTexture.dispose();
       signTextures.forEach(texture => texture.dispose());
       Object.values(signs).forEach(mat => mat.dispose());
-      shadowTexture.dispose();
+      disposeContactShadow();
       composer.passes.forEach(pass => pass.dispose());
       composer.dispose();
       renderer.dispose();

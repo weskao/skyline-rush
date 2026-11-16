@@ -74,7 +74,8 @@ test('Garage and Preview Studio keep equipped and previewed paint while switchin
   await page.locator('#garage-button').click();
   await expect(carButton(page, 'roadster')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(7);
-  expect(requests).toEqual([]); // the Roadster stays procedural: no GLB
+  await expect.poll(() => dressed(page)).toBe('roadster2');
+  expect(requests).toEqual(['/models/roadster2/roadster2-low.glb']);
   const roadsterAirflow = await airflowBounds(page);
   await expect(carButton(page, 'roadster')).toHaveAccessibleName('Stratosway R2');
   await expect(carButton(page, 'crimson-gt')).toHaveAccessibleName('Vantaire GT');
@@ -82,7 +83,7 @@ test('Garage and Preview Studio keep equipped and previewed paint while switchin
   await carButton(page, 'crimson-gt').click();
   await expect(carButton(page, 'crimson-gt')).toHaveAttribute('aria-pressed', 'true');
   await modelReady(page);
-  expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb']); // settled: model state polled above
+  expect(requests).toEqual(['/models/roadster2/roadster2-low.glb', '/models/crimson-gt/crimson-gt-low.glb']); // settled: model state polled above
   await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(7);
   await expect.poll(() => paintHex(page)).toEqual({ model: 'crimson-gt', glb: 'e6e9e7', proc: 'e6e9e7' });
   await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
@@ -108,8 +109,8 @@ test('Garage and Preview Studio keep equipped and previewed paint while switchin
   await carButton(page, 'roadster').focus(); // keyboard: the picker is native buttons
   await page.keyboard.press('Enter');
   await expect(carButton(page, 'roadster')).toHaveAttribute('aria-pressed', 'true');
-  await expect(world(page)).toHaveAttribute('data-garage-model', 'off');
-  await expect.poll(() => glbRoots(page)).toBe(0);
+  await expect.poll(() => dressed(page)).toBe('roadster2');
+  await expect.poll(() => glbRoots(page)).toBe(1);
   await expect.poll(() => airflowBounds(page)).toEqual(roadsterAirflow);
   await expect.poll(async () => (await paintHex(page)).proc).toBe('a9c5a0');
   await expect.poll(() => saved(page, 'skyline-rush-paint')).toBe('aurora');
@@ -156,15 +157,16 @@ test('a save from before cars existed loads as the Roadster with its paint', asy
   await expect(carButton(page, 'roadster')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('[data-paint="aurora"]')).toHaveAttribute('data-state', 'equipped');
   await expect.poll(async () => (await paintHex(page)).proc).toBe(PAINTS.aurora.paint.slice(1));
-  expect(requests).toEqual([]);
+  await expect.poll(() => paintHex(page)).toMatchObject({ model: 'roadster2', glb: PAINTS.aurora.paint.slice(1) });
+  expect(requests).toEqual(['/models/roadster2/roadster2.glb']);
   expect(await saved(page, 'skyline-rush-car')).toBeNull();
   expect(errors).toEqual([]);
 });
 
-test('?model=roadster&look=3d (any dev server started with 3d=1) keeps the equipped Crimson GT; the flag dresses only the Roadster', async ({ gameplayPage: page, gameplayURL }) => {
+test('legacy graphics URL keeps the equipped Crimson GT and follows the Garage car picker', async ({ gameplayPage: page, gameplayURL }) => {
   const dressedAs = () => dressed(page);
   test.setTimeout(ciTimeout(90000));
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster&look=3d`, { quality: 'low', storage: GT });
+  const { requests, errors } = await prepare(page, `${gameplayURL}?3d=1&model=roadster&look=3d`, { quality: 'low', storage: GT });
   await modelReady(page);
   await expect.poll(dressedAs).toBe('crimson-gt');
   expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb']); // settled: the dressed model was polled above
@@ -228,7 +230,7 @@ test('race: the equipped GT dresses Home and carries into the race with the rear
 /** Car root, chase camera and tyre contact height on the Coast grid, held in the countdown: no input, no speed, the same for every run. */
 async function gridPose(page, url, storage = {}) {
   const { errors } = await prepare(page, url, { storage });
-  if (storage['skyline-rush-car']) await modelReady(page);
+  await expect.poll(() => dressed(page), { timeout: ciTimeout(20000) }).toBe(storage['skyline-rush-car'] ? 'crimson-gt' : 'roadster2');
   await page.locator('#start-button').click();
   // Hold the countdown: the world keeps easing the car and the camera onto the grid, and GO never comes.
   await expect.poll(() => page.evaluate(() => { const { race } = window.gameplay; if (race.phase === 'countdown') race.countdown = 1e6; return race.phase === 'countdown' && race.countdown > 1e5 && race.elapsed === 0; })).toBe(true);
@@ -265,7 +267,7 @@ test('the GT stands on the road and under the chase camera exactly like the Road
   await captureHooks(other);
   const roadster = await gridPose(other, gameplayURL);
   await other.close();
-  expect(roadster.glbTyres, 'the Roadster is procedural').toEqual([]);
+  expect(roadster.glbTyres).toHaveLength(4);
   expect(gt.car, 'car root: the collision box and the road frame hang on it').toEqual(roadster.car);
   gt.camera.forEach((value, index) => expect(value, `chase camera component ${index}`).toBeCloseTo(roadster.camera[index], 2));
   expect(gt.tyres, 'the procedural wheels under the GLB').toEqual(roadster.tyres);
