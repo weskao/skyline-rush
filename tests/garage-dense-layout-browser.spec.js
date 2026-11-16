@@ -62,7 +62,7 @@ for (const size of sizes) {
   test(`Garage category and paint controls stay available while the catalog scrolls at ${size.width}x${size.height}`, async ({ page }) => {
     await page.setViewportSize(size);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     const preview = page.locator('#garage-preview');
     const cars = page.getByRole('button', { name: 'Cars', exact: true });
     const paints = page.getByRole('button', { name: 'Paints', exact: true });
