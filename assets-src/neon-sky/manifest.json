@@ -1,8 +1,22 @@
 {
  "script": "assets-src/neon-sky/build.py",
- "scriptSha256": "3e2693e95858e9339fc36dc888fbb30410ff3662318a0e1574bbf51669be1793",
+ "scriptSha256": "af0f1c97dd55e0af520913fbacb24819bca63a3ce1edd305ebea05d27df6384a",
  "encoder": "assets-src/coast-sky/build.py",
  "encoderSha256": "0a8ee4abef388f7fdd0b8476434450fb5deb92a2df49129c258e3b384b6059a2",
+ "io": "assets-src/neon-sky/hdr_io.py",
+ "ioSha256": "230b3a7ed18f4058cc614681c78cdacb258d0968b10ada17df3007067abe7d79",
+ "tint": {
+  "colour": [
+   0.8,
+   0.47,
+   1.0
+  ],
+  "sky": 0.5,
+  "haze": 1.0,
+  "env": 0.15,
+  "fullBelow": 1.0,
+  "noneAbove": 3.0
+ },
  "environments": {
   "night": {
    "file": "shanghai_bund_1k.hdr",
@@ -46,24 +60,24 @@
     {
      "width": 4096,
      "url": "environments/sky/shanghai_bund_sky_4k.ktx2",
-     "bytes": 1682348,
-     "sha256": "1aaa0ebc5a64a96a27aadf94da6573d8f0b9b3e76507e085ca2b6e134980cf97"
+     "bytes": 1573131,
+     "sha256": "2f8bc94b3685fc1688dd41ec9e0c2bf9adb3006d576a3cfe7c63d125a626f794"
     },
     {
      "width": 8192,
      "url": "environments/sky/shanghai_bund_sky_8k.ktx2",
-     "bytes": 5900825,
-     "sha256": "dc819ffd5af416a74e37d4911aae0f752904f60551263217d5b9a10126caa23e"
+     "bytes": 5515697,
+     "sha256": "b086588f86bfcd04907ab1408bbbd1245783434ce86fd0d7ca5381f974c59e36"
     }
    ],
    "environment": {
     "url": "environments/shanghai_bund_1k.hdr",
-    "bytes": 1261024,
-    "sha256": "ba1d2cb4b0767e93ad42bfaefa1c40b2bdf7ea90a1f5c8d5c65ac7061802b9a4"
+    "bytes": 1246382,
+    "sha256": "6f437e6f84fae6441cee88a07dc5cba0385c33194cadfa381f4164af7a36b8d3"
    },
    "irradiance": {
     "source": 2.0849,
-    "shipped": 2.0756
+    "shipped": 2.076
    },
    "fill": {
     "lonDeg": [
@@ -90,6 +104,12 @@
      40.0,
      60.0
     ],
+    "level": {
+     "lonDeg": 5.0,
+     "elDeg": 2.0,
+     "spanDeg": 16.0,
+     "maxGain": 2.0
+    },
     "pieces": [
      {
       "lonDeg": [
@@ -145,20 +165,20 @@
    },
    "key": {
     "direction": [
-     -0.2636,
-     0.8498,
-     0.4565
+     -0.25,
+     0.866,
+     0.433
     ],
-    "elevationDeg": 58.19,
+    "elevationDeg": 60.0,
     "color": "#ffdec0",
-    "intensity": 2.4532,
-    "irradiance": 3.0934,
+    "intensity": 2.4073,
+    "irradiance": 3.0356,
     "ambient": 1.3838,
     "filled": {
      "direction": [
-      -0.0081,
-      0.8498,
-      0.5271
+      -0.5402,
+      0.8151,
+      0.2094
      ]
     },
     "source": {
@@ -180,9 +200,9 @@
     "sunElevationDeg": 21.94,
     "peakLuminance": 54423.7,
     "horizon": [
-     2.37,
-     2.191,
-     2.089
+     2.397,
+     2.165,
+     2.269
     ],
     "disc": 0,
     "p995": 22.2232,
@@ -210,18 +230,26 @@
      0.545
     ],
     "bandByLon": [
-     0.825,
-     0.923,
-     0.794,
-     0.596,
+     0.823,
+     0.916,
+     0.788,
+     0.588,
      0.698,
      1.183,
      0.618,
      0.903,
      1.208,
      0.767,
-     0.762,
-     1.026
+     0.761,
+     1.024
+    ],
+    "fillSteps": [
+     1.031,
+     1.0,
+     1.016,
+     1.006,
+     1.023,
+     1.029
     ]
    }
   },
@@ -272,24 +300,24 @@
     {
      "width": 4096,
      "url": "environments/sky/shanghai_bund_rain_sky_4k.ktx2",
-     "bytes": 1451893,
-     "sha256": "a0d2207f48ed25664ede6faafb50b5a18f8202149bd4b3a904de52b2c3088e0b"
+     "bytes": 1345986,
+     "sha256": "dce961b91966e9c423f00d14fbaff594a7f677ebb8c9dd165a8b2008e287cb54"
     },
     {
      "width": 8192,
      "url": "environments/sky/shanghai_bund_rain_sky_8k.ktx2",
-     "bytes": 5207060,
-     "sha256": "7a67a9da146ed398fae0051d226afe8668be6d10253ccf25f5480b11a5fa3622"
+     "bytes": 4866134,
+     "sha256": "b199f53cad642ab0507a2a39a3db103cca7d0bbef76ebc300ec48446218e59cf"
     }
    ],
    "environment": {
     "url": "environments/shanghai_bund_rain_1k.hdr",
-    "bytes": 1120064,
-    "sha256": "0a64e9b26d6f3da0970ab560e124ca35c882b8c91e084215dc46d50c1830f819"
+    "bytes": 1101889,
+    "sha256": "0965f3cc0f23f898e7186b5355c3e3f4694f18697d8b79f792b4e10fcca578b0"
    },
    "irradiance": {
     "source": 1.4338,
-    "shipped": 1.613
+    "shipped": 1.5973
    },
    "fill": {
     "lonDeg": [
@@ -316,6 +344,12 @@
      40.0,
      60.0
     ],
+    "level": {
+     "lonDeg": 5.0,
+     "elDeg": 2.0,
+     "spanDeg": 16.0,
+     "maxGain": 2.0
+    },
     "pieces": [
      {
       "lonDeg": [
@@ -371,20 +405,20 @@
    },
    "key": {
     "direction": [
-     0.1203,
-     0.973,
-     0.1968
+     -0.1487,
+     0.9855,
+     0.0812
     ],
-    "elevationDeg": 76.66,
+    "elevationDeg": 80.25,
     "color": "#ffe4cf",
-    "intensity": 1.4737,
-    "irradiance": 1.8168,
+    "intensity": 1.455,
+    "irradiance": 1.7938,
     "ambient": 0.8754,
     "filled": {
      "direction": [
-      0.1203,
-      0.973,
-      0.1968
+      -0.1487,
+      0.9855,
+      0.0812
      ]
     },
     "source": {
@@ -398,9 +432,14 @@
     }
    },
    "hazeColor": [
-    2.064,
-    1.782,
-    1.6043
+    2.1339,
+    1.7376,
+    1.838
+   ],
+   "domeHazeColor": [
+    2.5298,
+    1.4863,
+    3.1623
    ],
    "sky": {
     "sunDirection": [
@@ -411,12 +450,12 @@
     "sunElevationDeg": 19.09,
     "peakLuminance": 29764.7,
     "horizon": [
-     1.521,
-     1.361,
-     1.262
+     1.731,
+     1.225,
+     1.984
     ],
     "disc": 0,
-    "p995": 12.046,
+    "p995": 12.0459,
     "p90Band0to40": 1.1377,
     "sourceBandByLon": [
      2.682,
@@ -441,18 +480,26 @@
      0.306
     ],
     "bandByLon": [
-     0.514,
-     0.555,
-     0.504,
-     0.451,
+     0.513,
+     0.55,
+     0.5,
+     0.447,
      0.532,
      0.644,
      0.467,
      0.615,
      0.676,
-     0.496,
+     0.497,
      0.5,
-     0.583
+     0.581
+    ],
+    "fillSteps": [
+     1.012,
+     1.001,
+     1.005,
+     1.002,
+     1.006,
+     1.009
     ]
    }
   }
