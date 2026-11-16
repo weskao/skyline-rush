@@ -62,6 +62,7 @@ export function setupGarageUI({
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const garageScreen = $<HTMLDialogElement>('#garage-screen');
   const preview = $('#garage-preview');
+  const previewControls = $('#garage-screen .garage-preview-controls');
   // One dock (unique id), borrowed from the home screen while the Garage is open, like #world.
   const dock = $('#showcase-camera-dock');
   const dockParent = dock.parentElement!, dockNext = dock.nextSibling;
@@ -261,7 +262,7 @@ export function setupGarageUI({
     garageScreen.showModal();
     cue?.('ui');
     preview.append($('#world'));
-    preview.after(dock);
+    previewControls.append(dock);
     world.resize();
     previewPaint(getEquippedPaint());
     world.setGarageLighting?.(garageStudioView.lighting);
@@ -302,10 +303,9 @@ export function setupGarageUI({
     const angle = stepGarageAngle(garageStudioView.angle, delta);
     setCamera({ ...garagePreset(angle), zoom: camera.zoom, mode: camera.mode, wing: camera.wing }, angle);
   });
-  document.querySelectorAll<HTMLButtonElement>('[data-garage-mode]').forEach(button =>
-    button.addEventListener('click', () => setCamera(
-      setGarageMode(camera, button.dataset.garageMode as GarageCamera['mode']), garageStudioView.angle,
-    )));
+  $('#garage-pose-action').addEventListener('click', () => setCamera(
+    setGarageMode(camera, camera.mode === 'flight' ? 'ground' : 'flight'), garageStudioView.angle,
+  ));
   $('#garage-wing').addEventListener('click', () => setCamera(toggleGarageWing(camera), garageStudioView.angle));
   $('#garage-lighting').addEventListener('click', () => {
     const lighting: GarageLighting = garageStudioView.lighting === 'bright' ? 'dim' : 'bright';
