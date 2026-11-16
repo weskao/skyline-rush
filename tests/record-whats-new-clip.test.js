@@ -28,6 +28,15 @@ test('the clip encoder keeps balanced quality, a constant 30 fps and no audio tr
   assert.match(code, /MAX_BYTES = 4 \* 1024 \* 1024/);
 });
 
+// The owner keeps a with-sound recording of each clip, but the game never plays sound from What's New media.
+test('--master keeps a vidpress-compressed recording with sound in assets-src, never in public', () => {
+  assert.match(code, /master: \{ type: 'boolean', default: false \}/);
+  assert.match(code, /\$\{master \? 'assets-src' : 'public'\}\/whats-new\//);
+  assert.match(code, /'BlackHole 2ch'/);
+  assert.match(code, /execFileSync\('vidpress', \['compress'/);
+  assert.doesNotMatch(code, /'--audio', 'none'/);
+});
+
 test('the clip recorder accepts scripted input with --press and a fixed layout seed', () => {
   assert.match(code, /press: \{ type: 'string'/);
   assert.match(code, /seed: \{ type: 'string'/);

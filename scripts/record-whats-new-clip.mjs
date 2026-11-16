@@ -11,7 +11,10 @@
 // defaults to 0.15), e.g. KeyE (NITRO, chains during a burn), KeyS + KeyA/KeyD together (drift), Space (fly).
 // Frames are lossless PNG screenshots at --scale x the CSS size (default 2), taken one per 1/30 s step of a paused
 // virtual clock, never Playwright recordVideo (a low-bitrate VP8 webm at device scale 1 that CRF 20 cannot recover).
-import { execFileSync } from 'node:child_process';
+// --master instead plays the same race in real time in a visible window and screen-records it with sound (ffmpeg,
+// system output routed to BlackHole 2ch while it runs), compressed by `vidpress` (its recommended H.265 + AAC) into
+// assets-src/whats-new/<theme-slug>/: an archive with audio. The game's clips above stay silent; nothing plays it.
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -20,11 +23,13 @@ import { parseArgs } from 'node:util';
 import { chromium } from '@playwright/test';
 import { createServer } from 'vite';
 
-const USAGE = 'Usage: record-whats-new-clip.mjs <theme-slug> [--track id] [--from s] [--seconds s] [--scale n] [--seed n] [--bot] [--press "Key@s[:hold],..."] [--shapes desktop,mobile]';
+const USAGE = 'Usage: record-whats-new-clip.mjs <theme-slug> [--track id] [--from s] [--seconds s] [--scale n] [--seed n] [--bot] [--press "Key@s[:hold],..."] [--shapes desktop,mobile] [--master]';
 const { values: opts, positionals: [slug] } = parseArgs({ allowPositionals: true, options: {
   track: { type: 'string', default: 'coast' }, from: { type: 'string', default: '3' }, seconds: { type: 'string', default: '6' },
   scale: { type: 'string', default: '2' }, seed: { type: 'string', default: '1' }, press: { type: 'string', default: '' }, bot: { type: 'boolean', default: false }, 'bot-until': { type: 'string', default: '1e9' }, shapes: { type: 'string', default: 'desktop,mobile' },
+  master: { type: 'boolean', default: false },
 } });
+const master = opts.master;
 const fail = message => { throw new Error(`${message}\n${USAGE}`); };
 if (!/^[a-z0-9-]+$/.test(slug ?? '')) fail('Missing or bad theme slug.');
 const from = Number(opts.from), seconds = Number(opts.seconds), scale = Number(opts.scale), FPS = 30;
@@ -34,7 +39,7 @@ const steps = opts.press.split(',').filter(Boolean).flatMap(spec => {
   return [[Number(at), 'down', code], [Number(at) + Number(hold), 'up', code]];
 }).sort((a, b) => a[0] - b[0]);
 const root = fileURLToPath(new URL('../', import.meta.url));
-const outDir = `${root}public/whats-new/${slug}/`;
+const outDir = `${root}${master ? 'assets-src' : 'public'}/whats-new/${slug}/`;
 const LOCALES = [['en', 'en-US'], ['zh-TW', 'zh-TW']];
 const ALL_SHAPES = { desktop: { width: 960, height: 600, mobile: false }, mobile: { width: 390, height: 844, mobile: true } };
 const SHAPES = Object.fromEntries(opts.shapes.split(',').map(name => [name, ALL_SHAPES[name] ?? fail(`Unknown shape "${name}".`)]));
@@ -45,7 +50,47 @@ process.env.GARAGE_VFX_RELEASE_MODE = 'coming-soon';
 const server = await createServer({ root, optimizeDeps: { entries: ['index.html'] }, server: { host: '127.0.0.1', port: 0 }, logLevel: 'error' });
 await server.listen();
 // Metal-backed GPU (the dev machine's real renderer), so the game runs at its real frame rate.
-const browser = await chromium.launch({ channel: 'chrome', args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
+// The master is shot on the second display (kept clear, Do Not Disturb on), so no other app's window is recorded.
+// Its top-left in the global top-left coordinates Chrome uses; Cocoa frames count y up from the main display's bottom.
+const display = master && JSON.parse(execFileSync('osascript', ['-l', 'JavaScript', '-e',
+  'ObjC.import("AppKit"); var s = $.NSScreen.screens; if (s.count < 2) throw "--master needs a second display";'
+  + ' var m = s.objectAtIndex(0).frame, f = s.objectAtIndex(1).frame;'
+  + ' JSON.stringify({ x: f.origin.x, y: m.size.height - f.origin.y - f.size.height })'], { encoding: 'utf8' }));
+// The output device is chosen when Chrome starts, so BlackHole is selected first; the speakers come back on any exit.
+const audioOut = master && execFileSync('SwitchAudioSource', ['-c', '-t', 'output'], { encoding: 'utf8' }).trim();
+if (audioOut) {
+  // macOS keeps a volume per device and BlackHole's own was 31 (the game recorded at about -55 dB), so it goes to 100.
+  // Both devices' levels are read before and written back after, so the speakers return at the owner's level.
+  const volume = () => execFileSync('osascript', ['-e', 'output volume of (get volume settings)'], { encoding: 'utf8' }).trim();
+  const setVolume = level => execFileSync('osascript', ['-e', `set volume output volume ${level}`]);
+  const speakerVolume = volume();
+  execFileSync('SwitchAudioSource', ['-t', 'output', '-s', 'BlackHole 2ch']);
+  const blackHoleVolume = volume();
+  setVolume(100);
+  process.on('exit', () => {
+    setVolume(blackHoleVolume);
+    execFileSync('SwitchAudioSource', ['-t', 'output', '-s', audioOut]);
+    setVolume(speakerVolume);
+  });
+}
+// Playwright mutes Chrome by default, which would leave the master silent.
+const browser = await chromium.launch({ channel: 'chrome', headless: !master, ignoreDefaultArgs: master ? ['--mute-audio'] : [], args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader',
+  ...master ? [`--window-position=${display.x},${display.y}`, '--autoplay-policy=no-user-gesture-required'] : []] });
+
+// Screen-records the page's box on the second display with the system sound (BlackHole) until stop() is called.
+async function screenRecord(page, cdp, path) {
+  await page.bringToFront();
+  // Phone emulation rewrites screenX/outerWidth, so the real window comes from CDP; the page sits at the content area's
+  // top-left, under the toolbar.
+  const { bounds: win } = await cdp.send('Browser.getWindowForTarget');
+  const { width: w, height: h } = page.viewportSize();
+  const crop = `crop=${w - w % 2}:${h - h % 2}:${win.left - display.x}:${win.top + win.height - h - display.y}`;
+  const ffmpeg = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'avfoundation', '-capture_cursor', '0', '-pixel_format', 'nv12', '-framerate', `${FPS}`,
+    '-i', 'Capture screen 1:BlackHole 2ch', '-vf', crop, '-c:v', 'libx264', '-preset', 'ultrafast', '-qp', '0', '-c:a', 'pcm_s16le', path], { stdio: ['pipe', 'inherit', 'inherit'] });
+  const done = new Promise((resolve, reject) => ffmpeg.on('exit', code => code === 0 ? resolve() : reject(new Error(`ffmpeg screen capture exited ${code}`))));
+  await new Promise(resolve => setTimeout(resolve, 1500)); // avfoundation needs a moment before the first frame
+  return () => { ffmpeg.stdin.end('q'); return done; };
+}
 
 async function record(locale, system, shape, { width, height, mobile }) {
   const context = await browser.newContext({ locale: system, viewport: { width, height }, deviceScaleFactor: scale, hasTouch: mobile, isMobile: mobile });
@@ -55,6 +100,11 @@ async function record(locale, system, shape, { width, height, mobile }) {
     localStorage.setItem('skyline-rush-last-track', track);
     localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', track])); // a fresh profile has only Coast
   }, opts.track);
+  // A headed Chrome offers Google Translate over pages in a language other than its UI, and no launch flag stops it.
+  if (master) await context.addInitScript(() => addEventListener('DOMContentLoaded', () => {
+    const meta = document.createElement('meta'); meta.name = 'google'; meta.content = 'notranslate'; document.head.prepend(meta);
+    document.documentElement.setAttribute('translate', 'no');
+  }));
   const page = await context.newPage();
   // Same read-only race handle the gameplay browser specs inject; the shipped app has none.
   await page.route('**/src/race-factory.ts', async route => {
@@ -67,7 +117,7 @@ async function record(locale, system, shape, { width, height, mobile }) {
     if (!source.includes(anchor)) throw new Error('Missing race anchor in main.js');
     await route.fulfill({ response, body: source.replace(anchor, `${anchor} window.gameplay = { get race() { return race; } };`) });
   });
-  await page.clock.install({ time: 0 });
+  if (!master) await page.clock.install({ time: 0 });
   await page.goto(server.resolvedUrls.local[0]);
   await page.locator('#start-button').waitFor();
   await page.waitForTimeout(700); // the music prompt appears after 600 ms where autoplay is blocked
@@ -81,8 +131,8 @@ async function record(locale, system, shape, { width, height, mobile }) {
   if (await page.locator('[data-wave3-wallet]').count()) throw new Error('Trial-only wallet chips are showing: the server is not on the coming-soon Garage build');
   // From here the game runs on a paused virtual clock that advances 1/FPS per screenshot: every frame is rendered and
   // captured whole at --scale x (no dropped frames, a constant 30 fps), whatever the machine's real speed.
-  await page.clock.pauseAt(await page.evaluate(() => Math.ceil((Date.now() + 100) / 1000) * 1000)); // a whole second: the same frame phase every run
-  const step = () => page.clock.runFor(1000 / FPS);
+  if (!master) await page.clock.pauseAt(await page.evaluate(() => Math.ceil((Date.now() + 100) / 1000) * 1000)); // a whole second: the same frame phase every run
+  const step = () => master ? page.waitForTimeout(1000 / FPS) : page.clock.runFor(1000 / FPS);
   const read = () => page.evaluate(() => {
     const { elapsed, player: p, traffic, rivals, rings, pickups } = window.gameplay.race, ahead = list => list.filter(i => i.distance > p.distance + 10 && i.distance < p.distance + 220);
     return {
@@ -102,28 +152,40 @@ async function record(locale, system, shape, { width, height, mobile }) {
     if (want) await page.keyboard.down(want);
     held = want;
   };
+  const dir = await mkdtemp(join(tmpdir(), 'whats-new-')), cdp = await context.newCDPSession(page);
+  const base = `${outDir}${slug}.${shape}.${locale}`, raw = `${dir}/${slug}.${shape}.${locale}.mkv`;
+  const stop = master && await screenRecord(page, cdp, raw); // the master keeps the countdown and the start-line sound
   await page.locator('#start-button').click();
   while (await page.locator('#countdown').isVisible()) await step();
   await page.locator('#intro').waitFor({ state: 'hidden' }); // the home panel's leave animation runs on real time and can outlast the countdown, so it would cover the first frames
   await page.keyboard.down('ArrowUp');
-  const dir = await mkdtemp(join(tmpdir(), 'whats-new-')), cdp = await context.newCDPSession(page);
   // CSS animations and transitions run on real time, not the virtual clock: match them to the game's pace (1/FPS s of
   // animation per step) from the measured real time per step.
   let realMs = 150, last = Date.now(), window0, state;
   for (let frame = 0, next = 0; frame < seconds * FPS; await step()) {
     realMs = 0.8 * realMs + 0.2 * (Date.now() - last); last = Date.now();
-    await cdp.send('Animation.setPlaybackRate', { playbackRate: Math.max(0.05, 1000 / FPS / realMs) });
+    if (!master) await cdp.send('Animation.setPlaybackRate', { playbackRate: Math.max(0.05, 1000 / FPS / realMs) });
     state = await read();
     const now = state.elapsed;
     if (opts.bot) await drive(now < Number(opts['bot-until']) ? state : { ...state, cars: [], rewards: [], x: 0 }); // past --bot-until: no goal, so the held key is released
     if (now >= from && !window0) window0 = state;
     for (; next < steps.length && steps[next][0] <= now; next++) await page.keyboard[steps[next][1]](steps[next][2]);
-    if (now >= from) await page.screenshot({ path: `${dir}/${String(frame++).padStart(5, '0')}.png`, animations: 'allow', caret: 'initial' });
+    if (master) { if (now >= from + seconds) break; } // real time: the race clock, not a frame count, ends the master
+    else if (now >= from) await page.screenshot({ path: `${dir}/${String(frame++).padStart(5, '0')}.png`, animations: 'allow', caret: 'initial' });
   }
+  if (stop) await stop();
   await context.close();
   console.log(`${locale} ${shape}: NITRO chain x${state.chain} (${state.nitro.toFixed(2)} charges left), ${state.collisions - window0.collisions} collisions in the clip`);
+  if (master) {
+    // vidpress's recommended settings (H.265 balanced, AAC audio); it names the output after the input, as .mp4, and
+    // silently keeps an existing one, so the previous take is removed first.
+    await rm(`${base}.mp4`, { force: true });
+    execFileSync('vidpress', ['compress', '-y', '--no-skip-if-larger', '-o', outDir, raw], { stdio: 'inherit' });
+    await rm(dir, { recursive: true, force: true });
+    console.log(`${base}.mp4 master with sound`);
+    return;
+  }
 
-  const base = `${outDir}${slug}.${shape}.${locale}`;
   // Balanced quality, never coarsened to fit: CRF 20 with a 4 MB cap; shorten --seconds (or lower --scale) instead.
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', `${FPS}`, '-i', `${dir}/%05d.png`, '-an', '-vf', 'crop=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', // x264 needs even sizes (390 × 1.25 is not)
     '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', `${base}.mp4`]);

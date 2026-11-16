@@ -42,6 +42,11 @@ paths:
 - Clips come from `scripts/record-whats-new-clip.mjs` as lossless PNG frames at device scale 2 on a paused virtual clock, never
   Playwright `recordVideo` (a low-bitrate VP8 webm at scale 1: blurry on HiDPI screens, and CRF 20 cannot recover the lost
   detail); guard: `tests/record-whats-new-clip.test.js`. `--bot` earns NITRO by driving and `--press` scripts NITRO or drift keys. It serves the shipped `coming-soon` Garage mode, never the dev `trial` mode (wallet chips, trial VFX).
+- `--master` archives a with-sound take (ffmpeg real-time capture + BlackHole, `vidpress` compressed) under
+  `assets-src/whats-new/<slug>/`; the page plays only the silent `public/` clip. The capture is cropped to the
+  page from CDP `Browser.getWindowForTarget`, so check the first frame shows only the game: never commit a take
+  that caught another window, notification or private data. A headed Chrome offers Google Translate over zh-TW
+  pages; the recorder injects `<meta name="google" content="notranslate">`, since no launch flag stops it.
 - A track is named exactly as Home shows it: `TRACK_NAMES` in `src/i18n.ts` (en + zh-TW) is the only table, and
   a highlight names the same tracks in both languages. A draft once wrote 霓虹市區 / 峽谷天道 / 天空螺旋 beside the
   right English names (game: 霓虹都會 / 峽谷天橋 / 天際螺旋). `copyProblems` enforces it; guard: "track names read
