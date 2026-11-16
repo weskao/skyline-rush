@@ -61,3 +61,9 @@ test('--master never leaves a screen capture running after the recorder exits', 
 test('--master keeps the display awake while it records', () => {
   assert.match(code, /spawn\('caffeinate', \['-d', '-i', '-w', `\$\{process\.pid\}`\]/);
 });
+
+// With the Mac locked, a --master take records the lock screen's wallpaper video instead of the race (2026-11-16).
+test('--master refuses to record while the screen is locked', () => {
+  assert.match(code, /CGSSessionScreenIsLocked/);
+  assert.ok(code.indexOf('CGSSessionScreenIsLocked') < code.indexOf('chromium.launch('), 'checked before anything is recorded');
+});

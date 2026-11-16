@@ -56,6 +56,8 @@ const display = master && JSON.parse(execFileSync('osascript', ['-l', 'JavaScrip
   'ObjC.import("AppKit"); var s = $.NSScreen.screens; if (s.count < 2) throw "--master needs a second display";'
   + ' var m = s.objectAtIndex(0).frame, f = s.objectAtIndex(1).frame;'
   + ' JSON.stringify({ x: f.origin.x, y: m.size.height - f.origin.y - f.size.height })'], { encoding: 'utf8' }));
+// A locked Mac shows its lock-screen wallpaper video, which a take once recorded in place of the race.
+if (master && /"CGSSessionScreenIsLocked"=Yes/.test(execFileSync('ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }))) fail('--master needs the screen unlocked.');
 // The screensaver once started mid-take and was recorded instead of the race; caffeinate holds it off until we exit.
 if (master) spawn('caffeinate', ['-d', '-i', '-w', `${process.pid}`], { stdio: 'ignore' }).unref();
 // The output device is chosen when Chrome starts, so BlackHole is selected first; the speakers come back on any exit.
