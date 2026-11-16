@@ -81,7 +81,7 @@ for (const lod of ['high', 'low']) {
 }
 
 for (const lod of ['high', 'low']) {
-  test(`crimson-gt ${lod} GLB: flake layer under the clearcoat, see-through glass over a cabin, hood vent pair`, () => {
+  test(`crimson-gt ${lod} GLB: flake layer under the clearcoat, opaque black glass over a cabin, hood vent pair`, () => {
     const json = gltf(lod === 'low' ? entry.lods[0].url : entry.url);
     const material = name => json.materials.find(m => m.name === name);
     const image = slot => json.images[json.textures[slot.index].extensions?.KHR_texture_basisu?.source ?? json.textures[slot.index].source].name;
@@ -89,10 +89,34 @@ for (const lod of ['high', 'low']) {
     assert.equal(image(paint.normalTexture), 'crimson_gt_flake', 'the base normal is the tiling flake map');
     assert.ok(paint.normalTexture.extensions?.KHR_texture_transform?.scale?.[0] > 8, 'the flake map tiles across the atlas');
     assert.equal(image(paint.extensions.KHR_materials_clearcoat.clearcoatNormalTexture), 'crimson_gt_normal', 'the baked edges shape the smooth coat');
-    assert.equal(material('gt_glass').alphaMode, 'BLEND');
-    assert.ok(material('gt_glass').pbrMetallicRoughness.baseColorFactor[3] < 0.7, 'the cabin shows through the glass');
+    // Owner, 2026-11-16: black glass, the cabin no longer shows through.
+    const glass = material('gt_glass');
+    assert.equal(glass.alphaMode ?? 'OPAQUE', 'OPAQUE', 'the glass is opaque');
+    assert.ok(glass.pbrMetallicRoughness.baseColorFactor.slice(0, 3).every(c => c < 0.02), 'the glass is black');
     for (const name of ['cabin', 'cabin_seats', 'hood_vent_l', 'hood_vent_r', 'hood_vent_slats_l', 'hood_vent_slats_r']) {
       assert.notEqual(json.nodes.find(n => n.name === name)?.mesh, undefined, `${name} mesh`);
+    }
+  });
+}
+
+// Owner, 2026-11-16: the fenders over all four wheels read as crash dents. Each arch was cut by clipping the lofted
+// sections, which dropped the character line over the wheel and stepped the fender in. The arches are now boolean-cut
+// through a flared haunch (assets-src/crimson-gt/build/gt_body.py flare, gt_parts.py cut_arches): just above every
+// arch top the fender stands at the body's full width.
+for (const lod of ['high', 'low']) {
+  test(`crimson-gt ${lod} GLB: every fender is flared to full width over its arch, no step in over the wheel`, async () => {
+    const { scene } = await parseGlb(readFileSync(new URL(`../public/${lod === 'low' ? entry.lods[0].url : entry.url}`, import.meta.url)));
+    scene.updateMatrixWorld(true);
+    const body = scene.getObjectByName('body');
+    const pos = body.geometry.attributes.position, v = body.position.clone();
+    const points = Array.from({ length: pos.count }, (_, i) => v.fromBufferAttribute(pos, i).applyMatrix4(body.matrixWorld).toArray());
+    const widest = Math.max(...points.map(([x]) => Math.abs(x)));
+    const archTop = HUB_Y + 0.337 + 0.022; // tyre radius + arch clearance (gt_body.py ARCH_R)
+    for (const [name, [wx, , wz]] of Object.entries(WHEELS)) {
+      const lip = points.filter(([x, y, z]) => Math.sign(x) === Math.sign(wx) && Math.abs(z - wz) < 0.06 && y > archTop + 0.005 && y < archTop + 0.04);
+      assert.ok(lip.length > 0, `${name}: fender vertices over the arch`);
+      const fender = Math.max(...lip.map(([x]) => Math.abs(x)));
+      assert.ok(fender > widest - 0.03, `${name}: fender ${fender.toFixed(3)} m vs body ${widest.toFixed(3)} m`);
     }
   });
 }

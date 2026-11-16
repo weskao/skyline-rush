@@ -8,7 +8,10 @@ from roadster_geom import cylinder, extrude, loft, merge, node, part
 from roadster_parts import (HINGE, LIFT_PORTS, RAM_BASE_Y, RAM_BASE_Z, REAR_PORT_X, WHEEL_Y, WHEELS, WING_POS,
                             ram_rest_pose)
 
-from gt_body import DECK_Y, HUB_Y, RIDGE_X, SILL, TYRE_R, Z_NOSE, Z_TAIL, body_verts, hood_y, patch, side_x, upper_parts
+import bpy
+
+from gt_body import (ARCH_R, ARCH_Z, DECK_Y, HUB_Y, RIDGE_X, SILL, TYRE_R, WELL_X, Z_NOSE, Z_TAIL, body_verts, hood_y,
+                     patch, side_x, upper_parts)
 
 SEG = 32
 NOZZLE_Y, NOZZLE_Z = .31, 1.975      # rear.png: four nozzles in a row at y .29-.31; contract ports are y .64, z 2.39
@@ -126,10 +129,26 @@ def cabin_parts():
     return merge(floor, bulkhead, wheel), merge(dash, *[_prism(seat, s * .27 - .15, s * .27 + .15) for s in (-1, 1)])
 
 
+def cut_arches(body, c, material):
+    """Boolean the four wheel arches out of the smooth lofted body: a cylinder per wheel from just inside the well
+    wall out past the flare, so the lip is one clean circle on an uncreased fender."""
+    cutters = merge(*[cylinder((s * (WELL_X - .02), HUB_Y, zc), (s * 1.5, HUB_Y, zc), ARCH_R, ARCH_R, 96)
+                      for zc in ARCH_Z for s in (-1, 1)])
+    cutter = part("arch_cutter", c, *cutters, material)
+    mod = body.modifiers.new("arches", "BOOLEAN")
+    mod.operation, mod.solver, mod.object = "DIFFERENCE", "EXACT", cutter
+    with bpy.context.temp_override(object=body, active_object=body):
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+    mesh = cutter.data
+    bpy.data.objects.remove(cutter)
+    bpy.data.meshes.remove(mesh)
+
+
 def build_car(c, mats):
     """c: the collection that holds every shipping object."""
     P, G = mats["gt_paint"], mats
     body = part("body", c, *body_verts(), P)
+    cut_arches(body, c, P)
     body.data.set_sharp_from_angle(angle=math.radians(50))   # arch lips, sill and tail edges stay crisp
     glass, roof = upper_parts()
     part("glass_canopy", c, *glass, G["gt_glass"])

@@ -77,37 +77,42 @@ ROOF_X = pchip([(-1.02, .46), (-.4, .41), (0, .38), (.5, .37), (1.0, .37), (1.4,
 Z_UPPER = (-1.02, 2.014)
 
 
+# Fender flare: over each wheel the shoulder swells out to the body's full width and rises clear of the arch top, so
+# the arch is cut through a smooth haunch with its lip at the widest line (inferred; the panels show smooth fenders).
+# The arches themselves are cut by gt_parts.cut_arches(), never by reshaping the lofted sections: clipping each
+# section at the arch moved every vertex at the arch ends and creased the fenders like dents (owner, 2026-11-16).
+ARCH_TOP = HUB_Y + ARCH_R
+FLARE_LEN = ARCH_R + .30             # half-length of the swell along z
+
+
+def flare(z):
+    """0..1 swell over the nearest wheel: cos^2 bump, 1 at the wheel centre, 0 (with zero slope) FLARE_LEN away."""
+    d = min(abs(z - zc) for zc in ARCH_Z)
+    return math.cos(.5 * math.pi * d / FLARE_LEN) ** 2 if d < FLARE_LEN else 0.0
+
+
 def side_profile(z):
-    """Un-arched side of the section, bottom to top: sill edge, scallop, character line, shoulder, crown."""
-    w = W(z)
+    """Side of the section, bottom to top: sill edge, scallop, character line, shoulder, crown."""
+    w, f = W(z), flare(z)
+    sh_y = SH_Y(z) + f * max(ARCH_TOP + .03 - SH_Y(z), 0.0)
     return [(w - SILL_IN(z), SILL(z)), (w - SC_IN(z), max(SC_Y(z), SILL(z) + .03)), (w, max(CHAR_Y(z), SILL(z) + .06)),
-            (w - SH_IN(z), max(SH_Y(z), SILL(z) + .09)), (w - CR_IN(z), max(CROWN(z), SILL(z) + .12))]
+            (w - SH_IN(z) * (1 - f), max(sh_y, SILL(z) + .09)), (w - CR_IN(z), max(CROWN(z), SILL(z) + .12))]
 
 
-def arch_y(z):
-    """Height of the wheel-arch opening at z, or None outside both arches."""
+def _check_flare():
     for zc in ARCH_Z:
-        d = abs(z - zc)
-        if d <= ARCH_R + 1e-9:
-            return HUB_Y + math.sqrt(max(ARCH_R * ARCH_R - d * d, 0.0))
-    return None
+        sh = side_profile(zc)[3]
+        assert sh[1] > ARCH_TOP and abs(sh[0] - W(zc)) < 1e-9, "the shoulder clears the arch top at full width"
+        assert flare(zc + 1.001 * FLARE_LEN) == 0.0 and flare(zc + .999 * FLARE_LEN) < 1e-5, "the swell fades out flat"
 
 
-def clip_profile(pts, y):
-    """The profile cut off below height y: same point count, the cut points spread evenly up from the arch lip."""
-    if y is None or y <= pts[0][1]:
-        return pts
-    keep = next(i for i, p in enumerate(pts) if p[1] > y + .012)   # first point clear of the lip
-    (x0, y0), (x1, y1) = pts[keep - 1], pts[keep]
-    lip = (x0 + (x1 - x0) * (y - y0) / (y1 - y0), y)
-    return [(lip[0] + (pts[keep][0] - lip[0]) * i / keep, lip[1] + (pts[keep][1] - lip[1]) * i / keep)
-            for i in range(keep)] + pts[keep:]
+_check_flare()
 
 
 def half_ring(z):
     """Right half of the cross-section at z, bottom centre to top centre: 12 (x, y) points."""
-    sill, lip = SILL(z), arch_y(z)
-    side = clip_profile(side_profile(z), lip)
+    sill = SILL(z)
+    side = side_profile(z)
     floor = sill - .02   # a 20 mm step keeps the well corner distinct outside the arches (no zero-area faces)
     wi = min(WELL_X, W(z) - .14)
     ridge, deck, crown = min(RIDGE_X(z), side[-1][0] - .12), DECK_Y(z), side[-1]
@@ -125,13 +130,8 @@ RING_SUB = 3
 
 
 def stations():
-    """z samples: an even grid plus the arch circles (dense at their ends, where the lip is steepest)."""
-    zs = [Z_NOSE + i * (Z_TAIL - Z_NOSE) / 64 for i in range(65)]
-    arch = []
-    for zc in ARCH_Z:
-        arch += [zc - ARCH_R + ARCH_R * (1 - math.cos(math.pi * i / 12)) for i in range(13)]
-    zs = [z for z in zs if all(abs(z - a) > .025 for a in arch)] + arch
-    return sorted(zs)
+    """z samples: an even grid, so the lofted skin stays smooth (the arches are cut afterwards)."""
+    return [Z_NOSE + i * (Z_TAIL - Z_NOSE) / 96 for i in range(97)]
 
 
 def body_verts():
