@@ -81,7 +81,7 @@ body[data-vfx-quality="low"] .wave3-demo-results__credit[data-reward-reveal]::af
   from { transform: translateX(-120%) skewX(-22deg); }
   to { transform: translateX(310%) skewX(-22deg); }
 }
-.wave3-demo-results__missions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 138px), 1fr)); gap: 6px; }
+.wave3-demo-results__missions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 156px), 1fr)); gap: 6px; }
 .wave3-demo-results__missions:not(:empty) { margin-top: 8px; }
 .wave3-demo-results__progress-title { grid-column: 1 / -1; margin: 0; font: 650 11px system-ui, sans-serif; color: #aed7eb;
   letter-spacing: .3px; }

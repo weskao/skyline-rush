@@ -180,6 +180,10 @@ for (const [locale, raceMode] of [['zh-TW', 'classic'], ['en', 'classic'], ['en'
       const progress = reward.getByRole('progressbar');
       await expect(progress.first()).toHaveAccessibleName(locale === 'zh-TW' ? /1\/1.*已領取/ : /1\/1.*claimed/i);
       await expect(progress).toHaveCount(3);
+      if (raceMode === 'time') {
+        // Font metrics vary across Chromium hosts. Allow for a wider English system font.
+        await page.addStyleTag({ content: '.wave3-demo-results__mission-label { letter-spacing: .25px; }' });
+      }
 
       for (const viewport of [
         { width: 320, height: 568 },
