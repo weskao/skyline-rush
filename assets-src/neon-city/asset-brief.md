@@ -18,7 +18,7 @@ interiors, signs, billboards, lanterns, blossom and every emissive pixel are pai
 | Title | Authors | URL | Licence | Used for (atlas cells) |
 | --- | --- | --- | --- | --- |
 | Concrete Wall 008 | Charlotte Baglioni, Dario Barresi | https://polyhaven.com/a/concrete_wall_008 | CC0-1.0 | `concrete`, `roof_flat`, kerb, `office_grid` wall |
-| Granite Tile 04 | Amal Kumar | https://polyhaven.com/a/granite_tile_04 | CC0-1.0 | `granite`, storefront piers, `retail_upper` wall |
+| Granite Tile 04 | Amal Kumar | https://polyhaven.com/a/granite_tile_04 | CC0-1.0 | `granite`, storefront piers, `store_arcade` wall, `retail_upper` wall |
 | Plastered Wall 05 | Charlotte Baglioni | https://polyhaven.com/a/plastered_wall_05 | CC0-1.0 | `plaster`, market fronts |
 | Black Painted Planks | Dimitrios Savva | https://polyhaven.com/a/black_painted_planks | CC0-1.0 | `planks`, market timber |
 | Roof Tiles 14 | Rob Tuytel | https://polyhaven.com/a/roof_tiles_14 | CC0-1.0 | `rooftile` |
@@ -78,7 +78,7 @@ Per-LOD triangle budgets live in `modules.json`; `build.py` and `tests/neon-city
 | --- | --- | --- | --- |
 | `tower_glass_a` | 681 (700) | 294 (320) | 192 (200) |
 | `tower_glass_b` | 361 (500) | 178 (240) | 142 (200) |
-| `block_retail_a` | 418 (550) | 106 (150) | 90 (120) |
+| `block_retail_a` | 434 (550) | 122 (150) | 106 (120) |
 | `block_office_b` | 436 (550) | 114 (150) | 98 (130) |
 | `shop_market_a` | 244 (340) | 88 (120) | 52 (80) |
 | `shop_market_b` | 290 (380) | 88 (120) | 58 (80) |
@@ -97,9 +97,11 @@ Per-LOD triangle budgets live in `modules.json`; `build.py` and `tests/neon-city
 | `skyline_tower_c` | 92 (120) | 54 (70) | |
 | `skyline_spire` | 109 (110) | 35 (44) | |
 
-GLB: 9,328 triangles in all 47 LOD meshes (budget 11,000), 1,093,972 bytes (budget 1,300,000), max texture
+GLB: 9,376 triangles in all 47 LOD meshes (budget 11,000), 1,144,956 bytes (budget 1,300,000), max texture
 2048 px (budget 2048). One material, four textures: colour 2048 ETC1S sRGB, emissive 2048 sRGB, normal 1024
-linear, occlusion/roughness/metal 1024 linear (one ORM image for both slots). Atlas fill 98.2%.
+linear, occlusion/roughness/metal 1024 linear (one ORM image for both slots). Atlas fill 98.2%: the last shelf
+row is 2012 of 2048 px, so a new cell fits only in a row's spare width. A 4 m podium bay (256 x 288 px) fits; a
+12 m shopfront (768 x 288) starts a new row and overflows by 28 px.
 
 Draw calls (N6, 380 on High shared with road, cars and effects): the kit costs one draw per module LOD that has
 at least one instance on screen. All 47 at once is the ceiling; a sector uses only its own modules (table
@@ -129,7 +131,8 @@ is visible together. The real figure depends on placement and LOD distances and 
 | Blade signs (`sign_blade_a`, `sign_blade_b`) | 1.54, 0.92 | 5.98, 3.39 |
 | Small sign boards (blade b, stack, shops) | 1.25–1.74 | 4.74–5.96 |
 | Billboards (`billboard_a`, `billboard_b`) | 0.88, 0.67 | 4.92, 4.72 |
-| Storefront glass (retail, office) | 1.04–1.29 | 5.46–5.67 |
+| Storefront glass (`store_glass`, `store_violet`) | 1.04–1.29 | 5.46–5.67 |
+| Stone arcade (`store_arcade`, retail block) | 1.07 | 2.82 |
 | Market shopfronts, lanterns | 1.09–1.11, 1.45 | 3.47–3.75, 2.42 |
 | Glass-tower windows (`tower_glass_a`, `_b`) | 0.27, 0.32 | 0.51, 0.61 |
 | Office and retail upper windows | 0.33, 0.22 | 0.70, 0.30 |
@@ -173,6 +176,11 @@ not a rule.
 
 ### Placement notes
 
+- **Podiums**: two shopfront designs. `storefront()` paints 12 m of flat-headed glazed bays (`store_glass` on
+  `tower_glass_a`, `store_violet` on `tower_glass_b` and `block_office_b`); `arcade()` paints one 4 m round-arched
+  bay (`store_arcade` on `block_retail_a`). `buildings.PODIUM` names the cell per module and build.py writes each
+  one's bay shape to `summary.json` (`podium`: the share of the run that is opening at 1.8 m and at 3.2 m).
+  A second colour of one painter is the same design: `tests/neon-scenery-plan.test.js` reads the shapes.
 - **Buildings**: the storefront, awning and entrance are on +Z. Glass-tower and block podiums are 24.4–28.4 m
   wide; market shops are 8.8–8.9 m wide and read as a row when placed side by side.
 - **Blade signs** hang from a wall plane at local z = −0.75 and project toward the street: put the pivot 0.75 m

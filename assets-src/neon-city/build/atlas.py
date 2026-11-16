@@ -153,6 +153,12 @@ class Cell:
         base = luminance(self.col)
         return dict(lit=round(float((luminance(self.emi) > 0.012).mean()), 3), relief=round(float(base.std() / base.mean()), 3))
 
+    def openings(self):
+        """Podium bay shape: the share of the street run that is recessed opening at eye height (1.8 m) and under
+        the fascia (3.2 m). A flat-headed shopfront reads the same at both; an arch narrows toward its crown."""
+        run = lambda z: round(float((self.height[self.span(0, z - 0.05, self.mw, z + 0.05)] < -0.1).mean()), 3)  # noqa: E731
+        return dict(low=run(1.8), high=run(3.2))
+
 
 class Atlas:
     def __init__(self, scans):

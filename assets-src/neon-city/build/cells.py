@@ -169,6 +169,31 @@ def storefront(c, rng, scans, tone, accent, sign):
     c.halo(0.35, 0.3)
 
 
+def arcade(c, scans, tone, accent):
+    """One 4 m bay of a stone arcade: a round-headed shop window with a fanlight between granite piers, its arch
+    traced in neon. The second podium shopfront: an arch narrows toward its crown, where storefront() is flat-headed."""
+    c.scan(scans, "granite_tile_04", 2, 2, tint=(0.8, 0.8, 0.82), rough=(0.25, 0.7))
+    c.rect(0, 0, c.mw, 0.35, ao=0.7)
+    for x0 in (0, c.mw - 0.25):                                                                # pier, shared with the next bay
+        c.rect(x0, 0, x0 + 0.25, 3.95, height=0.06)
+    c.rect(0, 3.95, c.mw, c.mh, height=0.08)                                                   # cornice
+    c.rect(0, 3.87, c.mw, 3.95, ao=0.6)
+    x, y = c.grid()
+    r = np.where(y > 2.1, np.hypot(x - 2.0, y - 2.1), np.abs(x - 2.0))                         # distance from the arch's axis
+    glass = (r < 1.3) & (y > 0.35)
+    lamp = np.exp(-((x - 2.0) ** 2 + (y - 2.5) ** 2) / 0.9)[..., None]                         # pendant lamp behind the fanlight
+    c.col[glass], c.rough[glass], c.metal[glass], c.height[glass], c.nxy[glass] = GLASS, 0.08, 0.0, -0.2, 0
+    c.emi[glass] = (np.asarray(tone, np.float32) * (0.2 + 0.5 * lamp))[glass]
+    c.emi[glass & (y < 1.0)] *= 0.3                                                            # counter in silhouette
+    spokes = (y > 2.1) & (np.abs(np.sin(3 * np.arctan2(y - 2.1, x - 2.0))) * r < 0.04)         # fanlight bars every 60 degrees
+    frame = glass & (spokes | (np.abs(y - 2.1) < 0.04) | (np.abs(np.abs(x - 2.0) - 0.65) < 0.04) & (y < 2.1) | (r > 1.22))
+    c.col[frame], c.emi[frame], c.rough[frame], c.metal[frame], c.height[frame] = FRAME, 0, 0.4, 1.0, 0.03
+    c.height[(r >= 1.3) & (r < 1.5) & (y > 0.35)] = 0.08                                       # archivolt
+    neon = (np.abs(r - 1.6) < 0.03) & (y > 0.5)
+    c.col[neon], c.emi[neon] = np.asarray(accent, np.float32) * 0.9, accent
+    c.halo(0.35, 0.3)
+
+
 def market_front(c, rng, scans, variant):
     """8 m night-market shop: open warm shopfront, sign board, timber frame, lattice windows upstairs."""
     c.scan(scans, "plastered_wall_05", 4, 3, tint=(0.62, 0.6, 0.58))
@@ -357,6 +382,7 @@ def paint_all(atlas):
     punched(c, rng, 3, 4, (3.2, 2.4), vio, 0.45, panes=3)
     storefront(atlas.cell("store_glass", (768, 288), (12.0, 4.5), (True, False)), rng, scans, WARM, PINK, PINK)
     storefront(atlas.cell("store_violet", (768, 288), (12.0, 4.5), (True, False)), rng, scans, (0.78, 0.55, 1.0), CYAN, VIOLET)
+    arcade(atlas.cell("store_arcade", (256, 288), (4.0, 4.5), (True, False)), scans, WARM, PINK)  # no random stream: the shared one stays as reviewed
     market_front(atlas.cell("market_front_a", (512, 384), (8.0, 6.0)), rng, scans, 0)
     market_front(atlas.cell("market_front_b", (512, 384), (8.0, 6.0)), rng, scans, 1)
 

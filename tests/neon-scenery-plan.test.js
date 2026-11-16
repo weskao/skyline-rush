@@ -407,6 +407,20 @@ test('the underpass straight: each block kind has its own street front, so the s
   }
 });
 
+// Closing audit entry 6 (2026-11-16): every podium on the straight was one painter's flat-headed glazed bays, in two
+// colours (build.py's bay shape: 0.772 of the run open at eye height and 0.789 under the fascia on all three kinds),
+// so the shopfront repeated down both sides however the blocks above and the street dressing differed.
+test('the underpass straight: no three plots in a row on either side share one podium bay shape', () => {
+  const { podium } = JSON.parse(readFileSync(new URL('../assets-src/neon-city/summary.json', import.meta.url), 'utf8'));
+  const same = (a, b) => Math.abs(podium[a].low - podium[b].low) < .2 && Math.abs(podium[a].high - podium[b].high) < .2;
+  for (const seed of [undefined, 4]) for (const side of [-1, 1]) {
+    const row = lap(seed).filter(p => p.piece in podium && p.lap >= 950 && p.lap < 1280 && Math.abs(p.offset) < 40 && Math.sign(p.offset) === side).sort((a, b) => a.lap - b.lap);
+    assert.ok(row.length >= 9, `${row.length} podiums on side ${side}`);
+    for (let i = 2; i < row.length; i++) assert.ok(!same(row[i].piece, row[i - 1].piece) || !same(row[i].piece, row[i - 2].piece),
+      `side ${side}, ${row[i - 2].lap.toFixed(0)} to ${row[i].lap.toFixed(0)} m: three ${podium[row[i].piece].cell}-shaped podiums in a row (${podium[row[i].piece].low} / ${podium[row[i].piece].high})`);
+  }
+});
+
 test('the boulevard roofline: a screen on the roof of the low blocks that have no street screen', () => {
   const ROOF = { block_retail_a: 21.7, block_office_b: 36.2 };
   for (const seed of [undefined, 6]) {
