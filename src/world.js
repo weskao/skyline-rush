@@ -465,7 +465,7 @@ export function createWorld(canvas) {
     }
     if (!mesh.userData.jets) return; // a traffic pose: its instanced car has no moving parts
     mesh.userData.jets.visible = !!car.thrusting;
-    mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(Math.max(car.braking ? 2.3 : 1, mesh.userData.driveCue?.update(car, visual, motionPreference.matches || visual.comfortable, time) ?? 1)); // rivals only carry driveCue
+    mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(Math.max(car.braking ? 2.3 : 1, mesh.userData.driveCue?.update(car, visual, motionPreference.matches || visual.comfortable, time, distance) ?? 1)); // rivals only carry driveCue
     const { wing } = mesh.userData;
     const downforce = isPlayer && visual.enabled && visual.airflow && visual.aeroMode === 'downforce';
     const boosting = car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
