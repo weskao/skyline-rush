@@ -52,12 +52,12 @@ export function createRaceAudioEvents() {
 
   return {
     // Transitions are consumed even while muted, so enabling audio never replays stale cues.
-    update(race: AudioRace, enabled: boolean, gap: number | null = null, halfwayStarted = false): RaceAudioFrame {
+    update(race: AudioRace, enabled: boolean, gap: number | null = null, halfwayStarted = false, waitingForScenery = false): RaceAudioFrame {
       const car = race.player;
       const active = race.phase === 'racing';
       const boosting = !!car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
       const freshRace = race !== previousRace;
-      const count = race.phase === 'countdown' ? Math.ceil(race.countdown) : null;
+      const count = race.phase === 'countdown' && !waitingForScenery && race.mode !== 'free' ? Math.ceil(race.countdown) : null;
       const modeEvents = modeAudioCues(race, modeAudioState);
       const sounds = frame.sounds;
       sounds.length = 0;
@@ -86,7 +86,7 @@ export function createRaceAudioEvents() {
       if (race.phase === 'paused' && previousPhase !== 'paused') silence = true;
       if (enabled) {
         if (count !== null && count !== previousCount) sounds.push('tick');
-        if (active && previousPhase === 'countdown') sounds.push('go');
+        if (active && previousPhase === 'countdown' && race.mode !== 'free') sounds.push('go');
         if (race.phase === 'finished' && previousPhase !== 'finished' &&
             race.result?.success !== false && !['cup', 'stunt'].includes(race.mode)) {
           sounds.push(race.mode === 'endless' && race.result?.endReason === 'collisions' ? 'endless-ended' : 'finish');

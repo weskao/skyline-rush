@@ -37,6 +37,7 @@ interface HudOptions extends ModePanelOptions {
   isAutoThrottle(): boolean;
   /** GO stays on screen until this time after the countdown ends. */
   getGoUntil(): number;
+  waitingForScenery(): boolean;
   setFly(on: boolean): void;
   updatePadHint(phase: string, elapsed: number): void;
   motionOptions(duration: string): { duration: number; easing: string };
@@ -249,15 +250,16 @@ export function createRaceHud(options: HudOptions) {
   }
   function updateCountdown(now: number, race: HudRace, calm: boolean): void {
     const countdown = race.phase === 'countdown';
+    const loading = countdown && options.waitingForScenery();
     setHudHidden(ui.countdown!, !(countdown || (race.phase === 'racing' && now < options.getGoUntil())));
-    const step = countdown ? String(Math.ceil(race.countdown)) : 'GO'; // the step stays a CSS hook; only the shown text is translated
-    const countdownText = countdown ? step : L['hud.go']!;
+    const step = loading ? 'loading' : countdown ? String(Math.ceil(race.countdown)) : 'GO';
+    const countdownText = loading ? '…' : countdown ? step : L['hud.go']!;
     if (countdownNumber.textContent !== countdownText) {
       countdownNumber.textContent = countdownText;
       ui.countdown!.dataset.step = step;
       if (!calm) countdownNumber.animate([{ opacity: 0.4, transform: `scale(${countdown ? 1.3 : 0.65})` }, { opacity: 1, transform: 'scale(1)' }], motionOptions(countdown ? 'base' : 'slow'));
     }
-    setHudText(countdownLabel, L[countdown ? options.isAutoThrottle() ? 'hud.autoReady' : 'hud.holdReady' : 'hud.goSkyline']!);
+    setHudText(countdownLabel, L[loading ? 'hud.loadingScenery' : countdown ? options.isAutoThrottle() ? 'hud.autoReady' : 'hud.holdReady' : 'hud.goSkyline']!);
   }
   function updateStatus(race: HudRace, car: HudRace, input: HudInput, impactAge: number): void {
     const length = race.length;

@@ -76,6 +76,60 @@ const scenery = { attachModel() {}, detachModel() {} };
 const never = { load: () => new Promise(() => {}) };
 const tick = () => new Promise(r => setTimeout(r, 0));
 
+test('the selected track waits for all required scenery at Medium and above', async () => {
+  const loads = new Map();
+  const neon = { attachKit() {}, detachKit() {}, pave() {}, update() {}, hide() {}, dispose() {} };
+  const assets = createCoastAssets({ scenery, neon, cache: { load: id => new Promise(resolve => loads.set(id, resolve)) } });
+  const pending = assets.sceneryPending;
+  const complete = async id => {
+    loads.get(id)({ kind: 'model', id, instance: () => new THREE.Group(), release() {} });
+    await tick();
+  };
+
+  assert.equal(pending('canyon', 'high'), false);
+  assert.equal(pending('neon', 'low'), false);
+  assert.equal(pending('neon', 'medium'), true, 'the grid waits even before the first render requests its kits');
+  assets.update('neon', 'medium', false);
+  await complete('neon-city');
+  assets.update('neon', 'medium', false);
+  assert.equal(pending('neon', 'high'), true, 'one kit cannot replace the city by itself');
+  await complete('neon-landmarks');
+  assert.equal(pending('neon', 'high'), true, 'decoded assets still need to attach and warm');
+  assets.update('neon', 'high', false);
+  assert.equal(pending('neon', 'high'), false);
+
+  assert.equal(pending('coast', 'medium'), true);
+  assets.update('coast', 'medium', false);
+  await complete('coast-scenery');
+  assets.update('coast', 'medium', false);
+  assert.equal(pending('coast', 'medium'), false);
+  assets.dispose();
+});
+
+test('unavailable required scenery lets the race continue with the procedural fallback', async t => {
+  t.mock.method(console, 'warn', () => {});
+  const f = fakes('fallback'), assets = createCoastAssets({ scenery: f.scenery, cache: f.cache });
+  assert.equal(assets.sceneryPending('coast', 'high'), true);
+  assets.update('coast', 'high', false);
+  await f.settle();
+  assert.equal(assets.sceneryPending('coast', 'high'), false);
+  assets.dispose();
+});
+
+test('a scenery attachment error releases the model and allows a procedural start', async t => {
+  t.mock.method(console, 'warn', () => {});
+  const f = fakes(), dataset = {}, assets = createCoastAssets({ cache: f.cache, dataset, scenery: {
+    ...f.scenery, attachModel() { throw new Error('cannot attach'); },
+  } });
+  assets.update('coast', 'medium', false);
+  await f.settle();
+  assert.equal(assets.update('coast', 'medium', false), false);
+  assert.equal(dataset.coastScenery, 'fallback:attach');
+  assert.equal(assets.sceneryPending('coast', 'medium'), false);
+  assert.deepEqual(f.log.slice(-2), [['detach'], ['release']]);
+  assets.dispose();
+});
+
 test('Coast Medium+ swaps in the KTX2 asphalt outside racing; Low and other tracks keep the procedural road', async () => {
   const r = roadFakes(), dataset = {}, assets = createCoastAssets({ scenery, cache: never, road: r.road, dataset });
   assets.update('coast', 'low', false);

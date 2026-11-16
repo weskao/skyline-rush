@@ -231,7 +231,7 @@ export function createWorld(canvas) {
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
   const coastScenery = createCoastScenery(scene), classicScenery = createClassicTrackScenery(scene);
-  const coastAssets = createWorldCoastAssets(renderer, { scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, replaced: [classicScenery.groups.neon, poles, lamps, pillars, tunnelRoofs, tunnelWalls] }, canvas.dataset); // Coast and Neon use their own visual assets on Medium and above.
+  const coastAssets = createWorldCoastAssets(renderer, { scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, replaced: [classicScenery.groups.neon, poles, lamps, pillars, tunnelRoofs, tunnelWalls] }, canvas.dataset);
   // Inspect car occlusion only when the showroom angle changes.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
   const showcaseRay = new THREE.Raycaster();
@@ -497,9 +497,8 @@ export function createWorld(canvas) {
       const paintMaterial = player.userData.body.material; paintMaterial.color.set(paint.paint); paintMaterial.metalness = paint.metalness; paintMaterial.roughness = paint.roughness;
       player.userData.lightColor.fromArray(paint.light);
     },
-    setRenderScale(scale) {
-      adaptiveScale = scale; this.configureVFX(visual);
-    },
+    setRenderScale(scale) { adaptiveScale = scale; this.configureVFX(visual); },
+    trackSceneryPending: race => !race.endless?.practice && coastAssets.sceneryPending(race.trackId, visual.quality),
     configureVFX(options) {
       visual=vfxSettings(options); garageHomeVisual = { ...visual, airflow: true }; garageHiddenVisual = { ...visual, enabled: false }; garageStage?.configureVFX(visual);
       const nextRatio=renderPixelRatioForQuality(visual.quality,devicePixelRatio,adaptiveScale);
@@ -582,8 +581,8 @@ export function createWorld(canvas) {
       coastLook.update(trackId, visualPreset, visual.quality);
       raceVisuals.apply(visualPreset); const blizzard = preview ? 0 : blizzardLevel(trackId, visualCar.distance, !!race.config.themes); raceVisuals.blizzard(blizzard);
       const distance = preview ? previewDistance(trackId) : visualCar.distance;
-      if(trackId==='coast'){coastScenery.show();coastScenery.update(classicRoute,distance,visual.quality,race.endless ? race.seed : undefined,reducedMotion ? 0 : race.elapsed + idleTime);} else coastScenery.hide();
       if (coastAssets.update(trackId, visual.quality, race.phase === 'racing', visualPreset, visual.ultra, curvedClassic ? classicRoute : undefined, distance, race.endless ? race.seed : undefined)) warmupPending = true; // new materials compile before GO
+      if(trackId==='coast'){coastScenery.show();coastScenery.update(classicRoute,distance,visual.quality,race.endless ? race.seed : undefined,reducedMotion ? 0 : race.elapsed + idleTime);} else coastScenery.hide();
       if(trackId==='neon'||trackId==='canyon'||trackId==='aurora') classicScenery.update(trackId,classicRoute,distance,visual.quality); else classicScenery.hide();
       sea.visible = mountains.visible = sky.visible && (!lighting || endlessActive); // Finite courses own their rebased terrain.
       const graphCentre = race.course ? graphOrigin(race.course) : null;

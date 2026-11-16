@@ -1,5 +1,5 @@
 import type { VfxQuality } from './vfx-settings.ts';
-import { trackLook } from './track-look.ts';
+import { detailedTrackLook, trackLook, type TrackLook } from './track-look.ts';
 
 /** PMREM cube size; equals RoomEnvironment's, so swapping `scene.environment` never recompiles a lit shader. */
 export const PMREM_CUBE_SIZE = 256;
@@ -68,18 +68,17 @@ export const COAST_ENV_VARIANTS: Readonly<Record<CoastEnvName, CoastEnvVariant>>
     sky: { sunDirection: [-0.1487, 0.9855, 0.0812], range: 3, gain: 0.259, disc: 0, ahead: 30 }, carSky: true },
 });
 
-const envVariant = (trackId: string, preset: string): CoastEnvName | null => {
-  const env = trackLook(trackId)?.env;
+const envVariant = (env: TrackLook['env'] | undefined, preset: string): CoastEnvName | null => {
   return env && Object.hasOwn(env, preset) ? env[preset] ?? null : null;
 };
 
 /** Coast's env variant for a race visual preset; null (night, snow, aurora) leaves the current environment alone. */
-export const coastEnvVariant = (preset: string): CoastEnvName | null => envVariant('coast', preset);
+export const coastEnvVariant = (preset: string): CoastEnvName | null => envVariant(trackLook('coast')?.env, preset);
 
 export type CoastEnvPlan = { kind: 'room' } | { kind: 'hdri'; variant: CoastEnvName };
 
 /** Low, every track without a look entry (track-look.ts) keep RoomEnvironment (the develop path); Medium+ loads the track's HDRI. */
 export function coastEnvPlan(trackId: string, preset: string, quality: VfxQuality): CoastEnvPlan {
-  const variant = quality !== 'low' ? envVariant(trackId, preset) : null;
+  const variant = envVariant(detailedTrackLook(trackId, quality)?.env, preset);
   return variant ? { kind: 'hdri', variant } : { kind: 'room' };
 }
