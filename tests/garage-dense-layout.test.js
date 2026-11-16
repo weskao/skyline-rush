@@ -15,8 +15,8 @@ test('Garage Home consumes the full safe viewport without a capped content width
 test('Studio gives the car the freed-up room but preserves accessible controls', () => {
   const preview = markup.match(/<div id="garage-preview"[^>]*>([\s\S]*?)<\/div>/)?.[1] ?? '';
   assert.match(preview, /garage-hint/, 'move the camera hint inside the preview, not another layout row');
-  assert.match(source, /\.garage-camera-controls \{[^}]*flex-wrap:\s*nowrap;[^}]*overflow-x:\s*auto/s,
-    'camera controls must use one scrollable row on narrow phones');
+  assert.match(source, /\.garage-camera-angles \{[^}]*overflow-x:\s*auto/s,
+    'let extra angles scroll so primary actions stay visible on narrow phones');
   assert.match(markup, /data-garage-mode="flight"/);
   assert.match(markup, /data-garage-mode="ground"/);
   for (const id of ['garage-reset', 'garage-zoom-in', 'garage-zoom-out', 'garage-rotate-left', 'garage-rotate-right'])

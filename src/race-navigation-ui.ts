@@ -21,7 +21,7 @@ export function setupRaceNavigation(deps: {
     'leave-keep-label': ['leave.keep', 'tutorial.leave.keep'],
   } as const;
   leaveScreen.addEventListener('keydown', event => event.stopPropagation());
-  document.querySelector('.brand')!.addEventListener('click', event => {
+  const openLeave = (event: Event): void => {
     if (!['racing', 'countdown', 'paused'].includes(deps.phase()) || document.querySelector('dialog[open]')) return;
     event.preventDefault();
     if (deps.phase() !== 'paused') deps.pause();
@@ -31,8 +31,15 @@ export function setupRaceNavigation(deps: {
     }
     endRace.hidden = practicing;
     applyI18n(leaveScreen);
-    deps.clearControls(); leaveScreen.showModal();
-  });
+    deps.clearControls();
+    // Touch browsers may not focus a clicked button or link. Give showModal a real
+    // opener so the native close and Escape paths both restore it.
+    (event.currentTarget as HTMLElement).focus({ preventScroll: true });
+    leaveScreen.showModal();
+  };
+  document.querySelector('.brand')!.addEventListener('click', openLeave);
+  document.querySelector('#pause-leave')!.addEventListener('click', openLeave);
+  document.querySelector('#leave-close')!.addEventListener('click', () => leaveScreen.close());
   document.querySelector('#leave-keep')!.addEventListener('click', () => {
     leaveScreen.close();
     if (deps.phase() === 'paused') deps.pause();

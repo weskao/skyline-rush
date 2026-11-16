@@ -24,11 +24,11 @@ test('scenario 2 — Orbit: view presets, auto rotation and reset are independen
   assert.deepEqual(defaultGarageCamera(), { yaw: .7, pitch: .27, zoom: 1, autoRotate: true, mode: 'ground', wing: false });
 });
 
-test('scenario 2 — releasing drag resumes slow orbit unless explicitly paused', async () => {
+test('scenario 2 — releasing drag restores the starting orbit mode and keeps the adjusted pose', async () => {
   const { releaseGarageOrbit } = await import('../src/garage-camera.ts');
   const moved = dragGarageCamera(defaultGarageCamera(), 50, 0);
-  assert.equal(releaseGarageOrbit(moved, false).autoRotate, true);
-  assert.equal(releaseGarageOrbit(moved, true).autoRotate, false);
+  assert.deepEqual(releaseGarageOrbit(moved, true), { ...moved, autoRotate: true });
+  assert.deepEqual(releaseGarageOrbit(moved, false), moved);
 });
 
 test('Studio wing toggle opens and stows the airbrake without touching the orbit pose', () => {

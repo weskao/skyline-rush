@@ -7,7 +7,7 @@ import { t } from './i18n.ts';
 // garage-ui.ts owns the click (equip, save, world); this component only renders the cars and which one is in use.
 const props = defineProps<{ locale: string }>();
 const text = (key: string): string => t(key, undefined, props.locale);
-const artworkBase = `${import.meta.env.BASE_URL}feature-assets/garage-vfx-skins/car-picker/`;
+const artworkBase = `${import.meta.env.BASE_URL}feature-assets/garage-public/car-picker/`;
 </script>
 
 <template>

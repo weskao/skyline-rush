@@ -135,7 +135,7 @@ for (const [name, viewport, hasTouch, reducedMotion] of [
     });
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');
     await expect(page.locator('#race-overlay')).toBeVisible();
-    await expect(page.locator('#again-button')).toBeFocused();
+    await expect(page.locator('#next-button')).toBeFocused();
     await expect(page.locator('#new-best')).toBeVisible();
     await expect.poll(() => page.locator('#result-stats > div:nth-child(2) strong').textContent()).toBe(await page.locator('#timer').textContent());
     const evidence = await page.evaluate(() => window.finishEvidence);

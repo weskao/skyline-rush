@@ -17,7 +17,7 @@ test('all native 3x car-paint image assets are present and reusable by 1x UI car
   assert.match(preview, /height="510"/);
   assert.match(vue, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   for (const id of Object.keys(PAINTS)) {
-    const path = new URL('../public/feature-assets/garage-vfx-skins/paint-cards/' + id + '@3x.webp', import.meta.url);
+    const path = new URL('../public/feature-assets/garage-public/paint-cards/' + id + '@3x.webp', import.meta.url);
     assert.ok(existsSync(path), id + ' has an image');
     assert.ok(statSync(path).size > 10_000, id + ' is a substantive image, not a placeholder');
     const bytes = readFileSync(path);
