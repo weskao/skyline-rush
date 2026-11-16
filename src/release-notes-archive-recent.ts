@@ -1,6 +1,7 @@
 import type { ReleaseEntry } from './release-notes.ts';
 
-// Published entries just past the dialog's newest five; release-notes-data.ts lists them before release-notes-archive.ts.
+// Older published entries moved out of release-notes-data.ts to keep it under 400 lines; release-notes-data.ts lists them
+// before release-notes-archive.ts, and the dialog picks its newest five from the combined list.
 export const RECENT_ARCHIVED_RELEASE_NOTES: readonly ReleaseEntry[] = [
   {
     version: '0.28.0', date: '2026-10-31', image: null,

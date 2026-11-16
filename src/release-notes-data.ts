@@ -11,10 +11,20 @@ import { RECENT_ARCHIVED_RELEASE_NOTES } from './release-notes-archive-recent.ts
 export const UPCOMING = 'upcoming';
 export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
   {
-    version: UPCOMING, date: '2026-11-13', image: null,
+    version: UPCOMING, date: '2026-11-16', image: null,
+    video: {
+      desktop: {
+        src: { en: 'whats-new/nitro-chain/nitro-chain.desktop.en.mp4', 'zh-TW': 'whats-new/nitro-chain/nitro-chain.desktop.zh-TW.mp4' },
+        poster: { en: 'whats-new/nitro-chain/nitro-chain.desktop.en.jpg', 'zh-TW': 'whats-new/nitro-chain/nitro-chain.desktop.zh-TW.jpg' }
+      },
+      mobile: {
+        src: { en: 'whats-new/nitro-chain/nitro-chain.mobile.en.mp4', 'zh-TW': 'whats-new/nitro-chain/nitro-chain.mobile.zh-TW.mp4' },
+        poster: { en: 'whats-new/nitro-chain/nitro-chain.mobile.en.jpg', 'zh-TW': 'whats-new/nitro-chain/nitro-chain.mobile.zh-TW.jpg' }
+      }
+    },
     highlights: [
       {
-        id: 'crimson-gt', kind: 'new', image: null,
+        id: 'crimson-gt', kind: 'new', image: { en: 'whats-new/crimson-gt/crimson-gt.en.webp', 'zh-TW': 'whats-new/crimson-gt/crimson-gt.zh-TW.webp' },
         title: {
           en: `A second car: ${GARAGE_CARS_COPY.en['car.crimson-gt']}`,
           'zh-TW': `第二款車：${GARAGE_CARS_COPY['zh-TW']['car.crimson-gt']}`,
@@ -34,6 +44,16 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       },
       {
         id: 'drift-tiers', kind: 'new', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/drift-tiers/drift-tiers.desktop.en.mp4', 'zh-TW': 'whats-new/drift-tiers/drift-tiers.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/drift-tiers/drift-tiers.desktop.en.jpg', 'zh-TW': 'whats-new/drift-tiers/drift-tiers.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/drift-tiers/drift-tiers.mobile.en.mp4', 'zh-TW': 'whats-new/drift-tiers/drift-tiers.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/drift-tiers/drift-tiers.mobile.en.jpg', 'zh-TW': 'whats-new/drift-tiers/drift-tiers.mobile.zh-TW.jpg' }
+          }
+        },
         title: { en: 'Drifts charge NITRO in three stages', 'zh-TW': '漂移分三段累積 NITRO' },
         description: {
           en: 'Hold a drift longer to earn NITRO at each of three stages. The car glows a new colour at every stage, and your tyres leave skid marks.',
@@ -57,7 +77,7 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         }
       },
       {
-        id: 'race-onboarding', kind: 'new', image: null,
+        id: 'race-onboarding', kind: 'new', image: { en: 'whats-new/race-onboarding/race-onboarding.en.webp', 'zh-TW': 'whats-new/race-onboarding/race-onboarding.zh-TW.webp' },
         title: { en: 'Practice first, or jump straight in', 'zh-TW': '先練習，或直接開跑' },
         description: {
           en: 'Your first Start asks whether to practise or race now. Controls are grouped into steering, touch layout and keyboard so they are easier to find.',
@@ -65,7 +85,7 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         }
       },
       {
-        id: 'halfway', kind: 'new', image: null,
+        id: 'halfway', kind: 'new', image: { en: 'whats-new/halfway/halfway.en.webp', 'zh-TW': 'whats-new/halfway/halfway.zh-TW.webp' },
         title: { en: 'A halfway call and a map that shows progress', 'zh-TW': '半程提示，地圖顯示進度' },
         description: {
           en: 'Reach the middle of a race to hear a chime and see the distance left. The route map fills in as you drive, and on landscape phones it sits top-right.',
@@ -97,7 +117,7 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         }
       },
       {
-        id: 'track-cards', kind: 'improvement', image: null,
+        id: 'track-cards', kind: 'improvement', image: { en: 'whats-new/track-cards/track-cards.en.webp', 'zh-TW': 'whats-new/track-cards/track-cards.zh-TW.webp' },
         title: { en: 'Illustrated cards for the classic tracks', 'zh-TW': '經典賽道換上插畫卡片' },
         description: {
           en: 'Each of the ten classic tracks now has its own illustration on the home screen.',
