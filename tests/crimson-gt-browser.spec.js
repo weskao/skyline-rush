@@ -456,16 +456,22 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
           ctx.drawImage(img, 0, 0);
           const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
           let clipped = 0;
+          let minX = canvas.width, maxX = -1;
           for (let y = 0; y < canvas.height; y++) {
             for (let x = 0; x < canvas.width; x++) {
+              if (data[4 * (y * canvas.width + x) + 3] <= 16) continue;
+              minX = Math.min(minX, x);
+              maxX = Math.max(maxX, x);
               if (x >= 4 && y >= 4 && x < canvas.width - 4 && y < canvas.height - 4) continue;
-              if (data[4 * (y * canvas.width + x) + 3] > 16) clipped++;
+              clipped++;
             }
           }
           return { left, right, height, imageLeft: image.left, imageRight: image.right,
-            imageWidth: image.width, imageBottom: image.bottom, nameTop: name.top, clipped };
+            imageWidth: image.width, imageBottom: image.bottom, nameTop: name.top, clipped,
+            artFill: (maxX - minX + 1) / canvas.width };
         });
         expect(bounds.clipped).toBe(0);
+        if (id === 'crimson-gt') expect(bounds.artFill).toBeGreaterThanOrEqual(0.9);
         expect(bounds.height).toBeGreaterThanOrEqual(44);
         expect(bounds.left).toBeGreaterThanOrEqual(0);
         expect(bounds.right).toBeLessThanOrEqual(viewport.width);
