@@ -206,6 +206,21 @@ test('the sculpture has its own emissive strength: its rings reach the bloom wit
   assert.deepEqual([freed, source], [true, false], 'the layer frees its copy, never the GLB\'s material');
 });
 
+// Closing audit 2026-11-16: a screen is 58 m2 of lit texels where a tube is a line. At the kit's 1.7 its graphics (brief:
+// billboards peak 4.92 at strength 6) sat at 1.55x the bloom threshold, and the street screen beside the car on the
+// straight after the rail tunnel washed to white (28% of its pixels).
+const SCREEN = 4.92 / 6;
+test('the street screen has its own emissive strength: its graphics reach the bloom and stay within a fifth over it', () => {
+  const { kit, city, pool } = rig(), { threshold } = COAST_ENV_VARIANTS[trackLook('neon').env.track].bloom;
+  const own = pool('billboard_a:near').material, shared = city.getObjectByName('billboard_a_lod0').material;
+  assert.notEqual(own, shared, 'its own copy of the kit material');
+  assert.equal(pool('billboard_a:far').material, own, 'one copy for both bands');
+  assert.ok(SCREEN * own.emissiveIntensity >= threshold, `${own.emissiveIntensity}: its graphics glow (${(SCREEN * own.emissiveIntensity).toFixed(2)} >= ${threshold})`);
+  assert.ok(SCREEN * own.emissiveIntensity <= 1.2 * threshold, `${own.emissiveIntensity}: its graphics ${(SCREEN * own.emissiveIntensity).toFixed(2)} stay within ${(1.2 * threshold).toFixed(2)}`);
+  assert.equal(pool('billboard_b:near').material, shared, 'the wall screens, mostly dark, keep the kit\'s strength');
+  kit.dispose();
+});
+
 test('N3: one ground mesh puts land under the city sectors and the harbour yard, and leaves the water open under the expressway, the harbour quay and the bridge', () => {
   const { kit } = rig();
   kit.update(route, 100, 'high');
