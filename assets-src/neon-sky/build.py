@@ -11,7 +11,7 @@ way Coast's are, for two environments. Run from the repo root after `python3 -I 
 The dome encoding is Coast's (assets-src/coast-sky/build.py): stored = sRGB_OETF(shoulder(linear) / range), 8 bit,
 triangular dither, UASTC + zstd, full mip chain, zenith row first; the dome multiplies by `range` to decode.
 Writes assets-src/neon-sky/manifest.json (inputs, outputs, measured key light and sky data); README.md explains it.
-Blender is used for its HDR reader/writer and bundled numpy; there is no .blend master. Deterministic: fixed seed.
+Blender is used for its HDR reader and bundled numpy; there is no .blend master. Deterministic: fixed seed.
 """
 import hashlib
 import json
@@ -29,6 +29,8 @@ COAST = os.path.join(REPO, "assets-src", "coast-sky", "build.py")
 # definitions above that call run here. shortcut: exec of a sibling script; move the encoder to scripts/assets/ when a
 # third sky needs it.
 exec(compile(open(COAST).read().rsplit("\nmain()", 1)[0], COAST, "exec"))  # noqa: S102
+IO = os.path.join(HERE, "hdr_io.py")                              # load_full, save_hdr (Radiance RGBE)
+exec(compile(open(IO).read(), IO, "exec"))  # noqa: S102
 
 CACHE = os.environ.get("POLYHAVEN_CACHE", os.path.join(os.path.expanduser("~"), ".cache", "skyline-rush", "polyhaven"))
 PUBLIC = os.path.join(REPO, "public")
@@ -43,6 +45,13 @@ ASSET = "shanghai_bund"
 # city's own measured horizon glow, exposure drops, colour flattens.
 #   x' = exposure * mix(sat(x), haze, veil * exp(-|elevation| / falloff)),  haze = horizon glow of the 1k source.
 RAIN_GRADE = {"exposure": 0.7, "veil": 0.65, "falloffDeg": 14.0, "saturation": 0.8}
+# Violet storm (concept frame 07, the canal): texels move toward `colour` (linear RGB) at their own luminance, so Eh,
+# the bands, the sharpness, the horizon and `gain` stay the download's. `sky` is the share for the night sky at or
+# below `fullBelow` radiance, none at `noneAbove` (lamps, LED facades and the lit skyline keep their colour); `haze`
+# is the share for the rain veil's colour, which is most of the rain sky below 25 degrees. The 1k maps carry `env` of
+# both shares: the wet road mirrors them, and at the full share the rain harbour road read violet. The key light's
+# colour is measured before the tint: it stands for the city's lamps.
+TINT = {"colour": [0.8, 0.47, 1.0], "sky": 0.5, "haze": 1.0, "env": 0.15, "fullBelow": 1.0, "noneAbove": 3.0}
 # Dome decode range per environment: the knee (0.6 * range) sits above the measured horizon glow (`sky.horizon`, about
 # 2.3 night and 1.5 rain), so the city glow stays linear and only the lamps and LED facades roll off in Coast's
 # shoulder. The 99.5th percentile (`sky.p995`, 12 to 24) is lamps; spending the 8 bits there would band the dark sky.
@@ -58,73 +67,29 @@ SOFTEN = {"sigmaDeg": 0.25, "fullDeg": 22.0, "fadeDeg": 26.0, "featherDeg": 1.0,
 # Wedge fill (domes and 1k maps): the near floodlit embankment buildings and trees fill lon -180..-68 and +114..180 up to
 # about 43 degrees at 8x the rest of the sky, and the harbour (heading 180) drives straight at them. `lonDeg` (wrapping)
 # below `fullDeg` (fading by `fadeDeg`) becomes a far shore: below `shoreDeg` whole shifted columns of the generic far
-# skyline (`pieces`; no LED, crown or iconic tower), then the city's horizon haze (per row, median of `hazeLonDeg`) up
-# to `hazeDeg`, then the pieces' clouds. 72 source degrees for 178 of wedge: a full-height copy repeated a tower in one
-# view. Feathers: `featherDeg` at the shore, `skyFeatherDeg` in the sky. The 1k maps keep the wall's horizontal
-# irradiance as overhead city glow (`glowDeg`, wall colour): the city stays lit, the wet road stops mirroring the wall.
+# skyline (`pieces`; no LED, crown or iconic tower), then the city's horizon haze up to `hazeDeg` (per row of
+# `hazeLonDeg`: the median on the domes, the sky between the towers; the mean on the 1k maps, the towers' light, so the
+# far shore lights the road as a city and not as an empty sky), then the pieces' clouds. 72 source degrees for 178 of
+# wedge: a full-height copy repeated a tower in one view. The two source spans' clouds differ 30 to 40% in luminance,
+# a step at every piece boundary, so `level` scales each piece's clouds to the sky beside the wedge: gain = (a ramp
+# between the mean luminance of the `spanDeg` either side of the wedge) / (the piece's luminance, low-passed over
+# `lonDeg` and `elDeg`), within `maxGain`. Feathers: `featherDeg` at the shore, `skyFeatherDeg` in the sky. The 1k maps
+# keep the wall's horizontal irradiance as overhead city glow (`glowDeg`, wall colour): the wet road stops mirroring it.
 FILL = {"lonDeg": [114.0, 292.0], "fullDeg": 50.0, "fadeDeg": 62.0, "shoreDeg": [3.0, 8.0], "hazeDeg": [15.0, 25.0],
         "hazeLonDeg": [-65.0, 114.0], "featherDeg": 1.0, "skyFeatherDeg": 8.0, "glowDeg": [40.0, 60.0],
+        "level": {"lonDeg": 5.0, "elDeg": 2.0, "spanDeg": 16.0, "maxGain": 2.0},
         "pieces": [{"lonDeg": [114.0, 149.0], "sourceLonDeg": [-18.0, 17.0]},
                    {"lonDeg": [149.0, 186.0], "sourceLonDeg": [71.0, 108.0]},
                    {"lonDeg": [186.0, 221.0], "sourceLonDeg": [-18.0, 17.0]},
                    {"lonDeg": [221.0, 258.0], "sourceLonDeg": [71.0, 108.0]},
                    {"lonDeg": [258.0, 292.0], "sourceLonDeg": [-18.0, 16.0]}]}
 # Luminance per 30-degree longitude bin, elevation 0..45 (what a chase camera sees of the dome): `sky.bandByLon` on the
-# shipped dome, `sky.sourceBandByLon` before the fill.
+# shipped dome, `sky.sourceBandByLon` before the fill. `sky.fillSteps`: the luminance jump across each piece boundary of
+# the shipped dome, elevation STEP_EL_DEG (the pieces' clouds), max(l / r, r / l) of the mean of the STEP_DEG either
+# side, STEP_CLEAR_DEG clear of it.
 BAND_BIN_DEG, BAND_TOP_DEG = 30, 45
+STEP_EL_DEG, STEP_DEG, STEP_CLEAR_DEG = (27.0, 50.0), 8.0, 4.0
 SIZES = {"4k": 4096, "8k": 8192}
-
-
-def load_full(path):
-    """Whole equirect .hdr as float32 RGB, rows top (zenith) first."""
-    img = bpy.data.images.load(path)
-    w, h = img.size
-    px = np.empty(w * h * 4, dtype=np.float32)
-    img.pixels.foreach_get(px)
-    bpy.data.images.remove(img)
-    return px.reshape(h, w, 4)[::-1, :, :3].copy()
-
-
-def rle(channel):
-    """Radiance new-style run-length encoding of one scanline channel: runs of 3+ as (128 + n, byte), else literals."""
-    out, i, n = bytearray(), 0, len(channel)
-    while i < n:
-        r = 1
-        while r < 127 and i + r < n and channel[i + r] == channel[i]:
-            r += 1
-        if r >= 3:
-            out += bytes((128 + r, channel[i]))
-            i += r
-            continue
-        j = i
-        while j < n and j - i < 128 and not (j + 2 < n and channel[j] == channel[j + 1] == channel[j + 2]):
-            j += 1
-        out.append(j - i)
-        out += channel[i:j]
-        i = j
-    return out
-
-
-def save_hdr(rgb, path):
-    """Radiance RGBE .hdr, RLE scanlines, rows top first. Blender's own writer is not used: image.save() altered the
-    float data (a 26112 peak came back as 72.5). Read back through Blender's reader to prove the round trip."""
-    h, w, _ = rgb.shape
-    peak = rgb.max(2)
-    mant, exp = np.frexp(peak)
-    scale = np.where(peak > 1e-32, mant * 256 / np.maximum(peak, 1e-38), 0)
-    rgbe = np.concatenate([np.clip(rgb * scale[..., None], 0, 255).astype(np.uint8),
-                           np.where(peak > 1e-32, exp + 128, 0).astype(np.uint8)[..., None]], axis=2)
-    body = bytearray(f"#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n-Y {h} +X {w}\n".encode())
-    for row in rgbe:
-        body += bytes((2, 2, w >> 8, w & 255))
-        for c in range(4):
-            body += rle(row[:, c].tobytes())
-    with open(path, "wb") as f:
-        f.write(body)
-    back = load_full(path)
-    # RGBE: one shared exponent and 8-bit mantissas, so the error is bounded by the pixel's brightest channel.
-    worst = float((np.abs(back - rgb).max(2) / (rgb.max(2) + 1e-6)).max())
-    assert worst < 0.01, f"{path}: RGBE round trip drifted by {worst:.4f} of the pixel maximum"
 
 
 def elevations(rows, upper_only):
@@ -203,6 +168,17 @@ def fill_wedge(img, upper_only):
         """Feather f on the shore, sf in the sky (`shore` mixes them by elevation)."""
         return shore * ramp(rel, width, f, first, last)[None] + (1 - shore) * ramp(rel, width, sf, first, last)[None]
 
+    lv, lum = FILL["level"], img @ LUMA
+    r_lon, r_el = (max(1, int(round(lv[k] * w / 360))) for k in ("lonDeg", "elDeg"))
+    low = box(box(box(lum.astype(np.float64), r_lon, 1, True), r_lon, 1, True), r_el, 0, False)
+
+    def beside(a):
+        """Per-row mean luminance of the `spanDeg` of sky starting at lon `a` (outside the wedge), smoothed in elevation."""
+        return box(lum[:, ((lon - a) % 360) <= lv["spanDeg"]].astype(np.float64).mean(1), r_el, 0, False)[:, None]
+    into = (lon - lo + 90) % 360 - 90                             # degrees into the wedge: no wrap inside its feathers
+    left, right = beside(lo - sf / 2 - lv["spanDeg"]), beside(hi + sf / 2)
+    target = left + (right - left) * np.clip(into / (hi - lo), 0, 1)[None]
+    clouds = (1 - shore) * (1 - smooth(el, *FILL["hazeDeg"]))     # where a piece's own sky shows
     shifted = np.zeros_like(img)
     for i, piece in enumerate(pieces):
         d0, d1 = piece["lonDeg"]
@@ -210,11 +186,13 @@ def fill_wedge(img, upper_only):
         assert s1 - s0 == d1 - d0 and (i == 0 or d0 == pieces[i - 1]["lonDeg"][1]), piece
         rel = (lon - d0 + 180) % 360 - 180                       # degrees past the piece start, wrapped
         col = np.rint(((s0 + rel + 180) % 360) / 360 * w - 0.5).astype(int) % w
-        shifted += img[:, col] * feathered(rel, d1 - d0, i == 0, i == len(pieces) - 1)[..., None]
-    rel = (lon - lo + 180) % 360 - 180
-    inside = np.minimum(feathered(rel, hi - lo), 1)
+        gain = np.clip(target / np.maximum(low[:, col], 1e-6), 1 / lv["maxGain"], lv["maxGain"])
+        weight = feathered(rel, d1 - d0, i == 0, i == len(pieces) - 1) * (1 + clouds * (gain - 1))
+        shifted += img[:, col] * weight.astype(np.float32)[..., None]
+    inside = np.minimum(feathered(into, hi - lo), 1)
     h0, h1 = FILL["hazeLonDeg"]
-    haze = np.median(img[:, (lon >= h0) & (lon <= h1)], axis=1)[:, None]
+    far = img[:, (lon >= h0) & (lon <= h1)]
+    haze = (np.median(far, axis=1) if upper_only else box(far.astype(np.float64).mean(1), r_el, 0, False))[:, None]
     veil = ((1 - shore) * smooth(el, *FILL["hazeDeg"]))[..., None]  # haze share: 0 at the shore and in the clouds
     fill = shifted * (1 - veil) + haze * veil
     t = (smooth(el, FILL["fullDeg"], FILL["fadeDeg"]) * inside)[..., None]
@@ -257,6 +235,26 @@ def band_by_lon(sky):
     lum = sky[rows:] @ LUMA
     edges = [round(i * w * BAND_BIN_DEG / 360) for i in range(360 // BAND_BIN_DEG + 1)]
     return [round(float(lum[:, a:b].mean()), 3) for a, b in zip(edges, edges[1:])]
+
+
+def fill_steps(sky):
+    """`sky.fillSteps` of an upper hemisphere: one jump per FILL piece boundary, wedge start to wedge end."""
+    h, w, _ = sky.shape
+    el, lon = np.degrees(elevations(h, True)), ((np.arange(w) + 0.5) / w - 0.5) * 360
+    cols = (sky[(el >= STEP_EL_DEG[0]) & (el < STEP_EL_DEG[1])] @ LUMA).astype(np.float64).mean(0)
+    out = []
+    for b in [FILL["lonDeg"][0]] + [p["lonDeg"][1] for p in FILL["pieces"]]:
+        l, r = (float(cols[((lon - a) % 360) <= STEP_DEG].mean()) for a in (b - STEP_CLEAR_DEG - STEP_DEG, b + STEP_CLEAR_DEG))
+        out.append(round(max(l / r, r / l), 3))
+    return out
+
+
+def tint(rgb, share, dim_only=True):
+    """TINT: `rgb` moved `share` of the way to the tint colour at its own luminance (`dim_only`: under the mask)."""
+    lum = np.asarray(rgb @ LUMA)[..., None]
+    c = np.asarray(TINT["colour"], dtype=np.float32)
+    t = share * (smooth(lum, TINT["fullBelow"], TINT["noneAbove"]) if dim_only else 1)
+    return (rgb * (1 - t) + lum * (c / (c @ LUMA)) * t).astype(np.float32)
 
 
 def grade_rain(rgb, haze, upper_only):
@@ -328,21 +326,22 @@ def main():
 
     name1k, path1k, digest1k = source("1k")
     full = load_full(path1k)
-    haze = horizon_glow(full)
-    # Both 1k maps carry FILL (the wet road mirrored the wall as a tan sheen) with the wall's light kept overhead; rain
-    # is the recorded grade of the shipped night map.
-    filled = fill_wedge(full, upper_only=False)
-    shipped = keep_irradiance(filled, full)
+    glow = horizon_glow(full)                                     # the rain veil's colour as measured; `haze` is its TINT
+    haze, env_haze = (tint(glow, TINT["haze"] * s, dim_only=False) for s in (1, TINT["env"]))
+    # Both 1k maps carry TINT and FILL with the wall's light kept overhead; rain is the grade of the shipped night map.
+    violet = tint(full, TINT["sky"] * TINT["env"])
+    filled = fill_wedge(violet, upper_only=False)
+    shipped = keep_irradiance(filled, violet)
     night_path, rain_path = os.path.join(OUT_ENV, name1k), os.path.join(OUT_ENV, f"{ASSET}_rain_1k.hdr")
     save_hdr(shipped, night_path)
-    save_hdr(grade_rain(load_full(night_path), haze, upper_only=False), rain_path)
+    save_hdr(grade_rain(load_full(night_path), env_haze, upper_only=False), rain_path)
     # The key light shines from the direction measured on the filled sky the player sees, not on the download: the
     # wall's vector irradiance made a sun at el 27 degrees straight down the harbour, a pinpoint specular that whited
     # out the wet road and the car. Its colour and the irradiance it adds to the road (intensity x sin(elevation)) stay
     # the download's (rain: its grade, through RGBE), whose light the 1k maps keep; `source` keeps that measurement.
     raw_rain = os.path.join(OUT_PNG, "raw_rain_1k.hdr")
-    save_hdr(grade_rain(full, haze, upper_only=False), raw_rain)
-    aim = {"night": key_light(filled), "rain": key_light(grade_rain(filled, haze, upper_only=False))}
+    save_hdr(grade_rain(full, glow, upper_only=False), raw_rain)
+    aim = {"night": key_light(filled), "rain": key_light(grade_rain(filled, env_haze, upper_only=False))}
     for name, src_img, path in (("night", full, night_path), ("rain", load_full(raw_rain), rain_path)):
         e = envs[name]
         e["file"], e["inputSha256"][name1k] = os.path.basename(path), digest1k
@@ -355,8 +354,8 @@ def main():
                     "intensity": round(src["intensity"] * scale, 4), "irradiance": round(src["irradiance"] * scale, 4),
                     "source": {"direction": src["direction"], "elevationDeg": src["elevationDeg"],
                                "intensity": src["intensity"]}}
-    envs["rain"]["hazeColor"] = [round(float(v), 4) for v in haze]
-    del full, filled, shipped
+    envs["rain"]["hazeColor"], envs["rain"]["domeHazeColor"] = ([round(float(v), 4) for v in c] for c in (env_haze, haze))
+    del full, violet, filled, shipped
 
     rng = np.random.default_rng(SEED)
     for label, width in SIZES.items():
@@ -365,7 +364,7 @@ def main():
         assert night.shape[:2] == (width // 4, width), f"{name}: expected {width}x{width // 2}, got {night.shape}"
         raw = {} if label != "4k" else {"night": sharpness(night),
                                          "rain": sharpness(grade_rain(night, haze, upper_only=True))}
-        night = soften_signs(night)
+        night = tint(soften_signs(night), TINT["sky"])
         for env_name in ("night", "rain"):
             e = envs[env_name]
             sky = night if env_name == "night" else grade_rain(night, haze, upper_only=True)
@@ -376,7 +375,7 @@ def main():
                             "sourceSharpness": raw[env_name], "sharpness": sharpness(sky)}
             sky = fill_wedge(sky, upper_only=True)
             if label == "4k":
-                e["sky"]["bandByLon"] = band_by_lon(sky)
+                e["sky"]["bandByLon"], e["sky"]["fillSteps"] = band_by_lon(sky), fill_steps(sky)
             stem = ASSET if env_name == "night" else f"{ASSET}_rain"
             png = os.path.join(OUT_PNG, f"{stem}_sky_{label}.png")
             write_png(png, encode_srgb8(sky, e["range"], rng))
@@ -389,7 +388,8 @@ def main():
         del night
 
     manifest = {"script": "assets-src/neon-sky/build.py", "scriptSha256": sha256(os.path.abspath(__file__)),
-                "encoder": "assets-src/coast-sky/build.py", "encoderSha256": sha256(COAST), "environments": envs}
+                "encoder": "assets-src/coast-sky/build.py", "encoderSha256": sha256(COAST),
+                "io": "assets-src/neon-sky/hdr_io.py", "ioSha256": sha256(IO), "tint": TINT, "environments": envs}
     if "--no-encode" not in ARGV:
         with open(os.path.join(HERE, "manifest.json"), "w") as f:
             json.dump(manifest, f, indent=1)

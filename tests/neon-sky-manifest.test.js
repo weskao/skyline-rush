@@ -32,7 +32,9 @@ test('the scripts are pinned by hash, Coast\'s encoder included, and hold no per
   assert.equal(MANIFEST.script, DIR + 'build.py');
   assert.equal(sha256(read(MANIFEST.script)), MANIFEST.scriptSha256, 'build.py drifted: rerun it');
   assert.equal(sha256(read(MANIFEST.encoder)), MANIFEST.encoderSha256, 'the Coast encoder drifted: rerun build.py');
-  for (const file of ['build.py', 'fetch.py', 'sources.json', 'manifest.json', 'README.md']) {
+  assert.equal(MANIFEST.io, DIR + 'hdr_io.py', 'the Radiance reader/writer build.py runs');
+  assert.equal(sha256(read(MANIFEST.io)), MANIFEST.ioSha256, 'hdr_io.py drifted: rerun build.py');
+  for (const file of ['build.py', 'hdr_io.py', 'fetch.py', 'sources.json', 'manifest.json', 'README.md']) {
     assert.doesNotMatch(read(DIR + file).toString(), /\/Users\/|\/home\/|C:\\Users/, `${file}: no personal paths`);
   }
 });
@@ -174,6 +176,51 @@ for (const [name, env] of Object.entries(ENVS)) {
     assert.ok(env.soften.signs.chroma > 0 && env.soften.signs.peak > 0, 'the soften keys on LED facades');
   });
 }
+
+// Trap (2026-11-16): the fill's pieces alternate two source spans whose clouds differ 30 to 40% in luminance, joined by
+// an 8 degree feather: a brightness step at every piece boundary (1.11 to 1.31 on the 4K night dome, elevation 27..50;
+// 1.10 to 1.27 on the 1k map, 27..38). The pieces are levelled to the sky beside the wedge. jump = max(l / r, r / l) of
+// the mean luminance of the 8 degrees either side of a boundary, 4 degrees clear of it.
+const STEP_LIMIT = 1.1;
+for (const [name, env] of Object.entries(ENVS)) {
+  test(`${name}: no brightness step where two fill pieces meet, on the dome or on the 1k map`, () => {
+    const bounds = [env.fill.lonDeg[0], ...env.fill.pieces.map(p => p.lonDeg[1])];
+    assert.equal(env.sky.fillSteps?.length, bounds.length, 'one jump per piece boundary, measured on the shipped 4K dome');
+    env.sky.fillSteps.forEach((v, i) => assert.ok(v <= STEP_LIMIT, `dome, lon ${bounds[i]}: jump ${v} > ${STEP_LIMIT}`));
+    const map = hdr('public/' + env.environment.url), cols = new Float64Array(map.width);
+    upperRows(map, (el, x, lum) => { if (el >= 27 && el < 38) cols[x] += lum; });
+    const side = from => { // mean over 8 degrees of longitude starting at `from`, wrapping
+      let sum = 0, n = 0;
+      for (let x = 0; x < map.width; x++) if ((((x + 0.5) / map.width - 0.5) * 360 - from + 720) % 360 <= 8) { sum += cols[x]; n++; }
+      return sum / n;
+    };
+    for (const b of bounds) {
+      const l = side(b - 12), r = side(b + 4), jump = Math.max(l / r, r / l);
+      assert.ok(jump <= STEP_LIMIT, `1k map, lon ${b}: jump ${jump.toFixed(3)} > ${STEP_LIMIT}`);
+    }
+  });
+}
+
+// Violet storm (concept frame 07): the tint moves the dim sky and the rain veil toward violet at the same luminance, so
+// the irradiance, band and sharpness guards above still measure the download's light. The 1k maps carry `env` of the
+// tint: the wet road mirrors them, and at the full share the rain harbour road read violet ([95,71,115]).
+test('violet storm: the rain veil and the dim night sky lean violet (blue over red over green), lamps untouched', () => {
+  const { colour, sky, haze, env, fullBelow, noneAbove } = MANIFEST.tint ?? {};
+  assert.ok(colour?.[2] > colour[0] && colour[0] > colour[1], 'tint colour: violet');
+  assert.ok(sky > 0 && sky <= 1 && haze > 0 && haze <= 1 && fullBelow < noneAbove, 'shares, and a luminance mask that spares the lamps');
+  assert.ok(env > 0 && env < 0.5, `the 1k maps carry a small share of the tint: ${env}`);
+  const [r, g, b] = ENVS.rain.domeHazeColor ?? [];
+  assert.ok(b > r && r > 1.3 * g, `rain veil colour on the dome ${ENVS.rain.domeHazeColor}`);
+  const [er, eg, eb] = ENVS.rain.hazeColor;
+  assert.ok(eb > eg && er < 1.25 * eg, `rain veil colour on the 1k map ${ENVS.rain.hazeColor}: off tan, short of violet`);
+  const map = hdr('public/' + ENVS.night.environment.url), mean = [0, 0, 0];
+  for (let y = 0; y < map.height / 2; y++) {
+    const el = 90 - (y + 0.5) / map.height * 180;
+    if (el < 25 || el >= 38) continue; // above the skyline's lamps, below the overhead glow
+    for (let x = 0; x < map.width; x++) for (let c = 0; c < 3; c++) mean[c] += map.data[(y * map.width + x) * 4 + c];
+  }
+  assert.ok(mean[2] > mean[0] && mean[0] >= 1.08 * mean[1], `night sky, elevation 25..38: ${mean.map(v => v.toFixed(0))}`);
+});
 
 test('rain is the recorded grade of night: veiled toward the horizon glow, darker and flatter', () => {
   const night = hdr('public/' + ENVS.night.environment.url), rain = hdr('public/' + ENVS.rain.environment.url);

@@ -59,13 +59,13 @@ export const COAST_ENV_VARIANTS: Readonly<Record<CoastEnvName, CoastEnvVariant>>
   // `gain` = 0.4 x bloom threshold / luminance of `sky.horizon`: the horizon glow stays under the bloom, which Coast's
   // p90 rule put it over (a white haze over the canal). The cap keeps sign texels from mirroring as white blots.
   night: { file: 'shanghai_bund_1k.hdr', credit: cc0('shanghai_bund', 'Greg Zaal'),
-    intensity: 0.6, exposure: 0.9, grade: { saturation: 1.15, contrast: 1.1, tint: [0.98, 1, 1.04] },
-    bloom: { strength: 0.55, threshold: 0.95 }, radianceCap: 4, sun: { color: '#ffdec0', intensity: 1.47 },
-    sky: { sunDirection: [-0.0081, 0.8498, 0.5271], range: 4, gain: 0.171, disc: 0, ahead: 30 }, carSky: true },
+    intensity: 0.69, exposure: 0.9, grade: { saturation: 1.15, contrast: 1.1, tint: [0.98, 1, 1.04] },
+    bloom: { strength: 0.55, threshold: 0.95 }, radianceCap: 4, sun: { color: '#ffdec0', intensity: 1.76 },
+    sky: { sunDirection: [-0.5402, 0.8151, 0.2094], range: 4, gain: 0.171, disc: 0, ahead: 30 }, carSky: true },
   nightRain: { file: 'shanghai_bund_rain_1k.hdr', credit: cc0('shanghai_bund', 'Greg Zaal'),
     intensity: 0.55, exposure: 0.95, grade: { saturation: 1.05, contrast: 1.08, tint: [0.98, 1, 1.03] },
-    bloom: { strength: 0.6, threshold: 0.9 }, radianceCap: 3, sun: { color: '#ffe4cf', intensity: 0.81 },
-    sky: { sunDirection: [0.1203, 0.973, 0.1968], range: 3, gain: 0.259, disc: 0, ahead: 30 }, carSky: true },
+    bloom: { strength: 0.6, threshold: 0.9 }, radianceCap: 3, sun: { color: '#ffe4cf', intensity: 0.8 },
+    sky: { sunDirection: [-0.1487, 0.9855, 0.0812], range: 3, gain: 0.259, disc: 0, ahead: 30 }, carSky: true },
 });
 
 const envVariant = (trackId: string, preset: string): CoastEnvName | null => {
