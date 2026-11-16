@@ -1,4 +1,5 @@
 import { expect, test } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 import { openSettingsSection } from './helpers/settings-browser.js';
 
 const layouts = [
@@ -46,7 +47,7 @@ for (const [name, width, height, segments] of layouts) {
         y: el.scrollHeight > el.clientHeight,
       }));
       expect(overflow).toEqual({ x: false, y: true });
-      if (process.env.UI_OVERHAUL_SHOTS) await page.screenshot({ path: info.outputPath('settings.png'), timeout: 12000 });
+      if (process.env.UI_OVERHAUL_SHOTS) await page.screenshot({ path: info.outputPath('settings.png'), timeout: ciTimeout(12000) });
       await openSettingsSection(page, 'driving');
       await expect(dialog.locator('#controls-panel')).toBeVisible();
       await openSettingsSection(page, 'audio');
