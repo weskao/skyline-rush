@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRace } from '../src/game.js';
 import { createRaceAudioEvents } from '../src/race-audio-events.ts';
+import { createPresentation } from '../src/presentation.ts';
 
 const racing = () => { const race = createRace(); race.phase = 'racing'; race.player.speed = 40; return race; };
 const cues = frame => frame.sounds.filter(sound => typeof sound === 'string');
@@ -302,18 +303,22 @@ test('entering a CourseGraph branch sounds only when the player leaves the norma
   assert.deepEqual(cues(events.update(race, true)), []);
 });
 
-test('the halfway chime plays once when the player crosses half of a finite course', () => {
-  const events = createRaceAudioEvents(), race = racing();
-  race.player.distance = race.length * 0.49;
-  events.update(race, true);
-  race.player.distance = race.length * 0.51;
-  assert.deepEqual(cues(events.update(race, true)), ['halfway']);
-  race.player.distance = race.length * 0.6;
-  assert.deepEqual(cues(events.update(race, true)), []);
-  const endless = racing();
-  endless.endless = {};
-  endless.player.distance = endless.length * 0.49;
-  events.update(endless, true);
-  endless.player.distance = endless.length * 0.51;
-  assert.ok(!cues(events.update(endless, true)).includes('halfway'));
+test('halfway sound follows the shared presentation event and consumes it when muted', () => {
+  const events = createRaceAudioEvents(), presentation = createPresentation(), race = racing();
+  const update = enabled => cues(events.update(race, enabled, null, presentation.update(race, .016).halfwayStarted));
+  race.player.distance = race.length / 2 - 1;
+  assert.deepEqual(update(true), []);
+  race.player.distance += 2;
+  assert.deepEqual(cues(events.update(race, true, null, false)), [], 'audio must not run a second distance detector');
+  assert.deepEqual(update(true), ['halfway']);
+  race.player.distance += 100;
+  assert.deepEqual(update(true), []);
+
+  const muted = racing(), mutedPresentation = createPresentation();
+  const updateMuted = enabled => cues(events.update(muted, enabled, null, mutedPresentation.update(muted, .016).halfwayStarted));
+  muted.player.distance = muted.length / 2 - 1;
+  updateMuted(false);
+  muted.player.distance += 2;
+  assert.deepEqual(updateMuted(false), []);
+  assert.deepEqual(updateMuted(true), []);
 });

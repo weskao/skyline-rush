@@ -28,6 +28,7 @@ import { setupTouchControlsUI } from './touch-controls-ui.ts';
 import { starTotal } from './history.ts';
 import { recordGhost, ghostAt } from './ghost.ts';
 import { createPresentation } from './presentation.ts';
+import { updateRaceHalfwayView } from './race-halfway-view.ts';
 import { equippedCar, loadCarPaint, saveCarPaint } from './car-catalog.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
@@ -59,7 +60,6 @@ import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 import { setupCupRecovery } from './cup-recovery-ui.ts';
 import { focusRace, setupRaceNavigation } from './race-navigation-ui.ts';
-/** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').PlayerSnapshot} PlayerSnapshot */
 /** @typedef {import('./game-types.js').RivalSnapshot} RivalSnapshot */
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
@@ -102,7 +102,7 @@ let daily = null; // the challenge being raced; its modifier lives on race.modif
 let sprintSeries = null; // Aggregated Custom heats; never career progress or genuine circuit laps.
 let cup = null; // Three unlocked point-to-point heats, with rival points carried between heats.
 let stunt = null; // Timed score run composed of explicit point-to-point heats, never fake laps.
-const presentation = createPresentation();
+const presentation = createPresentation(updateRaceHalfwayView);
 let presentationState = presentation.update(race, 0);
 let resultCounts = [];
 try { ({ audio, volume } = readAudio(localStorage)); } catch { /* Audio defaults to on when storage is blocked. */ }
@@ -565,7 +565,7 @@ try {
     const calm = calmMotion();
     // Watched per frame, not via a change listener: Chrome can drop that event when .matches is read every frame.
     if (calm && !wasCalm) vfx.stopMotionIfCalm(); wasCalm = calm;
-    presentationState = presentation.update(race, dt, calm);
+    presentationState = presentation.update(race, dt, calm, Math.max(0, rawDelta));
     const ghost = touchUI.prefs().ghost && race.session.presentation.ghostEnabled && race.phase !== 'ready' ? ghosts.forRace(race) : null;
     const shouldRender = fps.shouldRender(now, dt, race.phase === 'racing', document.hidden);
     if (shouldRender) {
@@ -574,7 +574,7 @@ try {
       world.render(race, fps.takeElapsed(), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed), renderMotion);
       fps.completeRender(performance.now() - renderStarted);
     }
-    sound.update(race);
+    sound.update(race, presentationState.halfwayStarted);
     hudElapsed += dt; if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
       updateUI(now / 1000, input); if (tutorial) renderTutorial();
       hudElapsed = 0;

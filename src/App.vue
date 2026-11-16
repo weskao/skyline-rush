@@ -36,6 +36,7 @@ import CupRecovery from './CupRecovery.vue';
 
 import RacePresentation from './RacePresentation.vue';
 import RaceOverlay from './RaceOverlay.vue';
+import RaceHalfway from './RaceHalfway.vue';
 import ItemRules from './ItemRules.vue';
 import ItemSlot from './ItemSlot.vue';
 
@@ -281,6 +282,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <div><strong id="impact-title"></strong><span id="impact-detail"><b id="impact-loss">0</b> <span data-i18n="impact.lost">KM/H LOST</span></span></div>
     </div>
 
+    <RaceHalfway />
     <RaceOverlay />
     <div id="error-message" class="error-message" role="alert" hidden></div>
   </main>

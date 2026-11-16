@@ -45,22 +45,20 @@ export function createRaceAudioEvents() {
   let previousRace: AudioRace | undefined, previousPhase: string | null = null, previousCount: number | null = null;
   let lastImpact: AudioCar['impact'] = null, lastLanding: AudioCar['landing'] = null;
   let lastNearMiss: unknown = null, lastTrick: unknown = null, lastShieldBlock: unknown = null;
-  let wasThrusting = false, wasBoosting = false, lowCharge = false, pastHalf = false;
+  let wasThrusting = false, wasBoosting = false, lowCharge = false;
   let collectedPickups = new WeakSet<object>(), collectedRings = new WeakSet<object>();
   // One frame object is reused every tick (no per-frame garbage); read it before the next update.
   const frame: RaceAudioFrame = { silence: false, sounds: [], active: false, boosting: false };
 
   return {
     // Transitions are consumed even while muted, so enabling audio never replays stale cues.
-    update(race: AudioRace, enabled: boolean, gap: number | null = null): RaceAudioFrame {
+    update(race: AudioRace, enabled: boolean, gap: number | null = null, halfwayStarted = false): RaceAudioFrame {
       const car = race.player;
       const active = race.phase === 'racing';
       const boosting = !!car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
       const freshRace = race !== previousRace;
       const count = race.phase === 'countdown' ? Math.ceil(race.countdown) : null;
       const modeEvents = modeAudioCues(race, modeAudioState);
-      // Endless rings per km and circuits per lap (mode-audio.ts); every finite sprint chimes once at half distance.
-      const half = active && !race.endless && !race.circuit && car.distance >= race.length / 2;
       const sounds = frame.sounds;
       sounds.length = 0;
       let silence = false;
@@ -78,7 +76,7 @@ export function createRaceAudioEvents() {
         previousRace = race;
         previousPhase = previousCount = null;
         lastImpact = lastLanding = lastNearMiss = lastTrick = lastShieldBlock = null;
-        wasThrusting = wasBoosting = lowCharge = pastHalf = false;
+        wasThrusting = wasBoosting = lowCharge = false;
         collectedPickups = new WeakSet(); collectedRings = new WeakSet();
         warnings.clear(); shortcuts.clear();
       }
@@ -114,7 +112,7 @@ export function createRaceAudioEvents() {
           if (!freshRace && car.fall && car.fall !== lastFall) sounds.push('fall-recovery');
           else if (newGap) sounds.push('gap-warning');
           else if (car.fuel < 20 && !lowCharge) sounds.push('low');
-          if (half && !pastHalf && !freshRace) sounds.push('halfway');
+          if (halfwayStarted) sounds.push('halfway');
         }
       }
       for (const pickup of race.pickups) if (pickup.taken && !collectedPickups.has(pickup)) {
@@ -144,7 +142,6 @@ export function createRaceAudioEvents() {
       lastShieldBlock = car.shieldBlock;
       wasThrusting = active && !!car.thrusting;
       wasBoosting = active && boosting;
-      pastHalf ||= half;
       if (car.fuel >= 30) lowCharge = false;
       else if (car.fuel < 20) lowCharge = true;
       frame.silence = silence; frame.active = active; frame.boosting = boosting;
