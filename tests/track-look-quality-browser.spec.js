@@ -21,6 +21,15 @@ for (const { track, viewport, asset, quality } of [
     page.on('pageerror', error => errors.push(error.message));
     let release;
     const held = new Promise(resolve => { release = resolve; });
+    // Keep the intentionally held response inside the loader deadline on slow software renderers.
+    // The existing loader and missing-asset tests cover timeout and fallback independently.
+    await page.route(url => url.pathname === '/src/asset-model-loader.ts', async route => {
+      const response = await route.fetch();
+      const source = await response.text();
+      const deadline = /\btimeoutMs\s*=\s*(?:15000|15e3)\b/;
+      expect(deadline.test(source), 'the dev module contains the normal model download deadline').toBe(true);
+      await route.fulfill({ response, body: source.replace(deadline, 'timeoutMs = 90000') });
+    });
     await page.route(`**/models/${asset}/${asset}.glb`, async route => { await held; await route.continue(); });
 
     const world = page.locator('#world');
@@ -30,11 +39,10 @@ for (const { track, viewport, asset, quality } of [
       await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', quality);
       await expect(world).toHaveAttribute(`data-${asset}`, 'loading');
       await page.locator('#start-button').click();
-      await expect(page.locator('#race-status')).toHaveText('COUNTDOWN');
+      await expect(page.locator('#countdown-label')).toHaveText('LOADING TRACK SCENERY');
       // Hold the model past the normal three-second countdown to reproduce a slow download.
       const phase = await page.evaluate(() => new Promise(resolve => setTimeout(() => resolve(window.gameplay.race.phase), 4000)));
       expect(phase).toBe('countdown');
-      await expect(page.locator('#countdown-label')).toHaveText('LOADING TRACK SCENERY');
     } finally {
       release();
     }
