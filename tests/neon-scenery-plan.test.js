@@ -384,6 +384,21 @@ test('the sculpture reads as the finale: half again its modelled size, a stone a
   }
 });
 
+// Closing audit 2026-11-16: the court's near tree row and the last pavement tree stood on the line from every lane to
+// the plinth, so the lit rings and lower blades stayed hidden until the car was alongside (rule 19: check it from the seat).
+test('the sculpture shows on the approach: from 200 m out no tree or screen stands between a lane and its plinth', () => {
+  assert.ok(Math.abs(bearing(9200, { lap: 9400, offset: 0 })) < .5, 'the plaza straight is straight on the approach');
+  for (const seed of [undefined, 9]) {
+    const plan = lap(seed), [sculpture] = of(plan, 'plaza_sculpture');
+    const dressing = plan.filter(p => (p.piece === 'cherry_tree' || p.piece.startsWith('billboard')) && p.offset < 0 && p.lap > 9300 && p.lap < sculpture.lap);
+    assert.ok(dressing.filter(p => p.piece === 'cherry_tree').length >= 3, 'the court keeps its near trees');
+    for (const from of [9200, 9250, 9300, 9340]) for (const lane of [-7.5, -2.5, 2.5, 7.5]) for (const p of dressing.filter(p => p.lap > from)) {
+      const sight = lane + (sculpture.offset - lane) * (p.lap - from) / (sculpture.lap - from); // the line to the plinth's middle, at p's lap
+      assert.ok(Math.abs(p.offset - sight) >= 3.4 + 2, `${p.piece} at ${p.lap.toFixed(0)}, ${p.offset} m: on the sightline from ${from}, lane ${lane} (${sight.toFixed(1)} m)`);
+    }
+  }
+});
+
 test('the underpass straight: each block kind has its own street front, so the shared podium never repeats unbroken', () => {
   for (const seed of [undefined, 4]) {
     const plan = lap(seed), dressing = { block_office_b: 'cherry_tree', block_retail_a: 'sign_stack_a', tower_glass_b: 'billboard_a' };

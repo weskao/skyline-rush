@@ -190,6 +190,37 @@ test('kit emissive: the neon tubes reach the bloom and the brightest texel stays
   kit.dispose();
 });
 
+// Closing audit 2026-11-16: at the kit's 1.5 the sculpture's only lamp, the violet plinth rings (brief: sRGB 0.74, 0.22,
+// 1.00), sat at a third of the bloom threshold, and the lap's finale read as a dark shape against the court towers.
+const VIOLET = .2126 * linear(.74) + .7152 * linear(.22) + .0722 * linear(1);
+test('the sculpture has its own emissive strength: its rings reach the bloom within twice the threshold, on a material the layer owns', () => {
+  const { kit, landmarks, pools, pool } = rig(), { threshold } = COAST_ENV_VARIANTS[trackLook('neon').env.track].bloom;
+  const own = pool('plaza_sculpture:near').material, shared = landmarks.getObjectByName('plaza_sculpture_lod0').material;
+  assert.notEqual(own, shared, 'its own copy of the kit material');
+  assert.equal(pool('plaza_sculpture:far').material, own, 'one copy for both bands');
+  assert.ok(VIOLET * own.emissiveIntensity >= threshold, `${own.emissiveIntensity}: its rings glow (${(VIOLET * own.emissiveIntensity).toFixed(2)} >= ${threshold})`);
+  assert.ok(VIOLET * own.emissiveIntensity <= 2 * threshold, `${own.emissiveIntensity}: its rings stay within ${2 * threshold}`);
+  for (const mesh of pools()) if (!mesh.name.startsWith('plaza_sculpture')) assert.notEqual(mesh.material, own, `${mesh.name} keeps the kit's strength`);
+  let freed = false, source = false; own.addEventListener('dispose', () => { freed = true; }); shared.addEventListener('dispose', () => { source = true; });
+  kit.dispose();
+  assert.deepEqual([freed, source], [true, false], 'the layer frees its copy, never the GLB\'s material');
+});
+
+// Closing audit 2026-11-16: a screen is 58 m2 of lit texels where a tube is a line. At the kit's 1.7 its graphics (brief:
+// billboards peak 4.92 at strength 6) sat at 1.55x the bloom threshold, and the street screen beside the car on the
+// straight after the rail tunnel washed to white (28% of its pixels).
+const SCREEN = 4.92 / 6;
+test('the street screen has its own emissive strength: its graphics reach the bloom and stay within a fifth over it', () => {
+  const { kit, city, pool } = rig(), { threshold } = COAST_ENV_VARIANTS[trackLook('neon').env.track].bloom;
+  const own = pool('billboard_a:near').material, shared = city.getObjectByName('billboard_a_lod0').material;
+  assert.notEqual(own, shared, 'its own copy of the kit material');
+  assert.equal(pool('billboard_a:far').material, own, 'one copy for both bands');
+  assert.ok(SCREEN * own.emissiveIntensity >= threshold, `${own.emissiveIntensity}: its graphics glow (${(SCREEN * own.emissiveIntensity).toFixed(2)} >= ${threshold})`);
+  assert.ok(SCREEN * own.emissiveIntensity <= 1.2 * threshold, `${own.emissiveIntensity}: its graphics ${(SCREEN * own.emissiveIntensity).toFixed(2)} stay within ${(1.2 * threshold).toFixed(2)}`);
+  assert.equal(pool('billboard_b:near').material, shared, 'the wall screens, mostly dark, keep the kit\'s strength');
+  kit.dispose();
+});
+
 test('N3: one ground mesh puts land under the city sectors and the harbour yard, and leaves the water open under the expressway, the harbour quay and the bridge', () => {
   const { kit } = rig();
   kit.update(route, 100, 'high');
