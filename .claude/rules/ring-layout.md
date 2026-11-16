@@ -34,6 +34,17 @@ pre-2026-11-07 baseline (user: more variety, but collecting must not get much ha
 - Sky Spiral's 5 spinning hoops and Cosmic Orbit's two climbing 3-hoop gates (`track-themes-classic.ts`,
   `track-themes-world-tour.ts`, themed races)
 - the mixed Gauntlet's hoop over each barricade (`gauntlet-course.ts`, merged by `withHoops`)
+- Neon Downtown's seven sector lines (`src/neon-ring-lines.ts`, a track's `ringLines`; owner brief, 2026-11-15): each
+  its own PERFECT LINE, the random rings give way 100 m before it (`LINE_LEAD`: at 40 m a random ring in a far lane
+  cost the line's first ring) and 40 m after. From 300 to 100 m before a line (`APPROACH`) the random rings lead
+  into it: on the road, in the lane of its first ring, never a risk ring (a ring in the air or in the far lane
+  there still cost the first ring). Guard: `tests/neon-highlights.test.js`. A track may set its own `shapeOdds`
+  (row, train odds per slot) and `ringDensity` (ring slots only, pickups unchanged): Neon's 10 km rolls fewer rows
+  and more trains, or rows pass one shape in three game-wide (`tests/ring-rows.test.js`), and 1.45 times the ring
+  slots, because the lines take 2.9 km of the lap from the random rings (22 rings a km or more). A line
+  that runs through a landmark moves, never the landmark; swings go with a bend's corner push, not against it. The
+  lines do not scale with the grid, so a change re-pins Neon in `tests/scaled-layout.test.js`, the parity, density
+  and variety locks and the replay fixture; a mixed-Gauntlet hoop still replaces a line ring within 30 m
 - each shortcut corridor's reward line: a cell every 60 m from `from + 30` and a tank halfway (`createPickups`)
 - each long-form shortcut or hidden path also gets the dense mix below, in that same window. Classic `RACE_TRACKS` corridors do not
 - trains (6 consecutive rings) and full-width rows still occurring in every race
@@ -49,8 +60,12 @@ layouts, rival takes and PERFECT LINE groups (`tests/catch-up-items.test.js`; de
 `docs/superpowers/specs/2026-11-07-catch-up-items-design.md`).
 
 **Long-form courses** (`topology: 'course-graph' | 'course-graph-runtime'`; user, 2026-11-09): rings and pickups scale
-with length, `itemScale(track) = length / mean classic length` (`race-tracks.ts`). Classic tracks stay at scale 1, so
-their counts are unchanged. Classic traffic uses a `trafficDensity` inside the classic range (0.65–1.5), never 0.
+with length, `itemScale(track) = length / mean classic length` (`race-tracks.ts`). Classic tracks use their own `itemDensity`
+(default 1; the first five maps, Coast → Sky Spiral, carry 1.4 since the user's 2026-11-13 request). Changing it is a
+layout change: bump that track's `layoutVersion`, add the new `<track>@<layout>` ids to `firestore.rules` (to `bestIds()` and as one inline
+check in `validBests`; Firestore stops at 1000 evaluated expressions per write, 60 ids is the measured cap, and only
+the CI `cloud-save` emulator job catches an overrun, not `npm test`, so run `npm run test:cloud` first), re-lock
+`tests/course-item-density.test.js`, the `ring-variety` baseline and the legacy replay fixture. Classic traffic uses a `trafficDensity` inside the classic range (0.65–1.5), never 0.
 On graph runtimes (`src/course-items.ts`) the shared layout is re-keyed to `(edgeId, localS)` on the ground route.
 Every alternate branch gets the shortcut reward line above plus the dense mix, rivals take items on their own edges, and traffic
 runs as unranked course cars on the ground route. Catch-up items stay off graph courses. Guards:

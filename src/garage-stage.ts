@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CAR_STYLES, makeCar, poseWing } from './car-model.js';
 import { createAeroVFX } from './aero-vfx.js';
+import { SHOWROOM } from './sprint-plume.ts';
 import { vfxSettings } from './vfx-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
@@ -59,11 +60,14 @@ export function createGarageStage(environment: THREE.Texture, carEnvironment: TH
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
   const towardsCamera = new THREE.Vector3();
-  const previewDriver = { speed: 105, boosting: true, nitroTime: 1, miniBoost: 0,
+  const previewDriver = { speed: SHOWROOM.speed, boosting: true, nitroTime: 1, miniBoost: 0,
     impact: null, altitude: 0, trick: null };
   const previewRace = { phase: 'racing', player: previewDriver };
   let previewSettings: VfxSettings = vfxSettings({ airflow: true });
   let lastTime = NaN;
+  let previousOrbitYaw: number | undefined;
+  let orbitOffset = 0;
+  let renderedYaw: number | undefined;
   // Airbrake travel 0..1 eased toward the Studio toggle; the same open/close times as racing.
   let wingTilt = 0;
   const platform = new THREE.Mesh(
@@ -109,7 +113,11 @@ export function createGarageStage(environment: THREE.Texture, carEnvironment: TH
     lastTime = time;
     wingTilt = reducedMotion ? +state.wing : Math.max(0, Math.min(1, wingTilt + (state.wing ? dt : -dt) / .5));
     paintSweep.update(time, previewSettings.quality, previewSettings.enabled, reducedMotion || previewSettings.comfortable);
-    const yaw = state.yaw + (state.autoRotate && !reducedMotion ? time * 0.13 : 0);
+    if (!state.autoRotate || state.yaw !== previousOrbitYaw) orbitOffset = 0;
+    else if (!reducedMotion) orbitOffset = (orbitOffset + dt * .13) % (2 * Math.PI);
+    previousOrbitYaw = state.autoRotate ? state.yaw : undefined;
+    const yaw = state.yaw + orbitOffset;
+    renderedYaw = yaw;
     // Frame the actual projected car bounds at every angle, including narrow portrait.
     const flying = state.mode === 'flight';
     const hover = flying ? 1.5 + (reducedMotion ? 0 : Math.sin(time * 1.8) * .12) : 0;
@@ -180,15 +188,13 @@ export function createGarageStage(environment: THREE.Texture, carEnvironment: TH
     aero.group.traverse(object => {
       if (object instanceof THREE.Mesh) releaseVfx(object.geometry);
     });
-    // Scene-owned Aero particles and shock meshes are not children of the car.
-    for (const object of scene.children) {
-      if (object === car || stageMeshes.includes(object as THREE.Mesh)) continue;
+    aero.worldEffects.traverse(object => {
       if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.LineSegments) {
         releaseVfx(object.geometry);
         const materials = Array.isArray(object.material) ? object.material : [object.material];
         materials.forEach(material => material.dispose());
       }
-    }
+    });
     // The car model borrows global box, lamp, spoke and body geometry from car-model.js.
     // Disposing those would invalidate race meshes sharing the same WebGL context.
     for (const mesh of stageMeshes) {
@@ -205,8 +211,10 @@ export function createGarageStage(environment: THREE.Texture, carEnvironment: TH
   }
   return {
     scene, update, inspectBounds, setPaint, dispose,
-    modelHost: { name: 'studio' as const, car, keep: aero.group as THREE.Object3D, scene }, // ?model=probe (garage-model.ts)
-    inspectCosmetics() { return aero.inspectCosmetics(); },
+    getCameraYaw: () => renderedYaw,
+    modelHost: { name: 'studio' as const, car, keep: aero.group as THREE.Object3D, scene, fitAirflow: aero.fitAirflow }, // ?model=probe (garage-model.ts)
+    inspectCosmetics: aero.inspectCosmetics,
+    setEffectsVisible: aero.setVisible,
     setSkins(ids: Partial<Record<SkinCategory, SkinId>>) { aero.setSkins(ids); },
     configureVFX(settings: VfxSettings) { previewSettings = { ...settings, airflow: settings.enabled }; },
   };

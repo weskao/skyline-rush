@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createRace, stepRace, RACE_TRACKS } from '../src/game.js';
+import { createInteractiveTutorial } from '../src/interactive-tutorial.ts';
+
+function tick(race, distance, speed, input = {}, altitude = 0) {
+  Object.assign(race, { phase: 'racing', traffic: [], rivals: [], rings: [], pickups: [] });
+  Object.assign(race.player, { distance, speed, altitude, x: 0, steering: 0, cooldown: 1 });
+  stepRace(race, { throttle: true, ...input }, 1 / 60);
+  return race.player.x;
+}
+
+test('Neon corners pull a fast grounded car outward in each direction and steering can correct', () => {
+  const race = () => createRace('neon', { mode: 'time' });
+  // 10 km lap (2026-11-15): the same bends at their new lap metres, underpass corner 663-942 and market left bend 1685-1932.
+  assert.ok(tick(race(), 1878, 88) > .005, 'the night-market left bend pushes right');
+  assert.ok(tick(race(), 800, 88) < -.005, 'the underpass right corner pushes left');
+  const correcting = race();
+  Object.assign(correcting, { phase: 'racing', traffic: [], rivals: [], rings: [], pickups: [] });
+  Object.assign(correcting.player, { distance: 1878, speed: 88, x: 0, steering: -1, cooldown: 1 });
+  stepRace(correcting, { throttle: true, steer: -1 }, 1 / 60);
+  assert.ok(correcting.player.x < 0, 'full steering retains authority');
+});
+
+test('corner load preserves the grid, slow handling, flight and tutorial steering', () => {
+  const race = () => createRace('neon', { mode: 'time' });
+  assert.equal(tick(race(), 40, 88), 0);
+  assert.equal(tick(race(), 800, 24), 0);
+  assert.equal(tick(race(), 800, 88, {}, 5), 0);
+  assert.equal(tick(createInteractiveTutorial().race, 330, 88), 0);
+});
+
+test('both streaming modes carry corner load beyond the original finish', () => {
+  for (const mode of ['endless', 'elimination']) {
+    const race = createRace('neon', { mode });
+    // Neon is a closed lap (layout 7): the second lap bends the same way as the first.
+    assert.ok(tick(race, RACE_TRACKS.neon.length + 800, 88) < -.005, mode);
+  }
+});
+
+test('cornering responds consistently to 30, 60 and 120 Hz steering steps', () => {
+  const positions = [30, 60, 120].map(hz => {
+    const race = createRace('neon', { mode: 'time' });
+    Object.assign(race, { phase: 'racing', traffic: [], rivals: [], rings: [], pickups: [] });
+    Object.assign(race.player, { distance: 1778, x: 0, speed: 85, cooldown: 2 });
+    for (let i = 0; i < hz; i++) stepRace(race, { throttle: true }, 1 / hz);
+    return race.player.x;
+  });
+  assert.ok(positions.every(x => x > .5));
+  assert.ok(Math.max(...positions) - Math.min(...positions) < .12);
+});

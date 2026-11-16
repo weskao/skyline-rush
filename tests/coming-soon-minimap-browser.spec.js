@@ -10,9 +10,13 @@ for (const id of courses) {
   test(`${id} race map draws the course and moves all eight racers`, async ({ gameplayPage: page }) => {
     test.setTimeout(ciTimeout(40_000));
     await page.locator(`[data-upcoming-track="${id}"]`).click();
+    const mapPaths = async selector => page.locator(selector).evaluateAll(nodes =>
+      nodes.map(node => [node.getAttribute('data-edge'), node.getAttribute('points')]));
+    const home = await mapPaths(`[data-upcoming-track="${id}"] .track-route-map [data-edge]`);
     await expect(page.locator('#start-button')).toBeEnabled();
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(16_000) });
+    expect(await mapPaths('#race-route-map [data-edge]')).toEqual(home);
     const before = await page.evaluate(() => {
       const line = document.querySelector('#race-route-map .route-overview-line');
       return {
@@ -30,8 +34,9 @@ for (const id of courses) {
       const race = window.gameplay.race;
       for (let i = 0; i < 180 && race.phase === 'racing'; i++) stepRace(race, { throttle: true }, 1 / 60);
     });
-    await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('#race-route-map [data-racer]')].map(node => `${node.getAttribute('data-racer')}:${node.getAttribute('cx')},${node.getAttribute('cy')}`))).not.toEqual(before.markers);
-    const after = await page.evaluate(() => [...document.querySelectorAll('#race-route-map [data-racer]')].map(node => `${node.getAttribute('data-racer')}:${node.getAttribute('cx')},${node.getAttribute('cy')}`));
-    expect(after.filter((spot, index) => spot !== before.markers[index])).toHaveLength(8);
+    // Poll for all eight: "any marker changed" was already true from the live loop's own HUD tick before the stepped
+    // frames were drawn, and near-grid racers on Volcanic's wide map had not yet moved a rounded 0.01 (2 in 3 runs).
+    await expect.poll(async () => (await page.evaluate(() => [...document.querySelectorAll('#race-route-map [data-racer]')].map(node => `${node.getAttribute('data-racer')}:${node.getAttribute('cx')},${node.getAttribute('cy')}`)))
+      .filter((spot, index) => spot !== before.markers[index]).length).toBe(8);
   });
 }

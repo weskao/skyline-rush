@@ -34,7 +34,7 @@ test('Frostbite records live under one topology-keyed id', () => {
   assert.deepEqual(recordTrackIds(FROSTBITE_ID), [KEY]);
   assert.deepEqual(parseRecordTrackId(KEY), { trackId: FROSTBITE_ID, layout: 1 });
   for (const stale of ['frostbite-canyon@t2l1', 'frostbite-canyon@t1l2', 'frostbite-canyon@2']) assert.equal(parseRecordTrackId(stale), null, stale);
-  assert.equal(recordTrackId('coast'), 'coast@4', 'classic ids unchanged');
+  assert.equal(recordTrackId('coast'), 'coast@6', 'Classic still uses a layout version without a topology prefix');
 });
 
 test('a finished Frostbite race saves history, a topology-keyed best and its Ghost; no campaign effects', async () => {
@@ -77,7 +77,7 @@ test('firestore.rules accepts the Frostbite topology-keyed best', () => {
   const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
   const listed = [...rules.match(/function bestIds\(\) \{[^}]*\}/)[0].matchAll(/'([^']+)'/g)].map(m => m[1]);
   assert.ok(listed.includes(KEY));
-  assert.match(rules, new RegExp(`validBest\\(bests, '${KEY}'\\)`));
+  assert.ok(rules.includes(`math.abs(b.get('${KEY}', 302400) - 302400) < 302400`), 'validBests checks the key inline');
 });
 
 test('release builds keep Frostbite a Coming Soon card', () => {

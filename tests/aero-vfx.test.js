@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { Scene, Group, Mesh, BoxGeometry, Vector3 } from 'three';
 import { createRace } from '../src/game.js';
 import { createAeroVFX, dashSamples } from '../src/aero-vfx.js';
@@ -61,6 +62,22 @@ test('VFX is read-only to race state, follows rotated anchors and rebases histor
   }
 });
 
+// User, 2026-11-13: the Frostbite showroom under Reduced Motion failed its stillness gate once dimmer lighting made the
+// exhaust shimmer readable. Reduced Motion and Comfortable hold every exhaust/airflow shader clock still.
+test('Reduced Motion and Comfortable freeze every exhaust and airflow shader clock in the showroom', () => {
+  for (const [calm, comfortable] of [[true, false], [false, true], [false, false]]) {
+    const { scene, vfx, race, options } = fixture();
+    race.phase = 'ready'; race.player.boosting = false; options.comfortable = comfortable;
+    const clocks = () => { const t = []; scene.traverse(o => { const u = o.material?.uniforms?.time; if (u) t.push(u.value); }); return t; };
+    vfx.update(race, .05, new Vector3(), options, calm, null, true);
+    const first = clocks();
+    vfx.update(race, .05, new Vector3(), options, calm, null, true);
+    assert.ok(first.length >= 6, 'jets, plume flare/glow, airflow, pressure and ribbon clocks found');
+    if (calm || comfortable) assert.deepEqual(clocks(), first, `calm=${calm} comfortable=${comfortable}`);
+    else assert.notDeepEqual(clocks(), first, 'full motion keeps animating');
+  }
+});
+
 test('repeated boost cycles stay bounded, release fades and restart clears every transient', () => {
   const { scene, vfx, race, update, vapor } = fixture();
   const count = scene.children.length;
@@ -76,7 +93,7 @@ test('repeated boost cycles stay bounded, release fades and restart clears every
   assert.ok(vapor.geometry.attributes.alpha.array.some(a => a > 0));
   vfx.reset();
   assert.ok(vapor.geometry.attributes.alpha.array.every(a => a === 0));
-  assert.ok(scene.children.filter(child => child.isLineSegments).every(child => !child.visible));
+  assert.ok(vfx.worldEffects.children.filter(child => child.isLineSegments).every(child => !child.visible));
 });
 
 test('NITRO and drift rewards ignite the existing exhaust without a held BOOST input', () => {
@@ -160,10 +177,10 @@ test('real roll uses world-space streak edges without enabling attached airflow 
   const f = rollingTrace();
   assert.ok(live(f.ribbon.geometry).length > 0);
   assert.ok(f.ribbon.geometry.attributes.rollWake.array.some(x => x === 1));
-  assert.equal(f.ribbon.parent, f.scene);
+  assert.equal(f.ribbon.parent.parent, f.scene, 'the ribbon remains world-space, independent of the car pose');
   const local = f.scene.getObjectByName('Airflow showcase');
   assert.equal(local.children.find(x => x.geometry?.attributes.flowType).visible, false);
-  assert.ok(local.children.filter(x => x.name.startsWith('Cold gas')).every(x => !x.visible));
+  assert.ok(local.getObjectByName('Rear ports').children.filter(x => x.name.startsWith('Cold gas')).every(x => !x.visible));
   assert.equal(f.race.player.boosting, false);
 });
 
@@ -270,7 +287,7 @@ test('wave2 sprint state: combined effects are bounded, comfort and VFX off supp
   assert.equal(sprint.update({ ...base, phase: 'paused' }).power, 0, 'restart clears visual state');
 });
 
-test('wave2 renderer distinguishes purple NITRO from cyan BOOST with shared geometry and bounded repeated triggers', async () => {
+test('wave2 renderer distinguishes gold NITRO from cyan BOOST with shared geometry and bounded repeated triggers', async () => {
   const { createSprintVfx } = await import('../src/vfx-settings.ts');
   const { scene, vfx, race, options, vehicle } = fixture();
   const sprint = createSprintVfx();
@@ -285,8 +302,8 @@ test('wave2 renderer distinguishes purple NITRO from cyan BOOST with shared geom
   race.player.boosting = false; race.player.nitroTime = 1;
   state = sprint.update({ ...input, nitro: true, boost: false });
   vfx.update(race, 0.05, new Vector3(), options, false, state);
-  const violet = flow.material.uniforms.nitroMix.value;
-  assert.ok(violet > cyan, 'NITRO must be visually distinguishable from BOOST');
+  const gold = flow.material.uniforms.nitroMix.value;
+  assert.ok(gold > cyan, 'NITRO must be visually distinguishable from BOOST');
   race.player.boosting = true;
   for (let i = 0; i < 60; i++) {
     state = sprint.update({ ...input, nitro: i % 2 === 0, boost: true });
@@ -305,7 +322,7 @@ test('sprint FOV: NITRO+BOOST widens the camera by the full FOV setting on every
   const settle = input => {
     const sprint = createSprintVfx();
     let frame;
-    for (let i = 0; i < 10; i++) frame = sprint.update(input);
+    for (let i = 0; i < 20; i++) frame = sprint.update(input); // 1 s: past the ignition punch
     return frame;
   };
   const offsets = {}, comfort = {};
@@ -323,7 +340,77 @@ test('sprint FOV: NITRO+BOOST widens the camera by the full FOV setting on every
     enabled: true, quality: 'high', reducedMotion: false }), vfxSettings({ enabled: false })), 0, 'VFX off');
 });
 
-test('cyan NITRO trail replaces the standard purple from the first NITRO frame', async () => {
+// The FOV share used to jump to 65% of the sprint on the ignition frame (18.6 deg/s on the first frame).
+test('sprint camera: the FOV share ramps in over 0.3 s and the kick clock restarts only on a fresh ignition', async () => {
+  const { createSprintVfx } = await import('../src/vfx-settings.ts');
+  const sprint = createSprintVfx(), dt = 1 / 60;
+  const idle = { phase: 'racing', nitro: false, boost: false, speed: 110, cap: 110, dt, enabled: true, quality: 'high', reducedMotion: false };
+  const held = { ...idle, boost: true };
+  assert.ok(sprint.update(idle).kick >= 0.25, 'no kick while nothing fires');
+  let frame = sprint.update(held);
+  assert.equal(frame.kick, 0, 'the kick clock starts with the ignition');
+  assert.ok(frame.fov > 0 && frame.fov <= 0.1, `ignition frame FOV share ${frame.fov}: a ramp, not a jump`);
+  for (let i = 0, last = frame.fov; i < 20; i++, last = frame.fov) {
+    frame = sprint.update(held);
+    assert.ok(frame.fov >= last && frame.fov - last <= dt / 0.3 + 1e-9, 'rises at an even rate');
+  }
+  assert.equal(frame.fov, frame.power, 'at the full sprint share 0.35 s after the ignition');
+  assert.ok(Math.abs(frame.kick - 20 * dt) < 1e-9, 'the kick clock runs in race time');
+  sprint.update(idle);
+  assert.ok(sprint.update(held).kick > 0.3, 'a BOOST that flickers off for a frame does not kick again');
+  assert.equal(sprint.update({ ...held, nitro: true }).kick, 0, 'NITRO fired on top of a held BOOST is a fresh ignition');
+  for (let i = 0; i < 40; i++) frame = sprint.update(idle);
+  assert.equal(frame.fov, 0, 'back to rest after the recovery');
+  assert.equal(createSprintVfx().update({ ...held, reducedMotion: true }).fov, 0, 'Reduced Motion never widens the camera');
+});
+
+// The sprint pulse alone (0.3 s ramp, faint kick) left NITRO/BOOST without an impact: one smooth ignition punch.
+test('sprint camera: a fresh ignition punches the FOV past the held sprint, then settles; comfort and repeats do not', async () => {
+  const { createSprintVfx, sprintFovOffset } = await import('../src/vfx-settings.ts');
+  const sprint = createSprintVfx(), dt = 1 / 60, visual = vfxSettings();
+  const idle = { phase: 'racing', nitro: false, boost: false, speed: 110, cap: 110, dt, enabled: true, quality: 'high', reducedMotion: false };
+  const held = { ...idle, boost: true };
+  assert.equal(sprint.update(idle).punch, 0, 'no punch while nothing fires');
+  const offsets = [], punches = [], blurs = [];
+  for (let i = 0; i < 90; i++) { const frame = sprint.update(held); offsets.push(sprintFovOffset(frame, visual)); punches.push(frame.punch); blurs.push(frame.blur); }
+  // The camera FOV as src/world.js smooths it (rate 7/s): what the player sees.
+  const camera = []; for (const target of offsets) camera.push((camera.at(-1) ?? 0) + (target - (camera.at(-1) ?? 0)) * (1 - Math.exp(-7 * dt)));
+  const held1 = camera.at(-1), peak = Math.max(...camera);
+  assert.ok(punches[0] < 0.2, `ignition frame punch ${punches[0]}: eased in, not a step`);
+  assert.ok(peak - held1 >= 1.5 && peak - held1 <= 3.5, `FOV overshoot ${(peak - held1).toFixed(2)} deg past the held ${held1.toFixed(2)}`);
+  assert.ok(camera.slice(1).every((value, i) => Math.abs(value - camera[i]) <= 45 * dt), 'a punch, never a snap: under 45 deg/s');
+  assert.equal(punches.at(-1), 0, 'gone 1.5 s after the ignition');
+  assert.ok(Math.max(...blurs) > blurs.at(-1) * 1.3, 'the radial blur flashes on the ignition');
+  const settled = sprint.update(held);
+  assert.ok(Math.abs(settled.blur - 0.6 * settled.power) < 1e-9, `held radial blur unchanged: ${settled.blur} at power ${settled.power}`);
+  sprint.update(idle);
+  assert.ok(sprint.update(held).punch < 0.01, 'a flickering BOOST does not punch again');
+  assert.equal(createSprintVfx().update({ ...held, reducedMotion: true }).punch, 0, 'Reduced Motion never punches');
+});
+
+// The car squats on the ignition (nose up, src/vehicle-render-motion.js) before the camera's punch peaks: the camera follows late.
+test('car squat: a fresh ignition lifts the nose ahead of the camera punch, then settles; comfort, VFX off and repeats do not', async () => {
+  const { createSprintVfx } = await import('../src/vfx-settings.ts');
+  const sprint = createSprintVfx(), dt = 1 / 60;
+  const idle = { phase: 'racing', nitro: false, boost: false, speed: 110, cap: 110, dt, enabled: true, quality: 'high', reducedMotion: false };
+  const held = { ...idle, boost: true };
+  assert.equal(sprint.update(idle).squat, 0, 'no squat while nothing fires');
+  assert.equal(sprint.frame, sprint.update(idle), 'the frame is readable before this frame\'s update (world.js poses the car first)');
+  const squats = [], punches = [];
+  for (let i = 0; i < 60; i++) { const frame = sprint.update(held); squats.push(frame.squat); punches.push(frame.punch); }
+  const peak = Math.max(...squats), peakAt = squats.indexOf(peak) * dt, punchAt = punches.indexOf(Math.max(...punches)) * dt;
+  assert.ok(peak >= 0.9 && peak <= 1, `full squat at top speed: ${peak.toFixed(3)}`);
+  assert.ok(squats[0] < 0.3, 'eased in, not a step');
+  assert.ok(peakAt <= 0.15 && punchAt - peakAt >= 0.05, `body peaks at ${peakAt.toFixed(3)} s, the camera punch at ${punchAt.toFixed(3)} s`);
+  assert.ok(squats.slice(Math.ceil(0.5 / dt)).every(value => value === 0), 'settled within 0.5 s');
+  sprint.update(idle);
+  assert.ok(sprint.update(held).squat < 0.01, 'a flickering BOOST does not squat again');
+  assert.equal(createSprintVfx().update({ ...held, reducedMotion: true }).squat, 0, 'Reduced Motion never squats');
+  const off = createSprintVfx(); off.update(held);
+  assert.equal(off.update({ ...held, enabled: false }).squat, 0, 'VFX off resets the squat');
+});
+
+test('cyan NITRO trail replaces the standard gold from the first NITRO frame', async () => {
   const { createSprintVfx } = await import('../src/vfx-settings.ts');
   const firstFrame = skin => {
     const { vfx, race, options, vehicle } = fixture();
@@ -344,7 +431,7 @@ test('cyan NITRO trail replaces the standard purple from the first NITRO frame',
   assert.ok(g > r * 3 && b > r * 3, 'accent is cyan');
   assert.equal(cyan.mix, standard.mix, 'NITRO timing does not depend on the skin');
   assert.ok(cyan.mix > 0.5, 'NITRO colour from the first frame');
-  assert.match(cyan.shader, /mix\(vec3\(\.72,\.4,1\.\),trailAccent\.rgb,trailAccent\.a\)/, 'the skin colour takes the purple slot');
+  assert.match(cyan.shader, /mix\(vec3\(1\.,\.82,\.4\),trailAccent\.rgb,trailAccent\.a\)/, 'the skin colour takes the NITRO gold slot');
   assert.doesNotMatch(cyan.shader, /trailAccent\.a\*[^;]*vUv\.x/, 'whole streamline, not only the tails');
 });
 
@@ -363,7 +450,7 @@ test('AIRFLOW off (V) hides the streamline showcase during BOOST/NITRO; the NITR
     }
     const [flow, pressure] = vehicle.getObjectByName('Airflow showcase').children;
     const ribbon = scene.getObjectByName('Continuous dash ribbon');
-    const jets = vehicle.getObjectByName('Airflow showcase').children.filter(child => child.material?.uniforms?.diamonds);
+    const jets = vehicle.getObjectByName('Rear ports').children.filter(child => child.material?.uniforms?.diamonds);
     return { flow: flow.visible, pressure: pressure.visible, ribbon: ribbon.geometry.attributes.alpha.array.some(a => a > 0),
       jets: jets.some(jet => jet.visible) };
   };
@@ -373,4 +460,31 @@ test('AIRFLOW off (V) hides the streamline showcase during BOOST/NITRO; the NITR
   assert.ok(off.ribbon, 'NITRO trail (and its Garage skin) still shows with AIRFLOW off');
   assert.ok(off.jets, 'thruster jets still show with AIRFLOW off');
   assert.ok(on.flow, 'AIRFLOW on: streamlines still show while sprinting');
+});
+
+test('NITRO chain lifts sprint flames, speed lines and FOV per charge, eases back after NITRO', async () => {
+  const { createSprintVfx, NITRO_CHAIN_LIFT } = await import('../src/vfx-settings.ts');
+  const base = { phase: 'racing', nitro: true, boost: false, speed: 110, cap: 110, dt: 0.05,
+    enabled: true, quality: 'high', reducedMotion: false };
+  const settle = (sprint, input) => { let s; for (let i = 0; i < 40; i++) s = sprint.update(input); return { ...s }; };
+  const levels = [1, 2, 3].map(chain => settle(createSprintVfx(), { ...base, chain }));
+  assert.deepEqual(NITRO_CHAIN_LIFT, [1, 1.2, 1.4]);
+  levels.forEach((s, i) => {
+    assert.ok(Math.abs(s.power - NITRO_CHAIN_LIFT[i]) < 1e-3, `×${i + 1} power ${s.power}`);
+    assert.ok(Math.abs(s.fov - NITRO_CHAIN_LIFT[i]) < 1e-3, `×${i + 1} fov ${s.fov}`);
+  });
+  assert.equal(settle(createSprintVfx(), { ...base, chain: 99 }).power, levels[2].power, 'chain clamps at ×3');
+  assert.equal(settle(createSprintVfx(), { ...base, chain: NaN }).power, levels[0].power, 'invalid chain reads as ×1');
+  const boostOnly = settle(createSprintVfx(), { ...base, nitro: false, boost: true, chain: 3 });
+  assert.ok(boostOnly.power <= 1, 'BOOST alone never takes the NITRO chain lift');
+  const sprint = createSprintVfx();
+  settle(sprint, { ...base, chain: 3 });
+  assert.ok(sprint.update({ ...base, chain: 1 }).power > 1, 'a level change eases instead of snapping');
+  assert.ok(settle(sprint, { ...base, nitro: false, chain: 3 }).power < 1e-3, 'NITRO end fades the lift away');
+  assert.equal(settle(createSprintVfx(), { ...base, chain: 3, reducedMotion: true }).fov, 0, 'comfort keeps the camera still');
+});
+
+test('world feeds the player NITRO chain into the sprint VFX', () => {
+  const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
+  assert.match(world, /chain: car\.nitroTime > 0 \? car\.nitroBurst : 0/);
 });

@@ -59,7 +59,7 @@ export const DUNE_TEMPEST_AUTHORED_EDGES: readonly Edge[] = [
   edge('winding-wadi', 'split1', 'merge1', 'main', 'canyon-track', 28, 1,
     [[1580, 8, -1930], [1640, 10, -2320], [1460, 6, -2780]]),
   edge('dune-crest-cut', 'split1', 'merge1', 'shortcut', 'dune-crest', 26, 2,
-    [[1240, 18, -2140], [1140, 22, -2550], [1060, 8, -2900]]),
+    [[1240, 8.6, -2040], [1210, 18, -2240], [1140, 22, -2550], [1060, 9.4, -2900]]),
   edge('rock-gate-descent', 'merge1', 'cp2', 'main', 'sand-road', 30, 2,
     [[600, 8, -3330], [380, 8, -3550], [550, 10, -3780], [520, 12, -4020]]),
   edge('canyon-approach', 'cp2', 'split2', 'main', 'sand-road', 38, 1,
@@ -67,24 +67,24 @@ export const DUNE_TEMPEST_AUTHORED_EDGES: readonly Edge[] = [
   edge('canyon-switchbacks', 'split2', 'merge2', 'main', 'canyon-track', 26, 1, [
     [-1450, 10, -4480], [-1550, 10, -4600], [-1400, 12, -4730], [-900, 15, -4740],
     [-560, 13, -4810], [-480, 12, -4980], [-640, 10, -5100], [-1200, 12, -5110],
-    [-1720, 10, -5210], [-1540, 12, -5400], [-1400, 12, -5540], [-900, 15, -5560],
+    [-1720, 10, -5210], [-1620, 12, -5400], [-1400, 12, -5540], [-900, 15, -5560],
     [-550, 10, -5650], [-500, 12, -5790], [-680, 10, -5930], [-875, 10, -5980],
   ]),
   {
     ...edge('canyon-air-crossing', 'split2', 'merge2', 'shortcut', 'air-route', 24, 3,
-      [[-620, 28, -4570], [-640, 68, -4720], [-710, 95, -5000],
-        [-850, 84, -5350], [-900, 22, -5760]], ['ground', 'flight']),
+      [[-653, 12, -4500], [-628, 12.1, -4550], [-613, 15, -4600], [-640, 68, -4720], [-710, 95, -5000],
+        [-850, 84, -5350], [-900, 22, -5760], [-916, 10, -5830], [-929, 10, -5890], [-941, 10, -5950]], ['ground', 'flight']),
     takeoff: { cueLeadMeters: 170, clearWidthMeters: 34 },
     landing: { clearLengthMeters: 105, recoveryEdgeId: 'canyon-switchbacks' },
   },
   edge('stone-ring-corridor', 'merge2', 'cp3', 'main', 'canyon-track', 34, 1,
-    [[-1130, 10, -6200], [-1740, 16, -6420], [-1710, 14, -6760], [-1350, 10, -6830]]),
+    [[-1130, 10, -6200], [-1740, 16, -6420], [-1710, 14, -6760], [-1430, 10, -6870]]),
   edge('sandstorm-climb', 'cp3', 'split3', 'main', 'dune-crest', 42, 2,
     [[-1900, 9, -7130], [-1960, 9, -7410], [-1620, 10, -7590]]),
   edge('natural-arch-pass', 'split3', 'merge3', 'main', 'canyon-track', 28, 1,
-    [[-900, 12, -7730], [-750, 8, -8080], [-950, 8, -8330], [-770, 10, -8520]]),
-  edge('dry-wash-cut', 'split3', 'merge3', 'shortcut', 'dry-wash', 52, 2,
-    [[-1070, 4, -8020], [-720, 5, -8320]]),
+    [[-900, 10.5, -7730], [-620, 8, -8080], [-940, 8, -8310], [-760, 9.85, -8510]]),
+  edge('dry-wash-cut', 'split3', 'merge3', 'shortcut', 'dry-wash', 48, 2,
+    [[-1070, 10.3, -8000], [-1010, 5, -8410], [-900, 9.5, -8585], [-700, 10.05, -8570]]),
   edge('stone-ring-outlet', 'merge3', 'cp4', 'main', 'sand-road', 48, 1,
     [[-170, 10, -8730], [110, 8, -8890], [320, 8, -9180]]),
   edge('finish-sprint', 'cp4', 'finish', 'main', 'sand-road', 60, 1,
@@ -92,7 +92,8 @@ export const DUNE_TEMPEST_AUTHORED_EDGES: readonly Edge[] = [
 ];
 
 // Q9: junctions are made tangent-continuous; only control points near nodes change.
-const junctions = smoothDuneJunctions({ id: 'dune-tempest', topologyVersion: 1, nodes,
+const TOPOLOGY_VERSION = 2;
+const junctions = smoothDuneJunctions({ id: 'dune-tempest', topologyVersion: TOPOLOGY_VERSION, nodes,
   edges: DUNE_TEMPEST_AUTHORED_EDGES, checkpoints: ['cp1', 'cp2', 'cp3', 'cp4'] });
 const edges = junctions.edges;
 /** Authored-arc metres of each edge's start / end junction blend (keep hazards outside). */
@@ -122,7 +123,7 @@ const hazards = [
 
 /** Draft contracts only: no collisions, particles or AI avoidance are wired here. */
 export const DUNE_TEMPEST_COURSE = {
-  id: 'dune-tempest', topologyVersion: 1, targetMainLengthMeters: 13500,
+  id: 'dune-tempest', topologyVersion: TOPOLOGY_VERSION, targetMainLengthMeters: 13500,
   status: 'graph-runtime-required' as const,
   nodes, edges, checkpoints: ['cp1', 'cp2', 'cp3', 'cp4'] as const, hairpins,
   hazards: hazards.map(h => ({

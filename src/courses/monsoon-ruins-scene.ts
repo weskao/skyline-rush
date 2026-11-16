@@ -272,7 +272,7 @@ export function createMonsoonRuinsChunk(options: MonsoonChunkOptions) {
   const root = new THREE.Group();
   root.name = 'monsoon-course-chunk-' + edgeId;
   const owned = [
-    new THREE.MeshStandardMaterial({ color: palette.road, roughness: .34, metalness: .08,
+    new THREE.MeshStandardMaterial({ color: palette.road, roughness: .67, metalness: .06,
       side: THREE.DoubleSide }),
     new THREE.MeshStandardMaterial({ color: palette.stone, roughness: .95, side: THREE.DoubleSide }),
     new THREE.MeshStandardMaterial({ color: palette.mud, roughness: .97, vertexColors: true, side: THREE.DoubleSide }),
@@ -280,8 +280,8 @@ export function createMonsoonRuinsChunk(options: MonsoonChunkOptions) {
     new THREE.MeshStandardMaterial({ color: palette.shadow, roughness: 1 }),
     new THREE.MeshStandardMaterial({ color: palette.jungle, roughness: .98 }),
     new THREE.MeshStandardMaterial({ color: palette.moss, roughness: .94 }),
-    new THREE.MeshPhysicalMaterial({ color: palette.water, roughness: .12, metalness: .18,
-      clearcoat: .85, clearcoatRoughness: .1, transparent: true, opacity: .68,
+    new THREE.MeshPhysicalMaterial({ color: palette.water, roughness: .43, metalness: .07,
+      clearcoat: .28, clearcoatRoughness: .37, transparent: true, opacity: .56,
       depthWrite: false, side: THREE.DoubleSide }),
   ];
   const [mud, stone, terrain, bark, shadow, foliage, crown, water] = owned;

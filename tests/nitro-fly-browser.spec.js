@@ -35,6 +35,20 @@ test('desktop: FLY + NITRO shows AIR DASH · NITRO and keeps flying', async ({ p
   await page.keyboard.up('w');
 });
 
+test('desktop: pressing NITRO again during NITRO shows the chain level', async ({ page }) => {
+  await chargedStart(page);
+  await page.keyboard.down('w');
+  const frames = () => page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
+  for (const level of ['NITRO ACTIVE', 'NITRO ×2', 'NITRO ×3']) {
+    // Held across frames, then released: one press per charge, never a down/up pair inside one frame.
+    await page.keyboard.down('e');
+    await expect(page.locator('#flight-state')).toHaveText(level);
+    await page.keyboard.up('e');
+    await frames();
+  }
+  await page.keyboard.up('w');
+});
+
 test.describe('touch', () => {
   test.use({ hasTouch: true, viewport: { width: 844, height: 390 } });
   test('NITRO + FLY held together show AIR DASH · NITRO', async ({ page, context }) => {

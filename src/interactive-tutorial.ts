@@ -1,4 +1,5 @@
-import { createRace, startRace, DRIFT_MIN_SPEED, DRIFT_BLEED } from './game.js';
+import { createRace, startRace } from './game.js';
+import { DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_FIRST_TIER, driftTier } from './drive-rules.ts';
 import { createTutorialManeuverState, type ManeuverSnapshot } from './tutorial-maneuver-state.ts';
 import { isGateStep, placeGate, judgeGate, gateGuide, placeBoostStretch, BOOST_LIMIT, type GateRing } from './tutorial-gates.ts';
 import { tutorialCue } from './tutorial-cues.ts';
@@ -16,8 +17,9 @@ export const CLEARED_SECONDS = 1.4; // long enough to read the pass toast
 // Only these lessons ask for a sustained 0.4 s hold; the rest complete on a real engine event.
 const HELD_STEPS: readonly string[] = ['throttle', 'fly'];
 const BRAKE_CRAWL = 25; // m/s: a held brake still reaches the gate in a few seconds
-// m/s: a drift ends below DRIFT_MIN_SPEED, so it must start fast enough to outlast its bleed to the 1 s payout.
-const DRIFT_ENTRY = DRIFT_MIN_SPEED + DRIFT_BLEED * 1;
+// m/s: a drift ends below DRIFT_MIN_SPEED, so it must start fast enough to outlast its bleed to the first payout.
+const DRIFT_ENTRY = DRIFT_MIN_SPEED + DRIFT_BLEED * DRIFT_FIRST_TIER;
+const driftProgress = (time: number): number => driftTier(time) ? 1 : time / DRIFT_FIRST_TIER;
 // m behind the car a collected gate ring stays in race.rings: audio and effects read hits after the step.
 const SPENT_RING_METERS = 60;
 
@@ -142,7 +144,7 @@ export function createInteractiveTutorial() {
     race,
     get index() { return index; },
     get step() { return TUTORIAL_STEPS[index] ?? null; },
-    get progress() { return index === TUTORIAL_STEPS.length || finishing ? 1 : TUTORIAL_STEPS[index] === 'drift' ? Math.min(1, ((car as unknown as { drift: { time: number } | null }).drift?.time ?? 0) / 1) : maneuver?.progress ?? Math.min(1, held / .4); },
+    get progress() { return index === TUTORIAL_STEPS.length || finishing ? 1 : TUTORIAL_STEPS[index] === 'drift' ? driftProgress((car as unknown as { drift: { time: number } | null }).drift?.time ?? 0) : maneuver?.progress ?? Math.min(1, held / .4); },
     get coachPhase() {
       if (finishing) return 'finishing';
       const phase = maneuver?.phase ?? (retryReason ? 'retry' : 'ready');
@@ -191,7 +193,7 @@ export function createInteractiveTutorial() {
       else if (isGateStep(step)) valid = judgeGateStep(step);
       else if (step === 'boost') valid = judgeStretch();
       else if (step === 'drift') {
-        valid = ((car as unknown as { driftPayout: { nitro: number } | null }).driftPayout?.nitro ?? 0) >= 0.15 && car.miniBoost > 0;
+        valid = !!(car as unknown as { driftPayout: { nitro: number } | null }).driftPayout && car.miniBoost > 0; // any tier pays
         if (car.drift) { drifted = true; if (retryReason === 'slow') retryReason = null; }
         else if (drifted && !valid) { drifted = false; retryReason = 'short'; } // released before the first payout tier
         // Lessons keep the player's speed, so a drift tried at crawl speed only brakes: say why.

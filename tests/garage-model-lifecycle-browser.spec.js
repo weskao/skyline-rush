@@ -1,4 +1,4 @@
-import { test } from './helpers/gameplay-browser.js';
+import { test, watchRequests } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { createServer } from 'vite';
@@ -12,8 +12,7 @@ const world = page => page.locator('#world');
 
 /** Opens `url`, recording GLB request paths, console errors, uncaught errors and `[model-probe]` warnings. */
 async function open(page, url) {
-  const seen = { glb: [], errors: [], warnings: [] };
-  page.on('request', request => { const { pathname } = new URL(request.url()); if (GLB.test(pathname)) seen.glb.push(pathname); });
+  const seen = { glb: await watchRequests(page, GLB), errors: [], warnings: [] };
   page.on('pageerror', error => seen.errors.push(error.message));
   page.on('console', message => {
     if (message.type() === 'error') seen.errors.push(message.text());

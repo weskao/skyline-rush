@@ -14,6 +14,7 @@ test('landscape language controls remain clickable while the quality notice is v
   await expect(page.locator('#performance-notice')).toBeVisible();
   await selectLocale(page, 'zh-TW');
   await expect(page.locator('#performance-notice-text')).toContainText('低');
+  await page.locator('#performance-notice summary').click();
   await page.locator('#performance-notice-dismiss').click();
   await expect(page.locator('#performance-notice')).toBeHidden();
 });
@@ -58,21 +59,19 @@ test('starting a race puts the downgrade notice away so it never covers the race
   await expect(page.locator('#performance-notice')).toBeHidden();
 });
 
-test('without ?look=3d Settings is the develop one: no Ultra option, and a saved Ultra shows as High but is kept', async ({ page }) => {
-  await page.goto('/');
-  await page.evaluate(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high', ultra: true, preset: 'cinematic', enabled: true })));
-  await page.reload();
-  const quality = page.locator('select[data-vfx="quality"]');
-  await expect(quality.locator('option')).toHaveText(['Low', 'Medium', 'High']);
-  await expect(quality).toHaveValue('high');
-  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'high');
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx')))).toMatchObject({ quality: 'high', ultra: true });
-  await page.goto('/?look=3d');
-  await expect(page.locator('select[data-vfx="quality"]')).toHaveValue('ultra'); // the same saved choice, back with the gate
-});
+for (const [label, url] of [['plain', '/'], ['legacy', '/?3d=1&look=3d&model=roadster']]) {
+  test(`the saved Ultra tier displays on the ${label} URL`, async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high', ultra: true })));
+    await page.goto(url);
+    const quality = page.locator('select[data-vfx="quality"]');
+    await expect(quality.locator('option')).toHaveText(['Low', 'Medium', 'High', 'Ultra']);
+    await expect(quality).toHaveValue('ultra');
+    await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'high');
+  });
+}
 
-test('?look=3d: Ultra quality is selectable, saved across reloads, and switching back to High clears it', async ({ page }) => {
-  await page.goto('/?look=3d');
+test('Ultra is selectable, saved across reloads, and switching back to High clears it', async ({ page }) => {
+  await page.goto('/');
   const quality = page.locator('select[data-vfx="quality"]');
   await expect(quality.locator('option')).toHaveText(['Low', 'Medium', 'High', 'Ultra']);
   await quality.selectOption('ultra', { force: true });
@@ -83,4 +82,21 @@ test('?look=3d: Ultra quality is selectable, saved across reloads, and switching
   await expect(page.locator('select[data-vfx="quality"]')).toHaveValue('ultra');
   await page.locator('select[data-vfx="quality"]').selectOption('high', { force: true });
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx')).ultra)).toBe(false);
+});
+
+test('automatic graphics choice is a short disclosure with keyboard-accessible details', async ({ page }) => {
+  await constrained(page);
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const notice = page.locator('#performance-notice');
+  const summary = notice.locator('summary');
+  await expect(summary).toBeVisible({ timeout: ciTimeout(2500) });
+  for (const selector of ['#airflow-toggle', '#vfx-panel > summary']) {
+    await page.locator(selector).click({ trial: true, timeout: ciTimeout(3500) });
+  }
+  await expect(notice.locator('#performance-notice-text')).toBeHidden();
+  await summary.focus();
+  await page.keyboard.press('Enter');
+  await expect(notice.locator('#performance-notice-text')).toBeVisible();
+  await notice.locator('#performance-notice-dismiss').click();
+  await expect(notice).toBeHidden();
 });

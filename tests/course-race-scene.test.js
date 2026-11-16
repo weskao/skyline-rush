@@ -21,7 +21,7 @@ function geometries(group) {
   return result;
 }
 
-test('one Three.js scene host streams road/terrain around eight cars and clears old chunks', () => {
+test('one Three.js scene host streams road chunks around eight cars and reuses the sand terrain', () => {
   const scene = new THREE.Scene(), host = createCourseRaceScene(scene), race = fixture();
   host.update(race, 'low');
   const root = scene.getObjectByName('CourseGraph race scenery');
@@ -29,7 +29,13 @@ test('one Three.js scene host streams road/terrain around eight cars and clears 
   assert.ok(root.visible);
   assert.ok(root.children.length >= groups.length, 'multiple live edges have chunks');
   for (const edgeId of groups) assert.ok(root.children.some(chunk => chunk.name === 'Dune chunk ' + edgeId));
+  const terrain = root.getObjectByName('Dune terrain');
+  assert.ok(terrain?.children.length);
+  const terrainGeometry = terrain.children[0].geometry;
+  let terrainDisposals = 0;
+  terrainGeometry.addEventListener('dispose', () => terrainDisposals++);
   const oldGeometries = geometries(root);
+  for (const geometry of geometries(terrain)) oldGeometries.delete(geometry);
   assert.ok(oldGeometries.size > 0);
   const disposal = new Map();
   for (const geometry of oldGeometries) {
@@ -43,7 +49,10 @@ test('one Three.js scene host streams road/terrain around eight cars and clears 
   host.update(race, 'low');
   assert.ok(root.children.length > 0);
   for (const geometry of oldGeometries) assert.equal(disposal.get(geometry), 1, 'stale geometry disposed once');
+  assert.equal(root.getObjectByName('Dune terrain'), terrain);
+  assert.equal(terrainDisposals, 0);
   host.hide();
+  assert.equal(terrainDisposals, 1);
   assert.equal(root.children.length, 0, 'switching to Coast removes graph road from renderer');
   assert.equal(root.visible, false);
   host.update(race, 'low');
@@ -56,11 +65,13 @@ test('same car positions reuse chunks; quality changes release previous buffers'
   const scene = new THREE.Scene(), host = createCourseRaceScene(scene), race = fixture();
   host.update(race, 'low');
   const root = scene.getObjectByName('CourseGraph race scenery');
+  const terrain = root.getObjectByName('Dune terrain');
   const first = [...root.children];
   host.update(race, 'low', 2);
   assert.deepEqual(root.children, first, 'no per-frame scene rebuild');
   host.update(race, 'high', 3);
-  assert.ok(root.children.every(chunk => !first.includes(chunk)), 'quality rebuild is explicit');
+  assert.equal(root.getObjectByName('Dune terrain'), terrain);
+  assert.ok(root.children.filter(chunk => chunk !== terrain).every(chunk => !first.includes(chunk)), 'quality rebuild is explicit');
   host.dispose();
 });
 

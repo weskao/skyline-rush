@@ -4,13 +4,14 @@ import * as THREE from 'three';
 import { COAST_PALETTE, COAST_LIGHTING, createCoastScenery } from '../src/coast-visuals.ts';
 
 const center = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
+const road = { point: (d, lane = 0) => [center(d) + lane, -d], heading: d => Math.atan((center(d + 1) - center(d - 1)) / 2) };
 
 test('Coast palette is grounded and road/shoreline materials stay matte', () => {
   assert.match(COAST_PALETTE.road, /^#[0-9a-f]{6}$/i);
   assert.notEqual(COAST_PALETTE.road, COAST_PALETTE.ground);
   assert.ok(COAST_PALETTE.warmth < 0.6, 'Coast sky should avoid the old oversaturated sunset');
   const scene = new THREE.Scene();
-  const kit = createCoastScenery(scene, center);
+  const kit = createCoastScenery(scene);
   const root = scene.getObjectByName('Coast scenic details');
   assert.equal(kit.group, root);
   assert.equal(root.children.length, 3, 'three shared-material submissions, never one draw per tree');
@@ -26,11 +27,11 @@ test('Coast palette is grounded and road/shoreline materials stay matte', () => 
 });
 
 test('Coast detail density is bounded by quality, not by time or total race length', () => {
-  const scene = new THREE.Scene(), kit = createCoastScenery(scene, center);
+  const scene = new THREE.Scene(), kit = createCoastScenery(scene);
   const root = kit.group;
   let previous = 0;
   for (const [quality, expected] of [['low',12],['medium',20],['high',32]]) {
-    kit.update(340,quality);
+    kit.update(road, 340,quality);
     for (const mesh of root.children) assert.equal(mesh.count, expected);
     assert.ok(expected >= previous);
     previous = expected;
@@ -39,13 +40,13 @@ test('Coast detail density is bounded by quality, not by time or total race leng
 });
 
 test('Coast scenery tiles do not teleport all instances at a 60 m streaming boundary', () => {
-  const kit = createCoastScenery(new THREE.Scene(), center);
-  kit.update(359.9,'high');
+  const kit = createCoastScenery(new THREE.Scene());
+  kit.update(road, 359.9,'high');
   const rock = kit.group.getObjectByName('Coast shoreline rocks');
   const prior = Array.from({ length: rock.count }, (_, i) => {
     const m = new THREE.Matrix4();rock.getMatrixAt(i,m);return m.elements.slice();
   });
-  kit.update(360.1,'high');
+  kit.update(road, 360.1,'high');
   let unchanged = 0;
   for(let i=0;i<rock.count;i++){
     const m = new THREE.Matrix4();rock.getMatrixAt(i,m);
@@ -65,10 +66,10 @@ test('Coast scenery tiles do not teleport all instances at a 60 m streaming boun
 });
 
 test('Endless Coast scenery remains near its floating origin and changes from absolute chunk seeds', () => {
-  const scene = new THREE.Scene(), kit = createCoastScenery(scene, center);
+  const scene = new THREE.Scene(), kit = createCoastScenery(scene);
   const matrix = new THREE.Matrix4();
   const sample = distance => {
-    kit.update(distance, 'low', 1001);
+    kit.update(road, distance, 'low', 1001);
     scene.updateMatrixWorld(true);
     return kit.group.children.map(mesh => {
       const entries = [];

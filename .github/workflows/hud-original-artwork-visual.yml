@@ -5,6 +5,7 @@ on:
       - fix/wave3-hud-artwork-completeness
     paths:
       - .github/workflows/hud-original-artwork-visual.yml
+      - .github/workflows/hud-original-artwork-repair.yml
       - public/feature-assets/mobile-controls-hud/raster/**
       - scripts/repair-hud-original-art.py
       - tests/hud-3x-artwork-browser.spec.js

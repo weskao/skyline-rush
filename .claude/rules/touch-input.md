@@ -50,3 +50,18 @@ Any new mobile surface must be covered by `tests/ios-touch-guard.test.js` and
 `tests/ios-touch-guard-browser.spec.js`; verify actual iPhone Safari/Chrome
 long-press, taps, scroll, and controls in the ready, racing, paused and results
 phases before claiming physical-device acceptance. CSS alone is not sufficient.
+
+## Touch layout editor rotation
+
+Bind each layout drag to its starting orientation. Commit on pointer-up in that orientation. Rotation, capture loss and pointer cancellation restore the last saved layout. The editor must continue displaying the current orientation and keep its peer layout intact. Guard: `tests/controls-preview-browser.spec.js`.
+
+## Space on a focused button is the button's, not FLY
+
+The keydown handler in `src/input.ts` leaves Space to a focused `button`/`summary` so keyboard users keep
+native activation. A mouse click focuses the button too: AIRFLOW stayed focused after a click, so Space
+toggled it instead of flying. Every always-visible HUD button container (`.toolbar`, `.aero-tools`) blurs a
+pointer-clicked button (`event.detail > 0`, `src/main.js`); a new HUD button container joins that list.
+Custom-select comboboxes are exempt: `src/custom-select.ts` closes its list on blur.
+Dropdowns are hidden while racing; every return to racing (start, restart, resume) goes through `focusRace()`
+(`src/race-navigation-ui.ts`), which blurs whatever the pause screen left focused. Guard:
+`tests/hud-focus-browser.spec.js`.

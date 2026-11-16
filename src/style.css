@@ -1,5 +1,7 @@
 @font-face { font-family: 'Barlow Condensed'; src: url('/fonts/barlow-condensed-bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
 :root { font-family: 'Avenir Next', 'Segoe UI', sans-serif; color: #f4f0e9; background: #040d1c; font-synthesis: none; --accent: #ff8966; --blue: #96e3ff; --muted: #c2c8cd; --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-spring: cubic-bezier(.2, 1.2, .3, 1); --dur-fast: 120ms; --dur-base: 240ms; --dur-slow: 480ms; }
+/* NITRO gold, BOOST red-orange, FLY cyan: touch buttons, bars, HUD text, key hints. The 3D NITRO trail (aero-vfx.js) mirrors --nitro; guard: tests/sprint-color-tokens.test.js. */
+:root { --nitro: #ffd166; --nitro-text: #ffe6a8; --nitro-deep: #4a3510; --boost: #ff7f3f; --boost-text: #ffd9c4; --boost-deep: #52230f; --fly: #83ceeb; --fly-text: #d8f6ff; --fly-deep: #1f4d66; }
 * { box-sizing: border-box; }
 html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
 /* On the root, not #app: a long press anywhere must never open the Copy/Select All menu. */
@@ -79,7 +81,11 @@ h1 em { font-weight: inherit; color: var(--accent); font-style: normal; }
 .primary-button svg { width: 20px; }
 .start-hint { margin-left: 16px; color: #b6bec5; font-size: 10px; }
 .start-hint kbd { border: none; padding: 0; min-width: 0; font-size: 9px; margin-left: 3px; }
-kbd { display: inline-flex; align-items: center; justify-content: center; font: 10px 'Avenir Next', 'Segoe UI', sans-serif; line-height: 1; min-width: 25px; height: 25px; padding: 0 6px; border: 1px solid rgb(230 236 240 / .3); border-radius: 3px; color: #e1e4e5; }
+kbd { display: inline-flex; align-items: center; justify-content: center; font: 10px 'Avenir Next', 'Segoe UI', sans-serif; line-height: 1; min-width: 25px; height: 25px; padding: 0 6px; border: 1px solid color-mix(in srgb, var(--key, #e6ecf0) 30%, transparent); border-radius: 3px; color: var(--key, #e1e4e5); }
+/* FLY / BOOST / NITRO keys wear their action colour on the home legend, guide, tutorial cue and Controls bindings. */
+:is([data-keys="fly"], [data-rebind="fly"]) { --key: var(--fly); }
+:is([data-keys="boost"], [data-rebind="boost"]) { --key: var(--boost); }
+:is([data-keys="nitro"], [data-rebind="nitro"]) { --key: var(--nitro); }
 .intro-controls { display: flex; flex-wrap: wrap; gap: 12px 27px; margin-top: 37px; }
 .intro-controls > div { display: flex; align-items: center; gap: 9px; color: #c0c8ce; font-size: 10px; }
 .keys { display: flex; gap: 3px; }
@@ -123,7 +129,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; font: 
 .build-version { grid-column: 2; grid-row: 1; text-align: center; font-size: 11px; letter-spacing: 1.5px; color: #a5b2bd; font-variant-numeric: tabular-nums; display: none; }
 body[data-phase="ready"] .build-version { display: block; }
 body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bottom, 0px)); }
-.race-info { position: fixed; z-index: 3; inset: 135px 40px auto; display: flex; justify-content: space-between; gap: 35px; pointer-events: none; }
+.race-info { position: fixed; z-index: 3; inset: 135px 40px auto; display: flex; justify-content: flex-start; gap: 35px; pointer-events: none; }
 .position-stat > div { display: flex; align-items: baseline; gap: 9px; margin-top: 6px; }
 .position-stat strong { font: 700 66px/.9 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; }
 .position-stat > div > span { font-size: 15px; color: #bec8cf; }
@@ -135,9 +141,6 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 .time { display: block; margin-top: 17px; font-size: 13px; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
 .race-progress { width: 300px; padding-top: 4px; position: absolute; left: 50%; transform: translateX(-50%); }
 .progress-labels { display: flex; justify-content: space-between; color: #e4e4e0; font-size: 8px; letter-spacing: 1.3px; }
-.progress-track { background: rgb(210 220 225 / .3); height: 2px; margin-top: 12px; position: relative; }
-#progress-fill { display: block; width: 0; height: 100%; background: var(--accent); }
-.finish-flag { position: absolute; right: 0; top: -3px; width: 8px; height: 8px; border: 1px solid #dedfd9; }
 .leaderboard { width: 175px; }
 .racer { display: flex; gap: 10px; align-items: center; font-size: 9px; color: #d7dce0; height: 31px; border-bottom: 1px solid rgb(225 231 235 / .1); }
 .racer > span:first-child { opacity: .7; width: 9px; font-variant-numeric: tabular-nums; }
@@ -148,7 +151,8 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 .racer.is-player > i { background: var(--accent); }
 .event-callout { position: fixed; z-index: 3; top: 206px; left: 16px; right: 16px; margin: auto; width: fit-content; max-width: calc(100vw - 32px); padding: 4px 14px; text-align: center; pointer-events: none; color: #c3f7ff; background: rgb(7 26 40 / .45); border-radius: 999px; text-shadow: 0 2px 10px rgb(5 17 30 / .8); font: 700 clamp(18px, 2.6vw, 28px)/1.1 'Barlow Condensed', sans-serif; }
 .event-callout span { display: block; margin-top: 2px; font: 500 10px/1.5 'Avenir Next', 'Segoe UI', sans-serif; letter-spacing: 1px; }
-.event-callout[data-kind="perfect"], .event-callout[data-kind="nitro"], .event-callout[data-kind="refill"] { color: #ffe3ae; }
+.event-callout[data-kind="perfect"], .event-callout[data-kind="refill"] { color: #ffe3ae; }
+.event-callout[data-kind="nitro"] { color: var(--nitro-text); }
 /* Portrait: the callout and the warning under it follow the RACING bar, which drops below an eight-row leaderboard. */
 @media (max-width: 760px) and (min-height: 501px) {
   .event-callout { top: max(272px, calc(var(--race-progress-bottom, 0px) + 10px)); }
@@ -344,6 +348,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .airborne .mode-indicator { border-color: rgb(103 227 255 / .65); }
 .airborne #flight-state { color: var(--blue); }
 .airborne .fuel-track > i { background: #7ce7ff; }
+.boost-draining .fuel-track > i { background: var(--boost); } /* before every .low-charge rule: low-fuel red still wins */
 .low-charge .fuel-track > i { background: #ffb572; }
 .low-charge #flight-budget, .low-charge .fuel-caption { color: #ffd09e; }
 .fuel-stat { width: 195px; }
@@ -356,7 +361,6 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .racer.is-player { color: #ffae94; }
 .position-stat { text-shadow: 0 2px 12px #071426; }
 .race-progress { padding: 11px 13px 15px; background: rgb(7 23 42 / .55); border: 1px solid rgb(155 194 222 / .16); border-radius: 4px; width: 330px; }
-.progress-track { height: 3px; }
 .flight-director { position: fixed; top: 37%; left: calc(50% - 150px); width: 300px; text-align: center; z-index: 2; pointer-events: none; opacity: 0; color: var(--blue); transform: rotate(var(--flight-bank, 0deg)); transition: opacity .3s, transform .2s ease-out; text-shadow: 0 1px 7px #071426; }
 .flight-director > span { font-size: 8px; letter-spacing: 3px; }
 .flight-director > svg { display: block; width: 100%; height: 100px; stroke: currentColor; stroke-width: 1; filter: drop-shadow(0 1px 3px #0b2137); }
@@ -383,6 +387,8 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 .speed-streaks { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: var(--streak-opacity, 0); transition: opacity .4s; }
 .speed-streaks > i { position: absolute; left: 50%; top: 50%; height: 1px; width: 18vw; background: linear-gradient(90deg, transparent, #9feaff); transform-origin: 0 0; animation: wind-rush .75s linear infinite; animation-delay: var(--delay); }
 .boosting .speed-ticks > i.active { background: var(--blue); }
+.boost-draining .speed-ticks > i.active { background: var(--boost); }
+.nitro-active .speed-ticks > i.active { background: var(--nitro); }
 .boosting .speed-number > strong { color: #b5edff; }
 .touch-actions { display: flex; gap: 6px; align-items: end; }
 .touch-controls .touch-boost { width: calc(44px * var(--touch-scale, 1)); height: calc(58px * var(--touch-scale, 1)); border-color: #ffba88; color: #ffcc9d; flex-direction: column; gap: 5px; font-size: 6px; letter-spacing: .7px; }
@@ -561,7 +567,8 @@ summary:focus-visible, input:focus-visible, .custom-select > button:focus-visibl
 .custom-select { position: relative; display: inline-block; min-width: 0; max-width: 100%; }
 .custom-select > button { display: block; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; background: #1b3044 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2396e3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 16px center; }
 .custom-select > button[aria-expanded="true"] { border-color: var(--blue); }
-.custom-select > [role="listbox"] { position: absolute; z-index: 6; top: calc(100% + 4px); right: 0; min-width: 100%; max-height: 240px; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 4px; list-style: none; background: #0b1c2bf8; border: 1px solid #5c8796; border-radius: 6px; box-shadow: 0 12px 32px #0009; }
+.custom-select.opens-up > [role="listbox"] { top: auto; bottom: calc(100% + 4px); }
+.custom-select > [role="listbox"] { position: absolute; z-index: 6; top: calc(100% + 4px); right: 0; min-width: 100%; max-height: min(240px, var(--list-room, 240px)); overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 4px; list-style: none; background: #0b1c2bf8; border: 1px solid #5c8796; border-radius: 6px; box-shadow: 0 12px 32px #0009; }
 .custom-select [role="option"] { min-height: 40px; display: flex; align-items: center; padding: 8px 12px; border-radius: 4px; white-space: nowrap; cursor: pointer; }
 .custom-select [role="option"]:hover, .custom-select [role="option"].is-active { background: #204858; }
 .custom-select [role="option"][aria-selected="true"] { color: #91e0f2; font-weight: 700; }
@@ -595,8 +602,9 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 2px s
 .aero-channels > span { display: flex; justify-content: space-between; font-size: 8px; color: #89a8b6; }
 .aero-channels b { font-weight: 500; color: #d1e6f0; font-size: 8px; }
 .aero-disclaimer { font-size: 6px; letter-spacing: 1.2px; color: #90a8b9; padding-top: 7px; }
-.boost-status { display: block; margin-top: 8px; font-size: 8px; letter-spacing: 1.5px; color: #a0cee0; transition: color .25s; }
-.boost-status[data-state="active"] { color: #e0faff; text-shadow: 0 0 9px #58d7ff; }
+.boost-status { display: block; margin-top: 8px; font-size: 8px; letter-spacing: 1.5px; color: color-mix(in srgb, var(--boost-text), #8d9aa4 40%); transition: color .25s; }
+.boost-status[data-state="active"] { color: var(--boost-text); text-shadow: 0 0 9px var(--boost); }
+.nitro-active .boost-status[data-state="active"] { color: var(--nitro-text); text-shadow: 0 0 9px var(--nitro); }
 .speed-streaks { transition: opacity .35s ease-out; }
 .vfx-comfort .speed-streaks { display: none; }
 @media (max-width: 760px) {
@@ -775,7 +783,7 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 /* Control customization inherits the existing instrument panel. */
 .keymap-field { display: grid; grid-template-columns: 1fr; }
 .keymap-binding { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 44px; padding: 8px; text-align: left; border: 1px solid rgb(195 224 244 / .25); border-radius: 8px; background: transparent; font-size: 10px; }
-.keymap-binding b { color: #b4edff; font-size: 10px; font-weight: 500; text-align: right; }
+.keymap-binding b { color: var(--key, #b4edff); font-size: 10px; font-weight: 500; text-align: right; }
 .keymap-binding[aria-pressed="true"] { border-color: var(--accent); background: #243b50; }
 /* Live preview of the touch buttons: stays at the top of the panel while the size and opacity controls below are used. */
 .controls-preview { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 64px; margin: -4px 6px 6px; padding: 6px 10px; background: rgb(0 9 22 / .35); border: 1px solid rgb(195 224 244 / .14); border-radius: 8px; }
@@ -784,8 +792,8 @@ body:not([data-phase="ready"]) .track-swipe { display: none; }
 .controls-preview-keys i { display: flex; align-items: center; justify-content: center; width: calc(34px * var(--touch-scale, 1)); height: calc(36px * var(--touch-scale, 1)); border: 1px solid rgb(210 226 238 / .3); border-radius: 6px; background: rgb(25 44 60 / .7); color: #f4f0e9; transition: width var(--dur-fast), height var(--dur-fast), opacity var(--dur-fast); }
 .controls-preview-keys svg { width: 55%; height: 55%; }
 .controls-preview-keys .touch-nitro { color: #f8d59a; border-color: #cba36c; }
-.controls-preview-keys .touch-fly { color: #aeebff; border-color: #83ceeb; }
-.controls-preview-keys .touch-boost { color: #ffcc9d; border-color: #ffba88; }
+.controls-preview-keys .touch-fly { color: var(--fly-text); border-color: var(--fly); }
+.controls-preview-keys .touch-boost { color: var(--boost-text); border-color: var(--boost); }
 .controls-preview-keys .touch-gas { background: #e7916f; color: #192b3a; border-color: #e7916f; }
 @media (prefers-reduced-motion: reduce) { .controls-preview-keys i { transition: none; } }
 .controls-note { margin: 8px; font-size: 11px; line-height: 1.5; color: #c9dfed; }
@@ -799,12 +807,12 @@ body.layout-editing #touch-controls { display: grid; }
 .layout-editing .touch-pad { pointer-events: none; }
 .layout-editing .telemetry { opacity: .35; pointer-events: none; }
 .layout-editing .aero-tools { visibility: hidden; }
-.nitro-hud { margin-top: 10px; font-size: 10px; letter-spacing: .3px; color: #f2d39e; }
+.nitro-hud { margin-top: 10px; font-size: 10px; letter-spacing: .3px; color: var(--nitro-text); }
 #nitro-status { white-space: nowrap; }
 .nitro-meter { display: flex; gap: 4px; margin-top: 5px; }
 .nitro-segment { flex: 1; height: 7px; overflow: hidden; border: 1px solid #ae946f; border-radius: 8px; background: #233748; }
-.nitro-segment i { display: block; position: relative; height: 100%; background: #f7c576; transform-origin: left; transition: transform var(--dur-base) var(--ease-out); }
-.nitro-segment.is-full { border-color: #ffe1aa; box-shadow: 0 0 7px rgb(247 197 118 / .5); }
+.nitro-segment i { display: block; position: relative; height: 100%; background: var(--nitro); transform-origin: left; transition: transform var(--dur-base) var(--ease-out); }
+.nitro-segment.is-full { border-color: var(--nitro-text); box-shadow: 0 0 7px color-mix(in srgb, var(--nitro) 50%, transparent); }
 .nitro-meter.is-max { animation: nitro-max 1.4s ease-in-out infinite alternate; }
 @keyframes nitro-max { to { opacity: .5; } }
 .vfx-comfort .nitro-meter, .vfx-comfort .nitro-segment i { animation: none; transition: none; }
@@ -902,7 +910,7 @@ body.layout-editing #touch-controls { display: grid; }
 .guide-keys > div { display: grid; grid-template-columns: minmax(180px, 1fr) 1.3fr; gap: 12px; padding-block: 12px; border-bottom: 1px solid #42596c; }
 .guide-keys dt { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .guide-keys dd { margin: 0; color: #c3d0dc; }
-.guide-screen kbd { display: inline-block; padding: 4px 8px; margin: 2px; border: 1px solid #899eaf; border-bottom-width: 3px; border-radius: 5px; color: #f4f0e9; background: #20364b; font: inherit; font-size: 13px; }
+.guide-screen kbd { display: inline-block; padding: 4px 8px; margin: 2px; border: 1px solid var(--key, #899eaf); border-bottom-width: 3px; border-radius: 5px; color: var(--key, #f4f0e9); background: #20364b; font: inherit; font-size: 13px; }
 .guide-note { color: #c3d0dc; font-size: 13px; }
 /* The guide's main call to action sits right under the intro, styled like the home Start button. */
 .guide-screen .tutorial-start { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 52px; margin: 16px 0 4px; padding: 0 20px; border: 0; border-radius: 8px; background: var(--accent); color: #142333; font-size: 15px; font-weight: 700; box-shadow: 0 8px 24px rgb(255 137 102 / .22); transition: background var(--dur-fast); }
@@ -919,8 +927,8 @@ body.layout-editing #touch-controls { display: grid; }
 .tutorial-copy { max-height: calc(55dvh - 174px); overflow: auto; overscroll-behavior: contain; }
 .tutorial-copy p { margin: 4px 0 10px; line-height: 1.5; font-size: 14px; }
 .tutorial-copy small { display: block; margin-top: 10px; color: #c3d0dc; font-size: 11px; line-height: 1.4; }
-#tutorial-input { font-weight: 700; font-size: 14px; color: #96e3ff; }
-#tutorial-input kbd { display: inline-block; min-width: 32px; padding: 5px 8px; margin: 2px; border: 1px solid #96e3ff; border-bottom-width: 3px; border-radius: 5px; background: #20364b; text-align: center; }
+#tutorial-input { font-weight: 700; font-size: 14px; color: var(--key, #96e3ff); }
+#tutorial-input kbd { display: inline-block; min-width: 32px; padding: 5px 8px; margin: 2px; border: 1px solid var(--key, #96e3ff); border-bottom-width: 3px; border-radius: 5px; background: #20364b; text-align: center; }
 .tutorial-target { outline: 3px solid #96e3ff; outline-offset: 4px; }
 .touch-pad.tutorial-target { outline-offset: -5px; background: rgb(150 227 255 / .08); }
 body[data-tutorial] :is(#race-route-map, #leaderboard, #practice-hud, #sprint-stage, #stunt-hud, #checkpoint-hud, #clean-trial-hud) { visibility: hidden; }
@@ -1235,7 +1243,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-spiral-direction { stroke:#fff6d9; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; vector-effect:non-scaling-stroke; }
 .route-start { fill:#78dfa0; }
 .route-finish { fill:#fff; stroke:#16233d; stroke-width:1; }
-.race-route-map { position:fixed; top:300px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
+.race-route-map { position:fixed; top:140px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
 .race-route-map svg { width:100%; height:100%; overflow:visible; }
 .route-driver { stroke:#09172b; stroke-width:1.35; fill:#f7c34d; }
 .route-driver-you { fill:#fff; stroke:#09e5ff; stroke-width:2.1; }
@@ -1255,7 +1263,8 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 @media (max-width: 760px) and (min-height: 501px) {
   .leaderboard:has(.racer:nth-child(8)) .racer { height: 19px; min-height: 19px; }
 }
-/* The live map sits below the leaderboard (desktop) or the progress bar (portrait). */
+/* Live map: top-right corner on every layout, 8px under the toolbar row (and AIRFLOW/VFX where they share it), right-aligned
+   with the toolbar; the leaderboard sits beside POSITION on the left instead. Guard: tests/race-map-corner-browser.spec.js. */
 @media (max-width:760px){ .race-route-map {top:272px;right:23px;width:77px;height:94px;} .track-route-map {height:48px;} }
 @media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
 /* Short screens: telemetry and touch buttons fill the sides, so the map moves to the bottom row (see the short-screen blocks below). */
@@ -1329,36 +1338,19 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 @media(max-width:760px) {
  .track-select button > span.track-route-map { height:54px; }
- .race-route-map { width:75px;height:88px;right:18px;top:max(272px, calc(var(--race-progress-bottom, 0px) + 10px)); } /* below the progress bar, which mode HUD rows grow */
+ .race-route-map { width:75px;height:88px;right:max(12px, var(--safe-right));top:108px; } /* AIRFLOW/VFX end at 100px */
 }
 @media(max-width:400px) {
- .race-route-map {width:59px;height:72px;right:14px;top:max(270px, calc(var(--race-progress-bottom, 0px) + 8px));}
+ .race-route-map {width:59px;height:72px;}
 }
 @media(max-height:500px) and (min-width:761px) {
- .race-route-map {width:67px;height:73px;}
+ .race-route-map {width:67px;height:73px;top:128px;} /* AIRFLOW/VFX end at 120px */
  .track-select button > span.track-route-map {
    position:absolute;top:8px;left:8px;right:8px;width:auto;height:28px;
  }
 }
 @media (max-width:400px) and (max-height:700px) {
  .race-route-map {display:block;}
-}
-/* Short screens: telemetry fills the right column, so the map sits on the bottom row beside the 2x2 thumb-action cluster
-   (mirrored for a right-hand layout). The slot is that cluster's width: 2 cells x the chosen size (TOUCH_SCALE in main.js)
-   + up to 12px column gap + 8px clearance. Portrait counts as short up to 760px: eight competitive leaderboard rows push
-   the RACING bar to ~321px, leaving the right column above the telemetry 1px short of the map on a 320x740 phone. */
-.race-route-map { --cluster-scale: 1; }
-body:has(#touch-controls[data-size="S"]) .race-route-map { --cluster-scale: .85; }
-body:has(#touch-controls[data-size="L"]) .race-route-map { --cluster-scale: 1.15; }
-@media (max-height:500px) and (orientation:landscape), (max-width:760px) and (min-height:501px) and (max-height:760px) {
- .race-route-map { --cluster: calc(2 * var(--touch-cell) * var(--cluster-scale) + 20px); display:block; top:auto; bottom:max(18px, var(--safe-bottom)); right:calc(max(var(--thumb-edge), var(--safe-right)) + var(--cluster)); }
- body:has(#touch-controls[data-hand="right"]) .race-route-map { right:auto; left:calc(max(var(--thumb-edge), var(--safe-left)) + var(--cluster)); }
-}
-/* Short portrait, Buttons mode: [<][>] fill the bottom row, so the map rises 8px above them into the BRAKE row, right beside
-   the 20vw-capped BRAKE (60px is the portrait steering-button height). It shrinks to 70% there so it stays off the player's car. */
-@media (max-width:760px) and (min-height:501px) and (max-height:760px) {
- body:has(#touch-controls[data-steer-mode="buttons"]) .race-route-map { width:41px; height:50px; bottom:calc(max(var(--thumb-lift), var(--safe-bottom)) + 60px * var(--cluster-scale) + 8px); left:calc(max(var(--thumb-edge), var(--safe-left)) + 20vw + 8px); right:auto; }
- body:has(#touch-controls[data-steer-mode="buttons"][data-hand="right"]) .race-route-map { left:auto; right:calc(max(var(--thumb-edge), var(--safe-right)) + 20vw + 8px); }
 }
 /* Keep a map on short screens: it is passive and never intercepts inputs. */
 
@@ -1563,22 +1555,26 @@ body[data-race-mode="cup"] #sprint-stage { color:#ffe5a2; text-shadow:0 0 12px #
 .elimination-hud[data-urgent="true"]{border-color:#ffb19d;color:#fff0e9;background:#873a44ee;}
 
 /* Paused Free Drive Photo Studio: keep the scenery visible, no new dependencies. */
-.photo-screen { position: fixed; inset: max(12px, var(--safe-top)) auto auto max(12px, var(--safe-left)); margin: 0; width: min(360px, calc(100vw - max(12px, var(--safe-left)) - max(12px, var(--safe-right)))); max-width: none; max-height: calc(100dvh - max(12px, var(--safe-top)) - max(12px, var(--safe-bottom))); overflow: auto; border: 1px solid #82dbe2bb; border-radius: 12px; padding: 0; background: #102637ed; color: #ecf9f5; box-shadow: 0 12px 48px #0008; }
+.photo-screen { position: fixed; inset: max(12px, var(--safe-top)) auto auto max(12px, var(--safe-left)); margin: 0; width: min(360px, calc(100vw - max(12px, var(--safe-left)) - max(12px, var(--safe-right)))); max-width: none; max-height: calc(100dvh - max(12px, var(--safe-top)) - max(12px, var(--safe-bottom))); overflow: hidden; border: 1px solid #82dbe2bb; border-radius: 12px; padding: 0; background: #102637ed; color: #ecf9f5; box-shadow: 0 12px 48px #0008; }
 .photo-screen::backdrop { background: transparent; }
-.photo-panel { display: grid; gap: 12px; padding: 18px; font-size: 13px; }
+.photo-panel { display: flex; flex-direction: column; max-height: inherit; padding: 12px; font-size: 13px; }
+.photo-tools { display: grid; gap: 8px; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 4px; }
 .photo-panel h2 { margin: 0; font-size: 18px; letter-spacing: .12em; }
 .photo-panel p { margin: 0; line-height: 1.5; }
-.photo-panel label { display: grid; gap: 5px; }
-.photo-panel input { width: 100%; }
-.photo-panel select { min-height: 38px; }
-.photo-actions { display: flex; gap: 10px; }
+.photo-panel label { display: grid; gap: 4px; }
+.photo-panel input { width: 100%; min-height: 28px; }
+.photo-panel .custom-select > button, .photo-panel select { min-height: 44px; }
+#photo-advanced > summary { display: list-item; align-content: center; min-height: 44px; cursor: pointer; }
+#photo-advanced[open] > label + label { margin-top: 8px; }
+.photo-actions { display: flex; flex: none; gap: 8px; padding-top: 8px; }
 .photo-actions button { min-height: 44px; flex: 1; border-radius: 6px; border: 1px solid #81e9e7; background: #21536a; color: #efffff; font-weight: 700; }
 .photo-actions button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-@media (max-width: 400px) {
-  .photo-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 12px; }
-  .photo-panel > :not(label), .photo-panel > label:has(#photo-sky) { grid-column: 1 / -1; }
+@media (orientation: portrait) and (max-width: 600px) {
+  .photo-screen { inset: auto max(12px, var(--safe-right)) max(12px, var(--safe-bottom)) max(12px, var(--safe-left)); width: auto; max-height: min(38dvh, calc(100dvh - var(--safe-top) - var(--safe-bottom) - 24px)); }
 }
-@media (max-height: 500px) and (min-width: 761px) { .photo-screen { width: 300px; } }
+@media (orientation: landscape) and (max-height: 500px) {
+  .photo-screen { width: min(280px, 41vw); }
+}
 
 .photo-screen[open] { z-index: 120; }
 /* Photo Studio shows only its controls and the canvas; closing restores existing phase/layout state.
@@ -1601,8 +1597,12 @@ body.photo-studio #perf-overlay { display: none; }
 .daily-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; max-width: min(100%, 550px); margin: 14px 0 0; padding: 10px 10px 10px 12px; border: 1px solid rgb(245 207 156 / .4); border-radius: 10px; background: linear-gradient(100deg, rgb(245 207 156 / .16), rgb(10 25 43 / .86) 58%); backdrop-filter: blur(8px); box-shadow: inset 3px 0 0 #f5cf9c; }
 .daily-card-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; background: rgb(245 207 156 / .16); color: #f5cf9c; }
 .daily-card-icon svg { width: 20px; height: 20px; fill: currentColor; }
-.daily-card-copy { display: grid; gap: 2px; min-width: 0; }
+.daily-card-copy { position: relative; display: grid; gap: 2px; min-width: 0; }
 .daily-card h2 { margin: 0; color: #f5cf9c; font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+#daily-card-open { padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: start; cursor: pointer; }
+#daily-card-open::after { content: ''; position: absolute; inset: 0; min-height: 44px; }
+#daily-card-open:hover { text-decoration: underline; }
+#daily-card-open:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 .daily-card strong { color: #f4f0e9; font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
 .daily-card small { color: #c2d3de; font-size: 11px; }
 .daily-card-start { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 8px 0 16px; border: 1px solid var(--accent); border-radius: 4px; background: rgb(255 137 102 / .14); color: var(--accent); font: 700 15px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; }
@@ -1660,9 +1660,9 @@ body.photo-studio #perf-overlay { display: none; }
 body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .showcase-camera-heading { font-size:10px; font-weight:750; letter-spacing:1.6px; color:#9ad6e9; }
 .showcase-camera-actions { display:flex; width:100%; justify-content:space-between; align-items:center; gap:5px; }
-.showcase-camera-actions button { width:40px; height:40px; flex-shrink:0; border:1px solid #8ddcf466; border-radius:9px;
+.showcase-camera-actions > button { width:40px; height:40px; flex-shrink:0; border:1px solid #8ddcf466; border-radius:9px;
   background:#1c3d51c9; color:#e0faff; font-size:25px; line-height:1; }
-.showcase-camera-actions button:hover { background:#315d73; }
+.showcase-camera-actions > button:hover { background:#315d73; }
 #showcase-camera-name { text-align:center; font-size:12px; font-weight:700; }
 .showcase-camera-dots { display:flex; gap:6px; }
 .showcase-camera-dots i { width:5px; height:5px; border-radius:99px; background:#9ad6e955; }
@@ -1670,7 +1670,7 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 @media (max-width:760px) {
  .showcase-camera-dock { top:auto; bottom:max(130px,calc(env(safe-area-inset-bottom,0px) + 100px)); right:12px;
    width:158px; padding:7px 9px; gap:4px; }
- .showcase-camera-actions button { width:40px; height:40px; }
+ .showcase-camera-actions > button { width:40px; height:40px; }
 }
 @media (max-width:760px) and (max-height:500px) {
  .showcase-camera-dock, .airflow-active[data-phase="ready"] .showcase-camera-dock { top:80px; bottom:auto; right:12px; width:148px; }
@@ -1687,7 +1687,10 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .build-version.has-update .release-unread { display: inline-block; }
 .release-screen {
   --rp: 24px;
-  width: min(600px, calc(100% - 24px)); max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  --top: max(12px, var(--safe-top)); --right: max(12px, var(--safe-right));
+  --bottom: max(12px, var(--safe-bottom)); --left: max(12px, var(--safe-left));
+  position: fixed; inset: var(--top) var(--right) var(--bottom) var(--left);
+  width: min(600px, calc(100vw - var(--left) - var(--right))); max-height: calc(100dvh - var(--top) - var(--bottom));
   padding: var(--rp) var(--rp) 0; border: 1px solid rgb(150 227 255 / .22); border-radius: 18px; overflow-y: auto;
   /* The glows paint on the dialog box itself, so they stay put while the notes scroll. */
   background:
@@ -1745,7 +1748,15 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
   .release-header h2 { font-size: 32px; }
   .release-meta span:first-child { font-size: 22px; }
 }
-@media (max-height: 420px) { .release-hero { display: none; } .release-intro { display: none; } .release-versions { margin-top: 4px; } }
+@media (max-height: 420px) and (orientation: landscape) {
+  .release-screen { --rp: 12px; }
+  .release-header small { display: none; }
+  .release-intro { margin-top: 4px; }
+  .release-versions { margin-top: 4px; }
+  .release-panel { margin-top: 4px; }
+  .release-meta { margin: 4px 0 8px; }
+  .release-footer { padding-block: 4px; }
+}
 @media (prefers-reduced-motion: reduce) { .release-screen, .release-entry, .release-tab { animation: none !important; transition: none !important; } }
 /* A release clip shows whole, never cropped like the hero banner; a portrait phone clip stays short enough to leave the notes in view. */
 .release-video { width: min(100%, 480px); max-height: none; aspect-ratio: 16 / 10; margin-inline: auto; object-fit: contain; background: #06101c; }
@@ -1761,8 +1772,10 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .cloud-player-details p { margin: 3px 0 0; font-size: 13px; color: #c5d7e2; }
 #cloud-sync-now:not(:disabled) { border-color: #66c6d5; }
 
-body[data-race-mode="endless"] #race-route-map,
-body[data-race-mode="endless"] .progress-track { display: none; }
+/* No finish, so no course map: the box keeps only its distance caption (the rolling map is the exception, below). */
+body[data-race-mode="endless"] #race-route-map:not([data-streaming]) > svg { display: none; }
+body[data-race-mode="endless"] #race-route-map:not([data-streaming]) { height: auto; padding-bottom: 0; border: 0; background: none; }
+body[data-race-mode="endless"] #race-route-map:not([data-streaming]) > .progress-bar { position: static; }
 
 /* Touch landscape under 761px wide: what the shared landscape race HUD blocks above do not reset from the portrait phone
    rules. POSITION and the leaderboard fill the left column (to 226px), the gauges the right; the progress bar and flight
@@ -1780,6 +1793,9 @@ body[data-race-mode="endless"] .progress-track { display: none; }
 @media (pointer: coarse) and (max-width: 760px) and (max-height: 380px) { .race-info { top: 70px; } }
 
 /* NITRO availability is read from the engine's one-charge threshold, never from VFX tier. */
+/* Decorative approved NITRO image stays outside layout height on narrow race HUDs. */
+.nitro-hud { position:relative; padding-left:24px; }
+.nitro-hud > img[data-wave3-hud-art] { position:absolute; top:-4px;left:0;width:20px;height:20px;object-fit:contain;pointer-events:none; }
 .touch-controls .touch-nitro[data-nitro-state="charging"] { opacity: .75; }
 .touch-controls .touch-nitro[data-nitro-state="ready"] { color: #ffefc1; border-color: #ffdf8c; box-shadow: inset 0 0 0 1px #ffe1a1, 0 0 9px rgb(255 213 128 / .35); }
 .touch-controls .touch-nitro[data-nitro-state="active"] { color: #fff4d6; border-color: #fff1bd; background: #735b40; }
@@ -1820,10 +1836,6 @@ body[data-fold-axis="vertical"] .leaderboard { left: calc(var(--fold-pane-right-
   body[data-fold-axis="vertical"] .event-callout { right: calc(100vw - var(--fold-pane-left-end) + 10px); }
 }
 body[data-fold-axis="vertical"] .impact-report { left: auto; right: calc(100vw - var(--fold-pane-left-end) + 10px); transform: none; }
-body[data-fold-axis="horizontal"] .race-route-map {
-  top: clamp(80px, max(30vh, calc(var(--race-progress-bottom, 0px) + 8px)), calc(var(--fold-pane-top-end) - 96px));
-  bottom: auto;
-}
 /* Portrait competitive: eight leaderboard rows reach 262px, so the RACING bar flows on its own row under the taller of
    POSITION and the leaderboard instead of a fixed 114px offset; the map and callout follow --race-progress-bottom.
    Hybrid shows fewer rows and keeps the fixed offset (a flowing bar ran into the telemetry on a 320x568 phone). */
@@ -1835,10 +1847,9 @@ body[data-fold-axis="horizontal"] .race-route-map {
 /* CJK NITRO availability remains legible during countdown, pause and racing. */
 html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 
-/* Touch tablets: the live map sits 8px under the AIRFLOW bar (242-276px); 288px left 1px to the zh-TW flight telemetry
-   on a 1024x768 iPad. The callout drops 8px under the centred mode panel instead of the desktop 206px slot inside it. */
+/* Touch tablets: the live map sits 8px under the toolbar (13-57px); AIRFLOW/VFX drop below POSITION here. The callout drops 8px under the centred mode panel instead of the desktop 206px slot inside it. */
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
-  .race-route-map { top: 284px; }
+  .race-route-map { top: 65px; right: max(12px, var(--safe-right)); }
   .event-callout { top: calc(max(144px, calc(var(--race-progress-bottom, 0px) + 8px)) + 70px); }
 }
 
@@ -1869,6 +1880,9 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 .driving-message[data-peripheral]:empty { display: none; }
 @media (max-width: 760px) { .event-callout[data-peripheral] span { display: block; margin: 0; } }
 .event-callout[data-peripheral][data-compact="true"] span { display: block; margin: 0; }
+@media (max-width: 640px) and (max-height: 360px) and (orientation: landscape) {
+  .event-callout[data-peripheral][data-compact="true"] { max-width: 68px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .event-callout[data-peripheral], .driving-message[data-peripheral] { animation: none !important; transition: none !important; }
 }
@@ -1883,7 +1897,6 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 #upcoming-scene-fallback { position: absolute; z-index: 1; right: 4%; top: 15%; max-width: 45vw; padding: 8px 12px; border: 1px solid #9cdff7; border-radius: 8px; color: #e3f5ff; font-size: 12px; background: #081b2be8; }
 .intro .track-select button.upcoming-track-card { border-color: rgb(123 215 241 / .42); }
 .intro .track-select button.upcoming-track-card[aria-pressed="true"] { border-color: #a3eaff; box-shadow: inset 0 0 0 1px #a3eaff, 0 7px 27px rgb(71 179 239 / .22); }
-.upcoming-track-card .upcoming-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .intro .track-select button.upcoming-track-card small { color: #a3eaff; font-weight: 700; }
 .intro #start-button { width: 236px; min-width: 236px; max-width: 236px; gap: 8px; }
 .intro #start-button > span { letter-spacing: .06em; }
@@ -1982,7 +1995,7 @@ html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 .tutorial-reward { padding: 0; border-radius: 3px; background: none; color: #ffd27a; font-weight: inherit; text-shadow: 0 0 10px rgb(255 210 122 / .75); white-space: nowrap; animation: reward-glow 1.4s ease-in-out infinite; }
 .tutorial-pass .tutorial-reward { font-weight: 800; }
 @keyframes reward-glow { 50% { color: #fff4dc; text-shadow: 0 0 14px rgb(255 210 122 / .95); } }
-body[data-tutorial-reward="nitro"] #nitro-meter, body[data-tutorial-reward="nitro"] #touch-controls [data-control="nitro"] { outline: 2px solid #ffd27a; outline-offset: 3px; animation: reward-meter .7s ease-in-out 2; }
+body[data-tutorial-reward="nitro"] #nitro-meter, body[data-tutorial-reward="nitro"] #touch-controls [data-control="nitro"] { outline: 2px solid var(--nitro); outline-offset: 3px; animation: reward-meter .7s ease-in-out 2; }
 @keyframes reward-meter { 50% { outline-offset: 7px; filter: drop-shadow(0 0 10px rgb(255 210 122 / .9)); } }
 @media (max-width: 760px) and (min-height: 501px) { .tutorial-pass { top: calc(var(--tutorial-coach-bottom, 300px) + 40px); font-size: 15px; } }
 @media (max-height: 500px) and (orientation: landscape) { .tutorial-pass { top: 34%; left: 79%; max-width: calc(42vw - 32px); padding: 6px 12px; font-size: 14px; } }
@@ -1991,7 +2004,7 @@ body[data-tutorial-reward="nitro"] #nitro-meter, body[data-tutorial-reward="nitr
    pause screen starts below it on phones, right of it in landscape; neither covers the other. */
 body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* an open language/VFX list opens over the coach (12) */
 @media (max-width: 760px) and (min-height: 501px) { body[data-tutorial] .race-overlay { top: max(calc(var(--safe-top) + 190px), calc(var(--tutorial-coach-bottom, 0px) + 8px)); align-items: start; overflow: auto; } body[data-tutorial] .overlay-route { display: none; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 4px 0 6px; } body[data-tutorial] .overlay-summary > p { margin-bottom: 12px; } }
-@media (max-height: 500px) and (orientation: landscape) { body[data-tutorial] .race-overlay { justify-items: end; } body[data-tutorial] .overlay-content { width: calc(42vw - 36px); margin-right: 12px; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 6px 0 8px; } } /* right of the 58vw coach */
+@media (max-height: 500px) and (orientation: landscape) { body[data-tutorial] .race-overlay { justify-items: end; padding-block: 10px; } body[data-tutorial] .overlay-route { display: none; } body[data-tutorial] .overlay-content { width: calc(42vw - 36px); margin-right: 12px; } body[data-tutorial] .overlay-content h2 { font-size: 36px; margin: 6px 0 8px; } } /* right of the 58vw coach */
 
 /* Display-only 3x results artwork; no reward entitlement. */
 .result-trophy-art{display:inline-block;max-width:96px;vertical-align:middle;object-fit:contain;animation:reward-podium-reveal .52s ease-out both}
@@ -2004,7 +2017,6 @@ body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* 
 #upcoming-scene-fallback { position: absolute; z-index: 1; right: 4%; top: 15%; max-width: 45vw; padding: 8px 12px; border: 1px solid #9cdff7; border-radius: 8px; color: #e3f5ff; font-size: 12px; background: #081b2be8; }
 .intro .track-select button.upcoming-track-card { border-color: rgb(123 215 241 / .42); }
 .intro .track-select button.upcoming-track-card[aria-pressed="true"] { border-color: #a3eaff; box-shadow: inset 0 0 0 1px #a3eaff, 0 7px 27px rgb(71 179 239 / .22); }
-.upcoming-track-card .upcoming-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .intro .track-select button.upcoming-track-card small { color: #a3eaff; font-weight: 700; }
 .intro #start-button { width: 236px; min-width: 236px; max-width: 236px; gap: 8px; }
 .intro #start-button > span { letter-spacing: .06em; }
@@ -2025,33 +2037,44 @@ body[data-tutorial] .aero-tools:has([aria-expanded="true"]) { z-index: 13; } /* 
 @keyframes route-player-pulse { from { transform:scale(.7); opacity:.95; } to { transform:scale(1.5); opacity:0; } }
 @media (prefers-reduced-motion:reduce) { .race-route-map .route-player-halo { animation:none; opacity:.85; } }
 
-/* Edge-docked race HUD: nothing persistent sits on the road view. The progress bar is a slim strip in the top bar (the
-   .race-progress container stays put as the anchor of mode rows); the ROAD/FLIGHT chip and the collision chip are one-line
+/* Edge-docked race HUD: nothing persistent sits on the road view. Progress lives on the live map: its orange trail is the
+   bar and the caption under it (.progress-bar) carries the distance; the phase word shows only outside racing. The
+   .race-progress container stays put as the anchor of mode rows; the ROAD/FLIGHT chip and the collision chip are one-line
    chips that src/race-feedback-placement.ts docks at an edge on layout changes only. Guard: tests/race-hud-overlap-browser.spec.js. */
 .race-progress { padding: 0; background: none; border: 0; }
-.progress-bar {
-  position: fixed; z-index: 3; top: calc(46px + var(--safe-top)); left: 50%; transform: translateX(-50%);
-  width: clamp(140px, calc(100vw - 800px), 300px); padding: 4px 8px 5px; box-sizing: border-box;
-  background: rgb(7 23 42 / .45); border-radius: 6px; pointer-events: none;
-}
-.progress-bar .progress-labels { font-size: 8px; letter-spacing: .6px; white-space: nowrap; gap: 6px; }
-.progress-bar .progress-track { margin-top: 5px; }
-.progress-bar .finish-flag { width: 6px; height: 6px; top: -2px; }
-@media (hover: none) and (pointer: coarse) and (min-width: 761px) { .progress-bar { top: calc(25px + var(--safe-top)); width: 250px; } }
-/* Short landscape: between the wordmark and the toolbar (345px wide, 12px in), like the callout's top-bar slot. */
+.race-route-map { padding-bottom: 13px; }
+.race-route-map > .progress-bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 2px 2px; pointer-events: none; }
+.race-route-map .progress-labels { justify-content: center; flex-wrap: wrap; column-gap: 4px; font-size: 8px; line-height: 11px;
+  letter-spacing: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+body[data-phase="racing"] #race-status { display: none; }
+/* zh-TW lifts the caption to 10px, and "2.82 / 5.00 KM" (66px) outgrows the 59-67px maps on narrow portrait and short landscape: the unit yields there. */
+@media (max-width: 400px) and (min-height: 501px) { .race-route-map .unit { display: none; } }
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) { .race-route-map .unit { display: none; } }
+.race-route-map .route-travelled { stroke: var(--accent); stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+/* HUD settings can hide the map drawing; the distance caption is essential and stays. */
+body[data-hud-map-visible="false"] #race-route-map > svg { display: none; }
+body[data-hud-map-visible="false"] #race-route-map { height: auto; padding-bottom: 0; border: 0; background: none; }
+body[data-hud-map-visible="false"] #race-route-map > .progress-bar { position: static; }
+/* Touch short landscape: the map takes the top-right corner, level with the toolbar, which shifts left by the map's width;
+   AIRFLOW/VFX join that row beside the logo, whose wordmark yields its width to them (the toolbar's width varies by
+   locale, so they anchor to the logo, not to it). Guard: tests/race-map-corner-browser.spec.js. */
 @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
-  .progress-bar { top: calc(25px + var(--safe-top)); left: calc(239px + var(--safe-left)); right: calc(367px + var(--safe-right)); width: auto; transform: none; }
+  body:not([data-phase="ready"]) .race-route-map { top: 12px; bottom: auto; left: auto; right: max(12px, var(--safe-right)); width: 67px; height: 88px; }
+  body:not([data-phase="ready"]) .toolbar { margin-right: 75px; }
+  body:not([data-phase="ready"]) .aero-tools { top: 17px; right: auto; left: calc(max(12px, var(--safe-left)) + 46px); }
+  body:not([data-phase="ready"]) .vfx-settings { left: 0; right: auto; } /* left-anchored now, so the panel opens rightwards */
+  body:not([data-phase="ready"]) .brand > span { display: none; }
+  /* Buttons mode lifts the telemetry above the steering buttons, up into the map's rows: it stops short of the map. */
+  body:not([data-phase="ready"]):has(#touch-controls[data-steer-mode="buttons"]) .telemetry { right: max(40px, calc(max(12px, var(--safe-right)) + 75px)); }
 }
 @media (pointer: coarse) and (max-height: 500px) and (max-width: 760px) and (orientation: landscape) {
-  .progress-bar { top: calc(31px + var(--safe-top)); left: calc(187px + var(--safe-left)); right: calc(357px + var(--safe-right)); }
+  body:not([data-phase="ready"]) .aero-tools { top: 21px; left: calc(max(12px, var(--safe-left)) + 37px); } /* .aero-tools already carries margin-top: var(--safe-top) */
 }
-/* Portrait: the top bar is full, so the strip takes the row under it, left of AIRFLOW/VFX (140px wide, 16px in). */
-@media (max-width: 760px) and (min-height: 501px) {
-  body .progress-bar { top: calc(70px + var(--safe-top)); left: calc(23px + var(--safe-left)); right: calc(166px + var(--safe-right)); width: auto; transform: none; padding: 3px 8px 4px; }
-  .progress-bar .progress-labels { line-height: 1.2; }
-  body[data-phase="paused"] .progress-bar { visibility: hidden; } /* the pause panel says where you are; the wider pause toolbar needs the row */
+/* Paused adds the language picker to AIRFLOW/VFX, too wide for the top row at 640px: the group drops under the toolbar. */
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="paused"] .aero-tools { top: 68px; left: auto; right: calc(max(12px, var(--safe-right)) + 75px); }
+  body[data-phase="paused"] .vfx-settings { left: auto; right: 0; }
 }
-body[data-fold-axis="vertical"] .progress-bar { right: calc(100vw - var(--fold-pane-left-end) + 10px); }
 
 body:not([data-phase="ready"]) .mode-indicator[data-peripheral] {
   position: fixed; z-index: 3; top: calc(8px + var(--safe-top)); right: max(12px, var(--safe-right)); bottom: auto; left: auto;
@@ -2158,6 +2181,49 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   body:not([data-tutorial]) .result-cloud p { font-size: 10.5px; line-height: 1.3; }
   body:not([data-tutorial]) .result-cloud .sign-in-button { min-height: 44px; padding-block: 6px; font-size: 13px; }
 }
+/* Results gain a third action (cloud backup); split summary/actions on desktop instead of
+   clipping Sign in behind #app. Preserve the existing one-column layout on portrait phones. */
+@media (min-width: 761px) and (min-height: 501px) {
+  /* Laptops / tablet landscape: a taller summary (Wave 3 reward card) scrolls instead of running off-screen. */
+  body[data-phase="finished"]:not([data-tutorial]) .race-overlay { overflow-y: auto; padding-block: 16px; }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-content {
+    display: grid;
+    width: min(900px, calc(100% - 48px));
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+    align-items: center;
+    gap: 24px;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions { min-width: 0; }
+  body[data-phase="finished"]:not([data-tutorial]) #next-button { min-width: 0; width: 100%; }
+}
+/* On short landscape screens all actions remain at least 44px tall; two rows of
+   controls plus an inline cloud sign-in replace the overflowing vertical stack. */
+@media (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    gap: 6px;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > #next-button,
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > .result-cloud { grid-column: 1 / -1; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-links { min-width: 0; gap: 4px; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-links .text-button { min-width: 0; padding: 4px; font-size: 11px; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-cloud {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+  }
+}
+/* Compact the non-interactive podium summary only on very short landscape screens.
+   Keep the header/tool clearance and every 44px action target unchanged.
+   Regression: overlay-landscape-fit-browser.spec.js (360–390px heights / fold). */
+@media (max-height: 400px) and (orientation: landscape) {
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-content h2 { margin-bottom: 4px; }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-summary > p { margin-bottom: 0; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-stats { margin: 0; gap: 4px 18px; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-style { margin: 0; gap: 2px 10px; }
+  body[data-phase="finished"]:not([data-tutorial]) .wave3-demo-results { margin-top: 0; }
+}
 /* Phone landscape: the coach card grows to show the whole lesson text (EN/中文). */
 @media (max-height: 500px) and (orientation: landscape) { .tutorial-coach { width: min(520px, calc(58vw - 24px)); } .tutorial-copy { max-height: none; overflow: visible; } }
 /* Reserve both Large thumb-control rows, including mirrored hands; long lessons scroll inside the card. */
@@ -2236,3 +2302,133 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 /* Keep the device notice nonmodal without modifying the byte-locked CSS prefix. */
 .performance-notice { pointer-events: none; }
 .performance-notice button { pointer-events: auto; }
+
+/* Wave 3 NITRO artwork: appended after the byte-locked main CSS contract. */
+.nitro-hud > img[data-wave3-hud-art] { display: inline-block; width: 24px; height: 24px; margin-right: 5px; object-fit: contain; vertical-align: middle; }
+
+
+/* One compact Home toolbar row. Reuse the existing route/medal line on desktops
+   rather than consuming another 30px and pushing Start off a 900px screen. */
+.intro .home-intro-topbar {
+  display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;
+  margin:0 0 12px;
+}
+.intro .home-intro-topbar .route-label {
+  flex:1 1 300px;min-width:0;margin:0;
+}
+.intro .home-intro-topbar .home-resource-strip {
+  flex:0 0 auto;margin:0;
+}
+@media (max-width:760px) {
+  .intro .home-intro-topbar {margin-bottom:8px;}
+  .intro .home-intro-topbar .route-label {flex-basis:100%;}
+}
+/* The compact wallet shares the short landscape panel's height budget with the track carousel. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .intro .home-intro-topbar { margin: 0; }
+  .intro .home-intro-topbar .route-label { display: flex; flex: 0 1 auto; gap: 8px; }
+  .intro .home-intro-topbar .route-label > span { display: none; }
+  .intro .home-intro-topbar .medal-chip { margin: 0; }
+  .intro:has(.home-resource-strip) .track-select button { height: 66px; padding-block: 4px; }
+  .intro:has(.home-resource-strip) .track-select .track-preview { height: 26px; }
+  .intro:has(.home-resource-strip) .track-select button > span.track-route-map { top: 6px; height: 24px; }
+}
+/* No room for the chip row at <= 330px tall: it pushed the track cards under the pinned Garage row (History keeps the Cloud and Medals tabs). */
+@media (max-height: 330px) and (orientation: landscape) {
+  .intro .home-intro-topbar .route-label { display: none; }
+}
+
+/* The rolling Endless minimap follows the current road window and has no finite finish. */
+body[data-race-mode="endless"] #race-route-map[data-streaming] { display: block; }
+
+.impact-report[data-contact="recovery"], .impact-report[data-contact="shielded"] { border-color: #8cd5ef; color: #d8f6ff; }
+.impact-icon[hidden], #impact-detail[hidden] { display: none; }
+
+/* Player pickup (pickup-fuel-cue.ts): the fuel bar flashes and "+N" rides right of the reading, clear of the label.
+   Appended after the byte-locked main CSS contract. Reduced Motion keeps a still highlight and a still "+N", with no sweep or pop. */
+.fuel-heading > span { position: relative; }
+.fuel-gain { position: absolute; left: calc(100% + 3px); top: -2px; color: #fff4d6; font: 700 12px/1 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 0 6px rgb(255 214 130 / .85); pointer-events: none; }
+.fuel-gain[hidden] { display: none; }
+.fuel-track[data-refilling="pickup"] > i { filter: brightness(1.6); box-shadow: 0 0 8px rgb(255 228 160 / .85); }
+.fuel-track[data-refilling="pickup"]::after { opacity: .9; animation: fuel-refill .45s ease-out; }
+.vfx-comfort .fuel-track[data-refilling="pickup"]::after { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .fuel-track[data-refilling="pickup"]::after { opacity: 0; }
+}
+
+/* Race navigation: the current primary action stays distinct from the secondary controls. */
+.race-overlay [data-primary-action].text-button {
+  min-height: 48px; padding-inline: 12px;
+  color: #142333; background: var(--accent); border: 1px solid transparent; border-radius: 4px;
+  font-weight: 700;
+}
+.race-overlay [data-primary-action].text-button:hover { background: #ffb394; }
+.race-overlay :is(.primary-button, .text-button, .sign-in-button):focus-visible { outline: 2px solid #95e2f6; outline-offset: 2px; }
+.leave-screen #leave-close { margin: 0 0 4px auto; }
+
+body[data-phase="paused"]:not([data-tutorial]) .overlay-actions {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
+  width: min(100%, 380px); margin-inline: auto;
+}
+body[data-phase="paused"]:not([data-tutorial]) .overlay-actions :is(#resume-button, #photo-open) { grid-column: 1 / -1; }
+body[data-phase="paused"]:not([data-tutorial]) .overlay-actions :is(.primary-button, .text-button) { margin: 0; }
+body[data-phase="paused"]:not([data-tutorial]) .overlay-actions .text-button {
+  min-height: 44px; border: 1px solid rgb(255 255 255 / .2); border-radius: 4px;
+}
+body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-action]) { display: flex; flex-direction: column; gap: 6px; }
+.result-links:has(> [data-primary-action]) { order: -1; }
+
+.result-standings {
+  width: min(100%, 420px); margin: 8px auto; padding: 0;
+  list-style: none; color: #d6e7f4; text-align: left;
+  font: 12px/1.35 system-ui, sans-serif; font-variant-numeric: tabular-nums;
+}
+.result-standings li {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 6px 10px; border-bottom: 1px solid rgb(214 231 244 / .18);
+}
+.result-standings li[aria-current="true"] { color: #fff0c7; background: rgb(255 211 141 / .14); }
+.result-standings strong { white-space: nowrap; }
+.result-standings:focus-visible { outline: 2px solid #95e2f6; outline-offset: 2px; }
+
+@media (max-width: 760px) and (orientation: portrait) {
+  body[data-phase="finished"] .race-overlay { align-items: safe center; padding-block: 10px max(12px, var(--safe-bottom)); }
+  body[data-phase="finished"] .overlay-content { width: calc(100% - 32px); }
+  body[data-phase="finished"] .overlay-content h2 { font-size: clamp(34px, 10vw, 48px); margin: 6px 0; }
+  body[data-phase="finished"] .overlay-summary > p { margin-bottom: 6px; line-height: 1.4; }
+  body[data-phase="finished"] .new-best { padding: 4px 8px; }
+  body[data-phase="finished"] .result-stats { margin: 8px 0; gap: 4px 16px; }
+  body[data-phase="finished"] .result-stats > div { gap: 2px; }
+  body[data-phase="finished"] .result-style { margin: 4px 0; gap: 2px; }
+  body[data-phase="finished"] .overlay-actions { display: flex; flex-direction: column; gap: 6px; }
+  body[data-phase="finished"] .overlay-actions > :is(.primary-button, .text-button) { width: 100%; min-width: 0; margin: 0; }
+  body[data-phase="finished"] .result-cloud { margin-top: 4px; }
+}
+@media (max-width: 380px) and (orientation: portrait) {
+  /* Reserve the bottom inset for navigation; the paused and wider podium layouts keep their existing space. */
+  body[data-phase="finished"] .race-overlay { bottom: max(8px, var(--safe-bottom)); }
+  body[data-phase="finished"] .overlay-route { display: none; }
+  body[data-phase="finished"] .overlay-summary > p { margin-block: 4px; }
+  body[data-phase="finished"] .overlay-actions > .next-button { height: 48px; }
+  body[data-phase="finished"] .style-stars svg { width: 24px; height: 24px; }
+  body[data-phase="finished"] .result-trophy-art { max-width: 48px; max-height: 48px; }
+  body[data-phase="finished"] .result-style {
+    grid-template-columns: auto auto; justify-content: center; align-items: center; gap: 2px 10px;
+  }
+  body[data-phase="finished"] .result-style small { grid-column: 1 / -1; line-height: 1.4; }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="paused"]:not([data-tutorial]) .overlay-actions { align-self: center; }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > #next-stage,
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > #again-button[data-primary-action] { grid-column: 1 / -1; }
+  body:not([data-tutorial]) .overlay-summary > .result-standings { flex-basis: 100%; min-width: 0; margin: 4px auto; }
+  .result-standings { max-height: 124px; overflow-y: auto; font-size: 11px; }
+  .result-standings li { padding: 3px 8px; }
+}
+
+/* The lobby scrolls its rules as a unit so an open listbox can extend beyond a disclosure. */
+.intro .race-rules-row .race-mode-rules[open] { max-height: none; overflow: visible; }
+#photo-advanced > summary { display: flex; align-items: center; justify-content: space-between; }
+#photo-advanced > summary::after { content: '＋'; color: var(--blue); }
+#photo-advanced[open] > summary::after { content: '−'; }

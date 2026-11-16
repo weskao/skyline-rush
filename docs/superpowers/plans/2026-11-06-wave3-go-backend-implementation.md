@@ -29,6 +29,12 @@
 - `docs/garage-release-policy.md`
 - `TODO.md`
 
+## 2026-11-10 sequencing clarification — frontend-first, backend-optional early access
+
+**Precedence:** `docs/superpowers/specs/2026-11-10-wave3-frontend-first-experience-design.md` and `docs/superpowers/plans/wave3-remaining-implementation-master-plan.md` specify the newer user-requested execution order. First finish the fully functioning **disposable local-demo** frontend (Missions → Results → Demo Rewards → Demo Store → Demo Collection → trial/equip), including `docs/designs/wave3-frontend-first-visual-assets.md` generation/audit and real device QA; an explicitly disclosed early-access demo may be published only on separate approval. **Only then**, with separate authorization, begin Phase 0 of this Go plan. Previous wording that implies frontend UI may not be interactive until Go exists refers only to **real authoritative payout/ownership**, not to a plainly labeled local demo.
+
+**Handoff contract:** Future Go adopts the same `Wave3ExperiencePort` UI interface via a new server adapter. Keep versioned stable IDs, error states and test matrices. Guest/demo values remain local and disposable; **never migrate** local demo points/claimed tasks/redeemed cosmetics into a real wallet, verified mission ledger, purchases or permanent inventory. Genuine Cloud Save, legacy PAINTS, local race records and trial session behavior remain independent. Go absence, outage or timeout must not block racing or demo browsing; only real grants fail closed. The original Go anti-cheat, Auth, Firestore transactions/rules and paid-store restrictions below remain unchanged.
+
 ## Non-negotiable: backward compatibility and anti-cheat
 
 1. **The pre-backend game must continue to work.** Offline/local races, existing track selection, controls, vehicle physics, NITRO/FLY/BOOST, race history and results display, tutorial, PAINTS/star progression, Garage Studio, existing VFX trials, Coming Soon store/reward previews, localization, accessibility, and the already-approved Cloud Save behavior must remain usable when the Go backend does not exist, is offline, times out, or returns an error.

@@ -8,7 +8,7 @@ test('garage cosmetics bind shared Aero shaders without reallocating scene or mu
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   const aero = createAeroVFX(scene, car);
   const flow = aero.group.children.find(child => child.geometry?.attributes.flowType);
-  const jet = aero.group.children.find(child => child.name.startsWith('Cold gas nozzle'));
+  const jet = aero.group.getObjectByName('Rear ports').children.find(child => child.name.startsWith('Cold gas nozzle'));
   const ribbon = scene.getObjectByName('Continuous dash ribbon');
   const shock = scene.getObjectByName('Ignition shockwave');
   const originalGeometry = { flow: flow.geometry, jet: jet.geometry, ribbon: ribbon.geometry };
@@ -59,7 +59,7 @@ test('selected skins switch shape and timing patterns in the shared WebGL render
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   const aero = createAeroVFX(scene, car);
   const flow = aero.group.children.find(child => child.geometry?.attributes.flowType);
-  const jet = aero.group.children.find(child => child.name.startsWith('Cold gas nozzle'));
+  const jet = aero.group.getObjectByName('Rear ports').children.find(child => child.name.startsWith('Cold gas nozzle'));
   const ribbon = scene.getObjectByName('Continuous dash ribbon');
   const shock = scene.getObjectByName('Ignition shockwave');
   const original = [flow.material, jet.material, ribbon.material, shock.geometry];
@@ -183,4 +183,40 @@ test('void beams are tapered glowing rods, bright along their core, so they keep
   assert.ok(radiusBottom > radiusTop * 1.8, 'wide at the nozzle, narrowing into the distance');
   assert.match(beams.material.vertexShader, /vFacing=abs\(dot\(/, 'view-facing term gives the rod volume');
   assert.match(beams.material.fragmentShader, /vFacing/);
+});
+
+test('all airflow skins keep the fitted roof, flank and underbody directions after a model change', () => {
+  const scene = new Scene(), car = new Group();
+  const body = new Mesh(new BoxGeometry(2, 1, 4));
+  body.position.y = .7;
+  car.userData.body = body;
+  car.add(body);
+  const aero = createAeroVFX(scene, car);
+  const [flow, pressure] = aero.group.children;
+  const model = new Group();
+  const tallBody = new Mesh(new BoxGeometry(3, 1.6, 5));
+  tallBody.position.set(.2, 1, .5);
+  model.add(tallBody);
+  const material = flow.material;
+  for (const displayed of [model, undefined]) {
+    aero.fitAirflow(displayed);
+    const geometry = flow.geometry;
+    const { flowOutward, flowType, lane } = geometry.attributes;
+    assert.ok(flowOutward, 'the fitted streamlines carry the outward direction used by skin motion');
+    for (const [mode, skin] of ['airflow-basic', 'airflow-slipstream', 'airflow-vortex', 'airflow-prism'].entries()) {
+      aero.setSkins({ airflow: skin });
+      assert.equal(flow.material.uniforms.skinPattern.value, mode);
+      assert.deepEqual(pressure.material.uniforms.skinTint.value.toArray(), flow.material.uniforms.skinTint.value.toArray());
+      assert.equal(flow.geometry, geometry, 'changing equipment reuses the fitted mesh');
+      assert.equal(flow.material, material);
+    }
+    const directions = new Set();
+    for (let i = 0; i < flowOutward.count; i++) {
+      const direction = [flowOutward.getX(i), flowOutward.getY(i)];
+      if (lane.getX(i) < .2) assert.deepEqual(direction, [0, 1], 'roof motion stays above the model');
+      if (flowType.getX(i) === 1) assert.equal(direction[1], 0, 'underbody motion stays parallel to the ground');
+      directions.add(direction.join());
+    }
+    assert.deepEqual([...directions].sort(), ['-1,0', '0,1', '1,0']);
+  }
 });

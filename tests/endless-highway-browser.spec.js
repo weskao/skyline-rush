@@ -1,7 +1,7 @@
 import { test } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
-import { expect } from './helpers/test.js';
+import { expect, settled } from './helpers/test.js';
 
 for (const [label, viewport, locale, touch] of [
   ['desktop-en', { width: 1440, height: 900 }, 'en', false],
@@ -23,8 +23,11 @@ for (const [label, viewport, locale, touch] of [
       await page.locator('#start-button').click();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
       await expect(page.locator('#speed')).not.toHaveText('0');
-      await expect(page.locator('#race-route-map')).toBeHidden();
-      await expect(page.locator('.progress-track')).toBeHidden();
+      // A classic road streams a rolling minimap through Endless (route-map.ts hasStreamingRouteMap); it has no finish.
+      await expect(page.locator('#race-route-map')).toBeVisible();
+      await expect(page.locator('#race-route-map')).toHaveAttribute('data-streaming', '');
+      await expect(page.locator('#race-route-map .route-travelled')).toBeHidden();
+      await expect(page.locator('#distance')).toBeVisible();
       await page.evaluate(() => {
         const race = window.gameplay.race;
         Object.assign(race.player, { distance: 15000, speed: 75, x: 0, cooldown: 2 });
@@ -92,6 +95,7 @@ for (const [label, viewport, locale, touch] of [
       await expect(page.locator('#overlay-title')).toHaveText(locale === 'en' ? 'SURVIVAL RUN COMPLETE' : '生存挑戰完成');
       await expect(page.locator('#result-stats')).toContainText('1000000.');
       await expect(page.locator('#race-overlay')).toBeVisible();
+      await settled(page.locator('.overlay-content'));
       expect(await page.locator('#result-stats').evaluate(element => {
         const bounds = element.getBoundingClientRect();
         return [...element.children].every(child => {

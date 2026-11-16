@@ -34,6 +34,8 @@ legibility, motion and camera scale.
   tangent/up/right at a curated preview point; never fixed world-axis coordinates.
 - Reduced motion: disable oscillation and non-essential jets/flash; keep all vehicles and road
   context. Keep visibility and comfortable lighting on Low/Medium.
+  `aero-vfx.js` stops its shader clock under Reduced Motion/Comfortable. A visible exhaust shimmer is motion: a
+  dimmer showroom made it fail the Frostbite stillness gate (2026-11-13). Guard: `tests/aero-vfx.test.js`.
 - Reuse streaming/rendering systems, but each destination keeps its own road shape, scenery,
   landmarks, tunnels and lighting.
 - Validate before merge/deploy with real Chrome/WebGL screenshots + assertions, desktop and
@@ -89,6 +91,10 @@ ready phase on desktop and touch, accessible and synchronized with the VFX
 select, without requiring AIRFLOW. The camera source of truth is `vfxSettings().view`,
 the view ordering `SHOWCASE_VIEWS`, and the geometry-independent camera offsets
 `showcaseCameraPose()`; the dock and the VFX menu stay synchronized and localized.
+
+Entering from Home resets the race rig's chase mode, smoothed position, look target
+and FOV on the first race frame. The Home view stays in the saved VFX settings.
+`tests/home-race-camera-browser.spec.js` covers the real Start and return flows.
 
 ## AIRFLOW ground contract (all current and future tracks)
 

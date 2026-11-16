@@ -24,11 +24,11 @@ test('scenario 2 — Orbit: view presets, auto rotation and reset are independen
   assert.deepEqual(defaultGarageCamera(), { yaw: .7, pitch: .27, zoom: 1, autoRotate: true, mode: 'ground', wing: false });
 });
 
-test('scenario 2 — releasing drag resumes slow orbit unless explicitly paused', async () => {
+test('scenario 2 — releasing drag restores the starting orbit mode and keeps the adjusted pose', async () => {
   const { releaseGarageOrbit } = await import('../src/garage-camera.ts');
   const moved = dragGarageCamera(defaultGarageCamera(), 50, 0);
-  assert.equal(releaseGarageOrbit(moved, false).autoRotate, true);
-  assert.equal(releaseGarageOrbit(moved, true).autoRotate, false);
+  assert.deepEqual(releaseGarageOrbit(moved, true), { ...moved, autoRotate: true });
+  assert.deepEqual(releaseGarageOrbit(moved, false), moved);
 });
 
 test('Studio wing toggle opens and stows the airbrake without touching the orbit pose', () => {
@@ -42,4 +42,15 @@ test('Studio wing toggle opens and stows the airbrake without touching the orbit
   const moved = zoomGarageCamera(dragGarageCamera(setGarageMode(open, 'flight'), 20, 5), .85);
   assert.equal(moved.wing, true, 'drag, zoom and Ground/Flight keep the wing choice');
   assert.equal(toggleGarageOrbit(open).wing, true);
+});
+
+test('Studio ‹ › steps the five presets, wraps, and starts from an end when the camera is free', async () => {
+  const { GARAGE_ANGLES, stepGarageAngle } = await import('../src/garage-camera.ts');
+  assert.deepEqual(GARAGE_ANGLES, ['front', 'rear', 'side', 'top', 'cinematic']);
+  assert.equal(stepGarageAngle('front', 1), 'rear');
+  assert.equal(stepGarageAngle('cinematic', 1), 'front');
+  assert.equal(stepGarageAngle('front', -1), 'cinematic');
+  assert.equal(stepGarageAngle('', 1), 'front');
+  assert.equal(stepGarageAngle('', -1), 'cinematic');
+  for (const angle of GARAGE_ANGLES) assert.notDeepEqual(garagePreset(angle), defaultGarageCamera(), angle);
 });

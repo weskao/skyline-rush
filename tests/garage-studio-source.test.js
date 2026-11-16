@@ -15,7 +15,15 @@ test('scenario 4 — Navigation offers keyboard controls and clear path back', (
 });
 test('Studio offers a wing toggle wired to the camera state and the stage', () => {
   const read = name => readFileSync(new URL(`../src/${name}`, import.meta.url), 'utf8');
-  assert.match(read('GaragePanel.vue'), /id="garage-wing"[^>]*:aria-pressed="garageStudioView\.wing"/);
+  assert.match(read('GaragePanel.vue'), /id="garage-wing"[^>]*:aria-checked="garageStudioView\.wing"/);
   assert.match(read('garage-ui.ts'), /#garage-wing[\s\S]*toggleGarageWing/);
   assert.match(read('garage-stage.ts'), /state\.wing/);
+});
+
+test('Garage exposes one labeled action for taking off and landing', () => {
+  const vue = readFileSync(new URL('../src/GaragePanel.vue', import.meta.url), 'utf8');
+  const actions = vue.match(/<button[^>]*data-garage-mode[^>]*>[\s\S]*?<\/button>/g) ?? [];
+  assert.equal(actions.length, 1);
+  assert.match(actions[0], /:data-garage-mode="nextPose"/);
+  assert.match(actions[0], /\{\{ poseAction \}\}/);
 });

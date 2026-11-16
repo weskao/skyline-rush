@@ -22,8 +22,8 @@ Sources:
 
 | Element | Today (file) | Board | Gap |
 |---|---|---|---|
-| Skyline buildings | 160 instanced unit boxes with no textures, plus 2,880 unlit window boxes, in a 2,200 m ring (`src/world.js` `city`, `src/skyline-scenery.ts`). Coast and Neon only. The same look in every preset and tier; Coast windows are LDR `#ffd394`, so they barely bloom. | **None**: no city in any Coast panel. | Owner decision **D1**: remove the city from Coast, or keep it and rebuild it as realistic towers. |
-| Bridge towers | 3 suspension-bridge towers every 1,100 m, about 58 non-instanced meshes each (≈ 170 draw calls), flat steel colour plus cyan trim (`src/world.js` bridge tower block). Shown on every non-framed classic track. | Not in the board's Coast panels. | Owner decision **D2**. They are also the largest draw-call item among the procedural props. |
+| Skyline buildings | 160 instanced unit boxes with no textures, plus 2,880 unlit window boxes, in a 2,200 m ring (`src/world.js` `city`, `src/skyline-scenery.ts`). Coast and Neon only. The same look in every preset and tier; Coast windows are LDR `#ffd394`, so they barely bloom. | **None**: no city in any Coast panel. | **D1 (decided 2026-11-13): remove the city from Coast.** Neon keeps its city. |
+| Bridge towers | 3 suspension-bridge towers every 1,100 m, about 58 non-instanced meshes each (≈ 170 draw calls), flat steel colour plus cyan trim (`src/world.js` bridge tower block). Shown on every non-framed classic track. | Not in the board's Coast panels. | **D2 (decided 2026-11-13): remove the bridge towers from Coast.** The other classic tracks keep theirs. They were the largest draw-call item among the procedural props; the sea arch is Coast's landmark. |
 | Sea | One 7,000 m plane with a custom shader: two sine products, two dark blues, an orange column at the sun's x (`src/classic-backdrop.ts`). The fog colour is fixed per track, not per preset. No sky or HDRI reflection. Foam is 110 flat translucent boxes. There is no shoreline; rocks just cut through the plane. | Turquoise near shore to deep blue; waves; sun glitter; white surf and foam at the rocks. | A full water material: normal-mapped waves, Fresnel reflection of the sky/HDRI, sun specular, depth colour, shoreline foam where rocks and cliffs meet the water. Its fog must follow each preset. |
 | Sky | A procedural 2,500 m dome: gradient, a hard-coded sun-glow direction, value-noise cloud band, aurora (`src/classic-backdrop.ts`). Sun disc at a fixed position. The Poly Haven HDRIs (day/dusk/rain/fog, 1K) are used **only for lighting**: the visible sky never matches them, and the dome sun, sun disc and directional light are not aligned to the HDRI sun. | Cumulus by day, sunset with sun on the horizon, overcast rain. | Show a sky that matches each preset's lighting HDRI, at a higher resolution than the 1K lighting maps. Align the sun disc and the directional light with the HDRI sun. |
 | Distant terrain | 30 instanced 7-sided cones at about 1,100–1,700 m with flat colour and no texture (`src/classic-backdrop.ts`); fog hides most of them. Nothing between the close GLB chunks (≤ ~840 m ahead on High) and the cones. | Green cliff headlands receding into haze; sea stacks. | Realistic far headlands and coastline (scan-based, matching the close cliffs), plus a mid band between the GLB chunks and the horizon. |
@@ -50,19 +50,24 @@ Sources:
    fallback. There is no Coast draw-call cap yet: set one before adding far content.
 10. Everything new is gated like the car, so `develop` keeps its current look until default-on is approved.
 
-## Owner decisions needed before work starts
+## Owner decisions (decided 2026-11-13)
 
-- **D1 Skyline buildings on Coast:** remove them to match the board, or keep them as realistic towers.
-- **D2 Bridge towers on Coast:** remove them, rebuild them as one realistic GLB, or keep them as they are.
-- **D3 Sky source:** show the existing Poly Haven HDRIs at a higher resolution as the visible sky, or build a
-  procedural or volumetric cloud sky tuned to them.
+- **D1 Skyline buildings on Coast: removed**, to match the board. Not rebuilt as realistic towers. Neon keeps its
+  city.
+- **D2 Bridge towers on Coast: removed.** Not rebuilt as a GLB. The other classic tracks keep theirs.
+- **D3 Sky source: the existing Poly Haven HDRIs, shown at a higher resolution as the visible sky** on a dome mesh
+  (constraint 6), with the sun disc and directional light aligned to the HDRI sun. No procedural or volumetric
+  cloud sky. The lighting maps stay 1K / PMREM 256 (constraint 4).
+
+D1 and D2 apply to the `?look=3d` look; without the gate Coast keeps the city and towers, as on `develop`
+(constraint 10).
 
 ## Suggested order
 
 1. Sky (D3), with the sun aligned. Everything else is judged against it.
 2. Sea, with reflection of the new sky and shoreline foam.
 3. Distant terrain and the mid band.
-4. Buildings and bridge towers per D1/D2.
+4. Remove the city and the bridge towers from Coast (D1, D2).
 5. Concept-board parity review (spec v2 §8.1), phone p50/p95 (`make phone-diag` beats now carry them), owner sign-off.
 
 Code inventory notes, read from code only and not verified at runtime:

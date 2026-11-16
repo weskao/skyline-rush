@@ -1,17 +1,18 @@
 import * as THREE from 'three';
+import type { ClassicRoad } from './classic-road-routes.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
-// Additional artwork only: the live road, collisions and saved ghosts remain unchanged.
+// Thematic roadside meshes positioned outside the driveable corridor.
 export const CLASSIC_SCENIC_TRACKS = ['neon', 'canyon', 'aurora'] as const;
 type Theme = typeof CLASSIC_SCENIC_TRACKS[number];
 const DENSITY: Record<VfxQuality, number> = { low: 8, medium: 16, high: 24 };
-const TOTAL = DENSITY.high, STEP = 60;
+const TOTAL = DENSITY.high, STEP = 60, UP = new THREE.Vector3(0, 1, 0);
 type Mesh = THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
 interface Kit {
   group: THREE.Group;
   meshes: [Mesh, Mesh, Mesh, Mesh];
   slots: number[];
-  initialized: boolean;
+  route?: ClassicRoad;
   previousQuality: VfxQuality | null;
   previousFirst: number | null;
 }
@@ -21,7 +22,7 @@ const THEMES: Record<Theme, { body: string; trim: string; accent: string; detail
   aurora: { body: '#42665e', trim: '#bbcbd0', accent: '#e1f0f1', detail: '#59616b', name: 'spectator stands' },
 };
 
-export function createClassicTrackScenery(scene: THREE.Scene, roadCenter: (distance: number) => number) {
+export function createClassicTrackScenery(scene: THREE.Scene) {
   const kits = {} as Record<Theme, Kit>;
   const groups = {} as Record<Theme, THREE.Group>;
   const position = new THREE.Vector3(), rotation = new THREE.Quaternion();
@@ -66,15 +67,16 @@ export function createClassicTrackScenery(scene: THREE.Scene, roadCenter: (dista
       mesh.frustumCulled = false;
       group.add(mesh);
     }
-    kits[id] = { group, meshes, slots: Array(TOTAL).fill(NaN), initialized: false, previousQuality: null, previousFirst: null };
+    kits[id] = { group, meshes, slots: Array(TOTAL).fill(NaN), previousQuality: null, previousFirst: null };
   }
-  const place = (id: Theme, index: number, distance: number): void => {
-    const side = index % 2 ? 1 : -1;
-    const x = roadCenter(distance) + side * (49 + (index * 11 % 33));
-    const z = -distance;
+  const place = (id: Theme, route: ClassicRoad, index: number, distance: number): void => {
+    const side = index % 2 ? 1 : -1, lane = side * (49 + (index * 11 % 33));
+    const [x,z] = route.point(distance, lane);
     const [body, trim, accent, detail] = kits[id].meshes;
+    // A lap turns through every bearing, so its props turn with the road. Open roads keep them square to the start.
+    rotation.setFromAxisAngle(UP, route.lap ? -route.heading(distance) : 0);
     // Same sector, opposite kerb from the skyline body, still 30 m+ clear of the road.
-    const near = roadCenter(distance) - side * (38 + index % 4 * 3), dz = z;
+    const [near, dz] = route.point(distance, -side * (38 + index % 4 * 3));
     if (id === 'neon') compose(detail, index, near, 12, dz, .8, 7, 14);
     else if (id === 'canyon') compose(detail, index, near, 1.3, dz, 2.6, 2.6, 6);
     else compose(detail, index, near, 2, dz, 6, 4, 16);
@@ -84,7 +86,8 @@ export function createClassicTrackScenery(scene: THREE.Scene, roadCenter: (dista
       compose(body, index, x, height / 2, z, width, height, 14);
       compose(trim, index, x, height + .8, z, width + 1, 1.6, 15);
       // A thin illuminated fascia faces the driveable corridor.
-      compose(accent, index, x - side * (width / 2 + .3), height * .63, z, .35, height * .48, 5);
+      const [fx, fz] = route.lap ? route.point(distance, lane - side * (width / 2 + .3)) : [x - side * (width / 2 + .3), z];
+      compose(accent, index, fx, height * .63, fz, .35, height * .48, 5);
     } else if (id === 'canyon') {
       const height = 21 + index % 5 * 6;
       compose(body, index, x, height * .44, z, 14 + index % 3 * 4, height, 19);
@@ -99,7 +102,7 @@ export function createClassicTrackScenery(scene: THREE.Scene, roadCenter: (dista
   };
   return {
     groups,
-    update(trackId: string, distance: number, quality: VfxQuality): void {
+    update(trackId: string, route: ClassicRoad, distance: number, quality: VfxQuality): void {
       for (const id of CLASSIC_SCENIC_TRACKS) groups[id].visible = id === trackId;
       if (!CLASSIC_SCENIC_TRACKS.some(id => id === trackId) || !Number.isFinite(distance)) return;
       const id = trackId as Theme, kit = kits[id];
@@ -107,22 +110,23 @@ export function createClassicTrackScenery(scene: THREE.Scene, roadCenter: (dista
       const active = DENSITY[quality];
       // The ring capacity must match the VISIBLE tier. Cycling all 24 slots
       // while drawing only 8 leaves low-tier players staring at empty gaps.
-      const rebuild = !kit.initialized || kit.previousQuality !== quality
+      const rebuild = route !== kit.route || kit.previousQuality !== quality
         || (kit.previousFirst !== null && first < kit.previousFirst);
       let moved = rebuild;
       for (let i = 0; i < active; i++) {
         let d = rebuild ? first + i * STEP : kit.slots[i];
         if (d < first) d += Math.ceil((first - d) / (active * STEP)) * active * STEP;
-        if (d !== kit.slots[i]) { kit.slots[i] = d; place(id, i, d); moved = true; }
+        if (rebuild || d !== kit.slots[i]) { kit.slots[i] = d; place(id, route, i, d); moved = true; }
       }
-      kit.initialized = true;
+      kit.route = route;
       kit.previousFirst = first;
       for (const mesh of kit.meshes) {
         mesh.count = active;
         if (moved) mesh.instanceMatrix.needsUpdate = true;
       }
       kit.previousQuality = quality;
-      kit.group.position.set(-roadCenter(distance), 0, distance);
+      const [x,z] = route.point(distance);
+      kit.group.position.set(-x, 0, -z);
     },
     hide(): void { for (const id of CLASSIC_SCENIC_TRACKS) groups[id].visible = false; },
     dispose(): void {

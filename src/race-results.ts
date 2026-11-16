@@ -9,6 +9,8 @@ import type { SessionProgress } from './session-progress.ts';
 import type { createGhostStore } from './ghost-store.ts';
 import { recordChallengeMedals, type ChallengeMedalId } from './history-challenge-medals.ts';
 import { addStuntHeat, stuntHeatContinues, type StuntRun } from './stunt-attack.ts';
+import { settleWave3RaceDemo } from '#wave3-demo-race';
+export { captureWave3RaceTelemetry } from '#wave3-demo-race';
 export interface RaceSeries { sprintSeries: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null }
 // The simulation race comes from plain-JS game.js; each history.ts writer validates the fields it stores.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,8 +32,11 @@ export interface Settlement {
   challengeMedals: ChallengeMedalId[];
   /** Track the NEXT button offers, when this run moved the campaign forward. */
   next: string | null;
+  unlockedTrack: boolean;
   /** A heat inside a sprint series, cup or stunt run with more to come. */
   intermediateStage: boolean;
+  /** Whether this outcome contributes a history result eligible for cloud backup. */
+  recorded: boolean;
   series: RaceSeries;
 }
 
@@ -45,6 +50,13 @@ export function settleRace(race: FinishedRace, context: SettleContext): Settleme
   const settlement = settleOnce(race, context);
   settled.set(race, settlement);
   return settlement;
+}
+
+/** Completes the existing local race settlement before showing disposable demo rewards. */
+export function settleRaceAndDemo(race: FinishedRace, context: SettleContext): Settlement {
+  const previous = settleRace(race, context);
+  settleWave3RaceDemo(race, previous.intermediateStage, previous.series);
+  return previous;
 }
 
 /** Classic personal best and its Ghost. A re-laid track keeps its best under `<track>@<layout>`, a course sprint under its
@@ -73,7 +85,7 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
   const medals = (race.mode === 'classic' && !gated ? recordMedals(race.result) : []).filter(id => !progress.medals[id]); // history.ts swallows storage failures
   progress.medals = { ...progress.medals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
   const trackId: string = race.trackId ?? 'coast';
-  let best: number, record: boolean, next: string | null = null;
+  let best: number, record: boolean, next: string | null = null, unlockedTrack = false;
   const intermediateStage = !!((sprintSeries && sprintSeries.results.length < sprintSeries.count) || (cup && !cupComplete(cup)) ||
     (stunt && stuntHeatContinues(stunt, race.result.endReason)));
   if (intermediateStage) {
@@ -111,7 +123,10 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     const following = tracks[tracks.indexOf(race.trackId) + 1];
     // NEXT drives progression only: hidden once every track was already open before this run.
     const campaignDone = tracks.every(id => progress.unlocked.has(id));
-    if (following && race.result.position <= 3 && !progress.unlocked.has(following)) progress.unlocked.add(following);
+    if (following && race.result.position <= 3 && !progress.unlocked.has(following)) {
+      progress.unlocked.add(following);
+      unlockedTrack = true;
+    }
     if (following && !campaignDone && progress.unlocked.has(following)) next = following;
     ({ best, record } = classicBest(race, progress, ghosts, trace));
     // The pre-tracks key stays readable for layout-1 coast only (older builds, browser test).
@@ -125,5 +140,6 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     const challenge = recordChallengeMedals(stunt ? { ...race, result: { ...race.result, time: stunt.elapsed }, styleAttack: stunt } : race, progress.challengeMedals);
     progress.challengeMedals = challenge.state; challengeMedals = challenge.awarded;
   }
-  return { best, record, medals, challengeMedals, next, intermediateStage, series: { sprintSeries, cup, stunt } };
+  const recorded = race.mode !== 'free' && !intermediateStage && (race.mode === 'classic' || race.result.success !== false);
+  return { best, record, medals, challengeMedals, next, unlockedTrack, intermediateStage, recorded, series: { sprintSeries, cup, stunt } };
 }

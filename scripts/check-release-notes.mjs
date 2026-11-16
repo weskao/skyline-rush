@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { RELEASE_NOTES, UPCOMING, compareVersions, releaseText, releaseImage, releaseHeroVideo } from '../src/release-notes.ts';
+import { TRACK_NAMES } from '../src/i18n.ts';
 
 const LOCALES = ['en', 'zh-TW'];
 const REVIEWS_FILE = new URL('./release-notes-reviews.json', import.meta.url);
@@ -27,10 +28,23 @@ const LOOKS_LIKE = [
   ['a commit id', /\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b/]
 ];
 const MAX_LENGTH = { en: { title: 48, description: 160 }, 'zh-TW': { title: 20, description: 70 } };
+// A track is named exactly as Home shows it (TRACK_NAMES), in both languages or neither: drafts once wrote
+// 霓虹市區 / 峽谷天道 beside the right English names. \b keeps "Coast" from matching "Coastal Horizon".
+const TRACKS = Object.keys(TRACK_NAMES.en).map(id => [TRACK_NAMES.en[id], new RegExp(`\\b${TRACK_NAMES.en[id]}\\b`), TRACK_NAMES['zh-TW'][id]]);
+// Reviewed before this check existed: rewording them voids their stored review, so they change only through a
+// fresh /review-release-notes of that version (then drop the line here). Never add to this.
+const TRACK_NAME_EXEMPT = new Set(['0.26.0 circuit-endless', '0.28.0 endless-every-road', '0.28.0 sky-spiral-landmarks']);
+const trackNameProblems = (item, where) => {
+  if (TRACK_NAME_EXEMPT.has(where)) return [];
+  const [en, zh] = LOCALES.map(locale => `${releaseText(item.title, locale)} ${releaseText(item.description, locale)}`);
+  return TRACKS.filter(([, enName, zhName]) => enName.test(en) !== zh.includes(zhName)).map(([name, , zhName]) =>
+    `${where}: track name mismatch, write "${name}" in en and "${zhName}" in zh-TW, as Home shows them`);
+};
 
 export function copyProblems(release) {
   const problems = [];
   for (const item of release.highlights ?? []) {
+    problems.push(...trackNameProblems(item, `${release.version} ${item.id}`));
     for (const locale of LOCALES) {
       for (const field of ['title', 'description']) {
         const text = releaseText(item[field], locale), where = `${release.version} ${item.id} ${locale} ${field}`;

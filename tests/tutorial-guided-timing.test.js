@@ -32,6 +32,28 @@ test('throttle lesson: the car stands still after GO until THROTTLE, and the arr
   assert.ok(session.race.player.speed > 0 && session.race.player.speed < 1, 'speed builds at the normal throttle rate');
 });
 
+test('the final lesson keeps the NITRO control in its cue through retry and the entire sprint', () => {
+  const session = createInteractiveTutorial();
+  skipTo(session, 'nitro');
+  const pressNitro = { key: 'tutorial.cue.nitro', actions: ['nitro'] };
+  assert.deepEqual(session.cue, pressNitro);
+  tick(session, { nitro: true, brake: true });
+  assert.equal(session.coachPhase, 'retry');
+  assert.deepEqual(session.cue, { key: 'tutorial.cue.nitroRelease', actions: ['nitro'] });
+  tick(session);
+  assert.deepEqual(session.cue, pressNitro, 'the press cue returns after the charge refills');
+  tick(session, { nitro: true });
+  assert.equal(session.coachPhase, 'sprinting');
+  const sprintCue = { key: 'tutorial.cue.nitroActive', actions: ['nitro'] };
+  assert.deepEqual(session.cue, sprintCue);
+  for (let i = 0; i < 120 && session.coachPhase === 'sprinting'; i++) tick(session);
+  assert.equal(session.coachPhase, 'finishing');
+  assert.deepEqual(session.cue, sprintCue, 'the key stays visible as the effect plays out');
+  for (let i = 0; i < 120 && !session.complete; i++) tick(session);
+  assert.ok(session.complete);
+  assert.ok(!session.cue?.actions.includes('nitro'));
+});
+
 test('a gate ring hit stays visible to the audio and effects that run after the step', () => {
   const session = createInteractiveTutorial();
   skipTo(session, 'left');
@@ -107,9 +129,10 @@ test('drift and air chain cues name the next action at the right moment', () => 
   const cue = (step, fields, extra = {}) => tutorialCue({ ...base, step, car: car(fields), ...extra });
   assert.deepEqual(cue('drift', { speed: 30 }), { key: 'tutorial.cue.driftSpeed', actions: ['brake'] });
   assert.deepEqual(cue('drift', {}), { key: 'tutorial.cue.driftStart', actions: ['brake', 'left', 'right'] });
-  assert.deepEqual(cue('drift', { drift: { time: 0.4 } }), { key: 'tutorial.cue.driftHold', actions: ['brake'], count: 0.6 });
-  assert.deepEqual(cue('drift', { drift: { time: 1.2 } }), { key: 'tutorial.cue.driftRelease', actions: ['brake'], n: 1 });
-  assert.deepEqual(cue('drift', { drift: { time: 3.1 } }), { key: 'tutorial.cue.driftMax', actions: ['brake'] });
+  assert.deepEqual(cue('drift', { drift: { time: 0.4 } }), { key: 'tutorial.cue.driftHold', actions: ['brake'], count: 0.2 });
+  assert.deepEqual(cue('drift', { drift: { time: 0.7 } }), { key: 'tutorial.cue.driftRelease', actions: ['brake'], n: 1 });
+  assert.deepEqual(cue('drift', { drift: { time: 1.3 } }), { key: 'tutorial.cue.driftRelease', actions: ['brake'], n: 2 });
+  assert.deepEqual(cue('drift', { drift: { time: 2.1 } }), { key: 'tutorial.cue.driftMax', actions: ['brake'] });
   assert.equal(cue('airChain', {}).key, 'tutorial.cue.chainFly');
   assert.deepEqual(cue('airChain', { altitude: 2, thrusting: true }), { key: 'tutorial.cue.chainBoost', actions: ['boost'] });
   assert.deepEqual(cue('airChain', { altitude: 2, thrusting: true, flightBoosted: true, poweredFlightTime: 0.1 }), { key: 'tutorial.cue.chainHold', actions: ['fly', 'boost'], count: 0.3 });
@@ -160,4 +183,16 @@ test('brake lesson cue: red gate ahead, then keep holding while braking', () => 
   const cue = braking => tutorialCue({ step: 'brake', phase: 'ready', car: { ...car, braking }, countdown: null, stretchEntered: false, driftEntry: 50 });
   assert.deepEqual(cue(false), { key: 'tutorial.cue.brakeAhead', actions: ['brake'] });
   assert.deepEqual(cue(true), { key: 'tutorial.cue.brakeHold', actions: ['brake'] });
+});
+
+test('completing the last tutorial lesson replaces the regular gate chime', () => {
+  const heard = [];
+  const chime = createClearChime(name => heard.push(name));
+  const tutorial = { clears:0, complete:false };
+  chime(tutorial);
+  tutorial.clears++;
+  chime(tutorial);
+  tutorial.clears++; tutorial.complete = true;
+  chime(tutorial); chime(tutorial);
+  assert.deepEqual(heard, ['gate-clear', 'tutorial-complete']);
 });

@@ -70,7 +70,7 @@ export function textureStats(json, bin) {
   return { maxTexturePx: Math.max(0, ...info.map(i => i.px)), colorSpaceErrors };
 }
 
-async function parse(buffer) {
+export async function parseGlb(buffer) {
   const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
   const { MeshoptDecoder } = await import('three/examples/jsm/libs/meshopt_decoder.module.js');
   const { Texture } = await import('three');
@@ -88,7 +88,7 @@ async function parse(buffer) {
 
 /** Summary of an optimized GLB; `rawBuffer` (the pre-optimize export) supplies the animation names to compare against. */
 export async function summarize(buffer, rawBuffer) {
-  const gltf = await parse(buffer);
+  const gltf = await parseGlb(buffer);
   let triangles = 0, draws = 0;
   const nodeNames = [], used = new Set();
   gltf.scene.traverse(o => {

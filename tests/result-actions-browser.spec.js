@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { settled } from './helpers/test.js';
 
 // Teleports the running race over the line; rivalsFirst finishes all three rivals ahead (P4).
 async function finishRace(page, { rivalsFirst = false, racing = 'RACING' } = {}) {
@@ -51,6 +52,7 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     await page.locator('#pause-button').click();
+    await settled(page.locator('.overlay-content'));
     await expect(page.locator('#again-button')).toBeVisible();
     expect((await page.locator('#again-button').boundingBox()).height).toBeGreaterThanOrEqual(44);
     await page.locator('#resume-button').click();
@@ -58,6 +60,7 @@ for (const [name, viewport, hasTouch] of [
     await page.evaluate(() => { const race = window.gameplay.race; race.elapsed = 80; Object.assign(race.player, { distance: race.length - 10, speed: 60 }); });
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');
     await expect(page.locator('#race-overlay')).toBeVisible();
+    await settled(page.locator('.overlay-content'));
     await expect(page.locator('#again-button')).toBeVisible();
     expect((await page.locator('#again-button').boundingBox()).height).toBeGreaterThanOrEqual(44);
     await page.locator('#again-button').click();
@@ -69,7 +72,7 @@ for (const [name, viewport, hasTouch] of [
     await finishRace(page);
     const trophy = page.locator('#result-stats .result-trophy-art');
     await expect(trophy).toBeVisible();
-    await expect(trophy).toHaveAttribute('src', /trophy-gold@3x\.png$/);
+    await expect(trophy).toHaveAttribute('src', /trophy-gold@3x\.webp$/);
     await expect(trophy).toHaveJSProperty('naturalWidth', 288);
     await expect(trophy).toHaveJSProperty('naturalHeight', 288);
     await expect(trophy).toHaveAttribute('width', '96');
@@ -101,7 +104,9 @@ test('a race still reaches its results when every frame is slow', async ({ gamep
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.evaluate(() => {
     const raf = window.requestAnimationFrame.bind(window);
-    window.requestAnimationFrame = callback => raf(time => { const end = performance.now() + 300; while (performance.now() < end); callback(time); });
+    // One 300 ms stall per frame, shared by every rAF callback in it (the results credit roll runs its own loop).
+    let stalledFrame;
+    window.requestAnimationFrame = callback => raf(time => { if (time !== stalledFrame) { stalledFrame = time; const end = performance.now() + 300; while (performance.now() < end); } callback(time); });
     const race = window.gameplay.race;
     race.elapsed = 80;
     Object.assign(race.player, { distance: race.length - 10, speed: 60 });

@@ -152,7 +152,12 @@ written with `version: UPCOMING` (never a version number) until it ships; see se
    - A moment in a race: `node scripts/record-whats-new-clip.mjs <theme-slug> --track <id> --from <s>
      --seconds <s>` records it from the real game at 960×600 and 390×844 in en and zh-TW, with
      posters, balanced quality (`-crf 20`, ≤ 4 MB each). Find the window first (log `race.elapsed` and the state you want to
-     show) and keep collisions or banners that are not the point out of it. Attach it as the entry's
+     show) and keep collisions or banners that are not the point out of it. The same command with
+     `--master` also keeps a with-sound archive under `assets-src/whats-new/<slug>/`: a headed Chrome
+     on the second display, captured in real time by ffmpeg (avfoundation screen + BlackHole 2ch),
+     then compressed by `vidpress` defaults. It needs `SwitchAudioSource`, a second display and
+     Screen Recording permission, and restores the audio output on exit. The public clip stays
+     silent. Attach it as the entry's
      `video`.
    - A screen or a still moment: a real screenshot (`.webp`) as the highlight's `image`, localized
      when it shows text (`scripts/capture-og-images.mjs` shows how to open the app as a returning

@@ -1,4 +1,5 @@
-import { test, captureHooks } from './helpers/gameplay-browser.js';
+import { openGarageSection } from './helpers/garage-browser.js';
+import { test, captureHooks, seedHeroCar } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -6,14 +7,14 @@ import { fileURLToPath } from 'node:url';
 import { PAINTS } from '../src/appearance.ts';
 import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
 
-// Task 4c owner audit (not a gate): every Garage paint and skin, procedural car vs `?model=roadster` GLB, in Garage Home
+// Task 4c owner audit (not a gate): every Garage paint and skin, procedural fallback vs equipped GLB, in Garage Home
 // at both lighting levels and all three poses, plus the race events with the heaviest loadout, desktop and phone.
 // Writes one contact sheet per group to the git-ignored docs/designs/3d-pipeline/audits/garage-equipment/.
 // Run: GARAGE_EQUIPMENT_AUDIT=1 npx playwright test tests/garage-equipment-audit-browser.spec.js --workers=1
 test.skip(!process.env.GARAGE_EQUIPMENT_AUDIT, 'owner audit captures only: set GARAGE_EQUIPMENT_AUDIT=1');
 
-const OUT = fileURLToPath(new URL('../docs/designs/3d-pipeline/audits/garage-equipment/', import.meta.url));
-const CARS = { procedural: '', glb: '?model=roadster' };
+const OUT = fileURLToPath(new URL(`../docs/designs/3d-pipeline/audits/garage-equipment${process.env.HERO_CAR ? `-${process.env.HERO_CAR}` : ''}/`, import.meta.url));
+const CARS = ['procedural', 'glb'];
 const COMBOS = ['bright', 'dim'].flatMap(light => ['ground', 'flight', 'wing'].map(pose => ({ light, pose })));
 const ITEMS = [
   ...Object.keys(PAINTS).map(id => ({ id, group: 'paint', select: `[data-paint="${id}"]` })),
@@ -21,15 +22,17 @@ const ITEMS = [
 ];
 const HEAVIEST = ['thruster-void', 'airflow-prism', 'nitro-trail-purple', 'launch-flare-white'];
 
-async function open(page, url, quality = 'high') {
+async function open(page, url, car, quality = 'high') {
   await page.addInitScript(q => {
     // A fresh context per car (browser.newPage): no skin picks carry over; What's New marked read like helpers/test.js does
     for (const [key, value] of [['guide-seen', '1'], ['whats-new-seen-v1', '999.0.0'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: q, enabled: true, comfortable: false }));
   }, quality);
+  await seedHeroCar(page);
+  if (car === 'procedural') await page.route(/\/models\/(roadster2|crimson-gt)\/.*\.glb$/, route => route.fulfill({ status: 404, body: '' }));
   await page.goto(url);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  if (url.includes('model=')) await expect(page.locator('#world')).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
+  await expect(page.locator('#world')).toHaveAttribute('data-garage-model', car === 'glb' ? 'model' : 'fallback:missing', { timeout: ciTimeout(20000) });
   await expect.poll(() => page.evaluate(() => !!window.gameScene)).toBe(true);
 }
 const flareShown = page => page.evaluate(() => { let on = false; window.gameScene.scene.traverse(o => { if (o.name === 'Launch flare body glow' && o.visible) on = true; }); return on; });
@@ -39,8 +42,10 @@ async function setCombo(page, { light, pose }) {
   const lighting = page.locator('#garage-lighting');
   if ((await lighting.getAttribute('aria-pressed')) !== String(light === 'dim')) await lighting.click();
   await expect(lighting).toHaveAttribute('aria-pressed', String(light === 'dim'));
-  await page.locator(`button[data-garage-mode="${pose === 'flight' ? 'flight' : 'ground'}"]`).click();
   const wing = page.locator('#garage-preview');
+  const mode = pose === 'flight' ? 'flight' : 'ground';
+  if (await wing.getAttribute('data-garage-mode') !== mode) await page.locator('#garage-pose-action').click();
+  await expect(wing).toHaveAttribute('data-garage-mode', mode);
   if ((await wing.getAttribute('data-garage-wing')) !== String(pose === 'wing')) await page.locator('#garage-wing').click();
   await expect(wing).toHaveAttribute('data-garage-wing', String(pose === 'wing'));
   await page.waitForTimeout(ciTimeout(1500)); // pose and wing transitions settle
@@ -52,6 +57,7 @@ async function captureGarage(page) {
   for (const combo of COMBOS) {
     await setCombo(page, combo);
     for (const [i, item] of ITEMS.entries()) {
+      await openGarageSection(page, item.group === 'paint' ? 'paints' : 'effects');
       await page.locator(item.select).click();
       if (item.id.startsWith('launch-flare-') && !item.id.endsWith('basic')) await expect.poll(() => flareShown(page), { timeout: ciTimeout(10000) }).toBe(true);
       else await page.waitForTimeout(ciTimeout(400));
@@ -66,7 +72,12 @@ async function captureGarage(page) {
 async function captureRace(page, quality = 'high') {
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
-  for (const id of HEAVIEST) await page.locator(`#garage-vfx-catalog [data-skin="${id}"]`).getByRole('button', { name: /try|試用/i }).click();
+  for (const id of HEAVIEST) {
+    await openGarageSection(page, 'effects');
+    const card = page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
+    await card.locator('.garage-skin-preview-hitarea').click();
+    await card.locator('.garage-skin-action').click();
+  }
   await page.locator('#garage-close').click();
   const shots = {};
   await page.locator('#start-button').click();
@@ -112,10 +123,10 @@ async function writeSheet(browser, name, html) {
 test('audit: draw calls and triangles per quality tier, heaviest loadout, NITRO + FLY, procedural vs GLB', async ({ browser, gameplayURL }) => {
   test.setTimeout(ciTimeout(10 * 60 * 1000));
   const rows = [];
-  for (const quality of ['low', 'medium', 'high']) for (const [car, query] of Object.entries(CARS)) {
+  for (const quality of ['low', 'medium', 'high']) for (const car of CARS) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await captureHooks(page);
-    await open(page, `${gameplayURL}${query}`, quality);
+    await open(page, gameplayURL, car, quality);
     await captureRace(page, quality); // equips the heaviest loadout and runs every event once; measured below with NITRO + FLY on
     await page.evaluate(() => { const { player } = window.gameplay.race; player.nitroTime = 4; player.speed = 90; });
     await page.keyboard.down('Space');
@@ -135,10 +146,10 @@ for (const viewport of [{ name: 'desktop', width: 1440, height: 900 }, { name: '
   test(`audit captures: every paint and skin, procedural vs GLB, ${viewport.name}`, async ({ browser, gameplayURL }) => {
     test.setTimeout(ciTimeout(30 * 60 * 1000));
     const garage = {}, race = {};
-    for (const [car, query] of Object.entries(CARS)) {
+    for (const car of CARS) {
       const page = await browser.newPage({ viewport, ...(viewport.name === 'phone' && { isMobile: true, hasTouch: true }) });
       await captureHooks(page);
-      await open(page, `${gameplayURL}${query}`);
+      await open(page, gameplayURL, car);
       await page.locator('#garage-button').click();
       garage[car] = await captureGarage(page);
       await page.locator('#garage-close').click();

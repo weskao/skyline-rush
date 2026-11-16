@@ -4,6 +4,7 @@ import { Scene, Group, Vector3 } from 'three';
 import { createRace, MAGNET_RANGE } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 import { drawnMarkers } from '../src/marker-pool.js';
+import { seededRng } from '../src/rng.ts';
 
 test('a nonpositive first frame cannot revive dormant particles with uninitialized data', t => {
   globalThis.devicePixelRatio = 1;
@@ -67,13 +68,23 @@ test('downwash descends and carries forward momentum after leaving a moving car'
 
 test('downwash turns into an outward surface flow when it reaches the road', t => {
   const { effects, race, attributes } = flight(t, 0.05, 0);
+  // This seed includes mostly longitudinal spread, which a lateral-only measurement misses.
+  t.mock.method(Math, 'random', seededRng(691, 'downwash'));
   effects.update(race, 0.04, 0, false, false);
+  const { alpha, position } = attributes;
+  const atContact = [...alpha.array.keys()].filter(i => alpha.getX(i) > 0);
+  assert.ok(atContact.length > 0, 'downwash reaches the road');
+  const contactPositions = position.array.slice();
   race.player.thrusting = false;
   for (let i = 0; i < 8; i++) effects.update(race, 0.025, 0, false, false);
-  const surface = [...attributes.alpha.array].flatMap((alpha, i) =>
-    alpha > 0 && attributes.position.array[i * 3 + 1] < 0.3 ? [Math.abs(attributes.position.array[i * 3])] : []);
-  assert.ok(surface.length > 0, 'surface wash remains briefly visible');
-  assert.ok(Math.max(...surface) > 1.25, 'air spreads beyond the nozzle footprint');
+  for (const i of atContact) {
+    assert.ok(alpha.getX(i) > 0, 'surface wash remains briefly visible');
+    assert.ok(contactPositions[i * 3 + 1] < 0.3, 'particle started at road level');
+    assert.equal(position.getY(i), contactPositions[i * 3 + 1], 'particle stays at road level');
+    const dx = position.getX(i) - contactPositions[i * 3];
+    const dz = position.getZ(i) - contactPositions[i * 3 + 2];
+    assert.ok(Math.hypot(dx, dz) > 0.45, 'air spreads away from its road contact point');
+  }
 });
 
 test('reset clears visible vapor immediately and a paused frame leaves it empty', t => {
@@ -110,6 +121,27 @@ test('lift cores follow tilted nozzle transforms and fade completely on release/
   assert.ok(cores.children.every(core => !core.visible));
 });
 
+// develop 56536093 shows every car GLB at the measured Roadster size, carrying its authored thrusters off LIFT_PORTS.
+test('lift cores and gas leave a dressed GLB\'s scaled thrusters, not the unscaled contract ports', t => {
+  globalThis.devicePixelRatio = 1;
+  t.after(() => { delete globalThis.devicePixelRatio; });
+  t.mock.method(Math, 'random', () => 0); // no nozzle jitter: each puff leaves the port's exact centre
+  const scene = new Scene(), pose = new Group();
+  pose.userData.displayScale = new Vector3(1.1, 1.02, 1.02); // garage-model.ts dress(): the instance's display scale
+  scene.add(pose);
+  const effects = createEffects(scene, () => 0), race = createRace();
+  race.phase = 'racing'; race.player.thrusting = true;
+  effects.update(race, 0.1, 0, false, false, [pose]);
+  const cores = scene.getObjectByName('Lift gas cores').children;
+  [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]].forEach(([x, z], i) =>
+    assert.ok(cores[i].position.distanceTo(new Vector3(x * 1.1, 0.19 * 1.02, z * 1.02)) < 1e-6, `core ${i}: ${cores[i].position.toArray()}`));
+  const { position, alpha } = scene.children.find(object => object.isPoints).geometry.attributes;
+  const born = [...alpha.array.keys()].filter(i => alpha.array[i] > 0);
+  assert.ok(born.length, 'gas leaves the nozzles');
+  // Its sideways and downward velocity move x and y; z (along the car) is still the scaled port's.
+  for (const i of born) assert.ok([-1.3 * 1.02, 1.45 * 1.02].some(z => Math.abs(position.getZ(i) - z) < 1e-6), `puff ${i} at z ${position.getZ(i)}`);
+});
+
 function raceScene(t) {
   globalThis.devicePixelRatio = 1;
   t.after(() => { delete globalThis.devicePixelRatio; });
@@ -130,11 +162,13 @@ test('pickup tiers are visible at their seeded positions and taken pickups disap
   assert.ok(group, 'collectible models are attached to the real scene');
   const visible = drawnMarkers(group);
   assert.equal(visible.length, 4);
-  assert.equal(new Set(visible.map(mesh => mesh.material.color.getHex())).size, 4);
+  const glow = visible.map(mesh => mesh.material.emissive); // the tier's accent; the body colours are in the model
+  assert.equal(new Set(glow.map(color => color.getHex())).size, 4);
   assert.equal(new Set(visible.map(mesh => mesh.scale.x)).size, 4);
-  assert.ok(visible[0].material.color.b > visible[0].material.color.r * 3 && visible[0].material.color.b > visible[0].material.color.g * 2, 'cell is blue');
-  assert.ok(visible[1].material.color.r > visible[1].material.color.g * 2, 'can is orange');
-  assert.ok(visible[2].material.color.g > visible[1].material.color.g, 'tank is gold');
+  assert.equal(new Set(visible.map(mesh => mesh.geometry.uuid)).size, 4, 'four different models');
+  assert.ok(glow[0].b > glow[0].r * 3 && glow[0].b > glow[0].g, 'cell is blue');
+  assert.ok(glow[1].r > glow[1].g * 2, 'can is orange');
+  assert.ok(glow[2].g > glow[1].g, 'tank is gold');
   assert.ok(visible[3].material.vertexColors && visible[3].geometry.attributes.color, 'overcharge is rainbow');
   assert.equal(visible[2].position.x, 2);
   assert.equal(visible[2].position.z, -120);
@@ -190,7 +224,7 @@ for (const kind of ['pickup', 'ring']) test(`${kind} collection bursts once and 
 test('drifting emits ground smoke and threshold-colored sparks while respecting motion/VFX limits', t => {
   const { race, effects, attributes, update } = raceScene(t);
   const counts = [];
-  for (const time of [1, 2, 3]) {
+  for (const time of [0.61, 1.21, 2.01]) { // just past each DRIFT_REWARDS threshold
     effects.reset();
     race.player.drift = { time, dir: 1 };
     update();
@@ -198,9 +232,9 @@ test('drifting emits ground smoke and threshold-colored sparks while respecting 
     assert.ok(sparks.length > 0, `sparks at ${time} seconds`);
     for (const i of sparks) {
       const [r, g, b] = attributes.color.array.slice(i * 3, i * 3 + 3);
-      if (time === 1) assert.ok(b > r * 2 && b > g * 2, 'one-second sparks are blue');
-      if (time === 2) assert.ok(r > g * 2 && g > b * 3, 'two-second sparks are orange');
-      if (time === 3) assert.ok(r > g * 2 && b > g * 3, 'three-second sparks are purple');
+      if (time === 0.61) assert.ok(b > r * 2 && b > g * 2, 'first-tier sparks are blue');
+      if (time === 1.21) assert.ok(r > g * 2 && g > b * 3, 'second-tier sparks are orange');
+      if (time === 2.01) assert.ok(r > g * 2 && b > g * 3, 'top-tier sparks are purple');
     }
     assert.ok([...attributes.alpha.array].some((a, i) => a > 0 && attributes.kind.array[i] === 2), 'tire smoke');
     counts.push(sparks.length);
@@ -219,7 +253,7 @@ test('disposing marker pools releases every tier material, including types no lo
   race.rings = ['charge', 'nitro', 'slipstream', 'risk', 'mystery'].map((type, i) => ({ type, radius: 4.8, x: 0, altitude: 8, distance: 100 + i * 20 }));
   update();
   const groups = [scene.getObjectByName('Nitro pickups'), scene.getObjectByName('Race rings')];
-  const materials = new Set(groups.flatMap(group => drawnMarkers(group).map(mesh => mesh.material)));
+  const materials = new Set(groups.flatMap(group => group.children.map(mesh => mesh.material)));
   const geometries = new Set(groups.flatMap(group => group.children.map(mesh => mesh.geometry)));
   const disposed = new Map();
   for (const resource of [...materials, ...geometries]) resource.addEventListener('dispose', () => disposed.set(resource, (disposed.get(resource) || 0) + 1));
@@ -229,7 +263,8 @@ test('disposing marker pools releases every tier material, including types no lo
   update();
   assert.ok(groups.every(group => new Set(drawnMarkers(group).map(mesh => mesh.material)).size === 1));
   effects.dispose?.();
-  assert.equal(disposed.size, 11, 'all nine materials and both shared geometries are released');
+  assert.equal(geometries.size, 9, 'four close and four distant pickup geometries plus one shared ring geometry');
+  assert.equal(disposed.size, materials.size + geometries.size, 'close and distant geometry and materials are all released');
   assert.ok([...disposed.values()].every(count => count === 1));
   assert.ok(groups.every(group => group.parent === null), 'scene disposal will not dispose these resources twice');
 });

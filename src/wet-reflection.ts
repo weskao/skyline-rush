@@ -8,8 +8,8 @@ import type { VfxQuality } from './vfx-settings.ts';
 
 export const REFLECT_LAYER = 5;
 /** Reflection strength for the race preset: wet presets on High (Ultra is High plus a flag); 0 means no pass. */
-export const wetReflectionStrength = (quality: VfxQuality, preset: string): number =>
-  quality === 'high' ? coastWetness(preset) * 0.8 : 0;
+export const wetReflectionStrength = (quality: VfxQuality, preset: string, wetness?: Readonly<Record<string, number>>): number =>
+  quality === 'high' ? coastWetness(preset, wetness) * 0.8 : 0;
 /** Opaque unlit meshes are the scene's light sources; transparent ghosts, decals and lit surfaces stay out. */
 export const isLightSource = (object: THREE.Object3D): boolean => {
   const { isMesh, material } = object as THREE.Mesh;

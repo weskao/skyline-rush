@@ -1,14 +1,23 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
   test(`Trial preview and equip preserve gameplay ownership on ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' })));
     await page.goto('/');
     await page.locator('#garage-button').click();
     await page.locator('#garage-studio-open').click();
+    await openGarageSection(page, 'effects');
     const catalog = page.locator('#garage-vfx-catalog');
     await expect(catalog).toHaveAttribute('data-preview-contract', 'live-shared-aero');
     const preview = page.locator('#garage-preview');
+    await expect.poll(async () => page.locator('#world').evaluate(world =>
+      !!JSON.parse(world.dataset.garageModelInstances ?? '{}').studio || !!world.dataset.garageModel?.startsWith('fallback:')),
+    { timeout: ciTimeout(20000) }).toBe(true);
+    await preview.evaluate(element => delete element.dataset.shaderPrograms);
+    await page.locator('#garage-angle-next').click();
     await expect(preview).toHaveAttribute('data-shader-programs', /\d+/);
     const programsBefore = Number(await preview.getAttribute('data-shader-programs'));
     const ion = catalog.locator('[data-skin="thruster-ion"]');
@@ -29,20 +38,59 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
   });
 }
 
-test('public trial is explicitly free, never grants ownership and remembers the last pick on reload', async ({ page }) => {
+// The action button equips in one press; it must never wait for a card preview first.
+test('VFX Try free equips directly and closing restores an unconfirmed preview', async ({ page }) => {
+  test.setTimeout(ciTimeout(90000));
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: true })));
   await page.goto('/');
   await page.locator('#garage-button').click();
+  const showroom = page.locator('#garage-preview');
+  await openGarageSection(page, 'effects');
+  const ion = page.locator('[data-skin="thruster-ion"]');
+  const action = ion.locator('.garage-skin-action');
+  await ion.locator('.garage-skin-preview-hitarea').click();
+  await expect(showroom).toHaveAttribute('data-skin-preview-thruster', 'thruster-ion');
+  await expect(showroom).toHaveAttribute('data-skin-equipped-thruster', 'thruster-basic');
+  await page.locator('#garage-close').click();
+  await expect(page.locator('#garage-screen')).toBeHidden();
+  await expect(showroom).toHaveAttribute('data-skin-preview-thruster', 'thruster-basic');
+
+  await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
+  await expect(action).toBeEnabled();
+  await expect(action).toHaveText('Try free');
+  await action.click();
+  await expect(action).toHaveText('Equipped');
+  await expect(showroom).toHaveAttribute('data-skin-equipped-thruster', 'thruster-ion');
+  await expect(ion).toHaveAttribute('data-owned', 'false');
+
+  await openGarageSection(page, 'effects');
+  const equip = page.locator('[data-skin="thruster-basic"] .garage-skin-action');
+  await expect(equip).toHaveText('Equip');
+  await equip.click();
+  await expect(showroom).toHaveAttribute('data-skin-equipped-thruster', 'thruster-basic');
+});
+
+test('public trial is explicitly free, never grants ownership and remembers the last pick on reload', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: true })));
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
   const catalog=page.locator('#garage-vfx-catalog');
   await expect(catalog).toHaveAttribute('data-release-mode','trial');
   await expect(catalog).toContainText(/free trial|免費試用/i);
   const ion=catalog.locator('[data-skin="thruster-ion"]');
   await expect(ion).toHaveAttribute('data-state','trial');
-  await ion.getByRole('button', { name: /try|試用/i }).click();
+  await ion.locator('.garage-skin-preview-hitarea').click();
+  await ion.locator('.garage-skin-action').click();
   await expect(ion).toHaveAttribute('data-state','equipped');
   await expect(ion).toHaveAttribute('data-owned','false');
   await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-equipped-thruster','thruster-ion');
   await page.reload();
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
   const after=page.locator('#garage-vfx-catalog [data-skin="thruster-ion"]');
   await expect(after).toHaveAttribute('data-state','equipped');
   await expect(after).toHaveAttribute('data-owned','false');

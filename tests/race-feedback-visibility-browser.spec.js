@@ -14,8 +14,15 @@ for (const { name, width, height, touch } of [
     test('reward stays peripheral, accessible and clear of live HUD and steering', async ({ gameplayPage: page }) => {
       test.setTimeout(ciTimeout(120_000));
       await page.locator('#start-button').click();
-      await expect.poll(() => page.evaluate(() => window.gameplay.race.phase)).toBe('racing');
-      await page.evaluate(() => Object.assign(window.gameplay.race.player, { speed: 80, nitroTime: 4, x: 0 }));
+      await page.evaluate(() => { window.gameplay.race.countdown = .01; });
+      await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
+      await expect(page.locator('#countdown')).toBeHidden();
+      await page.evaluate(() => {
+        const { player } = window.gameplay.race;
+        Object.assign(player, { speed: 80, nitroTime: 4, x: 0 });
+        player.nitroUses++; // Register a fresh event even if the HUD is between simulation updates.
+      });
+      await expect(page.locator('#event-callout')).toHaveAttribute('data-kind', 'nitro');
       await expect(page.locator('#event-callout')).toBeVisible({ timeout: ciTimeout(10_000) });
       const result = await page.evaluate(() => {
         const el = document.getElementById('event-callout');

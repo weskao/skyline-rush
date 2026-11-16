@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { roadRibbon } from './geometry.ts';
-import { skyFrame, skyPoint, skyPosition, skyGapAt, SKY_SPIRAL } from './sky-track.ts';
+import { skyFrame, skyPoint, skyPosition, skyGapAt, SKY_JUMPS, SKY_LENGTH, SKY_SPIRAL } from './sky-track.ts';
 
-// A dedicated, bounded 3D road renderer. The existing four flat tracks keep
-// their original geometry and fast path untouched.
+// A bounded 3D road renderer for the helix, sweepers and jump decks.
 const ROWS = 180;
 const STEP = 10;
 const WIDTH = 12;
+const boundaries = new Map(SKY_JUMPS.flatMap(jump =>
+  [jump.rampFrom, jump.gapFrom, jump.gapTo].map(at => [Math.round(at / STEP) * STEP, at])));
+const rowDistance = (distance, endless) => endless ? distance : Math.min(SKY_LENGTH, boundaries.get(distance) ?? distance);
 const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
 
 export function createSkyScene(scene) {
@@ -160,7 +162,7 @@ export function createSkyScene(scene) {
     fogBanks.add(cloud);
   }
   group.visible = false;
-  let lastRoadStart = null;
+  let lastRoadStart = null, lastEndless = false;
   const roadInstances = [borders, rails, beacons, laneLines];
 
   return {
@@ -169,9 +171,9 @@ export function createSkyScene(scene) {
       backdrop.material.uniforms.time.value = distance * 0.0015;
       const origin = skyPoint(distance, endless);
       // Loop existing architecture in the camera's streaming window without new GPU allocations.
-      const extension=endless&&distance>5600;
+      const extension = endless && distance > SKY_LENGTH;
       if (extension) {
-        const anchor = 5600 + Math.max(1, Math.floor((distance - 5600) / 1800)) * 1800;
+        const anchor = SKY_LENGTH + Math.max(1, Math.floor((distance - SKY_LENGTH) / 1800)) * 1800;
         for (const [index, [hero, at]] of [[landmark, anchor], [nextLandmark, anchor + 1800]].entries()) {
           const t = Math.max(0, Math.min(1, (1700 - Math.abs(at - distance)) / 500));
           const opacity = t * t * (3 - 2 * t);
@@ -194,33 +196,35 @@ export function createSkyScene(scene) {
       // Geometry and matrices change only when a 10m stream sector changes.
       road.position.set(-origin.x, -origin.y, -origin.z);
       for (const mesh of roadInstances) mesh.position.copy(road.position);
-      if (start !== lastRoadStart) {
-      for (let i = 0; i <= ROWS; i++) {
-        const s = endless ? start + i * STEP : Math.min(5600, start + i * STEP);
-        const frame = skyFrame(s,endless);
-        for (let side = 0; side < 2; side++) {
-          const [x, y, z] = skyPosition(s, side ? WIDTH : -WIDTH, 0, 0, endless);
-          const offset = (i * 2 + side) * 3;
-          positions.set([x, y, z], offset);
-          normals.set(frame.up, offset);
+      if (start !== lastRoadStart || endless !== lastEndless) {
+        for (let i = 0; i <= ROWS; i++) {
+          const s = rowDistance(start + i * STEP, endless);
+          const frame = skyFrame(s, endless);
+          for (let side = 0; side < 2; side++) {
+            const [x, y, z] = skyPosition(s, side ? WIDTH : -WIDTH, 0, 0, endless);
+            const offset = (i * 2 + side) * 3;
+            positions.set([x, y, z], offset);
+            normals.set(frame.up, offset);
+          }
+          if (i === ROWS) continue;
+          const length = rowDistance(start + (i + 1) * STEP, endless) - s;
+          const gap = length === 0 || skyGapAt(s + length / 2, endless);
+          const a = i * 2, k = i * 6;
+          indices.set(gap ? [a, a, a, a, a, a] : [a, a + 1, a + 2, a + 1, a + 3, a + 2], k);
+          const mid = s + length / 2, hide = gap ? -1000 : 0;
+          for (let side = 0; side < 2; side++) {
+            pose(borders, i * 2 + side, mid, side ? 12.1 : -12.1, 0.17 + hide, 0.16, 0.12, length || STEP, 0, endless);
+            pose(rails, i * 2 + side, mid, side ? 12.9 : -12.9, 0.60 + hide, 0.38, 1.1, length || STEP, 0, endless);
+            pose(beacons, i * 2 + side, mid, side ? 12.75 : -12.75, 1.12 + hide, 0.08, 0.09, length || STEP, 0, endless);
+          }
+          for (let lane = 0; lane < 3; lane++) {
+            pose(laneLines, i * 3 + lane, mid, (lane - 1) * 5, 0.025 + hide, 0.14, 0.03, 4.0, 0, endless);
+          }
         }
-        if (i === ROWS) continue;
-        const gap = skyGapAt(s + STEP * 0.5);
-        const a = i * 2, k = i * 6;
-        indices.set(gap ? [a, a, a, a, a, a] : [a, a + 1, a + 2, a + 1, a + 3, a + 2], k);
-        const mid = s + STEP * 0.5;
-        for (let side = 0; side < 2; side++) {
-          pose(borders, i * 2 + side, mid, side ? 12.1 : -12.1, 0.17, 0.16, 0.12, STEP, 0, endless);
-          pose(rails, i * 2 + side, mid, side ? 12.9 : -12.9, 0.60, 0.38, 1.1, STEP, 0, endless);
-          pose(beacons, i * 2 + side, mid, side ? 12.75 : -12.75, 1.12, 0.08, 0.09, STEP, 0, endless);
-        }
-        for (let lane = 0; lane < 3; lane++) {
-          pose(laneLines, i * 3 + lane, mid, (lane - 1) * 5, 0.025, 0.14, 0.03, 4.0, 0, endless);
-        }
-      }
-      for (const attribute of [geometry.attributes.position, geometry.attributes.normal, geometry.index]) attribute.needsUpdate = true;
-      for (const mesh of roadInstances) mesh.instanceMatrix.needsUpdate = true;
-      lastRoadStart = start;
+        for (const attribute of [geometry.attributes.position, geometry.attributes.normal, geometry.index]) attribute.needsUpdate = true;
+        for (const mesh of roadInstances) mesh.instanceMatrix.needsUpdate = true;
+        lastRoadStart = start;
+        lastEndless = endless;
       }
     },
     hide() { group.visible = false; },

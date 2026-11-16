@@ -43,3 +43,34 @@ test('garage camera fit and full-car bounds ignore cosmetic VFX tube geometry', 
   assert.deepEqual(stage.inspectBounds(camera), before, 'an oversized VFX tube must not shrink or clip the vehicle');
   stage.dispose();
 });
+
+test('hiding Studio cosmetics removes the live Aero, wake and body glow while keeping the car and paint', () => {
+  const stage = createGarageStage(new THREE.Texture(), new THREE.Texture());
+  const camera = new THREE.PerspectiveCamera(49, 1.5, .1, 500);
+  const state = { ...defaultGarageCamera(), mode: 'flight' };
+  const car = stage.modelHost.car;
+  stage.setSkins({ thruster: 'thruster-void', 'launch-flare': 'launch-flare-ring' });
+  stage.update(camera, state, 1, false);
+  const glow = car.getObjectByName('Launch flare body glow');
+  const wake = stage.scene.getObjectByName('World space gas wake');
+  const body = car.userData.body;
+  const drawn = object => {
+    for (let node = object; node; node = node.parent) if (!node.visible) return false;
+    return true;
+  };
+  assert.ok(drawn(stage.modelHost.keep) && drawn(wake) && drawn(glow));
+  const paint = body.material.color.getHex();
+  stage.setEffectsVisible(false);
+  stage.setSkins({ thruster: 'thruster-ion', 'launch-flare': 'launch-flare-pulse' });
+  for (let i = 0; i < 4; i++) stage.update(camera, state, 1.05 + i * .05, false);
+  for (const effect of [stage.modelHost.keep, wake, glow, stage.scene.getObjectByName('Continuous dash ribbon')]) {
+    assert.equal(drawn(effect), false, effect.name);
+  }
+  assert.ok(drawn(body) && car.position.y > 1);
+  assert.equal(body.material.color.getHex(), paint);
+  stage.setEffectsVisible(true);
+  stage.update(camera, state, 1.3, false);
+  assert.ok(drawn(stage.modelHost.keep) && drawn(wake) && drawn(glow));
+  assert.equal(stage.inspectCosmetics().launchPattern, 3);
+  stage.dispose();
+});

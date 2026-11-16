@@ -1,17 +1,17 @@
+import { legacyClassicRoad } from '../src/classic-road-routes.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createClassicTrackScenery, CLASSIC_SCENIC_TRACKS } from '../src/classic-track-scenery.ts';
-import { trackPoint } from '../src/track-paths.ts';
 
-const center = distance => trackPoint('neon', distance).x;
+const center = distance => legacyClassicRoad.point(distance)[0];
 
 test('Neon, Canyon and Aurora use bounded reusable instancing outside the driveable road', () => {
   assert.deepEqual([...CLASSIC_SCENIC_TRACKS], ['neon', 'canyon', 'aurora']);
   const scene = new THREE.Scene();
-  const kit = createClassicTrackScenery(scene, center);
+  const kit = createClassicTrackScenery(scene);
   for (const id of CLASSIC_SCENIC_TRACKS) {
-    kit.update(id, 345, 'high');
+    kit.update(id, legacyClassicRoad, 345, 'high');
     const group = kit.groups[id];
     assert.equal(group.visible, true);
     // Body, trim, accent plus one human-scale detail layer: four draws per theme at most.
@@ -34,11 +34,11 @@ test('Neon, Canyon and Aurora use bounded reusable instancing outside the drivea
 });
 
 test('low and medium quality fill contiguous near-road sectors after tier or track changes', () => {
-  const kit = createClassicTrackScenery(new THREE.Scene(), center);
+  const kit = createClassicTrackScenery(new THREE.Scene());
   const step = 60, distance = 1800, first = (Math.floor(distance / step) - 2) * step;
   for (const id of CLASSIC_SCENIC_TRACKS) {
     for (const [tier, count] of [['high', 24], ['low', 8], ['medium', 16], ['high', 24]]) {
-      kit.update(id, distance, tier);
+      kit.update(id, legacyClassicRoad, distance, tier);
       for (const mesh of kit.groups[id].children) {
         const matrix = new THREE.Matrix4(), point = new THREE.Vector3();
         const sectors = [];
@@ -56,17 +56,17 @@ test('low and medium quality fill contiguous near-road sectors after tier or tra
 });
 
 test('retiered streaming advances one recycled visible sector without per-frame allocations', () => {
-  const kit = createClassicTrackScenery(new THREE.Scene(), center);
-  kit.update('neon', 1840, 'low');
+  const kit = createClassicTrackScenery(new THREE.Scene());
+  kit.update('neon', legacyClassicRoad, 1840, 'low');
   const mesh = kit.groups.neon.children[0], before = new THREE.Matrix4(), after = new THREE.Matrix4();
   const previous = Array.from({length: mesh.count}, (_, i) => {
     mesh.getMatrixAt(i, before); return [...before.elements];
   });
-  kit.update('neon', 1840.5, 'low');
+  kit.update('neon', legacyClassicRoad, 1840.5, 'low');
   for (let i = 0; i < mesh.count; i++) {
     mesh.getMatrixAt(i, after); assert.deepEqual([...after.elements], previous[i]);
   }
-  kit.update('neon', 1860.5, 'low');
+  kit.update('neon', legacyClassicRoad, 1860.5, 'low');
   let changed = 0;
   for (let i = 0; i < mesh.count; i++) {
     mesh.getMatrixAt(i, after);
@@ -77,16 +77,16 @@ test('retiered streaming advances one recycled visible sector without per-frame 
 });
 
 test('Quality caps and streaming geometry are deterministic without per-frame churn', () => {
-  const scene = new THREE.Scene(), kit = createClassicTrackScenery(scene, center);
-  kit.update('neon', 359.9, 'high');
+  const scene = new THREE.Scene(), kit = createClassicTrackScenery(scene);
+  kit.update('neon', legacyClassicRoad, 359.9, 'high');
   const mesh = kit.groups.neon.children[0];
   const matrix = new THREE.Matrix4();
   const snapshot = Array.from({length: mesh.count}, (_, i) => {mesh.getMatrixAt(i,matrix); return [...matrix.elements]});
-  kit.update('neon', 359.95, 'high');
+  kit.update('neon', legacyClassicRoad, 359.95, 'high');
   for (let i = 0; i < mesh.count; i++) {
     mesh.getMatrixAt(i,matrix); assert.deepEqual([...matrix.elements], snapshot[i], 'same sector reuses matrices');
   }
-  kit.update('neon', 360.1, 'high');
+  kit.update('neon', legacyClassicRoad, 360.1, 'high');
   let stable = 0;
   for (let i = 0; i < mesh.count; i++) {
     mesh.getMatrixAt(i,matrix);
@@ -94,7 +94,7 @@ test('Quality caps and streaming geometry are deterministic without per-frame ch
   }
   assert.ok(stable >= mesh.count - 1, 'crossing one tile reuses other instances');
   for (const [quality, count] of [['low', 8], ['medium', 16], ['high', 24]]) {
-    kit.update('aurora', 560, quality);
+    kit.update('aurora', legacyClassicRoad, 560, quality);
     for (const m of kit.groups.aurora.children) assert.equal(m.count, count);
   }
   kit.hide();
@@ -104,11 +104,11 @@ test('Quality caps and streaming geometry are deterministic without per-frame ch
 
 test('each classic theme adds one instanced human-scale detail layer beside its skyline', () => {
   const scene = new THREE.Scene();
-  const kit = createClassicTrackScenery(scene, center);
+  const kit = createClassicTrackScenery(scene);
   const expected = { neon: 'billboards', canyon: 'service vans', aurora: 'spectator stands' };
   const matrix = new THREE.Matrix4(), position = new THREE.Vector3(), scale = new THREE.Vector3(), q = new THREE.Quaternion();
   for (const id of CLASSIC_SCENIC_TRACKS) {
-    kit.update(id, 345, 'high');
+    kit.update(id, legacyClassicRoad, 345, 'high');
     const detail = kit.groups[id].getObjectByName(`${id} ${expected[id]}`);
     assert.ok(detail?.isInstancedMesh, id);
     for (let i = 0; i < detail.count; i++) {
@@ -116,7 +116,7 @@ test('each classic theme adds one instanced human-scale detail layer beside its 
       assert.ok(scale.y <= 16, `${id} detail stays human-scale`);
       assert.ok(Math.abs(position.x - center(-position.z)) - scale.x / 2 >= 30, `${id} detail must clear shoulder`);
     }
-    kit.update(id, 345, 'low');
+    kit.update(id, legacyClassicRoad, 345, 'low');
     assert.equal(detail.count, 8, 'detail follows the visible quality tier');
   }
   kit.dispose();

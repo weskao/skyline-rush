@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { stepRace, DRIFT_MIN_SPEED } from '../src/game.js';
+import { stepRace, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS } from '../src/game.js';
 import { streamEndless, finishEndless } from '../src/endless-highway.ts';
 import { createInteractiveTutorial, CLEARED_SECONDS, TUTORIAL_STEPS } from '../src/interactive-tutorial.ts';
 import { tutorialInstructionKey } from '../src/tutorial-ui.ts';
@@ -110,6 +110,18 @@ test('a drift released before the first payout tier is named as too short', () =
   tick(session);
   assert.equal(session.step, 'drift');
   assert.equal(session.coachReason, 'short');
+});
+
+test('the coach asks for speed only below what outlasts the bleed to the first tier, and that entry pays', () => {
+  const session = createInteractiveTutorial(), car = session.race.player;
+  skipTo(session, 'drift');
+  const firstTier = Math.min(...DRIFT_REWARDS.map(reward => reward.time));
+  cruiseTo(session, DRIFT_MIN_SPEED + DRIFT_BLEED * firstTier + .05);
+  assert.equal(session.cue.key, 'tutorial.cue.driftStart', `${car.speed.toFixed(2)} m/s is fast enough`);
+  for (let i = 0; i < 60 && !(car.drift?.time >= firstTier); i++) tick(session, { brake: true, steer: -1 });
+  assert.ok(car.drift?.time >= firstTier, 'the drift outlasts its bleed to the first tier');
+  tick(session);
+  assert.equal(session.coachPhase, 'finishing');
 });
 
 test('a drift tried below drift speed is named as too slow, and clears once a real drift starts', () => {

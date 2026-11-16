@@ -4,9 +4,11 @@ import { skyPoint, skyFrame, skyPosition } from '../src/sky-track.ts';
 
 const FINISH=5600,START=900,LENGTH=1600,PERIOD=3800;
 const delta=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
-test('Sky Spiral Endless keeps the authored 5.6km exactly and repeats a gently connected 3D helix',()=>{
+test('Sky Spiral Endless keeps the authored horizontal route and repeats a gently connected 3D helix',()=>{
   for(const d of [0,1100,1650,2200,3000,5599,5600]){
-    assert.deepEqual(skyPoint(d,true),skyPoint(d,false),'Sprint/Ghost must have identical canonical points');
+    const sprint = skyPoint(d), stream = skyPoint(d, true);
+    assert.deepEqual([stream.x, stream.z], [sprint.x, sprint.z]);
+    if (d === 3000) assert.ok(stream.y < sprint.y, 'only sprint has a raised launch deck');
   }
   for(const lap of [0,1,10,100]){
     const at=FINISH+lap*PERIOD+START;
@@ -38,5 +40,14 @@ test('Endless Sky Spiral frame point equals extended road centre at every helix 
     assert.ok(delta(frame.point,expected)<1e-9,'frame centre must match 3D helix');
     assert.ok(Math.hypot(...skyPosition(d,0,0,d,true))<1e-8,'self-relative position is zero');
     assert.ok(delta(skyFrame(d,false).point,skyPoint(d,false))<1e-9,'finite sprint frame unchanged');
+  }
+});
+
+test('Sky Spiral Endless alternates sweepers with the elevated loop after the sprint', () => {
+  for (const cycle of [0, 1, 100]) {
+    const start = FINISH + cycle * PERIOD;
+    for (const distance of [start + 450, start + 3100]) {
+      assert.ok(Math.abs(skyPoint(distance, true).x) > 45);
+    }
   }
 });

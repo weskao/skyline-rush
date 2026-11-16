@@ -1,11 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Color } from 'three';
+import { Color, Euler, Vector3 } from 'three';
 import { createCoastLook } from '../src/coast-look.ts';
 import { COAST_ENV_VARIANTS } from '../src/coast-lighting.ts';
-import { setLook3d } from '../src/look-gate.ts';
+import { COAST_SUN_AZIMUTH, coastSkyYaw, coastSunDirection } from '../src/coast-sky.ts';
 
-setLook3d(true); // the Phase 3 look (`?look=3d`); tests/look-gate.test.js covers the develop look without it
 
 function rig() {
   const room = { id: 'room' }, textures = {}, loads = [];
@@ -49,7 +48,7 @@ test('Low and non-Coast tracks keep RoomEnvironment and an identity grade; leavi
   assert.deepEqual(loads, []);
   look.update('coast', 'track', 'high'); await settle();
   assert.equal(scene.environment.id, 'day');
-  look.update('neon', 'track', 'high');
+  look.update('canyon', 'track', 'high');
   assert.equal(scene.environment, room);
   assert.equal(scene.environmentIntensity, 0.42);
   assert.equal(lens.uniforms.saturation.value, 1);
@@ -63,9 +62,9 @@ test('a slow load never overrides a newer track or preset', async () => {
   const scene = { environment: room, environmentIntensity: 0.42 };
   const look = createCoastLook({ scene, renderer: { toneMappingExposure: 1 }, lens: { uniforms: { saturation: { value: 1 }, contrast: { value: 1 }, tint: { value: new Color() } } }, room, roomIntensity: 0.42, envs });
   look.update('coast', 'day', 'high');
-  look.update('neon', 'track', 'high');
+  look.update('canyon', 'track', 'high');
   releases[0](); await settle();
-  assert.equal(scene.environment, room, 'the stale day load must not land on neon');
+  assert.equal(scene.environment, room, 'the stale day load must not land on another track');
 });
 
 test('a failed load leaves the current environment in place', async () => {
@@ -90,20 +89,51 @@ test('Coast Medium+ tunes bloom for the light blades and matches the sun to the 
   const envs = { get: n => textures[n], preload: names => { for (const n of names) textures[n] = { id: n }; return Promise.resolve(); } };
   const scene = { environment: room, environmentIntensity: 0.42 }, renderer = { toneMappingExposure: 1.12 };
   const lens = { uniforms: { saturation: { value: 1 }, contrast: { value: 1 }, tint: { value: new Color(1, 1, 1) } } };
-  const bloom = { threshold: 1.1 }, sun = { color: new Color('#ffb88a'), intensity: 1.8 }; // world.js set Coast's palette sun
-  const look = createCoastLook({ scene, renderer, lens, room, roomIntensity: 0.42, envs, bloom, sun });
+  const sun = { color: new Color('#ffb88a'), intensity: 1.8 }; // world.js set Coast's palette sun
+  const look = createCoastLook({ scene, renderer, lens, room, roomIntensity: 0.42, envs, sun });
   assert.equal(look.bloomStrength(0.3), 0.3, 'before the HDRI lands world.js keeps its own bloom');
   look.update('coast', 'rain', 'high'); await settle();
   const v = COAST_ENV_VARIANTS.rain;
   assert.equal(look.bloomStrength(0.3), v.bloom.strength, 'world.js adds boost feedback on top of the variant strength');
-  assert.equal(bloom.threshold, v.bloom.threshold);
+  assert.equal(look.bloomThreshold(1.1), v.bloom.threshold);
   assert.equal(sun.color.getHexString(), new Color(v.sun.color).getHexString());
   assert.equal(sun.intensity, v.sun.intensity);
   look.update('coast', 'rain', 'low');
-  assert.deepEqual([bloom.threshold, sun.intensity, sun.color.getHexString()], [1.1, 1.8, 'ffb88a'], 'Coast Low: the palette sun and bloom come back');
+  assert.deepEqual([look.bloomThreshold(1.1), sun.intensity, sun.color.getHexString()], [1.1, 1.8, 'ffb88a'], 'Coast Low: the palette sun and bloom come back');
   assert.equal(look.bloomStrength(0.3), 0.3);
   look.update('coast', 'dusk', 'high'); await settle();
-  sun.color.set('#9fb4ff'); sun.intensity = 0.8; // world.js track block: Neon's palette, set before coastLook.update
+  sun.color.set('#9fb4ff'); sun.intensity = 0.8; // world.js track block: the next track's palette, set before coastLook.update
+  look.update('canyon', 'track', 'high');
+  assert.deepEqual([look.bloomThreshold(1.1), sun.intensity, sun.color.getHexString()], [1.1, 0.8, '9fb4ff'], 'another track keeps the sun its block just set');
+});
+
+test('the key light and the environment turn with the sky dome to the HDRI sun; Coast Low and other tracks get them back', async () => {
+  const room = { id: 'room' }, textures = {};
+  const envs = { get: n => textures[n], preload: names => { for (const n of names) textures[n] = { id: n }; return Promise.resolve(); } };
+  const scene = { environment: room, environmentIntensity: 0.42, environmentRotation: new Euler() };
+  const lens = { uniforms: { saturation: { value: 1 }, contrast: { value: 1 }, tint: { value: new Color(1, 1, 1) } } };
+  const sun = { color: new Color('#ffb88a'), intensity: 1.8, position: new Vector3(-170, 100, -190) }; // upcoming-lighting.ts
+  const look = createCoastLook({ scene, renderer: { toneMappingExposure: 1.12 }, lens, room, roomIntensity: 0.42, envs, sun });
+  for (const name of ['dusk', 'day']) {
+    look.update('coast', name, 'high'); await settle();
+    assert.ok(sun.position.clone().normalize().distanceTo(coastSunDirection(name)) < 1e-6, `${name}: the light shines from the HDRI sun`);
+    assert.ok(Math.abs(Math.atan2(sun.position.z, sun.position.x) - COAST_SUN_AZIMUTH) < 1e-6);
+    assert.ok(Math.abs(sun.position.length() - Math.hypot(170, 100, 190)) < 1e-6, 'same distance: only the direction changes');
+    assert.equal(scene.environmentRotation.y, coastSkyYaw(name), 'reflections and image-based light turn with the dome');
+  }
+  look.update('coast', 'dusk', 'low');
+  assert.deepEqual([sun.position.toArray(), scene.environmentRotation.y], [[-170, 100, -190], 0], 'Coast Low: the palette light and the unturned room');
+  look.update('coast', 'rain', 'high'); await settle();
+  sun.position.set(-400, 230, 260); // world.js track block: a World Tour sun, set before coastLook.update
+  look.update('coastal', 'track', 'high');
+  assert.deepEqual([sun.position.toArray(), scene.environmentRotation.y], [[-400, 230, 260], 0], 'another track keeps its own light; no room is left turned');
+});
+
+test('switching from HDRI to Low on the same track restores the procedural exposure', async () => {
+  const { renderer, look } = rig();
   look.update('neon', 'track', 'high');
-  assert.deepEqual([bloom.threshold, sun.intensity, sun.color.getHexString()], [1.1, 0.8, '9fb4ff'], 'another track keeps the sun its block just set');
+  await settle();
+  assert.notEqual(renderer.toneMappingExposure, 1.12);
+  look.update('neon', 'track', 'low');
+  assert.equal(renderer.toneMappingExposure, 1.12);
 });

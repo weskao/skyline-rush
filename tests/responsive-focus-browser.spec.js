@@ -1,6 +1,8 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { openLobbyModes } from './helpers/home-lobby.js';
 import { ciTimeout } from './helpers/ci.js';
+import { settled } from './helpers/test.js';
 
 // 13C Responsive (TODO 1788): at every supported size, an open setup dialog keeps Tab/Shift+Tab inside and hands
 // focus back to its opener, a setup popover never strands focus, and the in-race End action is reachable by pointer.
@@ -46,6 +48,7 @@ test.describe('320x740 Event Lab', () => {
     await page.evaluate(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', preset: 'cinematic', enabled: true })));
     await page.reload();
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+    await openLobbyModes(page);
     const opener = page.locator('button[data-race-mode="eventlab"]');
     for (const close of ['Escape', 'button']) {
       await opener.focus();
@@ -66,6 +69,7 @@ for (const [width, height] of VIEWPORTS) test.describe(`${width}x${height}`, () 
   test.use({ viewport: { width, height }, hasTouch: phone, isMobile: phone });
 
   test('a setup popover keeps focus on its combobox and never stays open behind it', async ({ gameplayPage: page }) => {
+    await openLobbyModes(page);
     await page.locator('button[data-race-mode="custom"]').click();
     const rules = page.locator('#race-mode-rules');
     if (!await rules.evaluate(details => details.open)) await rules.locator('> summary').click();
@@ -92,6 +96,7 @@ for (const [width, height] of VIEWPORTS) test.describe(`${width}x${height}`, () 
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
     await page.locator('#pause-button').click();
+    await settled(page.locator('.overlay-content'));
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
     // The pause menu's way out: the brand link must be on screen and on top, even on the narrowest phone.
     const brand = page.locator('.brand'), brandBox = await brand.boundingBox();
@@ -107,6 +112,14 @@ for (const [width, height] of VIEWPORTS) test.describe(`${width}x${height}`, () 
     await page.keyboard.press('Escape');
     await expect(leave).toBeHidden();
     await expect(brand, 'Escape returns focus to the brand link that opened it').toBeFocused();
+
+    const opener = page.locator('#pause-leave');
+    await opener.click();
+    await expect(leave).toBeVisible();
+    await page.locator('#leave-close').click();
+    await expect(leave).toBeHidden();
+    await expect(opener).toBeFocused();
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
 
     await page.mouse.click(brandBox.x + brandBox.width / 2, brandBox.y + brandBox.height / 2);

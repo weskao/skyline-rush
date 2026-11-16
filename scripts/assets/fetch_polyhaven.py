@@ -23,19 +23,24 @@ SOURCES = {
     'coast_rocks_01': ('model', '2k', None),
     'coast_rocks_05': ('model', '2k', None),
     'rock_face_01': ('model', '2k', None),
+    # Fynbos shrub from the same South African coast as the cliff scans; baked to impostor cards (coast-greenery).
+    'searsia_lucida': ('model', '1k', None),
     'asphalt_02': ('texture', '4k', ['Diffuse', 'nor_gl', 'Rough', 'AO']),
     'asphalt_track': ('texture', '4k', ['Diffuse', 'nor_gl', 'Rough', 'AO']),
+    'concrete_pavement': ('texture', '4k', ['Diffuse', 'nor_gl', 'Rough', 'AO']),   # Neon pavement (neon-pavement)
     'palm_bark': ('texture', '2k', ['Diffuse', 'nor_gl', 'Rough']),
     'metal_plate_02': ('texture', '2k', ['nor_gl', 'Rough']),
-    # Sky-only HDRIs: per-time-of-day environment maps (Medium+); Low keeps RoomEnvironment.
-    'kloofendal_48d_partly_cloudy_puresky': ('hdri', '1k', None),
-    'qwantani_sunset_puresky': ('hdri', '1k', None),
-    'belfast_sunset_puresky': ('hdri', '1k', None),
-    'kloofendal_overcast_puresky': ('hdri', '1k', None),
+    # Sky-only HDRIs: 1k = per-time-of-day environment maps (Medium+; Low keeps RoomEnvironment);
+    # 4k/8k = sources of the visible sky dome (assets-src/coast-sky/build.py).
+    'kloofendal_48d_partly_cloudy_puresky': ('hdri', '1k 4k 8k', None),
+    'qwantani_sunset_puresky': ('hdri', '1k 4k 8k', None),
+    'belfast_sunset_puresky': ('hdri', '1k 4k 8k', None),
+    'kloofendal_overcast_puresky': ('hdri', '1k 4k 8k', None),
 }
 SURVEY = {
     'hdris': ['sunset', 'overcast', 'clear', 'midday', 'coast', 'sea', 'beach'],
     'textures': ['metal', 'galvanized', 'steel', 'bark', 'palm', 'leaf'],
+    'models': ['shrub', 'bush', 'fynbos'],  # cliff-top greenery (assets-src/coast-greenery)
 }
 
 
@@ -49,9 +54,13 @@ def get(url, binary=False):
 
 def save(url, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    data = get(url, binary=True)
-    with open(path, 'wb') as out:
-        out.write(data)
+    if os.path.exists(path):  # already cached: record it, do not download again
+        with open(path, 'rb') as cached:
+            data = cached.read()
+    else:
+        data = get(url, binary=True)
+        with open(path, 'wb') as out:
+            out.write(data)
     return {'url': url, 'path': os.path.relpath(path, CACHE), 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
 
 
@@ -65,8 +74,9 @@ def fetch():
             for rel, inc in entry.get('include', {}).items():
                 records.append(save(inc['url'], os.path.join(folder, rel)))
         elif kind == 'hdri':
-            url = files['hdri'][res]['hdr']['url']
-            records.append(save(url, os.path.join(folder, os.path.basename(urlparse(url).path))))
+            for size in res.split():
+                url = files['hdri'][size]['hdr']['url']
+                records.append(save(url, os.path.join(folder, os.path.basename(urlparse(url).path))))
         else:
             for key in keys:
                 variant = files[key][res]

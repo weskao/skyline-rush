@@ -7,9 +7,7 @@ import { createSprintVfx, vfxSettings } from '../src/vfx-settings.ts';
 import { createRace } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 import { createAeroVFX } from '../src/aero-vfx.js';
-import { setLook3d } from '../src/look-gate.ts';
 
-setLook3d(true); // the Phase 3 look (`?look=3d`); tests/look-gate.test.js covers the develop look without it
 
 test('race weather preset: custom/free races show the chosen preset, every other mode the track default', () => {
   const session = { presentation: { visualPreset: 'rain' } };
@@ -46,7 +44,7 @@ test('rain wheel spray: none on Low, more on High, grows with speed and stops at
 
 test('Ultra only: the sprint motion blur is stronger; High and below are unchanged', () => {
   const input = { phase: 'racing', nitro: true, boost: false, speed: 110, cap: 110, dt: 0.3, enabled: true, quality: 'high', reducedMotion: false };
-  const sustained = frame => { const vfx = createSprintVfx(); for (let i = 0; i < 3; i++) vfx.update(frame); return vfx.update(frame).blur; }; // dt clamps to 0.1 s: past the 0.18 s ignition
+  const sustained = frame => { const vfx = createSprintVfx(); for (let i = 0; i < 9; i++) vfx.update(frame); return vfx.update(frame).blur; }; // dt clamps to 0.1 s: past the 0.18 s ignition and the 0.8 s punch
   const high = sustained(input), ultra = sustained({ ...input, ultra: true });
   assert.ok(Math.abs(high - 0.6) < 1e-9, `High blur ${high}`);
   assert.ok(ultra > high * 1.4 && ultra <= 1, `Ultra blur ${ultra}`);

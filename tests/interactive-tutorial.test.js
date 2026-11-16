@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, stepRace, DRIFT_MIN_SPEED } from '../src/game.js';
+import { createRace, stepRace, DRIFT_MIN_SPEED, DRIFT_REWARDS } from '../src/game.js';
 import { createInteractiveTutorial, prepareTutorialInput, TUTORIAL_STEPS } from '../src/interactive-tutorial.ts';
 import { DRIFT_ENTRY_KMH } from './helpers/tutorial-practice.js';
 
@@ -364,7 +364,8 @@ test('the keyboard practice drift entry speed outlasts the first payout tier bef
   while (car.speed * 3.6 >= DRIFT_ENTRY_KMH) tick(session, { brake: true });
   while (car.speed * 3.6 < DRIFT_ENTRY_KMH) tick(session);
   let frames = 0;
-  while (!(car.drift?.time >= 1)) {
+  const firstTier = Math.min(...DRIFT_REWARDS.map(reward => reward.time));
+  while (!(car.drift?.time >= firstTier)) {
     tick(session, { brake: true, steer: -1 });
     assert.ok(++frames < 90, 'the drift ended below DRIFT_MIN_SPEED before the first payout tier');
   }

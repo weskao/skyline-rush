@@ -5,7 +5,6 @@ import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { selectGarageReleaseBuild } from './scripts/garage-release-build.mjs';
 import { diagRelayPlugin } from './scripts/diag-relay-plugin.mjs';
-import { dev3dPlugin } from './scripts/dev-3d-redirect-plugin.mjs';
 
 // Build-time Strategy: default production strips preview, trial and cosmetic catalog modules.
 export default defineConfig(({ mode }) => {
@@ -26,11 +25,9 @@ export default defineConfig(({ mode }) => {
       },
       // `make dev-diag` / `make phone-diag`: the phone's diag stream lands in diag-logs/*.jsonl (serve only, never a build).
       ...(process.env.VITE_DIAG ? [diagRelayPlugin()] : []),
-      // `make <dev target> 3d=1`: the bare URL redirects to ?model=roadster&look=3d (serve only, never a build).
-      ...(process.env.DEV_3D ? [dev3dPlugin()] : []),
     ],
     define: { __GARAGE_SKIN_TRIAL__: JSON.stringify(release.mode === 'trial') },
-    // ?model=probe imports the GLB loader lazily; pre-bundle its deps so the dev server does not reload the page mid-Garage.
+    // GLBs load lazily; pre-bundle the loader dependencies to avoid a dev-server reload mid-game.
     optimizeDeps: { include: ['three/examples/jsm/loaders/GLTFLoader.js', 'three/examples/jsm/utils/SkeletonUtils.js', 'three/examples/jsm/libs/meshopt_decoder.module.js'] },
     server: { watch: { ignored: [fileURLToPath(new URL('./.claude/worktrees/**', import.meta.url))] } },
     resolve: { alias: {

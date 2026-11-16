@@ -155,6 +155,12 @@ test('Cloud save Traditional Chinese copy localizes ghost records', () => {
   assert.match(CATALOGS['zh-TW']['cloud.login'], /Google/);
 });
 
+test('both supported languages display the shared colour and the model names', () => {
+  assert.deepEqual(SUPPORTED_LOCALES.map(locale => [
+    t('paint.crimson', undefined, locale), t('car.roadster', undefined, locale), t('car.crimson-gt', undefined, locale),
+  ]), [['Deep Crimson', 'Stratosway R2', 'Vantaire GT'], ['深紅', '天航 R2', '夜鋒 GT']]);
+});
+
 // The browser flow only sees strings it renders; this catches stray English in every zh-TW message.
 test('zh-TW catalog keeps English to the allowed brand terms', () => {
   const stray = Object.entries(CATALOGS['zh-TW']).filter(([, text]) => typeof text === 'string')

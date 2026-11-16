@@ -48,6 +48,7 @@ test.describe('tilt', () => {
     await open(page);
     await page.locator('#controls-button').click();
     await page.locator('[data-controls="mode"][value="tilt"]').check();
+    await expect(page.locator('#tilt-status')).toContainText('Waiting for tilt readings');
     await page.evaluate(() => window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { gamma: 5, beta: 20 })));
     await expect(page.locator('#tilt-status')).toContainText('ready');
     await page.locator('#controls-button').click();
@@ -62,6 +63,7 @@ test.describe('tilt', () => {
     await page.locator('#pause-button').click();
     await page.locator('#controls-button').click();
     await page.locator('#tilt-enable').click();
+    await expect(page.locator('#tilt-status')).toContainText('Waiting for tilt readings');
     await page.evaluate(() => window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { gamma: 20, beta: 20 })));
     await expect(page.locator('#tilt-status')).toContainText('ready');
     await page.locator('#controls-reset').click();

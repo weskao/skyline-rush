@@ -10,7 +10,24 @@ export const SKY_JUMPS = Object.freeze([
   { rampFrom: 3700, rampTo: 3775, gapFrom: 3775, gapTo: 3840 },
   { rampFrom: 4550, rampTo: 4630, gapFrom: 4630, gapTo: 4700 },
 ]);
+export const SKY_LENGTH = 5600;
 const TAU = 2 * Math.PI;
+// Each sweeper returns to the tower axis with zero lateral slope and curvature.
+const SPRINT_SWEEPERS = [
+  [170, 690, 82], [2260, 2730, -78], [3100, 3600, 74],
+  [4010, 4460, -76], [4900, 5480, 86],
+] as const;
+const ENDLESS_SWEEPERS = [[90, 810, 105], [2640, 3560, -118]] as const;
+function lateral(s: number, sweepers: readonly (readonly [number, number, number])[]): number {
+  for (const [from, to, width] of sweepers) {
+    if (s <= from) break;
+    if (s < to) {
+      const t = (s - from) / (to - from);
+      return width * (4 * t * (1 - t)) ** 3;
+    }
+  }
+  return 0;
+}
 const clamp01 = (x: number): number => Math.max(0, Math.min(1, x));
 const smooth = (t: number): number => t * t * (3 - 2 * t);
 const between = (x: number, a: number, b: number): number => clamp01((x - a) / (b - a));
@@ -47,23 +64,22 @@ function launchProfile(distance: number): number {
 export function skyPoint(distance: number, endless = false): SkyPoint {
   const s = Number.isFinite(distance) ? distance : 0;
   const { start, end, radius } = SKY_SPIRAL;
-  const y = elevation(s) + launchProfile(s);
-  if (s < start) return { x: 0, y, z: -s };
+  const y = elevation(s) + (endless ? 0 : launchProfile(s));
+  if (s < start) return { x: lateral(s, SPRINT_SWEEPERS), y, z: -s };
   if (s <= end) {
     const angle = TAU * (s - start) / (end - start);
     return { x: radius * (1 - Math.cos(angle)), y, z: -start - radius * Math.sin(angle) };
   }
-  const original = { x: 0, y, z: -start - (s - end) };
-  // Only Endless adds repeatable 3D loops after the untouched 5.6 km sprint.
-  if (!endless || s <= 5600) return original;
-  const phase = (s - 5600) % 3800;
-  if (phase <= 900 || phase >= 2500) return original;
+  const z = -start - (s - end);
+  if (!endless || s <= SKY_LENGTH) return { x: lateral(s, SPRINT_SWEEPERS), y, z };
+  const phase = (s - SKY_LENGTH) % 3800;
+  if (phase <= 900 || phase >= 2500) return { x: lateral(phase, ENDLESS_SWEEPERS), y, z };
   const u = (phase - 900) / 1600, angle = TAU * u;
   const envelope = Math.sin(Math.PI * u) ** 2;
   return {
     x: SKY_SPIRAL.radius * (1 - Math.cos(angle)),
     y: y + SKY_SPIRAL.rise * envelope,
-    z: original.z - SKY_SPIRAL.radius * Math.sin(angle) * envelope,
+    z: z - SKY_SPIRAL.radius * Math.sin(angle) * envelope,
   };
 }
 
@@ -99,6 +115,7 @@ export function skyPosition(distance: number, lateral = 0, altitude = 0, originD
   ];
 }
 
-export function skyGapAt(distance: number): boolean {
-  return SKY_JUMPS.some(jump => distance >= jump.gapFrom && distance < jump.gapTo);
+export function skyJumpGap(distance: number, endless = false) {
+  return endless ? undefined : SKY_JUMPS.find(jump => distance >= jump.gapFrom && distance < jump.gapTo);
 }
+export const skyGapAt = (distance: number, endless = false): boolean => !!skyJumpGap(distance, endless);

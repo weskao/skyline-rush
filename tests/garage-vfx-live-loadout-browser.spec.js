@@ -1,12 +1,14 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
+import { openGarageSection } from './helpers/garage-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
   test('Garage shows four live 3x VFX artwork slots at ' + viewport.width + 'x' + viewport.height, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
     await page.locator('#garage-studio-open').click();
+    await openGarageSection(page, 'effects');
     const loadout = page.locator('#garage-vfx-live-loadout');
     await loadout.scrollIntoViewIfNeeded();
     await expect(loadout).toBeVisible();
@@ -45,6 +47,7 @@ test('live VFX thumbnail falls back if PNG fails, without unlocking', async ({ p
   await page.route('**/feature-assets/garage-vfx-skins/raster/airflow-basic@3x.png', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
   const tile = page.locator('#garage-vfx-live-loadout [data-loadout-category="airflow"]');
   await tile.scrollIntoViewIfNeeded();
   await expect(tile.locator('.artwork-img')).toHaveAttribute('src', /airflow\.svg$/);
@@ -57,6 +60,7 @@ test('live VFX labels are localized and motion-safe', async ({ page }) => {
   await selectLocale(page, 'zh-TW');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
+  await openGarageSection(page, 'effects');
   const loadout = page.locator('#garage-vfx-live-loadout');
   await loadout.scrollIntoViewIfNeeded();
   await expect(loadout.locator('h4')).toHaveText('目前外觀特效');

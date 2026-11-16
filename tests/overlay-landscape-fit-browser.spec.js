@@ -1,5 +1,5 @@
-import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { expect, settled } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
 // Phone landscape: the pause and results panels must show every action (Resume, Next, Race again, Choose track,
@@ -45,16 +45,28 @@ for (const { segments, ...viewport } of [
 
   test('pause and podium results show every action without scrolling', async ({ gameplayPage: page }) => {
     if (segments) {
-      await page.addInitScript(value => Object.defineProperty(window, 'getWindowSegments', { configurable: true, value: () => value }), segments);
+      await page.addInitScript(value => {
+        Object.defineProperty(window, 'viewport', { configurable: true, value: undefined });
+        Object.defineProperty(window, 'getWindowSegments', { configurable: true, value: () => value });
+      }, segments);
       await page.reload();
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
       await expect(page.locator('body')).toHaveAttribute('data-fold-axis', 'vertical');
     }
     const hinge = [FOLD[0].width, FOLD[1].left];
     await page.locator('#start-button').click();
-    await expect(page.locator('#race-status')).toHaveText('RACING');
+    await page.evaluate(() => { window.gameplay.race.countdown = .01; });
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     await page.locator('#pause-button').click();
     await expect(page.locator('#resume-button')).toBeVisible();
+    await expect(page.locator('#resume-button')).toBeFocused();
+    await expect(page.locator('#pause-leave')).toBeVisible();
+    await settled(page.locator('.overlay-content'));
+    await expect.poll(() => page.locator('.overlay-actions').evaluate(actions => {
+      const [resume, retry, leave] = ['#resume-button', '#again-button', '#pause-leave']
+        .map(id => actions.querySelector(id).getBoundingClientRect());
+      return resume.bottom <= retry.top + 1 && Math.abs(retry.top - leave.top) <= 1 && retry.right <= leave.left;
+    })).toBe(true);
     // Polled: overlay-in / enter() transforms move the panel for a few frames.
     await expect.poll(() => page.evaluate(unreachable), { timeout: ciTimeout(3000) }).toEqual({ misses: [], scroll: 0 });
     // Polled: enter() still slides the panel sideways after its buttons are already on screen.
@@ -65,6 +77,7 @@ for (const { segments, ...viewport } of [
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     await page.evaluate(() => { const race = window.gameplay.race; race.elapsed = 80; Object.assign(race.player, { distance: race.length - 10, speed: 60 }); });
     await expect(page.locator('#next-button')).toBeVisible();
+    await expect(page.locator('#next-button')).toBeFocused();
     await expect(page.locator('#result-links')).toBeVisible();
     // Signed out: the cloud line's sign-in button joins the actions column and must fit too (unreachable() checks every button).
     await expect(page.locator('#result-cloud-login')).toBeVisible();

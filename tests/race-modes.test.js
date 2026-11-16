@@ -127,6 +127,16 @@ test('Free Drive skips countdown and races until the road end', () => {
   assert.equal(race.phase, 'racing');
   assert.equal(race.result, null);
 });
+
+test('Free Drive waiting on track scenery still enters at rest without a countdown', () => {
+  const race = createRace('neon', { mode: 'free' });
+  startRace(race, true);
+  assert.equal(race.phase, 'countdown', 'only the starting grid renders while scenery is loading');
+  stepRace(race, {}, 1 / 60);
+  assert.equal(race.phase, 'racing');
+  assert.equal(race.player.speed, 0);
+  assert.equal(race.elapsed, 0);
+});
 test('AI opponent count supports one or three opponents without changing Classic', () => {
   assert.equal(createRace('coast', { mode: 'custom', rivals: 1 }).rivals.length, 1);
   assert.equal(createRace('coast', { mode: 'custom', rivals: 3 }).rivals.length, 3);

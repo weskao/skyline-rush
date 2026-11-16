@@ -165,3 +165,17 @@ test('a depleted rival recharges and may exceed its throttle cap only within the
   }
   assert.ok(usedBoost, 'recharging an empty tank eventually permits a legitimate BOOST');
 });
+
+test('rivals chain NITRO like the player: a press in the last 0.5 s extends the burst by a full charge', () => {
+  const hard = bare('hard'), rival = hard.rivals[6];
+  Object.assign(rival, { speed: MAX_SPEED, fuel: 0, nitro: 2, nitroUses: 0 });
+  driveRival(hard, rival, 6, 0, 1 / 60);
+  assert.equal(rival.nitro, 1, 'a clear lane: the first charge fires');
+  assert.equal(rival.nitroUses, 1);
+  run(hard, rival, 6, 1);
+  assert.equal(rival.nitro, 1, 'mid-burst: the next charge waits instead of burning every frame');
+  run(hard, rival, 6, 1.1);
+  assert.equal(rival.nitro, 0, 'near the end of the burst: the second charge extends it');
+  assert.equal(rival.nitroUses, 2, 'each charge still counts toward the personality timing');
+  assert.ok(rival.nitroTime > 2.5, `extended by a full charge: ${rival.nitroTime}`);
+});

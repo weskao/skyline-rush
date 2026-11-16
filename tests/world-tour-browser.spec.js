@@ -11,6 +11,29 @@ const seed = page => page.addInitScript(ids => {
   localStorage.setItem('skyline-rush-unlocked', JSON.stringify(ids));
   localStorage.setItem('skyline-rush-music', 'off');
 }, ids);
+test('classic track cards render their own teaser artwork', async ({ page }) => {
+  await seed(page);
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const artwork = page.locator('[data-track] .track-preview.upcoming-thumb img');
+  await expect(artwork).toHaveCount(ids.length);
+  const rendered = await artwork.evaluateAll(images => Promise.all(images.map(async image => {
+    // Decode every card, including images outside the track picker's scroll viewport.
+    image.loading = 'eager';
+    await image.decode();
+    return [new URL(image.currentSrc).pathname.split('/').pop(), image.naturalWidth,
+      image.naturalHeight, getComputedStyle(image).objectFit];
+  })));
+  expect(rendered).toEqual(ids.map(id => [`${id}.jpg`, 1136, 410, 'cover']));
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 430, height: 932 }, { width: 844, height: 390 }]) {
+    await page.setViewportSize(viewport);
+    await page.locator('#lobby-tracks-toggle').evaluate(toggle => toggle.setAttribute('aria-expanded', 'true'));
+    const density = await artwork.evaluateAll(images => images.map(image => {
+      const { width, height } = image.getBoundingClientRect();
+      return width && height ? Math.min(image.naturalWidth / width, image.naturalHeight / height) : 0;
+    }));
+    expect(Math.min(...density)).toBeGreaterThanOrEqual(3);
+  }
+});
 test('all home route previews and bilingual names are available without exposing classic shortcuts', async ({ page }) => {
   await seed(page);
   await page.goto('/');
@@ -58,7 +81,9 @@ test('live minimap does not duplicate secret corridors and moves marker position
   await seed(page);await page.goto('/');
   await page.locator('#start-button').click();
   const map=page.locator('#race-route-map svg');
-  await expect(map.locator('polyline')).toHaveCount(1);
+  await expect(map.locator('polyline.route-overview-line')).toHaveCount(1);
+  await expect(map.locator('polyline.route-travelled')).toHaveCount(1);
+  await expect(map.locator('polyline:not(.route-overview-line, .route-travelled)')).toHaveCount(0);
   await expect(map.locator('[data-racer]')).toHaveCount(8);
   const marker=map.locator('[data-racer="YOU"]');
   const start=await marker.getAttribute('cy');

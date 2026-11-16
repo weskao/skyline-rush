@@ -68,9 +68,10 @@ test('road tangent space is right-handed with the up normal (normal maps not mir
   }
 });
 
-test('the classic road writer in world.js uses setRoadRow and uploads UVs with positions', async () => {
-  const { readFileSync } = await import('node:fs');
-  const source = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
-  assert.match(source, /setRoadRow\(roadGeometry, i, x, z, d, tile\)/);
-  assert.match(source, /roadGeometry\.attributes\.position\.needsUpdate = roadGeometry\.attributes\.uv\.needsUpdate = true/);
+test('a curved road row measures its full width perpendicular to travel', () => {
+  const geometry = roadRibbon(1);
+  setRoadRow(geometry, 0, 20, -30, 36, 36, 12, Math.PI / 3);
+  const p = geometry.attributes.position;
+  assert.ok(Math.abs(p.getX(1) - p.getX(0) - 12) < 1e-5);
+  assert.ok(Math.abs(p.getZ(1) - p.getZ(0) - 12 * Math.sqrt(3)) < 1e-5);
 });

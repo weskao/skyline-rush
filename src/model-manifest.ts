@@ -1,5 +1,7 @@
 // Phase 2 model manifest. Contract: docs/designs/3d-pipeline/phase2-model-contracts.md §1.
-export const FALLBACK_KEYS = ['procedural-car', 'procedural-scenery'] as const;
+import { NEON_MODELS } from './model-manifest-neon.ts';
+
+export const FALLBACK_KEYS = ['procedural-car', 'procedural-scenery', 'procedural-pickup'] as const;
 export type FallbackKey = (typeof FALLBACK_KEYS)[number];
 export const DECODERS = ['meshopt', 'ktx2'] as const;
 export type Decoder = (typeof DECODERS)[number];
@@ -18,6 +20,37 @@ export interface ModelManifestEntry {
   fallback: FallbackKey;
   decoders: Decoder[];
   budgets: { triangles: number; bytes: number; textureMaxPx: number };
+}
+
+// The other power-up tiers share the cell's pipeline, budgets and art kit (scripts/assets/pickup_kit.py).
+const UNRECORDED = '0'.repeat(64);
+function pickupModel(tier: string, triangles: number, sha = { master: UNRECORDED, script: UNRECORDED, glb: UNRECORDED, bytes: 1 }): ModelManifestEntry {
+  const id = `pickup-${tier}`, src = `assets-src/${id}`;
+  return {
+    id,
+    url: `models/${id}/${id}.glb`,
+    source: { master: `${src}/${id}.blend`, script: `${src}/build.py`, masterSha256: sha.master, scriptSha256: sha.script },
+    glb: { sha256: sha.glb, bytes: sha.bytes },
+    license: { id: 'owned', creator: 'Skyline Rush project' },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        `$BLENDER_BIN --background --factory-startup --python ${src}/build.py`,
+        `node scripts/assets/export-glb.mjs ${id}`,
+        `node scripts/assets/optimize-glb.mjs ${id}`,
+        `$BLENDER_BIN --background --factory-startup --python scripts/assets/pickup_kit.py -- review ${id}`,
+        `node scripts/assets/check-glb.mjs ${id} --promote`,
+      ],
+    },
+    nodes: [`pickup_${tier}`],
+    materials: [`pickup_${tier}_pbr`],
+    lods: [],
+    fallback: 'procedural-pickup',
+    decoders: ['meshopt', 'ktx2'],
+    budgets: { triangles, bytes: 300_000, textureMaxPx: 512 },
+  };
 }
 
 // Hashes/bytes come from `node scripts/assets/check-glb.mjs <id>` and shasum of the committed sources.
@@ -51,7 +84,7 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt'],
     budgets: { triangles: 5000, bytes: 200_000, textureMaxPx: 0 },
   },
-  // Task 4/4b hero Roadster behind ?model=roadster: Garage, Home showcase and race car. Nodes are the rig contract (src/garage-model-rig.ts).
+  // Task 4/4b hero Roadster: Garage, Home showcase and race car. Nodes are the rig contract (src/garage-model-rig.ts).
   roadster2: {
     id: 'roadster2',
     url: 'models/roadster2/roadster2.glb',
@@ -82,6 +115,42 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     ],
     materials: ['roadster_paint', 'roadster_glass', 'roadster_trim', 'roadster_carbon', 'roadster_tire', 'roadster_rim', 'roadster_light', 'roadster_lamp', 'roadster_nozzle', 'roadster_fan'],
     lods: [{ quality: 'low', url: 'models/roadster2/roadster2-low.glb' }],
+    fallback: 'procedural-car',
+    decoders: ['meshopt', 'ktx2'],
+    budgets: { triangles: 60_000, bytes: 1_500_000, textureMaxPx: 1024 },
+  },
+  // Task 7 Crimson GT, the second player car (src/car-catalog.ts): same rig nodes and contract pivots as roadster2.
+  'crimson-gt': {
+    id: 'crimson-gt',
+    url: 'models/crimson-gt/crimson-gt.glb',
+    source: {
+      master: 'assets-src/crimson-gt/crimson-gt.blend',
+      script: 'assets-src/crimson-gt/build.py',
+      masterSha256: 'e4bdf1aaa5d4ac5ebde6428bdf6eab4a3e00288c13de85c3c25fe6c13604e111',
+      scriptSha256: '43afece2a7906f1efdfefacaa241ca9aa79ba012aa50f1b1d6102641c03b23e6',
+    },
+    glb: { sha256: '1410ea5e522b591d2fcddc4821a0311b36087c3208d82019eb80efe2660c2076', bytes: 1_206_344 },
+    license: { id: 'owned', creator: 'Skyline Rush project' },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        '$BLENDER_BIN --background --factory-startup --python assets-src/crimson-gt/build.py',
+        '$BLENDER_BIN --background --factory-startup --python assets-src/crimson-gt/bake.py',
+        'node scripts/assets/export-glb.mjs crimson-gt',
+        'node scripts/assets/optimize-glb.mjs crimson-gt',
+        'node scripts/assets/check-glb.mjs crimson-gt --promote',
+      ],
+    },
+    nodes: [
+      'body', 'wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr', 'wheel_fl_spin', 'wheel_fr_spin', 'wheel_rl_spin', 'wheel_rr_spin',
+      'wing', 'wing_blade', 'wing_tip_l', 'wing_tip_r', 'wing_rams',
+      'thruster_01', 'thruster_02', 'thruster_03', 'thruster_04', 'nozzle_rear_01', 'nozzle_rear_02', 'nozzle_rear_03', 'nozzle_rear_04',
+      'lift_fans', 'lift_fan_01', 'lift_fan_02', 'lift_fan_03', 'lift_fan_04',
+    ],
+    materials: ['gt_paint', 'gt_glass', 'gt_cabin', 'gt_trim', 'gt_carbon', 'gt_tire', 'gt_rim', 'gt_light', 'gt_lamp', 'gt_nozzle', 'gt_fan'],
+    lods: [{ quality: 'low', url: 'models/crimson-gt/crimson-gt-low.glb' }],
     fallback: 'procedural-car',
     decoders: ['meshopt', 'ktx2'],
     budgets: { triangles: 60_000, bytes: 1_500_000, textureMaxPx: 1024 },
@@ -122,6 +191,99 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     decoders: ['meshopt', 'ktx2'],
     budgets: { triangles: 63_500, bytes: 6_000_000, textureMaxPx: 1024 },
   },
+  // The boats on the open Coast water (coast-boats.ts): three modelled meshes, one vertex-coloured material, no textures.
+  'coast-boats': {
+    id: 'coast-boats',
+    url: 'models/coast-boats/coast-boats.glb',
+    source: {
+      master: 'assets-src/coast-boats/coast-boats.blend',
+      script: 'assets-src/coast-boats/build.py',
+      masterSha256: '1aed6c2efbbe527a4b2f4d3e55a33d80e431c89b6bba49b140326549d78eafb2',
+      scriptSha256: '4aa0dddb29c7f9b354f67859f2083f2ffbf41c968ef55b129ac0b50f855374b5',
+    },
+    glb: { sha256: '26c6b7a6e34f85920c61055b8d0612138f6296962810bfc91334b8f3ac82a7e4', bytes: 25_772 },
+    license: { id: 'owned', creator: 'Skyline Rush project' },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        '$BLENDER_BIN --background --factory-startup --python assets-src/coast-boats/build.py',
+        'node scripts/assets/export-glb.mjs coast-boats',
+        'node scripts/assets/optimize-glb.mjs coast-boats',
+        'node scripts/assets/check-glb.mjs coast-boats --promote',
+      ],
+    },
+    nodes: ['sailboat_a', 'sailboat_b', 'motorboat'],
+    materials: ['coast_boat_paint'],
+    lods: [],
+    fallback: 'procedural-scenery',
+    decoders: ['meshopt'],
+    budgets: { triangles: 3_000, bytes: 120_000, textureMaxPx: 0 },
+  },
+  // Coast cliff-top shrubs (Medium+, with coast-scenery): Poly Haven CC0 fynbos scans baked to impostor cards, three
+  // crossed cards per node on one 1K atlas. Instanced on the scan cliffs by coast-greenery.ts; without it, no shrubs.
+  'coast-greenery': {
+    id: 'coast-greenery',
+    url: 'models/coast-greenery/coast-greenery.glb',
+    source: {
+      master: 'assets-src/coast-greenery/coast-greenery.blend',
+      script: 'assets-src/coast-greenery/build.py',
+      masterSha256: '2f8dadca87c29b42405ab3847bbab4e8d096b382078cdb12f28d65ef89b80253',
+      scriptSha256: '94645eab2a881bcb8cf3e86713d3f1242eae3b4cdf79f1325b117bdd72667c73',
+    },
+    glb: { sha256: '860a6a1f726b39e11fcdd70201824227c151823a9c96305441c070302a225074', bytes: 163_824 },
+    license: {
+      id: 'CC0-1.0',
+      creator: 'Poly Haven: James Ray Cock (modelling), Jenelle van Heerden (photography) (searsia_lucida); impostor bake by Skyline Rush project',
+      sourceUrl: 'https://polyhaven.com/a/searsia_lucida',
+    },
+    provenance: {
+      blender: '5.2.3',
+      exporter: '5.2.41',
+      gltfTransform: '4.5.1',
+      commands: [
+        'python3 -I scripts/assets/fetch_polyhaven.py fetch',
+        '$BLENDER_BIN --background --factory-startup --python assets-src/coast-greenery/build.py',
+        'node scripts/assets/export-glb.mjs coast-greenery',
+        'node scripts/assets/optimize-glb.mjs coast-greenery',
+        'node scripts/assets/check-glb.mjs coast-greenery --promote',
+      ],
+    },
+    nodes: ['shrub_a', 'shrub_b', 'shrub_c'],
+    materials: ['coast_shrub'],
+    lods: [],
+    fallback: 'procedural-scenery',
+    decoders: ['meshopt', 'ktx2'],
+    budgets: { triangles: 100, bytes: 700_000, textureMaxPx: 1024 },
+  },
+  // Road power-ups: one mesh and one baked 512 px PBR set per tier, shared by the guide preview and the GPU-instanced
+  // track pool. Shapes in each build.py; materials, bake and review sheets in scripts/assets/pickup_kit.py.
+  'pickup-cell': pickupModel('cell', 3000, {
+    master: '89066a7f864fc86ac3f9ee1ccc8d1264220005928f6719b40be77e84fd569773',
+    script: '441f303eef72a0fd7c98abdd573c43a8ea1c0a01633576c4d390fbdc6fe4c7db',
+    glb: 'fc12ea421a2e4f85163bb03c3653501a0fa836079448cdf89be51b2582920c1c',
+    bytes: 296136,
+  }),
+  'pickup-can': pickupModel('can', 3000, {
+    master: '1018d03abec9d2e7222b842a02348071bca7e8b795727383930d685887b62678',
+    script: '4eb1fa8617885c7219eac05491c091379799d491c3dd80061b28a1d4b15a14ff',
+    glb: 'a935f735d2d9c6c05c22400a9aeb81dbf8f2dccec0724c164549c9556e9dc3ab',
+    bytes: 283440,
+  }),
+  'pickup-tank': pickupModel('tank', 4000, {
+    master: '0dd516a8afebb9ebab65a38e8f2324a27317f730ea4ac12992b31d914dc3fea8',
+    script: 'cd6fcf48c6ef93330e0742e1b0046fc822b135567fc9a2b8beb94ce938d6a799',
+    glb: 'bee734a3ae2c9b016efee63886d0f86053de49ca1dcb33708e6f93f4ecd744de',
+    bytes: 287132,
+  }),
+  'pickup-overcharge': pickupModel('overcharge', 4500, {
+    master: 'eb4765525fd77fe2dd7700084b1edeb38497f69b714f5830494eb7b6ed02035a',
+    script: '95a46e1f004cdb25a9c3bd1c9547a6934805cdfb2977567b104b10b4aec7804b',
+    glb: 'fe33592ca9471de4e30c883b176dee8166314ca20bc3313962d52395c7cc98ec',
+    bytes: 283232,
+  }),
+  ...NEON_MODELS, // Task 5b city kit and landmarks
 };
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;

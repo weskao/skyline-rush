@@ -3,16 +3,19 @@ import { trackProgressBottom } from './hud-progress-offset.ts';
 import { t, interpolate, getLocale, CATALOGS } from './i18n.ts';
 import { icon } from './icons.ts';
 import { timeString } from './time-format.ts';
-import { racePosition, sprintGaps, gapChargeWarning, MAX_SPEED } from './game.js';
+import { racePosition, sprintGaps, gapChargeWarning, MAX_SPEED, driftTier } from './game.js';
 import { ghostAt, type GhostRun } from './ghost.ts';
 import { createCallouts } from './callouts.ts';
 import { createRoadSafeFeedback } from './race-feedback-placement.ts';
-import { readHudFeedback, type ControlPreferences } from './control-settings.ts';
+import { createImpactHud } from './impact-hud.ts';
+import type { ControlPreferences } from './control-settings.ts';
 import type { VfxSettings } from './vfx-settings.ts';
 import { createModePanels, type ModePanelOptions } from './race-hud-modes.ts';
 import { createHaptics } from './haptics.ts';
-import { createNitroReadiness } from './nitro-readiness.ts';
+import { createSprintReadyFeedback, type SprintReadyCue } from './sprint-ready-feedback.ts';
 import { orderRaceLeaderboard, graphRivalGap } from './course-hud-standings.ts';
+import { PICKUP_HAPTIC_MS } from './pickup-feedback.ts';
+import { createPickupFuelCue } from './pickup-fuel-cue.ts';
 
 // The in-race HUD, written every HUD tick (~13 Hz) from the frame loop. It stays imperative:
 // elements are looked up once, text/hidden are written only when they change, no Vue reactivity.
@@ -29,11 +32,12 @@ interface HudOptions extends ModePanelOptions {
   /** Printed label of the first FLY key, e.g. SPACE. */
   flyKeyLabel(): string;
   getVisual(): VfxSettings;
-  onNitroReady(): void;
+  onSprintReady(cue: SprintReadyCue, delay?: number): void;
   timeTrialGhost(race: HudRace): GhostRun | null;
   isAutoThrottle(): boolean;
   /** GO stays on screen until this time after the countdown ends. */
   getGoUntil(): number;
+  waitingForScenery(): boolean;
   setFly(on: boolean): void;
   updatePadHint(phase: string, elapsed: number): void;
   motionOptions(duration: string): { duration: number; easing: string };
@@ -64,6 +68,7 @@ export function createRaceHud(options: HudOptions) {
   boostStatus.id = 'boost-status';
   boostStatus.className = 'boost-status';
   $('.fuel-stat').append(boostStatus);
+  const fuelCue = createPickupFuelCue(ui['fuel-value']!.parentElement!, () => !getVisual().comfortable && !reducedMotion.matches);
   const callouts = createCallouts();
   const haptic = createHaptics();
   const eventCallout = $('#event-callout');
@@ -71,15 +76,17 @@ export function createRaceHud(options: HudOptions) {
   const calloutReports = [$('#maneuver-report'), ui['skill-report']!, $('#action-report')];
   const nitroHud = document.createElement('div');
   nitroHud.className = 'nitro-hud';
-  nitroHud.innerHTML = `<span id="nitro-status">${t('hud.nitroCount', { n: 0 })}</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="${t('hud.nitroAria')}" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
+  nitroHud.innerHTML = `<img data-wave3-hud-art="hud-nitro" src="${import.meta.env.BASE_URL}feature-assets/mobile-controls-hud/raster/hud-nitro@3x.webp" alt="" decoding="async"><span id="nitro-status">${t('hud.nitroCount', { n: 0 })}</span><div id="nitro-meter" class="nitro-meter" role="meter" aria-label="${t('hud.nitroAria')}" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">${Array.from({ length: 3 }, () => '<span class="nitro-segment"><i></i></span>').join('')}</div>`;
   $('.fuel-stat').append(nitroHud);
+  nitroHud.querySelector('img')?.addEventListener('error', () => nitroHud.querySelector('img')?.remove(), { once: true });
   // Include the dynamically inserted NITRO status in the initial collision geometry.
   const feedbackPlacement = createRoadSafeFeedback(eventCallout, ui['driving-message']!, $<HTMLElement>('#impact-report'), $<HTMLElement>('.mode-indicator'));
+  const updateImpact = createImpactHud(ui['impact-report']!, feedbackPlacement.refresh);
   const nitroSegments = [...nitroHud.querySelectorAll<HTMLElement>('.nitro-segment')];
   const nitroStatus = $('#nitro-status');
   const nitroMeter = $('#nitro-meter');
   const nitroButton = touchButtons.find(button => button.dataset.control === 'nitro');
-  const nitroReadiness = createNitroReadiness();
+  const sprintReady = createSprintReadyFeedback(nitroButton, touchButtons.find(button => button.dataset.control === 'boost'), options.onSprintReady);
   // HUD text is read every tick: a plain catalog lookup (key parity is unit-tested), swapped on a language switch.
   let L: Record<string, string> = CATALOGS[getLocale() as keyof typeof CATALOGS];
   let flowKey = 'hud.streamlines', floorKey = 'hud.lowDrag', jetKey = 'hud.demo';
@@ -95,7 +102,7 @@ export function createRaceHud(options: HudOptions) {
   let previousBoost = false;
   let shownCallout: ReturnType<typeof callouts.update> = null;
   let lastDrivingMessage = '';
-  let feedbackCar: unknown, lastImpact: unknown, lastDriftPayout: unknown, lastTrickPayout: unknown, lastNitroTime = 0;
+  let feedbackCar: unknown, lastImpact: unknown, lastDriftPayout: unknown, lastTrickPayout: unknown, lastPickup: unknown, lastNitroTime = 0;
 
   function updateSpeedAndPosition(now: number, race: HudRace, car: HudRace, calm: boolean): void {
     setHudText(ui.speed!, String(Math.round(car.speed * 3.6)));
@@ -125,7 +132,6 @@ export function createRaceHud(options: HudOptions) {
   function updateProgress(race: HudRace, car: HudRace): void {
     setHudText(ui.timer!, timeString(race.elapsed));
     setHudText(ui.distance!, (car.distance / 1000).toFixed(2));
-    ui['progress-fill']!.style.width = `${race.endless ? 0 : car.distance / race.length * 100}%`;
     setHudText(hudNodes['race-length']!, race.endless ? '∞' : (race.length / 1000).toFixed(2));
     const timeGhost = race.mode === 'time' && getControlPrefs().ghost ? options.timeTrialGhost(race) : null;
     const split = hudNodes['ghost-split']!;
@@ -139,24 +145,16 @@ export function createRaceHud(options: HudOptions) {
     ui['fuel-fill']!.style.transform = `scaleX(${car.fuel / 100})`;
     ui['fuel-meter']!.setAttribute('aria-valuenow', String(Math.round(car.fuel)));
     ui['fuel-meter']!.setAttribute('aria-valuetext', `${car.fuel < 20 ? L['hud.lowCharge'] : ''}${Math.round(car.fuel)}%`);
-    ui['fuel-meter']!.dataset.refilling = String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
+    const pickup = fuelCue.update(race.phase === 'racing', race.elapsed, car.pickup);
+    ui['fuel-meter']!.dataset.refilling = pickup ? 'pickup' : String(race.phase === 'racing' && car.fuel > previousFuel && car.fuel < 100);
     previousFuel = car.fuel;
     setHudText(hudNodes['style-score']!, race.mode === 'gauntlet' ? t('mode.hazardHud', { n: race.hazards.filter((h: HudRace) => h.passed).length, total: race.hazards.length, score: Math.floor(car.score) }) : interpolate(L['hud.style']!, { n: Math.floor(car.score) }));
     setHudText(ui.altitude!, car.altitude.toFixed(1));
   }
-  function updateNitro(now: number, race: HudRace, car: HudRace, nitroActive: boolean): void {
+  function updateNitro(now: number, race: HudRace, car: HudRace, state: ReturnType<typeof sprintReady.update>): void {
     const visual = getVisual();
-    const { state, cueReady } = nitroReadiness.update({ charge: car.nitro, phase: race.phase, active: nitroActive });
-    if (cueReady) {
-      const feedback = readHudFeedback();
-      if (feedback.sound) options.onNitroReady();
-      if (nitroButton && feedback.animation && visual.enabled && !visual.comfortable && !reducedMotion.matches) {
-        nitroButton.animate([{ boxShadow: '0 0 0 0 rgb(255 213 128 / .8)' }, { boxShadow: '0 0 0 12px rgb(255 213 128 / 0)' }], { duration: 650 });
-      }
-    }
     if (nitroMeter.dataset.nitroState !== state) nitroMeter.dataset.nitroState = state;
     if (nitroButton) {
-      if (nitroButton.dataset.nitroState !== state) nitroButton.dataset.nitroState = state;
       const label = t(state === 'ready' ? 'hud.nitroReady' : state === 'active' ? 'hud.nitroActive'
         : state === 'charging' ? 'hud.nitroCharging' : 'hud.nitroUnavailable');
       if (nitroButton.getAttribute('aria-label') !== label) nitroButton.setAttribute('aria-label', label);
@@ -207,6 +205,7 @@ export function createRaceHud(options: HudOptions) {
     const visual = getVisual();
     document.body.classList.toggle('low-charge', car.fuel < 20);
     document.body.classList.toggle('boosting', (car.boosting || nitroActive || (car.miniBoost > 0 && car.boostTunnelEvent)) && race.phase === 'racing');
+    document.body.classList.toggle('boost-draining', car.boosting && race.phase === 'racing'); // BOOST alone, not NITRO or tunnel mini-boost: tints the charge bar
     const tunnelBoost = car.miniBoost > 0 && car.boostTunnelEvent &&
       race.elapsed - car.boostTunnelEvent.time < 3.6;
     const boost = (car.boosting || nitroActive || tunnelBoost) && race.phase === 'racing';
@@ -220,11 +219,12 @@ export function createRaceHud(options: HudOptions) {
       const burst = car.nitroTime > lastNitroTime || (boost && !previousBoost);
       const driftPaid = car.driftPayout && car.driftPayout !== lastDriftPayout;
       const trickPaid = car.trickPayout?.nitro > 0 && car.trickPayout !== lastTrickPayout;
+      const pickupPulse = car.pickup && car.pickup !== lastPickup ? PICKUP_HAPTIC_MS[car.pickup.tier] ?? 0 : 0;
       if (hit || burst || driftPaid || trickPaid) {
         haptic(hit ? [18, 30, 18] : trickPaid ? [12, 20, 12] : burst ? 25 : 15);
-      }
+      } else if (pickupPulse) haptic(pickupPulse);
     }
-    feedbackCar = car; lastImpact = car.impact; lastNitroTime = car.nitroTime;
+    feedbackCar = car; lastImpact = car.impact; lastNitroTime = car.nitroTime; lastPickup = car.pickup;
     lastDriftPayout = car.driftPayout;
     lastTrickPayout = car.trickPayout;
     previousBoost = boost;
@@ -250,15 +250,16 @@ export function createRaceHud(options: HudOptions) {
   }
   function updateCountdown(now: number, race: HudRace, calm: boolean): void {
     const countdown = race.phase === 'countdown';
+    const loading = countdown && options.waitingForScenery();
     setHudHidden(ui.countdown!, !(countdown || (race.phase === 'racing' && now < options.getGoUntil())));
-    const step = countdown ? String(Math.ceil(race.countdown)) : 'GO'; // the step stays a CSS hook; only the shown text is translated
-    const countdownText = countdown ? step : L['hud.go']!;
+    const step = loading ? 'loading' : countdown ? String(Math.ceil(race.countdown)) : 'GO';
+    const countdownText = loading ? '…' : countdown ? step : L['hud.go']!;
     if (countdownNumber.textContent !== countdownText) {
       countdownNumber.textContent = countdownText;
       ui.countdown!.dataset.step = step;
       if (!calm) countdownNumber.animate([{ opacity: 0.4, transform: `scale(${countdown ? 1.3 : 0.65})` }, { opacity: 1, transform: 'scale(1)' }], motionOptions(countdown ? 'base' : 'slow'));
     }
-    setHudText(countdownLabel, L[countdown ? options.isAutoThrottle() ? 'hud.autoReady' : 'hud.holdReady' : 'hud.goSkyline']!);
+    setHudText(countdownLabel, L[loading ? 'hud.loadingScenery' : countdown ? options.isAutoThrottle() ? 'hud.autoReady' : 'hud.holdReady' : 'hud.goSkyline']!);
   }
   function updateStatus(race: HudRace, car: HudRace, input: HudInput, impactAge: number): void {
     const length = race.length;
@@ -340,9 +341,9 @@ export function createRaceHud(options: HudOptions) {
     const state = L[car.thrusting ? car.verticalSpeed > 0.2 ? 'hud.ascending' : 'hud.cruise' : car.altitude > 0.25 ? 'hud.descending' : touchdown ? 'hud.touchdown' : depleted ? 'hud.recharging' : car.speed >= 18 ? 'hud.readyToFly' : 'hud.buildSpeed']!;
     const nitroActive = car.nitroTime > 0 && race.phase === 'racing';
     const airDash = car.thrusting && car.boosting;
-    setHudText(ui['flight-state']!, race.modifier === 'no-flight' ? L['daily.flightDisabled.state']! : car.thrusting && car.nitroTime > 0 ? L['hud.airDashNitro']! : airDash ? L['hud.airDash']! : nitroActive ? L['hud.nitroActive']! : car.trick && !car.trick.done ? L['hud.trick']! : car.inShortcut ? L['callout.shortcut']!
-      : car.drift ? interpolate(L['callout.drift']!, { tier: L[car.drift.time >= 3 ? 'callout.drift.tier.3' : car.drift.time >= 2 ? 'callout.drift.tier.2' : car.drift.time >= 1 ? 'callout.drift.tier.1' : 'hud.driftBuilding']! }) : car.miniBoost > 0 && !touchdown ? L['hud.miniBoost']! : state);
-    updateNitro(now, race, car, nitroActive);
+    setHudText(ui['flight-state']!, race.modifier === 'no-flight' ? L['daily.flightDisabled.state']! : nitroActive && car.nitroBurst > 1 ? interpolate(L['hud.nitroChain']!, { n: car.nitroBurst }) : car.thrusting && car.nitroTime > 0 ? L['hud.airDashNitro']! : airDash ? L['hud.airDash']! : nitroActive ? L['hud.nitroActive']! : car.trick && !car.trick.done ? L['hud.trick']! : car.inShortcut ? L['callout.shortcut']!
+      : car.drift ? interpolate(L['callout.drift']!, { tier: L[driftTier(car.drift.time) ? `callout.drift.tier.${driftTier(car.drift.time)}` : 'hud.driftBuilding']! }) : car.miniBoost > 0 && !touchdown ? L['hud.miniBoost']! : state);
+    updateNitro(now, race, car, sprintReady.update(race.phase, car, nitroActive, !!input.boost, visual.enabled && !calm));
     updateCallout(race, impactAge, calm);
     document.body.classList.toggle('nitro-active', nitroActive);
     // Inside a shortcut only BOOST drains (3/s); plain flight there is free.
@@ -353,13 +354,7 @@ export function createRaceHud(options: HudOptions) {
     setHudText(ui['climb-rate']!, `${car.verticalSpeed >= 0 ? '+' : ''}${car.verticalSpeed.toFixed(1)} M/S`);
     ui['height-indicator']!.style.transform = `translateY(${-car.altitude / 12 * 110}px)`;
     updateBoostAndFeedback(race, car, nitroActive, flying, calm);
-    const impactWasHidden = ui['impact-report']!.hidden;
-    setHudHidden(ui['impact-report']!, race.phase !== 'racing' || impactAge > 1.1);
-    if (!ui['impact-report']!.hidden) {
-      setHudText(ui['impact-title']!, L[car.impact.kind === 'barrier' ? 'hud.barrier' : 'hud.vehicle']!);
-      setHudText(ui['impact-loss']!, String(Math.round(car.impact.speedLost * 3.6)));
-      if (impactWasHidden) feedbackPlacement.refresh(); // event-driven: measured once per hit, never per frame
-    }
+    updateImpact(car, race.elapsed, race.phase === 'racing');
     updateTouchButtons(race, input, tap);
     options.updatePadHint(race.phase, race.elapsed);
     setHudText(ui['speed-caption']!, L[race.phase === 'ready' ? 'hud.readyTakeoff' : car.boosting ? 'hud.boostEngaged' : options.isAutoThrottle() ? 'hud.autoOverride' : 'hud.tagline']!);
@@ -379,7 +374,7 @@ export function createRaceHud(options: HudOptions) {
   return {
     update,
     /** A new race starts: charge and NITRO refill cues compare against a full tank and empty NITRO. */
-    resetMemory(): void { previousFuel = 100; previousNitro = 0; nitroReadiness.reset(); },
+    resetMemory(): void { previousFuel = 100; previousNitro = 0; sprintReady.reset(); },
     memory: (): HudMemory => ({ previousFuel, previousNitro }),
     restoreMemory(memory: HudMemory): void { ({ previousFuel, previousNitro } = memory); },
     /** The flight/road label is change-gated; the next tick rewrites it. */

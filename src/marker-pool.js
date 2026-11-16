@@ -9,7 +9,7 @@ export function createMarkerPool(name, geometry, materials, capacity) {
   group.name = name;
   group.userData.drawn = drawn; // [mesh, index, mesh, index, ...] of this frame, in item order
   for (const [key, material] of Object.entries(materials)) {
-    const mesh = new THREE.InstancedMesh(geometry, material, capacity);
+    const mesh = new THREE.InstancedMesh(geometry[key] ?? geometry, material, capacity);
     mesh.name = key; mesh.count = 1; mesh.visible = false;
     mesh.setMatrixAt(0, PARKED);
     meshes[key] = mesh; used[key] = 0;
@@ -41,6 +41,8 @@ export function createMarkerPool(name, geometry, materials, capacity) {
         mesh.computeBoundingSphere();
       }
     },
+    /** Replaces one key's shape and material in place (pickups: procedural stand-in → loaded model). */
+    swap(key, shape, material) { meshes[key].geometry = shape; meshes[key].material = material; },
     dispose() { for (const key in meshes) meshes[key].dispose(); },
   };
 }

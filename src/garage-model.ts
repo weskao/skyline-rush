@@ -1,18 +1,18 @@
-// `?model=probe` Garage adapter (docs/designs/3d-pipeline/phase2-model-contracts.md §2): while the Garage is open,
-// a manifest model replaces the procedural Roadster in Garage Home and the Preview Studio. Production (no query)
-// never creates it. The model is held while the Garage stays open and released when it closes.
-// Task 4b (`?model=roadster`): the same adapter also dresses the Home showcase car and the race car, one car at a time.
+// Player car GLBs dress the equipped car across the showroom and races. The pipeline probe is Garage-only.
 import type { Camera, Material, Mesh, MeshStandardMaterial, Object3D, Scene, Texture, WebGLRenderer } from 'three';
 import type { ModelCache, ModelHandle } from './asset-model-loader.ts';
 import type { ModelQuality } from './model-manifest.ts';
 import { bindGarageRig, type GarageRig } from './garage-model-rig.ts';
 import { applyCarReflections } from './car-reflections.ts';
+import { CARS, equippedCarModel } from './car-catalog.ts';
+import { REAR_PORTS } from './aero-vfx.js';
+import { fitToRoadsterSize } from './car-display-size.ts';
 
-const MODEL_PARAMS: Readonly<Record<string, string>> = { probe: 'pipeline-probe', roadster: 'roadster2' };
+const EQUIPPED_MODELS = new Set(Object.values(CARS).map(car => car.model));
 const HIDDEN_LAYER = 31; // no camera enables it; the frame loop rewrites `visible` on car parts, never `layers`
 
-/** Task 4b: the roadster GLB also dresses the Home showcase and race car; the probe stays Garage-only. */
-export const dressesRaceCar = (id: string): boolean => id === 'roadster2';
+/** Player-car GLBs also dress the Home showcase and race car; the probe stays Garage-only. */
+export const dressesRaceCar = (id: string): boolean => EQUIPPED_MODELS.has(id);
 
 /** The softened map the host's procedural car reflects (car-reflections.ts), if one was applied to it. */
 function carMapOf(car: Object3D): Texture | null {
@@ -24,12 +24,11 @@ function carMapOf(car: Object3D): Texture | null {
 }
 
 export function garageModelId(search: string): string | null {
-  const value = new URLSearchParams(search).get('model');
-  return value && Object.hasOwn(MODEL_PARAMS, value) ? MODEL_PARAMS[value]! : null;
+  return new URLSearchParams(search).get('model') === 'probe' ? 'pipeline-probe' : null;
 }
 
 /** A car to dress: `keep` (aero VFX riding on the car) stays drawn, `scene` supplies lights for compiling. */
-export interface GarageModelHost { name: 'home' | 'studio' | 'showcase'; car: Object3D; keep: Object3D; scene: Scene }
+export interface GarageModelHost { name: 'home' | 'studio' | 'showcase'; car: Object3D; keep: Object3D; scene: Scene; fitAirflow?(model?: Object3D): void }
 /** garage: every car shown since the Garage opened stays dressed. drive: only the car on screen. race: drive, but
  *  never attach or compile a new instance (after GO), so a race shows the GLB only if it was dressed before. */
 export type DressMode = 'garage' | 'drive' | 'race';
@@ -58,9 +57,24 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     dataset.garageModelWarmups = String(warmups);
   }
 
+  /** Rear-port VFX (aero-vfx.js `Rear ports`) sit on the GLB's nozzles when it authors them off the contract ports. */
+  function moveRearPorts(host: GarageModelHost, instance?: Object3D): void {
+    const rear = host.keep.getObjectByName('Rear ports');
+    if (!rear) return;
+    rear.position.set(0, 0, 0);
+    let node = instance?.getObjectByName('nozzle_rear_01');
+    if (!node) return;
+    for (; node && node !== instance; node = node.parent ?? undefined) rear.position.add(node.position); // unrotated, unscaled pivots
+    rear.position.multiply(instance!.scale); // the instance's display scale (car-display-size.ts) carries the nozzles outward
+    rear.position.x -= REAR_PORTS[0].position[0]; rear.position.y -= REAR_PORTS[0].position[1]; rear.position.z -= REAR_PORTS[0].position[2];
+  }
+
   function undress(host: GarageModelHost): void {
     const dressing = dressed.get(host);
     if (!dressing) return;
+    moveRearPorts(host);
+    delete host.car.userData.displayScale;
+    host.fitAirflow?.();
     dressing.instance.removeFromParent();
     dressing.rig.dispose();
     for (const [object, mask] of dressing.masks) object.layers.mask = mask;
@@ -71,6 +85,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     pending.add(host); // request() and the per-frame sync() never dress one host twice at once
     const instance = from.instance();
     instance.userData.garageModel = id;
+    if (dressesRaceCar(id)) fitToRoadsterSize(instance); // before the airflow fit and the rig, which measure the shown size
     const carMap = carMapOf(host.car); // without it the GLB mirrors the full scene HDRI: washed white in Coast rain
     if (carMap) applyCarReflections(instance, carMap); // before compiling, so no program changes after GO
     const rig = bindGarageRig(host.car, instance); // rig.update() only after compiling: compileAsync skips hidden parts (lift fans)
@@ -87,7 +102,10 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
         part.traverse(object => { if (!rig.riders.includes(object)) { masks.set(object, object.layers.mask); object.layers.set(HIDDEN_LAYER); } }); // riders move to the GLB body (rig)
       }
     }
+    host.fitAirflow?.(instance); // measure the authored neutral pose before binding the current wheel/wing animation
     rig.update();
+    moveRearPorts(host, instance);
+    host.car.userData.displayScale = instance.scale; // effects.js: lift jets stay on the scaled authored thrusters
     host.car.add(instance);
     dressed.set(host, { instance, rig, masks });
     report();
@@ -107,7 +125,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
       if (held) for (const host of [...dressed.keys()]) undress(host); // mid-race: procedural until the race stops
       else await Promise.all([...wanted].map(host => dress(host, result))); // a later dress replaces an earlier one
       old?.release(); // only after no host shows an old instance
-      report();
+      if (open && handle === result) report();
     } catch (error) {
       if (!(error instanceof DOMException && error.name === 'AbortError')) throw error;
     }
@@ -158,36 +176,63 @@ interface Ktx2Like { setTranscoderPath(path: string): Ktx2Like; detectSupport(re
 type Ktx2Class = new () => Ktx2Like;
 const importKtx2 = async (): Promise<Ktx2Class> => (await import('three/examples/jsm/loaders/KTX2Loader.js')).KTX2Loader as unknown as Ktx2Class;
 
-/** One KTX2Loader per world, on the existing renderer; the transcoder is served from `public/basis/`. */
-export function createKtx2Provider(renderer: unknown, baseUrl: string, load: () => Promise<Ktx2Class> = importKtx2) {
+const ktx2Providers = new WeakMap<object, () => Promise<Ktx2Like>>();
+
+/** Share the worker pool across the car, scenery and pickups on the same renderer. */
+export function createKtx2Provider(renderer: object, baseUrl: string, load: () => Promise<Ktx2Class> = importKtx2) {
+  const existing = ktx2Providers.get(renderer);
+  if (existing) return existing;
   let loader: Promise<Ktx2Like> | undefined;
-  return (): Promise<Ktx2Like> => (loader ??= load().then(Ktx2 => new Ktx2().setTranscoderPath(`${baseUrl}basis/`).detectSupport(renderer as never)));
+  const provide = () => (loader ??= load()
+    .then(Ktx2 => new Ktx2().setTranscoderPath(`${baseUrl}basis/`).detectSupport(renderer as never))
+    .catch(error => { loader = undefined; throw error; }));
+  ktx2Providers.set(renderer, provide);
+  return provide;
 }
 
-/** World wiring: null unless the page opted in. The loader (GLTFLoader) is imported only then. */
+/** World wiring. Load the equipped car on demand. The explicit pipeline probe can take the Roadster's place in Garage QA. */
 export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick<WebGLRenderer, 'compileAsync'>, camera: Camera,
-  search = location.search, baseUrl = import.meta.env.BASE_URL) {
-  const id = garageModelId(search);
-  if (!id) return null;
-  const everywhere = dressesRaceCar(id);
+  search = location.search, baseUrl = import.meta.env.BASE_URL, carModel: () => string | null = equippedCarModel) {
+  const probe = garageModelId(search);
   const loadKtx2 = createKtx2Provider(renderer, baseUrl);
-  const cache = import('./asset-model-loader.ts').then(({ createModelCache }) => createModelCache({ baseUrl, loadKtx2 }));
-  const model = createGarageModel({
-    id, dataset: canvas.dataset,
-    cache: { load: async (key, options) => (await cache).load(key, options) },
-    compile: (object, scene) => renderer.compileAsync(object, camera, scene),
-  });
-  const restored = (): void => { void model.warmAgain(); };
+  let cache: Promise<ModelCache> | undefined;
+  let id: string | null = null, model: ReturnType<typeof createGarageModel> | null = null;
+  const modelCache: Pick<ModelCache, 'load'> = {
+    async load(key, options) {
+      cache ??= import('./asset-model-loader.ts').then(({ createModelCache }) =>
+        createModelCache({ baseUrl, loadKtx2, retainReleasedModels: dressesRaceCar }));
+      return (await cache).load(key, options);
+    },
+  };
+  function use(next: string | null): void {
+    model?.dispose(); // the cars are procedural again before another model dresses them
+    id = next;
+    model = next === null ? null : createGarageModel({
+      id: next, dataset: canvas.dataset,
+      cache: modelCache,
+      compile: (object, scene) => renderer.compileAsync(object, camera, scene),
+    });
+  }
+  const restored = (): void => { void model?.warmAgain(); };
   canvas.addEventListener('webglcontextrestored', restored);
   return {
     /** Per frame, before posing: dresses the car on screen. `studio` only while the Preview Studio camera is on;
      *  `showcase` only while the Coming Soon stage renders the Home preview; `home` is the Home/race player car. */
     frame(quality: ModelQuality, phase: string, garageOpen: boolean, studio: GarageModelHost | null, showcase: GarageModelHost | null, home: GarageModelHost): void {
+      const equipped = carModel();
+      const wanted = equipped === CARS.roadster.model ? probe ?? equipped : equipped;
+      if (wanted !== id && phase !== 'racing') use(wanted); // the car changes in the Garage only; never rebuild mid-race
+      if (!model || id === null) return;
       if (studio) { model.sync(true, quality, studio); return; }
+      const everywhere = dressesRaceCar(id);
       const shown = showcase ?? (garageOpen || everywhere ? home : null);
       model.sync(garageOpen || everywhere, quality, shown, garageOpen ? 'garage' : phase === 'racing' ? 'race' : 'drive');
     },
-    release: model.release,
-    dispose() { canvas.removeEventListener('webglcontextrestored', restored); model.dispose(); },
+    release: (host: GarageModelHost): void => model?.release(host),
+    dispose() {
+      canvas.removeEventListener('webglcontextrestored', restored);
+      model?.dispose();
+      if (cache) void cache.then(loaded => loaded.dispose());
+    },
   };
 }

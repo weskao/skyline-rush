@@ -1,8 +1,8 @@
-import { test, glbRoots, programs, modelInstances as instances } from './helpers/gameplay-browser.js';
+import { test, glbRoots, programs, modelInstances as instances, dressedAs, HERO_MODEL } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 
-// Task 4b regression matrix: `?model=roadster` on every playable track (classic and World Tour), desktop and phone.
+// Task 4b regression matrix: Roadster GLB on every playable track (classic and World Tour), desktop and phone.
 // Drive, collide, BOOST, NITRO, FLY, land, finish and retry with the GLB dressing the player car; the procedural car
 // keeps the physics, so the race state must progress as usual, with no page error and no shader compile after GO.
 const TRACKS = ['coast', 'neon', 'canyon', 'aurora', 'spiral', 'taipei', 'tokyo', 'alpine', 'coastal', 'cosmic'];
@@ -21,12 +21,13 @@ function drive(id) {
     }, TRACKS);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto(`${gameplayURL}?model=roadster`);
+    await page.goto(gameplayURL);
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
     await page.locator(`[data-track="${id}"]`).click();
     await expect(page.locator(`[data-track="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#world')).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
     await expect.poll(() => glbRoots(page)).toBe(1); // Home showcase car dressed
+    expect(await dressedAs(page)).toBe(HERO_MODEL); // settled: polled above; under HERO_CAR the equipped car's GLB, not the flag's
     const { home } = await instances(page);
 
     await page.locator('#start-button').click();
@@ -69,7 +70,7 @@ async function carousel({ gameplayPage: page, gameplayURL }) {
   await page.addInitScript(() => { for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value); });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto(`${gameplayURL}?model=roadster`);
+  await page.goto(gameplayURL);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   await expect(page.locator('#world')).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
   let last = (await instances(page)).home;

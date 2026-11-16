@@ -17,9 +17,10 @@ _SPEC = {
 }
 
 
-def make_materials():
+def make_materials(spec=_SPEC):
+    """spec: another car's table in the same shape (assets-src/crimson-gt/build.py)."""
     out = {}
-    for name, (rgb, metal, rough, extra) in _SPEC.items():
+    for name, (rgb, metal, rough, extra) in spec.items():
         mat = bpy.data.materials.new(name)
         mat.use_nodes = True
         bsdf = next(n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
@@ -34,5 +35,7 @@ def make_materials():
             bsdf.inputs["Emission Strength"].default_value = extra["emit_strength"]
         if not extra.get("cull", True):
             mat.use_backface_culling = False
+        if "alpha" in extra:   # exported as alphaMode BLEND (another car's see-through glass)
+            bsdf.inputs["Alpha"].default_value = extra["alpha"]
         out[name] = mat
     return out

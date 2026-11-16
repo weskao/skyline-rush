@@ -66,7 +66,6 @@ function chooseHudMode(mode: HudDisplayMode): void {
   body[data-hud-mode="hybrid"] #leaderboard { display: none; }
 }
 body[data-hud-leaderboard-visible="false"] #leaderboard { display: none; }
-body[data-hud-map-visible="false"] #race-route-map { display: none; }
 body[data-hud-telemetry-visible="false"] #style-score { display: none; }
 /* On short landscape screens, rankings yield to the car, road and touch controls. */
 @media (max-height: 390px) and (orientation: landscape) {

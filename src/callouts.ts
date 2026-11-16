@@ -1,4 +1,4 @@
-import { t } from './i18n.ts';
+import { t } from './i18n.ts'; import { driftTier } from './drive-rules.ts';
 type CalloutText = string | readonly [string, Record<string, unknown>];
 interface CalloutEvent { kind: string; title: string; detail: string }
 interface ActiveCallout extends CalloutEvent { started: number }
@@ -21,7 +21,6 @@ interface FeedbackSnapshot {
 
 // A callout field is a catalog key or [key, params]; it resolves in the active locale once, when the event is queued.
 const text = (field: CalloutText): string => typeof field === 'string' ? t(field) : t(field[0], field[1]);
-
 export function createCallouts() {
   let previousRace: CalloutRace | undefined;
   let previous: FeedbackSnapshot | undefined;
@@ -47,7 +46,7 @@ export function createCallouts() {
       const next: FeedbackSnapshot = {
         near: car.nearMisses, perfect: car.perfectLines, nitro: car.nitro,
         nitroTime: car.nitroTime, uses: car.nitroUses, rewardFuel: car.rewardFuel,
-        drift: Math.min(3, Math.floor(car.drift?.time ?? 0)),
+        drift: car.drift ? driftTier(car.drift.time) : 0,
         trick: car.trick, trickPayout: car.trickPayout, shortcut: car.inShortcut, landing: car.landing,
       };
       if (race !== previousRace || race.phase !== 'racing' || !previous) {

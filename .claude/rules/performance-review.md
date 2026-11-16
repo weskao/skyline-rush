@@ -34,6 +34,16 @@ batching/culling; real WebGL screenshots on all affected courses incl. pause/res
 switch, WebGL recovery, low-power devices, narrow phone/landscape. Final report names untested
 devices and remaining uncertainty.
 
+## Traffic is one instanced fleet
+
+Each traffic car used to be its own `makeCar()` group: 15 draw calls per car in view, 1,549 with 108 cars.
+`src/traffic-fleet.ts` bakes each traffic style into one geometry per material and draws every car as an
+instance of a `marker-pool.js` pool: 21 calls at any car count, 6 more in the wet-road mirror pass. `world.js`
+poses plain `Object3D`s through `updateCar` and calls `trafficFleet.sync()` once per frame. Culling stays on:
+the pool rebuilds each mesh's bound from that frame's cars. A traffic car that needs a moving part (brake
+light, indicator, spinning wheel) gets an instanced attribute or its own pooled mesh, never a group per car.
+Guards: `tests/traffic-fleet.test.js`, `tests/traffic-instancing-browser.spec.js`.
+
 ## Home map switching: preserve the last two Coming Soon stages
 
 The 3D swipe snapshots temporarily select the neighbor and then return to the selected track.
@@ -68,6 +78,14 @@ frame and on every track change, so no per-module warmup flag is needed. Keep it
   prop, light or track keeps both green; extend them when adding an event that first shows
   something. Diagnose with `renderer.info.programs` and `renderer.properties.get(material)
   .currentProgram.cacheKey` to name the offending material.
+- Production builds skip three.js's `renderer.debug.checkShaderErrors` (a synchronous info-log read
+  per program that defeats parallel compile): third frame 7% sooner on desktop, 15% at 6x CPU
+  throttle (2026-11-14). Make every race renderer through `createRenderer` (`src/webgl-renderer.ts`);
+  dev and VITE_DIAG builds keep the check. Guard: `tests/webgl-renderer.test.js`.
+
+## Fit airflow when the displayed model changes
+
+Sample the neutral-pose shell in vehicle-local coordinates before animating the wheels and wing. Refit when a GLB or LOD attaches and restore the procedural fit on removal. Reuse the warmed airflow material and dispose replaced geometry. The same fit serves Home, Garage Studio, Coming Soon and races. The model swap and fallback regression lives in `tests/garage-model-rig.test.js`. Skin animation must use the fitted paths’ outward directions and reuse the same mesh when the skin changes. Refresh cached Coming Soon stages when the selected airflow skin changes. Every size-dependent airflow number (pressure footprint, wake range, skin motion scale, dash-ribbon/roll-wake anchor) comes from `airflowFrame(profile)` in `src/airflow-geometry.ts`; skin amplitudes live once in `SKIN_MOTION` and the shader interpolates them. Never add a Roadster-sized constant, clamp or per-car value: a new car or a new display size (src/car-display-size.ts) must need no airflow edits. Guard: `tests/airflow-adaptive-fit.test.js` (Roadster + scaled GLB stand-in, every airflow skin).
 
 ## One NaN pixel is a black frame
 

@@ -71,7 +71,7 @@ test('Pages deploy pins a reviewed garage release mode instead of inheriting mut
 
 test('unpublished skin IDs must be absent from shared race shader and covered by production leak markers', async () => {
   const { readFileSync } = await import('node:fs');
-  const shader = readFileSync(new URL('../src/aero-vfx.js', import.meta.url), 'utf8');
+  const shader = ['aero-vfx.js', 'sprint-plume.ts'].map(file => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8')).join('\n'); // the jets' shader lives in sprint-plume.ts
   const gate = readFileSync(new URL('../scripts/assert-production-locked.mjs', import.meta.url), 'utf8');
   for (const id of ['thruster-ion', 'airflow-slipstream', 'nitro-trail-cyan', 'launch-flare-blue']) {
     assert.doesNotMatch(shader, new RegExp(id));
@@ -121,8 +121,8 @@ test('release policy explains opt-in public session trial without permanent owne
   assert.match(policy, /no (?:purchase|checkout|payment)/i);
 });
 
-test('locked bundle audit refuses the skin pick storage key, other modes allow it', async () => {
-  const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs');
+test('locked bundle audit refuses the skin pick storage key, other modes allow it', async t => {
+  const { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
   const { spawnSync } = await import('node:child_process');
@@ -130,11 +130,70 @@ test('locked bundle audit refuses the skin pick storage key, other modes allow i
   const { SKIN_PICK_STORAGE_KEY } = await import('../src/garage-skin-preference.ts');
   const script = fileURLToPath(new URL('../scripts/assert-production-locked.mjs', import.meta.url));
   const root = mkdtempSync(join(tmpdir(), 'garage-pick-leak-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'dist'));
+  mkdirSync(join(root, 'dist', 'feature-assets'));
+  for (const directory of ['garage-public', 'garage-rewards-and-missions']) {
+    symlinkSync(fileURLToPath(new URL(`../public/feature-assets/${directory}`, import.meta.url)),
+      join(root, 'dist', 'feature-assets', directory), 'junction');
+  }
   writeFileSync(join(root, 'dist', 'index.js'), `localStorage.getItem("${SKIN_PICK_STORAGE_KEY}:"+id)`);
   const run = mode => spawnSync(process.execPath, [script], { cwd: root, env: { ...process.env, GARAGE_VFX_RELEASE_MODE: mode }, encoding: 'utf8' });
   const locked = run('coming-soon');
   assert.equal(locked.status, 1, locked.stdout);
   assert.match(locked.stderr, /skin pick/i);
   assert.equal(run('released').status, 0, 'key is scoped to the locked build only');
+});
+
+test('Wave 3 demo and race modules are build-time locked out of coming-soon bundles', () => {
+  const locked = selectGarageReleaseBuild('production', undefined);
+  assert.match(locked.aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);
+  assert.match(locked.aliases['#wave3-demo-ui'], /Wave3DemoLocked\.vue$/);
+  const trial = selectGarageReleaseBuild('production', 'trial');
+  assert.match(trial.aliases['#wave3-demo-race'], /wave3-race-events\.ts$/);
+  assert.match(trial.aliases['#wave3-demo-ui'], /Wave3DemoEntry\.vue$/);
+});
+
+test('the public released strategy must also exclude local-only demo rewards and UI', () => {
+  const aliases = selectGarageReleaseBuild('production', 'released').aliases;
+  assert.match(aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);
+  assert.match(aliases['#wave3-demo-ui'], /Wave3DemoLocked\.vue$/);
+});
+
+test('trial-only live mission UI and race port cannot leak into locked releases', () => {
+  for (const mode of ['coming-soon', 'released']) {
+    const aliases = selectGarageReleaseBuild('production', mode).aliases;
+    assert.match(aliases['#wave3-demo-mission-ui'], /GarageMissionBoardLocked\.vue$/);
+    assert.match(aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);
+  }
+  const trial = selectGarageReleaseBuild('production', 'trial').aliases;
+  assert.match(trial['#wave3-demo-mission-ui'], /GarageMissionBoard\.vue$/);
+  assert.match(trial['#wave3-demo-race'], /wave3-race-events\.ts$/);
+});
+
+test('production audit rejects missing public Garage artwork in locked and Pages trial bundles', async t => {
+  const { copyFileSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { spawnSync } = await import('node:child_process');
+  const root = mkdtempSync(join(tmpdir(), 'garage-public-artwork-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  for (const directory of ['dist', 'scripts', 'src']) mkdirSync(join(root, directory));
+  const script = join(root, 'scripts', 'assert-production-locked.mjs');
+  copyFileSync(new URL('../scripts/assert-production-locked.mjs', import.meta.url), script);
+  const catalog = readFileSync(new URL('../src/appearance.ts', import.meta.url), 'utf8');
+  writeFileSync(join(root, 'package.json'), '{"type":"module"}');
+  writeFileSync(join(root, 'src', 'appearance.ts'), catalog + '\nPAINTS["test-violet"] = { ...PAINTS.pearl };\n');
+
+  for (const mode of ['coming-soon', 'trial']) {
+    const result = spawnSync(process.execPath, [script], {
+      cwd: root, env: { ...process.env, GARAGE_VFX_RELEASE_MODE: mode }, encoding: 'utf8',
+    });
+    assert.match(result.stderr, /public Garage artwork missing: .*roadster@3x\.webp/, mode);
+    assert.match(result.stderr, /public Garage artwork missing: .*paint-cards\/test-violet@3x\.webp/, mode);
+    assert.match(result.stderr, /public Garage artwork missing: .*crimson@3x\.webp/, mode);
+    assert.match(result.stderr, /public Garage artwork missing: .*mission-race@3x\.webp/, mode);
+    assert.match(result.stderr, /public Garage artwork missing: .*trophy-gold@3x\.webp/, mode);
+    assert.equal(result.status, 1, mode);
+  }
 });

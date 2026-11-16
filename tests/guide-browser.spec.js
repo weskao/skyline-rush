@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
+import { ciTimeout } from './helpers/ci.js';
 
 test.use({ guideSeen: false });
 
@@ -48,10 +49,11 @@ test('first visit keeps the home screen clear; Controls opens the keyboard guide
   await expect(page.locator('#tutorial-coach')).toBeHidden();
 });
 
-test('first Start opens practice; Skip races the selected track and is remembered', async ({ page }) => {
+test('first Start offers practice; Skip races the selected track and is remembered', async ({ page }) => {
   await page.goto('/');
   const track = await page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
   await page.locator('#start-button').click();
+  await page.locator('#guide-practice').click();
   await expect(page.locator('#tutorial-coach')).toHaveAttribute('data-step', 'throttle');
   await expect(page.locator('#tutorial-exit')).toHaveText('Skip practice'); // not a second "Skip" beside Skip step
   await page.locator('#pause-button').click();
@@ -91,13 +93,15 @@ test('guide follows custom key bindings and remains usable with blocked storage'
 test('opening guide from paused controls does not resume the race', async ({ page }) => {
   await page.goto('/');
   await page.locator('#start-button').click();
-  await page.locator('#tutorial-exit').click();
-  await expect(page.locator('#race-status')).toHaveText('RACING');
+  await page.locator('#guide-start-race').click();
+  await expect(page.locator('#race-status')).toHaveText(/COUNTDOWN|RACING/);
   await page.keyboard.press('Escape');
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
   await openGuide(page);
+  await expect(page.locator('#guide-close')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('#guide-screen')).toBeHidden();
+  await expect(page.locator('#controls-button')).toBeFocused();
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
 });
 
@@ -126,6 +130,15 @@ test(`rings and supplies guide explains all ring types, road pickups and mystery
   await expect(panel.locator('[data-i18n="guide.items.pickup.can.title"]')).toHaveText('Energy Canister (Orange)');
   await expect(panel.locator('[data-i18n="guide.items.pickup.tank.title"]')).toHaveText('High-Capacity Tank (Gold)');
   await expect(panel.locator('[data-i18n="guide.items.pickup.overcharge.title"]')).toHaveText('Overcharge Core (Rainbow)');
+  const stages = panel.locator('.pickup-animation-stage');
+  await expect(stages).toHaveCount(4);
+  for (const tier of ['cell', 'can', 'tank', 'overcharge']) {
+    const stage = panel.locator(`.pickup-animation-stage[data-tier="${tier}"]`);
+    await expect(stage).toHaveCount(1);
+    await stage.scrollIntoViewIfNeeded();
+    await expect(stage.locator('.pickup-3d-canvas')).toBeVisible();
+    await expect(stage, `live 3D ${tier} draws at every viewport`).toHaveAttribute('data-live', 'true', { timeout: ciTimeout(8000) });
+  }
 
   // Mystery powers
   await expect(panel.locator('[data-i18n="guide.items.power.shield.title"]')).toHaveText('Energy Shield');
@@ -156,3 +169,17 @@ test(`rings and supplies guide explains all ring types, road pickups and mystery
   await expect(page.locator('#guide-screen')).toBeHidden();
 });
 }
+
+test('road pickup gallery keeps its artwork animated by default but stops for reduced motion', async ({ page }) => {
+  await page.goto('/');
+  await openGuide(page);
+  await page.locator('[data-guide-device="items"]').click();
+  const stage = page.locator('.pickup-animation-stage').first();
+  await stage.scrollIntoViewIfNeeded();
+  await expect(stage.locator('.pickup-3d-canvas')).toBeVisible();
+  await expect(stage).toHaveAttribute('data-live', 'true', { timeout: ciTimeout(8000) });
+  await expect(stage).toHaveAttribute('data-motion', 'running');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(stage).toHaveAttribute('data-motion', 'paused');
+  await expect(stage.locator('.pickup-3d-canvas')).toBeVisible();
+});

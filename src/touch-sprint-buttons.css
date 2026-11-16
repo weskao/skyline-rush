@@ -1,0 +1,205 @@
+/* Registered so state colours cross-fade; browsers without @property switch instantly. */
+@property --rim { syntax: '<color>'; inherits: true; initial-value: #8794a8; }
+@property --face-top { syntax: '<color>'; inherits: true; initial-value: #384558; }
+@property --face-bottom { syntax: '<color>'; inherits: true; initial-value: #1c2836; }
+
+/* Right-thumb cluster: NITRO, GAS, BOOST and FLY share one chamfered bezel. */
+#touch-controls :is(.touch-actions, .touch-pedals) > :is(.touch-nitro, .touch-boost, .touch-fly, .touch-gas) {
+  --cut: polygon(7px 0, calc(100% - 7px) 0, 100% 7px, 100% calc(100% - 7px), calc(100% - 7px) 100%, 7px 100%, 0 calc(100% - 7px), 0 7px);
+  /* Flame reach as a share of the button. Keep in step with scripts/generate-sprint-flame.py. */
+  --flame-top: .7;
+  --flame-side: .18;
+  --flame-bottom: .1;
+  isolation: isolate;
+  overflow: visible;
+  opacity: var(--touch-opacity, 1);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .035em;
+  text-shadow: 0 1px 1px #090717;
+  transition: --rim .2s, --face-top .2s, --face-bottom .2s;
+}
+
+#touch-controls :is(.touch-actions, .touch-pedals) > button:not(.is-positioned) { position: relative; }
+
+/* A flame passes behind its neighbours: BOOST sits under NITRO, both sit under FLY and GAS. */
+#touch-controls .touch-boost { z-index: 0; }
+#touch-controls .touch-nitro { z-index: 1; }
+#touch-controls :is(.touch-fly, .touch-gas) { z-index: 2; }
+
+/* Clip the artwork only. The whole rectangular button still receives pointer input. */
+#touch-controls :is(.touch-actions, .touch-pedals) > button::before,
+#touch-controls :is(.touch-actions, .touch-pedals) > button::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  clip-path: var(--cut);
+}
+
+#touch-controls :is(.touch-actions, .touch-pedals) > button::before {
+  inset: -1px;
+  z-index: -2;
+  /* The shaded side stays a darker rim, never a near-background colour: #162035 here erased the lower-right edges. */
+  background: linear-gradient(148deg, color-mix(in srgb, var(--rim), white 36%), var(--rim) 28%, color-mix(in srgb, var(--rim), black 30%) 75%, var(--rim));
+}
+
+#touch-controls :is(.touch-actions, .touch-pedals) > button::after {
+  inset: 1px;
+  z-index: -1;
+  background: linear-gradient(160deg, #ffffff26, transparent 30%), linear-gradient(180deg, var(--face-top), var(--face-bottom) 85%);
+}
+
+#touch-controls :is(.touch-actions, .touch-pedals) > button > svg:not(.touch-fly-lock) {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  pointer-events: none;
+}
+
+/* State colours derive from the :root NITRO / BOOST / FLY tokens (style.css); greys stay literal. */
+#touch-controls .touch-nitro {
+  --rim: var(--nitro);
+  --flame-core: #fff;
+  --flame-tip: var(--nitro-text);
+  --flame: var(--nitro);
+  --flame-edge: color-mix(in srgb, var(--nitro), black 45%);
+  --face-top: var(--nitro-deep);
+  --face-bottom: color-mix(in srgb, var(--nitro-deep), black 65%);
+  color: var(--nitro-text);
+}
+
+/* Not pressable yet: a muted bezel whose face fills from the bottom to the charge (--charge, 0..1 in 2% steps from sprint-ready-feedback.ts). */
+#touch-controls .touch-nitro[data-nitro-state="charging"] {
+  --rim: color-mix(in srgb, var(--nitro), #8794a8 55%);
+  --face-top: color-mix(in srgb, var(--nitro-deep), #1c2836 55%);
+  --face-bottom: color-mix(in srgb, var(--nitro-deep), black 75%);
+  color: color-mix(in srgb, var(--nitro-text), #8794a8 45%);
+}
+#touch-controls .touch-nitro[data-nitro-state="charging"]::after {
+  --level: calc(var(--charge, 0) * 100%);
+  background: linear-gradient(to top, color-mix(in srgb, var(--nitro) 40%, transparent) var(--level), var(--nitro) var(--level), var(--nitro) calc(var(--level) + 1.5px), transparent 0),
+    linear-gradient(180deg, var(--face-top), var(--face-bottom) 85%);
+}
+#touch-controls .touch-nitro[data-nitro-state="charging"] > svg { filter: grayscale(.7); opacity: .7; }
+#touch-controls .touch-nitro[data-nitro-state="ready"] { --rim: color-mix(in srgb, var(--nitro), white 25%); --face-top: color-mix(in srgb, var(--nitro), black 58%); --flame-rest: .55; --flame-alpha: .92; }
+#touch-controls .touch-nitro[data-nitro-state="active"] { --rim: color-mix(in srgb, var(--nitro), white 70%); --face-top: color-mix(in srgb, var(--nitro), black 45%); --face-bottom: color-mix(in srgb, var(--nitro), black 78%); }
+#touch-controls .touch-nitro[data-nitro-state="disabled"] { --rim: #8794a8; --face-top: #384558; --face-bottom: #1c2836; }
+#touch-controls .touch-nitro[data-nitro-state="disabled"] > svg { filter: grayscale(1); }
+
+#touch-controls .touch-boost {
+  --rim: var(--boost);
+  --flame-core: #fff;
+  --flame-tip: var(--boost-text);
+  --flame: var(--boost);
+  --flame-edge: color-mix(in srgb, var(--boost), black 40%);
+  --face-top: var(--boost-deep);
+  --face-bottom: color-mix(in srgb, var(--boost-deep), black 55%);
+  color: var(--boost-text);
+}
+
+#touch-controls .touch-boost.is-held {
+  --rim: color-mix(in srgb, var(--boost), white 45%);
+  --face-top: color-mix(in srgb, var(--boost), black 40%);
+  --face-bottom: color-mix(in srgb, var(--boost), black 75%);
+}
+
+/* BOOST is ready whenever fuel is left, so its resting flame is only embers at the base. */
+#touch-controls .touch-boost[data-boost-state="ready"] { --rim: color-mix(in srgb, var(--boost), white 15%); --face-top: color-mix(in srgb, var(--boost), black 60%); --flame-rest: .3; --flame-alpha: .8; }
+#touch-controls .touch-boost[data-boost-state="disabled"] {
+  --rim: #8794a8;
+  --face-top: #384558;
+  --face-bottom: #1c2836;
+}
+/* Empty tank. Any refuel makes BOOST ready at once, so there is no progress to fill: a dark, dimmed BOOST tint instead of braking grey. */
+#touch-controls .touch-boost[data-boost-state="charging"] {
+  --rim: color-mix(in srgb, var(--boost), #8794a8 50%);
+  --face-top: color-mix(in srgb, var(--boost-deep), black 45%);
+  --face-bottom: color-mix(in srgb, var(--boost-deep), black 70%);
+  color: color-mix(in srgb, var(--boost-text), #8794a8 45%);
+}
+#touch-controls .touch-boost[data-boost-state="charging"] > svg { filter: grayscale(.8); opacity: .55; }
+
+#touch-controls :is([data-nitro-state="active"], [data-boost-state="active"]) { --flame-rest: 1; --flame-alpha: 1; --flame-loop: .7s; }
+
+#touch-controls .touch-fly {
+  --rim: var(--fly);
+  --face-top: var(--fly-deep);
+  --face-bottom: #0c2030;
+  color: var(--fly-text);
+}
+
+#touch-controls .touch-fly:is(.is-held, [aria-pressed="true"]) { --rim: #c9f4ff; --face-top: #2f86ad; --face-bottom: #123c55; }
+#touch-controls .touch-fly:disabled {
+  --rim: #8794a8;
+  --face-top: #384558;
+  --face-bottom: #1c2836;
+  opacity: calc(var(--touch-opacity, 1) * .8);
+  color: #a4adb5;
+}
+
+#touch-controls .touch-gas {
+  --rim: #6fe0a0;
+  --face-top: #1f6a47;
+  --face-bottom: #0c2a1e;
+  color: #e9fff2;
+}
+
+#touch-controls .touch-gas.is-held { --rim: #b8ffd6; --face-top: #2fa56c; --face-bottom: #14452f; }
+
+#controls-panel .controls-preview-keys .touch-nitro { color: var(--nitro-text); border-color: var(--nitro); }
+#controls-panel .controls-preview-keys .touch-gas { background: #1f6a47; color: #e9fff2; border-color: #6fe0a0; }
+
+@media (forced-colors: active) {
+  #touch-controls :is(.touch-actions, .touch-pedals) > :is(.touch-nitro, .touch-boost, .touch-fly, .touch-gas) { border-color: ButtonText; }
+}
+
+/* Flame box around the whole button, behind the bezel. sprint-ready-feedback.ts sets data-flame. */
+#touch-controls .sprint-ready-effect {
+  --flame-box: calc(1 + var(--flame-top) + var(--flame-bottom));
+  --button-top: calc(var(--flame-top) / var(--flame-box) * 100%);
+  position: absolute;
+  inset: calc(var(--flame-top) * -100%) calc(var(--flame-side) * -100%) calc(var(--flame-bottom) * -100%);
+  z-index: -3;
+  display: none;
+  pointer-events: none;
+}
+
+#touch-controls [data-flame="on"] > .sprint-ready-effect { display: block; }
+
+/* One alpha-only flipbook strip masks a heat gradient: white-hot at the button, coloured at the tips. */
+#touch-controls .sprint-ready-effect::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 68% at 50% 67%, var(--flame-core) 38%, var(--flame-tip) 50%, var(--flame) 72%, var(--flame-edge));
+  mask: url('./sprint-flame-strip.webp') 0 0 / 1600% 100% no-repeat;
+  opacity: var(--flame-alpha, 0);
+  /* Squash toward the button's top edge: the tongues shorten, the side glow stays. */
+  transform: scaleY(var(--flame-rest, .2));
+  transform-origin: 50% var(--button-top);
+  transition: opacity .25s, transform .3s ease-out;
+}
+
+#touch-controls :is([data-nitro-state="ready"], [data-nitro-state="active"], [data-boost-state="ready"], [data-boost-state="active"]) > .sprint-ready-effect::before {
+  animation: sprint-flame var(--flame-loop, 1.15s) steps(16, jump-none) infinite;
+}
+
+@keyframes sprint-flame { to { mask-position: 100% 0; } }
+
+/* Shock ring on the button outline; sprint-ready-feedback.ts plays it at the readiness cue. */
+#touch-controls .sprint-ready-effect::after {
+  content: '';
+  position: absolute;
+  inset: var(--button-top) calc(var(--flame-side) / (1 + 2 * var(--flame-side)) * 100%) calc(var(--flame-bottom) / var(--flame-box) * 100%);
+  border: 2px solid var(--flame-tip);
+  border-radius: 9px;
+  opacity: 0;
+}
+
+@media (forced-colors: active), (prefers-reduced-motion: reduce) {
+  #touch-controls [data-flame] > .sprint-ready-effect { display: none; }
+}

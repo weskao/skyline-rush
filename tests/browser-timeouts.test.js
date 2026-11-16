@@ -65,6 +65,15 @@ test('World Tour rejects invalid worktree ports before creating a server command
   }
 });
 
+// The gate blocks every home-screen push: 2 local workers ran it in 100 s against 187-194 s on one. 4 workers ran 73-135 s but
+// timed out 4 tests in 2 of 5 runs while other sessions held the machine at a load above 150 (2026-11-14).
+test('the pre-push layout gate runs both Playwright halves on 2 workers', () => {
+  const script = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).scripts['test:layout'];
+  const runs = script.split('&&').filter(part => part.includes('playwright test'));
+  assert.equal(runs.length, 2);
+  for (const run of runs) assert.match(run, /--workers=2\b/, run.trim());
+});
+
 test('the pre-push layout gate runs on a free port, not the default one a stray server may hold', async () => {
   const hook = readFileSync(new URL('../.githooks/pre-push', import.meta.url), 'utf8');
   const pick = hook.match(/^PLAYWRIGHT_PORT=\$\((.+)\)$/m);
@@ -145,6 +154,35 @@ test('browser specs never poll game state with a counted wall-clock sleep', () =
   assert.deepEqual(offenders, [], 'Poll per frame until the game decides, bounded by race.elapsed (see .claude/rules/browser-test-stability.md)');
 });
 
+// A shim that stalled every requestAnimationFrame callback charged the results credit roll's second rAF loop too:
+// 17 slow frames cost 39 x 300 ms, past the 10 s expect (result-actions slow-frame test, 2026-11-15).
+test('a slow-frame shim stalls each frame once, not each animation-frame callback', () => {
+  const offenders = FILES.flatMap(file => [...readFileSync(new URL(file, import.meta.url), 'utf8')
+    .matchAll(/window\.requestAnimationFrame\s*=[\s\S]{0,300}?while\s*\(performance\.now\(\)/g)]
+    .filter(([shim]) => !shim.includes('stalledFrame')).map(([shim]) => `tests/${file}: ${shim.split('\n')[0].trim()}`));
+  assert.deepEqual(offenders, [], 'Stall only when the frame timestamp changes (stalledFrame); see .claude/rules/browser-test-stability.md');
+});
+
+// Overlays enter with a transform; a rect read mid-entry is shifted and can be off by a float32 ULP: the Garage car picker
+// thumbnail measured 144.00001526 px in 1 of 30 runs, the paused Race again button 43.99998474 px (2026-11-15).
+// After opening the Garage, pause, results or history, a spec settles the overlay (settled()/openGarage()) before measuring.
+const OVERLAY_OPENER = /#garage-button'\)\.(?:click|tap)\(|#pause-button'\)\.(?:click|tap)\(|data-open-history[^;]*\.(?:click|tap)\(|#race-overlay'\)\)\.toBeVisible\(/;
+const OVERLAY_SETTLE = /\b(?:settled|openGarage)\(/;
+const RECT_READ = /getBoundingClientRect|\.boundingBox\(\)/;
+
+test('overlay geometry is measured after the entry animation settles', () => {
+  const offenders = FILES.flatMap(file => {
+    let opened = 0;
+    return readFileSync(new URL(file, import.meta.url), 'utf8').split('\n').flatMap((line, i) => {
+      if (/\btest\(['`]/.test(line)) opened = 0;
+      if (OVERLAY_SETTLE.test(line)) opened = 0;
+      else if (OVERLAY_OPENER.test(line)) opened = i + 1;
+      return opened && RECT_READ.test(line) ? [`tests/${file}:${i + 1} (overlay opened on line ${opened})`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'await settled(<overlay locator>) or openGarage() from tests/helpers/test.js before measuring');
+});
+
 // The keyboard full-practice tests ran on the 135 s default while their touch twins had 720 s; a passing CI run took
 // 1.7 min, so slower runners timed out mid-lesson (develop, 2026-11-07). The shared flow helper owns the budget.
 test('every full practice run declares the full-practice budget', () => {
@@ -154,13 +192,57 @@ test('every full practice run declares the full-practice budget', () => {
   assert.match(spec, /real touch controls finish practice[\s\S]{0,400}test\.setTimeout\(FULL_PRACTICE_BUDGET\)/);
 });
 
-test('a ?look=3d spec gives its countdown an explicit CI budget', () => {
-  // CPU-only CI draws a ?look=3d High frame in ~0.5 s and the 3 s countdown needs ~70 frames (each clamped to 0.05 s),
+test('detailed Coast and Neon specs give the countdown an explicit CI budget', () => {
+  // CPU-only CI draws a detailed Coast or Neon frame in ~0.5 s and the 3 s countdown needs ~70 frames (each clamped to 0.05 s),
   // so GO came after the 30 s default expect on develop (CI 42525271964, 42538999660).
-  const offenders = FILES.filter(file => file.endsWith('.spec.js')).flatMap(file => {
-    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
-    return source.includes("gameplaySearch: '?look=3d'") ? source.split('\n').flatMap((line, i) =>
-      line.includes("toHaveText('RACING')") ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []) : [];
+  const offenders = ['coast-scenery', 'neon-look', 'shader-warmup', 'black-frame'].flatMap(name => {
+    const file = `tests/${name}-browser.spec.js`;
+    return readFileSync(new URL(`../${file}`, import.meta.url), 'utf8').split('\n').flatMap((line, i) =>
+      line.includes("toHaveText('RACING')") ? [`${file}:${i + 1}: ${line.trim()}`] : []);
   });
   assert.deepEqual(offenders, [], "Pass { timeout: ciTimeout(30000) } to the RACING wait (.claude/rules/browser-test-stability.md)");
+});
+
+// A spec that spawns its own server on a fixed default port collides with PLAYWRIGHT_PORT: Vite --strictPort exited on
+// EADDRINUSE and the readiness poll accepted the preview server already there, which has no diag relay (404, no beat).
+test('a spec that spawns a server takes a free port and fails loudly when the server exits', () => {
+  const offenders = FILES.flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    if (!/\bspawn\([^)]*vite/.test(source)) return [];
+    return [
+      ...(/process\.env\.\w+\s*\|\|\s*\d{4,5}\b/.test(source) ? [`tests/${file}: defaults its server port to a fixed number`] : []),
+      ...(!/\.exitCode\b/.test(source) ? [`tests/${file}: readiness never checks whether the spawned server exited`] : []),
+    ];
+  });
+  assert.deepEqual(offenders, [], 'Listen on port 0 for a free port and throw if server.exitCode !== null (diag-relay-browser.spec.js)');
+});
+
+// "Something changed" passed on the live loop's own HUD tick, then a one-shot read asserted all eight minimap markers had
+// moved before the stepped frames were drawn (volcanic-crown, 2 in 3 runs). Poll the asserted condition itself.
+test('browser specs poll the condition they assert, not a weaker change that a one-shot read then judges', () => {
+  const offenders = FILES.flatMap(file => readFileSync(new URL(file, import.meta.url), 'utf8').split('\n')
+    .flatMap((line, i, lines) => /await expect\.poll\(.*\)\.not\.toEqual\(/.test(line) && /=\s*await page\.evaluate\(/.test(lines[i + 1] ?? '')
+      ? [`tests/${file}:${i + 2}: ${lines[i + 1].trim()}`] : []));
+  assert.deepEqual(offenders, [], 'Put the final assertion inside expect.poll (.claude/rules/browser-test-stability.md)');
+});
+
+// In-race cues share confirmation pitches (a cell pickup starts at 880 Hz); a slow runner left the race driving long enough
+// to collect pickups, so "the result chime played once" counted 4 (audio-feedback, 1 in 6 runs at 6 workers).
+test('a spec counting Web Audio notes by pitch leaves out notes scheduled during the race', () => {
+  const offenders = FILES.filter(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    return source.includes('OscillatorNode.prototype.start') && /\.filter\(note => note === /.test(source) && !/\['countdown', 'racing'\]\.includes\(document\.body\.dataset\.phase\)/.test(source);
+  }).map(file => `tests/${file}`);
+  assert.deepEqual(offenders, [], "Skip notes while data-phase is 'countdown' or 'racing' (audio-feedback-browser.spec.js)");
+});
+
+// Trap (2026-11-17): the gameplayPage fixture has already loaded the game once (no saved car, so the Roadster) and
+// that page keeps fetching lazily. A spec that started counting requests and then navigated again also counted the
+// old page's late roadster2.glb (crimson-gt-browser: five tests red). watchRequests leaves that page first.
+test('a spec counting requests on the gameplay page leaves the fixture page first (watchRequests)', () => {
+  const offenders = FILES.filter(file => file !== 'helpers/gameplay-browser.js').filter(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    return source.includes('gameplayPage') && /\.on\(\s*['"]request['"]/.test(source);
+  });
+  assert.deepEqual(offenders, [], 'Count requests with watchRequests(page, pattern) from tests/helpers/gameplay-browser.js (see .claude/rules/browser-test-stability.md)');
 });

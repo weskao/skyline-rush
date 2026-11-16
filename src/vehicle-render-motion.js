@@ -37,3 +37,15 @@ export function smoothDriftYaw(yaw, drift, dt) {
 export function poseFor(mesh, car, previous, alpha) {
   return previous && alpha < 1 ? interpolateMotion(car, previous, alpha, mesh.userData.renderMotion ??= {}) : car;
 }
+
+// NITRO/BOOST ignition squat (presentation only): the nose lifts SQUAT_PITCH radians (about 2 degrees) at a full squat share.
+const SQUAT_PITCH = 0.034;
+export const squatPitch = share => SQUAT_PITCH * Math.max(0, Math.min(1, Number.isFinite(share) ? share : 0));
+
+// Lift that keeps the rear tyres on the road while the car pitches nose-up about its origin: the car squats on its rear axle.
+export function rearAxleLift(mesh, pitch) {
+  if (!pitch) return 0;
+  let rear = 0;
+  for (const wheel of mesh.userData.wheels ?? []) rear = Math.max(rear, wheel.position.z);
+  return rear * mesh.scale.z * Math.sin(pitch);
+}

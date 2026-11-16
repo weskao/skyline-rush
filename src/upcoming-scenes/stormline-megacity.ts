@@ -77,10 +77,10 @@ function addRoads(group: THREE.Group) {
     new THREE.Vector3(25, 26, -135), new THREE.Vector3(92, 23, -146),
   ]).getPoints(28);
   const street = new THREE.MeshStandardMaterial({
-    color: PALETTE.asphalt, metalness: 0.72, roughness: 0.24, side: THREE.DoubleSide,
+    color: PALETTE.asphalt, metalness: 0.32, roughness: 0.55, side: THREE.DoubleSide,
   });
   const bridge = new THREE.MeshStandardMaterial({
-    color: 0x1b213b, metalness: 0.62, roughness: 0.3, side: THREE.DoubleSide,
+    color: 0x1b213b, metalness: 0.28, roughness: 0.54, side: THREE.DoubleSide,
   });
   const under = new THREE.MeshStandardMaterial({ color: 0x111425, metalness: 0.25, roughness: 0.7 });
   const interchange = new THREE.Group();
@@ -181,7 +181,7 @@ function addAtmosphere(group: THREE.Group, ground: THREE.Vector3[]) {
   const reflections = new THREE.Group();
   reflections.name = 'stormline:wet-reflections';
   const glint = new THREE.MeshBasicMaterial({
-    color: PALETTE.cyan, transparent: true, opacity: 0.32, depthWrite: false,
+    color: PALETTE.cyan, transparent: true, opacity: 0.23, depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
   const glint2 = glint.clone();
@@ -207,10 +207,10 @@ function addAtmosphere(group: THREE.Group, ground: THREE.Vector3[]) {
     haze.add(layer);
   }
   group.add(haze);
-  group.add(new THREE.HemisphereLight(0x729dc8, 0x160f2c, 1.9));
+  group.add(new THREE.HemisphereLight(0x729dc8, 0x160f2c, .98));
   for (const [x, z, color] of [[-23, -44, PALETTE.cyan], [26, -92, PALETTE.magenta],
     [-23, -155, PALETTE.violet]] as const) {
-    const light = new THREE.PointLight(color, 90, 74, 2);
+    const light = new THREE.PointLight(color, 55, 64, 2);
     light.position.set(x, 14, z);
     group.add(light);
   }

@@ -1,6 +1,5 @@
 // Visual controls only: none of these values are consumed by the race simulation.
 // Index 0 is the English label; the UI translates it through the `vfx.<key>` catalog entry (vfxLabelKey).
-import { look3d } from './look-gate.ts';
 export const vfxLabelKey = (key: string): string => `vfx.${key}`;
 export const SHOWCASE_VIEWS = Object.freeze(['drive','front','rear','left','right','orbit'] as const);
 export const VFX_RANGES = {
@@ -20,7 +19,7 @@ export const VFX_RANGES = {
   speedLines: ['Speed line density', 0, 1, 0.05, 0.45],
   motionBlur: ['Motion blur strength', 0, 1, 0.05, 0.25],
   fov: ['Camera FOV offset', 0, 14, 1, 7],
-  shake: ['Camera shake', 0, 1, 0.05, 0.15],
+  shake: ['Camera shake', 0, 1, 0.05, 0.2],
   bloom: ['Bloom intensity', 0, 1.5, 0.05, 0.55],
 } as const satisfies Record<string, readonly [string, number, number, number, number]>;
 export type VfxRangeKey = keyof typeof VFX_RANGES;
@@ -70,7 +69,10 @@ export type SprintPhase = 'ready' | 'ignition' | 'sustain' | 'recovery';
 export type SprintInput = {
   phase: string; nitro: boolean; boost: boolean; speed: number; cap: number; dt: number;
   enabled: boolean; quality: VfxQuality; reducedMotion: boolean; ultra?: boolean;
+  chain?: number; // charges spent in the running NITRO burst (car.nitroBurst)
 };
+// NITRO ×1/×2/×3 scale the sprint frame: longer, brighter flames, denser speed lines, wider FOV. Presentation only.
+export const NITRO_CHAIN_LIFT: readonly number[] = [1, 1.2, 1.4];
 type SprintChannel = { phase: SprintPhase; intensity: number; ignition: number; age: number; release: number };
 const finite = (value: number, fallback = 0): number => Number.isFinite(value) ? value : fallback;
 const unit = (value: number): number => Math.max(0, Math.min(1, finite(value)));
@@ -78,16 +80,21 @@ const channel = (): SprintChannel => ({ phase: 'ready', intensity: 0, ignition: 
 
 export function createSprintVfx() {
   const nitro = channel(), boost = channel();
-  const frame = { nitro, boost, power: 0, fov: 0, blur: 0, particles: 0, nitroMix: 0 };
+  /** `fov`: eased sprint share for the camera (FOV, dolly, rumble). `kick`: seconds since the last fresh ignition. `punch`: its 0–1 surge.
+   * `squat`: the car's 0–1 nose lift on that ignition, peaking before the punch so the camera follows late. */
+  const frame = { nitro, boost, power: 0, fov: 0, blur: 0, particles: 0, nitroMix: 0, kick: 1, punch: 0, squat: 0 };
+  let lift = 1;
   const clear = (part: SprintChannel): void => {
     part.phase = 'ready'; part.intensity = part.ignition = part.age = part.release = 0;
   };
   const reset = (): typeof frame => {
     clear(nitro); clear(boost);
-    frame.power = frame.fov = frame.blur = frame.particles = frame.nitroMix = 0;
+    frame.power = frame.fov = frame.blur = frame.particles = frame.nitroMix = frame.punch = frame.squat = 0; frame.kick = 1;
+    lift = 1;
     return frame;
   };
   const advance = (part: SprintChannel, active: boolean, dt: number, speedScale: number): void => {
+    if (active && part.phase === 'ready') frame.kick = 0; // a flicker re-ignites from 'recovery' and must not kick again
     if (active && (part.phase === 'ready' || part.phase === 'recovery')) {
       part.phase = 'ignition'; part.age = 0;
     } else if (!active && (part.phase === 'sustain' || part.phase === 'ignition')) {
@@ -109,6 +116,8 @@ export function createSprintVfx() {
   };
   return {
     reset,
+    /** The last frame: world.js poses the car before this frame's update. */
+    frame,
     update(input: SprintInput): typeof frame {
       // A paused game must not consume an ignition window or advance a fade.
       if (input.phase === 'paused') return frame;
@@ -117,23 +126,42 @@ export function createSprintVfx() {
       const cap = Math.max(40, finite(input.cap, 110));
       const speed = Math.max(0, finite(input.speed));
       const speedScale = unit((speed - 12) / (cap - 12));
+      frame.kick = Math.min(1, frame.kick + dt);
       advance(nitro, !!input.nitro, dt, speedScale);
       advance(boost, !!input.boost, dt, speedScale);
       // Independent channels never add; simultaneous activation is capped at one.
       frame.power = unit(Math.max(nitro.intensity, boost.intensity * 0.8));
       frame.nitroMix = nitro.intensity > 0 ? unit(nitro.intensity / Math.max(0.01, frame.power)) : 0;
+      // Only a chained NITRO goes past one; eased so a new charge swells and the end of NITRO settles back.
+      const level = Math.min(3, Math.max(1, Math.round(finite(input.chain ?? 1, 1))));
+      lift += ((input.nitro ? NITRO_CHAIN_LIFT[level - 1]! : 1) - lift) * Math.min(1, dt * 8);
+      frame.power *= 1 + (lift - 1) * frame.nitroMix;
       const tier = input.quality === 'high' ? 1 : input.quality === 'medium' ? 0.65 : 0.3;
       const comfort = input.reducedMotion;
       frame.particles = frame.power * (comfort ? 0.2 : tier);
       // FOV is camera framing, not GPU cost: one strength on every tier (pre-Wave 2 behaviour).
-      frame.fov = comfort ? 0 : frame.power;
-      frame.blur = comfort ? 0 : Math.min(1, frame.power * tier * (input.ultra && look3d() ? 0.96 : 0.6)); // Ultra only (`?look=3d`): stronger lens radial blur, same pass
+      // Ramped over 0.3 s instead of jumping with the ignition; the camera's own smoothing rounds both ends.
+      const target = comfort ? 0 : frame.power, step = dt / 0.3;
+      frame.fov = comfort || Math.abs(target - frame.fov) <= step ? target : frame.fov + Math.sign(target - frame.fov) * step;
+      frame.punch = comfort ? 0 : frame.power * sprintPunch(frame.kick);
+      frame.squat = comfort ? 0 : speedScale * sprintPunch(frame.kick * SQUAT_LEAD); // NITRO and BOOST squat alike
+      frame.blur = comfort ? 0 : Math.min(1, (frame.power + 0.5 * frame.punch) * tier * (input.ultra ? 0.96 : 0.6)); // Ultra: stronger lens radial blur, same pass
       return frame;
     },
   };
 }
 
-/** Degrees the sprint widens the chase camera: sprint strength × the player's FOV setting, 0 with VFX off. */
-export function sprintFovOffset(frame: { fov: number }, visual: { enabled: boolean; fov: number }): number {
-  return visual.enabled ? frame.fov * visual.fov : 0;
+/** Ignition punch envelope `age` seconds after a fresh NITRO/BOOST: eased in over 0.2 s, gone at 0.8 s. */
+const PUNCH_IN = 0.2, PUNCH_TIME = 0.8, PUNCH_FOV = 0.8;
+/** The squat runs the punch envelope this much faster: peak at 0.12 s, settled at 0.48 s. */
+const SQUAT_LEAD = 5 / 3;
+export function sprintPunch(age: number): number {
+  if (!(age >= 0 && age < PUNCH_TIME)) return 0;
+  if (age < PUNCH_IN) { const x = age / PUNCH_IN; return x * x * (3 - 2 * x); }
+  return (1 - (age - PUNCH_IN) / (PUNCH_TIME - PUNCH_IN)) ** 2;
+}
+
+/** Degrees the sprint widens the chase camera: sprint strength plus the ignition punch × the player's FOV setting, 0 with VFX off. */
+export function sprintFovOffset(frame: { fov: number; punch?: number }, visual: { enabled: boolean; fov: number }): number {
+  return visual.enabled ? (frame.fov + PUNCH_FOV * (frame.punch ?? 0)) * visual.fov : 0;
 }

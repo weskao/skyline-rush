@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 
-// Attach the bundled clips to the current release (and, with `onHighlight`, to its first highlight) on the served build.
+// Attach bundled media fixtures so the tests can run with any current release notes.
 const CLIPS = 'whats-new/0.24.0/air-road-chain';
 const VIDEO = {
   desktop: { src: { en: `${CLIPS}.desktop.en.mp4`, 'zh-TW': `${CLIPS}.desktop.zh-TW.mp4` }, poster: { en: `${CLIPS}.desktop.en.jpg`, 'zh-TW': `${CLIPS}.desktop.zh-TW.jpg` } },
@@ -13,7 +13,16 @@ async function openNotes(page, gameplayURL, onHighlight = false, launch = false)
     const response = await route.fetch();
     const source = await response.text();
     if (!source.includes('export const CURRENT_RELEASE')) throw new Error('Missing CURRENT_RELEASE in release-notes.ts');
-    await route.fulfill({ response, body: `${source}\nif (CURRENT_RELEASE) CURRENT_RELEASE.video = ${JSON.stringify(VIDEO)};${onHighlight ? ` CURRENT_RELEASE.highlights[0].video = ${JSON.stringify(VIDEO)};` : ''}\n` });
+    const highlightMedia = onHighlight ? `
+      CURRENT_RELEASE.highlights[0].video = ${JSON.stringify(VIDEO)};
+      CURRENT_RELEASE.highlights.push(${JSON.stringify({
+        id: 'test-picture', kind: 'new', image: VIDEO.desktop.poster, title: 'Fixture picture', description: 'Fixture picture',
+      })});
+    ` : '';
+    await route.fulfill({ response, body: `${source}\nif (CURRENT_RELEASE) {
+      CURRENT_RELEASE.video = ${JSON.stringify(VIDEO)};
+      ${highlightMedia}
+    }\n` });
   });
   const errors = [];
   page.on('pageerror', error => errors.push(String(error)));
@@ -363,4 +372,29 @@ test.describe('phone portrait', () => {
 
   test('a hero refused autoplay (iPhone Low Power Mode) starts inline on the first tap anywhere on the notes', ({ page, gameplayURL }) =>
     refusedHeroStartsOnFirstTouch(page, gameplayURL, target => target.tap()));
+});
+
+test.describe('short landscape', () => {
+  test.use({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
+
+  test('shows the version and poster without fetching video until the player opens the preview', async ({ page, gameplayURL }) => {
+    const requested = [];
+    page.on('request', request => { if (request.url().includes(CLIPS) && request.url().endsWith('.mp4')) requested.push(request.url()); });
+    await openNotes(page, gameplayURL, true);
+    const preview = page.getByRole('button', { name: 'Play preview' });
+    await expect(page.locator('#release-version')).toBeInViewport();
+    await expect(preview).toBeInViewport({ ratio: 1 });
+    await expect(preview.locator('img')).toHaveAttribute('src', /desktop\.en\.jpg$/);
+    expect(requested).toEqual([]);
+    await preview.press('Enter');
+    const clip = page.locator('#release-media-viewer video');
+    await expect.poll(() => playing(clip)).toBe(true);
+    await page.goBack();
+    await expect(page.locator('#release-media-viewer')).toBeHidden();
+    await expect(page.locator('#whats-new-screen')).toBeVisible();
+    await expect(preview).toBeFocused();
+    await page.goBack();
+    await expect(page.locator('#whats-new-screen')).toBeHidden();
+    await expect(page.locator('#whats-new-open')).toBeFocused();
+  });
 });

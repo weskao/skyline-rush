@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 
 for (const pageName of ['home', 'studio']) {
@@ -6,6 +7,7 @@ for (const pageName of ['home', 'studio']) {
     await page.locator('#garage-button').click();
     if (pageName === 'studio') await page.locator('#garage-studio-open').click();
     await expect(page.locator('#garage-preview #world')).toBeVisible();
+    await openGarageSection(page, 'effects');
     const image = page.locator('[data-skin="thruster-basic"] .garage-vfx-art img').first();
     await image.scrollIntoViewIfNeeded();
     await expect(image).toHaveAttribute('data-animation-active', 'true');
@@ -28,6 +30,7 @@ for (const pageName of ['home', 'studio']) {
 test('Garage store concepts animate each original gift box while retaining original fallback', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const source = page.locator('#garage-art-source-garage-store-readiness');
   await source.locator('summary').click();
   const box = source.locator('[data-wave3-asset="store-box"] img');
@@ -35,13 +38,14 @@ test('Garage store concepts animate each original gift box while retaining origi
   await expect(box).toHaveAttribute('data-animation-active', 'true');
   await expect(box).toHaveAttribute('src', /garage-animated\/store-box@3x\.gif$/);
   await expect(box).toHaveJSProperty('naturalWidth', 216);
-  await expect(box).toHaveAttribute('data-static-src', /garage-store-readiness\/raster\/store-box@3x\.png$/);
+  await expect(box).toHaveAttribute('data-static-src', /garage-store-readiness\/raster\/store-box@3x\.webp$/);
 });
 
 test('reduced-motion displays untouched original static assets, never animating GIF', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
   const icon = page.locator('[data-skin="thruster-basic"] .garage-vfx-art img');
   await icon.scrollIntoViewIfNeeded();
   await expect(icon).toHaveAttribute('data-animation-active', 'false');
@@ -53,6 +57,7 @@ test('failed GIF falls back to source WebP without changing equipped state', asy
   await page.route('**/garage-animated/thruster-ion@3x.gif', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
   const skin = page.locator('[data-skin="thruster-ion"]');
   const icon = skin.locator('img');
   await icon.scrollIntoViewIfNeeded();
@@ -64,6 +69,7 @@ test('failed GIF falls back to source WebP without changing equipped state', asy
 test('25 part-motion cards map to their own GIFs; 14 sweep cards share one CSS sweep on Home and Studio', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   await page.locator('#garage-art-source-garage-store-readiness summary').click();
   const readCards = async () => {
     const skin = await page.locator('#garage-vfx-catalog [data-skin]').evaluateAll(cards =>
@@ -94,4 +100,26 @@ test('25 part-motion cards map to their own GIFs; 14 sweep cards share one CSS s
   await page.locator('#garage-studio-open').click();
   await expect(page.locator('#garage-preview #world')).toBeVisible();
   await readCards();
+});
+
+test('VFX Off and Low use the static original art; returning to High resumes only the GIF', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await openGarageSection(page, 'effects');
+  const skin = page.locator('[data-skin="thruster-basic"]');
+  const icon = skin.locator('.garage-vfx-art img');
+  await icon.scrollIntoViewIfNeeded();
+  const owned = await skin.getAttribute('data-owned');
+  await expect(icon).toHaveAttribute('data-animation-active', 'true');
+  await page.evaluate(() => { document.body.dataset.vfxEnabled = 'false'; });
+  await expect(icon).toHaveAttribute('data-animation-active', 'false');
+  await expect(icon).toHaveAttribute('src', /raster\/thruster-basic@3x\.webp$/);
+  await page.evaluate(() => {
+    document.body.dataset.vfxEnabled = 'true';
+    document.body.dataset.vfxQuality = 'low';
+  });
+  await expect(icon).toHaveAttribute('data-animation-active', 'false');
+  await page.evaluate(() => { document.body.dataset.vfxQuality = 'high'; });
+  await expect(icon).toHaveAttribute('data-animation-active', 'true');
+  await expect(skin).toHaveAttribute('data-owned', owned ?? 'false');
 });

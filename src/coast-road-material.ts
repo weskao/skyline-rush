@@ -4,6 +4,7 @@
 // program is built once (customProgramCacheKey) and warmed before GO like every other material.
 import * as THREE from 'three';
 import { MATERIAL_MANIFEST, type MaterialFile, type MaterialMap, type MaterialTier } from './material-manifest.ts';
+import { trackLook } from './track-look.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
 /** Road material tier (TIERS gives its resolution); null keeps the procedural road (Low, also with the Ultra flag). */
@@ -12,20 +13,20 @@ export function coastRoadTier(quality: VfxQuality, ultra: boolean): MaterialTier
   return ultra ? 'ultra' : quality;
 }
 
-export function coastRoadFiles(resolution: number): Record<MaterialMap, MaterialFile> {
-  const files = MATERIAL_MANIFEST['coast-asphalt']!.files.filter(f => f.resolution === resolution);
+/** The KTX2 files of one road set (a look entry's `road`); every set has coast-asphalt's maps and resolutions. */
+export function coastRoadFiles(resolution: number, id = 'coast-asphalt'): Record<MaterialMap, MaterialFile> {
+  const files = MATERIAL_MANIFEST[id]!.files.filter(f => f.resolution === resolution);
   return Object.fromEntries(files.map(f => [f.map, f])) as Record<MaterialMap, MaterialFile>;
 }
 
-const WETNESS: Readonly<Record<string, number>> = { rain: .85, dusk: .35, fog: .25 };
-/** 0 dry .. 1 soaked, per race visual preset; unknown presets (day, track, night, snow) stay dry. */
-export const coastWetness = (preset: string): number => WETNESS[preset] ?? 0;
+/** 0 dry .. 1 soaked, per race visual preset, from a look entry's table (Coast's by default); unlisted presets stay dry. */
+export const coastWetness = (preset: string, table = trackLook('coast')!.wetness): number => table[preset] ?? 0;
 
 const ROUGHNESS = '#include <roughnessmap_fragment>', NORMAL = '#include <normal_fragment_maps>', COMMON = '#include <common>';
 const WET_ROUGHNESS = `${ROUGHNESS}
-float puddle = smoothstep( .3, .7, texelRoughness.b ) * wetness;
+float puddle = smoothstep( .4, .95, texelRoughness.b ) * wetness;
 roughnessFactor = mix( roughnessFactor, roughnessFactor * .4, wetness );
-roughnessFactor = mix( roughnessFactor, .05, puddle );
+roughnessFactor = mix( roughnessFactor, .2, puddle );
 diffuseColor.rgb *= mix( 1., .5, wetness ) * mix( 1., .75, puddle );`;
 // The lights-only mirror (wet-reflection.ts): projective lookup, rippled by the normal map, five fading taps stretched
 // along the screen like light on wet asphalt, strongest in puddles and at grazing angles. No pow/exp, w clamped.
@@ -58,7 +59,7 @@ export function createCoastRoadMaterial(maps: Record<MaterialMap, THREE.Texture>
   const wetness = { value: 0 };
   const material = new THREE.MeshStandardMaterial({
     name: 'coast_asphalt', map: maps.baseColor, normalMap: maps.normal, aoMap: maps.packed, roughnessMap: maps.packed,
-    roughness: 1, metalness: 0,
+    color: '#a0a0a0', roughness: 1, metalness: 0,
   });
   material.onBeforeCompile = shader => {
     const frag = shader.fragmentShader;

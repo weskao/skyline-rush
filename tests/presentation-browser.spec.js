@@ -89,12 +89,19 @@ test('reduced-motion and comfort suppress presentation movement and looping prev
 
 test('enabling reduced motion interrupts an intro exit already in progress', async ({ page }) => {
   await open(page);
-  await page.evaluate(() => document.documentElement.style.setProperty('--dur-base', '4000ms'));
+  await page.evaluate(() => {
+    const intro = document.querySelector('#intro');
+    const animate = intro.animate.bind(intro);
+    intro.animate = (...args) => {
+      const exit = animate(...args);
+      exit.pause(); // Only cancellation can remove this exit from getAnimations().
+      return exit;
+    };
+  });
   await page.locator('#start-button').click();
   await expect.poll(() => page.locator('#intro').evaluate(el => el.getAnimations().length)).toBeGreaterThan(0);
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  // Leave room for a software-rendered frame, but fail before the 4 s animation expires naturally (fixed budget: never scaled).
-  await expect.poll(() => page.locator('#intro').evaluate(el => el.getAnimations().length), { timeout: 2000 }).toBe(0);
+  await expect.poll(() => page.locator('#intro').evaluate(el => el.getAnimations().length)).toBe(0);
   await expect(page.locator('#intro')).toBeHidden();
 });
 
@@ -128,7 +135,7 @@ for (const [name, viewport, hasTouch, reducedMotion] of [
     });
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');
     await expect(page.locator('#race-overlay')).toBeVisible();
-    await expect(page.locator('#again-button')).toBeFocused();
+    await expect(page.locator('#next-button')).toBeFocused();
     await expect(page.locator('#new-best')).toBeVisible();
     await expect.poll(() => page.locator('#result-stats > div:nth-child(2) strong').textContent()).toBe(await page.locator('#timer').textContent());
     const evidence = await page.evaluate(() => window.finishEvidence);

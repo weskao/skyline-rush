@@ -57,9 +57,20 @@ test('cue text follows the live settings: toggle FLY, slide pad and rebound keys
   assert.deepEqual(tutorialCueView({ key: 'tutorial.cue.brakeAhead', actions: ['brake'] }, false, 'hold', keyMap, 'buttons').cueKeys, ['B']);
 });
 
+test('the NITRO cue shows the current keyboard binding or a touch instruction', () => {
+  const keyMap = { ...DEFAULT_KEY_MAP, nitro: ['KeyJ'] };
+  const cue = { key: 'tutorial.cue.nitro', actions: ['nitro'] };
+  assert.deepEqual(tutorialCueView(cue, false, 'hold', keyMap).cueKeys, ['J']);
+  for (const mode of ['buttons', 'slide', 'tilt']) {
+    const touch = tutorialCueView(cue, true, 'hold', keyMap, mode);
+    assert.equal(touch.cueId, 'tutorial.touch.nitro');
+    assert.deepEqual(touch.cueKeys, []);
+  }
+});
+
 test('every cue variant has copy in both languages', () => {
   for (const lang of ['en', 'zh-TW']) {
-    for (const name of ['brakeAhead', 'brakeHold', 'brakeAheadSlide', 'brakeHoldSlide', 'chainFlyToggle', 'chainBoostToggle', 'chainHoldToggle',
+    for (const name of ['nitro', 'nitroActive', 'nitroRelease', 'brakeAhead', 'brakeHold', 'brakeAheadSlide', 'brakeHoldSlide', 'chainFlyToggle', 'chainBoostToggle', 'chainHoldToggle',
       'chainLandingToggle', 'rollFlyToggle', 'rollClimbToggle', 'rollReleaseToggle', 'rollSpinToggle']) {
       assert.ok(TUTORIAL_COPY[lang]['tutorial.cue.' + name], `${lang} ${name}`);
     }
@@ -78,4 +89,12 @@ test('the landing lesson shows no FLY outline, ripple target or key chip', () =>
   assert.equal(tutorialHighlight('airChain', 'ready').keys, 'fly boost nitro');
   assert.equal(tutorialHighlight('barrelRoll', 'ready').action, 'fly');
   assert.equal(tutorialTouchTarget('fly', 'ready', 'buttons', 'fly'), '#touch-controls [data-control="fly"]');
+});
+
+test('the ready NITRO cue names the action thumb opposite the steering hand', () => {
+  const cue = { key: 'tutorial.cue.nitro', actions: ['nitro'] };
+  for (const mode of ['buttons', 'slide', 'tilt']) {
+    assert.match(tutorialCueView(cue, true, 'hold', DEFAULT_KEY_MAP, mode, 'right').cue, /left thumb/);
+    assert.match(tutorialCueView(cue, true, 'hold', DEFAULT_KEY_MAP, mode, 'left').cue, /right thumb/);
+  }
 });

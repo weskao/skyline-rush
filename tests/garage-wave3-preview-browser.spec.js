@@ -1,10 +1,12 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
+import { openGarageSection } from './helpers/garage-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
 for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844,height:390}]){
   test(`Wave3 garage-store-readiness read-only cards browse safely at ${viewport.width}x${viewport.height}`,async({page})=>{
     await page.setViewportSize(viewport); await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
+    await openGarageSection(page, 'store');
     const gallery=page.locator('#garage-art-source-garage-store-readiness');
     await expect(gallery).toBeVisible();
     await expect(gallery).not.toHaveAttribute('open','');
@@ -13,7 +15,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
     await expect(entryIcon).toBeVisible();
     await expect(entryIcon).toHaveJSProperty('naturalWidth', 216);
     await expect(entryIcon).toHaveJSProperty('naturalHeight', 216);
-    await expect(entryIcon).toHaveAttribute('src', /store-collection@3x\.png$/);
+    await expect(entryIcon).toHaveAttribute('src', /store-collection@3x\.webp$/);
     await expect(gallery.locator('[data-store-phase="coming-soon"]')).toHaveText('Shop · Coming soon — preview only');
     const cards=gallery.locator('button[data-wave3-asset]');
     await expect(cards).toHaveCount(6);
@@ -31,6 +33,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
 }
 test('Wave3 garage-store-readiness filters and locale switch keep all buttons nontransactional',async({page})=>{
   await page.goto('/');await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const gallery=page.locator('#garage-art-source-garage-store-readiness');
   await gallery.locator('summary').click();
   await gallery.locator('[data-wave3-filter="collection"]').click();
@@ -40,6 +43,7 @@ test('Wave3 garage-store-readiness filters and locale switch keep all buttons no
   await expect(page.locator('#garage-screen')).not.toBeVisible();
   await selectLocale(page,'zh-TW');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const localized=page.locator('#garage-art-source-garage-store-readiness');
   await localized.locator('summary').click();
   await expect(localized.locator('[data-store-phase="coming-soon"]')).toHaveText('商店 · 即將推出 — 僅供預覽');
@@ -54,7 +58,8 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
   test(`all six store icons display complete transparent 3x art without cropping on ${viewport.width}x${viewport.height}`, async ({page}) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
+    await openGarageSection(page, 'store');
     const gallery = page.locator('#garage-art-source-garage-store-readiness');
     await gallery.locator('summary').click();
     for (const id of storeAssets) {
@@ -105,9 +110,9 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
           fitsViewport: button.getBoundingClientRect().width <= innerWidth,
           vividFraction: vivid / Math.max(visible, 1), paletteBins: palette.size};
       });
-      expect(metrics.type).toMatch(gif ? new RegExp(`garage-animated/${id}@3x\\.gif$`) : new RegExp(`raster/${id}@3x\\.png$`));
+      expect(metrics.type).toMatch(gif ? new RegExp(`garage-animated/${id}@3x\\.gif$`) : new RegExp(`raster/${id}@3x\\.webp$`));
       expect(metrics.animated).toBe(String(gif));
-      expect(metrics.original).toMatch(/@3x\.png$/);
+      expect(metrics.original).toMatch(/@3x\.webp$/);
       expect(metrics.nativeGif).toEqual([216,216]);
       expect(metrics.size).toEqual([216,216]);
       expect(metrics.display).toEqual([72,72]);
@@ -128,19 +133,20 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
   });
 }
 
-test('Store entrance icon falls back from the 3x PNG to its original 3x WebP', async ({ page }) => {
-  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.png', route => route.abort());
+test('Store entrance icon loads native WebP without any PNG fallback', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const entryIcon = page.locator('#garage-art-source-garage-store-readiness summary [data-wave3-entry-icon] img');
   await expect(entryIcon).toHaveAttribute('src', /store-collection@3x\.webp$/);
   await expect(entryIcon).toHaveJSProperty('naturalWidth', 216);
 });
 
 test('Store preview keeps readable Coming Soon when the real 3x entrance icon fails', async ({ page }) => {
-  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.{png,webp}', route => route.abort());
+  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.webp', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const gallery = page.locator('#garage-art-source-garage-store-readiness');
   await expect(gallery.locator('summary')).toBeVisible();
   await expect(gallery.locator('summary [data-wave3-entry-icon] .artwork-fallback')).toBeVisible();
@@ -152,7 +158,8 @@ test('Store preview keeps readable Coming Soon when the real 3x entrance icon fa
 for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844,height:390}]){
   test(`Wave3 garage-rewards-and-missions read-only cards browse safely at ${viewport.width}x${viewport.height}`,async({page})=>{
     await page.setViewportSize(viewport); await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
+    await openGarageSection(page, 'missions');
     const gallery=page.locator('#garage-art-source-garage-rewards-and-missions');
     await expect(gallery).toBeVisible();
     await expect(gallery).not.toHaveAttribute('open','');
@@ -179,6 +186,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
 }
 test('Wave3 garage-rewards-and-missions filters and locale switch keep all buttons nontransactional',async({page})=>{
   await page.goto('/');await page.locator('#garage-button').click();
+  await openGarageSection(page, 'missions');
   const gallery=page.locator('#garage-art-source-garage-rewards-and-missions');
   await gallery.locator('summary').click();
   await gallery.locator('[data-wave3-filter="trophy"]').click();
@@ -188,8 +196,22 @@ test('Wave3 garage-rewards-and-missions filters and locale switch keep all butto
   await expect(page.locator('#garage-screen')).not.toBeVisible();
   await selectLocale(page,'zh-TW');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'missions');
   const localized=page.locator('#garage-art-source-garage-rewards-and-missions');
   await localized.locator('summary').click();
   await expect(localized.locator('[data-wave3-description]')).toContainText(/[一-龥]/);
   await expect(localized.getByRole('button',{name:/購買|領取|buy|claim/i})).toHaveCount(0);
+});
+
+test('the actual Garage Store entrance directly renders native WebP, without removed PNG', async ({ page }) => {
+  const pngRequests = [];
+  page.on('request', request => {
+    if (/garage-store-readiness\/raster\/.*\.png(?:\?|$)/.test(request.url())) pngRequests.push(request.url());
+  });
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const image = page.locator('[data-garage-store-entry] img.artwork-img');
+  await expect(image).toHaveAttribute('src', /store-cart@3x\.webp$/);
+  await expect(image).toHaveJSProperty('naturalWidth', 216);
+  expect(pngRequests).toEqual([]);
 });

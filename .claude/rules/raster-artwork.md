@@ -4,6 +4,7 @@ paths:
   - "public/icons/**"
   - "public/whats-new/**"
   - "docs/designs/**"
+  - "src/appearance.ts"
   - "src/Garage*.vue"
   - "src/garage-*.ts"
   - "src/*Store*.vue"
@@ -49,6 +50,29 @@ When adding or updating Garage, HUD, Store, Rewards or any other transparent ico
   dimensions, alpha pixel bounds using Canvas, image/frame/caption rectangles and no clipping
   at portrait 390×844, landscape 844×390 and desktop 1440×900. Preserve keyboard/touch,
   locale, fallback and store-preview-only controls. Capture actual browser screenshots.
+- Garage trophy icons must remain 96×96 CSS pixels (native 288×288) even when Traditional
+  Chinese labels narrow the landscape two-column cards. Do not allow `max-width:100%` to
+  shrink them: keep sufficient inner card width and retain the strict real-browser test
+  `tests/wave3-demo-artwork-browser.spec.js` at 844×390 zh-TW (the old failure drew 91px).
 - Follow RED → GREEN → `make verify` → full exact-HEAD CI and actual visual review;
   programmatic alpha insets do not prove that the original silhouette is artistically complete.
   Do not call it accepted while any required test or manual review remains pending.
+
+## Garage art in production builds
+
+Keep shared car-picker and paint-card WebPs under `public/feature-assets/garage-public/`.
+The locked build removes the entire `garage-vfx-skins/` tree. Both mission boards use
+the existing WebPs in `garage-rewards-and-missions/raster/`. Check the actual `dist`
+image URLs and decode dimensions with `tests/garage-public-artwork-browser.spec.js`
+on the default locked artifact and with `PLAYWRIGHT_PAGES=1` on the Pages trial artifact.
+
+### Adding a Garage paint
+
+- Add a stable ID to `PAINTS` in `src/appearance.ts` with its swatch color, material
+  settings and unlock threshold. Add the matching `paint.<id>` label in English and
+  Traditional Chinese. Keep existing IDs stable for saved equipment.
+- Add the 960×510 WebP at `public/feature-assets/garage-public/paint-cards/<id>@3x.webp`.
+  The shared Garage and Studio cards use that ID and show the catalog color and
+  localized name when loading fails.
+- Keep the release audit and browser checks driven by `PAINTS` so every new paint
+  automatically enters both the locked and Pages trial checks.

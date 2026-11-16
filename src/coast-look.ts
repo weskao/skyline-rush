@@ -1,42 +1,60 @@
-import type { Color, Scene, Texture, WebGLRenderer } from 'three';
+import type { Color, Scene, Texture, Vector3, WebGLRenderer } from 'three';
 import { createCoastEnvironments } from './coast-environment.ts';
 import { COAST_ENV_VARIANTS, coastEnvPlan, type CoastEnvName } from './coast-lighting.ts';
+import { coastSkyYaw, coastSunDirection } from './coast-sky.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
-interface Envs { get(name: CoastEnvName): Texture | undefined; preload(names: readonly CoastEnvName[]): Promise<unknown> }
+interface Envs { get(name: CoastEnvName): Texture | undefined; preload(names: readonly CoastEnvName[]): Promise<unknown>;
+  /** The cars' reflection map shows this variant's sky, or (null) the studio room it was made with. */
+  paintCars?(name: CoastEnvName | null): void }
 interface GradeUniforms { uniforms: { saturation: { value: number }; contrast: { value: number }; tint: { value: Color } } }
 interface Options {
-  scene: Pick<Scene, 'environment' | 'environmentIntensity'>; renderer: Pick<WebGLRenderer, 'toneMappingExposure'>;
+  scene: Pick<Scene, 'environment' | 'environmentIntensity'> & { environmentRotation?: { y: number } }; renderer: Pick<WebGLRenderer, 'toneMappingExposure'>;
   lens: GradeUniforms; room: Texture | null; roomIntensity: number; envs?: Envs; baseUrl?: string;
-  /** World bloom pass (threshold only: world.js writes the strength every frame through `bloomStrength`) and key
-   *  light (world.js sets each track's sun on a track change, just before `update`). Optional in tests. */
-  bloom?: { threshold: number }; sun?: { color: Color; intensity: number };
+  /** The reflection map every car holds (car-reflections.ts); a `carSky` variant repaints it in place. */
+  cars?: Texture;
+  /** world.js sets each track's key light on a track change, just before `update`. With an HDRI the light shines from
+   *  that HDRI's sun, turned (as the environment and the sky dome are) to Coast's sun azimuth. */
+  sun?: { color: Color; intensity: number; position?: Vector3 };
 }
 
 /**
- * Per-time-of-day Coast look: environment map, exposure, colour grade, bloom and sun. `update` is called every frame and is a
+ * Per-time-of-day Coast look: environment map and its rotation, exposure, colour grade, bloom and sun. `update` is called every frame and is a
  * string compare unless the track/preset/tier changed. Everything it touches is a texture or uniform swap, so no
  * lit shader recompiles after GO; Low and every other track keep RoomEnvironment and an identity grade.
  */
-export function createCoastLook({ scene, renderer, lens, room, roomIntensity, envs, baseUrl = '/', bloom, sun }: Options) {
-  const environments: Envs = envs ?? createCoastEnvironments(renderer as WebGLRenderer, baseUrl); // tests inject `envs`; the real renderer is a full WebGLRenderer
+export function createCoastLook({ scene, renderer, lens, room, roomIntensity, envs, baseUrl = '/', sun, cars }: Options) {
+  const environments: Envs = envs ?? createCoastEnvironments(renderer as WebGLRenderer, baseUrl, cars); // tests inject `envs`; the real renderer is a full WebGLRenderer
   const grade = lens.uniforms;
   let key = '';
-  const threshold = bloom?.threshold ?? 0;
-  let applied: CoastEnvName | null = null, palette: { color: Color; intensity: number } | null = null; // Coast's own sun
-  function applyRoom(onCoast: boolean) {
+  let applied: CoastEnvName | null = null, palette: { color: Color; intensity: number; position?: Vector3 } | null = null; // the track's own sun
+  let paletteTrack = ''; // the track the procedural lighting was saved on
+  let baseExposure = renderer.toneMappingExposure;
+  function applyRoom(trackId: string) {
+    if (applied && trackId === paletteTrack && renderer.toneMappingExposure === COAST_ENV_VARIANTS[applied].exposure) renderer.toneMappingExposure = baseExposure;
     scene.environment = room; scene.environmentIntensity = roomIntensity;
     grade.saturation.value = grade.contrast.value = 1; grade.tint.value.setRGB(1, 1, 1);
-    if (bloom) bloom.threshold = threshold;
-    if (sun && palette && onCoast) { sun.color.copy(palette.color); sun.intensity = palette.intensity; } // leaving Coast: the new track's block already set it
+    if (scene.environmentRotation) scene.environmentRotation.y = 0;
+    environments.paintCars?.(null);
+    if (sun && palette && trackId === paletteTrack) { // on another track its own block already set the sun
+      sun.color.copy(palette.color); sun.intensity = palette.intensity;
+      if (palette.position) sun.position?.copy(palette.position);
+    }
     applied = palette = null;
   }
-  function applyVariant(name: CoastEnvName, texture: Texture) {
+  function applyVariant(name: CoastEnvName, texture: Texture, trackId: string) {
+    if (trackId !== paletteTrack) { palette = null; paletteTrack = trackId; }
+    if (!applied || renderer.toneMappingExposure !== COAST_ENV_VARIANTS[applied].exposure) baseExposure = renderer.toneMappingExposure;
     const v = COAST_ENV_VARIANTS[name];
     scene.environment = texture; scene.environmentIntensity = v.intensity; renderer.toneMappingExposure = v.exposure;
     grade.saturation.value = v.grade.saturation; grade.contrast.value = v.grade.contrast; grade.tint.value.setRGB(...v.grade.tint);
-    if (bloom) bloom.threshold = v.bloom.threshold;
-    if (sun) { palette ??= { color: sun.color.clone(), intensity: sun.intensity }; sun.color.set(v.sun.color); sun.intensity = v.sun.intensity; }
+    if (scene.environmentRotation) scene.environmentRotation.y = coastSkyYaw(name);
+    environments.paintCars?.(v.carSky ? name : null);
+    if (sun) {
+      palette ??= { color: sun.color.clone(), intensity: sun.intensity, position: sun.position?.clone() };
+      sun.color.set(v.sun.color); sun.intensity = v.sun.intensity;
+      if (sun.position && palette.position) coastSunDirection(name, sun.position).multiplyScalar(palette.position.length());
+    }
     applied = name;
   }
   return {
@@ -45,16 +63,18 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
       const next = plan.kind === 'room' ? 'room' : plan.variant;
       if (next === key) return;
       key = next;
-      if (plan.kind === 'room') return applyRoom(trackId === 'coast');
+      if (plan.kind === 'room') return applyRoom(trackId);
       const ready = environments.get(plan.variant);
-      if (ready) return applyVariant(plan.variant, ready);
+      if (ready) return applyVariant(plan.variant, ready, trackId);
+      if (applied && trackId !== paletteTrack) applyRoom(trackId); // never another track's sky while this one loads, or after it fails
       void environments.preload([plan.variant]).then(() => {
         const texture = environments.get(plan.variant);
-        if (key === next && texture) applyVariant(plan.variant, texture);
+        if (key === next && texture) applyVariant(plan.variant, texture, trackId);
       });
     },
     /** Bloom strength before boost feedback: the variant's while its HDRI is on screen, else world.js's own. */
     bloomStrength: (fallback: number): number => applied ? COAST_ENV_VARIANTS[applied].bloom.strength : fallback,
+    bloomThreshold: (fallback: number): number => applied ? COAST_ENV_VARIANTS[applied].bloom.threshold : fallback,
     dispose() { (environments as { dispose?: () => void }).dispose?.(); },
   };
 }

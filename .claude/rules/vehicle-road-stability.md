@@ -1,6 +1,10 @@
 ---
 paths:
   - "src/game.js"
+  - "src/player-contacts.js"
+  - "src/drive-rules.ts"
+  - "src/classic-road-routes.ts"
+  - "tests/drift-*.test.js"
   - "src/world.js"
   - "src/vehicle-pose.js"
   - "src/geometry.js"
@@ -49,6 +53,14 @@ Keep the arcade driving feel; do not replace it with a new physics engine.
 
 ## Stable boundaries and simulation
 
+- Player collision recovery suppresses repeat penalties, while vehicle and scenery contact still
+  separates their bodies. Only Ghost Phase allows overlap. At expiry, exempt the contacts already
+  overlapping until they clear; newly touched objects are solid on the first unphased frame.
+  Check both proposed lanes before separating a pair: a third car may occupy the landing space. If
+  the leading car blocks both sides, limit the player's travel and pace to the available gap.
+  Sustained contact stays part of the original encounter until the cars separate.
+  `tests/collision-recovery.test.js` covers these rules at the simulation boundary.
+
 - A continuous steering hold into one rail must not cause repeated hard hits every time
   the collision cooldown expires. Track sustained contact, reset it only after adequate
   separation, and re-arm the next genuine impact. Preserve intentional first-hit speed
@@ -60,6 +72,17 @@ Keep the arcade driving feel; do not replace it with a new physics engine.
   track-specific offsets, blurring/shaking the camera less, or damping away genuine
   orientation errors. Trace the numerical and rendering data flow and fix its shared
   root cause first; reuse existing helpers rather than adding a second pose system.
+
+## Drift handling is global (all tracks, now and future)
+
+- Drift tuning lives only in `src/drive-rules.ts` (`DRIFT_*`, `driftTier`) and the shared
+  `stepRace` drift block; a track or course never adds its own drift constants or rules.
+- Any track-specific lateral force (like `classicCornerPush`) skips the car while `drifting`, so a
+  drift slides at exactly `DRIFT_LATERAL` x the steering rate on every road. Only hazards that push
+  every car (crosswind sections) still act during a drift.
+- Guard: `tests/drift-all-tracks.test.js` iterates `RACE_TRACKS`, `COURSE_TRACKS`, the circuit and
+  Endless, so a newly registered track is checked without edits; a track it cannot cover is a gap
+  to fix in the test, not a skip.
 
 ## Required regression evidence for edits
 

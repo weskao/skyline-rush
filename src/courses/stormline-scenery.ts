@@ -30,7 +30,7 @@ export function createStormlineChunk(edgeId: string, startS: number, endS: numbe
     dispose() { group.removeFromParent(); },
   };
   const roadMat = new THREE.MeshStandardMaterial({ color: edge.surface === 'tunnel' ? 0x10172a : 0x171d35,
-    metalness: 0.54, roughness: quality === 'low' ? 0.45 : 0.24, side: THREE.DoubleSide });
+    metalness: 0.28, roughness: 0.55, side: THREE.DoubleSide });
   const railMat = new THREE.MeshBasicMaterial({ color: 0x39d6ed });
   const ledMat = new THREE.MeshBasicMaterial({ color: 0xb45beb, transparent: true, opacity: 0.65 });
   const structureMat = new THREE.MeshStandardMaterial({ color: 0x1b2541, metalness: 0.42, roughness: 0.57 });

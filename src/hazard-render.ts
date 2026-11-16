@@ -47,7 +47,7 @@ function gantry(): THREE.BufferGeometry {
 }
 
 // instances/put are world.js's pooled InstancedMesh helpers.
-export function createHazardRenderer(scene: THREE.Scene, box: THREE.BufferGeometry, instances: Instances, put: Put, place: Place) {
+export function createHazardRenderer(scene: THREE.Scene, box: THREE.BufferGeometry, instances: Instances, put: Put, place: Place, yawAt?: (trackId: string, distance: number) => number) {
   const barriers = instances(box, new THREE.MeshBasicMaterial({ color: '#ff946f' }), HAZARD_POOLS.block, scene);
   // A 4-sided cone laid on its side points +x; put()'s angle turns it to face the shove direction.
   const arrow = new THREE.ConeGeometry(0.5, 1, 4).rotateZ(-Math.PI / 2);
@@ -73,11 +73,12 @@ export function createHazardRenderer(scene: THREE.Scene, box: THREE.BufferGeomet
         const pool = poolOf(hazard);
         if (!pool || used[pool] >= HAZARD_POOLS[pool]) continue; // other triggers (checkpoints) are never drawn
         const { x, altitude, active } = hazardPose(hazard, race.elapsed, pose); if (!active) continue; // drawn exactly when solid
+        const yaw = yawAt?.(trackId, hazard.distance) ?? 0;
         const h = hazard.height ?? 2.5, w = hazard.halfWidth ? hazard.halfWidth * 2 : 3.1, l = hazard.halfLength ? hazard.halfLength * 2 : 1.3;
-        if (pool === 'block') { const xyz = place(trackId, hazard.distance, x, altitude + h / 2, distance, center); put(barriers, used.block++, xyz[0], xyz[1], xyz[2], w, h, l); }
-        else if (pool === 'slow') { const xyz = place(trackId, hazard.distance, x, altitude + 0.03, distance, center); put(surfaces, used.slow++, xyz[0], xyz[1], xyz[2], w, 0.06, l); }
-        else if (pool === 'marker') { const xyz = place(trackId, hazard.distance, 0, altitude, distance, center); put(markers, used.marker++, xyz[0], xyz[1], xyz[2], 1, 1, 1, riskySide(hazard) > 0 ? 0 : Math.PI); }
-        else { const xyz = place(trackId, hazard.distance, x, altitude + 1.6, distance, center); put(gusts, used.push++, xyz[0], xyz[1], xyz[2], 2.4, 1.2, 1.2, hazard.placement!.seed % 2 ? 0 : Math.PI); }
+        if (pool === 'block') { const xyz = place(trackId, hazard.distance, x, altitude + h / 2, distance, center); put(barriers, used.block++, xyz[0], xyz[1], xyz[2], w, h, l, yaw); }
+        else if (pool === 'slow') { const xyz = place(trackId, hazard.distance, x, altitude + 0.03, distance, center); put(surfaces, used.slow++, xyz[0], xyz[1], xyz[2], w, 0.06, l, yaw); }
+        else if (pool === 'marker') { const xyz = place(trackId, hazard.distance, 0, altitude, distance, center); put(markers, used.marker++, xyz[0], xyz[1], xyz[2], 1, 1, 1, yaw + (riskySide(hazard) > 0 ? 0 : Math.PI)); }
+        else { const xyz = place(trackId, hazard.distance, x, altitude + 1.6, distance, center); put(gusts, used.push++, xyz[0], xyz[1], xyz[2], 2.4, 1.2, 1.2, yaw + (hazard.placement!.seed % 2 ? 0 : Math.PI)); }
       }
       for (const pool of ['block', 'push', 'slow', 'marker'] as const) {
         pools[pool].count = used[pool];

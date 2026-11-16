@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRace } from '../src/game.js';
 import { createRaceAudioEvents } from '../src/race-audio-events.ts';
+import { createPresentation } from '../src/presentation.ts';
 
 const racing = () => { const race = createRace(); race.phase = 'racing'; race.player.speed = 40; return race; };
 const cues = frame => frame.sounds.filter(sound => typeof sound === 'string');
@@ -27,6 +28,21 @@ test('countdown ticks once per new second and GO fires once on the switch to rac
   assert.deepEqual(cues(events.update(race, true)), []);
 });
 
+test('the starting light waits for scenery before playing the first tick', () => {
+  const events = createRaceAudioEvents(), race = createRace('neon');
+  race.phase = 'countdown';
+  assert.deepEqual(cues(events.update(race, true, null, false, true)), []);
+  assert.deepEqual(cues(events.update(race, true, null, false, false)), ['tick']);
+});
+
+test('Free Drive has no countdown audio while it waits for scenery', () => {
+  const events = createRaceAudioEvents(), race = createRace('neon', { mode: 'free' });
+  race.phase = 'countdown';
+  assert.deepEqual(cues(events.update(race, true, null, false, true)), []);
+  race.phase = 'racing';
+  assert.deepEqual(cues(events.update(race, true, null, false, false)), []);
+});
+
 test('a new race asks for silence once and does not replay pickups already taken', () => {
   const events = createRaceAudioEvents();
   const race = racing();
@@ -45,7 +61,7 @@ test('a pickup collected while muted is consumed and never cues after unmuting',
   assert.deepEqual(cues(events.update(race, false)), []);
   assert.deepEqual(cues(events.update(race, true)), []);
   race.pickups[1].taken = true;
-  assert.deepEqual(cues(events.update(race, true)), ['pickup']);
+  assert.deepEqual(cues(events.update(race, true)), [`pickup-${race.pickups[1].tier}`]);
 });
 
 const ringAt = (race, type) => { const ring = { type, hit: false, distance: 500, x: 0, altitude: 0, radius: 4.8, group: 0 }; race.rings.push(ring); return ring; };
@@ -161,4 +177,163 @@ test('ITEM-12: a shield blocking a hit plays its own cue once, and never a crash
   const frame = events.update(race, true);
   assert.deepEqual([cues(frame), impulses(frame)], [['shield-block'], []]);
   assert.deepEqual(cues(events.update(race, true)), []);
+});
+
+
+test('each road supply selects its own cue once at collection', () => {
+  const events = createRaceAudioEvents(), race = racing();
+  events.update(race, true);
+  for (const tier of ['cell', 'can', 'tank', 'overcharge']) {
+    const pickup = { tier, taken: false };
+    race.pickups.push(pickup);
+    assert.deepEqual(cues(events.update(race, true)), []);
+    pickup.taken = true;
+    assert.deepEqual(cues(events.update(race, true)), [`pickup-${tier}`]);
+    assert.deepEqual(cues(events.update(race, true)), []);
+  }
+});
+
+test('drift payout has its own release sound in place of generic boost', () => {
+  const race = racing(), events = createRaceAudioEvents();
+  events.update(race, true);
+  race.player.driftPayout = { time: race.elapsed, nitro: .25 };
+  race.player.miniBoost = 2;
+  assert.deepEqual(cues(events.update(race, true)), ['drift-release']);
+  assert.deepEqual(cues(events.update(race, true)), []);
+});
+
+test('NITRO extension, slipstream reward and boost tunnel have distinct transition sounds', () => {
+  const race = racing(), events = createRaceAudioEvents();
+  race.player.nitroTime = 2;
+  events.update(race, true);
+  race.player.nitroTime = 3;
+  assert.deepEqual(cues(events.update(race, true)), ['nitro-extend']);
+  race.player.slipstream.paid = true;
+  assert.deepEqual(cues(events.update(race, true)), ['draft-reward']);
+  race.player.boostTunnelEvent = { time: race.elapsed, distance: race.player.distance };
+  assert.deepEqual(cues(events.update(race, true)), ['tunnel-boost']);
+});
+
+test('Perfect Line replaces only the final ring chime and keeps other rings audible', () => {
+  const race = racing(), events = createRaceAudioEvents();
+  const a = ringAt(race, 'charge'), b = ringAt(race, 'nitro');
+  events.update(race, true);
+  a.hit = b.hit = true;
+  race.player.perfectLines++;
+  assert.deepEqual(cues(events.update(race, true)), ['ring-charge', 'perfect-line']);
+  assert.deepEqual(cues(events.update(race, true)), []);
+});
+
+test('a missed gap gives a recovery cue once, and entering a shortcut cues once per section', () => {
+  const race = racing(), events = createRaceAudioEvents();
+  race.sections = [{ type:'shortcut', from: 10, to: 100 }];
+  race.player.distance = 20;
+  events.update(race, true);
+  race.player.inShortcut = true;
+  assert.deepEqual(cues(events.update(race, true)), ['shortcut-entry']);
+  race.player.inShortcut = false;
+  events.update(race, true);
+  race.player.inShortcut = true;
+  assert.deepEqual(cues(events.update(race, true)), []);
+  race.player.fall = { from: 20, distance: 40, time: race.elapsed };
+  assert.deepEqual(cues(events.update(race, true)), ['fall-recovery']);
+  assert.deepEqual(cues(events.update(race, true)), []);
+});
+
+test('a gap warning plays once per gap and consumes a warning while muted', () => {
+  const race = racing(), events = createRaceAudioEvents();
+  race.player.fuel = 22;
+  events.update(race, true, null);
+  assert.deepEqual(cues(events.update(race, true, 80)), ['gap-warning']);
+  events.update(race, true, null);
+  assert.deepEqual(cues(events.update(race, true, 80)), []);
+  events.update(race, false, 380);
+  assert.deepEqual(cues(events.update(race, true, 380)), []);
+});
+
+test('nearby elimination risk sounds once per round, then the rival knockout sounds once', () => {
+  const race = racing(), events = createRaceAudioEvents();
+  race.mode = 'elimination';
+  race.elimination = { nextAt:10, eliminated:[], outcome:null };
+  race.player.distance = 200;
+  race.rivals = [{ name:'NOVA', distance:210 }, { name:'ORBIT', distance:220 }];
+  race.elapsed = 6.9;
+  events.update(race, true);
+  race.elapsed = 7.1;
+  assert.deepEqual(cues(events.update(race, true)), ['elimination-warning']);
+  assert.deepEqual(cues(events.update(race, true)), []);
+  race.elapsed = 10;
+  race.elimination.nextAt = 20;
+  race.elimination.eliminated.push('NOVA');
+  assert.deepEqual(cues(events.update(race, true)), ['rival-eliminated']);
+  assert.deepEqual(cues(events.update(race, true)), []);
+});
+
+test('final lap and first invalidation distinguish the normal lap sound', () => {
+  const race = racing(), events = createRaceAudioEvents();
+  race.mode = 'circuit';
+  race.circuit = { laps:3, player:{ completed:1, valid:true } };
+  events.update(race, true);
+  race.circuit.player.completed++;
+  assert.deepEqual(cues(events.update(race, true)), ['final-lap']);
+  race.circuit.player.valid = false;
+  assert.deepEqual(cues(events.update(race, true)), ['objective-invalid']);
+  assert.deepEqual(cues(events.update(race, true)), []);
+});
+
+test('clean trial invalidation plays once and consumes changes while paused', () => {
+  const race = racing(), events = createRaceAudioEvents();
+  race.mode = 'time';
+  race.config = { clean:true };
+  events.update(race, true);
+  race.player.collisions++;
+  assert.deepEqual(cues(events.update(race, true)), ['objective-invalid']);
+  race.player.collisions++;
+  assert.deepEqual(cues(events.update(race, true)), []);
+  const other = { ...race, player: { ...race.player, collisions:0 } };
+  events.update(other, true);
+  other.phase = 'paused'; other.player.collisions++;
+  events.update(other, true);
+  other.phase = 'racing';
+  assert.deepEqual(cues(events.update(other, true)), []);
+});
+
+test('collision-limit ending is audible without the ordinary success melody', () => {
+  const race = racing(), events = createRaceAudioEvents();
+  race.mode = 'endless';
+  events.update(race, true);
+  race.phase = 'finished'; race.result = { success:true, endReason:'collisions' };
+  assert.deepEqual(cues(events.update(race, true)), ['endless-ended']);
+  assert.deepEqual(cues(events.update(race, true)), []);
+});
+
+test('entering a CourseGraph branch sounds only when the player leaves the normal route', () => {
+  const race = racing(), events = createRaceAudioEvents();
+  const travel = { currentEdgeId:'ground-a' };
+  race.course = { cars:new Map([['YOU',{ travel }]]), spec:{ graph:{ groundRoute:['ground-a','ground-b'] } } };
+  events.update(race, true);
+  travel.currentEdgeId = 'flight';
+  assert.deepEqual(cues(events.update(race, true)), ['shortcut-entry']);
+  travel.currentEdgeId = 'ground-b';
+  assert.deepEqual(cues(events.update(race, true)), []);
+});
+
+test('halfway sound follows the shared presentation event and consumes it when muted', () => {
+  const events = createRaceAudioEvents(), presentation = createPresentation(), race = racing();
+  const update = enabled => cues(events.update(race, enabled, null, presentation.update(race, .016).halfwayStarted));
+  race.player.distance = race.length / 2 - 1;
+  assert.deepEqual(update(true), []);
+  race.player.distance += 2;
+  assert.deepEqual(cues(events.update(race, true, null, false)), [], 'audio must not run a second distance detector');
+  assert.deepEqual(update(true), ['halfway']);
+  race.player.distance += 100;
+  assert.deepEqual(update(true), []);
+
+  const muted = racing(), mutedPresentation = createPresentation();
+  const updateMuted = enabled => cues(events.update(muted, enabled, null, mutedPresentation.update(muted, .016).halfwayStarted));
+  muted.player.distance = muted.length / 2 - 1;
+  updateMuted(false);
+  muted.player.distance += 2;
+  assert.deepEqual(updateMuted(false), []);
+  assert.deepEqual(updateMuted(true), []);
 });

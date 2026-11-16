@@ -1,11 +1,11 @@
-import { test, glbRoots, programs, modelInstances as instances } from './helpers/gameplay-browser.js';
+import { test, glbRoots, programs, modelInstances as instances, watchRequests } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 
-// Task 4b `?model=roadster`: the one roadster2 GLB dresses the player's car on the Home showcase and in every race
+// The roadster2 GLB dresses the player's car on the Home showcase and in every race
 // (src/garage-model.ts). The procedural car still owns the pose, collisions, road contact, camera and VFX ports.
 const GLB = /\/models\/roadster2\/roadster2(-low)?\.glb$/;
-const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]]; // src/effects.js
+const LIFT_PORTS = [[-0.79, -1.3], [-0.79, 1.45], [0.79, -1.3], [0.79, 1.45]]; // src/lift-ports.js
 const REAR_PORT_X = [-0.62, -0.22, 0.22, 0.62]; // src/aero-vfx.js REAR_PORTS (y .64, z 2.39)
 
 async function prepare(page, url, quality = 'high') {
@@ -13,8 +13,7 @@ async function prepare(page, url, quality = 'high') {
     for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: q, enabled: true, comfortable: false }));
   }, quality);
-  const requests = [], errors = [];
-  page.on('request', request => { if (GLB.test(new URL(request.url()).pathname)) requests.push(new URL(request.url()).pathname); });
+  const requests = await watchRequests(page, GLB), errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(url);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
@@ -38,7 +37,7 @@ const startRace = async page => {
 };
 
 test('Home showcase wears the GLB without the Garage; AIRFLOW ON grounded, OFF hovering with the GLB lift fans', async ({ gameplayPage: page, gameplayURL }) => {
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { requests, errors } = await prepare(page, gameplayURL);
   await modelReady(page);
   await expect.poll(() => instances(page)).toEqual({ home: expect.any(String) });
   expect(await glbRoots(page)).toBe(1); // settled: instances polled above
@@ -56,7 +55,7 @@ test('Home showcase wears the GLB without the Garage; AIRFLOW ON grounded, OFF h
 
 test('race: the Home instance carries on; VFX ports, programs and flight fans follow the procedural car', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(90000));
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { requests, errors } = await prepare(page, gameplayURL);
   await modelReady(page);
   const { home } = await instances(page);
   await startRace(page);
@@ -66,20 +65,26 @@ test('race: the Home instance carries on; VFX ports, programs and flight fans fo
   expect(await glbRoots(page)).toBe(1);
   await attach(page, 'race-ground');
 
-  // Ports: the GLB thruster/rear-nozzle pivots sit exactly on the procedural VFX ports, in world space.
+  // Ports: the GLB thruster/rear-nozzle pivots sit exactly on the VFX ports, in world space. The GLB shows at the
+  // Roadster's measured size (car-display-size.ts), so the lift jets scale their ports by it (effects.js) and the
+  // rear-port group moves onto the nozzles (garage-model.ts).
   const offsets = await page.evaluate(([lift, rear]) => {
     const car = window.gameScene.player, V = car.position.constructor;
     car.updateMatrixWorld(true);
-    const gap = (name, local) => car.getObjectByName(name).getWorldPosition(new V()).distanceTo(car.localToWorld(new V(...local)));
-    const root = car.children.find(c => c.userData.garageModel);
+    const at = name => car.getObjectByName(name).getWorldPosition(new V());
+    const root = car.children.find(c => c.userData.garageModel), shown = car.userData.displayScale;
+    const ports = car.getObjectByName('Rear ports');
     return {
-      lift: lift.map(([x, z], i) => gap(`thruster_0${i + 1}`, [x, 0.3, z])),
-      rear: rear.map((x, i) => gap(`nozzle_rear_0${i + 1}`, [x, 0.64, 2.39])),
-      root: [...root.position.toArray(), ...root.quaternion.toArray(), ...root.scale.toArray()],
+      lift: lift.map(([x, z], i) => at(`thruster_0${i + 1}`).distanceTo(car.localToWorld(new V(x, 0.3, z).multiply(shown)))),
+      rear: rear.map((x, i) => at(`nozzle_rear_0${i + 1}`).distanceTo(ports.localToWorld(new V(x, 0.64, 2.39)))),
+      root: [...root.position.toArray(), ...root.quaternion.toArray()],
+      scale: root.scale.toArray(), shown: shown.toArray(),
     };
   }, [LIFT_PORTS, REAR_PORT_X]);
   for (const gap of [...offsets.lift, ...offsets.rear]) expect(gap).toBeLessThan(1e-4);
-  expect(offsets.root).toEqual([0, 0, 0, 0, 0, 0, 1, 1, 1, 1]);
+  expect(offsets.root).toEqual([0, 0, 0, 0, 0, 0, 1]);
+  expect(offsets.shown).toEqual(offsets.scale);
+  expect(offsets.scale[1]).toBe(offsets.scale[2]); // wheels stay round
 
   await page.keyboard.down('ShiftLeft');
   await page.waitForTimeout(ciTimeout(600));
@@ -106,7 +111,7 @@ test('race: the Home instance carries on; VFX ports, programs and flight fans fo
 test('restart, track switch and End race keep one GLB instance and return GPU memory to its baseline', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(150000));
   await page.addInitScript(() => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon'])));
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { requests, errors } = await prepare(page, gameplayURL, 'low');
   await modelReady(page);
   const memory = () => page.evaluate(() => { const { geometries, textures } = window.gameScene.renderer.info.memory; return { geometries, textures }; });
   const stable = async () => {
@@ -147,7 +152,7 @@ test('restart, track switch and End race keep one GLB instance and return GPU me
 });
 
 test('Coming Soon showcase: the one instance moves to the card car and back to the Home car', async ({ gameplayPage: page, gameplayURL }) => {
-  const { errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { errors } = await prepare(page, gameplayURL);
   await modelReady(page);
   await page.locator('[data-upcoming-track="dune-tempest"]').click();
   await expect.poll(async () => Object.keys(await instances(page))).toEqual(['showcase']);
@@ -166,7 +171,7 @@ test('Coming Soon showcase: the one instance moves to the card car and back to t
 
 test('missing GLB: Home and race keep the procedural Roadster without a page error', async ({ gameplayPage: page, gameplayURL }) => {
   await page.route(GLB, route => route.fulfill({ status: 404, body: '' }));
-  const { errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+  const { errors } = await prepare(page, gameplayURL);
   await expect(world(page)).toHaveAttribute('data-garage-model', 'fallback:missing', { timeout: ciTimeout(15000) });
   await startRace(page);
   await page.waitForTimeout(ciTimeout(500));
@@ -177,7 +182,7 @@ test('missing GLB: Home and race keep the procedural Roadster without a page err
 });
 
 test('low quality tier loads only the low LOD for the Home showcase and the race', async ({ gameplayPage: page, gameplayURL }) => {
-  const { requests, errors } = await prepare(page, `${gameplayURL}?model=roadster`, 'low');
+  const { requests, errors } = await prepare(page, gameplayURL, 'low');
   await modelReady(page);
   await startRace(page);
   await expect.poll(() => glbRoots(page)).toBe(1);
@@ -189,7 +194,7 @@ test('low quality tier loads only the low LOD for the Home showcase and the race
 test.describe('phone portrait', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   test('GLB Roadster on the Home showcase and in the race on a phone', async ({ gameplayPage: page, gameplayURL }) => {
-    const { errors } = await prepare(page, `${gameplayURL}?model=roadster`);
+    const { errors } = await prepare(page, gameplayURL);
     await modelReady(page);
     await attach(page, 'phone-home');
     await startRace(page);

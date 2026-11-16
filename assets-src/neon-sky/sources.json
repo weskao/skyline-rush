@@ -1,0 +1,35 @@
+{
+ "sources": [
+  {
+   "id": "shanghai_bund",
+   "title": "Shanghai Bund",
+   "authors": {
+    "Greg Zaal": "All"
+   },
+   "url": "https://polyhaven.com/a/shanghai_bund",
+   "license": "CC0-1.0",
+   "licenseUrl": "https://polyhaven.com/license",
+   "datePublished": 1528754400,
+   "files": [
+    {
+     "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/shanghai_bund_1k.hdr",
+     "path": "shanghai_bund/shanghai_bund_1k.hdr",
+     "bytes": 1640377,
+     "sha256": "77276a6b67cbf09611efc46e55871eead34e1fc6fa107db412207b91cf74697e"
+    },
+    {
+     "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/4k/shanghai_bund_4k.hdr",
+     "path": "shanghai_bund/shanghai_bund_4k.hdr",
+     "bytes": 25500375,
+     "sha256": "2e72825fd2502ae649f59035ecc9887c7d217dfe1a32e7915146d587fa2816e3"
+    },
+    {
+     "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/8k/shanghai_bund_8k.hdr",
+     "path": "shanghai_bund/shanghai_bund_8k.hdr",
+     "bytes": 99678868,
+     "sha256": "fbc2e9859e6bfaf78a870f137c74ddad8f17b33d7b45f8b41fbd40def6bd05ef"
+    }
+   ]
+  }
+ ]
+}

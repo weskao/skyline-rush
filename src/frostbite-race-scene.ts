@@ -184,11 +184,11 @@ export function createFrostbiteRaceScene(scene: THREE.Scene) {
   const height = createCorridorHeight();
   const materials = {
     terrain: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .8, metalness: .04, flatShading: true }),
-    road: new THREE.MeshStandardMaterial({ color: '#4d6b91', roughness: .5, metalness: .12 }),
+    road: new THREE.MeshStandardMaterial({ color: '#4d6b91', roughness: .74, metalness: .07 }),
     paint: new THREE.MeshBasicMaterial({ color: '#cfefff' }),
     pylon: new THREE.MeshStandardMaterial({ color: '#d8f6ff', emissive: '#3fd8ff', emissiveIntensity: .8 }),
     // Frosted ice: translucent so a car on the lower road under the corridor stays visible to the chase camera.
-    deck: new THREE.MeshStandardMaterial({ color: '#8fd8ff', emissive: '#1d6f9c', emissiveIntensity: .35, roughness: .2, transparent: true, opacity: .55, depthWrite: false }),
+    deck: new THREE.MeshStandardMaterial({ color: '#8fd8ff', emissive: '#1d6f9c', emissiveIntensity: .25, roughness: .48, transparent: true, opacity: .48, depthWrite: false }),
     hazard: new THREE.MeshStandardMaterial({ color: '#ff9a3c', emissive: '#ff6a10', emissiveIntensity: 1.4 }),
   };
   const chunks: { group: THREE.Group; x: number; z: number; radius: number }[] = [];

@@ -1,4 +1,5 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
+import { openGarageSection } from './helpers/garage-browser.js';
 import { mkdir } from 'node:fs/promises';
 
 for (const quality of ['low', 'medium', 'high']) {
@@ -6,11 +7,12 @@ for (const quality of ['low', 'medium', 'high']) {
     await page.setViewportSize({width: 390, height: 844});
     await page.addInitScript(q => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: q, enabled: true })), quality);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
+    await openGarageSection(page, 'paints');
     const options = page.locator('.garage-collection .paint-options button');
-    await expect(options).toHaveCount(6);
+    await expect(options).toHaveCount(7);
     await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', quality);
-    const paints = ['pearl', 'aurora', 'glacier', 'coral', 'cobalt', 'obsidian'];
+    const paints = ['pearl', 'crimson', 'aurora', 'glacier', 'coral', 'cobalt', 'obsidian'];
     for (const id of paints) {
       const button = page.locator(`[data-paint="${id}"]`);
       const preview = button.locator('.garage-paint-preview');
@@ -39,6 +41,64 @@ test('Garage paint respects Reduced Motion even on High', async ({page}) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality:'high', enabled:true })));
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'paints');
   const animation = await page.locator('[data-paint="pearl"] .garage-paint-sheen').evaluate(node => getComputedStyle(node).animationName);
   expect(animation).toBe('none');
+});
+
+test('Garage selection has no press sweep and keeps previews separate from equipped paint', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low', enabled: true })));
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  await openGarageSection(page, 'paints');
+  const paint = page.locator('[data-paint="crimson"]');
+  const pearl = page.locator('[data-paint="pearl"]');
+
+  await paint.click();
+  await openGarageSection(page, 'effects');
+  await page.locator('[data-skin="thruster-ion"] .garage-skin-preview-hitarea').click();
+  await openGarageSection(page, 'paints');
+  // Selected cards get no shimmer sweep overlay.
+  await expect(page.locator('#garage-screen .garage-selection-flash')).toHaveCount(0);
+
+  await expect(paint).toHaveAttribute('aria-pressed', 'true');
+  await expect(paint.getByText('Previewing')).toBeVisible();
+  await expect(pearl).toHaveAttribute('data-state', 'equipped');
+  expect(await page.evaluate(() => localStorage.getItem('skyline-rush-paint'))).toBeNull(); // settled: absence check
+  await page.locator('#garage-equip').click();
+  await expect(paint).toHaveAttribute('data-state', 'equipped');
+  await expect(paint.getByText('Previewing')).toHaveCount(0);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-paint')))).toBe('crimson');
+});
+
+test('Garage can undo an owned paint after switching cars and still preview a locked finish', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('#garage-button').click();
+  const paints = page.getByRole('button', { name: 'Paints', exact: true });
+  const cars = page.getByRole('button', { name: 'Cars', exact: true });
+  await expect(paints).toBeVisible();
+  await paints.click();
+  await page.locator('[data-paint="crimson"]').click();
+  const equip = page.locator('#garage-equip');
+  await expect(equip).toBeInViewport({ ratio: .99 });
+  await equip.click();
+  await expect(page.locator('[data-paint="crimson"]')).toHaveAttribute('data-state', 'equipped');
+  await cars.click();
+  await page.locator('[data-car="crimson-gt"]').click();
+  await paints.click();
+  await expect(page.locator('[data-paint="crimson"]')).toHaveAttribute('data-state', 'equipped');
+  const undo = page.getByRole('button', { name: 'Undo paint', exact: true });
+  await undo.click();
+  await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
+  await expect(undo).toBeHidden();
+  await page.locator('[data-paint="obsidian"]').click();
+  await expect(equip).toBeDisabled();
+  await expect(page.locator('[data-paint="obsidian"]')).toHaveAttribute('aria-pressed', 'true');
+  await cars.click();
+  await page.locator('[data-car="roadster"]').click();
+  await paints.click();
+  await expect(page.locator('[data-paint="obsidian"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
 });

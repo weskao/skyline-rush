@@ -47,6 +47,42 @@ test('pause action fires once on a held key and clears throttle', () => {
   assert.equal(controls.read().throttle, false);
 });
 
+test('cleared driving keys wait for a fresh press instead of resuming on repeat', () => {
+  const target = new EventTarget();
+  const controls = createControls(target);
+  send(target, 'keydown', { code: 'KeyW' });
+  controls.clear();
+  send(target, 'keydown', { code: 'KeyW', repeat: true });
+  assert.equal(controls.read().throttle, false);
+  send(target, 'keyup', { code: 'KeyW' });
+  send(target, 'keydown', { code: 'KeyW' });
+  assert.equal(controls.read().throttle, true);
+});
+
+test('clearing driving input also releases native pointer capture', () => {
+  const target = new EventTarget();
+  const gas = new EventTarget();
+  const pad = new EventTarget();
+  const captured = new Map();
+  for (const element of [gas, pad]) {
+    element.hasPointerCapture = id => captured.get(id) === element;
+    element.setPointerCapture = id => captured.set(id, element);
+    element.releasePointerCapture = id => captured.delete(id);
+  }
+  const controls = createControls(target);
+  controls.bindButton(gas, 'throttle');
+  controls.bindSlidePad(pad);
+  for (const [element, pointerId] of [[gas, 1], [pad, 2]]) {
+    const down = new Event('pointerdown', { cancelable: true });
+    Object.defineProperty(down, 'isTrusted', { value: true });
+    element.dispatchEvent(Object.assign(down, { pointerId, clientX: 20, clientY: 20 }));
+  }
+  assert.equal(captured.size, 2);
+  controls.clear();
+  assert.equal(controls.read().throttle, false);
+  assert.equal(captured.size, 0);
+});
+
 test('camera, audio, airflow and auto accelerator shortcuts preserve held driving inputs', () => {
   const target = new EventTarget();
   const actions = [];
@@ -435,4 +471,26 @@ test('holding a touch button or the slide pad cancels touchstart, so iOS shows n
   assert.equal(controls.read().throttle, true);
   controls.destroy();
   assert.equal(send(gas, 'touchstart').defaultPrevented, false);
+});
+
+test('clearing during a fold releases both captured thumbs and ignores their subsequent moves', () => {
+  const controls = createControls(new EventTarget());
+  const steer = new EventTarget(), gas = new EventTarget(), released = [];
+  for (const button of [steer, gas]) {
+    button.hasPointerCapture = () => true;
+    button.releasePointerCapture = id => released.push(id);
+  }
+  controls.bindButton(steer, 'left');
+  controls.bindButton(gas, 'throttle');
+  send(steer, 'pointerdown', { pointerId: 4, pointerType: 'touch' });
+  send(gas, 'pointerdown', { pointerId: 8, pointerType: 'touch' });
+  assert.equal(controls.read().steer, -1);
+  assert.equal(controls.read().throttle, true);
+  controls.clear();
+  assert.deepEqual(released, [4, 8]);
+  send(steer, 'pointermove', { pointerId: 4, pointerType: 'touch' });
+  send(gas, 'pointermove', { pointerId: 8, pointerType: 'touch' });
+  assert.equal(controls.read().steer, 0);
+  assert.equal(controls.read().throttle, false);
+  controls.destroy();
 });

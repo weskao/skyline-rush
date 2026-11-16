@@ -21,9 +21,13 @@ const corner = (o: Object3D): string => `wheel_${o.position.z < 0 ? 'f' : 'r'}${
 
 function boundPairs(car: Object3D, instance: Object3D): [Object3D, Object3D][] {
   const { wheels = [], wing, jets } = car.userData as CarParts;
-  // Only wheels authored to the rig contract (a `<wheel>_spin` pivot child) follow; the Phase 2 probe's wheels
-  // sit on their own pivots and would be thrown off by the procedural TRS.
-  const rigged = wheels.filter(w => instance.getObjectByName(`${corner(w)}_spin`)?.parent?.name === corner(w));
+  // Only wheels authored to the rig contract (a `<wheel>_spin` pivot under the wheel, directly or below one static
+  // axle offset for a smaller tyre) follow; the Phase 2 probe's wheels sit on their own pivots and would be thrown
+  // off by the procedural TRS.
+  const rigged = wheels.filter(w => {
+    const holder = instance.getObjectByName(`${corner(w)}_spin`)?.parent;
+    return holder?.name === corner(w) || holder?.parent?.name === corner(w);
+  });
   const procedural: [string, Object3D | undefined][] = rigged.flatMap(w => [
     [corner(w), w], [`${corner(w)}_spin`, w.getObjectByName('Roadster wheel spin')],
   ] as [string, Object3D | undefined][]);
@@ -47,7 +51,7 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
   const parts = car.userData as CarParts;
   const pairs = boundPairs(car, instance);
   const finish = parts.body?.material as Material | undefined;
-  // Post-hit grace (grace-fade.ts) makes the player car's materials transparent when it is built and fades them.
+  // Ghost Phase can fade the race car. Studio cars keep their normal GLB material setup.
   const fades = finish?.transparent === true;
   const owned = new Map<Material, Tinted>(); // per instance; all of them when fading, so the cached original keeps its opacity
   instance.traverse(object => {
@@ -58,9 +62,9 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
   });
   const paints = [...owned.values()].filter(m => m.name.endsWith('_paint'));
   const lights = [...owned.values()].filter(m => m.name.endsWith('_light'));
-  // Blending from bind time, which is before compile: turning it on at the first hit would compile programs mid-race.
+  // Blending from bind time, which is before compile: turning it on at item activation would compile programs mid-race.
   const faded: [Material, number][] = fades ? [...owned.values()].map(m => { m.transparent = true; return [m, m.opacity]; }) : [];
-  const solid = finish?.opacity || 1; // the procedural body's opacity outside grace (dressing happens before GO)
+  const solid = finish?.opacity || 1; // the procedural body's opacity outside Ghost Phase (dressing happens before GO)
   let fade = 1;
   // Task 4c: a Garage-only paint shader hook (the Studio sweep, garage-paint-shader.ts) carries over to the GLB paint.
   if (finish && Object.hasOwn(finish, 'onBeforeCompile')) for (const paint of paints) {
@@ -79,9 +83,11 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
     update() {
       for (const rider of riders) if (rider.parent !== glbBody) {
         glbBody!.add(rider); rider.geometry = glbBody!.geometry;
-        // GLB body space (quantized, uniformly scaled, unrotated) → procedural body space, for shaders that read it
-        const { position: at, scale } = parts.body!, s = scale.x;
-        frameOf(rider)?.set((glbBody!.position.x - at.x) / s, (glbBody!.position.y - at.y) / s, (glbBody!.position.z - at.z) / s, glbBody!.scale.x / s);
+        // GLB body space (quantized, uniformly scaled, unrotated) → procedural body space, for shaders that read it.
+        // The instance's display scale (CARS) is folded in; its x may differ, so only x of the sweep stretches slightly.
+        const { position: at, scale } = parts.body!, s = scale.x, shown = instance.scale;
+        frameOf(rider)?.set((glbBody!.position.x * shown.x - at.x) / s, (glbBody!.position.y * shown.y - at.y) / s,
+          (glbBody!.position.z * shown.z - at.z) / s, glbBody!.scale.x * shown.y / s);
       }
       for (const [target, source] of pairs) {
         target.position.copy(source.position);
@@ -98,7 +104,7 @@ export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
       if (led?.emissive) for (const light of lights) { light.emissive?.copy(led.emissive); light.emissiveIntensity = led.emissiveIntensity; }
       if (faded.length && finish!.opacity / solid !== fade) {
         fade = finish!.opacity / solid;
-        for (const [material, base] of faded) material.opacity = base * fade;
+        for (const [material, base] of faded) material.opacity = material.name.endsWith('_light') ? base : base * fade;
       }
     },
     dispose() {

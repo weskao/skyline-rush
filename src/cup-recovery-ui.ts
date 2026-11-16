@@ -24,6 +24,8 @@ export function setupCupRecovery(deps: {
   cupRecoveryActions.resume = () => {
     const saved = loadCupProgress(deps.unlocked());
     if (!saved || !deps.canResume()) { refresh(); return; }
+    // A legacy save can resume ordinary standings. Earlier heats carry no demo generation.
+    if (saved.results.length && saved.demoScope === undefined) saved.demoScope = null;
     deps.resume(saved);
   };
   cupRecoveryActions.discard = () => { remember(null); deps.cue(); };

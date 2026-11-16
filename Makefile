@@ -2,14 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-# `3d=1` on any dev server (`make 3d=1`, `make dev-unlocked 3d=1`, `make phone 3d=1 y=1`, `make dev-feature <name> 3d=1`):
-# the bare URL redirects to ?model=roadster&look=3d (GLB Roadster + Coast look), phone and Telegram links included.
-# Exported so every child (emulators:exec, Vite, phone-dev, dev-feature) sees it; scripts/dev-3d-redirect-plugin.mjs reads it.
-ifneq ($(3d),)
-export DEV_3D := 1
-endif
-
-.PHONY: help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy deploy-netlify stop-old-dev reclaim-dev-port
+.PHONY: build help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy deploy-netlify stop-old-dev reclaim-dev-port
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -111,6 +104,10 @@ ifneq ($(DEV_FEATURE_NAME),)
 $(eval $(DEV_FEATURE_NAME):;@:)
 endif
 endif
+
+# Production-style artifact without deployment.
+build: node_modules ## `make build`: compile the site locally without publishing
+	$(NPM) run build
 
 # test:browser builds dist/ first via pretest:browser, so build is not run separately.
 run: node_modules ## `make run`: unit tests, production build and Chrome browser tests

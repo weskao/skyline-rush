@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wave 3 economy browser fixture</title></head>
+<body style="margin:12px;background:#101b28;color:#e7f5ff;font:14px system-ui">
+<div id="app"></div>
+<script type="module">
+import { createApp, h, ref } from 'vue';
+import GarageMissionBoard from '../../src/GarageMissionBoard.vue';
+import Wave3CurrencyStrip from '../../src/Wave3CurrencyStrip.vue';
+import Wave3DemoEntry from '../../src/Wave3DemoEntry.vue';
+import { wave3DemoExperience } from '../../src/wave3-race-events.ts';
+import { currentGarageSkins, garageSkinState } from '../../src/garage-skin-runtime.ts';
+import { resolveInitialLocale, saveLocale, setLocale } from '../../src/i18n.ts';
+
+createApp({
+  setup() {
+    const garage = ref(false);
+    const locale = ref(setLocale(resolveInitialLocale()));
+    const toggleLocale = () => {
+      locale.value = locale.value === 'en' ? 'zh-TW' : 'en';
+      saveLocale(locale.value);
+      setLocale(locale.value);
+    };
+    return () => h('main', [
+      h('button', { type: 'button', onClick: toggleLocale }, 'Switch language'),
+      garage.value
+        ? h('section', { id: 'garage-screen' }, [
+            h('button', { id: 'garage-close', type: 'button', onClick: () => { garage.value = false; } }, 'Close Garage'),
+            h('span', { id: 'garage-preview', 'data-revision': garageSkinState.revision,
+              'data-skin-equipped-thruster': currentGarageSkins().thruster }),
+            h(GarageMissionBoard, { experience: wave3DemoExperience }),
+            h(Wave3DemoEntry, { locale: locale.value }),
+          ])
+        : h('section', { id: 'intro' }, [
+            h(Wave3CurrencyStrip, { experience: wave3DemoExperience, compact: true, locale: locale.value }),
+            h('button', { id: 'garage-button', type: 'button', onClick: () => { garage.value = true; } }, 'Open Garage'),
+          ]),
+    ]);
+  },
+}).mount('#app');
+</script>
+</body>
+</html>

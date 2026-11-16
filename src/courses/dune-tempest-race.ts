@@ -34,7 +34,7 @@ const groundLength = graph.groundRoute.reduce((sum, id) => sum + routeLength(gra
 
 // Rings, pickups and traffic come from the shared generators, re-keyed onto graph edges (course-items.ts); hazards and
 // sections come from the spec. Traffic density sits in the classic range (user, 2026-11-09: Classic has road traffic).
-export const DUNE_TEMPEST_TRACK: TrackConfig & { topology: 'course-graph-runtime'; topologyVersion: 1 } = {
+export const DUNE_TEMPEST_TRACK: TrackConfig & { topology: 'course-graph-runtime'; topologyVersion: number } = {
   name: 'Dune Tempest', length: Math.floor(groundLength), trafficDensity: 0.9, seed: 13013,
-  layoutVersion: 1, sections: [], topology: 'course-graph-runtime', topologyVersion: 1,
+  layoutVersion: 1, sections: [], topology: 'course-graph-runtime', topologyVersion: graph.version,
 };

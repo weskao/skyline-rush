@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, DynamicDrawUsage, Float32BufferAttribute } from 'three';
+import { BufferAttribute, BufferGeometry, DynamicDrawUsage, Float32BufferAttribute, Matrix4, Quaternion, Vector3, Object3D, type InstancedMesh } from 'three';
 
 export function carShell(sections: readonly (readonly [number, number, number, number])[]): BufferGeometry {
   const vertices: number[] = [];
@@ -51,10 +51,24 @@ export const ROAD_UV_METRES = 24;
 // v is measured from a base that only jumps by whole repeats, so it stays small for float32 yet never swims.
 const ROAD_UV_PERIOD = ROAD_UV_METRES * 64;
 
-/** Writes one flat road row: left/right edges at centre ± halfWidth, u 0 → 1 across, v from road distance. */
+/** Writes a level road row perpendicular to heading, with u across the road and v measured along it. */
 export function setRoadRow(geometry: BufferGeometry, row: number, x: number, z: number, distance: number,
-  ribbonTile: number, halfWidth = 12): void {
-  (geometry.attributes.position.array as Float32Array).set([x - halfWidth, 0, z, x + halfWidth, 0, z], row * 6);
+  ribbonTile: number, halfWidth = 12, heading = 0): void {
+  const dx = Math.cos(heading) * halfWidth, dz = Math.sin(heading) * halfWidth;
+  (geometry.attributes.position.array as Float32Array).set([x - dx, 0, z - dz, x + dx, 0, z + dz], row * 6);
   const v = (distance - Math.floor(ribbonTile / ROAD_UV_PERIOD) * ROAD_UV_PERIOD) / ROAD_UV_METRES;
   (geometry.attributes.uv.array as Float32Array).set([0, v, 1, v], row * 4);
+}
+
+const matrix = new Matrix4();
+const rotation = new Quaternion();
+const position = new Vector3();
+const scale = new Vector3();
+
+export function putInstance(mesh: InstancedMesh, index: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, angle = 0) {
+  position.set(x, y, z);
+  scale.set(sx, sy, sz);
+  rotation.setFromAxisAngle(Object3D.DEFAULT_UP, angle);
+  matrix.compose(position, rotation, scale);
+  mesh.setMatrixAt(index, matrix);
 }

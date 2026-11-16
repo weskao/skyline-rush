@@ -22,6 +22,23 @@ test('provider: transcoder path follows BASE_URL, support is detected on the exi
   assert.deepEqual(detected, [renderer]);
 });
 
+test('independent model consumers share a transcoder on the same renderer', async () => {
+  const renderer = {};
+  let detections = 0;
+  class FakeKtx2 {
+    setTranscoderPath(path) { this.path = path; return this; }
+    detectSupport() { detections++; return this; }
+  }
+  const load = async () => FakeKtx2;
+  const car = createKtx2Provider(renderer, '/', load);
+  const scenery = createKtx2Provider(renderer, '/', load);
+  const otherWorld = createKtx2Provider({}, '/', load);
+  const [carLoader, sceneryLoader, otherLoader] = await Promise.all([car(), scenery(), otherWorld()]);
+  assert.equal(carLoader, sceneryLoader);
+  assert.notEqual(carLoader, otherLoader);
+  assert.equal(detections, 2);
+});
+
 test('public/basis transcoder is byte-identical to the installed three.js copy', () => {
   const dir = require.resolve('three/examples/jsm/libs/basis/basis_transcoder.js').replace(/basis_transcoder\.js$/, '');
   for (const file of ['basis_transcoder.js', 'basis_transcoder.wasm']) {

@@ -7,7 +7,7 @@ import { createGarageStage } from '../src/garage-stage.ts';
 import { createGaragePaintSweep } from '../src/garage-paint-shader.ts';
 const read = path => readFileSync(new URL('../src/' + path, import.meta.url), 'utf8');
 
-test('six native 3x car-paint image assets are present and reusable by 1x UI cards', () => {
+test('all native 3x car-paint image assets are present and reusable by 1x UI cards', () => {
   const vue = read('GaragePanel.vue'), preview = read('GaragePaintPreview.vue');
   assert.match(vue, /GaragePaintPreview :id="id" :color="paint.paint"/);
   assert.match(preview, /<img/);
@@ -17,7 +17,7 @@ test('six native 3x car-paint image assets are present and reusable by 1x UI car
   assert.match(preview, /height="510"/);
   assert.match(vue, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   for (const id of Object.keys(PAINTS)) {
-    const path = new URL('../public/feature-assets/garage-vfx-skins/paint-cards/' + id + '@3x.webp', import.meta.url);
+    const path = new URL('../public/feature-assets/garage-public/paint-cards/' + id + '@3x.webp', import.meta.url);
     assert.ok(existsSync(path), id + ' has an image');
     assert.ok(statSync(path).size > 10_000, id + ' is a substantive image, not a placeholder');
     const bytes = readFileSync(path);

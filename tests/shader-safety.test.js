@@ -7,6 +7,8 @@ import { RACE_TRACKS } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
 import { createAeroVFX } from '../src/aero-vfx.js';
 import { createUpcomingEnvironment as createFrostbite } from '../src/upcoming-scenes/frostbite-canyon.ts';
+import { createClassicBackdrop } from '../src/classic-backdrop.ts';
+import { createCoastSea } from '../src/coast-sea.ts';
 
 // GLSL pow(x, y) is undefined for x < 0; interpolated varyings overshoot [0,1] by an ulp at triangle edges,
 // and the resulting NaN pixel is spread by the bloom blur into a full black frame.
@@ -14,16 +16,19 @@ test('every VFX shader clamps pow() bases so edge pixels cannot produce NaN blac
   globalThis.devicePixelRatio = 1;
   t.after(() => { delete globalThis.devicePixelRatio; });
   const scene = new Scene(), vehicle = new Group();
-  vehicle.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  vehicle.add(vehicle.userData.body = new Mesh(new BoxGeometry(2, 1, 4)));
   scene.add(vehicle);
-  createEffects(scene, () => 0);
+  createEffects(scene, () => 0, { player: vehicle }); // the player car carries the drift charge shell
+  assert.ok(scene.getObjectByName('Drift charge shell')?.material.isShaderMaterial, 'the drift charge shader is linted');
   createAeroVFX(scene, vehicle);
   const skyCourse = new Scene(), frostbite = new Scene();
   createSkyScene(skyCourse).update(400, 'high');
   createFrostbite(frostbite);
+  const coast = new Scene(), backdrop = createClassicBackdrop(coast, new BoxGeometry(1, 1, 1), () => {});
+  createCoastSea({ ...backdrop, dome: new Mesh(), origin: coast.position, load: () => new Promise(() => {}) });
   const shaders = new Set();
-  for (const root of [scene, skyCourse, frostbite]) root.traverse(object => { if (object.material?.isShaderMaterial) shaders.add(object.material.fragmentShader); });
-  assert.ok(shaders.size >= 5);
+  for (const root of [scene, skyCourse, frostbite, coast]) root.traverse(object => { if (object.material?.isShaderMaterial) shaders.add(object.material.fragmentShader); });
+  assert.ok(shaders.size >= 8);
   const unguarded = [...shaders].flatMap(source => source.split(/\bpow\(/).slice(1)).filter(arg => !/^(max\(0\.,|clamp\()/.test(arg));
   assert.deepEqual(unguarded.map(arg => `pow(${arg.slice(0, 30)}`), []);
   // exp() overflows to Inf once its argument passes ~88, and a varying is extrapolated far past its range where MSAA

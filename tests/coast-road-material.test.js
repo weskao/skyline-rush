@@ -101,6 +101,15 @@ test('wet asphalt reads wet: darker and glossier than the first pass, puddles ne
   assert.match(shader.fragmentShader, /mix\( 1\., \.5, wetness \)/);
 });
 
+test('puddles stay glossy, not mirror-sharp: a sky-bright mirror reads as paint splashes on the road', () => {
+  const road = createCoastRoadMaterial(maps()), shader = standardShader();
+  road.material.onBeforeCompile(shader, null);
+  const floor = Number(shader.fragmentShader.match(/mix\( roughnessFactor, ([\d.]+), puddle \)/)?.[1]);
+  assert.ok(floor >= .15, `puddle roughness ${floor} blurs the reflected sky`);
+  const [, lo, hi] = shader.fragmentShader.match(/smoothstep\( ([\d.]+), ([\d.]+), texelRoughness\.b \)/).map(Number);
+  assert.ok(lo >= .4 && hi - lo >= .5, `puddle mask ${lo}..${hi}: fewer puddles with soft edges`);
+});
+
 test('wet shader: puddles from packed.b darken, smooth and flatten the asphalt', () => {
   const road = createCoastRoadMaterial(maps()), shader = standardShader();
   road.material.onBeforeCompile(shader, null);

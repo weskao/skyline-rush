@@ -27,12 +27,30 @@ exactly. Topics whose work often starts before a scoped file is open:
 | Course music, or music while a map is only selected on the home screen | `.claude/rules/playable-course-shared-template.md` |
 | Animated Garage/HUD/Store/VFX art (GIF, sprite sheet) | `.claude/rules/animated-image-production.md`, `.claude/rules/raster-artwork.md` |
 | Track teaser JPEGs under `public/track-teasers/` | `.claude/rules/track-teaser-artwork.md` |
-| Blender, GLB/PBR, 3D asset, rendering quality, Three.js r180 → r186 | `.claude/rules/3d-asset-pipeline.md` (planned; not deployed) |
+| Blender, GLB/PBR, 3D asset, new car model, rendering quality, Three.js r180 → r186 | `docs/designs/3d-pipeline/phases/README.md` (phase index; new car = `task-7-concept-hero-car.md`), then `.claude/rules/3d-asset-pipeline.md` |
 | Tutorial lessons, cues or transitions | `docs/tutorial-driving.md` |
 | Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
 
+Player copy (What's New, locales, store text, captions) names a track exactly as `TRACK_NAMES` in
+`src/i18n.ts` does, in en and zh-TW; never a paraphrase or a second table. Renaming a track changes that table.
+
 Every course needs its own in-race song, and that song must not match any other course.
 It plays after the race starts. Selecting the course on the home screen keeps the shared intro.
+
+## Garage equipment compatibility
+
+Every new or updated Garage item, including paints, cosmetics, and vehicle-mounted VFX,
+must preview and equip correctly on every selectable car. Use the shared equipment catalog
+and application path. Fit model-dependent effects to the active car's geometry or attachment
+points so the same equipment also works when a new car is added.
+For new paint IDs, names and artwork, follow `.claude/rules/raster-artwork.md`.
+
+Changing car models carries forward the equipped paint and any live paint preview. Persist
+only the equipped paint for the new car, and let the shared model loader warm the replacement
+before drawing it. Guards: `tests/crimson-gt-browser.spec.js` and `tests/garage-model.test.js`.
+
+Verify each changed item on every selectable car. Check the Garage preview and the equipped
+appearance after switching cars, including the home showcase and races where the item appears.
 
 ## Workflow (every feature and bug fix)
 

@@ -23,6 +23,8 @@ export interface CourseGraph {
   readonly checkpoints: readonly string[];
   /** Ordered safe ground edges connecting start to finish without using flight. */
   readonly groundRoute: readonly string[];
+  /** Metres over which route frames converge at a join with the ground route. */
+  readonly groundJoinBlend?: number;
 }
 
 const finitePoint = (p: CoursePoint3): boolean =>

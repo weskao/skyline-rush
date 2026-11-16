@@ -1,4 +1,4 @@
-import { MAX_SPEED, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, NITRO_TIME,
+import { MAX_SPEED, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, pressNitro,
   FLY_DRAIN, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, GLIDE_FUEL_REGEN, SLIPSTREAM_CAP_BONUS, SLIPSTREAM_NITRO, inDraft, stepSlipstream,
   type Slipstream } from './drive-rules.ts';
 import { NITRO_MAX } from './ring-layout.ts';
@@ -51,10 +51,12 @@ export function laneClear(race: DriveRace, rival: DrivenRival): boolean {
   return !blocks(race.player) && !race.traffic.some(blocks) && !race.rivals.some(blocks);
 }
 
+// A rival presses again only in a burst's last half second: one unbroken burst, never a charge burned per frame.
+export const RIVAL_CHAIN_WINDOW = 0.5;
 // Easy keeps each personality's moment (rival-items.ts); Normal and Hard fire a charge as soon as their line is
 // clear, as a good player does: a banked charge is time not gained, a charge fired into a tail is wasted.
 export function rivalFiresNitro(race: DriveRace, rival: DrivenRival, hop: number, skill: RivalSkill): boolean {
-  if (rival.nitro < 1 || rival.nitroTime > 0) return false; // the player's rule: a full charge, one burst at a time
+  if (rival.nitro < 1 || rival.nitroTime > RIVAL_CHAIN_WINDOW) return false; // the player's rule: a full charge per press
   return skill.smart ? laneClear(race, rival) : rivalWantsNitro(race, rival, hop);
 }
 
@@ -66,7 +68,9 @@ export function driveRival(race: DriveRace, rival: DrivenRival, slot: number, ho
   if (stepSlipstream(rival.slipstream, drafts(race.player) || race.traffic.some(drafts) || race.rivals.some(drafts), dt)) {
     rival.nitro = Math.min(NITRO_MAX, rival.nitro + SLIPSTREAM_NITRO);
   }
-  if (rivalFiresNitro(race, rival, hop, skill)) { rival.nitro--; rival.nitroUses++; rival.nitroTime = NITRO_TIME; }
+  // A press during NITRO extends it, as for the player; nitroUses still counts every charge, since each
+  // personality's timing (rival-items.ts) is scheduled per charge.
+  if (rivalFiresNitro(race, rival, hop, skill) && !pressNitro(rival)) rival.nitroUses++;
   const nitro = rival.nitroTime > 0, grounded = !(rival.altitude > 0);
   rival.nitroTime = Math.max(0, rival.nitroTime - dt);
   // No BOOST under NITRO: its cap already covers BOOST's, so the fuel would be wasted.

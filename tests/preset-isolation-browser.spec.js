@@ -5,7 +5,12 @@ import { ciTimeout } from './helpers/ci.js';
 // 10A: rule presets and saved Custom setups are shortcuts, never progress: unlocks, reward eligibility and the
 // skyline-rush-controls / skyline-rush-history formats stay byte-identical through choosing, saving, loading and racing them.
 const GUARDED = ['skyline-rush-unlocked', 'skyline-rush-controls', 'skyline-rush-history'];
-const racing = page => expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
+const startRace = async page => {
+  await page.locator('#start-button').click();
+  // Preset isolation is checked after the real phase transition, without waiting through the countdown twice.
+  await page.evaluate(() => { window.gameplay.race.countdown = .01; });
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
+};
 async function finish(page) {
   await page.evaluate(() => {
     const race = window.gameplay.race;
@@ -15,8 +20,9 @@ async function finish(page) {
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'finished');
 }
 
-test.use({ viewport: { width: 1440, height: 900 } });
+test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
 test('choosing, saving, loading and racing presets leaves unlocks, eligibility, controls and history untouched', async ({ gameplayPage: page }) => {
+  test.setTimeout(ciTimeout(90000));
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.addInitScript(() => {
@@ -28,6 +34,8 @@ test('choosing, saving, loading and racing presets leaves unlocks, eligibility, 
     };
   });
   await page.evaluate(() => {
+    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' }));
+    localStorage.setItem('skyline-rush-music', 'off');
     localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon']));
     localStorage.setItem('skyline-rush-controls', JSON.stringify({ mode: 'buttons', hand: 'right', fullLock: 80, size: 'L', opacity: 0.8, flyMode: 'tap', sensitivity: 1.2, ghost: true, layout: {}, version: 1 }));
   });
@@ -43,8 +51,7 @@ test('choosing, saving, loading and racing presets leaves unlocks, eligibility, 
     await page.locator(`[data-race-preset="${preset}"]`).click();
     await expect(page.locator(`[data-race-preset="${preset}"]`)).toHaveAttribute('aria-pressed', 'true');
   }
-  await page.locator('#start-button').click();
-  await racing(page);
+  await startRace(page);
   const chosen = await page.evaluate(() => JSON.stringify(window.gameplay.race.config));
   await finish(page);
   await page.locator('.brand').click();
@@ -56,8 +63,7 @@ test('choosing, saving, loading and racing presets leaves unlocks, eligibility, 
   // Load the saved setup back from Recent Custom races and race it again.
   await page.locator('#recent-custom > summary').click();
   await page.locator('#recent-custom-runs button[data-recent="0"]').click();
-  await page.locator('#start-button').click();
-  await racing(page);
+  await startRace(page);
   expect(await page.evaluate(() => JSON.stringify(window.gameplay.race.config)), 'the saved preset restores its rules').toBe(chosen);
   await finish(page);
   expect(await page.evaluate(() => window.storageWrites['skyline-rush-recent-custom-v1']), 'the setup was saved').toBeGreaterThan(0);

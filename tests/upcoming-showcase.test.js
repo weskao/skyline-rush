@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createUpcomingShowcase } from '../src/upcoming-showcase.ts';
 import { previewPlayer } from '../src/track-preview.ts';
+import { vfxSettings } from '../src/vfx-settings.ts';
 
 const id = 'dune-tempest';
 
@@ -147,5 +148,53 @@ test('cached showcase uses the latest car paint when reselected', () => {
   showcase.setTrack('dune-tempest');
   assert.equal(showcase.scene.children.find(child => child.userData?.body), firstCar);
   assert.equal(firstCar.userData.body.material.color.getHexString(), 'ff0000');
+  showcase.dispose();
+});
+
+test('new and cached Coming Soon cars show the current Garage airflow style', () => {
+  const make = () => ({ group: new THREE.Group(), update() {}, dispose() {} });
+  const showcase = createUpcomingShowcase({
+    'dune-tempest': make, 'monsoon-ruins': make,
+  }, new THREE.Texture(), new THREE.Texture());
+  const flow = () => showcase.modelHost.keep.children[0];
+  showcase.setAirflowSkin('airflow-vortex');
+  showcase.setTrack('dune-tempest');
+  assert.equal(flow().material.uniforms.skinPattern.value, 2, 'new stage inherits the selected style');
+  const dune = flow();
+  showcase.setTrack('monsoon-ruins');
+  assert.equal(flow().material.uniforms.skinPattern.value, 2);
+  showcase.setAirflowSkin('airflow-prism');
+  assert.equal(flow().material.uniforms.skinPattern.value, 3, 'active stage reflects a new selection');
+  showcase.setTrack('dune-tempest');
+  assert.equal(flow(), dune, 'returning to a track reuses its scene');
+  assert.equal(flow().material.uniforms.skinPattern.value, 3, 'cached stage also received the selection');
+  showcase.setAirflowSkin('airflow-basic');
+  assert.equal(flow().material.uniforms.skinPattern.value, 0, 'restoring the standard style clears the preview');
+  showcase.dispose();
+});
+
+test('Coming Soon showroom hides live cosmetics across cached and new stages and restores the selected skins', () => {
+  const make = scene => { const group = new THREE.Group(); scene.add(group); return { group, update() {}, dispose() {} }; };
+  const showcase = createUpcomingShowcase({
+    'dune-tempest': make, 'monsoon-ruins': make,
+  }, new THREE.Texture(), new THREE.Texture());
+  const camera = new THREE.PerspectiveCamera(50, 1.5, .1, 500);
+  const settings = vfxSettings({ airflow: true });
+  showcase.setTrack('dune-tempest');
+  showcase.setGaragePreview({ airflow: 'airflow-prism', thruster: 'thruster-void' }, false);
+  for (const id of ['dune-tempest', 'monsoon-ruins', 'dune-tempest']) {
+    showcase.setTrack(id);
+    showcase.update(camera, 1, settings, false);
+    assert.equal(showcase.modelHost.keep.visible, false);
+    assert.equal(showcase.modelHost.car.userData.body.visible, true);
+  }
+  showcase.setGaragePreview({ airflow: 'airflow-prism', thruster: 'thruster-void' }, true);
+  showcase.update(camera, 1.05, settings, false);
+  assert.equal(showcase.modelHost.keep.visible, true);
+  assert.equal(showcase.inspectCosmetics().airflowPattern, 3);
+  assert.equal(showcase.inspectCosmetics().voidBeams, true);
+  showcase.setGaragePreview(null);
+  showcase.update(camera, 1.1, settings, false);
+  assert.equal(showcase.inspectCosmetics().voidBeams, false);
   showcase.dispose();
 });

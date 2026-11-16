@@ -69,7 +69,7 @@ test('R9: race audio plays the rival cues; the synth plays them quieter than the
   assert.ok(loudest('rival-nitro') > 0 && loudest('rival-nitro') < loudest('boost'), 'rival NITRO is quieter');
 });
 
-test('R9: the cue is visual too: a small burst where the rival took the item, with no new scene objects', t => {
+test('R9: a rival can flashes at the pickup and other tiers still burst, with no new scene objects', t => {
   globalThis.devicePixelRatio = 1;
   t.after(() => { delete globalThis.devicePixelRatio; });
   const scene = new Scene(), effects = createEffects(scene, () => 0), race = racing();
@@ -80,6 +80,16 @@ test('R9: the cue is visual too: a small burst where the rival took the item, wi
   const objects = scene.children.length, before = lit();
   take(race, 0, 'can');
   effects.update(race, 0.016, 0, false, false);
-  assert.ok(lit() > before, 'particles burst at the take');
-  assert.equal(scene.children.length, objects, 'reuses the shared particle system');
+  assert.equal(lit(), before, 'no lingering road debris for a can');
+  const flash = scene.getObjectByName('Pickup collect can 0');
+  assert.ok(flash.visible && flash.getObjectByName('energy flash').material.opacity > 0);
+  assert.equal(flash.position.x, race.rivals[0].x);
+  assert.equal(Math.abs(flash.position.z), race.rivals[0].distance - race.player.distance);
+  effects.update(race, .28, 0, false, false);
+  assert.equal(flash.visible, false, 'the rival flash expires at the same short lifetime');
+  race.elapsed += RIVAL_CUE_GAP + 1;
+  take(race, 0, 'cell');
+  effects.update(race, 0.016, 0, false, false);
+  assert.ok(lit() > before, 'the cell still emits its legacy burst');
+  assert.equal(scene.children.length, objects, 'reuses the shared particle systems');
 });

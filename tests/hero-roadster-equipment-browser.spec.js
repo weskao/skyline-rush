@@ -1,10 +1,12 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, programs, modelInstances as instances } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { PAINTS } from '../src/appearance.ts';
+import { defaultPaint } from '../src/car-catalog.ts';
 import { GARAGE_SKINS } from '../src/garage-skin-catalog.ts';
 
-// Task 4c `?model=roadster`: every Garage paint and skin (read from the catalogs, so a new one joins automatically) shows
+// Task 4c Roadster GLB: every Garage paint and skin (read from the catalogs, so a new one joins automatically) shows
 // on the GLB car in Garage Home, Preview Studio, the Home showcase and the race, as uniforms on the existing VFX ports.
 async function prepare(page, url) {
   await page.addInitScript(() => {
@@ -53,10 +55,12 @@ const HEAVIEST = ['thruster-void', 'airflow-prism', 'nitro-trail-purple', PREMIU
 
 async function previewEverything(page) {
   for (const [id, paint] of Object.entries(PAINTS)) {
+    await openGarageSection(page, 'paints');
     await page.locator(`[data-paint="${id}"]`).click();
     await expect.poll(async () => { const a = await audit(page); return [a.paint, a.proc]; }).toEqual([paint.paint.slice(1), paint.paint.slice(1)]);
   }
   for (const { id, category } of GARAGE_SKINS) {
+    await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
     await expect(page.locator('#garage-preview')).toHaveAttribute(`data-skin-preview-${category}`, id);
     await expect.poll(async () => (await audit(page)).hidden, { message: id }).toEqual([]);
@@ -67,7 +71,7 @@ async function previewEverything(page) {
 
 test('Garage Home and Preview Studio: every paint and skin on the GLB car, without new programs or geometry', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(180000));
-  const errors = await prepare(page, `${gameplayURL}?model=roadster`);
+  const errors = await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
   await modelReady(page);
   await expect.poll(() => audit(page)).not.toBeNull();
@@ -84,6 +88,7 @@ test('Garage Home and Preview Studio: every paint and skin on the GLB car, witho
   await page.waitForTimeout(ciTimeout(500));
   const studio = await gpu(page);
   for (const { id, category } of GARAGE_SKINS) {
+    await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
     await expect(page.locator('#garage-preview')).toHaveAttribute(`data-skin-preview-${category}`, id);
     await expect.poll(async () => (await audit(page)).hidden, { message: id }).toEqual([]);
@@ -98,11 +103,13 @@ test('Garage Home and Preview Studio: every paint and skin on the GLB car, witho
 
 test('race with the heaviest skin of each category: launch flare wraps the GLB, no program compiles after GO', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(150000));
-  const errors = await prepare(page, `${gameplayURL}?model=roadster`);
+  const errors = await prepare(page, gameplayURL);
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   for (const id of HEAVIEST) {
+    await openGarageSection(page, 'effects');
     const card = page.locator(`#garage-vfx-catalog [data-skin="${id}"]`);
+    await card.locator('.garage-skin-preview-hitarea').click();
     await card.getByRole('button', { name: /try|試用/i }).click();
     await expect(card).toHaveAttribute('data-state', 'equipped');
     await expect(card).toHaveAttribute('data-owned', 'false');
@@ -117,8 +124,12 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
   await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
   await page.waitForTimeout(ciTimeout(300));
   const before = await programs(page);
-  await page.evaluate(() => { window.gameplay.race.player.cooldown = 1.5; }); // a hit's post-hit grace (grace-fade.ts)
-  await expect.poll(async () => (await audit(page)).opacity, { timeout: ciTimeout(5000) }).toBeLessThan(0.75); // the GLB pulses too
+  await page.evaluate(() => {
+    const { player } = window.gameplay.race;
+    player.cooldown = 1.5;
+    player.effects.ghost = 2.5; // only Ghost Phase fades the body
+  });
+  await expect.poll(async () => (await audit(page)).opacity, { timeout: ciTimeout(5000) }).toBeLessThan(0.75);
   await page.keyboard.down('ShiftLeft');
   await page.waitForTimeout(ciTimeout(600));
   await page.keyboard.up('ShiftLeft');
@@ -137,10 +148,12 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
 });
 
 test('Home and Coming Soon showcases wear the selected paint on the GLB', async ({ gameplayPage: page, gameplayURL }) => {
-  const errors = await prepare(page, `${gameplayURL}?model=roadster`);
+  const errors = await prepare(page, gameplayURL);
   // A locked paint previewed in the Garage reverts on close, so a one-shot read raced it (make verify, 2026-11-08):
-  // judge the equipped paint (a fresh profile owns only the 0-star one), polled, on both cars.
-  const [equipped] = Object.values(PAINTS).filter(p => !p.stars).map(p => p.paint.slice(1));
+  // judge the equipped paint (a fresh profile wears its car's default: the 0-star paint, or the GT's factory red
+  // under HERO_CAR=crimson-gt), polled, on both cars.
+  const car = process.env.HERO_CAR ?? 'roadster';
+  const equipped = PAINTS[defaultPaint(car)].paint.slice(1);
   const hex = async () => { const a = await audit(page); return a && [a.paint, a.proc]; };
   const shown = [equipped, equipped];
   await expect.poll(hex).toEqual(shown);
@@ -154,9 +167,10 @@ test('Home and Coming Soon showcases wear the selected paint on the GLB', async 
 test.describe('phone portrait', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   test('Garage Home flare and Studio sweep on the GLB car on a phone', async ({ gameplayPage: page, gameplayURL }) => {
-    const errors = await prepare(page, `${gameplayURL}?model=roadster`);
+    const errors = await prepare(page, gameplayURL);
     await page.locator('#garage-button').click();
     await modelReady(page);
+    await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${PREMIUM_FLARE}"] .garage-skin-preview-hitarea`).click();
     await expect.poll(() => glowOnGlb(page), { timeout: ciTimeout(10000) }).toBe(true);
     await attach(page, 'phone-garage-flare');

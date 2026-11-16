@@ -30,9 +30,7 @@ const storeStatusLabel = (id: string): string => {
     : (unavailable ? 'Unavailable' : 'Coming soon');
 };
 const image = (id: string) =>
-  `${import.meta.env.BASE_URL}feature-assets/${props.category}/raster/${id}@3x.png`;
-const legacyStoreImage = (id: string) =>
-  `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/${id}@3x.webp`;
+  `${import.meta.env.BASE_URL}feature-assets/${props.category}/raster/${id}@3x.webp`;
 function setFilter(group: Wave3PreviewGroup): void {
   filter.value = group;
   selected.value = filterWave3PreviewItems(props.category, group)[0]?.id ?? '';
@@ -48,7 +46,7 @@ onUnmounted(() => stopListening?.());
       <span data-wave3-entry-icon class="garage-source-entry-icon"
         :class="{ 'garage-source-entry-icon--store': category === 'garage-store-readiness' }">
         <GarageArtworkImage v-if="category === 'garage-store-readiness'"
-          :src="image('store-collection')" :fallback-src="legacyStoreImage('store-collection')"
+          :src="image('store-collection')"
           :size="72" image-id="store-collection-summary"
           :alt="locale === 'zh-TW' ? '商店收藏概念圖示' : 'Store collection concept artwork'"
           :fallback-text="locale === 'zh-TW' ? '收藏圖示' : 'Collection art'" loading="eager" />
@@ -86,7 +84,7 @@ onUnmounted(() => stopListening?.());
         <GarageArtworkTile :id="item.id" :label="copy(item.name)" :src="image(item.id)"
           :size="config.cssSize" :tone="item.tone"
           :restored="category === 'garage-store-readiness'"
-          :fallback-src="category === 'garage-store-readiness' ? legacyStoreImage(item.id) : ''" />
+           />
         <span v-if="category === 'garage-store-readiness'" class="garage-store-card-meta">
           <span v-if="STORE_ITEM_PRESENTATION[item.id]?.featured" data-store-featured class="garage-store-featured">
             {{ locale === 'zh-TW' ? '精選概念' : 'Featured concept' }}
@@ -106,7 +104,7 @@ onUnmounted(() => stopListening?.());
         <div v-if="category === 'garage-store-readiness'" class="garage-source-detail-art"
           :data-wave3-preview-image="current.id"
           :style="{ width: config.cssSize + 'px', height: config.cssSize + 'px' }">
-          <GarageArtworkImage :src="image(current.id)" :fallback-src="legacyStoreImage(current.id)" :size="config.cssSize"
+          <GarageArtworkImage :src="image(current.id)" :size="config.cssSize"
             :image-id="current.id + '-detail'"
             :alt="copy(current.name)" :fallback-text="copy(current.name)" loading="eager" />
         </div>

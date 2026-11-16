@@ -6,11 +6,15 @@ export interface ModeAudioRace {
   phase: string;
   mode: string;
   trackId: string;
-  circuit?: { player: { completed: number } } | null;
+  circuit?: { laps?: number; player: { completed: number; valid?: boolean } } | null;
+  elimination?: { nextAt: number; eliminated: readonly string[] } | null;
+  elapsed?: number;
+  rivals?: readonly { distance?: number }[];
+  config?: { clean?: boolean } | null;
   checkpoint?: { passed: number; missed: number; timeLeft: number } | null;
   hazards?: HazardCue[] | null;
   styleAttack?: { combo: number } | null;
-  player?: { distance: number; trickPayout?: { hard?: boolean } | null } | null;
+  player?: { distance: number; collisions?: number; trickPayout?: { hard?: boolean } | null } | null;
   result?: { success?: boolean } | null;
 }
 export interface ModeAudioState {
@@ -19,7 +23,8 @@ export interface ModeAudioState {
   passed: number; missed: number; warning: boolean;
   hazardsPassed: number; hazardsHit: number;
   warned: Set<string | number>;
-  combo: number; milestone: number; circuitLap: number;
+  combo: number; milestone: number; circuitLap: number; objectiveInvalid: boolean;
+  warnedRound: number; eliminations: number;
   trickPayout?: { hard?: boolean } | null;
 }
 // Pure mode-specific sound events: one-shot transitions, no Web Audio dependencies.
@@ -35,11 +40,15 @@ const MODE_MUSIC: Record<string, string> = {checkpoint:'checkpoint',stunt:'stunt
 export const musicForMode = (race: ModeAudioRace): string => ['ready','finished'].includes(race.phase) ? 'intro' : MODE_MUSIC[race.mode] || COURSE_MUSIC[race.trackId] || 'race';
 
 export const createModeAudioState = (): ModeAudioState => ({ race:null, phase:null, passed:0, missed:0, warning:false,
-  hazardsPassed:0, hazardsHit:0, warned:new Set(), combo:0, milestone:0, circuitLap:0, trickPayout:null });
+  hazardsPassed:0, hazardsHit:0, warned:new Set(), combo:0, milestone:0, circuitLap:0, objectiveInvalid:false, warnedRound:-1, eliminations:0, trickPayout:null });
 
 export function modeAudioCues(race: ModeAudioRace, state: ModeAudioState): string[] {
+  const invalid = race.circuit?.player.valid === false ||
+    (race.mode === 'time' && race.config?.clean === true && (race.player?.collisions ?? 0) > 0);
+  const eliminations = race.elimination?.eliminated.length ?? 0;
   if (race !== state.race) {
     state.race=race; state.phase=race.phase;
+    state.warnedRound = -1; state.eliminations = eliminations; state.objectiveInvalid = invalid;
     state.passed=race.checkpoint?.passed || 0;
     state.missed=race.checkpoint?.missed || 0;
     state.warning=false; state.milestone=Math.floor((race.player?.distance ?? 0)/1000); state.circuitLap=race.circuit?.player.completed ?? 0;
@@ -58,6 +67,7 @@ export function modeAudioCues(race: ModeAudioRace, state: ModeAudioState): strin
   }
   state.phase=race.phase;
   if (race.phase !== 'racing') {
+    state.eliminations = eliminations; state.objectiveInvalid = invalid;
     state.milestone=Math.floor((race.player?.distance ?? 0)/1000);
     state.circuitLap=race.circuit?.player.completed ?? 0;
     state.passed=race.checkpoint?.passed || 0;
@@ -72,9 +82,24 @@ export function modeAudioCues(race: ModeAudioRace, state: ModeAudioState): strin
   if(race.mode==='endless' && milestone>state.milestone)cues.push('gate-clear');
   state.milestone=milestone;
   const lap=race.circuit?.player.completed ?? 0;
-  if (lap>state.circuitLap) cues.push('gate-clear');
+  if (lap > state.circuitLap) cues.push(lap + 1 === race.circuit?.laps ? 'final-lap' : 'gate-clear');
   state.circuitLap=lap;
   const add = (cue: string): void => {if (cues.length < 2) cues.push(cue);};
+  if (invalid && !state.objectiveInvalid) add('objective-invalid');
+  state.objectiveInvalid = invalid;
+  const elimination = race.elimination;
+  if (elimination) {
+    if (eliminations > state.eliminations) add('rival-eliminated');
+    const remaining = elimination.nextAt - (race.elapsed ?? 0);
+    if (remaining > 0 && remaining <= 3 && state.warnedRound !== elimination.nextAt) {
+      const rivalsBehind = race.rivals?.filter(rival => (rival.distance ?? Infinity) < (race.player?.distance ?? 0)).length ?? 0;
+      if (rivalsBehind < 2) {
+        state.warnedRound = elimination.nextAt;
+        add('elimination-warning');
+      }
+    }
+  }
+  state.eliminations = eliminations;
   if (race.checkpoint) { // Checkpoint Rush and Event Lab's authored checkpoints share the gate cues
     const cp=race.checkpoint;
     if (cp.passed > state.passed) add('gate-clear');

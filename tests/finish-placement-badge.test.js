@@ -25,9 +25,9 @@ test('labels are bilingual and never include an award or currency', () => {
 
 test('Wave 3 podium artwork uses checked GitHub 3x assets with safe Pages prefix and display-only sizing', () => {
   assert.deepEqual(placementBadgeArtwork('gold', '/skyline-rush/'), {
-    src: '/skyline-rush/feature-assets/garage-rewards-and-missions/raster/trophy-gold@3x.png',
+    src: '/skyline-rush/feature-assets/garage-rewards-and-missions/raster/trophy-gold@3x.webp',
     cssSize: 96, sourcePixels: 288,
   });
-  assert.match(placementBadgeArtwork('silver', '/').src, /trophy-silver@3x\.png$/);
+  assert.match(placementBadgeArtwork('silver', '/').src, /trophy-silver@3x\.webp$/);
   assert.match(placementBadgeArtwork('bronze', '//evil/path/').src, /^\/feature-assets\//);
 });

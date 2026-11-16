@@ -21,6 +21,12 @@ Write every assertion so that runner speed cannot change its outcome.
   switch, 2026-11-04).
 - **Pause freezes the race clock.** Timed labels such as COLLECTED (1.2 s) stay up while paused.
   Judge whichever label the frozen state legitimately shows, not one fixed string.
+- **Pause does not freeze the camera.** The chase camera keeps easing to its rig (about 1.6 s at
+  60 fps), so the frustum moves under a draw-count, culling or screen-position read. Trap
+  (2026-11-16): Neon traffic measured 22 calls instead of 21 whenever the race paused early (cold
+  Vite cache); a rival's wheel rim crossed the frustum edge between the baseline and the reading.
+  Wait for the camera to come to rest first: `pausedRace()` in `tests/helpers/traffic-browser.js`
+  asserts it.
 
 ## Poll anything a UI action changes asynchronously
 
@@ -55,8 +61,29 @@ Write every assertion so that runner speed cannot change its outcome.
   *real engine's* respawn; separate deterministic unit tests cover natural falls at several
   simulation frame rates. Do not use wall-clock sleeps or bigger timeouts to hide movement.
 
+## Judge a feature in its own frame, by its own assets
+
+Trap (2026-11-14): three merges changed intended behaviour and left sibling browser specs red on develop for a
+day, unseen because each develop push cancelled the previous full CI run. Classic tracks now curve
+(`fbbfb8e5`), Endless shows a rolling minimap (same commit) and pickups are always-on meshopt + KTX2 GLBs (`e30ee752`).
+
+- **Poses on a classic road are road-relative.** Hazards and gates turn with the road
+  (`hazard-render.ts` `yawAt`), so a world yaw of 0 or a world-x sweep only held while the road was straight.
+  Read the heading from `classicRoadRoute(trackId).heading(distance)`, the source the renderer uses, and
+  measure lateral sweeps on the ground plane (`tests/hazard-captures-browser.spec.js`).
+- **An absence check names the feature's own files.** A shared decoder (`basis/basis_transcoder.*`,
+  meshopt) belongs to whichever system loads it first; "no Coast KTX2" is `.ktx2` files, not the transcoder
+  (`tests/coast-scenery-browser.spec.js`).
+- **A control's name is unique only inside its landmark.** Home's race setup and the VFX panel both have a
+  "Showcase camera" combobox (`498d84d0`), so a page-wide `getByRole('combobox', { name })` hit strict mode in
+  `browser.spec.js` and `custom-controls-browser.spec.js` (2026-11-16). Scope role locators to the landmark
+  that owns the control (`getByRole('complementary', { name: 'Airflow and visual effects' })`).
+- A merge that changes a shared HUD, road or asset rule runs the browser specs that assert it before it lands
+  (`git grep` the selector or asset name in `tests/*browser.spec.js`); do not rely on develop's CI to finish.
+
 ## Budgets and retries
 
+- **Split WebGL preview sweeps into small batches.** Each track switch rebuilds the scene. Keep all catalog entries covered, but let Playwright schedule bounded cases independently. The desktop locked-preview sweep exhausted the 135-second budget as Coast started in CI run `43563563658`.
 - Wrap fixed waits and timeouts in `ciTimeout()`. This is enforced by the same test file.
 - **A test must fit its budget with room to spare on CI.** CI steps the game at about 1/4 speed (each slow
   frame is clamped to 0.05 s), so a flow that plays N s of game time needs about 4N s of wall clock. A test
@@ -73,6 +100,40 @@ Write every assertion so that runner speed cannot change its outcome.
   await wait(10)` burned 60 s on one missed ring and timed ring-sfx out (CI 42489399352). Write
   `while (!decided && race.elapsed < until) await new Promise(requestAnimationFrame)`. Enforced by
   `tests/browser-timeouts.test.js` (*counted wall-clock sleep*).
+- **A slow-frame shim stalls each frame once, not each `requestAnimationFrame` callback.** Since the results
+  credit roll runs its own rAF loop, a per-callback 300 ms stall made the 17 frames a finish needs (4 to cross
+  the line, 12 for the 0.6 s results reveal at 0.05 s each) cost 39 stalls: 11.9 s, past the 10 s expect, while
+  a real slow device took 5.4 s. Key the stall on the frame timestamp (`stalledFrame`); enforced by
+  `tests/browser-timeouts.test.js` (*slow-frame shim*).
+- **Measure an overlay after its entry animation.** The Garage (`history-in`, translateX 22px), history, pause
+  and results (`enter()` in `src/motion.ts`) all open with a transform. A rect read mid-entry is shifted and goes
+  through float32 transform math: a 144 px Garage thumbnail measured 144.00001526 in 1 of 30 runs, the paused
+  Race again button 43.99998474 px, while `offsetWidth`/`offsetHeight` stayed exact. Open the Garage with
+  `openGarage()` and follow pause/results/history with `await settled(<overlay locator>)` (both in
+  `tests/helpers/test.js`); never loosen a pixel bound to absorb it. Enforced by the same test file
+  (*overlay geometry*) for every spec that opens one of them and then calls `getBoundingClientRect`/`boundingBox`.
+- **Poll the condition you assert, not a weaker proxy.** `expect.poll(...).not.toEqual(before)` passes on the
+  first change, which can be the live loop's own HUD tick (`updateUI` runs every 0.075 s) from before your
+  stepped frames were drawn; a one-shot read on the next line then judged all eight minimap markers and found
+  near-grid racers on Volcanic's wide map still on the same rounded 0.01 (2 in 3 runs). Put the full assertion
+  inside the poll. Enforced by the same test file (*weaker change*).
+- **A spec that spawns its own server takes a free port.** The diag relay spec spawned Vite on a fixed
+  `DIAG_RELAY_PORT || 5191` with `--strictPort`; when `PLAYWRIGHT_PORT` held that port, Vite exited on
+  EADDRINUSE and the readiness poll accepted the preview server, which has no relay (404 instead of 403, no
+  beat). Listen on port 0 for the default, poll an endpoint only your server answers, and throw when
+  `server.exitCode !== null`. Enforced by the same test file (*spawns a server*).
+- **Count a confirmation sound by its own moment, not by a pitch the race also plays.** In-race cues share
+  confirmation pitches (a cell pickup starts at 880 Hz). The slower the runner, the longer the race drives
+  before the spec teleports to the finish, so "the result chime played once" counted 4. Skip notes while
+  `data-phase` is `countdown` or `racing` (it lags `sound.update` by one frame). Enforced by the same test file
+  (*Web Audio notes*).
+- **Count requests only from your own navigation.** `gameplayPage` has already loaded the game once (no saved
+  car: the Roadster), and that page keeps fetching lazily. Trap (2026-11-17, since ba867d53): specs that
+  registered `page.on('request')` and then called `page.goto` also counted the old page's late
+  `roadster2.glb`, so four `crimson-gt-browser` request counts went red (`['…roadster2.glb', '…roadster2.glb']`)
+  while the product requested the GLB once per load. Start counting with `watchRequests(page, pattern)` from
+  `tests/helpers/gameplay-browser.js`; it leaves for `about:blank` first. Enforced by
+  `tests/browser-timeouts.test.js` (*leaves the fixture page first*).
 - **Seeded positions stay clear of the field.** Teleporting the player back to the first rings put
   it in the pack: rivals step first and take the ring, traffic knocks the car off it. Seed ahead of
   every car (`race.rivals`) and pass traffic with `player.effects.ghost` (game seconds).
@@ -86,3 +147,16 @@ Write every assertion so that runner speed cannot change its outcome.
   `CI=1 npx playwright test <spec> --repeat-each=8 --workers=4 --retries=0` after
   `npm run build`. `--retries=0` keeps the CI retry from hiding a flake. Report the pass count.
   A single local pass does not prove a fix.
+
+## A long local run needs a checkout nobody else moves
+
+- **Gameplay specs serve live source.** `tests/helpers/gameplay-browser.js` starts a Vite dev server on
+  the checkout, so a file that changes mid-run (a merge, a pull, another session's edit) reloads the page
+  under the test. Trap (2026-11-13): a fast-forward during `make verify` changed `src/aero-vfx.js`; the
+  race in progress went back to Home and the test failed with `#race-status` "READY" instead of "RACING".
+  The run log names the cause: `[vite] (client) page reload <file>`.
+- Before blaming the product, grep the run log for `page reload` and compare `git reflog` times with the
+  failure time. A run whose HEAD moved proves nothing about either commit: rerun it.
+- Run `make verify` and other long gates on a detached worktree pinned to the commit
+  (`git worktree add --detach .claude/worktrees/<name> <sha>`, then `npm ci`), and record
+  `git rev-parse HEAD` before and after the run.

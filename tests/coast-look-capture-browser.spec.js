@@ -5,11 +5,10 @@ import fs from 'node:fs';
 
 // Task 5 Coast look evidence: home showcase, day and rain race frames, NITRO, with renderer stats and ?perf frame
 // times per quality tier. Runs only with COAST_CAPTURE=1, never in the gate:
-//   COAST_CAPTURE=1 LABEL=<x> VIEWPORT=desktop|phone QUALITY=low|medium|high|ultra [MODEL=roadster] npx playwright test tests/coast-look-capture-browser.spec.js
+//   COAST_CAPTURE=1 LABEL=<x> VIEWPORT=desktop|phone QUALITY=low|medium|high|ultra npx playwright test tests/coast-look-capture-browser.spec.js
 // Output stays in the gitignored audits/ dir (machine-specific timings and screenshots).
 const LABEL = process.env.LABEL ?? 'task5', VIEW = process.env.VIEWPORT ?? 'desktop', QUALITY = process.env.QUALITY ?? 'high';
 const SECONDS = +(process.env.RACE_SECONDS ?? 5);
-const MODEL = process.env.MODEL ? `model=${encodeURIComponent(process.env.MODEL)}` : ''; // e.g. the gated GLB Roadster
 const OUT = `docs/designs/3d-pipeline/audits/task5/${LABEL}-${VIEW}-${QUALITY}`;
 
 test.skip(!process.env.COAST_CAPTURE, 'run with COAST_CAPTURE=1');
@@ -25,7 +24,7 @@ test(`${LABEL} ${VIEW} ${QUALITY}: Coast day and rain`, async ({ gameplayPage: p
   const stats = () => page.evaluate(() => {
     const { renderer } = window.gameScene, { render, memory, programs } = renderer.info;
     return { drawCalls: render.calls, triangles: render.triangles, textures: memory.textures, geometries: memory.geometries, programs: programs.length,
-      coastScenery: document.querySelector('#world')?.dataset.coastScenery ?? null };
+      coastScenery: document.querySelector('#world')?.dataset.coastScenery ?? null, coastSky: document.querySelector('#world')?.dataset.coastSky ?? null, coastSea: document.querySelector('#world')?.dataset.coastSea ?? null };
   });
   const perf = async () => {
     const text = await page.locator('#perf-overlay').textContent();
@@ -38,10 +37,11 @@ test(`${LABEL} ${VIEW} ${QUALITY}: Coast day and rain`, async ({ gameplayPage: p
     for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ ...settings, preset: 'cinematic', enabled: true }));
   }, vfx);
-  await page.goto(`${gameplayURL}?look=3d&perf${MODEL && `&${MODEL}`}`);
+  await page.goto(`${gameplayURL}?perf`);
   for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   if (QUALITY !== 'low') await expect.poll(() => page.locator('#world').getAttribute('data-coast-scenery'), { timeout: ciTimeout(60000) }).toBe('attached');
+  if (QUALITY !== 'low') await expect.poll(() => page.locator('#world').getAttribute('data-coast-sky'), { timeout: ciTimeout(60000) }).toMatch(/^day:/);
   await page.waitForTimeout(2500); // HDRI + idle camera settle
   await shot('home-day');
   rows.push({ scenario: 'home-day', ...await stats() });
@@ -80,7 +80,7 @@ test(`${LABEL} ${VIEW} ${QUALITY}: §8.1 Coast panels`, async ({ gameplayPage: p
     for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ ...settings, preset: 'cinematic', enabled: true }));
   }, vfx);
-  await page.goto(`${gameplayURL}?look=3d${MODEL && `&${MODEL}`}`);
+  await page.goto(gameplayURL);
   for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   if (QUALITY !== 'low') await expect.poll(() => page.locator('#world').getAttribute('data-coast-scenery'), { timeout: ciTimeout(60000) }).toBe('attached');

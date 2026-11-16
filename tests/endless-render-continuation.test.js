@@ -84,3 +84,18 @@ test('Sky Spiral Endless hero fades smoothly at the forward visibility threshold
     assert.ok(Math.abs(after-before)<.05,'visibility across a 1m drive must be smooth');
   }finally{sky.dispose();}
 });
+
+test('Sky Spiral uses the exact sprint gap edges and rebuilds solid deck when switching modes in the same sector', () => {
+  const scene = new THREE.Scene(), sky = createSkyScene(scene);
+  try {
+    const road = scene.getObjectByName('Sky Spiral 3D course').children.find(m => m.isMesh && m.geometry?.index);
+    sky.update(3770, 'low', false);
+    const index = road.geometry.index.array, positions = road.geometry.attributes.position;
+    const row = Array.from({ length: 180 }, (_, i) => i).find(i => index[i * 6] === index[i * 6 + 1]);
+    assert.ok(Number.isInteger(row), 'sprint draws a real gap');
+    const z = (positions.getZ(row * 2) + positions.getZ(row * 2 + 1)) / 2;
+    assert.equal(z, -(3775 - 1100), 'takeoff lip follows the simulated gap boundary');
+    sky.update(3770, 'low', true);
+    assert.ok(index[row * 6] !== index[row * 6 + 1], 'the streaming version draws a solid deck');
+  } finally { sky.dispose(); }
+});

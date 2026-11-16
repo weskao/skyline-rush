@@ -1,8 +1,11 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, openGarage } from './helpers/test.js';
+import { openGarageSection } from './helpers/garage-browser.js';
+import { ciTimeout } from './helpers/ci.js';
 
 test('Garage source artwork is available at native 3x resolution with 1x CSS display without granting capabilities', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const source = page.locator('#garage-art-source-garage-store-readiness');
   await expect(source).toBeVisible();
   const entry = source.locator('summary img[data-image="store-collection-summary"]');
@@ -26,13 +29,14 @@ test('Garage source artwork is available at native 3x resolution with 1x CSS dis
   await expect(source).not.toContainText(/buy now|purchase|claim reward|立即購買|立即領取/i);
 });
 
-test('Store 3x artwork appears directly in Garage and opens its 6-image interactive gallery', async ({ page }) => {
-  const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
-  for (const viewport of [{width:1440,height:900}, {width:390,height:844}, {width:844,height:390}]) {
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+  test(`Store 3x artwork opens its 6-image interactive gallery at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
+    await openGarageSection(page, 'store');
     const gallery = page.locator('#garage-art-source-garage-store-readiness');
     await expect(gallery).toBeVisible();
     await expect(gallery).toHaveAttribute('data-economy-preview','art-only');
@@ -58,23 +62,31 @@ test('Store 3x artwork appears directly in Garage and opens its 6-image interact
     await expect(selectedArt).toHaveAttribute('width', '72');
     await expect(selectedArt).toHaveAttribute('height', '72');
     await expect(selectedArt).toHaveJSProperty('naturalWidth', 216);
-    await gallery.locator('[data-wave3-filter="store"]').click();
-    await gallery.locator('[data-wave3-asset="store-cart"]').click();
+    const storeFilter = gallery.getByRole('button', { name: 'Store UI', exact: true });
+    await storeFilter.click();
+    await expect(storeFilter).toHaveAttribute('aria-pressed', 'true');
+    await expect(gallery.locator('[data-wave3-asset]')).toHaveCount(4);
+    await expect(gallery.locator('[data-wave3-selected]')).toHaveAttribute('data-wave3-selected', 'store-cart');
     const cartArt = gallery.locator('[data-wave3-preview-image="store-cart"] img[data-image="store-cart-detail"]');
     await expect(cartArt).toHaveJSProperty('naturalWidth', 216);
+    const box = gallery.locator('[data-wave3-asset="store-box"]');
+    await box.click({ timeout: ciTimeout(10000) });
+    await expect(box).toHaveAttribute('aria-pressed', 'true');
+    await expect(gallery.locator('[data-wave3-selected]')).toHaveAttribute('data-wave3-selected', 'store-box');
     await expect(gallery.getByRole('button',{name:/buy now|purchase|claim|checkout/i})).toHaveCount(0);
     await test.info().attach(`garage-store-applied-${viewport.width}x${viewport.height}.png`, {
       body: await gallery.screenshot(), contentType: 'image/png',
     });
-  }
-  expect(errors).toEqual([]);
-});
+    expect(errors).toEqual([]);
+  });
+}
 
 test('Store preview summary has bilingual art fallback without granting an Economy entitlement', async ({ page }) => {
   // Both the primary 3x PNG and its WebP fallback fail, so only the text fallback remains.
   await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.{png,webp}', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const entry = page.locator('#garage-art-source-garage-store-readiness summary');
   await expect(entry.getByRole('img',{name:'Collection art'})).toBeVisible();
   await entry.click();
@@ -89,6 +101,7 @@ test('failed selected Store concept image keeps readable text and no purchase CT
   await page.route('**/feature-assets/garage-store-readiness/raster/store-star@3x.webp', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
+  await openGarageSection(page, 'store');
   const gallery = page.locator('#garage-art-source-garage-store-readiness');
   await gallery.locator('summary').click();
   await gallery.locator('[data-wave3-asset="store-star"]').click();
@@ -98,30 +111,43 @@ test('failed selected Store concept image keeps readable text and no purchase CT
   await expect(gallery.getByRole('button', {name: /buy|checkout|claim|pay/i})).toHaveCount(0);
 });
 
-test('safe 3x Rewards/Missions reference cards never crop image or caption on desktop and phone', async ({ page }) => {
-  for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1440,height:900}]) {
+for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
+  test(`safe 3x Rewards/Missions reference cards fit at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.locator('#garage-button').click();
+    await openGarage(page);
+    await openGarageSection(page, 'missions');
     const gallery = page.locator('#garage-art-source-garage-rewards-and-missions');
     await gallery.locator('summary').click();
     const cards = gallery.locator('.garage-badge-card');
     await expect(cards).toHaveCount(8);
     for (const card of await cards.all()) {
-      await card.scrollIntoViewIfNeeded();
+      await card.evaluate(node => node.scrollIntoView({ block: 'nearest' }));
       await expect.poll(() => card.locator('img').evaluate(img => img.naturalWidth), { message: 'lazy art decoded at 3x' }).toBe(288);
       const v = await card.evaluate(node => {
-        const outer = node.getBoundingClientRect(), art = node.querySelector('img').getBoundingClientRect();
+        const image = node.querySelector('img');
+        const outer = node.getBoundingClientRect();
         const frame = node.querySelector('.garage-badge-art-frame').getBoundingClientRect();
         const caption = node.querySelector('figcaption').getBoundingClientRect();
-        return { native: node.querySelector('img').naturalWidth, icon: [art.width,art.height],
-          inside: frame.left <= art.left && frame.right >= art.right && frame.top <= art.top && frame.bottom >= art.bottom,
-          labelSafe: caption.top >= frame.bottom + 4, width: outer.width, viewport: innerWidth };
+        const [animation] = image.getAnimations();
+        // Sample the CSS transform extremes even when the runner reaches each card at a different time.
+        const offsets = animation?.effect.getKeyframes().map(keyframe => keyframe.computedOffset) ?? [0];
+        animation?.pause();
+        const clippedAt = offsets.filter(offset => {
+          if (animation) {
+            animation.currentTime = offset * animation.effect.getComputedTiming().duration;
+          }
+          const art = image.getBoundingClientRect();
+          return art.left < frame.left || art.right > frame.right || art.top < frame.top || art.bottom > frame.bottom;
+        });
+        return { native: image.naturalWidth, icon: [image.offsetWidth, image.offsetHeight],
+          clippedAt, labelSafe: caption.top >= frame.bottom + 4, width: outer.width, viewport: innerWidth };
       });
       expect(v.native).toBe(288);
       expect(v.icon).toEqual([96,96]);
-      expect(v.inside).toBe(true); expect(v.labelSafe).toBe(true);
+      expect(v.clippedAt, `${await card.getAttribute('data-art')} at ${viewport.width}x${viewport.height}`).toEqual([]);
+      expect(v.labelSafe).toBe(true);
       expect(v.width).toBeLessThanOrEqual(v.viewport);
     }
-  }
-});
+  });
+}

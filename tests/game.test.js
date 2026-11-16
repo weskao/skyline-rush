@@ -400,8 +400,8 @@ test('lane assist leaves active steering unchanged in either direction', () => {
   }
 });
 
-test('vehicle collision width is 1.7 so a 1.8 m lateral gap is not a crash', () => {
-  for (const [gap, collisions] of [[1.8, 0], [1.6, 1]]) {
+test('a pass with body clearance is safe but a visibly overlapping flank is a crash', () => {
+  for (const [gap, collisions] of [[2.45, 0], [2.25, 1]]) {
     const race = racing();
     Object.assign(race.player, { speed: 65, x: 2.5 });
     race.traffic = [{ x: 2.5 + gap, distance: 2, speed: 25 }];
@@ -452,6 +452,7 @@ test('review fixes: full-lock rail hit at boost speed is still a collision, lane
   assert.equal(race.player.x, 4.5);
 
   race = racing();
+  race.rivals = []; // isolate lane assist from the solid contacts allowed during grace
   Object.assign(race.player, { speed: 40, x: 3.6, cooldown: 1 });
   advance(race, 0.5, { throttle: true, laneAssist: true });
   assert.equal(race.player.x, 3.6);
@@ -480,7 +481,7 @@ function sectionOf(trackId, type, index = 0) {
 
 test('the track table holds all ten tracks and coast matches the original race', () => {
   assert.deepEqual(Object.keys(RACE_TRACKS), TRACK_IDS);
-  assert.deepEqual(TRACK_IDS.map(id => RACE_TRACKS[id].length), [5000, 4000, 6000, 5500, 5600, 6200, 6800, 7600, 5800, 8000]);
+  assert.deepEqual(TRACK_IDS.map(id => RACE_TRACKS[id].length), [5000, 10000, 6000, 5500, 5600, 6200, 6800, 7600, 5800, 8000]);
   assert.equal(RACE_LENGTH, RACE_TRACKS.coast.length);
   assert.deepEqual(createRace(), createRace('coast'));
   const coast = createRace();
@@ -710,7 +711,7 @@ test('NITRO spends one charge for 2.5 s with a MAX_SPEED + 30 cap and much stron
   assert.ok(nitro.player.speed < top);
 });
 
-test('holding NITRO fires once; pressing again extends it by 2 s without stacking speed', () => {
+test('holding NITRO fires once; pressing again extends it by a full charge without stacking speed', () => {
   const race = racing();
   Object.assign(race.player, { speed: MAX_SPEED + 30, nitro: 3 });
   advance(race, 0.5, { throttle: true, nitro: true });
@@ -719,7 +720,7 @@ test('holding NITRO fires once; pressing again extends it by 2 s without stackin
   const remaining = race.player.nitroTime;
   press(race, { throttle: true });
   assert.equal(race.player.nitro, 1);
-  assert.ok(Math.abs(race.player.nitroTime - (remaining + 2 - 2 / 60)) < 1e-9);
+  assert.ok(Math.abs(race.player.nitroTime - (remaining + 2.5 - 2 / 60)) < 1e-9);
   assert.equal(race.player.nitroUses, 1);
   advance(race, 1, { throttle: true, boost: true });
   assert.ok(race.player.speed <= MAX_SPEED + 30);
@@ -752,7 +753,7 @@ test('nitro caps at 3 charges: a 0.5 pickup at 2.9 banks 0.1 for 2 fuel and conv
   assert.equal(race.player.fuel, 100);
 });
 
-test('using one charge takes 3 to 2 and three presses chain into one 6.5 s burst via the extend rule', () => {
+test('using one charge takes 3 to 2 and three presses chain into one 7.5 s burst: chaining wastes no time', () => {
   const race = racing();
   Object.assign(race.player, { speed: 60, nitro: 3 });
   press(race);
@@ -760,7 +761,7 @@ test('using one charge takes 3 to 2 and three presses chain into one 6.5 s burst
   press(race);
   press(race);
   assert.equal(race.player.nitro, 0);
-  assert.ok(Math.abs(race.player.nitroTime - (2.5 + 2 + 2 - 6 / 60)) < 1e-9);
+  assert.ok(Math.abs(race.player.nitroTime - (2.5 * 3 - 6 / 60)) < 1e-9);
 });
 
 test('the race result records NITRO activations and the longest near-miss combo', () => {
@@ -805,8 +806,8 @@ test('drift payout emits one feedback event even when an existing boost is longe
   advance(race, 1.1, DRIFT);
   stepRace(race, {}, 1 / 60);
   assert.ok(race.player.miniBoost > 1);
-  assert.equal(race.player.nitro, 0.15);
-  assert.deepEqual(race.player.driftPayout, { time: race.elapsed, nitro: 0.15 });
+  assert.equal(race.player.nitro, 0.1);
+  assert.deepEqual(race.player.driftPayout, { time: race.elapsed, nitro: 0.1 });
   const payout = race.player.driftPayout;
   stepRace(race, {}, 1 / 60);
   assert.equal(race.player.driftPayout, payout);
@@ -820,13 +821,13 @@ test('no drift below 45 m/s: brake plus steer hard-brakes', () => {
   assert.ok(race.player.speed < 44 - 15);
 });
 
-test('brake plus steer at speed drifts, bleeding only 3 m/s^2, with the steer direction', () => {
+test('brake plus steer at speed drifts, bleeding only 1.5 m/s^2, with the steer direction', () => {
   const race = driftingRace();
   assert.equal(race.player.drift, null);
   advance(race, 0.5, { brake: true, steer: -0.1 });
   assert.equal(race.player.drift.dir, -1);
   assert.ok(Math.abs(race.player.drift.time - 0.5) < 0.02);
-  assert.ok(Math.abs(race.player.speed - (80 - 1.5)) < 0.1);
+  assert.ok(Math.abs(race.player.speed - (80 - 0.75)) < 0.1);
 });
 
 test('the pad input shape (brake + analog steer, nothing else) drifts; brake alone and steer alone do not', () => {
@@ -841,27 +842,31 @@ test('the pad input shape (brake + analog steer, nothing else) drifts; brake alo
   assert.equal(race.player.drift, null);
 });
 
-test('releasing a drift pays nitro and a mini boost by the highest time threshold reached', () => {
-  const rewards = [[0.95, 0, 0], [1.05, 0.15, 0.5], [2.05, 0.3, 0.8], [3.05, 0.5, 1.2]];
+test('a drift credits NITRO the moment each tier is reached and pays the mini boost on release', () => {
+  const rewards = [[0.55, 0, 0], [0.65, 0.1, 0.7], [1.25, 0.22, 1.1], [2.05, 0.35, 1.6]];
   for (const [time, nitro, boost] of rewards) {
     const race = driftingRace();
     advance(race, time, DRIFT);
-    assert.equal(race.player.nitro, 0, 'nothing is paid while drifting');
+    assert.ok(Math.abs(race.player.nitro - nitro) < 1e-9, `nitro while drifting at ${time}s`);
+    assert.equal(race.player.miniBoost, 0, 'the boost waits for the release');
     stepRace(race, {}, 1 / 60);
     assert.equal(race.player.drift, null);
-    assert.ok(Math.abs(race.player.nitro - nitro) < 1e-9, `nitro at ${time}s`);
+    assert.ok(Math.abs(race.player.nitro - nitro) < 1e-9, `release adds no NITRO at ${time}s`);
     assert.ok(Math.abs(race.player.miniBoost - boost) < 0.05, `mini boost at ${time}s`);
   }
 });
 
 test('drift nitro counts toward the cap and the overflow becomes fuel', () => {
-  const race = driftingRace();
-  Object.assign(race.player, { nitro: 2.9, fuel: 50 });
-  advance(race, 3.05, DRIFT);
-  const fuel = race.player.fuel;
-  stepRace(race, {}, 1 / 60);
-  assert.equal(race.player.nitro, NITRO_MAX);
-  assert.ok(race.player.fuel - fuel > 10); // 0.4 overflow x 32 fuel
+  const after = nitro => {
+    const race = driftingRace();
+    Object.assign(race.player, { nitro, fuel: 50 });
+    advance(race, 2.05, DRIFT);
+    stepRace(race, {}, 1 / 60);
+    return race.player;
+  };
+  const capped = after(2.9), free = after(0);
+  assert.equal(capped.nitro, NITRO_MAX);
+  assert.ok(Math.abs(capped.fuel - free.fuel - 0.25 * (32 - NITRO_FUEL_BONUS)) < 0.1); // 0.25 overflow pays 32/charge, not 20
 });
 
 test('the mini boost lifts the speed cap past MAX_SPEED without burning fuel', () => {
@@ -876,7 +881,7 @@ test('the mini boost lifts the speed cap past MAX_SPEED without burning fuel', (
   assert.ok(race.player.miniBoost === 0 && race.player.speed <= MAX_SPEED + 1e-9);
 });
 
-test('hitting a car or a barrier mid-drift cancels the build-up and loses the reward', () => {
+test('hitting a car or a barrier mid-drift keeps the NITRO already credited but loses the release boost', () => {
   for (const crash of [
     race => { race.traffic = [{ x: race.player.x, distance: race.player.distance + 1, speed: 0 }]; },
     race => { Object.assign(race.player, { x: ROAD_LIMIT, steering: 1 }); },
@@ -891,7 +896,7 @@ test('hitting a car or a barrier mid-drift cancels the build-up and loses the re
     race.traffic = [];
     Object.assign(race.player, { speed: 80, cooldown: 0 });
     stepRace(race, {}, 1 / 60);
-    assert.equal(race.player.nitro, 0);
+    assert.ok(Math.abs(race.player.nitro - 0.35) < 1e-9);
     assert.equal(race.player.miniBoost, 0);
   }
 });
@@ -910,10 +915,11 @@ test('no drift in the air, and taking off mid-drift cancels it', () => {
   assert.equal(race.player.drift, null);
   advance(race, 4, {});
   assert.equal(race.player.altitude, 0);
-  assert.equal(race.player.nitro, 0);
+  assert.ok(Math.abs(race.player.nitro - 0.35) < 1e-9, 'tiers reached before take-off stay credited');
+  assert.equal(race.player.miniBoost, 0);
 });
 
-test('falling into a gap cancels a held drift without a release reward', () => {
+test('falling into a gap cancels a held drift without a release boost', () => {
   const race = racingOn('canyon');
   race.rivals = [];
   race.pickups = [];
@@ -926,7 +932,7 @@ test('falling into a gap cancels a held drift without a release reward', () => {
   assert.equal(race.player.falls, 1);
   assert.equal(race.player.drift, null);
   advance(race, 0.2);
-  assert.equal(race.player.nitro, 0);
+  assert.ok(Math.abs(race.player.nitro - 0.35) < 1e-9, 'tiers reached before the fall stay credited');
   assert.equal(race.player.miniBoost, 0);
 });
 
@@ -969,7 +975,9 @@ test('rings come only from the track seed: reproducible, ordered, in groups of 3
         types.add(ring.type);
       });
       const groups = Object.values(Object.groupBy(rings, ring => ring.group));
-      for (const group of groups) if (!group.some(ring => ring.row || ring.train !== undefined)) assert.ok(group.length >= 3 && group.length <= 5 && group.every(ring => ring.groupSize === group.length), `${id} group ${group[0].group}: ${group.length} rings`);
+      // An authored line (a track's ringLines) is one group of its own length: Neon's harbour line has 7 rings, oldtown 11.
+      const lines = RACE_TRACKS[id].ringLines ?? [], lineOf = group => lines.find(line => group.every(ring => line.some(spot => spot[0] === ring.distance)));
+      for (const group of groups) if (!group.some(ring => ring.row || ring.train !== undefined)) assert.ok((lineOf(group) ? group.length === lineOf(group).length : group.length >= 3 && group.length <= 5) && group.every(ring => ring.groupSize === group.length), `${id} group ${group[0].group}: ${group.length} rings`);
       assert.deepEqual([...new Set(rings.map(ring => ring.group))].sort((a, b) => a - b), groups.map((_, i) => i)); // group ids 0..n-1
     }
     assert.deepEqual(types, new Set(['charge', 'nitro', 'slipstream', 'risk', 'mystery']));
@@ -1471,14 +1479,16 @@ function hold(race, seconds, input, altitude) {
   }
 }
 
-test('every track has exactly one flight-only shortcut corridor above an edge lane', () => {
+test('every track has exactly one flight-only shortcut corridor above an edge lane; the 10 km Neon lap has two', () => {
   for (const id of TRACK_IDS) {
     const shortcuts = RACE_TRACKS[id].sections.filter(section => section.type === 'shortcut');
-    assert.equal(shortcuts.length, 1, id);
-    const [{ from, to, x, altitude }] = shortcuts;
-    assert.ok(to - from >= 450 && to - from <= 550, id);
-    assert.ok([LANES[0], LANES[3]].includes(x), id);
-    assert.equal(altitude, 6, id);
+    assert.equal(shortcuts.length, id === 'neon' ? 2 : 1, id); // design delegated by the owner, 2026-11-15: a second corridor over the old town, on the other edge lane
+    for (const { from, to, x, altitude } of shortcuts) {
+      assert.ok(to - from >= 450 && to - from <= 550, id);
+      assert.ok([LANES[0], LANES[3]].includes(x), id);
+      assert.equal(altitude, 6, id);
+    }
+    assert.equal(new Set(shortcuts.map(s => s.x)).size, shortcuts.length, `${id}: one corridor per edge lane`);
   }
 });
 

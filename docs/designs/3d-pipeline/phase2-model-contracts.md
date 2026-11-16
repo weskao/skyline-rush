@@ -37,7 +37,7 @@ The coordinate system is Y-up with the nose pointing along -Z, in meters (spec Â
 ## 2. Async loader: `src/asset-model-loader.ts`
 
 ```ts
-createModelCache({ baseUrl, manifest?, fetch?, timeoutMs?, loadMeshopt? }): ModelCache
+createModelCache({ baseUrl, manifest?, fetch?, timeoutMs?, decodeTimeoutMs?, loadMeshopt? }): ModelCache
 cache.load(id, { signal?, quality? }): Promise<ModelHandle | ModelFallback>
 handle.instance(): Object3D   // a new clone every call
 handle.release(): void        // idempotent
@@ -56,7 +56,7 @@ The injectable `fetch`, `manifest` and `loadMeshopt` exist only so the module ca
 - **Failure resolves to `{ kind: 'fallback', id, fallback: entry.fallback, reason }`.** It never throws into the race loop. Reasons:
   - `missing`: an HTTP error status.
   - `network`: fetch threw.
-  - `timeout`: `timeoutMs` elapsed (default 15000). The fetch is aborted, and a late response is ignored.
+  - `timeout`: The download exceeded `timeoutMs` (15 seconds by default), or the decoder exceeded `decodeTimeoutMs` (30 seconds by default, starting after the download). Late downloads are ignored and late decoded models are released.
   - `invalid`: parse error, bad GLB magic, or an extension that is required but not enabled.
   - `decoder-unavailable`.
   - `missing-node:<name>`.
