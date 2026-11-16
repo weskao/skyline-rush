@@ -105,15 +105,33 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         title: { en: 'New corners and more rings on classic tracks', 'zh-TW': '經典賽道新彎道、更多圈' },
         description: {
           en: 'Coast, Canyon Skyway and Aurora Pass get their own corners, Sky Spiral gains wide sweeping bends, and the first five tracks carry 40% more rings and pickups.',
-          'zh-TW': '海岸、峽谷天道與極光山道有了各自的彎道，天空螺旋多了大弧度彎，前五條賽道的圈與補給品也多了四成。'
+          'zh-TW': '海岸公路、峽谷天橋與極光山道有了各自的彎道，天際螺旋多了大弧度彎，前五條賽道的圈與補給品也多了四成。'
         }
       },
       {
         id: 'neon-lap', kind: 'improvement', image: null,
-        title: { en: 'Neon Downtown is one long 10 km lap', 'zh-TW': '霓虹市區變成 10 公里長圈' },
+        title: { en: 'Neon Downtown is one long 10 km lap', 'zh-TW': '霓虹都會變成 10 公里長圈' },
         description: {
           en: 'The city course now runs one big lap through eight districts. Tracks with a new layout keep a fresh set of best times.',
           'zh-TW': '城市賽道改為穿過八個街區的一大圈。換了新路線的賽道會重新記錄最佳成績。'
+        }
+      },
+      {
+        id: 'neon-3d', kind: 'improvement', image: null,
+        video: {
+          desktop: {
+            src: { en: 'whats-new/neon-3d/neon-3d.desktop.en.mp4', 'zh-TW': 'whats-new/neon-3d/neon-3d.desktop.zh-TW.mp4' },
+            poster: { en: 'whats-new/neon-3d/neon-3d.desktop.en.jpg', 'zh-TW': 'whats-new/neon-3d/neon-3d.desktop.zh-TW.jpg' }
+          },
+          mobile: {
+            src: { en: 'whats-new/neon-3d/neon-3d.mobile.en.mp4', 'zh-TW': 'whats-new/neon-3d/neon-3d.mobile.zh-TW.mp4' },
+            poster: { en: 'whats-new/neon-3d/neon-3d.mobile.en.jpg', 'zh-TW': 'whats-new/neon-3d/neon-3d.mobile.zh-TW.jpg' }
+          }
+        },
+        title: { en: 'Neon Downtown, rebuilt for rainy nights', 'zh-TW': '霓虹都會換上雨夜新貌' },
+        description: {
+          en: 'On Medium graphics and up, race wet streets that mirror the neon, past detailed buildings, landmarks and a glass skyline under a violet storm sky.',
+          'zh-TW': '畫質設為「中」以上時，濕亮街道倒映霓虹，沿途有精緻建築與地標，運河對岸的玻璃高樓襯著紫色暴風雨天空。'
         }
       },
       {
@@ -128,8 +146,16 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         id: 'smoother-traffic', kind: 'fix', image: null,
         title: { en: 'Smoother racing in heavy traffic', 'zh-TW': '車多時跑起來更順' },
         description: {
-          en: 'Busy roads run more smoothly, and the music now starts before the track finishes loading.',
-          'zh-TW': '車流多的路段更流暢，音樂也會在賽道載入完成前就開始播放。'
+          en: 'Busy roads run more smoothly, the starting countdown no longer stalls on slower devices, and the music starts before the track finishes loading.',
+          'zh-TW': '車流多的路段更流暢，較慢的裝置起跑倒數不再卡住，音樂也會在賽道載入完成前就開始播放。'
+        }
+      },
+      {
+        id: 'garage-art', kind: 'fix', image: null,
+        title: { en: 'Garage pictures and preview camera fixed', 'zh-TW': '車庫圖片與預覽鏡頭修正' },
+        description: {
+          en: 'Car and paint pictures now show in the Garage and stay full size on tablets. The car preview camera keeps its angle and zoom when you change views.',
+          'zh-TW': '車庫的車款與車漆圖片會正常顯示，平板上也維持完整大小；車輛預覽鏡頭切換視角時會保留角度與縮放。'
         }
       }
     ]
@@ -301,97 +327,6 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
           en: 'Finishing 5th to 8th in a mode race now shows your results screen and saves the run to History.',
           'zh-TW': '在各模式競速拿到第 5 到第 8 名時，現在會正常顯示成績畫面，並把這次成績存進歷史紀錄。'
         }
-      }
-    ]
-  },
-  {
-    version: '0.29.0', date: '2026-11-03', image: null,
-    video: {
-      desktop: {
-        src: { en: 'whats-new/garage/garage.desktop.en.mp4', 'zh-TW': 'whats-new/garage/garage.desktop.zh-TW.mp4' },
-        poster: { en: 'whats-new/garage/garage.desktop.en.jpg', 'zh-TW': 'whats-new/garage/garage.desktop.zh-TW.jpg' }
-      },
-      mobile: {
-        src: { en: 'whats-new/garage/garage.mobile.en.mp4', 'zh-TW': 'whats-new/garage/garage.mobile.zh-TW.mp4' },
-        poster: { en: 'whats-new/garage/garage.mobile.en.jpg', 'zh-TW': 'whats-new/garage/garage.mobile.zh-TW.jpg' }
-      }
-    },
-    highlights: [
-      {
-        id: 'garage', kind: 'new', image: null,
-        title: { en: 'Try car effects free in the Garage', 'zh-TW': '車庫新增免費試用特效' },
-        description: { en: 'Preview launch flares, NITRO trails and airflow, then tap Try free to use one this visit. Spin your car in Ground or Flight view and see glossier paints.', 'zh-TW': '在車庫預覽起跑閃焰、NITRO 尾跡和氣流，按「免費試用」本次就能用；可切換平地、起飛視角，車漆也更亮澤。' }
-      },
-      {
-        id: 'eight-car-races', kind: 'new',
-        image: { en: 'whats-new/eight-car-races/eight-car-races.en.webp', 'zh-TW': 'whats-new/eight-car-races/eight-car-races.zh-TW.webp' },
-        title: { en: 'Eight-car races', 'zh-TW': '八車同場競速' },
-        description: {
-          en: 'Classic, Cup, Elimination and Circuit races now field eight cars. In the Cup, points run 10 down to 1 and later heats start in reverse finish order.',
-          'zh-TW': '經典競速、錦標賽、最後倖存競速和環道競速現在都是八輛車同場。錦標賽依名次給 10 到 1 分，下一站會倒著排起跑。'
-        }
-      },
-      {
-        id: 'rivals-grab-nitro', kind: 'new',
-        image: { en: 'whats-new/rival-nitro/rival-grab.en.webp', 'zh-TW': 'whats-new/rival-nitro/rival-grab.zh-TW.webp' },
-        video: {
-          desktop: {
-            src: { en: 'whats-new/rival-nitro/rival-nitro.desktop.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.desktop.zh-TW.mp4' },
-            poster: { en: 'whats-new/rival-nitro/rival-grab.en.webp', 'zh-TW': 'whats-new/rival-nitro/rival-grab.zh-TW.webp' }
-          },
-          mobile: {
-            src: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.mp4', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.mp4' },
-            poster: { en: 'whats-new/rival-nitro/rival-nitro.mobile.en.jpg', 'zh-TW': 'whats-new/rival-nitro/rival-nitro.mobile.zh-TW.jpg' }
-          }
-        },
-        title: { en: 'Rivals grab NITRO too', 'zh-TW': '對手也會搶 NITRO' },
-        description: {
-          en: 'Rivals now grab NITRO rings and pickups and fire NITRO more often; on Hard they swerve for them. You\'ll see and hear it when one near you grabs one.',
-          'zh-TW': '對手現在也會吃 NITRO 光圈和道具，也更常放 NITRO；困難難度還會換車道去搶。附近的對手吃到時，看得到也聽得到。'
-        }
-      },
-      {
-        id: 'tutorial-lessons', kind: 'new', image: null,
-        title: { en: 'Three new practice lessons', 'zh-TW': '練習新增三堂課' },
-        description: {
-          en: 'Practice now teaches DRIFT + MINI BOOST, AIR → ROAD CHAIN and BARREL ROLL, and coaches you through a miss. Find it under Practice on Home.',
-          'zh-TW': '「練習」新增甩尾與短暫加速、空地連擊、桶滾三堂課，沒成功還會教你怎麼重試。從首頁的「練習」進入。'
-        }
-      },
-      {
-        id: 'hud-styles', kind: 'new',
-        image: { en: 'whats-new/hud-styles/hud-styles.en.webp', 'zh-TW': 'whats-new/hud-styles/hud-styles.zh-TW.webp' },
-        title: { en: 'Pick your race HUD style', 'zh-TW': '選擇你的賽車介面' },
-        description: {
-          en: 'Switch between Immersive and Competitive in the VFX panel, choose which info to show, and turn NITRO READY sound or animation off.',
-          'zh-TW': '在「特效」面板選擇沉浸式或競技資訊介面，自由開關排行榜、小地圖等資訊，還能關掉 NITRO 就緒提示音和動畫。'
-        }
-      },
-      {
-        id: 'more-rings-everywhere', kind: 'improvement', image: null,
-        title: { en: 'Fresh rings and pickups every race', 'zh-TW': '每場比賽的光圈和道具都不同' },
-        description: {
-          en: 'Rings and NITRO pickups land in new spots every race and grow with the grid, with ring trains down the middle, full-width rows and pickup runs.',
-          'zh-TW': '光圈和 NITRO 道具每場換位置，車數越多，數量也越多；中間車道有連串光圈，還有整排光圈和成串道具。'
-        }
-      },
-      {
-        id: 'old-layout-records', kind: 'improvement', image: null,
-        title: { en: 'Your earlier times are kept', 'zh-TW': '之前的成績都會保留' },
-        description: {
-          en: 'Rings and pickups moved on every track, so best times and ghosts start fresh. Your earlier runs stay in History, marked OLD LAYOUT.',
-          'zh-TW': '每條賽道的光圈和道具位置都變了，所以最佳成績和幽靈車會重新計算。之前的成績仍保留在歷史紀錄，並標示「舊版配置」。'
-        }
-      },
-      {
-        id: 'touch-and-layout', kind: 'improvement', image: null,
-        title: { en: 'Touch layouts that fit your phone', 'zh-TW': '觸控配置更貼合手機' },
-        description: { en: 'Portrait and landscape remember their own touch layouts, and each thumb cluster moves as one. Pop-ups stay off the road, and folding phones avoid the hinge.', 'zh-TW': '直式、橫式各自記住觸控配置，拇指按鈕成組移動；提示不擋路面，摺疊手機的按鈕也會避開轉軸。' }
-      },
-      {
-        id: 'iphone-magnifier', kind: 'fix', image: null,
-        title: { en: 'No more magnifier on iPhone long-presses', 'zh-TW': 'iPhone 長按不再跳出放大鏡' },
-        description: { en: 'Holding the screen or a touch button on iPhone no longer pops up the magnifier, so steering, boosting and braking are never interrupted.', 'zh-TW': '在 iPhone 上按住畫面或觸控按鈕時，不會再跳出放大鏡，轉向、加速和煞車都不會被打斷。' }
       }
     ]
   },
