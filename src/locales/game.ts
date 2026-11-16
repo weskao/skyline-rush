@@ -80,7 +80,7 @@ export const GAME = Object.freeze({
     'callout.flow': '空地連擊',
     'callout.flow.detail': '穩定著地 · 加速 1.2 秒',
     'callout.halfway': '賽事過半',
-    'callout.halfway.detail': '距終點 {km} 公里',
+    'callout.halfway.detail': '剩 {km} 公里',
     'callout.shortcut': '捷徑',
     'callout.shortcut.detail': '自由飛行 · 速度上限 +12',
     'callout.roll': '桶滾',

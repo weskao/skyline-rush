@@ -60,12 +60,19 @@ for (const [name, width, height, hasTouch, locale, calm] of [
       const geometry = await card.evaluate(node => {
         const scene = document.querySelector('#world').getBoundingClientRect();
         const anchor = node.parentElement.getBoundingClientRect();
+        const box = node.getBoundingClientRect();
         return { dx: anchor.x + anchor.width / 2 - scene.x - scene.width / 2,
           dy: anchor.y + anchor.height / 2 - scene.y - scene.height / 2,
+          height: box.height / scene.height, area: box.width * box.height / (scene.width * scene.height),
+          backdrop: Number(getComputedStyle(node).backgroundColor.match(/[\d.]+(?=\))/)?.[0] ?? 1),
           pointer: getComputedStyle(node).pointerEvents, animation: getComputedStyle(node).animationName };
       });
       expect(Math.abs(geometry.dx)).toBeLessThan(1);
       expect(Math.abs(geometry.dy)).toBeLessThan(1);
+      // A slim, see-through strip: the road ahead stays visible behind and around it.
+      expect(geometry.height).toBeLessThan(.1);
+      expect(geometry.area).toBeLessThan(.04);
+      expect(geometry.backdrop).toBeLessThanOrEqual(.6);
       expect(geometry.pointer).toBe('none');
       expect(geometry.animation === 'none').toBe(calm);
       expect(await page.evaluate(() => window.halfwayChimes)).toBe(1);

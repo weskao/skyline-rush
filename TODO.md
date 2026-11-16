@@ -1,3 +1,14 @@
+# 2026-11-16 — Compact halfway strip (`develop`)
+
+Repro: the halfway card (two lines, gradient box, glow) covered 19.5% of the scene height on desktop and 13% in
+portrait, right over the road ahead, for 2 s; its 0.54 s chime ducked the mix for as long.
+
+- [x] `src/RaceHalfway.vue`: one translucent pill strip ("50%" chip + title + remaining km), background alpha .46, no glow or fill animation; zh-TW detail shortened to `剩 {km} 公里`; chime `src/feedback-sounds.ts` 0.54 s → 0.38 s (698/880/1175 Hz rising)
+- [x] RED → GREEN: `tests/race-halfway-browser.spec.js` height < .1, area < .04, alpha ≤ .6 (RED on the old card, GREEN 3/3 desktop/portrait/landscape); `tests/audio.test.js` chime ≤ 0.4 s (RED on 0.54 s, GREEN)
+- [x] Every map: `tests/race-halfway-maps-browser.spec.js` 16/16 (10 classic + 6 Coming Soon courses); `tests/presentation.test.js` already covers every track's halfway trigger
+- [x] Real-game captures inspected (desktop 1600×900, phone portrait 390×844, landscape 844×390, zh-TW): strip 3.5-7.6% of viewport height; What's New `halfway.{en,zh-TW}.webp` replaced with 1920×1200 captures
+- [ ] Physical phones, full `make verify` and exact-HEAD remote CI: not run
+
 # 2026-11-16 — Rival Freeze / EMP status tint (`feature/rival-vfx-cues`)
 
 - [x] A rival slowed by the player's Freeze or EMP (`FREEZE_RIVAL_SPEED`) showed nothing. `src/rival-status-tint.ts` adds one instanced additive shell (1 draw call, 1 program, fitted per car from its own visible parts): Freeze = icy blue, EMP = electric yellow-green flicker (steady under reduced motion), fading out when the effect ends. Low = soft tint only; Medium+ adds a fresnel rim through a uniform, never a new program. Car materials are never touched.

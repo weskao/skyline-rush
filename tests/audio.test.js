@@ -554,3 +554,12 @@ test('sprint readiness plays two distinct SFX phrases and respects mute', t => {
   sound.setEnabled(false);
   assert.deepEqual(pitches('boost-ready'), []);
 });
+
+test('the halfway chime is a short rising stinger, so it ducks the mix only briefly', async () => {
+  const { FEEDBACK_SOUNDS, STINGERS } = await import('../src/feedback-sounds.ts');
+  const notes = FEEDBACK_SOUNDS.halfway;
+  assert.ok(STINGERS.has('halfway'));
+  assert.equal(notes[0][0], 698);
+  assert.deepEqual(notes.map(([from]) => from), [...notes.map(([from]) => from)].sort((a, b) => a - b));
+  assert.ok(Math.max(...notes.map(([, , duration, delay]) => duration + delay)) <= .4);
+});
