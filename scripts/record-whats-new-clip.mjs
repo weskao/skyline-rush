@@ -87,6 +87,7 @@ async function screenRecord(page, cdp, path) {
   const crop = `crop=${w - w % 2}:${h - h % 2}:${win.left - display.x}:${win.top + win.height - h - display.y}`;
   const ffmpeg = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'avfoundation', '-capture_cursor', '0', '-pixel_format', 'nv12', '-framerate', `${FPS}`,
     '-i', 'Capture screen 1:BlackHole 2ch', '-vf', crop, '-c:v', 'libx264', '-preset', 'ultrafast', '-qp', '0', '-c:a', 'pcm_s16le', path], { stdio: ['pipe', 'inherit', 'inherit'] });
+  process.once('exit', () => ffmpeg.kill('SIGKILL')); // a run that throws must not leave ffmpeg recording the screen
   const done = new Promise((resolve, reject) => ffmpeg.on('exit', code => code === 0 ? resolve() : reject(new Error(`ffmpeg screen capture exited ${code}`))));
   await new Promise(resolve => setTimeout(resolve, 1500)); // avfoundation needs a moment before the first frame
   return () => { ffmpeg.stdin.end('q'); return done; };

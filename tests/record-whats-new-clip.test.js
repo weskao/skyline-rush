@@ -49,3 +49,9 @@ test('the clip recorder serves the shipped coming-soon Garage build, never the d
   assert.match(code, /GARAGE_VFX_RELEASE_MODE\s*=\s*'coming-soon'/);
   assert.ok(code.indexOf("GARAGE_VFX_RELEASE_MODE") < code.indexOf('createServer({'), 'mode must be set before the server starts');
 });
+
+// A --master run that threw mid-race left ffmpeg recording the screen and system sound with no parent (2026-11-16), and
+// the next take hung on the shared capture. The capture must die with the recorder, however it exits.
+test('--master never leaves a screen capture running after the recorder exits', () => {
+  assert.match(code, /process\.once\('exit', \(\) => ffmpeg\.kill\('SIGKILL'\)\)/);
+});

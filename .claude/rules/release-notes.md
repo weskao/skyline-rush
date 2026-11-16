@@ -46,7 +46,9 @@ paths:
   `assets-src/whats-new/<slug>/`; the page plays only the silent `public/` clip. The capture is cropped to the
   page from CDP `Browser.getWindowForTarget`, so check the first frame shows only the game: never commit a take
   that caught another window, notification or private data. A headed Chrome offers Google Translate over zh-TW
-  pages; the recorder injects `<meta name="google" content="notranslate">`, since no launch flag stops it.
+  pages; the recorder injects `<meta name="google" content="notranslate">`, since no launch flag stops it. A run that
+  throws must not orphan its ffmpeg (one kept recording screen + sound and hung the next take): the capture is killed on
+  process exit; before retrying a failed take, check `ps -axo pid,comm | grep ffmpeg` is empty.
 - A track is named exactly as Home shows it: `TRACK_NAMES` in `src/i18n.ts` (en + zh-TW) is the only table, and
   a highlight names the same tracks in both languages. A draft once wrote 霓虹市區 / 峽谷天道 / 天空螺旋 beside the
   right English names (game: 霓虹都會 / 峽谷天橋 / 天際螺旋). `copyProblems` enforces it; guard: "track names read
