@@ -5,10 +5,10 @@ import { garageStudioView } from './garage-view-state.ts';
 const props = defineProps<{ locale: string }>();
 const copy = computed(() => props.locale === 'zh-TW' ? {
   label: '顯示裝備特效', on: '特效開', off: '特效關',
-  notice: '已套用裝備。開啟特效即可在預覽中查看。',
+  hidden: '預覽特效已停用', notice: '已套用裝備。開啟特效即可在預覽中查看。',
 } : {
   label: 'Show equipment effects', on: 'VFX on', off: 'VFX off',
-  notice: 'Equipment applied. Turn VFX on to see it in the preview.',
+  hidden: 'Preview effects hidden', notice: 'Equipment applied. Turn VFX on to see it in the preview.',
 });
 
 watch(() => garageStudioView.effectsReminder, (reminder, _, onCleanup) => {
@@ -20,7 +20,7 @@ watch(() => garageStudioView.effectsReminder, (reminder, _, onCleanup) => {
 
 <template>
   <div class="garage-vfx-overlay">
-    <p id="garage-vfx-notice" class="garage-vfx-notice" role="status">{{ garageStudioView.effectsReminder ? copy.notice : '' }}</p>
+    <p id="garage-vfx-notice" class="garage-vfx-notice" role="status">{{ garageStudioView.effectsReminder ? copy.notice : garageStudioView.effectsVisible ? '' : copy.hidden }}</p>
     <button id="garage-effects-toggle" type="button" :aria-label="copy.label"
       :aria-pressed="garageStudioView.effectsVisible" aria-controls="garage-preview"
       :data-reminder="Boolean(garageStudioView.effectsReminder)">

@@ -24,7 +24,7 @@ for (const size of sizes) {
         entry: rect('#garage-studio-open'),
         collection: rect('#garage-screen .garage-collection'),
         angleWrap: getComputedStyle(angles).flexWrap,
-        collectionScrollable: getComputedStyle(document.querySelector('#garage-screen .garage-collection')).overflowY,
+        collectionScrollable: getComputedStyle(document.querySelector('#garage-catalog-scroll')).overflowY,
       };
     });
 
@@ -55,5 +55,37 @@ for (const size of sizes) {
     const viewport = await page.locator('#garage-preview').boundingBox();
     expect(viewport.x).toBeGreaterThanOrEqual(-1);
     expect(viewport.right ?? viewport.x + viewport.width).toBeLessThanOrEqual(size.width + 1);
+  });
+}
+
+for (const size of sizes) {
+  test(`Garage category and paint controls stay available while the catalog scrolls at ${size.width}x${size.height}`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await page.goto('/');
+    await openGarage(page);
+    const preview = page.locator('#garage-preview');
+    const cars = page.getByRole('button', { name: 'Cars', exact: true });
+    const paints = page.getByRole('button', { name: 'Paints', exact: true });
+    const effects = page.getByRole('button', { name: 'Effects', exact: true });
+    await expect(cars).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-paint="pearl"]')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Missions', exact: true })).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Demo Store', exact: true })).toBeInViewport();
+    const original = await preview.boundingBox();
+    expect(original.height).toBeGreaterThan(size.height * .4);
+    if (size.width > size.height) {
+      const navigation = await paints.boundingBox();
+      expect(navigation.x).toBeGreaterThan(original.x + original.width);
+    }
+    await paints.click();
+    await expect(page.locator('[data-car="roadster"]')).toBeHidden();
+    await page.locator('[data-paint="obsidian"]').click();
+    await expect(page.locator('#garage-status')).toContainText(/unlocks at \d+ stars/);
+    await expect(page.locator('#garage-equip')).toBeInViewport({ ratio: .99 });
+    await expect(page.locator('#garage-equip')).toBeDisabled();
+    await expect(preview).toBeInViewport({ ratio: .99 });
+    await effects.click();
+    await expect(page.locator('[data-paint="obsidian"]')).toBeHidden();
+    await expect(page.locator('#garage-vfx-catalog')).toBeVisible();
   });
 }

@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -13,9 +14,10 @@ for (const [width, height, hasTouch] of [[1440, 900, false], [390, 844, true], [
       const garageButton = page.getByRole('button', { name: 'Garage', exact: true });
       await expect(garageButton).toBeVisible({ timeout: ciTimeout(3000) });
       await garageButton.click();
+      await openGarageSection(page, 'paints');
       await expect(page.getByRole('dialog', { name: 'Garage' })).toBeVisible();
       await expect(page.locator('#garage-preview #world')).toBeVisible();
-      await page.getByRole('button', { name: 'Preview coral' }).click();
+      await page.getByRole('button', { name: /^Preview Coral/i }).click();
       await expect(page.locator('#garage-status')).toContainText('Coral');
       await expect(page.locator('#garage-status')).toContainText('Preview only');
       await expect(page.getByRole('button', { name: 'Equip finish' })).toBeDisabled();
@@ -25,7 +27,8 @@ for (const [width, height, hasTouch] of [[1440, 900, false], [390, 844, true], [
       await expect(garageButton).toBeFocused();
       await expect(page.locator('#app > #world')).toBeVisible();
       await garageButton.click();
-      await expect(page.getByRole('button', { name: 'Preview pearl' })).toHaveAttribute('aria-pressed', 'true');
+      await openGarageSection(page, 'paints');
+      await expect(page.getByRole('button', { name: /^Preview Pearl/i })).toHaveAttribute('aria-pressed', 'true');
       await page.getByRole('button', { name: 'Close garage' }).click();
       await page.locator('.history-button').click();
       await expect(page.locator('#daily-challenge')).toContainText('Today:');

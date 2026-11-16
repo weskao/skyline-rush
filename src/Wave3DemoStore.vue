@@ -123,7 +123,10 @@ async function confirmRedemption(): Promise<void> {
   cancelRedemption();
   const result = await props.port.redeemPreview(id, request);
   snapshot.value = result.snapshot;
-  message.value = feedback(result.status);
+  const used = { points: result.deltaDemoPoints, coins: result.deltaDemoCoins, diamonds: result.deltaDemoDiamonds }[request.currency];
+  message.value = result.status === 'completed' && used
+    ? `${feedback(result.status)} −${Math.abs(used).toLocaleString(props.locale)} ${currencyLabel(request.currency)}`
+    : feedback(result.status);
   if (result.status === 'completed') cue('redeem-unlocked');
   else if (result.status === 'expired' || result.status.startsWith('insufficient-demo-')) cue('action-unavailable');
 }
@@ -167,22 +170,6 @@ async function confirmRedemption(): Promise<void> {
       </button>
     </nav>
 
-    <div class="demo-catalog">
-      <button v-for="item in items" :key="item.id" type="button"
-        class="demo-item" :data-demo-id="item.id" :data-demo-status="statusFor(item.id)"
-        :aria-pressed="selectedId === item.id" @click="selectedId = item.id; cancelRedemption()">
-        <span class="demo-image">
-          <GarageArtworkImage :src="artwork(item.id)?.src ?? ''" :fallback-src="artwork(item.id)?.fallback"
-            :size="96" :alt="item.name[locale === 'zh-TW' ? 'zh-TW' : 'en']"
-            :fallback-text="item.name[locale === 'zh-TW' ? 'zh-TW' : 'en']" />
-        </span>
-        <strong>{{ item.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
-        <span class="demo-state">{{ demoItemStatusText(statusFor(item.id), locale) }}</span>
-        <small v-if="item.demoPrice !== null">{{ priceText(item) }}</small>
-        <small v-else>{{ tr('No demo redemption', '不開放試玩兌換') }}</small>
-      </button>
-    </div>
-
     <section v-if="selected" class="demo-detail" :aria-label="tr('Cosmetic preview', '外觀預覽')">
       <div>
         <h4>{{ selected.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</h4>
@@ -216,6 +203,22 @@ async function confirmRedemption(): Promise<void> {
       {{ tr('This device could not save this session’s progress.', '此裝置未能儲存本次進度。') }}
     </p>
     <p class="demo-message" role="status" aria-live="polite">{{ message }}</p>
+    <div class="demo-catalog">
+      <button v-for="item in items" :key="item.id" type="button"
+        class="demo-item" :data-demo-id="item.id" :data-demo-status="statusFor(item.id)"
+        :aria-pressed="selectedId === item.id" @click="selectedId = item.id; cancelRedemption()">
+        <span class="demo-image">
+          <GarageArtworkImage :src="artwork(item.id)?.src ?? ''" :fallback-src="artwork(item.id)?.fallback"
+            :size="96" :alt="item.name[locale === 'zh-TW' ? 'zh-TW' : 'en']"
+            :fallback-text="item.name[locale === 'zh-TW' ? 'zh-TW' : 'en']" />
+        </span>
+        <strong>{{ item.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
+        <span class="demo-state">{{ demoItemStatusText(statusFor(item.id), locale) }}</span>
+        <small v-if="item.demoPrice !== null">{{ priceText(item) }}</small>
+        <small v-else>{{ tr('No demo redemption', '不開放試玩兌換') }}</small>
+      </button>
+    </div>
+
     <p class="demo-disclaimer">{{ tr('This device only · Resettable · No Firebase sign-in required',
       '僅限此裝置 · 可重設 · 無須 Firebase 登入') }}</p>
   </section>

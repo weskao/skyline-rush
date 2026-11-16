@@ -1,3 +1,18 @@
+# 2026-11-15 — Garage Home and Preview Studio layout (`feature/garage-studio-layout`)
+
+- [x] CI run 43710388109: at 768×1024 the Garage catalog squeezed 96 px VFX art to 93 px. Increased the grid's minimum catalog width to 272 px to preserve the two-column layout, scroll track and native-size art. The existing compact-tiles browser check passes in English and Traditional Chinese at that viewport, with all loadout, badge and trophy assertions intact.
+- [ ] Verify the full GitHub quality gate and the separate home-shortcuts timeout from run 43710388109.
+
+- [x] Base `4d45cc460b4d1c45ed26017ef9737802a5a1d63e`. Reproduced the missing Cars/Paints navigation on the base trial build before changing production code.
+- [x] Garage keeps one scrollable catalog with separate Cars, Paints, Effects, Missions, demo Store and Collection entries. Paints retain an always-visible status/action row and one-step undo. Existing paint entitlement and car save routes are reused.
+- [x] The layout integrates with the current Studio angle stepper and keeps the primary camera actions available. Reused the camera implementation and regressions from `fix/studio-camera-orbit-persistence` at `a208263`, including preset/zoom/gesture continuity and preserving display pose on reset.
+- [x] Mission entry counts claimable rewards. Demo Store uses receipt deltas for transaction feedback, and Collection places equip feedback beside its action. Existing audio confirmations cover equip, undo and demo transactions. The DOM layout is shared by all quality tiers.
+- [x] Module-size, Garage/Studio unit guards, iOS touch guard and browser hygiene checks passed (37 tests).
+- [ ] Complete release and trial build verification, the full browser/World Tour gate and exact-head remote CI. Local software Chromium and build processes hit resource limits during the broad run.
+- [ ] Verify portrait/landscape on physical iOS and Android. Missing production artwork is assigned to H.
+- [x] Integration RED → GREEN: the overlay timing guard caught pre-settle measurements in the category regression. The test now uses the shared Garage opener before measuring. Existing artwork and foldable tests use the new section navigation.
+- [x] The merged tree passed type checking, focused Garage and overlay timing guards, and locked and trial build checks.
+
 # 2026-11-16 — Playwright CI shard title matching
 
 - [x] Run 43765608754: Playwright treated `›` in the Home and Studio camera test titles as a path separator. RED: browser shard 13 matched 78 of 79 tests, and the new unit guard failed on the old planner.

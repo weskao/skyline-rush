@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect, openGarage } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { chooseGarageAngle } from './helpers/garage-angle.js';
@@ -175,6 +176,7 @@ test('scenario 3 — Paint migration preserves original entitlement after previe
   await page.goto('/');
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
+  await openGarageSection(page, 'paints');
   await page.locator('[data-paint="obsidian"]').click();
   await expect(page.locator('#garage-equip')).toBeDisabled();
   await page.locator('#garage-close').click();
@@ -202,8 +204,10 @@ test('studio design — paint states and default restoration reflect actual owne
   await page.locator('#garage-studio-open').click();
   await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
   await expect(page.locator('[data-paint="obsidian"]')).toHaveAttribute('data-state', 'locked');
+  await openGarageSection(page, 'paints');
   await page.locator('[data-paint="obsidian"]').click();
   await expect(page.locator('#garage-equip')).toBeDisabled();
+  await openGarageSection(page, 'paints');
   await page.locator('#garage-restore-default').click();
   await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#garage-preview #world')).toBeVisible();
@@ -230,6 +234,7 @@ test('restoring default paint persists an equipped owned finish across close and
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   await expect(page.locator('[data-paint="aurora"]')).toHaveAttribute('data-state', 'equipped');
+  await openGarageSection(page, 'paints');
   await page.locator('#garage-restore-default').click();
   await expect(page.locator('[data-paint="pearl"]')).toHaveAttribute('data-state', 'equipped');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-paint')))).toBe('pearl');
@@ -245,6 +250,7 @@ test('locked paint state is announced in active language without pretending it i
   await page.locator('#garage-button').click();
   await page.locator('#garage-studio-open').click();
   await expect(page.locator('[data-paint="obsidian"]')).toHaveAttribute('aria-label', /未解鎖/);
+  await openGarageSection(page, 'paints');
   await page.locator('[data-paint="obsidian"]').click();
   await expect(page.locator('#garage-equip')).toBeDisabled();
   await expect(page.locator('#garage-restore-default')).toBeVisible();

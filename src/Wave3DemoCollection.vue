@@ -163,13 +163,13 @@ function closePreview(): void {
           @click="equipSelected">{{ equipped === selected.id ? tr('Demo equipped', '試玩已裝備') : tr('Equip demo preview', '裝備試玩外觀') }}</button>
         <button type="button" @click="closePreview">{{ tr('Close preview', '關閉預覽') }}</button>
       </div>
+      <p class="collection-message" role="status" aria-live="polite">{{ message }}</p>
     </section>
 
     <div class="collection-actions collection-footer">
       <button type="button" @click="emit('open-store')">{{ tr('Browse Demo Store', '瀏覽試玩商城') }}</button>
       <button type="button" @click="emit('return-to-race')">{{ tr('Return to racing', '返回比賽') }}</button>
     </div>
-    <p class="collection-message" role="status" aria-live="polite">{{ message }}</p>
     <p class="collection-disclaimer">{{ tr('Only this device · No payment · No Cloud Save grants · Guest-friendly',
       '僅限此裝置 · 無付款 · 不授予雲端收藏 · 訪客可用') }}</p>
   </section>

@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { dailyChallenge } from '../src/game.js';
 import { recordTrackId, roadRecordLayout } from '../src/record-layout.ts';
@@ -26,6 +27,7 @@ test('owned paints equip and persist; locked paints stay preview only', async ({
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/');
   await page.getByRole('button', { name: 'Garage', exact: true }).click();
+  await openGarageSection(page, 'paints');
   const status = page.locator('#garage-status');
   const equip = page.getByRole('button', { name: 'Equip finish' });
   await expect(status).toContainText('Pearl · equipped');
@@ -45,6 +47,7 @@ test('owned paints equip and persist; locked paints stay preview only', async ({
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-paint')))).toBe('aurora');
   await page.reload();
   await page.getByRole('button', { name: 'Garage', exact: true }).click();
+  await openGarageSection(page, 'paints');
   await expect(aurora).toHaveAttribute('aria-pressed', 'true');
   await expect(aurora).toHaveAttribute('data-state', 'equipped');
   await expect(status).toContainText('Aurora · equipped');

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+defineEmits<{ claimable: [count: number] }>();
 import { onMounted, onUnmounted, ref } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import { getLocale, onLocaleChange } from './i18n.ts';

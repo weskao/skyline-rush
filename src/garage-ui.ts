@@ -68,6 +68,7 @@ export function setupGarageUI({
   const historyKey = '__skylineGaragePage';
   let leavingGarage = false;
   let previewing = getEquippedPaint();
+  let previousPaint: string | null = null;
   const owned = (): string[] => availablePaints(getStars());
   let camera = defaultGarageCamera();
   let orbitBeforeGesture = false;
@@ -130,6 +131,7 @@ export function setupGarageUI({
     updateGarageStudioView({ ownedPaints: owned(), equippedPaint: getEquippedPaint(), car: equippedCar() });
     updateGarageView({
       status: t('garage.status.' + state, { name, stars: need, have: stars }),
+      canUndo: previousPaint !== null && owned().includes(previousPaint) && previousPaint !== getEquippedPaint(),
       equipDisabled: !canEquip,
       equipLabel: t('garage.btn.' + (state === 'owned' ? 'equip' : state), { name, stars: need }),
     });
@@ -146,6 +148,7 @@ export function setupGarageUI({
   function adoptCar(): void {
     const before = equippedCar();
     const restored = reloadCar();
+    previousPaint = null;
     if (restored === before) { showGarage(); return; }
     setEquippedPaint(loadCarPaint(restored, owned()));
     previewPaint(getEquippedPaint());
@@ -209,20 +212,32 @@ export function setupGarageUI({
     clearControls();
   }
 
+  function equipPaint(id: string): void {
+    previousPaint = getEquippedPaint() === id ? previousPaint : getEquippedPaint();
+    setEquippedPaint(id);
+    previewPaint(id);
+  }
+  $('#garage-paint-undo').addEventListener('click', () => {
+    const restore = previousPaint;
+    if (!restore || !owned().includes(restore)) return;
+    previousPaint = null;
+    setEquippedPaint(restore);
+    previewPaint(restore);
+    $(`[data-paint="${restore}"]`).focus({ preventScroll: true });
+    cue?.('equip-confirmed');
+  });
   $('#garage-restore-default').addEventListener('click', () => {
     // Restore is a saved equip action, not a temporary preview; each car's default finish is always owned.
     const standard = defaultPaint(equippedCar());
     if (!owned().includes(standard)) return;
     const changed = getEquippedPaint() !== standard;
-    setEquippedPaint(standard);
-    previewPaint(standard);
+    equipPaint(standard);
     if (changed) cue?.('equip-confirmed');
   });
   $('#garage-equip').addEventListener('click', () => {
     // Guard the data boundary, not only the disabled UI: a locked paint is never persisted.
     if (!garagePresentation(previewing, getEquippedPaint(), getStars(), PAINTS, owned()).canEquip) return;
-    setEquippedPaint(previewing);
-    previewPaint(getEquippedPaint());
+    equipPaint(previewing);
     cue?.('equip-confirmed');
   });
   $('#garage-screen .paint-options').addEventListener('click', event => {
@@ -275,6 +290,7 @@ export function setupGarageUI({
     getWorld()?.setGaragePose?.(null);
     getWorld()?.resize();
     cancelGarageSkinPreview();
+    previousPaint = null;
     previewPaint(getEquippedPaint());
     updateGarageStudioView({ page: 'home', effectsReminder: 0 });
     syncSkins(); // The locked build has no preview session to publish a reset.

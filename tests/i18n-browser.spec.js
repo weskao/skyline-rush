@@ -1,3 +1,4 @@
+import { openGarageSection } from './helpers/garage-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { expect } from '@playwright/test';
 import { mkdirSync, appendFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -235,6 +236,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       // Garage.
       await page.locator('#garage-button').click();
       await check(cx, 'garage');
+      await openGarageSection(page, 'paints');
       await page.locator('[data-paint]').nth(2).click();
       await check(cx, 'garage-paint');
       await page.locator('#garage-close').click();
