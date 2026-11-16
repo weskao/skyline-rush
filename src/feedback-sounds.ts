@@ -26,8 +26,9 @@ export const FEEDBACK_SOUNDS: Readonly<Partial<Record<string, readonly Note[]>>>
   'draft-reward': [[525, 980, .17, 0, .023]],
   'shortcut-entry': [[640, 960, .15, 0, .026], [960, 1200, .18, .09, .021]],
   'tunnel-boost': [[145, 50, .28, 0, .044], [455, 910, .23, .04, .025]],
+  halfway: [[698, 698, .18, 0, .044], [880, 880, .21, .10, .040], [1175, 1175, .32, .22, .034]],
   'final-lap': [[590, 590, .15, 0, .030], [885, 885, .25, .13, .027]],
   'objective-invalid': [[385, 240, .23, 0, .030]],
 };
 
-export const STINGERS = new Set(['victory', 'achievement-earned', 'tutorial-complete']);
+export const STINGERS = new Set(['victory', 'achievement-earned', 'tutorial-complete', 'halfway']);

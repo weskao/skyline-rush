@@ -86,10 +86,10 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
       },
       {
         id: 'halfway', kind: 'new', image: { en: 'whats-new/halfway/halfway.en.webp', 'zh-TW': 'whats-new/halfway/halfway.zh-TW.webp' },
-        title: { en: 'A halfway call and a map that shows progress', 'zh-TW': '半程提示，地圖顯示進度' },
+        title: { en: 'A clearer halfway signal', 'zh-TW': '賽事過半，抬眼就看見' },
         description: {
-          en: 'Reach the middle of a race to hear a chime and see the distance left. The route map fills in as you drive, and on landscape phones it sits top-right.',
-          'zh-TW': '跑到半程會響起提示音並顯示剩餘距離；路線地圖會隨你前進填色，手機橫放時移到右上角。'
+          en: 'In a race with a finish line, a banner lights up at center screen when you pass halfway. A short chime plays and the banner shows the distance left.',
+          'zh-TW': '跑過半程時，畫面中央會亮起提示，顯示距終點還有多遠，並響起短促的提示音。'
         }
       },
       {

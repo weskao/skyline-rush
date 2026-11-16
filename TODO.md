@@ -1,3 +1,10 @@
+# 2026-11-16 — Shared race halfway announcement
+
+- [x] Coast and other finite routes: the peripheral halfway notice could queue behind rewards or be delayed by an impact. The shared presentation event now shows a short cue at the racing scene center, with a chime and remaining distance.
+- [x] RED: the running Coast game had no central cue during a simultaneous NITRO/impact event. The presentation, audio, and peripheral-queue tests also failed on the original implementation. GREEN: focused units passed, including all 17 registered finite tracks, Harbor Circuit laps, and the Dune air shortcut. `npm test` passed 3,290 with three emulator-only skips. Typecheck, module-size checks, and the production build passed.
+- [x] The upcoming announcement shows new 1920 × 1200 English and Traditional Chinese WebP captures from Coast. Desktop and touch landscape Chromium verify centering, independent impact feedback, and one SFX cue.
+- [ ] Complete physical phone checks, full `make verify`, and the exact-commit GitHub quality gate.
+
 # 2026-11-16 — Graphics quality without preview URL flags
 
 - [x] RED: Vite redirected with `DEV_3D=1`, the Roadster was query-gated, a plain link had no Ultra option in Chromium, and dropping to Low retained Neon's HDRI exposure.
