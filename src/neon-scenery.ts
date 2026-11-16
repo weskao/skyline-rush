@@ -13,6 +13,11 @@ const PARKED = new THREE.Matrix4().makeTranslation(0, -1000, 0);
  *  glow, and its brightest texel (a blade sign, the cyan parapet band) within twice it, so the street fronts and the
  *  centre sightline keep their colour (tests/neon-scenery.test.js, *kit emissive*). */
 const EMISSIVE: Record<NeonKit, number> = { city: 1.7, landmarks: 1.5 };
+/** A hero piece with its own strength, on its own copy of the kit material (no draw added: a pool is one draw already).
+ *  The sculpture's only lamp is its violet plinth rings (linear luminance 0.208): at the kit's 1.5 they sat at a third of
+ *  the bloom threshold and the lap's finale read as a dark shape. 4.5 brings the rings to the bloom and trebles the
+ *  violet they throw on the blades (baked in the atlas), well inside twice the threshold. */
+const HERO_EMISSIVE: Partial<Record<NeonPiece, number>> = { plaza_sculpture: 4.5 };
 /** A far tower is left out when it would stand this close to another part of the loop (skyline-scenery.ts CLEAR). */
 const CLEAR = 64, FAR_OFFSET = 100;
 
@@ -43,10 +48,18 @@ function createKitPools(source: THREE.Object3D, kit: NeonKit) {
     bands.set(piece, { near: pool(piece, 0, spec.cap * nearChunks, 'near', spec.mirror), far: farChunks ? pool(piece, spec.lods - 1, spec.cap * farChunks, 'far', false) : null });
   }
   for (const { material } of meshes) (material as THREE.MeshStandardMaterial).emissiveIntensity = EMISSIVE[kit];
+  const own: THREE.Material[] = [];
+  for (const [piece, pools] of bands) {
+    const strength = HERO_EMISSIVE[piece];
+    if (!strength) continue;
+    const material = Object.assign((pools.near.mesh.material as THREE.MeshStandardMaterial).clone(), { emissiveIntensity: strength });
+    own.push(material);
+    for (const band of [pools.near, pools.far]) if (band) band.mesh.material = material;
+  }
   return {
     meshes, bands,
-    /** Frees the instance buffers only. */
-    dispose(): void { for (const mesh of meshes) { mesh.removeFromParent(); mesh.dispose(); } },
+    /** Frees the instance buffers and the layer's own material copies, never the GLB's. */
+    dispose(): void { for (const mesh of meshes) { mesh.removeFromParent(); mesh.dispose(); } for (const material of own) material.dispose(); },
   };
 }
 
