@@ -16,6 +16,18 @@ export async function captureHooks(page) {
   });
 }
 
+/**
+ * Records the pathnames matching `pattern` requested from the next navigation on. gameplayPage has already loaded the
+ * game once (no saved car: the Roadster) and that page keeps fetching lazily, so leave it first or its late
+ * roadster2.glb lands in the count (.claude/rules/browser-test-stability.md).
+ */
+export async function watchRequests(page, pattern) {
+  await page.goto('about:blank');
+  const seen = [];
+  page.on('request', request => { const { pathname } = new URL(request.url()); if (pattern.test(pathname)) seen.push(pathname); });
+  return seen;
+}
+
 export const test = base.extend({
   // `make dev-unlocked`'s module alias (src/access/dev-unlocked.ts): enters gated Coming Soon runtimes.
   unlockedAccess: [false, { option: true, scope: 'worker' }],

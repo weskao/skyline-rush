@@ -235,3 +235,14 @@ test('a spec counting Web Audio notes by pitch leaves out notes scheduled during
   }).map(file => `tests/${file}`);
   assert.deepEqual(offenders, [], "Skip notes while data-phase is 'countdown' or 'racing' (audio-feedback-browser.spec.js)");
 });
+
+// Trap (2026-11-17): the gameplayPage fixture has already loaded the game once (no saved car, so the Roadster) and
+// that page keeps fetching lazily. A spec that started counting requests and then navigated again also counted the
+// old page's late roadster2.glb (crimson-gt-browser: five tests red). watchRequests leaves that page first.
+test('a spec counting requests on the gameplay page leaves the fixture page first (watchRequests)', () => {
+  const offenders = FILES.filter(file => file !== 'helpers/gameplay-browser.js').filter(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    return source.includes('gameplayPage') && /\.on\(\s*['"]request['"]/.test(source);
+  });
+  assert.deepEqual(offenders, [], 'Count requests with watchRequests(page, pattern) from tests/helpers/gameplay-browser.js (see .claude/rules/browser-test-stability.md)');
+});

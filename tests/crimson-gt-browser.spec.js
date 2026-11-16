@@ -1,5 +1,5 @@
 import { openGarageSection } from './helpers/garage-browser.js';
-import { test, captureHooks, glbRoots, programs, modelInstances as instances, dressedAs as dressed } from './helpers/gameplay-browser.js';
+import { test, captureHooks, glbRoots, programs, modelInstances as instances, dressedAs as dressed, watchRequests } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { openGarage } from './helpers/test.js';
@@ -36,8 +36,7 @@ async function prepare(page, url, { quality = 'high', storage = {} } = {}) {
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: q, enabled: true, comfortable: false }));
     for (const [key, value] of Object.entries(extra)) if (localStorage.getItem(key) === null) localStorage.setItem(key, JSON.stringify(value)); // seed once: a reload keeps what the game saved
   }, [quality, storage]);
-  const requests = [], errors = [];
-  page.on('request', request => { if (GLB.test(new URL(request.url()).pathname)) requests.push(new URL(request.url()).pathname); });
+  const requests = await watchRequests(page, GLB), errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(url);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
@@ -254,7 +253,7 @@ async function gridPose(page, url, storage = {}) {
       });
       return round(y);
     };
-    const glb = ["fl", "fr", "rl", "rr"].map(w => player.getObjectByName(`wheel_${w}_axle`)).filter(Boolean); // the tyre hangs on the axle, the rim on `_spin`
+    const glb = ["fl", "fr", "rl", "rr"].map(w => player.getObjectByName(`wheel_${w}_tire`)).filter(Boolean); // every car GLB names its tyre `wheel_<corner>_tire` (only the GT has `_axle`)
     return {
       car: [...player.position.toArray(), ...player.quaternion.toArray()].map(round),
       camera: [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.fov].map(round),

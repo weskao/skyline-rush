@@ -127,6 +127,13 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   before the spec teleports to the finish, so "the result chime played once" counted 4. Skip notes while
   `data-phase` is `countdown` or `racing` (it lags `sound.update` by one frame). Enforced by the same test file
   (*Web Audio notes*).
+- **Count requests only from your own navigation.** `gameplayPage` has already loaded the game once (no saved
+  car: the Roadster), and that page keeps fetching lazily. Trap (2026-11-17, since ba867d53): specs that
+  registered `page.on('request')` and then called `page.goto` also counted the old page's late
+  `roadster2.glb`, so four `crimson-gt-browser` request counts went red (`['…roadster2.glb', '…roadster2.glb']`)
+  while the product requested the GLB once per load. Start counting with `watchRequests(page, pattern)` from
+  `tests/helpers/gameplay-browser.js`; it leaves for `about:blank` first. Enforced by
+  `tests/browser-timeouts.test.js` (*leaves the fixture page first*).
 - **Seeded positions stay clear of the field.** Teleporting the player back to the first rings put
   it in the pack: rivals step first and take the ring, traffic knocks the car off it. Seed ahead of
   every car (`race.rivals`) and pass traffic with `player.effects.ghost` (game seconds).
