@@ -36,6 +36,66 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
   });
 }
 
+test.describe('Garage landscape touch controls', () => {
+  test.use({ hasTouch: true, isMobile: true, locale: 'zh-TW' });
+
+  for (const [width, height] of [[667, 375], [743, 340], [756, 265], [844, 390]]) {
+    test(`pose and camera controls stay tappable at ${width}x${height}`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      // Use the same preview workload at every size so geometry checks don't depend on the test GPU.
+      await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' })));
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto('/');
+      await openGarage(page);
+
+      const preview = page.locator('#garage-preview');
+      const dock = page.locator('#garage-screen #showcase-camera-dock');
+      const controls = page.locator('#garage-screen .garage-mode-controls');
+      const [car, camera, poses] = await Promise.all([preview.boundingBox(), dock.boundingBox(), controls.boundingBox()]);
+      expect(poses.y).toBeGreaterThanOrEqual(car.y + car.height - 1);
+      expect(camera.y).toBeGreaterThanOrEqual(car.y + car.height - 1);
+      const overlapX = Math.min(camera.x + camera.width, poses.x + poses.width) - Math.max(camera.x, poses.x);
+      const overlapY = Math.min(camera.y + camera.height, poses.y + poses.height) - Math.max(camera.y, poses.y);
+      expect(Math.min(overlapX, overlapY), 'camera dock overlaps the pose and lighting controls').toBeLessThanOrEqual(1);
+
+      const pose = controls.locator('#garage-pose-action');
+      const wing = controls.locator('#garage-wing');
+      const lighting = controls.locator('#garage-lighting');
+      const previous = dock.locator('#showcase-camera-prev');
+      const next = dock.locator('#showcase-camera-next');
+      const targets = await Promise.all([pose, wing, lighting, previous, next].map(control =>
+        control.evaluate(button => {
+          const { x, y, width, height } = button.getBoundingClientRect();
+          const hit = button.contains(document.elementFromPoint(x + width / 2, y + height / 2));
+          return { x, y, width, height, hit, name: button.id || button.getAttribute('aria-label') };
+        })));
+      for (const bounds of targets) {
+        expect(bounds.width).toBeGreaterThanOrEqual(44);
+        expect(bounds.height).toBeGreaterThanOrEqual(44);
+        expect(bounds.x).toBeGreaterThanOrEqual(car.x - 1);
+        expect(bounds.x + bounds.width).toBeLessThanOrEqual(car.x + car.width + 1);
+        expect(bounds.y + bounds.height).toBeLessThanOrEqual(height);
+        expect(bounds.hit, `${bounds.name} receives pointer hits`).toBe(true);
+      }
+      await expect(pose).toHaveAccessibleName('起飛');
+      await pose.tap();
+      await expect(pose).toHaveAccessibleName('降落');
+      await expect(preview).toHaveAttribute('data-garage-mode', 'flight');
+      await pose.tap();
+      await expect(pose).toHaveAccessibleName('起飛');
+      await expect(preview).toHaveAttribute('data-garage-mode', 'ground');
+      await wing.tap();
+      await expect(wing).toHaveRole('switch');
+      await expect(wing).toHaveAttribute('aria-checked', 'true');
+      await expect(preview).toHaveAttribute('data-garage-wing', 'true');
+      await lighting.tap();
+      await expect(lighting).toHaveAttribute('data-lighting', 'dim');
+      await next.tap();
+      await expect(dock).toHaveAttribute('data-view', 'front');
+    });
+  }
+});
+
 test('AIRFLOW toggle only switches the effect: it neither stores nor applies a showcase camera in the race', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');

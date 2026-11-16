@@ -42,8 +42,10 @@ async function setCombo(page, { light, pose }) {
   const lighting = page.locator('#garage-lighting');
   if ((await lighting.getAttribute('aria-pressed')) !== String(light === 'dim')) await lighting.click();
   await expect(lighting).toHaveAttribute('aria-pressed', String(light === 'dim'));
-  await page.locator(`button[data-garage-mode="${pose === 'flight' ? 'flight' : 'ground'}"]`).click();
   const wing = page.locator('#garage-preview');
+  const mode = pose === 'flight' ? 'flight' : 'ground';
+  if (await wing.getAttribute('data-garage-mode') !== mode) await page.locator('#garage-pose-action').click();
+  await expect(wing).toHaveAttribute('data-garage-mode', mode);
   if ((await wing.getAttribute('data-garage-wing')) !== String(pose === 'wing')) await page.locator('#garage-wing').click();
   await expect(wing).toHaveAttribute('data-garage-wing', String(pose === 'wing'));
   await page.waitForTimeout(ciTimeout(1500)); // pose and wing transitions settle

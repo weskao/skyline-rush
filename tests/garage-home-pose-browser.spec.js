@@ -1,22 +1,21 @@
 import { test, expect, openGarage } from './helpers/test.js';
 
-// The Garage home page carries the Studio's ground / flight / wing pose buttons, and the showroom keeps
+// The Garage home page carries the Studio's pose action and wing switch, and the showroom keeps
 // as much of the screen as possible: pose buttons and camera dock share one row beneath it.
 for (const size of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
-  test(`Garage home shows the three pose buttons under the showroom ${size.width}x${size.height}`, async ({ page }) => {
+  test(`Garage home shows the preview controls under the showroom ${size.width}x${size.height}`, async ({ page }) => {
     await page.setViewportSize(size);
     await page.goto('/');    await openGarage(page);
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'home');
 
-    const ground = page.locator('button[data-garage-mode="ground"]');
-    const flight = page.locator('button[data-garage-mode="flight"]');
+    const pose = page.locator('#garage-pose-action');
     const wing = page.locator('#garage-wing');
-    for (const button of [ground, flight, wing]) await expect(button).toBeVisible();
-    await expect(ground).toHaveAttribute('aria-pressed', 'true');
+    for (const button of [pose, wing]) await expect(button).toBeVisible();
+    await expect(pose).toHaveAccessibleName('Take off');
 
     const box = async locator => locator.boundingBox();
     const preview = await box(page.locator('#garage-preview'));
-    for (const button of [ground, flight, wing, page.locator('#showcase-camera-next')]) {
+    for (const button of [pose, wing, page.locator('#showcase-camera-next')]) {
       const b = await box(button);
       expect(b.y).toBeGreaterThanOrEqual(preview.y + preview.height - 1); // never over the car
       expect(b.x).toBeGreaterThanOrEqual(0);
@@ -24,14 +23,14 @@ for (const size of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { 
       expect(b.y + b.height).toBeLessThanOrEqual(size.height + 1);
     }
     // Controls and dock stay clear of each other.
-    const [g, w, n] = await Promise.all([box(ground), box(wing), box(page.locator('#showcase-camera-next'))]);
+    const [g, w, n] = await Promise.all([box(pose), box(wing), box(page.locator('#showcase-camera-next'))]);
     expect(w.x + w.width <= n.x + 1 || n.x + n.width <= g.x + 1 || n.y >= w.y + w.height - 1).toBe(true);
 
-    await flight.click();
-    await expect(flight).toHaveAttribute('aria-pressed', 'true');
+    await pose.click();
+    await expect(pose).toHaveAccessibleName('Land');
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-garage-mode', 'flight');
     await wing.click();
-    await expect(wing).toHaveAttribute('aria-pressed', 'true');
+    await expect(wing).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-garage-wing', 'true');
     await page.waitForTimeout(900); // wing travel + hover wheels fold
     // Keep the whole car legible while leaving room for the actual track scenery.
@@ -55,9 +54,9 @@ for (const size of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { 
 
     // The same pose carries into the Studio and back.
     await page.locator('#garage-studio-open').click();
-    await expect(page.locator('button[data-garage-mode="flight"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(pose).toHaveAccessibleName('Land');
     await page.locator('#garage-studio-back').click();
-    await expect(flight).toBeVisible();
-    await expect(flight).toHaveAttribute('aria-pressed', 'true');
+    await expect(pose).toBeVisible();
+    await expect(pose).toHaveAccessibleName('Land');
   });
 }
