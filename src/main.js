@@ -31,7 +31,7 @@ import { createPresentation } from './presentation.ts';
 import { equippedCar, loadCarPaint, saveCarPaint } from './car-catalog.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
-import { drainSteps, SIM_STEP } from './frame-pacing.ts';
+import { advanceCountdown, drainSteps, SIM_STEP } from './frame-pacing.ts';
 import { captureRaceMotion } from './vehicle-render-motion.js';
 import { createStuntRun, stuntHeatContinues, stuntHeatLimit } from './stunt-attack.ts';
 import { trackPressedButtons } from './pressed-buttons.ts';
@@ -540,9 +540,10 @@ try {
     const rawDelta = (now - previousTime) / 1000; previousTime = now;
     const dt = Math.max(0, Math.min(rawDelta, 0.05));
     if (motionRace !== race) { motionRace = race; accumulator = 0; captureRaceMotion(race, previousMotion); }
-    const due = drainSteps(accumulator, dt); accumulator = due.accumulator;
-    // The 0.05s clamp already keeps a tab-switch gap from becoming unseen racing (hiding also pauses);
-    // never drop slow frames outright, or a device rendering under 4 fps stops advancing at all.
+    const countingDown = race.phase === 'countdown';
+    const due = drainSteps(accumulator, countingDown ? 0 : dt); accumulator = due.accumulator;
+    // A slow draw must not stretch the starting countdown. The fixed-step clock still owns movement after GO.
+    if (countingDown && previousPhase === 'countdown' && !document.hidden) advanceCountdown(race, Math.max(0, rawDelta));
     const input = controls.read();
     if (tutorial) prepareTutorialInput(input, tutorial.step);
     else {
