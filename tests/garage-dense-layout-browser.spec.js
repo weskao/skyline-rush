@@ -1,4 +1,5 @@
 import { test, expect, openGarage } from './helpers/test.js';
+import { chooseGarageAngle } from './helpers/garage-angle.js';
 
 const sizes = [
   { width: 1440, height: 900 }, { width: 390, height: 844 },
@@ -46,7 +47,7 @@ for (const size of sizes) {
     await expect(page.locator('button[data-garage-mode="ground"]')).toBeVisible();
     await expect(page.locator('button[data-garage-mode="flight"]')).toBeVisible();
     await page.locator('button[data-garage-mode="flight"]').click();
-    await page.locator('[data-garage-angle="side"]').click();
+    await chooseGarageAngle(page, 'side');
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame', 'true');
     const flightImage = test.info().outputPath(`garage-dense-flight-${size.width}x${size.height}.png`);
     await page.screenshot({ path: flightImage });

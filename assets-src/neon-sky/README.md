@@ -80,7 +80,8 @@ Pinned by `tests/neon-sky-manifest.test.js`.
 | `credit` | CC0-1.0, Greg Zaal, polyhaven.com/a/shanghai_bund | same |
 | Dome decode `sky.range` | 4.0 | 3.0 |
 | `sky.disc` | 0 (no sun) | 0 |
-| Key light direction (HDRI frame) | [-0.5402, 0.8151, 0.2094], el 54.6 deg | [-0.1487, 0.9855, 0.0812], el 80.3 deg |
+| Key light direction (HDRI frame) | [-0.2897, 0.8151, 0.5017], el 54.6 deg, lon 120 (a street axis) | [-0.1487, 0.9855, 0.0812], el 80.3 deg |
+| `key.filled`: measured on the filled sky | [-0.5402, 0.8151, 0.2094], lon 158.8 | same as the key |
 | Key light colour | `#ffdec0` | `#ffe4cf` |
 | Key light intensity (same road irradiance) | 2.5577 | 1.455 |
 | `key.source`: measured on the download (rain: its raw grade) | [-0.7865, 0.4607, -0.4112], el 27.4 deg, 4.5252 | [-0.7504, 0.5086, -0.4222], el 30.6 deg, 2.8193 |
@@ -106,6 +107,12 @@ What the runtime must know:
   sin(source elevation) / sin(elevation) so the road gets the same irradiance; colour and ambient stay the
   download's, whose light the shipped 1k keeps as overhead glow. Treat intensity as a starting value
   scaled by the environment's `intensity`/`exposure`, as Coast's hand-tuned `sun.intensity` is.
+- **Key azimuth.** Night's key is then turned about the vertical onto the nearest street axis (`AHEAD_DEG` + k x 90 in
+  the HDRI frame, the axes the runtime yaw gives the grid); `key.filled` keeps the measured direction. Where the
+  filled sky put it, it stood 119 degrees off the harbour heading and the player car's sloped rear deck mirrored it
+  into the chase camera as a white bar. The band is a key 105 to 150 degrees off a straight, on either side, under
+  about 76 degrees of elevation, and the lap drives all four street directions, so a diagonal key only moves the bar
+  to other straights. Rain's key (el 76.7 when it measured clean, 80.3 now) stands above the band and is not turned. No texture depends on the key.
 - **`sky.sunDirection`** keeps Coast's field (centroid of the brightest 0.02 % of the 4K hemisphere) but at night it
   is a lamp or LED facade near el 17-19 degrees; do not use it to place a sun disc (`disc` is 0).
 - **`sky.gain`**: `gain = 0.4 x threshold / luminance(sky.horizon)`, so the whole dome, its brightest texels included,

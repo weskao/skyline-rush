@@ -1,6 +1,7 @@
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
+import { chooseGarageAngle } from './helpers/garage-angle.js';
 
 // Phase 2 `?model=probe` Garage adapter, real WebGL lifecycle (docs/designs/3d-pipeline/phase2-model-contracts.md §2).
 // The Garage Home (main scene, showcase car) and the Preview Studio (garage stage) both show the probe while the
@@ -76,7 +77,7 @@ test('camera switch: Home dock views and Home ↔ Studio reuse the instances wit
   await page.locator('#garage-studio-open').click();
   await expect.poll(async () => (await instances(page)).studio ?? null).not.toBeNull();
   const { studio } = await instances(page);
-  await page.locator('[data-garage-angle="front"]').click();
+  await chooseGarageAngle(page, 'front');
   await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame', 'true');
   await attach(page, 'probe-garage-studio');
   await page.locator('#garage-studio-back').click();

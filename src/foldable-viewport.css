@@ -280,11 +280,6 @@ body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizo
 }
 body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .showcase-camera-dock :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
 body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .showcase-camera-dock .showcase-camera-actions { flex-wrap: nowrap; }
-body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #intro .showcase-camera-actions .custom-select { flex-basis: 0; order: 0; }
-body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro #showcase-camera-dock:has([aria-expanded="true"]) {
-  position: fixed;
-  z-index: 7;
-}
 body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro .daily-card { bottom: calc(var(--fold-gap-bottom) + 154px); }
 body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro .daily-card {
   grid-template-columns: minmax(0, 1fr) auto;

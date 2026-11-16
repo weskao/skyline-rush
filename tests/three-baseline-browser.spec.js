@@ -2,6 +2,7 @@ import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import fs from 'node:fs';
+import { chooseGarageAngle } from './helpers/garage-angle.js';
 
 // 3D pipeline Phase 1: same-settings renderer baseline (screenshots + renderer stats + ?perf frame time) so the
 // r186 upgrade is compared against r180 instead of remembered. Runs only via THREE_BASELINE=1, never in the gate:
@@ -94,7 +95,7 @@ test(`${LABEL} ${VIEW}: Garage Studio paint and glass baseline`, async ({ gamepl
   const preview = page.locator('#garage-preview');
   await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'studio');
   for (const angle of ['front', 'side', 'rear']) {
-    await page.locator(`[data-garage-angle="${angle}"]`).click();
+    await chooseGarageAngle(page, angle);
     await expect(preview).toHaveAttribute('data-car-in-frame', 'true');
     await page.waitForTimeout(ciTimeout(700)); // settle the camera before the comparison shot
     await page.locator('#garage-preview #world').screenshot({ path: `${OUT}/studio-${angle}.png` });

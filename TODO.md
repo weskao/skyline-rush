@@ -1,3 +1,9 @@
+# 2026-11-16 — Playwright CI shard title matching
+
+- [x] Run 43765608754: Playwright treated `›` in the Home and Studio camera test titles as a path separator. RED: browser shard 13 matched 78 of 79 tests, and the new unit guard failed on the old planner.
+- [x] GREEN: renamed the nine affected test cases by changing their two title templates, and made invalid titles fail with the offending test path. All 16 browser and two World Tour shard lists round-trip through Playwright, covering 1,255 and 49 unique tests respectively.
+- [ ] Verify the GitHub quality gate on the resulting develop commit.
+
 # 2026-11-16 — Collision recovery: contact aligned with race models
 
 - [x] Coast, about 300 m: the Roadster could visually intersect a flanking traffic car during contact protection. The old 1.7 m lateral test ignored the rendered hull and tire clearance. Use measured neutral envelopes for player contacts with traffic and rivals, including separate front and rear extents. Use the same clearance when traffic steers around the player or when Ghost Phase ends.

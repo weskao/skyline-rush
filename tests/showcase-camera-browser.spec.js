@@ -180,42 +180,41 @@ test('language switches relabel live AIRFLOW values before the next HUD tick', a
 // The home camera picker is the shared custom dropdown (same as the language picker), and no label
 // is clipped: the button shows each view's full name and the open list stays inside the viewport.
 for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [760, 501], [768, 1024], [844, 390]]) {
-  test(`home camera picker is the custom dropdown with uncut labels at ${width}x${height}`, async ({ page }, info) => {
+  // The dock is a ‹ name › stepper: no dropdown, the name sits centred between the arrows and is never cut.
+  test(`home camera dock uses a two-arrow stepper with uncut labels at ${width}x${height}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height });
     await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
-    const picker = page.locator('#showcase-camera-select + .custom-select');
-    const combobox = picker.getByRole('combobox');
-    await expect(combobox).toBeVisible();
+    const dock = page.locator('#showcase-camera-dock');
+    const name = page.locator('#showcase-camera-name');
+    await expect(name).toBeVisible();
+    await expect(dock.locator('select, [role="combobox"], [role="listbox"]')).toHaveCount(0);
     for (const locale of ['en', 'zh-TW']) {
       if (locale !== 'en') await selectLocale(page, locale);
       for (const view of ['drive', 'front', 'rear', 'left', 'right', 'orbit']) {
-        await page.locator('#showcase-camera-select').evaluate((select, value) => { select.value = value; }, view);
-        const cut = await combobox.evaluate(el => el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight);
+        await expect(dock).toHaveAttribute('data-view', view);
+        const cut = await name.evaluate(el => el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight);
         expect(cut, `${locale} ${view}: camera label is cut`).toBe(false);
         // A label may wrap between words ("Driving / camera") but never inside one ("Drivin / g").
-        const { lines, words } = await combobox.evaluate(el => {
+        const { lines, words } = await name.evaluate(el => {
           const range = document.createRange();
           range.selectNodeContents(el);
           return { lines: new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size, words: el.textContent.trim().split(/\s+/).length };
         });
         expect(lines, `${locale} ${view}: camera label breaks inside a word`).toBeLessThanOrEqual(words);
+        const [prev, label, next] = await Promise.all(['#showcase-camera-prev', '#showcase-camera-name', '#showcase-camera-next'].map(s => page.locator(s).boundingBox()));
+        expect(prev.width >= 44 && prev.height >= 44 && next.width >= 44 && next.height >= 44, `${locale}: arrows keep 44px targets`).toBe(true);
+        expect(prev.x + prev.width <= label.x + 1 && label.x + label.width <= next.x + 1, `${locale} ${view}: name sits between the arrows`).toBe(true);
+        expect(Math.abs((prev.x + next.x + next.width) / 2 - (label.x + label.width / 2)) <= 1, `${locale} ${view}: name is centred`).toBe(true);
+        expect(prev.x >= 0 && next.x + next.width <= width, `${locale}: arrows inside the viewport`).toBe(true);
+        await page.locator('#showcase-camera-next').click();
       }
-      await combobox.click();
-      await expect(picker.getByRole('listbox')).toBeVisible();
-      await page.screenshot({ path: info.outputPath(`camera-list-${locale}-${width}x${height}.png`) });
-      for (const option of await picker.getByRole('option').all()) {
-        await option.scrollIntoViewIfNeeded(); // a list capped to the room above or below scrolls
-        const box = await option.boundingBox();
-        const label = await option.textContent();
-        expect(box.y >= 0 && box.y + box.height <= height && box.x >= 0 && box.x + box.width <= width, `${locale} ${label}: option off screen`).toBe(true);
-        expect(await option.evaluate(el => el.scrollWidth > el.clientWidth), `${locale} ${label}: option text cut`).toBe(false);
-        // No other layer (tool row, rules row, top bar) is painted over the open list.
-        expect(await option.evaluate(el => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)); }), `${locale} ${label}: option covered`).toBe(true);
-      }
-      await picker.getByRole('option').last().click();
-      await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view', 'orbit');
+      await expect(dock).toHaveAttribute('data-view', 'drive'); // wraps around
+      await page.locator('#showcase-camera-prev').click();
+      await expect(dock).toHaveAttribute('data-view', 'orbit');
+      await page.locator('#showcase-camera-next').click();
+      await dock.screenshot({ path: info.outputPath(`camera-dock-${locale}-${width}x${height}.png`) });
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
     }
   });

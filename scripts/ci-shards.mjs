@@ -30,7 +30,14 @@ export function listedTests(report) {
   if (report.errors?.length) throw new Error(`playwright --list failed: ${report.errors[0].message}`);
   const out = [];
   const walk = (suite, titles) => {
-    for (const spec of suite.specs ?? []) out.push([spec.file, ...titles, spec.title].join(' › '));
+    for (const spec of suite.specs ?? []) {
+      const parts = [spec.file, ...titles, spec.title];
+      const entry = parts.join(' › ');
+      if (parts.some((part) => part !== part.trim() || /[›\n\r]/.test(part))) {
+        throw new Error(`${entry} cannot be matched by Playwright --test-list: use titles without ›, line breaks, or surrounding whitespace`);
+      }
+      out.push(entry);
+    }
     for (const child of suite.suites ?? []) walk(child, [...titles, child.title]);
   };
   for (const file of report.suites) walk(file, []);
@@ -57,7 +64,7 @@ function plan(config, shard, total) {
   const bin = partition(listedTests(playwrightList(config)), JSON.parse(readFileSync(DURATIONS, 'utf8')), total)[shard - 1];
   if (!bin) throw new Error(`shard ${shard} is outside 1..${total}`);
   const text = `${bin.tests.join('\n')}\n`;
-  // A title --test-list cannot match (trimmed whitespace, a "›" inside it) would silently never run.
+  // Round-trip through Playwright so a filter mismatch cannot silently drop tests.
   const file = join(mkdtempSync(join(tmpdir(), 'ci-shard-')), 'list.txt');
   writeFileSync(file, text);
   const matched = listedTests(playwrightList(config, ['--test-list', file])).length;

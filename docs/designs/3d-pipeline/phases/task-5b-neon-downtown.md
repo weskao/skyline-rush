@@ -91,7 +91,9 @@ To do, in order:
   (`tests/ring-variety.test.js` re-locked). Done when all of these hold:
   - [x] Owner confirmed (2026-11-15): Endless, Event Lab and Daily Neon records start fresh on road layout 3 (`neon@3`); the
     older ones stay stored and readable.
-  - [ ] Owner to deploy `firestore.rules` (`neon@7` added, 51 ids, cap 60).
+  - [x] `firestore.rules` deployed (2026-11-16, owner-approved) from `develop` `4fa797bb` (`neon@7` added, 51 ids, cap 60):
+    rules tests 3/3 on the local emulator, then `firebase deploy --only firestore:rules` released the rules. Not checked: a
+    signed-in production cloud save holding a `neon@7` best.
   - The Neon centreline is a closed clockwise loop: the finish point is the start point, the heading turns through
     360°, and the sectors come in the order of the schematic. Unit test on `classicRoadRoute('neon')`.
   - The track is not longer than today (4000 m) and no corner is tighter than today's tightest.
@@ -768,6 +770,103 @@ Still wrong:
 - Cloud brightness steps at two fill seams; some lamps soften to blobs.
 - The harbour's far shore is low, and its dry-night road is still the darkest on the lap.
 - Rain's horizontal irradiance rose (1.434 to 1.613).
+
+## Step 18: landmark and city kit rebuild (2026-11-16)
+
+Branch `feature/neon-landmark-polish`. It closes step 15's list except the baked light's direction. No real-time
+light, draw call, node or material is added; pivots, clear spans and footprints do not move.
+
+- **City kit towers:** a lit curtain wall in place of dark boxes with edge trim (`assets-src/neon-city/`).
+- **White containers flat, cause:** the tone curve ran on albedo times light, so the lamp spill pushed white paint
+  past the roll-off. `build.py` now tone-maps the light and multiplies the albedo afterwards. This path is shared,
+  so kit A's atlases changed and were re-pinned RED first; their white, bloom and peak stats did not move.
+- **Cargo ship:** stern and funnel floods; masts 18000 to 15000 W for the deck cargo's relief, and five hull floods
+  whose cones end under the cargo so the hull is lifted without touching it.
+- **Rail underpass:** a structural bay every 6 m on walls and ceiling (kit A).
+- **Bytes:** the GLB came out over its limit, so the occlusion-roughness slot of this asset alone takes a stronger
+  UASTC RDO (`scripts/assets/optimize-glb.mjs`). 3 959 896 to 3 849 128 bytes; the 4 000 000 limit did not move.
+- The same merge brings `develop` in. `tests/fixtures/legacy-race-replay.json` keeps `develop`'s hash for every
+  track; Neon's three are re-recorded from the merged code (the 10 km lap on `develop`'s contact rules).
+
+### Evidence
+
+Measured 2026-11-16 on one desktop machine; build logs and RED logs in the ignored `../audits/neon-landmark-polish/`.
+
+- [x] RED first, then GREEN: `tests/neon-landmarks-glb.test.js` (*the cargo ship shows its hull, stern and funnel*,
+  *the light containers keep their corrugation*, *a structural bay every 6 m*), `tests/optimize-glb-steps.test.js`,
+  `tests/neon-city-glb.test.js` and the manifest pins.
+- [x] `contract.json`: ship containers relief 0.877 to 0.951 (floor 0.95), hull `lit` 0.0557 (floor 0.055), hull
+  ends 0.0444 (floor 0.03); stack containers relief 0.972. Sectors emissive: no white texel, none over the bloom.
+- [x] `node --test tests/module-size.test.js`, `npm run typecheck`, `npm test` and `npm run build` on the merge.
+- [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
+  2026-11-16.
+- [x] Draw calls on High with the rebuilt pieces, 13 probes per weather: race 332 at most in rain (underpass,
+  700 m) and 296 at night, home 259 (caps 380 and 540).
+- [x] WebGL captures looked at, night and rain: underpass 800 m (ribs and bays read), expressway 3300 m (towers
+  carry lit windows), harbour 4950 to 5450 m (containers, gantries, ship hull and deckhouse read).
+- [ ] Owner art approval; phone.
+
+Still wrong:
+
+- Dry night, harbour straight, the white bar on the player car's rear deck: fixed in Step 19.
+
+- Two guards hold by thin margins (relief 0.951 of 0.95, hull 0.0557 of 0.055): the next lighting change to the
+  ship re-measures both.
+- The baked light is the same for every yaw and ignores the runtime key direction; a fix needs a shader change.
+- The occlusion-roughness atlases carry stronger compression; not compared by eye against the old ones.
+
+## Step 19: the night key on a street axis (2026-11-16)
+
+Owner decision of 2026-11-16: turn the night key onto a street axis. It closes step 18's rear-deck glint.
+
+- **Cause, measured:** the bar is the player car's sloped rear deck mirroring the key into the chase camera. It
+  shows when the key stands 105 to 150 degrees off the heading, on either side (over the car's shoulder), under
+  about 76 degrees of elevation. Step 17's key (elevation 58.2) stood 119 degrees off the harbour heading. Step
+  18's reading ("the straight heads toward the key") had the angle wrong. A lane map at 5200 m with a probe key
+  gave 160 to 1300 px of luma >= 235 in the car box at 119 degrees and 70 to 240 at 135, and 0 to 7 at 0, 45,
+  90, 105, 150, 165 and 180. Raising the key at 119 degrees: 1486 px at 58, 165 at 65, 33 at 70, 5 at 77.
+- **Why not a diagonal key:** the lap drives all four street directions, so a diagonal key stands 135 degrees
+  off two of them and only moves the bar (measured on the west canal and plaza).
+- **Change:** `on_street_axis` (`assets-src/neon-sky/build.py`) turns night's key about the vertical onto the
+  street axis nearest its measured azimuth, a 29.1 degree turn to due east on the grid. Elevation, colour and
+  intensity are kept; `key.filled` in the manifest keeps the measured direction. The rebuild wrote every sky
+  file byte for byte as before: no texture, gain or sha256 pin changed. `src/coast-lighting.ts` takes the new
+  `sunDirection` for `night` only; Coast's four rows are untouched.
+- **Rain night is not turned.** Its key (elevation 76.7) was swept at four azimuths on every long straight, both
+  outer lanes: the car-box numbers did not move with the key, so the key is not what shows there.
+- **Prevention:** item 20 of `.claude/rules/3d-asset-pipeline.md` and the two guards below.
+
+### Evidence
+
+Measured 2026-11-16 on one desktop machine, High, 1280x720; captures, numbers and logs in the ignored
+`../audits/neon-landmark-polish/`.
+
+- [x] RED first, then GREEN: `tests/neon-lighting.test.js` (*the key light never stands over the car's shoulder on
+  a long straight*) failed on the old night row (harbour, 119.1 degrees off) and passes on the new one;
+  `tests/neon-sky-manifest.test.js` (*night's is turned onto the nearest street axis*) pins the build's rule.
+- [x] Sky rebuild: every shipped file identical; only `manifest.json` (`key`, `scriptSha256`) changed.
+- [x] Harbour, dry night, the five probes 4500 to 5450 m: car box 0 px at each (before: 1518, 1097 and 1011 at
+  4950, 5200 and 5450 m). Rain night, same probes: 0 to 26 (before 0 to 19).
+- [x] Every long straight, both outer lanes, night and rain: no white bar on the rear deck in any capture looked
+  at (north boulevard, harbour, west canal, underpass). The car's lit flank reads a little lighter at night.
+- [x] `npm run typecheck`, `node --test tests/module-size.test.js`, `npm test` and `npm run build`.
+- [ ] `tests/neon-look-browser.spec.js` and every other browser spec: not run, on the owner's instruction of
+  2026-11-16.
+- [ ] Owner art approval of the turned key (facades, water highlights and shadows under it); phone; Medium and
+  Ultra.
+
+Still wrong:
+
+- White pixels that are not the key stay in the car box, steady across every key azimuth tried, in both
+  weathers: north boulevard (bonus rings, lane dashes and kerb lights behind the car; about 200 to 900 px
+  depending on where the rings stand) and the west canal and oldtown gate in the left lane (bollard lamps; about
+  50 to 160 px). The box measures the picture around the car, not only its paint. Not chased.
+- Rain, plaza, right lane: a probe key directly behind the car gave 126 px where the shipped key gives 2. Not
+  explained; the guard lets a key above 76.5 degrees stand anywhere.
+- The guard's numbers come from one car body (the Roadster GLB) on one machine at High; a new car body, key or
+  lap direction re-runs the lane sweep (item 20).
+- Cast shadows from the night key are too faint in the captures to read their new direction.
+- `assets-src/neon-sky/build.py` is 414 lines (400 before); asset build scripts are outside the module-size gate.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 

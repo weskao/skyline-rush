@@ -1,6 +1,6 @@
 {
  "script": "assets-src/neon-sky/build.py",
- "scriptSha256": "0456d90048a4d4c6b103c660cdae77865775909b75cc960550eb9c0ec4bea916",
+ "scriptSha256": "3d63c48806dc6690d4ea8aa7beed6bdbf8638a344f76cf9e9d42871287d8983f",
  "encoder": "assets-src/coast-sky/build.py",
  "encoderSha256": "0a8ee4abef388f7fdd0b8476434450fb5deb92a2df49129c258e3b384b6059a2",
  "io": "assets-src/neon-sky/hdr_io.py",
@@ -165,15 +165,22 @@
    },
    "key": {
     "direction": [
-     -0.5402,
+     -0.2897,
      0.8151,
-     0.2094
+     0.5017
     ],
     "elevationDeg": 54.59,
     "color": "#ffdec0",
     "intensity": 2.5577,
     "irradiance": 3.2251,
     "ambient": 1.3838,
+    "filled": {
+     "direction": [
+      -0.5402,
+      0.8151,
+      0.2094
+     ]
+    },
     "source": {
      "direction": [
       -0.7865,
@@ -407,6 +414,13 @@
     "intensity": 1.455,
     "irradiance": 1.7938,
     "ambient": 0.8754,
+    "filled": {
+     "direction": [
+      -0.1487,
+      0.9855,
+      0.0812
+     ]
+    },
     "source": {
      "direction": [
       -0.7504,

@@ -6,7 +6,7 @@ import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subsc
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import type { GaragePose } from './track-preview.ts';
 import { garageStudioView, updateGarageStudioView, updateGarageView } from './garage-view-state.ts';
-import { defaultGarageCamera, dragGarageCamera, garagePreset, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit, setGarageMode, toggleGarageWing } from './garage-camera.ts';
+import { defaultGarageCamera, dragGarageCamera, garagePreset, stepGarageAngle, toggleGarageOrbit, zoomGarageCamera, releaseGarageOrbit, setGarageMode, toggleGarageWing } from './garage-camera.ts';
 import type { GarageCamera } from './garage-camera.ts';
 import type { GarageLighting } from './garage-stage.ts';
 import { t } from './i18n.ts';
@@ -273,10 +273,10 @@ export function setupGarageUI({
     $('#garage-button').focus({ preventScroll: true });
   });
   garageScreen.addEventListener('keydown', event => event.stopPropagation());
-  document.querySelectorAll<HTMLButtonElement>('[data-garage-angle]').forEach(button =>
-    button.addEventListener('click', () => setCamera(
-      { ...garagePreset(button.dataset.garageAngle!), mode: camera.mode, wing: camera.wing }, button.dataset.garageAngle ?? '',
-    )));
+  for (const [id, delta] of [['#garage-angle-prev', -1], ['#garage-angle-next', 1]] as const) $(id).addEventListener('click', () => {
+    const angle = stepGarageAngle(garageStudioView.angle, delta);
+    setCamera({ ...garagePreset(angle), mode: camera.mode, wing: camera.wing }, angle);
+  });
   document.querySelectorAll<HTMLButtonElement>('[data-garage-mode]').forEach(button =>
     button.addEventListener('click', () => setCamera(
       setGarageMode(camera, button.dataset.garageMode as GarageCamera['mode']), garageStudioView.angle,
