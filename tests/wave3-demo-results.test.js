@@ -103,6 +103,15 @@ test('results are a keyboard reachable region with a polite atomic status and na
   assert.ok(progress); assert.ok(progress.getAttribute('aria-label'));
 });
 
+test('results end with native mission progress after the reward notes', () => {
+  const region = mountWave3DemoResults({ container: fakeHost(), settlement: settlement(), locale: 'en' });
+  const disclaimer = region.querySelector('.wave3-demo-results__disclaimer');
+  const progress = region.querySelector('progress');
+  const missionSection = progress.parentElement.parentElement;
+  assert.equal(missionSection.parentElement, disclaimer.parentElement);
+  assert.equal(disclaimer.parentElement.children.at(-1), missionSection);
+});
+
 test('rerender reuses the same node/status and does not modify existing results or award again', () => {
   const host = fakeHost(); const previous = host.ownerDocument.createElement('div'); previous.textContent = 'STAR 2'; host.append(previous);
   const first = mountWave3DemoResults({ container: host, settlement: settlement(), locale: 'en' });

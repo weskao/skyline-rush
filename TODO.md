@@ -558,6 +558,13 @@ Design: `docs/superpowers/specs/2026-11-13-drift-balance-design.md`. One table: 
 - [x] Verify cue selection, synth timing, mute, result priority and repeat prevention with focused Node tests.
 - [ ] Verify the desktop and mobile browser flow, exact-commit full regression and physical-device mix.
 
+# 2026-11-16 — Demo results mission progress layout
+
+- [x] Move the mission grid below the reward notes and align the native progress bars to the bottom of each tile. Use short claimed-state copy in English and Traditional Chinese.
+- [x] RED reproduced two-line labels, misaligned bars and notes below the progress grid. GREEN: three Chromium scenarios cover English and Traditional Chinese labels at 320×568, 360×740, 667×375 and 1024×768. The results unit, module-size and browser stability checks passed (37 tests).
+- [x] Reproduce the GitHub Actions English Time Trial wrap at 320×568 with wider font metrics in Chromium. Increase the minimum mission column width so the grid drops a column before the claimed label wraps.
+- [ ] Verify the complete real-race results layout matrix, physical-phone behavior, and exact-commit GitHub CI.
+
 # 2026-11-13 — Demo reward (試玩獎勵) results card fully visible
 
 - [x] RED: zh-TW guard reported the card scrolling 262/198px on desktop/tablet (missions and fine print cut) and four lines hidden in short landscape. GREEN: no height cap; crest moved into the header, mission tiles and fine print visible at 1440×900, 768×1024, 390×844, 360×740.

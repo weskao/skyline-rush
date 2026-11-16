@@ -110,8 +110,8 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     const coinCredit = makeCredit(doc, 'wave3-demo-results__credit wave3-demo-results__coin-credit');
     const details = make(doc, 'div', 'wave3-demo-results__details');
     details.id = 'wave3-demo-results-details';
-    details.append(coinCredit, status, make(doc, 'div', 'wave3-demo-results__missions'),
-      make(doc, 'p', 'wave3-demo-results__distinction'), make(doc, 'p', 'wave3-demo-results__disclaimer'));
+    details.append(coinCredit, status, make(doc, 'p', 'wave3-demo-results__distinction'),
+      make(doc, 'p', 'wave3-demo-results__disclaimer'), make(doc, 'div', 'wave3-demo-results__missions'));
     // Only shown on short landscape, where the card is a one-line strip and details open as a panel above it.
     const toggle = make(doc, 'button', 'wave3-demo-results__toggle');
     toggle.setAttribute('type', 'button');
