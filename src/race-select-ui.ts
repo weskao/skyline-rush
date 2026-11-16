@@ -196,6 +196,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     }, t);
     startButton.disabled = disabled;
     $('#lobby-track-name').textContent = name;
+    $('#lobby-hero-track').textContent = name;
     $('#lobby-track-status').textContent = t(trackStatusKey);
     const actionLabel = startButton.querySelector<HTMLElement>('span')!;
     actionLabel.dataset.i18n = labelKey;

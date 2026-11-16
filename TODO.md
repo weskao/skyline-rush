@@ -1,3 +1,9 @@
+# Skyline Rush responsive interface refresh
+
+- The lobby reads its title from the selected race and uses the existing 3D showcase and 3× track art. The desktop rail shows larger track cards, and the mobile layout preserves the safe-area Start rail and folded viewport segments.
+- The settings gear opens audio and links to the existing driving, display/HUD, and language panels. The first-race guide opens with the quick instructions, and the full manual is available from Practice. Garage camera icons, progress navigation, Event Lab history controls and results credits reuse the existing icon and artwork sources.
+- RED/GREEN guards cover the new layout contracts. Check desktop, portrait, short landscape, and both folding axes with the browser specs. Physical iOS, Android and foldable testing remains pending.
+
 # 2026-11-16 — Browser CI follow-up
 
 - The lobby already scrolls. Removing the inner rules scroller lets the AI listbox open above the rules without clipping its first options. Chromium reproduced the old track-list interception and verified that selecting 0 AI updates the rules summary after the fix.

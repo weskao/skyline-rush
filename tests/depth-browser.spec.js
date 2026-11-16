@@ -36,7 +36,7 @@ for (const [name, viewport, hasTouch] of [
     await seed(page);
     await open(page);
     await page.getByRole('button', { name: 'History', exact: true }).click();
-    const history = page.getByRole('dialog', { name: 'Race history' });
+    const history = page.getByRole('dialog', { name: 'Progress', exact: true });
     await expect(history).toBeVisible();
     await expect(page.locator('.history-run')).toHaveCount(12);
     await expect(page.locator('.history-best')).toHaveCount(1);
@@ -122,7 +122,7 @@ test('fresh progress locks tracks, empty History works and Escape restores menu 
   await page.keyboard.press('Enter');
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog', { name: 'Race history' })).not.toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Progress', exact: true })).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'History', exact: true })).toBeFocused();
 });
 

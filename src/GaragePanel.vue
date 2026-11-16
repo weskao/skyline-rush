@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { getLocale, onLocaleChange, t } from './i18n.ts';
 import { garageStudioView, garageView } from './garage-view-state.ts';
 import { GARAGE_ANGLES } from './garage-camera.ts';
-import { icons } from './icons.ts';
+import { ICON_ATTRS, icons } from './icons.ts';
 import { PAINTS } from './appearance.ts';
 import GarageCarPicker from './GarageCarPicker.vue';
 import CloseButton from './CloseButton.vue';
@@ -45,7 +45,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   showroom: '3D 車輛展示間', title: '預覽工作室', open: '開啟全螢幕預覽', back: '返回車庫',
   hint: '拖曳旋轉，雙指或滾輪縮放', angles: ['車頭', '車尾', '側面', '俯視', '斜後方'], free: '自由視角', angle: '鏡頭角度', prevAngle: '上一個角度', nextAngle: '下一個角度',
   left: '向左旋轉', right: '向右旋轉', zoomIn: '放大', zoomOut: '縮小',
-  auto: '環繞', reset: '重設鏡頭', resetShort: '重設', undo: '復原車漆', takeoff: '起飛', land: '降落', wing: '尾翼', collection: '車漆收藏',
+  auto: '環繞', reset: '重設鏡頭', undo: '復原車漆', takeoff: '起飛', land: '降落', wing: '尾翼', collection: '車漆收藏',
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? '外觀特效即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '外觀特效免費試用中：重新載入後記住此帳號最後的選擇；不代表永久擁有' : '外觀特效已開放，裝備須具備擁有權', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
   cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆',
   preview: '試看', previewing: '試看中', cars: '車款', paints: '車漆', effects: '特效', missions: '任務',
@@ -54,7 +54,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   showroom: '3D vehicle showroom', title: 'PREVIEW STUDIO', open: 'Open full-screen Studio', back: 'Back to Garage',
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'], free: 'Free view', angle: 'Camera angle', prevAngle: 'Previous angle', nextAngle: 'Next angle',
   left: 'Rotate left', right: 'Rotate right', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
-  auto: 'Orbit', reset: 'Reset camera', resetShort: 'Reset', undo: 'Undo paint', takeoff: 'Take off', land: 'Land', wing: 'Wing', collection: 'Paint collection',
+  auto: 'Orbit', reset: 'Reset camera', undo: 'Undo paint', takeoff: 'Take off', land: 'Land', wing: 'Wing', collection: 'Paint collection',
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Cosmetic VFX coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'Try VFX for free. Your last pick is remembered on reload for this account; no permanent ownership.' : 'Cosmetic VFX is available; equip requires ownership', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
   cosmetic: 'Appearance does not change performance', restore: 'Restore default paint',
   preview: 'Preview', previewing: 'Previewing', cars: 'Cars', paints: 'Paints', effects: 'Effects', missions: 'Missions',
@@ -87,7 +87,7 @@ const isPreviewingPaint = (id: string): boolean =>
         <div class="garage-preview-controls">
           <div class="garage-mode-controls">
             <button id="garage-pose-action" type="button" :data-garage-mode="nextPose">
-              <svg viewBox="0 0 24 24" aria-hidden="true" v-html="icons.fly"></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true" v-html="nextPose === 'flight' ? icons.fly : icons.road"></svg>
               {{ poseAction }}
             </button>
             <button type="button" id="garage-wing" role="switch" :aria-checked="garageStudioView.wing">
@@ -98,10 +98,10 @@ const isPreviewingPaint = (id: string): boolean =>
         </div>
         <nav v-show="garageStudioView.page === 'studio'" class="garage-camera-controls" :aria-label="locale === 'zh-TW' ? '鏡頭控制' : 'Camera controls'">
           <div class="garage-camera-actions">
-            <button type="button" id="garage-auto-rotate" :aria-pressed="garageStudioView.autoRotate">{{ copy.auto }}</button>
-            <button type="button" id="garage-zoom-out" :aria-label="copy.zoomOut" :title="copy.zoomOut">−</button>
-            <button type="button" id="garage-zoom-in" :aria-label="copy.zoomIn" :title="copy.zoomIn">＋</button>
-            <button type="button" id="garage-reset" :aria-label="copy.reset" :title="copy.reset">{{ copy.resetShort }}</button>
+            <button type="button" id="garage-auto-rotate" :aria-pressed="garageStudioView.autoRotate" :aria-label="copy.auto" :title="copy.auto"><svg v-bind="ICON_ATTRS" v-html="icons.cameraOrbit"></svg></button>
+            <button type="button" id="garage-zoom-out" :aria-label="copy.zoomOut" :title="copy.zoomOut"><svg v-bind="ICON_ATTRS" v-html="icons.zoomOut"></svg></button>
+            <button type="button" id="garage-zoom-in" :aria-label="copy.zoomIn" :title="copy.zoomIn"><svg v-bind="ICON_ATTRS" v-html="icons.zoomIn"></svg></button>
+            <button type="button" id="garage-reset" :aria-label="copy.reset" :title="copy.reset"><svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button>
           </div>
           <div class="garage-camera-angles">
             <span class="garage-angle-stepper" role="group" :aria-label="copy.angle">
@@ -109,8 +109,8 @@ const isPreviewingPaint = (id: string): boolean =>
               <span id="garage-angle-name" :data-angle="garageStudioView.angle || undefined" role="status" aria-live="polite">{{ angleName }}</span>
               <button type="button" id="garage-angle-next" :aria-label="copy.nextAngle">›</button>
             </span>
-            <button type="button" id="garage-rotate-left" :aria-label="copy.left" :title="copy.left">↶</button>
-            <button type="button" id="garage-rotate-right" :aria-label="copy.right" :title="copy.right">↷</button>
+            <button type="button" id="garage-rotate-left" :aria-label="copy.left" :title="copy.left"><svg v-bind="ICON_ATTRS" v-html="icons.undo"></svg></button>
+            <button type="button" id="garage-rotate-right" :aria-label="copy.right" :title="copy.right"><svg v-bind="ICON_ATTRS" v-html="icons.redo"></svg></button>
           </div>
         </nav>
       </section>

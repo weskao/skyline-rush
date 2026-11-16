@@ -1,3 +1,4 @@
+import { wave3DemoArtUrl, type Wave3DemoArtId } from './wave3-demo-art.ts';
 import type { ExperienceResult } from './wave3-experience-contract.ts';
 import { projectWave3DemoResults, type DemoResultView } from './wave3-demo-results-view.ts';
 
@@ -75,7 +76,7 @@ function renderCredit(credit: HTMLElement, reward: string | null, summary: DemoR
   });
 }
 
-function makeCredit(doc: Document, className: string): HTMLElement {
+function makeCredit(doc: Document, className: string, currency: Wave3DemoArtId): HTMLElement {
   const credit = make(doc, 'div', className);
   const balance = make(doc, 'div', 'wave3-demo-results__balance');
   balance.setAttribute('role', 'group');
@@ -84,7 +85,18 @@ function makeCredit(doc: Document, className: string): HTMLElement {
   label.setAttribute('aria-hidden', 'true');
   value.setAttribute('aria-hidden', 'true');
   balance.append(label, value);
-  credit.append(make(doc, 'p', 'wave3-demo-results__points'), balance);
+  const gain = make(doc, 'div', 'wave3-demo-results__gain');
+  const points = make(doc, 'p', 'wave3-demo-results__points');
+  if (import.meta.env) {
+    const image = doc.createElement('img');
+    image.src = wave3DemoArtUrl(currency);
+    image.alt = '';
+    image.width = image.height = 20;
+    image.addEventListener('error', () => image.remove(), { once: true });
+    gain.append(image);
+  }
+  gain.append(points);
+  credit.append(gain, balance);
   return credit;
 }
 
@@ -106,8 +118,8 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
     status.setAttribute('aria-atomic', 'true');
-    const credit = makeCredit(doc, 'wave3-demo-results__credit');
-    const coinCredit = makeCredit(doc, 'wave3-demo-results__credit wave3-demo-results__coin-credit');
+    const credit = makeCredit(doc, 'wave3-demo-results__credit', 'demo-points');
+    const coinCredit = makeCredit(doc, 'wave3-demo-results__credit wave3-demo-results__coin-credit', 'wallet-coin');
     const details = make(doc, 'div', 'wave3-demo-results__details');
     details.id = 'wave3-demo-results-details';
     details.append(coinCredit, status, make(doc, 'p', 'wave3-demo-results__distinction'),

@@ -50,7 +50,12 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-#garage-screen #garage-pose-action[data-garage-mode="ground"] svg { transform: rotate(180deg); }
+#garage-screen .garage-camera-controls button > svg {
+  display: block;
+  width: 19px;
+  height: 19px;
+  margin-inline: auto;
+}
 @media (hover: hover) {
   #garage-screen #garage-pose-action:hover { background: #2d5269; }
 }

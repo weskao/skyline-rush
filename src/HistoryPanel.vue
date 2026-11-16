@@ -17,7 +17,7 @@ const MEDALS = [['first-win', 'First victory', 'Win your first race'], ['clean-r
 
 <template>
   <dialog id="history-screen" class="history-screen" aria-labelledby="history-title">
-    <header class="history-heading"><h2 id="history-title" data-i18n="history.title">Race history</h2><CloseButton id="history-close" label="Close history" data-i18n-aria-label="history.close" /></header>
+    <header class="history-heading"><h2 id="history-title" data-i18n="nav.progress">Progress</h2><CloseButton id="history-close" label="Close history" data-i18n-aria-label="history.close" /></header>
     <div id="history-tabs" class="history-tabs" role="tablist" aria-labelledby="history-title">
       <button v-for="section in historySections" :key="section" :id="`history-tab-${section}`" type="button"
         role="tab" :tabindex="historyView.section === section ? 0 : -1" :aria-selected="historyView.section === section"

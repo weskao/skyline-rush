@@ -3,7 +3,7 @@ import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
 // CI speed: laptop rides on the desktop page, and small-phone and fold-cover ride on the phone page, resized in place.
 
-// Race HUD options sit in the VFX panel; the speaker button opens audio only.
+// Race HUD options sit in the VFX panel; the gear opens the settings hub and audio controls.
 // Real clicks fail if another layer covers a control, so each one is clicked on every screen shape.
 const DEVICES = [
   ['desktop', { width: 1440, height: 900 }, false],
@@ -34,12 +34,12 @@ async function expectInside(control, viewport) {
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
 }
 
-// The speaker button opens audio only (no HUD mode there), at the page's current size.
-async function expectAudioPanelOnly(page) {
+// The settings hub exposes audio and links to separate HUD controls, at the page's current size.
+async function expectSettingsHub(page) {
   await page.locator('#settings-button').click();
   await expect(page.locator('#settings-panel')).toBeVisible();
   await expect(page.locator('#settings-panel input[name="hud-mode"]')).toHaveCount(0);
-  await expect(page.locator('#settings-button')).toHaveAttribute('aria-label', 'Audio settings');
+  await expect(page.locator('#settings-button')).toHaveAttribute('aria-label', 'Game settings');
   await page.locator('#settings-button').click();
 }
 
@@ -91,7 +91,7 @@ for (const group of GROUPS) {
       for (const [index, [name, viewport]] of group.entries()) await test.step(`${name} ${viewport.width}x${viewport.height}`, async () => {
         if (index) await resizeTo(page, viewport.width, viewport.height);
         // The audio-only check is a ready-state fact and runs at every size in the ready test; racing keeps it at the boot size.
-        if (phase === 'ready' || index === 0) await expectAudioPanelOnly(page);
+        if (phase === 'ready' || index === 0) await expectSettingsHub(page);
         if (phase === 'racing' && index === 0) {
           await page.locator('#start-button').click();
           await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(25_000) });

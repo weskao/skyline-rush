@@ -16,6 +16,7 @@ export function setupControlPanels({
   const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
   function toggleSettings(open: boolean = !panelsView.settingsOpen): void {
     updatePanelsView({ settingsOpen: !!open });
+    if (open) syncDestinations();
     if (open) hidePerformanceNotice();
     trackDropdown($('.settings'), open, () => toggleSettings(false));
   }
@@ -28,5 +29,20 @@ export function setupControlPanels({
     if (open) hidePerformanceNotice();
     trackDropdown($('.controls-menu'), open, () => toggleControls(false));
   }
+  const destinations = document.querySelectorAll<HTMLButtonElement>('[data-settings-destination]');
+  function syncDestinations(): void {
+    for (const button of destinations) {
+      const target = document.querySelector<HTMLElement>(button.dataset.settingsDestination!);
+      button.disabled = !target?.getClientRects().length ||
+        (target.id === 'controls-button' && !canOpenControlsPanel(getRacePhase()));
+    }
+  }
+  for (const button of destinations) button.addEventListener('click', () => {
+    const target = document.querySelector<HTMLElement>(button.dataset.settingsDestination!);
+    if (!target) return;
+    toggleSettings(false);
+    target.focus({ preventScroll: true });
+    target.click();
+  });
   return { toggleSettings, toggleControls };
 }

@@ -13,8 +13,13 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
 </script>
 <template>
       <div class="settings">
-        <button class="icon-button" id="settings-button" :aria-label="tr('audio.settings')" :aria-expanded="panelsView.settingsOpen" aria-controls="settings-panel" :title="tr('audio.title')"><svg v-bind="ICON_ATTRS" v-html="icons[audioView.settingsIcon]"></svg></button>
-        <div class="settings-panel" id="settings-panel" role="group" :aria-label="tr('audio.settings')" :hidden="!panelsView.settingsOpen">
+        <button class="icon-button" id="settings-button" :aria-label="tr('settings.game')" :aria-expanded="panelsView.settingsOpen" aria-controls="settings-panel" :title="tr('settings.game')"><svg v-bind="ICON_ATTRS" v-html="icons.settings"></svg></button>
+        <div class="settings-panel" id="settings-panel" role="group" :aria-label="tr('settings.game')" :hidden="!panelsView.settingsOpen">
+          <div class="settings-destinations">
+            <button type="button" data-settings-destination="#controls-button">{{ tr('settings.driving') }}</button>
+            <button type="button" data-settings-destination="#vfx-panel > summary">{{ tr('settings.display') }}</button>
+            <button type="button" data-settings-destination="#locale-select + .custom-select button">{{ tr('settings.language') }}</button>
+          </div>
           <div class="audio-head"><span data-i18n="audio.head">Audio</span><button class="mute-all" id="mute-all" aria-keyshortcuts="M"><span>{{ audioView.muteAllText }}</span><kbd aria-hidden="true">M</kbd></button></div>
           <div class="audio-channel" v-for="{ kind, label } in AUDIO_CHANNELS" :key="kind">
             <button class="setting" role="switch" :data-audio="kind" :aria-checked="audioView[kind].enabled"><svg v-bind="ICON_ATTRS" v-html="icons[audioView[kind].enabled ? 'sound' : 'mute']"></svg><span :data-i18n="'audio.' + kind">{{ label }}</span><b aria-hidden="true">{{ audioView[kind].displayText }}</b></button>
@@ -27,4 +32,7 @@ const AUDIO_CHANNELS = [{ kind: 'music', label: 'Music' }, { kind: 'sfx', label:
 <style scoped>
 /* This scoped id rule outranks .settings-panel, so it carries the viewport cap too. */
 #settings-panel { max-height: min(calc(70dvh - 2px), 620px, calc(100dvh - 82px - env(safe-area-inset-bottom, 0px))); overflow-y: auto; }
+.settings-destinations { display: grid; gap: 4px; margin-bottom: 8px; }
+.settings-destinations button { min-height: 44px; padding: 0 10px; border: 1px solid #526c80; border-radius: 5px; text-align: start; background: #142738; }
+.settings-destinations button:focus-visible { outline: 2px solid #a0edff; outline-offset: -2px; }
 </style>

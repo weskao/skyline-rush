@@ -72,7 +72,7 @@ test('History track filter uses the web dropdown and reflects the opened track',
   await page.getByRole('option', { name: 'Neon Downtown' }).click();
   await expect(track).toHaveText('Neon Downtown');
   // The listbox click must not close the modal history dialog.
-  await expect(page.getByRole('dialog', { name: 'Race history' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Progress', exact: true })).toBeVisible();
 });
 
 test('checkboxes, sliders and disclosures are drawn by the page, not the OS', async ({ page }) => {

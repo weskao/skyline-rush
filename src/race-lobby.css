@@ -253,3 +253,70 @@ details.performance-notice {
     z-index: 8;
   }
 }
+
+/* Keep the 3D scene visible beside the lobby. Track artwork carries the desktop strip. */
+.intro :is(.lobby-picker-toggle, .garage-button, .history-button, .practice-button) > svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+.intro :is(.history-button, .practice-button) { gap: 6px; }
+.intro #intro-title { text-wrap: balance; }
+
+@media (min-width: 1001px) and (min-height: 701px) {
+  body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro {
+    max-width: min(76vw, 1200px);
+  }
+  body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro :is(.race-mode-picker, .track-note, .intro-actions) {
+    max-width: 670px;
+  }
+  body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro .track-select button {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-rows: 1fr auto;
+    align-items: end;
+    min-height: 86px;
+    flex-basis: 170px;
+    column-gap: 7px;
+  }
+  body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro .track-preview {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    margin: 0;
+    opacity: .46;
+  }
+  body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro .track-select button > .track-route-map {
+    position: relative;
+    inset: auto;
+    grid-row: 1 / 3;
+    align-self: center;
+    width: 42px;
+    height: 42px;
+    margin: 0;
+  }
+  body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro .track-select button > :is(strong, span:last-child) {
+    position: relative;
+    grid-column: 2;
+    margin-bottom: 0;
+    text-shadow: 0 1px 4px #020813;
+  }
+}
+
+@media (max-width: 1000px) and (min-height: 501px) {
+  body:not(.airflow-active) .intro #intro-title { display: block; margin: 4px 0 10px; font-size: clamp(24px, 5vw, 38px); }
+}
+
+@media (max-width: 370px), (max-height: 350px) and (orientation: landscape) {
+  .intro :is(.garage-button, .history-button, .practice-button) > svg { display: none; }
+}
+
+/* Show track detail on demand while retaining the swipeable rail. */
+@media (max-width: 1000px) and (min-height: 681px) {
+  body:not(.airflow-active) .intro #lobby-tracks-toggle[aria-expanded="false"] ~ .track-note {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+}

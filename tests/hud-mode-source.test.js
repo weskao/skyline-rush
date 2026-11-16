@@ -6,11 +6,12 @@ import { strayEnglish } from './helpers/i18n-english.js';
 const read = file => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
 const view = read('HudSettings.vue');
 
-// The speaker button is the audio menu; HUD layout is a display setting, so it lives in the VFX panel.
-test('Race HUD options live in the VFX panel, not in the audio dropdown', () => {
+// The hub links to the display panel, where the existing HUD controls are mounted.
+test('Race HUD options live in the display panel and are reachable from the settings hub', () => {
   const audio = read('SettingsPanel.vue');
   assert.doesNotMatch(audio, /hud-mode|hudSettings\.|HudFeedback|HudWidgets/);
-  assert.match(audio, /tr\('audio\.settings'\)/);
+  assert.match(audio, /tr\('settings\.game'\)/);
+  assert.match(audio, /data-settings-destination="#vfx-panel > summary"/);
   const vfx = read('App.vue').match(/<div class="vfx-settings">[\s\S]*?id="vfx-reset"/)[0];
   assert.match(vfx, /<HudSettings \/>/);
   assert.equal(HUD_SETTINGS_COPY.en['hudSettings.panel'], undefined, 'no "Audio and HUD" label is left behind');

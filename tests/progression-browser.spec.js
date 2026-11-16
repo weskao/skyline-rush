@@ -75,7 +75,7 @@ test('History shows awarded medals and today’s daily board; the daily run star
   await expect(page.locator('#daily-board')).toContainText('01:04.20');
   await expect(page.locator('#daily-board img')).toHaveCount(0);
   await page.getByRole('button', { name: 'Start daily challenge' }).click();
-  await expect(page.getByRole('dialog', { name: 'Race history' })).toBeHidden();
+  await expect(page.getByRole('dialog', { name: 'Progress', exact: true })).toBeHidden();
   await expect(page.locator('#race-status')).toHaveText(/COUNTDOWN|RACING/);
   await expect(page.locator('.overlay-route')).toContainText('DAILY');
   expect(errors).toEqual([]);
