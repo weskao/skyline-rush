@@ -58,13 +58,12 @@ test.describe('Garage landscape touch controls', () => {
       const overlapY = Math.min(camera.y + camera.height, poses.y + poses.height) - Math.max(camera.y, poses.y);
       expect(Math.min(overlapX, overlapY), 'camera dock overlaps the pose and lighting controls').toBeLessThanOrEqual(1);
 
-      const flight = controls.locator('[data-garage-mode="flight"]');
-      const ground = controls.locator('[data-garage-mode="ground"]');
+      const pose = controls.locator('#garage-pose-action');
       const wing = controls.locator('#garage-wing');
       const lighting = controls.locator('#garage-lighting');
       const previous = dock.locator('#showcase-camera-prev');
       const next = dock.locator('#showcase-camera-next');
-      const targets = await Promise.all([ground, flight, wing, lighting, previous, next].map(control =>
+      const targets = await Promise.all([pose, wing, lighting, previous, next].map(control =>
         control.evaluate(button => {
           const { x, y, width, height } = button.getBoundingClientRect();
           const hit = button.contains(document.elementFromPoint(x + width / 2, y + height / 2));
@@ -78,17 +77,13 @@ test.describe('Garage landscape touch controls', () => {
         expect(bounds.y + bounds.height).toBeLessThanOrEqual(height);
         expect(bounds.hit, `${bounds.name} receives pointer hits`).toBe(true);
       }
-      await expect(ground).toHaveAccessibleName('平地');
-      await expect(flight).toHaveAccessibleName('起飛');
-      for (const pose of [ground, flight]) {
-        await expect(pose).toHaveText('');
-        await expect(pose.locator('img')).toHaveJSProperty('naturalWidth', 120);
-      }
-
-      await flight.tap();
-      await expect(ground).toHaveAttribute('aria-pressed', 'false');
-      await expect(flight).toHaveAttribute('aria-pressed', 'true');
+      await expect(pose).toHaveAccessibleName('起飛');
+      await pose.tap();
+      await expect(pose).toHaveAccessibleName('降落');
       await expect(preview).toHaveAttribute('data-garage-mode', 'flight');
+      await pose.tap();
+      await expect(pose).toHaveAccessibleName('起飛');
+      await expect(preview).toHaveAttribute('data-garage-mode', 'ground');
       await wing.tap();
       await expect(wing).toHaveRole('switch');
       await expect(wing).toHaveAttribute('aria-checked', 'true');

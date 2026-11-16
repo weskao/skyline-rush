@@ -7,7 +7,7 @@
 # 2026-11-16 — Garage landscape preview controls
 
 - [x] RED: mobile Chromium measured 44 CSS px of vertical overlap between the pose controls and camera dock at 667×375 and 743×340.
-- [x] Use a wrapping toolbar, a Ground/Flight icon selector with a moving selected segment and localized accessible names, and a separate wing switch.
+- [x] Use a wrapping toolbar, one localized Take off/Land action with the game's flight symbol, and a separate wing switch.
 - [x] Production and trial builds, TypeScript checks and the module-size gate passed. Unit suite: 3,314 passed, 3 skipped.
 - [ ] Complete physical iOS and Android validation and the exact-commit GitHub quality gate.
 

@@ -303,10 +303,9 @@ export function setupGarageUI({
     const angle = stepGarageAngle(garageStudioView.angle, delta);
     setCamera({ ...garagePreset(angle), zoom: camera.zoom, mode: camera.mode, wing: camera.wing }, angle);
   });
-  document.querySelectorAll<HTMLButtonElement>('[data-garage-mode]').forEach(button =>
-    button.addEventListener('click', () => setCamera(
-      setGarageMode(camera, button.dataset.garageMode as GarageCamera['mode']), garageStudioView.angle,
-    )));
+  $('#garage-pose-action').addEventListener('click', () => setCamera(
+    setGarageMode(camera, camera.mode === 'flight' ? 'ground' : 'flight'), garageStudioView.angle,
+  ));
   $('#garage-wing').addEventListener('click', () => setCamera(toggleGarageWing(camera), garageStudioView.angle));
   $('#garage-lighting').addEventListener('click', () => {
     const lighting: GarageLighting = garageStudioView.lighting === 'bright' ? 'dim' : 'bright';

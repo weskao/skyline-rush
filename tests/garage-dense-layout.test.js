@@ -17,8 +17,7 @@ test('Studio gives the car the freed-up room but preserves accessible controls',
   assert.match(preview, /garage-hint/, 'move the camera hint inside the preview, not another layout row');
   assert.match(source, /\.garage-camera-angles \{[^}]*overflow-x:\s*auto/s,
     'let extra angles scroll so primary actions stay visible on narrow phones');
-  assert.match(markup, /data-garage-mode="flight"/);
-  assert.match(markup, /data-garage-mode="ground"/);
+  assert.match(markup, /id="garage-pose-action"/);
   for (const id of ['garage-reset', 'garage-zoom-in', 'garage-zoom-out', 'garage-rotate-left', 'garage-rotate-right'])
     assert.ok(markup.includes('id="' + id + '"'), id + ' must remain available');
 });
