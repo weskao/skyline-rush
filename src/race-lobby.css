@@ -225,6 +225,11 @@ details.performance-notice {
 @media (max-height: 340px) and (orientation: landscape), (max-width: 760px) and (max-height: 500px) and (orientation: landscape) {
   .intro:has(.home-resource-strip) .race-mode-heading { padding-inline-end: 118px; }
 }
+@media (761px <= width <= 900px) and (max-height: 500px) and (orientation: landscape) {
+  /* A landscape notch narrows the lobby enough for the resource toolbar to cover Mode. */
+  .intro .home-intro-topbar:has(.home-resource-strip) { position: static; }
+  .intro:has(.home-resource-strip) .race-mode-heading { padding-inline-end: 0; }
+}
 @media (max-height: 319px) and (orientation: landscape) {
   .intro #lobby-modes-toggle { width: 100%; }
   .intro :is(#mode-description, #mode-eligibility, .track-note),
