@@ -56,7 +56,7 @@ import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { createRampPool, drawRamps } from './ramp-view.ts'; import { createHazardRenderer } from './hazard-render.ts';
 import { createWorldGarageModel } from './garage-model.ts';
-import { createGhostPhase } from './grace-fade.ts';
+import { createGhostPhase } from './grace-fade.ts'; import { attachRivalDriveVfx } from './rival-drive-vfx.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const box = new THREE.BoxGeometry(1, 1, 1);
@@ -216,7 +216,7 @@ export function createWorld(canvas) {
   applyCarReflections(player, carEnvironment);
   const ghostPhase = createGhostPhase(player); // before aero VFX attach to it
   const rearLight = player.userData.rearLight;
-  const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); applyCarReflections(car, carEnvironment); scene.add(car); return car; });
+  const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); applyCarReflections(car, carEnvironment); attachRivalDriveVfx(car); scene.add(car); return car; }); // NITRO/BOOST cues (rival-drive-vfx.ts)
   const flightVehicles = [player, ...rivals];
   // ×2 covers the double-traffic daily modifier. Instanced (traffic-fleet.ts): `traffic` holds poses, not meshes.
   const trafficFleet = createTrafficFleet(scene, Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2)))), traffic = trafficFleet.cars;
@@ -465,7 +465,7 @@ export function createWorld(canvas) {
     }
     if (!mesh.userData.jets) return; // a traffic pose: its instanced car has no moving parts
     mesh.userData.jets.visible = !!car.thrusting;
-    mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(car.braking ? 2.3 : 1);
+    mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(Math.max(car.braking ? 2.3 : 1, mesh.userData.driveCue?.update(car, visual, motionPreference.matches || visual.comfortable, time) ?? 1)); // rivals only carry driveCue
     const { wing } = mesh.userData;
     const downforce = isPlayer && visual.enabled && visual.airflow && visual.aeroMode === 'downforce';
     const boosting = car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
