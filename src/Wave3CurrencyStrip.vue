@@ -242,6 +242,7 @@ const currencyArt = (kind: string) => {
 
 
 .wallet-resources { display: none; }
+.wallet-resources summary { display: flex; }
 .wallet-resources-list { display: contents; }
 
 /* Home-only miniature currency chips: no large cards, labels, or extra orbit effects. */
@@ -307,7 +308,7 @@ const currencyArt = (kind: string) => {
 @media (max-height: 340px) and (orientation: landscape), (max-width: 760px) and (max-height: 500px) and (orientation: landscape) {
   .wallet-resources { display: block; }
   .wallet-resources summary {
-    display: flex; align-items: center; min-height: 44px; padding-inline: 10px;
+    align-items: center; min-height: 44px; padding-inline: 10px;
     border: 1px solid #53738a; border-radius: 6px; color: #edf7fb;
     background: #142b40; cursor: pointer; font-size: 12px; font-weight: 750;
   }

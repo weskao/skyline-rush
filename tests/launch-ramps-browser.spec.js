@@ -73,7 +73,7 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('.lab-share > summary').click();
     await page.locator('#lab-json').fill(spot.json);
     await page.locator('#lab-import').click();
-    await expect(page.locator('#lab-error')).toBeEmpty();
+    await expect(page.locator('#event-lab-dialog [role="alert"]')).toHaveCount(0);
     await page.locator('#lab-use').click();
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(10000) });
