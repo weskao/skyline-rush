@@ -1,21 +1,19 @@
 import { t } from './i18n.ts';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS, type VfxSettings, type ShowcaseView, type VfxPreset } from './vfx-settings.ts';
 import { initialDeviceVisuals, QUALITY_STORAGE_KEY } from './device-quality.ts';
-import { trackDropdown } from './dropdown.ts';
 
 interface VfxWorld { configureVFX(settings: VfxSettings): void }
 interface VfxOptions {
   getWorld(): VfxWorld | null | undefined;
   /** The showcase hides the track picker, so swiping is how to change track. */
   onAirflowShown(): void;
-  onPanelOpen(): void;
   reducedMotion: MediaQueryList;
 }
 
 export const stepView = (view: ShowcaseView, delta: number): ShowcaseView =>
   SHOWCASE_VIEWS[(SHOWCASE_VIEWS.indexOf(view) + delta + SHOWCASE_VIEWS.length) % SHOWCASE_VIEWS.length]!;
 
-export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotion }: VfxOptions) {
+export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const vfxControls = [...document.querySelectorAll<HTMLInputElement>('[data-vfx]')];
   const airflowHud = $('#airflow-hud');
@@ -82,12 +80,6 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
   $('#showcase-camera-next').addEventListener('click', () => stepShowcaseView(1));
   $('#airflow-toggle').addEventListener('click', toggleAirflow);
   $('#vfx-reset').addEventListener('click', () => { visual = vfxSettings(); showVFX(); });
-  // The performance notice floats over the toolbar panels; opening one means the reader is already in the settings it points to.
-  $<HTMLDetailsElement>('#vfx-panel').addEventListener('toggle', ({ target }) => {
-    const panel = target as HTMLDetailsElement;
-    if (panel.open) onPanelOpen();
-    trackDropdown(panel, panel.open, () => { panel.open = false; });
-  });
   showVFX();
   return {
     settings: (): VfxSettings => visual,

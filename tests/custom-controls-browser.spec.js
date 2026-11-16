@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 
 const open = async page => {
@@ -5,14 +6,14 @@ const open = async page => {
   await page.waitForTimeout(700);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
 };
-const openVFX = page => page.locator('#vfx-panel > summary').click();
+const openVFX = page => toggleSettingsSection(page, 'display');
 
 test('every dropdown is a web listbox, never the OS select popup', async ({ page }) => {
   await open(page);
   await openVFX(page);
   await expect(page.locator('select:visible')).toHaveCount(0);
   for (const name of ['Visual style', 'Quality', 'Aerodynamics', 'Showcase camera']) {
-    await expect(page.getByRole('complementary', { name: 'Airflow and visual effects' }).getByRole('combobox', { name, exact: true })).toBeVisible();
+    await expect(page.locator('#settings-display').getByRole('combobox', { name, exact: true })).toBeVisible();
   }
 });
 
@@ -53,7 +54,7 @@ test('the dropdown is fully keyboard operable and keeps keys away from driving',
   await expect(listbox).toBeHidden();
   await expect(quality).toHaveText(before);
   await expect(quality).toBeFocused();
-  await expect(page.locator('#vfx-panel')).toHaveAttribute('open');
+  await expect(page.locator('#settings-display')).toBeVisible();
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('End');
   await page.keyboard.press('ArrowUp');
@@ -91,16 +92,13 @@ test('checkboxes, sliders and disclosures are drawn by the page, not the OS', as
   await expect(comfort).toBeChecked();
 });
 
-test('mid-race VFX panel never shows a setting row without its control', async ({ page }) => {
-  // The racing rule hides the toolbar language picker; it must not leave the panel's dropdown labels orphaned.
+test('mid-race settings stay closed until paused', async ({ page }) => {
   await open(page);
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
+  await expect(page.locator('#settings-button')).toBeHidden();
+  await expect(page.locator('#settings-panel')).toBeHidden();
+  await page.locator('#pause-button').click();
   await openVFX(page);
-  const orphans = await page.locator('#vfx-panel .vfx-settings > label').evaluateAll(rows => rows
-    .filter(row => row.getBoundingClientRect().height > 0)
-    .filter(row => ![...row.querySelectorAll('input, .custom-select > button')].some(control => control.getBoundingClientRect().width > 0))
-    .map(row => row.textContent.trim()));
-  expect(orphans).toEqual([]);
-  await expect(page.locator('#locale-select + .custom-select, .aero-tools > .custom-select').first()).toBeHidden();
+  await expect(page.locator('[data-vfx="quality"] + .custom-select')).toBeVisible();
 });

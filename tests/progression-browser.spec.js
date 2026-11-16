@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { dailyChallenge } from '../src/game.js';
@@ -88,7 +89,7 @@ test('a valid saved ghost is offered and its preference persists; a tampered gho
   await seed(page, { 'skyline-rush-ghosts': { [recordTrackId('coast')]: ghost, [recordTrackId('neon')]: { ...ghost, samples: ghost.samples.slice(0, 10) } } });
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   const toggle = page.getByRole('checkbox', { name: 'Show best-run ghost' });
   await expect(toggle).toBeEnabled();
   await expect(toggle).not.toBeChecked();
@@ -98,14 +99,14 @@ test('a valid saved ghost is offered and its preference persists; a tampered gho
   await toggle.uncheck();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).ghost)).toBe(false);
   await toggle.check();
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', '["coast","neon"]'));
   await page.reload();
   await dismissMusicPrompt(page);
   await page.locator('[data-track="neon"]').click();
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await expect(page.locator('#ghost-status')).toContainText('No best-run replay');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.locator('[data-track="coast"]').click();
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');

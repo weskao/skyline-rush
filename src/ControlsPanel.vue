@@ -12,9 +12,7 @@ const TOUCH_CHOICES = {
 };
 </script>
 <template>
-      <div class="controls-menu">
-        <button class="controls-button" id="controls-button" :aria-expanded="panelsView.controlsOpen" aria-controls="controls-panel" title="Driving controls" data-i18n-title="controls.title" data-i18n="controls.button">Controls</button>
-        <div class="controls-panel" id="controls-panel" role="group" aria-label="Driving controls" data-i18n-aria-label="controls.title" :hidden="!panelsView.controlsOpen">
+        <div class="controls-panel" id="controls-panel" role="group" aria-label="Driving controls" data-i18n-aria-label="controls.title">
           <button class="controls-reset" id="guide-open" data-i18n="guide.open">How to play</button>
           <button class="controls-reset" id="tutorial-open" data-i18n="tutorial.start">Start interactive practice</button>
           <section class="controls-section" role="group" aria-labelledby="controls-touch-title">
@@ -43,7 +41,6 @@ const TOUCH_CHOICES = {
           <p id="ghost-status" class="controls-note">No best-run replay recorded yet.</p>
           <button class="controls-reset" id="controls-reset" data-i18n="controls.reset">Reset to defaults</button>
         </div>
-      </div>
 </template>
 
 <style scoped>

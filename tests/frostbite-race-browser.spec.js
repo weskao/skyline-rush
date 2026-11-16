@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
@@ -98,9 +99,9 @@ test.describe('Frostbite Ghost', () => {
     });
     await page.locator('[data-upcoming-track="frostbite-canyon"]').click();
     await expect(page.locator('#ghost-status')).toContainText('5:00');
-    await page.locator('#controls-button').click(); // Ghost display is opt-in, in the Controls panel (real clicks)
+    await toggleSettingsSection(page, 'driving'); // Ghost display is opt-in, in the Controls panel (real clicks)
     await page.locator('#ghost-enabled').check();
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15_000) });
     const span = await page.evaluate(() => window.gameplay.race.sections.find(s => s.span));

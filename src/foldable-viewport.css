@@ -32,18 +32,6 @@ body[data-fold-axis="vertical"] .toolbar {
   justify-content: flex-end;
 }
 body[data-fold-axis="vertical"] .brand { max-width: calc(var(--fold-home-width) - var(--fold-gap-left) - 8px); }
-body[data-fold-axis="vertical"] .aero-tools {
-  left: auto;
-  right: var(--fold-gap-right);
-  top: max(84px, calc(var(--safe-top) + 72px));
-  max-width: calc(var(--fold-scene-width) - var(--fold-gap-right) - 8px);
-}
-body[data-fold-axis="vertical"] .vfx-settings {
-  right: 0;
-  left: auto;
-  max-width: calc(var(--fold-scene-width) - 24px);
-  max-height: calc(var(--fold-scene-height) - 136px);
-}
 body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not([data-phase="ready"]) .telemetry .flight-telemetry {
   transform: none;
 }
@@ -194,8 +182,6 @@ body[data-fold-axis="horizontal"]:not([data-phase="ready"]) .telemetry:has(.spee
   bottom: auto;
   top: calc(var(--fold-pane-bottom-start) + 80px);
 }
-body[data-fold-axis="horizontal"] .aero-tools { top: 88px; }
-body[data-fold-axis="horizontal"] .vfx-settings { max-height: calc(var(--fold-scene-height) - 136px); }
 body[data-fold-axis="horizontal"] .leaderboard#leaderboard {
   position: fixed;
   top: calc(var(--fold-pane-bottom-start) + 12px);

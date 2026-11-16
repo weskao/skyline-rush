@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 
 for (const [width, height] of [[1440, 900], [390, 844], [844, 390]]) {
@@ -5,7 +6,7 @@ for (const [width, height] of [[1440, 900], [390, 844], [844, 390]]) {
     test.use({ viewport: { width, height }, ...(width < 761 || height < 501 ? { hasTouch: true, isMobile: true } : {}) });
     test('the Controls panel previews touch button size and opacity as they change', async ({ page }) => {
       await page.goto('/');
-      await page.locator('#controls-button').click();
+      await toggleSettingsSection(page, 'driving');
       const keys = page.locator('.controls-preview-keys');
       const nitro = page.locator('.controls-preview .touch-nitro');
       await expect(nitro).toBeVisible();
@@ -31,7 +32,7 @@ test.describe('editing touch layouts', () => {
   test('the editor is in the first Controls screen and keeps orientation drafts separate', async ({ page }, testInfo) => {
     const key = 'skyline-rush-controls-layout-v2';
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     const edit = page.getByRole('group', { name: 'Touch layout' }).locator('#layout-edit');
     await expect(edit).toBeInViewport({ ratio: 1 });
     await expect(page.getByRole('group', { name: 'Steering', exact: true }).locator('#controls-sensitivity')).toHaveCount(1);
@@ -67,7 +68,7 @@ test.describe('editing touch layouts', () => {
     await page.locator('#layout-done').click();
     await page.reload();
     expect(await saved()).toEqual({ version: 2, portrait, landscape });
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await edit.click();
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(orientation).toHaveText('Portrait layout');

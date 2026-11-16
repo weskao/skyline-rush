@@ -24,7 +24,7 @@ for (const [name, viewport, locale] of [
         await expect(track).toBeHidden();
         await expect(page.locator('#lobby-race-distance')).toBeVisible();
         await modes.click();
-        await expect(page.locator('[data-race-mode="classic"] > svg')).toBeVisible();
+        await expect(page.locator('button[data-race-mode="classic"] > svg')).toBeVisible();
         await tracks.click();
         await expect(modes).toHaveAttribute('aria-expanded', 'false');
       }
@@ -33,20 +33,27 @@ for (const [name, viewport, locale] of [
       await expect(page.locator('#lobby-hero-track')).toHaveText(locale === 'zh-TW' ? '霓虹都會' : 'Neon Downtown');
       await expect(page.locator('#start-button')).toBeDisabled();
       await page.locator('[data-track="coast"]').click();
-      const settings = page.locator('#settings-button');
-      await settings.click();
-      await page.locator('[data-settings-destination="#controls-button"]').click();
-      await expect(page.locator('#controls-panel')).toBeVisible();
+      await expect(page.locator('.toolbar #settings-button')).toHaveCount(1);
+      await expect(page.locator('#controls-button, #airflow-toggle, #settings-language .custom-select')).not.toHaveCount(0);
+      for (const id of ['controls-button', 'airflow-toggle', 'settings-language'])
+        await expect(page.locator('#' + id)).toBeHidden();
+      await page.locator('#settings-button').click();
+      const settings = page.getByRole('dialog');
+      await expect(settings).toHaveCount(1);
+      await expect(page.locator('#settings-close')).toBeFocused();
+      for (const [tab, target] of [['driving', '#controls-panel'], ['display', '[data-vfx="quality"] + .custom-select'],
+        ['audio', '#mute-all'], ['language', '#locale-select + .custom-select']]) {
+        await settings.locator(`[data-settings-section="${tab}"]`).click();
+        await expect(settings.locator(target)).toBeVisible();
+      }
+      const language = page.locator('#locale-select + .custom-select button');
+      await language.click();
       await page.keyboard.press('Escape');
-      await expect(page.locator('#controls-panel')).toBeHidden();
-      await settings.click();
-      await page.locator('[data-settings-destination="#vfx-panel > summary"]').click();
-      await expect(page.locator('#vfx-panel')).toHaveAttribute('open', '');
-      await page.locator('#vfx-panel > summary').click();
-      await settings.click();
-      await page.locator('[data-settings-destination^="#locale-select"]').click();
-      await expect(page.locator('#locale-select + .custom-select [role="listbox"]')).toBeVisible();
+      await expect(language).toHaveAttribute('aria-expanded', 'false');
+      await expect(settings).toBeVisible();
       await page.keyboard.press('Escape');
+      await expect(page.locator('#settings-panel')).toBeHidden();
+      await expect(page.locator('#settings-button')).toBeFocused();
       await page.locator('#intro').evaluate(el => { el.scrollTop = 0; });
       if (process.env.UI_OVERHAUL_SHOTS) await page.screenshot({ path: testInfo.outputPath('lobby.png'), animations: 'disabled', scale: 'css' });
       await page.locator('#garage-button').click();

@@ -74,3 +74,13 @@ test('selected landmark art is 3x WebP and remains separate from the live race s
   assert.match(app, /<canvas id="world"/);
   assert.match(source('wave3-demo-results-integration.ts'), /#result-rewards/);
 });
+
+test('home settings use one modal with all four sections and no separate VFX or language toolbar', () => {
+  const settings = source('SettingsPanel.vue');
+  assert.match(settings, /<dialog[^>]*id="settings-panel"/);
+  for (const section of ['audio', 'driving', 'display', 'language'])
+    assert.ok(settings.includes(section), section);
+  const app = source('App.vue');
+  assert.doesNotMatch(app, /class="aero-tools"/);
+  assert.match(app, /<template #display>[\s\S]*id="vfx-panel"/);
+});

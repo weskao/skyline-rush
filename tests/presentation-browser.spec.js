@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { RACE_TRACKS } from '../src/game.js';
@@ -82,7 +83,7 @@ test('reduced-motion and comfort suppress presentation movement and looping prev
   await expect.poll(() => page.locator('#history-screen').evaluate(el => el.getAnimations().length)).toBe(0);
   await page.keyboard.press('Escape');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await page.locator('[data-vfx="comfortable"]').check();
   await expect(page.locator('.track-preview').first()).toHaveCSS('animation-name', 'none');
 });

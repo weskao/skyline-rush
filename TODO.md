@@ -1,3 +1,10 @@
+# Unified settings and lobby track navigation
+
+- [x] Home uses one Settings gear. Driving, Display & HUD, Audio and Language share a responsive dialog with its own scroll area. The pause menu opens the same dialog.
+- [x] Desktop horizontal trackpad gestures work across the lobby, with open track/mode pickers and vertical scrolling retaining their own input. Keep the wider desktop track cards and use the same map-and-art treatment in mobile portrait.
+- [x] RED on the former lobby wheel handling and settings structure. Focused regression tests, including the existing main CSS and module-size contracts, pass. Chromium verified desktop paging, mobile portrait and tabletop dialog geometry and Escape focus.
+- [ ] Record physical phone/foldable verification, full browser matrix and exact-HEAD CI before merge.
+
 # Reference design follow-up
 
 - [x] Compact race selection, desktop track rail, new 3× Coast/Neon landmark art, twelve mode icons and a shared two-state Garage pose switch.

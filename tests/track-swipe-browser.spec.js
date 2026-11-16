@@ -1,3 +1,4 @@
+import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 
 const selected = page => page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
@@ -22,16 +23,18 @@ async function touchSwipe(page, from, to, y, { steps = 8, stepMs = 16, holdMs = 
 // page (page.mouse.wheel stamps on delivery, so a slow CI round trip looks like the user pausing), and native wheel deltas are
 // scaled differently per runner (Linux CI turned a 40px nudge into a full swipe), so both delta and timeStamp are pinned here.
 // deliverMs spaces the deliveries; stallAt delays one delivery by 300ms.
-async function trackpadSwipe(page, deltaX, events, { deliverMs = 16, stallAt = -1 } = {}) {
+async function trackpadSwipe(page, deltaX, events, { deliverMs = 16, stallAt = -1, at } = {}) {
   const world = page.locator('#world');
   const start = await page.evaluate(() => performance.now());
   for (let i = 0; i < events; i++) {
     if (i === stallAt) await page.waitForTimeout(300);
-    await world.evaluate((canvas, { deltaX, timeStamp }) => {
+    await world.evaluate((canvas, { deltaX, timeStamp, at }) => {
+      const target = at ? document.elementFromPoint(at.x, at.y) : canvas;
+      if (!target) throw new Error("Trackpad test point missed the page");
       const event = new WheelEvent('wheel', { deltaX, deltaMode: 0, bubbles: true, cancelable: true });
       Object.defineProperty(event, 'timeStamp', { value: timeStamp });
-      canvas.dispatchEvent(event);
-    }, { deltaX, timeStamp: start + i * 16 });
+      target.dispatchEvent(event);
+    }, { deltaX, timeStamp: start + i * 16, at });
     await page.waitForTimeout(deliverMs);
   }
 }
@@ -52,7 +55,7 @@ test.describe('phone', () => {
         if (element.dataset.state === 'done') window.__sawSwipeDone = true;
       }).observe(element, { attributes: true, attributeFilter: ['data-state'] });
     });
-    await page.locator('#airflow-toggle').tap();
+    await toggleAirflowPreview(page);
     await expect(chip(page)).toHaveAttribute('data-state', 'hint');
     await expect(chip(page)).toContainText('Swipe left or right to change track');
     await expect(page.locator('.swipe-gesture i')).toBeVisible();
@@ -82,8 +85,8 @@ test.describe('phone', () => {
     expect(await selected(page)).toBe(first);
 
     await page.reload();
-    await page.locator('#airflow-toggle').tap(); // airflow was saved on: off, then on again
-    await page.locator('#airflow-toggle').tap();
+    await toggleAirflowPreview(page); // airflow was saved on: off, then on again
+    await toggleAirflowPreview(page);
     await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
     await expect(chip(page)).toHaveAttribute('data-state', 'hint'); // each new page load gets one hint
     expect(errors).toEqual([]);
@@ -93,7 +96,7 @@ test.describe('phone', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
     const [, second] = await trackOrder(page);
-    await page.locator('#airflow-toggle').tap();
+    await toggleAirflowPreview(page);
     await expect.poll(() => page.locator('.swipe-gesture i').evaluate(dot => getComputedStyle(dot).animationName)).toBe('none');
     await touchSwipe(page, 320, 90, 560);
     await expect.poll(() => selected(page)).toBe(second);
@@ -151,6 +154,35 @@ test('desktop: a two-finger trackpad swipe changes one track per gesture, moment
   await page.mouse.wheel(0, 200); // vertical scrolling is not a swipe
   await page.waitForTimeout(400);
   expect(await selected(page)).toBe(second);
+});
+
+test('desktop: the lobby and track rail page the 3D scene, while expanded pickers own their wheel', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    localStorage.setItem('skyline-rush-music', 'off');
+    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' }));
+  });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const [first, second] = await trackOrder(page);
+  const point = async selector => {
+    const locator = page.locator(selector).first();
+    await expect(locator).toBeVisible();
+    await locator.scrollIntoViewIfNeeded();
+    await expect(locator).toBeInViewport();
+    const { x, y, width, height } = await locator.boundingBox();
+    const at = { x: x + width / 2, y: y + height / 2 };
+    expect(await page.evaluate(({ x, y }) => Boolean(document.elementFromPoint(x, y)?.closest('#intro')), at)).toBe(true);
+    return at;
+  };
+  await trackpadSwipe(page, 180, 1, { at: await point('.lobby-race-heading') });
+  await expect.poll(() => selected(page)).toBe(second);
+  await page.waitForTimeout(180);
+  await trackpadSwipe(page, -180, 1, { at: await point(`[data-track="${second}"]`) });
+  await expect.poll(() => selected(page)).toBe(first);
+  await page.waitForTimeout(180);
+  await page.locator('#lobby-tracks-toggle').click();
+  await trackpadSwipe(page, 180, 1, { at: await point('[data-track="coast"]') });
+  await expect(page.locator('[data-track="coast"]')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('desktop: wheel momentum pauses over 160ms remain part of the same trackpad gesture', async ({ page }) => {
@@ -275,18 +307,18 @@ test.describe('phone reload hint', () => {
     }).observe(document.querySelector('#track-swipe'), { attributes: true, attributeFilter: ['data-state'] });
   });
   await watch();
-  await page.locator('#airflow-toggle').click();
+  await toggleAirflowPreview(page);
   await expect(chip(page)).toHaveAttribute('data-state', 'hint');
   await expect.poll(seen).toBe(1);
-  await page.locator('#airflow-toggle').click();
-  await page.locator('#airflow-toggle').click();
+  await toggleAirflowPreview(page);
+  await toggleAirflowPreview(page);
   expect(await seen(), 'toggle off/on again in same loaded page must not repeat hint').toBe(1);
 
   await page.reload();
   await watch();
   // Airflow setting persists; switch off then back on to trigger this page's first enable.
-  await page.locator('#airflow-toggle').click();
-  await page.locator('#airflow-toggle').click();
+  await toggleAirflowPreview(page);
+  await toggleAirflowPreview(page);
   await expect(chip(page)).toHaveAttribute('data-state', 'hint');
   await expect.poll(seen).toBe(1);
   });
@@ -332,7 +364,7 @@ test.describe('phone upcoming preview swipe', () => {
     await page.locator('[data-upcoming-track="dune-tempest"]').click();
     // The visible intro is a scrollable overlay; touch gestures there belong to the
     // form, not the WebGL canvas. Airflow exposes the same preview swipe surface.
-    await page.locator('#airflow-toggle').tap();
+    await toggleAirflowPreview(page);
     await expect.poll(() => page.evaluate(() => document.elementFromPoint(320, 560)?.id)).toBe('world');
     await touchSwipe(page, 320, 90, 560);
     await expect(page.locator('[data-upcoming-track="monsoon-ruins"]')).toHaveAttribute('aria-pressed', 'true');

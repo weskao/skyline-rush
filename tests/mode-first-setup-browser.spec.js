@@ -222,9 +222,11 @@ test('keyboard alone opens the visual panel, reaches Comfort mode and toggles it
   await closeMusicPrompt(page);
   await page.locator('button[data-race-mode="custom"]').focus();
   await page.keyboard.press('Enter');
-  await page.locator('#vfx-panel > summary').focus();
+  await page.locator('#settings-button').focus();
   await page.keyboard.press('Enter');
-  await expect.poll(() => page.locator('#vfx-panel').evaluate(panel => panel.open)).toBe(true);
+  await page.locator('[data-settings-section="display"]').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#settings-display')).toBeVisible();
   let reached = false;
   for (let i = 0; i < 20 && !reached; i++) {
     await page.keyboard.press('Tab');
@@ -248,7 +250,8 @@ for (const [name, viewport, touch] of [['pointer', { width: 1440, height: 900 },
       await closeMusicPrompt(page);
       const press = locator => touch ? locator.tap() : locator.click();
       await press(page.locator('button[data-race-mode="time"]'));
-      await press(page.locator('#vfx-panel > summary'));
+      await press(page.locator('#settings-button'));
+      await press(page.locator('[data-settings-section="display"]'));
       const row = page.locator('label:has(> [data-vfx="comfortable"])');
       await row.scrollIntoViewIfNeeded();
       const box = await row.boundingBox();

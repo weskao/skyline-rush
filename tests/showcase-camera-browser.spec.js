@@ -1,3 +1,4 @@
+import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { PORTRAIT_CAR_TOP } from './showcase-car-zone.js';
@@ -83,7 +84,7 @@ for(const [viewport,maps] of [[{width:1440,height:900},worldTourMaps.slice(0,3)]
     for(const id of maps) await test.step(id,async()=>{
       await page.locator(`[data-track="${id}"]`).click();
       const airflow=page.locator('#airflow-toggle');
-      await airflow.click(); // never force-click past an overlay
+      await toggleAirflowPreview(page); // never force-click past an overlay
       await expect(airflow,`${id}: AIRFLOW on`).toHaveAttribute('aria-pressed','true');
       const dock=page.locator('#showcase-camera-dock');
       await expect(dock).toBeVisible();
@@ -92,7 +93,7 @@ for(const [viewport,maps] of [[{width:1440,height:900},worldTourMaps.slice(0,3)]
         await expect(dock,`${id}: next camera is ${mode}`).toHaveAttribute('data-view',mode);
       }
       await page.screenshot({path:info.outputPath(`${id}-airflow-${viewport.width}.png`),animations:'disabled'});
-      await airflow.click();
+      await toggleAirflowPreview(page);
       await expect(airflow,`${id}: AIRFLOW off`).toHaveAttribute('aria-pressed','false');
     });
   });
@@ -106,7 +107,7 @@ for (const [width, height] of [[320, 568], [390, 844], [760, 501], [768, 1024], 
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
-    await page.locator('#airflow-toggle').click();
+    await toggleAirflowPreview(page);
     await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
 
     for (const locale of ['en', 'zh-TW']) {
@@ -137,7 +138,7 @@ test('AIRFLOW telemetry card stays above the showcase car at every portrait phon
   await page.setViewportSize({ width: cases[0][0], height: cases[0][1] });
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
-  await page.locator('#airflow-toggle').click();
+  await toggleAirflowPreview(page);
   await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
   const overlaps = (a, b) => !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
   for (const [width, height, top] of cases) await test.step(`${width}x${height}, top inset ${top}`, async () => {
@@ -162,7 +163,7 @@ test('AIRFLOW telemetry card stays above the showcase car at every portrait phon
 test('language switches relabel live AIRFLOW values before the next HUD tick', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.locator('#airflow-toggle').click();
+  await toggleAirflowPreview(page);
   await expect(page.locator('#aero-flow')).toHaveText('BODY STREAMLINES');
   for (const [locale, expected] of [
     ['zh-TW', ['車身流線', '低風阻', '展示中']],

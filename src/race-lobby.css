@@ -271,35 +271,7 @@ details.performance-notice {
     max-width: 670px;
   }
   body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro .track-select button {
-    display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
-    grid-template-rows: 1fr auto;
-    align-items: end;
-    min-height: 86px;
-    flex-basis: 170px;
-    column-gap: 7px;
-  }
-  body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro .track-preview {
-    position: absolute;
-    inset: 0;
-    height: auto;
-    margin: 0;
-    opacity: .46;
-  }
-  body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro .track-select button > .track-route-map {
-    position: relative;
-    inset: auto;
-    grid-row: 1 / 3;
-    align-self: center;
-    width: 42px;
-    height: 42px;
-    margin: 0;
-  }
-  body:not([data-fold-axis="vertical"], [data-fold-axis="horizontal"], .airflow-active) .intro .track-select button > :is(strong, span:last-child) {
-    position: relative;
-    grid-column: 2;
-    margin-bottom: 0;
-    text-shadow: 0 1px 4px #020813;
+    min-height: 86px; flex-basis: 170px;
   }
 }
 
@@ -356,12 +328,13 @@ details.performance-notice {
     top: auto; bottom: max(60px, calc(var(--safe-bottom) + 44px));
     max-height: calc(100dvh - 140px);
   }
-  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .lobby-compact .track-select { order: 2; }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .lobby-compact .track-select {
+    order: 2; width: min(760px, 100%); align-self: start;
+  }
 }
-body:not([data-phase="paused"]) #pause-settings,
-body[data-tutorial] #pause-settings { display: none; }
+body:not([data-phase="paused"]) #pause-settings { display: none; }
 #pause-settings > svg { width: 18px; height: 18px; vertical-align: middle; margin-inline-end: 5px; }
-body:is([data-phase="racing"], [data-phase="countdown"]):not([data-tutorial], .airflow-active) :is(.aero-tools, #restart-button, .settings, .controls-menu) { display: none; }
+body:is([data-phase="racing"], [data-phase="countdown"]):not([data-tutorial], .airflow-active) #restart-button { display: none; }
 
 @media (min-width: 1001px) and (min-height: 701px) {
   body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-content {
@@ -409,3 +382,35 @@ body:not([data-phase="finished"]) :is(.result-rewards, .result-style-details) { 
 
 
 body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { display: block; }
+
+/* Compact screens share the same landscape-card anatomy as the desktop rail.
+   The live scene gets the upper part of an upright phone; a folded device keeps its own pane. */
+@media (max-width: 760px) and (min-height: 501px) and (orientation: portrait) {
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro.lobby-compact {
+    top: clamp(150px, 32dvh, 285px);
+    max-height: none;
+  }
+}
+body[data-fold-axis] #intro .lobby-race-heading { width: 100%; }
+body[data-fold-axis] #intro #lobby-tracks-toggle[aria-expanded="false"] + .track-select,
+body[data-fold-axis] #intro .race-mode-heading:has(#lobby-modes-toggle[aria-expanded="false"]) + .race-mode-tabs { display: none; }
+
+@media (min-height: 501px) {
+  :is(body[data-fold-axis] #intro, body:not([data-fold-axis]) .lobby-compact) .track-select button {
+    display: grid; position: relative; grid-template: auto auto / 38px minmax(0, 1fr);
+    align-content: center; gap: 2px 8px;
+  }
+  :is(body[data-fold-axis] #intro, body:not([data-fold-axis]) .lobby-compact) .track-select button > .track-preview {
+    position: absolute; inset: 0; height: auto; opacity: .48; margin: 0;
+  }
+  :is(body[data-fold-axis] #intro, body:not([data-fold-axis]) .lobby-compact) .track-select button > .track-route-map {
+    position: relative; inset: auto; grid-area: 1 / 1 / 3; align-self: center;
+    width: 38px; height: 38px; margin: 0;
+  }
+  :is(body[data-fold-axis] #intro, body:not([data-fold-axis]) .lobby-compact) .track-select button > :is(strong, span:last-child) {
+    position: relative; grid-column: 2; margin: 0; text-shadow: 0 1px 4px #020813;
+  }
+}
+
+body:is([data-phase="countdown"], [data-phase="racing"], [data-phase="paused"]) #settings-button { display: none; }
+body[data-phase="ready"] .toolbar :is(#camera-button, #pause-button) { display: none; }

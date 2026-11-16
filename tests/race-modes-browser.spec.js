@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -220,8 +221,8 @@ test('1920x1080 intro fits without clipping and VFX remains reachable after musi
   await closeMusicPrompt(page);
   const overflow = await page.locator('#intro').evaluate(el => el.scrollHeight - el.clientHeight);
   expect(overflow).toBeLessThanOrEqual(0);
-  await page.locator('#vfx-panel > summary').click();
-  await expect(page.locator('#vfx-panel')).toHaveAttribute('open','');
+  await toggleSettingsSection(page, 'display');
+  await expect(page.locator('#settings-display')).toBeVisible();
   await page.screenshot({ path:'test-results/race-mode-layout-desktop.png' });
 });
 test('402x714 phone intro fades at its scroll edge and its last row scrolls clear of the fade', async ({ page }) => {

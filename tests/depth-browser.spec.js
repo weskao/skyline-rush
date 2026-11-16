@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -194,7 +195,8 @@ gameplayTest('fuel warns below 20%, refill feedback appears and comfort disables
   await expect(page.locator('#fuel-meter')).toHaveAttribute('aria-valuetext', /Low charge/, { timeout: process.env.CI ? 48000 : 16000 });
   await page.keyboard.up('Shift');
   await expect(page.locator('#fuel-meter')).toHaveAttribute('data-refilling', 'true');
-  await page.locator('#vfx-panel > summary').click();
+  await page.locator('#pause-button').click();
+  await toggleSettingsSection(page, 'display');
   await page.locator('[data-vfx="comfortable"]').check();
   await expect.poll(() => page.locator('#fuel-fill').evaluate(el => getComputedStyle(el).transitionDuration)).toBe('0s');
   expect(await page.locator('#fuel-meter').evaluate(el => getComputedStyle(el, '::after').animationName)).toBe('none');

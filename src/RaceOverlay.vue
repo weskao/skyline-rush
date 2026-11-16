@@ -26,7 +26,7 @@ import { cloudView } from './cloud-view-state.ts';
       <button class="primary-button next-button" id="next-stage" hidden>Next stage</button>
       <button class="primary-button next-button" id="next-button" hidden><span><span data-i18n="result.next">Next ·</span> <b id="next-track"></b></span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
       <button class="text-button" id="again-button"><span data-i18n="result.again">Race again</span> <svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button>
-      <button type="button" class="text-button" id="pause-settings"><svg v-bind="ICON_ATTRS" v-html="icons.settings"></svg><span data-i18n="settings.game">Game settings</span></button>
+      <button type="button" class="text-button" id="pause-settings" aria-haspopup="dialog" aria-controls="settings-panel"><svg v-bind="ICON_ATTRS" v-html="icons.settings"></svg><span data-i18n="settings.game">Game settings</span></button>
       <button type="button" class="text-button" id="pause-leave" data-i18n="leave.action" hidden>Leave race</button>
       <button type="button" class="text-button" id="photo-open" hidden><svg v-bind="ICON_ATTRS" v-html="icons.camera"></svg><span data-i18n="photo.open">PHOTO STUDIO</span></button>
       <div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track" data-i18n="track.choose">Choose track</button><button class="text-button" data-open-history data-i18n="nav.progress">Progress</button></div>

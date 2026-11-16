@@ -1,3 +1,4 @@
+import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, glbRoots, programs, modelInstances as instances } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -48,7 +49,7 @@ test('Home showcase wears the GLB without the Garage; AIRFLOW ON grounded, OFF h
   expect((await fans(page)).altitude).toBeGreaterThan(0.5); // settled: pose polled above
   await attach(page, 'home-airflow-off-hover');
 
-  await page.locator('#airflow-toggle').click();
+  await toggleAirflowPreview(page);
   await expect.poll(() => fans(page)).toEqual({ glb: false, jets: false, altitude: 0 }); // AIRFLOW ON: on the road, no jets
   await attach(page, 'home-airflow-on-grounded');
   expect(errors).toEqual([]);

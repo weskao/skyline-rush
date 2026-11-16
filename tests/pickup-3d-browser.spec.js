@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
@@ -13,7 +14,7 @@ const paintedShare = canvas => {
   return painted / (data.length / 4);
 };
 async function openItemsGuide(page) {
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.locator('#guide-open').click();
   await page.locator('[data-guide-device="items"]').click();
 }

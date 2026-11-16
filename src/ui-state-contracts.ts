@@ -79,7 +79,7 @@ export interface TutorialCoachView {
 }
 export interface ControlPanelsView {
   settingsOpen: boolean;
-  controlsOpen: boolean;
+  section: 'driving' | 'display' | 'audio' | 'language';
   /** Keyboard remapping: desktop, or a touch device once a physical keyboard was used. */
   keyboardSettings: boolean;
 }

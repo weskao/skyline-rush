@@ -1,3 +1,4 @@
+import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 import { GARAGE_ANGLES } from '../src/garage-camera.ts';
@@ -51,7 +52,7 @@ for(const id of IDS) for(const viewport of SCREEN_SIZES) {
 
     const airflow=page.locator('#airflow-toggle');
     for(const enabled of (viewport.width===1440?[false,true]:[true])) {
-      if((await airflow.getAttribute('aria-pressed'))!==String(enabled))await airflow.click();
+      if((await airflow.getAttribute('aria-pressed'))!==String(enabled))await toggleAirflowPreview(page);
       await expect(airflow).toHaveAttribute('aria-pressed',String(enabled));
       for(const view of HOME_VIEWS) {
         await page.locator('#showcase-camera-next').click();
@@ -61,7 +62,7 @@ for(const id of IDS) for(const viewport of SCREEN_SIZES) {
     }
 
     // AIRFLOW on hides the home panel by design (0f315b7c: one START in airflow mode); a player turns it off to reach Garage.
-    await airflow.click();
+    await toggleAirflowPreview(page);
     await expect(airflow).toHaveAttribute('aria-pressed','false');
     await page.locator('#garage-button').click();
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page','home');

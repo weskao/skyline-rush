@@ -2,7 +2,6 @@ import { applyI18n } from './i18n.ts';
 
 /** Home/leave navigation shared by the running race and recovered Cup sessions. */
 export function focusRace(): void {
-  document.querySelector<HTMLDetailsElement>('#vfx-panel')!.open = false;
   (document.activeElement as HTMLElement | null)?.blur();
 }
 

@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -27,9 +28,9 @@ test.describe('pickup haptics on a phone', () => {
       Object.defineProperty(navigator, 'vibrate', { value: pattern => { window.vibrations.push(pattern); return true; } });
     });
     await page.reload();
-    await page.locator('#vfx-panel > summary').click();
+    await toggleSettingsSection(page, 'display');
     await page.locator('[data-vfx="haptics"]').check();
-    await page.locator('#vfx-panel > summary').click();
+    await toggleSettingsSection(page, 'display');
     await startRace(page);
     for (const [tier, pulse] of [['can', 9], ['tank', 14]]) {
       const before = await page.evaluate(() => window.vibrations.length);

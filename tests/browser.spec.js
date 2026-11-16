@@ -1,3 +1,4 @@
+import { toggleSettingsSection, toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect, chromium } from './helpers/test.js';
 import { saveArtifact } from './helpers/artifact.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
@@ -19,7 +20,7 @@ const dismissMusicPrompt = async page => {
 
 // The VFX panel's dropdowns; Home's race setup has its own "Showcase camera" picker.
 const pick = async (page, name, option) => {
-  await page.getByRole('complementary', { name: 'Airflow and visual effects' }).getByRole('combobox', { name, exact: true }).click();
+  await page.locator('#settings-display').getByRole('combobox', { name, exact: true }).click();
   await page.getByRole('option', { name: option, exact: true }).click();
 };
 
@@ -77,7 +78,7 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
   await expect(page.locator('#speed')).toHaveText('0');
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await pick(page, 'Aerodynamics', 'High downforce');
   await expect(page.locator('#aero-mode')).toHaveText('HIGH DOWNFORCE');
   for (const preset of ['Realistic', 'Extreme · sci-fi', 'Cinematic']) await pick(page, 'Visual style', preset);
@@ -86,7 +87,7 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
     await pick(page, 'Showcase camera', view);
     await page.waitForTimeout(250);
   }
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await page.waitForTimeout(600);
   await saveArtifact(page, { path: 'artifacts/aero-downforce.jpeg', quality: 70 });
   await expect(page.locator('#track-note')).toBeHidden();
@@ -116,51 +117,40 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
 test('starting with a VFX control focused hands the keyboard back to driving', async ({ page }) => {
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await page.getByRole('combobox', { name: 'Visual style', exact: true }).focus();
-  // Safari and Firefox on macOS do not move focus to a clicked button.
-  await page.locator('#start-button').evaluate(button => button.click());
+  await page.locator('#settings-close').click();
+  await expect(page.locator('#settings-button')).toBeFocused();
+  await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
-  await expect(page.locator('#vfx-panel')).not.toHaveAttribute('open');
+  await expect(page.locator('#settings-display')).toBeHidden();
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(20);
   await page.keyboard.down('d');
   await expect.poll(async () => parseFloat(await page.evaluate(() => document.body.style.getPropertyValue('--flight-bank')))).toBeLessThan(-2);
 });
 
-for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['mobile', { width: 390, height: 844 }]]) test(`${name} dropdowns close on an outside press or another button, one open at a time`, async ({ page }) => {
+for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['mobile', { width: 390, height: 844 }]]) test(`${name} settings keeps its controls in one dialog`, async ({ page }) => {
   await page.setViewportSize(viewport);
   await page.goto('/');
   await dismissMusicPrompt(page);
-  const vfx = page.locator('#vfx-panel'), quality = page.getByRole('combobox', { name: 'Quality', exact: true });
-  await vfx.locator('> summary').click();
+  await toggleSettingsSection(page, 'display');
+  const quality = page.getByRole('combobox', { name: 'Quality', exact: true });
   await quality.click();
   await expect(quality).toHaveAttribute('aria-expanded', 'true');
-  // A press inside the VFX panel closes only the drawn select.
-  await page.locator('.vfx-settings').click({ position: { x: 8, y: 8 } });
-  await expect(quality).toHaveAttribute('aria-expanded', 'false');
-  await expect(vfx).toHaveAttribute('open');
-  // Left edge, mid-height: page background on both layouts, clear of every panel.
-  const outside = () => page.mouse.click(4, viewport.height / 2);
-  await outside();
-  await expect(vfx).not.toHaveAttribute('open');
-  // Another dropdown's button swaps them instead of stacking.
-  await vfx.locator('> summary').click();
-  await page.locator('#settings-button').click();
-  await expect(page.locator('#settings-panel')).toBeVisible();
-  await expect(vfx).not.toHaveAttribute('open');
   await page.locator('#controls-button').click();
   await expect(page.locator('#controls-panel')).toBeVisible();
+  await expect(quality).toBeHidden();
+  await page.locator('#settings-close').click();
   await expect(page.locator('#settings-panel')).toBeHidden();
-  await outside();
-  await expect(page.locator('#controls-panel')).toBeHidden();
+  await expect(page.locator('#settings-button')).toBeFocused();
 });
 
-// The transparent topbar overlaps the .aero-tools row: 14px of it on desktop, all of it on a landscape phone.
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) test(`${viewport.width}x${viewport.height} language button opens from its top border`, async ({ page }) => {
   await page.setViewportSize(viewport);
   await page.goto('/');
   await dismissMusicPrompt(page);
+  await toggleSettingsSection(page, 'language');
   const language = page.getByRole('combobox', { name: 'Language', exact: true });
   const box = await language.boundingBox();
   await page.mouse.click(box.x + box.width / 2, box.y + 1);
@@ -172,25 +162,25 @@ test('mobile VFX controls fit, persist and respect reduced motion', async ({ pag
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.locator('#airflow-toggle').click();
-  await page.locator('#vfx-panel > summary').click();
+  await toggleAirflowPreview(page);
+  await toggleSettingsSection(page, 'display');
   await page.locator('[data-vfx="comfortable"]').check();
   await pick(page, 'Quality', 'Low');
   const panel = await page.locator('.vfx-settings').boundingBox();
   expect(panel.x).toBeGreaterThanOrEqual(0);
   expect(panel.x + panel.width).toBeLessThanOrEqual(360);
-  expect(panel.y + panel.height).toBeLessThanOrEqual(780);
+  expect((await page.locator('#settings-panel').boundingBox()).y).toBeGreaterThanOrEqual(0);
   await saveArtifact(page, { path: 'artifacts/aero-settings-mobile.jpeg', quality: 70 });
   await page.reload();
   await dismissMusicPrompt(page);
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await expect(page.locator('[data-vfx="comfortable"]')).toBeChecked();
   await expect(page.getByRole('combobox', { name: 'Quality', exact: true })).toHaveText('Low');
   await expect(page.locator('.speed-streaks')).toBeHidden();
   await page.locator('[data-vfx="enabled"]').uncheck();
   await expect(page.locator('#airflow-toggle')).toBeDisabled();
   await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'true');
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
 });
@@ -211,7 +201,7 @@ test('music and sound effects start on and each remember an off choice in localS
   await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
-  await page.locator('#intro-title').click();
+  await page.locator('#settings-close').click();
   await expect(page.locator('#settings-panel')).toBeHidden();
 });
 
@@ -301,7 +291,10 @@ test('the audio panel scrolls instead of running off a short landscape phone scr
   await dismissMusicPrompt(page);
   await page.locator('#settings-button').click();
   const panel = page.locator('#settings-panel');
-  const layout = await panel.evaluate(el => ({ bottom: el.getBoundingClientRect().bottom, overflow: getComputedStyle(el).overflowY, scrolls: el.scrollHeight > el.clientHeight }));
+  const layout = await panel.evaluate(el => {
+    const content = el.querySelector('.settings-content');
+    return { bottom: el.getBoundingClientRect().bottom, overflow: getComputedStyle(content).overflowY, scrolls: content.scrollHeight > content.clientHeight };
+  });
   expect(layout.bottom).toBeLessThanOrEqual(240);
   expect(layout.overflow).toBe('auto');
   expect(layout.scrolls).toBe(true);
@@ -318,6 +311,7 @@ test('intro music plays after the first interaction and race music replaces it',
   await audioSwitch(page, 'Music').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
   await audioSwitch(page, 'Music').click();
+  await page.locator('#settings-close').click();
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await expect.poll(() => page.evaluate(() => window.audioLevel()), { intervals: [50] }).toBeGreaterThan(0.001);
@@ -437,15 +431,16 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(90);
   await page.keyboard.press('m');
-  await page.locator('#settings-button').click();
+  await page.locator('#pause-button').click();
+  await page.locator('#pause-settings').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
   await audioSwitch(page, 'Sound effects').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeGreaterThan(0.001);
-  await page.keyboard.press('p');
+  await page.locator('#settings-close').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
-  await page.locator('#settings-button').click();
+  await page.locator('#pause-settings').click();
   await audioSwitch(page, 'Sound effects').click();
   await audioSwitch(page, 'Sound effects').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
@@ -462,7 +457,8 @@ test('audio initialization failure leaves the silent game playable and retryable
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(30);
-  await page.locator('#settings-button').click();
+  await page.locator('#pause-button').click();
+  await page.locator('#pause-settings').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await audioSwitch(page, 'Sound effects').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
@@ -475,7 +471,7 @@ test('desktop: start, drive, steer, fly, land, pause and restart through real co
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'The road is just the beginning.' })).toBeVisible();
+  await expect(page.locator('#lobby-hero-track')).toBeVisible();
   await expect(page.locator('canvas#world')).toBeVisible();
   await expect(page.locator('#settings-button')).toBeVisible();
   await page.getByRole('button', { name: 'Change camera' }).click();
@@ -731,19 +727,15 @@ test.describe('phone game gestures', () => {
       expect(await page.locator(selector).evaluate(element => element.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, cancelable: true })))).toBe(false);
     }
     // Touch starts with AUTO on, which shows the gas as held; turn it off so the gas button reflects only the finger.
+    await toggleSettingsSection(page, 'driving');
     const assist = page.locator('#assist-button');
     const onBorder = await assist.evaluate((element) => getComputedStyle(element).borderColor);
     await assist.tap();
     await expect(assist).toHaveAttribute('aria-pressed', 'false');
     // A tap leaves :hover stuck on touch screens; it must not paint OFF with the ON border.
     expect(await assist.evaluate((element) => getComputedStyle(element).borderColor)).not.toBe(onBorder);
-    const controlsButton = page.locator('#controls-button');
-    const closedBorder = await controlsButton.evaluate((element) => getComputedStyle(element).borderColor);
-    await controlsButton.tap();
-    await expect(controlsButton).toHaveAttribute('aria-expanded', 'true');
-    await controlsButton.tap();
-    await expect(controlsButton).toHaveAttribute('aria-expanded', 'false');
-    expect(await controlsButton.evaluate((element) => getComputedStyle(element).borderColor)).toBe(closedBorder);
+    await page.locator('#settings-close').tap();
+    await expect(page.locator('#settings-panel')).toBeHidden();
     await page.getByRole('button', { name: 'Start race' }).tap();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     const gas = page.locator('[data-control="throttle"]');
@@ -811,7 +803,7 @@ const dragBank = async (page, send) => {
 };
 const chooseInPanel = async (page, key, value) => {
   await dismissMusicPrompt(page);
-  await page.locator('#controls-button').tap();
+  await toggleSettingsSection(page, 'driving');
   await page.locator(`[data-controls="${key}"][value="${value}"]`).check();
   await page.keyboard.press('Escape');
   await expect(page.locator('#controls-panel')).toBeHidden();
@@ -835,7 +827,7 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       const scale = () => control.evaluate(element => element.style.getPropertyValue('--touch-scale'));
       await page.goto('/');
       await dismissMusicPrompt(page);
-      await page.locator('#controls-button').tap();
+      await toggleSettingsSection(page, 'driving');
       await expect(page.locator('#controls-panel')).toBeVisible();
       await expect(control).toHaveAttribute('data-steer-mode', 'slide');
       await expect(control).toHaveAttribute('data-hand', 'left');
@@ -854,7 +846,7 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       await expect(control).toHaveAttribute('data-hand', 'right');
       expect(await scale()).toBe('1.15');
       await dismissMusicPrompt(page);
-      await page.locator('#controls-button').tap();
+      await toggleSettingsSection(page, 'driving');
       await expect(page.locator('[data-controls="mode"][value="buttons"]')).toBeChecked();
       await page.locator('#controls-reset').tap();
       await expect(control).toHaveAttribute('data-steer-mode', 'slide');

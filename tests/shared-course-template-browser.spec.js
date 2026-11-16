@@ -1,3 +1,4 @@
+import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -47,9 +48,9 @@ test('each new map shares the same AIRFLOW switch and Garage-to-Studio car pose 
     await page.locator(`[data-upcoming-track="${id}"]`).click();
     await expect(page.locator('#world')).toBeVisible();
     const previous = await airflow.getAttribute('aria-pressed');
-    await airflow.click();
+    await toggleAirflowPreview(page);
     await expect(airflow).toHaveAttribute('aria-pressed', previous === 'true' ? 'false' : 'true');
-    await airflow.click();
+    await toggleAirflowPreview(page);
     await expect(airflow).toHaveAttribute('aria-pressed', previous);
 
     await page.locator('#garage-button').click();

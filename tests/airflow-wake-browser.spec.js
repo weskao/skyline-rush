@@ -1,3 +1,4 @@
+import { toggleSettingsSection, toggleAirflowPreview } from './helpers/settings-browser.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { RACE_TRACKS } from '../src/game.js';
@@ -16,7 +17,7 @@ test('airflow renders on every track with bounded resources and no shader errors
   for (const track of Object.keys(RACE_TRACKS)) {
     await page.locator(`[data-track="${track}"]`).click();
     await expect.poll(() => page.evaluate(() => window.gameplay.race.trackId)).toBe(track);
-    await page.locator('#airflow-toggle').click();
+    await toggleAirflowPreview(page);
     await page.waitForTimeout(500);
     const record = await page.evaluate(async () => {
       const { renderer, scene } = window.gameScene;
@@ -37,16 +38,16 @@ test('airflow renders on every track with bounded resources and no shader errors
     expect(record.flowDraws).toBe(1);
     records.push({ track, ...record });
     if (track === 'coast') await page.screenshot({ path: info.outputPath('coast-airflow-desktop.png') });
-    await page.locator('#airflow-toggle').click();
+    await toggleAirflowPreview(page);
   }
   await page.locator('[data-track="coast"]').click();
-  await page.locator('#airflow-toggle').click();
+  await toggleAirflowPreview(page);
   const counts = [];
   for (const quality of ['low', 'medium', 'high']) {
-    await page.locator('#vfx-panel > summary').click();
+    await toggleSettingsSection(page, 'display');
     await page.getByRole('combobox', { name: 'Quality', exact: true }).click({ timeout: ciTimeout(15_000) });
     await page.getByRole('option', { name: quality[0].toUpperCase() + quality.slice(1), exact: true }).click();
-    await page.locator('#vfx-panel > summary').click();
+    await toggleSettingsSection(page, 'display');
     await page.waitForTimeout(300);
     counts.push(await page.evaluate(() => window.gameScene.scene.getObjectByName('Airflow showcase')
       .children.find(child => child.geometry?.getAttribute('flowType')).geometry.drawRange.count));

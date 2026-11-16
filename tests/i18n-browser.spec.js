@@ -1,3 +1,5 @@
+import { openSettingsSection } from './helpers/settings-browser.js';
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { expect } from '@playwright/test';
@@ -200,22 +202,21 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       expect.soft(await page.locator('[data-audio="music"] > b').textContent(), `${cx.id} muted badge`).toBe(L['audio.off']);
       await check(cx, 'audio-panel-muted');
       await page.locator('#mute-all').click();
-      await page.locator('#settings-button').click();
-      await page.locator('#controls-button').click();
+      await openSettingsSection(page, 'driving');
       await check(cx, 'controls-panel');
-      await page.locator('#controls-panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
+      await page.locator('.settings-content').evaluate(el => { el.scrollTop = el.scrollHeight; });
       await check(cx, 'controls-panel-bottom');
-      await page.locator('#controls-button').click();
-      if (await page.locator('#vfx-panel > summary').isVisible()) {
-        await page.locator('#vfx-panel > summary').click();
+      await toggleSettingsSection(page, 'driving');
+      {
+        await toggleSettingsSection(page, 'display');
         await check(cx, 'vfx-panel');
         await page.locator('.vfx-settings .custom-select button').first().click();
         await check(cx, 'vfx-select-open');
         await page.keyboard.press('Escape');
         await page.locator('.vfx-tuning summary').click();
         await check(cx, 'vfx-fine-tuning');
-        await page.locator('#vfx-panel > summary').click();
-      } else test.info().annotations.push({ type: 'note', description: `${cx.id}: VFX panel hidden at this viewport` });
+        await toggleSettingsSection(page, 'display');
+      }
 
       // Unlock every track so all ten route maps render, then walk them.
       await page.evaluate(ids => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(ids)), Object.keys(RACE_TRACKS));
@@ -257,10 +258,10 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       await check(cx, 'race-hud', { hud: true });
       // The live route map's player marker tooltip must read like the leaderboard row (identity key stays YOU).
       expect.soft(await page.locator('#race-route-map [data-racer="YOU"] title').textContent(), `${cx.id} route-map player marker tooltip`).toBe(CATALOGS[cx.locale]['hud.you']);
-      if (await page.locator('#airflow-toggle').isVisible()) {
-        await page.locator('#airflow-toggle').click();
+      {
+        await page.keyboard.press('v');
         await check(cx, 'race-hud-airflow', { hud: true });
-        await page.locator('#airflow-toggle').click(); // off again: the flight HUD is checked on its own (airflow + flight HUD collide on phones in en too, tracked separately), and a persisted airflow-on would hide the intro after the reload below
+        await page.keyboard.press('v'); // off again: the flight HUD is checked on its own (airflow + flight HUD collide on phones in en too, tracked separately), and a persisted airflow-on would hide the intro after the reload below
       }
       await page.evaluate(() => { document.activeElement?.blur(); Object.assign(window.gameplay.race.player, { speed: 90 }); }); // the clicked toggle keeps focus and would swallow Space
       await page.keyboard.down('Space');
@@ -387,7 +388,7 @@ for (const [locale, system] of LOCALES.slice(0, 1)) test.describe(`rebind prompt
     const status = page.locator('#keymap-status');
     await page.goto('/');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('[data-rebind="fly"]').click();
     await expect(status).toHaveText(press(locale));
     // The open controls panel covers the custom picker, so drive the native select it wraps (same change handler).

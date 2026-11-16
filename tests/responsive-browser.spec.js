@@ -163,14 +163,14 @@ for (const [width, height] of [[844, 390], [667, 375]]) {
       expect(Math.abs(await bottomOf('#start-button') - (height - 10)), 'no toolbar: Start keeps its 10px edge').toBeLessThanOrEqual(1);
       const bar = 56;
       await page.evaluate(px => document.body.style.setProperty('--browser-bar', `${px}px`), bar);
-      const [tools, daily, dock, start, card, garage] = await Promise.all(['.aero-tools', '#daily-card', '#showcase-camera-dock',
+      const [tools, daily, dock, start, card, garage] = await Promise.all(['.toolbar', '#daily-card', '#showcase-camera-dock',
         '#start-button', '#lobby-tracks-toggle', '#garage-button'].map(selector => page.locator(selector).first().boundingBox()));
       expect(Math.abs(start.y + start.height - (height - bar - 10)), 'Start sits 10px above the toolbar').toBeLessThanOrEqual(1);
       expect(Math.abs(garage.y + garage.height - (start.y + start.height)), 'pinned row follows Start').toBeLessThanOrEqual(2);
       expect(card.y + card.height, 'pinned row covers the track cards').toBeLessThanOrEqual(garage.y);
       expect(dock.y + dock.height).toBeLessThanOrEqual(start.y);
       expect(daily.y + daily.height).toBeLessThanOrEqual(dock.y);
-      expect(daily.y, 'rail runs into the AIRFLOW / VFX row').toBeGreaterThanOrEqual(tools.y + tools.height);
+      expect(daily.y, 'rail runs into the toolbar').toBeGreaterThanOrEqual(tools.y + tools.height);
       await page.keyboard.press('v');
       await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
       expect(await bottomOf('#start-button'), 'AIRFLOW Start sits above the toolbar').toBeLessThanOrEqual(height - bar - 10);
@@ -195,7 +195,7 @@ for (const [name, width, height, insets] of [['Chrome', 743, 340, { left: 62, ri
       const edge = Math.max(10, insets?.bottom ?? 0);
       for (const locale of ['en', 'zh-TW']) {
         await page.locator('#locale-select').selectOption(locale, { force: true });
-        const [tools, daily, dock, start, card, garage, panel] = await Promise.all(['.aero-tools', '#daily-card',
+        const [tools, daily, dock, start, card, garage, panel] = await Promise.all(['.toolbar', '#daily-card',
           '#showcase-camera-dock', '#start-button', '.track-select button', '#garage-button', '#intro']
           .map(selector => page.locator(selector).first().boundingBox()));
         await page.screenshot({ path: test.info().outputPath(`home-${width}x${height}-${locale}.png`), animations: 'disabled' });
@@ -205,8 +205,8 @@ for (const [name, width, height, insets] of [['Chrome', 743, 340, { left: 62, ri
         expect(panel.x, `${locale} panel clears the notch`).toBeGreaterThanOrEqual(Math.max(16, insets?.left ?? 0) - 1);
         expect(dock.y + dock.height, `${locale} dock above Start`).toBeLessThanOrEqual(start.y);
         expect(daily.y + daily.height, `${locale} daily above dock`).toBeLessThanOrEqual(dock.y);
-        expect(daily.y, `${locale} rail runs into the AIRFLOW / VFX row`).toBeGreaterThanOrEqual(tools.y + tools.height);
-        if (card) expect(card.y + card.height, `${locale} pinned row covers the track cards`).toBeLessThanOrEqual(garage.y);
+        expect(daily.y, `${locale} rail runs into the toolbar`).toBeGreaterThanOrEqual(tools.y + tools.height);
+        if (card) expect(card.y + card.height, `${locale} pinned row covers the race picker`).toBeLessThanOrEqual(garage.y);
         else await expect(page.locator('#lobby-tracks-toggle')).toHaveAttribute('aria-expanded', 'false');
         expect(start.height, `${locale} Start stays a usable tap target`).toBeGreaterThanOrEqual(44);
       }

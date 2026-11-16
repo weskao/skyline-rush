@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -55,9 +56,9 @@ for (const [name, viewport, hasTouch] of [
     await choosePreset(page, 'Night');
     await expect(page.locator('#ghost-status')).toContainText('01:20.00');
     const rules = await page.evaluate(() => JSON.stringify(window.gameplay.race.config));
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#ghost-enabled').check();
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     const scene = await page.evaluate(() => ({
