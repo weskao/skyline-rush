@@ -9,8 +9,8 @@ const MAX_LINES = 400;
 // A data catalog (translations) may stay large; everything else here is debt to split further.
 const LEGACY_CEILINGS = {
   'src/main.js': 670,
-  'src/world.js': 995,
-  'src/game.js': 488,
+  'src/world.js': 994,
+  'src/game.js': 485,
   'src/world-tour-scene.js': 453,
   'src/CollectiblesGuide.vue': 437,
   'src/locales/ui.ts': 1143, // ratchet down after extracting tutorial strings; never raise this limit

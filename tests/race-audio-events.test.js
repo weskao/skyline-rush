@@ -27,6 +27,21 @@ test('countdown ticks once per new second and GO fires once on the switch to rac
   assert.deepEqual(cues(events.update(race, true)), []);
 });
 
+test('the starting light waits for scenery before playing the first tick', () => {
+  const events = createRaceAudioEvents(), race = createRace('neon');
+  race.phase = 'countdown';
+  assert.deepEqual(cues(events.update(race, true, null, true)), []);
+  assert.deepEqual(cues(events.update(race, true, null, false)), ['tick']);
+});
+
+test('Free Drive has no countdown audio while it waits for scenery', () => {
+  const events = createRaceAudioEvents(), race = createRace('neon', { mode: 'free' });
+  race.phase = 'countdown';
+  assert.deepEqual(cues(events.update(race, true, null, true)), []);
+  race.phase = 'racing';
+  assert.deepEqual(cues(events.update(race, true, null, false)), []);
+});
+
 test('a new race asks for silence once and does not replay pickups already taken', () => {
   const events = createRaceAudioEvents();
   const race = racing();

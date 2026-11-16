@@ -1,4 +1,5 @@
 import { advanceCountdown } from './frame-pacing.ts';
+export { startRace } from './frame-pacing.ts';
 import { classicCornerPush } from './classic-road-routes.ts';
 import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
 import { earnsAirChain } from './air-chain.ts';
@@ -211,10 +212,6 @@ function collectRing(race, ring, index) {
     car.score += 500;
     addNitro(car, PERFECT_LINE_NITRO);
   }
-}
-
-export function startRace(race) {
-  if (race.phase === 'ready') race.phase = race.mode === 'free' ? 'racing' : 'countdown';
 }
 
 export function useHeldItem(race) {

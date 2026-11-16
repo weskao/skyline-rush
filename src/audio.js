@@ -313,7 +313,7 @@ export function createSound(gapWarning = () => null) {
     setHidden,
     running: () => context?.state === 'running',
     diagnostics: () => ({ state: context?.state ?? 'none', hidden, documentHidden: pageHidden(), musicOn, currentTime: context?.currentTime ?? null }),
-    update(race) {
+    update(race, waitingForScenery = false) {
       const car = race.player;
       current = race;
       // A single resume() on return can fail; retry once a second (allocation-free per frame) after the first gesture.
@@ -323,7 +323,7 @@ export function createSound(gapWarning = () => null) {
       }
       const audible = enabled && !hidden && context?.state === 'running';
       const { silence, sounds, active, boosting } = raceEvents.update(race, audible,
-        race.phase === 'racing' ? gapWarning(race) : null);
+        race.phase === 'racing' ? gapWarning(race) : null, waitingForScenery);
       if (silence) silenceCues();
       for (const sound of sounds) {
         if (typeof sound === 'string') cue(sound);

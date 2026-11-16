@@ -14,7 +14,7 @@ import { createKtx2Provider } from './garage-model.ts';
 import { coastRoadFiles, coastRoadTier, coastWetness, createCoastRoadMaterial, type CoastRoad, type ReflectionUniforms } from './coast-road-material.ts';
 import { createWetReflection, wetReflectionStrength } from './wet-reflection.ts';
 import { withGreenery } from './coast-greenery.ts';
-import { trackLook, type TrackLook } from './track-look.ts';
+import { detailedTrackLook, trackLook, type TrackLook } from './track-look.ts';
 import type { ClassicRoad } from './classic-road-routes.ts';
 import { createNeonScenery, type NeonScenery } from './neon-scenery.ts';
 
@@ -75,24 +75,33 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
 
   /** One GLB a track's look entry names under `slot`: fetched once on Medium+, in the scene only from outside a race on. */
   function lateModel(id: string, slot: 'scenery' | 'boats' | 'landmarks', status: string, attach: (source: Object3D) => void, detach: () => void) {
-    let requested = false, handle: ModelHandle | null = null;
+    let requested = false, failed = false, handle: ModelHandle | null = null;
+    const fallback = (reason: string): void => { failed = true; dataset[status] = `fallback:${reason}`; };
     const part = {
       attached: false,
-      wanted: (look: TrackLook | undefined, quality: VfxQuality): boolean => look?.[slot] === id && quality !== 'low',
+      wanted: (look: TrackLook | undefined): boolean => look?.[slot] === id,
+      pending: (look: TrackLook | undefined): boolean => part.wanted(look) && !part.attached && !failed,
       /** True when the model just joined the scene: its programs need the warmup. */
-      update(look: TrackLook | undefined, quality: VfxQuality, racing: boolean): boolean {
-        if (!requested && part.wanted(look, quality)) {
+      update(look: TrackLook | undefined, racing: boolean): boolean {
+        if (!part.wanted(look)) return false;
+        if (!requested) {
           requested = true;
           dataset[status] = 'loading';
           cache.load(id, { signal: controller.signal }).then(result => {
             if (result.kind === 'model') { handle = result; return; }
-            dataset[status] = `fallback:${result.reason}`;
+            fallback(result.reason);
             console.warn(`[coast-assets] ${id} → ${result.fallback} (${result.reason})`);
-          }, () => {}); // AbortError after dispose
+          }, () => { if (!controller.signal.aborted) fallback('load'); });
         }
         if (!handle || part.attached) return false;
         if (racing) { dataset[status] = 'waiting-for-race-end'; return false; }
-        attach(handle.instance());
+        try { attach(handle.instance()); }
+        catch (error) {
+          detach(); handle.release(); handle = null;
+          fallback('attach');
+          console.warn(`[coast-assets] ${id} → procedural (${error})`);
+          return false;
+        }
         part.attached = true;
         dataset[status] = 'attached';
         return true;
@@ -111,6 +120,7 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
   const boats = boatClock && lateModel('coast-boats', 'boats', 'coastBoats', source => scenery.attachBoats(source, boatClock), () => scenery.detachBoats());
   const cityKit = neon && lateModel('neon-city', 'scenery', 'neonCity', source => neon.attachKit('city', source), () => neon.detachKit('city'));
   const landmarks = neon && lateModel('neon-landmarks', 'landmarks', 'neonLandmarks', source => neon.attachKit('landmarks', source), () => neon.detachKit('landmarks'));
+  const requiredScenery = [scan, cityKit, landmarks];
 
   function loadRoad(id: string, tier: MaterialTier, key: string, { load, anisotropy }: Road, failed: () => void): void {
     roads.set(key, 'loading');
@@ -177,20 +187,24 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
   }
 
   return {
+    /** Required scenery joins the starting grid before racing, or settles to the procedural fallback. */
+    sceneryPending(trackId: string, quality: VfxQuality): boolean {
+      const look = detailedTrackLook(trackId, quality);
+      return requiredScenery.some(model => model?.pending(look));
+    },
     /** Per frame; true when new materials joined the scene and the caller must run its shader warmup. */
     update(trackId: string, quality: VfxQuality, racing: boolean, preset = 'track', ultra = false, route?: ClassicRoad, distance = 0, seed?: number): boolean {
-      const look = trackLook(trackId), onScan = scan.wanted(look, 'high'); // this track's look draws the scan coast
-      const onKit = !!cityKit?.wanted(look, 'high'); // this track's look draws the Neon kits
-      const joined = scan.update(look, quality, racing), sailing = boats?.update(look, quality, racing) ?? false;
-      const built = cityKit?.update(look, quality, racing) ?? false, marked = landmarks?.update(look, quality, racing) ?? false;
+      const look = detailedTrackLook(trackId, quality);
+      const joined = scan.update(look, racing), sailing = boats?.update(look, racing) ?? false;
+      const built = cityKit?.update(look, racing) ?? false, marked = landmarks?.update(look, racing) ?? false;
       // All or nothing: half a kit never replaces the procedural city. `route` is the authored loop (not practice).
-      const kitted = onKit && quality !== 'low' && !!route && cityKit!.attached && landmarks!.attached;
-      const drawn = scan.attached && onScan && quality !== 'low' || kitted;
+      const kitted = !!route && !!cityKit?.attached && cityKit.wanted(look) && !!landmarks?.attached;
+      const drawn = scan.attached && scan.wanted(look) || kitted;
       if (mountains) mountains.material.visible = !drawn;
-      if (city && (onScan || onKit)) city.visible = !drawn; // world.js sets it on a track change only
+      if (city && trackLook(trackId)?.scenery) city.visible = !drawn; // world.js sets it on a track change only
       if (drawn !== bare) show(towers, !(bare = drawn));
       if (kitted !== dressed) show(replaced, !(dressed = kitted));
-      if (kitted) neon!.update(route!, distance, quality, seed); else neon?.hide();
+      if (kitted) neon?.update(route, distance, quality, seed); else neon?.hide();
       sky?.update(trackId, preset, quality, ultra); // its program exists from creation: nothing to warm up
       sea?.update(trackId, preset, quality); // after the sky: the water shows only under the dome it mirrors
       const laid = updateGround(look, quality, racing, preset, ultra);

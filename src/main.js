@@ -59,9 +59,6 @@ import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 import { setupCupRecovery } from './cup-recovery-ui.ts';
 import { focusRace, setupRaceNavigation } from './race-navigation-ui.ts';
-/** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
-/** @typedef {import('./game-types.js').PlayerSnapshot} PlayerSnapshot */
-/** @typedef {import('./game-types.js').RivalSnapshot} RivalSnapshot */
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
 const sound = createSound(race => gapChargeWarning(race)?.from ?? null);
 createApp(App).provide('game-audio-cue', sound.cue).mount('#app');
@@ -144,6 +141,7 @@ const hud = createRaceHud({
   timeTrialGhost: race => ghosts.mode(race),
   isAutoThrottle: () => autoThrottle,
   getGoUntil: () => goUntil,
+  waitingForScenery: () => world?.trackSceneryPending(race) ?? false,
   setFly: on => controls.setFly(on),
   updatePadHint: (phase, elapsed) => touchUI.updatePadHint(phase, elapsed),
   motionOptions, touchPreference, reducedMotion,
@@ -208,7 +206,7 @@ const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue:
   resume: saved => {
     cup = saved; daily = null; sprintSeries = null; stunt = null;
     raceSelect.restoreCup(saved);
-    controls.clear(); leaveIntro(); startRace(race); focusRace(); sound.cue('ui');
+    controls.clear(); leaveIntro(); startRace(race, world.trackSceneryPending(race)); focusRace(); sound.cue('ui');
   },
 });
 const showTracks = () => { raceSelect.showTracks(); cupRecovery.refresh(); };
@@ -300,7 +298,7 @@ function start() {
   if (race.mode === 'custom') saveRecentCustom(undefined, race.trackId, race.config);
   raceSelect.rememberTrack(race.trackId);
   leaveIntro();
-  startRace(race);
+  startRace(race, world.trackSceneryPending(race));
   sound.cue('ui');
   focusRace();
 }
@@ -325,8 +323,8 @@ function restart(trackId = race.trackId) {
   if (stunt && race.mode === 'stunt') race.stuntLimit = stuntHeatLimit(stunt);
   hud.resetMemory();
   goUntil = 0;
-  startRace(race);
-  sound.update(race);
+  startRace(race, world.trackSceneryPending(race));
+  sound.update(race, world.trackSceneryPending(race));
   focusRace();
 }
 
@@ -507,7 +505,7 @@ function phaseText() {
 function updateUI(now, input) {
   raceSelect.raceRouteMap().updateDrivers([{ id: 'YOU', distance: race.player.distance, x: race.player.x, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance, x: r.x }))], race.course);
   if (previousPhase !== race.phase) {
-    if (previousPhase === 'countdown' && race.phase === 'racing') goUntil = now + 0.8;
+    if (previousPhase === 'countdown' && race.phase === 'racing' && race.mode !== 'free') goUntil = now + 0.8;
     phaseUI();
     if (race.phase === 'countdown' && previousPhase !== 'paused') enter(ui.countdown, 'translateY(-24px)');
     if (race.phase === 'countdown') notice.hide(); // never over the race view
@@ -542,8 +540,10 @@ try {
     if (motionRace !== race) { motionRace = race; accumulator = 0; captureRaceMotion(race, previousMotion); }
     const countingDown = race.phase === 'countdown';
     const due = drainSteps(accumulator, countingDown ? 0 : dt); accumulator = due.accumulator;
-    // A slow draw must not stretch the starting countdown. The fixed-step clock still owns movement after GO.
-    if (countingDown && previousPhase === 'countdown' && !document.hidden) advanceCountdown(race, Math.max(0, rawDelta));
+    // Count elapsed seconds after the track scene has attached and warmed on a rendered frame.
+    if (countingDown && previousPhase === 'countdown' && !document.hidden && !world.trackSceneryPending(race)) {
+      advanceCountdown(race, Math.max(0, rawDelta));
+    }
     const input = controls.read();
     if (tutorial) prepareTutorialInput(input, tutorial.step);
     else {
@@ -574,7 +574,7 @@ try {
       world.render(race, fps.takeElapsed(), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed), renderMotion);
       fps.completeRender(performance.now() - renderStarted);
     }
-    sound.update(race);
+    sound.update(race, countingDown && world.trackSceneryPending(race));
     hudElapsed += dt; if (hudElapsed >= 0.075 || previousPhase !== race.phase) {
       updateUI(now / 1000, input); if (tutorial) renderTutorial();
       hudElapsed = 0;

@@ -1,3 +1,9 @@
+# 2026-11-16 — Coast and Neon scenery at the starting grid
+
+- [x] RED: with the unlocked Vite server, phone portrait at High entered Neon Downtown before its held landmark GLB could attach. The old procedural city stayed in the race.
+- [x] The shared track look selects lightweight scenery on Low and the registered look on Medium and above. Wait for required scenery to attach and warm on the starting grid, or continue on the procedural scene if it fails. Free Drive still starts from rest without the 3–2–1 cue.
+- [ ] Physical iOS/Android review, full browser and World Tour suites and exact-commit GitHub quality gate.
+
 # 2026-11-16 — Graphics quality without preview URL flags
 
 - [x] RED: Vite redirected with `DEV_3D=1`, the Roadster was query-gated, a plain link had no Ultra option in Chromium, and dropping to Low retained Neon's HDRI exposure.

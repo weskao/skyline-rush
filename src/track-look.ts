@@ -1,6 +1,7 @@
 // Which tracks have dedicated materials and scenery at Medium and above. The lighting plan (coast-lighting.ts)
 // and the asset host (coast-assets.ts) read this entry, so a track opts in here, not with a second copy of them.
 import type { CoastEnvName } from './coast-lighting.ts';
+import type { VfxQuality } from './vfx-settings.ts';
 
 export interface TrackLook {
   /** Race visual preset → HDRI variant; a preset not listed keeps RoomEnvironment. */
@@ -25,3 +26,7 @@ const TRACK_LOOKS: Readonly<Record<string, TrackLook>> = {
 };
 
 export const trackLook = (trackId: string): TrackLook | undefined => Object.hasOwn(TRACK_LOOKS, trackId) ? TRACK_LOOKS[trackId] : undefined;
+
+/** Shared quality gate for the detailed look of any registered track. */
+export const detailedTrackLook = (trackId: string, quality: VfxQuality): TrackLook | undefined =>
+  quality === 'low' ? undefined : trackLook(trackId);
