@@ -31,6 +31,9 @@ exactly. Topics whose work often starts before a scoped file is open:
 | Tutorial lessons, cues or transitions | `docs/tutorial-driving.md` |
 | Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
 
+Player copy (What's New, locales, store text, captions) names a track exactly as `TRACK_NAMES` in
+`src/i18n.ts` does, in en and zh-TW; never a paraphrase or a second table. Renaming a track changes that table.
+
 Every course needs its own in-race song, and that song must not match any other course.
 It plays after the race starts. Selecting the course on the home screen keeps the shared intro.
 
