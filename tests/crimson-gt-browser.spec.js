@@ -471,7 +471,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
             artFill: (maxX - minX + 1) / canvas.width };
         });
         expect(bounds.clipped).toBe(0);
-        if (id === 'crimson-gt') expect(bounds.artFill).toBeGreaterThanOrEqual(0.9);
+        expect(bounds.artFill).toBeGreaterThanOrEqual(0.9);
         expect(bounds.height).toBeGreaterThanOrEqual(44);
         expect(bounds.left).toBeGreaterThanOrEqual(0);
         expect(bounds.right).toBeLessThanOrEqual(viewport.width);
