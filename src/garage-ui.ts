@@ -62,6 +62,7 @@ export function setupGarageUI({
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const garageScreen = $<HTMLDialogElement>('#garage-screen');
   const preview = $('#garage-preview');
+  const previewControls = $('#garage-screen .garage-preview-controls');
   // One dock (unique id), borrowed from the home screen while the Garage is open, like #world.
   const dock = $('#showcase-camera-dock');
   const dockParent = dock.parentElement!, dockNext = dock.nextSibling;
@@ -261,7 +262,7 @@ export function setupGarageUI({
     garageScreen.showModal();
     cue?.('ui');
     preview.append($('#world'));
-    preview.after(dock);
+    previewControls.append(dock);
     world.resize();
     previewPaint(getEquippedPaint());
     world.setGarageLighting?.(garageStudioView.lighting);

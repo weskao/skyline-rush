@@ -31,7 +31,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { 
     await expect(flight).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-garage-mode', 'flight');
     await wing.click();
-    await expect(wing).toHaveAttribute('aria-pressed', 'true');
+    await expect(wing).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-garage-wing', 'true');
     await page.waitForTimeout(900); // wing travel + hover wheels fold
     // Keep the whole car legible while leaving room for the actual track scenery.
