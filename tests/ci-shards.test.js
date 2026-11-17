@@ -21,7 +21,7 @@ test('listedTests yields the testDir-relative "file › describe › title" form
 });
 
 test('listedTests names titles that Playwright would split or trim in a test list', () => {
-  for (const [group, title] of [['Studio', 'angle ‹ › stepper'], ['Camera › Studio', 'angle stepper'], ['Studio', ' angle stepper']]) {
+  for (const [group, title] of [['Studio', 'angle ‹ › stepper'], ['Camera › Studio', 'angle stepper'], ['Studio', ' angle stepper'], ['', 'angle stepper']]) {
     const report = { suites: [{ title: 'camera.spec.js', suites: [{ title: group, specs: [{ file: 'camera.spec.js', title }] }] }] };
     assert.throws(() => listedTests(report), /camera\.spec\.js.*cannot be matched by Playwright --test-list/);
   }

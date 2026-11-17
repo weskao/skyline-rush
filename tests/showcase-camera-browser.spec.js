@@ -22,7 +22,7 @@ test('ready screen offers a discoverable camera dock across all tracks',async({p
   }
 });
 
-test.describe(() => {
+test.describe('automatic first-launch quality', () => {
 test.use({ lowGraphics: false }); // the notice only shows for an automatic first-launch choice
 test('desktop camera control is not covered by the device quality notice',async({page})=>{
   await page.setViewportSize({width:1440,height:900});
