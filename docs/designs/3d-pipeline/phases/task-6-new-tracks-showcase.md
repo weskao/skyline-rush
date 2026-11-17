@@ -15,6 +15,8 @@ Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../.
 | Stormline Megacity | bottom row, 3rd | neon towers, rain-slick road reflections, lightning |
 | Frostbite | bottom row, 4th | ice cliffs, frozen waterfall, snow spray and frost on the car |
 
+The [track artwork index](../track-profiles/README.md#phase-45-六張新賽道) includes a redrawn concept overview and four environment views per track, plus CourseGraph route plans, longitudinal profiles, and representative cross-sections. The running-game launch captures remain in the checklist below.
+
 ## By project (committed once)
 - [ ] Wait until shared pipeline is validated and integrated according to repository branch policy. Don't change sibling map branches from this working branch.
 - [ ] Define each map's unique foreground landmarks, reference images, licensed texture sets, world-space scale and deterministic chunk/LOD budgets with its owner.

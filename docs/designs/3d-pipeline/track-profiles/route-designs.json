@@ -1,0 +1,1288 @@
+[
+  {
+    "number": 3,
+    "id": "canyon",
+    "name": "Canyon Skyway",
+    "zh": "峽谷天橋",
+    "difficulty": 3,
+    "color": "#e9a267",
+    "signature": "沿紅砂岩台地起跑，進入斷裂直梁橋，穿過沿岩壁切出的低線，最後以峽谷回頭彎和高原長彎收尾。",
+    "skill": "先讓玩家看見斷點與落點，再考驗岩落區煞車與順風出彎。保留 FLY 或精準跳台的越隙玩法。",
+    "knots": [
+      [
+        0,
+        5,
+        55
+      ],
+      [
+        900,
+        23,
+        70
+      ],
+      [
+        1800,
+        74,
+        89
+      ],
+      [
+        2600,
+        17,
+        94
+      ],
+      [
+        3450,
+        -43,
+        103
+      ],
+      [
+        4300,
+        -108,
+        83
+      ],
+      [
+        4950,
+        -25,
+        59
+      ],
+      [
+        5700,
+        71,
+        49
+      ],
+      [
+        6500,
+        126,
+        28
+      ],
+      [
+        7400,
+        56,
+        46
+      ],
+      [
+        8300,
+        -18,
+        74
+      ],
+      [
+        9100,
+        -8,
+        98
+      ],
+      [
+        10000,
+        29,
+        109
+      ]
+    ],
+    "sectors": [
+      [
+        0,
+        "Plateau entry"
+      ],
+      [
+        1600,
+        "Cliff ledge"
+      ],
+      [
+        3400,
+        "Broken slab"
+      ],
+      [
+        5200,
+        "Rock-cut hairpins"
+      ],
+      [
+        7550,
+        "Mesa sweep"
+      ],
+      [
+        9150,
+        "Finish plateau"
+      ]
+    ],
+    "cross": {
+      "station": 3700,
+      "label": "Straight slab above the dry ravine",
+      "ground": [
+        [
+          -30,
+          9
+        ],
+        [
+          -23,
+          8
+        ],
+        [
+          -20,
+          -9
+        ],
+        [
+          -17,
+          -17
+        ],
+        [
+          -11,
+          -27
+        ],
+        [
+          8,
+          -31
+        ],
+        [
+          17,
+          -24
+        ],
+        [
+          23,
+          -16
+        ],
+        [
+          30,
+          -8
+        ]
+      ],
+      "structure": "piers"
+    },
+    "scenes": [
+      "cliff-ledge",
+      "broken-slab",
+      "rock-cut-hairpin",
+      "mesa-sweep"
+    ],
+    "designDistanceM": 10000,
+    "elevationRangeM": [
+      28.0,
+      109.0
+    ],
+    "computedGradePercentRange": [
+      -4.35,
+      3.42
+    ]
+  },
+  {
+    "number": 4,
+    "id": "aurora",
+    "name": "Aurora Pass",
+    "zh": "極光山道",
+    "difficulty": 4,
+    "color": "#72e8cb",
+    "signature": "冰湖快線轉入針葉林爬坡，穿過避雪直廊，從極光下的雪鞍下坡。",
+    "skill": "外側冰帶分段出現，保留可預判的高抓地線。後半段用坡度和視野壓縮提高控速難度。",
+    "knots": [
+      [
+        0,
+        15,
+        25
+      ],
+      [
+        1000,
+        31,
+        28
+      ],
+      [
+        1800,
+        -21,
+        42
+      ],
+      [
+        2450,
+        -63,
+        62
+      ],
+      [
+        3100,
+        -15,
+        94
+      ],
+      [
+        3950,
+        51,
+        128
+      ],
+      [
+        4850,
+        27,
+        170
+      ],
+      [
+        5800,
+        -29,
+        201
+      ],
+      [
+        6500,
+        -99,
+        187
+      ],
+      [
+        7350,
+        -51,
+        157
+      ],
+      [
+        8100,
+        39,
+        117
+      ],
+      [
+        8900,
+        62,
+        74
+      ],
+      [
+        10000,
+        14,
+        47
+      ]
+    ],
+    "sectors": [
+      [
+        0,
+        "Frozen lake"
+      ],
+      [
+        1990,
+        "Fir slalom"
+      ],
+      [
+        4000,
+        "Snow gallery"
+      ],
+      [
+        5900,
+        "Aurora saddle"
+      ],
+      [
+        7690,
+        "Ice descent"
+      ],
+      [
+        9400,
+        "Forest finish"
+      ]
+    ],
+    "cross": {
+      "station": 4520,
+      "label": "Snow gallery on the uphill cut",
+      "ground": [
+        [
+          -30,
+          -15
+        ],
+        [
+          -22,
+          -10
+        ],
+        [
+          -16,
+          -4
+        ],
+        [
+          -11,
+          -1
+        ],
+        [
+          11,
+          -1
+        ],
+        [
+          14,
+          0
+        ],
+        [
+          19,
+          7
+        ],
+        [
+          26,
+          14
+        ],
+        [
+          30,
+          19
+        ]
+      ],
+      "structure": "gallery"
+    },
+    "scenes": [
+      "black-ice-lakeshore",
+      "fir-lined-s-bends",
+      "avalanche-gallery",
+      "aurora-switchback"
+    ],
+    "designDistanceM": 10000,
+    "elevationRangeM": [
+      25.0,
+      201.0
+    ],
+    "computedGradePercentRange": [
+      -6.02,
+      5.35
+    ]
+  },
+  {
+    "number": 5,
+    "id": "spiral",
+    "name": "Sky Spiral",
+    "zh": "天際螺旋",
+    "difficulty": 5,
+    "color": "#6dc9fd",
+    "signature": "用同一座塔的傾斜螺旋爬升保留原有輪廓，再加入上層平台、分離式跳台和雲端 S 彎。",
+    "skill": "保留三次跳台節奏。每次落地後留出直線回正距離，最後才讓飛行落地接煞車與轉向。",
+    "knots": [
+      [
+        0,
+        0,
+        15
+      ],
+      [
+        850,
+        8,
+        16
+      ],
+      [
+        1500,
+        4,
+        28
+      ],
+      [
+        1850,
+        0,
+        50
+      ],
+      [
+        2200,
+        90,
+        76
+      ],
+      [
+        2550,
+        180,
+        102
+      ],
+      [
+        2900,
+        270,
+        128
+      ],
+      [
+        3250,
+        360,
+        154
+      ],
+      [
+        3750,
+        366,
+        168
+      ],
+      [
+        4600,
+        392,
+        189
+      ],
+      [
+        5350,
+        341,
+        176
+      ],
+      [
+        6100,
+        307,
+        151
+      ],
+      [
+        6960,
+        353,
+        130
+      ],
+      [
+        7720,
+        417,
+        102
+      ],
+      [
+        8490,
+        374,
+        81
+      ],
+      [
+        9170,
+        334,
+        65
+      ],
+      [
+        10000,
+        322,
+        60
+      ]
+    ],
+    "sectors": [
+      [
+        0,
+        "Tower approach"
+      ],
+      [
+        1850,
+        "Tower helix"
+      ],
+      [
+        3350,
+        "Upper terrace"
+      ],
+      [
+        4600,
+        "Launch decks"
+      ],
+      [
+        6870,
+        "Cloud slalom"
+      ],
+      [
+        9150,
+        "Terminal"
+      ]
+    ],
+    "cross": {
+      "station": 2600,
+      "label": "Banked deck supported from the tower",
+      "ground": [],
+      "structure": "outrigger"
+    },
+    "scenes": [
+      "tower-approach",
+      "banked-tower-helix",
+      "launch-gap",
+      "cloud-slalom"
+    ],
+    "designDistanceM": 10000,
+    "elevationRangeM": [
+      15.0,
+      189.0
+    ],
+    "computedGradePercentRange": [
+      -4.01,
+      8.51
+    ]
+  },
+  {
+    "number": 6,
+    "id": "taipei",
+    "name": "Taipei Heritage",
+    "zh": "台北古都",
+    "difficulty": 6,
+    "color": "#eabf7a",
+    "signature": "總統府前起跑，繞行城門廣場，穿過寺廟街區和節慶路障，沿河堤加速收尾。",
+    "skill": "用 90 度街廓與減速彎取代景觀橋。寺廟與城門保留在道路側面，直角彎前預留煞車視距。",
+    "knots": [
+      [
+        0,
+        0,
+        10
+      ],
+      [
+        1300,
+        0,
+        10
+      ],
+      [
+        1700,
+        12,
+        12
+      ],
+      [
+        2100,
+        98,
+        13
+      ],
+      [
+        2780,
+        98,
+        12
+      ],
+      [
+        3180,
+        180,
+        11
+      ],
+      [
+        3690,
+        175,
+        12
+      ],
+      [
+        4160,
+        102,
+        14
+      ],
+      [
+        4810,
+        90,
+        13
+      ],
+      [
+        5280,
+        13,
+        10
+      ],
+      [
+        5850,
+        -10,
+        8
+      ],
+      [
+        6260,
+        -75,
+        7
+      ],
+      [
+        6850,
+        -80,
+        8
+      ],
+      [
+        7280,
+        -13,
+        11
+      ],
+      [
+        8130,
+        -7,
+        13
+      ],
+      [
+        8840,
+        5,
+        14
+      ],
+      [
+        10000,
+        54,
+        13
+      ]
+    ],
+    "sectors": [
+      [
+        0,
+        "Civic boulevard"
+      ],
+      [
+        1700,
+        "City gate"
+      ],
+      [
+        3300,
+        "Historic lanes"
+      ],
+      [
+        5000,
+        "Temple chicane"
+      ],
+      [
+        6610,
+        "Flood-wall run"
+      ],
+      [
+        9000,
+        "Civic finish"
+      ]
+    ],
+    "cross": {
+      "station": 5500,
+      "label": "Temple chicane at street level",
+      "ground": [
+        [
+          -30,
+          0
+        ],
+        [
+          -12,
+          0
+        ],
+        [
+          -11,
+          -0.4
+        ],
+        [
+          11,
+          -0.4
+        ],
+        [
+          12,
+          0
+        ],
+        [
+          30,
+          0
+        ]
+      ],
+      "structure": "plaza"
+    },
+    "scenes": [
+      "presidential-office-boulevard",
+      "historic-city-gate",
+      "temple-market-chicane",
+      "riverside-return"
+    ],
+    "designDistanceM": 10000,
+    "elevationRangeM": [
+      7.0,
+      14.0
+    ],
+    "computedGradePercentRange": [
+      -0.79,
+      0.88
+    ]
+  },
+  {
+    "number": 7,
+    "id": "tokyo",
+    "name": "Tokyo Afterdark",
+    "zh": "東京夜行",
+    "difficulty": 7,
+    "color": "#fb91d8",
+    "signature": "雨夜十字路口接高密度街區，利用平頂電車下穿的明暗轉折，出彎望向東京塔。",
+    "skill": "從第一個交通閘門建立反應節拍，後段將施工縮道和連續變向分開，讓濕地刻線能看清。",
+    "knots": [
+      [
+        0,
+        0,
+        15
+      ],
+      [
+        1000,
+        -4,
+        15
+      ],
+      [
+        1400,
+        -81,
+        14
+      ],
+      [
+        2220,
+        -75,
+        19
+      ],
+      [
+        2690,
+        -155,
+        22
+      ],
+      [
+        3120,
+        -140,
+        20
+      ],
+      [
+        3600,
+        -48,
+        15
+      ],
+      [
+        4200,
+        20,
+        12
+      ],
+      [
+        4650,
+        -12,
+        7
+      ],
+      [
+        5210,
+        -80,
+        3
+      ],
+      [
+        5760,
+        -81,
+        4
+      ],
+      [
+        6220,
+        -12,
+        9
+      ],
+      [
+        6900,
+        60,
+        13
+      ],
+      [
+        7380,
+        93,
+        19
+      ],
+      [
+        7820,
+        34,
+        25
+      ],
+      [
+        8500,
+        -52,
+        24
+      ],
+      [
+        9040,
+        -26,
+        23
+      ],
+      [
+        10000,
+        32,
+        25
+      ]
+    ],
+    "sectors": [
+      [
+        0,
+        "Scramble crossing"
+      ],
+      [
+        1450,
+        "Signal gates"
+      ],
+      [
+        3000,
+        "Work-zone kinks"
+      ],
+      [
+        4800,
+        "Rail underpass"
+      ],
+      [
+        6520,
+        "Tower approach"
+      ],
+      [
+        8180,
+        "Rain sprint"
+      ]
+    ],
+    "cross": {
+      "station": 5350,
+      "label": "Flat railway deck with clear vehicle envelope",
+      "ground": [
+        [
+          -30,
+          0
+        ],
+        [
+          -12,
+          0
+        ],
+        [
+          -11,
+          -1
+        ],
+        [
+          11,
+          -1
+        ],
+        [
+          12,
+          0
+        ],
+        [
+          30,
+          0
+        ]
+      ],
+      "structure": "rail-deck"
+    },
+    "scenes": [
+      "scramble-crossing",
+      "construction-s-bends",
+      "flat-rail-underpass",
+      "tower-sprint"
+    ],
+    "designDistanceM": 10000,
+    "elevationRangeM": [
+      3.0,
+      25.0
+    ],
+    "computedGradePercentRange": [
+      -1.28,
+      1.82
+    ]
+  },
+  {
+    "number": 8,
+    "id": "alpine",
+    "name": "Alpine Rail Pass",
+    "zh": "山岳鐵道",
+    "difficulty": 8,
+    "color": "#c0d7a1",
+    "signature": "道路與齒軌列車沿山腰分層並行，穿過岩壁洞口和防雪棚，再穿越雪崩坡下山。",
+    "skill": "上坡窄髮夾彎先考驗控速，後段在露天峭坡增加碎石與連續下坡壓力。列車保持在道路側邊的獨立高程。",
+    "knots": [
+      [
+        0,
+        8,
+        350
+      ],
+      [
+        740,
+        24,
+        380
+      ],
+      [
+        1520,
+        97,
+        424
+      ],
+      [
+        2060,
+        153,
+        466
+      ],
+      [
+        2800,
+        77,
+        519
+      ],
+      [
+        3320,
+        23,
+        560
+      ],
+      [
+        3850,
+        -68,
+        595
+      ],
+      [
+        4430,
+        1,
+        641
+      ],
+      [
+        5080,
+        84,
+        687
+      ],
+      [
+        5760,
+        120,
+        719
+      ],
+      [
+        6470,
+        17,
+        680
+      ],
+      [
+        7030,
+        -62,
+        620
+      ],
+      [
+        7700,
+        -130,
+        566
+      ],
+      [
+        8360,
+        -18,
+        523
+      ],
+      [
+        9080,
+        68,
+        477
+      ],
+      [
+        10000,
+        30,
+        438
+      ]
+    ],
+    "sectors": [
+      [
+        0,
+        "Valley climb"
+      ],
+      [
+        1400,
+        "Granite wall"
+      ],
+      [
+        3060,
+        "Cog railway"
+      ],
+      [
+        4310,
+        "Snow shed"
+      ],
+      [
+        5800,
+        "Avalanche chute"
+      ],
+      [
+        7880,
+        "Valley descent"
+      ]
+    ],
+    "cross": {
+      "station": 6460,
+      "label": "Open avalanche slope with separate railway",
+      "ground": [
+        [
+          -30,
+          -18
+        ],
+        [
+          -23,
+          -12
+        ],
+        [
+          -18,
+          -5
+        ],
+        [
+          -11,
+          -1
+        ],
+        [
+          11,
+          -1
+        ],
+        [
+          17,
+          1
+        ],
+        [
+          21,
+          7
+        ],
+        [
+          30,
+          14
+        ]
+      ],
+      "structure": "rail-side"
+    },
+    "scenes": [
+      "uphill-hairpin",
+      "granite-rail-portal",
+      "avalanche-chute",
+      "ridge-descent"
+    ],
+    "designDistanceM": 10000,
+    "elevationRangeM": [
+      350.0,
+      719.0
+    ],
+    "computedGradePercentRange": [
+      -11.98,
+      8.23
+    ]
+  },
+  {
+    "number": 9,
+    "id": "coastal",
+    "name": "Coastal Horizon",
+    "zh": "海岸天際",
+    "difficulty": 9,
+    "color": "#86d4ee",
+    "signature": "以白色燈塔、迎風海岬、海堤與背風海灣構成全程。路面貼合岩岸，沿海段拉開海霧與浪花的層次。",
+    "skill": "由開闊高速彎進入不同風向的海岬，揚浪與側風分開出現，最後以海堤外傾轉入低地回程。",
+    "knots": [
+      [
+        0,
+        16,
+        25
+      ],
+      [
+        920,
+        44,
+        31
+      ],
+      [
+        1750,
+        103,
+        54
+      ],
+      [
+        2450,
+        162,
+        84
+      ],
+      [
+        3150,
+        205,
+        103
+      ],
+      [
+        3610,
+        166,
+        92
+      ],
+      [
+        4400,
+        100,
+        61
+      ],
+      [
+        5200,
+        76,
+        39
+      ],
+      [
+        6030,
+        15,
+        20
+      ],
+      [
+        6800,
+        -34,
+        18
+      ],
+      [
+        7480,
+        24,
+        43
+      ],
+      [
+        8250,
+        88,
+        57
+      ],
+      [
+        9040,
+        41,
+        52
+      ],
+      [
+        10000,
+        -8,
+        29
+      ]
+    ],
+    "sectors": [
+      [
+        0,
+        "Coastal approach"
+      ],
+      [
+        1550,
+        "Lighthouse rise"
+      ],
+      [
+        2900,
+        "Windward headland"
+      ],
+      [
+        4700,
+        "Sea-wall banking"
+      ],
+      [
+        6650,
+        "Dune windbreak"
+      ],
+      [
+        8500,
+        "Sheltered bay"
+      ]
+    ],
+    "cross": {
+      "station": 5210,
+      "label": "Banked sea-wall turn above the surf",
+      "ground": [
+        [
+          -30,
+          -16
+        ],
+        [
+          -21,
+          -16
+        ],
+        [
+          -16,
+          -14
+        ],
+        [
+          -13,
+          -11
+        ],
+        [
+          -11,
+          -1
+        ],
+        [
+          11,
+          -1
+        ],
+        [
+          16,
+          4
+        ],
+        [
+          24,
+          8
+        ],
+        [
+          30,
+          11
+        ]
+      ],
+      "structure": "sea-wall"
+    },
+    "scenes": [
+      "lighthouse-rise",
+      "windward-headland",
+      "sea-wall-turn",
+      "sheltered-bay"
+    ],
+    "designDistanceM": 10000,
+    "elevationRangeM": [
+      18.0,
+      103.0
+    ],
+    "computedGradePercentRange": [
+      -4.36,
+      5.0
+    ]
+  },
+  {
+    "number": 10,
+    "id": "cosmic",
+    "name": "Cosmic Orbit",
+    "zh": "星際軌道",
+    "difficulty": 10,
+    "color": "#c8a6ff",
+    "signature": "在巨型行星、碎石帶與方形軌道站模組間競速，經過低重力飛行線、直肋超速通道與對接終點。",
+    "skill": "兩段低重力飛行都保留地面通路。太陽風、掃動屏障與飛行閘門分段輪替，最後考驗連續落地、閃避與選線。",
+    "knots": [
+      [
+        0,
+        10,
+        10
+      ],
+      [
+        750,
+        65,
+        20
+      ],
+      [
+        1390,
+        1,
+        48
+      ],
+      [
+        2080,
+        -88,
+        83
+      ],
+      [
+        2750,
+        -52,
+        112
+      ],
+      [
+        3430,
+        21,
+        125
+      ],
+      [
+        4150,
+        97,
+        154
+      ],
+      [
+        4760,
+        62,
+        145
+      ],
+      [
+        5400,
+        -37,
+        111
+      ],
+      [
+        6040,
+        -116,
+        88
+      ],
+      [
+        6700,
+        -66,
+        113
+      ],
+      [
+        7310,
+        36,
+        148
+      ],
+      [
+        7910,
+        116,
+        191
+      ],
+      [
+        8580,
+        54,
+        206
+      ],
+      [
+        9320,
+        -19,
+        194
+      ],
+      [
+        10000,
+        30,
+        177
+      ]
+    ],
+    "sectors": [
+      [
+        0,
+        "Station approach"
+      ],
+      [
+        1460,
+        "Debris weave"
+      ],
+      [
+        3410,
+        "Low-g flight gates"
+      ],
+      [
+        5000,
+        "Hyperdrive channel"
+      ],
+      [
+        6920,
+        "Solar-wind seam"
+      ],
+      [
+        8520,
+        "Docking finish"
+      ]
+    ],
+    "cross": {
+      "station": 4120,
+      "label": "Low-g flight gates beside the solid deck",
+      "ground": [],
+      "structure": "orbital"
+    },
+    "scenes": [
+      "debris-weave",
+      "low-gravity-flight",
+      "hyperdrive-channel",
+      "docking-sequence"
+    ],
+    "designDistanceM": 10000,
+    "elevationRangeM": [
+      10.0,
+      206.0
+    ],
+    "computedGradePercentRange": [
+      -6.4,
+      8.45
+    ]
+  }
+]
