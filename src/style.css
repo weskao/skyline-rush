@@ -2320,10 +2320,11 @@ body[data-race-mode="endless"] #race-route-map[data-streaming] { display: block;
 .impact-report[data-contact="recovery"], .impact-report[data-contact="shielded"] { border-color: #8cd5ef; color: #d8f6ff; }
 .impact-icon[hidden], #impact-detail[hidden] { display: none; }
 
-/* Player pickup (pickup-fuel-cue.ts): the fuel bar flashes and "+N" rides right of the reading, clear of the label.
+/* Player pickup (pickup-fuel-cue.ts): the fuel bar flashes and "+N" rides above the reading, clear of the label.
+   The reading sits flush with the telemetry's right edge, so a cue beside it widened the HUD panel (rules/panel-edge-overflow.md).
    Appended after the byte-locked main CSS contract. Reduced Motion keeps a still highlight and a still "+N", with no sweep or pop. */
 .fuel-heading > span { position: relative; }
-.fuel-gain { position: absolute; left: calc(100% + 3px); top: -2px; color: #fff4d6; font: 700 12px/1 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 0 6px rgb(255 214 130 / .85); pointer-events: none; }
+.fuel-gain { position: absolute; right: 0; bottom: calc(100% + 1px); color: #fff4d6; font: 700 12px/1 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 0 6px rgb(255 214 130 / .85); pointer-events: none; }
 .fuel-gain[hidden] { display: none; }
 .fuel-track[data-refilling="pickup"] > i { filter: brightness(1.6); box-shadow: 0 0 8px rgb(255 228 160 / .85); }
 .fuel-track[data-refilling="pickup"]::after { opacity: .9; animation: fuel-refill .45s ease-out; }
@@ -2456,7 +2457,7 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
     position: sticky;
     bottom: 0;
     z-index: 1;
-    margin: 8px -8px 0;
+    margin: 8px 0 0;
     padding: 8px;
     border: 1px solid rgb(158 195 225 / .23);
     border-radius: 12px;

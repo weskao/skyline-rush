@@ -48,12 +48,15 @@ test.describe('pickup haptics on a phone', () => {
 const fuelCue = page => page.evaluate(() => {
   const gain = document.getElementById('fuel-gain'), box = gain?.getBoundingClientRect();
   const label = document.querySelector('.fuel-heading .stat-label').getBoundingClientRect();
+  const hud = document.querySelector('.telemetry');
   return {
     refilling: document.getElementById('fuel-meter').dataset.refilling,
     shown: !!gain && !gain.hidden && box.width > 0 && getComputedStyle(gain).visibility === 'visible',
     text: gain?.textContent,
     inView: !!box && box.left >= 0 && box.top >= 0 && box.right <= innerWidth && box.bottom <= innerHeight,
     clearOfLabel: !box || box.left >= label.right || box.right <= label.left || box.top >= label.bottom || box.bottom <= label.top,
+    // The reading sits on the telemetry's right edge: a cue beside it widened the HUD panel (i18n audit `.telemetry 358>344`).
+    insideHud: hud.scrollWidth <= hud.clientWidth,
     moves: (gain?.getAnimations() ?? []).some(a => a.effect.getKeyframes().some(k => k.transform && k.transform !== 'none')),
   };
 });
@@ -70,7 +73,7 @@ for (const [name, viewport, reducedMotion] of [
     // phones hide the telemetry while the GO countdown shows (style.css :has(#countdown))
     await expect(page.locator('#fuel-meter')).toBeVisible({ timeout: ciTimeout(5000) });
     await offer(page, 'can');
-    await expect.poll(() => fuelCue(page)).toMatchObject({ refilling: 'pickup', shown: true, text: '+10', inView: true, clearOfLabel: true });
+    await expect.poll(() => fuelCue(page)).toMatchObject({ refilling: 'pickup', shown: true, text: '+10', inView: true, clearOfLabel: true, insideHud: true });
     expect((await fuelCue(page)).moves).toBe(reducedMotion !== 'reduce');
     await test.info().attach(`pickup-fuel-cue-${name}.png`, { body: await page.screenshot(), contentType: 'image/png' });
     await expect.poll(() => fuelCue(page), { timeout: ciTimeout(6000) }).toMatchObject({ shown: false });
