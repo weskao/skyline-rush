@@ -79,8 +79,10 @@ export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: ()
   });
 }
 
+const trackCard = (id: string): Element | null => chooser().querySelector(`[data-track="${id}"], [data-upcoming-track="${id}"]`);
+
 export function renderLobbyTrackArt(id: string): void {
-  const card = chooser().querySelector(`[data-track="${id}"], [data-upcoming-track="${id}"]`);
+  const card = trackCard(id);
   const image = document.querySelector<HTMLImageElement>('#lobby-hero-art')!;
   const thumbnail = card?.querySelector<HTMLImageElement>('.track-preview img')?.getAttribute('src');
   if (thumbnail) image.src = thumbnail;
@@ -91,4 +93,12 @@ export function renderLobbyTrackArt(id: string): void {
 
 export function focusLobbyTrack(): void {
   (trackOpener().disabled ? document.getElementById('lobby-modes-toggle')! : trackOpener()).focus({ preventScroll: true });
+}
+
+/** A copied map never receives its source's relabel(); copy it again once the cards are relabelled. */
+export function refreshCopiedRouteMaps(): void {
+  for (const slot of document.querySelectorAll<HTMLElement>('#lobby-hero-map, #track-choose-map')) {
+    const id = slot.dataset.theme;
+    if (id) copyRouteMap(slot, trackCard(id), id);
+  }
 }
