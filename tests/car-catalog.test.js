@@ -97,6 +97,22 @@ test('world adapter: no model for the Roadster, the equipped GT without any URL 
   world.dispose();
 });
 
+test('procedural preview keeps Roadster undressed while other equipped cars still load', () => {
+  const canvas = { dataset: {}, addEventListener() {}, removeEventListener() {} };
+  let car = 'roadster2';
+  const home = { name: 'home', car: { children: [], userData: {}, traverse() {}, add() {} }, keep: {}, scene: {} };
+  const world = createWorldGarageModel(canvas, { compileAsync: async () => {} }, {}, '', '/', () => car, true);
+  world.frame('high', 'ready', false, null, null, home);
+  assert.equal(canvas.dataset.garageModel, undefined);
+  car = 'crimson-gt';
+  world.frame('high', 'ready', false, null, null, home);
+  assert.equal(canvas.dataset.garageModel, 'loading');
+  car = 'roadster2';
+  world.frame('high', 'ready', false, null, null, home);
+  assert.equal(canvas.dataset.garageModel, 'off');
+  world.dispose();
+});
+
 test('a car restored into storage by Cloud Save replaces the one held in memory', () => {
   const storage = memoryStorage();
   equipCar('roadster', storage);
