@@ -1,4 +1,4 @@
-import { toggleSettingsSection } from './helpers/settings-browser.js';
+import { openSettingsSection, toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
@@ -37,7 +37,7 @@ async function expectInside(control, viewport) {
 
 // The same settings dialog owns both Audio and Display.
 async function expectSettingsHub(page) {
-  await page.locator('#settings-button').click();
+  await openSettingsSection(page, 'audio');
   await expect(page.locator('#settings-panel')).toBeVisible();
   await expect(page.locator('#settings-panel input[name="hud-mode"]').first()).toBeHidden();
   await expect(page.locator('#settings-button')).toHaveAttribute('aria-label', 'Game settings');

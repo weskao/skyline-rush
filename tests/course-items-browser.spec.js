@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
@@ -15,7 +16,7 @@ for (const [device, viewport, hasTouch] of [
       test.setTimeout(ciTimeout(60_000));
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
-      await page.locator(`[data-upcoming-track="${id}"]`).click();
+      await clickLobbyOption(page, `[data-upcoming-track="${id}"]`);
       await expect(page.locator('#start-button')).toBeEnabled();
       await page.locator('#start-button').click();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(16_000) });

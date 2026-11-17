@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -13,7 +14,7 @@ async function collidedTokyoFinish(page) {
   }, trackIds.slice(0, tokyoIndex + 1));
   await page.reload();
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator('[data-track="tokyo"]').click();
+  await clickLobbyOption(page, '[data-track="tokyo"]');
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   // Exercise actual simulation impacts before the results UI is shown.

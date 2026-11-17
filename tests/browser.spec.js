@@ -474,9 +474,11 @@ test('desktop: start, drive, steer, fly, land, pause and restart through real co
   await expect(page.locator('#lobby-hero-track')).toBeVisible();
   await expect(page.locator('canvas#world')).toBeVisible();
   await expect(page.locator('#settings-button')).toBeVisible();
-  await page.getByRole('button', { name: 'Change camera' }).click();
-  await expect(page.getByRole('button', { name: 'Change camera' })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Change camera' }).click();
+  const dock = page.locator('#showcase-camera-dock');
+  await page.locator('#showcase-camera-next').click();
+  await expect(dock).toHaveAttribute('data-view', 'front');
+  await page.locator('#showcase-camera-prev').click();
+  await expect(dock).toHaveAttribute('data-view', 'drive');
   await page.locator('#intro').evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
   await saveArtifact(page, { path: 'artifacts/desktop-ready.jpeg', quality: 70 });
   await page.getByRole('button', { name: 'Start race' }).click();
@@ -504,7 +506,8 @@ test('desktop: start, drive, steer, fly, land, pause and restart through real co
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
   await page.getByRole('region', { name: 'Take a breather.' }).getByRole('button', { name: 'Resume race' }).click();
-  await page.getByRole('button', { name: 'Restart race' }).click();
+  await page.locator('#pause-button').click();
+  await page.locator('#again-button').click();
   await expect(page.locator('#speed')).toHaveText('0');
   await expect(page.locator('#fuel-value')).toHaveText('100');
   await expect(page.locator('#race-status')).toHaveText('COUNTDOWN');
@@ -608,7 +611,7 @@ gameplayTest('a complete 5 km sprint reaches results, saves a best time and can 
   const saved = await page.evaluate(id => ({ ghost: JSON.parse(localStorage.getItem('skyline-rush-ghosts'))[id], stars: JSON.parse(localStorage.getItem('skyline-rush-stars')).coast }), coastRecord);
   expect(saved.ghost.time).toBe(history[0].time);
   expect(saved.stars).toBeGreaterThanOrEqual(1);
-  await page.getByRole('button', { name: 'History', exact: true }).click();
+  await page.getByRole('button', { name: 'Progress', exact: true }).click();
   await expect(page.locator('.history-run')).toHaveCount(1);
   await expect(page.locator('.history-run')).toContainText('BEST');
   await page.getByRole('button', { name: 'Close history' }).click();

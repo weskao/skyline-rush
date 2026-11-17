@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
@@ -40,7 +41,7 @@ for(const id of IDS) for(const viewport of SCREEN_SIZES) {
     await page.goto('/');
     if(await page.locator('#music-prompt').isVisible())await page.locator('#music-no').click();
     const card=page.locator('[data-upcoming-track="'+id+'"]');
-    await card.click();
+    await clickLobbyOption(page, '[data-upcoming-track="'+id+'"]');
     await expect(card).toHaveAttribute('aria-pressed','true');
     await expect(page.locator('#start-button')).toBeDisabled();
     await expect(page.locator('#start-button span')).toHaveText('COMING SOON');

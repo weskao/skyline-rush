@@ -1,3 +1,9 @@
+# UI overhaul integration and CI follow-up
+
+- Integrated develop `4a3ff0a1`. Kept both the Roadster request-watch isolation and its new Settings flow when resolving the single conflict.
+- The prior CI run `43941377849` failed all 16 browser shards and the cloud-save job. Its mobile tests often tried to click a collapsed race-mode or track row. Use the shared lobby helper to open the disclosure before clicking; the 2/8-car mobile test passed on Chromium after that change. Updated browser checks for the Settings, Progress, camera, and pause/retry entry points, and fixed a result overlap check that called a DOM method on a rectangle.
+- Layout probe covered desktop and compact portrait action positions. Full browser/Cloud Save regression and exact-commit CI remain to be confirmed.
+
 # Unified settings and lobby track navigation
 
 - [x] Home uses one Settings gear. Driving, Display & HUD, Audio and Language share a responsive dialog with its own scroll area. The pause menu opens the same dialog.

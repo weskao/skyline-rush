@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -23,7 +24,7 @@ for (const [name, viewport, hasTouch] of [
   test('clean trial settles once, preserves Career and survives retry and language changes', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.locator('button[data-race-mode="time"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="time"]');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     await finish(page);
@@ -60,7 +61,7 @@ for (const [name, viewport, hasTouch] of [
 });
 
 test('a collided trial awards no clean medal', async ({ gameplayPage: page }) => {
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await finish(page, true);
@@ -77,7 +78,7 @@ test('blocked medal storage retains session collection and exports a usable back
       return save.call(this, name, value);
     };
   }, key);
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await finish(page);

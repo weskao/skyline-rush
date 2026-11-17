@@ -33,7 +33,7 @@ for (const [width, height, hasTouch] of [[1440, 900, false], [390, 844, true], [
       await page.getByRole('button', { name: 'Close garage' }).click();
       await page.locator('.history-button').click();
       await expect(page.locator('#daily-challenge')).toContainText('Today:');
-      await expect(page.getByRole('button', { name: 'Start daily challenge' })).toBeEnabled();
+      await expect(page.locator('#daily-card-start')).toBeEnabled();
       await expect(page.locator('#achievement-list > li')).toHaveCount(4);
       await expect(page.locator('#daily-board')).toContainText('No challenge runs');
       await page.getByRole('button', { name: 'Close history' }).click();

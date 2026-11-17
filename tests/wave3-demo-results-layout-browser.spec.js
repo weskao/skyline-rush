@@ -14,7 +14,7 @@ const clipped = () => {
   const panel = card.querySelector('.wave3-demo-results__details').getBoundingClientRect();
   const box = { left: Math.min(c.left, panel.left), right: Math.max(c.right, panel.right), bottom: Math.max(c.bottom, panel.bottom) };
   if (card.dataset.open !== undefined) {
-    const actions = document.querySelector('#race-overlay .overlay-actions').getBoundingClientRect();
+    const actions = document.querySelector('#race-overlay .overlay-actions');
     if (panel.top < 0 || panel.bottom > innerHeight) misses.push('details off screen');
     for (const control of actions.querySelectorAll(':scope > button:not([hidden]), :scope > .result-links button')) {
       const r = control.getBoundingClientRect();

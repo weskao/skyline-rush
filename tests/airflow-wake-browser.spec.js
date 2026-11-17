@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleSettingsSection, toggleAirflowPreview } from './helpers/settings-browser.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
@@ -15,7 +16,7 @@ test('airflow renders on every track with bounded resources and no shader errors
   await page.locator('#performance-notice summary').click();
   await page.locator('#performance-notice-dismiss').click();
   for (const track of Object.keys(RACE_TRACKS)) {
-    await page.locator(`[data-track="${track}"]`).click();
+    await clickLobbyOption(page, `[data-track="${track}"]`);
     await expect.poll(() => page.evaluate(() => window.gameplay.race.trackId)).toBe(track);
     await toggleAirflowPreview(page);
     await page.waitForTimeout(500);
@@ -40,7 +41,7 @@ test('airflow renders on every track with bounded resources and no shader errors
     if (track === 'coast') await page.screenshot({ path: info.outputPath('coast-airflow-desktop.png') });
     await toggleAirflowPreview(page);
   }
-  await page.locator('[data-track="coast"]').click();
+  await clickLobbyOption(page, '[data-track="coast"]');
   await toggleAirflowPreview(page);
   const counts = [];
   for (const quality of ['low', 'medium', 'high']) {

@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
@@ -16,7 +17,7 @@ test('ready screen offers a discoverable camera dock across all tracks',async({p
   await page.goto('/');
   await expect(page.locator('#showcase-camera-dock')).toBeVisible();
   for(const id of Object.keys(RACE_TRACKS)){
-    await page.locator(`[data-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-track="${id}"]`);
     await expect(page.locator('#showcase-camera-dock')).toBeVisible();
     await page.locator('#showcase-camera-next').click();
     await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view',/front|rear|left|right|orbit|drive/);
@@ -82,7 +83,7 @@ for(const [viewport,maps] of [[{width:1440,height:900},worldTourMaps.slice(0,3)]
     });
     await page.goto('/');
     for(const id of maps) await test.step(id,async()=>{
-      await page.locator(`[data-track="${id}"]`).click();
+      await clickLobbyOption(page, `[data-track="${id}"]`);
       const airflow=page.locator('#airflow-toggle');
       await toggleAirflowPreview(page); // never force-click past an overlay
       await expect(airflow,`${id}: AIRFLOW on`).toHaveAttribute('aria-pressed','true');

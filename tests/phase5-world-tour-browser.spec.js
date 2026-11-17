@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test, expect } from './helpers/test.js';
 import { writeFileSync } from 'node:fs';
 import { parsePerformanceEvidence } from '../src/performance-evidence.ts';
@@ -32,7 +33,7 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
     await page.goto('/?perf');
     // Include both supported locales without multiplying the 20 WebGL runs.
     if (viewport.width === 320) await selectLocale(page, 'zh-TW');
-    await page.locator(`[data-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-track="${id}"]`);
     const choice = page.locator(`[data-track="${id}"]`);
     await expect(choice).toHaveAttribute('aria-pressed', 'true');
     await expect(choice.locator('.track-route-map svg.route-overview')).toHaveCount(1);
@@ -105,7 +106,7 @@ for (const quality of ['low', 'medium', 'high']) {
     test.setTimeout(ciTimeout(240000));
     await page.goto('/');
     for (const id of TOURS) {
-      await page.locator(`[data-track="${id}"]`).click();
+      await clickLobbyOption(page, `[data-track="${id}"]`);
       await expect(page.locator('#world')).toBeVisible();
       await page.screenshot({ path: info.outputPath(`world-tour-phase5-${id}-${quality}-reduced-motion.png`) });
     }

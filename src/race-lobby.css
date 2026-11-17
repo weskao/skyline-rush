@@ -324,9 +324,9 @@ details.performance-notice {
 }
 @media (min-width: 1001px) and (min-height: 701px) {
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .lobby-compact {
-    display: flex; flex-direction: column; justify-content: end;
-    top: auto; bottom: max(60px, calc(var(--safe-bottom) + 44px));
-    max-height: calc(100dvh - 140px);
+    display: flex; flex-direction: column; justify-content: safe end;
+    top: calc(118px + var(--safe-top)); bottom: max(24px, calc(var(--safe-bottom) + 20px));
+    max-height: none;
   }
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .lobby-compact .track-select {
     order: 2; width: min(760px, 100%); align-self: start;
@@ -387,7 +387,7 @@ body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { dis
    The live scene gets the upper part of an upright phone; a folded device keeps its own pane. */
 @media (max-width: 760px) and (min-height: 501px) and (orientation: portrait) {
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro.lobby-compact {
-    top: clamp(150px, 32dvh, 285px);
+    top: clamp(114px, calc(100dvh - 430px), 285px);
     max-height: none;
   }
 }

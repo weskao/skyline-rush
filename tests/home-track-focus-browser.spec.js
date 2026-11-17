@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
 
@@ -8,7 +9,7 @@ const offCentre = (page, id) => page.locator(`[data-track="${id}"]`).evaluate(bu
   return box.left + box.width / 2 - (row.left + row.width / 2);
 });
 const raceThenLeave = async (page, id, exit) => {
-  await page.locator(`[data-track="${id}"]`).click();
+  await clickLobbyOption(page, `[data-track="${id}"]`);
   // Scroll the row away while it is visible, so only the return path can bring the track back into view.
   await page.locator('.track-select').evaluate(row => { row.scrollLeft = 0; });
   await page.locator('#start-button').click();
@@ -45,7 +46,7 @@ for (const [device, options] of [['desktop', {}], ['phone', { viewport: { width:
   test('Clicking a track focuses it and scrolls it to the row centre', async ({ page }) => {
     const id = tracks[Math.floor(tracks.length / 2)];
     await page.locator('.track-select').evaluate(row => { row.scrollLeft = 0; });
-    await page.locator(`[data-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-track="${id}"]`);
     await expect(page.locator(`[data-track="${id}"]`)).toBeFocused();
     await expect.poll(async () => Math.abs(await offCentre(page, id))).toBeLessThan(2);
   });

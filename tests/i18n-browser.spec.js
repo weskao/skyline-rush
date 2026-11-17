@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { openSettingsSection } from './helpers/settings-browser.js';
 import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { openGarageSection } from './helpers/garage-browser.js';
@@ -224,7 +225,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       await dismissMusic(page);
       await check(cx, 'tracks-unlocked');
       for (const [id] of Object.entries(RACE_TRACKS)) {
-        await page.locator(`[data-track="${id}"]`).click();
+        await clickLobbyOption(page, `[data-track="${id}"]`);
         if (['taipei', 'cosmic'].includes(id)) await check(cx, `track-${id}`);
         else {
           const strings = await collectStrings(page, false);
@@ -232,7 +233,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
           expect.soft(hits, `${cx.id} track ${id}`).toEqual([]);
         }
       }
-      await page.locator('[data-track="coast"]').click();
+      await clickLobbyOption(page, '[data-track="coast"]');
 
       // Garage.
       await page.locator('#garage-button').click();

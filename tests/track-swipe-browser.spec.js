@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 
@@ -339,7 +340,7 @@ test('desktop: a short drag snaps the joined previews back without changing trac
 
 test('desktop: existing preview wheel scroll enters and leaves live Coming Soon scenes', async ({ page }) => {
   await page.goto('/');
-  await page.locator('[data-track="cosmic"]').click();
+  await clickLobbyOption(page, '[data-track="cosmic"]');
   await trackpadSwipe(page, 30, 6);
   await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#start-button')).toBeDisabled();
@@ -361,7 +362,7 @@ test.describe('phone upcoming preview swipe', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   test('uses existing canvas drag to switch between future and playable scenes', async ({ page }) => {
     await page.goto('/');
-    await page.locator('[data-upcoming-track="dune-tempest"]').click();
+    await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
     // The visible intro is a scrollable overlay; touch gestures there belong to the
     // form, not the WebGL canvas. Airflow exposes the same preview swipe surface.
     await toggleAirflowPreview(page);
@@ -382,7 +383,7 @@ test.describe('phone upcoming preview swipe', () => {
 
 test('a committed Coming Soon swipe selects the card exactly once', async ({ page }) => {
   await page.goto('/');
-  await page.locator('[data-track="cosmic"]').click();
+  await clickLobbyOption(page, '[data-track="cosmic"]');
   await page.evaluate(() => {
     window.__duneClicks = 0;
     document.querySelector('[data-upcoming-track="dune-tempest"]')

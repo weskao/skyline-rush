@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { captureHooks, test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -25,7 +26,7 @@ for (const variant of variants) test.describe(variant.name, () => {
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
 
     const id = variant.track;
-    await page.locator('[data-track="' + id + '"]').click();
+    await clickLobbyOption(page, '[data-track="' + id + '"]');
     const homeLine = page.locator('[data-track="' + id + '"] .route-overview-line');
     const sprint = await homeLine.getAttribute('points');
     expect(sprint.split(' ')).toHaveLength(128);
@@ -35,7 +36,7 @@ for (const variant of variants) test.describe(variant.name, () => {
     }
     const modes = page.locator('#lobby-modes-toggle');
     if (await modes.isVisible()) await modes.click();
-    await page.locator('button[data-race-mode="endless"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="endless"]');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(40000) });
 

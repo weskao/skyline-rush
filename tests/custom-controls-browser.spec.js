@@ -56,8 +56,8 @@ test('the dropdown is fully keyboard operable and keeps keys away from driving',
   await expect(quality).toBeFocused();
   await expect(page.locator('#settings-display')).toBeVisible();
   await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('End');
-  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('Home');
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(listbox).toBeHidden();
   await expect(quality).toHaveText('Medium');
@@ -66,7 +66,7 @@ test('the dropdown is fully keyboard operable and keeps keys away from driving',
 
 test('History track filter uses the web dropdown and reflects the opened track', async ({ page }) => {
   await open(page);
-  await page.getByRole('button', { name: 'History', exact: true }).click();
+  await page.getByRole('button', { name: 'Progress', exact: true }).click();
   const track = page.getByRole('combobox', { name: 'History track' });
   await expect(track).toHaveText('Coast');
   await track.click();

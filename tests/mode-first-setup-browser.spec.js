@@ -1,6 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
-import { openLobbyModes } from './helpers/home-lobby.js';
+import { openLobbyModes, clickLobbyOption } from './helpers/home-lobby.js';
 
 // 10A UX-01: Choose Mode → Choose Track → Rules → Start on one screen, with real pointer/keyboard input.
 async function closeMusicPrompt(page) {
@@ -19,6 +19,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     const order = await page.evaluate(() => ['button[data-race-mode="classic"]', '[data-track="coast"]', '#race-rules-row', '#start-button']
       .map(s => document.querySelector(s)).every((el, i, all) => i === 0 || (all[i - 1].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)));
     expect(order).toBe(true);
+    await clickLobbyOption(page, 'button[data-race-mode="custom"]');
     for (const selector of ['button[data-race-mode="custom"]', '#rules-restore', '#start-button']) {
       const box = await page.locator(selector).boundingBox();
       expect(box.height, selector).toBeGreaterThanOrEqual(viewport.width < 600 ? 36 : 34);
@@ -34,14 +35,14 @@ test('rules row summarises, explains eligibility and restores defaults with real
   await closeMusicPrompt(page);
   await expect(page.locator('#mode-rules-summary')).toContainText('7 AI');
   await expect(page.locator('#mode-eligibility')).toHaveText('Counts for records, medals and unlocks');
-  await page.locator('button[data-race-mode="free"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="free"]');
   await expect(page.locator('#mode-eligibility')).toHaveText('Practice: no results are saved');
-  await page.locator('button[data-race-mode="stunt"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="stunt"]');
   await expect(page.locator('#mode-rules-summary')).toContainText('Solo run');
   await expect(page.locator('#mode-conflicts')).toContainText('Ghost replay');
 
   const before = await snapshot(page);
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#race-mode-rules > summary').click();
   const rivals = page.locator('[data-race-rule="rivals"] + .custom-select');
   await rivals.getByRole('combobox').click();
@@ -61,11 +62,11 @@ test('rules row summarises, explains eligibility and restores defaults with real
 test('switching language live re-renders the rules row without changing mode or track ids', async ({ page }) => {
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await page.locator('#locale-select').selectOption('zh-TW', { force: true }); // the drawn custom select mirrors this native one, as in i18n-browser.spec.js
   await expect(page.locator('#mode-rules-summary')).toContainText('單人挑戰');
   await expect(page.locator('#race-rules-step')).toHaveText('3 · 規則');
-  await expect(page.locator('#lobby-tracks-toggle > span:first-child')).toHaveText('賽道');
+  await expect(page.locator('#lobby-tracks-toggle > span').first()).toHaveText('賽道');
   await expect(page.locator('button[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#locale-select').selectOption('en', { force: true });
   await expect(page.locator('#mode-rules-summary')).toContainText('Solo run');
@@ -91,15 +92,15 @@ test('keyboard alone can pick a mode, a track, restore rules and start', async (
 test('unsupported combinations are explained in the rules row, in English and zh-TW', async ({ page }) => {
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="circuit"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="circuit"]');
   await expect(page.locator('#mode-conflicts')).toContainText('Laps run only on Harbor Circuit');
-  await page.locator('button[data-race-mode="elimination"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="elimination"]');
   await expect(page.locator('#mode-conflicts')).toContainText('Elimination always races 7 AI opponents');
   await page.locator('#locale-select').selectOption('zh-TW', { force: true });
   await expect(page.locator('#mode-conflicts')).toContainText('淘汰賽固定與 7 名 AI 對手競速');
-  await page.locator('button[data-race-mode="circuit"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="circuit"]');
   await expect(page.locator('#mode-conflicts')).toContainText('圈數只適用於港灣環道');
-  await page.locator('button[data-race-mode="classic"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="classic"]');
   await expect(page.locator('#mode-conflicts')).toBeHidden();
 });
 
@@ -120,9 +121,9 @@ const contrast = (page, selector) => page.locator(selector).evaluate(el => {
 test('setup controls show a visible keyboard focus ring and readable contrast', async ({ page }) => {
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   for (const selector of ['#race-rules-step', '#mode-rules-summary', '#mode-eligibility']) expect(await contrast(page, selector), selector).toBeGreaterThanOrEqual(4.5);
-  await page.locator('button[data-race-mode="elimination"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="elimination"]');
   expect(await contrast(page, '#mode-conflicts'), '#mode-conflicts').toBeGreaterThanOrEqual(4.5);
   for (const [from, to] of [['button[data-race-mode="classic"]', 'button[data-race-mode="custom"]'], ['#rules-restore', null]]) {
     await page.locator(from).focus();
@@ -148,7 +149,7 @@ for (const [name, viewport, safe] of [['phone notch', { width: 390, height: 844 
       expect(box.x, `${selector} left`).toBeGreaterThanOrEqual(safe.left);
       expect(box.x + box.width, `${selector} right`).toBeLessThanOrEqual(viewport.width - safe.right);
     }
-    await page.locator('button[data-race-mode="stunt"]').tap();
+    await clickLobbyOption(page, 'button[data-race-mode="stunt"]', 'tap');
     await expect(page.locator('button[data-race-mode="stunt"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#mode-rules-summary')).toContainText('Solo run');
   });
@@ -159,7 +160,7 @@ test('reduced motion: the setup flow works with no running intro animation', asy
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#rules-restore').click();
   await expect(page.locator('#mode-rules-summary')).toContainText('7 AI');
   const running = await page.locator('#race-rules-row').evaluate(el => el.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length);
@@ -172,8 +173,8 @@ test('returning home by reload (the brand link) keeps the mode the player raced,
   await page.evaluate(() => localStorage.setItem('skyline-rush-guide-seen', '1')); // skip the first-Start practice
   await page.reload();
   await closeMusicPrompt(page);
-  await page.locator('button[data-race-mode="stunt"]').click();
-  await page.locator('[data-track="coast"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="stunt"]');
+  await clickLobbyOption(page, '[data-track="coast"]');
   await page.locator('#start-button').click();
   await expect(page.locator('#intro')).toBeHidden({ timeout: ciTimeout(8000) });
   await page.goto('/'); // what the brand link does
@@ -193,7 +194,7 @@ for (const [name, viewport] of [['desktop', { width: 1440, height: 900 }], ['lan
     await openLobbyModes(page);
     let checked = 0;
     for (const mode of ['circuit', 'custom', 'time', 'gauntlet']) {
-      await page.locator(`button[data-race-mode="${mode}"]`).click();
+      await clickLobbyOption(page, `button[data-race-mode="${mode}"]`);
       for (const summary of await page.locator('#race-rules-row details:not([open]) > summary').filter({ visible: true }).all()) await summary.click();
       for (const combobox of await page.locator('#race-rules-row .custom-select [role="combobox"]').filter({ visible: true }).all()) {
         await combobox.scrollIntoViewIfNeeded();

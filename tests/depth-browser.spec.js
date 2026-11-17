@@ -1,3 +1,4 @@
+import { clickLobbyOption, openLobbyTracks } from './helpers/home-lobby.js';
 import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
@@ -36,7 +37,7 @@ for (const [name, viewport, hasTouch] of [
   test('History filters real saved runs, marks the best and charts the last ten', async ({ page }) => {
     await seed(page);
     await open(page);
-    await page.getByRole('button', { name: 'History', exact: true }).click();
+    await page.getByRole('button', { name: 'Progress', exact: true }).click();
     const history = page.getByRole('dialog', { name: 'Progress', exact: true });
     await expect(history).toBeVisible();
     await expect(page.locator('.history-run')).toHaveCount(12);
@@ -57,7 +58,7 @@ for (const [name, viewport, hasTouch] of [
     await expect(page.locator('#history-chart circle')).toHaveCount(1);
     await page.getByRole('button', { name: 'Close history' }).click();
     await expect(history).not.toBeVisible();
-    await expect(page.getByRole('button', { name: 'History', exact: true })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Progress', exact: true })).toBeFocused();
   });
 
   // Touch contexts fold: phone boots once and re-measures the tag at small phone and landscape (hasTouch is per context).
@@ -93,8 +94,7 @@ for (const [name, viewport, hasTouch] of [
     await seed(page);
     await open(page);
     for (const id of ['neon', 'canyon', 'aurora', 'coast', 'neon']) {
-      await page.locator(`[data-track="${id}"]`).scrollIntoViewIfNeeded();
-      await page.locator(`[data-track="${id}"]`).click();
+      await clickLobbyOption(page, `[data-track="${id}"]`);
       await expect(page.locator(`[data-track="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
       await expect(page.locator('#world')).toHaveAttribute('aria-label', new RegExp(id === 'neon' ? 'Neon Downtown' : id === 'canyon' ? 'Canyon Skyway' : id === 'aurora' ? 'Aurora Pass' : 'Coast'));
       await page.waitForTimeout(180); // compile and draw each real track shader
@@ -107,7 +107,8 @@ for (const [name, viewport, hasTouch] of [
       const nitro = await page.locator('[data-control="nitro"]').boundingBox();
       expect(gauge.y + gauge.height <= nitro.y || gauge.x + gauge.width <= nitro.x || gauge.x >= nitro.x + nitro.width).toBe(true);
     }
-    await page.getByRole('button', { name: 'Restart race', exact: true }).click();
+    await page.locator('#pause-button').click();
+    await page.locator('#again-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     await expect(page.locator('#race-length')).toHaveText('10.00');
     expect(errors).toEqual([]);
@@ -118,13 +119,13 @@ test('fresh progress locks tracks, empty History works and Escape restores menu 
   await open(page);
   await expect(page.locator('[data-track="neon"]')).toBeEnabled();
   await expect(page.locator('#track-note')).toContainText('Finish top 3 on Coast to unlock Neon Downtown');
-  await page.getByRole('button', { name: 'History', exact: true }).click();
+  await page.getByRole('button', { name: 'Progress', exact: true }).click();
   await expect(page.locator('#history-empty')).toBeVisible();
   await page.keyboard.press('Enter');
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Progress', exact: true })).not.toBeVisible();
-  await expect(page.getByRole('button', { name: 'History', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Progress', exact: true })).toBeFocused();
 });
 
 const lockedTracks = Object.keys(RACE_TRACKS).filter(id => id !== 'coast');
@@ -136,6 +137,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     test(`${ids.join(', ')} preview while locked starts stay blocked`, async ({ page }) => {
       await open(page);
       for (const id of ids) {
+        await openLobbyTracks(page);
         const card = page.locator(`[data-track="${id}"]`);
         await expect(card).toBeEnabled();
         await expect(card).toHaveCSS('opacity', '0.65');
@@ -154,7 +156,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
       }
       if (offset + ids.length === lockedTracks.length) {
-        await page.locator('[data-track="coast"]').click();
+        await clickLobbyOption(page, '[data-track="coast"]');
         await expect(page.locator('#start-button')).toBeEnabled();
         await page.locator('#start-button').click();
         await expect(page.locator('body')).toHaveAttribute('data-phase', /^(countdown|racing)$/);
@@ -169,7 +171,7 @@ test('track changes render four distinct sky palettes in the WebGL framebuffer',
   await open(page);
   const skies = [];
   for (const id of ['coast', 'neon', 'canyon', 'aurora']) {
-    await page.locator(`[data-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-track="${id}"]`);
     await page.waitForTimeout(200);
     skies.push(await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => {
       const canvas = document.querySelector('#world');
