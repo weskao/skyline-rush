@@ -22,6 +22,8 @@ test('ready screen offers a discoverable camera dock across all tracks',async({p
   }
 });
 
+test.describe(() => {
+test.use({ lowGraphics: false }); // the notice only shows for an automatic first-launch choice
 test('desktop camera control is not covered by the device quality notice',async({page})=>{
   await page.setViewportSize({width:1440,height:900});
   await page.goto('/');
@@ -34,6 +36,7 @@ test('desktop camera control is not covered by the device quality notice',async(
   expect(overlaps,'The first-launch performance notice must not cover the camera controls').toBe(false);
   await button.click();
   await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view','front');
+});
 });
 
 test('home camera cycles independently of AIRFLOW and follows language changes',async({page})=>{
