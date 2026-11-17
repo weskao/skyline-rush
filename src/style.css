@@ -28,7 +28,8 @@ svg { width: 22px; height: 22px; flex-shrink: 0; }
 #world { width: 100%; height: 100%; display: block; position: fixed; inset: 0; touch-action: none; }
 .scene-shade { position: fixed; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(9 21 34 / .88) 0%, rgb(9 21 34 / .69) 25%, rgb(9 21 34 / .1) 58%, transparent 80%), linear-gradient(0deg, rgb(6 17 28 / .91), transparent 30%, transparent 78%, rgb(9 21 34 / .26)); transition: opacity .5s; }
 body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, rgb(6 17 28 / .86), transparent 28%, transparent 76%, rgb(9 21 34 / .6)); }
-.topbar { position: fixed; z-index: 7; inset: 0 0 auto; height: 112px; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+:root { --toolbar-height: 112px; --toolbar-button-size: 44px; }
+.topbar { position: fixed; z-index: 7; inset: 0 0 auto; height: var(--toolbar-height); padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 /* The bar's empty gradient lets taps through to the .aero-tools row it overlaps; only its own controls catch them. */
 .topbar { pointer-events: none; }
 .topbar > * { pointer-events: auto; }
@@ -212,7 +213,8 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   .topbar { padding: 24px 28px; }
 }
 @media (max-width: 760px) {
-  .topbar { height: 82px; padding: 17px 20px; gap: 12px; }
+  :root { --toolbar-height: 82px; }
+  .topbar { padding: 17px 20px; gap: 12px; }
   .brand { gap: 6px; }
   .brand > svg { width: 29px; height: 29px; }
   .brand > span { font-size: 23px; letter-spacing: 1.2px; gap: 4px; }
@@ -279,7 +281,7 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
 /* iOS only: its home indicator is a thin bar 8-13px off the bottom, so non-interactive text may sit in the rest of the inset.
    Android's 48px inset can be a button bar, so other platforms keep clearing the whole inset. */
 @supports (-webkit-touch-callout: none) {
-  .bottomline, body[data-phase="ready"] .bottomline { bottom: 21px; }
+  .bottomline, body[data-phase="ready"] .bottomline { --home-footer-bottom: 21px; bottom: var(--home-footer-bottom); }
 }
 @media (max-height: 650px) and (max-width: 760px) {
   .intro { top: 95px; }
@@ -295,7 +297,8 @@ body[data-phase="ready"] .bottomline { bottom: max(4px, env(safe-area-inset-bott
   body:not([data-phase="ready"]) .touch-controls { display: grid; }
   body:not([data-phase="ready"]) .telemetry { bottom: 112px; }
   .touch-controls { bottom: max(18px, env(safe-area-inset-bottom)); }
-  .topbar { height: 70px; padding: 12px 24px; }
+  :root { --toolbar-height: 70px; }
+  .topbar { padding: 12px 24px; }
   .intro { top: 82px; }
   h1 { font-size: 48px; }
   .route-label { margin-bottom: 12px; }
@@ -513,7 +516,7 @@ body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, 
 }
 
 /* Start lights and reward cues use the same cyan/amber language as the instruments. */
-.icon-button { width: 44px; height: 44px; flex-shrink: 0; }
+.icon-button { width: var(--toolbar-button-size); height: var(--toolbar-button-size); flex-shrink: 0; }
 .assist-button { display: flex; flex-direction: column; gap: 1px; border-radius: 12px; }
 .assist-button svg { width: 18px; height: 18px; }
 .assist-button span { font-size: 8px; letter-spacing: .6px; }
@@ -1243,7 +1246,8 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 .route-spiral-direction { stroke:#fff6d9; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; vector-effect:non-scaling-stroke; }
 .route-start { fill:#78dfa0; }
 .route-finish { fill:#fff; stroke:#16233d; stroke-width:1; }
-.race-route-map { position:fixed; top:140px; right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
+/* The centered toolbar ends halfway through its height plus half a button. Safe-area offset is shared. */
+.race-route-map { position:fixed; top:calc((var(--toolbar-height) + var(--toolbar-button-size)) / 2 + 8px); right:40px; width:116px; height:126px; flex-shrink:0; border:1px solid rgb(120 196 238 / .25); border-radius:6px; background: rgb(5 16 37 / .7); pointer-events:none; }
 .race-route-map svg { width:100%; height:100%; overflow:visible; }
 .route-driver { stroke:#09172b; stroke-width:1.35; fill:#f7c34d; }
 .route-driver-you { fill:#fff; stroke:#09e5ff; stroke-width:2.1; }
@@ -1265,10 +1269,7 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 /* Live map: top-right corner on every layout, 8px under the toolbar row (and AIRFLOW/VFX where they share it), right-aligned
    with the toolbar; the leaderboard sits beside POSITION on the left instead. Guard: tests/race-map-corner-browser.spec.js. */
-@media (max-width:760px){ .race-route-map {top:272px;right:23px;width:77px;height:94px;} .track-route-map {height:48px;} }
-@media (max-width:400px){ .race-route-map {width:63px;height:83px;} }
-/* Short screens: telemetry and touch buttons fill the sides, so the map moves to the bottom row (see the short-screen blocks below). */
-/* The compact in-race route map remains visible on small viewports. */
+@media (max-width:760px){ .track-route-map {height:48px;} }
 /* Short landscape has ~9px of intro slack: draw the route over the sky strip. */
 @media (max-height: 500px) and (min-width: 761px) {
   .track-route-map { position:absolute; top:8px; left:8px; right:8px; height:26px; margin:0; background:none; }
@@ -1338,13 +1339,13 @@ body:not([data-phase="ready"]) .mode-indicator { margin-top: var(--safe-top); }
 }
 @media(max-width:760px) {
  .track-select button > span.track-route-map { height:54px; }
- .race-route-map { width:75px;height:88px;right:max(12px, var(--safe-right));top:108px; } /* AIRFLOW/VFX end at 100px */
+ .race-route-map { width:75px;height:88px;right:max(12px, var(--safe-right)); }
 }
 @media(max-width:400px) {
  .race-route-map {width:59px;height:72px;}
 }
 @media(max-height:500px) and (min-width:761px) {
- .race-route-map {width:67px;height:73px;top:128px;} /* AIRFLOW/VFX end at 120px */
+ .race-route-map {width:67px;height:73px;}
  .track-select button > span.track-route-map {
    position:absolute;top:8px;left:8px;right:8px;width:auto;height:28px;
  }
@@ -1847,9 +1848,9 @@ body[data-fold-axis="vertical"] .impact-report { left: auto; right: calc(100vw -
 /* CJK NITRO availability remains legible during countdown, pause and racing. */
 html[lang="zh-TW"] #nitro-status { font-size: max(10px, 1em); }
 
-/* Touch tablets: the live map sits 8px under the toolbar (13-57px); AIRFLOW/VFX drop below POSITION here. The callout drops 8px under the centred mode panel instead of the desktop 206px slot inside it. */
+/* Touch tablets: align the map with the safe-area inset; the callout clears the centred mode panel. */
 @media (hover: none) and (pointer: coarse) and (min-width: 761px) and (min-height: 501px) {
-  .race-route-map { top: 65px; right: max(12px, var(--safe-right)); }
+  .race-route-map { right: max(12px, var(--safe-right)); }
   .event-callout { top: calc(max(144px, calc(var(--race-progress-bottom, 0px) + 8px)) + 70px); }
 }
 

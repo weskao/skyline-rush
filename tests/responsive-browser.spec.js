@@ -538,10 +538,18 @@ for (const [width, height] of [[756, 265], [320, 568], [768, 840], [840, 768]]) 
           expect(height, `${locale} ${selector} height`).toBeGreaterThanOrEqual(44);
           expect(hits, `${locale} ${selector} receives taps`).toBe(true);
         }
-        await expect(page.locator('#mode-rules-summary')).toBeInViewport({ ratio: 1 });
-        await expect(page.locator('#lobby-mode-name')).toBeInViewport({ ratio: 1 });
+        await expect(page.locator('#mode-rules-summary')).toBeHidden(); // Classic does not show an idle rules row on compact Home.
         await expect(page.locator('#lobby-track-name')).toBeInViewport({ ratio: 1 });
         await page.screenshot({ path: testInfo.outputPath(`lobby-${width}x${height}-${locale}.png`), animations: 'disabled' });
+        const mode = page.locator('#lobby-mode-name');
+        if (width === 320 && height === 568) {
+          const setup = page.locator('.lobby-setup');
+          await mode.scrollIntoViewIfNeeded();
+          await expect(mode).toBeInViewport({ ratio: 1 });
+          await setup.evaluate(el => { el.scrollTop = 0; });
+        } else {
+          await expect(mode).toBeInViewport({ ratio: 1 });
+        }
       }
       await page.locator('#start-button').tap();
       await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);

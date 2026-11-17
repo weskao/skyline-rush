@@ -7,10 +7,11 @@ interface ControlPanelDependencies {
   clearRebinding: () => void;
   clearControls: () => void;
   hidePerformanceNotice: () => void;
+  restorePerformanceNotice: () => void;
 }
 
 export function setupControlPanels({
-  getRacePhase, clearRebinding, clearControls, hidePerformanceNotice,
+  getRacePhase, clearRebinding, clearControls, hidePerformanceNotice, restorePerformanceNotice,
 }: ControlPanelDependencies) {
   const dialog = document.querySelector<HTMLDialogElement>('#settings-panel')!;
   const gear = document.querySelector<HTMLButtonElement>('#settings-button')!;
@@ -40,6 +41,7 @@ export function setupControlPanels({
     clearRebinding();
     clearControls();
     if (!document.querySelector('dialog[open]') && !document.body.classList.contains('layout-editing')) {
+      restorePerformanceNotice();
       gear.focus({ preventScroll: true });
     }
   });

@@ -43,7 +43,8 @@ test('all home route previews and bilingual names are available without exposing
   const classicMaps = page.locator('[data-track] .track-route-map');
   await expect(page.locator('[data-track]')).toHaveCount(ids.length);
   await expect(page.locator('[data-upcoming-track]')).toHaveCount(upcomingIds.length);
-  await expect(page.locator('.track-route-map svg')).toHaveCount(ids.length + upcomingIds.length);
+  await expect(page.locator('#lobby-track-options .track-route-map svg')).toHaveCount(ids.length + upcomingIds.length);
+  await expect(page.locator('#lobby-hero-map svg')).toHaveCount(1);
   await expect(classicMaps.locator('polyline.route-overview-line')).toHaveCount(ids.length);
   // Sky Spiral's upper-loop and direction overlays are decoration, not extra roads.
   await expect(classicMaps.locator('polyline:not(.route-overview-line):not(.route-spiral-upper):not(.route-spiral-direction)')).toHaveCount(0);

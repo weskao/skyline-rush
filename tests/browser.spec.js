@@ -698,11 +698,15 @@ test.describe('narrow touch screen', () => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Start race' }).click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
-    const bounds = await page.locator('#touch-controls button, .toolbar .icon-button').evaluateAll(buttons => buttons.map(button => {
+    const touchButtons = page.locator('#touch-controls button[data-control]');
+    const raceTools = page.locator('.toolbar :is(#camera-button, #pause-button)');
+    await expect(touchButtons).toHaveCount(7);
+    await expect(raceTools).toHaveCount(2);
+    const bounds = await touchButtons.or(raceTools).evaluateAll(buttons => buttons.map(button => {
       const { left, right, width, height } = button.getBoundingClientRect();
       return { left, right, width, height };
     }));
-    expect(bounds).toHaveLength(12);
+    expect(bounds).toHaveLength(9);
     for (const bound of bounds) {
       expect(bound.left).toBeGreaterThanOrEqual(0);
       expect(bound.right).toBeLessThanOrEqual(320);

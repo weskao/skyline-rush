@@ -368,7 +368,7 @@ body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { dis
   }
   body:not([data-fold-axis]) .intro .home-intro-topbar > .route-label > span { display: none; }
   body:not([data-fold-axis]) .intro .home-intro-topbar :is(button, summary) { pointer-events: auto; }
-  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .bottomline { bottom: var(--safe-bottom); }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .bottomline { bottom: var(--home-footer-bottom, var(--safe-bottom)); }
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro.lobby-compact {
     --lobby-bottom: calc(var(--safe-bottom) + 48px);
     inset: auto max(12px, var(--safe-right)) var(--lobby-bottom) max(12px, var(--safe-left));

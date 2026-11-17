@@ -1,6 +1,6 @@
 {
-  "reference": "main bd71ac8 plus intentional camera layout correction cda325e; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient; mode HUD offset: phone route map and short-landscape mode indicator sit below the race progress block that mode HUD rows grow; every-device race HUD spacing (main 266210c/f83b67e); one-row held-item slot at \u2264400 px; Wave 2 eight-car HUD spacing and short-landscape speedometer corrections (feature/race-difficulty-eight-car-grid 1fce652); short-landscape callout in the top-bar strip on touch only, mouse keeps the left gutter (fix/race-callout-landscape, fix/hud-callout-landscape); Race HUD moved into the VFX panel: its reset shares the #vfx-reset style, and touch tablets cap the mid-race VFX panel below the lowered tool row (feature/race-hud-vfx-panel); home Garage button NEW highlight and Start + Garage pinned row with Practice scrolling below on phones, so Garage now precedes Practice in element order (f7691cc1); 900-966px desktops set the tagline on one 32px line so the wrapped Practice row fits without the intro scrolling (fix/home-intro-garage-fit); desktop (>=1001px) Garage NEW tag pinned to the button corner so the 1440x900 Start row stays on one line (feature/garage-skin-pick-memory 4c409785); Garage NEW tag pinned to its corner on all devices, above the rules row but below expanded dropdowns (77a368ee); Garage 900px compact intro layout retained alongside single-line NEW Garage action row (feature/garage-vfx-skins); 900px desktop header and 44px footer clearance (118px top, 60px bottom with -6px margin) (feature/garage-vfx-skins CI fix); results/pause copy selector retargeted to .overlay-summary > p for the phone-landscape two-column panel; NITRO/BOOST/FLY colour tokens on :root drive the NITRO meter, HUD text, charge bar, BOOST status, speed ticks, Controls preview and per-action key hints (feature/hud-sprint-colors); home camera picker uses the shared custom dropdown: arrow-button rules scoped to direct children, lists open upward and cap to the viewport room; driving onboarding quick actions precede the guide introduction, and Controls groups touch layout, steering and keyboard in that order; live race map takes the top-right corner under the toolbar row on every layout and the leaderboard joins POSITION on the left (short-portrait bottom-row map removed); responsive game dialogs (Photo Studio and Daily shortcut styles, safe-area release notes, and intentional release, Photo Studio and History element order); lobby mode and track toggles replace the old track step and the graphics notice is a native disclosure; pause and results prioritize the primary action before Photo Studio",
-  "cssBlob": "f24850840bee0a3d1d1590a45258df0aea1d8629",
+  "reference": "main bd71ac8 plus intentional camera layout correction cda325e; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Endless-only finite HUD hiding; preserve AIRFLOW telemetry and release gradient; main ebd30e5 (same f9c2cb1/d71fc65 runtime) plus reviewed bounded result metrics; Harbor Circuit map palette; preserve AIRFLOW telemetry and release gradient; mode HUD offset: phone route map and short-landscape mode indicator sit below the race progress block that mode HUD rows grow; every-device race HUD spacing (main 266210c/f83b67e); one-row held-item slot at \u2264400 px; Wave 2 eight-car HUD spacing and short-landscape speedometer corrections (feature/race-difficulty-eight-car-grid 1fce652); short-landscape callout in the top-bar strip on touch only, mouse keeps the left gutter (fix/race-callout-landscape, fix/hud-callout-landscape); Race HUD moved into the VFX panel: its reset shares the #vfx-reset style, and touch tablets cap the mid-race VFX panel below the lowered tool row (feature/race-hud-vfx-panel); home Garage button NEW highlight and Start + Garage pinned row with Practice scrolling below on phones, so Garage now precedes Practice in element order (f7691cc1); 900-966px desktops set the tagline on one 32px line so the wrapped Practice row fits without the intro scrolling (fix/home-intro-garage-fit); desktop (>=1001px) Garage NEW tag pinned to the button corner so the 1440x900 Start row stays on one line (feature/garage-skin-pick-memory 4c409785); Garage NEW tag pinned to its corner on all devices, above the rules row but below expanded dropdowns (77a368ee); Garage 900px compact intro layout retained alongside single-line NEW Garage action row (feature/garage-vfx-skins); 900px desktop header and 44px footer clearance (118px top, 60px bottom with -6px margin) (feature/garage-vfx-skins CI fix); results/pause copy selector retargeted to .overlay-summary > p for the phone-landscape two-column panel; NITRO/BOOST/FLY colour tokens on :root drive the NITRO meter, HUD text, charge bar, BOOST status, speed ticks, Controls preview and per-action key hints (feature/hud-sprint-colors); home camera picker uses the shared custom dropdown: arrow-button rules scoped to direct children, lists open upward and cap to the viewport room; driving onboarding quick actions precede the guide introduction, and Controls groups touch layout, steering and keyboard in that order; live race map takes the top-right corner under the toolbar row on every layout and the leaderboard joins POSITION on the left (short-portrait bottom-row map removed); responsive game dialogs (Photo Studio and Daily shortcut styles, safe-area release notes, and intentional release, Photo Studio and History element order); lobby mode and track toggles replace the old track step and the graphics notice is a native disclosure; pause and results prioritize the primary action before Photo Studio; consolidated settings move controls into sections, the active route appears before Mode, the chooser lives in its own dialog and the Home camera/Daily rail precedes the action dock",
+  "cssBlob": "20f1707668ce549bc629be402f740cd4f021d59c",
   "elements": [
     {
       "id": "whats-new-screen",
@@ -195,14 +195,6 @@
       "classes": []
     },
     {
-      "id": "assist-button",
-      "tag": "button",
-      "classes": [
-        "icon-button",
-        "assist-button"
-      ]
-    },
-    {
       "id": "settings-button",
       "tag": "button",
       "classes": [
@@ -211,23 +203,20 @@
     },
     {
       "id": "settings-panel",
-      "tag": "div",
-      "classes": [
-        "settings-panel"
-      ]
-    },
-    {
-      "id": "mute-all",
-      "tag": "button",
-      "classes": [
-        "mute-all"
-      ]
+      "tag": "dialog",
+      "classes": []
     },
     {
       "id": "controls-button",
       "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "assist-button",
+      "tag": "button",
       "classes": [
-        "controls-button"
+        "icon-button",
+        "assist-button"
       ]
     },
     {
@@ -323,6 +312,33 @@
       ]
     },
     {
+      "id": "airflow-toggle",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "vfx-panel",
+      "tag": "div",
+      "classes": []
+    },
+    {
+      "id": "vfx-reset",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "mute-all",
+      "tag": "button",
+      "classes": [
+        "mute-all"
+      ]
+    },
+    {
+      "id": "locale-select",
+      "tag": "select",
+      "classes": []
+    },
+    {
       "id": "camera-button",
       "tag": "button",
       "classes": [
@@ -342,26 +358,6 @@
       "classes": [
         "icon-button"
       ]
-    },
-    {
-      "id": "locale-select",
-      "tag": "select",
-      "classes": []
-    },
-    {
-      "id": "airflow-toggle",
-      "tag": "button",
-      "classes": []
-    },
-    {
-      "id": "vfx-panel",
-      "tag": "details",
-      "classes": []
-    },
-    {
-      "id": "vfx-reset",
-      "tag": "button",
-      "classes": []
     },
     {
       "id": "track-swipe",
@@ -467,6 +463,21 @@
       "classes": []
     },
     {
+      "id": "lobby-track-name",
+      "tag": "span",
+      "classes": []
+    },
+    {
+      "id": "lobby-tracks-toggle",
+      "tag": "button",
+      "classes": []
+    },
+    {
+      "id": "lobby-track-status",
+      "tag": "span",
+      "classes": []
+    },
+    {
       "id": "race-mode-picker",
       "tag": "div",
       "classes": [
@@ -495,30 +506,6 @@
       "tag": "div",
       "classes": [
         "race-mode-tabs"
-      ]
-    },
-    {
-      "id": "lobby-tracks-toggle",
-      "tag": "button",
-      "classes": [
-        "lobby-picker-toggle"
-      ]
-    },
-    {
-      "id": "lobby-track-name",
-      "tag": "strong",
-      "classes": []
-    },
-    {
-      "id": "lobby-track-status",
-      "tag": "span",
-      "classes": []
-    },
-    {
-      "id": "lobby-track-options",
-      "tag": "div",
-      "classes": [
-        "track-select"
       ]
     },
     {
@@ -640,29 +627,6 @@
       "classes": []
     },
     {
-      "id": "start-button",
-      "tag": "button",
-      "classes": [
-        "primary-button"
-      ]
-    },
-    {
-      "id": "garage-button",
-      "tag": "button",
-      "classes": [
-        "text-button",
-        "garage-button"
-      ]
-    },
-    {
-      "id": "practice-button",
-      "tag": "button",
-      "classes": [
-        "text-button",
-        "practice-button"
-      ]
-    },
-    {
       "id": "showcase-camera-dock",
       "tag": "nav",
       "classes": [
@@ -718,6 +682,29 @@
       "tag": "button",
       "classes": [
         "daily-card-start"
+      ]
+    },
+    {
+      "id": "start-button",
+      "tag": "button",
+      "classes": [
+        "primary-button"
+      ]
+    },
+    {
+      "id": "garage-button",
+      "tag": "button",
+      "classes": [
+        "text-button",
+        "garage-button"
+      ]
+    },
+    {
+      "id": "practice-button",
+      "tag": "button",
+      "classes": [
+        "text-button",
+        "practice-button"
       ]
     },
     {
@@ -1029,6 +1016,13 @@
       "tag": "div",
       "classes": [
         "error-message"
+      ]
+    },
+    {
+      "id": "lobby-track-options",
+      "tag": "div",
+      "classes": [
+        "track-select"
       ]
     },
     {

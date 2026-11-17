@@ -26,8 +26,11 @@ test('landscape language controls remain clickable while the quality notice is v
   await expect(page.locator('#performance-notice')).toBeVisible();
   await selectLocale(page, 'zh-TW');
   await expect(page.locator('#performance-notice-text')).toContainText('低');
+  await expect(page.locator('#performance-notice summary')).toBeVisible();
   await page.locator('#performance-notice summary').click();
   await page.locator('#performance-notice-dismiss').click();
+  await expect(page.locator('#performance-notice')).toBeHidden();
+  await selectLocale(page, 'en');
   await expect(page.locator('#performance-notice')).toBeHidden();
 });
 

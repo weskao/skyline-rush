@@ -93,6 +93,10 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   Keep the existing release-notes dialog wired to that same button. Guard both placement and taps
   in the Home version and landscape toolbar tests in `tests/responsive-browser.spec.js`.
 
+- **Dock the live minimap relative to the race toolbar.** Keep the shared toolbar height and button size as the source of the gap. Short touch landscape keeps the map beside the toolbar and folds use their pane rules. Guard: `tests/race-map-corner-browser.spec.js`.
+
+- **The short-landscape Resources list expands in the lobby's scroll flow.** A list positioned below the whole lobby can fall under the pinned Progress button. Keep the currency buttons reachable after opening. Guard: the ultra-short landscape test in `tests/wave3-currency-browser.spec.js`.
+
 - **Short-landscape Home keeps the wallet row distinct from the selected-track hero.** Preserve at least 6 px between
   `.home-intro-topbar` and `.lobby-race-heading` when the compact resource strip is shown; do not zero the
   topbar's bottom margin. Guard 345×206, 667×375, 743×340 and 852×393 in `tests/lobby-polish-browser.spec.js`.

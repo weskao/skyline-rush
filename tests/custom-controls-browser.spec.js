@@ -56,8 +56,8 @@ test('the dropdown is fully keyboard operable and keeps keys away from driving',
   await expect(quality).toBeFocused();
   await expect(page.locator('#settings-display')).toBeVisible();
   await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Home');
-  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('End');
+  await page.keyboard.press('ArrowUp');
   await page.keyboard.press('Enter');
   await expect(listbox).toBeHidden();
   await expect(quality).toHaveText('High'); // one above the last option, Ultra

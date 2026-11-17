@@ -1,3 +1,10 @@
+# Develop browser CI run 44117764575
+
+- [x] Reproduced the live minimap gap on desktop and two phone widths. The map now shares the toolbar height and button size. Short touch landscape keeps its own side-by-side row.
+- [x] Reproduced the short-landscape Resources list under the pinned Progress button. The expanded list stays inside the lobby's scrolling flow.
+- [x] Preserve the iOS portrait footer inset when Home overrides the base layout and restore an undismissed graphics notice after closing Settings on Home.
+- [ ] Finish the remaining browser failures on the latest develop SHA, confirm the full quality gate and verify the layout on a physical phone.
+
 # Mobile results navigation and cloud save
 
 - [x] Keep race actions on the first portrait screen and reachable while scrolling the reward receipt. A subsequent result opens at the top.

@@ -19,12 +19,12 @@ export async function readSafeArea(page) {
   const box = selector => page.locator(selector).boundingBox();
   const line = page.locator('.bottomline');
   return {
-    world: await box('#world'), bar: await box('.topbar'), brand: await box('.brand'), camera: await box('#camera-button'),
+    world: await box('#world'), bar: await box('.topbar'), brand: await box('.brand'), settings: await box('#settings-button'),
     line: await line.isVisible() ? await line.boundingBox() : null, start: await box('#start-button'),
   };
 }
 
-export function expectSafeArea({ world, bar, brand, camera, line, start }, name, insets, width, height) {
+export function expectSafeArea({ world, bar, brand, settings, line, start }, name, insets, width, height) {
   expect(world.x, name).toBeLessThanOrEqual(1);
   expect(world.y, name).toBeLessThanOrEqual(1);
   expect(world.x + world.width, name).toBeGreaterThanOrEqual(width - 1);
@@ -32,8 +32,8 @@ export function expectSafeArea({ world, bar, brand, camera, line, start }, name,
   expect(bar.y, `${name} top bar`).toBeGreaterThanOrEqual(insets.top - 1);
   expect(bar.y, `${name} top bar`).toBeLessThanOrEqual(insets.top + 1);
   expect(brand.x, `${name} brand`).toBeGreaterThanOrEqual(insets.left - 1);
-  expect(camera.x + camera.width, `${name} camera`).toBeLessThanOrEqual(width - insets.right + 1);
-  expect(camera.y, `${name} camera`).toBeGreaterThanOrEqual(insets.top - 1);
+  expect(settings.x + settings.width, `${name} settings`).toBeLessThanOrEqual(width - insets.right + 1);
+  expect(settings.y, `${name} settings`).toBeGreaterThanOrEqual(insets.top - 1);
   // touch tablets hide the footer by design
   if (height >= 500 && line) {
     const gap = height - (line.y + line.height);

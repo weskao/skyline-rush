@@ -358,6 +358,7 @@ const { toggleSettings } = setupControlPanels({
   getRacePhase: () => race.phase,
   clearRebinding: () => keymap.cancelRebinding(),
   hidePerformanceNotice: () => notice.hide(),
+  restorePerformanceNotice: () => notice.restore(race.phase === 'ready'),
   clearControls: () => controls.clear(),
 });
 

@@ -78,12 +78,15 @@ test.describe('Garage landscape touch controls', () => {
         expect(bounds.y + bounds.height).toBeLessThanOrEqual(height);
         expect(bounds.hit, `${bounds.name} receives pointer hits`).toBe(true);
       }
-      await expect(pose).toHaveAccessibleName('起飛');
+      await expect(pose).toHaveRole('switch');
+      await expect(pose).toHaveAccessibleName('飛行');
+      await expect(pose).toHaveAttribute('aria-checked', 'false');
       await pose.tap();
-      await expect(pose).toHaveAccessibleName('降落');
+      await expect(pose).toHaveAccessibleName('飛行');
+      await expect(pose).toHaveAttribute('aria-checked', 'true');
       await expect(preview).toHaveAttribute('data-garage-mode', 'flight');
       await pose.tap();
-      await expect(pose).toHaveAccessibleName('起飛');
+      await expect(pose).toHaveAttribute('aria-checked', 'false');
       await expect(preview).toHaveAttribute('data-garage-mode', 'ground');
       await wing.tap();
       await expect(wing).toHaveRole('switch');
