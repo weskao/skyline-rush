@@ -49,6 +49,15 @@ Write every assertion so that runner speed cannot change its outcome.
   "NEXT · AIR +25 · 6 M" in English after a switch to zh-TW.
 - Compare against the text actually shown, not a literal guessed in advance. Read it once the
   element is visible and the state is frozen, then assert that it changes.
+- **Reach a lobby mode button the way a player does.** At 1000px wide or less, or 500px tall or less,
+  the lobby folds the mode list (`#lobby-mode-options`) behind `#lobby-modes-toggle`
+  (`src/race-lobby.css`), so `button[data-race-mode="…"]` is in the DOM but hidden. A direct
+  `.click()` waits out the whole timeout and reads like a product bug. Use `clickLobbyOption()` or
+  `openLobbyModes()` from `tests/helpers/home-lobby.js`; both do nothing extra on desktop.
+  `close-button`, `event-lab` and `mode-first-setup` failed this way at 390x844.
+  **Enforced by** `tests/lobby-mode-helper.test.js`: a spec that names a mode button must call the
+  helper. It cannot see a single missed click in a spec that already uses the helper; run the
+  spec at a phone size.
 
 ## Catalog drift and deterministic physics
 

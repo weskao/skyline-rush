@@ -4,6 +4,7 @@ import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
+import { openLobbyModes } from './helpers/home-lobby.js';
 // CI speed: the three touch sizes share one booted page per check and are resized in place (each size is also freshly booted in one
 // check), the two promoted-Garage widths share a page per locale and the four NEW-tag sizes share one page. Desktop mouse tests boot alone.
 
@@ -139,8 +140,7 @@ async function expectHomeEntriesReachable(page, width, height) {
 
 // Compact rows may draw smaller than 44px but must still answer a 44px-tall tap (drawn box or hit area).
 async function expectCompactTouchTargets(page, width, height) {
-  const modes = page.locator('#lobby-modes-toggle');
-  if (!await page.locator('button[data-race-mode="classic"]').isVisible()) await modes.click();
+  await openLobbyModes(page);
   await page.locator('button[data-race-mode="custom"]').evaluate(el => el.click());
   await page.locator('#race-mode-rules > summary').scrollIntoViewIfNeeded();
   const groups = ['#settings-button',

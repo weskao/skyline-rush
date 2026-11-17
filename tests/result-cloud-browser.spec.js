@@ -10,6 +10,7 @@ const SHOTS = process.env.RESULT_CLOUD_SHOTS;
 // Served in place of src/cloud-save.ts by the Vite dev server; window.cloudMock (init script) scripts each call.
 const MOCK_MODULE = `
 import { mergeProgress } from '/src/cloud-progress.ts';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 const mock = window.cloudMock;
 export const watchCloudUser = onUser => { mock.onUser = onUser; setTimeout(() => onUser(mock.user)); };
 export async function signInToCloud() {
@@ -163,7 +164,7 @@ test('results cloud line follows the language switch', async ({ gameplayPage }) 
 test('a failed clean time trial offers a visible retry without claiming a cloud save or a demo credit', async ({ gameplayPage }) => {
   const page = await cloudPage(gameplayPage, { user: { uid: 'player_test_001', email: 'player@example.com' } });
   await expect.poll(() => page.evaluate(() => window.cloudMock.calls)).toBe(1);
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await page.locator('#time-trial-rules > summary').click();
   await page.locator('#clean-trial').check();
   await finishRace(page, '#start-button', 1);

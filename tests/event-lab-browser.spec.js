@@ -132,7 +132,7 @@ test.describe('narrow Event Lab', () => {
 
   test('keeps the action reachable at keyboard height and scopes validation to the edited object', async ({ gameplayPage: page }) => {
     const entry = page.locator('button[data-race-mode="eventlab"]');
-    await entry.click();
+    await clickLobbyOption(page, 'button[data-race-mode="eventlab"]'); // phones keep the mode list behind the Mode dropdown
     const dialog = page.locator('#event-lab-dialog');
     const objects = dialog.getByRole('button', { name: 'Objects', exact: true });
     await expect(dialog.locator('.lab-map')).toBeVisible();

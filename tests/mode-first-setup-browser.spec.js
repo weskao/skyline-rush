@@ -251,7 +251,7 @@ for (const [name, viewport, touch] of [['pointer', { width: 1440, height: 900 },
       await page.goto('/');
       await closeMusicPrompt(page);
       const press = locator => touch ? locator.tap() : locator.click();
-      await press(page.locator('button[data-race-mode="time"]'));
+      await clickLobbyOption(page, 'button[data-race-mode="time"]', touch ? 'tap' : 'click'); // phones keep the mode list behind the Mode dropdown
       await press(page.locator('#settings-button'));
       await press(page.locator('[data-settings-section="display"]'));
       const row = page.locator('label:has(> [data-vfx="comfortable"])');
