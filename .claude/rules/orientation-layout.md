@@ -96,3 +96,8 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
 - **Short-landscape Home keeps the wallet row distinct from the selected-track hero.** Preserve at least 6 px between
   `.home-intro-topbar` and `.lobby-race-heading` when the compact resource strip is shown; do not zero the
   topbar's bottom margin. Guard 345×206, 667×375, 743×340 and 852×393 in `tests/lobby-polish-browser.spec.js`.
+
+- **Home displays the track at its original brightness.** Keep the viewport-wide shade out of the ready phase,
+  including the concept-image fallback. Any contrast treatment belongs to the controls that need it.
+  Animate the Start highlight inside the button's own bounds so moving to or from the landscape rail cannot
+  move the highlight outside the button. Both behaviors are covered in `tests/lobby-polish-browser.spec.js`.

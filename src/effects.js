@@ -108,7 +108,9 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
     return wheel;
   }
   let classicRoute;
-  const burst = createParticleBurst(emit, (d, x) => classicRoute?.point(d, x) ?? [roadCenter(d) + x, -d]);
+  const roadPoint = (d, x) => classicRoute?.point(d, x) ?? [roadCenter(d) + x, -d];
+  const burst = createParticleBurst(emit, roadPoint);
+  const statusEmit = (d, x, y, ...rest) => { const [wx, wz] = roadPoint(d, x); emit(wx, y, -wz, ...rest); }; // rival-status-fx.ts
   // rings[0] flashes a crash, rings[1] a hit the shield blocked (ITEM-12); one shader program for both.
   const rings = [orange, blue].map(color => {
     const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(...color), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -127,7 +129,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   magnetRing.scale.setScalar(MAGNET_RANGE);
   scene.add(magnetRing);
   const statusTint = createRivalStatusTint(RACE_DRIVER_IDS.length - 1); // Freeze / EMP on the rivals they slow
-  scene.add(statusTint.mesh);
+  scene.add(statusTint.object);
   return {
     // `origin`: the scene's floating origin (scene + origin = absolute; world.js), defaulting to the flat road's.
     update(race, dt, center, preview, reducedMotion, vehicles, options = {}, origin = null) {
@@ -356,7 +358,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         // Fades over the final second; a gentle pulse unless motion is reduced.
         magnetRing.material.opacity = Math.min(1, magnet) * (reducedMotion ? .3 : .3 + Math.sin(flowTime * 5) * .08);
       }
-      statusTint.update(race, vehicles, dt, { quality: options.quality, reducedMotion, preview });
+      statusTint.update(race, vehicles, dt, { quality: options.quality, reducedMotion, preview, emit: active ? statusEmit : null });
       if (race.phase === 'countdown' || race.phase === 'ready') {
         lastImpact = null; lastLanding = null; lastShieldBlock = null;
       }

@@ -1,4 +1,18 @@
 /* Home lobby. Keep the scroll panel and its fixed landscape actions free of new stacking contexts. */
+body[data-phase="ready"] :is(.scene-shade, .topbar),
+.upcoming-scene::after { background: none; }
+
+/* Keep the highlight anchored to its button as Start moves between the dock and the landscape rail. */
+.intro .primary-button::after, .race-overlay .next-button::after {
+  border-radius: inherit;
+  background: linear-gradient(100deg, transparent 44%, rgb(255 255 255 / .42) 50%, transparent 56%) 100% 0 / 300% 100% no-repeat;
+  translate: none;
+}
+@keyframes start-sheen {
+  0%, 55% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
 .lobby-visually-hidden {
   position: absolute;
   width: 1px;
