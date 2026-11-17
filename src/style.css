@@ -2175,12 +2175,6 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 .result-cloud[data-state="syncing"] p::before { background: #7cc8ff; }
 .result-cloud[data-state="synced"] p::before { background: #5be39a; }
 .result-cloud[data-state="failed"] p::before { background: #ffb44d; }
-@media (max-height: 500px) and (orientation: landscape) {
-  body:not([data-tutorial]) .overlay-actions:has(> .result-cloud:not([hidden])) { gap: 6px; } /* pays for the cloud line at 360px tall */
-  body:not([data-tutorial]) .result-cloud { justify-items: stretch; gap: 4px; margin-top: 0; }
-  body:not([data-tutorial]) .result-cloud p { font-size: 10.5px; line-height: 1.3; }
-  body:not([data-tutorial]) .result-cloud .sign-in-button { min-height: 44px; padding-block: 6px; font-size: 13px; }
-}
 /* Results gain a third action (cloud backup); split summary/actions on desktop instead of
    clipping Sign in behind #app. Preserve the existing one-column layout on portrait phones. */
 @media (min-width: 761px) and (min-height: 501px) {
@@ -2195,24 +2189,6 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   }
   body[data-phase="finished"]:not([data-tutorial]) .overlay-actions { min-width: 0; }
   body[data-phase="finished"]:not([data-tutorial]) #next-button { min-width: 0; width: 100%; }
-}
-/* On short landscape screens all actions remain at least 44px tall; two rows of
-   controls plus an inline cloud sign-in replace the overflowing vertical stack. */
-@media (max-height: 500px) and (orientation: landscape) {
-  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: center;
-    gap: 6px;
-  }
-  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > #next-button,
-  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > .result-cloud { grid-column: 1 / -1; }
-  body[data-phase="finished"]:not([data-tutorial]) .result-links { min-width: 0; gap: 4px; }
-  body[data-phase="finished"]:not([data-tutorial]) .result-links .text-button { min-width: 0; padding: 4px; font-size: 11px; }
-  body[data-phase="finished"]:not([data-tutorial]) .result-cloud {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: center;
-  }
 }
 /* Compact the non-interactive podium summary only on very short landscape screens.
    Keep the header/tool clearance and every 44px action target unchanged.
@@ -2357,6 +2333,7 @@ body[data-race-mode="endless"] #race-route-map[data-streaming] { display: block;
 }
 
 /* Race navigation: the current primary action stays distinct from the secondary controls. */
+.overlay-buttons { display: contents; }
 .race-overlay [data-primary-action].text-button {
   min-height: 48px; padding-inline: 12px;
   color: #142333; background: var(--accent); border: 1px solid transparent; border-radius: 4px;
@@ -2391,6 +2368,72 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
 .result-standings strong { white-space: nowrap; }
 .result-standings:focus-visible { outline: 2px solid #95e2f6; outline-offset: 2px; }
 
+/* Share the same primary/secondary order in both phone orientations. */
+@media (max-width: 760px) and (orientation: portrait), (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons:has(.next-button:not([hidden])) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons :is(.primary-button, .text-button) {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    margin: 0;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons .text-button {
+    gap: 6px;
+    padding: 5px 4px;
+    border-radius: 6px;
+    line-height: 1.2;
+    word-break: keep-all;
+    text-wrap: balance;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons .text-button:not([data-primary-action]) {
+    border: 1px solid rgb(208 228 245 / .22);
+    background: rgb(14 29 48 / .76);
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons svg { flex-shrink: 0; }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons [data-primary-action] {
+    grid-column: 1 / -1;
+    min-height: 48px;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .result-links {
+    display: grid;
+    grid-column: span 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: inherit;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .result-links:has(> [data-primary-action]) { display: contents; }
+  body[data-phase="finished"]:not([data-tutorial]) #choose-track[data-primary-action] { order: -1; }
+
+  body[data-phase="finished"]:not([data-tutorial]) .result-cloud {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+    gap: 5px;
+    margin: 0;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .result-cloud p {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    justify-self: center;
+    column-gap: 6px;
+    font: 12px/1.3 system-ui, sans-serif;
+    text-align: start;
+    text-wrap: pretty;
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .result-cloud p::before { margin: 0; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-cloud .sign-in-button {
+    margin: 0;
+    padding: 6px 10px;
+    font: 600 13px/1.25 system-ui, sans-serif;
+    text-wrap: balance;
+  }
+}
 @media (max-width: 760px) and (orientation: portrait) {
   body[data-phase="finished"] .race-overlay { align-items: safe center; padding-block: 10px max(12px, var(--safe-bottom)); }
   body[data-phase="finished"] .overlay-content { width: calc(100% - 32px); }
@@ -2400,16 +2443,34 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
   body[data-phase="finished"] .result-stats { margin: 8px 0; gap: 4px 16px; }
   body[data-phase="finished"] .result-stats > div { gap: 2px; }
   body[data-phase="finished"] .result-style { margin: 4px 0; gap: 2px; }
-  body[data-phase="finished"] .overlay-actions { display: flex; flex-direction: column; gap: 6px; }
-  body[data-phase="finished"] .overlay-actions > :is(.primary-button, .text-button) { width: 100%; min-width: 0; margin: 0; }
-  body[data-phase="finished"] .result-cloud { margin-top: 4px; }
+
+  /* Keep the dock in the results scroller, with the summary and receipt free to move above it. */
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .race-overlay {
+    bottom: max(8px, var(--safe-bottom));
+    overflow-anchor: none;
+    overscroll-behavior-y: contain;
+    scroll-padding-bottom: 114px;
+  }
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-actions { display: contents; }
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-buttons {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: 8px -8px 0;
+    padding: 8px;
+    border: 1px solid rgb(158 195 225 / .23);
+    border-radius: 12px;
+    background: #0c192b;
+    box-shadow: 0 -8px 20px rgb(5 12 24 / .38);
+  }
+  body[data-phase="finished"]:not([data-tutorial]) .overlay-buttons .next-button { height: 48px; }
+  body[data-phase="finished"]:not([data-tutorial]) .result-cloud { margin-top: 8px; }
 }
 @media (max-width: 380px) and (orientation: portrait) {
   /* Reserve the bottom inset for navigation; the paused and wider podium layouts keep their existing space. */
   body[data-phase="finished"] .race-overlay { bottom: max(8px, var(--safe-bottom)); }
   body[data-phase="finished"] .overlay-route { display: none; }
   body[data-phase="finished"] .overlay-summary > p { margin-block: 4px; }
-  body[data-phase="finished"] .overlay-actions > .next-button { height: 48px; }
   body[data-phase="finished"] .style-stars svg { width: 24px; height: 24px; }
   body[data-phase="finished"] .result-trophy-art { max-width: 48px; max-height: 48px; }
   body[data-phase="finished"] .result-style {
@@ -2420,8 +2481,9 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
 
 @media (max-height: 500px) and (orientation: landscape) {
   body[data-phase="paused"]:not([data-tutorial]) .overlay-actions { align-self: center; }
-  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > #next-stage,
-  body[data-phase="finished"]:not([data-tutorial]) .overlay-actions > #again-button[data-primary-action] { grid-column: 1 / -1; }
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-content {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 36%);
+  }
   body:not([data-tutorial]) .overlay-summary > .result-standings { flex-basis: 100%; min-width: 0; margin: 4px auto; }
   .result-standings { max-height: 124px; overflow-y: auto; font-size: 11px; }
   .result-standings li { padding: 3px 8px; }

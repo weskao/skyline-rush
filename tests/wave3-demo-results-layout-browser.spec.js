@@ -16,7 +16,7 @@ const clipped = () => {
   if (card.dataset.open !== undefined) {
     const actions = document.querySelector('#race-overlay .overlay-actions');
     if (panel.top < 0 || panel.bottom > innerHeight) misses.push('details off screen');
-    for (const control of actions.querySelectorAll(':scope > button:not([hidden]), :scope > .result-links button')) {
+    for (const control of actions.querySelectorAll('.overlay-buttons button:not([hidden])')) {
       const r = control.getBoundingClientRect();
       if (r.width && r.height && panel.right > r.left + 1 && panel.left < r.right - 1 &&
         panel.bottom > r.top + 1 && panel.top < r.bottom - 1) misses.push('details cover actions');

@@ -1,3 +1,11 @@
+# Mobile results navigation and cloud save
+
+- [x] Keep race actions on the first portrait screen and reachable while scrolling the reward receipt. A subsequent result opens at the top.
+- [x] Give short-landscape secondary buttons equal widths and the cloud status its own row. Keep the Google mark and translated label together.
+- [x] Browser RED: portrait secondary actions were below the fold, and landscape labels wrapped. Chromium checked English and Traditional Chinese, both primary-action variants, both Google states and the existing compact/foldable layout cases.
+- [x] Typecheck, production build, module-size and unit suite passed locally (3,353 unit tests passed, 3 skipped).
+- [ ] Confirm physical-device behavior and the exact-head GitHub quality gate. The local full browser suite requires the configured Chrome distribution.
+
 # Home scene and Start sweep
 
 - [x] Show the original Home track scene without a full-screen gradient across viewport sizes, including the fallback preview.
