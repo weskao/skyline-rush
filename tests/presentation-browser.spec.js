@@ -1,3 +1,4 @@
+import { openLobbyTracks } from './helpers/home-lobby.js';
 import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
@@ -21,7 +22,10 @@ for (const [name, viewport, hasTouch] of [
     await open(page);
     // Coming Soon cards reuse .track-preview for their thumbnail; only race tracks animate here.
     await expect(page.locator('[data-track] .track-preview')).toHaveCount(Object.keys(RACE_TRACKS).length);
+    await openLobbyTracks(page);
+    await expect(page.locator('#track-chooser')).toHaveCSS('animation-name', 'chooser-in');
     await expect(page.locator('[data-track] .track-preview').first()).toHaveCSS('animation-play-state', 'running');
+    await page.locator('#track-choose-close').click();
     await page.evaluate(() => {
       window.uiMotion = [];
       const animate = Element.prototype.animate;
@@ -78,13 +82,20 @@ for (const [name, viewport, hasTouch] of [
 test('reduced-motion and comfort suppress presentation movement and looping previews', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await open(page);
+  await openLobbyTracks(page);
+  await expect(page.locator('#track-chooser')).toHaveCSS('animation-name', 'none');
   await expect(page.locator('.track-preview').first()).toHaveCSS('animation-name', 'none');
+  await page.locator('#track-choose-close').click();
   await page.locator('.history-button').click();
   await expect.poll(() => page.locator('#history-screen').evaluate(el => el.getAnimations().length)).toBe(0);
   await page.keyboard.press('Escape');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await toggleSettingsSection(page, 'display');
   await page.locator('[data-vfx="comfortable"]').check();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#settings-panel')).toBeHidden();
+  await openLobbyTracks(page);
+  await expect(page.locator('#track-chooser')).toHaveCSS('animation-name', 'none');
   await expect(page.locator('.track-preview').first()).toHaveCSS('animation-name', 'none');
 });
 

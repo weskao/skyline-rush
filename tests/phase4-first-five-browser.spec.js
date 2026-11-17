@@ -37,7 +37,8 @@ for (const track of TRACKS) for (const viewport of VIEWPORTS) {
     await clickLobbyOption(page, `[data-track="${track}"]`);
     const button = page.locator(`[data-track="${track}"]`);
     await expect(button).toHaveAttribute('aria-pressed', 'true');
-    const overview = button.locator('.track-route-map svg.route-overview');
+    const overview = page.locator('#lobby-hero-map svg.route-overview');
+    await expect(overview).toBeVisible();
     await expect(overview).toHaveCount(1);
     await expect(overview.locator('.route-overview-line')).toHaveCount(1);
     await expect(overview.locator('.route-start')).toHaveCount(1);

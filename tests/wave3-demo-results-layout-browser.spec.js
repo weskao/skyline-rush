@@ -9,7 +9,7 @@ const clipped = () => {
   const card = document.querySelector('.wave3-demo-results--earned');
   const misses = [];
   if (card.scrollHeight > card.clientHeight + 1) misses.push(`card scrolls ${card.scrollHeight}/${card.clientHeight}`);
-  // Short landscape opens the details as a panel above the strip; it counts as part of the card.
+  // Short landscape opens the details beside the action column; it counts as part of the card.
   const c = card.getBoundingClientRect();
   const panel = card.querySelector('.wave3-demo-results__details').getBoundingClientRect();
   const box = { left: Math.min(c.left, panel.left), right: Math.max(c.right, panel.right), bottom: Math.max(c.bottom, panel.bottom) };
@@ -105,7 +105,7 @@ for (const viewport of [
         })).toEqual([]);
       }
       if (viewport.height <= 500) {
-        // The strip itself is the tap target; the details rise as a panel and close again.
+        // The strip opens a details panel alongside the results actions.
         await reward.click({ position: { x: 20, y: 10 } });
         await expect(toggle).toHaveAttribute('aria-expanded', 'true');
         await page.locator('#next-button').click({ trial: true });

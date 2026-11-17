@@ -51,6 +51,7 @@
 #track-chooser[open] { display: grid; animation: chooser-in 180ms ease-out both; }
 #track-chooser::backdrop { background: #05101ead; }
 @keyframes chooser-in { from { opacity: 0; transform: translateY(16px) scale(.985); } }
+.vfx-comfort #track-chooser[open] { animation: none; }
 @media (prefers-reduced-motion: reduce) { #track-chooser[open] { animation: none; } }
 .track-chooser-heading, .track-chooser-footer {
   display: flex;

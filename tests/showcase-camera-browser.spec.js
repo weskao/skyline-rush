@@ -58,7 +58,9 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:32
     await expect(page.locator('#showcase-camera-next')).toBeVisible();
     for (const locale of ['en', 'zh-TW']) {
       await page.locator('#locale-select').selectOption(locale, { force: true });
-      const camera = await page.locator('#showcase-camera-dock').boundingBox();
+      const dock = page.locator('#showcase-camera-dock');
+      await dock.scrollIntoViewIfNeeded();
+      const camera = await dock.boundingBox();
       for (const selector of ['#start-button', '#practice-button', '.history-button', '#garage-button', '#daily-card-start']) {
         const control = await page.locator(selector).boundingBox();
         const overlaps = camera.x < control.x + control.width && control.x < camera.x + camera.width &&

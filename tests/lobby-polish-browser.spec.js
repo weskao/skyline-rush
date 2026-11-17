@@ -1,7 +1,7 @@
-import { expect, test } from './helpers/test.js';
+import { expect } from './helpers/test.js';
 import { openSettingsSection } from './helpers/settings-browser.js';
 import { ciTimeout } from './helpers/ci.js';
-import { captureHooks } from './helpers/gameplay-browser.js';
+import { captureHooks, test } from './helpers/gameplay-browser.js';
 import { clickLobbyOption } from './helpers/home-lobby.js';
 
 test.beforeEach(async ({ page }) => {
@@ -40,9 +40,9 @@ test('all page-drawn selects share a bordered trigger and language keeps the glo
 test.describe('portrait', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test('expanding race setup keeps the centre scene and Start clear', async ({ page }, info) => {
+  test('expanding race setup keeps the centre scene and Start clear', async ({ page, gameplayURL }, info) => {
     await captureHooks(page);
-    await page.goto('/');
+    await page.goto(gameplayURL);
     await expect(page.locator('#lobby-hero-track')).toHaveText('海岸公路');
     const intro = page.locator('#intro');
     const start = page.locator('#start-button');
@@ -186,11 +186,13 @@ for (const [name, viewport, segments] of [
 }
 
 
-for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }]) {
-  test(`classic finish exposes scoring and actions immediately at ${viewport.width}x${viewport.height}`, async ({ page }, info) => {
+for (const viewport of [{ width: 390, height: 844 }, { width: 667, height: 375 }, { width: 844, height: 390 }]) {
+  test(`classic finish exposes scoring and actions immediately at ${viewport.width}x${viewport.height}`, async ({ page, gameplayURL }, info) => {
     await page.setViewportSize(viewport);
     await captureHooks(page);
-    await page.goto('/');
+    await page.addInitScript(() => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon'])));
+    await page.goto(gameplayURL);
+    await clickLobbyOption(page, '[data-track="neon"]');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(20_000) });
     await page.evaluate(() => {
@@ -202,7 +204,9 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     await expect(style).toBeVisible();
     await expect(style.locator('strong')).toContainText('風格分');
     await expect(style.locator('small')).toContainText('乾淨駕駛');
-    await expect(style.locator('small')).toContainText('3 星');
+    await expect(style.locator('small')).toContainText(/2 星：2500 分.*3 星：5000 分/);
+    await expect(style.locator('strong')).toBeInViewport({ ratio: 1 });
+    await expect(style.locator('small')).toBeInViewport({ ratio: 1 });
     await expect(page.locator('#result-style-details')).toHaveCount(0);
     await expect(page.locator('#again-button')).toBeVisible();
     await shot(page, info, `result-style-${viewport.width}.png`);

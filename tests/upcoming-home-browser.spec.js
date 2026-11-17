@@ -109,7 +109,9 @@ test('Start and Coming Soon labels fit after locale switching on phones', async 
           const span = button.querySelector('span');
           return { button: button.getBoundingClientRect().width, text: span.scrollWidth, available: span.clientWidth };
         });
-        expect(sizing.button).toBe(210); // portrait button and the shared landscape right rail
+        await expect(start).toBeInViewport({ ratio: 1 });
+        if (viewport.width > viewport.height) expect(sizing.button).toBe(210); // landscape right rail
+        else expect(sizing.button).toBeGreaterThanOrEqual(viewport.width * .8); // fixed action bar below the scrollable setup
         expect(sizing.text, `${locale} ${upcoming ? 'Coming Soon' : 'Start'} must not be clipped`)
           .toBeLessThanOrEqual(sizing.available + 1);
       }

@@ -281,8 +281,7 @@ body:is([data-phase="racing"], [data-phase="countdown"]):not([data-tutorial], .a
   .lobby-compact .lobby-race-heading { margin-block-end: 4px; }
 }
 
-/* The results column owns the receipt. Its short-screen disclosure rises above
-   the strip and remains clear of the next action below. */
+/* The results column owns the receipt and keeps its disclosure clear of the next action. */
 .result-rewards:not(:has(.wave3-demo-results:not([hidden]))),
 body:not([data-phase="finished"]) .result-rewards { display: none; }
 .result-rewards { min-width: 0; grid-column: 1 / -1; }
@@ -298,13 +297,21 @@ body[data-phase="finished"] #result-style {
 @media (max-height: 500px) and (orientation: landscape) {
   .result-rewards > .wave3-demo-results { padding-inline: 4px; gap: 4px; max-height: none; }
   .result-rewards .wave3-demo-results__heading { font-size: 10px; }
-  .result-rewards .wave3-demo-results__mark { display: none; }
+  .result-rewards .wave3-demo-results__mark { width: 18px; height: 18px; }
   .result-rewards .wave3-demo-results__points { font-size: 10px; }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
   body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .overlay-content:has(.result-rewards > .wave3-demo-results:not([hidden])) {
-    grid-template-columns: minmax(0, 1fr) minmax(246px, 41%);
+    --result-action-width: max(246px, 41%);
+    position: relative;
+    grid-template-columns: minmax(0, 1fr) var(--result-action-width);
+  }
+  /* Use the summary column for the opened receipt when the toolbar leaves little headroom. */
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .result-rewards > .wave3-demo-results[data-open] { position: static; }
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .result-rewards .wave3-demo-results[data-open] .wave3-demo-results__details {
+    inset: 0 calc(var(--result-action-width) + 24px) auto 0;
+    max-height: 100%;
   }
 }
 
