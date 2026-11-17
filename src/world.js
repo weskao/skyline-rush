@@ -28,7 +28,7 @@ import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage, GARAGE_LIGHTING } from './garage-stage.ts';
 import { applyCarReflections, createCarEnvironment } from './car-reflections.ts';
-import { createCarBounds } from './car-bounds.ts';
+import { createCarBounds } from './car-bounds.ts'; import { drawnTriangles } from './perf.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts';
 import { createCircuitScene } from './circuit-scene.ts';
@@ -903,7 +903,7 @@ export function createWorld(canvas) {
         void capturePhoto(renderer).then(request.resolve, request.reject);
       }
     },
-    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
+    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,carTriangles:drawnTriangles(player,camera),textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
     inspectPrograms() { return renderer.info.programs.length; }, // QA only: shader programs compiled so far
     inspectShowcase() {
       // Read-only projection for browser QA: verify the player and all three

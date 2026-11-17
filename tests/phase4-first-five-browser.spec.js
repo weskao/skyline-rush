@@ -88,14 +88,14 @@ for (const track of TRACKS) for (const viewport of VIEWPORTS) {
       { timeout: ciTimeout(30000) }).toBe(true);
     const metrics = await perf.evaluate(el => ({
       line: el.textContent, calls: Number(el.dataset.drawCalls),
-      triangles: Number(el.dataset.triangles),
+      triangles: Number(el.dataset.triangles), carTriangles: Number(el.dataset.carTriangles),
     }));
     const evidence = parsePerformanceEvidence({
       track, quality: 'medium', width: viewport.width, height: viewport.height,
       pixelRatio: await page.evaluate(() => devicePixelRatio),
       browser: process.env.CI ? 'chromium-software-webgl' : 'chromium-local-webgl',
       commit: process.env.GITHUB_SHA || 'local', drawCalls: metrics.calls,
-      triangles: metrics.triangles, line: metrics.line || '',
+      triangles: metrics.triangles, carTriangles: metrics.carTriangles, line: metrics.line || '',
     });
     writeFileSync(info.outputPath(`render-performance-${track}-${viewport.width}x${viewport.height}.json`),
       JSON.stringify(evidence, null, 2));
