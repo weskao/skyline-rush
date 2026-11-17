@@ -9,7 +9,7 @@ import {
 
 const sample = (overrides={}) => ({
   track:'taipei', quality:'medium', width:1440, height:900, pixelRatio:.25,
-  browser:'chromium-software-webgl', commit:'f2e32feb', drawCalls:532, triangles:60000,
+  browser:'chromium-software-webgl', commit:'f2e32feb', drawCalls:532, triangles:60000, carTriangles:11000,
   line:'FRAME p50 50.0 ms · p95 80.0 ms · 12.5 fps · 5 s', ...overrides,
 });
 
@@ -18,7 +18,7 @@ test('read exact WebGL draw/frame metrics into finite versioned records', () => 
   assert.deepEqual(result,{
     version:1,source:'software-webgl-ci',track:'taipei',quality:'medium',
     viewport:{width:1440,height:900,pixelRatio:.25},browser:'chromium-software-webgl',
-    commit:'f2e32feb',drawCalls:532,triangles:60000,p50Ms:50,p95Ms:80,
+    commit:'f2e32feb',drawCalls:532,triangles:60000,carTriangles:11000,p50Ms:50,p95Ms:80,
     fps:12.5,windowSeconds:5,
   });
   assert.equal(WORLD_TOUR_SOFTWARE_BASELINE.taipei.drawCalls,839);
@@ -29,6 +29,7 @@ test('reject incomplete, invalid or misleading metrics instead of recording zero
     sample({line:'FRAME p50 0.0 ms · p95 0.0 ms · 0 fps · 0 s'}),
     sample({line:'FRAME p50 92.0 ms · p95 50.0 ms · 12 fps · 4 s'}),
     sample({drawCalls:NaN}),sample({triangles:-1}),
+    sample({carTriangles:undefined}),sample({carTriangles:-1}),sample({carTriangles:60001}),
     sample({pixelRatio:0}),sample({quality:'ultra'}),
     sample({line:'unknown timing line'}),
   ]) assert.throws(()=>parsePerformanceEvidence(input));

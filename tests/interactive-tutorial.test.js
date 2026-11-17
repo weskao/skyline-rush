@@ -414,3 +414,18 @@ test('practice speed only changes through the driving physics, never a lesson sn
   for (const action of [{ fly: true }, { fly: false }, { boost: true }]) perform(session, action); // drift runs first
   assert.ok(worst.jump < 2, `lesson flow jumped ${JSON.stringify(worst)}`);
 });
+
+// Practice is a Free Drive race, yet it keeps the race 3-2-1 (src/main.js beginTutorial); Free Drive alone skips it.
+test('practice counts down 3-2-1 with ticks and GO although it runs in Free Drive', async () => {
+  const { advanceCountdown } = await import('../src/frame-pacing.ts');
+  const { createRaceAudioEvents } = await import('../src/race-audio-events.ts');
+  const { race } = createInteractiveTutorial(), audio = createRaceAudioEvents();
+  race.phase = 'countdown';
+  assert.deepEqual(audio.update(race, true).sounds, ['tick']);
+  advanceCountdown(race, 1);
+  assert.equal(race.phase, 'countdown', 'one second in, the lights still read 2');
+  advanceCountdown(race, race.countdown);
+  assert.equal(race.phase, 'racing');
+  assert.equal(race.player.speed, 0, 'a standing start: THROTTLE rolls the car, not GO');
+  assert.ok(audio.update(race, true).sounds.includes('go'));
+});

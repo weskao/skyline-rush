@@ -111,6 +111,7 @@ function zoomHero() {
 .release-preview { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 10px; padding: 4px 12px 4px 4px; border: 1px solid #5c7488; border-radius: 8px; background: #1b3044; color: #eefbff; font: inherit; cursor: pointer; }
 .release-preview img { width: 72px; height: 44px; object-fit: cover; border-radius: 4px; }
 .release-preview:focus-visible, .release-zoom:focus-visible, .release-zoom-corner:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.release-zoom[data-focus-returned], .release-zoom-corner[data-focus-returned] { outline: none; } /* set by ReleaseMediaViewer until blur */
 .release-zoom-corner { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; padding: 0; border: 1px solid rgb(150 227 255 / .35); border-radius: 50%;
   background: rgb(8 16 28 / .78); color: #eefbff; display: grid; place-items: center; cursor: pointer; }
 /* Drawn, not a "⤢" glyph: fallback fonts (Android) offset the glyph inside the circle. */

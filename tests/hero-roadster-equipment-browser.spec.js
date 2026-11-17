@@ -1,6 +1,6 @@
 import { clickLobbyOption } from './helpers/home-lobby.js';
 import { openGarageSection } from './helpers/garage-browser.js';
-import { test, programs, modelInstances as instances } from './helpers/gameplay-browser.js';
+import { test, programs, modelInstances as instances, landed } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { PAINTS } from '../src/appearance.ts';
@@ -143,6 +143,7 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
   expect((await audit(page)).hidden).toEqual([]); // settled: altitude polled above
   await attach(page, 'race-fly-void');
   await page.keyboard.up('Space');
+  await landed(page);
   await expect.poll(() => page.evaluate(() => window.gameScene.player.userData.altitude), { timeout: ciTimeout(15000) }).toBe(0);
   expect(await programs(page)).toBe(before); // settled: landing polled above
   expect(errors).toEqual([]);

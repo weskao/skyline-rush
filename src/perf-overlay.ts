@@ -6,7 +6,7 @@ export const perfLine = ({ p50, p95, fps }: { p50: number; p95: number; fps: num
 // A gap this long is a stall (tab switch, backgrounding), not a frame time. 250 ms hid every frame of a 3-4 fps device.
 const STALL_MS = 1000;
 
-export interface PerfStats { p50: number; p95: number; fps: number; seconds: number; drawCalls?: number; triangles?: number }
+export interface PerfStats { p50: number; p95: number; fps: number; seconds: number; drawCalls?: number; triangles?: number; carTriangles?: number }
 let latest: PerfStats | null = null;
 /** The newest racing-window stats (null outside racing); the diag relay adds them to its 500 ms beat. */
 export const latestPerf = (): PerfStats | null => latest;
@@ -14,7 +14,7 @@ const tenth = (value: number): number => Math.round(value * 10) / 10;
 
 /** The `?perf` frame-time strip used for device checks; null when the page was opened without ?perf.
  *  `record` (diag builds) measures without ?perf too, but draws no strip: the stats only reach the diag log. */
-export function createPerfOverlay(search: string, readLoad?: () => {drawCalls:number;triangles:number}, record = false) {
+export function createPerfOverlay(search: string, readLoad?: () => {drawCalls:number;triangles:number;carTriangles?:number}, record = false) {
   const strip = new URLSearchParams(search).has('perf');
   if (!strip && !record) return null;
   const overlay = strip ? document.body.appendChild(Object.assign(document.createElement('output'), { id: 'perf-overlay', className: 'perf-overlay' })) : null;
@@ -47,6 +47,7 @@ export function createPerfOverlay(search: string, readLoad?: () => {drawCalls:nu
       if (load) {
         overlay.dataset.drawCalls = String(load.drawCalls);
         overlay.dataset.triangles = String(load.triangles);
+        if (load.carTriangles !== undefined) overlay.dataset.carTriangles = String(load.carTriangles);
       }
     },
   };

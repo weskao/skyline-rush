@@ -4,8 +4,6 @@ import { test } from './helpers/gameplay-browser.js';
 
 // input.ts leaves Space to a focused button for keyboard users; a mouse click must not leave HUD focus behind.
 const racing = async page => {
-  await page.locator('#performance-notice summary').click();
-  await page.locator('#performance-notice-dismiss').click();
   await page.locator('#start-button').click();
   await page.waitForFunction(() => window.gameplay.race.phase === 'racing');
 };

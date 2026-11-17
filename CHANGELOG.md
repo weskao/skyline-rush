@@ -1,3 +1,683 @@
+## [0.32.0] - 2026-11-17
+
+### 🚀 Features
+
+- **wave3:** Freeze local demo experience contract with TDD
+- **wave3:** Wire real race telemetry and local-only settlement [full-regression]
+- **wave3:** Derive demo store entries and safety states from existing catalog
+- **wave3:** Implement bilingual local Demo Store with confirmation
+- **wave3:** Add demo collection with guarded equip and Garage handoff
+- **wave3:** Add local-only demo results presentation [full-regression]
+- **wave3:** Import isolated local-demo storage and tests
+- **wave3:** Add release-gated Store and Collection entry
+- **wave3:** Gate demo UI and race logic by build-time strategy
+- **wave3:** Isolate demo VFX trial from permanent skin ownership
+- **wave3:** Present first local settlement receipt without duplicate payout
+- **wave3:** Restore full demo checkpoints with replay dedupe and account isolation
+- **wave3:** Add deterministic UTC daily and weekly mission rules
+- **wave3:** Display live demo mission progress, claims and UTC variants
+- **wave3:** Connect Prompt A missions to shared demo adapter and release gate [full-regression]
+- **wave3:** Wire approved A-03 A-04 assets and native NITRO HUD art [full-regression]
+- **wave3:** Add responsive live wallet strip with approved A-03 artwork
+- **wave3:** Surface live demo balance and credited claim feedback
+- **wave3:** Surface live demo balance and credited claim feedback
+- **wave3:** Surface live demo balance and credited claim feedback
+- **wave3:** Ship premium transparent gold and crystal 3x raster icons with eight-frame shimmer sheet [full-regression]
+- **wave3:** Render PNG coin and diamond with eight-frame image shimmer
+- **wave3:** Route approved A05 A06 artwork into demo UI
+- **wave3:** A05 empty collection art and holo scan
+- **wave3:** Route approved A05 A06 artwork into demo UI
+- **wave3:** Mount earned-only A06 results banner with fallback
+- **wave3:** Save illustrated A05 and A06 transparent WebP assets
+- **wave3:** Add transparent PNG backups for A05 A06 generated artwork
+- Build four distinct instanced 3d pickup models
+- Render hovering and spinning pickup models in race scenes
+- Show animated collectible artwork in the in-game guide
+- Share 3d=1 pickup feature gate across gameplay and guide
+- Enable unified physical pickup meshes only with 3d=1 across all tracks
+- Render guide pickups as the exact same animated 3D mesh and PBR material as racing
+- Switch guide cards to synchronized live 3D collectibles when 3d=1
+- Lift detailed pickup silhouettes clear of roads with shared PBR geometry
+- Make in-guide 3D previews render exactly the scene's model, material, scale and motion
+- Add make build 3d=1 target without deployment
+- Animate pickup energy glow using shared PBR uniforms
+- Pulse scene pickup energy without shader recreation
+- Match guide product glow with the in-race animated PBR emission
+- Pooled four-tier 3D collection shockwaves, energy flashes and prismatic shards
+- Shared premium collect VFX triggered by player/rival pickups, respawn-safe
+- Align rival VFX with authored course graph collectible edge metadata
+- Show AI-authored sequential WebP artwork in guide with 3D and SVG fallbacks
+- Use AI sprite playback for game guide pickup cards
+- **models:** Add Crimson GT car asset and manifest entry
+- **garage:** Add car picker with Crimson GT as second player car
+- **assets:** Add four authored 3D road pickup models
+- **pickup:** Always-on 3D pickups with per-tier collect fx
+- **audio:** Add distinct supply sounds
+- **garage:** Let car models lower wheels, move ports
+- **models:** Rebuild Crimson GT from the concept panel silhouettes
+- **crimson-gt:** Rebuild asset as iteration 8
+- **crimson-gt:** Sync the equipped car to Cloud Save
+- **crimson-gt:** Render the factory paint card
+- **camera:** Closer chase, drift swing and a grounded first person
+- **art:** Add reproducible layered-metal mission trophy wallet WebP renderer
+- **wave3:** Serve WebP illustrations and animate the actual wallet mission trophy art
+- **art:** Render 3D spectral chrome from original silhouettes; unique mission motion [full-regression]
+- **wave3:** Add icon-specific gallery motion and charged wallet light trails [full-regression]
+- **home:** Show compact three-resource HUD on start screen and remove Garage balances [full-regression]
+- Give classic Skyline Rush tracks distinct corners [full-regression]
+- Add sweepers to Sky Spiral [full-regression]
+- **wave3:** Balance race rewards and animate demo credits [full-regression]
+- **tracks:** Add 40% more rings and pickups on first five maps [full-regression]
+- **drift:** Pay every drift at 0.6/1.2/2.0 s with a 1.5 m/s² bleed
+- **tutorial:** Teach the 0.6/1.2/2.0 s drift tiers
+- **drift:** Credit NITRO as each tier is reached and halve the payouts
+- **vfx:** Per-tier drift charge on the car body
+- **drift:** Slide sideways at 80% while drifting so the 2 s tier is reachable
+- **ui:** Animate progress bars with gradient and sheen
+- **wave3:** Add local coin and diamond economy [full-regression]
+- **nitro:** Extend by a full charge via pressNitro
+- **rivals:** Let rivals chain NITRO like the player
+- **vfx:** Add NITRO chain lift and HUD level
+- **coast:** Sky dome textures from the lighting HDRIs
+- **coast:** HDRI sky dome with the sun and key light aligned (?look=3d)
+- **coast:** Baked ocean wave map for the sea surface
+- **coast:** Water surface mirroring the sky dome, with shore foam (?look=3d)
+- **coast:** Far headlands and sea stacks from the cliff and rock scans (?look=3d)
+- **coast:** Skyline buildings and bridge towers leave Coast with the scan coast (?look=3d)
+- **race:** Halfway callout and chime
+- **hud:** Map shows progress, top-right in landscape
+- **coast:** Darker sky and livelier day coast in 3d look
+- **coast:** Seagull flocks over the sea and cliffs in 3d look
+- **coast:** Add coast-boats GLB with two sailboats and a motor boat
+- **coast:** Sail boats on the open sea in the 3d look
+- **coast:** Cliff-top grass and shrub thickets in 3d look
+- **camera:** Dolly zoom, road rumble and ignition squat for NITRO/BOOST
+- **neon:** Close downtown road into a loop
+- **neon:** Wear wet city asphalt under look=3d
+- **neon:** Night and rain-night sky assets for Task 5b step 3
+- **neon:** Light Neon Downtown with its night HDRIs under look=3d
+- **neon:** Add Neon Downtown city kit GLB and master
+- **neon:** Add sector landmark kit for task 5b
+- **neon:** Draw the city and landmark kits under ?look=3d
+- **camera:** Visible hit and landing jolt, low-res rumble
+- **vfx:** Leave drift skid marks on the road
+- **neon:** Rework cherry tree, spire and glass towers toward frame 03
+- **neon:** Pave the Neon land with its KTX2 set and guard the race cap per sector
+- **neon:** One authored ring line per sector
+- **neon:** Model harbour and oldtown landmark pieces
+- **neon:** Realism look-dev for harbour landmarks
+- **neon:** One 10 km lap in eight sectors
+- **neon:** Harbour and oldtown ring lines, approach rings, 23 rings a km
+- **neon:** Place the harbour gantries, container yard and moored ship
+- **neon:** Place the oldtown gate, lantern spans and clock tower; dress oldtown, the plaza court and the underpass straight
+- **neon:** Bake quay and street floods into the sector emissive so harbour and oldtown walls read at night
+- **neon:** Dress the plain stretches of the lap from the driver's seat
+- **hud:** One NITRO gold / BOOST red-orange / FLY cyan palette
+- **lobby:** Keep race setup and primary actions reachable [full-regression]
+- **camera:** Re-aim the landscape chase camera on NITRO/BOOST
+- **vfx:** Fat sprint flame with a daylight core
+- **vfx:** Nozzle flare and road glow on every sprint
+- Fit race HUD and navigation to viewport segments [full-regression]
+- Offer race onboarding and organize driving controls [full-regression]
+- **hud:** Light haptic pulse on a player pickup
+- **hud:** Flash the fuel bar and show +N on a pickup
+- **camera:** Small kick on a player pickup
+- **vfx:** Can embers fly from the can into the car
+- **vfx:** Play the rear streaks once when a mini-boost starts
+- **vfx:** Pulse the showroom plume to race length
+- **home:** Illustrate the ten classic track thumbnails [full-regression]
+- **neon:** Tall glass towers on the canal's far shore, a pink and cyan skyline behind them
+- **neon:** Violet storm sky, level the fill's cloud steps, light the dry harbour road
+- **effects:** Tint rivals slowed by Freeze or EMP
+- **vfx:** Show rival NITRO burn and BOOST cues
+- **vfx:** Show a scaled-down flame and ignition flash for rival BOOST
+- **release:** Archive a with-sound What's New master via --master
+- **garage:** Use an icon-only segmented pose selector
+- **garage:** Use one takeoff and landing action in the showroom
+- **dev:** Allow procedural roadster preview
+
+### 🐛 Bug Fixes
+
+- **wave3:** Capture final-frame drift reward in demo telemetry [full-regression]
+- **wave3:** Accept all typed port redemption statuses
+- **wave3:** Keep released and coming-soon bundles demo-locked [full-regression]
+- **i18n:** Resolve upcoming course labels from shared catalog
+- **test:** Isolate Wave 3 fixture Vite dependency scan from application entry
+- **wave3:** Reject unsupported mission event modes using F01 catalog
+- **wave3:** Refresh daily missions on UTC rollover and lock release aliases [full-regression]
+- **wave3:** Keep demo result card off core overlay action flow [full-regression]
+- **test:** Isolate Wave 3 Store fixture from concurrent Vite browser cache [full-regression]
+- **wave3:** Restore acceptance browser contracts and localized artwork [full-regression]
+- **wave3:** Restore isolated store harness, localize missions and fit cloud actions
+- **garage:** Keep native trophy art size in narrow panels [full-regression]
+- **wave3:** Keep demo results out of landscape overlay flow [full-regression]
+- **wave3:** Preserve frozen CSS baseline and native-art browser contracts
+- **wave3:** Preserve frozen CSS baseline and native-art browser contracts
+- **wave3:** Preserve frozen CSS baseline and native-art browser contracts
+- **wave3:** Fit all three wallet balances in one compact Garage row
+- **wave3:** Constrain reused A-03 image's inline size inside compact wallet
+- **test:** Restore complete currency browser spec after interrupted edit
+- **wave3:** Respect VFX-off and reduced-motion for coin diamond sprite
+- **ci:** Classify wallet sprite and preserve Vue scoped selector semantics
+- **wave3:** Reference wallet artwork with explicit approved filenames
+- **garage:** Pause authored GIF artwork on VFX Off and Low [full-regression]
+- **wallet:** Keep localized CJK balance notes legible at 10px
+- **ci:** Use Pillow on Ubuntu 26 for A05 A06 PNG export
+- **ci:** Prevent wallet overlay and restore Wave 3 browser regressions
+- Render launch flare bursts above road depth [full-regression]
+- **ci:** Preserve frozen CSS prefix by moving Wave 3 art rule
+- **ci:** Separate flight gauges from VFX toolbar on 320px landscape
+- **art:** Beautify HUD icons with arcade gaming gradient style
+- **ci:** Regenerate source-matched HUD assets when rasters change
+- **art:** Restore original HUD bezels and missing faces without redesign
+- Declare intrinsic 384x384 size for cell guide art
+- Declare intrinsic 384x384 size for can guide art
+- Declare intrinsic 384x384 size for tank guide art
+- Declare intrinsic 384x384 size for overcharge guide art
+- Give every animated 3D pickup safe road clearance through bobbing
+- Narrow WebGL geometry type before studio camera framing [full-regression]
+- Preload instanced shard shaders before first real pickup
+- Use original pickup geometry coordinates for rival VFX on branching routes
+- Show SVG placeholder while animated WebP is loading
+- Keep guide motion state accurate when sprites fall back to the live 3D model
+- **hud:** Restore short-landscape telemetry clearance
+- **flare:** Restore car depth for 3D rays, rings and sparks
+- **flare:** Clip road ripple beneath vehicle silhouette without clipping across lanes [full-regression]
+- **flare:** Align ground pool with road
+- **wave3:** Anchor earned reward in race summary across devices
+- **wave3:** Keep compact reward details accessible to screen readers
+- **ui:** Fit finished-race summary on short landscape screens
+- **garage:** Keep the equipped car's model under ?model=roadster (3d=1)
+- **vfx:** Fit airflow to the displayed car [full-regression]
+- **garage:** Fit equipped airflow animations to the car [full-regression]
+- **crimson-gt:** Show the GT at the Roadster's size [full-regression]
+- **vfx:** Derive every airflow skin size from the measured shell [full-regression]
+- **garage:** Show every car at the measured Roadster size [full-regression]
+- **wave3:** Keep 96px trophy layout stable while floating [full-regression]
+- **art:** Preserve original shapes while enhancing material and lighting
+- **art:** Enforce original threshold-alpha contour and retain subtle halo
+- **test:** Use actual WebP image paths in three browser regression suites
+- **test:** Abort mission WebP source rather than deleted PNG in fallback coverage
+- **art:** Keep transparent silhouette; reduce overdrawn purple halo toward approved Demo Points style
+- **art:** Prevent colored backdrop plates with fine contour-only glow and alpha gate
+- **wallet:** Wrap full VFX-off pseudo-element selectors for Vue scoped CSS [full-regression]
+- **test:** Scroll animated artwork without stability deadlock in Playwright [full-regression]
+- **wave3:** Use native WebP assets directly in Garage Store and Demo Store [full-regression]
+- **ci:** Keep landscape results compact and align Garage WebP fallback test
+- **home:** Share existing status row with compact wallet so Start layout stays unchanged [full-regression]
+- **garage:** Reward claims update home wallet without duplicating balance in Garage [full-regression]
+- **wave3:** Restore compact landscape and artwork bounds [full-regression]
+- **home:** Show empty wallet balances as zero and explain each resource
+- **results:** Show the full demo reward card on every screen
+- **firestore:** Inline best checks to stay under the 1000-expression budget
+- **tutorial:** Fit zh-TW drift lesson in short landscape and name the real entry speed
+- **assets:** Sync Crimson GT Blender master checksum
+- **vfx:** Freeze exhaust and airflow shader clocks under Reduced Motion
+- **garage:** Drop shimmer and restore direct equip
+- **ui:** Keep progress bar flow one-directional
+- **vfx:** Lift jets follow the dressed car's scale
+- **ui:** Scroll desktop results so reward card shows
+- **drift:** Survive steer flips, skip corner push, slide at 90%
+- **coast:** Darken 3d asphalt and day grade for contrast
+- **coast:** Soften wet-road puddles so they stop reading as paint
+- **camera:** Replace sprint shake with kick + pull-back
+- **garage:** Stop period card reward overlapping title
+- **camera:** Add ignition punch to NITRO/BOOST sprint
+- **audio:** Start music before the 3D world loads
+- **touch:** Restore full button bezels and charging looks
+- **pickup:** Body sweep reads on light paints
+- Compact mission reset display
+- Localize and compact mission reset schedule
+- Preserve paint and reuse models when switching cars
+- Show the final tutorial NITRO control cue
+- Finish closing Preview Studio before returning home
+- Keep the final NITRO tutorial key visible
+- **dune-tempest:** Clear road and pickup sightlines [full-regression]
+- **models:** Give GLB decoding its own deadline and share KTX2 workers [full-regression]
+- **neon:** Place the market kerb, water lamps and props, retune kit emissive
+- **neon:** Keep the night dome under the bloom so the canal reads as night
+- **ci:** Release Garage probe resources and stabilize browser checks
+- **test:** Make verify-red browser specs deterministic
+- **test:** Name and remove four verify-red races
+- **neon:** Cars reflect the night sky, not the world-fixed studio room
+- **neon:** No skyline tower in the sea round the harbour corner
+- **neon:** Stand the two oldtown shops back from the rooftop shortcut sign
+- **neon:** Fill the floodlit harbour wedge of the sky and aim the key light off it
+- **neon:** Cap the baked work light lower so the stack's white boxes stop blooming at hero distance
+- **neon:** Soften only the LED signs and fill the 1k maps so the far skyline is sharp and the wet harbour road stops reading tan
+- **neon:** Mirror the city lights sharper in Neon's night water, one uniform and no recompile
+- **neon:** Give the skyline towers a lit curtain wall so they stop reading as dark boxes with pink trim
+- **ci:** Release Garage probe GPU resources [full-regression]
+- **render:** Reduce distant pickup geometry [full-regression]
+- **camera:** Start races in rear chase view
+- Tune sprint plume visibility
+- Keep the expanded Home track list clear of Start
+- **home:** Use shared dropdown for camera picker
+- Pin foldable home shortcuts inside their pane [full-regression]
+- Preserve the practice guide acknowledgement [full-regression]
+- Satisfy driving onboarding integration guards [full-regression]
+- Restore keyboard focus in the driving guide
+- **hud:** Keep race map in the top-right corner
+- **ci:** Align responsive dialog UI contracts
+- **layout:** Keep track cards clear of the pinned row at 568x320
+- **test:** Wait for the paused chase camera before counting traffic draws
+- **test:** Scope VFX panel combobox locators to the airflow panel
+- **neon:** Rebuild the landmarks: container stack, cargo ship ends and hull, rail underpass bays; tone-map the lamp light before the albedo
+- Draw energy can pickup sparks at the absorption point
+- **vfx:** Warm white-yellow can sparks, apart from the crash orange
+- **vfx:** Keep the fat sprint jet under the bloom threshold
+- **vfx:** Soften sprint jet glare, longer core
+- **vfx:** Let the phone-tier plume carry its own halo
+- **vfx:** Feed the board-plume tail to every sprint jet
+- **vfx:** Clamp the sprint jets at a x3 NITRO chain
+- **input:** A clicked AIRFLOW toggle no longer swallows Space
+- **sprint-plume:** Restore additive plume behavior
+- **neon:** Turn the night key onto a street axis so the rear deck stops mirroring it
+- **camera:** Switch showcase and Studio views with ‹ › only
+- **art:** Remove Dune Tempest teaser caption
+- **lobby:** Show whole track cards in phone landscape
+- **lobby:** Back landscape track cards with their sky / teaser art
+- **ci:** Keep camera tests matchable in Playwright shards
+- **neon:** Show the plaza sculpture on the approach and light it as the lap's finale
+- **neon:** Keep the street screen's picture where it stands beside the car
+- **garage:** Ship shared car and paint artwork in public builds
+- **garage:** Validate artwork for future paint colors
+- **garage:** Preserve Studio camera orbit mode after gestures [full-regression]
+- **garage:** Make Studio camera controls easier to use [full-regression]
+- **ci:** Backport Playwright test-list title repair [full-regression]
+- **neon:** Light the sculpture's blades and the ship's stern and funnel in the landmark bake
+- **neon:** Give the retail block a stone arcade so the underpass podiums stop repeating
+- **art:** Export classic track thumbnails for 3x displays [full-regression]
+- **release:** Record sharp What's New clips from the shipped Garage mode
+- **rendering:** Use graphics quality and equipped car without URL flags [full-regression]
+- **rendering:** Keep the starting countdown responsive under load [full-regression]
+- **garage:** Keep tablet loadout and trophy art full size [full-regression]
+- **neon:** Stand the night key at 60 degrees so the car stops mirroring it
+- **rendering:** Use graphics quality and equipped car without URL flags [full-regression]
+- **rendering:** Keep the starting countdown responsive under load [full-regression]
+- **race:** Synchronize the central halfway announcement
+- **rendering:** Prepare quality-selected track scenery before GO [full-regression]
+- **scripts:** Select the track and even-crop clips
+- **race:** Compact halfway strip, shorter chime
+- **release:** Kill the master screen capture when the recorder exits
+- **release:** Keep the display awake while --master records
+- **release:** Refuse a --master take while the screen is locked
+- **ci:** Restore lobby dropdowns and align browser regressions
+- **ci:** Preserve the base stylesheet contract
+- **lobby:** Keep Mode tappable near the landscape notch
+- **results:** Keep demo mission progress at the bottom [full-regression]
+- **results:** Fit claimed time-trial progress on narrow phones
+- **ci:** Carry shared lobby and browser fixes into demo results [full-regression]
+- **ci:** Preserve the base stylesheet contract [full-regression]
+- **garage:** Keep preview controls clear on compact screens
+- **garage:** Fit the camera dock in narrow preview columns
+- **garage:** Stabilize camera arrows while stepping views
+- **crimson-gt:** Opaque glass, flared boolean arches
+- **crimson-gt:** Smooth flanks, no baked door cracks or ragged intakes
+- **crimson-gt:** Even crease highlight along the flank scallop
+- **hud:** Keep portrait leaderboard off road view
+- **ci:** Reject untitled describes in shard planner
+- **tutorial:** Keep practice countdown in free drive
+- **release-notes:** No focus ring after viewer closes
+- **rendering:** Warm hidden section-sign materials
+- **collision:** Release a followed car that respawns ahead
+- **perf-gate:** Budget scenery triangles, excluding the player car
+
+### 💼 Other
+
+- Sync develop into feature/3d-pipeline-concept-target
+- Sync develop into feature/3d-pipeline-concept-target
+- **wave3:** Import independent Demo Store and Collection UI
+- **wave3:** Import separate Demo Results presentation
+- **wave3:** Integrate artwork QA regression checks
+- Sync develop into feature/wave3-frontend-demo-integration
+- **wave3:** Pin current frontend demo candidate for pre-A acceptance
+- Incorporate frozen Wave 3 F01 experience contract
+- **wave3:** Stage Prompt A missions scoped files for integration
+- **wave3:** Update QA candidate with Prompt A integrated UI and local missions
+- **wave3:** Align full-regression QA with final integration UX and rules [full-regression]
+- **wave3:** Temporarily export A05 A06 PNG backups from committed images
+- Integrate Wave 3 wallet UI polish into develop [full-regression]
+- Sync develop into fix/wave3-hud-artwork-completeness
+- Add authored cell pickup illustration
+- Add authored can pickup illustration
+- Add authored tank pickup illustration
+- Add authored overcharge pickup illustration
+- Make 3d=1 enable shared 3D collectibles in races and guide
+- Rebuild four detailed metallic 3D collectibles with shared physical materials
+- Add four original AI animated pickup WebP sprites and posters [full-regression]
+- Archive four original AI pickup spritesheets alongside animated guide assets [full-regression]
+- **fix/launch-flare-road-car-layering:** Integrate launch flare ground-pool alignment into develop
+- **develop:** Integrate Crimson GT and launch flare layering [full-regression]
+- **wave3:** Add A-03 demo points and A-04 claim transparent WebPs
+- **wave3:** Include transparent 3x PNG counterparts for demo art
+- Sync develop into feature/wave3-implementation-plan-audit-20261110
+- **wave3:** Regenerate ten premium native-3x WebP illustrations
+- **wave3:** Original silhouettes with metallic highlights [full-regression]
+- **wave3:** Original silhouettes with metallic highlights [full-regression]
+- **wave3:** Original silhouettes with metallic highlights [full-regression]
+- **wave3:** Original silhouettes with metallic highlights [full-regression]
+- **develop:** Incorporate latest car catalog and Crimson GT work into Wave 3 art branch [full-regression]
+- **develop:** Sync launch flare layering fixes into Wave 3 premium WebP UI branch [full-regression]
+- **develop:** Retain fixed earned-results placement and WebP-only reward fallback [full-regression]
+- **wave3:** Install user-approved 3D screenshot cutouts across Wallet, Missions and Trophies [full-regression]
+- **neon:** Bake wet city asphalt KTX2 set (CC0 Asphalt Track)
+- **neon:** Bake wet city pavement KTX2 set (CC0 Concrete Pavement)
+- **assets:** UASTC RDO lambda 12 on the neon-landmarks occlusion atlases to hold the 4 MB budget
+- Integrate classic track thumbnails
+- **garage:** Reshoot the Vantaire GT car card at a low angle
+- **garage:** Reshoot the Stratosway R2 car card at a low angle
+- **garage:** Re-render the Crimson GT car-picker card from the fixed master
+
+### 🚜 Refactor
+
+- **garage:** Extract compact layout CSS to satisfy module limit
+- **wave3:** Drop A-05/A-06 PNG backups and preserve WebP-only art [full-regression]
+- Allow per-tier geometry in the existing marker pool
+- Keep effect updates within module-size budget
+- Extract existing debris burst for bounded shared effects integration
+- **drift:** Read tier thresholds from DRIFT_REWARDS in HUD, callouts, sparks, screech
+- **effects:** Move lift ports to lift-ports.js
+- **3d-look:** Read look=3d gates from a track entry
+- **assets:** Move the Neon model rows into their own manifest module
+- **effects:** Move the effect colour tables to effects-palette.ts
+- **vfx:** Move the rear exhaust jets into sprint-plume
+- Move the player pickup take out of game.js
+- Move particle shaders out of effects.js
+- Share streak ribbons and car-frame placement
+
+### 📚 Documentation
+
+- **wave3:** Hand off pinned F01 contract, mark observed TDD, retain CI gates [full-regression]
+- **wave3:** Record source SHAs, QA coverage and external art blockers [full-regression]
+- **wave3:** Record scoped satellite integrations and remaining test gates [full-regression]
+- **wave3:** Define visible local-demo wallet UX and guarded currency rollout
+- **wave3:** Track wallet UX, CI and physical-device acceptance honestly
+- **wave3:** Record shipped premium PNG art, frame atlas and guarded CI acceptance
+- **wave3:** Record shipped premium PNG art, frame atlas and guarded CI acceptance
+- **wave3:** Record A05 A06 image provenance and gated visual motion [full-regression]
+- Guard launch flare road occlusion rendering contract
+- Record launch flare occlusion regression and pending verification
+- Define authored pickup art and visual acceptance gates
+- Track pickup art regression work and verification gaps
+- Document 3d=1 shared game/guide art, performance and acceptance
+- Track shared 3d=1 pickup follow-up and remaining validation
+- Explain unified 3D pickup art, Makefile flag and real render evidence
+- Track full 3D pickup acceptance on exact HEAD [full-regression]
+- Specify tiered collection effects, GPU limits and verification
+- Track actual pickup collection VFX implementation and acceptance
+- Require exact-HEAD 3D pickup VFX evidence and full suites [full-regression]
+- Map all four AI sprite animations, posters and runtime fallbacks
+- Track binary 16-frame sprite installation separately from guide code
+- Record original AI image sprites and binary delivery gate [full-regression]
+- **3d-pipeline:** Record Crimson GT evidence in Task 7 and TODO
+- Record launch flare review progress
+- **wave3:** Capture result-card transform trap [full-regression]
+- **wave3:** Plan frontend-first local demo, future Go integration, and 3x asset production
+- **wave3:** Record generated demo points and claim asset filenames
+- **wave3:** Reference A-03 and A-04 artwork in frontend master plan
+- **todo:** Track approved Wave 3 demo asset names and integration gate
+- **wave3:** Verify committed A-03/A-04 asset SHA and alpha margins
+- **wave3:** Mark A-03/A-04 binary artwork published to plan branch
+- **todo:** Mark A03/A04 image publication done, keep UI QA open
+- **pickups:** Document always-on 3D pickup pipeline
+- **3d-pipeline:** Record the rebuilt Crimson GT measurements
+- **3d-pipeline:** Record the 3d=1 car fix and the 2026-11-13 unlock decision
+- **crimson-gt:** Announce the car in release notes
+- **3d-pipeline:** Record crimson gt iteration 8 evidence
+- Update crimson gt phase notes
+- **rules:** Record the car-size trap and guard
+- **todo:** Record race camera evidence and open checks
+- **wave3:** Retire PNG export and document premium WebP art [full-regression]
+- Require Garage equipment compatibility across cars
+- **todo:** Record drift balance before/after and open browser items
+- **claude-md:** Point 3D/new-car work at the phase index
+- **3d-pipeline:** Record coast D1-D3 owner decisions
+- **rules:** Pin the checkout for long local browser runs
+- **crimson-gt:** Record iteration 9 probes, master decision and GT matrix evidence
+- **crimson-gt:** Record the owner's 2026-11-14 closures and the observed verify result
+- **crimson-gt:** Reopen the unlock rule, both cars temporarily free
+- **wave3:** Plan frontend economy acceptance and backend handoff
+- **3d-pipeline:** Record Coast sky step evidence
+- **3d-pipeline:** Record Coast sea step evidence
+- **3d-pipeline:** Record Coast far-terrain step evidence
+- **3d-pipeline:** Record Coast city and tower removal evidence
+- **todo:** Record red develop browser spec fixes
+- **drift:** Rule that drift handling is global; spec revision and evidence
+- **notes:** Upcoming highlight for drift flips and quicker slide
+- **todo:** Record sprint camera WebGL frame evidence
+- **todo:** Record music autoplay recovery evidence
+- Track remaining Wave 3 economy backend tasks
+- **3d-pipeline:** Plan neon downtown look task 5b
+- **neon:** Adopt nine-image concept set, plan loop
+- **neon:** Record Task 5b steps 5 to 7 evidence
+- **neon:** Record owner decisions of 2026-11-15 for Task 5b
+- **neon:** Record Task 5b step 9 and desktop evidence at d2a76328
+- **neon:** Record step 10 lap plan and evidence
+- **neon:** Step 12, the harbour landmarks placed, with evidence and what still looks wrong
+- **neon:** Record step 13, oldtown dressing and its landmarks, in the Task 5b plan
+- **neon:** Record steps 14 and 15, the harbour sky fix and the landmark night light, in the Task 5b plan
+- **neon:** Record steps 16 and 17, scenery richness and sky polish, with trap rules 17 to 19
+- **todo:** Track the sprint colour palette evidence and pickup-can follow-up
+- **todo:** Pickup can stays amber, not confusable with BOOST red-orange
+- **vfx:** Draft sprint exhaust visibility design
+- **vfx:** Approve sprint exhaust visibility design after builder check
+- **vfx:** Plan the sprint exhaust visibility work
+- Energy can pickup punch — rule, TODO evidence and README
+- **vfx:** Record sprint plume traps and evidence
+- **vfx:** Record the phone-tier plume trap and evidence
+- **neon:** Record step 18, landmark and city kit rebuild, with the night car glint left open
+- **neon:** Record the firestore.rules deploy for neon@7
+- **neon:** Step 20, the closing audit of the 3D look
+- **neon:** Step 21, the landmark re-light and the second podium
+- **neon:** Step 22, the owner's decisions at close
+- **notes:** Draft upcoming highlights since v0.31.0
+- **notes:** Attach real-game media to the upcoming highlights
+- **neon:** Tick the owner's art approval of the look
+- **neon:** Correct the canal towers' heights in the plan comment (147 to 210 m, 128 to 183 m)
+- **release-notes:** Add neon 3d look to upcoming
+- **todo:** Track rival NITRO/BOOST cue evidence
+- **todo:** Track rival BOOST flame evidence
+- **todo:** Record Neon Downtown blossom follow-up after phone measurement
+- **release:** Reshoot Crimson GT stills in red factory paint
+- **release:** Show the Crimson GT from six Studio angles
+- **release:** Fit the Crimson GT views and share one image
+- **release:** Show the Crimson GT from above in the top-right view
+- **notes:** Show rival cues, 3D pickups and the race camera in action
+- **notes:** Archive the race-camera takes with sound
+- **notes:** Revise the 0.32.0 notes and show Coast in 3D
+- **release:** Review 0.32.0 notes
+
+### ⚡ Performance
+
+- Avoid per-item allocations in legacy pickup rendering
+- **render:** Skip checkShaderErrors in production
+- Draw traffic as one instanced fleet
+
+### 🎨 Styling
+
+- **wave3:** Keep premium resource strip legible while Garage scrolls on large screens
+- **wave3:** Animate A06 trophy glint without moving artwork or controls
+- Add animated premium pickup gallery cards
+- Preserve complete pickup art and ensure scoped style priority
+- **garage:** Compact skin and challenge cards
+- **garage:** Compact loadout, badge and trophy cards
+
+### 🧪 Testing
+
+- **wave3:** Defer demo mission progress until eligible finish [full-regression]
+- **wave3:** Add RED demo store and collection acceptance tests
+- **wave3:** Isolated Vue browser harness for demo store and collection [full-regression]
+- **wave3:** Add source-locked artwork audit regression checks [full-regression]
+- **wave3:** Capture artwork layouts and check decode alpha and fallback [full-regression]
+- **wave3:** Route baseline screenshots through existing CI artifact upload [full-regression]
+- **wave3:** Wait for redeemed item before checking idempotency
+- **wave3:** Accept Vue Escape stop modifier in accessibility guard
+- **i18n:** Cover localization of all upcoming courses
+- **ci:** Validate classic and upcoming track route maps independently
+- **wave3:** Stage pre-A real-app browser acceptance cases [full-regression]
+- **wave3:** Cover UTC cadence, dedupe, claims and account changes
+- **wave3:** Exercise mission layouts, localization and artwork fallback
+- **wave3:** Cover noneligible modes and request full regression [full-regression]
+- **wave3:** Activate real-game F08 E2E journey and resilience gates [full-regression]
+- **wave3:** Assert local-demo mission authority and unverified disclaimer [full-regression]
+- **wave3:** Preserve the actual mode history through demo reset [full-regression]
+- **garage:** Exercise missing trophy image after lazy-load intersection [full-regression]
+- **wave3:** Define RED A-03 A-04 and live NITRO artwork acceptance [full-regression]
+- **wave3:** Project only local demo currency with RED-GREEN coverage
+- **wave3:** Project only local demo currency with RED-GREEN coverage
+- **wave3:** Verify real Garage currency HUD at phone and desktop sizes
+- **wave3:** Guard native 3x currency art, sprite frames and actual UI wiring
+- **wave3:** Assert real native PNG currency icons and 8-frame overlay in browser
+- **wave3:** Verify sprite respects reduced motion/VFX off and broken PNG fallback
+- **wave3:** E2E actual race updates PNG wallet after claim and redemption
+- **garage:** Cover GIF fallback on VFX Off and Low
+- **wave3:** Require native A05/A06 art and reduced-motion visual behavior
+- **ci:** Scope BOOST assertions and avoid GIF decode race
+- **wave3:** Cover A05/A06 mounted images and earned-only visuals
+- **wave3:** Cover A05/A06 mounted images and earned-only visuals
+- **wave3:** Cover A05/A06 mounted images and earned-only visuals
+- **wave3:** Approve real A05 A06 PNG fallbacks without changing original artwork hashes
+- **wave3:** Align optional artwork regressions with WebP-only assets [full-regression]
+- **wave3:** Expect accessible WebP-only empty art failure [full-regression]
+- **wallet:** Scale VFX preview click budgets for CI regression
+- Reproduce launch flare occlusion by track depth
+- **ci:** Distinguish demo icon from native mission artwork
+- **ci:** Scope BOOST checks to actual touch controls
+- **ci:** Validate HUD repair workflow edits with the visual gate
+- Guard pickup geometry, instancing and motion
+- Enforce four authored pickup illustrations and accessible animation
+- **browser:** Require four decoded pickup artworks on every viewport
+- Ratchet guide module ceiling after removing obsolete gem styles
+- **browser:** Verify pickup animation accessibility [full-regression]
+- Account for four individually owned pickup geometries in disposal [full-regression]
+- Require 3d=1 feature gating and shared PBR game/guide models [full-regression]
+- Verify all five 3d geometry resources dispose in opt-in mode
+- **browser:** Verify model-based 3d=1 preview and legacy illustration modes
+- **browser:** Capture 3D guide frames and verify same instanced meshes in races
+- Use captured real game scene on Vite fixture for 3D visual smoke
+- Fail explicitly when 3d=1 preview is absent instead of silently skipping
+- Reproduce guide-model parity, road clipping and missing make build
+- Stabilize frozen pose regression before implementation
+- Match ground-level collectible altitude in clipping regression
+- Enforce per-tier factory parity in the WebGL guide preview
+- Capture guide and in-race 3D visual evidence for all four pickups
+- Pin shared luminous energy pulse and reduced-motion behavior
+- Protect ground clearance against bobbing and tilt
+- Specify tiered pooled 3D pickup collection VFX (red phase)
+- Prevent first-collection shader compilation with parked instanced warmup
+- Exercise real 3D pickup effects on each tier with WebGL screenshots
+- Preserve actual CourseGraph pickup edge on rival collection effects
+- Scale pickup browser poll budgets with CPU CI factor
+- Match TypeScript non-null assertion for guide preview motion parity
+- Exclude Three Sprite-owned quad from GPU disposal contract
+- Document verified pickup VFX regression gates [full-regression]
+- Specify AI animated pickup sprite playback, fallback, and preserved race renderer
+- Retain opt-in real-time 3D fallback behind animated guide art
+- Validate animated guide sprites and existing 3D fallback with reduced motion
+- Match actual version-safe guide sprite asset interpolation
+- Recognize static poster when reduced motion is active
+- Pin exact AI sprite hashes, 16 animation frames, and all-eight asset completeness
+- Assert guide uses AI sprite artwork with original SVG fallback
+- Require shipped AI pickup WebP artwork and original PNG sources [full-regression]
+- Align guide browser checks with animated WebP and reduced-motion posters [full-regression]
+- Fix guide browser WebP source regex [full-regression]
+- **flare:** RED road ripple over lanes without overriding car occlusion
+- **wave3:** Reproduce jumping reward panel and compact landscape regression
+- **wave3:** Match primary card rule, not hidden-state selector
+- **wave3:** Guard earned rewards on portrait, landscape, tablet and desktop
+- **wave3:** Preserve compact landscape reward accessibility
+- **crimson-gt:** Cover the GT in browser regressions
+- **wave3:** Specify WebP-only premium artwork and independent motion
+- **wave3:** Migrate 3x asset contracts and remove obsolete runtime PNGs
+- **wave3:** Verify WebP runtime and text fallback across wallet, Garage and Results
+- **wave3:** Update podium and storefront assertions for native WebP codecs [full-regression]
+- **art:** Prevent silhouette replacement and record source provenance [full-regression]
+- **wave3:** Require demo-points visual treatment and per-icon animations; update WebP browser expectations
+- **wave3:** Verify native artwork in Garage and Demo Store; measure CSS layout independent of animation [full-regression]
+- **garage:** Assert layout pixels separately from animated visual bounds
+- **wave3:** Expect the compact short-landscape wallet icon and wait for loaded artwork [full-regression]
+- **replay:** Re-record legacy replay for the retuned drift payout
+- Update specs left stale by intended changes
+- **camera:** Env-gated sprint camera capture spec
+- **vfx:** Make downwash surface spread deterministic
+- **neon:** Pin parity and fallback look pre-5b
+- **browser:** Share the NaN frame scan as a helper
+- **ci:** Add resizeTo helper for folding viewport matrices into one app boot
+- **unit:** Split the two slowest race simulation files so npm test runs them in parallel
+- **ci:** Fold browser.spec portrait touch-controls matrix into one boot
+- **ci:** Fold responsive viewport matrices into one boot per layout class
+- **ci:** Fold race map viewports into one reload per touch combo
+- **ci:** Fold i18n intro bottom edge sizes into one boot per locale
+- **ci:** Fold Photo Studio touch sizes into one boot, run phone on Coast only
+- **ci:** Fold History old-layout tag touch sizes into one boot per locale
+- **ci:** Fold race-hud-overlap viewport matrices into one boot per layout class
+- **ci:** Fold mode-coverage touch viewport matrices into one boot per mode
+- **ci:** Fold hud-settings viewport matrices into one boot per layout class
+- **ci:** Fold home-shortcuts viewport matrices into one boot per check
+- **hooks:** Run the pre-push layout gate on 4 Playwright workers
+- **ci:** Fold showcase camera-view matrices into one boot per map
+- **ci:** Fold World Tour showcase checks into one boot per map family
+- **ci:** Fold showcase telemetry-card and on-road matrices into one boot per layout family
+- **ci:** Stabilize develop browser regressions
+- **ci:** Estimate shard durations for the folded browser specs [full-regression]
+- **hooks:** Run the pre-push layout gate on 2 workers, not 4 [full-regression]
+- Split locked track previews into bounded cases [full-regression]
+- **ci:** Bound race map cases by touch size [full-regression]
+- **traffic:** Wait for a steady frame before counting draw calls
+- **neon:** Browser locks, plan evidence and asset brief for the 10 km lap
+- **neon:** Attribute the second corridor to the delegated design
+- **neon:** Probe the draw-call cap where the placed harbour pieces crowd the view
+- **neon:** Scale the race draw-call budget with its fourteen probes
+- **vfx:** Capture sprint plume visibility and cost
+- **vfx:** Measure the sprint plume's frame area on the phone tier
+- **vfx:** Count the NITRO gold mix across aero-vfx and sprint-plume
+- Cover Home race access and showcase camera preferences
+- Verify the short rival energy can cue
+- Keep the pickup event out of the legacy replay hash
+- **home:** Verify track images without thumbnail motion [full-regression]
+- **home:** Decode teaser art independently of scrolling [full-regression]
+- **rendering:** Avoid redundant WebGL startups [full-regression]
+- **neon:** Check legacy URL lighting independently of scenery streaming [full-regression]
+- **browser:** Open the compact mode picker before selecting Endless [full-regression]
+- **garage:** Open the catalog spec through openGarage
+- **rendering:** Avoid redundant WebGL startups [full-regression]
+- **neon:** Check legacy URL lighting independently of scenery streaming [full-regression]
+- **browser:** Open the compact mode picker before selecting Endless [full-regression]
+- **rendering:** Use the phone VFX panel's main summary [full-regression]
+- **rendering:** Isolate the slow-asset scenario from the download deadline [full-regression]
+- **release-notes:** Guard track names in highlights
+- **vfx:** Move rival drive cue evidence into an env-gated spec
+- **browser:** Count GLB requests only from own nav
+- **history:** Select Medals and Daily tabs before asserting their panels
+- **browser:** Start browser specs at low graphics
+- **browser:** Update specs stale after ui changes
+- **browser:** Trim redundant pixel-check viewports
+- **browser:** Use heavier tier for effect specs
+- **browser:** Update stale expectations
+- **browser:** Wait out landings in game time
+
+### ⚙️ Miscellaneous Tasks
+
+- **wave3:** Verify integration browser regressions [full-regression]
+- **ci:** Verify wallet UI browser regression [full-regression]
+- **wave3:** Remove completed one-time A05 A06 PNG export workflow
+- Verify Wave 3 wallet fixes [full-regression]
+- **wallet:** Verify exact-head full regression [full-regression]
+- Build 3d=1 bundle and smoke-test guide/race model parity
+- Enable 3D feature flag for live Vite browser smoke fixture
+- Retain real 3D guide and race screenshots as review artifacts
+- Require all-tier pickup collection WebGL smoke and save tier screenshots
+- Include pickup artwork specification in tested-document change gate
+- Update crimson gt review log
+- **wave3:** Render and commit WebP illustrations on asset branch
+- **assets:** Update crimson gt blend
+- 16 browser + 2 world-tour shards, refresh durations, drop duplicate pickup-3d smoke
+- **tests:** Drop throwaway sprint-plume diag specs
+
+### ◀️ Revert
+
+- **art:** Restore original Wave 3 silhouettes from before e4a73a2
 ## [0.31.0] - 2026-11-10
 
 ### 🚀 Features

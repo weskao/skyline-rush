@@ -13,8 +13,6 @@ test('airflow renders on every track with bounded resources and no shader errors
   const errors = [], records = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-  await page.locator('#performance-notice summary').click();
-  await page.locator('#performance-notice-dismiss').click();
   for (const track of Object.keys(RACE_TRACKS)) {
     await clickLobbyOption(page, `[data-track="${track}"]`);
     await expect.poll(() => page.evaluate(() => window.gameplay.race.trackId)).toBe(track);
@@ -67,7 +65,7 @@ test('airflow renders on every track with bounded resources and no shader errors
 });
 
 for (const mobile of [false, true]) test.describe(mobile ? 'touch barrel roll' : 'keyboard barrel roll', () => {
-test.use({ hasTouch: mobile, isMobile: mobile });
+test.use({ hasTouch: mobile, isMobile: mobile, lowGraphics: false }); // Low has no roll wake (src/aero-vfx.js rollEnabled)
 test('flight flick triggers the roll wake without AIRFLOW preview', async ({ gameplayPage: page }, info) => {
   test.setTimeout(ciTimeout(45_000)); // Slow software WebGL needs game frames to expire the wake.
   const errors = [];

@@ -121,6 +121,10 @@ interface StartingGrid {
   rivals: { speed: number }[];
 }
 
+/** Free Drive skips the 3-2-1 (it only holds for scenery); practice, a standing-start Free Drive, keeps it. */
+export const skipsCountdown = (race: Pick<StartingGrid, 'mode' | 'standingStart'>): boolean =>
+  race.mode === 'free' && !race.standingStart;
+
 export function startRace(race: Pick<StartingGrid, 'phase' | 'mode'>, waitingForScenery = false): void {
   if (race.phase !== 'ready') return;
   race.phase = race.mode === 'free' && !waitingForScenery ? 'racing' : 'countdown';
@@ -128,7 +132,7 @@ export function startRace(race: Pick<StartingGrid, 'phase' | 'mode'>, waitingFor
 
 /** Count down in elapsed seconds while the grid is stationary. Race physics start on the next tick. */
 export function advanceCountdown(race: StartingGrid, elapsed: number): void {
-  if (race.mode === 'free') { race.phase = 'racing'; return; }
+  if (skipsCountdown(race)) { race.phase = 'racing'; return; }
   race.countdown = Math.max(0, race.countdown - elapsed);
   if (race.countdown >= 0.00001) return;
   race.phase = 'racing';
