@@ -33,6 +33,8 @@ function fade(view: HTMLDialogElement, opacity: number[], duration: number): Pro
 }
 function open(next: ZoomedMedia, from: HTMLElement): void {
   opener = from;
+  // Closing returns focus here, natively and in restore(); Escape is a key press, so the browser would ring it.
+  from.dataset.focusReturned = ''; // hides that ring until focus moves on (ReleaseNotesPanel.vue)
   closing = false;
   still.value = reducedMotion.matches;
   userPaused.value = false;
@@ -89,7 +91,9 @@ function restore(): void {
   const time = clip.value?.currentTime;
   emit('closed', media.value?.kind === 'video' && Number.isFinite(time) ? time ?? null : null);
   media.value = null;
-  opener?.focus({ preventScroll: true });
+  const returned = opener;
+  returned?.focus({ preventScroll: true });
+  returned?.addEventListener('blur', () => delete returned.dataset.focusReturned, { once: true });
 }
 defineExpose({ open });
 </script>
