@@ -23,7 +23,8 @@ export function refreshFoldableViewport(): boolean {
   layout = next;
   const body = document.body;
   const axis = next?.axis;
-  body.dataset.foldAxis = axis ?? '';
+  if (axis) body.dataset.foldAxis = axis;
+  else delete body.dataset.foldAxis;
   const first = next?.segments[0];
   const second = next?.segments[1];
   const scene = next && foldScenePane(next);

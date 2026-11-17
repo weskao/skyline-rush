@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PerspectiveCamera, Vector3 } from 'three';
-import { updateFoldableProjection } from '../src/foldable-viewport.ts';
+import { refreshFoldableViewport, updateFoldableProjection } from '../src/foldable-viewport.ts';
 import { resolveFoldableLayout, placeInVisibleSegment, viewportFoldableLayout } from '../src/foldable-layout.ts';
 
 const viewport = { width: 844, height: 390 };
@@ -91,4 +91,20 @@ test('the world camera frames the road clear of either hinge and recentres when 
   updateFoldableProjection(camera, null, false);
   assert.equal(axisPoint.clone().project(camera).y, 0);
   assert.equal(camera.aspect, 2);
+});
+
+test('returning to a single segment restores normal body layout selectors', () => {
+  const body = { dataset: {}, style: { setProperty() {}, removeProperty() {} } };
+  const window = { innerWidth: viewport.width, innerHeight: viewport.height, viewport: { segments: panels } };
+  Object.assign(globalThis, { window, document: { body } });
+  try {
+    assert.equal(refreshFoldableViewport(), true);
+    assert.equal(body.dataset.foldAxis, 'vertical');
+    window.viewport.segments = [{ left: 0, top: 0, ...viewport }];
+    assert.equal(refreshFoldableViewport(), true);
+    assert.ok(!Object.hasOwn(body.dataset, 'foldAxis'));
+  } finally {
+    delete globalThis.window;
+    delete globalThis.document;
+  }
 });

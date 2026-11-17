@@ -3,6 +3,8 @@
 - Home and race render the car and track across the entire foldable viewport. The race camera aims clear of the hinge on books and tabletop layouts. HUD, touch buttons and dialogs still use viewport segments. Garage and Photo Studio retain their own framing.
 - The existing Settings gear is shown at Home, pause and results. Countdown and active driving hide it. Closing Settings restores focus to the same gear.
 - Home uses three transparent 72 × 72 WebP sprites for Garage, Progress and Practice. Visible localized labels stay in place at every size.
+- A desktop viewport probe reproduced 5 px of overflow on the old lobby. The reordered track rail no longer carries a negative bottom margin into the edge of the panel.
+- Chromium verified live Home and race geometry and hinge-safe actions on both fold axes, plus the settings phase transitions on desktop and touch landscape.
 - Test-first failures reproduced the old phase rule, one-pane canvas and absent artwork. Focused source, foldable projection, asset and model checks, typecheck and the locked production build passed. Physical foldable and exact-commit CI verification are tracked separately.
 
 # UI overhaul integration and CI follow-up

@@ -331,7 +331,7 @@ details.performance-notice {
     max-height: none;
   }
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .lobby-compact .track-select {
-    order: 2; width: min(760px, 100%); align-self: start;
+    order: 2; width: min(760px, 100%); align-self: start; margin-bottom: 0;
   }
 }
 body:is([data-phase="racing"], [data-phase="countdown"]):not([data-tutorial], .airflow-active) #restart-button { display: none; }
