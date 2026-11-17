@@ -98,6 +98,8 @@ for (const [name, viewport, hasTouch] of [
     for (const down of [.35, .5, .65, .8]) for (const across of [.125, .375, .625, .875]) {
       if (fits) break;
       await press({ x: box.width * across, y: box.height * down });
+      // A tap on a marker selects it; phones then show its Objects row, so aim again from the Route view.
+      if (!(await map.isVisible())) { await page.locator('.lab-switch button').first().click(); continue; }
       fits = !(await page.locator('#lab-preview').getAttribute('class')).includes('lab-error');
     }
     expect(fits).toBe(true);
@@ -143,6 +145,8 @@ test.describe('narrow Event Lab', () => {
     await expect(lane).toHaveAttribute('aria-invalid', 'true');
     await expect(lane).toHaveAccessibleDescription(/lanes 0–3/);
     await expect(dialog.locator('#lab-use')).toBeInViewport({ ratio: 1 });
+    // Keyboard down: 390x360 is "landscape" to CSS, where the lobby folds the Mode buttons away (src/race-lobby.css).
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goBack();
     await expect(dialog).toBeHidden();
     await expect(entry).toBeFocused();

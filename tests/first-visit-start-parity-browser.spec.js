@@ -1,5 +1,6 @@
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
+import { openLobbyModes } from './helpers/home-lobby.js';
 
 test.use({ guideSeen: false });
 
@@ -10,6 +11,7 @@ for (const [width, height, touch] of [[1440, 900, false], [390, 844, true], [844
       await page.addInitScript(() => localStorage.setItem('skyline-rush-unlocked', '["coast","neon"]'));
       await page.goto('/', { waitUntil: 'domcontentloaded' });
       await page.locator('[data-track="neon"]').click();
+      await openLobbyModes(page); // short landscape folds the Mode buttons away
       await page.locator('button[data-race-mode="time"]').click();
       await page.locator('#start-button').click();
       const guide = page.locator('#guide-screen');

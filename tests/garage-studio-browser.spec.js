@@ -311,9 +311,8 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       await page.locator('#garage-angle-prev').click();
       await expect(name).toHaveAttribute('data-angle', 'cinematic');
       await expect(name).toHaveText(locale === 'en' ? '3/4 view' : '斜後方');
-      await page.locator('#garage-reset').click();
-      await expect(name).not.toHaveAttribute('data-angle', /./);
-      await page.locator('#garage-angle-prev').click(); // from the free orbit, ‹ starts at the last preset
+      await page.locator('#garage-angle-prev').click();
+      await page.locator('#garage-reset').click(); // Reset returns to the 3/4 view (src/garage-ui.ts)
       await expect(name).toHaveAttribute('data-angle', 'cinematic');
       await page.locator('#garage-studio-back').click();
       await page.locator('#garage-close').click();

@@ -126,8 +126,13 @@ test.describe('new-mode controls have accessible names', () => {
     const dialog = page.locator('#event-lab-dialog');
     await expect(dialog).toBeVisible();
     await dialog.locator('.lab-share > summary').click(); // Export/Import sit in a closed share section
-    const buttons = dialog.locator('button');
-    for (let i = 0; i < await buttons.count(); i++) await expect(buttons.nth(i)).toHaveAccessibleName(/\S/);
+    // Phones show the Route or the Objects section (.lab-switch); a hidden button has no accessible name.
+    for (const section of ['Route', 'Objects']) {
+      await dialog.locator('.lab-switch').getByRole('button', { name: section, exact: true }).click();
+      const buttons = dialog.locator('button').filter({ visible: true });
+      expect(await buttons.count()).toBeGreaterThan(3);
+      for (let i = 0; i < await buttons.count(); i++) await expect(buttons.nth(i)).toHaveAccessibleName(/\S/);
+    }
     await page.locator('#lab-close').click();
     await pickMode(page, 'custom');
     await page.locator('#race-mode-rules > summary').click();
