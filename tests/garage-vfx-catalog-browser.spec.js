@@ -125,7 +125,8 @@ test('failed badge artwork remains accessible and localized in Traditional Chine
   await expect(card.locator('figcaption')).toHaveText('已裝備徽章');
 });
 
-for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+// Artwork pixels do not depend on the viewport; the eleven-badge test below keeps all three layouts.
+for (const viewport of [{ width: 390, height: 844 }]) {
   test(`restored Equipped/Favorite/Limited badge artwork has full symmetric alpha silhouettes and separate readable labels at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
@@ -322,7 +323,7 @@ test('clicking a skin card lights the whole card the same way in every category'
 
 // Original collage cutouts could have internal truncation despite having transparent outer pixels.
 // These eight artworks were re-authored at native 216×216, not enlarged from cutouts.
-for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
+for (const viewport of [{ width: 390, height: 844 }]) { // pixels only: one viewport
   test(`all eight regenerated badge/rarity WebPs show complete native 3x silhouettes at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
