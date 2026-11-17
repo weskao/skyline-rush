@@ -63,23 +63,14 @@ for (const locale of ['en', 'zh-TW']) {
         expect(map, 'map visible').not.toBeNull();
         expect(map.top).toBeLessThanOrEqual(20);
         expect(Math.abs(width - 12 - map.right)).toBeLessThanOrEqual(1);
-        // AIRFLOW/VFX sit on the toolbar's row, left of it.
-        expect(Math.abs(box['.aero-tools'].top - box['.toolbar'].top)).toBeLessThanOrEqual(8);
-        expect(box['.aero-tools'].right).toBeLessThanOrEqual(box['.toolbar'].left);
         const hits = [];
         for (const [i, a] of CLEAR.entries()) for (const b of ['.race-route-map', ...CLEAR.slice(i + 1)])
           if (box[a] && box[b] && overlaps(box[a], box[b])) hits.push(`${a} x ${b}`);
         expect(hits).toEqual([]);
 
-        // Pause adds the language picker to AIRFLOW/VFX; the group drops under the toolbar and still clears the map.
         await page.locator('#pause-button').click();
         await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
-        await expect(page.locator('#race-status')).toBeVisible();
-        const paused = await boxes(page, ['.race-route-map', '.brand', '.toolbar', '.aero-tools']);
-        const pausedHits = [];
-        for (const a of ['.brand', '.toolbar', '.race-route-map'])
-          if (paused[a] && overlaps(paused[a], paused['.aero-tools'])) pausedHits.push(`${a} x .aero-tools`);
-        expect(pausedHits).toEqual([]);
+        await expect(page.locator('#settings-button')).toBeVisible();
       });
     });
   }
@@ -109,8 +100,7 @@ for (const { width, height, touch } of CORNER) {
         expect(map, `${hud}: map visible`).not.toBeNull();
         const toolbar = box['.toolbar'];
         // AIRFLOW/VFX belong to the top row when they sit right under the toolbar (tablets drop them below POSITION).
-        const aero = box['.aero-tools'];
-        const rowBottom = Math.max(toolbar.bottom, aero && aero.top < toolbar.bottom + 30 ? aero.bottom : 0);
+        const rowBottom = toolbar.bottom;
         // The toolbar overruns its 12px margin on a 320px phone (ends 5px from the edge); the map keeps the 12px.
         expect(Math.abs(map.right - Math.min(toolbar.right, width - 12)), `${hud}: right-aligned with the toolbar`).toBeLessThanOrEqual(1);
         expect(map.top - rowBottom, `${hud}: right under the toolbar row`).toBeGreaterThanOrEqual(2);

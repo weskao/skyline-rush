@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -32,14 +33,14 @@ for (const [width, height, hasTouch] of [[1440, 900, false], [390, 844, true], [
       await page.getByRole('button', { name: 'Close garage' }).click();
       await page.locator('.history-button').click();
       await expect(page.locator('#daily-challenge')).toContainText('Today:');
-      await expect(page.getByRole('button', { name: 'Start daily challenge' })).toBeEnabled();
+      await expect(page.locator('#daily-card-start')).toBeEnabled();
       await expect(page.locator('#achievement-list > li')).toHaveCount(4);
       await expect(page.locator('#daily-board')).toContainText('No challenge runs');
       await page.getByRole('button', { name: 'Close history' }).click();
-      await page.locator('#controls-button').click();
+      await toggleSettingsSection(page, 'driving');
       await expect(page.getByRole('checkbox', { name: 'Show best-run ghost' })).toBeEnabled();
       await expect(page.locator('#ghost-status')).toContainText('No best-run replay');
-      await page.locator('#controls-button').click();
+      await toggleSettingsSection(page, 'driving');
       await page.locator('#start-button').click();
       await expect(page.locator('#race-status')).toHaveText('RACING');
       expect(errors).toEqual([]);

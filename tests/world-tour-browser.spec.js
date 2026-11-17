@@ -1,3 +1,4 @@
+import { clickLobbyOption, openLobbyTracks } from './helpers/home-lobby.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
@@ -26,7 +27,7 @@ test('classic track cards render their own teaser artwork', async ({ page }) => 
   expect(rendered).toEqual(ids.map(id => [`${id}.jpg`, 1136, 410, 'cover']));
   for (const viewport of [{ width: 1440, height: 900 }, { width: 430, height: 932 }, { width: 844, height: 390 }]) {
     await page.setViewportSize(viewport);
-    await page.locator('#lobby-tracks-toggle').evaluate(toggle => toggle.setAttribute('aria-expanded', 'true'));
+    await openLobbyTracks(page);
     const density = await artwork.evaluateAll(images => images.map(image => {
       const { width, height } = image.getBoundingClientRect();
       return width && height ? Math.min(image.naturalWidth / width, image.naturalHeight / height) : 0;
@@ -68,7 +69,7 @@ for (const id of classicIds) test(`course ${id} renders a lit scene and exposes 
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('/');
   const button=page.locator(`[data-track="${id}"]`);
-  await button.click();
+  await clickLobbyOption(page, `[data-track="${id}"]`);
   await expect(button).toHaveAttribute('aria-pressed','true');
   await expect(page.locator('#track-note')).not.toBeEmpty();
   await page.locator('#start-button').click();
@@ -98,11 +99,11 @@ test('capture genuine world-tour scenes and race HUD', async ({ page }, testInfo
   await seed(page);
   await page.goto('/');
   for (const id of newIds) {
-    await page.locator(`[data-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-track="${id}"]`);
     await page.waitForTimeout(400);
     await shot(`${id}-desktop`);
   }
-  await page.locator('[data-track="taipei"]').click();
+  await clickLobbyOption(page, '[data-track="taipei"]');
   await page.locator('#start-button').click();
   await page.waitForTimeout(4300);
   await shot('taipei-race-map');
@@ -119,7 +120,7 @@ test('Alpine and Cosmic minimaps expose cached climb and descent cues from the m
    await expect(overview.locator('.route-elevation-cue[data-direction="up"]')).toHaveCount(1);
    await expect(overview.locator('.route-elevation-cue[data-direction="down"]')).toHaveCount(1);
    await expect(overview.locator('.route-overview-line')).toHaveCount(1);
-   await button.click();
+   await clickLobbyOption(page, `[data-track="${id}"]`);
    await page.locator('#start-button').click();
    const live=page.locator('#race-route-map svg.route-overview');
    await expect(live.locator('.route-elevation-cue')).toHaveCount(2);

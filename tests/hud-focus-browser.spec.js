@@ -1,3 +1,4 @@
+import { openSettingsSection, toggleAirflowPreview } from './helpers/settings-browser.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 
@@ -17,8 +18,12 @@ const spaceFlies = async page => {
 
 test('a clicked AIRFLOW toggle leaves Space to FLY', async ({ gameplayPage: page }) => {
   await racing(page);
-  const airflow = page.getByRole('complementary', { name: 'Airflow and visual effects' }).locator('#airflow-toggle');
-  await airflow.click();
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.gameplay.race.phase === 'paused');
+  const airflow = page.locator('#airflow-toggle');
+  await toggleAirflowPreview(page);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.gameplay.race.phase === 'racing');
   await expect(airflow).toHaveAttribute('aria-pressed', 'true');
   await spaceFlies(page);
   await expect(airflow).toHaveAttribute('aria-pressed', 'true');
@@ -30,11 +35,13 @@ test('a VFX pick by mouse while paused leaves Space to FLY after Esc resumes', a
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => window.gameplay.race.phase === 'paused');
   const combobox = page.locator('[data-vfx="preset"] + .custom-select > [role="combobox"]');
-  if (!await combobox.isVisible()) await page.locator('#vfx-panel > summary').click();
+  await openSettingsSection(page, 'display');
   await combobox.click();
   await expect(combobox).toHaveAttribute('aria-expanded', 'true'); // the opening click keeps its list
   await page.locator('[data-vfx="preset"] + .custom-select [role="option"]').nth(1).click();
   await expect(combobox).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#settings-panel')).toBeHidden();
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => window.gameplay.race.phase === 'racing');
   await spaceFlies(page);

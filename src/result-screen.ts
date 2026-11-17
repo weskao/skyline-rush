@@ -201,6 +201,7 @@ export function setupResultScreen(afterRender: () => void = () => {}) {
     for (const image of stats.querySelectorAll<HTMLImageElement>('.result-trophy-art')) {
       image.onerror = () => { image.hidden = true; };
     }
+    style.hidden = !view.style;
     if (view.style) { style.setAttribute('aria-label', view.style.aria); style.innerHTML = view.style.html; }
     afterRender();
     if (!view.counts.length) return [];

@@ -1,9 +1,10 @@
+import { openSettingsSection, toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
 // CI speed: laptop rides on the desktop page, and small-phone and fold-cover ride on the phone page, resized in place.
 
-// Race HUD options sit in the VFX panel; the speaker button opens audio only.
+// Race HUD options sit in the VFX panel; the gear opens the settings hub and audio controls.
 // Real clicks fail if another layer covers a control, so each one is clicked on every screen shape.
 const DEVICES = [
   ['desktop', { width: 1440, height: 900 }, false],
@@ -34,19 +35,19 @@ async function expectInside(control, viewport) {
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
 }
 
-// The speaker button opens audio only (no HUD mode there), at the page's current size.
-async function expectAudioPanelOnly(page) {
-  await page.locator('#settings-button').click();
+// The same settings dialog owns both Audio and Display.
+async function expectSettingsHub(page) {
+  await openSettingsSection(page, 'audio');
   await expect(page.locator('#settings-panel')).toBeVisible();
-  await expect(page.locator('#settings-panel input[name="hud-mode"]')).toHaveCount(0);
-  await expect(page.locator('#settings-button')).toHaveAttribute('aria-label', 'Audio settings');
-  await page.locator('#settings-button').click();
+  await expect(page.locator('#settings-panel input[name="hud-mode"]').first()).toBeHidden();
+  await expect(page.locator('#settings-button')).toHaveAttribute('aria-label', 'Game settings');
+  await page.locator('#settings-close').click();
 }
 
 // Clicks every Race HUD control in the VFX panel at the page's current size, then leaves the page as it found it
 // (panel closed, HUD back to hybrid) so the next size of the group starts from the same state.
 async function setRaceHudFromVfxPanel(page, name, viewport, phase) {
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   const panel = page.locator('#vfx-panel');
   const click = async control => { await control.scrollIntoViewIfNeeded(); await expectInside(control, viewport); await control.click(); };
   await click(panel.getByRole('radio', { name: 'Competitive' }));
@@ -70,8 +71,8 @@ async function setRaceHudFromVfxPanel(page, name, viewport, phase) {
   // Back to the default for the next size, then fold the panel away.
   await click(reset);
   await expect(page.locator('body')).toHaveAttribute('data-hud-mode', 'hybrid');
-  await page.locator('#vfx-panel > summary').click();
-  await expect(panel).not.toHaveAttribute('open', '');
+  await toggleSettingsSection(page, 'display');
+  await expect(panel).toBeHidden();
 }
 
 for (const group of GROUPS) {
@@ -79,9 +80,9 @@ for (const group of GROUPS) {
   const names = group.map(([name]) => name).join(' + ');
   test.describe(names, () => {
     test.use({ viewport: first, hasTouch, isMobile: hasTouch });
-    for (const phase of ['ready', 'racing']) test(`${names} ${phase}: Race HUD is set from the VFX panel`, async ({ page }) => {
+    for (const phase of ['ready', 'paused']) test(`${names} ${phase}: Race HUD is set from the VFX panel`, async ({ page }) => {
       // The live race keeps rendering through the countdown and every pointer assertion.
-      if (phase === 'racing' || group.length > 1) test.setTimeout(ciTimeout(90_000));
+      if (phase === 'paused' || group.length > 1) test.setTimeout(ciTimeout(90_000));
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
       // HUD layout and pointer targets are independent of graphics quality. Keep the live race light on software WebGL.
@@ -91,10 +92,12 @@ for (const group of GROUPS) {
       for (const [index, [name, viewport]] of group.entries()) await test.step(`${name} ${viewport.width}x${viewport.height}`, async () => {
         if (index) await resizeTo(page, viewport.width, viewport.height);
         // The audio-only check is a ready-state fact and runs at every size in the ready test; racing keeps it at the boot size.
-        if (phase === 'ready' || index === 0) await expectAudioPanelOnly(page);
-        if (phase === 'racing' && index === 0) {
+        if (phase === 'ready' || index === 0) await expectSettingsHub(page);
+        if (phase === 'paused' && index === 0) {
           await page.locator('#start-button').click();
           await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(25_000) });
+          await page.locator('#pause-button').click();
+          await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
         }
         await setRaceHudFromVfxPanel(page, name, viewport, phase);
       });

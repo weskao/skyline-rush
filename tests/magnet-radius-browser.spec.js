@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 
@@ -14,7 +15,7 @@ for (const [name, viewport, hasTouch] of [
     await page.evaluate(id => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', id])), trackId);
     await page.reload();
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-    await page.locator(`[data-track="${trackId}"]`).first().click();
+    await clickLobbyOption(page, `[data-track="${trackId}"]`);
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     await page.waitForTimeout(500);

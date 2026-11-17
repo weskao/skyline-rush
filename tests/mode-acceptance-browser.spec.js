@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 
@@ -6,7 +7,7 @@ const CLASSIC_KEYS = ['skyline-rush-best-tracks', 'skyline-rush-best', 'skyline-
   'skyline-rush-medals', 'skyline-rush-stars', 'skyline-rush-unlocked'];
 const classicStorage = page => page.evaluate(keys => keys.map(key => localStorage.getItem(key)), CLASSIC_KEYS);
 const pickMode = async (page, mode) => {
-  await page.locator(`button[data-race-mode="${mode}"]`).click();
+  await clickLobbyOption(page, `button[data-race-mode="${mode}"]`);
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', mode);
 };
 const teleportToFinish = page => page.evaluate(() => {

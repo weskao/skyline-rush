@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { expect } from '@playwright/test';
 import { captureHooks, test, programs } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -156,7 +157,7 @@ for (const [label, search] of [['plain', ''], ['legacy', '?3d=1&look=3d&model=ro
     const path = test.info().outputPath(`coast-high-${label}.png`);
     await page.screenshot({ path });
     await test.info().attach(`coast-high-${label}`, { path, contentType: 'image/png' });
-    await page.locator('#vfx-panel > summary').click();
+    await toggleSettingsSection(page, 'display');
     await page.locator('select[data-vfx="quality"]').selectOption('low', { force: true });
     await expect(world).toHaveAttribute('data-coast-road', 'procedural');
     await expect(world).toHaveAttribute('data-coast-sky', 'procedural');

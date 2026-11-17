@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -26,7 +27,7 @@ test('Custom 2 and 8 total racers work in a real mobile race, preserving leaderb
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await closeMusic(page);
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   // Custom rules live inside a collapsed <details>; open the real UI before selecting.
   await page.locator('#race-mode-rules > summary').click();
   const rivals = page.locator('[data-race-rule="rivals"] + .custom-select');
@@ -46,7 +47,7 @@ test('Custom two-car race runs in real portrait WebGL with one AI', async ({ pag
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await closeMusic(page);
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   // Custom rules live inside a collapsed <details>; open the real UI before selecting.
   await page.locator('#race-mode-rules > summary').click();
   const rivals = page.locator('[data-race-rule="rivals"] + .custom-select');
@@ -66,7 +67,7 @@ test('Custom two-car race runs in real portrait WebGL with one AI', async ({ pag
 test('Time Attack stays solo without a fabricated eight-driver HUD', async ({ page }) => {
   await page.goto('/');
   await closeMusic(page);
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await page.locator('#start-button').click();
   await expect(page.locator('#leaderboard')).toBeHidden();
   await expect(page.locator('#race-route-map [data-racer="NOVA"]')).toHaveAttribute('visibility', 'hidden');

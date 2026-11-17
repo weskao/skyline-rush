@@ -1,3 +1,4 @@
+import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect, openGarage } from './helpers/test.js';
 
 // The home showcase camera dock is reused (one id) on the Garage page to inspect the body from every angle.
@@ -101,9 +102,9 @@ test('AIRFLOW toggle only switches the effect: it neither stores nor applies a s
   await page.goto('/');
   await expect(page.locator('#start-button')).toBeVisible();
   for (let i = 0; i < 2; i++) await page.locator('#showcase-camera-next').click(); // drive -> front -> rear
-  await page.locator('#airflow-toggle').click();
+  await toggleAirflowPreview(page);
   await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('#airflow-toggle').click();
+  await toggleAirflowPreview(page);
   await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'false');
   // The dock keeps its own selection for the showcase; the toggle did not reset or consume it.
   await expect(page.locator('#showcase-camera-dock')).not.toHaveAttribute('data-view', 'drive');

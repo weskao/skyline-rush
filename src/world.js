@@ -29,6 +29,7 @@ import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.t
 import { createGarageStage, GARAGE_LIGHTING } from './garage-stage.ts';
 import { applyCarReflections, createCarEnvironment } from './car-reflections.ts';
 import { createCarBounds } from './car-bounds.ts';
+import { currentFoldableLayout, updateFoldableProjection } from './foldable-viewport.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts';
 import { createCircuitScene } from './circuit-scene.ts';
@@ -396,7 +397,6 @@ export function createWorld(canvas) {
   const aero = createAeroVFX(scene, player, shadow);
   const garageModel = createWorldGarageModel(canvas, renderer, camera), homeModelHost = { name: 'home', car: player, keep: aero.group, scene, fitAirflow: aero.fitAirflow };
   const sprintVisual = createSprintVfx();
-  // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
   const sprintInput = { phase: 'ready', nitro: false, chain: 0, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
   let visual = vfxSettings(), garageHomeVisual = { ...visual, airflow: true }, garageHiddenVisual = { ...visual, enabled: false };
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
@@ -528,9 +528,10 @@ export function createWorld(canvas) {
     },
     render(race, dt, idleTime, input = {}, presentation = {}, ghost = null, motion = null) {
       garageModel?.frame(visual.quality === 'low' ? 'low' : 'high', race.phase, garageHomePreview || !!garageCamera, garageCamera ? garageStage?.modelHost ?? null : null, race.phase === 'ready' ? upcomingStage.modelHost : null, homeModelHost);
-      if (garageCamera && garageStage && race.phase === 'ready') { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; configureBloom(bloom, visual.quality, .01, 1.1); if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; } // r186 bloom is stronger in the Studio's bright environment.
-      // The original home showcase owns only scenery and camera; no race state or entry.
-      if (race.phase === 'ready' && upcomingStage.scene) {
+      const preview = race.phase === 'ready';
+      updateFoldableProjection(camera, garageCamera || photoView ? null : currentFoldableLayout(), preview, preview && !garageCamera && !garageHomePreview && !upcomingStage.scene && !framedRoad(race.trackId) && !(visual.enabled && visual.airflow));
+      if (garageCamera && garageStage && preview) { renderPass.scene = garageStage.scene; garageStage.update(camera, garageCamera, idleTime, motionPreference.matches || visual.comfortable); lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0; configureBloom(bloom, visual.quality, .01, 1.1); if (garageWarmupPending) { garageWarmupPending = false; warmupShaders(renderer, garageStage.scene, camera, composer.renderTarget1); } renderer.info.reset(); composer.render(dt); return; } // r186 bloom is stronger in the Studio's bright environment.
+      if (preview && upcomingStage.scene) {
         renderPass.scene = upcomingStage.scene;
         upcomingStage.update(camera, idleTime, visual, motionPreference.matches || visual.comfortable);
         lens.uniforms.boost.value = lens.uniforms.impact.value = lens.uniforms.pressure.value = 0;
@@ -543,7 +544,6 @@ export function createWorld(canvas) {
       curvedClassic = !!authoredClassic;
       classicRoute = authoredClassic ?? legacyClassicRoad;
       const lighting = upcomingRaceLighting(race.trackId);
-      const preview = race.phase === 'ready';
       const car = race.player;
       const alpha = race.phase === 'racing' ? motion?.alpha ?? 1 : 1, visualCar = poseFor(player, car, motion?.previous?.player, alpha);
       const reducedMotion = motionPreference.matches || visual.comfortable;

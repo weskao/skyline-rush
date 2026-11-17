@@ -1,3 +1,5 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
+import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 import { GARAGE_ANGLES } from '../src/garage-camera.ts';
@@ -39,19 +41,20 @@ for(const id of IDS) for(const viewport of SCREEN_SIZES) {
     await page.goto('/');
     if(await page.locator('#music-prompt').isVisible())await page.locator('#music-no').click();
     const card=page.locator('[data-upcoming-track="'+id+'"]');
-    await card.click();
+    await clickLobbyOption(page, '[data-upcoming-track="'+id+'"]');
     await expect(card).toHaveAttribute('aria-pressed','true');
     await expect(page.locator('#start-button')).toBeDisabled();
     await expect(page.locator('#start-button span')).toHaveText('COMING SOON');
-    await card.focus();
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Space');
+    await page.locator('#lobby-tracks-toggle').press('Enter');
+    await expect(card).toBeFocused();
+    await card.press('Space');
+    await page.locator('#track-choose-confirm').press('Enter');
     await expect(page.locator('body')).toHaveAttribute('data-phase','ready');
     await expect(page.locator('#start-button')).toBeDisabled();
 
     const airflow=page.locator('#airflow-toggle');
     for(const enabled of (viewport.width===1440?[false,true]:[true])) {
-      if((await airflow.getAttribute('aria-pressed'))!==String(enabled))await airflow.click();
+      if((await airflow.getAttribute('aria-pressed'))!==String(enabled))await toggleAirflowPreview(page);
       await expect(airflow).toHaveAttribute('aria-pressed',String(enabled));
       for(const view of HOME_VIEWS) {
         await page.locator('#showcase-camera-next').click();
@@ -61,7 +64,7 @@ for(const id of IDS) for(const viewport of SCREEN_SIZES) {
     }
 
     // AIRFLOW on hides the home panel by design (0f315b7c: one START in airflow mode); a player turns it off to reach Garage.
-    await airflow.click();
+    await toggleAirflowPreview(page);
     await expect(airflow).toHaveAttribute('aria-pressed','false');
     await page.locator('#garage-button').click();
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page','home');

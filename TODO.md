@@ -1,3 +1,57 @@
+# Home short-landscape wallet / track spacing
+- [x] Restore a small 6px gap between the Home resource strip and selected-track hero on short landscape layouts.
+- [x] Add browser regression coverage for 345×206, 667×375, 743×340 and 852×393.
+- [ ] Run the focused browser regression and exact-HEAD CI; confirm the final spacing on a physical phone.
+
+# Landscape Home version button
+
+- [x] Restore the version button to the bottom center of short phone landscapes and keep the adjacent action labels inside their buttons.
+- [x] RED reproduced the old header position and the 667 × 375 English label overflow. The focused Chromium cases verify the center gap, safe area, toolbar, and release-notes tap. The real-game 852 × 393 Chromium capture shows the version button.
+- [ ] Check the exact-commit GitHub quality gate and a physical phone. Full local unit coverage requires the assets omitted from this sparse checkout.
+
+# Home track chooser and immediate race score
+
+- The Home hero combines the selected track map, name, and teaser. Confirm in the track dialog to apply a new track. Cancel preserves the selection and restores focus. Desktop and touch gestures still page the Home scene when the dialog is closed.
+- Home keeps the car above the locked-in Start rail on phones and adds an Airflow preview shortcut beside Settings. Book and tabletop foldables use a single usable segment for chooser controls.
+- All 25 project select controls share one drawn appearance. Language keeps its globe, and race weather and Photo Studio lighting use the same trigger and menu treatment.
+- Standard results display the style score, stars, scoring sources, and per-route medal thresholds without a disclosure.
+- Test-first regressions covered the former result disclosure, mismatched select styling, obscured car and missing track confirmation. The 45 focused source tests, 13 Chromium UI scenarios, typecheck and locked production build passed. Physical foldable and exact-commit CI checks are separate.
+
+# Full-width foldable race and lobby navigation
+
+- Home and race render the car and track across the entire foldable viewport. The race camera aims clear of the hinge on books and tabletop layouts. HUD, touch buttons and dialogs still use viewport segments. Garage and Photo Studio retain their own framing.
+- The existing Settings gear is shown at Home, pause and results. Countdown and active driving hide it. Closing Settings restores focus to the same gear.
+- Home uses three transparent 72 × 72 WebP sprites for Garage, Progress and Practice. Visible localized labels stay in place at every size.
+- A desktop viewport probe reproduced 5 px of overflow on the old lobby. The reordered track rail no longer carries a negative bottom margin into the edge of the panel.
+- Chromium verified live Home and race geometry and hinge-safe actions on both fold axes, plus the settings phase transitions on desktop and touch landscape.
+- Test-first failures reproduced the old phase rule, one-pane canvas and absent artwork. Focused source, foldable projection, asset and model checks, typecheck and the locked production build passed. Physical foldable and exact-commit CI verification are tracked separately.
+
+# UI overhaul integration and CI follow-up
+
+- Integrated develop `4a3ff0a1`. Kept both the Roadster request-watch isolation and its new Settings flow when resolving the single conflict.
+- The prior CI run `43941377849` failed all 16 browser shards and the cloud-save job. Its mobile tests often tried to click a collapsed race-mode or track row. Use the shared lobby helper to open the disclosure before clicking; the 2/8-car mobile test passed on Chromium after that change. Updated browser checks for the Settings, Progress, camera, and pause/retry entry points, and fixed a result overlap check that called a DOM method on a rectangle.
+- Layout probe covered desktop and compact portrait action positions. Full browser/Cloud Save regression and exact-commit CI remain to be confirmed.
+
+# Unified settings and lobby track navigation
+
+- [x] Home uses one Settings gear. Driving, Display & HUD, Audio and Language share a responsive dialog with its own scroll area. The pause menu opens the same dialog.
+- [x] Desktop horizontal trackpad gestures work across the lobby, with open track/mode pickers and vertical scrolling retaining their own input. Keep the wider desktop track cards and use the same map-and-art treatment in mobile portrait.
+- [x] RED on the former lobby wheel handling and settings structure. Focused regression tests, including the existing main CSS and module-size contracts, pass. Chromium verified desktop paging, mobile portrait and tabletop dialog geometry and Escape focus.
+- [ ] Record physical phone/foldable verification, full browser matrix and exact-HEAD CI before merge.
+
+# Reference design follow-up
+
+- [x] Compact race selection, desktop track rail, new 3× Coast/Neon landmark art, twelve mode icons and a shared two-state Garage pose switch.
+- [x] Simplify live race toolbar and add pause settings. Show both earned currencies in the responsive results receipt, with the receipt beside the next action.
+- [x] RED/GREEN focused tests, source size and existing main CSS contract (19 passed). Verify production build, exact-head CI and physical device layouts separately.
+- [ ] Follow up on unified wallet, account and missions navigation, Garage secondary controls and Photo/Event Lab restructuring. Preserve original access and entitlements.
+
+# Skyline Rush responsive interface refresh
+
+- The lobby reads its title from the selected race and uses the existing 3D showcase and 3× track art. The desktop rail shows larger track cards, and the mobile layout preserves the safe-area Start rail and folded viewport segments.
+- The settings gear opens audio and links to the existing driving, display/HUD, and language panels. The first-race guide opens with the quick instructions, and the full manual is available from Practice. Garage camera icons, progress navigation, Event Lab history controls and results credits reuse the existing icon and artwork sources.
+- RED/GREEN guards cover the new layout contracts. Check desktop, portrait, short landscape, and both folding axes with the browser specs. Physical iOS, Android and foldable testing remains pending.
+
 # 2026-11-16 — Browser CI follow-up
 
 - The lobby already scrolls. Removing the inner rules scroller lets the AI listbox open above the rules without clipping its first options. Chromium reproduced the old track-list interception and verified that selecting 0 AI updates the rules summary after the fix.

@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { mkdir } from 'node:fs/promises';
@@ -68,8 +69,8 @@ for (const [name, viewport, hasTouch] of [
   });
 
   const raceRamp = async (page, spot) => {
-    await page.locator(`[data-track="${spot.trackId}"]`).click();
-    await page.locator('button[data-race-mode="eventlab"]').click();
+    await clickLobbyOption(page, `[data-track="${spot.trackId}"]`);
+    await clickLobbyOption(page, 'button[data-race-mode="eventlab"]');
     await page.locator('.lab-share > summary').click();
     await page.locator('#lab-json').fill(spot.json);
     await page.locator('#lab-import').click();

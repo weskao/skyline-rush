@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, programs, modelInstances as instances } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -157,7 +158,7 @@ test('Home and Coming Soon showcases wear the selected paint on the GLB', async 
   const hex = async () => { const a = await audit(page); return a && [a.paint, a.proc]; };
   const shown = [equipped, equipped];
   await expect.poll(hex).toEqual(shown);
-  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
   await expect.poll(async () => Object.keys(await instances(page))).toEqual(['showcase']);
   await expect.poll(hex).toEqual(shown);
   await attach(page, 'coming-soon-paint');

@@ -30,3 +30,19 @@ test('track preview swipe resolves playable and future card IDs without creating
   assert.equal(swipe.swipeTrackId({ dataset: { upcomingTrack: 'dune-tempest' } }), 'dune-tempest');
   assert.equal(swipe.swipeTrackId({ dataset: {} }), '');
 });
+
+test('desktop horizontal paging accepts the lobby and collapsed track rail but leaves nested scrollers alone', async () => {
+  const { acceptsTrackWheelTarget } = await import('../src/track-swipe-ui.ts');
+  const target = (...ancestors) => ({ closest: selector => ancestors.some(item => selector.split(', ').includes(item)) ? {} : null });
+  const scene = target('#world');
+  const heading = target('#intro');
+  const rail = target('#intro', '.track-select');
+  assert.equal(acceptsTrackWheelTarget(scene, true), true);
+  assert.equal(acceptsTrackWheelTarget(heading, true), true);
+  assert.equal(acceptsTrackWheelTarget(rail, true), true);
+  assert.equal(acceptsTrackWheelTarget(rail, false), false);
+  assert.equal(acceptsTrackWheelTarget(target('#intro', '#track-chooser'), true), false);
+  assert.equal(acceptsTrackWheelTarget(target('#intro', '#lobby-mode-options'), true), false);
+  assert.equal(acceptsTrackWheelTarget(target('#intro', 'select'), true), false);
+  assert.equal(acceptsTrackWheelTarget(target('.settings-panel'), true), false);
+});

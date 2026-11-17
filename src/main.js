@@ -41,7 +41,6 @@ import { setupPhotoUI } from './photo-ui.ts';
 import { saveLocale, resolveInitialLocale, getLocale, setLocale, onLocaleChange, applyI18n, applyDocumentLocale, t, formatDate } from './i18n.ts';
 import { availableTracks, availablePaints, isUpcomingEnterable } from '@progression-access';
 import { customSelect, refreshCustomSelects } from './custom-select.ts';
-import { trackDropdown } from './dropdown.ts';
 import { setupTrackSwipeUI } from './track-swipe-ui.ts';
 import { refreshIfStale } from './update-check.ts';
 import { setupReleaseNotesUI } from './release-notes-ui.ts';
@@ -71,7 +70,7 @@ const $ =selector => document.querySelector(selector);
 // Event messages (tilt, key map, errors) remember how to re-render, so a language switch translates the live text.
 const said = new Map();
 function say(element, text) { said.set(element, text); element.textContent = text(); }
-const ui = Object.fromEntries(['intro', 'race-info', 'race-status', 'speed', 'position', 'timer', 'distance', 'fuel-value', 'fuel-fill', 'fuel-caption', 'fuel-meter', 'altitude', 'flight-mode', 'mode-icon', 'flight-state', 'flight-budget', 'flight-instruction', 'climb-rate', 'height-indicator', 'impact-report', 'impact-title', 'impact-loss', 'countdown', 'driving-message', 'race-overlay', 'overlay-title', 'overlay-copy', 'result-stats', 'resume-button', 'again-button', 'start-button', 'pause-button', 'restart-button', 'settings-button', 'settings-panel', 'camera-button', 'controls-button', 'controls-panel', 'touch-controls', 'leaderboard', 'speed-caption'].map(id => [id, $(`#${id}`)]));
+const ui = Object.fromEntries(['intro', 'race-info', 'race-status', 'speed', 'position', 'timer', 'distance', 'fuel-value', 'fuel-fill', 'fuel-caption', 'fuel-meter', 'altitude', 'flight-mode', 'mode-icon', 'flight-state', 'flight-budget', 'flight-instruction', 'climb-rate', 'height-indicator', 'impact-report', 'impact-title', 'impact-loss', 'countdown', 'driving-message', 'race-overlay', 'overlay-title', 'overlay-copy', 'result-stats', 'resume-button', 'again-button', 'start-button', 'pause-button', 'restart-button', 'settings-button', 'camera-button', 'controls-panel', 'touch-controls', 'leaderboard', 'speed-caption'].map(id => [id, $(`#${id}`)]));
 ui['assist-button'] = $('#assist-button');
 ui['skill-report'] = $('#skill-report');
 const clearButtonPresses = trackPressedButtons();
@@ -108,9 +107,6 @@ const keymap = setupKeyMapUI({ clearControls: () => controls.clear(), say });
 // Its action callback only runs on input, so the handlers declared further down are ready by then.
 const controls = createControls(window, action => {
   if (document.querySelector('dialog[open]')) { controls.clear(); return; }
-  if (action === 'pause') toggleSettings(false);
-  if (action === 'pause') $('#vfx-panel').open = false;
-  if (action === 'pause') toggleControls(false);
   ({ start, restart, pause, item: itemUI.activate, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: vfx.toggleAirflow })[action]?.();
 }, { getSettings: () => touchUI.inputPrefs(), getKeyMap: () => keymap.getKeyMap(), onTilt: () => touchUI.onTilt() });
 const touchUI = setupTouchControlsUI({
@@ -119,12 +115,12 @@ const touchUI = setupTouchControlsUI({
   isTutorialActive: () => !!tutorial,
   say,
   cueUi: () => sound.cue('ui'),
-  closeControlsPanel: () => toggleControls(false),
+  closeControlsPanel: () => toggleSettings(false),
   refreshPhase: () => phaseUI(),
   clearButtonPresses,
   reducedMotion,
 });
-const vfx = setupVfxUI({ getWorld: () => world, onAirflowShown: () => showSwipeHint(), onPanelOpen: () => notice.hide(), reducedMotion });
+const vfx = setupVfxUI({ getWorld: () => world, onAirflowShown: () => showSwipeHint(), reducedMotion });
 const calmMotion = vfx.calm;
 const { motionOptions, enter } = createMotion(calmMotion);
 const hud = createRaceHud({
@@ -161,7 +157,7 @@ const notice = setupPerformanceNotice({ downgraded: vfx.deviceSelection.downgrad
 const { renderReleaseNotes, maybeShowReleaseNotes } = setupReleaseNotesUI({
   canOpen: () => race.phase === 'ready' && !tutorial,
   canAutoOpen: () => !!world && !document.hidden,
-  beforeOpen: () => { controls.clear(); toggleControls(false); toggleSettings(false); notice.hide(); },
+  beforeOpen: () => { controls.clear(); toggleSettings(false); notice.hide(); },
   afterClose: () => notice.restore(race.phase === 'ready'),
   reducedMotion,
 });
@@ -201,7 +197,7 @@ const raceSelect = setupRaceSelectUI({
   cueUi: () => sound.cue('ui'),
   reducedMotion, showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false, isUpcomingEnterable,
 });
-const { centerSelectedTrack, selectedRace, cupCount, focusLobbyTrack } = raceSelect;
+const { applyTrack, selectedRace, cupCount, focusLobbyTrack } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
   canResume: () => !!world && race.phase === 'ready' && !contextLost && !document.querySelector('dialog[open]'),
   resume: saved => {
@@ -219,7 +215,7 @@ const { showHistory, showHomeStatus } = createHistoryView({
     sessionDaily: progress.daily, sessionMedals: progress.medals, sessionChallengeMedals: progress.challengeMedals, world }),
   timeString,
 });
-showTracks(); centerSelectedTrack();
+showTracks();
 refreshCustomSelects(); // showTracks just localized the History options the drawn select copied at construction
 
 const currentProgress = () => progressSnapshot(progress);
@@ -265,14 +261,13 @@ function chooseTrack() {
   hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
   focusLobbyTrack();
-  centerSelectedTrack();
 }
 $('#choose-track').addEventListener('click', chooseTrack);
 
 const { showSwipeHint, cancelSwipe } = setupTrackSwipeUI({
   getRace: () => race,
   getWorld: () => world,
-  selectedRace,
+  selectedRace, applyTrack,
   getSelectedTrackId: () => raceSelect.currentTrackId(),
   calmMotion,
   motionOptions,
@@ -359,11 +354,11 @@ function toggleAssist() {
   sound.cue('ui');
 }
 
-const { toggleSettings, toggleControls } = setupControlPanels({
+const { toggleSettings } = setupControlPanels({
   getRacePhase: () => race.phase,
   clearRebinding: () => keymap.cancelRebinding(),
   hidePerformanceNotice: () => notice.hide(),
-  trackDropdown,
+  clearControls: () => controls.clear(),
 });
 
 function changeCamera() {
@@ -375,18 +370,12 @@ function changeCamera() {
 
 const itemUI = setupItemUI({ getRace: () => race, cue: name => sound.cue(name) });
 showAssist();
-ui['controls-button'].addEventListener('click', () => { toggleControls(); sound.cue('ui'); });
 // Capture phase so Escape only closes the panel and never reaches input.js as a pause/resume.
 document.addEventListener('keydown', event => {
   if (touchUI.isEditing() && event.code === 'Escape') {
     event.preventDefault(); event.stopImmediatePropagation(); touchUI.editLayout(false); return;
   }
   if (keymap.handleRebindKey(event)) return;
-  if (event.code !== 'Escape' || ui['controls-panel'].hidden) return;
-  event.preventDefault();
-  event.stopPropagation();
-  toggleControls(false);
-  ui['controls-button'].focus({ preventScroll: true });
 }, { capture: true });
 document.querySelectorAll('[data-control]').forEach(button => controls.bindButton(button, button.dataset.control));
 ui['start-button'].addEventListener('click', start);
@@ -411,8 +400,8 @@ setupPhotoUI({ getRace: () => race, getWorld: () => world, cue: name => sound.cu
 ui['settings-button'].addEventListener('click', () => { toggleSettings(); sound.cue('ui'); });
 ui['camera-button'].addEventListener('click', changeCamera);
 ui['assist-button'].addEventListener('click', toggleAssist);
-for (const bar of document.querySelectorAll('.toolbar, .aero-tools')) bar.addEventListener('click', event => {
-  if (event.detail > 0) event.target.closest('button:not([role="combobox"])')?.blur();
+$('.toolbar').addEventListener('click', event => {
+  if (event.detail > 0 && !event.target.closest('#settings-panel')) event.target.closest('button:not([role="combobox"])')?.blur();
 });
 window.addEventListener('blur', () => {
   clearButtonPresses();
@@ -455,14 +444,12 @@ function phaseUI() {
   ui['race-overlay'].hidden = !overlay || editingLayout || phase === 'finished';
   ui['touch-controls'].hidden = !editingLayout && (ready || overlay);
   ui.intro.hidden ||= editingLayout;
-  ui['controls-button'].disabled = !(ready || phase === 'paused');
-  if (ui['controls-button'].disabled) toggleControls(false);
+  if (phase === 'racing' || phase === 'countdown') toggleSettings(false);
   ui['pause-button'].disabled = ready || phase === 'finished';
   ui['restart-button'].hidden = ready;
   if (ready) queueMicrotask(maybeShowReleaseNotes);
   if (tutorial) {
     ui['race-overlay'].hidden = phase !== 'paused'; // the shared pause screen shows how to resume
-    ui['controls-button'].disabled = true;
     ui['restart-button'].hidden = true;
     ui['pause-button'].disabled = tutorial.complete;
   }
@@ -484,7 +471,6 @@ function phaseUI() {
     showTracks();
     ui['result-stats'].hidden = false;
     $('#new-best').hidden = !record;
-    $('#result-style').hidden = race.mode !== 'classic';
     lastResult = { race, best, record, medals, challengeMedals: settled.challengeMedals, series: sprintSeries, cup, stunt, next: settled.next, settled };
   }
   phaseText();
@@ -608,7 +594,7 @@ function beginTutorial(firstStart = raceAfterTutorial) {
   if (!tutorial) tutorialReturn = { race, pausedPhase, goUntil, hud: hud.memory() };
   closeGuide(); // marks this player as having seen the guide, even for first-start practice
   if (touchUI.isEditing()) touchUI.editLayout(false);
-  controls.clear(); clearButtonPresses(); toggleControls(false); toggleSettings(false);
+  controls.clear(); clearButtonPresses(); toggleSettings(false);
   updateTutorialActions(raceAfterTutorial);
   tutorial = createInteractiveTutorial(); race = tutorial.race;
   race.phase = 'countdown'; // the same 3-2-1 → GO as a race, so equipped Launch Flare charges and bursts here too
@@ -647,7 +633,7 @@ const { renderTutorial, resetTutorialView } = setupTutorialUI({
 const { closeGuide, offerFirstStart } = setupGuideUI({
   beforeOpen: () => {
     if (touchUI.isEditing()) touchUI.editLayout(false);
-    controls.clear(); toggleControls(false); toggleSettings(false);
+    controls.clear(); toggleSettings(false);
     notice.hide();
   },
   getSteeringMode: () => touchUI.inputPrefs().mode,

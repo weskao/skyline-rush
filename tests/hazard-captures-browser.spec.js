@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { saveArtifact } from './helpers/artifact.js';
@@ -27,7 +28,7 @@ for (const [name, viewport, hasTouch] of [
     await page.reload();
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
     for (const c of CASES) {
-      await page.locator(`[data-track="${c.track}"]`).click();
+      await clickLobbyOption(page, `[data-track="${c.track}"]`);
       await page.locator('#start-button').click();
       await expect(page.locator('#race-status')).not.toHaveText('READY', { timeout: ciTimeout(15_000) });
       await expect(page.locator('#countdown')).toBeHidden({ timeout: ciTimeout(10_000) });

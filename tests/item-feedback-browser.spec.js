@@ -1,9 +1,10 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 
 // ITEM-12 feedback and 12B acceptance (misses, blocked storage, touch layout) in the real game.
 const startWithItems = async (page, { blockedStorage = false } = {}) => {
-  await page.locator('button[data-race-mode="free"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="free"]');
   await page.locator('#race-mode-rules > summary').click();
   await page.locator('[data-race-rule="itemRules"]').evaluate(node => { node.value = 'active'; node.dispatchEvent(new Event('change', { bubbles: true })); });
   await page.locator('#start-button').click();

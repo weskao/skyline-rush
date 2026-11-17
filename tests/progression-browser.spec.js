@@ -1,3 +1,5 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { dailyChallenge } from '../src/game.js';
@@ -74,8 +76,8 @@ test('History shows awarded medals and today’s daily board; the daily run star
   await expect(page.locator('#daily-status')).toContainText(/Today:.*Gold rings only/i);
   await expect(page.locator('#daily-board')).toContainText('01:04.20');
   await expect(page.locator('#daily-board img')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Start daily challenge' }).click();
-  await expect(page.getByRole('dialog', { name: 'Race history' })).toBeHidden();
+  await page.locator('#daily-card-start').click();
+  await expect(page.getByRole('dialog', { name: 'Progress', exact: true })).toBeHidden();
   await expect(page.locator('#race-status')).toHaveText(/COUNTDOWN|RACING/);
   await expect(page.locator('.overlay-route')).toContainText('DAILY');
   expect(errors).toEqual([]);
@@ -88,7 +90,7 @@ test('a valid saved ghost is offered and its preference persists; a tampered gho
   await seed(page, { 'skyline-rush-ghosts': { [recordTrackId('coast')]: ghost, [recordTrackId('neon')]: { ...ghost, samples: ghost.samples.slice(0, 10) } } });
   await page.goto('/');
   await dismissMusicPrompt(page);
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   const toggle = page.getByRole('checkbox', { name: 'Show best-run ghost' });
   await expect(toggle).toBeEnabled();
   await expect(toggle).not.toBeChecked();
@@ -98,15 +100,15 @@ test('a valid saved ghost is offered and its preference persists; a tampered gho
   await toggle.uncheck();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls')).ghost)).toBe(false);
   await toggle.check();
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', '["coast","neon"]'));
   await page.reload();
   await dismissMusicPrompt(page);
-  await page.locator('[data-track="neon"]').click();
-  await page.locator('#controls-button').click();
+  await clickLobbyOption(page, '[data-track="neon"]');
+  await toggleSettingsSection(page, 'driving');
   await expect(page.locator('#ghost-status')).toContainText('No best-run replay');
-  await page.locator('#controls-button').click();
-  await page.locator('[data-track="coast"]').click();
+  await toggleSettingsSection(page, 'driving');
+  await clickLobbyOption(page, '[data-track="coast"]');
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   expect(errors).toEqual([]);
@@ -137,7 +139,7 @@ for (const [modifier, label] of [['no-flight', 'No flight'], ['double-traffic', 
       await page.keyboard.down('Space');
       await expect(fly).toHaveAttribute('aria-pressed', 'false');
       await page.keyboard.up('Space');
-      await page.locator('#restart-button').click();
+      await page.keyboard.press('Backspace');
       await expect(fly).toBeDisabled();
       await expect(page.locator('#flight-instruction')).toHaveText('Daily challenge rule: FLY is unavailable');
       await page.locator('.brand').click();

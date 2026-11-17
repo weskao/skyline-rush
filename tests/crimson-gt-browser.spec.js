@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, captureHooks, glbRoots, programs, modelInstances as instances, dressedAs as dressed, watchRequests } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -183,7 +184,7 @@ test('legacy graphics URL keeps the equipped Crimson GT and follows the Garage c
   await expect.poll(dressedAs).toBe('crimson-gt');
   await page.locator('#garage-close').click();
   await expect.poll(() => instances(page)).toEqual({ home: expect.any(String) });
-  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
   await expect.poll(() => instances(page)).toEqual({ showcase: expect.any(String) });
   expect(requests).toEqual(['/models/crimson-gt/crimson-gt-low.glb', '/models/roadster2/roadster2-low.glb']);
   expect(errors).toEqual([]);
@@ -564,7 +565,7 @@ test('Garage airflow previews and equipped styles follow Crimson GT onto Coming 
   const { errors } = await prepare(page, gameplayURL, { storage: GT });
   await modelReady(page);
   await expect.poll(() => instances(page)).toEqual({ home: expect.any(String) });
-  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
   const style = () => page.evaluate(() => {
     const { composer } = window.gameScene;
     const flow = composer.passes.find(pass => pass.scene?.isScene)?.scene.getObjectByName('Airflow showcase')?.children[0];
@@ -587,7 +588,7 @@ test('Garage airflow previews and equipped styles follow Crimson GT onto Coming 
   await page.locator('[data-skin="airflow-vortex"] .garage-skin-action').click();
   await page.locator('#garage-close').click();
   await expect.poll(style).toEqual(['crimson-gt', 2]);
-  await page.locator('[data-upcoming-track="monsoon-ruins"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="monsoon-ruins"]');
   await expect.poll(style, { timeout: ciTimeout(20000) }).toEqual(['crimson-gt', 2]);
   expect(errors).toEqual([]);
 });

@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { captureHooks, test, programs } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -18,7 +19,7 @@ async function neon(page, quality) {
   }, quality);
   await page.reload();
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator('[data-track="neon"]').click();
+  await clickLobbyOption(page, '[data-track="neon"]');
   await expect(page.locator('[data-track="neon"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#world')).toHaveAttribute('aria-label', /Neon Downtown/);
 }

@@ -9,6 +9,7 @@ export function createCarBounds(probe: THREE.PerspectiveCamera, camera: THREE.Pe
   function projectedCarBounds(eye: THREE.Vector3, look: THREE.Vector3, measure = true): ScreenBounds {
     probe.fov = 50;
     probe.aspect = camera.aspect;
+    probe.view = camera.view;
     probe.position.copy(eye);
     probe.lookAt(look);
     probe.updateProjectionMatrix();

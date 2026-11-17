@@ -1,3 +1,5 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
@@ -24,7 +26,7 @@ for (const [name, viewport, hasTouch] of [
   test('the Coming Soon card enters a real 13.8 km race that renders the course, finishes once and saves topology-keyed results', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.locator('[data-upcoming-track="frostbite-canyon"]').click();
+    await clickLobbyOption(page, '[data-upcoming-track="frostbite-canyon"]');
     await expect(page.locator('#start-button')).toBeEnabled();
     await expect(page.locator('#track-length')).toHaveText('13.8 KM SPRINT');
     await expect(page.locator('.route-heading')).toHaveText('FROSTBITE CANYON');
@@ -96,11 +98,11 @@ test.describe('Frostbite Ghost', () => {
       const mid = 6480, length = 13799, samples = Array.from({ length: 3001 }, (_, i) => i < 600 ? [mid, 7.5, 6] : [mid + (length - mid) * (i - 600) / 2400, 0, 0]);
       localStorage.setItem('skyline-rush-ghosts', JSON.stringify({ 'frostbite-canyon@t1l1': { time: 300, samples } }));
     });
-    await page.locator('[data-upcoming-track="frostbite-canyon"]').click();
+    await clickLobbyOption(page, '[data-upcoming-track="frostbite-canyon"]');
     await expect(page.locator('#ghost-status')).toContainText('5:00');
-    await page.locator('#controls-button').click(); // Ghost display is opt-in, in the Controls panel (real clicks)
+    await toggleSettingsSection(page, 'driving'); // Ghost display is opt-in, in the Controls panel (real clicks)
     await page.locator('#ghost-enabled').check();
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15_000) });
     const span = await page.evaluate(() => window.gameplay.race.sections.find(s => s.span));

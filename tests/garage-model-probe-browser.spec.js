@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test, dressedAs, watchRequests } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -106,9 +107,9 @@ test('track switch after closing the Garage returns GPU memory to the no-probe b
     const tracks = page.locator('[data-track]');
     const original = await page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
     const other = await tracks.evaluateAll((buttons, id) => buttons.map(b => b.dataset.track).find(t => t !== id), original);
-    await page.locator(`[data-track="${other}"]`).click();
+    await clickLobbyOption(page, `[data-track="${other}"]`);
     await expect(page.locator(`[data-track="${other}"]`)).toHaveAttribute('aria-pressed', 'true');
-    await page.locator(`[data-track="${original}"]`).click();
+    await clickLobbyOption(page, `[data-track="${original}"]`);
     await expect(page.locator(`[data-track="${original}"]`)).toHaveAttribute('aria-pressed', 'true');
   };
   const stable = async () => {

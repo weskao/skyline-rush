@@ -20,6 +20,7 @@ interface SwipeOptions {
   getRace(): SwipeRace;
   getWorld(): SwipeWorld | null | undefined;
   selectedRace(trackId: string): object;
+  applyTrack(trackId: string): void;
   calmMotion(): boolean;
   motionOptions(speed: string): KeyframeAnimationOptions;
   isTutorialActive(): boolean;
@@ -40,9 +41,17 @@ export function canBeginTrackSwipe({ button, phase, tutorial, editing, busy, dia
     (pointerType === 'mouse' || (clientX >= SWIPE_EDGE_PX && clientX <= width - SWIPE_EDGE_PX));
 }
 
-export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches, getSelectedTrackId }: SwipeOptions) {
+/** Desktop wheel paging also starts over the lobby; settings and expanded lists keep their native scrolling. */
+export function acceptsTrackWheelTarget(target: Pick<Element, 'closest'>, desktop: boolean): boolean {
+  if (target.closest('#world')) return true;
+  return desktop && !!target.closest('#intro') && !target.closest(
+    '#track-chooser, #lobby-mode-options, details[open], [role="listbox"], input, select, textarea, [contenteditable]',
+  );
+}
+
+export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, applyTrack, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches, getSelectedTrackId }: SwipeOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
-  trackLandscapeHomeScale($('#intro'), $('.aero-tools')); // the home strip's short-landscape panel + rail scale
+  trackLandscapeHomeScale($('#intro'), $('.toolbar')); // the home strip's short-landscape panel + rail scale
   // Home screen: swipe (touch) or drag (mouse) the 3D preview to change track, like a carousel page.
   const worldCanvas = $<HTMLCanvasElement>('#world');
   const swipeChip = $('#track-swipe');
@@ -155,7 +164,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     swipe = null; swipeTarget = null; swipeBusy = true;
     const prepared = prepareSwipeScenes(step);
     // Commit the choice before the transition: software WebGL can delay animation frames in CI.
-    button.click();
+    applyTrack(swipeTrackId(button));
     showSwipeChip('done', getSelectedTrackId());
     if (prepared && !calmMotion()) {
       const from = swipeScenes.style.transform || (step > 0 ? 'translateX(0px)' : 'translateX(-100vw)');
@@ -209,9 +218,11 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
   // distance; the rest of that gesture, momentum included, is spent so one swipe is one track. A pause of WHEEL_END_MS ends it,
   // timed on the events' own timeStamp: a stalled frame or late delivery must not turn the momentum tail into a second swipe.
   const WHEEL_END_MS = 160;
-  worldCanvas.addEventListener('wheel', event => {
+  document.addEventListener('wheel', event => {
+    if (event.ctrlKey || !(event.target instanceof Element) ||
+      !acceptsTrackWheelTarget(event.target, !touchMatches())) return;
     if (wheelSwipe && event.timeStamp - wheelSwipe.stamp >= WHEEL_END_MS) { clearTimeout(wheelSwipe.timer); wheelSwipe = null; }
-    if (!wheelSwipe && Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+    if (event.deltaX === 0 || (!wheelSwipe && Math.abs(event.deltaX) <= Math.abs(event.deltaY))) return;
     if (swipe || getRace().phase !== 'ready' || isTutorialActive() || isEditingLayout() || document.querySelector('dialog[open]')) return;
     event.preventDefault(); // also keeps the browser's two-finger back/forward swipe off the preview
     clearTimeout(wheelSwipe?.timer);

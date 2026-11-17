@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { dailyChallenge } from '../src/game.js';
@@ -10,7 +11,7 @@ test('returning to home keeps the last picker course in memory after Daily, and 
   const pick = daily === 'neon' ? 'canyon' : 'neon';
   await page.evaluate(ids => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(ids)), ['coast', 'neon', 'canyon']);
   await page.reload();
-  await page.locator(`[data-track="${pick}"]`).click();
+  await clickLobbyOption(page, `[data-track="${pick}"]`);
   await expect.poll(() => selectedPlayable(page)).toBe(pick);
   await page.locator('#daily-card-start').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
@@ -30,7 +31,7 @@ test('returning to home keeps the last picker course in memory after Daily, and 
 });
 
 test('returning to home restores a Coming Soon card selected before Daily', async ({ gameplayPage: page }) => {
-  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
   await expect.poll(() => selectedUpcoming(page)).toBe('dune-tempest');
   await page.locator('#daily-card-start').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');

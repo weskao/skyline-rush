@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -10,7 +11,7 @@ for (const [name, viewport, hasTouch] of [
   test('All items draw warned distinct gates and a real EMP pickup activates safely', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.locator('button[data-race-mode="custom"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="custom"]');
     await page.locator('#race-mode-rules > summary').click();
     await page.locator('[data-race-rule="itemRules"]').evaluate(node => {
       node.value = 'all'; node.dispatchEvent(new Event('change', { bubbles: true }));
@@ -68,7 +69,7 @@ for (const [name, viewport, hasTouch] of [
 
 test('Stunt and Checkpoint bonus gates are explicit opt-ins and keep ordinary sessions unchanged', async ({ gameplayPage: page }) => {
   for (const mode of ['stunt', 'checkpoint']) {
-    await page.locator(`button[data-race-mode="${mode}"]`).click();
+    await clickLobbyOption(page, `button[data-race-mode="${mode}"]`);
     await expect(page.locator('#bonus-gates-rule')).toBeVisible();
     await page.locator('[data-race-rule="bonusGates"]').check();
     // The race rebuilds after the change event, not synchronously with it.

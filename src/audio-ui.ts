@@ -36,7 +36,6 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
     updateAudioView({
       music: channelView(audio.music, volume.music),
       sfx: channelView(audio.sfx, volume.sfx),
-      settingsIcon: on ? 'sound' : 'mute',
       muteAllText: t(on ? 'audio.muteAll' : 'audio.unmuteAll'),
     });
   }
