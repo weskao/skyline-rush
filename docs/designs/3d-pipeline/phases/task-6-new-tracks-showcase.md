@@ -1,6 +1,7 @@
-# Task 6 — Five new tracks adopt shared pipeline and optional showcase/cover
+# Task 6 — Six new tracks adopt shared pipeline and optional showcase/cover
 
 Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) · Spec Phase 4–5 · Scope tags: [README.md](README.md).
+Shared recipe (reuse table, ordered steps, traps, checklist): [task-8-track-look-shared-plan.md](task-8-track-look-shared-plan.md).
 
 **Files:** shared loader/manifests established in Task 3; branch-specific scene modules only with owner approval, per-track visual assets, existing showcase modules and tests.
 **Produces:** reusable, measured visual assets for Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline Megacity and Frostbite, each aimed at its concept-board panel.
@@ -13,7 +14,7 @@ Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../.
 | Skyfall Archipelago | bottom row, 1st | floating islands, cloud sea, waterfalls, flight glow |
 | Volcanic Crown | bottom row, 2nd | lava rivers, ember light on the car, dark rock |
 | Stormline Megacity | bottom row, 3rd | neon towers, rain-slick road reflections, lightning |
-| Frostbite | bottom row, 4th | ice cliffs, frozen waterfall, snow spray and frost on the car |
+| Frostbite Canyon | bottom row, 4th | ice cliffs, frozen waterfall, snow spray and frost on the car |
 
 The [track artwork index](../track-profiles/README.md#phase-45-六張新賽道) includes a redrawn concept overview and four environment views per track, plus CourseGraph route plans, longitudinal profiles, and representative cross-sections. The running-game launch captures remain in the checklist below.
 
@@ -22,7 +23,7 @@ The [track artwork index](../track-profiles/README.md#phase-45-六張新賽道) 
 - [ ] Define each map's unique foreground landmarks, reference images, licensed texture sets, world-space scale and deterministic chunk/LOD budgets with its owner.
 - [ ] Use reference-led Blender models only for major nearby features and hero landmarks; farther scenery retains low-cost procedural geometry and correct occlusion.
 - [ ] Add per-map parity tests for course frames, checkpoints, collisions, flying shortcuts and no missing GLB or pipeline stall. Test weather/fog and game speed separately.
-- [ ] Each map reuses the Task 5 shared lighting, post and wet-road pipeline, with its own environment, fog and colour grade aimed at its panel. The map owner still defines the landmarks and budgets.
+- [ ] Each map reuses the Task 5 shared lighting, post and wet-road pipeline (as listed in [task-8-track-look-shared-plan.md](task-8-track-look-shared-plan.md)), with its own environment, fog and colour grade aimed at its panel. The map owner still defines the landmarks and budgets.
 - [ ] Build actual running-game captures for launch/cover assets, only after Phase 2d (and after Task 7 if the owner wants the new car on covers), so they show the cars players actually drive. Generated concept images (e.g. [track-profiles/skyline-rush-3d-target-concept-board.jpeg](../track-profiles/skyline-rush-3d-target-concept-board.jpeg), also the per-map mood source) remain mood-board only; label separate from WebGL proof.
 - [ ] Review source asset licensing and owner art approval; exact-HEAD CI.
 

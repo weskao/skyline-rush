@@ -13,9 +13,18 @@ Index for [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](..
 | 4c | Phase 2c | Phase 3c | [task-4c-garage-equipment-vfx.md](task-4c-garage-equipment-vfx.md) |
 | 4d | Phase 2d (Roadster close-out) | Phase 3d | [Completed by owner decision (2026-11-17)](task-4b-roadster-race.md#roadster-close-out) |
 | 5 | Phase 3 | — | [task-5-coast-pbr-road.md](task-5-coast-pbr-road.md) |
-| 5b | Proposed (not in spec v2): Neon Downtown | — | `task-5b-neon-downtown.md` |
+| 5b | Proposed (not in spec v2): Neon Downtown | — | [task-5b-neon-downtown.md](task-5b-neon-downtown.md) |
 | 6 | Phase 4–5 | — | [task-6-new-tracks-showcase.md](task-6-new-tracks-showcase.md) |
 | 7 | Phase 6 (concept hero car) | Phase 7 | [task-7-concept-hero-car.md](task-7-concept-hero-car.md) |
+| 8 | Proposed (not in spec v2): shared track-look plan | — | [task-8-track-look-shared-plan.md](task-8-track-look-shared-plan.md) |
+| 8a | Proposed (not in spec v2): Canyon Skyway | — | [task-8a-canyon-skyway.md](task-8a-canyon-skyway.md) |
+| 8b | Proposed (not in spec v2): Aurora Pass | — | [task-8b-aurora-pass.md](task-8b-aurora-pass.md) |
+| 8c | Proposed (not in spec v2): Sky Spiral | — | [task-8c-sky-spiral.md](task-8c-sky-spiral.md) |
+| 8d | Proposed (not in spec v2): Taipei Heritage | — | [task-8d-taipei-heritage.md](task-8d-taipei-heritage.md) |
+| 8e | Proposed (not in spec v2): Tokyo Afterdark | — | [task-8e-tokyo-afterdark.md](task-8e-tokyo-afterdark.md) |
+| 8f | Proposed (not in spec v2): Alpine Rail Pass | — | [task-8f-alpine-rail-pass.md](task-8f-alpine-rail-pass.md) |
+| 8g | Proposed (not in spec v2): Coastal Horizon | — | [task-8g-coastal-horizon.md](task-8g-coastal-horizon.md) |
+| 8h | Proposed (not in spec v2): Cosmic Orbit | — | [task-8h-cosmic-orbit.md](task-8h-cosmic-orbit.md) |
 
 Visual tasks (4c–7) are accepted by the concept-board parity review in spec v2 §8.1; see [../concept-art/README.md](../concept-art/README.md) for which panel each task answers to.
 

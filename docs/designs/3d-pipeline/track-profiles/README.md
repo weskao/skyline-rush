@@ -27,6 +27,8 @@
 
 **第 3～10 張遊戲整合里程：** 單場起點到終點的主線里程以 10 km 為基準，容許 ±2 km（8～12 km，含上下限）。各圖依彎道、地標與飛行段的節奏安排終點。定案後，同步遊戲里程、俯視路線圖及剖面圖的對應標註。
 
+**3D 建置計畫：** 第 3～10 張共用[賽道外觀共用計畫](../phases/task-8-track-look-shared-plan.md)，各張的計畫連結列在該張段落末尾。本頁圖片僅為概念美術與氛圍參考。
+
 | 賽道 | 主要地標與變更 | 圖面里程 |
 | --- | --- | --- |
 | 03 峽谷天橋 · Canyon Skyway | 紅砂岩切壁與斷裂直梁橋 | 10.00 km |
@@ -52,7 +54,7 @@
 
 先讓玩家看見斷點與落點，再考驗岩落區煞車與順風出彎。保留 FLY 或精準跳台的越隙玩法。斷梁區保留一個可辨識的危險越隙段，路肩提高岩落預警的可見性。
 
-[空拍](canyon/01-aerial-overview.webp) · 場景 [1](canyon/02-cliff-ledge.webp) / [2](canyon/03-broken-slab.webp) / [3](canyon/04-rock-cut-hairpin.webp) / [4](canyon/05-mesa-sweep.webp) · [俯視路線](canyon/06-route-plan.svg) · [縱剖面](canyon/07-longitudinal-profile.svg) · [橫剖面](canyon/08-cross-section.svg)
+[空拍](canyon/01-aerial-overview.webp) · 場景 [1](canyon/02-cliff-ledge.webp) / [2](canyon/03-broken-slab.webp) / [3](canyon/04-rock-cut-hairpin.webp) / [4](canyon/05-mesa-sweep.webp) · [俯視路線](canyon/06-route-plan.svg) · [縱剖面](canyon/07-longitudinal-profile.svg) · [橫剖面](canyon/08-cross-section.svg) · [3D 建置計畫](../phases/task-8a-canyon-skyway.md)
 
 ## 04 極光山道 · Aurora Pass
 
@@ -60,7 +62,7 @@
 
 外側冰帶分段出現，保留可預判的高抓地線。後半段用坡度和視野壓縮提高控速難度。可行安全路線始終保有抓地力，與外側黑冰用雪屑、粗糙度和刻線區別。
 
-[空拍](aurora/01-aerial-overview.webp) · 場景 [1](aurora/02-black-ice-lakeshore.webp) / [2](aurora/03-fir-lined-s-bends.webp) / [3](aurora/04-avalanche-gallery.webp) / [4](aurora/05-aurora-switchback.webp) · [俯視路線](aurora/06-route-plan.svg) · [縱剖面](aurora/07-longitudinal-profile.svg) · [橫剖面](aurora/08-cross-section.svg)
+[空拍](aurora/01-aerial-overview.webp) · 場景 [1](aurora/02-black-ice-lakeshore.webp) / [2](aurora/03-fir-lined-s-bends.webp) / [3](aurora/04-avalanche-gallery.webp) / [4](aurora/05-aurora-switchback.webp) · [俯視路線](aurora/06-route-plan.svg) · [縱剖面](aurora/07-longitudinal-profile.svg) · [橫剖面](aurora/08-cross-section.svg) · [3D 建置計畫](../phases/task-8b-aurora-pass.md)
 
 ## 05 天際螺旋 · Sky Spiral
 
@@ -68,7 +70,7 @@
 
 保留三次跳台節奏。每次落地後留出直線回正距離，最後才讓飛行落地接煞車與轉向。俯視圖的環形重合處為塔身螺旋。上下層辨識以縱剖面的里程和高程為準。
 
-[空拍](spiral/01-aerial-overview.webp) · 場景 [1](spiral/02-tower-approach.webp) / [2](spiral/03-banked-tower-helix.webp) / [3](spiral/04-launch-gap.webp) / [4](spiral/05-cloud-slalom.webp) · [俯視路線](spiral/06-route-plan.svg) · [縱剖面](spiral/07-longitudinal-profile.svg) · [橫剖面](spiral/08-cross-section.svg)
+[空拍](spiral/01-aerial-overview.webp) · 場景 [1](spiral/02-tower-approach.webp) / [2](spiral/03-banked-tower-helix.webp) / [3](spiral/04-launch-gap.webp) / [4](spiral/05-cloud-slalom.webp) · [俯視路線](spiral/06-route-plan.svg) · [縱剖面](spiral/07-longitudinal-profile.svg) · [橫剖面](spiral/08-cross-section.svg) · [3D 建置計畫](../phases/task-8c-sky-spiral.md)
 
 ## 06 台北古都 · Taipei Heritage
 
@@ -76,7 +78,7 @@
 
 用 90 度街廓與減速彎取代景觀橋。寺廟與城門保留在道路側面，直角彎前預留煞車視距。寺廟與城門造型保留，車道繞過建築。街區路線預留制動區及出彎視距。
 
-[空拍](taipei/01-aerial-overview.webp) · 場景 [1](taipei/02-presidential-office-boulevard.webp) / [2](taipei/03-historic-city-gate.webp) / [3](taipei/04-temple-market-chicane.webp) / [4](taipei/05-riverside-return.webp) · [俯視路線](taipei/06-route-plan.svg) · [縱剖面](taipei/07-longitudinal-profile.svg) · [橫剖面](taipei/08-cross-section.svg)
+[空拍](taipei/01-aerial-overview.webp) · 場景 [1](taipei/02-presidential-office-boulevard.webp) / [2](taipei/03-historic-city-gate.webp) / [3](taipei/04-temple-market-chicane.webp) / [4](taipei/05-riverside-return.webp) · [俯視路線](taipei/06-route-plan.svg) · [縱剖面](taipei/07-longitudinal-profile.svg) · [橫剖面](taipei/08-cross-section.svg) · [3D 建置計畫](../phases/task-8d-taipei-heritage.md)
 
 ## 07 東京夜行 · Tokyo Afterdark
 
@@ -84,7 +86,7 @@
 
 從第一個交通閘門建立反應節拍，後段將施工縮道和連續變向分開，讓濕地刻線能看清。平頂高架的支撐採直梁與立柱。信號閘門不和最窄的施工變向設於同一個彎心。
 
-[空拍](tokyo/01-aerial-overview.webp) · 場景 [1](tokyo/02-scramble-crossing.webp) / [2](tokyo/03-construction-s-bends.webp) / [3](tokyo/04-flat-rail-underpass.webp) / [4](tokyo/05-tower-sprint.webp) · [俯視路線](tokyo/06-route-plan.svg) · [縱剖面](tokyo/07-longitudinal-profile.svg) · [橫剖面](tokyo/08-cross-section.svg)
+[空拍](tokyo/01-aerial-overview.webp) · 場景 [1](tokyo/02-scramble-crossing.webp) / [2](tokyo/03-construction-s-bends.webp) / [3](tokyo/04-flat-rail-underpass.webp) / [4](tokyo/05-tower-sprint.webp) · [俯視路線](tokyo/06-route-plan.svg) · [縱剖面](tokyo/07-longitudinal-profile.svg) · [橫剖面](tokyo/08-cross-section.svg) · [3D 建置計畫](../phases/task-8e-tokyo-afterdark.md)
 
 ## 08 山岳鐵道 · Alpine Rail Pass
 
@@ -92,7 +94,7 @@
 
 上坡窄髮夾彎先考驗控速，後段在露天峭坡增加碎石與連續下坡壓力。列車保持在道路側邊的獨立高程。齒軌與主路同向時仍走獨立高程。雪崩坡保持露天，讓玩家看見碎石落點。
 
-[空拍](alpine/01-aerial-overview.webp) · 場景 [1](alpine/02-uphill-hairpin.webp) / [2](alpine/03-granite-rail-portal.webp) / [3](alpine/04-avalanche-chute.webp) / [4](alpine/05-ridge-descent.webp) · [俯視路線](alpine/06-route-plan.svg) · [縱剖面](alpine/07-longitudinal-profile.svg) · [橫剖面](alpine/08-cross-section.svg)
+[空拍](alpine/01-aerial-overview.webp) · 場景 [1](alpine/02-uphill-hairpin.webp) / [2](alpine/03-granite-rail-portal.webp) / [3](alpine/04-avalanche-chute.webp) / [4](alpine/05-ridge-descent.webp) · [俯視路線](alpine/06-route-plan.svg) · [縱剖面](alpine/07-longitudinal-profile.svg) · [橫剖面](alpine/08-cross-section.svg) · [3D 建置計畫](../phases/task-8f-alpine-rail-pass.md)
 
 ## 09 海岸天際 · Coastal Horizon
 
@@ -100,7 +102,7 @@
 
 由開闊高速彎進入不同風向的海岬，揚浪與側風分開出現，最後以海堤外傾轉入低地回程。迎風海岬的陣風、海堤的浪花與背風段各有自己的可見地標。
 
-[空拍](coastal/01-aerial-overview.webp) · 場景 [1](coastal/02-lighthouse-rise.webp) / [2](coastal/03-windward-headland.webp) / [3](coastal/04-sea-wall-turn.webp) / [4](coastal/05-sheltered-bay.webp) · [俯視路線](coastal/06-route-plan.svg) · [縱剖面](coastal/07-longitudinal-profile.svg) · [橫剖面](coastal/08-cross-section.svg)
+[空拍](coastal/01-aerial-overview.webp) · 場景 [1](coastal/02-lighthouse-rise.webp) / [2](coastal/03-windward-headland.webp) / [3](coastal/04-sea-wall-turn.webp) / [4](coastal/05-sheltered-bay.webp) · [俯視路線](coastal/06-route-plan.svg) · [縱剖面](coastal/07-longitudinal-profile.svg) · [橫剖面](coastal/08-cross-section.svg) · [3D 建置計畫](../phases/task-8g-coastal-horizon.md)
 
 ## 10 星際軌道 · Cosmic Orbit
 
@@ -108,7 +110,7 @@
 
 兩段低重力飛行都保留地面通路。太陽風、掃動屏障與飛行閘門分段輪替，最後考驗連續落地、閃避與選線。空中閘門排在道路側上方，主車道保留連續實體路面。外太空行星環屬於背景地形。
 
-[空拍](cosmic/01-aerial-overview.webp) · 場景 [1](cosmic/02-debris-weave.webp) / [2](cosmic/03-low-gravity-flight.webp) / [3](cosmic/04-hyperdrive-channel.webp) / [4](cosmic/05-docking-sequence.webp) · [俯視路線](cosmic/06-route-plan.svg) · [縱剖面](cosmic/07-longitudinal-profile.svg) · [橫剖面](cosmic/08-cross-section.svg)
+[空拍](cosmic/01-aerial-overview.webp) · 場景 [1](cosmic/02-debris-weave.webp) / [2](cosmic/03-low-gravity-flight.webp) / [3](cosmic/04-hyperdrive-channel.webp) / [4](cosmic/05-docking-sequence.webp) · [俯視路線](cosmic/06-route-plan.svg) · [縱剖面](cosmic/07-longitudinal-profile.svg) · [橫剖面](cosmic/08-cross-section.svg) · [3D 建置計畫](../phases/task-8h-cosmic-orbit.md)
 
 ## Phase 4–5 六張新賽道
 
