@@ -126,10 +126,10 @@ export const MODEL_MANIFEST: Record<string, ModelManifestEntry> = {
     source: {
       master: 'assets-src/crimson-gt/crimson-gt.blend',
       script: 'assets-src/crimson-gt/build.py',
-      masterSha256: 'e4bdf1aaa5d4ac5ebde6428bdf6eab4a3e00288c13de85c3c25fe6c13604e111',
+      masterSha256: '10c08c760b5bd8339f515283b50f6ebf9a8afb8ac5823f61c590ad6fffd0c4c5',
       scriptSha256: '43afece2a7906f1efdfefacaa241ca9aa79ba012aa50f1b1d6102641c03b23e6',
     },
-    glb: { sha256: '1410ea5e522b591d2fcddc4821a0311b36087c3208d82019eb80efe2660c2076', bytes: 1_206_344 },
+    glb: { sha256: 'b890db4afec6ddc3aaeaa60548ba4483a10dbd8b5d6cfab0255be6d06d19c918', bytes: 1_226_212 },
     license: { id: 'owned', creator: 'Skyline Rush project' },
     provenance: {
       blender: '5.2.3',

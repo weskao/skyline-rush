@@ -41,8 +41,8 @@ reclaim-port = @pids=$$(lsof -nP -tiTCP:$(1) -sTCP:LISTEN 2>/dev/null | sort -u)
 reclaim-dev-port:
 	$(call reclaim-port,5173)
 
-dev: stop-old-dev reclaim-dev-port node_modules ## `make`: Vite + Vue dev server with hot reload and Firebase emulators on http://127.0.0.1:5173
-	$(WITH_EMULATORS) '$(NPM) run dev'
+dev: stop-old-dev reclaim-dev-port node_modules ## `make dev [procedural=1]`: dev server; procedural=1 previews the procedural Roadster
+	VITE_PROCEDURAL_ROADSTER=$(if $(filter 1,$(procedural)),1,0) $(WITH_EMULATORS) '$(NPM) run dev'
 
 # VITE_DIAG=1 compiles in src/crash-log.ts: a live banner with frame counter, lifecycle and input events plus the
 # stored crash log. Production builds never include it (scripts/assert-production-locked.mjs refuses the marker).
