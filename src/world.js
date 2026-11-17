@@ -651,6 +651,8 @@ export function createWorld(canvas) {
       sectionSigns.forEach(({ group, panel }, i) => {
         const section = race.sections[i];
         const relative = section ? section.from - 65 - distance : 0;
+        // Set while hidden too: warmup must compile each sign under the current point-light count (lamp-lit tour tracks).
+        if (section) panel.material = signs[sectionSignKey(section.type)]; // Every section sign needs a valid material, including boost tunnels.
         group.visible = !!section && relative > -40 && relative < 850;
         if (!group.visible) return;
         if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
@@ -664,8 +666,6 @@ export function createWorld(canvas) {
           group.position.fromArray(classicPosition(section.from - 65, -17, 0, distance));
           group.rotation.set(0, curvedClassic ? -roadHeading(section.from - 65) : 0, 0);
         }
-        // Every section sign needs a valid material, including boost tunnels.
-        panel.material = signs[sectionSignKey(section.type)];
       });
       if (cliffs.visible) {
         const count = touch || visual.quality === 'low' ? 20 : 40;
