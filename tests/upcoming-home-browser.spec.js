@@ -104,9 +104,11 @@ test('Start and Coming Soon labels fit after locale switching on phones', async 
           : (locale === 'en' ? 'Start race' : '開始比賽'));
         const sizing = await start.evaluate(button => {
           const span = button.querySelector('span');
-          return { button: button.getBoundingClientRect().width, text: span.scrollWidth, available: span.clientWidth };
+          const actions = button.closest('.intro-actions');
+          return { button: button.getBoundingClientRect().width, actions: actions && parseFloat(getComputedStyle(actions).width), text: span.scrollWidth, available: span.clientWidth };
         });
-        expect(sizing.button).toBe(210); // portrait button and the shared landscape right rail
+        // Portrait spans the action grid (src/race-lobby.css); landscape keeps the shared 210 px right rail.
+        expect(sizing.button).toBeCloseTo(viewport.height > viewport.width ? sizing.actions : 210, 0);
         expect(sizing.text, `${locale} ${upcoming ? 'Coming Soon' : 'Start'} must not be clipped`)
           .toBeLessThanOrEqual(sizing.available + 1);
       }
