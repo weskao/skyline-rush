@@ -28,7 +28,7 @@ import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage, GARAGE_LIGHTING } from './garage-stage.ts';
 import { applyCarReflections, createCarEnvironment } from './car-reflections.ts';
-import { createCarBounds } from './car-bounds.ts';
+import { createCarBounds } from './car-bounds.ts'; import { drawnTriangles } from './perf.ts';
 import { currentFoldableLayout, updateFoldableProjection } from './foldable-viewport.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
 import { UPCOMING_ENVIRONMENTS } from './upcoming-scenes/index.ts';
@@ -651,6 +651,8 @@ export function createWorld(canvas) {
       sectionSigns.forEach(({ group, panel }, i) => {
         const section = race.sections[i];
         const relative = section ? section.from - 65 - distance : 0;
+        // Set while hidden too: warmup must compile each sign under the current point-light count (lamp-lit tour tracks).
+        if (section) panel.material = signs[sectionSignKey(section.type)]; // Every section sign needs a valid material, including boost tunnels.
         group.visible = !!section && relative > -40 && relative < 850;
         if (!group.visible) return;
         if (trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
@@ -664,8 +666,6 @@ export function createWorld(canvas) {
           group.position.fromArray(classicPosition(section.from - 65, -17, 0, distance));
           group.rotation.set(0, curvedClassic ? -roadHeading(section.from - 65) : 0, 0);
         }
-        // Every section sign needs a valid material, including boost tunnels.
-        panel.material = signs[sectionSignKey(section.type)];
       });
       if (cliffs.visible) {
         const count = touch || visual.quality === 'low' ? 20 : 40;
@@ -903,7 +903,7 @@ export function createWorld(canvas) {
         void capturePhoto(renderer).then(request.resolve, request.reject);
       }
     },
-    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
+    inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,carTriangles:drawnTriangles(player,camera),textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
     inspectPrograms() { return renderer.info.programs.length; }, // QA only: shader programs compiled so far
     inspectShowcase() {
       // Read-only projection for browser QA: verify the player and all three

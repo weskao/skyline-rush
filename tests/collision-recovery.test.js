@@ -402,3 +402,16 @@ test('shallow hull contact makes room without the full speed penalty of a direct
   assert.ok(!bodyOverlap(player, commuter, 0));
   assert.ok(player.speed > 35, 'a glancing rub should keep at least seven eighths of the speed');
 });
+
+test('a respawn ahead of a followed car releases it: the fall is not replayed behind its bumper', () => {
+  const { race, player, leader } = packedRoad();
+  for (let i = 0; i < 30; i++) tick(race);
+  assert.equal(player.collisions, 1, 'boxed in behind the leader');
+  race.sections = [{ type: 'gap', from: player.distance + 1, to: player.distance + 40 }];
+  while (player.falls === 0 && player.distance < race.sections[0].to) tick(race);
+  const respawn = player.fall?.distance;
+  assert.ok(respawn > leader.distance + 20, 'the queue led the car into the gap; it respawned well ahead of the leader');
+  for (let i = 0; i < 30; i++) tick(race);
+  assert.equal(player.falls, 1);
+  assert.ok(player.distance >= respawn, `stays ahead of the respawn (${player.distance.toFixed(1)} m of ${respawn} m)`);
+});

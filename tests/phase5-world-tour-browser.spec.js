@@ -61,6 +61,7 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
       line: el.textContent,
       calls: Number(el.dataset.drawCalls),
       triangles: Number(el.dataset.triangles),
+      carTriangles: Number(el.dataset.carTriangles),
     }));
     expect(metrics.calls).toBeGreaterThanOrEqual(0);
     expect(metrics.triangles).toBeGreaterThanOrEqual(0);
@@ -69,11 +70,11 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
       pixelRatio: await page.evaluate(() => devicePixelRatio),
       browser: process.env.CI ? 'chromium-software-webgl' : 'chromium-local-webgl',
       commit: process.env.GITHUB_SHA || 'local', drawCalls: metrics.calls,
-      triangles: metrics.triangles, line: metrics.line || '',
+      triangles: metrics.triangles, carTriangles: metrics.carTriangles, line: metrics.line || '',
     });
     writeFileSync(info.outputPath(`render-performance-${id}-${viewport.width}x${viewport.height}.json`),
       JSON.stringify(evidence, null, 2));
-    console.log(`Phase5 software WebGL ${id} ${viewport.width}x${viewport.height}: ${metrics.line}; drawCalls=${metrics.calls}; triangles=${metrics.triangles} (not same-device before/after)`);
+    console.log(`Phase5 software WebGL ${id} ${viewport.width}x${viewport.height}: ${metrics.line}; drawCalls=${metrics.calls}; triangles=${metrics.triangles}; carTriangles=${metrics.carTriangles} (not same-device before/after)`);
     // The passive minimap must never cover an active touch control.
     const overlapped = await page.evaluate(() => {
       const map = document.querySelector('#race-route-map')?.getBoundingClientRect();

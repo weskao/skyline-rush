@@ -1,5 +1,6 @@
 import { createModeAudioState, modeAudioCues, type ModeAudioRace } from './mode-audio.ts';
 import { createRivalCues, type RivalCueRace } from './rival-cues.ts';
+import { skipsCountdown } from './frame-pacing.ts';
 
 // Pure race → sound transitions for the Web Audio engine: what to play this frame, never how it sounds.
 interface AudioCar {
@@ -57,7 +58,7 @@ export function createRaceAudioEvents() {
       const active = race.phase === 'racing';
       const boosting = !!car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
       const freshRace = race !== previousRace;
-      const count = race.phase === 'countdown' && !waitingForScenery && race.mode !== 'free' ? Math.ceil(race.countdown) : null;
+      const count = race.phase === 'countdown' && !waitingForScenery && !skipsCountdown(race) ? Math.ceil(race.countdown) : null;
       const modeEvents = modeAudioCues(race, modeAudioState);
       const sounds = frame.sounds;
       sounds.length = 0;
@@ -86,7 +87,7 @@ export function createRaceAudioEvents() {
       if (race.phase === 'paused' && previousPhase !== 'paused') silence = true;
       if (enabled) {
         if (count !== null && count !== previousCount) sounds.push('tick');
-        if (active && previousPhase === 'countdown' && race.mode !== 'free') sounds.push('go');
+        if (active && previousPhase === 'countdown' && !skipsCountdown(race)) sounds.push('go');
         if (race.phase === 'finished' && previousPhase !== 'finished' &&
             race.result?.success !== false && !['cup', 'stunt'].includes(race.mode)) {
           sounds.push(race.mode === 'endless' && race.result?.endReason === 'collisions' ? 'endless-ended' : 'finish');

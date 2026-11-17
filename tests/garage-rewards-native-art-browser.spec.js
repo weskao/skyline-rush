@@ -2,7 +2,8 @@ import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
-for (const [width, height] of [[390, 844], [844, 390], [1440, 900]]) {
+// Native-alpha pixels do not depend on the viewport; Garage layout per viewport is covered by its layout specs.
+for (const [width, height] of [[390, 844]]) {
   test(`actual Garage mission cards and source icons preserve native 3x alpha at ${width}x${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');

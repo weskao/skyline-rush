@@ -111,12 +111,23 @@ const keyboardToNitro = async page => {
 test('practice opens with the race countdown, stands still at GO, and THROTTLE then FLY answer', async ({ page }) => {
   await page.goto('/');
   await toggleSettingsSection(page, 'driving');
+  // The 3-2-1 runs on wall clock (3 s) while a slow runner spends that long on two expects: sample it in the page, per frame.
+  await page.evaluate(() => {
+    const seen = window.__countdownFrames = { frames: 0, guide: 0 };
+    const sample = () => {
+      if (document.body.dataset.phase === 'countdown') { seen.frames++; if (document.querySelector('#tutorial-guide')) seen.guide++; }
+      if (document.body.dataset.phase !== 'racing') requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
   await page.locator('#tutorial-open').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
   await expect(page.locator('#countdown')).toBeVisible();
-  // The forward arrow waits for GO (user, 2026-11-08): none during 3-2-1, then it appears with the throttle cue.
-  await expect(page.locator('#tutorial-guide')).toHaveCount(0);
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(6000) });
+  // The forward arrow waits for GO (user, 2026-11-08): none during 3-2-1, then it appears with the throttle cue.
+  const counted = await page.evaluate(() => window.__countdownFrames);
+  expect(counted.frames).toBeGreaterThan(0);
+  expect(counted.guide).toBe(0);
   // Practice has no GO roll (user, 2026-11-08): the car waits for THROTTLE, and the cue says so.
   await expect(page.locator('#speed')).toHaveText('0');
   await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'ahead');

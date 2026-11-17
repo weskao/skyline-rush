@@ -96,6 +96,17 @@ test('track switch after closing the Garage returns GPU memory to the no-probe b
   test.setTimeout(ciTimeout(120000));
   // Pickups can switch from procedural to textured GLBs between samples. Use their real fallback in both runs.
   await page.route('**/models/pickup-*/*.glb', route => route.abort());
+  // Section-sign canvas textures (src/section-sign-materials.ts) are cached for the world's life and upload on the first
+  // frame a sign type is visible, so the other track adds one. Visit it before the baseline: that texture is not a probe leak.
+  const trackRoundTrip = async () => {
+    const tracks = page.locator('[data-track]');
+    const original = await page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
+    const other = await tracks.evaluateAll((buttons, id) => buttons.map(b => b.dataset.track).find(t => t !== id), original);
+    await clickLobbyOption(page, `[data-track="${other}"]`);
+    await expect(page.locator(`[data-track="${other}"]`)).toHaveAttribute('aria-pressed', 'true');
+    await clickLobbyOption(page, `[data-track="${original}"]`);
+    await expect(page.locator(`[data-track="${original}"]`)).toHaveAttribute('aria-pressed', 'true');
+  };
   const cycle = async () => {
     await page.locator('#garage-button').click();
     await expect(page.locator('#garage-screen')).toHaveAttribute('data-page', 'home');
@@ -104,13 +115,7 @@ test('track switch after closing the Garage returns GPU memory to the no-probe b
     await page.locator('#garage-close').click();
     await expect(page.locator('#garage-screen')).not.toHaveAttribute('open', '');
     await expect(world(page)).toHaveAttribute('data-garage-model', 'off');
-    const tracks = page.locator('[data-track]');
-    const original = await page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
-    const other = await tracks.evaluateAll((buttons, id) => buttons.map(b => b.dataset.track).find(t => t !== id), original);
-    await clickLobbyOption(page, `[data-track="${other}"]`);
-    await expect(page.locator(`[data-track="${other}"]`)).toHaveAttribute('aria-pressed', 'true');
-    await clickLobbyOption(page, `[data-track="${original}"]`);
-    await expect(page.locator(`[data-track="${original}"]`)).toHaveAttribute('aria-pressed', 'true');
+    await trackRoundTrip();
   };
   const stable = async () => {
     let last = null;
@@ -120,6 +125,7 @@ test('track switch after closing the Garage returns GPU memory to the no-probe b
   };
 
   await prepare(page, `${gameplayURL}?model=probe`, { quality: 'low' });
+  await trackRoundTrip();
   const baseline = await stable();
   await cycle(); // keep the renderer alive from probe load through both track switches
   await expect.poll(() => memory(page), { timeout: ciTimeout(20000) }).toEqual(baseline);

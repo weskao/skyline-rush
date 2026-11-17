@@ -1,5 +1,5 @@
 import { clickLobbyOption } from './helpers/home-lobby.js';
-import { test } from './helpers/gameplay-browser.js';
+import { test, landed } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import fs from 'node:fs';
@@ -72,6 +72,7 @@ test(`${LABEL} ${VIEW}: renderer baseline across Garage and all ten tracks`, asy
       await shot(`${track}-fly`);
       rows.push({ scenario: `${track}-fly`, ...await stats() });
       await page.keyboard.up('Space');
+      await landed(page);
       await expect.poll(() => page.evaluate(() => window.gameplay.race.player.altitude), { timeout: ciTimeout(15000) }).toBe(0);
       await shot(`${track}-landed`);
       rows.push({ scenario: `${track}-landed`, ...await stats() });

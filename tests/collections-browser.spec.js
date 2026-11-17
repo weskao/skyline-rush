@@ -32,10 +32,13 @@ for (const [width, height, hasTouch] of [[1440, 900, false], [390, 844, true], [
       await expect(page.getByRole('button', { name: /^Preview Pearl/i })).toHaveAttribute('aria-pressed', 'true');
       await page.getByRole('button', { name: 'Close garage' }).click();
       await page.locator('.history-button').click();
+      await page.locator('#history-tab-daily').click(); // History opens on its Races tab
       await expect(page.locator('#daily-challenge')).toContainText('Today:');
       await expect(page.locator('#daily-card-start')).toBeEnabled();
-      await expect(page.locator('#achievement-list > li')).toHaveCount(4);
+      await expect(page.getByRole('button', { name: 'Start daily challenge' })).toBeEnabled();
       await expect(page.locator('#daily-board')).toContainText('No challenge runs');
+      await page.locator('#history-tab-medals').click();
+      await expect(page.locator('#achievement-list > li')).toHaveCount(4);
       await page.getByRole('button', { name: 'Close history' }).click();
       await toggleSettingsSection(page, 'driving');
       await expect(page.getByRole('checkbox', { name: 'Show best-run ghost' })).toBeEnabled();

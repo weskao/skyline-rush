@@ -61,6 +61,10 @@ Keep the arcade driving feel; do not replace it with a new physics engine.
   Sustained contact stays part of the original encounter until the cars separate.
   `tests/collision-recovery.test.js` covers these rules at the simulation boundary.
 
+- A queued car follows its leader only from behind. A gap respawn (or any jump) that puts it ahead of the
+  leader releases the hold: `follow()` used to pull it back behind the bumper every frame, into the gap again
+  (31 falls in 30 frames; the GLB track specs hung before FINISHED, CI 44025345247). Guard:
+  `tests/collision-recovery.test.js` (*a respawn ahead of a followed car releases it*).
 - A continuous steering hold into one rail must not cause repeated hard hits every time
   the collision cooldown expires. Track sustained contact, reset it only after adequate
   separation, and re-arm the next genuine impact. Preserve intentional first-hit speed
