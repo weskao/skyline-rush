@@ -30,7 +30,7 @@ const STREAK_FRAGMENT = `varying vec2 vUv;varying float vFacing;uniform float ti
     if(style>3.5){float twin=pow(max(0.,sin(a*12.566-u*9.+time*6.)),6.); // two ribbons wind around the plume
       body=edge*.25+core*.5+twin*1.4*edge;tint=mix(color,vec3(1.,.22,.8),.5+.5*sin(u*8.-time*3.));glint*=1.6;} // violet-to-magenta nebula
     vec3 col=tint*(body+nozzle*1.2+nozzle*core*1.5)+mix(tint,vec3(1.),.6)*glint*2.; // the nozzle stays the skin colour, not white
-    gl_FragColor=vec4(col,clamp((body*tail+nozzle*.9*edge+glint)*power,0.,1.));}`;
+    gl_FragColor=vec4(col*.45,clamp((body*tail+nozzle*.9*edge+glint)*power,0.,1.));}`;
 const POOL_VERTEX = 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}';
 const POOL_FRAGMENT = `varying vec2 vUv;uniform float time,power,style;uniform vec3 color;
   void main(){vec2 q=clamp(vUv,0.,1.)*2.-1.;float u=1.-clamp(vUv.y,0.,1.); // u: 0 at the bumper, 1 far back
