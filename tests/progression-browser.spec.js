@@ -67,10 +67,14 @@ test('History shows awarded medals and today’s daily board; the daily run star
   await page.goto('/');
   await dismissMusicPrompt(page);
   await page.locator('.history-button').click();
+  await page.locator('#history-tab-medals').click();
+  await expect(page.locator('#history-panel-medals')).toBeVisible();
   await expect(page.locator('[data-medal="first-win"]')).toContainText('Awarded');
   await expect(page.locator('[data-medal="first-win"]')).toHaveClass(/is-awarded/);
   await expect(page.locator('[data-medal="clean-run"]')).toContainText('Not awarded');
   await expect(page.locator('#achievement-status')).toContainText('1 of 4 medals awarded');
+  await page.locator('#history-tab-daily').click();
+  await expect(page.locator('#history-panel-daily')).toBeVisible();
   await expect(page.locator('#daily-status')).toContainText(/Today:.*Gold rings only/i);
   await expect(page.locator('#daily-board')).toContainText('01:04.20');
   await expect(page.locator('#daily-board img')).toHaveCount(0);
