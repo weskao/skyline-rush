@@ -1,4 +1,4 @@
-import { test, glbRoots, programs, modelInstances as instances, watchRequests } from './helpers/gameplay-browser.js';
+import { test, glbRoots, programs, modelInstances as instances, watchRequests, landed } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 
@@ -99,6 +99,7 @@ test('race: the Home instance carries on; VFX ports, programs and flight fans fo
   await page.waitForTimeout(ciTimeout(500));
   await attach(page, 'race-fly');
   await page.keyboard.up('Space');
+  await landed(page);
   await expect.poll(async () => (await fans(page)).altitude, { timeout: ciTimeout(15000) }).toBe(0);
   expect((await fans(page)).glb).toBe(false); // settled: landed (altitude 0) polled above; thrust ends before touchdown
   await attach(page, 'race-landing');

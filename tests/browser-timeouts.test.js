@@ -259,3 +259,27 @@ test('a spec that observes an effect Low turns off chooses a heavier tier', () =
   });
   assert.deepEqual(offenders, [], 'Set test.use({ lowGraphics: false }) around those tests (see .claude/rules/browser-test-stability.md)');
 });
+
+// A landing is up to 2.6 s of game time; a CPU renderer plays 0.05 s of it per ~1 s frame, so a 45 s wall-clock
+// poll ran out with the car at 1.09 m (hero-roadster-race, CI 44025345247). `landed()` waits per frame, by race time.
+test('a spec that polls the car back to altitude 0 waits out the fall in game time first (landed)', () => {
+  const offenders = FILES.flatMap(file => readFileSync(new URL(file, import.meta.url), 'utf8').split('\n')
+    .flatMap((line, i, lines) => /altitude.*\)\.toBe\(0\)/.test(line) && !/^\s*await landed\(page\);/.test(lines[i - 1] ?? '')
+      ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
+  assert.deepEqual(offenders, [], 'Call `await landed(page)` (tests/helpers/gameplay-browser.js) on the line before (.claude/rules/browser-test-stability.md)');
+});
+
+// The 3-2-1 lasts 3 s of wall clock; on CI two expects outlast it, so "absent during the countdown" was judged after
+// GO (interactive-tutorial, CI 44025345247). Sample the countdown per frame from before the click instead.
+test('a spec never asserts absence between its countdown wait and its racing wait', () => {
+  const phase = name => new RegExp(`'data-phase', '${name}'`);
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!phase('countdown').test(line)) return [];
+      const end = lines.findIndex((next, j) => j > i && j <= i + 12 && phase('racing').test(next));
+      return lines.slice(i + 1, Math.max(end, i)).flatMap((next, k) => /toHaveCount\(0\)|toBeHidden\(|\)\.not\./.test(next) ? [`tests/${file}:${i + k + 2}: ${next.trim()}`] : []);
+    });
+  });
+  assert.deepEqual(offenders, [], 'Record the countdown frames in the page and assert after GO (.claude/rules/browser-test-stability.md)');
+});

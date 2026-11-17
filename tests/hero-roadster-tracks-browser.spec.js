@@ -1,4 +1,4 @@
-import { test, glbRoots, programs, modelInstances as instances, dressedAs, HERO_MODEL } from './helpers/gameplay-browser.js';
+import { test, glbRoots, programs, modelInstances as instances, dressedAs, HERO_MODEL, landed } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 
@@ -46,6 +46,7 @@ function drive(id) {
     await expect.poll(() => state(page), { timeout: ciTimeout(10000) }).toEqual(expect.objectContaining({ fans: true, jets: true }));
     expect((await state(page)).altitude).toBeGreaterThan(0); // settled: thrusting polled above
     await page.keyboard.up('Space');
+    await landed(page);
     await expect.poll(async () => (await state(page)).altitude, { timeout: ciTimeout(20000) }).toBe(0);
     await expect.poll(async () => (await state(page)).fans).toBe(false);
     expect(await programs(page)).toBe(before);
