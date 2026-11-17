@@ -88,7 +88,7 @@ test('the gulls join the Coast scenery only with the scan coast and leave with i
   for (const name of [...COAST_PIECES, ...Object.values(COAST_FAR_LOD)]) source.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial()), { name }));
   const find = () => kit.group.getObjectByName('Coast seagulls');
   kit.update(coast, 300, 'high', undefined, 4);
-  assert.equal(find(), undefined, 'no scan coast (Low, or no ?look=3d): no gulls');
+  assert.equal(find(), undefined, 'no scan coast (Low, or a failed load): no gulls');
   kit.attachModel(source);
   kit.update(coast, 300, 'high', undefined, 4);
   assert.ok(find().visible && find().count > 0);

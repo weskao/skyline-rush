@@ -11,7 +11,7 @@ Blender-baked KTX2 from CC0 photoscanned sources; close scenery comes from Poly 
 quality tier is added. Each source's licence, creator and source URL goes in the model/material manifest before
 commit. Procedural substitutes are a fallback (Low tier, load failure), never the shipped Medium+ look.
 
-**Gate on develop (owner, 2026-11-09):** develop keeps its current appearance. The whole Phase 3 pass (Coast HDRI look
+**Gate on develop (owner, 2026-11-09; historical; gate removed):** develop keeps its current appearance. The whole Phase 3 pass (Coast HDRI look
 with its bloom/sun retune, KTX2 road, close-scenery GLB, wet-road mirror, magenta plume tail, thruster glow, rain wheel
 spray, contact shadow, Ultra quality option and Ultra lens blur) is opt-in behind `?look=3d` (`src/look-gate.ts`), the
 same way the car is gated by `?model=roadster`; the two gates are independent and combine (`?model=roadster&look=3d`).
@@ -19,7 +19,9 @@ Without `?look=3d` every map and the Settings panel render as develop did: no Ul
 renders and shows as High but stays saved. Default-on is deferred by the owner, as for the car. Guards:
 `tests/look-gate.test.js`, `coast-scenery-browser.spec.js` (develop-look Coast), `device-quality-browser.spec.js` (no
 Ultra without the gate); the shader-warmup and black-frame specs run both looks. The checkboxes below describe the
-`?look=3d` look.
+`?look=3d` look. Current model: the gate was removed in `ba867d53`; the graphics quality tier decides (Low draws the
+procedural scene, Medium and above draw the registered detailed look, `detailedTrackLook()` in `src/track-look.ts`),
+and the `look=3d` and `model=roadster` switches are ignored.
 
 ## By project (committed once)
 - [x] Look brief: for each Coast panel, record its camera, time of day, weather and the spec v2 §8.1 checklist items it scores, before any change. *Evidence: `coast-look-brief.md` (b6a39ad6).*
@@ -50,19 +52,21 @@ Ultra without the gate); the shader-warmup and black-frame specs run both looks.
   - [x] Owner decisions (2026-11-13): D1 remove the skyline buildings from Coast (the board has none; Neon keeps
     its city), D2 remove the bridge towers from Coast (other classic tracks keep theirs), D3 the visible sky is
     the existing Poly Haven HDRIs at a higher resolution.
-  - [x] Skyline buildings and bridge towers: removed from Coast in the `?look=3d` look (D1, D2); no realistic
+  - [x] Skyline buildings and bridge towers: removed from Coast in the `?look=3d` look (historical; gate removed) (D1, D2); no realistic
     towers are built. They leave on Medium+ once the scan coast is attached; Low keeps both (owner decision
     2026-11-14), as do other tracks, a failed GLB load and pages without the gate. `66d6ca94`. Tests:
     `tests/coast-assets.test.js` ("D1, D2"), `tests/coast-scenery-browser.spec.js` ("draw-call cap" on High, the
     Low test, "without ?look=3d"). Gates: `npm test` 2801 pass / 0 fail / 3 skipped, typecheck, build,
     module-size. Real WebGL (desktop High / Ultra / Low, phone-size Medium): High draw calls home 650 to 491,
     race 469 to 307, rain 500 to 322; 76 programs before and after GO; Low unchanged (city and towers drawn).
-    The browser cap is now home 540, race 380. Not done: the "without ?look=3d" browser test fails on its
+    The browser cap is now home 540, race 380. Not done (historical; gate removed): the "without ?look=3d" browser test fails on its
     last assertion (the Basis transcoder is fetched; the pickup models request it and this branch does not
-    touch them), not checked on `develop` itself.
+    touch them), not checked on `develop` itself. Resolved: `ba867d53` rewrote that test as the plain / legacy URL
+    loop (a page with no flags and one with the retired flags must look the same), and the whole spec passes 9 of 9
+    on `32beebef` (2026-11-18).
   - [x] Sea: a water surface (baked FFT-ocean normal and foam map, Fresnel reflection of the sky dome on screen, sun
     glitter under that sky's sun, foam where the placed rocks, cliffs and arch stand in the water, haze into the dome
-    horizon) in day, rain, sunset and fog, behind `?look=3d` on Medium+. `c3dbb1dc` (wave map, build script,
+    horizon) in day, rain, sunset and fog, behind `?look=3d` on Medium+ (historical; gate removed). `c3dbb1dc` (wave map, build script,
     manifest), `1e528477` (runtime). Tests: `tests/coast-sea.test.js`, `tests/coast-assets.test.js` ("water"),
     `tests/shader-safety.test.js` (now lints the sea shaders). Gates: `npm test` 2796 pass / 0 fail / 3 skipped,
     typecheck, build, module-size. Real WebGL (`COAST_CAPTURE=1 COAST_PANELS=1`, desktop High / Ultra / Low and a
@@ -73,7 +77,7 @@ Ultra without the gate); the shader-warmup and black-frame specs run both looks.
     frame. Not verified: a real phone GPU.
   - [x] Sky (D3): each Coast preset's Poly Haven lighting HDRI (day, rain, sunset, fog) shown at a higher resolution
     on a sky dome (4K; 8K on Ultra), with the sun disc and directional light aligned to the HDRI sun, behind
-    `?look=3d`. `d7137534` (KTX2 textures, manifest), `ddf48900` (runtime). Tests: `tests/coast-sky.test.js`,
+    `?look=3d` (historical; gate removed). `d7137534` (KTX2 textures, manifest), `ddf48900` (runtime). Tests: `tests/coast-sky.test.js`,
     `tests/coast-sky-manifest.test.js`, `tests/coast-environment.test.js`, `tests/coast-look.test.js` ("the key
     light and the environment turn with the dome"). Gates: `npm test` 2788 pass / 0 fail / 3 skipped, typecheck,
     build, module-size. Real WebGL (`COAST_CAPTURE=1 COAST_PANELS=1`, desktop High / Ultra / Low and a phone-size
@@ -90,10 +94,58 @@ Ultra without the gate); the shader-warmup and black-frame specs run both looks.
     cap": High home 700, race 560, set before the far content). Gates: `npm test` 2800 pass / 0 fail / 3 skipped,
     typecheck, build, module-size. Real WebGL (desktop High / Ultra / Low, phone-size Medium): draw calls and
     programs unchanged (High race 469, was 482; 76 programs), triangles High race 406k to 495k and phone-size Medium
-    346k to 415k, 60 fps on the capture machine. Limits: the far pieces draw the full-detail scans (no decimated far
-    LOD yet); no shore foam at their base; rock tops are bare (the board shows green tops); a new slot enters at
-    about 70% fog on Medium. Not verified: a real phone GPU.
-  - [ ] Remaining procedural props on Coast (rail lights, lamp posts): not assessed.
+    346k to 415k, 60 fps on the capture machine. Limits at that commit (each one closed or deferred in the next
+    item): the far pieces draw the full-detail scans (no decimated far LOD yet); no shore foam at their base; rock
+    tops are bare (the board shows green tops); a new slot enters at about 70% fog on Medium. Not verified: a real
+    phone GPU.
+  - [x] Far-coast limits, closed or deferred (2026-11-18, `32beebef`):
+    - Far LOD, fixed: the far headlands draw `cliff_a_far` / `cliff_b_far` (2,499 triangles each, decimated from
+      the finished 11k cliffs: same UVs, material and baked maps, so no texture or program is added). The far sea
+      stacks still draw the full rock scans (2.6k and 2.5k triangles; not worth a second node).
+    - Bare rock tops, fixed: `f842413b` put the greenery on the cliff tops; it now also covers the far nodes
+      (`src/coast-greenery.ts` `HOSTS`).
+    - Pop-in on Medium, fixed: Medium keeps four far slots like High, so a new slot's nearest piece enters at
+      1,340 m (83% fog or more) instead of 860 m (about 52%).
+    - Shore foam at the far headlands, **deferred**: the nearest far piece stands 290 m from the road, where a foam
+      band is under one pixel tall at the race camera height, and it would add foam stamps for every far piece to
+      the sea shader's footprint list. Revisit only if the parity review flags a hard waterline there.
+    - Tests: `tests/coast-scenery-glb.test.js` (RED on the old code: `COAST_FAR_LOD` missing, manifest node list),
+      `tests/coast-greenery.test.js` (RED: "got 0 shrubs on 8"), `tests/coast-scenery-browser.spec.js` ("draw-call
+      cap": 6 or more headlands in the far pools, 8 or fewer in the close pools).
+  - [x] Remaining procedural props on Coast, assessed (2026-11-18, `32beebef`):
+    - Lamp posts, **replaced**: a modelled `lamp_post` node in `coast-scenery.glb` (136 triangles, a 12.25 m
+      tapered column with its arm over the road, on the rail's galvanized-steel material from Poly Haven Metal
+      Plate 02: no new texture or program) stands every 60 m. The box posts are hidden while the scan coast is
+      drawn; Low, a failed GLB load and the other tracks keep them. The emissive lamp heads stay (they are the
+      light source the bloom reads) and sit in the modelled luminaire.
+    - Bug found and fixed on the way: each street lamp's side came from its slot in the moving window (`i % 2`),
+      so every lamp on every classic track changed sides each 60 m. It now comes from the absolute 60 m index.
+      Rule 28 in `.claude/rules/3d-asset-pipeline.md`.
+    - Guard rail: the right-hand rail showed its posts to the road; it is turned so the W-beam faces the lanes.
+    - Rail lights, **kept** as they are: a 4.5 cm emissive edge strip is a gameplay marker (it takes each track's
+      palette colour and shows the road edge at speed and in fog), not scenery a scan could replace, and it runs
+      on past the modelled rail chunks.
+    - Track frame, lanes, collisions and ports unchanged; nothing compiles after GO (104 programs before and
+      after, at home and in the race).
+    - Tests: `tests/coast-assets.test.js` (poles hidden only while the scan coast is drawn; RED on the old code),
+      `tests/coast-scenery-glb.test.js` (lamp parity and rail facing; a mutation of either is RED),
+      `tests/coast-scenery-browser.spec.js` ("lamp posts": sampled every 20 m over 160 m without a retry; RED on
+      the old side rule with 16 posts without a lamp head, 5 of 5 green on the fix). Gates: `npm test` 3,357
+      pass / 0 fail / 3 skipped, typecheck, module-size (`src/world.js` 994 lines, unchanged), `check-glb: PASS`
+      (61,631 triangles of 63,500, 14 draws, 5,879,276 bytes of 6,000,000).
+    - Real WebGL, one Mac, `b5248993` to `32beebef` (home frames; race frames vary with timing):
+
+      | Viewport, tier | Draw calls | Triangles | Programs |
+      |---|---|---|---|
+      | Desktop, High | 232 to 233 | 510,120 to 438,377 | 104 to 104 |
+      | Desktop, Medium | 231 to 234 | 416,506 to 374,201 | 104 to 104 |
+      | 412×915 portrait, High | 192 to 195 | 510,052 to 441,987 | 104 to 104 |
+      | 412×915 portrait, Medium | 192 to 194 | 397,412 to 377,161 | 104 to 104 |
+
+      Race day on desktop High: 238 to 239 draw calls (cap 380), 497,744 to 421,958 triangles; 60 fps held, no
+      page errors. Frames looked at: desktop High race day before and after, 412×915 portrait Medium, 844×390
+      landscape Medium, 320×740 Low (box posts and city kept). Captures in ignored `../audits/task5/partA-*`.
+      Not verified: a real phone GPU.
   - [ ] The concept-board parity review and owner sign-off below wait for these items.
 - [ ] Full verification and exact-HEAD CI, no silent map topology changes.
 

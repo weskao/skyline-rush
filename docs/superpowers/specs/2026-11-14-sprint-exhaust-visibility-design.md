@@ -28,7 +28,7 @@ Causes, in order of weight:
 3. **Little room in landscape.** The car's rear bumper sits at row 0.91; the dolly zoom brings the
    eye to 3.5 m behind the nozzles at NITRO top speed.
 4. **No glow in the default look.** The nozzle glow discs and the longer board plume are gated
-   behind `?look=3d` (`src/board-effects.ts`, `src/look-gate.ts`), and the road glow exists only
+   behind `?look=3d` (`src/board-effects.ts`, `src/look-gate.ts`; historical; gate removed), and the road glow exists only
    with a NITRO trail skin (`src/garage-nitro-trail.js`).
 
 Camera options at a full sprint, landscape:
@@ -54,7 +54,7 @@ Camera options at a full sprint, landscape:
 - No gameplay, physics, input, HUD layout or audio change. No new Garage item.
 - Rival and traffic cars, first person, the touch-button flames, the void-pulse beams' own look and
   the NITRO trail skins' own art stay as they are.
-- `?look=3d` gating of the board plume tail and the glow discs stays as it is.
+- `?look=3d` gating of the board plume tail and the glow discs stays as it is (historical; gate removed).
 - Anti-goals: a white-out that hides the car's rear or the road ahead; centre-screen glare; a
   flame that looks detached from the nozzles; a frame-time regression on Low; a sustained camera
   rotation or shake; any HUD readout made harder to read.
@@ -104,7 +104,7 @@ plus the new parts become one module with one reason to change. All parts are ch
 - **Core that survives daylight.** The inner core is drawn in a saturated colour that does not rely
   on additive blending alone, so it reads on Coast's sunlit asphalt; the outer glow stays additive.
 - **Nozzle flare.** One camera-facing glow per port, about 0.45 m across at full power, depth-tested
-  so the car occludes it, independent of bloom and of `?look=3d`, on every tier including Low.
+  so the car occludes it, independent of bloom and of `?look=3d` (historical; gate removed), on every tier including Low.
 - **Road glow.** One ground quad behind the car for every sprint, Medium and High only, hidden in
   flight, oriented by the contact-shadow plane (`.claude/rules/launch-flare-rendering.md`: lean and
   reach).
@@ -172,7 +172,7 @@ core is blended; test structure; how many lines leave `src/aero-vfx.js`.
 
 ## Calls made by the author, for the owner to confirm
 
-- The plume is on in the default look, not behind `?look=3d` (the 2026-11-09 decision kept the
+- The plume is on in the default look, not behind `?look=3d` (historical; gate removed) (the 2026-11-09 decision kept the
   default look; this request changes the default exhaust only).
 - Portrait gets no re-aim.
 - Void pulse gains the flare and road glow but keeps its beams.

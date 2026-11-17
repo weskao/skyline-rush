@@ -1,6 +1,6 @@
 # Neon Downtown asphalt (task 5b step 4, asset half)
 
-Dark, fine-grained wet city asphalt for the Neon Downtown `?look=3d` road. One seamless 24 m x 24 m tile, baked in
+Dark, fine-grained wet city asphalt for the Neon Downtown detailed road (Medium and up). One seamless 24 m x 24 m tile, baked in
 Blender from a CC0 scan and encoded to KTX2. It mirrors the Coast set (`assets-src/coast-asphalt/`) file for file, so
 the existing Coast road material loads it unchanged.
 

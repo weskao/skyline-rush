@@ -27,7 +27,7 @@ Sources:
 | Sea | One 7,000 m plane with a custom shader: two sine products, two dark blues, an orange column at the sun's x (`src/classic-backdrop.ts`). The fog colour is fixed per track, not per preset. No sky or HDRI reflection. Foam is 110 flat translucent boxes. There is no shoreline; rocks just cut through the plane. | Turquoise near shore to deep blue; waves; sun glitter; white surf and foam at the rocks. | A full water material: normal-mapped waves, Fresnel reflection of the sky/HDRI, sun specular, depth colour, shoreline foam where rocks and cliffs meet the water. Its fog must follow each preset. |
 | Sky | A procedural 2,500 m dome: gradient, a hard-coded sun-glow direction, value-noise cloud band, aurora (`src/classic-backdrop.ts`). Sun disc at a fixed position. The Poly Haven HDRIs (day/dusk/rain/fog, 1K) are used **only for lighting**: the visible sky never matches them, and the dome sun, sun disc and directional light are not aligned to the HDRI sun. | Cumulus by day, sunset with sun on the horizon, overcast rain. | Show a sky that matches each preset's lighting HDRI, at a higher resolution than the 1K lighting maps. Align the sun disc and the directional light with the HDRI sun. |
 | Distant terrain | 30 instanced 7-sided cones at about 1,100–1,700 m with flat colour and no texture (`src/classic-backdrop.ts`); fog hides most of them. Nothing between the close GLB chunks (≤ ~840 m ahead on High) and the cones. | Green cliff headlands receding into haze; sea stacks. | Realistic far headlands and coastline (scan-based, matching the close cliffs), plus a mid band between the GLB chunks and the horizon. |
-| Mid props | Road pillars (40), poles and lamps (48 + 24), all instanced primitives. | Plain grey highway lamps and rails. | Lower priority: check them in the parity review after the four elements above. |
+| Mid props | Road pillars (40), poles and lamps (48 + 24), all instanced primitives. | Plain grey highway lamps and rails. | Lower priority: check them in the parity review after the four elements above. Assessed 2026-11-18 (`32beebef`): lamp posts are a modelled `lamp_post` node on Medium and above; the rail lights stay (gameplay edge marker); the road pillars are unchanged. Reasons in the Task 5 doc. |
 
 ## Constraints a replacement must keep (from the inventory)
 
@@ -48,7 +48,8 @@ Sources:
    replacement. `tests/shader-safety.test.js` lints every new shader.
 9. Budgets are recorded per asset in the model and material manifests, each with licence, provenance and
    fallback. There is no Coast draw-call cap yet: set one before adding far content.
-10. Everything new is gated like the car, so `develop` keeps its current look until default-on is approved.
+10. Everything new is gated like the car, so `develop` keeps its current look until default-on is approved
+   (historical; gate removed).
 
 ## Owner decisions (decided 2026-11-13)
 
@@ -59,8 +60,8 @@ Sources:
   (constraint 6), with the sun disc and directional light aligned to the HDRI sun. No procedural or volumetric
   cloud sky. The lighting maps stay 1K / PMREM 256 (constraint 4).
 
-D1 and D2 apply to the `?look=3d` look; without the gate Coast keeps the city and towers, as on `develop`
-(constraint 10).
+D1 and D2 apply to Coast's detailed look on Medium and above; on Low Coast keeps the city and towers, as on
+`develop` (constraint 10, historical; gate removed).
 
 ## Suggested order
 

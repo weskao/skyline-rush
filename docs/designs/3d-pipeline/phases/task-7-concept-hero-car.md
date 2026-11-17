@@ -116,7 +116,7 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   - keyboard (Enter on a native button), touch on phone portrait 390x844 and landscape 844x390, and car names in
     every supported language (`tests/i18n.test.js`)
   - each car remembers its own paint and both use the same collection
-  - 2026-11-13 fix: on a dev server started with `3d=1` (`?model=roadster&look=3d`) the Roadster GLB covered the
+  - 2026-11-13 fix: on a dev server started with `3d=1` (`?model=roadster&look=3d`; historical; gate removed) the Roadster GLB covered the
     equipped GT. The equipped car's own model now wins (`carModel() ?? forced` in `src/garage-model.ts`); the flag
     dresses only the Roadster. RED (`Expected "crimson-gt", Received "roadster2"`) → GREEN in
     `tests/crimson-gt-browser.spec.js`; rule 13 in `.claude/rules/3d-asset-pipeline.md`.
@@ -140,7 +140,7 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
 - [x] The Low tier requests only `crimson-gt-low.glb`; rival cars stay procedural (one GLB root in a race); a
   missing GLB falls back to the procedural car with no page error. The car never swaps during a race.
 - [x] Preload and compile the equipped car before GO (2026-11-13): `tests/shader-warmup-browser.spec.js` runs with
-  the GT equipped (boost, afterimages, top speed), with and without `?look=3d`: 2/2, no program compiles mid-race.
+  the GT equipped (boost, afterimages, top speed), with and without `?look=3d` (historical; gate removed): 2/2, no program compiles mid-race.
   A race started before the GLB arrives stays on the procedural car and compiles nothing; the GT dresses the car
   once the race is left (`tests/crimson-gt-browser.spec.js`).
 - [x] `npm test`, `npm run typecheck`, `npm run build` and `node --test tests/module-size.test.js` (2026-11-13).
