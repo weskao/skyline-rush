@@ -1,3 +1,10 @@
+# Home scene and Start sweep
+
+- [x] Show the original Home track scene without a full-screen gradient across viewport sizes, including the fallback preview.
+- [x] Keep the Start highlight inside the button during portrait-to-landscape and landscape-to-portrait rotation.
+- Playwright RED exposed the viewport gradients and a translated highlight outside the button box. The production CSS passes the same checks in Chromium, and the changed Coast scene was captured in phone portrait and landscape.
+- [ ] Confirm on a physical phone and check the GitHub quality gate for the new branch head.
+
 # Home short-landscape wallet / track spacing
 - [x] Restore a small 6px gap between the Home resource strip and selected-track hero on short landscape layouts.
 - [x] Add browser regression coverage for 345×206, 667×375, 743×340 and 852×393.

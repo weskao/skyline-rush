@@ -17,6 +17,59 @@ const shot = (page, info, name) => process.env.UI_POLISH_SHOTS && page.screensho
   path: info.outputPath(name), animations: 'disabled', scale: 'css', timeout: ciTimeout(20_000),
 });
 
+test('desktop Home leaves the track scene unshaded', async ({ page }, info) => {
+  await page.goto('/');
+  await expect(page.locator('#world')).toBeVisible();
+  await shot(page, info, 'unshaded-home-desktop.png');
+  await expect(page.locator('.scene-shade')).toHaveCSS('background-image', 'none');
+  await expect(page.locator('.topbar')).toHaveCSS('background-image', 'none');
+});
+
+test.describe('rotating a touch device on Home', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('leaves the track scene unshaded in each orientation and on tablets', async ({ page }, info) => {
+    await page.goto('/');
+    await expect(page.locator('#world')).toBeVisible();
+    for (const [width, height] of [[390, 844], [844, 390], [820, 1180]]) {
+      await page.setViewportSize({ width, height });
+      await shot(page, info, `unshaded-home-${width}x${height}.png`);
+      await expect.soft(page.locator('.scene-shade')).toHaveCSS('background-image', 'none', { timeout: ciTimeout(2000) });
+      await expect.soft(page.locator('.topbar')).toHaveCSS('background-image', 'none', { timeout: ciTimeout(2000) });
+      const fallbackShade = await page.locator('#upcoming-scene').evaluate(el => getComputedStyle(el, '::after').backgroundImage);
+      expect.soft(fallbackShade, 'the concept-image fallback also leaves the scene unshaded').toBe('none');
+    }
+  });
+
+  test('keeps the running Start sweep inside the button when rotating both ways', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+    const start = page.locator('#start-button');
+    await expect(start).toBeEnabled();
+    for (const [width, height] of [[390, 844], [844, 390], [390, 844]]) {
+      await page.setViewportSize({ width, height });
+      await expect(start).toBeInViewport({ ratio: 1 });
+      const frames = await start.evaluate(button => {
+        const sweep = button.getAnimations({ subtree: true }).find(animation => animation.animationName === 'start-sheen');
+        sweep.pause();
+        const { delay, duration } = sweep.effect.getTiming();
+        const samples = [0.62, 0.81].map(progress => {
+          sweep.currentTime = delay + duration * progress;
+          const shine = getComputedStyle(button, '::after');
+          return { inset: shine.inset, translate: shine.translate, position: shine.backgroundPosition };
+        });
+        sweep.play();
+        return samples;
+      });
+      for (const frame of frames) {
+        expect.soft(frame.inset).toBe('0px');
+        expect.soft(frame.translate, `moving gradient stays inside the button at ${width}x${height}`).toBe('none');
+      }
+      expect.soft(frames[0].position, 'the highlight still moves across the button').not.toBe(frames[1].position);
+    }
+  });
+});
+
 test('all page-drawn selects share a bordered trigger and language keeps the globe', async ({ page }, info) => {
   await page.goto('/');
   await openSettingsSection(page, 'language');
@@ -258,6 +311,7 @@ for (const [name, viewport, segments] of [
         Object.defineProperty(window, 'viewport', { configurable: true, value: { segments: value } });
       }, segments);
       await page.goto('/');
+      if (segments) await expect(page.locator('.scene-shade')).toHaveCSS('background-image', 'none');
       await page.locator('#lobby-tracks-toggle').tap();
       const dialog = page.locator('#track-chooser');
       await expect(dialog).toBeVisible();

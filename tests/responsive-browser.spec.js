@@ -437,7 +437,7 @@ test.describe('device safe areas', () => {
 
 // iOS keeps the status-bar style an icon was installed with. Icons added under black-translucent
 // still lay out 62 pt short of the screen, and only the root background reaches that bottom band
-// (WebKit 313800). The opaque status strip of a black install is root background too.
+// (WebKit 313800). Keep the match in races, where the HUD still shades the bottom edge.
 for (const [width, height] of [[402, 874], [1440, 900]]) {
   test(`root background continues the scene's bottom edge at ${width}x${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
@@ -460,7 +460,6 @@ for (const [width, height] of [[402, 874], [1440, 900]]) {
     };
     const root = (await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)).match(/\d+/g).map(Number);
     const mismatch = rgb => Math.max(...rgb.map((value, c) => Math.abs(value - root[c])));
-    expect(mismatch(await edge()), 'start screen').toBeLessThanOrEqual(10);
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     expect(mismatch(await edge()), 'racing').toBeLessThanOrEqual(10);
