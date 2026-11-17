@@ -21,6 +21,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
   });
 }
 
+test.describe('animated artwork', () => {
+  test.use({ lowGraphics: false }); // Low keeps the static art (GarageArtworkImage.vue)
 test('selected artwork animates at original 3x dimensions while retaining WebP fallback', async ({ page }) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
@@ -35,6 +37,7 @@ test('selected artwork animates at original 3x dimensions while retaining WebP f
   await expect(ion).toBeVisible();
   const dims = await ion.evaluate(img => ({ width: img.naturalWidth, height: img.naturalHeight }));
   expect(dims).toEqual({ width: 288, height: 288 });
+});
 });
 
 test('unavailable GIF and original WebP fall back to category SVG, without granting ownership', async ({ page }) => {

@@ -19,7 +19,7 @@ const untilRace = (page, time) => page.waitForFunction(t => window.gameplay.race
 const shown = page => page.waitForFunction(() => window.gameScene.scene.getObjectByName('Mini boost streaks').visible, null, { timeout: ciTimeout(10_000) });
 
 for (const [name, viewport, hasTouch] of VIEWPORTS) test.describe(`mini-boost streaks ${name}`, () => {
-  test.use({ viewport, hasTouch });
+  test.use({ viewport, hasTouch, lowGraphics: false }); // Low hides the streaks (src/mini-boost-streaks.js)
   test('a boost tunnel and a chain landing each play the rear streaks once', async ({ gameplayPage: page }, info) => {
     test.setTimeout(ciTimeout(120_000));
     const errors = [];

@@ -246,3 +246,16 @@ test('a spec counting requests on the gameplay page leaves the fixture page firs
   });
   assert.deepEqual(offenders, [], 'Count requests with watchRequests(page, pattern) from tests/helpers/gameplay-browser.js (see .claude/rules/browser-test-stability.md)');
 });
+
+// Specs start at Low (tests/helpers/test.js), which turns off the Garage GIF artwork (GarageArtworkImage.vue vfxAllowed),
+// the mini-boost streaks and the full pickup collect effect. Six specs asserted them and failed on CI run 44012297806.
+const LOW_GATED = /garage-animated\/|data-animation-active', ?(?:'true'|String\()|'Mini boost streaks'|'Pickup collect VFX'/;
+const TIER_CHOSEN = /lowGraphics: false|skyline-rush-vfx/;
+
+test('a spec that observes an effect Low turns off chooses a heavier tier', () => {
+  const offenders = FILES.filter(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    return LOW_GATED.test(source) && !TIER_CHOSEN.test(source);
+  });
+  assert.deepEqual(offenders, [], 'Set test.use({ lowGraphics: false }) around those tests (see .claude/rules/browser-test-stability.md)');
+});

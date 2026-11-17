@@ -102,6 +102,8 @@ test('new original Gold/Crimson/Cyan/Magenta/White launch flares and Purple trai
 });
 
 // 3x artwork replaces the four identical Airflow placeholders.
+test.describe('animated airflow artwork', () => {
+  test.use({ lowGraphics: false }); // Low keeps the static art (GarageArtworkImage.vue)
 test('four airflow appearances have distinct 3x image sources and live car rendering modes', async ({page}) => {
   await page.goto('/');
   await page.locator('#garage-button').click();
@@ -119,4 +121,5 @@ test('four airflow appearances have distinct 3x image sources and live car rende
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-gpu-airflow-pattern',String(mode));
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-preview-airflow',id);
   }
+});
 });

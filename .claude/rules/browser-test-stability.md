@@ -89,7 +89,12 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   Low settings unless a spec sets `lowGraphics: false` (automatic-choice / notice specs) or seeds
   its own `skyline-rush-vfx` tier (look, model and effect specs). Guard: *browser specs start at
   Low* in `device-quality-browser.spec.js`. A new default-on rendering cost needs no test change,
-  but a spec that must see it pins the tier itself.
+  but a spec that must see it pins the tier itself. Low also turns effects *off*: the Garage GIF
+  artwork, the mini-boost streaks and the full pickup collect effect. Six specs asserting them failed
+  on main run `44012297806`. Scope `test.use({ lowGraphics: false })` to just those tests. Guard:
+  *a spec that observes an effect Low turns off chooses a heavier tier* in
+  `tests/browser-timeouts.test.js`. When a new Low-only cut gets an observable marker, add it to
+  `LOW_GATED` there.
 - **Split WebGL preview sweeps into small batches.** Each track switch rebuilds the scene. Keep all catalog entries covered, but let Playwright schedule bounded cases independently. The desktop locked-preview sweep exhausted the 135-second budget as Coast started in CI run `43563563658`.
 - Wrap fixed waits and timeouts in `ciTimeout()`. This is enforced by the same test file.
 - **A test must fit its budget with room to spare on CI.** CI steps the game at about 1/4 speed (each slow
