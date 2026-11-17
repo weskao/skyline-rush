@@ -17,7 +17,6 @@ export function setupHistoryDialog({ getTrackId, showHistory, clearControls, cal
   const tabs = $('#history-tabs');
   const track = $<HTMLSelectElement>('#history-track');
   let historyOpener: HTMLElement | null = null;
-  let closing: Animation | null = null;
 
   async function select(section: HistorySection, focus: 'tab' | 'entry') {
     updateHistoryView({ section });
@@ -57,18 +56,11 @@ export function setupHistoryDialog({ getTrackId, showHistory, clearControls, cal
   $('#mode-history-filter').addEventListener('change', showHistory);
 
   function closeHistory(): void {
-    if (closing) return;
-    if (calm()) { navigation.close(); return; }
-    const animation = historyScreen.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(36px)' }], motionOptions('fast'));
-    closing = animation;
-    void animation.finished.then(() => navigation.close(), () => {});
+    if (calm()) navigation.close();
+    else navigation.leave([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(36px)' }], motionOptions('fast'));
   }
   $('#history-close').addEventListener('click', closeHistory);
   historyScreen.addEventListener('cancel', event => { event.preventDefault(); closeHistory(); });
-  historyScreen.addEventListener('close', () => {
-    closing?.cancel();
-    closing = null;
-    historyOpener?.focus({ preventScroll: true });
-  });
+  historyScreen.addEventListener('close', () => historyOpener?.focus({ preventScroll: true }));
   return { close: () => navigation.close(true), isOpen: () => historyScreen.open };
 }
