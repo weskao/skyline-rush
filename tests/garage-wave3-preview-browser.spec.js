@@ -54,6 +54,8 @@ test('Wave3 garage-store-readiness filters and locale switch keep all buttons no
 
 const storeAssets = ['store-cart', 'store-box', 'store-bundle', 'store-tag', 'store-star', 'store-collection'];
 const storeWithPartMotion = new Set(['store-box', 'store-bundle', 'store-collection']); // others: CSS sweep
+test.describe('animated store icons', () => {
+  test.use({ lowGraphics: false }); // Low keeps the static art (GarageArtworkImage.vue)
 for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1440,height:900}]) {
   test(`all six store icons display complete transparent 3x art without cropping on ${viewport.width}x${viewport.height}`, async ({page}) => {
     await page.setViewportSize(viewport);
@@ -132,6 +134,7 @@ for (const viewport of [{width:390,height:844}, {width:844,height:390}, {width:1
     });
   });
 }
+});
 
 test('Store entrance icon loads native WebP without any PNG fallback', async ({ page }) => {
   await page.goto('/');

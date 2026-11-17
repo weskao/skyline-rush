@@ -87,6 +87,19 @@ frame and on every track change, so no per-module warmup flag is needed. Keep it
 
 Sample the neutral-pose shell in vehicle-local coordinates before animating the wheels and wing. Refit when a GLB or LOD attaches and restore the procedural fit on removal. Reuse the warmed airflow material and dispose replaced geometry. The same fit serves Home, Garage Studio, Coming Soon and races. The model swap and fallback regression lives in `tests/garage-model-rig.test.js`. Skin animation must use the fitted paths’ outward directions and reuse the same mesh when the skin changes. Refresh cached Coming Soon stages when the selected airflow skin changes. Every size-dependent airflow number (pressure footprint, wake range, skin motion scale, dash-ribbon/roll-wake anchor) comes from `airflowFrame(profile)` in `src/airflow-geometry.ts`; skin amplitudes live once in `SKIN_MOTION` and the shader interpolates them. Never add a Roadster-sized constant, clamp or per-car value: a new car or a new display size (src/car-display-size.ts) must need no airflow edits. Guard: `tests/airflow-adaptive-fit.test.js` (Roadster + scaled GLB stand-in, every airflow skin).
 
+## The pre-pool triangle budget measures scenery, not the player car
+
+`WORLD_TOUR_SOFTWARE_BASELINE` (`src/performance-evidence.ts`) was measured with the procedural Roadster.
+Since ba867d53 the race car is the roadster2 GLB (6,688 triangles in the camera pass, more with its shadow),
+and Tokyo, Coastal and Cosmic tipped over the +65% budget with no scenery change (quality-gate,
+CI 44046135203). The car's shadow pass still counts as scenery, which errs on the strict side. The perf
+overlay reports the player car's own share (`drawnTriangles` in `src/perf.ts`: visible meshes on the camera's
+layers, draw range, visible material groups, instances), and `scripts/verify-performance-evidence.mjs` gates
+`triangles − carTriangles`. A heavier car model is judged on its own (`docs/designs/3d-pipeline/`), never by
+raising the scenery budget; scenery growth still fails at the old number. Guards:
+`tests/performance-evidence-gate.test.js` (*excludes the player car but still catches scenery growth*),
+`tests/perf.test.js` (*drawn triangles*), `tests/performance-evidence.test.js`.
+
 ## One NaN pixel is a black frame
 
 The bloom blur spreads a single NaN/Inf texel in the HDR scene buffer into a screen-sized black

@@ -4,6 +4,16 @@ import { selectLocale } from './helpers/locale-browser.js';
 import { test,expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
+test('browser specs start at Low with no notice unless they opt out', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'low');
+  await expect(page.locator('#performance-notice')).toBeHidden();
+});
+
+test.describe('automatic first-launch quality', () => {
+test.use({ lowGraphics: false });
+
 const constrained=page=>page.addInitScript(()=>{
   Object.defineProperty(navigator,'hardwareConcurrency',{configurable:true,get:()=>2});
   Object.defineProperty(navigator,'deviceMemory',{configurable:true,get:()=>2});
@@ -99,4 +109,5 @@ test('automatic graphics choice is a short disclosure with keyboard-accessible d
   await expect(notice.locator('#performance-notice-text')).toBeVisible();
   await notice.locator('#performance-notice-dismiss').click();
   await expect(notice).toBeHidden();
+});
 });

@@ -83,6 +83,18 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
 
 ## Budgets and retries
 
+- **Specs start at Low graphics; a heavier tier is opt-in per spec.** Making the full 3D look the
+  default Medium/High path (2026-11-16) doubled every unpinned spec on CI's software WebGL and
+  timed out 13 of 16 shards (main run `43924576729`). `tests/helpers/test.js` saves the weak-device
+  Low settings unless a spec sets `lowGraphics: false` (automatic-choice / notice specs) or seeds
+  its own `skyline-rush-vfx` tier (look, model and effect specs). Guard: *browser specs start at
+  Low* in `device-quality-browser.spec.js`. A new default-on rendering cost needs no test change,
+  but a spec that must see it pins the tier itself. Low also turns effects *off*: the Garage GIF
+  artwork, the mini-boost streaks and the full pickup collect effect. Six specs asserting them failed
+  on main run `44012297806`. Scope `test.use({ lowGraphics: false })` to just those tests. Guard:
+  *a spec that observes an effect Low turns off chooses a heavier tier* in
+  `tests/browser-timeouts.test.js`. When a new Low-only cut gets an observable marker, add it to
+  `LOW_GATED` there.
 - **Split WebGL preview sweeps into small batches.** Each track switch rebuilds the scene. Keep all catalog entries covered, but let Playwright schedule bounded cases independently. The desktop locked-preview sweep exhausted the 135-second budget as Coast started in CI run `43563563658`.
 - Wrap fixed waits and timeouts in `ciTimeout()`. This is enforced by the same test file.
 - **A test must fit its budget with room to spare on CI.** CI steps the game at about 1/4 speed (each slow
@@ -100,6 +112,14 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   await wait(10)` burned 60 s on one missed ring and timed ring-sfx out (CI 42489399352). Write
   `while (!decided && race.elapsed < until) await new Promise(requestAnimationFrame)`. Enforced by
   `tests/browser-timeouts.test.js` (*counted wall-clock sleep*).
+- **A wall-clock poll cannot wait out game time; a wall-clock phase cannot wait for the test.** A landing is
+  up to 2.6 s of game time (about 50 CPU-rendered frames at ~1 s each on High), past a 45 s poll: wait in
+  the page per frame, bounded by race time, then poll. The practice 3-2-1 runs 3 s of wall clock, so a
+  check made "during the countdown" after two expects arrives after GO: sample it per frame from before
+  the click (`hero-roadster-race-browser.spec.js`, `interactive-tutorial-browser.spec.js`, CI 44025345247).
+  Mechanism: `landed(page)` in `tests/helpers/gameplay-browser.js` goes on the line before every
+  altitude-0 poll. Enforced by `tests/browser-timeouts.test.js` (*waits out the fall in game time*,
+  *never asserts absence between its countdown wait and its racing wait*).
 - **A slow-frame shim stalls each frame once, not each `requestAnimationFrame` callback.** Since the results
   credit roll runs its own rAF loop, a per-callback 300 ms stall made the 17 frames a finish needs (4 to cross
   the line, 12 for the 0.6 s results reveal at 0.05 s each) cost 39 stalls: 11.9 s, past the 10 s expect, while

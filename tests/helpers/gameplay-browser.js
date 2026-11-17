@@ -66,4 +66,9 @@ export const dressedAs = page => page.evaluate(() => window.gameScene.player.chi
 // compiled shader programs, and the hosts currently dressed (`#world[data-garage-model-instances]`).
 export const glbRoots = page => page.evaluate(() => { let n = 0; window.gameScene.scene.traverse(o => { if (o.userData.garageModel) n++; }); return n; });
 export const programs = page => page.evaluate(() => window.gameScene.renderer.info.programs.length);
+/** Waits out a fall in game time, per frame: a CPU renderer plays 0.05 s of game per ~1 s frame, so a wall-clock poll alone runs out. */
+export const landed = page => page.evaluate(async () => {
+  const { race } = window.gameplay, until = race.elapsed + 6;
+  while (race.player.altitude !== 0 && race.elapsed < until) await new Promise(requestAnimationFrame);
+});
 export const modelInstances = async page => JSON.parse((await page.locator('#world').getAttribute('data-garage-model-instances')) ?? '{}');

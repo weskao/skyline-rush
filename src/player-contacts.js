@@ -115,7 +115,8 @@ function resolveVehicles(race, previousDistance, previousX, retention, exit) {
   if (leader) {
     const gap = opponents.includes(leader) && !exit?.cars.has(leader) ? carGap(race, car, leader) : null;
     const size = vehicleContactSize(race, leader), followGap = body.front + size.rear + FOLLOW_CLEARANCE;
-    if (gap !== null && gap <= followGap + RELEASE_CLEARANCE &&
+    // A car put ahead of its leader (gap respawn) has left the queue: holding on dragged it back, a fall per frame.
+    if (gap !== null && gap <= followGap + RELEASE_CLEARANCE && gap > -(body.rear + size.front) &&
         Math.abs(car.x - leader.x) < body.halfWidth + size.halfWidth && bodiesShareHeight(car, leader)) {
       if (gap < followGap) follow(race, leader, gap, followGap, retention);
     } else following.delete(car);
@@ -127,7 +128,7 @@ function resolveVehicles(race, previousDistance, previousX, retention, exit) {
     if (gap === null || gap >= front) continue;
     const previousGap = gap + car.distance - previousDistance;
     if (gap <= -rear) {
-      if (previousGap >= front) follow(race, other, gap, front + FOLLOW_CLEARANCE, retention);
+      if (previousGap >= front && car.fall?.time !== race.elapsed) follow(race, other, gap, front + FOLLOW_CLEARANCE, retention); // a respawn jump is not a sweep
       continue;
     }
     const lateralGap = Math.abs(car.x - other.x);

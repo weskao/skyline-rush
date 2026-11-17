@@ -35,13 +35,14 @@ const lines = [
   '',
   'Baseline: Phase 5 pre-pooling CI [40803061305](https://github.com/weskao/skyline-rush/actions/runs/40803061305). Only 1440×900 Medium World Tour has a reference.',
   '',
-  '| Track | Viewport | DPR | Draw Calls | Pre-pool draws | Change | Triangles | FPS | Frame p50 / p95 |',
-  '|---|---|---:|---:|---:|---:|---:|---:|---:|',
+  '| Track | Viewport | DPR | Draw Calls | Pre-pool draws | Change | Triangles | Player car | FPS | Frame p50 / p95 |',
+  '|---|---|---:|---:|---:|---:|---:|---:|---:|---:|',
 ];
 for (const record of records.sort((a,b) => a.track.localeCompare(b.track)
     || b.viewport.width-a.viewport.width)) {
   if (record.version !== 1 || !Number.isFinite(record.drawCalls) ||
       !Number.isFinite(record.triangles) || !Number.isFinite(record.p95Ms) ||
+      !Number.isFinite(record.carTriangles) || record.carTriangles < 0 || record.carTriangles > record.triangles ||
       record.source !== 'software-webgl-ci' || record.commit !== process.env.GITHUB_SHA) {
     problems.push('Untrusted or mismatched performance record: ' + record.track);
     continue;
@@ -51,7 +52,7 @@ for (const record of records.sort((a,b) => a.track.localeCompare(b.track)
     record.viewport.height === 900 && record.quality === 'medium';
   const before = matchedBaseline ? baseline.drawCalls : null;
   const change = before ? ((record.drawCalls - before) / before * 100).toFixed(1) + '%' : '—';
-  lines.push(`| ${record.track} | ${record.viewport.width}×${record.viewport.height} | ${record.viewport.pixelRatio} | ${record.drawCalls} | ${before ?? '—'} | ${change} | ${record.triangles} | ${record.fps} | ${record.p50Ms} / ${record.p95Ms} ms |`);
+  lines.push(`| ${record.track} | ${record.viewport.width}×${record.viewport.height} | ${record.viewport.pixelRatio} | ${record.drawCalls} | ${before ?? '—'} | ${change} | ${record.triangles} | ${record.carTriangles} | ${record.fps} | ${record.p50Ms} / ${record.p95Ms} ms |`);
   // Flag large rendering regressions on exactly matching 1440x900 Medium software WebGL.
   // Deliberately do not gate on FPS/p95: CI CPU scheduling is noisy.
   if (baseline && record.viewport.width === 1440 && record.viewport.height === 900 &&
@@ -59,8 +60,10 @@ for (const record of records.sort((a,b) => a.track.localeCompare(b.track)
     if (record.drawCalls > baseline.drawCalls * 1.1) {
       problems.push(`${record.track}: ${record.drawCalls} draws exceeds pre-pool budget ${baseline.drawCalls} (+10% tolerance)`);
     }
-    if (record.triangles > baseline.triangles * 1.65) {
-      problems.push(`${record.track}: ${record.triangles} triangles exceeds pre-pool budget ${baseline.triangles} (+65% tolerance)`);
+    // The baseline predates the GLB race car (ba867d53): it budgets scenery, so the player car is not counted.
+    const scenery = record.triangles - record.carTriangles;
+    if (scenery > baseline.triangles * 1.65) {
+      problems.push(`${record.track}: ${scenery} scenery triangles exceeds pre-pool budget ${baseline.triangles} (+65% tolerance)`);
     }
   }
 }

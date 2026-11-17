@@ -10,12 +10,14 @@ export const WORLD_TOUR_SOFTWARE_BASELINE = {
 type Quality = 'low' | 'medium' | 'high';
 interface RawEvidence {
   track: string; quality: string; width: number; height: number; pixelRatio: number;
-  browser: string; commit: string; drawCalls: number; triangles: number; line: string;
+  browser: string; commit: string; drawCalls: number; triangles: number; carTriangles: number; line: string;
 }
 export interface PerformanceEvidence {
   version: 1; source: 'software-webgl-ci' | 'browser-webgl'; track: string;
   quality: Quality; viewport: { width: number; height: number; pixelRatio: number };
   browser: string; commit: string; drawCalls: number; triangles: number;
+  /** The player car's share of `triangles`; the scenery budget excludes it. */
+  carTriangles: number;
   p50Ms: number; p95Ms: number; fps: number; windowSeconds: number;
 }
 const frameLine = /^FRAME p50 (\d+(?:\.\d+)?) ms · p95 (\d+(?:\.\d+)?) ms · (\d+(?:\.\d+)?) fps · (\d+(?:\.\d+)?) s$/;
@@ -32,6 +34,7 @@ export function parsePerformanceEvidence(raw: RawEvidence): PerformanceEvidence 
       !finite(fps, true) || !finite(seconds, true) ||
       !Number.isInteger(raw.drawCalls) || !finite(raw.drawCalls) ||
       !Number.isInteger(raw.triangles) || !finite(raw.triangles) ||
+      !Number.isInteger(raw.carTriangles) || !finite(raw.carTriangles) || raw.carTriangles > raw.triangles ||
       !Number.isInteger(raw.width) || !finite(raw.width, true) ||
       !Number.isInteger(raw.height) || !finite(raw.height, true) ||
       !finite(raw.pixelRatio, true) ||
@@ -45,7 +48,7 @@ export function parsePerformanceEvidence(raw: RawEvidence): PerformanceEvidence 
     track: raw.track, quality: raw.quality as Quality,
     viewport: { width: raw.width, height: raw.height, pixelRatio: raw.pixelRatio },
     browser: raw.browser, commit: raw.commit, drawCalls: raw.drawCalls,
-    triangles: raw.triangles, p50Ms: p50, p95Ms: p95, fps,
+    triangles: raw.triangles, carTriangles: raw.carTriangles, p50Ms: p50, p95Ms: p95, fps,
     windowSeconds: seconds,
   };
 }
