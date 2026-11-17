@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createCoastScenery } from '../src/coast-visuals.ts';
-import { COAST_PIECES } from '../src/coast-scenery-glb.ts';
+import { COAST_FAR_LOD, COAST_PIECES } from '../src/coast-scenery-glb.ts';
 import { GREENERY_ID, GREENERY_SHRUBS, greenTops, greeneryAnchors, withGreenery } from '../src/coast-greenery.ts';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
 import { seededRng } from '../src/rng.ts';
 
-// Cliff greenery (?look=3d, Medium+): grass on the up-facing scan surfaces and shrub cards rooted on the cliff tops.
+// Cliff greenery (Medium+): grass on the up-facing scan surfaces and shrub cards rooted on the cliff tops.
 const quad = (x0, x1, y, z0 = 0, z1 = 1) => [x0, y, z0, x1, y, z1, x1, y, z0, x0, y, z0, x0, y, z1, x1, y, z1]; // up-facing, two triangles
 const points = anchors => Array.from({ length: anchors.length / 3 }, (_, i) => [...anchors.subarray(i * 3, i * 3 + 3)]);
 const sequential = positions => Array.from({ length: positions.length / 3 }, (_, i) => i);
@@ -105,9 +105,9 @@ function fakeCoast(shrubs = GREENERY_SHRUBS) {
   const root = new THREE.Group(), small = new THREE.BoxGeometry(1, 1, 1), tall = new THREE.BoxGeometry(2, 8, 2);
   const mat = name => Object.assign(new THREE.MeshStandardMaterial(), { name });
   const rock = mat('coast_rock'), other = mat('other');
-  for (const piece of COAST_PIECES) {
-    const cliff = piece.startsWith('cliff_');
-    const mesh = Object.assign(new THREE.Mesh(cliff ? tall : small, cliff ? mat(`coast_${piece}`) : piece.startsWith('rock_') ? rock : other), { name: piece });
+  for (const piece of [...COAST_PIECES, ...Object.values(COAST_FAR_LOD)]) {
+    const cliff = piece.startsWith('cliff_'); // the far headland nodes share their close scan's material
+    const mesh = Object.assign(new THREE.Mesh(cliff ? tall : small, cliff ? mat(`coast_${piece.replace('_far', '')}`) : piece.startsWith('rock_') ? rock : other), { name: piece });
     if (cliff) mesh.position.y = 4;
     root.add(mesh);
   }
@@ -122,22 +122,26 @@ test('shrubs stand on the top of every cliff in the window, follow it down the r
   const kit = createCoastScenery(new THREE.Scene());
   kit.attachModel(fakeCoast());
   kit.update(road, 0, 'high');
-  const cliffs = () => instanced(kit, ['cliff_a', 'cliff_b']).flatMap(matrices), shrubs = () => instanced(kit, GREENERY_SHRUBS);
+  const cliffs = () => instanced(kit, ['cliff_a', 'cliff_b', ...Object.values(COAST_FAR_LOD)]).flatMap(matrices), shrubs = () => instanced(kit, GREENERY_SHRUBS);
+  const headlands = instanced(kit, Object.values(COAST_FAR_LOD)).flatMap(matrices);
+  assert.ok(headlands.length >= 8, 'the far headlands draw their own decimated nodes');
   assert.equal(shrubs().length, GREENERY_SHRUBS.length, 'one instanced draw per shrub variant');
-  const onACliffTop = shrub => cliffs().some(cliff => {
+  const onACliffTop = (shrub, list = cliffs()) => list.some(cliff => {
     const p = new THREE.Vector3().setFromMatrixPosition(shrub).applyMatrix4(cliff.clone().invert()); // cliff geometry space: top at y = 4
     return Math.abs(p.x) <= 1 && Math.abs(p.z) <= 1 && p.y <= 4 + 1e-4 && p.y > 3.7;
   });
   const first = shrubs().flatMap(matrices);
   assert.ok(first.length >= cliffs().length * 30, `a full fringe per cliff, got ${first.length} for ${cliffs().length} cliffs`);
-  assert.ok(first.every(onACliffTop), 'every shrub is rooted on a cliff top');
+  assert.ok(first.every(shrub => onACliffTop(shrub)), 'every shrub is rooted on a cliff top');
+  const onHeadlands = first.filter(shrub => onACliffTop(shrub, headlands));
+  assert.ok(onHeadlands.length >= headlands.length * 30, `the decimated headlands keep their green tops, got ${onHeadlands.length} shrubs on ${headlands.length}`);
   const sizes = first.map(m => m.getMaxScaleOnAxis());
   assert.ok(Math.max(...sizes) > 4 * Math.min(...sizes), 'shrubs grow with their cliff: headlands carry canopy-size clumps');
   assert.ok(shrubs().every(mesh => mesh.visible && !mesh.frustumCulled));
   kit.update(road, 1400, 'high');
   const later = shrubs().flatMap(matrices);
   assert.notDeepEqual(later[0].elements, first[0].elements, 'replaced with the window');
-  assert.ok(later.every(onACliffTop));
+  assert.ok(later.every(shrub => onACliffTop(shrub)));
   kit.update(road, 1400, 'low');
   assert.ok(shrubs().every(mesh => !mesh.visible), 'Low keeps the procedural coast');
   kit.detachModel();

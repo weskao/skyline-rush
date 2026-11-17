@@ -37,6 +37,7 @@ def split_islands(ob):
 
 
 def select(objs, active):
+    bpy.context.view_layer.update()  # in background mode the layer still lists objects removed since the last sync
     for o in bpy.context.view_layer.objects:
         o.select_set(False)
     for o in objs:

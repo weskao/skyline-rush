@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createCoastScenery } from '../src/coast-visuals.ts';
-import { COAST_CHUNK_METRES, COAST_FAR_SLOT_METRES, COAST_PIECES, coastChunkPlan, coastChunkWindow, coastFarPlan, coastFarWindow, PIECE_DEPTH, RAIL_CHUNKS } from '../src/coast-scenery-glb.ts';
+import { COAST_CHUNK_METRES, COAST_FAR_LOD, COAST_FAR_SLOT_METRES, COAST_PIECES, coastChunkPlan, coastChunkWindow, coastFarPlan, coastFarWindow, PIECE_DEPTH, RAIL_CHUNKS } from '../src/coast-scenery-glb.ts';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
 
 const center = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 610) * 25;
@@ -15,7 +15,8 @@ function fakeGlb() {
   const mat = name => Object.assign(new THREE.MeshStandardMaterial(), { name });
   const box = new THREE.BoxGeometry(2, 2, 2);
   const leaf = (name, material) => Object.assign(new THREE.Mesh(box, material), { name });
-  for (const [name, material] of [['cliff_a', 'coast_cliff_a'], ['cliff_b', 'coast_cliff_b'], ['rock_a', 'coast_rock'], ['rock_b', 'coast_rock'], ['guard_rail', 'coast_rail_steel']]) {
+  for (const [name, material] of [['cliff_a', 'coast_cliff_a'], ['cliff_b', 'coast_cliff_b'], ['cliff_a_far', 'coast_cliff_a'], ['cliff_b_far', 'coast_cliff_b'],
+    ['rock_a', 'coast_rock'], ['rock_b', 'coast_rock'], ['guard_rail', 'coast_rail_steel'], ['lamp_post', 'coast_rail_steel']]) {
     const mesh = leaf(name, mat(material));
     mesh.position.y = 1;
     root.add(mesh);
@@ -39,8 +40,11 @@ const layerMeshes = kit => kit.group.children.filter(o => o.isInstancedMesh && !
 const matrixOf = (mesh, i) => { const m = new THREE.Matrix4(); mesh.getMatrixAt(i, m); return m; };
 
 test('the chunk plan covers every manifest piece and is keyed by absolute chunk index and endless seed', () => {
-  assert.deepEqual([...COAST_PIECES].sort(), MODEL_MANIFEST['coast-scenery'].nodes.filter(n => !/_front|_back/.test(n)).sort());
+  assert.deepEqual([...COAST_PIECES, ...Object.values(COAST_FAR_LOD)].sort(), MODEL_MANIFEST['coast-scenery'].nodes.filter(n => !/_front|_back/.test(n)).sort());
   assert.deepEqual(coastChunkPlan(7), coastChunkPlan(7), 'deterministic');
+  // Lamp posts take no random number, like the rails: the scans stand where they stood before the posts were added.
+  const scans = coastChunkPlan(7).filter(p => !['guard_rail', 'lamp_post'].includes(p.piece));
+  assert.deepEqual([scans.length, scans[0].piece, +scans[0].offset.toFixed(6), scans.at(-1).piece, +scans.at(-1).offset.toFixed(6)], [8, 'cliff_b', 56.662423, 'palm_a', -45.506901]);
   assert.notDeepEqual(coastChunkPlan(7), coastChunkPlan(8));
   assert.notDeepEqual(coastChunkPlan(7, 1001), coastChunkPlan(7, 2002), 'endless seeds give different coasts');
   const seen = new Set();
@@ -52,7 +56,14 @@ test('the chunk plan covers every manifest piece and is keyed by absolute chunk 
     const inner = Math.abs(p.offset) - PIECE_DEPTH[p.piece] * p.scale;
     // Rails ride the existing curb line (12.4 m); everything else clears the 24 m road and the curbs by a wide margin.
     if (p.piece === 'guard_rail') assert.equal(Math.abs(p.offset), 12.4);
-    else assert.ok(inner >= 20, `${p.piece} reaches ${inner.toFixed(1)} m from the centre line`);
+    else if (p.piece === 'lamp_post') {
+      // One post per 60 m just outside the curb, its side keyed by the absolute post index (world.js lights the same
+      // posts with its emissive heads): never by a window-relative index, which swaps every post's side each 60 m.
+      const index = (chunk * COAST_CHUNK_METRES + p.along) / 60;
+      assert.ok(Number.isInteger(index));
+      assert.equal(p.offset, index % 2 ? 12.7 : -12.7);
+      assert.equal(p.y, 0, 'the pole stands on the road level');
+    } else assert.ok(inner >= 20, `${p.piece} reaches ${inner.toFixed(1)} m from the centre line`);
     // Rock skirts carry stretched scan UVs: most of each rock sits below the sea plane (y = -6).
     if (p.piece === 'rock_a' || p.piece === 'rock_b') assert.ok(p.y <= -6 - .1 * p.scale, `${p.piece} skirt above the water`);
   }
@@ -71,8 +82,9 @@ test('the GLB layer draws one InstancedMesh per GLB primitive and replaces the p
   const scene = new THREE.Scene(), kit = createCoastScenery(scene);
   kit.attachModel(fakeGlb());
   const layer = layerMeshes(kit);
-  // cliff_a, cliff_b, rock_a, rock_b, guard_rail, 2 x palm bark/frond, one arch shell shared by front and back.
-  assert.equal(layer.length, 10, 'one draw per primitive, never one per placed prop');
+  // cliff_a, cliff_b and their far LODs, rock_a, rock_b, guard_rail, lamp_post, 2 x palm bark/frond, one arch shell
+  // shared by front and back.
+  assert.equal(layer.length, 13, 'one draw per primitive, never one per placed prop');
   for (const mesh of layer) assert.equal(mesh.frustumCulled, false);
   kit.update(road, 300, 'medium');
   for (const name of PROCEDURAL) assert.equal(kit.group.getObjectByName(name).visible, false, name);
@@ -99,6 +111,19 @@ test('placed pieces sit where the chunk plan puts them, and unused instances are
     matrixOf(rails, i).decompose(p, q, s);
     const distance = -p.z;
     assert.ok(Math.abs(Math.abs(p.x - center(distance)) - 12.4) < .05, 'rail rides the curb line');
+    // The model's +z is its road face (beam), the posts stand behind it: on both sides the beam faces the lanes.
+    const face = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
+    assert.ok(face.x * (center(distance) - p.x) > 0, `rail at ${distance.toFixed(0)} m turns its posts to the road`);
+  }
+  // Lamp posts: two per chunk through the whole window, alternating sides, the arm (model +z) reaching over the road.
+  const posts = kit.group.getObjectByName('lamp_post');
+  assert.equal(posts.count, window.count * 2);
+  for (let i = 0; i < posts.count; i++) {
+    matrixOf(posts, i).decompose(p, q, s);
+    const distance = -p.z, side = Math.round(distance / 60) % 2 ? 1 : -1;
+    assert.ok(Math.abs(distance / 60 - Math.round(distance / 60)) < 1e-6, 'a post every 60 m');
+    assert.ok(Math.abs(p.x - center(distance) - side * 12.7) < .05, `post at ${distance.toFixed(0)} m stands outside the ${side < 0 ? 'left' : 'right'} curb`);
+    assert.ok(new THREE.Vector3(0, 0, 1).applyQuaternion(q).x * -side > .9, 'the arm reaches over the lanes');
   }
   for (const mesh of layerMeshes(kit)) for (let i = 0; i < mesh.instanceMatrix.count; i++) {
     matrixOf(mesh, i).decompose(p, q, s);
@@ -197,32 +222,37 @@ test('the far plan puts a scan headland on each side of every slot and sea stack
   assert.deepEqual([...seen].sort(), ['cliff_a', 'cliff_b', 'rock_a', 'rock_b'], 'cliff and rock scans only');
 });
 
-test('far window: alongside the car to past the fog on High, shorter on Medium, nothing on Low', () => {
+// Medium used to place three slots: a new one entered 860 to 1060 m out, at about 63 to 70% fog, and popped in. With
+// the decimated far headlands a fourth slot costs about 6k triangles, so Medium keeps High's window.
+test('far window: alongside the car to past the fog on Medium and High, nothing on Low', () => {
   assert.equal(coastFarWindow(900, 'low'), null);
   for (const distance of [0, 239, 240, 900, 4321, 99_999]) {
-    const medium = coastFarWindow(distance, 'medium'), high = coastFarWindow(distance, 'high');
-    assert.equal(medium.first, high.first);
-    assert.ok(high.first * COAST_FAR_SLOT_METRES <= distance - 240, 'the slot beside the car is still placed');
-    assert.ok((high.first + high.count) * COAST_FAR_SLOT_METRES - distance >= 1200, 'a new slot enters behind the fog');
-    assert.ok((medium.first + medium.count) * COAST_FAR_SLOT_METRES - distance >= 720);
-    assert.ok(high.count > medium.count);
+    for (const quality of ['medium', 'high']) {
+      const far = coastFarWindow(distance, quality);
+      assert.ok(far.first * COAST_FAR_SLOT_METRES <= distance - 240, 'the slot beside the car is still placed');
+      assert.ok((far.first + far.count) * COAST_FAR_SLOT_METRES - distance >= 1200, `${quality}: a new slot enters behind the fog`);
+    }
   }
 });
 
-test('far pieces are more instances of the pooled close meshes: no new draw call, placed where the far plan puts them', () => {
+test('far headlands draw the decimated far nodes and far sea stacks the pooled rocks: no draw call added while driving', () => {
   const kit = createCoastScenery(new THREE.Scene());
   kit.attachModel(fakeGlb());
   const layer = layerMeshes(kit);
   kit.update(road, 2000, 'high');
-  assert.deepEqual(layerMeshes(kit), layer, 'the same ten meshes');
+  assert.deepEqual(layerMeshes(kit), layer, 'the same thirteen meshes');
   const window = coastChunkWindow(2000, 'high'), far = coastFarWindow(2000, 'high');
   const close = [], distant = [];
   for (let c = window.first; c < window.first + window.count; c++) close.push(...coastChunkPlan(c));
   for (let s = far.first; s < far.first + far.count; s++) distant.push(...coastFarPlan(s).map(p => ({ ...p, distance: s * COAST_FAR_SLOT_METRES + p.along })));
   const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
   for (const piece of ['cliff_a', 'cliff_b', 'rock_a', 'rock_b']) {
-    const mesh = kit.group.getObjectByName(piece), of = list => list.filter(x => x.piece === piece);
-    assert.equal(mesh.count, of(close).length + of(distant).length, piece);
+    const lod = COAST_FAR_LOD[piece], of = list => list.filter(x => x.piece === piece);
+    // A headland never spends the 11k-triangle close scan: it is drawn from its far LOD pool, the close pool holds
+    // the close cliffs only.
+    if (lod) assert.equal(kit.group.getObjectByName(piece).count, of(close).length, `${piece} close pool`);
+    const mesh = kit.group.getObjectByName(lod ?? piece);
+    assert.equal(mesh.count, lod ? of(distant).length : of(close).length + of(distant).length, lod ?? piece);
     const placed = Array.from({ length: mesh.count }, (_, i) => { matrixOf(mesh, i).decompose(p, q, s); return [p.x, p.z, s.x]; });
     for (const want of of(distant)) {
       const [x, z] = road.point(want.distance, want.offset);
@@ -231,9 +261,9 @@ test('far pieces are more instances of the pooled close meshes: no new draw call
   }
   assert.ok(distant.length >= 8);
   kit.update(road, 2000, 'medium');
-  const fewer = coastFarWindow(2000, 'medium');
   let cliffs = 0;
   for (let c = window.first; c < window.first + coastChunkWindow(2000, 'medium').count; c++) cliffs += coastChunkPlan(c).filter(x => x.piece.startsWith('cliff_')).length;
-  assert.equal(kit.group.getObjectByName('cliff_a').count + kit.group.getObjectByName('cliff_b').count, cliffs + fewer.count * 2, 'Medium places a shorter far window');
+  assert.equal(kit.group.getObjectByName('cliff_a').count + kit.group.getObjectByName('cliff_b').count, cliffs, 'Medium places a shorter close window');
+  assert.equal(kit.group.getObjectByName('cliff_a_far').count + kit.group.getObjectByName('cliff_b_far').count, coastFarWindow(2000, 'medium').count * 2, 'and a headland on each side of every far slot');
   kit.dispose();
 });

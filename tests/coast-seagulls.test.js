@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { classicRoadRoute } from '../src/classic-road-routes.ts';
 import { createCoastScenery } from '../src/coast-visuals.ts';
-import { COAST_PIECES } from '../src/coast-scenery-glb.ts';
+import { COAST_FAR_LOD, COAST_PIECES } from '../src/coast-scenery-glb.ts';
 import { coastGullPlan, coastGullWindow, createCoastSeagulls, GULL_MIN_HEIGHT, GULL_ROAD_CLEARANCE, GULL_SLOT_METRES } from '../src/coast-seagulls.ts';
 
 const coast = classicRoadRoute('coast');
@@ -85,7 +85,7 @@ test('every flock of the window shares one instanced draw call and is placed onl
 
 test('the gulls join the Coast scenery only with the scan coast and leave with it', () => {
   const scene = new THREE.Scene(), kit = createCoastScenery(scene), source = new THREE.Group();
-  for (const name of COAST_PIECES) source.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial()), { name }));
+  for (const name of [...COAST_PIECES, ...Object.values(COAST_FAR_LOD)]) source.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial()), { name }));
   const find = () => kit.group.getObjectByName('Coast seagulls');
   kit.update(coast, 300, 'high', undefined, 4);
   assert.equal(find(), undefined, 'no scan coast (Low, or no ?look=3d): no gulls');
