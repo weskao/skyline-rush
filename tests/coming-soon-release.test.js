@@ -63,9 +63,10 @@ test('an approved playable preview with a real runtime is playable in dev-unlock
   }
 });
 
-test('Coming Soon cards keep original selectable route-map and KM styling, not a parallel gallery', () => {
+test('Coming Soon cards share the track chooser and retain route maps and distance', () => {
   const shell = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
   const select = readFileSync(new URL('../src/race-select-ui.ts', import.meta.url), 'utf8');
+  const chooser = readFileSync(new URL('../src/race-lobby-ui.ts', import.meta.url), 'utf8');
   assert.match(shell, /<button v-for="\(track, id\) in UPCOMING_TRACKS"/);
   assert.match(shell, /class="upcoming-track-card"/);
   assert.match(shell, /:data-upcoming-track="id" aria-pressed="false"/);
@@ -74,8 +75,9 @@ test('Coming Soon cards keep original selectable route-map and KM styling, not a
   assert.match(select, /for \(const button of upcomingButtons\(\)\) \{\s*mountRouteMap\(button\.dataset\.upcomingTrack!\)/);
   assert.match(shell, /<strong>\{\{ track.names.en \}\}<\/strong><span>\{\{ track.length \/ 1000 \}\} KM <small><\/small><\/span>/);
   assert.doesNotMatch(shell, /class="coming-soon-card"/);
-  assert.match(select, /for \(const button of upcomingButtons\(\)\) button.addEventListener\('click'/);
-  assert.match(select, /const id = button\.dataset\.upcomingTrack as UpcomingTrackId;\s*upcomingSelection = options\.isUpcomingEnterable\(id\) \? null : id;/);
+  assert.match(chooser, /querySelectorAll<HTMLButtonElement>\('\[data-track\], \[data-upcoming-track\]'\)/);
+  assert.match(chooser, /confirm.addEventListener\('click', \(\) => \{[\s\S]*?applyTrack\(trackId\(pending\)\)/);
+  assert.match(select, /upcomingSelection = upcoming && !options\.isUpcomingEnterable\(upcoming\) \? upcoming : null;/);
   assert.match(select, /isUpcomingTrack\(id\) \? options\.isUpcomingEnterable\(id\) : unlockedTracks\.has\(id\)/, 'preview race is forbidden regardless of saved unlock');
 });
 

@@ -134,20 +134,24 @@ test('desktop: a mouse drag past 20% of a wide screen switches track before the 
 });
 
 test('desktop: a two-finger trackpad swipe changes one track per gesture, momentum included', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'low' })));
   await page.goto('/');
   const [first, second, third] = await trackOrder(page);
   await page.mouse.move(1150, 600);
+  const snapshots = page.locator('#track-swipe-scenes canvas');
   const scroll = (deltaX, events, options) => trackpadSwipe(page, deltaX, events, options);
   await scroll(10, 4);
   await page.waitForTimeout(400);
   expect(await selected(page), 'a nudge springs back').toBe(first);
-  await expect.poll(() => page.locator('#world').evaluate(canvas => canvas.style.transform)).toBe('');
+  await expect(snapshots).toHaveCount(0);
   await scroll(30, 20, { stallAt: 12 }); // swipe plus its momentum tail, one event delivered late: still one track
   await expect.poll(() => selected(page)).toBe(second);
   await page.waitForTimeout(400);
   expect(await selected(page)).toBe(second);
+  await expect(snapshots).toHaveCount(0);
   await scroll(30, 6);
   await expect.poll(() => selected(page)).toBe(third);
+  await expect(snapshots).toHaveCount(0);
   await page.waitForTimeout(400);
   await scroll(-30, 6);
   await expect.poll(() => selected(page)).toBe(second);
@@ -165,14 +169,14 @@ test('desktop: the lobby pages the 3D scene, while the track chooser owns its wh
   });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const [first, second] = await trackOrder(page);
-  const point = async selector => {
+  const point = async (selector, surface = '#intro') => {
     const locator = page.locator(selector).first();
     await expect(locator).toBeVisible();
     await locator.scrollIntoViewIfNeeded();
     await expect(locator).toBeInViewport();
     const { x, y, width, height } = await locator.boundingBox();
     const at = { x: x + width / 2, y: y + height / 2 };
-    expect(await page.evaluate(({ x, y }) => Boolean(document.elementFromPoint(x, y)?.closest('#intro')), at)).toBe(true);
+    expect(await page.evaluate(({ x, y, surface }) => Boolean(document.elementFromPoint(x, y)?.closest(surface)), { ...at, surface })).toBe(true);
     return at;
   };
   await trackpadSwipe(page, 180, 1, { at: await point('.lobby-race-heading') });
@@ -182,7 +186,7 @@ test('desktop: the lobby pages the 3D scene, while the track chooser owns its wh
   await expect.poll(() => selected(page)).toBe(first);
   await page.waitForTimeout(180);
   await page.locator('#lobby-tracks-toggle').click();
-  await trackpadSwipe(page, 180, 1, { at: await point('[data-track="coast"]') });
+  await trackpadSwipe(page, 180, 1, { at: await point('[data-track="coast"]', '#track-chooser') });
   await expect(page.locator('[data-track="coast"]')).toHaveAttribute('aria-pressed', 'true');
 });
 

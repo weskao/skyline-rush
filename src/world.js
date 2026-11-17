@@ -397,7 +397,6 @@ export function createWorld(canvas) {
   const aero = createAeroVFX(scene, player, shadow);
   const garageModel = createWorldGarageModel(canvas, renderer, camera), homeModelHost = { name: 'home', car: player, keep: aero.group, scene, fitAirflow: aero.fitAirflow };
   const sprintVisual = createSprintVfx();
-  // Stable rendering-only adapter: never changes the race simulation or Vue reactive state.
   const sprintInput = { phase: 'ready', nitro: false, chain: 0, boost: false, speed: 0, cap: 110, dt: 0, enabled: true, quality: 'high', reducedMotion: false };
   let visual = vfxSettings(), garageHomeVisual = { ...visual, airflow: true }, garageHiddenVisual = { ...visual, enabled: false };
   const projectedNozzle = new THREE.Vector3(), aeroOrigin = new THREE.Vector3();
@@ -411,7 +410,8 @@ export function createWorld(canvas) {
   const syncGarageLighting = () => { lens.uniforms.gain.value = garageCamera || garagePose ? GARAGE_LIGHTING[garageLighting] : 1; };
   const raceVisuals = createRaceVisuals({ scene, renderer, sky: sky.material.uniforms });
   let sizeKey = '', warmupPending = true, garageWarmupPending = true;
-  canvas.addEventListener('webglcontextrestored', () => { warmupPending = garageWarmupPending = true; });
+  const restoreWarmup = () => { warmupPending = garageWarmupPending = true; };
+  canvas.addEventListener('webglcontextrestored', restoreWarmup);
   function resize() {
     const { width, height } = canvas.getBoundingClientRect();
     // setSize reallocates the drawing buffer and every composer target, blanking a frame; mobile URL-bar and

@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, settled } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -272,7 +272,7 @@ test.describe('landscape track cards show the whole card', () => {
           await expect(page.locator('#lobby-race-distance')).toBeVisible();
           continue;
         }
-        await expect(page.locator('[data-track="coast"] .route-overview')).toBeVisible();
+        await settled(page.locator('[data-track="coast"] .route-overview'));
         const { cards, footerTop } = await page.evaluate(() => {
           const box = el => el.getBoundingClientRect();
           const cards = [...document.querySelectorAll('.track-select button')].slice(0, 2).map(button => {
