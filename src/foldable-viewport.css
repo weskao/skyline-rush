@@ -232,6 +232,9 @@ body[data-fold-axis="vertical"][data-tutorial] .race-overlay .overlay-content {
   #leaderboard .racer > span:last-child { white-space: nowrap; }
   #leaderboard .racer.is-player > span:last-child { display: none; }
 }
+/* Portrait: beside POSITION the rows span the road column between AIRFLOW/VFX (ends 100px) and the road view (20vh, 148px
+   on a 320x740 phone), so three rows from 102px must end by 147px. Guard: tests/race-hud-overlap-browser.spec.js. */
+@media (max-width: 760px) and (min-height: 501px) { #leaderboard .racer { height: 15px; min-height: 15px; } }
 @media (pointer: coarse) and (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
   #leaderboard .racer > strong { display: none; }
   #leaderboard .racer > span:last-child { display: block; }
