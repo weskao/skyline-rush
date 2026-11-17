@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -44,7 +45,7 @@ test('new content frame time, draw calls and triangles against Classic', async (
     };
     if (s.hazards) await choose('#race-mode-rules', '[data-race-rule="hazards"]', s.hazards, 'hazards');
     if (s.layout) await choose('#gauntlet-rules', '#gauntlet-layout', s.layout, 'layout');
-    await page.locator('[data-track="coast"]').click();
+    await clickLobbyOption(page, '[data-track="coast"]');
     await page.locator('#start-button').click();
     await page.waitForFunction(() => document.body.dataset.phase === 'racing', null, { timeout: ciTimeout(30000) });
     const setup = await page.evaluate(async ({ themes, teleport }) => {

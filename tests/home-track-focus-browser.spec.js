@@ -1,17 +1,11 @@
-import { clickLobbyOption } from './helpers/home-lobby.js';
+import { clickLobbyOption, openLobbyTracks } from './helpers/home-lobby.js';
 import { test, expect } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
 
 const tracks = Object.keys(RACE_TRACKS);
-// Pixels between the selected track's centre and the row's centre (negative: left of centre).
-const offCentre = (page, id) => page.locator(`[data-track="${id}"]`).evaluate(button => {
-  const row = button.parentElement.getBoundingClientRect(), box = button.getBoundingClientRect();
-  return box.left + box.width / 2 - (row.left + row.width / 2);
-});
+const selectedCard = (page, id) => page.locator(`[data-track="${id}"]`);
 const raceThenLeave = async (page, id, exit) => {
   await clickLobbyOption(page, `[data-track="${id}"]`);
-  // Scroll the row away while it is visible, so only the return path can bring the track back into view.
-  await page.locator('.track-select').evaluate(row => { row.scrollLeft = 0; });
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.locator('.brand').click();
@@ -29,25 +23,27 @@ test.beforeEach(async ({ page }) => {
 for (const [device, options] of [['desktop', {}], ['phone', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }]]) test.describe(device, () => {
   test.use(options);
 
-  test('Back to home reopens on the raced track, centred in the row', async ({ page }) => {
+  test('Back to home highlights the raced track when the chooser reopens', async ({ page }) => {
     const id = tracks[Math.floor(tracks.length / 2)];
     await raceThenLeave(page, id, 'home');
-    expect(Math.abs(await offCentre(page, id))).toBeLessThan(2);
+    await openLobbyTracks(page);
+    await expect(selectedCard(page, id)).toBeFocused();
   });
 
-  test('End race keeps the last playable track centred before six preview-only cards', async ({ page }) => {
+  test('End race keeps the last playable track highlighted before six preview-only cards', async ({ page }) => {
     const id = tracks.at(-1);
     await raceThenLeave(page, id, 'end');
-    await expect.poll(async () => Math.abs(await offCentre(page, id))).toBeLessThan(2);
+    await openLobbyTracks(page);
+    await expect(selectedCard(page, id)).toBeFocused();
     await expect(page.locator('[data-upcoming-track]')).toHaveCount(6);
     await expect(page.locator('button[data-upcoming-track][aria-pressed="false"]')).toHaveCount(6);
   });
 
-  test('Clicking a track focuses it and scrolls it to the row centre', async ({ page }) => {
+  test('Confirming a track restores focus to the home track card', async ({ page }) => {
     const id = tracks[Math.floor(tracks.length / 2)];
-    await page.locator('.track-select').evaluate(row => { row.scrollLeft = 0; });
     await clickLobbyOption(page, `[data-track="${id}"]`);
-    await expect(page.locator(`[data-track="${id}"]`)).toBeFocused();
-    await expect.poll(async () => Math.abs(await offCentre(page, id))).toBeLessThan(2);
+    await expect(page.locator('#lobby-tracks-toggle')).toBeFocused();
+    await openLobbyTracks(page);
+    await expect(selectedCard(page, id)).toBeFocused();
   });
 });

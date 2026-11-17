@@ -157,7 +157,7 @@ test('desktop: a two-finger trackpad swipe changes one track per gesture, moment
   expect(await selected(page)).toBe(second);
 });
 
-test('desktop: the lobby and track rail page the 3D scene, while expanded pickers own their wheel', async ({ page }) => {
+test('desktop: the lobby pages the 3D scene, while the track chooser owns its wheel', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(() => {
     localStorage.setItem('skyline-rush-music', 'off');
@@ -178,7 +178,7 @@ test('desktop: the lobby and track rail page the 3D scene, while expanded picker
   await trackpadSwipe(page, 180, 1, { at: await point('.lobby-race-heading') });
   await expect.poll(() => selected(page)).toBe(second);
   await page.waitForTimeout(180);
-  await trackpadSwipe(page, -180, 1, { at: await point(`[data-track="${second}"]`) });
+  await trackpadSwipe(page, -180, 1, { at: await point('.lobby-race-heading') });
   await expect.poll(() => selected(page)).toBe(first);
   await page.waitForTimeout(180);
   await page.locator('#lobby-tracks-toggle').click();
@@ -385,12 +385,15 @@ test('a committed Coming Soon swipe selects the card exactly once', async ({ pag
   await page.goto('/');
   await clickLobbyOption(page, '[data-track="cosmic"]');
   await page.evaluate(() => {
-    window.__duneClicks = 0;
-    document.querySelector('[data-upcoming-track="dune-tempest"]')
-      .addEventListener('click', () => { window.__duneClicks++; });
+    const home = document.querySelector('#intro');
+    window.__duneSelections = 0;
+    new MutationObserver(records => {
+      window.__duneSelections += records.filter(record =>
+        record.oldValue !== 'dune-tempest' && home.dataset.lobbyTrack === 'dune-tempest').length;
+    }).observe(home, { attributes: true, attributeOldValue: true, attributeFilter: ['data-lobby-track'] });
   });
   await trackpadSwipe(page, 30, 6);
   await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#track-swipe-scenes canvas')).toHaveCount(0);
-  expect(await page.evaluate(() => window.__duneClicks)).toBe(1);
+  expect(await page.evaluate(() => window.__duneSelections)).toBe(1);
 });

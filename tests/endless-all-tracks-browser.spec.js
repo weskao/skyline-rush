@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -16,7 +17,7 @@ for(const id of IDS){
       await page.locator('button[data-race-mode="endless"]').click();
       const choice=page.locator(`[data-track="${id}"]`);
       await expect(choice).toBeEnabled();
-      await choice.click();
+      await clickLobbyOption(page, `[data-track="${id}"]`);
       await expect(choice).toHaveAttribute('aria-pressed','true');
       await expect(page.locator('#track-length')).toContainText('ENDLESS');
       await expect(page.locator('#start-button')).toBeEnabled();

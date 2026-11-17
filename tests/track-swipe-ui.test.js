@@ -41,7 +41,7 @@ test('desktop horizontal paging accepts the lobby and collapsed track rail but l
   assert.equal(acceptsTrackWheelTarget(heading, true), true);
   assert.equal(acceptsTrackWheelTarget(rail, true), true);
   assert.equal(acceptsTrackWheelTarget(rail, false), false);
-  assert.equal(acceptsTrackWheelTarget(target('#intro', '#lobby-tracks-toggle[aria-expanded="true"] + .track-select'), true), false);
+  assert.equal(acceptsTrackWheelTarget(target('#intro', '#track-chooser'), true), false);
   assert.equal(acceptsTrackWheelTarget(target('#intro', '#lobby-mode-options'), true), false);
   assert.equal(acceptsTrackWheelTarget(target('#intro', 'select'), true), false);
   assert.equal(acceptsTrackWheelTarget(target('.settings-panel'), true), false);

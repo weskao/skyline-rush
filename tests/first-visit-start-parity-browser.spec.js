@@ -1,11 +1,10 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 import { openLobbyModes } from './helpers/home-lobby.js';
 
 async function chooseNeonTimeAttack(page) {
-  const track = page.locator('[data-track="neon"]');
-  if (!await track.isVisible()) await page.locator('#lobby-tracks-toggle').click();
-  await track.click();
+  await clickLobbyOption(page, '[data-track="neon"]');
   await openLobbyModes(page);
   await page.locator('button[data-race-mode="time"]').click();
 }

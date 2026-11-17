@@ -1,4 +1,4 @@
-import { clickLobbyOption } from './helpers/home-lobby.js';
+import { clickLobbyOption, openLobbyTracks } from './helpers/home-lobby.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
@@ -82,10 +82,12 @@ test('selecting an Event Lab course clears a previously selected coming-soon pre
 });
 
 test('keyboard arrows can focus the first future card after the last playable map', async ({ page }) => {
+  await openLobbyTracks(page);
   await page.locator('[data-track="cosmic"]').focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toBeFocused();
   await page.keyboard.press('Enter');
+  await page.locator('#track-choose-confirm').press('Enter');
   await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#start-button')).toBeDisabled();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');

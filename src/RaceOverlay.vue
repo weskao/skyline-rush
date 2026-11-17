@@ -15,10 +15,7 @@ import { cloudView } from './cloud-view-state.ts';
       <span id="new-best" class="new-best" data-i18n="result.newBest" hidden>NEW BEST</span>
       <div id="result-stats" class="result-stats" hidden></div>
       <ol id="result-standings" class="result-standings" role="list" tabindex="0" data-i18n-aria-label="mode.cupStandings" hidden></ol>
-      <details class="result-style-details" id="result-style-details" hidden>
-        <summary data-i18n="result.styleDetails">Driving style</summary>
-        <div id="result-style" class="result-style" hidden></div>
-      </details>
+      <div id="result-style" class="result-style" hidden></div>
     </div>
     <div class="overlay-actions">
       <div class="result-rewards" id="result-rewards"></div>

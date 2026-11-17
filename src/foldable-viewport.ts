@@ -8,9 +8,10 @@ export const currentFoldableLayout = (): FoldableLayout | null => layout;
 export const foldScenePane = (fold: FoldableLayout): FoldableRect => fold.segments[fold.axis === 'vertical' ? 1 : 0];
 
 // Shift the optical centre away from the hinge with the full frustum and aspect intact.
-export function updateFoldableProjection(camera: PerspectiveCamera, fold: FoldableLayout | null, showcase: boolean): void {
+export function updateFoldableProjection(camera: PerspectiveCamera, fold: FoldableLayout | null, showcase: boolean, portraitLobby = false): void {
   const left = fold?.axis === 'vertical' && !showcase ? -0.18 * camera.aspect : 0;
-  const top = fold?.axis === 'horizontal' ? 0.20 : 0;
+  // On portrait Home, move the car clear of the bottom setup dock.
+  const top = fold?.axis === 'horizontal' ? 0.20 : !fold && portraitLobby && camera.aspect < .75 ? 0.18 : 0;
   if (left || top) {
     if (camera.view?.offsetX !== left || camera.view.offsetY !== top || !camera.view.enabled)
       camera.setViewOffset(camera.aspect, 1, left, top, camera.aspect, 1);

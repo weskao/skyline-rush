@@ -1,4 +1,4 @@
-import { focusLobbyTrack, setupLobbyPickers } from './race-lobby-ui.ts';
+import { focusLobbyTrack, renderLobbyTrackArt, setupLobbyPickers } from './race-lobby-ui.ts';
 import { CIRCUIT_ID } from './circuit-track.ts';
 import { homeTrackStatus, isUpcomingTrack, upcomingTrackInfo, upcomingTrackName, type PreviewTrackId, type UpcomingTrackId } from './upcoming-tracks.ts';
 import { stage2PreviewRequest } from './stage2-tracks.ts';
@@ -119,7 +119,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     $('#time-trial-rules').hidden = selectedMode !== 'time';
     $('#cup-rules').hidden = selectedMode !== 'cup';
     $('#circuit-rules').hidden = selectedMode !== 'circuit';
-    $('.track-select').hidden = $<HTMLButtonElement>('#lobby-tracks-toggle').disabled = selectedMode === 'circuit';
+    $<HTMLButtonElement>('#lobby-tracks-toggle').disabled = selectedMode === 'circuit';
     $('#stunt-rules').hidden = selectedMode !== 'stunt';
     $('#bonus-gates-rule').hidden = !['stunt', 'checkpoint'].includes(selectedMode);
     const recent = selectedMode === 'custom' ? loadRecentCustom().filter(entry => unlockedTracks.has(entry.trackId)) : [];
@@ -196,7 +196,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     }, t);
     startButton.disabled = disabled;
     $('#lobby-track-name').textContent = name;
-    $('#lobby-hero-track').textContent = name;
+    renderLobbyTrackArt(upcomingSelection ?? race.trackId);
     $('#intro').dataset.lobbyTrack = upcomingSelection ?? race.trackId;
     $('#lobby-track-status').textContent = t(trackStatusKey);
     const actionLabel = startButton.querySelector<HTMLElement>('span')!;
@@ -242,13 +242,6 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     renderRouteInfo(race);
     showGhost(race);
   }
-  // The browser clamps scrollLeft, so the first and last tracks rest at the row's edges instead of the middle.
-  function centerSelectedTrack(smooth = false): void {
-    const button = document.querySelector<HTMLElement>(upcomingSelection ? `[data-upcoming-track="${upcomingSelection}"]` : `[data-track="${getRace().trackId}"]`);
-    if (!button) return;
-    const row = button.parentElement!;
-    row.scrollBy({ left: button.getBoundingClientRect().left + button.offsetWidth / 2 - row.getBoundingClientRect().left - row.clientWidth / 2, behavior: smooth && !options.reducedMotion.matches ? 'smooth' : 'instant' });
-  }
   function changeRaceSelection(): void {
     if (getRace().phase !== 'ready') return;
     options.clearDaily();
@@ -266,37 +259,18 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     refreshCustomSelects();
   }
 
-  setupLobbyPickers(centerSelectedTrack);
-  for (const button of trackButtons()) button.addEventListener('click', () => {
+  function applyTrack(id: string): void {
     if (getRace().phase !== 'ready') return;
-    options.clearControls();
-    upcomingSelection = null;
-    rememberLastHomeTrack(button.dataset.track!);
-    setRace(selectedRace(button.dataset.track!)); options.clearDaily();
-    showTracks();
-    button.focus({ preventScroll: true }); // Safari does not focus buttons on click
-    centerSelectedTrack(true);
-    options.cueUi();
-  });
-  for (const button of upcomingButtons()) button.addEventListener('click', () => {
-    if (getRace().phase !== 'ready') return;
-    const id = button.dataset.upcomingTrack as UpcomingTrackId;
-    upcomingSelection = options.isUpcomingEnterable(id) ? null : id;
-    rememberLastHomeTrack(id);
+    const upcoming = isUpcomingTrack(id) ? id : null;
+    upcomingSelection = upcoming && !options.isUpcomingEnterable(upcoming) ? upcoming : null;
     options.clearControls(); options.clearDaily();
+    rememberLastHomeTrack(id);
     if (!upcomingSelection) setRace(selectedRace(id));
-    showTracks(); options.refreshPhase();
-    button.focus({ preventScroll: true });
-    centerSelectedTrack(true);
+    showTracks();
+    if (upcoming) options.refreshPhase();
     options.cueUi();
-  });
-  $('.track-select').addEventListener('keydown', event => {
-    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
-    event.preventDefault(); event.stopPropagation();
-    const buttons = [...document.querySelectorAll<HTMLElement>('[data-track]:not(:disabled), [data-upcoming-track]:not(:disabled)')];
-    const index = buttons.indexOf(document.activeElement as HTMLElement);
-    buttons[(index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length]!.focus();
-  });
+  }
+  setupLobbyPickers(applyTrack, () => upcomingSelection ?? getRace().trackId);
   for (const button of document.querySelectorAll<HTMLElement>('button[data-race-mode]')) button.addEventListener('click', () => {
     if (button.dataset.raceMode === 'eventlab') { eventLab.open(); return; }
     upcomingSelection = null;
@@ -374,8 +348,7 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     },
     cupCount,
     showTracks,
-    centerSelectedTrack,
-    focusLobbyTrack: () => focusLobbyTrack(getRace().trackId),
+    applyTrack, focusLobbyTrack,
     ensureRouteMaps,
     /** Live route map for the HUD tick (rebuilt when the track changes). */
     raceRouteMap: (): RouteMap => {

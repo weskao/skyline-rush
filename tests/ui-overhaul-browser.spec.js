@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect, test, settled } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 
@@ -27,12 +28,13 @@ for (const [name, viewport, locale] of [
         await expect(page.locator('button[data-race-mode="classic"] > svg')).toBeVisible();
         await tracks.click();
         await expect(modes).toHaveAttribute('aria-expanded', 'false');
-      }
+      } else await tracks.click();
       await expect(track).toBeVisible();
       await track.click();
+      await page.locator('#track-choose-confirm').click();
       await expect(page.locator('#lobby-hero-track')).toHaveText(locale === 'zh-TW' ? '霓虹都會' : 'Neon Downtown');
       await expect(page.locator('#start-button')).toBeDisabled();
-      await page.locator('[data-track="coast"]').click();
+      await clickLobbyOption(page, '[data-track="coast"]');
       await expect(page.locator('.toolbar #settings-button')).toHaveCount(1);
       await expect(page.locator('#controls-button, #airflow-toggle, #settings-language .custom-select')).not.toHaveCount(0);
       for (const id of ['controls-button', 'airflow-toggle', 'settings-language'])

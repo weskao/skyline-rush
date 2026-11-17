@@ -31,7 +31,7 @@ for (const [name, width, height, segments] of layouts) {
         await expect(card).toBeVisible();
         await expect(card.locator('.track-preview')).toHaveCSS('position', 'absolute');
         await expect(card.locator('.track-route-map')).toHaveCSS('position', 'relative');
-        await page.locator('#lobby-tracks-toggle').click();
+        await page.locator('#track-choose-close').click();
       }
       await openSettingsSection(page, 'display');
       const dialog = page.locator('#settings-panel');

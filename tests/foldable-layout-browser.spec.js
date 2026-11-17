@@ -162,8 +162,7 @@ for (const [axis, viewport] of [['vertical', { width: 844, height: 390 }], ['hor
         await expectInsidePane(icon, panes);
         await expect(icon).toHaveJSProperty('naturalWidth', 72);
       }
-      if (!await page.locator('[data-track="coast"]').isVisible()) await page.locator('#lobby-tracks-toggle').click();
-      for (const selector of ['#start-button', '#garage-button', '#showcase-camera-next', '#daily-card', '[data-track="coast"]'])
+      for (const selector of ['#start-button', '#garage-button', '#showcase-camera-next', '#daily-card', '#lobby-tracks-toggle'])
         await expectInsidePane(page.locator(selector), panes);
       const daily = await page.locator('#daily-card').boundingBox();
       const camera = await page.locator('#showcase-camera-dock').boundingBox();

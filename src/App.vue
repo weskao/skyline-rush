@@ -15,7 +15,9 @@ import './progress-bars.css';
 import './touch-sprint-buttons.css';
 import { MODE_ART } from './lobby-art.ts';
 import './race-lobby.css';
+import './dropdown-appearance.css';
 import './foldable-viewport.css';
+import './track-chooser.css';
 import { icons, ICON_ATTRS } from './icons.ts';
 import CloseButton from './CloseButton.vue';
 import GaragePanel from './GaragePanel.vue';
@@ -76,11 +78,12 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     </a>
     <div class="route-heading"><span class="live-dot"></span> COASTAL EXPRESSWAY <span class="route-divider">/</span> <span>DUSK RUN</span></div>
     <nav class="toolbar" aria-label="Game controls" data-i18n-aria-label="nav.toolbar">
+      <button type="button" class="icon-button home-airflow-toggle" id="home-airflow-toggle" aria-pressed="false" aria-keyshortcuts="V" title="Toggle airflow · V" data-i18n-title="aero.toggleTitle"><svg v-bind="ICON_ATTRS" v-html="icons.airflow"></svg><span data-i18n="aero.airflow">AIRFLOW</span><kbd class="key-badge" aria-hidden="true">V</kbd></button>
       <SettingsPanel>
         <template #driving><ControlsPanel /></template>
         <template #assist><button class="icon-button assist-button" id="assist-button" aria-label="Auto accelerate" data-i18n-aria-label="assist.aria" aria-pressed="false" title="Auto accelerator · F2" aria-keyshortcuts="F2"><svg v-bind="ICON_ATTRS" v-html="icons.assist"></svg><span data-i18n="assist.label">AUTO</span><kbd class="key-badge" aria-hidden="true">F2</kbd></button></template>
         <template #display>
-          <button id="airflow-toggle" aria-pressed="false" aria-keyshortcuts="V" title="Toggle airflow · V" data-i18n-title="aero.toggleTitle"><kbd aria-hidden="true">V</kbd> <span data-i18n="aero.airflow">AIRFLOW</span></button>
+          <button id="airflow-toggle" aria-pressed="false" aria-keyshortcuts="V" title="Toggle airflow · V" data-i18n-title="aero.toggleTitle"><svg v-bind="ICON_ATTRS" v-html="icons.airflow"></svg><span data-i18n="aero.airflow">AIRFLOW</span><kbd aria-hidden="true">V</kbd></button>
           <div id="vfx-panel">
             <div class="vfx-settings">
               <div class="vfx-heading"><span data-i18n="vfx.eyebrow">AEROSPACE / VISUAL LAB</span><strong data-i18n="vfx.headline">Shape the rush.</strong><small data-i18n="vfx.subline">Visual simulation · driving physics unchanged</small></div>
@@ -125,6 +128,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <button type="button" id="performance-notice-dismiss">Got it</button>
     </details>
     <section class="intro lobby-compact" id="intro" aria-label="Race setup" data-i18n-aria-label="lobby.title">
+      <div class="lobby-setup">
       <div class="home-intro-topbar">
         <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers"></span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals" :aria-label="homeStatusView.medalLabel" :class="{ 'has-medals': homeStatusView.hasMedals }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">{{ homeStatusView.medalCount }}</span></button></div>
         <Wave3CurrencyStrip v-if="GARAGE_RELEASE_MODE === 'trial'" compact
@@ -132,10 +136,11 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       </div>
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
       <div class="lobby-race-heading">
-        <img :src="`${BASE_URL}feature-assets/race-lobby/coast-landmark@3x.webp`" alt="" width="480" height="180" decoding="async" data-track-art="coast" />
-        <img :src="`${BASE_URL}feature-assets/race-lobby/neon-landmark@3x.webp`" alt="" width="480" height="180" decoding="async" loading="lazy" data-track-art="neon" />
-        <h1 id="intro-title"><span id="lobby-hero-track"></span></h1>
-        <p id="lobby-race-distance" class="lobby-race-distance"></p>
+        <img id="lobby-hero-art" alt="" decoding="async" />
+        <span class="track-route-map" id="lobby-hero-map" aria-hidden="true"></span>
+        <div class="lobby-track-copy"><h1 id="intro-title"><span id="lobby-hero-track"><span id="lobby-track-name"></span></span></h1><p id="lobby-race-distance" class="lobby-race-distance"></p></div>
+        <button type="button" id="lobby-tracks-toggle" aria-expanded="false" aria-haspopup="dialog" aria-controls="track-chooser" aria-describedby="lobby-hero-track"><span data-i18n="track.choose">Choose track</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+        <span id="lobby-track-status" class="lobby-visually-hidden"></span>
       </div>
       <div class="race-mode-picker" id="race-mode-picker" role="group" aria-label="Game mode" data-i18n-aria-label="mode.heading">
         <div class="race-mode-heading">
@@ -156,14 +161,6 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
           <button type="button" data-race-mode="elimination" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.elimination"></svg><span data-i18n="mode.elimination">Elimination</span></button>
           <button type="button" data-race-mode="eventlab" aria-pressed="false"><svg v-bind="ICON_ATTRS" v-html="MODE_ART.eventlab"></svg><span data-i18n="mode.eventlab">Event Lab</span></button>
         </div>
-      </div>
-      <button class="lobby-picker-toggle" id="lobby-tracks-toggle" type="button" aria-expanded="false" aria-controls="lobby-track-options"><svg v-bind="ICON_ATTRS" v-html="icons.map"></svg><span data-i18n="lobby.track">Track</span><strong id="lobby-track-name"></strong><span id="lobby-track-status"></span></button>
-      <div class="track-select" id="lobby-track-options" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose">
-        <button v-for="(track, id) in RACE_TRACKS" :key="id" :data-track="id" :aria-pressed="id === 'coast'">
-          <i class="track-preview upcoming-thumb" :class="`preview-${id}`" aria-hidden="true"><img :src="`${BASE_URL}track-teasers/${id}.jpg`" alt="" loading="lazy" /></i>
-          <span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span>
-        </button>
-        <button v-for="(track, id) in UPCOMING_TRACKS" :key="id" type="button" class="upcoming-track-card" :data-upcoming-track="id" aria-pressed="false"><i class="track-preview upcoming-thumb" aria-hidden="true"><img :src="`${BASE_URL}${track.image}`" alt="" loading="lazy" /></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.names.en }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
       </div>
       <p id="track-note" class="track-note"></p>
       <section class="race-mode-picker race-rules-row" id="race-rules-row" aria-labelledby="race-rules-step">
@@ -234,14 +231,6 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
           <RacePresentation />
         </details>
       </section>
-      <div class="intro-actions">
-        <p id="lobby-access-note" role="status" hidden></p>
-        <div class="intro-primary"><button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-        <button type="button" class="text-button garage-button" id="garage-button"><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-garage@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.garage">Garage</span><span class="garage-new-tag" lang="en" aria-hidden="true">NEW</span></button></div>
-        <button type="button" class="text-button history-button" data-open-history><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-progress@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.progress">Progress</span></button>
-        <button type="button" class="text-button practice-button" id="practice-button"><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-practice@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.practice">Practice</span></button>
-        <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
-      </div>
       <!-- Reserve space for the camera controls in compact layouts. -->
       <nav class="showcase-camera-dock" id="showcase-camera-dock" aria-label="Showcase camera" data-i18n-aria-label="vfx.view">
         <span class="showcase-camera-heading" data-i18n="showcase.heading">CAMERA VIEW</span>
@@ -270,6 +259,15 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         <div><kbd>V</kbd><span data-i18n="hint.airflow">Airflow</span></div>
       </div>
       <p class="flight-tip"><span class="tip-full" data-i18n="intro.tip">Build speed to lift off. Release to land. Recharge on the road. AUTO holds the accelerator; you steer and brake.</span><span class="tip-short" data-i18n="intro.tipShort">Build speed to fly, release to land. AUTO holds the throttle.</span></p>
+      </div>
+      <div class="intro-actions">
+        <p id="lobby-access-note" role="status" hidden></p>
+        <div class="intro-primary"><button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
+        <button type="button" class="text-button garage-button" id="garage-button"><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-garage@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.garage">Garage</span><span class="garage-new-tag" lang="en" aria-hidden="true">NEW</span></button></div>
+        <button type="button" class="text-button history-button" data-open-history><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-progress@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.progress">Progress</span></button>
+        <button type="button" class="text-button practice-button" id="practice-button"><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-practice@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.practice">Practice</span></button>
+        <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
+      </div>
     </section>
 
     <section class="race-info" id="race-info" aria-label="Race progress" data-i18n-aria-label="race.progress" hidden>
@@ -293,6 +291,17 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     <RaceOverlay />
     <div id="error-message" class="error-message" role="alert" hidden></div>
   </main>
+  <dialog id="track-chooser" class="track-chooser" aria-labelledby="track-chooser-title">
+    <header class="track-chooser-heading"><h2 id="track-chooser-title" data-i18n="track.choose">Choose track</h2><CloseButton id="track-choose-close" :label="homeWalletLocale === 'zh-TW' ? '關閉賽道選擇' : 'Close track selection'" /></header>
+      <div class="track-select" id="lobby-track-options" role="group" aria-label="Choose track" data-i18n-aria-label="track.choose">
+        <button v-for="(track, id) in RACE_TRACKS" :key="id" :data-track="id" :aria-pressed="id === 'coast'">
+          <i class="track-preview upcoming-thumb" :class="`preview-${id}`" aria-hidden="true"><img :src="`${BASE_URL}track-teasers/${id}.jpg`" alt="" loading="lazy" /></i>
+          <span class="track-route-map" aria-hidden="true"></span><strong>{{ track.name }}</strong><span>{{ track.length / 1000 }} KM <small></small></span>
+        </button>
+        <button v-for="(track, id) in UPCOMING_TRACKS" :key="id" type="button" class="upcoming-track-card" :data-upcoming-track="id" aria-pressed="false"><i class="track-preview upcoming-thumb" aria-hidden="true"><img :src="`${BASE_URL}${track.image}`" alt="" loading="lazy" /></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.names.en }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
+      </div>
+    <footer class="track-chooser-footer"><div aria-live="polite"><strong id="track-choose-selection"></strong><small id="track-choose-state"></small></div><button type="button" id="track-choose-confirm"><span data-i18n="track.choose">Choose track</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button></footer>
+  </dialog>
   <dialog id="photo-screen" class="photo-screen" aria-labelledby="photo-title">
     <div class="photo-panel">
       <div class="photo-tools">

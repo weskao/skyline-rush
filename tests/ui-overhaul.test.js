@@ -15,7 +15,7 @@ test('vehicle inspection has shared named camera and pose artwork', () => {
 test('the default lobby presents the selected track as its heading', () => {
   const app = source('App.vue');
   assert.match(app, /<h1 id="intro-title"[^>]*>[^<]*<span id="lobby-hero-track"/);
-  assert.match(source('race-select-ui.ts'), /#lobby-hero-track/);
+  assert.match(source('race-select-ui.ts'), /#lobby-track-name/);
 });
 
 test('the quick first-start guide keeps the full manual for later visits', () => {
@@ -47,8 +47,7 @@ test('reward credits use distinct currency icons and retain their amount text', 
 });
 
 test('a compact lobby hides full selectors until opened and exposes the race distance', () => {
-  const css = source('race-lobby.css');
-  assert.match(css, /\.lobby-compact[^{}]*#lobby-tracks-toggle\[aria-expanded="false"\][^{}]*\{ display: none; \}/);
+  assert.match(source("App.vue"), /id="lobby-tracks-toggle"[^>]*aria-haspopup="dialog"/);
   assert.match(source('App.vue'), /id="lobby-race-distance"/);
   assert.match(source('race-select-ui.ts'), /#lobby-race-distance/);
 });
@@ -92,7 +91,6 @@ test('selected landmark art is 3x WebP and remains separate from the live race s
   for (const track of ['coast', 'neon']) {
     const file = readFileSync(new URL(`../public/feature-assets/race-lobby/${track}-landmark@3x.webp`, import.meta.url));
     assert.equal(file.toString('ascii', 8, 12), 'WEBP');
-    assert.match(app, new RegExp(`${track}-landmark@3x\\.webp[^>]*data-track-art="${track}"`));
   }
   assert.match(app, /<canvas id="world"/);
   assert.match(source('wave3-demo-results-integration.ts'), /#result-rewards/);
@@ -106,4 +104,14 @@ test('home settings use one modal with all four sections and no separate VFX or 
   const app = source('App.vue');
   assert.doesNotMatch(app, /class="aero-tools"/);
   assert.match(app, /<template #display>[\s\S]*id="vfx-panel"/);
+});
+
+test('classic results reveal driving score and scoring rules without a disclosure', () => {
+  const overlay = source('RaceOverlay.vue');
+  const renderer = source('result-screen.ts');
+  assert.match(overlay, /<div id="result-style" class="result-style" hidden><\/div>/);
+  assert.doesNotMatch(overlay, /result-style-details|result\.styleDetails/);
+  assert.match(renderer, /style\.hidden = !view\.style/);
+  assert.match(renderer, /result\.styleHelp/);
+  assert.match(renderer, /result\.styleStars/);
 });

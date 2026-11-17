@@ -359,11 +359,11 @@ test('lobby summaries reflect race data and show access reasons beside Start', a
   await page.keyboard.press('Enter');
   await expect(tracks).toHaveAttribute('aria-expanded', 'true');
   const coast = page.locator('[data-track="coast"]');
-  await page.keyboard.press('Tab');
   await expect(coast).toBeFocused();
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('[data-track="neon"]')).toBeFocused();
   await page.keyboard.press('Enter');
+  await page.locator('#track-choose-confirm').click();
   await expect(page.locator('#lobby-track-name')).toHaveText('Neon Downtown');
   await expect(page.locator('#start-button')).toBeDisabled();
   await expect(page.locator('#start-button')).toHaveAccessibleDescription(/Coast/);
@@ -375,7 +375,7 @@ test('lobby summaries reflect race data and show access reasons beside Start', a
   await expect(page.locator('#start-button')).toHaveAccessibleDescription(/Preview only/);
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
 
-  await coast.click();
+  await clickLobbyOption(page, '[data-track="coast"]');
   const modes = page.locator('#lobby-modes-toggle');
   await modes.click();
   await expect(modes).toHaveAttribute('aria-expanded', 'true');

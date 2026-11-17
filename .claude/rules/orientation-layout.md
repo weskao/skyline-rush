@@ -71,9 +71,8 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   Custom layouts stay viewport-relative and keep their independent portrait and landscape keys.
   Guards: `tests/foldable-layout-browser.spec.js` and `tests/foldable-layout.test.js`.
 
-- **Short-landscape track cards keep the portrait anatomy.** A fixed 58 px stacked card drew the route over a 22 px
-  sky strip, cut the KM / status row and shrank Coming Soon teaser art to an unreadable strip (2026-11-16). In
-  `max-height: 500px` landscape the card is a 2-row grid: a square route map beside name and KM + status, with the
-  sky / teaser art backing the whole card. Its height (~50 px) is budgeted against the pinned Garage row under the
-  iPhone Chrome toolbar (667×375, 1 px slack); a taller card needs a smaller gap elsewhere, never an overlap.
-  Guard: *landscape track cards show the whole card* and the toolbar test in `tests/responsive-browser.spec.js`.
+- **Track selection uses the Home hero card and a dedicated dialog.** The hero keeps its route silhouette, teaser
+  art, and race distance while the setup is docked clear of the car. The chooser fills narrow or short viewports
+  and stays within a single usable segment on a foldable. Its list scrolls independently of the fixed confirmation
+  row. Confirm commits the track and refreshes Home. Closing the chooser preserves the previous selection.
+  Guards: `tests/lobby-polish-browser.spec.js` and the short-landscape checks in `tests/responsive-browser.spec.js`.

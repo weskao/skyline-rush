@@ -17,6 +17,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const vfxControls = [...document.querySelectorAll<HTMLInputElement>('[data-vfx]')];
   const airflowHud = $('#airflow-hud');
+  const airflowToggles = document.querySelectorAll<HTMLButtonElement>('#airflow-toggle, #home-airflow-toggle');
   // Initial quality selection is performed once; manual/previous settings win.
   let storedVisuals: unknown = null;
   try { const raw = localStorage.getItem(QUALITY_STORAGE_KEY); if (raw) storedVisuals = JSON.parse(raw); }
@@ -49,8 +50,10 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
       dot.classList.toggle('is-active', i === viewIndex);
       return dot;
     }));
-    $<HTMLButtonElement>('#airflow-toggle').setAttribute('aria-pressed', String(visual.airflow));
-    $<HTMLButtonElement>('#airflow-toggle').disabled = !visual.enabled;
+    for (const button of airflowToggles) {
+      button.setAttribute('aria-pressed', String(visual.airflow));
+      button.disabled = !visual.enabled;
+    }
     document.body.classList.toggle('airflow-active', visual.airflow && visual.enabled);
     document.body.classList.toggle('vfx-comfort', visual.comfortable);
     document.body.dataset.vfxQuality = visual.quality;
@@ -78,7 +81,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
   }
   $('#showcase-camera-prev').addEventListener('click', () => stepShowcaseView(-1));
   $('#showcase-camera-next').addEventListener('click', () => stepShowcaseView(1));
-  $('#airflow-toggle').addEventListener('click', toggleAirflow);
+  for (const button of airflowToggles) button.addEventListener('click', toggleAirflow);
   $('#vfx-reset').addEventListener('click', () => { visual = vfxSettings(); showVFX(); });
   showVFX();
   return {

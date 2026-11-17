@@ -2,7 +2,7 @@ import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
 import { openLobbyModes, clickLobbyOption } from './helpers/home-lobby.js';
 
-// 10A UX-01: Choose Mode → Choose Track → Rules → Start on one screen, with real pointer/keyboard input.
+// 10A UX-01: Choose Track → Choose Mode → Rules → Start on one screen, with real pointer/keyboard input.
 async function closeMusicPrompt(page) {
   await page.waitForTimeout(700);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
@@ -12,11 +12,11 @@ const PROGRESS_KEYS = ['skyline-rush-controls', 'skyline-rush-history', 'skyline
 const snapshot = page => page.evaluate(keys => Object.fromEntries(keys.map(k => [k, localStorage.getItem(k)])), PROGRESS_KEYS);
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
-  test(`setup reads mode → track → rules → Start in DOM and focus order (${viewport.width}px)`, async ({ page }) => {
+  test(`setup reads track → mode → rules → Start in DOM and focus order (${viewport.width}px)`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
     await closeMusicPrompt(page);
-    const order = await page.evaluate(() => ['button[data-race-mode="classic"]', '[data-track="coast"]', '#race-rules-row', '#start-button']
+    const order = await page.evaluate(() => ['#lobby-tracks-toggle', 'button[data-race-mode="classic"]', '#race-rules-row', '#start-button']
       .map(s => document.querySelector(s)).every((el, i, all) => i === 0 || (all[i - 1].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)));
     expect(order).toBe(true);
     await clickLobbyOption(page, 'button[data-race-mode="custom"]');
@@ -66,7 +66,7 @@ test('switching language live re-renders the rules row without changing mode or 
   await page.locator('#locale-select').selectOption('zh-TW', { force: true }); // the drawn custom select mirrors this native one, as in i18n-browser.spec.js
   await expect(page.locator('#mode-rules-summary')).toContainText('單人挑戰');
   await expect(page.locator('#race-rules-step')).toHaveText('3 · 規則');
-  await expect(page.locator('#lobby-tracks-toggle > span').first()).toHaveText('賽道');
+  await expect(page.locator('#lobby-tracks-toggle > span').first()).toHaveText('選擇賽道');
   await expect(page.locator('button[data-race-mode="time"]')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#locale-select').selectOption('en', { force: true });
   await expect(page.locator('#mode-rules-summary')).toContainText('Solo run');
@@ -78,8 +78,9 @@ test('keyboard alone can pick a mode, a track, restore rules and start', async (
   await page.locator('button[data-race-mode="custom"]').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('button[data-race-mode="custom"]')).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('[data-track="coast"]').focus();
-  await page.keyboard.press('Enter');
+  await page.locator('#lobby-tracks-toggle').press('Enter');
+  await expect(page.locator('[data-track="coast"]')).toBeFocused();
+  await page.locator('#track-choose-confirm').press('Enter');
   await page.locator('#rules-restore').focus();
   await expect(page.locator('#rules-restore')).toBeFocused();
   await page.keyboard.press('Enter');

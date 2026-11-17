@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
@@ -9,7 +10,7 @@ const courses = ['dune-tempest', 'monsoon-ruins', 'skyfall-archipelago', 'volcan
 for (const id of courses) {
   test(`${id} race map draws the course and moves all eight racers`, async ({ gameplayPage: page }) => {
     test.setTimeout(ciTimeout(40_000));
-    await page.locator(`[data-upcoming-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-upcoming-track="${id}"]`);
     const mapPaths = async selector => page.locator(selector).evaluateAll(nodes =>
       nodes.map(node => [node.getAttribute('data-edge'), node.getAttribute('points')]));
     const home = await mapPaths(`[data-upcoming-track="${id}"] .track-route-map [data-edge]`);

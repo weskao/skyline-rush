@@ -45,9 +45,10 @@ for(const id of IDS) for(const viewport of SCREEN_SIZES) {
     await expect(card).toHaveAttribute('aria-pressed','true');
     await expect(page.locator('#start-button')).toBeDisabled();
     await expect(page.locator('#start-button span')).toHaveText('COMING SOON');
-    await card.focus();
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Space');
+    await page.locator('#lobby-tracks-toggle').press('Enter');
+    await expect(card).toBeFocused();
+    await card.press('Space');
+    await page.locator('#track-choose-confirm').press('Enter');
     await expect(page.locator('body')).toHaveAttribute('data-phase','ready');
     await expect(page.locator('#start-button')).toBeDisabled();
 

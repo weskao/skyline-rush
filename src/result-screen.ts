@@ -178,7 +178,6 @@ export function setupResultScreen(afterRender: () => void = () => {}) {
   const title = $('#overlay-title'), copy = $('#overlay-copy'), stats = $('#result-stats');
   const nextStage = $('#next-stage'), nextTrack = $('#next-track'), style = $('#result-style');
   const standings = $('#result-standings');
-  const styleDetails = $('#result-style-details') as HTMLDetailsElement;
   return function render(view: ResultView): ResultCount[] {
     title.textContent = view.title;
     copy.textContent = view.copy;
@@ -202,7 +201,7 @@ export function setupResultScreen(afterRender: () => void = () => {}) {
     for (const image of stats.querySelectorAll<HTMLImageElement>('.result-trophy-art')) {
       image.onerror = () => { image.hidden = true; };
     }
-    styleDetails.hidden = !view.style;
+    style.hidden = !view.style;
     if (view.style) { style.setAttribute('aria-label', view.style.aria); style.innerHTML = view.style.html; }
     afterRender();
     if (!view.counts.length) return [];
@@ -220,7 +219,6 @@ export function setupOverlayActions() {
   const links = document.getElementById('result-links')!;
   const standings = document.getElementById('result-standings')!;
   const copy = document.getElementById('overlay-copy')!;
-  const styleDetails = document.querySelector<HTMLDetailsElement>('#result-style-details')!;
   let primary = resume;
   function setPrimary(action: HTMLButtonElement) {
     delete primary.dataset.primaryAction;
@@ -230,7 +228,6 @@ export function setupOverlayActions() {
   return {
     pause(practice: boolean, mode: string) {
       resume.hidden = false;
-      styleDetails.open = false;
       again.hidden = leave.hidden = practice;
       photo.hidden = practice || mode !== 'free';
       nextStage.hidden = nextTrack.hidden = links.hidden = standings.hidden = true;
@@ -244,7 +241,6 @@ export function setupOverlayActions() {
       nextStage.hidden = !settlement.intermediateStage;
       nextTrack.hidden = !settlement.next;
       if (settlement.next) nextTrack.dataset.next = settlement.next;
-      styleDetails.open = false;
       setPrimary(settlement.intermediateStage ? nextStage : settlement.next ? nextTrack :
         settlement.series.cup || mode === 'free' ? choose : again);
     },

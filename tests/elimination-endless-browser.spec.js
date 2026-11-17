@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -13,7 +14,7 @@ for (const id of ['coast', 'spiral']) {
       await page.reload();
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
       await page.locator('button[data-race-mode="elimination"]').click();
-      await page.locator(`[data-track="${id}"]`).click();
+      await clickLobbyOption(page, `[data-track="${id}"]`);
       await expect(page.locator('#start-button')).toBeEnabled();
       await page.locator('#start-button').click();
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });

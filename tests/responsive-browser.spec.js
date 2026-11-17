@@ -196,7 +196,7 @@ for (const [name, width, height, insets] of [['Chrome', 743, 340, { left: 62, ri
       for (const locale of ['en', 'zh-TW']) {
         await page.locator('#locale-select').selectOption(locale, { force: true });
         const [tools, daily, dock, start, card, garage, panel] = await Promise.all(['.toolbar', '#daily-card',
-          '#showcase-camera-dock', '#start-button', '.track-select button', '#garage-button', '#intro']
+          '#showcase-camera-dock', '#start-button', '#lobby-tracks-toggle', '#garage-button', '#intro']
           .map(selector => page.locator(selector).first().boundingBox()));
         await page.screenshot({ path: test.info().outputPath(`home-${width}x${height}-${locale}.png`), animations: 'disabled' });
         expect(Math.abs(start.y + start.height - (height - edge)), `${locale} Start keeps its bottom edge`).toBeLessThanOrEqual(1);
@@ -206,8 +206,7 @@ for (const [name, width, height, insets] of [['Chrome', 743, 340, { left: 62, ri
         expect(dock.y + dock.height, `${locale} dock above Start`).toBeLessThanOrEqual(start.y);
         expect(daily.y + daily.height, `${locale} daily above dock`).toBeLessThanOrEqual(dock.y);
         expect(daily.y, `${locale} rail runs into the toolbar`).toBeGreaterThanOrEqual(tools.y + tools.height);
-        if (card) expect(card.y + card.height, `${locale} pinned row covers the race picker`).toBeLessThanOrEqual(garage.y);
-        else await expect(page.locator('#lobby-tracks-toggle')).toHaveAttribute('aria-expanded', 'false');
+        expect(card.y + card.height, `${locale} pinned row covers the race picker`).toBeLessThanOrEqual(garage.y);
         expect(start.height, `${locale} Start stays a usable tap target`).toBeGreaterThanOrEqual(44);
       }
       // iOS WebKit (not desktop engines) clips a fixed box to a scroller that is, or holds, its nearest stacking context:
@@ -274,14 +273,14 @@ test.describe('landscape track cards show the whole card', () => {
           continue;
         }
         await expect(page.locator('[data-track="coast"] .route-overview')).toBeVisible();
-        const { cards, garageTop } = await page.evaluate(() => {
+        const { cards, footerTop } = await page.evaluate(() => {
           const box = el => el.getBoundingClientRect();
           const cards = [...document.querySelectorAll('.track-select button')].slice(0, 2).map(button => {
             const card = box(button), sky = box(button.querySelector('.track-preview'));
             const route = box(button.querySelector('.track-route-map')), km = box(button.querySelector(':scope > span:last-child'));
             return { bottom: card.bottom, skyHeight: sky.height, cardHeight: card.height, routeHeight: route.height, km: km.bottom, kmHeight: km.height };
           });
-          return { cards, garageTop: box(document.querySelector('#garage-button')).top };
+          return { cards, footerTop: box(document.querySelector('.track-chooser-footer')).top };
         });
         for (const [i, c] of cards.entries()) {
           const at = `${width}x${height} expanded=${expanded} card ${i}`;
@@ -289,8 +288,9 @@ test.describe('landscape track cards show the whole card', () => {
           expect(c.routeHeight, `${at}: route box too short to read`).toBeGreaterThanOrEqual(36);
           expect(c.kmHeight, `${at}: KM row collapsed`).toBeGreaterThan(8);
           expect(c.km, `${at}: KM row cut off`).toBeLessThanOrEqual(c.bottom - 2);
-          expect(c.bottom, `${at}: pinned Garage row covers the first card row`).toBeLessThanOrEqual(garageTop);
+          expect(c.bottom, `${at}: confirmation bar covers the first card row`).toBeLessThanOrEqual(footerTop);
         }
+        await page.locator('#track-choose-close').click();
       }
     }
   });

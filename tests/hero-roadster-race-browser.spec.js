@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleAirflowPreview } from './helpers/settings-browser.js';
 import { test, glbRoots, programs, modelInstances as instances, watchRequests } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -128,7 +129,7 @@ test('restart, track switch and End race keep one GLB instance and return GPU me
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   };
   const pick = async id => {
-    await page.locator(`[data-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-track="${id}"]`);
     await expect(page.locator(`[data-track="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
   };
   const cycle = async () => {
@@ -155,16 +156,15 @@ test('restart, track switch and End race keep one GLB instance and return GPU me
 test('Coming Soon showcase: the one instance moves to the card car and back to the Home car', async ({ gameplayPage: page, gameplayURL }) => {
   const { errors } = await prepare(page, gameplayURL);
   await modelReady(page);
-  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
   await expect.poll(async () => Object.keys(await instances(page))).toEqual(['showcase']);
   const first = (await instances(page)).showcase;
   expect(await glbRoots(page)).toBe(0); // settled: instances polled above; the Home car gave its copy up
   await attach(page, 'coming-soon-dune');
-  await page.locator('[data-upcoming-track="monsoon-ruins"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="monsoon-ruins"]');
   await expect.poll(async () => (await instances(page)).showcase ?? first).not.toBe(first);
   expect(Object.keys(await instances(page))).toEqual(['showcase']); // settled: polled above
-  const classic = page.locator('[data-track]').first();
-  await classic.click();
+  await clickLobbyOption(page, '[data-track="coast"]');
   await expect.poll(async () => Object.keys(await instances(page))).toEqual(['home']);
   expect(await glbRoots(page)).toBe(1); // settled: polled above
   expect(errors).toEqual([]);

@@ -197,7 +197,7 @@ const raceSelect = setupRaceSelectUI({
   cueUi: () => sound.cue('ui'),
   reducedMotion, showUpcoming3D: id => world?.setUpcomingTrack(id) ?? false, isUpcomingEnterable,
 });
-const { centerSelectedTrack, selectedRace, cupCount, focusLobbyTrack } = raceSelect;
+const { applyTrack, selectedRace, cupCount, focusLobbyTrack } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
   canResume: () => !!world && race.phase === 'ready' && !contextLost && !document.querySelector('dialog[open]'),
   resume: saved => {
@@ -215,7 +215,7 @@ const { showHistory, showHomeStatus } = createHistoryView({
     sessionDaily: progress.daily, sessionMedals: progress.medals, sessionChallengeMedals: progress.challengeMedals, world }),
   timeString,
 });
-showTracks(); centerSelectedTrack();
+showTracks();
 refreshCustomSelects(); // showTracks just localized the History options the drawn select copied at construction
 
 const currentProgress = () => progressSnapshot(progress);
@@ -261,14 +261,13 @@ function chooseTrack() {
   hud.resetMemory();
   showTracks(); phaseUI(); previousPhase = race.phase;
   focusLobbyTrack();
-  centerSelectedTrack();
 }
 $('#choose-track').addEventListener('click', chooseTrack);
 
 const { showSwipeHint, cancelSwipe } = setupTrackSwipeUI({
   getRace: () => race,
   getWorld: () => world,
-  selectedRace,
+  selectedRace, applyTrack,
   getSelectedTrackId: () => raceSelect.currentTrackId(),
   calmMotion,
   motionOptions,
@@ -472,7 +471,6 @@ function phaseUI() {
     showTracks();
     ui['result-stats'].hidden = false;
     $('#new-best').hidden = !record;
-    $('#result-style').hidden = race.mode !== 'classic';
     lastResult = { race, best, record, medals, challengeMedals: settled.challengeMedals, series: sprintSeries, cup, stunt, next: settled.next, settled };
   }
   phaseText();

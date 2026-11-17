@@ -1,3 +1,11 @@
+# Home track chooser and immediate race score
+
+- The Home hero combines the selected track map, name, and teaser. Confirm in the track dialog to apply a new track. Cancel preserves the selection and restores focus. Desktop and touch gestures still page the Home scene when the dialog is closed.
+- Home keeps the car above the locked-in Start rail on phones and adds an Airflow preview shortcut beside Settings. Book and tabletop foldables use a single usable segment for chooser controls.
+- All 25 project select controls share one drawn appearance. Language keeps its globe, and race weather and Photo Studio lighting use the same trigger and menu treatment.
+- Standard results display the style score, stars, scoring sources, and per-route medal thresholds without a disclosure.
+- Test-first regressions covered the former result disclosure, mismatched select styling, obscured car and missing track confirmation. The 45 focused source tests, 13 Chromium UI scenarios, typecheck and locked production build passed. Physical foldable and exact-commit CI checks are separate.
+
 # Full-width foldable race and lobby navigation
 
 - Home and race render the car and track across the entire foldable viewport. The race camera aims clear of the hinge on books and tabletop layouts. HUD, touch buttons and dialogs still use viewport segments. Garage and Photo Studio retain their own framing.

@@ -16,6 +16,7 @@ export const icons = {
   sound: '<path d="m11 5-6 4H2v6h3l6 4V5Z"/><path d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
   mute: '<path d="m11 5-6 4H2v6h3l6 4V5Z"/><path d="m16 9 6 6m0-6-6 6"/>',
   assist: '<path d="M4 17a9 9 0 1 1 16 0M12 13l5-5M7 18h10"/><circle cx="12" cy="13" r="2"/>',
+  airflow: '<path d="M3 8h13a2 2 0 1 0-2-2M3 12h17a2 2 0 1 1-2 2M3 16h9a2 2 0 1 1-2 2"/>',
   camera: '<rect x="3" y="6" width="18" height="14" rx="3"/><path d="m8 6 2-3h4l2 3"/><circle cx="12" cy="13" r="4"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   restart: '<path d="M3 10a9 9 0 1 1 2 9M3 4v6h6"/>',

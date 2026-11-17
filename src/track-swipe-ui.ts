@@ -20,6 +20,7 @@ interface SwipeOptions {
   getRace(): SwipeRace;
   getWorld(): SwipeWorld | null | undefined;
   selectedRace(trackId: string): object;
+  applyTrack(trackId: string): void;
   calmMotion(): boolean;
   motionOptions(speed: string): KeyframeAnimationOptions;
   isTutorialActive(): boolean;
@@ -44,11 +45,11 @@ export function canBeginTrackSwipe({ button, phase, tutorial, editing, busy, dia
 export function acceptsTrackWheelTarget(target: Pick<Element, 'closest'>, desktop: boolean): boolean {
   if (target.closest('#world')) return true;
   return desktop && !!target.closest('#intro') && !target.closest(
-    '#lobby-tracks-toggle[aria-expanded="true"] + .track-select, #lobby-mode-options, details[open], [role="listbox"], input, select, textarea, [contenteditable]',
+    '#track-chooser, #lobby-mode-options, details[open], [role="listbox"], input, select, textarea, [contenteditable]',
   );
 }
 
-export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches, getSelectedTrackId }: SwipeOptions) {
+export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, applyTrack, calmMotion, motionOptions, isTutorialActive, isEditingLayout, touchMatches, getSelectedTrackId }: SwipeOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   trackLandscapeHomeScale($('#intro'), $('.toolbar')); // the home strip's short-landscape panel + rail scale
   // Home screen: swipe (touch) or drag (mouse) the 3D preview to change track, like a carousel page.
@@ -163,7 +164,7 @@ export function setupTrackSwipeUI({ getRace, getWorld, selectedRace, calmMotion,
     swipe = null; swipeTarget = null; swipeBusy = true;
     const prepared = prepareSwipeScenes(step);
     // Commit the choice before the transition: software WebGL can delay animation frames in CI.
-    button.click();
+    applyTrack(swipeTrackId(button));
     showSwipeChip('done', getSelectedTrackId());
     if (prepared && !calmMotion()) {
       const from = swipeScenes.style.transform || (step > 0 ? 'translateX(0px)' : 'translateX(-100vw)');

@@ -11,10 +11,13 @@ export async function openLobbyTracks(page) {
 }
 
 export async function clickLobbyOption(page, selector, action = 'click') {
-  const option = page.locator(selector);
-  if (!await option.isVisible()) {
-    if (selector.includes('data-race-mode=')) await openLobbyModes(page);
-    else await openLobbyTracks(page);
+  if (/\[data-(?:upcoming-)?track=/.test(selector)) {
+    await openLobbyTracks(page);
+    await page.locator('#track-chooser').locator(selector).first()[action]();
+    await page.locator('#track-choose-confirm')[action]();
+    return;
   }
+  const option = page.locator(selector);
+  if (!await option.isVisible()) await openLobbyModes(page);
   await option[action]();
 }

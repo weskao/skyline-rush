@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
@@ -103,11 +104,11 @@ test('a valid saved ghost is offered and its preference persists; a tampered gho
   await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', '["coast","neon"]'));
   await page.reload();
   await dismissMusicPrompt(page);
-  await page.locator('[data-track="neon"]').click();
+  await clickLobbyOption(page, '[data-track="neon"]');
   await toggleSettingsSection(page, 'driving');
   await expect(page.locator('#ghost-status')).toContainText('No best-run replay');
   await toggleSettingsSection(page, 'driving');
-  await page.locator('[data-track="coast"]').click();
+  await clickLobbyOption(page, '[data-track="coast"]');
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
   expect(errors).toEqual([]);
