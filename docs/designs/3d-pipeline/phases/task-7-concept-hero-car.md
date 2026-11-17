@@ -4,7 +4,7 @@ Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../.
 
 **Starts after:** Phase 2d (Roadster close-out, default-on). May run in parallel with Task 5 on its own branch.
 **Look target:** the studio 2×2 panels of
-[concept-art/skyline-rush-3d-target-concept-board.jpeg](../concept-art/skyline-rush-3d-target-concept-board.jpeg):
+[track-profiles/skyline-rush-3d-target-concept-board.jpeg](../track-profiles/skyline-rush-3d-target-concept-board.jpeg):
 - front 3/4 view: light blade
 - side view: low wedge, cab-forward canopy
 - rear 3/4 view: swan-neck wing deployed

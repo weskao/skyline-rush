@@ -39,7 +39,7 @@ the new sha256 of `bake.py` and `neon-asphalt.blend`; `tests/neon-asphalt-materi
 | `asphalt_track_ao_4k.jpg` | `1bd099b091e50af2f00881a17e2203476285f520699a39a194708cbb988127b9` |
 
 Download URLs: `https://dl.polyhaven.org/file/ph-assets/Textures/{jpg,png}/4k/asphalt_track/<file>`. The concept frames
-in `docs/designs/3d-pipeline/concept-art/neon-downtown/` are a mood target only; no pixel of them is in the tile.
+in `docs/designs/3d-pipeline/track-profiles/neon-downtown/` are a mood target only; no pixel of them is in the tile.
 
 Why this scan: near-black, even and crack-free, the dark city asphalt of concept frames 03-08, and dark asphalt is
 what lets the neon read in the wet mirror. The scan is warm brown-black (mean linear albedo 0.016), so `bake.py`

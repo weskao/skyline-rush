@@ -5,7 +5,7 @@ The owner judged Coast **not yet at their standard**: every element of the map n
 
 Sources:
 - Board: the five Coast panels of
-  [../concept-art/skyline-rush-3d-target-concept-board.jpeg](../concept-art/skyline-rush-3d-target-concept-board.jpeg)
+  [../track-profiles/skyline-rush-3d-target-concept-board.jpeg](../track-profiles/skyline-rush-3d-target-concept-board.jpeg)
   (mood and look target, not geometry).
 - Current game: the Ultra desktop captures in the ignored `../audits/task5/roadster-panels-fixed-desktop-ultra/`.
 - Code inventory (read-only, at `ff4058fd`). Coast is the classic track `coast`, not the World Tour `coastal` route.

@@ -2,7 +2,7 @@
 
 Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) · Spec v2 Phase 3 · Scope tags: [README.md](README.md).
 
-**Look target:** the Coast panels of [../concept-art/skyline-rush-3d-target-concept-board.jpeg](../concept-art/skyline-rush-3d-target-concept-board.jpeg): top-right grounded, thruster boost and flight; middle-row Coast day and Coast rain at sunset.
+**Look target:** the Coast panels of [../track-profiles/skyline-rush-3d-target-concept-board.jpeg](../track-profiles/skyline-rush-3d-target-concept-board.jpeg): top-right grounded, thruster boost and flight; middle-row Coast day and Coast rain at sunset.
 **Files:** src/geometry.ts (roadRibbon UV), src/world-tour-scene.js, src/track-palettes.ts, src/coast-visuals.ts, src/world-tour-scenery.js, src/world.js (environment/tone mapping/bloom), src/aero-vfx.js and src/effects.js (glow, plume, spray), tests/phase4-road-materials.test.js and new UV seam test.
 **Produces:** PBR asphalt, shoulder and track objects at Coast with unaffected track frame, lanes and collisions. Also a shared lighting/post pass and board-level effects that every map and both cars reuse.
 

@@ -4,7 +4,7 @@ Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../.
 
 **Files:** shared loader/manifests established in Task 3; branch-specific scene modules only with owner approval, per-track visual assets, existing showcase modules and tests.
 **Produces:** reusable, measured visual assets for Dune Tempest, Monsoon Ruins, Skyfall Archipelago, Volcanic Crown, Stormline Megacity and Frostbite, each aimed at its concept-board panel.
-**Look targets (spec v2 Phase 4)** from [../concept-art/skyline-rush-3d-target-concept-board.jpeg](../concept-art/skyline-rush-3d-target-concept-board.jpeg):
+**Look targets (spec v2 Phase 4)** from [../track-profiles/skyline-rush-3d-target-concept-board.jpeg](../track-profiles/skyline-rush-3d-target-concept-board.jpeg):
 
 | Map | Panel | Key look items |
 |---|---|---|
@@ -23,7 +23,7 @@ The [track artwork index](../track-profiles/README.md#phase-45-六張新賽道) 
 - [ ] Use reference-led Blender models only for major nearby features and hero landmarks; farther scenery retains low-cost procedural geometry and correct occlusion.
 - [ ] Add per-map parity tests for course frames, checkpoints, collisions, flying shortcuts and no missing GLB or pipeline stall. Test weather/fog and game speed separately.
 - [ ] Each map reuses the Task 5 shared lighting, post and wet-road pipeline, with its own environment, fog and colour grade aimed at its panel. The map owner still defines the landmarks and budgets.
-- [ ] Build actual running-game captures for launch/cover assets, only after Phase 2d (and after Task 7 if the owner wants the new car on covers), so they show the cars players actually drive. Generated concept images (e.g. [concept-art/skyline-rush-3d-target-concept-board.jpeg](../concept-art/skyline-rush-3d-target-concept-board.jpeg), also the per-map mood source) remain mood-board only; label separate from WebGL proof.
+- [ ] Build actual running-game captures for launch/cover assets, only after Phase 2d (and after Task 7 if the owner wants the new car on covers), so they show the cars players actually drive. Generated concept images (e.g. [track-profiles/skyline-rush-3d-target-concept-board.jpeg](../track-profiles/skyline-rush-3d-target-concept-board.jpeg), also the per-map mood source) remain mood-board only; label separate from WebGL proof.
 - [ ] Review source asset licensing and owner art approval; exact-HEAD CI.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)

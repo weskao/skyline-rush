@@ -4,7 +4,7 @@ Part of `docs/superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md` · **Pro
 Phase 3 covers Coast and Phase 4 the six course maps; Neon Downtown (classic track `neon`, the second map in
 `src/race-tracks.ts`) has no phase and no concept-board panel. Scope tags: `README.md`. Planning only: no code yet.
 
-**Look and route target:** the owner-supplied nine-image set in `../concept-art/neon-downtown/` (N1 and N7,
+**Look and route target:** the owner-supplied nine-image set in `../track-profiles/neon-downtown/` (N1 and N7,
 2026-11-14); capture recipe in `../neon-look-brief.md`. The board itself has no Neon panel.
 **Files (expected):** new `src/neon-*.ts` modules (`src/world.js` is at its legacy line ceiling), `assets-src/neon-*/`,
 `public/models/neon-*/`, `public/materials/`, `public/environments/`, the model and material manifests, new tests.
@@ -74,7 +74,7 @@ Already in place from Tasks 3–5 and usable by Neon as is:
 - [x] Neon element inventory (table above).
 
 To do, in order:
-- [x] **0 Concept set (N1, N7).** Nine owner-supplied images in `../concept-art/neon-downtown/` (two overviews, six
+- [x] **0 Concept set (N1, N7).** Nine owner-supplied images in `../track-profiles/neon-downtown/` (two overviews, six
   sector frames, one route schematic), listed in that folder's `README.md` with the panel row. They replace the two
   generated views, which were deleted before being committed. Never in-game evidence.
   - [x] Generator and redistribution licence of the set: generated with ChatGPT; the owner confirms the set is

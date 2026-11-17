@@ -10,7 +10,7 @@ import sys
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-BOARD = os.path.join(HERE, "..", "..", "..", "docs", "designs", "3d-pipeline", "concept-art",
+BOARD = os.path.join(HERE, "..", "..", "..", "docs", "designs", "3d-pipeline", "track-profiles",
                      "skyline-rush-3d-target-concept-board.jpeg")
 NAMES = [["front_three_quarter", "side"], ["rear_three_quarter", "rear"]]
 

@@ -1,8 +1,27 @@
-# Skyline Rush｜第 3～10 賽道與 Phase 4–5 圖集
+# Skyline Rush｜第 1～16 張賽道圖集
 
-[14 條賽道空拍總覽](track-artwork-overview.webp)
+[第 3～16 張空拍總覽](track-artwork-overview.webp)
 
-14 條賽道各有一張空拍概念圖、四張路段場景圖、俯視路線圖、縱剖面與橫剖面，共 112 張。場景圖為重繪的概念美術。第 3～10 張的本版規劃圖採用 [10 km 設計資料](route-designs.json)。六張 Phase 4–5 賽道的俯視路線和縱剖面取樣自 GitHub `57da090` 的 [現有 CourseGraph](phase-4-5-course-graphs.json)。遊戲內的路線、場景及正式 WebGL 展示圖仍需整合或擷取。
+第 1～2 張收錄既有概念圖。第 3～16 張各有一張空拍概念圖、四張路段場景圖、俯視路線圖、縱剖面與橫剖面，共 112 張。場景圖為重繪的概念美術。第 3～10 張的本版規劃圖採用 [10 km 設計資料](route-designs.json)。六張 Phase 4–5 賽道的俯視路線和縱剖面取樣自 GitHub `57da090` 的 [現有 CourseGraph](phase-4-5-course-graphs.json)。遊戲內的路線、場景及正式 WebGL 展示圖仍需整合或擷取。
+
+## 01 海岸公路 · Coast
+
+現有視覺參考是共用概念板的五個 Coast 分格。右上三格為地面駕駛、推進和飛行，中排兩格為白天與夕陽降雨。共用板也包含其他賽道與車型的參考。
+
+[Coast 概念分格原圖](skyline-rush-3d-target-concept-board.jpeg) · [鏡位與天候對照](../coast-look-brief.md)
+
+目前尚無獨立的空拍圖、俯視路線圖、縱剖面與橫剖面。
+
+## 02 霓虹都會 · Neon Downtown
+
+[空拍](neon-downtown/01-aerial-overview.jpg) · [俯視概念](neon-downtown/02-overhead-route.jpg) · [舊版閉環示意圖](neon-downtown/09-closed-loop-schematic.png)
+
+- [起終點大道](neon-downtown/03-start-finish-boulevard.jpg)、[鐵路下穿](neon-downtown/04-rail-underpass.jpg)、[夜市連續彎](neon-downtown/05-night-market-chicane.jpg)
+- [高架快速道路](neon-downtown/06-elevated-expressway.jpg)、[運河拱橋](neon-downtown/07-canal-arch-bridge.jpg)、[紫光廣場](neon-downtown/08-violet-plaza-return.jpg)
+
+舊版示意圖只涵蓋六個路段。現行 10 km 賽道有八個路段，新增的港灣與舊城區尚未反映在這組概念圖內。目前也沒有獨立的縱剖面與橫剖面。 [現行路線說明](../phases/task-5b-neon-downtown.md)
+
+## 第 3～10 張路線設計
 
 第 3～10 張的中心線從設計控制點的里程、航向及高程計算。航向由北向順時針計算，高程以各地圖局部基準表示。設計採每車道 5 m 的四車道橫剖面。第 3～10 張依序提高視線判讀、煞車、連續轉向及飛行落地的要求。
 
