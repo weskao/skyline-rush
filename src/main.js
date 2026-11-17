@@ -32,7 +32,7 @@ import { updateRaceHalfwayView } from './race-halfway-view.ts';
 import { equippedCar, loadCarPaint, saveCarPaint } from './car-catalog.ts';
 import { createPerfOverlay } from './perf-overlay.ts';
 import { setupFpsUI } from './fps-ui.ts';
-import { advanceCountdown, drainSteps, SIM_STEP } from './frame-pacing.ts';
+import { advanceCountdown, drainSteps, skipsCountdown, SIM_STEP } from './frame-pacing.ts';
 import { captureRaceMotion } from './vehicle-render-motion.js';
 import { createStuntRun, stuntHeatContinues, stuntHeatLimit } from './stunt-attack.ts';
 import { trackPressedButtons } from './pressed-buttons.ts';
@@ -506,7 +506,7 @@ function phaseText() {
 function updateUI(now, input) {
   raceSelect.raceRouteMap().updateDrivers([{ id: 'YOU', distance: race.player.distance, x: race.player.x, player: true }, ...race.rivals.map(r => ({ id: r.name, distance: r.distance, x: r.x }))], race.course);
   if (previousPhase !== race.phase) {
-    if (previousPhase === 'countdown' && race.phase === 'racing' && race.mode !== 'free') goUntil = now + 0.8;
+    if (previousPhase === 'countdown' && race.phase === 'racing' && !skipsCountdown(race)) goUntil = now + 0.8;
     phaseUI();
     if (race.phase === 'countdown' && previousPhase !== 'paused') enter(ui.countdown, 'translateY(-24px)');
     if (race.phase === 'countdown') notice.hide(); // never over the race view
