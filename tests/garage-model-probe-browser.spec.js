@@ -1,4 +1,4 @@
-import { test, dressedAs } from './helpers/gameplay-browser.js';
+import { test, dressedAs, watchRequests } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 import { chooseGarageAngle } from './helpers/garage-angle.js';
@@ -14,8 +14,7 @@ async function prepare(page, url, { quality = 'high' } = {}) {
     for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: q, enabled: true, comfortable: false }));
   }, quality);
-  const glbRequests = [];
-  page.on('request', request => { if (GLB.test(new URL(request.url()).pathname)) glbRequests.push(request.url()); });
+  const glbRequests = await watchRequests(page, GLB);
   await page.goto(url);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
   return glbRequests;
@@ -89,7 +88,7 @@ test('quality: the low tier loads the main URL (no LOD) and shows the probe', as
   const requests = await prepare(page, `${gameplayURL}?model=probe`, { quality: 'low' });
   await page.locator('#garage-button').click();
   await expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(15000) });
-  expect(requests.map(u => new URL(u).pathname)).toEqual(['/models/pipeline-probe/pipeline-probe.glb']); // settled: model state polled above
+  expect(requests).toEqual(['/models/pipeline-probe/pipeline-probe.glb']); // settled: model state polled above
 });
 
 test('track switch after closing the Garage returns GPU memory to the no-probe baseline', async ({ gameplayPage: page, gameplayURL }) => {

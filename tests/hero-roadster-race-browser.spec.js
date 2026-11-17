@@ -1,5 +1,5 @@
 import { toggleAirflowPreview } from './helpers/settings-browser.js';
-import { test, glbRoots, programs, modelInstances as instances } from './helpers/gameplay-browser.js';
+import { test, glbRoots, programs, modelInstances as instances, watchRequests } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
 
@@ -14,8 +14,7 @@ async function prepare(page, url, quality = 'high') {
     for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: q, enabled: true, comfortable: false }));
   }, quality);
-  const requests = [], errors = [];
-  page.on('request', request => { if (GLB.test(new URL(request.url()).pathname)) requests.push(new URL(request.url()).pathname); });
+  const requests = await watchRequests(page, GLB), errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(url);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();

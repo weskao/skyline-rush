@@ -25,8 +25,8 @@ from roadster_materials import make_materials  # noqa: E402
 # the paint colour here is the factory finish (sRGB #9a1424, src/car-catalog.ts) for viewers without the rig.
 MATERIALS = {
     "gt_paint": ((0.323, 0.007, 0.018), 0.74, 0.17, {"coat": 0.9, "coat_rough": 0.06}),
-    # Amber-tinted, see-through (front three-quarter panel): the cabin shows behind it.
-    "gt_glass": ((0.09, 0.055, 0.03), 0.04, 0.07, {"coat": 0.96, "coat_rough": 0.06, "cull": False, "alpha": 0.5}),
+    # Opaque black glass (owner, 2026-11-16): the cabin no longer shows through; the clearcoat keeps the reflections.
+    "gt_glass": ((0.01, 0.01, 0.012), 0.04, 0.07, {"coat": 0.96, "coat_rough": 0.06, "cull": False}),
     "gt_cabin": ((0.30, 0.17, 0.09), 0.0, 0.62, {}),     # tan seats and dash top (front three-quarter panel)
     "gt_trim": ((0.012, 0.014, 0.018), 0.30, 0.42, {}),
     "gt_carbon": ((0.03, 0.035, 0.04), 0.35, 0.34, {}),

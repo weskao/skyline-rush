@@ -23,6 +23,9 @@ PROPORTIONS read off side.png after that registration: tyre radius .337 (hub y .
            trace; the model uses -2.27, the best fit at the solved lens), tail z 2.04, roof 1.084 at z -.08,
            fender crown .818 at z -1.25, tail top .775, sill .165 between the wheels.
            Model: body length 4.31 m (4.34 with splitter and nozzle bezels), half-width 1.175 at the rear arch.
+           Arches (owner, 2026-11-16): the shoulder flares to full width over each wheel (gt_body.py `flare`, a
+           cos^2 haunch) and the openings are boolean-cut from the smooth loft (gt_parts.py `cut_arches`); sections
+           are never clipped at the arch, which stepped the fender in and read as crash dents.
 PARTS      body; glass_canopy; roof (body-colour upper: roof, pillars, buttresses); headlamp (light blade +
            slashes); tail_light; front_intake; corner_intake_l/r; rear_fascia; rear_corners; side_intake_l/r;
            rocker_l/r; mirror_l/r; splitter; diffuser — static.
@@ -43,7 +46,8 @@ SILHOUETTE low pointed wedge nose with a full-width light blade; long teardrop c
 MATERIALS  gt_paint (factory deep red sRGB #9a1424, metallic .74, roughness .17, clearcoat; tinted at runtime by
            the Garage paint), gt_glass, gt_trim, gt_carbon, gt_tire, gt_rim (dark), gt_nozzle, gt_fan,
            gt_light (rear LED, emissive driven at runtime), gt_lamp (front blade emissive), gt_cabin (tan).
-           gt_glass is see-through (alpha blend) over the cabin. Factors only.
+           gt_glass is opaque near-black with a clearcoat (owner, 2026-11-16): the cabin no longer shows
+           through. Factors only.
            Textures: one shared 1024 px atlas (UV channel 0), plus the tiling flake:
              textures/crimson_gt_normal.png  tangent-space normal, OpenGL +Y, Non-Color -> clearcoat normal on
                                              gt_paint (the smooth coat keeps the baked edges), normalTexture elsewhere
@@ -54,7 +58,7 @@ ARTICULATION no armature, no clips. The runtime rig copies local TRS from the pr
            names as roadster2; `<wheel>_axle` and the nozzle offset are static and read by src/garage-model.ts.
 INFERRED   see the list below
 TARGET     three.js WebGLRenderer, GLB through scripts/assets (export -> optimize -> check). Budget 60,000
-           triangles (actual 22,996; low LOD 13,926), 1.5 MB (actual 1,204,084 B; low LOD 541,088 B),
+           triangles (actual 25,886; low LOD 15,334), 1.5 MB (actual 1,206,344 B; low LOD 539,872 B),
            textures <= 1024 px (low LOD 512), KTX2 normal/AO, meshopt.
 ```
 
@@ -195,7 +199,8 @@ Not built: the red glow under the wing in the rear 3/4 panel.
 - Scallop depth on the flank, hood centre height and its raised centre section, deck height under the upper.
 - Underbody, sill inset, wheel wells, inner arch walls.
 - The whole cabin: floor liner, bulkhead, steering wheel, dash top, two seat backs and their tan colour.
-  The front 3/4 panel shows a tan interior through the glass and resolves nothing else.
+  The front 3/4 panel shows a tan interior through the glass and resolves nothing else. Since the glass went
+  opaque black (owner, 2026-11-16) the cabin is hidden from outside.
 - Hood vent size, position and louvre count: the front 3/4 panel shows only two dark patches.
 - Paint flake size (about 1.2 mm), density and strength; no panel resolves the paint surface.
 - The stowed wing: its rest height, the leading-edge hinge line and the (0, -.22, -.42) offset; how high
