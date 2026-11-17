@@ -1,3 +1,8 @@
+# Home short-landscape wallet / track spacing
+- [x] Restore a small 6px gap between the Home resource strip and selected-track hero on short landscape layouts.
+- [x] Add browser regression coverage for 345×206, 667×375, 743×340 and 852×393.
+- [ ] Run the focused browser regression and exact-HEAD CI; confirm the final spacing on a physical phone.
+
 # Landscape Home version button
 
 - [x] Restore the version button to the bottom center of short phone landscapes and keep the adjacent action labels inside their buttons.

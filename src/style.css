@@ -2325,7 +2325,7 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
 }
 /* The compact wallet shares the short landscape panel's height budget with the track carousel. */
 @media (max-height: 500px) and (orientation: landscape) {
-  .intro .home-intro-topbar { margin: 0; }
+  .intro .home-intro-topbar { margin: 0 0 6px; }
   .intro .home-intro-topbar .route-label { display: flex; flex: 0 1 auto; gap: 8px; }
   .intro .home-intro-topbar .route-label > span { display: none; }
   .intro .home-intro-topbar .medal-chip { margin: 0; }

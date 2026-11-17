@@ -110,6 +110,30 @@ for (const viewport of [{ width: 924, height: 412 }, { width: 1440, height: 900 
 }
 
 
+test.describe('short-landscape Home wallet spacing', () => {
+  test.use({ viewport: { width: 345, height: 206 }, hasTouch: true, isMobile: true });
+
+  test('keeps a visible gap between the resource row and selected track card', async ({ page }, info) => {
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    for (const [width, height] of [[345, 206], [667, 375], [743, 340], [852, 393]]) {
+      await test.step(`${width}x${height}`, async () => {
+        await page.setViewportSize({ width, height });
+        await expect(page.locator('#intro .home-resource-strip')).toBeVisible();
+        const [topbar, hero] = await Promise.all([
+          page.locator('#intro .home-intro-topbar').boundingBox(),
+          page.locator('#intro .lobby-race-heading').boundingBox(),
+        ]);
+        expect(topbar, 'Home resource row exists').not.toBeNull();
+        expect(hero, 'selected track card exists').not.toBeNull();
+        expect(hero.y - (topbar.y + topbar.height),
+          `${width}x${height} keeps 6px between resources and the track card`).toBeGreaterThanOrEqual(6);
+        await shot(page, info, `home-landscape-resource-gap-${width}x${height}.png`);
+      });
+    }
+  });
+});
+
 test('iPhone landscape reserves room for the route icon and long localized track title', async ({ page }, info) => {
   await page.setViewportSize({ width: 852, height: 393 });
   await page.goto('/');

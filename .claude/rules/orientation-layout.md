@@ -92,3 +92,7 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   target above the safe area and any browser toolbar. The Home action rails reserve the center gap.
   Keep the existing release-notes dialog wired to that same button. Guard both placement and taps
   in the Home version and landscape toolbar tests in `tests/responsive-browser.spec.js`.
+
+- **Short-landscape Home keeps the wallet row distinct from the selected-track hero.** Preserve at least 6 px between
+  `.home-intro-topbar` and `.lobby-race-heading` when the compact resource strip is shown; do not zero the
+  topbar's bottom margin. Guard 345×206, 667×375, 743×340 and 852×393 in `tests/lobby-polish-browser.spec.js`.
