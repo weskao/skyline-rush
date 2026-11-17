@@ -91,17 +91,29 @@ def flare(z):
     return math.cos(.5 * math.pi * d / FLARE_LEN) ** 2 if d < FLARE_LEN else 0.0
 
 
+# The scallop is a rounded cove sampled at COVE_LO (sill to bottom) and COVE_UP (bottom to character line): as one
+# section point it was a single-edge V fold whose angle followed SC_IN from 14 to 68 degrees along the door, so it
+# crossed the bake bevel (30) and the sharp split (50) mid-door and its highlight stepped (owner, 2026-11-17). These
+# fractions keep every visible flank edge under 27 degrees (searched on a 0.05 grid, two points a side).
+COVE_LO, COVE_UP = (.1, .7), (.35, .7)
+
+
 def side_profile(z):
-    """Side of the section, bottom to top: sill edge, scallop, character line, shoulder, crown."""
-    w, f = W(z), flare(z)
+    """Side of the section, bottom to top: sill edge, lower cove, cove bottom, upper cove, character line, shoulder,
+    crown. The cove eases out of the sill and into the character line with a raised-cosine inset (zero slope at its
+    bottom and at the character line), so no visible flank edge turns by the bake's bevel limit."""
+    w, f, sill, d = W(z), flare(z), SILL(z), SC_IN(z)
+    y_sc, y_ch = max(SC_Y(z), sill + .03), max(CHAR_Y(z), sill + .06)
     sh_y = SH_Y(z) + f * max(ARCH_TOP + .03 - SH_Y(z), 0.0)
-    return [(w - SILL_IN(z), SILL(z)), (w - SC_IN(z), max(SC_Y(z), SILL(z) + .03)), (w, max(CHAR_Y(z), SILL(z) + .06)),
-            (w - SH_IN(z) * (1 - f), max(sh_y, SILL(z) + .09)), (w - CR_IN(z), max(CROWN(z), SILL(z) + .12))]
+    lower = [(w - SILL_IN(z) * (1 - t) - d * (.5 - .5 * math.cos(math.pi * t)), sill + (y_sc - sill) * t) for t in COVE_LO]
+    upper = [(w - d * (.5 + .5 * math.cos(math.pi * t)), y_sc + (y_ch - y_sc) * t) for t in COVE_UP]
+    return ([(w - SILL_IN(z), sill)] + lower + [(w - d, y_sc)] + upper + [(w, y_ch),
+            (w - SH_IN(z) * (1 - f), max(sh_y, sill + .09)), (w - CR_IN(z), max(CROWN(z), sill + .12))])
 
 
 def _check_flare():
     for zc in ARCH_Z:
-        sh = side_profile(zc)[3]
+        sh = side_profile(zc)[-2]
         assert sh[1] > ARCH_TOP and abs(sh[0] - W(zc)) < 1e-9, "the shoulder clears the arch top at full width"
         assert flare(zc + 1.001 * FLARE_LEN) == 0.0 and flare(zc + .999 * FLARE_LEN) < 1e-5, "the swell fades out flat"
 
@@ -110,7 +122,7 @@ _check_flare()
 
 
 def half_ring(z):
-    """Right half of the cross-section at z, bottom centre to top centre: 12 (x, y) points."""
+    """Right half of the cross-section at z, bottom centre to top centre: (x, y) points, side_profile() from SIDE0."""
     sill = SILL(z)
     side = side_profile(z)
     floor = sill - .02   # a 20 mm step keeps the well corner distinct outside the arches (no zero-area faces)
@@ -127,6 +139,8 @@ def ring(z):
 
 
 RING_SUB = 3
+SIDE0 = 3                                # half_ring index of the sill edge (floor centre, well floor, well top before it)
+CROWN_AT = SIDE0 + len(side_profile(0.0)) - 1
 
 
 def stations():
@@ -140,7 +154,7 @@ def body_verts():
 
 def side_x(z, y):
     """Half-width of the smoothed body side at height y (between the sill edge and the crown)."""
-    pts = _resample(ring(z), RING_SUB, True)[3 * RING_SUB:7 * RING_SUB + 1]
+    pts = _resample(ring(z), RING_SUB, True)[SIDE0 * RING_SUB:CROWN_AT * RING_SUB + 1]
     for (x0, y0, _), (x1, y1, _) in zip(pts, pts[1:]):
         if y0 <= y <= y1 and y1 > y0:
             return x0 + (x1 - x0) * (y - y0) / (y1 - y0)
@@ -149,15 +163,18 @@ def side_x(z, y):
 
 def hood_y(z, x):
     """Height of the smoothed body top at half-width x (between the crown and the centreline)."""
-    pts = _resample(ring(z), RING_SUB, True)[7 * RING_SUB:11 * RING_SUB + 1]   # crown, valley, ridge, centre: x falling
+    pts = _resample(ring(z), RING_SUB, True)[CROWN_AT * RING_SUB:(CROWN_AT + 4) * RING_SUB + 1]   # crown, valley, ridge, centre: x falling
     for (x0, y0, _), (x1, y1, _) in zip(pts, pts[1:]):
         if x1 <= x <= x0 and x0 > x1:
             return y0 + (y1 - y0) * (x0 - x) / (x0 - x1)
     return pts[-1][1]
 
 
-def patch(zs, y_lo, y_hi, ny=4, proud=.008, depth=.03, side=1):
-    """Closed thin panel lying on the body side: at each z it spans y_lo(z)..y_hi(z), `proud` outside the surface."""
+def patch(z0, z1, y_lo, y_hi, ny=4, proud=.008, depth=.03, side=1):
+    """Closed thin panel lying on the body side from z0 to z1: at each z it spans y_lo(z)..y_hi(z), `proud` outside
+    the surface. Its sections sit on the body's own stations: a coarser grid let the convex flank poke through the
+    panel's chords and ragged its edges."""
+    zs = [z0] + [z for z in stations() if z0 + .005 < z < z1 - .005] + [z1]
     rings = []
     for z in zs:
         ys = [y_lo(z) + (y_hi(z) - y_lo(z)) * j / ny for j in range(ny + 1)]

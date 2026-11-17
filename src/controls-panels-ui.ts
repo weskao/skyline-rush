@@ -17,9 +17,8 @@ export function setupControlPanels({
   const close = dialog.querySelector<HTMLButtonElement>('#settings-close')!;
   const content = dialog.querySelector<HTMLElement>('.settings-content')!;
   const driving = dialog.querySelector<HTMLButtonElement>('#controls-button')!;
-  let opener = gear;
 
-  function toggleSettings(open = !dialog.open, source = gear): void {
+  function toggleSettings(open = !dialog.open): void {
     if (!open) {
       if (dialog.open) dialog.close();
       return;
@@ -28,7 +27,6 @@ export function setupControlPanels({
     driving.disabled = !canOpenControlsPanel(phase);
     if (dialog.open || (driving.disabled && phase !== 'finished') || document.querySelector('dialog[open]')) return;
     if (driving.disabled && panelsView.section === 'driving') updatePanelsView({ section: 'audio' });
-    opener = source;
     hidePerformanceNotice();
     clearControls();
     updatePanelsView({ settingsOpen: true });
@@ -42,7 +40,7 @@ export function setupControlPanels({
     clearRebinding();
     clearControls();
     if (!document.querySelector('dialog[open]') && !document.body.classList.contains('layout-editing')) {
-      opener.focus({ preventScroll: true });
+      gear.focus({ preventScroll: true });
     }
   });
   dialog.addEventListener('keydown', event => event.stopPropagation());

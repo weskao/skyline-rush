@@ -53,8 +53,31 @@ test('a compact lobby hides full selectors until opened and exposes the race dis
   assert.match(source('race-select-ui.ts'), /#lobby-race-distance/);
 });
 
-test('pause owns the settings action and the studio pose switch has two named states', () => {
-  assert.match(source('RaceOverlay.vue'), /id="pause-settings"/);
+test('the same Settings icon is available at home, paused, and finished', () => {
+  const css = source('race-lobby.css');
+  assert.match(css, /body:is\(\[data-phase="countdown"\], \[data-phase="racing"\]\) #settings-button \{ display: none; \}/);
+  assert.doesNotMatch(source('RaceOverlay.vue'), /id="pause-settings"/);
+  assert.match(source('SettingsPanel.vue'), /id="settings-button"/);
+});
+
+test('foldable viewport segments place HUD and controls over a full-screen world', () => {
+  assert.match(source('style.css'), /#world\s*\{[^}]*position:\s*fixed;\s*inset:\s*0/);
+  assert.doesNotMatch(source('foldable-viewport.css'), /#world\s*\{/);
+});
+
+test('the three lobby destinations pair transparent 3x artwork with their visible labels', () => {
+  const app = source('App.vue');
+  for (const name of ['garage', 'progress', 'practice']) {
+    const file = readFileSync(new URL(`../public/feature-assets/race-lobby/nav-${name}@3x.webp`, import.meta.url));
+    assert.equal(file.toString('ascii', 8, 16), 'WEBPVP8X');
+    assert.equal(file[20] & 16, 16, 'alpha channel');
+    assert.equal(file.readUIntLE(24, 3) + 1, 72);
+    assert.equal(file.readUIntLE(27, 3) + 1, 72);
+    assert.match(app, new RegExp(`nav-${name}@3x\\.webp[^>]*width="24" height="24" alt=""[^>]*><span data-i18n="nav\\.${name}"`));
+  }
+});
+
+test('the studio pose switch has two named states', () => {
   assert.match(source('GaragePanel.vue'), /id="garage-pose-action"[^>]*role="switch"[^>]*aria-checked="garageStudioView.mode === 'flight'"/);
 });
 

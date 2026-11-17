@@ -70,8 +70,7 @@ for (const locale of ['en', 'zh-TW']) {
 
         await page.locator('#pause-button').click();
         await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
-        await expect(page.locator('#pause-settings')).toBeVisible();
-        await expect(page.locator('#settings-button')).toBeHidden();
+        await expect(page.locator('#settings-button')).toBeVisible();
       });
     });
   }

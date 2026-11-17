@@ -398,8 +398,7 @@ $('#next-button').addEventListener('click', ({ currentTarget }) => { restart(cur
 ui['pause-button'].addEventListener('click', pause);
 ui['resume-button'].addEventListener('click', pause);
 setupPhotoUI({ getRace: () => race, getWorld: () => world, cue: name => sound.cue(name) });
-for (const button of [ui['settings-button'], $('#pause-settings')])
-  button.addEventListener('click', () => { toggleSettings(undefined, button); sound.cue('ui'); });
+ui['settings-button'].addEventListener('click', () => { toggleSettings(); sound.cue('ui'); });
 ui['camera-button'].addEventListener('click', changeCamera);
 ui['assist-button'].addEventListener('click', toggleAssist);
 $('.toolbar').addEventListener('click', event => {

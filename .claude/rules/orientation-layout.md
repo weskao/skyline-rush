@@ -65,7 +65,8 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
 
 - **A split viewport has two coordinate spaces.** Use the normalized Viewport Segments source
   in `foldable-layout.ts` and its published variables for fixed rails and native dialogs.
-  The race camera belongs to one segment; feedback reserves the road inside that segment.
+  The Home and race scene spans the whole viewport. Keep feedback and controls within visible
+  segments, with no tap targets across the hinge.
   Release steering, throttle and native pointer capture when rotating or changing segments.
   Custom layouts stay viewport-relative and keep their independent portrait and landscape keys.
   Guards: `tests/foldable-layout-browser.spec.js` and `tests/foldable-layout.test.js`.

@@ -1,10 +1,7 @@
 // Navigate through the same entry points available to the player.
 export async function openSettingsSection(page, section) {
   const dialog = page.locator('#settings-panel');
-  if (!await dialog.isVisible()) {
-    const pause = page.locator('#pause-settings');
-    await (await pause.isVisible() ? pause : page.locator('#settings-button')).click();
-  }
+  if (!await dialog.isVisible()) await page.locator('#settings-button').click();
   const tab = dialog.locator(`[data-settings-section="${section}"]`);
   if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
 }

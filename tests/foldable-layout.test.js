@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { PerspectiveCamera, Vector3 } from 'three';
+import { updateFoldableProjection } from '../src/foldable-viewport.ts';
 import { resolveFoldableLayout, placeInVisibleSegment, viewportFoldableLayout } from '../src/foldable-layout.ts';
 
 const viewport = { width: 844, height: 390 };
@@ -70,4 +72,23 @@ test('compatibility sources still work with absent or unavailable current API', 
   assert.equal(viewportFoldableLayout({ ...screen, visualViewport: { segments: panels } })?.axis, 'vertical');
   const source = { ...screen, get viewport() { throw new Error('transition'); }, getWindowSegments() { return panels; } };
   assert.equal(viewportFoldableLayout(source)?.axis, 'vertical');
+});
+
+test('the world camera frames the road clear of either hinge and recentres when unfolded', () => {
+  const camera = new PerspectiveCamera(60, 2, 0.1, 100);
+  const axisPoint = new Vector3(0, 0, -5);
+  const book = resolveFoldableLayout(viewport, panels);
+  const tabletop = resolveFoldableLayout({ width: 600, height: 900 }, [
+    { left: 0, top: 0, width: 600, height: 430 }, { left: 0, top: 460, width: 600, height: 440 },
+  ]);
+  updateFoldableProjection(camera, book, false);
+  assert.ok(axisPoint.clone().project(camera).x > 0.2);
+  assert.equal(camera.aspect, 2);
+  updateFoldableProjection(camera, book, true);
+  assert.equal(axisPoint.clone().project(camera).x, 0, 'the landscape showcase already frames the car on the right');
+  updateFoldableProjection(camera, tabletop, true);
+  assert.ok(axisPoint.clone().project(camera).y > 0.2);
+  updateFoldableProjection(camera, null, false);
+  assert.equal(axisPoint.clone().project(camera).y, 0);
+  assert.equal(camera.aspect, 2);
 });

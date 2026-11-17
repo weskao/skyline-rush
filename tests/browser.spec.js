@@ -432,7 +432,7 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(90);
   await page.keyboard.press('m');
   await page.locator('#pause-button').click();
-  await page.locator('#pause-settings').click();
+  await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
@@ -440,7 +440,7 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeGreaterThan(0.001);
   await page.locator('#settings-close').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
-  await page.locator('#pause-settings').click();
+  await page.locator('#settings-button').click();
   await audioSwitch(page, 'Sound effects').click();
   await audioSwitch(page, 'Sound effects').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
@@ -458,7 +458,7 @@ test('audio initialization failure leaves the silent game playable and retryable
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(30);
   await page.locator('#pause-button').click();
-  await page.locator('#pause-settings').click();
+  await page.locator('#settings-button').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await audioSwitch(page, 'Sound effects').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');

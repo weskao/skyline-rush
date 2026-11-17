@@ -1,3 +1,10 @@
+# Full-width foldable race and lobby navigation
+
+- Home and race render the car and track across the entire foldable viewport. The race camera aims clear of the hinge on books and tabletop layouts. HUD, touch buttons and dialogs still use viewport segments. Garage and Photo Studio retain their own framing.
+- The existing Settings gear is shown at Home, pause and results. Countdown and active driving hide it. Closing Settings restores focus to the same gear.
+- Home uses three transparent 72 × 72 WebP sprites for Garage, Progress and Practice. Visible localized labels stay in place at every size.
+- Test-first failures reproduced the old phase rule, one-pane canvas and absent artwork. Focused source, foldable projection, asset and model checks, typecheck and the locked production build passed. Physical foldable and exact-commit CI verification are tracked separately.
+
 # UI overhaul integration and CI follow-up
 
 - Integrated develop `4a3ff0a1`. Kept both the Roadster request-watch isolation and its new Settings flow when resolving the single conflict.
@@ -5965,3 +5972,9 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 
 - [x] RED: a temporary paint ID in the shared catalog was ignored by the production audit. GREEN: the same fixture identifies its missing WebP in locked and Pages trial mode.
 - [x] Both the release audit and the Garage artwork browser test read the paint catalog. The raster-artwork rule records the stable ID, bilingual names, WebP naming and load fallback.
+
+# Procedural Roadster dev preview
+
+- [ ] `make dev procedural=1` shows the procedural Roadster on Home, Garage and races; switching to another car still loads its model. Default and production builds retain the GLB. Verify desktop/mobile, `make verify` and exact-commit CI before acceptance.
+- [x] RED: `node --test tests/car-catalog.test.js` requested the Roadster GLB with the preview enabled. GREEN: focused catalog and Garage model tests passed (50 tests); typecheck passed.
+- [ ] `make verify` was interrupted during unit tests; browser and World Tour gates did not run. `npm run build` and `tests/module-size.test.js` passed separately. Browser preview and exact-commit CI remain unverified.

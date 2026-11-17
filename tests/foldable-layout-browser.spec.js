@@ -154,6 +154,14 @@ for (const [axis, viewport] of [['vertical', { width: 844, height: 390 }], ['hor
       await page.goto('/');
       const body = page.locator('body');
       await expect(body).toHaveAttribute('data-fold-axis', axis);
+      const scene = page.locator('#world');
+      const fullViewport = { x: 0, y: 0, ...viewport };
+      await expect.poll(() => scene.boundingBox()).toEqual(fullViewport);
+      for (const name of ['garage', 'progress', 'practice']) {
+        const icon = page.locator(`.lobby-action-art[src*="nav-${name}@3x.webp"]`);
+        await expectInsidePane(icon, panes);
+        await expect(icon).toHaveJSProperty('naturalWidth', 72);
+      }
       if (!await page.locator('[data-track="coast"]').isVisible()) await page.locator('#lobby-tracks-toggle').click();
       for (const selector of ['#start-button', '#garage-button', '#showcase-camera-next', '#daily-card', '[data-track="coast"]'])
         await expectInsidePane(page.locator(selector), panes);
@@ -181,10 +189,11 @@ for (const [axis, viewport] of [['vertical', { width: 844, height: 390 }], ['hor
       await expectInsidePane(page.locator('#history-screen'), panes);
       await page.keyboard.press('Escape');
       await page.locator('#start-button').click();
-      for (const selector of ['#countdown', '#world', '#position', '#timer', '[data-control="throttle"]', '[data-control="left"]'])
+      for (const selector of ['#countdown', '#position', '#timer', '[data-control="throttle"]', '[data-control="left"]'])
         await expectInsidePane(page.locator(selector), panes);
       await expect(body).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(20_000) });
       await expect(page.locator('#countdown')).toBeHidden();
+      await expect.poll(() => scene.boundingBox()).toEqual(fullViewport);
       for (const selector of ['#speed', '#fuel-meter', '#race-route-map'])
         await expectInsidePane(page.locator(selector), panes);
       await page.screenshot({ path: test.info().outputPath(`foldable-race-${axis}.png`) });

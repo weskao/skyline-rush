@@ -237,9 +237,9 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <div class="intro-actions">
         <p id="lobby-access-note" role="status" hidden></p>
         <div class="intro-primary"><button class="primary-button" id="start-button" aria-label="Start race" data-i18n-aria-label="start.race"><span data-i18n="start.race">Start race</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button>
-        <button type="button" class="text-button garage-button" id="garage-button"><svg v-bind="ICON_ATTRS" v-html="icons.garage"></svg><span data-i18n="nav.garage">Garage</span><span class="garage-new-tag" lang="en" aria-hidden="true">NEW</span></button></div>
-        <button type="button" class="text-button history-button" data-open-history><svg v-bind="ICON_ATTRS" v-html="icons.trophy"></svg><span data-i18n="nav.progress">Progress</span></button>
-        <button type="button" class="text-button practice-button" id="practice-button"><svg v-bind="ICON_ATTRS" v-html="icons.practice"></svg><span data-i18n="nav.practice">Practice</span></button>
+        <button type="button" class="text-button garage-button" id="garage-button"><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-garage@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.garage">Garage</span><span class="garage-new-tag" lang="en" aria-hidden="true">NEW</span></button></div>
+        <button type="button" class="text-button history-button" data-open-history><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-progress@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.progress">Progress</span></button>
+        <button type="button" class="text-button practice-button" id="practice-button"><img class="lobby-action-art" :src="`${BASE_URL}feature-assets/race-lobby/nav-practice@3x.webp`" width="24" height="24" alt="" draggable="false"><span data-i18n="nav.practice">Practice</span></button>
         <span class="start-hint"><span data-i18n="start.hint">or press</span> <kbd>ENTER</kbd></span>
       </div>
       <!-- Reserve space for the camera controls in compact layouts. -->

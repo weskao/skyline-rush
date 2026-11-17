@@ -1,10 +1,21 @@
+import type { PerspectiveCamera } from 'three';
 import { viewportFoldableLayout, type FoldableLayout, type FoldableRect } from './foldable-layout.ts';
 
 let layout: FoldableLayout | null = null;
 export const currentFoldableLayout = (): FoldableLayout | null => layout;
 
-// Home uses the other pane for configuration; race camera and critical feedback use this pane.
+// Home uses the other pane for configuration. Critical HUD and dialogs use this pane.
 export const foldScenePane = (fold: FoldableLayout): FoldableRect => fold.segments[fold.axis === 'vertical' ? 1 : 0];
+
+// Shift the optical centre away from the hinge with the full frustum and aspect intact.
+export function updateFoldableProjection(camera: PerspectiveCamera, fold: FoldableLayout | null, showcase: boolean): void {
+  const left = fold?.axis === 'vertical' && !showcase ? -0.18 * camera.aspect : 0;
+  const top = fold?.axis === 'horizontal' ? 0.20 : 0;
+  if (left || top) {
+    if (camera.view?.offsetX !== left || camera.view.offsetY !== top || !camera.view.enabled)
+      camera.setViewOffset(camera.aspect, 1, left, top, camera.aspect, 1);
+  } else if (camera.view?.enabled) camera.clearViewOffset();
+}
 
 export function refreshFoldableViewport(): boolean {
   const next = viewportFoldableLayout(window);

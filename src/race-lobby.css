@@ -255,12 +255,13 @@ details.performance-notice {
 }
 
 /* Keep the 3D scene visible beside the lobby. Track artwork carries the desktop strip. */
-.intro :is(.lobby-picker-toggle, .garage-button, .history-button, .practice-button) > svg {
+.intro .lobby-picker-toggle > svg {
   flex: none;
   width: 16px;
   height: 16px;
 }
-.intro :is(.history-button, .practice-button) { gap: 6px; }
+.intro :is(.garage-button, .history-button, .practice-button) { gap: 6px; }
+.lobby-action-art { width: 24px; height: 24px; flex: none; object-fit: contain; }
 .intro #intro-title { text-wrap: balance; }
 
 @media (min-width: 1001px) and (min-height: 701px) {
@@ -280,7 +281,8 @@ details.performance-notice {
 }
 
 @media (max-width: 370px), (max-height: 350px) and (orientation: landscape) {
-  .intro :is(.garage-button, .history-button, .practice-button) > svg { display: none; }
+  .lobby-action-art { width: 18px; height: 18px; }
+  .intro :is(.garage-button, .history-button, .practice-button) { gap: 4px; }
 }
 
 /* Show track detail on demand while retaining the swipeable rail. */
@@ -332,8 +334,6 @@ details.performance-notice {
     order: 2; width: min(760px, 100%); align-self: start;
   }
 }
-body:not([data-phase="paused"]) #pause-settings { display: none; }
-#pause-settings > svg { width: 18px; height: 18px; vertical-align: middle; margin-inline-end: 5px; }
 body:is([data-phase="racing"], [data-phase="countdown"]):not([data-tutorial], .airflow-active) #restart-button { display: none; }
 
 @media (min-width: 1001px) and (min-height: 701px) {
@@ -384,7 +384,7 @@ body:not([data-phase="finished"]) :is(.result-rewards, .result-style-details) { 
 body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { display: block; }
 
 /* Compact screens share the same landscape-card anatomy as the desktop rail.
-   The live scene gets the upper part of an upright phone; a folded device keeps its own pane. */
+   The live scene gets the upper part of an upright phone; foldable controls use a clear segment. */
 @media (max-width: 760px) and (min-height: 501px) and (orientation: portrait) {
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro.lobby-compact {
     top: clamp(114px, calc(100dvh - 430px), 285px);
@@ -412,5 +412,5 @@ body[data-fold-axis] #intro .race-mode-heading:has(#lobby-modes-toggle[aria-expa
   }
 }
 
-body:is([data-phase="countdown"], [data-phase="racing"], [data-phase="paused"]) #settings-button { display: none; }
+body:is([data-phase="countdown"], [data-phase="racing"]) #settings-button { display: none; }
 body[data-phase="ready"] .toolbar :is(#camera-button, #pause-button) { display: none; }

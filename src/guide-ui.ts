@@ -58,7 +58,7 @@ export function setupGuideUI({
       if (device === 'desktop' || device === 'mobile' || device === 'items') selectGuideDevice(device);
     });
   }
-  $('#guide-open').addEventListener('click', () => openGuide(document.body.dataset.phase === 'paused' ? $('#pause-settings') : $('#settings-button')));
+  $('#guide-open').addEventListener('click', () => openGuide($('#settings-button')));
   $('#practice-button').addEventListener('click', event => {
     openGuide(event.currentTarget as HTMLElement, false, true);
   });
