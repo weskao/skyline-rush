@@ -110,6 +110,59 @@ for (const viewport of [{ width: 924, height: 412 }, { width: 1440, height: 900 
 }
 
 
+test('iPhone landscape reserves room for the route icon and long localized track title', async ({ page }, info) => {
+  await page.setViewportSize({ width: 852, height: 393 });
+  await page.goto('/');
+  for (const [selector, title] of [
+    ['[data-track="coast"]', '海岸公路'],
+    ['[data-upcoming-track="stormline-megacity"]', '霓虹暴雨都市'],
+  ]) {
+    await clickLobbyOption(page, selector);
+    await expect(page.locator('#lobby-hero-track')).toHaveText(title);
+    const [map, name, action] = await Promise.all([
+      '#lobby-hero-map', '.lobby-track-copy', '#lobby-tracks-toggle > span',
+    ].map(selector => page.locator(selector).boundingBox()));
+    expect(map.x + map.width + 4, 'route icon clears track text').toBeLessThanOrEqual(name.x);
+    expect(name.x + name.width).toBeLessThanOrEqual(action.x + 1);
+    await expect(page.locator('#lobby-tracks-toggle')).toBeInViewport({ ratio: 1 });
+  }
+  await shot(page, info, 'home-layout-landscape.png');
+});
+
+test('wide desktop anchors the controls near the top left and leaves the scene open', async ({ page }, info) => {
+  await page.setViewportSize({ width: 1920, height: 975 });
+  await page.goto('/');
+  await clickLobbyOption(page, '[data-track="coastal"]');
+  const panel = await page.locator('#intro').boundingBox();
+  const firstRow = await page.locator('.home-intro-topbar').boundingBox();
+  const start = await page.locator('#start-button').boundingBox();
+  expect(panel.x).toBeLessThanOrEqual(68);
+  expect(firstRow.y).toBeLessThanOrEqual(155);
+  expect(panel.width).toBeLessThanOrEqual(720);
+  expect(start.y + start.height).toBeLessThanOrEqual(975 - 90);
+  await shot(page, info, 'home-layout-desktop.png');
+});
+
+test('phone portrait keeps the wordmark and resources above the preview and the dock below it', async ({ page, gameplayURL }, info) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(gameplayURL);
+  await expect(page.locator('.topbar .brand > span')).toBeVisible();
+  const [brand, wallet, card, mode, start] = await Promise.all([
+    '.topbar .brand', '#intro .home-resource-strip', '.lobby-race-heading', '#lobby-modes-toggle', '#start-button',
+  ].map(selector => page.locator(selector).boundingBox()));
+  expect(brand.y + brand.height).toBeLessThanOrEqual(wallet.y);
+  expect(wallet.y + wallet.height).toBeLessThan(844 * .25);
+  expect(card.y).toBeGreaterThanOrEqual(844 * .615);
+  expect(card.y + card.height).toBeLessThanOrEqual(mode.y);
+  expect(mode.y + mode.height).toBeLessThanOrEqual(start.y);
+  await expect(page.locator('#intro .wallet-currency')).toHaveCount(3);
+  await page.locator('#intro .wallet-currency').first().click();
+  await expect(page.locator('.wallet-detail')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.wallet-detail')).toBeHidden();
+  await shot(page, info, 'home-layout-portrait.png');
+});
+
 test('Photo Studio uses the same dropdown for lighting and fog', async ({ page }, info) => {
   await page.goto('/');
   await clickLobbyOption(page, 'button[data-race-mode="free"]');
@@ -128,6 +181,7 @@ test('Photo Studio uses the same dropdown for lighting and fog', async ({ page }
 });
 
 test('track selection is staged until confirmed and Escape keeps the current route', async ({ page }, info) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/');
   const opener = page.locator('#lobby-tracks-toggle');
   const dialog = page.locator('#track-chooser');
@@ -135,7 +189,19 @@ test('track selection is staged until confirmed and Escape keeps the current rou
   await expect(title).toHaveText('海岸公路');
   await opener.click();
   await expect(dialog).toBeVisible({ timeout: ciTimeout(5_000) });
-  await dialog.locator('[data-track="neon"]').click();
+  const current = dialog.locator('[data-track="coast"]');
+  const preview = dialog.locator('[data-track="neon"]');
+  await preview.click();
+  await expect(current).toHaveAttribute('aria-current', 'true');
+  await expect(current).toHaveAttribute('aria-pressed', 'false');
+  await expect(preview).toHaveAttribute('aria-pressed', 'true');
+  await expect(preview).not.toHaveAttribute('aria-current', 'true');
+  await expect(dialog.locator('#track-choose-selection')).toHaveText('霓虹都會');
+  await expect(dialog.locator('#track-choose-map svg')).toBeVisible();
+  await expect(dialog.locator('#track-choose-confirm')).toHaveAccessibleName('確認賽道');
+  await expect(dialog).toHaveCSS('animation-name', 'chooser-in');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(dialog).toHaveCSS('animation-name', 'none');
   await expect(title).toHaveText('海岸公路');
   await shot(page, info, 'track-chooser-desktop.png');
   await page.keyboard.press('Escape');
@@ -147,6 +213,8 @@ test('track selection is staged until confirmed and Escape keeps the current rou
   await expect(dialog).toBeHidden();
   await expect(title).toHaveText('霓虹都會');
   await expect(page.locator('#lobby-hero-art')).toHaveAttribute('src', /neon\.jpg$/);
+  await opener.click();
+  await expect(preview).toHaveAttribute('aria-current', 'true');
 });
 
 for (const [name, viewport, segments] of [

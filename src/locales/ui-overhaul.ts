@@ -1,6 +1,7 @@
 export const UI_OVERHAUL_COPY = {
   en: {
     'nav.progress': 'Progress',
+    'track.confirm': 'Confirm track',
     'settings.display': 'Display & HUD',
     'settings.game': 'Game settings',
     'settings.close': 'Close settings',
@@ -9,6 +10,7 @@ export const UI_OVERHAUL_COPY = {
   },
   'zh-TW': {
     'nav.progress': '進度',
+    'track.confirm': '確認賽道',
     'settings.display': '畫面與 HUD',
     'settings.game': '遊戲設定',
     'settings.close': '關閉設定',

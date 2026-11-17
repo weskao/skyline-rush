@@ -498,8 +498,8 @@ for (const [locale, system] of LOCALES) {
           await intro.evaluate(el => { el.scrollTop = el.scrollHeight; });
           const last = await introLines(page);
           const lowest = last.lines.reduce((a, b) => (b.bottom > a.bottom ? b : a));
-          expect.soft(lowest.text, `${size}: the flight tip is the last line`).toBe((await page.locator('.flight-tip').innerText()).trim().slice(0, 24));
           expect.soft(lowest.bottom, `${size}: last line fully visible once scrolled`).toBeLessThanOrEqual(last.edge + 0.5);
+          await expect.soft(page.locator('#start-button'), `${size}: Start is fully visible once scrolled`).toBeInViewport({ ratio: 1 });
         });
       }
     });

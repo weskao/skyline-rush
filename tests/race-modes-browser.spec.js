@@ -226,22 +226,27 @@ test('1920x1080 intro fits without clipping and VFX remains reachable after musi
   await expect(page.locator('#settings-display')).toBeVisible();
   await page.screenshot({ path:'test-results/race-mode-layout-desktop.png' });
 });
-test('402x714 phone intro fades at its scroll edge and its last row scrolls clear of the fade', async ({ page }) => {
-  // iPhone 17 Pro Safari's visible viewport: the intro scrolls, so a hard clip made Garage look cut by the footer
+test('402x714 phone setup scrolls to its last card while the primary actions stay fixed', async ({ page }) => {
+  // Approximate the iPhone 17 Pro Safari viewport with the browser chrome open.
   await page.setViewportSize({ width: 402, height: 714 });
   await page.goto('/');
   await closeMusicPrompt(page);
-  const intro = page.locator('#intro');
-  const fade = await intro.evaluate(el => { const cs = getComputedStyle(el); return cs.getPropertyValue('mask-image') || cs.getPropertyValue('-webkit-mask-image'); });
-  expect(fade).toContain('linear-gradient');
-  await intro.evaluate(el => { el.scrollTop = el.scrollHeight; });
-  const gap = await intro.evaluate(el => el.getBoundingClientRect().bottom - el.querySelector('#race-rules-row').getBoundingClientRect().bottom); // the setup's last row since the 10A mode-first order
-  expect(gap).toBeGreaterThanOrEqual(24);
+  const setup = page.locator('#intro .lobby-setup');
+  const start = page.locator('#start-button');
+  const initial = await start.boundingBox();
+  expect(await setup.evaluate(el => el.scrollHeight - el.clientHeight)).toBeGreaterThan(0);
+  await setup.evaluate(el => { el.scrollTop = el.scrollHeight; });
+  await expect(page.locator('#daily-card-start')).toBeInViewport({ ratio: 1 });
+  await expect(page.locator('#garage-button')).toBeInViewport({ ratio: 1 });
+  await expect(start).toBeInViewport({ ratio: 1 });
+  expect(await start.boundingBox()).toEqual(initial);
 });
 
 test('completed Custom setup appears as a recent preset without touching unlocks', async ({ page }) => {
   await page.goto('/');
   await closeMusicPrompt(page);
+  const readUnlocks = () => page.evaluate(() => localStorage.getItem('skyline-rush-unlocked'));
+  const unlocks = await readUnlocks();
   await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#start-button').click();
   await page.reload();
@@ -249,11 +254,12 @@ test('completed Custom setup appears as a recent preset without touching unlocks
   await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await expect(page.locator('#recent-custom')).toBeVisible();
   await page.locator('#recent-custom > summary').click();
-  const preset=page.locator('#recent-custom-runs button').first();
+  const preset = page.locator('#recent-custom-runs button').first();
   await expect(preset).toContainText('Coast');
   await preset.click();
   await expect(page.locator('[data-track="coast"]')).toHaveAttribute('aria-pressed','true');
-  await page.screenshot({path:'test-results/race-mode-recent-custom.png'});
+  await expect(page.locator('#lobby-hero-track')).toHaveText('Coast');
+  expect(await readUnlocks()).toBe(unlocks);
 });
 
 test('Checkpoint Rush shows directional guidance and perfect gate counter', async ({ page }) => {

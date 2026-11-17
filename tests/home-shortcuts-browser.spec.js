@@ -162,7 +162,7 @@ async function expectCompactTouchTargets(page, width, height) {
 async function expectTopBarPanelsTouchable(page, width, height) {
   const touch = width < 1001;
   const tall = async locator => { for (const el of await locator.all()) expect((await el.boundingBox()).height, `${width}x${height} ${await el.getAttribute('aria-label') ?? await el.textContent()}`).toBeGreaterThanOrEqual(44); };
-  await page.locator('#settings-button').click();
+  await openSettingsSection(page, 'audio');
   if (touch) await tall(page.locator('#settings-audio input[type="range"]'));
   await page.keyboard.press('Escape');
   await openSettingsSection(page, 'language');

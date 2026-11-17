@@ -4,12 +4,19 @@ const trackId = (card: HTMLButtonElement): string => card.dataset.track ?? card.
 const chooser = (): HTMLDialogElement => document.querySelector<HTMLDialogElement>('#track-chooser')!;
 const trackOpener = (): HTMLButtonElement => document.querySelector<HTMLButtonElement>('#lobby-tracks-toggle')!;
 
+function copyRouteMap(slot: HTMLElement, card: Element | undefined | null, track: string): void {
+  const map = card?.querySelector('.track-route-map')?.firstElementChild;
+  slot.replaceChildren(...(map ? [map.cloneNode(true)] : []));
+  slot.dataset.theme = track;
+}
+
 export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: () => string): void {
   const mode = document.querySelector<HTMLButtonElement>('#lobby-modes-toggle')!;
   const opener = trackOpener();
   const dialog = chooser();
   const cards = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-track], [data-upcoming-track]'));
   const confirm = dialog.querySelector<HTMLButtonElement>('#track-choose-confirm')!;
+  const map = dialog.querySelector<HTMLElement>('#track-choose-map')!;
   const selection = dialog.querySelector<HTMLElement>('#track-choose-selection')!;
   const state = dialog.querySelector<HTMLElement>('#track-choose-state')!;
   const navigation = dialogNavigation(dialog);
@@ -17,9 +24,15 @@ export function setupLobbyPickers(applyTrack: (id: string) => void, getTrack: ()
 
   function stage(card: HTMLButtonElement | undefined): void {
     pending = card;
-    for (const option of cards) option.setAttribute('aria-pressed', String(option === card));
+    const activeTrack = getTrack();
+    for (const option of cards) {
+      option.setAttribute('aria-pressed', String(option === card));
+      if (trackId(option) === activeTrack) option.setAttribute('aria-current', 'true');
+      else option.removeAttribute('aria-current');
+    }
     selection.textContent = card?.querySelector('strong')?.textContent ?? '';
     state.textContent = card?.querySelector('small')?.textContent ?? '';
+    copyRouteMap(map, card, card ? trackId(card) : '');
     confirm.disabled = !card;
   }
   mode.addEventListener('click', () => mode.setAttribute('aria-expanded', String(mode.getAttribute('aria-expanded') !== 'true')));
@@ -72,10 +85,8 @@ export function renderLobbyTrackArt(id: string): void {
   const thumbnail = card?.querySelector<HTMLImageElement>('.track-preview img')?.getAttribute('src');
   if (thumbnail) image.src = thumbnail;
   else image.removeAttribute('src');
-  const map = card?.querySelector('.track-route-map')?.firstElementChild;
   const slot = document.querySelector<HTMLElement>('#lobby-hero-map')!;
-  slot.replaceChildren(...(map ? [map.cloneNode(true)] : []));
-  slot.dataset.theme = id;
+  copyRouteMap(slot, card, id);
 }
 
 export function focusLobbyTrack(): void {

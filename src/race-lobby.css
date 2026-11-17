@@ -258,9 +258,14 @@ details.performance-notice {
   .lobby-compact #lobby-track-status { margin-inline-start: auto; }
 }
 @media (min-width: 1001px) and (min-height: 701px) {
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .bottomline { bottom: max(4px, var(--safe-bottom)); }
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .lobby-compact {
-    display: flex; flex-direction: column; justify-content: safe end;
-    top: calc(118px + var(--safe-top)); bottom: max(24px, calc(var(--safe-bottom) + 20px));
+    display: flex; flex-direction: column;
+    justify-content: flex-start;
+    top: calc(118px + var(--safe-top));
+    left: max(clamp(24px, 3.2vw, 64px), var(--safe-left));
+    bottom: calc(max(4px, var(--safe-bottom)) + 48px);
+    margin-bottom: 0;
     max-height: none;
   }
 }
@@ -326,14 +331,36 @@ body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { dis
 /* Keep the existing layout outside the portrait dock. */
 .lobby-setup { display: contents; }
 
-/* The compact race setup scrolls inside a bottom dock; its primary actions are always available. */
+/* Portrait keeps account controls above the scene and race setup in the bottom dock. */
 @media (max-width: 760px) and (orientation: portrait) {
+  body[data-phase="ready"]:not([data-fold-axis]) .topbar .brand > span {
+    display: flex;
+    font-size: clamp(18px, 5.15vw, 23px);
+    letter-spacing: .8px;
+    white-space: nowrap;
+  }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .intro .home-intro-topbar {
+    position: fixed;
+    top: calc(76px + var(--safe-top));
+    left: max(12px, var(--safe-left));
+    right: max(12px, var(--safe-right));
+    gap: 4px 8px;
+    align-content: start;
+    pointer-events: none;
+  }
+  body:not([data-fold-axis]) .intro .home-intro-topbar > .route-label {
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+  body:not([data-fold-axis]) .intro .home-intro-topbar > .route-label > span { display: none; }
+  body:not([data-fold-axis]) .intro .home-intro-topbar :is(button, summary) { pointer-events: auto; }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .bottomline { bottom: var(--safe-bottom); }
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro.lobby-compact {
-    --lobby-bottom: max(44px, calc(var(--safe-bottom) + 42px));
+    --lobby-bottom: calc(var(--safe-bottom) + 48px);
     inset: auto max(12px, var(--safe-right)) var(--lobby-bottom) max(12px, var(--safe-left));
     width: auto;
     max-width: none;
-    max-height: min(380px, calc(49dvh - var(--lobby-bottom)));
+    max-height: clamp(182px, calc(36dvh - var(--lobby-bottom)), 300px);
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     margin: 0;
@@ -344,7 +371,7 @@ body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { dis
   }
   body:not([data-fold-axis], .airflow-active) .intro .lobby-setup {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     align-content: start;
     align-items: start;
     gap: 5px;
@@ -353,7 +380,6 @@ body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { dis
     scrollbar-width: thin;
     padding: 4px 2px 2px;
   }
-  body:not([data-fold-axis], .airflow-active) .intro .lobby-setup > * { grid-column: 1 / -1; }
   body:not([data-fold-axis], .airflow-active) .intro .lobby-setup > .race-mode-picker { margin: 0; }
   body:not([data-fold-axis], .airflow-active) .intro .lobby-setup > #race-mode-picker { padding: 0; }
   body:not([data-fold-axis], .airflow-active) .intro #race-mode-picker .race-mode-heading { margin: 0; }
@@ -363,8 +389,7 @@ body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { dis
   body:not([data-fold-axis], .airflow-active) .lobby-setup .lobby-race-heading { width: 100%; padding-block: 5px; }
   body:not([data-fold-axis], .airflow-active) .lobby-setup .lobby-race-heading #intro-title { font-size: 20px; }
   body:not([data-fold-axis], .airflow-active) .lobby-setup .lobby-race-distance { font-size: 11px; }
-  body:not([data-fold-axis], .airflow-active) .lobby-setup .home-intro-topbar { order: 1; margin: 0; }
-  body:not([data-fold-axis], .airflow-active) .lobby-setup :is(.showcase-camera-dock, .daily-card) { order: 2; margin-block: 0; }
+  body:not([data-fold-axis], .airflow-active) .lobby-setup :is(.showcase-camera-dock, .daily-card) { margin-block: 0; }
   body:not([data-fold-axis], .airflow-active) .lobby-setup :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
   body[data-phase="ready"]:not(.airflow-active, [data-fold-axis]) .intro .intro-actions {
     display: grid;
@@ -390,7 +415,12 @@ body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { dis
   }
 }
 @media (min-width: 1200px) and (min-height: 701px) {
-  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro { max-width: min(760px, 44vw); }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro { max-width: min(680px, 40vw); }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .intro-controls { flex-wrap: wrap; }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) .intro-wordmark {
+    font-size: clamp(46px, 4.4vw, 68px);
+    margin-block-end: 10px;
+  }
 }
 
 .toolbar .home-airflow-toggle {

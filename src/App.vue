@@ -128,12 +128,12 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <button type="button" id="performance-notice-dismiss">Got it</button>
     </details>
     <section class="intro lobby-compact" id="intro" aria-label="Race setup" data-i18n-aria-label="lobby.title">
-      <div class="lobby-setup">
       <div class="home-intro-topbar">
         <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers"></span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals" :aria-label="homeStatusView.medalLabel" :class="{ 'has-medals': homeStatusView.hasMedals }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">{{ homeStatusView.medalCount }}</span></button></div>
         <Wave3CurrencyStrip v-if="GARAGE_RELEASE_MODE === 'trial'" compact
           class="home-resource-strip" :experience="wave3DemoExperience" :locale="homeWalletLocale" />
       </div>
+      <div class="lobby-setup">
       <a class="intro-wordmark" href="./" aria-label="Skyline Rush home (reload)" data-i18n-aria-label="nav.homeReload"><svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><path :d="LOGO_PATH" stroke="currentColor" stroke-width="3"/></svg><span lang="en">SKYLINE <b>RUSH</b></span></a>
       <div class="lobby-race-heading">
         <img id="lobby-hero-art" alt="" decoding="async" />
@@ -300,7 +300,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
         </button>
         <button v-for="(track, id) in UPCOMING_TRACKS" :key="id" type="button" class="upcoming-track-card" :data-upcoming-track="id" aria-pressed="false"><i class="track-preview upcoming-thumb" aria-hidden="true"><img :src="`${BASE_URL}${track.image}`" alt="" loading="lazy" /></i><span class="track-route-map" aria-hidden="true"></span><strong>{{ track.names.en }}</strong><span>{{ track.length / 1000 }} KM <small></small></span></button>
       </div>
-    <footer class="track-chooser-footer"><div aria-live="polite"><strong id="track-choose-selection"></strong><small id="track-choose-state"></small></div><button type="button" id="track-choose-confirm"><span data-i18n="track.choose">Choose track</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button></footer>
+    <footer class="track-chooser-footer"><div aria-live="polite"><span id="track-choose-map" class="track-route-map" aria-hidden="true"></span><div><strong id="track-choose-selection"></strong><small id="track-choose-state"></small></div></div><button type="button" id="track-choose-confirm"><span data-i18n="track.confirm">Confirm track</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button></footer>
   </dialog>
   <dialog id="photo-screen" class="photo-screen" aria-labelledby="photo-title">
     <div class="photo-panel">

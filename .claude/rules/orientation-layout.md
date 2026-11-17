@@ -1,6 +1,8 @@
 ---
 paths:
   - "src/style.css"
+  - "src/race-lobby.css"
+  - "src/track-chooser.css"
   - "src/wave3-demo-results.css"
   - "src/App.vue"
   - "tests/responsive-browser.spec.js"
@@ -74,5 +76,14 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
 - **Track selection uses the Home hero card and a dedicated dialog.** The hero keeps its route silhouette, teaser
   art, and race distance while the setup is docked clear of the car. The chooser fills narrow or short viewports
   and stays within a single usable segment on a foldable. Its list scrolls independently of the fixed confirmation
-  row. Confirm commits the track and refreshes Home. Closing the chooser preserves the previous selection.
+  row. Distinguish the applied track (`aria-current`) from the preview (`aria-pressed`). Confirm commits the
+  preview and refreshes Home. Closing the chooser preserves the previous selection. Honor reduced motion
+  and comfort mode for both the chooser and its backdrop.
   Guards: `tests/lobby-polish-browser.spec.js` and the short-landscape checks in `tests/responsive-browser.spec.js`.
+
+- **Keep the Home hierarchy consistent across sizes.** Present the full game wordmark and wallet balances
+  above the scene on phone portrait. Keep the compact setup and its primary actions below the showcased car.
+  Anchor the desktop setup near the upper left, below the toolbar. Keep the release footer clear of the
+  setup on desktop and portrait. Reserve a separate cell for the hero route icon so short-landscape
+  thumbnail positioning cannot overlay the track name or distance.
+  Check 852×393, 390×844, and 1920×975 in `tests/lobby-polish-browser.spec.js`.
