@@ -1,3 +1,9 @@
+# Landscape Home version button
+
+- [x] Restore the version button to the bottom center of short phone landscapes and keep the adjacent action labels inside their buttons.
+- [x] RED reproduced the old header position and the 667 × 375 English label overflow. The focused Chromium cases verify the center gap, safe area, toolbar, and release-notes tap. The real-game 852 × 393 Chromium capture shows the version button.
+- [ ] Check the exact-commit GitHub quality gate and a physical phone. Full local unit coverage requires the assets omitted from this sparse checkout.
+
 # Home track chooser and immediate race score
 
 - The Home hero combines the selected track map, name, and teaser. Confirm in the track dialog to apply a new track. Cancel preserves the selection and restores focus. Desktop and touch gestures still page the Home scene when the dialog is closed.

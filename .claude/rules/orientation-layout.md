@@ -87,3 +87,8 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   setup on desktop and portrait. Reserve a separate cell for the hero route icon so short-landscape
   thumbnail positioning cannot overlay the track name or distance.
   Check 852×393, 390×844, and 1920×975 in `tests/lobby-polish-browser.spec.js`.
+
+- **Center the version button along the bottom of short single-screen landscapes.** Keep its 44 px
+  target above the safe area and any browser toolbar. The Home action rails reserve the center gap.
+  Keep the existing release-notes dialog wired to that same button. Guard both placement and taps
+  in the Home version and landscape toolbar tests in `tests/responsive-browser.spec.js`.

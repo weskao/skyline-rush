@@ -409,9 +409,45 @@ body[data-fold-axis] #intro.lobby-compact .lobby-race-heading #intro-title { dis
   }
 }
 
+@media (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="ready"]:not([data-fold-axis]) { --home-version-width: 64px; }
+  body[data-phase="ready"]:not([data-fold-axis]) .bottomline {
+    top: auto;
+    right: auto;
+    bottom: calc(max(4px, var(--safe-bottom)) + max(var(--browser-bar), 100% - 100dvh));
+    left: 50%;
+    translate: -50% 0;
+    width: var(--home-version-width);
+  }
+  body[data-phase="ready"]:not([data-fold-axis]) .build-version {
+    width: 100%;
+    padding-inline: 4px;
+    white-space: nowrap;
+    text-shadow: 0 1px 3px #000;
+  }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro {
+    --version-side-room: calc(50vw - var(--home-version-width) / 2 - 4px);
+    --version-panel-limit: calc((var(--version-side-room) - max(16px, var(--safe-left))) / var(--z));
+    --panel-width: min(520px, calc((100vw - 280px - var(--safe-left) - var(--safe-right)) / var(--z)), var(--version-panel-limit));
+    --rail: min(210px, calc((var(--version-side-room) - max(16px, var(--safe-right))) / var(--z)));
+  }
+}
+@media (max-width: 760px) and (max-height: 500px) and (orientation: landscape) {
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro .intro-actions > :is(.garage-button, .history-button, .practice-button) {
+    flex-direction: column;
+    gap: 2px;
+    padding-inline: 4px;
+    letter-spacing: .05em;
+    line-height: 1.1;
+  }
+  body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro .intro-actions .lobby-action-art {
+    width: 16px;
+    height: 16px;
+  }
+}
 @media (min-width: 800px) and (max-height: 500px) and (orientation: landscape) {
   body[data-phase="ready"]:not([data-fold-axis], .airflow-active) #intro {
-    --panel-width: min(420px, 43vw);
+    --panel-width: min(420px, 43vw, var(--version-panel-limit));
   }
 }
 @media (min-width: 1200px) and (min-height: 701px) {
