@@ -1,3 +1,9 @@
+# Taipei Presidential Office sightline
+
+- [x] On the measured Taipei route, face the entrance, central tower and window rows toward the incoming lanes in point-to-point and endless races.
+- [x] The regression in `node --test tests/world-tour-scene.test.js` reproduced the rear/side approach at 950 m (facing dot product −0.36). The corrected scene passes at four approach distances across three lanes in both route modes. The desktop WebGL capture at 1.24 km shows the facade, and the office stays outside the road shoulder.
+- [ ] Check the exact-commit GitHub quality gate and device behavior.
+
 # Garage drift trails
 
 - [x] Add five visual drift trails beside the original rubber. The existing account-scoped trial separates preview and equip.

@@ -19,7 +19,7 @@ export const HERO_PREVIEWS: Readonly<Record<string, HeroPreview>> = Object.freez
   // to frame the landmark ahead, right of the home UI panel.
   'harbor-circuit': { distance: 0, landmark: 'beacon', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
-  taipei: { distance: 1000, landmark: 'office', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
+  taipei: { distance: 1040, landmark: 'office', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
   tokyo: { distance: 6675, landmark: 'tower', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 8.4 },
