@@ -348,25 +348,25 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
   </footer>
   <!-- TOUCH CONTROLS DOM/CSS CONTRACT — frozen; style.css builds from this, change both together.
    #touch-controls.touch-controls (shown by the existing media rules; [hidden] outside racing/countdown)
-     data-steer-mode="slide|buttons|tilt"  slide: .touch-pad steers (drag sideways, pull down = brake), hide .touch-steer (and its brake)
+     data-steer-mode="slide|buttons|tilt"  slide: .touch-pad steers (drag sideways, pull down = brake), hide .touch-steer and the brake button
                                       buttons: .touch-steer left/right buttons steer, hide .touch-pad
-                                      tilt: sensors steer; pad remains available for down-drag brake / drift
+                                      tilt: motion sensors steer; pad remains available for down-drag brake / drift
      data-hand="left|right"           side of the screen the steering (pad or .touch-steer) sits on; actions/pedals take the other side
      data-size="S|M|L"               chosen size; lets the live route map clear the cluster (style.css)
      style --touch-scale              0.85 (S) | 1 (M) | 1.15 (L); multiply control sizes by it
      style --touch-opacity            0.4–1; control opacity
-     children, in order (all siblings):
-       .touch-pad[aria-hidden]        slide surface (pointer events, touch-action:none) > .pad-ring + .pad-knob (positioned later by main.js)
-       .touch-steer                   button[data-control=left|right] + button[data-control=brake] (brake sits above them, off the thumb's rest row; an arrow touch slid up into it holds brake + steer = drift)
+       .touch-pad[aria-hidden]        slide surface (pointer events, touch-action:none) > .pad-ring + .pad-knob (positioned by touch-controls-ui.ts)
+       .touch-steer                   button[data-control=left|right] on the steering side
        .touch-actions                 button.touch-fly[data-control=fly], button.touch-boost[data-control=boost]
        .touch-pedals                  button.touch-gas[data-control=throttle] (gas always visible, both modes)
+       .touch-brake                   separate brake for the opposite thumb in Buttons mode
      button.is-held / [aria-pressed=true] while active (existing).
    Settings Driving section: #controls-panel controls remain mounted so game state and keyboard bindings stay connected.
      Inside: fieldset.controls-field > legend + label.controls-choice > input[type=radio][data-controls] + span;
      label.controls-field.controls-range > output + input[type=range][data-controls=opacity]; button#controls-reset.controls-reset. -->
   <div class="touch-controls" id="touch-controls" aria-label="Touch driving controls" data-i18n-aria-label="touch.controls" hidden>
     <div class="touch-pad" aria-hidden="true"><i class="pad-ring"></i><i class="pad-knob"></i></div>
-    <div class="touch-steer"><button data-control="left" aria-label="Steer left" data-i18n-aria-label="touch.left"><svg v-bind="ICON_ATTRS" v-html="icons.left"></svg></button><button data-control="right" aria-label="Steer right" data-i18n-aria-label="touch.right"><svg v-bind="ICON_ATTRS" v-html="icons.right"></svg></button><button data-control="brake" aria-label="Brake" data-i18n-aria-label="touch.brake"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></button></div>
+    <div class="touch-steer"><button data-control="left" aria-label="Steer left" data-i18n-aria-label="touch.left"><svg v-bind="ICON_ATTRS" v-html="icons.left"></svg></button><button data-control="right" aria-label="Steer right" data-i18n-aria-label="touch.right"><svg v-bind="ICON_ATTRS" v-html="icons.right"></svg></button></div>
     <div class="touch-actions">
       <button class="touch-nitro" data-control="nitro" aria-label="Activate nitro" data-i18n-aria-label="touch.nitro">
         <svg viewBox="0 0 28 28" aria-hidden="true" fill="none">
@@ -388,6 +388,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       </button>
     </div>
     <div class="touch-pedals"><button class="touch-gas" data-control="throttle" aria-label="Accelerate" data-i18n-aria-label="touch.throttle"><svg v-bind="ICON_ATTRS" v-html="icons.pedal"></svg></button></div>
+    <button class="touch-brake" data-control="brake" aria-label="Brake" data-i18n-aria-label="touch.brake"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></button>
   </div>
   <div class="layout-toolbar" id="layout-toolbar" hidden><div><strong id="layout-orientation" role="status"></strong><br><span data-i18n="layout.hint">Drag buttons to fit your thumbs</span></div><button id="layout-done" data-i18n="layout.done">Done editing</button></div>
   <div class="bottomline"><span><i></i> <span data-i18n="footer.tagline">BEYOND THE ROAD</span></span><button type="button" id="whats-new-open" class="build-version" :hidden="releaseView.openHidden" :class="{ 'has-update': releaseView.openHasUpdate }" data-i18n-aria-label="release.open" data-i18n-title="release.open" title="What's new">v{{ version }}<span class="release-unread" aria-hidden="true"></span></button><span data-i18n="footer.genre">AN ORIGINAL ARCADE FLIGHT RACER</span></div>

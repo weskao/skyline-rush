@@ -839,7 +839,10 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       await expect(control).toHaveAttribute('data-steer-mode', 'slide');
       await expect(control).toHaveAttribute('data-hand', 'left');
       expect(await scale()).toBe('1');
+      await expect(page.locator('[data-controls="brakePull"][value="balanced"]')).toBeChecked();
+      await choose('brakePull', 'firm');
       await choose('mode', 'buttons');
+      await expect(page.locator('[data-controls="brakePull"][value="firm"]')).toBeHidden();
       await expect(control).toHaveAttribute('data-steer-mode', 'buttons');
       await choose('hand', 'right');
       await expect(control).toHaveAttribute('data-hand', 'right');
@@ -847,7 +850,7 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       expect(await scale()).toBe('1.15');
       await page.locator('[data-controls="opacity"]').fill('0.6');
       await expect.poll(() => control.evaluate(element => element.style.getPropertyValue('--touch-opacity'))).toBe('0.6');
-      expect(await stored()).toMatchObject({ mode: 'buttons', hand: 'right', size: 'L', opacity: 0.6, version: 1 });
+      expect(await stored()).toMatchObject({ mode: 'buttons', hand: 'right', size: 'L', opacity: 0.6, brakePull: 'firm', version: 1 });
       await page.reload();
       await expect(control).toHaveAttribute('data-steer-mode', 'buttons');
       await expect(control).toHaveAttribute('data-hand', 'right');
@@ -858,7 +861,7 @@ for (const [width, height] of [[390, 844], [320, 740], [844, 390]]) {
       await page.locator('#controls-reset').tap();
       await expect(control).toHaveAttribute('data-steer-mode', 'slide');
       await expect(control).toHaveAttribute('data-hand', 'left');
-      expect(await stored()).toMatchObject({ mode: 'slide', hand: 'left', size: 'M', opacity: 0.9 });
+      expect(await stored()).toMatchObject({ mode: 'slide', hand: 'left', size: 'M', opacity: 0.9, brakePull: 'balanced' });
       await choose('mode', 'buttons');
       await page.keyboard.press('Escape');
       await expect(page.locator('#controls-panel')).toBeHidden();
@@ -924,6 +927,9 @@ for (const sizes of [[[390, 844], [320, 740]], [[844, 390]]]) {
         await expect.poll(async () => Math.abs(await bank(page)), { message: size }).toBeLessThan(0.5);
         await expect(control, size).not.toHaveAttribute('data-pad-brake');
         await expect.poll(() => speedOf(page), { message: size }).toBeGreaterThan(60);
+        await slideFrom(send, start, 65, 53);
+        await expect(control, size).not.toHaveAttribute('data-pad-brake');
+        await send('touchEnd');
         const before = await speedOf(page);
         await slideFrom(send, start, 0, 60);
         await expect(control, size).toHaveAttribute('data-pad-brake', 'true');
@@ -1012,42 +1018,57 @@ for (const sizes of [[[390, 844], [320, 740]], [[844, 390]]]) {
       }
     });
 
-    test('one thumb drifts: an arrow slid up into BRAKE holds steer + brake, the gap and the way back only steer', async ({ page, context }) => {
+    test('one thumb glides between arrows while the other thumb brakes', async ({ page, context }) => {
       const send = await touchDriver(page, context);
       await useControls(page, { mode: 'buttons' });
       await startTouchRace(page);
-      const [left, brake] = ['Steer left', 'Brake'].map(name => page.getByRole('button', { name, exact: true }));
-      const pressed = async () => [await left.getAttribute('aria-pressed'), await brake.getAttribute('aria-pressed')];
+      const [left, right, brake] = ['Steer left', 'Steer right', 'Brake'].map(name => page.getByRole('button', { name, exact: true }));
+      const pressed = () => Promise.all([left, right, brake].map(key => key.getAttribute('aria-pressed')));
       await eachSize(page, async (width, height, size) => {
-        const [arrow, top] = await Promise.all([centerOf(left), brake.boundingBox()]);
-        await send('touchStart', { id: 1, ...arrow });
-        await expect.poll(pressed, { message: size }).toEqual(['true', 'false']);
-        // Halfway up the gap between the arrow and BRAKE: a resting or slipping thumb never brakes.
-        await send('touchMove', { id: 1, x: arrow.x, y: (top.y + top.height + (arrow.y - (await left.boundingBox()).height / 2)) / 2 });
-        await expect.poll(pressed, { message: size }).toEqual(['true', 'false']);
-        await send('touchMove', { id: 1, x: arrow.x, y: top.y + top.height / 2 });
-        await expect.poll(pressed, { message: size }).toEqual(['true', 'true']);
-        await send('touchMove', { id: 1, ...arrow });
-        await expect.poll(pressed, { message: size }).toEqual(['true', 'false']);
-        await send('touchEnd');
-        await expect.poll(pressed, { message: size }).toEqual(['false', 'false']);
+        const [l, r, b] = await Promise.all([left, right, brake].map(key => centerOf(key)));
+        const steer = { id: 1, ...l }, pedal = { id: 2, ...b };
+        await send('touchStart', steer);
+        await expect.poll(pressed, { message: size }).toEqual(['true', 'false', 'false']);
+        await send('touchMove', { ...steer, x: (l.x + r.x) / 2 });
+        await expect.poll(pressed, { message: size }).toEqual(['false', 'false', 'false']);
+        await send('touchMove', { ...steer, ...r });
+        await expect.poll(pressed, { message: size }).toEqual(['false', 'true', 'false']);
+        await send('touchStart', { ...steer, ...r }, pedal);
+        await expect.poll(pressed, { message: size }).toEqual(['false', 'true', 'true']);
+        await send('touchMove', { ...steer, ...l }, pedal);
+        await expect.poll(pressed, { message: size }).toEqual(['true', 'false', 'true']);
+        await send('touchCancel');
+        await expect.poll(pressed, { message: size }).toEqual(['false', 'false', 'false']);
       });
     });
 
-    test('thumb controls stay off the corner and BRAKE sits above the steering row', async ({ page }) => {
+    test('BRAKE is opposite both arrows and follows the steering hand setting', async ({ page }) => {
       await useControls(page, { mode: 'buttons' });
       await startTouchRace(page);
       const box = name => page.getByRole('button', { name, exact: true }).boundingBox();
-      await eachSize(page, async (width, height, size) => {
+      const check = async (width, height, size, hand) => {
         const [left, right, brake, fly] = await Promise.all(['Steer left', 'Steer right', 'Brake', 'Hold to fly'].map(box));
-        // The thumb pivots on the side edge: the outermost buttons keep a 24px margin instead of hugging the corner.
-        expect(width - (fly.x + fly.width), `${size} FLY margin`).toBeGreaterThanOrEqual(24);
-        expect(left.x, `${size} left margin`).toBeGreaterThanOrEqual(24);
-        // Rarely used BRAKE: above the row the thumb rests on, behind a gap, and slimmer than the steering buttons.
-        for (const steer of [left, right]) expect(steer.y - (brake.y + brake.height), `${size} BRAKE gap`).toBeGreaterThanOrEqual(12);
-        expect(brake.height, `${size} BRAKE slimmer`).toBeLessThan(left.height);
-        expect(brake.height, `${size} BRAKE target`).toBeGreaterThanOrEqual(44);
-      });
+        const steerEdge = hand === 'left' ? left.x : width - (right.x + right.width);
+        const flyEdge = hand === 'left' ? width - (fly.x + fly.width) : fly.x;
+        expect(steerEdge, `${size} steering margin`).toBeGreaterThanOrEqual(24);
+        expect(flyEdge, `${size} action margin`).toBeGreaterThanOrEqual(24);
+        for (const steer of [left, right]) {
+          const gap = hand === 'left' ? brake.x - (steer.x + steer.width) : steer.x - (brake.x + brake.width);
+          expect(gap, `${size} BRAKE separation`).toBeGreaterThanOrEqual(6);
+        }
+        expect(hand === 'left' ? brake.x + brake.width / 2 : width - (brake.x + brake.width / 2), size).toBeGreaterThan(width / 2);
+        const brakeEdge = hand === 'left' ? width - (brake.x + brake.width) : brake.x;
+        expect(brakeEdge, `${size} brake margin`).toBeGreaterThanOrEqual(24);
+        expect(brakeEdge, `${size} brake closer to the thumb than FLY`).toBeLessThan(flyEdge);
+        expect(brake.width, size).toBeGreaterThanOrEqual(44);
+        expect(brake.height, size).toBeGreaterThanOrEqual(44);
+      };
+      await eachSize(page, (width, height, size) => check(width, height, size, 'left'));
+      await page.locator('#pause-button').tap();
+      await chooseInPanel(page, 'hand', 'right');
+      await page.locator('#resume-button').tap();
+      await expect(page.locator('#race-status')).toHaveText('RACING');
+      await eachSize(page, (width, height, size) => check(width, height, size, 'right'));
     });
 
     test('slide pad covers the bottom 45% of the steering half, clear of the edge-swipe zone', async ({ page }) => {

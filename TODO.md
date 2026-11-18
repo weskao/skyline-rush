@@ -5,6 +5,13 @@
 - [x] Preserve the iOS portrait footer inset when Home overrides the base layout and restore an undismissed graphics notice after closing Settings on Home.
 - [ ] Finish the remaining browser failures on the latest develop SHA, confirm the full quality gate and verify the layout on a physical phone.
 
+# Mobile steering and braking
+
+- [x] Replace the slide pad's fixed downward threshold with directional activation, saved pull presets and stable release during drift. Steering still responds at full lock.
+- [x] Let a captured steering thumb change arrows without lifting and return to neutral between the targets. Place BRAKE opposite the arrows and allow independent positioning.
+- [x] Unit RED reproduced the original brake and steering issues; the focused tests pass with the shared input fix.
+- [ ] Verify physical phone ergonomics and the exact-head GitHub quality gate.
+
 # Mobile results navigation and cloud save
 
 - [x] Keep race actions on the first portrait screen and reachable while scrolling the reward receipt. A subsequent result opens at the top.
