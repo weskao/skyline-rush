@@ -24,7 +24,20 @@ export function createAeroWakeMeshes(positions, alphas, sizes, segmentCount) {
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
     uniforms: { skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, time: { value: 0 } },
     vertexShader: 'attribute float alpha,rollWake;varying float vAlpha,vRoll;varying vec2 vUv;void main(){vAlpha=alpha;vRoll=rollWake;vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: 'varying float vAlpha,vRoll;varying vec2 vUv;uniform vec3 skinTint;uniform float skinPattern,time;void main(){float u=clamp(vUv.x,0.,1.);float edge=vRoll>.5?pow(max(0.,1.-min(u,1.-u)*12.),2.):pow(max(0.,sin(u*3.14159)),3.);float shape=1.;if(vRoll<.5){if(skinPattern>.5)shape=.65+.35*cos(vUv.x*14.+vUv.y*6.);if(skinPattern>1.5)shape=.3+.7*abs(sin(vUv.x*28.+vUv.y*12.));if(skinPattern>2.5)shape=step(.44,fract(vUv.y*7.+vUv.x*2.));if(skinPattern>3.5)shape=.3+.7*pow(max(0.,abs(sin(vUv.y*25.+vUv.x*16.-time*9.))),6.);}gl_FragColor=vec4(vec3(.5,.8,1.)*skinTint,edge*vAlpha*shape);}',
+    fragmentShader: `varying float vAlpha,vRoll;varying vec2 vUv;uniform vec3 skinTint;uniform float skinPattern,time;
+      void main(){
+        float u=clamp(vUv.x,0.,1.);
+        float edge=vRoll>.5?pow(max(0.,1.-min(u,1.-u)*12.),2.):pow(max(0.,sin(u*3.14159)),3.);
+        float shape=1.;
+        if(vRoll<.5){
+          if(skinPattern>.5)shape=.65+.35*cos(vUv.x*14.+vUv.y*6.);
+          if(skinPattern>1.5)shape=.3+.7*abs(sin(vUv.x*28.+vUv.y*12.));
+          if(skinPattern>2.5){float dash=fract(vUv.y*5.+vUv.x*2.);
+            shape=.32+.56*smoothstep(.06,.28,dash)*(1.-smoothstep(.62,.93,dash));}
+          if(skinPattern>3.5)shape=.3+.7*pow(max(0.,abs(sin(vUv.y*25.+vUv.x*16.-time*9.))),6.);
+        }
+        gl_FragColor=vec4(vec3(.5,.8,1.)*skinTint,edge*vAlpha*shape);
+      }`,
   }));
   ribbon.name = 'Continuous dash ribbon'; ribbon.frustumCulled = false;
   return { vapor, particleGeo, ribbon, ribbonGeo, ribbonPositions, ribbonAlpha, ribbonKinds };

@@ -164,7 +164,7 @@ test('x3 chain: power above 1 makes the flare no bigger and the jets no brighter
   assert.ok(Math.abs(state(1)[0] - PLUME.flare) < 1e-9 && Math.abs(state(0.5)[0] - PLUME.flare * 0.775) < 1e-9, 'flare size is PLUME.flare * (0.55 + 0.45 * power)');
 });
 
-test('trail skin: its NITRO trail replaces the fat flame and the road glow; BOOST and calm modes keep them', () => {
+test('trail skin: its NITRO trail replaces the fat flame and the road glow; BOOST keeps both, calm keeps the plume', () => {
   const tint = [1, 0.5, 0.25], accent = new Vector4(1, 0.25, 0.5, 1);
   const state = (trailStyle, over) => {
     const parts = rig();
@@ -176,16 +176,16 @@ test('trail skin: its NITRO trail replaces the fat flame and the road glow; BOOS
       assert.equal(mesh.material.uniforms.nitroMix.value, over.nitroMix);
     }
     return { thick: parts.jets.map(jet => jet.material.uniforms.thick.value),
-      glow: parts.glow.material.uniforms.fade.value, flare: parts.flare.material.uniforms.fade.value };
+      glow: parts.glow.visible ? parts.glow.material.uniforms.fade.value : 0, flare: parts.flare.material.uniforms.fade.value };
   };
   const nitro = state(2, { nitroMix: 1 }), boost = state(2, { nitroMix: 0 }), calm = state(2, { nitroMix: 1, calm: true }), plain = state(0, { nitroMix: 1 });
   assert.deepEqual([nitro.thick, nitro.glow], [[0, 0, 0, 0], 0], 'NITRO with a trail skin: the old cone, no glow');
   assert.ok(nitro.flare > 0, 'the nozzle flare stays');
   for (const [name, kept] of [['BOOST', boost], ['calm', calm], ['no trail skin', plain]]) {
     assert.deepEqual(kept.thick, [1, 1, 1, 1], name);
-    assert.ok(kept.glow > 0, name);
+    assert.equal(kept.glow > 0, name !== 'calm', name);
   }
-  assert.ok(Math.abs(calm.flare - 0.6 * boost.flare) < 1e-9 && Math.abs(calm.glow - 0.6 * boost.glow) < 1e-9, 'Reduced Motion / Comfortable: 0.6 times');
+  assert.ok(Math.abs(calm.flare - 0.6 * plain.flare) < 1e-9, 'Reduced Motion / Comfortable: 0.6 times the NITRO flare');
 });
 
 // Trap: the car banks, and squats on its rear tyres during the very sprint that shows the glow. A plane 7 m long that
@@ -232,11 +232,11 @@ test('createAeroVFX tells the plume about the tier, the road and Reduced Motion'
   assert.deepEqual(shown(road), [true, true, true]);
   assert.deepEqual(shown(air), [true, true, false], 'airborne: no road to light');
   const calm = heldNitro({ quality: 'high', preset: 'realistic' }, undefined, { reducedMotion: true });
-  assert.deepEqual(shown(calm), [true, true, true], 'Reduced Motion keeps a static plume');
+  assert.deepEqual(shown(calm), [true, true, false], 'Reduced Motion shows the static plume without lighting the road');
   assert.ok(Math.abs(calm.flare.material.uniforms.fade.value - 0.6 * road.flare.material.uniforms.fade.value) < 1e-9, 'at 0.6 times');
-  // Low + Realistic, the 2-core phone: flare size and fade are the ones High + Extreme gets.
+  // Low + Realistic, the 2-core phone: the flare remains legible without post-processing.
   const phone = heldNitro({ quality: 'low', preset: 'realistic' }).flare.material.uniforms, desk = heldNitro({ quality: 'high', preset: 'extreme' }).flare.material.uniforms;
-  assert.deepEqual([phone.size.value, phone.fade.value], [desk.size.value, desk.fade.value]);
+  assert.ok(phone.size.value > desk.size.value && phone.fade.value > desk.fade.value);
 });
 
 // User, 2026-11-16: the Garage/Home showroom plume stood at about 0.8 m, 17% of a race NITRO, so the exhaust length
@@ -270,4 +270,17 @@ test('showroom plume: loops from a short idle to the race length with the igniti
 test('showroom plume holds still under Reduced Motion: Preview Studio keeps the full length', () => {
   const { reach, full } = showroom('racing', true);
   assert.ok(reach.every(value => Math.abs(value - full) < 1e-6), 'no pulse, the race length');
+});
+
+test('NITRO tightens the shared nozzle flare where bloom runs and preserves the Low flare and jet profile', () => {
+  const parent = new Group(), plume = createSprintPlume(parent, REAR_PORTS);
+  const flare = parent.getObjectByName('Sprint nozzle flare').material.uniforms;
+  plume.update(frame());
+  const size = flare.size.value, fade = flare.fade.value;
+  plume.update(frame({ nitroMix: 1 }));
+  assert.ok(flare.size.value < size && flare.fade.value < fade);
+  assert.ok(plume.jets.every(jet => jet.material.uniforms.thick.value === 1));
+  plume.update(frame({ nitroMix: 1, quality: .25 }));
+  assert.equal(flare.size.value, size);
+  assert.equal(flare.fade.value, fade);
 });

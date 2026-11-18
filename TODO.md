@@ -1,3 +1,9 @@
+# 2026-11-18 — NITRO tail glare
+
+- [x] Reproduce from High with a custom NITRO trail, on the road and in flight. Test the gold pulse, red dash, chain lighting, compact road placement, and Comfort card loop. The new guards fail against the original behavior.
+- [x] Tune all five styles through the shared render path. Keep Low readable, and use the chain's extra energy for length and flow speed. Comfort shows a quiet, tinted tail and static card art.
+- [ ] Verify the exact feature-branch GitHub quality gate and review the phone WebGL evidence.
+
 # Develop browser CI run 44117764575
 
 - [x] Reproduced the live minimap gap on desktop and two phone widths. The map now shares the toolbar height and button size. Short touch landscape keeps its own side-by-side row.

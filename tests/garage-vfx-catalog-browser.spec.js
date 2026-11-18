@@ -40,6 +40,32 @@ test('selected artwork animates at original 3x dimensions while retaining WebP f
 });
 });
 
+test('Comfort uses static NITRO card art on High while the same card animates in standard mode', async ({ page }) => {
+  await page.addInitScript(() => {
+    const comfortable = new URL(location.href).searchParams.has('test-comfort');
+    localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality: 'high', comfortable }));
+    localStorage.setItem('skyline-rush-music', 'off');
+  });
+  const trail = page.locator('[data-skin="nitro-trail-gold"] img');
+  for (const url of ['/', '/?test-comfort']) {
+    await page.goto(url);
+    await openGarage(page);
+    await openGarageSection(page, 'effects');
+    await trail.scrollIntoViewIfNeeded();
+    await expect(trail).toBeInViewport();
+    await trail.evaluate(img => new Promise(resolve => {
+      const observer = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+          observer.disconnect();
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        }
+      });
+      observer.observe(img);
+    }));
+    await expect(trail).toHaveAttribute('data-animation-active', String(url === '/'));
+  }
+});
+
 test('unavailable GIF and original WebP fall back to category SVG, without granting ownership', async ({ page }) => {
   await page.route('**/feature-assets/garage-animated/thruster-ion@3x.gif', route => route.abort());
   await page.route('**/feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', route => route.abort());

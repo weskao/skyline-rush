@@ -41,7 +41,7 @@ let media: MediaQueryList | undefined;
 // Observe only settings attributes, not body classes which may change every racing frame.
 const syncVfx = (): void => {
   vfxAllowed.value = document.body.dataset.vfxEnabled !== 'false' &&
-    document.body.dataset.vfxQuality !== 'low';
+    document.body.dataset.vfxQuality !== 'low' && document.body.dataset.vfxComfort !== 'true';
 };
 const onMotionChange = (event: MediaQueryListEvent): void => { reducedMotion.value = event.matches; };
 onMounted(() => {
@@ -52,7 +52,7 @@ onMounted(() => {
     syncVfx();
     vfxObserver = new MutationObserver(syncVfx);
     vfxObserver.observe(document.body, { attributes: true,
-      attributeFilter: ['data-vfx-enabled', 'data-vfx-quality'] });
+      attributeFilter: ['data-vfx-enabled', 'data-vfx-quality', 'data-vfx-comfort'] });
   }
   if ('IntersectionObserver' in window && image.value) {
     observer = new IntersectionObserver(([entry]) => { visible.value = entry.isIntersecting; },

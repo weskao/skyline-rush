@@ -89,7 +89,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   const rear = new THREE.Group(); rear.name = 'Rear ports'; local.add(rear); // garage-model.ts moves it onto a dressed GLB's nozzles
   const plume = createSprintPlume(rear, REAR_PORTS, vehicle, ground); // the four jets (src/sprint-plume.ts)
   const voidBeams = createVoidPulseBeams(rear, REAR_PORTS);
-  const nitroTrail = createNitroTrail(rear, REAR_PORTS);
+  const nitroTrail = createNitroTrail(rear, REAR_PORTS, vehicle, ground);
   const glow = createThrusterGlow(rear, REAR_PORTS);
 
   const particles = Array.from({ length: MAX_PARTICLES }, () => ({ life: 0, roll: false, pos: new THREE.Vector3(), velocity: new THREE.Vector3() }));
@@ -203,6 +203,8 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       const boost = active && (car.boosting || car.nitroTime > 0 || car.miniBoost > 0) && enabled;
       const nitroActive = boost && car.nitroTime > 0;
       const sprintPower = sprintFrame ? sprintFrame.power : boost ? 1 : 0;
+      const lightPower = sprintFrame?.lightPower ?? sprintPower;
+      const chainMotion = Math.max(0, sprintPower - lightPower);
       const nitroMix = sprintFrame ? sprintFrame.nitroMix : nitroActive ? 1 : 0;
       const calm = reducedMotion || settings.comfortable;
       quality = settings.quality === 'low' ? 0.25 : settings.quality === 'medium' ? 0.5 : 1;
@@ -215,7 +217,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       const show = settings.airflow && enabled; // V/AIRFLOW alone owns the streamlines; sprint keeps jets, ribbon and screen streaks
       reveal = enabled ? THREE.MathUtils.damp(reveal, show ? 1 : 0, show ? 3 : 6, dt) : 0;
       const demonstration = show && preview ? 0.32 * THREE.MathUtils.smoothstep(reveal, 0.85, 0.99) : 0;
-      strength = enabled ? THREE.MathUtils.damp(strength, boost ? sprintPower : demonstration, boost ? 55 : 7, dt) : 0;
+      strength = enabled ? THREE.MathUtils.damp(strength, boost ? lightPower : demonstration, boost ? 55 : 7, dt) : 0;
       // A selected showroom skin must be visible without requiring racing or NITRO input.
       // This presentation-only floor never changes race physics or Reduced Motion.
       if (studioDemo && preview && enabled && !calm) strength = Math.max(strength, 0.32);
@@ -246,7 +248,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       const fu = flow.material.uniforms;
       fu.time.value = time; fu.speed.value = settings.airflowSpeed * (0.45 + car.speed / 90 + strength * 0.6);
       fu.nitroMix.value = nitroMix;
-      fu.power.value = calm ? reveal * settings.airflowOpacity * 0.15 : Math.max(reveal * settings.airflowOpacity * (1 + strength * 0.35), sprintPower * settings.speedLines * 0.65);
+      fu.power.value = calm ? reveal * settings.airflowOpacity * 0.15 : Math.max(reveal * settings.airflowOpacity * (1 + strength * 0.35), lightPower * settings.speedLines * 0.65);
       fu.density.value = Math.max(settings.airflowDensity * (0.5 + quality * 0.5), sprintPower * settings.speedLines * (0.5 + quality * 0.5));
       fu.length.value = Math.min(0.85, settings.streamlineLength + car.speed / 600);
       fu.suction.value = settings.suction / (1 + Math.max(0, vehicle.position.y) * 2);
@@ -257,18 +259,19 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       pressure.material.uniforms.power.value = reveal * fu.suction.value * (settings.aeroMode === 'downforce' ? 1 : 0.35);
       pressure.material.uniforms.time.value = time;
       voidBeams.update(time, strength, quality, enabled && !calm);
-      nitroTrail.update(time, studioDemo && preview ? 0.85 : strength * nitroMix, quality, enabled && !calm); // Studio previews the trail without NITRO
+      const showroom = studioDemo && preview, grounded = car.altitude <= 0;
+      nitroTrail.update(time, showroom ? 0.85 : strength * nitroMix, quality, enabled && !calm, grounded, chainMotion);
       ribbon.material.uniforms.time.value = time;
       const look = plumeLook(settings.quality), jet = plumeFrame;
       glow.update(enabled && !voidPulse ? thrusterGlow(settings.quality, active, car.altitude > 0, strength) : 0);
       const pulse = studioDemo && enabled && !calm ? showroomPulse(demoPulseClock) : -1; // showrooms loop the plume with the ignition
-      jet.time = time; jet.nitroMix = nitroMix; jet.tail = look.tail; jet.enabled = enabled; jet.voidPulse = voidPulse;
+      jet.time = time; jet.nitroMix = showroom && flow.material.uniforms.trailAccent.value.w > 0 ? 1 : nitroMix; jet.tail = look.tail; jet.enabled = enabled; jet.voidPulse = voidPulse;
       jet.power = pulse < 0 ? strength : THREE.MathUtils.lerp(SHOWROOM.idlePower, 1, pulse);
-      jet.reach = settings.exhaustLength * look.stretch * (pulse < 0 ? strength * (0.65 + car.speed / 200)
+      jet.reach = settings.exhaustLength * look.stretch * (pulse < 0 ? (strength + (calm ? 0 : chainMotion)) * (0.65 + car.speed / 200)
         : THREE.MathUtils.lerp(SHOWROOM.idle, 1, pulse) * (0.65 + SHOWROOM.speed / 200));
-      jet.brightness = Math.min(settings.coreBrightness, calm ? 0.9 : 3);
+      jet.brightness = Math.min(settings.coreBrightness, calm ? (jet.nitroMix > 0 ? 0.65 : 0.9) : 3);
       jet.diamonds = settings.machDiamonds; jet.extreme = settings.preset === 'extreme' ? 1 : 0;
-      jet.quality = quality; jet.calm = calm; jet.racing = active; jet.grounded = car.altitude <= 0;
+      jet.quality = quality; jet.calm = calm; jet.racing = active; jet.grounded = grounded;
       plume.update(jet);
       delta = car.speed;
       if (wakeStrength > 0.01 && enabled && dt > 0) {
@@ -348,7 +351,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       shock.position.copy(shockPosition).sub(origin);
       shock.scale.setScalar(studioDemo ? 0.7 + shockAge * 4.5 : 0.5 + shockAge * 20);
       shock.material.opacity = Math.max(0, 1 - shockAge / shockDuration) ** 2
-        * settings.shockwave * (studioDemo ? 0.95 : 0.45);
+        * settings.shockwave * (studioDemo ? 0.95 : nitroActive ? 0.3 : 0.45);
       flare.update(dt, time, origin, enabled && !calm, quality, Math.min(1, settings.shockwave * (studioDemo ? 2 : 1.4))); // default 0.5 → full in Studio, 0.7 racing
       previous.copy(current); previousRotation.copy(vehicle.quaternion);
       direction.set(0, 0.64, 3).applyMatrix4(vehicle.matrixWorld);
