@@ -51,16 +51,16 @@ export const CLASSIC_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown
     place('aurora', 'aurora-snowbank-3', 'debris', 2100, 2.5),
     place('aurora', 'aurora-snowbank-4', 'debris', 3000, -2.5),
     place('aurora', 'aurora-ice-2', 'terrain', 3200, 7.5),
-    place('aurora', 'aurora-ice-3', 'terrain', 4450, -2.5),
+    place('aurora', 'aurora-ice-3', 'terrain', 8150, -2.5),
     place('aurora', 'aurora-snowbank-5', 'debris', 3900, 7.5),
-    place('aurora', 'aurora-snowbank-6', 'debris', 4600, -7.5),
+    place('aurora', 'aurora-snowbank-6', 'debris', 7350, -7.5),
   ],
   // Sky Spiral: energy platform barriers and aerial gates on the helix, away from the launch gaps, plus
   // spinning light hoops 6 m up that pay the risk-ring score for a precise airborne line.
   spiral: [
-    place('spiral', 'spiral-hoop-1', 'ring', 1100, 2.5, hoop(6, 4)),
-    place('spiral', 'spiral-hoop-2', 'ring', 1700, -2.5, hoop(6, 4, Math.PI)),
-    place('spiral', 'spiral-hoop-3', 'ring', 2200, 2.5, hoop(6, 4)),
+    place('spiral', 'spiral-hoop-1', 'ring', 1930, 2.5, hoop(6, 4)),
+    place('spiral', 'spiral-hoop-2', 'ring', 2550, -2.5, hoop(6, 4, Math.PI)),
+    place('spiral', 'spiral-hoop-3', 'ring', 3120, 2.5, hoop(6, 4)),
     place('spiral', 'spiral-hoop-4', 'ring', 3450, -2.5, hoop(6, 4, Math.PI)),
     place('spiral', 'spiral-hoop-5', 'ring', 4350, 0, hoop(6, 4)),
     place('spiral', 'spiral-barrier-1', 'energy-barrier', 700, -2.5, pulse(3)),
@@ -68,6 +68,6 @@ export const CLASSIC_THEMED_PLACEMENTS: Readonly<Record<string, readonly unknown
     place('spiral', 'spiral-gate-2', 'gate', 1900, -4.6, sweep(5, Math.PI)),
     place('spiral', 'spiral-barrier-2', 'energy-barrier', 2500, 2.5),
     place('spiral', 'spiral-barrier-3', 'energy-barrier', 3300, -2.5, pulse(3, Math.PI)),
-    place('spiral', 'spiral-gate-3', 'gate', 4200, 2.5),
+    place('spiral', 'spiral-gate-3', 'gate', 8230, 2.5),
   ],
 };

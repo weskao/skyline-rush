@@ -15,9 +15,9 @@ export const SCENERY_KINDS = Object.freeze({
   cosmic: ['satellite','asteroid','habitat','antenna','debris','solar-panel'],
 });
 // Valley openings: the hillside on one side sinks to a meadow so the hero
-// peak (WORLD_THEMES alpine mountain, 6180 m left) is not hidden behind the
+// peak (WORLD_THEMES alpine mountain, 6060 m left) is not hidden behind the
 // valley wall. 0..1 with 90 m ramps; continuous in distance, so no seams.
-export const TERRAIN_VISTAS = Object.freeze({ alpine: [{ from: 5600, to: 6260, side: -1 }] });
+export const TERRAIN_VISTAS = Object.freeze({ alpine: [{ from: 5350, to: 6260, side: -1 }] });
 function vistaOpening(trackId,distance,side) {
   let open=0;
   for(const v of TERRAIN_VISTAS[trackId]||[])if(v.side===side)
@@ -33,9 +33,9 @@ export function terrainHeight(trackId,distance,side,lateral) {
     Math.cos(distance*.049+side*.8)*.24+
     Math.sin(distance*.011+3.1)*.21;
   const xs=trackId==='alpine'?[16,23,39,72]:[15,25,48,92];
-  const open=1-.85*vistaOpening(trackId,distance,side);
+  const open=vistaOpening(trackId,distance,side), valley=[-1,-3,-10,-26];
   const ys=trackId==='alpine'
-    ?[-1,(4+noise*2.2)*open,(22+noise*7)*open,(65+noise*16)*open]
+    ?[-1,4+noise*2.2,22+noise*7,65+noise*16].map((h,i)=>h+(valley[i]-h)*open)
     :(side===1?[-3,-7,-18,-22]:[-1,2,8,18])
       .map((h,i)=>h+noise*[.2,.8,2.8,4.5][i]);
   for(let i=0;i<xs.length-1;i++){

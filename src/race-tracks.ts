@@ -1,5 +1,5 @@
-import { CANYON_GAP, CANYON_LENGTH } from './track-profile-road.ts';
-import { SKY_LENGTH } from './sky-track.ts';
+import { CANYON_GAP, CANYON_LENGTH, profileLength } from './track-profile-road.ts';
+import { SKY_JUMPS, SKY_LENGTH, SKY_SPIRAL } from './sky-track.ts';
 import { CIRCUIT_ID, CIRCUIT_TRACK } from './circuit-track.ts';
 import type { TrackConfig } from './game-types.ts';
 import { FROSTBITE_ID, FROSTBITE_TRACK } from './courses/frostbite-race.ts';
@@ -16,6 +16,8 @@ import { NEON_RING_LINES } from './neon-ring-lines.ts';
 // User, 2026-11-13: the first five maps (Coast → Sky Spiral) felt sparse, so they carry 40% more ring and pickup
 // slots (a new layoutVersion each).
 const OPENING_ITEMS = 1.4;
+// Keep the number of full-width rows and trains in check as the longer profiles add item slots.
+const PROFILE_RING_SHAPES = [.065, .23] as const;
 const BOOST_ODDS = [0.4, 0.7, 0.8, 0.9] as const; // charge 40%, nitro 30%, slipstream 10%, risk 10%, mystery 10% (unchanged)
 export const RACE_TRACKS: Record<string, TrackConfig> = {
   coast: { // fixedRings: the original gate heights (8 m, then road height 3 m) on any lane
@@ -52,31 +54,73 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     ],
   },
   aurora: {
-    name: 'Aurora Pass', length: 5500, trafficDensity: 1, seed: 4004, layoutVersion: 5, itemDensity: OPENING_ITEMS,
+    name: 'Aurora Pass', length: profileLength('aurora'), trafficDensity: 1, seed: 4004, layoutVersion: 6,
+    itemDensity: OPENING_ITEMS * profileLength('aurora') / 5500, ringDensity: .77,
+    shapeOdds: PROFILE_RING_SHAPES,
     sections: [
-      { from: 900, to: 1500, type: 'ice' }, { from: 1800, to: 2600, type: 'uphill' }, { from: 2800, to: 3500, type: 'ice' },
-      { from: 3800, to: 4200, type: 'uphill' }, { from: 4300, to: 4900, type: 'ice' },
-      { from: 4920, to: 5380, type: 'shortcut', x: 7.5, altitude: 6 },
+      { from: 900, to: 1680, type: 'ice' }, { from: 2200, to: 2960, type: 'uphill' },
+      { from: 4060, to: 4440, type: 'tunnel' }, { from: 5190, to: 5740, type: 'uphill' },
+      { from: 7760, to: 8550, type: 'ice' }, { from: 9020, to: 9520, type: 'shortcut', x: 7.5, altitude: 6 },
     ],
   },
   spiral: {
-    name: 'Sky Spiral', length: SKY_LENGTH, trafficDensity: 0.75, seed: 5005, layoutVersion: 6, itemDensity: OPENING_ITEMS, openingNitroRings: 2, // difficulty curve: only the late first NITRO is fixed
+    name: 'Sky Spiral', length: SKY_LENGTH, trafficDensity: .75, seed: 5005, layoutVersion: 7,
+    itemDensity: OPENING_ITEMS * SKY_LENGTH / 5600, ringDensity: .82, openingNitroRings: 2,
+    shapeOdds: PROFILE_RING_SHAPES,
     sections: [
-      { from: 1100, to: 2200, type: 'spiral' },
-      { from: 2800, to: 2870, type: 'launch' },
-      { from: 2870, to: 2935, type: 'gap' },
-      { from: 3700, to: 3775, type: 'launch' },
-      { from: 3775, to: 3840, type: 'gap' },
-      { from: 4550, to: 4630, type: 'launch' },
-      { from: 4630, to: 4700, type: 'gap' },
-      { from: 4950, to: 5450, type: 'shortcut', x: -7.5, altitude: 6 },
+      { from: SKY_SPIRAL.start, to: SKY_SPIRAL.end, type: 'spiral' },
+      ...SKY_JUMPS.flatMap(({ rampFrom, rampTo, gapFrom, gapTo }) => [
+        { from: rampFrom, to: rampTo, type: 'launch' }, { from: gapFrom, to: gapTo, type: 'gap' },
+      ] as const),
+      { from: 7220, to: 7720, type: 'shortcut', x: -7.5, altitude: 6 },
     ],
   },
-  taipei: {"name":"Taipei Heritage","length":6200,"trafficDensity":1.1,"seed":6006,"layoutVersion":3,"sections":[{"from":850,"to":1200,"type":"tunnel"},{"from":1950,"to":2450,"type":"shortcut","x":-7.5,"altitude":6},{"from":3120,"to":3450,"type":"boost-tunnel"},{"from":4100,"to":4450,"type":"tunnel"}]},
-  tokyo: {"name":"Tokyo Afterdark","length":6800,"trafficDensity":1.4,"seed":7007,"layoutVersion":3,"sections":[{"from":850,"to":1350,"type":"tunnel"},{"from":2450,"to":2950,"type":"shortcut","x":7.5,"altitude":6},{"from":4150,"to":4650,"type":"tunnel"},{"from":5050,"to":5450,"type":"boost-tunnel"}]},
-  alpine: {"name":"Alpine Rail Pass","length":7600,"trafficDensity":0.8,"seed":8008,"layoutVersion":3,"sections":[{"from":900,"to":1420,"type":"uphill"},{"from":1600,"to":2200,"type":"tunnel"},{"from":3100,"to":3600,"type":"shortcut","x":-7.5,"altitude":6},{"from":3850,"to":4200,"type":"boost-tunnel"},{"from":4700,"to":5200,"type":"tunnel"},{"from":5900,"to":6400,"type":"uphill"}]},
-  coastal: {"name":"Coastal Horizon","length":5800,"trafficDensity":1,"seed":9009,"layoutVersion":3,"sections":[{"from":850,"to":1300,"type":"crosswind","dir":1},{"from":2100,"to":2600,"type":"shortcut","x":7.5,"altitude":6},{"from":2950,"to":3310,"type":"boost-tunnel"},{"from":3950,"to":4600,"type":"crosswind","dir":-1}]},
-  cosmic: {"name":"Cosmic Orbit","length":8000,"trafficDensity":0.65,"seed":1010,"layoutVersion":3,"sections":[{"from":1400,"to":1900,"type":"crosswind","dir":1},{"from":3000,"to":3500,"type":"shortcut","x":-7.5,"altitude":6},{"from":5100,"to":5600,"type":"crosswind","dir":-1},{"from":6100,"to":6540,"type":"boost-tunnel"}]},
+  taipei: {
+    name: 'Taipei Heritage', length: profileLength('taipei'), trafficDensity: 1.1, seed: 6006, layoutVersion: 4,
+    itemDensity: profileLength('taipei') / 6200, ringDensity: .78,
+    shapeOdds: PROFILE_RING_SHAPES,
+    sections: [
+      { from: 1950, to: 2450, type: 'shortcut', x: -7.5, altitude: 6 }, { from: 2780, to: 3130, type: 'tunnel' },
+      { from: 3400, to: 3730, type: 'boost-tunnel' }, { from: 6930, to: 7280, type: 'tunnel' },
+    ],
+  },
+  tokyo: {
+    name: 'Tokyo Afterdark', length: profileLength('tokyo'), trafficDensity: 1.4, seed: 7007, layoutVersion: 4,
+    itemDensity: profileLength('tokyo') / 6800, ringDensity: .96,
+    shapeOdds: PROFILE_RING_SHAPES,
+    sections: [
+      { from: 850, to: 1350, type: 'tunnel' }, { from: 2450, to: 2950, type: 'shortcut', x: 7.5, altitude: 6 },
+      { from: 4880, to: 5300, type: 'tunnel' }, { from: 8460, to: 8860, type: 'boost-tunnel' },
+    ],
+  },
+  alpine: {
+    name: 'Alpine Rail Pass', length: profileLength('alpine'), trafficDensity: .8, seed: 8008, layoutVersion: 4,
+    itemDensity: profileLength('alpine') / 7600, ringDensity: .9,
+    shapeOdds: PROFILE_RING_SHAPES,
+    sections: [
+      { from: 900, to: 1420, type: 'uphill' }, { from: 1600, to: 2200, type: 'tunnel' },
+      { from: 3100, to: 3600, type: 'shortcut', x: -7.5, altitude: 6 }, { from: 4430, to: 4860, type: 'tunnel' },
+      { from: 5010, to: 5360, type: 'boost-tunnel' }, { from: 5380, to: 5760, type: 'uphill' },
+    ],
+  },
+  coastal: {
+    name: 'Coastal Horizon', length: profileLength('coastal'), trafficDensity: 1, seed: 9009, layoutVersion: 4,
+    itemDensity: profileLength('coastal') / 5800, ringDensity: .78,
+    shapeOdds: PROFILE_RING_SHAPES,
+    sections: [
+      { from: 2890, to: 3380, type: 'crosswind', dir: 1 }, { from: 4250, to: 4750, type: 'shortcut', x: 7.5, altitude: 6 },
+      { from: 5780, to: 6140, type: 'boost-tunnel' }, { from: 6520, to: 7140, type: 'crosswind', dir: -1 },
+    ],
+  },
+  cosmic: {
+    name: 'Cosmic Orbit', length: profileLength('cosmic'), trafficDensity: .65, seed: 1010, layoutVersion: 4,
+    itemDensity: profileLength('cosmic') / 8000, ringDensity: .9,
+    shapeOdds: PROFILE_RING_SHAPES,
+    sections: [
+      { from: 1400, to: 1900, type: 'crosswind', dir: 1 }, { from: 3000, to: 3500, type: 'shortcut', x: -7.5, altitude: 6 },
+      { from: 5060, to: 5500, type: 'boost-tunnel' }, { from: 6570, to: 7100, type: 'crosswind', dir: -1 },
+    ],
+  },
 };
 
 // User, 2026-11-09: a new course (any `topology`) keeps the classic per-km ring/pickup density: its per-car item count

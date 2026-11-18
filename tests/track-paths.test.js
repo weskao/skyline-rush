@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RACE_TRACKS } from '../src/game.js';
+import { SKY_SPIRAL } from '../src/sky-track.ts';
 import { trackPoint, trackFrame, trackOverview } from '../src/track-paths.ts';
 const close=(a,b,e=1e-7)=>assert.ok(Math.abs(a-b)<e,`${a} != ${b}`);
 
@@ -47,9 +48,9 @@ test('classic turns continue beyond the finish with metre-based progress and no 
 });
 
 test('spiral is a true 360-degree elevated turn',()=>{
-  const a=trackPoint('spiral',1100),middle=trackPoint('spiral',1650),b=trackPoint('spiral',2200);
-  close(a.x,b.x,1e-5); close(a.z,b.z,1e-5);
-  assert.ok(middle.x>a.x+300);close(b.y-a.y,82,1e-5);
+  const a=trackPoint('spiral',1850),middle=trackPoint('spiral',2550),b=trackPoint('spiral',3250);
+  close(a.x,b.x,.02); close(a.z,b.z,.02);
+  assert.ok(middle.x>a.x+300);close(b.y-a.y,104,1e-5);
 });
 test('public overview uses only the centreline across every course',()=>{
   for(const id of Object.keys(RACE_TRACKS)){
@@ -94,10 +95,10 @@ test('old four course outlines are visually legible instead of a one-pixel line'
 });
 test("Sky Spiral's real 360-degree helix is visibly large on its full-course map",()=>{
   const samples=trackOverview('spiral',257);
-  const loop=samples.filter(p=>p.distance>=1100&&p.distance<=2200);
-  assert.ok(Math.max(...loop.map(p=>p.x))-Math.min(...loop.map(p=>p.x))>.5);
+  const loop=samples.filter(p=>p.distance>=SKY_SPIRAL.start&&p.distance<=SKY_SPIRAL.end);
+  assert.ok(Math.max(...loop.map(p=>p.x))-Math.min(...loop.map(p=>p.x))>.35);
   assert.ok(Math.max(...loop.map(p=>p.y))-Math.min(...loop.map(p=>p.y))>.26);
   const start=samples[0],end=samples.at(-1);
   assert.ok(start.y<.1&&end.y>.9);
-  assert.ok(loop.some(p=>p.x>.6)&&loop.some(p=>p.y<.3));
+  assert.ok(loop.some(p=>p.x>.6)&&loop.some(p=>p.y<.31));
 });

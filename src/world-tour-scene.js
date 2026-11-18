@@ -13,16 +13,16 @@ export const WORLD_THEMES = {
   taipei: {
     top:'#405970',horizon:'#91a4a4',fog:'#74868b',rock:'#657e83',road:'#373e41',ground:'#536374',rail:'#929f9a',sun:'#c3c9c5',warmth:.08,
     buildings:'#ad6e59',accent:'#f3c47b',prop:'city',landmarks:[
-      {kind:'office',at:1750,side:1,offset:94,scale:1.7,yaw:.6,plaza:520},
-      {kind:'gate',at:2630,side:1,offset:71,scale:1.12},
-      {kind:'temple',at:4480,side:-1,offset:75,scale:1.25},
+      {kind:'office',at:1450,side:-1,offset:94,scale:1.7,yaw:.6,plaza:600,radius:55},
+      {kind:'gate',at:2070,side:1,offset:71,scale:1.12},
+      {kind:'temple',at:5150,side:-1,offset:75,scale:1.25},
     ],
   },
   tokyo: {
     top:'#121a31',horizon:'#38415e',fog:'#32364d',rock:'#252e44',road:'#202b3b',ground:'#232c40',rail:'#838a98',sun:'#a0a7bc',warmth:0,
     buildings:'#29305c',accent:'#ff49bd',prop:'neon',landmarks:[
       {kind:'crossing',at:1200,side:-1,offset:66,scale:1.2},
-      {kind:'tower',at:3300,side:-1,offset:110,scale:1.25,plaza:500},
+      {kind:'tower',at:6900,side:-1,offset:110,scale:1.25,plaza:500},
       {kind:'railway',at:5180,side:-1,offset:78,scale:1.05},
     ],
   },
@@ -30,16 +30,16 @@ export const WORLD_THEMES = {
     top:'#4c6876',horizon:'#95aca6',fog:'#74877f',rock:'#53665a',road:'#414640',ground:'#547367',rail:'#a7b0a3',sun:'#a1acaa',warmth:0,
     buildings:'#526c65',accent:'#f9dba2',prop:'mountain',landmarks:[
       {kind:'tunnel',at:1760,side:1,offset:80,scale:1.3},
-      {kind:'railway',at:3850,side:-1,offset:110,scale:1.25},
-      {kind:'mountain',at:6180,side:-1,offset:120,scale:1.4,plaza:560},
+      {kind:'railway',at:3290,side:-1,offset:110,scale:1.25},
+      {kind:'mountain',at:6060,side:-1,offset:120,scale:1.4,plaza:560},
     ],
   },
   coastal: {
     top:'#577b90',horizon:'#a6b7b1',fog:'#899ea6',rock:'#697785',road:'#454b49',ground:'#557985',rail:'#9eaca3',sun:'#c2ccc7',warmth:0,
     buildings:'#d6b99b',accent:'#ffeeaa',prop:'coast',landmarks:[
-      {kind:'lighthouse',at:1180,side:-1,offset:100,scale:1.35,plaza:400},
+      {kind:'lighthouse',at:1630,side:-1,offset:100,scale:1.35,plaza:400},
       {kind:'bridge',at:3160,side:-1,offset:130,scale:1.2},
-      {kind:'arch',at:4870,side:1,offset:125,scale:1.6},
+      {kind:'arch',at:5060,side:1,offset:125,scale:1.6},
     ],
   },
   cosmic: {
@@ -269,14 +269,13 @@ export function createWorldTourScene(scene){
     if(homeId!==id||homeOrigin!==origin){homeId=id;homeOrigin=origin;homePoint=trackPoint(id,clamped(id,origin),endlessActive);}
     return [c.x-homePoint.x+f.right[0]*x+f.up[0]*y,c.y-homePoint.y+f.right[1]*x+f.up[1]*y,c.z-homePoint.z+f.right[2]*x+f.up[2]*y];
   };
-  const pose=(target,id,s,x,y,origin)=>{
-    const f=trackFrame(id,clamped(id,s),endlessActive);
+  const pose=(target,id,s,x,y,origin,f=trackFrame(id,clamped(id,s),endlessActive))=>{
     basis.makeBasis(vec(f.right),vec(f.up),vec(f.forward).negate());
     target.position.fromArray(local(id,s,x,y,origin,f));
     target.quaternion.setFromRotationMatrix(basis);
   };
-  const instance=(mesh,index,id,s,x,y,size,origin)=>{
-    pose(dummy,id,s,x,y,origin);dummy.scale.set(...size);dummy.updateMatrix();
+  const instance=(mesh,index,id,s,x,y,size,origin,f)=>{
+    pose(dummy,id,s,x,y,origin,f);dummy.scale.set(...size);dummy.updateMatrix();
     mesh.setMatrixAt(index,dummy.matrix);
   };
   const clearHeroes=()=>{
@@ -345,18 +344,18 @@ export function createWorldTourScene(scene){
         const a=i*2,k=i*6;
         const hole=sections.some(entry=>entry.type==='gap'&&s+STEP/2>=entry.from&&s+STEP/2<entry.to);
         indices.set(hole?[a,a,a,a,a,a]:[a,a+1,a+2,a+1,a+3,a+2],k);
-        const character=ROAD_CHARACTER[id].markings;
+        const character=ROAD_CHARACTER[id].markings, edgeFrame=trackFrame(id,clamped(id,s+STEP*.5),endlessActive);
         for(const side of [-1,1]){
           const n=i*2+(side===1?1:0);
           instance(roadEdges,n,id,s+STEP*.5,side*11.8,.24,
-            [character==='mountain'?.25:.16,.14,STEP],origin);
+            [character==='mountain'?.25:.16,.14,STEP],origin,edgeFrame);
           instance(shoulders,n,id,s+STEP*.5,side*13.5,-.22,
-            [character==='orbital'?2.5:3.2,.42,STEP],origin);
+            [character==='orbital'?2.5:3.2,.42,STEP],origin,edgeFrame);
         }
         const offsets=character==='urban'?[-6,0,6]
           :character==='expressway'?[-5.4,0,5.4]
           :character==='orbital'?[-10.6,10.6]:[-10.5,0,10.5];
-        const stripes=offsets.length;
+        const stripes=offsets.length, stripeFrame=trackFrame(id,clamped(id,s+2),endlessActive);
         laneMarks.count=ROWS*stripes;
         for(let line=0;line<stripes;line++){
           const lateral=offsets[line];
@@ -364,7 +363,7 @@ export function createWorldTourScene(scene){
           const width=edge?.19:character==='mountain'?.16:.12;
           const length=edge?STEP:character==='urban'?3.8:5;
           instance(laneMarks,i*stripes+line,id,s+2,lateral,.07,
-            [width,.035,length],origin);
+            [width,.035,length],origin,stripeFrame);
         }
       }
       geometry.attributes.position.needsUpdate=geometry.attributes.normal.needsUpdate=geometry.index.needsUpdate=true;

@@ -1,4 +1,4 @@
-import { buildCanyonRoad } from './track-profile-road.ts';
+import { buildCanyonRoad, profileRoad } from './track-profile-road.ts';
 
 // A sector describes a smooth change of heading from a straight, through an apex, back to a straight.
 // Signed apex headings are degrees from the route's overall bearing. Paired corners can have different lengths.
@@ -159,13 +159,7 @@ const roads: Readonly<Record<string, ClassicRoad>> = {
     [980, 0], [279, 90], [114, 0], // Violet Plaza, heading west, and the last corner back onto the boulevard
   ]),
   canyon: buildCanyonRoad(),
-  // Aurora: wider entries on ice, alternating sweepers and a tighter switchback before the final climb.
-  aurora: buildRoad(5500, [
-    [185, 565, 37], [600, 865, -45], [920, 1490, 35],
-    [1610, 1960, -55], [1990, 2480, 49], [2620, 2780, -28],
-    [2810, 3450, -43], [3520, 3740, 50], [3760, 4010, -53],
-    [4250, 4830, 38], [4870, 5300, -46],
-  ]),
+  aurora: profileRoad('aurora')!,
 };
 
 export const classicRoadRoute = (id: string): ClassicRoad | undefined => Object.hasOwn(roads, id) ? roads[id] : undefined;

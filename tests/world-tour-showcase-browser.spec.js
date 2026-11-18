@@ -74,8 +74,8 @@ for (const id of MAPS) {
 // In-race approach: the chase camera keeps the signature landmark in view and
 // clear of roadside props on its kerb (the plaza), not just on the home screen.
 // Two pages: five maps in one outran the folded-test budget (about 150 CI seconds).
-const APPROACHES=[['taipei','office',[1250,1400,1550]],['tokyo','tower',[2980,3080,3180]],
-  ['alpine','mountain',[5750,5900]],['coastal','lighthouse',[850,950]],['cosmic','cosmic-gate',[3820,3920]]];
+const APPROACHES=[['taipei','office',[940,1060,1240]],['tokyo','tower',[6500,6570,6710]],
+  ['alpine','mountain',[5575,5750]],['coastal','lighthouse',[1260,1380]],['cosmic','cosmic-gate',[3820,3920]]];
 for(const group of [APPROACHES.slice(0,2),APPROACHES.slice(2)]) {
   test(`racing toward the landmark keeps it in view and unobstructed: ${group.map(([id])=>id).join(', ')}`,async({page})=>{
     test.setTimeout(ciTimeout(100000));
