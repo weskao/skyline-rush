@@ -284,3 +284,19 @@ test('NITRO tightens the shared nozzle flare where bloom runs and preserves the 
   assert.equal(flare.size.value, size);
   assert.equal(flare.fade.value, fade);
 });
+
+test('Low showroom caps overlapping jet light while Low racing keeps the daylight profile', () => {
+  const scene = new Scene(), vehicle = new Group(), origin = new Vector3();
+  vehicle.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  scene.add(vehicle);
+  const vfx = createAeroVFX(scene, vehicle), race = createRace(), settings = vfxSettings({ quality: 'low' });
+  race.phase = 'racing';
+  Object.assign(race.player, { speed: 105, nitroTime: 1 });
+  const jet = jetsOf(scene.getObjectByName('Rear ports'))[0];
+  vfx.update(race, 1 / 60, origin, settings, false, null, true);
+  assert.equal(jet.material.uniforms.glare.value, 1);
+  assert.equal(jet.visible, true);
+  vfx.update(race, 1 / 60, origin, settings, false);
+  assert.equal(jet.material.uniforms.glare.value, 0);
+  assert.equal(jet.visible, true);
+});

@@ -2,7 +2,9 @@
 
 - [x] Reuse the wake point cloud for small skin-tinted sparks on High/Ultra. Restrict the submitted wake points on Low/Medium and keep the equipped shapes.
 - [x] Limit launch sparks to 24/48/72/96 by tier; refine the spark silhouette and fitted airflow seams on High/Ultra. Comfort and Reduced Motion omit the added details.
-- [x] Observe RED for unbounded wake draws and matching flare counts across tiers; both guards pass with 65 focused checks, including shader safety and module size.
+- [x] Constrain overlapping NITRO jets in the Low showroom; keep the daylight race profile. A dedicated RED exposed the missing showroom cap.
+- [x] Observe RED for unbounded wake draws and matching flare counts across tiers; 66 focused checks pass, including shader safety and module size.
+- [x] Check the four representative styles in WebGL at every tier and confirm the combined loadout attaches to both selectable car models in Studio.
 - [ ] Confirm physical-device footage and review the exact-commit GitHub quality gate.
 
 # 2026-11-18 — Garage and race VFX polish

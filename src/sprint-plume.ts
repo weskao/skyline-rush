@@ -7,7 +7,7 @@ import * as THREE from 'three';
 interface Port { position: readonly number[]; direction: readonly number[]; size: number }
 /** `reach`: jet length (m). `quality`: 0.25 Low, 0.5 Medium, 1 High. `calm`: Reduced Motion or Comfortable. */
 export interface PlumeFrame { time: number; power: number; nitroMix: number; reach: number; brightness: number; diamonds: number;
-  extreme: number; tail: number; quality: number; enabled: boolean; calm: boolean; voidPulse: boolean; racing: boolean; grounded: boolean }
+  extreme: number; tail: number; quality: number; enabled: boolean; calm: boolean; voidPulse: boolean; racing: boolean; grounded: boolean; showroom?: boolean }
 
 /** The flame in metres behind the nozzle. Fixed: as fat and as bright on Low + Realistic as on High + Extreme, whatever the tail length. */
 export const PLUME = { nozzle: 0.065, fat: 0.3, half: 0.12, flare: 0.45, glowWidth: 2.4, glowLength: 7 } as const;
@@ -134,7 +134,8 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         jet.visible = on;
         jet.scale.z = frame.reach;
         const u = jet.material.uniforms;
-        u.reach!.value = frame.reach; u.thick!.value = 1 - skinFade; u.glare!.value = frame.quality > 0.25 ? 1 : 0; // configureBloom: no bloom on Low
+        u.reach!.value = frame.reach; u.thick!.value = 1 - skinFade;
+        u.glare!.value = Number(frame.quality > 0.25 || frame.showroom === true); // the dark showroom also needs the overlap cap on Low
         u.time!.value = frame.time + i * 0.13; u.tail!.value = frame.tail;
         u.power!.value = Math.sqrt(power); // clamped like the flare; a held BOOST (power ~0.65) still reads as a sprint
         u.brightness!.value = frame.brightness; u.diamonds!.value = frame.diamonds; u.extreme!.value = frame.extreme; u.nitroMix!.value = frame.nitroMix;

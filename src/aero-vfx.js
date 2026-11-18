@@ -125,7 +125,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
   const shockColor = new THREE.Color('#bdeeff'), nitroShockColor = new THREE.Color('#ffd166'); // --nitro (style.css)
   let hadPosition = false, wasBoosting = false, wasNitro = false, time = 0, reveal = 0, strength = 0, rollStrength = 0, wakeStrength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
-  const plumeFrame = { time: 0, power: 0, nitroMix: 0, reach: 0, brightness: 1, diamonds: 0, extreme: 0, tail: 0, quality: 1, enabled: false, calm: false, voidPulse: false, racing: false, grounded: true }; // reused: no object per frame
+  const plumeFrame = { time: 0, power: 0, nitroMix: 0, reach: 0, brightness: 1, diamonds: 0, extreme: 0, tail: 0, quality: 1, enabled: false, calm: false, voidPulse: false, racing: false, grounded: true, showroom: false }; // reused: no object per frame
   let quality = 1, settings, delta, launchSkinActive = false, launchPattern = 0, voidPulse = false, lastPhase = 'ready', demoPulseClock = 2.2;
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
@@ -288,7 +288,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         : THREE.MathUtils.lerp(SHOWROOM.idle, 1, pulse) * (0.65 + SHOWROOM.speed / 200));
       jet.brightness = Math.min(settings.coreBrightness, calm ? (jet.nitroMix > 0 ? 0.65 : 0.9) : 3);
       jet.diamonds = settings.machDiamonds; jet.extreme = settings.preset === 'extreme' ? 1 : 0;
-      jet.quality = quality; jet.calm = calm; jet.racing = active; jet.grounded = grounded;
+      jet.quality = quality; jet.calm = calm; jet.showroom = studioDemo; jet.racing = active; jet.grounded = grounded;
       plume.update(jet);
       delta = car.speed;
       if (wakeStrength > 0.01 && enabled && dt > 0) {
