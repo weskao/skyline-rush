@@ -43,6 +43,9 @@ Keep Playwright helper imports outside the source string served by a module mock
   judge it by `paused` read once or by the `play()` promise. A hero clip resuming after a viewer
   closes failed 1 in 2 CI runs this way (`release-media-zoom-browser.spec.js`, not yet
   reproduced).
+- **Measure one-shot sound cues on the audio rendering thread.** A stalled WebGL frame can
+  make a `ScriptProcessorNode` miss an entire cue (CI 44250995528). Arm an `AudioWorkletNode`
+  before the action and retain its measured peak for the browser assertion.
 
 ## Assert only what a player can see
 
@@ -143,6 +146,10 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `openGarage()` and follow pause/results/history with `await settled(<overlay locator>)` (both in
   `tests/helpers/test.js`); never loosen a pixel bound to absorb it. Enforced by the same test file
   (*overlay geometry*) for every spec that opens one of them and then calls `getBoundingClientRect`/`boundingBox`.
+- **Read a timed cue in the tick that finds it.** The halfway card lives 2.15 s of race time; on CI,
+  `toBeVisible` + two `toContainText` + `locator.evaluate` outlived it and the evaluate got a detached node
+  (`parentElement` null, run 44269822759). Find, read and measure a self-expiring element inside one
+  `page.waitForFunction`, then assert on the returned snapshot (`race-halfway-browser.spec.js`).
 - **Poll the condition you assert, not a weaker proxy.** `expect.poll(...).not.toEqual(before)` passes on the
   first change, which can be the live loop's own HUD tick (`updateUI` runs every 0.075 s) from before your
   stepped frames were drawn; a one-shot read on the next line then judged all eight minimap markers and found
