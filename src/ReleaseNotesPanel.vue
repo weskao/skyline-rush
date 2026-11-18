@@ -95,6 +95,11 @@ function zoomHero() {
   </dialog>
 </template>
 <style scoped>
+.release-panel { display: grid; grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
+.release-meta { margin: 0; }
+@media (max-height: 420px) and (orientation: landscape) {
+  .release-panel { row-gap: 8px; }
+}
 .release-zoom { display: block; width: 100%; padding: 0; border: 0; border-radius: 8px; background: none; cursor: zoom-in; }
 .release-zoom[hidden] { display: none; }
 /* Tapping a picture or clip, or getting focus back when its enlarged view closes, never flashes a focus ring. */

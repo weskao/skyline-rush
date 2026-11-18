@@ -4,6 +4,7 @@ paths:
   - "src/race-lobby.css"
   - "src/track-chooser.css"
   - "src/wave3-demo-results.css"
+  - "src/ReleaseNotesPanel.vue"
   - "src/App.vue"
   - "tests/responsive-browser.spec.js"
   - "tests/*layout*"
