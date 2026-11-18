@@ -14,6 +14,12 @@
 - [x] All 17 failing browser cases passed in the fix worktree. The production build, type checks and 3,364 unit tests passed (3 skipped).
 - [ ] Confirm the full GitHub quality gate on the repair commit.
 
+# Release notes hero spacing
+
+- [x] Keep equal, visible gaps from the version/date row to the hero and from the hero to the first highlight. The inline clip previously touched the first card.
+- RED reproduced a 12 px gap above the inline clip and 0 px below. Chromium layout measurements now show 12 px on each side for inline video and hero images, 8 px on each side for the compact landscape preview, and one gap for a release without hero media.
+- [ ] Confirm the exact-commit GitHub quality gate and physical device behavior.
+
 # Develop browser CI run 44117764575
 
 - [x] Reproduced the live minimap gap on desktop and two phone widths. The map now shares the toolbar height and button size. Short touch landscape keeps its own side-by-side row.
