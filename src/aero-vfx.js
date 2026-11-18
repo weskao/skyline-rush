@@ -58,8 +58,12 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         color=mix(color,mix(vec3(1.,.82,.4),trailAccent.rgb,trailAccent.a),clamp(nitroMix,0.,1.)*.85); // NITRO gold = the --nitro CSS token; an equipped trail skin replaces it
         float pattern=1.;
         if(skinPattern>.5) pattern=.6+.4*sin(vUv.y*11.+time*(2.+skinPattern));
-        if(skinPattern>1.5) pattern=.35+.65*abs(sin(vUv.y*(12.+skinPattern*4.)+time*4.+vLane*8.));
-        if(skinPattern>2.5) pattern=step(.4,fract(vUv.y*9.+vLane*4.+time));
+        if(skinPattern>1.5) pattern=(.60+.40*abs(sin(vUv.y*20.+time*4.+vLane*8.)))*mix(1.,.68,smoothstep(.20,.95,vLane));
+        if(skinPattern>2.5){
+          float phase=fract(vUv.y*9.+vLane*4.+time*.75);
+          float segment=smoothstep(.08,.31,phase)*(1.-smoothstep(.66,.94,phase));
+          pattern=.28+.55*segment;
+        }
         gl_FragColor=vec4(color*(1.+point),ends*power*(.08+pulse*.7+point*.2)*strength*pattern);}`,
   }));
   local.add(flow);
@@ -234,11 +238,10 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       if (!hadPosition || car.impact !== lastImpact || !enabled) {
         previous.copy(current); previousRotation.copy(vehicle.quaternion); hadPosition = true;
       }
-      const countingDown = launchSkinActive && race.phase === 'countdown'; // the flare plays through 3-2-1, then bursts at GO
+      const countingDown = launchSkinActive && race.phase === 'countdown';
       flare.hold(countingDown);
-      if (countingDown && !flare.active) flare.trigger(current, vehicle.quaternion, 1.4);
       const launching = launchSkinActive && active && (lastPhase === 'ready' || lastPhase === 'countdown');
-      const flared = launching && flare.trigger(current, vehicle.quaternion, 1.1);
+      const flared = launching && flare.trigger(current, vehicle.quaternion, .78);
       if (!flared && ((boost && !wasBoosting) || (nitroActive && !wasNitro) || launching)) {
         shockAge = 0; shockPosition.copy(current); shock.quaternion.copy(vehicle.quaternion);
       }

@@ -70,7 +70,7 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         float body=thick*(1.-smoothstep(0.,3.,clamp(vD,0.,3.))); // the first 3 m stay dense whatever the tail length
         float shape=1.;
         if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
-        if(skinPattern>1.5) shape=.25+.75*abs(sin(vUv.x*6.28*3.+t*28.-time*11.));
+        if(skinPattern>1.5) shape=.58+.42*pow(max(0.,.5+.5*sin(vUv.x*6.28*3.+t*28.-time*8.)),2.);
         if(skinPattern>2.5) shape=step(.45,fract(t*7.+time*3.+vUv.x*3.));
         // glare 1 (bloom, Medium/High): under the bloom threshold, the fat flame emits half (two faces, overlapping neighbours).
         // 0 (Low, no bloom): full light and a denser tail, the jet's own halo. No channel above 1, hue kept.

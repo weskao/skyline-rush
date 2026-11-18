@@ -1,3 +1,9 @@
+# 2026-11-18 — Launch flare, thruster and airflow glare
+
+- [x] Use a steady charge during countdown and a single burst at GO. Contain flare emission by style; use continuous motion envelopes for Void Pulse, Plasma Helix, Prism Lattice and Vortex Spiral.
+- [x] The three regression guards failed with the original behavior. All 82 focused unit checks, typecheck and the trial build passed.
+- [ ] Verify the exact feature-branch quality gate and review on physical phones.
+
 # 2026-11-18 — NITRO tail glare
 
 - [x] Reproduce from High with a custom NITRO trail, on the road and in flight. Test the gold pulse, red dash, chain lighting, compact road placement, and Comfort card loop. The new guards fail against the original behavior.

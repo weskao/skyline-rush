@@ -220,3 +220,17 @@ test('all airflow skins keep the fitted roof, flank and underbody directions aft
     assert.deepEqual([...directions].sort(), ['-1,0', '0,1', '1,0']);
   }
 });
+
+test('void, plasma and prism use continuous lighting envelopes', () => {
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  const aero = createAeroVFX(scene, car);
+  const beams = car.getObjectByName('Void pulse beams').material.fragmentShader;
+  assert.match(beams, /time\*2\.4/, 'the helix still travels');
+  assert.doesNotMatch(beams, /sin\(time|float flash/);
+  const jets = car.getObjectByName('Cold gas nozzle 1').material.fragmentShader;
+  assert.match(jets, /skinPattern>1\.5\) shape=\.58\+/);
+  const airflow = aero.group.children[0].material.fragmentShader;
+  assert.doesNotMatch(airflow, /pattern=step\(/);
+  assert.match(airflow, /float segment=smoothstep/);
+});

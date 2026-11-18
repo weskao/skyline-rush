@@ -86,7 +86,7 @@ function writeRays(rays, layout) {
 // effects: the car-mounted effects group (outside the silhouette Studio framing measures); vehicle: the car;
 // ground: the road plane under the car (its contact shadow, in the car's parent space), absent in Garage and Studio.
 export function createLaunchFlare(effects, vehicle, ground) {
-  const uniforms = Object.fromEntries(['age', 'power', 'time', 'shape', 'rays', 'swirl', 'pulse', 'corona', 'core', 'size']
+  const uniforms = Object.fromEntries(['age', 'power', 'time', 'charging', 'shape', 'rays', 'swirl', 'pulse', 'corona', 'core', 'size']
     .map(key => [key, { value: 0 }]));
   uniforms.core.value = uniforms.size.value = 1;
   uniforms.primary = { value: new THREE.Vector3(1, 1, 1) }; uniforms.secondary = { value: new THREE.Vector3(1, 1, 1) };
@@ -102,7 +102,7 @@ export function createLaunchFlare(effects, vehicle, ground) {
   return {
     get active() { return pool.visible; },
     reset() { held = false; hide(); },
-    hold(on) { held = on; }, // held: the flare loops (the 3-2-1 countdown) instead of ending
+    hold(on) { held = on; if (held) age = 1; }, // the countdown draws a static pool
     setSkin(id) {
       style = LAUNCH_FLARE_STYLES[id] ?? null;
       if (!style) return hide();
@@ -119,17 +119,19 @@ export function createLaunchFlare(effects, vehicle, ground) {
     },
     // Low keeps the pool and rays but skips the full-body overdraw; VFX Off / Reduced Motion pass enabled=false.
     update(dt, time, origin, enabled, quality, power) {
-      if (age < 1) { age += dt / duration; age = age < 1 ? age : held ? age % 1 : 1; }
-      const on = !!style && enabled && age < 1;
-      pool.visible = on; glow.visible = on && quality > 0.25;
-      rays.visible = on && rays.count > 0; rings.visible = on && style.shape === 'ring';
-      sparks.visible = on && style.shape !== 'ring'; sparks.geometry.setDrawRange(0, quality > 0.25 ? SPARKS : SPARKS / 2); // Low throws half
+      if (age < 1) age = Math.min(1, age + dt / duration);
+      const on = !!style && enabled && (held || age < 1);
+      const bursting = on && !held;
+      pool.visible = on; glow.visible = bursting && quality > 0.25;
+      rays.visible = bursting && rays.count > 0; rings.visible = bursting && style.shape === 'ring';
+      sparks.visible = bursting && style.shape !== 'ring'; sparks.geometry.setDrawRange(0, quality > 0.25 ? SPARKS : SPARKS / 2); // Low throws half
       if (!on) return;
       if (ground) { // the car leans about its wheels (steering bank, thrust pitch): a pool leaning with it sinks under the road
         roadUp.set(0, 0, 1).applyQuaternion(ground.quaternion).applyQuaternion(carFrame.copy(vehicle.quaternion).invert());
         pool.quaternion.setFromUnitVectors(UP, roadUp).multiply(FLAT);
       }
-      uniforms.age.value = age; uniforms.time.value = time; uniforms.power.value = power;
+      uniforms.age.value = age; uniforms.time.value = time; uniforms.power.value = power * style.intensity;
+      uniforms.charging.value = Number(held);
       rays.rotation.y = style.swirl * time * 0.8; // the magenta vortex swirls its rays around the car
     },
   };

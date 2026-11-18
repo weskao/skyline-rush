@@ -40,10 +40,14 @@ test('each launch flare matches its badge: silhouette, signature motion and colo
   assert.ok(hsv(white.primary).saturation < 0.2, 'white supernova is white');
   assert.ok(hueIn(white.secondary, 210, 240), 'with the steel-blue fringe of its badge');
   assert.ok(hueIn(LAUNCH_FLARE_STYLES['launch-flare-ring'].secondary, 215, 245), 'ring badge: magenta outer, blue inner ring');
-  assert.ok(LAUNCH_FLARE_STYLES['launch-flare-pulse'].pulse > 0, 'Pulse flare throbs');
+  assert.ok(LAUNCH_FLARE_STYLES['launch-flare-pulse'].pulse > 0, 'Pulse flare has a travelling wave');
   assert.ok(LAUNCH_FLARE_STYLES['launch-flare-gold'].corona > 0, 'Solar corona has a flame corona');
   assert.ok(LAUNCH_FLARE_STYLES['launch-flare-magenta'].swirl > 0, 'Magenta vortex spirals');
-  assert.ok(white.core > Math.max(...FLARES.slice(0, -1).map(id => LAUNCH_FLARE_STYLES[id].core)), 'supernova has the brightest core');
+  assert.ok(white.core > Math.max(...FLARES.slice(0, -1).map(id => LAUNCH_FLARE_STYLES[id].core)), 'supernova retains its distinct core shape');
+  assert.ok(white.core <= 1 && white.size <= 2.6 && white.intensity <= .55, 'white keeps a contained highlight');
+  assert.ok(hsv(LAUNCH_FLARE_STYLES['launch-flare-red'].primary).saturation < .85, 'red stays distinct at lower saturation');
+  assert.doesNotMatch(flareShaders.RAY_FRAGMENT, /mod\(behind/);
+  assert.doesNotMatch(flareShaders.BODY_FRAGMENT, /sin\(time|float throb/);
   assert.equal(new Set(FLARES.map(id => JSON.stringify(LAUNCH_FLARE_STYLES[id]))).size, FLARES.length, 'no two flares look alike');
 });
 

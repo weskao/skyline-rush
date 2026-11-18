@@ -83,7 +83,7 @@ test('flare parts follow quality and comfort settings and never re-upload instan
   assert.notEqual(rays.rotation.y, turn, 'the magenta vortex swirls its rays around the car');
 });
 
-test('the launch flare keeps playing through the whole 3-2-1 countdown, then bursts at GO', () => {
+test('countdown holds a dim, steady charge and GO triggers one short burst', () => {
   const scene = new Scene(), car = new Group();
   car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
   car.add(car.userData.body); scene.add(car);
@@ -91,12 +91,21 @@ test('the launch flare keeps playing through the whole 3-2-1 countdown, then bur
   aero.setSkins({ 'launch-flare': 'launch-flare-gold' });
   const pool = scene.getObjectByName('Launch flare burst');
   race.phase = 'countdown';
-  let dark = 0;
-  for (let i = 0; i < 3 * 60; i++) { aero.update(race, 1 / 60, new Vector3(), settings, false); if (!pool.visible) dark++; }
-  assert.equal(dark, 0, `flare dark for ${dark} countdown frames`);
+  const u = pool.material.uniforms;
+  const moving = ['Launch flare rays', 'Launch flare rings', 'Launch flare sparks', 'Launch flare body glow'].map(name => scene.getObjectByName(name));
+  const origin = new Vector3();
+  const chargeAges = new Set();
+  for (let i = 0; i < 3 * 60; i++) {
+    aero.update(race, 1 / 60, origin, settings, false);
+    chargeAges.add(u.age.value);
+    assert.ok(pool.visible && moving.every(mesh => !mesh.visible), 'only the ground charge is visible');
+    assert.equal(u.charging.value, 1);
+  }
+  assert.equal(chargeAges.size, 1);
   race.phase = 'racing'; aero.update(race, 1 / 60, new Vector3(), settings, false);
-  assert.equal(pool.visible, true, 'GO fires the launch burst');
-  for (let i = 0; i < 3 * 60; i++) aero.update(race, 1 / 60, new Vector3(), settings, false);
+  assert.ok(pool.visible && moving[0].visible, 'GO fires the launch burst');
+  assert.equal(u.charging.value, 0);
+  for (let i = 0; i < 60; i++) aero.update(race, 1 / 60, new Vector3(), settings, false);
   assert.equal(pool.visible, false, 'the flare ends once the race is under way');
   race.phase = 'countdown'; aero.setSkins({});
   aero.update(race, 1 / 60, new Vector3(), settings, false);
