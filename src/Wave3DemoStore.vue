@@ -14,7 +14,7 @@ import type { DemoTrialAccess, DemoRedeemState, Wave3DemoItem } from './wave3-de
 import { demoBalance } from './wave3-demo-settlement.ts';
 import { demoCurrencyLabel } from './wave3-currency-view.ts';
 
-import { presentAcquisition } from './acquisition-reveal.ts';
+import { ACQUISITION_KIND, presentAcquisition } from './acquisition-reveal.ts';
 import { demoAcquisitionId } from './acquisition-demo-items.ts';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
@@ -135,16 +135,12 @@ async function confirmRedemption(): Promise<void> {
   message.value = result.status === 'completed' && used
     ? `${feedback(result.status)} −${Math.abs(used).toLocaleString(props.locale)} ${currencyLabel(request.currency)}`
     : feedback(result.status);
-  if (result.status === 'completed') {
-    cue('redeem-unlocked');
-    if (result.operationId && item && result.snapshot.demoInventory.includes(id)) {
-      presentAcquisition({ id: demoAcquisitionId('store', request.scope, result.operationId), items: [{
-        id, name: item.name, kind: 'equipment', status: 'unlocked', scope: 'demo',
-        artwork: art ? { src: art.src, style: 'icon' } : undefined,
-      }] });
-    }
-  }
-  else if (result.status === 'expired' || result.status.startsWith('insufficient-demo-')) cue('action-unavailable');
+  if (result.status === 'completed' && result.operationId && item && result.snapshot.demoInventory.includes(id)) {
+    presentAcquisition({ id: demoAcquisitionId('store', request.scope, result.operationId), items: [{
+      id, name: item.name, kind: ACQUISITION_KIND.EQUIPMENT, status: 'unlocked', scope: 'demo',
+      artwork: art ? { src: art.src, style: 'icon' } : undefined,
+    }] });
+  } else if (result.status === 'expired' || result.status.startsWith('insufficient-demo-')) cue('action-unavailable');
 }
 </script>
 
