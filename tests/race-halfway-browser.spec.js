@@ -54,19 +54,22 @@ for (const [name, width, height, hasTouch, locale, calm] of [
         });
       });
       const card = page.locator('#race-halfway-card');
-      await expect(card).toBeVisible();
-      await expect(card).toContainText(locale === 'en' ? 'HALFWAY' : '賽事過半');
-      await expect(card).toContainText(locale === 'en' ? 'KM TO GO' : '公里');
-      const geometry = await card.evaluate(node => {
+      // The card lives 2.15 s of race time; a slow runner can spend that between separate locator
+      // calls (CI 44269822759 read a detached node), so find, read and measure it in one page tick.
+      const geometry = await (await page.waitForFunction(() => {
+        const node = document.querySelector('#race-halfway-card');
+        const box = node?.getBoundingClientRect();
+        if (!box?.width || !box.height) return null;
         const scene = document.querySelector('#world').getBoundingClientRect();
         const anchor = node.parentElement.getBoundingClientRect();
-        const box = node.getBoundingClientRect();
-        return { dx: anchor.x + anchor.width / 2 - scene.x - scene.width / 2,
+        return { text: node.textContent, dx: anchor.x + anchor.width / 2 - scene.x - scene.width / 2,
           dy: anchor.y + anchor.height / 2 - scene.y - scene.height / 2,
           height: box.height / scene.height, area: box.width * box.height / (scene.width * scene.height),
           backdrop: Number(getComputedStyle(node).backgroundColor.match(/[\d.]+(?=\))/)?.[0] ?? 1),
           pointer: getComputedStyle(node).pointerEvents, animation: getComputedStyle(node).animationName };
-      });
+      }, null, { timeout: ciTimeout(5_000) })).jsonValue();
+      expect(geometry.text).toContain(locale === 'en' ? 'HALFWAY' : '賽事過半');
+      expect(geometry.text).toContain(locale === 'en' ? 'KM TO GO' : '公里');
       expect(Math.abs(geometry.dx)).toBeLessThan(1);
       expect(Math.abs(geometry.dy)).toBeLessThan(1);
       // A slim, see-through strip: the road ahead stays visible behind and around it.

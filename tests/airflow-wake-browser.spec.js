@@ -6,14 +6,24 @@ import { RACE_TRACKS } from '../src/game.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { ciTimeout } from './helpers/ci.js';
 
-test('airflow renders on every track with bounded resources and no shader errors', async ({ gameplayPage: page }, info) => {
-  // Ten-plus CPU-rendered tracks, screenshots and 30 live frames per track
-  // need an extended runner timeout, including 11-track software-WebGL quality checks.
-  test.setTimeout(ciTimeout(120_000));
-  const errors = [], records = [];
+const watchErrors = page => {
+  const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-  for (const track of Object.keys(RACE_TRACKS)) {
+  return errors;
+};
+
+// One sweep of every track plus the Quality tiers used 236–365 s of a 360 s CI budget (run 44269822759),
+// so the tracks run in small batches and the Quality tiers in their own test.
+const TRACK_BATCH = 4;
+const tracks = Object.keys(RACE_TRACKS);
+for (let start = 0; start < tracks.length; start += TRACK_BATCH) {
+  const batch = tracks.slice(start, start + TRACK_BATCH);
+test(`airflow renders on ${batch.join(', ')} with bounded resources and no shader errors`, async ({ gameplayPage: page }, info) => {
+  // CPU-rendered track switches, screenshots and 30 live frames per track.
+  test.setTimeout(ciTimeout(120_000));
+  const errors = watchErrors(page), records = [];
+  for (const track of batch) {
     await clickLobbyOption(page, `[data-track="${track}"]`);
     await expect.poll(() => page.evaluate(() => window.gameplay.race.trackId)).toBe(track);
     await toggleAirflowPreview(page);
@@ -39,6 +49,15 @@ test('airflow renders on every track with bounded resources and no shader errors
     if (track === 'coast') await page.screenshot({ path: info.outputPath('coast-airflow-desktop.png') });
     await toggleAirflowPreview(page);
   }
+  expect(errors).toEqual([]);
+  mkdirSync('artifacts/airflow-wake', { recursive: true });
+  writeFileSync(`artifacts/airflow-wake/${process.env.AIRFLOW_EVIDENCE_PHASE || 'after'}-${start / TRACK_BATCH + 1}.json`, JSON.stringify(records, null, 2));
+});
+}
+
+test('airflow keeps one flow batch across Quality tiers and phone viewports', async ({ gameplayPage: page }, info) => {
+  test.setTimeout(ciTimeout(120_000));
+  const errors = watchErrors(page);
   await clickLobbyOption(page, '[data-track="coast"]');
   await toggleAirflowPreview(page);
   const counts = [];
@@ -60,8 +79,6 @@ test('airflow renders on every track with bounded resources and no shader errors
     await page.screenshot({ path: info.outputPath(`airflow-${width}x${height}.png`) });
   }
   expect(errors).toEqual([]);
-  mkdirSync('artifacts/airflow-wake', { recursive: true });
-  writeFileSync(`artifacts/airflow-wake/${process.env.AIRFLOW_EVIDENCE_PHASE || 'after'}.json`, JSON.stringify(records, null, 2));
 });
 
 for (const mobile of [false, true]) test.describe(mobile ? 'touch barrel roll' : 'keyboard barrel roll', () => {
