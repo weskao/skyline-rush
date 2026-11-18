@@ -257,7 +257,8 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       pressure.material.uniforms.power.value = reveal * fu.suction.value * (settings.aeroMode === 'downforce' ? 1 : 0.35);
       pressure.material.uniforms.time.value = time;
       voidBeams.update(time, strength, quality, enabled && !calm);
-      nitroTrail.update(time, studioDemo && preview ? 0.85 : strength * nitroMix, quality, enabled && !calm); // Studio previews the trail without NITRO
+      nitroTrail.update(time, studioDemo && preview ? 0.85 : strength * nitroMix, quality, enabled && !calm,
+        studioDemo && preview ? Infinity : car.speed); // Studio previews the trail without NITRO, fully stretched
       ribbon.material.uniforms.time.value = time;
       const look = plumeLook(settings.quality), jet = plumeFrame;
       glow.update(enabled && !voidPulse ? thrusterGlow(settings.quality, active, car.altitude > 0, strength) : 0);
