@@ -100,7 +100,103 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await expect(collection.locator('[data-demo-id="nitro-trail-cyan"]')).toContainText('Demo equipped');
   });
 
+  test('redemption audio distinguishes review, cancel, failure, and actual unlock', async ({ page }) => {
+    await page.goto(url);
+    const store = page.locator('[data-wave3-demo-store]');
+    const redeem = store.getByRole('button', { name: 'Demo redeem', exact: true });
+    const confirm = store.getByRole('button', { name: 'Confirm demo redeem', exact: true });
+    const cues = () => page.evaluate(() => window.__wave3DemoFixture.cues());
+    await redeem.click();
+    expect(await cues()).toEqual(['action-unavailable']);
+
+    await page.evaluate(() => window.__wave3DemoFixture.grantRace());
+    expect(await cues()).toEqual(['action-unavailable']);
+    await redeem.click();
+    await expect(confirm).toBeFocused();
+    expect(await cues()).toEqual(['action-unavailable', 'redeem-review']);
+    await confirm.press('Escape');
+    await expect(confirm).toHaveCount(0);
+    expect(await cues()).toEqual(['action-unavailable', 'redeem-review', 'redeem-cancelled']);
+
+    await redeem.click();
+    await store.getByRole('button', { name: 'Cancel', exact: true }).click();
+    expect((await cues()).slice(-2)).toEqual(['redeem-review', 'redeem-cancelled']);
+    await expect(store.locator('.demo-wallet strong')).toHaveText('40');
+
+    await page.evaluate(() => window.__wave3DemoFixture.setRedemptionUnavailable(true));
+    await redeem.click();
+    await confirm.click();
+    await expect(store.getByRole('status').last()).toContainText('Demo redemption is unavailable');
+    expect((await cues()).slice(-2)).toEqual(['redeem-review', 'action-unavailable']);
+    await expect(store.locator('.demo-wallet strong')).toHaveText('40');
+
+    await page.evaluate(() => window.__wave3DemoFixture.setRedemptionUnavailable(false));
+    await redeem.click();
+    await confirm.click();
+    await expect(store.locator('.demo-wallet strong')).toHaveText('15');
+    expect(await cues()).toEqual([
+      'action-unavailable', 'redeem-review', 'redeem-cancelled', 'redeem-review', 'redeem-cancelled',
+      'redeem-review', 'action-unavailable', 'redeem-review', 'redeem-unlocked',
+    ]);
+  });
+
+  test('mobile card redeems the displayed item directly without a separate selection step', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(url);
+    const store = page.locator('[data-wave3-demo-store]');
+    const offer = store.locator('[data-demo-offer="nitro-trail-cyan"]');
+    const redeem = offer.getByRole('button', { name: /^Redeem / });
+    await expect(redeem).toBeVisible();
+    await redeem.click();
+    await expect(store.getByRole('status').last()).toContainText('Not enough demo coins');
+    await expect(store.getByRole('group', { name: 'Confirm demo redemption' })).toHaveCount(0);
+
+    await page.evaluate(() => {
+      for (let index = 1; index <= 3; index++) window.__wave3DemoFixture.grantRace(index);
+    });
+    await redeem.click();
+    const dialog = store.getByRole('group', { name: 'Confirm demo redemption' });
+    await expect(dialog).toContainText('150 Demo coins');
+    await expect(dialog).toContainText('Remaining 0 Demo coins');
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(redeem).toBeFocused();
+    await expect(store.locator('[data-demo-balance="coins"] strong')).toHaveText('150');
+
+    await redeem.click();
+    await dialog.getByRole('button', { name: 'Confirm demo redeem' }).click();
+    await expect(store.locator('[data-demo-balance="coins"] strong')).toHaveText('0');
+    await expect(offer.locator('[data-demo-status]')).toHaveAttribute('data-demo-status', 'demo-unlocked');
+    await expect(redeem).toHaveCount(0);
+  });
+
+  test('store and collection reuse effect GIFs with a static reduced-motion fallback', async ({ page }) => {
+    await page.goto(url);
+    const store = page.locator('[data-wave3-demo-store]');
+    const item = store.locator('[data-demo-id="thruster-ion"]');
+    const art = item.locator('img.artwork-img');
+    await art.scrollIntoViewIfNeeded();
+    await expect(art).toHaveAttribute('src', /garage-animated\/thruster-ion@3x\.gif$/);
+    await expect(art).toHaveJSProperty('naturalWidth', 288);
+    await page.evaluate(() => { document.body.dataset.vfxQuality = 'low'; });
+    await expect(art).toHaveAttribute('data-animation-active', 'false');
+    await page.evaluate(() => { delete document.body.dataset.vfxQuality; });
+    await expect(art).toHaveAttribute('data-animation-active', 'true');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(art).toHaveAttribute('src', /garage-vfx-skins\/raster\/thruster-ion@3x\.webp$/);
+    const drift = store.locator('[data-demo-id="drift-trail-flame"]');
+    await expect(drift.locator('img.artwork-img')).toHaveAttribute('src', /garage-vfx-skins\/raster\/drift-trail-flame@3x\.webp$/);
+    await drift.click();
+    await expect(store.locator('[data-drift-preview]')).toHaveCount(0);
+    await store.getByRole('button', { name: 'Inspect preview' }).click();
+    await expect(store.locator('[data-drift-preview="drift-trail-flame"]')).toBeVisible();
+    await store.getByRole('button', { name: 'Demo Collection' }).click();
+    const collectionArt = page.locator('[data-wave3-demo-collection] [data-demo-id="thruster-ion"] img');
+    await expect(collectionArt).toHaveAttribute('data-animated-src', /garage-animated\/thruster-ion@3x\.gif$/);
+    await expect(collectionArt).toHaveAttribute('data-animation-active', 'false');
+  });
+
   test('trial expiry, bilingual copy and missing image fallback work without granting', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.route('**/feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', route => route.abort());
     await page.goto(url);
     const store = page.locator('[data-wave3-demo-store]');
@@ -109,6 +205,7 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await expect(store.locator('[data-demo-id="airflow-vortex"]')).toHaveAttribute('data-demo-status', 'trial');
     await page.evaluate(() => window.__wave3DemoFixture.expireTrial());
     await expect(store.locator('[data-demo-id="airflow-vortex"]')).toHaveAttribute('data-demo-status', 'locked');
+    await store.locator('[data-demo-id="thruster-ion"]').scrollIntoViewIfNeeded();
     await expect(store.locator('[data-demo-id="thruster-ion"] img[src$="/thruster.svg"]')).toBeVisible();
     await page.evaluate(() => window.__wave3DemoFixture.setLocale('zh-TW'));
     await expect(store).toContainText('試玩商城');

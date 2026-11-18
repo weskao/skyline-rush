@@ -10,6 +10,12 @@ import Wave3DemoCollection from '../../src/Wave3DemoCollection.vue';
 import { createWave3LocalDemo } from '../../src/wave3-local-demo.ts';
 
 const port = createWave3LocalDemo();
+const redeemPreview = port.redeemPreview;
+let redemptionUnavailable = false;
+port.redeemPreview = (...args) => redemptionUnavailable
+  ? { status: 'unavailable', snapshot: port.getSnapshot(), deltaDemoPoints: 0, deltaDemoCoins: 0, deltaDemoDiamonds: 0 }
+  : redeemPreview(...args);
+const cues = [];
 const page = ref('store');
 const locale = ref('en');
 const skinRevision = ref(0);
@@ -33,12 +39,14 @@ const App = {
     ]);
   },
 };
-createApp(App).mount('#app');
+createApp(App).provide('game-audio-cue', name => cues.push(name)).mount('#app');
 window.__wave3DemoFixture = {
   grantRace(index = 1) { return port.settleCompletion({ schemaVersion:1, completionId: `race-demo-000${index}`,
     trackId:'coast', mode:'classic', eligible:true, occurredAt:1700000000000, accountId:port.getSnapshot().accountId }); },
   setAccount(account) { port.setAccount(account); },
   snapshot() { return port.getSnapshot(); },
+  cues() { return cues; },
+  setRedemptionUnavailable(value) { redemptionUnavailable = value; },
   duplicateRedeem() { return port.redeemPreview('thruster-ion').status; },
   setLocale(value) { locale.value = value; },
   enableTrial() { trialUntil.value = Date.now() + 60_000; skinRevision.value++; },

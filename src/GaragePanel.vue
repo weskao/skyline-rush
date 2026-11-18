@@ -158,7 +158,8 @@ const isPreviewingPaint = (id: string): boolean =>
             <GarageSourceArtGallery category="garage-rewards-and-missions" />
           </section>
           <Wave3DemoEntry v-if="wave3DemoEnabled" v-show="section === 'store' || section === 'collection'"
-            ref="demo" :locale="locale" embedded @navigate="page => { if (page !== 'home') section = page; }" />
+            ref="demo" :locale="locale" :active="section === 'store'" embedded
+            @navigate="page => { if (page !== 'home') section = page; }" />
           <section v-show="section === 'store'" class="garage-store-concepts">
             <section class="garage-store-entry" data-garage-store-entry
               :aria-label="locale === 'zh-TW' ? '車庫商店' : 'Garage Store concepts'">

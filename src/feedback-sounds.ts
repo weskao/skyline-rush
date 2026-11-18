@@ -3,6 +3,8 @@ type Note = readonly [number, number, number, number, number];
 export const FEEDBACK_SOUNDS: Readonly<Partial<Record<string, readonly Note[]>>> = {
   'reward-credited': [[880, 990, .17, 0, .033], [1320, 1568, .25, .09, .028]],
   'reward-mission-ready': [[880, 990, .17, 0, .033], [1320, 1568, .19, .09, .028], [1760, 1865, .24, .21, .021]],
+  'redeem-review': [[540, 620, .075, 0, .022], [790, 880, .095, .045, .017]],
+  'redeem-cancelled': [[540, 410, .095, 0, .016]],
   'redeem-unlocked': [[660, 784, .13, 0, .030], [990, 1175, .21, .10, .029]],
   'equip-confirmed': [[235, 118, .09, 0, .037], [1047, 784, .11, .035, .017]],
   'action-unavailable': [[370, 280, .15, 0, .025]],

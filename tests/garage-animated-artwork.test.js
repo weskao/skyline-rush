@@ -65,7 +65,8 @@ test('production cards use native animation instead of sparkle overlays and resp
   assert.match(image, /animationFailed\.value = true/);
   assert.match(image, /return props\.src/);
   const skin = src('GarageSkinCatalog.vue');
-  assert.match(skin, /:animated-src=/);
+  const face = src('GarageSkinCardFace.vue');
+  assert.match(face, /:animated-src=/);
   assert.doesNotMatch(skin, /sparkle@3x\.gif/);
   const tile = src('GarageArtworkTile.vue');
   assert.match(tile, /garage-animated\/\$\{props\.id\}@3x\.gif/);
@@ -88,10 +89,13 @@ test('every item has its own source-driven motion recipe, with moving physical p
   assert.doesNotMatch(generator, /np\.rint\(xx - dx\)/, 'no whole-image pixel field warp');
 });
 
-test('Vite BASE_URL is resolved in Vue script, never inside template expression', () => {
-  const skin = src('GarageSkinCatalog.vue');
-  assert.match(skin, /const animatedArtworkSrc =/);
-  assert.match(skin, /:animated-src="animatedArtworkSrc\(skin\.id\)"/);
-  assert.doesNotMatch(skin, /:animated-src="[^"]*import\.meta/,
-    'Vue template expression is not parsed as a JavaScript module');
+test('effect, store and collection cards share their animation and poster renderer', () => {
+  for (const name of ['GarageSkinCatalog.vue', 'Wave3DemoStore.vue', 'Wave3DemoCollection.vue']) {
+    const source = src(name);
+    assert.match(source, /<GarageSkinCardFace\b/, name);
+    assert.doesNotMatch(source, /garage-animated\/\$\{.*\}@3x\.gif/, name);
+  }
+  const face = src('GarageSkinCardFace.vue');
+  assert.match(face, /import\.meta\.env\.BASE_URL/);
+  assert.doesNotMatch(face, /:animated-src="[^"]*import\.meta/);
 });

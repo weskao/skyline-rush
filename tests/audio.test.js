@@ -555,6 +555,28 @@ test('sprint readiness plays two distinct SFX phrases and respects mute', t => {
   assert.deepEqual(pitches('boost-ready'), []);
 });
 
+test('store cues play short distinct SFX without joining the music stingers', async t => {
+  const { FEEDBACK_SOUNDS, STINGERS } = await import('../src/feedback-sounds.ts');
+  const { nodes, sound } = installAudio(t);
+  const cues = ['redeem-review', 'redeem-cancelled', 'redeem-unlocked', 'action-unavailable'];
+  const pitches = name => {
+    const start = nodes.length;
+    sound.cue(name);
+    return nodes.slice(start).filter(node => node.kind === 'oscillator').map(node => node.frequency.value);
+  };
+  sound.setEnabled(true);
+  for (const cue of cues) {
+    assert.ok(FEEDBACK_SOUNDS[cue]?.length, cue);
+    assert.equal(STINGERS.has(cue), false, cue);
+    assert.ok(Math.max(...FEEDBACK_SOUNDS[cue].map(([, , duration, delay]) => duration + delay)) <= .35, cue);
+  }
+  const phrases = cues.map(pitches);
+  assert.ok(phrases.every(phrase => phrase.length > 0));
+  assert.equal(new Set(phrases.map(phrase => phrase.join(','))).size, cues.length);
+  sound.setEnabled(false);
+  for (const cue of cues) assert.deepEqual(pitches(cue), []);
+});
+
 test('the halfway chime is a short rising stinger, so it ducks the mix only briefly', async () => {
   const { FEEDBACK_SOUNDS, STINGERS } = await import('../src/feedback-sounds.ts');
   const notes = FEEDBACK_SOUNDS.halfway;

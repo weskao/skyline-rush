@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { inject, computed, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
+import GarageDriftPreview from './GarageDriftPreview.vue';
+import GarageSkinCardFace from './GarageSkinCardFace.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
 import Wave3CurrencyAmount from './Wave3CurrencyAmount.vue';
 import { SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
@@ -11,9 +13,10 @@ import {
   WAVE3_DEMO_ITEMS, WAVE3_DEMO_STORE_ART, demoItemStatus, demoItemStatusText,
   demoRedemptionState,
 } from './wave3-demo-catalog.ts';
-import type { DemoTrialAccess, DemoRedeemState } from './wave3-demo-catalog.ts';
+import type { DemoTrialAccess, DemoRedeemState, Wave3DemoItem } from './wave3-demo-catalog.ts';
 import { demoBalance } from './wave3-demo-settlement.ts';
 import { demoCurrencyLabel, demoPersistenceLabel } from './wave3-currency-view.ts';
+import { garageStudioView } from './garage-view-state.ts';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = withDefaults(defineProps<{
@@ -21,7 +24,8 @@ const props = withDefaults(defineProps<{
   locale?: string;
   trialAccess?: (id: SkinId) => DemoTrialAccess | null;
   skinRevision?: number;
-}>(), { locale: 'en' });
+  active?: boolean;
+}>(), { locale: 'en', active: true });
 const emit = defineEmits<{
   (event: 'preview', itemId: SkinId): void;
   (event: 'open-collection'): void;
@@ -36,22 +40,27 @@ const selectedId = ref<SkinId>(WAVE3_DEMO_ITEMS[0]!.id);
 const confirmationId = ref<SkinId | null>(null);
 const quote = ref<DemoRedemptionQuote | null>(null);
 const confirmationButton = ref<HTMLButtonElement | null>(null);
+const statusMessage = ref<HTMLElement | null>(null);
+const previewingDrift = ref(false);
 const message = ref('');
+let redemptionTrigger: HTMLElement | null = null;
 
 watch(() => props.port, (port, _, onCleanup) => {
   snapshot.value = port.getSnapshot();
-  confirmationId.value = null;
+  cancelRedemption();
   message.value = '';
   const stop = port.subscribe(next => {
     if (next.accountId !== snapshot.value.accountId) {
-      confirmationId.value = null;
-      quote.value = null;
+      cancelRedemption();
       message.value = '';
     }
     snapshot.value = next;
   });
   onCleanup(stop);
 }, { immediate: true });
+watch(() => props.active, active => {
+  if (!active) previewingDrift.value = false;
+});
 
 const items = computed(() => WAVE3_DEMO_ITEMS.filter(item => filter.value === 'all' || item.category === filter.value));
 const selected = computed(() => WAVE3_DEMO_ITEMS.find(item => item.id === selectedId.value));
@@ -66,7 +75,8 @@ const statusFor = (id: SkinId) => {
   void props.skinRevision; // Re-render when the integration owner's trial session changes.
   return demoItemStatus(id, snapshot.value, props.trialAccess?.(id));
 };
-const artwork = (id: SkinId) => skinArtwork(id, import.meta.env.BASE_URL);
+const driftPoster = computed(() => selected.value && previewingDrift.value
+  ? skinArtwork(selected.value.id, import.meta.env.BASE_URL)?.src ?? '' : '');
 const storeArt = (id: string) =>
   `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/${id}@3x.webp`;
 const categoryLabel = (value: StoreCategory): string => ({
@@ -78,8 +88,19 @@ const categoryLabel = (value: StoreCategory): string => ({
 function selectCategory(category: StoreCategory): void {
   filter.value = category;
   const first = items.value[0];
-  if (first) selectedId.value = first.id;
-  confirmationId.value = null;
+  if (first) selectItem(first.id);
+}
+function selectItem(id: SkinId): void {
+  if (selectedId.value !== id) {
+    selectedId.value = id;
+    previewingDrift.value = false;
+    message.value = '';
+  }
+  cancelRedemption();
+}
+function inspectPreview(item: Wave3DemoItem): void {
+  emit('preview', item.id);
+  previewingDrift.value = item.category === 'drift-trail';
 }
 function feedback(status: DemoRedeemState | Wave3Status): string {
   switch (status) {
@@ -93,26 +114,37 @@ function feedback(status: DemoRedeemState | Wave3Status): string {
     default: return tr('Demo redemption is unavailable.', '目前無法進行試玩兌換。');
   }
 }
-function requestRedemption(): void {
-  const item = selected.value;
+function requestRedemption(item: Wave3DemoItem, event: MouseEvent): void {
   if (!item?.currency || item.demoPrice === null) return;
+  selectItem(item.id);
   const current = props.port.getSnapshot();
   const state = demoRedemptionState(item.id, current);
   if (state !== 'ready') {
     message.value = feedback(state);
-    if (state.startsWith('insufficient-demo-')) cue('action-unavailable');
+    cue('action-unavailable');
+    void nextTick(() => statusMessage.value?.scrollIntoView({ block: 'nearest' }));
     return;
   }
   snapshot.value = current;
   confirmationId.value = item.id;
   quote.value = { scope: props.port.getOperationScope(), expiresAt: Date.now() + DEMO_QUOTE_LIFETIME_MS,
     catalogVersion: current.catalogVersion, currency: item.currency, cost: item.demoPrice };
+  redemptionTrigger = event.currentTarget as HTMLElement | null;
   message.value = '';
+  cue('redeem-review');
   void nextTick(() => confirmationButton.value?.focus());
 }
 function cancelRedemption(): void {
   confirmationId.value = null;
   quote.value = null;
+  redemptionTrigger = null;
+}
+function dismissRedemption(): void {
+  if (!confirmationId.value) return;
+  const trigger = redemptionTrigger;
+  cancelRedemption();
+  cue('redeem-cancelled');
+  void nextTick(() => trigger?.focus());
 }
 async function confirmRedemption(): Promise<void> {
   const id = confirmationId.value;
@@ -125,14 +157,13 @@ async function confirmRedemption(): Promise<void> {
   message.value = result.status === 'completed' && used
     ? `${feedback(result.status)} −${Math.abs(used).toLocaleString(props.locale)} ${currencyLabel(request.currency)}`
     : feedback(result.status);
-  if (result.status === 'completed') cue('redeem-unlocked');
-  else if (result.status === 'expired' || result.status.startsWith('insufficient-demo-')) cue('action-unavailable');
+  cue(result.status === 'completed' ? 'redeem-unlocked' : 'action-unavailable');
 }
 </script>
 
 <template>
   <section class="wave3-demo-store" data-wave3-demo-store data-authority="local-demo"
-    :aria-label="tr('Demo Store', '試玩商城')" @keydown.esc.stop="cancelRedemption">
+    :aria-label="tr('Demo Store', '試玩商城')" @keydown.esc.stop="dismissRedemption">
     <header class="demo-header">
       <div class="demo-title">
         <span class="demo-kicker">{{ tr('DEMO · NO PAYMENT', '試玩 · 無付款') }}</span>
@@ -182,11 +213,13 @@ async function confirmRedemption(): Promise<void> {
         </p>
       </div>
       <div class="demo-actions">
-        <button type="button" @click="emit('preview', selected.id)">{{ tr('Inspect preview', '檢視預覽') }}</button>
+        <button type="button" @click="inspectPreview(selected)">{{ tr('Inspect preview', '檢視預覽') }}</button>
         <button type="button" :disabled="!canRequestRedemption"
-          @click="requestRedemption">{{ tr('Demo redeem', '試玩兌換') }}</button>
+          @click="requestRedemption(selected, $event)">{{ tr('Demo redeem', '試玩兌換') }}</button>
         <button type="button" @click="emit('open-collection')">{{ tr('Demo Collection', '試玩收藏') }}</button>
       </div>
+      <GarageDriftPreview v-if="active && driftPoster" :key="garageStudioView.car" :skin="selected.id"
+        :locale="locale" :label="selected.name[locale === 'zh-TW' ? 'zh-TW' : 'en']" :poster="driftPoster" />
     </section>
 
     <section v-if="confirmationId && quote" class="demo-confirm" role="group"
@@ -202,28 +235,28 @@ async function confirmRedemption(): Promise<void> {
       </p>
       <div class="demo-actions">
         <button ref="confirmationButton" type="button" @click="confirmRedemption">{{ tr('Confirm demo redeem', '確認試玩兌換') }}</button>
-        <button type="button" @click="cancelRedemption">{{ tr('Cancel', '取消') }}</button>
+        <button type="button" @click="dismissRedemption">{{ tr('Cancel', '取消') }}</button>
       </div>
     </section>
     <p v-if="snapshot.persistence === 'memory-only'" class="demo-message" role="status">
       {{ tr('This device could not save this session’s progress.', '此裝置未能儲存本次進度。') }}
     </p>
-    <p class="demo-message" role="status" aria-live="polite">{{ message }}</p>
+    <p ref="statusMessage" class="demo-message" role="status" aria-live="polite">{{ message }}</p>
     <div class="demo-catalog">
-      <button v-for="item in items" :key="item.id" type="button"
-        class="demo-item" :data-demo-id="item.id" :data-demo-status="statusFor(item.id)"
-        :aria-pressed="selectedId === item.id" @click="selectedId = item.id; cancelRedemption()">
-        <span class="demo-image">
-          <GarageArtworkImage :src="artwork(item.id)?.src ?? ''" :fallback-src="artwork(item.id)?.fallback"
-            :size="96" :alt="item.name[locale === 'zh-TW' ? 'zh-TW' : 'en']"
-            :fallback-text="item.name[locale === 'zh-TW' ? 'zh-TW' : 'en']" />
-        </span>
-        <strong>{{ item.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
-        <span class="demo-state">{{ demoItemStatusText(statusFor(item.id), locale) }}</span>
-        <small v-if="item.currency && item.demoPrice !== null && !snapshot.demoInventory.includes(item.id)">
-          <Wave3CurrencyAmount class="demo-price" :currency="item.currency" :amount="item.demoPrice" :locale="locale" />
-        </small>
-      </button>
+      <div v-for="item in items" :key="item.id" class="demo-item" :data-demo-offer="item.id">
+        <button type="button" class="demo-item-preview" :data-demo-id="item.id" :data-demo-status="statusFor(item.id)"
+          :aria-pressed="selectedId === item.id" @click="selectItem(item.id)">
+          <GarageSkinCardFace :skin-id="item.id" :locale="locale" />
+          <span class="demo-state">{{ demoItemStatusText(statusFor(item.id), locale) }}</span>
+          <small v-if="item.currency && item.demoPrice !== null && !snapshot.demoInventory.includes(item.id)">
+            <Wave3CurrencyAmount class="demo-price" :currency="item.currency" :amount="item.demoPrice" :locale="locale" />
+          </small>
+        </button>
+        <button v-if="item.currency && item.demoPrice !== null && !snapshot.demoInventory.includes(item.id)"
+          type="button" class="demo-item-redeem"
+          :aria-label="tr('Redeem', '兌換') + ' ' + item.name[locale === 'zh-TW' ? 'zh-TW' : 'en']"
+          @click="requestRedemption(item, $event)">{{ tr('Redeem', '兌換') }}</button>
+      </div>
     </div>
 
     <p class="demo-disclaimer">{{ demoPersistenceLabel(snapshot.persistence, locale) }} · {{ tr('Resettable', '可重設') }}</p>
@@ -259,17 +292,21 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .demo-item { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 8px;
   gap: 6px; background: linear-gradient(150deg, #123650, #101e36); border: 1px solid #36658b;
   border-radius: 13px; text-align: center; }
-.demo-item[aria-pressed="true"] { border-color: #67e9f5; box-shadow: 0 0 0 1px #69dcea; }
-.demo-image { box-sizing: border-box; display: grid; place-items: center; width: 112px; height: 112px; padding: 8px; }
-.demo-item strong { font-size: 12px; overflow-wrap: anywhere; }
+.demo-item:has(.demo-item-preview[aria-pressed="true"]) { border-color: #67e9f5; box-shadow: 0 0 0 1px #69dcea; }
+.demo-item-preview { display: flex; flex: 1; flex-direction: column; align-items: center;
+  gap: 6px; width: 100%; border: 0; border-radius: 7px; padding: 0 0 4px; background: transparent; }
+.demo-item-redeem { width: 100%; border: 1px solid #67e5ee; border-radius: 8px; padding: 8px;
+  background: linear-gradient(145deg, #246579, #153d59); color: #effcff; font-size: 13px; font-weight: 750; }
+.demo-item-redeem:active { background: #215878; }
 .demo-state { padding: 3px 7px; border: 1px solid #8c71bc; border-radius: 20px; font-size: 11px; color: #f0dfff; }
-.demo-item[data-demo-status="demo-unlocked"] .demo-state { border-color: #27e6bb; color: #9bffe9; }
+.demo-item-preview[data-demo-status="demo-unlocked"] .demo-state { border-color: #27e6bb; color: #9bffe9; }
 .demo-item small { color: #aacde2; font-size: 11px; }
 .demo-secondary-wallet { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; }
 .demo-detail, .demo-confirm { margin-top: 10px; padding: 12px; border: 1px solid #356c8f;
   border-radius: 12px; background: #0e2942; }
 .demo-detail .demo-price { margin-inline-start: 6px; }
 .demo-detail h4 { margin: 0 0 6px; }
+.demo-detail :deep(.garage-drift-preview) { margin: 10px 0 0; }
 .demo-detail p, .demo-confirm p { margin: 0 0 10px; font-size: 12px; line-height: 1.5; }
 .demo-message { min-height: 1.5em; margin: 10px 0; color: #ffe3ac; font-size: 12px; }
 @media (max-width: 440px) { .wave3-demo-store { padding: 9px; } .demo-catalog { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

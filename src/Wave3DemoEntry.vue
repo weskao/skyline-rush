@@ -6,7 +6,7 @@ import { wave3DemoExperience } from './wave3-race-events.ts';
 import { garageSkinEntry, garageSkinState, selectGarageSkin } from '#garage-skin-runtime';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
-const props = defineProps<{ locale: string; embedded?: boolean }>();
+const props = withDefaults(defineProps<{ locale: string; embedded?: boolean; active?: boolean }>(), { active: true });
 const emit = defineEmits<{ navigate: [page: 'home' | 'store' | 'collection'] }>();
 const screen = ref<HTMLElement>();
 const page = ref<'home' | 'store' | 'collection'>('home');
@@ -55,7 +55,7 @@ const returnToRace = () => document.querySelector<HTMLButtonElement>('#garage-cl
     </template>
     <template v-else>
       <button type="button" class="wave3-demo-back" @click="navigate('home')">{{ locale === 'zh-TW' ? '返回試玩選單' : 'Back to demo menu' }}</button>
-      <Wave3DemoStore v-if="page === 'store'" :port="wave3DemoExperience" :locale="locale"
+      <Wave3DemoStore v-if="page === 'store'" :port="wave3DemoExperience" :locale="locale" :active="active"
         :trial-access="garageSkinEntry" :skin-revision="garageSkinState.revision"
         @preview="selectGarageSkin" @open-collection="navigate('collection')" />
       <Wave3DemoCollection v-else :port="wave3DemoExperience" :locale="locale"
