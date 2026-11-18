@@ -4,13 +4,15 @@
 // Vertices are stored relative to `anchor` (the floating origin at the race's first mark) so they stay small and
 // steady; the mesh is shifted by anchor - origin every frame. Scene position + origin = absolute, as in aero-vfx.js.
 import * as THREE from 'three';
+import { createDriftTrail } from '#garage-drift-trail';
 
 export const SKID_CAPACITY = 6000; // ~1.8 km of drifting per tyre at STEP
 const STEP = 0.6; // metres of travel per quad
 const HALF_WIDTH = 0.15; // the tyre's contact patch is 0.27 m wide
 const LIFT = 0.025; // above the road: the tyre bottom sits at 0.02 (car-model.js)
 const UNDER_SHADOW = 0.005; // world.js lays the ground shadow 0.03 above the road; the marks sit just under it
-const BREAK = 4; // a jump this long (respawn, teleport) starts a new trail instead of bridging it
+const BREAK = 4;
+const MAX_ROAD_SPEED = 136; // m/s with NITRO, slipstream and shortcut bonuses
 const TREAD_LENGTH = 3; // metres per tread-texture repeat
 const FALLBACK_REAR = [[-1.05, 1.42], [1.05, 1.42]]; // car-model.js rear wheel pivots
 
@@ -34,7 +36,11 @@ function treadTexture() {
 }
 
 /** `ground`: the car's ground shadow, placed on the road each frame (world.js); marks are projected onto its plane so a
- * drift's body roll cannot sink one trail into the road. Without it the car's own frame is the road. */
+ * drift's body roll cannot sink one trail into the road. Without it the car's own frame is the road.
+ * @param {THREE.Scene} scene
+ * @param {THREE.Object3D} car
+ * @param {THREE.Object3D | null} ground
+ */
 export function createSkidMarks(scene, car, ground = null) {
   const positions = new Float32Array(SKID_CAPACITY * 12), colors = new Float32Array(SKID_CAPACITY * 16).fill(1);
   const uvs = new Float32Array(SKID_CAPACITY * 8), index = new Uint32Array(SKID_CAPACITY * 6);
@@ -53,9 +59,13 @@ export function createSkidMarks(scene, car, ground = null) {
   mesh.name = 'Skid marks'; mesh.frustumCulled = false; mesh.renderOrder = -1; // under smoke and sparks
   scene.add(mesh); // present from creation, so shader warmup compiles it before GO
 
+  const trail = createDriftTrail(scene);
   const anchor = new THREE.Vector3(), point = new THREE.Vector3(), up = new THREE.Vector3(), across = new THREE.Vector3();
   const plane = new THREE.Vector3();
-  const tyres = [0, 1].map(() => ({ on: false, last: new THREE.Vector3(), left: new THREE.Vector3(), right: new THREE.Vector3(), v: 0, alpha: 0, slot: -1 }));
+  const tyres = Array.from({ length: 2 }, () => ({
+    on: false, last: new THREE.Vector3(), left: new THREE.Vector3(), right: new THREE.Vector3(),
+    side: new THREE.Vector3(), up: new THREE.Vector3(), along: 0, trailTime: undefined, v: 0, alpha: 0, slot: -1,
+  }));
   let anchored = false, next = 0, used = 0, wheels = null;
 
   function rearWheels() { // per race: a car swap happens between races, and reset() clears it
@@ -72,14 +82,18 @@ export function createSkidMarks(scene, car, ground = null) {
     if (tyre.on && tyre.slot >= 0) { setAlpha(tyre.slot, 2, 0); setAlpha(tyre.slot, 3, 0); upload(tyre.slot); }
     tyre.on = false; tyre.slot = -1;
   }
-  function edges(tyre, from, to, dir) {
-    across.crossVectors(dir, up).normalize().multiplyScalar(HALF_WIDTH);
-    tyre.left.copy(to).sub(across); tyre.right.copy(to).add(across);
+  function edges(tyre, to, dir) {
+    across.crossVectors(dir, up).normalize();
+    tyre.left.copy(to).addScaledVector(across, -HALF_WIDTH);
+    tyre.right.copy(to).addScaledVector(across, HALF_WIDTH);
   }
   function lay(tyre, alpha) {
     const slot = next, length = point.distanceTo(tyre.last);
     writeEdge(tyre, slot * 12);
-    edges(tyre, tyre.last, point, across.subVectors(point, tyre.last).normalize());
+    edges(tyre, point, across.subVectors(point, tyre.last).normalize());
+    const along = tyre.along + length;
+    trail.lay(tyre, point, across, up, along, alpha);
+    tyre.along = along; tyre.side.copy(across); tyre.up.copy(up);
     writeEdge(tyre, slot * 12 + 6);
     const v = tyre.v + length / TREAD_LENGTH;
     const o = slot * 8;
@@ -93,8 +107,10 @@ export function createSkidMarks(scene, car, ground = null) {
 
   return {
     mesh,
+    setSkin: trail.setSkin,
     /** `drift`: the player's drift while racing (null otherwise); `origin`: the scene's floating origin (scene + origin = absolute). */
-    update(drift, origin) {
+    update(drift, origin, dt = 0, reducedMotion = false, lowQuality = false, enabled = true) {
+      trail.tick(dt, reducedMotion, lowQuality, enabled);
       if (!drift) { for (const tyre of tyres) end(tyre); }
       else {
         if (!anchored) { anchor.copy(origin); anchored = true; }
@@ -104,6 +120,7 @@ export function createSkidMarks(scene, car, ground = null) {
           up.setFromMatrixColumn(ground.matrixWorld, 2).normalize(); // the shadow plane's normal
           plane.setFromMatrixPosition(ground.matrixWorld).addScaledVector(up, -UNDER_SHADOW);
         } else up.setFromMatrixColumn(car.matrixWorld, 1).normalize();
+        const continuity = Math.max(BREAK, MAX_ROAD_SPEED * Math.min(dt, .05));
         const alpha = Math.min(1, 0.45 + drift.time * 0.5); // a held slide burns darker rubber
         wheels ??= rearWheels();
         for (let i = 0; i < 2; i++) {
@@ -112,22 +129,28 @@ export function createSkidMarks(scene, car, ground = null) {
           if (ground) point.addScaledVector(up, -across.subVectors(point, plane).dot(up));
           point.add(origin).sub(anchor);
           const gap = point.distanceTo(tyre.last);
-          if (tyre.on && gap > BREAK) end(tyre);
+          if (tyre.on && gap > continuity) end(tyre);
           if (!tyre.on) {
-            edges(tyre, point, point, across.setFromMatrixColumn(car.matrixWorld, 2).negate().normalize());
+            edges(tyre, point, across.setFromMatrixColumn(car.matrixWorld, 2).negate().normalize());
+            tyre.side.copy(across); tyre.up.copy(up); tyre.along = 0; tyre.trailTime = undefined;
             Object.assign(tyre, { on: true, alpha: 0, v: 0, slot: -1 }); tyre.last.copy(point);
           } else if (gap >= STEP) lay(tyre, alpha);
         }
       }
-      if (anchored) mesh.position.subVectors(anchor, origin);
+      if (anchored) {
+        mesh.position.subVectors(anchor, origin);
+        trail.place(mesh.position);
+      }
     },
     reset() {
       for (const tyre of tyres) { tyre.on = false; tyre.slot = -1; }
       anchored = false; next = used = 0; wheels = null;
+      trail.reset();
       geometry.setDrawRange(0, 0);
     },
     dispose() {
       mesh.removeFromParent(); geometry.dispose(); material.dispose(); alphaMap.dispose();
+      trail.dispose();
     },
   };
 }

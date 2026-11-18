@@ -148,7 +148,7 @@ const isPreviewingPaint = (id: string): boolean =>
           </section>
           <section v-show="section === 'effects'">
             <p class="garage-coming">{{ copy.coming }}</p>
-            <GarageSkinCatalog :locale="locale" />
+            <GarageSkinCatalog :locale="locale" :active="section === 'effects'" />
             <p class="garage-cosmetic">{{ copy.cosmetic }}</p>
           </section>
           <section v-show="section === 'missions'">

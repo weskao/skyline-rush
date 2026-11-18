@@ -1,5 +1,7 @@
+import { DRIFT_TRAIL_SKINS } from './garage-drift-styles.ts';
+
 // Wave 2 Phase B: account-scoped cosmetic contracts; variants affect visuals only.
-export const SKIN_CATEGORIES = ['thruster', 'airflow', 'nitro-trail', 'launch-flare'] as const;
+export const SKIN_CATEGORIES = ['thruster', 'airflow', 'nitro-trail', 'launch-flare', 'drift-trail'] as const;
 export type SkinCategory = (typeof SKIN_CATEGORIES)[number];
 export const SKIN_SCHEMA_VERSION = 1 as const;
 
@@ -33,6 +35,7 @@ export const GARAGE_SKINS = [
   { id: 'launch-flare-cyan', category: 'launch-flare', default: false, name: { en: 'Arctic nova', 'zh-TW': '極光新星' }, candidateRasterId: 'flare-cyan' },
   { id: 'launch-flare-magenta', category: 'launch-flare', default: false, name: { en: 'Magenta vortex', 'zh-TW': '洋紅旋渦' }, candidateRasterId: 'flare-magenta' },
   { id: 'launch-flare-white', category: 'launch-flare', default: false, name: { en: 'White supernova', 'zh-TW': '白耀超新星' }, candidateRasterId: 'flare-white' },
+  ...DRIFT_TRAIL_SKINS,
 ] as const satisfies readonly SkinDefinition[];
 export type SkinId = (typeof GARAGE_SKINS)[number]['id'];
 export type SkinState = 'locked' | 'trial' | 'owned' | 'equipped';
@@ -54,6 +57,7 @@ export const DEFAULT_SKINS = {
   airflow: 'airflow-basic',
   'nitro-trail': 'nitro-trail-basic',
   'launch-flare': 'launch-flare-basic',
+  'drift-trail': 'drift-trail-basic',
 } as const satisfies Record<SkinCategory, SkinId>;
 export const SKIN_PREVIEW_UI = Object.freeze({
   mode: 'live-shared-aero', // Studio and racing reuse createAeroVFX.
