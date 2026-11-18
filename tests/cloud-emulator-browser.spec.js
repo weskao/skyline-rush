@@ -472,9 +472,14 @@ test('Wave 3 restores race rewards, claims and redemptions from Firestore in a f
     await tab.context().route(liveApis, route => route.abort());
     await tab.addInitScript(disableWebGL);
     await tab.goto('/?firebase-emulator=1');
-    await tab.locator('#cloud-open').click();
-    await mockGoogleSignIn(tab, { existing, email });
-    await expect(tab.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+    const uid = await tab.evaluate(async ({ email, existing }) => {
+      const { signInWave3EmulatorUser } = await import('/tests/fixtures/wave3-firestore-auth.ts');
+      return signInWave3EmulatorUser(email, existing);
+    }, { email, existing });
+    await expect.poll(() => tab.evaluate(async () => {
+      const { wave3DemoExperience } = await import('/src/wave3-race-events.ts');
+      return wave3DemoExperience.getSnapshot().accountId;
+    })).toBe(uid);
   };
   const balances = async (tab, expected) => {
     for (const [index, currency] of ['demo-points', 'coins', 'diamonds'].entries()) {
