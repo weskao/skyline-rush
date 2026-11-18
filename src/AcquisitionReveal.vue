@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, shallowRef, ref, watchPostEffect } from 'vue';
+import { computed, inject, onMounted, onUnmounted, shallowRef, ref, watchPostEffect } from 'vue';
 import { acquisitionReveal, type AcquisitionBatch, type AcquisitionKind } from './acquisition-reveal.ts';
 import { getLocale, onLocaleChange } from './i18n.ts';
 import { dialogNavigation } from './dialog-navigation.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
+import { ACQUISITION_SOUNDS } from './feedback-sounds.ts';
 import { GARAGE_POSE_ART } from './lobby-art.ts';
 import './acquisition-reveal.css';
 
@@ -19,6 +20,7 @@ const glyph: Record<AcquisitionKind, string> = {
   car: `<path d="${GARAGE_POSE_ART.car}"/>`, track: icons.flag, paint: icons.nitro,
   equipment: icons.airflow, clothing: icons.star, item: icons.star, medal: icons.star, currency: icons.star,
 };
+const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const dialog = ref<HTMLDialogElement>();
 const primary = ref<HTMLButtonElement>();
 const active = shallowRef<AcquisitionBatch | null>(null);
@@ -60,13 +62,21 @@ onUnmounted(() => {
 
 watchPostEffect(() => {
   const batch = active.value;
-  if (!batch || (phase.value && phase.value !== 'ready' && phase.value !== 'finished')) return;
+  const first = batch?.items[0];
+  if (!batch || !first || (phase.value && phase.value !== 'ready' && phase.value !== 'finished')) return;
   if (!dialog.value?.open && nav) {
     shown = batch;
     nav.open();
+    cue(ACQUISITION_SOUNDS[first.kind]);
     primary.value?.focus({ preventScroll: true });
   }
 });
+
+function selectReward(index: number): void {
+  if (selected.value === index) return;
+  selected.value = index;
+  cue('acquisition-select');
+}
 
 function continueGame(): void {
   nav?.close();
@@ -101,7 +111,7 @@ function continueGame(): void {
           <div v-if="active.items.length > 1" class="acquisition-rewards" role="group" :aria-label="copy.rewards">
             <button v-for="(reward, index) in active.items" :key="reward.kind + ':' + reward.id" type="button"
               :aria-pressed="index === selected" :aria-label="reward.name[locale]"
-              @click="selected = index">
+              @click="selectReward(index)">
               <svg v-bind="ICON_ATTRS" v-html="glyph[reward.kind]"></svg><span>{{ reward.name[locale] }}</span>
             </button>
           </div>
