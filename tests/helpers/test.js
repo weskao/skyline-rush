@@ -13,6 +13,15 @@ const LOW_VISUALS = initialDeviceVisuals({ device: { cores: 2 } }).settings;
 
 export const test = base.extend({
   guideSeen: [true, { option: true }],
+  keepAcquisitionOpen: [false, { option: true }],
+  page: async ({ page, keepAcquisitionOpen }, use) => {
+    // Existing flows exercise the real results/Garage controls after accepting any earned rewards.
+    // The acquisition suite opts out to assert the modal's behavior and focus directly.
+    if (!keepAcquisitionOpen) await page.addLocatorHandler(page.locator('#acquisition-reveal[open]'), async reveal => {
+      await reveal.locator('.acquisition-continue').click();
+    });
+    await use(page);
+  },
   // A player with no What's New record gets the notes on load; mark them read so other specs start clean.
   whatsNewSeen: ['999.0.0', { option: true }],
   lowGraphics: [true, { option: true }],

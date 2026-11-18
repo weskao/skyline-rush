@@ -11,6 +11,10 @@ import { wave3DemoArtUrl } from './wave3-demo-art.ts';
 import { demoMissionBonus } from './wave3-demo-settlement.ts';
 import type { DemoCurrency, Wave3ExperiencePort, ExperienceSnapshot, MissionProgress } from './wave3-experience-contract.ts';
 
+import { presentAcquisition } from './acquisition-reveal.ts';
+import { demoAcquisitionId, demoAcquisitionItems, missionTrophy } from './acquisition-demo-items.ts';
+import { sameDemoScope } from './wave3-experience-contract.ts';
+
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = defineProps<{ experience?: Wave3ExperiencePort | null }>();
 const locale = ref(getLocale());
@@ -65,7 +69,13 @@ async function claim(id: string): Promise<void> {
   const port = props.experience;
   const scope = port.getOperationScope();
   const result = await port.claimMission(id, missionPeriodId(id, snapshot.value!.updatedAt), scope);
+  if (port !== props.experience || !sameDemoScope(scope, port.getOperationScope())) return;
   snapshot.value = result.snapshot;
+  if (result.status === 'completed' && result.operationId) {
+    const trophy = missionTrophy(id, result.snapshot);
+    presentAcquisition({ id: demoAcquisitionId('mission', scope, result.operationId),
+      items: [...(trophy ? [trophy] : []), ...demoAcquisitionItems(result)] });
+  }
   if (result.status === 'completed' && result.deltaDemoPoints > 0) cue('reward-credited');
   feedback.value = result.status === 'completed'
     ? formatDemoReward({ points: result.deltaDemoPoints, coins: result.deltaDemoCoins,
