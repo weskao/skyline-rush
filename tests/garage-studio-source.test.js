@@ -20,10 +20,12 @@ test('Studio offers a wing toggle wired to the camera state and the stage', () =
   assert.match(read('garage-stage.ts'), /state\.wing/);
 });
 
-test('Garage exposes one labeled action for taking off and landing', () => {
+test('Garage exposes one labeled switch for ground and flight poses', () => {
   const vue = readFileSync(new URL('../src/GaragePanel.vue', import.meta.url), 'utf8');
   const actions = vue.match(/<button[^>]*data-garage-mode[^>]*>[\s\S]*?<\/button>/g) ?? [];
   assert.equal(actions.length, 1);
   assert.match(actions[0], /:data-garage-mode="nextPose"/);
-  assert.match(actions[0], /\{\{ poseAction \}\}/);
+  assert.match(actions[0], /role="switch"/);
+  assert.match(actions[0], /:aria-checked="garageStudioView.mode === 'flight'"/);
+  assert.match(actions[0], /GARAGE_POSE_ART\[pose\]/);
 });

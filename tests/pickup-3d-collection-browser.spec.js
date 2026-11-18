@@ -3,6 +3,8 @@ import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
 
 const TIERS = ['cell', 'can', 'tank', 'overcharge'];
+// The full per-tier effect: Low trims rings, shards and the contact pulse (src/pickup-collect-vfx.js).
+test.use({ lowGraphics: false });
 const expectedModel = process.env.PICKUP_TEST_MODEL;
 async function startRace(page) {
   await page.locator('#start-button').click();

@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { CATALOGS } from '../src/i18n.ts';
 
@@ -29,7 +30,7 @@ for (const viewport of [{ width: 320, height: 640 }, { width: 390, height: 844 }
       test('mobile instructions are readable, static and fit the dialog', async ({ page }) => {
         await page.goto('/');
         const guide = page.locator('#guide-mobile');
-        await page.locator('#controls-button').click();
+        await toggleSettingsSection(page, 'driving');
         await page.locator('#guide-open').click();
         await expect(page.locator('#guide-screen')).toBeVisible();
         await expect(guide).toBeVisible();

@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -12,7 +13,7 @@ for (const [name, viewport, hasTouch] of [
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await selectLocale(page, locale);
-    await page.locator('button[data-race-mode="gauntlet"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="gauntlet"]');
     await page.locator('#gauntlet-rules > summary').click();
     const layout = page.locator('#gauntlet-layout');
     await expect(layout).toHaveValue('classic');

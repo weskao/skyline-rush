@@ -1,24 +1,23 @@
 import { t } from './i18n.ts';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS, type VfxSettings, type ShowcaseView, type VfxPreset } from './vfx-settings.ts';
 import { initialDeviceVisuals, QUALITY_STORAGE_KEY } from './device-quality.ts';
-import { trackDropdown } from './dropdown.ts';
 
 interface VfxWorld { configureVFX(settings: VfxSettings): void }
 interface VfxOptions {
   getWorld(): VfxWorld | null | undefined;
   /** The showcase hides the track picker, so swiping is how to change track. */
   onAirflowShown(): void;
-  onPanelOpen(): void;
   reducedMotion: MediaQueryList;
 }
 
 export const stepView = (view: ShowcaseView, delta: number): ShowcaseView =>
   SHOWCASE_VIEWS[(SHOWCASE_VIEWS.indexOf(view) + delta + SHOWCASE_VIEWS.length) % SHOWCASE_VIEWS.length]!;
 
-export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotion }: VfxOptions) {
+export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptions) {
   const $ = <T extends Element = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const vfxControls = [...document.querySelectorAll<HTMLInputElement>('[data-vfx]')];
   const airflowHud = $('#airflow-hud');
+  const airflowToggles = document.querySelectorAll<HTMLButtonElement>('#airflow-toggle, #home-airflow-toggle');
   // Initial quality selection is performed once; manual/previous settings win.
   let storedVisuals: unknown = null;
   try { const raw = localStorage.getItem(QUALITY_STORAGE_KEY); if (raw) storedVisuals = JSON.parse(raw); }
@@ -51,8 +50,10 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
       dot.classList.toggle('is-active', i === viewIndex);
       return dot;
     }));
-    $<HTMLButtonElement>('#airflow-toggle').setAttribute('aria-pressed', String(visual.airflow));
-    $<HTMLButtonElement>('#airflow-toggle').disabled = !visual.enabled;
+    for (const button of airflowToggles) {
+      button.setAttribute('aria-pressed', String(visual.airflow));
+      button.disabled = !visual.enabled;
+    }
     document.body.classList.toggle('airflow-active', visual.airflow && visual.enabled);
     document.body.classList.toggle('vfx-comfort', visual.comfortable);
     document.body.dataset.vfxQuality = visual.quality;
@@ -80,14 +81,8 @@ export function setupVfxUI({ getWorld, onAirflowShown, onPanelOpen, reducedMotio
   }
   $('#showcase-camera-prev').addEventListener('click', () => stepShowcaseView(-1));
   $('#showcase-camera-next').addEventListener('click', () => stepShowcaseView(1));
-  $('#airflow-toggle').addEventListener('click', toggleAirflow);
+  for (const button of airflowToggles) button.addEventListener('click', toggleAirflow);
   $('#vfx-reset').addEventListener('click', () => { visual = vfxSettings(); showVFX(); });
-  // The performance notice floats over the toolbar panels; opening one means the reader is already in the settings it points to.
-  $<HTMLDetailsElement>('#vfx-panel').addEventListener('toggle', ({ target }) => {
-    const panel = target as HTMLDetailsElement;
-    if (panel.open) onPanelOpen();
-    trackDropdown(panel, panel.open, () => { panel.open = false; });
-  });
   showVFX();
   return {
     settings: (): VfxSettings => visual,

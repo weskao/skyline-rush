@@ -1,6 +1,9 @@
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 
+// Low turns the GIF artwork off (GarageArtworkImage.vue): these specs need the device's own tier.
+test.use({ lowGraphics: false });
+
 for (const pageName of ['home', 'studio']) {
   test(`Garage ${pageName} uses source-art animation without replacing live 3D`, async ({ page }) => {
     await page.goto('/');

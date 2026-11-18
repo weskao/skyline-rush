@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -18,7 +19,7 @@ const coach = page => page.locator('#tutorial-coach');
 const step = (page, name) => expect(coach(page)).toHaveAttribute('data-step', name, { timeout: ciTimeout(name === 'airChain' ? 30000 : 10000) });
 const begin = async page => {
   await page.goto('/');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await expect(page.locator('#tutorial-open')).toBeVisible();
   await page.locator('#tutorial-open').click();
   await step(page, 'throttle');
@@ -109,13 +110,24 @@ const keyboardToNitro = async page => {
 
 test('practice opens with the race countdown, stands still at GO, and THROTTLE then FLY answer', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
+  // The 3-2-1 runs on wall clock (3 s) while a slow runner spends that long on two expects: sample it in the page, per frame.
+  await page.evaluate(() => {
+    const seen = window.__countdownFrames = { frames: 0, guide: 0 };
+    const sample = () => {
+      if (document.body.dataset.phase === 'countdown') { seen.frames++; if (document.querySelector('#tutorial-guide')) seen.guide++; }
+      if (document.body.dataset.phase !== 'racing') requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
   await page.locator('#tutorial-open').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
   await expect(page.locator('#countdown')).toBeVisible();
-  // The forward arrow waits for GO (user, 2026-11-08): none during 3-2-1, then it appears with the throttle cue.
-  await expect(page.locator('#tutorial-guide')).toHaveCount(0);
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(6000) });
+  // The forward arrow waits for GO (user, 2026-11-08): none during 3-2-1, then it appears with the throttle cue.
+  const counted = await page.evaluate(() => window.__countdownFrames);
+  expect(counted.frames).toBeGreaterThan(0);
+  expect(counted.guide).toBe(0);
   // Practice has no GO roll (user, 2026-11-08): the car waits for THROTTLE, and the cue says so.
   await expect(page.locator('#speed')).toHaveText('0');
   await expect(page.locator('#tutorial-guide')).toHaveAttribute('data-dir', 'ahead');
@@ -150,7 +162,7 @@ test('keyboard practice requires real actions, completes all ten steps and prese
   await page.locator('#tutorial-exit').click();
   await expect(coach(page)).toBeHidden();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.locator('#guide-open').click();
   await expect(page.locator('#guide-practice')).toHaveText('Practice again');
 });
@@ -254,7 +266,7 @@ test('practice restores a paused race and uses the current custom throttle key',
   await page.keyboard.press('Escape');
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
   const distance = await page.locator('#distance').textContent();
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.locator('#tutorial-open').click();
   await expect(page.locator('#tutorial-input')).toContainText('Z');
   await keyStep(page, 'z', 'left');
@@ -391,7 +403,7 @@ test.describe('granted tilt and rotation', () => {
   test.use({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
   test('orientation input advances steering and survives a viewport rotation', async ({page}) => {
     await page.goto('/');
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('[data-controls="mode"][value="tilt"]').check();
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode','tilt');
     const tilt = value => page.evaluate(value => {

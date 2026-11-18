@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -16,7 +17,7 @@ for (const [name, viewport, hasTouch] of [
     await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon', 'canyon', 'aurora', 'spiral'])));
     await page.reload();
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-    await page.locator('[data-track="spiral"]').click();
+    await clickLobbyOption(page, '[data-track="spiral"]');
     await page.locator('#start-button').click();
     await page.evaluate(() => { window.gameplay.race.countdown = .01; });
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(10000) });

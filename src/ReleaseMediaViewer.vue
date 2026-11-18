@@ -20,20 +20,15 @@ const userPaused = ref(false);
 // The media stays transparent until it can draw itself, then fades in: no blank box, no mid-clip poster flash.
 const ready = ref(false);
 let opener: HTMLElement | null = null;
-let closing = false;
 let navigation: ReturnType<typeof dialogNavigation>;
 onMounted(() => { navigation = dialogNavigation(dialog.value!); });
 
 // The view and its backdrop fade together; reduced motion skips it.
-function fade(view: HTMLDialogElement, opacity: number[], duration: number): Promise<unknown> | null {
-  if (reducedMotion.matches) return null;
-  const timing = { duration, easing: 'ease-out' };
-  view.animate({ opacity }, timing);
-  return view.animate({ opacity }, { ...timing, pseudoElement: '::backdrop' }).finished;
-}
+const FADE = { easing: 'ease-out' };
 function open(next: ZoomedMedia, from: HTMLElement): void {
   opener = from;
-  closing = false;
+  // Closing returns focus here, natively and in restore(); Escape is a key press, so the browser would ring it.
+  from.dataset.focusReturned = ''; // hides that ring until focus moves on (ReleaseNotesPanel.vue)
   still.value = reducedMotion.matches;
   userPaused.value = false;
   ready.value = false;
@@ -41,7 +36,7 @@ function open(next: ZoomedMedia, from: HTMLElement): void {
   const view = dialog.value;
   if (!view) return;
   navigation.open();
-  fade(view, [0, 1], 220);
+  if (!reducedMotion.matches) for (const pseudoElement of [undefined, '::backdrop']) view.animate({ opacity: [0, 1] }, { ...FADE, duration: 220, pseudoElement });
   // Refused autoplay (iOS Low Power Mode) falls back to the still with controls instead of an empty view.
   if (next.kind === 'video' && !still.value) nextTick(() => {
     clip.value?.focus({ preventScroll: true }); // Space / Enter pause it
@@ -59,13 +54,8 @@ function togglePause(): void {
   if (video.paused) video.play().catch(() => { still.value = true; }); else video.pause();
 }
 function close(): void {
-  const view = dialog.value;
-  if (!view?.open || closing) return;
-  closing = true;
-  const faded = fade(view, [1, 0], 180);
-  if (!faded) return navigation.close();
-  const hide = () => navigation.close();
-  void faded.then(hide, hide);
+  if (reducedMotion.matches) navigation.close();
+  else navigation.leave({ opacity: [1, 0] }, { ...FADE, duration: 180 }, true);
 }
 // Space and Enter pause a focused clip; with native controls (reduced motion) the keys stay the browser's.
 function onKey(event: KeyboardEvent): void {
@@ -84,12 +74,13 @@ function cancel(event: Event): void {
   close();
 }
 function restore(): void {
-  closing = false;
   clip.value?.pause();
   const time = clip.value?.currentTime;
   emit('closed', media.value?.kind === 'video' && Number.isFinite(time) ? time ?? null : null);
   media.value = null;
-  opener?.focus({ preventScroll: true });
+  const returned = opener;
+  returned?.focus({ preventScroll: true });
+  returned?.addEventListener('blur', () => delete returned.dataset.focusReturned, { once: true });
 }
 defineExpose({ open });
 </script>

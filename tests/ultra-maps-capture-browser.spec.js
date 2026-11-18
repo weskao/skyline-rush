@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { expect } from '@playwright/test';
@@ -36,7 +37,7 @@ test(`${LABEL} ${VIEW}: every map on High and Ultra`, async ({ gameplayPage: pag
       for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(ciTimeout(400)); }
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
       const choice = page.locator(`[data-track="${id}"]`).first();
-      await choice.evaluate(button => button.click()); // a capture tool: the carousel may hold it off screen (real taps: track-swipe specs)
+      await clickLobbyOption(page, `[data-track="${id}"]`);
       await expect(choice).toHaveAttribute('aria-pressed', 'true');
       await page.locator('#start-button').click();
       await page.waitForFunction(() => document.body.dataset.phase === 'racing', null, { timeout: ciTimeout(30000) });

@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -5,7 +6,7 @@ import { ciTimeout } from './helpers/ci.js';
 test.use({ guideSeen: false });
 
 const openGuide = async page => {
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.locator('#guide-open').click();
   await expect(page.locator('#guide-screen')).toBeVisible();
 };
@@ -42,7 +43,7 @@ test('first visit keeps the home screen clear; Controls opens the keyboard guide
   await expect(page.locator('#guide-items-panel')).toBeHidden();
   await page.keyboard.press('Escape');
   await expect(guide).toBeHidden();
-  await expect(page.locator('#controls-button')).toBeFocused();
+  await expect(page.locator('#settings-button')).toBeFocused();
   await page.reload();
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING');
@@ -69,7 +70,7 @@ test('first Start offers practice; Skip races the selected track and is remember
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await expect(page.locator('#tutorial-coach')).toBeHidden();
   await page.keyboard.press('Escape');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.locator('#tutorial-open').click();
   await expect(page.locator('#tutorial-exit')).toHaveText('Exit');
 });
@@ -101,7 +102,7 @@ test('opening guide from paused controls does not resume the race', async ({ pag
   await expect(page.locator('#guide-close')).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('#guide-screen')).toBeHidden();
-  await expect(page.locator('#controls-button')).toBeFocused();
+  await expect(page.locator('#settings-button')).toBeFocused();
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
 });
 

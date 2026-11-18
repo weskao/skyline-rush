@@ -13,7 +13,9 @@ test('Neon traffic costs a fixed number of draw calls at any car count', async (
   const none = await place(page, 0, POOL);
   const calls = [];
   for (const shown of [3, 12, 54, POOL]) calls.push(await place(page, shown, POOL) - none);
-  expect(calls, 'traffic draw calls with 3, 12, 54 and 108 cars in view').toEqual([TRAFFIC_CALLS, TRAFFIC_CALLS, TRAFFIC_CALLS, TRAFFIC_CALLS]);
+  // High draws Neon's wet streets, so its mirror pass redraws the lamps too (src/wet-reflection.ts).
+  const fixed = TRAFFIC_CALLS + MIRROR_CALLS;
+  expect(calls, 'traffic draw calls with 3, 12, 54 and 108 cars in view').toEqual([fixed, fixed, fixed, fixed]);
   expect(await place(page, 0, POOL), 'no car in view draws nothing').toBe(none);
 });
 

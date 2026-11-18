@@ -13,9 +13,9 @@ export async function readHomeVersion(page) {
 export function expectHomeVersion({ tagline, version }, width, height, locale) {
   const tag = `${width}x${height} ${locale}`;
   if (height <= 500 && width > height) {
-    // Landscape phones move the version chip into the top bar beside the brand.
     expect(tagline, `${tag} tagline hidden`).toBeNull();
-    expect(version.y + version.height, `${tag} version in the top bar`).toBeLessThanOrEqual(82);
+    expect(Math.abs(version.x + version.width / 2 - width / 2), `${tag} version horizontally centered`).toBeLessThanOrEqual(1);
+    expect(Math.abs(version.y + version.height - (height - 4)), `${tag} version at the bottom edge`).toBeLessThanOrEqual(1);
   } else {
     expect(Math.abs(tagline.y + tagline.height / 2 - version.y - version.height / 2), `${tag} version centered on the tagline`).toBeLessThanOrEqual(1);
     expect(tagline.x + tagline.width, `${tag} tagline left of the version`).toBeLessThanOrEqual(version.x);

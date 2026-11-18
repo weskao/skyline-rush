@@ -9,15 +9,18 @@ const clipped = () => {
   const card = document.querySelector('.wave3-demo-results--earned');
   const misses = [];
   if (card.scrollHeight > card.clientHeight + 1) misses.push(`card scrolls ${card.scrollHeight}/${card.clientHeight}`);
-  // Short landscape opens the details as a panel above the strip; it counts as part of the card.
+  // Short landscape opens the details beside the action column; it counts as part of the card.
   const c = card.getBoundingClientRect();
   const panel = card.querySelector('.wave3-demo-results__details').getBoundingClientRect();
   const box = { left: Math.min(c.left, panel.left), right: Math.max(c.right, panel.right), bottom: Math.max(c.bottom, panel.bottom) };
   if (card.dataset.open !== undefined) {
-    const actions = document.querySelector('#race-overlay .overlay-actions').getBoundingClientRect();
+    const actions = document.querySelector('#race-overlay .overlay-actions');
     if (panel.top < 0 || panel.bottom > innerHeight) misses.push('details off screen');
-    if (panel.right > actions.left + 1 && panel.left < actions.right - 1 &&
-      panel.bottom > actions.top + 1 && panel.top < actions.bottom - 1) misses.push('details cover actions');
+    for (const control of actions.querySelectorAll('.overlay-buttons button:not([hidden])')) {
+      const r = control.getBoundingClientRect();
+      if (r.width && r.height && panel.right > r.left + 1 && panel.left < r.right - 1 &&
+        panel.bottom > r.top + 1 && panel.top < r.bottom - 1) misses.push('details cover actions');
+    }
   }
   for (const node of card.querySelectorAll('h3, p, h4, span, strong, progress')) {
     if (node.closest('[hidden]')) continue;
@@ -60,21 +63,20 @@ for (const viewport of [
 
       const geometry = () => page.evaluate(() => {
         const reward = document.querySelector('.wave3-demo-results--earned');
-        const summary = document.querySelector('#race-overlay .overlay-summary');
-        const actions = document.querySelector('#race-overlay .overlay-actions');
+        const slot = document.querySelector('#result-rewards');
         const b = reward.getBoundingClientRect();
-        const s = summary.getBoundingClientRect();
-        const a = actions.getBoundingClientRect();
+        const s = slot.getBoundingClientRect();
+        const content = document.querySelector('.overlay-content');
         return {
           // Relative only anchors the short-landscape details panel; never fixed/absolute.
-          inline: reward.parentElement === summary && ['static', 'relative'].includes(getComputedStyle(reward).position),
-          withinSummary: b.left >= s.left - 1 && b.right <= s.right + 1,
-          clearOfActions: b.right <= a.left + 1 || b.left >= a.right - 1 ||
-            b.bottom <= a.top + 1 || b.top >= a.bottom - 1,
+          inline: reward.parentElement === slot && ['static', 'relative'].includes(getComputedStyle(reward).position),
+          withinSlot: b.left >= s.left - 1 && b.right <= s.right + 1,
+          // The phone action dock stays inside the results column: a negative inline margin widened it (i18n audit `.overlay-content 366>358`).
+          columnFits: content.scrollWidth <= content.clientWidth,
         };
       });
       await expect.poll(geometry, { timeout: ciTimeout(4000) }).toEqual({
-        inline: true, withinSummary: true, clearOfActions: true,
+        inline: true, withinSlot: true, columnFits: true,
       });
       // The result entrance may slide the entire summary. The reward must retain
       // its relative position, rather than reanchoring after the transform ends.
@@ -106,7 +108,7 @@ for (const viewport of [
         })).toEqual([]);
       }
       if (viewport.height <= 500) {
-        // The strip itself is the tap target; the details rise as a panel and close again.
+        // The strip opens a details panel alongside the results actions.
         await reward.click({ position: { x: 20, y: 10 } });
         await expect(toggle).toHaveAttribute('aria-expanded', 'true');
         await page.locator('#next-button').click({ trial: true });

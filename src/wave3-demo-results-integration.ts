@@ -2,13 +2,13 @@ import { getWave3DemoReceipt } from '#wave3-demo-race';
 import { mountWave3DemoResults } from './wave3-demo-results-ui.ts';
 import { wave3DemoArtUrl } from './wave3-demo-art.ts';
 
-/** Draw the receipt on the existing results summary; no payouts on language/UI rerenders. */
+/** Draw the receipt beside the next race action; no payouts on language/UI rerenders. */
 let renderRevision = 0;
 let shownRace: object | undefined;
 
 export async function renderWave3DemoResults(race: { mode: string }, locale: string): Promise<void> {
   const revision = ++renderRevision;
-  const container = document.querySelector<HTMLElement>('#race-overlay .overlay-summary');
+  const container = document.querySelector<HTMLElement>('#result-rewards');
   if (!container) return;
   const previous = container.querySelector<HTMLElement>('[data-wave3-demo-results]');
   if (previous && shownRace !== race) previous.hidden = true;

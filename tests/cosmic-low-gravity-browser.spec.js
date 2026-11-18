@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -16,7 +17,7 @@ for (const [name, viewport, hasTouch] of [
     await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['cosmic'])));
     await page.reload();
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-    await page.locator('[data-track="cosmic"]').click();
+    await clickLobbyOption(page, '[data-track="cosmic"]');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(10000) });
     const result = await page.evaluate(async () => {

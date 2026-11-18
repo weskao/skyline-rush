@@ -11,7 +11,8 @@ for (const size of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { 
     const pose = page.locator('#garage-pose-action');
     const wing = page.locator('#garage-wing');
     for (const button of [pose, wing]) await expect(button).toBeVisible();
-    await expect(pose).toHaveAccessibleName('Take off');
+    await expect(pose).toHaveAccessibleName('Flight');
+    await expect(pose).toHaveAttribute('aria-checked', 'false');
 
     const box = async locator => locator.boundingBox();
     const preview = await box(page.locator('#garage-preview'));
@@ -27,7 +28,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { 
     expect(w.x + w.width <= n.x + 1 || n.x + n.width <= g.x + 1 || n.y >= w.y + w.height - 1).toBe(true);
 
     await pose.click();
-    await expect(pose).toHaveAccessibleName('Land');
+    await expect(pose).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-garage-mode', 'flight');
     await wing.click();
     await expect(wing).toHaveAttribute('aria-checked', 'true');
@@ -54,9 +55,9 @@ for (const size of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { 
 
     // The same pose carries into the Studio and back.
     await page.locator('#garage-studio-open').click();
-    await expect(pose).toHaveAccessibleName('Land');
+    await expect(pose).toHaveAttribute('aria-checked', 'true');
     await page.locator('#garage-studio-back').click();
     await expect(pose).toBeVisible();
-    await expect(pose).toHaveAccessibleName('Land');
+    await expect(pose).toHaveAttribute('aria-checked', 'true');
   });
 }

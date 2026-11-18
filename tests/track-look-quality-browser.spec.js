@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { expect } from '@playwright/test';
 import { captureHooks, test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -71,8 +72,8 @@ test('Neon switches scenery when the phone graphics setting changes', async ({ p
   const kitVisible = () => page.evaluate(() => window.gameScene?.scene.getObjectByName('Neon Downtown kit')?.visible);
   await expect.poll(kitVisible).toBe(false);
 
-  await page.locator('#vfx-panel > summary').click();
-  const panel = page.getByRole('complementary', { name: 'Airflow and visual effects' });
+  await toggleSettingsSection(page, 'display');
+  const panel = page.locator('#settings-display');
   const quality = panel.getByRole('combobox', { name: 'Quality', exact: true });
   await quality.click();
   await panel.getByRole('option', { name: 'Medium', exact: true }).click();

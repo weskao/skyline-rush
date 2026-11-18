@@ -61,7 +61,8 @@ test('a phone diag session streams device, beat, input, console and pagehide ent
   await expect(badge).toHaveText('DIAG ● 連線中');
   await expect.poll(() => badge.evaluate(node => node.matches(':popover-open') && getComputedStyle(node).pointerEvents)).toBe('none');
   await page.route('**/__diag/log', route => route.abort());
-  await expect(badge).toHaveText(/^DIAG ✕ 中斷 \ds · network$/, { timeout: ciTimeout(5000) });
+  // The seconds count from the last acknowledged batch; a slow CI runner can stall posts past 10 s (run 44012297806: 20s).
+  await expect(badge).toHaveText(/^DIAG ✕ 中斷 \d+s · network$/, { timeout: ciTimeout(5000) });
   await page.unroute('**/__diag/log');
   await expect(badge).toHaveText('DIAG ● 連線中', { timeout: ciTimeout(5000) });
 

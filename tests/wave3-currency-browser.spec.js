@@ -48,7 +48,7 @@ test('home displays three compact resource icons with genuine demo points', asyn
 });
 
 for (const viewport of [{ width: 568, height: 320 }, { width: 756, height: 265 }]) {
-  test(`the Home resource menu fits alongside the mode picker at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+  test(`the Home resource menu stays above the mode picker at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
     const wallet = page.locator('#intro [data-wave3-wallet]');
@@ -57,7 +57,7 @@ for (const viewport of [{ width: 568, height: 320 }, { width: 756, height: 265 }
     await expect(resources).toBeVisible();
     const [resourceBox, modeBox] = await Promise.all([resources.boundingBox(), modes.boundingBox()]);
     expect(resourceBox.height).toBeGreaterThanOrEqual(44);
-    expect(resourceBox.x).toBeGreaterThanOrEqual(modeBox.x + modeBox.width);
+    expect(resourceBox.y + resourceBox.height).toBeLessThanOrEqual(modeBox.y);
     await expect(wallet.locator('img').first()).toBeHidden();
     await resources.click();
     await expect(wallet.locator('[data-currency="coins"] strong')).toHaveText('0');
@@ -175,7 +175,9 @@ test.describe('ultra-short landscape wallet', () => {
     await entry.tap();
     await expect(wallet.locator('[data-currency="coins"] strong')).toHaveText('0');
     await expect(wallet.locator('[data-currency="diamonds"] strong')).toHaveText('0');
-    await wallet.getByRole('button', { name: /Demo coins/i }).tap();
+    const coins = wallet.getByRole('button', { name: /Demo coins/i });
+    await expect(coins).toBeInViewport({ ratio: 1 });
+    await coins.tap();
     await expect(page.getByRole('region', { name: 'Demo coins' })).toBeVisible();
   });
 });

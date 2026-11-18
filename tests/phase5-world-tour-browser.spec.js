@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test, expect } from './helpers/test.js';
 import { writeFileSync } from 'node:fs';
 import { parsePerformanceEvidence } from '../src/performance-evidence.ts';
@@ -32,7 +33,7 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
     await page.goto('/?perf');
     // Include both supported locales without multiplying the 20 WebGL runs.
     if (viewport.width === 320) await selectLocale(page, 'zh-TW');
-    await page.locator(`[data-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-track="${id}"]`);
     const choice = page.locator(`[data-track="${id}"]`);
     await expect(choice).toHaveAttribute('aria-pressed', 'true');
     await expect(choice.locator('.track-route-map svg.route-overview')).toHaveCount(1);
@@ -60,6 +61,7 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
       line: el.textContent,
       calls: Number(el.dataset.drawCalls),
       triangles: Number(el.dataset.triangles),
+      carTriangles: Number(el.dataset.carTriangles),
     }));
     expect(metrics.calls).toBeGreaterThanOrEqual(0);
     expect(metrics.triangles).toBeGreaterThanOrEqual(0);
@@ -68,11 +70,11 @@ for (const id of TOURS) for (const viewport of VIEWPORTS) {
       pixelRatio: await page.evaluate(() => devicePixelRatio),
       browser: process.env.CI ? 'chromium-software-webgl' : 'chromium-local-webgl',
       commit: process.env.GITHUB_SHA || 'local', drawCalls: metrics.calls,
-      triangles: metrics.triangles, line: metrics.line || '',
+      triangles: metrics.triangles, carTriangles: metrics.carTriangles, line: metrics.line || '',
     });
     writeFileSync(info.outputPath(`render-performance-${id}-${viewport.width}x${viewport.height}.json`),
       JSON.stringify(evidence, null, 2));
-    console.log(`Phase5 software WebGL ${id} ${viewport.width}x${viewport.height}: ${metrics.line}; drawCalls=${metrics.calls}; triangles=${metrics.triangles} (not same-device before/after)`);
+    console.log(`Phase5 software WebGL ${id} ${viewport.width}x${viewport.height}: ${metrics.line}; drawCalls=${metrics.calls}; triangles=${metrics.triangles}; carTriangles=${metrics.carTriangles} (not same-device before/after)`);
     // The passive minimap must never cover an active touch control.
     const overlapped = await page.evaluate(() => {
       const map = document.querySelector('#race-route-map')?.getBoundingClientRect();
@@ -105,7 +107,7 @@ for (const quality of ['low', 'medium', 'high']) {
     test.setTimeout(ciTimeout(240000));
     await page.goto('/');
     for (const id of TOURS) {
-      await page.locator(`[data-track="${id}"]`).click();
+      await clickLobbyOption(page, `[data-track="${id}"]`);
       await expect(page.locator('#world')).toBeVisible();
       await page.screenshot({ path: info.outputPath(`world-tour-phase5-${id}-${quality}-reduced-motion.png`) });
     }

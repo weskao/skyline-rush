@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
@@ -19,7 +20,7 @@ const untilRace = (page, time) => page.waitForFunction(t => window.gameplay.race
 const shown = page => page.waitForFunction(() => window.gameScene.scene.getObjectByName('Mini boost streaks').visible, null, { timeout: ciTimeout(10_000) });
 
 for (const [name, viewport, hasTouch] of VIEWPORTS) test.describe(`mini-boost streaks ${name}`, () => {
-  test.use({ viewport, hasTouch });
+  test.use({ viewport, hasTouch, lowGraphics: false }); // Low hides the streaks (src/mini-boost-streaks.js)
   test('a boost tunnel and a chain landing each play the rear streaks once', async ({ gameplayPage: page }, info) => {
     test.setTimeout(ciTimeout(120_000));
     const errors = [];
@@ -27,7 +28,7 @@ for (const [name, viewport, hasTouch] of VIEWPORTS) test.describe(`mini-boost st
     await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['taipei'])));
     await page.reload();
     if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-    await page.locator('[data-track="taipei"]').click();
+    await clickLobbyOption(page, '[data-track="taipei"]');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15_000) });
     await page.keyboard.down('w');

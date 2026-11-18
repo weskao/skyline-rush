@@ -220,13 +220,11 @@ def build_car(c, mats):
         recess, slats = hood_vents(side)
         part("hood_vent_" + tag, c, *recess, G["gt_trim"])
         part("hood_vent_slats_" + tag, c, *slats, P)
-    intake_z = [.15 + .88 * i / 10 for i in range(11)]
-    corner_z = [-2.16 + .30 * i / 6 for i in range(7)]
-    rocker_z = [-.92 + 1.94 * i / 12 for i in range(13)]
     for side, tag in ((-1, "l"), (1, "r")):
-        part("side_intake_" + tag, c, *patch(intake_z, lambda z: .50 - .22 * (z - .15) / .88, lambda z: .51 + .12 * (z - .15) / .88, side=side), G["gt_trim"])
-        part("corner_intake_" + tag, c, *patch(corner_z, lambda z: SILL(z) + .015, lambda z: SILL(z) + .025 + .17 * (-1.86 - z) / .30, ny=2, side=side), G["gt_trim"])
-        part("rocker_" + tag, c, *patch(rocker_z, lambda z: .168, lambda z: .255, ny=2, proud=.012, side=side), G["gt_carbon"])
+        # 12 rows: at 4 the panel chords cut under the convex flank and the body showed through its top by 15 mm.
+        part("side_intake_" + tag, c, *patch(.15, 1.03, lambda z: .50 - .22 * (z - .15) / .88, lambda z: .51 + .12 * (z - .15) / .88, ny=12, side=side), G["gt_trim"])
+        part("corner_intake_" + tag, c, *patch(-2.16, -1.86, lambda z: SILL(z) + .015, lambda z: SILL(z) + .025 + .17 * (-1.86 - z) / .30, ny=2, side=side), G["gt_trim"])
+        part("rocker_" + tag, c, *patch(-.92, 1.02, lambda z: .168, lambda z: .255, ny=2, proud=.012, side=side), G["gt_carbon"])
         # Mirror pod on a short stalk at the A-pillar base (front three-quarter panel).
         pod = lathe([(a, r) for a, r in [(-.08, .012), (-.04, .040), (.05, .046), (.075, .030)]], 10, axis="z")
         mirror = merge(([(side * .88 + 1.6 * x, .875 + .8 * y, -.62 + z) for x, y, z in pod[0]], pod[1]),

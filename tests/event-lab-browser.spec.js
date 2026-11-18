@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -12,7 +13,7 @@ for (const [name, viewport, hasTouch] of [
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await selectLocale(page, locale);
-    await page.locator('button[data-race-mode="eventlab"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="eventlab"]');
     const dialog = page.locator('#event-lab-dialog');
     await expect(dialog).toBeVisible();
     await page.locator('.lab-share > summary').click();
@@ -76,7 +77,7 @@ for (const [name, viewport, hasTouch] of [
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await selectLocale(page, locale);
-    await page.locator('button[data-race-mode="eventlab"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="eventlab"]');
     await page.locator('#lab-template-checkpoints').click();
     const map = page.locator('.lab-map'), box = await map.boundingBox();
     const press = position => hasTouch ? map.tap({ position }) : map.click({ position });
@@ -98,6 +99,8 @@ for (const [name, viewport, hasTouch] of [
     for (const down of [.35, .5, .65, .8]) for (const across of [.125, .375, .625, .875]) {
       if (fits) break;
       await press({ x: box.width * across, y: box.height * down });
+      // A tap on a marker selects it; phones then show its Objects row, so aim again from the Route view.
+      if (!(await map.isVisible())) { await page.locator('.lab-switch button').first().click(); continue; }
       fits = !(await page.locator('#lab-preview').getAttribute('class')).includes('lab-error');
     }
     expect(fits).toBe(true);
@@ -129,7 +132,7 @@ test.describe('narrow Event Lab', () => {
 
   test('keeps the action reachable at keyboard height and scopes validation to the edited object', async ({ gameplayPage: page }) => {
     const entry = page.locator('button[data-race-mode="eventlab"]');
-    await entry.click();
+    await clickLobbyOption(page, 'button[data-race-mode="eventlab"]'); // phones keep the mode list behind the Mode dropdown
     const dialog = page.locator('#event-lab-dialog');
     const objects = dialog.getByRole('button', { name: 'Objects', exact: true });
     await expect(dialog.locator('.lab-map')).toBeVisible();
@@ -143,6 +146,8 @@ test.describe('narrow Event Lab', () => {
     await expect(lane).toHaveAttribute('aria-invalid', 'true');
     await expect(lane).toHaveAccessibleDescription(/lanes 0–3/);
     await expect(dialog.locator('#lab-use')).toBeInViewport({ ratio: 1 });
+    // Keyboard down: 390x360 is "landscape" to CSS, where the lobby folds the Mode buttons away (src/race-lobby.css).
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goBack();
     await expect(dialog).toBeHidden();
     await expect(entry).toBeFocused();

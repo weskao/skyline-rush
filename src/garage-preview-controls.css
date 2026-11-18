@@ -50,7 +50,12 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-#garage-screen #garage-pose-action[data-garage-mode="ground"] svg { transform: rotate(180deg); }
+#garage-screen .garage-camera-controls button > svg {
+  display: block;
+  width: 19px;
+  height: 19px;
+  margin-inline: auto;
+}
 @media (hover: hover) {
   #garage-screen #garage-pose-action:hover { background: #2d5269; }
 }
@@ -97,4 +102,16 @@
 
 @media (max-width: 360px) {
   #garage-screen .garage-mode-controls button { padding-inline: 4px; font-size: 11px; }
+}
+
+#garage-screen #garage-pose-action { padding-inline: 3px; gap: 2px; }
+#garage-screen #garage-pose-action > span {
+  display: inline-flex; align-items: center; gap: 3px; padding: 2px 4px;
+  border-radius: 5px; min-height: 34px; color: #b5c9da;
+}
+#garage-screen #garage-pose-action > [data-active="true"] { background: #205068; color: #fff; }
+#garage-screen #garage-pose-action svg { width: 26px; height: 18px; stroke: currentColor; }
+@media (max-width: 380px) {
+  #garage-screen #garage-pose-action > span { padding-inline: 2px; }
+  #garage-screen #garage-pose-action svg { width: 21px; }
 }

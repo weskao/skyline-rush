@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test, expect } from './helpers/test.js';
 import { writeFileSync } from 'node:fs';
 import { parsePerformanceEvidence } from '../src/performance-evidence.ts';
@@ -33,10 +34,11 @@ for (const track of TRACKS) for (const viewport of VIEWPORTS) {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/?perf');
-    await page.locator(`[data-track="${track}"]`).click();
+    await clickLobbyOption(page, `[data-track="${track}"]`);
     const button = page.locator(`[data-track="${track}"]`);
     await expect(button).toHaveAttribute('aria-pressed', 'true');
-    const overview = button.locator('.track-route-map svg.route-overview');
+    const overview = page.locator('#lobby-hero-map svg.route-overview');
+    await expect(overview).toBeVisible();
     await expect(overview).toHaveCount(1);
     await expect(overview.locator('.route-overview-line')).toHaveCount(1);
     await expect(overview.locator('.route-start')).toHaveCount(1);
@@ -88,14 +90,14 @@ for (const track of TRACKS) for (const viewport of VIEWPORTS) {
       { timeout: ciTimeout(30000) }).toBe(true);
     const metrics = await perf.evaluate(el => ({
       line: el.textContent, calls: Number(el.dataset.drawCalls),
-      triangles: Number(el.dataset.triangles),
+      triangles: Number(el.dataset.triangles), carTriangles: Number(el.dataset.carTriangles),
     }));
     const evidence = parsePerformanceEvidence({
       track, quality: 'medium', width: viewport.width, height: viewport.height,
       pixelRatio: await page.evaluate(() => devicePixelRatio),
       browser: process.env.CI ? 'chromium-software-webgl' : 'chromium-local-webgl',
       commit: process.env.GITHUB_SHA || 'local', drawCalls: metrics.calls,
-      triangles: metrics.triangles, line: metrics.line || '',
+      triangles: metrics.triangles, carTriangles: metrics.carTriangles, line: metrics.line || '',
     });
     writeFileSync(info.outputPath(`render-performance-${track}-${viewport.width}x${viewport.height}.json`),
       JSON.stringify(evidence, null, 2));

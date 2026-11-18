@@ -1,3 +1,5 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -11,7 +13,7 @@ async function choosePreset(page, name) {
 
 test('Custom offers cosmetic presets without changing official controls or layout', async ({ page }) => {
   await page.goto('/');
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#race-mode-rules > summary').click();
   await expect(page.locator('#race-visual-preset + .custom-select')).toBeVisible();
   await expect(page.locator('#race-presentation-summary')).toContainText('Track');
@@ -24,7 +26,7 @@ test('Custom offers cosmetic presets without changing official controls or layou
 
 test('Custom lists snowfall and aurora skies only on tracks that suit them', async ({ page }) => {
   await page.goto('/');
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#race-mode-rules > summary').click();
   const options = page.locator('#race-visual-preset option');
   await expect(options).toHaveText(['Track atmosphere', 'Daylight', 'Dusk', 'Night', 'Rain', 'Fog']);
@@ -40,7 +42,7 @@ for (const [name, viewport, hasTouch] of [
   test('Custom shows its compatible Ghost and theme, preserving rules through retry and clearing on track/Classic selection', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.locator('button[data-race-mode="custom"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="custom"]');
     await page.evaluate(coast => {
       const config = window.gameplay.race.config;
       const samples = Array.from({ length: 801 }, (_, i) => [i * 6.25, 0, 0]);
@@ -50,14 +52,14 @@ for (const [name, viewport, hasTouch] of [
       localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon']));
     }, recordTrackId('coast'));
     await page.reload();
-    await page.locator('button[data-race-mode="custom"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="custom"]');
     await page.locator('#race-mode-rules > summary').click();
     await choosePreset(page, 'Night');
     await expect(page.locator('#ghost-status')).toContainText('01:20.00');
     const rules = await page.evaluate(() => JSON.stringify(window.gameplay.race.config));
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#ghost-enabled').check();
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     const scene = await page.evaluate(() => ({
@@ -69,21 +71,21 @@ for (const [name, viewport, hasTouch] of [
     }));
     expect(scene).toEqual({ fog: .0016, exposure: .72, ghosts: 1, config: rules });
     await page.screenshot({ path: `artifacts/custom-presentation/${name}-night-ghost.png` });
-    await page.locator('#restart-button').click();
+    await page.keyboard.press('Backspace');
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
     expect(await page.evaluate(() => window.gameplay.race.session.presentation.visualPreset)).toBe('night');
     await page.locator('.brand').click();
     await page.locator('#leave-end').click();
-    await page.locator('[data-track="neon"]').click();
+    await clickLobbyOption(page, '[data-track="neon"]');
     await expect(page.locator('#race-visual-preset')).toHaveValue('track');
-    await page.locator('button[data-race-mode="classic"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="classic"]');
     await expect.poll(() => page.evaluate(() => window.gameplay.race.session.presentation.visualPreset)).toBe('track');
     expect(errors).toEqual([]);
   });
 });
 
 test('Free Drive presets translate live and Photo Studio restores the active race atmosphere', async ({ gameplayPage: page }) => {
-  await page.locator('button[data-race-mode="free"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="free"]');
   await page.locator('#race-mode-rules > summary').click();
   await selectLocale(page, 'zh-TW');
   await choosePreset(page, '霧景');
@@ -104,8 +106,8 @@ test('Free Drive presets translate live and Photo Studio restores the active rac
 test('rain stays centered on the rendered car on a banked 3D road', async ({ gameplayPage: page }) => {
   await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(['coast', 'neon', 'canyon', 'aurora', 'spiral'])));
   await page.reload();
-  await page.locator('button[data-race-mode="free"]').click();
-  await page.locator('[data-track="spiral"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="free"]');
+  await clickLobbyOption(page, '[data-track="spiral"]');
   await page.locator('#race-mode-rules > summary').click();
   await choosePreset(page, 'Rain');
   await page.locator('#start-button').click();
@@ -130,7 +132,7 @@ test('rain stays centered on the rendered car on a banked 3D road', async ({ gam
 
 test('canceling a real track swipe preserves the selected atmosphere and current race', async ({ page }) => {
   await page.goto('/');
-  await page.locator('button[data-race-mode="custom"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="custom"]');
   await page.locator('#race-mode-rules > summary').click();
   await choosePreset(page, 'Night');
   await page.mouse.move(1150, 600);

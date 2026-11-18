@@ -1,6 +1,18 @@
+import { openSettingsSection } from './helpers/settings-browser.js';
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { test,expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
+
+test('browser specs start at Low with no notice unless they opt out', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'low');
+  await expect(page.locator('#performance-notice')).toBeHidden();
+});
+
+test.describe('automatic first-launch quality', () => {
+test.use({ lowGraphics: false });
 
 const constrained=page=>page.addInitScript(()=>{
   Object.defineProperty(navigator,'hardwareConcurrency',{configurable:true,get:()=>2});
@@ -14,8 +26,11 @@ test('landscape language controls remain clickable while the quality notice is v
   await expect(page.locator('#performance-notice')).toBeVisible();
   await selectLocale(page, 'zh-TW');
   await expect(page.locator('#performance-notice-text')).toContainText('低');
+  await expect(page.locator('#performance-notice summary')).toBeVisible();
   await page.locator('#performance-notice summary').click();
   await page.locator('#performance-notice-dismiss').click();
+  await expect(page.locator('#performance-notice')).toBeHidden();
+  await selectLocale(page, 'en');
   await expect(page.locator('#performance-notice')).toBeHidden();
 });
 
@@ -37,8 +52,8 @@ test('first visit chooses Low for constrained device, explains it in either lang
 // any panel puts it away: the reader is already in the settings it points to.
 const panels = {
   audio: { open: page => page.locator('#settings-button').click(), control: page => page.getByRole('switch', { name: 'Sound effects' }) },
-  controls: { open: page => page.locator('#controls-button').click(), control: page => page.locator('#controls-panel button:visible').first() },
-  vfx: { open: page => page.locator('#vfx-panel > summary').click(), control: page => page.locator('.vfx-settings .custom-select button').first() },
+  controls: { open: page => openSettingsSection(page, 'driving'), control: page => page.locator('#controls-panel button:visible').first() },
+  vfx: { open: page => toggleSettingsSection(page, 'display'), control: page => page.locator('.vfx-settings .custom-select button').first() },
 };
 for (const [name, panel] of Object.entries(panels)) {
   test(`opening the ${name} panel puts the downgrade notice away so its controls stay clickable`, async ({ page }) => {
@@ -90,13 +105,12 @@ test('automatic graphics choice is a short disclosure with keyboard-accessible d
   const notice = page.locator('#performance-notice');
   const summary = notice.locator('summary');
   await expect(summary).toBeVisible({ timeout: ciTimeout(2500) });
-  for (const selector of ['#airflow-toggle', '#vfx-panel > summary']) {
-    await page.locator(selector).click({ trial: true, timeout: ciTimeout(3500) });
-  }
+  await page.locator('#settings-button').click({ trial: true, timeout: ciTimeout(3500) });
   await expect(notice.locator('#performance-notice-text')).toBeHidden();
   await summary.focus();
   await page.keyboard.press('Enter');
   await expect(notice.locator('#performance-notice-text')).toBeVisible();
   await notice.locator('#performance-notice-dismiss').click();
   await expect(notice).toBeHidden();
+});
 });

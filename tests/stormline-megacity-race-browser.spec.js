@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { test } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
@@ -24,7 +25,7 @@ for (const [name, viewport, hasTouch] of [
   test('the Coming Soon card enters a real 14.5 km race over every fork, finishes once and saves topology-keyed results', async ({ gameplayPage: page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.locator('[data-upcoming-track="stormline-megacity"]').click();
+    await clickLobbyOption(page, '[data-upcoming-track="stormline-megacity"]');
     await expect(page.locator('#start-button')).toBeEnabled();
     await expect(page.locator('#track-length')).toHaveText('14.5 KM SPRINT');
     await expect(page.locator('.route-heading')).toHaveText('STORMLINE MEGACITY');

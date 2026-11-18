@@ -2,6 +2,7 @@ import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 
 // Exercise the real built game using the trial artifact from pretest:browser.
 const demoKey = 'skyline-rush-wave3-demo:v1:guest';
@@ -99,7 +100,7 @@ test('real Garage demo uses localized keyboard navigation and tolerates missing 
 
 test('starting actual Free Drive cannot immediately credit a demo race reward', async ({ page }) => {
   await page.goto('/');
-  await page.locator('button[data-race-mode="free"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="free"]');
   await page.locator('#start-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await expect.poll(() => page.evaluate(key => {
@@ -124,7 +125,7 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
     }).observe(overlay, { attributes: true, attributeFilter: ['hidden', 'data-reward-reveal'], childList: true, subtree: true });
   });
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(20000) });
   await page.keyboard.down('w');

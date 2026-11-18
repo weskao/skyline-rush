@@ -1,6 +1,8 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect, settled } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 
 const open = async page => {
   await page.goto('/');
@@ -15,7 +17,7 @@ const bank = page => page.evaluate(() => parseFloat(document.body.style.getPrope
 
 test('desktop remaps swap conflicts, reject reserved keys, persist and drive AIR DASH live', async ({ page }) => {
   await open(page);
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await expect(page.getByRole('slider', { name: 'Steering sensitivity', exact: true })).toBeVisible();
   await page.keyboard.down('d');
   await page.locator('[data-rebind="fly"]').click();
@@ -34,9 +36,9 @@ test('desktop remaps swap conflicts, reject reserved keys, persist and drive AIR
   await page.locator('[data-rebind="fly"]').click();
   await page.keyboard.press('f');
   await page.reload();
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await expect(page.locator('[data-rebind="fly"]')).toContainText('F');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await start(page);
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(70);
@@ -67,7 +69,7 @@ test.describe('touch controls', () => {
     await page.locator('#pause-button').click();
     await settled(page.locator('.overlay-content'));
     await expect(page.locator('#race-status')).toHaveText('PAUSED');
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('[data-controls="mode"][value="buttons"]').check();
     await page.locator('[data-controls="hand"][value="right"]').check();
     await page.locator('#layout-edit').click();
@@ -80,7 +82,7 @@ test.describe('touch controls', () => {
       await touch('touchEnd');
     }
     await page.locator('#layout-done').click();
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#layout-edit').click();
     await page.keyboard.press('p');
     await expect(page.locator('#layout-toolbar')).toBeHidden();
@@ -108,13 +110,13 @@ test.describe('touch controls', () => {
     await expect(page.locator('.nitro-segment')).toHaveCount(3);
     await page.locator('#pause-button').click();
     await settled(page.locator('.overlay-content'));
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('[data-controls="hand"][value="left"]').check();
     await page.locator('#layout-edit').click();
     const mirrored = await page.locator('[data-control="right"]').boundingBox();
     expect(mirrored.x + mirrored.width / 2).toBeCloseTo(saved.landscape.right.x * 844, 0);
     await page.locator('#layout-done').click();
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#layout-reset').click();
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')).landscape)).toEqual({});
   });
@@ -123,7 +125,7 @@ test.describe('touch controls', () => {
     await start(page);
     await page.locator('#pause-button').click();
     await settled(page.locator('.overlay-content'));
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#layout-edit').click();
     const session = await context.newCDPSession(page);
     await session.send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 59, right: 59, top: 20, bottom: 21 } });
@@ -147,11 +149,11 @@ test.describe('touch controls', () => {
 
 gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and fire once per press', async ({ gameplayPage: page }) => {
   gameplayTest.setTimeout(ciTimeout(90000));
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   await page.locator('#controls-sensitivity').focus();
   await page.keyboard.press('Home');
   await expect(page.locator('#controls-sensitivity')).toHaveValue('0.4');
-  await page.locator('#controls-button').click();
+  await toggleSettingsSection(page, 'driving');
   // Snapshot the HUD in-page the moment charge reads 0.5; polling from the test misses the 0.6s refill window on slow CI.
   await page.evaluate(() => {
     const meter = document.querySelector('#nitro-meter');
@@ -172,7 +174,7 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
   });
   // Solo Time Trial: rivals ahead on the grid take Coast's first rings (2.5 s respawn), so the player's first charge
   // would skip 0.5 and the group could not complete. This test is about the player's own ring rewards.
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.
@@ -223,10 +225,10 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'none');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await page.locator('[data-vfx="comfortable"]').check();
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'none');
-  await page.locator('#vfx-panel > summary').click();
+  await toggleSettingsSection(page, 'display');
   await expect(page.locator('#maneuver-report')).toBeHidden();
   // Record every charge change in-page: the race keeps refilling (rings, pickups, slipstream) while slow CI polls,
   // so "one charge per press" is the first change landing on 2 and the meter never dropping below it.

@@ -1,4 +1,4 @@
-/* The browser's segments, in CSS pixels, are shared by the scene, HUD and top-layer dialogs. */
+/* The browser's segments, in CSS pixels, place HUD and dialogs over the full-viewport scene. */
 body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) {
   --fold-scene-right: calc(100vw - var(--fold-scene-left) - var(--fold-scene-width));
   --fold-scene-bottom: calc(100dvh - var(--fold-scene-top) - var(--fold-scene-height));
@@ -10,18 +10,21 @@ body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) {
   --fold-gap-bottom: max(12px, var(--safe-bottom));
 }
 
-body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #app > #world {
-  inset: var(--fold-scene-top) auto auto var(--fold-scene-left);
-  width: var(--fold-scene-width);
-  height: var(--fold-scene-height);
-}
-body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #upcoming-scene {
-  inset: var(--fold-scene-top) var(--fold-scene-right) var(--fold-scene-bottom) var(--fold-scene-left);
-}
+/* The fallback artwork also spans both panes. Its label stays on the clear pane. */
 body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #upcoming-scene img {
-  width: min(94%, 760px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: .86;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
-body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #upcoming-scene-fallback { max-width: 92%; }
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #upcoming-scene-fallback {
+  top: calc(var(--fold-scene-top) + max(80px, var(--fold-gap-top)));
+  right: calc(var(--fold-scene-right) + var(--fold-gap-right));
+  max-width: calc(var(--fold-scene-width) - var(--fold-gap-left) - var(--fold-gap-right));
+}
 
 body[data-fold-axis="vertical"] .topbar { gap: 0; }
 body[data-fold-axis="vertical"] .topbar .route-heading { display: none; }
@@ -32,18 +35,6 @@ body[data-fold-axis="vertical"] .toolbar {
   justify-content: flex-end;
 }
 body[data-fold-axis="vertical"] .brand { max-width: calc(var(--fold-home-width) - var(--fold-gap-left) - 8px); }
-body[data-fold-axis="vertical"] .aero-tools {
-  left: auto;
-  right: var(--fold-gap-right);
-  top: max(84px, calc(var(--safe-top) + 72px));
-  max-width: calc(var(--fold-scene-width) - var(--fold-gap-right) - 8px);
-}
-body[data-fold-axis="vertical"] .vfx-settings {
-  right: 0;
-  left: auto;
-  max-width: calc(var(--fold-scene-width) - 24px);
-  max-height: calc(var(--fold-scene-height) - 136px);
-}
 body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not([data-phase="ready"]) .telemetry .flight-telemetry {
   transform: none;
 }
@@ -194,8 +185,6 @@ body[data-fold-axis="horizontal"]:not([data-phase="ready"]) .telemetry:has(.spee
   bottom: auto;
   top: calc(var(--fold-pane-bottom-start) + 80px);
 }
-body[data-fold-axis="horizontal"] .aero-tools { top: 88px; }
-body[data-fold-axis="horizontal"] .vfx-settings { max-height: calc(var(--fold-scene-height) - 136px); }
 body[data-fold-axis="horizontal"] .leaderboard#leaderboard {
   position: fixed;
   top: calc(var(--fold-pane-bottom-start) + 12px);
@@ -232,6 +221,9 @@ body[data-fold-axis="vertical"][data-tutorial] .race-overlay .overlay-content {
   #leaderboard .racer > span:last-child { white-space: nowrap; }
   #leaderboard .racer.is-player > span:last-child { display: none; }
 }
+/* Portrait: beside POSITION the rows span the road column between AIRFLOW/VFX (ends 100px) and the road view (20vh, 148px
+   on a 320x740 phone), so three rows from 102px must end by 147px. Guard: tests/race-hud-overlap-browser.spec.js. */
+@media (max-width: 760px) and (min-height: 501px) { #leaderboard .racer { height: 15px; min-height: 15px; } }
 @media (pointer: coarse) and (max-width: 700px) and (max-height: 500px) and (orientation: landscape) {
   #leaderboard .racer > strong { display: none; }
   #leaderboard .racer > span:last-child { display: block; }

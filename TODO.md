@@ -1,3 +1,79 @@
+# Develop browser CI run 44117764575
+
+- [x] Reproduced the live minimap gap on desktop and two phone widths. The map now shares the toolbar height and button size. Short touch landscape keeps its own side-by-side row.
+- [x] Reproduced the short-landscape Resources list under the pinned Progress button. The expanded list stays inside the lobby's scrolling flow.
+- [x] Preserve the iOS portrait footer inset when Home overrides the base layout and restore an undismissed graphics notice after closing Settings on Home.
+- [ ] Finish the remaining browser failures on the latest develop SHA, confirm the full quality gate and verify the layout on a physical phone.
+
+# Mobile results navigation and cloud save
+
+- [x] Keep race actions on the first portrait screen and reachable while scrolling the reward receipt. A subsequent result opens at the top.
+- [x] Give short-landscape secondary buttons equal widths and the cloud status its own row. Keep the Google mark and translated label together.
+- [x] Browser RED: portrait secondary actions were below the fold, and landscape labels wrapped. Chromium checked English and Traditional Chinese, both primary-action variants, both Google states and the existing compact/foldable layout cases.
+- [x] Typecheck, production build, module-size and unit suite passed locally (3,353 unit tests passed, 3 skipped).
+- [ ] Confirm physical-device behavior and the exact-head GitHub quality gate. The local full browser suite requires the configured Chrome distribution.
+
+# Home scene and Start sweep
+
+- [x] Show the original Home track scene without a full-screen gradient across viewport sizes, including the fallback preview.
+- [x] Keep the Start highlight inside the button during portrait-to-landscape and landscape-to-portrait rotation.
+- Playwright RED exposed the viewport gradients and a translated highlight outside the button box. The production CSS passes the same checks in Chromium, and the changed Coast scene was captured in phone portrait and landscape.
+- [ ] Confirm on a physical phone and check the GitHub quality gate for the new branch head.
+
+# Home short-landscape wallet / track spacing
+- [x] Restore a small 6px gap between the Home resource strip and selected-track hero on short landscape layouts.
+- [x] Add browser regression coverage for 345×206, 667×375, 743×340 and 852×393.
+- [ ] Run the focused browser regression and exact-HEAD CI; confirm the final spacing on a physical phone.
+
+# Landscape Home version button
+
+- [x] Restore the version button to the bottom center of short phone landscapes and keep the adjacent action labels inside their buttons.
+- [x] RED reproduced the old header position and the 667 × 375 English label overflow. The focused Chromium cases verify the center gap, safe area, toolbar, and release-notes tap. The real-game 852 × 393 Chromium capture shows the version button.
+- [ ] Check the exact-commit GitHub quality gate and a physical phone. Full local unit coverage requires the assets omitted from this sparse checkout.
+
+# Home track chooser and immediate race score
+
+- The Home hero combines the selected track map, name, and teaser. Confirm in the track dialog to apply a new track. Cancel preserves the selection and restores focus. Desktop and touch gestures still page the Home scene when the dialog is closed.
+- Home keeps the car above the locked-in Start rail on phones and adds an Airflow preview shortcut beside Settings. Book and tabletop foldables use a single usable segment for chooser controls.
+- All 25 project select controls share one drawn appearance. Language keeps its globe, and race weather and Photo Studio lighting use the same trigger and menu treatment.
+- Standard results display the style score, stars, scoring sources, and per-route medal thresholds without a disclosure.
+- Test-first regressions covered the former result disclosure, mismatched select styling, obscured car and missing track confirmation. The 45 focused source tests, 13 Chromium UI scenarios, typecheck and locked production build passed. Physical foldable and exact-commit CI checks are separate.
+
+# Full-width foldable race and lobby navigation
+
+- Home and race render the car and track across the entire foldable viewport. The race camera aims clear of the hinge on books and tabletop layouts. HUD, touch buttons and dialogs still use viewport segments. Garage and Photo Studio retain their own framing.
+- The existing Settings gear is shown at Home, pause and results. Countdown and active driving hide it. Closing Settings restores focus to the same gear.
+- Home uses three transparent 72 × 72 WebP sprites for Garage, Progress and Practice. Visible localized labels stay in place at every size.
+- A desktop viewport probe reproduced 5 px of overflow on the old lobby. The reordered track rail no longer carries a negative bottom margin into the edge of the panel.
+- Chromium verified live Home and race geometry and hinge-safe actions on both fold axes, plus the settings phase transitions on desktop and touch landscape.
+- Test-first failures reproduced the old phase rule, one-pane canvas and absent artwork. Focused source, foldable projection, asset and model checks, typecheck and the locked production build passed. Physical foldable and exact-commit CI verification are tracked separately.
+
+# UI overhaul integration and CI follow-up
+
+- Integrated develop `4a3ff0a1`. Kept both the Roadster request-watch isolation and its new Settings flow when resolving the single conflict.
+- The prior CI run `43941377849` failed all 16 browser shards and the cloud-save job. Its mobile tests often tried to click a collapsed race-mode or track row. Use the shared lobby helper to open the disclosure before clicking; the 2/8-car mobile test passed on Chromium after that change. Updated browser checks for the Settings, Progress, camera, and pause/retry entry points, and fixed a result overlap check that called a DOM method on a rectangle.
+- Layout probe covered desktop and compact portrait action positions. Full browser/Cloud Save regression and exact-commit CI remain to be confirmed.
+
+# Unified settings and lobby track navigation
+
+- [x] Home uses one Settings gear. Driving, Display & HUD, Audio and Language share a responsive dialog with its own scroll area. The pause menu opens the same dialog.
+- [x] Desktop horizontal trackpad gestures work across the lobby, with open track/mode pickers and vertical scrolling retaining their own input. Keep the wider desktop track cards and use the same map-and-art treatment in mobile portrait.
+- [x] RED on the former lobby wheel handling and settings structure. Focused regression tests, including the existing main CSS and module-size contracts, pass. Chromium verified desktop paging, mobile portrait and tabletop dialog geometry and Escape focus.
+- [ ] Record physical phone/foldable verification, full browser matrix and exact-HEAD CI before merge.
+
+# Reference design follow-up
+
+- [x] Compact race selection, desktop track rail, new 3× Coast/Neon landmark art, twelve mode icons and a shared two-state Garage pose switch.
+- [x] Simplify live race toolbar and add pause settings. Show both earned currencies in the responsive results receipt, with the receipt beside the next action.
+- [x] RED/GREEN focused tests, source size and existing main CSS contract (19 passed). Verify production build, exact-head CI and physical device layouts separately.
+- [ ] Follow up on unified wallet, account and missions navigation, Garage secondary controls and Photo/Event Lab restructuring. Preserve original access and entitlements.
+
+# Skyline Rush responsive interface refresh
+
+- The lobby reads its title from the selected race and uses the existing 3D showcase and 3× track art. The desktop rail shows larger track cards, and the mobile layout preserves the safe-area Start rail and folded viewport segments.
+- The settings gear opens audio and links to the existing driving, display/HUD, and language panels. The first-race guide opens with the quick instructions, and the full manual is available from Practice. Garage camera icons, progress navigation, Event Lab history controls and results credits reuse the existing icon and artwork sources.
+- RED/GREEN guards cover the new layout contracts. Check desktop, portrait, short landscape, and both folding axes with the browser specs. Physical iOS, Android and foldable testing remains pending.
+
 # 2026-11-16 — Browser CI follow-up
 
 - The lobby already scrolls. Removing the inner rules scroller lets the AI listbox open above the rules without clipping its first options. Chromium reproduced the old track-list interception and verified that selecting 0 AI updates the rules summary after the fix.
@@ -5939,3 +6015,20 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 
 - [x] RED: a temporary paint ID in the shared catalog was ignored by the production audit. GREEN: the same fixture identifies its missing WebP in locked and Pages trial mode.
 - [x] Both the release audit and the Garage artwork browser test read the paint catalog. The raster-artwork rule records the stable ID, bilingual names, WebP naming and load fallback.
+
+# Procedural Roadster dev preview
+
+- [ ] `make dev procedural=1` shows the procedural Roadster on Home, Garage and races; switching to another car still loads its model. Default and production builds retain the GLB. Verify desktop/mobile, `make verify` and exact-commit CI before acceptance.
+- [x] RED: `node --test tests/car-catalog.test.js` requested the Roadster GLB with the preview enabled. GREEN: focused catalog and Garage model tests passed (50 tests); typecheck passed.
+- [ ] `make verify` was interrupted during unit tests; browser and World Tour gates did not run. `npm run build` and `tests/module-size.test.js` passed separately. Browser preview and exact-commit CI remain unverified.
+
+## 2026-11-18 — Dialog close flash (`feature/skyline-rush-ui-overhaul`)
+
+Repro: on Home, open What's New, tap a picture or clip, close the enlarged view. It fades out, flashes back at full opacity, then vanishes, so the dimmed home and track map blink through. History closes the same way. Expected: once faded out it stays transparent until it closes.
+
+- [x] Root cause: `dialogNavigation().close()` closes on the async `popstate` after `history.back()`, and both exit animations ran without `fill`, so the still-open dialog repainted with its normal styles in between.
+- [x] RED: `tests/dialog-exit-hold-browser.spec.js` on the old sources, 6 of 6 failed at 1440x900, 390x844 and 844x390 (`atClose: 1, flashes: 1`). `tests/dialog-exit-animation.test.js` matches `.finished` in the old `history-dialog-ui.ts` and `ReleaseMediaViewer.vue`.
+- [x] GREEN: shared `navigation.leave()` in `src/dialog-navigation.ts` holds the last frame and cancels it on `close`; the viewer and History use it. The new spec passes 6 of 6; `npm test` 3358 pass, 0 fail; `npm run typecheck` clean.
+- [x] Prevention: `.claude/rules/dialog-exit-animation.md` plus the two guards above.
+- [ ] `tests/close-button-browser.spec.js` at 390x844 fails on this branch before and after the fix: `button[data-race-mode="eventlab"]` is not visible on phones. Not caused by this change; needs its own fix.
+- [ ] Not yet done: full `make verify`, a real iPhone (Safari and Home Screen app) in both orientations, exact-HEAD `quality-gate`.

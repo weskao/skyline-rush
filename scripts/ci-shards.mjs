@@ -33,8 +33,8 @@ export function listedTests(report) {
     for (const spec of suite.specs ?? []) {
       const parts = [spec.file, ...titles, spec.title];
       const entry = parts.join(' › ');
-      if (parts.some((part) => part !== part.trim() || /[›\n\r]/.test(part))) {
-        throw new Error(`${entry} cannot be matched by Playwright --test-list: use titles without ›, line breaks, or surrounding whitespace`);
+      if (parts.some((part) => !part || part !== part.trim() || /[›\n\r]/.test(part))) {
+        throw new Error(`${entry} cannot be matched by Playwright --test-list: use non-empty titles (name every test.describe) without ›, line breaks, or surrounding whitespace`);
       }
       out.push(entry);
     }

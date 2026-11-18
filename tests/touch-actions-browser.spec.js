@@ -1,3 +1,4 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 
 const open = async page => {
@@ -35,7 +36,7 @@ test.describe('tilt', () => {
       DeviceOrientationEvent.requestPermission = async () => { window.permissionRequests++; return 'denied'; };
     });
     await open(page);
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     expect(await page.evaluate(() => window.permissionRequests)).toBe(0); // settled: an absence check; opening the panel must not have asked
     await page.locator('[data-controls="mode"][value="tilt"]').click();
     await expect(page.locator('#tilt-status')).toContainText('denied');
@@ -46,12 +47,12 @@ test.describe('tilt', () => {
   test('granted tilt calibrates and steers the real car; reopening calibration and resetting remain usable', async ({ page }) => {
     await page.addInitScript(() => { DeviceOrientationEvent.requestPermission = async () => 'granted'; });
     await open(page);
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('[data-controls="mode"][value="tilt"]').check();
     await expect(page.locator('#tilt-status')).toContainText('Waiting for tilt readings');
     await page.evaluate(() => window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { gamma: 5, beta: 20 })));
     await expect(page.locator('#tilt-status')).toContainText('ready');
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#start-button').click();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     await page.evaluate(() => {
@@ -61,7 +62,7 @@ test.describe('tilt', () => {
     await expect.poll(() => page.evaluate(() => parseFloat(document.body.style.getPropertyValue('--flight-bank')))).toBeLessThan(-2);
     await page.evaluate(() => clearInterval(window.tiltInterval));
     await page.locator('#pause-button').click();
-    await page.locator('#controls-button').click();
+    await toggleSettingsSection(page, 'driving');
     await page.locator('#tilt-enable').click();
     await expect(page.locator('#tilt-status')).toContainText('Waiting for tilt readings');
     await page.evaluate(() => window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { gamma: 20, beta: 20 })));

@@ -19,8 +19,8 @@ test('Vue migration preserves the recorded element order, roles and CSS hooks', 
   expect(actual.missing).toEqual([]);
   expect(actual.ordered).toEqual(baseline.elements.map(item => item.id));
   for (let i = 0; i < baseline.elements.length; i++) {
-    expect(actual.elements[i].tag, baseline.elements[i].id).toBe(baseline.elements[i].tag);
+    expect.soft(actual.elements[i].tag, baseline.elements[i].id).toBe(baseline.elements[i].tag);
     for (const cls of baseline.elements[i].classes)
-      expect(actual.elements[i].classes, baseline.elements[i].id).toContain(cls);
+      expect.soft(actual.elements[i].classes, baseline.elements[i].id).toContain(cls);
   }
 });

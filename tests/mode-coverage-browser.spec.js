@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
-import { openLobbyModes } from './helpers/home-lobby.js';
+import { openLobbyModes, clickLobbyOption } from './helpers/home-lobby.js';
 // CI speed: each mode's three touch sizes (390x844, 320x740, 844x390) share one booted race and are resized in place; each size is
 // also freshly booted in two of the six modes. Desktop stays a separate test (hasTouch/isMobile are fixed per browser context).
 
@@ -11,7 +11,7 @@ import { openLobbyModes } from './helpers/home-lobby.js';
 const racing = page => expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
 async function pickMode(page, mode) {
   await openLobbyModes(page);
-  await page.locator(`button[data-race-mode="${mode}"]`).click();
+  await clickLobbyOption(page, `button[data-race-mode="${mode}"]`);
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', mode);
 }
 async function useItemRules(page, rule) {
@@ -122,12 +122,17 @@ test.describe('new-mode controls have accessible names', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
   test('item rules, circuit laps, Event Lab buttons and USE are named', async ({ gameplayPage: page }) => {
     // Event Lab authors on the sprint routes, so open it from the home screen before Circuit swaps the route.
-    await page.locator('button[data-race-mode="eventlab"]').click();
+    await clickLobbyOption(page, 'button[data-race-mode="eventlab"]');
     const dialog = page.locator('#event-lab-dialog');
     await expect(dialog).toBeVisible();
     await dialog.locator('.lab-share > summary').click(); // Export/Import sit in a closed share section
-    const buttons = dialog.locator('button');
-    for (let i = 0; i < await buttons.count(); i++) await expect(buttons.nth(i)).toHaveAccessibleName(/\S/);
+    // Phones show the Route or the Objects section (.lab-switch); a hidden button has no accessible name.
+    for (const section of ['Route', 'Objects']) {
+      await dialog.locator('.lab-switch').getByRole('button', { name: section, exact: true }).click();
+      const buttons = dialog.locator('button').filter({ visible: true });
+      expect(await buttons.count()).toBeGreaterThan(3);
+      for (let i = 0; i < await buttons.count(); i++) await expect(buttons.nth(i)).toHaveAccessibleName(/\S/);
+    }
     await page.locator('#lab-close').click();
     await pickMode(page, 'custom');
     await page.locator('#race-mode-rules > summary').click();

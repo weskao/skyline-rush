@@ -1,8 +1,10 @@
+import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
 import { settled } from './helpers/test.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 // CI speed: the four touch sizes without a fold share one booted page per (locale, HUD) pair and are resized in place; each size is
 // also freshly booted in one pair. Desktop and the two fold layouts keep their own boot (touch/fold are fixed per browser context).
 
@@ -272,7 +274,7 @@ for (const { width, height, hud } of [{ width: 844, height: 390, hud: 'hybrid' }
       const target = await page.locator('.leaderboard').boundingBox();
       await page.locator('#pause-button').click();
       await settled(page.locator('.overlay-content'));
-      await page.locator('#controls-button').click();
+      await toggleSettingsSection(page, 'driving');
       await page.locator('[data-controls="mode"][value="buttons"]').check();
       await page.locator('[data-controls="hand"][value="right"]').check();
       await page.locator('[data-controls="size"][value="L"]').check();
@@ -320,7 +322,7 @@ for (const [track, selector] of [
   ['volcanic-crown', '[data-upcoming-track="volcanic-crown"]'],
 ]) {
   foldHudTest(`${track} retains legible controls and telemetry on a stacked fold`, async ({ gameplayPage: page }) => {
-    await page.locator(selector).click();
+    await clickLobbyOption(page, selector);
     await page.locator('#start-button').click();
     await page.evaluate(() => { window.gameplay.race.countdown = .01; });
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');

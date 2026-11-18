@@ -45,9 +45,9 @@ for (const size of sizes) {
     expect(studio.angleWrap).toBe('nowrap');
     expect(studio.collectionScrollable).toBe('auto');
     const pose = page.locator('#garage-pose-action');
-    await expect(pose).toHaveAccessibleName('Take off');
+    await expect(pose).toHaveAttribute('aria-checked', 'false');
     await pose.click();
-    await expect(pose).toHaveAccessibleName('Land');
+    await expect(pose).toHaveAttribute('aria-checked', 'true');
     await chooseGarageAngle(page, 'side');
     await expect(page.locator('#garage-preview')).toHaveAttribute('data-car-in-frame', 'true');
     const flightImage = test.info().outputPath(`garage-dense-flight-${size.width}x${size.height}.png`);

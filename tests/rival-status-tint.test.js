@@ -97,3 +97,59 @@ test('a hidden rival gets no tint', t => {
   assert.equal(lit(tint, 1), 0);
   assert.ok(lit(tint, 0) > 0);
 });
+
+// Game feel (user 2026-11-17): Freeze grows ice crystals that shatter on thaw; EMP fires a shockwave and sparks.
+const shardsOf = scene => scene.getObjectByName('Rival freeze shards');
+const shownInstances = (mesh, from = 0, to = mesh.count) => {
+  const m = new Matrix4(), p = new Vector3();
+  let n = 0;
+  for (let i = from; i < to; i++) { mesh.getMatrixAt(i, m); p.setFromMatrixPosition(m); if (p.y > -1000) n++; }
+  return n;
+};
+const liveParticles = scene => { let n = 0; scene.traverse(o => { if (o.isPoints) n += o.geometry.attributes.alpha.array.filter(a => a > 0).length; }); return n; };
+
+test('a Freeze grows ice crystals on each frozen rival, and they shatter outward on thaw', t => {
+  const { race, frame, effects, vehicles } = setup(t);
+  const scene = vehicles[0].parent;
+  const shards = shardsOf(scene);
+  assert.ok(shards?.isInstancedMesh, 'one instanced shard mesh');
+  const per = shards.count / 7;
+  race.player.effects.freeze = 2;
+  for (let i = 0; i < 10; i++) frame();
+  assert.equal(shards.visible, true);
+  for (let r = 0; r < 3; r++) assert.equal(shownInstances(shards, r * per, (r + 1) * per), per, `rival ${r + 1} wears its crystals`);
+  const m = new Matrix4(), before = new Vector3(), after = new Vector3(), car = vehicles[1].position;
+  shards.getMatrixAt(0, m); before.setFromMatrixPosition(m);
+  race.player.effects.freeze = 0;
+  for (let i = 0; i < 6; i++) frame(0.03);
+  shards.getMatrixAt(0, m); after.setFromMatrixPosition(m);
+  assert.ok(after.distanceTo(car) > before.distanceTo(car) + 0.3, 'a thawed crystal flies off the car');
+  for (let i = 0; i < 30; i++) frame();
+  assert.equal(shownInstances(shards), 0, 'the shatter clears');
+  effects.reset();
+});
+
+test('Low keeps the soft tint only: no ice crystals', t => {
+  const { race, frame, vehicles } = setup(t);
+  race.player.effects.freeze = 2;
+  for (let i = 0; i < 10; i++) frame(0.05, { quality: 'low' });
+  assert.equal(shownInstances(shardsOf(vehicles[0].parent)), 0);
+});
+
+test('an EMP hit fires an expanding shockwave and spits sparks; the shell tells the shader which status and how long', t => {
+  const { race, frame, tint, vehicles } = setup(t);
+  const scene = vehicles[0].parent;
+  const wave = scene.getObjectByName('Rival status shockwave');
+  assert.ok(wave?.isInstancedMesh);
+  const sparksBefore = liveParticles(scene);
+  race.rivals[1].empUntil = race.elapsed + 1.5;
+  const m = new Matrix4(), s = new Vector3(), scales = [];
+  for (let i = 0; i < 4; i++) { frame(0.03); wave.getMatrixAt(1, m); m.decompose(new Vector3(), new Quaternion(), s); scales.push(s.x); }
+  assert.ok(scales[3] > scales[0] * 1.5, `the shockwave expands (${scales})`);
+  assert.ok(liveParticles(scene) > sparksBefore + 5, 'sparks fly');
+  const status = tint.geometry.attributes.status;
+  assert.equal(status.getX(1), 1, 'EMP kind');
+  assert.ok(status.getY(1) > 0.05, 'age since the hit drives the hit flash and arcs');
+  for (let i = 0; i < 30; i++) frame();
+  wave.getMatrixAt(1, m); assert.ok(new Vector3().setFromMatrixPosition(m).y < -1000, 'the wave parks after it fades');
+});

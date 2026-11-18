@@ -192,7 +192,8 @@ export function createKtx2Provider(renderer: object, baseUrl: string, load: () =
 
 /** World wiring. Load the equipped car on demand. The explicit pipeline probe can take the Roadster's place in Garage QA. */
 export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick<WebGLRenderer, 'compileAsync'>, camera: Camera,
-  search = location.search, baseUrl = import.meta.env.BASE_URL, carModel: () => string | null = equippedCarModel) {
+  search = location.search, baseUrl = import.meta.env.BASE_URL, carModel: () => string | null = equippedCarModel,
+  proceduralRoadster = !!import.meta.env?.DEV && import.meta.env.VITE_PROCEDURAL_ROADSTER === '1') {
   const probe = garageModelId(search);
   const loadKtx2 = createKtx2Provider(renderer, baseUrl);
   let cache: Promise<ModelCache> | undefined;
@@ -220,7 +221,7 @@ export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick
      *  `showcase` only while the Coming Soon stage renders the Home preview; `home` is the Home/race player car. */
     frame(quality: ModelQuality, phase: string, garageOpen: boolean, studio: GarageModelHost | null, showcase: GarageModelHost | null, home: GarageModelHost): void {
       const equipped = carModel();
-      const wanted = equipped === CARS.roadster.model ? probe ?? equipped : equipped;
+      const wanted = equipped === CARS.roadster.model ? (proceduralRoadster ? null : probe ?? equipped) : equipped;
       if (wanted !== id && phase !== 'racing') use(wanted); // the car changes in the Garage only; never rebuild mid-race
       if (!model || id === null) return;
       if (studio) { model.sync(true, quality, studio); return; }

@@ -1,3 +1,4 @@
+import { clickLobbyOption, openLobbyTracks } from './helpers/home-lobby.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 
@@ -14,7 +15,7 @@ test.beforeEach(async ({ page }) => {
 test('all six preview cards retain their original selection flow and cannot START', async ({ page }) => {
   await expect(page.locator('[data-upcoming-track]')).toHaveCount(6);
   for (const id of previews) {
-    await page.locator(`[data-upcoming-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-upcoming-track="${id}"]`);
     await expect(page.locator(`[data-upcoming-track="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#start-button')).toBeDisabled();
     await expect(page.locator('#start-button span')).toHaveText('COMING SOON');
@@ -34,12 +35,12 @@ test('all six preview cards retain their original selection flow and cannot STAR
   }
   await page.keyboard.press('Enter');
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-  await page.locator('[data-track="coast"]').click();
+  await clickLobbyOption(page, '[data-track="coast"]');
   await expect(page.locator('#upcoming-scene')).toBeHidden();
   await expect(page.locator('#start-button')).toBeEnabled();
   await expect(page.locator('#start-button span')).toHaveText('Start race');
   await expect(page.locator('#start-button')).toHaveAccessibleName('Start race'); // Playable CTA keeps its established accessible name.
-  await page.locator('[data-track="neon"]').click();
+  await clickLobbyOption(page, '[data-track="neon"]');
   await expect(page.locator('#start-button')).toBeDisabled();
   await expect(page.locator('#start-button span')).toHaveText('LOCKED');
 });
@@ -53,7 +54,7 @@ test('the Stage 2 preview URL opens the Frostbite card as Coming Soon with Start
 });
 
 test('CTA copy is translated without resizing its hit target', async ({ page }) => {
-  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
   const button = page.locator('#start-button');
   const widthEn = await button.evaluate(e => e.getBoundingClientRect().width);
   await selectLocale(page, 'zh-TW');
@@ -62,15 +63,15 @@ test('CTA copy is translated without resizing its hit target', async ({ page }) 
   await expect(page.locator('[data-upcoming-track="dune-tempest"] strong')).toHaveText('沙暴裂谷');
   const widthZh = await button.evaluate(e => e.getBoundingClientRect().width);
   expect(Math.abs(widthEn - widthZh)).toBeLessThan(1);
-  await page.locator('[data-track="coast"]').click();
+  await clickLobbyOption(page, '[data-track="coast"]');
   await expect(button.locator('span')).toHaveText('開始比賽');
 });
 
 test('selecting an Event Lab course clears a previously selected coming-soon preview', async ({ page }) => {
-  await page.locator('[data-upcoming-track="dune-tempest"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="dune-tempest"]');
   await expect(page.locator('#upcoming-scene')).toBeHidden(); // Live WebGL replaces the JPEG hero.
   await expect(page.locator('#world')).toBeVisible();
-  await page.locator('button[data-race-mode="eventlab"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="eventlab"]');
   await expect(page.locator('#event-lab-dialog')).toBeVisible();
   await page.locator('#lab-use').click();
   await expect(page.locator('#event-lab-dialog')).toBeHidden();
@@ -81,10 +82,12 @@ test('selecting an Event Lab course clears a previously selected coming-soon pre
 });
 
 test('keyboard arrows can focus the first future card after the last playable map', async ({ page }) => {
+  await openLobbyTracks(page);
   await page.locator('[data-track="cosmic"]').focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toBeFocused();
   await page.keyboard.press('Enter');
+  await page.locator('#track-choose-confirm').press('Enter');
   await expect(page.locator('[data-upcoming-track="dune-tempest"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#start-button')).toBeDisabled();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
@@ -96,7 +99,7 @@ test('Start and Coming Soon labels fit after locale switching on phones', async 
   for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }]) {
     await page.setViewportSize(viewport);
     for (const upcoming of [false, true]) {
-      await page.locator(upcoming ? '[data-upcoming-track="dune-tempest"]' : '[data-track="coast"]').click();
+      await clickLobbyOption(page, upcoming ? '[data-upcoming-track="dune-tempest"]' : '[data-track="coast"]');
       for (const locale of ['zh-TW', 'en']) {
         await selectLocale(page, locale);
         await expect(label).toHaveText(upcoming
@@ -106,7 +109,9 @@ test('Start and Coming Soon labels fit after locale switching on phones', async 
           const span = button.querySelector('span');
           return { button: button.getBoundingClientRect().width, text: span.scrollWidth, available: span.clientWidth };
         });
-        expect(sizing.button).toBe(210); // portrait button and the shared landscape right rail
+        await expect(start).toBeInViewport({ ratio: 1 });
+        if (viewport.width > viewport.height) expect(sizing.button).toBe(210); // landscape right rail
+        else expect(sizing.button).toBeGreaterThanOrEqual(viewport.width * .8); // fixed action bar below the scrollable setup
         expect(sizing.text, `${locale} ${upcoming ? 'Coming Soon' : 'Start'} must not be clipped`)
           .toBeLessThanOrEqual(sizing.available + 1);
       }
@@ -116,7 +121,7 @@ test('Start and Coming Soon labels fit after locale switching on phones', async 
 
 test('Frostbite home supports authored P02 3D view without enabling a race', async ({ page }) => {
   await page.goto('/?stage2-preview=frostbite-canyon&shot=p02');
-  await page.locator('[data-upcoming-track="frostbite-canyon"]').click();
+  await clickLobbyOption(page, '[data-upcoming-track="frostbite-canyon"]');
   await expect(page.locator('[data-upcoming-track="frostbite-canyon"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#upcoming-scene')).toBeHidden();
   await expect(page.locator('#start-button')).toBeDisabled();

@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 
 // 10C: after a finish, pausing, switching language, restarting, exiting and switching mode never write or award it again.
 const writes = page => page.evaluate(() => ({ ...window.storageWrites }));
@@ -38,7 +39,7 @@ for (const mode of ['classic', 'endless']) {
         return setItem.call(this, key, value);
       };
     });
-    if (mode !== 'classic') await page.locator(`button[data-race-mode="${mode}"]`).click();
+    if (mode !== 'classic') await clickLobbyOption(page, `button[data-race-mode="${mode}"]`);
     await page.locator('#start-button').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(15000) });
     const before = await writes(page);
@@ -66,7 +67,7 @@ for (const mode of ['classic', 'endless']) {
     await page.locator('.brand').click();
     if (await page.locator('#leave-screen').isVisible()) await page.locator('#leave-end').click();
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
-    await page.locator(`button[data-race-mode="${mode === 'custom' ? 'time' : 'custom'}"]`).click();
+    await clickLobbyOption(page, `button[data-race-mode="${mode === 'custom' ? 'time' : 'custom'}"]`);
     await unchanged('exit and mode switch');
     expect(errors).toEqual([]);
   });

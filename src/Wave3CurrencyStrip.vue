@@ -306,6 +306,9 @@ const currencyArt = (kind: string) => {
   }
 }
 @media (max-height: 340px) and (orientation: landscape), (max-width: 760px) and (max-height: 500px) and (orientation: landscape) {
+  .wave3-wallet-strip[data-compact="true"]:has(.wallet-resources[open]) {
+    flex-direction: column; align-items: flex-start;
+  }
   .wallet-resources { display: block; }
   .wallet-resources summary {
     align-items: center; min-height: 44px; padding-inline: 10px;
@@ -316,8 +319,7 @@ const currencyArt = (kind: string) => {
   .wallet-resources[open] summary::after { content: '−'; }
   .wallet-resources:not([open]) + .wallet-resources-list { display: none; }
   .wallet-resources-list {
-    position: absolute; top: 100%; right: 0;
-    display: flex; gap: 4px; padding: 4px;
+    display: flex; flex-wrap: wrap; gap: 4px; padding: 4px;
     border-radius: 8px; background: #142b40;
   }
 }

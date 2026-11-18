@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { captureHooks, test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -18,7 +19,7 @@ for (const id of [...CLASSIC_IDS, ...Object.keys(COURSE_TRACKS)]) {
     }, CLASSIC_IDS);
     await page.goto(gameplayURL, { waitUntil: 'domcontentloaded' });
     for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(400); }
-    await page.locator(`[data-track="${id}"], [data-upcoming-track="${id}"]`).click();
+    await clickLobbyOption(page, `[data-track="${id}"], [data-upcoming-track="${id}"]`);
     await expect(page.locator('#start-button')).toBeEnabled();
     await page.locator('#start-button').click();
     await page.evaluate(() => { window.gameplay.race.countdown = .01; });

@@ -5,28 +5,59 @@ export const canOpenControlsPanel = (phase: string): boolean => phase === 'ready
 interface ControlPanelDependencies {
   getRacePhase: () => string;
   clearRebinding: () => void;
+  clearControls: () => void;
   hidePerformanceNotice: () => void;
-  trackDropdown: (region: Element, isOpen: boolean, close: () => void) => void;
+  restorePerformanceNotice: () => void;
 }
 
-// Audio settings and control layout are event driven, never updated per frame.
 export function setupControlPanels({
-  getRacePhase, clearRebinding, hidePerformanceNotice, trackDropdown,
+  getRacePhase, clearRebinding, clearControls, hidePerformanceNotice, restorePerformanceNotice,
 }: ControlPanelDependencies) {
-  const $ = (selector: string): HTMLElement => document.querySelector<HTMLElement>(selector)!;
-  function toggleSettings(open: boolean = !panelsView.settingsOpen): void {
-    updatePanelsView({ settingsOpen: !!open });
-    if (open) hidePerformanceNotice();
-    trackDropdown($('.settings'), open, () => toggleSettings(false));
-  }
+  const dialog = document.querySelector<HTMLDialogElement>('#settings-panel')!;
+  const gear = document.querySelector<HTMLButtonElement>('#settings-button')!;
+  const close = dialog.querySelector<HTMLButtonElement>('#settings-close')!;
+  const content = dialog.querySelector<HTMLElement>('.settings-content')!;
+  const driving = dialog.querySelector<HTMLButtonElement>('#controls-button')!;
 
-  // Touch layout is tuned between races only, so the panel never opens mid-race.
-  function toggleControls(open: boolean = !panelsView.controlsOpen): void {
-    open &&= canOpenControlsPanel(getRacePhase());
-    if (!open) clearRebinding();
-    updatePanelsView({ controlsOpen: !!open });
-    if (open) hidePerformanceNotice();
-    trackDropdown($('.controls-menu'), open, () => toggleControls(false));
+  function toggleSettings(open = !dialog.open): void {
+    if (!open) {
+      if (dialog.open) dialog.close();
+      return;
+    }
+    const phase = getRacePhase();
+    driving.disabled = !canOpenControlsPanel(phase);
+    if (dialog.open || (driving.disabled && phase !== 'finished') || document.querySelector('dialog[open]')) return;
+    if (driving.disabled && panelsView.section === 'driving') updatePanelsView({ section: 'audio' });
+    hidePerformanceNotice();
+    clearControls();
+    updatePanelsView({ settingsOpen: true });
+    dialog.showModal();
+    close.focus({ preventScroll: true });
   }
-  return { toggleSettings, toggleControls };
+  close.addEventListener('click', () => toggleSettings(false));
+  dialog.addEventListener('close', () => {
+    if (dialog.open) return;
+    updatePanelsView({ settingsOpen: false });
+    clearRebinding();
+    clearControls();
+    if (!document.querySelector('dialog[open]') && !document.body.classList.contains('layout-editing')) {
+      restorePerformanceNotice();
+      gear.focus({ preventScroll: true });
+    }
+  });
+  dialog.addEventListener('keydown', event => event.stopPropagation());
+  dialog.addEventListener('click', event => {
+    if (event.target !== dialog) return;
+    const box = dialog.getBoundingClientRect();
+    if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom)
+      toggleSettings(false);
+  });
+  for (const button of dialog.querySelectorAll<HTMLButtonElement>('[data-settings-section]')) {
+    button.addEventListener('click', () => {
+      clearRebinding();
+      updatePanelsView({ section: button.dataset.settingsSection as typeof panelsView.section });
+      content.scrollTop = 0;
+    });
+  }
+  return { toggleSettings };
 }
