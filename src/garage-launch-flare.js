@@ -90,6 +90,7 @@ export function createLaunchFlare(effects, vehicle, ground) {
     .map(key => [key, { value: 0 }]));
   uniforms.core.value = uniforms.size.value = 1;
   uniforms.primary = { value: new THREE.Vector3(1, 1, 1) }; uniforms.secondary = { value: new THREE.Vector3(1, 1, 1) };
+  uniforms.sparkDetail = { value: 0 };
   uniforms.bodyFrame = { value: new THREE.Vector4(0, 0, 0, 1) }; // identity: the procedural body
   // Every part rides on the car and sits in the scene (hidden) from creation so shader warm-up compiles it.
   const { pool, rays, rings, sparks, body } = createParts(uniforms);
@@ -118,13 +119,17 @@ export function createLaunchFlare(effects, vehicle, ground) {
       return true;
     },
     // Low keeps the pool and rays but skips the full-body overdraw; VFX Off / Reduced Motion pass enabled=false.
-    update(dt, time, origin, enabled, quality, power) {
+    update(dt, time, origin, enabled, quality, power, detail = 0) {
       if (age < 1) age = Math.min(1, age + dt / duration);
       const on = !!style && enabled && (held || age < 1);
       const bursting = on && !held;
       pool.visible = on; glow.visible = bursting && quality > 0.25;
       rays.visible = bursting && rays.count > 0; rings.visible = bursting && style.shape === 'ring';
-      sparks.visible = bursting && style.shape !== 'ring'; sparks.geometry.setDrawRange(0, quality > 0.25 ? SPARKS : SPARKS / 2); // Low throws half
+      sparks.visible = bursting && style.shape !== 'ring';
+      if (sparks.visible) {
+        sparks.geometry.setDrawRange(0, Math.round(SPARKS * (quality < 1 ? quality : detail === 1 ? 1 : .75)));
+        uniforms.sparkDetail.value = detail;
+      }
       if (!on) return;
       if (ground) { // the car leans about its wheels (steering bank, thrust pitch): a pool leaning with it sinks under the road
         roadUp.set(0, 0, 1).applyQuaternion(ground.quaternion).applyQuaternion(carFrame.copy(vehicle.quaternion).invert());

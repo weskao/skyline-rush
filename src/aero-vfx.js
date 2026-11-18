@@ -29,7 +29,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   vehicle.add(local);
   const flow = new THREE.Mesh(streamGeometry(proceduralProfile), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix'].map(key => [key, { value: 0 }])), wakeRange: { value: new THREE.Vector2() }, rippleScale: { value: new THREE.Vector2() }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
+    uniforms: { ...Object.fromEntries(['time', 'power', 'speed', 'density', 'length', 'suction', 'turbulence', 'downforce', 'nitroMix', 'edgeDetail'].map(key => [key, { value: 0 }])), wakeRange: { value: new THREE.Vector2() }, rippleScale: { value: new THREE.Vector2() }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) } },
     vertexShader: `attribute float flowType; attribute float lane; attribute vec2 flowOutward; varying vec2 vUv; varying float vType; varying float vLane;
       uniform float time; uniform float turbulence; uniform float downforce;uniform float skinPattern; uniform vec2 wakeRange, rippleScale;
       void main(){vUv=uv;vType=flowType;vLane=lane;vec3 p=position;
@@ -47,7 +47,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         }
         gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
     fragmentShader: `varying vec2 vUv; varying float vType; varying float vLane;
-      uniform float time,power,speed,density,length,suction,downforce,nitroMix,skinPattern;uniform vec3 skinTint;uniform vec4 trailAccent;
+      uniform float time,power,speed,density,length,suction,downforce,nitroMix,skinPattern,edgeDetail;uniform vec3 skinTint;uniform vec4 trailAccent;
       void main(){if(vLane>density)discard;
         float t=fract(vUv.x*2.-time*speed+vLane*3.);
         float pulse=smoothstep(1.-length,1.-length+.10,t)*(1.-smoothstep(.84,1.,t));
@@ -63,6 +63,10 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
           float phase=fract(vUv.y*9.+vLane*4.+time*.75);
           float segment=smoothstep(.08,.31,phase)*(1.-smoothstep(.66,.94,phase));
           pattern=.28+.55*segment;
+        }
+        if(edgeDetail>0.&&skinPattern>.5){
+          float seam=.5+.5*cos(vUv.x*31.-time*3.+vLane*6.);
+          pattern*=mix(1.,.78+.22*seam,edgeDetail);
         }
         gl_FragColor=vec4(color*(1.+point*.62),ends*power*(.08+pulse*.7+point*.2)*strength*pattern);}`,
   }));
@@ -127,7 +131,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
     sample.lerpVectors(previous, current, t);
     sampleRotation.slerpQuaternions(previousRotation, vehicle.quaternion, t);
     for (const port of REAR_PORTS) {
-      const p = particles[cursor]; cursor = (cursor + 1) % Math.round(MAX_PARTICLES * quality);
+      const p = particles[cursor]; cursor = (cursor + 1) % particleGeo.drawRange.count;
       p.pos.fromArray(port.position).add(rear.position).applyQuaternion(sampleRotation).add(sample);
       p.roll = rollStrength * .7 > strength;
       // shortcut: still-air frozen-convection markers; use a validated flow solver for pressure or swirl predictions.
@@ -170,6 +174,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       flow.material.uniforms.skinPattern.value = patterns.airflow;
       glow.tint.fromArray(palette.thruster);
       vapor.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
+      vapor.material.uniforms.thrusterTint.value.fromArray(palette.thruster);
       ribbon.material.uniforms.skinTint.value.fromArray(palette['nitro-trail']);
       ribbon.material.uniforms.skinPattern.value = patterns['nitro-trail'];
       shock.userData.skinPattern = launchPattern;
@@ -213,6 +218,15 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       const calm = reducedMotion || settings.comfortable;
       quality = settings.quality === 'low' ? 0.25 : settings.quality === 'medium' ? 0.5 : 1;
       if (calm) quality = Math.min(quality, 0.5);
+      const detail = enabled && !calm && settings.quality === 'high' ? settings.ultra ? 1 : .55 : 0;
+      const wakeCount = Math.round(MAX_PARTICLES * quality);
+      if (particleGeo.drawRange.count !== wakeCount) {
+        for (let i = wakeCount; i < MAX_PARTICLES; i++) particles[i].life = 0;
+        particleGeo.setDrawRange(0, wakeCount); cursor %= wakeCount;
+      }
+      vapor.visible = enabled;
+      vapor.material.uniforms.sparkShare.value = detail > 0 && (boost || studioDemo && preview) ? settings.ultra ? .32 : .18 : 0;
+      vapor.material.uniforms.nitroMix.value = nitroMix;
       if (!calm) time += dt; // Reduced Motion/Comfortable: shader clocks and the showroom emission sweep hold still
       const rollEnabled = enabled && !calm && settings.quality !== 'low' && settings.airflowDensity > 0 && settings.airflowOpacity > 0;
       const rolling = active && car.altitude > 0 && car.trick && !car.trick.done && car.trick.time < TRICK_ROLL_TIME;
@@ -250,7 +264,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       shockAge += dt;
       const fu = flow.material.uniforms;
       fu.time.value = time; fu.speed.value = settings.airflowSpeed * (0.45 + car.speed / 90 + strength * 0.6);
-      fu.nitroMix.value = nitroMix;
+      fu.nitroMix.value = nitroMix; fu.edgeDetail.value = detail;
       fu.power.value = calm ? reveal * settings.airflowOpacity * 0.15 : Math.max(reveal * settings.airflowOpacity * (1 + strength * 0.35), lightPower * settings.speedLines * 0.65);
       fu.density.value = Math.max(settings.airflowDensity * (0.5 + quality * 0.5), sprintPower * settings.speedLines * (0.5 + quality * 0.5));
       fu.length.value = Math.min(0.85, settings.streamlineLength + car.speed / 600);
@@ -329,7 +343,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       }
       ribbonGeo.attributes.position.needsUpdate = ribbonGeo.attributes.alpha.needsUpdate = true;
       if (ribbonKindDirty) ribbonGeo.attributes.rollWake.needsUpdate = true;
-      for (let i = 0; i < MAX_PARTICLES; i++) {
+      for (let i = 0; i < wakeCount; i++) {
         const p = particles[i]; p.life = p.roll && !rollEnabled ? 0 : Math.max(0, p.life - dt);
         alphas[i] = 0;
         if (p.life === 0) continue;
@@ -342,7 +356,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
         sizes[i] = p.roll ? p.size : p.size + age * 2;
         alphas[i] = p.opacity * Math.min(1, age * 25) * (p.life / p.maxLife) ** 1.5;
       }
-      for (const attribute of Object.values(particleGeo.attributes)) attribute.needsUpdate = true;
+      particleGeo.attributes.position.needsUpdate = particleGeo.attributes.alpha.needsUpdate = particleGeo.attributes.size.needsUpdate = true;
       for (let i = 0; i < ghosts.length; i++) {
         const g = ghosts[i]; g.life = Math.max(0, g.life - dt);
         g.mesh.visible = enabled && !calm && g.life > 0 && i < settings.afterimages;
@@ -355,7 +369,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       shock.scale.setScalar(studioDemo ? 0.7 + shockAge * 4.5 : 0.5 + shockAge * 20);
       shock.material.opacity = Math.max(0, 1 - shockAge / shockDuration) ** 2
         * settings.shockwave * (studioDemo ? 0.95 : nitroActive ? 0.3 : 0.45);
-      flare.update(dt, time, origin, enabled && !calm, quality, Math.min(1, settings.shockwave * (studioDemo ? 2 : 1.4))); // default 0.5 → full in Studio, 0.7 racing
+      flare.update(dt, time, origin, enabled && !calm, quality, Math.min(1, settings.shockwave * (studioDemo ? 2 : 1.4)), detail); // default 0.5 → full in Studio, 0.7 racing
       previous.copy(current); previousRotation.copy(vehicle.quaternion);
       direction.set(0, 0.64, 3).applyMatrix4(vehicle.matrixWorld);
       return { strength, ignition: boost ? Math.max(0, 1 - shockAge / 0.25) : 0, nozzle: direction, reveal };

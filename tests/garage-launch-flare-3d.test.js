@@ -138,3 +138,18 @@ test('flares other than the shock ring are slim shooting streaks with rising spa
     assert.equal(off.scene.getObjectByName('Launch flare sparks').visible, false, 'VFX Off and Reduced Motion throw no sparks');
   }
 });
+
+test('flare spark samples scale across all four tiers and respect Comfort', () => {
+  for (const [quality, count, detail] of [
+    ['low', 24, 0], ['medium', 48, 0], ['high', 72, 0.55], ['ultra', 96, 1],
+  ]) {
+    const settings = vfxSettings({ quality });
+    const { scene } = launched('launch-flare-gold', settings);
+    const sparks = scene.getObjectByName('Launch flare sparks');
+    assert.equal(sparks.geometry.drawRange.count, count);
+    assert.equal(sparks.material.uniforms.sparkDetail.value, detail);
+    assert.ok(sparks.visible && sparks.material.depthTest);
+  }
+  const { scene } = launched('launch-flare-gold', vfxSettings({ quality: 'ultra', comfortable: true }));
+  assert.equal(scene.getObjectByName('Launch flare sparks').visible, false);
+});

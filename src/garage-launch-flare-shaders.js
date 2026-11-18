@@ -50,8 +50,11 @@ export const SPARK_VERTEX = `attribute vec4 seed;uniform float age,time,swirl,si
     vFade=t>0.&&t<1.?pow(1.-t,1.4)*smoothstep(0.,.06,t):0.;vHot=seed.w;
     gl_PointSize=clamp((1.6+seed.w*2.6)*(1.-.5*t)*80./max(1.,-mv.z),0.,16.);
     gl_Position=projectionMatrix*mv;}`;
-export const SPARK_FRAGMENT = `uniform float power;uniform vec3 primary,secondary;varying float vFade,vHot;
-  void main(){vec2 c=gl_PointCoord*2.-1.;float d=exp(-dot(c,c)*7.); // a crisp hot point, not a soft blob
+export const SPARK_FRAGMENT = `uniform float power,sparkDetail;uniform vec3 primary,secondary;varying float vFade,vHot;
+  void main(){vec2 c=gl_PointCoord*2.-1.;
+    float stretch=sparkDetail*(.2+.8*vHot);
+    c*=vec2(1.+stretch*.60,1.-stretch*.26); // vertically tapered sparks at higher tiers
+    float d=exp(-dot(c,c)*7.);
     vec3 col=mix(primary,secondary,vHot)*(.85+.65*d);
     gl_FragColor=vec4(col,clamp(d*vFade*power*1.3,0.,1.));}`;
 

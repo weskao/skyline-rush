@@ -1,3 +1,10 @@
+# 2026-11-19 — Tiered Garage and race VFX detail
+
+- [x] Reuse the wake point cloud for small skin-tinted sparks on High/Ultra. Restrict the submitted wake points on Low/Medium and keep the equipped shapes.
+- [x] Limit launch sparks to 24/48/72/96 by tier; refine the spark silhouette and fitted airflow seams on High/Ultra. Comfort and Reduced Motion omit the added details.
+- [x] Observe RED for unbounded wake draws and matching flare counts across tiers; both guards pass with 65 focused checks, including shader safety and module size.
+- [ ] Confirm physical-device footage and review the exact-commit GitHub quality gate.
+
 # 2026-11-18 — Garage and race VFX polish
 
 - [x] Review the shared 3× artwork catalog. Link card and loadout colours to each cosmetic, and replace pulsing preview rings with steady selection borders.
