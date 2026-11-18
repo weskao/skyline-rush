@@ -8,10 +8,16 @@
 # Wave 3 試玩記錄開關（2026-11-19）
 
 - [x] 先重現 release 無法啟用、無效開關未報錯、UID 舊本機紀錄被讀入、checkpoint 仍未設定索引豁免。新增測試後以共用 Vite 策略與 Firestore Adapter 修正。
-- [x] 驗證 `coming-soon`、`trial`、`released` 的開關矩陣。release 可開啟試玩記錄，production 的 `trial` 與 `released` 預設開啟。
+- [x] 驗證 `coming-soon`、`trial`、`released` 的開關矩陣。release 可開啟試玩記錄，production 的 `trial` 與 `released` 原先預設開啟，已於審查修正改為 opt-in。
 - [x] release 瀏覽器與 Firebase 模擬器驗證訪客本機、登入後的 UID 檔案、跨瀏覽器讀回、並發完賽去重、登出回訪客和試玩 VFX 與正式擁有權隔離。
 - [x] 保留 v1 資料相容並停用試玩 checkpoint 的索引。操作、停用與清理順序見 [Cloud Save 指南](docs/cloud-save.md#wave-3-firestore-preview)。
 - [ ] 正式 Firebase Rules／Indexes 部署、正式 Google 帳號與實機驗收。
+
+# Wave 3 試玩記錄審查修正（2026-11-19）
+
+- [x] 試玩記錄改為嚴格 opt-in：只有 `VITE_WAVE3_FIRESTORE_PREVIEW=1` 啟用，未設定在所有 Vite 模式皆關閉。 RED：`tests/garage-release-build.test.js` 矩陣在舊碼 `production trial undefined` 失敗；GREEN 19/19。
+- [x] 刪除雲端資料時先提交 `saves`、`modeBests`、`accounts` 批次，再於所有建置單獨刪除 `wave3PreviewEconomy/{uid}`，僅忽略 `permission-denied`。Bundle fence 改用試玩 store 專屬標記。 RED：`tests/cloud-delete.test.js` 與 fence 標記測試在舊碼失敗；GREEN 25/25。`npm test` 3401 pass／4 skipped，typecheck、`npm run build` 通過；trial 未設定與 `=1` 建置的 bundle 稽核分別無／有標記；`npm run test:cloud` 17 項瀏覽器與 5 項 Rules 通過。
+- [ ] Pages／Netlify 部署若需要試玩記錄，需在 Rules 部署後明確設定 `VITE_WAVE3_FIRESTORE_PREVIEW=1`。
 
 # Garage drift trails
 

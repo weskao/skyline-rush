@@ -1,7 +1,7 @@
 import { doc, runTransaction } from 'firebase/firestore';
-import type { Firestore, WriteBatch } from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore';
+import { WAVE3_PREVIEW_COLLECTION } from './cloud-delete.ts';
 
-const COLLECTION = 'wave3PreviewEconomy';
 const VERSION = 1;
 
 export type Wave3PreviewTransact = <T>(uid: string, update: (raw: string | null) =>
@@ -9,12 +9,11 @@ export type Wave3PreviewTransact = <T>(uid: string, update: (raw: string | null)
 
 export type Wave3PreviewStoreFactory = (db: Firestore, currentUid: () => string | undefined) => {
   transact: Wave3PreviewTransact;
-  stageDeletion: (batch: WriteBatch, uid: string) => void;
 };
 
 /** One document per UID. A transaction retry always restages from the latest checkpoint. */
 export const createWave3PreviewStore: Wave3PreviewStoreFactory | undefined = (db, currentUid) => {
-  const ownDocument = (uid: string) => doc(db, COLLECTION, uid);
+  const ownDocument = (uid: string) => doc(db, WAVE3_PREVIEW_COLLECTION, uid);
   const checkAccount = (uid: string) => {
     if (currentUid() !== uid) throw new Error('Wave 3 preview account changed');
   };
@@ -32,11 +31,5 @@ export const createWave3PreviewStore: Wave3PreviewStoreFactory | undefined = (db
       return result;
     });
   };
-  return {
-    transact,
-    stageDeletion(batch, uid) {
-      checkAccount(uid);
-      batch.delete(ownDocument(uid));
-    },
-  };
+  return { transact };
 };

@@ -200,12 +200,15 @@ test('production audit rejects missing public Garage artwork in locked and Pages
   }
 });
 
-test('the build switch selects one preview storage implementation and activates released Wave 3', () => {
+test('the build switch is strictly opt-in: only an explicit 1 selects Firestore preview storage', () => {
   for (const [viteMode, garageMode, flag, enabled] of [
     ['development', 'trial', undefined, false],
+    ['development', 'released', undefined, false],
     ['development', 'released', '1', true],
-    ['production', 'trial', undefined, true],
-    ['production', 'released', undefined, true],
+    ['production', 'trial', undefined, false],
+    ['production', 'released', undefined, false],
+    ['production', 'trial', '1', true],
+    ['production', 'released', '1', true],
     ['production', 'trial', '0', false],
     ['production', 'released', '0', false],
     ['production', 'coming-soon', undefined, false],
@@ -222,4 +225,16 @@ test('invalid Wave 3 settings fail the build before Firebase preview code is bun
     assert.throws(() => selectGarageReleaseBuild('production', 'released', flag), /Invalid VITE_WAVE3_FIRESTORE_PREVIEW/);
   }
   assert.throws(() => selectGarageReleaseBuild('production', 'coming-soon', '1'), /coming-soon/);
+});
+
+test('the bundle fence marker is unique to the Firestore preview store, not the always-on cleanup', async () => {
+  const { WAVE3_PREVIEW_STORE_MARKER } = await import('../scripts/garage-release-build.mjs');
+  assert.equal(typeof WAVE3_PREVIEW_STORE_MARKER, 'string');
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const dir = new URL('../src/', import.meta.url);
+  const holders = readdirSync(dir).filter(name => /\.(ts|js|vue)$/.test(name)
+    && readFileSync(new URL(name, dir), 'utf8').includes(WAVE3_PREVIEW_STORE_MARKER));
+  assert.deepEqual(holders, ['wave3-preview-firestore.ts']);
+  const vite = readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8');
+  assert.match(vite, /includes\(WAVE3_PREVIEW_STORE_MARKER\)/);
 });
