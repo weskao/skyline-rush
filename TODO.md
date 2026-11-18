@@ -1,3 +1,10 @@
+# Garage drift trails
+
+- [x] Add five visual drift trails beside the original rubber. The existing account-scoped trial separates preview and equip.
+- [x] Observed three test-first failures for the missing catalog, geometry and race wiring. Focused skid, shader and Garage tests passed after implementation. Full Node suite: 3,363 passed, 3 skipped. The locked build passed its leakage audit.
+- [x] Captured the five live WebGL previews with the Roadster and Crimson GT models. Existing equip audio is sufficient for these cosmetic-only variants. Low graphics keeps the five silhouettes and reduces secondary detail. Comfort and reduced motion suppress the moving pattern.
+- [ ] Confirm physical phone checks, the complete browser/World Tour suite and the feature branch CI.
+
 # Develop browser CI run 44117764575
 
 - [x] Reproduced the live minimap gap on desktop and two phone widths. The map now shares the toolbar height and button size. Short touch landscape keeps its own side-by-side row.
