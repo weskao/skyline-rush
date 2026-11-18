@@ -8,6 +8,7 @@ const CAPACITY = 512;
 const VERTICES = 6;
 const INDICES = 12;
 const LIFE = 1.85;
+const RIBBON_DETAIL = { low: 0, medium: .55, high: 1, ultra: 1 };
 
 export function createDriftTrail(scene) {
   const geometry = new THREE.BufferGeometry();
@@ -41,7 +42,7 @@ export function createDriftTrail(scene) {
   mesh.renderOrder = -0.5; // above the rubber and under the car/foreground particles
   scene.add(mesh);
 
-  const accents = createDriftAccents(scene, { time: uniforms.time, style: uniforms.style, detail: uniforms.detail,
+  const accents = createDriftAccents(scene, { time: uniforms.time, style: uniforms.style,
     tint: uniforms.tint, core: uniforms.core });
   const point = new THREE.Vector3();
   const written = [position, sample, surface];
@@ -80,12 +81,14 @@ export function createDriftTrail(scene) {
       accents.setStyle(next);
       reset();
     },
-    tick(dt, reducedMotion, lowQuality, enabled) {
+    tick(dt, reducedMotion, quality, enabled) {
       if (!enabled) { reset(); return; }
       clock += dt;
       uniforms.time.value = clock;
       uniforms.motion.value = reducedMotion ? 0 : 1;
-      uniforms.detail.value = lowQuality || reducedMotion ? 0 : 1;
+      const tier = reducedMotion ? 'low' : quality;
+      uniforms.detail.value = RIBBON_DETAIL[tier];
+      accents.setQuality(tier);
       accents.tick(clock);
       if (count && clock - last >= LIFE) reset();
     },
@@ -95,7 +98,7 @@ export function createDriftTrail(scene) {
       const born = tyre.trailTime ?? clock;
       edge(vertex, tyre.last, tyre.side, tyre.up, tyre.along, tyre.alpha, born);
       edge(vertex + 3, to, side, up, along, strength, clock);
-      accents.emit(tyre.along, to, up, side, along, strength, clock);
+      accents.emit(tyre, to, up, side, along, strength, clock);
       tyre.trailTime = last = clock;
       for (const attribute of written) {
         attribute.addUpdateRange(vertex * 3, VERTICES * 3);

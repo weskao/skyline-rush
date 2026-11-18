@@ -222,7 +222,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
       miniBoostStreaks?.update(car, vehicles?.[0], camera, dt, { active, enabled, quality: options.quality, reducedMotion });
       const groundedDrift = enabled && !preview && (race.phase === 'racing' || race.phase === 'paused') && car.altitude < 0.2 ? car.drift : null;
       skids?.update(groundedDrift, origin ?? skidOrigin.set(center, 0, -distance),
-        race.phase === 'paused' ? 0 : dt, reducedMotion, lowQuality, enabled && !preview);
+        race.phase === 'paused' ? 0 : dt, reducedMotion, options.ultra ? 'ultra' : options.quality, enabled && !preview);
       if (fired && car.altitude < 0.2) for (const side of [-1, 1]) for (let i = reducedMotion ? 3 : lowQuality ? 5 : 10; i > 0; i--) {
         const { x, d } = rearWheel(side, car, center, originZ, vehicles);
         emit(x, 0.2, d, side * (1 + Math.random() * 3), 2 + Math.random() * 2, car.speed * 0.9, 0.16, 0.45, driftColors[fired - 1], 6);

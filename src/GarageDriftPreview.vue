@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { garageStudioView, garageView } from './garage-view-state.ts';
 import { PAINTS } from './appearance.ts';
+import type { QualityTier } from './vfx-settings.ts';
 import type { SkinId } from './garage-skin-catalog.ts';
 import type { createGarageDriftPreview } from './garage-drift-preview.ts';
 
@@ -13,7 +14,8 @@ const title = computed(() => props.locale === 'zh-TW' ? '甩尾實景預覽' : '
 const action = computed(() => props.locale === 'zh-TW' ? (paused.value ? '播放' : '暫停') : (paused.value ? 'Play' : 'Pause'));
 let stage: ReturnType<typeof createGarageDriftPreview> | undefined;
 let media: MediaQueryList, seen: IntersectionObserver, sized: ResizeObserver, settings: MutationObserver;
-let live = true, visible = false, frame = 0, last = 0, elapsed = 0, low = false;
+const quality = ref<QualityTier>('high');
+let live = true, visible = false, frame = 0, last = 0, elapsed = 0;
 
 function draw(now: number) {
   frame = 0;
@@ -21,7 +23,7 @@ function draw(now: number) {
   if (!last || now - last >= 31 || paused.value || reduced.value) {
     if (last && !paused.value && !reduced.value) elapsed += Math.min(.06, (now - last) / 1000);
     last = now;
-    stage.draw(elapsed, reduced.value || (paused.value && !ready.value), low);
+    stage.draw(elapsed, reduced.value || (paused.value && !ready.value), quality.value);
     ready.value = true;
   }
   if (!paused.value && !reduced.value) schedule();
@@ -31,7 +33,8 @@ function schedule() {
 }
 function sync() {
   allowed.value = document.body.dataset.vfxEnabled !== 'false';
-  low = document.body.dataset.vfxQuality === 'low';
+  const tier = document.body.dataset.vfxQuality;
+  quality.value = tier === 'low' || tier === 'medium' || tier === 'ultra' ? tier : 'high';
   reduced.value = media.matches || document.body.classList.contains('vfx-comfort');
   last = 0;
   schedule();
@@ -85,7 +88,7 @@ onBeforeUnmount(() => {
 
 <template>
   <figure class="garage-drift-preview" :data-drift-preview="skin" :data-live="ready && allowed"
-    :data-car-model="model" :data-motion="paused || reduced ? 'paused' : 'running'" :aria-label="title + ' · ' + label">
+    :data-car-model="model" :data-quality="quality" :data-motion="paused || reduced ? 'paused' : 'running'" :aria-label="title + ' · ' + label">
     <div class="garage-drift-stage">
       <canvas ref="canvas" :class="{ hidden: !ready || !allowed }" aria-hidden="true" />
       <img v-if="!ready || !allowed" :src="poster" alt="" width="96" height="96">

@@ -10,12 +10,12 @@ const drift = time => ({ time, dir: 1, nitro: 0, grace: 0 });
 const quads = marks => marks.mesh.geometry.drawRange.count / 6;
 
 // Drives the car `metres` down -z (scene space) in 0.25 m frames while the world origin follows it, as world.js does.
-function drive(marks, car, origin, metres, state, z = { at: 0 }) {
+function drive(marks, car, origin, metres, state, z = { at: 0 }, quality = 'high') {
   for (let i = 0; i < metres * 4; i++) {
     z.at -= 0.25;
     origin.z = z.at; car.position.z = 0; // floating origin: the car stays at the scene origin
     car.updateMatrixWorld(true);
-    marks.update(state, origin);
+    marks.update(state, origin, 0, false, quality);
   }
   return z;
 }
@@ -227,9 +227,9 @@ test('accent pool stays bounded and is cleared for low quality or reduced motion
   marks.setSkin('drift-trail-stardust');
   const accents = scene.getObjectByName('Drift trail accents');
   assert.ok(accents);
-  drive(marks, car, origin, 420, drift(1));
+  drive(marks, car, origin, 420, drift(1), undefined, 'ultra');
   assert.equal(accents.geometry.instanceCount, 256);
-  marks.update(drift(1), origin, 1 / 60, false, true);
+  marks.update(drift(1), origin, 1 / 60, false, 'low');
   assert.equal(accents.geometry.instanceCount, 0);
   assert.equal(accents.visible, false);
   origin.z -= .9;
@@ -255,4 +255,52 @@ test('flames and ice use depth-bearing geometry in the shared accent pool', () =
   }
   marks.setSkin('drift-trail-rainbow');
   assert.equal(geometry.drawRange.count, 6, 'spectral flakes still use the budgeted planar shape');
+});
+
+test('the installed drift effect honors all four live quality tiers and clears the old particle pool on downgrade', () => {
+  const scene = new Scene(), car = makeCar(CAR_STYLES.roadster), origin = new Vector3();
+  const marks = createSkidMarks(scene, car);
+  marks.setSkin('drift-trail-flame');
+  const accents = scene.getObjectByName('Drift trail accents');
+  const ribbon = scene.getObjectByName('Drift trail');
+  const counts = [];
+  for (const quality of ['low', 'medium', 'high', 'ultra']) {
+    marks.reset();
+    for (let i = 0; i < 35; i++) {
+      origin.z -= 1.2;
+      marks.update(drift(1), origin, 1 / 60, false, quality);
+    }
+    counts.push(accents.geometry.instanceCount);
+    assert.equal(ribbon.visible, true);
+  }
+  assert.equal(counts[0], 0);
+  assert.ok(counts[1] > 0 && counts[2] > counts[1] && counts[3] > counts[2], counts.join(', '));
+  const particles = accents.geometry.getAttribute('birthSeedPower');
+  assert.ok(Array.from({ length: counts[3] }, (_, i) => particles.getW(i)).includes(1),
+    'Ultra emits independently aged fine particles');
+  const geometry = accents.geometry, material = accents.material;
+  marks.update(null, origin, 0, false, 'medium');
+  assert.equal(accents.geometry.instanceCount, 0, 'stale Ultra particles disappear immediately');
+  assert.equal(accents.geometry, geometry);
+  assert.equal(accents.material, material);
+  marks.update(null, origin, 0, true, 'ultra');
+  assert.equal(ribbon.material.uniforms.motion.value, 0);
+  assert.equal(accents.visible, false);
+});
+
+test('particle placements follow distance with short or long valid road samples', () => {
+  function contacts(step) {
+    const scene = new Scene(), car = makeCar(CAR_STYLES.roadster), origin = new Vector3();
+    const marks = createSkidMarks(scene, car);
+    marks.setSkin('drift-trail-ice');
+    for (let i = 0; i <= Math.round(24 / step); i++) {
+      origin.z = -i * step;
+      marks.update(drift(1), origin, step / 96, false, 'high');
+    }
+    const { geometry } = scene.getObjectByName('Drift trail accents');
+    return Array.from({ length: geometry.instanceCount }, (_, i) =>
+      Number(geometry.attributes.contact.getZ(i).toFixed(2))).sort((a, b) => a - b);
+  }
+  assert.deepEqual(contacts(.8), contacts(4.8));
+  assert.ok(contacts(.8).length > 20);
 });
