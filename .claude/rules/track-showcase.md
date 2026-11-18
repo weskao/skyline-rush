@@ -1,6 +1,7 @@
 ---
 paths:
-  - "src/track-preview.js"
+  - "src/track-preview.ts"
+  - "src/showcase-framing.ts"
   - "src/world.js"
   - "src/sky-scene.js"
   - "src/world-tour-scene.js"
@@ -47,18 +48,20 @@ legibility, motion and camera scale.
 
 ## Signature landmark — home preview and in-race sightline
 
-Selecting a map on the home screen shows its main landmark in the live preview (Taipei →
+Selecting a map on the home screen shows its main landmark in the live preview (Sky Spiral →
+tower, Taipei →
 Presidential Office, Tokyo → Tokyo Tower, Alpine → peak, Coastal → lighthouse, Cosmic → cosmic
 gate). Every new map ships the same way.
 
-- **Preview point**: `HERO_PREVIEWS` entry (`src/track-preview.js`) names the `landmark` kind;
+- **Preview point**: `HERO_PREVIEWS` entry (`src/track-preview.ts`) names the `landmark` kind;
   its `distance` puts the landmark 150–600 m ahead. Neither the camera (12 m behind the car)
   nor the landmark may sit in a tunnel, boost-tunnel or shortcut; crosswind/uphill are fine.
-  Frame with `lookHeight` only; keep the chase-camera offsets and car scale.
+  When the centreline moves, recheck the preview point against the new approach. Keep the car scale
+  and use the road-relative camera pose. Portrait may adjust aim sideways to fit the car and landmark.
 - **Side of the road**: the three-quarter camera looks ~30° left of the road. A **left-side**
   (`side:-1`) landmark lands center-right in landscape, right of the home UI panel; a right-side
   one only fits where the road bends toward it. Landscape: NDC x within 0.04–0.98, top below
-  0.98. Portrait: center on screen.
+  0.98. Portrait: fit the visible landmark silhouette and the player inside the screen edges.
 - **No occlusion, near or far**: geometry is fixed and only placement changes (`at`, `side`,
   `offset`, `scale`, `yaw` in `WORLD_THEMES`). The landmark's `plaza` (metres before it) runs
   `blocksLandmark()` in `src/world-tour-scene.js`: a prop blocks when, seen from some approach
