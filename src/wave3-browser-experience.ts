@@ -1,10 +1,12 @@
 import { createWave3LocalDemo } from './wave3-local-demo.ts';
 import type { Wave3DemoCheckpoint } from './wave3-local-demo.ts';
 import { createWave3DemoStorage, encodeWave3DemoCheckpoint, readWave3DemoCheckpoint, WAVE3_DEMO_STORAGE_PREFIX } from './wave3-demo-storage.ts';
-import type { transactWave3Preview } from './cloud-save.ts';
+import type { Wave3PreviewTransact } from './wave3-preview-firestore.ts';
 import type { ExperienceResult, ExperienceSnapshot, Wave3ExperiencePort } from './wave3-experience-contract.ts';
 import { DEMO_RETENTION_MS, sameDemoScope } from './wave3-experience-contract.ts';
 import { equipWave3DemoSkin, onWave3DemoSkinOverride, resetWave3DemoSkin } from '#garage-skin-runtime';
+
+declare const __WAVE3_FIRESTORE_PREVIEW__: boolean;
 
 type DemoState = ReturnType<typeof createWave3LocalDemo>;
 type ProfileLock = Pick<LockManager, 'request'>;
@@ -12,12 +14,12 @@ type Options = {
   now?: () => number;
   cache?: ReturnType<typeof createWave3DemoStorage>;
   locks?: ProfileLock | null;
-  firestore?: typeof transactWave3Preview;
+  firestore?: Wave3PreviewTransact;
   applyEquipment?: (itemId: string, accountId: string) => boolean;
   clearEquipment?: () => void;
 };
 
-/** All writable tabs use the same profile lock and re-read disk before mutation. */
+/** Guest tabs use a shared browser lock. Authenticated preview writes are serialized by Firestore. */
 export function createWave3BrowserExperience(options: Options = {}) {
   const cache = options.cache ?? createWave3DemoStorage({ now: options.now });
   const locks = options.locks === undefined ? globalThis.navigator?.locks : options.locks;
@@ -35,8 +37,9 @@ export function createWave3BrowserExperience(options: Options = {}) {
   const usesFirestore = (accountId: string) => !!firestore && accountId !== 'guest';
   const getSnapshot = (): ExperienceSnapshot => {
     const snapshot = state.getSnapshot();
-    return !usesFirestore(snapshot.accountId) && (!locks || volatile.has(snapshot.accountId))
-      ? { ...snapshot, persistence: 'memory-only' } : snapshot;
+    if (usesFirestore(snapshot.accountId)) return { ...snapshot, persistence: 'firestore' };
+    const maySaveOnDevice = snapshot.accountId === 'guest' && locks && !volatile.has(snapshot.accountId);
+    return maySaveOnDevice ? snapshot : { ...snapshot, persistence: 'memory-only' };
   };
   const syncEquipment = () => {
     const { equippedPreview, accountId } = state.getSnapshot();
@@ -108,7 +111,7 @@ export function createWave3BrowserExperience(options: Options = {}) {
       }
       return action(scope.accountId, writable && !volatile.has(scope.accountId), changed);
     };
-    if (!locks || volatile.has(scope.accountId)) return run(false);
+    if (scope.accountId !== 'guest' || !locks || volatile.has(scope.accountId)) return run(false);
     let acquired = false;
     try {
       return await locks.request(WAVE3_DEMO_STORAGE_PREFIX + scope.accountId, () => {
@@ -198,7 +201,7 @@ export function createWave3BrowserExperience(options: Options = {}) {
       } else {
         const checkpoint = volatile.get(accountId);
         if (checkpoint) state.restoreCheckpoint(checkpoint);
-        else syncDisk(accountId, true);
+        else if (accountId === 'guest') syncDisk(accountId, true);
       }
       return publish();
     },
@@ -233,16 +236,19 @@ export function createWave3BrowserExperience(options: Options = {}) {
       return target.clearEquippedPreview(itemId);
     }),
     refresh(accountId: string) {
-      if (!usesFirestore(accountId) && accountId === state.getOperationScope().accountId && syncDisk(accountId)) publish();
+      if (accountId === 'guest' && state.getOperationScope().accountId === accountId && syncDisk(accountId)) publish();
     },
   } satisfies Wave3ExperiencePort & Record<string, unknown>;
   return port;
 }
 
 export const wave3DemoExperience = createWave3BrowserExperience({
-  firestore: import.meta.env?.VITE_WAVE3_FIRESTORE_PREVIEW === '1'
-    ? async (uid, update) => (await import('./cloud-save.ts')).transactWave3Preview(uid, update)
-    : undefined,
+  firestore: typeof __WAVE3_FIRESTORE_PREVIEW__ !== 'undefined' && __WAVE3_FIRESTORE_PREVIEW__
+    ? async (uid, update) => {
+      const { transactWave3Preview } = await import('./cloud-save.ts');
+      if (!transactWave3Preview) throw new Error('Wave 3 Firestore preview is unavailable');
+      return transactWave3Preview(uid, update);
+    } : undefined,
   applyEquipment: typeof window === 'undefined' ? undefined : equipWave3DemoSkin,
   clearEquipment: typeof window === 'undefined' ? undefined : resetWave3DemoSkin,
 });

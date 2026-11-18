@@ -146,3 +146,9 @@ test('Wave 3 preview checkpoints are private, bounded and deletable by their own
   await assertSucceeds(deleteDoc(checkpoint));
   assert.equal((await getDoc(checkpoint)).exists(), false);
 });
+
+test('the Wave 3 document payload is exempt from Firestore indexing', () => {
+  const config = JSON.parse(readFileSync(new URL('../firestore.indexes.json', import.meta.url), 'utf8'));
+  assert.deepEqual(config.fieldOverrides.find(entry =>
+    entry.collectionGroup === 'wave3PreviewEconomy' && entry.fieldPath === 'checkpoint')?.indexes, []);
+});

@@ -12,7 +12,7 @@ import {
 } from './wave3-demo-catalog.ts';
 import type { DemoTrialAccess, DemoRedeemState, Wave3DemoItem } from './wave3-demo-catalog.ts';
 import { demoBalance } from './wave3-demo-settlement.ts';
-import { demoCurrencyLabel } from './wave3-currency-view.ts';
+import { demoCurrencyLabel, demoPersistenceLabel } from './wave3-currency-view.ts';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = withDefaults(defineProps<{
@@ -136,10 +136,10 @@ async function confirmRedemption(): Promise<void> {
     :aria-label="tr('Demo Store', '試玩商城')" @keydown.esc.stop="cancelRedemption">
     <header class="demo-header">
       <div class="demo-title">
-        <span class="demo-kicker">{{ tr('LOCAL · NO PAYMENT', '本機試玩 · 無付款') }}</span>
+        <span class="demo-kicker">{{ tr('DEMO · NO PAYMENT', '試玩 · 無付款') }}</span>
         <h3>{{ tr('Demo Store', '試玩商城') }}</h3>
-        <p>{{ tr('Earn local demo rewards and redeem temporary cosmetic previews.',
-          '取得可重設的本機試玩獎勵，兌換暫時外觀。') }}</p>
+        <p>{{ tr('Earn demo rewards and redeem temporary cosmetic previews.',
+          '取得可重設的試玩獎勵，兌換暫時外觀。') }}</p>
       </div>
       <div class="demo-wallet" data-demo-balance="points" role="status" aria-live="polite">
         <Wave3DemoArt id="demo-points" :alt="tr('Demo points', '試玩點數')" />
@@ -218,8 +218,7 @@ async function confirmRedemption(): Promise<void> {
       </button>
     </div>
 
-    <p class="demo-disclaimer">{{ tr('This device only · Resettable · No Firebase sign-in required',
-      '僅限此裝置 · 可重設 · 無須 Firebase 登入') }}</p>
+    <p class="demo-disclaimer">{{ demoPersistenceLabel(snapshot.persistence, locale) }} · {{ tr('Resettable', '可重設') }}</p>
   </section>
 </template>
 

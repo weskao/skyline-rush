@@ -5,7 +5,6 @@
 import packageMeta from '../package.json' with { type: 'json' };
 import { ref, onMounted, onUnmounted } from 'vue';
 import { getLocale, onLocaleChange } from './i18n.ts';
-import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 import { wave3DemoExperience } from '#wave3-demo-race';
 import Wave3CurrencyStrip from './Wave3CurrencyStrip.vue';
 import { RACE_TRACKS } from './game.js';
@@ -130,7 +129,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     <section class="intro lobby-compact" id="intro" aria-label="Race setup" data-i18n-aria-label="lobby.title">
       <div class="home-intro-topbar">
         <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers"></span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals" :aria-label="homeStatusView.medalLabel" :class="{ 'has-medals': homeStatusView.hasMedals }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">{{ homeStatusView.medalCount }}</span></button></div>
-        <Wave3CurrencyStrip v-if="GARAGE_RELEASE_MODE === 'trial'" compact
+        <Wave3CurrencyStrip v-if="wave3DemoExperience" compact
           class="home-resource-strip" :experience="wave3DemoExperience" :locale="homeWalletLocale" />
       </div>
       <div class="lobby-setup">

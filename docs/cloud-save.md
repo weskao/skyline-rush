@@ -17,11 +17,29 @@ npm run build
 
 ## Wave 3 Firestore preview
 
-Set `VITE_WAVE3_FIRESTORE_PREVIEW=1` when running or building the Garage `trial` mode to sync signed-in Wave 3 progress. `npm run test:cloud` enables both the preview and the local Firebase emulators. To try it manually against the emulators, run `VITE_WAVE3_FIRESTORE_PREVIEW=1 make dev` and sign in with a test identity. For a hosted trial, build with `GARAGE_VFX_RELEASE_MODE=trial VITE_WAVE3_FIRESTORE_PREVIEW=1 npm run build` and use the matching Firestore rules on the configured project.
+`VITE_WAVE3_FIRESTORE_PREVIEW` is a build-time switch. Set it where Vite runs and rebuild when changing it. The preview uses the existing Google sign-in and Firebase project.
 
-- `wave3PreviewEconomy/{uid}` stores the versioned trial checkpoint for that Firebase account. The checkpoint includes points, coins, diamonds, mission claims, trial cosmetics and recent race completion IDs. Firestore transactions handle concurrent writes and the client's existing replay checks prevent duplicate rewards.
-- Guests and trial builds without the flag use the existing device save. Signed-in Firestore previews start their own checkpoint; an existing device save is not imported. A failed Firestore write leaves the last confirmed preview balance unchanged. Progress remains browser-calculated and disposable. The normal Cloud Save records stay separate.
-- To retire the preview, turn off the flag and remove the Firestore rule that allows clients to write `wave3PreviewEconomy`. Then delete the `wave3PreviewEconomy` collection from the intended Firebase project. This collection holds the entire trial checkpoint and has no subcollections. `saves`, `modeBests` and `accounts` are regular Cloud Save data.
+| Garage mode | Setting omitted | `=1` | `=0` |
+| --- | --- | --- | --- |
+| `trial` | On for a production build, off for the dev server | Wave 3 with Firestore | Wave 3 with guest storage and signed-in in-page state |
+| `released` | On for a production build, off for the dev server | Wave 3 with Firestore | Wave 3 excluded |
+| `coming-soon` | Wave 3 excluded | Configuration error | Wave 3 excluded |
+
+GitHub Pages and Netlify production builds use the enabled `trial` default. To pin a different setting on a deployment, set the same variable in the build environment. Firebase Rules and indexes are deployed separately.
+
+```sh
+VITE_WAVE3_FIRESTORE_PREVIEW=1 make dev
+npm run test:cloud
+GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=1 npm run build
+GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=0 npm run build
+```
+
+### Storage and maintenance
+
+- A signed-out player uses the guest device key `skyline-rush-wave3-demo:v1:guest`. Google sign-in switches to the Firebase UID's preview document when the flag is on. Signing out restores the guest save. Previous local UID checkpoints are ignored, and guest balances are never uploaded. A failed authenticated write keeps the last confirmed snapshot and reports the operation as unavailable.
+- Firestore uses one owner-only document at `wave3PreviewEconomy/{uid}`. The envelope is `{ version: 1, checkpoint: string }`. The application validates the decoded checkpoint, including the UID, schema version, size, currency balances, mission state, inventory and recent replay IDs. The payload is capped at 64 KiB and exempt from Firestore indexing. Update the codec, rules, adapter and regression fixtures together if the format changes.
+- The Firestore adapter stages gameplay mutations inside a transaction using the server document and publishes the new state after commit. Keeping the balances, rewards and replay IDs together allows a retry to recognize a previously recorded completion. The client ignores checkpoints after seven days without a saved operation. Firestore retains the physical document until deletion.
+- The existing cloud-save delete action includes the preview document while preview storage is enabled. For a full cleanup, turn off the flag and remove the preview write rule, then delete `wave3PreviewEconomy` in the intended project. The ordinary `saves`, `modeBests` and `accounts` collections do not hold Wave 3 balances. Keep the preview data out of the formal Go economy when that launches.
 
 ## Account data and safe progress restore
 

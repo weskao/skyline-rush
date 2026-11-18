@@ -467,11 +467,13 @@ test('the equipped car is restored on a clean device, and a device that picked i
   await own.close();
 });
 
-test('Wave 3 restores race rewards, claims and redemptions from Firestore in a fresh browser', async ({ browser, page }) => {
-  const open = async (tab, existing = false, email = 'wave3-preview@example.test') => {
+test('released Wave 3 keeps guest saves on the device and restores signed-in progress from Firestore', async ({ browser, page }) => {
+  const load = async tab => {
     await tab.context().route(liveApis, route => route.abort());
     await tab.addInitScript(disableWebGL);
     await tab.goto('/?firebase-emulator=1');
+  };
+  const signIn = async (tab, existing = false, email = 'wave3-preview@example.test') => {
     const uid = await tab.evaluate(async ({ email, existing }) => {
       const { signInWave3EmulatorUser } = await import('/tests/fixtures/wave3-firestore-auth.ts');
       return signInWave3EmulatorUser(email, existing);
@@ -480,7 +482,10 @@ test('Wave 3 restores race rewards, claims and redemptions from Firestore in a f
       const { wave3DemoExperience } = await import('/src/wave3-race-events.ts');
       return wave3DemoExperience.getSnapshot().accountId;
     })).toBe(uid);
+    return uid;
   };
+  const deviceCheckpoint = (tab, uid) => tab.evaluate(id =>
+    localStorage.getItem('skyline-rush-wave3-demo:v1:' + id), uid);
   const balances = async (tab, expected) => {
     for (const [index, currency] of ['demo-points', 'coins', 'diamonds'].entries()) {
       await expect(tab.locator(`.home-resource-strip [data-currency="${currency}"] strong`)).toHaveText(String(expected[index]));
@@ -496,7 +501,14 @@ test('Wave 3 restores race rewards, claims and redemptions from Firestore in a f
     }, false)).status;
   }, id);
 
-  await open(page);
+  await load(page);
+  expect(await settle(page, 'guest-before-google')).toBe('completed');
+  await balances(page, [48, 86, 0]);
+  const pointsButton = page.locator('.home-resource-strip [data-currency="demo-points"]');
+  await expect(pointsButton).toHaveAttribute('aria-label', /Local demo/i);
+  const guestSave = await deviceCheckpoint(page, 'guest');
+  expect(guestSave).not.toBeNull();
+  const uid = await signIn(page);
   await balances(page, [20, 0, 0]);
   for (let race = 1; race <= 5; race += 1) expect(await settle(page, 'cloud-preview-race-' + race)).toBe('completed');
   const statuses = await page.evaluate(async () => {
@@ -509,10 +521,24 @@ test('Wave 3 restores race rewards, claims and redemptions from Firestore in a f
   });
   expect(statuses).toEqual(['completed', 'completed', 'completed']);
   await balances(page, [155, 350, 5]);
+  await expect(pointsButton).toHaveAttribute('aria-label', /Cloud demo/i);
+  expect(await deviceCheckpoint(page, uid)).toBeNull();
+  expect(await deviceCheckpoint(page, 'guest')).toBe(guestSave);
+  const visual = await page.evaluate(async () => {
+    const { wave3DemoExperience: wallet } = await import('/src/wave3-race-events.ts');
+    const { currentGarageSkins, equipGarageSkin, garageSkinEntry } = await import('/src/garage-skin-runtime.ts');
+    const equipped = await wallet.equipPreview('thruster-ion');
+    return {
+      status: equipped.status, vfx: currentGarageSkins().thruster,
+      owned: garageSkinEntry('thruster-ion')?.owned, catalogCanEquip: equipGarageSkin('thruster-ion'),
+    };
+  });
+  expect(visual).toEqual({ status: 'completed', vfx: 'thruster-ion', owned: false, catalogCanEquip: false });
 
   const fresh = await browser.newPage();
   try {
-    await open(fresh, true);
+    await load(fresh);
+    expect(await signIn(fresh, true)).toBe(uid);
     await balances(fresh, [155, 350, 5]);
     expect(await settle(fresh, 'cloud-preview-race-5')).toBe('duplicate');
     const paired = await Promise.all([settle(page, 'cloud-preview-shared-race'), settle(fresh, 'cloud-preview-shared-race')]);
@@ -521,7 +547,8 @@ test('Wave 3 restores race rewards, claims and redemptions from Firestore in a f
     // Account B has no access to account A's preview save.
     const other = await browser.newPage();
     try {
-      await open(other, false, 'wave3-other@example.test');
+      await load(other);
+      await signIn(other, false, 'wave3-other@example.test');
       await balances(other, [20, 0, 0]);
     } finally {
       await other.close();
@@ -529,4 +556,9 @@ test('Wave 3 restores race rewards, claims and redemptions from Firestore in a f
   } finally {
     await fresh.close();
   }
+  await page.evaluate(async () => (await import('/src/cloud-save.ts')).signOutOfCloud());
+  await balances(page, [48, 86, 0]);
+  const afterLogout = await page.evaluate(async () =>
+    (await import('/src/garage-skin-runtime.ts')).currentGarageSkins().thruster);
+  expect(afterLogout).toBe('thruster-basic');
 });

@@ -1,3 +1,11 @@
+# Wave 3 試玩記錄開關（2026-11-19）
+
+- [x] 先重現 release 無法啟用、無效開關未報錯、UID 舊本機紀錄被讀入、checkpoint 仍未設定索引豁免。新增測試後以共用 Vite 策略與 Firestore Adapter 修正。
+- [x] 驗證 `coming-soon`、`trial`、`released` 的開關矩陣。release 可開啟試玩記錄，production 的 `trial` 與 `released` 預設開啟。
+- [x] release 瀏覽器與 Firebase 模擬器驗證訪客本機、登入後的 UID 檔案、跨瀏覽器讀回、並發完賽去重、登出回訪客和試玩 VFX 與正式擁有權隔離。
+- [x] 保留 v1 資料相容並停用試玩 checkpoint 的索引。操作、停用與清理順序見 [Cloud Save 指南](docs/cloud-save.md#wave-3-firestore-preview)。
+- [ ] 正式 Firebase Rules／Indexes 部署、正式 Google 帳號與實機驗收。
+
 # Develop browser CI run 44117764575
 
 - [x] Reproduced the live minimap gap on desktop and two phone widths. The map now shares the toolbar height and button size. Short touch landscape keeps its own side-by-side row.

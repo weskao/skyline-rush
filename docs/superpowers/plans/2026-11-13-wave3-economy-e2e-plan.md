@@ -164,7 +164,7 @@ flowchart LR
 
 - 每步先寫會在舊碼失敗的測試，記錄失敗原因，再改對應來源、確認通過並重構。使用目前的測試工具與測試資料注入點。瀏覽器樣本使用遊戲內操作，固定時鐘只用於驗收跨週期。
 - 本機至少跑 `node --test tests/module-size.test.js`、`npm test`、`npm run typecheck`、`npm run build`、試玩版建置與 `make verify`。瀏覽器回歸須實跑，環境限制與測試失敗分開記錄。
-- 手動試玩使用 `GARAGE_VFX_RELEASE_MODE=trial npm run build` 後執行 `npm run preview -- --host 127.0.0.1`。先正常載入頁面與素材，再切斷網路測完賽、領取、兌換及裝備。回到線上後刷新，驗證之前的本機進度可讀取。
+- 手動試玩使用 `GARAGE_VFX_RELEASE_MODE=trial VITE_WAVE3_FIRESTORE_PREVIEW=0 npm run build` 後執行 `npm run preview -- --host 127.0.0.1`。先正常載入頁面與素材，再切斷網路測完賽、領取、兌換及裝備。回到線上後刷新，驗證之前的本機進度可讀取。
 - 專項瀏覽器測試可先執行 `npm run test:browser -- tests/wave3-early-access-browser.spec.js tests/wave3-demo-store-browser.spec.js tests/wave3-demo-results-layout-browser.spec.js tests/wave3-currency-browser.spec.js`，再跑完整的 `make verify`。
 - 裝置矩陣包含 1440×900 桌面、390×844 與 360×740 直向、844×390 與 667×375 短橫向，以及實體 iOS Safari、Android Chrome。保留對帳結果、短橫向截圖／錄影、無意外 console error 及實機結果。
 - 推送功能分支後核對 exact-HEAD `[full-regression]` 的 `quality-gate`、Browser、World Tour 與適用工作，在 `TODO.md` 記錄提交、測試、機型、餘額與證據。依專案既有合併與發佈流程處理。
@@ -172,7 +172,7 @@ flowchart LR
 
 ## 8. 未來後端接入規劃
 
-正式版沿用 [Go 後端計畫 Phase 0–9](2026-11-06-wave3-go-backend-implementation.md)。下列名稱是預留的 API 契約，前端試玩目前由本機 adapter 運作。未來可用非同步 server adapter 映射相同的畫面狀態、錯誤及回執。Go 驗證 Firebase 身分並從 token 取得 UID。
+正式版沿用 [Go 後端計畫 Phase 0–9](2026-11-06-wave3-go-backend-implementation.md)。下列名稱是預留的正式 API 契約。試玩存檔依第 10 節在訪客本機與 Firebase UID 文件間切換。未來可用非同步 server adapter 映射相同的畫面狀態、錯誤及回執。Go 驗證 Firebase 身分並從 token 取得 UID。
 
 | 介面草案 | 輸入及服務端責任 | 回傳與一致性 |
 | --- | --- | --- |
@@ -195,3 +195,13 @@ flowchart LR
 - [ ] F5 跨三幣別的端到端對帳、真實瀏覽器及實機證據已完成。
 - [ ] 最新功能提交的完整 CI、裝置驗收結果與剩餘限制已記錄。
 - [ ] 後端進入獨立階段時，以第 8 節與 Go Phase 0–9 開始評估。
+
+## 10. 2026-11-19｜試玩記錄與 release 開關
+
+- [x] 由 Vite 在建置時選擇 Wave 3 入口與 Firestore Adapter。預設 production 的 `trial`、`released` 會開啟，`=0` 可關閉，`coming-soon` 拒絕 `=1`。
+- [x] 訪客只存本機。已登入只同步自己的 Firebase 試玩文件，開關關閉時只保留當次頁面狀態，雲端出錯時保留最後成功提交的餘額。
+- [x] 保留 `wave3PreviewEconomy/{uid}` v1 文件形狀，為不查詢的 checkpoint 停用單欄索引，並記錄資料上限、隔離與下線清理順序。
+- [x] 完成 release 瀏覽器 E2E、模擬器規則與發佈產物開關驗證。以兩個瀏覽器工作階段驗證同帳號讀回、重複完賽、訪客本機保留，以及試玩裝備仍無正式擁有權。
+- [ ] 將核准的規則／索引部署至目標 Firebase 專案並於正式環境驗證 Google 登入。正式經濟上線前依清理順序處理試玩集合。
+
+操作方式見 [Cloud Save 指南](../../cloud-save.md#wave-3-firestore-preview)。保留原有點數、金幣和鑽石的名稱與交易規則。試玩外觀使用暫時的 VFX 選擇。

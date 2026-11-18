@@ -4,7 +4,7 @@ import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signO
 import { doc, getFirestore, runTransaction, writeBatch, getDoc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { mergeProgress, mergeModeBests, readLocalModeBests, saveLocalModeBests } from './cloud-progress.ts';
 import { googleAccountFields } from './cloud-account.ts';
-import { GARAGE_RELEASE_MODE } from '#garage-release-config';
+import { createWave3PreviewStore } from '#wave3-preview-store';
 
 const app = initializeApp({
   apiKey: 'AIzaSyChOFZ1EvyZ9iVlVZ_QQpijgObgALUyeEQ',
@@ -18,13 +18,14 @@ const mergeDeviceProgress = mergeProgress as unknown as (local: object, cloud: u
 const mergeDeviceBests = mergeModeBests as unknown as (local: object, cloud: unknown) => PermanentBests;
 const auth = getAuth(app);
 const db = getFirestore(app);
-const WAVE3_PREVIEW_COLLECTION = 'wave3PreviewEconomy';
-const wave3PreviewEnabled = GARAGE_RELEASE_MODE === 'trial' && import.meta.env.VITE_WAVE3_FIRESTORE_PREVIEW === '1';
 if (import.meta.env.DEV && location.hostname === '127.0.0.1'
   && (import.meta.env.VITE_FIREBASE_EMULATOR || new URLSearchParams(location.search).has('firebase-emulator'))) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
 }
+
+const wave3PreviewStore = createWave3PreviewStore?.(db, () => auth.currentUser?.uid);
+export const transactWave3Preview = wave3PreviewStore?.transact;
 
 export const watchCloudUser = (onUser: (user: User | null) => void, onError?: (error: Error) => void) => onAuthStateChanged(auth, onUser, onError);
 export const signInToCloud = () => signInWithPopup(auth, new GoogleAuthProvider());
@@ -32,28 +33,10 @@ export const signOutOfCloud = () => signOut(auth);
 export const deleteCloudProgress = (expectedUid: string) => {
   if (auth.currentUser?.uid !== expectedUid) throw new Error('Cloud account changed');
   const batch = writeBatch(db);
-  const collections = ['saves', 'modeBests', 'accounts'];
-  if (wave3PreviewEnabled) collections.push(WAVE3_PREVIEW_COLLECTION);
-  for (const collection of collections) batch.delete(doc(db, collection, expectedUid));
+  for (const collection of ['saves', 'modeBests', 'accounts']) batch.delete(doc(db, collection, expectedUid));
+  wave3PreviewStore?.stageDeletion(batch, expectedUid);
   return batch.commit();
 };
-
-/** Persist disposable browser-calculated trial progress with UID scoping and Firestore retry semantics. */
-export function transactWave3Preview<T>(uid: string, update: (raw: string | null) => { result: T; write?: string }): Promise<T> {
-  const checkAccount = () => {
-    if (!wave3PreviewEnabled || auth.currentUser?.uid !== uid) throw new Error('Wave 3 preview account unavailable');
-  };
-  checkAccount();
-  const save = doc(db, WAVE3_PREVIEW_COLLECTION, uid);
-  return runTransaction(db, async transaction => {
-    const current = (await transaction.get(save)).data();
-    checkAccount();
-    if (current && (current.version !== 1 || typeof current.checkpoint !== 'string')) throw new Error('Invalid Wave 3 preview document');
-    const { result, write } = update(current?.checkpoint ?? null);
-    if (write !== undefined) transaction.set(save, { version: 1, checkpoint: write });
-    return result;
-  });
-}
 
 export async function syncCloudProgress(localProgress: () => object) {
   const user = auth.currentUser;

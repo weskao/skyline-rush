@@ -154,15 +154,15 @@ test('Wave 3 demo and race modules are build-time locked out of coming-soon bund
   assert.match(trial.aliases['#wave3-demo-ui'], /Wave3DemoEntry\.vue$/);
 });
 
-test('the public released strategy must also exclude local-only demo rewards and UI', () => {
-  const aliases = selectGarageReleaseBuild('production', 'released').aliases;
+test('released builds with the Wave 3 flag off omit its rewards and UI', () => {
+  const aliases = selectGarageReleaseBuild('production', 'released', '0').aliases;
   assert.match(aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);
   assert.match(aliases['#wave3-demo-ui'], /Wave3DemoLocked\.vue$/);
 });
 
 test('trial-only live mission UI and race port cannot leak into locked releases', () => {
   for (const mode of ['coming-soon', 'released']) {
-    const aliases = selectGarageReleaseBuild('production', mode).aliases;
+    const aliases = selectGarageReleaseBuild('production', mode, '0').aliases;
     assert.match(aliases['#wave3-demo-mission-ui'], /GarageMissionBoardLocked\.vue$/);
     assert.match(aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);
   }
@@ -196,4 +196,28 @@ test('production audit rejects missing public Garage artwork in locked and Pages
     assert.match(result.stderr, /public Garage artwork missing: .*trophy-gold@3x\.webp/, mode);
     assert.equal(result.status, 1, mode);
   }
+});
+
+test('the build switch selects one preview storage implementation and activates released Wave 3', () => {
+  for (const [viteMode, garageMode, flag, enabled] of [
+    ['development', 'trial', undefined, false],
+    ['development', 'released', '1', true],
+    ['production', 'trial', undefined, true],
+    ['production', 'released', undefined, true],
+    ['production', 'trial', '0', false],
+    ['production', 'released', '0', false],
+    ['production', 'coming-soon', undefined, false],
+  ]) {
+    const build = selectGarageReleaseBuild(viteMode, garageMode, flag);
+    assert.equal(build.wave3FirestoreEnabled, enabled, `${viteMode} ${garageMode} ${flag}`);
+    assert.match(build.aliases['#wave3-preview-store'], enabled ? /wave3-preview-firestore\.ts$/ : /wave3-preview-disabled\.ts$/);
+    if (enabled) assert.match(build.aliases['#wave3-demo-race'], /wave3-race-events\.ts$/);
+  }
+});
+
+test('invalid Wave 3 settings fail the build before Firebase preview code is bundled', () => {
+  for (const flag of ['', 'true', '01']) {
+    assert.throws(() => selectGarageReleaseBuild('production', 'released', flag), /Invalid VITE_WAVE3_FIRESTORE_PREVIEW/);
+  }
+  assert.throws(() => selectGarageReleaseBuild('production', 'coming-soon', '1'), /coming-soon/);
 });
