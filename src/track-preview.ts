@@ -24,7 +24,8 @@ export const HERO_PREVIEWS: Readonly<Record<string, HeroPreview>> = Object.freez
   // The rebuilt approach sweeps toward the tower on the right. Shoot from the left kerb.
   spiral: { distance: SKY_SPIRAL.start - 465, landmark: 'sky-tower', cameraSide: -6.5, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5.5 },
-  taipei: { distance: 1040, landmark: 'office', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
+  // The full portrait orbit clears the kerbside bus stop at this point.
+  taipei: { distance: 1090, landmark: 'office', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
   tokyo: { distance: 6675, landmark: 'tower', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 8.4 },

@@ -1,3 +1,8 @@
+# Develop World Tour camera CI run 44394398766
+
+- [x] Keep the Taipei showroom car clear of scenery through the High-quality portrait orbit with AIRFLOW on. Moving the Home preview from 1,040 m to 1,090 m clears the kerbside bus-stop posts. The 390 × 844 regression failed at 76° and 77° before the fix, then passed with all six Taipei camera cases on Chromium.
+- [ ] Verify the full GitHub quality gate on the repair commit.
+
 # Acquisition reveal
 
 - [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.
