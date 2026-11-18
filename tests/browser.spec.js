@@ -27,11 +27,12 @@ const pick = async (page, name, option) => {
 // Touch players default to slide steering; legacy button tests pin Buttons mode (and any other prefs) before the page loads.
 const useControls = (page, prefs) => page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, ...prefs })), prefs);
 
-const measureAudio = () => {
+const measureAudio = (retainCueLevel = false) => {
   const connect = AudioNode.prototype.connect;
   AudioNode.prototype.connect = function(destination, ...args) {
     if (destination instanceof AudioDestinationNode) {
       const analyser = this.context.createAnalyser();
+      analyser.fftSize = 32768; // Retain short UI cues across a slow browser automation round trip.
       connect.call(this, analyser);
       window.audioState = () => this.context.state;
       window.audioLevel = () => {
@@ -39,6 +40,36 @@ const measureAudio = () => {
         analyser.getFloatTimeDomainData(data);
         return Math.sqrt(data.reduce((sum, value) => sum + value * value, 0) / data.length);
       };
+      if (retainCueLevel) {
+        // Measure rendered samples on the audio thread, which keeps running through a stalled WebGL frame.
+        const moduleUrl = URL.createObjectURL(new Blob([`
+          registerProcessor('cue-peak-meter', class extends AudioWorkletProcessor {
+            peak = 0;
+            process(inputs) {
+              const samples = inputs[0][0];
+              if (samples?.length) {
+                const rms = Math.sqrt(samples.reduce((sum, value) => sum + value * value, 0) / samples.length);
+                if (rms > this.peak) {
+                  this.peak = rms;
+                  this.port.postMessage(rms);
+                }
+              }
+              return true;
+            }
+          });
+        `], { type: 'text/javascript' }));
+        const ready = this.context.audioWorklet.addModule(moduleUrl).finally(() => URL.revokeObjectURL(moduleUrl));
+        let tap;
+        window.armAudioCueMeter = async () => {
+          await ready;
+          if (tap) { this.disconnect(tap); tap.port.close(); }
+          tap = new AudioWorkletNode(this.context, 'cue-peak-meter', { numberOfOutputs: 0 });
+          let peakRms = 0;
+          tap.port.onmessage = ({ data }) => { peakRms = data; };
+          window.audioCueLevel = () => peakRms;
+          connect.call(this, tap);
+        };
+      }
     }
     return connect.call(this, destination, ...args);
   };
@@ -422,11 +453,16 @@ test('countdown lights, automatic accelerator and brake work without holding the
 });
 
 test('real audio output includes UI and countdown cues, then mutes and pauses cleanly', async ({ page }) => {
-  await page.addInitScript(measureAudio);
+  await page.addInitScript(measureAudio, true);
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/');
+  await page.locator('#settings-button').click();
+  await page.locator('#settings-close').click();
+  await expect.poll(() => page.evaluate(() => window.audioState?.())).toBe('running');
+  await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
+  await page.evaluate(() => window.armAudioCueMeter());
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => window.audioLevel?.() ?? 0), { intervals: [20] }).toBeGreaterThan(0.001);
+  await expect.poll(() => page.evaluate(() => window.audioCueLevel())).toBeGreaterThan(0.001);
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(90);
@@ -436,8 +472,17 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
+  await page.evaluate(() => window.armAudioCueMeter());
+  await audioSwitch(page, 'Sound effects').evaluate(button => {
+    button.addEventListener('click', () => {
+      // Simulate a slow WebGL frame after the real settings handler schedules the short cue.
+      const until = performance.now() + 350;
+      while (performance.now() < until) { /* block the main thread, leaving audio rendering active */ }
+    }, { once: true });
+  });
   await audioSwitch(page, 'Sound effects').click();
-  await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeGreaterThan(0.001);
+  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
+  await expect.poll(() => page.evaluate(() => window.audioCueLevel())).toBeGreaterThan(0.001);
   await page.locator('#settings-close').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
   await page.locator('#settings-button').click();

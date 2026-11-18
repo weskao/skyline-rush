@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { roadRibbon } from './geometry.ts';
-import { skyFrame, skyPoint, skyPosition, skyGapAt, SKY_JUMPS, SKY_LENGTH, SKY_SPIRAL } from './sky-track.ts';
+import { skyFrame, skyPoint, skyGapAt, skyTowerOrigin, SKY_JUMPS, SKY_LENGTH, SKY_SPIRAL } from './sky-track.ts';
 
 // A bounded 3D road renderer for the helix, sweepers and jump decks.
 const ROWS = 180;
@@ -43,14 +43,13 @@ export function createSkyScene(scene) {
   const rightVector = new THREE.Vector3();
   const upVector = new THREE.Vector3();
   const backVector = new THREE.Vector3();
-  function pose(instance, index, s, lateral, rise, width, height, depth, origin, endless = false) {
-    const frame = skyFrame(s, endless);
-    const [x, y, z] = skyPosition(s, lateral, rise, origin, endless);
+  function pose(instance, index, frame, lateral, rise, width, height, depth) {
+    const { point } = frame;
     rightVector.fromArray(frame.right);
     upVector.fromArray(frame.up);
     backVector.fromArray(frame.forward).negate();
     basis.makeBasis(rightVector, upVector, backVector);
-    object.position.set(x, y, z);
+    object.position.set(point.x, point.y, point.z).addScaledVector(rightVector, lateral).addScaledVector(upVector, rise);
     object.quaternion.setFromRotationMatrix(basis);
     object.scale.set(width, height, depth);
     object.updateMatrix();
@@ -60,11 +59,11 @@ export function createSkyScene(scene) {
   // Hand-built hero architecture gives the spiral scale and a unique silhouette.
   const landmark = new THREE.Group();
   group.add(landmark);
-  const tower = new THREE.Mesh(new THREE.CylinderGeometry(18, 30, 230, 12),
+  const tower = new THREE.Mesh(new THREE.CylinderGeometry(18, 30, 276, 12),
     new THREE.MeshStandardMaterial({ color: '#1c244a', metalness: 0.82, roughness: 0.25 }));
   tower.position.y = 74;
   landmark.add(tower);
-  const towerCore = new THREE.Mesh(new THREE.CylinderGeometry(20, 32, 238, 12, 1, true),
+  const towerCore = new THREE.Mesh(new THREE.CylinderGeometry(20, 32, 284, 12, 1, true),
     new THREE.MeshBasicMaterial({ color: '#392d88', wireframe: true, transparent: true, opacity: 0.72 }));
   towerCore.position.y = 74;
   landmark.add(towerCore);
@@ -75,29 +74,12 @@ export function createSkyScene(scene) {
     halo.position.y = -25 + i * 25;
     landmark.add(halo);
   }
-  // Keep two absolute-distance landmarks so a visible tower never teleports
-  // when the endless course streams into the next repeat.
-  const nextLandmark = landmark.clone(true);
-  nextLandmark.visible = false;
-  group.add(nextLandmark);
-  // Four shared material variants per hero, created once. Never fade the
-  // original neon rail/beacon materials along with the landmark.
-  const originalTowerMaterials = [tower.material, towerCore.material];
-  const landmarkMaterials = [landmark, nextLandmark].map(hero => {
-    const variants = new Map();
-    hero.traverse(mesh => {
-      if (!mesh.isMesh) return;
-      const source = mesh.material;
-      if (!variants.has(source)) {
-        const material = source.clone();
-        material.transparent = true;
-        material.depthWrite = false;
-        variants.set(source, { material, opacity: source.opacity });
-      }
-      mesh.material = variants.get(source).material;
-    });
-    return [...variants.values()];
-  });
+  // Fade the road's hero near the edge of its draw range. Clone the halo
+  // materials so their opacity never changes the road rails or beacons.
+  const towerCyan = cyan.clone(), towerMagenta = magenta.clone();
+  for (const halo of landmark.children.slice(2)) halo.material = halo.material === cyan ? towerCyan : towerMagenta;
+  const heroMaterials = [tower.material, towerCore.material, towerCyan, towerMagenta];
+  for (const material of heroMaterials) material.transparent = true;
   const skyline = new THREE.Group();
   group.add(skyline);
   const towerGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -109,8 +91,8 @@ export function createSkyScene(scene) {
     const angle = i * 2.399963;
     const radius = 320 + (i * 41 % 480);
     const height = 45 + (i * 31 % 135);
-    const x = Math.cos(angle) * radius + SKY_SPIRAL.radius;
-    const z = Math.sin(angle) * radius - SKY_SPIRAL.start;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
     object.position.set(x, height / 2 - 100, z);
     object.quaternion.identity();
     object.scale.set(16 + i % 5 * 7, height, 16 + i % 4 * 6);
@@ -156,8 +138,8 @@ export function createSkyScene(scene) {
   for (let i = 0; i < 24; i++) {
     const angle = i * 2.39996;
     const cloud = new THREE.Mesh(cloudGeometry, cloudMat);
-    cloud.position.set(SKY_SPIRAL.radius + Math.sin(angle) * (210 + i % 7 * 65), 12 + i % 5 * 6,
-      -SKY_SPIRAL.start + Math.cos(angle) * (200 + i % 7 * 65));
+    cloud.position.set(Math.sin(angle) * (210 + i % 7 * 65), 12 + i % 5 * 6,
+      Math.cos(angle) * (200 + i % 7 * 65));
     cloud.scale.set(85 + i % 5 * 13, 6 + i % 3 * 4, 70 + i % 4 * 20);
     fogBanks.add(cloud);
   }
@@ -170,27 +152,16 @@ export function createSkyScene(scene) {
       group.visible = true;
       backdrop.material.uniforms.time.value = distance * 0.0015;
       const origin = skyPoint(distance, endless);
-      // Loop existing architecture in the camera's streaming window without new GPU allocations.
-      const extension = endless && distance > SKY_LENGTH;
-      if (extension) {
-        const anchor = SKY_LENGTH + Math.max(1, Math.floor((distance - SKY_LENGTH) / 1800)) * 1800;
-        for (const [index, [hero, at]] of [[landmark, anchor], [nextLandmark, anchor + 1800]].entries()) {
-          const t = Math.max(0, Math.min(1, (1700 - Math.abs(at - distance)) / 500));
-          const opacity = t * t * (3 - 2 * t);
-          hero.visible = opacity > 0;
-          for (const variant of landmarkMaterials[index]) variant.material.opacity = variant.opacity * opacity;
-          hero.position.set(SKY_SPIRAL.radius - origin.x, -origin.y, skyPoint(at, true).z - origin.z);
-        }
-      } else {
-        landmark.visible = true;
-        nextLandmark.visible = false;
-        for (const variant of landmarkMaterials[0]) variant.material.opacity = variant.opacity;
-        landmark.position.set(SKY_SPIRAL.radius - origin.x, -origin.y, -SKY_SPIRAL.start - origin.z);
-      }
-      skyline.position.set(-origin.x,-origin.y,(extension?skyPoint(distance+900,endless).z+SKY_SPIRAL.start:0)-origin.z);
+      const anchor = skyTowerOrigin(distance, endless);
+      landmark.position.set(anchor.x - origin.x, anchor.y - origin.y, anchor.z - origin.z);
+      const approach = Math.max(anchor.entry - distance, distance - anchor.entry - (SKY_SPIRAL.end - SKY_SPIRAL.start));
+      const fade = endless ? THREE.MathUtils.smoothstep(1700 - approach, 0, 450) : 1;
+      landmark.visible = fade > 0;
+      heroMaterials.forEach((material, i) => { material.opacity = fade * (i === 1 ? .72 : 1); });
+      skyline.position.copy(landmark.position);
       fogBanks.position.copy(skyline.position);
-      skyline.visible = quality !== 'low';
-      fogBanks.visible = quality === 'high';
+      skyline.visible = landmark.visible && quality !== 'low';
+      fogBanks.visible = landmark.visible && quality === 'high';
       const start = Math.max(0, Math.floor((distance - 140) / STEP) * STEP);
       // Transform the static world-space road into camera-relative coordinates.
       // Geometry and matrices change only when a 10m stream sector changes.
@@ -201,9 +172,9 @@ export function createSkyScene(scene) {
           const s = rowDistance(start + i * STEP, endless);
           const frame = skyFrame(s, endless);
           for (let side = 0; side < 2; side++) {
-            const [x, y, z] = skyPosition(s, side ? WIDTH : -WIDTH, 0, 0, endless);
-            const offset = (i * 2 + side) * 3;
-            positions.set([x, y, z], offset);
+            const lateral = side ? WIDTH : -WIDTH, offset = (i * 2 + side) * 3;
+            const { point, right } = frame;
+            positions.set([point.x + right[0] * lateral, point.y + right[1] * lateral, point.z + right[2] * lateral], offset);
             normals.set(frame.up, offset);
           }
           if (i === ROWS) continue;
@@ -211,14 +182,14 @@ export function createSkyScene(scene) {
           const gap = length === 0 || skyGapAt(s + length / 2, endless);
           const a = i * 2, k = i * 6;
           indices.set(gap ? [a, a, a, a, a, a] : [a, a + 1, a + 2, a + 1, a + 3, a + 2], k);
-          const mid = s + length / 2, hide = gap ? -1000 : 0;
+          const mid = skyFrame(s + length / 2, endless), hide = gap ? -1000 : 0;
           for (let side = 0; side < 2; side++) {
-            pose(borders, i * 2 + side, mid, side ? 12.1 : -12.1, 0.17 + hide, 0.16, 0.12, length || STEP, 0, endless);
-            pose(rails, i * 2 + side, mid, side ? 12.9 : -12.9, 0.60 + hide, 0.38, 1.1, length || STEP, 0, endless);
-            pose(beacons, i * 2 + side, mid, side ? 12.75 : -12.75, 1.12 + hide, 0.08, 0.09, length || STEP, 0, endless);
+            pose(borders, i * 2 + side, mid, side ? 12.1 : -12.1, 0.17 + hide, 0.16, 0.12, length || STEP);
+            pose(rails, i * 2 + side, mid, side ? 12.9 : -12.9, 0.60 + hide, 0.38, 1.1, length || STEP);
+            pose(beacons, i * 2 + side, mid, side ? 12.75 : -12.75, 1.12 + hide, 0.08, 0.09, length || STEP);
           }
           for (let lane = 0; lane < 3; lane++) {
-            pose(laneLines, i * 3 + lane, mid, (lane - 1) * 5, 0.025 + hide, 0.14, 0.03, 4.0, 0, endless);
+            pose(laneLines, i * 3 + lane, mid, (lane - 1) * 5, 0.025 + hide, 0.14, 0.03, 4.0);
           }
         }
         for (const attribute of [geometry.attributes.position, geometry.attributes.normal, geometry.index]) attribute.needsUpdate = true;
@@ -232,8 +203,8 @@ export function createSkyScene(scene) {
       group.removeFromParent();
       geometry.dispose();
       road.material.dispose();
-      for (const variants of landmarkMaterials) for (const { material } of variants) material.dispose();
-      for (const material of originalTowerMaterials) material.dispose();
+      for (const mesh of landmark.children) mesh.geometry.dispose();
+      for (const material of heroMaterials) material.dispose();
       for (const mat of [cyan, magenta, stripes, concrete, cloudMat, backdrop.material]) mat.dispose();
       backdrop.geometry.dispose();
       for (const mesh of [borders, rails, beacons, laneLines]) mesh.dispose();

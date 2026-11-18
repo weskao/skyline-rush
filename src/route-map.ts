@@ -1,4 +1,5 @@
 import { classicRoadRoute } from './classic-road-routes.ts';
+import { hasRoadProfile, profileRoad } from './track-profile-road.ts';
 import { raceTrack } from './race-tracks.ts';
 import { minimapGraph } from './course-minimap.ts';
 import { createCourseRouteProjection } from './course-route-map.ts';
@@ -33,7 +34,7 @@ const svg = (tag: string, attrs: Record<string, string | number> = {}): SVGEleme
   return node;
 };
 export function routeSamples(trackId: string): RouteSample[] {
-  if (!cache.has(trackId)) cache.set(trackId, trackOverview(trackId, 128));
+  if (!cache.has(trackId)) cache.set(trackId, trackOverview(trackId, trackId === 'spiral' ? 256 : 128));
   return cache.get(trackId)!;
 }
 const pointText = (p: {x: number; y: number}): string => `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
@@ -119,13 +120,13 @@ function streamingRoute(point: (d: number) => readonly [number, number], distanc
   return { sector, start, end: start + 700, line: samples.map(p => pointText(project(p))).join(' '), marker: (d: number) => project(point(d)) };
 }
 export const hasStreamingRouteMap = (trackId: string, mode: string): boolean =>
-  (mode === 'endless' || mode === 'elimination') && (trackId === 'spiral' || !!classicRoadRoute(trackId));
+  (mode === 'endless' || mode === 'elimination') && (!!classicRoadRoute(trackId) || hasRoadProfile(trackId));
 
 export function createRouteMap(trackId: string, { live = false, streaming = false }: { live?: boolean; streaming?: boolean } = {}) {
   const streamRoad = streaming ? trackId === 'spiral' ? (d: number) => {
     const { x, z } = skyPoint(d, true);
     return [x, z] as const;
-  } : classicRoadRoute(trackId)?.point : undefined;
+  } : (classicRoadRoute(trackId) ?? profileRoad(trackId))?.point : undefined;
   let window: ReturnType<typeof streamingRoute> | undefined;
   const element = svg('svg', { viewBox: '0 0 100 100', class: `route-overview theme-${trackId}`, role: 'img' }); // aria-label: relabel() below
   const graph = minimapGraph(trackId);
@@ -156,7 +157,7 @@ export function createRouteMap(trackId: string, { live = false, streaming = fals
     element.append(svg('polyline', { points: spiralUpperDirectionChevron(trackId),
       class: 'route-spiral-direction', fill: 'none', 'aria-hidden': 'true' }));
   }
-  for (const cue of routeElevationCues(trackId)) {
+  for (const cue of streamRoad ? [] : routeElevationCues(trackId)) {
     const { x, y } = cue;
     const top = cue.direction === 'up';
     const tip = (y + (top ? -3 : 3)).toFixed(2);

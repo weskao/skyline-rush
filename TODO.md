@@ -1,3 +1,32 @@
+# Garage drift trails
+
+- [x] Add five visual drift trails beside the original rubber. The existing account-scoped trial separates preview and equip.
+- [x] Observed three test-first failures for the missing catalog, geometry and race wiring. Focused skid, shader and Garage tests passed after implementation. Full Node suite: 3,363 passed, 3 skipped. The locked build passed its leakage audit.
+- [x] Captured the five live WebGL previews with the Roadster and Crimson GT models. Existing equip audio is sufficient for these cosmetic-only variants. Low graphics keeps the five silhouettes and reduces secondary detail. Comfort and reduced motion suppress the moving pattern.
+- [x] Replace the five provisional drift-trail cards with 288×288 alpha WebPs and keep their lossless PNG masters. The first browser run caught a 20 px source margin on the previous artwork. The five replacements exceed the 22 px threshold. Trial and locked builds passed, along with 3,363 Node tests (3 skipped).
+- [x] Expand all five in-race drift looks with distance-spaced accents. Flames use crossed meshes, ice uses shaded facets, and rainbow, arc and nebula retain distinctive moving surfaces. Low quality and comfort mode suppress the secondary layer.
+- [x] Keep both tyre traces continuous across long valid frames while breaking at a jump in position. Focused tests caught missing accents, missing volumetric geometry and a 5 m motion gap at 100 m/s before implementation.
+- [x] Add SVG pause/play artwork to the live preview. Chromium verified the 44 px hit target, pointer pause, keyboard resume and retained focus.
+- [ ] Confirm physical phone checks, the complete browser/World Tour suite and the feature branch CI.
+
+# Develop browser CI run 44303677367
+
+- [x] All 17 failing browser cases passed in the fix worktree. The production build, type checks and 3,364 unit tests passed (3 skipped).
+- [ ] Confirm the full GitHub quality gate on the repair commit.
+
+# Release notes hero spacing
+
+- [x] Keep equal, visible gaps from the version/date row to the hero and from the hero to the first highlight. The inline clip previously touched the first card.
+- RED reproduced a 12 px gap above the inline clip and 0 px below. Chromium layout measurements now show 12 px on each side for inline video and hero images, 8 px on each side for the compact landscape preview, and one gap for a release without hero media.
+- [ ] Confirm the exact-commit GitHub quality gate and physical device behavior.
+
+# Browser audio CI run 44250995528
+
+- [x] Reproduced the re-enable cue failure with the old meter and a 350 ms main-thread stall. The audio rendering thread measured the cue during the same stall.
+- [x] Armed the worklet meter before Start and before re-enabling sound effects. Chromium passed the cue, mute and pause scenario 3/3 without retries under CI timing, and the audio initialization recovery scenario passed separately.
+- [x] Verified the trial build, typecheck and unit suite. Unit results were 3,361 passed and 3 skipped.
+- [ ] Confirm the full GitHub Actions quality gate on the repair branch's updated HEAD.
+
 # Develop browser CI run 44117764575
 
 - [x] Reproduced the live minimap gap on desktop and two phone widths. The map now shares the toolbar height and button size. Short touch landscape keeps its own side-by-side row.
@@ -350,6 +379,14 @@ on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, 
 - [x] Showroom pulse (owner's pick over a fixed race length or a hold-to-preview button): Garage/Home plume was 0.83 m vs Preview Studio's 4.70 m (default settings). `tests/sprint-plume.test.js` *showroom plume: loops…* RED on `e4329420` (0.83 m), GREEN after: every showroom loops from idle to ≥ 95% of the race length with the 2.2 s ignition demo; Reduced Motion holds Studio at full length.
 - [ ] Showroom pulse in real Garage/Studio frames, both cars, both phone orientations: delegated recording, not yet reviewed.
 
+## NITRO trail skins: comfortable glow, no strobe (2026-11-18, `fix/nitro-trail-glare`)
+
+- [x] Cyan/gold/crimson/nebula trails (`src/garage-nitro-trail.js`): colour capped at `vec3(1.2)` (was up to ~4.2, past the 1.1 bloom threshold), `FrontSide` (both tube walls added up), nozzle hot spot and glints toned down, every animated term ≤ 3 Hz at a pixel with the same visible flow speed (gold beat 3.2 Hz → ~1 Hz, crimson hard 7 Hz on/off → 2.5 Hz soft 50–100%, glints 22 Hz → 2.5 Hz). Standard trail (style 0) draws no streak: unchanged.
+- [x] RED: `tests/nitro-trail-comfort.test.js` 3/3 failed on `c8c2b208`; GREEN after. `npm test` 3,364 pass / 0 fail / 3 skipped; `npm run build` passed.
+- [x] Prevention: `.claude/rules/nitro-trail-vfx.md`.
+- [x] Real WebGL before/after (Chromium 1280×720, High, Coast race with NITRO + Preview Studio), four skins, Roadster: colour reads as distinct jets instead of a white wash. Crimson in race is the most subdued; the owner judges whether it needs more body.
+- [ ] Not run: Crimson GT, phone portrait/landscape, physical phone, full `npm run test:browser`, exact-HEAD `quality-gate`.
+
 ## Final tutorial NITRO cue (2026-11-15)
 
 - [x] Show the final NITRO action in the same on-screen cue as THROTTLE, with the bound desktop key or touch button copy. Hide the press prompt and touch outline during the sprint and while waiting for release after an interrupted attempt.
@@ -691,6 +728,13 @@ Design: `docs/superpowers/specs/2026-11-13-drift-balance-design.md`. One table: 
 - [x] RED → GREEN for distance, authored hazards, AI difficulty, placement, timed distance, multi-stage settlement, duplicate receipts and the result wallet balance.
 - [x] Show the credited amount and roll the local balance from its previous value after the results panel appears. Respect reduced motion and the player's VFX settings.
 - [ ] Verify the final branch commit's full GitHub Actions quality gate and review the reveal on a physical phone.
+
+# 2026-11-18 — Measured Three.js routes for tracks 4–10
+
+- [x] RED reproduced the old finish distances on all seven tracks. GREEN measures each Three.js centreline at 10 km and checks the reference elevations and headings, the finite-mode finish, and repeated profile seams in Endless and Elimination.
+- [x] Align the road, section cues, minimaps, checkpoints and World Tour landmarks with the revised course. Retain the three Sky Spiral jumps in finite modes and solid decks in streaming modes.
+- [x] Version timed records, daily routes and streaming records when their layouts change. Retain legacy bests and ghosts. Replay fixture changes are limited to the reprofiled tracks.
+- [ ] Complete the exact-commit CI quality gate and physical-phone review.
 
 # 2026-11-13 — Classic track corners
 

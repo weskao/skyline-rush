@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { RACE_TRACKS, createRace } from '../src/game.js';
 import { trackPoint, trackFrame, trackOverview } from '../src/track-paths.ts';
 const ids=['taipei','tokyo','alpine','coastal','cosmic'];
-test('five new world-tour routes are deterministic and all 5–8 km',()=>{
- assert.deepEqual(ids.map(id=>RACE_TRACKS[id].length),[6200,6800,7600,5800,8000]);
+test('five World Tour routes are deterministic and all 10 km',()=>{
+ assert.deepEqual(ids.map(id=>RACE_TRACKS[id].length),Array(5).fill(10000));
  for(const id of ids){
   assert.deepEqual(createRace(id),createRace(id));
   const section=RACE_TRACKS[id].sections.filter(s=>s.type==='shortcut');
