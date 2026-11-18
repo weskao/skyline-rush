@@ -7,7 +7,7 @@ import Wave3DemoArt from './Wave3DemoArt.vue';
 import Wave3CurrencyAmount from './Wave3CurrencyAmount.vue';
 import { SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
 import type { SkinId } from './garage-skin-catalog.ts';
-import { DEMO_QUOTE_LIFETIME_MS } from './wave3-experience-contract.ts';
+import { DEMO_QUOTE_LIFETIME_MS, sameDemoScope } from './wave3-experience-contract.ts';
 import type { DemoCurrency, DemoRedemptionQuote, ExperienceSnapshot, Wave3ExperiencePort, Wave3Status } from './wave3-experience-contract.ts';
 import {
   WAVE3_DEMO_ITEMS, WAVE3_DEMO_STORE_ART, demoItemStatus, demoItemStatusText,
@@ -17,6 +17,9 @@ import type { DemoTrialAccess, DemoRedeemState, Wave3DemoItem } from './wave3-de
 import { demoBalance } from './wave3-demo-settlement.ts';
 import { demoCurrencyLabel, demoPersistenceLabel } from './wave3-currency-view.ts';
 import { garageStudioView } from './garage-view-state.ts';
+
+import { presentAcquisition } from './acquisition-reveal.ts';
+import { demoAcquisitionId } from './acquisition-demo-items.ts';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = withDefaults(defineProps<{
@@ -151,13 +154,26 @@ async function confirmRedemption(): Promise<void> {
   const request = quote.value;
   if (!id || !request) return;
   cancelRedemption();
-  const result = await props.port.redeemPreview(id, request);
+  const item = WAVE3_DEMO_ITEMS.find(entry => entry.id === id);
+  const art = artwork(id);
+  const port = props.port;
+  const result = await port.redeemPreview(id, request);
+  if (port !== props.port || !sameDemoScope(request.scope, port.getOperationScope())) return;
   snapshot.value = result.snapshot;
   const used = { points: result.deltaDemoPoints, coins: result.deltaDemoCoins, diamonds: result.deltaDemoDiamonds }[request.currency];
   message.value = result.status === 'completed' && used
     ? `${feedback(result.status)} −${Math.abs(used).toLocaleString(props.locale)} ${currencyLabel(request.currency)}`
     : feedback(result.status);
-  cue(result.status === 'completed' ? 'redeem-unlocked' : 'action-unavailable');
+  if (result.status === 'completed') {
+    cue('redeem-unlocked');
+    if (result.operationId && item && result.snapshot.demoInventory.includes(id)) {
+      presentAcquisition({ id: demoAcquisitionId('store', request.scope, result.operationId), items: [{
+        id, name: item.name, kind: 'equipment', status: 'unlocked', scope: 'demo',
+        artwork: art ? { src: art.src, style: 'icon' } : undefined,
+      }] });
+    }
+  }
+  else cue('action-unavailable');
 }
 </script>
 

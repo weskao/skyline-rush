@@ -24,7 +24,6 @@ interface TouchControlsOptions {
 }
 
 const TOUCH_SCALE: Record<ControlPreferences['size'], number> = { S: 0.85, M: 1, L: 1.15 };
-const PAD_BRAKE_PX = 40;
 const PAD_HINT_SECONDS = 4;
 
 /** What input.ts reads: practice uses slide steering until the tilt permission is granted. */
@@ -56,6 +55,7 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
   const touch = $('#touch-controls');
   const panel = $('#controls-panel');
   const tiltStatus = $('#tilt-status');
+  const brakePullField = $('#controls-brake-pull');
   const layoutOrientation = $('#layout-orientation');
   const touchButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-control]')];
   const controlInputs = [...document.querySelectorAll<HTMLInputElement>('[data-controls]')];
@@ -83,6 +83,7 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     panel.style.setProperty('--touch-opacity', String(controlPrefs.opacity));
     controls.setFlyMode(controlPrefs.flyMode);
     $('#tilt-enable').hidden = controlPrefs.mode !== 'tilt';
+    brakePullField.hidden = controlPrefs.mode === 'buttons';
     if (controlPrefs.mode !== 'tilt') { controls.setTilt(false); tiltGranted = false; clearTimeout(tiltTimeout); }
     for (const button of touchButtons) {
       const point = isTutorialActive() ? undefined : orientedLayouts[currentOrientation()][button.dataset.control as keyof ControlPreferences['layout']];
@@ -104,12 +105,9 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     }
   }
 
-  // input.ts keeps the slide-pad state private, so the ring/knob mirror it from the same pointer events (same follow-the-thumb rule as slide-pad.ts).
   const pad = $('.touch-pad');
-  controls.bindSlidePad(pad, { getSettings: () => inputPrefs });
   const padRing = $('.pad-ring');
   const padKnob = $('.pad-knob');
-  let padTouch: { id: number; ox: number; oy: number; x: number; y: number } | null = null;
   let padHint = false;
   const clampPad = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
   // Ring/knob sit at the pad's top-left in CSS; transform alone moves them (percentages centre each on its point).
@@ -118,37 +116,20 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     el.style.opacity = opacity;
     el.style.transition = reducedMotion.matches ? 'none' : 'opacity 0.6s ease';
   }
-  function drawPad(): void {
+  function drawPad(showActive = true): void {
     const rect = pad.getBoundingClientRect();
-    const brake = !!padTouch && padTouch.y - padTouch.oy >= PAD_BRAKE_PX;
-    if (brake) touch.dataset.padBrake = 'true'; else delete touch.dataset.padBrake;
-    if (padTouch) {
-      const lock = controlPrefs.fullLock;
-      placePad(padRing, padTouch.ox - rect.left, padTouch.oy - rect.top, '0.35');
-      placePad(padKnob, clampPad(padTouch.x, padTouch.ox - lock, padTouch.ox + lock) - rect.left, clampPad(padTouch.y, padTouch.oy - lock, padTouch.oy + lock) - rect.top, '0.6');
+    const { active, brake, origin, thumb } = readPad();
+    if (showActive && brake) touch.dataset.padBrake = 'true'; else delete touch.dataset.padBrake;
+    if (showActive && active) {
+      const lock = inputPrefs.fullLock;
+      placePad(padRing, origin.x - rect.left, origin.y - rect.top, '0.35');
+      placePad(padKnob, clampPad(thumb.x, origin.x - lock, origin.x + lock) - rect.left, clampPad(thumb.y, origin.y - lock, origin.y + lock) - rect.top, '0.6');
     } else {
       placePad(padRing, rect.width / 2, rect.height / 2, padHint ? '0.25' : '0');
       placePad(padKnob, rect.width / 2, rect.height / 2, padHint ? '0.45' : '0');
     }
   }
-  pad.addEventListener('pointerdown', event => { // the newest finger owns the pad, as in input.ts
-    padTouch = { id: event.pointerId, ox: event.clientX, oy: event.clientY, x: event.clientX, y: event.clientY };
-    drawPad();
-  });
-  pad.addEventListener('pointermove', event => {
-    if (event.pointerId !== padTouch?.id) return;
-    padTouch.x = event.clientX; padTouch.y = event.clientY;
-    const dx = padTouch.x - padTouch.ox;
-    if (Math.abs(dx) > controlPrefs.fullLock) padTouch.ox = padTouch.x - Math.sign(dx) * controlPrefs.fullLock;
-    drawPad();
-  });
-  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
-    pad.addEventListener(type, event => {
-      if (event.pointerId !== padTouch?.id) return;
-      padTouch = null;
-      drawPad();
-    });
-  }
+  const readPad = controls.bindSlidePad(pad, { getSettings: () => inputPrefs, onChange: drawPad });
   applyControls();
   if (controlPrefs.mode === 'tilt') say(tiltStatus, () => t('tilt.saved'));
 
@@ -194,7 +175,7 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     cancelLayoutDrag();
     editingLayout = editing;
     if (editing) showLayoutOrientation();
-    controls.clear(); padTouch = null; drawPad();
+    controls.clear(); drawPad();
     document.body.classList.toggle('layout-editing', editing);
     $('#layout-toolbar').hidden = !editing;
     closeControlsPanel();
@@ -233,9 +214,13 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     button.addEventListener('pointerdown', event => {
       if (!editingLayout || drag) return;
       event.preventDefault();
-      // Move the whole thumb cluster while the pad remains input-owned.
-      const isSteer = (peer: HTMLButtonElement) => ['left', 'right', 'brake'].includes(peer.dataset.control!);
-      const peers = touchButtons.filter(peer => isSteer(button) === isSteer(peer) && peer.getClientRects().length);
+      // Keep paired thumb controls together. BRAKE is placed independently.
+      const group = (peer: HTMLButtonElement) => {
+        const action = peer.dataset.control;
+        if (action === 'brake') return 'brake';
+        return action === 'left' || action === 'right' ? 'steering' : 'actions';
+      };
+      const peers = touchButtons.filter(peer => group(button) === group(peer) && peer.getClientRects().length);
       const orientation = currentOrientation();
       drag = { button, id: event.pointerId, x: event.clientX, y: event.clientY, orientation,
         original: orientedLayouts[orientation], origins: peers.map(peer => {
@@ -278,7 +263,7 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     if (orientation !== lastOrientation || Math.abs(innerWidth - lastWidth) > 16 || foldChanged ||
       event.type === 'orientationchange' || event.currentTarget === window.screen.orientation) {
       cancelLayoutDrag();
-      controls.clear(); clearButtonPresses(); padTouch = null; drawPad();
+      controls.clear(); clearButtonPresses(); drawPad();
     }
     if (editingLayout && orientation !== lastOrientation) showLayoutOrientation();
     lastOrientation = orientation;
@@ -294,9 +279,9 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     window.matchMedia(query).addEventListener('change', onViewportChange);
   }
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { cancelLayoutDrag(); applyControls(false); controls.clear(); padTouch = null; drawPad(); }
+    if (document.hidden) { cancelLayoutDrag(); applyControls(false); controls.clear(); drawPad(); }
   });
-  window.addEventListener('pagehide', () => { cancelLayoutDrag(); controls.clear(); padTouch = null; });
+  window.addEventListener('pagehide', () => { cancelLayoutDrag(); controls.clear(); });
 
   return {
     prefs: (): ControlPreferences => controlPrefs,
@@ -305,11 +290,10 @@ export function setupTouchControlsUI({ controls, getRacePhase, isTutorialActive,
     applyControls,
     editLayout,
     setGhost(on: boolean): void { controlPrefs = controlSettings({ ...controlPrefs, ghost: on }); applyControls(); },
-    /** controls.clear() resets the real pad; drop the mirrored ring/knob with it. */
-    resetPad(): void { padTouch = null; drawPad(); },
+    resetPad(): void { padHint = false; drawPad(false); },
     /** First seconds of a slide-steering race show where the pad is. */
     updatePadHint(phase: string, elapsed: number): void {
-      const hint = !padTouch && phase === 'racing' && elapsed < PAD_HINT_SECONDS && controlPrefs.mode === 'slide';
+      const hint = phase === 'racing' && elapsed < PAD_HINT_SECONDS && inputPrefs.mode === 'slide';
       if (hint !== padHint) { padHint = hint; drawPad(); }
     },
     onTilt(): void {

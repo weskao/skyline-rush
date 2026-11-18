@@ -41,7 +41,8 @@ import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, makeCar, step
 import { createTrafficFleet } from './traffic-fleet.ts';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
-import { landmarkBounds } from './landmark-bounds.ts';
+import { nearestLandmark } from './landmark-bounds.ts';
+import { chooseShowcaseFraming } from './showcase-framing.ts';
 import { createContactShadow } from './contact-shadow.ts';
 import { isRaining, racePreset } from './board-effects.ts';
 import { createClassicTrackScenery } from './classic-track-scenery.ts';
@@ -252,76 +253,34 @@ export function createWorld(canvas) {
   const orbitTurns = [0,1,2,3,4,5,6,7].map(i=>i*Math.PI/4), spin = (v,a) => v.clone().sub(player.position).applyAxisAngle(camera.up,a).add(player.position);
   // Frame the full vehicle silhouette, including wheels.
   const { projectedCarBounds, carCorner } = createCarBounds(showcaseProbe, camera, player, () => aero.group);
-  let framingKey = '', framingBack = 0, framingLookY = 0; const framingAxis = new THREE.Vector3();
+  let framingKey = '', framing = { back: 0, down: 0, side: 0 };
+  const framingAxis = new THREE.Vector3(), framingRight = new THREE.Vector3();
+  const showcaseLandmarks = () => trackId === 'spiral' ? skyScene.landmarks()
+    : trackId === CIRCUIT_ID ? circuitScene.landmarks() : TOUR_IDS.has(trackId) ? worldTourScene.landmarks() : [];
 
   function frameShowcaseCar(distance) {
-    // Hover wheels fold out over ~0.5 s and widen the car: reframe as they move, not once from the first frame.
+    // Reframe as the hovering wheels fold out and widen the car.
     const key=[trackId,visual.view,visual.airflow,visual.quality,camera.aspect.toFixed(3),garageHomePreview,
       Math.round(player.userData.wheels[0].rotation.z*4)].join(':');
-    // Dolly straight away from the car for the chosen angle (re-aimed each frame as orbit turns); only drive follows the road's chase axis.
     if(visual.view!=='drive') framingAxis.copy(desiredCamera).sub(player.position).setY(0).normalize();
     if(key!==framingKey) {
       framingKey=key;
-      framingBack=0;
-      framingLookY=0;
-      const originalEye=desiredCamera.clone(), originalLook=lookTarget.clone();
       const frame=trackId==='spiral'?skyFrame(distance):
         curvedClassic||framedRoad(trackId, endlessActive)?trackFrame(trackId,distance):null;
       if(visual.view==='drive') framingAxis.set(...(frame?frame.forward:[0,0,-1])).negate();
-      // Try the smallest look adjustment first, then dolly out if a wide
-      // vehicle cannot fit. No per-track offsets or expensive per-frame probes.
-      // A portrait phone (aspect ~0.46) needs far more dolly than a desktop; when
-      // nothing fits, keep the least-cropped candidate instead of the unframed shot.
-      let found=false, bestScore=Infinity, bestLookY=0, bestBack=0;
-      const turns=visual.view==='orbit'?orbitTurns:[0];
-      projectedCarBounds(originalEye,originalLook); // measure the car once; candidates only re-project it
-      // The drive shot also owns the signature landmark: tilting down to catch the wheels
-      // must not push its top out of frame, so that top is a fit constraint too.
-      // Frostbite keeps its race-only framing: the home landmark fit stays on Tour/Circuit roads.
-      const landmark=visual.view==='drive'&&framedRoad(trackId, endlessActive)&&trackId!==FROSTBITE_ID&&!MEASURED_COURSE_IDS.has(trackId)?landmarkBounds(trackId===CIRCUIT_ID?circuitScene.landmarks():worldTourScene.landmarks(),originalLook):null;
-      // Landscape keeps the landmark clear of the home panel on the left (NDC x >= .04).
-      const clearLeft=camera.aspect>1;
-      // Fine steps near the camera: a tight landmark leaves only a ~1 m dolly window.
-      search: for(const back of SHOWCASE_BACKS) {
-        const eye=originalEye.clone().addScaledVector(framingAxis,back);
-        for(const down of [0,.25,.5,.75,1,1.5,2,3,4,5,6,8,10,12]) {
-          const look=originalLook.clone();look.y-=down;
-          // Fit inside the edge limits with a small margin: the hovering car bobs after this
-          // one-off search, so a zero-margin fit crops it again a moment later.
-          const carMiss=Math.max(...turns.map(a=>{ const b=projectedCarBounds(spin(eye,a),spin(look,a),false);
-            return Math.max(-.92-b.minX,b.maxX-.92,-.88-b.minY,b.maxY-.88); }));
-          let miss=carMiss;
-          if(landmark) {
-            carCorner.set((landmark.min.x+landmark.max.x)/2,landmark.max.y,(landmark.min.z+landmark.max.z)/2)
-              .project(showcaseProbe);
-            if(carCorner.z<1) miss=Math.max(miss,carCorner.y-.97);
-            if(clearLeft) for(const x of [landmark.min.x,landmark.max.x])
-              for(const y of [landmark.min.y,landmark.max.y])
-                for(const z of [landmark.min.z,landmark.max.z]) {
-                  carCorner.set(x,y,z).project(showcaseProbe);
-                  if(carCorner.z<1) miss=Math.max(miss,.03-carCorner.x);
-                }
-          }
-          // The whole car is the hard requirement; the landmark only breaks ties among the
-          // candidates that fit it. With no fit at all, keep the least-cropped car.
-          const score=carMiss<0?miss-1e3:carMiss;
-          if(score<bestScore) {
-            bestScore=score;
-            bestBack=back;
-            bestLookY=-down;
-          }
-          if(miss<0) {
-            framingBack=back;
-            framingLookY=-down;
-            found=true;
-            break search;
-          }
-        }
-      }
-      if(!found) { framingBack=bestBack; framingLookY=bestLookY; }
+      framingRight.set(...(frame?frame.right:[1,0,0]));
+      const landmarks=visual.view==='drive'?showcaseLandmarks():[];
+      const landmark=landmarks.find(hero=>hero.visible&&hero.userData.landmarkKind===HERO_PREVIEWS[trackId]?.landmark)
+        ?? nearestLandmark(landmarks,lookTarget);
+      projectedCarBounds(desiredCamera,lookTarget);
+      framing=chooseShowcaseFraming({
+        eye:desiredCamera,look:lookTarget,axis:framingAxis,right:framingRight,landmark,
+        probe:showcaseProbe,corner:carCorner,carBounds:projectedCarBounds,spin,
+        turns:visual.view==='orbit'?orbitTurns:[0],backs:SHOWCASE_BACKS,
+      });
     }
-    desiredCamera.addScaledVector(framingAxis,framingBack);
-    lookTarget.y+=framingLookY;
+    desiredCamera.addScaledVector(framingAxis,framing.back);
+    lookTarget.addScaledVector(framingRight,framing.side).y-=framing.down;
   }
 
   function showroomClearShare(eye, look, projection = null) {
@@ -812,22 +771,12 @@ export function createWorld(canvas) {
           lookTarget.copy(player.position).add(new THREE.Vector3(pose.lookSide,pose.lookHeight-1.6,-pose.lookAhead));
         }
       } else if (preview && HERO_PREVIEWS[trackId]) {
-        // Same shot scale and 3/4 chase angle as the original five course
-        // previews, rotated into the local road frame (including hills).
-        // A world-space lookTarget at the next waypoint previously made the
-        // Alpine and Cosmic cars too small or cut off.
-        const info=HERO_PREVIEWS[trackId],frame=trackFrame(trackId,distance);
+        const pose=showcaseCameraPose(trackId,'drive',time,portrait),frame=trackFrame(trackId,distance);
         const right=new THREE.Vector3(...frame.right),forward=new THREE.Vector3(...frame.forward);
         desiredCamera.copy(player.position)
-          .addScaledVector(right,portrait?7.8:info.cameraSide)
-          .addScaledVector(forward,-(portrait?13.8:info.cameraBack))
-          // Reference maps use absolute 5.1 m camera eye height, while the
-          // showcased car floats at 1.6 m. Preserve the SAME relative view.
-          .add(new THREE.Vector3(0,portrait?4.3:info.cameraHeight,0));
+          .addScaledVector(right,pose.cameraSide).addScaledVector(forward,-pose.cameraBack).y+=pose.cameraHeight;
         lookTarget.copy(player.position)
-          .addScaledVector(right,portrait?1:info.lookSide)
-          .addScaledVector(forward,info.lookAhead)
-          .add(new THREE.Vector3(0,info.lookHeight-1.6,0));
+          .addScaledVector(right,pose.lookSide).addScaledVector(forward,pose.lookAhead).y+=pose.lookHeight-1.6;
       } else if (preview) {
         desiredCamera.fromArray(classicPosition(distance - (portrait ? 13.8 : 11.8), portrait ? 7.8 : 8.3, portrait ? 5.9 : 5.1, distance));
         lookTarget.fromArray(classicPosition(distance + 3.5, portrait ? 1 : -1.4, 1.4, distance));
@@ -937,7 +886,7 @@ export function createWorld(canvas) {
       camera.updateMatrixWorld(true);
       const raycaster=new THREE.Raycaster();
       const shown=object=>{for(let o=object;o;o=o.parent)if(!o.visible)return false;return true;};
-      return worldTourScene.landmarks().map(hero=>{
+      return showcaseLandmarks().map(hero=>{
         // Bounds from the projected mesh vertices: box corners overstate the
         // on-screen extent of cones and rings seen at an angle.
         const box=new THREE.Box3().setFromObject(hero),v=new THREE.Vector3();
@@ -967,7 +916,7 @@ export function createWorld(canvas) {
           let node=hit.object;while(node&&node!==hero)node=node.parent;
           if(node)hits++;
         }
-        return {kind:hero.userData.entry.kind,visible:hero.visible,minX,maxX,minY,maxY,
+        return {kind:hero.userData.landmarkKind ?? hero.userData.entry?.kind,visible:hero.visible,minX,maxX,minY,maxY,
           inFront:zs.every(z=>z<1),unobstructed:samples?hits/samples:0,
           distance:camera.position.distanceTo(box.getCenter(new THREE.Vector3()))};
       });

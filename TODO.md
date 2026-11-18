@@ -10,6 +10,25 @@
 - [x] RED 重現最高金幣價在 20 場 Coast 仍買不起、首個競速週獎勵無法兌換。GREEN 通過 55 項定價、結算、賽事與模組大小測試，及商城、14 步帳本、多分頁與儲存降級瀏覽器測試。
 - [x] 記錄瀏覽器提供試玩結果、訪客本機及登入交易失敗不補發的邊界，見 [試玩經濟 E2E 計畫](docs/superpowers/plans/2026-11-13-wave3-economy-e2e-plan.md#離線完賽與正式驗證)。
 - [ ] 按 Go Phase 2–3 接入正式完賽驗證與權威帳本，離線個人成績與試玩資料不作為正式入帳依據。
+# Acquisition reveal
+
+- [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.
+- [x] Add one accessible bilingual reveal for real race, mission and redemption outcomes, and document the consumer API.
+- [ ] Confirm physical phone coverage and exact-HEAD CI.
+
+# Measured routes and Home artwork
+
+- [x] Audit the eight classic routes from Canyon Skyway through Cosmic Orbit. Card and Home heading art still use each track's canonical 1136 × 410 JPEG. The Home mini-map uses the measured driving centreline.
+- [x] Move Sky Spiral's live showcase to 465 m before the rebuilt helix and take the shot from the other shoulder. Fit the complete signature landmark and the Roadster together in portrait using projected mesh vertices.
+- [x] Stage demonstration rivals closer on the rebuilt Canyon and Aurora curves, and toward the visible shoulder on Sky Spiral. The home-preview fixture checks at least three actors in the portrait frame.
+- [x] The previous Sky Spiral preview failed with its helix 1,510 m away. The fixture now exercises six landmarks, and the focused geometry regression checks the Roadster and landmark in both grounded and hovering poses.
+- [ ] Confirm the exact-commit GitHub quality gate and complete the desktop/phone WebGL matrix.
+
+# Taipei Presidential Office sightline
+
+- [x] On the measured Taipei route, face the entrance, central tower and window rows toward the incoming lanes in point-to-point and endless races.
+- [x] The regression in `node --test tests/world-tour-scene.test.js` reproduced the rear/side approach at 950 m (facing dot product −0.36). The corrected scene passes at four approach distances across three lanes in both route modes. The desktop WebGL capture at 1.24 km shows the facade, and the office stays outside the road shoulder.
+- [ ] Check the exact-commit GitHub quality gate and device behavior.
 
 # Wave 3 裝備試玩定價與價格圖示（2026-11-19）
 
@@ -67,6 +86,13 @@
 - [x] Reproduced the short-landscape Resources list under the pinned Progress button. The expanded list stays inside the lobby's scrolling flow.
 - [x] Preserve the iOS portrait footer inset when Home overrides the base layout and restore an undismissed graphics notice after closing Settings on Home.
 - [ ] Finish the remaining browser failures on the latest develop SHA, confirm the full quality gate and verify the layout on a physical phone.
+
+# Mobile steering and braking
+
+- [x] Replace the slide pad's fixed downward threshold with directional activation, saved pull presets and stable release during drift. Steering still responds at full lock.
+- [x] Let a captured steering thumb change arrows without lifting and return to neutral between the targets. Place BRAKE opposite the arrows and allow independent positioning.
+- [x] Unit RED reproduced the original brake and steering issues; the focused tests pass with the shared input fix.
+- [ ] Verify physical phone ergonomics and the exact-head GitHub quality gate.
 
 # Mobile results navigation and cloud save
 

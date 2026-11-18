@@ -216,7 +216,7 @@ test.describe('slide-pad feedback', () => {
     const pad = await page.locator('.touch-pad').boundingBox();
     const point = { id: 1, x: pad.x + 45, y: pad.y + 55 };
     await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
-    await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x + 65, y: point.y + 45 }] });
+    await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x + 12, y: point.y + 60 }] });
     await expect(page.locator('#touch-controls')).toHaveAttribute('data-pad-brake', 'true');
     await expect(ring).toHaveCSS('opacity', '0.35');
     await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
