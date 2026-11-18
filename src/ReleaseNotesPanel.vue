@@ -108,7 +108,7 @@ function zoomHero() {
 /* A highlight's poster is a play action, not a zoom. */
 .release-play { position: relative; display: block; width: 100%; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; }
 .release-play :deep(.release-play-badge) { --badge: 36px; }
-.release-preview { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 10px; padding: 4px 12px 4px 4px; border: 1px solid #5c7488; border-radius: 8px; background: #1b3044; color: #eefbff; font: inherit; cursor: pointer; }
+.release-preview { display: flex; justify-self: start; align-items: center; gap: 10px; min-height: 44px; padding: 4px 12px 4px 4px; border: 1px solid #5c7488; border-radius: 8px; background: #1b3044; color: #eefbff; font: inherit; cursor: pointer; }
 .release-preview img { width: 72px; height: 44px; object-fit: cover; border-radius: 4px; }
 .release-preview:focus-visible, .release-zoom:focus-visible, .release-zoom-corner:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .release-zoom[data-focus-returned], .release-zoom-corner[data-focus-returned] { outline: none; } /* set by ReleaseMediaViewer until blur */
