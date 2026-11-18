@@ -481,7 +481,7 @@ function sectionOf(trackId, type, index = 0) {
 
 test('the track table holds all ten tracks and coast matches the original race', () => {
   assert.deepEqual(Object.keys(RACE_TRACKS), TRACK_IDS);
-  assert.deepEqual(TRACK_IDS.map(id => RACE_TRACKS[id].length), [5000, 10000, 6000, 5500, 5600, 6200, 6800, 7600, 5800, 8000]);
+  assert.deepEqual(TRACK_IDS.map(id => RACE_TRACKS[id].length), [5000, 10000, 10000, 5500, 5600, 6200, 6800, 7600, 5800, 8000]);
   assert.equal(RACE_LENGTH, RACE_TRACKS.coast.length);
   assert.deepEqual(createRace(), createRace('coast'));
   const coast = createRace();
@@ -503,7 +503,7 @@ test('special sections stay on the road, never overlap and cover each track sign
   }
   assert.deepEqual(RACE_TRACKS.coast.sections.map(section => section.type), ['shortcut']); // coast's ground race is unchanged
   assert.ok(sectionOf('neon', 'tunnel'));
-  assert.ok([2, 3].includes(RACE_TRACKS.canyon.sections.filter(section => section.type === 'gap').length));
+  assert.equal(RACE_TRACKS.canyon.sections.filter(section => section.type === 'gap').length, 1);
   assert.ok(sectionOf('canyon', 'crosswind') && sectionOf('aurora', 'ice') && sectionOf('aurora', 'uphill'));
 });
 

@@ -37,8 +37,9 @@ export function trackPoint(trackId: string, distance: number, extended = false):
   if (trackId === 'spiral') return skyPoint(s, extended);
   const profile = profiles[trackId];
   if (profile) return { ...profile(s), z: -s };
-  const [x, z] = (classicRoadRoute(trackId) ?? legacyClassicRoad).point(s);
-  return { x, y: 0, z };
+  const road = classicRoadRoute(trackId) ?? legacyClassicRoad;
+  const [x, z] = road.point(s);
+  return { x, y: road.elevation?.(s) ?? 0, z };
 }
 
 /** `span`: the car flies the Frostbite Rift span (`car.span`); other tracks ignore it. */
@@ -53,7 +54,9 @@ export function trackFrame(trackId: string, distance: number, extended = false, 
   const road = classicRoadRoute(trackId);
   if (road) {
     const heading = road.heading(s), sin = Math.sin(heading), cos = Math.cos(heading);
-    return { point: trackPoint(trackId, s, extended), forward: [sin, 0, -cos] as Vec3, right: [cos, 0, sin] as Vec3, up: [0, 1, 0] as Vec3 };
+    const pitch = road.pitch?.(s) ?? 0, rise = Math.sin(pitch), level = Math.cos(pitch);
+    return { point: trackPoint(trackId, s, extended), forward: [sin * level, rise, -cos * level] as Vec3,
+      right: [cos, 0, sin] as Vec3, up: [-sin * rise, level, cos * rise] as Vec3 };
   }
   const a = trackPoint(trackId, s - 0.5, extended);
   const b = trackPoint(trackId, s + 0.5, extended);

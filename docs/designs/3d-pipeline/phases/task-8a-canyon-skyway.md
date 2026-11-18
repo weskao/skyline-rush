@@ -46,7 +46,7 @@ No ripped meshes. Every source keeps its licence and sha256 in a `sources.json` 
 
 ## Budgets
 
-Road type: classic authored route (not in `TOUR_IDS`, not `framedRoad`), 6,000 m. Shared-plan budgets apply as for
+Road type: classic authored route (not in `TOUR_IDS`, not `framedRoad`), 10,000 m. Shared-plan budgets apply as for
 Coast: draw calls home 540 / race 380 on High, no compile after GO, dome and road set per `COAST_SKY_MANIFEST` and
 `MATERIAL_MANIFEST` limits, GLB entries with their own triangle and byte caps.
 
@@ -76,3 +76,12 @@ Low keeps the procedural scene; the course keeps its own in-race song; exact-HEA
 - [ ] Real WebGL captures per section, desktop and phone, portrait and landscape.
 - [ ] Draw calls, triangles, p50/p95 recorded.
 - [ ] Owner sign-off on this device.
+
+## Route implementation
+
+The Three.js road and minimaps use the 10 km design heading and elevation
+control points. Two added knots keep the broken slab approach and landing
+straight at the real gap between 3,672 and 3,732 m. Endless and Elimination
+stream solid road, with continuous headings and slopes at the repeat seams.
+The [record migration](../../../classic-road-minimap.md) versions the changed
+sprint and streaming layouts.

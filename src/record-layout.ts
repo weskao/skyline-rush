@@ -13,14 +13,15 @@ export function layoutVersion(trackId: unknown): number {
 
 /** Daily challenges and custom courses version the road independently of the stock item layout.
  *  Neon is on road 3 since it became a closed lap (2026-11-14); the other authored roads are on 2. */
-export const roadRecordLayout = (trackId: string): number => trackId === 'neon' ? 3 : trackId === 'spiral' || classicRoadRoute(trackId) ? 2 : 1;
+export const roadRecordLayout = (trackId: string): number => trackId === 'neon' || classicRoadRoute(trackId)?.elevation ? 3 : trackId === 'spiral' || classicRoadRoute(trackId) ? 2 : 1;
 
 /** The layout a race runs on; a Cup counts as its newest track. */
 export function raceLayout(trackId: string, config?: unknown): number {
   const rules = config && typeof config === 'object' ? config as { mode?: unknown; cupTracks?: unknown } : {};
   if (rules.mode === 'endless' || rules.mode === 'eventlab') return roadRecordLayout(trackId);
   const cup = Array.isArray(rules.cupTracks) ? rules.cupTracks : [];
-  return Math.max(layoutVersion(trackId), ...cup.map(layoutVersion));
+  // For mixed Cups, an older layout-7 Neon stage would otherwise hide the new Canyon route.
+  return Math.max(cup.length && [trackId, ...cup].includes('canyon') ? 8 : 1, layoutVersion(trackId), ...cup.map(layoutVersion));
 }
 
 // CourseGraph sprints key every record by graph topology and layout, `<track>@t<topology>l<layout>`: a re-authored

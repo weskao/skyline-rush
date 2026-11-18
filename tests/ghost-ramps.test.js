@@ -57,12 +57,12 @@ function arcs(truth) {
   return out.filter(([, end]) => end !== null);
 }
 
-for (const [name, build] of [['Canyon themed ramps', canyon], ['an Event Lab ramp course', eventLab]]) {
+for (const [name, build, expectedJumps] of [['Canyon themed ramp', canyon, 1], ['an Event Lab ramp course', eventLab, 3]]) {
   test(`a Ghost recorded over ${name} replays the airborne arc at 30/60/120 Hz`, () => {
     const { race, ghost, truth } = drive(build());
     assert.ok(validGhost(ghost, race.trackId, race.config), 'the run stays a valid Ghost');
     const jumps = arcs(truth);
-    assert.ok(jumps.length >= 3, `${jumps.length} ramp jumps`);
+    assert.equal(jumps.length, expectedJumps, 'every ramp is replayed');
     for (const hz of [30, 60, 120]) for (const [takeoff, landing] of jumps) {
       for (let t = Math.ceil(takeoff * hz) / hz; t <= landing; t += 1 / hz) {
         const replay = ghostAt(ghost, t), real = truthAt(truth, t), at = `${hz} Hz @${t.toFixed(2)} s`;

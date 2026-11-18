@@ -1,3 +1,5 @@
+import { buildCanyonRoad } from './track-profile-road.ts';
+
 // A sector describes a smooth change of heading from a straight, through an apex, back to a straight.
 // Signed apex headings are degrees from the route's overall bearing. Paired corners can have different lengths.
 type Bend = readonly [entry: number, exit: number, apexDegrees: number];
@@ -8,6 +10,8 @@ export interface ClassicRoad {
   /** World-space x and z, with the lane offset measured perpendicular to the driving direction. */
   point(distance: number, lane?: number): readonly [x: number, z: number];
   heading(distance: number): number;
+  elevation?(distance: number): number;
+  pitch?(distance: number): number;
   /** Metres from a world position to the centre line. An open road measures across x. A lap measures to its nearest
    *  part within `reach` metres (16 unless given) and reads Infinity beyond. */
   offset(x: number, z: number, reach?: number): number;
@@ -154,12 +158,7 @@ const roads: Readonly<Record<string, ClassicRoad>> = {
     [300, 90], [160, -50], [315, 100], [315, -100], [160, 50], [39, 0], [300, -90], // old town: north through linked S-bends, left onto the plaza
     [980, 0], [279, 90], [114, 0], // Violet Plaza, heading west, and the last corner back onto the boulevard
   ]),
-  // Canyon: long bends against the crosswind and a straight approach and landing at each broken span.
-  canyon: buildRoad(6000, [
-    [180, 620, -51], [700, 1375, 37], [1650, 2020, -54],
-    [2035, 2380, 57], [2510, 2890, -56], [3140, 3520, 43],
-    [3560, 4250, -35], [4560, 5100, 62], [5140, 5730, -48],
-  ]),
+  canyon: buildCanyonRoad(),
   // Aurora: wider entries on ice, alternating sweepers and a tighter switchback before the final climb.
   aurora: buildRoad(5500, [
     [185, 565, 37], [600, 865, -45], [920, 1490, 35],

@@ -15,7 +15,7 @@ import { GHOST_RATE } from '../src/ghost.ts';
 // 2026-11-02: more rings on every map, every timed record gets a new key) moved those five to layout 3 and
 // Aurora and the World Tour to layout 2. Scaled layouts (user, 2026-11-02: 4 rings and pickups per car, re-rolled
 // every race) bump every track once more. Every older id stays readable as an old-layout record.
-const NEWEST = ['coast', 'canyon', 'spiral']; // layout 6 (user, 2026-11-13: 40% more rings and pickups on the first five maps)
+const NEWEST = ['coast', 'spiral']; // layout 6 (user, 2026-11-13: 40% more rings and pickups on the first five maps)
 // Neon is layout 7 (owner decision N7, 2026-11-14: the route became a closed clockwise loop); its road layout is 3.
 const TWICE = [CIRCUIT_ID]; // layout 4; Aurora is layout 5
 const ONCE = [ 'taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']; // layout 3
@@ -32,6 +32,7 @@ const ghost = (trackId, time, config) => {
 test('layout versions track the current road and item layouts', () => {
   for (const id of NEWEST) assert.equal(layoutVersion(id), 6, id);
   assert.equal(layoutVersion('neon'), 7);
+  assert.equal(layoutVersion('canyon'), 7);
   assert.equal(recordTrackId('neon'), 'neon@7');
   for (const id of TWICE) assert.equal(layoutVersion(id), 4, id);
   assert.equal(layoutVersion('aurora'), 5);

@@ -1,3 +1,4 @@
+import { CANYON_GAP, CANYON_LENGTH } from './track-profile-road.ts';
 import { SKY_LENGTH } from './sky-track.ts';
 import { CIRCUIT_ID, CIRCUIT_TRACK } from './circuit-track.ts';
 import type { TrackConfig } from './game-types.ts';
@@ -40,12 +41,14 @@ export const RACE_TRACKS: Record<string, TrackConfig> = {
     shapeOdds: [0.04, 0.4],
   },
   canyon: {
-    name: 'Canyon Skyway', length: 6000, trafficDensity: 1, seed: 3003, layoutVersion: 6, itemDensity: OPENING_ITEMS, openingNitroRings: 2, // volume was enough; only the first NITRO came late
+    name: 'Canyon Skyway', length: CANYON_LENGTH, trafficDensity: 1, seed: 3003, layoutVersion: 7,
+    itemDensity: OPENING_ITEMS * CANYON_LENGTH / 6000, openingNitroRings: 2,
+    ringDensity: .86, // keep ring takes and NITRO per minute near the previous Canyon pace
     sections: [
-      { from: 700, to: 1300, type: 'crosswind', dir: 1 }, { from: 1500, to: 1560, type: 'gap' },
-      { from: 2000, to: 2500, type: 'shortcut', x: -7.5, altitude: 6 },
-      { from: 3000, to: 3070, type: 'gap' }, { from: 3300, to: 4100, type: 'crosswind', dir: -1 },
-      { from: 4400, to: 4470, type: 'gap' },
+      { from: 1650, to: 2200, type: 'crosswind', dir: 1 },
+      CANYON_GAP,
+      { from: 5300, to: 5800, type: 'shortcut', x: -7.5, altitude: 6 },
+      { from: 7750, to: 8380, type: 'crosswind', dir: -1 },
     ],
   },
   aurora: {

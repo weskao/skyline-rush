@@ -16,7 +16,7 @@ test('the four classic tracks have distinct left/right corners and usable straig
     const distances = Array.from({ length: RACE_TRACKS[id].length / 20 + 1 }, (_, i) => i * 20);
     const headings = distances.map(d => heading(id, d));
     assert.ok(Math.max(...headings) > .28 && Math.min(...headings) < -.28, id + ' has bends in both directions');
-    assert.ok(headings.slice(0, 8).every(angle => Math.abs(angle) < .025), id + ' opens on a straight');
+    assert.ok(headings.slice(0, 8).every(angle => Math.abs(angle - headings[0]) < .025), id + ' opens on a straight');
     const section = distances.filter(d => d <= 1500).map(d => heading(id, d).toFixed(2));
     turns.set(id, section.join(','));
   }
@@ -25,7 +25,7 @@ test('the four classic tracks have distinct left/right corners and usable straig
 
 test('Canyon bridge gaps have straight approaches and landings', () => {
   for (const { from, to } of RACE_TRACKS.canyon.sections.filter(s => s.type === 'gap')) {
-    for (let d = from - 75; d <= to + 45; d += 5) close(heading('canyon', d), 0, .01);
+    for (let d = from - 75; d <= to + 45; d += 5) close(heading('canyon', d), heading('canyon', from), .01);
   }
 });
 
