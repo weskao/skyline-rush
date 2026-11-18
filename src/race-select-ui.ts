@@ -1,4 +1,4 @@
-import { focusLobbyTrack, renderLobbyTrackArt, setupLobbyPickers } from './race-lobby-ui.ts';
+import { focusLobbyTrack, refreshCopiedRouteMaps, renderLobbyTrackArt, setupLobbyPickers } from './race-lobby-ui.ts';
 import { CIRCUIT_ID } from './circuit-track.ts';
 import { homeTrackStatus, isUpcomingTrack, upcomingTrackInfo, upcomingTrackName, type PreviewTrackId, type UpcomingTrackId } from './upcoming-tracks.ts';
 import { stage2PreviewRequest } from './stage2-tracks.ts';
@@ -356,7 +356,10 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       if (raceRouteMap?.trackId !== trackId || raceRouteMap?.streaming !== hasStreamingRouteMap(trackId, mode)) ensureRouteMaps();
       return raceRouteMap!;
     },
-    relabelRouteMaps(locale: string): void { for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale); },
+    relabelRouteMaps(locale: string): void {
+      for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale);
+      refreshCopiedRouteMaps();
+    },
     restoreLastTrack(): void {
       const choice = restoreHomeTrack(lastHomeTrack(), getRace().trackId, playable, isUpcomingTrack);
       upcomingSelection = choice.upcoming as PreviewTrackId | null;
