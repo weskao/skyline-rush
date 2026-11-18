@@ -49,7 +49,6 @@ import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-
 import { settleRaceAndDemo, captureWave3RaceTelemetry } from './race-results.ts';
 import { resultView, setupResultScreen, setupOverlayActions, animateResultCounts } from './result-screen.ts';
 import { presentRaceAcquisitions } from './acquisition-race-reveal.ts';
-import { playResultFeedbackOnce } from './result-audio.ts';
 import { renderWave3DemoResults } from './wave3-demo-results-integration.ts';
 import { createRaceHud } from './race-hud.ts';
 import { setupItemUI } from './item-ui.ts';
@@ -507,9 +506,8 @@ function updateUI(now, input) {
     if (ui['race-overlay'].hidden) {
       ui['race-overlay'].hidden = false;
       enter($('.overlay-content'), 'translateX(48px)', 'slow');
-      playResultFeedbackOnce(sound.cue, race, lastResult.settled, calmMotion());
       overlayActions.focus();
-      void presentRaceAcquisitions(race, lastResult.settled);
+      void presentRaceAcquisitions(race, lastResult.settled, sound.cue, calmMotion());
     }
     animateResultCounts(resultCounts, presentationState.count);
   }

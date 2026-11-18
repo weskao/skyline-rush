@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
 import { formatDate, getLocale, onLocaleChange } from './i18n.ts';
@@ -15,7 +15,6 @@ import { presentAcquisition } from './acquisition-reveal.ts';
 import { demoAcquisitionId, demoAcquisitionItems, missionTrophy } from './acquisition-demo-items.ts';
 import { sameDemoScope } from './wave3-experience-contract.ts';
 
-const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = defineProps<{ experience?: Wave3ExperiencePort | null }>();
 const locale = ref(getLocale());
 const emit = defineEmits<{ claimable: [count: number] }>();
@@ -86,7 +85,6 @@ async function claim(id: string): Promise<void> {
     presentAcquisition({ id: demoAcquisitionId('mission', scope, result.operationId),
       items: [...(trophy ? [trophy] : []), ...demoAcquisitionItems(result)] });
   }
-  if (result.status === 'completed' && result.deltaDemoPoints > 0) cue('reward-credited');
   feedback.value = result.status === 'completed'
     ? formatDemoReward({ points: result.deltaDemoPoints, coins: result.deltaDemoCoins,
         diamonds: result.deltaDemoDiamonds }, locale.value)

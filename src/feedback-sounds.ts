@@ -1,6 +1,15 @@
+import { ACQUISITION_KIND, type AcquisitionKind } from './acquisition-reveal.ts';
+
 // [start Hz, end Hz, length in seconds, delay, gain]. Stingers share the SFX bus.
 type Note = readonly [number, number, number, number, number];
-export const FEEDBACK_SOUNDS: Readonly<Partial<Record<string, readonly Note[]>>> = {
+export const FEEDBACK_SOUNDS = {
+  'acquisition-hero': [[294, 220, .22, 0, .036], [440, 494, .21, .08, .024],
+    [659, 784, .26, .17, .025], [988, 1175, .32, .28, .022]],
+  'acquisition-cosmetic': [[554, 740, .20, 0, .026], [831, 1109, .24, .09, .024], [1245, 1397, .20, .17, .013]],
+  'acquisition-item': [[275, 150, .14, 0, .031], [587, 699, .17, .07, .023], [1175, 1319, .21, .13, .017]],
+  'acquisition-medal': [[659, 659, .17, 0, .028], [784, 784, .19, .10, .027], [988, 988, .20, .20, .026],
+    [1319, 1319, .36, .29, .024]],
+  'acquisition-select': [[932, 784, .095, 0, .016]],
   'reward-credited': [[880, 990, .17, 0, .033], [1320, 1568, .25, .09, .028]],
   'reward-mission-ready': [[880, 990, .17, 0, .033], [1320, 1568, .19, .09, .028], [1760, 1865, .24, .21, .021]],
   'redeem-unlocked': [[660, 784, .13, 0, .030], [990, 1175, .21, .10, .029]],
@@ -29,6 +38,19 @@ export const FEEDBACK_SOUNDS: Readonly<Partial<Record<string, readonly Note[]>>>
   halfway: [[698, 698, .13, 0, .040], [880, 880, .15, .08, .036], [1175, 1175, .22, .16, .030]],
   'final-lap': [[590, 590, .15, 0, .030], [885, 885, .25, .13, .027]],
   'objective-invalid': [[385, 240, .23, 0, .030]],
-};
+} satisfies Readonly<Record<string, readonly Note[]>>;
 
-export const STINGERS = new Set(['victory', 'achievement-earned', 'tutorial-complete', 'halfway']);
+export const ACQUISITION_SOUNDS = {
+  [ACQUISITION_KIND.CAR]: 'acquisition-hero',
+  [ACQUISITION_KIND.TRACK]: 'acquisition-hero',
+  [ACQUISITION_KIND.PAINT]: 'acquisition-cosmetic',
+  [ACQUISITION_KIND.EQUIPMENT]: 'acquisition-item',
+  [ACQUISITION_KIND.CLOTHING]: 'acquisition-cosmetic',
+  [ACQUISITION_KIND.ITEM]: 'acquisition-item',
+  [ACQUISITION_KIND.MEDAL]: 'acquisition-medal',
+  [ACQUISITION_KIND.CURRENCY]: 'reward-credited',
+} as const satisfies Readonly<Record<AcquisitionKind, keyof typeof FEEDBACK_SOUNDS>>;
+
+export const STINGERS = new Set([
+  'victory', 'achievement-earned', 'tutorial-complete', 'halfway', 'acquisition-hero', 'acquisition-medal',
+]);
