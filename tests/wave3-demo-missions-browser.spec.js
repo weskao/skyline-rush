@@ -13,7 +13,7 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1440
     await expect(board.locator('.garage-period-card')).toHaveCount(8);
     await expect(board.locator('[data-trophy-id]')).toHaveCount(4);
     await expect(board.getByRole('button',{name:/claim demo reward|領取試玩獎勵/i})).toHaveCount(0);
-    await expect(board).toContainText(/local, disposable|僅儲存在本機/i);
+    await expect(board.locator('.garage-mission-notice:not(.garage-period-reset)')).toHaveText('Demo progress and trophies are local, disposable and resettable.');
     const width=await board.evaluate(el=>el.getBoundingClientRect().width);
     expect(width).toBeLessThanOrEqual(viewport.width);
   });
