@@ -1,20 +1,38 @@
 import { COURSE_RUNTIMES } from './course-runtimes.ts';
 import { raceTrack } from './race-tracks.ts';
+import type { GARAGE_SKINS } from './garage-skin-catalog.ts';
 import type { DemoCurrency, DemoRaceMetrics, ExperienceSnapshot } from './wave3-experience-contract.ts';
 
 type DemoOffer = Readonly<{ currency: DemoCurrency; cost: number }>;
-const DEMO_OFFERS: Readonly<Record<string, DemoOffer>> = {
+type DemoSkinId = Exclude<(typeof GARAGE_SKINS)[number], { readonly default: true }>['id'];
+const DEMO_OFFERS = {
   'thruster-ion': { currency: 'points', cost: 25 },
   'thruster-plasma': { currency: 'points', cost: 100 },
-  'nitro-trail-cyan': { currency: 'coins', cost: 150 },
-  'airflow-slipstream': { currency: 'coins', cost: 500 },
-  'nitro-trail-gold': { currency: 'coins', cost: 1200 },
   'thruster-void': { currency: 'diamonds', cost: 15 },
+  'airflow-slipstream': { currency: 'coins', cost: 500 },
+  'airflow-vortex': { currency: 'coins', cost: 850 },
   'airflow-prism': { currency: 'diamonds', cost: 25 },
-};
+  'nitro-trail-cyan': { currency: 'coins', cost: 150 },
+  'nitro-trail-red': { currency: 'coins', cost: 750 },
+  'nitro-trail-gold': { currency: 'coins', cost: 1200 },
+  'nitro-trail-purple': { currency: 'diamonds', cost: 20 },
+  'launch-flare-blue': { currency: 'points', cost: 45 },
+  'launch-flare-pulse': { currency: 'points', cost: 80 },
+  'launch-flare-ring': { currency: 'coins', cost: 250 },
+  'launch-flare-cyan': { currency: 'coins', cost: 450 },
+  'launch-flare-red': { currency: 'coins', cost: 650 },
+  'launch-flare-gold': { currency: 'coins', cost: 1000 },
+  'launch-flare-magenta': { currency: 'diamonds', cost: 15 },
+  'launch-flare-white': { currency: 'diamonds', cost: 25 },
+  'drift-trail-flame': { currency: 'coins', cost: 300 },
+  'drift-trail-ice': { currency: 'coins', cost: 550 },
+  'drift-trail-arc': { currency: 'coins', cost: 850 },
+  'drift-trail-rainbow': { currency: 'diamonds', cost: 15 },
+  'drift-trail-stardust': { currency: 'diamonds', cost: 20 },
+} satisfies Record<DemoSkinId, DemoOffer>;
 
 export const demoOffer = (itemId: string): DemoOffer | undefined =>
-  Object.hasOwn(DEMO_OFFERS, itemId) ? DEMO_OFFERS[itemId] : undefined;
+  Object.hasOwn(DEMO_OFFERS, itemId) ? DEMO_OFFERS[itemId as DemoSkinId] : undefined;
 export const demoBalance = (snapshot: ExperienceSnapshot, currency: DemoCurrency): number =>
   currency === 'points' ? snapshot.demoPoints : snapshot.demoEconomy?.[currency] ?? 0;
 export const insufficientDemo = (currency: DemoCurrency): `insufficient-demo-${DemoCurrency}` =>

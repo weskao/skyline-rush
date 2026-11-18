@@ -7,7 +7,7 @@ import { WAVE3_PREVIEW_CATALOG, filterWave3PreviewItems } from './garage-wave3-p
 import type { Wave3PreviewItem } from './garage-wave3-preview-catalog.ts';
 import { MISSION_DEFINITIONS, missionPeriodBounds, missionPeriodId, missionStatus, trophyTier } from './wave3-demo-missions.ts';
 import { demoCurrencyLabel, demoPersistenceLabel, formatDemoReward } from './wave3-currency-view.ts';
-import { wave3DemoArtUrl } from './wave3-demo-art.ts';
+import { wave3CurrencyArtUrl } from './wave3-demo-art.ts';
 import { demoMissionBonus } from './wave3-demo-settlement.ts';
 import type { DemoCurrency, Wave3ExperiencePort, ExperienceSnapshot, MissionProgress } from './wave3-experience-contract.ts';
 
@@ -84,12 +84,11 @@ async function claim(id: string): Promise<void> {
       ? label('This challenge has expired. Check the current challenges.', '此挑戰已過期，請查看目前的挑戰。')
       : label('Demo claim unavailable or already processed.', '試玩領取尚未開放或已處理。');
 }
-const REWARD_ART = { points: 'demo-points', coins: 'wallet-coin', diamonds: 'wallet-diamond' } as const;
 /** One chip per currency a claim pays: amount, icon and the currency name for assistive tech. */
 function missionReward(id: string) {
   const delta: Record<DemoCurrency, number> = { points: progressOf(id)?.rewardDemoPoints ?? 0, ...demoMissionBonus(id) };
-  return (Object.keys(REWARD_ART) as DemoCurrency[]).filter(currency => delta[currency] > 0).map(currency => ({
-    currency, amount: delta[currency], art: wave3DemoArtUrl(REWARD_ART[currency]),
+  return (Object.keys(delta) as DemoCurrency[]).filter(currency => delta[currency] > 0).map(currency => ({
+    currency, amount: delta[currency], art: wave3CurrencyArtUrl(currency),
     name: demoCurrencyLabel(currency, locale.value),
   }));
 }

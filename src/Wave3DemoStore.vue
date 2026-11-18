@@ -2,6 +2,7 @@
 import { inject, computed, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
+import Wave3CurrencyAmount from './Wave3CurrencyAmount.vue';
 import { SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
 import type { SkinId } from './garage-skin-catalog.ts';
 import { DEMO_QUOTE_LIFETIME_MS } from './wave3-experience-contract.ts';
@@ -10,7 +11,7 @@ import {
   WAVE3_DEMO_ITEMS, WAVE3_DEMO_STORE_ART, demoItemStatus, demoItemStatusText,
   demoRedemptionState,
 } from './wave3-demo-catalog.ts';
-import type { DemoTrialAccess, DemoRedeemState, Wave3DemoItem } from './wave3-demo-catalog.ts';
+import type { DemoTrialAccess, DemoRedeemState } from './wave3-demo-catalog.ts';
 import { demoBalance } from './wave3-demo-settlement.ts';
 import { demoCurrencyLabel, demoPersistenceLabel } from './wave3-currency-view.ts';
 
@@ -27,11 +28,8 @@ const emit = defineEmits<{
 }>();
 const tr = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
 const currencyLabel = (currency: DemoCurrency) => demoCurrencyLabel(currency, props.locale);
-const priceText = (item: Wave3DemoItem) => item.currency && item.demoPrice !== null
-  ? `${item.demoPrice.toLocaleString(props.locale === 'zh-TW' ? 'zh-TW' : 'en-US')} ${currencyLabel(item.currency)}`
-  : tr('Preview only', '僅供預覽');
 const snapshot = ref<ExperienceSnapshot>(props.port.getSnapshot());
-const categories = ['all', ...SKIN_CATEGORIES.filter(category => category !== 'drift-trail')] as const;
+const categories = ['all', ...SKIN_CATEGORIES] as const;
 type StoreCategory = (typeof categories)[number];
 const filter = ref<StoreCategory>('all');
 const selectedId = ref<SkinId>(WAVE3_DEMO_ITEMS[0]!.id);
@@ -74,7 +72,7 @@ const storeArt = (id: string) =>
 const categoryLabel = (value: StoreCategory): string => ({
   all: tr('All', '全部'), thruster: tr('Thrusters', '推進器'),
   airflow: tr('Airflow', '氣流'), 'nitro-trail': tr('NITRO trails', '氮氣尾跡'),
-  'launch-flare': tr('Launch flares', '起跑閃焰'),
+  'launch-flare': tr('Launch flares', '起跑閃焰'), 'drift-trail': tr('Drift trails', '甩尾痕跡'),
 })[value];
 
 function selectCategory(category: StoreCategory): void {
@@ -173,11 +171,14 @@ async function confirmRedemption(): Promise<void> {
     <section v-if="selected" class="demo-detail" :aria-label="tr('Cosmetic preview', '外觀預覽')">
       <div>
         <h4>{{ selected.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</h4>
-        <p>{{ demoItemStatusText(statusFor(selected.id), locale) }} ·
-          {{ priceText(selected) }}
+        <p>
+          {{ demoItemStatusText(statusFor(selected.id), locale) }}
+          <Wave3CurrencyAmount v-if="selected.currency && selected.demoPrice !== null && !snapshot.demoInventory.includes(selected.id)"
+            class="demo-price" :currency="selected.currency" :amount="selected.demoPrice" :locale="locale" />
         </p>
         <p v-if="selected.currency && selected.currency !== 'points'" class="demo-selected-balance" role="status">
-          {{ tr('Available', '可用') }} {{ selectedBalance }} {{ currencyLabel(selected.currency) }}
+          {{ tr('Available', '可用') }}
+          <Wave3CurrencyAmount :currency="selected.currency" :amount="selectedBalance ?? 0" :locale="locale" />
         </p>
       </div>
       <div class="demo-actions">
@@ -190,10 +191,15 @@ async function confirmRedemption(): Promise<void> {
 
     <section v-if="confirmationId && quote" class="demo-confirm" role="group"
       :aria-label="tr('Confirm demo redemption', '確認試玩兌換')">
-      <p v-if="selected">{{ selected.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }} · {{ priceText(selected) }}</p>
-      <p>{{ tr('Available', '可用') }} {{ demoBalance(snapshot, quote.currency) }} ·
-        {{ tr('Remaining', '兌換後') }} {{ Math.max(0, demoBalance(snapshot, quote.currency) - quote.cost) }}
-        {{ currencyLabel(quote.currency) }}</p>
+      <p v-if="selected">
+        {{ selected.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }} ·
+        <Wave3CurrencyAmount class="demo-price" :currency="quote.currency" :amount="quote.cost" :locale="locale" />
+      </p>
+      <p>{{ tr('Available', '可用') }}
+        <Wave3CurrencyAmount :currency="quote.currency" :amount="demoBalance(snapshot, quote.currency)" :locale="locale" />
+        · {{ tr('Remaining', '兌換後') }}
+        <Wave3CurrencyAmount :currency="quote.currency" :amount="Math.max(0, demoBalance(snapshot, quote.currency) - quote.cost)" :locale="locale" />
+      </p>
       <div class="demo-actions">
         <button ref="confirmationButton" type="button" @click="confirmRedemption">{{ tr('Confirm demo redeem', '確認試玩兌換') }}</button>
         <button type="button" @click="cancelRedemption">{{ tr('Cancel', '取消') }}</button>
@@ -214,8 +220,9 @@ async function confirmRedemption(): Promise<void> {
         </span>
         <strong>{{ item.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
         <span class="demo-state">{{ demoItemStatusText(statusFor(item.id), locale) }}</span>
-        <small v-if="item.demoPrice !== null">{{ priceText(item) }}</small>
-        <small v-else>{{ tr('No demo redemption', '不開放試玩兌換') }}</small>
+        <small v-if="item.currency && item.demoPrice !== null && !snapshot.demoInventory.includes(item.id)">
+          <Wave3CurrencyAmount class="demo-price" :currency="item.currency" :amount="item.demoPrice" :locale="locale" />
+        </small>
       </button>
     </div>
 
@@ -261,6 +268,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .demo-secondary-wallet { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; }
 .demo-detail, .demo-confirm { margin-top: 10px; padding: 12px; border: 1px solid #356c8f;
   border-radius: 12px; background: #0e2942; }
+.demo-detail .demo-price { margin-inline-start: 6px; }
 .demo-detail h4 { margin: 0 0 6px; }
 .demo-detail p, .demo-confirm p { margin: 0 0 10px; font-size: 12px; line-height: 1.5; }
 .demo-message { min-height: 1.5em; margin: 10px 0; color: #ffe3ac; font-size: 12px; }
