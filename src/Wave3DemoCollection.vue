@@ -102,7 +102,7 @@ function closePreview(): void {
     :aria-label="tr('Demo Collection', '試玩收藏')" @keydown.esc.stop="closePreview">
     <header class="collection-head">
       <div>
-        <span class="collection-kicker">{{ tr('LOCAL COSMETIC PREVIEWS', '本機外觀試玩') }}</span>
+        <span class="collection-kicker">{{ tr('TEMPORARY COSMETIC PREVIEWS', '試玩外觀') }}</span>
         <h3>{{ tr('Demo Collection', '試玩收藏') }}</h3>
         <p>{{ tr('Demo unlocks are disposable and never permanent ownership.',
           '試玩取得的外觀可重設，並非永久擁有權。') }}</p>

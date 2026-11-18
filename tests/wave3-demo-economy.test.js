@@ -458,3 +458,59 @@ test('rolling the device clock backwards cannot erase the active tab wallet', as
   assert.deepEqual(balances(result.snapshot), [15, 70, 0]);
   assert.equal(result.snapshot.persistence, 'memory-only');
 });
+
+test('signed-in Firebase trial operations publish balances only after the checkpoint commits', async () => {
+  const { createWave3BrowserExperience } = await import('../src/wave3-browser-experience.ts');
+  let document = null;
+  let failWrite = false;
+  const trial = createWave3BrowserExperience({
+    now: () => now,
+    locks: null,
+    firestore: async (uid, update) => {
+      assert.equal(uid, 'firebase-driver');
+      const { result, write } = update(document);
+      if (write !== undefined) {
+        if (failWrite) throw new Error('Firestore disconnected');
+        document = write;
+      }
+      return result;
+    },
+  });
+  trial.setAccount('firebase-driver');
+  const completion = {
+    schemaVersion: 1, completionId: 'firebase-race', trackId: 'coast', accountId: 'firebase-driver',
+    mode: 'classic', occurredAt: now, eligible: true,
+  };
+  failWrite = true;
+  assert.equal((await trial.settleCompletion(completion)).status, 'unavailable');
+  assert.equal(trial.getSnapshot().demoPoints, 20);
+  assert.equal(document, null);
+  failWrite = false;
+  const receipt = await trial.settleCompletion(completion);
+  assert.equal(receipt.status, 'completed');
+  assert.equal(projectWave3Currency(receipt.snapshot, 'zh-TW')[0].note, '雲端試玩 · 可重設');
+  assert.match(projectWave3DemoResults(receipt, { locale: 'zh-TW' }).disclaimer, /雲端試玩/);
+  assert.equal(JSON.parse(document).snapshot.demoPoints, 40);
+  assert.equal(Object.hasOwn(JSON.parse(document).snapshot, 'persistence'), false);
+  assert.equal((await trial.settleCompletion(completion)).status, 'duplicate');
+});
+
+test('signed-in sessions with recording disabled never use the guest or an old UID device record', async () => {
+  const { createWave3BrowserExperience } = await import('../src/wave3-browser-experience.ts');
+  const storage = memoryStorage();
+  const cache = createWave3DemoStorage({ storage, now: () => now });
+  const previous = demo();
+  previous.setAccount('driver');
+  previous.settleCompletion(race('legacy'));
+  assert.equal(cache.saveCheckpoint(previous.getCheckpoint()), true);
+  const driverKey = 'skyline-rush-wave3-demo:v1:driver';
+  const previousDisk = storage.getItem(driverKey);
+  const trial = createWave3BrowserExperience({
+    now: () => now, cache, locks: { request: async (_name, action) => action() },
+  });
+  assert.equal((await trial.settleCompletion(race('guest'))).snapshot.demoPoints, 40);
+  assert.equal(trial.setAccount('driver').demoPoints, 20);
+  assert.equal((await trial.settleCompletion(race('signed-in'))).snapshot.demoPoints, 40);
+  assert.equal(storage.getItem(driverKey), previousDisk);
+  assert.equal(trial.setAccount(null).demoPoints, 40);
+});

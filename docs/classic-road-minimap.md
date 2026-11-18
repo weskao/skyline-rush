@@ -12,9 +12,9 @@ shortcuts and both Coast scenery tiers. The home and finite-race maps use
 rolling window of the same route. Keep the road ribbon, props and map
 streaming bounded and reuse the SVG elements.
 
-The finite records use layout 6 (Coast and Canyon), 7 (Neon) or 5 (Aurora).
-Endless and Event Lab use road layout 2 for Coast, Canyon and Aurora and road
-layout 3 for Neon (`roadRecordLayout` in `src/record-layout.ts`). Historical
+The finite records use layout 6 (Coast), 7 (Neon and Canyon) or 5 (Aurora).
+Endless and Event Lab use road layout 2 for Coast and Aurora and road
+layout 3 for Neon and Canyon (`roadRecordLayout` in `src/record-layout.ts`). Historical
 bests, history and Ghost keys stay readable, and only records for the active
 layout are compared. Update the Firestore best-id allowlist with any new finite
 layout keys.
@@ -29,6 +29,13 @@ this spot from the road" (skyline plots, the rain splash guard) uses
 `road.heading`. Tests: `tests/neon-loop.test.js`, `tests/neon-parity.test.js`.
 Changing the legs is a layout change: bump `layoutVersion`, and bump Neon's road
 layout too if Endless distances stop being comparable.
+
+Canyon Skyway starts Task 8 with the 10 km centreline from the track profile.
+The playable bridge has a straight deck approach and a single gap; the streaming
+modes keep a solid deck and continue along reflected traversals. Daily and
+Endless use road layout 3. Mixed Cups with Canyon use layout 8 or higher so the
+old layout-7 Neon stage cannot mask the redesigned stage. Prior bests and ghosts
+stay under their original keys.
 
 Sky Spiral uses `skyPoint`/`skyFrame` for the helix, sweepers and jump approaches.
 The 2D map uses the same lateral coordinates and highlights the elevated exit.

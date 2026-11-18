@@ -240,14 +240,14 @@ test('a clean lap of the bot takes every ground line whole; the bridge line need
   }
 });
 
-test('the highlight lines are Neon only: every other track keeps its ring layout', () => {
+test('the highlight lines are Neon only: pin the independent ring layouts of the other tracks', () => {
   const sha = v => createHash('sha256').update(JSON.stringify(v)).digest('hex').slice(0, 16);
   const rings = Object.fromEntries(Object.keys(RACE_TRACKS).filter(id => id !== 'neon').map(id => {
     const race = createRace(id);
     return [id, [race.rings.length, sha(race.rings.map(r => [r.distance, r.x, r.altitude, r.radius, r.type]))]];
   }));
   assert.deepEqual(rings, {
-    coast: [121, '1f623acf6557f0a6'], canyon: [77, '8eadcc0388f59da2'], aurora: [64, '25a422ed04e374ce'], spiral: [92, '6ed9d0b0efee3185'],
-    taipei: [70, '80364872412e3905'], tokyo: [49, '88b5bafb2ffbfc8c'], alpine: [43, '68f4d3ead42d4638'], coastal: [55, 'dc06fefb829a982a'], cosmic: [66, '16e3ca5db9d78a9b'],
+    coast: [121, '1f623acf6557f0a6'], canyon: [139, '07cb51c82f0b274a'], aurora: [120, '6df3e001eb49c8f5'], spiral: [147, '3138d7e9c493ea38'],
+    taipei: [92, '7f42c4f5989d9487'], tokyo: [80, '08f42dd22c43924a'], alpine: [76, '0db439a247a2cfe3'], coastal: [107, '762fce018fe5fd9e'], cosmic: [85, '0bd0c08e5745f9a6'],
   });
 });

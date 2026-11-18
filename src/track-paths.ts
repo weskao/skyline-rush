@@ -1,4 +1,5 @@
 import { classicRoadRoute, legacyClassicRoad } from './classic-road-routes.ts';
+import { profileRoad } from './track-profile-road.ts';
 import { raceTrack } from './race-tracks.ts';
 import { CIRCUIT_ID, circuitFrame } from './circuit-track.ts';
 import { skyFrame, skyPoint, SKY_SPIRAL, type Vec3, type SkyPoint } from './sky-track.ts';
@@ -13,13 +14,6 @@ interface OverviewPoint { distance: number; x: number; y: number }
 
 // The same distance-to-road mapping drives the race scene, previews and minimaps.
 export { classicRoadCenter } from './classic-road-routes.ts';
-const profiles: Record<string, (s: number) => Pick<SkyPoint, 'x' | 'y'>> = {
- taipei: s => ({ x: 205 * Math.sin(s/670) + 60 * Math.sin(s/185), y: 0 }),
- tokyo: s => ({ x: 275 * Math.sin(s/455) + 90 * Math.cos(s/205), y: 0 }),
- alpine: s => ({ x: 380 * Math.sin(s/310) + 150 * Math.sin(s/790), y: 34 * Math.sin(s/1300) + 65*s/7600 }),
- coastal: s => ({ x: 235 * Math.sin(s/890) + 65 * Math.sin(s/300), y: 12 * Math.sin(s/650) }),
- cosmic: s => ({ x: 405 * Math.sin(s/900) + 220 * Math.sin(s/460), y: 65 + 24 * Math.sin(s/1050) }),
-};
 const clamp = (value: number, from: number, to: number): number => Math.min(to, Math.max(from, value));
 const unit = ([x, y, z]: Vec3): Vec3 => {
   const length = Math.hypot(x, y, z) || 1;
@@ -35,10 +29,9 @@ export function trackPoint(trackId: string, distance: number, extended = false):
   if (Object.hasOwn(MEASURED_FRAMES, trackId)) return MEASURED_FRAMES[trackId](distance).point;
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
   if (trackId === 'spiral') return skyPoint(s, extended);
-  const profile = profiles[trackId];
-  if (profile) return { ...profile(s), z: -s };
-  const [x, z] = (classicRoadRoute(trackId) ?? legacyClassicRoad).point(s);
-  return { x, y: 0, z };
+  const road = classicRoadRoute(trackId) ?? profileRoad(trackId) ?? legacyClassicRoad;
+  const [x, z] = road.point(s);
+  return { x, y: road.elevation?.(s) ?? 0, z };
 }
 
 /** `span`: the car flies the Frostbite Rift span (`car.span`); other tracks ignore it. */
@@ -50,10 +43,13 @@ export function trackFrame(trackId: string, distance: number, extended = false, 
   if (Object.hasOwn(MEASURED_FRAMES, trackId)) return MEASURED_FRAMES[trackId](distance);
   const s = clamp(Number.isFinite(distance) ? distance : 0, 0, extended ? Number.MAX_SAFE_INTEGER : track.length);
   if (trackId === 'spiral') return skyFrame(s, extended);
-  const road = classicRoadRoute(trackId);
+  const road = classicRoadRoute(trackId) ?? profileRoad(trackId);
   if (road) {
     const heading = road.heading(s), sin = Math.sin(heading), cos = Math.cos(heading);
-    return { point: trackPoint(trackId, s, extended), forward: [sin, 0, -cos] as Vec3, right: [cos, 0, sin] as Vec3, up: [0, 1, 0] as Vec3 };
+    const pitch = road.pitch?.(s) ?? 0, rise = Math.sin(pitch), level = Math.cos(pitch);
+    const [x, z] = road.point(s);
+    return { point: { x, y: road.elevation?.(s) ?? 0, z }, forward: [sin * level, rise, -cos * level] as Vec3,
+      right: [cos, 0, sin] as Vec3, up: [-sin * rise, level, cos * rise] as Vec3 };
   }
   const a = trackPoint(trackId, s - 0.5, extended);
   const b = trackPoint(trackId, s + 0.5, extended);
@@ -67,7 +63,7 @@ export function trackFrame(trackId: string, distance: number, extended = false, 
 export function trackLocalPosition(trackId: string, distance: number, lateral = 0, altitude = 0, origin = 0, extended = false): Vec3 {
   const span = trackId === FROSTBITE_ID && frostbiteObjectSpan(distance, lateral, altitude);
   const frame = span ? frostbiteFrame(distance, true) : trackFrame(trackId, distance, extended);
-  const point = span ? frame.point : trackPoint(trackId, distance, extended);
+  const { point } = frame;
   const home = trackPoint(trackId, origin, extended);
   return [
     point.x - home.x + frame.right[0] * lateral + frame.up[0] * altitude,
@@ -98,26 +94,14 @@ export function trackOverview(trackId: string, count = 128): OverviewPoint[] {
     return {distance,x:world.x,y:-world.z};
   });
   if(classicRoadRoute(trackId))return mapFit(points,'flat');
-  if(trackId==='spiral'){
-    const { start, end, radius } = SKY_SPIRAL, after = track.length - end;
-    return points.map(p=>{
-      if(p.distance<start)return {
-        distance:p.distance,x:.20+p.x/(2*radius)*.56,y:.07+(p.distance/start)*.36,
-      };
-      if(p.distance<=end){
-        // Project the canonical helix to a legible 360-degree loop.
-        // The radius and orientation come from skyPoint; its height is not
-        // another "secret path" and is intentionally excluded.
-        return {
-          distance:p.distance,
-          x:.20+(p.x/(2*radius))*.56,
-          y:.43+(p.y-start)/radius*.145,
-        };
-      }
-      return {
-        distance:p.distance,x:.20+p.x/(2*radius)*.56,y:.43+(p.distance-end)/after*.49,
-      };
-    });
+  if (trackId === 'spiral') {
+    // Give the tower's real plan-view loop room on the map without redrawing the course.
+    const center = -skyPoint(SKY_SPIRAL.start).z;
+    const low = center - SKY_SPIRAL.radius, high = center + SKY_SPIRAL.radius;
+    const start = Math.min(...points.map(point => point.y)), end = Math.max(...points.map(point => point.y));
+    const project = (y: number) => y < low ? .08 + .21 * (y - start) / (low - start)
+      : y > high ? .60 + .32 * (y - high) / (end - high) : .29 + .31 * (y - low) / (high - low);
+    return mapFit(points, 'world-tour').map((point, i) => ({ ...point, y: project(points[i].y) }));
   }
   // World Tour paths keep a world-geometry projection with nonuniform
   // schematic fit, so all ten courses are readable in the same small HUD.

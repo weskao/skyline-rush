@@ -71,6 +71,39 @@ const noInlineHighlightVideo = page => expect(page.locator('#release-items video
 const paused = video => video.evaluate(element => element.paused);
 const time = video => video.evaluate(element => element.currentTime);
 
+for (const { name, width, height, touch, compact } of [
+  { name: 'desktop', width: 1440, height: 900 },
+  { name: 'tablet', width: 768, height: 1024, touch: true },
+  { name: 'small phone portrait', width: 360, height: 780, touch: true },
+  { name: 'tall phone landscape', width: 932, height: 430, touch: true },
+  { name: 'short phone landscape', width: 844, height: 390, touch: true, compact: true },
+]) {
+  test.describe(`hero spacing on ${name}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: !!touch, isMobile: !!touch, reducedMotion: 'reduce' });
+
+    test('leaves equal vertical space between the release date, hero media and first card', async ({ page, gameplayURL }) => {
+      const errors = await openNotes(page, gameplayURL);
+      const panel = page.locator('#release-panel');
+      const hero = panel.locator(compact ? '#release-preview' : '.release-hero-frame');
+      const firstCard = panel.locator('.release-entry').first();
+      await expect(hero).toBeVisible();
+      await expect(firstCard).toBeVisible();
+
+      const { above, below } = await hero.evaluate((element) => {
+        const media = element.getBoundingClientRect();
+        const meta = element.parentElement.querySelector('.release-meta').getBoundingClientRect();
+        const card = element.parentElement.querySelector('.release-entry').getBoundingClientRect();
+        return { above: media.top - meta.bottom, below: card.top - media.bottom };
+      });
+      const minGap = compact ? 8 : 10;
+      expect(above, 'gap below the version and date').toBeGreaterThanOrEqual(minGap);
+      expect(below, 'gap above the first highlight card').toBeGreaterThanOrEqual(minGap);
+      expect(above).toBeCloseTo(below, 1);
+      expect(errors).toEqual([]);
+    });
+  });
+}
+
 test.describe('desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test('the release clip plays inline, muted and looping, as soon as the notes open, in the reader\'s language', async ({ page, gameplayURL }) => {

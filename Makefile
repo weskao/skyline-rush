@@ -159,7 +159,11 @@ deploy-netlify: node_modules ## `make deploy-netlify`: production build of this 
 	if [ -f "$(TG_SEND)" ]; then TG_MSG_TYPE=deploy-done bash "$(TG_SEND)" send "$$msg"; else echo "TG: send skipped — $(TG_SEND) not found"; fi
 
 # Installs dependencies on first run and whenever package-lock.json changes; also enables the repo's git hooks.
+# A worktree that links node_modules to another checkout keeps the link while both lockfiles match:
+# a checkout only bumps the lockfile's mtime, and npm install would replace the link with a full copy.
 node_modules: package-lock.json
-	$(NPM) install
+	@if [ -L $@ ] && cmp -s package-lock.json "$$(readlink $@)/../package-lock.json"; then \
+	  echo "node_modules: shared via $$(readlink $@), lockfile unchanged; skipping npm install"; \
+	else $(NPM) install; fi
 	@git config core.hooksPath .githooks
 	@touch $@

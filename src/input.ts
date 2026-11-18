@@ -1,4 +1,4 @@
-import { createSlidePad } from './slide-pad.ts';
+import { createSlidePad, SLIDE_BRAKE_DISTANCES } from './slide-pad.ts';
 import { installGameTouchGuard } from './ios-touch-guard.ts';
 import type { DriveAction, KeyMap } from './key-map.ts';
 import type { ControlPreferences } from './control-settings.ts';
@@ -11,7 +11,8 @@ interface ControlOptions {
   getKeyMap?: () => KeyMap;
   onTilt?: () => void;
 }
-interface SlideBinding { pointerId: number | null; pad: ReturnType<typeof createSlidePad> }
+interface SlideBinding { pointerId: number | null; pad: ReturnType<typeof createSlidePad>; onChange?: () => void }
+type SteerAction = 'left' | 'right';
 type HeldAction = DriveAction;
 
 import { DEFAULT_KEY_MAP, ACTION_KEYS as actionKeys } from './key-map.ts';
@@ -28,7 +29,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
   const slides: SlideBinding[] = [];
   const captures = new Map<number, HTMLElement>();
   const actionButtons = new Map<DriveAction, ControlButton>();
-  let brakeButton: ControlButton | null = null;
+  const steeringButtons = new Map<SteerAction, ControlButton>();
   let tiltEnabled = false, tiltBase: number | null = null, tiltAngle: number | null = null, tiltSteer = 0, tiltAt = 0;
   let flyMode = 'hold';
   let flyLatched = false;
@@ -50,7 +51,12 @@ export function createControls(target: ControlTarget = window, onAction: (action
   function clear() {
     keys.clear(); pointers.clear(); flyLatched = false;
     tiltBase = null; tiltSteer = 0;
-    for (const slide of slides) { slide.pointerId = null; slide.pad.reset(); }
+    for (const slide of slides) {
+      if (slide.pointerId === null) continue;
+      slide.pointerId = null;
+      slide.pad.reset();
+      slide.onChange?.();
+    }
     for (const [id, element] of captures) {
       if (element.hasPointerCapture?.(id)) element.releasePointerCapture(id);
     }
@@ -110,14 +116,19 @@ export function createControls(target: ControlTarget = window, onAction: (action
     },
     bindButton(button: ControlButton, control: DriveAction) {
       if (control === 'fly' || control === 'boost') actionButtons.set(control, button);
-      if (control === 'brake') brakeButton = button;
+      const isSteering = control === 'left' || control === 'right';
+      if (isSteering) steeringButtons.set(control, button);
       holdWithoutLoupe(button);
       listen<PointerEvent>(button, 'pointerdown', event => {
         event.preventDefault();
         if (defaultSettings()?.editing || button.disabled || (control === 'fly' && !flyEnabled)) return;
         // WebKit withholds the release of a touch that became an edge-swipe gesture: a new finger on the
         // same button takes it over from any pointer still holding it.
-        for (const [id, held] of pointers) if (held.includes(control)) pointers.set(id, held.filter(action => action !== control));
+        for (const [id, held] of pointers) {
+          if (isSteering && (held.includes(control) || (held.length === 0 && captures.get(id) === button))) {
+            pointers.delete(id);
+          } else if (held.includes(control)) pointers.set(id, held.filter(action => action !== control));
+        }
         if (control === 'fly' && flyMode === 'toggle') { flyLatched = !flyLatched; pointers.set(event.pointerId, []); }
         else pointers.set(event.pointerId, [control]);
         // Synthetic accessibility/test events do not own a native pointer to capture.
@@ -125,13 +136,20 @@ export function createControls(target: ControlTarget = window, onAction: (action
       });
       listen<PointerEvent>(button, 'pointermove', event => {
         if (!pointers.has(event.pointerId) || event.pointerType !== 'touch' || defaultSettings()?.editing) return;
-        const steer = pointers.get(event.pointerId)!.find(action => action === 'left' || action === 'right');
-        if (steer) {
-          // One-thumb drift: a steering thumb slid up into BRAKE keeps its direction and brakes while it is over BRAKE.
-          const rect = brakeButton?.getBoundingClientRect();
-          const onBrake = !!rect && rect.width > 0 && !!brakeButton && !brakeButton.disabled && event.clientX >= rect.left && event.clientX <= rect.right &&
-            event.clientY >= rect.top && event.clientY <= rect.bottom;
-          pointers.set(event.pointerId, onBrake ? [steer, 'brake'] : [steer]);
+        if (isSteering) {
+          // Pointer capture keeps events on the first arrow. Hit-test both real targets so a
+          // single thumb can change direction, and steer stays neutral in the gap.
+          const held: SteerAction[] = [];
+          for (const [direction, arrow] of steeringButtons) {
+            const rect = arrow.getBoundingClientRect();
+            if (!arrow.disabled && rect.width > 0 && rect.height > 0 &&
+                event.clientX >= rect.left && event.clientX < rect.right &&
+                event.clientY >= rect.top && event.clientY < rect.bottom) {
+              held.push(direction);
+              break;
+            }
+          }
+          pointers.set(event.pointerId, held);
           return;
         }
         if (!actionButtons.has(control)) return;
@@ -151,16 +169,18 @@ export function createControls(target: ControlTarget = window, onAction: (action
         });
       }
     },
-    bindSlidePad(element: HTMLElement, { getSettings = defaultSettings }: { getSettings?: () => ControlSettings } = {}) {
-      const slide: SlideBinding = { pointerId: null, pad: createSlidePad() };
+    bindSlidePad(element: HTMLElement, { getSettings = defaultSettings, onChange }: { getSettings?: () => ControlSettings; onChange?: () => void } = {}) {
+      const slide: SlideBinding = { pointerId: null, pad: createSlidePad(), onChange };
       slides.push(slide);
       const syncLock = () => slide.pad.setFullLock(getSettings()?.fullLock ?? 60);
       holdWithoutLoupe(element);
       listen<PointerEvent>(element, 'pointerdown', event => {
         event.preventDefault();
+        if (getSettings()?.editing) return;
         slide.pointerId = event.pointerId; // the newest finger owns the pad (see bindButton)
         syncLock();
-        slide.pad.down(event.clientX, event.clientY);
+        slide.pad.down(event.clientX, event.clientY, SLIDE_BRAKE_DISTANCES[getSettings()?.brakePull ?? 'balanced']);
+        onChange?.();
         // Synthetic accessibility/test events do not own a native pointer to capture.
         capture(element, event);
       });
@@ -168,6 +188,7 @@ export function createControls(target: ControlTarget = window, onAction: (action
         if (event.pointerId !== slide.pointerId) return;
         syncLock();
         slide.pad.move(event.clientX, event.clientY);
+        onChange?.();
       });
       for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
         listen<PointerEvent>(element, type, event => {
@@ -175,8 +196,10 @@ export function createControls(target: ControlTarget = window, onAction: (action
           if (event.pointerId !== slide.pointerId) return;
           slide.pointerId = null;
           slide.pad.up();
+          onChange?.();
         });
       }
+      return () => slide.pad.read();
     },
     setFlyMode(mode: string) { flyMode = mode === 'toggle' ? 'toggle' : 'hold'; if (flyMode === 'hold') flyLatched = false; },
     setFlyEnabled(enabled: boolean) {

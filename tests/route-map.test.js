@@ -27,8 +27,8 @@ const COMING_SOON_GRAPHS = {
 test('the public route preview is only a single sampled main centreline', () => {
   for (const id of Object.keys(RACE_TRACKS)) {
     const points = routePolyline(id).split(' ');
-    assert.equal(points.length, 128);
-    assert.equal(routeSamples(id).length, 128);
+    assert.equal(points.length, id === 'spiral' ? 256 : 128);
+    assert.equal(routeSamples(id).length, id === 'spiral' ? 256 : 128);
     assert.ok(points.every(p => /^\d+\.\d+,\d+\.\d+$/.test(p)));
     assert.equal(routePolyline(id), routePolyline(id));
   }

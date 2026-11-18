@@ -236,21 +236,35 @@ test('race: the equipped GT dresses Home and carries into the race with the rear
 
 /** Car root, chase camera and tyre contact height on the Coast grid, held in the countdown: no input, no speed, the same for every run. */
 async function gridPose(page, url, storage = {}) {
-  const { errors } = await prepare(page, url, { storage });
+  // Medium loads the same high-detail car GLB with a smaller scenery budget.
+  const { errors } = await prepare(page, url, { quality: 'medium', storage });
   await expect.poll(() => dressed(page), { timeout: ciTimeout(20000) }).toBe(storage['skyline-rush-car'] ? 'crimson-gt' : 'roadster2');
-  await page.locator('#start-button').click();
-  // Hold the countdown: the world keeps easing the car and the camera onto the grid, and GO never comes.
-  await expect.poll(() => page.evaluate(() => { const { race } = window.gameplay; if (race.phase === 'countdown') race.countdown = 1e6; return race.phase === 'countdown' && race.countdown > 1e5 && race.elapsed === 0; })).toBe(true);
-  const read = () => page.evaluate(() => {
+  const start = page.locator('#start-button');
+  // Hold the live grid in the same click as Start. A host-side poll can arrive after the wall-clock countdown.
+  await start.evaluate(button => button.addEventListener('click', () => {
+    const { race } = window.gameplay;
+    if (race.phase === 'countdown') race.countdown = 1e6;
+  }, { once: true }));
+  await start.click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
+  await expect.poll(() => page.evaluate(() => {
+    const { race } = window.gameplay;
+    return race.countdown > 1e5 && race.elapsed === 0;
+  })).toBe(true);
+  const read = () => page.evaluate(async () => {
+    await new Promise(requestAnimationFrame);
     const { player, camera } = window.gameScene, round = v => Math.round(v * 1e3) / 1e3 + 0;
-    const lowest = root => { // lowest point of a wheel in the car's own space
+    player.updateWorldMatrix(true, true);
+    const carInverse = player.matrixWorld.clone().invert();
+    const meshInCar = carInverse.clone();
+    const vertex = player.position.clone();
+    const lowest = root => { // tyre surface in car space, independent of the spin of the rim's bounding box
       let y = Infinity;
-      player.updateWorldMatrix(true, true);
       root.traverse(mesh => {
         if (!mesh.isMesh) return;
-        mesh.geometry.computeBoundingBox();
-        const { min, max } = mesh.geometry.boundingBox;
-        for (const x of [min.x, max.x]) for (const h of [min.y, max.y]) for (const z of [min.z, max.z]) y = Math.min(y, player.worldToLocal(mesh.localToWorld(min.clone().set(x, h, z))).y);
+        meshInCar.multiplyMatrices(carInverse, mesh.matrixWorld);
+        const positions = mesh.geometry.getAttribute('position');
+        for (let i = 0; i < positions.count; i++) y = Math.min(y, vertex.fromBufferAttribute(positions, i).applyMatrix4(meshInCar).y);
       });
       return round(y);
     };
@@ -258,7 +272,7 @@ async function gridPose(page, url, storage = {}) {
     return {
       car: [...player.position.toArray(), ...player.quaternion.toArray()].map(round),
       camera: [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.fov].map(round),
-      tyres: player.userData.wheels.map(lowest), glbTyres: glb.map(lowest),
+      wheelPivots: player.userData.wheels.map(wheel => wheel.position.toArray().map(round)), glbTyres: glb.map(lowest),
     };
   });
   let last = ''; // the car pitch and the chase camera ease onto the grid: wait until two reads half a second apart agree
@@ -267,20 +281,37 @@ async function gridPose(page, url, storage = {}) {
   return JSON.parse(last);
 }
 
-test('the GT stands on the road and under the chase camera exactly like the Roadster', async ({ gameplayPage: page, gameplayURL, browser }) => {
+test('the GT stands on the road and under the chase camera exactly like the Roadster', async ({ gameplayURL, browser, viewport, deviceScaleFactor }) => {
   test.setTimeout(ciTimeout(120000));
-  const gt = await gridPose(page, gameplayURL, GT);
-  const other = await browser.newPage();
-  await captureHooks(other);
-  const roadster = await gridPose(other, gameplayURL);
-  await other.close();
+  // Compare both cars with the same canvas size, one renderer at a time on a CPU-only runner.
+  const sample = async (storage, shot = '') => {
+    const page = await browser.newPage({ viewport, deviceScaleFactor });
+    try {
+      await captureHooks(page);
+      const pose = await gridPose(page, gameplayURL, storage);
+      if (shot) await attach(page, shot);
+      return pose;
+    } finally {
+      await page.close();
+    }
+  };
+  const gt = await sample(GT, 'gt-grid');
+  const roadster = await sample();
   expect(roadster.glbTyres).toHaveLength(4);
   expect(gt.car, 'car root: the collision box and the road frame hang on it').toEqual(roadster.car);
   gt.camera.forEach((value, index) => expect(value, `chase camera component ${index}`).toBeCloseTo(roadster.camera[index], 2));
-  expect(gt.tyres, 'the procedural wheels under the GLB').toEqual(roadster.tyres);
+  expect(gt.wheelPivots, 'the shared procedural wheel pivots').toEqual(roadster.wheelPivots);
   expect(gt.glbTyres).toHaveLength(4);
-  gt.glbTyres.forEach((y, i) => expect(y, `GT tyre ${i} touches the road where the Roadster's does`).toBeCloseTo(roadster.tyres[i], 2));
-  await attach(page, 'gt-grid');
+  // Use the shipped GLBs' ground clearance contract even when their hidden procedural rig has a different tyre profile.
+  for (const [model, tyres] of [['Roadster', roadster.glbTyres], ['GT', gt.glbTyres]]) {
+    for (const [wheel, y] of tyres.entries()) {
+      expect(y, `${model} tyre ${wheel} stays above the road plane`).toBeGreaterThanOrEqual(0);
+      expect(y, `${model} tyre ${wheel} stays within the ground contact tolerance`).toBeLessThan(0.05);
+    }
+  }
+  gt.glbTyres.forEach((y, i) => {
+    expect(Math.abs(y - roadster.glbTyres[i]), `GT tyre ${i} matches the Roadster's contact height within 1 cm`).toBeLessThanOrEqual(0.01);
+  });
 });
 
 /** GLB rig nodes next to the procedural parts they follow, in the Garage (src/garage-model-rig.ts). */

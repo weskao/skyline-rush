@@ -6,7 +6,7 @@ import { mixedCourse } from '../src/gauntlet-course.ts';
 // User, 2026-11-07: the deliberately authored ring and reward sequences are design, not random layout. Changing one
 // needs the user's approval first (.claude/rules/ring-layout.md); re-rolling the random rings must never move them.
 const AUTHORED_HOOPS = {
-  spiral: [[1100, 2.5, 6], [1700, -2.5, 6], [2200, 2.5, 6], [3450, -2.5, 6], [4350, 0, 6]],
+  spiral: [[1930, 2.5, 6], [2550, -2.5, 6], [3120, 2.5, 6], [3450, -2.5, 6], [4350, 0, 6]],
   cosmic: [[3800, -2.5, 5], [3920, 2.5, 7], [4040, -2.5, 9], [7350, 2.5, 5], [7470, -2.5, 7], [7590, 2.5, 9]],
 };
 const SEEDS = [undefined, 1, 2, 3, 99];

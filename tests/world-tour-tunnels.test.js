@@ -1,3 +1,4 @@
+import { trackPoint } from '../src/track-paths.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RACE_TRACKS } from '../src/game.js';
@@ -34,13 +35,11 @@ test('tunnel segments keep one 24 m absolute rhythm across streamed chunk bounda
      for(const child of group.children.filter(c=>c.name.startsWith('tunnel:'+id+':'))){
       // The kit places every shell at a centreline point from its source section.
       // A section's 24m rhythm must not reset at each 120m streaming boundary.
-      const d=-child.position.z;
-      assert.ok(Number.isFinite(d),id+' needs finite world positions');
-      actual.push(d);
+      actual.push(child.position.toArray());
      }
     }
     const expected=[];
-    for(let d=section.from+12;d<section.to;d+=24)expected.push(d);
+    for(let d=section.from+12;d<section.to;d+=24){ const {x,y,z}=trackPoint(id,d); expected.push([x,y,z]); }
     assert.deepEqual(actual,expected,id+' @ '+section.from+' tunnel continuity');
    }
   }

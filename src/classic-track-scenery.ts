@@ -73,31 +73,34 @@ export function createClassicTrackScenery(scene: THREE.Scene) {
     const side = index % 2 ? 1 : -1, lane = side * (49 + (index * 11 % 33));
     const [x,z] = route.point(distance, lane);
     const [body, trim, accent, detail] = kits[id].meshes;
+    const heightOffset = route.elevation?.(distance) ?? 0;
+    const placeMesh: typeof compose = (mesh, slot, x, y, z, width, height, depth) =>
+      compose(mesh, slot, x, y + heightOffset, z, width, height, depth);
     // A lap turns through every bearing, so its props turn with the road. Open roads keep them square to the start.
-    rotation.setFromAxisAngle(UP, route.lap ? -route.heading(distance) : 0);
+    rotation.setFromAxisAngle(UP, route.lap || route.elevation ? -route.heading(distance) : 0);
     // Same sector, opposite kerb from the skyline body, still 30 m+ clear of the road.
     const [near, dz] = route.point(distance, -side * (38 + index % 4 * 3));
-    if (id === 'neon') compose(detail, index, near, 12, dz, .8, 7, 14);
-    else if (id === 'canyon') compose(detail, index, near, 1.3, dz, 2.6, 2.6, 6);
-    else compose(detail, index, near, 2, dz, 6, 4, 16);
+    if (id === 'neon') placeMesh(detail, index, near, 12, dz, .8, 7, 14);
+    else if (id === 'canyon') placeMesh(detail, index, near, 1.3, dz, 2.6, 2.6, 6);
+    else placeMesh(detail, index, near, 2, dz, 6, 4, 16);
     if (id === 'neon') {
       const height = 28 + index % 7 * 7;
       const width = 14 + index % 3 * 3;
-      compose(body, index, x, height / 2, z, width, height, 14);
-      compose(trim, index, x, height + .8, z, width + 1, 1.6, 15);
+      placeMesh(body, index, x, height / 2, z, width, height, 14);
+      placeMesh(trim, index, x, height + .8, z, width + 1, 1.6, 15);
       // A thin illuminated fascia faces the driveable corridor.
       const [fx, fz] = route.lap ? route.point(distance, lane - side * (width / 2 + .3)) : [x - side * (width / 2 + .3), z];
-      compose(accent, index, fx, height * .63, fz, .35, height * .48, 5);
+      placeMesh(accent, index, fx, height * .63, fz, .35, height * .48, 5);
     } else if (id === 'canyon') {
       const height = 21 + index % 5 * 6;
-      compose(body, index, x, height * .44, z, 14 + index % 3 * 4, height, 19);
-      compose(trim, index, x, height * .86, z, 18 + index % 3 * 3, 2.3, 21);
-      compose(accent, index, x - side * 1.2, height * .68, z, 14 + index % 3 * 3, 1.7, 17);
+      placeMesh(body, index, x, height * .44, z, 14 + index % 3 * 4, height, 19);
+      placeMesh(trim, index, x, height * .86, z, 18 + index % 3 * 3, 2.3, 21);
+      placeMesh(accent, index, x - side * 1.2, height * .68, z, 14 + index % 3 * 3, 1.7, 17);
     } else {
       const height = 18 + index % 5 * 3.2;
-      compose(body, index, x, height / 2 + 2, z, height * .31, height, height * .31);
-      compose(trim, index, x, 2.4, z, 2.1, 7, 2.1);
-      compose(accent, index, x, 2 + height * .84, z, height * .20, height * .30, height * .20);
+      placeMesh(body, index, x, height / 2 + 2, z, height * .31, height, height * .31);
+      placeMesh(trim, index, x, 2.4, z, 2.1, 7, 2.1);
+      placeMesh(accent, index, x, 2 + height * .84, z, height * .20, height * .30, height * .20);
     }
   };
   return {
@@ -126,7 +129,7 @@ export function createClassicTrackScenery(scene: THREE.Scene) {
       }
       kit.previousQuality = quality;
       const [x,z] = route.point(distance);
-      kit.group.position.set(-x, 0, -z);
+      kit.group.position.set(-x, -(route.elevation?.(distance) ?? 0), -z);
     },
     hide(): void { for (const id of CLASSIC_SCENIC_TRACKS) groups[id].visible = false; },
     dispose(): void {
