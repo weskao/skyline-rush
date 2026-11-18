@@ -209,10 +209,10 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'none');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect(page.locator('#maneuver-report')).toBeHidden();
   // Settings is available on pause and results, but the charge must still be tested in the same race.
   await page.locator('#pause-button').click();
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
+  await expect(page.locator('#maneuver-report')).toBeHidden();
   await toggleSettingsSection(page, 'display');
   await page.locator('[data-vfx="comfortable"]').check();
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'none');

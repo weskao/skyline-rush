@@ -236,7 +236,8 @@ test('race: the equipped GT dresses Home and carries into the race with the rear
 
 /** Car root, chase camera and tyre contact height on the Coast grid, held in the countdown: no input, no speed, the same for every run. */
 async function gridPose(page, url, storage = {}) {
-  const { errors } = await prepare(page, url, { storage });
+  // Medium loads the same high-detail car GLB with a smaller scenery budget.
+  const { errors } = await prepare(page, url, { quality: 'medium', storage });
   await expect.poll(() => dressed(page), { timeout: ciTimeout(20000) }).toBe(storage['skyline-rush-car'] ? 'crimson-gt' : 'roadster2');
   const start = page.locator('#start-button');
   // Hold the live grid in the same click as Start. A host-side poll can arrive after the wall-clock countdown.

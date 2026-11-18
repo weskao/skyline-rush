@@ -440,7 +440,7 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/');
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => window.audioLevel?.() ?? 0), { intervals: [20] }).toBeGreaterThan(0.001);
+  await expect.poll(() => page.evaluate(() => window.audioCueLevel?.() ?? 0)).toBeGreaterThan(0.001);
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(90);

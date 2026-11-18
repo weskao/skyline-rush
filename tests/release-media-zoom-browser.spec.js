@@ -131,10 +131,12 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
   test('the hero clip plays inline with an enlarge button on its corner, and its clip opens whole and carries on playing', async ({ page, gameplayURL }) => {
     await page.addInitScript(() => {
       const fetch = window.fetch;
+      const playing = new WeakSet();
+      document.addEventListener('playing', event => playing.add(event.target), true);
       window.clipsRequestedBeforeHero = [];
       window.fetch = (input, ...options) => {
         const hero = document.querySelector('#release-video');
-        if (typeof input === 'string' && input.endsWith('.mp4') && hero && !hero.getAttribute('src') && input !== hero.dataset.source) {
+        if (typeof input === 'string' && input.endsWith('.mp4') && hero && !playing.has(hero) && input !== hero.dataset.source) {
           window.clipsRequestedBeforeHero.push(input);
         }
         return fetch.call(window, input, ...options);
@@ -151,8 +153,8 @@ for (const [device, width, height, touch] of DEVICES) test.describe(device, () =
       return;
     }
     await expect(hero).toHaveAttribute('src', /^blob:/);
-    expect(await page.evaluate(() => window.clipsRequestedBeforeHero), 'only the visible hero loads before it can play').toEqual([]);
     await expect.poll(() => playing(hero), 'the hero autoplays inline').toBe(true);
+    expect(await page.evaluate(() => window.clipsRequestedBeforeHero), 'only the visible hero loads before playback starts').toEqual([]);
     // Measure together: the notes entrance animation can move between browser round trips.
     const [zoomBox, heroBox, iconBox] = await zoom.evaluate(el =>
       [el, document.getElementById('release-video'), el.querySelector('svg')].map(node => node.getBoundingClientRect().toJSON()));

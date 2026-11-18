@@ -46,10 +46,12 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   async function loadVisibleClips() {
     if (!releaseDialog.open || compact.matches) return;
     const { heroVideo, entries } = releaseView;
-    if (heroVideo && !heroVideo.src) {
-      const src = await mediaCache.load(heroVideo.source);
-      if (!releaseDialog.open || compact.matches || heroVideo !== releaseView.heroVideo) return;
-      heroVideo.src = src;
+    if (heroVideo) {
+      if (!heroVideo.src) {
+        const src = await mediaCache.load(heroVideo.source);
+        if (!releaseDialog.open || compact.matches || heroVideo !== releaseView.heroVideo) return;
+        heroVideo.src = src;
+      }
       await nextTick(syncReleaseVideo);
     }
     if (!releaseDialog.open || compact.matches || entries !== releaseView.entries) return;
@@ -111,8 +113,9 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   function syncReleaseVideo() {
     const video = document.querySelector<HTMLVideoElement>('#release-video');
     if (!video) return;
-    if (releaseDialog.open && !compact.matches && !reducedMotion.matches && video.offsetParent) video.play().catch(() => { /* autoplay refused: the poster stays */ });
-    else video.pause();
+    if (releaseDialog.open && !compact.matches && !reducedMotion.matches && video.offsetParent)
+      return video.play().catch(() => { /* autoplay refused: the poster stays */ });
+    video.pause();
   }
   // iPhone refuses even a muted clip in Low Power Mode until the player touches the page: the first tap or key anywhere starts
   // the hero where it is (as it starts the music), not only a tap on the clip, which enlarges it. An enlarged view keeps it waiting.
