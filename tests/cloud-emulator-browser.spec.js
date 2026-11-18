@@ -435,7 +435,11 @@ test('the equipped car is restored on a clean device, and a device that picked i
   const storedCar = target => target.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-car')));
   await context.route(liveApis, route => route.abort());
   await page.addInitScript(disableWebGL);
-  await page.addInitScript(() => localStorage.setItem('skyline-rush-car', JSON.stringify('crimson-gt')));
+  const trial = Date.now() - 60_000;
+  await page.addInitScript(trial => {
+    localStorage.setItem('skyline-rush-gt-trial-started-at', JSON.stringify(trial));
+    localStorage.setItem('skyline-rush-car', JSON.stringify('crimson-gt'));
+  }, trial);
   await page.goto('/?firebase-emulator=1');
   await page.locator('#cloud-open').click();
   await mockGoogleSignIn(page, { email });
@@ -451,6 +455,7 @@ test('the equipped car is restored on a clean device, and a device that picked i
   await expect(fresh.locator('#cloud-status')).toHaveText(savedMessage);
   await expect.poll(() => storedCar(fresh)).toBe('crimson-gt');
   await expect(fresh.locator('#garage-screen [data-car="crimson-gt"]')).toHaveAttribute('aria-pressed', 'true'); // worn without a reload
+  expect(await fresh.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-gt-trial-started-at')))).toBe(trial);
   await fresh.close();
 
   const own = await browser.newPage({ locale: 'en-US' });

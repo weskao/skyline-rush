@@ -67,6 +67,9 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
   // Optional equipped car (Task 7): the catalog's ids only; a save without it stays valid for older clients.
   for (const car of ['roadster', 'crimson-gt']) await assertSucceeds(setDoc(save, { ...progress, car }), `car ${car}`);
   for (const bad of ['hovercraft', '', 7, null, ['crimson-gt']]) await assertFails(setDoc(save, { ...progress, car: bad }), `car ${JSON.stringify(bad)}`);
+  await assertSucceeds(setDoc(save, { ...progress, gtTrialStartedAt: 1_700_000_000_000 }));
+  for (const bad of [0, -1, 2.5, '1700000000000', null])
+    await assertFails(setDoc(save, { ...progress, gtTrialStartedAt: bad }), `trial start ${bad}`);
   await assertFails(deleteDoc(doc(other, 'saves/owner')));
   await assertFails(deleteDoc(doc(guest, 'saves/owner')));
   await assertSucceeds(deleteDoc(save));

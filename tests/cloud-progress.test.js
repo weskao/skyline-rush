@@ -4,6 +4,13 @@ import { careerStats } from '../src/history.ts';
 import { DAILY_MODIFIERS } from '../src/game.js';
 import { mergeUnlocks, mergeProgress, readLocalProgress, saveLocalProgress, clearLocalProgress, claimCloudOwner, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus, writeCloudSyncStatus, mergeModeBests, readLocalModeBests, saveLocalModeBests, parseProgressExport } from '../src/cloud-progress.ts';
 
+test('cloud merge preserves the first GT trial start across devices and old saves', () => {
+  const first = 1_700_000_000_000, later = first + 86_400_000;
+  assert.equal(mergeProgress({ gtTrialStartedAt: later }, { version: 2, gtTrialStartedAt: first }).gtTrialStartedAt, first);
+  assert.equal(mergeProgress({ gtTrialStartedAt: first }, { version: 2 }).gtTrialStartedAt, first);
+  assert.equal(mergeProgress({ gtTrialStartedAt: '1700000000000' }, { version: 2, gtTrialStartedAt: -1 }).gtTrialStartedAt, undefined);
+});
+
 test('cloud failure status reports whether a durable device copy exists', () => {
   assert.equal(cloudFailureStatus({ code: 'unavailable' }, false), 'cloud.localFailed');
   assert.equal(cloudFailureStatus({ code: 'unavailable' }, true), 'cloud.pending');
@@ -131,19 +138,21 @@ test('an empty browser store recovers all account progress fields', () => {
 
 test('switching Google accounts snapshots A and restores B without leaking progress or changing device settings', () => {
   const data = new Map([['skyline-rush-vfx', '{"quality":"low"}']]);
-  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
-  saveLocalProgress(mergeProgress({ unlocked: ['coast', 'neon'], stars: { neon: 3 }, bests: { neon: 66 } }), storage);
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key) };
+  saveLocalProgress(mergeProgress({ unlocked: ['coast', 'neon'], stars: { neon: 3 }, bests: { neon: 66 }, gtTrialStartedAt: 1_700_000_000_000 }), storage);
   data.set('skyline-rush-cloud-owner', 'player-A');
   const b = mergeProgress({ unlocked: ['coast', 'canyon'], stars: { canyon: 2 }, bests: { canyon: 77 } });
   data.set('skyline-rush-cloud-account:player-B', JSON.stringify(b));
   assert.equal(switchCloudAccount('player-A', 'player-B', storage), true);
   assert.deepEqual(readLocalProgress(storage).unlocked, ['coast', 'canyon']);
   assert.deepEqual(readLocalProgress(storage).stars, { canyon: 2 });
+  assert.equal(readLocalProgress(storage).gtTrialStartedAt, undefined);
   assert.equal(data.get('skyline-rush-cloud-owner'), 'player-B');
   assert.equal(data.get('skyline-rush-vfx'), '{"quality":"low"}');
   assert.equal(switchCloudAccount('player-B', 'player-A', storage), true);
   assert.deepEqual(readLocalProgress(storage).unlocked, ['coast', 'neon']);
   assert.deepEqual(readLocalProgress(storage).stars, { neon: 3 });
+  assert.equal(readLocalProgress(storage).gtTrialStartedAt, 1_700_000_000_000);
 });
 
 test('a new Google account starts with clean progress rather than inheriting previous account unlocks', () => {
@@ -349,6 +358,6 @@ test('firestore.rules accepts exactly the catalog\'s car ids in the optional car
   const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
   const [, ids] = rules.match(/data\.get\('car', 'roadster'\) in \[([^\]]+)\]/) ?? [];
   assert.deepEqual(ids?.split(',').map(id => id.trim().replaceAll("'", '')), Object.keys(CARS));
-  assert.match(rules, /hasOnly\(\['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily', 'car'\]\)/);
+  assert.match(rules, /hasOnly\(\['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily', 'car', 'gtTrialStartedAt'\]\)/);
   assert.match(rules, /hasAll\(\['version', 'unlocked', 'stars', 'bests', 'medals', 'history', 'modeHistory', 'daily'\]\)/, 'car stays optional: older clients keep saving');
 });

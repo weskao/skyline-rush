@@ -1,3 +1,4 @@
+import { GT_EARNED_STARS } from './helpers/gt-progress.js';
 import { clickLobbyOption } from './helpers/home-lobby.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, captureHooks, glbRoots, programs, modelInstances as instances, dressedAs as dressed, watchRequests } from './helpers/gameplay-browser.js';
@@ -45,7 +46,8 @@ async function prepare(page, url, { quality = 'high', storage = {} } = {}) {
   return { requests, errors };
 }
 
-const GT = { 'skyline-rush-car': 'crimson-gt' };
+const OWNED_GT = { 'skyline-rush-stars': GT_EARNED_STARS };
+const GT = { ...OWNED_GT, 'skyline-rush-car': 'crimson-gt' };
 const world = page => page.locator('#world');
 const modelReady = page => expect(world(page)).toHaveAttribute('data-garage-model', 'model', { timeout: ciTimeout(20000) });
 const carButton = (page, id) => page.locator(`#garage-screen [data-car="${id}"]`);
@@ -71,7 +73,7 @@ const attach = async (page, name) => {
 
 test('Garage and Preview Studio keep equipped and previewed paint while switching cars', async ({ gameplayPage: page, gameplayURL }) => {
   test.setTimeout(ciTimeout(90000));
-  const { requests, errors } = await prepare(page, gameplayURL, { quality: 'low', storage: { 'skyline-rush-stars': { coast: 3 } } }); // 3 stars: Aurora is owned
+  const { requests, errors } = await prepare(page, gameplayURL, { quality: 'low', storage: OWNED_GT });
   await page.locator('#garage-button').click();
   await expect(carButton(page, 'roadster')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#garage-screen [data-paint]')).toHaveCount(7);
@@ -380,7 +382,7 @@ test('every Garage skin previews on the Crimson GT', async ({ gameplayPage: page
 });
 
 test('keyboard: Tab walks the cars in catalog order, Enter equips the focused car, and the Paints section is keyboard accessible', async ({ gameplayPage: page, gameplayURL }) => {
-  const { errors } = await prepare(page, gameplayURL);
+  const { errors } = await prepare(page, gameplayURL, { storage: OWNED_GT });
   await page.locator('#garage-button').click();
   await carButton(page, 'roadster').focus();
   await page.keyboard.press('Tab');
@@ -443,7 +445,7 @@ for (const [name, viewport] of [['phone portrait', { width: 390, height: 844 }],
   test.describe(name, () => {
     test.use({ viewport, isMobile: true, hasTouch: true, locale: 'zh-TW' });
     test('the car picker is reachable by touch, in Traditional Chinese, and equips the GT', async ({ gameplayPage: page, gameplayURL }) => {
-      const { errors } = await prepare(page, gameplayURL);
+      const { errors } = await prepare(page, gameplayURL, { storage: OWNED_GT });
       await openGarage(page, 'tap');
       const gt = carButton(page, 'crimson-gt');
       await gt.scrollIntoViewIfNeeded();
@@ -516,7 +518,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
     });
 
     test('the car in use is unmistakable and the other car offers a select pill', async ({ gameplayPage: page, gameplayURL }) => {
-      await prepare(page, gameplayURL);
+      await prepare(page, gameplayURL, { storage: OWNED_GT });
       await openGarage(page);
       const look = id => carButton(page, id).evaluate(card => {
         const style = getComputedStyle(card), pill = card.querySelector('.garage-car-badge'), pillStyle = getComputedStyle(pill);

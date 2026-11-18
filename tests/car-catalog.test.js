@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PAINTS, ownedPaints } from '../src/appearance.ts';
-import { CARS, defaultPaint, equipCar, equippedCar, equippedCarModel, isCar, loadCar, loadCarPaint, reloadCar, saveCarPaint, savedCar } from '../src/car-catalog.ts';
+import { CARS, defaultPaint, equipCar, equippedCar, equippedCarModel, isCar, loadCar, loadCarPaint, reloadCar, saveCarPaint, savedCar, startGtTrial, savedGtTrial, validateEquippedCar } from '../src/car-catalog.ts';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
 import { createWorldGarageModel, dressesRaceCar } from '../src/garage-model.ts';
 
@@ -10,6 +10,7 @@ const memoryStorage = (initial = {}) => {
   const data = new Map(Object.entries(initial));
   return { getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); }, data };
 };
+const careerSave = { 'skyline-rush-stars': '{"coast":3,"neon":3,"canyon":3,"aurora":3,"spiral":3,"taipei":3}' };
 const OWNED = ['pearl', 'crimson', 'aurora', 'cobalt'];
 
 test('two cars: the Roadster and Crimson GT GLBs from the manifest', () => {
@@ -28,8 +29,49 @@ test('an old save without a car field loads as the Roadster; unknown ids too', (
   assert.equal(loadCar(memoryStorage({ 'skyline-rush-car': '{broken' })), 'roadster');
 });
 
-test('the equipped car is saved and read back', () => {
+test('a saved GT requires 18 Career stars or a live one-day trial', () => {
+  const stars = { coast: 3, neon: 3, canyon: 3, aurora: 3, spiral: 3, taipei: 2 };
+  const storage = memoryStorage({
+    'skyline-rush-car': '"crimson-gt"',
+    'skyline-rush-stars': JSON.stringify(stars),
+    'skyline-rush-car-paints': '{"crimson-gt":"cobalt"}',
+  });
+  assert.equal(loadCar(storage), 'roadster', 'a legacy car selection does not grant ownership at 17 stars');
+  assert.equal(loadCarPaint('crimson-gt', OWNED, storage), 'cobalt', 'falling back preserves the GT finish');
+  const now = Date.now();
+  storage.setItem('skyline-rush-gt-trial-started-at', JSON.stringify(now - 60_000));
+  assert.equal(loadCar(storage), 'crimson-gt');
+  storage.setItem('skyline-rush-gt-trial-started-at', JSON.stringify(now - 86_400_000));
+  assert.equal(loadCar(storage), 'roadster');
+  storage.setItem('skyline-rush-stars', JSON.stringify({ ...stars, taipei: 3 }));
+  assert.equal(loadCar(storage), 'crimson-gt', '18 Career stars keep the GT available after the trial');
+});
+
+test('preview and a second trial attempt cannot grant or extend access', () => {
   const storage = memoryStorage();
+  assert.equal(equipCar('crimson-gt', storage), false);
+  assert.equal(savedCar(storage), undefined);
+  const first = 1_700_000_000_000;
+  assert.equal(startGtTrial(0, storage, first), true);
+  assert.equal(startGtTrial(0, storage, first + 172_800_000), false);
+  assert.equal(savedGtTrial(storage), first);
+  assert.equal(savedCar(storage), undefined, 'activating a trial and equipping are independent operations');
+});
+
+test('trial expiry leaves the current race car intact until the next access check', () => {
+  const storage = memoryStorage({
+    'skyline-rush-car': '"crimson-gt"',
+    'skyline-rush-gt-trial-started-at': JSON.stringify(Date.now() - 10_000),
+  });
+  assert.equal(reloadCar(storage), 'crimson-gt');
+  storage.setItem('skyline-rush-gt-trial-started-at', JSON.stringify(Date.now() - 86_400_000));
+  assert.equal(equippedCar(), 'crimson-gt');
+  assert.equal(validateEquippedCar(17, storage), 'roadster');
+  assert.equal(savedCar(storage), 'crimson-gt', 'expiry leaves the saved preference intact');
+});
+
+test('the equipped car is saved and read back', () => {
+  const storage = memoryStorage(careerSave);
   equipCar('crimson-gt', storage);
   assert.equal(equippedCar(), 'crimson-gt');
   assert.equal(equippedCarModel(), 'crimson-gt');
@@ -114,7 +156,7 @@ test('procedural preview keeps Roadster undressed while other equipped cars stil
 });
 
 test('a car restored into storage by Cloud Save replaces the one held in memory', () => {
-  const storage = memoryStorage();
+  const storage = memoryStorage(careerSave);
   equipCar('roadster', storage);
   storage.setItem('skyline-rush-car', '"crimson-gt"');
   assert.equal(equippedCar(), 'roadster', 'held in memory until asked to reload');
@@ -127,7 +169,7 @@ test('a car restored into storage by Cloud Save replaces the one held in memory'
 test('the simulation does not know the car: the same drive collides and ends identically in either car', async () => {
   const { createRace, startRace, stepRace } = await import('../src/game.js');
   const drive = car => {
-    equipCar(car, memoryStorage());
+    equipCar(car, memoryStorage(careerSave));
     const race = createRace('coast');
     startRace(race);
     // Full throttle, weaving across the road: 11 collisions in 45 s on Coast.

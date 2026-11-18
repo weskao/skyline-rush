@@ -26,7 +26,7 @@ import { cloudView } from './cloud-view-state.ts';
         <button class="text-button" id="again-button"><span data-i18n="result.again">Race again</span> <svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg></button>
         <button type="button" class="text-button" id="pause-leave" data-i18n="leave.action" hidden>Leave race</button>
         <button type="button" class="text-button" id="photo-open" hidden><svg v-bind="ICON_ATTRS" v-html="icons.camera"></svg><span data-i18n="photo.open">PHOTO STUDIO</span></button>
-        <div class="result-links" id="result-links" hidden><button class="text-button" id="choose-track" data-i18n="track.choose">Choose track</button><button class="text-button" data-open-history data-i18n="nav.progress">Progress</button></div>
+        <div class="result-links" id="result-links" hidden><button type="button" class="text-button" id="result-gt-garage" data-i18n="car.gt.openGarage" hidden>Go to Garage</button><button class="text-button" id="choose-track" data-i18n="track.choose">Choose track</button><button class="text-button" data-open-history data-i18n="nav.progress">Progress</button></div>
       </div>
       <div class="result-cloud" id="result-cloud" :hidden="cloudView.resultHidden" :data-state="cloudView.resultState"><p id="result-cloud-status" role="status" aria-live="polite" :aria-busy="cloudView.resultBusy">{{ cloudView.resultText }}</p><SignInButton id="result-cloud-login" label-key="cloud.login" :hidden="cloudView.resultSignInHidden" :disabled="cloudView.resultSignInDisabled">Sign in with Google</SignInButton></div>
     </div>

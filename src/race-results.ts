@@ -1,5 +1,5 @@
 import { RACE_TRACKS } from './game.js';
-import { recordRace, recordBest, recordModeRace, loadModeHistory, recordMedals, recordStars, recordDaily, dailyBoard, LEGACY_BEST_KEY } from './history.ts';
+import { recordRace, recordBest, recordModeRace, loadModeHistory, recordMedals, recordStars, starTotal, recordDaily, dailyBoard, LEGACY_BEST_KEY } from './history.ts';
 import { addSprintStage, sprintTotal, type SprintSeries } from './sprint-series.ts';
 import { addCupResult, cupStandings, cupComplete, cupTotalTime, type CupState } from './championship-cup.ts';
 import { validGhost, type GhostSample } from './ghost.ts';
@@ -9,6 +9,7 @@ import type { SessionProgress } from './session-progress.ts';
 import type { createGhostStore } from './ghost-store.ts';
 import { recordChallengeMedals, type ChallengeMedalId } from './history-challenge-medals.ts';
 import { addStuntHeat, stuntHeatContinues, type StuntRun } from './stunt-attack.ts';
+import { GT_UNLOCK_STARS } from './car-catalog.ts';
 import { settleWave3RaceDemo } from '#wave3-demo-race';
 export { captureWave3RaceTelemetry } from '#wave3-demo-race';
 export interface RaceSeries { sprintSeries: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null }
@@ -33,6 +34,7 @@ export interface Settlement {
   /** Track the NEXT button offers, when this run moved the campaign forward. */
   next: string | null;
   unlockedTrack: boolean;
+  unlockedGt?: true;
   /** A heat inside a sprint series, cup or stunt run with more to come. */
   intermediateStage: boolean;
   /** Whether this outcome contributes a history result eligible for cloud backup. */
@@ -86,6 +88,7 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
   progress.medals = { ...progress.medals, ...Object.fromEntries(medals.map(id => [id, new Date().toISOString()])) };
   const trackId: string = race.trackId ?? 'coast';
   let best: number, record: boolean, next: string | null = null, unlockedTrack = false;
+  let unlockedGt = false;
   const intermediateStage = !!((sprintSeries && sprintSeries.results.length < sprintSeries.count) || (cup && !cupComplete(cup)) ||
     (stunt && stuntHeatContinues(stunt, race.result.endReason)));
   if (intermediateStage) {
@@ -131,8 +134,10 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     ({ best, record } = classicBest(race, progress, ghosts, trace));
     // The pre-tracks key stays readable for layout-1 coast only (older builds, browser test).
     if (record && recordTrackId(trackId) === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
+    const before = starTotal(progress.stars);
     recordStars(trackId, race.result.stars);
     progress.stars[trackId] = Math.max(progress.stars[trackId] ?? 0, race.result.stars);
+    unlockedGt = before < GT_UNLOCK_STARS && starTotal(progress.stars) >= GT_UNLOCK_STARS;
   }
   if (race.mode === 'custom' && trace) ghosts.saveCustom(race, { time: race.elapsed, samples: trace });
   let challengeMedals: ChallengeMedalId[] = [];
@@ -141,5 +146,5 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     progress.challengeMedals = challenge.state; challengeMedals = challenge.awarded;
   }
   const recorded = race.mode !== 'free' && !intermediateStage && (race.mode === 'classic' || race.result.success !== false);
-  return { best, record, medals, challengeMedals, next, unlockedTrack, intermediateStage, recorded, series: { sprintSeries, cup, stunt } };
+  return { best, record, medals, challengeMedals, next, unlockedTrack, ...(unlockedGt ? { unlockedGt: true } : {}), intermediateStage, recorded, series: { sprintSeries, cup, stunt } };
 }

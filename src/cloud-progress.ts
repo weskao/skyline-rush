@@ -1,7 +1,7 @@
 import { mergeProgress } from './cloud-progress-merge.ts';
 import { mergeModeBests } from './cloud-mode-bests.ts';
 import { CUP_PROGRESS_KEY } from './cup-progress.ts';
-import { CAR_KEY, isCar, savedCar } from './car-catalog.ts';
+import { CAR_KEY, GT_TRIAL_KEY, isCar, savedCar, savedGtTrial, validTrialStart } from './car-catalog.ts';
 import { CHALLENGE_MEDALS_KEY, loadChallengeMedals, parseChallengeMedals, canWriteChallengeMedals,
   type ChallengeMedalState } from './history-challenge-medals.ts';
 import { HISTORY_KEY, BEST_KEY, LEGACY_BEST_KEY, UNLOCKED_KEY, MEDALS_KEY, STARS_KEY, MODE_HISTORY_KEY, DAILY_KEY,
@@ -28,6 +28,7 @@ interface ProgressValues {
   daily: unknown;
   /** Present and a car: saved. Present but not a car: the saved car is removed. Absent: the saved car stays. */
   car?: unknown;
+  gtTrialStartedAt?: unknown;
   localChallengeMedals?: ChallengeMedalState;
 }
 const asRecord = (v: unknown): Record<string, unknown> =>
@@ -76,10 +77,10 @@ export function parseProgressExport(text: unknown) {
 }
 
 export function readLocalProgress(storage?: ProgressStorage) {
-  const car = savedCar(storage);
+  const car = savedCar(storage), gtTrialStartedAt = savedGtTrial(storage);
   return { version: 2 as const, unlocked: loadUnlocks(storage), stars: loadStars(storage), bests: loadBests(storage),
     medals: loadMedals(storage), history: loadHistory(storage), modeHistory: loadModeHistory(storage), daily: loadDaily(storage),
-    ...(car ? { car } : {}) };
+    ...(car ? { car } : {}), ...(gtTrialStartedAt === undefined ? {} : { gtTrialStartedAt }) };
 }
 
 export function saveLocalProgress(progress: ProgressValues, storage?: ProgressStorage): boolean {
@@ -89,6 +90,10 @@ export function saveLocalProgress(progress: ProgressValues, storage?: ProgressSt
     [MODE_HISTORY_KEY, progress.modeHistory], [DAILY_KEY, progress.daily],
   ];
   if (Object.hasOwn(progress, 'car')) fields.push([CAR_KEY, isCar(progress.car) ? progress.car : undefined]);
+  if (Object.hasOwn(progress, 'gtTrialStartedAt')) {
+    const value = progress.gtTrialStartedAt;
+    fields.push([GT_TRIAL_KEY, validTrialStart(value) ? value : undefined]);
+  }
   if (progress.localChallengeMedals !== undefined) {
     try {
       if (!canWriteChallengeMedals(storage)) return false;
@@ -123,7 +128,7 @@ export function switchCloudAccount(previousUid: unknown, nextUid: unknown,
   try {
     if (!canWriteChallengeMedals(storage)) return false;
     // `car: undefined` on both sides: the car is this account's, so a switch (or its rollback) never leaves the other one's.
-    const current = { car: undefined, ...readLocalProgress(storage), permanent: readLocalModeBests(storage),
+    const current = { car: undefined, gtTrialStartedAt: undefined, ...readLocalProgress(storage), permanent: readLocalModeBests(storage),
       localChallengeMedals: loadChallengeMedals(storage) };
     const stored = storage.getItem(accountKey(nextUid));
     const rawNext: unknown = stored ? JSON.parse(stored) : null;
@@ -131,7 +136,7 @@ export function switchCloudAccount(previousUid: unknown, nextUid: unknown,
     const permanent = mergeModeBests(asRecord(rawNext).permanent);
     const localChallengeMedals = parseChallengeMedals(asRecord(rawNext).localChallengeMedals);
     if (previousUid) storage.setItem(accountKey(previousUid as string), JSON.stringify(current));
-    if (!saveLocalProgress({ car: undefined, ...next, localChallengeMedals }, storage) || !saveLocalModeBests(permanent, storage)) {
+    if (!saveLocalProgress({ car: undefined, gtTrialStartedAt: undefined, ...next, localChallengeMedals }, storage) || !saveLocalModeBests(permanent, storage)) {
       saveLocalProgress(current, storage);
       saveLocalModeBests(current.permanent, storage);
       return false;
@@ -152,7 +157,7 @@ export function clearLocalProgress(storage?: ProgressStorage): boolean {
   try {
     const target = storage ?? globalThis.localStorage;
     for (const key of [UNLOCKED_KEY, STARS_KEY, BEST_KEY, MEDALS_KEY, HISTORY_KEY, MODE_HISTORY_KEY,
-      DAILY_KEY, LEGACY_BEST_KEY, MODE_BESTS_KEY, STUNT_BESTS_KEY, CUP_PROGRESS_KEY, CHALLENGE_MEDALS_KEY]) target.removeItem!(key);
+      DAILY_KEY, LEGACY_BEST_KEY, MODE_BESTS_KEY, STUNT_BESTS_KEY, CUP_PROGRESS_KEY, CHALLENGE_MEDALS_KEY, GT_TRIAL_KEY]) target.removeItem!(key);
     return true;
   } catch { return false; }
 }

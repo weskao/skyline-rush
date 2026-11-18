@@ -29,18 +29,17 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
 - [x] The car's display name and stable ID (the working ID `concept-gt` is a placeholder).
   - **Decided 2026-11-09 (owner):** display name **Crimson GT**, stable ID **`crimson-gt`**. Replaces the `concept-gt`
     placeholder; the ID is final and must not change after release.
-- [ ] The unlock rule: stars threshold, trial, or free; and the default paint.
-  - **Owner, 2026-11-14:** both cars are temporarily free for everyone; the owner decides the plan later. Trial +
-    stars is not built and no threshold is recorded.
-  - **Decided 2026-11-09 (owner): trial + stars.** The car follows the paint model's locked/trial/owned/equipped
-    states: equippable during an account-scoped trial, owned permanently once the stars threshold is reached. A
-    preview never grants the car.
-  - **Still open:** the stars threshold value and the default paint.
-  - **Decided 2026-11-12 (owner), for the first build:** both cars are open to everyone (no lock, trial or stars
-    threshold is implemented), and the default paint is the car's own factory colour (`factory`, deep red `#9a1424`
-    on the GT; the Roadster keeps Pearl). The trial + stars rule above is not built, so this gate stays open.
-  - **Decided 2026-11-13 (owner):** the 2026-11-09 rule stands (trial + stars). The stars threshold value is still
-    not decided, so the locked/trial/owned states are not built and this gate stays open.
+- [x] Vantaire GT unlock and factory finish (2026-11-19): **Vantaire GT** (夜鋒 GT, stable ID `crimson-gt`) becomes permanently
+  available at **18 Career stars**. Classic Career counts each track's best 1–3 stars once. Six perfect tracks are the
+  earliest possible unlock and other combinations can reach it across more tracks. No currency is spent.
+  - Locked cars can be previewed in 3D. The optional, one-time **24-hour test drive** starts from the explicit Garage
+    action and permits regular races. Reaching 18 stars while driving the GT keeps it equipped. The results screen
+    announces the unlock once when a Career finish crosses the threshold.
+  - The trial uses the earliest saved start on Google Cloud Save and browser storage for guests. An expired trial
+    allows the current race to finish and falls back to Stratosway R2 for the following race, unless the player has
+    reached 18 stars. A car selection from the previously free build does not grant access. The GT finish stays saved.
+  - Deep Crimson (`crimson`, `#9a1424`) is the GT's factory finish. The initial free build was approved November 12
+    and reconfirmed November 14 while the star threshold was open.
 - [x] The concept board's generator and terms of use, recorded in [../concept-art/README.md](../concept-art/README.md).
   This is a release gate.
   - **Closed 2026-11-14 by the owner after discussion;** the README entry itself was not written in this pass.
@@ -65,8 +64,8 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     the chase camera exactly like the Roadster" (car root, chase camera, procedural tyres equal; GLB tyres touch the
     road within 0.005). These are guards: the product already behaved this way, so there was no product RED.
   - the equipped car persists across Cloud Save: see the Cloud Save box below.
-- [ ] A preview never grants the car: not written, nothing to grant while both cars are open to everyone (waits for
-  the unlock rule).
+- [x] A locked preview keeps the saved car and trial untouched. See `tests/car-catalog.test.js` and
+  `tests/gt-unlock-browser.spec.js`.
 - [x] Blockout from the four studio panels (image-to-3D allowed only as a blockout). Then author the car in Blender
   around the shared collision envelope and ports. Do **not** move the ports to match the image.
   - 2026-11-12: `assets-src/crimson-gt/` (`build.py`, `bake.py`, `crimson-gt.blend`), authored in bpy, no
@@ -126,8 +125,8 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   painted collection's close-up composition and is available for all cars. The full-car render now appears in the car
   picker beside the Roadster. Browser coverage checks the art, labels and responsive bounds at 390×844,
   844×390 and 1440×900. See the [artwork notes](../../../../public/feature-assets/garage-public/paint-cards/README.md).
-- [ ] Car picker locked/trial/owned states: not built, both cars are temporarily open (waits for the unlock rule,
-  which the owner decides later, 2026-11-14).
+- [x] The car picker shows the locked preview, trial activation and expiry, and owned selection in both locales.
+  The save and race start also enforce the same 18-star or active-trial requirement.
 - [x] Local save for the equipped car (`skyline-rush-car`) and each car's paint (`skyline-rush-car-paints`), with a
   backward-compatible load: no entry means the Roadster, whose paint stays in `skyline-rush-paint`. No change to
   existing paint or skin entitlements.
