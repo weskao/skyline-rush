@@ -282,13 +282,13 @@ export function stepRace(race, input, dt) {
     car.boostTunnelEvent = { time: race.elapsed, distance: car.distance };
   }
   const drifting = car.drift !== null;
-  const hardBrake = brake && !car.driftHold;
-  car.braking = hardBrake || drifting;
+  const brakeDecel = brake ? 35 * (car.driftHold?.brakeBlend ?? 1) : 0;
+  car.braking = brakeDecel > 0 || drifting;
   const boosted = boost || (car.miniBoost > 0 && !brake); // the mini boost shares the boost cap but burns no fuel
   const limit = (nitro ? MAX_SPEED + NITRO_CAP_BONUS : boosted ? MAX_SPEED + BOOST_CAP_BONUS : MAX_SPEED) + (slip.active ? SLIPSTREAM_CAP_BONUS : 0) +
     (car.inShortcut ? SHORTCUT_CAP_BONUS : 0);
-  const drive = drifting ? -DRIFT_BLEED : (throttle ? THROTTLE_ACCEL : -4) - (hardBrake ? 35 : 0);
-  const acceleration = car.speed > limit ? -OVER_CAP_DECEL - (hardBrake ? 35 : 0) : drive + (boosted ? BOOST_ACCEL : 0) + (nitro ? NITRO_ACCEL : 0);
+  const drive = drifting ? -DRIFT_BLEED : (throttle ? THROTTLE_ACCEL : -4) - brakeDecel;
+  const acceleration = car.speed > limit ? -OVER_CAP_DECEL - brakeDecel : drive + (boosted ? BOOST_ACCEL : 0) + (nitro ? NITRO_ACCEL : 0);
   car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
   car.nitroTime = Math.max(0, car.nitroTime - dt);
   car.miniBoost = Math.max(0, car.miniBoost - dt);

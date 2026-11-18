@@ -199,7 +199,7 @@ export function createInteractiveTutorial() {
       else if (step === 'boost') valid = judgeStretch();
       else if (step === 'drift') {
         valid = !!(car as unknown as { driftPayout: { nitro: number } | null }).driftPayout && car.miniBoost > 0; // any tier pays
-        if (car.drift || car.driftHold?.reward) { drifted = true; if (retryReason === 'slow') retryReason = null; }
+        if (car.drift || car.driftHold) { drifted = true; retryReason = null; }
         else if (drifted && !valid) { drifted = false; retryReason = 'short'; } // released before the first payout tier
         // Lessons keep the player's speed, so a drift tried at crawl speed only brakes: say why.
         else if (!valid && controls.brake && controls.steer && car.altitude === 0 && car.speed < DRIFT_ENTRY) retryReason = 'slow';

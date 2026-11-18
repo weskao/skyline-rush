@@ -131,12 +131,34 @@ test('drift lesson keeps its release cue and charge when the drift ends below th
   for (let frame = 0; frame < 60; frame++) tick(session, { brake: true, steer: 0.1 });
 
   assert.equal(car.drift, null);
-  assert.deepEqual(session.cue, { key: 'hud.driftRelease', actions: ['brake'] });
+  assert.deepEqual(session.cue, { key: 'tutorial.cue.driftExit', actions: ['brake'] });
   assert.equal(session.progress, 1);
   assert.equal(session.coachReason, null);
   tick(session);
   assert.equal(session.coachPhase, 'finishing');
   assert.ok(car.miniBoost > 0);
+});
+
+test('a short drift that ended during the hold tells the player to release before retrying', () => {
+  const session = createInteractiveTutorial();
+  skipTo(session, 'drift');
+  const car = session.race.player;
+  car.speed = 70;
+  const drift = { brake: true, steer: 0.1 };
+
+  for (let frame = 0; frame < 12; frame++) tick(session, drift);
+  for (let frame = 0; frame < 15; frame++) tick(session, { brake: true });
+  assert.equal(car.drift, null);
+  assert.deepEqual(session.cue, { key: 'tutorial.cue.driftReset', actions: ['brake'] });
+  assert.equal(session.coachReason, null);
+  tick(session, drift);
+  assert.equal(car.drift, null, 'steering again in the same brake hold cannot restart');
+  tick(session);
+  assert.equal(session.coachReason, 'short');
+  assert.equal(car.miniBoost, 0);
+  tick(session, drift);
+  assert.ok(car.drift);
+  assert.equal(session.coachReason, null, 'the previous retry warning clears when the new drift begins');
 });
 
 test('drift and air chain cues name the next action at the right moment', () => {

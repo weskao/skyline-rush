@@ -22,7 +22,9 @@ const ROLL_FAST_FALL = 8; // m/s down
 const tenth = (seconds: number): number => Math.round(Math.max(0, seconds) * 10) / 10;
 
 function driftCue({ car, driftEntry }: CueState): TutorialCue {
-  if (car.driftHold?.reward) return { key: 'hud.driftRelease', actions: ['brake'] };
+  if (car.driftHold && !car.drift) {
+    return { key: car.driftHold.reward ? 'tutorial.cue.driftExit' : 'tutorial.cue.driftReset', actions: ['brake'] };
+  }
   const time = car.drift?.time;
   if (time !== undefined) {
     // The engine credits each DRIFT_REWARDS tier's NITRO as it is reached; the release pays the mini boost.

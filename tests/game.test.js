@@ -70,10 +70,7 @@ test('accelerating, coasting, braking and steering respect road and speed limits
   assert.ok(race.player.speed < speed);
   advance(race, 5, { brake: true, steer: -1 });
   assert.ok(race.player.x >= -ROAD_LIMIT);
-  assert.ok(race.player.speed > 0, 'the drift hold does not become a hard brake');
-  advance(race, 0.05); // release the drift input before asking for a hard brake
-  advance(race, 5, { brake: true });
-  assert.equal(race.player.speed, 0);
+  assert.equal(race.player.speed, 0, 'holding BRAKE brings the car to a stop after the drift');
 });
 
 test('thrusters require speed, lift the car, spend fuel and land on release', () => {

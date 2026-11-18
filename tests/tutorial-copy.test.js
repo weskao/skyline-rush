@@ -28,13 +28,13 @@ test('all bilingual interactive tutorial strings are retained in the public UI c
   const english = Object.keys(TUTORIAL_COPY.en).sort();
   const chinese = Object.keys(TUTORIAL_COPY['zh-TW']).sort();
   assert.deepEqual(chinese, english, 'the two tutorial languages must have identical keys');
-  assert.equal(english.length, 140, 'all lesson, coaching, live cue and touch/tilt hints remain available');
+  assert.equal(english.length, 144, 'all lesson, coaching, live cue and touch/tilt hints remain available');
   for (const key of ['tutorial.cue.chainRelease', 'tutorial.cue.driftRelease', 'tutorial.cue.boostGo', 'tutorial.finishing']) assert.ok(english.includes(key), key);
   assert.ok(english.includes('tutorial.freeDrive'), 'the completion banner must be localized');
   assert.ok(english.includes('tutorial.barrelRollReadyToLand'));
   assert.ok(english.includes('tutorial.drift'));
   assert.match(UI.en['tutorial.drift'], /NITRO arrives as you hold: 0\.6s \+0\.10/);
-  assert.match(UI['zh-TW']['tutorial.drift'], /0\.6 秒 \+0\.10.*立即入帳；放開再加速/);
+  assert.match(UI['zh-TW']['tutorial.drift'], /0\.6 秒 \+0\.10.*立即入帳；放開煞車再加速/);
   for (const key of ['tutorial.driftRetry.short', 'tutorial.driftRetry.shortSlide']) {
     assert.match(UI.en[key], /0\.6s/, key);
     assert.match(UI['zh-TW'][key], /0\.6 秒/, key);

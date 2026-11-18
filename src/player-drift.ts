@@ -7,7 +7,12 @@ interface Drift {
   grace: number;
 }
 
-export interface DriftHold { reward: Drift | null }
+const DRIFT_BRAKE_RAMP_SECONDS = 0.55;
+
+export interface DriftHold {
+  reward: Drift | null;
+  brakeBlend: number;
+}
 
 interface DriftPlayer {
   speed: number;
@@ -25,7 +30,7 @@ export function stepPlayerDrift(car: DriftPlayer, brake: boolean, steer: number,
   const canDrift = brake && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED;
   const dir = Math.sign(steer);
   if (canDrift && dir !== 0 && car.railContactSide !== dir && (!car.driftHold || car.drift)) {
-    car.driftHold ??= { reward: null };
+    car.driftHold ??= { reward: null, brakeBlend: 0 };
     const drift = car.drift ??= { time: 0, dir, nitro: 0, grace: 0 };
     drift.dir = dir;
     drift.grace = 0;
@@ -40,8 +45,12 @@ export function stepPlayerDrift(car: DriftPlayer, brake: boolean, steer: number,
     car.drift = null;
   }
 
-  // The rest of this hold coasts. The next press can brake or start another drift.
-  if (brake || !hold) return 0;
+  if (!hold) return 0;
+  if (brake) {
+    // Blend back to ordinary braking over time when the player keeps the input held.
+    hold.brakeBlend = Math.min(1, hold.brakeBlend + dt / DRIFT_BRAKE_RAMP_SECONDS);
+    return 0;
+  }
   car.driftHold = null;
   const earned = hold.reward;
   if (!earned) return 0;

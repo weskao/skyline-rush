@@ -1,3 +1,10 @@
+# Drift exit braking and tutorial coaching
+
+- [x] RED reproduced a hold that could never rebuild braking force after a drift, a generic earned-boost cue, and an incorrect drift-start cue after a short hold.
+- [x] Blend from drift exit to normal braking over 0.55 seconds. A straight brake request still acts immediately, and releasing an earned drift still starts its mini boost.
+- [x] Coach brake release, continued braking, and a short drift retry in English and Traditional Chinese. Select copy for keys, buttons, slide and tilt, pulse BRAKE for drift entry, and clear stale retry copy.
+- [ ] Confirm real browser and physical-phone behavior and the exact-commit GitHub quality gate.
+
 # Short-landscape reward details
 
 - [x] Reproduced the hard cut in Chromium. The old panel switched directly to opacity 1 without a transform when Details opened.

@@ -120,19 +120,35 @@ test('a drift that slows below DRIFT_MIN_SPEED pays the tier it reached', () => 
   assert.equal(race.player.nitro, DRIFT_REWARDS.at(-1).nitro);
 });
 
-test('holding brake past the minimum drift speed coasts until release, then a new press can hard-brake', () => {
-  const race = cruising(DRIFT_MIN_SPEED + 1);
-  const car = race.player;
-  for (let frame = 0; frame < 60; frame++) stepRace(race, DRIFT, DT);
+test('a held drift blends into braking and can stop the car without another press', () => {
+  for (const hz of [30, 60, 120]) {
+    const dt = 1 / hz;
+    const race = cruising(DRIFT_MIN_SPEED + 1);
+    const car = race.player;
+    stepRace(race, DRIFT, dt);
+    assert.ok(car.drift);
+    let before = car.speed;
+    for (let frame = 0; car.drift && frame < hz; frame++) {
+      before = car.speed;
+      stepRace(race, DRIFT, dt);
+    }
 
-  assert.equal(car.drift, null);
-  assert.ok(car.speed > DRIFT_MIN_SPEED - 2, `speed after held exit was ${car.speed.toFixed(2)} m/s`);
-  assert.equal(car.braking, false);
-  stepRace(race, {}, DT);
-  const speed = car.speed;
+    assert.equal(car.drift, null);
+    const exitDecel = (before - car.speed) / dt;
+    assert.ok(exitDecel > 4 && exitDecel < 8, `${hz} Hz exit deceleration: ${exitDecel.toFixed(2)} m/s²`);
+    for (let frame = 0; frame < Math.ceil(hz * 0.55); frame++) stepRace(race, DRIFT, dt);
+    before = car.speed;
+    stepRace(race, DRIFT, dt);
+    assert.ok(Math.abs((before - car.speed) / dt - 39) < 1e-9, `${hz} Hz reaches full braking`);
+    for (let frame = 0; frame < hz; frame++) stepRace(race, DRIFT, dt);
+    assert.equal(car.speed, 0, `${hz} Hz stops during the same hold`);
+  }
+});
+
+test('straight-line braking immediately reaches full strength without a preceding drift', () => {
+  const race = cruising(46);
   stepRace(race, { brake: true }, DT);
-  assert.ok(Math.abs(car.speed - (speed - 39 * DT)) < 1e-9, 'the new press can immediately hard-brake');
-  assert.equal(car.braking, true);
+  assert.ok(Math.abs(race.player.speed - (46 - 39 * DT)) < 1e-9);
 });
 
 test('an earned low-speed exit boost waits through the whole hold and fires once on release', () => {

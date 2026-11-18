@@ -49,7 +49,7 @@ const TOGGLE_FLY_COPY = new Set(['tutorial.airChain', 'tutorial.airChainAirborne
   'tutorial.touch.land', 'tutorial.touch.airChain', 'tutorial.touch.barrelRoll', 'tutorial.slide.barrelRoll', 'tutorial.tilt.barrelRoll',
   ...['chainFly', 'chainBoost', 'chainHold', 'chainLanding', 'chainRelease', 'rollFly', 'rollClimb', 'rollRelease', 'rollSpin', 'rollSoften'].map(cue => 'tutorial.cue.' + cue)]);
 const PAD_BRAKE_COPY = new Set(['tutorial.brake', 'tutorial.brakeRetry.noBrake', 'tutorial.drift', 'tutorial.driftRetry.short', 'tutorial.driftRetry.slow',
-  ...['brakeAhead', 'brakeHold', 'driftSpeed', 'driftStart', 'driftRelease', 'driftMax'].map(cue => 'tutorial.cue.' + cue)]);
+  ...['brakeAhead', 'brakeHold', 'driftSpeed', 'driftStart', 'driftRelease', 'driftMax', 'driftExit', 'driftReset'].map(cue => 'tutorial.cue.' + cue)]);
 function controlVariant(key: string, { touch, steerMode, flyMode }: HintControls): string {
   if (!touch) return key;
   if (key === 'tutorial.cue.nitro') return 'tutorial.touch.nitro';
@@ -129,6 +129,7 @@ export function tutorialCueView(cue: TutorialCue | null | undefined, touch: bool
 /** Phone controls that pulse now. NITRO needs a fresh press; the air chain accepts either BOOST or NITRO in flight. */
 export function tutorialTouchControls(step: string | null, cue: TutorialCue | null | undefined, action: string | null): string[] {
   if (step === 'nitro') return cue?.key === 'tutorial.cue.nitro' ? ['nitro'] : [];
+  if (step === 'drift') return cue?.key === 'tutorial.cue.driftStart' && action ? [action] : [];
   if (step !== 'airChain' || !cue) return action ? [action] : [];
   if (cue.key === 'tutorial.cue.chainFly') return ['fly'];
   return cue.actions.includes('boost') ? ['boost', 'nitro'] : [];
