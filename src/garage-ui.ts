@@ -280,8 +280,10 @@ export function setupGarageUI({
     if (!garageScreen.open) return;
     if (leavingGarage) { continueGarageExit(); return; }
     const page = history.state?.[historyKey];
-    if (page === 'home' || page === 'studio') showPage(page);
-    else garageScreen.close();
+    if (page === 'home' || page === 'studio') {
+      // A nested reward dialog owns its own history entry inside the same Garage page.
+      if (page !== garageStudioView.page) showPage(page);
+    } else garageScreen.close();
   });
   garageScreen.addEventListener('close', () => {
     contacts.clear();

@@ -1,3 +1,9 @@
+# Acquisition reveal
+
+- [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.
+- [x] Add one accessible bilingual reveal for real race, mission and redemption outcomes, and document the consumer API.
+- [ ] Confirm physical phone coverage and exact-HEAD CI.
+
 # Garage drift trails
 
 - [x] Add five visual drift trails beside the original rubber. The existing account-scoped trial separates preview and equip.

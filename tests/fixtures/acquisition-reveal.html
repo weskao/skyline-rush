@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Skyline Rush reward reveal fixture</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      font: 16px "Avenir Next", Inter, system-ui, "Noto Sans CJK TC", sans-serif;
+    }
+    body {
+      margin: 0;
+      background: #0b1526 url("/track-teasers/neon.jpg") center / cover fixed;
+    }
+    #opener { margin: 16px; min-height: 44px; }
+  </style>
+</head>
+<body data-phase="ready">
+  <button id="opener" type="button">Present reward</button>
+  <div id="app"></div>
+  <script type="module">
+    import { createApp } from 'vue';
+    import AcquisitionReveal from '../../src/AcquisitionReveal.vue';
+    import { presentAcquisition } from '../../src/acquisition-reveal.ts';
+    import { setLocale } from '../../src/i18n.ts';
+
+    setLocale(location.search === '?zh' ? 'zh-TW' : 'en');
+    createApp(AcquisitionReveal).mount('#app');
+    const items = [
+      { id: 'gt', kind: 'car', status: 'unlocked', name: { en: 'Vantaire GT', 'zh-TW': '夜鋒 GT' },
+        artwork: { src: 'feature-assets/garage-public/car-picker/crimson-gt@3x.webp', style: 'cutout' } },
+      { id: 'aurora', kind: 'paint', status: 'unlocked', name: { en: 'Aurora', 'zh-TW': '極光' },
+        artwork: { src: 'feature-assets/garage-public/paint-cards/aurora@3x.webp', style: 'cover' } },
+      { id: 'ion', kind: 'equipment', status: 'earned', name: { en: 'Ion thruster', 'zh-TW': '離子推進器' },
+        artwork: { src: 'feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', style: 'icon' } },
+      { id: 'trophy', kind: 'medal', status: 'earned', name: { en: 'Gold trophy', 'zh-TW': '金級獎盃' },
+        artwork: { src: 'feature-assets/garage-rewards-and-missions/raster/trophy-gold@3x.webp', style: 'icon' } },
+    ];
+    document.querySelector('#opener').addEventListener('click', () => {
+      presentAcquisition({ id: 'sample-reward', items });
+      presentAcquisition({ id: 'second-reward', items: [{ id: 'item', kind: 'item', status: 'earned',
+        name: { en: 'Collection token', 'zh-TW': '收藏代幣' }, artwork: { src: 'missing.webp', style: 'icon' } }] });
+    });
+  </script>
+</body>
+</html>

@@ -23,6 +23,7 @@ import CloseButton from './CloseButton.vue';
 import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';
 import ReleaseNotesPanel from './ReleaseNotesPanel.vue';
+import AcquisitionReveal from './AcquisitionReveal.vue';
 import { releaseView } from './release-view-state.ts';
 import { setupInputModality } from './input-modality.ts';
 import TutorialCoach from './TutorialCoach.vue';
@@ -42,7 +43,6 @@ import RaceOverlay from './RaceOverlay.vue';
 import RaceHalfway from './RaceHalfway.vue';
 import ItemRules from './ItemRules.vue';
 import ItemSlot from './ItemSlot.vue';
-
 const { version } = packageMeta;
 setupInputModality();
 const homeWalletLocale = ref(getLocale());
@@ -61,6 +61,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
 </script>
 
 <template>
+  <AcquisitionReveal />
   <ReleaseNotesPanel />
   <GuidePanel />
   <EventLabPanel />
