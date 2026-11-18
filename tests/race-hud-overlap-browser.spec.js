@@ -138,7 +138,8 @@ async function measureHud(page, viewport, locale, hud, failures) {
   await page.waitForFunction(() => !document.querySelector('#event-callout').hidden, null, { polling: 'raf', timeout: ciTimeout(5_000) });
   const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
   // The callout stays off the road view: the same centre rectangle pickPeripheralSlot (src/race-feedback-placement.ts) avoids.
-  const scene = await page.locator('#world').boundingBox();
+  const pane = viewport.segments?.[viewport.width > viewport.height ? 1 : 0];
+  const scene = pane ? { x: pane.left, y: pane.top, width: pane.width, height: pane.height } : await page.locator('#world').boundingBox();
   const road = { left: scene.x + scene.width * 0.325, right: scene.x + scene.width * 0.675,
     top: scene.y + scene.height * 0.2, bottom: scene.y + scene.height * 0.72 };
   // The progress bar (.progress-bar; mode rows stay in .race-progress) and ROAD/FLIGHT mode chip dock at the edges too (persistent blocks must never sit on the road view).

@@ -32,6 +32,7 @@ const measureAudio = () => {
   AudioNode.prototype.connect = function(destination, ...args) {
     if (destination instanceof AudioDestinationNode) {
       const analyser = this.context.createAnalyser();
+      analyser.fftSize = 32768; // Retain short UI cues across a slow browser automation round trip.
       connect.call(this, analyser);
       window.audioState = () => this.context.state;
       window.audioLevel = () => {
