@@ -1,3 +1,12 @@
+# Startup loading screen
+
+- [x] Add a first-paint opening screen with responsive full-bleed artwork, bilingual wordmark and tagline, and a three-segment status tied to game bootstrap. Show Enter only after the first lobby render and remember entry per tab.
+- [x] Size the brand and 44px-or-larger action for compact landscape, tablet and foldable geometry. Keep the fully rendered lobby inert behind the screen and pause its animation until entry.
+- [x] Reuse game quality for ambient particles (Low 0, Medium 3, High and Ultra 7) and honor comfort, effects-off and reduced motion. Reuse the game UI confirmation sound on entry. Startup progress itself uses visual feedback.
+- [x] Add test-first checks for the static shell, keyboard entry, render failure, context loss, art selection, device layouts and quality. The shell check failed on the original HTML and passes after integration.
+- The full-bleed WebPs under `public/feature-assets/startup/` use the original landscape (1672×941), portrait (852×1847) and square (1254×1254) render resolutions plus smaller encodes. Their responsive display size is independent of the 3× icon sizing policy. The art keeps the source proportions and uses local code for text/buttons.
+- [ ] Confirm the full GitHub quality gate and physical iOS/Android/foldable devices.
+
 # Garage drift trails
 
 - [x] Add five visual drift trails beside the original rubber. The existing account-scoped trial separates preview and equip.

@@ -1,0 +1,104 @@
+import { resolveInitialLocale } from './locale-preference.ts';
+import { refreshFoldableViewport } from './foldable-viewport.ts';
+
+const COPY = {
+  en: {
+    tagline: 'Beyond the road',
+    steps: ['Loading game', 'Building lobby', 'Preparing 3D scene'],
+    enter: 'Enter game',
+    retry: 'Retry',
+    module: 'Game files could not be loaded.',
+    renderer: 'The 3D scene could not start. Check WebGL and try again.',
+  },
+  'zh-TW': {
+    tagline: '駛出公路，飛向天際',
+    steps: ['載入遊戲', '建立大廳', '準備 3D 場景'],
+    enter: '進入遊戲',
+    retry: '重試',
+    module: '遊戲檔案載入失敗。',
+    renderer: '無法啟動 3D 場景。請確認 WebGL 可用後重試。',
+  },
+} as const;
+
+function setupStartup() {
+  const app = document.querySelector<HTMLElement>('#app')!;
+  const root = document.querySelector<HTMLElement>('#startup')!;
+  const progress = root.querySelector<HTMLElement>('#startup-progress')!;
+  const status = root.querySelector<HTMLElement>('#startup-status')!;
+  const error = root.querySelector<HTMLElement>('#startup-error')!;
+  const enter = root.querySelector<HTMLButtonElement>('#startup-enter')!;
+  const retry = root.querySelector<HTMLButtonElement>('#startup-retry')!;
+  const locale = resolveInitialLocale();
+  const copy = COPY[locale];
+  const seenKey = 'skyline-rush-startup-entered';
+  const viewport = new AbortController();
+  let entered = false;
+  let ready = false;
+  let failed = false;
+  let exit: Animation | undefined;
+
+  try { entered = sessionStorage.getItem(seenKey) === '1'; } catch { /* Storage is optional. */ }
+  document.documentElement.lang = locale;
+  root.querySelector('#startup-tagline')!.textContent = copy.tagline;
+  status.textContent = copy.steps[0];
+  enter.firstElementChild!.textContent = copy.enter;
+  retry.firstElementChild!.textContent = copy.retry;
+  app.inert = !entered;
+  root.hidden = entered;
+
+  if (!entered) {
+    refreshFoldableViewport();
+    window.addEventListener('resize', refreshFoldableViewport, { signal: viewport.signal });
+    window.visualViewport?.addEventListener('resize', refreshFoldableViewport, { signal: viewport.signal });
+  }
+
+  retry.addEventListener('click', () => location.reload());
+
+  return {
+    get entered() { return entered; },
+    get waitingForFrame() { return !entered && !ready && !failed; },
+    step(step: 1 | 2) {
+      if (step === 1) viewport.abort(); // The game owns segment changes after it mounts.
+      root.dataset.stage = String(step);
+      status.textContent = copy.steps[step];
+    },
+    ready(onEnter: () => void) {
+      if (!this.waitingForFrame) return;
+      ready = true;
+      root.dataset.stage = '3';
+      progress.hidden = true;
+      enter.hidden = false;
+      enter.focus({ preventScroll: true });
+      enter.addEventListener('click', async () => {
+        enter.disabled = true;
+        if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.body.classList.contains('vfx-comfort')) {
+          exit = root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-out', fill: 'forwards' });
+          await exit.finished.catch(() => {});
+        }
+        if (failed) return;
+        root.hidden = true;
+        entered = true;
+        app.inert = false;
+        try { sessionStorage.setItem(seenKey, '1'); } catch { /* The lobby still opens. */ }
+        viewport.abort();
+        app.querySelector<HTMLElement>('#start-button')?.focus({ preventScroll: true });
+        onEnter();
+      }, { once: true });
+    },
+    fail(reason: 'module' | 'renderer') {
+      failed = true;
+      exit?.cancel();
+      entered = false;
+      app.inert = true;
+      root.hidden = false;
+      progress.hidden = true;
+      enter.hidden = true;
+      error.textContent = copy[reason];
+      error.hidden = false;
+      retry.hidden = false;
+      retry.focus({ preventScroll: true });
+    },
+  };
+}
+
+export const startup = setupStartup();

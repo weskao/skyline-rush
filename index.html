@@ -8,6 +8,7 @@
     <meta name="apple-mobile-web-app-title" content="Skyline Rush" />
     <!-- black, not black-translucent: that style paints under the status bar and leaves an unpaintable bottom band on iOS standalone (WebKit 313800). -->
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <link rel="stylesheet" href="/src/startup.css" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
@@ -27,5 +28,32 @@
     <meta property="og:image:alt" content="Skyline Rush start screen" />
     <meta name="twitter:card" content="summary_large_image" />
   </head>
-  <body><div id="app"></div><script type="module" src="/src/main.js"></script></body>
+  <body>
+    <main id="startup" class="startup" data-stage="0" aria-labelledby="startup-title">
+      <picture class="startup-art" aria-hidden="true">
+        <source media="(max-aspect-ratio: 3/5)" srcset="%BASE_URL%feature-assets/startup/startup-portrait-compact.webp 480w, %BASE_URL%feature-assets/startup/startup-portrait.webp 852w" sizes="100vw" />
+        <source media="(max-aspect-ratio: 3/2) and (min-height: 500px)" srcset="%BASE_URL%feature-assets/startup/startup-square-compact.webp 630w, %BASE_URL%feature-assets/startup/startup-square.webp 1254w" sizes="100vw" />
+        <img src="%BASE_URL%feature-assets/startup/startup-wide.webp" srcset="%BASE_URL%feature-assets/startup/startup-wide-compact.webp 840w, %BASE_URL%feature-assets/startup/startup-wide.webp 1672w" sizes="100vw" alt="" draggable="false" />
+      </picture>
+      <div class="startup-motes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="startup-layout">
+        <header class="startup-brand">
+          <h1 id="startup-title" lang="en" aria-label="Skyline Rush"><span>Skyline</span> <strong>Rush</strong></h1>
+          <p id="startup-tagline">Beyond the road</p>
+        </header>
+        <div class="startup-dock">
+          <div id="startup-progress" class="startup-progress">
+            <span class="startup-lights" aria-hidden="true"><i></i><i></i><i></i></span>
+            <p id="startup-status" role="status">Loading game</p>
+          </div>
+          <p id="startup-error" class="startup-error" role="alert" hidden></p>
+          <button id="startup-enter" class="startup-action" type="button" hidden><span>Enter game</span></button>
+          <button id="startup-retry" class="startup-action" type="button" hidden><span>Retry</span></button>
+          <noscript>Enable JavaScript to play Skyline Rush.</noscript>
+        </div>
+      </div>
+    </main>
+    <div id="app" inert></div>
+    <script type="module" src="/src/startup-entry.ts"></script>
+  </body>
 </html>

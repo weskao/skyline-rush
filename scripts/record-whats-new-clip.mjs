@@ -124,6 +124,7 @@ async function record(locale, system, shape, { width, height, mobile }) {
   });
   if (!master) await page.clock.install({ time: 0 });
   await page.goto(server.resolvedUrls.local[0]);
+  await page.locator('#startup-enter').click();
   await page.locator('#start-button').waitFor();
   await page.waitForTimeout(700); // the music prompt appears after 600 ms where autoplay is blocked
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
