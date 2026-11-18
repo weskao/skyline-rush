@@ -30,7 +30,10 @@
     import { setLocale } from '../../src/i18n.ts';
 
     setLocale(location.search === '?zh' ? 'zh-TW' : 'en');
-    createApp(AcquisitionReveal).mount('#app');
+    window.revealCues = [];
+    createApp(AcquisitionReveal).provide('game-audio-cue', name => {
+      window.revealCues.push([name, document.querySelector('#acquisition-reveal').open]);
+    }).mount('#app');
     const items = [
       { id: 'gt', kind: 'car', status: 'unlocked', name: { en: 'Vantaire GT', 'zh-TW': '夜鋒 GT' },
         artwork: { src: 'feature-assets/garage-public/car-picker/crimson-gt@3x.webp', style: 'cutout' } },
