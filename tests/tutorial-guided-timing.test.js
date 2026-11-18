@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { stepRace } from '../src/game.js';
+import { DRIFT_MIN_SPEED, stepRace } from '../src/game.js';
 import { createRaceAudioEvents } from '../src/race-audio-events.ts';
 import { createInteractiveTutorial, TUTORIAL_STEPS } from '../src/interactive-tutorial.ts';
 import { BOOST_LIMIT } from '../src/tutorial-gates.ts';
@@ -121,6 +121,22 @@ test('effect lessons advance only after their boost or NITRO has fully played ou
   assert.ok(finishing, 'the chain boost played out before the next lesson');
   assert.equal(car.miniBoost, 0);
   for (const key of ['tutorial.cue.chainFly', 'tutorial.cue.chainRelease', 'tutorial.cue.finishing']) assert.ok(seen.has(key), key);
+});
+
+test('drift lesson keeps its release cue and charge when the drift ends below the speed threshold', () => {
+  const session = createInteractiveTutorial();
+  skipTo(session, 'drift');
+  const car = session.race.player;
+  car.speed = DRIFT_MIN_SPEED + 1;
+  for (let frame = 0; frame < 60; frame++) tick(session, { brake: true, steer: 0.1 });
+
+  assert.equal(car.drift, null);
+  assert.deepEqual(session.cue, { key: 'hud.driftRelease', actions: ['brake'] });
+  assert.equal(session.progress, 1);
+  assert.equal(session.coachReason, null);
+  tick(session);
+  assert.equal(session.coachPhase, 'finishing');
+  assert.ok(car.miniBoost > 0);
 });
 
 test('drift and air chain cues name the next action at the right moment', () => {

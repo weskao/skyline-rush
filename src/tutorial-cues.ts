@@ -1,11 +1,12 @@
 import { CHAIN_POWERED_SECONDS } from './air-chain.ts';
+import type { DriftHold } from './player-drift.ts';
 import { DRIFT_REWARDS, DRIFT_FIRST_TIER, driftTier } from './drive-rules.ts';
 
 /** Live "do this now" toast for a lesson: what the engine shows the player is doing, and which control comes next. */
 export interface TutorialCue { key: string; actions: readonly string[]; n?: number; count?: number }
 export interface CueCar {
   altitude: number; thrusting: boolean; flightBoosted: boolean; poweredFlightTime: number;
-  drift: { time: number } | null; speed: number; verticalSpeed?: number; braking?: boolean;
+  drift: { time: number } | null; driftHold?: DriftHold | null; speed: number; verticalSpeed?: number; braking?: boolean;
 }
 export interface CueState {
   step: string | null; phase: string; car: CueCar;
@@ -21,6 +22,7 @@ const ROLL_FAST_FALL = 8; // m/s down
 const tenth = (seconds: number): number => Math.round(Math.max(0, seconds) * 10) / 10;
 
 function driftCue({ car, driftEntry }: CueState): TutorialCue {
+  if (car.driftHold?.reward) return { key: 'hud.driftRelease', actions: ['brake'] };
   const time = car.drift?.time;
   if (time !== undefined) {
     // The engine credits each DRIFT_REWARDS tier's NITRO as it is reached; the release pays the mini boost.

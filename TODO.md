@@ -1,3 +1,11 @@
+# Drift exit and release boost
+
+- [x] RED reproduced the speed drop and early boost countdown on Coast. With BRAKE and light steering held from 165.6 km/h, speed at one second was 117.45 km/h on the old code.
+- [x] Keep the input assigned to the drift until release. In the same 60 Hz run, speed was 157.35 km/h after one second and the boost waited for release. A new press without steering brakes immediately.
+- [x] Verify the tutorial cue, the existing 0.2-second steering reversal across tracks and modes at 30/60/120 Hz, replay fixtures and the shared input tests for keyboard and touch.
+- [ ] Verify the HUD in a real browser run and on physical phones. Chromium in this environment could not start because UNIX sockets are restricted.
+- [ ] Confirm the exact-commit GitHub quality gate.
+
 # Garage drift trails
 
 - [x] Add five visual drift trails beside the original rubber. The existing account-scoped trial separates preview and equip.

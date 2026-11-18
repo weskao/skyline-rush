@@ -1,4 +1,5 @@
 import { advanceCountdown } from './frame-pacing.ts';
+import { stepPlayerDrift } from './player-drift.ts';
 export { startRace } from './frame-pacing.ts';
 import { classicCornerPush } from './classic-road-routes.ts';
 import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
@@ -29,7 +30,7 @@ import { skyJumpGap } from './sky-track.ts'; import { dropCar, stepDeck, stepRiv
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
-import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, DRIFT_FLIP_GRACE, DRIFT_REWARDS, driftCredit, driftTier, grantMiniBoost } from './drive-rules.ts';
+import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, grantMiniBoost } from './drive-rules.ts';
 export { MAX_SPEED, NITRO_TIME, NITRO_EXTEND, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
@@ -174,6 +175,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
       section: null, inShortcut: false, falls: 0, fall: null, span: false,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
+      driftHold: /** @type {import('./player-drift.ts').DriftHold | null} */ (null),
       drift: null, driftPayout: null, miniBoost: 0, miniBoostEvent: null, boostTunnelClaimed: [], boostTunnelEvent: null, trick: null, trickPayout: null, flick: null, steerSign: 0,
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
       heldItem: null, itemCooldown: 0,
@@ -252,7 +254,6 @@ export function stepRace(race, input, dt) {
   car.steerSign = steerSign;
   const boost = input.boost === true && car.fuel > 0 && !brake;
   car.boosting = boost;
-  car.braking = brake;
   // NITRO is edge-triggered: one press spends one full charge; a press during NITRO extends it, never stacks speed.
   if (input.nitro === true && !car.nitroHeld && car.nitro >= 1) {
     if (pressNitro(car)) car.nitroBurst = 0;
@@ -269,20 +270,8 @@ export function stepRace(race, input, dt) {
       Math.abs((other.altitude || 0) - car.altitude) < SLIPSTREAM_ALTITUDE;
   };
   if (stepSlipstream(slip, race.traffic.some(drafts) || race.rivals.some(drafts), dt)) addNitro(car, SLIPSTREAM_NITRO);
-  // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; each tier reached pays NITRO, the release a mini boost.
-  const canDrift = brake && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED;
-  if (canDrift && steer !== 0 && car.railContactSide !== Math.sign(steer)) {
-    car.drift ??= { time: 0, dir: 0, nitro: 0, grace: 0 };
-    car.drift.dir = Math.sign(steer); car.drift.grace = 0; car.drift.time += dt; // a flip turns the drift
-    const owed = driftCredit(car.drift); if (owed > 0) addNitro(car, owed);
-  } else if (car.drift && !(canDrift && steer === 0 && (car.drift.grace += dt) <= DRIFT_FLIP_GRACE)) { // neutral mid-flip: held, unpaid
-    const reward = DRIFT_REWARDS.find(r => car.drift.time >= r.time);
-    if (reward) {
-      grantMiniBoost(car, reward.boost, race.elapsed, driftTier(car.drift.time));
-      car.driftPayout = { time: race.elapsed, nitro: car.drift.nitro };
-    }
-    car.drift = null;
-  }
+  const driftNitro = stepPlayerDrift(car, brake, steer, dt, race.elapsed);
+  if (driftNitro > 0) addNitro(car, driftNitro);
   // A one-time, on-road tunnel reward. Track it by the authored section start,
   // not a frame counter: pausing, braking or standing inside cannot farm charge.
   if (car.section === 'boost-tunnel' && !car.boostTunnelClaimed.includes(section.from) &&
@@ -293,11 +282,13 @@ export function stepRace(race, input, dt) {
     car.boostTunnelEvent = { time: race.elapsed, distance: car.distance };
   }
   const drifting = car.drift !== null;
+  const hardBrake = brake && !car.driftHold;
+  car.braking = hardBrake || drifting;
   const boosted = boost || (car.miniBoost > 0 && !brake); // the mini boost shares the boost cap but burns no fuel
   const limit = (nitro ? MAX_SPEED + NITRO_CAP_BONUS : boosted ? MAX_SPEED + BOOST_CAP_BONUS : MAX_SPEED) + (slip.active ? SLIPSTREAM_CAP_BONUS : 0) +
     (car.inShortcut ? SHORTCUT_CAP_BONUS : 0);
-  const drive = drifting ? -DRIFT_BLEED : (throttle ? THROTTLE_ACCEL : -4) - (brake ? 35 : 0);
-  const acceleration = car.speed > limit ? -OVER_CAP_DECEL - (brake && !drifting ? 35 : 0) : drive + (boosted ? BOOST_ACCEL : 0) + (nitro ? NITRO_ACCEL : 0);
+  const drive = drifting ? -DRIFT_BLEED : (throttle ? THROTTLE_ACCEL : -4) - (hardBrake ? 35 : 0);
+  const acceleration = car.speed > limit ? -OVER_CAP_DECEL - (hardBrake ? 35 : 0) : drive + (boosted ? BOOST_ACCEL : 0) + (nitro ? NITRO_ACCEL : 0);
   car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
   car.nitroTime = Math.max(0, car.nitroTime - dt);
   car.miniBoost = Math.max(0, car.miniBoost - dt);
