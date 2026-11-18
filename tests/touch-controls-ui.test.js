@@ -42,6 +42,6 @@ test('browser toolbar height changes preserve steering, but fold/rotation/width 
   assert.match(source, /orientation !== lastOrientation/);
   assert.match(source, /Math\.abs\(innerWidth - lastWidth\) > 16/);
   assert.match(source, /\|\| foldChanged/);
-  assert.match(source, /controls\.clear\(\); padTouch = null; drawPad\(\)/);
+  assert.match(source, /controls\.clear\(\); drawPad\(\)/);
   assert.doesNotMatch(source, /'resize', \(\) => \{ controls\.clear\(\);/);
 });

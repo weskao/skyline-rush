@@ -2496,3 +2496,27 @@ body[data-phase="finished"] .overlay-actions:has(#choose-track[data-primary-acti
 #photo-advanced > summary { display: flex; align-items: center; justify-content: space-between; }
 #photo-advanced > summary::after { content: '＋'; color: var(--blue); }
 #photo-advanced[open] > summary::after { content: '−'; }
+
+/* Thumb positions in Buttons mode: steer on one side and brake on the outer edge of the action cluster. */
+#touch-controls[data-steer-mode="buttons"] { grid-template-columns: 1fr auto auto auto; }
+#touch-controls:not([data-steer-mode="buttons"]) .touch-brake { display: none; }
+#touch-controls .touch-steer :is([data-control="left"], [data-control="right"]) { grid-row: auto; }
+#touch-controls .touch-steer button:active:not(.is-held) { background: rgb(25 44 60 / .7); filter: none; }
+#touch-controls .touch-brake {
+  grid-column: 4;
+  grid-row: 1 / 3;
+  align-self: center;
+  width: calc(var(--touch-cell) * var(--touch-scale, 1));
+  background: #532a30;
+  border-color: #e88777;
+  color: #ffd5ca;
+}
+#touch-controls .touch-brake.is-held { background: #a84842; border-color: #ffd5ca; }
+@media (max-width: 430px) {
+  #touch-controls[data-steer-mode="buttons"] {
+    --compact-key-width: max(44px, calc((100vw - max(var(--thumb-edge), env(safe-area-inset-left)) - max(var(--thumb-edge), env(safe-area-inset-right)) - 36px) / 5));
+  }
+  #touch-controls[data-steer-mode="buttons"] button:not(.is-positioned) { max-width: var(--compact-key-width); }
+}
+#touch-controls[data-pad-brake] .pad-ring { border-color: #ff907d; }
+#touch-controls[data-pad-brake] .pad-knob { background: #ff907d; }

@@ -499,14 +499,15 @@ for (const [width,height,mode,flyMode,custom] of [[390,844,'slide','hold'],[320,
       await gesture(button('throttle'),'left');
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('left'),'right',effectiveMode==='slide'?-55:0);
       await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('right'),'brake',effectiveMode==='slide'?55:0);
-      await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('brake'),'drift',0,effectiveMode==='slide'?55:0);
+      await gesture(effectiveMode==='slide'?page.locator('.touch-pad'):button('brake'),'drift',0,effectiveMode==='slide'?66:0);
       await driftReady(page);
       if (effectiveMode === 'slide') {
         // One thumb: slide down (brake) and sideways (steer) on the pad.
         const b = await page.locator('.touch-pad').boundingBox();
         const p = { id: 1, x: b.x + b.width / 2, y: b.y + b.height * .25 };
         await touch('touchStart', [p]);
-        await touch('touchMove', [{ ...p, x: p.x - 55, y: p.y + 55 }]);
+        await touch('touchMove', [{ ...p, y: p.y + 66 }]);
+        await touch('touchMove', [{ ...p, x: p.x - 55, y: p.y + 66 }]);
       } else await touch('touchStart', [await point(button('left'), 1), await point(button('brake'), 2)]);
       await driftCharged(page);
       await touch('touchEnd', []);

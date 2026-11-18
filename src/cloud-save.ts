@@ -4,6 +4,7 @@ import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signO
 import { doc, getFirestore, runTransaction, writeBatch, getDoc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { mergeProgress, mergeModeBests, readLocalModeBests, saveLocalModeBests } from './cloud-progress.ts';
 import { googleAccountFields } from './cloud-account.ts';
+import { createWave3PreviewStore } from '#wave3-preview-store';
 
 const app = initializeApp({
   apiKey: 'AIzaSyChOFZ1EvyZ9iVlVZ_QQpijgObgALUyeEQ',
@@ -23,14 +24,17 @@ if (import.meta.env.DEV && location.hostname === '127.0.0.1'
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
 }
 
+const wave3PreviewStore = createWave3PreviewStore?.(db, () => auth.currentUser?.uid);
+export const transactWave3Preview = wave3PreviewStore?.transact;
+
 export const watchCloudUser = (onUser: (user: User | null) => void, onError?: (error: Error) => void) => onAuthStateChanged(auth, onUser, onError);
 export const signInToCloud = () => signInWithPopup(auth, new GoogleAuthProvider());
 export const signOutOfCloud = () => signOut(auth);
 export const deleteCloudProgress = (expectedUid: string) => {
   if (auth.currentUser?.uid !== expectedUid) throw new Error('Cloud account changed');
   const batch = writeBatch(db);
-  for (const collection of ['saves', 'modeBests', 'accounts'])
-    batch.delete(doc(db, collection, expectedUid));
+  for (const collection of ['saves', 'modeBests', 'accounts']) batch.delete(doc(db, collection, expectedUid));
+  wave3PreviewStore?.stageDeletion(batch, expectedUid);
   return batch.commit();
 };
 

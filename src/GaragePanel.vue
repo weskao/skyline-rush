@@ -18,6 +18,7 @@ import GarageLightingToggle from './GarageLightingToggle.vue';
 import GarageEffectsToggle from './GarageEffectsToggle.vue';
 import GarageSkinCatalog from '#garage-skin-ui';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
+const wave3DemoEnabled = wave3DemoExperience !== null;
 const locale = ref(getLocale());
 const storeCatalog = ref<{ openStore: () => void } | null>(null);
 const demo = ref<{ navigate: (page: 'home' | 'store' | 'collection', interactive?: boolean) => void } | null>(null);
@@ -27,7 +28,7 @@ const catalog = ref<HTMLElement>();
 const claimable = ref(0);
 function selectSection(next: typeof section.value): void {
   section.value = next;
-  if (next === 'store' && GARAGE_RELEASE_MODE === 'trial') demo.value?.navigate('store');
+  if (next === 'store' && wave3DemoEnabled) demo.value?.navigate('store');
   if (next === 'collection') demo.value?.navigate('collection');
   if (catalog.value) catalog.value.scrollTop = 0;
 }
@@ -50,7 +51,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? '外觀特效即將推出' : GARAGE_RELEASE_MODE === 'trial' ? '外觀特效免費試用中：重新載入後記住此帳號最後的選擇；不代表永久擁有' : '外觀特效已開放，裝備須具備擁有權', equipped: '已裝備', owned: '已擁有', locked: '未解鎖',
   cosmetic: '外觀不影響車輛性能', restore: '恢復預設車漆',
   preview: '試看', previewing: '試看中', cars: '車款', paints: '車漆', effects: '特效', missions: '任務',
-  store: GARAGE_RELEASE_MODE === 'trial' ? '試玩商城' : '商店展示', collectionTab: '試玩收藏', ready: '項可領取',
+  store: wave3DemoEnabled ? '試玩商城' : '商店展示', collectionTab: '試玩收藏', ready: '項可領取',
 } : {
   showroom: '3D vehicle showroom', title: 'PREVIEW STUDIO', open: 'Open full-screen Studio', back: 'Back to Garage',
   hint: 'Drag to rotate. Pinch or scroll to zoom.', angles: ['Front', 'Rear', 'Side', 'Top', '3/4 view'], free: 'Free view', angle: 'Camera angle', prevAngle: 'Previous angle', nextAngle: 'Next angle',
@@ -59,7 +60,7 @@ const copy = computed(() => locale.value === 'zh-TW' ? {
   coming: GARAGE_RELEASE_MODE === 'coming-soon' ? 'Cosmetic VFX coming soon' : GARAGE_RELEASE_MODE === 'trial' ? 'Try VFX for free. Your last pick is remembered on reload for this account; no permanent ownership.' : 'Cosmetic VFX is available; equip requires ownership', equipped: 'Equipped', owned: 'Owned', locked: 'Locked',
   cosmetic: 'Appearance does not change performance', restore: 'Restore default paint',
   preview: 'Preview', previewing: 'Previewing', cars: 'Cars', paints: 'Paints', effects: 'Effects', missions: 'Missions',
-  store: GARAGE_RELEASE_MODE === 'trial' ? 'Demo Store' : 'Store Preview', collectionTab: 'Collection', ready: 'ready to claim',
+  store: wave3DemoEnabled ? 'Demo Store' : 'Store Preview', collectionTab: 'Collection', ready: 'ready to claim',
 });
 const angleName = computed(() => copy.value.angles[GARAGE_ANGLES.indexOf(garageStudioView.angle as typeof GARAGE_ANGLES[number])] ?? copy.value.free);
 const nextPose = computed(() => garageStudioView.mode === 'flight' ? 'ground' : 'flight');
@@ -119,10 +120,10 @@ const isPreviewingPaint = (id: string): boolean =>
       </section>
       <aside class="garage-collection">
         <nav class="garage-section-nav" :aria-label="locale === 'zh-TW' ? '車庫分類' : 'Garage sections'">
-          <button v-for="id in sections" v-show="id !== 'collection' || GARAGE_RELEASE_MODE === 'trial'"
+          <button v-for="id in sections" v-show="id !== 'collection' || wave3DemoEnabled"
             :key="id" type="button" :data-garage-section="id" :aria-pressed="section === id"
-            :data-wave3-open-store="id === 'store' && GARAGE_RELEASE_MODE === 'trial' ? '' : undefined"
-            :data-wave3-open-collection="id === 'collection' && GARAGE_RELEASE_MODE === 'trial' ? '' : undefined"
+            :data-wave3-open-store="id === 'store' && wave3DemoEnabled ? '' : undefined"
+            :data-wave3-open-collection="id === 'collection' && wave3DemoEnabled ? '' : undefined"
             aria-controls="garage-catalog-scroll" :aria-label="sectionLabel(id)"
             :aria-describedby="id === 'missions' && claimable ? 'garage-claim-count' : undefined" @click="selectSection(id)">
             <span>{{ sectionLabel(id) }}</span>
@@ -152,11 +153,11 @@ const isPreviewingPaint = (id: string): boolean =>
             <p class="garage-cosmetic">{{ copy.cosmetic }}</p>
           </section>
           <section v-show="section === 'missions'">
-            <GarageMissionBoard :experience="GARAGE_RELEASE_MODE === 'trial' ? wave3DemoExperience : null"
+            <GarageMissionBoard :experience="wave3DemoExperience"
               @claimable="claimable = $event" />
             <GarageSourceArtGallery category="garage-rewards-and-missions" />
           </section>
-          <Wave3DemoEntry v-if="GARAGE_RELEASE_MODE === 'trial'" v-show="section === 'store' || section === 'collection'"
+          <Wave3DemoEntry v-if="wave3DemoEnabled" v-show="section === 'store' || section === 'collection'"
             ref="demo" :locale="locale" embedded @navigate="page => { if (page !== 'home') section = page; }" />
           <section v-show="section === 'store'" class="garage-store-concepts">
             <section class="garage-store-entry" data-garage-store-entry
