@@ -5,6 +5,7 @@
 <div id="app"></div>
 <script type="module">
 import { createApp, h, ref } from 'vue';
+import AcquisitionReveal from '../../src/AcquisitionReveal.vue';
 import Wave3DemoStore from '../../src/Wave3DemoStore.vue';
 import Wave3DemoCollection from '../../src/Wave3DemoCollection.vue';
 import { createWave3LocalDemo } from '../../src/wave3-local-demo.ts';
@@ -27,6 +28,7 @@ const lastEquipped = ref('');
 const App = {
   setup() {
     return () => h('main', { style: 'max-width:1200px;margin:auto;padding:10px' }, [
+      h(AcquisitionReveal),
       page.value === 'store'
         ? h(Wave3DemoStore, { port, locale: locale.value, trialAccess, skinRevision: skinRevision.value,
             onOpenCollection: () => { page.value = 'collection'; } })

@@ -19,7 +19,7 @@ import { demoCurrencyLabel, demoPersistenceLabel } from './wave3-currency-view.t
 import { garageStudioView } from './garage-view-state.ts';
 
 import { presentAcquisition } from './acquisition-reveal.ts';
-import { demoAcquisitionId } from './acquisition-demo-items.ts';
+import { storeAcquisitionBatch } from './acquisition-demo-items.ts';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = withDefaults(defineProps<{
@@ -80,7 +80,6 @@ const statusFor = (id: SkinId) => {
 };
 const driftPoster = computed(() => selected.value && previewingDrift.value
   ? skinArtwork(selected.value.id, import.meta.env.BASE_URL)?.src ?? '' : '');
-const artwork = (id: SkinId) => skinArtwork(id, import.meta.env.BASE_URL); // Acquisition reveal icon.
 const storeArt = (id: string) =>
   `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/${id}@3x.webp`;
 const categoryLabel = (value: StoreCategory): string => ({
@@ -155,8 +154,6 @@ async function confirmRedemption(): Promise<void> {
   const request = quote.value;
   if (!id || !request) return;
   cancelRedemption();
-  const item = WAVE3_DEMO_ITEMS.find(entry => entry.id === id);
-  const art = artwork(id);
   const port = props.port;
   const result = await port.redeemPreview(id, request);
   if (port !== props.port || !sameDemoScope(request.scope, port.getOperationScope())) return;
@@ -165,16 +162,9 @@ async function confirmRedemption(): Promise<void> {
   message.value = result.status === 'completed' && used
     ? `${feedback(result.status)} −${Math.abs(used).toLocaleString(props.locale)} ${currencyLabel(request.currency)}`
     : feedback(result.status);
-  if (result.status === 'completed') {
-    cue('redeem-unlocked');
-    if (result.operationId && item && result.snapshot.demoInventory.includes(id)) {
-      presentAcquisition({ id: demoAcquisitionId('store', request.scope, result.operationId), items: [{
-        id, name: item.name, kind: 'equipment', status: 'unlocked', scope: 'demo',
-        artwork: art ? { src: art.src, style: 'icon' } : undefined,
-      }] });
-    }
-  }
-  else cue('action-unavailable');
+  const batch = storeAcquisitionBatch(id, request.scope, result);
+  if (batch) presentAcquisition(batch);
+  else if (result.status !== 'completed') cue('action-unavailable');
 }
 </script>
 

@@ -2,6 +2,12 @@ import { test, expect } from '@playwright/test';
 import { createServer } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
+async function continueAfterUnlock(page) {
+  const reveal = page.locator('#acquisition-reveal');
+  await reveal.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(reveal).toBeHidden();
+}
+
 test.describe('isolated Wave 3 demo store and collection (not mounted in Garage yet)', () => {
   test.describe.configure({ mode: 'default' });
   let server;
@@ -61,6 +67,7 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
       await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
       await expect(store.locator('.demo-wallet strong')).toHaveText('15');
       await expect(store.locator('[data-demo-id="thruster-ion"]')).toHaveAttribute('data-demo-status', 'demo-unlocked');
+      await continueAfterUnlock(page);
       await store.getByRole('button', { name: 'Demo Collection' }).click();
       const collection = page.locator('[data-wave3-demo-collection]');
       await expect(collection).toBeVisible();
@@ -93,6 +100,7 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
     await expect(store.locator('.demo-selected-balance')).toHaveText('Available 0 Demo coins');
     await expect(store.locator('.demo-wallet strong')).toHaveText('80');
+    await continueAfterUnlock(page);
     await store.getByRole('button', { name: 'Demo Collection' }).click();
     const collection = page.locator('[data-wave3-demo-collection]');
     await collection.locator('[data-demo-id="nitro-trail-cyan"]').click();
@@ -106,6 +114,7 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     const redeem = store.getByRole('button', { name: 'Demo redeem', exact: true });
     const confirm = store.getByRole('button', { name: 'Confirm demo redeem', exact: true });
     const cues = () => page.evaluate(() => window.__wave3DemoFixture.cues());
+    const reveal = page.locator('#acquisition-reveal');
     await redeem.click();
     expect(await cues()).toEqual(['action-unavailable']);
 
@@ -116,6 +125,7 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     expect(await cues()).toEqual(['action-unavailable', 'redeem-review']);
     await confirm.press('Escape');
     await expect(confirm).toHaveCount(0);
+    await expect(reveal).toBeHidden();
     expect(await cues()).toEqual(['action-unavailable', 'redeem-review', 'redeem-cancelled']);
 
     await redeem.click();
@@ -128,16 +138,20 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await confirm.click();
     await expect(store.getByRole('status').last()).toContainText('Demo redemption is unavailable');
     expect((await cues()).slice(-2)).toEqual(['redeem-review', 'action-unavailable']);
+    await expect(reveal).toBeHidden();
     await expect(store.locator('.demo-wallet strong')).toHaveText('40');
 
     await page.evaluate(() => window.__wave3DemoFixture.setRedemptionUnavailable(false));
     await redeem.click();
     await confirm.click();
     await expect(store.locator('.demo-wallet strong')).toHaveText('15');
-    expect(await cues()).toEqual([
+    await expect(reveal.getByRole('heading', { name: 'Ion thruster' })).toBeVisible();
+    await expect(reveal.locator('.acquisition-hero')).toHaveAttribute('data-kind', 'equipment');
+    await expect.poll(cues).toEqual([
       'action-unavailable', 'redeem-review', 'redeem-cancelled', 'redeem-review', 'redeem-cancelled',
-      'redeem-review', 'action-unavailable', 'redeem-review', 'redeem-unlocked',
+      'redeem-review', 'action-unavailable', 'redeem-review', 'acquisition-item',
     ]);
+    await continueAfterUnlock(page);
   });
 
   test('mobile card redeems the displayed item directly without a separate selection step', async ({ page }) => {
@@ -167,6 +181,8 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await expect(store.locator('[data-demo-balance="coins"] strong')).toHaveText('0');
     await expect(offer.locator('[data-demo-status]')).toHaveAttribute('data-demo-status', 'demo-unlocked');
     await expect(redeem).toHaveCount(0);
+    await expect(page.locator('#acquisition-reveal').getByRole('heading')).toHaveText(/cyan/i);
+    await continueAfterUnlock(page);
   });
 
   test('store and collection reuse effect GIFs with a static reduced-motion fallback', async ({ page }) => {
@@ -249,7 +265,9 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await store.getByRole('button', { name: 'Demo redeem' }).click();
     await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
     await expect(store.locator('[data-demo-id="thruster-ion"]')).toHaveAttribute('data-demo-status', 'demo-unlocked');
+    await continueAfterUnlock(page);
     expect(await page.evaluate(() => window.__wave3DemoFixture.duplicateRedeem())).toBe('duplicate');
+    await expect(page.locator('#acquisition-reveal')).toBeHidden();
     await expect(store.locator('.demo-wallet strong')).toHaveText('15');
     await page.evaluate(() => window.__wave3DemoFixture.setAccount('driver_B'));
     await expect(store.locator('.demo-wallet strong')).toHaveText('20');

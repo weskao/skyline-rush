@@ -1,6 +1,16 @@
 import type { Locale } from './i18n.ts';
 
-export type AcquisitionKind = 'car' | 'track' | 'paint' | 'equipment' | 'clothing' | 'item' | 'medal' | 'currency';
+export const ACQUISITION_KIND = {
+  CAR: 'car',
+  TRACK: 'track',
+  PAINT: 'paint',
+  EQUIPMENT: 'equipment',
+  CLOTHING: 'clothing',
+  ITEM: 'item',
+  MEDAL: 'medal',
+  CURRENCY: 'currency',
+} as const;
+export type AcquisitionKind = typeof ACQUISITION_KIND[keyof typeof ACQUISITION_KIND];
 export type AcquisitionText = Readonly<Record<Locale, string>>;
 export type AcquisitionItem = Readonly<{
   id: string;

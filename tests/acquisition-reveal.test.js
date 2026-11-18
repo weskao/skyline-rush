@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createAcquisitionQueue } from '../src/acquisition-reveal.ts';
-import { demoAcquisitionItems, missionTrophy } from '../src/acquisition-demo-items.ts';
+import { demoAcquisitionId, demoAcquisitionItems, missionTrophy, storeAcquisitionBatch } from '../src/acquisition-demo-items.ts';
+import { createWave3LocalDemo } from '../src/wave3-local-demo.ts';
 
 const item = { id: 'gt', kind: 'car', status: 'unlocked', name: { en: 'Vantaire GT', 'zh-TW': '夜鋒 GT' } };
 
@@ -37,4 +38,32 @@ test('only claims counted by the existing mission board reveal the next trophy t
   const snapshot = { missions: { 'mission-race': { claimed: true }, 'mission-time': { claimed: true }, 'daily-race': { claimed: true } } };
   assert.equal(missionTrophy('mission-time', snapshot)?.id, 'trophy-silver');
   assert.equal(missionTrophy('daily-race', snapshot), undefined);
+});
+
+test('only a newly redeemed store item produces an account-scoped equipment reveal', () => {
+  const port = createWave3LocalDemo();
+  const scope = port.getOperationScope();
+  const batch = receipt => storeAcquisitionBatch('thruster-ion', scope, receipt);
+
+  assert.equal(batch(port.redeemPreview('thruster-ion')), undefined);
+  port.settleCompletion({ schemaVersion: 1, completionId: 'acquisition-test-race', trackId: 'coast',
+    mode: 'classic', eligible: true, occurredAt: Date.now(), accountId: scope.accountId });
+  const successful = port.redeemPreview('thruster-ion');
+  const reveal = batch(successful);
+  assert.deepEqual(reveal, {
+    id: demoAcquisitionId('store', scope, successful.operationId),
+    items: [{
+      id: 'thruster-ion', kind: 'equipment', status: 'unlocked', scope: 'demo',
+      name: { en: 'Ion thruster', 'zh-TW': '離子推進器' },
+      artwork: { src: 'feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', style: 'icon' },
+    }],
+  });
+  assert.equal(batch(port.redeemPreview('thruster-ion')), undefined);
+  assert.equal(batch({ ...successful, operationId: undefined }), undefined);
+  assert.equal(batch({ ...successful, snapshot: { ...successful.snapshot, demoInventory: [] } }), undefined);
+  assert.notEqual(storeAcquisitionBatch('thruster-ion', { ...scope, generation: 'new' }, successful).id, reveal.id);
+  assert.notEqual(storeAcquisitionBatch('thruster-ion', { ...scope, accountId: 'other' }, successful).id, reveal.id);
+  const queue = createAcquisitionQueue();
+  assert.equal(queue.present(reveal), true);
+  assert.equal(queue.present(batch(successful)), false);
 });
