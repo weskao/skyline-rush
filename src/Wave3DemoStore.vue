@@ -80,6 +80,7 @@ const statusFor = (id: SkinId) => {
 };
 const driftPoster = computed(() => selected.value && previewingDrift.value
   ? skinArtwork(selected.value.id, import.meta.env.BASE_URL)?.src ?? '' : '');
+const artwork = (id: SkinId) => skinArtwork(id, import.meta.env.BASE_URL); // Acquisition reveal icon.
 const storeArt = (id: string) =>
   `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/${id}@3x.webp`;
 const categoryLabel = (value: StoreCategory): string => ({
