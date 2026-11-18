@@ -1,10 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import type { User } from 'firebase/auth';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, connectAuthEmulator } from 'firebase/auth';
-import { doc, getFirestore, runTransaction, writeBatch, getDoc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { doc, getFirestore, runTransaction, writeBatch, getDoc, setDoc, deleteDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { mergeProgress, mergeModeBests, readLocalModeBests, saveLocalModeBests } from './cloud-progress.ts';
 import { googleAccountFields } from './cloud-account.ts';
 import { createWave3PreviewStore } from '#wave3-preview-store';
+import { deleteCloudDocuments, WAVE3_PREVIEW_COLLECTION } from './cloud-delete.ts';
 
 const app = initializeApp({
   apiKey: 'AIzaSyChOFZ1EvyZ9iVlVZ_QQpijgObgALUyeEQ',
@@ -30,13 +31,17 @@ export const transactWave3Preview = wave3PreviewStore?.transact;
 export const watchCloudUser = (onUser: (user: User | null) => void, onError?: (error: Error) => void) => onAuthStateChanged(auth, onUser, onError);
 export const signInToCloud = () => signInWithPopup(auth, new GoogleAuthProvider());
 export const signOutOfCloud = () => signOut(auth);
-export const deleteCloudProgress = (expectedUid: string) => {
-  if (auth.currentUser?.uid !== expectedUid) throw new Error('Cloud account changed');
-  const batch = writeBatch(db);
-  for (const collection of ['saves', 'modeBests', 'accounts']) batch.delete(doc(db, collection, expectedUid));
-  wave3PreviewStore?.stageDeletion(batch, expectedUid);
-  return batch.commit();
-};
+export const deleteCloudProgress = (expectedUid: string) => deleteCloudDocuments({
+  checkAccount: () => {
+    if (auth.currentUser?.uid !== expectedUid) throw new Error('Cloud account changed');
+  },
+  commitBatch: () => {
+    const batch = writeBatch(db);
+    for (const collection of ['saves', 'modeBests', 'accounts']) batch.delete(doc(db, collection, expectedUid));
+    return batch.commit();
+  },
+  deletePreview: () => deleteDoc(doc(db, WAVE3_PREVIEW_COLLECTION, expectedUid)),
+});
 
 export async function syncCloudProgress(localProgress: () => object) {
   const user = auth.currentUser;

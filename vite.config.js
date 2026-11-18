@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue';
 import { rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { selectGarageReleaseBuild } from './scripts/garage-release-build.mjs';
+import { selectGarageReleaseBuild, WAVE3_PREVIEW_STORE_MARKER } from './scripts/garage-release-build.mjs';
 import { diagRelayPlugin } from './scripts/diag-relay-plugin.mjs';
 
 // Build-time Strategy: default production strips preview, trial and cosmetic catalog modules.
@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
         configResolved(config) { outputDir = resolve(config.root, config.build.outDir); },
         generateBundle(_, bundle) {
           const hasPreviewStore = Object.values(bundle).some(chunk =>
-            chunk.type === 'chunk' && chunk.code.includes('wave3PreviewEconomy'));
+            chunk.type === 'chunk' && chunk.code.includes(WAVE3_PREVIEW_STORE_MARKER));
           if (hasPreviewStore !== release.wave3FirestoreEnabled) {
             this.error('Wave 3 Firestore bundle does not match VITE_WAVE3_FIRESTORE_PREVIEW');
           }
