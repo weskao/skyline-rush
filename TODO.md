@@ -1,3 +1,10 @@
+# Short-landscape reward details
+
+- [x] Reproduced the hard cut in Chromium. The old panel switched directly to opacity 1 without a transform when Details opened.
+- [x] Checked both directions of the anchored reveal and immediate keyboard disclosure with reduced motion in Chromium. The closed panel leaves the receipt text available to assistive technology while releasing pointer input.
+- [x] Passed 57 focused Node checks, including the module-size gate.
+- [ ] Complete the real-race browser matrix, physical phone check and exact-commit CI. The local full gate stopped at Vue typechecking with exit 137.
+
 # Drift exit and release boost
 
 - [x] RED reproduced the speed drop and early boost countdown on Coast. With BRAKE and light steering held from 165.6 km/h, speed at one second was 117.45 km/h on the old code.
