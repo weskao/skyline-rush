@@ -1,6 +1,6 @@
 # Coast look brief (Task 5, recorded before any look change)
 
-Target: the five Coast panels of `concept-art/skyline-rush-3d-target-concept-board.jpeg` (concept art, mood only;
+Target: the five Coast panels of `track-profiles/skyline-rush-3d-target-concept-board.jpeg` (concept art, mood only;
 never a geometry source or in-game evidence). Each row says how the running game reproduces the panel for the
 spec v2 §8.1 side-by-side, and which of the seven §8.1 items the panel actually scores. Composites and scores live in
 the git-ignored `audits/`; this file only fixes the capture recipe.

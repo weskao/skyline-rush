@@ -36,6 +36,9 @@ SCANS = {
     "rock_a": ("coast_rocks_05", None, 2_600),
     "rock_b": ("coast_rocks_05", None, 9_000),   # cropped to the resting boulder (~2.5k) in finish_scans
 }
+# Far LOD triangles: the headlands of the far coast (5 to 12 x scale, 290 m and further from the road) draw these
+# nodes instead of the 11k close scans; same UVs, material and baked maps, so no texture or program is added.
+FAR_LODS = {"cliff_a": 2_500, "cliff_b": 2_500}
 # material: (scan asset, pieces sharing its baked normal map, cage extrusion m, max ray m, normal + ARM px)
 # Albedo is always 1K. The 4 m rock gets 512 px normal/ARM (~128 px/m, still denser than the 41-92 m cliffs at 1K):
 # a 1K UASTC normal costs ~1.2 MB of GLB, the largest item in the byte budget.
@@ -130,6 +133,13 @@ def finish_scans(lows):
         ob.parent = arch
 
 
+def build_far_lods(lows):
+    """Decimated copies of the finished cliffs (pivot, skirt and UVs kept) on the same material and baked maps."""
+    for piece, target in FAR_LODS.items():
+        far = S.decimated(lows[piece], f"{piece}_far", target)
+        far.data.materials.append(lows[piece].data.materials[0])
+
+
 def build_props():
     bark = os.path.join(SRC, "palm_bark")
     metal = os.path.join(SRC, "metal_plate_02")
@@ -152,7 +162,8 @@ def build_props():
     props.build_palm("palm_a", mats, height=10.5, lean=Vector((1.6, 0.4, 0)), fronds=14, frond_len=4.6, seed=1)
     props.build_palm("palm_b", mats, height=7.4, lean=Vector((-0.7, -0.9, 0)), fronds=12, frond_len=4.0, seed=5)
     props.build_guard_rail("guard_rail", steel)
-    for name in ("palm_a", "palm_b", "guard_rail"):
+    props.build_lamp_post("lamp_post", steel)
+    for name in ("palm_a", "palm_b", "guard_rail", "lamp_post"):
         props.make_normals_consistent(bpy.data.objects[name])
 
 
@@ -165,6 +176,7 @@ def main():
     os.makedirs(TEX, exist_ok=True)
     lows, _ = build_scans()
     finish_scans(lows)
+    build_far_lods(lows)
     build_props()
     summary = {ob.name: S.tris(ob) for ob in scene.objects if ob.type == "MESH"}
     print("COAST_SCENERY_SUMMARY " + json.dumps(summary, sort_keys=True))

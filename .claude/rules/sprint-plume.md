@@ -15,7 +15,7 @@ instanced nozzle flare, plus one road glow. Every part blends additively: the ex
 
 - **Thin, additive-only, gated (2026-11-14).** Each jet left at a 6.5 cm radius and stayed 0.095 to 0.136 m
   wide over its first 0.6 m (15 to 19 px on a phone, about 8 px at the nozzle), additive only, so it washed
-  out on a sunlit road; the nozzle glows and the board plume sat behind `?look=3d`, the road glow behind a trail
+  out on a sunlit road; the nozzle glows and the board plume sat behind `?look=3d` (historical; gate removed), the road glow behind a trail
   skin. On the phone tier (2 cores: Low + Realistic) the exhaust changed 1 to 3% of the frame. Now: radius at
   least 0.20 m by 0.6 m (`plumeRadius`, `PLUME.fat`/`half`) whatever the tail length, tier or preset; flare and
   road glow in the default look (a normal-blended core was tried too, then removed: see *Solid core bar*). Guards: `tests/sprint-plume.test.js` (*flame shape*, *phone width*:

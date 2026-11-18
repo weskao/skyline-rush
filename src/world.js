@@ -232,7 +232,7 @@ export function createWorld(canvas) {
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
   const coastScenery = createCoastScenery(scene), classicScenery = createClassicTrackScenery(scene);
-  const coastAssets = createWorldCoastAssets(renderer, { scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, replaced: [classicScenery.groups.neon, poles, lamps, pillars, tunnelRoofs, tunnelWalls] }, canvas.dataset);
+  const coastAssets = createWorldCoastAssets(renderer, { scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, poles, replaced: [classicScenery.groups.neon, poles, lamps, pillars, tunnelRoofs, tunnelWalls] }, canvas.dataset);
   // Inspect car occlusion only when the showroom angle changes.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
   const showcaseRay = new THREE.Raycaster();
@@ -688,7 +688,7 @@ export function createWorld(canvas) {
       pillars.instanceMatrix.needsUpdate = true;
       for (let i = 0; i < 24; i++) {
         const d = Math.floor(distance / 60) * 60 + (i - 1) * 60;
-        const side = i % 2 ? 1 : -1;
+        const side = d / 60 % 2 ? 1 : -1;
         const yaw = curvedClassic ? -roadHeading(d) : 0;
         put(poles, i * 2, ...classicPosition(d, side * 12.7, 6.5, distance), .14, 13, .14, yaw);
         put(poles, i * 2 + 1, ...classicPosition(d, side * 10.9, 12.9, distance), 3.7, .14, .18, yaw);

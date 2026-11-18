@@ -67,7 +67,7 @@ test('no boat ever sails onto the road, the close shore or into a cliff, arch, h
       obstacles.push({ piece: placement.piece, x, z, yaw: placement.yaw - coast.heading(distance), hx: hx * placement.scale + HULL, hz: hz * placement.scale + HULL });
     };
     for (let chunk = Math.floor((start - 1500) / COAST_CHUNK_METRES); chunk * COAST_CHUNK_METRES < start + 2000; chunk++) {
-      for (const p of coastChunkPlan(chunk, seed)) if (p.piece !== 'guard_rail') stand(p, chunk * COAST_CHUNK_METRES + p.along);
+      for (const p of coastChunkPlan(chunk, seed)) if (p.piece in HALF) stand(p, chunk * COAST_CHUNK_METRES + p.along); // rails and lamp posts stand on the road
     }
     for (let far = slot - 4; far <= slot + 4; far++) for (const p of coastFarPlan(far, seed)) stand(p, far * COAST_FAR_SLOT_METRES + p.along);
     for (const boat of coastBoatPlan(slot, coast, seed)) for (const pose of samples(boat)) {

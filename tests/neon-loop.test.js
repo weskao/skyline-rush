@@ -1,6 +1,6 @@
 // Task 5b step 1b (owner decision N7): Neon Downtown is one clockwise lap of a closed loop. Step 11 (N7 amended,
 // 2026-11-15: 4000 m was a 36 s lap) makes it 10 km and eight sectors, still one lap: boulevard, underpass, market,
-// expressway, harbour, canal, old town, plaza. The 4000 m schematic in concept-art/neon-downtown is out of date.
+// expressway, harbour, canal, old town, plaza. The 4000 m schematic in track-profiles/neon-downtown is out of date.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { classicCornerPush, classicRoadRoute, legacyClassicRoad } from '../src/classic-road-routes.ts';

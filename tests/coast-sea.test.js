@@ -165,7 +165,7 @@ const center = distance => Math.sin(distance / 270) * 18 + Math.sin(distance / 6
 const road = { point: (d, lane = 0) => [center(d) + lane, -d], heading: d => Math.atan((center(d + 1) - center(d - 1)) / 2) };
 function fakeGlb() {
   const root = new THREE.Group(), material = new THREE.MeshStandardMaterial();
-  for (const [name, x, z] of [['sea_arch', 20, 6], ['cliff_a', 30, 10], ['cliff_b', 24, 8], ['rock_a', 4, 4], ['rock_b', 2, 2], ['palm_a', 1, 1], ['palm_b', 1, 1], ['guard_rail', 12, .2]]) {
+  for (const [name, x, z] of [['sea_arch', 20, 6], ['cliff_a', 30, 10], ['cliff_b', 24, 8], ['rock_a', 4, 4], ['rock_b', 2, 2], ['palm_a', 1, 1], ['palm_b', 1, 1], ['guard_rail', 12, .2], ['lamp_post', .5, 3.8], ['cliff_a_far', 30, 10], ['cliff_b_far', 24, 8]]) {
     root.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(x, 2, z), material), { name }));
   }
   return root;
@@ -178,7 +178,7 @@ test('the scenery layer stamps every rock, cliff and arch that stands in the wat
   kit.update(road, 300, 'high');
   const window = coastChunkWindow(300, 'high');
   let wet = 0;
-  for (let c = window.first; c < window.first + window.count; c++) wet += coastChunkPlan(c).filter(p => !/palm|rail/.test(p.piece)).length;
+  for (let c = window.first; c < window.first + window.count; c++) wet += coastChunkPlan(c).filter(p => !/palm|rail|lamp/.test(p.piece)).length; // the roadside props stand on the verge
   const stamps = log.filter(([op]) => op === 'stamp');
   assert.equal(log[0][0], 'begin');
   assert.equal(log.at(-1)[0], 'end');

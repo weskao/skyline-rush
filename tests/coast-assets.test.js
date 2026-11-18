@@ -271,6 +271,32 @@ test('the procedural cones leave Coast once the scan coast is attached on Medium
   assert.equal(mountains.material.visible, true);
 });
 
+test('the box lamp posts leave Coast while the scan coast, which has modelled ones, is drawn; they stay on Low, other tracks and a failed load', async () => {
+  const poles = { material: { visible: true } };
+  const handle = { kind: 'model', instance: () => new THREE.Group(), release() {} };
+  const assets = createCoastAssets({ scenery, cache: { load: async () => handle }, poles });
+  assets.update('coast', 'high', false);
+  assert.equal(poles.material.visible, true, 'box posts until the GLB is attached');
+  await tick();
+  assets.update('coast', 'high', false);
+  assert.equal(poles.material.visible, false, 'the GLB lamp posts replace them');
+  assets.update('coast', 'low', false);
+  assert.equal(poles.material.visible, true, 'Low draws no GLB');
+  assets.update('coast', 'medium', false);
+  assert.equal(poles.material.visible, false);
+  assets.update('canyon', 'high', false);
+  assert.equal(poles.material.visible, true, 'other tracks keep their posts');
+  assets.update('coast', 'high', false);
+  assets.dispose();
+  assert.equal(poles.material.visible, true);
+  const failed = createCoastAssets({ scenery, cache: { load: async () => ({ kind: 'fallback', id: 'coast-scenery', fallback: 'procedural-scenery', reason: 'network' }) }, poles });
+  failed.update('coast', 'high', false);
+  await tick();
+  failed.update('coast', 'high', false);
+  assert.equal(poles.material.visible, true, 'a failed load keeps the procedural posts');
+  failed.dispose();
+});
+
 test('D1, D2: the skyline buildings and bridge towers leave Coast with the cones on Medium+; Low, other tracks and a missing GLB keep them', async () => {
   const rig = () => {
     const city = { visible: true }, steel = new THREE.MeshStandardMaterial(), trim = new THREE.MeshBasicMaterial(), tower = new THREE.Group();
@@ -323,7 +349,12 @@ test('the boats GLB loads beside the scenery only with a boat clock, and joins t
   assert.equal(dataset.coastBoats, 'off');
 });
 
-test('world.js hands the procedural sky dome, sun disc, sea plane, sea lines, mountains, city and towers to the Coast assets', async () => {
+test('world.js hands the procedural sky dome, sun disc, sea plane, sea lines, mountains, city, towers and lamp posts to the Coast assets', async () => {
   const { readFileSync } = await import('node:fs');
-  assert.match(readFileSync(new URL('../src/world.js', import.meta.url), 'utf8'), /createWorldCoastAssets\(renderer, \{ scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, replaced: \[[^\]]+\] \}, canvas\.dataset\)/);
+  const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
+  assert.match(world, /createWorldCoastAssets\(renderer, \{ scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, poles, replaced: \[[^\]]+\] \}, canvas\.dataset\)/);
+  // A lamp's side comes from its absolute 60 m index, as the GLB lamp posts' does (coastChunkPlan). Keyed by its slot
+  // in the moving window, every lamp changed sides each 60 m driven and stood opposite its post half the time.
+  assert.match(world, /const side = d \/ 60 % 2 \? 1 : -1;/);
+  assert.doesNotMatch(world, /const side = i % 2 \? 1 : -1;\n\s+const yaw = curvedClassic/);
 });

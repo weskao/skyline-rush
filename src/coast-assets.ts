@@ -43,6 +43,9 @@ interface Deps {
   /** The procedural far cones (classic-backdrop.ts): off on Coast while the scan coast, which has its own far
    *  headlands (coast-scenery-glb.ts), is drawn. */
   mountains?: { material: { visible: boolean } };
+  /** The box lamp posts and arms (world.js): off wherever the scan coast, which has modelled posts under the same
+   *  lamp heads, or the Neon kits are drawn. */
+  poles?: { material: { visible: boolean } };
   /** D1, D2: the skyline buildings and the bridge towers (world.js) leave Coast with the cones; the sea arch is the
    *  landmark. Low keeps them (owner decision 2026-11-14), as do other tracks and a failed load. */
   city?: { visible: boolean }; towers?: Object3D[];
@@ -55,7 +58,7 @@ interface Deps {
   dataset?: Record<string, string | undefined>;
 }
 
-export function createCoastAssets({ scenery, cache, boatClock, road, reflection, sky, sea, mountains, city, towers, neon, replaced, dataset = {} }: Deps) {
+export function createCoastAssets({ scenery, cache, boatClock, road, reflection, sky, sea, mountains, poles, city, towers, neon, replaced, dataset = {} }: Deps) {
   const controller = new AbortController();
   const procedural = road?.mesh.material;
   const roads = new Map<string, CoastRoad | 'loading' | 'failed'>(); // by road set and tier
@@ -204,6 +207,7 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
       if (city && trackLook(trackId)?.scenery) city.visible = !drawn; // world.js sets it on a track change only
       if (drawn !== bare) show(towers, !(bare = drawn));
       if (kitted !== dressed) show(replaced, !(dressed = kitted));
+      if (poles) poles.material.visible = !drawn; // after `replaced`, which lists the posts for the Neon kits
       if (kitted) neon?.update(route, distance, quality, seed); else neon?.hide();
       sky?.update(trackId, preset, quality, ultra); // its program exists from creation: nothing to warm up
       sea?.update(trackId, preset, quality); // after the sky: the water shows only under the dome it mirrors
@@ -214,6 +218,7 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
       controller.abort();
       boats?.dispose(); scan.dispose(); landmarks?.dispose(); cityKit?.dispose(); neon?.dispose();
       if (mountains) mountains.material.visible = true;
+      if (poles) poles.material.visible = true;
       if (bare) { city && (city.visible = true); show(towers, true); }
       if (dressed) show(replaced, true);
       if (road) { road.mesh.material = procedural!; road.mesh.onBeforeRender = onBeforeRender; }
@@ -229,7 +234,7 @@ interface WorldRenderer { capabilities: { getMaxAnisotropy(): number; maxTexture
 
 /** World wiring: the track model cache is loaded on demand and shares the renderer's KTX2 transcoder. */
 export function createWorldCoastAssets(renderer: WorldRenderer,
-  targets: { scene: Object3D; scenery: Scenery & { group: { position: Vector3 } }; road: Road['mesh'] } & Pick<Parameters<typeof createCoastSky>[0], 'sky' | 'sun'> & Pick<Parameters<typeof createCoastSea>[0], 'sea' | 'seaLines'> & Pick<Deps, 'mountains' | 'city' | 'towers' | 'replaced'>,
+  targets: { scene: Object3D; scenery: Scenery & { group: { position: Vector3 } }; road: Road['mesh'] } & Pick<Parameters<typeof createCoastSky>[0], 'sky' | 'sun'> & Pick<Parameters<typeof createCoastSea>[0], 'sea' | 'seaLines'> & Pick<Deps, 'mountains' | 'poles' | 'city' | 'towers' | 'replaced'>,
   dataset: Deps['dataset'], baseUrl = import.meta.env.BASE_URL) {
   const loadKtx2 = createKtx2Provider(renderer, baseUrl);
   let models: Promise<ModelCache> | undefined;
@@ -245,5 +250,5 @@ export function createWorldCoastAssets(renderer: WorldRenderer,
   };
   const sky = createCoastSky({ sky: targets.sky, sun: targets.sun, load: loadTexture, maxTextureSize: renderer.capabilities.maxTextureSize, dataset });
   const sea = createCoastSea({ sea: targets.sea, seaLines: targets.seaLines, dome: sky.dome, origin: targets.scenery.group.position, load: loadTexture, dataset });
-  return createCoastAssets({ scenery: targets.scenery, boatClock: targets.sea.material.uniforms.time!, road, sky, sea, mountains: targets.mountains, city: targets.city, towers: targets.towers, neon: createNeonScenery(targets.scene), replaced: targets.replaced, dataset, reflection: createWetReflection(), cache: withGreenery({ load: loadModel }) });
+  return createCoastAssets({ scenery: targets.scenery, boatClock: targets.sea.material.uniforms.time!, road, sky, sea, mountains: targets.mountains, poles: targets.poles, city: targets.city, towers: targets.towers, neon: createNeonScenery(targets.scene), replaced: targets.replaced, dataset, reflection: createWetReflection(), cache: withGreenery({ load: loadModel }) });
 }
