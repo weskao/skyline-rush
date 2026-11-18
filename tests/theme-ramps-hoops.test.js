@@ -19,7 +19,7 @@ test('themes stay opt-in: without them Canyon has no ramps and Sky Spiral keeps 
 
 test('Canyon themes place launch ramps that never become road hazards', () => {
   const race = themed('canyon');
-  assert.ok(race.ramps.length >= 3, 'precision ramps');
+  assert.equal(race.ramps.length, gaps('canyon').length, 'one precision ramp per driven gap');
   assert.ok(race.hazards.every(h => h.type !== 'ramp'), 'ramps launch; they never block or nudge');
   for (const gap of gaps('canyon')) {
     assert.ok(race.ramps.some(r => r.distance + r.halfLength < gap.from && gap.from - (r.distance + r.halfLength) <= 40),

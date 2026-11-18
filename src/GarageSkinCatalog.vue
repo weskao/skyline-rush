@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { inject, computed } from 'vue';
+import { computed, inject, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
 import { GARAGE_SKINS, SKIN_CATEGORIES, skinAccentHue, skinArtwork } from './garage-skin-catalog.ts';
 import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, selectedGarageSkins, currentGarageSkins } from './garage-skin-runtime.ts';
+import GarageDriftPreview from './GarageDriftPreview.vue';
+import { DRIFT_TRAIL_STYLES, driftTrailIndex } from './garage-drift-styles.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { garageStudioView } from './garage-view-state.ts';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
-defineProps<{ locale: string }>();
-const animatedArtworkSrc = (id: string): string =>
+const props = defineProps<{ locale: string; active?: boolean }>();
+const driftPreview = ref<HTMLElement>();
+const showingDrift = ref(false);
+watch(() => props.active, active => { if (!active) showingDrift.value = false; });
+const animatedArtworkSrc = (id: SkinId): string => id.startsWith('drift-trail-') ? '' :
   `${import.meta.env.BASE_URL}feature-assets/garage-animated/${id}@3x.gif`;
 
 // Source-only cosmetic status and rarity icon gallery. These artworks do not
@@ -48,7 +53,9 @@ const categoryNames: Record<SkinCategory, { en: string; 'zh-TW': string }> = {
   airflow: { en: 'Airflow', 'zh-TW': '氣流' },
   'nitro-trail': { en: 'NITRO trail', 'zh-TW': '氮氣尾跡' },
   'launch-flare': { en: 'Launch flare', 'zh-TW': '起跑閃焰' },
+  'drift-trail': { en: 'Drift trails', 'zh-TW': '甩尾痕跡' },
 };
+const displayCategories: readonly SkinCategory[] = ['drift-trail', ...SKIN_CATEGORIES.filter(category => category !== 'drift-trail')];
 const entries = GARAGE_SKINS.map(skin => ({ ...skin, artwork: skinArtwork(skin.id, import.meta.env.BASE_URL)! }));
 // This live selection strip uses the same artwork and session as the actual 3D Garage preview.
 // A preview is never treated as ownership or a permanent equipment grant.
@@ -65,6 +72,12 @@ const liveLoadout = computed(() => {
   });
 });
 const skinLabel = (id: SkinId, locale: string): string => GARAGE_SKINS.find(s => s.id === id)!.name[locale === 'zh-TW' ? 'zh-TW' : 'en'];
+const activeDrift = computed(() => liveLoadout.value.find(item => item.category === 'drift-trail')!);
+function previewSkin(id: SkinId, category: SkinCategory) {
+  selectGarageSkin(id);
+  showingDrift.value = category === 'drift-trail';
+  if (showingDrift.value) void nextTick(() => driftPreview.value?.scrollIntoView({ block: 'nearest' }));
+}
 const view = (id: SkinId) => { void garageSkinState.revision; return garageSkinEntry(id); };
 const isPreviewActive = (id: SkinId, category: SkinCategory) => {
   void garageSkinState.revision;
@@ -113,8 +126,12 @@ const statusText = (id: SkinId, locale: string) => {
         </li>
       </ul>
     </section>
-    <div v-for="category in SKIN_CATEGORIES" :key="category" class="garage-vfx-category">
+    <div v-for="category in displayCategories" :key="category" class="garage-vfx-category" :data-vfx-category="category">
       <h4>{{ categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</h4>
+      <div v-if="category === 'drift-trail' && showingDrift && garageStudioView.effectsVisible" :ref="el => driftPreview = el as HTMLElement | undefined">
+        <GarageDriftPreview :key="garageStudioView.car" :skin="activeDrift.id" :locale="locale"
+          :label="skinLabel(activeDrift.id, locale)" :poster="activeDrift.artwork.src" />
+      </div>
       <ul>
         <li v-for="skin in entries.filter(entry => entry.category === category)" :key="skin.id"
           :data-skin="skin.id" :data-state="view(skin.id)?.state" :data-owned="String(view(skin.id)?.owned ?? false)"
@@ -125,7 +142,7 @@ const statusText = (id: SkinId, locale: string) => {
           <button class="garage-skin-preview-hitarea" type="button"
             :aria-label="`${locale === 'zh-TW' ? '預覽' : 'Preview'} ${skinLabel(skin.id, locale)}`"
             :aria-pressed="isPreviewActive(skin.id, skin.category)"
-            @click="selectGarageSkin(skin.id)">
+            @click="previewSkin(skin.id, skin.category)">
             <span class="garage-vfx-art">
               <GarageArtworkImage :src="skin.artwork.src" :fallback-src="skin.artwork.hasRaster ? skin.artwork.fallback : ''"
                 :animated-src="animatedArtworkSrc(skin.id)"

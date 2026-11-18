@@ -22,9 +22,9 @@ const pickupsOf = race => race.pickups.filter(p => p.tier !== 'overcharge' && !p
 // slots, the same 31 gates: 34 / 35 / 39 / 53 became 44 / 58 / 70 / 131. Seven lines and ringDensity 1.45 (step 11):
 // 63 / 77 / 89 / 156.
 const WITH_LINES = { neon: { 1: 63, 2: 77, 3: 89, 8: 156 } };
-const singlesFor = (id, cars) => WITH_LINES[id]?.[cars] ?? slotsFor(id, cars);
+const singlesFor = (id, cars) => WITH_LINES[id]?.[cars] ?? Math.round(slotsFor(id, cars) * (RACE_TRACKS[id].ringDensity ?? 1));
 
-test('L1: a race carries ITEMS_PER_CAR single rings per car on the grid, on every track', () => {
+test('L1: single ring slots follow the grid size and track ring density', () => {
   for (const id of TRACKS) for (const rivals of [0, 1, 2, 7]) {
     const race = createRace(id, { mode: 'custom', rivals });
     assert.equal(singles(race).length, singlesFor(id, rivals + 1), `${id} with ${rivals + 1} car(s)`);

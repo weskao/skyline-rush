@@ -58,13 +58,14 @@ test('curved road mesh edges follow the lane frame, including at 50 km', () => {
 test('Canyon gaps cut both the road and its edge cues, while the streamed road is solid', () => {
   const { meshes, geometry, renderer } = makeRoad();
   const route = classicRoadRoute('canyon'), sections = RACE_TRACKS.canyon.sections;
-  renderer.update('canyon', route, 1500, sections, false, true);
+  const { from } = sections.find(s => s.type === 'gap');
+  renderer.update('canyon', route, from, sections, false, true);
   const row = 5, index = geometry.index.array;
   assert.deepEqual([...index.slice(row * 6, row * 6 + 6)], Array(6).fill(0));
   const transform = new Matrix4();
   meshes.curbs.getMatrixAt(row * 2, transform);
   assert.ok(transform.elements[13] < -500);
-  renderer.update('canyon', route, 1500, [], false, true);
+  renderer.update('canyon', route, from, [], false, true);
   assert.ok(index[row * 6] > 0);
   meshes.curbs.getMatrixAt(row * 2, transform);
   assert.ok(transform.elements[13] > 0);
@@ -84,4 +85,16 @@ test('each broken span starts and ends at the exact playable gap boundary', () =
     assert.ok(Math.abs(edgeZ(first) - route.point(from)[1]) < .001, 'takeoff at ' + from);
     assert.ok(Math.abs(edgeZ(last + 1) - route.point(to)[1]) < .001, 'landing at ' + to);
   }
+});
+
+test('the rebuilt Canyon ribbon follows the same elevations as its road centreline', () => {
+  const { meshes, geometry, renderer } = makeRoad();
+  const id = 'canyon', distance = 5676, route = classicRoadRoute(id);
+  renderer.update(id, route, distance, RACE_TRACKS.canyon.sections, false, true);
+  const origin = route.elevation?.(distance);
+  assert.ok(Number.isFinite(origin));
+  const pos = geometry.attributes.position, normal = geometry.attributes.normal;
+  const d = distance + 60, row = 10;
+  assert.ok(Math.abs(pos.getY(row * 2) + meshes.road.position.y - (route.elevation(d) - origin)) < .001);
+  assert.ok(Math.abs(normal.getY(row * 2) - 1) > .000001, 'sloped road has a sloped normal');
 });

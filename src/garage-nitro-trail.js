@@ -6,6 +6,8 @@ import { createSprintRoadPlacement } from './sprint-plume.ts';
 // a skin swap writes uniforms only, and the meshes sit on the car (hidden) from creation for shader warm-up.
 // Each plume is an open tube (unit radius, u along +z) that leaves its round nozzle at exactly the nozzle radius and
 // swells behind it; the view-facing term shades it as a glowing round jet, so it reads as gas, never as a flat card.
+// Comfort (.claude/rules/nitro-trail-vfx.md): energy flows along the jet instead of strobing it — no pixel changes
+// faster than 3 Hz — and colour caps at 1.2, so only the thin core touches the bloom threshold, never the whole plume.
 const STREAK_VERTEX = `uniform float time,style,trailLength,nozzleRadius;varying vec2 vUv;varying float vFacing;
   void main(){vUv=uv;float u=clamp(position.z,0.,1.);
     float grow=style>3.5?2.5:style>2.5?1.8:style>1.5?2.1:1.15;
@@ -35,14 +37,14 @@ const STREAK_FRAGMENT = `varying vec2 vUv;varying float vFacing;uniform float ti
       tint=mix(color,vec3(.72,.23,.61),.26+.48*filament);} // two violet ribbons
     vec3 light=tint*(.19+body*.41+nozzle*.19+glint);
     light*=.66/max(.66,max(light.r,max(light.g,light.b)));
-    gl_FragColor=vec4(light,clamp((body*tail+nozzle*.42*edge+glint)*power,0.,.76));}`;
+    gl_FragColor=vec4(min(light,vec3(1.2)),clamp((body*tail+nozzle*.42*edge+glint)*power,0.,.76));}`;
 const POOL_VERTEX = 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}';
 const POOL_FRAGMENT = `varying vec2 vUv;uniform float power;uniform vec3 color;
   void main(){vec2 q=clamp(vUv,0.,1.)*2.-1.;float u=clamp(1.-vUv.y,0.,1.);
     float across=clamp(q.x*q.x,0.,1.);
     float glow=exp(-across*4.)*exp(-u*2.4)*(1.-smoothstep(.65,1.,u));
     float tracks=.78+.22*abs(cos(q.x*8.));
-    gl_FragColor=vec4(color*.78,glow*tracks*power*.13);}`;
+    gl_FragColor=vec4(min(color*.78,vec3(1.2)),glow*tracks*power*.13);}`;
 
 function plumeTube() { // open round tube, unit radius, mouth at z=0 and tail at z=1 (uv.x around, uv.y along)
   return new THREE.CylinderGeometry(1, 1, 1, 16, 24, true).rotateX(Math.PI / 2).translate(0, 0, 0.5);
@@ -51,7 +53,7 @@ function plumeTube() { // open round tube, unit radius, mouth at z=0 and tail at
 export function createNitroTrail(car, rearPorts, vehicle, ground) {
   const uniforms = { time: { value: 0 }, power: { value: 0 }, style: { value: 0 }, trailLength: { value: 8 }, nozzleRadius: { value: rearPorts[0].size },
     color: { value: new THREE.Vector3(1, 1, 1) } };
-  const additive = { uniforms, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending };
+  const additive = { uniforms, transparent: true, depthWrite: false, side: THREE.FrontSide, blending: THREE.AdditiveBlending };
   const streaks = new THREE.InstancedMesh(plumeTube(), new THREE.ShaderMaterial({ ...additive,
     vertexShader: STREAK_VERTEX, fragmentShader: STREAK_FRAGMENT }), rearPorts.length);
   const matrix = new THREE.Matrix4(), yaw = new THREE.Quaternion(), at = new THREE.Vector3(), size = new THREE.Vector3(1, 1, 1);

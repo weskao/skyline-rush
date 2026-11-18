@@ -11,8 +11,9 @@ service cloud.firestore {
       'aurora@2', 'taipei@2', 'tokyo@2', 'alpine@2', 'coastal@2', 'cosmic@2',
       'coast@4', 'neon@4', 'canyon@4', 'spiral@4',
       'coast@5', 'neon@5', 'canyon@5', 'aurora@4', 'spiral@5',
-      'coast@6', 'neon@6', 'canyon@6', 'aurora@5', 'spiral@6', 'neon@7',
+      'coast@6', 'neon@6', 'canyon@6', 'aurora@5', 'spiral@6', 'neon@7', 'canyon@7',
       'aurora@3', 'taipei@3', 'tokyo@3', 'alpine@3', 'coastal@3', 'cosmic@3',
+      'aurora@6', 'spiral@7', 'taipei@4', 'tokyo@4', 'alpine@4', 'coastal@4', 'cosmic@4',
       'frostbite-canyon@t1l1', 'dune-tempest@t1l1', 'dune-tempest@t2l1', 'skyfall-archipelago@t1l1',
       'stormline-megacity@t1l1', 'volcanic-crown@t1l1', 'monsoon-ruins@t1l1']); // CourseGraph sprints: `<track>@t<topology>l<layout>`
   }
@@ -28,63 +29,74 @@ service cloud.firestore {
     return stars.values().hasOnly([1, 2, 3]);
   }
 
-  // Rules stop at 1000 evaluated expressions per write. Each best is one defaulted lookup, 0 < best < 604800 s
-  // (a missing id takes the valid default), written inline: a per-id helper call cost one extra expression per
-  // id, and at 50 ids that rejected every cloud save (2026-11-13). Measured on the emulator: 60 ids fit, 70 do
-  // not. tests/record-layout.test.js caps the list at 60; more ids need a new budget measurement first.
+  // The allowed keys are checked separately. Validate their values as a list, so every check
+  // uses a list index instead of a defaulted map lookup and a full save fits under the
+  // 1000-expression limit. Missing entries are padded with a legal time (302400 seconds).
   function validBests(b) {
-    return math.abs(b.get('coast', 302400) - 302400) < 302400
-      && math.abs(b.get('neon', 302400) - 302400) < 302400
-      && math.abs(b.get('canyon', 302400) - 302400) < 302400
-      && math.abs(b.get('aurora', 302400) - 302400) < 302400
-      && math.abs(b.get('spiral', 302400) - 302400) < 302400
-      && math.abs(b.get('taipei', 302400) - 302400) < 302400
-      && math.abs(b.get('tokyo', 302400) - 302400) < 302400
-      && math.abs(b.get('alpine', 302400) - 302400) < 302400
-      && math.abs(b.get('coastal', 302400) - 302400) < 302400
-      && math.abs(b.get('cosmic', 302400) - 302400) < 302400
-      && math.abs(b.get('coast@2', 302400) - 302400) < 302400
-      && math.abs(b.get('coast@3', 302400) - 302400) < 302400
-      && math.abs(b.get('neon@2', 302400) - 302400) < 302400
-      && math.abs(b.get('neon@3', 302400) - 302400) < 302400
-      && math.abs(b.get('canyon@2', 302400) - 302400) < 302400
-      && math.abs(b.get('canyon@3', 302400) - 302400) < 302400
-      && math.abs(b.get('spiral@2', 302400) - 302400) < 302400
-      && math.abs(b.get('spiral@3', 302400) - 302400) < 302400
-      && math.abs(b.get('aurora@2', 302400) - 302400) < 302400
-      && math.abs(b.get('taipei@2', 302400) - 302400) < 302400
-      && math.abs(b.get('tokyo@2', 302400) - 302400) < 302400
-      && math.abs(b.get('alpine@2', 302400) - 302400) < 302400
-      && math.abs(b.get('coastal@2', 302400) - 302400) < 302400
-      && math.abs(b.get('cosmic@2', 302400) - 302400) < 302400
-      && math.abs(b.get('coast@4', 302400) - 302400) < 302400
-      && math.abs(b.get('neon@4', 302400) - 302400) < 302400
-      && math.abs(b.get('canyon@4', 302400) - 302400) < 302400
-      && math.abs(b.get('spiral@4', 302400) - 302400) < 302400
-      && math.abs(b.get('coast@5', 302400) - 302400) < 302400
-      && math.abs(b.get('neon@5', 302400) - 302400) < 302400
-      && math.abs(b.get('canyon@5', 302400) - 302400) < 302400
-      && math.abs(b.get('aurora@4', 302400) - 302400) < 302400
-      && math.abs(b.get('spiral@5', 302400) - 302400) < 302400
-      && math.abs(b.get('coast@6', 302400) - 302400) < 302400
-      && math.abs(b.get('neon@6', 302400) - 302400) < 302400
-      && math.abs(b.get('neon@7', 302400) - 302400) < 302400
-      && math.abs(b.get('canyon@6', 302400) - 302400) < 302400
-      && math.abs(b.get('aurora@5', 302400) - 302400) < 302400
-      && math.abs(b.get('spiral@6', 302400) - 302400) < 302400
-      && math.abs(b.get('aurora@3', 302400) - 302400) < 302400
-      && math.abs(b.get('taipei@3', 302400) - 302400) < 302400
-      && math.abs(b.get('tokyo@3', 302400) - 302400) < 302400
-      && math.abs(b.get('alpine@3', 302400) - 302400) < 302400
-      && math.abs(b.get('coastal@3', 302400) - 302400) < 302400
-      && math.abs(b.get('cosmic@3', 302400) - 302400) < 302400
-      && math.abs(b.get('frostbite-canyon@t1l1', 302400) - 302400) < 302400
-      && math.abs(b.get('dune-tempest@t1l1', 302400) - 302400) < 302400
-      && math.abs(b.get('dune-tempest@t2l1', 302400) - 302400) < 302400
-      && math.abs(b.get('skyfall-archipelago@t1l1', 302400) - 302400) < 302400
-      && math.abs(b.get('stormline-megacity@t1l1', 302400) - 302400) < 302400
-      && math.abs(b.get('volcanic-crown@t1l1', 302400) - 302400) < 302400
-      && math.abs(b.get('monsoon-ruins@t1l1', 302400) - 302400) < 302400;
+    let eight = [302400, 302400, 302400, 302400, 302400, 302400, 302400, 302400];
+    let sixteen = eight.concat(eight);
+    let thirtyTwo = sixteen.concat(sixteen);
+    let times = b.values().concat(thirtyTwo).concat(thirtyTwo);
+    return math.abs(times[0] - 302400) < 302400
+      && math.abs(times[1] - 302400) < 302400
+      && math.abs(times[2] - 302400) < 302400
+      && math.abs(times[3] - 302400) < 302400
+      && math.abs(times[4] - 302400) < 302400
+      && math.abs(times[5] - 302400) < 302400
+      && math.abs(times[6] - 302400) < 302400
+      && math.abs(times[7] - 302400) < 302400
+      && math.abs(times[8] - 302400) < 302400
+      && math.abs(times[9] - 302400) < 302400
+      && math.abs(times[10] - 302400) < 302400
+      && math.abs(times[11] - 302400) < 302400
+      && math.abs(times[12] - 302400) < 302400
+      && math.abs(times[13] - 302400) < 302400
+      && math.abs(times[14] - 302400) < 302400
+      && math.abs(times[15] - 302400) < 302400
+      && math.abs(times[16] - 302400) < 302400
+      && math.abs(times[17] - 302400) < 302400
+      && math.abs(times[18] - 302400) < 302400
+      && math.abs(times[19] - 302400) < 302400
+      && math.abs(times[20] - 302400) < 302400
+      && math.abs(times[21] - 302400) < 302400
+      && math.abs(times[22] - 302400) < 302400
+      && math.abs(times[23] - 302400) < 302400
+      && math.abs(times[24] - 302400) < 302400
+      && math.abs(times[25] - 302400) < 302400
+      && math.abs(times[26] - 302400) < 302400
+      && math.abs(times[27] - 302400) < 302400
+      && math.abs(times[28] - 302400) < 302400
+      && math.abs(times[29] - 302400) < 302400
+      && math.abs(times[30] - 302400) < 302400
+      && math.abs(times[31] - 302400) < 302400
+      && math.abs(times[32] - 302400) < 302400
+      && math.abs(times[33] - 302400) < 302400
+      && math.abs(times[34] - 302400) < 302400
+      && math.abs(times[35] - 302400) < 302400
+      && math.abs(times[36] - 302400) < 302400
+      && math.abs(times[37] - 302400) < 302400
+      && math.abs(times[38] - 302400) < 302400
+      && math.abs(times[39] - 302400) < 302400
+      && math.abs(times[40] - 302400) < 302400
+      && math.abs(times[41] - 302400) < 302400
+      && math.abs(times[42] - 302400) < 302400
+      && math.abs(times[43] - 302400) < 302400
+      && math.abs(times[44] - 302400) < 302400
+      && math.abs(times[45] - 302400) < 302400
+      && math.abs(times[46] - 302400) < 302400
+      && math.abs(times[47] - 302400) < 302400
+      && math.abs(times[48] - 302400) < 302400
+      && math.abs(times[49] - 302400) < 302400
+      && math.abs(times[50] - 302400) < 302400
+      && math.abs(times[51] - 302400) < 302400
+      && math.abs(times[52] - 302400) < 302400
+      && math.abs(times[53] - 302400) < 302400
+      && math.abs(times[54] - 302400) < 302400
+      && math.abs(times[55] - 302400) < 302400
+      && math.abs(times[56] - 302400) < 302400
+      && math.abs(times[57] - 302400) < 302400
+      && math.abs(times[58] - 302400) < 302400
+      && math.abs(times[59] - 302400) < 302400;
   }
 
   function validMedals(medals) {

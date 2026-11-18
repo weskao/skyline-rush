@@ -6,13 +6,13 @@ const account = 'signedInA';
 const profile = (value = {}) => normalizeSkinProfile({ version: 1, accountId: account, ...value }, account);
 const session = (value = {}) => ({ accountId: account, now: 1000, trialEnabled: false, trialExpiresAt: 0, ...value });
 
-test('BDD catalog groups all four categories with stable unique IDs and default entries', () => {
-  assert.equal(GARAGE_SKINS.length, 22);
-  assert.equal(new Set(GARAGE_SKINS.map(s => s.id)).size, 22);
+test('BDD catalog groups all five categories with stable unique IDs and default entries', () => {
+  assert.equal(GARAGE_SKINS.length, 28);
+  assert.equal(new Set(GARAGE_SKINS.map(s => s.id)).size, 28);
   for (const category of SKIN_CATEGORIES) {
     assert.equal(GARAGE_SKINS.filter(s => s.category === category && s.default).length, 1);
     assert.equal(GARAGE_SKINS.filter(s => s.category === category && !s.default).length,
-      category === 'launch-flare' ? 8 : category === 'nitro-trail' ? 4 : 3);
+      ({ 'launch-flare': 8, 'nitro-trail': 4, 'drift-trail': 5 })[category] ?? 3);
   }
 });
 

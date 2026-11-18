@@ -75,7 +75,7 @@ test('25 part-motion cards map to their own GIFs; 14 sweep cards share one CSS s
   await openGarageSection(page, 'store');
   await page.locator('#garage-art-source-garage-store-readiness summary').click();
   const readCards = async () => {
-    const skin = await page.locator('#garage-vfx-catalog [data-skin]').evaluateAll(cards =>
+    const skin = await page.locator('#garage-vfx-catalog [data-skin]:not([data-skin^="drift-trail-"])').evaluateAll(cards =>
       cards.map(card => ({ id: card.dataset.skin, src: card.querySelector('img')?.dataset.animatedSrc,
         sweep: card.querySelector('.garage-art-sweep') && getComputedStyle(card.querySelector('.garage-art-sweep'), '::after').animationDuration })));
     const badges = await page.locator('#garage-vfx-art-badges [data-badge-art]').evaluateAll(cards =>

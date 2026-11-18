@@ -1,4 +1,5 @@
 import { classicRoadRoute } from './classic-road-routes.ts';
+import { hasRoadProfile } from './track-profile-road.ts';
 import { COURSE_TRACKS, RACE_TRACKS } from './race-tracks.ts';
 import { CIRCUIT_ID, CIRCUIT_TRACK } from './circuit-track.ts';
 
@@ -13,14 +14,18 @@ export function layoutVersion(trackId: unknown): number {
 
 /** Daily challenges and custom courses version the road independently of the stock item layout.
  *  Neon is on road 3 since it became a closed lap (2026-11-14); the other authored roads are on 2. */
-export const roadRecordLayout = (trackId: string): number => trackId === 'neon' ? 3 : trackId === 'spiral' || classicRoadRoute(trackId) ? 2 : 1;
+export const roadRecordLayout = (trackId: string): number => ['neon', 'canyon', 'aurora', 'spiral'].includes(trackId) ? 3 : classicRoadRoute(trackId) || hasRoadProfile(trackId) ? 2 : 1;
 
 /** The layout a race runs on; a Cup counts as its newest track. */
 export function raceLayout(trackId: string, config?: unknown): number {
   const rules = config && typeof config === 'object' ? config as { mode?: unknown; cupTracks?: unknown } : {};
   if (rules.mode === 'endless' || rules.mode === 'eventlab') return roadRecordLayout(trackId);
   const cup = Array.isArray(rules.cupTracks) ? rules.cupTracks : [];
-  return Math.max(layoutVersion(trackId), ...cup.map(layoutVersion));
+  const stages = [trackId, ...cup];
+  // Mixing layouts can mask a geometry change when another stage has a higher version.
+  const cupLayout = !cup.length ? 1 : stages.some(id => typeof id === 'string' && id !== 'canyon' && hasRoadProfile(id)) ? 9
+    : stages.includes('canyon') ? 8 : 1;
+  return Math.max(cupLayout, ...stages.map(layoutVersion));
 }
 
 // CourseGraph sprints key every record by graph topology and layout, `<track>@t<topology>l<layout>`: a re-authored

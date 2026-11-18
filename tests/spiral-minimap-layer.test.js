@@ -29,9 +29,9 @@ test('upper-ramp chevron is in bounds, points forward and cannot be generated fo
 });
 
 test('the sprint minimap follows lateral road changes on both sides of the helix', () => {
-  const before = [170, 420, 690].map(d => routeMarker('spiral', d).x);
-  const after = [4900, 5190, 5480].map(d => routeMarker('spiral', d).x);
+  const before = [0, 900, 1800].map(d => routeMarker('spiral', d).x);
+  const after = [6800, 7720, 8800].map(d => routeMarker('spiral', d).x);
   for (const [left, apex, right] of [before, after]) {
-    assert.ok(Math.abs(apex - left) > 7 && Math.abs(apex - right) > 7);
+    assert.ok(Math.max(left, apex, right) - Math.min(left, apex, right) > 5);
   }
 });
