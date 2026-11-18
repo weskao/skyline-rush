@@ -15,6 +15,32 @@ npm run build
 
 `test:cloud` starts local Firebase Auth and Firestore emulators. Its Google account form uses mock identities and does not touch production data. The browser tests cover map recovery after clearing site data, account switching, export and delete, reconnect, and concurrent devices. Firestore rules tests cover owner-only reads, writes and deletion.
 
+## Wave 3 Firestore preview
+
+`VITE_WAVE3_FIRESTORE_PREVIEW` is a build-time switch. Set it where Vite runs and rebuild when changing it. The preview uses the existing Google sign-in and Firebase project.
+
+| Garage mode | Setting omitted | `=1` | `=0` |
+| --- | --- | --- | --- |
+| `trial` | On for a production build, off for the dev server | Wave 3 with Firestore | Wave 3 with guest storage and signed-in in-page state |
+| `released` | On for a production build, off for the dev server | Wave 3 with Firestore | Wave 3 excluded |
+| `coming-soon` | Wave 3 excluded | Configuration error | Wave 3 excluded |
+
+GitHub Pages and Netlify production builds use the enabled `trial` default. To pin a different setting on a deployment, set the same variable in the build environment. Firebase Rules and indexes are deployed separately.
+
+```sh
+VITE_WAVE3_FIRESTORE_PREVIEW=1 make dev
+npm run test:cloud
+GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=1 npm run build
+GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=0 npm run build
+```
+
+### Storage and maintenance
+
+- A signed-out player uses the guest device key `skyline-rush-wave3-demo:v1:guest`. Google sign-in switches to the Firebase UID's preview document when the flag is on. Signing out restores the guest save. Previous local UID checkpoints are ignored, and guest balances are never uploaded. A failed authenticated write keeps the last confirmed snapshot and reports the operation as unavailable.
+- Firestore uses one owner-only document at `wave3PreviewEconomy/{uid}`. The envelope is `{ version: 1, checkpoint: string }`. The application validates the decoded checkpoint, including the UID, schema version, size, currency balances, mission state, inventory and recent replay IDs. The payload is capped at 64 KiB and exempt from Firestore indexing. Update the codec, rules, adapter and regression fixtures together if the format changes.
+- The Firestore adapter stages gameplay mutations inside a transaction using the server document and publishes the new state after commit. Keeping the balances, rewards and replay IDs together allows a retry to recognize a previously recorded completion. The client ignores checkpoints after seven days without a saved operation. Firestore retains the physical document until deletion.
+- The existing cloud-save delete action includes the preview document while preview storage is enabled. For a full cleanup, turn off the flag and remove the preview write rule, then delete `wave3PreviewEconomy` in the intended project. The ordinary `saves`, `modeBests` and `accounts` collections do not hold Wave 3 balances. Keep the preview data out of the formal Go economy when that launches.
+
 ## Account data and safe progress restore
 
 - Google login caches only `displayName` and `email` in `accounts/{uid}`, reading existing fields to avoid duplicate writes. Empty/invalid Google values do not wipe previously saved valid values. This uses the existing Spark database.

@@ -5,7 +5,6 @@
 import packageMeta from '../package.json' with { type: 'json' };
 import { ref, onMounted, onUnmounted } from 'vue';
 import { getLocale, onLocaleChange } from './i18n.ts';
-import { GARAGE_RELEASE_MODE } from '#garage-release-config';
 import { wave3DemoExperience } from '#wave3-demo-race';
 import Wave3CurrencyStrip from './Wave3CurrencyStrip.vue';
 import { RACE_TRACKS } from './game.js';
@@ -23,6 +22,7 @@ import CloseButton from './CloseButton.vue';
 import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';
 import ReleaseNotesPanel from './ReleaseNotesPanel.vue';
+import AcquisitionReveal from './AcquisitionReveal.vue';
 import { releaseView } from './release-view-state.ts';
 import { setupInputModality } from './input-modality.ts';
 import TutorialCoach from './TutorialCoach.vue';
@@ -42,6 +42,7 @@ import RaceOverlay from './RaceOverlay.vue';
 import RaceHalfway from './RaceHalfway.vue';
 import ItemRules from './ItemRules.vue';
 import ItemSlot from './ItemSlot.vue';
+import PhotoStudio from './PhotoStudio.vue';
 
 const { version } = packageMeta;
 setupInputModality();
@@ -61,6 +62,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
 </script>
 
 <template>
+  <AcquisitionReveal />
   <ReleaseNotesPanel />
   <GuidePanel />
   <EventLabPanel />
@@ -130,7 +132,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     <section class="intro lobby-compact" id="intro" aria-label="Race setup" data-i18n-aria-label="lobby.title">
       <div class="home-intro-topbar">
         <div class="route-label"><span class="route-line"></span> <span id="track-length">5 KM SPRINT</span> <span>·</span> <span class="route-drivers"></span><button class="medal-chip cloud-chip" id="cloud-open" data-open-history="cloud" data-i18n="cloud.title">Cloud save</button><button class="medal-chip" id="medal-chip" data-open-history="medals" :aria-label="homeStatusView.medalLabel" :class="{ 'has-medals': homeStatusView.hasMedals }"><svg v-bind="ICON_ATTRS" v-html="icons.star"></svg><span id="medal-count">{{ homeStatusView.medalCount }}</span></button></div>
-        <Wave3CurrencyStrip v-if="GARAGE_RELEASE_MODE === 'trial'" compact
+        <Wave3CurrencyStrip v-if="wave3DemoExperience" compact
           class="home-resource-strip" :experience="wave3DemoExperience" :locale="homeWalletLocale" />
       </div>
       <div class="lobby-setup">
@@ -302,28 +304,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       </div>
     <footer class="track-chooser-footer"><div aria-live="polite"><span id="track-choose-map" class="track-route-map" aria-hidden="true"></span><div><strong id="track-choose-selection"></strong><small id="track-choose-state"></small></div></div><button type="button" id="track-choose-confirm"><span data-i18n="track.confirm">Confirm track</span><svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg></button></footer>
   </dialog>
-  <dialog id="photo-screen" class="photo-screen" aria-labelledby="photo-title">
-    <div class="photo-panel">
-      <div class="photo-tools">
-        <h2 id="photo-title" data-i18n="photo.title">PHOTO STUDIO</h2>
-        <label><span data-i18n="photo.orbit">Camera orbit</span>
-          <input id="photo-orbit" type="range" min="0" max="360" step="15" value="30"></label>
-        <details id="photo-advanced">
-          <summary data-i18n="photo.tools">Advanced tools</summary>
-          <label><span data-i18n="photo.fov">Field of view</span>
-            <input id="photo-fov" type="range" min="35" max="85" value="58"></label>
-          <label><span data-i18n="photo.sky">Photo lighting</span>
-            <select id="photo-sky"><option value="original" data-i18n="photo.original">Original</option>
-              <option value="sunset" data-i18n="photo.sunset">Sunset</option>
-              <option value="night" data-i18n="photo.night">Night</option>
-              <option value="fog" data-i18n="photo.fog">Fog</option></select></label>
-        </details>
-        <p id="photo-status" role="status" data-i18n="photo.status">This photo stays on your device.</p>
-      </div>
-      <div class="photo-actions"><button type="button" id="photo-close" data-i18n="photo.close">BACK</button>
-        <button type="button" id="photo-save" data-i18n="photo.save">SAVE PNG</button></div>
-    </div>
-  </dialog>
+  <PhotoStudio />
   <div id="race-wipe" class="race-wipe" aria-hidden="true" hidden></div>
 
   <HistoryPanel />

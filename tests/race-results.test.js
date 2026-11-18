@@ -317,3 +317,12 @@ test('only the first unlock of a track earns the unlock sound', () => {
   assert.equal(replay.next, 'neon');
   assert.equal(replay.unlockedTrack, false);
 });
+
+test('settlement reports only paint thresholds crossed by new Classic stars', () => {
+  const progress = loadSessionProgress(['coast', 'neon']);
+  progress.stars.neon = 3;
+  const race = classic({ stars: 3 });
+  assert.deepEqual(settle(race, { progress }).settlement.unlockedPaints, ['glacier']);
+  assert.deepEqual(settle(classic({ stars: 2 }), { progress }).settlement.unlockedPaints, []);
+  assert.deepEqual(settle(classic({ stars: 3 }, { mode: 'free' }), { progress }).settlement.unlockedPaints, []);
+});

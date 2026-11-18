@@ -171,7 +171,7 @@ test('zh-TW catalog keeps English to the allowed brand terms', () => {
 
 // Static template keys must be translated, not silently displayed as their raw identifiers.
 test('all static App.vue translation keys and mode History badges exist in both locales', () => {
-  const template = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
+  const template = ['App.vue', 'PhotoStudio.vue'].map(name => readFileSync(new URL(`../src/${name}`, import.meta.url), 'utf8')).join('\n');
   const keys = new Set([...template.matchAll(/data-i18n(?:-aria-label|-title)?="([\w.-]+)"/g)].map(match => match[1]));
   keys.add('mode.historyPersonalBest');
   keys.add('mode.historyGhost');
