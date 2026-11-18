@@ -12,6 +12,8 @@ A spec that passes 68 of 68 runs locally can still fail 1 in 2 on CI. Main/devel
 2026-10-27 to 2026-11-04 failed 15 times. Most failures were timing races, not product bugs.
 Write every assertion so that runner speed cannot change its outcome.
 
+Keep Playwright helper imports outside the source string served by a module mock. A test-only import in the served module can break application startup before the first assertion.
+
 ## Freeze, then assert
 
 - **The race keeps driving while the test reads it.** A slow runner may already have passed

@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -10,7 +11,6 @@ const SHOTS = process.env.RESULT_CLOUD_SHOTS;
 // Served in place of src/cloud-save.ts by the Vite dev server; window.cloudMock (init script) scripts each call.
 const MOCK_MODULE = `
 import { mergeProgress } from '/src/cloud-progress.ts';
-import { clickLobbyOption } from './helpers/home-lobby.js';
 const mock = window.cloudMock;
 export const watchCloudUser = onUser => { mock.onUser = onUser; setTimeout(() => onUser(mock.user)); };
 export async function signInToCloud() {
