@@ -58,20 +58,41 @@ test('release clears steer, brake and active', () => {
   assert.equal(p.read().active, false);
 });
 
-test('sliding down 40px brakes without steering', () => {
+test('balanced braking requires a deliberate downward pull', () => {
   const p = pad();
-  p.move(100, 239);
+  p.move(100, 245);
   assert.equal(p.read().brake, false);
-  p.move(100, 240);
+  p.move(100, 255);
   assert.deepEqual([p.read().brake, p.read().steer], [true, 0]);
 });
 
 test('down plus sideways brakes and steers analog (drift)', () => {
   const p = pad();
-  p.move(130, 250);
+  p.move(130, 255);
   const r = p.read();
   assert.equal(r.brake, true);
   assert.equal(r.steer, 0.5);
+});
+
+test('a sideways steering arc after full lock does not engage the brake', () => {
+  const p = pad();
+  p.move(215, 218);
+  p.move(225, 255);
+  assert.deepEqual([p.read().steer, p.read().brake], [1, false]);
+  p.move(225, 270);
+  assert.deepEqual([p.read().steer, p.read().brake], [1, true], 'a longer downward pull still works at full lock');
+});
+
+test('a deliberate brake stays on during sideways drift and releases when the thumb moves back up', () => {
+  const p = pad();
+  p.move(100, 256);
+  assert.equal(p.read().brake, true);
+  p.move(170, 248);
+  assert.deepEqual([p.read().steer, p.read().brake], [1, true]);
+  p.move(170, 240);
+  assert.deepEqual([p.read().steer, p.read().brake], [1, false]);
+  p.down(170, 240);
+  assert.deepEqual([p.read().steer, p.read().brake], [0, false]);
 });
 
 test('setFullLock rescales steering sensitivity', () => {
