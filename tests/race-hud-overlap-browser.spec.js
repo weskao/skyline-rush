@@ -4,6 +4,7 @@ import { expect } from '@playwright/test';
 import { ciTimeout } from './helpers/ci.js';
 import { resizeTo } from './helpers/viewport.js';
 import { settled } from './helpers/test.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 // CI speed: the four touch sizes without a fold share one booted page per (locale, HUD) pair and are resized in place; each size is
 // also freshly booted in one pair. Desktop and the two fold layouts keep their own boot (touch/fold are fixed per browser context).
 
@@ -321,7 +322,7 @@ for (const [track, selector] of [
   ['volcanic-crown', '[data-upcoming-track="volcanic-crown"]'],
 ]) {
   foldHudTest(`${track} retains legible controls and telemetry on a stacked fold`, async ({ gameplayPage: page }) => {
-    await page.locator(selector).click();
+    await clickLobbyOption(page, selector);
     await page.locator('#start-button').click();
     await page.evaluate(() => { window.gameplay.race.countdown = .01; });
     await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
