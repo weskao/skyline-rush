@@ -563,3 +563,29 @@ test('the halfway chime is a short rising stinger, so it ducks the mix only brie
   assert.deepEqual(notes.map(([from]) => from), [...notes.map(([from]) => from)].sort((a, b) => a - b));
   assert.ok(Math.max(...notes.map(([, , duration, delay]) => duration + delay)) <= .4);
 });
+
+test('acquisition motifs are distinct, fit the reveal and use the existing SFX mute', async t => {
+  const { ACQUISITION_KIND } = await import('../src/acquisition-reveal.ts');
+  const { ACQUISITION_SOUNDS } = await import('../src/feedback-sounds.ts');
+  const { nodes, sound } = installAudio(t);
+  assert.deepEqual(Object.keys(ACQUISITION_SOUNDS).sort(), Object.values(ACQUISITION_KIND).sort());
+  sound.setEnabled(true);
+  const heard = cue => {
+    const start = nodes.length;
+    sound.cue(cue);
+    return nodes.slice(start).filter(node => node.kind === 'oscillator');
+  };
+  const cues = [...new Set(Object.values(ACQUISITION_SOUNDS)), 'acquisition-select'];
+  assert.ok(cues.length >= 5);
+  const signatures = cues.map(cue => {
+    const voices = heard(cue);
+    assert.ok(voices.length > 0, cue);
+    assert.ok(Math.max(...voices.map(node => node.stopped)) <= .8, cue);
+    // The mock never fires onended automatically. Each cue tests the same clean voice budget.
+    voices.forEach(node => node.onended());
+    return voices.map(node => node.frequency.value).join(',');
+  });
+  assert.equal(new Set(signatures).size, cues.length);
+  sound.setEnabled(false);
+  for (const cue of cues) assert.deepEqual(heard(cue), []);
+});

@@ -10,7 +10,7 @@ for (const [name, viewport, hasTouch, muted] of [
   ['muted landscape', { width:844, height:390 }, true, true],
 ]) {
   test.describe(name, () => {
-    test.use({ viewport, hasTouch });
+    test.use({ viewport, hasTouch, keepAcquisitionOpen: true });
     test('real result and Garage actions schedule each confirmation once on SFX', async ({ page, gameplayURL }) => {
       await captureHooks(page);
       await page.route(/^https:\/\//, route => route.abort());
@@ -41,18 +41,25 @@ for (const [name, viewport, hasTouch, muted] of [
       await page.locator('#start-button').click();
       await page.evaluate(() => { window.gameplay.race.countdown = .01; });
       await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout:ciTimeout(15000) });
-      await page.evaluate(() => {
+      await page.evaluate(async () => {
+        const { finishRace } = await import('/src/race-finish.js');
         const race = window.gameplay.race;
         race.elapsed = 80;
-        Object.assign(race.player, { distance:race.length - 10, speed:60 });
+        Object.assign(race.player, { distance: race.length, speed: 60 });
+        finishRace(race, race.length - 10, 1 / 60);
       });
+      const reveal = page.locator('#acquisition-reveal');
+      const continueReward = reveal.getByRole('button', { name: 'Continue' });
       await expect(page.locator('.wave3-demo-results--earned')).toBeVisible();
       await expect(page.locator('.wave3-demo-results--earned')).toContainText('Demo points');
-      await expect.poll(() => notes(880), { timeout:ciTimeout(5000) }).toBe(muted ? 0 : 1);
+      await expect(reveal).toBeVisible();
+      await expect.poll(() => notes(294), { timeout:ciTimeout(5000) }).toBe(muted ? 0 : 1);
+      expect(await notes(880)).toBe(0); // The reward modal supersedes the old result credit cue.
+      await continueReward.click();
       await selectLocale(page, 'zh-TW');
       await expect(page.locator('.wave3-demo-results--earned')).toContainText('試玩點數');
       await selectLocale(page, 'en');
-      expect(await notes(880)).toBe(muted ? 0 : 1);
+      expect(await notes(294)).toBe(muted ? 0 : 1);
 
       await page.locator('#choose-track').click();
       await page.locator('#garage-button').click();
@@ -60,16 +67,20 @@ for (const [name, viewport, hasTouch, muted] of [
       const mission = page.locator('[data-mission-id="mission-race:daily"]');
       await mission.getByRole('button', { name:/claim demo reward/i }).click();
       await expect(mission).toHaveAttribute('data-mission-state', 'claimed');
-      await expect.poll(() => notes(880)).toBe(muted ? 0 : 2);
+      await expect(reveal).toBeVisible();
+      await expect.poll(() => notes(880)).toBe(muted ? 0 : 1);
+      await continueReward.click();
 
-      await page.locator('[data-wave3-open-store]').click();
+      await openGarageSection(page, 'store');
       const store = page.locator('[data-wave3-demo-store]');
       await store.locator('[data-demo-id="thruster-ion"]').click();
       await store.getByRole('button', { name:'Demo redeem', exact:true }).click();
-      const beforeRedeem = await notes(990);
+      const beforeRedeem = await notes(275);
       await store.getByRole('button', { name:'Confirm demo redeem' }).click();
       await expect(store.locator('[data-demo-id="thruster-ion"]')).toHaveAttribute('data-demo-status','demo-unlocked');
-      await expect.poll(() => notes(990)).toBe(beforeRedeem + (muted ? 0 : 1));
+      await expect(reveal).toBeVisible();
+      await expect.poll(() => notes(275)).toBe(beforeRedeem + (muted ? 0 : 1));
+      await continueReward.click();
       await store.getByRole('button', { name:'Demo Collection' }).click();
       const collection = page.locator('[data-wave3-demo-collection]');
       await collection.locator('[data-demo-id="thruster-ion"]').click();

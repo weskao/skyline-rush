@@ -156,10 +156,7 @@ const VIEWS: [(race: FinishedRace, finished: FinishedResult) => unknown, (race: 
 ];
 export function resultView(race: FinishedRace, finished: FinishedResult): ResultView {
   const view = (VIEWS.find(([applies]) => applies(race, finished))?.[1] ?? standardView)(race, finished);
-  if (finished.unlockedGt) {
-    view.unlockedGt = true;
-    view.copy = [view.copy, t('car.gt.unlocked')].filter(Boolean).join(' ');
-  }
+  if (finished.unlockedGt) view.unlockedGt = true;
   if (finished.challengeMedals?.length) view.copy += t('challengeMedal.new', {
     list: finished.challengeMedals.map(id => t(`challengeMedal.${id}`)).join(t('list.separator')),
   });

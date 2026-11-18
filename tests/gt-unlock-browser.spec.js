@@ -3,7 +3,7 @@ import { test, captureHooks } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 
-test.use({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+test.use({ keepAcquisitionOpen: true, viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
 
 const gt = page => page.locator('#garage-screen [data-car="crimson-gt"]');
 const stars = { coast: 3, neon: 3, canyon: 3, aurora: 3, spiral: 3, taipei: 2 };
@@ -64,7 +64,7 @@ test('18 Career stars allow the earned GT after the trial has expired', async ({
   await expect(page.getByRole('button', { name: 'Start 24-hour test drive' })).toHaveCount(0);
 });
 
-test('the 18th Career star in results opens the Garage with the GT owned', async ({ page, gameplayURL }) => {
+test('the 18th Career star reveals the GT in the shared dialog and opens the Garage', async ({ page, gameplayURL }) => {
   await enter(page, gameplayURL, { career: { ...stars, coast: 2, taipei: 3 }, garage: false });
   await page.locator('#start-button').click();
   await expect(page.locator('#race-status')).toHaveText(/^(COUNTDOWN|RACING)$/);
@@ -75,7 +75,11 @@ test('the 18th Career star in results opens the Garage with the GT owned', async
     race.elapsed = 60;
     Object.assign(race.player, { distance: race.length - 10, speed: 60, score: race.length });
   });
-  await expect(page.locator('#overlay-copy')).toContainText('Vantaire GT unlocked!');
+  const reveal = page.getByRole('dialog', { name: 'Reward reveal' });
+  await expect(reveal.getByRole('heading', { name: 'Vantaire GT' })).toBeVisible({ timeout: ciTimeout(20_000) });
+  await expect(reveal.locator('.acquisition-hero')).toHaveAttribute('data-kind', 'car');
+  await reveal.getByRole('button', { name: 'Continue' }).click();
+  await expect(reveal).toBeHidden();
   await expect(page.locator('#race-overlay')).toBeVisible();
   await page.getByRole('button', { name: 'Go to Garage' }).click();
   await expect(page.locator('#garage-screen')).toBeVisible();

@@ -2,6 +2,7 @@
 
 - [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.
 - [x] Add one accessible bilingual reveal for real race, mission and redemption outcomes, and document the consumer API.
+- [x] Add per-kind reveal SFX on the shared mixer and expose typed acquisition constants for callers.
 - [ ] Confirm physical phone coverage and exact-HEAD CI.
 
 # Measured routes and Home artwork
@@ -2401,6 +2402,7 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
     - [x] Real-phone screenshots and frame-time p50/p95, GT versus Roadster: closed 2026-11-14 by the owner after discussion; owner's own visual acceptance passed; no real-phone capture is recorded here (checklist in the ignored `audits/crimson-gt/phone-checklist.md`).
     - [x] `make verify` and exact-HEAD full CI: closed 2026-11-14 by the owner after discussion, with the suite not green. Observed on a detached checkout of `6d2ec20a` (`make verify`, stopped reading at browser test 467 of 1163): typecheck pass; unit 2764 tests, 2761 pass, 0 fail, 3 skipped; browser suite 9 failures, none in a Crimson GT spec: `coast-scenery-browser.spec.js:109`, `endless-highway-browser.spec.js:12` (desktop-en, phone-zh), `hazard-captures-browser.spec.js:22` (desktop-en, phone-en), `hero-roadster-race-browser.spec.js:57`, `release-video-browser.spec.js:227` (desktop), `spiral-items-browser.spec.js:12` (desktop, phone). The first six reproduced in two runs on develop-level code and are being fixed on `fix/develop-red-browser-specs`; the last three are not yet examined. Exact-HEAD full CI runs on `develop` after the merge the owner approved 2026-11-14; no result is recorded here yet.
     - [x] Implement the 18-star permanent unlock and one-time 24-hour test drive. Garage cards show progress, trial expiry and preview/equip states. Old selections respect eligibility, the next race rechecks expired trials, and a qualifying Career result links to the Garage.
+    - [x] Route the first 18-star GT unlock through the shared acquisition reveal as the hero of the existing race reward batch. Keep the results action to open the Garage. RED reproduced the missing GT in a mixed reward batch. GREEN verifies its localized name, artwork, order, deduplication and ownership of the reveal audio. The focused Node tests passed 40/40. A 390 × 844 Chromium test passed the 18-star race finish, shared dialog and Garage action. Typecheck and the production build passed.
     - [x] Observed failing-before-fix checks at 17 stars and for trial timestamp merging. Focused Node tests passed, and the
       local Firestore emulator passed all three rules tests, including the optional trial field and invalid values.
     - [x] Verify the feature commit's focused GitHub quality gate. [Run 44359580440](https://github.com/weskao/skyline-rush/actions/runs/44359580440) passed unit-tests, Cloud Save, and quality-gate on `0dead842`. This branch workflow skips the full browser and World Tour suites.

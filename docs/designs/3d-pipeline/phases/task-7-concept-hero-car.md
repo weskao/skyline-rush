@@ -34,7 +34,8 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
   earliest possible unlock and other combinations can reach it across more tracks. No currency is spent.
   - Locked cars can be previewed in 3D. The optional, one-time **24-hour test drive** starts from the explicit Garage
     action and permits regular races. Reaching 18 stars while driving the GT keeps it equipped. The results screen
-    announces the unlock once when a Career finish crosses the threshold.
+    uses the shared acquisition dialog when a Career finish crosses the threshold. The GT opens the race reward batch,
+    then the results page offers the Garage after the dialog closes.
   - The trial uses the earliest saved start on Google Cloud Save and browser storage for guests. An expired trial
     allows the current race to finish and falls back to Stratosway R2 for the following race, unless the player has
     reached 18 stars. A car selection from the previously free build does not grant access. The GT finish stays saved.
