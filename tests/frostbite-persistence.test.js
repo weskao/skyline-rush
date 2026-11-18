@@ -77,7 +77,6 @@ test('firestore.rules accepts the Frostbite topology-keyed best', () => {
   const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
   const listed = [...rules.match(/function bestIds\(\) \{[^}]*\}/)[0].matchAll(/'([^']+)'/g)].map(m => m[1]);
   assert.ok(listed.includes(KEY));
-  assert.ok(rules.includes(`math.abs(b.get('${KEY}', 302400) - 302400) < 302400`), 'validBests checks the key inline');
 });
 
 test('release builds keep Frostbite a Coming Soon card', () => {

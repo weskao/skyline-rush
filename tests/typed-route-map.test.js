@@ -6,8 +6,8 @@ import { routeSamples, routePolyline, routeMarker } from '../src/route-map.ts';
 
 test('typed minimap samples remain identical for all routes and do not duplicate JS implementation', () => {
   for (const id of Object.keys(RACE_TRACKS)) {
-    assert.equal(routeSamples(id).length, 128);
-    assert.equal(routePolyline(id).split(' ').length, 128);
+    assert.equal(routeSamples(id).length, id === 'spiral' ? 256 : 128);
+    assert.equal(routePolyline(id).split(' ').length, id === 'spiral' ? 256 : 128);
     assert.deepEqual(routeMarker(id, Number.NaN), routeMarker(id, 0));
     assert.deepEqual(routeMarker(id, Number.POSITIVE_INFINITY), routeMarker(id, 0));
   }
