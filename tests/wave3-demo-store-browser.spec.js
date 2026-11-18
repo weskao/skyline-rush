@@ -135,7 +135,7 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     }
     await store.getByRole('button', { name: 'Drift trails' }).click();
     await expect(store.locator('[data-demo-id]')).toHaveCount(5);
-    await expect(offer('drift-trail-flame')).toHaveAccessibleName(/300 Demo coins/);
+    await expect(offer('drift-trail-flame')).toHaveAccessibleName(/260 Demo coins/);
     await store.getByRole('button', { name: 'Thrusters' }).click();
     await page.evaluate(() => window.__wave3DemoFixture.grantRace());
     await store.getByRole('button', { name: 'Demo redeem' }).click();
