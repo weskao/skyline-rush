@@ -133,9 +133,16 @@ async function bootRace(page, locale, hud, segments) {
 async function measureHud(page, viewport, locale, hud, failures) {
   const label = `${viewport.width}x${viewport.height}/${locale}/${hud}`;
   // A NITRO activation raises the event callout, the transient overlay most likely to land on other blocks.
-  await page.evaluate(() => Object.assign(window.gameplay.race.player, { x: 0, speed: 80, nitroTime: 4 }));
-  // Polled every frame: a callout lives ~0.85s of race time, shorter than the default poll interval on a slow runner.
-  await page.waitForFunction(() => !document.querySelector('#event-callout').hidden, null, { polling: 'raf', timeout: ciTimeout(5_000) });
+  const showCallout = await page.evaluate(async () => {
+    const { race } = window.gameplay;
+    const callout = document.querySelector('#event-callout');
+    Object.assign(race.player, { x: 0, speed: 80, nitroTime: 4 });
+    // Observe the real HUD on its own frames. A slow renderer can spend more than 15 wall-clock seconds before GO clears.
+    const deadline = race.elapsed + 2;
+    while (callout.hidden && race.phase === 'racing' && race.elapsed < deadline) await new Promise(requestAnimationFrame);
+    return !callout.hidden;
+  });
+  expect(showCallout, 'NITRO callout appears in the same race').toBe(true);
   const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
   // The canvas spans the hinge, but the road is framed on the right pane of a vertical fold and the upper pane of a horizontal fold.
   const scene = viewport.segments
