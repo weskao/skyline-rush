@@ -42,7 +42,7 @@ test('a page shown again without a visibilitychange event recovers its music on 
   await installMusicProbe(page);
   await page.goto('/');
   await ready(page);
-  await page.locator('#intro-title').click();
+  await page.locator('#whats-new-open').click();
   await expectMusicPlaying(page);
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
@@ -54,7 +54,7 @@ test('a page shown again without a visibilitychange event recovers its music on 
   const before = await page.evaluate(() => window.__music.ctxs.length);
   for (let tap = 0; tap < 4; tap++) {
     await page.waitForTimeout(ciTimeout(1300)); // past the engine's 1 s rebuild guard, as a player's separate taps are
-    await page.locator('#intro-title').click();
+    await page.locator('#release-title').click();
   }
   await expectMusicPlaying(page);
   const made = await page.evaluate(() => window.__music.ctxs.length); // settled: music is playing, so every tap was handled
