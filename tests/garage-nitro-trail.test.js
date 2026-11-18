@@ -170,3 +170,10 @@ test('the compact reflection stays on the road when a fitted car pitches and ban
   assert.ok(up.distanceTo(new Vector3(0, 1, 0)) < 1e-6);
   assert.ok(Math.abs(pool.getWorldPosition(new Vector3()).y - .04) < 1e-6);
 });
+
+test('style filaments use the existing streak shader and do not lift its light ceilings', () => {
+  const shader = rig('nitro-trail-purple').streaks.material.fragmentShader;
+  assert.match(shader, /float filament=/);
+  assert.match(shader, /\.66\/max\(\.66/);
+  assert.match(shader, /power,0\.,\.76\)/);
+});

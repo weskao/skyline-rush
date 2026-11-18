@@ -50,8 +50,8 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       uniform float time,power,speed,density,length,suction,downforce,nitroMix,skinPattern;uniform vec3 skinTint;uniform vec4 trailAccent;
       void main(){if(vLane>density)discard;
         float t=fract(vUv.x*2.-time*speed+vLane*3.);
-        float pulse=smoothstep(1.-length,1.-length+.06,t)*(1.-smoothstep(.91,1.,t));
-        float point=pow(max(0.,1.-abs(t-.88)*22.),3.);
+        float pulse=smoothstep(1.-length,1.-length+.10,t)*(1.-smoothstep(.84,1.,t));
+        float point=pow(max(0.,1.-abs(t-.83)*14.),3.);
         float ends=smoothstep(0.,.09,vUv.x)*(1.-smoothstep(.85,1.,vUv.x));
         float strength=vType>.5&&vType<1.5?suction*(.55+downforce*.45):vType>1.5?.35+downforce*.55:1.;
         vec3 color=mix(vec3(.18,.65,1.),vec3(.7,.95,1.),pulse*.6+point*.4)*skinTint;
@@ -64,7 +64,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
           float segment=smoothstep(.08,.31,phase)*(1.-smoothstep(.66,.94,phase));
           pattern=.28+.55*segment;
         }
-        gl_FragColor=vec4(color*(1.+point),ends*power*(.08+pulse*.7+point*.2)*strength*pattern);}`,
+        gl_FragColor=vec4(color*(1.+point*.62),ends*power*(.08+pulse*.7+point*.2)*strength*pattern);}`,
   }));
   local.add(flow);
   const pressure = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShaderMaterial({

@@ -137,3 +137,14 @@ test('all airflow skins resolve to four distinct native 3x transparent PNG artwo
   }
   assert.equal(sources.size, 4);
 });
+
+test('distinct VFX colour accents identify every style in the Garage', async () => {
+  const { skinAccentHue } = await import('../src/garage-skin-catalog.ts');
+  for (const category of SKIN_CATEGORIES) {
+    const hues = GARAGE_SKINS.filter(skin => skin.category === category).map(skin => skinAccentHue(skin.id));
+    assert.ok(hues.every(hue => Number.isFinite(hue) && hue >= 0 && hue < 360));
+    assert.equal(new Set(hues).size, hues.length, category);
+  }
+  assert.ok(skinAccentHue('nitro-trail-cyan') >= 170 && skinAccentHue('nitro-trail-cyan') <= 205);
+  assert.ok(skinAccentHue('thruster-void') >= 260 && skinAccentHue('thruster-void') <= 300);
+});

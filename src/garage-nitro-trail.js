@@ -22,16 +22,17 @@ const STREAK_FRAGMENT = `varying vec2 vUv;varying float vFacing;uniform float ti
     float core=pow(max(0.,f),3.);float edge=pow(max(0.,f),1.2); // bright down the jet's axis, soft at its rim
     float nozzle=exp(-u*9.);float tail=pow(max(0.,1.-u),1.65);
     float glint=pow(max(0.,hash(floor(vec2(a*14.,u*32.)))),24.)*edge*.12;
+    float filament=.5+.5*cos(a*18.85-u*13.+time*3.8);
     float body=edge*.15+core;vec3 tint=color;
-    if(style>.5&&style<1.5){body=core*1.05+edge*.12;glint*=.45;} // steady cyan filament
+    if(style>.5&&style<1.5){body=core*(.86+.19*filament)+edge*.12;glint*=.45;} // steady cyan filament
     if(style>1.5&&style<2.5){float band=exp(-abs(fract(u*3.-time*1.35)-.5)*7.);
-      body=edge*(.23+.53*band)+core*.35;} // amber bands travel through steady exhaust
+      body=edge*(.23+.53*band)*(.78+.22*filament)+core*.35;} // amber bands travel through steady exhaust
     if(style>2.5&&style<3.5){float k=fract(u*5.-time*2.65);
       float dash=smoothstep(.06,.27,k)*(1.-smoothstep(.61,.92,k));
-      body=core*(.28+.64*dash)+edge*.12;glint*=1.3;} // soft red segments and embers
+      body=core*(.28+.64*dash)*(.8+.2*filament)+edge*.12;glint*=1.3;} // soft red segments and embers
     if(style>3.5){float twin=pow(max(0.,sin(a*12.566-u*9.+time*4.2)),6.);
       body=edge*.13+core*.28+twin*.85*edge;
-      tint=mix(color,vec3(.72,.23,.61),.45+.25*sin(u*8.-time*2.));} // two violet ribbons
+      tint=mix(color,vec3(.72,.23,.61),.26+.48*filament);} // two violet ribbons
     vec3 light=tint*(.19+body*.41+nozzle*.19+glint);
     light*=.66/max(.66,max(light.r,max(light.g,light.b)));
     gl_FragColor=vec4(light,clamp((body*tail+nozzle*.42*edge+glint)*power,0.,.76));}`;
@@ -40,7 +41,8 @@ const POOL_FRAGMENT = `varying vec2 vUv;uniform float power;uniform vec3 color;
   void main(){vec2 q=clamp(vUv,0.,1.)*2.-1.;float u=clamp(1.-vUv.y,0.,1.);
     float across=clamp(q.x*q.x,0.,1.);
     float glow=exp(-across*4.)*exp(-u*2.4)*(1.-smoothstep(.65,1.,u));
-    gl_FragColor=vec4(color*.78,glow*power*.13);}`;
+    float tracks=.78+.22*abs(cos(q.x*8.));
+    gl_FragColor=vec4(color*.78,glow*tracks*power*.13);}`;
 
 function plumeTube() { // open round tube, unit radius, mouth at z=0 and tail at z=1 (uv.x around, uv.y along)
   return new THREE.CylinderGeometry(1, 1, 1, 16, 24, true).rotateX(Math.PI / 2).translate(0, 0, 0.5);

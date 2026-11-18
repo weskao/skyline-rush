@@ -15,10 +15,11 @@ export function createVoidPulseBeams(car, rearPorts) {
         float axial=clamp(vUv.y,0.,1.);
         float wave=fract(axial*4.5-time*2.4+vUv.x*2.); // helical bolts: spirals keep depth where flat bands read as rings
         float bolt=pow(max(0.,1.-abs(wave-.36)*4.),3.);
-        float bright=(.33+bolt*.28)*power*quality;
+        float innerArc=pow(max(0.,1.-abs(wave-.61)*6.),3.);
+        float bright=(.30+bolt*.27+innerArc*.04)*power*quality;
         float taper=pow(max(0.,1.-abs(axial-.42)*1.9),1.4);
         vec3 violet=vec3(.48,.23,.8);vec3 core=vec3(.60,.53,.91);
-        vec3 color=mix(violet,core,clamp(bolt*.44+pow(max(0.,vFacing),3.)*.42,0.,1.));
+        vec3 color=mix(violet,core,clamp(bolt*.44+innerArc*.15+pow(max(0.,vFacing),3.)*.42,0.,1.));
         gl_FragColor=vec4(color,min(1.,bright*taper*(.25+.75*vFacing)));
       }`,
   });

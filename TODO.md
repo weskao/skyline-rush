@@ -1,3 +1,10 @@
+# 2026-11-18 — Garage and race VFX polish
+
+- [x] Review the shared 3× artwork catalog. Link card and loadout colours to each cosmetic, and replace pulsing preview rings with steady selection borders.
+- [x] Shape NITRO filaments, the launch flare colour sweep, thruster texture and airflow falloff within the existing intensity budgets.
+- [x] Confirm two test-first failures. The 72 focused tests, 3,370 unit tests (3 skipped), typecheck, module-size check and locked production build passed.
+- [ ] Review real-game WebGL evidence, a physical phone and the exact-commit quality gate.
+
 # 2026-11-18 — Launch flare, thruster and airflow glare
 
 - [x] Use a steady charge during countdown and a single burst at GO. Contain flare emission by style; use continuous motion envelopes for Void Pulse, Plasma Helix, Prism Lattice and Vortex Spiral.

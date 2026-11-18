@@ -68,10 +68,10 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         color=mix(color,vec3(1.,.38,.78),tail*smoothstep(.2,1.,t)); // board plume (Medium+): the blue-white core fades to magenta
         color=mix(color*skinTint,${NITRO_TINT}); // skin tints the base
         float body=thick*(1.-smoothstep(0.,3.,clamp(vD,0.,3.))); // the first 3 m stay dense whatever the tail length
-        float shape=1.;
+        float shape=.91+.09*cos(vUv.x*12.566+t*25.-time*7.);
         if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
         if(skinPattern>1.5) shape=.58+.42*pow(max(0.,.5+.5*sin(vUv.x*6.28*3.+t*28.-time*8.)),2.);
-        if(skinPattern>2.5) shape=step(.45,fract(t*7.+time*3.+vUv.x*3.));
+        if(skinPattern>2.5) shape=.63+.28*sin(t*13.-time*5.+vUv.x*6.283);
         // glare 1 (bloom, Medium/High): under the bloom threshold, the fat flame emits half (two faces, overlapping neighbours).
         // 0 (Low, no bloom): full light and a denser tail, the jet's own halo. No channel above 1, hue kept.
         vec3 light=color*brightness*(1.+core+cells)*mix(1.,vSpread*(1.-.5*thick),glare);

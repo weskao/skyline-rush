@@ -17,7 +17,9 @@ export const POOL_FRAGMENT = `varying vec2 vUv;uniform float age,power,charging,
     float r=length(q),front=age*1.12,ring=shape>.5&&shape<1.5?0.:1.;
     float ripple=ring*(exp(-abs(r-front)*22.)+pulse*.48*exp(-abs(r-front*.68)*24.))*(1.-clamp(age,0.,1.));
     float rim=.9+corona*.1*cos(r*16.-age*4.);
-    vec3 col=(primary*pool*.86+secondary*hot*.69+primary*ripple*.75)*rim;
+    float sweep=smoothstep(.04,.28,r)*smoothstep(.05,.3,age);
+    vec3 rippleTint=mix(primary,secondary,sweep*.52);
+    vec3 col=(primary*pool*.86+secondary*hot*.69+rippleTint*ripple*.75)*rim;
     float life=${LIFE}*smoothstep(0.,.12,age+.04);
     gl_FragColor=vec4(col,clamp((pool*life+ripple*.58)*power,0.,.72));}`;
 
@@ -31,9 +33,9 @@ export const RAY_FRAGMENT = `uniform float age,power,corona;uniform vec3 primary
   void main(){float head=age*2.6-vDelay*.6; // each streak fires a beat apart and its head shoots up
     float behind=head-vT;
     float tip=exp(-abs(behind)*24.);float trail=behind>0.?exp(-clamp(behind,0.,4.)*3.2):0.;
-    float core=pow(max(0.,vFacing),5.); // a thin hot line down the middle, soft at the edge
+    float core=pow(max(0.,vFacing),5.); // a thin coloured line with a shaped tip
     float texture=1.+corona*.12*sin(vDelay*12.+vT*7.);
-    vec3 col=mix(primary,secondary,vTone)*(.68+.72*tip);
+    vec3 col=mix(mix(primary,secondary,vTone),secondary,tip*.36)*(.68+.72*tip);
     float body=(trail*.75+tip*1.8)*(.2+.8*core)*texture*pow(max(0.,1.-vT),.6);
     gl_FragColor=vec4(col,clamp(body*${LIFE}*power*1.4,0.,1.));}`;
 
