@@ -1,4 +1,4 @@
-/** Disposable local demo, not a server-backed wallet or proof of ownership. */
+/** Disposable browser-calculated demo with optional cloud persistence. */
 export const WAVE3_EXPERIENCE_VERSION = 1 as const;
 export const WAVE3_CATALOG_VERSION = 1 as const;
 
@@ -32,8 +32,8 @@ export type ExperienceSnapshot = Readonly<{
   demoInventory: readonly string[];
   equippedPreview: string | null;
   updatedAt: number;
-  /** Session-only status, excluded from the v1 disk snapshot. */
-  persistence?: 'memory-only';
+  /** Presentation metadata, excluded from the v1 checkpoint. */
+  persistence?: 'memory-only' | 'firestore';
 }>;
 export type GameEvent = Readonly<{
   schemaVersion: typeof WAVE3_EXPERIENCE_VERSION;

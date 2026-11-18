@@ -100,6 +100,36 @@ function serializeEntry(snapshot: ExperienceSnapshot, savedAt: number, replay?: 
   return JSON.stringify(entry);
 }
 
+function replayFields({ seenEvents, settledCompletions, generation, missionTime }: Wave3DemoCheckpoint): Replay {
+  return {
+    seenEvents, settledCompletions,
+    ...(generation === undefined ? {} : { generation }),
+    ...(missionTime === undefined ? {} : { missionTime }),
+  };
+}
+
+export function encodeWave3DemoCheckpoint(checkpoint: Wave3DemoCheckpoint, savedAt: number): string {
+  const raw = serializeEntry(checkpoint.snapshot, savedAt, replayFields(checkpoint));
+  if (!readEntry(raw, checkpoint.snapshot.accountId, savedAt)) throw new Error('Invalid Wave 3 checkpoint');
+  return raw;
+}
+
+export function readWave3DemoCheckpoint(raw: string | null, id: string, currentTime: number): {
+  raw: string | null; savedAt: number | null; expiredGeneration?: string;
+  clockRollback?: boolean; checkpoint: Wave3DemoCheckpoint | null;
+} {
+  const entry = raw === null ? null : readEntry(raw, id, currentTime, false);
+  if (entry && currentTime - entry.savedAt > DEMO_RETENTION_MS) {
+    return { raw, savedAt: null, expiredGeneration: `retention-${entry.savedAt}`, checkpoint: null };
+  }
+  if (entry && entry.savedAt > currentTime + FUTURE_SKEW_MS) {
+    return { raw, savedAt: entry.savedAt, clockRollback: true, checkpoint: null };
+  }
+  return { raw, savedAt: entry?.savedAt ?? null, checkpoint: entry ? {
+    snapshot: entry.snapshot, seenEvents: [], settledCompletions: [], ...entry.checkpoint,
+  } : null };
+}
+
 export function browserWave3DemoStorage(): DemoStorage | null {
   try { return globalThis.localStorage ?? null; } catch { return null; }
 }
@@ -150,11 +180,7 @@ export function createWave3DemoStorage(options: { storage?: DemoStorage | null; 
       return persist(snapshot, expectedAccountId);
     },
     saveCheckpoint(checkpoint: Wave3DemoCheckpoint, expectedAccountId: string | null = checkpoint.snapshot.accountId): boolean {
-      return persist(checkpoint.snapshot, expectedAccountId, {
-        seenEvents: checkpoint.seenEvents, settledCompletions: checkpoint.settledCompletions,
-        ...(checkpoint.generation === undefined ? {} : { generation: checkpoint.generation }),
-        ...(checkpoint.missionTime === undefined ? {} : { missionTime: checkpoint.missionTime }),
-      });
+      return persist(checkpoint.snapshot, expectedAccountId, replayFields(checkpoint));
     },
     loadCheckpoint(accountId: string | null): Wave3DemoCheckpoint | null {
       const id = account(accountId);
@@ -169,17 +195,7 @@ export function createWave3DemoStorage(options: { storage?: DemoStorage | null; 
     } | undefined {
       if (!storage || !ACCOUNT.test(id)) return undefined;
       try {
-        const raw = storage.getItem(WAVE3_DEMO_STORAGE_PREFIX + id);
-        const currentTime = now();
-        const entry = raw === null ? null : readEntry(raw, id, currentTime, false);
-        if (entry && currentTime - entry.savedAt > DEMO_RETENTION_MS) {
-          return { raw, savedAt: null, expiredGeneration: `retention-${entry.savedAt}`, checkpoint: null };
-        }
-        if (entry && entry.savedAt > currentTime + FUTURE_SKEW_MS) {
-          return { raw, savedAt: entry.savedAt, clockRollback: true, checkpoint: null };
-        }
-        return { raw, savedAt: entry?.savedAt ?? null, checkpoint: entry ? { snapshot: entry.snapshot,
-          seenEvents: [], settledCompletions: [], ...entry.checkpoint } : null };
+        return readWave3DemoCheckpoint(storage.getItem(WAVE3_DEMO_STORAGE_PREFIX + id), id, now());
       } catch { return undefined; }
     },
     resetDemo(accountId: string | null = null): void {

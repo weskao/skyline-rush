@@ -1,8 +1,8 @@
 import { Box3, type Object3D, type Vector3 } from 'three';
 
-// Bounds of the visible landmark nearest the look target; null when none is shown.
+// Find the visible landmark nearest to the look target when there is no authored landmark.
 const apexBox = new Box3();
-export function landmarkBounds(landmarks: Iterable<Object3D>, look: Vector3): Box3 | null {
+export function nearestLandmark(landmarks: Iterable<Object3D>, look: Vector3): Object3D | null {
   let best: Object3D | null = null, bestDistance = Infinity;
   for(const hero of landmarks) {
     if(!hero.visible) continue;
@@ -11,6 +11,5 @@ export function landmarkBounds(landmarks: Iterable<Object3D>, look: Vector3): Bo
     const d = apexBox.distanceToPoint(look);
     if(d < bestDistance) { bestDistance = d; best = hero; }
   }
-  if(!best) return null;
-  return apexBox.setFromObject(best);
+  return best;
 }

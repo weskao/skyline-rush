@@ -13,7 +13,7 @@ export const WORLD_THEMES = {
   taipei: {
     top:'#405970',horizon:'#91a4a4',fog:'#74868b',rock:'#657e83',road:'#373e41',ground:'#536374',rail:'#929f9a',sun:'#c3c9c5',warmth:.08,
     buildings:'#ad6e59',accent:'#f3c47b',prop:'city',landmarks:[
-      {kind:'office',at:1450,side:-1,offset:94,scale:1.7,yaw:.6,plaza:600,radius:55},
+      {kind:'office',at:1600,side:-1,offset:128,scale:1.7,yaw:-1.1,plaza:750,radius:55},
       {kind:'gate',at:2070,side:1,offset:71,scale:1.12},
       {kind:'temple',at:5150,side:-1,offset:75,scale:1.25},
     ],

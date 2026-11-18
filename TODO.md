@@ -4,6 +4,40 @@
 - [x] Verify the incoming HUD countdown with the item HUD regression and pass the TypeScript, Vue, JavaScript and locked production checks. Update the 16 deterministic replay hashes changed by rival Freeze.
 - [x] Restore the player's normal speed multiplier as soon as the last attack expires. The six Frostbite pace checks, including the 24-layout throttle-only sweep, pass with rival Freeze enabled.
 - [ ] Confirm the desktop and both phone orientations in a real browser and verify the exact-HEAD quality gate. Local Chromium cannot open its required Unix socket in this environment.
+# Acquisition reveal
+
+- [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.
+- [x] Add one accessible bilingual reveal for real race, mission and redemption outcomes, and document the consumer API.
+- [ ] Confirm physical phone coverage and exact-HEAD CI.
+
+# Measured routes and Home artwork
+
+- [x] Audit the eight classic routes from Canyon Skyway through Cosmic Orbit. Card and Home heading art still use each track's canonical 1136 × 410 JPEG. The Home mini-map uses the measured driving centreline.
+- [x] Move Sky Spiral's live showcase to 465 m before the rebuilt helix and take the shot from the other shoulder. Fit the complete signature landmark and the Roadster together in portrait using projected mesh vertices.
+- [x] Stage demonstration rivals closer on the rebuilt Canyon and Aurora curves, and toward the visible shoulder on Sky Spiral. The home-preview fixture checks at least three actors in the portrait frame.
+- [x] The previous Sky Spiral preview failed with its helix 1,510 m away. The fixture now exercises six landmarks, and the focused geometry regression checks the Roadster and landmark in both grounded and hovering poses.
+- [ ] Confirm the exact-commit GitHub quality gate and complete the desktop/phone WebGL matrix.
+
+# Taipei Presidential Office sightline
+
+- [x] On the measured Taipei route, face the entrance, central tower and window rows toward the incoming lanes in point-to-point and endless races.
+- [x] The regression in `node --test tests/world-tour-scene.test.js` reproduced the rear/side approach at 950 m (facing dot product −0.36). The corrected scene passes at four approach distances across three lanes in both route modes. The desktop WebGL capture at 1.24 km shows the facade, and the office stays outside the road shoulder.
+- [ ] Check the exact-commit GitHub quality gate and device behavior.
+
+# Wave 3 裝備試玩定價與價格圖示（2026-11-19）
+
+- [x] 盤點 5 類 VFX。保留原本 7 款的價格，新增其餘 16 款定價，商城可按類別篩選全部 23 款非預設 VFX。預設特效、車款及車漆維持既有取得方式。
+- [x] 商品卡、詳情與確認畫面共用首頁貨幣圖示。保留讀屏幣別名稱與可用、兌換後餘額。
+- [x] RED 重現未定價的 VFX、無法兌換甩尾痕跡及商品卡缺少圖示。GREEN 通過商城單元測試與 8 項瀏覽器測試，包含三種貨幣圖示、手機尺寸及兌換裝備。
+- [ ] 依實際遊玩數據調整正式經濟平衡並驗證正式付款與永久權益。
+
+# Wave 3 試玩記錄開關（2026-11-19）
+
+- [x] 先重現 release 無法啟用、無效開關未報錯、UID 舊本機紀錄被讀入、checkpoint 仍未設定索引豁免。新增測試後以共用 Vite 策略與 Firestore Adapter 修正。
+- [x] 驗證 `coming-soon`、`trial`、`released` 的開關矩陣。release 可開啟試玩記錄，production 的 `trial` 與 `released` 預設開啟。
+- [x] release 瀏覽器與 Firebase 模擬器驗證訪客本機、登入後的 UID 檔案、跨瀏覽器讀回、並發完賽去重、登出回訪客和試玩 VFX 與正式擁有權隔離。
+- [x] 保留 v1 資料相容並停用試玩 checkpoint 的索引。操作、停用與清理順序見 [Cloud Save 指南](docs/cloud-save.md#wave-3-firestore-preview)。
+- [ ] 正式 Firebase Rules／Indexes 部署、正式 Google 帳號與實機驗收。
 
 # Garage drift trails
 

@@ -1,5 +1,5 @@
 import type { ExperienceResult, MissionProgress } from './wave3-experience-contract.ts';
-import { formatDemoReward } from './wave3-currency-view.ts';
+import { demoPersistenceLabel, formatDemoReward } from './wave3-currency-view.ts';
 
 type Locale = 'en' | 'zh-TW';
 type State = 'earned' | 'duplicate' | 'ineligible' | 'unavailable';
@@ -15,20 +15,20 @@ export type DemoResultView = Readonly<{
 
 const COPY = {
   en: {
-    heading: 'Demo reward', earned: 'Local demo race reward recorded.', duplicate: 'Already recorded — no additional Demo rewards.',
+    heading: 'Demo reward', earned: 'Demo race reward recorded.', duplicate: 'Already recorded — no additional Demo rewards.',
     ineligible: 'This result is not eligible for a Demo reward.', unavailable: 'Demo rewards are unavailable for this result.',
     points: 'Demo points', balance: 'Demo points balance', coinBalance: 'Demo coins balance', progress: 'Mission progress',
     distinction: 'Separate from race stars, placement badges and medals.',
-    disclaimer: 'Local demo only · This device only · Not verified or permanent.',
+    disclaimer: 'Resettable trial rewards.',
     missions: { 'mission-race': 'Finish', 'mission-time': 'Time trial', 'mission-drift': 'Drift', 'mission-combo': 'Combo' },
     claimed: 'Claimed', details: 'Details',
   },
   'zh-TW': {
-    heading: '試玩獎勵', earned: '已記錄本機試玩賽事獎勵。', duplicate: '此結果已記錄，不會再次發放試玩獎勵。',
+    heading: '試玩獎勵', earned: '已記錄試玩賽事獎勵。', duplicate: '此結果已記錄，不會再次發放試玩獎勵。',
     ineligible: '此賽事結果不符合試玩獎勵資格。', unavailable: '目前無法顯示此結果的試玩獎勵。',
     points: '試玩點數', balance: '試玩點數總額', coinBalance: '試玩金幣總額', progress: '任務進度',
     distinction: '與正式比賽星星、名次徽章及獎牌分開計算。',
-    disclaimer: '僅限本機試玩 · 僅此裝置 · 未經伺服器驗證，也非永久獎勵。',
+    disclaimer: '試玩獎勵可重設。',
     missions: { 'mission-race': '完賽', 'mission-time': '計時賽', 'mission-drift': '甩尾', 'mission-combo': '連擊' },
     claimed: '已領取', details: '詳情',
   },
@@ -73,6 +73,6 @@ export function projectWave3DemoResults(
     state, heading: copy.heading,
     status: copy[state], points: amount > 0 ? `+${amount} ${copy.points}` : null, balance,
     coins: coinBalance ? formatDemoReward({ coins: coinDelta }, locale ?? 'en') : null, coinBalance,
-    progressHeading: copy.progress, missions, distinction: copy.distinction, disclaimer: copy.disclaimer, details: copy.details,
+    progressHeading: copy.progress, missions, distinction: copy.distinction, disclaimer: demoPersistenceLabel(snapshot?.persistence, locale) + ' · ' + copy.disclaimer, details: copy.details,
   };
 }

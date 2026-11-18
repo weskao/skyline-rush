@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createRace,RACE_TRACKS } from '../src/game.js';
 import { previewDistance,previewRival,previewPlayer,HERO_PREVIEWS,showcaseCameraPose } from '../src/track-preview.ts';
 import { WORLD_THEMES } from '../src/world-tour-scene.js';
+import { SKY_SPIRAL } from '../src/sky-track.ts';
 
 for(const id of ['taipei','tokyo','alpine','coastal','cosmic']) {
   test(id+' showcase retains the original home-camera distance and hovering vehicle scale',()=>{
@@ -63,6 +64,16 @@ for(const [id,kind] of [['taipei','office'],['tokyo','tower'],['alpine','mountai
     assert.ok(landmark.at-landmark.plaza<=info.distance,'plaza must start at the showcase');
   });
 }
+test('Sky Spiral home preview starts on the continuous tower approach', () => {
+  const distance = previewDistance('spiral');
+  const ahead = SKY_SPIRAL.start - distance;
+  assert.ok(ahead > 150 && ahead < 600, `the rebuilt helix starts ${ahead} m beyond the home camera`);
+  assert.equal(HERO_PREVIEWS.spiral.landmark, 'sky-tower');
+  for (const portrait of [false, true]) {
+    assert.ok(showcaseCameraPose('spiral', 'drive', 0, portrait).cameraSide < 0,
+      'the showroom camera is across the road from the right-hand tower');
+  }
+});
 test('all original tracks retain their original player/rival animation and home preview distance',()=>{
   const r=createRace('coast');
   assert.equal(previewDistance('coast'),340);
