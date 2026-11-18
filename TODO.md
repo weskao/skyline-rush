@@ -349,7 +349,11 @@ on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, 
 - [x] RED: `tests/nitro-trail-comfort.test.js` 3/3 failed on `c8c2b208`; GREEN after. `npm test` 3,364 pass / 0 fail / 3 skipped; `npm run build` passed.
 - [x] Prevention: `.claude/rules/nitro-trail-vfx.md`.
 - [x] Real WebGL before/after (Chromium 1280×720, High, Coast race with NITRO + Preview Studio), four skins, Roadster: colour reads as distinct jets instead of a white wash. Crimson in race is the most subdued; the owner judges whether it needs more body.
-- [ ] Not run: Crimson GT, phone portrait/landscape, physical phone, full `npm run test:browser`, exact-HEAD `quality-gate`.
+- [x] Crimson body: edge .08 → .18 so the dashes ride a visible red jet in a race.
+- [x] Layers instead of brightness (owner: trails read flat after the glare fix): hot core cooling to a deeper hue down the tail (ice → deep blue, gold → ember, crimson → wine), three fixed shock diamonds, a wide dim halo tube (`NITRO trail halo`, +1 instanced draw, hidden on Low like the road glow) with embers drifting at 1.2 Hz, one 0.45 s ignition swell per NITRO start, road glow wider/brighter and starting under the bumper. Body reflection on the car itself skipped: it needs a real light on every lit material.
+- [x] RED: halo/ignition tests in `tests/nitro-trail-comfort.test.js` failed (no halo); GREEN after. `npm test` 3,366 pass / 0 fail / 3 skipped; build, typecheck; `shader-warmup`, `black-frame`, `hero-roadster-equipment` browser specs 10/10.
+- [x] Real WebGL race recording (Chromium 1280×720, High, Coast, Roadster), all five trails, no console/shader errors; before/after close-ups show the halo and gradient. Shock diamonds sit mostly under the bumper from the chase camera.
+- [ ] Not run: Crimson GT, phone portrait/landscape, physical phone, full `npm run test:browser`, exact-HEAD `quality-gate`, frame-time measurement of the halo overdraw.
 
 ## Final tutorial NITRO cue (2026-11-15)
 

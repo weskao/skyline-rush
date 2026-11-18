@@ -6,7 +6,7 @@ import { REAR_PORTS } from '../src/aero-vfx.js';
 
 // Guards .claude/rules/nitro-trail-vfx.md: the NITRO trail skins stay under the photosensitive flash band and cap their HDR.
 const trail = createNitroTrail(new Group(), REAR_PORTS);
-const materials = { streaks: trail.streaks.material, pool: trail.pool.material };
+const materials = { streaks: trail.streaks.material, halo: trail.halo.material, pool: trail.pool.material };
 
 // Hz seen by one screen pixel for every `time*N`: inside sin/cos it is N/2π, anything else (fract/floor/step) repeats N times a second.
 function flickers(source) {
@@ -38,4 +38,28 @@ test('NITRO trail colour is capped so only a thin core reaches the bloom thresho
 
 test('NITRO trail draws one side so the two tube walls never double the glow', () => {
   for (const [name, material] of Object.entries(materials)) assert.equal(material.side, FrontSide, name);
+});
+
+test('NITRO ignition swells the trail once per start, never as a repeating pulse', () => {
+  const t = createNitroTrail(new Group(), REAR_PORTS), ignite = () => t.streaks.material.uniforms.ignite.value;
+  t.setStyle(2, [1, .7, .2]);
+  t.update(0, 0, 1, true);
+  t.update(1, 1, 1, true);
+  assert.equal(ignite(), 1, 'NITRO starts with a full swell');
+  t.update(1.2, 1, 1, true);
+  assert.ok(ignite() > 0 && ignite() < 1, 'the swell fades');
+  for (const time of [1.5, 3, 9]) { t.update(time, 1, 1, true); assert.equal(ignite(), 0, `no second swell at ${time} s`); }
+  t.update(10, 0, 1, true); t.update(11, 1, 1, true);
+  assert.equal(ignite(), 1, 'the next NITRO swells again');
+});
+
+test('the halo shares the streaks\' visibility and, like the road glow, skips Low', () => {
+  const t = createNitroTrail(new Group(), REAR_PORTS);
+  t.setStyle(4, [.6, .35, 1.6]);
+  t.update(0, 1, 1, true);
+  assert.ok(t.halo.visible && t.halo.isInstancedMesh && t.halo.count === REAR_PORTS.length);
+  t.update(0, 1, 0, true);
+  assert.ok(t.streaks.visible && !t.halo.visible, 'Low skips the halo overdraw');
+  t.update(0, 1, 1, false);
+  assert.equal(t.halo.visible, false, 'VFX Off');
 });

@@ -24,6 +24,11 @@ the trail; brightness changes stay slow and partial. Keep it that way:
   threshold in `world.js`. Raise a skin's punch with saturation or shape, never with a bigger multiplier.
 - **One side only** (`FrontSide`): the open tube's back wall doubled every pixel's glow and its overdraw.
 - A palette entry in `garage-skin-palette.ts` above 1 is fine: the cap does the limiting.
+- **Richness comes from layers, not brightness.** Capping the glare left the trails flat (2026-11-18), so each skin
+  stacks a hot core cooling down the tail, fixed shock diamonds, a dim wide halo (`NITRO trail halo`, peaking off the
+  core so it never piles onto it) with drifting embers, and one ignition swell per NITRO start, never a repeating pulse.
+  A new skin adds a layer or a shape before it adds a multiplier.
 
-Guard: `tests/nitro-trail-comfort.test.js` (flicker Hz per `time*N`, the colour cap, one side). A new trail style
+Guard: `tests/nitro-trail-comfort.test.js` (flicker Hz per `time*N`, the colour cap, one side, for streaks, halo
+and road glow; one ignition swell per start; Low drops the halo). A new trail style
 or a new animated term keeps it green; never widen its 3 Hz or 1.2 limits to pass.
