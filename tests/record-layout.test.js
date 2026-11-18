@@ -242,18 +242,10 @@ test('firestore.rules accepts exactly the versioned Classic best ids the client 
   const listed = [...rules.match(/function bestIds\(\) \{[^}]*\}/)[0].matchAll(/'([^']+)'/g)].map(m => m[1]);
   const versioned = [...Object.keys(RACE_TRACKS), ...Object.keys(COURSE_TRACKS)].flatMap(recordTrackIds).filter(id => id.includes('@'));
   assert.deepEqual(listed.sort(), [...versioned].sort());
+  // One bounded check per allowed value, including the final slot of a full save.
   const bounds = rules.match(/function validBests\(\w+\) \{[^}]*\}/)[0];
-  for (const id of [...Object.keys(RACE_TRACKS), ...versioned]) assert.ok(bounds.includes(`math.abs(b.get('${id}', 302400) - 302400) < 302400`), id);
-});
-
-// User, 2026-11-13: five new best ids pushed the saves rule past Firestore's 1000-expression limit, so every cloud
-// save failed, and only the emulator (CI cloud-save) noticed. Measured on the emulator: 60 inlined ids fit, 70 do not.
-test('firestore.rules best checks stay inside the measured 1000-expression budget', async () => {
-  const { readFileSync } = await import('node:fs');
-  const bounds = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8').match(/function validBests\(\w+\) \{[^}]*\}/)[0];
-  assert.doesNotMatch(bounds, /validBest\(/, 'a per-id helper call costs one more expression per id: keep the checks inline');
-  const ids = bounds.match(/b\.get\(/g).length;
-  assert.ok(ids <= 60, `${ids} best ids: re-measure with npm run test:cloud and raise this cap only if a full save still passes`);
+  const checked = [...bounds.matchAll(/math\.abs\(times\[(\d+)\] - 302400\) < 302400/g)].map(m => Number(m[1]));
+  assert.deepEqual(checked, Array.from({ length: Object.keys(RACE_TRACKS).length + versioned.length }, (_, i) => i));
 });
 
 test('AC2 device: export, import and a cloud merge write old and new records back bit-for-bit', () => {

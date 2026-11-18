@@ -50,6 +50,10 @@ test('cloud saves are private and accept only valid map progress', { skip: !proc
   await assertSucceeds(setDoc(save, { ...progress, unlocked: tracks, stars: Object.fromEntries(tracks.map(id => [id, 3])),
     bests: { ...everyBest, ...courseBests }, car: 'crimson-gt',
     medals: { 'first-win': stamp, 'clean-run': stamp, 'perfect-five': stamp, 'nitro-chain': stamp } }), 'fullest save with course bests');
+  const fullBests = { ...everyBest, ...courseBests };
+  for (const id of [recordTrackId('spiral'), recordTrackId('cosmic')]) {
+    await assertFails(setDoc(save, { ...progress, bests: { ...fullBests, [id]: 0 } }), `${id} invalid in a full save`);
+  }
   for (const id of Object.keys(courseBests)) await assertFails(setDoc(save, { ...progress, bests: { [id]: 0 } }), `${id} best 0`);
   for (const bad of [0, 604800, 604801, -1, '60', true]) await assertFails(setDoc(save, { ...progress, bests: { [recordTrackId('coast')]: bad } }), `best ${bad}`);
   for (const bad of [0, 4, 2.5, '3']) await assertFails(setDoc(save, { ...progress, stars: { coast: bad } }), `star ${bad}`);
