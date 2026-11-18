@@ -471,3 +471,99 @@ test('the equipped car is restored on a clean device, and a device that picked i
   await expect(own.locator('#garage-screen [data-car="roadster"]')).toHaveAttribute('aria-pressed', 'true');
   await own.close();
 });
+
+test('released Wave 3 keeps guest saves on the device and restores signed-in progress from Firestore', async ({ browser, page }) => {
+  const load = async tab => {
+    await tab.context().route(liveApis, route => route.abort());
+    await tab.addInitScript(disableWebGL);
+    await tab.goto('/?firebase-emulator=1');
+  };
+  const signIn = async (tab, existing = false, email = 'wave3-preview@example.test') => {
+    const uid = await tab.evaluate(async ({ email, existing }) => {
+      const { signInWave3EmulatorUser } = await import('/tests/fixtures/wave3-firestore-auth.ts');
+      return signInWave3EmulatorUser(email, existing);
+    }, { email, existing });
+    await expect.poll(() => tab.evaluate(async () => {
+      const { wave3DemoExperience } = await import('/src/wave3-race-events.ts');
+      return wave3DemoExperience.getSnapshot().accountId;
+    })).toBe(uid);
+    return uid;
+  };
+  const deviceCheckpoint = (tab, uid) => tab.evaluate(id =>
+    localStorage.getItem('skyline-rush-wave3-demo:v1:' + id), uid);
+  const balances = async (tab, expected) => {
+    for (const [index, currency] of ['demo-points', 'coins', 'diamonds'].entries()) {
+      await expect(tab.locator(`.home-resource-strip [data-currency="${currency}"] strong`)).toHaveText(String(expected[index]));
+    }
+  };
+  const settle = (tab, id) => tab.evaluate(async id => {
+    const { createWave3RaceEventBridge, wave3DemoExperience } = await import('/src/wave3-race-events.ts');
+    const bridge = createWave3RaceEventBridge(wave3DemoExperience, () => id);
+    return (await bridge.finish({
+      phase: 'finished', trackId: 'coast', mode: 'classic', elapsed: 70, length: 5000,
+      config: { difficulty: 'normal' }, rivals: Array(7).fill({}),
+      player: { driftPayout: null, longestCombo: 0 }, result: { success: true, time: 70, position: 1 },
+    }, false)).status;
+  }, id);
+
+  await load(page);
+  expect(await settle(page, 'guest-before-google')).toBe('completed');
+  await balances(page, [48, 86, 0]);
+  const pointsButton = page.locator('.home-resource-strip [data-currency="demo-points"]');
+  await expect(pointsButton).toHaveAttribute('aria-label', /Local demo/i);
+  const guestSave = await deviceCheckpoint(page, 'guest');
+  expect(guestSave).not.toBeNull();
+  const uid = await signIn(page);
+  await balances(page, [20, 0, 0]);
+  for (let race = 1; race <= 5; race += 1) expect(await settle(page, 'cloud-preview-race-' + race)).toBe('completed');
+  const statuses = await page.evaluate(async () => {
+    const { wave3DemoExperience: wallet } = await import('/src/wave3-race-events.ts');
+    return [
+      (await wallet.claimMission('mission-race:daily')).status,
+      (await wallet.claimMission('mission-race:weekly')).status,
+      (await wallet.redeemPreview('thruster-ion')).status,
+    ];
+  });
+  expect(statuses).toEqual(['completed', 'completed', 'completed']);
+  await balances(page, [155, 350, 5]);
+  await expect(pointsButton).toHaveAttribute('aria-label', /Cloud demo/i);
+  expect(await deviceCheckpoint(page, uid)).toBeNull();
+  expect(await deviceCheckpoint(page, 'guest')).toBe(guestSave);
+  const visual = await page.evaluate(async () => {
+    const { wave3DemoExperience: wallet } = await import('/src/wave3-race-events.ts');
+    const { currentGarageSkins, equipGarageSkin, garageSkinEntry } = await import('/src/garage-skin-runtime.ts');
+    const equipped = await wallet.equipPreview('thruster-ion');
+    return {
+      status: equipped.status, vfx: currentGarageSkins().thruster,
+      owned: garageSkinEntry('thruster-ion')?.owned, catalogCanEquip: equipGarageSkin('thruster-ion'),
+    };
+  });
+  expect(visual).toEqual({ status: 'completed', vfx: 'thruster-ion', owned: false, catalogCanEquip: false });
+
+  const fresh = await browser.newPage();
+  try {
+    await load(fresh);
+    expect(await signIn(fresh, true)).toBe(uid);
+    await balances(fresh, [155, 350, 5]);
+    expect(await settle(fresh, 'cloud-preview-race-5')).toBe('duplicate');
+    const paired = await Promise.all([settle(page, 'cloud-preview-shared-race'), settle(fresh, 'cloud-preview-shared-race')]);
+    expect(paired.sort()).toEqual(['completed', 'duplicate']);
+    await balances(fresh, [183, 406, 5]);
+    // Account B has no access to account A's preview save.
+    const other = await browser.newPage();
+    try {
+      await load(other);
+      await signIn(other, false, 'wave3-other@example.test');
+      await balances(other, [20, 0, 0]);
+    } finally {
+      await other.close();
+    }
+  } finally {
+    await fresh.close();
+  }
+  await page.evaluate(async () => (await import('/src/cloud-save.ts')).signOutOfCloud());
+  await balances(page, [48, 86, 0]);
+  const afterLogout = await page.evaluate(async () =>
+    (await import('/src/garage-skin-runtime.ts')).currentGarageSkins().thruster);
+  expect(afterLogout).toBe('thruster-basic');
+});

@@ -4,7 +4,8 @@ paths:
   - "src/ios-touch-guard.ts"
   - "tests/ios-touch-guard.test.js"
   - "tests/ios-touch-guard-browser.spec.js"
-  - "src/slide-pad.js"
+  - "src/slide-pad.ts"
+  - "src/touch-controls-ui.ts"
   - "src/style.css"
   - "tests/input.test.js"
   - "src/track-swipe.js"
@@ -19,11 +20,21 @@ pins the car to one wall for the rest of the race.
 
 - No touch pointer may hold a control forever: the newest finger on the slide pad or on a touch button
   takes it over from any pointer still holding it (`bindSlidePad`, `bindButton` in `src/input.ts`;
-  the `padTouch` mirror in `src/main.js` follows the same rule).
+  the pad feedback in `src/touch-controls-ui.ts` reads the same state).
 - The slide pad keeps 20 px clear of the side edges (`.touch-pad` in `src/style.css`), so a steer
   cannot start inside the edge-swipe zone. Guards: `tests/input.test.js` (stuck-pointer takeover)
   and the pad geometry tests in `tests/browser.spec.js`.
 - Never cure a stuck pointer with a timeout: a thumb held still is legitimate input.
+
+## Driving thumbs
+
+- Slide-pad braking checks total downward travel and direction against the original touch-down point.
+  The floating steering center must only affect steer. After braking engages, keep it steady through
+  sideways drift and small vertical tremors. The HUD reads the input state directly. Guards:
+  `tests/slide-pad.test.js` and the slide-control cases in `tests/browser.spec.js`.
+- Hit-test both steering buttons on movement because pointer capture keeps sending events to the
+  first button. Release steer in the gap and outside both arrows. BRAKE belongs to the opposite
+  thumb and requires its own touch. Guards: `tests/input.test.js` and `tests/browser.spec.js`.
 
 ## Trackpad gestures are timed on the input's own clock
 

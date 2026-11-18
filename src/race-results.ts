@@ -10,6 +10,7 @@ import type { createGhostStore } from './ghost-store.ts';
 import { recordChallengeMedals, type ChallengeMedalId } from './history-challenge-medals.ts';
 import { addStuntHeat, stuntHeatContinues, type StuntRun } from './stunt-attack.ts';
 import { GT_UNLOCK_STARS } from './car-catalog.ts';
+import { ownedPaints } from './appearance.ts';
 import { settleWave3RaceDemo } from '#wave3-demo-race';
 export { captureWave3RaceTelemetry } from '#wave3-demo-race';
 export interface RaceSeries { sprintSeries: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null }
@@ -35,6 +36,7 @@ export interface Settlement {
   next: string | null;
   unlockedTrack: boolean;
   unlockedGt?: true;
+  unlockedPaints: string[];
   /** A heat inside a sprint series, cup or stunt run with more to come. */
   intermediateStage: boolean;
   /** Whether this outcome contributes a history result eligible for cloud backup. */
@@ -78,6 +80,7 @@ function classicBest(race: FinishedRace, progress: SessionProgress, ghosts: Sett
 function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace }: SettleContext): Settlement {
   let { sprintSeries, cup } = series;
   const { stunt } = series;
+  let unlockedPaints: string[] = [];
   if (sprintSeries && race.mode === 'custom') sprintSeries = addSprintStage(sprintSeries, race);
   if (cup && race.mode === 'cup') cup = addCupResult(cup, race);
   if (stunt && race.mode === 'stunt') addStuntHeat(stunt, race);
@@ -135,9 +138,11 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     // The pre-tracks key stays readable for layout-1 coast only (older builds, browser test).
     if (record && recordTrackId(trackId) === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
     const before = starTotal(progress.stars);
+    const previousPaints = ownedPaints(before);
     recordStars(trackId, race.result.stars);
     progress.stars[trackId] = Math.max(progress.stars[trackId] ?? 0, race.result.stars);
     unlockedGt = before < GT_UNLOCK_STARS && starTotal(progress.stars) >= GT_UNLOCK_STARS;
+    unlockedPaints = ownedPaints(starTotal(progress.stars)).filter(id => !previousPaints.includes(id));
   }
   if (race.mode === 'custom' && trace) ghosts.saveCustom(race, { time: race.elapsed, samples: trace });
   let challengeMedals: ChallengeMedalId[] = [];
@@ -146,5 +151,5 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     progress.challengeMedals = challenge.state; challengeMedals = challenge.awarded;
   }
   const recorded = race.mode !== 'free' && !intermediateStage && (race.mode === 'classic' || race.result.success !== false);
-  return { best, record, medals, challengeMedals, next, unlockedTrack, ...(unlockedGt ? { unlockedGt: true } : {}), intermediateStage, recorded, series: { sprintSeries, cup, stunt } };
+  return { best, record, medals, challengeMedals, next, unlockedTrack, unlockedPaints, ...(unlockedGt ? { unlockedGt: true } : {}), intermediateStage, recorded, series: { sprintSeries, cup, stunt } };
 }

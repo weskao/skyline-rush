@@ -10,10 +10,20 @@ const props = defineProps<{ locale: string; embedded?: boolean }>();
 const emit = defineEmits<{ navigate: [page: 'home' | 'store' | 'collection'] }>();
 const screen = ref<HTMLElement>();
 const page = ref<'home' | 'store' | 'collection'>('home');
+const resetting = ref(false);
+const resetFailed = ref(false);
 async function reset() {
-  await wave3DemoExperience.resetDemo();
-  cue('reset-confirmed');
-  navigate('home');
+  resetting.value = true;
+  resetFailed.value = false;
+  try {
+    await wave3DemoExperience.resetDemo();
+    cue('reset-confirmed');
+    navigate('home');
+  } catch {
+    resetFailed.value = true;
+  } finally {
+    resetting.value = false;
+  }
 }
 function navigate(next: typeof page.value, interactive = true) {
   if (page.value === next) return;
@@ -34,13 +44,14 @@ const returnToRace = () => document.querySelector<HTMLButtonElement>('#garage-cl
 <template>
   <section ref="screen" tabindex="-1" class="wave3-demo-entry" data-wave3-demo-entry :aria-label="locale === 'zh-TW' ? '試玩外觀與收藏' : 'Demo cosmetics and collection'">
     <template v-if="page === 'home'">
-      <p>{{ locale === 'zh-TW' ? '完成賽事與挑戰，取得本機試玩獎勵並兌換暫時外觀。' :
-        'Race and complete challenges to earn local demo rewards and redeem temporary cosmetics.' }}</p>
+      <p>{{ locale === 'zh-TW' ? '完成賽事與挑戰，取得試玩獎勵並兌換暫時外觀。' :
+        'Race and complete challenges to earn demo rewards and redeem temporary cosmetics.' }}</p>
       <nav class="wave3-demo-entry-actions">
         <button v-if="!embedded" type="button" data-wave3-open-store @click="navigate('store')">{{ locale === 'zh-TW' ? '開啟試玩商城' : 'Open Demo Store' }}</button>
         <button v-if="!embedded" type="button" data-wave3-open-collection @click="navigate('collection')">{{ locale === 'zh-TW' ? '試玩收藏' : 'Demo Collection' }}</button>
-        <button type="button" data-wave3-reset @click="reset">{{ locale === 'zh-TW' ? '重設本機試玩' : 'Reset local demo' }}</button>
+        <button type="button" data-wave3-reset :disabled="resetting" @click="reset">{{ locale === 'zh-TW' ? '重設試玩' : 'Reset demo' }}</button>
       </nav>
+      <p v-if="resetFailed" role="status">{{ locale === 'zh-TW' ? '無法重設試玩進度，請再試一次。' : 'Could not reset demo progress. Try again.' }}</p>
     </template>
     <template v-else>
       <button type="button" class="wave3-demo-back" @click="navigate('home')">{{ locale === 'zh-TW' ? '返回試玩選單' : 'Back to demo menu' }}</button>

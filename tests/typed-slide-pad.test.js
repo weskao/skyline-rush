@@ -8,11 +8,11 @@ test('typed slide pad preserves steering dead-zone, brake and full-lock recovery
   pad.down(100, 200);
   pad.move(105, 239);
   assert.deepEqual([pad.read().steer, pad.read().brake], [0, false]);
-  pad.move(100, 240);
+  pad.move(100, 255);
   assert.deepEqual([pad.read().steer, pad.read().brake], [0, true]);
-  pad.move(300, 240);
+  pad.move(300, 255);
   assert.equal(pad.read().steer, 1);
-  pad.move(270, 240);
+  pad.move(270, 255);
   assert.equal(pad.read().steer, .5);
   pad.up();
   assert.equal(pad.read().active, false);
