@@ -103,7 +103,8 @@ for (const [name, viewport, hasTouch] of [
     page.on('pageerror', error => errors.push(error.message));
     await clickLobbyOption(page, 'button[data-race-mode="custom"]');
     await page.locator('#race-mode-rules > summary').click();
-    await page.locator('[data-race-rule="itemRules"]').selectOption('all');
+    await page.locator('#race-mode-rules').getByRole('combobox', { name: 'Item rules', exact: true }).click();
+    await page.getByRole('listbox', { name: 'Item rules', exact: true }).getByRole('option', { name: /^All ·/ }).click();
     await page.locator('#start-button').click();
     await page.waitForFunction(() => window.gameplay.race.phase === 'racing');
     await page.evaluate(() => {

@@ -1,26 +1,15 @@
 import { cupComplete, cupStandings } from './championship-cup.ts';
 import type { Settlement } from './race-results.ts';
-import { getWave3DemoReceipt } from '#wave3-demo-race';
 import type { ExperienceResult } from './wave3-experience-contract.ts';
 
 type ResultFeedback = Pick<Settlement, 'record' | 'medals' | 'challengeMedals' | 'unlockedTrack' | 'intermediateStage' | 'series'>;
-type RaceOutcome = { mode: string; rivals?: readonly unknown[]; result: { success?: boolean; position?: number } | null };
-type PlayCue = (name: string, delay: number) => void;
-
-const heard = new WeakSet<RaceOutcome>();
-export function playResultFeedbackOnce(cue: PlayCue, race: RaceOutcome, result: ResultFeedback, instantReveal: boolean): void {
-  if (heard.has(race)) return;
-  heard.add(race);
-  // The instant/comfortable reveal may occur in the same frame as the finish chime.
-  // The demo receipt settles asynchronously (Web Lock + checkpoint), so the cues wait for it.
-  void Promise.resolve(getWave3DemoReceipt(race))
-    .then(receipt => playResultFeedback(cue, race, result, receipt, instantReveal ? .8 : .18));
-}
+export type RaceOutcome = { mode: string; rivals?: readonly unknown[]; result: { success?: boolean; position?: number } | null };
+export type PlayCue = (name: string, delay: number) => void;
 
 export function playResultFeedback(
-  cue: PlayCue, race: RaceOutcome, result: ResultFeedback, receipt: ExperienceResult | null, delay: number,
+  cue: PlayCue, race: RaceOutcome, result: ResultFeedback, receipt: ExperienceResult | null, delay: number, hasAcquisition = false,
 ): void {
-  if (!race.result || race.result.success === false || result.intermediateStage) return;
+  if (hasAcquisition || !race.result || race.result.success === false || result.intermediateStage) return;
   const { cup } = result.series;
   if ((race.mode === 'elimination' && race.result.success) ||
       (race.mode === 'classic' && race.result.position === 1 && race.rivals?.length) ||

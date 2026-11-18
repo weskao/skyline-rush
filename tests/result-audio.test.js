@@ -5,9 +5,9 @@ import { createCup, addCupResult } from '../src/championship-cup.ts';
 
 const record = { record:true, medals:[], challengeMedals:[], unlockedTrack:false, series:{cup:null} };
 const reward = { status:'completed', deltaDemoPoints:20, missionReady:true };
-const play = (race, result, receipt = null) => {
+const play = (race, result, receipt = null, hasAcquisition = false) => {
   const heard = [];
-  playResultFeedback((name, delay) => heard.push([name, delay]), race, result, receipt, .18);
+  playResultFeedback((name, delay) => heard.push([name, delay]), race, result, receipt, .18, hasAcquisition);
   return heard;
 };
 
@@ -41,4 +41,14 @@ test('failed and duplicate results never sound as a reward', () => {
   assert.deepEqual(play({ mode:'time', result:{ success:false } }, record, reward), []);
   assert.deepEqual(play({ mode:'time', result:{ success:true } }, { ...record, record:false },
     { ...reward, status:'duplicate' }), []);
+});
+
+test('the reward dialog owns the celebration sound when a race grants an acquisition', () => {
+  assert.deepEqual(play({ mode:'classic', rivals:[{}], result:{ success:true, position:1 } },
+    { ...record, unlockedTrack:true }, reward, true), []);
+});
+
+test('a claimable mission still has a cue when the race grants no acquisition', () => {
+  assert.deepEqual(play({ mode:'time', result:{ success:true } }, { ...record, record:false },
+    { ...reward, deltaDemoPoints:0 }), [['mission-ready', .18]]);
 });

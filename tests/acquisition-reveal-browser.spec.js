@@ -83,13 +83,17 @@ test('the production reveal component queues batches, defers during a race, and 
   await page.evaluate(() => { document.body.dataset.phase = 'racing'; });
   await opener.click();
   await expect(reveal).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.revealCues)).toEqual([]);
   await page.evaluate(() => { document.body.dataset.phase = 'ready'; });
   await expect(reveal.getByRole('heading', { name: 'Vantaire GT' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.revealCues)).toEqual([['acquisition-hero', true]]);
   const proceed = reveal.getByRole('button', { name: 'Continue' });
   await expect(proceed).toBeFocused();
   expect((await proceed.boundingBox()).width).toBeGreaterThanOrEqual((await reveal.boundingBox()).width - 32);
   await reveal.getByRole('button', { name: 'Ion thruster' }).tap();
   await expect(reveal.getByRole('heading', { name: 'Ion thruster' })).toBeVisible();
+  await reveal.getByRole('button', { name: 'Ion thruster' }).tap();
+  await expect.poll(() => page.evaluate(() => window.revealCues)).toEqual([['acquisition-hero', true], ['acquisition-select', true]]);
   await expect(proceed).toBeInViewport();
   await page.keyboard.press('Escape');
   await expect(reveal.getByRole('heading', { name: 'Collection token' })).toBeVisible();
@@ -99,4 +103,7 @@ test('the production reveal component queues batches, defers during a race, and 
   await expect(opener).toBeFocused();
   await opener.tap();
   await expect(reveal).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.revealCues)).toEqual([
+    ['acquisition-hero', true], ['acquisition-select', true], ['acquisition-item', true],
+  ]);
 });
