@@ -29,6 +29,7 @@ exactly. Topics whose work often starts before a scoped file is open:
 | Track teaser JPEGs under `public/track-teasers/` | `.claude/rules/track-teaser-artwork.md` |
 | Blender, GLB/PBR, 3D asset, new car model, rendering quality, Three.js r180 → r186 | `docs/designs/3d-pipeline/phases/README.md` (phase index; new car = `task-7-concept-hero-car.md`), then `.claude/rules/3d-asset-pipeline.md` |
 | Tutorial lessons, cues or transitions | `docs/tutorial-driving.md` |
+| Anything the player newly acquires or unlocks (car, track, paint, equipment, clothing, medal, currency, reward, store or mission claim) | `.claude/rules/acquisition-reveal.md` (one shared reveal via `presentAcquisition`) |
 | Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
 
 Player copy (What's New, locales, store text, captions) names a track exactly as `TRACK_NAMES` in
