@@ -14,7 +14,7 @@ const LOW_VISUALS = initialDeviceVisuals({ device: { cores: 2 } }).settings;
 // Lobby tests start in a tab that has already acknowledged the startup screen.
 export const markStartupSeen = target => target.addInitScript(() => {
   if (location.protocol === 'http:' || location.protocol === 'https:') {
-    sessionStorage.setItem('skyline-rush-startup-entered', '1');
+    sessionStorage.setItem('skyline-rush-startup-skip', '1');
   }
 });
 

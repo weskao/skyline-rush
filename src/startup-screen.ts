@@ -30,14 +30,14 @@ function setupStartup() {
   const retry = root.querySelector<HTMLButtonElement>('#startup-retry')!;
   const locale = resolveInitialLocale();
   const copy = COPY[locale];
-  const seenKey = 'skyline-rush-startup-entered';
   const viewport = new AbortController();
   let entered = false;
   let ready = false;
   let failed = false;
   let exit: Animation | undefined;
 
-  try { entered = sessionStorage.getItem(seenKey) === '1'; } catch { /* Storage is optional. */ }
+  // Every page load shows the screen: skipping it revealed the half-built lobby. Only test/perf tooling sets this key.
+  try { entered = sessionStorage.getItem('skyline-rush-startup-skip') === '1'; } catch { /* Storage is optional. */ }
   document.documentElement.lang = locale;
   root.querySelector('#startup-tagline')!.textContent = copy.tagline;
   status.textContent = copy.steps[0];
@@ -79,7 +79,6 @@ function setupStartup() {
         root.hidden = true;
         entered = true;
         app.inert = false;
-        try { sessionStorage.setItem(seenKey, '1'); } catch { /* The lobby still opens. */ }
         viewport.abort();
         app.querySelector<HTMLElement>('#start-button')?.focus({ preventScroll: true });
         onEnter();

@@ -1,6 +1,8 @@
 # Startup loading screen
 
-- [x] Add a first-paint opening screen with responsive full-bleed artwork, bilingual wordmark and tagline, and a three-segment status tied to game bootstrap. Show Enter only after the first lobby render and remember entry per tab.
+- [x] Add a first-paint opening screen with responsive full-bleed artwork, bilingual wordmark and tagline, and a three-segment status tied to game bootstrap. Show Enter only after the first lobby render.
+- [x] Show the screen on every page load (reload, duplicated or new tab). Remembering entry per tab in `sessionStorage` skipped it and revealed the half-built lobby before its first 3D frame. Only test and perf tooling set `skyline-rush-startup-skip`. Guard: `tests/startup-screen.test.js` was RED on the old code (second load: `hidden` true) and is GREEN after the fix.
+- [ ] Browser regression for the reload expectation in `tests/startup-browser.spec.js` (not run: user asked to skip browser tests on 2026-11-19).
 - [x] Size the brand and 44px-or-larger action for compact landscape, tablet and foldable geometry. Keep the fully rendered lobby inert behind the screen and pause its animation until entry.
 - [x] Reuse game quality for ambient particles (Low 0, Medium 3, High and Ultra 7) and honor comfort, effects-off and reduced motion. Reuse the game UI confirmation sound on entry. Startup progress itself uses visual feedback.
 - [x] Add test-first checks for the static shell, keyboard entry, render failure, context loss, art selection, device layouts and quality. The shell check failed on the original HTML and passes after integration.

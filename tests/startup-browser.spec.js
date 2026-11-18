@@ -40,10 +40,12 @@ test('paints before scripts, waits for a rendered frame and enters the lobby via
   await expect(page.locator('#startup')).toBeHidden();
   await expect(page.getByRole('button', { name: 'Start race', exact: true })).toBeEnabled();
   await expect(page.locator('#race-status')).not.toHaveText('RACING');
+  // A new page load covers the half-built lobby again instead of revealing it.
   await page.reload();
+  await expect(page.locator('#startup')).toBeVisible();
+  await expect(page.locator('#app')).toHaveAttribute('inert', '');
   await page.evaluate(() => window.releaseStartupFrames());
-  await expect(page.locator('#startup')).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Start race', exact: true })).toBeEnabled();
+  await expect(enter(page)).toBeEnabled();
 });
 
 test('renderer failure replaces progress with a retry action', async ({ page }) => {
