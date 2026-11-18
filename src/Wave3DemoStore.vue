@@ -3,7 +3,7 @@ import { inject, computed, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
 import { SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
-import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
+import type { SkinId } from './garage-skin-catalog.ts';
 import { DEMO_QUOTE_LIFETIME_MS } from './wave3-experience-contract.ts';
 import type { DemoCurrency, DemoRedemptionQuote, ExperienceSnapshot, Wave3ExperiencePort, Wave3Status } from './wave3-experience-contract.ts';
 import {
@@ -31,8 +31,9 @@ const priceText = (item: Wave3DemoItem) => item.currency && item.demoPrice !== n
   ? `${item.demoPrice.toLocaleString(props.locale === 'zh-TW' ? 'zh-TW' : 'en-US')} ${currencyLabel(item.currency)}`
   : tr('Preview only', '僅供預覽');
 const snapshot = ref<ExperienceSnapshot>(props.port.getSnapshot());
-const filter = ref<'all' | SkinCategory>('all');
-const categories = ['all', ...SKIN_CATEGORIES] as const;
+const categories = ['all', ...SKIN_CATEGORIES.filter(category => category !== 'drift-trail')] as const;
+type StoreCategory = (typeof categories)[number];
+const filter = ref<StoreCategory>('all');
 const selectedId = ref<SkinId>(WAVE3_DEMO_ITEMS[0]!.id);
 const confirmationId = ref<SkinId | null>(null);
 const quote = ref<DemoRedemptionQuote | null>(null);
@@ -70,13 +71,13 @@ const statusFor = (id: SkinId) => {
 const artwork = (id: SkinId) => skinArtwork(id, import.meta.env.BASE_URL);
 const storeArt = (id: string) =>
   `${import.meta.env.BASE_URL}feature-assets/garage-store-readiness/raster/${id}@3x.webp`;
-const categoryLabel = (value: 'all' | SkinCategory): string => ({
+const categoryLabel = (value: StoreCategory): string => ({
   all: tr('All', '全部'), thruster: tr('Thrusters', '推進器'),
   airflow: tr('Airflow', '氣流'), 'nitro-trail': tr('NITRO trails', '氮氣尾跡'),
   'launch-flare': tr('Launch flares', '起跑閃焰'),
 })[value];
 
-function selectCategory(category: 'all' | SkinCategory): void {
+function selectCategory(category: StoreCategory): void {
   filter.value = category;
   const first = items.value[0];
   if (first) selectedId.value = first.id;

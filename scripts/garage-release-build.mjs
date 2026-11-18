@@ -31,6 +31,7 @@ export function selectGarageReleaseBuild(viteMode, explicit = undefined, wave3Fl
       '#garage-skin-palette': source(locked ? 'garage-skin-palette-locked.ts' : 'garage-skin-palette.ts'),
       '#garage-void-beams': source(locked ? 'garage-void-beams-locked.js' : 'garage-void-beams.js'),
       '#garage-launch-flare': source(locked ? 'garage-launch-flare-locked.js' : 'garage-launch-flare.js'),
+      '#garage-drift-trail': source(locked ? 'garage-drift-trail-locked.js' : 'garage-drift-trail.js'),
       '#garage-nitro-trail': source(locked ? 'garage-nitro-trail-locked.js' : 'garage-nitro-trail.js'),
       '#garage-release-config': source(`garage-release-${mode}.ts`),
       '#wave3-preview-store': source(wave3FirestoreEnabled ? 'wave3-preview-firestore.ts' : 'wave3-preview-disabled.ts'),
