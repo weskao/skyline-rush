@@ -123,3 +123,36 @@ test('permanent mode records are private and bounded on Spark Firestore', { skip
   await assertFails(deleteDoc(doc(other, path)));
   await assertSucceeds(deleteDoc(doc(owner, path)));
 });
+
+test('Wave 3 preview checkpoints are private, bounded and deletable by their owner', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async t => {
+  const env = await initializeTestEnvironment({
+    projectId: 'demo-skyline-rush-wave3',
+    firestore: { rules: readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8') },
+  });
+  t.after(() => env.cleanup());
+  const owner = env.authenticatedContext('driver').firestore();
+  const other = env.authenticatedContext('other').firestore();
+  const guest = env.unauthenticatedContext().firestore();
+  const path = 'wave3PreviewEconomy/driver';
+  const checkpoint = doc(owner, path);
+  const data = { version: 1, checkpoint: '{"test":"preview"}' };
+  await assertSucceeds(setDoc(checkpoint, data));
+  await assertSucceeds(getDoc(checkpoint));
+  await assertFails(getDoc(doc(other, path)));
+  await assertFails(getDoc(doc(guest, path)));
+  await assertFails(getDocs(collection(owner, 'wave3PreviewEconomy')));
+  await assertFails(setDoc(doc(other, path), data));
+  await assertFails(deleteDoc(doc(other, path)));
+  await assertFails(setDoc(checkpoint, { ...data, version: 2 }));
+  await assertFails(setDoc(checkpoint, { ...data, checkpoint: {} }));
+  await assertFails(setDoc(checkpoint, { ...data, checkpoint: 'x'.repeat(65_537) }));
+  await assertFails(setDoc(checkpoint, { ...data, ownership: true }));
+  await assertSucceeds(deleteDoc(checkpoint));
+  assert.equal((await getDoc(checkpoint)).exists(), false);
+});
+
+test('the Wave 3 document payload is exempt from Firestore indexing', () => {
+  const config = JSON.parse(readFileSync(new URL('../firestore.indexes.json', import.meta.url), 'utf8'));
+  assert.deepEqual(config.fieldOverrides.find(entry =>
+    entry.collectionGroup === 'wave3PreviewEconomy' && entry.fieldPath === 'checkpoint')?.indexes, []);
+});

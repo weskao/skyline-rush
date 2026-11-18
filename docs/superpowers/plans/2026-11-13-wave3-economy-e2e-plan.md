@@ -79,21 +79,39 @@
 - 首次完賽按試玩檔案與標準賽道 ID 記錄，圈數及賽制共用該 ID。整個系列只為最後一站結算首次獎勵，延續現有規則。
 - 每日於 00:00 UTC、每週於週一 00:00 UTC 重置。台北時間為每日 08:00 與週一 08:00。計時賽走獨立的時間挑戰，競速週任務不計 Time Attack。現有每日／每週任務門檻為競速 1／5、計時 1／3、漂移 2／6、連擊 1／4。
 - 每個餘額是非負安全整數，上限 1,000,000,000。顯示實際入帳差額，滿額時只顯示可入帳的部分。金幣基準取公式 P，個別幣別獨立飽和。
-- 延續首輪試玩定價。一般外觀用金幣，高級 VFX 可用鑽石。三種幣別獨立，無兌換、贈送或提款流程。15／25 顆的外觀分別需 3／5 次週獎勵。週期切換驗收以測試時鐘推進，玩家以正常遊玩取得。
+- 延續首輪七件商品的價格。點數用於入門外觀，金幣覆蓋一般至進階外觀，鑽石用於較長期取得的外觀。三種幣別獨立，無兌換、贈送或提款流程。15／20／25 顆的外觀分別需 3／4／5 次週獎勵。週期切換驗收以測試時鐘推進，玩家以正常遊玩取得。
 
 ### 3.3 試玩商城價格
 
-| 商品 ID | 外觀 | 幣別 | 售價 |
-| --- | --- | --- | ---: |
-| `thruster-ion` | 離子推進器 | 點數 | 25 |
-| `thruster-plasma` | 電漿螺旋 | 點數 | 100 |
-| `nitro-trail-cyan` | 青色尾跡 | 金幣 | 150 |
-| `airflow-slipstream` | 流線氣流 | 金幣 | 500 |
-| `nitro-trail-gold` | 金色脈衝尾跡 | 金幣 | 1,200 |
-| `thruster-void` | 虛空脈衝 | 鑽石 | 15 |
-| `airflow-prism` | 稜鏡氣流 | 鑽石 | 25 |
+| 分類 | 商品 ID | 外觀 | 幣別 | 試玩價格 |
+| --- | --- | --- | --- | ---: |
+| 推進器 | `thruster-ion` | 離子推進器 | 點數 | 25 |
+| 推進器 | `thruster-plasma` | 電漿螺旋 | 點數 | 100 |
+| 推進器 | `thruster-void` | 虛空脈衝 | 鑽石 | 15 |
+| 氣流 | `airflow-slipstream` | 流線氣流 | 金幣 | 500 |
+| 氣流 | `airflow-vortex` | 渦旋氣流 | 金幣 | 850 |
+| 氣流 | `airflow-prism` | 稜鏡氣流 | 鑽石 | 25 |
+| 氮氣尾跡 | `nitro-trail-cyan` | 青色尾跡 | 金幣 | 150 |
+| 氮氣尾跡 | `nitro-trail-red` | 赤紅斷續尾跡 | 金幣 | 750 |
+| 氮氣尾跡 | `nitro-trail-gold` | 金色脈衝尾跡 | 金幣 | 1,200 |
+| 氮氣尾跡 | `nitro-trail-purple` | 星雲紫光尾跡 | 鑽石 | 20 |
+| 起跑閃焰 | `launch-flare-blue` | 藍色閃焰 | 點數 | 45 |
+| 起跑閃焰 | `launch-flare-pulse` | 脈衝閃焰 | 點數 | 80 |
+| 起跑閃焰 | `launch-flare-ring` | 衝擊環閃焰 | 金幣 | 250 |
+| 起跑閃焰 | `launch-flare-cyan` | 極光新星 | 金幣 | 450 |
+| 起跑閃焰 | `launch-flare-red` | 赤紅衝擊 | 金幣 | 650 |
+| 起跑閃焰 | `launch-flare-gold` | 日冕金焰 | 金幣 | 1,000 |
+| 起跑閃焰 | `launch-flare-magenta` | 洋紅旋渦 | 鑽石 | 15 |
+| 起跑閃焰 | `launch-flare-white` | 白耀超新星 | 鑽石 | 25 |
+| 甩尾痕跡 | `drift-trail-flame` | 熾焰 | 金幣 | 300 |
+| 甩尾痕跡 | `drift-trail-ice` | 裂冰晶痕 | 金幣 | 550 |
+| 甩尾痕跡 | `drift-trail-arc` | 霓電弧 | 金幣 | 850 |
+| 甩尾痕跡 | `drift-trail-rainbow` | 虹光流帶 | 鑽石 | 15 |
+| 甩尾痕跡 | `drift-trail-stardust` | 星雲微塵 | 鑽石 | 20 |
 
-每個商品使用既有目錄的穩定 ID、單一幣別與正整數價格。確認視窗顯示商品、價格、可用餘額與預計剩餘值。送出時以當前快照重查價格、幣別、試玩檔案、是否已取得與可用餘額。成功時同一筆更新扣款與加入收藏。取消或失敗時沒有部分扣款。車庫可預覽的外觀、可兌換的外觀及已取得外觀應能在介面上辨識。
+23 款非預設 VFX 各有一個幣別與正整數價格。5 款預設 VFX 和兩款車可直接使用。車漆沿用既有星星門檻（0／3／6／10／16／24），星星只用於解鎖判斷。價格只適用於試玩收藏，裝備後使用對應 VFX。
+
+商品卡、預覽價格和兌換確認沿用首頁的 `demo-points@3x.webp`、`wallet-coin@3x.webp`、`wallet-diamond@3x.webp`，並保留讀屏用的幣別名稱。確認畫面使用報價當下的幣別及價格，顯示可用與兌換後餘額。送出時重查價格、幣別、試玩檔案、是否已取得與可用餘額。成功時同一筆更新扣款與加入收藏，取消或失敗時保留原餘額。
 
 ## 4. 前端分層與畫面責任
 
@@ -164,7 +182,7 @@ flowchart LR
 
 - 每步先寫會在舊碼失敗的測試，記錄失敗原因，再改對應來源、確認通過並重構。使用目前的測試工具與測試資料注入點。瀏覽器樣本使用遊戲內操作，固定時鐘只用於驗收跨週期。
 - 本機至少跑 `node --test tests/module-size.test.js`、`npm test`、`npm run typecheck`、`npm run build`、試玩版建置與 `make verify`。瀏覽器回歸須實跑，環境限制與測試失敗分開記錄。
-- 手動試玩使用 `GARAGE_VFX_RELEASE_MODE=trial npm run build` 後執行 `npm run preview -- --host 127.0.0.1`。先正常載入頁面與素材，再切斷網路測完賽、領取、兌換及裝備。回到線上後刷新，驗證之前的本機進度可讀取。
+- 手動試玩使用 `GARAGE_VFX_RELEASE_MODE=trial VITE_WAVE3_FIRESTORE_PREVIEW=0 npm run build` 後執行 `npm run preview -- --host 127.0.0.1`。先正常載入頁面與素材，再切斷網路測完賽、領取、兌換及裝備。回到線上後刷新，驗證之前的本機進度可讀取。
 - 專項瀏覽器測試可先執行 `npm run test:browser -- tests/wave3-early-access-browser.spec.js tests/wave3-demo-store-browser.spec.js tests/wave3-demo-results-layout-browser.spec.js tests/wave3-currency-browser.spec.js`，再跑完整的 `make verify`。
 - 裝置矩陣包含 1440×900 桌面、390×844 與 360×740 直向、844×390 與 667×375 短橫向，以及實體 iOS Safari、Android Chrome。保留對帳結果、短橫向截圖／錄影、無意外 console error 及實機結果。
 - 推送功能分支後核對 exact-HEAD `[full-regression]` 的 `quality-gate`、Browser、World Tour 與適用工作，在 `TODO.md` 記錄提交、測試、機型、餘額與證據。依專案既有合併與發佈流程處理。
@@ -172,7 +190,7 @@ flowchart LR
 
 ## 8. 未來後端接入規劃
 
-正式版沿用 [Go 後端計畫 Phase 0–9](2026-11-06-wave3-go-backend-implementation.md)。下列名稱是預留的 API 契約，前端試玩目前由本機 adapter 運作。未來可用非同步 server adapter 映射相同的畫面狀態、錯誤及回執。Go 驗證 Firebase 身分並從 token 取得 UID。
+正式版沿用 [Go 後端計畫 Phase 0–9](2026-11-06-wave3-go-backend-implementation.md)。下列名稱是預留的正式 API 契約。試玩存檔依第 10 節在訪客本機與 Firebase UID 文件間切換。未來可用非同步 server adapter 映射相同的畫面狀態、錯誤及回執。Go 驗證 Firebase 身分並從 token 取得 UID。
 
 | 介面草案 | 輸入及服務端責任 | 回傳與一致性 |
 | --- | --- | --- |
@@ -195,3 +213,13 @@ flowchart LR
 - [ ] F5 跨三幣別的端到端對帳、真實瀏覽器及實機證據已完成。
 - [ ] 最新功能提交的完整 CI、裝置驗收結果與剩餘限制已記錄。
 - [ ] 後端進入獨立階段時，以第 8 節與 Go Phase 0–9 開始評估。
+
+## 10. 2026-11-19｜試玩記錄與 release 開關
+
+- [x] 由 Vite 在建置時選擇 Wave 3 入口與 Firestore Adapter。預設 production 的 `trial`、`released` 會開啟，`=0` 可關閉，`coming-soon` 拒絕 `=1`。
+- [x] 訪客只存本機。已登入只同步自己的 Firebase 試玩文件，開關關閉時只保留當次頁面狀態，雲端出錯時保留最後成功提交的餘額。
+- [x] 保留 `wave3PreviewEconomy/{uid}` v1 文件形狀，為不查詢的 checkpoint 停用單欄索引，並記錄資料上限、隔離與下線清理順序。
+- [x] 完成 release 瀏覽器 E2E、模擬器規則與發佈產物開關驗證。以兩個瀏覽器工作階段驗證同帳號讀回、重複完賽、訪客本機保留，以及試玩裝備仍無正式擁有權。
+- [ ] 將核准的規則／索引部署至目標 Firebase 專案並於正式環境驗證 Google 登入。正式經濟上線前依清理順序處理試玩集合。
+
+操作方式見 [Cloud Save 指南](../../cloud-save.md#wave-3-firestore-preview)。保留原有點數、金幣和鑽石的名稱與交易規則。試玩外觀使用暫時的 VFX 選擇。

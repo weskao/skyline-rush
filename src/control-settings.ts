@@ -12,6 +12,7 @@ export interface ControlPreferences {
   mode: SteeringMode;
   hand: ControlHand;
   fullLock: 40 | 60 | 80;
+  brakePull: 'light' | 'balanced' | 'firm';
   size: TouchSize;
   opacity: number;
   flyMode: FlyMode;
@@ -22,7 +23,7 @@ export interface ControlPreferences {
 }
 
 export const CONTROL_DEFAULTS: ControlPreferences = {
-  mode: 'slide', hand: 'left', fullLock: 60, size: 'M', opacity: 0.9,
+  mode: 'slide', hand: 'left', fullLock: 60, brakePull: 'balanced', size: 'M', opacity: 0.9,
   flyMode: 'hold', sensitivity: 1, ghost: false, layout: {}, version: 1,
 };
 const ACTIONS: readonly TouchAction[] = ['left', 'right', 'brake', 'fly', 'boost', 'nitro', 'throttle'];
@@ -50,6 +51,7 @@ export function controlSettings(values: unknown = {}): ControlPreferences {
     mode: isOneOf(values.mode, ['slide', 'buttons', 'tilt'] as const) ? values.mode : d.mode,
     hand: isOneOf(values.hand, ['left', 'right'] as const) ? values.hand : d.hand,
     fullLock: isOneOf(values.fullLock, [40, 60, 80] as const) ? values.fullLock : d.fullLock,
+    brakePull: isOneOf(values.brakePull, ['light', 'balanced', 'firm'] as const) ? values.brakePull : d.brakePull,
     size: isOneOf(values.size, ['S', 'M', 'L'] as const) ? values.size : d.size,
     opacity: bounded(values.opacity, d.opacity),
     flyMode: isOneOf(values.flyMode, ['hold', 'toggle'] as const) ? values.flyMode : d.flyMode,
@@ -89,14 +91,23 @@ export function activateHudMode(mode: HudDisplayMode, root: Pick<HTMLElement, 'd
   return selected;
 }
 
+// Keep the original storage key so older orientation layouts can be migrated in place.
 export const ORIENTATION_LAYOUT_KEY = 'skyline-rush-controls-layout-v2';
 export type LayoutOrientation = 'portrait' | 'landscape';
-export interface OrientationLayouts { version: 2; portrait: ControlPreferences['layout']; landscape: ControlPreferences['layout'] }
+export interface OrientationLayouts { version: 3; portrait: ControlPreferences['layout']; landscape: ControlPreferences['layout'] }
 export function normalizeOrientationLayouts(value: unknown, legacy: ControlPreferences['layout'] = {}): OrientationLayouts {
-  const sanitized = (layout: unknown): ControlPreferences['layout'] => controlSettings({ version: 1, layout }).layout;
-  const fallback = sanitized(legacy);
-  if (!isRecord(value) || value.version !== 2) return { version: 2, portrait: { ...fallback }, landscape: { ...fallback } };
-  return { version: 2, portrait: sanitized(value.portrait), landscape: sanitized(value.landscape) };
+  const version = isRecord(value) ? value.version : undefined;
+  const sanitized = (layout: unknown): ControlPreferences['layout'] => {
+    const positions = controlSettings({ version: 1, layout }).layout;
+    // Legacy editors moved BRAKE together with the arrows. Use its new default location.
+    if (version !== 3) delete positions.brake;
+    return positions;
+  };
+  if (!isRecord(value) || (version !== 2 && version !== 3)) {
+    const fallback = sanitized(legacy);
+    return { version: 3, portrait: { ...fallback }, landscape: { ...fallback } };
+  }
+  return { version: 3, portrait: sanitized(value.portrait), landscape: sanitized(value.landscape) };
 }
 export function readOrientationLayouts(legacy: ControlPreferences['layout'] = {}, storage?: Pick<Storage, 'getItem'>): OrientationLayouts {
   try { return normalizeOrientationLayouts(JSON.parse((storage ?? globalThis.localStorage).getItem(ORIENTATION_LAYOUT_KEY) ?? 'null'), legacy); }
