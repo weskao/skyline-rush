@@ -33,12 +33,32 @@ test('demo items use existing real nondefault skin IDs, unique and never grant o
   assert.equal(findDemoItem('deleted-id'), null);
 });
 
-test('existing point offers and explicit trial coin and diamond offers have a single price', () => {
-  assert.equal(findDemoItem('thruster-ion')?.demoPrice, 25);
-  assert.equal(findDemoItem('thruster-plasma')?.demoPrice, 100);
-  assert.equal(findDemoItem('airflow-vortex')?.demoPrice, null);
-  assert.deepEqual(WAVE3_DEMO_ITEMS.filter(item => item.currency === 'coins').map(item => item.demoPrice).sort((a, b) => a - b), [150, 500, 1200]);
-  assert.deepEqual(WAVE3_DEMO_ITEMS.filter(item => item.currency === 'diamonds').map(item => item.demoPrice), [15, 25]);
+test('every non-default cosmetic has one trial price and the original seven retain their prices', () => {
+  for (const item of WAVE3_DEMO_ITEMS) {
+    assert.ok(item.currency && ['points', 'coins', 'diamonds'].includes(item.currency), item.id);
+    assert.ok(Number.isSafeInteger(item.demoPrice) && item.demoPrice > 0, item.id);
+  }
+  for (const [id, currency, cost] of [
+    ['thruster-ion', 'points', 25], ['thruster-plasma', 'points', 100],
+    ['nitro-trail-cyan', 'coins', 150], ['airflow-slipstream', 'coins', 500],
+    ['nitro-trail-gold', 'coins', 1200], ['thruster-void', 'diamonds', 15],
+    ['airflow-prism', 'diamonds', 25], ['drift-trail-flame', 'coins', 300],
+    ['drift-trail-rainbow', 'diamonds', 15],
+  ]) assert.deepEqual(demoOffer(id), { currency, cost });
+});
+
+test('a newly priced drift trail uses only its listed currency and can be equipped', () => {
+  const port = createWave3LocalDemo();
+  for (let index = 0; index < 7; index++) {
+    port.settleCompletion({ ...race('guest'), completionId: 'drift-store-race-' + index });
+  }
+  assert.equal(port.getSnapshot().demoEconomy.coins, 310);
+  const reward = port.redeemPreview('drift-trail-flame');
+  assert.equal(reward.status, 'completed');
+  assert.deepEqual([reward.deltaDemoPoints, reward.deltaDemoCoins, reward.deltaDemoDiamonds], [0, -300, 0]);
+  assert.equal(port.equipPreview('drift-trail-flame').status, 'completed');
+  assert.equal(port.redeemPreview('drift-trail-flame').status, 'duplicate');
+  assert.equal(port.getSnapshot().demoEconomy.coins, 10);
 });
 
 test('existing six store illustrations are for presentation, never purchasable SKUs', () => {
@@ -48,11 +68,11 @@ test('existing six store illustrations are for presentation, never purchasable S
   assert.ok(WAVE3_DEMO_STORE_ART.every(id => findDemoItem(id) === null));
 });
 
-test('guest sees distinct locked, preview-only, trial and demo-unlocked states', () => {
+test('guest sees distinct locked, trial and demo-unlocked states', () => {
   const port = createWave3LocalDemo();
   const initial = port.getSnapshot();
   assert.equal(demoItemStatus('thruster-ion', initial), 'locked');
-  assert.equal(demoItemStatus('airflow-vortex', initial), 'preview-only');
+  assert.equal(demoItemStatus('airflow-vortex', initial), 'locked');
   assert.equal(demoItemStatus('airflow-vortex', initial, { state: 'trial', canEquip: true, expiresAt: 2_000 }, 1_000), 'trial');
   assert.equal(demoItemStatus('not-a-skin', initial), 'locked');
   port.settleCompletion(race('guest'));
@@ -62,9 +82,9 @@ test('guest sees distinct locked, preview-only, trial and demo-unlocked states',
 
 test('expired/disabled trial cannot be equipped or shown as active', () => {
   const snapshot = createWave3LocalDemo().getSnapshot();
-  assert.equal(demoItemStatus('airflow-vortex', snapshot, { state: 'trial', canEquip: true, expiresAt: 2_000 }, 2_000), 'preview-only');
+  assert.equal(demoItemStatus('airflow-vortex', snapshot, { state: 'trial', canEquip: true, expiresAt: 2_000 }, 2_000), 'locked');
   assert.equal(demoItemStatus('thruster-ion', snapshot, { state: 'trial', canEquip: false }, 1_000), 'locked');
-  assert.equal(demoItemStatus('airflow-vortex', snapshot, { state: 'locked', canEquip: false }, 1_000), 'preview-only');
+  assert.equal(demoItemStatus('airflow-vortex', snapshot, { state: 'locked', canEquip: false }, 1_000), 'locked');
   assert.equal(canEquipDemoPreview('airflow-vortex', snapshot), false, 'temporary trial is not a demo entitlement');
 });
 
@@ -73,7 +93,7 @@ test('insufficient balance, unsupported and duplicate redemption leave the port 
   const before = port.getSnapshot();
   assert.equal(demoRedemptionState('thruster-ion', before), 'insufficient-demo-points');
   assert.equal(demoRedemptionState('thruster-plasma', before), 'insufficient-demo-points');
-  assert.equal(demoRedemptionState('airflow-vortex', before), 'preview-only');
+  assert.equal(demoRedemptionState('airflow-vortex', before), 'insufficient-demo-coins');
   assert.equal(demoRedemptionState('__proto__', before), 'invalid');
   assert.equal(port.redeemPreview('thruster-ion').status, 'insufficient-demo-points');
   assert.equal(port.getSnapshot().demoPoints, before.demoPoints);
@@ -129,8 +149,7 @@ test('offline guest can browse without any browser storage or network APIs', () 
       id: item.id, name: item.name.en, status: demoItemStatus(item.id, port.getSnapshot()),
     }));
     assert.ok(items.length >= 10);
-    assert.ok(items.some(item => item.status === 'preview-only'));
-    assert.ok(items.some(item => item.status === 'locked'));
+    assert.ok(items.every(item => item.status === 'locked'));
     assert.equal(port.getSnapshot().mode, 'local-demo');
   } finally { globalThis.fetch = previousFetch; }
 });

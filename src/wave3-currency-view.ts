@@ -19,6 +19,13 @@ const DEMO_LABELS = {
 export const demoCurrencyLabel = (currency: DemoCurrency, locale: string) =>
   DEMO_LABELS[currency][locale === 'zh-TW' ? 'zh-TW' : 'en'];
 
+export function demoPersistenceLabel(persistence: ExperienceSnapshot['persistence'], locale: string): string {
+  const zh = locale === 'zh-TW';
+  if (persistence === 'firestore') return zh ? '雲端試玩' : 'Cloud demo';
+  if (persistence === 'memory-only') return zh ? '僅限本次試玩' : 'This session only';
+  return zh ? '本機試玩' : 'Local demo';
+}
+
 export function formatDemoReward(delta: Partial<Record<DemoCurrency, number>>, locale: string): string {
   return (['points', 'coins', 'diamonds'] as const)
     .filter(currency => (delta[currency] ?? 0) > 0)
@@ -37,7 +44,7 @@ export function projectWave3Currency(
   const amount = local && typeof points === 'number' && Number.isSafeInteger(points) && points >= 0 ? points : null;
   const empty = snapshot == null || (local && points == null);
   const invalid = amount === null && !empty;
-  const note = zh ? '本機試玩 · 可重設' : 'Local demo · Resettable';
+  const note = demoPersistenceLabel(snapshot?.persistence, locale) + (zh ? ' · 可重設' : ' · Resettable');
   const resource = (id: 'coins' | 'diamonds', en: string, tw: string): Wave3CurrencyRow => {
     const total = local ? snapshot.demoEconomy?.[id] : undefined;
     if (typeof total === 'number' && Number.isSafeInteger(total) && total >= 0) {

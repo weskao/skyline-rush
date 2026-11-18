@@ -6,8 +6,8 @@ import { formatDate, getLocale, onLocaleChange } from './i18n.ts';
 import { WAVE3_PREVIEW_CATALOG, filterWave3PreviewItems } from './garage-wave3-preview-catalog.ts';
 import type { Wave3PreviewItem } from './garage-wave3-preview-catalog.ts';
 import { MISSION_DEFINITIONS, missionPeriodBounds, missionPeriodId, missionStatus, trophyTier } from './wave3-demo-missions.ts';
-import { demoCurrencyLabel, formatDemoReward } from './wave3-currency-view.ts';
-import { wave3DemoArtUrl } from './wave3-demo-art.ts';
+import { demoCurrencyLabel, demoPersistenceLabel, formatDemoReward } from './wave3-currency-view.ts';
+import { wave3CurrencyArtUrl } from './wave3-demo-art.ts';
 import { demoMissionBonus } from './wave3-demo-settlement.ts';
 import type { DemoCurrency, Wave3ExperiencePort, ExperienceSnapshot, MissionProgress } from './wave3-experience-contract.ts';
 
@@ -30,6 +30,16 @@ const label = (en: string, zh: string) => locale.value === 'zh-TW' ? zh : en;
 const asset = (id: string) => import.meta.env.BASE_URL + 'feature-assets/garage-rewards-and-missions/raster/' + id + '@3x.webp';
 const available = computed(() => snapshot.value?.mode === 'local-demo' &&
   snapshot.value.authority === 'local' && snapshot.value.syncState === 'local-only');
+const progressNotice = computed(() => {
+  if (snapshot.value?.persistence === 'firestore') return label(
+    'Trial progress and trophies are saved to your account and can be reset.',
+    '試玩進度與獎盃會儲存至此帳號，可重設。');
+  if (snapshot.value?.persistence === 'memory-only') return label(
+    'Trial progress and trophies are kept for this session.',
+    '試玩進度與獎盃只保留在本次頁面。');
+  return label('Demo progress and trophies are local, disposable and resettable.',
+    '試玩進度與獎盃僅儲存在本機，可重設。');
+});
 const progressOf = (id: string): MissionProgress | null =>
   available.value ? snapshot.value?.missions[id] ?? null : null;
 const stateOf = (id: string) => missionStatus(progressOf(id));
@@ -84,12 +94,11 @@ async function claim(id: string): Promise<void> {
       ? label('This challenge has expired. Check the current challenges.', '此挑戰已過期，請查看目前的挑戰。')
       : label('Demo claim unavailable or already processed.', '試玩領取尚未開放或已處理。');
 }
-const REWARD_ART = { points: 'demo-points', coins: 'wallet-coin', diamonds: 'wallet-diamond' } as const;
 /** One chip per currency a claim pays: amount, icon and the currency name for assistive tech. */
 function missionReward(id: string) {
   const delta: Record<DemoCurrency, number> = { points: progressOf(id)?.rewardDemoPoints ?? 0, ...demoMissionBonus(id) };
-  return (Object.keys(REWARD_ART) as DemoCurrency[]).filter(currency => delta[currency] > 0).map(currency => ({
-    currency, amount: delta[currency], art: wave3DemoArtUrl(REWARD_ART[currency]),
+  return (Object.keys(delta) as DemoCurrency[]).filter(currency => delta[currency] > 0).map(currency => ({
+    currency, amount: delta[currency], art: wave3CurrencyArtUrl(currency),
     name: demoCurrencyLabel(currency, locale.value),
   }));
 }
@@ -119,11 +128,9 @@ onUnmounted(() => { stopLocale?.(); stopExperience?.(); clearInterval(minuteTime
     :data-rewards-authority="available ? 'local-demo' : 'not-connected'">
     <div class="garage-mission-heading">
       <h3 id="garage-missions-title">{{ label('Mission center', '任務中心') }}</h3>
-      <span class="garage-mission-coming">{{ available ? label('Local demo', '本機試玩') : label('Coming soon', '尚未開放') }}</span>
+      <span class="garage-mission-coming">{{ available ? demoPersistenceLabel(snapshot?.persistence, locale) : label('Coming soon', '尚未開放') }}</span>
     </div>
-    <p class="garage-mission-notice">{{ label(
-      'Demo progress and trophies are local, disposable, unverified and never server-backed. Clearing this device may erase them.',
-      '試玩進度與獎盃僅儲存在本機，可清除且未經伺服器驗證；清除裝置資料可能導致遺失。') }}</p>
+    <p class="garage-mission-notice">{{ progressNotice }}</p>
     <div class="garage-mission-grid">
       <article v-for="item in missions" :key="item.id" class="garage-mission-card"
         :data-mission-id="item.id" :data-mission-state="stateOf(item.id)">

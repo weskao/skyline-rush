@@ -104,16 +104,44 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await page.route('**/feature-assets/garage-vfx-skins/raster/thruster-ion@3x.webp', route => route.abort());
     await page.goto(url);
     const store = page.locator('[data-wave3-demo-store]');
-    await expect(store.locator('[data-demo-id="airflow-vortex"]')).toHaveAttribute('data-demo-status', 'preview-only');
+    await expect(store.locator('[data-demo-id="airflow-vortex"]')).toHaveAttribute('data-demo-status', 'locked');
     await page.evaluate(() => window.__wave3DemoFixture.enableTrial());
     await expect(store.locator('[data-demo-id="airflow-vortex"]')).toHaveAttribute('data-demo-status', 'trial');
     await page.evaluate(() => window.__wave3DemoFixture.expireTrial());
-    await expect(store.locator('[data-demo-id="airflow-vortex"]')).toHaveAttribute('data-demo-status', 'preview-only');
+    await expect(store.locator('[data-demo-id="airflow-vortex"]')).toHaveAttribute('data-demo-status', 'locked');
     await expect(store.locator('[data-demo-id="thruster-ion"] img[src$="/thruster.svg"]')).toBeVisible();
     await page.evaluate(() => window.__wave3DemoFixture.setLocale('zh-TW'));
     await expect(store).toContainText('試玩商城');
     await expect(store.locator('[data-demo-id="thruster-ion"]')).toContainText('未解鎖');
     expect(await page.evaluate(() => window.__wave3DemoFixture.snapshot().demoInventory)).toEqual([]);
+  });
+
+  test('prices in cards, detail and confirmation share Home currency icons', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(url);
+    const store = page.locator('[data-wave3-demo-store]');
+    const offer = id => store.locator(`[data-demo-id="${id}"]`);
+    for (const [id, icon, label] of [
+      ['thruster-ion', 'demo-points', '25 Demo points'],
+      ['nitro-trail-cyan', 'wallet-coin', '150 Demo coins'],
+      ['thruster-void', 'wallet-diamond', '15 Demo diamonds'],
+    ]) {
+      await expect(offer(id).locator('.demo-price img')).toHaveAttribute('src',
+        '/feature-assets/wave3-demo/raster/' + icon + '@3x.webp');
+      await expect(offer(id)).toHaveAccessibleName(new RegExp(label));
+      await offer(id).click();
+      await expect(store.locator('.demo-detail .demo-price img')).toHaveAttribute('src',
+        '/feature-assets/wave3-demo/raster/' + icon + '@3x.webp');
+    }
+    await store.getByRole('button', { name: 'Drift trails' }).click();
+    await expect(store.locator('[data-demo-id]')).toHaveCount(5);
+    await expect(offer('drift-trail-flame')).toHaveAccessibleName(/300 Demo coins/);
+    await store.getByRole('button', { name: 'Thrusters' }).click();
+    await page.evaluate(() => window.__wave3DemoFixture.grantRace());
+    await store.getByRole('button', { name: 'Demo redeem' }).click();
+    const confirmation = store.getByRole('group', { name: 'Confirm demo redemption' });
+    await expect(confirmation.locator('img[src$="/demo-points@3x.webp"]')).toHaveCount(3);
+    await expect(confirmation).toContainText('Remaining 15 Demo points');
   });
 
   test('duplicate redemption and account switching cannot leak demo grants', async ({ page }) => {

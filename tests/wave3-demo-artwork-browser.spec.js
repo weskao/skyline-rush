@@ -77,7 +77,8 @@ for (const viewport of screens) for (const locale of ['en', 'zh-TW']) {
     await expect(board).toBeVisible();
     await expect(board).toContainText(locale === 'en' ? 'Mission center' : '任務中心');
     await expect(board).toHaveAttribute('data-rewards-authority', 'local-demo');
-    await expect(board).toContainText(locale === 'en' ? 'unverified and never server-backed' : '未經伺服器驗證');
+    await expect(board.locator('.garage-mission-notice:not(.garage-period-reset)')).toHaveText(locale === 'en'
+      ? 'Demo progress and trophies are local, disposable and resettable.' : '試玩進度與獎盃僅儲存在本機，可重設。');
     for (const id of missionIds) {
       const card = board.locator('[data-mission-id="' + id + '"]');
       await expect(card).toBeVisible();
