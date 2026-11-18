@@ -343,6 +343,14 @@ on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, 
 - [x] Showroom pulse (owner's pick over a fixed race length or a hold-to-preview button): Garage/Home plume was 0.83 m vs Preview Studio's 4.70 m (default settings). `tests/sprint-plume.test.js` *showroom plume: loops…* RED on `e4329420` (0.83 m), GREEN after: every showroom loops from idle to ≥ 95% of the race length with the 2.2 s ignition demo; Reduced Motion holds Studio at full length.
 - [ ] Showroom pulse in real Garage/Studio frames, both cars, both phone orientations: delegated recording, not yet reviewed.
 
+## NITRO trail skins: comfortable glow, no strobe (2026-11-18, `fix/nitro-trail-glare`)
+
+- [x] Cyan/gold/crimson/nebula trails (`src/garage-nitro-trail.js`): colour capped at `vec3(1.2)` (was up to ~4.2, past the 1.1 bloom threshold), `FrontSide` (both tube walls added up), nozzle hot spot and glints toned down, every animated term ≤ 3 Hz at a pixel with the same visible flow speed (gold beat 3.2 Hz → ~1 Hz, crimson hard 7 Hz on/off → 2.5 Hz soft 50–100%, glints 22 Hz → 2.5 Hz). Standard trail (style 0) draws no streak: unchanged.
+- [x] RED: `tests/nitro-trail-comfort.test.js` 3/3 failed on `c8c2b208`; GREEN after. `npm test` 3,364 pass / 0 fail / 3 skipped; `npm run build` passed.
+- [x] Prevention: `.claude/rules/nitro-trail-vfx.md`.
+- [x] Real WebGL before/after (Chromium 1280×720, High, Coast race with NITRO + Preview Studio), four skins, Roadster: colour reads as distinct jets instead of a white wash. Crimson in race is the most subdued; the owner judges whether it needs more body.
+- [ ] Not run: Crimson GT, phone portrait/landscape, physical phone, full `npm run test:browser`, exact-HEAD `quality-gate`.
+
 ## Final tutorial NITRO cue (2026-11-15)
 
 - [x] Show the final NITRO action in the same on-screen cue as THROTTLE, with the bound desktop key or touch button copy. Hide the press prompt and touch outline during the sprint and while waiting for release after an interrupted attempt.
