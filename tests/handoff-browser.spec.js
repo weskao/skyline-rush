@@ -2,6 +2,7 @@ import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect, settled } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 
 const open = async page => {
   await page.goto('/');
@@ -173,7 +174,7 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
   });
   // Solo Time Trial: rivals ahead on the grid take Coast's first rings (2.5 s respawn), so the player's first charge
   // would skip 0.5 and the group could not complete. This test is about the player's own ring rewards.
-  await page.locator('button[data-race-mode="time"]').click();
+  await clickLobbyOption(page, 'button[data-race-mode="time"]');
   await expect(page.locator('body')).toHaveAttribute('data-race-mode', 'time');
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
   // Drive the real key handlers from the page frame: host round trips miss narrow flight windows under parallel WebGL load.

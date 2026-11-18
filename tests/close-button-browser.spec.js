@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
+import { clickLobbyOption } from './helpers/home-lobby.js';
 
 // Every panel closes with the same round × (src/CloseButton.vue), named for screen readers, closed by a real tap.
 const PANELS = [
@@ -14,7 +15,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     test.use({ viewport, hasTouch: viewport.width < 600 });
     test('every panel closes with the same named round × button', async ({ gameplayPage: page }) => {
       for (const [name, opener, panel, close, label] of PANELS) {
-        await page.locator(opener).click();
+        await clickLobbyOption(page, opener); // phones keep the mode list behind the Mode dropdown
         await expect(page.locator(panel), name).toBeVisible();
         const button = page.locator(close);
         await expect(button, name).toHaveText('×');

@@ -6021,3 +6021,14 @@ Source asset manifest: `public/feature-assets/garage-store-readiness/ASSET-MANIF
 - [ ] `make dev procedural=1` shows the procedural Roadster on Home, Garage and races; switching to another car still loads its model. Default and production builds retain the GLB. Verify desktop/mobile, `make verify` and exact-commit CI before acceptance.
 - [x] RED: `node --test tests/car-catalog.test.js` requested the Roadster GLB with the preview enabled. GREEN: focused catalog and Garage model tests passed (50 tests); typecheck passed.
 - [ ] `make verify` was interrupted during unit tests; browser and World Tour gates did not run. `npm run build` and `tests/module-size.test.js` passed separately. Browser preview and exact-commit CI remain unverified.
+
+## 2026-11-18 — Dialog close flash (`feature/skyline-rush-ui-overhaul`)
+
+Repro: on Home, open What's New, tap a picture or clip, close the enlarged view. It fades out, flashes back at full opacity, then vanishes, so the dimmed home and track map blink through. History closes the same way. Expected: once faded out it stays transparent until it closes.
+
+- [x] Root cause: `dialogNavigation().close()` closes on the async `popstate` after `history.back()`, and both exit animations ran without `fill`, so the still-open dialog repainted with its normal styles in between.
+- [x] RED: `tests/dialog-exit-hold-browser.spec.js` on the old sources, 6 of 6 failed at 1440x900, 390x844 and 844x390 (`atClose: 1, flashes: 1`). `tests/dialog-exit-animation.test.js` matches `.finished` in the old `history-dialog-ui.ts` and `ReleaseMediaViewer.vue`.
+- [x] GREEN: shared `navigation.leave()` in `src/dialog-navigation.ts` holds the last frame and cancels it on `close`; the viewer and History use it. The new spec passes 6 of 6; `npm test` 3358 pass, 0 fail; `npm run typecheck` clean.
+- [x] Prevention: `.claude/rules/dialog-exit-animation.md` plus the two guards above.
+- [ ] `tests/close-button-browser.spec.js` at 390x844 fails on this branch before and after the fix: `button[data-race-mode="eventlab"]` is not visible on phones. Not caused by this change; needs its own fix.
+- [ ] Not yet done: full `make verify`, a real iPhone (Safari and Home Screen app) in both orientations, exact-HEAD `quality-gate`.

@@ -66,14 +66,17 @@ for (const viewport of [
         const slot = document.querySelector('#result-rewards');
         const b = reward.getBoundingClientRect();
         const s = slot.getBoundingClientRect();
+        const content = document.querySelector('.overlay-content');
         return {
           // Relative only anchors the short-landscape details panel; never fixed/absolute.
           inline: reward.parentElement === slot && ['static', 'relative'].includes(getComputedStyle(reward).position),
           withinSlot: b.left >= s.left - 1 && b.right <= s.right + 1,
+          // The phone action dock stays inside the results column: a negative inline margin widened it (i18n audit `.overlay-content 366>358`).
+          columnFits: content.scrollWidth <= content.clientWidth,
         };
       });
       await expect.poll(geometry, { timeout: ciTimeout(4000) }).toEqual({
-        inline: true, withinSlot: true,
+        inline: true, withinSlot: true, columnFits: true,
       });
       // The result entrance may slide the entire summary. The reward must retain
       // its relative position, rather than reanchoring after the transform ends.
