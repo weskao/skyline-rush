@@ -1,3 +1,12 @@
+# Rival supercar fleet
+
+- [x] Give the seven AI cars distinct bodywork and seed a fresh chassis and livery assignment for ordinary races, with stable assignments through Cup heats, retries and recovery.
+- [x] Observed RED for the missing lineup, sculpted bodies, wheel-spoke variants and persistent Cup appearance. The fleet, contact envelope, Cup and rival NITRO/BOOST unit tests pass after the change.
+- [x] Verified 72 focused tests after review, including in-place Elimination, the Low rival triangle budget and BOOST/NITRO cue dimensions under contact fitting.
+- [x] Captured the seven chassis in Chromium WebGL and the full field from the Canyon chase camera in a staged race.
+- [ ] Complete full local verification and physical phone checks.
+- [ ] Confirm the feature branch exact-commit GitHub quality gate.
+
 # Garage drift trails
 
 - [x] Add five visual drift trails beside the original rubber. The existing account-scoped trial separates preview and equip.

@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { makeCar, CAR_STYLES } from '../src/car-model.js';
 
-// Recorded from the unmerged models: merging may change how parts are drawn, never what is drawn.
+// Pin the exact legacy silhouettes and the three revised lofts, including their 512 new body triangles.
 const SHAPES = {
   roadster: { triangles: [3500, 8000], box: [-1.3, 0, -2.8, 1.3, 1.6, 2.8] },
-  nova: { triangles: 966, box: [-1.25, 0.02, -2.53, 1.25, 1.36, 2.73] },
-  orbit: { triangles: 1194, box: [-1.25, 0.02, -2.385, 1.25, 1.6225, 2.285] },
-  apex: { triangles: 1038, box: [-1.1925, 0.02, -2.67, 1.1925, 1.73, 2.31] },
+  nova: { triangles: 1478, box: [-1.25, 0.02, -2.53, 1.25, 1.36, 2.73] },
+  orbit: { triangles: 1706, box: [-1.25, 0.02, -2.385, 1.25, 1.6225, 2.285] },
+  apex: { triangles: 1550, box: [-1.1925, 0.02, -2.67, 1.1925, 1.73, 2.31] },
   commuter: { triangles: 978, box: [-1.25, 0.02, -2.38, 1.25, 1.6225, 2.28] },
 };
 

@@ -37,7 +37,7 @@ import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { f
 import { createCourseRaceScene } from './course-race-scene.ts'; import { graphOrigin, graphCarVisual, graphLookAhead, graphFinishVisual } from './course-render-pose.ts'; import { courseItemFrame, courseItemPoint } from './course-items.ts'; import { isCourseRuntime } from './course-runtimes.ts';
 import { FROSTBITE_ID, FROSTBITE_SPAN, frostbiteObjectSpan, frostbiteSpanLift } from './courses/frostbite-race.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
-import { instances, material, block, CAR_STYLES, RIVAL_CAR_STYLES, makeCar, stepWing, isCircuitFinisher } from './car-model.js';
+import { instances, material, block, CAR_STYLES, makeCar, stepWing, isCircuitFinisher } from './car-model.js';
 import { createTrafficFleet } from './traffic-fleet.ts';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
@@ -57,7 +57,7 @@ import { createWorldTourScene } from './world-tour-scene.js';
 import { RACE_TRACKS, TRICK_ROLL_TIME, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { createRampPool, drawRamps } from './ramp-view.ts'; import { createHazardRenderer } from './hazard-render.ts';
 import { createWorldGarageModel } from './garage-model.ts';
-import { createGhostPhase } from './grace-fade.ts'; import { attachRivalDriveVfx } from './rival-drive-vfx.ts';
+import { createGhostPhase } from './grace-fade.ts'; import { createRivalFleet } from './rival-fleet.js';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 /** @typedef {import('./game-types.js').TrackConfig} TrackConfig */
 const box = new THREE.BoxGeometry(1, 1, 1);
@@ -217,7 +217,7 @@ export function createWorld(canvas) {
   applyCarReflections(player, carEnvironment);
   const ghostPhase = createGhostPhase(player); // before aero VFX attach to it
   const rearLight = player.userData.rearLight;
-  const rivals = RIVAL_CAR_STYLES.map(style => { const car = makeCar(style); applyCarReflections(car, carEnvironment); attachRivalDriveVfx(car); scene.add(car); return car; }); // NITRO/BOOST cues (rival-drive-vfx.ts)
+  const fleet = createRivalFleet(scene, carEnvironment), rivals = fleet.cars;
   const flightVehicles = [player, ...rivals];
   // ×2 covers the double-traffic daily modifier. Instanced (traffic-fleet.ts): `traffic` holds poses, not meshes.
   const trafficFleet = createTrafficFleet(scene, Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2)))), traffic = trafficFleet.cars;
@@ -464,6 +464,7 @@ export function createWorld(canvas) {
       mesh.rotation.x = THREE.MathUtils.damp(mesh.rotation.x, car.thrusting ? -0.06 : Math.min(0.08, -(pose.verticalSpeed || 0) * 0.006), 7, dt);
     }
     if (!mesh.userData.jets) return; // a traffic pose: its instanced car has no moving parts
+    if (mesh.userData.rivalFitOffset) mesh.translateZ(mesh.userData.rivalFitOffset);
     mesh.userData.jets.visible = !!car.thrusting;
     mesh.userData.brakeLight.color.copy(mesh.userData.lightColor).multiplyScalar(Math.max(car.braking ? 2.3 : 1, mesh.userData.driveCue?.update(car, visual, motionPreference.matches || visual.comfortable, time, distance) ?? 1)); // rivals only carry driveCue
     const { wing } = mesh.userData;
@@ -548,6 +549,7 @@ export function createWorld(canvas) {
       const alpha = race.phase === 'racing' ? motion?.alpha ?? 1 : 1, visualCar = poseFor(player, car, motion?.previous?.player, alpha);
       const reducedMotion = motionPreference.matches || visual.comfortable;
       const motionDt = preview || race.phase === 'racing' || race.phase === 'countdown' ? dt : 0;
+      if (fleet.sync(race, visual.quality)) flightVehicles.splice(1, rivals.length, ...rivals);
       if (lastRace !== race) { effects.reset(); aero.reset(); sprintVisual.reset(); rearLight.reset(); lastRace = race; initialized = false; carBank = 0; for (const mesh of [player, ...rivals, ...traffic]) mesh.userData.driftYaw = 0; }
       if (trackId !== race.trackId) {
         sprintVisual.reset();
@@ -906,12 +908,10 @@ export function createWorld(canvas) {
     inspectRenderLoad() { return {drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,carTriangles:drawnTriangles(player,camera),textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries}; },
     inspectPrograms() { return renderer.info.programs.length; }, // QA only: shader programs compiled so far
     inspectShowcase() {
-      // Read-only projection for browser QA: verify the player and all three
-      // rivals stay within the real camera on curving/elevated preview roads.
+      // Read-only projection for browser QA of cars on curving and elevated roads.
       camera.updateMatrixWorld(true);
       return [player,...rivals].map((mesh,i)=>{
         const projected=mesh.getWorldPosition(new THREE.Vector3()).project(camera);
-        // The axle span collapses edge-on; measure the actual body silhouette.
         const body=mesh.userData.body,vertices=body.geometry.attributes.position;
         const point=new THREE.Vector3();
         let minX=Infinity,maxX=-Infinity;

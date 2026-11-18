@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { carShell, canopy } from './geometry.ts';
+import { rivalShell } from './rival-body.js';
 
 // Fictional race silhouettes; intentionally no manufacturer badges or fixed logos.
 // Player liveries / future collectible emblems are separate from these body meshes.
@@ -26,10 +27,10 @@ export const EXTRA_RACE_STYLES = {
   // VEGA: broad rear-hunched torque coupe, stacked vertical headlights and rear vents.
   vega: {
     color: '#9c80db', glass: '#1b1833', light: [1.7, .5, 3.4],
-    body: carShell([
+    body: rivalShell([
       [-2.38,.76,.41,.61],[-1.88,1.06,.39,.78],[-1.24,1.14,.39,.91],
       [.54,1.17,.38,.94],[1.42,1.22,.4,1.05],[2.42,1.03,.49,.9],
-    ]),
+    ], .17),
     cabin: canopy(.79,-.87,.92,1.18,.96,.56,-.16,.51,1.38),
     trim(group, m) {
       pair(group,m.white,.87,.67,-2.35,.13,.22,.06,'vega front signature');
@@ -46,10 +47,10 @@ export const EXTRA_RACE_STYLES = {
   pulse: {
     chassisLength: 4.0,
     color: '#37b6c1', glass: '#13353f', light: [.25,3.0,2.4],
-    body: carShell([
+    body: rivalShell([
       [-2.10,.83,.47,.71],[-1.70,1.08,.44,.83],[-1.12,1.10,.44,.98],
       [.55,1.09,.44,1.02],[1.32,1.11,.46,.98],[2.08,.92,.53,.87],
-    ]),
+    ], .19),
     cabin: canopy(.89,-.93,1.0,1.27,1.01,.68,-.34,.75,1.50),
     trim(group,m) {
       pair(group,m.white,.74,.65,-2.10,.38,.043,.055,'pulse front signature',.30);
@@ -64,10 +65,10 @@ export const EXTRA_RACE_STYLES = {
   // COMET: tiny sharp track prototype with long nose, forward-slant lamps and central fin.
   comet: {
     color: '#e8b957', glass: '#202735', light: [3.8,1.3,.08],
-    body: carShell([
+    body: rivalShell([
       [-2.52,.62,.37,.53],[-2.02,.93,.36,.70],[-1.25,1.08,.36,.91],
       [.58,1.03,.36,.92],[1.25,1.13,.38,.95],[2.26,.86,.45,.71],
-    ]),
+    ], .11),
     cabin: canopy(.74,-.78,.89,1.05,.91,.48,-.16,.48,1.30),
     trim(group,m) {
       pair(group,m.white,.60,.59,-2.42,.41,.037,.045,'comet front signature',-.28);
@@ -82,10 +83,10 @@ export const EXTRA_RACE_STYLES = {
   // RIFT: faceted stealth wedge, diagonal headlight cuts and separated X rear signatures.
   rift: {
     color: '#6e8c9f', glass: '#121b25', light: [3.2,.36,1.4],
-    body: carShell([
+    body: rivalShell([
       [-2.49,.84,.38,.53],[-2.07,1.03,.35,.64],[-1.37,1.18,.37,.89],
       [.50,1.16,.36,.90],[1.43,1.21,.38,.98],[2.43,1.08,.46,.76],
-    ]),
+    ], .08),
     cabin: canopy(.75,-1.02,.92,1.42,.94,.53,-.48,.54,1.39),
     trim(group,m) {
       pair(group,m.white,.82,.62,-2.38,.35,.042,.055,'rift front signature',-.30);

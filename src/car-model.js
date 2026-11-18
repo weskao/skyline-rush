@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { canopy, carShell } from './geometry.ts';
+import { rivalShell } from './rival-body.js';
 import { LIFT_PORTS } from './lift-ports.js';
 import { roadsterBody, roadsterCanopy, addRoadsterTrim, addRoadsterWheelDetail, poseRoadsterWing, stepRoadsterWing } from './roadster-fidelity.js';
 import { EXTRA_RACE_STYLES, TRAFFIC_STYLES } from './vehicle-fleet-styles.js';
@@ -48,7 +49,7 @@ export const CAR_STYLES = {
   // NOVA: long-tail hypercar, twin tail fins bridged by a blade, split magenta tail lights.
   nova: {
     color: '#fd775d', glass: '#121a24', light: [3.5, 0.06, 0.6],
-    body: carShell([[-2.5, 0.8, 0.42, 0.58], [-1.9, 1.08, 0.38, 0.8], [-1.1, 1.14, 0.4, 0.84], [0.7, 1.12, 0.4, 0.9], [1.7, 1.16, 0.42, 0.94], [2.7, 0.92, 0.5, 0.82]]),
+    body: rivalShell([[-2.5, 0.8, 0.42, 0.58], [-1.9, 1.08, 0.38, 0.8], [-1.1, 1.14, 0.4, 0.84], [0.7, 1.12, 0.4, 0.9], [1.7, 1.16, 0.42, 0.94], [2.7, 0.92, 0.5, 0.82]], .16),
     cabin: canopy(0.78, -0.8, 0.82, 1.4, 0.9, 0.55, -0.1, 0.55, 1.36),
     trim(group, m) {
       for (const side of [-1, 1]) {
@@ -63,7 +64,7 @@ export const CAR_STYLES = {
   // ORBIT: rounded GT, tall bubble canopy, ducktail lip, round cyan lamps.
   orbit: {
     color: '#b9c39a', glass: '#1d3a3a', light: [0.2, 1.8, 3.2],
-    body: carShell([[-2.35, 0.86, 0.44, 0.7], [-1.8, 1.06, 0.4, 0.88], [-1.2, 1.12, 0.42, 0.96], [0.8, 1.12, 0.42, 0.98], [1.6, 1.12, 0.46, 0.98], [2.25, 0.96, 0.54, 0.88]]),
+    body: rivalShell([[-2.35, 0.86, 0.44, 0.7], [-1.8, 1.06, 0.4, 0.88], [-1.2, 1.12, 0.42, 0.96], [0.8, 1.12, 0.42, 0.98], [1.6, 1.12, 0.46, 0.98], [2.25, 0.96, 0.54, 0.88]], .21),
     cabin: canopy(0.92, -1, 0.95, 1.5, 0.97, 0.72, -0.4, 0.8, 1.6),
     trim(group, m) {
       block(group, m.paint, 0, 1.6, 0.2, 1.43, 0.045, 1.2);
@@ -76,7 +77,7 @@ export const CAR_STYLES = {
   // APEX: track car with splitter, roof scoop, side intakes, tall endplate wing, amber C-lights.
   apex: {
     color: '#7baab6', glass: '#151c2a', light: [3.4, 1, 0.04],
-    body: carShell([[-2.45, 0.9, 0.36, 0.6], [-1.9, 1.1, 0.36, 0.8], [-1.2, 1.15, 0.38, 0.92], [0.8, 1.13, 0.38, 0.96], [1.55, 1.16, 0.42, 1], [2.25, 1.04, 0.5, 0.94]]),
+    body: rivalShell([[-2.45, 0.9, 0.36, 0.6], [-1.9, 1.1, 0.36, 0.8], [-1.2, 1.15, 0.38, 0.92], [0.8, 1.13, 0.38, 0.96], [1.55, 1.16, 0.42, 1], [2.25, 1.04, 0.5, 0.94]], .13),
     cabin: canopy(0.86, -0.9, 0.9, 1.3, 0.98, 0.58, -0.2, 0.55, 1.46),
     trim(group, m) {
       block(group, m.black, 0, 0.37, -2.52, 2, 0.04, 0.3);
@@ -164,10 +165,13 @@ function mergeStaticParts(group, style, moving, paint) {
   });
 }
 
-export function makeCar(style, color = style.color) {
+export function makeCar(style, color = style.color, rival = false) {
   const group = new THREE.Group();
   const detailed = !!style.detailed;
-  const paint = detailed
+  const paint = rival
+    ? new THREE.MeshPhysicalMaterial({ color, metalness: 0.32, roughness: 0.36,
+      clearcoat: 0.39, clearcoatRoughness: 0.3 })
+    : detailed
     ? new THREE.MeshPhysicalMaterial({ color, metalness: 0.13, roughness: 0.19,
       clearcoat: 0.88, clearcoatRoughness: 0.10, envMapIntensity: 1.4 })
     : material(color, 0.55, 0.25);

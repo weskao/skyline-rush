@@ -1,10 +1,12 @@
 import { raceTrack } from './race-tracks.ts';
+import { randomVisualSeed, streamSeed } from './rng.ts';
 import { RACE_DRIVER_IDS, reversedGrid } from './race-grid.ts';
 import type { DemoOperationScope } from './wave3-experience-contract.ts';
 
 export interface CupHeat { track: string; time: number; order: string[]; times: Record<string, number> }
 export interface CupState {
   tracks: string[]; results: CupHeat[];
+  rivalVisualSeed?: number;
   demoScope?: Pick<DemoOperationScope, 'accountId' | 'generation'> | null;
 }
 interface CupRace {
@@ -24,7 +26,14 @@ export function createCup(unlocked: string[], startingTrack: string, count: numb
     unlocked.some(id => !raceTrack(id)) || ![3, 5].includes(count) ||
     unlocked.length < count || !unlocked.includes(startingTrack)) throw new RangeError('Cup requires unlocked courses');
   const start = unlocked.indexOf(startingTrack);
-  return { tracks: Array.from({ length: count }, (_, i) => unlocked[(start + i) % unlocked.length]), results: [] };
+  return { tracks: Array.from({ length: count }, (_, i) => unlocked[(start + i) % unlocked.length]), results: [], rivalVisualSeed: randomVisualSeed() };
+}
+
+// Older v1 checkpoints can still recover their lineup from the original Cup itinerary.
+export function cupRivalVisualSeed(cup: CupState): number {
+  const seed = cup.rivalVisualSeed;
+  return typeof seed === 'number' && Number.isInteger(seed) && seed >= 0 && seed <= 0xffffffff
+    ? seed : streamSeed(0, cup.tracks.join('/'));
 }
 
 function roster(cup: CupState): readonly string[] {

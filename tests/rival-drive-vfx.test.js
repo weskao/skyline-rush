@@ -109,8 +109,22 @@ test('update draws BOOST with the same flame sprite, smaller and dimmer, near th
   assert.equal(driveCue.flame.material.opacity, nitroOpacity, 'NITRO gets its own look back');
 });
 
+test('the BOOST flame and NITRO trail keep their world-space dimensions after contact fitting', () => {
+  const car = makeCar(RIVAL_CAR_STYLES[0]);
+  attachRivalDriveVfx(car);
+  const { driveCue } = car.userData, visual = { enabled: true, quality: 'high' };
+  driveCue.update(NITRO, visual, true, 2);
+  const length = driveCue.trail.scale.z, width = driveCue.flame.scale.x;
+  car.scale.set(0.93, 1, 1.2);
+  driveCue.update(NITRO, visual, true, 2);
+  assert.ok(Math.abs(driveCue.trail.scale.z * car.scale.z - length) < 1e-9);
+  assert.ok(Math.abs(driveCue.flame.scale.x * car.scale.x - width) < 1e-9);
+});
+
 test('world.js gives rivals (only) the drive cue and feeds its gain to the tail light', () => {
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
-  assert.ok(/RIVAL_CAR_STYLES\.map\([^\n]*attachRivalDriveVfx\(car\)/.test(world), "rivals get attachRivalDriveVfx");
+  const fleet = readFileSync(new URL('../src/rival-fleet.js', import.meta.url), 'utf8');
+  assert.match(world, /createRivalFleet\(scene, carEnvironment\)/);
+  assert.match(fleet, /RIVAL_CAR_STYLES\.map\([\s\S]*?attachRivalDriveVfx\(car\)/);
   assert.ok(/brakeLight\.color[^\n]*driveCue\?\.update\(car, visual, [^\n]*, time, distance\)/.test(world), "updateCar feeds the player's distance and takes the tail-light gain");
 });

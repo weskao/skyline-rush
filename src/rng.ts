@@ -15,6 +15,7 @@ const hash = (text: string): number => [...text].reduce((h, char) => Math.imul(h
 
 export const streamSeed = (seed: number, streamName: string): number => (seed ^ hash(streamName)) >>> 0;
 export const seededRng = (seed: number, streamName: string): (() => number) => mulberry32(streamSeed(seed, streamName));
+export const randomVisualSeed = (): number => globalThis.crypto.getRandomValues(new Uint32Array(1))[0]!;
 
 // Stable stream names: never silently rename them or old generated courses change.
 // Adding or consuming a separate stream cannot change pickups and rings.
