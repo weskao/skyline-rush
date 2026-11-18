@@ -466,3 +466,62 @@ test('the equipped car is restored on a clean device, and a device that picked i
   await expect(own.locator('#garage-screen [data-car="roadster"]')).toHaveAttribute('aria-pressed', 'true');
   await own.close();
 });
+
+test('Wave 3 restores race rewards, claims and redemptions from Firestore in a fresh browser', async ({ browser, page }) => {
+  const open = async (tab, existing = false, email = 'wave3-preview@example.test') => {
+    await tab.context().route(liveApis, route => route.abort());
+    await tab.addInitScript(disableWebGL);
+    await tab.goto('/?firebase-emulator=1');
+    await tab.locator('#cloud-open').click();
+    await mockGoogleSignIn(tab, { existing, email });
+    await expect(tab.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
+  };
+  const balances = async (tab, expected) => {
+    for (const [index, currency] of ['demo-points', 'coins', 'diamonds'].entries()) {
+      await expect(tab.locator(`.home-resource-strip [data-currency="${currency}"] strong`)).toHaveText(String(expected[index]));
+    }
+  };
+  const settle = (tab, id) => tab.evaluate(async id => {
+    const { createWave3RaceEventBridge, wave3DemoExperience } = await import('/src/wave3-race-events.ts');
+    const bridge = createWave3RaceEventBridge(wave3DemoExperience, () => id);
+    return (await bridge.finish({
+      phase: 'finished', trackId: 'coast', mode: 'classic', elapsed: 70, length: 5000,
+      config: { difficulty: 'normal' }, rivals: Array(7).fill({}),
+      player: { driftPayout: null, longestCombo: 0 }, result: { success: true, time: 70, position: 1 },
+    }, false)).status;
+  }, id);
+
+  await open(page);
+  await balances(page, [20, 0, 0]);
+  for (let race = 1; race <= 5; race += 1) expect(await settle(page, 'cloud-preview-race-' + race)).toBe('completed');
+  const statuses = await page.evaluate(async () => {
+    const { wave3DemoExperience: wallet } = await import('/src/wave3-race-events.ts');
+    return [
+      (await wallet.claimMission('mission-race:daily')).status,
+      (await wallet.claimMission('mission-race:weekly')).status,
+      (await wallet.redeemPreview('thruster-ion')).status,
+    ];
+  });
+  expect(statuses).toEqual(['completed', 'completed', 'completed']);
+  await balances(page, [155, 350, 5]);
+
+  const fresh = await browser.newPage();
+  try {
+    await open(fresh, true);
+    await balances(fresh, [155, 350, 5]);
+    expect(await settle(fresh, 'cloud-preview-race-5')).toBe('duplicate');
+    const paired = await Promise.all([settle(page, 'cloud-preview-shared-race'), settle(fresh, 'cloud-preview-shared-race')]);
+    expect(paired.sort()).toEqual(['completed', 'duplicate']);
+    await balances(fresh, [183, 406, 5]);
+    // Account B has no access to account A's preview save.
+    const other = await browser.newPage();
+    try {
+      await open(other, false, 'wave3-other@example.test');
+      await balances(other, [20, 0, 0]);
+    } finally {
+      await other.close();
+    }
+  } finally {
+    await fresh.close();
+  }
+});

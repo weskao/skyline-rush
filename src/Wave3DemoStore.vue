@@ -90,7 +90,6 @@ function feedback(status: DemoRedeemState | Wave3Status): string {
     case 'insufficient-demo-diamonds': return tr('Not enough demo diamonds. Claim the weekly race mission.', '試玩鑽石不足，請領取每週競速任務。');
     case 'duplicate': return tr('Already demo unlocked. Your balances are unchanged.', '已試玩取得，餘額未變更。');
     case 'expired': return tr('Confirmation expired. Review the current price and try again.', '確認已過期，請查看目前售價後重新兌換。');
-    case 'unavailable': return tr('Only local demo redemption is available.', '僅支援本機試玩兌換。');
     case 'preview-only': return tr('This item can only be previewed.', '此項目僅供預覽。');
     default: return tr('Demo redemption is unavailable.', '目前無法進行試玩兌換。');
   }

@@ -15,6 +15,14 @@ npm run build
 
 `test:cloud` starts local Firebase Auth and Firestore emulators. Its Google account form uses mock identities and does not touch production data. The browser tests cover map recovery after clearing site data, account switching, export and delete, reconnect, and concurrent devices. Firestore rules tests cover owner-only reads, writes and deletion.
 
+## Wave 3 Firestore preview
+
+Set `VITE_WAVE3_FIRESTORE_PREVIEW=1` when running or building the Garage `trial` mode to sync signed-in Wave 3 progress. `npm run test:cloud` enables both the preview and the local Firebase emulators. To try it manually against the emulators, run `VITE_WAVE3_FIRESTORE_PREVIEW=1 make dev` and sign in with a test identity. For a hosted trial, build with `GARAGE_VFX_RELEASE_MODE=trial VITE_WAVE3_FIRESTORE_PREVIEW=1 npm run build` and use the matching Firestore rules on the configured project.
+
+- `wave3PreviewEconomy/{uid}` stores the versioned trial checkpoint for that Firebase account. The checkpoint includes points, coins, diamonds, mission claims, trial cosmetics and recent race completion IDs. Firestore transactions handle concurrent writes and the client's existing replay checks prevent duplicate rewards.
+- Guests and trial builds without the flag use the existing device save. Signed-in Firestore previews start their own checkpoint; an existing device save is not imported. A failed Firestore write leaves the last confirmed preview balance unchanged. Progress remains browser-calculated and disposable. The normal Cloud Save records stay separate.
+- To retire the preview, turn off the flag and remove the Firestore rule that allows clients to write `wave3PreviewEconomy`. Then delete the `wave3PreviewEconomy` collection from the intended Firebase project. This collection holds the entire trial checkpoint and has no subcollections. `saves`, `modeBests` and `accounts` are regular Cloud Save data.
+
 ## Account data and safe progress restore
 
 - Google login caches only `displayName` and `email` in `accounts/{uid}`, reading existing fields to avoid duplicate writes. Empty/invalid Google values do not wipe previously saved valid values. This uses the existing Spark database.

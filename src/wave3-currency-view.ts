@@ -37,7 +37,7 @@ export function projectWave3Currency(
   const amount = local && typeof points === 'number' && Number.isSafeInteger(points) && points >= 0 ? points : null;
   const empty = snapshot == null || (local && points == null);
   const invalid = amount === null && !empty;
-  const note = zh ? '本機試玩 · 可重設' : 'Local demo · Resettable';
+  const note = zh ? '試玩 · 可重設' : 'Demo · Resettable';
   const resource = (id: 'coins' | 'diamonds', en: string, tw: string): Wave3CurrencyRow => {
     const total = local ? snapshot.demoEconomy?.[id] : undefined;
     if (typeof total === 'number' && Number.isSafeInteger(total) && total >= 0) {

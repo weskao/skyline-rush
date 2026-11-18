@@ -15,6 +15,7 @@ export default defineConfig({
   },
   webServer: {
     command: 'npm run dev -- --port 5187 --strictPort',
+    env: { VITE_WAVE3_FIRESTORE_PREVIEW: '1' },
     url: 'http://127.0.0.1:5187',
     reuseExistingServer: false,
   },

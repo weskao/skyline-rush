@@ -129,6 +129,18 @@ service cloud.firestore {
         && request.resource.data.stunts.size() <= 200;
     }
 
+    // Disposable trial progress. This collection grants no production entitlement.
+    match /wave3PreviewEconomy/{uid} {
+      allow get, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['version', 'checkpoint'])
+        && request.resource.data.keys().hasAll(['version', 'checkpoint'])
+        && request.resource.data.version == 1
+        && request.resource.data.checkpoint is string
+        && request.resource.data.checkpoint.size() > 0
+        && request.resource.data.checkpoint.size() <= 65536;
+    }
+
     match /saves/{uid} {
       allow get, delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid
