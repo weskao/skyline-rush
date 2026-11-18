@@ -26,6 +26,14 @@ const TOUCH_CHOICES = {
           <section class="controls-section" role="group" aria-labelledby="controls-steering-title">
             <h3 id="controls-steering-title" data-i18n="controls.mode"></h3>
             <fieldset v-for="([legend, options], key) in STEERING_CHOICES" class="controls-field"><legend :data-i18n="`controls.${key === 'mode' ? 'steeringMethod' : key}`">{{ legend }}</legend><label v-for="[value, label] in options" class="controls-choice"><input type="radio" :name="`controls-${key}`" :data-controls="key" :value="value"><span :data-i18n="`controls.${key}.${value}`">{{ label }}</span></label></fieldset>
+            <fieldset id="controls-brake-pull" class="controls-field" aria-describedby="controls-brake-note">
+              <legend data-i18n="controls.brakePull">Pull to brake</legend>
+              <label v-for="[value, label] in [['light', 'Light'], ['balanced', 'Balanced'], ['firm', 'Firm']]" :key="value" class="controls-choice">
+                <input type="radio" name="controls-brake-pull" data-controls="brakePull" :value="value">
+                <span :data-i18n="`controls.brakePull.${value}`">{{ label }}</span>
+              </label>
+              <p id="controls-brake-note" class="controls-note" data-i18n="controls.brakePull.note">Pull down to brake. Firm needs a longer pull.</p>
+            </fieldset>
             <label class="controls-field controls-range"><span data-i18n="controls.sensitivity">Steering sensitivity</span> <output for="controls-sensitivity"></output><input id="controls-sensitivity" aria-label="Steering sensitivity" data-i18n-aria-label="controls.sensitivity" type="range" data-controls="sensitivity" min="0.4" max="1" step="0.1"></label>
             <p id="tilt-status" role="status" class="controls-note" data-i18n="controls.tiltNote">Tilt asks permission only when selected. Hold your phone comfortably to set neutral.</p>
             <button id="tilt-enable" class="controls-reset" data-i18n="controls.tiltEnable" hidden>Enable / recenter tilt</button>
@@ -46,5 +54,7 @@ const TOUCH_CHOICES = {
 <style scoped>
 .controls-section { display: grid; gap: 2px; padding-block: 6px; border-top: 1px solid rgb(195 224 244 / .2); }
 .controls-section h3 { margin: 3px 6px; color: #a3e8fb; font-size: 12px; }
+#controls-brake-pull { flex-wrap: wrap; }
+#controls-brake-note { flex-basis: 100%; margin: 0; }
 #layout-edit { background: #19384c; color: #d9f5ff; font-weight: 700; }
 </style>

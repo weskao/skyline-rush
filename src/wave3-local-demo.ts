@@ -32,16 +32,19 @@ export const newDemoGeneration = () => globalThis.crypto?.randomUUID?.() ??
 
 export function createWave3LocalDemo(options: {
   now?: () => number;
+  initialScope?: DemoOperationScope;
   applyEquipment?: (itemId: string, accountId: string) => boolean;
 } = {}) {
   const now = options.now ?? Date.now;
   const listeners = new Set<(value: ExperienceSnapshot) => void>();
-  let accountId = 'guest', demoPoints = DEMO_START_POINTS, equippedPreview: string | null = null;
+  let accountId = options.initialScope?.accountId ?? 'guest';
+  let demoPoints = DEMO_START_POINTS, equippedPreview: string | null = null;
   let coins = 0, diamonds = 0, firstFinishes = new Set<string>();
   let seenEvents = new Set<string>(), settled = new Set<string>(), redeemed = new Set<string>();
   let missionTime = now();
   let period = createMissionPeriodState(accountId, missionTime);
-  let generation = 'legacy', session = 0;
+  let generation = options.initialScope?.generation ?? 'legacy';
+  let session = options.initialScope?.session ?? 0;
   const scope = (): DemoOperationScope => ({ accountId, generation, session });
   const blankMissions = () => Object.fromEntries(Object.entries(GOALS).map(([id, goal]) =>
     [id, { progress: 0, goal, claimed: false, rewardDemoPoints: DEMO_MISSION_CLAIM_REWARD }]));

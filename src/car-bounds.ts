@@ -14,8 +14,11 @@ export function createCarBounds(probe: THREE.PerspectiveCamera, camera: THREE.Pe
     probe.lookAt(look);
     probe.updateProjectionMatrix();
     probe.updateMatrixWorld(true);
-    player.updateMatrixWorld(true);
-    if (measure) { box.makeEmpty(); for (const part of player.children) if (part !== airflow()) box.expandByObject(part, true); } // model only: airflow VFX spans metres
+    if (measure) {
+      player.updateMatrixWorld(true);
+      box.makeEmpty();
+      for (const part of player.children) if (part !== airflow()) box.expandByObject(part, true);
+    }
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const x of [box.min.x, box.max.x])
       for (const y of [box.min.y, box.max.y])
@@ -26,6 +29,6 @@ export function createCarBounds(probe: THREE.PerspectiveCamera, camera: THREE.Pe
         }
     return { minX, maxX, minY, maxY };
   }
-  // `corner` is shared scratch: the obstruction search in world.js projects landmark corners through the same probe.
+  // The framing search also projects landmark vertices through this probe.
   return { projectedCarBounds, carCorner: corner };
 }

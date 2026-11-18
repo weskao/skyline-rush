@@ -27,6 +27,8 @@ landmarks · `src/world.js` lighting · `src/route-map.js` + `src/style.css` rou
   the edges. Alpine railroad bore: dark, enclosed, rare amber service lamps.
 - Landmarks: recognizable skyline silhouettes from original geometry, with low/high quality and
   reduced-motion variants.
+  When moving a landmark across the road or changing its approach, recheck the facade's
+  model-space front against the incoming road sightline. A side flip also changes the base yaw.
 
 ## Solid props
 
