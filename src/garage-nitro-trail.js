@@ -21,7 +21,7 @@ const STREAK_FRAGMENT = `varying vec2 vUv;varying float vFacing;uniform float ti
   void main(){float u=clamp(vUv.y,0.,1.);float a=clamp(vUv.x,0.,1.);float f=clamp(vFacing,0.,1.);
     float core=pow(max(0.,f),3.);float edge=pow(max(0.,f),1.2); // bright down the jet's axis, soft at its rim
     float nozzle=exp(-u*9.);float tail=pow(max(0.,1.-u),1.65);
-    float glint=pow(hash(floor(vec2(a*14.,u*32.))),24.)*edge*.12;
+    float glint=pow(max(0.,hash(floor(vec2(a*14.,u*32.)))),24.)*edge*.12;
     float body=edge*.15+core;vec3 tint=color;
     if(style>.5&&style<1.5){body=core*1.05+edge*.12;glint*=.45;} // steady cyan filament
     if(style>1.5&&style<2.5){float band=exp(-abs(fract(u*3.-time*1.35)-.5)*7.);
@@ -37,8 +37,9 @@ const STREAK_FRAGMENT = `varying vec2 vUv;varying float vFacing;uniform float ti
     gl_FragColor=vec4(light,clamp((body*tail+nozzle*.42*edge+glint)*power,0.,.76));}`;
 const POOL_VERTEX = 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}';
 const POOL_FRAGMENT = `varying vec2 vUv;uniform float power;uniform vec3 color;
-  void main(){vec2 q=clamp(vUv,0.,1.)*2.-1.;float u=1.-clamp(vUv.y,0.,1.);
-    float glow=exp(-q.x*q.x*4.)*exp(-u*2.4)*(1.-smoothstep(.65,1.,u));
+  void main(){vec2 q=clamp(vUv,0.,1.)*2.-1.;float u=clamp(1.-vUv.y,0.,1.);
+    float across=clamp(q.x*q.x,0.,1.);
+    float glow=exp(-across*4.)*exp(-u*2.4)*(1.-smoothstep(.65,1.,u));
     gl_FragColor=vec4(color*.78,glow*power*.13);}`;
 
 function plumeTube() { // open round tube, unit radius, mouth at z=0 and tail at z=1 (uv.x around, uv.y along)
