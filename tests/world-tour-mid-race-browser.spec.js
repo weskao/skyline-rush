@@ -1,10 +1,8 @@
 import { test, expect } from './helpers/test.js';
-const tracks={
-  taipei:[3120,3450,6200],tokyo:[5050,5450,6800],
-  alpine:[3850,4200,7600],coastal:[2950,3310,5800],
-  cosmic:[6100,6540,8000],
-};
-for(const [id,[from,to,length]] of Object.entries(tracks)){
+import { RACE_TRACKS } from '../src/race-tracks.ts';
+for(const id of ['taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']){
+  const {length, sections} = RACE_TRACKS[id];
+  const {from, to} = sections.find(s => s.type === 'boost-tunnel');
   test(`${id}: three-dimensional driving world remains live before, during, and after the tunnel`,async({page},info)=>{
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     await page.goto('/tests/fixtures/world-tour-mid-race.html');
@@ -30,3 +28,19 @@ for(const [id,[from,to,length]] of Object.entries(tracks)){
     await page.screenshot({path:info.outputPath(`world-tour-${id}-mid-race.png`),animations:'disabled'});
   });
 }
+
+test('all seven reprofiled roads render at the sprint finish and beyond it in streaming modes', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/tests/fixtures/world-tour-mid-race.html');
+  await page.waitForFunction(() => window.worldTourReady === true);
+  for (const id of ['aurora', 'spiral', 'taipei', 'tokyo', 'alpine', 'coastal', 'cosmic']) {
+    const { length } = RACE_TRACKS[id];
+    for (const [mode, distance] of [['classic', length - 30], ['endless', length + 250], ['elimination', 2 * length + 250]]) {
+      expect(await page.evaluate(([id, distance, mode]) => window.worldTourProbe(id, distance, mode),
+        [id, distance, mode])).toEqual({ id, distance });
+    }
+  }
+  expect(await page.evaluate(() => window.worldTourPrograms())).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});

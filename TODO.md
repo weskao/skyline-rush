@@ -730,6 +730,13 @@ Design: `docs/superpowers/specs/2026-11-13-drift-balance-design.md`. One table: 
 - [x] Show the credited amount and roll the local balance from its previous value after the results panel appears. Respect reduced motion and the player's VFX settings.
 - [ ] Verify the final branch commit's full GitHub Actions quality gate and review the reveal on a physical phone.
 
+# 2026-11-18 — Measured Three.js routes for tracks 4–10
+
+- [x] RED reproduced the old finish distances on all seven tracks. GREEN measures each Three.js centreline at 10 km and checks the reference elevations and headings, the finite-mode finish, and repeated profile seams in Endless and Elimination.
+- [x] Align the road, section cues, minimaps, checkpoints and World Tour landmarks with the revised course. Retain the three Sky Spiral jumps in finite modes and solid decks in streaming modes.
+- [x] Version timed records, daily routes and streaming records when their layouts change. Retain legacy bests and ghosts. Replay fixture changes are limited to the reprofiled tracks.
+- [ ] Complete the exact-commit CI quality gate and physical-phone review.
+
 # 2026-11-13 — Classic track corners
 
 - [x] Author distinct Coast, Neon Downtown, Canyon Skyway and Aurora Pass corner sequences, preserving their shortcuts, tunnels, gaps and ice.

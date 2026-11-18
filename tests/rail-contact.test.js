@@ -8,7 +8,7 @@ test('all tracks treat a sustained rail press as one contact until the car leave
     race.phase = 'racing';
     race.traffic = [];
     race.rivals = [];
-    Object.assign(race.player, { distance: id === 'spiral' ? 1500 : 800, x: ROAD_LIMIT, speed: 75, steering: 1 });
+    Object.assign(race.player, { distance: id === 'spiral' ? 1500 : id === 'aurora' ? 550 : 800, x: ROAD_LIMIT, speed: 75, steering: 1 });
     stepRace(race, { throttle: true, steer: 1 }, 1 / 60);
     assert.equal(race.player.collisions, 1, `${id} initial impact`);
     for (let frame = 0; frame < 180; frame++) {

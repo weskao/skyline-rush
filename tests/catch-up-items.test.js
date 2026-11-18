@@ -28,7 +28,7 @@ function trail(race, gap, seconds, from = 400) {
 const sorted = items => items.every((item, i) => !i || items[i - 1].distance <= item.distance);
 
 test('a Classic player 300 m behind gets extra rings, added beyond the 900 m draw range', () => {
-  const race = racing('tokyo'), spawned = trail(race, 300, 60);
+  const race = racing('tokyo'), spawned = trail(race, 300, race.length / 60);
   assert.ok(spawned.length >= 5, `spawned ${spawned.length}`);
   assert.ok(spawned.length <= catchUp.catchUpSettings(race.length).maxItems);
   assert.ok(spawned.every(([item]) => item.type && item.altitude === ROW_ALTITUDE), 'all catch-up items are rings at the row altitude');
@@ -42,7 +42,7 @@ test('a Classic player 300 m behind gets extra rings, added beyond the 900 m dra
 
 test('NITRO is the majority of catch-up rings across five Classic tracks', () => {
   const spawned = ['tokyo', 'coast', 'neon', 'canyon', 'alpine']
-    .flatMap(id => trail(racing(id), 300, 90).map(([item]) => item));
+    .flatMap(id => { const race = racing(id); return trail(race, 300, race.length / 60).map(([item]) => item); });
   assert.ok(spawned.length >= 30, `spawned ${spawned.length}`);
   const nitro = spawned.filter(item => item.type === 'nitro').length;
   const charge = spawned.filter(item => item.type === 'charge').length;
@@ -114,8 +114,8 @@ test('stepRace runs the spawner: a Classic player held far behind finds catch-up
 test('catch-up tuning derives limits, timing and distance thresholds from total course length', () => {
   assert.equal(typeof catchUp.catchUpSettings, 'function', 'length-aware tuning must be exposed by shared catch-up code');
   const short = catchUp.catchUpSettings(racing('coast').length); // Coast, 5 km: Neon was the short track until its lap grew to 10 km (2026-11-15)
-  const reference = catchUp.catchUpSettings(racing('canyon').length);
-  const long = catchUp.catchUpSettings(racing('cosmic').length);
+  const reference = catchUp.catchUpSettings(6000); // reference length stays fixed after Canyon's route redesign
+  const long = catchUp.catchUpSettings(racing('canyon').length);
   const future = catchUp.catchUpSettings(12000);
   assert.equal(reference.maxItems, CATCH_UP.maxItems, '6 km reference track keeps 12-item baseline');
   assert.equal(reference.fastest, CATCH_UP.fastest);

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createSkyScene } from '../src/sky-scene.js';
 import { createWorldTourScene, endlessRoadObstacles } from '../src/world-tour-scene.js';
+import { SKY_JUMPS, SKY_LENGTH, SKY_SPIRAL, skyPoint } from '../src/sky-track.ts';
 import { RACE_TRACKS } from '../src/game.js';
 
 test('Sky Spiral road buffers continue past the authored finish with bounded live GPU instances',()=>{
@@ -51,19 +52,15 @@ test('all five World Tour Endless roads generate bounded themed chunks and colli
 test('Sky Spiral Endless keeps its visible hero fixed through repeating scenery seams',()=>{
   const scene=new THREE.Scene(),sky=createSkyScene(scene);
   const root=scene.getObjectByName('Sky Spiral 3D course');
-  const visibleAhead=()=>root.children
-    .filter(node=>node.visible && node.children.some(child=>child.geometry?.type==='CylinderGeometry'))
-    .filter(node=>node.position.z < -50 && node.position.z > -1450)
-    .map(node=>node.position.clone());
+  const hero = root.children.find(node => node.children.some(child => child.geometry?.type === 'CylinderGeometry'));
   try {
-    for(const seam of [6600,8400,10200,12000,13800,15600]){
-      sky.update(seam-.25,'high',true);
-      const before=visibleAhead();
-      sky.update(seam+.25,'high',true);
-      const after=visibleAhead();
-      assert.ok(before.length>0 && after.length>0,'visible hero must not vanish around '+seam);
-      assert.ok(before.some(p=>after.some(q=>p.distanceTo(q)<5)),
-        'no visible landmark may teleport at '+seam+'m');
+    for (const lap of [0, 1, 2, 10]) {
+      const entry = lap * SKY_LENGTH + (lap % 2 ? SKY_LENGTH - SKY_SPIRAL.end : SKY_SPIRAL.start);
+      sky.update(entry - .25, 'high', true);
+      assert.ok(hero.visible);
+      const before = hero.position.clone();
+      sky.update(entry + .25, 'high', true);
+      assert.ok(hero.visible && before.distanceTo(hero.position) < .55);
     }
   }finally{sky.dispose();}
 });
@@ -78,7 +75,8 @@ test('Sky Spiral Endless hero fades smoothly at the forward visibility threshold
       sky.update(distance,'high',true);
       return hero.visible?tower.material.opacity:0;
     };
-    const before=opacity(5949.5),after=opacity(5950.5);
+    const approach = SKY_LENGTH * 2 + SKY_SPIRAL.start - 1500;
+    const before=opacity(approach - .5),after=opacity(approach + .5);
     assert.ok(before>0 && before<1,'approaching distant landmark must already be fading in');
     assert.ok(after>0 && after<1,'distant landmark must not appear at full opacity');
     assert.ok(Math.abs(after-before)<.05,'visibility across a 1m drive must be smooth');
@@ -89,13 +87,17 @@ test('Sky Spiral uses the exact sprint gap edges and rebuilds solid deck when sw
   const scene = new THREE.Scene(), sky = createSkyScene(scene);
   try {
     const road = scene.getObjectByName('Sky Spiral 3D course').children.find(m => m.isMesh && m.geometry?.index);
-    sky.update(3770, 'low', false);
+    const station = SKY_JUMPS[1].gapFrom, approach = station - 5;
+    sky.update(approach, 'low', false);
     const index = road.geometry.index.array, positions = road.geometry.attributes.position;
     const row = Array.from({ length: 180 }, (_, i) => i).find(i => index[i * 6] === index[i * 6 + 1]);
     assert.ok(Number.isInteger(row), 'sprint draws a real gap');
-    const z = (positions.getZ(row * 2) + positions.getZ(row * 2 + 1)) / 2;
-    assert.equal(z, -(3775 - 1100), 'takeoff lip follows the simulated gap boundary');
-    sky.update(3770, 'low', true);
+    const expected = skyPoint(station);
+    for (const [axis, value] of [['X', expected.x], ['Y', expected.y], ['Z', expected.z]]) {
+      const midpoint = (positions['get' + axis](row * 2) + positions['get' + axis](row * 2 + 1)) / 2;
+      assert.ok(Math.abs(midpoint - value) < .001, 'takeoff lip matches the simulation on ' + axis);
+    }
+    sky.update(approach, 'low', true);
     assert.ok(index[row * 6] !== index[row * 6 + 1], 'the streaming version draws a solid deck');
   } finally { sky.dispose(); }
 });

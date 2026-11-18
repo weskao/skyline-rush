@@ -4,7 +4,8 @@ import type { ClassicRoad } from './classic-road-routes.ts';
 import type { TrackConfig } from './game-types.ts';
 
 type Put = (mesh: InstancedMesh, index: number, x: number, y: number, z: number,
-  width: number, height: number, depth: number, yaw?: number) => void;
+  width: number, height: number, depth: number, yaw?: number, pitch?: number) => void;
+type RoadOrigin = readonly [x: number, z: number, y: number];
 type Section = TrackConfig['sections'][number];
 interface RoadMeshes {
   road: Mesh<BufferGeometry>; laneLines: InstancedMesh; curbs: InstancedMesh; edgeLines: InstancedMesh;
@@ -20,16 +21,19 @@ export function createClassicRoadRender(meshes: RoadMeshes, segments: number, pu
   const batch = Object.values(meshes), geometry = road.geometry, baseIndices = geometry.index!.array.slice();
   let activeRoute: ClassicRoad | undefined, activeTrack: string, activeSections: readonly Section[], activeTile: number, activeSparse: boolean;
 
-  function strip(mesh: InstancedMesh, index: number, route: ClassicRoad, origin: readonly [number, number],
+  function strip(mesh: InstancedMesh, index: number, route: ClassicRoad, origin: RoadOrigin,
     start: number, end: number, lane: number, y: number, width: number, height: number, overlap = .15) {
     const a = route.point(start, lane), b = route.point(end, lane);
     const dx = b[0] - a[0], dz = b[1] - a[1];
-    put(mesh, index, (a[0] + b[0]) / 2 - origin[0], y, (a[1] + b[1]) / 2 - origin[1],
-      width, height, Math.hypot(dx, dz) + overlap, -Math.atan2(dx, -dz));
+    const startY = route.elevation?.(start) ?? 0, endY = route.elevation?.(end) ?? 0;
+    const dy = endY - startY;
+    put(mesh, index, (a[0] + b[0]) / 2 - origin[0], y + (startY + endY) / 2 - origin[2], (a[1] + b[1]) / 2 - origin[1],
+      width, height, Math.hypot(dx, dy, dz) + overlap, -Math.atan2(dx, -dz), Math.atan2(dy, Math.hypot(dx, dz)));
   }
 
   function rebuild(route: ClassicRoad, tile: number, sections: readonly Section[], sparse: boolean, curved: boolean) {
-    const origin = route.point(tile), index = geometry.index!;
+    const origin: RoadOrigin = [...route.point(tile), route.elevation?.(tile) ?? 0];
+    const index = geometry.index!;
     const start = tile - 5 * STEP;
     const boundaries = new Map<number, number>();
     for (const section of sections) for (const distance of [section.from, section.to]) {
@@ -39,7 +43,8 @@ export function createClassicRoadRender(meshes: RoadMeshes, segments: number, pu
     for (let i = 0; i <= segments; i++) {
       const d = row(i), next = row(i + 1);
       const [x, z] = route.point(d);
-      setRoadRow(geometry, i, x - origin[0], z - origin[1], d, tile, ROAD_HALF, curved ? route.heading(d) : 0);
+      setRoadRow(geometry, i, x - origin[0], z - origin[1], d, tile, ROAD_HALF, curved ? route.heading(d) : 0,
+        (route.elevation?.(d) ?? 0) - origin[2], route.pitch?.(d) ?? 0);
       if (i === segments) break;
       const section = sections.find(s => (d + next) / 2 >= s.from && (d + next) / 2 < s.to);
       const gap = section?.type === 'gap';
@@ -68,7 +73,7 @@ export function createClassicRoadRender(meshes: RoadMeshes, segments: number, pu
         strip(railLights, at, route, origin, d, next, side * 12.1, gap ? -1000 : .68, .045, .04);
       }
     }
-    geometry.attributes.position!.needsUpdate = geometry.attributes.uv!.needsUpdate = index.needsUpdate = true;
+    geometry.attributes.position!.needsUpdate = geometry.attributes.normal!.needsUpdate = geometry.attributes.uv!.needsUpdate = index.needsUpdate = true;
     for (const mesh of [laneLines, curbs, edgeLines, railLights, shortcutDeck, surfaceMarks, tunnelRoofs, tunnelWalls]) {
       if (mesh.visible) mesh.instanceMatrix.needsUpdate = true;
     }
@@ -82,7 +87,8 @@ export function createClassicRoadRender(meshes: RoadMeshes, segments: number, pu
         activeTile = tile; activeTrack = track; activeRoute = route; activeSections = sections; activeSparse = sparse;
       }
       const [x, z] = route.point(distance), [originX, originZ] = route.point(tile);
-      for (const mesh of batch) mesh.position.set(originX - x, 0, originZ - z);
+      const y = (route.elevation?.(tile) ?? 0) - (route.elevation?.(distance) ?? 0);
+      for (const mesh of batch) mesh.position.set(originX - x, y, originZ - z);
     },
   };
 }

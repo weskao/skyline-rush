@@ -2,7 +2,7 @@
 
 [第 3～16 張空拍總覽](track-artwork-overview.webp)
 
-第 1～2 張收錄既有概念圖。第 3～16 張各有一張空拍概念圖、四張路段場景圖、俯視路線圖、縱剖面與橫剖面，共 112 張。場景圖為重繪的概念美術。第 3～10 張的本版規劃圖採用 [10 km 設計資料](route-designs.json)。六張 Phase 4–5 賽道的俯視路線和縱剖面取樣自 GitHub `57da090` 的 [現有 CourseGraph](phase-4-5-course-graphs.json)。遊戲內的路線、場景及正式 WebGL 展示圖仍需整合或擷取。
+第 1～2 張收錄既有概念圖。第 3～16 張各有一張空拍概念圖、四張路段場景圖、俯視路線圖、縱剖面與橫剖面，共 112 張。場景圖為重繪的概念美術。第 3～10 張的規劃圖與可玩的 Three.js 路線採用相同的 [10 km 設計資料](route-designs.json)。六張 Phase 4–5 賽道的俯視路線和縱剖面取樣自 GitHub `57da090` 的 [現有 CourseGraph](phase-4-5-course-graphs.json)。場景美術和正式 WebGL 展示圖依個別建置計畫驗收。
 
 ## 01 海岸公路 · Coast
 

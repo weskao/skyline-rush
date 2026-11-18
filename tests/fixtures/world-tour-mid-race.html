@@ -31,15 +31,16 @@
   const world = createWorld(document.getElementById('world'));
   world.configureVFX({ quality: 'low', enabled: true, bloom: 0 });
   let race, selected;
-  window.worldTourProbe = (id, distance) => {
+  window.worldTourProbe = (id, distance, mode = 'classic') => {
     // Reuse the SAME race and GPU renderer during the entire sweep, just as a
-    // real 5-8 km driving session does. Fresh races only on track changes.
-    if(selected!==id){
-      selected=id;
-      race=createRace(id);
+    // real driving session does. Fresh races only on track changes.
+    const selection = id + ':' + mode;
+    if (selected !== selection) {
+      selected = selection;
+      race = createRace(id, { mode });
       race.phase='racing';
     }
-    const d = Math.min(RACE_TRACKS[id].length - 30, distance);
+    const d = race.endless ? distance : Math.min(RACE_TRACKS[id].length - 30, distance);
     race.elapsed = Math.max(0, d / 90);
     Object.assign(race.player, { distance: d, speed: 72, altitude: 0, miniBoost: 0 });
     race.rivals.forEach((r, i) => { r.distance = d + i * 16 + 35; r.speed = 60 + i * 4; });
