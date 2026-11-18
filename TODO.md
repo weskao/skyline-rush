@@ -387,6 +387,25 @@ on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, 
 - [x] Showroom pulse (owner's pick over a fixed race length or a hold-to-preview button): Garage/Home plume was 0.83 m vs Preview Studio's 4.70 m (default settings). `tests/sprint-plume.test.js` *showroom plume: loops…* RED on `e4329420` (0.83 m), GREEN after: every showroom loops from idle to ≥ 95% of the race length with the 2.2 s ignition demo; Reduced Motion holds Studio at full length.
 - [ ] Showroom pulse in real Garage/Studio frames, both cars, both phone orientations: delegated recording, not yet reviewed.
 
+## Wave 3 trial review fixes (2026-11-19, `fix/wave3-review-experience`)
+
+- [x] Cloud deletion invalidates trial writes first. RED: `forgetAccount` did not exist, and a
+  queued settlement read the deleted (null) document as a new account and wrote it again.
+  GREEN: `tests/wave3-experience-guards.test.js` (in-flight Firestore settlement, later
+  settlement and reset all leave the deleted document absent; in-memory wallet cleared).
+- [x] Race start waits for the signed-in wallet restore and the 7-day expiry. RED: a race whose
+  countdown scope predated the expiry settled as `expired`. GREEN: `start`, `restart` and
+  Cup resume defer on `deferWave3RaceStart`; guard tests cover restore, expiry and the wiring.
+- [x] Reset trial overwrites a corrupted or future-dated save. RED: the Firestore reset
+  rejected with `Invalid Wave 3 preview checkpoint`, and the guest reset left `{"broken"` on
+  disk. GREEN: reset writes without reading the stored save.
+- [x] Local gates: module-size 3/3, `npm test` 3,402 passed / 0 failed / 4 skipped,
+  `npm run typecheck`, `npm run build`, garage-trial Playwright (wave3 economy, store,
+  missions, early access, currency, bootstrap) 37 passed, `npm run test:cloud` 17 + 5 passed.
+  `tests/result-cloud-browser.spec.js` does not parse at base `a9a5aa4e` (duplicate
+  `clickLobbyOption` import), so it was not run.
+- [ ] Remote `quality-gate` for the pushed HEAD (not pushed in this session).
+
 ## NITRO trail skins: comfortable glow, no strobe (2026-11-18, `fix/nitro-trail-glare`)
 
 - [x] Cyan/gold/crimson/nebula trails (`src/garage-nitro-trail.js`): colour capped at `vec3(1.2)` (was up to ~4.2, past the 1.1 bloom threshold), `FrontSide` (both tube walls added up), nozzle hot spot and glints toned down, every animated term ≤ 3 Hz at a pixel with the same visible flow speed (gold beat 3.2 Hz → ~1 Hz, crimson hard 7 Hz on/off → 2.5 Hz soft 50–100%, glints 22 Hz → 2.5 Hz). Standard trail (style 0) draws no streak: unchanged.
