@@ -1,3 +1,5 @@
+import { SKY_SPIRAL } from './sky-track.ts';
+
 // Showcase art direction: the player and a rival hover with animated jets,
 // like the original Skyline Rush launch screen. Other rivals ground the shot.
 // Keep the 50° FOV / three-quarter chase camera at the ORIGINAL home-screen
@@ -19,6 +21,9 @@ export const HERO_PREVIEWS: Readonly<Record<string, HeroPreview>> = Object.freez
   // to frame the landmark ahead, right of the home UI panel.
   'harbor-circuit': { distance: 0, landmark: 'beacon', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
+  // The rebuilt approach sweeps toward the tower on the right. Shoot from the left kerb.
+  spiral: { distance: SKY_SPIRAL.start - 465, landmark: 'sky-tower', cameraSide: -6.5, cameraBack: 11.8, cameraHeight: 3.5,
+    lookSide: -1.4, lookAhead: 3.5, lookHeight: 5.5 },
   taipei: { distance: 1040, landmark: 'office', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
     lookSide: -1.4, lookAhead: 3.5, lookHeight: 5 },
   tokyo: { distance: 6675, landmark: 'tower', cameraSide: 8.3, cameraBack: 11.8, cameraHeight: 3.5,
@@ -60,16 +65,19 @@ export function previewRival<T extends object>(
   id: string, index: number, rival: T, idleTime = 0, reducedMotion = false,
 ) {
   const info=HERO_PREVIEWS[id];
-  if(!info) return {...rival,
+  // The measured Canyon and Aurora bend away before the old, distant rival slots.
+  if(!info && id!=='canyon' && id!=='aurora') return {...rival,
     distance:340+35+index*28,altitude:index===0?5:0,
     thrusting:index===0,
   };
   // Put three rivals in the same readable shot on curving, elevated roads.
   // Rival 0 visibly flies with its nozzles on; the remaining two show lane depth.
   const fly=index===0;
+  // The tower is right of Sky Spiral's approach and the camera shoots from the left.
+  const towerSide = id === 'spiral';
   return { ...rival,
-    distance:info.distance+12+index*15,
-    x:([-4,0,4][index] ?? 0),
+    distance:previewDistance(id)+(towerSide ? 6+index*8 : 12+index*15),
+    x:((towerSide ? [4,8,10] : [-4,0,4])[index] ?? 0),
     altitude:fly ? 4.5+(reducedMotion?0:Math.sin(idleTime*1.25+.6)*.22) : 0,
     thrusting:fly&&!reducedMotion,
   };
@@ -79,7 +87,7 @@ export function previewRival<T extends object>(
 export function showcaseCameraPose(id: string, view = 'drive', time = 0, portrait = false): CameraPose {
   const info = HERO_PREVIEWS[id];
   const drive = {
-    cameraSide: portrait ? 7.8 : (info?.cameraSide ?? 8.3),
+    cameraSide: portrait ? 7.8 * Math.sign(info?.cameraSide ?? 8.3) : (info?.cameraSide ?? 8.3),
     cameraBack: portrait ? 13.8 : (info?.cameraBack ?? 11.8),
     cameraHeight: portrait ? 4.3 : (info?.cameraHeight ?? 3.5),
     lookSide: portrait ? 1 : (info?.lookSide ?? -1.4),

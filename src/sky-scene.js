@@ -58,6 +58,7 @@ export function createSkyScene(scene) {
 
   // Hand-built hero architecture gives the spiral scale and a unique silhouette.
   const landmark = new THREE.Group();
+  landmark.userData.landmarkKind = 'sky-tower';
   group.add(landmark);
   const tower = new THREE.Mesh(new THREE.CylinderGeometry(18, 30, 276, 12),
     new THREE.MeshStandardMaterial({ color: '#1c244a', metalness: 0.82, roughness: 0.25 }));
@@ -147,7 +148,9 @@ export function createSkyScene(scene) {
   let lastRoadStart = null, lastEndless = false;
   const roadInstances = [borders, rails, beacons, laneLines];
 
+  const landmarks = [landmark];
   return {
+    landmarks: () => landmarks,
     update(distance, quality = 'high', endless = false) {
       group.visible = true;
       backdrop.material.uniforms.time.value = distance * 0.0015;

@@ -1,3 +1,11 @@
+# Measured routes and Home artwork
+
+- [x] Audit the eight classic routes from Canyon Skyway through Cosmic Orbit. Card and Home heading art still use each track's canonical 1136 × 410 JPEG. The Home mini-map uses the measured driving centreline.
+- [x] Move Sky Spiral's live showcase to 465 m before the rebuilt helix and take the shot from the other shoulder. Fit the complete signature landmark and the Roadster together in portrait using projected mesh vertices.
+- [x] Stage demonstration rivals closer on the rebuilt Canyon and Aurora curves, and toward the visible shoulder on Sky Spiral. The home-preview fixture checks at least three actors in the portrait frame.
+- [x] The previous Sky Spiral preview failed with its helix 1,510 m away. The fixture now exercises six landmarks, and the focused geometry regression checks the Roadster and landmark in both grounded and hovering poses.
+- [ ] Confirm the exact-commit GitHub quality gate and complete the desktop/phone WebGL matrix.
+
 # Taipei Presidential Office sightline
 
 - [x] On the measured Taipei route, face the entrance, central tower and window rows toward the incoming lanes in point-to-point and endless races.
