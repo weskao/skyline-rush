@@ -238,9 +238,18 @@ test('race: the equipped GT dresses Home and carries into the race with the rear
 async function gridPose(page, url, storage = {}) {
   const { errors } = await prepare(page, url, { storage });
   await expect.poll(() => dressed(page), { timeout: ciTimeout(20000) }).toBe(storage['skyline-rush-car'] ? 'crimson-gt' : 'roadster2');
-  await page.locator('#start-button').click();
-  // Hold the countdown: the world keeps easing the car and the camera onto the grid, and GO never comes.
-  await expect.poll(() => page.evaluate(() => { const { race } = window.gameplay; if (race.phase === 'countdown') race.countdown = 1e6; return race.phase === 'countdown' && race.countdown > 1e5 && race.elapsed === 0; })).toBe(true);
+  const start = page.locator('#start-button');
+  // Hold the live grid in the same click as Start. A host-side poll can arrive after the wall-clock countdown.
+  await start.evaluate(button => button.addEventListener('click', () => {
+    const { race } = window.gameplay;
+    if (race.phase === 'countdown') race.countdown = 1e6;
+  }, { once: true }));
+  await start.click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'countdown');
+  await expect.poll(() => page.evaluate(() => {
+    const { race } = window.gameplay;
+    return race.countdown > 1e5 && race.elapsed === 0;
+  })).toBe(true);
   const read = () => page.evaluate(() => {
     const { player, camera } = window.gameScene, round = v => Math.round(v * 1e3) / 1e3 + 0;
     const lowest = root => { // lowest point of a wheel in the car's own space

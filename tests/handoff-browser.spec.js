@@ -225,11 +225,14 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'none');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect(page.locator('#maneuver-report')).toBeHidden();
+  // Settings is available on pause and results, but the charge must still be tested in the same race.
+  await page.locator('#pause-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'paused');
   await toggleSettingsSection(page, 'display');
   await page.locator('[data-vfx="comfortable"]').check();
   await expect(page.locator('#nitro-meter')).toHaveCSS('animation-name', 'none');
   await toggleSettingsSection(page, 'display');
-  await expect(page.locator('#maneuver-report')).toBeHidden();
   // Record every charge change in-page: the race keeps refilling (rings, pickups, slipstream) while slow CI polls,
   // so "one charge per press" is the first change landing on 2 and the meter never dropping below it.
   await page.evaluate(() => {
@@ -238,6 +241,8 @@ gameplayTest('earned ring rewards fill the nitro HUD, announce PERFECT LINE and 
     new MutationObserver(() => window.nitroValues.push(Number(meter.getAttribute('aria-valuenow'))))
       .observe(meter, { attributes: true, attributeFilter: ['aria-valuenow'] });
   });
+  await page.locator('#resume-button').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await page.keyboard.down('e');
   await expect.poll(() => page.evaluate(() => window.nitroValues[0])).toBe(2);
   await expect(page.locator('#nitro-status')).toHaveText('NITRO ACTIVE');

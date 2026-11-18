@@ -42,12 +42,19 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
   const mediaCache = createReleaseMediaCache(clipSources, {
     caches: globalThis.caches, fetch: url => fetch(url), createObjectURL: blob => URL.createObjectURL(blob),
   });
-  // Clips download ahead only while the notes are open, so the hero and any enlarged clip start at once; highlight clips
-  // draw only their poster and play button. A reader who moved on meanwhile keeps their view (the stale view just updates unseen).
-  function loadVisibleClips() {
+  // Give the inline hero the first download. Highlight clips only show a poster until opened.
+  async function loadVisibleClips() {
     if (!releaseDialog.open || compact.matches) return;
-    for (const view of [releaseView.heroVideo, ...releaseView.entries.map(entry => entry.video)]) {
-      if (view && !view.src) mediaCache.load(view.source).then(src => { view.src = src; if (view === releaseView.heroVideo) nextTick(syncReleaseVideo); });
+    const { heroVideo, entries } = releaseView;
+    if (heroVideo && !heroVideo.src) {
+      const src = await mediaCache.load(heroVideo.source);
+      if (!releaseDialog.open || compact.matches || heroVideo !== releaseView.heroVideo) return;
+      heroVideo.src = src;
+      await nextTick(syncReleaseVideo);
+    }
+    if (!releaseDialog.open || compact.matches || entries !== releaseView.entries) return;
+    for (const { video } of entries) {
+      if (video && !video.src) void mediaCache.load(video.source).then(src => { video.src = src; });
     }
   }
   function clipView(video: ReleaseVideo | null | undefined, locale: string): ReleaseClipView | null {
@@ -98,7 +105,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     });
     updateReleaseView({ openHasUpdate: !releaseShownHere && shouldAnnounce(CURRENT_RELEASE, releaseStorage()) });
     nextTick(syncReleaseVideo);
-    loadVisibleClips();
+    void loadVisibleClips();
   }
   // The hero plays only while the notes are open and it is on screen (short landscape hides it); reduced motion keeps its poster and controls.
   function syncReleaseVideo() {
@@ -138,7 +145,7 @@ export function setupReleaseNotesUI({ canOpen, canAutoOpen, beforeOpen, afterClo
     renderReleaseNotes();
     navigation.open();
     releaseDialog.scrollTop = 0;
-    loadVisibleClips();
+    void loadVisibleClips();
     $('#release-close').focus({ preventScroll: true });
     return true;
   }

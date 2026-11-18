@@ -137,10 +137,12 @@ async function measureHud(page, viewport, locale, hud, failures) {
   // Polled every frame: a callout lives ~0.85s of race time, shorter than the default poll interval on a slow runner.
   await page.waitForFunction(() => !document.querySelector('#event-callout').hidden, null, { polling: 'raf', timeout: ciTimeout(5_000) });
   const args = { hud: HUD, pausePanel: PAUSE_PANEL, pauseClearOf: PAUSE_CLEAR_OF, minGap: MIN_GAP };
-  // The callout stays off the road view: the same centre rectangle pickPeripheralSlot (src/race-feedback-placement.ts) avoids.
-  const scene = await page.locator('#world').boundingBox();
-  const road = { left: scene.x + scene.width * 0.325, right: scene.x + scene.width * 0.675,
-    top: scene.y + scene.height * 0.2, bottom: scene.y + scene.height * 0.72 };
+  // The canvas spans the hinge, but the road is framed on the right pane of a vertical fold and the upper pane of a horizontal fold.
+  const scene = viewport.segments
+    ? viewport.segments[viewport.segments[0].top === viewport.segments[1].top ? 1 : 0]
+    : { left: 0, top: 0, width: viewport.width, height: viewport.height };
+  const road = { left: scene.left + scene.width * 0.325, right: scene.left + scene.width * 0.675,
+    top: scene.top + scene.height * 0.2, bottom: scene.top + scene.height * 0.72 };
   // The progress bar (.progress-bar; mode rows stay in .race-progress) and ROAD/FLIGHT mode chip dock at the edges too (persistent blocks must never sit on the road view).
   // Phones show only the three nearby leaderboard rows, docked beside POSITION off the road view; desktop and tablet keep all eight.
   const phone = viewport.touch && (viewport.width <= 760 || viewport.height <= 500);

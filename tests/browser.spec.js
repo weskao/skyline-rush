@@ -27,7 +27,7 @@ const pick = async (page, name, option) => {
 // Touch players default to slide steering; legacy button tests pin Buttons mode (and any other prefs) before the page loads.
 const useControls = (page, prefs) => page.addInitScript(prefs => localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, ...prefs })), prefs);
 
-const measureAudio = () => {
+const measureAudio = (retainCueLevel = false) => {
   const connect = AudioNode.prototype.connect;
   AudioNode.prototype.connect = function(destination, ...args) {
     if (destination instanceof AudioDestinationNode) {
@@ -39,6 +39,20 @@ const measureAudio = () => {
         analyser.getFloatTimeDomainData(data);
         return Math.sqrt(data.reduce((sum, value) => sum + value * value, 0) / data.length);
       };
+      if (retainCueLevel) {
+        // Keep the measured output from a short UI cue even when a busy browser misses the host's next poll.
+        const tap = this.context.createScriptProcessor(1024, 1, 1);
+        connect.call(this, tap);
+        connect.call(tap, destination);
+        let peakRms = 0;
+        tap.onaudioprocess = event => {
+          const samples = event.inputBuffer.getChannelData(0);
+          const rms = Math.sqrt(samples.reduce((sum, sample) => sum + sample * sample, 0) / samples.length);
+          peakRms = Math.max(peakRms, rms);
+        };
+        window.audioCueLevel = () => peakRms;
+        window.resetAudioCueLevel = () => { peakRms = 0; };
+      }
     }
     return connect.call(this, destination, ...args);
   };
@@ -422,7 +436,7 @@ test('countdown lights, automatic accelerator and brake work without holding the
 });
 
 test('real audio output includes UI and countdown cues, then mutes and pauses cleanly', async ({ page }) => {
-  await page.addInitScript(measureAudio);
+  await page.addInitScript(measureAudio, true);
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/');
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
@@ -436,8 +450,10 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
+  await page.evaluate(() => window.resetAudioCueLevel());
   await audioSwitch(page, 'Sound effects').click();
-  await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeGreaterThan(0.001);
+  await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
+  await expect.poll(() => page.evaluate(() => window.audioCueLevel())).toBeGreaterThan(0.001);
   await page.locator('#settings-close').click();
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
   await page.locator('#settings-button').click();
