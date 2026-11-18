@@ -19,7 +19,7 @@ import { demoCurrencyLabel, demoPersistenceLabel } from './wave3-currency-view.t
 import { garageStudioView } from './garage-view-state.ts';
 
 import { presentAcquisition } from './acquisition-reveal.ts';
-import { storeAcquisitionBatch } from './acquisition-demo-items.ts';
+import { storeAcquisitionBatch } from './acquisition-demo-store.ts';
 
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
 const props = withDefaults(defineProps<{

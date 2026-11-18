@@ -156,6 +156,29 @@ test('Wave 3 demo and race modules are build-time locked out of coming-soon bund
   assert.match(trial.aliases['#wave3-demo-ui'], /Wave3DemoEntry\.vue$/);
 });
 
+test('coming-soon race acquisitions omit the unpublished Garage skin catalog', async () => {
+  const { fileURLToPath } = await import('node:url');
+  const { build } = await import('vite');
+  const { aliases } = selectGarageReleaseBuild('production');
+  const bundle = await build({
+    configFile: false,
+    logLevel: 'silent',
+    resolve: { alias: aliases },
+    build: {
+      write: false,
+      copyPublicDir: false,
+      lib: {
+        entry: fileURLToPath(new URL('../src/acquisition-race-reveal.ts', import.meta.url)),
+        formats: ['es'],
+      },
+    },
+  });
+  const js = bundle.flatMap(result => result.output)
+    .filter(output => output.type === 'chunk').map(chunk => chunk.code).join('\n');
+  assert.ok(js.includes('presentRaceAcquisitions'), 'the race acquisition entry should be bundled');
+  assert.ok(!js.includes('thruster-ion'), 'the locked race bundle contains the unpublished skin catalog');
+});
+
 test('released builds with the Wave 3 flag off omit its rewards and UI', () => {
   const aliases = selectGarageReleaseBuild('production', 'released', '0').aliases;
   assert.match(aliases['#wave3-demo-race'], /wave3-demo-race-locked\.ts$/);

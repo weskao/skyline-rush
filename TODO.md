@@ -15,6 +15,7 @@
 - [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.
 - [x] Add one accessible bilingual reveal for real race, mission and redemption outcomes, and document the consumer API.
 - [x] Add per-kind reveal SFX on the shared mixer and expose typed acquisition constants for callers.
+- [x] Keep the storefront catalog outside locked race bundles. RED reproduced the unpublished skin IDs in the compiled race entry. GREEN passes the focused regression and the locked, offline trial, and opt-in Firestore builds.
 - [ ] Confirm physical phone coverage and exact-HEAD CI.
 
 # Measured routes and Home artwork

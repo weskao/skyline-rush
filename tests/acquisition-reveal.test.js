@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createAcquisitionQueue } from '../src/acquisition-reveal.ts';
-import { demoAcquisitionId, demoAcquisitionItems, missionTrophy, storeAcquisitionBatch } from '../src/acquisition-demo-items.ts';
+import { demoAcquisitionId, demoAcquisitionItems, missionTrophy } from '../src/acquisition-demo-items.ts';
+import { storeAcquisitionBatch } from '../src/acquisition-demo-store.ts';
 import { createWave3LocalDemo } from '../src/wave3-local-demo.ts';
 
 const item = { id: 'gt', kind: 'car', status: 'unlocked', name: { en: 'Vantaire GT', 'zh-TW': '夜鋒 GT' } };

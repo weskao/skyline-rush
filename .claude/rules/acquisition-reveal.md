@@ -36,6 +36,9 @@ second unlock modal, toast, banner or per-feature reveal screen. API, fields and
    then show the batch only once. One operation is one batch, and its first item is the hero.
 4. Race rewards join `raceAcquisitionItems`; never call `presentAcquisition` separately for
    race results. It opens with the results screen.
+   Keep storefront builders and their catalog imports in `acquisition-demo-store.ts`. Race
+   results import `acquisition-demo-items.ts` in locked builds, where the initialized store
+   catalog would otherwise survive bundling. Guard: `tests/garage-release-build.test.js`.
 5. Do not present items from save loads, cloud sync, equipping, try-on/preview, in-race pickups
    or items the player already owned.
 
