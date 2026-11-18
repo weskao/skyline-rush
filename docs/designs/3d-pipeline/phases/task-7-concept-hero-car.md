@@ -64,8 +64,12 @@ equipment as the Roadster, and the procedural Roadster stays its load fallback.
     the chase camera exactly like the Roadster" (car root, chase camera, procedural tyres equal; GLB tyres touch the
     road within 0.005). These are guards: the product already behaved this way, so there was no product RED.
   - the equipped car persists across Cloud Save: see the Cloud Save box below.
-- [x] A locked preview keeps the saved car and trial untouched. See `tests/car-catalog.test.js` and
-  `tests/gt-unlock-browser.spec.js`.
+- [x] A locked preview keeps the saved car and trial untouched. The renderer requests the preview model only while
+  the Garage is open. `tests/car-catalog.test.js` failed on the pre-feature renderer and passed on the feature branch.
+- [x] The focused GitHub branch gate passed on `0dead842`: unit-tests, Cloud Save, and quality-gate.
+  [Run 44359580440](https://github.com/weskao/skyline-rush/actions/runs/44359580440).
+- [ ] Verify the GT unlock flow on a physical phone in portrait and landscape.
+- [ ] Publish the Firestore rules with the website and verify test-drive restoration with a real Google account.
 - [x] Blockout from the four studio panels (image-to-3D allowed only as a blockout). Then author the car in Blender
   around the shared collision envelope and ports. Do **not** move the ports to match the image.
   - 2026-11-12: `assets-src/crimson-gt/` (`build.py`, `bake.py`, `crimson-gt.blend`), authored in bpy, no

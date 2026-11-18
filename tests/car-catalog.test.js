@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PAINTS, ownedPaints } from '../src/appearance.ts';
-import { CARS, defaultPaint, equipCar, equippedCar, equippedCarModel, isCar, loadCar, loadCarPaint, reloadCar, saveCarPaint, savedCar, startGtTrial, savedGtTrial, validateEquippedCar } from '../src/car-catalog.ts';
+import { CARS, defaultPaint, equipCar, equippedCar, equippedCarModel, isCar, loadCar, loadCarPaint, reloadCar, saveCarPaint, savedCar, startGtTrial, savedGtTrial, setGaragePreviewCar, validateEquippedCar } from '../src/car-catalog.ts';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
 import { createWorldGarageModel, dressesRaceCar } from '../src/garage-model.ts';
 
@@ -137,6 +137,24 @@ test('world adapter: no model for the Roadster, the equipped GT without any URL 
   world.frame('high', 'ready', false, null, null, home);
   assert.equal(canvas.dataset.garageModel, 'off', 'back to the procedural Roadster');
   world.dispose();
+});
+
+test('the renderer requests the locked GT preview only while the Garage is open', () => {
+  const canvas = { dataset: {}, addEventListener() {}, removeEventListener() {} };
+  const home = { name: 'home', car: { children: [], userData: {}, traverse() {}, add() {} }, keep: {}, scene: {} };
+  const world = createWorldGarageModel(canvas, { compileAsync: async () => {} }, {}, '', '/', () => 'roadster2', true);
+  setGaragePreviewCar('crimson-gt');
+  try {
+    world.frame('low', 'ready', false, null, null, home);
+    assert.equal(canvas.dataset.garageModel, undefined);
+    world.frame('low', 'ready', true, null, null, home);
+    assert.equal(canvas.dataset.garageModel, 'loading');
+    world.frame('low', 'ready', false, null, null, home);
+    assert.equal(canvas.dataset.garageModel, 'off');
+  } finally {
+    setGaragePreviewCar(null);
+    world.dispose();
+  }
 });
 
 test('procedural preview keeps Roadster undressed while other equipped cars still load', () => {
