@@ -40,18 +40,34 @@ const measureAudio = (retainCueLevel = false) => {
         return Math.sqrt(data.reduce((sum, value) => sum + value * value, 0) / data.length);
       };
       if (retainCueLevel) {
-        // Keep the measured output from a short UI cue even when a busy browser misses the host's next poll.
-        const tap = this.context.createScriptProcessor(1024, 1, 1);
-        connect.call(this, tap);
-        connect.call(tap, destination);
-        let peakRms = 0;
-        tap.onaudioprocess = event => {
-          const samples = event.inputBuffer.getChannelData(0);
-          const rms = Math.sqrt(samples.reduce((sum, sample) => sum + sample * sample, 0) / samples.length);
-          peakRms = Math.max(peakRms, rms);
+        // Measure rendered samples on the audio thread, which keeps running through a stalled WebGL frame.
+        const moduleUrl = URL.createObjectURL(new Blob([`
+          registerProcessor('cue-peak-meter', class extends AudioWorkletProcessor {
+            peak = 0;
+            process(inputs) {
+              const samples = inputs[0][0];
+              if (samples?.length) {
+                const rms = Math.sqrt(samples.reduce((sum, value) => sum + value * value, 0) / samples.length);
+                if (rms > this.peak) {
+                  this.peak = rms;
+                  this.port.postMessage(rms);
+                }
+              }
+              return true;
+            }
+          });
+        `], { type: 'text/javascript' }));
+        const ready = this.context.audioWorklet.addModule(moduleUrl).finally(() => URL.revokeObjectURL(moduleUrl));
+        let tap;
+        window.armAudioCueMeter = async () => {
+          await ready;
+          if (tap) { this.disconnect(tap); tap.port.close(); }
+          tap = new AudioWorkletNode(this.context, 'cue-peak-meter', { numberOfOutputs: 0 });
+          let peakRms = 0;
+          tap.port.onmessage = ({ data }) => { peakRms = data; };
+          window.audioCueLevel = () => peakRms;
+          connect.call(this, tap);
         };
-        window.audioCueLevel = () => peakRms;
-        window.resetAudioCueLevel = () => { peakRms = 0; };
       }
     }
     return connect.call(this, destination, ...args);
@@ -439,8 +455,13 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await page.addInitScript(measureAudio, true);
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/');
+  await page.locator('#settings-button').click();
+  await page.locator('#settings-close').click();
+  await expect.poll(() => page.evaluate(() => window.audioState?.())).toBe('running');
+  await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
+  await page.evaluate(() => window.armAudioCueMeter());
   await page.getByRole('button', { name: 'Start race', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => window.audioCueLevel?.() ?? 0)).toBeGreaterThan(0.001);
+  await expect.poll(() => page.evaluate(() => window.audioCueLevel())).toBeGreaterThan(0.001);
   await expect(page.locator('#race-status')).toHaveText('RACING');
   await page.keyboard.down('w');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(90);
@@ -450,7 +471,14 @@ test('real audio output includes UI and countdown cues, then mutes and pauses cl
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'false');
   await expect(audioSwitch(page, 'Music')).toHaveAttribute('aria-checked', 'false');
   await expect.poll(() => page.evaluate(() => window.audioLevel())).toBeLessThan(0.0001);
-  await page.evaluate(() => window.resetAudioCueLevel());
+  await page.evaluate(() => window.armAudioCueMeter());
+  await audioSwitch(page, 'Sound effects').evaluate(button => {
+    button.addEventListener('click', () => {
+      // Simulate a slow WebGL frame after the real settings handler schedules the short cue.
+      const until = performance.now() + 350;
+      while (performance.now() < until) { /* block the main thread, leaving audio rendering active */ }
+    }, { once: true });
+  });
   await audioSwitch(page, 'Sound effects').click();
   await expect(audioSwitch(page, 'Sound effects')).toHaveAttribute('aria-checked', 'true');
   await expect.poll(() => page.evaluate(() => window.audioCueLevel())).toBeGreaterThan(0.001);

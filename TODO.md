@@ -1,3 +1,10 @@
+# Browser audio CI run 44250995528
+
+- [x] Reproduced the re-enable cue failure with the old meter and a 350 ms main-thread stall. The audio rendering thread measured the cue during the same stall.
+- [x] Armed the worklet meter before Start and before re-enabling sound effects. Chromium passed the cue, mute and pause scenario 3/3 without retries under CI timing, and the audio initialization recovery scenario passed separately.
+- [x] Verified the trial build, typecheck and unit suite. Unit results were 3,361 passed and 3 skipped.
+- [ ] Confirm the full GitHub Actions quality gate on the repair branch's updated HEAD.
+
 # Develop browser CI run 44117764575
 
 - [x] Reproduced the live minimap gap on desktop and two phone widths. The map now shares the toolbar height and button size. Short touch landscape keeps its own side-by-side row.

@@ -41,6 +41,9 @@ Write every assertion so that runner speed cannot change its outcome.
   judge it by `paused` read once or by the `play()` promise. A hero clip resuming after a viewer
   closes failed 1 in 2 CI runs this way (`release-media-zoom-browser.spec.js`, not yet
   reproduced).
+- **Measure one-shot sound cues on the audio rendering thread.** A stalled WebGL frame can
+  make a `ScriptProcessorNode` miss an entire cue (CI 44250995528). Arm an `AudioWorkletNode`
+  before the action and retain its measured peak for the browser assertion.
 
 ## Assert only what a player can see
 
