@@ -66,5 +66,17 @@ test('item HUD announces pickup/cooldown once, keeps activation paused-safe and 
     assert.equal(cues.length, count + 1);
     race.elapsed = 3; race.rings = [];
     ui.update(race); assert.equal(nodes['bonus-status'].hidden, true);
+    race.config.activeItems = false;
+    race.player.freezeUntil = 5;
+    race.player.empUntil = 4.5;
+    ui.update(race);
+    assert.equal(nodes['bonus-status'].hidden, false);
+    assert.equal(nodes['bonus-status'].textContent, 'EMP HIT · 2s');
+    race.elapsed = 4.5;
+    ui.update(race);
+    assert.equal(nodes['bonus-status'].textContent, 'FROZEN · 1s');
+    race.elapsed = 5;
+    ui.update(race);
+    assert.equal(nodes['bonus-status'].hidden, true);
   } finally { globalThis.document = previousDocument; }
 });

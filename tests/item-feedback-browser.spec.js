@@ -90,3 +90,39 @@ test('item rules still start a race when storage is blocked', async ({ gameplayP
   await expect(page.locator('#item-slot')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+for (const [name, viewport, hasTouch] of [
+  ['desktop', { width: 1440, height: 900 }, false],
+  ['portrait', { width: 390, height: 844 }, true],
+  ['landscape', { width: 844, height: 390 }, true],
+]) test.describe(`incoming item feedback on ${name}`, () => {
+  test.use({ viewport, hasTouch });
+
+  test('a rival EMP makes the HUD show the hit while the player is slowed', async ({ gameplayPage: page }, testInfo) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await clickLobbyOption(page, 'button[data-race-mode="custom"]');
+    await page.locator('#race-mode-rules > summary').click();
+    await page.locator('[data-race-rule="itemRules"]').selectOption('all');
+    await page.locator('#start-button').click();
+    await page.waitForFunction(() => window.gameplay.race.phase === 'racing');
+    await page.evaluate(() => {
+      const race = window.gameplay.race, [rival] = race.rivals;
+      race.elapsed = 13;
+      race.traffic = [];
+      race.pickups = [];
+      race.rivals.length = 1;
+      Object.assign(rival, { distance: 200, x: -2.5, homeX: -2.5, speed: 60 });
+      Object.assign(race.player, { distance: 220, x: 2.5, speed: 60 });
+      race.rings = [{ distance: 200.5, x: -2.5, altitude: 0, radius: 2, group: 0, type: 'emp' }];
+    });
+    const status = page.locator('#bonus-status');
+    await expect(status).toBeVisible();
+    await expect(status).toHaveText(/^EMP HIT · [12]s$/);
+    const box = await status.boundingBox();
+    expect(box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width && box.y + box.height <= viewport.height).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('rival-emp.png') });
+    await expect(status).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+});

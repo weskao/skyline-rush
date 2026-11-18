@@ -1,3 +1,10 @@
+# Rival attack pickups
+
+- [x] Let AI drivers collect Freeze and EMP so the player can be slowed by the same attack items. Test-first coverage reproduced the missing pickups. Coast and Dune Tempest now cover the shared ring sweep, EMP range and duration, Freeze, and overlapping hits.
+- [x] Verify the incoming HUD countdown with the item HUD regression and pass the TypeScript, Vue, JavaScript and locked production checks. Update the 16 deterministic replay hashes changed by rival Freeze.
+- [x] Restore the player's normal speed multiplier as soon as the last attack expires. The six Frostbite pace checks, including the 24-layout throttle-only sweep, pass with rival Freeze enabled.
+- [ ] Confirm the desktop and both phone orientations in a real browser and verify the exact-HEAD quality gate. Local Chromium cannot open its required Unix socket in this environment.
+
 # Garage drift trails
 
 - [x] Add five visual drift trails beside the original rubber. The existing account-scoped trial separates preview and equip.

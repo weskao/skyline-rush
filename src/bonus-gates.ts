@@ -8,7 +8,7 @@ export interface BonusCar extends ActiveItemCar {
 }
 interface BonusRace {
   mode: string; elapsed: number; player: BonusCar;
-  rivals: { distance: number; x: number; altitude?: number; empUntil?: number }[];
+  rivals: readonly unknown[];
 }
 interface BonusConfig { mode: string; rivals: number; itemRules?: string; bonusGates?: boolean }
 
@@ -44,12 +44,6 @@ export function collectBonusGate(race: BonusRace, ring: RaceRing): void {
   else if (type === 'emp' && race.mode === 'custom' && race.rivals.length > 0) bankItem(car, 'emp');
   else return;
   car.lastBonus = { type: type as BonusGate, time: race.elapsed };
-}
-
-export function applyEMPPulse(race: BonusRace): void {
-  const car = race.player;
-  for (const rival of race.rivals) if (Math.hypot(rival.distance - car.distance, rival.x - car.x,
-    (rival.altitude ?? 0) - car.altitude) <= 30) rival.empUntil = race.elapsed + 1.5;
 }
 
 export function recoveryRetention(car: ActiveItemCar, retention: number): number {

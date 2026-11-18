@@ -1,20 +1,17 @@
 import * as THREE from 'three';
 import { blue, emp as EMP } from './effects-palette.ts';
+import { rivalItemHit, type ItemHits } from './item-attacks.ts';
 import { createRivalStatusFx, type FxRival, type StatusEmit } from './rival-status-fx.ts';
 
-// A rival slowed by the player's Freeze or EMP (game.js FREEZE_RIVAL_SPEED) wears a status shell: one instanced
+// A rival slowed by Freeze or EMP wears a status shell: one instanced
 // additive mesh and one shader program for every rival. Car materials are never touched, so shared paints,
 // the player and Garage previews stay exact. Low draws the soft tint only; Medium and up add a fresnel rim and the
 // status's own surface: Freeze = frost creeping up from the sills into faceted, glinting ice (flash-freeze);
 // EMP = lightning arcs re-striking over the body after a white hit flash. rival-status-fx.ts adds crystals and waves.
-type StatusRace = { elapsed: number; phase?: string; player: { effects?: { freeze?: number } }; rivals: ({ empUntil?: number } & FxRival)[] };
+type StatusRace = { elapsed: number; phase?: string; player: { effects?: { freeze?: number } }; rivals: (ItemHits & FxRival)[] };
 export type RivalStatus = 'freeze' | 'emp' | null;
 
-/** Mirrors the slow-down test in game.js stepRace: EMP is per rival, Freeze hits every rival. */
-export function rivalStatus(race: StatusRace, rival: { empUntil?: number }): RivalStatus {
-  if ((rival.empUntil ?? 0) > race.elapsed) return 'emp';
-  return (race.player.effects?.freeze ?? 0) > 0 ? 'freeze' : null;
-}
+export const rivalStatus = rivalItemHit;
 
 const FIT = 1.2; // ellipsoid radii over the car's half extents: covers the body, corners soften into the rim
 const parked = new THREE.Matrix4().makeTranslation(0, -1e4, 0); // unused instances wait below the scene, never at scale 0
