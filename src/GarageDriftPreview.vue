@@ -92,7 +92,13 @@ onBeforeUnmount(() => {
     </div>
     <figcaption>
       <span><small>{{ title }}</small><strong>{{ label }}</strong></span>
-      <button v-if="ready && allowed && !reduced" type="button" :aria-label="action + ' · ' + title" @click="pause">{{ action }}</button>
+      <button v-if="ready && allowed && !reduced" class="drift-playback" type="button"
+        :data-paused="paused" :aria-label="action + ' · ' + title" :title="action" @click="pause">
+        <svg viewBox="0 0 24 24" :data-glyph="paused ? 'play' : 'pause'" aria-hidden="true" focusable="false">
+          <path v-if="paused" d="M8 4.8a1 1 0 0 1 1.5-.86l11 7.2a1 1 0 0 1 0 1.72l-11 7.2A1 1 0 0 1 8 19.2z"/>
+          <path v-else d="M6 5h3a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm9 0h3a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>
+        </svg>
+      </button>
     </figcaption>
   </figure>
 </template>
@@ -109,5 +115,25 @@ onBeforeUnmount(() => {
 figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 54px; padding: 5px 8px 5px 12px; }
 figcaption span { display: grid; gap: 2px; }
 figcaption small { color: #a7becf; font-size: .72rem; }
-figcaption button { min-width: 64px; min-height: 44px; padding-inline: 9px; }
+.drift-playback {
+  --rim: #66859b; --face: #254f67; --edge: #93d9ed;
+  position: relative; display: grid; place-items: center; flex: 0 0 44px;
+  width: 44px; height: 44px; box-sizing: border-box; padding: 0; color: #e9f9ff;
+  border: 1px solid var(--rim); border-radius: 50%;
+  background: radial-gradient(ellipse at 38% 18%, var(--face), #101f30 74%);
+  box-shadow: inset 0 1px 1px #c8f4ff36, inset 0 -2px 4px #0007, 0 3px 8px #050d16a8;
+}
+.drift-playback[data-paused="true"] { --rim: #60b5d1; --face: #2b7692; --edge: #b7f3ff; }
+.drift-playback::before {
+  content: ''; position: absolute; inset: 4px; border: 1px solid #b6ebff26;
+  border-radius: inherit; pointer-events: none;
+}
+.drift-playback svg {
+  width: 21px; height: 21px; fill: currentColor; filter: drop-shadow(0 1px 2px #051927);
+}
+@media (hover: hover) {
+  .drift-playback:hover { border-color: var(--edge); }
+}
+.drift-playback:active { box-shadow: inset 0 2px 5px #000a; }
+.drift-playback:focus-visible { outline: 2px solid #a3edff; outline-offset: 2px; }
 </style>

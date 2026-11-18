@@ -10,11 +10,11 @@ export const DRIFT_TRAIL_SKINS = [
 // Palette in sRGB, then converted by THREE.Color for the shader's linear blend.
 export const DRIFT_TRAIL_STYLES = [
   { hue: 207, width: 0, height: 0, tint: '#626875', core: '#a6b1bc' },
-  { hue: 23, width: .64, height: .47, tint: '#e44725', core: '#ffb04f' },
-  { hue: 322, width: .68, height: .34, tint: '#a93de0', core: '#ff8dd5' },
-  { hue: 193, width: .56, height: .45, tint: '#26a9da', core: '#bcecff' },
-  { hue: 263, width: .62, height: .33, tint: '#7537e7', core: '#bdb1ff' },
-  { hue: 294, width: .74, height: .58, tint: '#8338ad', core: '#f7bbdf' },
+  { hue: 23, width: .94, height: .53, tint: '#f03b15', core: '#ffc261' },
+  { hue: 322, width: .98, height: .45, tint: '#a93de0', core: '#ff8dd5' },
+  { hue: 193, width: .85, height: .53, tint: '#24b4e6', core: '#d5f5ff' },
+  { hue: 263, width: .87, height: .37, tint: '#8041e9', core: '#decaff' },
+  { hue: 294, width: 1.04, height: .52, tint: '#a63bba', core: '#ffd7ef' },
 ] as const;
 
 export const driftTrailIndex = (id: unknown): number => Math.max(0, DRIFT_TRAIL_SKINS.findIndex(skin => skin.id === id));

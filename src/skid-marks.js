@@ -11,7 +11,8 @@ const STEP = 0.6; // metres of travel per quad
 const HALF_WIDTH = 0.15; // the tyre's contact patch is 0.27 m wide
 const LIFT = 0.025; // above the road: the tyre bottom sits at 0.02 (car-model.js)
 const UNDER_SHADOW = 0.005; // world.js lays the ground shadow 0.03 above the road; the marks sit just under it
-const BREAK = 4; // a jump this long (respawn, teleport) starts a new trail instead of bridging it
+const BREAK = 4;
+const MAX_ROAD_SPEED = 136; // m/s with NITRO, slipstream and shortcut bonuses
 const TREAD_LENGTH = 3; // metres per tread-texture repeat
 const FALLBACK_REAR = [[-1.05, 1.42], [1.05, 1.42]]; // car-model.js rear wheel pivots
 
@@ -119,6 +120,7 @@ export function createSkidMarks(scene, car, ground = null) {
           up.setFromMatrixColumn(ground.matrixWorld, 2).normalize(); // the shadow plane's normal
           plane.setFromMatrixPosition(ground.matrixWorld).addScaledVector(up, -UNDER_SHADOW);
         } else up.setFromMatrixColumn(car.matrixWorld, 1).normalize();
+        const continuity = Math.max(BREAK, MAX_ROAD_SPEED * Math.min(dt, .05));
         const alpha = Math.min(1, 0.45 + drift.time * 0.5); // a held slide burns darker rubber
         wheels ??= rearWheels();
         for (let i = 0; i < 2; i++) {
@@ -127,7 +129,7 @@ export function createSkidMarks(scene, car, ground = null) {
           if (ground) point.addScaledVector(up, -across.subVectors(point, plane).dot(up));
           point.add(origin).sub(anchor);
           const gap = point.distanceTo(tyre.last);
-          if (tyre.on && gap > BREAK) end(tyre);
+          if (tyre.on && gap > continuity) end(tyre);
           if (!tyre.on) {
             edges(tyre, point, across.setFromMatrixColumn(car.matrixWorld, 2).negate().normalize());
             tyre.side.copy(across); tyre.up.copy(up); tyre.along = 0; tyre.trailTime = undefined;
