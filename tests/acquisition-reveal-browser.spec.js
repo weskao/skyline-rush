@@ -76,6 +76,7 @@ test('a mission claim and an equipment redemption reveal their receipts over Gar
 });
 
 test('the production reveal component queues batches, defers during a race, and restores keyboard focus', async ({ page, gameplayURL }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(gameplayURL + 'tests/fixtures/acquisition-reveal.html');
   const reveal = page.locator('#acquisition-reveal');
   const opener = page.getByRole('button', { name: 'Present reward' });
@@ -86,6 +87,7 @@ test('the production reveal component queues batches, defers during a race, and 
   await expect(reveal.getByRole('heading', { name: 'Vantaire GT' })).toBeVisible();
   const proceed = reveal.getByRole('button', { name: 'Continue' });
   await expect(proceed).toBeFocused();
+  expect((await proceed.boundingBox()).width).toBeGreaterThanOrEqual((await reveal.boundingBox()).width - 32);
   await reveal.getByRole('button', { name: 'Ion thruster' }).tap();
   await expect(reveal.getByRole('heading', { name: 'Ion thruster' })).toBeVisible();
   await expect(proceed).toBeInViewport();

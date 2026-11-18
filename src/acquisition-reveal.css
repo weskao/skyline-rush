@@ -199,7 +199,7 @@
 @keyframes acquisition-orbit { from { transform: rotateX(58deg) rotateZ(-13deg) scale(.7); opacity: 0; } }
 
 @media (max-width: 560px) {
-  .acquisition-footer { display: grid; gap: 9px; }
+  .acquisition-footer { display: grid; grid-template-columns: minmax(0, 1fr); justify-content: stretch; gap: 9px; }
   .acquisition-rewards {
     box-sizing: border-box;
     display: grid;
