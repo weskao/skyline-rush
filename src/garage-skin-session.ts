@@ -44,9 +44,9 @@ export function createGarageSkinSession(accountId: string, now: () => number, in
     return true;
   }
 
-  function preview(category: SkinCategory): SkinId {
+  function preview(category: SkinCategory, fallback = active(category)): SkinId {
     const skin = findSkin(selected);
-    return skin?.category === category ? skin.id : active(category);
+    return skin?.category === category ? skin.id : fallback;
   }
 
   return {

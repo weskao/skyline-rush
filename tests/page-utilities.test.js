@@ -13,6 +13,16 @@ test('pressed-button feedback, the History dialog, photo mode and the ?perf stri
     assert.doesNotMatch(main, moved);
 });
 
+test('Photo Studio markup is its own typed SFC, mounted once from App.vue with stable selectors', () => {
+  const panel = readFileSync(new URL('../src/PhotoStudio.vue', import.meta.url), 'utf8');
+  assert.match(panel, /<script setup lang="ts">/);
+  for (const id of ['photo-screen', 'photo-orbit', 'photo-advanced', 'photo-fov', 'photo-sky', 'photo-status', 'photo-close', 'photo-save'])
+    assert.match(panel, new RegExp(`id="${id}"`), `preserve selector #${id}`);
+  const app = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8');
+  assert.match(app, /<PhotoStudio\s*\/>/);
+  assert.doesNotMatch(app, /id="photo-screen"/, 'do not mount a duplicate dialog');
+});
+
 test('the ?perf strip reads p50, p95, fps and the sampled seconds', () => {
   assert.equal(perfLine({ p50: 16.66, p95: 18.04, fps: 59.8 }, 12.4), 'FRAME p50 16.7 ms · p95 18.0 ms · 59.8 fps · 12 s');
 });

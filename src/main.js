@@ -48,6 +48,7 @@ import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, delet
 import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-progress.ts';
 import { settleRaceAndDemo, captureWave3RaceTelemetry } from './race-results.ts';
 import { resultView, setupResultScreen, setupOverlayActions, animateResultCounts } from './result-screen.ts';
+import { presentRaceAcquisitions } from './acquisition-race-reveal.ts';
 import { playResultFeedbackOnce } from './result-audio.ts';
 import { renderWave3DemoResults } from './wave3-demo-results-integration.ts';
 import { createRaceHud } from './race-hud.ts';
@@ -508,6 +509,7 @@ function updateUI(now, input) {
       enter($('.overlay-content'), 'translateX(48px)', 'slow');
       playResultFeedbackOnce(sound.cue, race, lastResult.settled, calmMotion());
       overlayActions.focus();
+      void presentRaceAcquisitions(race, lastResult.settled);
     }
     animateResultCounts(resultCounts, presentationState.count);
   }
