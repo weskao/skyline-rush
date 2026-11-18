@@ -2,7 +2,7 @@
 
 Part of [../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md](../../../superpowers/plans/3d-visual-fidelity-pipeline-plan-v2.md) · Spec Phase 2b · TODO Phase 3b · Scope tags: [README.md](README.md).
 
-**Depends on:** Task 4 accepted (owner visual sign-off on it6 given 2026-11-07) and merged into `develop`. **Blocks:** Task 6 launch/cover captures (Spec Phase 5).
+**Depends on:** Task 4 accepted (owner visual sign-off on it6 given 2026-11-07) and merged into `develop`. Task 6 launch/cover captures (Spec Phase 5) use the default-on player car.
 **Files:** src/garage-model.ts and src/garage-model-rig.ts (reuse the loader and rig; no second loader), src/world.js (Home showcase and race player car share this scene), assets-src/roadster2/ (remaining procedural parts), public/models/roadster2/. src/car-model.js and src/roadster-fidelity.js stay the procedural fallback and must not change behaviour. New tests next to `tests/garage-model-rig.test.js`, `tests/garage-model-roadster-browser.spec.js` and the existing showcase specs.
 **Produces:** one Blender-authored roadster2 GLB car, with movable wheels, wing and thruster parts, used by Garage, the Home showcase and every race. Physics, collisions and VFX stay exactly as they are today.
 
@@ -34,13 +34,19 @@ Owner decisions (2026-11-07): add this phase; the Home showcase hero car (former
 - [x] Regression matrix: the shared six-course Home carousel and camera dock, and every playable track including World Tour, on desktop and phone viewports, with drive, collision, NITRO, FLY, BOOST, landing and finish → retry.
   - `tests/hero-roadster-tracks-browser.spec.js`: 10 tracks × desktop/phone portrait, plus the six-course carousel and camera dock on both (22/22).
 - [x] Local gates (owner 2026-11-08: merge without waiting for `make verify` or CI): `npm test` 2133 pass / 0 fail, typecheck and build clean; `make verify` stopped by request after 102 of 983 browser tests (0 failed); hero specs 29/29.
-- [ ] Exact-HEAD full CI on the feature branch (`[full-regression]`); exact-HEAD full `quality-gate` on `develop` after the owner-approved merge.
+- [x] Exact-HEAD full CI requirement closed by owner decision (2026-11-17). See the close-out evidence below.
 - [x] Real WebGL screenshots of the GLB car on Home (AIRFLOW on/off) and in race (ground, BOOST, NITRO, FLY, landing), attached by the browser spec.
 - [x] ~~Owner visual sign-off on the Home and in-race screenshots~~: waived by the owner for Phase 2b on 2026-11-08 (no manual acceptance, no CI wait).
-- [ ] Owner-approved default-on: remove the `?model=roadster` gate in its own commit, with procedural fallback kept.
-  - **Deferred** by the owner (2026-11-08): Phase 2 merges into `develop` with the gate kept, so `develop` looks exactly as it did before the merge. The GLB car shows only with `?model=roadster`. Default-on needs a later owner decision.
+- [x] Default-on shipped in the 2026-11-16 graphics quality update. The equipped car and graphics tier select the model and LOD. The procedural fallback is retained. [Graphics quality update](../../../../TODO.md#2026-11-16--graphics-quality-without-preview-url-flags)
 
-Known limitation: the in-race Home link (`#leave-home`) reloads `./` and drops `?model=roadster`; End race (`#leave-end`) keeps it. Moot once the gate is removed.
+## Roadster close-out
+
+Task 4d (spec Phase 2d / TODO Phase 3d) was marked complete by owner decision on 2026-11-17.
+
+- [x] Physical-phone screenshots and frame-time p50/p95 closed by owner decision. The captures and measurements above use desktop browser viewports. No fresh physical-phone capture or frame-time measurement was recorded.
+- [x] All-track regression closed by owner decision. The original matrix passed 22/22 across ten tracks and the Home checks. No new all-track run was recorded after the default-on change for this close-out.
+- [x] `make verify` closed by owner decision. It exited 0 on the Garage integration commit `c2b1cd87`. The later Task 4b run was stopped after 102 of 983 browser tests. No fresh run was recorded for this close-out.
+- [x] Exact-HEAD full CI closed by owner decision. The earlier Garage merge `24418e6b` ended with a failed `quality-gate` and cancelled browser and World Tour shards. A passing full run for the close-out is unverified. [Run 42379030844](https://github.com/weskao/skyline-rush/actions/runs/42379030844)
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 - [x] Mac: frame-time p50/p95, GLB vs procedural (2026-11-07, Apple-silicon Mac, headless Chrome, production build, CPU throttled 6×, Coast, high tier, median of 3 rounds alternating the order; Home = 10 s of rAF deltas, race = the `?perf` strip after 24 s):

@@ -2,7 +2,7 @@
 
 One GLB (`public/models/coast-greenery/coast-greenery.glb`, manifest id `coast-greenery`) holding three shrub
 thickets that `src/coast-greenery.ts` instances on the up-facing faces of the scan cliffs (`cliff_a`, `cliff_b`)
-in the `?look=3d` Coast scene, Medium and up. Low never loads it (fallback `procedural-scenery`). If the GLB
+in the detailed Coast scene, Medium and up. Low never loads it (fallback `procedural-scenery`). If the GLB
 fails to load, the scan scenery still shows, without shrubs.
 
 The grass on the rock itself is not part of this asset: `greenTops()` in `src/coast-greenery.ts` blends it into

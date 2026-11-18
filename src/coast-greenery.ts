@@ -4,13 +4,15 @@
 // instanced draw per shrub variant. Everything joins the scene with the scans, before GO, so the warmup builds it.
 import * as THREE from 'three';
 import type { ModelCache, ModelResult } from './asset-model-loader.ts';
+import { COAST_FAR_LOD } from './coast-scenery-glb.ts';
 import { seededRng } from './rng.ts';
 
 export const GREENERY_ID = 'coast-greenery';
 export const GREENERY_SHRUBS = ['shrub_a', 'shrub_b', 'shrub_c'] as const;
 const SCENERY_ID = 'coast-scenery';
-/** Scan pieces that carry shrubs, and scan materials that grow grass (palms and rails stay as they are). */
-const HOSTS = ['cliff_a', 'cliff_b'], GRASSY = ['coast_cliff_a', 'coast_cliff_b', 'coast_arch', 'coast_rock'];
+/** Scan pieces that carry shrubs (the far headlands' decimated nodes included: anchors come from the node's own
+ *  geometry), and scan materials that grow grass (palms, rails and lamp posts stay as they are). */
+const HOSTS = ['cliff_a', 'cliff_b', ...Object.values(COAST_FAR_LOD)], GRASSY = ['coast_cliff_a', 'coast_cliff_b', 'coast_arch', 'coast_rock'];
 /** Shrubs per cliff; 12 triangles each, so a full High window (16 cliffs) is about 14k triangles in 3 draws. */
 const PER_HOST = 72;
 /** Piece-space metres above the cliff's ground pivot: the wave-washed ledges stay bare. */

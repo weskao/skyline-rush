@@ -1,6 +1,6 @@
 # Neon Downtown night sky (Task 5b step 3, asset half)
 
-Two environments for the Neon `?look=3d` look (owner decisions N1, N2): `night` (dry) and `rain` (rain night, same
+Two environments for the Neon detailed look on Medium and up (owner decisions N1, N2): `night` (dry) and `rain` (rain night, same
 city, wetter and hazier). Day, dusk and fog keep today's lighting; nothing is built for them.
 
 ## Source and licence

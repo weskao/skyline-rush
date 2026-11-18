@@ -20,7 +20,7 @@
 - Shaders: every `pow()` base is `max(0.,…)` or `clamp(…)`; every `exp()` argument is a negated abs/dot/length/square or a `clamp()`ed scalar; every uv-derived scalar is clamped (`tests/shader-safety.test.js`).
 - New flare and glow layers are depth-tested (`depthTest: true`, `depthWrite: false`).
 - VFX Off shows nothing. Reduced Motion and Comfortable: no re-aim, static plume, every shader clock frozen.
-- `?look=3d` gating of `plumeLook` and `thrusterGlow` is untouched.
+- `?look=3d` gating of `plumeLook` and `thrusterGlow` is untouched (historical; gate removed).
 - No user-specific absolute path in any committed file.
 
 ## Measured before planning (throwaway script through the live rig, default FOV setting)
@@ -59,7 +59,7 @@ The spec's "about 8 px" is the width at the nozzle exit. At 1 m today's cone is 
 - [ ] **Step 1:** In the capture spec, change the track list to `['coast', 'neon', 'spiral', 'canyon']` (keep the unlock list as is) and record `plume: await page.evaluate(() => window.plumeOnScreen())` beside each existing `carOnScreen()` row. Before the first run, read the `uphill` sections in `src/race-tracks.ts`; if `canyon` has none, use the unlocked track with the longest `uphill` section and seed `player.distance` to its start.
 - [ ] **Step 2:** Add `contrast(png, box)` using the in-page PNG decode pattern of `changedShare` in `tests/frostbite-canyon-browser.spec.js`: mean RGB of the central third of `box` (the core) against the mean RGB of two road strips of the same height, one box-width left and right of it; return the Euclidean distance on a 0 to 255 scale. Record it for `boost` and `nitro-top`.
 - [ ] **Step 3:** After the JSON is written add, for label names starting with `after`: `expect(rows.nitroTop.plume.carInside).toBe(true)`; for Coast and Neon `expect(rows.nitroTop.contrast).toBeGreaterThanOrEqual(40)`.
-- [ ] **Step 4:** Create `tests/sprint-plume-cost-browser.spec.js`, gated by `PLUME_BENCH=1`, modelled on `tests/tier-cost-benchmark-browser.spec.js` (same launch args, `sampleFrameCost`, `gpuName`, output under `docs/designs/3d-pipeline/audits/sprint-plume/`), without `?look=3d`: for `VIEWPORT` 844x390 and 1440x900, for Low, Medium, High, hold `speed: 118, nitroTime: 30` on Coast for 2 s, then `sampleFrameCost(page, 6000)`; write `{ label, viewport, tier, gpu, p50, p95, calls, triangles }`.
+- [ ] **Step 4:** Create `tests/sprint-plume-cost-browser.spec.js`, gated by `PLUME_BENCH=1`, modelled on `tests/tier-cost-benchmark-browser.spec.js` (same launch args, `sampleFrameCost`, `gpuName`, output under `docs/designs/3d-pipeline/audits/sprint-plume/`), without `?look=3d` (historical; gate removed): for `VIEWPORT` 844x390 and 1440x900, for Low, Medium, High, hold `speed: 118, nitroTime: 30` on Coast for 2 s, then `sampleFrameCost(page, 6000)`; write `{ label, viewport, tier, gpu, p50, p95, calls, triangles }`.
 - [ ] **Step 5:** Build, then run the baseline on the current code and keep the output (gitignored):
 
 ```bash

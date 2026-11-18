@@ -1,0 +1,116 @@
+[
+  {
+    "id": "dune-tempest",
+    "name": "Dune Tempest",
+    "number": 11,
+    "color": "#f3ad65",
+    "zh": "沙暴裂谷",
+    "direction": "以紅層岩脊、風蝕石柱與流沙谷取代橫跨賽道的拱形地標。",
+    "scenes": [
+      "dust-front",
+      "sandstone-fin-descent",
+      "dune-crest-split",
+      "sheltered-basin"
+    ],
+    "graphVersion": 2,
+    "groundLengthM": 13949.522,
+    "crossSectionStationM": 3714.018,
+    "crossSectionEdge": "rock-gate-descent",
+    "crossSectionRoadWidthM": 30
+  },
+  {
+    "id": "monsoon-ruins",
+    "name": "Monsoon Ruins",
+    "number": 12,
+    "color": "#71dcb0",
+    "zh": "雨林失落神殿",
+    "direction": "核心地標改用矩形石刻、崩塌階台和貼瀑岩壁的連續路面。",
+    "scenes": [
+      "wet-jungle-entry",
+      "ruin-courtyard",
+      "waterfall-gorge",
+      "rainforest-ridge"
+    ],
+    "graphVersion": 1,
+    "groundLengthM": 12562.143,
+    "crossSectionStationM": 6105.198,
+    "crossSectionEdge": "monsoon-ground-5",
+    "crossSectionRoadWidthM": 27
+  },
+  {
+    "id": "skyfall-archipelago",
+    "name": "Skyfall Archipelago",
+    "number": 13,
+    "color": "#84d9f1",
+    "zh": "浮空群島",
+    "direction": "由浮島高低差、垂瀑、開放飛行缺口與細直懸索成為主要視覺。",
+    "scenes": [
+      "island-edge-road",
+      "straight-cable-deck",
+      "island-flight-gap",
+      "waterfall-switchbacks"
+    ],
+    "graphVersion": 1,
+    "groundLengthM": 16462.256,
+    "crossSectionStationM": 8398.416,
+    "crossSectionEdge": "b-ground",
+    "crossSectionRoadWidthM": 28
+  },
+  {
+    "id": "volcanic-crown",
+    "name": "Volcanic Crown",
+    "number": 14,
+    "color": "#fb8c70",
+    "zh": "熔火天脊",
+    "direction": "沿玄武岩脊線行駛，使用直肋蒸氣廊、節理岩層與露天熔流呈現高差。",
+    "scenes": [
+      "basalt-rim",
+      "vent-gallery",
+      "lava-side-ridge",
+      "crater-descent"
+    ],
+    "graphVersion": 1,
+    "groundLengthM": 15963.73,
+    "crossSectionStationM": 7080.847,
+    "crossSectionEdge": "ground-4",
+    "crossSectionRoadWidthM": 34
+  },
+  {
+    "id": "stormline-megacity",
+    "name": "Stormline Megacity",
+    "number": 15,
+    "color": "#68d8ed",
+    "zh": "霓虹暴雨都市",
+    "direction": "以暴雨及垂直樓層為主，描繪平頂服務樓板、滯洪槽和變電塔。",
+    "scenes": [
+      "storm-boulevard",
+      "flood-control-channel",
+      "stacked-service-decks",
+      "lightning-substation"
+    ],
+    "graphVersion": 1,
+    "groundLengthM": 14458.621,
+    "crossSectionStationM": 6750.353,
+    "crossSectionEdge": "surface-loop",
+    "crossSectionRoadWidthM": 26
+  },
+  {
+    "id": "frostbite-canyon",
+    "name": "Frostbite Canyon",
+    "number": 16,
+    "color": "#b1f2ff",
+    "zh": "極地冰原峽谷",
+    "direction": "冷色冰原保留水晶尖塔和凝結冰瀑，主要視線由冰壁、冰脊與冰裂谷構成。",
+    "scenes": [
+      "crystal-sentinels",
+      "frozen-waterfall",
+      "glacial-hairpin",
+      "basin-finish"
+    ],
+    "graphVersion": 1,
+    "groundLengthM": 13799.27,
+    "crossSectionStationM": 5146.597,
+    "crossSectionEdge": "riverbed-hairpin",
+    "crossSectionRoadWidthM": 22
+  }
+]

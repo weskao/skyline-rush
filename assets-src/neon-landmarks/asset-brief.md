@@ -14,7 +14,7 @@ lists them, and `tests/neon-landmarks-glb.test.js` fails when one is placed with
 
 ## Pieces and the frames they were read from
 
-Concept frames: `docs/designs/3d-pipeline/concept-art/neon-downtown/`. They are perspective paintings, so
+Concept frames: `docs/designs/3d-pipeline/track-profiles/neon-downtown/`. They are perspective paintings, so
 they give silhouette, construction and colour; every dimension comes from the road (see "Clearances") or is
 inferred.
 

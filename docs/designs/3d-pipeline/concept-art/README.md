@@ -17,8 +17,8 @@ and before the Phase 6 car ships (spec v2 §5).
 
 | File | Size | Use for |
 | --- | --- | --- |
-| `skyline-rush-3d-target-concept-board.jpeg` | 1672 × 941 | Look target: paint depth, light blade, quad thruster glow, wet-road reflections, per-map atmosphere |
-| `neon-downtown/` (nine files, below) | 1672 × 941, schematic 1950 × 1095 | Neon Downtown look and route target (Task 5b, N1) |
+| [`skyline-rush-3d-target-concept-board.jpeg`](../track-profiles/skyline-rush-3d-target-concept-board.jpeg) | 1672 × 941 | Look target: paint depth, light blade, quad thruster glow, wet-road reflections, per-map atmosphere |
+| [`neon-downtown/`](../track-profiles/neon-downtown/) (nine files, below) | 1672 × 941, schematic 1950 × 1095 | Neon Downtown look and route target (Task 5b, N1) |
 
 ### Neon Downtown set (`neon-downtown/`)
 

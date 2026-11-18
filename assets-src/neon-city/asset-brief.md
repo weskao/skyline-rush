@@ -6,7 +6,7 @@ and the far skyline. Everything is modelled by `build.py`; nothing is photoscann
 and the wet road belong to the runtime, not to this asset. Low tier never loads it: the manifest fallback is
 `procedural-scenery`.
 
-Reference frames: `docs/designs/3d-pipeline/concept-art/neon-downtown/` (`03-start-finish-boulevard.jpg` for the
+Reference frames: `docs/designs/3d-pipeline/track-profiles/neon-downtown/` (`03-start-finish-boulevard.jpg` for the
 glass towers, spire and boulevard furniture, `05-night-market-chicane.jpg` for the tile-roofed shops).
 
 ## Sources (all CC0-1.0, Poly Haven)
