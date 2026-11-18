@@ -1,3 +1,8 @@
+# Develop browser CI run 44303677367
+
+- [x] All 17 failing browser cases passed in the fix worktree. The production build, type checks and 3,364 unit tests passed (3 skipped).
+- [ ] Confirm the full GitHub quality gate on the repair commit.
+
 # Develop browser CI run 44117764575
 
 - [x] Reproduced the live minimap gap on desktop and two phone widths. The map now shares the toolbar height and button size. Short touch landscape keeps its own side-by-side row.
