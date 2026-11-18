@@ -3,6 +3,8 @@ export function captureWave3RaceTelemetry(..._args: unknown[]): void {}
 export function settleWave3RaceDemo(..._args: unknown[]): null { return null; }
 export function getWave3DemoReceipt(_race: object): null { return null; }
 export function setWave3DemoAccount(_id: string | null): void {}
+export function deferWave3RaceStart(_start: () => void): boolean { return false; }
+export function forgetWave3DemoAccount(_uid: string): void {}
 
 /** Released/coming-soon builds cannot instantiate local demo rewards. */
 export const wave3DemoExperience = null;

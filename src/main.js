@@ -47,6 +47,7 @@ import { setupReleaseNotesUI } from './release-notes-ui.ts';
 import { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails } from './cloud-save.ts';
 import { loadSessionProgress, adoptProgress, progressSnapshot } from './session-progress.ts';
 import { settleRaceAndDemo, captureWave3RaceTelemetry } from './race-results.ts';
+import { deferWave3RaceStart, forgetWave3DemoAccount } from '#wave3-demo-race';
 import { resultView, setupResultScreen, setupOverlayActions, animateResultCounts } from './result-screen.ts';
 import { playResultFeedbackOnce } from './result-audio.ts';
 import { renderWave3DemoResults } from './wave3-demo-results-integration.ts';
@@ -200,7 +201,8 @@ const raceSelect = setupRaceSelectUI({
 const { applyTrack, selectedRace, cupCount, focusLobbyTrack } = raceSelect;
 const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue: () => sound.cue('ui'),
   canResume: () => !!world && race.phase === 'ready' && !contextLost && !document.querySelector('dialog[open]'),
-  resume: saved => {
+  resume: function resume(saved) {
+    if (deferWave3RaceStart(() => race.phase === 'ready' && resume(saved))) return;
     cup = saved; daily = null; sprintSeries = null; stunt = null;
     raceSelect.restoreCup(saved);
     controls.clear(); leaveIntro(); startRace(race, world.trackSceneryPending(race)); focusRace(); sound.cue('ui');
@@ -221,7 +223,9 @@ refreshCustomSelects(); // showTracks just localized the History options the dra
 const currentProgress = () => progressSnapshot(progress);
 // Cloud Save lives in cloud-ui.ts; this boundary owns the session copies it merges into.
 const cloud = setupCloudUI({
-  services: { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, deleteCloudProgress, syncGoogleAccountDetails },
+  services: { watchCloudUser, signInToCloud, signOutOfCloud, syncCloudProgress, syncGoogleAccountDetails,
+    // Invalidate trial settlements first, so one in flight cannot recreate the deleted save.
+    deleteCloudProgress: uid => { forgetWave3DemoAccount(uid); return deleteCloudProgress(uid); } },
   getProgress: currentProgress, getLocalChallengeMedals: () => progress.challengeMedals,
   applyProgress: (merged, localChallengeMedals) => {
     adoptProgress(progress, merged, localChallengeMedals);
@@ -285,6 +289,7 @@ function start() {
   if (raceSelect.selectedMode() === 'cup' && unlockedTracks.size < cupCount()) return;
   if (!world || race.phase !== 'ready' || (!daily && !raceSelect.canRace(race.trackId)) || document.querySelector('dialog[open]')) return;
   if (contextLost) { location.reload(); return; } // a fresh page is the only way back to a live renderer
+  if (deferWave3RaceStart(start)) return; // the race scope is captured after the wallet restore and 7-day expiry
   if (offerFirstStart()) return;
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
@@ -304,6 +309,7 @@ function restart(trackId = race.trackId) {
   if (tutorial) { beginTutorial(); return; }
   if (!world || (!daily && !raceSelect.canRace(trackId))) return;
   if (contextLost) { location.reload(); return; }
+  if (deferWave3RaceStart(() => restart(trackId))) return;
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
   const wipe = $('#race-wipe');
