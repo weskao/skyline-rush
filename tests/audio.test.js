@@ -403,6 +403,30 @@ test('backgrounding cancels pending stingers and suppresses new sounds', t => {
 // A prelude note is any music oscillator: cues are sine tones and none play here; the engine hum starts without a time.
 const musicNotes = nodes => nodes.filter(node => node.kind === 'oscillator' && typeof node.started === 'number' && node.type !== 'sine');
 const musicBus = nodes => nodes.filter(node => node.kind === 'gain' && node.destination?.kind === 'compressor')[1];
+
+test('equipment unlock keeps the enabled menu soundtrack playing', async t => {
+  const { ACQUISITION_SOUNDS } = await import('../src/feedback-sounds.ts');
+  const { nodes, sound } = installAudio(t);
+  const race = createRace();
+  sound.setEnabled(true);
+  sound.setMusic(true);
+  const bus = musicBus(nodes);
+  const homeLevel = bus.gain.value;
+  assert.ok(homeLevel > 0);
+
+  sound.update(race);
+  assert.equal(bus.gain.value, homeLevel);
+  sound.setMusic(true);
+  assert.equal(bus.gain.value, homeLevel);
+  sound.cue(ACQUISITION_SOUNDS.equipment);
+  sound.update(race);
+  assert.equal(bus.gain.value, homeLevel);
+
+  sound.setMusic(false);
+  sound.update(race);
+  assert.equal(bus.gain.value, 0);
+});
+
 function trackContexts() {
   const made = [];
   globalThis.AudioContext = class extends globalThis.AudioContext { constructor() { super(); made.push(this); } };
@@ -556,6 +580,42 @@ test('sprint readiness plays two distinct SFX phrases and respects mute', t => {
   assert.ok(Math.min(...nitro) > Math.max(...boost));
   sound.setEnabled(false);
   assert.deepEqual(pitches('boost-ready'), []);
+});
+
+test('store cues play short distinct SFX without joining the music stingers', async t => {
+  const { ACQUISITION_SOUNDS, FEEDBACK_SOUNDS, STINGERS } = await import('../src/feedback-sounds.ts');
+  const { nodes, sound } = installAudio(t);
+  const cues = ['redeem-review', 'redeem-cancelled', ACQUISITION_SOUNDS.equipment, 'action-unavailable'];
+  const pitches = name => {
+    const start = nodes.length;
+    sound.cue(name);
+    return nodes.slice(start).filter(node => node.kind === 'oscillator').map(node => node.frequency.value);
+  };
+  sound.setEnabled(true);
+  for (const cue of cues) {
+    assert.ok(FEEDBACK_SOUNDS[cue]?.length, cue);
+    assert.equal(STINGERS.has(cue), false, cue);
+    assert.ok(Math.max(...FEEDBACK_SOUNDS[cue].map(([, , duration, delay]) => duration + delay)) <= .35, cue);
+  }
+  const phrases = cues.map(pitches);
+  assert.ok(phrases.every(phrase => phrase.length > 0));
+  assert.equal(new Set(phrases.map(phrase => phrase.join(','))).size, cues.length);
+  sound.setEnabled(false);
+  for (const cue of cues) assert.deepEqual(pitches(cue), []);
+});
+
+test('the equipment reveal plays the original bass sweep and two rising notes', async t => {
+  const { ACQUISITION_SOUNDS } = await import('../src/feedback-sounds.ts');
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const start = nodes.length;
+  sound.cue(ACQUISITION_SOUNDS.equipment);
+  const voices = nodes.slice(start).filter(node => node.kind === 'oscillator');
+  assert.deepEqual(voices.map(voice => [voice.type, voice.started, voice.frequency.value]), [
+    ['sine', 0, 150],
+    ['sine', .07, 699],
+    ['sine', .13, 1319],
+  ]);
 });
 
 test('the halfway chime is a short rising stinger, so it ducks the mix only briefly', async () => {

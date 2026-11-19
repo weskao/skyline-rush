@@ -1,5 +1,8 @@
 import { fileURLToPath } from 'node:url';
 
+// Only src/wave3-preview-firestore.ts contains this; the always-on cleanup names the collection in every bundle.
+export const WAVE3_PREVIEW_STORE_MARKER = 'Invalid Wave 3 preview document';
+
 export const GARAGE_RELEASE_MODES = Object.freeze(['coming-soon', 'trial', 'released']);
 
 const source = name => fileURLToPath(new URL(`../src/${name}`, import.meta.url));
@@ -20,7 +23,8 @@ export function selectGarageReleaseBuild(viteMode, explicit = undefined, wave3Fl
   if (locked && wave3Flag === '1') {
     throw new Error('VITE_WAVE3_FIRESTORE_PREVIEW=1 is incompatible with coming-soon');
   }
-  const wave3FirestoreEnabled = !locked && (wave3Flag === undefined ? viteMode === 'production' : wave3Flag === '1');
+  // Strictly opt-in: deployed Firestore rules must already allow the preview collection.
+  const wave3FirestoreEnabled = !locked && wave3Flag === '1';
   const demoEnabled = mode === 'trial' || wave3FirestoreEnabled;
   return {
     mode,

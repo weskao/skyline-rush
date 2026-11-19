@@ -255,7 +255,8 @@ const TIER_CHOSEN = /lowGraphics: false|skyline-rush-vfx/;
 test('a spec that observes an effect Low turns off chooses a heavier tier', () => {
   const offenders = FILES.filter(file => {
     const source = readFileSync(new URL(file, import.meta.url), 'utf8');
-    return LOW_GATED.test(source) && !TIER_CHOSEN.test(source);
+    // An isolated-fixture spec on plain @playwright/test never gets the Low default of tests/helpers/test.js.
+    return LOW_GATED.test(source) && !TIER_CHOSEN.test(source) && /helpers\/test\.js/.test(source);
   });
   assert.deepEqual(offenders, [], 'Set test.use({ lowGraphics: false }) around those tests (see .claude/rules/browser-test-stability.md)');
 });

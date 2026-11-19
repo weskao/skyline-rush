@@ -3,6 +3,7 @@ import { computed, inject, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
 import { GARAGE_SKINS, SKIN_CATEGORIES, skinAccentHue, skinArtwork } from './garage-skin-catalog.ts';
+import GarageSkinCardFace from './GarageSkinCardFace.vue';
 import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, selectedGarageSkins, currentGarageSkins } from './garage-skin-runtime.ts';
 import GarageDriftPreview from './GarageDriftPreview.vue';
 import { DRIFT_TRAIL_STYLES, driftTrailIndex } from './garage-drift-styles.ts';
@@ -15,8 +16,6 @@ const props = defineProps<{ locale: string; active?: boolean }>();
 const driftPreview = ref<HTMLElement>();
 const showingDrift = ref(false);
 watch(() => props.active, active => { if (!active) showingDrift.value = false; });
-const animatedArtworkSrc = (id: SkinId): string => id.startsWith('drift-trail-') ? '' :
-  `${import.meta.env.BASE_URL}feature-assets/garage-animated/${id}@3x.gif`;
 
 // Source-only cosmetic status and rarity icon gallery. These artworks do not
 // create a badge, inventory entitlement, artificial rarity or monetary offer.
@@ -143,13 +142,7 @@ const statusText = (id: SkinId, locale: string) => {
             :aria-label="`${locale === 'zh-TW' ? '預覽' : 'Preview'} ${skinLabel(skin.id, locale)}`"
             :aria-pressed="isPreviewActive(skin.id, skin.category)"
             @click="previewSkin(skin.id, skin.category)">
-            <span class="garage-vfx-art">
-              <GarageArtworkImage :src="skin.artwork.src" :fallback-src="skin.artwork.hasRaster ? skin.artwork.fallback : ''"
-                :animated-src="animatedArtworkSrc(skin.id)"
-                :size="skin.artwork.cssSize" alt="" loading="lazy" fallback-class="garage-vfx-fallback"
-                :fallback-text="categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en']" />
-            </span>
-            <strong>{{ skin.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</strong>
+            <GarageSkinCardFace :skin-id="skin.id" :locale="locale" />
             <small class="garage-skin-status">{{ statusText(skin.id, locale) }}</small>
             <small class="garage-skin-preview-label" :aria-hidden="!isPreviewOnly(skin.id, skin.category)">{{ locale === 'zh-TW' ? '預覽中' : 'Previewing' }}</small>
           </button>
@@ -243,23 +236,6 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-vfx-category li.garage-skin-card:has(> .garage-skin-preview-hitarea:active) { filter: brightness(.86); transform: scale(.985); }
 .garage-skin-preview-hitarea:focus-visible {
   outline: 3px solid #74ebff; outline-offset: 3px;
-}
-.garage-vfx-art {
-  position: relative;
-  width: 112px; height: 112px; max-width: 100%; box-sizing: border-box;
-  padding: 8px; display: grid; place-items: center; border-radius: 13px;
-  background: radial-gradient(ellipse at 50% 61%, hsl(var(--card-hue) 72% 47% / .22), transparent 71%),
-    repeating-linear-gradient(135deg, #edf7ff06 0 1px, transparent 1px 9px);
-  pointer-events: none;
-}
-.garage-vfx-art :deep(.artwork-img) {
-  max-width: 100%; max-height: 100%; object-fit: contain;
-  filter: drop-shadow(0 4px 5px #060e18ac);
-}
-.garage-vfx-fallback { color: #c4e7f0; font-size: 12px; overflow-wrap: anywhere; }
-.garage-skin-card strong {
-  padding: 0 4px; font-size: 12px; line-height: 1.3; color: #ecf6ff;
-  font-weight: 750; overflow-wrap: anywhere; pointer-events: none;
 }
 /* One state pill per card: "Previewing" takes the status pill's place instead of its own row. */
 .garage-skin-status, .garage-skin-preview-label {

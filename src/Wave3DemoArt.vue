@@ -2,13 +2,13 @@
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import { wave3DemoArtUrl, type Wave3DemoArtId } from './wave3-demo-art.ts';
 
-withDefaults(defineProps<{ id: Wave3DemoArtId; alt?: string }>(), { alt: '' });
+withDefaults(defineProps<{ id: Wave3DemoArtId; alt?: string; size?: number }>(), { alt: '', size: 72 });
 </script>
 
 <template>
   <span class="wave3-demo-art" :data-wave3-demo-art="id">
     <GarageArtworkImage :src="wave3DemoArtUrl(id)"
-      :size="72" :image-id="id" :alt="alt" :fallback-text="alt" />
+      :size="size" :image-id="id" :alt="alt" :fallback-text="alt" />
   </span>
 </template>
 

@@ -481,6 +481,7 @@ test('the equipped car is restored on a clean device, and a device that picked i
 });
 
 test('released Wave 3 keeps guest saves on the device and restores signed-in progress from Firestore', async ({ browser, page }) => {
+  await page.removeLocatorHandler(page.locator('#acquisition-reveal[open]'));
   const load = async tab => {
     await tab.context().route(liveApis, route => route.abort());
     await tab.addInitScript(disableWebGL);
@@ -513,6 +514,10 @@ test('released Wave 3 keeps guest saves on the device and restores signed-in pro
       player: { driftPayout: null, longestCombo: 0 }, result: { success: true, time: 70, position: 1 },
     }, false)).status;
   }, id);
+  const redeem = (tab, id) => tab.evaluate(async id => {
+    const { wave3DemoExperience } = await import('/src/wave3-race-events.ts');
+    return (await wave3DemoExperience.redeemPreview(id)).status;
+  }, id);
 
   await load(page);
   expect(await settle(page, 'guest-before-google')).toBe('completed');
@@ -529,10 +534,27 @@ test('released Wave 3 keeps guest saves on the device and restores signed-in pro
     return [
       (await wallet.claimMission('mission-race:daily')).status,
       (await wallet.claimMission('mission-race:weekly')).status,
-      (await wallet.redeemPreview('thruster-ion')).status,
     ];
   });
-  expect(statuses).toEqual(['completed', 'completed', 'completed']);
+  expect(statuses).toEqual(['completed', 'completed']);
+  // Recreate Garage's parent dialog history without booting the WebGL showroom in the emulator suite.
+  await page.locator('#garage-screen').evaluate(dialog => {
+    dialog.showModal();
+    history.pushState({ ...history.state, __skylineGaragePage: 'home' }, '');
+  });
+  await page.locator('[data-garage-section="store"]').click();
+  const store = page.locator('[data-wave3-demo-store]');
+  const ion = store.locator('[data-demo-offer="thruster-ion"]');
+  await ion.getByRole('button', { name: 'Redeem Ion thruster' }).click();
+  const quote = store.getByRole('group', { name: 'Confirm demo redemption' });
+  await expect(quote).toContainText('Remaining 155 Demo points');
+  await quote.getByRole('button', { name: 'Confirm demo redeem' }).click();
+  const reveal = page.locator('#acquisition-reveal');
+  await expect(reveal.getByRole('heading', { name: 'Ion thruster' })).toBeVisible();
+  await reveal.getByRole('button', { name: 'Continue' }).click();
+  await ion.getByRole('button', { name: 'View in collection' }).click();
+  await expect(page.locator('[data-wave3-demo-collection] [data-demo-id="thruster-ion"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#garage-close').click();
   await balances(page, [155, 350, 5]);
   await expect(pointsButton).toHaveAttribute('aria-label', /Cloud demo/i);
   expect(await deviceCheckpoint(page, uid)).toBeNull();
@@ -557,6 +579,18 @@ test('released Wave 3 keeps guest saves on the device and restores signed-in pro
     const paired = await Promise.all([settle(page, 'cloud-preview-shared-race'), settle(fresh, 'cloud-preview-shared-race')]);
     expect(paired.sort()).toEqual(['completed', 'duplicate']);
     await balances(fresh, [183, 406, 5]);
+    const sameOffer = await Promise.all([redeem(page, 'nitro-trail-cyan'), redeem(fresh, 'nitro-trail-cyan')]);
+    expect(sameOffer.sort()).toEqual(['completed', 'duplicate']);
+    await balances(fresh, [183, 256, 5]);
+    const sameBalance = await Promise.all([redeem(page, 'launch-flare-magenta'), redeem(fresh, 'drift-trail-rainbow')]);
+    expect(sameBalance.sort()).toEqual(['completed', 'insufficient-demo-diamonds']);
+    await balances(fresh, [183, 256, 0]);
+    await fresh.context().setOffline(true);
+    expect(await redeem(page, 'launch-flare-ring')).toBe('completed');
+    await balances(fresh, [183, 256, 0]);
+    await fresh.context().setOffline(false);
+    await balances(fresh, [183, 36, 0]);
+    expect(await redeem(fresh, 'launch-flare-ring')).toBe('duplicate');
     // Account B has no access to account A's preview save.
     const other = await browser.newPage();
     try {

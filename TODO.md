@@ -25,6 +25,42 @@
 - [x] Stage Home controls before the splash fades. Wide layouts start outside the viewport; compact and folded layouts lift a few pixels in place. Keep keyboard focus on Start after handoff and keep the fixed-rail ancestors out of the animation. Both startup handoff and progress tests reproduced the old behavior before the fix.
 - [ ] Confirm the full GitHub quality gate and physical iOS/Android/foldable devices.
 
+# Wave 3 還原車庫配樂與裝備解鎖音效（2026-11-19）
+
+- [x] 還原 `3c08acf` 前的混音。開啟車庫、試玩商城與裝備揭曉時繼續播放已啟用的背景配樂，並遵守玩家的音樂開關。
+- [x] 還原裝備取得的三音提示，第一個音從 275 Hz 降到 150 Hz，再接兩個上揚音。各類裝備的啟動音層與車款登場的配樂降音沿用共用揭曉機制。
+- [x] 兩項音訊回歸先重現失敗，再驗證修正。`node --test tests/audio.test.js tests/module-size.test.js` 通過 57 項，型別檢查及正式版與試玩版建置通過。全套單元測試 3,449 項通過、4 項跳過。
+- [x] Chrome 試玩流程驗證車庫開啟後配樂持續播放，實際兌換離子推進器開啟揭曉時發出原版三音，背景配樂維持原音量。
+
+# Wave 3 裝備揭曉與商城版面（2026-11-19）
+
+- [x] 重現裝備圖過小、分類溢出、卡寬跳動、預覽動作未對齊，以及摺疊螢幕的揭曉彈窗換側。商城 18 項瀏覽器回歸均通過。
+- [x] 桌機以左側分類、中央商品、右側預覽呈現。平板使用頂部分類和並排預覽，窄手機提供完整的分類按鈕。錢包、商品價格與主要操作對齊。
+- [x] 共用裝備揭曉採獨立大圖區。驗證多獎勵切換、繼續、鍵盤焦點，以及模擬兩種摺疊方向。
+- [ ] 核對當前提交的 CI，以及不同瀏覽器的實體裝置。見 [商城與裝備揭曉版面計畫](docs/superpowers/plans/2026-11-19-wave3-showroom-layout-plan.md)。
+
+# Wave 3 試玩商城送出狀態與布局（2026-11-19）
+
+- [x] RED 重現確認區在回執前消失與缺額提示缺失。GREEN 驗證等候狀態、重複操作只提交一次、失敗原位重試，並在晚到成功回執時保持新帳號的錢包與畫面。
+- [x] 三個幣別與缺額共用首頁圖示，商品卡顯示現有的競速／任務獎勵來源。使用同一個解鎖彈窗，關閉回原商品，前往收藏會預選該外觀。
+- [x] RED 重現 Firestore 重連後持有過期錢包。GREEN 用兩份試玩狀態驗證重連只讀取已提交的餘額和收藏，斷線保留最後已確認的快照。
+- [x] 14 步訪客帳本、離線兌換、雙分頁競態、裝置儲存降級以及車庫兌換共用彈窗流程已通過瀏覽器測試。
+- [x] 本機型別檢查、3,431 個單元測試與 14 個商城瀏覽器測試通過。release 的 Firestore 模擬器驗證雙分頁扣款、存檔讀回、斷線後重連與 5 項 Rules 測試。
+- [ ] 核對此提交的 GitHub CI、正式 Google 測試帳號與實體手機。詳細情境與驗收狀態見 [試玩商城計畫](docs/superpowers/plans/2026-11-19-wave3-store-implementation-plan.md)。
+
+# Wave 3 試玩商城兌換與商品卡（2026-11-19）
+
+- [x] 每張尚未取得的可兌換商品卡提供「兌換」入口，保留幣別圖示、扣款前確認、餘額不足提示及取消後的鍵盤焦點。
+- [x] 共用特效、商城和收藏的名稱、卡片圖片、GIF 與靜態降級。商城可按需開啟同一個甩尾實景預覽。
+- [x] 確認、取消及交易結果使用既有音效音量與靜音設定。RED 重現確認提示音、共用卡片及卡上兌換入口缺失。相關測試涵蓋實際扣款與取消。
+
+# Wave 3 試玩數值平衡與離線完賽（2026-11-19）
+
+- [x] 依現有賽道距離、AI 難度／名次、首完與日／週獎勵校準 23 款 VFX；維持點數 25–100，金幣調整為 150–650，鑽石調整為 5／10／15。
+- [x] RED 重現最高金幣價在 20 場 Coast 仍買不起、首個競速週獎勵無法兌換。GREEN 通過 55 項定價、結算、賽事與模組大小測試，及商城、14 步帳本、多分頁與儲存降級瀏覽器測試。
+- [x] 記錄瀏覽器提供試玩結果、訪客本機及登入交易失敗不補發的邊界，見 [試玩經濟 E2E 計畫](docs/superpowers/plans/2026-11-13-wave3-economy-e2e-plan.md#離線完賽與正式驗證)。
+- [ ] 按 Go Phase 2–3 接入正式完賽驗證與權威帳本，離線個人成績與試玩資料不作為正式入帳依據。
+
 # Develop World Tour camera CI run 44394398766
 
 - [x] Keep the Taipei showroom car clear of scenery through the High-quality portrait orbit with AIRFLOW on. Moving the Home preview from 1,040 m to 1,090 m clears the kerbside bus-stop posts. The 390 × 844 regression failed at 76° and 77° before the fix, then passed with all six Taipei camera cases on Chromium.
@@ -63,6 +99,7 @@
 - [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.
 - [x] Add one accessible bilingual reveal for real race, mission and redemption outcomes, and document the consumer API.
 - [x] Add per-kind reveal SFX on the shared mixer and expose typed acquisition constants for callers.
+- [x] Keep the storefront catalog outside locked race bundles. RED reproduced the unpublished skin IDs in the compiled race entry. GREEN passes the focused regression and the locked, offline trial, and opt-in Firestore builds.
 - [x] Use one four-shot reveal for catalog cars, with a localized model title, viewport-aware framing and a static fallback for Low, reduced motion, comfort, disabled effects or failed rendering. Chromium preview captured at desktop 1100 × 720, mobile 390 × 844 and 740 × 360.
 - [x] Add Vantaire GT to the existing Classic settlement at 18 career stars and preserve ownership from prior equipped-car and per-car paint saves. RED → GREEN for the first threshold crossing and no replay for legacy ownership. Local typecheck, production build and unit gate passed (3,416 passed, 4 skipped).
 - [x] RED → GREEN for the film-study camera order, eight distinct reward scores, and stopping only the acquisition score. The live car reveal now matches the study’s low front, side and rear angles before the title cut. Captured actual Chromium WebGL frames and an audible score using the game mixer.
@@ -94,10 +131,16 @@
 # Wave 3 試玩記錄開關（2026-11-19）
 
 - [x] 先重現 release 無法啟用、無效開關未報錯、UID 舊本機紀錄被讀入、checkpoint 仍未設定索引豁免。新增測試後以共用 Vite 策略與 Firestore Adapter 修正。
-- [x] 驗證 `coming-soon`、`trial`、`released` 的開關矩陣。release 可開啟試玩記錄，production 的 `trial` 與 `released` 預設開啟。
+- [x] 驗證 `coming-soon`、`trial`、`released` 的開關矩陣。release 可開啟試玩記錄，production 的 `trial` 與 `released` 原先預設開啟，已於審查修正改為 opt-in。
 - [x] release 瀏覽器與 Firebase 模擬器驗證訪客本機、登入後的 UID 檔案、跨瀏覽器讀回、並發完賽去重、登出回訪客和試玩 VFX 與正式擁有權隔離。
 - [x] 保留 v1 資料相容並停用試玩 checkpoint 的索引。操作、停用與清理順序見 [Cloud Save 指南](docs/cloud-save.md#wave-3-firestore-preview)。
 - [ ] 正式 Firebase Rules／Indexes 部署、正式 Google 帳號與實機驗收。
+
+# Wave 3 試玩記錄審查修正（2026-11-19）
+
+- [x] 試玩記錄改為嚴格 opt-in：只有 `VITE_WAVE3_FIRESTORE_PREVIEW=1` 啟用，未設定在所有 Vite 模式皆關閉。 RED：`tests/garage-release-build.test.js` 矩陣在舊碼 `production trial undefined` 失敗；GREEN 19/19。
+- [x] 刪除雲端資料時先提交 `saves`、`modeBests`、`accounts` 批次，再於所有建置單獨刪除 `wave3PreviewEconomy/{uid}`，僅忽略 `permission-denied`。Bundle fence 改用試玩 store 專屬標記。 RED：`tests/cloud-delete.test.js` 與 fence 標記測試在舊碼失敗；GREEN 25/25。`npm test` 3401 pass／4 skipped，typecheck、`npm run build` 通過；trial 未設定與 `=1` 建置的 bundle 稽核分別無／有標記；`npm run test:cloud` 17 項瀏覽器與 5 項 Rules 通過。
+- [ ] Pages／Netlify 部署若需要試玩記錄，需在 Rules 部署後明確設定 `VITE_WAVE3_FIRESTORE_PREVIEW=1`。
 
 # Garage drift trails
 
@@ -481,6 +524,25 @@ on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, 
 - [ ] Not run: physical phone, exact-HEAD GitHub `quality-gate`.
 - [x] Showroom pulse (owner's pick over a fixed race length or a hold-to-preview button): Garage/Home plume was 0.83 m vs Preview Studio's 4.70 m (default settings). `tests/sprint-plume.test.js` *showroom plume: loops…* RED on `e4329420` (0.83 m), GREEN after: every showroom loops from idle to ≥ 95% of the race length with the 2.2 s ignition demo; Reduced Motion holds Studio at full length.
 - [ ] Showroom pulse in real Garage/Studio frames, both cars, both phone orientations: delegated recording, not yet reviewed.
+
+## Wave 3 trial review fixes (2026-11-19, `fix/wave3-review-experience`)
+
+- [x] Cloud deletion invalidates trial writes first. RED: `forgetAccount` did not exist, and a
+  queued settlement read the deleted (null) document as a new account and wrote it again.
+  GREEN: `tests/wave3-experience-guards.test.js` (in-flight Firestore settlement, later
+  settlement and reset all leave the deleted document absent; in-memory wallet cleared).
+- [x] Race start waits for the signed-in wallet restore and the 7-day expiry. RED: a race whose
+  countdown scope predated the expiry settled as `expired`. GREEN: `start`, `restart` and
+  Cup resume defer on `deferWave3RaceStart`; guard tests cover restore, expiry and the wiring.
+- [x] Reset trial overwrites a corrupted or future-dated save. RED: the Firestore reset
+  rejected with `Invalid Wave 3 preview checkpoint`, and the guest reset left `{"broken"` on
+  disk. GREEN: reset writes without reading the stored save.
+- [x] Local gates: module-size 3/3, `npm test` 3,402 passed / 0 failed / 4 skipped,
+  `npm run typecheck`, `npm run build`, garage-trial Playwright (wave3 economy, store,
+  missions, early access, currency, bootstrap) 37 passed, `npm run test:cloud` 17 + 5 passed.
+  `tests/result-cloud-browser.spec.js` does not parse at base `a9a5aa4e` (duplicate
+  `clickLobbyOption` import), so it was not run.
+- [ ] Remote `quality-gate` for the pushed HEAD (not pushed in this session).
 
 ## NITRO trail skins: comfortable glow, no strobe (2026-11-18, `fix/nitro-trail-glare`)
 

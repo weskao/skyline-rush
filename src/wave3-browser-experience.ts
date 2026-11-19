@@ -34,6 +34,9 @@ export function createWave3BrowserExperience(options: Options = {}) {
   let equipped: string | null = null;
   const { firestore } = options;
   let pendingFirestore: Promise<unknown> = Promise.resolve();
+  let restoring: Promise<void> | null = null;
+  // Accounts whose cloud data was deleted in this tab: queued and later writes become no-ops.
+  const forgotten = new Set<string>();
   const usesFirestore = (accountId: string) => !!firestore && accountId !== 'guest';
   const getSnapshot = (): ExperienceSnapshot => {
     const snapshot = state.getSnapshot();
@@ -95,16 +98,19 @@ export function createWave3BrowserExperience(options: Options = {}) {
   };
   const currentScope = () => {
     const scope = state.getOperationScope();
-    if (savedAt !== null && now() - savedAt > DEMO_RETENTION_MS && syncDisk(scope.accountId)) publish();
+    if (!usesFirestore(scope.accountId) && savedAt !== null && now() - savedAt > DEMO_RETENTION_MS &&
+      syncDisk(scope.accountId)) publish();
     return state.getOperationScope();
   };
-  const transact = async <T>(action: (accountId: string, writable: boolean, changed: boolean) => T, stale: () => T): Promise<T> => {
+  const transact = async <T>(
+    action: (accountId: string, writable: boolean, changed: boolean) => T, stale: () => T, sync = true,
+  ): Promise<T> => {
     const scope = currentScope();
     const run = (writable: boolean): T => {
       const before = state.getOperationScope();
       // Tab switches invalidate queued work even when the user switches away and back.
-      if (!sameDemoScope(scope, before)) return stale();
-      const changed = writable && syncDisk(scope.accountId);
+      if (forgotten.has(scope.accountId) || !sameDemoScope(scope, before)) return stale();
+      const changed = writable && sync && syncDisk(scope.accountId);
       if (!sameDemoScope(scope, state.getOperationScope())) {
         if (changed) publish();
         return stale();
@@ -127,32 +133,41 @@ export function createWave3BrowserExperience(options: Options = {}) {
     }
   };
   // Firestore may rerun the callback after a concurrent commit. The staged state has no display or equipment side effects.
-  const transactFirestore = <T>(action?: (draft: DemoState) => { value: T; save: boolean }) => {
+  // `overwrite` (reset) replaces the stored document without reading it, so a corrupted one cannot block it.
+  const transactFirestore = <T>(action?: (draft: DemoState) => { value: T; save: boolean }, overwrite = false) => {
     const scope = state.getOperationScope();
-    const stillCurrent = () => sameDemoScope(scope, state.getOperationScope());
+    const stillCurrent = () => !forgotten.has(scope.accountId) && sameDemoScope(scope, state.getOperationScope());
     const operation = pendingFirestore.then(async () => {
       if (!firestore || !stillCurrent()) return null;
       const result = await firestore(scope.accountId, raw => {
         if (!stillCurrent()) return { result: null };
+        const time = now();
         const draft = createWave3LocalDemo({ now, initialScope: { ...scope, generation: 'legacy' } });
-        const saved = readWave3DemoCheckpoint(raw, scope.accountId, now());
-        if (saved.expiredGeneration) draft.expireCheckpoint(saved.expiredGeneration);
-        else if (raw !== null && (!saved.checkpoint || !draft.restoreCheckpoint(saved.checkpoint))) {
+        const saved = overwrite ? null : readWave3DemoCheckpoint(raw, scope.accountId, time);
+        if (saved?.expiredGeneration) draft.expireCheckpoint(saved.expiredGeneration);
+        else if (saved && raw !== null && (!saved.checkpoint || !draft.restoreCheckpoint(saved.checkpoint))) {
           throw new Error('Invalid Wave 3 preview checkpoint');
         }
-        const update = sameDemoScope(scope, draft.getOperationScope()) ? action?.(draft) : undefined;
+        const update = overwrite || sameDemoScope(scope, draft.getOperationScope()) ? action?.(draft) : undefined;
         const checkpoint = draft.getCheckpoint();
         return {
-          result: { value: update?.value, checkpoint },
-          ...(update?.save ? { write: encodeWave3DemoCheckpoint(checkpoint, now()) } : {}),
+          result: { value: update?.value, checkpoint, savedAt: update?.save ? time : saved?.savedAt ?? null },
+          ...(update?.save ? { write: encodeWave3DemoCheckpoint(checkpoint, time) } : {}),
         };
       });
       if (!result || !stillCurrent()) return null;
+      savedAt = result.savedAt;
       state.restoreCheckpoint(result.checkpoint);
       return { value: result.value, snapshot: publish() };
     });
     pendingFirestore = operation.catch(() => {});
     return operation;
+  };
+  const restore = () => {
+    savedAt = null; // a failed refresh must not retry on every race start
+    const pending: Promise<void> = transactFirestore().then(() => {}, () => {})
+      .then(() => { if (restoring === pending) restoring = null; });
+    return restoring = pending;
   };
   const failed = (status: 'expired' | 'unavailable'): ExperienceResult => ({
     status, snapshot: getSnapshot(), deltaDemoPoints: 0, deltaDemoCoins: 0, deltaDemoDiamonds: 0,
@@ -196,9 +211,8 @@ export function createWave3BrowserExperience(options: Options = {}) {
       options.clearEquipment?.();
       diskRaw = undefined;
       savedAt = null;
-      if (usesFirestore(accountId)) {
-        void transactFirestore().catch(() => {});
-      } else {
+      if (usesFirestore(accountId)) void restore();
+      else {
         const checkpoint = volatile.get(accountId);
         if (checkpoint) state.restoreCheckpoint(checkpoint);
         else if (accountId === 'guest') syncDisk(accountId, true);
@@ -206,17 +220,34 @@ export function createWave3BrowserExperience(options: Options = {}) {
       return publish();
     },
     async resetDemo() {
-      if (usesFirestore(state.getOperationScope().accountId)) {
-        const result = await transactFirestore(draft => ({ value: draft.resetDemo(), save: true }));
+      const { accountId } = state.getOperationScope();
+      if (usesFirestore(accountId)) {
+        const result = await transactFirestore(draft => ({ value: draft.resetDemo(), save: true }), true);
         if (!result?.value) throw new Error('Wave 3 preview reset expired');
         return result.snapshot;
       }
+      // Reset overwrites the stored save unread, so a corrupted or future-dated one cannot pin the tab to memory.
+      volatile.delete(accountId);
       return transact((accountId, writable) => {
         state.resetDemo();
         // Persist the new generation atomically, including when the wallet is empty.
         save(accountId, writable);
         return publish();
-      }, getSnapshot);
+      }, getSnapshot, false);
+    },
+    /** Race start waits for this: the signed-in wallet restore and the 7-day expiry. Null when nothing is pending. */
+    ready(): Promise<void> | null {
+      const { accountId } = currentScope(); // applies the guest expiry synchronously
+      if (usesFirestore(accountId) && !restoring && savedAt !== null && now() - savedAt > DEMO_RETENTION_MS) restore();
+      return restoring;
+    },
+    /** Cloud deletion: queued and later trial writes for the account become no-ops in this tab. */
+    forgetAccount(accountId: string) {
+      forgotten.add(accountId);
+      volatile.delete(accountId);
+      if (state.getOperationScope().accountId !== accountId) return;
+      state.resetDemo();
+      publish();
     },
     recordGameEvent: (...args: Parameters<Wave3ExperiencePort['recordGameEvent']>) =>
       mutate(target => target.recordGameEvent(...args)),
@@ -236,7 +267,9 @@ export function createWave3BrowserExperience(options: Options = {}) {
       return target.clearEquippedPreview(itemId);
     }),
     refresh(accountId: string) {
-      if (accountId === 'guest' && state.getOperationScope().accountId === accountId && syncDisk(accountId)) publish();
+      if (state.getOperationScope().accountId !== accountId) return;
+      if (usesFirestore(accountId)) return transactFirestore().then(() => {}, () => {});
+      if (accountId === 'guest' && syncDisk(accountId)) publish();
     },
   } satisfies Wave3ExperiencePort & Record<string, unknown>;
   return port;
@@ -258,9 +291,9 @@ if (typeof window !== 'undefined') {
     void wave3DemoExperience.clearEquippedPreview(itemId, accountId);
   });
   window.addEventListener('storage', event => {
-    if (event.key === null) wave3DemoExperience.refresh(wave3DemoExperience.getOperationScope().accountId);
-    else if (event.key.startsWith(WAVE3_DEMO_STORAGE_PREFIX)) {
-      wave3DemoExperience.refresh(event.key.slice(WAVE3_DEMO_STORAGE_PREFIX.length));
-    }
+    if (event.key === null || event.key === WAVE3_DEMO_STORAGE_PREFIX + 'guest') wave3DemoExperience.refresh('guest');
+  });
+  window.addEventListener('online', () => {
+    void wave3DemoExperience.refresh(wave3DemoExperience.getOperationScope().accountId);
   });
 }

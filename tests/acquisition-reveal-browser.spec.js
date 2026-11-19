@@ -64,8 +64,7 @@ test('a mission claim and an equipment redemption reveal their receipts over Gar
 
   await garage.locator('[data-garage-section="store"]').tap();
   const store = garage.locator('[data-wave3-demo-store]');
-  await store.locator('[data-demo-id="thruster-ion"]').tap();
-  await store.getByRole('button', { name: 'Demo redeem', exact: true }).tap();
+  await store.locator('[data-demo-offer="thruster-ion"]').getByRole('button', { name: /^Redeem / }).tap();
   await store.getByRole('button', { name: 'Confirm demo redeem' }).tap();
   await expect(reveal.getByRole('heading', { name: 'Ion thruster' })).toBeVisible();
   await expect(reveal.locator('.acquisition-art')).toHaveJSProperty('naturalWidth', 288);

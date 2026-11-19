@@ -23,7 +23,7 @@ The Garage contains two distinct state machines. **Release mode** decides which 
 
 The release selector in `scripts/garage-release-build.mjs` selects the Wave 3 UI and race aliases together with `#wave3-preview-store`. Vite supplies the same selection to the browser and checks the emitted bundle for the chosen storage strategy. `Wave3ExperiencePort` continues to own settlement and UI operations. Guests use the existing device adapter, and signed-in preview users use the Firestore adapter.
 
-Production builds with Garage mode `trial` or `released` currently enable the preview. `VITE_WAVE3_FIRESTORE_PREVIEW=0` turns off Firestore and removes Wave 3 from a `released` build. In that mode the regular VFX catalog remains available. With the switch on, a redeemed Wave 3 cosmetic may render as a temporary override in `released`. The regular catalog continues to enforce its ownership check. See [cloud-save.md](cloud-save.md#wave-3-firestore-preview) for build commands and database cleanup.
+The preview is strictly opt-in: only `VITE_WAVE3_FIRESTORE_PREVIEW=1` enables it, in any Vite mode. Omitting the switch or setting `=0` turns off Firestore and removes Wave 3 from a `released` build. The bundle fence keys on `WAVE3_PREVIEW_STORE_MARKER`, a string only the Firestore preview store contains, because the always-on account cleanup names the preview collection in every bundle. In that mode the regular VFX catalog remains available. With the switch on, a redeemed Wave 3 cosmetic may render as a temporary override in `released`. The regular catalog continues to enforce its ownership check. See [cloud-save.md](cloud-save.md#wave-3-firestore-preview) for build commands and database cleanup.
 
 ## Quick local checks
 

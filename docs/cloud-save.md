@@ -17,15 +17,15 @@ npm run build
 
 ## Wave 3 Firestore preview
 
-`VITE_WAVE3_FIRESTORE_PREVIEW` is a build-time switch. Set it where Vite runs and rebuild when changing it. The preview uses the existing Google sign-in and Firebase project.
+`VITE_WAVE3_FIRESTORE_PREVIEW` is a strictly opt-in build-time switch: only `=1` enables Firestore preview storage, in every Vite mode. Set it where Vite runs and rebuild when changing it. The preview uses the existing Google sign-in and Firebase project. Enable it only for a project whose deployed Rules already allow `wave3PreviewEconomy`.
 
 | Garage mode | Setting omitted | `=1` | `=0` |
 | --- | --- | --- | --- |
-| `trial` | On for a production build, off for the dev server | Wave 3 with Firestore | Wave 3 with guest storage and signed-in in-page state |
-| `released` | On for a production build, off for the dev server | Wave 3 with Firestore | Wave 3 excluded |
+| `trial` | Same as `=0` | Wave 3 with Firestore | Wave 3 with guest storage and signed-in in-page state |
+| `released` | Same as `=0` | Wave 3 with Firestore | Wave 3 excluded |
 | `coming-soon` | Wave 3 excluded | Configuration error | Wave 3 excluded |
 
-GitHub Pages and Netlify production builds use the enabled `trial` default. To pin a different setting on a deployment, set the same variable in the build environment. Firebase Rules and indexes are deployed separately.
+GitHub Pages and Netlify production builds set only `GARAGE_VFX_RELEASE_MODE=trial`, so they ship without Firestore preview storage. A deployment that needs it must set `VITE_WAVE3_FIRESTORE_PREVIEW=1` in its build environment after the Firebase Rules and indexes are deployed; those are deployed separately.
 
 ```sh
 VITE_WAVE3_FIRESTORE_PREVIEW=1 make dev
@@ -39,7 +39,8 @@ GARAGE_VFX_RELEASE_MODE=released VITE_WAVE3_FIRESTORE_PREVIEW=0 npm run build
 - A signed-out player uses the guest device key `skyline-rush-wave3-demo:v1:guest`. Google sign-in switches to the Firebase UID's preview document when the flag is on. Signing out restores the guest save. Previous local UID checkpoints are ignored, and guest balances are never uploaded. A failed authenticated write keeps the last confirmed snapshot and reports the operation as unavailable.
 - Firestore uses one owner-only document at `wave3PreviewEconomy/{uid}`. The envelope is `{ version: 1, checkpoint: string }`. The application validates the decoded checkpoint, including the UID, schema version, size, currency balances, mission state, inventory and recent replay IDs. The payload is capped at 64 KiB and exempt from Firestore indexing. Update the codec, rules, adapter and regression fixtures together if the format changes.
 - The Firestore adapter stages gameplay mutations inside a transaction using the server document and publishes the new state after commit. Keeping the balances, rewards and replay IDs together allows a retry to recognize a previously recorded completion. The client ignores checkpoints after seven days without a saved operation. Firestore retains the physical document until deletion.
-- The existing cloud-save delete action includes the preview document while preview storage is enabled. For a full cleanup, turn off the flag and remove the preview write rule, then delete `wave3PreviewEconomy` in the intended project. The ordinary `saves`, `modeBests` and `accounts` collections do not hold Wave 3 balances. Keep the preview data out of the formal Go economy when that launches.
+- When a signed-in browser comes back online, the trial wallet reads the latest confirmed checkpoint. A failed read keeps the last confirmed balance and collection. Redemption retries use the current server balance and inventory inside the transaction. A cosmetic already unlocked in another tab costs nothing on retry.
+- The cloud-save delete action removes the preview document in every build, including builds with the preview off, so data written by an earlier preview build does not survive. It first commits the `saves`, `modeBests` and `accounts` batch, then deletes `wave3PreviewEconomy/{uid}` on its own (`src/cloud-delete.ts`). A `permission-denied` result there is ignored because a project without the preview rule cannot hold that document; any other error is reported. For a full cleanup, turn off the flag and remove the preview write rule, then delete `wave3PreviewEconomy` in the intended project. The ordinary `saves`, `modeBests` and `accounts` collections do not hold Wave 3 balances. Keep the preview data out of the formal Go economy when that launches.
 
 ## Account data and safe progress restore
 
