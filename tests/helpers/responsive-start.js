@@ -34,7 +34,7 @@ export const AIRFLOW_START_CLASSES = [
 const AIRFLOW_PANELS = ['.airflow-hud', '.aero-tools', '.bottomline'];
 export async function readAirflowStart(page) {
   // Judge the settled layout: the AIRFLOW panels slide in, and a read mid-slide differs from a read after a resize.
-  await page.evaluate(() => Promise.all(document.getAnimations().filter(a => a.effect?.getComputedTiming().iterations !== Infinity).map(a => a.finished)));
+  await page.evaluate(() => Promise.all(document.getAnimations().filter(a => a.effect?.getComputedTiming().iterations !== Infinity).map(a => a.finished.catch(() => {}))));
   const start = await page.locator('#start-button').boundingBox();
   const panels = [];
   for (const selector of AIRFLOW_PANELS) {

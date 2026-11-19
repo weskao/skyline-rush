@@ -345,3 +345,11 @@ test('a spec never asserts absence between its countdown wait and its racing wai
   });
   assert.deepEqual(offenders, [], 'Record the countdown frames in the page and assert after GO (.claude/rules/browser-test-stability.md)');
 });
+
+// A page-wide wait on document.getAnimations() also sees a toast that unmounts mid-wait: cancel rejects `finished` with
+// AbortError (airflow showcase, 7 of 7 viewports red once pressing `v` raised the toast). Scope to a node or catch.
+test('a page-wide animation wait tolerates a cancelled animation (finished.catch)', () => {
+  const offenders = FILES.flatMap(file => readFileSync(new URL(file, import.meta.url), 'utf8').split('\n')
+    .flatMap((line, i) => /document\.getAnimations\(/.test(line) && /\.finished(?!\.catch)/.test(line) ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
+  assert.deepEqual(offenders, [], 'Use `animation.finished.catch(() => {})` or scope getAnimations() to one element (.claude/rules/browser-test-stability.md)');
+});
