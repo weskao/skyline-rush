@@ -1,4 +1,4 @@
-import { FEEDBACK_SOUNDS, STINGERS } from './feedback-sounds.ts';
+import { FEEDBACK_SOUNDS, ITEM_HIT_TEXTURES, STINGERS } from './feedback-sounds.ts';
 import { musicForMode } from './mode-audio.ts'; import { driftTier } from './drive-rules.ts';
 import { createRaceAudioEvents } from './race-audio-events.ts';
 import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
@@ -116,13 +116,16 @@ export function createSound(gapWarning = () => null) {
     const now = context.currentTime;
     voice(type, from, to, now, duration, volume, .006, master);
     tone(from / 4, from / 8, duration * .55, 0, .035);
+    filteredBurst(to, from, duration, .025, now);
+  }
+  function filteredBurst(from, to, duration, volume, now) {
     const source = context.createBufferSource(), band = context.createBiquadFilter(), envelope = context.createGain();
     source.buffer = noiseBuffer;
     band.type = 'bandpass'; band.Q.value = .8;
-    band.frequency.setValueAtTime(to, now);
-    band.frequency.exponentialRampToValueAtTime(from, now + duration);
+    band.frequency.setValueAtTime(from, now);
+    band.frequency.exponentialRampToValueAtTime(to, now + duration);
     envelope.gain.setValueAtTime(0, now);
-    envelope.gain.linearRampToValueAtTime(.025, now + .012);
+    envelope.gain.linearRampToValueAtTime(volume, now + .012);
     envelope.gain.exponentialRampToValueAtTime(.0001, now + duration);
     source.connect(band).connect(envelope).connect(master);
     source.start(now);
@@ -132,8 +135,13 @@ export function createSound(gapWarning = () => null) {
     if (!enabled || hidden || !context || context.state !== 'running') return;
     const notes = FEEDBACK_SOUNDS[name];
     if (notes) {
-      if (voices.size + notes.length > 24) return;
-      for (const [from, to, duration, delay, volume] of notes) tone(from, to, duration, startAfter + delay, volume);
+      const texture = ITEM_HIT_TEXTURES[name];
+      if (voices.size + notes.length + Number(!!texture) > 24) return;
+      const start = context.currentTime + startAfter;
+      for (const [from, to, duration, delay, volume, type = 'sine'] of notes) {
+        voice(type, from, to, start + delay, duration, volume, .008, master);
+      }
+      if (texture) filteredBurst(...texture, start);
       if (STINGERS.has(name)) {
         const end = Math.max(...notes.map(([, , duration, delay]) => duration + delay));
         duckFrom = context.currentTime + Math.max(0, startAfter - .05);

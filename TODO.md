@@ -1,5 +1,8 @@
 # Rival attack pickups
 
+- [x] Add distinct Freeze and EMP impact/recovery sounds through the shared player status and SFX mixer. RED reproduced missing cues and stale shell bounds after a car swap. GREEN passes 152 focused tests and plays distinct waveforms through Chromium Web Audio, with muted output measured at zero.
+- [x] Refit status shells when the active model changes. WebGL verified both effects on the actual Stratosway R2 and Vantaire GT GLBs. The regression iterates the catalog and covers an unlisted model and procedural fallback.
+- [ ] Check the full local regression and the exact-commit CI gate for attack audio and model fitting.
 - [x] Reproduced three differences in player feedback: a separate EMP hue, no Low-quality crystals, and a thaw that always used reduced motion. The player now shares the rival EMP palette and shatter behavior and reuses the crystal pool on Low. All 28 focused item, status and module-size tests pass.
 - [x] Verified desktop gameplay on Coast in Low graphics with staged rival Freeze and EMP activations. Captured both the affected car and viewport edge, from activation through recovery. Type checks and the locked production build passed.
 - [ ] Complete the full `make verify` regression and check the exact-commit CI quality gate for the updated status visuals.

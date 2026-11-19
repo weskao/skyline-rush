@@ -555,6 +555,38 @@ test('sprint readiness plays two distinct SFX phrases and respects mute', t => {
   assert.deepEqual(pitches('boost-ready'), []);
 });
 
+test('Freeze and EMP play distinct attack and recovery cues through the race SFX bus', t => {
+  const { nodes, sound } = installAudio(t);
+  const race = createRace(); race.phase = 'racing';
+  sound.setEnabled(true, .5);
+  sound.update(race);
+  const limiter = nodes.find(node => node.kind === 'compressor');
+  const master = nodes.find(node => node.kind === 'gain' && node.destination === limiter && node.gain.value > 0);
+  const record = change => {
+    const start = nodes.length;
+    change(); sound.update(race);
+    const voices = nodes.slice(start).filter(node => node.kind === 'oscillator' || node.kind === 'buffer');
+    for (const voice of voices) {
+      let target = voice.destination;
+      while (target && target !== master) target = target.destination;
+      assert.equal(target, master, 'cues go through the user-controlled effects bus');
+      assert.ok(voice.stopped < .6, 'one-shot cue');
+      voice.onended();
+    }
+    return voices;
+  };
+  const freeze = record(() => { race.player.freezeUntil = 2; });
+  assert.ok(freeze.some(node => node.kind === 'buffer') && freeze.some(node => node.type === 'sine'));
+  assert.ok(record(() => { race.elapsed = 2; }).length > 0, 'thaw sounds');
+  const emp = record(() => { race.player.empUntil = 3.5; });
+  assert.ok(emp.some(node => node.type === 'square') && emp.some(node => node.kind === 'buffer'));
+  assert.ok(record(() => { race.elapsed = 3.5; }).length > 0, 'EMP recovery sounds');
+  sound.setEnabled(false);
+  assert.deepEqual(record(() => { race.player.freezeUntil = 5.5; }), []);
+  sound.setEnabled(true);
+  assert.deepEqual(record(() => {}), [], 'unmuting does not replay the hit');
+});
+
 test('the halfway chime is a short rising stinger, so it ducks the mix only briefly', async () => {
   const { FEEDBACK_SOUNDS, STINGERS } = await import('../src/feedback-sounds.ts');
   const notes = FEEDBACK_SOUNDS.halfway;

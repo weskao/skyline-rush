@@ -71,22 +71,23 @@ export function createRivalStatusTint(capacity: number) {
   for (let i = 0; i < capacity; i++) { mesh.setMatrixAt(i, parked); mesh.setColorAt(i, color.setRGB(0, 0, 0)); }
   let time = 0;
 
-  // The shell's local transform, measured once per car from its own visible parts (any model fits).
+  // The race pose stays the same when the loader replaces its displayed model. Cache each model's own fit.
   function fit(pose: THREE.Object3D): THREE.Matrix4 {
-    let local = fits.get(pose);
+    const source = pose.children.find(part => part.userData.garageModel) ?? pose;
+    let local = fits.get(source);
     if (local) return local;
     pose.updateWorldMatrix(true, true);
     inverse.copy(pose.matrixWorld).invert();
     box.makeEmpty();
-    pose.traverseVisible(object => {
+    source.traverseVisible(object => {
       const { geometry, isMesh } = object as THREE.Mesh;
-      if (!isMesh || object === pose.userData.jets || object.parent === pose.userData.jets) return;
+      if (!isMesh || object.userData.followsBody || object === pose.userData.jets || object.parent === pose.userData.jets) return;
       if (!geometry.boundingBox) geometry.computeBoundingBox();
       box.union(part.copy(geometry.boundingBox!).applyMatrix4(toCar.multiplyMatrices(inverse, object.matrixWorld)));
     });
     if (box.isEmpty()) box.set(new THREE.Vector3(-1.1, 0, -2.3), new THREE.Vector3(1.1, 1.3, 2.3));
     box.getCenter(center); box.getSize(size).multiplyScalar(FIT / 2);
-    fits.set(pose, local = new THREE.Matrix4().compose(center, new THREE.Quaternion(), size));
+    fits.set(source, local = new THREE.Matrix4().compose(center, new THREE.Quaternion(), size));
     return local;
   }
 
