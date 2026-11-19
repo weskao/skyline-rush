@@ -118,6 +118,8 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
     status.setAttribute('aria-atomic', 'true');
+    const compactStatus = make(doc, 'div', 'wave3-demo-results__compact-status');
+    compactStatus.setAttribute('aria-hidden', 'true');
     const credit = makeCredit(doc, 'wave3-demo-results__credit', 'demo-points');
     const coinCredit = makeCredit(doc, 'wave3-demo-results__credit wave3-demo-results__coin-credit', 'wallet-coin');
     const details = make(doc, 'div', 'wave3-demo-results__details');
@@ -126,7 +128,7 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     gains.append(credit, coinCredit);
     details.append(status, make(doc, 'p', 'wave3-demo-results__distinction'),
       make(doc, 'p', 'wave3-demo-results__disclaimer'), make(doc, 'div', 'wave3-demo-results__missions'));
-    // Only shown on short landscape, where the card is a one-line strip and details open as a panel above it.
+    // Only shown in short landscape, where the card collapses to a strip.
     const toggle = make(doc, 'button', 'wave3-demo-results__toggle');
     toggle.setAttribute('type', 'button');
     toggle.setAttribute('aria-controls', details.id);
@@ -137,7 +139,7 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
       toggle.setAttribute('aria-expanded', String(open));
       if (open) region!.dataset.open = ''; else delete region!.dataset.open;
     });
-    region.append(header, gains, details, toggle);
+    region.append(header, gains, compactStatus, details, toggle);
     container.append(region);
   }
   region.className = `wave3-demo-results wave3-demo-results--${view.state}`;
@@ -152,6 +154,7 @@ export function mountWave3DemoResults({ container, settlement, locale, raceMode,
     delete region.dataset.open;
   }
   put(region.querySelector<HTMLElement>('.wave3-demo-results__status')!, view.status);
+  put(region.querySelector<HTMLElement>('.wave3-demo-results__compact-status')!, view.status);
   renderCredit(region.querySelector<HTMLElement>('.wave3-demo-results__credit')!, view.points, view.balance, settlement);
   renderCredit(region.querySelector<HTMLElement>('.wave3-demo-results__coin-credit')!, view.coins, view.coinBalance, settlement);
   put(region.querySelector<HTMLElement>('.wave3-demo-results__distinction')!, view.distinction);

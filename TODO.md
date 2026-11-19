@@ -160,6 +160,28 @@
 - [x] Tune all five styles through the shared render path. Keep Low readable, and use the chain's extra energy for length and flow speed. Comfort shows a quiet, tinted tail and static card art.
 - [ ] Verify the exact feature-branch GitHub quality gate and review the phone WebGL evidence.
 
+# Drift exit braking and tutorial coaching
+
+- [x] RED reproduced a hold that could never rebuild braking force after a drift, a generic earned-boost cue, and an incorrect drift-start cue after a short hold.
+- [x] Blend from drift exit to normal braking over 0.55 seconds. A straight brake request still acts immediately, and releasing an earned drift still starts its mini boost.
+- [x] Coach brake release, continued braking, and a short drift retry in English and Traditional Chinese. Select copy for keys, buttons, slide and tilt, pulse BRAKE for drift entry, and clear stale retry copy.
+- [ ] Confirm real browser and physical-phone behavior and the exact-commit GitHub quality gate.
+
+# Short-landscape reward details
+
+- [x] Reproduced the hard cut in Chromium. The old panel switched directly to opacity 1 without a transform when Details opened.
+- [x] Checked both directions of the anchored reveal and immediate keyboard disclosure with reduced motion in Chromium. The closed panel leaves the receipt text available to assistive technology while releasing pointer input.
+- [x] Passed 57 focused Node checks, including the module-size gate.
+- [ ] Complete the real-race browser matrix, physical phone check and exact-commit CI. The local full gate stopped at Vue typechecking with exit 137.
+
+# Drift exit and release boost
+
+- [x] RED reproduced the speed drop and early boost countdown on Coast. With BRAKE and light steering held from 165.6 km/h, speed at one second was 117.45 km/h on the old code.
+- [x] Keep the input assigned to the drift until release. In the same 60 Hz run, speed was 157.35 km/h after one second and the boost waited for release. A new press without steering brakes immediately.
+- [x] Verify the tutorial cue, the existing 0.2-second steering reversal across tracks and modes at 30/60/120 Hz, replay fixtures and the shared input tests for keyboard and touch.
+- [ ] Verify the HUD in a real browser run and on physical phones. Chromium in this environment could not start because UNIX sockets are restricted.
+- [ ] Confirm the exact-commit GitHub quality gate.
+
 # Acquisition reveal
 
 - [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.

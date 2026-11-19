@@ -327,9 +327,9 @@ body[data-phase="finished"] #result-style {
     position: relative;
     grid-template-columns: minmax(0, 1fr) var(--result-action-width);
   }
-  /* Use the summary column for the opened receipt when the toolbar leaves little headroom. */
-  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .result-rewards > .wave3-demo-results[data-open] { position: static; }
-  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .result-rewards .wave3-demo-results[data-open] .wave3-demo-results__details {
+  /* Anchor the receipt to the summary column throughout its reveal and exit. */
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .result-rewards > .wave3-demo-results { position: static; }
+  body[data-phase="finished"]:not([data-tutorial], [data-fold-axis]) .result-rewards .wave3-demo-results__details {
     inset: 0 calc(var(--result-action-width) + 24px) auto 0;
     max-height: 100%;
   }

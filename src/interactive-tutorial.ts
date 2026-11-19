@@ -70,7 +70,7 @@ export function createInteractiveTutorial() {
     car.nitroTime = 0;
     car.nitroHeld = false;
     if (TUTORIAL_STEPS[index - 1] !== 'drift') car.miniBoost = 0;
-    car.drift = car.trick = null;
+    car.drift = car.driftHold = car.trick = null;
     // Lesson changes never move the car (user, 2026-11-08): only rings and lesson state change.
     if (step === 'drift') car.driftPayout = null;
     if (step !== 'land') {
@@ -144,7 +144,12 @@ export function createInteractiveTutorial() {
     race,
     get index() { return index; },
     get step() { return TUTORIAL_STEPS[index] ?? null; },
-    get progress() { return index === TUTORIAL_STEPS.length || finishing ? 1 : TUTORIAL_STEPS[index] === 'drift' ? driftProgress((car as unknown as { drift: { time: number } | null }).drift?.time ?? 0) : maneuver?.progress ?? Math.min(1, held / .4); },
+    get progress() {
+      if (index === TUTORIAL_STEPS.length || finishing) return 1;
+      if (TUTORIAL_STEPS[index] !== 'drift') return maneuver?.progress ?? Math.min(1, held / .4);
+      const drift = (car as unknown as { drift: { time: number } | null }).drift ?? car.driftHold?.reward;
+      return driftProgress(drift?.time ?? 0);
+    },
     get coachPhase() {
       if (finishing) return 'finishing';
       const phase = maneuver?.phase ?? (retryReason ? 'retry' : 'ready');
@@ -194,7 +199,7 @@ export function createInteractiveTutorial() {
       else if (step === 'boost') valid = judgeStretch();
       else if (step === 'drift') {
         valid = !!(car as unknown as { driftPayout: { nitro: number } | null }).driftPayout && car.miniBoost > 0; // any tier pays
-        if (car.drift) { drifted = true; if (retryReason === 'slow') retryReason = null; }
+        if (car.drift || car.driftHold) { drifted = true; retryReason = null; }
         else if (drifted && !valid) { drifted = false; retryReason = 'short'; } // released before the first payout tier
         // Lessons keep the player's speed, so a drift tried at crawl speed only brakes: say why.
         else if (!valid && controls.brake && controls.steer && car.altitude === 0 && car.speed < DRIFT_ENTRY) retryReason = 'slow';
