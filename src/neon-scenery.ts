@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type { ClassicRoad } from './classic-road-routes.ts';
 import { NEON_CHUNK_METRES, NEON_GROUND, NEON_LAP, NEON_MAX_CHUNKS, NEON_PIECES, NEON_SHORE, NEON_TILE, NEON_YARD, neonChunkPlan, neonChunkWindow, type NeonKit, type NeonPiece, type NeonPlacement } from './neon-scenery-plan.ts';
 import { REFLECT_LAYER } from './wet-reflection.ts';
+import { createBlossomMaterial } from './neon-blossom.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
 const PARKED = new THREE.Matrix4().makeTranslation(0, -1000, 0);
@@ -52,9 +53,9 @@ function createKitPools(source: THREE.Object3D, kit: NeonKit) {
   for (const { material } of meshes) (material as THREE.MeshStandardMaterial).emissiveIntensity = EMISSIVE[kit];
   const own: THREE.Material[] = [];
   for (const [piece, pools] of bands) {
-    const strength = PIECE_EMISSIVE[piece];
-    if (!strength) continue;
-    const material = Object.assign((pools.near.mesh.material as THREE.MeshStandardMaterial).clone(), { emissiveIntensity: strength });
+    const strength = PIECE_EMISSIVE[piece], shared = pools.near.mesh.material as THREE.MeshStandardMaterial;
+    const material = piece === 'cherry_tree' ? createBlossomMaterial(shared) : strength ? Object.assign(shared.clone(), { emissiveIntensity: strength }) : null;
+    if (!material) continue;
     own.push(material);
     for (const band of [pools.near, pools.far]) if (band) band.mesh.material = material;
   }

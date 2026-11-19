@@ -190,8 +190,8 @@ To do, in order:
     `tests/neon-scenery.test.js` (*the land takes the pavement set*), `tests/neon-look-browser.spec.js` (*asphalt and
     pavement*, *falls back*), RED first.
   - [x] Owner art approval of the kit. Accepted by eye on 2026-11-16 (Step 22).
-  - [ ] Open after the approval: the cherry tree is still opaque puffs (the kit has no alpha
-    material; one would cost a draw call); the spire is limited by its 32 m footprint slot; the emissive values (1.7
+  - [ ] Open after the approval: the cherry tree's opaque puffs are cut out in Step 23 (no draw added), but the
+    result is not yet seen in a WebGL capture; the spire is limited by its 32 m footprint slot; the emissive values (1.7
     city, 1.5 landmarks) were set before the darker dome and are not yet judged against it; the wet mirror on the
     pavement is a fill-rate cost not yet measured on a phone.
 - [x] **6 Rail underpass** (N5, N7): one Blender underpass GLB (rail bridge deck, abutments, amber lamps) on the
@@ -928,7 +928,7 @@ Captures are observations, not approval. Captures, logs and numbers: ignored `..
 | 22 | Canal: warm-gold embankment on the dome, not the concept's violet sky (12, parity sheet) | b | Choice: kit skyline in front of the dome, not a tinted dome. A tint is a sky rebuild (every pin moves, the 1k map and the key with it) for one sector; the towers carry the concept's teal and magenta, add no texture and leave Coast alone. `08`, `08b`, `08c`: towers frame both sides |
 | 22b | A small warm patch of dome still shows through the arch (found here) | c | The same choice: closing it is the sky rebuild above, or a tower on the road's own line, where the route and its rings run |
 | 23 | Across-the-water skyline stands in the sea (12) | c | The canal is over water (N3, N7) and the land is one mesh; the far towers are sunk 6 to 66 m and turned so they read as a far waterfront (`08b`). A bank under them is a second ground mesh |
-| 24 | Cherry tree reads as opaque puffs (18) | c | The city kit is one opaque material; cut-out blossom is a second material and alpha overdraw on up to 8 trees a chunk. Seen at `02b`, `03c` |
+| 24 | Cherry tree reads as opaque puffs (18) | step 23, capture pending | Cut-out blossom on the tree's own pools: alpha test, no blending, no draw added, one program added. Seen at `02b`, `03c`; the after captures are not taken yet |
 | 25 | Emissive 1.7 city, 1.5 landmarks not judged against the darker dome (18) | b | Judged in this step's captures: tubes, blade signs and parapet bands keep their colour in every probe looked at. The two pieces that did not are entries 1 and 4 |
 | 26 | Ship's stern and funnel dark, deckhouse bright (15) | a, step 21 | `a5f06b60`; funnel 0.023 to 0.366 (deckhouse 0.464), stern 0.0444 to 0.0888; the two thin guards now hold by 0.004 (relief 0.954 of 0.95) and 0.013 (hull 0.068 of 0.055); `07e`, `07h`, `07j` before and after |
 | 27 | Stack's white boxes flat pale grey (15) | c, step 21 | Lifted, not fixed: white relief 0.972 to 0.980 of the colour map's 1.0. More light costs relief (0.908 at +20% power, guard 0.95) and less light nears the lit floor (0.989 at lit 0.0561, floor 0.05); `07g` reads about the same before and after |
@@ -968,7 +968,8 @@ Accepted limits (entries marked c above), by what would lift them:
 
 - A landmark kit budget decision: entry 29. Entries 2 and 26 were fixed in step 21 inside the budget; entry 27
   is held between two guards (step 21).
-- A city kit rebuild with a second material: entry 24. Entry 6 was fixed in step 21.
+- A city kit rebuild with a second material: none left. Entry 24 was cut out in step 23 without one; entry 6 was
+  fixed in step 21.
 - A new panorama or sky rebuild: entries 9 to 12, 14 and 22b.
 - A shader or lighting change: entries 13, 28 and 32.
 - A second ground mesh or mirror draw against the draw-call caps: entries 16 and 23.
@@ -1038,6 +1039,47 @@ logs and numbers: ignored `../audits/neon-landmark-relight/` (`before-*` at `0cf
 - [ ] Medium, Ultra, the other selectable cars, the default look compared with `develop`, and shader compiles after
   GO: not measured, on the owner's instruction (no browser runs). Not verified.
 - Accepted limits carried forward unchanged: Steps 20 and 21.
+
+## Step 23: cut-out blossom on the cherry tree (2026-11-19)
+
+Owner decision 2026-11-19: build it now, before the phone measurement, and record the desktop numbers before and
+after.
+
+- [x] The premise in entry 24 was wrong. A second material does not cost a draw. Every piece is already its own
+  pooled `InstancedMesh`, one draw per band. The cherry tree (`prop`) has a near pool and no far pool.
+- [x] `src/neon-blossom.ts`: the cherry tree's pool wears its own copy of the city kit material.
+  - The copy uses `alphaTest` 0.5, with `transparent` false and `depthWrite` on. The kit's front-face culling stays.
+  - Florets are cut out only inside the blossom cell of the atlas (`NEON_BLOSSOM_CELL`). The bark lies outside
+    that cell.
+  - A puff that turns away from the camera loses more florets, so its outline goes ragged.
+  - Where a floret shrinks below a pixel, the cut fades out. That stops the far trees from shimmering.
+  - Low draws no kit, so Low is unchanged.
+- [x] Guards, RED first:
+  - `tests/neon-scenery.test.js` (*cut-out blossom copy*): the cut sits between the colour map and the alpha
+    test, no pool is added, other pieces stay opaque, and dispose frees the copy but never the GLB's material.
+  - `tests/neon-city-glb.test.js` (*the blossom fills the cell*): on every LOD, the crown is inside the cell and
+    the trunk is outside it.
+- [x] Before numbers: desktop, headless Chrome, rain-night race at 1440 × 900.
+  - Columns: probe, peak draw calls, p50 / p95 ms, triangles.
+  - High has 115 programs and Medium has 111.
+
+  | Probe | High | Medium |
+  | --- | --- | --- |
+  | grid | 321, 20.3 / 24.8, 244,243 | 284, 11.3 / 13.8, 167,318 |
+  | boulevard 200 m | 337, 16.5 / 22.8, 205,452 | 307, 11.8 / 13.6, 163,070 |
+  | underpass straight 1050 m | 206, 17.4 / 26.6, 236,663 | 302, 11.3 / 13.6, 180,485 |
+  | market 1500 m | 191, 13.5 / 16.1, 246,368 | 296, 11.1 / 13.5, 188,999 |
+  | oldtown 7600 m | 191, 15.3 / 20.5, 252,398 | 177, 10.5 / 12.5, 177,988 |
+  | plaza approach 9200 m | 227, 13.7 / 18.1, 312,668 | 203, 10.3 / 11.3, 230,636 |
+  | plaza 9350 m | 213, 14.2 / 17.8, 296,615 | 196, 10.1 / 11.1, 228,321 |
+
+- [ ] After numbers and captures (boulevard and plaza against concept frames `02b`, `03c`): not taken.
+  - The owner told us on 2026-11-19 not to run any browser test.
+  - Draw calls and triangles are unchanged by construction. The unit test shows no pool is added, and the
+    geometry is untouched. So the High race peak stays 337 of 380, but only by reasoning, not by measurement.
+  - The extra cost is one shader program and fragment work on the crown. That cost is not measured.
+  - `tests/neon-look-browser.spec.js` was not run either.
+- [ ] Phone (`make phone-diag`), portrait and landscape: p50 / p95 with the cut-out. Still pending.
 
 ## By device (repeat per machine; evidence in ignored `../audits/`)
 
