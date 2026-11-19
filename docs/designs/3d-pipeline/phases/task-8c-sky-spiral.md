@@ -81,7 +81,8 @@ Low keeps the procedural scene; the course keeps its own in-race song; exact-HEA
 
 - [x] Route frozen against the 8–12 km art target and parity pinned before any asset. Evidence: 10,000 m measured,
   `node --test tests/sky-spiral-parity.test.js` 4 of 4 (a pin of shipped behaviour: GREEN from the start, no RED run).
-- [ ] Look brief with owner decisions (time of day; cloud sea approach).
+- [x] Look brief with owner decisions (time of day; cloud sea approach). Evidence:
+  [sky-spiral-look-brief.md](../../sky-spiral-look-brief.md), decisions recorded above.
 - [ ] Sky hook and helix road hook in new modules, RED first, Coast and Neon unchanged.
 - [ ] Sky chosen, built, measured (items 15, 20); manifest rows; bloom value.
 - [ ] Tower, platform, deck and rail GLBs with masters, manifest entries, licences.
