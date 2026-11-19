@@ -48,6 +48,8 @@
 - [x] Expand all five in-race drift looks with distance-spaced accents. Flames use crossed meshes, ice uses shaded facets, and rainbow, arc and nebula retain distinctive moving surfaces. Low quality and comfort mode suppress the secondary layer.
 - [x] Keep both tyre traces continuous across long valid frames while breaking at a jump in position. Focused tests caught missing accents, missing volumetric geometry and a 5 m motion gap at 100 m/s before implementation.
 - [x] Add SVG pause/play artwork to the live preview. Chromium verified the 44 px hit target, pointer pause, keyboard resume and retained focus.
+- [x] Use the saved Low, Medium, High and Ultra settings in the Garage preview and race. Low keeps the style ribbon, Medium and High expand the particle budget, and Ultra adds short-lived fine sparks and ice fragments within the shared instanced draw. Comfort removes secondary particles.
+- [x] Sample every crossed road-distance cell and keep particle birth time within the frame interval. Both new skid tests failed before the fix and passed after it. The latest branch base and this change passed 44 focused skid, shader, module-size and browser-stability checks.
 - [ ] Confirm physical phone checks, the complete browser/World Tour suite and the feature branch CI.
 
 # Develop browser CI run 44303677367
