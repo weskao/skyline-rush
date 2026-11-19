@@ -60,7 +60,9 @@ export function createCoastLook({ scene, renderer, lens, room, roomIntensity, en
   return {
     update(trackId: string, preset: string, quality: VfxQuality) {
       const plan = coastEnvPlan(trackId, preset, quality);
-      const next = plan.kind === 'room' ? 'room' : plan.variant;
+      // Keyed by track as well: world.js resets the sun and exposure on a track change, so a track that shares the
+      // last one's sky (Coast to Sky Spiral, both `day`) must have them applied again.
+      const next = plan.kind === 'room' ? 'room' : `${trackId}:${plan.variant}`;
       if (next === key) return;
       key = next;
       if (plan.kind === 'room') return applyRoom(trackId);

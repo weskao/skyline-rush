@@ -2,7 +2,9 @@
 
 Part of [task-8-track-look-shared-plan.md](task-8-track-look-shared-plan.md) · Proposed (not in spec v2) · Scope tags: [README.md](README.md).
 
-**Status:** plan only. No asset, test or capture exists for this look yet.
+**Status:** built on `feature/sky-spiral-3d-look` (2026-11-19), unit-tested and built; not merged. No browser spec has
+been run and no WebGL capture exists: the owner asked for no browser tests on this task. Every browser- and
+device-dependent line below is open.
 
 ## Look target and sources
 
@@ -22,10 +24,11 @@ Concept art and mood reference only (rule item 7). No concept-board panel exists
 
 | Item | Source category (CC0 Poly Haven unless stated) | Asset |
 |---|---|---|
-| Day sky with cirrus | HDRI, puresky | Coast `day` is a starting candidate; to be chosen and recorded in the manifest |
-| Tower shell and light strip | painted concrete / metal textures; geometry modelled in Blender | to be chosen and recorded in the manifest |
-| Cloud sea | built in engine or as a dome band; no photo source expected | to verify |
-| Deck, rails, chevrons | metal and concrete textures | to be chosen and recorded in the manifest |
+| Day sky with cirrus | HDRI, puresky | Coast's `day` sky, reused as it is (`coastEnvPlan('spiral', …)`): no new file or manifest row |
+| Tower shell and light strip | painted concrete / metal textures; geometry modelled in Blender | `spiral-landmarks` (`tower`, `tower_far`): Poly Haven `concrete_panels`, `blue_metal_plate` (`assets-src/spiral-landmarks/sources.json`) |
+| Cloud sea | High and Ultra: shader cloud deck and wisps. Medium: cloud GLB models | High and Ultra: `src/spiral-clouds.ts` on the noise map of `src/cloud-noise.ts` (made at run time, no file). Medium: `spiral-landmarks` (`cloud_a`, `cloud_b`, `cloud_c`), 76 placed on the race lap. Snow peaks from `snow_field_aerial`, `aerial_rocks_02` |
+| Sky life | modelled and painted in Blender, no scan | `spiral-landmarks` (`bird_body`, `bird_wing_l`, `bird_wing_r`, `airship`), flown by `src/spiral-sky-life.ts`: two flocks of seven seabirds beside the road and one 60 m airship, Medium and above |
+| Deck, rails, chevrons | metal and concrete textures | Road deck: the procedural ribbon with the look's KTX2 road set. Rails: the procedural trim, recoloured while the kit is drawn. Chevron signs, gap markers, struts, platforms and stations: `spiral-landmarks` |
 
 ## Reuses from the shared plan
 
@@ -43,14 +46,37 @@ Concept art and mood reference only (rule item 7). No concept-board panel exists
   does not reach this road: a new target for the helix ribbon is needed.
 - Tower GLB (one landmark visible through the whole climb, two absolute-distance copies as today), spire platforms,
   deck and rail kit; masters and LODs.
-- Bloom value for this track: `src/world.js` picks bloom by track group; the Spiral value is to verify.
+- Bloom value for this track: Coast `day`'s (strength 0.36, threshold 1.15) while the day look is applied; the kit's
+  emissive strength is 3.4 (`SPIRAL_EMISSIVE`), which puts the blue strip at 1.09x the threshold.
 
 ## Budgets
 
-Road type: helix (`skyFrame`, `SKY_LENGTH` 5,600 m, helix 1,100–2,200 m, radius 165 m, rise 82 m; launches and gaps
-at 2,800, 3,700 and 4,550 m). Draw-call caps as the shared plan (home 540 / race 380 on High) until the owner sets a
-track-specific one. The tower stays in view for most of the lap, so its LODs and triangle budget matter more than
-on a chunked route.
+Road type: helix (`skyFrame`). Measured on 2026-11-19 from `src/sky-track.ts` and `src/race-tracks.ts`:
+`SKY_LENGTH` 10,000 m (`profileLength('spiral')`), helix 1,850–3,250 m, radius 222.2 m, rise 104 m; launches at
+4,650, 5,550 and 6,350 m with gaps at 4,720–4,785, 5,625–5,690 and 6,430–6,500 m; shortcut 7,220–7,720 m;
+`layoutVersion` 7. The route is inside the 8–12 km art target, so it is frozen unchanged (no new layout id, records,
+ghosts and cloud-save ids untouched) and pinned by `tests/sky-spiral-parity.test.js`.
+Draw-call caps: home 540 / race 380 on High, as the shared plan (owner decision, 2026-11-19: no track-specific cap).
+The tower stays in view for most of the lap, so its LODs and triangle budget matter more than on a chunked route.
+
+Measured without a browser (2026-11-19): `spiral-landmarks.glb` 1,019,196 bytes and 10,643 triangles (budget 1.5 MB /
+11,000) in sixteen nodes, one material, base colour 2048 px and three 1024 px maps. The kit is twelve instanced draws,
+eleven at once, and the flyers at most four more (three bird pools and the airship while it is in range). On High the
+cloud deck and its wisps (two draws) stand in for the three cloud mounds: fourteen at most, fifteen on Medium. 168
+placements on the race lap, at most 135 within the 2.6 km draw range (5,800 m); the 56,288 triangles the kit drew
+there with the full tower were counted on the earlier 9,163-triangle GLB and not recounted. The cloud deck costs about
+28 texture fetches a pixel on High and 60 on Ultra; its frame time was not measured. Draw calls, scene triangles, GPU bytes and p50/p95 need a browser: not run: the owner asked for no browser tests on this task (2026-11-19).
+
+## Owner decisions (2026-11-19)
+
+- Route length may move within 8–12 km to fit the art; outside that range the owner is asked first. Not used: the
+  shipped 10 km route fits.
+- Time of day: day sky, as the concept art. Low keeps the dark procedural scene.
+- Cloud sea: cloud GLB models (not an engine plane, not a dome band). Superseded for High and Ultra later the same day (owner: the mounds look fake; High and above must be as close to the real thing as possible): a shader cloud deck with drifting wisps (`src/spiral-clouds.ts`). Medium keeps the GLB mounds.
+- Draw-call cap: the shared home 540 / race 380.
+- Later the same day: the road must feel in the sky, with cloud drifting over it; the violet light under the day sky
+  is wrong; add moving sky scenery or animals; the finish must run on as road, not hang in the air; scenery is built
+  in Blender.
 
 ## Acceptance checks and guard tests
 
@@ -68,13 +94,42 @@ Low keeps the procedural scene; the course keeps its own in-race song; exact-HEA
 
 ## By project (committed once)
 
-- [ ] Route frozen against the 8–12 km art target and parity pinned before any asset.
-- [ ] Look brief with owner decisions (time of day; cloud sea approach).
-- [ ] Sky hook and helix road hook in new modules, RED first, Coast and Neon unchanged.
-- [ ] Sky chosen, built, measured (items 15, 20); manifest rows; bloom value.
-- [ ] Tower, platform, deck and rail GLBs with masters, manifest entries, licences.
-- [ ] `TRACK_LOOKS` entry; Low, fallback, warmup and draw-call tests GREEN.
-- [ ] Licence review, owner art approval, `make verify`, exact-HEAD CI.
+- [x] Route frozen against the 8–12 km art target and parity pinned before any asset. Evidence: 10,000 m measured,
+  `node --test tests/sky-spiral-parity.test.js` 4 of 4 (a pin of shipped behaviour: GREEN from the start, no RED run).
+- [x] Look brief with owner decisions (time of day; cloud sea approach). Evidence:
+  [sky-spiral-look-brief.md](../../sky-spiral-look-brief.md), decisions recorded above.
+- [x] Sky hook and helix road hook in new modules, RED first, Coast and Neon unchanged. Evidence: `src/spiral-look.ts`
+  (`5d7710aa`), `node --test tests/spiral-look.test.js` 8 of 8 (RED before the module existed); `src/world.js` did not
+  grow; `npm test` at `5fd333d7`: 3,464 pass, 0 fail, 4 skipped (Coast and Neon suites included).
+- [x] Sky chosen and bloom value: Coast's `day` sky and bloom, so item 15 is Coast's measurement and no manifest row is
+  added. Evidence: `tests/spiral-look.test.js` (*the day sky is Coast's, dome gain and bloom threshold included*).
+- [ ] Item 20 on this lap (the sun on the car's rear deck, per straight and lane): needs real WebGL frames; not run: the owner asked for no browser tests on this task (2026-11-19).
+- [x] Tower, strut, platform, station, sign, gap-marker, cloud and peak GLB nodes with master, manifest entry and
+  licences. Evidence: `e5460e12`, `assets-src/spiral-landmarks/` (master, build scripts, `sources.json`: CC0),
+  `SPIRAL_MODELS` in `src/model-manifest-spiral.ts`, `node --test tests/spiral-landmarks-glb.test.js` 12 of 12 (the
+  plan-size guard RED on the nominal sizes first). The GLB was checked by its tests and Cycles renders of the master,
+  never in three.js/WebGL.
+- [ ] Deck and rail GLBs: not built. The deck is the procedural ribbon with the KTX2 road set and the rails are the
+  procedural trim in the day palette; whether they need models is an art call on real captures.
+- [x] `TRACK_LOOKS` entry; Low and load-failure fallback unit tests GREEN. Evidence: `6b4bdf3a`,
+  `node --test tests/spiral-scenery.test.js tests/spiral-scenery-plan.test.js tests/track-look.test.js` 22 of 22, plus the
+  lit-instance check in `tests/shader-safety.test.js` and the hook order in `tests/sky-scene-streaming.test.js`.
+- [x] Violet sun under the day sky. Evidence: `4bf62b35` (`tests/coast-look.test.js`, RED on the sky-only key; rule
+  item 32).
+- [x] The road runs on past the finish instead of ending in the air. Evidence: `1fd1f9a0`, rule
+  `.claude/rules/road-runout.md` (`037d402d`). The other open-ended courses are a separate branch,
+  `feature/road-runout`.
+- [x] Cloud deck and wisps on High and Ultra. Evidence: `ffd88d99`, rule item 33,
+  `node --test tests/spiral-clouds.test.js tests/cloud-noise.test.js`; desktop Chromium stills in the ignored audits
+  (`spiral-lookdev/sea4-high-*.jpg`, before: `before-high-*.jpg`). No Ultra still, no phone, no frame time.
+- [x] Seabirds and airship: Blender nodes and their flight. Evidence: `2fd808ef` (GLB tests, RED before the build;
+  Cycles renders `bird.jpg`, `airship.jpg`, `peak.jpg`, `station.jpg`, `clouds.jpg` in the ignored audits), `97eaa229`
+  (`node --test tests/spiral-sky-life.test.js` 6 of 6: clear of every drawn road and kit piece on the lap, the run-out
+  and three Endless laps; wings stay on their shoulders; still under a stopped clock). Never drawn in WebGL.
+- [ ] No compile after GO, the home 540 / race 380 draw-call caps, warm-before-GO and the NaN scan: written in
+  `tests/spiral-look-browser.spec.js` and `tests/track-look-quality-browser.spec.js` (`5fd333d7`), never executed; not run: the owner asked for no browser tests on this task (2026-11-19).
+- [ ] Licence review, owner art approval, `make verify`, exact-HEAD CI. Feature branches do not run the full remote CI;
+  `make verify` includes the browser stages (not run: the owner asked for no browser tests on this task (2026-11-19)).
 
 ## By device (repeat per machine; evidence in ignored ../audits/)
 
