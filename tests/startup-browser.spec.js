@@ -102,24 +102,35 @@ test('keeps localised text and touch targets in bounds through rotation and fold
   await expect(page.locator('#startup')).toBeHidden();
 });
 
-test('scales decorative particles with existing graphics quality and reduced motion', async ({ page }) => {
+test('scales the camera and road motion with existing graphics quality and reduced motion', async ({ page }) => {
   await page.addInitScript(key => {
     if (sessionStorage.getItem('test-initial-quality')) return;
     sessionStorage.setItem('test-initial-quality', '1');
     localStorage.setItem(key, JSON.stringify({ quality: 'high', enabled: true }));
   }, QUALITY_STORAGE_KEY);
-  await page.goto('/');
-  await expect(enter(page)).toBeVisible();
+  // Measure the opening while the game chunk is still pending, before WebGL or the lobby can affect it.
+  await page.route('**/assets/main-*.js', () => {});
+  const startup = page.locator('#startup');
+  await page.goto('/', { waitUntil: 'commit' });
+  await expect(startup).toHaveAttribute('data-motion', 'high');
   const motes = page.locator('.startup-motes > i:visible');
+  const road = page.locator('.startup-road > i:visible');
+  const camera = page.locator('.startup-art img');
   await expect(motes).toHaveCount(7);
+  await expect(road).toHaveCount(4);
+  await expect(camera).toHaveCSS('animation-name', 'startup-camera');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(motes).toHaveCount(0);
+  await expect(road).toHaveCount(0);
+  await expect(camera).toHaveCSS('animation-name', 'none');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  for (const [tier, count] of [['medium', 3], ['low', 0]]) {
+  for (const [tier, count, roadCount] of [['medium', 3, 2], ['low', 0, 0]]) {
     await page.evaluate(([key, quality]) => localStorage.setItem(key, JSON.stringify({ quality, enabled: true })), [QUALITY_STORAGE_KEY, tier]);
-    await page.reload();
-    await expect(enter(page)).toBeVisible();
+    await page.reload({ waitUntil: 'commit' });
+    await expect(startup).toHaveAttribute('data-motion', tier);
     await expect(motes).toHaveCount(count);
+    await expect(road).toHaveCount(roadCount);
+    await expect(camera).toHaveCSS('animation-name', 'none');
   }
 });
 

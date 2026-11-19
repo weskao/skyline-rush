@@ -55,3 +55,33 @@ test('every new page load covers the lobby with the startup screen, even after t
   assert.equal(next.nodes.app.inert, true, 'half-built lobby must stay covered and inert');
   assert.equal(next.startup.waitingForFrame, true);
 });
+
+test('the launch animation keeps the lobby inert and is removed when rendering fails', async () => {
+  const { nodes, startup } = await openPage(memoryStorage());
+  nodes.startup.dataset.motion = 'high';
+  globalThis.matchMedia = () => ({ matches: false });
+  let resolveExit;
+  const finished = new Promise(resolve => { resolveExit = resolve; });
+  nodes.startup.animate = () => ({ finished, cancel: resolveExit });
+  startup.ready(() => assert.fail('a failed render must never enter the lobby'));
+  const entry = nodes['startup-enter'].listeners.click();
+  assert.equal(nodes.startup.dataset.entering, 'true');
+  assert.equal(nodes.app.inert, true);
+
+  startup.fail('renderer');
+  await entry;
+  assert.equal(nodes.startup.dataset.entering, undefined);
+  assert.equal(nodes.startup.dataset.stage, 'failed');
+  assert.equal(nodes.app.inert, true);
+  assert.equal(nodes['startup-retry'].hidden, false);
+});
+
+test('effects-off enters the lobby without creating an animation', async () => {
+  const { nodes, startup } = await openPage(memoryStorage());
+  nodes.startup.dataset.motion = 'off';
+  globalThis.matchMedia = () => ({ matches: false });
+  nodes.startup.animate = () => assert.fail('effects-off must enter immediately');
+  startup.ready(() => {});
+  await nodes['startup-enter'].listeners.click();
+  assert.equal(nodes.app.inert, false);
+});

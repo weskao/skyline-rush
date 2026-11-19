@@ -83,13 +83,18 @@ function setupStartup() {
       enter.focus({ preventScroll: true });
       enter.addEventListener('click', async () => {
         enter.disabled = true;
-        if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.body.classList.contains('vfx-comfort')) {
-          exit = root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-out', fill: 'forwards' });
+        const motion = root.dataset.motion;
+        if (motion !== 'off' && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          const cinematic = motion === 'high' || motion === 'medium';
+          if (cinematic) root.dataset.entering = 'true';
+          exit = root.animate([{ opacity: 1 }, { opacity: 1, offset: .22 }, { opacity: 0 }],
+            { duration: cinematic ? 360 : 240, easing: 'ease-in', fill: 'forwards' });
           await exit.finished.catch(() => {});
         }
         if (failed) return;
         finishAudio(true);
         root.hidden = true;
+        delete root.dataset.entering;
         entered = true;
         app.inert = false;
         viewport.abort();
@@ -99,6 +104,8 @@ function setupStartup() {
     },
     fail(reason: 'module' | 'renderer') {
       failed = true;
+      delete root.dataset.entering;
+      root.dataset.stage = 'failed';
       finishAudio(false);
       exit?.cancel();
       entered = false;
