@@ -1,4 +1,4 @@
-import { cupComplete, type CupState } from './championship-cup.ts';
+import { cupComplete, cupRivalVisualSeed, type CupState } from './championship-cup.ts';
 import type { HistoryStorage } from './history-storage.ts';
 import { writeStored } from './history-storage.ts';
 
@@ -29,7 +29,7 @@ export function retryCupHeat(cup: CupState, trackId: string): CupState {
   cupComplete(cup); // Reuse the shared track/driver/time validation before rolling back.
   const last = cup.results.at(-1);
   if (last?.track === trackId) {
-    if (cup.results.length === 1) return { tracks: [...cup.tracks], results: [] };
+    if (cup.results.length === 1) return { tracks: [...cup.tracks], results: [], rivalVisualSeed: cupRivalVisualSeed(cup) };
     return { ...cup, results: cup.results.slice(0, -1) };
   }
   if (cup.tracks[cup.results.length] !== trackId) throw new RangeError('Invalid Cup retry');

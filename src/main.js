@@ -15,7 +15,7 @@ import { createRace } from './race-factory.ts';
 import { createControls } from './input.ts';
 import { createSprintSeries, nextSprintGrid } from './sprint-series.ts';
 import { saveRecentCustom } from './recent-custom.ts';
-import { nextCupGrid, cupComplete } from './championship-cup.ts';
+import { nextCupGrid, cupComplete, cupRivalVisualSeed } from './championship-cup.ts';
 import { createWorld } from './world.js';
 import { readAudio } from './audio-settings.ts';
 import { setupVfxUI } from './vfx-ui.ts';
@@ -207,6 +207,7 @@ const cupRecovery = setupCupRecovery({ unlocked: () => [...unlockedTracks], cue:
     if (deferWave3RaceStart(() => race.phase === 'ready' && resume(saved))) return;
     cup = saved; daily = null; sprintSeries = null; stunt = null;
     raceSelect.restoreCup(saved);
+    race.rivalVisualSeed = cupRivalVisualSeed(saved);
     controls.clear(); leaveIntro(); startRace(race, world.trackSceneryPending(race)); focusRace(); sound.cue('ui');
   },
 });
@@ -296,6 +297,7 @@ function start() {
   if (touchUI.isEditing()) touchUI.editLayout(false);
   controls.clear();
   cup = race.mode === 'cup' && unlockedTracks.size >= cupCount() ? cupRecovery.start(race.trackId,cupCount()) : null;
+  if (cup) race.rivalVisualSeed = cupRivalVisualSeed(cup);
   stunt = race.mode === 'stunt' ? createStuntRun(race.trackId, race.config.duration) : null;
   sprintSeries = race.mode === 'custom' && race.config.stages ? createSprintSeries(race.config.stages) : null;
   if (race.mode === 'custom') saveRecentCustom(undefined, race.trackId, race.config);
@@ -324,6 +326,7 @@ function restart(trackId = race.trackId) {
     animation.finished.catch(() => {}).then(() => { if (!wipe.getAnimations().length) wipe.hidden = true; });
   }
   race = race.eventCourse ? raceSelect.recreate(race, trackId) : createRace(trackId, race.modifier ?? (race.mode === 'classic' ? null : race.config), race.session.presentation, nextGrid ?? undefined);
+  if (cup) race.rivalVisualSeed = cupRivalVisualSeed(cup);
   if (stunt && race.mode === 'stunt') race.stuntLimit = stuntHeatLimit(stunt);
   hud.resetMemory();
   goUntil = 0;

@@ -61,6 +61,14 @@
 - [x] 記錄瀏覽器提供試玩結果、訪客本機及登入交易失敗不補發的邊界，見 [試玩經濟 E2E 計畫](docs/superpowers/plans/2026-11-13-wave3-economy-e2e-plan.md#離線完賽與正式驗證)。
 - [ ] 按 Go Phase 2–3 接入正式完賽驗證與權威帳本，離線個人成績與試玩資料不作為正式入帳依據。
 
+# Motorsport rival chassis
+
+- [x] Redesign seven race opponents with original canopy, fender, rear-lamp, aero and race-graphics packages.
+- [x] Use a different chassis and colour family per slot in a full grid. Keep a Championship driver's look through grid rotations, retries and legacy/current progress recovery.
+- [x] RED reproduced missing fleet selection and Cup persistence. Focused regression tests cover wheel/wing clearance, lift and drive cues, in-place knockout, tier budgets and deck graphics. Production build passes.
+- [x] Capture the new meshes from multiple angles and inspect the seven-rival field with the game renderer at High and Low.
+- [ ] Confirm the feature branch's exact-commit CI, all-track regression and physical phone coverage.
+
 # Develop World Tour camera CI run 44394398766
 
 - [x] Keep the Taipei showroom car clear of scenery through the High-quality portrait orbit with AIRFLOW on. Moving the Home preview from 1,040 m to 1,090 m clears the kerbside bus-stop posts. The 390 × 844 regression failed at 76° and 77° before the fix, then passed with all six Taipei camera cases on Chromium.
