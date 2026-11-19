@@ -1,6 +1,6 @@
 # Skyline Rush — Claude Code project instructions
 
-Browser 3D arcade racer: Vue 3 + TypeScript (strict) + Vite + Three.js, Node >= 22.12.
+Browser 3D arcade racer: Vue 3 + TypeScript (strict) + Vite + Three.js r186, Node >= 22.12.
 Simulation `src/game.js`; rendering `src/world.js`, `src/effects.js`, `src/aero-vfx.js`;
 UI `src/App.vue`, `src/main.js`, `src/style.css`.
 
@@ -29,8 +29,10 @@ exactly. Topics whose work often starts before a scoped file is open:
 | Animated Garage/HUD/Store/VFX art (GIF, sprite sheet) | `.claude/rules/animated-image-production.md`, `.claude/rules/raster-artwork.md` |
 | Garage/Store access in `make *unlocked` | `.claude/rules/unlock-separation.md` |
 | Track teaser JPEGs under `public/track-teasers/` | `.claude/rules/track-teaser-artwork.md` |
-| Blender, GLB/PBR, 3D asset, new car model, rendering quality, Three.js r180 → r186 | `docs/designs/3d-pipeline/phases/README.md` (phase index; new car = `task-7-concept-hero-car.md`), then `.claude/rules/3d-asset-pipeline.md` |
-| Vehicle glare, exterior paint and glass, track lighting or bloom | [Vehicle and track lighting](.claude/rules/vehicle-lighting.md) |
+| Blender, GLB/PBR, 3D asset, new car model, rendering quality, a Three.js upgrade | `docs/designs/3d-pipeline/phases/README.md` (phase index; new car = `task-7-concept-hero-car.md`), then `.claude/rules/3d-asset-pipeline.md` |
+| Choosing a camera angle, lens, shot timing or light direction for a car or prop (reveal, showroom, title shot); checking a new GLB's silhouette and scale; a turntable or draft MP4 | `.claude/rules/crucible-mcp.md` (study it in Crucible MCP, ship the numbers as data) |
+| Vehicle glare, exterior paint and glass, track lighting or bloom | `.claude/rules/vehicle-lighting.md` |
+| A Garage item, paint, cosmetic or vehicle-mounted VFX; adding or switching a selectable car | `.claude/rules/garage-equipment.md` (every item works on every car) |
 | Tutorial lessons, cues or transitions | `docs/tutorial-driving.md` |
 | Anything the player newly acquires or unlocks (car, track, paint, equipment, clothing, medal, currency, reward, store or mission claim) | `.claude/rules/acquisition-reveal.md` (one shared reveal via `presentAcquisition`) |
 | Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
@@ -38,23 +40,20 @@ exactly. Topics whose work often starts before a scoped file is open:
 Player copy (What's New, locales, store text, captions) names a track exactly as `TRACK_NAMES` in
 `src/i18n.ts` does, in en and zh-TW; never a paraphrase or a second table. Renaming a track changes that table.
 
-Every course needs its own in-race song, and that song must not match any other course.
-It plays after the race starts. Selecting the course on the home screen keeps the shared intro.
+## 3D tools
 
-## Garage equipment compatibility
+Project-scope MCP servers (`.mcp.json`, `.codex/config.toml`). Pick by the job, and say so when
+the one a task needs is not connected instead of working around it:
 
-Every new or updated Garage item, including paints, cosmetics, and vehicle-mounted VFX,
-must preview and equip correctly on every selectable car. Use the shared equipment catalog
-and application path. Fit model-dependent effects to the active car's geometry or attachment
-points so the same equipment also works when a new car is added.
-For new paint IDs, names and artwork, follow `.claude/rules/raster-artwork.md`.
+| Tool | Use it for | Never for |
+| --- | --- | --- |
+| Blender MCP (`blender`) | Editable masters, GLB/PBR export, bakes | Deciding how the game frames a model |
+| Crucible MCP (`crucible`) | Looking before coding: angles, lens, shot timing and light direction for a car or prop, a GLB check, draft stills and MP4 | The game runtime (no `crucible` import under `src/`), asset masters, acceptance evidence |
+| The game (Three.js, Playwright) | Every acceptance capture | — |
 
-Changing car models carries forward the equipped paint and any live paint preview. Persist
-only the equipped paint for the new car, and let the shared model loader warm the replacement
-before drawing it. Guards: `tests/crimson-gt-browser.spec.js` and `tests/garage-model.test.js`.
-
-Verify each changed item on every selectable car. Check the Garage preview and the equipped
-appearance after switching cars, including the home showcase and races where the item appears.
+A Crucible study ends as numbers in the module that owns the shot, with its test, and is then
+confirmed on a real WebGL capture. The car premiere's angles in `src/acquisition-car-camera.ts`
+came from one.
 
 ## Workflow (every feature and bug fix)
 
@@ -68,18 +67,16 @@ never proves another.
 A bug fix ships with its prevention: the scoped rule that names the trap, the mechanism that
 removes it, and a guard test that is RED on the old code.
 
-### Mandatory checks before Commit / Push
+### Before Commit / Push
 
-- Before committing source changes, run `node --test tests/module-size.test.js`; also run the
-  focused regression tests, typecheck and build appropriate to the changed behavior.
-- Before a local push, the existing `.githooks/pre-push` runs the module-size gate automatically,
-  even with `SKIP_LAYOUT_GATE=1`. Configure `git config core.hooksPath .githooks` for new clones.
-- When a check fails, identify the exact source file(s), actual/allowed line count when relevant,
-  failed test file, applicable rule file and command to reproduce it. Fix and rerun before pushing.
-- Do not compress unrelated statements, remove tests or increase legacy ceilings just to silence CI.
-  Keep modules readable; extract code only when there is a meaningful responsibility boundary.
-- GitHub API/connector commits bypass local Git hooks: explicitly perform available checks and
-  inspect the exact-HEAD remote CI. Report commands not executed; never assume a check passed.
+- Before committing source changes, run `node --test tests/module-size.test.js`, plus the focused
+  regression tests, typecheck and build for the changed behavior. A failure is fixed at its
+  source, never by compressing code, removing tests or raising a ceiling; what to report is in
+  `.claude/rules/module-size.md`.
+- `.githooks/pre-push` runs the module-size gate (even with `SKIP_LAYOUT_GATE=1`) and `npm test`;
+  never bypass it with `--no-verify`. A new clone enables the hooks with `make setup`.
+- GitHub API/connector commits bypass local Git hooks: run the available checks yourself, inspect
+  the exact-HEAD remote CI and report every command not executed.
 
 Merge-ready only when the latest `develop` is integrated, required checks are green and the
 user-visible symptoms were retested. Never merge into `develop`/`main`, open a PR or deploy
@@ -94,15 +91,14 @@ without explicit user approval.
 - Bug seen only on a phone → reproduce on that device class and orientation (`make phone-diag`);
   a desktop viewport of the same size is not a reproduction.
 - Never delete or weaken tests to pass CI; report any test you could not run.
-- Never commit RED tests (yours or another session's staged files) without the implementation that turns them
-  green; `.githooks/pre-push` runs `npm test` on code/test pushes, never bypass it with `--no-verify`.
-- Only `main`/`develop` run the full remote CI; a green run on an earlier commit does not
-  validate the new HEAD.
+- Never commit RED tests (yours or another session's staged files) without the implementation
+  that turns them green.
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
+| `make setup` | Install npm dependencies (Crucible included) and enable the git hooks |
 | `make` / `make dev` | Vite dev server, saved progression respected |
 | `make dev-unlocked` / `make test-unlocked` | Local Vite playtest server with all catalog cars, paints and equipment available |
 | `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS |
