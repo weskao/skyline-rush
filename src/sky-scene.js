@@ -8,7 +8,10 @@ const STEP = 10;
 const WIDTH = 12;
 const boundaries = new Map(SKY_JUMPS.flatMap(jump =>
   [jump.rampFrom, jump.gapFrom, jump.gapTo].map(at => [Math.round(at / STEP) * STEP, at])));
-const rowDistance = (distance, endless) => endless ? distance : Math.min(SKY_LENGTH, boundaries.get(distance) ?? distance);
+const rowDistance = (distance, endless) => endless ? distance : boundaries.get(distance) ?? distance;
+// Past the finish the ribbon follows the route's Endless continuation, so the road runs on ahead of a parked car
+// instead of ending in the air under it (.claude/rules/road-runout.md).
+const rowFrame = (s, endless) => skyFrame(s, endless || s > SKY_LENGTH);
 const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
 
 export function createSkyScene(scene) {
@@ -185,7 +188,7 @@ export function createSkyScene(scene) {
         const uvBase = Math.floor(start / ROAD_UV_PERIOD) * ROAD_UV_PERIOD;
         for (let i = 0; i <= ROWS; i++) {
           const s = rowDistance(start + i * STEP, endless);
-          const frame = skyFrame(s, endless), v = (s - uvBase) / ROAD_UV_METRES;
+          const frame = rowFrame(s, endless), v = (s - uvBase) / ROAD_UV_METRES;
           uvs.set([0, v, 1, v], i * 4);
           for (let side = 0; side < 2; side++) {
             const lateral = side ? WIDTH : -WIDTH, offset = (i * 2 + side) * 3;
@@ -198,7 +201,7 @@ export function createSkyScene(scene) {
           const gap = length === 0 || skyGapAt(s + length / 2, endless);
           const a = i * 2, k = i * 6;
           indices.set(gap ? [a, a, a, a, a, a] : [a, a + 1, a + 2, a + 1, a + 3, a + 2], k);
-          const mid = skyFrame(s + length / 2, endless), hide = gap ? -1000 : 0;
+          const mid = rowFrame(s + length / 2, endless), hide = gap ? -1000 : 0;
           for (let side = 0; side < 2; side++) {
             pose(borders, i * 2 + side, mid, side ? 12.1 : -12.1, 0.17 + hide, 0.16, 0.12, length || STEP);
             pose(rails, i * 2 + side, mid, side ? 12.9 : -12.9, 0.60 + hide, 0.38, 1.1, length || STEP);
