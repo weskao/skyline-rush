@@ -50,6 +50,7 @@ function setupStartup() {
   let failed = false;
   let exit: Animation | undefined;
   let progressAnimation: Animation | undefined;
+  let readyHold: Animation | undefined;
   const canAnimate = () => root.dataset.motion !== 'off' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function advanceProgress(stage: 0 | 1 | 2 | 3) {
@@ -100,9 +101,16 @@ function setupStartup() {
     async ready(onEnter: () => void) {
       if (!this.waitingForFrame) return;
       ready = true;
-      status.textContent = copy.complete;
       const completion = advanceProgress(3);
       if (completion) await completion.finished.catch(() => {});
+      if (failed) return;
+      status.textContent = copy.complete;
+      root.dataset.stage = 'complete';
+      if (canAnimate()) {
+        readyHold = progress.animate([{ opacity: 1 }, { opacity: 1, offset: .75 }, { opacity: .58 }],
+          { id: 'startup-ready-hold', duration: 260, easing: 'ease-in-out', fill: 'forwards' });
+        await readyHold.finished.catch(() => {});
+      }
       if (failed) return;
       root.dataset.stage = '3';
       progress.hidden = true;
@@ -139,6 +147,7 @@ function setupStartup() {
       root.dataset.stage = 'failed';
       finishAudio(false);
       progressAnimation?.cancel();
+      readyHold?.cancel();
       exit?.cancel();
       entered = false;
       app.inert = true;

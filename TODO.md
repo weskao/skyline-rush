@@ -12,6 +12,8 @@
 - [x] After the startup gate exits, bring the Home setup and tools in from opposite sides by group. Use shorter lifts on narrow portrait and foldable layouts, a fade on Low, and instant controls with effects off, comfort, or reduced motion. The integration test was RED without the handoff animation and is GREEN with it. The landscape Chromium guard verifies the Start rail animates independently of the scroller and keeps keyboard focus.
 - [x] Fill the three startup lights continuously from the currently visible value. Keep each loading stage below completion until the first 3D frame succeeds, then settle the fill before offering Enter. Give Enter an amber hover surface, a one-shot sweep and a short arrow movement.
 - [x] Stage Home controls before the splash fades. Wide layouts start outside the viewport; compact and folded layouts lift a few pixels in place. Keep keyboard focus on Start after handoff and keep the fixed-rail ancestors out of the animation. Both startup handoff and progress tests reproduced the old behavior before the fix.
+- [x] Resolve the opening language before first paint using saved preference, then browser languages. Announce readiness only after the fill reaches 100%, hold the glowing rail briefly, and then reveal Enter with a single light sweep. The first-paint locale and readiness-order guards reproduced the old behavior before the fix.
+- [x] Keep the localized opening tagline below the logo on short landscape and both fold axes. Bound the horizontal fold heading to the upper segment and keep the loading controls clear of the hinge.
 - [ ] Confirm the full GitHub quality gate and physical iOS/Android/foldable devices.
 
 # Develop World Tour camera CI run 44394398766
