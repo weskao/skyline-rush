@@ -12,13 +12,12 @@ export type RivalStatus = 'freeze' | 'emp' | null;
 
 export const rivalStatus = rivalItemHit;
 
-const PLAYER_EMP = [1.65, 1.12, 0.24] as const;
 const FIT = 1.2; // ellipsoid radii over the car's half extents: covers the body, corners soften into the rim
 const parked = new THREE.Matrix4().makeTranslation(0, -1e4, 0); // unused instances wait below the scene, never at scale 0
 
 const FROST_CREEP = 0.3; // s for the frost line to climb from the sills over the roof
 // Per instance `status` = (kind: 1 EMP / 0 Freeze, seconds since the hit, seed, fade level). `rim` doubles as the
-// detail switch: Low skips the facets and arcs (uniform branch, one program for every tier).
+// detail switch: Low skips facets and keeps one EMP arc on the nearby player.
 const VERTEX = `attribute vec4 status;varying vec3 vColor,vNormal,vView,vLocal;varying vec4 vStatus;
   void main(){mat3 m=mat3(modelMatrix*instanceMatrix);
     vec3 s=vec3(dot(m[0],m[0]),dot(m[1],m[1]),dot(m[2],m[2])); // squared axis scales: ellipsoid normal = m * n / s
@@ -39,9 +38,10 @@ const FRAGMENT = `uniform float rim,time;varying vec3 vColor,vNormal,vView,vLoca
     float age=vStatus.y,seed=vStatus.z,level=vStatus.w;vec3 p=vLocal,col;
     bool player=seed<0.;
     if(vStatus.x>.5){float flash=player?0.:1.-smoothstep(0.,.18,age),arcs=0.,core=0.;
-      if(rim>0.){float strike=floor(time*(player?4.:15.)+seed*7.); // the arcs jump to a new path each strike
+      if(rim>0.||player){float strike=floor(time*(player?4.:15.)+seed*7.); // the arcs jump to a new path each strike
         core=1.-smoothstep(0.,.05,abs(noise(p*2.6+vec3(seed,strike*1.7,0.))-.5));
-        arcs=max(core,.8*(1.-smoothstep(0.,.035,abs(noise(p*4.3-vec3(strike*.9,seed,0.))-.5))));}
+        arcs=core;
+        if(rim>0.)arcs=max(core,.8*(1.-smoothstep(0.,.035,abs(noise(p*4.3-vec3(strike*.9,seed,0.))-.5))));}
       col=vColor*(body+(player ? 0.28 : 0.)*edge+rim*edge*.9+arcs*2.2+flash*1.4)+vec3(1.)*level*(core*core*1.3+flash*.8);
     }else{float front=-1.15+2.5*clamp(age/${FROST_CREEP},0.,1.);
       float iced=smoothstep(front+.08,front-.08,p.y),line=(1.-smoothstep(0.,.08,abs(p.y-front)))*step(age,${FROST_CREEP});
@@ -113,8 +113,8 @@ export function createRivalStatusTint(capacity: number) {
         if (now) kinds[i] = now; // keep the last colour while it fades out
         levels[i] = THREE.MathUtils.damp(levels[i]!, now ? 1 : 0, now ? 14 : 8, dt);
         const visible = levels[i]! >= 0.01 && (isPlayer ? !!target : !!pose);
-        fx.rival(i, { status: now, age: time - since[i]!, pose: target, fit, rival: driver },
-          dt, target ? emit : null, low, reducedMotion || isPlayer);
+        fx.rival(i, { status: now, age: time - since[i]!, pose: target, fit, rival: driver, isPlayer },
+          dt, target ? emit : null, low, reducedMotion);
 
         if (!visible) { levels[i] = 0; mesh.setMatrixAt(i, parked); mesh.setColorAt(i, color.setRGB(0, 0, 0)); continue; }
         shown = true;
@@ -122,7 +122,7 @@ export function createRivalStatusTint(capacity: number) {
         // EMP: a hard electric flicker; reduced motion keeps it steady.
         const flicker = emp && !isPlayer && !reducedMotion && Math.sin(time * 53 + i * 2.1) * Math.sin(time * 29) < 0 ? 0.35 : 1;
         const strength = levels[i]! * (isPlayer ? 0.68 : 1);
-        const rgb = emp ? (isPlayer ? PLAYER_EMP : EMP) : blue;
+        const rgb = emp ? EMP : blue;
         mesh.setColorAt(i, color.setRGB(rgb[0], rgb[1], rgb[2]).multiplyScalar(strength * flicker));
         status.setXYZW(i, emp ? 1 : 0, age, isPlayer ? -1 : i * 0.37, strength);
 

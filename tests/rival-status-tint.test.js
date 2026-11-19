@@ -172,8 +172,44 @@ test('the incoming status shell tracks the player pose and clears on finish', t 
   assert.equal(new Vector3().setFromMatrixPosition(matrix).x, -3);
   race.player.empUntil = 21.5;
   frame(.05, { quality: 'low' }, true);
-  assert.ok(colorOf(tint, playerIndex).r > colorOf(tint, playerIndex).b, 'EMP reads as amber at Low quality');
+  const empColor = colorOf(tint, playerIndex);
+  assert.ok(empColor.g > empColor.r && empColor.r > empColor.b, 'player EMP shares the rival EMP hue at Low quality');
   race.phase = 'finished';
   frame();
   assert.equal(lit(tint, playerIndex), 0);
+});
+
+test('Low shows a few ice crystals on the nearby player while rivals keep the lightweight shell', t => {
+  const { race, tint, frame, vehicles } = setup(t);
+  const shards = shardsOf(vehicles[0].parent);
+  const playerStart = shards.count - shards.count / tint.count;
+  race.player.freezeUntil = race.elapsed + 2;
+  race.player.effects.freeze = 2;
+  for (let i = 0; i < 10; i++) frame(0.05, { quality: 'low' });
+  assert.equal(shownInstances(shards, 0, playerStart), 0);
+  const playerShards = shownInstances(shards, playerStart);
+  assert.ok(playerShards > 0 && playerShards < shards.count / tint.count);
+});
+
+test('the player shares the outward thaw animation and honors reduced motion', t => {
+  const { race, tint, frame, vehicles } = setup(t);
+  const shards = shardsOf(vehicles[0].parent);
+  const playerStart = shards.count - shards.count / tint.count;
+  const matrix = new Matrix4(), point = new Vector3();
+  const crystalDistance = () => {
+    shards.getMatrixAt(playerStart, matrix);
+    return point.setFromMatrixPosition(matrix).distanceTo(vehicles[0].position);
+  };
+  for (const calm of [false, true]) {
+    race.player.freezeUntil = race.elapsed + 2;
+    for (let i = 0; i < 10; i++) frame(0.05, {}, calm);
+    assert.equal(shownInstances(shards, playerStart), shards.count / tint.count);
+    const frozen = crystalDistance();
+    race.player.freezeUntil = 0;
+    for (let i = 0; i < 6; i++) frame(0.03, {}, calm);
+    if (calm) assert.equal(crystalDistance(), frozen, 'crystals shrink in place');
+    else assert.ok(crystalDistance() > frozen + 0.3, 'crystals fly off the car');
+    for (let i = 0; i < 30; i++) frame(0.05, {}, calm);
+    assert.equal(shownInstances(shards, playerStart), 0);
+  }
 });

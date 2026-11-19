@@ -1,5 +1,8 @@
 # Rival attack pickups
 
+- [x] Reproduced three differences in player feedback: a separate EMP hue, no Low-quality crystals, and a thaw that always used reduced motion. The player now shares the rival EMP palette and shatter behavior and reuses the crystal pool on Low. All 28 focused item, status and module-size tests pass.
+- [x] Verified desktop gameplay on Coast in Low graphics with staged rival Freeze and EMP activations. Captured both the affected car and viewport edge, from activation through recovery. Type checks and the locked production build passed.
+- [ ] Complete the full `make verify` regression and check the exact-commit CI quality gate for the updated status visuals.
 - [x] Cover incoming screen feedback, player shell, VFX quality, and expiry with the item HUD and status-renderer regressions. Focused unit tests, type checks, and the locked build pass.
 - [x] Captured the viewport edge and player car for Freeze (desktop) and EMP (phone portrait) in the Coast pursuit view with Low graphics. The overlay has no pointer targets.
 - [ ] Confirm real-device and exact-HEAD CI coverage for the incoming screen and car effects.
