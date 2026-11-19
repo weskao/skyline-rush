@@ -102,24 +102,35 @@ test('keeps localised text and touch targets in bounds through rotation and fold
   await expect(page.locator('#startup')).toBeHidden();
 });
 
-test('scales decorative particles with existing graphics quality and reduced motion', async ({ page }) => {
+test('scales the camera and road motion with existing graphics quality and reduced motion', async ({ page }) => {
   await page.addInitScript(key => {
     if (sessionStorage.getItem('test-initial-quality')) return;
     sessionStorage.setItem('test-initial-quality', '1');
     localStorage.setItem(key, JSON.stringify({ quality: 'high', enabled: true }));
   }, QUALITY_STORAGE_KEY);
-  await page.goto('/');
-  await expect(enter(page)).toBeVisible();
+  // Measure the opening while the game chunk is still pending, before WebGL or the lobby can affect it.
+  await page.route('**/assets/main-*.js', () => {});
+  const startup = page.locator('#startup');
+  await page.goto('/', { waitUntil: 'commit' });
+  await expect(startup).toHaveAttribute('data-motion', 'high');
   const motes = page.locator('.startup-motes > i:visible');
+  const road = page.locator('.startup-road > i:visible');
+  const camera = page.locator('.startup-art img');
   await expect(motes).toHaveCount(7);
+  await expect(road).toHaveCount(4);
+  await expect(camera).toHaveCSS('animation-name', 'startup-camera');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(motes).toHaveCount(0);
+  await expect(road).toHaveCount(0);
+  await expect(camera).toHaveCSS('animation-name', 'none');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  for (const [tier, count] of [['medium', 3], ['low', 0]]) {
+  for (const [tier, count, roadCount] of [['medium', 3, 2], ['low', 0, 0]]) {
     await page.evaluate(([key, quality]) => localStorage.setItem(key, JSON.stringify({ quality, enabled: true })), [QUALITY_STORAGE_KEY, tier]);
-    await page.reload();
-    await expect(enter(page)).toBeVisible();
+    await page.reload({ waitUntil: 'commit' });
+    await expect(startup).toHaveAttribute('data-motion', tier);
     await expect(motes).toHaveCount(count);
+    await expect(road).toHaveCount(roadCount);
+    await expect(camera).toHaveCSS('animation-name', 'none');
   }
 });
 
@@ -138,4 +149,84 @@ test('a context loss during entry keeps the retry screen visible and the lobby i
   await expect(retry).toBeVisible();
   await expect(page.locator('#startup')).toHaveCSS('opacity', '1');
   await expect(page.locator('#app')).toHaveAttribute('inert', '');
+});
+
+test('the landscape home lifts its controls without animating the fixed-rail ancestors', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.addInitScript(() => {
+    window.homeArrivalFrames = [];
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (frames, options) {
+      if (options?.id === 'home-arrival') window.homeArrivalFrames.push([this.id, frames[0].translate]);
+      return animate.call(this, frames, options);
+    };
+  });
+  await page.goto('/');
+  await expect(enter(page)).toBeEnabled();
+  await page.locator('#startup').evaluate(screen => { screen.dataset.motion = 'medium'; });
+  await enter(page).press('Enter');
+  await expect(page.locator('#startup')).toBeHidden();
+  await expect(page.locator('#start-button')).toBeFocused();
+  const arrivals = await page.evaluate(() => window.homeArrivalFrames);
+  expect(arrivals).toEqual(expect.arrayContaining([
+    ['race-mode-picker', '0 6px'], ['start-button', '0 6px'], ['garage-button', '0 6px'],
+  ]));
+  expect(arrivals.map(([id]) => id)).not.toContain('intro');
+  await expect(page.locator('#intro')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('#start-button')).toHaveCSS('translate', 'none');
+});
+
+test('slow startup fills continuously, the Enter hover changes appearance, and desktop starts off-screen', async ({ page }) => {
+  let release;
+  const blocked = new Promise(resolve => { release = resolve; });
+  await page.route('**/assets/main-*.js', async route => { await blocked; await route.continue(); });
+  await page.goto('/', { waitUntil: 'commit' });
+  const fill = page.locator('#startup-fill');
+  const scaleAt = time => fill.evaluate((element, ms) => {
+    const animation = element.getAnimations().find(animation => animation.id === 'startup-progress-fill');
+    animation.pause();
+    animation.currentTime = ms;
+    return new DOMMatrixReadOnly(getComputedStyle(element).transform).a;
+  }, time);
+  try {
+    await expect(page.locator('#startup')).toHaveAttribute('data-motion', 'low');
+    const first = await scaleAt(1000);
+    const later = await scaleAt(4500);
+    expect(first).toBeGreaterThan(.03);
+    expect(later).toBeGreaterThan(first);
+    expect(later).toBeLessThan(1);
+    await expect(enter(page)).toBeHidden();
+  } finally {
+    release();
+  }
+
+  const button = enter(page);
+  await expect(button).toBeEnabled();
+  const normal = await button.evaluate(element => getComputedStyle(element).backgroundImage);
+  await button.hover();
+  expect(await button.evaluate(element => getComputedStyle(element).backgroundImage)).not.toBe(normal);
+  expect(await button.evaluate(element => getComputedStyle(element, '::before').animationName)).toBe('startup-hover-sweep');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await button.evaluate(element => getComputedStyle(element, '::before').animationName)).toBe('none');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+  await page.evaluate(() => {
+    const splash = document.querySelector('#startup');
+    splash.dataset.motion = 'medium';
+    const animate = splash.animate.bind(splash);
+    splash.animate = (...args) => {
+      window.arrivalEdges = {
+        intro: document.querySelector('.lobby-race-heading').getBoundingClientRect().right,
+        settings: document.querySelector('#settings-button').getBoundingClientRect().left,
+        viewport: window.innerWidth,
+      };
+      return animate(...args);
+    };
+  });
+  await button.press('Enter');
+  await expect(page.locator('#startup')).toBeHidden();
+  const edges = await page.evaluate(() => window.arrivalEdges);
+  expect(edges.intro).toBeLessThanOrEqual(0);
+  expect(edges.settings).toBeGreaterThanOrEqual(edges.viewport);
+  await expect(page.locator('#start-button')).toBeFocused();
 });

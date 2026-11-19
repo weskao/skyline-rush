@@ -2,6 +2,7 @@
 paths:
   - "src/style.css"
   - "src/race-lobby.css"
+  - "src/home-arrival.ts"
   - "src/track-chooser.css"
   - "src/wave3-demo-results.css"
   - "src/ReleaseNotesPanel.vue"
@@ -26,7 +27,8 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   the Rules row scrolls clear).
 - **No ancestor of the rail animates.** A running `opacity`/`transform` animation or transition
   makes the ancestor a stacking context for its duration, and the rail is painted into that
-  clipped layer. Landscape has no arrival fade for this reason.
+  clipped layer. Apply Home arrival motion to the race controls and cards themselves. Keep the
+  scrolling `.intro` and the action-row wrappers out of the arrival animation.
 - **Both orientations, every time.** A change to a landscape media query
   (`(orientation: landscape)`, `max-height: 500px` / `380px`), to `.intro`, the pinned row, or
   anything `fixed`/`sticky` on the home is checked in portrait and landscape, and a new
