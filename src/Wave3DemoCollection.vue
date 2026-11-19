@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageSkinCardFace from './GarageSkinCardFace.vue';
 import { wave3DemoArtUrl } from './wave3-demo-art.ts';
@@ -15,6 +15,7 @@ const props = withDefaults(defineProps<{
   locale?: string;
   trialAccess?: (id: SkinId) => DemoTrialAccess | null;
   skinRevision?: number;
+  initialItemId?: SkinId;
 }>(), { locale: 'en' });
 const emit = defineEmits<{
   (event: 'preview', itemId: SkinId): void;
@@ -28,11 +29,17 @@ const snapshot = ref<ExperienceSnapshot>(props.port.getSnapshot());
 const filter = ref<'all' | DemoItemStatus>('all');
 const filters = ['all', 'demo-unlocked', 'trial', 'locked', 'preview-only'] as const;
 const selectedId = ref<SkinId | null>(null);
+const collection = ref<HTMLElement | null>(null);
 const message = ref('');
 
 watch(() => props.port, (port, _, onCleanup) => {
   snapshot.value = port.getSnapshot();
-  selectedId.value = null;
+  const initial = props.initialItemId;
+  selectedId.value = initial && canEquipDemoPreview(initial, snapshot.value) ? initial : null;
+  filter.value = selectedId.value ? 'demo-unlocked' : 'all';
+  if (selectedId.value) void nextTick(() => {
+    collection.value?.querySelector<HTMLButtonElement>('[aria-pressed="true"][data-demo-id]')?.focus();
+  });
   message.value = '';
   const stop = port.subscribe(next => {
     if (next.accountId !== snapshot.value.accountId) {
@@ -97,7 +104,7 @@ function closePreview(): void {
 </script>
 
 <template>
-  <section class="wave3-demo-collection" data-wave3-demo-collection
+  <section ref="collection" class="wave3-demo-collection" data-wave3-demo-collection
     :aria-label="tr('Demo Collection', '試玩收藏')" @keydown.esc.stop="closePreview">
     <header class="collection-head">
       <div>

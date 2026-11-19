@@ -79,7 +79,7 @@ const isPreviewingPaint = (id: string): boolean =>
       <h2 id="garage-title">{{ garageStudioView.page === 'studio' ? copy.title : (locale === 'zh-TW' ? '車庫' : 'Garage') }}</h2>
       <button id="garage-studio-open" v-show="garageStudioView.page === 'home'" type="button" class="garage-entry">{{ copy.open }} ↗</button>
       <CloseButton id="garage-close" label="Close garage" data-i18n-aria-label="garage.close" /></header>
-    <div class="garage-layout">
+    <div class="garage-layout" :data-demo-store="wave3DemoEnabled && section === 'store' ? '' : undefined">
       <section class="garage-visual" :aria-label="copy.showroom">
         <div id="garage-preview" class="garage-preview" tabindex="0" role="group" :aria-label="copy.hint" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown + -">
           <p v-show="garageStudioView.page === 'studio'" class="garage-hint">{{ copy.hint }}</p>

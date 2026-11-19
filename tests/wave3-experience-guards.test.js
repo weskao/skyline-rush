@@ -51,6 +51,32 @@ const racingThrough = (bridge, race) => {
 const aRace = () => ({ phase: 'countdown', trackId: 'coast', mode: 'classic', length: 2000,
   elapsed: 0, result: null, player: { driftPayout: null, longestCombo: 0 } });
 
+test('refresh reconciles cloud redemption without writing and keeps confirmed progress on a network error', async () => {
+  const cloud = fakeCloud(savedDocument(start));
+  let offline = false;
+  const trial = openCloud({ transact: (...args) => {
+    if (offline) return Promise.reject(new Error('offline'));
+    return cloud.transact(...args);
+  } });
+  trial.setAccount('driver');
+  await trial.ready();
+  assert.deepEqual(balances(trial.getSnapshot()), [40, 70, 0]);
+  const second = openCloud(cloud);
+  second.setAccount('driver');
+  await second.ready();
+  assert.equal((await second.redeemPreview('thruster-ion')).status, 'completed');
+  const committedDocument = cloud.document;
+
+  offline = true;
+  await trial.refresh('driver');
+  assert.deepEqual(balances(trial.getSnapshot()), [40, 70, 0]);
+  offline = false;
+  await trial.refresh('driver');
+  assert.deepEqual(balances(trial.getSnapshot()), [15, 70, 0]);
+  assert.deepEqual(trial.getSnapshot().demoInventory, ['thruster-ion']);
+  assert.equal(cloud.document, committedDocument);
+});
+
 test('a Firestore settlement in flight when cloud data is deleted cannot recreate the trial save', async () => {
   const cloud = fakeCloud();
   const trial = openCloud(cloud);

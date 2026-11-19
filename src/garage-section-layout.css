@@ -169,3 +169,19 @@
 @media (max-height: 500px) and (orientation: landscape) {
   #garage-screen[data-page] .garage-layout { grid-template-columns: minmax(0, 1fr) minmax(220px, 33%); }
 }
+
+@media (min-width: 980px) {
+  #garage-screen .garage-layout[data-demo-store] {
+    grid-template-columns: minmax(0, 1fr) clamp(580px, 58vw, 875px);
+  }
+}
+@media (max-width: 979px) and (max-height: 500px) and (orientation: landscape) {
+  #garage-screen .garage-layout[data-demo-store] {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 65%);
+  }
+}
+@media (max-width: 650px) and (orientation: portrait) {
+  #garage-screen .garage-layout[data-demo-store] .garage-visual { flex: 0 0 clamp(118px, 17dvh, 165px); }
+  #garage-screen .garage-layout[data-demo-store] .garage-preview { min-height: 0; }
+  #garage-screen .garage-layout[data-demo-store] .garage-collection { flex: 1 1 0; }
+}

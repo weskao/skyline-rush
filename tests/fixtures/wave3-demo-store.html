@@ -13,11 +13,27 @@ import { createWave3LocalDemo } from '../../src/wave3-local-demo.ts';
 const port = createWave3LocalDemo();
 const redeemPreview = port.redeemPreview;
 let redemptionUnavailable = false;
-port.redeemPreview = (...args) => redemptionUnavailable
-  ? { status: 'unavailable', snapshot: port.getSnapshot(), deltaDemoPoints: 0, deltaDemoCoins: 0, deltaDemoDiamonds: 0 }
-  : redeemPreview(...args);
+let releaseRedemption;
+let redemptionGate;
+let holdReceipt = false;
+let deliveredStatus = '';
+let redemptionCalls = 0;
+port.redeemPreview = (...args) => {
+  redemptionCalls++;
+  const complete = () => redemptionUnavailable
+    ? { status: 'unavailable', snapshot: port.getSnapshot(), deltaDemoPoints: 0, deltaDemoCoins: 0, deltaDemoDiamonds: 0 }
+    : redeemPreview(...args);
+  if (!redemptionGate) return complete();
+  const committed = holdReceipt ? complete() : null;
+  return redemptionGate.then(() => {
+    const result = committed ?? complete();
+    deliveredStatus = result.status;
+    return result;
+  });
+};
 const cues = [];
 const page = ref('store');
+const collectionItem = ref();
 const locale = ref('en');
 const skinRevision = ref(0);
 const trialUntil = ref(0);
@@ -31,9 +47,10 @@ const App = {
       h(AcquisitionReveal),
       page.value === 'store'
         ? h(Wave3DemoStore, { port, locale: locale.value, trialAccess, skinRevision: skinRevision.value,
-            onOpenCollection: () => { page.value = 'collection'; } })
+            onOpenCollection: id => { collectionItem.value = id; page.value = 'collection'; } })
         : page.value === 'collection'
           ? h(Wave3DemoCollection, { port, locale: locale.value, trialAccess, skinRevision: skinRevision.value,
+              initialItemId: collectionItem.value,
               onOpenStore: () => { page.value = 'store'; },
               onEquippedPreview: id => { lastEquipped.value = id; },
               onReturnToRace: () => { page.value = 'race'; } })
@@ -48,6 +65,14 @@ window.__wave3DemoFixture = {
   setAccount(account) { port.setAccount(account); },
   snapshot() { return port.getSnapshot(); },
   cues() { return cues; },
+  deferRedemption(receiptOnly = false) {
+    holdReceipt = receiptOnly;
+    deliveredStatus = '';
+    redemptionGate = new Promise(resolve => { releaseRedemption = resolve; });
+  },
+  releaseRedemption() { releaseRedemption?.(); redemptionGate = undefined; },
+  redemptionCalls() { return redemptionCalls; },
+  deliveredRedemptionStatus() { return deliveredStatus; },
   setRedemptionUnavailable(value) { redemptionUnavailable = value; },
   duplicateRedeem() { return port.redeemPreview('thruster-ion').status; },
   setLocale(value) { locale.value = value; },

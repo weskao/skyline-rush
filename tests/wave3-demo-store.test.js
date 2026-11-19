@@ -210,7 +210,7 @@ test('store/collection stay presentation-only and controls are accessible', () =
     assert.match(source, /role="status"/);
     assert.match(source, /:disabled=/);
     assert.match(source, /@click=/);
-    assert.match(source, /<style scoped>/);
+    assert.match(source, /<style scoped(?:\s|>)/);
     assert.doesNotMatch(source, /\b(?:checkout|purchase|payment|receipt|firebase|localStorage|sessionStorage)\s*\(/i);
   }
   const store = readFileSync(new URL('../src/Wave3DemoStore.vue', import.meta.url), 'utf8');

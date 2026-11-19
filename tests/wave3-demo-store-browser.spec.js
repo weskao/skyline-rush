@@ -154,6 +154,85 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await continueAfterUnlock(page);
   });
 
+  test('pending redemption retains the quote, submits once and unlocks after the receipt', async ({ page }) => {
+    await page.goto(url);
+    await page.evaluate(() => {
+      window.__wave3DemoFixture.grantRace();
+      window.__wave3DemoFixture.deferRedemption();
+    });
+    const store = page.locator('[data-wave3-demo-store]');
+    const card = store.locator('[data-demo-offer="thruster-ion"]');
+    await card.getByRole('button', { name: /^Redeem / }).click();
+    const quote = store.getByRole('group', { name: 'Confirm demo redemption' });
+    const confirm = quote.getByRole('button', { name: 'Confirm demo redeem' });
+    await confirm.click();
+    await expect(quote).toHaveAttribute('aria-busy', 'true');
+    await expect(quote).toContainText('25 Demo points');
+    await expect(quote).toContainText('Redeeming');
+    await expect(confirm).toBeDisabled();
+    await expect(store.locator('[data-demo-offer="nitro-trail-cyan"] .demo-item-redeem')).toBeDisabled();
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.evaluate(() => window.__wave3DemoFixture.redemptionCalls())).toBe(1);
+    await expect(store.locator('[data-demo-balance="points"] strong')).toHaveText('40');
+    await expect(page.locator('#acquisition-reveal')).toBeHidden();
+    await page.evaluate(() => window.__wave3DemoFixture.releaseRedemption());
+    await expect(store.locator('[data-demo-balance="points"] strong')).toHaveText('15');
+    await continueAfterUnlock(page);
+    await expect(card.getByRole('button', { name: /View in collection/i })).toBeFocused();
+    await card.getByRole('button', { name: /View in collection/i }).click();
+    const collection = page.locator('[data-wave3-demo-collection]');
+    await expect(collection.locator('[data-demo-id="thruster-ion"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(collection.getByRole('button', { name: 'Equip demo preview' })).toBeEnabled();
+  });
+
+  test('a delayed failure is retryable and an old account receipt stays out of the new wallet', async ({ page }) => {
+    await page.goto(url);
+    await page.evaluate(() => {
+      window.__wave3DemoFixture.grantRace();
+      window.__wave3DemoFixture.setRedemptionUnavailable(true);
+      window.__wave3DemoFixture.deferRedemption();
+    });
+    const store = page.locator('[data-wave3-demo-store]');
+    await store.getByRole('button', { name: 'Demo redeem', exact: true }).click();
+    const quote = store.getByRole('group', { name: 'Confirm demo redemption' });
+    await quote.getByRole('button', { name: 'Confirm demo redeem' }).click();
+    await expect(quote).toHaveAttribute('aria-busy', 'true');
+    await page.evaluate(() => window.__wave3DemoFixture.releaseRedemption());
+    await expect(quote).toContainText('Demo redemption is unavailable');
+    await expect(store.locator('[data-demo-balance="points"] strong')).toHaveText('40');
+    await expect(page.locator('#acquisition-reveal')).toBeHidden();
+    await page.evaluate(() => {
+      window.__wave3DemoFixture.setRedemptionUnavailable(false);
+      window.__wave3DemoFixture.deferRedemption(true);
+    });
+    await quote.getByRole('button', { name: 'Retry redemption' }).click();
+    await expect(quote).toHaveAttribute('aria-busy', 'true');
+    await page.evaluate(() => {
+      window.__wave3DemoFixture.setAccount('other');
+      window.__wave3DemoFixture.releaseRedemption();
+    });
+    await expect.poll(() => page.evaluate(() => window.__wave3DemoFixture.deliveredRedemptionStatus())).toBe('completed');
+    await expect(quote).toHaveCount(0);
+    await expect(store.locator('[data-demo-balance="points"] strong')).toHaveText('20');
+    await expect(page.locator('#acquisition-reveal')).toBeHidden();
+    await expect.poll(() => page.evaluate(() => window.__wave3DemoFixture.redemptionCalls())).toBe(2);
+  });
+
+  test('card shows current shortfall and earning path inline', async ({ page }) => {
+    await page.goto(url);
+    const card = page.locator('[data-demo-offer="nitro-trail-cyan"]');
+    const gap = card.locator('[data-demo-shortfall]');
+    await expect(gap).toContainText('Need 150 Demo coins more');
+    await expect(gap).toContainText('daily race mission');
+    await page.evaluate(() => {
+      window.__wave3DemoFixture.grantRace(1);
+      window.__wave3DemoFixture.grantRace(2);
+    });
+    await expect(gap).toContainText('Need 40 Demo coins more');
+    await page.evaluate(() => window.__wave3DemoFixture.grantRace(3));
+    await expect(gap).toHaveCount(0);
+  });
+
   test('mobile card redeems the displayed item directly without a separate selection step', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(url);

@@ -33,6 +33,23 @@ test('fresh guest can open the real Garage, missions and demo entry without sign
   await expect(page.locator('#garage-screen')).not.toContainText(/purchase confirmed|server verified/i);
 });
 
+test('real Garage gives the trial store room for desktop preview and portrait browsing', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openGarage(page);
+  const store = await openStore(page);
+  const showroom = store.locator('.demo-showroom');
+  await expect(showroom).toHaveCSS('grid-template-areas', '"catalog checkout"');
+  await expect(store.locator('.demo-detail-art')).toBeInViewport();
+  const firstOffer = store.locator('[data-demo-offer="thruster-ion"]');
+  for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 720 }, { width: 844, height: 390 }]) {
+    await test.step(`${viewport.width}×${viewport.height}`, async () => {
+      await page.setViewportSize(viewport);
+      await expect.poll(() => store.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+      if (viewport.width < viewport.height) await expect(firstOffer).toBeInViewport({ ratio: 0.3 });
+    });
+  }
+});
+
 test('real Garage rejects unaffordable demo redemption and keeps collection empty offline', async ({ page }) => {
   await openGarage(page);
   const store = await openStore(page);

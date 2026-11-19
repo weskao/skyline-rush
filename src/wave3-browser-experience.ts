@@ -267,7 +267,9 @@ export function createWave3BrowserExperience(options: Options = {}) {
       return target.clearEquippedPreview(itemId);
     }),
     refresh(accountId: string) {
-      if (accountId === 'guest' && state.getOperationScope().accountId === accountId && syncDisk(accountId)) publish();
+      if (state.getOperationScope().accountId !== accountId) return;
+      if (usesFirestore(accountId)) return transactFirestore().then(() => {}, () => {});
+      if (accountId === 'guest' && syncDisk(accountId)) publish();
     },
   } satisfies Wave3ExperiencePort & Record<string, unknown>;
   return port;
@@ -289,9 +291,9 @@ if (typeof window !== 'undefined') {
     void wave3DemoExperience.clearEquippedPreview(itemId, accountId);
   });
   window.addEventListener('storage', event => {
-    if (event.key === null) wave3DemoExperience.refresh(wave3DemoExperience.getOperationScope().accountId);
-    else if (event.key.startsWith(WAVE3_DEMO_STORAGE_PREFIX)) {
-      wave3DemoExperience.refresh(event.key.slice(WAVE3_DEMO_STORAGE_PREFIX.length));
-    }
+    if (event.key === null || event.key === WAVE3_DEMO_STORAGE_PREFIX + 'guest') wave3DemoExperience.refresh('guest');
+  });
+  window.addEventListener('online', () => {
+    void wave3DemoExperience.refresh(wave3DemoExperience.getOperationScope().accountId);
   });
 }
