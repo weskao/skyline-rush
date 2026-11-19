@@ -37,7 +37,7 @@ function onBackdrop(event: MouseEvent): void {
 <style scoped>
 /* One fact per line, left-aligned so a phone reader scans them; the action button is tinted as the one that changes something. */
 #confirm-body ul { display: grid; gap: 8px; margin: 0 0 24px; padding: 0; list-style: none; text-align: left; color: #cad2d8; font-size: 14px; line-height: 1.5; }
-#confirm-body li { display: flex; gap: 10px; }
+#confirm-body li { display: flex; gap: 10px; text-wrap: pretty; }
 #confirm-body li::before { content: ''; flex: none; width: 6px; height: 6px; margin-top: .55em; border-radius: 50%; background: var(--accent, #ffb15c); }
 #confirm-accept { color: #ff8a7e; }
 /* Short landscape phones: .history-screen caps the height at 100dvh - 64px and scrolls, which hid the second button.
