@@ -38,3 +38,7 @@ Turning it back on never asks. Today: Visual effects (`confirmVfxOff` in `src/vf
   `OK` is ambiguous: it also reads as "close this box".
 - Both locales in the same change; check the dialog at desktop, phone portrait and phone
   landscape (`tests/toggle-feedback-browser.spec.js`).
+- The dialog is a `.history-screen`: capped at `100dvh - 64px` and scrolling. At 844×390 that hid
+  "Turn effects off" below the fold while both buttons still sat inside the viewport. Short
+  landscape uses a one-line title and side-by-side buttons (`src/ConfirmDialog.vue`); the spec
+  asserts the dialog does not scroll (`scrollHeight <= clientHeight`) at 844×390 and 743×340.

@@ -75,7 +75,7 @@ test('every Visual effects switch-off asks in game; Cancel, Esc and the backdrop
   await expect(vfx(page)).toBeChecked();
 });
 
-for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['phone portrait', 390, 844, true], ['phone landscape', 844, 390, true]]) for (const lang of ['en', 'zh-TW']) {
+for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['phone portrait', 390, 844, true], ['phone landscape', 844, 390, true], ['iPhone Chrome landscape', 743, 340, true]]) for (const lang of ['en', 'zh-TW']) {
   test.describe(`switch-off dialog ${name} ${lang}`, () => {
     test.use({ viewport: { width, height }, hasTouch: touch, isMobile: touch, locale: lang });
     test('reads in its language and keeps both choices on screen and tappable', async ({ page }) => {
@@ -97,7 +97,8 @@ for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['pho
         expect(box.y + box.height, box.id).toBeLessThanOrEqual(height);
       }
       for (const button of boxes.slice(1)) expect(button.height, button.id).toBeGreaterThanOrEqual(44);
-      expect(await dialog(page).evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+      // The dialog itself scrolls (max-height under .history-screen): a button inside the viewport can still be cut by it.
+      expect(await dialog(page).evaluate(el => [el.scrollWidth <= el.clientWidth, el.scrollHeight <= el.clientHeight])).toEqual([true, true]);
       await (touch ? page.locator('#confirm-cancel').tap() : page.locator('#confirm-cancel').click());
       await expect(dialog(page)).toBeHidden();
       await expect(vfx(page)).toBeChecked();

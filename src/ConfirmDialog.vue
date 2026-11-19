@@ -40,4 +40,12 @@ function onBackdrop(event: MouseEvent): void {
 #confirm-body li { display: flex; gap: 10px; }
 #confirm-body li::before { content: ''; flex: none; width: 6px; height: 6px; margin-top: .55em; border-radius: 50%; background: var(--accent, #ffb15c); }
 #confirm-accept { color: #ff8a7e; }
+/* Short landscape phones: .history-screen caps the height at 100dvh - 64px and scrolls, which hid the second button.
+   A wider box, a one-line title and side-by-side buttons fit 743x340 with slack (tests/toggle-feedback-browser.spec.js). */
+@media (max-height: 500px) and (orientation: landscape) {
+  #confirm-dialog { width: min(600px, calc(100% - 32px)); padding: 16px 24px; }
+  #confirm-dialog h2 { font-size: 30px; margin-bottom: 10px; }
+  #confirm-body ul { gap: 4px; margin-bottom: 14px; }
+  .leave-actions { grid-template-columns: 1fr 1fr; }
+}
 </style>
