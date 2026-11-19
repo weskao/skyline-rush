@@ -1,3 +1,9 @@
+# Race car glare on Coast and other tracks
+
+- [x] Compared WebGL ground and 8 m flight snapshots across all 17 tracks. Tested Low, Medium and High with the two car GLBs across representative scenes. Coast direct sun drives the sharp glass glints; dusk bloom also veils the horizon and wet asphalt. Reduce the dusk spread while keeping the directional and reflected light.
+- [x] Add RED → GREEN guards for the race paint and clear coat, per-instance GLB glass and material arrays, and Coast dusk bloom. Guards: `tests/car-reflections.test.js`, `tests/garage-model.test.js`, `tests/coast-look.test.js`.
+- [ ] Verify rendering and the focused GitHub quality gate on the published commit. Review on phone hardware when available.
+
 # Startup loading screen
 
 - [x] Add a first-paint opening screen with responsive full-bleed artwork, bilingual wordmark and tagline, and a three-segment status tied to game bootstrap. Show Enter only after the first lobby render.

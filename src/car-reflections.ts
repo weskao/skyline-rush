@@ -18,14 +18,24 @@ export function createCarEnvironment(renderer: THREE.WebGLRenderer): THREE.Textu
   }
 }
 
-/** Points every lit material of the car at the softened map; VFX shaders and unlit lamps are untouched. */
-export function applyCarReflections(car: THREE.Object3D, envMap: THREE.Texture): void {
+// Broaden only tight lobes. Slick paints retain their relative finish, while already rough trim stays the same.
+export const outdoorCarRoughness = (roughness: number): number => roughness < 0.3 ? (roughness + 0.3) / 2 : roughness;
+
+/** Gives lit car materials the softened map and, outdoors, spreads tight highlights from every light source. */
+export function applyCarReflections(car: THREE.Object3D, envMap: THREE.Texture, finish: 'studio' | 'outdoor' = 'studio'): void {
+  const materials = new Set<THREE.MeshStandardMaterial>();
   car.traverse(object => {
     const { material } = object as THREE.Mesh;
     for (const item of Array.isArray(material) ? material : material ? [material] : [])
-      if (item instanceof THREE.MeshStandardMaterial) {
-        item.envMap = envMap;
-        item.envMapIntensity = CAR_REFLECTION.intensity;
-      }
+      if (item instanceof THREE.MeshStandardMaterial) materials.add(item);
   });
+  for (const material of materials) {
+    material.envMap = envMap;
+    material.envMapIntensity = CAR_REFLECTION.intensity;
+    if (finish === 'outdoor') {
+      material.roughness = outdoorCarRoughness(material.roughness);
+      if (material instanceof THREE.MeshPhysicalMaterial && material.clearcoat > 0)
+        material.clearcoatRoughness = outdoorCarRoughness(material.clearcoatRoughness);
+    }
+  }
 }
