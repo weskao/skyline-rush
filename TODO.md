@@ -6139,7 +6139,7 @@ Repro: on Home, open What's New, tap a picture or clip, close the enlarged view.
 
 ## 2026-11-19 — Sky Spiral detailed 3D look, Task 8c (`feature/sky-spiral-3d-look`)
 
-Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/phases/task-8c-sky-spiral.md`. Not merged.
+Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/phases/task-8c-sky-spiral.md`. Merged into the local `develop` at `32893aa7` (`feature/road-runout` at `565221d2`); not on `origin/develop` when checked (`git merge-base --is-ancestor 09903f56 origin/develop` fails).
 
 - [x] Route frozen at the shipped 10 km and pinned (`c34c9811`): `node --test tests/sky-spiral-parity.test.js` 4 of 4.
 - [x] Look brief with the owner decisions: day sky, cloud GLB models, shared draw-call caps (`79e53a73`).
@@ -6149,12 +6149,12 @@ Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/
 - [x] Kit drawn on Medium and above, Low and failed loads keep the procedural scene (`6b4bdf3a`): `tests/spiral-scenery.test.js` 9 of 9, `tests/spiral-scenery-plan.test.js` 6 of 6, `tests/track-look.test.js` 7 of 7.
 - [x] At `5fd333d7`: `npm test` 3,464 pass, 0 fail, 4 skipped; `node --test tests/module-size.test.js` 3 of 3; `npm run typecheck` clean; `npm run build` passed and `dist/models/spiral-landmarks/spiral-landmarks.glb` is present.
 - [x] Violet highlights under the day sky: the look key now includes the track, so a shared sky reapplies its sun (`4bf62b35`). `tests/coast-look.test.js` RED on the sky-only key; rule item 32.
-- [x] The road runs on past the finish instead of ending in the air (`1fd1f9a0`), with the rule `.claude/rules/road-runout.md` (`037d402d`). The other open-ended courses are on `feature/road-runout`, not merged here.
+- [x] The road runs on past the finish instead of ending in the air (`1fd1f9a0`), with the rule `.claude/rules/road-runout.md` (`037d402d`). The other open-ended courses are on `feature/road-runout`, not merged here (merged into the local `develop` at `565221d2`, not on `origin/develop`).
 - [x] Cloud deck with drifting wisps on High and Ultra in place of the kit's cloud mounds; Medium keeps the mounds (`ffd88d99`, rule item 33 and decision notes `4030cdfb`). `tests/spiral-clouds.test.js`, `tests/cloud-noise.test.js`. Desktop Chromium look-dev stills in the ignored audits: `spiral-lookdev/before-high-*.jpg` against `sea4-high-*.jpg`.
-- [ ] Cloud deck not checked: frame time (about 28 texture fetches a pixel on High, 60 on Ultra), an Ultra still, a phone.
+- [ ] Cloud deck not checked: frame time (about 28 texture fetches a pixel on High, 60 on Ultra), an Ultra still, a phone. Not run, by owner instruction (no browser tests, 2026-11-19).
 - [x] Seabird, airship and rebuilt station, clouds and peak in the Blender master (`2fd808ef`): sixteen nodes, 10,643 of 11,000 triangles, 1,019,196 bytes; `tests/spiral-landmarks-glb.test.js` RED before the build; Cycles renders in the ignored audits.
 - [x] Two flocks of seven seabirds and one airship fly round the course while the kit is drawn (`97eaa229`): `node --test tests/spiral-sky-life.test.js` 6 of 6.
-- [ ] Birds and airship never drawn in WebGL: flap, bank, size on screen and the extra three to four draws against the race 380 cap are unchecked.
+- [ ] Birds and airship never drawn in WebGL: flap, bank, size on screen and the extra three to four draws against the race 380 cap are unchecked. Not run, by owner instruction (no browser tests, 2026-11-19).
 - [x] At `97eaa229`: `npm test` 3,486 tests, 3,482 pass, 0 fail, 4 skipped; `npm run typecheck` clean; `npm run build` passed and `dist/models/spiral-landmarks/spiral-landmarks.glb` is the 2488ff2b… file.
 - [ ] Browser specs written and never executed, by owner instruction (2026-11-19): `tests/spiral-look-browser.spec.js` (kit, day sky and road on High, NaN scan, no compile after GO, Low fetches no look asset, load-failure fallback, draw-call caps home 540 / race 380) and the Sky Spiral case in `tests/track-look-quality-browser.spec.js`. They may fail on their first run.
-- [ ] Not done: `make verify`, real WebGL captures (desktop and phone, both orientations), draw calls and p50/p95, rule item 20 lane sweep, the kit on the non-day presets' bloom, concept parity review, owner art sign-off, exact-HEAD `quality-gate`.
+- [ ] Not done: `make verify`, real WebGL captures (desktop and phone, both orientations), draw calls and p50/p95, rule item 20 lane sweep, the kit on the non-day presets' bloom, concept parity review, owner art sign-off, exact-HEAD `quality-gate`. Not run, by owner instruction (no browser tests, 2026-11-19).

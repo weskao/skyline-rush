@@ -118,7 +118,7 @@ Low keeps the procedural scene; the course keeps its own in-race song; exact-HEA
   item 32).
 - [x] The road runs on past the finish instead of ending in the air. Evidence: `1fd1f9a0`, rule
   `.claude/rules/road-runout.md` (`037d402d`). The other open-ended courses are a separate branch,
-  `feature/road-runout`.
+  `feature/road-runout` (merged into the local `develop` at `565221d2`, not on `origin/develop`).
 - [x] Cloud deck and wisps on High and Ultra. Evidence: `ffd88d99`, rule item 33,
   `node --test tests/spiral-clouds.test.js tests/cloud-noise.test.js`; desktop Chromium stills in the ignored audits
   (`spiral-lookdev/sea4-high-*.jpg`, before: `before-high-*.jpg`). No Ultra still, no phone, no frame time.
@@ -133,6 +133,6 @@ Low keeps the procedural scene; the course keeps its own in-race song; exact-HEA
 
 ## By device (repeat per machine; evidence in ignored ../audits/)
 
-- [ ] Real WebGL captures at the approach, helix entry, mid-helix, exit and each launch, desktop and phone, both orientations.
-- [ ] Draw calls, triangles, p50/p95 recorded.
+- [ ] Real WebGL captures at the approach, helix entry, mid-helix, exit and each launch, desktop and phone, both orientations. Not run, by owner instruction (no browser tests, 2026-11-19).
+- [ ] Draw calls, triangles, p50/p95 recorded. Not run, by owner instruction (no browser tests, 2026-11-19).
 - [ ] Owner sign-off on this device.
