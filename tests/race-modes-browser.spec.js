@@ -2,6 +2,7 @@ import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
+import { recordPaint, firstPaint } from './helpers/boot-paint.js';
 
 async function closeMusicPrompt(page) {
   await page.waitForTimeout(700);
@@ -354,8 +355,10 @@ test('paused Free Drive supports orbit, lighting and local PNG export', async ({
 
 test('lobby summaries reflect race data and show access reasons beside Start', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
+  await recordPaint(page, '.route-drivers');
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('.route-drivers')).toHaveText('8 DRIVERS', { timeout: ciTimeout(2500) });
+  expect(await firstPaint(page, '.route-drivers'), 'race setup painted (ms after navigation)').toBeLessThan(ciTimeout(2500));
+  await expect(page.locator('.route-drivers')).toHaveText('8 DRIVERS');
   await expect(page.locator('#mode-rules-summary')).toContainText('7 AI');
   await expect(page.locator('#lobby-mode-name')).toHaveText('Classic Race');
   await expect(page.locator('#lobby-track-name')).toHaveText('Coast');

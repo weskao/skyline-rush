@@ -3,6 +3,7 @@ import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { ciTimeout } from './helpers/ci.js';
+import { recordPaint, firstPaint } from './helpers/boot-paint.js';
 import { resizeTo } from './helpers/viewport.js';
 import { openLobbyModes } from './helpers/home-lobby.js';
 // CI speed: the three touch sizes share one booted page per check and are resized in place (each size is also freshly booted in one
@@ -241,9 +242,11 @@ test('Garage NEW tag is a top-corner overlay and never covered (desktop, phone, 
 
 test('keyboard can step the showcase angle without starting a race', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
+  await recordPaint(page, '#showcase-camera-prev');
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const previous = page.locator('#showcase-camera-prev');
-  await expect(previous).toBeVisible({ timeout: ciTimeout(2500) });
+  expect(await firstPaint(page, '#showcase-camera-prev'), 'camera dock painted (ms after navigation)').toBeLessThan(ciTimeout(2500));
+  await expect(previous).toBeVisible();
   await previous.focus();
   await page.keyboard.press('Enter'); // Drive wraps back to the last view
   await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view', 'orbit');
