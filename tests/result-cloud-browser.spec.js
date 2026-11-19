@@ -192,12 +192,16 @@ test('a failed clean time trial offers a visible retry without claiming a cloud 
 });
 
 test.describe('mobile results navigation dock', () => {
-  test.use({ viewport: { width: 402, height: 874 }, hasTouch: true, reducedMotion: 'reduce' });
+  test.use({ viewport: { width: 402, height: 874 }, hasTouch: true, reducedMotion: 'reduce',
+    locale: 'zh-TW', keepAcquisitionOpen: true });
 
   test('the race actions are tappable on first paint and while scrolling the receipt', async ({ gameplayPage }) => {
     const page = await cloudPage(gameplayPage);
-    await selectLocale(page, 'zh-TW');
     await finishRace(page);
+    const reveal = page.locator('#acquisition-reveal');
+    await expect(reveal).toBeVisible();
+    await reveal.getByRole('button', { name: '繼續' }).tap();
+    await expect(reveal).toBeHidden();
     await expect(page.locator('.wave3-demo-results--earned')).toBeVisible();
     const overlay = page.locator('#race-overlay');
     const primary = overlay.locator('button[data-primary-action]');

@@ -49,6 +49,10 @@ Keep Playwright helper imports outside the source string served by a module mock
 
 ## Assert only what a player can see
 
+- **Accept earned rewards before measuring the mobile results dock.** The native acquisition dialog
+  owns the top layer. Parallel locator evaluations can stall on the automatic dismissal handler
+  (CI `44486279087`). The portrait dock spec keeps the real dialog open, taps Continue, verifies
+  it closes and then reads all controls in one browser tick, before and after scrolling.
 - Hidden elements keep stale text. Check `toBeVisible()` before you judge text, or the
   assertion passes or fails on copy no player sees. Example: hidden `#bonus-status` still held
   "NEXT · AIR +25 · 6 M" in English after a switch to zh-TW.
