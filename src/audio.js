@@ -4,11 +4,8 @@ import { musicForMode } from './mode-audio.ts'; import { driftTier } from './dri
 import { createRaceAudioEvents } from './race-audio-events.ts';
 import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
 
-/**
- * @param {(race: any) => number | null} gapWarning
- * @param {() => boolean} backgroundMuted
- */
-export function createSound(gapWarning = () => null, backgroundMuted = () => false) {
+/** @param {(race: any) => number | null} gapWarning */
+export function createSound(gapWarning = () => null) {
   let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
   let music, warm, hats, snares, song = null, step = 0, nextStep = 0, madeAt = -Infinity;
   let enabled = false, musicOn = false, hidden = false, current = null, resumedAt = -Infinity;
@@ -81,7 +78,7 @@ export function createSound(gapWarning = () => null, backgroundMuted = () => fal
   function prelude() {
     if (!musicOn || (current && musicForMode(current) !== 'intro')) return;
     if (song !== 'intro') { song = 'intro'; step = 0; cutMusic(); }
-    music.gain.setTargetAtTime(backgroundMuted() ? 0 : musicLevel * 0.65, context.currentTime, 0.1);
+    music.gain.setTargetAtTime(musicLevel * 0.65, context.currentTime, 0.1); // the home-screen mix update() keeps
     schedule(PRELUDE);
   }
   function playStep(tune, index, time) {
@@ -382,8 +379,7 @@ export function createSound(gapWarning = () => null, backgroundMuted = () => fal
         const skid = car.drift ? 0.035 + driftTier(car.drift.time) * 0.012 : car.braking ? 0.035 : 0;
         skidGain.gain.setTargetAtTime(active && car.altitude < 0.2 && car.speed > 15 ? skid : 0, now, 0.06);
         const musicMix = race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65;
-        const soundtrackLevel = musicOn && !backgroundMuted() ? musicLevel * musicMix : 0;
-        music.gain.setTargetAtTime(soundtrackLevel * (now >= duckFrom && now < duckUntil ? duckRatio : 1), now, 0.1);
+        music.gain.setTargetAtTime(musicOn ? musicLevel * musicMix * (now >= duckFrom && now < duckUntil ? duckRatio : 1) : 0, now, 0.1);
         const name = !musicOn ? null : musicForMode(race);
         if (name !== song) { song = name; step = 0; cutMusic(); }
         const urgency = race.mode === 'checkpoint' && race.checkpoint?.timeLeft < 10 ? 1.1 :

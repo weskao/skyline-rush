@@ -61,11 +61,8 @@ import { createGhostStore } from './ghost-store.ts';
 import { setupCupRecovery } from './cup-recovery-ui.ts';
 import { focusRace, setupRaceNavigation } from './race-navigation-ui.ts';
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
-const sound = createSound(race => gapChargeWarning(race)?.from ?? null,
-  () => garageAudioDialog?.open === true || revealAudioDialog?.open === true);
+const sound = createSound(race => gapChargeWarning(race)?.from ?? null);
 createApp(App).provide('game-audio-cue', sound.cue).mount('#app');
-const garageAudioDialog = /** @type {HTMLDialogElement | null} */ (document.getElementById('garage-screen'));
-const revealAudioDialog = /** @type {HTMLDialogElement | null} */ (document.getElementById('acquisition-reveal'));
 // Saved choice > system language > English; only a click on the switch persists (saveLocale below).
 setLocale(resolveInitialLocale());
 applyI18n(); applyDocumentLocale(); // before customSelect, so the drawn selects copy translated text
