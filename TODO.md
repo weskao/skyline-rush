@@ -1,3 +1,8 @@
+# CI browser regression repair (2026-11-20)
+
+- [x] Confirmed the browser regression in [the previous full CI run](https://github.com/weskao/skyline-rush/actions/runs/44501777719). Camera-stepper coverage keeps both locales and the real clicks, and reads the geometry together to avoid slow-renderer round trips.
+- [ ] Verify these scenarios and the full quality gate at the repair commit. Local Playwright cannot start Chromium because the runner denies the browser's socket operation.
+
 # Rival supercar fleet
 
 - [x] Give the seven AI cars distinct bodywork and seed a fresh chassis and livery assignment for ordinary races, with stable assignments through Cup heats, retries and recovery.
