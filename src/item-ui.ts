@@ -12,7 +12,8 @@ export interface ItemRace extends PlayerItemRace {
 interface ItemSettings { itemRules?: unknown; activeItems?: unknown }
 export const itemRuleValue = (rules: ItemSettings): string => typeof rules.itemRules === 'string' ? rules.itemRules : rules.activeItems ? 'all' : 'classic';
 
-export function setupItemUI({ getRace, cue }: { getRace: () => ItemRace; cue: (name: string) => void }) {
+export function setupItemUI({ getRace, cue, calm = () => false }: { getRace: () => ItemRace; cue: (name: string) => void; calm?: () => boolean }) {
+  const screen = document.getElementById('player-hit-screen')!;
   const slot = document.getElementById('item-slot')!;
   const status = document.getElementById('item-status')!;
   const phaseStatus = document.getElementById('ghost-phase-status')!;
@@ -33,6 +34,13 @@ export function setupItemUI({ getRace, cue }: { getRace: () => ItemRace; cue: (n
     const recent = car.lastBonus && race.elapsed - car.lastBonus.time < 1.2 ? car.lastBonus : null;
     const near = ahead && ahead.distance - car.distance <= 170 ? ahead : null;
     const hit = (race.phase === 'racing' || race.phase === 'paused') ? itemHit(race, car) : null;
+    const screenHit = race.phase === 'racing' ? hit ?? '' : '';
+    if (screen.dataset.hit !== screenHit) screen.dataset.hit = screenHit;
+    if (screenHit) {
+      const calmValue = String(calm());
+      if (screen.dataset.calm !== calmValue) screen.dataset.calm = calmValue;
+    }
+    setHiddenIfChanged(screen, !screenHit);
     setHiddenIfChanged(bonus, race.phase === 'ready' || !(hit || active || recent || near));
     if (hit) {
       const until = hit === 'emp' ? car.empUntil! : car.freezeUntil!;

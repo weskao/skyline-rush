@@ -26,6 +26,39 @@ button[hidden], [hidden]:not(.touch-controls) { display: none !important; }
 @media (prefers-reduced-motion: reduce) { button { transition: none !important; } }
 svg { width: 22px; height: 22px; flex-shrink: 0; }
 #world { width: 100%; height: 100%; display: block; position: fixed; inset: 0; touch-action: none; }
+/* Incoming attacks tint the view around the driving line, beneath all interactive HUD. */
+#player-hit-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(var(--hit-rgb) / .55), transparent 21% 79%, rgb(var(--hit-rgb) / .55)),
+    linear-gradient(0deg, rgb(var(--hit-rgb) / .37), transparent 21% 81%, rgb(var(--hit-rgb) / .50));
+  box-shadow: inset 0 0 0 2px rgb(var(--hit-rgb) / .45);
+}
+#player-hit-screen[data-hit="freeze"] { --hit-rgb: 107 210 255; }
+#player-hit-screen[data-hit="emp"] { --hit-rgb: 255 171 65; }
+#player-hit-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--hit-edge-detail);
+  mask-image: radial-gradient(ellipse at center, transparent 56%, #000 82%);
+}
+#player-hit-screen[data-hit="freeze"]::before {
+  --hit-edge-detail:
+    repeating-conic-gradient(from -17deg at top left, rgb(231 250 255 / .22) 0deg 2deg, transparent 3deg 19deg),
+    repeating-conic-gradient(from 11deg at bottom right, rgb(231 250 255 / .16) 0deg 2deg, transparent 3deg 24deg);
+}
+#player-hit-screen[data-hit="emp"]::before {
+  --hit-edge-detail:
+    repeating-linear-gradient(132deg, transparent 0 24px, rgb(255 221 152 / .28) 25px 27px, transparent 28px 63px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  #player-hit-screen[data-calm="false"]:not([hidden]) { animation: hit-screen-settle .24s ease-out both; }
+}
+@keyframes hit-screen-settle { from { opacity: .55; } to { opacity: 1; } }
 .scene-shade { position: fixed; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgb(9 21 34 / .88) 0%, rgb(9 21 34 / .69) 25%, rgb(9 21 34 / .1) 58%, transparent 80%), linear-gradient(0deg, rgb(6 17 28 / .91), transparent 30%, transparent 78%, rgb(9 21 34 / .26)); transition: opacity .5s; }
 body:not([data-phase="ready"]) .scene-shade { background: linear-gradient(0deg, rgb(6 17 28 / .86), transparent 28%, transparent 76%, rgb(9 21 34 / .6)); }
 :root { --toolbar-height: 112px; --toolbar-button-size: 44px; }

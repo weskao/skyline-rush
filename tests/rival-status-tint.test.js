@@ -109,11 +109,11 @@ const shownInstances = (mesh, from = 0, to = mesh.count) => {
 const liveParticles = scene => { let n = 0; scene.traverse(o => { if (o.isPoints) n += o.geometry.attributes.alpha.array.filter(a => a > 0).length; }); return n; };
 
 test('a Freeze grows ice crystals on each frozen rival, and they shatter outward on thaw', t => {
-  const { race, frame, effects, vehicles } = setup(t);
+  const { race, frame, effects, vehicles, tint } = setup(t);
   const scene = vehicles[0].parent;
   const shards = shardsOf(scene);
   assert.ok(shards?.isInstancedMesh, 'one instanced shard mesh');
-  const per = shards.count / 7;
+  const per = shards.count / tint.count;
   race.player.effects.freeze = 2;
   for (let i = 0; i < 10; i++) frame();
   assert.equal(shards.visible, true);
@@ -152,4 +152,28 @@ test('an EMP hit fires an expanding shockwave and spits sparks; the shell tells 
   assert.ok(status.getY(1) > 0.05, 'age since the hit drives the hit flash and arcs');
   for (let i = 0; i < 30; i++) frame();
   wave.getMatrixAt(1, m); assert.ok(new Vector3().setFromMatrixPosition(m).y < -1000, 'the wave parks after it fades');
+});
+
+test('the incoming status shell tracks the player pose and clears on finish', t => {
+  const { race, tint, frame, vehicles } = setup(t, 1);
+  const playerIndex = tint.count - 1;
+  race.player.effects.freeze = 2;
+  frame();
+  assert.equal(lit(tint, playerIndex), 0, 'outgoing Freeze leaves the player clear');
+  const rivalTint = lit(tint, 0);
+  race.player.effects.freeze = 0;
+  race.player.freezeUntil = 22;
+  vehicles[0].position.x = -3;
+  frame();
+  assert.ok(colorOf(tint, playerIndex).b > 0.15, 'incoming Freeze shows on the player');
+  assert.ok(lit(tint, 0) < rivalTint, 'rival fades separately');
+  const matrix = new Matrix4();
+  tint.getMatrixAt(playerIndex, matrix);
+  assert.equal(new Vector3().setFromMatrixPosition(matrix).x, -3);
+  race.player.empUntil = 21.5;
+  frame(.05, { quality: 'low' }, true);
+  assert.ok(colorOf(tint, playerIndex).r > colorOf(tint, playerIndex).b, 'EMP reads as amber at Low quality');
+  race.phase = 'finished';
+  frame();
+  assert.equal(lit(tint, playerIndex), 0);
 });

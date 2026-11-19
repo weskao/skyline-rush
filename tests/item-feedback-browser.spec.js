@@ -106,9 +106,11 @@ for (const [name, viewport, hasTouch] of [
     await page.locator('#race-mode-rules').getByRole('combobox', { name: 'Item rules', exact: true }).click();
     await page.getByRole('listbox', { name: 'Item rules', exact: true }).getByRole('option', { name: /^All ·/ }).click();
     await page.locator('#start-button').click();
-    await page.waitForFunction(() => window.gameplay.race.phase === 'racing');
+    await page.waitForFunction(() => ['countdown', 'racing'].includes(window.gameplay.race.phase));
     await page.evaluate(() => {
       const race = window.gameplay.race, [rival] = race.rivals;
+      // Stage the live encounter independently of asynchronous scenery warmup.
+      race.phase = 'racing';
       race.elapsed = 13;
       race.traffic = [];
       race.pickups = [];
@@ -118,12 +120,18 @@ for (const [name, viewport, hasTouch] of [
       race.rings = [{ distance: 200.5, x: -2.5, altitude: 0, radius: 2, group: 0, type: 'emp' }];
     });
     const status = page.locator('#bonus-status');
+    const screen = page.locator('#player-hit-screen');
+    await expect(screen).toHaveAttribute('data-hit', 'emp');
+    await expect(screen).toBeVisible();
+    await expect(screen).toHaveCSS('pointer-events', 'none');
+    expect(await screen.boundingBox()).toEqual({ x: 0, y: 0, ...viewport });
     await expect(status).toBeVisible();
     await expect(status).toHaveText(/^EMP HIT · [12]s$/);
     const box = await status.boundingBox();
     expect(box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width && box.y + box.height <= viewport.height).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('rival-emp.png') });
     await expect(status).toBeHidden();
+    await expect(screen).toBeHidden();
     expect(errors).toEqual([]);
   });
 });

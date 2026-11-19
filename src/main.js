@@ -369,7 +369,7 @@ function changeCamera() {
   ui['camera-button'].setAttribute('aria-pressed', String(mode === 1));
 }
 
-const itemUI = setupItemUI({ getRace: () => race, cue: name => sound.cue(name) });
+const itemUI = setupItemUI({ getRace: () => race, cue: name => sound.cue(name), calm: calmMotion });
 showAssist();
 // Capture phase so Escape only closes the panel and never reaches input.js as a pause/resume.
 document.addEventListener('keydown', event => {

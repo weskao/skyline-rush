@@ -1,18 +1,18 @@
 import * as THREE from 'three';
 import { blue, emp as EMP } from './effects-palette.ts';
-import { rivalItemHit, type ItemHits } from './item-attacks.ts';
+import { itemHit, rivalItemHit, type ItemHits } from './item-attacks.ts';
 import { createRivalStatusFx, type FxRival, type StatusEmit } from './rival-status-fx.ts';
 
-// A rival slowed by Freeze or EMP wears a status shell: one instanced
-// additive mesh and one shader program for every rival. Car materials are never touched, so shared paints,
-// the player and Garage previews stay exact. Low draws the soft tint only; Medium and up add a fresnel rim and the
+// Cars slowed by Freeze or EMP share an instanced status shell over their paint.
+// Low draws the soft tint; Medium and up add a fresnel rim and the
 // status's own surface: Freeze = frost creeping up from the sills into faceted, glinting ice (flash-freeze);
 // EMP = lightning arcs re-striking over the body after a white hit flash. rival-status-fx.ts adds crystals and waves.
-type StatusRace = { elapsed: number; phase?: string; player: { effects?: { freeze?: number } }; rivals: (ItemHits & FxRival)[] };
+type StatusRace = { elapsed: number; phase?: string; player: ItemHits & FxRival & { effects?: { freeze?: number } }; rivals: (ItemHits & FxRival)[] };
 export type RivalStatus = 'freeze' | 'emp' | null;
 
 export const rivalStatus = rivalItemHit;
 
+const PLAYER_EMP = [1.65, 1.12, 0.24] as const;
 const FIT = 1.2; // ellipsoid radii over the car's half extents: covers the body, corners soften into the rim
 const parked = new THREE.Matrix4().makeTranslation(0, -1e4, 0); // unused instances wait below the scene, never at scale 0
 
@@ -37,11 +37,12 @@ const FRAGMENT = `uniform float rim,time;varying vec3 vColor,vNormal,vView,vLoca
   void main(){float facing=clamp(abs(dot(vNormal/max(length(vNormal),1e-4),vView/max(length(vView),1e-4))),0.,1.);
     float body=.14*smoothstep(0.,.5,facing);float edge=pow(max(0.,1.-facing),3.);
     float age=vStatus.y,seed=vStatus.z,level=vStatus.w;vec3 p=vLocal,col;
-    if(vStatus.x>.5){float flash=1.-smoothstep(0.,.18,age),arcs=0.,core=0.;
-      if(rim>0.){float strike=floor(time*15.+seed*7.); // the arcs jump to a new path each strike
+    bool player=seed<0.;
+    if(vStatus.x>.5){float flash=player?0.:1.-smoothstep(0.,.18,age),arcs=0.,core=0.;
+      if(rim>0.){float strike=floor(time*(player?4.:15.)+seed*7.); // the arcs jump to a new path each strike
         core=1.-smoothstep(0.,.05,abs(noise(p*2.6+vec3(seed,strike*1.7,0.))-.5));
         arcs=max(core,.8*(1.-smoothstep(0.,.035,abs(noise(p*4.3-vec3(strike*.9,seed,0.))-.5))));}
-      col=vColor*(body+rim*edge*.9+arcs*2.2+flash*1.4)+vec3(1.)*level*(core*core*1.3+flash*.8);
+      col=vColor*(body+(player ? 0.28 : 0.)*edge+rim*edge*.9+arcs*2.2+flash*1.4)+vec3(1.)*level*(core*core*1.3+flash*.8);
     }else{float front=-1.15+2.5*clamp(age/${FROST_CREEP},0.,1.);
       float iced=smoothstep(front+.08,front-.08,p.y),line=(1.-smoothstep(0.,.08,abs(p.y-front)))*step(age,${FROST_CREEP});
       float crack=0.,glint=0.;
@@ -93,7 +94,7 @@ export function createRivalStatusTint(capacity: number) {
     mesh, object,
     /** `emit` (effects.js, road coordinates) is passed only while the race runs: sparks, frost and ice chips. */
     update(race: StatusRace, vehicles: THREE.Object3D[] | undefined, dt: number,
-      { quality = 'high', reducedMotion = false, preview = false, emit = null as StatusEmit | null } = {}) {
+      { quality = 'high', reducedMotion = false, preview = false, playerEnabled = true, emit = null as StatusEmit | null } = {}) {
       time += dt;
       const low = quality === 'low';
       material.uniforms.rim!.value = low ? 0 : 1;
@@ -101,24 +102,33 @@ export function createRivalStatusTint(capacity: number) {
       let shown = false;
       fx.begin(dt);
       for (let i = 0; i < capacity; i++) {
-        const rival = race.rivals[i], pose = vehicles?.[i + 1];
-        const now = !preview && rival && pose?.visible ? rivalStatus(race, rival) : null;
+        const isPlayer = i === capacity - 1;
+        const driver = isPlayer ? race.player : race.rivals[i];
+        const playerVisible = playerEnabled && (race.phase === 'racing' || race.phase === 'paused');
+        const pose = vehicles?.[isPlayer ? 0 : i + 1];
+        const target = pose?.visible && !preview && (!isPlayer || playerVisible) ? pose : undefined;
+        const now = target && driver ? (isPlayer ? itemHit(race, race.player) : rivalStatus(race, driver)) : null;
         if (now && now !== live[i]) since[i] = time; // a new hit restarts the flash and the frost creep
         live[i] = now;
         if (now) kinds[i] = now; // keep the last colour while it fades out
         levels[i] = THREE.MathUtils.damp(levels[i]!, now ? 1 : 0, now ? 14 : 8, dt);
-        const visible = levels[i]! >= 0.01 && !!pose;
-        fx.rival(i, { status: now, age: time - since[i]!, pose: pose?.visible ? pose : undefined, fit, rival }, dt, emit, low, reducedMotion);
+        const visible = levels[i]! >= 0.01 && (isPlayer ? !!target : !!pose);
+        fx.rival(i, { status: now, age: time - since[i]!, pose: target, fit, rival: driver },
+          dt, target ? emit : null, low, reducedMotion || isPlayer);
+
         if (!visible) { levels[i] = 0; mesh.setMatrixAt(i, parked); mesh.setColorAt(i, color.setRGB(0, 0, 0)); continue; }
         shown = true;
         const emp = kinds[i] === 'emp', age = time - since[i]!;
         // EMP: a hard electric flicker; reduced motion keeps it steady.
-        const flicker = emp && !reducedMotion && Math.sin(time * 53 + i * 2.1) * Math.sin(time * 29) < 0 ? 0.35 : 1;
-        mesh.setColorAt(i, color.setRGB(...(emp ? EMP : blue)).multiplyScalar(levels[i]! * flicker));
-        status.setXYZW(i, emp ? 1 : 0, age, i * 0.37, levels[i]!);
+        const flicker = emp && !isPlayer && !reducedMotion && Math.sin(time * 53 + i * 2.1) * Math.sin(time * 29) < 0 ? 0.35 : 1;
+        const strength = levels[i]! * (isPlayer ? 0.68 : 1);
+        const rgb = emp ? (isPlayer ? PLAYER_EMP : EMP) : blue;
+        mesh.setColorAt(i, color.setRGB(rgb[0], rgb[1], rgb[2]).multiplyScalar(strength * flicker));
+        status.setXYZW(i, emp ? 1 : 0, age, isPlayer ? -1 : i * 0.37, strength);
+
         pose!.updateWorldMatrix(true, false);
         // The hit lands with a pop: EMP bursts the shell out, Freeze swells as the crust forms.
-        const pop = reducedMotion ? 1 : emp ? 1 + 0.3 * Math.max(0, 1 - age / 0.15) : 1 + 0.08 * Math.sin(Math.min(1, age / FROST_CREEP) * Math.PI);
+        const pop = reducedMotion || isPlayer ? 1 : emp ? 1 + 0.3 * Math.max(0, 1 - age / 0.15) : 1 + 0.08 * Math.sin(Math.min(1, age / FROST_CREEP) * Math.PI);
         mesh.setMatrixAt(i, matrix.multiplyMatrices(pose!.matrixWorld, fit(pose!)).multiply(toCar.makeScale(pop, pop, pop)));
       }
       fx.end();
