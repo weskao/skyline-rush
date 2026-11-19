@@ -5,6 +5,7 @@ test.use({ keepAcquisitionOpen: true, reducedMotion: 'reduce', viewport: { width
 
 async function finishCoast(page) {
   await page.locator('#start-button').click();
+  await page.evaluate(() => { window.gameplay.race.countdown = .01; });
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await page.evaluate(async () => {
     const { finishRace } = await import('/src/race-finish.js');
@@ -106,4 +107,33 @@ test('the production reveal component queues batches, defers during a race, and 
   await expect.poll(() => page.evaluate(() => window.revealCues)).toEqual([
     ['acquisition-hero', true], ['acquisition-select', true], ['acquisition-item', true],
   ]);
+});
+
+test('earning the 18th career star reveals Vantaire GT once and makes it selectable', async ({ gameplayPage: page, gameplayURL }) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('skyline-rush-stars')) {
+      const stars = { coast: 2, neon: 3, canyon: 3, aurora: 3, spiral: 3, taipei: 3 };
+      localStorage.setItem('skyline-rush-stars', JSON.stringify(stars));
+    }
+  });
+  await page.goto(gameplayURL);
+  await page.locator('#garage-button').click();
+  const gt = page.locator('#garage-screen [data-car="crimson-gt"]');
+  await expect(gt).toBeDisabled();
+  await expect(gt).toContainText('18 stars');
+  await page.locator('#garage-close').click();
+
+  await finishCoast(page);
+  const reveal = page.locator('#acquisition-reveal');
+  await expect(reveal.getByRole('heading', { name: 'Vantaire GT' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-stars')).coast)).toBe(3);
+  await reveal.getByRole('button', { name: 'Continue' }).click();
+  await page.locator('#choose-track').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+  await expect(reveal).toBeHidden();
+  await page.locator('#garage-button').click();
+  await expect(gt).toBeEnabled();
+  await gt.click();
+  await expect(gt).toHaveAttribute('aria-pressed', 'true');
+  await expect(reveal).toBeHidden();
 });

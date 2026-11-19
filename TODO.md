@@ -8,6 +8,8 @@
 - [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.
 - [x] Add one accessible bilingual reveal for real race, mission and redemption outcomes, and document the consumer API.
 - [x] Add per-kind reveal SFX on the shared mixer and expose typed acquisition constants for callers.
+- [x] Use one four-shot reveal for catalog cars, with a localized model title, viewport-aware framing and a static fallback for Low, reduced motion, comfort, disabled effects or failed rendering. Chromium preview captured at desktop 1100 × 720, mobile 390 × 844 and 740 × 360.
+- [x] Add Vantaire GT to the existing Classic settlement at 18 career stars and preserve ownership from prior equipped-car and per-car paint saves. RED → GREEN for the first threshold crossing and no replay for legacy ownership. Local typecheck, production build and unit gate passed (3,416 passed, 4 skipped).
 - [ ] Confirm physical phone coverage and exact-HEAD CI.
 
 # Measured routes and Home artwork

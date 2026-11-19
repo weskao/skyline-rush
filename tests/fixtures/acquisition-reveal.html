@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Skyline Rush reward reveal fixture</title>
   <style>
+    @font-face { font-family: 'Barlow Condensed'; src: url('/fonts/barlow-condensed-bold.ttf'); font-weight: 700; }
     :root {
       color-scheme: dark;
       --safe-left: env(safe-area-inset-left, 0px);
@@ -34,9 +35,9 @@
     createApp(AcquisitionReveal).provide('game-audio-cue', name => {
       window.revealCues.push([name, document.querySelector('#acquisition-reveal').open]);
     }).mount('#app');
+    const roadster = location.search === '?roadster';
     const items = [
-      { id: 'gt', kind: 'car', status: 'unlocked', name: { en: 'Vantaire GT', 'zh-TW': '夜鋒 GT' },
-        artwork: { src: 'feature-assets/garage-public/car-picker/crimson-gt@3x.webp', style: 'cutout' } },
+      { id: roadster ? 'roadster' : 'crimson-gt', kind: 'car', status: 'unlocked', name: roadster ? { en: 'Stratosway R2', 'zh-TW': '天航 R2' } : { en: 'Vantaire GT', 'zh-TW': '夜鋒 GT' } },
       { id: 'aurora', kind: 'paint', status: 'unlocked', name: { en: 'Aurora', 'zh-TW': '極光' },
         artwork: { src: 'feature-assets/garage-public/paint-cards/aurora@3x.webp', style: 'cover' } },
       { id: 'ion', kind: 'equipment', status: 'earned', name: { en: 'Ion thruster', 'zh-TW': '離子推進器' },

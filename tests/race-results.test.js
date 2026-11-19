@@ -326,3 +326,24 @@ test('settlement reports only paint thresholds crossed by new Classic stars', ()
   assert.deepEqual(settle(classic({ stars: 2 }), { progress }).settlement.unlockedPaints, []);
   assert.deepEqual(settle(classic({ stars: 3 }, { mode: 'free' }), { progress }).settlement.unlockedPaints, []);
 });
+
+test('the first Classic finish reaching 18 stars awards Vantaire GT in the race settlement', () => {
+  localStorage.setItem('skyline-rush-stars', JSON.stringify({
+    coast: 2, neon: 3, canyon: 3, aurora: 3, spiral: 3, taipei: 3,
+  }));
+  const progress = loadSessionProgress(['coast']);
+  const race = classic({ stars: 3 });
+  const { context, settlement } = settle(race, { progress });
+  assert.equal(loadStars().coast, 3);
+  assert.deepEqual(settlement.unlockedCars, ['crimson-gt']);
+  assert.equal(settleRace(race, context), settlement);
+  assert.deepEqual(settle(classic({ stars: 3, time: 70 }), { progress }).settlement.unlockedCars, []);
+});
+
+test('a Vantaire GT saved before the star requirement does not trigger a second unlock', () => {
+  localStorage.setItem('skyline-rush-car', JSON.stringify('crimson-gt'));
+  localStorage.setItem('skyline-rush-stars', JSON.stringify({
+    coast: 2, neon: 3, canyon: 3, aurora: 3, spiral: 3, taipei: 3,
+  }));
+  assert.deepEqual(settle(classic({ stars: 3 })).settlement.unlockedCars, []);
+});

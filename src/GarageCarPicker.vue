@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CARS } from './car-catalog.ts';
+import { CARS, carArtwork, type CarId } from './car-catalog.ts';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import { garageStudioView } from './garage-view-state.ts';
 import { t } from './i18n.ts';
@@ -7,7 +7,9 @@ import { t } from './i18n.ts';
 // garage-ui.ts owns the click (equip, save, world); this component only renders the cars and which one is in use.
 const props = defineProps<{ locale: string }>();
 const text = (key: string): string => t(key, undefined, props.locale);
-const artworkBase = `${import.meta.env.BASE_URL}feature-assets/garage-public/car-picker/`;
+const artworkBase = import.meta.env.BASE_URL;
+const available = (id: CarId): boolean => garageStudioView.availableCars.includes(id);
+const unlockHint = (id: CarId): string => t('car.unlockStars', { stars: CARS[id].stars }, props.locale);
 </script>
 
 <template>
@@ -15,12 +17,13 @@ const artworkBase = `${import.meta.env.BASE_URL}feature-assets/garage-public/car
     <h3 id="garage-cars-title">{{ text('garage.cars') }}</h3>
     <div class="garage-car-options" role="group" :aria-label="text('garage.cars.pick')">
       <button v-for="(_, id) in CARS" :key="id" type="button" :data-car="id"
-        :aria-label="text('car.' + id)" :aria-pressed="id === garageStudioView.car">
+        :disabled="!available(id)" :aria-pressed="id === garageStudioView.car"
+        :aria-label="available(id) ? text('car.' + id) : text('car.' + id) + ' · ' + unlockHint(id)">
         <span class="garage-car-art" aria-hidden="true">
-          <GarageArtworkImage :src="`${artworkBase}${id}@3x.webp`" :size="144" :height="66" alt="" loading="eager" />
+          <GarageArtworkImage :src="artworkBase + carArtwork(id)" :size="144" :height="66" alt="" loading="eager" />
         </span>
         <span class="garage-car-name">{{ text('car.' + id) }}</span>
-        <span class="garage-car-badge" aria-hidden="true">{{ id === garageStudioView.car ? `✓ ${text('car.inUse')}` : text('car.select') }}</span>
+        <span class="garage-car-badge" aria-hidden="true">{{ id === garageStudioView.car ? `✓ ${text('car.inUse')}` : available(id) ? text('car.select') : unlockHint(id) }}</span>
       </button>
     </div>
   </section>
@@ -39,6 +42,7 @@ const artworkBase = `${import.meta.env.BASE_URL}feature-assets/garage-public/car
   transition: border-color .18s ease, box-shadow .18s ease, color .18s ease, transform .12s ease;
 }
 #garage-screen .garage-car-options button[data-car="crimson-gt"] { --car-light: #ed606655; }
+#garage-screen .garage-car-options button:disabled { cursor: default; }
 #garage-screen .garage-car-options button:active { transform: scale(.98); }
 #garage-screen .garage-car-options button:focus-visible { outline: 3px solid #dbffff; outline-offset: 2px; }
 /* The car not in use steps back, so the lit one reads as the choice at a glance. */
@@ -54,9 +58,9 @@ const artworkBase = `${import.meta.env.BASE_URL}feature-assets/garage-public/car
   transition: color .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 @media (hover: hover) {
-  #garage-screen .garage-car-options button:hover { border-color: #7fc4ea; color: #e6f4ff; }
-  #garage-screen .garage-car-options button:hover .garage-car-art { filter: none; }
-  #garage-screen .garage-car-options button:hover .garage-car-badge { border-color: #7fc4ea; color: #e6f4ff; }
+  #garage-screen .garage-car-options button:not(:disabled):hover { border-color: #7fc4ea; color: #e6f4ff; }
+  #garage-screen .garage-car-options button:not(:disabled):hover .garage-car-art { filter: none; }
+  #garage-screen .garage-car-options button:not(:disabled):hover .garage-car-badge { border-color: #7fc4ea; color: #e6f4ff; }
 }
 #garage-screen .garage-car-options button[aria-pressed="true"] {
   border-color: #3df2ff; color: #f5fbff;

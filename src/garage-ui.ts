@@ -1,5 +1,5 @@
 import { PAINTS, type PaintPreset } from './appearance.ts';
-import { defaultPaint, equipCar, equippedCar, isCar, loadCarPaint, reloadCar } from './car-catalog.ts';
+import { availableCars, defaultPaint, equipCar, equippedCar, isCar, loadCarPaint, reloadCar } from './car-catalog.ts';
 import { setWave3DemoAccount } from '#wave3-demo-race';
 import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from '#garage-skin-runtime';
@@ -129,7 +129,7 @@ export function setupGarageUI({
     const stars = getStars();
     const { state, canEquip, need } = garagePresentation(id, getEquippedPaint(), stars, PAINTS, owned());
     const name = t('paint.' + id);
-    updateGarageStudioView({ ownedPaints: owned(), equippedPaint: getEquippedPaint(), car: equippedCar() });
+    updateGarageStudioView({ ownedPaints: owned(), equippedPaint: getEquippedPaint(), car: equippedCar(), availableCars: availableCars(stars) });
     updateGarageView({
       status: t('garage.status.' + state, { name, stars: need, have: stars }),
       canUndo: previousPaint !== null && owned().includes(previousPaint) && previousPaint !== getEquippedPaint(),
@@ -247,8 +247,8 @@ export function setupGarageUI({
   });
   document.querySelectorAll<HTMLButtonElement>('[data-car]').forEach(button => button.addEventListener('click', () => {
     const id = button.dataset.car;
-    if (!isCar(id) || id === equippedCar()) return;
-    equipCar(id); // both cars are open to everyone: picking one equips it
+    if (!isCar(id) || id === equippedCar() || !availableCars(getStars()).includes(id)) return;
+    equipCar(id);
     // Save the equipped finish for the new car while leaving its live preview alone.
     setEquippedPaint(getEquippedPaint());
     showGarage();

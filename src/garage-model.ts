@@ -172,7 +172,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
   };
 }
 
-interface Ktx2Like { setTranscoderPath(path: string): Ktx2Like; detectSupport(renderer: never): Ktx2Like }
+interface Ktx2Like { dispose?(): void; setTranscoderPath(path: string): Ktx2Like; detectSupport(renderer: never): Ktx2Like }
 type Ktx2Class = new () => Ktx2Like;
 const importKtx2 = async (): Promise<Ktx2Class> => (await import('three/examples/jsm/loaders/KTX2Loader.js')).KTX2Loader as unknown as Ktx2Class;
 

@@ -5,6 +5,8 @@ import { getLocale, onLocaleChange } from './i18n.ts';
 import { dialogNavigation } from './dialog-navigation.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
 import { ACQUISITION_SOUNDS } from './feedback-sounds.ts';
+import AcquisitionCarStage from './AcquisitionCarStage.vue';
+import { carArtwork, isCar } from './car-catalog.ts';
 import { GARAGE_POSE_ART } from './lobby-art.ts';
 import './acquisition-reveal.css';
 
@@ -25,12 +27,15 @@ const dialog = ref<HTMLDialogElement>();
 const primary = ref<HTMLButtonElement>();
 const active = shallowRef<AcquisitionBatch | null>(null);
 const selected = ref(0);
+const presenting = ref(false);
 const failedArt = ref('');
 const locale = ref(getLocale());
 const phase = ref('');
 const copy = computed(() => labels[locale.value]);
 const item = computed(() => active.value?.items[selected.value]);
-const art = computed(() => item.value?.artwork && new URL(item.value.artwork.src, new URL(import.meta.env.BASE_URL, location.href)).href);
+const car = computed(() => item.value?.kind === 'car' && isCar(item.value.id) ? item.value.id : undefined);
+const artwork = computed(() => item.value?.artwork ?? (car.value && { src: carArtwork(car.value), style: 'cutout' }));
+const art = computed(() => artwork.value && new URL(artwork.value.src, new URL(import.meta.env.BASE_URL, location.href)).href);
 const quantity = computed(() => item.value?.quantity === undefined ? '' : '+' + item.value.quantity.toLocaleString(locale.value));
 
 let nav: ReturnType<typeof dialogNavigation> | undefined;
@@ -40,6 +45,7 @@ let phaseObserver: MutationObserver | undefined;
 let shown: AcquisitionBatch | null = null;
 onMounted(() => {
   nav = dialogNavigation(dialog.value!, () => {
+    presenting.value = false;
     if (shown) acquisitionReveal.dismiss(shown.id);
     shown = null;
   });
@@ -67,6 +73,7 @@ watchPostEffect(() => {
   if (!dialog.value?.open && nav) {
     shown = batch;
     nav.open();
+    presenting.value = true;
     cue(ACQUISITION_SOUNDS[first.kind]);
     primary.value?.focus({ preventScroll: true });
   }
@@ -89,11 +96,12 @@ function continueGame(): void {
       aria-describedby="acquisition-name" @cancel.prevent="continueGame">
       <template v-if="item && active">
         <section :key="active.id + ':' + selected" class="acquisition-hero" :data-kind="item.kind"
-          :data-art-style="item.artwork?.style">
+          :data-art-style="artwork?.style" :data-car-showcase="car || undefined">
           <div class="acquisition-stage" aria-hidden="true">
             <div class="acquisition-grid"></div>
             <div class="acquisition-orbit"></div>
             <div class="acquisition-beam"></div>
+            <AcquisitionCarStage v-if="car && presenting" :car="car" />
             <img v-if="art && failedArt !== art" :src="art" class="acquisition-art" alt="" @error="failedArt = art ?? ''" />
             <div v-else class="acquisition-emblem">
               <svg v-bind="ICON_ATTRS" v-html="glyph[item.kind]"></svg>
