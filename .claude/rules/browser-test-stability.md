@@ -50,6 +50,10 @@ Keep Playwright helper imports outside the source string served by a module mock
 
 ## Assert only what a player can see
 
+- **Accept earned rewards before measuring the mobile results dock.** The native acquisition dialog
+  owns the top layer. Parallel locator evaluations can stall on the automatic dismissal handler
+  (CI `44486279087`). The portrait dock spec keeps the real dialog open, taps Continue, verifies
+  it closes and then reads all controls in one browser tick, before and after scrolling.
 - Hidden elements keep stale text. Check `toBeVisible()` before you judge text, or the
   assertion passes or fails on copy no player sees. Example: hidden `#bonus-status` still held
   "NEXT · AIR +25 · 6 M" in English after a switch to zh-TW.
@@ -93,6 +97,11 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   "Showcase camera" combobox (`498d84d0`), so a page-wide `getByRole('combobox', { name })` hit strict mode in
   `browser.spec.js` and `custom-controls-browser.spec.js` (2026-11-16). Scope role locators to the landmark
   that owns the control (`getByRole('complementary', { name: 'Airflow and visual effects' })`).
+- **Rival `i` is `window.gameScene.rivals[i]`, never the i-th scene child.** `createRivalFleet`
+  (`src/rival-fleet.js`) keeps one pooled car per chassis in scene order and deals each race a shuffled
+  lineup, so `scene.children.filter(o => o.userData.driveCue)[1]` was another rival's car and the NITRO
+  trail read false (rival-drive-vfx, CI 44395376200). Enforced by `tests/browser-timeouts.test.js`
+  (*gameScene.rivals, not scene order*).
 - A merge that changes a shared HUD, road or asset rule runs the browser specs that assert it before it lands
   (`git grep` the selector or asset name in `tests/*browser.spec.js`); do not rely on develop's CI to finish.
 
@@ -162,10 +171,15 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `openGarage()` and follow pause/results/history with `await settled(<overlay locator>)` (both in
   `tests/helpers/test.js`); never loosen a pixel bound to absorb it. Enforced by the same test file
   (*overlay geometry*) for every spec that opens one of them and then calls `getBoundingClientRect`/`boundingBox`.
+- **Read the results dock's hit targets together.** Use one `evaluateAll` per poll for the sticky dock and
+  sign-in button. All targets share a layout sample, and the poll can report missing controls without
+  waiting on several independent locator evaluations (CI 44468157574).
 - **Read a timed cue in the tick that finds it.** The halfway card lives 2.15 s of race time; on CI,
   `toBeVisible` + two `toContainText` + `locator.evaluate` outlived it and the evaluate got a detached node
   (`parentElement` null, run 44269822759). Find, read and measure a self-expiring element inside one
-  `page.waitForFunction`, then assert on the returned snapshot (`race-halfway-browser.spec.js`).
+  `page.waitForFunction`, then assert on the returned snapshot (`race-halfway-browser.spec.js`). The per-map sweep
+  repeated it and measured a zero rect on Monsoon (dx 480, CI 44395376200). Enforced by `tests/browser-timeouts.test.js`
+  (*halfway card in one page tick*).
 - **Poll the condition you assert, not a weaker proxy.** `expect.poll(...).not.toEqual(before)` passes on the
   first change, which can be the live loop's own HUD tick (`updateUI` runs every 0.075 s) from before your
   stepped frames were drawn; a one-shot read on the next line then judged all eight minimap markers and found

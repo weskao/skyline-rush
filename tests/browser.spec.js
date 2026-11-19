@@ -1059,9 +1059,14 @@ for (const sizes of [[[390, 844], [320, 740]], [[844, 390]]]) {
           await expect(page.locator('.touch-pad'), size).toBeHidden();
           const steer = hand === 'right' ? (x => x > width / 2) : (x => x < width / 2);
           const actions = hand === 'right' ? (x => x < width / 2) : (x => x > width / 2);
-          for (const name of ['Steer left', 'Steer right', 'Brake']) expect(steer(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
-          // Landscape centers the FLY/BOOST cluster between steering and pedals (it straddles the midline), so only portrait puts it wholly opposite the steering.
-          for (const name of ['Accelerate', ...height > width ? ['Hold to fly', 'Hold to boost', 'Nitro button'] : []]) expect(actions(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
+          for (const name of ['Steer left', 'Steer right']) expect(steer(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
+          // BRAKE belongs to the opposite thumb, beside the pedals (60dfff91).
+          for (const name of ['Accelerate', 'Brake']) expect(actions(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
+          // FLY/BOOST/NITRO sit between steering and pedals and may straddle the midline (landscape centers them; BRAKE now
+          // takes the outer column in portrait): they must clear the steering cluster.
+          const pad = await page.locator('.touch-steer').boundingBox();
+          const clear = hand === 'right' ? (x => x < pad.x) : (x => x > pad.x + pad.width);
+          for (const name of ['Hold to fly', 'Hold to boost', 'Nitro button']) expect(clear(await centerX(name)), `${size} ${hand} ${name}`).toBe(true);
         });
       }
     });

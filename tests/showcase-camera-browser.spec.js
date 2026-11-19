@@ -201,16 +201,23 @@ for (const [width, height] of [[1440, 900], [390, 844], [320, 568], [760, 501], 
       if (locale !== 'en') await selectLocale(page, locale);
       for (const view of ['drive', 'front', 'rear', 'left', 'right', 'orbit']) {
         await expect(dock).toHaveAttribute('data-view', view);
-        const cut = await name.evaluate(el => el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight);
-        expect(cut, `${locale} ${view}: camera label is cut`).toBe(false);
-        // A label may wrap between words ("Driving / camera") but never inside one ("Drivin / g").
-        const { lines, words } = await name.evaluate(el => {
+        // Read the whole layout in one frame so software WebGL does not run between each measurement.
+        const { cut, lines, words, prev, label, next } = await name.evaluate(el => {
           const range = document.createRange();
           range.selectNodeContents(el);
-          return { lines: new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size, words: el.textContent.trim().split(/\s+/).length };
+          const dock = el.closest('#showcase-camera-dock');
+          return {
+            cut: el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight,
+            lines: new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size,
+            words: el.textContent.trim().split(/\s+/).length,
+            prev: dock.querySelector('#showcase-camera-prev').getBoundingClientRect().toJSON(),
+            label: el.getBoundingClientRect().toJSON(),
+            next: dock.querySelector('#showcase-camera-next').getBoundingClientRect().toJSON(),
+          };
         });
+        expect(cut, `${locale} ${view}: camera label is cut`).toBe(false);
+        // A label may wrap between words ("Driving / camera") but never inside one ("Drivin / g").
         expect(lines, `${locale} ${view}: camera label breaks inside a word`).toBeLessThanOrEqual(words);
-        const [prev, label, next] = await Promise.all(['#showcase-camera-prev', '#showcase-camera-name', '#showcase-camera-next'].map(s => page.locator(s).boundingBox()));
         expect(prev.width >= 44 && prev.height >= 44 && next.width >= 44 && next.height >= 44, `${locale}: arrows keep 44px targets`).toBe(true);
         expect(prev.x + prev.width <= label.x + 1 && label.x + label.width <= next.x + 1, `${locale} ${view}: name sits between the arrows`).toBe(true);
         expect(Math.abs((prev.x + next.x + next.width) / 2 - (label.x + label.width / 2)) <= 1, `${locale} ${view}: name is centred`).toBe(true);

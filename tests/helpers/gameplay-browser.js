@@ -9,7 +9,7 @@ export async function captureHooks(page) {
   await markStartupSeen(page);
   for (const [file, anchor, replacement] of [
     ['main.js', 'let race = createRace();', 'let race = createRace(); window.gameplay = { get race() { return race; } };'],
-    ['world.js', 'scene.add(player);', 'scene.add(player); window.gameScene = { scene, player, renderer, camera, composer };'],
+    ['world.js', 'scene.add(player);', 'scene.add(player); window.gameScene = { scene, player, renderer, camera, composer, get rivals() { return rivals; } };'],
   ]) await page.route(url => url.pathname === `/src/${file}`, async route => {
     const response = await route.fetch();
     const source = await response.text();

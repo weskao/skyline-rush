@@ -33,11 +33,11 @@ export function mapHits(result, combo, width, height) {
   const hits = [];
   if (!result.map) return [`${tag}: map hidden`];
   if (result.events !== 'none') hits.push(`${tag}: map takes pointer events`);
-  // A phone caps BRAKE short of its row: it must keep to the outer screen edge for either hand (the map slot relies on it).
+  // BRAKE belongs to the opposite thumb (.claude/rules/touch-input.md): wholly across the steering cluster for either hand.
   if (result.brake) {
     const [s, b] = [result.steer, result.brake];
-    const gap = combo.hand === 'left' ? b.x - s.x : (s.x + s.width) - (b.x + b.width);
-    if (Math.abs(gap) > 0.5) hits.push(`${tag}: brake ${Math.round(gap)}px off the outer edge`);
+    const across = combo.hand === 'left' ? b.x - (s.x + s.width) : s.x - (b.x + b.width);
+    if (across < -0.5) hits.push(`${tag}: brake overlaps the steering side by ${Math.round(-across)}px`);
   }
   const m = result.map;
   if (m.x < 0 || m.y < 0 || m.x + m.width > width + 0.5 || m.y + m.height > height + 0.5) hits.push(`${tag}: map off screen`);

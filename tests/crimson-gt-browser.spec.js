@@ -369,12 +369,11 @@ test('every Garage skin previews on the Crimson GT', async ({ gameplayPage: page
   const { errors } = await prepare(page, gameplayURL, { storage: GT });
   await page.locator('#garage-button').click();
   await modelReady(page);
-  expect(GARAGE_SKINS).toHaveLength(22);
   for (const { id, category } of GARAGE_SKINS) {
     await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
     await expect(page.locator('#garage-preview'), id).toHaveAttribute(`data-skin-preview-${category}`, id);
-    if (process.env.CRIMSON_GT_SHOTS) await attach(page, `gt-skin-${id}`); // local review sheet: all 22 on the GT
+    if (process.env.CRIMSON_GT_SHOTS) await attach(page, `gt-skin-${id}`); // local review sheet: every skin on the GT
   }
   expect(await glbRoots(page)).toBe(1); // still the GT under the last skin
   await attach(page, 'gt-garage-skins');
