@@ -149,7 +149,9 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
 - **Read a timed cue in the tick that finds it.** The halfway card lives 2.15 s of race time; on CI,
   `toBeVisible` + two `toContainText` + `locator.evaluate` outlived it and the evaluate got a detached node
   (`parentElement` null, run 44269822759). Find, read and measure a self-expiring element inside one
-  `page.waitForFunction`, then assert on the returned snapshot (`race-halfway-browser.spec.js`).
+  `page.waitForFunction`, then assert on the returned snapshot (`race-halfway-browser.spec.js`). The per-map sweep
+  repeated it and measured a zero rect on Monsoon (dx 480, CI 44395376200). Enforced by `tests/browser-timeouts.test.js`
+  (*halfway card in one page tick*).
 - **Poll the condition you assert, not a weaker proxy.** `expect.poll(...).not.toEqual(before)` passes on the
   first change, which can be the live loop's own HUD tick (`updateUI` runs every 0.075 s) from before your
   stepped frames were drawn; a one-shot read on the next line then judged all eight minimap markers and found
