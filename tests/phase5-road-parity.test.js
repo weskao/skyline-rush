@@ -24,11 +24,12 @@ test('Phase 5 World Tour ribbon and physics centreline agree for five tracks and
         const positions=road.geometry.getAttribute('position');
         const normals=road.geometry.getAttribute('normal');
         for(const row of [0,1,30,78,130,138]){
-          const s=Math.max(0,Math.min(length,start+row*12));
-          const up=trackFrame(id,s).up;
+          // Past the finish the drawn road runs on along the route's continuation (rules/road-runout.md).
+          const s=Math.max(0,start+row*12),past=s>length;
+          const up=trackFrame(id,s,past).up;
           for(const [side,lateral] of [-12,12].entries()){
             const vertex=row*2+side;
-            const expected=trackLocalPosition(id,s,lateral,0,origin);
+            const expected=trackLocalPosition(id,s,lateral,0,origin,past);
             const actual=[positions.getX(vertex),positions.getY(vertex),positions.getZ(vertex)];
             const error=Math.hypot(...actual.map((n,i)=>n-expected[i]));
             assert.ok(error<.005,`${id}/${quality}/${distance}m row ${row}: road vs physics ${error}`);

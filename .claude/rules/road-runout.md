@@ -9,6 +9,11 @@ paths:
   - "src/courses/**"
   - "src/upcoming-scenes/**"
   - "src/race-tracks.ts"
+  - "src/frostbite-race-scene.ts"
+  - "src/*-race-scene.ts"
+  - "src/course-race-scene.ts"
+  - "src/road-runout.ts"
+  - "tests/road-runout.test.js"
 ---
 
 # Road run-out: an open road never ends in the air under the car
@@ -24,12 +29,23 @@ of the centreline, a course edge that simply stops), existing and new.
   data keep the shipped length; no car is simulated on the run-out.
 - Take the run-out from the route's own continuation (its Endless or next-lap extension, or the centreline
   extrapolated along its last heading and grade), joined with the same position and tangent as the finish. Never a
-  second hand-drawn stub with its own width or material.
+  second hand-drawn stub with its own width or material. Where the map's chunk builder cannot sample past its last
+  edge, use `createRoadRunout` (`src/road-runout.ts`) with that edge's width and the map's road material parameters,
+  built or streamed with the sector that holds the finish (never rebuilt per frame).
 - A real break the car must jump (a gap in the course data) stays a break. It is shown on the minimap
   (the minimap gap rule) and is not filled by this rule.
 - A stream that clamps its rows to the race length (`Math.min(length, distance)`) is the usual cause: clamp the
   simulation, not the drawing.
-- Guard per track: a unit test that parks the scene at the race length and asserts drawn road beyond it. Sky
-  Spiral: `tests/sky-scene-streaming.test.js` (*the road runs on past the finish instead of ending in the air
-  under the parked car*), RED when the ribbon stopped 12 m from the car (2026-11-19).
+- Guard per track: a unit test that parks the scene at the race length and asserts drawn road beyond it. A new
+  open road adds its case to `tests/road-runout.test.js`. RED evidence, 2026-11-19:
+  - Sky Spiral: `tests/sky-scene-streaming.test.js` (*the road runs on past the finish instead of ending in the
+    air under the parked car*), RED when the ribbon stopped 12 m from the car.
+  - World Tour, all five: *World Tour roads run on past the finish under the parked car*, RED when the ribbon's
+    last rows collapsed onto the finish (`trackFrame` clamped).
+  - Frostbite: *Frostbite road runs on past the finish for the whole view radius*, RED at 550 m (run-off was 500).
+  - Stormline, Volcanic: *… road runs on past the finish for the whole view radius*, RED at 50 m.
+  - Dune, Skyfall: *… road runs on past the finish for its draw range*, RED at 50 m (FINISH has no next edge).
+  - Monsoon: `tests/monsoon-ruins-race.test.js` (*Monsoon scenery runs on past FINISH as far as the race view
+    reaches*), `MONSOON_RUNOUT`.
+  - Coast, Canyon, Aurora: *classic open roads run on past the finish* (they mirror past their length; never RED).
 - Confirm on a real WebGL frame at the finish and 300 m before it; a unit test cannot show a seam or a missing rail.

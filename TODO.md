@@ -5,6 +5,34 @@
 - [ ] Complete the full-game browser and physical-phone checks, including the selected model in a running race.
 - [ ] Check the GitHub quality gate for the branch head.
 
+# 終點後道路延伸（2026-11-19，`feature/road-runout`）
+
+規則：`.claude/rules/road-runout.md`。停在終點的車，前方要看到道路、護欄、車道線和路肩繼續延伸，至少到該賽道的一般繪製距離。延伸段只負責繪製，賽程長度、檢查點、終點門、小地圖、紀錄和 Ghost 都維持原值。
+
+盤點（21 項，均已處理）：
+
+| 賽道／模式 | 路線形式 | 修改前終點之後 | 結論 |
+| --- | --- | --- | --- |
+| Taipei、Tokyo、Alpine、Coastal、Cosmic（世界巡迴） | 開放 | `trackFrame` 在賽程長度夾住，路面最後幾列擠在終點 | 已修，336282c6 |
+| Frostbite Canyon | 開放 | 只往前延伸 500 m，但可視距離是 1500 m | 已修，f6c0accb |
+| Stormline Megacity、Volcanic Crown | 開放 | 道路停在最後一段地面路線的終點 | 已修，31d526a1、fd1d39e6 |
+| Dune Tempest、Skyfall Archipelago | 開放 | FINISH 沒有下一段路線，串流到此為止；Skyfall 的路面直接停在空中 | 已修，2d728405、fd1d39e6 |
+| Monsoon Ruins | 開放 | 已有 `MONSOON_RUNOUT` 1500 m | 已符合，未修改 |
+| Coast、Canyon、Aurora | 開放 | 路線在長度之後鏡像或反射延伸 | 已符合，補上防護測試 |
+| Sky Spiral | 開放 | 在 `feature/sky-spiral-3d-look` 修正（037d402d） | 不在本分支處理 |
+| Neon、Harbor Circuit | 封閉環線 | 不適用 | 不適用 |
+| Endless、Elimination | 串流道路 | 道路持續延伸 | 不適用 |
+| 教學（Coast free 模式）、Daily | 沿用已登錄賽道 | 結論同所用賽道 | 已涵蓋 |
+| 首頁 Coming Soon 預覽 | 沒有終點 | 不適用 | 不適用 |
+
+- [x] RED → GREEN：`tests/road-runout.test.js`。世界巡迴最後一列的 x 擠在終點；Frostbite 在終點後 550 m 沒有路面；Stormline、Volcanic、Dune、Skyfall 在終點後 50 m 就沒有路面。修正後全部通過，Dune 和 Skyfall 也確認延伸段會隨所屬區段串流移除。
+- [x] 共用延伸段 `src/road-runout.ts`：沿最後的方向與坡度直線延伸，位置與切線和終點相同，使用該路段寬度和該地圖的路面材質參數。延伸段與所屬區段一起建立或串流，不在每幀重建。
+- [x] `node --test tests/module-size.test.js`、`npm test`（3460 項：3450 通過、4 略過、6 失敗，見下一項）、`npm run typecheck`、`npm run build`（exit 0）。
+- [x] `npm test` 的 6 項失敗：5 項（`tests/js-typecheck.test.js`、`tests/typescript-primary.test.js`、`tests/three-version-contract.test.js`）是這個 worktree 沒有 `node_modules`，暫時連結主 checkout 的 `node_modules` 後全部通過。`tests/phase5-road-parity.test.js` 原本假設終點後的路面夾在終點，現在終點前仍比對有限長度的物理中心線，終點後改比對路線延伸，容差不變；舊的 `src/world-tour-scene.js` 失敗（Tokyo row 30 差 147 m），新程式通過。
+- [ ] 終點與終點前 300 m 的真實 WebGL 畫面（接縫、護欄）。依擁有者指示（2026-11-19）未執行 Playwright 與 `make verify`。
+- [ ] iPhone 上 Dune 和 Skyfall 延伸段首次出現時的 shader 編譯（`tests/shader-warmup-browser.spec.js`）。依擁有者指示未執行。
+- [ ] exact-HEAD 完整 CI：feature 分支不跑完整 CI，尚未檢查。
+
 # Minimap gap marks (2026-11-19, `feature/minimap-gap-marks`)
 
 - [x] Inventory: 4 tracks / 8 gaps the physics drops the car into — Canyon 1 (`sections` gap), Sky Spiral 3 (`SKY_JUMPS` via `sections`, finite modes), Dune Tempest 1 and Skyfall Archipelago 3 (`spec.noRoad`). Endless/Elimination clear `race.sections`, so none there. One renderer, `createRouteMap` (`src/route-map.ts`), three draw paths (classic polyline, CourseGraph, streaming). Monsoon, Volcanic, Stormline and Frostbite have no `noRoad`, so they get no gap mark.
