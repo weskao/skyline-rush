@@ -1,16 +1,19 @@
 export const accentVertex = /* glsl */ `
-  attribute vec3 contact, roadUp, roadSide, birthSeedPower;
+  attribute vec3 contact, roadUp, roadSide;
+  attribute vec4 birthSeedPower;
   attribute float facetShade;
   uniform float time, style;
   varying vec2 vShape;
-  varying float vAge, vSeed, vStrength, vShade;
+  varying float vAge, vSeed, vStrength, vShade, vSpark;
   void main() {
     vShape = vec2(position.x + position.z, position.y);
     vShade = facetShade;
     vSeed = birthSeedPower.y;
+    vSpark = birthSeedPower.w;
     float age = max(0., time - birthSeedPower.x);
     float life = mix(.68, 1.22, vSeed);
     if (style > 3.5 && style < 4.5) life *= .68;
+    if (vSpark > .5) life = mix(.25, .61, vSeed);
     vAge = age / life;
     vStrength = birthSeedPower.z;
     vec2 size = vec2(.41, .61);
@@ -28,6 +31,13 @@ export const accentVertex = /* glsl */ `
       size = vec2(.52, .30);
       rise = .10 + .40 * vAge;
     }
+    float scatter = 0.;
+    if (vSpark > .5) {
+      size *= style > 2.5 && style < 3.5 ? .29 : .32;
+      rise += (style > 2.5 && style < 3.5 ? .24 : .39) * (1. - (1. - vAge) * (1. - vAge));
+      scatter = (vSeed - .5) * (.36 + .82 * vAge);
+    }
+    vec3 spawn = contact + roadUp * rise + roadSide * scatter;
     if (vAge >= 1.) { gl_Position = vec4(2., 2., 2., 1.); return; }
 
     float scale = mix(.72, 1.24, vSeed) * mix(.75, 1., vStrength);
@@ -39,7 +49,7 @@ export const accentVertex = /* glsl */ `
       float melt = style > 2.5 ? 1. - .50 * smoothstep(.20, 1., vAge) : 1.;
       vec3 lever = right * position.x * size.x + depth * position.z * size.x * 1.27
         + roadUp * position.y * size.y;
-      vec3 point = contact + roadUp * rise + lever * scale * melt;
+      vec3 point = spawn + lever * scale * melt;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(point, 1.);
       return;
     }
@@ -47,7 +57,7 @@ export const accentVertex = /* glsl */ `
     vec3 axis = mat3(modelViewMatrix) * roadUp;
     vec2 axisXY = dot(axis.xy, axis.xy) > .0001 ? normalize(axis.xy) : vec2(0., 1.);
     vec2 side = vec2(axisXY.y, -axisXY.x);
-    vec3 centre = (modelViewMatrix * vec4(contact + roadUp * rise, 1.)).xyz;
+    vec3 centre = (modelViewMatrix * vec4(spawn, 1.)).xyz;
     centre.xy += (side * (position.x * size.x + (vSeed - .5) * (.22 + .3 * vAge))
       + axisXY * position.y * size.y) * scale;
     gl_Position = projectionMatrix * vec4(centre, 1.);
@@ -58,7 +68,7 @@ export const accentFragment = /* glsl */ `
   uniform float style;
   uniform vec3 tint, core;
   varying vec2 vShape;
-  varying float vAge, vSeed, vStrength, vShade;
+  varying float vAge, vSeed, vStrength, vShade, vSpark;
 
   float softBand(float d, float w) { return 1. - smoothstep(w * .42, w, abs(d)); }
 
@@ -77,7 +87,17 @@ export const accentFragment = /* glsl */ `
     vec2 p = vShape;
     float alpha, hot;
     vec3 color = tint;
-    if (style < 1.5) {
+    if (vSpark > .5) {
+      vec2 point = abs(p);
+      float starDot = 1. - smoothstep(.09, .65, length(p * vec2(1.15, .84)));
+      float gleam = max(softBand(point.x, .10) * softBand(point.y, .79),
+        softBand(point.x, .62) * softBand(point.y, .12));
+      alpha = style > 2.5 && style < 3.5 ? .69 : max(starDot * .66, gleam * .76);
+      hot = style > 2.5 && style < 3.5 ? vShade : max(starDot, gleam);
+      if (style > 1.5 && style < 2.5) {
+        color = .12 + .63 * clamp(abs(fract(vSeed + vec3(0., .67, .33)) * 6. - 3.) - 1., 0., 1.);
+      }
+    } else if (style < 1.5) {
       vec2 lit = flame(p);
       alpha = lit.x * .80;
       hot = lit.y;

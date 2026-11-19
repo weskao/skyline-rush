@@ -22,3 +22,11 @@ export const garageStudioView = reactive<{ page: 'home' | 'studio'; angle: strin
 export function updateGarageStudioView(fields: Partial<typeof garageStudioView>) {
   Object.assign(garageStudioView, fields);
 }
+
+export const garageCars = reactive({
+  stars: 0,
+  trialStartedAt: undefined as number | undefined,
+  access: 'locked' as ReturnType<typeof import('./car-catalog.ts').gtAccess>,
+  previewCar: null as CarId | null,
+  trialError: false,
+});

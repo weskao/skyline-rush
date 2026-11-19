@@ -16,6 +16,12 @@ const medal = (id: string, key: string): AcquisitionItem => ({
 
 export function raceAcquisitionItems(result: Settlement): AcquisitionItem[] {
   const items: AcquisitionItem[] = [];
+  if (result.unlockedGt) {
+    const id = 'crimson-gt';
+    items.push({ id, kind: ACQUISITION_KIND.CAR, status: 'unlocked',
+      name: localized(locale => t('car.' + id, undefined, locale)),
+      artwork: { src: `feature-assets/garage-public/car-picker/${id}@3x.webp`, style: 'cutout' } });
+  }
   if (result.next && result.unlockedTrack) {
     const id = result.next;
     items.push({ id, kind: ACQUISITION_KIND.TRACK, status: 'unlocked', name: localized(locale => trackName(id, locale)),

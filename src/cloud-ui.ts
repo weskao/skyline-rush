@@ -248,7 +248,7 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
       const permanent = mergeModeBests(previousPermanent, imported.permanent);
       if (!saveLocalProgress({ ...merged, localChallengeMedals })) throw new Error('Could not import into device storage');
       if (!saveLocalModeBests(permanent)) {
-        saveLocalProgress({ ...previousProgress, localChallengeMedals: previousMedals });
+        saveLocalProgress({ gtTrialStartedAt: undefined, ...previousProgress, localChallengeMedals: previousMedals });
         throw new Error('Could not import permanent results');
       }
       applyProgress(merged, localChallengeMedals);
@@ -298,6 +298,7 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
       showResultCloud();
       return saving;
     },
+    syncProgress: saveCloudProgress,
     /** Reuse the single Cloud Save auth observer for Garage account isolation. */
     subscribeAccount(listener: (uid: string | null) => void): void {
       accountListeners.add(listener);

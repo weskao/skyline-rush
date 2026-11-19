@@ -1,3 +1,4 @@
+import { seedGtCareer } from './gt-progress.js';
 import { test as base } from './test.js';
 import { createServer } from 'vite';
 import { fileURLToPath } from 'node:url';
@@ -55,6 +56,7 @@ export const test = base.extend({
 
 // HERO_CAR=crimson-gt reruns the track and equipment matrices with that car equipped.
 export const seedHeroCar = async page => {
+  if (process.env.HERO_CAR === 'crimson-gt') await seedGtCareer(page);
   if (process.env.HERO_CAR) await page.addInitScript(car => localStorage.setItem('skyline-rush-car', JSON.stringify(car)), process.env.HERO_CAR);
 };
 /** MODEL_MANIFEST id those matrices must see on the car: the equipped car's GLB. */

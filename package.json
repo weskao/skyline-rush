@@ -22,6 +22,7 @@
     "typecheck:vue": "vue-tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
+    "crucible": "https://crucible.codepawl.com/releases/codepawlhq-crucible-0.21.0.tgz",
     "firebase": "^13.1.0",
     "three": "0.186.1",
     "vue": "^3.5.44"
@@ -37,7 +38,13 @@
     "vue-tsc": "3.3.13"
   },
   "overrides": {
-    "@grpc/grpc-js": "^1.14.6"
+    "@grpc/grpc-js": "^1.14.6",
+    "crucible": {
+      "three": "$three"
+    }
+  },
+  "allowScripts": {
+    "https://crucible.codepawl.com/releases/codepawlhq-crucible-0.21.0.tgz": false
   },
   "imports": {
     "#garage-skin-ui": "./src/GarageSkinCatalog.vue",
