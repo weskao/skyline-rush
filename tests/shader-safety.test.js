@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Scene, Group, Mesh, BoxGeometry, Matrix4, BackSide } from 'three';
+import { Scene, Group, Mesh, BoxGeometry, Matrix4, MeshStandardMaterial, BackSide } from 'three';
 import { createSkyScene } from '../src/sky-scene.js';
+import { createSpiralKit } from '../src/spiral-scenery.ts';
+import { SPIRAL_NODES } from '../src/spiral-scenery-plan.ts';
 import { createWorldTourScene, WORLD_THEMES } from '../src/world-tour-scene.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { createEffects } from '../src/effects.js';
@@ -78,6 +80,22 @@ test('every lit mesh in the 3D courses has unit normals and non-degenerate insta
   const frostbite = new Scene();
   createFrostbite(frostbite).setShot('p02');
   assert.deepEqual(litFaults(frostbite), [], 'frostbite showroom');
+});
+
+// Task 8c: the kit's pooled instances are lit (one atlas material), so a collapsed matrix would be a NaN pixel.
+test('the Sky Spiral kit draws no collapsed instance at any frame of the look brief', () => {
+  const scene = new Scene(), course = createSkyScene(scene), source = new Group(), geometry = new BoxGeometry(), material = new MeshStandardMaterial();
+  for (const node of [...SPIRAL_NODES, 'tower', 'tower_far']) source.add(Object.assign(new Mesh(geometry, material), { name: node }));
+  const kit = createSpiralKit(source, course.parts);
+  kit.show(true);
+  course.parts.stream = kit.stream;
+  for (const distance of [0, 1650, 2550, 4650, 8600]) {
+    course.update(distance, 'high');
+    assert.deepEqual(litFaults(scene), [], `${distance} m`);
+  }
+  let drawn = 0;
+  scene.traverse(object => { if (object.isInstancedMesh && object.material === material) drawn += object.count; });
+  assert.ok(drawn > 20, 'the guard read real placements');
 });
 
 test('Sky Spiral owns a sky backdrop that appears with the course and hides with it', () => {

@@ -87,7 +87,8 @@ export function createSkyScene(scene) {
   const towerGeo = new THREE.BoxGeometry(1, 1, 1);
   const skylineMesh = new THREE.InstancedMesh(towerGeo,
     new THREE.MeshStandardMaterial({ color: '#202e56', metalness: 0.55, roughness: 0.48 }), 86);
-  const skylineLights = new THREE.InstancedMesh(towerGeo, magenta, 86);
+  // Its own material: the detailed look hides the skyline through it, and the rail beacons keep theirs.
+  const skylineLights = new THREE.InstancedMesh(towerGeo, magenta.clone(), 86);
   skyline.add(skylineMesh, skylineLights);
   for (let i = 0; i < 86; i++) {
     const angle = i * 2.399963;
@@ -150,10 +151,16 @@ export function createSkyScene(scene) {
   const roadInstances = [borders, rails, beacons, laneLines];
 
   const landmarks = [landmark];
+  /** What the detailed look (spiral-look.ts) dresses on Medium and above; Low never touches these. `replaced` are
+   *  the materials of the procedural tower, skyline and fog banks its kit stands in for, `stream` its per-frame hook. */
+  const parts = {
+    group, road, backdrop, landmark, stream: undefined,
+    replaced: [...heroMaterials, skylineMesh.material, skylineLights.material, cloudMat],
+    trim: { accent: cyan, beacons: magenta, rails: concrete, lanes: stripes },
+  };
   return {
     landmarks: () => landmarks,
-    /** What the detailed look (spiral-look.ts) dresses on Medium and above; Low never touches these. */
-    parts: { group, road, backdrop },
+    parts,
     update(distance, quality = 'high', endless = false) {
       group.visible = true;
       backdrop.material.uniforms.time.value = distance * 0.0015;
@@ -206,6 +213,7 @@ export function createSkyScene(scene) {
         lastRoadStart = start;
         lastEndless = endless;
       }
+      parts.stream?.(distance, endless);
     },
     hide() { group.visible = false; },
     dispose() {
@@ -218,6 +226,7 @@ export function createSkyScene(scene) {
       backdrop.geometry.dispose();
       for (const mesh of [borders, rails, beacons, laneLines]) mesh.dispose();
       skylineMesh.dispose();
+      skylineLights.material.dispose();
       skylineLights.dispose();
       towerGeo.dispose();
       cloudGeometry.dispose();

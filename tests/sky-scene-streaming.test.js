@@ -28,6 +28,20 @@ test('Sky Spiral streams road geometry only when its 10m sector changes', () => 
   kit.dispose();
 });
 
+// Task 8c: the look's kit (spiral-scenery.ts) rides this hook; it must see the road where this frame put it.
+test('the look\'s streaming hook runs once per frame, after the road has moved, with the endless flag', () => {
+  const scene = new THREE.Scene(), kit = createSkyScene(scene), { parts } = kit, seen = [];
+  kit.update(1700, 'medium');
+  assert.equal(parts.stream, undefined, 'no hook until the look sets one');
+  parts.stream = (distance, endless) => seen.push([distance, endless, parts.road.position.clone()]);
+  kit.update(1900, 'medium');
+  kit.update(12000, 'medium', true);
+  assert.deepEqual(seen.map(([distance, endless]) => [distance, endless]), [[1900, false], [12000, true]]);
+  assert.ok(seen[1][2].equals(parts.road.position), 'the road was already moved for this frame');
+  assert.ok(!seen[0][2].equals(seen[1][2]));
+  kit.dispose();
+});
+
 test('Sky Spiral road keeps the same camera-relative geometry after large teleports', () => {
   const scene = new THREE.Scene(), kit = createSkyScene(scene);
   const root = scene.getObjectByName('Sky Spiral 3D course');

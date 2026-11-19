@@ -3,8 +3,10 @@
 // road mesh that wears the KTX2 road set. This is their target on the course: the dome hangs under the course's group
 // in place of its procedural backdrop, the ribbon wears the look's `helix` set (coast-assets.ts loads it), and clear
 // day air replaces the violet haze. Lighting, exposure and bloom come from coast-look.ts through the look entry.
+// The landmark kit (spiral-scenery.ts) is shown on every preset of Medium and above, as the road set is.
 import { Color, DoubleSide, type FogExp2, type Material, type Object3D, type Scene } from 'three';
 import { coastEnvPlan } from './coast-lighting.ts';
+import { createSpiralKit, type SpiralKit, type SpiralKitHost } from './spiral-scenery.ts';
 import { TRACK_PALETTES } from './track-palettes.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
@@ -15,7 +17,11 @@ const TRACK = 'spiral';
 export const SPIRAL_DAY = Object.freeze({ background: '#94b7c9', fog: '#a3bdc8', density: .00045 });
 
 /** The course's own pieces (sky-scene.js `parts`). */
-export interface SpiralParts { group: Object3D; road: { material: Material | Material[] }; backdrop: { visible: boolean } }
+export interface SpiralParts extends SpiralKitHost {
+  group: Object3D; road: Object3D & { material: Material | Material[] }; backdrop: { visible: boolean };
+  /** Called by the course each frame it is drawn, after it has moved its road: the kit's streaming while shown. */
+  stream?: SpiralKit['stream'];
+}
 interface Deps {
   parts: SpiralParts;
   /** The HDRI dome (coast-sky.ts) and the shared sky mesh it hangs under on every other track. */
@@ -27,7 +33,7 @@ export function createSpiralLook({ parts, dome, home, scene }: Deps) {
   const procedural = parts.road.material, background = scene.background as Color, fog = scene.fog as FogExp2;
   const night = new Color(TRACK_PALETTES.spiral.fog), shared = fog.density; // what world.js sets on this track
   const dayBackground = new Color(SPIRAL_DAY.background), dayFog = new Color(SPIRAL_DAY.fog);
-  let hung = false;
+  let hung = false, kit: SpiralKit | null = null, dressed = false;
 
   /** The dome under the course while it shows the course's sky; the backdrop only without it. */
   function hang(under: boolean): void {
@@ -36,10 +42,17 @@ export function createSpiralLook({ parts, dome, home, scene }: Deps) {
     parts.backdrop.visible = !under;
     hung = under;
   }
+  function dress(on: boolean): void {
+    if (on === dressed) return;
+    kit?.show(dressed = on);
+    parts.stream = on ? kit?.stream : undefined;
+  }
 
   return {
-    /** Per frame, after coast-sky.ts and race-visuals.ts: both write first, this corrects for the course. */
-    update(trackId: string, preset: string, quality: VfxQuality): void {
+    /** Per frame, after coast-sky.ts and race-visuals.ts: both write first, this corrects for the course. `kitted`:
+     *  the look wants the landmark kit and it is in the scene. */
+    update(trackId: string, preset: string, quality: VfxQuality, kitted = false): void {
+      dress(kitted && !!kit);
       const mine = trackId === TRACK, day = mine && coastEnvPlan(trackId, preset, quality).kind === 'hdri';
       hang(day && dome.visible);
       if (day) {
@@ -58,7 +71,12 @@ export function createSpiralLook({ parts, dome, home, scene }: Deps) {
       if (material) { material.side = DoubleSide; material.name = 'spiral_asphalt'; }
       parts.road.material = material ?? procedural;
     },
+    /** The landmark kit joins the course hidden (its programs get the warmup); `update` shows it. Throws on a kit
+     *  without one of its nodes, and the caller keeps the procedural scene. */
+    attachKit(source: Object3D): void { kit = createSpiralKit(source, parts); },
+    detachKit(): void { dress(false); kit?.dispose(); kit = null; },
     dispose(): void {
+      dress(false); kit?.dispose(); kit = null;
       hang(false);
       parts.road.material = procedural;
     },

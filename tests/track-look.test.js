@@ -8,6 +8,8 @@ import { trackLook } from '../src/track-look.ts';
 import { coastEnvPlan } from '../src/coast-lighting.ts';
 import { createCoastLook } from '../src/coast-look.ts';
 import { createCoastAssets } from '../src/coast-assets.ts';
+import { MODEL_MANIFEST } from '../src/model-manifest.ts';
+import { MATERIAL_MANIFEST } from '../src/material-manifest.ts';
 
 const source = file => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
 
@@ -18,6 +20,15 @@ test('Coast has a look entry; a track without one, and an inherited key, has non
   assert.equal(coast.scenery, 'coast-scenery');
   assert.equal(coast.boats, 'coast-boats');
   for (const id of ['canyon', 'circuit', 'toString', '__proto__', '']) assert.equal(trackLook(id), undefined, id);
+});
+
+// Task 8c: a look that names an id no manifest holds would fall back on every load and never show.
+test('every model and material set a look names is registered in its manifest', () => {
+  for (const track of ['coast', 'neon', 'spiral']) {
+    const look = trackLook(track);
+    for (const slot of ['scenery', 'boats', 'landmarks']) if (look[slot]) assert.ok(Object.hasOwn(MODEL_MANIFEST, look[slot]), `${track} ${slot}: ${look[slot]}`);
+    for (const slot of ['road', 'helix', 'ground']) if (look[slot]) assert.ok(Object.hasOwn(MATERIAL_MANIFEST, look[slot]), `${track} ${slot}: ${look[slot]}`);
+  }
 });
 
 test('the lighting plan, the look and the asset host read the entry, never the track id', () => {

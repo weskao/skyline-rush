@@ -54,8 +54,8 @@ interface Deps {
    *  piers, tunnel shell) it replaces while both kits are in the scene. */
   neon?: Pick<NeonScenery, 'attachKit' | 'detachKit' | 'pave' | 'update' | 'hide' | 'dispose'>; replaced?: Object3D[];
   /** Task 8c: the Sky Spiral course's own sky, haze and road ribbon (spiral-look.ts). */
-  spiral?: Pick<SpiralLook, 'pave' | 'update' | 'dispose'>;
-  /** QA state (the canvas dataset): coastScenery, coastBoats, neonCity, neonLandmarks = loading |
+  spiral?: Pick<SpiralLook, 'attachKit' | 'detachKit' | 'pave' | 'update' | 'dispose'>;
+  /** QA state (the canvas dataset): coastScenery, coastBoats, neonCity, neonLandmarks, spiralLandmarks = loading |
    *  waiting-for-race-end | attached | fallback:<reason> | off;
    *  coastRoad, neonGround, spiralRoad = medium | high | ultra (material tier) while the set is on that surface,
    *  else procedural | fallback. */
@@ -127,7 +127,8 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
   const boats = boatClock && lateModel('coast-boats', 'boats', 'coastBoats', source => scenery.attachBoats(source, boatClock), () => scenery.detachBoats());
   const cityKit = neon && lateModel('neon-city', 'scenery', 'neonCity', source => neon.attachKit('city', source), () => neon.detachKit('city'));
   const landmarks = neon && lateModel('neon-landmarks', 'landmarks', 'neonLandmarks', source => neon.attachKit('landmarks', source), () => neon.detachKit('landmarks'));
-  const requiredScenery = [scan, cityKit, landmarks];
+  const spiralKit = spiral && lateModel('spiral-landmarks', 'landmarks', 'spiralLandmarks', source => spiral.attachKit(source), () => spiral.detachKit());
+  const requiredScenery = [scan, cityKit, landmarks, spiralKit];
 
   function loadRoad(id: string, tier: MaterialTier, key: string, { load, anisotropy }: Road, failed: () => void): void {
     roads.set(key, 'loading');
@@ -225,13 +226,15 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
       if (kitted) neon?.update(route, distance, quality, seed); else neon?.hide();
       sky?.update(trackId, preset, quality, ultra); // its program exists from creation: nothing to warm up
       sea?.update(trackId, preset, quality); // after the sky: the water shows only under the dome it mirrors
-      spiral?.update(trackId, preset, quality); // after the sky: the dome moves under the course only once it shows
+      const raised = spiralKit?.update(look, racing) ?? false;
+      // After the sky: the dome moves under the course only once it shows.
+      spiral?.update(trackId, preset, quality, !!spiralKit?.attached && spiralKit.wanted(look));
       const laid = ground.update(look, quality, racing, preset, ultra), decked = helix.update(look, quality, racing, preset, ultra);
-      return updateRoad(look, quality, racing, preset, ultra) || laid || decked || joined || sailing || built || marked;
+      return updateRoad(look, quality, racing, preset, ultra) || laid || decked || raised || joined || sailing || built || marked;
     },
     dispose(): void {
       controller.abort();
-      boats?.dispose(); scan.dispose(); landmarks?.dispose(); cityKit?.dispose(); neon?.dispose();
+      boats?.dispose(); scan.dispose(); landmarks?.dispose(); cityKit?.dispose(); neon?.dispose(); spiralKit?.dispose();
       if (mountains) mountains.material.visible = true;
       if (poles) poles.material.visible = true;
       if (bare) { city && (city.visible = true); show(towers, true); }
