@@ -137,3 +137,13 @@ test('switching from HDRI to Low on the same track restores the procedural expos
   look.update('neon', 'track', 'low');
   assert.equal(renderer.toneMappingExposure, 1.12);
 });
+
+
+test('Coast dusk keeps the bright horizon band below bloom while HDR lights can still bloom', async () => {
+  const { look } = rig();
+  look.update('coast', 'dusk', 'high');
+  await settle();
+  const threshold = look.bloomThreshold(1.1);
+  assert.ok(threshold > 1.05, 'the bright sky and reflected horizon do not bloom across the road');
+  assert.ok(threshold < 1.3 && look.bloomStrength(0) > 0.36, 'brighter race lights still glow');
+});

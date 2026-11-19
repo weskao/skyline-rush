@@ -46,7 +46,7 @@ export function createRivalFleet(scene, environment) {
     const { body, rivalGraphics, wheels } = car.userData;
     car.userData.rivalHull = new Box3().setFromObject(car,true);
     car.userData.defaultCoat = [body.material.color.clone(), rivalGraphics.color.clone(), wheels[0].children[1].material.color.clone()];
-    applyCarReflections(car,environment);
+    applyCarReflections(car,environment,'outdoor');
     attachRivalDriveVfx(car);
     scene.add(car);
     return car;

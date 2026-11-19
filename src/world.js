@@ -27,7 +27,7 @@ import { t, getLocale, onLocaleChange } from './i18n.ts';
 import { createRearLight } from './rear-light.ts';
 import { createRaceVisuals, blizzardLevel, weatherDrops } from './race-visuals.ts';
 import { createGarageStage, GARAGE_LIGHTING } from './garage-stage.ts';
-import { applyCarReflections, createCarEnvironment } from './car-reflections.ts';
+import { applyCarReflections, createCarEnvironment, outdoorCarRoughness } from './car-reflections.ts';
 import { createCarBounds } from './car-bounds.ts'; import { drawnTriangles } from './perf.ts';
 import { currentFoldableLayout, updateFoldableProjection } from './foldable-viewport.ts';
 import { createUpcomingShowcase } from './upcoming-showcase.ts';
@@ -215,14 +215,14 @@ export function createWorld(canvas) {
   scene.add(finish);
   const player = makeCar(CAR_STYLES.roadster);
   scene.add(player);
-  applyCarReflections(player, carEnvironment);
+  applyCarReflections(player, carEnvironment, 'outdoor');
   const ghostPhase = createGhostPhase(player); // before aero VFX attach to it
   const rearLight = player.userData.rearLight;
   const fleet = createRivalFleet(scene, carEnvironment), rivals = fleet.cars;
   const flightVehicles = [player, ...rivals];
   // ×2 covers the double-traffic daily modifier. Instanced (traffic-fleet.ts): `traffic` holds poses, not meshes.
   const trafficFleet = createTrafficFleet(scene, Math.max(...Object.values(RACE_TRACKS).map(track => Math.round(36 * track.trafficDensity * 2)))), traffic = trafficFleet.cars;
-  applyCarReflections(trafficFleet.group, carEnvironment);
+  applyCarReflections(trafficFleet.group, carEnvironment, 'outdoor');
   // Best-run ghost: the player's shape in one translucent material.
   const ghostCar = makeCar(CAR_STYLES.roadster);
   const ghostMaterial = new THREE.MeshBasicMaterial({ color: '#8fd3ff', transparent: true, opacity: 0.3, depthWrite: false });
@@ -455,7 +455,7 @@ export function createWorld(canvas) {
         inspectGarageStudio() { if (garageStage && garageCamera) return garageStage.inspectBounds(camera); if (!garageHomePreview) return null; const { minX, maxX, minY, maxY } = projectedCarBounds(camera.position, smoothLook); return { minX, maxX, minY, maxY, inFrame: minX > -.94 && maxX < .94 && minY > -.94 && maxY < .94 }; }, // Home: QA reads how much of the showroom the car fills
     previewAppearance(paint) {
       garagePaint = paint; garageStage?.setPaint(paint); upcomingStage.setPaint(paint);
-      const paintMaterial = player.userData.body.material; paintMaterial.color.set(paint.paint); paintMaterial.metalness = paint.metalness; paintMaterial.roughness = paint.roughness;
+      const paintMaterial = player.userData.body.material; paintMaterial.color.set(paint.paint); paintMaterial.metalness = paint.metalness; paintMaterial.roughness = outdoorCarRoughness(paint.roughness);
       player.userData.lightColor.fromArray(paint.light);
     },
     setRenderScale(scale) { adaptiveScale = scale; this.configureVFX(visual); },

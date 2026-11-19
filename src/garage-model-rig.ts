@@ -47,18 +47,25 @@ function boundPairs(car: Object3D, instance: Object3D): [Object3D, Object3D][] {
 }
 
 /** Gives `instance` its own paint/light materials (named `<x>_paint` / `<x>_light`) and binds them and its nodes to `car`. */
-export function bindGarageRig(car: Object3D, instance: Object3D): GarageRig {
+export function bindGarageRig(car: Object3D, instance: Object3D, ownFinish = false): GarageRig {
   const parts = car.userData as CarParts;
   const pairs = boundPairs(car, instance);
   const finish = parts.body?.material as Material | undefined;
   // Ghost Phase can fade the race car. Studio cars keep their normal GLB material setup.
   const fades = finish?.transparent === true;
-  const owned = new Map<Material, Tinted>(); // per instance; all of them when fading, so the cached original keeps its opacity
+  const owned = new Map<Material, Tinted>(); // per instance; all of them when fading or adjusting the whole finish
+  const own = (material: Material): Material => {
+    if (!(fades || ownFinish || /_(paint|light)$/.test(material.name))) return material;
+    let copy = owned.get(material);
+    if (!copy) {
+      copy = material.clone() as Tinted;
+      owned.set(material, copy);
+    }
+    return copy;
+  };
   instance.traverse(object => {
     const mesh = object as Mesh;
-    if (!mesh.isMesh || Array.isArray(mesh.material) || !(fades || /_(paint|light)$/.test(mesh.material.name))) return;
-    if (!owned.has(mesh.material)) owned.set(mesh.material, mesh.material.clone() as Tinted);
-    mesh.material = owned.get(mesh.material)!;
+    if (mesh.isMesh) mesh.material = Array.isArray(mesh.material) ? mesh.material.map(own) : own(mesh.material);
   });
   const paints = [...owned.values()].filter(m => m.name.endsWith('_paint'));
   const lights = [...owned.values()].filter(m => m.name.endsWith('_light'));
