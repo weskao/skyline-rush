@@ -352,7 +352,7 @@ test('the boats GLB loads beside the scenery only with a boat clock, and joins t
 test('world.js hands the procedural sky dome, sun disc, sea plane, sea lines, mountains, city, towers and lamp posts to the Coast assets', async () => {
   const { readFileSync } = await import('node:fs');
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
-  assert.match(world, /createWorldCoastAssets\(renderer, \{ scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, poles, replaced: \[[^\]]+\] \}, canvas\.dataset\)/);
+  assert.match(world, /createWorldCoastAssets\(renderer, \{ scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, poles, replaced: \[[^\]]+\], spiral: skyScene\.parts \}, canvas\.dataset\)/);
   // A lamp's side comes from its absolute 60 m index, as the GLB lamp posts' does (coastChunkPlan). Keyed by its slot
   // in the moving window, every lamp changed sides each 60 m driven and stood opposite its post half the time.
   assert.match(world, /const side = d \/ 60 % 2 \? 1 : -1;/);

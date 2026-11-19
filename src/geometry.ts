@@ -49,7 +49,7 @@ export function roadRibbon(rows: number): BufferGeometry {
 /** Metres of road per texture repeat along the road; across, u spans the full road width once. */
 export const ROAD_UV_METRES = 24;
 // v is measured from a base that only jumps by whole repeats, so it stays small for float32 yet never swims.
-const ROAD_UV_PERIOD = ROAD_UV_METRES * 64;
+export const ROAD_UV_PERIOD = ROAD_UV_METRES * 64;
 
 /** Writes a level road row perpendicular to heading, with u across the road and v measured along it. */
 export function setRoadRow(geometry: BufferGeometry, row: number, x: number, z: number, distance: number,

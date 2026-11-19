@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { roadRibbon } from './geometry.ts';
+import { roadRibbon, ROAD_UV_METRES, ROAD_UV_PERIOD } from './geometry.ts';
 import { skyFrame, skyPoint, skyGapAt, skyTowerOrigin, SKY_JUMPS, SKY_LENGTH, SKY_SPIRAL } from './sky-track.ts';
 
 // A bounded 3D road renderer for the helix, sweepers and jump decks.
@@ -18,6 +18,7 @@ export function createSkyScene(scene) {
 
   const geometry = roadRibbon(ROWS);
   const [positions, normals, indices] = [geometry.attributes.position.array, geometry.attributes.normal.array, geometry.index.array];
+  const uvs = geometry.attributes.uv.array; // for the KTX2 road set of the detailed look (spiral-look.ts)
   const road = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
     color: '#202b42', metalness: 0.13, roughness: 0.70, side: THREE.DoubleSide,
   }));
@@ -151,6 +152,8 @@ export function createSkyScene(scene) {
   const landmarks = [landmark];
   return {
     landmarks: () => landmarks,
+    /** What the detailed look (spiral-look.ts) dresses on Medium and above; Low never touches these. */
+    parts: { group, road, backdrop },
     update(distance, quality = 'high', endless = false) {
       group.visible = true;
       backdrop.material.uniforms.time.value = distance * 0.0015;
@@ -171,9 +174,12 @@ export function createSkyScene(scene) {
       road.position.set(-origin.x, -origin.y, -origin.z);
       for (const mesh of roadInstances) mesh.position.copy(road.position);
       if (start !== lastRoadStart || endless !== lastEndless) {
+        // v restarts by whole repeats only, so it stays small for float32 on endless and the texture never jumps.
+        const uvBase = Math.floor(start / ROAD_UV_PERIOD) * ROAD_UV_PERIOD;
         for (let i = 0; i <= ROWS; i++) {
           const s = rowDistance(start + i * STEP, endless);
-          const frame = skyFrame(s, endless);
+          const frame = skyFrame(s, endless), v = (s - uvBase) / ROAD_UV_METRES;
+          uvs.set([0, v, 1, v], i * 4);
           for (let side = 0; side < 2; side++) {
             const lateral = side ? WIDTH : -WIDTH, offset = (i * 2 + side) * 3;
             const { point, right } = frame;
@@ -195,7 +201,7 @@ export function createSkyScene(scene) {
             pose(laneLines, i * 3 + lane, mid, (lane - 1) * 5, 0.025 + hide, 0.14, 0.03, 4.0);
           }
         }
-        for (const attribute of [geometry.attributes.position, geometry.attributes.normal, geometry.index]) attribute.needsUpdate = true;
+        for (const attribute of [geometry.attributes.position, geometry.attributes.normal, geometry.attributes.uv, geometry.index]) attribute.needsUpdate = true;
         for (const mesh of roadInstances) mesh.instanceMatrix.needsUpdate = true;
         lastRoadStart = start;
         lastEndless = endless;

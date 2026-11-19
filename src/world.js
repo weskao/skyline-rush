@@ -233,7 +233,7 @@ export function createWorld(canvas) {
   const skyScene = createSkyScene(scene);
   const worldTourScene = createWorldTourScene(scene);
   const coastScenery = createCoastScenery(scene), classicScenery = createClassicTrackScenery(scene);
-  const coastAssets = createWorldCoastAssets(renderer, { scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, poles, replaced: [classicScenery.groups.neon, poles, lamps, pillars, tunnelRoofs, tunnelWalls] }, canvas.dataset);
+  const coastAssets = createWorldCoastAssets(renderer, { scene, scenery: coastScenery, road, sky, sun, sea, seaLines, mountains, city, towers, poles, replaced: [classicScenery.groups.neon, poles, lamps, pillars, tunnelRoofs, tunnelWalls], spiral: skyScene.parts }, canvas.dataset);
   // Inspect car occlusion only when the showroom angle changes.
   const showcaseOccluders = scene.getObjectByName('World Tour authored scenery');
   const showcaseRay = new THREE.Raycaster();
