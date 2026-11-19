@@ -5,6 +5,7 @@ import { VOLCANIC_CHUNK_METERS, createVolcanicCrownChunk } from './courses/volca
 import { VOLCANIC_OBSTACLES } from './courses/volcanic-crown-obstacles.ts';
 import { SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE, shortcutPylons } from './game.js';
 import { DECK_DEPTH } from './road-falls.ts';
+import { createRoadRunout } from './road-runout.ts';
 
 // Authored Volcanic chunks follow the very same unrounded CourseGraph arc lengths that
 // the shared 1D driver traverses. No extra renderer, camera or physics loop.
@@ -77,6 +78,13 @@ export function createVolcanicCrownRaceScene(scene: THREE.Scene) {
     }
     offset += length;
   }
+  // The road runs on past FINISH for the whole view (drawing only; rules/road-runout.md).
+  const end = volcanicFrame(offset), last = graph.edges.find(e => e.id === graph.groundRoute.at(-1))!;
+  const runout = createRoadRunout({ ...end, point: [end.point.x, end.point.y, end.point.z] },
+    { width: last.width, length: VIEW_RADIUS, road: '#342e32', rail: '#ff8d4e', mark: '#d9c9b8', bed: '#1b1b20' });
+  chunks.push({ group: runout.group, x: runout.centre.x, z: runout.centre.z, radius: VIEW_RADIUS / 2,
+    update() {}, dispose: runout.dispose, decorativeHazards: [] });
+  group.add(runout.group);
   const lavaLights = Array.from({ length: 2 }, () => {
     const light = new THREE.PointLight('#ff743b', 0, 95, 2);
     light.name = 'pooled-lava-light'; group.add(light);

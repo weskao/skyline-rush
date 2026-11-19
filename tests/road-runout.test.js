@@ -9,6 +9,10 @@ import { RACE_TRACKS } from '../src/game.js';
 import { trackLocalPosition } from '../src/track-paths.ts';
 import { createFrostbiteRaceScene } from '../src/frostbite-race-scene.ts';
 import { FROSTBITE_TRACK, frostbiteFrame } from '../src/courses/frostbite-race.ts';
+import { createStormlineRaceScene } from '../src/stormline-megacity-race-scene.ts';
+import { STORMLINE_TRACK, stormlineFrame } from '../src/courses/stormline-megacity-race.ts';
+import { createVolcanicCrownRaceScene } from '../src/volcanic-crown-race-scene.ts';
+import { VOLCANIC_TRACK, volcanicFrame } from '../src/courses/volcanic-crown-race.ts';
 
 const near = (actual, expected, label) => assert.ok(Math.abs(actual - expected) < .01, `${label}: ${actual} ≈ ${expected}`);
 const matrix = new THREE.Matrix4(), at = new THREE.Vector3();
@@ -23,6 +27,12 @@ function assertRoadAhead(label, roads, frameAt, finish, reach) {
     assert.ok(hit, `${label}: drawn road ${k} m past the finish, lane ${lateral}`);
   }
 }
+// Past the end, the road runs straight on along its last heading and grade, offset by the scene's origin.
+const straightOn = (end, from, origin) => s => ({ ...end, point: {
+  x: end.point.x + end.forward[0] * (s - from) + origin.x,
+  y: end.point.y + end.forward[1] * (s - from) + origin.y,
+  z: end.point.z + end.forward[2] * (s - from) + origin.z,
+} });
 const instanceAt = (mesh, index) => { mesh.getMatrixAt(index, matrix); return at.setFromMatrixPosition(matrix).clone(); };
 
 test('World Tour roads run on past the finish under the parked car', () => {
@@ -65,12 +75,22 @@ test('Frostbite road runs on past the finish for the whole view radius', () => {
   race.group.updateMatrixWorld(true);
   const roads = [];
   race.group.traverse(o => { if (o.name === 'race-road') roads.push(o); });
-  // Past the finish the scene runs straight on along the last heading (race frames clamp there).
-  const end = frostbiteFrame(length), along = s => ({ ...end, point: {
-    x: end.point.x + end.forward[0] * (s - length), y: end.point.y + end.forward[1] * (s - length), z: end.point.z + end.forward[2] * (s - length),
-  } });
-  const origin = race.group.position;
-  const local = s => { const f = along(s); return { ...f, point: { x: f.point.x + origin.x, y: f.point.y + origin.y, z: f.point.z + origin.z } }; };
+  const local = straightOn(frostbiteFrame(length), length, race.group.position);
   assertRoadAhead('frostbite', roads, local, length, 1500);
+  race.dispose();
+});
+
+// Measured courses: the drawn road stops where the last ground edge ends (CourseGraph frames clamp there).
+for (const [label, create, track, frameAt] of [
+  ['stormline', createStormlineRaceScene, STORMLINE_TRACK, stormlineFrame],
+  ['volcanic', createVolcanicCrownRaceScene, VOLCANIC_TRACK, volcanicFrame],
+]) test(`${label} road runs on past the finish for the whole view radius`, () => {
+  const race = create(new THREE.Scene()), length = track.length;
+  race.update(length);
+  race.group.updateMatrixWorld(true);
+  const roads = [];
+  race.group.traverse(o => { if (o.isMesh && o.name !== 'city-floor') roads.push(o); });
+  const end = track.length + 1; // the last edge's end: track.length is its whole metres
+  assertRoadAhead(label, roads, straightOn(frameAt(end), end, race.group.position), end, 1500);
   race.dispose();
 });
