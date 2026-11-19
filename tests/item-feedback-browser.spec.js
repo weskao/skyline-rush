@@ -130,6 +130,11 @@ for (const [name, viewport, hasTouch] of [
     const box = await status.boundingBox();
     expect(box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width && box.y + box.height <= viewport.height).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('rival-emp.png') });
+    // Advance to the end of the hit in game time. Software WebGL can spend many real seconds per simulated second.
+    await page.evaluate(() => {
+      const { race } = window.gameplay;
+      race.elapsed = Math.max(race.elapsed, race.player.empUntil - .01);
+    });
     await expect(status).toBeHidden();
     await expect(screen).toBeHidden();
     expect(errors).toEqual([]);
