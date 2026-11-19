@@ -1,3 +1,8 @@
+# Finish-line branch full CI repair (2026-11-20)
+
+- [x] Trace the browser failures in [run 44587777984](https://github.com/weskao/skyline-rush/actions/runs/44587777984). The three finish-line impact cases passed. Repair Home readiness, drift-preview material ownership, stale catalog/control assertions, the halfway-card sample and the disabled Store shortfall assertion. The focused Node gate passed 74 tests.
+- [ ] Check the full quality gate on the repair commit. Other cases from the original run still need verification, including Wave 3 checkout and daily/cup scenarios. Local Playwright could not open Chromium because the runner denies its socket operation.
+
 # 完賽對手終點碰撞
 
 - [x] RED：直線與分岔賽道的對手完賽後仍在加速，環道每幀把車放回終點。已有延伸道路的實測長度賽道也會把渲染位置卡在終點。

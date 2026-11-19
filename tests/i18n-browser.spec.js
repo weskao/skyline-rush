@@ -6,6 +6,7 @@ import { selectLocale } from './helpers/locale-browser.js';
 import { expect } from '@playwright/test';
 import { mkdirSync, appendFileSync, rmSync, writeFileSync } from 'node:fs';
 import { test } from './helpers/gameplay-browser.js';
+import { waitForHome } from './helpers/test.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { CATALOGS } from '../src/i18n.ts';
 import { ciTimeout } from './helpers/ci.js';
@@ -171,7 +172,11 @@ const calloutText = async (cx, step) => {
   appendFileSync(`${cx.dir}/callouts.txt`, `${step}: ${text.replace(/\n/g, ' | ')}\n`);
 };
 const noErrors = cx => expect.soft(cx.errors, `${cx.id} page errors`).toEqual([]);
-const dismissMusic = async page => { if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click(); };
+const reloadHome = async page => {
+  await page.reload();
+  await waitForHome(page);
+  if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
+};
 
 for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system, htmlLang] of LOCALES) {
   test.describe(`i18n flow ${locale} ${vpName}`, () => {
@@ -183,6 +188,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       const pressed = async code => expect.soft(await page.locator('#locale-select').inputValue() === code, `${cx.id} switch ${code}`).toBe(code === cx.locale);
 
       // Start screen, fresh profile: locked tracks show their unlock hints.
+      await waitForHome(page);
       await check(cx, 'start');
       await pressed('en'); await pressed('zh-TW');
 
@@ -221,8 +227,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
 
       // Unlock every track so all ten route maps render, then walk them.
       await page.evaluate(ids => localStorage.setItem('skyline-rush-unlocked', JSON.stringify(ids)), Object.keys(RACE_TRACKS));
-      await page.reload();
-      await dismissMusic(page);
+      await reloadHome(page);
       await check(cx, 'tracks-unlocked');
       for (const [id] of Object.entries(RACE_TRACKS)) {
         await clickLobbyOption(page, `[data-track="${id}"]`);
@@ -317,8 +322,7 @@ for (const [vpName, viewport, hasTouch] of VIEWPORTS) for (const [locale, system
       await check(cx, 'results-actions');
 
       // Back to the intro: history and awards with a saved run, then switch language live and re-check every screen with stale text in mind.
-      await page.reload();
-      await dismissMusic(page);
+      await reloadHome(page);
       await page.locator('.history-button').click();
       await check(cx, 'history-with-run');
       await page.locator('#history-tab-medals').click();

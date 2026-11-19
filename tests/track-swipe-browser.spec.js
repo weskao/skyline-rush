@@ -1,9 +1,12 @@
 import { clickLobbyOption } from './helpers/home-lobby.js';
 import { toggleAirflowPreview } from './helpers/settings-browser.js';
-import { test, expect } from './helpers/test.js';
+import { test, expect, waitForHome } from './helpers/test.js';
 
 const selected = page => page.locator('[data-track][aria-pressed="true"]').getAttribute('data-track');
-const trackOrder = page => page.locator('[data-track]').evaluateAll(buttons => buttons.map(button => button.dataset.track));
+const trackOrder = async page => {
+  await waitForHome(page);
+  return page.locator('[data-track]').evaluateAll(buttons => buttons.map(button => button.dataset.track));
+};
 const chip = page => page.locator('#track-swipe');
 
 // Real touch input through CDP: start, a few moves, release; holdMs pauses before lifting (no flick).
@@ -305,11 +308,11 @@ test.describe('phone reload hint', () => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-swipe-hint', 'shown'));
   await page.goto('/');
   const seen = () => page.evaluate(() => window.__hintCount);
-  const watch = () => page.evaluate(() => {
+  const watch = () => chip(page).evaluate(element => {
     window.__hintCount = 0;
     new MutationObserver(() => {
-      if (document.querySelector('#track-swipe')?.dataset.state === 'hint') window.__hintCount++;
-    }).observe(document.querySelector('#track-swipe'), { attributes: true, attributeFilter: ['data-state'] });
+      if (element.dataset.state === 'hint') window.__hintCount++;
+    }).observe(element, { attributes: true, attributeFilter: ['data-state'] });
   });
   await watch();
   await toggleAirflowPreview(page);

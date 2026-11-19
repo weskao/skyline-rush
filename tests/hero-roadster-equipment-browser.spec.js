@@ -94,6 +94,10 @@ test('Garage Home and Preview Studio: every paint and skin on the GLB car, witho
     await expect(page.locator('#garage-preview')).toHaveAttribute(`data-skin-preview-${category}`, id);
     await expect.poll(async () => (await audit(page)).hidden, { message: id }).toEqual([]);
   }
+  // The drift-trail preview draws a procedural car in its own renderer; leaving it once disposed the game's shared
+  // nozzle and fascia materials, releasing a program (140 -> 139). Leave it explicitly, whatever the skin order.
+  await page.locator('[data-skin="drift-trail-flame"] .garage-skin-preview-hitarea').click();
+  await expect(page.locator('#garage-preview')).toHaveAttribute('data-skin-preview-drift-trail', 'drift-trail-flame');
   await page.locator(`[data-skin="${PREMIUM_FLARE}"] .garage-skin-preview-hitarea`).click();
   await expect.poll(() => glowOnGlb(page), { timeout: ciTimeout(10000) }).toBe(true);
   expect(await gpu(page)).toEqual(studio); // settled: polled above

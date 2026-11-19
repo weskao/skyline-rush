@@ -49,6 +49,14 @@ export const test = base.extend({
   },
 });
 
+// The startup entry imports the game asynchronously. Wait for Home's scene and controls before reading or sending input.
+export const waitForHome = page => expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+
+export const gotoHome = async page => {
+  await page.goto('/');
+  await waitForHome(page);
+};
+
 // Overlays enter with a transform (Garage/history `history-in` translateX 22px; pause and results `.overlay-content`
 // translateY 12px / translateX 48px). A rect read mid-entry is shifted and goes through float32 transform math: a 144 px
 // thumbnail measured 144.00001526 and a 44 px button 43.99998474. Resolves once the element is visible and every finite
