@@ -513,7 +513,8 @@ function updateUI(now, input) {
   }
   hud.update(now, input);
 }
-try {
+// Building the world is one multi-second task: let Home's setup reach a frame first (boot-first-paint-browser.spec.js).
+requestAnimationFrame(() => setTimeout(() => { try {
   world = createWorld($('#world')); syncSkins();
   requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
@@ -579,7 +580,7 @@ try {
   // No render loop to write the HUD: one text pass now and one per language switch (after applyLocale relabels the HUD).
   const hudPass = () => updateUI(performance.now() / 1000, controls.read());
   hudPass(); onLocaleChange(hudPass);
-}
+} }));
 
 $('#world').addEventListener('webglcontextlost', event => {
   event.preventDefault();

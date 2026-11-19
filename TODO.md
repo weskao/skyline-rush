@@ -6,6 +6,21 @@
 - [x] Captured the seven chassis in Chromium WebGL and the full field from the Canyon chase camera in a staged race.
 - [ ] Complete full local verification and physical phone checks.
 - [ ] Confirm the feature branch exact-commit GitHub quality gate.
+
+# Develop browser CI run 44399876486
+
+- [x] Leaving the Garage drift-trail preview disposed `makeCar`'s shared nozzle and fascia materials, so the game renderer released a program (Studio 140 → 139). `tests/hero-roadster-equipment-browser.spec.js` now leaves a drift preview explicitly: RED 139 on 2bd96471, GREEN 4/4 after `src/garage-drift-preview.ts` draws cloned materials. Drift/animated-artwork/store specs 22/22 on the trial build.
+- [ ] `garage-stage.ts` and `upcoming-showcase.ts` still dispose every `makeCar` material in the game renderer; the next draw recompiles the shared program. Needs a unit RED before changing either.
+- [x] Stale specs after intended changes: Garage tile count and the crimson skin count (catalog-driven now), handoff layout version 3, brake on the opposite thumb (`responsive-map.js`, `browser.spec.js`), hazard heights relative to the classic road elevation, and result-actions last place (the default grid is eight since 43241657; the old `'4'` only matched the race time locally).
+- [ ] `result-cloud-browser.spec.js:194` (phone results dock hit test) failed twice on CI but passes 12/12 locally at `CI=1` and under 6x CPU throttle, with every button the hit target. Not reproduced; next failure needs the covering element.
+- [x] Boot budgets (`race-modes:358`, `home-shortcuts:246`, `device-quality:107`) missed 7.5 s on CI because Home's setup was painted only after `createWorld` finished in the same task. Decided: defer the world build behind one painted frame (`src/main.js`). RED `tests/boot-first-paint-browser.spec.js` (frame 1643 ms > WebGL 808 ms) → GREEN; `CI=1 --repeat-each=8 --workers=4 --retries=0` on the three specs + guard: 32/32. Rule: `performance-review.md` "Home paints before the world is built". CI confirmation pending.
+- [ ] Verify the full GitHub quality gate on the repair commit.
+
+# Develop World Tour camera CI run 44394398766
+
+- [x] Keep the Taipei showroom car clear of scenery through the High-quality portrait orbit with AIRFLOW on. Moving the Home preview from 1,040 m to 1,090 m clears the kerbside bus-stop posts. The 390 × 844 regression failed at 76° and 77° before the fix, then passed with all six Taipei camera cases on Chromium.
+- [ ] Verify the full GitHub quality gate on the repair commit.
+
 # Acquisition reveal
 
 - [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.

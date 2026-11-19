@@ -3,6 +3,9 @@ paths:
   - "src/**/*.js"
   - "src/**/*.vue"
   - "src/**/*.css"
+  - "src/garage-drift-preview.ts"
+  - "src/garage-stage.ts"
+  - "src/upcoming-showcase.ts"
 ---
 
 # Performance review is part of every feature change
@@ -86,6 +89,26 @@ frame and on every track change, so no per-module warmup flag is needed. Keep it
 ## Fit airflow when the displayed model changes
 
 Sample the neutral-pose shell in vehicle-local coordinates before animating the wheels and wing. Refit when a GLB or LOD attaches and restore the procedural fit on removal. Reuse the warmed airflow material and dispose replaced geometry. The same fit serves Home, Garage Studio, Coming Soon and races. The model swap and fallback regression lives in `tests/garage-model-rig.test.js`. Skin animation must use the fitted paths’ outward directions and reuse the same mesh when the skin changes. Refresh cached Coming Soon stages when the selected airflow skin changes. Every size-dependent airflow number (pressure footprint, wake range, skin motion scale, dash-ribbon/roll-wake anchor) comes from `airflowFrame(profile)` in `src/airflow-geometry.ts`; skin amplitudes live once in `SKIN_MOTION` and the shader interpolates them. Never add a Roadster-sized constant, clamp or per-car value: a new car or a new display size (src/car-display-size.ts) must need no airflow edits. Guard: `tests/airflow-adaptive-fit.test.js` (Roadster + scaled GLB stand-in, every airflow skin).
+
+## A second renderer draws its own material copies
+
+`makeCar` reuses module-level materials (rear nozzles, fascia trim) across every procedural car, and
+`material.dispose()` releases that material's program in *every* renderer that drew it. The Garage drift preview
+(its own `WebGLRenderer`) disposed its car's materials on unmount and so freed a program the game still used
+(Studio 140 → 139 programs, 19b02d60). A preview with its own renderer clones the car's materials and disposes only
+the clones (`src/garage-drift-preview.ts`). Stages in the game's renderer (`garage-stage.ts`, `upcoming-showcase.ts`)
+still dispose every car material, which makes the next draw recompile a shared program: open item in `TODO.md`. Guard: `tests/hero-roadster-equipment-browser.spec.js` (leaves a drift preview, then counts programs).
+
+## Home paints before the world is built
+
+`createWorld` (renderer, scenes, GLB warm-up) is one synchronous task of seconds on CPU-only WebGL. It ran in the
+same task as Home's first `showTracks()`, so nothing reached the screen until the whole world was built, and the
+race-modes, home-shortcuts and device-quality boot budgets failed on CI (44399876486). `src/main.js` now starts
+the world build after one painted frame (`requestAnimationFrame(() => setTimeout(...))`). Never move world
+construction, or any other multi-second boot work, back into the module's first task; every caller of `world`
+outside the boot block already guards `!world`, and a new one must too. Guard:
+`tests/boot-first-paint-browser.spec.js` (a frame lands after `.route-drivers` is filled and before `#world`
+asks for its WebGL context).
 
 ## The pre-pool triangle budget measures scenery, not the player car
 
