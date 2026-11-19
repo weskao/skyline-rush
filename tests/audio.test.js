@@ -23,7 +23,10 @@ function installAudio(t) {
     createBiquadFilter() { return node('filter'); }
     createDynamicsCompressor() { return node('compressor'); }
     createBufferSource() { return node('buffer'); }
-    createBuffer() { return { getChannelData: () => new Float32Array(100) }; }
+    createBuffer(numberOfChannels, length, sampleRate) {
+      const channels = Array.from({ length: numberOfChannels }, () => new Float32Array(length));
+      return { numberOfChannels, length, sampleRate, getChannelData: channel => channels[channel] };
+    }
     resume() { this.state = 'running'; return Promise.resolve(); }
     suspend() { this.state = 'suspended'; return Promise.resolve(); }
     close() { return Promise.resolve(); }
@@ -573,19 +576,105 @@ test('acquisition motifs are distinct, fit the reveal and use the existing SFX m
   const heard = cue => {
     const start = nodes.length;
     sound.cue(cue);
-    return nodes.slice(start).filter(node => node.kind === 'oscillator');
+    return nodes.slice(start).filter(node => node.kind === 'oscillator' || node.kind === 'buffer');
   };
-  const cues = [...new Set(Object.values(ACQUISITION_SOUNDS)), 'acquisition-select'];
-  assert.ok(cues.length >= 5);
+  const cues = [...Object.values(ACQUISITION_SOUNDS), 'acquisition-select'];
+  assert.equal(new Set(cues).size, Object.values(ACQUISITION_KIND).length + 1);
   const signatures = cues.map(cue => {
     const voices = heard(cue);
     assert.ok(voices.length > 0, cue);
-    assert.ok(Math.max(...voices.map(node => node.stopped)) <= .8, cue);
+    assert.ok(Math.max(...voices.map(node => node.stopped)) <= 1.4, cue);
     // The mock never fires onended automatically. Each cue tests the same clean voice budget.
     voices.forEach(node => node.onended());
-    return voices.map(node => node.frequency.value).join(',');
+    return voices.map(node => node.kind === 'buffer' ? node.buffer.length : node.frequency.value).join(',');
   });
   assert.equal(new Set(signatures).size, cues.length);
   sound.setEnabled(false);
   for (const cue of cues) assert.deepEqual(heard(cue), []);
+});
+
+test('opening music stays queued before rendering and hands off once to the original lobby track', t => {
+  const { nodes, made, sound } = installTracked(t);
+  sound.setOpening(true);
+  sound.setMusic(true, 0.7);
+  const opening = musicNotes(nodes);
+  assert.ok(opening.some(note => note.started < .25 && note.frequency.value === midiHz(62)));
+  assert.ok(musicBus(nodes).gain.value < 0.7, 'the waiting mix has room for the lobby theme');
+
+  made[0].currentTime = 6;
+  sound.refreshOpeningMusic();
+  assert.ok(musicNotes(nodes).at(-1).started > 10, 'the overlay does not need the rendering loop to keep playing');
+  const openingNotes = musicNotes(nodes);
+  sound.update(createRace());
+  assert.equal(musicNotes(nodes).length, openingNotes.length, 'a lobby render under the overlay does not change songs');
+
+  sound.setOpening(false);
+  const lobby = musicNotes(nodes).slice(openingNotes.length);
+  assert.ok(lobby.some(note => note.started < 6.25 && note.frequency.value === midiHz(57)));
+  assert.ok(openingNotes.filter(note => note.started > 6).every(note => note.stopped === undefined));
+  assert.equal(made.length, 1, 'opening and lobby share the same audio context');
+});
+
+test('muted startup never creates an audio context or queues the opening track', t => {
+  const { made, sound } = installTracked(t);
+  sound.setOpening(true);
+  sound.setMusic(false);
+  sound.refreshOpeningMusic();
+  sound.setOpening(false);
+  assert.equal(made.length, 0);
+});
+
+test('premiere cues play stereo layers that follow the shots with bounded peaks', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const starts = nodes.length;
+  const order = [['acquisition-car', 0], ['acquisition-car-signature', .2], ['acquisition-car-profile', 1.8],
+    ['acquisition-car-thrusters', 3.35], ['acquisition-car-hero', 4.9]];
+  order.forEach(([name, at]) => sound.cue(name, at));
+  const layers = nodes.slice(starts).filter(node => node.kind === 'buffer');
+  assert.equal(layers.length, order.length);
+  layers.forEach(({ buffer, started }, index) => {
+    assert.equal(started, order[index][1]);
+    assert.equal(buffer.numberOfChannels, 2);
+    assert.ok(buffer.length / buffer.sampleRate >= .9);
+    const left = buffer.getChannelData(0);
+    const right = buffer.getChannelData(1);
+    assert.ok(left.some((sample, i) => Math.abs(sample - right[i]) > .015));
+    assert.ok(left.every((sample, i) => Math.abs(sample) <= .6 && Math.abs(right[i]) <= .6));
+    assert.ok(left.some(sample => Math.abs(sample) > .09));
+    assert.ok(Math.abs(left.at(-1)) < .001);
+  });
+  sound.setEnabled(false);
+  const muted = nodes.length;
+  sound.cue('acquisition-car-hero');
+  assert.equal(nodes.length, muted);
+});
+
+test('equipment plays a distinct activation layer for each Garage category', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  for (const category of ['thruster', 'airflow', 'nitro-trail', 'launch-flare', 'drift-trail']) {
+    sound.cue('acquisition-stop');
+    sound.cue('acquisition-equipment-' + category);
+  }
+  const activations = nodes.filter(node => node.kind === 'buffer' && node.started === 0 && node.buffer.numberOfChannels === 2);
+  assert.equal(activations.length, 5);
+  const footprints = activations.map(({ buffer }) => Array.from(buffer.getChannelData(0).filter((_, i) => i % 1200 === 0)));
+  assert.equal(new Set(footprints.map(series => series.join(','))).size, 5);
+});
+
+test('stopping the reveal fades its stereo score and leaves unrelated feedback audible', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const start = nodes.length;
+  sound.cue('acquisition-car-hero');
+  const camera = nodes.slice(start).find(node => node.kind === 'buffer');
+  assert.ok(camera);
+  const beforeEquip = nodes.length;
+  sound.cue('equip-confirmed');
+  const equip = nodes.slice(beforeEquip).filter(node => node.kind === 'oscillator');
+  assert.ok(equip.length);
+  sound.cue('acquisition-stop');
+  assert.ok(camera.stopped > 0 && camera.stopped < .08);
+  assert.ok(equip.every(node => Number.isFinite(node.stopped)));
 });

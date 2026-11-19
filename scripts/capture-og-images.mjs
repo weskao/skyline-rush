@@ -31,6 +31,7 @@ const open = async (locale, viewport, mobile = false) => {
   });
   const page = await context.newPage();
   await page.goto(url);
+  await page.locator('#startup-enter').click();
   await page.locator('#start-button').waitFor();
   await page.locator('#intro').evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)));
   // Where autoplay is blocked the music prompt appears after 600ms over the settings buttons.

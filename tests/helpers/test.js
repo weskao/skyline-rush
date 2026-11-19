@@ -11,7 +11,15 @@ export const CI_DEVICE = Object.freeze({ cores: 4, memoryGiB: 8 });
 // (saved, so no downgrade notice); a spec about the look pins its tier, one about the automatic choice sets lowGraphics: false.
 const LOW_VISUALS = initialDeviceVisuals({ device: { cores: 2 } }).settings;
 
+// Lobby tests start in a tab that has already acknowledged the startup screen.
+export const markStartupSeen = target => target.addInitScript(() => {
+  if (location.protocol === 'http:' || location.protocol === 'https:') {
+    sessionStorage.setItem('skyline-rush-startup-skip', '1');
+  }
+});
+
 export const test = base.extend({
+  startupSeen: [true, { option: true }],
   guideSeen: [true, { option: true }],
   keepAcquisitionOpen: [false, { option: true }],
   page: async ({ page, keepAcquisitionOpen }, use) => {
@@ -25,7 +33,8 @@ export const test = base.extend({
   // A player with no What's New record gets the notes on load; mark them read so other specs start clean.
   whatsNewSeen: ['999.0.0', { option: true }],
   lowGraphics: [true, { option: true }],
-  context: async ({ context, guideSeen, whatsNewSeen, lowGraphics }, use) => {
+  context: async ({ context, startupSeen, guideSeen, whatsNewSeen, lowGraphics }, use) => {
+    if (startupSeen) await markStartupSeen(context);
     if (guideSeen) await context.addInitScript(() => localStorage.setItem('skyline-rush-guide-seen', '1'));
     if (whatsNewSeen) await context.addInitScript(seen => localStorage.setItem('skyline-rush-whats-new-seen-v1', seen), whatsNewSeen);
     // Only when unset: a reload keeps a tier the spec chose in Settings, and page scripts that seed one run after this.

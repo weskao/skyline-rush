@@ -37,6 +37,7 @@ async function openPage({ locale: _locale, system, width, height, mobile }) {
     });
   });
   await page.goto(url);
+  await page.locator('#startup-enter').click();
   await page.locator('#start-button').waitFor();
   await page.waitForTimeout(700);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();

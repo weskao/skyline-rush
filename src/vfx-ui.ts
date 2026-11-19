@@ -1,6 +1,6 @@
 import { t } from './i18n.ts';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS, type VfxSettings, type ShowcaseView, type VfxPreset } from './vfx-settings.ts';
-import { initialDeviceVisuals, QUALITY_STORAGE_KEY } from './device-quality.ts';
+import { readInitialDeviceVisuals, QUALITY_STORAGE_KEY } from './device-quality.ts';
 
 interface VfxWorld { configureVFX(settings: VfxSettings): void }
 interface VfxOptions {
@@ -18,15 +18,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
   const vfxControls = [...document.querySelectorAll<HTMLInputElement>('[data-vfx]')];
   const airflowHud = $('#airflow-hud');
   const airflowToggles = document.querySelectorAll<HTMLButtonElement>('#airflow-toggle, #home-airflow-toggle');
-  // Initial quality selection is performed once; manual/previous settings win.
-  let storedVisuals: unknown = null;
-  try { const raw = localStorage.getItem(QUALITY_STORAGE_KEY); if (raw) storedVisuals = JSON.parse(raw); }
-  catch { /* Storage is optional; use device-aware in-memory defaults. */ }
-  const deviceSelection = initialDeviceVisuals({
-    storedSettings: storedVisuals,
-    device: { cores: navigator.hardwareConcurrency, memoryGiB: (navigator as Navigator & { deviceMemory?: number }).deviceMemory,
-      width: innerWidth, height: innerHeight, pixelRatio: devicePixelRatio },
-  });
+  const deviceSelection = readInitialDeviceVisuals();
   let visual = deviceSelection.settings;
   const calm = (): boolean => visual.comfortable || reducedMotion.matches;
   function stopMotionIfCalm(): void {

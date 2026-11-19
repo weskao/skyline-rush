@@ -28,6 +28,7 @@ async function studio(locale, system, { width, height, mobile }, extra = {}) {
   });
   const page = await context.newPage();
   await page.goto(server.resolvedUrls.local[0]);
+  await page.locator('#startup-enter').click();
   await page.locator('#start-button').waitFor();
   await page.waitForTimeout(700);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
@@ -98,6 +99,7 @@ async function racers(locale, system) {
   });
   const page = await context.newPage();
   await page.goto(server.resolvedUrls.local[0]);
+  await page.locator('#startup-enter').click();
   await page.locator('#start-button').waitFor();
   await page.waitForTimeout(700);
   if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();

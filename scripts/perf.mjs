@@ -135,6 +135,7 @@ if (mode === 'phone') {
     const context = await browser.newContext(opts.viewport === 'desktop' ? { viewport: { width: 1440, height: 900 } }
       : { viewport: { width: 412, height: 915 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     await context.addInitScript(() => {
+      sessionStorage.setItem('skyline-rush-startup-skip', '1');
       for (const [key, value] of [['guide-seen', '1'], ['tutorial-completed', '1'], ['music', 'off'], ['sound', 'off']]) localStorage.setItem(`skyline-rush-${key}`, value);
     });
     const page = await context.newPage();

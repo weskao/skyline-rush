@@ -28,12 +28,15 @@ test(`${LABEL} ${VIEW}: every map on High and Ultra`, async ({ gameplayPage: pag
       localStorage.setItem('skyline-rush-vfx', JSON.stringify({ ...settings, preset: 'cinematic', enabled: true }));
     }, vfx);
     await page.goto(gameplayURL);
+    await page.locator('#start-button').waitFor({ state: 'attached' });
     await page.evaluate(() => localStorage.setItem('skyline-rush-unlocked', JSON.stringify([...document.querySelectorAll('[data-track]')].map(b => b.dataset.track))));
     await page.goto(gameplayURL);
+    await page.locator('#start-button').waitFor({ state: 'attached' });
     const ids = await page.evaluate(() => [...new Set([...document.querySelectorAll('[data-track]')].filter(b => !b.disabled).map(b => b.dataset.track))]);
     expect(ids.length).toBeGreaterThan(1);
     for (const id of ids) {
       await page.goto(gameplayURL);
+      await page.locator('#start-button').waitFor({ state: 'attached' });
       for (let i = 0; i < 3 && await page.locator('dialog[open]').count(); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(ciTimeout(400)); }
       if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').click();
       const choice = page.locator(`[data-track="${id}"]`).first();
