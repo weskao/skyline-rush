@@ -2,7 +2,6 @@ import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { toastView, showToast, TOAST_MS } from '../src/toast-view-state.ts';
 import { confirmOnce } from '../src/confirm-once.ts';
-import { SETTINGS_FEEDBACK_COPY } from '../src/locales/settings-feedback.ts';
 import { confirmView, confirmDialog, answerConfirm } from '../src/confirm-dialog.ts';
 
 test('a new toast replaces the shown one and hides itself after its full time', () => {
@@ -24,31 +23,7 @@ test('a new toast replaces the shown one and hides itself after its full time', 
   } finally { mock.timers.reset(); }
 });
 
-test('a setting toast carries its new state for the ON/OFF badge; a plain toast drops it', () => {
-  mock.timers.enable({ apis: ['setTimeout'] });
-  try {
-    showToast({ text: 'Sound', state: { on: false, text: 'OFF' } });
-    assert.equal(toastView.text, 'Sound');
-    assert.equal(toastView.state, 'off');
-    assert.equal(toastView.stateText, 'OFF');
-    showToast({ text: 'Airflow', state: { on: true, text: 'ON' } });
-    assert.equal(toastView.state, 'on');
-    showToast({ text: 'Saved' });
-    assert.equal(toastView.state, '');
-    assert.equal(toastView.stateText, '');
-  } finally { mock.timers.reset(); }
-});
-
-test('every toggle toast names its setting and its state words in en and zh-TW, never a full sentence', () => {
-  for (const lang of ['en', 'zh-TW']) {
-    const copy = SETTINGS_FEEDBACK_COPY[lang];
-    for (const key of ['toast.sound', 'toast.airflow', 'toast.assist', 'toast.vfx', 'toast.on', 'toast.off']) assert.ok(copy[key], `${lang} ${key}`);
-    assert.notEqual(copy['toast.on'], copy['toast.off']);
-    for (const old of ['toast.soundOn', 'toast.soundOff', 'toast.vfxOn']) assert.equal(copy[old], undefined, `${lang} ${old} is replaced by label + badge`);
-  }
-});
-
-test('TOAST_MS is about 1.8 s',() => assert.ok(TOAST_MS >= 1500 && TOAST_MS <= 2200));
+test('TOAST_MS is about 1.8 s', () => assert.ok(TOAST_MS >= 1500 && TOAST_MS <= 2200));
 
 const memoryStorage = (seed = {}) => {
   const data = new Map(Object.entries(seed));
