@@ -12,8 +12,7 @@
 
 # Measured routes and Home artwork
 
-- [x] Replace Sky Spiral's purple teaser with a 1136 × 410 daylight JPEG. The aerial render uses the current tower, road meshes and landmark placement, with a distant cloud layer for the cover camera. The existing Home and track chooser entries share `public/track-teasers/spiral.jpg`.
-- [x] The old teaser failed the daylight image check. The new JPEG decodes at 1136 × 410, passes that check and the 22 focused thumbnail, module-size and Sky Spiral tests, and is included in the locked production build.
+- [x] Redraw the shared 1136 × 410 Sky Spiral teaser using the Phase 8c banked helix, tower approach and aerial overview references. Frame the white tower and the single blue-lit turn in a close, daylight view above the clouds. The locked production build and all 36 focused thumbnail, module-size and track regression tests passed with the new `public/track-teasers/spiral.jpg`.
 - [x] Chromium verified the actual Home and chooser use the same updated JPEG and retain the route map at 1440 × 900, 390 × 844 and 844 × 390. Screenshots were captured at all three viewport sizes.
 - [ ] Confirm the feature commit's GitHub quality gate and review on a physical phone. The full local browser suite stopped at the missing Google Chrome channel; the targeted artwork checks ran in Chromium Headless Shell.
 - [x] Audit the eight classic routes from Canyon Skyway through Cosmic Orbit. Card and Home heading art still use each track's canonical 1136 × 410 JPEG. The Home mini-map uses the measured driving centreline.
