@@ -99,6 +99,17 @@ Sample the neutral-pose shell in vehicle-local coordinates before animating the 
 the clones (`src/garage-drift-preview.ts`). Stages in the game's renderer (`garage-stage.ts`, `upcoming-showcase.ts`)
 still dispose every car material, which makes the next draw recompile a shared program: open item in `TODO.md`. Guard: `tests/hero-roadster-equipment-browser.spec.js` (leaves a drift preview, then counts programs).
 
+## Home paints before the world is built
+
+`createWorld` (renderer, scenes, GLB warm-up) is one synchronous task of seconds on CPU-only WebGL. It ran in the
+same task as Home's first `showTracks()`, so nothing reached the screen until the whole world was built, and the
+race-modes, home-shortcuts and device-quality boot budgets failed on CI (44399876486). `src/main.js` now starts
+the world build after one painted frame (`requestAnimationFrame(() => setTimeout(...))`). Never move world
+construction, or any other multi-second boot work, back into the module's first task; every caller of `world`
+outside the boot block already guards `!world`, and a new one must too. Guard:
+`tests/boot-first-paint-browser.spec.js` (a frame lands after `.route-drivers` is filled and before `#world`
+asks for its WebGL context).
+
 ## The pre-pool triangle budget measures scenery, not the player car
 
 `WORLD_TOUR_SOFTWARE_BASELINE` (`src/performance-evidence.ts`) was measured with the procedural Roadster.

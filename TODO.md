@@ -4,7 +4,7 @@
 - [ ] `garage-stage.ts` and `upcoming-showcase.ts` still dispose every `makeCar` material in the game renderer; the next draw recompiles the shared program. Needs a unit RED before changing either.
 - [x] Stale specs after intended changes: Garage tile count and the crimson skin count (catalog-driven now), handoff layout version 3, brake on the opposite thumb (`responsive-map.js`, `browser.spec.js`), hazard heights relative to the classic road elevation, and result-actions last place (the default grid is eight since 43241657; the old `'4'` only matched the race time locally).
 - [ ] `result-cloud-browser.spec.js:194` (phone results dock hit test) failed twice on CI but passes 12/12 locally at `CI=1` and under 6x CPU throttle, with every button the hit target. Not reproduced; next failure needs the covering element.
-- [ ] Boot budgets (`race-modes:358`, `home-shortcuts:246`, `device-quality:107`) miss 7.5 s on CI because Home's setup is painted only after `createWorld` finishes in the same task. Open decision: defer the world build behind a painted frame, or cut the boot cost.
+- [x] Boot budgets (`race-modes:358`, `home-shortcuts:246`, `device-quality:107`) missed 7.5 s on CI because Home's setup was painted only after `createWorld` finished in the same task. Decided: defer the world build behind one painted frame (`src/main.js`). RED `tests/boot-first-paint-browser.spec.js` (frame 1643 ms > WebGL 808 ms) → GREEN; `CI=1 --repeat-each=8 --workers=4 --retries=0` on the three specs + guard: 32/32. Rule: `performance-review.md` "Home paints before the world is built". CI confirmation pending.
 - [ ] Verify the full GitHub quality gate on the repair commit.
 
 # Develop World Tour camera CI run 44394398766
