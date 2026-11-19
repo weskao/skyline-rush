@@ -26,7 +26,7 @@ Concept art and mood reference only (rule item 7). No concept-board panel exists
 |---|---|---|
 | Day sky with cirrus | HDRI, puresky | Coast's `day` sky, reused as it is (`coastEnvPlan('spiral', …)`): no new file or manifest row |
 | Tower shell and light strip | painted concrete / metal textures; geometry modelled in Blender | `spiral-landmarks` (`tower`, `tower_far`): Poly Haven `concrete_panels`, `blue_metal_plate` (`assets-src/spiral-landmarks/sources.json`) |
-| Cloud sea | cloud GLB models (owner decision) | `spiral-landmarks` (`cloud_a`, `cloud_b`, `cloud_c`), 76 placed on the race lap; snow peaks from `snow_field_aerial`, `aerial_rocks_02` |
+| Cloud sea | High and Ultra: shader cloud deck and wisps. Medium: cloud GLB models | High and Ultra: `src/spiral-clouds.ts` on the noise map of `src/cloud-noise.ts` (made at run time, no file). Medium: `spiral-landmarks` (`cloud_a`, `cloud_b`, `cloud_c`), 76 placed on the race lap. Snow peaks from `snow_field_aerial`, `aerial_rocks_02` |
 | Deck, rails, chevrons | metal and concrete textures | Road deck: the procedural ribbon with the look's KTX2 road set. Rails: the procedural trim, recoloured while the kit is drawn. Chevron signs, gap markers, struts, platforms and stations: `spiral-landmarks` |
 
 ## Reuses from the shared plan
@@ -68,7 +68,7 @@ with the full tower. Draw calls, scene triangles, GPU bytes and p50/p95 need a b
 - Route length may move within 8–12 km to fit the art; outside that range the owner is asked first. Not used: the
   shipped 10 km route fits.
 - Time of day: day sky, as the concept art. Low keeps the dark procedural scene.
-- Cloud sea: cloud GLB models (not an engine plane, not a dome band).
+- Cloud sea: cloud GLB models (not an engine plane, not a dome band). Superseded for High and Ultra later the same day (owner: the mounds look fake; High and above must be as close to the real thing as possible): a shader cloud deck with drifting wisps (`src/spiral-clouds.ts`). Medium keeps the GLB mounds.
 - Draw-call cap: the shared home 540 / race 380.
 
 ## Acceptance checks and guard tests

@@ -37,7 +37,7 @@ The road is dry on every preset.
 ## Owner decisions (2026-11-19)
 
 - Time of day: day sky.
-- Cloud sea: cloud GLB models, not an engine plane and not a band painted on the dome.
+- Cloud sea: cloud GLB models, not an engine plane and not a band painted on the dome. Superseded for High and Ultra later the same day (owner: the mounds look fake; High and above must be as close to the real thing as possible): a shader cloud deck with drifting wisps (`src/spiral-clouds.ts`). Medium keeps the GLB mounds.
 - Route: frozen at the shipped 10 km (inside the 8–12 km art target).
 - Draw-call cap: the shared home 540 / race 380.
 
