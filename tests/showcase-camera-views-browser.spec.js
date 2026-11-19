@@ -129,7 +129,7 @@ async function checkHighDetail(page, id, viewport, airflow) {
       { airflow, quality: 'high', seconds: orbit ? 41.5 : 2, every: orbit ? 0.5 : 0 }), [id, view, airflow, orbit]);
     const size = sizeLabel(viewport, airflow);
     for (const [i, s] of (orbit ? result.samples.slice(3) : [result]).entries())
-      expectWholeCar(s, `${id}/${view}${orbit ? ` sample ${i}` : ''} ${size}`);
+      expectWholeCar(s, `${id}/${view}${orbit ? ` sample ${i} (${s.bearing.toFixed(0)}°)` : ''} ${size}`);
     if (view === 'drive') {
       // Drive is the curated three-quarter chase shot: the camera stays behind the car, inside the planner's edge margins.
       const { minX, maxX, minY, maxY } = result.carBounds, label = `${id}/drive ${size}`;

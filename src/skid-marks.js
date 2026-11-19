@@ -108,9 +108,10 @@ export function createSkidMarks(scene, car, ground = null) {
   return {
     mesh,
     setSkin: trail.setSkin,
-    /** `drift`: the player's drift while racing (null otherwise); `origin`: the scene's floating origin (scene + origin = absolute). */
-    update(drift, origin, dt = 0, reducedMotion = false, lowQuality = false, enabled = true) {
-      trail.tick(dt, reducedMotion, lowQuality, enabled);
+    /** @param {import('./vfx-settings.ts').QualityTier} quality
+     * `drift`: the player's drift while racing (null otherwise); `origin`: the scene's floating origin (scene + origin = absolute). */
+    update(drift, origin, dt = 0, reducedMotion = false, quality = 'high', enabled = true) {
+      trail.tick(dt, reducedMotion, quality, enabled);
       if (!drift) { for (const tyre of tyres) end(tyre); }
       else {
         if (!anchored) { anchor.copy(origin); anchored = true; }

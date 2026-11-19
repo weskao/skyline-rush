@@ -28,7 +28,7 @@ test('all native 3x car-paint image assets are present and reusable by 1x UI car
 
 test('native image sweep follows Low/Medium/High, disabled VFX and reduced-motion preferences', () => {
   const preview = read('GaragePaintPreview.vue'), vfx = read('vfx-ui.ts');
-  assert.match(vfx, /dataset.vfxQuality = visual.quality/);
+  assert.match(vfx, /dataset.vfxQuality = visual.ultra \? 'ultra' : visual.quality/);
   assert.match(vfx, /dataset.vfxEnabled = String\(visual.enabled\)/);
   for (const q of ['low', 'medium', 'high']) assert.ok(preview.includes('data-vfx-quality="' + q + '"'));
   assert.match(preview, /prefers-reduced-motion: reduce/);

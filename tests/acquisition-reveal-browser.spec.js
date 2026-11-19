@@ -5,6 +5,7 @@ test.use({ keepAcquisitionOpen: true, reducedMotion: 'reduce', viewport: { width
 
 async function finishCoast(page) {
   await page.locator('#start-button').click();
+  await page.evaluate(() => { window.gameplay.race.countdown = .01; });
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing');
   await page.evaluate(async () => {
     const { finishRace } = await import('/src/race-finish.js');
@@ -75,6 +76,7 @@ test('a mission claim and an equipment redemption reveal their receipts over Gar
 });
 
 test('the production reveal component queues batches, defers during a race, and restores keyboard focus', async ({ page, gameplayURL }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(gameplayURL + 'tests/fixtures/acquisition-reveal.html');
   const reveal = page.locator('#acquisition-reveal');
@@ -85,14 +87,20 @@ test('the production reveal component queues batches, defers during a race, and 
   await expect.poll(() => page.evaluate(() => window.revealCues)).toEqual([]);
   await page.evaluate(() => { document.body.dataset.phase = 'ready'; });
   await expect(reveal.getByRole('heading', { name: 'Vantaire GT' })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => window.revealCues)).toEqual([['acquisition-hero', true]]);
+  await expect.poll(() => page.evaluate(() => window.revealCues)).toEqual([['acquisition-car', true]]);
   const proceed = reveal.getByRole('button', { name: 'Continue' });
   await expect(proceed).toBeFocused();
   expect((await proceed.boundingBox()).width).toBeGreaterThanOrEqual((await reveal.boundingBox()).width - 32);
   await reveal.getByRole('button', { name: 'Ion thruster' }).tap();
   await expect(reveal.getByRole('heading', { name: 'Ion thruster' })).toBeVisible();
   await reveal.getByRole('button', { name: 'Ion thruster' }).tap();
-  await expect.poll(() => page.evaluate(() => window.revealCues)).toEqual([['acquisition-hero', true], ['acquisition-select', true]]);
+  await reveal.getByRole('button', { name: 'Aurora' }).tap();
+  await expect(reveal.getByRole('heading', { name: 'Aurora' })).toBeVisible();
+  await reveal.getByRole('button', { name: 'Ion thruster' }).tap();
+  await expect.poll(() => page.evaluate(() => window.revealCues.map(([name]) => name))).toEqual([
+    'acquisition-car', 'acquisition-stop', 'acquisition-equipment-thruster', 'acquisition-stop',
+    'acquisition-paint', 'acquisition-stop', 'acquisition-select',
+  ]);
   await expect(proceed).toBeInViewport();
   await page.keyboard.press('Escape');
   await expect(reveal.getByRole('heading', { name: 'Collection token' })).toBeVisible();
@@ -102,7 +110,37 @@ test('the production reveal component queues batches, defers during a race, and 
   await expect(opener).toBeFocused();
   await opener.tap();
   await expect(reveal).toBeHidden();
-  await expect.poll(() => page.evaluate(() => window.revealCues)).toEqual([
-    ['acquisition-hero', true], ['acquisition-select', true], ['acquisition-item', true],
+  await expect.poll(() => page.evaluate(() => window.revealCues.slice(-3))).toEqual([
+    ['acquisition-stop', true], ['acquisition-item', true], ['acquisition-stop', true],
   ]);
+});
+
+test('earning the 18th career star reveals Vantaire GT once and makes it selectable', async ({ gameplayPage: page, gameplayURL }) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('skyline-rush-stars')) {
+      const stars = { coast: 2, neon: 3, canyon: 3, aurora: 3, spiral: 3, taipei: 3 };
+      localStorage.setItem('skyline-rush-stars', JSON.stringify(stars));
+    }
+  });
+  await page.goto(gameplayURL);
+  await page.locator('#garage-button').click();
+  const gt = page.locator('#garage-screen [data-car="crimson-gt"]');
+  await expect(gt).toHaveAttribute('data-car-access', 'locked');
+  await expect(gt).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByText('17 / 18 Career stars')).toBeVisible();
+  await page.locator('#garage-close').click();
+
+  await finishCoast(page);
+  const reveal = page.locator('#acquisition-reveal');
+  await expect(reveal.getByRole('heading', { name: 'Vantaire GT' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-stars')).coast)).toBe(3);
+  await reveal.getByRole('button', { name: 'Continue' }).click();
+  await page.locator('#choose-track').click();
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+  await expect(reveal).toBeHidden();
+  await page.locator('#garage-button').click();
+  await expect(gt).toHaveAttribute('data-car-access', 'owned');
+  await gt.click();
+  await expect(gt).toHaveAttribute('aria-pressed', 'true');
+  await expect(reveal).toBeHidden();
 });

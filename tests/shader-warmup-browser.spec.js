@@ -1,3 +1,4 @@
+import { seedGtCareer } from './helpers/gt-progress.js';
 import { expect } from '@playwright/test';
 import { test, glbRoots } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -36,6 +37,7 @@ for (const [car, name] of [['roadster', 'Roadster'], ['crimson-gt', 'Crimson GT'
   for (const quality of ['low', 'high']) {
     test.describe(`${name} on ${quality}`, () => {
       test.beforeEach(async ({ page }) => {
+        if (car === 'crimson-gt') await seedGtCareer(page);
         await page.addInitScript(([car, quality]) => {
           localStorage.setItem('skyline-rush-car', JSON.stringify(car));
           localStorage.setItem('skyline-rush-vfx', JSON.stringify({ quality }));

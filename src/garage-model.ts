@@ -4,7 +4,7 @@ import type { ModelCache, ModelHandle } from './asset-model-loader.ts';
 import type { ModelQuality } from './model-manifest.ts';
 import { bindGarageRig, type GarageRig } from './garage-model-rig.ts';
 import { applyCarReflections } from './car-reflections.ts';
-import { CARS, equippedCarModel } from './car-catalog.ts';
+import { CARS, equippedCarModel, garagePreviewModel } from './car-catalog.ts';
 import { REAR_PORTS } from './aero-vfx.js';
 import { fitToRoadsterSize } from './car-display-size.ts';
 
@@ -172,7 +172,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
   };
 }
 
-interface Ktx2Like { setTranscoderPath(path: string): Ktx2Like; detectSupport(renderer: never): Ktx2Like }
+interface Ktx2Like { dispose?(): void; setTranscoderPath(path: string): Ktx2Like; detectSupport(renderer: never): Ktx2Like }
 type Ktx2Class = new () => Ktx2Like;
 const importKtx2 = async (): Promise<Ktx2Class> => (await import('three/examples/jsm/loaders/KTX2Loader.js')).KTX2Loader as unknown as Ktx2Class;
 
@@ -219,10 +219,10 @@ export function createWorldGarageModel(canvas: HTMLCanvasElement, renderer: Pick
   return {
     /** Per frame, before posing: dresses the car on screen. `studio` only while the Preview Studio camera is on;
      *  `showcase` only while the Coming Soon stage renders the Home preview; `home` is the Home/race player car. */
-    frame(quality: ModelQuality, phase: string, garageOpen: boolean, studio: GarageModelHost | null, showcase: GarageModelHost | null, home: GarageModelHost): void {
-      const equipped = carModel();
+    frame(quality: ModelQuality, phase: string, garageOpen: boolean, studio: GarageModelHost | null, showcase: GarageModelHost | null, home: GarageModelHost, startingFreeDrive = false): void {
+      const equipped = (garageOpen ? garagePreviewModel() : undefined) ?? carModel();
       const wanted = equipped === CARS.roadster.model ? (proceduralRoadster ? null : probe ?? equipped) : equipped;
-      if (wanted !== id && phase !== 'racing') use(wanted); // the car changes in the Garage only; never rebuild mid-race
+      if (wanted !== id && (phase !== 'racing' || startingFreeDrive)) use(wanted); // never rebuild mid-race
       if (!model || id === null) return;
       if (studio) { model.sync(true, quality, studio); return; }
       const everywhere = dressesRaceCar(id);

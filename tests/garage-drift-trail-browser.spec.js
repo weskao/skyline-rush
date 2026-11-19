@@ -1,3 +1,4 @@
+import { seedGtCareer } from './helpers/gt-progress.js';
 import { test, expect, openGarage } from './helpers/test.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -6,6 +7,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
   test('Garage drift preview and trial are independent at ' + viewport.width + '×' + viewport.height, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await seedGtCareer(page);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await openGarage(page);
     await openGarageSection(page, 'effects');
@@ -59,6 +61,15 @@ test('Garage drift preview toggles between accessible play and pause artwork', a
   await expect(play.locator('svg[data-glyph="play"]')).toBeVisible();
   await expect(preview).toHaveAttribute('data-motion', 'paused');
   await expect(play).toBeFocused();
+  const settings = page.locator('[data-vfx="quality"]');
+  for (const tier of ['ultra', 'low', 'medium', 'high']) {
+    await settings.evaluate((control, value) => {
+      control.value = value;
+      control.dispatchEvent(new Event('input', { bubbles: true }));
+    }, tier);
+    await expect(preview).toHaveAttribute('data-quality', tier);
+    await expect(preview).toHaveAttribute('data-motion', 'paused');
+  }
   await play.press('Enter');
   await expect(pause.locator('svg[data-glyph="pause"]')).toBeVisible();
   await expect(preview).toHaveAttribute('data-motion', 'running');

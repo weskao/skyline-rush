@@ -10,7 +10,7 @@ import { updateCoachView } from './tutorial-coach-state.ts';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { icon } from './icons.ts';
-import { startRace, stepRace, dailyChallenge, gapChargeWarning } from './game.js';
+import { startRace as startSimulation, stepRace, dailyChallenge, gapChargeWarning } from './game.js';
 import { createRace } from './race-factory.ts';
 import { createControls } from './input.ts';
 import { createSprintSeries, nextSprintGrid } from './sprint-series.ts';
@@ -151,7 +151,7 @@ function leaveIntro() {
   const animation = ui.intro.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-36px)' }], motionOptions('base'));
   animation.finished.catch(() => {}).then(() => { ui.intro.inert = false; ui.intro.hidden = race.phase !== 'ready'; });
 }
-const renderResult = setupResultScreen(() => renderWave3DemoResults(race, getLocale()));
+const renderResult = setupResultScreen(() => renderWave3DemoResults(race, getLocale()), () => { chooseTrack(); $('#garage-button').click(); });
 const overlayActions = setupOverlayActions();
 const notice = setupPerformanceNotice({ downgraded: vfx.deviceSelection.downgraded, quality: vfx.deviceSelection.settings.quality });
 
@@ -251,13 +251,13 @@ const historyDialog = setupHistoryDialog({
   calm: calmMotion,
   motionOptions,
 });
-const { showGarage, adoptCar, syncSkins, previewPaint } = setupGarageUI({
-  getWorld: () => world,
-  canOpen: () => race.phase === 'ready',
+const { showGarage, adoptCar, syncSkins, previewPaint, startRace } = setupGarageUI({
+  getWorld: () => world, canOpen: () => race.phase === 'ready',
   clearControls: () => controls.clear(),
   getEquippedPaint: () => equippedPaint,
   setEquippedPaint: id => { equippedPaint = id; saveCarPaint(equippedCar(), id); },
   getStars: () => starTotal(progress.stars), availablePaints, subscribeAccount: cloud.subscribeAccount, cue: sound.cue,
+  startSimulation, syncProgress: cloud.syncProgress,
 });
 function chooseTrack() {
   if (tutorial) { endTutorial(false); return; }
@@ -478,7 +478,7 @@ function phaseUI() {
     showTracks();
     ui['result-stats'].hidden = false;
     $('#new-best').hidden = !record;
-    lastResult = { race, best, record, medals, challengeMedals: settled.challengeMedals, series: sprintSeries, cup, stunt, next: settled.next, settled };
+    lastResult = { race, best, record, medals, challengeMedals: settled.challengeMedals, unlockedGt: settled.unlockedCars.includes('crimson-gt') || undefined, series: sprintSeries, cup, stunt, next: settled.next, settled };
   }
   phaseText();
 }

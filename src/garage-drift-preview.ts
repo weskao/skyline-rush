@@ -1,3 +1,4 @@
+import type { QualityTier } from './vfx-settings.ts';
 import * as THREE from 'three';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { CAR_STYLES, makeCar } from './car-model.js';
@@ -38,7 +39,7 @@ export function createGarageDriftPreview(canvas: HTMLCanvasElement, carId: CarId
   const skids = createSkidMarks(scene, car, ground);
   const camera = new THREE.PerspectiveCamera(36, 1, .1, 70);
   const aim = new THREE.Vector3(), cameraOffset = new THREE.Vector3(4.9, 7.9, 9.2);
-  let previous = -STEP, low = false, still = false;
+  let previous = -STEP, still = false, tier: QualityTier = 'high';
 
   // Show the selected production model when present, using the same-size procedural rig as the race fallback.
   const baseUrl = import.meta.env.BASE_URL;
@@ -72,17 +73,17 @@ export function createGarageDriftPreview(canvas: HTMLCanvasElement, carId: CarId
     previous = -STEP;
     skids.reset();
   }
-  function draw(elapsed: number, reduced: boolean, lowQuality: boolean) {
+  function draw(elapsed: number, reduced: boolean, quality: QualityTier) {
     const time = reduced ? 1.21 : elapsed % LOOP;
-    if (time < previous || reduced !== still || lowQuality !== low) restart();
-    low = lowQuality;
+    if (time < previous || reduced !== still || quality !== tier) restart();
+    tier = quality;
     still = reduced;
     // A fixed sample rate keeps the preview's tread continuous when the canvas is drawn at 30 fps.
     while (previous + STEP <= time) {
       previous += STEP;
       place(previous);
       skids.update(previous < DRIFT_DURATION ? { time: previous, dir: 1, nitro: 0, grace: 0 } : null,
-        origin, STEP, reduced, lowQuality);
+        origin, STEP, reduced, quality);
     }
     aim.set(car.position.x * .64, .06, car.position.z * .72 + 1.42);
     const widthRatio = Math.max(1, 1.65 / camera.aspect);

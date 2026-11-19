@@ -15,7 +15,7 @@ export function storeAcquisitionBatch(
     id: demoAcquisitionId('store', scope, receipt.operationId),
     items: [{
       id: item.id, name: item.name, kind: ACQUISITION_KIND.EQUIPMENT, status: 'unlocked', scope: 'demo',
-      artwork: art ? { src: art.src.slice(1), style: 'icon' } : undefined,
+      equipmentCategory: item.category, artwork: art ? { src: art.src.slice(1), style: 'icon' } : undefined,
     }],
   };
 }

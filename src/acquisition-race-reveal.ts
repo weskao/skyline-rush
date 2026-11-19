@@ -4,6 +4,7 @@ import { demoAcquisitionItems } from './acquisition-demo-items.ts';
 import { getWave3DemoReceipt } from '#wave3-demo-race';
 import { playResultFeedback, type PlayCue, type RaceOutcome } from './result-audio.ts';
 import type { Settlement } from './race-results.ts';
+import { carArtwork } from './car-catalog.ts';
 
 const presented = new WeakSet<object>();
 let sequence = 0;
@@ -15,7 +16,10 @@ const medal = (id: string, key: string): AcquisitionItem => ({
 });
 
 export function raceAcquisitionItems(result: Settlement): AcquisitionItem[] {
-  const items: AcquisitionItem[] = [];
+  const items: AcquisitionItem[] = result.unlockedCars.map(id => ({
+    id, kind: ACQUISITION_KIND.CAR, status: 'unlocked', name: localized(locale => t('car.' + id, undefined, locale)),
+    artwork: { src: carArtwork(id), style: 'cutout' },
+  }));
   if (result.next && result.unlockedTrack) {
     const id = result.next;
     items.push({ id, kind: ACQUISITION_KIND.TRACK, status: 'unlocked', name: localized(locale => trackName(id, locale)),
