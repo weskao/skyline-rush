@@ -1,6 +1,18 @@
 // Small optional active item slot for unranked practice; never changes Classic ring rewards.
-const DURATIONS = { shield: 10, magnet: 5, ghost: 3, freeze: 2, emp: 1.5 };
+import { EFFECT_TIMES, MYSTERY_EFFECTS } from './ring-layout.ts';
+import { seededRng, RACE_STREAMS } from './rng.ts';
+
+export const EMP_DURATION = 1.5;
+export const ITEM_COOLDOWN = 0.7;
+const DURATIONS = { ...EFFECT_TIMES, emp: EMP_DURATION };
+
+// The same seeded mystery roll goes to whichever driver crosses the ring.
+export function mysteryEffect(seed: number, index: number): keyof typeof EFFECT_TIMES {
+  const roll = seededRng(seed, `${RACE_STREAMS.mysteryPrefix}${index}`)();
+  return MYSTERY_EFFECTS[Math.floor(roll * MYSTERY_EFFECTS.length)]!;
+}
 export type ActiveItem = keyof typeof DURATIONS;
+export const ACTIVE_ITEMS: readonly ActiveItem[] = Object.freeze(Object.keys(DURATIONS) as ActiveItem[]);
 
 // Rings are scarce (5 per car), so Active makes every ring an item ring and All every other one (the rest
 // become bonus gates); each keeps its source index, so its reward never depends on the rule.
@@ -33,7 +45,7 @@ export function activateItem(car: ActiveItemCar | null | undefined, hasRivals = 
   const effect = (car.heldItem === 'freeze' || car.heldItem === 'emp') && !hasRivals ? 'magnet' : car.heldItem;
   car.effects[effect] = Math.max(car.effects[effect] || 0, DURATIONS[effect]);
   car.heldItem = null;
-  car.itemCooldown = .7;
+  car.itemCooldown = ITEM_COOLDOWN;
   return effect;
 }
 

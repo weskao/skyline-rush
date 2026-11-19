@@ -1,3 +1,9 @@
+# Local verification preview port
+
+- [x] Reproduced the port 5178 collision on isolated `370bdfc9`. The Make target regression failed before the fix and now verifies that both browser stages use one free port and honor an explicit `PLAYWRIGHT_PORT`.
+- [x] With 5178 still occupied, `make verify` passed typecheck, 3,585 unit tests (4 skipped), and the production build, then started Playwright. A separate Chrome run passed 9 production browser cases and handed the same port to 6 passing World Tour mid-race cases. All 51 World Tour cases passed in the full World Tour run.
+- [ ] Complete the full standard browser suite and CI for the port fix. The 1,437-case local run was stopped after 24 passes. The interrupted personal medals case passed on its own.
+
 # Vite-only Garage and Store playtesting
 
 - [x] Reproduced zero-star GT equip failure, the Vite preview loophole and the unlocked Store reading the normal demo checkpoint. The Vite access regression now passes in both modes.
@@ -72,6 +78,8 @@
 - [x] After the startup gate exits, bring the Home setup and tools in from opposite sides by group. Use shorter lifts on narrow portrait and foldable layouts, a fade on Low, and instant controls with effects off, comfort, or reduced motion. The integration test was RED without the handoff animation and is GREEN with it. The landscape Chromium guard verifies the Start rail animates independently of the scroller and keeps keyboard focus.
 - [x] Fill the three startup lights continuously from the currently visible value. Keep each loading stage below completion until the first 3D frame succeeds, then settle the fill before offering Enter. Give Enter an amber hover surface, a one-shot sweep and a short arrow movement.
 - [x] Stage Home controls before the splash fades. Wide layouts start outside the viewport; compact and folded layouts lift a few pixels in place. Keep keyboard focus on Start after handoff and keep the fixed-rail ancestors out of the animation. Both startup handoff and progress tests reproduced the old behavior before the fix.
+- [x] Resolve the opening language before first paint using saved preference, then browser languages. Announce readiness only after the fill reaches 100%, hold the glowing rail briefly, and then reveal Enter with a single light sweep. The first-paint locale and readiness-order guards reproduced the old behavior before the fix.
+- [x] Keep the localized opening tagline below the logo on short landscape and both fold axes. Bound the horizontal fold heading to the upper segment and keep the loading controls clear of the hinge.
 - [x] Restore the race effects bus when opening music already runs on the shared AudioContext. Confirmed that the old lobby skipped the saved SFX setting, then verified the saved 65% level and the original engine, Boost and Nitro cues with native Chromium Web Audio. The SFX switch and saved preferences still apply.
 - [ ] Confirm the full GitHub quality gate and physical iOS/Android/foldable devices.
 
@@ -124,6 +132,26 @@
 - [x] RED reproduced missing fleet selection and Cup persistence. Focused regression tests cover wheel/wing clearance, lift and drive cues, in-place knockout, tier budgets and deck graphics. Production build passes.
 - [x] Capture the new meshes from multiple angles and inspect the seven-rival field with the game renderer at High and Low.
 - [ ] Confirm the feature branch's exact-commit CI, all-track regression and physical phone coverage.
+# Rival attack pickups
+
+- [x] Integrated develop `f9735e4c` into the feature candidate. 180 focused tests, type checks, the locked build and both Taipei 390 × 844 fresh-boot camera tests passed.
+- [x] Reconciled develop `c4d56c15`'s cinematic score with Freeze and EMP cues in the shared mixer. All 110 focused audio, acquisition, status and module-size tests passed.
+- [ ] Verify the updated browser specs on exact-commit CI. The compact Garage spec now expects all catalog categories, including drift trail. The incoming EMP spec advances to the expiry boundary in game time after confirming the visible hit.
+- [x] Add distinct Freeze and EMP impact/recovery sounds through the shared player status and SFX mixer. RED reproduced missing cues and stale shell bounds after a car swap. GREEN passes 152 focused tests and plays distinct waveforms through Chromium Web Audio, with muted output measured at zero.
+- [x] Refit status shells when the active model changes. WebGL verified both effects on the actual Stratosway R2 and Vantaire GT GLBs. The regression iterates the catalog and covers an unlisted model and procedural fallback.
+- [ ] Check the full local regression and the exact-commit CI gate for attack audio and model fitting.
+- [x] Reproduced three differences in player feedback: a separate EMP hue, no Low-quality crystals, and a thaw that always used reduced motion. The player now shares the rival EMP palette and shatter behavior and reuses the crystal pool on Low. All 28 focused item, status and module-size tests pass.
+- [x] Verified desktop gameplay on Coast in Low graphics with staged rival Freeze and EMP activations. Captured both the affected car and viewport edge, from activation through recovery. Type checks and the locked production build passed.
+- [ ] Complete the full `make verify` regression and check the exact-commit CI quality gate for the updated status visuals.
+- [x] Cover incoming screen feedback, player shell, VFX quality, and expiry with the item HUD and status-renderer regressions. Focused unit tests, type checks, and the locked build pass.
+- [x] Captured the viewport edge and player car for Freeze (desktop) and EMP (phone portrait) in the Coast pursuit view with Low graphics. The overlay has no pointer targets.
+- [ ] Confirm real-device and exact-HEAD CI coverage for the incoming screen and car effects.
+
+- [x] Let AI drivers collect Freeze and EMP so the player can be slowed by the same attack items. Test-first coverage reproduced the missing pickups. Coast and Dune Tempest now cover the shared ring sweep, EMP range and duration, Freeze, and overlapping hits.
+- [x] Verify the incoming HUD countdown with the item HUD regression and pass the TypeScript, Vue, JavaScript and locked production checks. Update the 16 deterministic replay hashes changed by rival Freeze.
+- [x] Restore the player's normal speed multiplier as soon as the last attack expires. The six Frostbite pace checks, including the 24-layout throttle-only sweep, pass with rival Freeze enabled.
+- [ ] Confirm the desktop and both phone orientations in a real browser and verify the exact-HEAD quality gate. Local Chromium cannot open its required Unix socket in this environment.
+
 
 # Develop World Tour camera CI run 44394398766
 
@@ -157,6 +185,28 @@
 - [x] Reproduce from High with a custom NITRO trail, on the road and in flight. Test the gold pulse, red dash, chain lighting, compact road placement, and Comfort card loop. The new guards fail against the original behavior.
 - [x] Tune all five styles through the shared render path. Keep Low readable, and use the chain's extra energy for length and flow speed. Comfort shows a quiet, tinted tail and static card art.
 - [ ] Verify the exact feature-branch GitHub quality gate and review the phone WebGL evidence.
+
+# Drift exit braking and tutorial coaching
+
+- [x] RED reproduced a hold that could never rebuild braking force after a drift, a generic earned-boost cue, and an incorrect drift-start cue after a short hold.
+- [x] Blend from drift exit to normal braking over 0.55 seconds. A straight brake request still acts immediately, and releasing an earned drift still starts its mini boost.
+- [x] Coach brake release, continued braking, and a short drift retry in English and Traditional Chinese. Select copy for keys, buttons, slide and tilt, pulse BRAKE for drift entry, and clear stale retry copy.
+- [ ] Confirm real browser and physical-phone behavior and the exact-commit GitHub quality gate.
+
+# Short-landscape reward details
+
+- [x] Reproduced the hard cut in Chromium. The old panel switched directly to opacity 1 without a transform when Details opened.
+- [x] Checked both directions of the anchored reveal and immediate keyboard disclosure with reduced motion in Chromium. The closed panel leaves the receipt text available to assistive technology while releasing pointer input.
+- [x] Passed 57 focused Node checks, including the module-size gate.
+- [ ] Complete the real-race browser matrix, physical phone check and exact-commit CI. The local full gate stopped at Vue typechecking with exit 137.
+
+# Drift exit and release boost
+
+- [x] RED reproduced the speed drop and early boost countdown on Coast. With BRAKE and light steering held from 165.6 km/h, speed at one second was 117.45 km/h on the old code.
+- [x] Keep the input assigned to the drift until release. In the same 60 Hz run, speed was 157.35 km/h after one second and the boost waited for release. A new press without steering brakes immediately.
+- [x] Verify the tutorial cue, the existing 0.2-second steering reversal across tracks and modes at 30/60/120 Hz, replay fixtures and the shared input tests for keyboard and touch.
+- [ ] Verify the HUD in a real browser run and on physical phones. Chromium in this environment could not start because UNIX sockets are restricted.
+- [ ] Confirm the exact-commit GitHub quality gate.
 
 # Acquisition reveal
 
@@ -6328,7 +6378,7 @@ Repro: on Home, open What's New, tap a picture or clip, close the enlarged view.
 
 ## 2026-11-19 — Sky Spiral detailed 3D look, Task 8c (`feature/sky-spiral-3d-look`)
 
-Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/phases/task-8c-sky-spiral.md`. Not merged.
+Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/phases/task-8c-sky-spiral.md`. Merged into the local `develop` at `32893aa7` (`feature/road-runout` at `565221d2`); not on `origin/develop` when checked (`git merge-base --is-ancestor 09903f56 origin/develop` fails).
 
 - [x] Route frozen at the shipped 10 km and pinned (`c34c9811`): `node --test tests/sky-spiral-parity.test.js` 4 of 4.
 - [x] Look brief with the owner decisions: day sky, cloud GLB models, shared draw-call caps (`79e53a73`).
@@ -6338,12 +6388,12 @@ Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/
 - [x] Kit drawn on Medium and above, Low and failed loads keep the procedural scene (`6b4bdf3a`): `tests/spiral-scenery.test.js` 9 of 9, `tests/spiral-scenery-plan.test.js` 6 of 6, `tests/track-look.test.js` 7 of 7.
 - [x] At `5fd333d7`: `npm test` 3,464 pass, 0 fail, 4 skipped; `node --test tests/module-size.test.js` 3 of 3; `npm run typecheck` clean; `npm run build` passed and `dist/models/spiral-landmarks/spiral-landmarks.glb` is present.
 - [x] Violet highlights under the day sky: the look key now includes the track, so a shared sky reapplies its sun (`4bf62b35`). `tests/coast-look.test.js` RED on the sky-only key; rule item 32.
-- [x] The road runs on past the finish instead of ending in the air (`1fd1f9a0`), with the rule `.claude/rules/road-runout.md` (`037d402d`). The other open-ended courses are on `feature/road-runout`, not merged here.
+- [x] The road runs on past the finish instead of ending in the air (`1fd1f9a0`), with the rule `.claude/rules/road-runout.md` (`037d402d`). The other open-ended courses are on `feature/road-runout`, not merged here (merged into the local `develop` at `565221d2`, not on `origin/develop`).
 - [x] Cloud deck with drifting wisps on High and Ultra in place of the kit's cloud mounds; Medium keeps the mounds (`ffd88d99`, rule item 33 and decision notes `4030cdfb`). `tests/spiral-clouds.test.js`, `tests/cloud-noise.test.js`. Desktop Chromium look-dev stills in the ignored audits: `spiral-lookdev/before-high-*.jpg` against `sea4-high-*.jpg`.
-- [ ] Cloud deck not checked: frame time (about 28 texture fetches a pixel on High, 60 on Ultra), an Ultra still, a phone.
+- [ ] Cloud deck not checked: frame time (about 28 texture fetches a pixel on High, 60 on Ultra), an Ultra still, a phone. Not run, by owner instruction (no browser tests, 2026-11-19).
 - [x] Seabird, airship and rebuilt station, clouds and peak in the Blender master (`2fd808ef`): sixteen nodes, 10,643 of 11,000 triangles, 1,019,196 bytes; `tests/spiral-landmarks-glb.test.js` RED before the build; Cycles renders in the ignored audits.
 - [x] Two flocks of seven seabirds and one airship fly round the course while the kit is drawn (`97eaa229`): `node --test tests/spiral-sky-life.test.js` 6 of 6.
-- [ ] Birds and airship never drawn in WebGL: flap, bank, size on screen and the extra three to four draws against the race 380 cap are unchecked.
+- [ ] Birds and airship never drawn in WebGL: flap, bank, size on screen and the extra three to four draws against the race 380 cap are unchecked. Not run, by owner instruction (no browser tests, 2026-11-19).
 - [x] At `97eaa229`: `npm test` 3,486 tests, 3,482 pass, 0 fail, 4 skipped; `npm run typecheck` clean; `npm run build` passed and `dist/models/spiral-landmarks/spiral-landmarks.glb` is the 2488ff2b… file.
 - [ ] Browser specs written and never executed, by owner instruction (2026-11-19): `tests/spiral-look-browser.spec.js` (kit, day sky and road on High, NaN scan, no compile after GO, Low fetches no look asset, load-failure fallback, draw-call caps home 540 / race 380) and the Sky Spiral case in `tests/track-look-quality-browser.spec.js`. They may fail on their first run.
-- [ ] Not done: `make verify`, real WebGL captures (desktop and phone, both orientations), draw calls and p50/p95, rule item 20 lane sweep, the kit on the non-day presets' bloom, concept parity review, owner art sign-off, exact-HEAD `quality-gate`.
+- [ ] Not done: `make verify`, real WebGL captures (desktop and phone, both orientations), draw calls and p50/p95, rule item 20 lane sweep, the kit on the non-day presets' bloom, concept parity review, owner art sign-off, exact-HEAD `quality-gate`. Not run, by owner instruction (no browser tests, 2026-11-19).

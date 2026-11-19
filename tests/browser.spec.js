@@ -1,5 +1,5 @@
 import { toggleSettingsSection, toggleAirflowPreview } from './helpers/settings-browser.js';
-import { test, expect, chromium } from './helpers/test.js';
+import { test, expect, chromium, gotoHome } from './helpers/test.js';
 import { saveArtifact } from './helpers/artifact.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { slow, ciTimeout } from './helpers/ci.js';
@@ -104,7 +104,7 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-  await page.goto('/');
+  await gotoHome(page);
   await page.keyboard.press('v');
   await expect(page.locator('#airflow-toggle')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');
@@ -407,7 +407,7 @@ test('a saved music-off choice stays silent after the first gesture and keeps so
   await page.addInitScript(blockAutoplay);
   await page.addInitScript(measureAudio);
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
-  await page.goto('/');
+  await gotoHome(page);
   await page.keyboard.press('Shift');
   await page.waitForTimeout(500);
   expect(await level(page)).toBeLessThan(0.0001);

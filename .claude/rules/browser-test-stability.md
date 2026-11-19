@@ -1,5 +1,6 @@
 ---
 paths:
+  - "Makefile"
   - "tests/**/*browser.spec.js"
   - "tests/helpers/**"
   - "playwright*.config.js"
@@ -111,6 +112,16 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `LOW_GATED` there.
 - **Split WebGL preview sweeps into small batches.** Each track switch rebuilds the scene. Keep all catalog entries covered, but let Playwright schedule bounded cases independently. The desktop locked-preview sweep exhausted the 135-second budget as Coast started in CI run `43563563658`.
 - Wrap fixed waits and timeouts in `ciTimeout()`. This is enforced by the same test file.
+- **A page load is not a rendered Home.** `index.html` boots `src/startup-entry.ts`, which imports
+  `main.js` dynamically (`3033736b`), so `domcontentloaded` and `load` fire before Home is rendered.
+  The first wait after `page.goto` keeps the default expect budget. Trap (2026-11-19): the lobby
+  summaries spec gave `.route-drivers` 2.5 s and saw it empty in 1 of 3 local runs, which blocked the
+  pre-push layout gate. Enforced by `tests/browser-timeouts.test.js` (*first wait after a page load*).
+  A key pressed before `main.js` subscribes is lost for good, so no wait retries it. Trap (2026-11-20, since
+  `74da0992`): the airflow showcase spec pressed `v` straight after `page.goto` and failed 7 of 7 viewports;
+  the "music-off stays silent" spec passed without the game hearing its gesture. Load with `gotoHome(page)`
+  (`tests/helpers/test.js`) before the first key press. Enforced by the same test file (*key press after a
+  page load*).
 - **A test must fit its budget with room to spare on CI.** CI steps the game at about 1/4 speed (each slow
   frame is clamped to 0.05 s), so a flow that plays N s of game time needs about 4N s of wall clock. A test
   whose passing CI run (the `(1.7m)` in the job log) uses more than about half of its budget gets an explicit
@@ -187,6 +198,10 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   A single local pass does not prove a fix.
 
 ## A long local run needs a checkout nobody else moves
+
+- **Use a free preview port for local gates.** Another worktree's preview can hold port 5178.
+  `make verify` and the pre-push layout gate use `scripts/free-local-port.mjs`.
+  Both stages of `make verify` use the same port and honor an explicit `PLAYWRIGHT_PORT`.
 
 - **Gameplay specs serve live source.** `tests/helpers/gameplay-browser.js` starts a Vite dev server on
   the checkout, so a file that changes mid-run (a merge, a pull, another session's edit) reloads the page

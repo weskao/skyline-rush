@@ -104,7 +104,7 @@ test('automatic graphics choice is a short disclosure with keyboard-accessible d
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const notice = page.locator('#performance-notice');
   const summary = notice.locator('summary');
-  await expect(summary).toBeVisible({ timeout: ciTimeout(2500) });
+  await expect(summary).toBeVisible();
   await page.locator('#settings-button').click({ trial: true, timeout: ciTimeout(3500) });
   await expect(notice.locator('#performance-notice-text')).toBeHidden();
   await summary.focus();

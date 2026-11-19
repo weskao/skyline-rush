@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { rivalWantsNitro, rivalCollects, RIVAL_NITRO_CHARGES, ITEM_RESPAWN } from '../src/rival-items.ts';
-import { createRace, startRace, stepRace, NITRO_MAX, NITRO_PICKUPS } from '../src/game.js';
+import { createRace, startRace, stepRace, mysteryEffect, NITRO_MAX, NITRO_PICKUPS } from '../src/game.js';
 import { measureEconomy } from '../scripts/pickup-economy.mjs';
 
 test('R2: rival NITRO timing lives in its own module, not in game.js', () => {
@@ -37,11 +37,14 @@ test('R4: a rival crossing a NITRO pickup takes it: charge for the rival, gone f
   }
 });
 
-test('R4: rivals take only NITRO rings, never the overcharge, a gone item or one off their line', () => {
+test('R4: rivals take NITRO and attack rings, never the overcharge, a gone item or one off their line', () => {
   for (const [item, list, taken] of [[ringItem('nitro'), 'rings', true], [ringItem('risk'), 'rings', true], [ringItem('charge'), 'rings', false],
     [ringItem('slipstream'), 'rings', false], [ringItem('mystery'), 'rings', false], [pickupItem('overcharge'), 'pickups', false]]) {
     const { race, rival, before } = rivalOn(item);
     race.rings = []; race.pickups = []; race[list] = [item];
+    if (item.type === 'mystery') {
+      item.mysteryIndex = Array.from({ length: 100 }, (_, i) => i).find(i => mysteryEffect(race.seed, i) === 'shield');
+    }
     rivalCollects(race, rival, before);
     assert.equal(item.downUntil !== undefined, taken, item.type ?? item.tier);
   }

@@ -9,6 +9,39 @@ const racing = () => { const race = createRace(); race.phase = 'racing'; race.pl
 const cues = frame => frame.sounds.filter(sound => typeof sound === 'string');
 const impulses = frame => frame.sounds.filter(sound => typeof sound !== 'string');
 
+test('incoming attacks cue impact and final recovery once, including EMP over an active Freeze', () => {
+  const events = createRaceAudioEvents(), race = racing();
+  const frame = () => cues(events.update(race, true));
+  frame();
+  race.player.freezeUntil = 2;
+  assert.deepEqual(frame(), ['freeze-hit']);
+  assert.deepEqual(frame(), []);
+  race.player.empUntil = 1.5;
+  assert.deepEqual(frame(), ['emp-hit']);
+  race.elapsed = 1.5;
+  assert.deepEqual(frame(), [], 'the remaining Freeze is already active');
+  race.elapsed = 2;
+  assert.deepEqual(frame(), ['freeze-thaw']);
+  assert.deepEqual(frame(), []);
+  race.player.empUntil = 3.5;
+  assert.deepEqual(frame(), ['emp-hit']);
+  race.elapsed = 3.5;
+  assert.deepEqual(frame(), ['emp-clear']);
+});
+
+test('muting and pausing consume old attack cues and a fresh race clears the previous hit', () => {
+  const events = createRaceAudioEvents(), race = racing();
+  events.update(race, true);
+  race.player.empUntil = 1.5;
+  assert.deepEqual(cues(events.update(race, false)), []);
+  assert.deepEqual(cues(events.update(race, true)), []);
+  race.phase = 'paused';
+  assert.equal(events.update(race, true).silence, true);
+  race.phase = 'racing';
+  assert.deepEqual(cues(events.update(race, true)), []);
+  assert.deepEqual(cues(events.update(racing(), true)), []);
+});
+
 test('cue detection has one home: the synth engine keeps no race-transition bookkeeping', () => {
   const engine = readFileSync(new URL('../src/audio.js', import.meta.url), 'utf8');
   assert.doesNotMatch(engine, /collectedPickups|lastNearMiss|wasThrusting|lowCharge/);

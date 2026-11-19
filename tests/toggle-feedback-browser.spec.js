@@ -5,6 +5,13 @@ import { bootAirflowRace, readHudBoxes } from './helpers/responsive-hud.js';
 
 // Shared setting toast (src/GameToast.vue) and the first Visual effects switch-off confirm (src/vfx-ui.ts).
 const toast = page => page.locator('#game-toast .game-toast-pill');
+const STATE_WORDS = { en: { on: 'ON', off: 'OFF' }, 'zh-TW': { on: '開啟', off: '關閉' } };
+// The setting name, then its new state as a separate badge that the colour and the fill both mark.
+const expectToast = async (page, label, state, lang = 'en') => {
+  await expect(toast(page)).toHaveAttribute('data-state', state);
+  await expect(toast(page).locator('.game-toast-label')).toHaveText(label);
+  await expect(toast(page).locator('.game-toast-state')).toHaveText(STATE_WORDS[lang][state]);
+};
 const vfx = page => page.locator('[data-vfx="enabled"]');
 const dialog = page => page.locator('#confirm-dialog');
 const home = async page => {
@@ -34,7 +41,7 @@ test('the first Visual effects switch-off asks in game; Cancel, Esc and the back
   await page.locator('#confirm-accept').click();
   await expect(vfx(page)).not.toBeChecked();
   await expect(page.locator('#airflow-toggle')).toBeDisabled();
-  await expect(toast(page)).toHaveText('Visual effects off');
+  await expectToast(page, 'Visual effects', 'off');
   // The toast is raised into the top layer above the open Settings dialog.
   expect(await page.locator('#game-toast').evaluate(el => el.matches(':popover-open'))).toBe(true);
   await expect.poll(() => page.evaluate(() => localStorage.getItem('skyline-vfx-off-confirmed'))).toBe('1');
@@ -42,7 +49,7 @@ test('the first Visual effects switch-off asks in game; Cancel, Esc and the back
   await vfx(page).click();
   await expect(vfx(page)).toBeChecked();
   await expect(dialog(page)).toBeHidden();
-  await expect(toast(page)).toHaveText('Visual effects on');
+  await expectToast(page, 'Visual effects', 'on');
   await vfx(page).click();
   await expect(vfx(page)).not.toBeChecked();
   await expect(dialog(page)).toBeHidden();
@@ -57,34 +64,67 @@ test('the first Visual effects switch-off asks in game; Cancel, Esc and the back
 test('M, V and F2 each show one toast that replaces the last and hides itself', async ({ page }) => {
   await home(page);
   await page.keyboard.press('m');
-  await expect(toast(page)).toHaveText('Sound off');
+  await expectToast(page, 'Sound', 'off');
   await expect(page.locator('#game-toast')).toHaveAttribute('role', 'status');
   await page.keyboard.press('m');
-  await expect(toast(page)).toHaveText('Sound on');
+  await expectToast(page, 'Sound', 'on');
   await page.keyboard.press('v');
-  await expect(toast(page)).toHaveText('Airflow on');
+  await expectToast(page, 'Airflow', 'on');
   await expect(toast(page)).toHaveCount(1);
   await page.keyboard.press('F2');
-  await expect(toast(page)).toHaveText('Auto accelerate off');
+  await expectToast(page, 'Auto accelerate', 'off');
   expect(await page.locator('#game-toast').evaluate(el => getComputedStyle(el).pointerEvents)).toBe('none');
   await expect(toast(page)).toHaveCount(0, { timeout: ciTimeout(3000) });
   // The button path, inside the open Settings dialog: the toast still shows above it.
   await page.locator('#settings-button').click();
   await page.locator('#mute-all').click();
-  await expect(toast(page)).toHaveText('Sound off');
+  await expectToast(page, 'Sound', 'off');
   await openSettingsSection(page, 'display');
   await page.locator('#airflow-toggle').click();
-  await expect(toast(page)).toHaveText('Airflow off');
+  await expectToast(page, 'Airflow', 'off');
 });
 
-for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['phone portrait', 390, 844, true], ['phone landscape', 844, 390, true]]) {
-  test.describe(`race toast ${name}`, () => {
-    test.use({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
+// WCAG contrast ratio of two computed rgb() colours (alpha ignored).
+const contrast = (a, b) => {
+  const lum = c => {
+    const [r, g, bl] = c.match(/[\d.]+/g).slice(0, 3).map(v => { const x = v / 255; return x <= .03928 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4; });
+    return .2126 * r + .7152 * g + .0722 * bl;
+  };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + .05) / (lo + .05);
+};
+
+test('the ON and OFF badges differ in colour and fill, and both stay readable', async ({ page }) => {
+  await home(page);
+  const badge = () => toast(page).locator('.game-toast-state').evaluate(el => {
+    const pill = el.closest('.game-toast-pill');
+    pill.getAnimations({ subtree: true }).forEach(a => a.finish());
+    const s = getComputedStyle(el);
+    return { color: s.color, bg: s.backgroundColor, pillBg: getComputedStyle(pill).backgroundColor, font: Number.parseFloat(s.fontSize) };
+  });
+  await page.keyboard.press('m');
+  await expectToast(page, 'Sound', 'off');
+  const off = await badge();
+  await page.keyboard.press('m');
+  await expectToast(page, 'Sound', 'on');
+  const on = await badge();
+  expect(on.color).not.toBe(off.color);
+  expect(off.bg, 'OFF is an outlined badge, ON a filled one: the state never rests on hue alone').toBe('rgba(0, 0, 0, 0)');
+  expect(on.bg).not.toBe(off.bg);
+  expect(contrast(on.color, on.bg), `ON ${on.color} on ${on.bg}`).toBeGreaterThanOrEqual(4.5);
+  expect(contrast(off.color, off.pillBg), `OFF ${off.color} on ${off.pillBg}`).toBeGreaterThanOrEqual(4.5);
+  expect(on.font).toBeGreaterThanOrEqual(13);
+});
+
+for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['phone portrait', 390, 844, true], ['phone landscape', 844, 390, true]]) for (const lang of ['en', 'zh-TW']) {
+  test.describe(`race toast ${name} ${lang}`, () => {
+    test.use({ viewport: { width, height }, hasTouch: touch, isMobile: touch, locale: lang });
     test('stays clear of the HUD readouts, driving message and event callout', async ({ page, context }) => {
       test.setTimeout(ciTimeout(75000));
-      await bootAirflowRace(page, context, 'en');
-      await page.keyboard.press('m');
-      await expect(toast(page)).toHaveText('Sound off');
+      await bootAirflowRace(page, context, lang);
+      // Auto accelerate is the longest setting name, so this measures the widest toast.
+      await page.keyboard.press('F2');
+      await expectToast(page, lang === 'en' ? 'Auto accelerate' : '自動加速', 'off', lang);
       const pill = await toast(page).evaluate(el => {
         el.getAnimations().forEach(animation => animation.finish());
         const { x, y, width, height } = el.getBoundingClientRect();

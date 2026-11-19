@@ -8,6 +8,13 @@
       ],
       "env": {}
     },
+    "crucible": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "scripts/crucible-mcp.mjs"
+      ]
+    },
     "firebase": {
       "type": "stdio",
       "command": "npx",

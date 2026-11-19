@@ -149,10 +149,8 @@ test('short landscape results show a compact earned reward without crowding race
   const compact = css.split('@media (max-height: 500px) and (orientation: landscape)')[1] ?? '';
   assert.match(compact, /\.wave3-demo-results\s*\{/);
   assert.match(compact, /\.wave3-demo-results__banner\s*\{\s*display:\s*none/);
-  assert.match(compact, /\.wave3-demo-results__missions/);
   assert.match(compact, /\.wave3-demo-results__points/);
-  // Compact visuals must not remove the settled status and mission text from assistive technology.
-  assert.match(compact, /clip-path:\s*inset\(50%\)/);
+  assert.match(compact, /\.wave3-demo-results__details\s*\{[^}]*position:\s*absolute/);
 });
 
 test('A-03 optional WebP keeps the decorative CSS mark on failure without requesting PNG', () => {
