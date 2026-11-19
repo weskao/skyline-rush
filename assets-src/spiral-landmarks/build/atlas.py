@@ -10,7 +10,8 @@ never stretches it; across a band, faces are laid out mirrored (build/mesh.py), 
   panel   white painted plate, 40 px/m: struts, platform hulls, station walls
   metal   the same plate, dark: decks, gantries, masts
   peak    rock below, snow above: u once round the peak, v its height
-  swatch  cells (no repeat): cloud gradient, blue lamp, hazard stripes, chevron board, lit windows, white, dark
+  swatch  cells (no repeat): cloud (v its height, u the crease between two billows), blue lamp, hazard stripes,
+          chevron board, lit windows, white, dark, grey, seabird (wing below, body above)
 
 Albedos are linear and deliberately under 0.62: the day sun and sky put about three times a flat upward face's
 albedo on screen (assets-src/coast-boats/asset-brief.md), so brighter whites clip and bloom.
@@ -32,10 +33,11 @@ BANDS = dict(shell=(0, 640, 20.0), panel=(640, 384, 40.0), metal=(1024, 192, 40.
 SWATCH = (1664, 384)
 # name: (first column, columns, rows used)
 CELLS = dict(cloud=(0, 128, 384), blue=(128, 128, 384), hazard=(256, 256, 384), chevron=(512, 512, 256),
-             windows=(1024, 256, 384), white=(1280, 64, 384), dark=(1344, 64, 384), grey=(1408, 64, 384))
+             windows=(1024, 256, 384), white=(1280, 64, 384), dark=(1344, 64, 384), grey=(1408, 64, 384), bird=(1472, 256, 192))
 WHITE, GREY, DARK = (0.60, 0.61, 0.62), (0.34, 0.35, 0.37), (0.085, 0.09, 0.10)
 METAL = (0.20, 0.21, 0.225)        # decks and gantries: flat upward faces stay well under 0.5
 CLOUD_TOP, CLOUD_BASE, SNOW = (0.48, 0.485, 0.49), (0.25, 0.29, 0.37), (0.52, 0.54, 0.57)
+CLOUD_CREASE = (0.52, 0.60, 0.78)  # what the gap between two billows keeps of the open cloud's colour: darker, bluer
 BLUE = (0.0395, 0.402, 1.0)        # linear; sRGB 56, 170, 255: the kit's only lamp colour
 LAMPS = dict(strip=1.0, chevron=1.0, beacon=1.0, window=0.45)   # share of BLUE the emissive atlas stores
 LUMA = np.array((0.2126, 0.7152, 0.0722), np.float32)
@@ -117,6 +119,27 @@ def chevrons(rows, cols):
     return frame.astype(np.float32), mark.astype(np.float32)
 
 
+def seabird(rows, cols):
+    """The seabird's cell, (albedo, roughness, feather lines). Lower half, the wing: u from the shoulder to the tip,
+    v from the trailing edge to the leading edge; white, black hand and trailing flight feathers. Upper half, the
+    body: u from the beak tip to the tail tip, v from the belly to the back; horn-yellow beak, dark eye and tail tip."""
+    half = rows // 2
+    v, u = np.mgrid[0:half, 0:cols].astype(np.float32) / np.array((half - 1, cols - 1), np.float32)[:, None, None]
+    ramp = lambda x: np.clip(x, 0, 1) ** 2 * (3 - 2 * np.clip(x, 0, 1))
+    white, black = np.array(WHITE, np.float32), np.array((0.03, 0.03, 0.035), np.float32)
+    dark = np.maximum(ramp((u - 0.60) / 0.14), ramp((0.10 + 0.30 * u - v) / 0.10))[..., None]
+    lines = ((np.arange(cols) % 10 == 0)[None, :] & (v < 0.62)).astype(np.float32)   # the flight feathers' edges
+    wing = (white * (1 - dark) + black * dark) * (1 - 0.12 * lines[..., None])
+    body = white * (0.80 + 0.20 * v)[..., None]                                     # the belly sits in its own shade
+    beak = ramp((0.105 - u) / 0.012)[..., None]
+    body = body * (1 - beak) + np.array((0.50, 0.33, 0.11), np.float32) * (1 - 0.5 * ramp((0.025 - u) / 0.02))[..., None] * beak
+    spot = ramp(1.6 - np.hypot((u - 0.165) / 0.014, (v - 0.64) / 0.09) * 1.6)[..., None]   # the eye
+    tip = ramp((u - 0.90) / 0.05)[..., None] * 0.85
+    body = body * (1 - np.maximum(spot, tip)) + black * np.maximum(spot, tip)
+    rough = np.vstack((np.full((half, cols), 0.8, np.float32), np.where(beak[..., 0] > 0.5, 0.4, 0.8)))
+    return np.vstack((wing, body)), rough, np.vstack((lines, np.zeros_like(lines)))
+
+
 def compose():
     """The four maps at SIZE, rows from the bottom: (albedo, normal xy, occlusion-roughness-metal, emissive), linear."""
     albedo = np.zeros((SIZE, SIZE, 3), np.float32)
@@ -167,7 +190,9 @@ def compose():
 
     albedo[SWATCH[0]:] = GREY
     rise = np.linspace(0, 1, 384, dtype=np.float32)[:, None, None] ** 0.7   # cloud: grey-blue underside to white top
-    albedo[cell("cloud")] = np.array(CLOUD_BASE, np.float32) * (1 - rise) + np.array(CLOUD_TOP, np.float32) * rise
+    open_cloud = np.array(CLOUD_BASE, np.float32) * (1 - rise) + np.array(CLOUD_TOP, np.float32) * rise
+    crease = np.linspace(0, 1, 128, dtype=np.float32)[None, :, None]              # u: 0 an open crown, 1 between two billows
+    albedo[cell("cloud")] = open_cloud * (1 - crease * (1 - np.array(CLOUD_CREASE, np.float32)))
     orm[cell("cloud") + (1,)] = 1.0
     albedo[cell("blue")], emissive[cell("blue")] = (0.03, 0.12, 0.30), BLUE
     orm[cell("blue") + (1,)] = 0.3
@@ -185,6 +210,8 @@ def compose():
     orm[cell("windows") + (1,)] = np.where(mullion, 0.5, 0.1)
     albedo[cell("white")], albedo[cell("dark")], albedo[cell("grey")] = WHITE, DARK, GREY
     orm[cell("white") + (1,)], orm[cell("dark") + (1,)], orm[cell("grey") + (1,)] = 0.5, 0.45, 0.55
+    albedo[cell("bird")], orm[cell("bird") + (1,)], feathers = seabird(CELLS["bird"][2], CELLS["bird"][1])
+    groove(normal[cell("bird")], feathers, 0.5)
     return albedo, normal, orm, emissive
 
 

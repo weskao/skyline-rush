@@ -1,11 +1,11 @@
-"""Builds the Sky Spiral landmark kit: twelve modelled pieces on one material and one atlas.
+"""Builds the Sky Spiral landmark kit: sixteen modelled pieces on one material and one atlas.
 
   python3 -I assets-src/spiral-landmarks/fetch_sources.py   (once: the CC0 scans, outside the repo)
   blender --background --factory-startup --python assets-src/spiral-landmarks/build.py
 
 Writes spiral-landmarks.blend, textures/ and contract.json next to this file. build/atlas.py composes the atlas
-from the scans (no render bake: the day look lights the kit at run time), build/pieces.py models the pieces with
-build/mesh.py, in the game's axes; this file wires the one material, checks every piece against the node contract
+from the scans (no render bake: the day look lights the kit at run time), build/pieces.py and build/sky.py model the
+pieces with build/mesh.py, in the game's axes; this file wires the one material, checks every piece against the node contract
 and saves. Nothing here depends on the machine: same inputs, same pieces, textures and contract. The .blend's
 bytes differ on every save, so a rebuild is followed by export, optimise, check and new hashes in the manifest.
 """
@@ -19,6 +19,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / "build"))
 import atlas  # noqa: E402
 from pieces import CAPS, CORE, STRUT, build_all  # noqa: E402
+from sky import AIRSHIP, SHOULDER, WINGSPAN  # noqa: E402
 
 MATERIAL = "spiral_landmarks"
 # where the runtime puts each piece (the placement itself is the runtime's: src/, not this kit)
@@ -34,6 +35,10 @@ PLACE = {
     "cloud_a": "origin at the centre of the flat underside", "cloud_b": "origin at the centre of the flat underside",
     "cloud_c": "origin at the centre of the flat underside",
     "peak": "origin at the base centre; the base ring (y = 0) goes under the cloud sea",
+    "bird_body": "flying: origin at the body's centre, beak toward -Z; draw both wings on the same pivot",
+    "bird_wing_l": "the body's pivot; to flap, turn it about Z through its shoulder (`bird.shoulders`), not its origin",
+    "bird_wing_r": "the body's pivot; to flap, turn it about Z through its shoulder (`bird.shoulders`), not its origin",
+    "airship": "flying: origin at the hull's centre, nose toward -Z",
 }
 
 
@@ -81,7 +86,12 @@ def check(name, m):
         assert sum(abs(r - CORE) < 1e-3 for r, p in zip(reach, span) if p.y in (-10, 115)), f"{name}: no {CORE} m ring at the strut span's ends"
     if name == "strut":
         assert (lo[0], hi[0], hi[1]) == (0, STRUT, -0.5), f"strut: x {lo[0]} .. {hi[0]}, top {hi[1]}"
-    if name != "strut" and not name.startswith("tower") and not name.startswith("platform"):
+    if name.startswith("bird_wing"):   # each wing wholly on its own side of its shoulder, out to half the span
+        side = 1 if name.endswith("r") else -1
+        assert sorted((side * lo[0], side * hi[0])) == [SHOULDER[0], WINGSPAN / 2], f"{name}: x {lo[0]} .. {hi[0]}"
+    if name == "airship":
+        assert (lo[2], hi[2]) == (-AIRSHIP / 2, AIRSHIP / 2), f"airship: z {lo[2]} .. {hi[2]}"
+    if name != "strut" and not name.startswith(("tower", "platform", "bird", "airship")):
         assert lo[1] == 0, f"{name}: base at y = {lo[1]}"
     return dict(triangles=m.triangles(), triangle_cap=CAPS[name], min=lo, max=hi, place=PLACE[name])
 
@@ -100,8 +110,12 @@ def main():
     assert list(nodes) == list(CAPS), "a piece is missing or out of order"
     (HERE / "contract.json").write_text(json.dumps(dict(
         glb="public/models/spiral-landmarks/spiral-landmarks.glb", material=MATERIAL,
-        axes="Y up, metres; each node's origin is its pivot",
+        axes="Y up, metres; each node's origin is its pivot (a bird wing also turns about its shoulder)",
         tower=dict(core_radius=CORE, strut_span_y=[-10, 115], strip_side="+Z"), strut=dict(length=STRUT, top_y=-0.5),
+        # the wings' vertices are authored about the body's pivot: a flap is T(shoulder) R(Z) T(-shoulder)
+        bird=dict(wingspan=WINGSPAN, forward="-Z", flap_axis="Z",
+                  shoulders=dict(bird_wing_l=[-SHOULDER[0], SHOULDER[1], 0], bird_wing_r=[SHOULDER[0], SHOULDER[1], 0])),
+        airship=dict(length=int(AIRSHIP), forward="-Z"),
         emissive="blue only; `lamps` gives each lamp's stored linear colour and luminance (0.2126, 0.7152, 0.0722). "
                  "The runtime's emissive strength multiplies it: the kit sets none.",
         **stats, nodes=nodes), indent=2) + "\n", encoding="utf-8")

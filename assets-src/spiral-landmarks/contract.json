@@ -1,7 +1,7 @@
 {
   "glb": "public/models/spiral-landmarks/spiral-landmarks.glb",
   "material": "spiral_landmarks",
-  "axes": "Y up, metres; each node's origin is its pivot",
+  "axes": "Y up, metres; each node's origin is its pivot (a bird wing also turns about its shoulder)",
   "tower": {
     "core_radius": 40.0,
     "strut_span_y": [
@@ -13,6 +13,27 @@
   "strut": {
     "length": 170.0,
     "top_y": -0.5
+  },
+  "bird": {
+    "wingspan": 2.4,
+    "forward": "-Z",
+    "flap_axis": "Z",
+    "shoulders": {
+      "bird_wing_l": [
+        -0.08,
+        0.02,
+        0
+      ],
+      "bird_wing_r": [
+        0.08,
+        0.02,
+        0
+      ]
+    }
+  },
+  "airship": {
+    "length": 60,
+    "forward": "-Z"
   },
   "emissive": "blue only; `lamps` gives each lamp's stored linear colour and luminance (0.2126, 0.7152, 0.0722). The runtime's emissive strength multiplies it: the kit sets none.",
   "textures": {
@@ -186,7 +207,7 @@
       "place": "floating: origin at the deck centre, deck top y = 0; 48 m along X, 30 m along Z"
     },
     "station": {
-      "triangles": 280,
+      "triangles": 560,
       "triangle_cap": 800,
       "min": [
         -15.3,
@@ -231,12 +252,12 @@
       "place": "origin at the base, at a launch-gap edge"
     },
     "cloud_a": {
-      "triangles": 352,
+      "triangles": 386,
       "triangle_cap": 400,
       "min": [
         -210.0,
         0.0,
-        -150.001
+        -150.0
       ],
       "max": [
         210.0,
@@ -246,7 +267,7 @@
       "place": "origin at the centre of the flat underside"
     },
     "cloud_b": {
-      "triangles": 352,
+      "triangles": 386,
       "triangle_cap": 400,
       "min": [
         -165.0,
@@ -256,12 +277,12 @@
       "max": [
         165.0,
         64.0,
-        155.0
+        155.001
       ],
       "place": "origin at the centre of the flat underside"
     },
     "cloud_c": {
-      "triangles": 352,
+      "triangles": 386,
       "triangle_cap": 400,
       "min": [
         -250.0,
@@ -276,12 +297,12 @@
       "place": "origin at the centre of the flat underside"
     },
     "peak": {
-      "triangles": 552,
+      "triangles": 750,
       "triangle_cap": 800,
       "min": [
-        -249.999,
+        -250.0,
         0.0,
-        -250.0
+        -249.999
       ],
       "max": [
         250.0,
@@ -289,6 +310,66 @@
         250.0
       ],
       "place": "origin at the base centre; the base ring (y = 0) goes under the cloud sea"
+    },
+    "bird_body": {
+      "triangles": 66,
+      "triangle_cap": 70,
+      "min": [
+        -0.1,
+        -0.087,
+        -0.54
+      ],
+      "max": [
+        0.1,
+        0.087,
+        0.54
+      ],
+      "place": "flying: origin at the body's centre, beak toward -Z; draw both wings on the same pivot"
+    },
+    "bird_wing_l": {
+      "triangles": 28,
+      "triangle_cap": 30,
+      "min": [
+        -1.2,
+        0.02,
+        -0.2
+      ],
+      "max": [
+        -0.08,
+        0.036,
+        0.12
+      ],
+      "place": "the body's pivot; to flap, turn it about Z through its shoulder (`bird.shoulders`), not its origin"
+    },
+    "bird_wing_r": {
+      "triangles": 28,
+      "triangle_cap": 30,
+      "min": [
+        0.08,
+        0.02,
+        -0.2
+      ],
+      "max": [
+        1.2,
+        0.036,
+        0.12
+      ],
+      "place": "the body's pivot; to flap, turn it about Z through its shoulder (`bird.shoulders`), not its origin"
+    },
+    "airship": {
+      "triangles": 778,
+      "triangle_cap": 900,
+      "min": [
+        -7.531,
+        -7.72,
+        -30.0
+      ],
+      "max": [
+        7.531,
+        7.4,
+        30.0
+      ],
+      "place": "flying: origin at the hull's centre, nose toward -Z"
     }
   }
 }

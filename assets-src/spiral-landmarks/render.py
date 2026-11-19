@@ -54,6 +54,16 @@ def lineup(*names, gap):
     return build
 
 
+BIRD = ("bird_body", "bird_wing_l", "bird_wing_r")
+
+
+def flock(scene):
+    """Five birds in a V, seen from 30 m."""
+    for k in range(5):
+        for name in BIRD:
+            place(scene, name, (2.6 * (k - 2), 0.3 * (k % 2), 2.2 * abs(k - 2)))
+
+
 # shot -> (scene builder, eye, target, lens mm)
 SHOTS = {
     "spiral": (spiral, (330, 95, 520), (0, 110, 0), 22),
@@ -69,6 +79,11 @@ SHOTS = {
     "signs": (lineup("chevron_sign", "gap_marker", gap=6), (2.5, 3.2, 12), (0, 2.9, 0), 35),
     "clouds": (lineup("cloud_a", "cloud_b", "cloud_c", gap=470), (150, 190, 1000), (0, 20, 0), 35),
     "peak": (lineup("peak", gap=0), (420, 120, 720), (0, 110, 0), 35),
+    "bird": (lineup(*BIRD, gap=0), (1.5, 1.1, -1.7), (0, 0, 0), 50),
+    "bird_below": (lineup(*BIRD, gap=0), (-0.9, -1.6, -1.5), (0, 0, 0), 50),
+    "bird_far": (flock, (14, -6, -26), (0, 0, 0), 50),
+    "airship": (lineup("airship", gap=0), (46, 9, -50), (0, -1, 2), 35),
+    "airship_below": (lineup("airship", gap=0), (-34, -22, 44), (0, -1, 2), 35),
 }
 
 

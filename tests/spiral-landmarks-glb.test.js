@@ -15,7 +15,7 @@ const contract = JSON.parse(read('assets-src/spiral-landmarks/contract.json'));
 const entry = MODEL_MANIFEST['spiral-landmarks'];
 // The node contract of the kit: triangle cap per node, in the order the runtime lists them.
 const CAPS = { tower: 6000, tower_far: 1200, strut: 300, platform_a: 1500, platform_b: 1500, station: 800, chevron_sign: 120,
-  gap_marker: 200, cloud_a: 400, cloud_b: 400, cloud_c: 400, peak: 800 };
+  gap_marker: 200, cloud_a: 400, cloud_b: 400, cloud_c: 400, peak: 800, bird_body: 70, bird_wing_l: 30, bird_wing_r: 30, airship: 900 };
 const NAMES = Object.keys(CAPS);
 const QUANTIZE = 0.1;   // meshopt stores positions on a 14-bit grid of each node's box: 3 cm on the 540 m tower
 
@@ -51,7 +51,7 @@ test('the manifest entry and the shipped GLB agree, inside the budgets', async (
   assert.deepEqual(entry.materials, [contract.material]);
 });
 
-test('twelve named mesh nodes and nothing else: no light, camera, animation or skin', async () => {
+test('sixteen named mesh nodes and nothing else: no light, camera, animation or skin', async () => {
   const { gltf, json } = await loaded;
   assert.deepEqual(json.nodes.map(node => node.name).sort(), [...NAMES].sort());
   for (const name of NAMES) assert.ok(gltf.scene.getObjectByName(name)?.isMesh, `${name} is one mesh`);
@@ -155,6 +155,47 @@ test('platforms, station, signs, clouds and the peak keep their pivots and sizes
     near(b.min.x + b.max.x, 0, `${name} centred on x`, 0.5);
     near(b.min.z + b.max.z, 0, `${name} centred on z`, 0.5);
   }
+});
+
+// The runtime flaps a wing by turning its node about a front-to-back axis through its shoulder. A node's own
+// dequantization transform is not that pivot (rule 29), so the shoulder is pinned in the vertex positions.
+test('the seabird heads -Z on the kit origin, each wing on its own side of its shoulder', async () => {
+  const { gltf } = await loaded, fine = 0.002;   // 14 bits over a 1.2 m box: under a tenth of a millimetre
+  const body = piece(gltf, 'bird_body'), left = piece(gltf, 'bird_wing_l'), right = piece(gltf, 'bird_wing_r');
+  assert.deepEqual(contract.bird.shoulders, { bird_wing_l: [-0.08, 0.02, 0], bird_wing_r: [0.08, 0.02, 0] });
+  assert.deepEqual([contract.bird.wingspan, contract.bird.forward, contract.bird.flap_axis], [2.4, '-Z', 'Z']);
+  for (const [wing, side] of [[left, -1], [right, 1]]) {
+    const reach = wing.points.map(p => p.x * side), [, sy, sz] = contract.bird.shoulders[wing.mesh.name];
+    near(Math.min(...reach), 0.08, `${wing.mesh.name} root`, fine);
+    near(Math.max(...reach), 1.2, `${wing.mesh.name} tip`, fine);
+    const root = wing.points.filter(p => Math.abs(p.x * side - 0.08) <= fine);
+    assert.ok(root.length >= 3, `${wing.mesh.name}: ${root.length} root vertices on the shoulder plane`);
+    assert.ok(root.every(p => Math.abs(p.y - sy) <= 0.03), `${wing.mesh.name}: the root chord is at the shoulder's height`);
+    assert.ok(Math.min(...root.map(p => p.z)) < sz && Math.max(...root.map(p => p.z)) > sz, `${wing.mesh.name}: the shoulder is on the root chord`);
+    assert.ok(wing.points.every(p => Math.abs(p.y - sy) <= 0.05), `${wing.mesh.name} is flat along X in the glide pose`);
+    const tip = wing.points.reduce((best, p) => (p.x * side > best.x * side ? p : best));
+    assert.ok(tip.z > 0.02, `${wing.mesh.name}: the hand sweeps back from the wrist, tip at z ${tip.z}`);
+  }
+  for (const axis of ['y', 'z']) for (const end of ['min', 'max']) near(left.box[end][axis], right.box[end][axis], `the wings mirror on ${axis}`, fine);
+  near(right.box.max.x - left.box.min.x, 2.4, 'wingspan', 2 * fine);
+  for (const axis of ['x', 'y', 'z']) near(body.box.min[axis] + body.box.max[axis], 0, `body centre ${axis}`, 0.04);
+  assert.ok(across(body.box, 'z') > 0.9 && across(body.box, 'z') < 1.2 && body.box.max.x >= 0.08 && body.box.max.x < 0.14, 'a 1 m body that covers both shoulders');
+  const beak = body.points.filter(p => p.z < body.box.min.z + 0.06), tail = body.points.filter(p => p.z > body.box.max.z - 0.06);
+  assert.ok(beak.every(p => Math.abs(p.x) < 0.03), 'a beak at the -Z end');
+  assert.ok(Math.max(...tail.map(p => p.x)) - Math.min(...tail.map(p => p.x)) > 0.12, 'a tail fan at the +Z end');
+});
+
+test('the airship is about 60 m long on its hull centre, nose toward -Z, fins at the tail', async () => {
+  const { points, box } = piece((await loaded).gltf, 'airship');
+  assert.deepEqual([contract.airship.length, contract.airship.forward], [60, '-Z']);
+  near(box.min.z, -30, 'nose', 0.05);
+  near(box.max.z, 30, 'tail', 0.05);
+  near(box.min.x + box.max.x, 0, 'centred on x', 0.05);
+  const reach = ends => Math.max(...points.filter(ends).map(p => Math.hypot(p.x, p.y)));
+  assert.ok(reach(p => p.z > 20) > 7 && reach(p => p.z < -20) < 5.2, 'tail fins stand out of the hull, the nose is bare');
+  const lowest = points.reduce((best, p) => (p.y < best.y ? p : best));
+  assert.ok(lowest.z < -4 && lowest.y < -6.5 && Math.abs(lowest.x) < 2.5, `the gondola hangs under the forward hull: lowest point ${lowest.x}, ${lowest.y}, ${lowest.z}`);
+  assert.ok(across(box, 'x') < 20 && across(box, 'y') < 20, 'a slender hull: fins and pods inside 20 m');
 });
 
 test('unit normals everywhere and no zero-area triangle', async () => {
