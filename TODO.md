@@ -1,6 +1,7 @@
 # Rival attack pickups
 
-- [x] Integrated the latest develop baseline into the feature candidate. 180 focused tests, type checks, the locked build and both Taipei 390 × 844 fresh-boot camera tests passed.
+- [x] Integrated develop `f9735e4c` into the feature candidate. 180 focused tests, type checks, the locked build and both Taipei 390 × 844 fresh-boot camera tests passed.
+- [x] Reconciled develop `c4d56c15`'s cinematic score with Freeze and EMP cues in the shared mixer. All 110 focused audio, acquisition, status and module-size tests passed.
 - [ ] Verify the updated browser specs on exact-commit CI. The compact Garage spec now expects all catalog categories, including drift trail. The incoming EMP spec advances to the expiry boundary in game time after confirming the visible hit.
 - [x] Add distinct Freeze and EMP impact/recovery sounds through the shared player status and SFX mixer. RED reproduced missing cues and stale shell bounds after a car swap. GREEN passes 152 focused tests and plays distinct waveforms through Chromium Web Audio, with muted output measured at zero.
 - [x] Refit status shells when the active model changes. WebGL verified both effects on the actual Stratosway R2 and Vantaire GT GLBs. The regression iterates the catalog and covers an unlisted model and procedural fallback.
@@ -27,6 +28,11 @@
 - [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.
 - [x] Add one accessible bilingual reveal for real race, mission and redemption outcomes, and document the consumer API.
 - [x] Add per-kind reveal SFX on the shared mixer and expose typed acquisition constants for callers.
+- [x] Use one four-shot reveal for catalog cars, with a localized model title, viewport-aware framing and a static fallback for Low, reduced motion, comfort, disabled effects or failed rendering. Chromium preview captured at desktop 1100 × 720, mobile 390 × 844 and 740 × 360.
+- [x] Add Vantaire GT to the existing Classic settlement at 18 career stars and preserve ownership from prior equipped-car and per-car paint saves. RED → GREEN for the first threshold crossing and no replay for legacy ownership. Local typecheck, production build and unit gate passed (3,416 passed, 4 skipped).
+- [x] RED → GREEN for the film-study camera order, eight distinct reward scores, and stopping only the acquisition score. The live car reveal now matches the study’s low front, side and rear angles before the title cut. Captured actual Chromium WebGL frames and an audible score using the game mixer.
+- [x] RED → GREEN for stereo camera sections, five Garage sound families, and reveal-only sound fade. Verified all 28 Garage cards and their cue routing in Chromium. The locked-production bundle build passed after moving Garage category metadata to the producer.
+- [x] Resolve the develop merge using the feature reveal UI, shot order, and stereo mix. Preserve develop’s 24-hour trial and Go to Garage action, with the permanent 18-star unlock routed through the shared catalog-based reveal.
 - [ ] Confirm physical phone coverage and exact-HEAD CI.
 
 # Measured routes and Home artwork

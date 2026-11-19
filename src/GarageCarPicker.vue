@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CARS, GT_UNLOCK_STARS, gtTrialEndsAt, type CarId } from './car-catalog.ts';
+import { CARS, GT_UNLOCK_STARS, carArtwork, gtTrialEndsAt, type CarId } from './car-catalog.ts';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import { garageCars, garageStudioView } from './garage-view-state.ts';
 import { formatDate, t } from './i18n.ts';
@@ -9,7 +9,7 @@ const props = defineProps<{ locale: string }>();
 const text = (key: string, params?: Record<string, number | string>): string => t(key, params, props.locale);
 const access = (id: CarId) => id === 'crimson-gt' ? garageCars.access : 'owned';
 const trialExpiry = (startedAt: number) => formatDate(gtTrialEndsAt(startedAt), { dateStyle: 'short', timeStyle: 'short' }, props.locale);
-const artworkBase = `${import.meta.env.BASE_URL}feature-assets/garage-public/car-picker/`;
+const artworkBase = import.meta.env.BASE_URL;
 </script>
 
 <template>
@@ -19,7 +19,7 @@ const artworkBase = `${import.meta.env.BASE_URL}feature-assets/garage-public/car
       <button v-for="(_, id) in CARS" :key="id" type="button" :data-car="id" :data-car-access="access(id)" :data-car-preview="garageCars.previewCar === id"
         :aria-label="text('car.' + id)" :aria-describedby="id === 'crimson-gt' && access(id) !== 'owned' ? 'gt-access-detail' : undefined" :aria-pressed="id === garageStudioView.car">
         <span class="garage-car-art" aria-hidden="true">
-          <GarageArtworkImage :src="`${artworkBase}${id}@3x.webp`" :size="144" :height="66" alt="" loading="eager" />
+          <GarageArtworkImage :src="artworkBase + carArtwork(id)" :size="144" :height="66" alt="" loading="eager" />
         </span>
         <span class="garage-car-name">{{ text('car.' + id) }}</span>
         <span class="garage-car-badge" aria-hidden="true">{{ id === garageStudioView.car ? `✓ ${text('car.inUse')}` : access(id) === 'locked' ? text('car.preview') : text('car.select') }}</span>

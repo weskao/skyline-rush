@@ -135,7 +135,7 @@ async function confirmRedemption(): Promise<void> {
   if (result.status === 'completed' && result.operationId && item && result.snapshot.demoInventory.includes(id)) {
     presentAcquisition({ id: demoAcquisitionId('store', request.scope, result.operationId), items: [{
       id, name: item.name, kind: ACQUISITION_KIND.EQUIPMENT, status: 'unlocked', scope: 'demo',
-      artwork: art ? { src: art.src, style: 'icon' } : undefined,
+      equipmentCategory: item.category, artwork: art ? { src: art.src, style: 'icon' } : undefined,
     }] });
   } else if (result.status === 'expired' || result.status.startsWith('insufficient-demo-')) cue('action-unavailable');
 }

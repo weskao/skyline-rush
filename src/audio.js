@@ -1,3 +1,4 @@
+import { acquisitionAudioBuffer } from './acquisition-audio.ts';
 import { FEEDBACK_SOUNDS, ITEM_HIT_TEXTURES, STINGERS } from './feedback-sounds.ts';
 import { musicForMode } from './mode-audio.ts'; import { driftTier } from './drive-rules.ts';
 import { createRaceAudioEvents } from './race-audio-events.ts';
@@ -9,8 +10,10 @@ export function createSound(gapWarning = () => null) {
   let music, warm, hats, snares, song = null, step = 0, nextStep = 0, madeAt = -Infinity;
   let enabled = false, musicOn = false, hidden = false, current = null, resumedAt = -Infinity;
   // Slider levels map to gain on a squared curve so the lower half of the slider stays audibly useful.
-  let effectsLevel = 1, musicLevel = 1, duckUntil = 0, duckFrom = 0;
+  let effectsLevel = 1, musicLevel = 1, duckUntil = 0, duckFrom = 0, duckRatio = .43, acquisitionDuck = false;
   const voices = new Set();
+  const acquisitionVoices = new Map();
+  const acquisitionBuffers = new Map();
   const notes = new Map(); // queued music sources → start time, so a song change or mute can drop the ones not yet heard
   const ignore = () => {};
   // Loading stalls the main thread (shader warm-up ≈ 0.6 s desktop, 1.5 s at 6× CPU) but not the audio thread, so the
@@ -22,13 +25,15 @@ export function createSound(gapWarning = () => null) {
 
   function track(source, nodes, end, cue = true, at = 0) {
     if (cue) voices.add(source); else notes.set(source, at);
-    source.onended = () => { voices.delete(source); notes.delete(source); source.disconnect(); nodes.forEach(node => node.disconnect()); };
+    source.onended = () => { voices.delete(source); acquisitionVoices.delete(source); notes.delete(source); source.disconnect(); nodes.forEach(node => node.disconnect()); };
     source.stop(end);
   }
   function silenceCues() {
     for (const voice of voices) voice.stop();
     voices.clear();
+    acquisitionVoices.clear();
     duckUntil = 0;
+    acquisitionDuck = false;
   }
   function voice(type, frequency, endFrequency, time, duration, volume, attack, destination, cue = true) {
     const source = context.createOscillator();
@@ -42,10 +47,11 @@ export function createSound(gapWarning = () => null) {
     source.connect(envelope).connect(destination);
     source.start(time);
     track(source, [envelope], time + duration + 0.02, cue, time);
+    return source;
   }
-  function tone(frequency, endFrequency, duration, delay = 0, volume = 0.045) {
+  function tone(frequency, endFrequency, duration, delay = 0, volume = 0.045, type = 'sine') {
     if (!enabled || voices.size >= 24) return;
-    voice('sine', frequency, endFrequency, context.currentTime + delay, duration, volume, 0.008, master);
+    return voice(type, frequency, endFrequency, context.currentTime + delay, duration, volume, 0.008, master);
   }
   function hit(destination, time, duration, volume) {
     const source = context.createBufferSource();
@@ -131,21 +137,53 @@ export function createSound(gapWarning = () => null) {
     source.start(now);
     track(source, [band, envelope], now + duration + .02);
   }
+  function playAcquisitionLayer(buffer, at) {
+    const source = context.createBufferSource(), envelope = context.createGain();
+    source.buffer = buffer;
+    source.connect(envelope).connect(master);
+    source.start(at);
+    acquisitionVoices.set(source, envelope);
+    const end = buffer.length / buffer.sampleRate;
+    track(source, [envelope], at + end);
+    return end;
+  }
   function cue(name, startAfter = 0) {
-    if (!enabled || hidden || !context || context.state !== 'running') return;
-    const notes = FEEDBACK_SOUNDS[name];
-    if (notes) {
-      const texture = ITEM_HIT_TEXTURES[name];
-      if (voices.size + notes.length + Number(!!texture) > 24) return;
-      const start = context.currentTime + startAfter;
-      for (const [from, to, duration, delay, volume, type = 'sine'] of notes) {
-        voice(type, from, to, start + delay, duration, volume, .008, master);
+    if (name === 'acquisition-stop') {
+      for (const [source, envelope] of acquisitionVoices) {
+        const now = context.currentTime;
+        if (envelope) envelope.gain.setTargetAtTime(0, now, .009);
+        source.stop(envelope ? now + .045 : undefined);
+        voices.delete(source);
       }
-      if (texture) filteredBurst(...texture, start);
+      acquisitionVoices.clear();
+      if (acquisitionDuck) duckUntil = 0;
+      acquisitionDuck = false;
+      return;
+    }
+    if (!enabled || hidden || !context || context.state !== 'running') return;
+    const acquisition = name.startsWith('acquisition-');
+    const carPremiere = name === 'acquisition-car' || name.startsWith('acquisition-car-');
+    const notes = FEEDBACK_SOUNDS[name.startsWith('acquisition-equipment-') ? 'acquisition-equipment' : name];
+    let buffer = acquisitionBuffers.get(name);
+    if (acquisition && !buffer) {
+      buffer = acquisitionAudioBuffer(context, name);
+      if (buffer) acquisitionBuffers.set(name, buffer);
+    }
+    if (notes || buffer) {
+      const texture = ITEM_HIT_TEXTURES[name];
+      if (voices.size + (notes?.length ?? 0) + Number(!!buffer) + Number(!!texture) > 24) return;
+      const end = buffer ? playAcquisitionLayer(buffer, context.currentTime + startAfter) : 0;
+      for (const [from, to, duration, delay, volume, type] of notes ?? []) {
+        const source = tone(from, to, duration, startAfter + delay, volume, type);
+        if (acquisition && source) acquisitionVoices.set(source, null);
+      }
+      if (texture) filteredBurst(...texture, context.currentTime + startAfter);
       if (STINGERS.has(name)) {
-        const end = Math.max(...notes.map(([, , duration, delay]) => duration + delay));
+        acquisitionDuck = acquisition;
+        duckRatio = carPremiere ? .15 : .43;
         duckFrom = context.currentTime + Math.max(0, startAfter - .05);
-        duckUntil = context.currentTime + startAfter + end;
+        const noteEnd = Math.max(0, ...(notes ?? []).map(([, , duration, delay]) => duration + delay));
+        duckUntil = context.currentTime + startAfter + Math.max(end, noteEnd);
       }
       return;
     }
@@ -346,7 +384,7 @@ export function createSound(gapWarning = () => null) {
         const skid = car.drift ? 0.035 + driftTier(car.drift.time) * 0.012 : car.braking ? 0.035 : 0;
         skidGain.gain.setTargetAtTime(active && car.altitude < 0.2 && car.speed > 15 ? skid : 0, now, 0.06);
         const musicMix = race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65;
-        music.gain.setTargetAtTime(musicOn ? musicLevel * musicMix * (now >= duckFrom && now < duckUntil ? .43 : 1) : 0, now, 0.1);
+        music.gain.setTargetAtTime(musicOn ? musicLevel * musicMix * (now >= duckFrom && now < duckUntil ? duckRatio : 1) : 0, now, 0.1);
         const name = !musicOn ? null : musicForMode(race);
         if (name !== song) { song = name; step = 0; cutMusic(); }
         const urgency = race.mode === 'checkpoint' && race.checkpoint?.timeLeft < 10 ? 1.1 :
