@@ -1,3 +1,12 @@
+# Develop browser CI run 44399876486
+
+- [x] Leaving the Garage drift-trail preview disposed `makeCar`'s shared nozzle and fascia materials, so the game renderer released a program (Studio 140 → 139). `tests/hero-roadster-equipment-browser.spec.js` now leaves a drift preview explicitly: RED 139 on 2bd96471, GREEN 4/4 after `src/garage-drift-preview.ts` draws cloned materials. Drift/animated-artwork/store specs 22/22 on the trial build.
+- [ ] `garage-stage.ts` and `upcoming-showcase.ts` still dispose every `makeCar` material in the game renderer; the next draw recompiles the shared program. Needs a unit RED before changing either.
+- [x] Stale specs after intended changes: Garage tile count and the crimson skin count (catalog-driven now), handoff layout version 3, brake on the opposite thumb (`responsive-map.js`, `browser.spec.js`), hazard heights relative to the classic road elevation, and result-actions last place (the default grid is eight since 43241657; the old `'4'` only matched the race time locally).
+- [ ] `result-cloud-browser.spec.js:194` (phone results dock hit test) failed twice on CI but passes 12/12 locally at `CI=1` and under 6x CPU throttle, with every button the hit target. Not reproduced; next failure needs the covering element.
+- [ ] Boot budgets (`race-modes:358`, `home-shortcuts:246`, `device-quality:107`) miss 7.5 s on CI because Home's setup is painted only after `createWorld` finishes in the same task. Open decision: defer the world build behind a painted frame, or cut the boot cost.
+- [ ] Verify the full GitHub quality gate on the repair commit.
+
 # Develop World Tour camera CI run 44394398766
 
 - [x] Keep the Taipei showroom car clear of scenery through the High-quality portrait orbit with AIRFLOW on. Moving the Home preview from 1,040 m to 1,090 m clears the kerbside bus-stop posts. The 390 × 844 regression failed at 76° and 77° before the fix, then passed with all six Taipei camera cases on Chromium.

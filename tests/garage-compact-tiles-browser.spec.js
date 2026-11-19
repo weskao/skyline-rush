@@ -1,6 +1,7 @@
 import { openGarageSection } from './helpers/garage-browser.js';
 import { test, expect } from './helpers/test.js';
 import { selectLocale } from './helpers/locale-browser.js';
+import { SKIN_CATEGORIES } from '../src/garage-skin-catalog.ts';
 
 // Compact Garage tiles: VFX loadout, badge/rarity gallery and trophy showcase.
 // Less scrolling, but every artwork keeps its native 1x size and no tile is clipped.
@@ -45,9 +46,9 @@ for (const locale of ['en', 'zh-TW']) for (const [width, height] of COMPACT_VIEW
     }
     const { loadout, badge, trophy } = m;
     console.log(JSON.stringify({ width, height, locale, ...m }, (k, v) => k === 'art' ? undefined : v));
-    expect(loadout.art, 'loadout art keeps its native 1x size').toEqual(Array(4).fill([96, 96]));
-    // Four tiles read as a 2x2 block everywhere, including the ~240px column beside the tablet 3D preview.
-    expect([loadout.perRow, loadout.rows], 'loadout tiles per row, rows').toEqual([2, 2]);
+    expect(loadout.art, 'loadout art keeps its native 1x size').toEqual(Array(SKIN_CATEGORIES.length).fill([96, 96]));
+    // One tile per VFX category in two columns everywhere, including the ~240px column beside the tablet 3D preview.
+    expect([loadout.perRow, loadout.rows], 'loadout tiles per row, rows').toEqual([2, Math.ceil(SKIN_CATEGORIES.length / 2)]);
     expect(loadout.tallest, 'loadout tile height').toBeLessThanOrEqual(LOADOUT_MAX);
     expect([loadout.inside, loadout.unclipped], 'loadout tiles fit their grid').toEqual([true, true]);
 

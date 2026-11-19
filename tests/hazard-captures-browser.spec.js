@@ -53,14 +53,16 @@ for (const [name, viewport, hasTouch] of [
           const { classicRoadRoute } = await import('/src/classic-road-routes.ts');
           const race = window.gameplay.race, target = race.hazards[0];
           // Hazards turn with a curved classic road (hazard-render.ts yawAt, world.js): judge the arrow against the road's yaw.
-          const roadYaw = -(classicRoadRoute(race.trackId)?.heading(target.distance) ?? 0);
+          const route = classicRoadRoute(race.trackId), roadYaw = -(route?.heading(target.distance) ?? 0);
+          // Classic roads also climb (world.js classicPosition): the scene is drawn relative to the player's road height.
+          const roadY = (route?.elevation?.(target.distance) ?? 0) - (route?.elevation?.(race.player.distance) ?? 0);
           if (!mesh?.visible || mesh.count === 0) return { count: 0 };
           const m = mesh.matrix.clone(), position = camera.position.clone(), quaternion = camera.quaternion.clone(), scale = camera.scale.clone();
           mesh.getMatrixAt(0, m); m.decompose(position, quaternion, scale);
           const ndc = position.clone().project(camera), pose = hazardPose(target, race.elapsed);
           // The game frame runs before the pin each rAF, so it draws up to one clamped 0.05 s step (src/main.js) past the pin.
           const stepAltitude = hazardPose(target, race.elapsed + 0.05).altitude;
-          return { count: mesh.count, x: position.x, y: position.y, z: position.z, sy: scale.y, yaw: 2 * Math.atan2(quaternion.y, quaternion.w), roadYaw,
+          return { count: mesh.count, x: position.x, y: position.y, z: position.z, sy: scale.y, yaw: 2 * Math.atan2(quaternion.y, quaternion.w), roadYaw, roadY,
             inFrame: ndc.z < 1 && Math.abs(ndc.x) <= 1 && Math.abs(ndc.y) <= 1, poseAltitude: pose.altitude, stepAltitude, height: target.height };
         }, { meshName: c.mesh });
         const expectDrawn = !(c.track === 'tokyo' && time === 3);
@@ -74,14 +76,14 @@ for (const [name, viewport, hasTouch] of [
       }
       const [first, second] = samples;
       if (c.id === 'coast-gust-1') expect(Math.abs(Math.sin((first.yaw - first.roadYaw) / 2))).toBeLessThan(0.01); // seed 1 shoves right: the arrow points along the road's +x
-      if (c.id === 'aurora-ice-1') { expect(first.sy).toBeLessThan(0.1); expect(first.y).toBeLessThan(0.1); }
+      if (c.id === 'aurora-ice-1') { expect(first.sy).toBeLessThan(0.1); expect(Math.abs(first.y - first.roadY)).toBeLessThan(0.1); }
       if (c.id === 'canyon-rock-1') {
         expect(first.poseAltitude).toBeGreaterThan(0.5);
         expect(first.poseAltitude).toBeLessThan(9.5);
         // Drawn at the pose of the frame that rendered it: within one physics step of the pinned time on slow CI frames too.
         const [low, high] = [first.poseAltitude, first.stepAltitude].sort((x, y) => x - y).map(alt => alt + first.height / 2);
-        expect(first.y).toBeGreaterThan(low - 0.02);
-        expect(first.y).toBeLessThan(high + 0.02);
+        expect(first.y - first.roadY).toBeGreaterThan(low - 0.02);
+        expect(first.y - first.roadY).toBeLessThan(high + 0.02);
       }
       // The sweep runs across the road, which a curved classic road turns off world x: measure it on the ground plane.
       if (c.id === 'neon-gate-1') expect(Math.abs(Math.hypot(first.x - second.x, first.z - second.z) - 3.6)).toBeLessThan(0.1);
