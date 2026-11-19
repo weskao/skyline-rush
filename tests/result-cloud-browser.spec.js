@@ -66,11 +66,15 @@ const login = page => page.locator('#result-cloud-login');
 // (Choose track / History sit below the fold), so scroll there like a player would; landscape must fit as is
 // (tests/overlay-landscape-fit-browser.spec.js asserts no scrolling).
 const onScreen = async locator => (await locator.page().viewportSize()).width < 500 ? locator.scrollIntoViewIfNeeded().then(() => visibleHit(locator)) : visibleHit(locator);
+// A miss names itself in the poll's Received (off screen, or what a tap would reach instead). expect.poll runs this
+// outside its retry, so an evaluate that never settles left only "Timeout … waiting on the predicate" (CI 44468157574,
+// not reproduced locally or in Linux); the bounded wait names the locator or the stalled page before the poll gives up.
 const visibleHit = locator => locator.evaluate(element => {
   const r = element.getBoundingClientRect();
+  if (!(r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth)) return `off screen [${[r.left, r.top, r.right, r.bottom].map(Math.round)}] in ${innerWidth}x${innerHeight}`;
   const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-  return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth && element.contains(hit);
-});
+  return element.contains(hit) || `covered by ${hit?.outerHTML.slice(0, 120) ?? 'nothing'}`;
+}, undefined, { timeout: ciTimeout(8000) });
 const shot = async (page, name, tag) => {
   if (!SHOTS) return;
   await page.waitForTimeout(ciTimeout(900)); // screenshots only: let the slide-in and count-up settle
