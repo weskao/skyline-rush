@@ -1,4 +1,5 @@
 import { acquisitionAudioBuffer } from './acquisition-audio.ts';
+import { createLoopingNoiseGain } from './audio-noise.ts';
 import { FEEDBACK_SOUNDS, STINGERS } from './feedback-sounds.ts';
 import { musicForMode } from './mode-audio.ts'; import { driftTier } from './drive-rules.ts';
 import { createRaceAudioEvents } from './race-audio-events.ts';
@@ -248,20 +249,6 @@ export function createSound(gapWarning = () => null) {
     track(source, [lowpass, envelope], now + 0.38);
     tone(landing ? 75 : 130, 38, 0.22, 0, intensity * 0.07);
   }
-  function noise(frequency, type) {
-    const source = context.createBufferSource();
-    source.buffer = noiseBuffer;
-    source.loop = true;
-    const band = context.createBiquadFilter();
-    band.type = type;
-    band.frequency.value = frequency;
-    band.Q.value = 0.6;
-    const level = context.createGain();
-    level.gain.value = 0;
-    source.connect(band).connect(level).connect(master);
-    source.start();
-    return level;
-  }
   function filtered(type, frequency) {
     const node = context.createBiquadFilter();
     node.type = type;
@@ -305,9 +292,9 @@ export function createSound(gapWarning = () => null) {
       noiseBuffer = context.createBuffer(1, context.sampleRate, context.sampleRate);
       const data = noiseBuffer.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-      thrustGain = noise(950, 'bandpass');
-      windGain = noise(400, 'lowpass');
-      skidGain = noise(2300, 'bandpass');
+      thrustGain = createLoopingNoiseGain(context, noiseBuffer, master, 950, 'bandpass');
+      windGain = createLoopingNoiseGain(context, noiseBuffer, master, 400, 'lowpass');
+      skidGain = createLoopingNoiseGain(context, noiseBuffer, master, 2300, 'bandpass');
       warm = filtered('lowpass', 1800);
       hats = filtered('highpass', 7000);
       snares = filtered('bandpass', 1800);
