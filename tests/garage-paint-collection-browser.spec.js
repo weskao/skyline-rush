@@ -1,3 +1,4 @@
+import { seedGtCareer } from './helpers/gt-progress.js';
 import { test, expect, openGarage } from './helpers/test.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { mkdir } from 'node:fs/promises';
@@ -74,7 +75,7 @@ test('Garage selection has no press sweep and keeps previews separate from equip
 
 test('Garage can undo an owned paint after switching cars and still preview a locked finish', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(() => localStorage.setItem('skyline-rush-stars', JSON.stringify({ coast: 3, neon: 3, canyon: 3, aurora: 3, spiral: 3, taipei: 3 })));
+  await seedGtCareer(page);
   await page.goto('/');
   await page.locator('#garage-button').click();
   const paints = page.getByRole('button', { name: 'Paints', exact: true });

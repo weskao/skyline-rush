@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createAcquisitionQueue } from '../src/acquisition-reveal.ts';
+import { acquisitionReveal, createAcquisitionQueue } from '../src/acquisition-reveal.ts';
 import { demoAcquisitionItems, missionTrophy } from '../src/acquisition-demo-items.ts';
+import { presentRaceAcquisitions, raceAcquisitionItems } from '../src/acquisition-race-reveal.ts';
 
 const item = { id: 'gt', kind: 'car', status: 'unlocked', name: { en: 'Vantaire GT', 'zh-TW': '夜鋒 GT' } };
 
@@ -39,6 +40,34 @@ test('only claims counted by the existing mission board reveal the next trophy t
   assert.equal(missionTrophy('daily-race', snapshot), undefined);
 });
 
+test('the newly unlocked GT leads a single shared race reward batch', async () => {
+  const race = { mode: 'classic', rivals: [{}], result: { success: true, position: 1 } };
+  const cues = [];
+  const cue = (name, delay) => cues.push([name, delay]);
+  const result = { unlockedCars: ['crimson-gt'], unlockedTrack: true, next: 'neon', unlockedPaints: [], medals: [], challengeMedals: [] };
+  await presentRaceAcquisitions(race, result, cue, true);
+  const batch = acquisitionReveal.current();
+  assert.ok(batch);
+  try {
+    assert.deepEqual(batch.items[0], {
+      id: 'crimson-gt', kind: 'car', status: 'unlocked',
+      name: { en: 'Vantaire GT', 'zh-TW': '夜鋒 GT' },
+      artwork: { src: 'feature-assets/garage-public/car-picker/crimson-gt@3x.webp', style: 'cutout' },
+    });
+    assert.deepEqual(batch.items.map(item => item.id), ['crimson-gt', 'neon']);
+    await presentRaceAcquisitions(race, result, cue, true);
+  } finally {
+    acquisitionReveal.dismiss(batch.id);
+  }
+  assert.equal(acquisitionReveal.current(), null);
+  assert.deepEqual(cues, [], 'the shared reveal owns the celebration audio');
+});
+
+test('other race rewards do not present an already available or trial GT', () => {
+  assert.deepEqual(raceAcquisitionItems({
+    unlockedCars: [], unlockedTrack: true, next: 'neon', unlockedPaints: [], medals: [], challengeMedals: [],
+  }).map(item => item.id), ['neon']);
+});
 
 test('the vehicle premiere uses a low front dolly, a broadside pass, a rear push and a title hold', async () => {
   const { CAR_REVEAL_MS, carRevealShot } = await import('../src/acquisition-car-camera.ts');

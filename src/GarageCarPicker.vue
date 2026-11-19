@@ -1,35 +1,48 @@
 <script setup lang="ts">
-import { CARS, carArtwork, type CarId } from './car-catalog.ts';
+import { CARS, GT_UNLOCK_STARS, carArtwork, gtTrialEndsAt, type CarId } from './car-catalog.ts';
 import GarageArtworkImage from './GarageArtworkImage.vue';
-import { garageStudioView } from './garage-view-state.ts';
-import { t } from './i18n.ts';
+import { garageCars, garageStudioView } from './garage-view-state.ts';
+import { formatDate, t } from './i18n.ts';
 
 // garage-ui.ts owns the click (equip, save, world); this component only renders the cars and which one is in use.
 const props = defineProps<{ locale: string }>();
-const text = (key: string): string => t(key, undefined, props.locale);
+const text = (key: string, params?: Record<string, number | string>): string => t(key, params, props.locale);
+const access = (id: CarId) => id === 'crimson-gt' ? garageCars.access : 'owned';
+const trialExpiry = (startedAt: number) => formatDate(gtTrialEndsAt(startedAt), { dateStyle: 'short', timeStyle: 'short' }, props.locale);
 const artworkBase = import.meta.env.BASE_URL;
-const available = (id: CarId): boolean => garageStudioView.availableCars.includes(id);
-const unlockHint = (id: CarId): string => t('car.unlockStars', { stars: CARS[id].stars }, props.locale);
 </script>
 
 <template>
   <section class="garage-cars">
     <h3 id="garage-cars-title">{{ text('garage.cars') }}</h3>
     <div class="garage-car-options" role="group" :aria-label="text('garage.cars.pick')">
-      <button v-for="(_, id) in CARS" :key="id" type="button" :data-car="id"
-        :disabled="!available(id)" :aria-pressed="id === garageStudioView.car"
-        :aria-label="available(id) ? text('car.' + id) : text('car.' + id) + ' · ' + unlockHint(id)">
+      <button v-for="(_, id) in CARS" :key="id" type="button" :data-car="id" :data-car-access="access(id)" :data-car-preview="garageCars.previewCar === id"
+        :aria-label="text('car.' + id)" :aria-describedby="id === 'crimson-gt' && access(id) !== 'owned' ? 'gt-access-detail' : undefined" :aria-pressed="id === garageStudioView.car">
         <span class="garage-car-art" aria-hidden="true">
           <GarageArtworkImage :src="artworkBase + carArtwork(id)" :size="144" :height="66" alt="" loading="eager" />
         </span>
         <span class="garage-car-name">{{ text('car.' + id) }}</span>
-        <span class="garage-car-badge" aria-hidden="true">{{ id === garageStudioView.car ? `✓ ${text('car.inUse')}` : available(id) ? text('car.select') : unlockHint(id) }}</span>
+        <span class="garage-car-badge" aria-hidden="true">{{ id === garageStudioView.car ? `✓ ${text('car.inUse')}` : access(id) === 'locked' ? text('car.preview') : text('car.select') }}</span>
       </button>
     </div>
+    <div v-if="garageCars.access !== 'owned'" id="gt-access-detail" class="garage-gt-access">
+      <span>{{ text('car.gt.progress', { stars: garageCars.stars, need: GT_UNLOCK_STARS }) }}</span>
+      <span v-if="garageCars.access === 'trial' && garageCars.trialStartedAt !== undefined">
+        {{ text('car.gt.trialUntil', { time: trialExpiry(garageCars.trialStartedAt) }) }}
+      </span>
+      <button v-else-if="garageCars.trialStartedAt === undefined" type="button" class="text-button" data-gt-trial>
+        {{ text('car.gt.startTrial') }}
+      </button>
+      <span v-else>{{ text('car.gt.trialEnded') }}</span>
+    </div>
+    <p v-if="garageCars.trialError" class="garage-gt-access" role="status">{{ text('car.gt.trialError') }}</p>
   </section>
 </template>
 
 <style>
+.garage-gt-access { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin: 6px 0 0; font-size: .8rem; color: #cfdaeb; }
+.garage-gt-access .text-button { min-height: 44px; padding: 5px 10px; }
+#garage-screen .garage-car-options button[data-car-preview="true"] { border-color: #8eaff2; }
 /* Same card language as the paint collection (garage-card-styles.css): cyan frame = selected, teal pill = in use. */
 #garage-screen .garage-car-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
 #garage-screen .garage-car-options button {
@@ -42,7 +55,6 @@ const unlockHint = (id: CarId): string => t('car.unlockStars', { stars: CARS[id]
   transition: border-color .18s ease, box-shadow .18s ease, color .18s ease, transform .12s ease;
 }
 #garage-screen .garage-car-options button[data-car="crimson-gt"] { --car-light: #ed606655; }
-#garage-screen .garage-car-options button:disabled { cursor: default; }
 #garage-screen .garage-car-options button:active { transform: scale(.98); }
 #garage-screen .garage-car-options button:focus-visible { outline: 3px solid #dbffff; outline-offset: 2px; }
 /* The car not in use steps back, so the lit one reads as the choice at a glance. */
@@ -58,9 +70,9 @@ const unlockHint = (id: CarId): string => t('car.unlockStars', { stars: CARS[id]
   transition: color .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 @media (hover: hover) {
-  #garage-screen .garage-car-options button:not(:disabled):hover { border-color: #7fc4ea; color: #e6f4ff; }
-  #garage-screen .garage-car-options button:not(:disabled):hover .garage-car-art { filter: none; }
-  #garage-screen .garage-car-options button:not(:disabled):hover .garage-car-badge { border-color: #7fc4ea; color: #e6f4ff; }
+  #garage-screen .garage-car-options button:hover { border-color: #7fc4ea; color: #e6f4ff; }
+  #garage-screen .garage-car-options button:hover .garage-car-art { filter: none; }
+  #garage-screen .garage-car-options button:hover .garage-car-badge { border-color: #7fc4ea; color: #e6f4ff; }
 }
 #garage-screen .garage-car-options button[aria-pressed="true"] {
   border-color: #3df2ff; color: #f5fbff;

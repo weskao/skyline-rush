@@ -16,9 +16,17 @@ export function updateGarageView(fields: Partial<GarageView>) {
   Object.assign(garageView, fields);
 }
 
-export const garageStudioView = reactive<{ page: 'home' | 'studio'; angle: string; autoRotate: boolean; mode: 'ground' | 'flight'; wing: boolean; lighting: GarageLighting; effectsVisible: boolean; effectsReminder: number; ownedPaints: string[]; equippedPaint: string; car: CarId; availableCars: CarId[] }>({
-  page: 'home', angle: '', autoRotate: true, mode: 'ground', wing: false, lighting: 'bright', effectsVisible: true, effectsReminder: 0, ownedPaints: ['pearl', 'crimson'], equippedPaint: 'pearl', car: 'roadster', availableCars: ['roadster'],
+export const garageStudioView = reactive<{ page: 'home' | 'studio'; angle: string; autoRotate: boolean; mode: 'ground' | 'flight'; wing: boolean; lighting: GarageLighting; effectsVisible: boolean; effectsReminder: number; ownedPaints: string[]; equippedPaint: string; car: CarId }>({
+  page: 'home', angle: '', autoRotate: true, mode: 'ground', wing: false, lighting: 'bright', effectsVisible: true, effectsReminder: 0, ownedPaints: ['pearl', 'crimson'], equippedPaint: 'pearl', car: 'roadster',
 });
 export function updateGarageStudioView(fields: Partial<typeof garageStudioView>) {
   Object.assign(garageStudioView, fields);
 }
+
+export const garageCars = reactive({
+  stars: 0,
+  trialStartedAt: undefined as number | undefined,
+  access: 'locked' as ReturnType<typeof import('./car-catalog.ts').gtAccess>,
+  previewCar: null as CarId | null,
+  trialError: false,
+});

@@ -126,8 +126,9 @@ test('earning the 18th career star reveals Vantaire GT once and makes it selecta
   await page.goto(gameplayURL);
   await page.locator('#garage-button').click();
   const gt = page.locator('#garage-screen [data-car="crimson-gt"]');
-  await expect(gt).toBeDisabled();
-  await expect(gt).toContainText('18 stars');
+  await expect(gt).toHaveAttribute('data-car-access', 'locked');
+  await expect(gt).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByText('17 / 18 Career stars')).toBeVisible();
   await page.locator('#garage-close').click();
 
   await finishCoast(page);
@@ -139,7 +140,7 @@ test('earning the 18th career star reveals Vantaire GT once and makes it selecta
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
   await expect(reveal).toBeHidden();
   await page.locator('#garage-button').click();
-  await expect(gt).toBeEnabled();
+  await expect(gt).toHaveAttribute('data-car-access', 'owned');
   await gt.click();
   await expect(gt).toHaveAttribute('aria-pressed', 'true');
   await expect(reveal).toBeHidden();

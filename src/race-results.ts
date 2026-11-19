@@ -10,7 +10,7 @@ import type { createGhostStore } from './ghost-store.ts';
 import { recordChallengeMedals, type ChallengeMedalId } from './history-challenge-medals.ts';
 import { addStuntHeat, stuntHeatContinues, type StuntRun } from './stunt-attack.ts';
 import { ownedPaints } from './appearance.ts';
-import { availableCars, type CarId } from './car-catalog.ts';
+import { earnedCars, type CarId } from './car-catalog.ts';
 import { settleWave3RaceDemo } from '#wave3-demo-race';
 export { captureWave3RaceTelemetry } from '#wave3-demo-race';
 export interface RaceSeries { sprintSeries: SprintSeries | null; cup: CupState | null; stunt: StuntRun | null }
@@ -139,12 +139,12 @@ function settleOnce(race: FinishedRace, { series, progress, ghosts, daily, trace
     if (record && recordTrackId(trackId) === 'coast') try { localStorage.setItem(LEGACY_BEST_KEY, String(best)); } catch { /* A blocked personal-best store never blocks the results. */ }
     const previousStars = starTotal(progress.stars);
     const previousPaints = ownedPaints(previousStars);
-    const previousCars = availableCars(previousStars);
+    const previousCars = earnedCars(previousStars);
     recordStars(trackId, race.result.stars);
     progress.stars[trackId] = Math.max(progress.stars[trackId] ?? 0, race.result.stars);
     const totalStars = starTotal(progress.stars);
     unlockedPaints = ownedPaints(totalStars).filter(id => !previousPaints.includes(id));
-    unlockedCars = availableCars(totalStars).filter(id => !previousCars.includes(id));
+    unlockedCars = earnedCars(totalStars).filter(id => !previousCars.includes(id));
   }
   if (race.mode === 'custom' && trace) ghosts.saveCustom(race, { time: race.elapsed, samples: trace });
   let challengeMedals: ChallengeMedalId[] = [];

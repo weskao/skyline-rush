@@ -37,8 +37,11 @@ test('account switch clears trial and selected preview; disabling flag revokes e
 
 test('short-lived trial expires automatically and notifies subscribers without another click', async () => {
   setGarageSkinAccount('timer_driver');
-  setGarageSkinTrial(true, Date.now() + 50);
   assert.equal(equipGarageSkin('thruster-ion'), true);
+  // Arm the short window only after equipping: a loaded CPU (full suite in pre-push) can spend
+  // 50 ms between arming and equipping, and an expired trial correctly refuses the equip.
+  setGarageSkinTrial(true, Date.now() + 50);
+  assert.equal(currentGarageSkins().thruster, 'thruster-ion');
   let revoked = false;
   const unsubscribe = subscribeGarageSkins(() => {
     if (currentGarageSkins().thruster === 'thruster-basic') revoked = true;
