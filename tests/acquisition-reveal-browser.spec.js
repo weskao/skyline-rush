@@ -99,7 +99,7 @@ test('the production reveal component queues batches, defers during a race, and 
   await expect(reveal.getByRole('heading', { name: 'Aurora' })).toBeVisible();
   await reveal.getByRole('button', { name: 'Ion thruster' }).tap();
   await expect.poll(() => page.evaluate(() => window.revealCues.map(([name]) => name))).toEqual([
-    'acquisition-car', 'acquisition-stop', 'acquisition-equipment', 'acquisition-stop',
+    'acquisition-car', 'acquisition-stop', 'acquisition-equipment-thruster', 'acquisition-stop',
     'acquisition-paint', 'acquisition-stop', 'acquisition-select',
   ]);
   await expect(proceed).toBeInViewport();

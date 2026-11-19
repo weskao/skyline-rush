@@ -3,19 +3,6 @@ import { ACQUISITION_KIND, type AcquisitionKind } from './acquisition-reveal.ts'
 // [start Hz, end Hz, length, delay, gain, waveform]. All motifs go through the SFX bus.
 type Note = readonly [number, number, number, number, number, OscillatorType?];
 export const FEEDBACK_SOUNDS = {
-  'acquisition-car': [[76, 41, .68, 0, .072], [68, 146.83, .81, .07, .033, 'triangle'],
-    [220, 146.83, .42, .19, .022, 'triangle']],
-  'acquisition-car-signature': [[73.42, 57, .62, 0, .075], [110, 146.83, .66, .07, .045, 'triangle'],
-    [293.66, 293.66, .82, .29, .028], [440, 440, .69, .5, .016, 'triangle']],
-  'acquisition-car-profile': [[260, 73.42, .52, 0, .054, 'triangle'], [146.83, 146.83, .69, .11, .045],
-    [349.23, 349.23, .62, .24, .025, 'triangle'], [440, 587.33, .52, .38, .022]],
-  'acquisition-car-thrusters': [[98, 39, .59, 0, .086], [63, 130.81, .61, .04, .038, 'sawtooth'],
-    [146.83, 146.83, .66, .32, .04, 'triangle'], [261.63, 440, .61, .60, .028, 'triangle'],
-    [440, 660, .38, 1.03, .015]],
-  'acquisition-car-hero': [[98, 38, .73, 0, .095], [73.42, 73.42, 1.34, .01, .055, 'triangle'],
-    [146.83, 146.83, 1.27, .045, .043, 'triangle'], [293.66, 293.66, 1.19, .11, .036, 'triangle'],
-    [349.23, 349.23, 1.02, .20, .033, 'triangle'], [440, 440, .94, .28, .032, 'triangle'],
-    [587.33, 587.33, .84, .39, .029], [880, 880, .53, .59, .020]],
   'acquisition-track': [[294, 220, .30, 0, .046], [68, 43, .41, 0, .055],
     [146.83, 220, .41, .09, .035, 'triangle'], [293.66, 293.66, .52, .20, .038, 'triangle'],
     [440, 587.33, .53, .35, .035], [784, 784, .42, .54, .022]],
@@ -72,7 +59,7 @@ export const ACQUISITION_SOUNDS = {
   [ACQUISITION_KIND.ITEM]: 'acquisition-item',
   [ACQUISITION_KIND.MEDAL]: 'acquisition-medal',
   [ACQUISITION_KIND.CURRENCY]: 'acquisition-currency',
-} as const satisfies Readonly<Record<AcquisitionKind, keyof typeof FEEDBACK_SOUNDS>>;
+} as const satisfies Readonly<Record<AcquisitionKind, keyof typeof FEEDBACK_SOUNDS | 'acquisition-car'>>;
 
 export const STINGERS = new Set([
   'victory', 'achievement-earned', 'tutorial-complete', 'halfway', 'acquisition-track', 'acquisition-medal',

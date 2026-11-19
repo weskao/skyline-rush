@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, onUnmounted, shallowRef, ref, watchPostEffect } from 'vue';
-import { acquisitionReveal, type AcquisitionBatch, type AcquisitionKind } from './acquisition-reveal.ts';
+import { acquisitionReveal, type AcquisitionBatch, type AcquisitionItem, type AcquisitionKind } from './acquisition-reveal.ts';
 import { getLocale, onLocaleChange } from './i18n.ts';
 import { dialogNavigation } from './dialog-navigation.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
@@ -86,10 +86,16 @@ watchPostEffect(() => {
     nav.open();
     presenting.value = true;
     viewed.add(0);
-    cue(ACQUISITION_SOUNDS[first.kind]);
+    cue(rewardCue(first));
     primary.value?.focus({ preventScroll: true });
   }
 });
+
+function rewardCue(reward: AcquisitionItem): string {
+  return reward.kind === 'equipment' && reward.equipmentCategory
+    ? 'acquisition-equipment-' + reward.equipmentCategory
+    : ACQUISITION_SOUNDS[reward.kind];
+}
 
 function selectReward(index: number): void {
   if (selected.value === index) return;
@@ -101,7 +107,7 @@ function selectReward(index: number): void {
   firstLook.value = !viewed.has(index);
   viewed.add(index);
   selected.value = index;
-  cue(firstLook.value ? ACQUISITION_SOUNDS[reward.kind] : 'acquisition-select');
+  cue(firstLook.value ? rewardCue(reward) : 'acquisition-select');
 }
 
 function showShot(angle: CarRevealShot | ''): void {
