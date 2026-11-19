@@ -23,6 +23,7 @@
 - [x] After the startup gate exits, bring the Home setup and tools in from opposite sides by group. Use shorter lifts on narrow portrait and foldable layouts, a fade on Low, and instant controls with effects off, comfort, or reduced motion. The integration test was RED without the handoff animation and is GREEN with it. The landscape Chromium guard verifies the Start rail animates independently of the scroller and keeps keyboard focus.
 - [x] Fill the three startup lights continuously from the currently visible value. Keep each loading stage below completion until the first 3D frame succeeds, then settle the fill before offering Enter. Give Enter an amber hover surface, a one-shot sweep and a short arrow movement.
 - [x] Stage Home controls before the splash fades. Wide layouts start outside the viewport; compact and folded layouts lift a few pixels in place. Keep keyboard focus on Start after handoff and keep the fixed-rail ancestors out of the animation. Both startup handoff and progress tests reproduced the old behavior before the fix.
+- [x] Restore the race effects bus when opening music already runs on the shared AudioContext. Confirmed that the old lobby skipped the saved SFX setting, then verified the saved 65% level and the original engine, Boost and Nitro cues with native Chromium Web Audio. The SFX switch and saved preferences still apply.
 - [ ] Confirm the full GitHub quality gate and physical iOS/Android/foldable devices.
 
 # Develop World Tour camera CI run 44394398766
