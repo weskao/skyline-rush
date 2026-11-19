@@ -125,6 +125,20 @@ test('the first wait after a page load keeps the default expect budget', () => {
   assert.deepEqual(offenders, [], 'Drop the short timeout: Home renders after the dynamic main.js import (.claude/rules/browser-test-stability.md)');
 });
 
+test('a key press after a page load waits for the game to listen', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/\bpage\.goto\(/.test(line)) return [];
+      // Only blank lines, comments and the font wait may sit between the load and its first key press.
+      let j = i + 1;
+      while (j < lines.length && /^\s*(\/\/.*)?$|document\.fonts\.ready/.test(lines[j])) j++;
+      return /^\s*await page\.keyboard\./.test(lines[j] ?? '') ? [`tests/${file}:${j + 1}: ${lines[j].trim()}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Load with gotoHome(page): main.js attaches the key listener after page.goto resolves (.claude/rules/browser-test-stability.md)');
+});
+
 test('CI retries a failed browser test once and still reports it; local runs never retry', () => {
   for (const ci of ['1', undefined]) {
     const env = { ...process.env };

@@ -116,6 +116,11 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   The first wait after `page.goto` keeps the default expect budget. Trap (2026-11-19): the lobby
   summaries spec gave `.route-drivers` 2.5 s and saw it empty in 1 of 3 local runs, which blocked the
   pre-push layout gate. Enforced by `tests/browser-timeouts.test.js` (*first wait after a page load*).
+  A key pressed before `main.js` subscribes is lost for good, so no wait retries it. Trap (2026-11-20, since
+  `74da0992`): the airflow showcase spec pressed `v` straight after `page.goto` and failed 7 of 7 viewports;
+  the "music-off stays silent" spec passed without the game hearing its gesture. Load with `gotoHome(page)`
+  (`tests/helpers/test.js`) before the first key press. Enforced by the same test file (*key press after a
+  page load*).
 - **A test must fit its budget with room to spare on CI.** CI steps the game at about 1/4 speed (each slow
   frame is clamped to 0.05 s), so a flow that plays N s of game time needs about 4N s of wall clock. A test
   whose passing CI run (the `(1.7m)` in the job log) uses more than about half of its budget gets an explicit
