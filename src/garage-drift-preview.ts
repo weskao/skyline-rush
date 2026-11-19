@@ -18,9 +18,15 @@ export function createGarageDriftPreview(canvas: HTMLCanvasElement, carId: CarId
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#121b28');
   const car = makeCar(CAR_STYLES.roadster, paint);
-  const ownedMaterials = new Set<THREE.Material>();
+  // makeCar reuses module-level materials (nozzles, fascia trim) with the game's cars, and dispose() reaches every
+  // renderer: this second renderer draws its own copies so disposing them never releases a game program.
+  const ownedMaterials = new Map<THREE.Material, THREE.Material>();
+  const own = (material: THREE.Material) => {
+    if (!ownedMaterials.has(material)) ownedMaterials.set(material, material.clone());
+    return ownedMaterials.get(material)!;
+  };
   car.traverse(object => {
-    if (object instanceof THREE.Mesh) for (const material of [object.material].flat()) ownedMaterials.add(material);
+    if (object instanceof THREE.Mesh) object.material = Array.isArray(object.material) ? object.material.map(own) : own(object.material);
   });
   scene.add(car, new THREE.HemisphereLight('#d7e9ff', '#63566b', 2.65));
   const light = new THREE.DirectionalLight('#ede9ff', 2.7);
@@ -114,7 +120,7 @@ export function createGarageDriftPreview(canvas: HTMLCanvasElement, carId: CarId
       cache.dispose();
       ktx2?.dispose();
       skids.dispose();
-      for (const material of ownedMaterials) material.dispose();
+      for (const material of ownedMaterials.values()) material.dispose();
       for (const object of [grid, pad]) { object.geometry.dispose(); object.material.dispose(); }
       renderer.dispose();
       renderer.forceContextLoss();

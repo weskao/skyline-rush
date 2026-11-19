@@ -243,7 +243,7 @@ test('keyboard can step the showcase angle without starting a race', async ({ pa
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const previous = page.locator('#showcase-camera-prev');
-  await expect(previous).toBeVisible({ timeout: ciTimeout(2500) });
+  await expect(previous).toBeVisible();
   await previous.focus();
   await page.keyboard.press('Enter'); // Drive wraps back to the last view
   await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view', 'orbit');

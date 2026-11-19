@@ -88,7 +88,7 @@ test.describe('touch controls', () => {
     await expect(page.locator('#layout-toolbar')).toBeHidden();
     await expect(page.locator('#race-status')).toHaveText('RACING');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-controls-layout-v2')));
-    expect(saved.version).toBe(2);
+    expect(saved.version).toBe(3);
     expect(Object.keys(saved.landscape)).toHaveLength(7);
     expect(saved.portrait).toEqual({});
     await page.reload();

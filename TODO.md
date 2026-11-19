@@ -1,3 +1,8 @@
+# CI browser regression repair (2026-11-20)
+
+- [x] Trace the failures in [the previous full CI run](https://github.com/weskao/skyline-rush/actions/runs/44527278699). Align browser assertions with the current catalog, controls, graphics tiers and result UI. The preview now disposes only its own copies of car materials. Locally the focused module-size and browser-guard checks passed.
+- [ ] Verify the full quality gate on the repair commit. Local Playwright cannot start Chromium because the runner denies the browser's socket operation.
+
 # Motorsport rival chassis
 
 - [x] Redesign seven race opponents with original canopy, fender, rear-lamp, aero and race-graphics packages.
