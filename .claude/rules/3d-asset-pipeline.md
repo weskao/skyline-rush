@@ -8,7 +8,6 @@ paths:
   - "src/asset-model-loader.ts"
   - "src/model-manifest.ts"
   - "src/garage-model.ts"
-  - "src/car-reflections.ts"
   - "src/car-catalog.ts"
   - "scripts/dev-3d-redirect-plugin.mjs"
   - "tests/model-asset-*.js"
@@ -16,12 +15,6 @@ paths:
 ---
 
 # AI and Blender 3D asset pipeline (planning rule)
-
-## Exterior vehicle highlights
-
-Inspect the direct key light and the environment map separately with the car on the road and pitched or banked in flight. Tight GGX highlights on paint, glass and clear coat can bloom even with a blurred environment map. Use the shared exterior roughness response in `src/car-reflections.ts` for race car materials, including fallback and GLB instances. Changing a paint mid-session must retain that response. Give each GLB instance its own materials before adjusting the finish. Keep the track's light direction, scenery exposure and luminous cues available when evaluating the fix. On Coast at dusk, the wet road and the bright horizon must stay below the bloom threshold where they cover the driving sightline. Guard: `tests/coast-look.test.js`. Material guards: `tests/car-reflections.test.js` and `tests/garage-model.test.js`.
-
-## Asset toolchain
 
 Before any Blender asset, GLB import, texture, loader, compression or asset pipeline work:
 1. Read docs/superpowers/specs/3d-visual-fidelity-pipeline-design-v2.md and the corresponding implementation plan and local toolchain preflight.
