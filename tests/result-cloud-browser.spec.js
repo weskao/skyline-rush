@@ -66,11 +66,14 @@ const login = page => page.locator('#result-cloud-login');
 // (Choose track / History sit below the fold), so scroll there like a player would; landscape must fit as is
 // (tests/overlay-landscape-fit-browser.spec.js asserts no scrolling).
 const onScreen = async locator => (await locator.page().viewportSize()).width < 500 ? locator.scrollIntoViewIfNeeded().then(() => visibleHit(locator)) : visibleHit(locator);
-const visibleHit = locator => locator.evaluate(element => {
-  const r = element.getBoundingClientRect();
-  const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-  return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth && element.contains(hit);
-});
+const hitTargets = locator => locator.evaluateAll(elements => elements.map(element => {
+  const target = element.id || element.textContent.trim();
+  const rect = element.getBoundingClientRect();
+  if (rect.top < 0 || rect.bottom > innerHeight || rect.left < 0 || rect.right > innerWidth) return `${target} is off screen`;
+  const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  return element.contains(hit) || `${target} hit ${hit?.outerHTML.slice(0, 120) ?? 'nothing'}`;
+}));
+const visibleHit = async locator => (await hitTargets(locator))[0] ?? 'control not found';
 const shot = async (page, name, tag) => {
   if (!SHOTS) return;
   await page.waitForTimeout(ciTimeout(900)); // screenshots only: let the slide-in and count-up settle
@@ -199,15 +202,16 @@ test.describe('mobile results navigation dock', () => {
     const overlay = page.locator('#race-overlay');
     const primary = overlay.locator('button[data-primary-action]');
     const history = overlay.locator('[data-open-history]');
-    const choose = overlay.locator('#choose-track');
-    await expect.poll(() => Promise.all([primary, history, choose].map(visibleHit))).toEqual([true, true, true]);
+    const actions = overlay.locator('button[data-primary-action], [data-open-history], #choose-track');
+    // Read every hit target in one browser tick, including on a software renderer.
+    await expect.poll(() => hitTargets(actions)).toEqual([true, true, true]);
     await expect(overlay).toHaveJSProperty('scrollTop', 0);
     await shot(page, 'mobile-results', 'portrait-402x874');
 
     await page.mouse.move(190, 440);
     await page.mouse.wheel(0, 500);
     await expect.poll(() => overlay.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
-    await expect.poll(() => Promise.all([primary, history, choose, login(page)].map(visibleHit))).toEqual([true, true, true, true]);
+    await expect.poll(() => hitTargets(actions.or(login(page)))).toEqual([true, true, true, true]);
     await shot(page, 'mobile-results-scrolled', 'portrait-402x874');
     await history.tap();
     await expect(page.locator('#history-tab-races')).toBeFocused();

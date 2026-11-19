@@ -151,6 +151,16 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   `openGarage()` and follow pause/results/history with `await settled(<overlay locator>)` (both in
   `tests/helpers/test.js`); never loosen a pixel bound to absorb it. Enforced by the same test file
   (*overlay geometry*) for every spec that opens one of them and then calls `getBoundingClientRect`/`boundingBox`.
+- **Judge a boot budget at first paint, in the page.** Playwright reads the page on its main thread. Home paints
+  before the world is built, but `createWorld` then holds that thread for seconds on CI's software WebGL, so
+  `toHaveText(…, { timeout: ciTimeout(2500) })` right after `goto` saw Home only after the build (race-modes,
+  home-shortcuts, CI 44468157574; at 12x CPU locally the text was painted at 4.4 s and seen at 8.1 s). Register
+  `recordPaint(page, selector)` before `goto` and assert `await firstPaint(page, selector)` against the budget
+  (`tests/helpers/boot-paint.js`); content checks follow at the default timeout. Enforced by
+  `tests/browser-timeouts.test.js` (*boot budget is measured at first paint*).
+- **Read the results dock's hit targets together.** Use one `evaluateAll` per poll for the sticky dock and
+  sign-in button. All targets share a layout sample, and the poll can report missing controls without
+  waiting on several independent locator evaluations (CI 44468157574).
 - **Read a timed cue in the tick that finds it.** The halfway card lives 2.15 s of race time; on CI,
   `toBeVisible` + two `toContainText` + `locator.evaluate` outlived it and the evaluate got a detached node
   (`parentElement` null, run 44269822759). Find, read and measure a self-expiring element inside one

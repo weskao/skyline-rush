@@ -305,3 +305,21 @@ test('a spec reads the self-expiring halfway card in one page tick', () => {
   });
   assert.deepEqual(offenders, [], 'find, read and measure #race-halfway-card inside one page.waitForFunction');
 });
+
+// Playwright reads the page on its main thread, which createWorld holds for seconds on CI's software WebGL, so a
+// locator check right after goto sees Home only once the world is built (race-modes, home-shortcuts, CI 44468157574).
+// A boot budget is judged by when the element reached the screen: recordPaint + firstPaint (tests/helpers/boot-paint.js).
+test('a boot budget is measured at first paint, not by a short locator timeout after goto', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/page\.goto\(/.test(line)) return [];
+      const boot = lines.slice(i + 1, i + 5), acted = boot.findIndex(next => /\.(?:click|press|fill|check|selectOption|tap)\(/.test(next));
+      return boot.slice(0, acted < 0 ? boot.length : acted).flatMap((next, k) => {
+        const budget = /expect\(.*\)\.(?:not\.)?to\w+\(.*timeout: ciTimeout\(([\d_]+)\)/.exec(next);
+        return budget && Number(budget[1].replaceAll('_', '')) < 5000 ? [`tests/${file}:${i + k + 2}: ${next.trim()}`] : [];
+      });
+    });
+  });
+  assert.deepEqual(offenders, [], 'Assert `await firstPaint(page, selector)` against the budget (tests/helpers/boot-paint.js, .claude/rules/browser-test-stability.md)');
+});

@@ -3,6 +3,7 @@ import { toggleSettingsSection } from './helpers/settings-browser.js';
 import { selectLocale } from './helpers/locale-browser.js';
 import { test,expect } from './helpers/test.js';
 import { ciTimeout } from './helpers/ci.js';
+import { recordPaint, firstPaint } from './helpers/boot-paint.js';
 
 test('browser specs start at Low with no notice unless they opt out', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -101,10 +102,12 @@ test('Ultra is selectable, saved across reloads, and switching back to High clea
 
 test('automatic graphics choice is a short disclosure with keyboard-accessible details', async ({ page }) => {
   await constrained(page);
+  await recordPaint(page, '#performance-notice summary');
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const notice = page.locator('#performance-notice');
   const summary = notice.locator('summary');
-  await expect(summary).toBeVisible({ timeout: ciTimeout(2500) });
+  expect(await firstPaint(page, '#performance-notice summary'), 'notice painted (ms after navigation)').toBeLessThan(ciTimeout(2500));
+  await expect(summary).toBeVisible();
   await page.locator('#settings-button').click({ trial: true, timeout: ciTimeout(3500) });
   await expect(notice.locator('#performance-notice-text')).toBeHidden();
   await summary.focus();

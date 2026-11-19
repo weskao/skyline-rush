@@ -7,6 +7,13 @@
 - [ ] Complete full local verification and physical phone checks.
 - [ ] Confirm the feature branch exact-commit GitHub quality gate.
 
+# Rival supercar lineup CI run 44468157574
+
+- [x] Reproduced the Frostbite boot cover remaining visible before the WebGL world exists. Ported the world-ready Home refresh from `70e394e4` and observed the boot regression pass with the Coming Soon start label intact.
+- [ ] Confirm the lobby summary, keyboard camera and graphics notice on the feature branch. Reproduced the three 7.5 s locator timeouts and ported the in-page first-paint measurement from `b07b22c`, keeping the same paint budget.
+- [ ] Confirm portrait results dock hit tests on the GitHub runner. The original locator poll timed out before returning a sample on CI, while one local run passed. The updated poll reads all controls in one browser evaluation before and after scrolling.
+- [ ] Confirm the exact-commit GitHub quality gate and physical-phone coverage.
+
 # Develop browser CI run 44399876486
 
 - [x] Leaving the Garage drift-trail preview disposed `makeCar`'s shared nozzle and fascia materials, so the game renderer released a program (Studio 140 → 139). `tests/hero-roadster-equipment-browser.spec.js` now leaves a drift preview explicitly: RED 139 on 2bd96471, GREEN 4/4 after `src/garage-drift-preview.ts` draws cloned materials. Drift/animated-artwork/store specs 22/22 on the trial build.
