@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { inject, computed, nextTick, ref, watch } from 'vue';
+import GaragePlaytestEquip from '#garage-playtest-equip';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
 import Wave3CurrencyAmount from './Wave3CurrencyAmount.vue';
@@ -194,7 +195,8 @@ async function confirmRedemption(): Promise<void> {
       </div>
       <div class="demo-actions">
         <button type="button" @click="emit('preview', selected.id)">{{ tr('Inspect preview', '檢視預覽') }}</button>
-        <button type="button" :disabled="!canRequestRedemption"
+        <component v-if="GaragePlaytestEquip" :is="GaragePlaytestEquip" :id="selected.id" :locale="locale" />
+        <button v-else type="button" :disabled="!canRequestRedemption"
           @click="requestRedemption">{{ tr('Demo redeem', '試玩兌換') }}</button>
         <button type="button" @click="emit('open-collection')">{{ tr('Demo Collection', '試玩收藏') }}</button>
       </div>

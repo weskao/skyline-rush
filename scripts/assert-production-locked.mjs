@@ -5,6 +5,7 @@ import { PAINTS } from '../src/appearance.ts';
 // Each marker is a string its development-only module needs at runtime, so minification cannot strip it.
 const RELEASE_LEAK_MARKERS = {
   SKYLINE_RUSH_DEV_UNLOCK_ALL_ONLY: 'development unlock code',
+  'data-garage-playtest-equip': 'development Store equip action',
   'skyline-rush-crash-log': 'diagnostic crash log / live panel (VITE_DIAG build)',
   '__diag/log': 'diagnostic log relay client (VITE_DIAG build)',
   'diag-relay-token': 'diagnostic log relay token (VITE_DIAG dev server)',

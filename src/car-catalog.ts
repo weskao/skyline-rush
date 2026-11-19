@@ -4,17 +4,18 @@
 import { loadPaint, loadStars, savePaint } from './history-achievements.ts';
 import { starTotal } from './history-stats.ts';
 import { readStored, writeStored, type HistoryStorage } from './history-storage.ts';
+import { garagePlaytestStorage } from '#garage-playtest-storage';
 
-export type CarId = 'roadster' | 'crimson-gt';
 export const GT_UNLOCK_STARS = 18;
 /** model: MODEL_MANIFEST id drawn over the procedural fallback.
  *  defaultPaint: a shared paint shown until the player picks one for this car.
  *  No size field: car-display-size.ts measures each GLB and shows it at the Roadster's size. */
 interface CarEntry { model: string; defaultPaint: string; stars: number }
-export const CARS: Readonly<Record<CarId, CarEntry>> = {
+export const CARS = Object.freeze({
   roadster: { model: 'roadster2', defaultPaint: 'pearl', stars: 0 },
   'crimson-gt': { model: 'crimson-gt', defaultPaint: 'crimson', stars: GT_UNLOCK_STARS },
-};
+} satisfies Record<string, CarEntry>);
+export type CarId = keyof typeof CARS;
 export const CAR_KEY = 'skyline-rush-car';
 export const GT_TRIAL_KEY = 'skyline-rush-gt-trial-started-at';
 const GT_TRIAL_MS = 24 * 60 * 60 * 1000;
@@ -52,17 +53,23 @@ export function savedCar(storage?: HistoryStorage): CarId | undefined {
   const id = readStored(CAR_KEY, storage);
   return isCar(id) ? id : undefined;
 }
+export function carAccess(id: CarId, stars: number, gtTrial?: number, now = Date.now()): CarAccess {
+  if (garagePlaytestStorage || stars >= CARS[id].stars) return 'owned';
+  return id === 'crimson-gt' ? gtAccess(stars, gtTrial, now) : 'locked';
+}
 function canUseCar(id: CarId, stars: number, storage?: HistoryStorage): boolean {
-  return stars >= CARS[id].stars || (id === 'crimson-gt' && gtAccess(stars, savedGtTrial(storage)) === 'trial');
+  return carAccess(id, stars, id === 'crimson-gt' ? savedGtTrial(storage) : undefined) !== 'locked';
 }
 
 /** A legacy selection by itself conveys no eligibility. Keep it for a future qualified restore. */
 export function loadCar(storage?: HistoryStorage, stars = starTotal(loadStars(storage))): CarId {
-  const id = savedCar(storage) ?? 'roadster';
+  const testPick = garagePlaytestStorage && savedCar(garagePlaytestStorage);
+  const id = testPick ?? savedCar(storage) ?? 'roadster';
   return canUseCar(id, stars, storage) ? id : 'roadster';
 }
 
 export function loadCarPaint(car: CarId, owned: readonly string[], storage?: HistoryStorage): string {
+  storage = garagePlaytestStorage ?? storage;
   if (car === 'roadster') return loadPaint(owned, storage);
   const saved = readStored(CAR_PAINTS_KEY, storage);
   const id = saved !== null && typeof saved === 'object' && Object.hasOwn(saved, car) ? (saved as Record<string, unknown>)[car] : null;
@@ -71,6 +78,7 @@ export function loadCarPaint(car: CarId, owned: readonly string[], storage?: His
   return typeof id === 'string' && owned.includes(id) ? id : defaultPaint(car);
 }
 export function saveCarPaint(car: CarId, id: string, storage?: HistoryStorage): void {
+  storage = garagePlaytestStorage ?? storage;
   if (car === 'roadster') { savePaint(id, storage); return; }
   const saved = readStored(CAR_PAINTS_KEY, storage);
   writeStored(CAR_PAINTS_KEY, { ...(saved !== null && typeof saved === 'object' && !Array.isArray(saved) ? saved : {}), [car]: id }, storage);
@@ -89,9 +97,9 @@ export function validateEquippedCar(stars: number, storage?: HistoryStorage): Ca
   return equippedCar();
 }
 export function equipCar(id: CarId, storage?: HistoryStorage, stars = starTotal(loadStars(storage))): boolean {
-  if (!canUseCar(id, stars, storage)) return false;
+  if (!isCar(id) || !canUseCar(id, stars, storage)) return false;
   equipped = id;
-  writeStored(CAR_KEY, id, storage);
+  writeStored(CAR_KEY, id, garagePlaytestStorage ?? storage);
   return true;
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CARS, GT_UNLOCK_STARS, carArtwork, gtTrialEndsAt, type CarId } from './car-catalog.ts';
+import { CARS, GT_UNLOCK_STARS, carAccess, carArtwork, gtTrialEndsAt, type CarId } from './car-catalog.ts';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import { garageCars, garageStudioView } from './garage-view-state.ts';
 import { formatDate, t } from './i18n.ts';
@@ -7,7 +7,7 @@ import { formatDate, t } from './i18n.ts';
 // garage-ui.ts owns the click (equip, save, world); this component only renders the cars and which one is in use.
 const props = defineProps<{ locale: string }>();
 const text = (key: string, params?: Record<string, number | string>): string => t(key, params, props.locale);
-const access = (id: CarId) => id === 'crimson-gt' ? garageCars.access : 'owned';
+const access = (id: CarId) => id === 'crimson-gt' ? garageCars.access : carAccess(id, garageCars.stars);
 const trialExpiry = (startedAt: number) => formatDate(gtTrialEndsAt(startedAt), { dateStyle: 'short', timeStyle: 'short' }, props.locale);
 const artworkBase = import.meta.env.BASE_URL;
 </script>

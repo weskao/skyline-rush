@@ -55,7 +55,7 @@ phone-diag: ## `make phone-diag [name|off] [y=1]`: like `make phone`, with the o
 	VITE_DIAG=1 $(MAKE) phone $(if $(y),y=$(y)) $(if $(via),PHONE_VITE_ARGS="--via $(via)") $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Compile with the development-only access implementation. Never produces a distributable build.
-dev-unlocked: stop-old-dev reclaim-dev-port node_modules ## `make dev-unlocked`: local-only Vite server with all tracks and paints unlocked
+dev-unlocked: stop-old-dev reclaim-dev-port node_modules ## `make dev-unlocked`: local Vite playtest with all race-ready tracks, cars, paints and equipment
 	$(WITH_EMULATORS) '$(NPM) run dev -- --config vite.unlocked.config.js'
 
 test-unlocked: dev-unlocked ## Alias: `make test-unlocked` also opens the all-unlocked local dev server
@@ -71,7 +71,7 @@ phone: node_modules ## `make phone [name|off] [y=1]`: menu (y=1: Recommended ans
 
 # The unlocked config binds 127.0.0.1 so `make dev-unlocked` stays Mac-only; phone-dev's own `--host 0.0.0.0` CLI
 # flag overrides it, so this is the only phone-reachable all-unlocked server. Still a dev server: never a build.
-phone-unlocked: ## `make phone-unlocked [name|off] [y=1]`: like `make phone`, with all tracks and paints unlocked
+phone-unlocked: ## `make phone-unlocked [name|off] [y=1]`: phone Vite playtest with all race-ready tracks, cars, paints and equipment
 	$(MAKE) phone PHONE_VITE_ARGS="-- --config vite.unlocked.config.js" $(if $(y),y=$(y)) $(if $(DEV_FEATURE_NAME),DEV_FEATURE_NAME=$(DEV_FEATURE_NAME))
 
 # Frame times of production builds, read from the in-game `?perf` strip. BASE=<git ref> (e.g. main) adds an A/B
