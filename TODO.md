@@ -1,3 +1,11 @@
+# Motorsport rival chassis
+
+- [x] Redesign seven race opponents with original canopy, fender, rear-lamp, aero and race-graphics packages.
+- [x] Use a different chassis and colour family per slot in a full grid. Keep a Championship driver's look through grid rotations, retries and legacy/current progress recovery.
+- [x] RED reproduced missing fleet selection and Cup persistence. Focused regression tests cover wheel/wing clearance, lift and drive cues, in-place knockout, tier budgets and deck graphics. Production build passes.
+- [x] Capture the new meshes from multiple angles and inspect the seven-rival field with the game renderer at High and Low.
+- [ ] Confirm the feature branch's exact-commit CI, all-track regression and physical phone coverage.
+
 # Develop World Tour camera CI run 44394398766
 
 - [x] Keep the Taipei showroom car clear of scenery through the High-quality portrait orbit with AIRFLOW on. Moving the Home preview from 1,040 m to 1,090 m clears the kerbside bus-stop posts. The 390 × 844 regression failed at 76° and 77° before the fix, then passed with all six Taipei camera cases on Chromium.

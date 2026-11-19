@@ -167,22 +167,24 @@ function mergeStaticParts(group, style, moving, paint) {
 export function makeCar(style, color = style.color) {
   const group = new THREE.Group();
   const detailed = !!style.detailed;
-  const paint = detailed
+  const paint = style.motorsport
+    ? new THREE.MeshPhysicalMaterial({ color, metalness: .40, roughness: .28, clearcoat: .53, clearcoatRoughness: .22 })
+    : detailed
     ? new THREE.MeshPhysicalMaterial({ color, metalness: 0.13, roughness: 0.19,
       clearcoat: 0.88, clearcoatRoughness: 0.10, envMapIntensity: 1.4 })
     : material(color, 0.55, 0.25);
   const black = material('#101923', 0.4, 0.4);
-  const glass = detailed
+  const glass = detailed || style.motorsport
     ? new THREE.MeshPhysicalMaterial({ color: style.glass, metalness: 0.04, roughness: 0.075,
       clearcoat: 0.96, clearcoatRoughness: 0.065, envMapIntensity: 1.6 })
     : material(style.glass, 0.85, 0.16);
   const light = new THREE.MeshBasicMaterial({ color: new THREE.Color(...style.light) });
   const white = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 2.1, 2.6) });
-  block(group, black, 0, 0.48, 0, 2.08, 0.26, style.chassisLength ?? 4.38);
+  if (!style.motorsport) block(group, black, 0, 0.48, 0, 2.08, 0.26, style.chassisLength ?? 4.38);
   const body = new THREE.Mesh(style.body, paint);
   group.add(body, new THREE.Mesh(style.cabin, glass));
   const wing = style.trim(group, { paint, black, light, white });
-  for (const side of [-1, 1]) {
+  if (!style.motorsport) for (const side of [-1, 1]) {
     block(group, black, side * 1.09, 0.55, 0.04, 0.04, 0.13, 2.32);
     if (detailed) block(group, white, side * 1.1, 0.48, 0, 0.025, 0.025, 2.5);
   }

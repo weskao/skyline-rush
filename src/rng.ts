@@ -13,6 +13,8 @@ function mulberry32(seed: number): () => number {
 // FNV-1a hash of the stream name, mixed into the seed.
 const hash = (text: string): number => [...text].reduce((h, char) => Math.imul(h ^ char.charCodeAt(0), 16777619), 2166136261) >>> 0;
 
+export const randomVisualSeed = (): number => globalThis.crypto.getRandomValues(new Uint32Array(1))[0]!;
+
 export const streamSeed = (seed: number, streamName: string): number => (seed ^ hash(streamName)) >>> 0;
 export const seededRng = (seed: number, streamName: string): (() => number) => mulberry32(streamSeed(seed, streamName));
 
