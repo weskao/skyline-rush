@@ -47,10 +47,21 @@ Concept art and mood reference only (rule item 7). No concept-board panel exists
 
 ## Budgets
 
-Road type: helix (`skyFrame`, `SKY_LENGTH` 5,600 m, helix 1,100–2,200 m, radius 165 m, rise 82 m; launches and gaps
-at 2,800, 3,700 and 4,550 m). Draw-call caps as the shared plan (home 540 / race 380 on High) until the owner sets a
-track-specific one. The tower stays in view for most of the lap, so its LODs and triangle budget matter more than
-on a chunked route.
+Road type: helix (`skyFrame`). Measured on 2026-11-19 from `src/sky-track.ts` and `src/race-tracks.ts`:
+`SKY_LENGTH` 10,000 m (`profileLength('spiral')`), helix 1,850–3,250 m, radius 222.2 m, rise 104 m; launches at
+4,650, 5,550 and 6,350 m with gaps at 4,720–4,785, 5,625–5,690 and 6,430–6,500 m; shortcut 7,220–7,720 m;
+`layoutVersion` 7. The route is inside the 8–12 km art target, so it is frozen unchanged (no new layout id, records,
+ghosts and cloud-save ids untouched) and pinned by `tests/sky-spiral-parity.test.js`.
+Draw-call caps: home 540 / race 380 on High, as the shared plan (owner decision, 2026-11-19: no track-specific cap).
+The tower stays in view for most of the lap, so its LODs and triangle budget matter more than on a chunked route.
+
+## Owner decisions (2026-11-19)
+
+- Route length may move within 8–12 km to fit the art; outside that range the owner is asked first. Not used: the
+  shipped 10 km route fits.
+- Time of day: day sky, as the concept art. Low keeps the dark procedural scene.
+- Cloud sea: cloud GLB models (not an engine plane, not a dome band).
+- Draw-call cap: the shared home 540 / race 380.
 
 ## Acceptance checks and guard tests
 
@@ -68,7 +79,8 @@ Low keeps the procedural scene; the course keeps its own in-race song; exact-HEA
 
 ## By project (committed once)
 
-- [ ] Route frozen against the 8–12 km art target and parity pinned before any asset.
+- [x] Route frozen against the 8–12 km art target and parity pinned before any asset. Evidence: 10,000 m measured,
+  `node --test tests/sky-spiral-parity.test.js` 4 of 4 (a pin of shipped behaviour: GREEN from the start, no RED run).
 - [ ] Look brief with owner decisions (time of day; cloud sea approach).
 - [ ] Sky hook and helix road hook in new modules, RED first, Coast and Neon unchanged.
 - [ ] Sky chosen, built, measured (items 15, 20); manifest rows; bloom value.
