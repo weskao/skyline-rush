@@ -18,6 +18,9 @@ import { DUNE_TEMPEST_RACE } from '../src/courses/dune-tempest-race.ts';
 import { SKYFALL_ARCHIPELAGO_RACE } from '../src/courses/skyfall-archipelago-race.ts';
 import { routeLength, sampleRoute } from '../src/course-route-frame.ts';
 import { RACE_DRIVER_IDS } from '../src/race-grid.ts';
+import { roadRibbon } from '../src/geometry.ts';
+import { classicRoadRoute } from '../src/classic-road-routes.ts';
+import { createClassicRoadRender } from '../src/classic-road-render.ts';
 
 const near = (actual, expected, label) => assert.ok(Math.abs(actual - expected) < .01, `${label}: ${actual} ≈ ${expected}`);
 const matrix = new THREE.Matrix4(), at = new THREE.Vector3();
@@ -119,4 +122,23 @@ for (const [trackId, spec, reach] of [
   host.update({ trackId, elapsed: 2, course: { spec, cars } }, 'medium');
   assert.equal(root.getObjectByName('road-runout'), undefined, `${trackId}: the run-out streams out with its sector`);
   host.dispose();
+});
+
+// Classic open roads mirror (Coast) or reflect (Canyon, Aurora) past their length, so the ribbon already ran on;
+// Neon is a closed loop. Guard only: this never was RED.
+test('classic open roads run on past the finish under the parked car', () => {
+  const rows = 120, material = new THREE.MeshBasicMaterial(), pool = () => new THREE.InstancedMesh(new THREE.BoxGeometry(), material, rows * 3);
+  const meshes = { road: new THREE.Mesh(roadRibbon(rows), material), laneLines: pool(), curbs: pool(), edgeLines: pool(),
+    railLights: pool(), tunnelRoofs: pool(), tunnelWalls: pool(), shortcutDeck: pool(), surfaceMarks: pool() };
+  const renderer = createClassicRoadRender(meshes, rows, (mesh, i, x, y, z) => mesh.setMatrixAt(i, matrix.makeTranslation(x, y, z)), 2);
+  for (const id of ['coast', 'canyon', 'aurora']) {
+    const { length, sections } = RACE_TRACKS[id], route = classicRoadRoute(id);
+    renderer.update(id, route, length, sections, false, true);
+    const position = meshes.road.geometry.attributes.position, index = meshes.road.geometry.index;
+    const ahead = row => Math.hypot(position.getX(row * 2) + meshes.road.position.x, position.getZ(row * 2) + meshes.road.position.z);
+    assert.ok(ahead(rows) > 1000, `${id}: the deck reaches ${ahead(rows).toFixed(0)} m past the finish`);
+    const tile = Math.floor(length / 12) * 12;
+    for (let row = Math.ceil((length - tile) / 12) + 5; row < rows; row++)
+      assert.notEqual(index.getX(row * 6), index.getX(row * 6 + 1), `${id} row ${row} past the finish is drawn`);
+  }
 });
