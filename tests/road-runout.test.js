@@ -13,6 +13,11 @@ import { createStormlineRaceScene } from '../src/stormline-megacity-race-scene.t
 import { STORMLINE_TRACK, stormlineFrame } from '../src/courses/stormline-megacity-race.ts';
 import { createVolcanicCrownRaceScene } from '../src/volcanic-crown-race-scene.ts';
 import { VOLCANIC_TRACK, volcanicFrame } from '../src/courses/volcanic-crown-race.ts';
+import { createCourseRaceScene } from '../src/course-race-scene.ts';
+import { DUNE_TEMPEST_RACE } from '../src/courses/dune-tempest-race.ts';
+import { SKYFALL_ARCHIPELAGO_RACE } from '../src/courses/skyfall-archipelago-race.ts';
+import { routeLength, sampleRoute } from '../src/course-route-frame.ts';
+import { RACE_DRIVER_IDS } from '../src/race-grid.ts';
 
 const near = (actual, expected, label) => assert.ok(Math.abs(actual - expected) < .01, `${label}: ${actual} ≈ ${expected}`);
 const matrix = new THREE.Matrix4(), at = new THREE.Vector3();
@@ -93,4 +98,25 @@ for (const [label, create, track, frameAt] of [
   const end = track.length + 1; // the last edge's end: track.length is its whole metres
   assertRoadAhead(label, roads, straightOn(frameAt(end), end, race.group.position), end, 1500);
   race.dispose();
+});
+
+// CourseGraph courses: FINISH has no outgoing edge, so streaming stopped at the last ground edge's end.
+for (const [trackId, spec, reach] of [
+  ['dune-tempest', DUNE_TEMPEST_RACE, 650], // AHEAD_METRES 680 in course-race-scene.ts
+  ['skyfall-archipelago', SKYFALL_ARCHIPELAGO_RACE, 800], // two 420 m Skyfall chunks
+]) test(`${trackId} road runs on past the finish for its draw range`, () => {
+  const scene = new THREE.Scene(), host = createCourseRaceScene(scene), graph = spec.graph;
+  const edgeId = graph.groundRoute.at(-1), length = routeLength(graph, edgeId);
+  const cars = new Map(RACE_DRIVER_IDS.map(id => [id, { travel: { currentEdgeId: edgeId, localS: length } }]));
+  host.update({ trackId, elapsed: 1, course: { spec, cars } }, 'medium');
+  const root = scene.getObjectByName('CourseGraph race scenery');
+  root.updateMatrixWorld(true);
+  const roads = [];
+  root.traverse(o => { if (o.isMesh && !o.material.transparent && !o.parent?.name.includes('terrain')) roads.push(o); });
+  const f = sampleRoute(graph, edgeId, length), end = { ...f, point: { x: f.point[0], y: f.point[1], z: f.point[2] } };
+  assertRoadAhead(trackId, roads, straightOn(end, length, root.position), length, reach);
+  for (const car of cars.values()) car.travel = { currentEdgeId: graph.groundRoute[0], localS: 0 };
+  host.update({ trackId, elapsed: 2, course: { spec, cars } }, 'medium');
+  assert.equal(root.getObjectByName('road-runout'), undefined, `${trackId}: the run-out streams out with its sector`);
+  host.dispose();
 });

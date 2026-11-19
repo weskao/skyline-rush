@@ -6,6 +6,7 @@ import { SKYFALL_ARCHIPELAGO_ID } from './courses/skyfall-archipelago-race.ts';
 import { createSkyfallWorld } from './courses/skyfall-world.ts';
 import { createDuneTempestVisualChunk } from './courses/dune-tempest-chunk.ts';
 import { createDuneTerrain } from './courses/dune-tempest-terrain.ts';
+import { createRoadRunout } from './road-runout.ts';
 
 type Quality = 'low' | 'medium' | 'high';
 type Chunk = ReturnType<typeof createDuneTempestVisualChunk>;
@@ -19,11 +20,14 @@ export function createCourseRaceScene(scene: THREE.Scene) {
   scene.add(root);
   const live = new Map<string, Chunk>();
   let dune: ReturnType<typeof createDuneTerrain> | null = null;
+  let runout: ReturnType<typeof createRoadRunout> | null = null;
   let skyfall: ReturnType<typeof createSkyfallWorld> | null = null;
   let quality: Quality | null = null;
   const clear = () => {
     for (const chunk of live.values()) chunk.dispose();
     live.clear();
+    runout?.dispose();
+    runout = null;
     skyfall?.dispose();
     skyfall = null;
     root.visible = false;
@@ -66,6 +70,7 @@ export function createCourseRaceScene(scene: THREE.Scene) {
     }
     root.visible = true;
     const active = new Set<string>();
+    let nearFinish = false;
     const lengths = new Map<string, number>();
     const length = (id: string) => {
       let result = lengths.get(id);
@@ -93,11 +98,19 @@ export function createCourseRaceScene(scene: THREE.Scene) {
       if (!edge) continue;
       include(currentEdgeId, localS - BEHIND_METRES, Math.min(length(currentEdgeId) - 1e-6, localS + AHEAD_METRES));
       const remaining = length(currentEdgeId) - localS;
+      if (remaining < AHEAD_METRES && edge.to === graph.finish) nearFinish = true;
       if (remaining < AHEAD_METRES) for (const next of graph.edges) {
         if (next.from === edge.to) include(next.id, 0, Math.min(length(next.id) - 1e-6, AHEAD_METRES - remaining));
       }
     }
     for (const [key, chunk] of live) if (!active.has(key)) { chunk.dispose(); live.delete(key); }
+    // FINISH has no outgoing edge: the road runs on past it for the streaming range (drawing only; rules/road-runout.md).
+    if (nearFinish && !runout) {
+      const last = graph.groundRoute.at(-1)!, end = sampleRoute(graph, last, length(last));
+      runout = createRoadRunout(end, { width: end.width, length: AHEAD_METRES,
+        road: 0xab7546, rail: 0x966047, mark: 0xe5d3a8, bed: 0xb77b49 });
+      root.add(runout.group);
+    } else if (!nearFinish && runout) { runout.dispose(); runout = null; }
     for (const chunk of live.values()) chunk.update(time, tier, reducedMotion);
     const player = runtime.cars.get('YOU');
     if (player) {

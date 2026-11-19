@@ -4,6 +4,7 @@ import {
   getSkyfallEdgeLength, hasSkyfallRoadContact, sampleSkyfallRoad,
   type SkyfallFrame,
 } from './skyfall-archipelago.ts';
+import { createRoadRunout } from '../road-runout.ts';
 
 type Tier = 'low' | 'medium' | 'high';
 const framePoint = (f: SkyfallFrame, lateral = 0, height = 0) => new THREE.Vector3(
@@ -198,7 +199,7 @@ function addCloudOcean(group: THREE.Group, quality: Tier): THREE.InstancedMesh {
 }
 
 /** Scene-only assembly. Never creates a renderer, starts a loop, or owns race physics. */
-const CHUNK_METERS = 420;
+const CHUNK_METERS = 420, RUNOUT = 'finish:runout';
 type Focus = { edgeId: string; localS: number };
 
 export function createSkyfallWorld(scene: THREE.Scene, quality: Tier = 'medium') {
@@ -253,6 +254,7 @@ export function createSkyfallWorld(scene: THREE.Scene, quality: Tier = 'medium')
         }
       }
       if (length - localS < CHUNK_METERS) {
+        if (edge.to === SKYFALL_COURSE.finish) wanted.add(RUNOUT);
         for (const next of SKYFALL_COURSE.edges.filter(e => e.from === edge.to)) {
           include(next.id, 0);
         }
@@ -261,6 +263,13 @@ export function createSkyfallWorld(scene: THREE.Scene, quality: Tier = 'medium')
     for (const key of chunks.keys()) if (!wanted.has(key)) unload(key);
     for (const key of wanted) {
       if (chunks.has(key)) continue;
+      if (key === RUNOUT) {
+        // FINISH has no outgoing edge: the road runs on past it for two chunks (drawing only; rules/road-runout.md).
+        const last = SKYFALL_GROUND_PATH[SKYFALL_GROUND_PATH.length - 1], end = sampleSkyfallRoad(last, getSkyfallEdgeLength(last));
+        const runout = createRoadRunout({ ...end, point: [end.point.x, end.point.y, end.point.z] }, { width: end.width,
+          length: 2 * CHUNK_METERS, road: 0x888b80, rail: 0xffdb91, mark: 0xf5fbff, bed: 0x6f7368 }).group;
+        group.add(runout); chunks.set(key, runout); continue; // unload() frees it like any chunk
+      }
       const separator = key.lastIndexOf(':');
       const edgeId = key.slice(0, separator);
       const index = Number(key.slice(separator + 1));
