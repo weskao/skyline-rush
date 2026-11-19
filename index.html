@@ -2,6 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script id="startup-locale-bootstrap">
+      // Runs before the splash is parsed. Keep the priority in sync with locale-preference.ts.
+      (() => {
+        let saved;
+        try { saved = localStorage.getItem('skyline-rush-locale'); } catch { /* Use the browser preference. */ }
+        if (saved === 'en' || saved === 'zh-TW') {
+          document.documentElement.lang = saved;
+          return;
+        }
+        for (const tag of navigator.languages?.length ? navigator.languages : [navigator.language]) {
+          if (/^en(-|_|$)/i.test(tag)) return;
+          if (/^zh(-|_|$)/i.test(tag)) { document.documentElement.lang = 'zh-TW'; return; }
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#101b26" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -40,12 +55,12 @@
       <div class="startup-layout">
         <header class="startup-brand">
           <h1 id="startup-title" lang="en" aria-label="Skyline Rush"><span>Skyline</span> <strong>Rush</strong></h1>
-          <p id="startup-tagline">Beyond the road</p>
+          <p id="startup-tagline"><span class="startup-copy" lang="en">Beyond the road</span><span class="startup-copy" lang="zh-TW">駛出公路，飛向天際</span></p>
         </header>
         <div class="startup-dock">
           <div id="startup-progress" class="startup-progress">
             <span class="startup-lights" aria-hidden="true"><i id="startup-fill"></i></span>
-            <p id="startup-status" role="status">Loading game</p>
+            <p id="startup-status" role="status"><span class="startup-copy" lang="en">Loading game</span><span class="startup-copy" lang="zh-TW">載入遊戲</span></p>
           </div>
           <p id="startup-error" class="startup-error" role="alert" hidden></p>
           <button id="startup-enter" class="startup-action" type="button" hidden><span>Enter game</span></button>
