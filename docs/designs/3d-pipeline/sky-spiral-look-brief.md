@@ -28,9 +28,11 @@ track is the boost plume and the launch: no rain, no spray.
 |---|---|---|
 | `track` (every mode but Free/Custom) | day | Owner decision, 2026-11-19: day sky, as every frame in the set |
 | `day` | day | The player asked for day |
-| `dusk`, `night`, `rain`, `fog`, `aurora` | none: today's lighting | No frame shows them; an unlisted preset keeps RoomEnvironment and the procedural backdrop (`src/track-look.ts`) |
+| `dusk`, `night`, `rain`, `fog`, `aurora` | today's sky and lighting | No frame shows them; an unlisted preset keeps RoomEnvironment and the procedural backdrop (`src/track-look.ts`) |
 
-Low keeps the dark procedural scene on every preset. The road is dry on every preset the look covers.
+On Medium and above the landmark kit and the KTX2 road set are drawn on every preset, as Coast's and Neon's are:
+only the sky, the haze and the lighting follow the table. Low keeps the dark procedural scene on every preset.
+The road is dry on every preset.
 
 ## Owner decisions (2026-11-19)
 

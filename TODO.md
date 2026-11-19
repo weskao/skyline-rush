@@ -6133,3 +6133,17 @@ Repro: on Home, open What's New, tap a picture or clip, close the enlarged view.
 - [x] Prevention: `.claude/rules/dialog-exit-animation.md` plus the two guards above.
 - [ ] `tests/close-button-browser.spec.js` at 390x844 fails on this branch before and after the fix: `button[data-race-mode="eventlab"]` is not visible on phones. Not caused by this change; needs its own fix.
 - [ ] Not yet done: full `make verify`, a real iPhone (Safari and Home Screen app) in both orientations, exact-HEAD `quality-gate`.
+
+## 2026-11-19 — Sky Spiral detailed 3D look, Task 8c (`feature/sky-spiral-3d-look`)
+
+Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/phases/task-8c-sky-spiral.md`. Not merged.
+
+- [x] Route frozen at the shipped 10 km and pinned (`c34c9811`): `node --test tests/sky-spiral-parity.test.js` 4 of 4.
+- [x] Look brief with the owner decisions: day sky, cloud GLB models, shared draw-call caps (`79e53a73`).
+- [x] Day sky and KTX2 road on the Sky Spiral course through new modules (`5d7710aa`): `tests/spiral-look.test.js` 8 of 8, RED first; `src/world.js` unchanged in size.
+- [x] Landmark kit GLB with master, manifest entry and CC0 sources (`e5460e12`): 9,163 triangles, 983,356 bytes; `tests/spiral-landmarks-glb.test.js` 12 of 12.
+- [x] RED: the plan's nominal piece sizes disagreed with the shipped GLB on seven counts (strut depth, platform_b, cloud widths and tops, peak). GREEN: measured sizes in `src/spiral-scenery-plan.ts`; prevention in `.claude/rules/3d-asset-pipeline.md` item 31.
+- [x] Kit drawn on Medium and above, Low and failed loads keep the procedural scene (`6b4bdf3a`): `tests/spiral-scenery.test.js` 9 of 9, `tests/spiral-scenery-plan.test.js` 6 of 6, `tests/track-look.test.js` 7 of 7.
+- [x] At `5fd333d7`: `npm test` 3,464 pass, 0 fail, 4 skipped; `node --test tests/module-size.test.js` 3 of 3; `npm run typecheck` clean; `npm run build` passed and `dist/models/spiral-landmarks/spiral-landmarks.glb` is present.
+- [ ] Browser specs written and never executed, by owner instruction (2026-11-19): `tests/spiral-look-browser.spec.js` (kit, day sky and road on High, NaN scan, no compile after GO, Low fetches no look asset, load-failure fallback, draw-call caps home 540 / race 380) and the Sky Spiral case in `tests/track-look-quality-browser.spec.js`. They may fail on their first run.
+- [ ] Not done: `make verify`, real WebGL captures (desktop and phone, both orientations), draw calls and p50/p95, rule item 20 lane sweep, the kit on the non-day presets' bloom, concept parity review, owner art sign-off, exact-HEAD `quality-gate`.
