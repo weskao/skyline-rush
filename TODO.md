@@ -222,6 +222,9 @@ on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, 
 - [x] RED → GREEN: `node --test tests/rival-drive-vfx.test.js` 9 tests (4 RED on 50a623af: BOOST flame 0, no flash, no distance gate, world.js without `distance`)
 - [x] Browser guard `tests/rival-drive-vfx-browser.spec.js` (High: BOOST flame visible, smaller and dimmer than NITRO, none beyond the range; Low: none): RED with `BEFORE=HEAD` (BOOST flame false), GREEN after (2 passed)
 - [x] WebGL captures inspected, before/after (`RIVAL_VFX_EVIDENCE=<label>` on `tests/rival-drive-vfx-evidence-browser.spec.js`, env-gated per `tests/audit-specs-gated.test.js`, gitignored audits dir): desktop, phone portrait, phone landscape × Low/High, one rival on BOOST and one on NITRO. Low: no flame, correct. High: BOOST flame drawn and distinguishable from NITRO's
+- [x] CI 44395376200 `rival-drive-vfx-browser.spec.js` (trail false): the helper read rivals in scene order, which the shuffled
+  chassis pool no longer matches; it now reads `gameScene.rivals` in race order. Guard *gameScene.rivals, not scene order*
+  in `tests/browser-timeouts.test.js` (RED on the old helper). Product unchanged.
 - [ ] Visibility: on Coast's sunlit road the High BOOST flame (and the earlier NITRO flame) is faint at 16-22 m and barely noticeable on phones; the BOOST tail-light bloom reads stronger than the flame. Needs a user call on flame size/brightness (would change NITRO too)
 - [ ] Freeze/EMP tint browser regression and captures (section above): still not run
 

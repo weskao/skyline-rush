@@ -28,7 +28,8 @@ export const stage = (page, allBoost = false) => page.evaluate(async ([range, al
     rival.boosting = allBoost || i !== 1; rival.nitroTime = !allBoost && i === 1 ? 5 : 0;
   });
   for (let f = 0; f < 3; f++) await new Promise(requestAnimationFrame);
-  return window.gameScene.scene.children.filter(o => o.userData.driveCue).map(o => {
+  // Race order, not scene order: the fleet deals each race's rivals a shuffled chassis (src/rival-fleet.js).
+  return window.gameScene.rivals.slice(0, rivals.length).map(o => {
     const { flame, trail } = o.userData.driveCue;
     return { flame: flame.visible, scale: flame.scale.x, opacity: flame.material.opacity, trail: trail.visible };
   });

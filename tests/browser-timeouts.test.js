@@ -283,3 +283,11 @@ test('a spec never asserts absence between its countdown wait and its racing wai
   });
   assert.deepEqual(offenders, [], 'Record the countdown frames in the page and assert after GO (.claude/rules/browser-test-stability.md)');
 });
+
+// The rival fleet pools one car per chassis and deals each race a shuffled lineup, so scene order is not race
+// order: the drive-cue helper judged rival 1's flame on another car (trail false, CI 44395376200).
+test('a spec pairs a rival with its scene car through gameScene.rivals, not scene order', () => {
+  const offenders = FILES.flatMap(file => readFileSync(new URL(file, import.meta.url), 'utf8').split('\n')
+    .flatMap((line, i) => /scene\.children\b.*\b(driveCue|rival)/i.test(line) ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
+  assert.deepEqual(offenders, [], 'Read `window.gameScene.rivals[i]` (tests/helpers/gameplay-browser.js) (.claude/rules/browser-test-stability.md)');
+});
