@@ -1,12 +1,15 @@
-/** Last home-page course for this page load. Never written to localStorage or sessionStorage. */
+const LAST_TRACK_KEY = 'skyline-rush-last-track';
 let last: string | null = null;
 
 export function rememberLastHomeTrack(id: string): void {
-  if (id) last = id;
+  if (!id) return;
+  last = id;
+  try { localStorage.setItem(LAST_TRACK_KEY, id); } catch { /* The choice lasts for this visit without storage. */ }
 }
 
 export function lastHomeTrack(): string | null {
-  return last;
+  if (last) return last;
+  try { return localStorage.getItem(LAST_TRACK_KEY); } catch { return null; }
 }
 
 const RACED_PARAM = 'raced';
@@ -16,12 +19,12 @@ export function backHomeHref(trackId: string): string {
   return `./?${RACED_PARAM}=${encodeURIComponent(trackId)}`;
 }
 
-export function bootHomeTrack(search: string, fallback: string, canPlay: (id: string) => boolean): string {
+export function bootHomeTrack(search: string, remembered: string | null, canPlay: (id: string) => boolean): string | null {
   const raced = new URLSearchParams(search).get(RACED_PARAM);
-  return raced && canPlay(raced) ? raced : fallback;
+  return raced && canPlay(raced) ? raced : remembered;
 }
 
-/** Drop the one-shot param so the next reload opens the fallback course. */
+/** Drop the one-shot param so the next reload opens the saved Home course. */
 export function withoutRacedQuery(search: string): string {
   const params = new URLSearchParams(search);
   params.delete(RACED_PARAM);
@@ -32,12 +35,12 @@ export function withoutRacedQuery(search: string): string {
 export function restoreHomeTrack(
   remembered: string | null,
   fallback: string,
-  canPlay: (id: string) => boolean,
+  canSelect: (id: string) => boolean,
   isUpcoming: (id: string) => boolean,
 ): { upcoming: string | null; trackId: string } {
   const id = remembered || fallback;
-  if (isUpcoming(id) && !canPlay(id)) return { upcoming: id, trackId: canPlay(fallback) ? fallback : 'coast' };
-  if (canPlay(id)) return { upcoming: null, trackId: id };
-  if (canPlay(fallback)) return { upcoming: null, trackId: fallback };
+  if (isUpcoming(id) && !canSelect(id)) return { upcoming: id, trackId: canSelect(fallback) ? fallback : 'coast' };
+  if (canSelect(id)) return { upcoming: null, trackId: id };
+  if (canSelect(fallback)) return { upcoming: null, trackId: fallback };
   return { upcoming: null, trackId: 'coast' };
 }

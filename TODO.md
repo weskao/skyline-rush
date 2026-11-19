@@ -1,3 +1,11 @@
+# Remember the last Home track
+
+- [x] Chromium: confirm a track on Home, close the tab without starting a race and reopen the game. Restore the last selection on desktop, phone portrait and phone landscape, with locked courses and Coming Soon previews keeping their existing access rules.
+- [x] RED: the fresh-page unit test lost the stored ID, and Chromium reopened Coast after Neon Downtown was selected.
+- [x] GREEN: focused unit checks, type checks, module-size, 3,434 unit tests passed (4 skipped), and the trial and locked production builds.
+- [x] Focused Playwright: all 6 tests in `tests/last-home-track-browser.spec.js` passed, including both Daily return flows.
+- [ ] Verify the feature branch's GitHub CI and the full browser and World Tour suites.
+
 # Startup loading screen
 
 - [x] Add a first-paint opening screen with responsive full-bleed artwork, bilingual wordmark and tagline, and a three-segment status tied to game bootstrap. Show Enter only after the first lobby render.
