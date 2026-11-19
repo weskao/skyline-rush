@@ -9,6 +9,7 @@ import { Color, DoubleSide, type FogExp2, type Material, type Object3D, type Sce
 import { createSpiralClouds, type SpiralClouds } from './spiral-clouds.ts';
 import { coastEnvPlan } from './coast-lighting.ts';
 import { createSpiralKit, type SpiralKit, type SpiralKitHost } from './spiral-scenery.ts';
+import { createSpiralSkyLife, type SpiralSkyLife } from './spiral-sky-life.ts';
 import { TRACK_PALETTES } from './track-palettes.ts';
 import type { VfxQuality } from './vfx-settings.ts';
 
@@ -38,7 +39,8 @@ export function createSpiralLook({ parts, dome, home, scene, clock }: Deps) {
   const night = new Color(TRACK_PALETTES.spiral.fog), shared = fog.density; // what world.js sets on this track
   const dayBackground = new Color(SPIRAL_DAY.background), dayFog = new Color(SPIRAL_DAY.fog);
   let hung = false, kit: SpiralKit | null = null, dressed = false, clouds: SpiralClouds | null = null, billowed = false;
-  const stream: SpiralKit['stream'] = (distance, endless) => { kit?.stream(distance, endless); if (billowed) clouds?.stream(distance, endless); };
+  let life: SpiralSkyLife | null = null;
+  const stream: SpiralKit['stream'] = (distance, endless) => { kit?.stream(distance, endless); life?.stream(distance, endless); if (billowed) clouds?.stream(distance, endless); };
 
   /** The dome under the course while it shows the course's sky; the backdrop only without it. */
   function hang(under: boolean): void {
@@ -49,7 +51,7 @@ export function createSpiralLook({ parts, dome, home, scene, clock }: Deps) {
   }
   function dress(on: boolean): void {
     if (on === dressed) return;
-    kit?.show(dressed = on);
+    kit?.show(dressed = on); life?.show(on);
     parts.stream = on ? stream : undefined;
   }
   /** The cloud sea in place of the kit's mounds: created with the kit, so a course without it has neither. */
@@ -57,7 +59,7 @@ export function createSpiralLook({ parts, dome, home, scene, clock }: Deps) {
     clouds?.show(on, ultra);
     if (on !== billowed) kit?.clouds(!(billowed = on));
   }
-  function strip(): void { billow(false, false); dress(false); clouds?.dispose(); kit?.dispose(); clouds = kit = null; }
+  function strip(): void { billow(false, false); dress(false); clouds?.dispose(); life?.dispose(); kit?.dispose(); clouds = life = kit = null; }
 
   return {
     /** Per frame, after coast-sky.ts and race-visuals.ts: both write first, this corrects for the course. `kitted`:
@@ -86,7 +88,9 @@ export function createSpiralLook({ parts, dome, home, scene, clock }: Deps) {
     /** The landmark kit joins the course hidden (its programs get the warmup); `update` shows it. Throws on a kit
      *  without one of its nodes, and the caller keeps the procedural scene. */
     attachKit(source: Object3D): void {
-      kit = createSpiralKit(source, parts);
+      const made = createSpiralKit(source, parts);
+      try { life = createSpiralSkyLife(source, { road: parts.road, clock, plan: made.plan }); } catch (error) { made.dispose(); throw error; }
+      kit = made;
       clouds = createSpiralClouds({ group: parts.group, road: parts.road, dome, clock });
     },
     detachKit: strip,

@@ -81,6 +81,8 @@ export function createSpiralKit(source: THREE.Object3D, { road, landmark, replac
 
   return {
     show,
+    /** The placements of the lap last streamed: what flies round the kit keeps out of them (spiral-sky-life.ts). */
+    plan: (): readonly SpiralPlacement[] => plan,
     /** The kit's cloud mounds: off while the cloud sea stands in for them (spiral-clouds.ts, High and Ultra). */
     clouds(on: boolean): void { for (const mesh of mounds) mesh.visible = on; },
     /** Per frame while shown, after sky-scene.js has moved the road and the landmark for `distance`. */

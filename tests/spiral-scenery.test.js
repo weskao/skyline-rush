@@ -9,16 +9,17 @@ import { createSpiralLook } from '../src/spiral-look.ts';
 import { readFileSync } from 'node:fs';
 import { SPIRAL_EMISSIVE, SPIRAL_TRIM } from '../src/spiral-scenery.ts';
 import { SPIRAL_NODES, SPIRAL_NODE_RADIUS, spiralSceneryPlan } from '../src/spiral-scenery-plan.ts';
+import { SKY_LIFE_NODES } from '../src/spiral-sky-life.ts';
 import { createCoastAssets } from '../src/coast-assets.ts';
 import { COAST_ENV_VARIANTS, coastEnvPlan } from '../src/coast-lighting.ts';
 import { detailedTrackLook, trackLook } from '../src/track-look.ts';
 import { skyPoint, SKY_LENGTH } from '../src/sky-track.ts';
 
 const NODES = [...SPIRAL_NODES, 'tower', 'tower_far'];
-/** A stand-in for spiral-landmarks.glb: every node a mesh on the kit's one material. */
+/** A stand-in for spiral-landmarks.glb: every node a mesh on the kit's one material, the flyers' four included. */
 function fakeGlb({ without } = {}) {
   const root = new Group(), material = new MeshStandardMaterial({ name: 'spiral_kit' }), geometry = new BoxGeometry();
-  for (const node of NODES) if (node !== without) root.add(Object.assign(new Mesh(geometry, material), { name: node }));
+  for (const node of [...NODES, ...SKY_LIFE_NODES]) if (node !== without) root.add(Object.assign(new Mesh(geometry, material), { name: node }));
   return root;
 }
 function rig() {
@@ -46,14 +47,18 @@ test('the kit is twelve pooled draws on its one material, hidden until the look 
   for (const mesh of meshes) assert.equal(mesh.material, source.children[0].material, 'no material is added');
   const visible = mesh => { for (let o = mesh; o && o !== parts.group; o = o.parent) if (!o.visible) return false; return true; };
   assert.ok(meshes.every(mesh => !visible(mesh)), 'in the scene for the warmup, not drawn yet');
+  const flyers = parts.road.getObjectByName('Sky Spiral sky life');
+  assert.deepEqual([flyers.visible, flyers.children.length], [false, SKY_LIFE_NODES.length], 'the birds and the airship wait with it');
   assert.ok(parts.replaced.every(material => material.visible), 'the procedural tower still stands');
   look.update('spiral', 'track', 'medium', true);
   course.update(0);
   assert.ok(meshes.filter(visible).length === 11, 'ten kinds of piece and one of the two tower nodes');
+  assert.ok(flyers.visible && flyers.children[0].count > 0, 'the kit brings its birds: streamed with it');
   look.update('spiral', 'track', 'high', true);
   assert.equal(meshes.filter(visible).length, 8, 'High: the cloud sea and its wisps (two draws) stand in for the three mounds');
   look.detachKit();
   assert.deepEqual(kitMeshes(parts), [], 'leaves the scene before the cache frees the GLB');
+  assert.equal(flyers.parent, null);
 });
 
 test('the procedural tower, skyline and fog banks leave only while the kit is drawn, and the trim takes the day palette', () => {
@@ -168,6 +173,10 @@ test('a kit that fails to load, or lacks a node, keeps the procedural scene and 
   assert.equal(await broken.settle('spiral', 'high', false), false);
   assert.equal(broken.dataset.spiralLandmarks, 'fallback:attach');
   assert.deepEqual(kitMeshes(broken.parts), [], 'half a kit never joins the scene');
+  const bare = rig();
+  assert.throws(() => bare.look.attachKit(fakeGlb({ without: 'bird_wing_l' })), /node bird_wing_l is missing/);
+  assert.deepEqual(kitMeshes(bare.parts), [], 'a kit without its birds does not join either');
+  assert.ok(bare.parts.replaced.every(material => material.visible));
   assert.ok(broken.parts.replaced.every(material => material.visible));
   assert.equal(handle.released, 1);
 });
