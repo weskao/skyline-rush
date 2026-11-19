@@ -25,6 +25,7 @@
 - [x] Stage Home controls before the splash fades. Wide layouts start outside the viewport; compact and folded layouts lift a few pixels in place. Keep keyboard focus on Start after handoff and keep the fixed-rail ancestors out of the animation. Both startup handoff and progress tests reproduced the old behavior before the fix.
 - [x] Resolve the opening language before first paint using saved preference, then browser languages. Announce readiness only after the fill reaches 100%, hold the glowing rail briefly, and then reveal Enter with a single light sweep. The first-paint locale and readiness-order guards reproduced the old behavior before the fix.
 - [x] Keep the localized opening tagline below the logo on short landscape and both fold axes. Bound the horizontal fold heading to the upper segment and keep the loading controls clear of the hinge.
+- [x] Restore the race effects bus when opening music already runs on the shared AudioContext. Confirmed that the old lobby skipped the saved SFX setting, then verified the saved 65% level and the original engine, Boost and Nitro cues with native Chromium Web Audio. The SFX switch and saved preferences still apply.
 - [ ] Confirm the full GitHub quality gate and physical iOS/Android/foldable devices.
 
 # Develop World Tour camera CI run 44394398766

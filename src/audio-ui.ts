@@ -91,6 +91,8 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
   // A page can come back (bfcache, app switch) without a visibilitychange; resync the engine from the live flag.
   for (const type of ['pageshow', 'focus']) window.addEventListener(type, () => sound.setHidden(document.hidden));
   showAudio();
-  unlockAudio(); // plays at once where the browser allows autoplay
+  // Opening music can already be playing on the shared context before the lobby mounts.
+  if (sound.running()) setAudio('sfx', audio.sfx, volume.sfx, false);
+  else unlockAudio(); // plays at once where the browser allows autoplay
   return { showAudio, toggleSound };
 }
