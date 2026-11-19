@@ -1,3 +1,4 @@
+import { seedGtCareer } from './helpers/gt-progress.js';
 import { test, expect, openGarage } from './helpers/test.js';
 import { openGarageSection } from './helpers/garage-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -6,6 +7,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
   test('Garage drift preview and trial are independent at ' + viewport.width + '×' + viewport.height, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await seedGtCareer(page);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await openGarage(page);
     await openGarageSection(page, 'effects');

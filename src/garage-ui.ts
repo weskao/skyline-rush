@@ -1,5 +1,5 @@
 import { PAINTS, type PaintPreset } from './appearance.ts';
-import { defaultPaint, equipCar, equippedCar, isCar, loadCarPaint, reloadCar } from './car-catalog.ts';
+import { defaultPaint, equippedCar, loadCarPaint, reloadCar, validateEquippedCar } from './car-catalog.ts';
 import { setWave3DemoAccount } from '#wave3-demo-race';
 import { SKIN_CATEGORIES } from './garage-skin-catalog.ts';
 import { currentGarageSkins, selectedGarageSkins, cancelGarageSkinPreview, subscribeGarageSkins, setGarageSkinAccount } from '#garage-skin-runtime';
@@ -10,6 +10,7 @@ import { defaultGarageCamera, dragGarageCamera, garagePreset, stepGarageAngle, t
 import type { GarageCamera } from './garage-camera.ts';
 import type { GarageLighting } from './garage-stage.ts';
 import { t } from './i18n.ts';
+import { setupGarageCarActions } from './garage-car-actions.ts';
 
 type Paint = PaintPreset;
 type PaintCatalog = Record<string, { stars: number }>;
@@ -44,6 +45,8 @@ interface GarageDependencies {
   getStars(): number;
   /** Entitlement from the build-selected `@progression-access` module (main.js), so unlocked dev servers see every paint. */
   availablePaints(stars: number): string[];
+  startSimulation: typeof import('./frame-pacing.ts').startRace;
+  syncProgress(): Promise<unknown>;
   subscribeAccount(listener: (uid: string | null) => void): void;
 }
 
@@ -57,7 +60,7 @@ export function garagePresentation(
 
 // Preserve the existing WebGL canvas, paint entitlement source and race state.
 export function setupGarageUI({
-  getWorld, canOpen, clearControls, cue, getEquippedPaint, setEquippedPaint, getStars, availablePaints, subscribeAccount,
+  getWorld, canOpen, clearControls, cue, getEquippedPaint, setEquippedPaint, getStars, availablePaints, subscribeAccount, startSimulation, syncProgress,
 }: GarageDependencies) {
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const garageScreen = $<HTMLDialogElement>('#garage-screen');
@@ -127,6 +130,7 @@ export function setupGarageUI({
 
   function showGarage(id: string = previewing): void {
     const stars = getStars();
+    carActions.refresh();
     const { state, canEquip, need } = garagePresentation(id, getEquippedPaint(), stars, PAINTS, owned());
     const name = t('paint.' + id);
     updateGarageStudioView({ ownedPaints: owned(), equippedPaint: getEquippedPaint(), car: equippedCar() });
@@ -140,21 +144,35 @@ export function setupGarageUI({
   function previewPaint(id: string): void {
     const paint = Object.hasOwn(PAINTS, id) ? PAINTS[id] : undefined;
     if (!paint) return;
+    carActions.clearPreview();
     previewing = id;
     getWorld()?.previewAppearance(paint);
     updateGarageView({ selected: id });
     showGarage();
   }
-  /** After Cloud Save or a backup import: wear the car it restored into storage, if it is another one. */
-  function adoptCar(): void {
-    const before = equippedCar();
-    const restored = reloadCar();
+  function applyCar(resolve: () => ReturnType<typeof equippedCar>): void {
+    const before = equippedCar(), after = resolve();
+    if (after === before) return;
     previousPaint = null;
-    if (restored === before) { showGarage(); return; }
-    setEquippedPaint(loadCarPaint(restored, owned()));
+    setEquippedPaint(loadCarPaint(after, owned()));
     previewPaint(getEquippedPaint());
     inspectStudioAfterFrame();
   }
+  let pendingCarRestore = false;
+  function adoptCar(): void {
+    pendingCarRestore = !canOpen();
+    if (pendingCarRestore) return;
+    applyCar(() => reloadCar(undefined, getStars()));
+    showGarage();
+  }
+  const startRace: typeof startSimulation = (race, waitingForScenery) => {
+    if (pendingCarRestore) {
+      pendingCarRestore = false;
+      applyCar(() => reloadCar(undefined, getStars()));
+    }
+    applyCar(() => validateEquippedCar(getStars()));
+    startSimulation(race, waitingForScenery);
+  };
   function syncWorldCamera(): void {
     const studio = garageStudioView.page === 'studio';
     getWorld()?.setGarageCamera(studio ? camera : null);
@@ -245,19 +263,23 @@ export function setupGarageUI({
     const id = (event.target as Element).closest<HTMLElement>('[data-paint]')?.dataset.paint;
     if (id) previewPaint(id);
   });
-  document.querySelectorAll<HTMLButtonElement>('[data-car]').forEach(button => button.addEventListener('click', () => {
-    const id = button.dataset.car;
-    if (!isCar(id) || id === equippedCar()) return;
-    equipCar(id); // both cars are open to everyone: picking one equips it
-    // Save the equipped finish for the new car while leaving its live preview alone.
-    setEquippedPaint(getEquippedPaint());
-    showGarage();
-    inspectStudioAfterFrame();
-    cue?.('equip-confirmed');
-  }));
+  const carActions = setupGarageCarActions(garageScreen, {
+    getStars, syncProgress,
+    preview: id => { getWorld()?.previewAppearance(PAINTS[loadCarPaint(id, owned())]!); inspectStudioAfterFrame(); },
+    selected: (changed, wasPreview) => {
+      if (changed) setEquippedPaint(getEquippedPaint()); // carry the equipped finish into the new car
+      if (wasPreview) previewPaint(previewing);
+      showGarage();
+      inspectStudioAfterFrame();
+      cue?.(changed ? 'equip-confirmed' : 'ui');
+    },
+    onTrialExpired: () => { if (garageScreen.open) { applyCar(() => validateEquippedCar(getStars())); showGarage(); } },
+  });
   $('#garage-button').addEventListener('click', () => {
     const world = getWorld();
     if (!world || !canOpen() || garageScreen.open) return;
+    if (pendingCarRestore) adoptCar();
+    applyCar(() => validateEquippedCar(getStars()));
     clearControls();
     garageScreen.showModal();
     cue?.('ui');
@@ -369,5 +391,5 @@ export function setupGarageUI({
     event.preventDefault();
   });
   showGarage();
-  return { showGarage, adoptCar, syncSkins, previewPaint };
+  return { showGarage, adoptCar, syncSkins, previewPaint, startRace };
 }

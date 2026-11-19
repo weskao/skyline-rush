@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { CARS } from './car-catalog.ts';
+import { CARS, GT_UNLOCK_STARS, gtTrialEndsAt, type CarId } from './car-catalog.ts';
 import GarageArtworkImage from './GarageArtworkImage.vue';
-import { garageStudioView } from './garage-view-state.ts';
-import { t } from './i18n.ts';
+import { garageCars, garageStudioView } from './garage-view-state.ts';
+import { formatDate, t } from './i18n.ts';
 
 // garage-ui.ts owns the click (equip, save, world); this component only renders the cars and which one is in use.
 const props = defineProps<{ locale: string }>();
-const text = (key: string): string => t(key, undefined, props.locale);
+const text = (key: string, params?: Record<string, number | string>): string => t(key, params, props.locale);
+const access = (id: CarId) => id === 'crimson-gt' ? garageCars.access : 'owned';
+const trialExpiry = (startedAt: number) => formatDate(gtTrialEndsAt(startedAt), { dateStyle: 'short', timeStyle: 'short' }, props.locale);
 const artworkBase = `${import.meta.env.BASE_URL}feature-assets/garage-public/car-picker/`;
 </script>
 
@@ -14,19 +16,33 @@ const artworkBase = `${import.meta.env.BASE_URL}feature-assets/garage-public/car
   <section class="garage-cars">
     <h3 id="garage-cars-title">{{ text('garage.cars') }}</h3>
     <div class="garage-car-options" role="group" :aria-label="text('garage.cars.pick')">
-      <button v-for="(_, id) in CARS" :key="id" type="button" :data-car="id"
-        :aria-label="text('car.' + id)" :aria-pressed="id === garageStudioView.car">
+      <button v-for="(_, id) in CARS" :key="id" type="button" :data-car="id" :data-car-access="access(id)" :data-car-preview="garageCars.previewCar === id"
+        :aria-label="text('car.' + id)" :aria-describedby="id === 'crimson-gt' && access(id) !== 'owned' ? 'gt-access-detail' : undefined" :aria-pressed="id === garageStudioView.car">
         <span class="garage-car-art" aria-hidden="true">
           <GarageArtworkImage :src="`${artworkBase}${id}@3x.webp`" :size="144" :height="66" alt="" loading="eager" />
         </span>
         <span class="garage-car-name">{{ text('car.' + id) }}</span>
-        <span class="garage-car-badge" aria-hidden="true">{{ id === garageStudioView.car ? `✓ ${text('car.inUse')}` : text('car.select') }}</span>
+        <span class="garage-car-badge" aria-hidden="true">{{ id === garageStudioView.car ? `✓ ${text('car.inUse')}` : access(id) === 'locked' ? text('car.preview') : text('car.select') }}</span>
       </button>
     </div>
+    <div v-if="garageCars.access !== 'owned'" id="gt-access-detail" class="garage-gt-access">
+      <span>{{ text('car.gt.progress', { stars: garageCars.stars, need: GT_UNLOCK_STARS }) }}</span>
+      <span v-if="garageCars.access === 'trial' && garageCars.trialStartedAt !== undefined">
+        {{ text('car.gt.trialUntil', { time: trialExpiry(garageCars.trialStartedAt) }) }}
+      </span>
+      <button v-else-if="garageCars.trialStartedAt === undefined" type="button" class="text-button" data-gt-trial>
+        {{ text('car.gt.startTrial') }}
+      </button>
+      <span v-else>{{ text('car.gt.trialEnded') }}</span>
+    </div>
+    <p v-if="garageCars.trialError" class="garage-gt-access" role="status">{{ text('car.gt.trialError') }}</p>
   </section>
 </template>
 
 <style>
+.garage-gt-access { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin: 6px 0 0; font-size: .8rem; color: #cfdaeb; }
+.garage-gt-access .text-button { min-height: 44px; padding: 5px 10px; }
+#garage-screen .garage-car-options button[data-car-preview="true"] { border-color: #8eaff2; }
 /* Same card language as the paint collection (garage-card-styles.css): cyan frame = selected, teal pill = in use. */
 #garage-screen .garage-car-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
 #garage-screen .garage-car-options button {

@@ -45,6 +45,16 @@ test('a podium Classic finish unlocks the next track, offers NEXT and saves the 
   assert.equal(context.progress.history.length, 1);
 });
 
+test('a new Career best crossing 18 stars unlocks the GT once', () => {
+  const progress = loadSessionProgress(['coast']);
+  Object.assign(progress.stars, { coast: 2, neon: 3, canyon: 3, aurora: 3, spiral: 3, taipei: 3 });
+  assert.equal(settle(classic({ stars: 2 }), { progress }).settlement.unlockedGt, undefined);
+  assert.equal(settle(classic({ stars: 3 }, { mode: 'time' }), { progress }).settlement.unlockedGt, undefined);
+  assert.equal(progress.stars.coast, 2);
+  assert.equal(settle(classic({ stars: 3 }), { progress }).settlement.unlockedGt, true);
+  assert.equal(settle(classic({ stars: 3 }), { progress }).settlement.unlockedGt, undefined);
+});
+
 test('fourth place records the run but neither unlocks nor offers the next track', () => {
   const { context, settlement } = settle(classic({ position: 4 }));
   assert.equal(settlement.next, null);
