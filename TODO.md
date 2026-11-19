@@ -15,6 +15,34 @@
 - [x] Keep the Taipei showroom car clear of scenery through the High-quality portrait orbit with AIRFLOW on. Moving the Home preview from 1,040 m to 1,090 m clears the kerbside bus-stop posts. The 390 × 844 regression failed at 76° and 77° before the fix, then passed with all six Taipei camera cases on Chromium.
 - [ ] Verify the full GitHub quality gate on the repair commit.
 
+# 2026-11-19 — Tiered Garage and race VFX detail
+
+- [x] Reuse the wake point cloud for small skin-tinted sparks on High/Ultra. Restrict the submitted wake points on Low/Medium and keep the equipped shapes.
+- [x] Limit launch sparks to 24/48/72/96 by tier; refine the spark silhouette and fitted airflow seams on High/Ultra. Comfort and Reduced Motion omit the added details.
+- [x] Constrain overlapping NITRO jets in the Low showroom; keep the daylight race profile. A dedicated RED exposed the missing showroom cap.
+- [x] Observe RED for unbounded wake draws and matching flare counts across tiers; 66 focused checks pass, including shader safety and module size.
+- [x] Check the four representative styles in WebGL at every tier and confirm the combined loadout attaches to both selectable car models in Studio.
+- [ ] Confirm physical-device footage and review the exact-commit GitHub quality gate.
+
+# 2026-11-18 — Garage and race VFX polish
+
+- [x] Review the shared 3× artwork catalog. Link card and loadout colours to each cosmetic, and replace pulsing preview rings with steady selection borders.
+- [x] Shape NITRO filaments, the launch flare colour sweep, thruster texture and airflow falloff within the existing intensity budgets.
+- [x] Confirm two test-first failures. The 72 focused tests, 3,370 unit tests (3 skipped), typecheck, module-size check and locked production build passed.
+- [ ] Review real-game WebGL evidence, a physical phone and the exact-commit quality gate.
+
+# 2026-11-18 — Launch flare, thruster and airflow glare
+
+- [x] Use a steady charge during countdown and a single burst at GO. Contain flare emission by style; use continuous motion envelopes for Void Pulse, Plasma Helix, Prism Lattice and Vortex Spiral.
+- [x] The three regression guards failed with the original behavior. All 82 focused unit checks, typecheck and the trial build passed.
+- [ ] Verify the exact feature-branch quality gate and review on physical phones.
+
+# 2026-11-18 — NITRO tail glare
+
+- [x] Reproduce from High with a custom NITRO trail, on the road and in flight. Test the gold pulse, red dash, chain lighting, compact road placement, and Comfort card loop. The new guards fail against the original behavior.
+- [x] Tune all five styles through the shared render path. Keep Low readable, and use the chain's extra energy for length and flow speed. Comfort shows a quiet, tinted tail and static card art.
+- [ ] Verify the exact feature-branch GitHub quality gate and review the phone WebGL evidence.
+
 # Acquisition reveal
 
 - [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.

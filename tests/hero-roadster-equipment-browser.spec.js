@@ -120,9 +120,14 @@ test('race with the heaviest skin of each category: launch flare wraps the GLB, 
   await expect.poll(async () => Object.keys(await instances(page))).toEqual(['home']);
 
   await page.locator('#start-button').click();
-  await expect.poll(() => glowOnGlb(page), { timeout: ciTimeout(15000) }).toBe(true); // 3-2-1 holds the flare
-  await attach(page, 'race-countdown-flare');
+  await expect.poll(() => page.evaluate(() => {
+    const car = window.gameScene.player;
+    const pool = car.getObjectByName('Launch flare burst');
+    return !!pool?.visible && pool.material.uniforms.charging.value === 1 && !car.getObjectByName('Launch flare body glow')?.visible;
+  }), { timeout: ciTimeout(15000) }).toBe(true);
+  await expect.poll(() => glowOnGlb(page), { timeout: ciTimeout(15000) }).toBe(true);
   await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(15000) });
+  await attach(page, 'race-launch-flare');
   await page.waitForTimeout(ciTimeout(300));
   const before = await programs(page);
   await page.evaluate(() => {

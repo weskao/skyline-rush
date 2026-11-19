@@ -71,7 +71,7 @@ export type SprintInput = {
   enabled: boolean; quality: VfxQuality; reducedMotion: boolean; ultra?: boolean;
   chain?: number; // charges spent in the running NITRO burst (car.nitroBurst)
 };
-// NITRO ×1/×2/×3 scale the sprint frame: longer, brighter flames, denser speed lines, wider FOV. Presentation only.
+// NITRO ×1/×2/×3 scale the sprint frame: longer flames, denser speed lines, wider FOV. Presentation only.
 export const NITRO_CHAIN_LIFT: readonly number[] = [1, 1.2, 1.4];
 type SprintChannel = { phase: SprintPhase; intensity: number; ignition: number; age: number; release: number };
 const finite = (value: number, fallback = 0): number => Number.isFinite(value) ? value : fallback;
@@ -82,14 +82,14 @@ export function createSprintVfx() {
   const nitro = channel(), boost = channel();
   /** `fov`: eased sprint share for the camera (FOV, dolly, rumble). `kick`: seconds since the last fresh ignition. `punch`: its 0–1 surge.
    * `squat`: the car's 0–1 nose lift on that ignition, peaking before the punch so the camera follows late. */
-  const frame = { nitro, boost, power: 0, fov: 0, blur: 0, particles: 0, nitroMix: 0, kick: 1, punch: 0, squat: 0 };
+  const frame = { nitro, boost, power: 0, lightPower: 0, fov: 0, blur: 0, particles: 0, nitroMix: 0, kick: 1, punch: 0, squat: 0 };
   let lift = 1;
   const clear = (part: SprintChannel): void => {
     part.phase = 'ready'; part.intensity = part.ignition = part.age = part.release = 0;
   };
   const reset = (): typeof frame => {
     clear(nitro); clear(boost);
-    frame.power = frame.fov = frame.blur = frame.particles = frame.nitroMix = frame.punch = frame.squat = 0; frame.kick = 1;
+    frame.power = frame.lightPower = frame.fov = frame.blur = frame.particles = frame.nitroMix = frame.punch = frame.squat = 0; frame.kick = 1;
     lift = 1;
     return frame;
   };
@@ -130,7 +130,7 @@ export function createSprintVfx() {
       advance(nitro, !!input.nitro, dt, speedScale);
       advance(boost, !!input.boost, dt, speedScale);
       // Independent channels never add; simultaneous activation is capped at one.
-      frame.power = unit(Math.max(nitro.intensity, boost.intensity * 0.8));
+      frame.power = frame.lightPower = unit(Math.max(nitro.intensity, boost.intensity * 0.8));
       frame.nitroMix = nitro.intensity > 0 ? unit(nitro.intensity / Math.max(0.01, frame.power)) : 0;
       // Only a chained NITRO goes past one; eased so a new charge swells and the end of NITRO settles back.
       const level = Math.min(3, Math.max(1, Math.round(finite(input.chain ?? 1, 1))));
@@ -164,4 +164,11 @@ export function sprintPunch(age: number): number {
 /** Degrees the sprint widens the chase camera: sprint strength plus the ignition punch × the player's FOV setting, 0 with VFX off. */
 export function sprintFovOffset(frame: { fov: number; punch?: number }, visual: { enabled: boolean; fov: number }): number {
   return visual.enabled ? (frame.fov + PUNCH_FOV * (frame.punch ?? 0)) * visual.fov : 0;
+}
+
+/** NITRO adds a bounded halo from the unchained intensity. BOOST retains its own lighting. */
+export function sprintBloomBoost(frame: { nitroMix: number; lightPower: number }, bloom: number, ignition: number): number {
+  const boost = bloom * (frame.lightPower * .25 + ignition * .2);
+  const nitro = Math.min(.055, bloom * (frame.lightPower * .09 + ignition * .035));
+  return boost + (nitro - boost) * frame.nitroMix;
 }
