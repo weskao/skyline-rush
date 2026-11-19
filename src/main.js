@@ -472,7 +472,7 @@ function phaseUI() {
     showTracks();
     ui['result-stats'].hidden = false;
     $('#new-best').hidden = !record;
-    lastResult = { race, best, record, medals, challengeMedals: settled.challengeMedals, unlockedGt: settled.unlockedGt, series: sprintSeries, cup, stunt, next: settled.next, settled };
+    lastResult = { race, best, record, medals, challengeMedals: settled.challengeMedals, unlockedGt: settled.unlockedCars.includes('crimson-gt') || undefined, series: sprintSeries, cup, stunt, next: settled.next, settled };
   }
   phaseText();
 }

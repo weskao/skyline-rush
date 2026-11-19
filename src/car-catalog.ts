@@ -6,17 +6,17 @@ import { starTotal } from './history-stats.ts';
 import { readStored, writeStored, type HistoryStorage } from './history-storage.ts';
 
 export type CarId = 'roadster' | 'crimson-gt';
+export const GT_UNLOCK_STARS = 18;
 /** model: MODEL_MANIFEST id drawn over the procedural fallback.
  *  defaultPaint: a shared paint shown until the player picks one for this car.
  *  No size field: car-display-size.ts measures each GLB and shows it at the Roadster's size. */
-interface CarEntry { model: string; defaultPaint: string }
+interface CarEntry { model: string; defaultPaint: string; stars: number }
 export const CARS: Readonly<Record<CarId, CarEntry>> = {
-  roadster: { model: 'roadster2', defaultPaint: 'pearl' },
-  'crimson-gt': { model: 'crimson-gt', defaultPaint: 'crimson' },
+  roadster: { model: 'roadster2', defaultPaint: 'pearl', stars: 0 },
+  'crimson-gt': { model: 'crimson-gt', defaultPaint: 'crimson', stars: GT_UNLOCK_STARS },
 };
 export const CAR_KEY = 'skyline-rush-car';
 export const GT_TRIAL_KEY = 'skyline-rush-gt-trial-started-at';
-export const GT_UNLOCK_STARS = 18;
 const GT_TRIAL_MS = 24 * 60 * 60 * 1000;
 type CarAccess = 'locked' | 'trial' | 'owned';
 
@@ -43,6 +43,9 @@ const CAR_PAINTS_KEY = 'skyline-rush-car-paints'; // { [car]: paint id }; the Ro
 
 export const isCar = (id: unknown): id is CarId => typeof id === 'string' && Object.hasOwn(CARS, id);
 export const defaultPaint = (car: CarId): string => CARS[car].defaultPaint;
+export const carArtwork = (id: CarId): string => `feature-assets/garage-public/car-picker/${id}@3x.webp`;
+export const earnedCars = (stars: number): CarId[] =>
+  Object.keys(CARS).filter(isCar).filter(id => stars >= CARS[id].stars);
 
 /** The car this device's player picked; undefined until they pick one. */
 export function savedCar(storage?: HistoryStorage): CarId | undefined {
@@ -50,7 +53,7 @@ export function savedCar(storage?: HistoryStorage): CarId | undefined {
   return isCar(id) ? id : undefined;
 }
 function canUseCar(id: CarId, stars: number, storage?: HistoryStorage): boolean {
-  return id === 'roadster' || gtAccess(stars, savedGtTrial(storage)) !== 'locked';
+  return stars >= CARS[id].stars || (id === 'crimson-gt' && gtAccess(stars, savedGtTrial(storage)) === 'trial');
 }
 
 /** A legacy selection by itself conveys no eligibility. Keep it for a future qualified restore. */

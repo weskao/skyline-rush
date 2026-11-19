@@ -44,7 +44,7 @@ test('the newly unlocked GT leads a single shared race reward batch', async () =
   const race = { mode: 'classic', rivals: [{}], result: { success: true, position: 1 } };
   const cues = [];
   const cue = (name, delay) => cues.push([name, delay]);
-  const result = { unlockedGt: true, unlockedTrack: true, next: 'neon', unlockedPaints: [], medals: [], challengeMedals: [] };
+  const result = { unlockedCars: ['crimson-gt'], unlockedTrack: true, next: 'neon', unlockedPaints: [], medals: [], challengeMedals: [] };
   await presentRaceAcquisitions(race, result, cue, true);
   const batch = acquisitionReveal.current();
   assert.ok(batch);
@@ -65,6 +65,21 @@ test('the newly unlocked GT leads a single shared race reward batch', async () =
 
 test('other race rewards do not present an already available or trial GT', () => {
   assert.deepEqual(raceAcquisitionItems({
-    unlockedTrack: true, next: 'neon', unlockedPaints: [], medals: [], challengeMedals: [],
+    unlockedCars: [], unlockedTrack: true, next: 'neon', unlockedPaints: [], medals: [], challengeMedals: [],
   }).map(item => item.id), ['neon']);
+});
+
+test('the vehicle premiere uses a low front dolly, a broadside pass, a rear push and a title hold', async () => {
+  const { CAR_REVEAL_MS, carRevealShot } = await import('../src/acquisition-car-camera.ts');
+  assert.deepEqual([0, 1600, 3150, 4700, CAR_REVEAL_MS].map(time => carRevealShot(time).name),
+    ['signature', 'profile', 'thrusters', 'hero', 'hero']);
+  const nose = carRevealShot(1100);
+  const side = carRevealShot(2350);
+  const exhaust = carRevealShot(4550);
+  const hero = carRevealShot(CAR_REVEAL_MS);
+  assert.ok(nose.yaw > 2.4 && nose.pitch < .16 && nose.focus < 0);
+  assert.ok(Math.abs(side.yaw - Math.PI / 2) < .15);
+  assert.ok(exhaust.yaw < .46 && exhaust.focus > 0 && exhaust.fill > nose.fill);
+  assert.ok(hero.fill < exhaust.fill && hero.yaw > 2);
+  assert.deepEqual(carRevealShot(CAR_REVEAL_MS + 2000), hero);
 });

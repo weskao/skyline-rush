@@ -8,6 +8,11 @@
 - [x] Observed RED for newly crossed Classic paint thresholds and verified GREEN for settled rewards, queue order and duplicate receipts.
 - [x] Add one accessible bilingual reveal for real race, mission and redemption outcomes, and document the consumer API.
 - [x] Add per-kind reveal SFX on the shared mixer and expose typed acquisition constants for callers.
+- [x] Use one four-shot reveal for catalog cars, with a localized model title, viewport-aware framing and a static fallback for Low, reduced motion, comfort, disabled effects or failed rendering. Chromium preview captured at desktop 1100 × 720, mobile 390 × 844 and 740 × 360.
+- [x] Add Vantaire GT to the existing Classic settlement at 18 career stars and preserve ownership from prior equipped-car and per-car paint saves. RED → GREEN for the first threshold crossing and no replay for legacy ownership. Local typecheck, production build and unit gate passed (3,416 passed, 4 skipped).
+- [x] RED → GREEN for the film-study camera order, eight distinct reward scores, and stopping only the acquisition score. The live car reveal now matches the study’s low front, side and rear angles before the title cut. Captured actual Chromium WebGL frames and an audible score using the game mixer.
+- [x] RED → GREEN for stereo camera sections, five Garage sound families, and reveal-only sound fade. Verified all 28 Garage cards and their cue routing in Chromium. The locked-production bundle build passed after moving Garage category metadata to the producer.
+- [x] Resolve the develop merge using the feature reveal UI, shot order, and stereo mix. Preserve develop’s 24-hour trial and Go to Garage action, with the permanent 18-star unlock routed through the shared catalog-based reveal.
 - [ ] Confirm physical phone coverage and exact-HEAD CI.
 
 # Measured routes and Home artwork

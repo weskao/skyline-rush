@@ -1,9 +1,10 @@
 .acquisition-reveal {
   --reveal-cyan: #72e4ff;
+  --reveal-width: 780px;
   box-sizing: border-box;
   inset: max(12px, var(--safe-top, 0px)) max(12px, var(--safe-right, 0px))
     max(12px, var(--safe-bottom, 0px)) max(12px, var(--safe-left, 0px));
-  width: min(780px, calc(100vw - max(12px, var(--safe-left, 0px)) - max(12px, var(--safe-right, 0px))));
+  width: min(var(--reveal-width), calc(100vw - max(12px, var(--safe-left, 0px)) - max(12px, var(--safe-right, 0px))));
   max-height: calc(100dvh - max(12px, var(--safe-top, 0px)) - max(12px, var(--safe-bottom, 0px)));
   padding: 0;
   border: 1px solid #40637b;
@@ -222,7 +223,7 @@
 body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) .acquisition-reveal {
   inset: calc(var(--fold-home-top) + var(--fold-gap-top)) calc(var(--fold-home-right) + var(--fold-gap-right))
     calc(var(--fold-home-bottom) + var(--fold-gap-bottom)) calc(var(--fold-home-left) + var(--fold-gap-left));
-  width: min(780px, calc(var(--fold-home-width) - var(--fold-gap-left) - var(--fold-gap-right)));
+  width: min(var(--reveal-width), calc(var(--fold-home-width) - var(--fold-gap-left) - var(--fold-gap-right)));
   max-height: calc(var(--fold-home-height) - var(--fold-gap-top) - var(--fold-gap-bottom));
 }
 body:is(.vfx-comfort, [data-vfx-enabled="false"]) .acquisition-reveal,
