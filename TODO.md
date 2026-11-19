@@ -1,3 +1,8 @@
+# CI browser regression repair (2026-11-20)
+
+- [x] Confirmed the browser regression in [the previous full CI run](https://github.com/weskao/skyline-rush/actions/runs/44501768226). Capture the restart HUD during the countdown and read each showcase camera layout together, preserving the real key and pointer actions.
+- [ ] Verify these scenarios and the full quality gate at the repair commit. Local Playwright cannot start Chromium because the runner denies the browser's socket operation.
+
 # Browser CI run 44486279087
 
 - [x] Identified the mobile results dock stall at the acquisition locator handler and the late camera dock paint (12.7–13.3 s against a 7.5 s CI budget).
