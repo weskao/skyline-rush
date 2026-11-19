@@ -111,8 +111,8 @@ test('real Garage rejects unaffordable demo redemption and keeps collection empt
   const store = await openStore(page);
   await expect(store.locator('.demo-wallet strong')).toHaveText('20');
   await store.locator('[data-demo-id="thruster-ion"]').click();
-  await store.getByRole('button', { name: 'Demo redeem' }).click();
-  await expect(store.locator('.demo-message')).toContainText('Not enough demo points');
+  await expect(store.getByRole('button', { name: 'Demo redeem', exact: true })).toBeDisabled();
+  await expect(store.getByRole('button', { name: 'Demo redeem', exact: true })).toHaveAccessibleDescription(/Need 5 Demo points more/);
   await expect(store.locator('.demo-wallet strong')).toHaveText('20');
 
   await page.context().setOffline(true);
@@ -260,8 +260,8 @@ test('real 5 km Time Attack -> demo result -> claim -> redeem -> equip -> persis
   await store.locator('[data-demo-id="nitro-trail-cyan"]').click();
   await expect(store.locator('.demo-detail')).toContainText('150 Demo coins');
   await expect(store.locator('.demo-selected-balance')).toHaveText('Available 70 Demo coins');
-  await store.getByRole('button', { name: 'Demo redeem' }).click();
-  await expect(store.locator('.demo-message')).toContainText('Not enough demo coins');
+  await expect(store.getByRole('button', { name: 'Demo redeem', exact: true })).toBeDisabled();
+  await expect(store.getByRole('button', { name: 'Demo redeem', exact: true })).toHaveAccessibleDescription(/Need 80 Demo coins more/);
   await store.locator('[data-demo-id="thruster-ion"]').click();
   await store.getByRole('button', { name: 'Demo redeem' }).click();
   await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
@@ -316,7 +316,7 @@ test('real Garage cannot grant paid entitlements or stale demo claims through re
   const store = await openStore(page);
   await expect(store).toHaveAttribute('data-authority', 'local-demo');
   await store.locator('[data-demo-id="thruster-ion"]').click();
-  await store.getByRole('button', { name: 'Demo redeem' }).click();
+  await expect(store.getByRole('button', { name: 'Demo redeem', exact: true })).toBeDisabled();
   await expect(store.locator('.demo-wallet strong')).toHaveText('20');
   const before = await page.evaluate(() => Object.keys(localStorage));
   await page.reload();
