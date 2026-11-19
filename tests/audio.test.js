@@ -6,7 +6,7 @@ import { createRace } from '../src/game.js';
 const midiHz = note => 440 * 2 ** ((note - 69) / 12);
 
 // Record the Web Audio boundary; synthesizers, cue selection and event tracking stay real.
-function installAudio(t) {
+function installAudio(t, backgroundMuted) {
   const nodes = [];
   const param = () => ({ value: 0, setValueAtTime(value) { this.value = value; },
     setTargetAtTime(value) { this.value = value; }, linearRampToValueAtTime(value) { this.value = value; },
@@ -32,7 +32,7 @@ function installAudio(t) {
     close() { return Promise.resolve(); }
   };
   t.after(() => { delete globalThis.AudioContext; });
-  const sound = createSound();
+  const sound = createSound(undefined, backgroundMuted);
   t.after(() => sound.dispose());
   return { nodes, sound };
 }
@@ -403,6 +403,37 @@ test('backgrounding cancels pending stingers and suppresses new sounds', t => {
 // A prelude note is any music oscillator: cues are sine tones and none play here; the engine hum starts without a time.
 const musicNotes = nodes => nodes.filter(node => node.kind === 'oscillator' && typeof node.started === 'number' && node.type !== 'sine');
 const musicBus = nodes => nodes.filter(node => node.kind === 'gain' && node.destination?.kind === 'compressor')[1];
+
+test('quiet panels fade the background music and leave the soundtrack preference and cues active', t => {
+  let panelOpen = false;
+  const { nodes, sound } = installAudio(t, () => panelOpen);
+  const race = createRace();
+  sound.setEnabled(true);
+  sound.setMusic(true);
+  const bus = musicBus(nodes);
+  const homeLevel = bus.gain.value;
+  assert.ok(homeLevel > 0);
+
+  panelOpen = true;
+  sound.update(race);
+  assert.equal(bus.gain.value, 0, 'opening the Garage or a reward reveal removes the background layer');
+  sound.setMusic(true);
+  assert.equal(bus.gain.value, 0, 're-applying audio settings in an open panel stays quiet');
+  const beforeCue = nodes.length;
+  sound.cue('redeem-review');
+  assert.ok(nodes.slice(beforeCue).some(node => node.kind === 'oscillator' && node.type === 'sine'));
+  assert.equal(sound.diagnostics().musicOn, true);
+
+  panelOpen = false;
+  sound.update(race);
+  assert.equal(bus.gain.value, homeLevel);
+  sound.setMusic(false);
+  panelOpen = true;
+  sound.update(race);
+  panelOpen = false;
+  sound.update(race);
+  assert.equal(bus.gain.value, 0, 'closing a panel respects an explicitly disabled soundtrack');
+});
 function trackContexts() {
   const made = [];
   globalThis.AudioContext = class extends globalThis.AudioContext { constructor() { super(); made.push(this); } };
@@ -571,16 +602,25 @@ test('store cues play short distinct SFX without joining the music stingers', as
   for (const cue of cues) {
     assert.ok(FEEDBACK_SOUNDS[cue]?.length, cue);
     assert.equal(STINGERS.has(cue), false, cue);
-    // The success motif belongs to the shared reveal; its length budget is checked with the acquisition motifs.
-    if (cue !== ACQUISITION_SOUNDS.equipment) {
-      assert.ok(Math.max(...FEEDBACK_SOUNDS[cue].map(([, , duration, delay]) => duration + delay)) <= .35, cue);
-    }
+    assert.ok(Math.max(...FEEDBACK_SOUNDS[cue].map(([, , duration, delay]) => duration + delay)) <= .35, cue);
   }
   const phrases = cues.map(pitches);
   assert.ok(phrases.every(phrase => phrase.length > 0));
   assert.equal(new Set(phrases.map(phrase => phrase.join(','))).size, cues.length);
   sound.setEnabled(false);
   for (const cue of cues) assert.deepEqual(pitches(cue), []);
+});
+
+test('the equipment reveal uses a short rising chime without a bass sweep', async t => {
+  const { ACQUISITION_SOUNDS } = await import('../src/feedback-sounds.ts');
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const start = nodes.length;
+  sound.cue(ACQUISITION_SOUNDS.equipment);
+  const voices = nodes.slice(start).filter(node => node.kind === 'oscillator');
+  assert.equal(voices.length, 2);
+  assert.ok(voices.every(voice => voice.type === 'sine' && voice.frequency.value >= 500));
+  assert.ok(voices[0].frequency.value < voices[1].frequency.value);
 });
 
 test('the halfway chime is a short rising stinger, so it ducks the mix only briefly', async () => {

@@ -277,19 +277,18 @@ async function confirmRedemption(): Promise<void> {
       </div>
     </header>
 
-    <nav class="demo-filters" :aria-label="tr('Filter cosmetic categories', '篩選外觀類別')">
-      <button v-for="category in categories" :key="category" type="button"
-        :aria-pressed="filter === category" :disabled="submitting" @click="selectCategory(category)">
-        {{ categoryLabel(category) }}
-      </button>
-    </nav>
-
     <div class="demo-showroom">
+      <nav class="demo-filters" :aria-label="tr('Filter cosmetic categories', '篩選外觀類別')">
+        <button v-for="category in categories" :key="category" type="button"
+          :aria-pressed="filter === category" :disabled="submitting" @click="selectCategory(category)">
+          {{ categoryLabel(category) }}
+        </button>
+      </nav>
       <div class="demo-checkout">
         <span class="demo-sr-only" role="status">{{ submitting ? tr('Redeeming…', '兌換中…') : '' }}</span>
         <section v-if="selected" class="demo-detail" :aria-label="tr('Cosmetic preview', '外觀預覽')">
           <div v-if="!driftPoster" class="demo-detail-art" aria-hidden="true">
-            <GarageSkinCardFace :skin-id="selected.id" :locale="locale" />
+            <GarageSkinCardFace :skin-id="selected.id" :locale="locale" :size="156" />
           </div>
           <div class="demo-detail-copy">
             <h4>{{ selected.name[locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</h4>
@@ -304,9 +303,10 @@ async function confirmRedemption(): Promise<void> {
             </p>
           </div>
           <div class="demo-actions">
-            <button type="button" :disabled="submitting" @click="inspectPreview(selected)">{{ tr('Inspect preview', '檢視預覽') }}</button>
-            <button type="button" :disabled="submitting || !canRequestRedemption"
+            <button type="button" class="demo-primary" :class="{ 'demo-insufficient': shortfall(selected) > 0 }"
+              :disabled="submitting || !canRequestRedemption"
               @click="requestRedemption(selected, $event)">{{ tr('Demo redeem', '試玩兌換') }}</button>
+            <button type="button" :disabled="submitting" @click="inspectPreview(selected)">{{ tr('Inspect preview', '檢視預覽') }}</button>
             <button type="button" :disabled="submitting" @click="emit('open-collection')">{{ tr('Demo Collection', '試玩收藏') }}</button>
           </div>
           <GarageDriftPreview v-if="active && driftPoster" :key="garageStudioView.car" :skin="selected.id"

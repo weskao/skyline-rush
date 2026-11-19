@@ -70,7 +70,7 @@ const returnToRace = () => document.querySelector<HTMLButtonElement>('#garage-cl
         :trial-access="garageSkinEntry" :skin-revision="garageSkinState.revision"
         @preview="selectGarageSkin" @open-collection="openCollection">
         <template v-if="embedded" #navigation>
-          <button type="button" @click="navigate('home')">{{ backLabel }}</button>
+          <button type="button" class="wave3-store-back" @click="navigate('home')">{{ backLabel }}</button>
         </template>
       </Wave3DemoStore>
       <Wave3DemoCollection v-else :port="wave3DemoExperience" :locale="locale" :initial-item-id="collectionItem"
@@ -87,6 +87,8 @@ const returnToRace = () => document.querySelector<HTMLButtonElement>('#garage-cl
 .wave3-demo-entry p { margin: 0 0 8px; font-size: 12px; line-height: 1.5; }
 .wave3-demo-entry-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .wave3-demo-entry button { min-height: 44px; color: #dff5ff; background: #17405d; border: 1px solid #538baa; border-radius: 8px; padding: 9px 10px; cursor: pointer; }
+.wave3-demo-entry .wave3-store-back { background: #17243a; border-color: #546587;
+  font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1.2; }
 .wave3-demo-back { margin-bottom: 10px; }
 .wave3-demo-entry button:focus-visible { outline: 3px solid #89f5ff; outline-offset: 2px; }
 </style>
