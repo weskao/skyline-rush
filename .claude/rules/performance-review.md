@@ -106,9 +106,11 @@ same task as Home's first `showTracks()`, so nothing reached the screen until th
 race-modes, home-shortcuts and device-quality boot budgets failed on CI (44399876486). `src/main.js` now starts
 the world build after one painted frame (`requestAnimationFrame(() => setTimeout(...))`). Never move world
 construction, or any other multi-second boot work, back into the module's first task; every caller of `world`
-outside the boot block already guards `!world`, and a new one must too. Guard:
-`tests/boot-first-paint-browser.spec.js` (a frame lands after `.route-drivers` is filled and before `#world`
-asks for its WebGL context).
+outside the boot block already guards `!world`, and a new one must too. A guard that falls back while `world` is
+null (the Coming Soon cover image instead of the live showroom) must be redrawn once the world exists: the boot
+block calls `showTracks()` after `previewPaint`, and a new world-dependent view joins that call (Frostbite stayed on
+its cover, CI 44468157574). Guards: `tests/boot-first-paint-browser.spec.js` (a frame lands after `.route-drivers`
+is filled and before `#world` asks for its WebGL context; a Coming Soon card opened at boot reaches live 3D).
 
 ## The pre-pool triangle budget measures scenery, not the player car
 

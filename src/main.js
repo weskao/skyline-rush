@@ -514,9 +514,9 @@ function updateUI(now, input) {
 requestAnimationFrame(() => setTimeout(() => { try {
   world = createWorld($('#world')); syncSkins();
   requestAnimationFrame(maybeShowReleaseNotes);
-  showHomeStatus(); // the daily card can start a race now
   world.configureVFX(vfx.settings());
   previewPaint(equippedPaint);
+  showTracks(); // Home status + a Coming Soon card upgrades from its cover to live 3D, now that the world is configured
   let previousTime = performance.now(), accumulator = 0, hudElapsed = 0, wasCalm = calmMotion();
   const perfOverlay = createPerfOverlay(location.search, () => world.inspectRenderLoad(), !!import.meta.env.VITE_DIAG);
   const fps = setupFpsUI(scale => world.setRenderScale(scale));

@@ -24,3 +24,12 @@ test('Home setup reaches a frame before the 3D world is built', async ({ page })
   expect(framedAt).toBeLessThan(worldAt);
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
 });
+
+// Home's first showTracks() runs before the world exists, so a Coming Soon card can only show its cover image then.
+// Once the world is built the card must switch to the live 3D showroom (frostbite-canyon, CI 44468157574).
+test('a Coming Soon card opened at boot switches to live 3D once the world is built', async ({ page }) => {
+  await page.goto('/?stage2-preview=frostbite-canyon');
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+  await expect(page.locator('#start-button span')).toHaveText('COMING SOON');
+  await expect(page.locator('#upcoming-scene')).toBeHidden(); // live 3D, not the cover image
+});
