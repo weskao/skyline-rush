@@ -21,7 +21,7 @@ test('audio switches, sliders, Mute all and the autoplay unlock are wired by the
 });
 
 // Minimal DOM for the controller: no channel rows, one Mute all button, window listeners and storage recorded.
-async function setupWithEngine(t, sound) {
+async function setupWithEngine(t, sound, prefs = { music: true, sfx: true }) {
   const listeners = {}, writes = [];
   let muteAll;
   globalThis.document = { hidden: false, querySelectorAll: () => [], querySelector: () => ({ addEventListener: (type, fn) => { muteAll = fn; } }) };
@@ -29,8 +29,8 @@ async function setupWithEngine(t, sound) {
   globalThis.localStorage = { setItem: (key, value) => writes.push([key, value]) };
   t.after(() => { delete globalThis.document; delete globalThis.window; delete globalThis.localStorage; });
   const { setupAudioUI } = await import('../src/audio-ui.ts');
-  const audio = { music: true, sfx: true };
-  setupAudioUI({ audio, volume: { music: 1, sfx: 1 }, sound });
+  const audio = { ...prefs };
+  setupAudioUI({ audio, volume: { music: 1, sfx: 0.65 }, sound });
   return { audio, listeners, writes, muteAll: () => muteAll() };
 }
 const failingEngine = (calls = []) => ({
@@ -42,6 +42,21 @@ test('an engine that fails to start on load or on a tap never saves the player\'
   assert.deepEqual(writes, [], 'the start-up unlock leaves storage alone');
   for (const fn of listeners.pointerdown) fn();
   assert.deepEqual(writes, [], 'a gesture unlock leaves storage alone');
+});
+
+test('the lobby applies the saved effects setting when opening music already runs', async t => {
+  for (const enabled of [true, false]) {
+    const effects = [];
+    const sound = {
+      ...failingEngine(),
+      running: () => true,
+      setEnabled(on, level) { effects.push([on, level]); return on; },
+    };
+    const { writes, listeners } = await setupWithEngine(t, sound, { music: true, sfx: enabled });
+    for (const tap of listeners.pointerdown) tap();
+    assert.deepEqual(effects, [[enabled, 0.65]]);
+    assert.deepEqual(writes, []);
+  }
 });
 
 test('the player\'s own Mute all still saves the choice', async t => {
