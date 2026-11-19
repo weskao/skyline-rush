@@ -3,6 +3,10 @@ import { ACQUISITION_KIND, type AcquisitionKind } from './acquisition-reveal.ts'
 // [start Hz, end Hz, length, delay, gain, waveform]. All motifs go through the SFX bus.
 type Note = readonly [number, number, number, number, number, OscillatorType?];
 export const FEEDBACK_SOUNDS = {
+  'freeze-hit': [[310, 105, .22, 0, .035, 'triangle'], [1750, 960, .26, .014, .025], [2640, 1620, .22, .055, .017]],
+  'freeze-thaw': [[1740, 2710, .13, .018, .015], [2210, 1410, .19, .051, .009]],
+  'emp-hit': [[162, 63, .29, 0, .035, 'triangle'], [680, 182, .14, .009, .019, 'square'], [543, 146, .1, .108, .014, 'square']],
+  'emp-clear': [[156, 265, .14, 0, .021, 'triangle'], [510, 665, .1, .049, .014]],
   'acquisition-track': [[294, 220, .30, 0, .046], [68, 43, .41, 0, .055],
     [146.83, 220, .41, .09, .035, 'triangle'], [293.66, 293.66, .52, .20, .038, 'triangle'],
     [440, 587.33, .53, .35, .035], [784, 784, .42, .54, .022]],
@@ -49,6 +53,14 @@ export const FEEDBACK_SOUNDS = {
   'final-lap': [[590, 590, .15, 0, .030], [885, 885, .25, .13, .027]],
   'objective-invalid': [[385, 240, .23, 0, .030]],
 } satisfies Readonly<Record<string, readonly Note[]>>;
+
+// Filtered noise layered under the crystal snap and electrical discharge.
+export const ITEM_HIT_TEXTURES = {
+  'freeze-hit': [3900, 1100, .25, .045],
+  'freeze-thaw': [5100, 2250, .16, .035],
+  'emp-hit': [1850, 460, .22, .043],
+  'emp-clear': [1150, 520, .11, .019],
+} as const;
 
 export const ACQUISITION_SOUNDS = {
   [ACQUISITION_KIND.CAR]: 'acquisition-car',

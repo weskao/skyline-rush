@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { delimiter, join } from 'node:path';
 import config from '../playwright.config.js';
 import { ciTimeout, slow } from './helpers/ci.js';
 
@@ -76,7 +78,7 @@ test('the pre-push layout gate runs both Playwright halves on 2 workers', () => 
 
 test('the pre-push layout gate runs on a free port, not the default one a stray server may hold', async () => {
   const hook = readFileSync(new URL('../.githooks/pre-push', import.meta.url), 'utf8');
-  const pick = hook.match(/^PLAYWRIGHT_PORT=\$\((.+)\)$/m);
+  const pick = hook.match(/^PLAYWRIGHT_PORT=\$\((.+)\)(?: \|\| exit 1)?$/m);
   assert.ok(pick, 'pre-push must assign PLAYWRIGHT_PORT');
   assert.match(hook, /^export PLAYWRIGHT_PORT$/m);
   assert.ok(hook.indexOf('export PLAYWRIGHT_PORT') < hook.indexOf('npm run test:layout >&2'), 'export before the gate runs');
@@ -87,6 +89,36 @@ test('the pre-push layout gate runs on a free port, not the default one a stray 
     assert.match(port, /^\d{1,5}$/);
     assert.notEqual(port, '5178');
   } finally { held.close(); }
+});
+
+test('make verify bypasses a busy default port and honors an override for both browser stages', async () => {
+  const bin = mkdtempSync(join(tmpdir(), 'verify-port-'));
+  const held = net.createServer();
+  try {
+    await new Promise((resolve, reject) => {
+      held.once('error', error => error.code === 'EADDRINUSE' ? resolve() : reject(error));
+      held.listen(5178, '127.0.0.1', resolve);
+    });
+    writeFileSync(join(bin, 'npm'), '#!/bin/sh\nprintf "%s|%s\\n" "$*" "$PLAYWRIGHT_PORT"\n', { mode: 0o755 });
+    symlinkSync('npm', join(bin, 'npx'));
+    for (const override of [undefined, '5198']) {
+      const env = { ...process.env, PATH: bin + delimiter + process.env.PATH };
+      if (override) env.PLAYWRIGHT_PORT = override;
+      else delete env.PLAYWRIGHT_PORT;
+      const result = spawnSync('make', ['-o', 'node_modules', 'verify'], {
+        cwd: new URL('..', import.meta.url), env, encoding: 'utf8',
+      });
+      assert.equal(result.status, 0, result.stderr);
+      const port = result.stdout.match(/^run test:browser\|(\d{1,5})$/m)?.[1];
+      assert.ok(port && Number(port) > 0 && Number(port) <= 65535, 'browser tests need a valid port');
+      assert.ok(result.stdout.split('\n').includes(`playwright test --config=playwright.world-tour.config.js|${port}`));
+      if (override) assert.equal(port, override);
+      else assert.notEqual(port, '5178');
+    }
+  } finally {
+    held.close();
+    rmSync(bin, { recursive: true, force: true });
+  }
 });
 
 test('browser specs never set a wall-clock budget that skips the CI factor', () => {
@@ -108,6 +140,35 @@ test('browser specs poll page state after a UI action instead of reading it once
     .flatMap((line, i, lines) => ONE_SHOT_READ.test(line) && UI_ACTION.test(lines[i - 1] ?? '') && !line.includes('// settled:')
       ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
   assert.deepEqual(offenders, [], 'Use await expect.poll(() => page.evaluate(...)) (see .claude/rules/browser-test-stability.md)');
+});
+
+// index.html boots src/startup-entry.ts, which imports main.js dynamically: 'domcontentloaded' fires before Home is
+// rendered, so a short first wait races the bundle load (lobby summaries: 8 DRIVERS empty at 2.5 s, 1 run in 3).
+test('the first wait after a page load keeps the default expect budget', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/\bpage\.goto\(/.test(line)) return [];
+      const j = lines.findIndex((next, k) => k > i && k <= i + 4 && /\bexpect\(/.test(next));
+      const ms = Number(lines[j]?.match(/timeout: ciTimeout\(([\d_]+)\)/)?.[1].replaceAll('_', ''));
+      return j > 0 && ms < config.expect.timeout / slow ? [`tests/${file}:${j + 1}: ${lines[j].trim()}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Drop the short timeout: Home renders after the dynamic main.js import (.claude/rules/browser-test-stability.md)');
+});
+
+test('a key press after a page load waits for the game to listen', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/\bpage\.goto\(/.test(line)) return [];
+      // Only blank lines, comments and the font wait may sit between the load and its first key press.
+      let j = i + 1;
+      while (j < lines.length && /^\s*(\/\/.*)?$|document\.fonts\.ready/.test(lines[j])) j++;
+      return /^\s*await page\.keyboard\./.test(lines[j] ?? '') ? [`tests/${file}:${j + 1}: ${lines[j].trim()}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Load with gotoHome(page): main.js attaches the key listener after page.goto resolves (.claude/rules/browser-test-stability.md)');
 });
 
 test('CI retries a failed browser test once and still reports it; local runs never retry', () => {

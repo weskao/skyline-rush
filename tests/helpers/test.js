@@ -49,6 +49,13 @@ export const test = base.extend({
   },
 });
 
+// page.goto resolves before the dynamic main.js import attaches the key listener, so a key pressed at once is lost.
+// vfx-ui stamps data-vfx-quality on body while main.js evaluates, after createControls has subscribed.
+export const gotoHome = async (page, url = '/') => {
+  await page.goto(url);
+  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', /./);
+};
+
 // Overlays enter with a transform (Garage/history `history-in` translateX 22px; pause and results `.overlay-content`
 // translateY 12px / translateX 48px). A rect read mid-entry is shifted and goes through float32 transform math: a 144 px
 // thumbnail measured 144.00001526 and a 44 px button 43.99998474. Resolves once the element is visible and every finite

@@ -17,7 +17,8 @@ const inViewport = async (page, locator) => {
 test('Garage replaces Practice beside Start, advertises NEW and still opens the showroom', async ({ page }) => {
   await page.goto('/');
   const primary = page.locator('.intro-primary');
-  expect(await primary.locator('button').evaluateAll(buttons => buttons.map(button => button.id))).toEqual(['start-button', 'garage-button']);
+  // Home renders after the dynamic main.js import, so a one-shot read after goto can find no buttons yet.
+  await expect.poll(() => primary.locator('button').evaluateAll(buttons => buttons.map(button => button.id))).toEqual(['start-button', 'garage-button']);
   expect(await page.locator('.intro-actions > button').evaluateAll(buttons => buttons.map(button => button.id || 'history'))).toEqual(['history', 'practice-button']);
   const garage = page.locator('#garage-button');
   await expect(garage.locator('.garage-new-tag')).toHaveText('NEW');
@@ -243,7 +244,7 @@ test('keyboard can step the showcase angle without starting a race', async ({ pa
   await page.addInitScript(() => localStorage.setItem('skyline-rush-music', 'off'));
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const previous = page.locator('#showcase-camera-prev');
-  await expect(previous).toBeVisible({ timeout: ciTimeout(2500) });
+  await expect(previous).toBeVisible();
   await previous.focus();
   await page.keyboard.press('Enter'); // Drive wraps back to the last view
   await expect(page.locator('#showcase-camera-dock')).toHaveAttribute('data-view', 'orbit');

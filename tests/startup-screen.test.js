@@ -19,6 +19,7 @@ function fakePage(session) {
   nodes.app.inert = true;
   nodes['startup-enter'].hidden = true;
   nodes['startup-fill'].animate = () => ({ cancel() {}, finished: Promise.resolve() });
+  nodes['startup-progress'].animate = nodes['startup-fill'].animate;
   Object.assign(globalThis, {
     document: {
       querySelector: id => nodes[id.slice(1)], documentElement: {},
@@ -149,9 +150,18 @@ test('startup fills forward from its current position and settles before showing
   assert.notEqual(animations[1].frames[1].transform, 'scaleX(1)');
   assert.equal(animations[2].frames[1].transform, 'scaleX(1)');
   assert.ok(animations[2].duration <= 250);
+  assert.equal(nodes['startup-status'].textContent, 'Preparing 3D scene');
   assert.equal(nodes['startup-enter'].hidden, true);
   assert.equal(nodes['startup-progress'].hidden, false);
+  let releaseHold;
+  const hold = new Promise(resolve => { releaseHold = resolve; });
+  nodes['startup-progress'].animate = () => ({ finished: hold, cancel: releaseHold });
   finish();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(nodes['startup-status'].textContent, 'Ready to race');
+  assert.equal(nodes['startup-enter'].hidden, true);
+  assert.equal(nodes['startup-progress'].hidden, false);
+  releaseHold();
   await ready;
   assert.equal(nodes['startup-enter'].hidden, false);
   assert.equal(nodes['startup-progress'].hidden, true);

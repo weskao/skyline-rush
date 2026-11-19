@@ -5,29 +5,36 @@ import { icons } from './icons.ts';
 // AUTO starts on for every device; only a player's own toggle is remembered.
 const AUTO_KEY = 'skyline-rush-auto';
 
-interface AssistOptions {
-  button: HTMLElement;
-  /** The tutorial drives the throttle itself, so AUTO cannot change during it. */
-  isLocked(): boolean;
-  cueUi(): void;
+interface AssistButton {
+  title: string;
+  setAttribute(name: string, value: string): void;
+  addEventListener(type: 'click', listener: () => void): void;
 }
 
-export function setupAssistUI({ button, isLocked, cueUi }: AssistOptions) {
-  let autoThrottle = true;
-  try { autoThrottle = localStorage.getItem(AUTO_KEY) !== 'off'; } catch { /* AUTO stays on without storage. */ }
-  function showAssist(): void {
-    button.setAttribute('aria-pressed', String(autoThrottle));
-    button.title = t(autoThrottle ? 'assist.titleOn' : 'assist.titleOff');
+export interface AssistUIDeps {
+  button: AssistButton;
+  isLocked: () => boolean;
+  cue: () => void;
+}
+
+export function setupAssistUI({ button, isLocked, cue }: AssistUIDeps) {
+  let on = true;
+  try { on = localStorage.getItem(AUTO_KEY) !== 'off'; } catch { /* AUTO stays on without storage. */ }
+
+  function show() {
+    button.setAttribute('aria-pressed', String(on));
+    button.title = t(on ? 'assist.titleOn' : 'assist.titleOff');
   }
-  function toggleAssist(): void {
+
+  function toggle() {
     if (isLocked()) return;
-    autoThrottle = !autoThrottle;
-    try { localStorage.setItem(AUTO_KEY, autoThrottle ? 'on' : 'off'); } catch { /* The toggle lasts for this page without storage. */ }
-    showAssist();
-    cueUi();
-    showToast({ text: t(autoThrottle ? 'toast.assistOn' : 'toast.assistOff'), icon: icons.assist });
+    on = !on;
+    try { localStorage.setItem(AUTO_KEY, on ? 'on' : 'off'); } catch { /* The toggle lasts for this page without storage. */ }
+    show();
+    cue();
+    showToast({ text: t(on ? 'toast.assistOn' : 'toast.assistOff'), icon: icons.assist });
   }
-  button.addEventListener('click', toggleAssist);
-  showAssist();
-  return { isOn: (): boolean => autoThrottle, showAssist, toggleAssist };
+
+  button.addEventListener('click', toggle);
+  return { isOn: () => on, show, toggle };
 }

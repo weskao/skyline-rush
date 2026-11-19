@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 import { QUALITY_STORAGE_KEY } from '../src/device-quality.ts';
 
 test.use({ startupSeen: false });
@@ -10,6 +11,16 @@ test.beforeEach(async ({ page }) => {
   });
 });
 const enter = page => page.getByRole('button', { name: 'Enter game', exact: true });
+
+test('saved Chinese appears before the startup module can load', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('skyline-rush-locale', 'zh-TW'));
+  await page.route('**/assets/*.js', route => route.abort());
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
+  await expect(page.getByText('載入遊戲', { exact: true })).toBeVisible();
+  await expect(page.getByText('駛出公路，飛向天際', { exact: true })).toBeVisible();
+  await expect(page.getByText('Loading game', { exact: true })).toBeHidden();
+});
 
 test('paints before scripts, waits for a rendered frame and enters the lobby via keyboard', async ({ page }) => {
   await page.addInitScript(() => {
@@ -64,40 +75,56 @@ test('renderer failure replaces progress with a retry action', async ({ page }) 
 test('keeps localised text and touch targets in bounds through rotation and fold', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('skyline-rush-locale', 'zh-TW'));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  let release;
+  const blocked = new Promise(resolve => { release = resolve; });
+  await page.route('**/assets/main-*.js', async route => { await blocked; await route.continue(); });
+  await page.goto('/', { waitUntil: 'commit' });
   const button = page.getByRole('button', { name: '進入遊戲', exact: true });
-  await expect(button).toBeVisible();
+  const progress = page.locator('#startup-progress');
   const heading = page.locator('#startup-title');
   const subtitle = page.getByText('駛出公路，飛向天際', { exact: true });
   const art = page.locator('#startup picture img');
-  for (const [width, height, asset, showSubtitle] of [
-    [320, 568, 'portrait', true], [390, 844, 'portrait', true], [844, 390, 'wide', false],
-    [345, 206, 'wide', false], [768, 1024, 'square', true], [1024, 768, 'square', true],
-    [1440, 900, 'wide', true], [1920, 1080, 'wide', true],
-  ]) {
-    await page.setViewportSize({ width, height });
-    await expect.poll(() => art.evaluate(img => img.currentSrc)).toContain('startup-' + asset);
-    expect(await subtitle.isVisible()).toBe(showSubtitle);
+  const assertBounds = async (width, height) => {
+    await expect(subtitle).toBeVisible({ timeout: ciTimeout(4000) });
     const titleBox = await heading.boundingBox();
-    const buttonBox = await button.boundingBox();
-    for (const box of [titleBox, buttonBox]) {
+    const subtitleBox = await subtitle.boundingBox();
+    const progressBox = await progress.boundingBox();
+    for (const box of [titleBox, subtitleBox, progressBox]) {
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.y).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
       expect(box.y + box.height).toBeLessThanOrEqual(height + 1);
     }
-    expect(buttonBox.height).toBeGreaterThanOrEqual(44);
-    expect(titleBox.y + titleBox.height).toBeLessThan(buttonBox.y);
-  }
-  await page.setViewportSize({ width: 900, height: 700 });
-  await page.evaluate(() => {
-    Object.defineProperty(window, 'viewport', { configurable: true, value: { segments: [
-      { left: 0, top: 0, width: 438, height: 700 },
-      { left: 462, top: 0, width: 438, height: 700 },
-    ] } });
+    expect(progressBox.height).toBeGreaterThanOrEqual(44);
+    expect(titleBox.y + titleBox.height).toBeLessThan(subtitleBox.y);
+    expect(subtitleBox.y + subtitleBox.height).toBeLessThan(progressBox.y);
+  };
+  const setSegments = segments => page.evaluate(value => {
+    Object.defineProperty(window, 'viewport', { configurable: true, value: { segments: value } });
     window.dispatchEvent(new Event('resize'));
-  });
-  await expect.poll(() => button.boundingBox().then(b => b.x + b.width)).toBeLessThanOrEqual(438);
+  }, segments);
+  try {
+    for (const [width, height, asset] of [
+      [320, 568, 'portrait'], [390, 844, 'portrait'], [844, 390, 'wide'], [345, 206, 'wide'],
+      [768, 1024, 'square'], [1024, 768, 'square'], [1440, 900, 'wide'], [1920, 1080, 'wide'],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await expect.poll(() => art.evaluate(img => img.currentSrc)).toContain('startup-' + asset);
+      await assertBounds(width, height);
+    }
+    await page.setViewportSize({ width: 900, height: 700 });
+    await setSegments([{ left: 0, top: 0, width: 438, height: 700 }, { left: 462, top: 0, width: 438, height: 700 }]);
+    await expect(page.locator('body')).toHaveAttribute('data-fold-axis', 'vertical');
+    await assertBounds(438, 700);
+    await setSegments([{ left: 0, top: 0, width: 900, height: 338 }, { left: 0, top: 362, width: 900, height: 338 }]);
+    await expect(page.locator('body')).toHaveAttribute('data-fold-axis', 'horizontal');
+    await assertBounds(900, 700);
+    expect(await subtitle.boundingBox().then(box => box.y + box.height)).toBeLessThan(338);
+    expect(await progress.boundingBox().then(box => box.y)).toBeGreaterThan(362);
+  } finally {
+    release();
+  }
+  await expect(button).toBeVisible();
   await button.click();
   await expect(page.locator('#startup')).toBeHidden();
 });
@@ -177,6 +204,23 @@ test('the landscape home lifts its controls without animating the fixed-rail anc
 });
 
 test('slow startup fills continuously, the Enter hover changes appearance, and desktop starts off-screen', async ({ page }) => {
+  await page.addInitScript(() => {
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (frames, options) {
+      const animation = animate.call(this, frames, options);
+      if (options?.id === 'startup-progress-fill' && frames.at(-1).transform === 'scaleX(1)') {
+        animation.pause();
+        animation.currentTime = 100;
+        window.finalFill = animation;
+      }
+      if (options?.id === 'startup-ready-hold') {
+        animation.pause();
+        animation.currentTime = 0;
+        window.readyHold = animation;
+      }
+      return animation;
+    };
+  });
   let release;
   const blocked = new Promise(resolve => { release = resolve; });
   await page.route('**/assets/main-*.js', async route => { await blocked; await route.continue(); });
@@ -200,6 +244,14 @@ test('slow startup fills continuously, the Enter hover changes appearance, and d
     release();
   }
 
+  await page.waitForFunction(() => Boolean(window.finalFill));
+  await expect(page.locator('#startup-status')).toHaveText('Preparing 3D scene');
+  expect(await fill.evaluate(element => new DOMMatrixReadOnly(getComputedStyle(element).transform).a)).toBeLessThan(1);
+  await page.evaluate(() => window.finalFill.finish());
+  await expect(page.locator('#startup-status')).toHaveText('Ready to race');
+  await expect(fill).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+  await expect(enter(page)).toBeHidden();
+  await page.evaluate(() => window.readyHold.finish());
   const button = enter(page);
   await expect(button).toBeEnabled();
   const normal = await button.evaluate(element => getComputedStyle(element).backgroundImage);

@@ -120,8 +120,11 @@ run: node_modules ## `make run`: unit tests, production build and Chrome browser
 verify: node_modules ## `make verify`: type checks, units, production build, browser and World Tour suites
 	$(NPM) run typecheck
 	$(NPM) test
-	$(NPM) run test:browser
-	npx playwright test --config=playwright.world-tour.config.js
+	@if [ -z "$${PLAYWRIGHT_PORT:-}" ]; then \
+	  PLAYWRIGHT_PORT=$$(node scripts/free-local-port.mjs) || exit 1; \
+	fi; \
+	export PLAYWRIGHT_PORT; \
+	$(NPM) run test:browser && npx playwright test --config=playwright.world-tour.config.js
 
 # Lists every target that carries a `## description`.
 help: ## `make help`: list these commands

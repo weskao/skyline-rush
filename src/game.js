@@ -1,4 +1,5 @@
 import { advanceCountdown } from './frame-pacing.ts';
+import { stepPlayerDrift } from './player-drift.ts';
 export { startRace } from './frame-pacing.ts';
 import { classicCornerPush } from './classic-road-routes.ts';
 import { prepareEndless, streamEndless, finishEndless } from './endless-highway.ts';
@@ -17,8 +18,11 @@ import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
 import { createElimination, stepElimination } from './elimination.ts';
-import { bankItem, activateItem, tickItemCooldown, ringsForItemRule } from './active-items.ts';
-import { decorateBonusGates, collectBonusGate, applyEMPPulse, bonusScore } from './bonus-gates.ts';
+import { bankItem, mysteryEffect, tickItemCooldown, ringsForItemRule } from './active-items.ts';
+export { mysteryEffect } from './active-items.ts';
+import { itemHit, rivalItemHit, ITEM_HIT_SPEED, stepRivalAttacks } from './item-attacks.ts';
+export { useHeldItem, ITEM_HIT_SPEED as FREEZE_RIVAL_SPEED } from './item-attacks.ts';
+import { decorateBonusGates, collectBonusGate, bonusScore } from './bonus-gates.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
 import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
 import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts'; import { spawnCatchUp } from './catch-up-items.ts';
@@ -29,7 +33,7 @@ import { skyJumpGap } from './sky-track.ts'; import { dropCar, stepDeck, stepRiv
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
 export { RACE_TRACKS } from './race-tracks.ts';
 export const RACE_LENGTH = RACE_TRACKS.coast.length;
-import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, DRIFT_FLIP_GRACE, DRIFT_REWARDS, driftCredit, driftTier, grantMiniBoost } from './drive-rules.ts';
+import { MAX_SPEED, NITRO_TIME, pressNitro, FLY_DRAIN, GLIDE_FUEL_REGEN, BOOST_CAP_BONUS, NITRO_CAP_BONUS, THROTTLE_ACCEL, BOOST_ACCEL, NITRO_ACCEL, OVER_CAP_DECEL, BOOST_DRAIN, GROUND_FUEL_REGEN, UPHILL_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_LATERAL, grantMiniBoost } from './drive-rules.ts';
 export { MAX_SPEED, NITRO_TIME, NITRO_EXTEND, FLY_DRAIN, GLIDE_FUEL_REGEN, DRIFT_MIN_SPEED, DRIFT_BLEED, DRIFT_REWARDS, driftTier } from './drive-rules.ts';
 export const ROAD_LIMIT = 10.2;
 export const LANES = [-7.5, -2.5, 2.5, 7.5];
@@ -67,7 +71,6 @@ export const shortcutPylons = section => Array.from({ length: Math.ceil((section
 }));
 
 import { takePickups } from './pickup-take.ts'; export { MAGNET_RANGE } from './pickup-take.ts';
-export const FREEZE_RIVAL_SPEED = 0.5; // rival speed multiplier while frozen
 
 import { SLIPSTREAM_CAP_BONUS, SLIPSTREAM_NITRO, SLIPSTREAM_MIN_GAP, SLIPSTREAM_MAX_GAP,
   SLIPSTREAM_LATERAL, SLIPSTREAM_ALTITUDE, stepSlipstream } from './drive-rules.ts'; // SLIPSTREAM: shared with rivals
@@ -109,9 +112,6 @@ function createPickups(track, count, seed) {
   }
   return [...pickups, overcharge].sort((a, b) => a.distance - b.distance);
 }
-
-// The mystery effect of ring `index`: its own seed-derived stream, so it is reproducible and needs no race state.
-export const mysteryEffect = (seed, index) => MYSTERY_EFFECTS[Math.floor(seededRng(seed, `${RACE_STREAMS.mysteryPrefix}${index}`)() * MYSTERY_EFFECTS.length)];
 
 // Charges cap at NITRO_MAX; the excess becomes fuel so nothing is wasted. Banked charge also refills flight fuel.
 function addNitro(car, amount, fuelBonus = NITRO_FUEL_BONUS) {
@@ -174,6 +174,7 @@ export function createRace(trackId = 'coast', modifier = null, presentation = {}
       section: null, inShortcut: false, falls: 0, fall: null, span: false,
       nitro: 0, nitroTime: 0, nitroHeld: false, nitroUses: 0, nitroBurst: 0, nitroChain: 0, longestCombo: 0,
       slipstream: { time: 0, active: false, paid: false },
+      driftHold: /** @type {import('./player-drift.ts').DriftHold | null} */ (null),
       drift: null, driftPayout: null, miniBoost: 0, miniBoostEvent: null, boostTunnelClaimed: [], boostTunnelEvent: null, trick: null, trickPayout: null, flick: null, steerSign: 0,
       rings: 0, perfectLines: 0, score: 0, cleanDistance: 0, groupHits: {}, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
       heldItem: null, itemCooldown: 0,
@@ -214,14 +215,6 @@ function collectRing(race, ring, index) {
   }
 }
 
-export function useHeldItem(race) {
-  if (!race?.config?.activeItems || race.phase !== 'racing') return null;
-  if (race.player.heldItem === 'emp' && (race.mode !== 'custom' || race.config.itemRules !== 'all')) race.player.heldItem = 'magnet';
-  const effect = activateItem(race.player, race.rivals.length > 0);
-  if (effect === 'emp') applyEMPPulse(race);
-  return effect;
-}
-
 export { racePosition, sprintGaps } from './race-standings.ts';
 
 export function stepRace(race, input, dt) {
@@ -229,8 +222,10 @@ export function stepRace(race, input, dt) {
   if (race.phase === 'countdown') return advanceCountdown(race, dt);
   if (race.phase !== 'racing') return;
   streamEndless(race); spawnCatchUp(race);
+  const car = race.player, wasSlowed = itemHit(race, car) !== null;
   race.elapsed += dt;
-  const car = race.player;
+  const hitSpeed = itemHit(race, car) ? ITEM_HIT_SPEED : 1;
+  if (wasSlowed && hitSpeed === 1) car.speed /= ITEM_HIT_SPEED; // lift the penalty, preserving braking and impacts
   const previousScore = car.score;
   if (race.config.activeItems || race.config.bonusGates) tickItemCooldown(car, dt);
   const section = race.sections.find(s => car.distance >= s.from && car.distance < s.to);
@@ -252,7 +247,6 @@ export function stepRace(race, input, dt) {
   car.steerSign = steerSign;
   const boost = input.boost === true && car.fuel > 0 && !brake;
   car.boosting = boost;
-  car.braking = brake;
   // NITRO is edge-triggered: one press spends one full charge; a press during NITRO extends it, never stacks speed.
   if (input.nitro === true && !car.nitroHeld && car.nitro >= 1) {
     if (pressNitro(car)) car.nitroBurst = 0;
@@ -269,20 +263,8 @@ export function stepRace(race, input, dt) {
       Math.abs((other.altitude || 0) - car.altitude) < SLIPSTREAM_ALTITUDE;
   };
   if (stepSlipstream(slip, race.traffic.some(drafts) || race.rivals.some(drafts), dt)) addNitro(car, SLIPSTREAM_NITRO);
-  // DRIFT: brake + steer on the ground at speed slides instead of hard-braking; each tier reached pays NITRO, the release a mini boost.
-  const canDrift = brake && car.altitude === 0 && car.speed >= DRIFT_MIN_SPEED;
-  if (canDrift && steer !== 0 && car.railContactSide !== Math.sign(steer)) {
-    car.drift ??= { time: 0, dir: 0, nitro: 0, grace: 0 };
-    car.drift.dir = Math.sign(steer); car.drift.grace = 0; car.drift.time += dt; // a flip turns the drift
-    const owed = driftCredit(car.drift); if (owed > 0) addNitro(car, owed);
-  } else if (car.drift && !(canDrift && steer === 0 && (car.drift.grace += dt) <= DRIFT_FLIP_GRACE)) { // neutral mid-flip: held, unpaid
-    const reward = DRIFT_REWARDS.find(r => car.drift.time >= r.time);
-    if (reward) {
-      grantMiniBoost(car, reward.boost, race.elapsed, driftTier(car.drift.time));
-      car.driftPayout = { time: race.elapsed, nitro: car.drift.nitro };
-    }
-    car.drift = null;
-  }
+  const driftNitro = stepPlayerDrift(car, brake, steer, dt, race.elapsed);
+  if (driftNitro > 0) addNitro(car, driftNitro);
   // A one-time, on-road tunnel reward. Track it by the authored section start,
   // not a frame counter: pausing, braking or standing inside cannot farm charge.
   if (car.section === 'boost-tunnel' && !car.boostTunnelClaimed.includes(section.from) &&
@@ -293,12 +275,14 @@ export function stepRace(race, input, dt) {
     car.boostTunnelEvent = { time: race.elapsed, distance: car.distance };
   }
   const drifting = car.drift !== null;
+  const brakeDecel = brake ? 35 * (car.driftHold?.brakeBlend ?? 1) : 0;
+  car.braking = brakeDecel > 0 || drifting;
   const boosted = boost || (car.miniBoost > 0 && !brake); // the mini boost shares the boost cap but burns no fuel
-  const limit = (nitro ? MAX_SPEED + NITRO_CAP_BONUS : boosted ? MAX_SPEED + BOOST_CAP_BONUS : MAX_SPEED) + (slip.active ? SLIPSTREAM_CAP_BONUS : 0) +
-    (car.inShortcut ? SHORTCUT_CAP_BONUS : 0);
-  const drive = drifting ? -DRIFT_BLEED : (throttle ? THROTTLE_ACCEL : -4) - (brake ? 35 : 0);
-  const acceleration = car.speed > limit ? -OVER_CAP_DECEL - (brake && !drifting ? 35 : 0) : drive + (boosted ? BOOST_ACCEL : 0) + (nitro ? NITRO_ACCEL : 0);
-  car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
+  const baseLimit = nitro ? MAX_SPEED + NITRO_CAP_BONUS : boosted ? MAX_SPEED + BOOST_CAP_BONUS : MAX_SPEED;
+  const limit = hitSpeed * (baseLimit + (slip.active ? SLIPSTREAM_CAP_BONUS : 0) + (car.inShortcut ? SHORTCUT_CAP_BONUS : 0));
+  const drive = drifting ? -DRIFT_BLEED : (throttle ? THROTTLE_ACCEL : -4) - brakeDecel;
+  const acceleration = car.speed > limit ? -OVER_CAP_DECEL - brakeDecel : drive + (boosted ? BOOST_ACCEL : 0) + (nitro ? NITRO_ACCEL : 0);
+  car.speed = clamp(car.speed + acceleration * hitSpeed * dt, 0, Math.max(limit, car.speed));
   car.nitroTime = Math.max(0, car.nitroTime - dt);
   car.miniBoost = Math.max(0, car.miniBoost - dt);
   trackPhaseExit(race, dt);
@@ -403,7 +387,7 @@ export function stepRace(race, input, dt) {
     const before = rival.distance;
     // Rubber band: a rival far ahead of the player eases off by at most RUBBER_BAND_MAX; one behind is never sped up.
     const band = clamp((progressGap(race, car, rival) - RUBBER_BAND_FREE) / RUBBER_BAND_RANGE, 0, 1);
-    const slow = (car.effects.freeze > 0 || rival.empUntil > race.elapsed ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
+    const slow = (rivalItemHit(race, rival) ? ITEM_HIT_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
     rival.pace = rival.speed * slow;
     rival.distance += rival.pace * dt;
     rivalSeek(race, rival); avoidObstacles(race, rival, rival.pace, dt); stepRivalDeck(rival, race.sections, hopFrom, CAR_HEIGHT);
@@ -472,6 +456,7 @@ export function stepRace(race, input, dt) {
   if (finishEndless(race)) return;
   stepCircuit(race, dt);
   finishRace(race, previousDistance, dt);
+  stepRivalAttacks(race);
 }
 
 // The next broken bridge within warning range when the charge left cannot thrust across it at the current speed.

@@ -23,7 +23,7 @@ interface CourseRef { course?: CourseRuntime; player: object }
 interface CourseHost extends CourseRef {
   trackId: string; seed: number; elapsed: number; length: number; player: Player; rivals: Rival[]; result: { time: number } | null;
   rings: CourseItem[]; pickups: CourseItem[]; traffic: (RaceCar & { speed: number })[]; hazards: unknown[]; sections: unknown[];
-  mode: string; endless?: object; config: { difficulty?: string };
+  mode: string; endless?: object; config: { difficulty?: string; itemRules?: string };
 }
 type Contact = (race: CourseHost, kind: 'barrier', obstacleX: number, intensity: number, retention: number) => void;
 
