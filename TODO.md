@@ -1,7 +1,8 @@
 # Rival attack pickups
 
 - [x] Cover incoming screen feedback, player shell, VFX quality, and expiry with the item HUD and status-renderer regressions. Focused unit tests, type checks, and the locked build pass.
-- [ ] Verify that an incoming Freeze or EMP is readable at the edge of the screen and on the player car in pursuit view. Check desktop and both phone orientations with comfort and graphics settings.
+- [x] Captured the viewport edge and player car for Freeze (desktop) and EMP (phone portrait) in the Coast pursuit view with Low graphics. The overlay has no pointer targets.
+- [ ] Confirm real-device and exact-HEAD CI coverage for the incoming screen and car effects.
 
 - [x] Let AI drivers collect Freeze and EMP so the player can be slowed by the same attack items. Test-first coverage reproduced the missing pickups. Coast and Dune Tempest now cover the shared ring sweep, EMP range and duration, Freeze, and overlapping hits.
 - [x] Verify the incoming HUD countdown with the item HUD regression and pass the TypeScript, Vue, JavaScript and locked production checks. Update the 16 deterministic replay hashes changed by rival Freeze.

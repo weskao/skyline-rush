@@ -1,4 +1,5 @@
 import './style.css';
+import './player-hit-screen.css';
 import { setupGarageUI } from './garage-ui.ts';
 import { createHistoryView } from './history-ui.ts';
 import { setupCloudUI } from './cloud-ui.ts';
