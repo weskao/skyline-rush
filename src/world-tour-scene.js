@@ -60,6 +60,7 @@ const UNIT_Y=new THREE.Vector3(0,1,0),ZER0=new THREE.Vector3();
 function seeded(i){const n=Math.sin(i*127.1+78.233)*43758.5453;return n-Math.floor(n);}
 let endlessActive=false;
 const clamped=(id,s)=>Math.max(0,endlessActive?s:Math.min(RACE_TRACKS[id].length,s));
+const drawnFrame=(id,s)=>trackFrame(id,Math.max(0,s),true); // drawing only: road runs on past the finish (rules/road-runout.md)
 // An authored plaza keeps the approach sightline to a hero landmark open: a
 // roadside item drops out only if, seen from some road point of the approach,
 // it sits nearer than the landmark and inside its angular width (ground plane).
@@ -192,7 +193,7 @@ export function createWorldTourScene(scene){
     }
     const [behind,ahead]=level==='high'?[3,10]:level==='medium'?[2,9]:[2,7];
     const start=Math.max(0,centerChunk-behind);
-    const end=endlessActive?centerChunk+ahead:Math.min(Math.ceil(RACE_TRACKS[id].length/SCENERY_CHUNK_METRES),centerChunk+ahead);
+    const end=centerChunk+ahead;
     for(const [index,node] of chunks){
       if(index<start||index>end){releaseChunk(node);chunks.delete(index);changed=true;}
     }
@@ -200,13 +201,13 @@ export function createWorldTourScene(scene){
       if(chunks.has(index))continue;
       changed=true;
       const chunk=new THREE.Group();chunk.name='world-tour-'+id+'-chunk-'+index;chunk.userData.chunkIndex=index;
-      for(const item of [...detailPlan(id,index,level,endlessActive),...detailSetPlan(id,index,level,landmarkBlocker(id),endlessActive)]){
+      for(const item of [...detailPlan(id,index,level,true),...detailSetPlan(id,index,level,landmarkBlocker(id),true)]){
         const prop=kit.build(id,item.kind,item.size);
         kit.place(prop,id,item.distance,item.side*item.offset,
           terrainHeight(id,item.distance,item.side,item.offset));
         chunk.add(prop);
       }
-      const earth=kit.terrain(id,index,level==='low',endlessActive);
+      const earth=kit.terrain(id,index,level==='low',true);
       if(earth)chunk.add(earth);
       chunk.add(tunnelKit.buildChunk(id,index,sections));
       // One-time static batching keeps every model/material, greatly reducing
@@ -334,7 +335,7 @@ export function createWorldTourScene(scene){
         cachedOrigin=origin;cachedQuality=quality;
         const start=Math.max(0,origin-160);
         for(let i=0;i<=ROWS;i++){
-        const s=clamped(id,start+i*STEP),f=trackFrame(id,s,endlessActive);
+        const s=start+i*STEP,f=drawnFrame(id,s);
         for(let side=0;side<2;side++){
           const index=(i*2+side)*3;
           positions.set(local(id,s,side?HALF:-HALF,0,origin,f),index);
@@ -344,7 +345,7 @@ export function createWorldTourScene(scene){
         const a=i*2,k=i*6;
         const hole=sections.some(entry=>entry.type==='gap'&&s+STEP/2>=entry.from&&s+STEP/2<entry.to);
         indices.set(hole?[a,a,a,a,a,a]:[a,a+1,a+2,a+1,a+3,a+2],k);
-        const character=ROAD_CHARACTER[id].markings, edgeFrame=trackFrame(id,clamped(id,s+STEP*.5),endlessActive);
+        const character=ROAD_CHARACTER[id].markings, edgeFrame=drawnFrame(id,s+STEP*.5);
         for(const side of [-1,1]){
           const n=i*2+(side===1?1:0);
           instance(roadEdges,n,id,s+STEP*.5,side*11.8,.24,
@@ -355,7 +356,7 @@ export function createWorldTourScene(scene){
         const offsets=character==='urban'?[-6,0,6]
           :character==='expressway'?[-5.4,0,5.4]
           :character==='orbital'?[-10.6,10.6]:[-10.5,0,10.5];
-        const stripes=offsets.length, stripeFrame=trackFrame(id,clamped(id,s+2),endlessActive);
+        const stripes=offsets.length, stripeFrame=drawnFrame(id,s+2);
         laneMarks.count=ROWS*stripes;
         for(let line=0;line<stripes;line++){
           const lateral=offsets[line];
