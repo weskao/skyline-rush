@@ -151,7 +151,7 @@ test('a context loss during entry keeps the retry screen visible and the lobby i
   await expect(page.locator('#app')).toHaveAttribute('inert', '');
 });
 
-test('the landscape home slides its controls without animating the fixed-rail ancestors', async ({ page }) => {
+test('the landscape home lifts its controls without animating the fixed-rail ancestors', async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await page.addInitScript(() => {
     window.homeArrivalFrames = [];
@@ -169,9 +169,64 @@ test('the landscape home slides its controls without animating the fixed-rail an
   await expect(page.locator('#start-button')).toBeFocused();
   const arrivals = await page.evaluate(() => window.homeArrivalFrames);
   expect(arrivals).toEqual(expect.arrayContaining([
-    ['race-mode-picker', '-10px 0'], ['start-button', '10px 0'], ['garage-button', '-10px 0'],
+    ['race-mode-picker', '0 6px'], ['start-button', '0 6px'], ['garage-button', '0 6px'],
   ]));
   expect(arrivals.map(([id]) => id)).not.toContain('intro');
   await expect(page.locator('#intro')).toHaveCSS('animation-name', 'none');
   await expect(page.locator('#start-button')).toHaveCSS('translate', 'none');
+});
+
+test('slow startup fills continuously, the Enter hover changes appearance, and desktop starts off-screen', async ({ page }) => {
+  let release;
+  const blocked = new Promise(resolve => { release = resolve; });
+  await page.route('**/assets/main-*.js', async route => { await blocked; await route.continue(); });
+  await page.goto('/', { waitUntil: 'commit' });
+  const fill = page.locator('#startup-fill');
+  const scaleAt = time => fill.evaluate((element, ms) => {
+    const animation = element.getAnimations().find(animation => animation.id === 'startup-progress-fill');
+    animation.pause();
+    animation.currentTime = ms;
+    return new DOMMatrixReadOnly(getComputedStyle(element).transform).a;
+  }, time);
+  try {
+    await expect(page.locator('#startup')).toHaveAttribute('data-motion', 'low');
+    const first = await scaleAt(1000);
+    const later = await scaleAt(4500);
+    expect(first).toBeGreaterThan(.03);
+    expect(later).toBeGreaterThan(first);
+    expect(later).toBeLessThan(1);
+    await expect(enter(page)).toBeHidden();
+  } finally {
+    release();
+  }
+
+  const button = enter(page);
+  await expect(button).toBeEnabled();
+  const normal = await button.evaluate(element => getComputedStyle(element).backgroundImage);
+  await button.hover();
+  expect(await button.evaluate(element => getComputedStyle(element).backgroundImage)).not.toBe(normal);
+  expect(await button.evaluate(element => getComputedStyle(element, '::before').animationName)).toBe('startup-hover-sweep');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await button.evaluate(element => getComputedStyle(element, '::before').animationName)).toBe('none');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+  await page.evaluate(() => {
+    const splash = document.querySelector('#startup');
+    splash.dataset.motion = 'medium';
+    const animate = splash.animate.bind(splash);
+    splash.animate = (...args) => {
+      window.arrivalEdges = {
+        intro: document.querySelector('.lobby-race-heading').getBoundingClientRect().right,
+        settings: document.querySelector('#settings-button').getBoundingClientRect().left,
+        viewport: window.innerWidth,
+      };
+      return animate(...args);
+    };
+  });
+  await button.press('Enter');
+  await expect(page.locator('#startup')).toBeHidden();
+  const edges = await page.evaluate(() => window.arrivalEdges);
+  expect(edges.intro).toBeLessThanOrEqual(0);
+  expect(edges.settings).toBeGreaterThanOrEqual(edges.viewport);
+  await expect(page.locator('#start-button')).toBeFocused();
 });

@@ -3,12 +3,16 @@ import { startOpeningAudio } from './startup-audio.ts';
 import { readInitialDeviceVisuals } from './device-quality.ts';
 import { resolveInitialLocale } from './locale-preference.ts';
 import { refreshFoldableViewport } from './foldable-viewport.ts';
-import { playHomeArrival } from './home-arrival.ts';
+import { prepareHomeArrival } from './home-arrival.ts';
+
+// These are visual ceilings. Only a successful first frame can complete the rail.
+const PROGRESS = [[.63, 8500, .23], [.81, 2100, .64], [.94, 2600, .83], [1, 220, 1]] as const;
 
 const COPY = {
   en: {
     tagline: 'Beyond the road',
     steps: ['Loading game', 'Building lobby', 'Preparing 3D scene'],
+    complete: 'Ready to race',
     enter: 'Enter game',
     retry: 'Retry',
     music: 'Play opening music',
@@ -18,6 +22,7 @@ const COPY = {
   'zh-TW': {
     tagline: '駛出公路，飛向天際',
     steps: ['載入遊戲', '建立大廳', '準備 3D 場景'],
+    complete: '準備就緒',
     enter: '進入遊戲',
     retry: '重試',
     music: '播放開場音樂',
@@ -30,6 +35,7 @@ function setupStartup() {
   const app = document.querySelector<HTMLElement>('#app')!;
   const root = document.querySelector<HTMLElement>('#startup')!;
   const progress = root.querySelector<HTMLElement>('#startup-progress')!;
+  const fill = root.querySelector<HTMLElement>('#startup-fill')!;
   const status = root.querySelector<HTMLElement>('#startup-status')!;
   const error = root.querySelector<HTMLElement>('#startup-error')!;
   const enter = root.querySelector<HTMLButtonElement>('#startup-enter')!;
@@ -43,6 +49,19 @@ function setupStartup() {
   let ready = false;
   let failed = false;
   let exit: Animation | undefined;
+  let progressAnimation: Animation | undefined;
+  const canAnimate = () => root.dataset.motion !== 'off' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function advanceProgress(stage: 0 | 1 | 2 | 3) {
+    const [ceiling, duration, milestone] = PROGRESS[stage];
+    const motion = canAnimate();
+    const from = motion ? getComputedStyle(fill).transform : '';
+    progressAnimation?.cancel();
+    fill.style.transform = `scaleX(${motion ? ceiling : milestone})`;
+    progressAnimation = motion ? fill.animate([{ transform: from }, { transform: fill.style.transform }],
+      { id: 'startup-progress-fill', duration, easing: stage === 3 ? 'ease-out' : 'cubic-bezier(.24,.65,.45,1)' }) : undefined;
+    return progressAnimation;
+  }
 
   // Every page load shows the screen: skipping it revealed the half-built lobby. Only test/perf tooling sets this key.
   try { entered = sessionStorage.getItem('skyline-rush-startup-skip') === '1'; } catch { /* Storage is optional. */ }
@@ -59,6 +78,7 @@ function setupStartup() {
   if (!entered) {
     const { settings } = readInitialDeviceVisuals();
     root.dataset.motion = settings.enabled && !settings.comfortable ? settings.quality : 'off';
+    advanceProgress(0);
     refreshFoldableViewport();
     window.addEventListener('resize', refreshFoldableViewport, { signal: viewport.signal });
     window.visualViewport?.addEventListener('resize', refreshFoldableViewport, { signal: viewport.signal });
@@ -72,12 +92,18 @@ function setupStartup() {
     get waitingForFrame() { return !entered && !ready && !failed; },
     step(step: 1 | 2) {
       if (step === 1) viewport.abort(); // The game owns segment changes after it mounts.
+      if (entered || failed) return;
       root.dataset.stage = String(step);
       status.textContent = copy.steps[step];
+      advanceProgress(step);
     },
-    ready(onEnter: () => void) {
+    async ready(onEnter: () => void) {
       if (!this.waitingForFrame) return;
       ready = true;
+      status.textContent = copy.complete;
+      const completion = advanceProgress(3);
+      if (completion) await completion.finished.catch(() => {});
+      if (failed) return;
       root.dataset.stage = '3';
       progress.hidden = true;
       enter.hidden = false;
@@ -85,21 +111,23 @@ function setupStartup() {
       enter.addEventListener('click', async () => {
         enter.disabled = true;
         const motion = root.dataset.motion;
-        const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-        if (motion !== 'off' && !reducedMotion.matches) {
+        const animated = canAnimate();
+        const arrival = animated ? prepareHomeArrival(app, motion === 'low') : [];
+        if (animated) {
           const cinematic = motion === 'high' || motion === 'medium';
           if (cinematic) root.dataset.entering = 'true';
           exit = root.animate([{ opacity: 1 }, { opacity: 1, offset: .22 }, { opacity: 0 }],
             { duration: cinematic ? 360 : 240, easing: 'ease-in', fill: 'forwards' });
           await exit.finished.catch(() => {});
         }
-        if (failed) return;
+        if (failed) { arrival.forEach(animation => animation.cancel()); return; }
         finishAudio(true);
         root.hidden = true;
         delete root.dataset.entering;
         entered = true;
         app.inert = false;
-        if (motion !== 'off' && !reducedMotion.matches) playHomeArrival(app, motion === 'low');
+        const playback = canAnimate() ? 'play' : 'cancel';
+        arrival.forEach(animation => animation[playback]());
         viewport.abort();
         app.querySelector<HTMLElement>('#start-button')?.focus({ preventScroll: true });
         onEnter();
@@ -110,6 +138,7 @@ function setupStartup() {
       delete root.dataset.entering;
       root.dataset.stage = 'failed';
       finishAudio(false);
+      progressAnimation?.cancel();
       exit?.cancel();
       entered = false;
       app.inert = true;
