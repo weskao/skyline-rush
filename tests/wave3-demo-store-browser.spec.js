@@ -29,6 +29,79 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
   });
   test.afterAll(async () => { await server?.close(); });
 
+  test('equipment unlock has a large unobstructed stage and a reachable Continue button', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(url);
+    await page.evaluate(() => window.__wave3DemoFixture.grantRace());
+    const store = page.locator('[data-wave3-demo-store]');
+    await store.locator('[data-demo-offer="thruster-ion"] .demo-item-redeem').click();
+    await store.getByRole('button', { name: 'Confirm demo redeem' }).click();
+    const reveal = page.locator('#acquisition-reveal');
+    const art = reveal.locator('.acquisition-art');
+    const heading = reveal.getByRole('heading', { name: 'Ion thruster' });
+    await expect(heading).toBeVisible();
+    await expect(art).toHaveJSProperty('naturalWidth', 288);
+    for (const [width, height, minArt] of [[1440, 900, 260], [820, 1180, 260], [390, 844, 205], [320, 568, 176], [667, 320, 155]]) {
+      await test.step(`${width}×${height}`, async () => {
+        await page.setViewportSize({ width, height });
+        await expect.poll(async () => (await art.boundingBox()).width).toBeGreaterThanOrEqual(minArt);
+        await expect.poll(async () => {
+          const product = await art.boundingBox();
+          const title = await heading.boundingBox();
+          return Math.min(product.x + product.width - title.x, product.y + product.height - title.y);
+        }).toBeLessThanOrEqual(1);
+        await expect(reveal.getByRole('button', { name: 'Continue' })).toBeInViewport({ ratio: 1 });
+      });
+    }
+  });
+
+  test('desktop category rail preserves card width when switching filters', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(url);
+    const category = page.getByRole('navigation', { name: 'Filter cosmetic categories' });
+    const offer = page.locator('[data-demo-offer="nitro-trail-cyan"]');
+    const cardWidth = (await offer.boundingBox()).width;
+    await category.getByRole('button', { name: 'NITRO trails' }).click();
+    await expect(category.getByRole('button', { name: 'NITRO trails' })).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(async () => {
+      const card = await offer.boundingBox();
+      const rail = await category.boundingBox();
+      return [rail.x + rail.width < card.x, Math.abs(card.width - cardWidth) < 1];
+    }).toEqual([true, true]);
+  });
+
+  test('narrow portrait category controls fit at touch size', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto(url);
+    const category = page.getByRole('navigation', { name: 'Filter cosmetic categories' });
+    await expect(category.getByRole('button')).toHaveCount(6);
+    await expect.poll(() => category.evaluate(nav => {
+      const bounds = nav.getBoundingClientRect();
+      return [...nav.querySelectorAll('button')].every(button => {
+        const rect = button.getBoundingClientRect();
+        return rect.x >= bounds.x && rect.right <= bounds.right + 1 && rect.height >= 44;
+      });
+    })).toBe(true);
+  });
+
+  test('wide preview aligns the primary action above the paired secondary actions', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(url);
+    const preview = page.getByRole('region', { name: 'Cosmetic preview' });
+    const primary = preview.getByRole('button', { name: 'Demo redeem', exact: true });
+    const inspect = preview.getByRole('button', { name: 'Inspect preview' });
+    const collection = preview.getByRole('button', { name: 'Demo Collection' });
+    await expect.poll(async () => {
+      const redeem = await primary.boundingBox();
+      const inspectBox = await inspect.boundingBox();
+      const collectionBox = await collection.boundingBox();
+      return Math.abs(inspectBox.y - collectionBox.y) < 1 &&
+        redeem.y + redeem.height < inspectBox.y &&
+        Math.abs(redeem.x - inspectBox.x) < 1 &&
+        Math.abs(redeem.x + redeem.width - collectionBox.x - collectionBox.width) < 1;
+    }).toBe(true);
+  });
+
   test('all six Demo Store concept assets load native WebP without removed PNG', async ({ page }) => {
     const pngRequests = [];
     page.on('request', request => {

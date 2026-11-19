@@ -4,7 +4,7 @@ import GarageArtworkImage from './GarageArtworkImage.vue';
 import { findSkin, skinArtwork } from './garage-skin-catalog.ts';
 import type { SkinId } from './garage-skin-catalog.ts';
 
-const props = defineProps<{ skinId: SkinId; locale: string }>();
+const props = defineProps<{ skinId: SkinId; locale: string; size?: number }>();
 const base = import.meta.env.BASE_URL;
 const artwork = computed(() => skinArtwork(props.skinId, base));
 const skin = computed(() => findSkin(props.skinId));
@@ -17,7 +17,7 @@ const animatedSrc = computed(() => skin.value && skin.value.category !== 'drift-
 <template>
   <span v-if="artwork" class="garage-vfx-art">
     <GarageArtworkImage :src="artwork.src" :fallback-src="artwork.hasRaster ? artwork.fallback : ''"
-      :animated-src="animatedSrc" :size="artwork.cssSize" alt="" :fallback-text="title"
+      :animated-src="animatedSrc" :size="size ?? artwork.cssSize" alt="" :fallback-text="title"
       fallback-class="garage-vfx-fallback" />
   </span>
   <strong class="garage-skin-card-name">{{ title }}</strong>
