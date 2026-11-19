@@ -8,7 +8,7 @@ const MAX_LINES = 400;
 // Ratchet for files that predate the limit: never grow, and lower the number whenever one shrinks.
 // A data catalog (translations) may stay large; everything else here is debt to split further.
 const LEGACY_CEILINGS = {
-  'src/main.js': 670,
+  'src/main.js': 662,
   'src/world.js': 943,
   'src/game.js': 485,
   'src/world-tour-scene.js': 453,

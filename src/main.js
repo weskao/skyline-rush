@@ -4,6 +4,7 @@ import { createHistoryView } from './history-ui.ts';
 import { setupCloudUI } from './cloud-ui.ts';
 import { setupGuideUI } from './guide-ui.ts';
 import { setupAudioUI } from './audio-ui.ts';
+import { setupAssistUI } from './assist-ui.ts';
 import { setupControlPanels } from './controls-panels-ui.ts';
 import { setupTutorialUI, updateTutorialActions } from './tutorial-ui.ts';
 import { updateCoachView } from './tutorial-coach-state.ts';
@@ -86,10 +87,7 @@ let contextLost = false; // iOS drops WebGL on lock/app switch and may never res
 let previousPhase;
 let goUntil = 0;
 let { audio, volume } = readAudio();
-// AUTO starts on for every device; only a player's own toggle is remembered.
-const AUTO_KEY = 'skyline-rush-auto';
-let autoThrottle = true;
-try { autoThrottle = localStorage.getItem(AUTO_KEY) !== 'off'; } catch { /* AUTO stays on without storage. */ }
+const assist = setupAssistUI({ button: ui['assist-button'], isLocked: () => !!tutorial, cueUi: () => sound.cue('ui') });
 let animationId;
 if (import.meta.env.VITE_DIAG) import('./diag-relay.ts').then(({ startDiag }) => startDiag(window, localStorage, $('#error-message'), () => ({ phase: race.phase, track: race.trackId, mode: race.mode, quality: vfx.settings().ultra ? 'ultra' : vfx.settings().quality, audio: sound.diagnostics() }))); // diagnostic builds only; production drops the module
 let pausedPhase = 'racing';
@@ -110,7 +108,7 @@ const keymap = setupKeyMapUI({ clearControls: () => controls.clear(), say });
 // Its action callback only runs on input, so the handlers declared further down are ready by then.
 const controls = createControls(window, action => {
   if (!startup.entered || document.querySelector('dialog[open]')) { controls.clear(); return; }
-  ({ start, restart, pause, item: itemUI.activate, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: vfx.toggleAirflow })[action]?.();
+  ({ start, restart, pause, item: itemUI.activate, sound: toggleSound, camera: changeCamera, assist: assist.toggleAssist, airflow: vfx.toggleAirflow })[action]?.();
 }, { getSettings: () => touchUI.inputPrefs(), getKeyMap: () => keymap.getKeyMap(), onTilt: () => touchUI.onTilt() });
 const touchUI = setupTouchControlsUI({
   controls,
@@ -139,7 +137,7 @@ const hud = createRaceHud({
   getVisual: () => vfx.settings(),
   onSprintReady: sound.cue,
   timeTrialGhost: race => ghosts.mode(race),
-  isAutoThrottle: () => autoThrottle,
+  isAutoThrottle: assist.isOn,
   getGoUntil: () => goUntil,
   waitingForScenery: () => world?.trackSceneryPending(race) ?? false,
   setFly: on => controls.setFly(on),
@@ -175,7 +173,7 @@ function applyLocale() {
   if (historyDialog.isOpen()) showHistory();
   for (const [element, text] of said) element.textContent = text();
   cloud.relabel(); // Vue-owned account name/identity are localized on each language switch.
-  vfx.relabel(); showAudio(); showAssist(); showGarage(); phaseText();
+  vfx.relabel(); showAudio(); assist.showAssist(); showGarage(); phaseText();
   syncDailyFlightControl();
   notice.refresh();
   renderReleaseNotes();
@@ -352,19 +350,6 @@ function pause() {
   sound.cue(race.phase === 'paused' ? 'pause' : 'ui');
 }
 
-function showAssist() {
-  ui['assist-button'].setAttribute('aria-pressed', String(autoThrottle));
-  ui['assist-button'].title = t(autoThrottle ? 'assist.titleOn' : 'assist.titleOff');
-}
-
-function toggleAssist() {
-  if (tutorial) return;
-  autoThrottle = !autoThrottle;
-  try { localStorage.setItem(AUTO_KEY, autoThrottle ? 'on' : 'off'); } catch { /* The toggle lasts for this page without storage. */ }
-  showAssist();
-  sound.cue('ui');
-}
-
 const { toggleSettings } = setupControlPanels({
   getRacePhase: () => race.phase,
   clearRebinding: () => keymap.cancelRebinding(),
@@ -381,7 +366,6 @@ function changeCamera() {
 }
 
 const itemUI = setupItemUI({ getRace: () => race, cue: name => sound.cue(name) });
-showAssist();
 // Capture phase so Escape only closes the panel and never reaches input.js as a pause/resume.
 document.addEventListener('keydown', event => {
   if (touchUI.isEditing() && event.code === 'Escape') {
@@ -411,7 +395,6 @@ ui['resume-button'].addEventListener('click', pause);
 setupPhotoUI({ getRace: () => race, getWorld: () => world, cue: name => sound.cue(name) });
 ui['settings-button'].addEventListener('click', () => { toggleSettings(); sound.cue('ui'); });
 ui['camera-button'].addEventListener('click', changeCamera);
-ui['assist-button'].addEventListener('click', toggleAssist);
 $('.toolbar').addEventListener('click', event => {
   if (event.detail > 0 && !event.target.closest('#settings-panel')) event.target.closest('button:not([role="combobox"])')?.blur();
 });
@@ -544,8 +527,8 @@ try {
     const input = controls.read();
     if (tutorial) prepareTutorialInput(input, tutorial.step);
     else {
-      if (autoThrottle && !input.brake) input.throttle = true;
-      input.laneAssist = autoThrottle;
+      if (assist.isOn() && !input.brake) input.throttle = true;
+      input.laneAssist = assist.isOn();
     }
     if (!tutorial && traceRace !== race) { traceRace = race; trace = []; }
     for (let step = 0; step < due.steps; step++) {
@@ -640,7 +623,7 @@ function endTutorial(continueToRace) {
   touchUI.applyControls(false);
   updateCoachView({ visible: false });
   hud.forgetFlightMode();
-  showTracks(); phaseUI(); previousPhase = race.phase; showAssist();
+  showTracks(); phaseUI(); previousPhase = race.phase; assist.showAssist();
   (race.phase === 'paused' ? ui['resume-button'] : ui['start-button']).focus({ preventScroll: true });
   const shouldRace = raceAfterTutorial && continueToRace;
   raceAfterTutorial = false;
