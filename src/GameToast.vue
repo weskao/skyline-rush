@@ -41,5 +41,5 @@ watch(() => toastView.id, raise, { flush: 'post' });
 .game-toast-pill svg { width: 18px; height: 18px; flex: none; color: var(--accent, #ffb15c); }
 @keyframes game-toast { 0% { opacity: 0; translate: 0 -8px; } 10%, 82% { opacity: 1; translate: 0 0; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .game-toast-pill { animation: none; } }
-:global(body.vfx-comfort) .game-toast-pill { animation: none; }
+body.vfx-comfort .game-toast-pill { animation: none; }
 </style>
