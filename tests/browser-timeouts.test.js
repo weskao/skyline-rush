@@ -291,3 +291,17 @@ test('a spec pairs a rival with its scene car through gameScene.rivals, not scen
     .flatMap((line, i) => /scene\.children\b.*\b(driveCue|rival)/i.test(line) ? [`tests/${file}:${i + 1}: ${line.trim()}`] : []));
   assert.deepEqual(offenders, [], 'Read `window.gameScene.rivals[i]` (tests/helpers/gameplay-browser.js) (.claude/rules/browser-test-stability.md)');
 });
+
+// The halfway card lives 2.15 s of race time. toBeVisible, then a text check, then a measure outlived it on CI (a detached
+// node in 44269822759; a zero rect, dx 480, in 44395376200). Read it in one page tick (page.waitForFunction); a locator
+// may only wait for it to go.
+test('a spec reads the self-expiring halfway card in one page tick', () => {
+  const offenders = FILES.flatMap(file => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    const names = [...source.matchAll(/(\w+)\s*=\s*page\.locator\(['"]#race-halfway-card['"]\)/g)].map(([, name]) => name);
+    const reads = [/page\.locator\(['"]#race-halfway-card['"]\)\s*\.(?!.*toBeHidden)/,
+      ...names.map(name => new RegExp(`expect\\(${name}\\)\\.(?!toBeHidden)|\\b${name}\\.(?:evaluate|boundingBox|textContent|innerText)\\(`))];
+    return source.split('\n').flatMap((line, i) => reads.some(read => read.test(line)) ? [`tests/${file}:${i + 1}`] : []);
+  });
+  assert.deepEqual(offenders, [], 'find, read and measure #race-halfway-card inside one page.waitForFunction');
+});
