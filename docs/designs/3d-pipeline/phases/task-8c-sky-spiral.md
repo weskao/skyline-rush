@@ -27,6 +27,7 @@ Concept art and mood reference only (rule item 7). No concept-board panel exists
 | Day sky with cirrus | HDRI, puresky | Coast's `day` sky, reused as it is (`coastEnvPlan('spiral', …)`): no new file or manifest row |
 | Tower shell and light strip | painted concrete / metal textures; geometry modelled in Blender | `spiral-landmarks` (`tower`, `tower_far`): Poly Haven `concrete_panels`, `blue_metal_plate` (`assets-src/spiral-landmarks/sources.json`) |
 | Cloud sea | High and Ultra: shader cloud deck and wisps. Medium: cloud GLB models | High and Ultra: `src/spiral-clouds.ts` on the noise map of `src/cloud-noise.ts` (made at run time, no file). Medium: `spiral-landmarks` (`cloud_a`, `cloud_b`, `cloud_c`), 76 placed on the race lap. Snow peaks from `snow_field_aerial`, `aerial_rocks_02` |
+| Sky life | modelled and painted in Blender, no scan | `spiral-landmarks` (`bird_body`, `bird_wing_l`, `bird_wing_r`, `airship`), flown by `src/spiral-sky-life.ts`: two flocks of seven seabirds beside the road and one 60 m airship, Medium and above |
 | Deck, rails, chevrons | metal and concrete textures | Road deck: the procedural ribbon with the look's KTX2 road set. Rails: the procedural trim, recoloured while the kit is drawn. Chevron signs, gap markers, struts, platforms and stations: `spiral-landmarks` |
 
 ## Reuses from the shared plan
@@ -58,10 +59,13 @@ ghosts and cloud-save ids untouched) and pinned by `tests/sky-spiral-parity.test
 Draw-call caps: home 540 / race 380 on High, as the shared plan (owner decision, 2026-11-19: no track-specific cap).
 The tower stays in view for most of the lap, so its LODs and triangle budget matter more than on a chunked route.
 
-Measured without a browser (2026-11-19): `spiral-landmarks.glb` 983,356 bytes and 9,163 triangles (budget 1.5 MB /
-11,000), one material, base colour 2048 px and three 1024 px maps; twelve instanced draws, eleven at once; 168
-placements on the race lap, at most 135 within the 2.6 km draw range (5,800 m), where the kit draws 56,288 triangles
-with the full tower. Draw calls, scene triangles, GPU bytes and p50/p95 need a browser: not run: the owner asked for no browser tests on this task (2026-11-19).
+Measured without a browser (2026-11-19): `spiral-landmarks.glb` 1,019,196 bytes and 10,643 triangles (budget 1.5 MB /
+11,000) in sixteen nodes, one material, base colour 2048 px and three 1024 px maps. The kit is twelve instanced draws,
+eleven at once, and the flyers at most four more (three bird pools and the airship while it is in range). On High the
+cloud deck and its wisps (two draws) stand in for the three cloud mounds: fourteen at most, fifteen on Medium. 168
+placements on the race lap, at most 135 within the 2.6 km draw range (5,800 m); the 56,288 triangles the kit drew
+there with the full tower were counted on the earlier 9,163-triangle GLB and not recounted. The cloud deck costs about
+28 texture fetches a pixel on High and 60 on Ultra; its frame time was not measured. Draw calls, scene triangles, GPU bytes and p50/p95 need a browser: not run: the owner asked for no browser tests on this task (2026-11-19).
 
 ## Owner decisions (2026-11-19)
 
@@ -70,6 +74,9 @@ with the full tower. Draw calls, scene triangles, GPU bytes and p50/p95 need a b
 - Time of day: day sky, as the concept art. Low keeps the dark procedural scene.
 - Cloud sea: cloud GLB models (not an engine plane, not a dome band). Superseded for High and Ultra later the same day (owner: the mounds look fake; High and above must be as close to the real thing as possible): a shader cloud deck with drifting wisps (`src/spiral-clouds.ts`). Medium keeps the GLB mounds.
 - Draw-call cap: the shared home 540 / race 380.
+- Later the same day: the road must feel in the sky, with cloud drifting over it; the violet light under the day sky
+  is wrong; add moving sky scenery or animals; the finish must run on as road, not hang in the air; scenery is built
+  in Blender.
 
 ## Acceptance checks and guard tests
 
@@ -107,6 +114,18 @@ Low keeps the procedural scene; the course keeps its own in-race song; exact-HEA
 - [x] `TRACK_LOOKS` entry; Low and load-failure fallback unit tests GREEN. Evidence: `6b4bdf3a`,
   `node --test tests/spiral-scenery.test.js tests/spiral-scenery-plan.test.js tests/track-look.test.js` 22 of 22, plus the
   lit-instance check in `tests/shader-safety.test.js` and the hook order in `tests/sky-scene-streaming.test.js`.
+- [x] Violet sun under the day sky. Evidence: `4bf62b35` (`tests/coast-look.test.js`, RED on the sky-only key; rule
+  item 32).
+- [x] The road runs on past the finish instead of ending in the air. Evidence: `1fd1f9a0`, rule
+  `.claude/rules/road-runout.md` (`037d402d`). The other open-ended courses are a separate branch,
+  `feature/road-runout`.
+- [x] Cloud deck and wisps on High and Ultra. Evidence: `ffd88d99`, rule item 33,
+  `node --test tests/spiral-clouds.test.js tests/cloud-noise.test.js`; desktop Chromium stills in the ignored audits
+  (`spiral-lookdev/sea4-high-*.jpg`, before: `before-high-*.jpg`). No Ultra still, no phone, no frame time.
+- [x] Seabirds and airship: Blender nodes and their flight. Evidence: `2fd808ef` (GLB tests, RED before the build;
+  Cycles renders `bird.jpg`, `airship.jpg`, `peak.jpg`, `station.jpg`, `clouds.jpg` in the ignored audits), `97eaa229`
+  (`node --test tests/spiral-sky-life.test.js` 6 of 6: clear of every drawn road and kit piece on the lap, the run-out
+  and three Endless laps; wings stay on their shoulders; still under a stopped clock). Never drawn in WebGL.
 - [ ] No compile after GO, the home 540 / race 380 draw-call caps, warm-before-GO and the NaN scan: written in
   `tests/spiral-look-browser.spec.js` and `tests/track-look-quality-browser.spec.js` (`5fd333d7`), never executed; not run: the owner asked for no browser tests on this task (2026-11-19).
 - [ ] Licence review, owner art approval, `make verify`, exact-HEAD CI. Feature branches do not run the full remote CI;
