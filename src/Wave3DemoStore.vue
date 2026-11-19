@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { inject, computed, nextTick, ref, shallowRef, watch } from 'vue';
+import { inject, computed, nextTick, ref, shallowRef, useId, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageDriftPreview from './GarageDriftPreview.vue';
 import GarageSkinCardFace from './GarageSkinCardFace.vue';
 import Wave3DemoArt from './Wave3DemoArt.vue';
 import Wave3CurrencyAmount from './Wave3CurrencyAmount.vue';
+import Wave3DemoShortfall from './Wave3DemoShortfall.vue';
+import StoreActionButton from './StoreActionButton.vue';
 import { SKIN_CATEGORIES, skinArtwork } from './garage-skin-catalog.ts';
 import type { SkinId } from './garage-skin-catalog.ts';
 import { DEMO_QUOTE_LIFETIME_MS, sameDemoScope } from './wave3-experience-contract.ts';
@@ -46,7 +48,8 @@ const quote = shallowRef<DemoRedemptionQuote | null>(null);
 const store = ref<HTMLElement | null>(null);
 const submitting = ref(false);
 const retry = ref(false);
-const confirmationButton = ref<HTMLButtonElement | null>(null);
+const confirmationButton = ref<InstanceType<typeof StoreActionButton> | null>(null);
+const actionId = useId();
 const statusMessage = ref<HTMLElement | null>(null);
 const previewingDrift = ref(false);
 const message = ref('');
@@ -86,13 +89,14 @@ watch(() => props.active, active => {
 
 const items = computed(() => WAVE3_DEMO_ITEMS.filter(item => filter.value === 'all' || item.category === filter.value));
 const selected = computed(() => WAVE3_DEMO_ITEMS.find(item => item.id === selectedId.value));
-const redeemState = computed(() => selected.value
-  ? demoRedemptionState(selected.value.id, snapshot.value) : 'invalid');
+const redeemStates = computed(() => new Map(WAVE3_DEMO_ITEMS.map(({ id }) => [id, demoRedemptionState(id, snapshot.value)])));
+const redemptionState = (id: SkinId) => redeemStates.value.get(id) ?? 'invalid';
+const redeemState = computed(() => selected.value ? redemptionState(selected.value.id) : 'invalid');
+const hasActionReason = (state: DemoRedeemState) => state === 'unavailable' || state.startsWith('insufficient-demo-');
 const secondaryWallet = computed(() => (['coins', 'diamonds'] as const).map(currency => ({
   currency, value: demoBalance(snapshot.value, currency), label: currencyLabel(currency),
   art: currency === 'coins' ? 'wallet-coin' as const : 'wallet-diamond' as const,
 })));
-const canRequestRedemption = computed(() => redeemState.value === 'ready' || redeemState.value.startsWith('insufficient-demo-'));
 const selectedBalance = computed(() => selected.value?.currency ? demoBalance(snapshot.value, selected.value.currency) : null);
 const statusFor = (id: SkinId) => {
   void props.skinRevision; // Re-render when the integration owner's trial session changes.
@@ -124,13 +128,6 @@ function selectItem(id: SkinId): void {
 function shortfall(item: Wave3DemoItem): number {
   return item.currency && item.demoPrice !== null
     ? Math.max(0, item.demoPrice - demoBalance(snapshot.value, item.currency)) : 0;
-}
-function earningHint(currency: DemoCurrency): string {
-  switch (currency) {
-    case 'points': return tr('Finish a race or claim a demo mission.', '完成比賽或領取試玩任務。');
-    case 'coins': return tr('Finish races or claim the daily race mission.', '完成競速或領取每日競速任務。');
-    case 'diamonds': return tr('Claim the weekly race mission.', '領取每週競速任務。');
-  }
 }
 function inspectPreview(item: Wave3DemoItem): void {
   emit('preview', item.id);
@@ -195,7 +192,8 @@ function dismissRedemption(): void {
 function focusOffer(id: SkinId): void {
   if (!props.active) return;
   const card = store.value?.querySelector(`[data-demo-offer="${id}"]`);
-  const action = card?.querySelector<HTMLButtonElement>('.demo-item-collection, .demo-item-redeem');
+  const action = card?.querySelector<HTMLButtonElement>('.demo-item-collection:enabled, .demo-item-redeem:enabled')
+    ?? card?.querySelector<HTMLButtonElement>('.demo-item-preview:enabled');
   action?.scrollIntoView({ block: 'nearest' });
   action?.focus({ preventScroll: true });
 }
@@ -302,10 +300,15 @@ async function confirmRedemption(): Promise<void> {
               <Wave3CurrencyAmount :currency="selected.currency" :amount="selectedBalance ?? 0" :locale="locale" />
             </p>
           </div>
+          <div v-if="hasActionReason(redeemState)" :id="actionId + '-detail'" class="demo-action-reason">
+            <p v-if="redeemState === 'unavailable'" class="demo-message">{{ feedback(redeemState) }}</p>
+            <Wave3DemoShortfall v-else-if="selected.currency" :currency="selected.currency" :amount="shortfall(selected)" :locale="locale" />
+          </div>
           <div class="demo-actions">
-            <button type="button" class="demo-primary" :class="{ 'demo-insufficient': shortfall(selected) > 0 }"
-              :disabled="submitting || !canRequestRedemption"
-              @click="requestRedemption(selected, $event)">{{ tr('Demo redeem', '試玩兌換') }}</button>
+            <StoreActionButton kind="redeem" :locale="locale" class="demo-primary"
+              :disabled="submitting || redeemState !== 'ready'"
+              :aria-describedby="hasActionReason(redeemState) ? actionId + '-detail' : undefined"
+              @click="requestRedemption(selected, $event)">{{ tr('Demo redeem', '兌換') }}</StoreActionButton>
             <button type="button" :disabled="submitting" @click="inspectPreview(selected)">{{ tr('Inspect preview', '檢視預覽') }}</button>
             <button type="button" :disabled="submitting" @click="emit('open-collection')">{{ tr('Demo Collection', '試玩收藏') }}</button>
           </div>
@@ -325,9 +328,10 @@ async function confirmRedemption(): Promise<void> {
             <Wave3CurrencyAmount :currency="quote.currency" :amount="Math.max(0, demoBalance(snapshot, quote.currency) - quote.cost)" :locale="locale" />
           </p>
           <div class="demo-actions">
-            <button ref="confirmationButton" type="button" class="demo-primary" :disabled="submitting" @click="confirmRedemption">
-              {{ retry ? tr('Retry redemption', '重試兌換') : tr('Confirm demo redeem', '確認試玩兌換') }}
-            </button>
+            <StoreActionButton ref="confirmationButton" kind="redeem" :locale="locale" class="demo-primary"
+              :disabled="submitting" @click="confirmRedemption">
+              {{ retry ? tr('Retry redemption', '重試兌換') : tr('Confirm demo redeem', '確認兌換') }}
+            </StoreActionButton>
             <button type="button" :disabled="submitting" @click="dismissRedemption">{{ tr('Cancel', '取消') }}</button>
           </div>
           <p v-if="submitting" class="demo-message">{{ tr('Redeeming…', '兌換中…') }}</p>
@@ -349,17 +353,14 @@ async function confirmRedemption(): Promise<void> {
             </small>
           </button>
           <template v-if="item.currency && item.demoPrice !== null && !snapshot.demoInventory.includes(item.id)">
-            <div v-if="shortfall(item) > 0" class="demo-shortfall" data-demo-shortfall>
-              <strong>{{ tr('Need', '還差') }}
-                <Wave3CurrencyAmount :currency="item.currency" :amount="shortfall(item)" :locale="locale" />
-                {{ tr('more', '') }}
-              </strong>
-              <span>{{ earningHint(item.currency) }}</span>
+            <div v-if="hasActionReason(redemptionState(item.id))" :id="actionId + '-' + item.id">
+              <p v-if="redemptionState(item.id) === 'unavailable'" class="demo-message">{{ feedback('unavailable') }}</p>
+              <Wave3DemoShortfall v-else :currency="item.currency" :amount="shortfall(item)" :locale="locale" />
             </div>
-            <button type="button" class="demo-item-redeem" :class="{ 'demo-insufficient': shortfall(item) > 0 }"
-              :disabled="submitting"
-              :aria-label="tr('Redeem', '兌換') + ' ' + item.name[locale === 'zh-TW' ? 'zh-TW' : 'en']"
-              @click="requestRedemption(item, $event)">{{ tr('Redeem', '兌換') }}</button>
+            <StoreActionButton kind="redeem" :locale="locale" class="demo-item-redeem" :item="item.name[locale === 'zh-TW' ? 'zh-TW' : 'en']"
+              :disabled="submitting || redemptionState(item.id) !== 'ready'"
+              :aria-describedby="hasActionReason(redemptionState(item.id)) ? actionId + '-' + item.id : undefined"
+              @click="requestRedemption(item, $event)" />
           </template>
           <button v-else-if="snapshot.demoInventory.includes(item.id)" type="button"
             class="demo-item-collection" :disabled="submitting" @click="emit('open-collection', item.id)">

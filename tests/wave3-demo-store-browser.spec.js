@@ -128,8 +128,9 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
       await expect(store).toContainText('Demo points');
       await expect(store.locator('.demo-wallet strong')).toHaveText('20');
       await store.locator('[data-demo-id="thruster-ion"]').click();
-      await store.getByRole('button', { name: 'Demo redeem' }).click();
-      await expect(store.getByRole('status').last()).toContainText('Not enough demo points');
+      const detailRedeem = store.getByRole('button', { name: 'Demo redeem', exact: true });
+      await expect(detailRedeem).toBeDisabled();
+      await expect(detailRedeem).toHaveAccessibleDescription(/Need 5 Demo points more.*Finish a race/);
       await expect(store.locator('.demo-wallet strong')).toHaveText('20');
 
       await page.evaluate(() => window.__wave3DemoFixture.grantRace());
@@ -188,18 +189,19 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     const confirm = store.getByRole('button', { name: 'Confirm demo redeem', exact: true });
     const cues = () => page.evaluate(() => window.__wave3DemoFixture.cues());
     const reveal = page.locator('#acquisition-reveal');
-    await redeem.click();
-    expect(await cues()).toEqual(['action-unavailable']);
+    await expect(redeem).toBeDisabled();
+    await redeem.evaluate(button => button.click());
+    expect(await cues()).toEqual([]);
 
     await page.evaluate(() => window.__wave3DemoFixture.grantRace());
-    expect(await cues()).toEqual(['action-unavailable']);
+    expect(await cues()).toEqual([]);
     await redeem.click();
     await expect(confirm).toBeFocused();
-    expect(await cues()).toEqual(['action-unavailable', 'redeem-review']);
+    expect(await cues()).toEqual(['redeem-review']);
     await confirm.press('Escape');
     await expect(confirm).toHaveCount(0);
     await expect(reveal).toBeHidden();
-    expect(await cues()).toEqual(['action-unavailable', 'redeem-review', 'redeem-cancelled']);
+    expect(await cues()).toEqual(['redeem-review', 'redeem-cancelled']);
 
     await redeem.click();
     await store.getByRole('button', { name: 'Cancel', exact: true }).click();
@@ -221,8 +223,8 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await expect(reveal.getByRole('heading', { name: 'Ion thruster' })).toBeVisible();
     await expect(reveal.locator('.acquisition-hero')).toHaveAttribute('data-kind', 'equipment');
     await expect.poll(cues).toEqual([
-      'action-unavailable', 'redeem-review', 'redeem-cancelled', 'redeem-review', 'redeem-cancelled',
-      'redeem-review', 'action-unavailable', 'redeem-review', 'acquisition-item',
+      'redeem-review', 'redeem-cancelled', 'redeem-review', 'redeem-cancelled',
+      'redeem-review', 'action-unavailable', 'redeem-review', 'acquisition-equipment-thruster',
     ]);
     await continueAfterUnlock(page);
   });
@@ -295,6 +297,11 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await page.goto(url);
     const card = page.locator('[data-demo-offer="nitro-trail-cyan"]');
     const gap = card.locator('[data-demo-shortfall]');
+    const action = card.getByRole('button', { name: /^Redeem / });
+    await expect(action).toBeDisabled();
+    await expect(action).toHaveAccessibleDescription(/Need 150 Demo coins more.*daily race mission/);
+    await expect(action).toHaveCSS('cursor', 'not-allowed');
+    const unavailableColour = await action.evaluate(button => getComputedStyle(button).color);
     await expect(gap).toContainText('Need 150 Demo coins more');
     await expect(gap).toContainText('daily race mission');
     await page.evaluate(() => {
@@ -304,6 +311,11 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     await expect(gap).toContainText('Need 40 Demo coins more');
     await page.evaluate(() => window.__wave3DemoFixture.grantRace(3));
     await expect(gap).toHaveCount(0);
+    await expect(action).toBeEnabled();
+    await expect(action).not.toHaveCSS('color', unavailableColour);
+    await expect(action).toHaveCSS('min-height', '44px');
+    await page.evaluate(() => window.__wave3DemoFixture.setLocale('zh-TW'));
+    await expect(card.getByRole('button', { name: '兌換 青色尾跡' })).toBeEnabled();
   });
 
   test('mobile card redeems the displayed item directly without a separate selection step', async ({ page }) => {
@@ -312,9 +324,9 @@ test.describe('isolated Wave 3 demo store and collection (not mounted in Garage 
     const store = page.locator('[data-wave3-demo-store]');
     const offer = store.locator('[data-demo-offer="nitro-trail-cyan"]');
     const redeem = offer.getByRole('button', { name: /^Redeem / });
-    await expect(redeem).toBeVisible();
-    await redeem.click();
-    await expect(store.getByRole('status').last()).toContainText('Not enough demo coins');
+    await expect(redeem).toBeDisabled();
+    await expect(redeem).toHaveAccessibleDescription(/Need 150 Demo coins more/);
+    await redeem.evaluate(button => button.click());
     await expect(store.getByRole('group', { name: 'Confirm demo redemption' })).toHaveCount(0);
 
     await page.evaluate(() => {
