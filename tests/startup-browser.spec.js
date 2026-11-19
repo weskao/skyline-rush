@@ -150,3 +150,28 @@ test('a context loss during entry keeps the retry screen visible and the lobby i
   await expect(page.locator('#startup')).toHaveCSS('opacity', '1');
   await expect(page.locator('#app')).toHaveAttribute('inert', '');
 });
+
+test('the landscape home slides its controls without animating the fixed-rail ancestors', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.addInitScript(() => {
+    window.homeArrivalFrames = [];
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (frames, options) {
+      if (options?.id === 'home-arrival') window.homeArrivalFrames.push([this.id, frames[0].translate]);
+      return animate.call(this, frames, options);
+    };
+  });
+  await page.goto('/');
+  await expect(enter(page)).toBeEnabled();
+  await page.locator('#startup').evaluate(screen => { screen.dataset.motion = 'medium'; });
+  await enter(page).press('Enter');
+  await expect(page.locator('#startup')).toBeHidden();
+  await expect(page.locator('#start-button')).toBeFocused();
+  const arrivals = await page.evaluate(() => window.homeArrivalFrames);
+  expect(arrivals).toEqual(expect.arrayContaining([
+    ['race-mode-picker', '-10px 0'], ['start-button', '10px 0'], ['garage-button', '-10px 0'],
+  ]));
+  expect(arrivals.map(([id]) => id)).not.toContain('intro');
+  await expect(page.locator('#intro')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('#start-button')).toHaveCSS('translate', 'none');
+});

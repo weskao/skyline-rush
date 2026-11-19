@@ -9,6 +9,7 @@
 - The full-bleed WebPs under `public/feature-assets/startup/` use the original landscape (1672×941), portrait (852×1847) and square (1254×1254) render resolutions plus smaller encodes. Their responsive display size is independent of the 3× icon sizing policy. The art keeps the source proportions and uses local code for text/buttons.
 - [x] Animate perspective road reflections on Medium/High and give the active loading segment a moving highlight. The startup mix uses the shared audio context, honors the saved music switch, and switches back to the original intro on entry.
 - [x] Give High/Ultra a one-pass camera push, accelerate ground reflections on Medium/High/Ultra, and add a short launch transition when entering the ready lobby. Browser captures confirm desktop and portrait framing and that reduced motion stops the camera and road layers. The entry cancellation and effects-off unit tests were RED on the previous screen and are GREEN after the change.
+- [x] After the startup gate exits, bring the Home setup and tools in from opposite sides by group. Use shorter lifts on narrow portrait and foldable layouts, a fade on Low, and instant controls with effects off, comfort, or reduced motion. The integration test was RED without the handoff animation and is GREEN with it. The landscape Chromium guard verifies the Start rail animates independently of the scroller and keeps keyboard focus.
 - [ ] Confirm the full GitHub quality gate and physical iOS/Android/foldable devices.
 
 # Develop World Tour camera CI run 44394398766

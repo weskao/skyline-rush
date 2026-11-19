@@ -81,7 +81,36 @@ test('effects-off enters the lobby without creating an animation', async () => {
   nodes.startup.dataset.motion = 'off';
   globalThis.matchMedia = () => ({ matches: false });
   nodes.startup.animate = () => assert.fail('effects-off must enter immediately');
+  nodes.app.querySelectorAll = () => assert.fail('effects-off must skip home animations');
   startup.ready(() => {});
   await nodes['startup-enter'].listeners.click();
   assert.equal(nodes.app.inert, false);
+});
+
+test('wide home controls slide from both sides only when the startup screen has exited', async () => {
+  const { nodes, startup } = await openPage(memoryStorage());
+  nodes.startup.dataset.motion = 'high';
+  globalThis.matchMedia = () => ({ matches: false });
+  globalThis.getComputedStyle = () => ({ getPropertyValue: key => key === '--ease-out' ? 'ease-out' : '240ms' });
+  let finishExit;
+  const finished = new Promise(resolve => { finishExit = resolve; });
+  nodes.startup.animate = () => ({ finished });
+  const slides = new Map();
+  nodes.app.querySelectorAll = selectors => selectors.split(', ').map(selector => ({
+    animate: (frames, options) => {
+      assert.equal(nodes.startup.hidden, true);
+      assert.equal(nodes.app.inert, false);
+      slides.set(selector, { frames, options });
+    },
+  }));
+  startup.ready(() => {});
+  const entry = nodes['startup-enter'].listeners.click();
+  assert.equal(slides.size, 0);
+  finishExit();
+  await entry;
+  assert.match(slides.get('.lobby-race-heading')?.frames[0].translate ?? '', /^-/);
+  assert.match(slides.get('#settings-button')?.frames[0].translate ?? '', /^[1-9]/);
+  assert.equal(slides.get('#start-button')?.frames[1].translate, 'none');
+  assert.ok(slides.get('#garage-button').options.delay > slides.get('.lobby-race-heading').options.delay);
+  assert.equal(slides.get('#start-button').options.fill, 'backwards');
 });

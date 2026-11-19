@@ -3,6 +3,7 @@ import { startOpeningAudio } from './startup-audio.ts';
 import { readInitialDeviceVisuals } from './device-quality.ts';
 import { resolveInitialLocale } from './locale-preference.ts';
 import { refreshFoldableViewport } from './foldable-viewport.ts';
+import { playHomeArrival } from './home-arrival.ts';
 
 const COPY = {
   en: {
@@ -84,7 +85,8 @@ function setupStartup() {
       enter.addEventListener('click', async () => {
         enter.disabled = true;
         const motion = root.dataset.motion;
-        if (motion !== 'off' && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+        if (motion !== 'off' && !reducedMotion.matches) {
           const cinematic = motion === 'high' || motion === 'medium';
           if (cinematic) root.dataset.entering = 'true';
           exit = root.animate([{ opacity: 1 }, { opacity: 1, offset: .22 }, { opacity: 0 }],
@@ -97,6 +99,7 @@ function setupStartup() {
         delete root.dataset.entering;
         entered = true;
         app.inert = false;
+        if (motion !== 'off' && !reducedMotion.matches) playHomeArrival(app, motion === 'low');
         viewport.abort();
         app.querySelector<HTMLElement>('#start-button')?.focus({ preventScroll: true });
         onEnter();
