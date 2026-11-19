@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RACE_TRACKS } from '../src/race-tracks.ts';
 import { skyFrame, skyPoint, skyTowerOrigin, SKY_JUMPS, SKY_LENGTH as L, SKY_SPIRAL } from '../src/sky-track.ts';
-import { SPIRAL_NODES, SPIRAL_NODE_RADIUS as RADIUS, SPIRAL_NODE_SPAN as SPAN, spiralSceneryPlan, spiralStrutStations } from '../src/spiral-scenery-plan.ts';
+import { SPIRAL_CLOUD_SPREAD, SPIRAL_NODES, SPIRAL_NODE_RADIUS as RADIUS, SPIRAL_NODE_SPAN as SPAN, spiralSceneryPlan, spiralStrutStations } from '../src/spiral-scenery-plan.ts';
 
 const of = (plan, node) => plan.filter(p => p.node === node);
 const clouds = plan => plan.filter(p => p.node.startsWith('cloud'));
@@ -80,7 +80,7 @@ function strutIntrusions(plan, frames) {
 /** The smallest height of the road over the top of a cloud under it (any cloud may be 500 m across). */
 const cloudGap = (plan, frames) => Math.min(...clouds(plan).map(p => {
   const top = p.y + SPAN[p.node][1] * p.scale;
-  return Math.min(...frames.filter(f => flat(f.point, p) <= RADIUS.cloud_c * p.scale).map(f => f.point.y - top));
+  return Math.min(...frames.filter(f => flat(f.point, p) <= SPIRAL_CLOUD_SPREAD * p.scale).map(f => f.point.y - top));
 }));
 
 test('no piece stands in the road, the flight corridor or the shortcut, on a race and on both endless directions', () => {

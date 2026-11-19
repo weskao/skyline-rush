@@ -6,16 +6,19 @@ import { SKY_JUMPS, SKY_LENGTH, SKY_SPIRAL, skyFrame, skyPoint, skyTowerOrigin }
 
 export const SPIRAL_NODES = ['strut', 'platform_a', 'platform_b', 'station', 'chevron_sign', 'gap_marker', 'cloud_a', 'cloud_b', 'cloud_c', 'peak'] as const;
 export type SpiralNode = typeof SPIRAL_NODES[number];
-/** Horizontal reach (m, at scale 1) of each node about its pivot's vertical axis, from the kit's node contract: the
- *  strut's is its length, a cloud's its smallest half-width. A node built wider re-runs the clearance test. */
+/** Horizontal reach (m, at scale 1) of each node about its pivot's vertical axis, measured on the shipped GLB
+ *  (tests/spiral-landmarks-glb.test.js): the strut's is its length, a cloud's its smallest half-width, the part of
+ *  the sea it is sure to cover. */
 export const SPIRAL_NODE_RADIUS: Readonly<Record<SpiralNode, number>> = {
-  strut: 170, platform_a: 22, platform_b: 22, station: 17, chevron_sign: 2.2, gap_marker: 1.2, cloud_a: 150, cloud_b: 200, cloud_c: 250, peak: 250,
+  strut: 170, platform_a: 22, platform_b: 25, station: 17, chevron_sign: 2.2, gap_marker: 1.2, cloud_a: 150, cloud_b: 155, cloud_c: 135, peak: 307,
 };
-/** Lowest and highest point (m, at scale 1) of each node from its pivot, same contract. */
+/** Lowest and highest point (m, at scale 1) of each node from its pivot, same measurement. */
 export const SPIRAL_NODE_SPAN: Readonly<Record<SpiralNode, readonly [number, number]>> = {
-  strut: [-12, -.5], platform_a: [-50, 45], platform_b: [-50, 45], station: [0, 14], chevron_sign: [0, 6], gap_marker: [0, 6.5],
-  cloud_a: [0, 60], cloud_b: [0, 75], cloud_c: [0, 90], peak: [0, 260],
+  strut: [-25.2, -.5], platform_a: [-50, 45], platform_b: [-50, 45], station: [0, 14], chevron_sign: [0, 6], gap_marker: [0, 6.5],
+  cloud_a: [0, 80], cloud_b: [0, 64], cloud_c: [0, 90], peak: [0, 260],
 };
+/** The farthest any cloud reaches from its pivot (m, at scale 1): cloud_c's corner. */
+export const SPIRAL_CLOUD_SPREAD = 264;
 export interface SpiralPlacement { node: SpiralNode; x: number; y: number; z: number; yaw: number; scale: number }
 
 const L = SKY_LENGTH;
@@ -104,9 +107,10 @@ function peaks(run: Run): SpiralPlacement[] {
 }
 
 // The cloud sea: a hex grid of clouds kept within CLOUD_CORRIDOR of the route. At CLOUD_PITCH the smallest cloud
-// (150 m, never scaled down) still reaches the middle of its three neighbours, so the kept cells leave no hole.
+// still reaches the middle of its three neighbours (144 m), so the kept cells leave no hole: cloud_c, 135 m across
+// its narrow side, is never drawn under 1.1.
 const CLOUD_PITCH = 250, CLOUD_ROW = CLOUD_PITCH * Math.sqrt(3) / 2, CLOUD_CORRIDOR = 215, CLOUD_CLEAR = 26;
-const CLOUDS: readonly (readonly [SpiralNode, number, number])[] = [['cloud_a', 1, 1.3], ['cloud_b', .8, 1.3], ['cloud_c', .8, 1.2]];
+const CLOUDS: readonly (readonly [SpiralNode, number, number])[] = [['cloud_a', 1, 1.3], ['cloud_b', 1, 1.3], ['cloud_c', 1.1, 1.3]];
 function cloudSea(run: Run): SpiralPlacement[] {
   const route = Array.from({ length: L / 10 + 1 }, (_, i) => skyPoint(run.at(i * 10), run.endless));
   const xs = route.map(p => p.x), zs = route.map(p => p.z), out: SpiralPlacement[] = [];
@@ -116,7 +120,7 @@ function cloudSea(run: Run): SpiralPlacement[] {
     const seed = i * 57 + j * 131, x = (i + (j & 1) / 2) * CLOUD_PITCH + mix(-8, 8, hash(seed)), z = j * CLOUD_ROW + mix(-8, 8, hash(seed + 1));
     const [node, small, large] = CLOUDS[Math.floor(hash(seed + 2) * 3)], scale = mix(small, large, hash(seed + 3));
     // Its top stays CLOUD_CLEAR under the lowest road over it (the helix passes over its own approach).
-    const reach = SPIRAL_NODE_RADIUS.cloud_c * scale + 10;
+    const reach = SPIRAL_CLOUD_SPREAD * scale + 10;
     let nearest = Infinity, low = Infinity, fallback = 0;
     for (const p of route) {
       const flat = Math.hypot(p.x - x, p.z - z);
