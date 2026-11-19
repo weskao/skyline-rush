@@ -7,7 +7,7 @@ import * as THREE from 'three';
 interface Port { position: readonly number[]; direction: readonly number[]; size: number }
 /** `reach`: jet length (m). `quality`: 0.25 Low, 0.5 Medium, 1 High. `calm`: Reduced Motion or Comfortable. */
 export interface PlumeFrame { time: number; power: number; nitroMix: number; reach: number; brightness: number; diamonds: number;
-  extreme: number; tail: number; quality: number; enabled: boolean; calm: boolean; voidPulse: boolean; racing: boolean; grounded: boolean }
+  extreme: number; tail: number; quality: number; enabled: boolean; calm: boolean; voidPulse: boolean; racing: boolean; grounded: boolean; showroom?: boolean }
 
 /** The flame in metres behind the nozzle. Fixed: as fat and as bright on Low + Realistic as on High + Extreme, whatever the tail length. */
 export const PLUME = { nozzle: 0.065, fat: 0.3, half: 0.12, flare: 0.45, glowWidth: 2.4, glowLength: 7 } as const;
@@ -32,6 +32,20 @@ const TINT_UNIFORMS = 'uniform float time,nitroMix;uniform vec3 skinTint;uniform
 const FLAME = `mix(vec3(.45,.75,1.)*skinTint,${NITRO_TINT})`; // the thruster tint on blue
 const tube = (around: number, along: number) => new THREE.CylinderGeometry(1, 1, 1, around, along, true).rotateX(-Math.PI / 2).translate(0, 0, 0.5);
 
+/** Align both NITRO reflections to the contact-shadow plane through the car, even when the rear ports are refitted. */
+export function createSprintRoadPlacement(parent: THREE.Object3D, vehicle?: THREE.Object3D, ground?: THREE.Object3D) {
+  const roadUp = new THREE.Vector3(), spot = new THREE.Vector3(), carFrame = new THREE.Quaternion();
+  return (glow: THREE.Object3D, distance: number): void => {
+    glow.position.set(0, -parent.position.y, distance);
+    if (ground && vehicle) {
+      roadUp.set(0, 0, 1).applyQuaternion(ground.quaternion).applyQuaternion(carFrame.copy(vehicle.quaternion).invert());
+      glow.quaternion.setFromUnitVectors(UP, roadUp).multiply(FLAT);
+      glow.position.addScaledVector(roadUp, -roadUp.dot(spot.copy(glow.position).add(parent.position)));
+    } else roadUp.copy(UP);
+    glow.position.addScaledVector(roadUp, .04);
+  };
+}
+
 /** `ground`: the car's contact-shadow plane (+z is the road's up), so the road glow stays on the road while `vehicle` leans. */
 export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[], vehicle?: THREE.Object3D, ground?: THREE.Object3D) {
   const jetGeometry = tube(20, 24);
@@ -54,10 +68,10 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         color=mix(color,vec3(1.,.38,.78),tail*smoothstep(.2,1.,t)); // board plume (Medium+): the blue-white core fades to magenta
         color=mix(color*skinTint,${NITRO_TINT}); // skin tints the base
         float body=thick*(1.-smoothstep(0.,3.,clamp(vD,0.,3.))); // the first 3 m stay dense whatever the tail length
-        float shape=1.;
+        float shape=.91+.09*cos(vUv.x*12.566+t*25.-time*7.);
         if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
-        if(skinPattern>1.5) shape=.25+.75*abs(sin(vUv.x*6.28*3.+t*28.-time*11.));
-        if(skinPattern>2.5) shape=step(.45,fract(t*7.+time*3.+vUv.x*3.));
+        if(skinPattern>1.5) shape=.58+.42*pow(max(0.,.5+.5*sin(vUv.x*6.28*3.+t*28.-time*8.)),2.);
+        if(skinPattern>2.5) shape=.63+.28*sin(t*13.-time*5.+vUv.x*6.283);
         // glare 1 (bloom, Medium/High): under the bloom threshold, the fat flame emits half (two faces, overlapping neighbours).
         // 0 (Low, no bloom): full light and a denser tail, the jet's own halo. No channel above 1, hue kept.
         vec3 light=color*brightness*(1.+core+cells)*mix(1.,vSpread*(1.-.5*thick),glare);
@@ -86,7 +100,7 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         gl_Position=projectionMatrix*(centre+vec4(position.xy*span,0.,0.));}`,
     fragmentShader: `varying vec2 vUv;${TINT_UNIFORMS}uniform float fade;
       void main(){float disc=clamp(1.-length(vUv-.5)*2.,0.,1.);disc*=disc;
-        gl_FragColor=vec4(mix(${FLAME},vec3(1.),disc),disc*fade*(.9+.1*sin(time*23.)));}`,
+        gl_FragColor=vec4(mix(${FLAME},vec3(1.),disc),disc*fade*(.9+.1*(1.-clamp(nitroMix,0.,1.))*sin(time*23.)));}`,
   }), ports.length);
   flare.name = 'Sprint nozzle flare';
   const glow = new THREE.Mesh(new THREE.PlaneGeometry(PLUME.glowWidth, PLUME.glowLength), new THREE.ShaderMaterial({
@@ -101,7 +115,7 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
   const place = new THREE.Matrix4();
   ports.forEach((port, i) => flare.setMatrixAt(i, place.makeTranslation(new THREE.Vector3(...port.position))));
   for (const mesh of [flare, glow]) { mesh.visible = false; parent.add(mesh); }
-  const roadUp = new THREE.Vector3(), spot = new THREE.Vector3(), carFrame = new THREE.Quaternion();
+  const placeRoadGlow = createSprintRoadPlacement(parent, vehicle, ground);
   let trail = 0;
   return {
     jets,
@@ -120,22 +134,20 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         jet.visible = on;
         jet.scale.z = frame.reach;
         const u = jet.material.uniforms;
-        u.reach!.value = frame.reach; u.thick!.value = 1 - skinFade; u.glare!.value = frame.quality > 0.25 ? 1 : 0; // configureBloom: no bloom on Low
+        u.reach!.value = frame.reach; u.thick!.value = 1 - skinFade;
+        u.glare!.value = Number(frame.quality > 0.25 || frame.showroom === true); // the dark showroom also needs the overlap cap on Low
         u.time!.value = frame.time + i * 0.13; u.tail!.value = frame.tail;
         u.power!.value = Math.sqrt(power); // clamped like the flare; a held BOOST (power ~0.65) still reads as a sprint
         u.brightness!.value = frame.brightness; u.diamonds!.value = frame.diamonds; u.extreme!.value = frame.extreme; u.nitroMix!.value = frame.nitroMix;
       });
-      flare.visible = lit; glow.visible = lit && frame.quality > 0.25 && frame.racing && frame.grounded;
+      flare.visible = lit;
+      glow.visible = lit && frame.quality > 0.25 && frame.racing && frame.grounded && !(frame.calm && frame.nitroMix > 0);
+      const nitroHalo = frame.quality > .25 ? frame.nitroMix : 0;
       shared.time.value = frame.time; shared.nitroMix.value = frame.nitroMix;
-      flareSize.value = PLUME.flare * (0.55 + 0.45 * power); flareFade.value = power * dim; glowFade.value = 0.6 * power * (1 - skinFade) * dim;
-      if (!glow.visible) return;
-      glow.position.set(0, -parent.position.y, glowZ); // the road under the car, wherever garage-model.ts put the ports
-      if (ground && vehicle) { // as garage-launch-flare.js: the car banks and squats about its wheels, the glow must not
-        roadUp.set(0, 0, 1).applyQuaternion(ground.quaternion).applyQuaternion(carFrame.copy(vehicle.quaternion).invert());
-        glow.quaternion.setFromUnitVectors(UP, roadUp).multiply(FLAT);
-        glow.position.addScaledVector(roadUp, -roadUp.dot(spot.copy(glow.position).add(parent.position))); // back onto the road plane: 6 m behind a squatting car it would sink
-      } else roadUp.copy(UP);
-      glow.position.addScaledVector(roadUp, 0.04);
+      flareSize.value = PLUME.flare * (0.55 + 0.45 * power) * (1 - .23 * nitroHalo);
+      flareFade.value = power * dim * (1 - .19 * nitroHalo);
+      glowFade.value = 0.6 * power * (1 - skinFade) * dim * (1 - .25 * nitroHalo);
+      if (glow.visible) placeRoadGlow(glow, glowZ);
     },
     reset(): void { for (const jet of jets) jet.visible = false; flare.visible = glow.visible = false; },
   };

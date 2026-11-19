@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/test.js';
+import { ciTimeout } from './helpers/ci.js';
 import { QUALITY_STORAGE_KEY } from '../src/device-quality.ts';
 
 test.use({ startupSeen: false });
@@ -84,7 +85,7 @@ test('keeps localised text and touch targets in bounds through rotation and fold
   const subtitle = page.getByText('駛出公路，飛向天際', { exact: true });
   const art = page.locator('#startup picture img');
   const assertBounds = async (width, height) => {
-    await expect(subtitle).toBeVisible({ timeout: 4000 });
+    await expect(subtitle).toBeVisible({ timeout: ciTimeout(4000) });
     const titleBox = await heading.boundingBox();
     const subtitleBox = await subtitle.boundingBox();
     const progressBox = await progress.boundingBox();

@@ -1,6 +1,8 @@
 ---
 paths:
   - "src/sprint-plume.ts"
+  - "src/garage-nitro-trail.js"
+  - "tests/garage-nitro-trail.test.js"
   - "tests/sprint-plume.test.js"
 ---
 
@@ -56,7 +58,7 @@ instanced nozzle flare, plus one road glow. Every part blends additively: the ex
 | Medium, High | on | on | on |
 | Airborne, or not racing (Garage, Home) | on | on | off |
 | Void pulse skin | off (its beams) | on | as above |
-| Reduced Motion / Comfortable (`calm`) | on, clock frozen | x0.6, no flicker | x0.6 |
+| Reduced Motion / Comfortable (`calm`) | on, clock frozen | x0.6, no flicker | off for NITRO, x0.6 for BOOST |
 | NITRO with a trail skin (not calm) | thick fades to the old cone | on | fades to 0 |
 
 - **Trail-skin cross-fade.** While a trail skin's streaks show, the jets' thickness and the road glow
@@ -67,8 +69,13 @@ instanced nozzle flare, plus one road glow. Every part blends additively: the ex
   `SHOWROOM`): from `idle` (a quarter) up to the length the Studio's `SHOWROOM.speed` driver gets, and back; brightness
   follows from `idlePower` to 1. Reduced Motion / Comfortable: no pulse (Studio holds the full length). Races never
   pulse. Guards: `tests/sprint-plume.test.js` (*showroom plume* x2).
-- **x3 chain.** `frame.power` reaches 1.4; flare size and the jets' `power` clamp at 1 (the veil spec
-  runs at chain 1 only, so an unclamped jet would add ~18% light past its guard).
+- **NITRO trail glare (2026-11-18).** Additive exhaust, the reflection and post-process bloom overlap.
+  Gold moves bands through a steady nozzle and reflection. Red uses soft envelopes on both meshes.
+  Keep the NITRO bloom contribution bounded and fed by `frame.lightPower` before chain scaling, including
+  the additive airflow opacity. `frame.power` can still stretch reach and accelerate the trail. Low keeps
+  its nozzle contrast without bloom. Both road reflections use the same contact-plane placement.
+  Guards: `tests/garage-nitro-trail.test.js`, the standard nozzle in `tests/sprint-plume.test.js`, and
+  the Comfort-mode static artwork in `tests/garage-vfx-catalog-browser.spec.js`.
 - **Lean.** The road glow lies on the road plane through the car's contact-shadow plane (`ground`) while the car
   banks and squats, and moves back onto that plane 6 m behind it (`launch-flare-rendering.md`). Guard: *lean*.
 

@@ -18,7 +18,7 @@ import { classicRoadRoute, legacyClassicRoad } from './classic-road-routes.ts';
 import { createClassicRoadRender } from './classic-road-render.ts';
 import { createEffects } from './effects.js';
 import { createAeroVFX } from './aero-vfx.js';
-import { vfxSettings, createSprintVfx, sprintFovOffset } from './vfx-settings.ts';
+import { vfxSettings, createSprintVfx, sprintBloomBoost, sprintFovOffset } from './vfx-settings.ts';
 import { raceCameraView, rigBack, rigLook, rigHeight, rigFov, rigShake, rigKick, rigRumble, rigJolt, rumbleFloor, stepCameraSwing, frameChaseSightline } from './race-camera.ts';
 import { renderPixelRatioForQuality } from './render-resolution.ts';
 import { warmupShaders } from './shader-warmup.ts';
@@ -744,7 +744,7 @@ export function createWorld(canvas) {
       });
       const portrait = camera.aspect < 0.8, view = raceCameraView(cameraMode, portrait), sprintFrame = sprintVisual.update(sprintInput), chaseFov = reducedMotion ? 64 : rigFov(view, visualCar.speed) + sprintFovOffset(sprintFrame, visual); // chaseFov drives the dolly: no impact pinch
       const feedback = aero.update(race, race.phase === 'paused' ? 0 : dt, origin ?? aeroOrigin.set(center, 0, -distance), garageHomePreview ? garageHomeVisual : visual, reducedMotion, sprintFrame, garageHomePreview);
-      const boostStrength = race.phase === 'racing' ? sprintFrame.power : 0;
+      const sprintActive = race.phase === 'racing' && !reducedMotion && visual.enabled;
       if (photoView && race.phase === 'paused') {
         desiredCamera.set(player.position.x + Math.sin(photoView.angle) * 14,
           player.position.y + 5, player.position.z + Math.cos(photoView.angle) * 14);
@@ -840,7 +840,7 @@ export function createWorld(canvas) {
       lens.uniforms.nozzle.value.set(projectedNozzle.x * 0.5 + 0.5, projectedNozzle.y * 0.5 + 0.5);
       lens.uniforms.pressure.value = reducedMotion || visual.quality === 'low' || projectedNozzle.z > 1 ? 0 : feedback.strength * 0.6;
       lens.uniforms.time.value = time;
-      const boostGlow = reducedMotion || !visual.enabled ? 0 : visual.bloom * (boostStrength * .25 + feedback.ignition * .2);
+      const boostGlow = sprintActive ? sprintBloomBoost(sprintFrame, visual.bloom, feedback.ignition) : 0;
       const bloomStrength = lighting ? upcomingRaceBloom(boostGlow) : TOUR_IDS.has(trackId) ? .085 : coastLook.bloomStrength(trackId === 'coast' ? COAST_LIGHTING.bloom : .42) + boostGlow;
       configureBloom(bloom, visual.quality, bloomStrength, lighting ? UPCOMING_BLOOM_THRESHOLD : coastLook.bloomThreshold(1.1));
       if (warmupPending) { warmupPending = false; warmupShaders(renderer, scene, camera, composer.renderTarget1); }

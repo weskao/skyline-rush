@@ -1,3 +1,14 @@
+# Minimap gap marks (2026-11-19, `feature/minimap-gap-marks`)
+
+- [x] Inventory: 4 tracks / 8 gaps the physics drops the car into — Canyon 1 (`sections` gap), Sky Spiral 3 (`SKY_JUMPS` via `sections`, finite modes), Dune Tempest 1 and Skyfall Archipelago 3 (`spec.noRoad`). Endless/Elimination clear `race.sections`, so none there. One renderer, `createRouteMap` (`src/route-map.ts`), three draw paths (classic polyline, CourseGraph, streaming). Monsoon, Volcanic, Stormline and Frostbite have no `noRoad`, so they get no gap mark.
+- [x] Every gap is drawn as a break with end caps: a map-background cut over the true span, an orange dotted jump and orange caps at takeoff and landing. Geometry is computed once per track (`routeGapPaths`, cached); no per-frame work. Gapless tracks draw exactly as before.
+- [x] RED → GREEN: `tests/minimap-gap-marks.test.js` failed on the old code (`canyon draws one cut, one dotted jump and one cap path`, `routeGapPaths is not a function`, missing cut nodes for exact-position checks), then 6/6 pass.
+- [x] Prevention: `.claude/rules/route-minimap.md` (scoped) plus a pointer in `playable-course-shared-template.md`.
+- [x] `node --test tests/module-size.test.js` (3/3), `npm test` (3439 pass, 0 fail, 4 skipped), `npm run typecheck` and `npm run build` all exit 0.
+- [ ] `tests/minimap-gap-marks-browser.spec.js` (Canyon, Sky Spiral, Coast; desktop, phone portrait and landscape): written but not run, by owner instruction (no browser tests, 2026-11-19).
+- [ ] Phone-size readability check of Canyon's 60 m gap (1.6 map units, under 1 px on the smallest map, so its caps read as one crossbar), on a real device in both orientations.
+- [ ] Exact-HEAD GitHub quality gate.
+
 # Startup loading screen
 
 - [x] Add a first-paint opening screen with responsive full-bleed artwork, bilingual wordmark and tagline, and a three-segment status tied to game bootstrap. Show Enter only after the first lobby render.
@@ -20,6 +31,34 @@
 
 - [x] Keep the Taipei showroom car clear of scenery through the High-quality portrait orbit with AIRFLOW on. Moving the Home preview from 1,040 m to 1,090 m clears the kerbside bus-stop posts. The 390 × 844 regression failed at 76° and 77° before the fix, then passed with all six Taipei camera cases on Chromium.
 - [ ] Verify the full GitHub quality gate on the repair commit.
+
+# 2026-11-19 — Tiered Garage and race VFX detail
+
+- [x] Reuse the wake point cloud for small skin-tinted sparks on High/Ultra. Restrict the submitted wake points on Low/Medium and keep the equipped shapes.
+- [x] Limit launch sparks to 24/48/72/96 by tier; refine the spark silhouette and fitted airflow seams on High/Ultra. Comfort and Reduced Motion omit the added details.
+- [x] Constrain overlapping NITRO jets in the Low showroom; keep the daylight race profile. A dedicated RED exposed the missing showroom cap.
+- [x] Observe RED for unbounded wake draws and matching flare counts across tiers; 66 focused checks pass, including shader safety and module size.
+- [x] Check the four representative styles in WebGL at every tier and confirm the combined loadout attaches to both selectable car models in Studio.
+- [ ] Confirm physical-device footage and review the exact-commit GitHub quality gate.
+
+# 2026-11-18 — Garage and race VFX polish
+
+- [x] Review the shared 3× artwork catalog. Link card and loadout colours to each cosmetic, and replace pulsing preview rings with steady selection borders.
+- [x] Shape NITRO filaments, the launch flare colour sweep, thruster texture and airflow falloff within the existing intensity budgets.
+- [x] Confirm two test-first failures. The 72 focused tests, 3,370 unit tests (3 skipped), typecheck, module-size check and locked production build passed.
+- [ ] Review real-game WebGL evidence, a physical phone and the exact-commit quality gate.
+
+# 2026-11-18 — Launch flare, thruster and airflow glare
+
+- [x] Use a steady charge during countdown and a single burst at GO. Contain flare emission by style; use continuous motion envelopes for Void Pulse, Plasma Helix, Prism Lattice and Vortex Spiral.
+- [x] The three regression guards failed with the original behavior. All 82 focused unit checks, typecheck and the trial build passed.
+- [ ] Verify the exact feature-branch quality gate and review on physical phones.
+
+# 2026-11-18 — NITRO tail glare
+
+- [x] Reproduce from High with a custom NITRO trail, on the road and in flight. Test the gold pulse, red dash, chain lighting, compact road placement, and Comfort card loop. The new guards fail against the original behavior.
+- [x] Tune all five styles through the shared render path. Keep Low readable, and use the chain's extra energy for length and flow speed. Comfort shows a quiet, tinted tail and static card art.
+- [ ] Verify the exact feature-branch GitHub quality gate and review the phone WebGL evidence.
 
 # Acquisition reveal
 
@@ -2414,7 +2453,10 @@ VFX `fa5da581` already ancestors; Rewards `01637c6c` merged as `8ef63fd8` (zero 
     - [x] ~~Coast open items: exact-HEAD full CI and the full local browser suite on the final HEAD; real-phone captures and phone thermal run; owner sign-off on the §8.1 sheet (re-drafted with Ultra + Roadster panels in the ignored `audits/task5/parity/`).~~ Closed by owner acceptance on 2026-11-19. Not verified by an agent: no green exact-HEAD full CI on develop at that time (run 44399876486 failed, later runs cancelled or queued), and no fresh full local browser suite.
     - [x] Phase 3 look gated for the develop merge (owner, 2026-11-09): on develop the whole Phase 3 pass (Coast HDRI/bloom/sun, KTX2 road, scenery GLB, wet mirror, plume tail, thruster glow, spray, contact shadow, Ultra option and blur) is behind `?look=3d` (`src/look-gate.ts`), separate from and combinable with `?model=roadster`; without it every map and Settings render as develop did, and a saved Ultra stays saved. RED→GREEN `tests/look-gate.test.js` (module missing), develop-look browser specs failed on the old code (Coast GLB `attached`; Ultra option listed) → GREEN. Details: Task 5 doc.
     - [x] Phase 3 look default-on: `ba867d53` (2026-11-16) removed `src/look-gate.ts`; the look follows the selected graphics quality (detailed Coast and Neon scenery on Medium and above, Low keeps the old look) with no URL flag. Owner accepted it as the default on 2026-11-19.
-    - [ ] Neon Downtown (Task 5b, Medium and above) follow-up, after the phone measurement (`make phone-diag`, portrait and landscape, deferred in Step 22): cut-out blossom on the cherry tree (audit entry 24). The city kit is one opaque material; a second alpha material costs one draw call (race peak 350 of 380 on High) and alpha overdraw on up to 8 trees a chunk, not measured on a phone. Decide from the phone's frame time. Owner decision 2026-11-16: the other four accepted limits stay as they are (entry 27 white container boxes, 13 harbour dry-night road, 22b warm sky patch behind the canal arch, 3 clock tower small from 7450 m). Details: `docs/designs/3d-pipeline/phases/task-5b-neon-downtown.md`, Steps 20 to 22.
+    - [ ] Neon Downtown (Task 5b, Medium and above) follow-up: cut-out blossom on the cherry tree (audit entry 24). Owner decision 2026-11-19: build it before the phone measurement. Owner decision 2026-11-16: the other four accepted limits stay as they are (entry 27 white container boxes, 13 harbour dry-night road, 22b warm sky patch behind the canal arch, 3 clock tower small from 7450 m). Details: `docs/designs/3d-pipeline/phases/task-5b-neon-downtown.md`, Steps 20 to 22.
+      - [x] Implementation, Task 5b Step 23. `src/neon-blossom.ts` gives the cherry tree's pool its own alpha-tested copy of the kit material. Nothing is blended, depth write stays on, no draw is added and one program is added. Guards: `tests/neon-scenery.test.js` and `tests/neon-city-glb.test.js`, both RED first. `npm test`, typecheck and build pass. The before numbers are in Step 23.
+      - [ ] After captures and numbers on desktop: the boulevard and the plaza against `02b`/`03c`, on High and Medium, plus `tests/neon-look-browser.spec.js`. Not run, because the owner said on 2026-11-19 not to run browser tests.
+      - [ ] Phone measurement (`make phone-diag`, portrait and landscape) with the cut-out on.
 - [ ] **Phase 7 (spec v2 Phase 6, added 2026-11-08):** Concept hero car: the board's deep-red GT becomes a second player car on the shared simulation and port contract, with a Garage car picker, equipped-car save/Cloud Save migration, i18n and What's New. Owner gates: name, unlock rule, board licence record. The car is **Vantaire GT** (夜鋒 GT, `crimson-gt`), with Deep Crimson as its factory finish. On 2026-11-19, the permanent unlock threshold was set to 18 Career stars; board is AI-generated, generator/terms to be recorded in the concept-art README, GT may be derived once terms permit it (README entry still open). [Task 7](docs/designs/3d-pipeline/phases/task-7-concept-hero-car.md).
     - [x] Asset (2026-11-12, `d863cb74`; rebuilt from the concept panels 2026-11-13, `82f81f22`; iteration 8 `35c7360b`): `assets-src/crimson-gt/` build script + `.blend` master, `public/models/crimson-gt/` GLB 22,996 tris / 1,204,084 B and low LOD 13,926 tris / 541,088 B, `check-glb: PASS` on both, manifest hashes match; wheel, wing and lift-port pivots within 1e-4 m of the Roadster contract on both LODs, hubs on a static `<wheel>_axle` (tyre radius .337) and rear nozzles one rigid offset (0, -.33, -.415) from the rear ports, both owner-approved (`tests/crimson-gt-model.test.js`, RED on the old GLBs).
     - [x] Asset fidelity, side view: silhouette IoU .952 against the side panel in the rest pose (wing stowed, owner-approved 2026-11-13), at or above the 0.90 forms target (`assets-src/crimson-gt/asset-brief.md` iteration 8, `35c7360b`).

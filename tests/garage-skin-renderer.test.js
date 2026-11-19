@@ -220,3 +220,49 @@ test('all airflow skins keep the fitted roof, flank and underbody directions aft
     assert.deepEqual([...directions].sort(), ['-1,0', '0,1', '1,0']);
   }
 });
+
+test('void, plasma and prism use continuous lighting envelopes', () => {
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  const aero = createAeroVFX(scene, car);
+  const beams = car.getObjectByName('Void pulse beams').material.fragmentShader;
+  assert.match(beams, /time\*2\.4/, 'the helix still travels');
+  assert.doesNotMatch(beams, /sin\(time|float flash/);
+  const jets = car.getObjectByName('Cold gas nozzle 1').material.fragmentShader;
+  assert.match(jets, /skinPattern>1\.5\) shape=\.58\+/);
+  const airflow = aero.group.children[0].material.fragmentShader;
+  assert.doesNotMatch(airflow, /pattern=step\(/);
+  assert.match(airflow, /float segment=smoothstep/);
+});
+
+test('wake budgets scale with quality and reuse the same particles when switching tiers', async () => {
+  const [{ createRace }, { Vector3 }, { vfxSettings }] = await Promise.all([
+    import('../src/game.js'), import('three'), import('../src/vfx-settings.ts'),
+  ]);
+  const scene = new Scene(), car = new Group();
+  car.userData.body = new Mesh(new BoxGeometry(2, 1, 4));
+  const aero = createAeroVFX(scene, car), wake = scene.getObjectByName('World space gas wake');
+  const flow = aero.group.children.find(child => child.geometry?.attributes.flowType);
+  const particles = wake.geometry.attributes.position, race = createRace(), origin = new Vector3();
+  aero.setSkins({ thruster: 'thruster-void', airflow: 'airflow-prism', 'nitro-trail': 'nitro-trail-purple' });
+  race.phase = 'racing'; race.player.nitroTime = 2; race.player.speed = 90;
+  const update = (quality, extra = {}, reducedMotion = false) =>
+    aero.update(race, 1 / 60, origin, vfxSettings({ quality, airflow: true, ...extra }), reducedMotion);
+  for (const [quality, count, sparks, seams] of [
+    ['ultra', 512, 0.32, 1], ['high', 512, 0.18, 0.55], ['medium', 256, 0, 0], ['low', 128, 0, 0], ['high', 512, 0.18, 0.55],
+  ]) {
+    update(quality);
+    assert.equal(wake.geometry.drawRange.count, count);
+    assert.equal(wake.material.uniforms.sparkShare.value, sparks);
+    assert.equal(flow.material.uniforms.edgeDetail.value, seams);
+    assert.equal(wake.geometry.attributes.position, particles);
+  }
+  update('ultra', { comfortable: true });
+  assert.equal(wake.material.uniforms.sparkShare.value, 0);
+  assert.equal(flow.material.uniforms.edgeDetail.value, 0);
+  assert.equal(wake.geometry.drawRange.count, 256);
+  update('ultra', {}, true);
+  assert.equal(wake.material.uniforms.sparkShare.value, 0);
+  update('ultra', { enabled: false });
+  assert.equal(wake.visible, false);
+});
