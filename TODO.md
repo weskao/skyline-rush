@@ -1,3 +1,9 @@
+# Local verification preview port
+
+- [x] Reproduced the port 5178 collision on isolated `370bdfc9`. The Make target regression failed before the fix and now verifies that both browser stages use one free port and honor an explicit `PLAYWRIGHT_PORT`.
+- [x] With 5178 still occupied, `make verify` passed typecheck, 3,585 unit tests (4 skipped), and the production build, then started Playwright. A separate Chrome run passed 9 production browser cases and handed the same port to 6 passing World Tour mid-race cases. All 51 World Tour cases passed in the full World Tour run.
+- [ ] Complete the full standard browser suite and CI for the port fix. The 1,437-case local run was stopped after 24 passes. The interrupted personal medals case passed on its own.
+
 # Vite-only Garage and Store playtesting
 
 - [x] Reproduced zero-star GT equip failure, the Vite preview loophole and the unlocked Store reading the normal demo checkpoint. The Vite access regression now passes in both modes.

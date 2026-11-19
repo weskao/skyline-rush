@@ -1,5 +1,6 @@
 ---
 paths:
+  - "Makefile"
   - "tests/**/*browser.spec.js"
   - "tests/helpers/**"
   - "playwright*.config.js"
@@ -197,6 +198,10 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   A single local pass does not prove a fix.
 
 ## A long local run needs a checkout nobody else moves
+
+- **Use a free preview port for local gates.** Another worktree's preview can hold port 5178.
+  `make verify` and the pre-push layout gate use `scripts/free-local-port.mjs`.
+  Both stages of `make verify` use the same port and honor an explicit `PLAYWRIGHT_PORT`.
 
 - **Gameplay specs serve live source.** `tests/helpers/gameplay-browser.js` starts a Vite dev server on
   the checkout, so a file that changes mid-run (a merge, a pull, another session's edit) reloads the page
