@@ -37,7 +37,7 @@ import { createFrostbiteRaceScene } from './frostbite-race-scene.ts'; import { f
 import { createCourseRaceScene } from './course-race-scene.ts'; import { graphOrigin, graphCarVisual, graphLookAhead, graphFinishVisual } from './course-render-pose.ts'; import { courseItemFrame, courseItemPoint } from './course-items.ts'; import { isCourseRuntime } from './course-runtimes.ts';
 import { FROSTBITE_ID, FROSTBITE_SPAN, frostbiteObjectSpan, frostbiteSpanLift } from './courses/frostbite-race.ts';
 import { CIRCUIT_ID, physicalGap } from './circuit-track.ts';
-import { instances, material, block, CAR_STYLES, makeCar, stepWing, isCircuitFinisher } from './car-model.js';
+import { instances, material, block, CAR_STYLES, makeCar, stepWing } from './car-model.js';
 import { createTrafficFleet } from './traffic-fleet.ts';
 import { createCoastScenery, COAST_LIGHTING } from './coast-visuals.ts';
 import { createWorldCoastAssets } from './coast-assets.ts';
@@ -51,7 +51,7 @@ import { createSkyScene } from './sky-scene.js';
 import { skyPosition as finiteSkyPosition, skyFrame as finiteSkyFrame } from './sky-track.ts';
 import { orientCarOnRoad, placeGroundShadow } from './vehicle-pose.ts';
 import { poseFor, smoothDriftYaw, squatPitch, rearAxleLift } from './vehicle-render-motion.js';
-import { trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition, lookAheadDistance } from './track-paths.ts';
+import { trackPoint as finitePoint, trackFrame as finiteFrame, trackLocalPosition as finitePosition, lookAheadDistance, trackRunoutFrame } from './track-paths.ts';
 import { HERO_PREVIEWS,SHOWCASE_BACKS,previewDistance,previewPlayer,previewRival,showcaseCameraPose } from './track-preview.ts';
 import { sectionSignKey } from './section-signs.ts';
 import { createWorldTourScene } from './world-tour-scene.js';
@@ -389,20 +389,20 @@ export function createWorld(canvas) {
   function updateCar(mesh, car, distance, center, time, dt, isPlayer = false, input = {}, pose = car) {
     const graphView = lastRace?.course && isCourseRuntime(trackId) ? graphCarVisual(lastRace.course, isPlayer ? 'YOU' : car.id, courseOriginPoint) : null;
     const relative = graphView ? graphView.separation : physicalGap(trackId, distance, pose.distance);
-    // Tour and sky routes end at the finish and trackPoint clamps there, so cars
-    // past it would pile up at the arch like parked cars; they leave the scene instead.
-    const pastFinish = isCircuitFinisher(lastRace, car) || graphView?.finished || (!endlessActive && (trackId === 'spiral' || TOUR_IDS.has(trackId) || trackId === FROSTBITE_ID || MEASURED_COURSE_IDS.has(trackId)) && pose.distance > lastRace.length);
-    mesh.visible = isPlayer || (graphView ? relative < 900 && !pastFinish : relative > -55 && relative < 900 && !pastFinish);
+    const pastLine = !endlessActive && pose.distance > lastRace.length;
+    const offRoad = car.finishTime == null && (graphView?.finished || (pastLine && trackId !== CIRCUIT_ID && (trackId === 'spiral' || framedRoad(trackId))));
+    mesh.visible = isPlayer || (!offRoad && relative < 900 && (graphView != null || relative > -55));
     if (!mesh.visible) return; mesh.userData.roadDistance = pose.distance; mesh.userData.span = !!car.span; mesh.userData.altitude = (pose.altitude || 0) - (car.span ? FROSTBITE_SPAN.altitude - SHORTCUT_TOLERANCE : 0); // the pose the shadow sits under (a span car's on the deck)
     if (curvedClassic || trackId === 'spiral' || framedRoad(trackId, endlessActive)) {
+      const frame = graphView?.frame ?? (pastLine && car.finishTime != null ? trackRunoutFrame(trackId, pose.distance) : trackFrame(trackId, pose.distance, car.span));
       if (curvedClassic) mesh.position.fromArray(classicPosition(pose.distance, pose.x, pose.altitude || 0, distance));
       else if (graphView) mesh.position.fromArray(graphView.position);
-      else if (trackId === 'spiral') mesh.position.fromArray(skyPosition(pose.distance, pose.x, pose.altitude || 0, distance));
       else {
-        const f=trackFrame(trackId,pose.distance,car.span),p=f.point,o=trackPoint(trackId,distance);
-        mesh.position.set(p.x-o.x+f.right[0]*pose.x+f.up[0]*(pose.altitude||0),p.y-o.y+f.right[1]*pose.x+f.up[1]*(pose.altitude||0),p.z-o.z+f.right[2]*pose.x+f.up[2]*(pose.altitude||0));
+        const { point, right, up } = frame, origin = trackPoint(trackId, distance);
+        mesh.position.set(point.x - origin.x + right[0] * pose.x + up[0] * (pose.altitude || 0),
+          point.y - origin.y + right[1] * pose.x + up[1] * (pose.altitude || 0),
+          point.z - origin.z + right[2] * pose.x + up[2] * (pose.altitude || 0));
       }
-      const frame = graphView?.frame ?? (trackId === 'spiral' ? skyFrame(pose.distance) : trackFrame(trackId,pose.distance,car.span));
       // Compose every visual offset in local car axes, retaining the actual road pitch/bank.
       // Reading/writing Euler rotation after setting the track quaternion used to
       // overwrite its banking and snap near 90-degree spiral headings.

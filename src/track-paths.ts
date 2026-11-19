@@ -59,6 +59,15 @@ export function trackFrame(trackId: string, distance: number, extended = false, 
   return { point: trackPoint(trackId, s, extended), forward, right, up: unit(cross(right, forward)) };
 }
 
+/** Frame used by a finished rival rolling on the visible road past the timing line. */
+export function trackRunoutFrame(trackId: string, distance: number) {
+  if (trackId !== FROSTBITE_ID && !Object.hasOwn(MEASURED_FRAMES, trackId)) return trackFrame(trackId, distance, true);
+  const length = raceTrack(trackId)!.length, offset = distance - length;
+  if (offset <= 0) return trackFrame(trackId, distance);
+  const end = trackFrame(trackId, length), { point, forward } = end;
+  return { ...end, point: { x: point.x + forward[0] * offset, y: point.y + forward[1] * offset, z: point.z + forward[2] * offset } };
+}
+
 /** Convert game-distance, lane and altitude to camera-relative 3D coordinates. */
 export function trackLocalPosition(trackId: string, distance: number, lateral = 0, altitude = 0, origin = 0, extended = false): Vec3 {
   const span = trackId === FROSTBITE_ID && frostbiteObjectSpan(distance, lateral, altitude);

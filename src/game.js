@@ -6,7 +6,8 @@ import { earnsAirChain } from './air-chain.ts';
 import { createRings, pickupRun, spreadDistances, ITEMS_PER_CAR, RING_RADIUS, RING_FUEL, RING_NITRO, SLIPSTREAM_BOOST, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX } from './ring-layout.ts';
 export { RING_RADIUS, RISK_RING_RADIUS, ITEMS_PER_CAR, RING_FUEL, SLIPSTREAM_BOOST, RISK_SCORE, PERFECT_LINE_NITRO, MYSTERY_EFFECTS, EFFECT_TIMES, NITRO_MAX, NITRO_PICKUPS } from './ring-layout.ts';
 import { createCircuit, stepCircuit, lapItems } from './circuit-laps.ts';
-import { attachCourse, stepCoursePlayer, stepCourseCars, carGap, progressGap, courseFinished, courseGapWarning, recycleCourseTraffic } from './course-race-step.ts'; import { finishRace } from './race-finish.js';
+import { attachCourse, stepCoursePlayer, stepCourseCars, carGap, courseGapWarning, recycleCourseTraffic } from './course-race-step.ts'; import { finishRace } from './race-finish.js';
+import { stepRaceRivals } from './race-rivals.js';
 import { avoidObstacles, aiImpacts, bumpCars, TRAFFIC_ACCEL } from './car-collisions.js';
 import { seededRng, RACE_STREAMS } from './rng.ts';
 import { createHazards } from './hazards.ts'; import { crossesRamp, launchImpulse, LAUNCH_MIN_SPEED } from './launch-ramps.ts';
@@ -23,7 +24,7 @@ import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
 import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
 import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts'; import { spawnCatchUp } from './catch-up-items.ts';
 import { createRaceSessionContract } from './race-session.ts';
-import { skyJumpGap } from './sky-track.ts'; import { dropCar, stepDeck, stepRivalDeck, stepSpan, SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE } from './road-falls.ts';
+import { skyJumpGap } from './sky-track.ts'; import { dropCar, stepDeck, stepSpan, SHORTCUT_HALF_WIDTH, SHORTCUT_TOLERANCE } from './road-falls.ts';
 /** @typedef {import('./game-types.js').RaceSnapshot} RaceSnapshot */
 
 import { RACE_TRACKS, raceTrack, assertTrackMode, itemScale } from './race-tracks.ts';
@@ -73,7 +74,7 @@ import { SLIPSTREAM_CAP_BONUS, SLIPSTREAM_NITRO, SLIPSTREAM_MIN_GAP, SLIPSTREAM_
   SLIPSTREAM_LATERAL, SLIPSTREAM_ALTITUDE, stepSlipstream } from './drive-rules.ts'; // SLIPSTREAM: shared with rivals
 export { SLIPSTREAM_TIME, SLIPSTREAM_CAP_BONUS, SLIPSTREAM_NITRO, SLIPSTREAM_LATERAL, SLIPSTREAM_MIN_GAP, SLIPSTREAM_MAX_GAP, SLIPSTREAM_ALTITUDE } from './drive-rules.ts';
 
-import { RIVAL_NITRO_CHARGES, RIVAL_HOP_PERIOD, ITEM_RESPAWN, rivalCollects, rivalSeek } from './rival-items.ts'; import { driveRival } from './rival-driver.ts';
+import { RIVAL_NITRO_CHARGES, ITEM_RESPAWN } from './rival-items.ts';
 export { RIVAL_NITRO_CHARGES, RIVAL_NITRO_BONUS, RIVAL_NITRO_NOVA_FIRST, RIVAL_NITRO_NOVA_EVERY, RIVAL_NITRO_ORBIT_ALTITUDE, RIVAL_NITRO_MIN_SPEED, RIVAL_NITRO_APEX_FROM, RIVAL_HOP_PERIOD } from './rival-items.ts';
 export const RIVAL_NITRO_TIME = NITRO_TIME; // seconds one rival charge lasts
 export const RUBBER_BAND_MAX = 0.04; // a leading rival's speed multiplier drops by at most this; one behind gets nothing (user, 2026-11-07)
@@ -393,30 +394,12 @@ export function stepRace(race, input, dt) {
     // Recycle distant traffic so the same small scene stays populated for the full sprint.
     if (!race.endless && (race.course ? recycleCourseTraffic(race, traffic) : traffic.distance < car.distance - 60)) traffic.distance += 1400;
   }
-  race.rivals.forEach((rival, i) => {
-    const period = RIVAL_HOP_PERIOD[rival.name] ?? 13;
-    const cycle = ((race.elapsed + i * 3) % period) * (13 / period);
-    const hopFrom = rival.altitude; rival.altitude = cycle > 6 && cycle < 11 ? Math.sin((cycle - 6) / 5 * Math.PI) * (5 + i) : 0;
-    rival.thrusting = cycle > 6 && cycle < 9;
-    rival.cooldown = Math.max(0, (rival.cooldown || 0) - dt);
-    driveRival(race, rival, i, Math.floor((race.elapsed + i * 3) / period), dt); // the player's caps, fuel and NITRO
-    const before = rival.distance;
-    // Rubber band: a rival far ahead of the player eases off by at most RUBBER_BAND_MAX; one behind is never sped up.
-    const band = clamp((progressGap(race, car, rival) - RUBBER_BAND_FREE) / RUBBER_BAND_RANGE, 0, 1);
-    const slow = (car.effects.freeze > 0 || rival.empUntil > race.elapsed ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
-    rival.pace = rival.speed * slow;
-    rival.distance += rival.pace * dt;
-    rivalSeek(race, rival); avoidObstacles(race, rival, rival.pace, dt); stepRivalDeck(rival, race.sections, hopFrom, CAR_HEIGHT);
-    aiImpacts(race, rival, before, rival.pace); rivalCollects(race, rival, before);
-    if (!race.endless && !race.circuit && courseFinished(race, rival) && rival.finishTime === null) {
-      rival.finishTime = race.elapsed - dt + Math.max(0, race.length - before) / rival.pace;
-    }
-  });
+  stepRaceRivals(race, dt);
   stepCourseCars(race, dt); // H2 rivals: graph poses, gates, hazards and finish from this frame's odometers
   const { rivals, traffic } = race;
   for (let i = 0; i < rivals.length; i++) {
-    for (let j = i + 1; j < rivals.length; j++) bumpCars(race, rivals[i], rivals[j]);
-    for (const other of traffic) bumpCars(race, rivals[i], other);
+    for (let j = i + 1; j < rivals.length; j++) bumpCars(race, rivals[i], rivals[j], dt);
+    for (const other of traffic) bumpCars(race, rivals[i], other, dt);
   }
   for (let i = 0; i < traffic.length; i++) for (let j = i + 1; j < traffic.length; j++) bumpCars(race, traffic[i], traffic[j]);
 

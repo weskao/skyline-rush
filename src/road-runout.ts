@@ -12,9 +12,9 @@ export interface RunoutStyle {
 }
 
 /**
- * Drawing only (.claude/rules/road-runout.md): past the finish the road runs straight on along its last
- * heading and grade, with rails, a dashed centre line and an embankment, so the parked car never sits at a deck
- * that ends in the air. Nothing is simulated on it. Built once with its scene; static afterwards.
+ * Past the finish the road runs straight on along its last heading and grade, with rails,
+ * a dashed centre line and an embankment for parked vehicles (.claude/rules/road-runout.md).
+ * Built once with its scene; static afterwards.
  */
 export function createRoadRunout(end: RunoutEnd, style: RunoutStyle) {
   const { width, length, shoulder = 8, depth = 6 } = style;
