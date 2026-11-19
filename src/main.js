@@ -17,7 +17,6 @@ import { createSprintSeries, nextSprintGrid } from './sprint-series.ts';
 import { saveRecentCustom } from './recent-custom.ts';
 import { nextCupGrid, cupComplete } from './championship-cup.ts';
 import { createWorld } from './world.js';
-import { createSound } from './audio.js';
 import { readAudio } from './audio-settings.ts';
 import { setupVfxUI } from './vfx-ui.ts';
 import { createMotion } from './motion.ts';
@@ -59,8 +58,11 @@ import { timeString } from './time-format.ts';
 import { createGhostStore } from './ghost-store.ts';
 import { setupCupRecovery } from './cup-recovery-ui.ts';
 import { focusRace, setupRaceNavigation } from './race-navigation-ui.ts';
+import { startup } from './startup-screen.ts';
+startup.step(1);
 // mount() renders synchronously, so the DOM queries below find the App.vue markup.
-const sound = createSound(race => gapChargeWarning(race)?.from ?? null);
+const sound = startup.sound;
+sound.setGapWarning(race => gapChargeWarning(race)?.from ?? null);
 createApp(App).provide('game-audio-cue', sound.cue).mount('#app');
 // Saved choice > system language > English; only a click on the switch persists (saveLocale below).
 setLocale(resolveInitialLocale());
@@ -106,7 +108,7 @@ try { ({ audio, volume } = readAudio(localStorage)); } catch { /* Audio defaults
 const keymap = setupKeyMapUI({ clearControls: () => controls.clear(), say });
 // Its action callback only runs on input, so the handlers declared further down are ready by then.
 const controls = createControls(window, action => {
-  if (document.querySelector('dialog[open]')) { controls.clear(); return; }
+  if (!startup.entered || document.querySelector('dialog[open]')) { controls.clear(); return; }
   ({ start, restart, pause, item: itemUI.activate, sound: toggleSound, camera: changeCamera, assist: toggleAssist, airflow: vfx.toggleAirflow })[action]?.();
 }, { getSettings: () => touchUI.inputPrefs(), getKeyMap: () => keymap.getKeyMap(), onTilt: () => touchUI.onTilt() });
 const touchUI = setupTouchControlsUI({
@@ -156,7 +158,7 @@ const notice = setupPerformanceNotice({ downgraded: vfx.deviceSelection.downgrad
 
 const { renderReleaseNotes, maybeShowReleaseNotes } = setupReleaseNotesUI({
   canOpen: () => race.phase === 'ready' && !tutorial,
-  canAutoOpen: () => !!world && !document.hidden,
+  canAutoOpen: () => startup.entered && !!world && !document.hidden,
   beforeOpen: () => { controls.clear(); toggleSettings(false); notice.hide(); },
   afterClose: () => notice.restore(race.phase === 'ready'),
   reducedMotion,
@@ -511,7 +513,7 @@ function updateUI(now, input) {
   hud.update(now, input);
 }
 try {
-  world = createWorld($('#world')); syncSkins();
+  startup.step(2); world = createWorld($('#world')); syncSkins();
   requestAnimationFrame(maybeShowReleaseNotes);
   showHomeStatus(); // the daily card can start a race now
   world.configureVFX(vfx.settings());
@@ -557,7 +559,17 @@ try {
     if (shouldRender) {
       const renderStarted = performance.now();
       renderMotion.alpha = Math.max(0, Math.min(1, accumulator / SIM_STEP));
-      world.render(race, fps.takeElapsed(), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed), renderMotion);
+      try {
+        world.render(race, fps.takeElapsed(), race.phase === 'ready' ? now / 1000 : 0, input, presentationState, ghost && ghostAt(ghost, race.elapsed), renderMotion);
+      } catch (error) {
+        if (!startup.waitingForFrame) throw error;
+        startup.fail('renderer'); cancelAnimationFrame(animationId);
+        console.error('First 3D frame failed:', error); return;
+      }
+      if (startup.waitingForFrame) {
+        cancelAnimationFrame(animationId); // The opaque startup screen only needs the first lobby frame.
+        startup.ready(() => { controls.clear(); sound.cue('ui'); maybeShowReleaseNotes(); animationId = requestAnimationFrame(frame); });
+      }
       fps.completeRender(performance.now() - renderStarted);
     }
     sound.update(race, presentationState.halfwayStarted, countingDown && world.trackSceneryPending(race));
@@ -572,6 +584,7 @@ try {
   ui['start-button'].disabled = true;
   $('#error-message').hidden = false;
   say($('#error-message'), () => t('error.webgl'));
+  if (startup.waitingForFrame) startup.fail('renderer');
   console.error('3D renderer initialization failed:', error);
   // No render loop to write the HUD: one text pass now and one per language switch (after applyLocale relabels the HUD).
   const hudPass = () => updateUI(performance.now() / 1000, controls.read());
@@ -584,6 +597,7 @@ $('#world').addEventListener('webglcontextlost', event => {
   $('#error-message').hidden = false;
   say($('#error-message'), () => t('error.contextLost'));
   contextLost = true;
+  if (!startup.entered) startup.fail('renderer');
 });
 $('#world').addEventListener('webglcontextrestored', () => {
   contextLost = false;

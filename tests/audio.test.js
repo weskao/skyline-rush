@@ -593,6 +593,36 @@ test('acquisition motifs are distinct, fit the reveal and use the existing SFX m
   for (const cue of cues) assert.deepEqual(heard(cue), []);
 });
 
+test('opening music stays queued before rendering and hands off once to the original lobby track', t => {
+  const { nodes, made, sound } = installTracked(t);
+  sound.setOpening(true);
+  sound.setMusic(true, 0.7);
+  const opening = musicNotes(nodes);
+  assert.ok(opening.some(note => note.started < .25 && note.frequency.value === midiHz(62)));
+  assert.ok(musicBus(nodes).gain.value < 0.7, 'the waiting mix has room for the lobby theme');
+
+  made[0].currentTime = 6;
+  sound.refreshOpeningMusic();
+  assert.ok(musicNotes(nodes).at(-1).started > 10, 'the overlay does not need the rendering loop to keep playing');
+  const openingNotes = musicNotes(nodes);
+  sound.update(createRace());
+  assert.equal(musicNotes(nodes).length, openingNotes.length, 'a lobby render under the overlay does not change songs');
+
+  sound.setOpening(false);
+  const lobby = musicNotes(nodes).slice(openingNotes.length);
+  assert.ok(lobby.some(note => note.started < 6.25 && note.frequency.value === midiHz(57)));
+  assert.ok(openingNotes.filter(note => note.started > 6).every(note => note.stopped === undefined));
+  assert.equal(made.length, 1, 'opening and lobby share the same audio context');
+});
+
+test('muted startup never creates an audio context or queues the opening track', t => {
+  const { made, sound } = installTracked(t);
+  sound.setOpening(true);
+  sound.setMusic(false);
+  sound.refreshOpeningMusic();
+  sound.setOpening(false);
+  assert.equal(made.length, 0);
+});
 
 test('premiere cues play stereo layers that follow the shots with bounded peaks', t => {
   const { nodes, sound } = installAudio(t);

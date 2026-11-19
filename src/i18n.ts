@@ -8,11 +8,8 @@ import { DRIVING_CONTROLS_COPY } from './locales/driving-controls-copy.ts';
 import { GAME } from './locales/game.ts';
 import { EVENT_LAB } from './locales/event-lab.ts';
 import { CHALLENGE_MEDAL_COPY } from './locales/challenge-medals.ts';
-export const SUPPORTED_LOCALES = Object.freeze(['en', 'zh-TW'] as const);
-export type Locale = typeof SUPPORTED_LOCALES[number];
-interface LocaleStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
-const isLocale = (value: unknown): value is Locale =>
-  typeof value === 'string' && SUPPORTED_LOCALES.includes(value as Locale);
+import { SUPPORTED_LOCALES, isLocale, type Locale } from './locale-preference.ts';
+export { SUPPORTED_LOCALES, saveLocale, loadLocale, detectLocale, savedLocale, resolveInitialLocale, type Locale } from './locale-preference.ts';
 const raceTracks = RACE_TRACKS as Record<string, { name?: string }>;
 // Every Coming Soon card, including ones not yet in the race registry. Copying a subset
 // left dune-tempest and skyfall-archipelago labeled with their English slugs.
@@ -25,44 +22,13 @@ export const TRACK_NAMES: Readonly<Record<Locale, Record<string, string>>> = Obj
   'zh-TW': { coast: '海岸公路', neon: '霓虹都會', canyon: '峽谷天橋', aurora: '極光山道', spiral: '天際螺旋',
     taipei: '台北古都', tokyo: '東京夜行', alpine: '山岳鐵道', coastal: '海岸天際', cosmic: '星際軌道', 'harbor-circuit': '港灣環道', ...upcomingNames('zh-TW') },
 });
-const KEY = 'skyline-rush-locale';
 export const trackName = (trackId: string, locale: string = 'en'): string =>
   (TRACK_NAMES[isLocale(locale) ? locale : 'en']?.[trackId])
   ?? (isUpcomingTrack(trackId) ? upcomingTrackName(trackId, locale) : undefined)
   ?? TRACK_NAMES.en[trackId] ?? raceTracks[trackId]?.name ?? String(trackId);
-export function saveLocale(locale: string, storage?: LocaleStorage): void {
-  if (!isLocale(locale)) return;
-  try { (storage ?? globalThis.localStorage).setItem(KEY, locale); } catch { /* in-memory preference still works */ }
-}
-
 export const CATALOGS = Object.freeze(Object.fromEntries(
   SUPPORTED_LOCALES.map(l => [l, Object.freeze({ ...UI[l], ...UI_OVERHAUL_COPY[l], ...DRIVING_CONTROLS_COPY[l], ...GAME[l], ...EVENT_LAB[l], ...ENDLESS_COPY[l], ...CIRCUIT_COPY[l], ...CHALLENGE_MEDAL_COPY[l] })]),
 )) as unknown as Readonly<Record<Locale, Record<string, string>>>;
-
-// Any Chinese tag (zh, zh-CN, zh-Hans, zh-HK, zh-Hant...) maps to the one Chinese catalog we ship.
-// First supported language in the system's preference order wins: any zh* -> zh-TW, en* -> en, unknown tags are skipped, none -> en.
-export function detectLocale(languages?: Iterable<unknown>): Locale {
-  for (const l of Array.isArray(languages) ? languages : Array.from(languages ?? [])) {
-    const tag = String(l);
-    if (/^zh(-|_|$)/i.test(tag)) return 'zh-TW';
-    if (/^en(-|_|$)/i.test(tag)) return 'en';
-  }
-  return 'en';
-}
-
-export function savedLocale(storage?: LocaleStorage): Locale | null {
-  try {
-    const value = (storage ?? globalThis.localStorage).getItem(KEY);
-    return isLocale(value) ? value : null;
-  } catch { return null; }
-}
-export const loadLocale = (storage?: LocaleStorage): Locale => savedLocale(storage) ?? 'en';
-// Saved choice > system language > 'en'. Never writes: only an explicit click persists (saveLocale).
-// An empty or missing navigator.languages (some embedded/older browsers) falls back to navigator.language.
-const systemLanguages = (nav: Navigator | undefined = globalThis.navigator): readonly string[] =>
-  (nav?.languages?.length ? nav.languages : [nav?.language].filter((x): x is string => Boolean(x)));
-export const resolveInitialLocale = (storage?: LocaleStorage, languages: Iterable<unknown> = systemLanguages()): Locale =>
-  savedLocale(storage) ?? detectLocale(languages);
 
 let current: Locale = 'en';
 const listeners = new Set<(locale: Locale) => void>();

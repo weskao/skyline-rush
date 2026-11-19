@@ -12,6 +12,17 @@ export interface MusicTrack {
 // Each chord is [bass root, three pad/arp tones]; lead is eight eighth-notes per chord bar (0 = rest).
 // Layers enter at the listed bar so every pass builds up.
 export const TRACKS: Record<string, MusicTrack> = {
+  opening: {
+    bpm: 112, arp: 4, bass: [0, 7, 10, 14], enter: { bass: 0, drums: 32, lead: 2 },
+    chords: [[38, 62, 65, 69], [34, 62, 65, 70], [41, 60, 65, 69], [36, 60, 64, 67],
+      [38, 62, 65, 69], [34, 62, 65, 70], [43, 62, 67, 70], [33, 61, 64, 69]],
+    lead: [
+      69, 0, 0, 74, 0, 72, 0, 0, 70, 0, 0, 77, 0, 74, 0, 0,
+      72, 0, 0, 76, 0, 77, 0, 0, 76, 0, 0, 72, 0, 67, 0, 0,
+      69, 0, 0, 74, 0, 77, 0, 0, 77, 0, 0, 74, 0, 70, 0, 0,
+      74, 0, 0, 79, 0, 77, 0, 0, 76, 0, 0, 73, 0, 69, 0, 0,
+    ],
+  },
   intro: {
     bpm: 120, arp: 2, bass: [0, 6, 8, 14], enter: { bass: 8, drums: 16, lead: 16 },
     chords: [[45, 57, 60, 64], [41, 57, 60, 65], [48, 55, 60, 64], [43, 55, 59, 62], [45, 57, 60, 64], [41, 57, 60, 65], [43, 55, 59, 62], [40, 56, 59, 64]],

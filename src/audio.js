@@ -8,6 +8,7 @@ import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
 export function createSound(gapWarning = () => null) {
   let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
   let music, warm, hats, snares, song = null, step = 0, nextStep = 0, madeAt = -Infinity;
+  let opening = false;
   let enabled = false, musicOn = false, hidden = false, current = null, resumedAt = -Infinity;
   // Slider levels map to gain on a squared curve so the lower half of the slider stays audibly useful.
   let effectsLevel = 1, musicLevel = 1, duckUntil = 0, duckFrom = 0, duckRatio = .43, acquisitionDuck = false;
@@ -64,9 +65,11 @@ export function createSound(gapWarning = () => null) {
     track(source, [envelope], time + duration + 0.02, false, time);
   }
   // Drops queued notes not yet started (a stale prelude or the old song) so the next one starts now; sounding ones ring out.
-  function cutMusic() {
+  function cutMusic(replaceSong = false) {
     const now = context.currentTime;
-    for (const [note, at] of notes) if (at > now) { note.stop(); notes.delete(note); }
+    for (const [note, at] of notes) {
+      if (at > now || replaceSong) { note.stop(at > now ? undefined : now + .035); notes.delete(note); }
+    }
     nextStep = 0;
   }
   // Queues the current song `ahead` seconds; after a stalled frame it resumes from now instead of bursting.
@@ -74,11 +77,12 @@ export function createSound(gapWarning = () => null) {
     const now = context.currentTime, tune = TRACKS[song];
     for (nextStep = Math.max(nextStep, now + 0.03); nextStep < now + ahead; nextStep += 15 / (tune.bpm * sprint), step = (step + 1) % LOOP_STEPS) playStep(tune, step, nextStep);
   }
-  // Only the intro is queued ahead: a race song follows sprint tempo and its mode, so it stays with the frame loop.
+  // Opening and lobby music can play through a shader-loading stall.
   function prelude() {
-    if (!musicOn || (current && musicForMode(current) !== 'intro')) return;
-    if (song !== 'intro') { song = 'intro'; step = 0; cutMusic(); }
-    music.gain.setTargetAtTime(musicLevel * 0.65, context.currentTime, 0.1); // the home-screen mix update() keeps
+    if (!musicOn || (!opening && current && musicForMode(current) !== 'intro')) return;
+    const name = opening ? 'opening' : 'intro';
+    if (song !== name) { song = name; step = 0; cutMusic(); }
+    music.gain.setTargetAtTime(musicLevel * (opening ? .32 : .65), context.currentTime, 0.1);
     schedule(PRELUDE);
   }
   function playStep(tune, index, time) {
@@ -348,6 +352,15 @@ export function createSound(gapWarning = () => null) {
   }
   return {
     cue,
+    setGapWarning(next) { gapWarning = next; },
+    setOpening(next) {
+      if (opening === next) return;
+      opening = next;
+      if (context && musicOn) { cutMusic(true); song = null; prelude(); }
+    },
+    refreshOpeningMusic() {
+      if (opening && !hidden && context?.state === 'running') prelude();
+    },
     setEnabled,
     setMusic,
     setHidden,
@@ -378,9 +391,9 @@ export function createSound(gapWarning = () => null) {
         windGain.gain.setTargetAtTime(active ? (car.speed / 102) ** 2 * 0.07 : 0, now, 0.1);
         const skid = car.drift ? 0.035 + driftTier(car.drift.time) * 0.012 : car.braking ? 0.035 : 0;
         skidGain.gain.setTargetAtTime(active && car.altitude < 0.2 && car.speed > 15 ? skid : 0, now, 0.06);
-        const musicMix = race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65;
+        const musicMix = opening ? .32 : race.phase === 'paused' ? .25 : active ? .5 : .65;
         music.gain.setTargetAtTime(musicOn ? musicLevel * musicMix * (now >= duckFrom && now < duckUntil ? duckRatio : 1) : 0, now, 0.1);
-        const name = !musicOn ? null : musicForMode(race);
+        const name = !musicOn ? null : opening ? 'opening' : musicForMode(race);
         if (name !== song) { song = name; step = 0; cutMusic(); }
         const urgency = race.mode === 'checkpoint' && race.checkpoint?.timeLeft < 10 ? 1.1 :
           race.mode === 'stunt' && race.stuntLimit - race.elapsed < 20 ? 1.08 : 1;

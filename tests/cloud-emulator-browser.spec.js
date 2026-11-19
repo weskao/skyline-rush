@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/test.js';
+import { test, expect, markStartupSeen } from './helpers/test.js';
 import { readFile } from 'node:fs/promises';
 
 const liveApis = /^https?:\/\/(?:(?:identitytoolkit|firestore)\.googleapis\.com|accounts\.google\.com)/;
@@ -35,6 +35,7 @@ test('Google sign-in stores unlocked maps and restores them after site data is c
   await expect(page.locator('#cloud-last-sync')).toContainText('Last synced');
 
   const fresh = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(fresh);
   await fresh.context().route(liveApis, route => route.abort());
   await fresh.addInitScript(disableWebGL);
   await fresh.goto('/?firebase-emulator=1');
@@ -69,6 +70,7 @@ test('switching Google accounts isolates local maps and retains the first player
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toEqual(['coast']);
 
   const firstAccount = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(firstAccount);
   await firstAccount.context().route(liveApis, route => route.abort());
   await firstAccount.addInitScript(disableWebGL);
   await firstAccount.goto('/?firebase-emulator=1');
@@ -144,6 +146,7 @@ test('offline map progress stays pending then syncs when the browser comes onlin
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
 
   const restored = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(restored);
   await restored.context().route(liveApis, route => route.abort());
   await restored.addInitScript(disableWebGL);
   await restored.goto('/?firebase-emulator=1');
@@ -179,6 +182,7 @@ test('two devices merge different results and repeated sign-in does not duplicat
   const raceB = { date: '2026-10-20T02:00:00.000Z', track: 'neon', position: 2, time: 70 };
   const openDevice = async (unlocked, run) => {
     const device = await browser.newPage({ locale: 'en-US' });
+    await markStartupSeen(device);
     await device.context().route(liveApis, route => route.abort());
     await device.addInitScript(disableWebGL);
     if (run) await device.addInitScript(({ unlocked, run }) => {
@@ -272,6 +276,7 @@ test('permanent rule-scoped Mode best restores to a second browser independent o
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
 
   const fresh = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(fresh);
   await fresh.context().route(liveApis, route => route.abort());
   await fresh.addInitScript(disableWebGL);
   await fresh.goto('/?firebase-emulator=1');
@@ -298,6 +303,7 @@ test('permanent Stunt score, combo and air time restore to a clean device', asyn
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
 
   const fresh = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(fresh);
   await fresh.context().route(liveApis, route => route.abort());
   await fresh.addInitScript(disableWebGL);
   await fresh.goto('/?firebase-emulator=1');
@@ -446,6 +452,7 @@ test('the equipped car is restored on a clean device, and a device that picked i
   await expect(page.locator('#cloud-status')).toHaveText(savedMessage);
 
   const fresh = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(fresh);
   await fresh.context().route(liveApis, route => route.abort());
   await fresh.addInitScript(disableWebGL);
   await fresh.goto('/?firebase-emulator=1');
@@ -459,6 +466,7 @@ test('the equipped car is restored on a clean device, and a device that picked i
   await fresh.close();
 
   const own = await browser.newPage({ locale: 'en-US' });
+  await markStartupSeen(own);
   await own.context().route(liveApis, route => route.abort());
   await own.addInitScript(disableWebGL);
   await own.addInitScript(() => localStorage.setItem('skyline-rush-car', JSON.stringify('roadster')));

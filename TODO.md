@@ -1,3 +1,15 @@
+# Startup loading screen
+
+- [x] Add a first-paint opening screen with responsive full-bleed artwork, bilingual wordmark and tagline, and a three-segment status tied to game bootstrap. Show Enter only after the first lobby render.
+- [x] Show the screen on every page load (reload, duplicated or new tab). Remembering entry per tab in `sessionStorage` skipped it and revealed the half-built lobby before its first 3D frame. Only test and perf tooling set `skyline-rush-startup-skip`. Guard: `tests/startup-screen.test.js` was RED on the old code (second load: `hidden` true) and is GREEN after the fix.
+- [ ] Browser regression for the reload expectation in `tests/startup-browser.spec.js` (not run: user asked to skip browser tests on 2026-11-19).
+- [x] Size the brand and 44px-or-larger action for compact landscape, tablet and foldable geometry. Keep the fully rendered lobby inert behind the screen and pause its animation until entry.
+- [x] Reuse game quality for ambient particles (Low 0, Medium 3, High and Ultra 7) and honor comfort, effects-off and reduced motion. Reuse the game UI confirmation sound on entry. Startup progress itself uses visual feedback.
+- [x] Add test-first checks for the static shell, keyboard entry, render failure, context loss, art selection, device layouts and quality. The shell check failed on the original HTML and passes after integration.
+- The full-bleed WebPs under `public/feature-assets/startup/` use the original landscape (1672×941), portrait (852×1847) and square (1254×1254) render resolutions plus smaller encodes. Their responsive display size is independent of the 3× icon sizing policy. The art keeps the source proportions and uses local code for text/buttons.
+- [x] Animate perspective road reflections on Medium/High and give the active loading segment a moving highlight. The startup mix uses the shared audio context, honors the saved music switch, and switches back to the original intro on entry.
+- [ ] Confirm the full GitHub quality gate and physical iOS/Android/foldable devices.
+
 # Develop World Tour camera CI run 44394398766
 
 - [x] Keep the Taipei showroom car clear of scenery through the High-quality portrait orbit with AIRFLOW on. Moving the Home preview from 1,040 m to 1,090 m clears the kerbside bus-stop posts. The 390 × 844 regression failed at 76° and 77° before the fix, then passed with all six Taipei camera cases on Chromium.
