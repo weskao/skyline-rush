@@ -35,6 +35,7 @@ exactly. Topics whose work often starts before a scoped file is open:
 | A Garage item, paint, cosmetic or vehicle-mounted VFX; adding or switching a selectable car | `.claude/rules/garage-equipment.md` (every item works on every car) |
 | Tutorial lessons, cues or transitions | `docs/tutorial-driving.md` |
 | Anything the player newly acquires or unlocks (car, track, paint, equipment, clothing, medal, currency, reward, store or mission claim) | `.claude/rules/acquisition-reveal.md` (one shared reveal via `presentAcquisition`) |
+| Any confirm, alert, prompt, dropdown, search box or picker; turning an important setting off | `.claude/rules/no-native-ui.md` (in-game `confirmDialog()`, never the browser's native UI) |
 | Pushing, reading CI, merging, releasing | `.claude/rules/ci-gates.md`, `.claude/rules/branch-release.md` |
 
 Player copy (What's New, locales, store text, captions) names a track exactly as `TRACK_NAMES` in
