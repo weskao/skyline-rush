@@ -150,6 +150,11 @@ day, unseen because each develop push cancelled the previous full CI run. Classi
   the line, 12 for the 0.6 s results reveal at 0.05 s each) cost 39 stalls: 11.9 s, past the 10 s expect, while
   a real slow device took 5.4 s. Key the stall on the frame timestamp (`stalledFrame`); enforced by
   `tests/browser-timeouts.test.js` (*slow-frame shim*).
+- **A page-wide animation wait must survive a cancel.** `document.getAnimations()` also holds the setting toast
+  (`GameToast.vue`, 1.8 s entry, unmounted by `TOAST_MS`); a cancelled animation rejects `finished` with
+  AbortError. Trap (2026-11-20): pressing `v` raised the toast and `readAirflowStart` failed 7 of 7 viewports.
+  Write `a.finished.catch(() => {})` or scope to one element. Enforced by `tests/browser-timeouts.test.js`
+  (*a page-wide animation wait tolerates a cancelled animation*).
 - **Measure an overlay after its entry animation.** The Garage (`history-in`, translateX 22px), history, pause
   and results (`enter()` in `src/motion.ts`) all open with a transform. A rect read mid-entry is shifted and goes
   through float32 transform math: a 144 px Garage thumbnail measured 144.00001526 in 1 of 30 runs, the paused
