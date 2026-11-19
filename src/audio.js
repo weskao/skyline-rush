@@ -1,6 +1,6 @@
 import { acquisitionAudioBuffer } from './acquisition-audio.ts';
 import { createLoopingNoiseGain } from './audio-noise.ts';
-import { FEEDBACK_SOUNDS, STINGERS } from './feedback-sounds.ts';
+import { FEEDBACK_SOUNDS, ITEM_HIT_TEXTURES, STINGERS } from './feedback-sounds.ts';
 import { musicForMode } from './mode-audio.ts'; import { driftTier } from './drive-rules.ts';
 import { createRaceAudioEvents } from './race-audio-events.ts';
 import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
@@ -127,13 +127,16 @@ export function createSound(gapWarning = () => null) {
     const now = context.currentTime;
     voice(type, from, to, now, duration, volume, .006, master);
     tone(from / 4, from / 8, duration * .55, 0, .035);
+    filteredBurst(to, from, duration, .025, now);
+  }
+  function filteredBurst(from, to, duration, volume, now) {
     const source = context.createBufferSource(), band = context.createBiquadFilter(), envelope = context.createGain();
     source.buffer = noiseBuffer;
     band.type = 'bandpass'; band.Q.value = .8;
-    band.frequency.setValueAtTime(to, now);
-    band.frequency.exponentialRampToValueAtTime(from, now + duration);
+    band.frequency.setValueAtTime(from, now);
+    band.frequency.exponentialRampToValueAtTime(to, now + duration);
     envelope.gain.setValueAtTime(0, now);
-    envelope.gain.linearRampToValueAtTime(.025, now + .012);
+    envelope.gain.linearRampToValueAtTime(volume, now + .012);
     envelope.gain.exponentialRampToValueAtTime(.0001, now + duration);
     source.connect(band).connect(envelope).connect(master);
     source.start(now);
@@ -172,12 +175,14 @@ export function createSound(gapWarning = () => null) {
       if (buffer) acquisitionBuffers.set(name, buffer);
     }
     if (notes || buffer) {
-      if (voices.size + (notes?.length ?? 0) + Number(!!buffer) > 24) return;
+      const texture = ITEM_HIT_TEXTURES[name];
+      if (voices.size + (notes?.length ?? 0) + Number(!!buffer) + Number(!!texture) > 24) return;
       const end = buffer ? playAcquisitionLayer(buffer, context.currentTime + startAfter) : 0;
       for (const [from, to, duration, delay, volume, type] of notes ?? []) {
         const source = tone(from, to, duration, startAfter + delay, volume, type);
         if (acquisition && source) acquisitionVoices.set(source, null);
       }
+      if (texture) filteredBurst(...texture, context.currentTime + startAfter);
       if (STINGERS.has(name)) {
         acquisitionDuck = acquisition;
         duckRatio = carPremiere ? .15 : .43;

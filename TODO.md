@@ -126,6 +126,26 @@
 - [x] RED reproduced missing fleet selection and Cup persistence. Focused regression tests cover wheel/wing clearance, lift and drive cues, in-place knockout, tier budgets and deck graphics. Production build passes.
 - [x] Capture the new meshes from multiple angles and inspect the seven-rival field with the game renderer at High and Low.
 - [ ] Confirm the feature branch's exact-commit CI, all-track regression and physical phone coverage.
+# Rival attack pickups
+
+- [x] Integrated develop `f9735e4c` into the feature candidate. 180 focused tests, type checks, the locked build and both Taipei 390 × 844 fresh-boot camera tests passed.
+- [x] Reconciled develop `c4d56c15`'s cinematic score with Freeze and EMP cues in the shared mixer. All 110 focused audio, acquisition, status and module-size tests passed.
+- [ ] Verify the updated browser specs on exact-commit CI. The compact Garage spec now expects all catalog categories, including drift trail. The incoming EMP spec advances to the expiry boundary in game time after confirming the visible hit.
+- [x] Add distinct Freeze and EMP impact/recovery sounds through the shared player status and SFX mixer. RED reproduced missing cues and stale shell bounds after a car swap. GREEN passes 152 focused tests and plays distinct waveforms through Chromium Web Audio, with muted output measured at zero.
+- [x] Refit status shells when the active model changes. WebGL verified both effects on the actual Stratosway R2 and Vantaire GT GLBs. The regression iterates the catalog and covers an unlisted model and procedural fallback.
+- [ ] Check the full local regression and the exact-commit CI gate for attack audio and model fitting.
+- [x] Reproduced three differences in player feedback: a separate EMP hue, no Low-quality crystals, and a thaw that always used reduced motion. The player now shares the rival EMP palette and shatter behavior and reuses the crystal pool on Low. All 28 focused item, status and module-size tests pass.
+- [x] Verified desktop gameplay on Coast in Low graphics with staged rival Freeze and EMP activations. Captured both the affected car and viewport edge, from activation through recovery. Type checks and the locked production build passed.
+- [ ] Complete the full `make verify` regression and check the exact-commit CI quality gate for the updated status visuals.
+- [x] Cover incoming screen feedback, player shell, VFX quality, and expiry with the item HUD and status-renderer regressions. Focused unit tests, type checks, and the locked build pass.
+- [x] Captured the viewport edge and player car for Freeze (desktop) and EMP (phone portrait) in the Coast pursuit view with Low graphics. The overlay has no pointer targets.
+- [ ] Confirm real-device and exact-HEAD CI coverage for the incoming screen and car effects.
+
+- [x] Let AI drivers collect Freeze and EMP so the player can be slowed by the same attack items. Test-first coverage reproduced the missing pickups. Coast and Dune Tempest now cover the shared ring sweep, EMP range and duration, Freeze, and overlapping hits.
+- [x] Verify the incoming HUD countdown with the item HUD regression and pass the TypeScript, Vue, JavaScript and locked production checks. Update the 16 deterministic replay hashes changed by rival Freeze.
+- [x] Restore the player's normal speed multiplier as soon as the last attack expires. The six Frostbite pace checks, including the 24-layout throttle-only sweep, pass with rival Freeze enabled.
+- [ ] Confirm the desktop and both phone orientations in a real browser and verify the exact-HEAD quality gate. Local Chromium cannot open its required Unix socket in this environment.
+
 
 # Develop World Tour camera CI run 44394398766
 

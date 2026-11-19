@@ -9,12 +9,15 @@ paths:
   - "src/model-manifest.ts"
   - "src/garage-model.ts"
   - "src/car-catalog.ts"
+  - "src/rival-status-tint.ts"
   - "scripts/dev-3d-redirect-plugin.mjs"
   - "tests/model-asset-*.js"
   - "tests/model-manifest*.js"
 ---
 
 # AI and Blender 3D asset pipeline (planning rule)
+
+**In-race status fit:** The race car keeps its pose object when Garage swaps the displayed GLB. Measure and cache Freeze/EMP shell bounds by the visible model root marked by the shared loader so a fallback, LOD replacement or later car cannot reuse stale bounds. Guard: `tests/rival-status-tint.test.js`.
 
 Before any Blender asset, GLB import, texture, loader, compression or asset pipeline work:
 1. Read docs/superpowers/specs/3d-visual-fidelity-pipeline-design-v2.md and the corresponding implementation plan and local toolchain preflight.

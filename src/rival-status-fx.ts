@@ -5,17 +5,17 @@ import { emp as EMP } from './effects-palette.ts';
 // The game-feel layer over the status shell (rival-status-tint.ts), after the big-game read of each status:
 // Freeze = ice crystals jut from the body (flash-freeze), cold vapor rolls off, and on thaw they shatter outward;
 // EMP = a shockwave ring on the hit and sparks spitting from the body while it lasts.
-// Two instanced meshes for every rival; crystals and waves live in the car's own frame, so they ride its pose.
-// Low skips the crystals; reduced motion keeps the crystals still, shrinks them in place and emits a third.
+// Two instanced meshes for all cars; crystals and waves ride each car's pose.
+// Low keeps a few crystals on the nearby player; reduced motion shrinks crystals in place and emits fewer particles.
 
 type Rgb = [number, number, number];
 /** effects.js emit(), in road coordinates: race distance, lateral x, height above the road. */
 export type StatusEmit = (distance: number, x: number, y: number, vx: number, vy: number, forward: number,
   size: number, life: number, color: Rgb, gravity: number, kind?: number, opacity?: number) => void;
-export type FxRival = { distance?: number; x?: number; altitude?: number; pace?: number };
-export type FxFrame = { status: RivalStatus; age: number; pose: THREE.Object3D | undefined; fit: (pose: THREE.Object3D) => THREE.Matrix4; rival: FxRival | undefined };
+export type FxRival = { distance?: number; x?: number; altitude?: number; pace?: number; speed?: number };
+type FxFrame = { status: RivalStatus; age: number; pose: THREE.Object3D | undefined; fit: (pose: THREE.Object3D) => THREE.Matrix4; rival: FxRival | undefined; isPlayer: boolean };
 
-const SHARDS = 10; // crystals per rival
+const SHARDS = 10, LOW_PLAYER_SHARDS = 4; // crystals per car
 const GROW = 0.22, STAGGER = 0.025, SHATTER = 0.65; // s
 const WAVE = 0.45; // s a shockwave ring lives
 const FROST: Rgb = [0.75, 1.5, 2.6], ICE_WHITE: Rgb = [1.6, 1.9, 2.3], VAPOR: Rgb = [0.7, 0.85, 1];
@@ -48,8 +48,9 @@ export function createRivalStatusFx(capacity: number) {
   const color = new THREE.Color();
   for (const mesh of [shards, waves]) {
     mesh.frustumCulled = false; mesh.visible = false; // posed every frame
-    for (let i = 0; i < mesh.count; i++) { mesh.setMatrixAt(i, parked); mesh.setColorAt(i, color.setRGB(0, 0, 0)); }
+    for (let i = 0; i < mesh.count; i++) mesh.setMatrixAt(i, parked);
   }
+  for (let i = 0; i < waves.count; i++) waves.setColorAt(i, color.setRGB(0, 0, 0));
   const group = new THREE.Group();
   group.name = 'Rival status fx';
   group.add(shards, waves);
@@ -61,7 +62,7 @@ export function createRivalStatusFx(capacity: number) {
   let time = 0, anyShards = false, anyWaves = false;
 
   function emitAround(emit: StatusEmit, rival: FxRival, count: number, burst: boolean, kind: RivalStatus, thaw = false) {
-    const d0 = rival.distance ?? 0, x0 = rival.x ?? 0, y0 = (rival.altitude ?? 0) + 0.7, forward = rival.pace ?? 0;
+    const d0 = rival.distance ?? 0, x0 = rival.x ?? 0, y0 = (rival.altitude ?? 0) + 0.7, forward = rival.pace ?? rival.speed ?? 0;
     for (let n = 0; n < count; n++) {
       const a = Math.random() * Math.PI * 2, c = Math.cos(a), s = Math.sin(a), d = d0 + s * 2, x = x0 + c * 1;
       if (kind === 'emp') { // streaked sparks (particle kind 1) fanning out of the body
@@ -82,7 +83,8 @@ export function createRivalStatusFx(capacity: number) {
 
   function poseShards(i: number, f: FxFrame, low: boolean, reducedMotion: boolean): boolean {
     const thawed = time - thawAt[i]!, frozen = f.status === 'freeze';
-    if (low || !f.pose || (!frozen && thawed > SHATTER)) {
+    const count = low ? (f.isPlayer ? LOW_PLAYER_SHARDS : 0) : SHARDS;
+    if (!count || !f.pose || (!frozen && thawed > SHATTER)) {
       for (let k = 0; k < SHARDS; k++) shards.setMatrixAt(i * SHARDS + k, parked);
       return false;
     }
@@ -90,6 +92,7 @@ export function createRivalStatusFx(capacity: number) {
     f.fit(f.pose).decompose(center, spin, half);
     const size = Math.max(0.6, Math.min(half.x, half.z) / 1.3); // crystals scale with the car, any model
     for (let k = 0; k < SHARDS; k++) {
+      if (k >= count) { shards.setMatrixAt(i * SHARDS + k, parked); continue; }
       const shard = layout[k]!;
       point.copy(shard.at).multiply(half).add(center);
       spin.copy(shard.lean);
@@ -119,10 +122,11 @@ export function createRivalStatusFx(capacity: number) {
     f.pose.updateWorldMatrix(true, false);
     f.fit(f.pose).decompose(center, spin, half);
     point.set(center.x, center.y - half.y * 0.7, center.z);
-    scale.setScalar(Math.max(half.x, half.z) * (0.6 + t * (reducedMotion ? 1.2 : emp ? 5 : 3)));
+    const spread = reducedMotion ? 1.2 : emp && !f.isPlayer ? 5 : 3;
+    scale.setScalar(Math.max(half.x, half.z) * (0.6 + t * spread));
     local.compose(point, spin.identity(), scale);
     waves.setMatrixAt(i, matrix.multiplyMatrices(f.pose.matrixWorld, local));
-    const fade = (1 - t) * (1 - t);
+    const fade = (1 - t) ** 2 * (f.isPlayer ? 0.65 : 1);
     waves.setColorAt(i, color.setRGB(...(emp ? EMP : FROST)).multiplyScalar(fade));
     return true;
   }
@@ -136,7 +140,7 @@ export function createRivalStatusFx(capacity: number) {
       if (now && now !== was) { hitAt[i] = time; carry[i] = 0; waveEmp[i] = Number(now === 'emp'); }
       if (was === 'freeze' && now !== 'freeze') thawAt[i] = time;
       if (emit && f.rival) {
-        const thin = (low ? 0.5 : 1) * (reducedMotion ? 0.3 : 1);
+        const thin = (low ? 0.5 : 1) * (reducedMotion ? 0.3 : f.isPlayer ? 0.75 : 1);
         if (now && now !== was) emitAround(emit, f.rival, Math.round((now === 'emp' ? 26 : 20) * thin), true, now);
         if (was === 'freeze' && now !== 'freeze') emitAround(emit, f.rival, Math.round(24 * thin), true, 'freeze', true);
         if (now) { // steady emission: sparks crackle hard, the ice smokes gently

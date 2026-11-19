@@ -18,8 +18,11 @@ import { createCheckpointRush, stepCheckpointRush } from './checkpoint-rush.ts';
 import { createPracticeStats, samplePractice } from './practice-stats.ts';
 import { createStuntAttack, scoreStuntAttack } from './stunt-attack.ts';
 import { createElimination, stepElimination } from './elimination.ts';
-import { bankItem, activateItem, tickItemCooldown, ringsForItemRule } from './active-items.ts';
-import { decorateBonusGates, collectBonusGate, applyEMPPulse, bonusScore } from './bonus-gates.ts';
+import { bankItem, mysteryEffect, tickItemCooldown, ringsForItemRule } from './active-items.ts';
+export { mysteryEffect } from './active-items.ts';
+import { itemHit, rivalItemHit, ITEM_HIT_SPEED, stepRivalAttacks } from './item-attacks.ts';
+export { useHeldItem, ITEM_HIT_SPEED as FREEZE_RIVAL_SPEED } from './item-attacks.ts';
+import { decorateBonusGates, collectBonusGate, bonusScore } from './bonus-gates.ts';
 import { normalizeRaceConfig, trafficMultiplier } from './race-config.ts';
 import { RACE_DRIVER_IDS, startingGrid } from './race-grid.ts';
 import { raceCompletion } from './race-objectives.ts'; import { riskRules } from './risk-lines.ts'; import { spawnCatchUp } from './catch-up-items.ts';
@@ -68,7 +71,6 @@ export const shortcutPylons = section => Array.from({ length: Math.ceil((section
 }));
 
 import { takePickups } from './pickup-take.ts'; export { MAGNET_RANGE } from './pickup-take.ts';
-export const FREEZE_RIVAL_SPEED = 0.5; // rival speed multiplier while frozen
 
 import { SLIPSTREAM_CAP_BONUS, SLIPSTREAM_NITRO, SLIPSTREAM_MIN_GAP, SLIPSTREAM_MAX_GAP,
   SLIPSTREAM_LATERAL, SLIPSTREAM_ALTITUDE, stepSlipstream } from './drive-rules.ts'; // SLIPSTREAM: shared with rivals
@@ -110,9 +112,6 @@ function createPickups(track, count, seed) {
   }
   return [...pickups, overcharge].sort((a, b) => a.distance - b.distance);
 }
-
-// The mystery effect of ring `index`: its own seed-derived stream, so it is reproducible and needs no race state.
-export const mysteryEffect = (seed, index) => MYSTERY_EFFECTS[Math.floor(seededRng(seed, `${RACE_STREAMS.mysteryPrefix}${index}`)() * MYSTERY_EFFECTS.length)];
 
 // Charges cap at NITRO_MAX; the excess becomes fuel so nothing is wasted. Banked charge also refills flight fuel.
 function addNitro(car, amount, fuelBonus = NITRO_FUEL_BONUS) {
@@ -216,14 +215,6 @@ function collectRing(race, ring, index) {
   }
 }
 
-export function useHeldItem(race) {
-  if (!race?.config?.activeItems || race.phase !== 'racing') return null;
-  if (race.player.heldItem === 'emp' && (race.mode !== 'custom' || race.config.itemRules !== 'all')) race.player.heldItem = 'magnet';
-  const effect = activateItem(race.player, race.rivals.length > 0);
-  if (effect === 'emp') applyEMPPulse(race);
-  return effect;
-}
-
 export { racePosition, sprintGaps } from './race-standings.ts';
 
 export function stepRace(race, input, dt) {
@@ -231,8 +222,10 @@ export function stepRace(race, input, dt) {
   if (race.phase === 'countdown') return advanceCountdown(race, dt);
   if (race.phase !== 'racing') return;
   streamEndless(race); spawnCatchUp(race);
+  const car = race.player, wasSlowed = itemHit(race, car) !== null;
   race.elapsed += dt;
-  const car = race.player;
+  const hitSpeed = itemHit(race, car) ? ITEM_HIT_SPEED : 1;
+  if (wasSlowed && hitSpeed === 1) car.speed /= ITEM_HIT_SPEED; // lift the penalty, preserving braking and impacts
   const previousScore = car.score;
   if (race.config.activeItems || race.config.bonusGates) tickItemCooldown(car, dt);
   const section = race.sections.find(s => car.distance >= s.from && car.distance < s.to);
@@ -285,11 +278,11 @@ export function stepRace(race, input, dt) {
   const brakeDecel = brake ? 35 * (car.driftHold?.brakeBlend ?? 1) : 0;
   car.braking = brakeDecel > 0 || drifting;
   const boosted = boost || (car.miniBoost > 0 && !brake); // the mini boost shares the boost cap but burns no fuel
-  const limit = (nitro ? MAX_SPEED + NITRO_CAP_BONUS : boosted ? MAX_SPEED + BOOST_CAP_BONUS : MAX_SPEED) + (slip.active ? SLIPSTREAM_CAP_BONUS : 0) +
-    (car.inShortcut ? SHORTCUT_CAP_BONUS : 0);
+  const baseLimit = nitro ? MAX_SPEED + NITRO_CAP_BONUS : boosted ? MAX_SPEED + BOOST_CAP_BONUS : MAX_SPEED;
+  const limit = hitSpeed * (baseLimit + (slip.active ? SLIPSTREAM_CAP_BONUS : 0) + (car.inShortcut ? SHORTCUT_CAP_BONUS : 0));
   const drive = drifting ? -DRIFT_BLEED : (throttle ? THROTTLE_ACCEL : -4) - brakeDecel;
   const acceleration = car.speed > limit ? -OVER_CAP_DECEL - brakeDecel : drive + (boosted ? BOOST_ACCEL : 0) + (nitro ? NITRO_ACCEL : 0);
-  car.speed = clamp(car.speed + acceleration * dt, 0, Math.max(limit, car.speed));
+  car.speed = clamp(car.speed + acceleration * hitSpeed * dt, 0, Math.max(limit, car.speed));
   car.nitroTime = Math.max(0, car.nitroTime - dt);
   car.miniBoost = Math.max(0, car.miniBoost - dt);
   trackPhaseExit(race, dt);
@@ -394,7 +387,7 @@ export function stepRace(race, input, dt) {
     const before = rival.distance;
     // Rubber band: a rival far ahead of the player eases off by at most RUBBER_BAND_MAX; one behind is never sped up.
     const band = clamp((progressGap(race, car, rival) - RUBBER_BAND_FREE) / RUBBER_BAND_RANGE, 0, 1);
-    const slow = (car.effects.freeze > 0 || rival.empUntil > race.elapsed ? FREEZE_RIVAL_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
+    const slow = (rivalItemHit(race, rival) ? ITEM_HIT_SPEED : 1) * (1 - band * RUBBER_BAND_MAX);
     rival.pace = rival.speed * slow;
     rival.distance += rival.pace * dt;
     rivalSeek(race, rival); avoidObstacles(race, rival, rival.pace, dt); stepRivalDeck(rival, race.sections, hopFrom, CAR_HEIGHT);
@@ -463,6 +456,7 @@ export function stepRace(race, input, dt) {
   if (finishEndless(race)) return;
   stepCircuit(race, dt);
   finishRace(race, previousDistance, dt);
+  stepRivalAttacks(race);
 }
 
 // The next broken bridge within warning range when the charge left cannot thrust across it at the current speed.
