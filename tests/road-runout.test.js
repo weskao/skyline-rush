@@ -7,9 +7,22 @@ import * as THREE from 'three';
 import { createWorldTourScene } from '../src/world-tour-scene.js';
 import { RACE_TRACKS } from '../src/game.js';
 import { trackLocalPosition } from '../src/track-paths.ts';
+import { createFrostbiteRaceScene } from '../src/frostbite-race-scene.ts';
+import { FROSTBITE_TRACK, frostbiteFrame } from '../src/courses/frostbite-race.ts';
 
 const near = (actual, expected, label) => assert.ok(Math.abs(actual - expected) < .01, `${label}: ${actual} ≈ ${expected}`);
 const matrix = new THREE.Matrix4(), at = new THREE.Vector3();
+const down = new THREE.Vector3(0, -1, 0);
+const shown = object => { for (let o = object; o; o = o.parent) if (!o.visible) return false; return true; };
+// The drawn road under each lane, every 100 m along `frameAt` up to `reach` metres past the finish, in world space.
+function assertRoadAhead(label, roads, frameAt, finish, reach) {
+  for (let k = 50; k <= reach; k += 100) for (const lateral of [-10, 0, 10]) {
+    const f = frameAt(finish + k), x = f.point.x + f.right[0] * lateral, z = f.point.z + f.right[2] * lateral;
+    const hit = new THREE.Raycaster(new THREE.Vector3(x, f.point.y + 30, z), down).intersectObjects(roads)
+      .find(h => shown(h.object) && Math.abs(h.point.y - f.point.y) < 1);
+    assert.ok(hit, `${label}: drawn road ${k} m past the finish, lane ${lateral}`);
+  }
+}
 const instanceAt = (mesh, index) => { mesh.getMatrixAt(index, matrix); return at.setFromMatrixPosition(matrix).clone(); };
 
 test('World Tour roads run on past the finish under the parked car', () => {
@@ -44,4 +57,20 @@ test('World Tour roads run on past the finish under the parked car', () => {
     const beyond = layer.children.filter(c => c.name.startsWith(`world-tour-${id}-chunk-`) && c.userData.chunkIndex * 120 > length);
     assert.ok(beyond.length >= 5, `${id}: the roadside scenery runs on with the road (${beyond.length} chunks)`);
   }
+});
+
+test('Frostbite road runs on past the finish for the whole view radius', () => {
+  const scene = new THREE.Scene(), race = createFrostbiteRaceScene(scene), length = FROSTBITE_TRACK.length;
+  race.update(length);
+  race.group.updateMatrixWorld(true);
+  const roads = [];
+  race.group.traverse(o => { if (o.name === 'race-road') roads.push(o); });
+  // Past the finish the scene runs straight on along the last heading (race frames clamp there).
+  const end = frostbiteFrame(length), along = s => ({ ...end, point: {
+    x: end.point.x + end.forward[0] * (s - length), y: end.point.y + end.forward[1] * (s - length), z: end.point.z + end.forward[2] * (s - length),
+  } });
+  const origin = race.group.position;
+  const local = s => { const f = along(s); return { ...f, point: { x: f.point.x + origin.x, y: f.point.y + origin.y, z: f.point.z + origin.z } }; };
+  assertRoadAhead('frostbite', roads, local, length, 1500);
+  race.dispose();
 });

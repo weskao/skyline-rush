@@ -16,8 +16,8 @@ export const ROAD_HALF = 12; // drawn road; the simulation's ROAD_LIMIT (10.2 m)
 const CHUNK = 600, ROAD_STEP = 6, VIEW_RADIUS = 1500, BEHIND = 300;
 // World-aligned terrain tiles: a route-following strip folds over itself inside bends tighter than its width.
 const TILE = 480, CELL = 24, REACH = 340;
-const LENGTH = FROSTBITE_TRACK.length, RUNOFF = 500;
-// Visual only: the road runs straight on past FINISH so the finish camera never faces a snow wall (race frames clamp).
+const LENGTH = FROSTBITE_TRACK.length, RUNOFF = VIEW_RADIUS;
+// Visual only: the road runs straight on past FINISH for the whole view (race frames clamp; rules/road-runout.md).
 const END = frostbiteFrame(LENGTH);
 function frameAt(s: number) {
   if (s <= LENGTH) return frostbiteFrame(s);
