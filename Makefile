@@ -2,7 +2,7 @@
 NPM := npm
 .DEFAULT_GOAL := dev
 
-.PHONY: build help dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy deploy-netlify stop-old-dev reclaim-dev-port
+.PHONY: build help setup dev dev-diag dev-unlocked dev-feature test-unlocked phone phone-diag phone-unlocked perf perf-modes perf-phone run verify deploy deploy-netlify stop-old-dev reclaim-dev-port
 
 # Dev servers run inside local Auth/Firestore emulators: Google sign-in uses fake accounts and never
 # touches production saves. VITE_FIREBASE_EMULATOR points the page at them; Ctrl+C stops both.
@@ -157,6 +157,8 @@ deploy-netlify: node_modules ## `make deploy-netlify`: production build of this 
 	msg=$$(printf '🚀 skyline-rush 已部署到 Netlify：%s/\n本次部署：%s\n%s @ %s' "$(NETLIFY_URL)" "$$unique" \
 	  "$$(git rev-parse --abbrev-ref HEAD)" "$$(git describe --tags --always)"); \
 	if [ -f "$(TG_SEND)" ]; then TG_MSG_TYPE=deploy-done bash "$(TG_SEND)" send "$$msg"; else echo "TG: send skipped — $(TG_SEND) not found"; fi
+
+setup: node_modules ## `make setup`: install npm dependencies (crucible included) and enable the git hooks; other targets do this too
 
 # Installs dependencies on first run and whenever package-lock.json changes; also enables the repo's git hooks.
 # A worktree that links node_modules to another checkout keeps the link while both lockfiles match:
