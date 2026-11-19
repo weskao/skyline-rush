@@ -4,7 +4,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { Box3 } from 'three';
+import { Box3, Vector3 } from 'three';
+import { NEON_BLOSSOM_CELL } from '../src/neon-blossom.ts';
 import { MODEL_MANIFEST } from '../src/model-manifest.ts';
 import { checkGlb, glbJson, parseGlb, summarize } from '../scripts/assets/check-glb.mjs';
 
@@ -95,5 +96,26 @@ test('neon-city: the skyline towers show lit glazing and storey lines at night, 
   for (const cell of ['sky_a', 'sky_b', 'sky_c']) {
     const { lit, relief } = facade?.[cell] ?? {};
     assert.ok(lit >= 0.15 && relief >= 0.3, `${cell}: lit glazing ${lit}, storey relief ${relief}`);
+  }
+});
+
+// Audit entry 24: src/neon-blossom.ts cuts florets only inside the blossom cell of the atlas. If a kit rebuild moves the
+// cell, the cut-out would land on another part of the atlas: on the bark, or nowhere.
+test('neon-city: the cherry tree\'s blossom fills the cell the cut-out reads, and its bark stays outside it', () => {
+  const [u0, v0, u1, v1] = NEON_BLOSSOM_CELL, inCell = (u, v) => u >= u0 && u <= u1 && v >= v0 && v <= v1;
+  for (let lod = 0; lod < 3; lod++) {
+    const mesh = node(`cherry_tree_lod${lod}`), uv = mesh.geometry.attributes.uv, at = mesh.geometry.attributes.position, p = new Vector3();
+    let top = -Infinity, topIn = false, vLow = Infinity, vHigh = -Infinity;
+    for (let i = 0; i < uv.count; i++) {
+      const u = uv.getX(i), v = uv.getY(i), y = p.fromBufferAttribute(at, i).applyMatrix4(mesh.matrixWorld).y, inside = inCell(u, v);
+      if (y > top) { top = y; topIn = inside; }
+      if (y < 3) assert.ok(!inside, `cherry_tree_lod${lod}: trunk vertex at ${y.toFixed(2)} m in the blossom cell`);
+      if (inside) { vLow = Math.min(vLow, v); vHigh = Math.max(vHigh, v); }
+      else assert.ok(u < u0 - .005 || u > u1 + .005 || v < v0 - .005 || v > v1 + .005, `cherry_tree_lod${lod}: bark at (${u.toFixed(4)}, ${v.toFixed(4)}) against the cell`);
+    }
+    assert.ok(topIn, `cherry_tree_lod${lod}: the crown is blossom`);
+    // Kit.puff spans 0.05 .. 0.95 of its cell up the puff's height: the cell's own placement, to a texel.
+    const cell = v1 - v0;
+    assert.ok(Math.abs((vLow - v0) / cell - .05) < .01 && Math.abs((v1 - vHigh) / cell - .05) < .01, `cherry_tree_lod${lod}: blossom v ${vLow.toFixed(4)} .. ${vHigh.toFixed(4)} not centred in ${v0.toFixed(4)} .. ${v1.toFixed(4)}`);
   }
 });

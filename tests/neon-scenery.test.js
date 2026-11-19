@@ -221,6 +221,28 @@ test('the street screen has its own emissive strength: its graphics reach the bl
   kit.dispose();
 });
 
+// Audit entry 24 (Task 5b step 20): the cherry tree read as opaque puffs. Its pools wear an alpha-tested copy of the
+// kit material that cuts florets out of the blossom cell; a pool is one draw already, so the cut-out adds none.
+test('the cherry tree wears a cut-out blossom copy of the kit material: alpha-tested, depth-written, never blended, no draw added', () => {
+  const plain = rig().pools().length;
+  const { kit, city, pools, pool } = rig(), shared = city.getObjectByName('cherry_tree_lod0').material, own = pool('cherry_tree:near').material;
+  assert.equal(pools().length, plain, 'no pool added');
+  assert.notEqual(own, shared, 'its own copy of the kit material');
+  for (const mesh of pools()) if (mesh.name.startsWith('cherry_tree:')) assert.equal(mesh.material, own, `${mesh.name}: one copy for every band`);
+  assert.ok(own.alphaTest > 0 && own.alphaTest < 1, `alphaTest ${own.alphaTest}`);
+  assert.deepEqual([own.transparent, own.depthWrite, own.side], [false, true, shared.side], 'a cut-out: no blending, depth write on, the kit\'s face culling');
+  assert.equal(own.emissiveIntensity, shared.emissiveIntensity, 'the kit\'s strength');
+  assert.notEqual(own.customProgramCacheKey(), shared.customProgramCacheKey(), 'its own program');
+  const shader = { vertexShader: THREE.ShaderLib.physical.vertexShader, fragmentShader: THREE.ShaderLib.physical.fragmentShader, uniforms: {} };
+  own.onBeforeCompile(shader, null);
+  const cut = shader.fragmentShader.indexOf('diffuseColor.a *=');
+  assert.ok(cut > shader.fragmentShader.indexOf('#include <map_fragment>') && cut < shader.fragmentShader.indexOf('#include <alphatest_fragment>'), 'the florets are cut between the colour map and the alpha test');
+  for (const mesh of pools()) if (!mesh.name.startsWith('cherry_tree')) assert.notEqual(mesh.material, own, `${mesh.name} stays opaque`);
+  let freed = false, source = false; own.addEventListener('dispose', () => { freed = true; }); shared.addEventListener('dispose', () => { source = true; });
+  kit.dispose();
+  assert.deepEqual([freed, source], [true, false], 'the layer frees its copy, never the GLB\'s material');
+});
+
 test('N3: one ground mesh puts land under the city sectors and the harbour yard, and leaves the water open under the expressway, the harbour quay and the bridge', () => {
   const { kit } = rig();
   kit.update(route, 100, 'high');
