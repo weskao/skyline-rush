@@ -139,9 +139,20 @@ test('airflow showcase, presets, views and boost coexist without shader errors',
   await expect(page.locator('#boost-status')).toHaveText('RECHARGING');
   await page.keyboard.press('Escape');
   await expect(page.locator('#race-status')).toHaveText('PAUSED');
+  // Capture the restart HUD in the countdown frame, before AUTO launches the car at GO.
+  await page.evaluate(() => {
+    const observer = new MutationObserver(() => {
+      if (document.body.dataset.phase !== 'countdown') return;
+      window.__airflowRestartHud = {
+        fuel: document.getElementById('fuel-value').textContent,
+        speed: document.getElementById('speed').textContent,
+      };
+      observer.disconnect();
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-phase'] });
+  });
   await page.keyboard.press('Backspace');
-  await expect(page.locator('#fuel-value')).toHaveText('100');
-  await expect(page.locator('#speed')).toHaveText('0');
+  await expect.poll(() => page.evaluate(() => window.__airflowRestartHud)).toEqual({ fuel: '100', speed: '0' });
   expect(errors).toEqual([]);
 });
 
