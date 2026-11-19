@@ -12,6 +12,7 @@
 - [x] Reproduced the Frostbite boot cover remaining visible before the WebGL world exists. Ported the world-ready Home refresh from `70e394e4` and observed the boot regression pass with the Coming Soon start label intact.
 - [ ] Confirm the lobby summary, keyboard camera and graphics notice on the feature branch. Reproduced the three 7.5 s locator timeouts and ported the in-page first-paint measurement from `b07b22c`, keeping the same paint budget.
 - [ ] Confirm portrait results dock hit tests on the GitHub runner. The original locator poll timed out before returning a sample on CI, while one local run passed. The updated poll reads all controls in one browser evaluation before and after scrolling.
+- [x] Isolated the keyboard camera's true cold-boot delay: CSS hid the dock until the first rendered world frame set `data-phase`. RED: camera paint 8,764 ms, WebGL initialization 930 ms. The dock now uses its Home layout before the phase is published, with a paint-before-WebGL regression.
 - [ ] Confirm the exact-commit GitHub quality gate and physical-phone coverage.
 
 # Develop browser CI run 44399876486

@@ -15,10 +15,14 @@ test('Home setup reaches a frame before the 3D world is built', async ({ page })
     };
   });
   await recordPaint(page, '.route-drivers');
+  await recordPaint(page, '#showcase-camera-prev');
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const framedAt = await firstPaint(page, '.route-drivers');
+  const cameraAt = await firstPaint(page, '#showcase-camera-prev');
   await expect.poll(() => page.evaluate(() => typeof window.__worldAt)).toBe('number');
-  expect(framedAt).toBeLessThan(await page.evaluate(() => window.__worldAt)); // settled: polled above, written once
+  const worldAt = await page.evaluate(() => window.__worldAt); // settled: polled above, written once
+  expect(framedAt).toBeLessThan(worldAt);
+  expect(cameraAt).toBeLessThan(worldAt);
   await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
 });
 
