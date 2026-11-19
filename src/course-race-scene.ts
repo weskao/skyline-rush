@@ -108,7 +108,7 @@ export function createCourseRaceScene(scene: THREE.Scene) {
     if (nearFinish && !runout) {
       const last = graph.groundRoute.at(-1)!, end = sampleRoute(graph, last, length(last));
       runout = createRoadRunout(end, { width: end.width, length: AHEAD_METRES,
-        road: 0xab7546, rail: 0x966047, mark: 0xe5d3a8, bed: 0xb77b49 });
+        road: { color: 0xab7546, roughness: 1 }, rail: 0x966047, mark: 0xe5d3a8, bed: 0xb77b49 });
       root.add(runout.group);
     } else if (!nearFinish && runout) { runout.dispose(); runout = null; }
     for (const chunk of live.values()) chunk.update(time, tier, reducedMotion);

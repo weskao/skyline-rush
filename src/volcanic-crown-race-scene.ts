@@ -81,7 +81,8 @@ export function createVolcanicCrownRaceScene(scene: THREE.Scene) {
   // The road runs on past FINISH for the whole view (drawing only; rules/road-runout.md).
   const end = volcanicFrame(offset), last = graph.edges.find(e => e.id === graph.groundRoute.at(-1))!;
   const runout = createRoadRunout({ ...end, point: [end.point.x, end.point.y, end.point.z] },
-    { width: last.width, length: VIEW_RADIUS, road: '#342e32', rail: '#ff8d4e', mark: '#d9c9b8', bed: '#1b1b20' });
+    { width: last.width, length: VIEW_RADIUS, road: { color: '#342e32', roughness: .88, metalness: .07 },
+      rail: '#ff8d4e', mark: '#d9c9b8', bed: '#1b1b20' });
   chunks.push({ group: runout.group, x: runout.centre.x, z: runout.centre.z, radius: VIEW_RADIUS / 2,
     update() {}, dispose: runout.dispose, decorativeHazards: [] });
   group.add(runout.group);

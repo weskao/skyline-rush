@@ -267,7 +267,8 @@ export function createSkyfallWorld(scene: THREE.Scene, quality: Tier = 'medium')
         // FINISH has no outgoing edge: the road runs on past it for two chunks (drawing only; rules/road-runout.md).
         const last = SKYFALL_GROUND_PATH[SKYFALL_GROUND_PATH.length - 1], end = sampleSkyfallRoad(last, getSkyfallEdgeLength(last));
         const runout = createRoadRunout({ ...end, point: [end.point.x, end.point.y, end.point.z] }, { width: end.width,
-          length: 2 * CHUNK_METERS, road: 0x888b80, rail: 0xffdb91, mark: 0xf5fbff, bed: 0x6f7368 }).group;
+          length: 2 * CHUNK_METERS, road: { color: 0x888b80, roughness: .96 },
+          rail: 0xffdb91, mark: 0xf5fbff, bed: 0x6f7368 }).group;
         group.add(runout); chunks.set(key, runout); continue; // unload() frees it like any chunk
       }
       const separator = key.lastIndexOf(':');

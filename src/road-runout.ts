@@ -5,7 +5,8 @@ type Vec3 = readonly [number, number, number];
 export interface RunoutEnd { point: Vec3; forward: Vec3; right: Vec3; up: Vec3 }
 export interface RunoutStyle {
   width: number; length: number;
-  road: THREE.ColorRepresentation; rail: THREE.ColorRepresentation; mark: THREE.ColorRepresentation;
+  /** The map's own road material parameters, so the run-out reads as the same asphalt. */
+  road: THREE.MeshStandardMaterialParameters; rail: THREE.ColorRepresentation; mark: THREE.ColorRepresentation;
   /** Embankment colour and reach beyond each road edge. */
   bed: THREE.ColorRepresentation; shoulder?: number; depth?: number;
 }
@@ -25,7 +26,7 @@ export function createRoadRunout(end: RunoutEnd, style: RunoutStyle) {
   const group = new THREE.Group();
   group.name = 'road-runout';
   const materials = [
-    new THREE.MeshStandardMaterial({ color: style.road, roughness: .8 }),
+    new THREE.MeshStandardMaterial({ ...style.road, side: THREE.FrontSide }),
     new THREE.MeshStandardMaterial({ color: style.bed, roughness: .95 }),
     new THREE.MeshBasicMaterial({ color: style.rail }),
     new THREE.MeshBasicMaterial({ color: style.mark }),
