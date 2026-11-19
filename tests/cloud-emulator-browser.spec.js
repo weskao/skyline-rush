@@ -64,8 +64,8 @@ test('switching Google accounts isolates local maps and retains the first player
   await expect(page.locator('#cloud-login')).toBeVisible();
   await mockGoogleSignIn(page, { email: 'second@example.test' });
   await expect(page.locator('#cloud-status')).toContainText('another Google account');
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-switch').click();
+  await page.locator('#confirm-accept').click();
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toEqual(['coast']);
 
@@ -109,9 +109,9 @@ test('export includes maps, then delete clears cloud and local progress without 
   await page.evaluate(() => localStorage.setItem('skyline-rush-cup-progress-v1', JSON.stringify({
     version: 1, cup: { tracks: ['coast', 'neon', 'canyon'], results: [] },
   })));
-  page.once('dialog', dialog => dialog.accept());
   const reloaded = page.waitForEvent('load');
   await page.locator('#cloud-delete').click();
+  await page.locator('#confirm-accept').click();
   await reloaded;
   await page.locator('#cloud-open').click();
   await expect(page.locator('#cloud-login')).toBeVisible();
@@ -322,19 +322,19 @@ test('cloud save JSON import merges restored records and rejects malformed files
   await page.addInitScript(disableWebGL);
   await page.goto('/?firebase-emulator=1');
   await page.locator('#cloud-open').click();
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-import-file').setInputFiles({
     name: 'skyline-rush-progress.json',
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify({ version: 2, unlocked: ['coast', 'neon'], stars: { neon: 2 }, bests: {},
       medals: {}, history: [], modeHistory: [], daily: [] })),
   });
+  await page.locator('#confirm-accept').click();
   await expect(page.locator('#cloud-status')).toContainText('Backup imported on this device.');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toContain('neon');
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-import-file').setInputFiles({
     name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('not-json'),
   });
+  await page.locator('#confirm-accept').click();
   await expect(page.locator('#cloud-status')).toContainText('Could not import this backup.');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-unlocked')))).toContain('neon');
 });
@@ -357,16 +357,16 @@ test('an unsynced permanent record survives A to B to A account switching', asyn
   await page.locator('#cloud-logout').click();
   await expect(page.locator('#cloud-login')).toBeVisible();
   await mockGoogleSignIn(page, { email: 'switch-B@example.test' });
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-switch').click();
+  await page.locator('#confirm-accept').click();
   await page.locator('#cloud-open').click(); // Account switch reloads the page and closes this dialog.
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
   expect(await page.evaluate(key => JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBeUndefined();
 
   await page.locator('#cloud-logout').click();
   await mockGoogleSignIn(page, { existing: true, email: 'switch-A@example.test' });
-  page.once('dialog', dialog => dialog.accept());
   await page.locator('#cloud-switch').click();
+  await page.locator('#confirm-accept').click();
   await page.locator('#cloud-open').click(); // The second switch also performs a reload.
   await expect(page.locator('#cloud-status')).toHaveText('Race progress is saved to your Google account.');
   expect(await page.evaluate(key => JSON.parse(localStorage.getItem('skyline-rush-mode-bests-v1') || '{}')[key], key)).toBe(47);
@@ -380,12 +380,10 @@ test('cloud dialog explains sign-out separately from deleting Google identity', 
   await mockGoogleSignIn(page, { email: 'logout-copy@example.test' });
   await expect(page.locator('#cloud-logout-note')).toContainText('Signing out does not delete');
   await expect(page.locator('#cloud-delete')).toBeVisible();
-  const warning = page.waitForEvent('dialog');
-  const click = page.locator('#cloud-delete').click({ noWaitAfter: true });
-  const confirmation = await warning;
-  expect(confirmation.message()).toContain('does not delete your Google sign-in account');
-  await confirmation.dismiss();
-  await click;
+  await page.locator('#cloud-delete').click();
+  await expect(page.locator('#confirm-body')).toContainText('does not delete your Google sign-in account');
+  await page.locator('#confirm-cancel').click();
+  await expect(page.locator('#confirm-dialog')).not.toBeVisible();
   await page.locator('#cloud-logout').click();
   await expect(page.locator('#cloud-logout-note')).toBeHidden();
 });

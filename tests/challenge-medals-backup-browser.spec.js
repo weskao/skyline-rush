@@ -19,9 +19,16 @@ test('local backup import restores personal medals and keeps old backups compati
   await page.goto('/');
   await page.locator('#cloud-open').click();
   const backup = { version: 2, unlocked: ['coast'], stars: {}, bests: {}, medals: {}, history: [], modeHistory: [], daily: [], localChallengeMedals: medals };
+  // Cancel in the in-game confirm imports nothing.
+  await page.locator('#cloud-import-file').setInputFiles({ name: 'progress.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
+  await page.locator('#confirm-cancel').click();
+  await expect(page.locator('#confirm-dialog')).toBeHidden();
+  await expect(page.locator('#cloud-status')).not.toHaveAttribute('data-cloud-state', 'imported');
+  expect(await page.evaluate(key => localStorage.getItem(key), key)).toBeNull(); // settled: the dialog closed without importing
   for (const contents of [backup, { ...backup, localChallengeMedals: undefined }]) {
-    page.once('dialog', dialog => dialog.accept());
     await page.locator('#cloud-import-file').setInputFiles({ name: 'progress.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(contents)) });
+    await expect(page.locator('#confirm-body')).toHaveText(/Import this backup and merge/);
+    await page.locator('#confirm-accept').click();
     await expect(page.locator('#cloud-status')).toHaveAttribute('data-cloud-state', 'imported');
     expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key) || 'null'), key)).toEqual(medals);
     await expect(page.locator('#challenge-medal-count')).toContainText('1 / 5');
