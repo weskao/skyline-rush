@@ -190,8 +190,10 @@ project's existing Node type-stripping, as `npm test` already does).
   file, including evidence files.
 - Branch `feature/track-lifecycle-sop` from epic; merge back into epic only after the Step 2 courses
   (Stormline, Volcanic, Monsoon) have merged, because both touch `src/upcoming-tracks.ts`. It does not
-  wait for Dune and Skyfall: they stay at `preview` (awaiting their A/B engine decision) and later
-  follow the SOP to promote (my call). Never merge into `develop` / `main` without explicit approval.
+  wait for Dune and Skyfall: they stay at `preview` until their engine is decided, and later
+  follow the SOP to promote (my call). Update 2026-11-19: decided on 2026-11-07, Option B (the real
+  CourseGraph topology wired into `src/game.js`, see `2026-11-06-course-graph-runtime-design.md`);
+  both are now `playable` in `src/upcoming-tracks.ts`. No engine decision is pending. Never merge into `develop` / `main` without explicit approval.
 - TDD: each gate's failing fixture case is observed RED before the check is implemented.
 - Existing gates stay: `scripts/assert-production-locked.mjs`, `tests/coming-soon-release.test.js`,
   `tests/upcoming-unlock-access.test.js`, `tests/access-build.test.js`.

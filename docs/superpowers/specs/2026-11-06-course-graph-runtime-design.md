@@ -2,8 +2,9 @@
 
 **Date:** 2026-11-06 · **Branch:** `feature/course-graph-runtime` (cut from
 `origin/feature/epic-multiroute-longform-tracks` at `0c951d49`) · **Status:** design approved;
-open questions Q1–Q9 decided by the user on 2026-11-07 (section 17). No product code on this branch
-yet.
+open questions Q1–Q9 decided by the user on 2026-11-07 (section 17); Option B (§1) chosen over the
+1D-engine Option A. Update 2026-11-19: implemented and merged; Dune Tempest and Skyfall Archipelago
+are `playable` in `src/upcoming-tracks.ts` (dev-unlocked races, Coming Soon in production).
 
 **Plan:** `docs/superpowers/plans/2026-11-06-course-graph-runtime.md`
 
