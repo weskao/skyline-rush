@@ -1,3 +1,10 @@
+# Browser CI run 44486279087
+
+- [x] Identified the mobile results dock stall at the acquisition locator handler and the late camera dock paint (12.7–13.3 s against a 7.5 s CI budget).
+- [x] Added the paint-before-WebGL guard for the camera dock and synced the CSS fingerprint. The portrait results spec taps Continue on the real reward dialog and checks all targets in one evaluation.
+- [x] Chromium CI-mode verification passed for the camera dock before WebGL and the complete 402×874 portrait results flow.
+- [ ] Confirm the exact-commit GitHub quality gate.
+
 # Develop browser CI run 44399876486
 
 - [x] Leaving the Garage drift-trail preview disposed `makeCar`'s shared nozzle and fascia materials, so the game renderer released a program (Studio 140 → 139). `tests/hero-roadster-equipment-browser.spec.js` now leaves a drift preview explicitly: RED 139 on 2bd96471, GREEN 4/4 after `src/garage-drift-preview.ts` draws cloned materials. Drift/animated-artwork/store specs 22/22 on the trial build.

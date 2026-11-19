@@ -95,7 +95,7 @@ body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow
   max-width: 100%;
   height: 48px;
 }
-body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro :is(.showcase-camera-dock, .daily-card) {
+body:is(:not([data-phase]), [data-phase="ready"]):is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro :is(.showcase-camera-dock, .daily-card) {
   position: static;
   inset: auto;
   width: 100%;
@@ -106,7 +106,7 @@ body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizo
   max-width: calc(var(--fold-scene-width) - 24px);
   margin: 0;
 }
-body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]).airflow-active .showcase-camera-dock {
+body:is(:not([data-phase]), [data-phase="ready"]):is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]).airflow-active .showcase-camera-dock {
   inset: auto calc(var(--fold-scene-right) + var(--fold-gap-right)) calc(var(--fold-scene-bottom) + 108px) auto;
   width: min(228px, calc(var(--fold-scene-width) - 24px));
 }
@@ -246,7 +246,7 @@ body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizo
   z-index: auto;
 }
 body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro #start-button,
-body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro :is(.showcase-camera-dock, .daily-card) {
+body:is(:not([data-phase]), [data-phase="ready"]):is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro :is(.showcase-camera-dock, .daily-card) {
   position: fixed;
   z-index: 3;
   left: auto;
@@ -255,7 +255,7 @@ body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizo
   width: var(--fold-rail-width);
 }
 body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro #start-button { bottom: calc(var(--fold-gap-bottom) + 36px); }
-body[data-phase="ready"]:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro #showcase-camera-dock {
+body:is(:not([data-phase]), [data-phase="ready"]):is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):not(.airflow-active) #intro #showcase-camera-dock {
   bottom: calc(var(--fold-gap-bottom) + 92px);
   padding: 4px 5px;
 }

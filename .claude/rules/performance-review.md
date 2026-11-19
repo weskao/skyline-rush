@@ -109,8 +109,10 @@ construction, or any other multi-second boot work, back into the module's first 
 outside the boot block already guards `!world`, and a new one must too. A guard that falls back while `world` is
 null (the Coming Soon cover image instead of the live showroom) must be redrawn once the world exists: the boot
 block calls `showTracks()` after `previewPaint`, and a new world-dependent view joins that call (Frostbite stayed on
-its cover, CI 44468157574). Guards: `tests/boot-first-paint-browser.spec.js` (a frame lands after `.route-drivers`
-is filled and before `#world` asks for its WebGL context; a Coming Soon card opened at boot reaches live 3D).
+its cover, CI 44468157574). The Home camera dock uses its ready layout before the first `data-phase`
+update so it can paint while WebGL initializes. The game loop publishes the phase after initialization.
+Guards: `tests/boot-first-paint-browser.spec.js` (route summary and camera frame before `#world` asks for its WebGL
+context; a Coming Soon card opened at boot reaches live 3D).
 
 ## The pre-pool triangle budget measures scenery, not the player car
 

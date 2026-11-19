@@ -1647,18 +1647,18 @@ body.photo-studio #perf-overlay { display: none; }
 /* Ready-screen showroom control: separate from VFX settings and race camera. */
 /* The camera dock and the AIRFLOW Start button share one bottom/height budget.
    Never anchor them independently: changes to safe areas or CTA size must preserve this gap. */
-.airflow-active[data-phase="ready"] { --showcase-start-bottom: max(48px, calc(env(safe-area-inset-bottom, 0px) + 44px)); --showcase-start-height: 60px; }
-@media (max-width: 760px) { .airflow-active[data-phase="ready"] { --showcase-start-height: 58px; } }
-@media (max-height: 500px) { .airflow-active[data-phase="ready"] { --showcase-start-height: 46px; } }
+.airflow-active:is(:not([data-phase]), [data-phase="ready"]) { --showcase-start-bottom: max(48px, calc(env(safe-area-inset-bottom, 0px) + 44px)); --showcase-start-height: 60px; }
+@media (max-width: 760px) { .airflow-active:is(:not([data-phase]), [data-phase="ready"]) { --showcase-start-height: 58px; } }
+@media (max-height: 500px) { .airflow-active:is(:not([data-phase]), [data-phase="ready"]) { --showcase-start-height: 46px; } }
 /* Start takes its height from the same variable the dock reserves, so a later `.intro .primary-button`
    height rule can never make the two disagree (the dock ended 2.5px too low when they did). */
-.airflow-active[data-phase="ready"] #start-button { bottom: var(--showcase-start-bottom); height: var(--showcase-start-height); }
+.airflow-active:is(:not([data-phase]), [data-phase="ready"]) #start-button { bottom: var(--showcase-start-bottom); height: var(--showcase-start-height); }
 .showcase-camera-dock { position:fixed; z-index:4; bottom:max(140px,env(safe-area-inset-bottom,0px)); right:max(30px,env(safe-area-inset-right,0px));
   width:190px; padding:11px 12px; display:grid; justify-items:center; gap:8px;
   background:linear-gradient(135deg,#10283de8,#071623d9); border:1px solid #83e1fa6b;
   border-radius:12px; color:#e4f8ff; backdrop-filter:blur(12px); box-shadow:0 12px 40px #0005; }
-.airflow-active[data-phase="ready"] .showcase-camera-dock { visibility: visible; bottom: calc(var(--showcase-start-bottom) + var(--showcase-start-height) + 24px); }
-body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
+.airflow-active:is(:not([data-phase]), [data-phase="ready"]) .showcase-camera-dock { visibility: visible; bottom: calc(var(--showcase-start-bottom) + var(--showcase-start-height) + 24px); }
+body[data-phase]:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
 .showcase-camera-heading { font-size:10px; font-weight:750; letter-spacing:1.6px; color:#9ad6e9; }
 .showcase-camera-actions { display:flex; width:100%; justify-content:space-between; align-items:center; gap:5px; }
 .showcase-camera-actions > button { width:40px; height:40px; flex-shrink:0; border:1px solid #8ddcf466; border-radius:9px;
@@ -1674,10 +1674,10 @@ body:not([data-phase="ready"]) .showcase-camera-dock { display:none; }
  .showcase-camera-actions > button { width:40px; height:40px; }
 }
 @media (max-width:760px) and (max-height:500px) {
- .showcase-camera-dock, .airflow-active[data-phase="ready"] .showcase-camera-dock { top:80px; bottom:auto; right:12px; width:148px; }
+ .showcase-camera-dock, .airflow-active:is(:not([data-phase]), [data-phase="ready"]) .showcase-camera-dock { top:80px; bottom:auto; right:12px; width:148px; }
 }
 @media (max-width:1000px) {
- body[data-phase="ready"]:not(.airflow-active) .showcase-camera-dock { position:static; inset:auto; width:100%; margin-block:16px 12px; }
+ body:is(:not([data-phase]), [data-phase="ready"]):not(.airflow-active) .showcase-camera-dock { position:static; inset:auto; width:100%; margin-block:16px 12px; }
 }
 
 
@@ -2223,7 +2223,7 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
      in-app browsers (756x265). Zoom multiplies every inset and makes % of the containing block zoomed units while dvh
      is not, so --browser-bar is kept in screen px (100% * --z) and the insets are divided by --z. --z: 1 changes nothing. */
   body { --z: var(--home-scale, 1); --browser-bar: max(0px, 100% * var(--z) - 100dvh); --edge-bottom: calc((max(10px, var(--safe-bottom)) + var(--browser-bar)) / var(--z)); }
-  .airflow-active[data-phase="ready"] { --showcase-start-bottom: calc(max(48px, calc(env(safe-area-inset-bottom, 0px) + 44px)) + var(--browser-bar)); }
+  .airflow-active:is(:not([data-phase]), [data-phase="ready"]) { --showcase-start-bottom: calc(max(48px, calc(env(safe-area-inset-bottom, 0px) + 44px)) + var(--browser-bar)); }
   /* No arrival: its transform would contain the fixed rail, and even an opacity fade makes the scrolling .intro the rail's
      stacking context (see below) while it runs. none for every landscape intro, so toggling AIRFLOW never restarts one. */
   .intro { animation: none; }
@@ -2260,8 +2260,8 @@ body:not([data-phase="finished"]) .result-cloud { display: none; }
   /* Share the row: English GARAGE / HISTORY / PRACTICE at 14px padding overflowed the 276px panel at 568px wide. */
   .intro :is(.history-button, .garage-button, .practice-button) { flex: 1 1 auto; min-width: 0; height: 44px; padding-inline: 8px; white-space: nowrap; }
   body[data-phase="ready"]:not(.airflow-active) .intro #start-button { position: fixed; z-index: 3; right: calc(max(16px, var(--safe-right)) / var(--z)); bottom: var(--edge-bottom); width: var(--rail); min-width: 0; max-width: none; height: 52px; }
-  body[data-phase="ready"]:not(.airflow-active) .showcase-camera-dock { position: fixed; right: calc(max(16px, var(--safe-right)) / var(--z)); bottom: calc(var(--edge-bottom) + 62px); top: auto; width: var(--rail); margin: 0; padding: 4px 6px; gap: 0; }
-  body[data-phase="ready"]:not(.airflow-active) :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
+  body:is(:not([data-phase]), [data-phase="ready"]):not(.airflow-active) .showcase-camera-dock { position: fixed; right: calc(max(16px, var(--safe-right)) / var(--z)); bottom: calc(var(--edge-bottom) + 62px); top: auto; width: var(--rail); margin: 0; padding: 4px 6px; gap: 0; }
+  body:is(:not([data-phase]), [data-phase="ready"]):not(.airflow-active) :is(.showcase-camera-heading, .showcase-camera-dots) { display: none; }
   body[data-phase="ready"]:not(.airflow-active) .daily-card { position: fixed; right: calc(max(16px, var(--safe-right)) / var(--z)); bottom: calc(var(--edge-bottom) + 120px); width: var(--rail); max-width: none; box-sizing: border-box; margin: 0; padding: 6px 6px 6px 10px; gap: 8px; }
   /* One-line Daily (title + route, best hidden) so the rail stays below the AIRFLOW / VFX row at 320px tall in en too. */
   body[data-phase="ready"]:not(.airflow-active) .daily-card small { display: none; }
