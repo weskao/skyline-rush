@@ -23,6 +23,8 @@ import GaragePanel from './GaragePanel.vue';
 import GuidePanel from './GuidePanel.vue';
 import ReleaseNotesPanel from './ReleaseNotesPanel.vue';
 import AcquisitionReveal from './AcquisitionReveal.vue';
+import GameToast from './GameToast.vue';
+import ConfirmDialog from './ConfirmDialog.vue';
 import { releaseView } from './release-view-state.ts';
 import { setupInputModality } from './input-modality.ts';
 import TutorialCoach from './TutorialCoach.vue';
@@ -321,6 +323,8 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       <a class="text-button" id="leave-home" href="./" data-i18n="leave.home">Back to home</a>
     </div>
   </dialog>
+  <ConfirmDialog />
+  <GameToast />
 
   <footer class="telemetry">
     <div class="speedometer"><div class="speed-number"><strong id="speed">0</strong><span>KM/H</span></div><div class="speed-ticks" aria-hidden="true"><svg class="speed-dial" viewBox="0 0 200 22"><path d="M4 20 Q100 -16 196 20"/><path id="speed-needle" d="M100 20V2"/></svg><i v-for="i in 24"></i></div><span class="speed-caption" id="speed-caption">READY FOR TAKEOFF</span></div>

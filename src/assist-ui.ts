@@ -1,4 +1,6 @@
 import { t } from './i18n.ts';
+import { showToast } from './toast-view-state.ts';
+import { icons } from './icons.ts';
 
 // AUTO starts on for every device; only a player's own toggle is remembered.
 const AUTO_KEY = 'skyline-rush-auto';
@@ -23,6 +25,7 @@ export function setupAssistUI({ button, isLocked, cueUi }: AssistOptions) {
     try { localStorage.setItem(AUTO_KEY, autoThrottle ? 'on' : 'off'); } catch { /* The toggle lasts for this page without storage. */ }
     showAssist();
     cueUi();
+    showToast({ text: t(autoThrottle ? 'toast.assistOn' : 'toast.assistOff'), icon: icons.assist });
   }
   button.addEventListener('click', toggleAssist);
   showAssist();

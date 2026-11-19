@@ -2,6 +2,8 @@ import { updateAudioView, type AudioChannelView } from './audio-view-state.ts';
 import { t } from './i18n.ts';
 import { AUDIO_KEYS, setVolume } from './audio-settings.ts';
 import { onUserActivation } from './user-activation.ts';
+import { showToast } from './toast-view-state.ts';
+import { icons } from './icons.ts';
 
 type Channel = 'music' | 'sfx';
 type AudioSettings = Record<Channel, boolean>;
@@ -55,6 +57,7 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
     setAudio('music', on);
     setAudio('sfx', on);
     sound.cue('ui');
+    showToast(on ? { text: t('toast.soundOn'), icon: icons.sound } : { text: t('toast.soundOff'), icon: icons.mute });
   }
   function unlockAudio(): void {
     if (!sound.running() && (audio.music || audio.sfx)) {

@@ -1,6 +1,10 @@
 import { t } from './i18n.ts';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS, type VfxSettings, type ShowcaseView, type VfxPreset } from './vfx-settings.ts';
 import { readInitialDeviceVisuals, QUALITY_STORAGE_KEY } from './device-quality.ts';
+import { showToast } from './toast-view-state.ts';
+import { confirmDialog } from './confirm-dialog.ts';
+import { confirmOnce } from './confirm-once.ts';
+import { icons } from './icons.ts';
 
 interface VfxWorld { configureVFX(settings: VfxSettings): void }
 interface VfxOptions {
@@ -60,13 +64,29 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
     if (!visual.enabled) return;
     visual.airflow = !visual.airflow;
     showVFX();
+    showToast({ text: t(visual.airflow ? 'toast.airflowOn' : 'toast.airflowOff'), icon: icons.airflow });
     if (visual.airflow) onAirflowShown();
   }
-  for (const control of vfxControls) control.addEventListener('input', () => {
+  function applyControl(control: HTMLInputElement): void {
     const key = control.dataset.vfx!;
     const value = control.type === 'checkbox' ? control.checked : control.type === 'range' ? Number(control.value) : control.value;
     visual = vfxSettings({ ...visual, ...(key === 'preset' ? VFX_PRESETS[value as VfxPreset] : {}), ...(key === 'quality' ? { ultra: false } : {}), [key]: value });
     showVFX();
+    if (key === 'enabled') showToast({ text: t(value ? 'toast.vfxOn' : 'toast.vfxOff'), icon: icons.star });
+  }
+  // The first switch-off asks in game; the box stays on until the player confirms, and turning effects on never asks.
+  const vfxOffConfirm = confirmOnce('skyline-vfx-off-confirmed');
+  async function confirmVfxOff(control: HTMLInputElement): Promise<void> {
+    control.checked = true;
+    const ok = await confirmDialog({ title: t('vfxOff.title'), body: t('vfxOff.body'), confirm: t('vfxOff.confirm'), cancel: t('vfxOff.keep') });
+    if (!ok || !visual.enabled) return;
+    vfxOffConfirm.remember();
+    control.checked = false;
+    applyControl(control);
+  }
+  for (const control of vfxControls) control.addEventListener('input', () => {
+    if (control.dataset.vfx === 'enabled' && !control.checked && vfxOffConfirm.needed()) void confirmVfxOff(control);
+    else applyControl(control);
   });
   function stepShowcaseView(delta: number): void {
     visual = vfxSettings({ ...visual, view: stepView(visual.view, delta) });

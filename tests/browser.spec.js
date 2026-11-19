@@ -208,7 +208,10 @@ test('mobile VFX controls fit, persist and respect reduced motion', async ({ pag
   await expect(page.locator('[data-vfx="comfortable"]')).toBeChecked();
   await expect(page.getByRole('combobox', { name: 'Quality', exact: true })).toHaveText('Low');
   await expect(page.locator('.speed-streaks')).toBeHidden();
-  await page.locator('[data-vfx="enabled"]').uncheck();
+  // The first switch-off asks in game (tests/toggle-feedback-browser.spec.js covers Cancel).
+  await page.locator('[data-vfx="enabled"]').click();
+  await page.locator('#confirm-accept').click();
+  await expect(page.locator('[data-vfx="enabled"]')).not.toBeChecked();
   await expect(page.locator('#airflow-toggle')).toBeDisabled();
   await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'true');
   await toggleSettingsSection(page, 'display');

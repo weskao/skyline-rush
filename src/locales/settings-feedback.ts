@@ -1,0 +1,33 @@
+// Toasts for settings that are easy to change by accident, and the in-game confirmations (toggle feedback).
+export const SETTINGS_FEEDBACK_COPY = {
+  en: {
+    'toast.soundOn': 'Sound on',
+    'toast.soundOff': 'Sound off',
+    'toast.airflowOn': 'Airflow on',
+    'toast.airflowOff': 'Airflow off',
+    'toast.assistOn': 'Auto accelerate on',
+    'toast.assistOff': 'Auto accelerate off',
+    'toast.vfxOn': 'Visual effects on',
+    'toast.vfxOff': 'Visual effects off',
+    'vfxOff.title': 'Turn off visual effects?',
+    'vfxOff.body': 'Airflow and the other visual effects will be hidden. Driving is not affected, and you can turn them back on in Display & HUD.',
+    'vfxOff.keep': 'Keep effects',
+    'vfxOff.confirm': 'Turn off',
+    'confirm.cancel': 'Cancel',
+  },
+  'zh-TW': {
+    'toast.soundOn': '音效已開啟',
+    'toast.soundOff': '音效已關閉',
+    'toast.airflowOn': '氣流已開啟',
+    'toast.airflowOff': '氣流已關閉',
+    'toast.assistOn': '自動加速已開啟',
+    'toast.assistOff': '自動加速已關閉',
+    'toast.vfxOn': '視覺特效已開啟',
+    'toast.vfxOff': '視覺特效已關閉',
+    'vfxOff.title': '要關閉視覺特效嗎？',
+    'vfxOff.body': '氣流與其他視覺特效將會隱藏。駕駛不受影響，之後可在「畫面與 HUD」重新開啟。',
+    'vfxOff.keep': '保留特效',
+    'vfxOff.confirm': '關閉',
+    'confirm.cancel': '取消',
+  },
+} as const;
