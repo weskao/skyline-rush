@@ -16,9 +16,15 @@ Open the **local URL** Vite prints (normally http://127.0.0.1:5173).
 
 This special development-server configuration substitutes `src/access/dev-unlocked.ts`
 for `src/access/production.ts` at Vite module resolution / transformation time.
-The local preview unlocks **all tracks** and **all Garage paints** currently defined in
-`RACE_TRACKS` and `PAINTS`. As those catalogs grow, the local preview picks up additions
-without manually listing identifiers.
+The local preview makes every race-ready track and every car, paint and effect in
+`CARS`, `PAINTS` and `GARAGE_SKINS` available for testing. New catalog entries use the
+same rules automatically. In the Garage, select a car directly or equip a paint or effect.
+In the Demo Store, select any cosmetic and choose **Equip for testing**. The same effect
+is applied to the car without redeeming it or changing demo balances or inventory.
+
+Test car, paint and effect selections live in memory for the current page. They apply to
+the Garage, Home and race, then reset on reload. The unlocked server also keeps its demo
+checkpoint in memory, separate from the normal device save.
 
 **Coming Soon / readiness gate:** A teaser image, animated 3D home scene or even a
 registered race runtime is not proof that the full course is playable. Any ID in
@@ -70,9 +76,9 @@ npm run build
 ```
 
 The production Vite config always aliases to the normal progression implementation.
-The alternate `vite.unlocked.config.js` explicitly refuses build commands and binds
-only to localhost. The GitHub Pages workflow uses the normal production build, never
-the local all-unlocked configuration.
+The alternate `vite.unlocked.config.js` explicitly refuses build and preview commands.
+It binds to localhost by default. `make phone-unlocked` uses the phone launcher to expose
+the dev server. GitHub Pages builds with the normal production configuration.
 
 **Security boundary / future paid product:** This isolates developer testing code
 from production bundles, but the **current game still stores unlock progression in

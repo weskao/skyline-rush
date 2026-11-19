@@ -6,10 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { selectGarageReleaseBuild, WAVE3_PREVIEW_STORE_MARKER } from './scripts/garage-release-build.mjs';
 import { diagRelayPlugin } from './scripts/diag-relay-plugin.mjs';
 
-// Build-time Strategy: default production strips preview, trial and cosmetic catalog modules.
-export default defineConfig(({ mode }) => {
+export function createViteConfig(mode, garageRelease) {
   const env = loadEnv(mode, process.cwd(), ['GARAGE_VFX_', 'VITE_WAVE3_FIRESTORE_PREVIEW']);
-  const release = selectGarageReleaseBuild(mode, env.GARAGE_VFX_RELEASE_MODE, env.VITE_WAVE3_FIRESTORE_PREVIEW);
+  const release = garageRelease ?? selectGarageReleaseBuild(mode, env.GARAGE_VFX_RELEASE_MODE, env.VITE_WAVE3_FIRESTORE_PREVIEW);
   let outputDir = '';
   return {
     plugins: [
@@ -45,4 +44,7 @@ export default defineConfig(({ mode }) => {
       ...release.aliases,
     } },
   };
-});
+}
+
+// Build-time Strategy: default production strips preview, trial and cosmetic catalog modules.
+export default defineConfig(({ mode }) => createViteConfig(mode));

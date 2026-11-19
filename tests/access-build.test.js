@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createServer } from 'vite';
+import { createSSRApp } from 'vue';
+import { renderToString } from 'vue/server-renderer';
 import productionConfig from '../vite.config.js';
 import unlockedConfig from '../vite.unlocked.config.js';
 import { availableTracks as devTracks, availablePaints as devPaints, isUpcomingEnterable } from '../src/access/dev-unlocked.ts';
@@ -8,6 +11,7 @@ import { UPCOMING_TRACKS } from '../src/upcoming-tracks.ts';
 import { availableTracks as prodTracks, availablePaints as prodPaints } from '../src/access/production.ts';
 import { RACE_TRACKS } from '../src/game.js';
 import { PAINTS } from '../src/appearance.ts';
+import { createWave3LocalDemo } from '../src/wave3-local-demo.ts';
 
 test('local-only build exposes every track and paint without writing storage', () => {
   const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
@@ -34,6 +38,68 @@ test('normal Vite config resolves the production access module, unlocked config 
   const cfg = unlockedConfig({ command: 'serve', mode: 'development' });
   assert.match(cfg.resolve.alias['@progression-access'], /access\/dev-unlocked\.ts$/);
 });
+
+test('unlocked Vite only serves the full local catalog, even in production mode', () => {
+  assert.throws(() => unlockedConfig({ command: 'serve', mode: 'production', isPreview: true }), /development-server only/);
+  const config = unlockedConfig({ command: 'serve', mode: 'production' });
+  assert.match(config.resolve.alias['#garage-skin-runtime'], /garage-skin-runtime\.ts$/);
+  assert.match(config.resolve.alias['#wave3-demo-ui'], /Wave3DemoEntry\.vue$/);
+  assert.match(config.resolve.alias['#wave3-preview-store'], /wave3-preview-disabled\.ts$/);
+});
+
+for (const unlocked of [false, true]) {
+  test(`Vite ${unlocked ? 'unlocked' : 'standard'} catalog uses the corresponding car and Store policies`, async () => {
+    const server = await createServer({
+      configFile: unlocked ? 'vite.unlocked.config.js' : 'vite.config.js',
+      server: { middlewareMode: true, ws: false },
+      optimizeDeps: { noDiscovery: true, include: [] },
+    });
+    const saved = new Map();
+    const storage = { getItem: key => saved.get(key) ?? null, setItem: (key, value) => saved.set(key, value) };
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    const reads = [];
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+      ...storage, getItem: key => { reads.push(key); return storage.getItem(key); },
+    } });
+    try {
+      const cars = await server.ssrLoadModule('/src/car-catalog.ts');
+      for (const [id, car] of Object.entries(cars.CARS)) {
+        const canEquip = unlocked || car.stars === 0;
+        assert.equal(cars.equipCar(id, storage, 0), canEquip, `equip ${id} at zero stars`);
+        if (canEquip) assert.equal(cars.validateEquippedCar(0, storage), id, `race selection for ${id}`);
+      }
+      assert.equal(cars.savedCar(storage), unlocked ? undefined : 'roadster');
+
+      const { default: store } = await server.ssrLoadModule('/src/Wave3DemoStore.vue');
+      const html = await renderToString(createSSRApp(store, { port: createWave3LocalDemo() }));
+      assert.equal(html.includes('Equip for testing'), unlocked);
+      assert.equal(html.includes('Demo redeem'), !unlocked);
+
+      const { wave3DemoExperience } = await server.ssrLoadModule('/src/wave3-browser-experience.ts');
+      const checkpoint = 'skyline-rush-wave3-demo:v1:guest';
+      await wave3DemoExperience.resetDemo();
+      assert.equal(reads.includes(checkpoint), !unlocked, 'the unlocked Store does not reuse the normal demo save');
+      if (unlocked) {
+        assert.equal(saved.has(checkpoint), false);
+        for (const id of Object.keys(PAINTS)) {
+          cars.saveCarPaint('roadster', id, storage);
+          assert.equal(cars.loadCarPaint('roadster', devPaints(), storage), id);
+        }
+        const { GARAGE_SKINS } = await server.ssrLoadModule('/src/garage-skin-catalog.ts');
+        const runtime = await server.ssrLoadModule('/src/garage-skin-runtime.ts');
+        for (const { id, category } of GARAGE_SKINS) {
+          assert.equal(runtime.equipGarageSkin(id), true, `equip ${id}`);
+          assert.equal(runtime.currentGarageSkins()[category], id);
+        }
+        assert.equal(saved.size, 0, 'test picks never reach the device save');
+      }
+    } finally {
+      if (original) Object.defineProperty(globalThis, 'localStorage', original);
+      else delete globalThis.localStorage;
+      await server.close();
+    }
+  });
+}
 
 test('distribution entry never directly imports the development unlock module', () => {
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');

@@ -1,3 +1,10 @@
+# Vite-only Garage and Store playtesting
+
+- [x] Reproduced zero-star GT equip failure, the Vite preview loophole and the unlocked Store reading the normal demo checkpoint. The Vite access regression now passes in both modes.
+- [x] The shared equip checks cover every catalog car, paint and VFX item. They verify race-start eligibility and that test picks stay outside the normal save. The Store fixture confirmed direct equip leaves all three demo balances unchanged.
+- [ ] Complete the full-game browser and physical-phone checks, including the selected model in a running race.
+- [ ] Check the GitHub quality gate for the branch head.
+
 # Minimap gap marks (2026-11-19, `feature/minimap-gap-marks`)
 
 - [x] Inventory: 4 tracks / 8 gaps the physics drops the car into — Canyon 1 (`sections` gap), Sky Spiral 3 (`SKY_JUMPS` via `sections`, finite modes), Dune Tempest 1 and Skyfall Archipelago 3 (`spec.noRoad`). Endless/Elimination clear `race.sections`, so none there. One renderer, `createRouteMap` (`src/route-map.ts`), three draw paths (classic polyline, CourseGraph, streaming). Monsoon, Volcanic, Stormline and Frostbite have no `noRoad`, so they get no gap mark.

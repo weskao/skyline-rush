@@ -1,4 +1,5 @@
 import { createWave3LocalDemo } from './wave3-local-demo.ts';
+import { garagePlaytestStorage } from '#garage-playtest-storage';
 import type { Wave3DemoCheckpoint } from './wave3-local-demo.ts';
 import { createWave3DemoStorage, encodeWave3DemoCheckpoint, readWave3DemoCheckpoint, WAVE3_DEMO_STORAGE_PREFIX } from './wave3-demo-storage.ts';
 import type { Wave3PreviewTransact } from './wave3-preview-firestore.ts';
@@ -276,6 +277,7 @@ export function createWave3BrowserExperience(options: Options = {}) {
 }
 
 export const wave3DemoExperience = createWave3BrowserExperience({
+  cache: garagePlaytestStorage ? createWave3DemoStorage({ storage: null }) : undefined,
   firestore: typeof __WAVE3_FIRESTORE_PREVIEW__ !== 'undefined' && __WAVE3_FIRESTORE_PREVIEW__
     ? async (uid, update) => {
       const { transactWave3Preview } = await import('./cloud-save.ts');

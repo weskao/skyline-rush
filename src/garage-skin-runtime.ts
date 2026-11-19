@@ -1,4 +1,5 @@
 import { reactive } from 'vue';
+import { garagePlaytestStorage } from '#garage-playtest-storage';
 import { DEFAULT_SKINS, SKIN_CATEGORIES, findSkin } from './garage-skin-catalog.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { createGarageSkinSession } from './garage-skin-session.ts';
@@ -31,7 +32,8 @@ const freeTrialExpiry = Number.MAX_SAFE_INTEGER;
 const MAX_TIMEOUT_MS = 2_147_483_647;
 session.setTrial({ enabled: trialMode, expiresAt: trialMode ? freeTrialExpiry : 0 });
 // Remembered picks re-enter through session.equip, so storage can never bypass the owned/trial gate.
-const restorePicks = () => restoreSkinPicks(browserSkinPickStorage(), accountId, id => session.equip(id));
+const skinPickStorage = () => garagePlaytestStorage ?? browserSkinPickStorage();
+const restorePicks = () => restoreSkinPicks(skinPickStorage(), accountId, id => session.equip(id));
 restorePicks();
 export const garageSkinState = reactive({ revision: 0 });
 const listeners = new Set<(equipped: boolean) => void>();
@@ -67,7 +69,7 @@ export function selectGarageSkin(id: unknown): boolean {
 export function equipGarageSkin(id: unknown): boolean {
   if (!session.equip(id)) return false;
   if (demoApplied?.category === findSkin(id)?.category) clearDemoSelection();
-  rememberSkinPick(browserSkinPickStorage(), accountId, id);
+  rememberSkinPick(skinPickStorage(), accountId, id);
   publish(true);
   return true;
 }

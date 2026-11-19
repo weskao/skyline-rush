@@ -3,6 +3,10 @@ paths:
   - "vite*.config.js"
   - "src/main.js"
   - "src/access/**"
+  - "src/car-catalog.ts"
+  - "src/garage-car-actions.ts"
+  - "src/garage-skin-runtime.ts"
+  - "src/Wave3DemoStore.vue"
   - "scripts/assert-production-locked.mjs"
   - "scripts/*garage*.mjs"
   - "src/garage-release-*.ts"
@@ -19,19 +23,24 @@ Mechanism (keep every link intact):
 
 - `src/main.js` imports `@progression-access`.
 - `vite.config.js` resolves it to `src/access/production.ts` (dev and release).
-- `vite.unlocked.config.js` resolves it to `src/access/dev-unlocked.ts`, serves localhost only,
-  and must keep rejecting `build`.
+- `vite.unlocked.config.js` resolves it to `src/access/dev-unlocked.ts`, binds localhost by default,
+  and must keep rejecting `build` and `preview`.
+- The unlocked config selects the full local Garage catalog, the in-memory selection store
+  and the Store equip button through Vite. Standard and production builds resolve the normal
+  package imports, even when the public trial is enabled.
 - `npm run build` runs `scripts/assert-production-locked.mjs` against `dist/`.
 
 Forbidden replacements: runtime `if (dev)`, URL/query params, `import.meta.env` flags, console
 commands, any shipped toggle, exposing the unlocked config via a public preview build.
 
-All-unlocked preview only exposes `RACE_TRACKS` and `PAINTS` entries; it must not award
-achievements, fill scoreboards, grant NITRO or change saved progress. Never set or overwrite
-`localStorage` to fake entitlements or persistent unlocks.
+Keep eligibility catalog-driven. New entries in `CARS`, `PAINTS` and `GARAGE_SKINS` must
+equip through the shared paths in the unlocked server, including at race start. The Store's
+playtest action uses the same equipment path and leaves balances, demo inventory and ownership
+alone. Test vehicle, paint and VFX picks live in memory. Never write test unlocks, fake
+achievements, scores or entitlement grants to saved progress.
 
 After changing unlocks, catalogs, aliases, build scripts or Vite config: verify standard and
-unlocked modes, inspect the production bundle for leakage.
+unlocked modes and inspect both the locked and public trial production bundles for leakage.
 
 Security boundary: progress and cosmetics are client-side `localStorage`; the release check is
 a guardrail, not payment enforcement. Monetized content needs server-side entitlement and

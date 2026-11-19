@@ -27,6 +27,7 @@ exactly. Topics whose work often starts before a scoped file is open:
 | A finish area, or any road that does not close into a loop | `.claude/rules/road-runout.md` (the drawn road runs on past the finish; it never ends in the air) |
 | Course music, or music while a map is only selected on the home screen | `.claude/rules/playable-course-shared-template.md` |
 | Animated Garage/HUD/Store/VFX art (GIF, sprite sheet) | `.claude/rules/animated-image-production.md`, `.claude/rules/raster-artwork.md` |
+| Garage/Store access in `make *unlocked` | `.claude/rules/unlock-separation.md` |
 | Track teaser JPEGs under `public/track-teasers/` | `.claude/rules/track-teaser-artwork.md` |
 | Blender, GLB/PBR, 3D asset, new car model, rendering quality, Three.js r180 → r186 | `docs/designs/3d-pipeline/phases/README.md` (phase index; new car = `task-7-concept-hero-car.md`), then `.claude/rules/3d-asset-pipeline.md` |
 | Vehicle glare, exterior paint and glass, track lighting or bloom | [Vehicle and track lighting](.claude/rules/vehicle-lighting.md) |
@@ -103,9 +104,10 @@ without explicit user approval.
 | Command | Purpose |
 | --- | --- |
 | `make` / `make dev` | Vite dev server, saved progression respected |
-| `make dev-unlocked` | Local-only all-unlocked server (not a test runner) |
+| `make dev-unlocked` / `make test-unlocked` | Local Vite playtest server with all catalog cars, paints and equipment available |
 | `make dev-feature <name>` | Worktree of `origin/feature/<name>`, all-unlocked, HTTPS |
 | `make phone [name] [y=1]` | Phone-reachable locked dev server (`y=1` = no prompts) |
+| `make phone-unlocked [name] [y=1]` | Phone-reachable Vite playtest server with the same unlocked catalog |
 | `make dev-diag` / `make phone-diag [name]` | Same servers with the diagnostic banner (`VITE_DIAG=1`) |
 | `npm test` | Node unit tests |
 | `npm run build` | Production build + release-bundle lock assertion |

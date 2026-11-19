@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { inject, computed, nextTick, ref, shallowRef, watch } from 'vue';
+import GaragePlaytestEquip from '#garage-playtest-equip';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageDriftPreview from './GarageDriftPreview.vue';
 import GarageSkinCardFace from './GarageSkinCardFace.vue';
@@ -303,7 +304,8 @@ async function confirmRedemption(): Promise<void> {
             </p>
           </div>
           <div class="demo-actions">
-            <button type="button" class="demo-primary" :class="{ 'demo-insufficient': shortfall(selected) > 0 }"
+            <component v-if="GaragePlaytestEquip" :is="GaragePlaytestEquip" :id="selected.id" :locale="locale" />
+            <button v-else type="button" class="demo-primary" :class="{ 'demo-insufficient': shortfall(selected) > 0 }"
               :disabled="submitting || !canRequestRedemption"
               @click="requestRedemption(selected, $event)">{{ tr('Demo redeem', '試玩兌換') }}</button>
             <button type="button" :disabled="submitting" @click="inspectPreview(selected)">{{ tr('Inspect preview', '檢視預覽') }}</button>
