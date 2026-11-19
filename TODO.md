@@ -1,3 +1,14 @@
+# Minimap gap marks (2026-11-19, `feature/minimap-gap-marks`)
+
+- [x] Inventory: 4 tracks / 8 gaps the physics drops the car into — Canyon 1 (`sections` gap), Sky Spiral 3 (`SKY_JUMPS` via `sections`, finite modes), Dune Tempest 1 and Skyfall Archipelago 3 (`spec.noRoad`). Endless/Elimination clear `race.sections`, so none there. One renderer, `createRouteMap` (`src/route-map.ts`), three draw paths (classic polyline, CourseGraph, streaming). Monsoon, Volcanic, Stormline and Frostbite have no `noRoad`, so they get no gap mark.
+- [x] Every gap is drawn as a break with end caps: a map-background cut over the true span, an orange dotted jump and orange caps at takeoff and landing. Geometry is computed once per track (`routeGapPaths`, cached); no per-frame work. Gapless tracks draw exactly as before.
+- [x] RED → GREEN: `tests/minimap-gap-marks.test.js` failed on the old code (`canyon draws one cut, one dotted jump and one cap path`, `routeGapPaths is not a function`, missing cut nodes for exact-position checks), then 6/6 pass.
+- [x] Prevention: `.claude/rules/route-minimap.md` (scoped) plus a pointer in `playable-course-shared-template.md`.
+- [x] `node --test tests/module-size.test.js` (3/3), `npm test` (3439 pass, 0 fail, 4 skipped), `npm run typecheck` and `npm run build` all exit 0.
+- [ ] `tests/minimap-gap-marks-browser.spec.js` (Canyon, Sky Spiral, Coast; desktop, phone portrait and landscape): written but not run, by owner instruction (no browser tests, 2026-11-19).
+- [ ] Phone-size readability check of Canyon's 60 m gap (1.6 map units, under 1 px on the smallest map, so its caps read as one crossbar), on a real device in both orientations.
+- [ ] Exact-HEAD GitHub quality gate.
+
 # Startup loading screen
 
 - [x] Add a first-paint opening screen with responsive full-bleed artwork, bilingual wordmark and tagline, and a three-segment status tied to game bootstrap. Show Enter only after the first lobby render.

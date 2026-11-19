@@ -126,6 +126,8 @@ reuse or transpose another course's loop.
   Use the existing `src/game.js`, `src/world.js`, RaceFactory and physics;
   never invent a second per-course simulation/renderer or flatten genuine
   branch topology into a fake one-dimensional race.
+- A gap the car must jump goes in `spec.noRoad`; the minimap then marks it by itself
+  (`.claude/rules/route-minimap.md`).
 - A new course keeps the classic per-km ring/pickup density and Classic road traffic: set
   `topology` and a classic-range `trafficDensity`, never strip the item lists
   (`.claude/rules/ring-layout.md`, `tests/course-item-density.test.js` covers every registered course).
