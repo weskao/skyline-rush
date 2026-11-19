@@ -1,5 +1,5 @@
 import { t } from './i18n.ts';
-import { showToast } from './toast-view-state.ts';
+import { showSettingToast } from './toast-view-state.ts';
 import { icons } from './icons.ts';
 
 // AUTO starts on for every device; only a player's own toggle is remembered.
@@ -32,7 +32,7 @@ export function setupAssistUI({ button, isLocked, cue }: AssistUIDeps) {
     try { localStorage.setItem(AUTO_KEY, on ? 'on' : 'off'); } catch { /* The toggle lasts for this page without storage. */ }
     show();
     cue();
-    showToast({ text: t(on ? 'toast.assistOn' : 'toast.assistOff'), icon: icons.assist });
+    showSettingToast('assist', on, icons.assist);
   }
 
   button.addEventListener('click', toggle);

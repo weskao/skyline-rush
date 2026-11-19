@@ -1,7 +1,7 @@
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { toastView, showToast, TOAST_MS } from '../src/toast-view-state.ts';
-import { confirmOnce } from '../src/confirm-once.ts';
+import { SETTINGS_FEEDBACK_COPY } from '../src/locales/settings-feedback.ts';
 import { confirmView, confirmDialog, answerConfirm } from '../src/confirm-dialog.ts';
 
 test('a new toast replaces the shown one and hides itself after its full time', () => {
@@ -23,34 +23,50 @@ test('a new toast replaces the shown one and hides itself after its full time', 
   } finally { mock.timers.reset(); }
 });
 
-test('TOAST_MS is about 1.8 s', () => assert.ok(TOAST_MS >= 1500 && TOAST_MS <= 2200));
-
-const memoryStorage = (seed = {}) => {
-  const data = new Map(Object.entries(seed));
-  return { data, getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v) };
-};
-
-test('confirmOnce asks until the player confirms, then never again, and saves it', () => {
-  const storage = memoryStorage();
-  const once = confirmOnce('skyline-vfx-off-confirmed', () => storage);
-  assert.equal(once.needed(), true);
-  assert.equal(once.needed(), true, 'asking without confirming does not count');
-  once.remember();
-  assert.equal(once.needed(), false);
-  assert.equal(confirmOnce('skyline-vfx-off-confirmed', () => storage).needed(), false, 'a later visit remembers it');
+test('a setting toast carries its new state for the ON/OFF badge; a plain toast drops it', () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  try {
+    showToast({ text: 'Sound', state: { on: false, text: 'OFF' } });
+    assert.equal(toastView.text, 'Sound');
+    assert.equal(toastView.state, 'off');
+    assert.equal(toastView.stateText, 'OFF');
+    showToast({ text: 'Airflow', state: { on: true, text: 'ON' } });
+    assert.equal(toastView.state, 'on');
+    showToast({ text: 'Saved' });
+    assert.equal(toastView.state, '');
+    assert.equal(toastView.stateText, '');
+  } finally { mock.timers.reset(); }
 });
 
-test('confirmOnce remembers in memory when storage is blocked', () => {
-  const blocked = () => { throw new DOMException('blocked', 'SecurityError'); };
-  const once = confirmOnce('skyline-vfx-off-confirmed', blocked);
-  assert.equal(once.needed(), true);
-  once.remember();
-  assert.equal(once.needed(), false);
-  const throwing = { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); } };
-  const again = confirmOnce('skyline-vfx-off-confirmed', () => throwing);
-  assert.equal(again.needed(), true);
-  again.remember();
-  assert.equal(again.needed(), false);
+test('every toggle toast names its setting and its state words in en and zh-TW, never a full sentence', () => {
+  for (const lang of ['en', 'zh-TW']) {
+    const copy = SETTINGS_FEEDBACK_COPY[lang];
+    for (const key of ['toast.sound', 'toast.airflow', 'toast.assist', 'toast.vfx', 'toast.on', 'toast.off']) assert.ok(copy[key], `${lang} ${key}`);
+    assert.notEqual(copy['toast.on'], copy['toast.off']);
+    for (const old of ['toast.soundOn', 'toast.soundOff', 'toast.vfxOn']) assert.equal(copy[old], undefined, `${lang} ${old} is replaced by label + badge`);
+  }
+});
+
+test('TOAST_MS is about 1.8 s',() => assert.ok(TOAST_MS >= 1500 && TOAST_MS <= 2200));
+
+test('the effects switch-off dialog names the action on its button, so 關閉 never reads as "close this box"', () => {
+  for (const [lang, word] of [['en', /effects/i], ['zh-TW', /特效/]]) {
+    const copy = SETTINGS_FEEDBACK_COPY[lang];
+    assert.match(copy['vfxOff.confirm'], word, `${lang} confirm button`);
+    assert.notEqual(copy['vfxOff.confirm'], copy['vfxOff.keep']);
+    for (const key of ['vfxOff.title', 'vfxOff.hidden', 'vfxOff.same', 'vfxOff.later']) assert.ok(copy[key], `${lang} ${key}`);
+    assert.equal(copy['vfxOff.body'], undefined, `${lang}: one point per line replaces the paragraph`);
+  }
+});
+
+test('confirmDialog shows its points as a list and clears them for a dialog without any', async () => {
+  const first = confirmDialog({ title: 'T', body: '', points: ['a', 'b'], confirm: 'Yes', cancel: 'No' });
+  assert.deepEqual(confirmView.points, ['a', 'b']);
+  const second = confirmDialog({ title: 'T2', body: 'B', confirm: 'Yes', cancel: 'No' });
+  assert.equal(await first, false);
+  assert.deepEqual(confirmView.points, []);
+  answerConfirm(false);
+  await second;
 });
 
 test('confirmDialog resolves with the answer and closes', async () => {
