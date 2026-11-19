@@ -52,6 +52,7 @@ export function createSpiralKit(source: THREE.Object3D, { road, landmark, replac
   const tower = pool('tower', 1, hero), towerFar = pool('tower_far', 1, hero);
   for (const mesh of [tower, towerFar]) { mesh.setMatrixAt(0, mesh.userData.local); mesh.count = 1; }
   for (const { material } of meshes) (material as THREE.MeshStandardMaterial).emissiveIntensity = SPIRAL_EMISSIVE;
+  const mounds = SPIRAL_NODES.filter(node => node.startsWith('cloud_')).map(node => pools.get(node)!);
   road.add(root); landmark.add(hero);
   const procedural = { beacons: trim.beacons.color.clone(), rails: trim.rails.color.clone(), lanes: trim.lanes.color.clone() };
 
@@ -80,6 +81,8 @@ export function createSpiralKit(source: THREE.Object3D, { road, landmark, replac
 
   return {
     show,
+    /** The kit's cloud mounds: off while the cloud sea stands in for them (spiral-clouds.ts, High and Ultra). */
+    clouds(on: boolean): void { for (const mesh of mounds) mesh.visible = on; },
     /** Per frame while shown, after sky-scene.js has moved the road and the landmark for `distance`. */
     stream(distance: number, endless: boolean): void {
       const lap = endless ? Math.floor(distance / SKY_LENGTH) : 0, here = Math.floor(distance / SECTOR);

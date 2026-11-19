@@ -25,9 +25,9 @@ function rig() {
   const scene = new Scene();
   scene.background = new Color('#302657');
   scene.fog = new FogExp2('#302657', .0013);
-  const home = new Mesh(), dome = new Object3D(), course = createSkyScene(scene), parts = course.parts;
+  const home = new Mesh(), dome = new Mesh(), course = createSkyScene(scene), parts = course.parts;
   home.add(dome);
-  return { scene, course, parts, look: createSpiralLook({ parts, dome, home, scene }) };
+  return { scene, course, parts, look: createSpiralLook({ parts, dome, home, scene, clock: { value: 0 } }) };
 }
 const kitMeshes = parts => { const found = []; parts.group.traverse(o => { if (o.isInstancedMesh && NODES.includes(o.name)) found.push(o); }); return found; };
 const hex = color => `#${color.getHexString()}`;
@@ -47,9 +47,11 @@ test('the kit is twelve pooled draws on its one material, hidden until the look 
   const visible = mesh => { for (let o = mesh; o && o !== parts.group; o = o.parent) if (!o.visible) return false; return true; };
   assert.ok(meshes.every(mesh => !visible(mesh)), 'in the scene for the warmup, not drawn yet');
   assert.ok(parts.replaced.every(material => material.visible), 'the procedural tower still stands');
-  look.update('spiral', 'track', 'high', true);
+  look.update('spiral', 'track', 'medium', true);
   course.update(0);
   assert.ok(meshes.filter(visible).length === 11, 'ten kinds of piece and one of the two tower nodes');
+  look.update('spiral', 'track', 'high', true);
+  assert.equal(meshes.filter(visible).length, 8, 'High: the cloud sea and its wisps (two draws) stand in for the three mounds');
   look.detachKit();
   assert.deepEqual(kitMeshes(parts), [], 'leaves the scene before the cache frees the GLB');
 });
@@ -192,4 +194,33 @@ test('the kit\'s blue lamps land just over the day bloom and its windows under i
   look.attachKit(source);
   assert.equal(source.children[0].material.emissiveIntensity, SPIRAL_EMISSIVE, 'the GLB stores strength 1: the layer sets it');
   assert.ok(kitMeshes(parts).length);
+});
+
+// Owner, 2026-11-19: the cloud mounds under the road looked fake. On High and Ultra under the day sky the cloud sea
+// (spiral-clouds.ts) stands in for them; Medium, and a preset without the day sky, keep the mounds.
+test('the cloud sea replaces the kit\'s cloud mounds on High under the day sky, and only there', () => {
+  const { scene, course, parts, look } = rig();
+  look.attachKit(fakeGlb());
+  const sea = scene.getObjectByName('Sky Spiral cloud sea'), wisps = scene.getObjectByName('Sky Spiral cloud wisps');
+  const mounds = kitMeshes(parts).filter(mesh => mesh.name.startsWith('cloud_'));
+  assert.equal(mounds.length, 3);
+  const state = () => [sea.visible, wisps.visible, ...mounds.map(mesh => mesh.visible)];
+  assert.deepEqual(state(), [false, false, true, true, true], 'hidden for the warmup');
+  look.update('spiral', 'track', 'high', true);
+  assert.deepEqual(state(), [true, true, false, false, false], 'High, day');
+  course.update(1650, 'high');
+  assert.ok(wisps.geometry.instanceCount > 0 && Number.isFinite(sea.position.y), 'the course streams the sea with the kit');
+  look.update('spiral', 'track', 'high', true, true);
+  assert.equal(sea.material.uniforms.steps.value, 20, 'Ultra marches finer');
+  look.update('spiral', 'track', 'medium', true);
+  assert.deepEqual(state(), [false, false, true, true, true], 'Medium keeps the mounds');
+  look.update('spiral', 'night', 'high', true);
+  assert.deepEqual(state(), [false, false, true, true, true], 'no day sky to light the sea');
+  look.update('spiral', 'day', 'high', true);
+  assert.deepEqual(state(), [true, true, false, false, false]);
+  look.update('spiral', 'track', 'low', false);
+  assert.deepEqual([sea.visible, wisps.visible], [false, false], 'Low');
+  look.update('spiral', 'track', 'high', true);
+  look.detachKit();
+  assert.deepEqual([sea.parent, wisps.parent], [null, null], 'gone with the kit');
 });

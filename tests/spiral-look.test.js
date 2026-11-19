@@ -21,11 +21,11 @@ function rig() {
   const scene = new Scene();
   scene.background = new Color(NIGHT);
   scene.fog = new FogExp2(NIGHT, DENSITY);
-  const home = new Mesh(), dome = new Object3D();
+  const home = new Mesh(), dome = new Mesh(); // coast-sky.ts hangs a textured dome mesh
   dome.visible = false;
   home.add(dome);
   const course = createSkyScene(scene), parts = course.parts;
-  return { scene, home, dome, course, parts, look: createSpiralLook({ parts, dome, home, scene }) };
+  return { scene, home, dome, course, parts, look: createSpiralLook({ parts, dome, home, scene, clock: { value: 0 } }) };
 }
 
 test('Sky Spiral has a look entry: the day sky on `track` and `day`, its road set on the helix, dry', () => {
@@ -184,5 +184,5 @@ test('world.js hands the Sky Spiral course to the asset host without growing', (
   const world = readFileSync(new URL('../src/world.js', import.meta.url), 'utf8');
   assert.match(world, /createWorldCoastAssets\(renderer, \{ scene, [^}]+, spiral: skyScene\.parts \}, canvas\.dataset\)/);
   const host = readFileSync(new URL('../src/coast-assets.ts', import.meta.url), 'utf8');
-  assert.match(host, /createSpiralLook\(\{ parts: targets\.spiral, dome: sky\.dome, home: targets\.sky, scene: targets\.scene \}\)/);
+  assert.match(host, /createSpiralLook\(\{ parts: targets\.spiral, dome: sky\.dome, home: targets\.sky, scene: targets\.scene, clock: targets\.sea\.material\.uniforms\.time! \}\)/);
 });

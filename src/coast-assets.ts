@@ -228,7 +228,7 @@ export function createCoastAssets({ scenery, cache, boatClock, road, reflection,
       sea?.update(trackId, preset, quality); // after the sky: the water shows only under the dome it mirrors
       const raised = spiralKit?.update(look, racing) ?? false;
       // After the sky: the dome moves under the course only once it shows.
-      spiral?.update(trackId, preset, quality, !!spiralKit?.attached && spiralKit.wanted(look));
+      spiral?.update(trackId, preset, quality, !!spiralKit?.attached && spiralKit.wanted(look), ultra);
       const laid = ground.update(look, quality, racing, preset, ultra), decked = helix.update(look, quality, racing, preset, ultra);
       return updateRoad(look, quality, racing, preset, ultra) || laid || decked || raised || joined || sailing || built || marked;
     },
@@ -268,5 +268,5 @@ export function createWorldCoastAssets(renderer: WorldRenderer,
   };
   const sky = createCoastSky({ sky: targets.sky, sun: targets.sun, load: loadTexture, maxTextureSize: renderer.capabilities.maxTextureSize, dataset });
   const sea = createCoastSea({ sea: targets.sea, seaLines: targets.seaLines, dome: sky.dome, origin: targets.scenery.group.position, load: loadTexture, dataset });
-  return createCoastAssets({ scenery: targets.scenery, boatClock: targets.sea.material.uniforms.time!, road, sky, sea, mountains: targets.mountains, poles: targets.poles, city: targets.city, towers: targets.towers, neon: createNeonScenery(targets.scene), replaced: targets.replaced, spiral: createSpiralLook({ parts: targets.spiral, dome: sky.dome, home: targets.sky, scene: targets.scene }), dataset, reflection: createWetReflection(), cache: withGreenery({ load: loadModel }) });
+  return createCoastAssets({ scenery: targets.scenery, boatClock: targets.sea.material.uniforms.time!, road, sky, sea, mountains: targets.mountains, poles: targets.poles, city: targets.city, towers: targets.towers, neon: createNeonScenery(targets.scene), replaced: targets.replaced, spiral: createSpiralLook({ parts: targets.spiral, dome: sky.dome, home: targets.sky, scene: targets.scene, clock: targets.sea.material.uniforms.time! }), dataset, reflection: createWetReflection(), cache: withGreenery({ load: loadModel }) });
 }
