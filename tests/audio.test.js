@@ -575,12 +575,12 @@ test('acquisition motifs are distinct, fit the reveal and use the existing SFX m
     sound.cue(cue);
     return nodes.slice(start).filter(node => node.kind === 'oscillator');
   };
-  const cues = [...new Set(Object.values(ACQUISITION_SOUNDS)), 'acquisition-select'];
-  assert.ok(cues.length >= 5);
+  const cues = [...Object.values(ACQUISITION_SOUNDS), 'acquisition-select'];
+  assert.equal(new Set(cues).size, Object.values(ACQUISITION_KIND).length + 1);
   const signatures = cues.map(cue => {
     const voices = heard(cue);
     assert.ok(voices.length > 0, cue);
-    assert.ok(Math.max(...voices.map(node => node.stopped)) <= .8, cue);
+    assert.ok(Math.max(...voices.map(node => node.stopped)) <= 1.4, cue);
     // The mock never fires onended automatically. Each cue tests the same clean voice budget.
     voices.forEach(node => node.onended());
     return voices.map(node => node.frequency.value).join(',');
@@ -588,4 +588,24 @@ test('acquisition motifs are distinct, fit the reveal and use the existing SFX m
   assert.equal(new Set(signatures).size, cues.length);
   sound.setEnabled(false);
   for (const cue of cues) assert.deepEqual(heard(cue), []);
+});
+
+
+test('stopping the reveal cuts its score and leaves unrelated feedback audible', t => {
+  const { nodes, sound } = installAudio(t);
+  sound.setEnabled(true);
+  const scheduled = cue => {
+    const start = nodes.length;
+    sound.cue(cue);
+    return nodes.slice(start).filter(node => node.kind === 'oscillator');
+  };
+  const camera = scheduled('acquisition-car-hero');
+  const equip = scheduled('equip-confirmed');
+  assert.ok(camera.length >= 4, 'the hero cut hits and resolves in a chord');
+  assert.ok(equip.length);
+  assert.ok(camera.some(node => node.type === 'triangle'));
+  sound.cue('acquisition-stop');
+  assert.ok(camera.every(node => node.stopped === undefined));
+  assert.ok(equip.every(node => Number.isFinite(node.stopped)));
+  assert.ok(scheduled('acquisition-car-thrusters').length);
 });

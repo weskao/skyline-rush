@@ -9,8 +9,9 @@ export function createSound(gapWarning = () => null) {
   let music, warm, hats, snares, song = null, step = 0, nextStep = 0, madeAt = -Infinity;
   let enabled = false, musicOn = false, hidden = false, current = null, resumedAt = -Infinity;
   // Slider levels map to gain on a squared curve so the lower half of the slider stays audibly useful.
-  let effectsLevel = 1, musicLevel = 1, duckUntil = 0, duckFrom = 0;
+  let effectsLevel = 1, musicLevel = 1, duckUntil = 0, duckFrom = 0, acquisitionDuck = false;
   const voices = new Set();
+  const acquisitionVoices = new Set();
   const notes = new Map(); // queued music sources → start time, so a song change or mute can drop the ones not yet heard
   const ignore = () => {};
   // Loading stalls the main thread (shader warm-up ≈ 0.6 s desktop, 1.5 s at 6× CPU) but not the audio thread, so the
@@ -22,13 +23,15 @@ export function createSound(gapWarning = () => null) {
 
   function track(source, nodes, end, cue = true, at = 0) {
     if (cue) voices.add(source); else notes.set(source, at);
-    source.onended = () => { voices.delete(source); notes.delete(source); source.disconnect(); nodes.forEach(node => node.disconnect()); };
+    source.onended = () => { voices.delete(source); acquisitionVoices.delete(source); notes.delete(source); source.disconnect(); nodes.forEach(node => node.disconnect()); };
     source.stop(end);
   }
   function silenceCues() {
     for (const voice of voices) voice.stop();
     voices.clear();
+    acquisitionVoices.clear();
     duckUntil = 0;
+    acquisitionDuck = false;
   }
   function voice(type, frequency, endFrequency, time, duration, volume, attack, destination, cue = true) {
     const source = context.createOscillator();
@@ -42,10 +45,11 @@ export function createSound(gapWarning = () => null) {
     source.connect(envelope).connect(destination);
     source.start(time);
     track(source, [envelope], time + duration + 0.02, cue, time);
+    return source;
   }
-  function tone(frequency, endFrequency, duration, delay = 0, volume = 0.045) {
+  function tone(frequency, endFrequency, duration, delay = 0, volume = 0.045, type = 'sine') {
     if (!enabled || voices.size >= 24) return;
-    voice('sine', frequency, endFrequency, context.currentTime + delay, duration, volume, 0.008, master);
+    return voice(type, frequency, endFrequency, context.currentTime + delay, duration, volume, 0.008, master);
   }
   function hit(destination, time, duration, volume) {
     const source = context.createBufferSource();
@@ -129,12 +133,24 @@ export function createSound(gapWarning = () => null) {
     track(source, [band, envelope], now + duration + .02);
   }
   function cue(name, startAfter = 0) {
+    if (name === 'acquisition-stop') {
+      for (const source of acquisitionVoices) { source.stop(); voices.delete(source); }
+      acquisitionVoices.clear();
+      if (acquisitionDuck) duckUntil = 0;
+      acquisitionDuck = false;
+      return;
+    }
     if (!enabled || hidden || !context || context.state !== 'running') return;
     const notes = FEEDBACK_SOUNDS[name];
     if (notes) {
       if (voices.size + notes.length > 24) return;
-      for (const [from, to, duration, delay, volume] of notes) tone(from, to, duration, startAfter + delay, volume);
+      const acquisition = name.startsWith('acquisition-');
+      for (const [from, to, duration, delay, volume, type] of notes) {
+        const source = tone(from, to, duration, startAfter + delay, volume, type);
+        if (acquisition && source) acquisitionVoices.add(source);
+      }
       if (STINGERS.has(name)) {
+        acquisitionDuck = acquisition;
         const end = Math.max(...notes.map(([, , duration, delay]) => duration + delay));
         duckFrom = context.currentTime + Math.max(0, startAfter - .05);
         duckUntil = context.currentTime + startAfter + end;

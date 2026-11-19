@@ -6,9 +6,11 @@ import { dialogNavigation } from './dialog-navigation.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
 import { ACQUISITION_SOUNDS } from './feedback-sounds.ts';
 import AcquisitionCarStage from './AcquisitionCarStage.vue';
+import type { CarRevealShot } from './acquisition-car-camera.ts';
 import { carArtwork, isCar } from './car-catalog.ts';
 import { GARAGE_POSE_ART } from './lobby-art.ts';
 import './acquisition-reveal.css';
+import './acquisition-motion.css';
 
 const labels = {
   en: { car: 'Vehicle', track: 'Track', paint: 'Paint finish', equipment: 'Equipment', clothing: 'Apparel',
@@ -28,6 +30,10 @@ const primary = ref<HTMLButtonElement>();
 const active = shallowRef<AcquisitionBatch | null>(null);
 const selected = ref(0);
 const presenting = ref(false);
+const firstLook = ref(true);
+const shot = ref<CarRevealShot | ''>('');
+const viewed = new Set<number>();
+const heardShots = new Set<CarRevealShot>();
 const failedArt = ref('');
 const locale = ref(getLocale());
 const phase = ref('');
@@ -46,11 +52,16 @@ let shown: AcquisitionBatch | null = null;
 onMounted(() => {
   nav = dialogNavigation(dialog.value!, () => {
     presenting.value = false;
+    if (shown) cue('acquisition-stop');
     if (shown) acquisitionReveal.dismiss(shown.id);
     shown = null;
   });
   stopQueue = acquisitionReveal.subscribe(batch => {
     selected.value = 0;
+    firstLook.value = true;
+    shot.value = '';
+    viewed.clear();
+    heardShots.clear();
     active.value = batch;
   });
   stopLocale = onLocaleChange(next => { locale.value = next; });
@@ -74,6 +85,7 @@ watchPostEffect(() => {
     shown = batch;
     nav.open();
     presenting.value = true;
+    viewed.add(0);
     cue(ACQUISITION_SOUNDS[first.kind]);
     primary.value?.focus({ preventScroll: true });
   }
@@ -81,8 +93,23 @@ watchPostEffect(() => {
 
 function selectReward(index: number): void {
   if (selected.value === index) return;
+  const reward = active.value?.items[index];
+  if (!reward) return;
+  cue('acquisition-stop');
+  shot.value = '';
+  heardShots.clear();
+  firstLook.value = !viewed.has(index);
+  viewed.add(index);
   selected.value = index;
-  cue('acquisition-select');
+  cue(firstLook.value ? ACQUISITION_SOUNDS[reward.kind] : 'acquisition-select');
+}
+
+function showShot(angle: CarRevealShot | ''): void {
+  if (!presenting.value || !firstLook.value || !car.value) return;
+  shot.value = angle;
+  if (!angle || heardShots.has(angle)) return;
+  heardShots.add(angle);
+  cue('acquisition-car-' + angle);
 }
 
 function continueGame(): void {
@@ -96,12 +123,15 @@ function continueGame(): void {
       aria-describedby="acquisition-name" @cancel.prevent="continueGame">
       <template v-if="item && active">
         <section :key="active.id + ':' + selected" class="acquisition-hero" :data-kind="item.kind"
-          :data-art-style="artwork?.style" :data-car-showcase="car || undefined">
+          :data-art-style="artwork?.style" :data-car-showcase="car || undefined" :data-reveal-shot="shot || undefined"
+          :data-revisit="firstLook ? undefined : 'true'">
           <div class="acquisition-stage" aria-hidden="true">
             <div class="acquisition-grid"></div>
             <div class="acquisition-orbit"></div>
             <div class="acquisition-beam"></div>
-            <AcquisitionCarStage v-if="car && presenting" :car="car" />
+            <AcquisitionCarStage v-if="car && presenting && firstLook" :car="car" @shot="showShot" />
+            <div v-if="car && shot" :key="shot" class="acquisition-cut"></div>
+            <div v-if="!car" class="acquisition-accents"></div>
             <img v-if="art && failedArt !== art" :src="art" class="acquisition-art" alt="" @error="failedArt = art ?? ''" />
             <div v-else class="acquisition-emblem">
               <svg v-bind="ICON_ATTRS" v-html="glyph[item.kind]"></svg>

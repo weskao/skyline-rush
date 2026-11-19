@@ -15,11 +15,19 @@ test('the shared reveal plays the actual vehicle and holds the final angle', asy
   await expect(dialog.getByRole('heading', { name: 'Vantaire GT' })).toBeVisible();
   await expect(stage).toHaveCount(1);
   await expect(stage).toHaveAttribute('data-cinematic', 'playing', { timeout: ciTimeout(20000) });
-  await expect(stage).toHaveAttribute('data-shot', 'hero', { timeout: ciTimeout(12000) });
+  await expect(dialog.locator('.acquisition-hero')).toHaveAttribute('data-reveal-shot', 'signature');
+  await expect(stage).toHaveAttribute('data-shot', 'hero', { timeout: ciTimeout(16000) });
+  await expect(dialog.locator('.acquisition-hero')).toHaveAttribute('data-reveal-shot', 'hero');
+  await expect.poll(() => page.evaluate(() => window.revealCues.map(([name]) => name))).toEqual([
+    'acquisition-car', 'acquisition-car-signature', 'acquisition-car-profile',
+    'acquisition-car-thrusters', 'acquisition-car-hero',
+  ]);
   await expect(stage).toHaveAttribute('data-cinematic', 'still');
   await expect(dialog.getByRole('button', { name: 'Continue' })).toBeInViewport();
   await dialog.getByRole('button', { name: 'Continue' }).click();
   await expect(stage.locator('canvas')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.revealCues.slice(-2).map(([name]) => name)))
+    .toEqual(['acquisition-stop', 'acquisition-item']);
 });
 
 test('vehicle title and continue fit in both mobile orientations with reduced motion', async ({ page, gameplayURL }) => {

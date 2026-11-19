@@ -1,14 +1,37 @@
 import { ACQUISITION_KIND, type AcquisitionKind } from './acquisition-reveal.ts';
 
-// [start Hz, end Hz, length in seconds, delay, gain]. Stingers share the SFX bus.
-type Note = readonly [number, number, number, number, number];
+// [start Hz, end Hz, length, delay, gain, waveform]. All motifs go through the SFX bus.
+type Note = readonly [number, number, number, number, number, OscillatorType?];
 export const FEEDBACK_SOUNDS = {
-  'acquisition-hero': [[294, 220, .22, 0, .036], [440, 494, .21, .08, .024],
-    [659, 784, .26, .17, .025], [988, 1175, .32, .28, .022]],
-  'acquisition-cosmetic': [[554, 740, .20, 0, .026], [831, 1109, .24, .09, .024], [1245, 1397, .20, .17, .013]],
-  'acquisition-item': [[275, 150, .14, 0, .031], [587, 699, .17, .07, .023], [1175, 1319, .21, .13, .017]],
-  'acquisition-medal': [[659, 659, .17, 0, .028], [784, 784, .19, .10, .027], [988, 988, .20, .20, .026],
-    [1319, 1319, .36, .29, .024]],
+  'acquisition-car': [[76, 41, .68, 0, .072], [68, 146.83, .81, .07, .033, 'triangle'],
+    [220, 146.83, .42, .19, .022, 'triangle']],
+  'acquisition-car-signature': [[73.42, 57, .62, 0, .075], [110, 146.83, .66, .07, .045, 'triangle'],
+    [293.66, 293.66, .82, .29, .028], [440, 440, .69, .5, .016, 'triangle']],
+  'acquisition-car-profile': [[260, 73.42, .52, 0, .054, 'triangle'], [146.83, 146.83, .69, .11, .045],
+    [349.23, 349.23, .62, .24, .025, 'triangle'], [440, 587.33, .52, .38, .022]],
+  'acquisition-car-thrusters': [[98, 39, .59, 0, .086], [63, 130.81, .61, .04, .038, 'sawtooth'],
+    [146.83, 146.83, .66, .32, .04, 'triangle'], [261.63, 440, .61, .60, .028, 'triangle'],
+    [440, 660, .38, 1.03, .015]],
+  'acquisition-car-hero': [[98, 38, .73, 0, .095], [73.42, 73.42, 1.34, .01, .055, 'triangle'],
+    [146.83, 146.83, 1.27, .045, .043, 'triangle'], [293.66, 293.66, 1.19, .11, .036, 'triangle'],
+    [349.23, 349.23, 1.02, .20, .033, 'triangle'], [440, 440, .94, .28, .032, 'triangle'],
+    [587.33, 587.33, .84, .39, .029], [880, 880, .53, .59, .020]],
+  'acquisition-track': [[294, 220, .30, 0, .046], [68, 43, .41, 0, .055],
+    [146.83, 220, .41, .09, .035, 'triangle'], [293.66, 293.66, .52, .20, .038, 'triangle'],
+    [440, 587.33, .53, .35, .035], [784, 784, .42, .54, .022]],
+  'acquisition-paint': [[349.23, 522, .44, 0, .050, 'triangle'], [659, 880, .39, .12, .035],
+    [1047, 1174.66, .34, .24, .024], [1568, 1568, .34, .30, .014]],
+  'acquisition-equipment': [[275, 146.83, .16, 0, .065], [86, 53, .18, .12, .055],
+    [146.83, 220, .35, .15, .048, 'triangle'], [587.33, 587.33, .26, .24, .028]],
+  'acquisition-clothing': [[220, 349.23, .28, 0, .043, 'triangle'], [440, 440, .34, .09, .032],
+    [698.46, 698.46, .39, .20, .027, 'triangle'], [880, 880, .29, .33, .021]],
+  'acquisition-item': [[180, 68, .20, 0, .059, 'triangle'], [293.66, 349.23, .30, .10, .045],
+    [523.25, 587.33, .32, .21, .039, 'triangle'], [880, 880, .27, .34, .022]],
+  'acquisition-medal': [[146.83, 146.83, .82, 0, .050, 'triangle'], [293.66, 293.66, .41, .06, .035],
+    [440, 440, .48, .18, .034, 'triangle'], [587.33, 587.33, .64, .31, .046, 'triangle'],
+    [880, 880, .66, .43, .035], [1174.66, 1174.66, .51, .53, .025]],
+  'acquisition-currency': [[880, 990, .17, 0, .048], [1174.66, 1174.66, .24, .095, .041, 'triangle'],
+    [1320, 1760, .29, .185, .033], [2349, 2349, .20, .25, .019]],
   'acquisition-select': [[932, 784, .095, 0, .016]],
   'reward-credited': [[880, 990, .17, 0, .033], [1320, 1568, .25, .09, .028]],
   'reward-mission-ready': [[880, 990, .17, 0, .033], [1320, 1568, .19, .09, .028], [1760, 1865, .24, .21, .021]],
@@ -41,16 +64,18 @@ export const FEEDBACK_SOUNDS = {
 } satisfies Readonly<Record<string, readonly Note[]>>;
 
 export const ACQUISITION_SOUNDS = {
-  [ACQUISITION_KIND.CAR]: 'acquisition-hero',
-  [ACQUISITION_KIND.TRACK]: 'acquisition-hero',
-  [ACQUISITION_KIND.PAINT]: 'acquisition-cosmetic',
-  [ACQUISITION_KIND.EQUIPMENT]: 'acquisition-item',
-  [ACQUISITION_KIND.CLOTHING]: 'acquisition-cosmetic',
+  [ACQUISITION_KIND.CAR]: 'acquisition-car',
+  [ACQUISITION_KIND.TRACK]: 'acquisition-track',
+  [ACQUISITION_KIND.PAINT]: 'acquisition-paint',
+  [ACQUISITION_KIND.EQUIPMENT]: 'acquisition-equipment',
+  [ACQUISITION_KIND.CLOTHING]: 'acquisition-clothing',
   [ACQUISITION_KIND.ITEM]: 'acquisition-item',
   [ACQUISITION_KIND.MEDAL]: 'acquisition-medal',
-  [ACQUISITION_KIND.CURRENCY]: 'reward-credited',
+  [ACQUISITION_KIND.CURRENCY]: 'acquisition-currency',
 } as const satisfies Readonly<Record<AcquisitionKind, keyof typeof FEEDBACK_SOUNDS>>;
 
 export const STINGERS = new Set([
-  'victory', 'achievement-earned', 'tutorial-complete', 'halfway', 'acquisition-hero', 'acquisition-medal',
+  'victory', 'achievement-earned', 'tutorial-complete', 'halfway', 'acquisition-track', 'acquisition-medal',
+  'acquisition-car', 'acquisition-car-signature', 'acquisition-car-profile',
+  'acquisition-car-thrusters', 'acquisition-car-hero',
 ]);

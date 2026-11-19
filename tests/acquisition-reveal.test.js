@@ -38,3 +38,19 @@ test('only claims counted by the existing mission board reveal the next trophy t
   assert.equal(missionTrophy('mission-time', snapshot)?.id, 'trophy-silver');
   assert.equal(missionTrophy('daily-race', snapshot), undefined);
 });
+
+
+test('the vehicle premiere uses a low front dolly, a broadside pass, a rear push and a title hold', async () => {
+  const { CAR_REVEAL_MS, carRevealShot } = await import('../src/acquisition-car-camera.ts');
+  assert.deepEqual([0, 1600, 3150, 4700, CAR_REVEAL_MS].map(time => carRevealShot(time).name),
+    ['signature', 'profile', 'thrusters', 'hero', 'hero']);
+  const nose = carRevealShot(1100);
+  const side = carRevealShot(2350);
+  const exhaust = carRevealShot(4550);
+  const hero = carRevealShot(CAR_REVEAL_MS);
+  assert.ok(nose.yaw > 2.4 && nose.pitch < .16 && nose.focus < 0);
+  assert.ok(Math.abs(side.yaw - Math.PI / 2) < .15);
+  assert.ok(exhaust.yaw < .46 && exhaust.focus > 0 && exhaust.fill > nose.fill);
+  assert.ok(hero.fill < exhaust.fill && hero.yaw > 2);
+  assert.deepEqual(carRevealShot(CAR_REVEAL_MS + 2000), hero);
+});

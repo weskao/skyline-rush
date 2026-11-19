@@ -1,13 +1,14 @@
-// A single shot sequence for every catalog vehicle. +Z is the rear of the model.
+// The three Crucible study angles, followed by a full-car title shot. +Z is the rear.
 const shots = [
-  { name: 'signature', end: 850, from: [2.95, .115], to: [2.63, .18], fill: .91 },
-  { name: 'profile', end: 1750, from: [1.79, .13], to: [1.42, .19], fill: .88 },
-  { name: 'thrusters', end: 2650, from: [.74, .12], to: [.42, .16], fill: .93 },
-  { name: 'hero', end: 3750, from: [2.24, .24], to: [2.56, .23], fill: .86 },
+  { name: 'signature', end: 1600, from: [2.67, .12, .93, -.08], to: [2.55, .095, 1.01, -.12] },
+  { name: 'profile', end: 3150, from: [1.78, .13, .89, -.025], to: [1.34, .11, .94, .035] },
+  { name: 'thrusters', end: 4700, from: [.57, .135, .99, .13], to: [.35, .075, 1.30, .30] },
+  { name: 'hero', end: 6550, from: [2.40, .19, .86, 0], to: [2.54, .175, .94, 0] },
 ] as const;
 
+export type CarRevealShot = typeof shots[number]['name'];
 export const CAR_REVEAL_MS = shots[shots.length - 1].end;
-export const CAR_REVEAL_FOV = 36;
+export const CAR_REVEAL_FOV = 33;
 
 export function carRevealShot(milliseconds: number) {
   const time = Math.max(0, milliseconds);
@@ -17,10 +18,6 @@ export function carRevealShot(milliseconds: number) {
   const start = i ? shots[i - 1]!.end : 0;
   const u = Math.min(1, (time - start) / (shot.end - start));
   const ease = u * u * (3 - 2 * u);
-  return {
-    name: shot.name,
-    yaw: shot.from[0] + (shot.to[0] - shot.from[0]) * ease,
-    pitch: shot.from[1] + (shot.to[1] - shot.from[1]) * ease,
-    fill: shot.fill,
-  };
+  const at = (axis: 0 | 1 | 2 | 3) => shot.from[axis] + (shot.to[axis] - shot.from[axis]) * ease;
+  return { name: shot.name, yaw: at(0), pitch: at(1), fill: at(2), focus: at(3) };
 }

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { CarId } from './car-catalog.ts';
+import type { CarRevealShot } from './acquisition-car-camera.ts';
 
 const props = defineProps<{ car: CarId }>();
+const emit = defineEmits<{ shot: [angle: CarRevealShot | ''] }>();
 const canvas = ref<HTMLCanvasElement>();
 const graphics = ref('');
 const motion = ref(false);
@@ -31,6 +33,7 @@ onUnmounted(() => {
 
 watch([canvas, graphics], ([target, quality], _, onCleanup) => {
   shot.value = '';
+  emit('shot', '');
   if (!target) { state.value = 'static'; return; }
   state.value = 'loading';
   const controller = new AbortController();
@@ -42,7 +45,10 @@ watch([canvas, graphics], ([target, quality], _, onCleanup) => {
         (nextState, angle) => {
           if (controller.signal.aborted) return;
           state.value = nextState;
-          shot.value = angle;
+          if (shot.value !== angle) {
+            shot.value = angle;
+            emit('shot', angle);
+          }
         });
     })
     .catch(() => { if (!controller.signal.aborted) state.value = 'static'; });
