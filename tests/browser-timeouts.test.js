@@ -110,6 +110,21 @@ test('browser specs poll page state after a UI action instead of reading it once
   assert.deepEqual(offenders, [], 'Use await expect.poll(() => page.evaluate(...)) (see .claude/rules/browser-test-stability.md)');
 });
 
+// index.html boots src/startup-entry.ts, which imports main.js dynamically: 'domcontentloaded' fires before Home is
+// rendered, so a short first wait races the bundle load (lobby summaries: 8 DRIVERS empty at 2.5 s, 1 run in 3).
+test('the first wait after a page load keeps the default expect budget', () => {
+  const offenders = FILES.flatMap(file => {
+    const lines = readFileSync(new URL(file, import.meta.url), 'utf8').split('\n');
+    return lines.flatMap((line, i) => {
+      if (!/\bpage\.goto\(/.test(line)) return [];
+      const j = lines.findIndex((next, k) => k > i && k <= i + 4 && /\bexpect\(/.test(next));
+      const ms = Number(lines[j]?.match(/timeout: ciTimeout\(([\d_]+)\)/)?.[1].replaceAll('_', ''));
+      return j > 0 && ms < config.expect.timeout / slow ? [`tests/${file}:${j + 1}: ${lines[j].trim()}`] : [];
+    });
+  });
+  assert.deepEqual(offenders, [], 'Drop the short timeout: Home renders after the dynamic main.js import (.claude/rules/browser-test-stability.md)');
+});
+
 test('CI retries a failed browser test once and still reports it; local runs never retry', () => {
   for (const ci of ['1', undefined]) {
     const env = { ...process.env };
