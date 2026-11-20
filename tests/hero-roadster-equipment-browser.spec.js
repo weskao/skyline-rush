@@ -60,7 +60,7 @@ async function previewEverything(page) {
     await page.locator(`[data-paint="${id}"]`).click();
     await expect.poll(async () => { const a = await audit(page); return [a.paint, a.proc]; }).toEqual([paint.paint.slice(1), paint.paint.slice(1)]);
   }
-  for (const { id, category } of GARAGE_SKINS) {
+  for (const { id, category } of GARAGE_SKINS) { // motion: the showroom's looping launch flare is judged after the sweep
     await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
     await expect(page.locator('#garage-preview')).toHaveAttribute(`data-skin-preview-${category}`, id);
@@ -88,7 +88,7 @@ test('Garage Home and Preview Studio: every paint and skin on the GLB car, witho
   await expect.poll(async () => (await audit(page))?.sweep).toBe(true); // the Studio paint sweep rides on the GLB paint
   await page.waitForTimeout(ciTimeout(500));
   const studio = await gpu(page);
-  for (const { id, category } of GARAGE_SKINS) {
+  for (const { id, category } of GARAGE_SKINS) { // motion: the Studio paint sweep and looping flare are judged after it
     await openGarageSection(page, 'effects');
     await page.locator(`[data-skin="${id}"] .garage-skin-preview-hitarea`).click();
     await expect(page.locator('#garage-preview')).toHaveAttribute(`data-skin-preview-${category}`, id);
