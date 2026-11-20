@@ -22,7 +22,7 @@
     "typecheck:vue": "vue-tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
-    "crucible": "https://crucible.codepawl.com/releases/codepawlhq-crucible-0.21.0.tgz",
+    "crucible": "npm:@codepawlhq/crucible@0.21.0",
     "firebase": "^13.1.0",
     "three": "0.186.1",
     "vue": "^3.5.44"
@@ -44,7 +44,7 @@
     }
   },
   "allowScripts": {
-    "https://crucible.codepawl.com/releases/codepawlhq-crucible-0.21.0.tgz": false
+    "@codepawlhq/crucible": false
   },
   "imports": {
     "#garage-playtest-storage": "./src/access/garage-production.ts",
