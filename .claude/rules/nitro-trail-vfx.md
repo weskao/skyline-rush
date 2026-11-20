@@ -46,14 +46,18 @@ the trail; brightness changes stay slow and partial. Keep it that way:
   A new skin adds a layer or a shape before it adds a multiplier.
 - **Shape comes from the flame texture, not from `sin` and a hash** (2026-11-20). Three glare fixes left the
   streak flat: smooth functions only, at 0.66. `src/nitro-flame-texture.ts` is the only module that names the
-  image (`flame-noise.png`, contract in `docs/designs/nitro-flame/DESIGN.md`) and only `garage-nitro-trail.js`
-  imports it, so the locked bundle never references it. R tears the body into tongues and erodes its edge, G
+  image (`flame-noise.png`, contract in `docs/designs/nitro-flame/DESIGN.md`). Two modules import it:
+  `garage-nitro-trail.js` and `src/sprint-plume.ts` (the standard exhaust), so the image ships in the locked build
+  from `public/feature-assets/nitro-flame/`. R tears the body into tongues and erodes its edge, G
   roughens the edge, B is the thin hot filaments on the core. Traps:
   - **A scrolled texture is a flicker frequency.** A sample scrolled along V by `time*N` changes one pixel
-    N x (light-dark cycles per tile along V) times a second. `FLAME_CYCLES` (r 2, g 8, b 3) states what the
-    shader assumes of the image; N x the busiest channel read stays ≤ 3 Hz (`.r` at 1.2, `.gb` at .35). A busier
-    image raises `FLAME_CYCLES` and lowers the scroll, never the limit. U never scrolls. Halo and road glow do
-    not sample it.
+    N x (light-dark cycles per tile along V) times a second. `FLAME_CYCLES` (r 3, g 11, b 3) states what the
+    shader assumes of the image; N x the busiest channel read stays ≤ 3 Hz. A busier image raises `FLAME_CYCLES`
+    and lowers the scroll, never the limit. U never scrolls. Halo and road glow do not sample it. Trap
+    (2026-11-21): the shader was tuned on a stand-in image; the shipped `flame-noise.png`'s busiest columns hold
+    R 3, G 11, B 3 cycles a tile at the shader's own dark/light levels, so `.r` at 1.2 reached 3.6 Hz. Scrolls
+    are now `.r` 1.0 and `.gb` .27. Guard: *the real flame image, scrolled as the shader scrolls it* (reads the
+    PNG; RED at 3.60 Hz on the old scroll).
   - **The sampler exists from creation** (a neutral 1 x 1 mid-grey `DataTexture`); the image replaces the
     uniform's *value* on the first skin use, so the warmed-up program is kept. On the neutral texel the jet is
     smooth and whole: it must look acceptable there (image missing, slow network).
@@ -66,6 +70,17 @@ the trail; brightness changes stay slow and partial. Keep it that way:
     `src/aero-vfx.js` holds the cone at 20% while the trail's streaks are visible (BOOST and calm modes show no
     trail and keep the plume). Guard: *the base exhaust cone stays faint* in `tests/garage-nitro-trail.test.js`.
   - **No particles here.** Sparks belong to `src/effects.js`.
+- **Sparks are judged in the chase camera, not in the car's frame.** Trap (2026-11-20): NITRO sparks at 12 to
+  24 m/s passed every unit test and showed in no live frame. The NITRO chase eye is under 4 m behind the
+  nozzles, so a fast spark passes the lens in 0.2 s, and the additive jets wash out a spark that stays inside
+  them. Mechanism: `src/nitro-sparks.ts` keeps exit speed low, lives at 0.3 s or less and fans each port to its
+  own side; chained NITRO scales speed only. A change to spark speed, life or size, or to `RACE_CAMERA.chase` /
+  `chasePortrait`, re-runs the guard and a real WebGL capture in both orientations. Guard:
+  `tests/nitro-sparks.test.js` (*a spark spends its whole life in front of the chase camera, inside the frame,
+  in landscape and portrait*), RED on the fast tuning (`1.35 m from the lens`).
+- **The spark budget is 8 / 12 / 19 live sparks (Low / Medium / High) of the pool's 480**, at most 4 per frame.
+  A new emitter in the shared pool states its own budget the same way. Guard: *the spark budget cannot starve
+  the shared particle pool*.
 - **Glare limits from `.claude/rules/sprint-plume.md` still hold** (merged 2026-11-20): the streak keeps its
   `.66` exposure normalisation and `.76` alpha cap; the road glow stays compact (≤ 1.65 × 6), steady (no `time`)
   and on the ground only; gold has no global brightness pulse; chained NITRO adds length and travel speed, never

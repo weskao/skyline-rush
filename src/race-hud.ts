@@ -13,6 +13,7 @@ import type { VfxSettings } from './vfx-settings.ts';
 import { createModePanels, type ModePanelOptions } from './race-hud-modes.ts';
 import { createHaptics } from './haptics.ts';
 import { createSprintReadyFeedback, type SprintReadyCue } from './sprint-ready-feedback.ts';
+import { createSprintTierHud } from './sprint-tier-hud.ts';
 import { orderRaceLeaderboard, graphRivalGap } from './course-hud-standings.ts';
 import { PICKUP_HAPTIC_MS } from './pickup-feedback.ts';
 import { createPickupFuelCue } from './pickup-fuel-cue.ts';
@@ -87,6 +88,7 @@ export function createRaceHud(options: HudOptions) {
   const nitroMeter = $('#nitro-meter');
   const nitroButton = touchButtons.find(button => button.dataset.control === 'nitro');
   const sprintReady = createSprintReadyFeedback(nitroButton, touchButtons.find(button => button.dataset.control === 'boost'), options.onSprintReady);
+  const sprintTierHud = createSprintTierHud(document.body);
   // HUD text is read every tick: a plain catalog lookup (key parity is unit-tested), swapped on a language switch.
   let L: Record<string, string> = CATALOGS[getLocale() as keyof typeof CATALOGS];
   let flowKey = 'hud.streamlines', floorKey = 'hud.lowDrag', jetKey = 'hud.demo';
@@ -151,7 +153,7 @@ export function createRaceHud(options: HudOptions) {
     setHudText(hudNodes['style-score']!, race.mode === 'gauntlet' ? t('mode.hazardHud', { n: race.hazards.filter((h: HudRace) => h.passed).length, total: race.hazards.length, score: Math.floor(car.score) }) : interpolate(L['hud.style']!, { n: Math.floor(car.score) }));
     setHudText(ui.altitude!, car.altitude.toFixed(1));
   }
-  function updateNitro(now: number, race: HudRace, car: HudRace, state: ReturnType<typeof sprintReady.update>): void {
+  function updateNitro(now: number, race: HudRace, car: HudRace, state: ReturnType<typeof sprintReady.update>, tierCaption: string): void {
     const visual = getVisual();
     if (nitroMeter.dataset.nitroState !== state) nitroMeter.dataset.nitroState = state;
     if (nitroButton) {
@@ -167,7 +169,7 @@ export function createRaceHud(options: HudOptions) {
     if (car.nitro > previousNitro && race.phase === 'racing') nitroRefillUntil = now + .6;
     nitroMeter.dataset.refilling = String(race.phase === 'racing' && now < nitroRefillUntil);
     setHudText(nitroStatus, state === 'ready' ? L['hud.nitroReady']! : state === 'disabled' ? L['hud.nitroUnavailable']!
-      : state === 'active' ? L['hud.nitroActive']! : interpolate(L['hud.nitroCount']!, { n: car.nitro.toFixed(2) }));
+      : state === 'active' ? tierCaption : interpolate(L['hud.nitroCount']!, { n: car.nitro.toFixed(2) }));
     for (const [index, segment] of nitroSegments.entries()) {
       const fill = Math.min(1, Math.max(0, car.nitro - index));
       (segment.firstElementChild as HTMLElement).style.transform = `scaleX(${fill})`;
@@ -341,9 +343,11 @@ export function createRaceHud(options: HudOptions) {
     const state = L[car.thrusting ? car.verticalSpeed > 0.2 ? 'hud.ascending' : 'hud.cruise' : car.altitude > 0.25 ? 'hud.descending' : touchdown ? 'hud.touchdown' : depleted ? 'hud.recharging' : car.speed >= 18 ? 'hud.readyToFly' : 'hud.buildSpeed']!;
     const nitroActive = car.nitroTime > 0 && race.phase === 'racing';
     const airDash = car.thrusting && car.boosting;
-    setHudText(ui['flight-state']!, race.modifier === 'no-flight' ? L['daily.flightDisabled.state']! : nitroActive && car.nitroBurst > 1 ? interpolate(L['hud.nitroChain']!, { n: car.nitroBurst }) : car.thrusting && car.nitroTime > 0 ? L['hud.airDashNitro']! : airDash ? L['hud.airDash']! : nitroActive ? L['hud.nitroActive']! : car.trick && !car.trick.done ? L['hud.trick']! : car.inShortcut ? L['callout.shortcut']!
+    // One caption per sprint tier and chain step, shared by every HUD line that names it (sprint-tier-hud.ts).
+    const tierCaption = sprintTierHud.update(race.phase === 'racing', nitroActive, car.boosting, car.nitroBurst, L);
+    setHudText(ui['flight-state']!, race.modifier === 'no-flight' ? L['daily.flightDisabled.state']! : nitroActive && car.nitroBurst > 1 ? tierCaption! : car.thrusting && car.nitroTime > 0 ? L['hud.airDashNitro']! : airDash ? L['hud.airDash']! : nitroActive ? tierCaption! : car.trick && !car.trick.done ? L['hud.trick']! : car.inShortcut ? L['callout.shortcut']!
       : car.drift ? interpolate(L['callout.drift']!, { tier: L[driftTier(car.drift.time) ? `callout.drift.tier.${driftTier(car.drift.time)}` : 'hud.driftBuilding']! }) : car.miniBoost > 0 && !touchdown ? L['hud.miniBoost']! : state);
-    updateNitro(now, race, car, sprintReady.update(race.phase, car, nitroActive, !!input.boost, visual.enabled && !calm));
+    updateNitro(now, race, car, sprintReady.update(race.phase, car, nitroActive, !!input.boost, visual.enabled && !calm), tierCaption ?? '');
     updateCallout(race, impactAge, calm);
     document.body.classList.toggle('nitro-active', nitroActive);
     // Inside a shortcut only BOOST drains (3/s); plain flight there is free.
@@ -357,7 +361,7 @@ export function createRaceHud(options: HudOptions) {
     updateImpact(car, race.elapsed, race.phase === 'racing');
     updateTouchButtons(race, input, tap);
     options.updatePadHint(race.phase, race.elapsed);
-    setHudText(ui['speed-caption']!, L[race.phase === 'ready' ? 'hud.readyTakeoff' : car.boosting ? 'hud.boostEngaged' : options.isAutoThrottle() ? 'hud.autoOverride' : 'hud.tagline']!);
+    setHudText(ui['speed-caption']!, tierCaption ?? L[race.phase === 'ready' ? 'hud.readyTakeoff' : options.isAutoThrottle() ? 'hud.autoOverride' : 'hud.tagline']!);
     document.body.classList.toggle('airborne', flying);
     document.body.classList.toggle('collision', impactAge < 0.45 && race.phase === 'racing');
     if (previousFlight !== flying) {

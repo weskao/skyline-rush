@@ -159,6 +159,7 @@ Copy into `task-8x-<track>.md`; tick only with evidence (commit, test, capture i
 - [ ] Sky and lighting: source, licence, build script, manifest rows; items 15–18, 20 measured.
 - [ ] Road set baked and registered; `wetness` per preset; fallback test.
 - [ ] Scenery and landmark GLBs with masters, LODs, manifest entries, licences; placement module and tests; items 19, 21–24.
+- [ ] Props reused per `.claude/rules/prop-reuse.md`: species from `assets-src/props/` or an existing kit first, varied per instance; a moved or re-knobbed builder shows `scripts/assets/glb_ab.py` IDENTICAL.
 - [ ] `TRACK_LOOKS` entry; Low and load-failure fallback tests; no compile after GO; draw-call cap test.
 - [ ] Licence review, owner art approval, `make verify`, exact-HEAD CI.
 

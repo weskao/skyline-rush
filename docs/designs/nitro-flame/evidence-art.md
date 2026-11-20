@@ -7,7 +7,7 @@ Branch `feature/nitro-flame-art`, 2026-11-20. Scope: the flame noise texture of 
 
 | Item | Value |
 | --- | --- |
-| File | `public/feature-assets/garage-vfx-skins/nitro-flame/flame-noise.png` |
+| File | `public/feature-assets/nitro-flame/flame-noise.png` |
 | Format | 512 x 512, 8-bit RGB (PNG colour type 2), chunks `IHDR IDAT IEND` only |
 | Size | 293,450 bytes (limit read as 300,000 bytes, the stricter reading of 300 KB) |
 | sha256 | `a71ed8b3011873e2588891a50b5f18b519e317a0d55d2a49560d84a4ef114af6` |

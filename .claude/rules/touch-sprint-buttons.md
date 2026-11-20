@@ -2,6 +2,7 @@
 paths:
   - "src/touch-sprint-buttons.css"
   - "src/sprint-ready-feedback.ts"
+  - "src/sprint-tier-hud.ts"
   - "tests/touch-sprint-bezel.test.js"
 ---
 
@@ -20,5 +21,24 @@ paths:
   `--boost*`, `--fly*` tokens on `:root` in `style.css`; states derive from them with `color-mix`,
   only neutral greys stay literal. The meter, charge bar, key hints and the 3D NITRO trail
   (`aero-vfx.js`) use the same values. Guard: `tests/sprint-color-tokens.test.js`.
+- **One sprint ladder, one look per tier.** With BOOST held during NITRO the speed caption said
+  BOOST ENGAGED while the flight state said NITRO ACTIVE, and both buttons burned the same
+  full-height flame on the same 0.7 s loop, so BOOST, NITRO, both and a x3 chain looked alike.
+  `src/sprint-tier-hud.ts` is the HUD's only reading of `sprintTier()` (`src/sprint-tier.ts`): it
+  writes `body[data-sprint-tier]` (the tier id, racing only) and `body[data-sprint-chain]` (2 or 3)
+  on change and returns the one caption every HUD line shows (`hud.tier.<id>`, `hud.tierChain.<id>`
+  in `src/locales/nitro-hud.ts`). Each tier is one `body[data-sprint-tier="<id>"]` rule in
+  `style.css` setting `--tier-lift`, `--tier-loop`, `--tier-glow`, `--tier-core`, `--tier-rim`; the
+  buttons and HUD lines consume those variables and name no tier. A new tier is that rule plus its
+  caption key: no branch in `race-hud.ts`, no tier id in `touch-sprint-buttons.css`.
+  - `--flame-rest` stays the per-state flame size; the tier scales beside it through
+    `--flame-lift`. Combined tier times x3 chain stays at or below 1.05: taller covers the NITRO
+    meter in landscape and the mode panel in portrait.
+  - The button glow and the caption colours are static, so the ladder still reads with the flame
+    off (Reduced Motion, Comfortable, HUD animation off, Low graphics). Forced colours drops both.
+  - The combined tier is NITRO gold at the core and BOOST red-orange at the rim, from the tokens.
+    The charge bar keeps draining in the BOOST colour: it is information.
+  - Guard: `tests/sprint-tier-hud.test.js`. Real frames: `tests/sprint-tier-hud-capture-browser.spec.js`
+    (`SPRINT_TIER_HUD_CAPTURE=1`).
 - Visual changes here need real frames on a phone, portrait and landscape: the unit guard checks
   colours, not layout, Reduced Motion or touch opacity.

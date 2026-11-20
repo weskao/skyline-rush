@@ -1,3 +1,4 @@
+import { sprintCue } from './sprint-tier.ts';
 // Visual controls only: none of these values are consumed by the race simulation.
 // Index 0 is the English label; the UI translates it through the `vfx.<key>` catalog entry (vfxLabelKey).
 export const vfxLabelKey = (key: string): string => `vfx.${key}`;
@@ -80,16 +81,16 @@ const channel = (): SprintChannel => ({ phase: 'ready', intensity: 0, ignition: 
 
 export function createSprintVfx() {
   const nitro = channel(), boost = channel();
-  /** `fov`: eased sprint share for the camera (FOV, dolly, rumble). `kick`: seconds since the last fresh ignition. `punch`: its 0–1 surge.
+  /** `fov`: eased sprint share for the camera (FOV, dolly, rumble). `lines`: speed-line density and travel speed. `kick`: seconds since the last fresh ignition. `punch`: its 0–1 surge.
    * `squat`: the car's 0–1 nose lift on that ignition, peaking before the punch so the camera follows late. */
-  const frame = { nitro, boost, power: 0, lightPower: 0, fov: 0, blur: 0, particles: 0, nitroMix: 0, kick: 1, punch: 0, squat: 0 };
+  const frame = { nitro, boost, power: 0, lightPower: 0, fov: 0, blur: 0, lines: 0, particles: 0, nitroMix: 0, kick: 1, punch: 0, squat: 0 };
   let lift = 1;
   const clear = (part: SprintChannel): void => {
     part.phase = 'ready'; part.intensity = part.ignition = part.age = part.release = 0;
   };
   const reset = (): typeof frame => {
     clear(nitro); clear(boost);
-    frame.power = frame.lightPower = frame.fov = frame.blur = frame.particles = frame.nitroMix = frame.punch = frame.squat = 0; frame.kick = 1;
+    frame.power = frame.lightPower = frame.fov = frame.blur = frame.lines = frame.particles = frame.nitroMix = frame.punch = frame.squat = 0; frame.kick = 1;
     lift = 1;
     return frame;
   };
@@ -129,13 +130,15 @@ export function createSprintVfx() {
       frame.kick = Math.min(1, frame.kick + dt);
       advance(nitro, !!input.nitro, dt, speedScale);
       advance(boost, !!input.boost, dt, speedScale);
-      // Independent channels never add; simultaneous activation is capped at one.
-      frame.power = frame.lightPower = unit(Math.max(nitro.intensity, boost.intensity * 0.8));
+      // Every strength comes from the ladder (sprint-tier.ts); the light share never passes one.
+      frame.power = frame.lightPower = unit(sprintCue(nitro.intensity, boost.intensity, 'share'));
       frame.nitroMix = nitro.intensity > 0 ? unit(nitro.intensity / Math.max(0.01, frame.power)) : 0;
       // Only a chained NITRO goes past one; eased so a new charge swells and the end of NITRO settles back.
       const level = Math.min(3, Math.max(1, Math.round(finite(input.chain ?? 1, 1))));
       lift += ((input.nitro ? NITRO_CHAIN_LIFT[level - 1]! : 1) - lift) * Math.min(1, dt * 8);
-      frame.power *= 1 + (lift - 1) * frame.nitroMix;
+      const chained = 1 + (lift - 1) * frame.nitroMix;
+      frame.power *= chained;
+      frame.lines = sprintCue(nitro.intensity, boost.intensity, 'lines') * chained;
       const tier = input.quality === 'high' ? 1 : input.quality === 'medium' ? 0.65 : 0.3;
       const comfort = input.reducedMotion;
       frame.particles = frame.power * (comfort ? 0.2 : tier);
@@ -143,9 +146,10 @@ export function createSprintVfx() {
       // Ramped over 0.3 s instead of jumping with the ignition; the camera's own smoothing rounds both ends.
       const target = comfort ? 0 : frame.power, step = dt / 0.3;
       frame.fov = comfort || Math.abs(target - frame.fov) <= step ? target : frame.fov + Math.sign(target - frame.fov) * step;
-      frame.punch = comfort ? 0 : frame.power * sprintPunch(frame.kick);
+      // Capped at a x3 NITRO punch: race-camera.test.js checks the portrait HUD and the dolly up to there.
+      frame.punch = comfort ? 0 : Math.min(NITRO_CHAIN_LIFT.at(-1)!, sprintCue(nitro.intensity, boost.intensity, 'punch') * chained) * sprintPunch(frame.kick);
       frame.squat = comfort ? 0 : speedScale * sprintPunch(frame.kick * SQUAT_LEAD); // NITRO and BOOST squat alike
-      frame.blur = comfort ? 0 : Math.min(1, (frame.power + 0.5 * frame.punch) * tier * (input.ultra ? 0.96 : 0.6)); // Ultra: stronger lens radial blur, same pass
+      frame.blur = comfort ? 0 : Math.min(1, (sprintCue(nitro.intensity, boost.intensity, 'blur') * chained + 0.5 * frame.punch) * tier * (input.ultra ? 0.96 : 0.6)); // Ultra: stronger lens radial blur, same pass
       return frame;
     },
   };

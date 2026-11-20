@@ -1,12 +1,13 @@
 import { DataTexture, LinearFilter, LinearMipmapLinearFilter, NoColorSpace, RepeatWrapping, TextureLoader, type Texture } from 'three';
 
-// The NITRO trail's flame texture (contract: docs/designs/nitro-flame/DESIGN.md). V is the flow axis, U wraps the tube;
-// R tongues, G fine turbulence, B sparse hot filaments. This module is the only code that names the path.
-export const NITRO_FLAME_PATH = 'feature-assets/garage-vfx-skins/nitro-flame/flame-noise.png';
+// The flame texture of the NITRO trail and the sprint exhaust (contract: docs/designs/nitro-flame/DESIGN.md). V is the
+// flow axis, U wraps the tube; R tongues, G fine turbulence, B sparse hot filaments. This module is the only code that
+// names the path. Outside `garage-vfx-skins/`: the locked build deletes that tree, and the standard exhaust ships in it.
+export const NITRO_FLAME_PATH = 'feature-assets/nitro-flame/flame-noise.png';
 
 /** Most light-dark cycles along V in one tile, per channel: what the trail's flicker accounting assumes of the image
  *  (.claude/rules/nitro-trail-vfx.md). A busier texture needs these raised, and the shader's scroll speeds lowered. */
-export const FLAME_CYCLES = { r: 2, g: 8, b: 3 };
+export const FLAME_CYCLES = { r: 3, g: 11, b: 3 };
 
 type Load = (url: string, onLoad: (texture: Texture) => void) => unknown;
 const browserLoad: Load | null = typeof document === 'undefined' ? null : (url, onLoad) => new TextureLoader().load(url, onLoad);
@@ -36,5 +37,5 @@ export function createNitroFlame(load: Load | null = browserLoad, baseUrl?: stri
   };
 }
 
-/** One texture for every trail: the race car, the Garage stage and the previews. */
+/** One texture for every trail and every exhaust jet: the race car, the Garage stage and the previews. */
 export const nitroFlame = createNitroFlame();

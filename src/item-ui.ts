@@ -1,3 +1,4 @@
+import { shallowReactive } from 'vue';
 import type { BonusCar } from './bonus-gates.ts';
 import { itemHit, useHeldItem, type PlayerItemRace } from './item-attacks.ts';
 import { ACTIVE_ITEMS, type ActiveItem } from './active-items.ts';
@@ -11,6 +12,8 @@ export interface ItemRace extends PlayerItemRace {
 }
 interface ItemSettings { itemRules?: unknown; activeItems?: unknown }
 export const itemRuleValue = (rules: ItemSettings): string => typeof rules.itemRules === 'string' ? rules.itemRules : rules.activeItems ? 'all' : 'classic';
+
+export const playerHitView = shallowReactive({ emp: 0, freeze: 0, calm: false });
 
 export function setupItemUI({ getRace, cue, calm = () => false }: { getRace: () => ItemRace; cue: (name: string) => void; calm?: () => boolean }) {
   const screen = document.getElementById('player-hit-screen')!;
@@ -37,10 +40,16 @@ export function setupItemUI({ getRace, cue, calm = () => false }: { getRace: () 
     const screenHit = race.phase === 'racing' ? hit ?? '' : '';
     if (screen.dataset.hit !== screenHit) screen.dataset.hit = screenHit;
     if (screenHit) {
-      const calmValue = String(calm());
+      const isCalm = calm();
+      if (playerHitView.calm !== isCalm) playerHitView.calm = isCalm;
+      const calmValue = String(isCalm);
       if (screen.dataset.calm !== calmValue) screen.dataset.calm = calmValue;
     }
     setHiddenIfChanged(screen, !screenHit);
+    const emp = screenHit ? Math.max(0, Math.ceil((car.empUntil ?? 0) - race.elapsed)) : 0;
+    const freeze = screenHit ? Math.max(0, Math.ceil((car.freezeUntil ?? 0) - race.elapsed)) : 0;
+    if (playerHitView.emp !== emp) playerHitView.emp = emp;
+    if (playerHitView.freeze !== freeze) playerHitView.freeze = freeze;
     setHiddenIfChanged(bonus, race.phase === 'ready' || !(hit || active || recent || near));
     if (hit) {
       const until = hit === 'emp' ? car.empUntil! : car.freezeUntil!;

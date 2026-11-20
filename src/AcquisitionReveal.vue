@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, onUnmounted, shallowRef, ref, watchPostEffect } from 'vue';
-import { acquisitionReveal, type AcquisitionBatch, type AcquisitionItem, type AcquisitionKind } from './acquisition-reveal.ts';
+import { acquisitionReveal, type AcquisitionActionFor, type AcquisitionBatch, type AcquisitionItem, type AcquisitionKind } from './acquisition-reveal.ts';
 import { getLocale, onLocaleChange } from './i18n.ts';
 import { dialogNavigation } from './dialog-navigation.ts';
 import { icons, ICON_ATTRS } from './icons.ts';
@@ -15,16 +15,25 @@ import './acquisition-motion.css';
 const labels = {
   en: { car: 'Vehicle', track: 'Track', paint: 'Paint finish', equipment: 'Equipment', clothing: 'Apparel',
     item: 'Item', medal: 'Medal', currency: 'Currency', unlocked: 'Unlocked', earned: 'Acquired',
-    demo: 'Demo reward', continue: 'Continue', rewards: 'Rewards', title: 'Reward reveal' },
+    demo: 'Demo reward', continue: 'Continue', rewards: 'Rewards', title: 'Reward reveal',
+    drive: ['Drive this car', 'Car selected'], paintAction: ['Apply paint', 'Paint applied'],
+    equip: ['Equip now', 'Equipped'], demoEquip: ['Equip demo item', 'Demo item equipped'],
+    wear: ['Wear now', 'Outfit equipped'], use: ['Use now', 'Used'], trackAction: ['Go to track', ''],
+    applying: 'Applying…', unavailable: 'Could not apply this reward.' },
   'zh-TW': { car: '車款', track: '賽道', paint: '車漆', equipment: '裝備', clothing: '服裝',
     item: '物品', medal: '勳章', currency: '資源', unlocked: '已解鎖', earned: '已獲得',
-    demo: '試玩獎勵', continue: '繼續', rewards: '本次獎勵', title: '獎勵揭曉' },
+    demo: '試玩獎勵', continue: '繼續', rewards: '本次獎勵', title: '獎勵揭曉',
+    drive: ['換乘此車', '已選用此車'], paintAction: ['套用車漆', '已套用車漆'],
+    equip: ['立即裝備', '已裝備'], demoEquip: ['立即試裝', '已試裝'],
+    wear: ['立即穿戴', '已穿戴'], use: ['立即使用', '已使用'], trackAction: ['前往賽道', ''],
+    applying: '套用中…', unavailable: '目前無法套用此獎勵。' },
 } as const;
 const glyph: Record<AcquisitionKind, string> = {
   car: `<path d="${GARAGE_POSE_ART.car}"/>`, track: icons.flag, paint: icons.nitro,
   equipment: icons.airflow, clothing: icons.star, item: icons.star, medal: icons.star, currency: icons.star,
 };
 const cue = inject<(name: string) => void>('game-audio-cue', () => {});
+const garageAction = inject<() => AcquisitionActionFor | undefined>('acquisition-garage', () => undefined);
 const dialog = ref<HTMLDialogElement>();
 const primary = ref<HTMLButtonElement>();
 const active = shallowRef<AcquisitionBatch | null>(null);
@@ -37,8 +46,24 @@ const heardShots = new Set<CarRevealShot>();
 const failedArt = ref('');
 const locale = ref(getLocale());
 const phase = ref('');
+const actionState = ref<'idle' | 'pending' | 'applied' | 'failed'>('idle');
+const appliedRewards = new Set<number>();
 const copy = computed(() => labels[locale.value]);
 const item = computed(() => active.value?.items[selected.value]);
+const action = computed(() => item.value && (item.value.action ?? garageAction()?.(item.value)));
+const applied = computed(() => {
+  const next = action.value;
+  return actionState.value !== 'pending' && !!next && next.kind !== 'track'
+    && (next.isApplied?.() ?? appliedRewards.has(selected.value));
+});
+const actionLabel = computed(() => {
+  const next = action.value;
+  if (!next) return '';
+  if (actionState.value === 'pending' && next.kind !== 'track') return copy.value.applying;
+  const key = next.kind === 'equip' && item.value?.scope === 'demo' ? 'demoEquip'
+    : next.kind === 'paint' ? 'paintAction' : next.kind === 'track' ? 'trackAction' : next.kind;
+  return copy.value[key][applied.value ? 1 : 0];
+});
 const car = computed(() => item.value?.kind === 'car' && isCar(item.value.id) ? item.value.id : undefined);
 const artwork = computed(() => item.value?.artwork ?? (car.value && { src: carArtwork(car.value), style: 'cutout' }));
 const art = computed(() => artwork.value && new URL(artwork.value.src, new URL(import.meta.env.BASE_URL, location.href)).href);
@@ -49,12 +74,17 @@ let stopQueue: (() => void) | undefined;
 let stopLocale: (() => void) | undefined;
 let phaseObserver: MutationObserver | undefined;
 let shown: AcquisitionBatch | null = null;
+let openTrack: (() => void) | undefined;
 onMounted(() => {
   nav = dialogNavigation(dialog.value!, () => {
     presenting.value = false;
     if (shown) cue('acquisition-stop');
-    if (shown) acquisitionReveal.dismiss(shown.id);
+  }, () => {
+    const batch = shown, navigate = openTrack;
     shown = null;
+    openTrack = undefined;
+    if (batch) acquisitionReveal.dismiss(batch.id);
+    navigate?.();
   });
   stopQueue = acquisitionReveal.subscribe(batch => {
     selected.value = 0;
@@ -62,6 +92,8 @@ onMounted(() => {
     shot.value = '';
     viewed.clear();
     heardShots.clear();
+    appliedRewards.clear();
+    actionState.value = 'idle';
     active.value = batch;
   });
   stopLocale = onLocaleChange(next => { locale.value = next; });
@@ -74,6 +106,7 @@ onUnmounted(() => {
   phaseObserver?.disconnect();
   stopQueue?.();
   stopLocale?.();
+  openTrack = undefined;
   if (dialog.value?.open) nav?.close(true);
 });
 
@@ -98,7 +131,7 @@ function rewardCue(reward: AcquisitionItem): string {
 }
 
 function selectReward(index: number): void {
-  if (selected.value === index) return;
+  if (selected.value === index || actionState.value === 'pending') return;
   const reward = active.value?.items[index];
   if (!reward) return;
   cue('acquisition-stop');
@@ -107,6 +140,7 @@ function selectReward(index: number): void {
   firstLook.value = !viewed.has(index);
   viewed.add(index);
   selected.value = index;
+  actionState.value = 'idle';
   cue(firstLook.value ? rewardCue(reward) : 'acquisition-select');
 }
 
@@ -116,6 +150,23 @@ function showShot(angle: CarRevealShot | ''): void {
   if (!angle || heardShots.has(angle)) return;
   heardShots.add(angle);
   cue('acquisition-car-' + angle);
+}
+
+async function applyReward(): Promise<void> {
+  const next = action.value, batch = shown;
+  if (!next || !batch || !presenting.value || applied.value || actionState.value === 'pending') return;
+  actionState.value = 'pending';
+  if (next.kind === 'track') {
+    openTrack = () => { next.open(); cue('ui'); };
+    nav?.close();
+    return;
+  }
+  let success = false;
+  try { success = await next.apply(); } catch { /* Keep the action available for another attempt. */ }
+  if (shown !== batch || !presenting.value) return;
+  if (success) appliedRewards.add(selected.value);
+  actionState.value = success ? 'applied' : 'failed';
+  cue(success ? 'equip-confirmed' : 'action-unavailable');
 }
 
 function continueGame(): void {
@@ -155,13 +206,29 @@ function continueGame(): void {
           <div v-if="active.items.length > 1" class="acquisition-rewards" role="group" :aria-label="copy.rewards">
             <button v-for="(reward, index) in active.items" :key="reward.kind + ':' + reward.id" type="button"
               :aria-pressed="index === selected" :aria-label="reward.name[locale]"
-              @click="selectReward(index)">
+              :disabled="actionState === 'pending'" @click="selectReward(index)">
               <svg v-bind="ICON_ATTRS" v-html="glyph[reward.kind]"></svg><span>{{ reward.name[locale] }}</span>
             </button>
           </div>
-          <button ref="primary" class="acquisition-continue" type="button" @click="continueGame">
-            {{ copy.continue }} <svg v-bind="ICON_ATTRS" v-html="icons.arrow"></svg>
-          </button>
+          <div class="acquisition-controls">
+            <div class="acquisition-actions">
+              <button ref="primary" class="acquisition-continue" type="button" @click="continueGame">
+                {{ copy.continue }} <svg v-if="!action" v-bind="ICON_ATTRS" v-html="icons.arrow"></svg>
+              </button>
+              <button v-if="action" class="acquisition-apply" type="button" :data-action="action.kind"
+                :data-applied="applied || undefined" :aria-disabled="applied || actionState === 'pending' || undefined"
+                :aria-busy="actionState === 'pending' || undefined" @click="applyReward">
+                <svg v-bind="ICON_ATTRS">
+                  <path v-if="applied" d="m5 12 4 4L19 6" />
+                  <g v-else v-html="glyph[item.kind]"></g>
+                </svg>
+                {{ actionLabel }}
+              </button>
+            </div>
+            <span class="acquisition-action-status" role="status" :data-error="actionState === 'failed' || undefined">
+              {{ actionState === 'failed' ? copy.unavailable : actionState === 'applied' ? actionLabel : '' }}
+            </span>
+          </div>
         </footer>
       </template>
     </dialog>

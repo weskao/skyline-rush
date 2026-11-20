@@ -1,11 +1,11 @@
 # NITRO trail flame noise
 
-The tileable noise texture the NITRO trail shader scrolls along the jet. Contract:
+The tileable noise texture the NITRO trail and sprint exhaust shaders scroll along the jet. Contract:
 `docs/designs/nitro-flame/DESIGN.md`, "Shared contract > Flame noise texture".
 
 | File | What |
 | --- | --- |
-| `bake.py` | Simulates the flow, writes `public/feature-assets/garage-vfx-skins/nitro-flame/flame-noise.png` and a contact sheet outside the repo, prints a `SUMMARY` (bytes, sha256, channel means) |
+| `bake.py` | Simulates the flow, writes `public/feature-assets/nitro-flame/flame-noise.png` and a contact sheet outside the repo, prints a `SUMMARY` (bytes, sha256, channel means) |
 
 There is no `.blend` master and no downloaded source: the texture is computed, so `bake.py` with its fixed seeds is
 the editable master.

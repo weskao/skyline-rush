@@ -5,7 +5,7 @@ interface CarActions {
   getStars(): number;
   syncProgress(): Promise<unknown>;
   preview(id: CarId): void;
-  selected(changed: boolean, wasPreview: boolean): void;
+  selected(changed: boolean, wasPreview: boolean, playSound: boolean): void;
   onTrialExpired(): void;
 }
 
@@ -28,18 +28,22 @@ export function setupGarageCarActions(panel: HTMLDialogElement, actions: CarActi
     return wasPreview;
   }
 
-  function select(id: CarId): void {
-    garageCars.trialError = false;
+  function equip(id: CarId, playSound = true): boolean {
     const changing = id !== equippedCar();
-    if (changing && !equipCar(id, undefined, actions.getStars())) {
-      garageCars.previewCar = id;
-      setGaragePreviewCar(id);
-      actions.preview(id);
-      refresh();
-      return;
-    }
+    if (changing && !equipCar(id, undefined, actions.getStars())) return false;
+    garageCars.trialError = false;
     const wasPreview = clearPreview();
-    if (changing || wasPreview) actions.selected(changing, wasPreview);
+    if (changing || wasPreview) actions.selected(changing, wasPreview, playSound);
+    return true;
+  }
+
+  function select(id: CarId): void {
+    if (equip(id)) return;
+    garageCars.trialError = false;
+    garageCars.previewCar = id;
+    setGaragePreviewCar(id);
+    actions.preview(id);
+    refresh();
   }
 
   panel.addEventListener('click', event => {
@@ -54,5 +58,5 @@ export function setupGarageCarActions(panel: HTMLDialogElement, actions: CarActi
     const id = target.closest<HTMLElement>('[data-car]')?.dataset.car;
     if (isCar(id)) select(id);
   });
-  return { refresh, clearPreview };
+  return { refresh, clearPreview, equip };
 }

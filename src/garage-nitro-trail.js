@@ -33,15 +33,16 @@ const FLOW = 'float flow(float x){return 1.+.18*sin(x);}'; // the only term allo
 // edge (`lick`, `torn`), G roughens that edge, B is the thin hot filaments along the core (`hair`). Patterns are
 // scaled in metres (`m`), not `u`: the chase camera sees only the first 3 to 4 m of a 17 m trail. `rim` is the
 // view-normalised profile (vFacing never passes ~.3 seen end-on), so the body reads down the axis. A sample scrolled
-// by `time*N` changes N x FLAME_CYCLES times a second at one pixel: 1.2 x 2 and .35 x 8, both under 3 Hz. On the
+// by `time*N` changes N x cycles times a second at one pixel; the real image's busiest columns hold R 3, G 11, B 3 cycles
+// a tile, so 1 x 3 and .27 x 11 stay under 3 Hz. On the
 // neutral 1 x 1 fallback (.5) `lick` is 1, `hair` is 0 and `torn` only narrows the jet: smooth, never broken.
 // `white` is the white-hot nozzle core, the one light added after the .66 normalisation: steady (no time, ignition or
 // texture), it ends 0.3 m behind the nozzle and wherever a swell draws the jet wider than 0.16 m.
 const STREAK_FRAGMENT = `varying vec2 vUv;varying float vFacing;varying float vWide;varying float vAxis;uniform float time,power,style,ignite,trailLength;uniform vec3 color;uniform sampler2D flame;${HASH}${FLOW}
   void main(){float u=clamp(vUv.y,0.,1.);float a=clamp(vUv.x,0.,1.);float f=clamp(vFacing,0.,1.);
     float m=u*trailLength;float rim=clamp(f/max(vAxis,.08),0.,1.); // metres behind the nozzle; 1 on the jet's centre line, 0 at its silhouette
-    float tongue=texture2D(flame,vec2(a,m*.5-time*1.2)).r;
-    vec2 fine=texture2D(flame,vec2(a*2.+tongue*.1,m*.12-time*.35)).gb; // x: G turbulence, y: B filaments
+    float tongue=texture2D(flame,vec2(a,m*.5-time*1.)).r;
+    vec2 fine=texture2D(flame,vec2(a*2.+tongue*.1,m*.12-time*.27)).gb; // x: G turbulence, y: B filaments
     float rush=flow(u*40.+a*25.13-time*60.); // four thin streaks race back at ~10 Hz
     float lick=smoothstep(.25,.75,tongue)*2.;
     float hair=smoothstep(.52,.85,fine.y)*rim*rim*rush;

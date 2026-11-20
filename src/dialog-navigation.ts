@@ -3,7 +3,7 @@
 let nextEntry = 0;
 const key = 'skylineRushDialog';
 
-export function dialogNavigation(dialog: HTMLDialogElement, beforeClose = () => {}) {
+export function dialogNavigation(dialog: HTMLDialogElement, beforeClose = () => {}, afterClose = () => {}) {
   let entry = '';
   let pendingBack = false;
   const cleanup = () => window.removeEventListener('popstate', onBack);
@@ -12,6 +12,7 @@ export function dialogNavigation(dialog: HTMLDialogElement, beforeClose = () => 
     pendingBack = false;
     beforeClose();
     dialog.close();
+    afterClose();
   };
   const onBack = () => {
     if (dialog.open && !history.state?.[key]?.includes(entry)) closeDialog();

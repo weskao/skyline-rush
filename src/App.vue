@@ -43,6 +43,7 @@ import CupRecovery from './CupRecovery.vue';
 import RacePresentation from './RacePresentation.vue';
 import RaceOverlay from './RaceOverlay.vue';
 import RaceHalfway from './RaceHalfway.vue';
+import RaceSpeedometer from './RaceSpeedometer.vue';
 import ItemRules from './ItemRules.vue';
 import ItemSlot from './ItemSlot.vue';
 import PhotoStudio from './PhotoStudio.vue';
@@ -329,7 +330,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
   <GameToast />
 
   <footer class="telemetry">
-    <div class="speedometer"><div class="speed-number"><strong id="speed">0</strong><span>KM/H</span></div><div class="speed-ticks" aria-hidden="true"><svg class="speed-dial" viewBox="0 0 200 22"><path d="M4 20 Q100 -16 196 20"/><path id="speed-needle" d="M100 20V2"/></svg><i v-for="i in 24"></i></div><span class="speed-caption" id="speed-caption">READY FOR TAKEOFF</span></div>
+    <RaceSpeedometer />
     <div class="mode-indicator"><div class="mode-heading"><div class="mode-icon" id="mode-icon"><svg v-bind="ICON_ATTRS" v-html="icons.road"></svg></div><span id="flight-mode">ROAD MODE</span><span id="flight-budget">5.3s</span></div><strong id="flight-state">BUILD SPEED</strong><span class="mode-key" id="flight-instruction">REACH 65 KM/H · HOLD SPACE TO LIFT</span></div>
     <div class="flight-telemetry"><div class="altitude-stat"><span class="stat-label" data-i18n="hud.altitude">ALTITUDE</span><strong><span id="altitude">0.0</span><small>M</small></strong></div><div class="fuel-stat"><div class="fuel-heading"><span class="stat-label" data-i18n="hud.thruster">THRUSTER CHARGE</span><span><b id="fuel-value">100</b><small>%</small></span></div><div class="fuel-track" id="fuel-meter" role="meter" aria-label="Thruster charge" data-i18n-aria-label="hud.thrusterAria" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="fuel-fill"></i></div><span class="fuel-caption" id="fuel-caption">GROUND RECHARGE ACTIVE</span></div></div>
   </footer>
@@ -378,7 +379,7 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
     <button class="touch-brake" data-control="brake" aria-label="Brake" data-i18n-aria-label="touch.brake"><svg v-bind="ICON_ATTRS" v-html="icons.brake"></svg></button>
   </div>
   <div class="layout-toolbar" id="layout-toolbar" hidden><div><strong id="layout-orientation" role="status"></strong><br><span data-i18n="layout.hint">Drag buttons to fit your thumbs</span></div><button id="layout-done" data-i18n="layout.done">Done editing</button></div>
-  <div class="bottomline"><span><i></i> <span data-i18n="footer.tagline">BEYOND THE ROAD</span></span><button type="button" id="whats-new-open" class="build-version" :hidden="releaseView.openHidden" :class="{ 'has-update': releaseView.openHasUpdate }" data-i18n-aria-label="release.open" data-i18n-title="release.open" title="What's new">v{{ version }}<span class="release-unread" aria-hidden="true"></span></button><span data-i18n="footer.genre">AN ORIGINAL ARCADE FLIGHT RACER</span></div>
+  <div class="bottomline"><button type="button" id="whats-new-open" class="build-version" :hidden="releaseView.openHidden" :class="{ 'has-update': releaseView.openHasUpdate }" data-i18n-aria-label="release.open" data-i18n-title="release.open" title="What's new">v{{ version }}<span class="release-unread" aria-hidden="true"></span></button></div>
 </template>
 
 <style scoped>

@@ -186,6 +186,48 @@
 .acquisition-reveal button:hover { border-color: #a4ecff; }
 .acquisition-reveal .acquisition-continue { flex: none; min-width: 124px; color: #061b2c; background: linear-gradient(135deg, #a1efff, #6bcafa); border-color: #a9e7ff; }
 .acquisition-continue:hover { filter: brightness(1.1); }
+.acquisition-controls { flex: none; max-width: 100%; }
+.acquisition-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.acquisition-reveal .acquisition-actions > button { flex: 1 1 auto; }
+.acquisition-actions:has(.acquisition-apply) .acquisition-continue {
+  min-width: 0;
+  color: #d4e3f4;
+  background: #142234;
+  border-color: #526a83;
+}
+.acquisition-actions:has(.acquisition-apply) .acquisition-continue:hover { border-color: #a4ecff; }
+.acquisition-reveal .acquisition-apply {
+  --action-accent: #89e8ff;
+  position: relative;
+  overflow: hidden;
+  color: #0b1625;
+  background: linear-gradient(125deg, #f0f8ff, var(--action-accent) 72%);
+  border-color: var(--action-accent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--action-accent) 22%, transparent);
+  transition: filter 150ms ease, transform 110ms ease;
+}
+.acquisition-apply[data-action="drive"] { --action-accent: #ffc275; }
+.acquisition-apply[data-action="paint"] { --action-accent: #e3a7ff; }
+.acquisition-apply[data-action="equip"] { --action-accent: #adbaff; }
+.acquisition-apply[data-action="wear"] { --action-accent: #ffb0d2; }
+.acquisition-apply:not([aria-disabled]):hover { filter: brightness(1.1); }
+.acquisition-apply:not([aria-disabled]):active { transform: var(--acquisition-press, scale(.97)); }
+.acquisition-apply[aria-disabled] { cursor: default; }
+.acquisition-reveal .acquisition-apply[data-applied] {
+  color: #c0f6d9;
+  background: #13392e;
+  border-color: #61ae91;
+  box-shadow: none;
+}
+.acquisition-apply[data-applied] svg { animation: acquisition-confirm 260ms ease-out both; }
+.acquisition-action-status:not([data-error]) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.acquisition-action-status[data-error] { display: block; margin-top: 6px; color: #ffc1b8; font-size: .78rem; }
+@keyframes acquisition-confirm { from { opacity: .45; transform: scale(.7); } }
+body:is(.vfx-comfort, [data-vfx-enabled="false"]) .acquisition-apply { --acquisition-press: none; transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .acquisition-apply { --acquisition-press: none; transition: none; }
+}
+
 
 @keyframes acquisition-enter { from { opacity: 0; transform: translateY(13px) scale(.985); } }
 @keyframes acquisition-backdrop { from { opacity: 0; } }

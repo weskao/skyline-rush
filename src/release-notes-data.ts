@@ -59,11 +59,20 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         }
       },
       {
-        id: 'rival-items', kind: 'new', image: null,
+        id: 'drift-trail-styles', kind: 'new', image: 'whats-new/drift-trail-styles/garage-drift-trails.webp',
+        title: { en: 'Five new drift trail styles', 'zh-TW': '五款全新甩尾痕跡' },
+        description: {
+          en: 'Preview and try Embercut, Prism Ribbon, Glacier Fracture, Voltage Arc and Nebula Dust for free in Garage Effects. Equip one to leave its trail on the road.',
+          'zh-TW': '到車庫「特效」即時預覽並免費試用熾焰、虹光流帶、裂冰晶痕、霓電弧與星雲微塵。裝備後，甩尾時就會在路面留下你選的痕跡。'
+        }
+      },
+      {
+        id: 'rival-items', kind: 'new',
+        image: { en: 'whats-new/rival-items/debuffs.en.webp', 'zh-TW': 'whats-new/rival-items/debuffs.zh-TW.webp' },
         title: { en: 'Rivals fight back with Freeze and EMP', 'zh-TW': '對手也會用冰凍與 EMP' },
         description: {
-          en: 'Rivals now pick up Freeze and EMP and use them on you. Hit rivals frost over or spark out.',
-          'zh-TW': '對手現在會撿冰凍與 EMP 來攻擊你；被擊中的對手會結冰或冒出電弧。'
+          en: 'Rivals can hit you with Freeze or EMP. A center countdown shows how long it lasts, while your speedometer lights up icy blue or gold.',
+          'zh-TW': '對手會用冰凍與 EMP 攻擊。中招時，畫面中央會顯示倒數，時速表也會亮起冰藍或金黃，直到效果解除。'
         }
       },
       {

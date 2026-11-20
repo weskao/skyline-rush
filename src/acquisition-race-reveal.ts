@@ -15,7 +15,7 @@ const medal = (id: string, key: string): AcquisitionItem => ({
   description: localized(locale => t(key + '.detail', undefined, locale)),
 });
 
-export function raceAcquisitionItems(result: Settlement): AcquisitionItem[] {
+export function raceAcquisitionItems(result: Settlement, openTrack?: (id: string) => void): AcquisitionItem[] {
   const items: AcquisitionItem[] = result.unlockedCars.map(id => ({
     id, kind: ACQUISITION_KIND.CAR, status: 'unlocked', name: localized(locale => t('car.' + id, undefined, locale)),
     artwork: { src: carArtwork(id), style: 'cutout' },
@@ -23,7 +23,8 @@ export function raceAcquisitionItems(result: Settlement): AcquisitionItem[] {
   if (result.next && result.unlockedTrack) {
     const id = result.next;
     items.push({ id, kind: ACQUISITION_KIND.TRACK, status: 'unlocked', name: localized(locale => trackName(id, locale)),
-      artwork: { src: `track-teasers/${id}.jpg`, style: 'cover' } });
+      artwork: { src: `track-teasers/${id}.jpg`, style: 'cover' },
+      action: openTrack && { kind: 'track', open: () => openTrack(id) } });
   }
   for (const id of result.unlockedPaints) {
     items.push({ id, kind: ACQUISITION_KIND.PAINT, status: 'unlocked', name: localized(locale => t('paint.' + id, undefined, locale)),
@@ -35,12 +36,12 @@ export function raceAcquisitionItems(result: Settlement): AcquisitionItem[] {
 
 /** Called when the ordinary results are visible, once per real race object. */
 export async function presentRaceAcquisitions(
-  race: RaceOutcome, result: Settlement, cue: PlayCue, instantReveal: boolean,
+  race: RaceOutcome, result: Settlement, cue: PlayCue, instantReveal: boolean, openTrack?: (id: string) => void,
 ): Promise<void> {
   if (presented.has(race)) return;
   presented.add(race);
   const id = `race:${++sequence}`;
-  const items = raceAcquisitionItems(result);
+  const items = raceAcquisitionItems(result, openTrack);
   const receipt = await Promise.resolve(getWave3DemoReceipt(race)).catch(() => null);
   const queued = presentAcquisition({ id, items: [...items, ...demoAcquisitionItems(receipt)] });
   // Comfortable presentation can reach results in the same frame as the race finish cue.
