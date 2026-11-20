@@ -378,8 +378,6 @@ export const UI = Object.freeze({
     'touch.nitro': 'Activate nitro',
     'touch.boost': 'Hold to boost',
     'touch.throttle': 'Accelerate',
-    'footer.tagline': 'BEYOND THE ROAD',
-    'footer.genre': 'AN ORIGINAL ARCADE FLIGHT RACER',
     // Dynamic text (main.js)
     'track.locked': 'LOCKED',
     'track.selected': 'SELECTED',
@@ -956,8 +954,6 @@ export const UI = Object.freeze({
     'touch.nitro': '發動 NITRO',
     'touch.boost': '按住 BOOST',
     'touch.throttle': '踩油門',
-    'footer.tagline': '超越公路',
-    'footer.genre': '原創街機飛行競速',
     'track.locked': '未解鎖',
     'track.selected': '已選擇',
     'track.open': '可選擇',

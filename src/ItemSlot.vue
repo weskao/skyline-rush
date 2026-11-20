@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { itemAttackPaths } from './icons.ts';
+
 // Static silhouettes are selected by the typed hot-HUD adapter; no per-frame Vue reactivity.
 </script>
 
@@ -9,8 +11,8 @@
       <svg class="item-shield" viewBox="0 0 48 48"><path d="M24 10l12 5v9c0 8-5 13-12 15-7-2-12-7-12-15v-9l12-5z" /></svg>
       <svg class="item-magnet" viewBox="0 0 48 48"><path d="M15 14v10a9 9 0 0018 0V14h-5v10a4 4 0 01-8 0V14h-5z" /></svg>
       <svg class="item-ghost" viewBox="0 0 48 48"><path d="M14 36V22a10 10 0 0120 0v14l-4-3-3 3-3-3-3 3-3-3-4 3zm6-14h1m7 0h1" /></svg>
-      <svg class="item-emp" viewBox="0 0 48 48"><path d="M26 7L14 26h9l-1 15 13-22h-9l1-12zM8 16l-4-3m36 22l4 3M8 33l-4 3m36-21l4-3" /></svg>
-      <svg class="item-freeze" viewBox="0 0 48 48"><path d="M24 8v32M10 16l28 16M10 32l28-16M19 12l5 5 5-5M19 36l5-5 5 5M11 22l7-2-2-7M37 26l-7 2 2 7" /></svg>
+      <svg class="item-emp" viewBox="0 0 48 48"><path :d="itemAttackPaths.emp" /></svg>
+      <svg class="item-freeze" viewBox="0 0 48 48"><path :d="itemAttackPaths.freeze" /></svg>
     </span>
     <span id="item-status" role="status"></span>
     <div id="ghost-phase-status" class="ghost-phase-status" hidden>
