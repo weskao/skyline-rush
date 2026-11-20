@@ -29,9 +29,19 @@
   border-color: #f5a483; background: linear-gradient(110deg, #51343b, #21364c 76%); color: #fff5ed;
 }
 .settings-sections button[aria-pressed="true"] svg { color: #ffc1a2; }
-.settings-sections button[aria-pressed="true"]::before {
+.settings-sections button::before {
   content: ''; position: absolute; inset: 7px auto 7px 0; width: 3px; border-radius: 0 2px 2px 0;
-  background: #ffaf89;
+  background: #ffaf89; opacity: 0; pointer-events: none;
+}
+.settings-sections button[aria-pressed="true"]::before { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  body:not(.vfx-comfort) #settings-panel[open] .settings-content > section:not([hidden]) {
+    animation: overlay-in var(--dur-fast) var(--ease-out);
+  }
+  body:not(.vfx-comfort) .settings-sections button {
+    transition: border-color var(--dur-fast), color var(--dur-fast), filter var(--dur-base) var(--ease-spring);
+  }
+  body:not(.vfx-comfort) .settings-sections button::before { transition: opacity var(--dur-fast); }
 }
 .settings-sections button:disabled { opacity: .55; cursor: default; }
 .settings-content { min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 1px 4px 4px; }

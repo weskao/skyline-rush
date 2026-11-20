@@ -82,3 +82,11 @@
   border-width: 0 0 2px 2px;
   transform: translateX(-2px) rotate(-45deg);
 }
+@media (prefers-reduced-motion: no-preference) {
+  body:not(.vfx-comfort) .custom-select > [role="listbox"]:not([hidden]) {
+    animation: overlay-in var(--dur-fast) var(--ease-out);
+  }
+  body:not(.vfx-comfort) .custom-select > button[role="combobox"] {
+    transition: border-color var(--dur-fast), background-color var(--dur-fast), filter var(--dur-base) var(--ease-spring);
+  }
+}

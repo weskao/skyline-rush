@@ -106,3 +106,34 @@ test('Home weather shows the extra options for the chosen track', async ({ page 
   await picker.getByRole('option', { name: /snow/i }).click();
   await expect(page.locator('#race-visual-preset')).toHaveValue('snow');
 });
+
+test('Settings transitions respect both motion preferences and leave the picker usable', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await gotoHome(page);
+  const language = page.locator('#settings-language');
+  const picker = language.getByRole('combobox');
+  const list = language.getByRole('listbox');
+
+  const verifyMotion = async (animate) => {
+    await openSettingsSection(page, 'language');
+    const expectAnimation = el => animate ? expect(el).not.toHaveCSS('animation-name', 'none') : expect(el).toHaveCSS('animation-name', 'none');
+    await expectAnimation(language);
+    await picker.press('Enter');
+    await expectAnimation(list);
+    await expect(list.getByRole('option')).toHaveCount(2);
+    await picker.press('Escape');
+    await expect(list).toBeHidden();
+    await expect(picker).toBeFocused();
+    await expect(page.locator('#settings-panel')).toBeVisible();
+  };
+
+  await verifyMotion(true);
+  await openSettingsSection(page, 'audio');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await verifyMotion(false);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await openSettingsSection(page, 'display');
+  await page.locator('[data-vfx="comfortable"]').check();
+  await expect(page.locator('body')).toHaveClass(/\bvfx-comfort\b/);
+  await verifyMotion(false);
+});
