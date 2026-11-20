@@ -46,11 +46,12 @@ the trail; brightness changes stay slow and partial. Keep it that way:
   A new skin adds a layer or a shape before it adds a multiplier.
 - **Shape comes from the flame texture, not from `sin` and a hash** (2026-11-20). Three glare fixes left the
   streak flat: smooth functions only, at 0.66. `src/nitro-flame-texture.ts` is the only module that names the
-  image (`flame-noise.png`, contract in `docs/designs/nitro-flame/DESIGN.md`) and only `garage-nitro-trail.js`
-  imports it, so the locked bundle never references it. R tears the body into tongues and erodes its edge, G
+  image (`flame-noise.png`, contract in `docs/designs/nitro-flame/DESIGN.md`). Two modules import it:
+  `garage-nitro-trail.js` and `src/sprint-plume.ts` (the standard exhaust), so the image ships in the locked build
+  from `public/feature-assets/nitro-flame/`. R tears the body into tongues and erodes its edge, G
   roughens the edge, B is the thin hot filaments on the core. Traps:
   - **A scrolled texture is a flicker frequency.** A sample scrolled along V by `time*N` changes one pixel
-    N x (light-dark cycles per tile along V) times a second. `FLAME_CYCLES` (r 2, g 8, b 3) states what the
+    N x (light-dark cycles per tile along V) times a second. `FLAME_CYCLES` (r 3, g 11, b 3) states what the
     shader assumes of the image; N x the busiest channel read stays ≤ 3 Hz. A busier image raises `FLAME_CYCLES`
     and lowers the scroll, never the limit. U never scrolls. Halo and road glow do not sample it. Trap
     (2026-11-21): the shader was tuned on a stand-in image; the shipped `flame-noise.png`'s busiest columns hold

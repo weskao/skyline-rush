@@ -4,7 +4,7 @@ Three sessions built it (design `docs/designs/nitro-flame/DESIGN.md`; their evid
 `evidence-sparks.md` in the same folder); this entry folds them in. Full commands and numbers:
 `docs/designs/sprint-tiers/evidence-nitro-acceptance.md`.
 
-- [x] Art: `public/feature-assets/garage-vfx-skins/nitro-flame/flame-noise.png`, 512 x 512 RGB, 293,450 bytes, deterministic rebuild on one machine (R tongues, G turbulence, B filaments).
+- [x] Art: `public/feature-assets/nitro-flame/flame-noise.png`, 512 x 512 RGB, 293,450 bytes, deterministic rebuild on one machine (R tongues, G turbulence, B filaments).
 - [x] Shader: the four trail skins sample the image (R scrolled, GB scrolled), scaled in metres, `rim` body profile, a steady white nozzle core after the `.66` line; neutral 1 x 1 texel from creation, the image swaps the uniform's value. `src/aero-vfx.js` holds the base cone at 20% under a trail skin (one line outside the shader session's list, kept: it is what lets the tongues show).
 - [x] Sparks: `src/nitro-sparks.ts`, kind-0 points in the shared 480-slot pool, 8 / 12 / 19 live (Low / Medium / High), skin-coloured. The one `src/world.js` statement (`effects.setNitroTrail(ids)` in `setCosmeticSkins`) is kept: it is the existing path that hands `effects.js` the drift-trail skin, it adds no line (943), and `tests/nitro-sparks.test.js` asserts it. Live captures show cyan sparks on the cyan skin and red on the red, so it works at runtime.
 - [x] Real texture in game (never checked by the art session): it loads as 512x512 on both cars in every capture, parented to `Rear ports`, 0 page errors.

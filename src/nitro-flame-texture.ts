@@ -7,7 +7,7 @@ export const NITRO_FLAME_PATH = 'feature-assets/nitro-flame/flame-noise.png';
 
 /** Most light-dark cycles along V in one tile, per channel: what the trail's flicker accounting assumes of the image
  *  (.claude/rules/nitro-trail-vfx.md). A busier texture needs these raised, and the shader's scroll speeds lowered. */
-export const FLAME_CYCLES = { r: 2, g: 8, b: 3 };
+export const FLAME_CYCLES = { r: 3, g: 11, b: 3 };
 
 type Load = (url: string, onLoad: (texture: Texture) => void) => unknown;
 const browserLoad: Load | null = typeof document === 'undefined' ? null : (url, onLoad) => new TextureLoader().load(url, onLoad);

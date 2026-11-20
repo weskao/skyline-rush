@@ -74,8 +74,8 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
     fragmentShader: `varying vec2 vUv;varying float vD,vSpread;uniform float time,clock,power,brightness,diamonds,extreme,nitroMix,skinPattern,tail,thick,glare;uniform vec3 skinTint;uniform vec4 trailAccent,look,tier;uniform sampler2D flame;
       float flow(float x){return 1.+.18*sin(x);}
       void main(){float t=clamp(1.-vUv.y,0.,1.),d=clamp(vD,0.,40.); // MSAA slivers extrapolate vUv far past the rim; unclamped, the core overflows to Inf and a zero fade makes NaN
-        float tongue=texture2D(flame,vec2(vUv.x*look.z,d*look.w-clock*1.4)).r;
-        vec2 fine=texture2D(flame,vec2(vUv.x*2.+tongue*.1,d*.3-clock*.36)).gb;
+        float tongue=texture2D(flame,vec2(vUv.x*look.z,d*look.w-clock*1.)).r;
+        vec2 fine=texture2D(flame,vec2(vUv.x*2.+tongue*.1,d*.3-clock*.27)).gb;
         float tear=look.x*tier.y*smoothstep(0.,.3,t); // the nozzle stays whole and steady: a small white-hot point
         float lick=mix(1.,.25+1.5*smoothstep(.2,.8,tongue),tear);
         float hair=smoothstep(.55,.9,fine.y)*look.y*tier.y*flow(d*9.-clock*60.); // thin filaments race back: speed without glow
