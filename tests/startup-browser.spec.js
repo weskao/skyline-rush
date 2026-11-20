@@ -161,6 +161,54 @@ test('scales the camera and road motion with existing graphics quality and reduc
   }
 });
 
+test('glass reflections follow the responsive artwork and respect startup motion settings', async ({ page }) => {
+  await page.addInitScript(key => localStorage.setItem(key, JSON.stringify({ quality: 'high', enabled: true })), QUALITY_STORAGE_KEY);
+  await page.route('**/assets/main-*.js', () => {});
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/', { waitUntil: 'commit' });
+  const startup = page.locator('#startup');
+  const art = page.locator('.startup-art');
+  const glass = pseudo => art.evaluate((element, selector) => {
+    const css = getComputedStyle(element, selector);
+    return { mask: css.maskImage, animation: css.animationName, opacity: Number(css.opacity) };
+  }, pseudo);
+
+  await expect(startup).toHaveAttribute('data-motion', 'high');
+  for (const [width, height, shape] of [[1440, 900, 'wide'], [390, 844, 'portrait'], [768, 1024, 'square'], [844, 390, 'wide']]) {
+    await page.setViewportSize({ width, height });
+    await expect.poll(() => glass('::before').then(style => style.mask)).toContain(`startup-glass-${shape}.svg`);
+    const reflection = await glass('::after');
+    expect(reflection.mask).toContain(`startup-glass-${shape}.svg`);
+    expect(reflection.animation).toBe('startup-camera, startup-glass-reflection');
+  }
+  const [rest, glint] = await art.evaluate(element => {
+    const motion = document.getAnimations().find(animation => animation.animationName === 'startup-glass-reflection');
+    motion.pause();
+    return [0.4, 0.16].map(progress => {
+      motion.currentTime = progress * motion.effect.getTiming().duration;
+      return Number(getComputedStyle(element, '::after').opacity);
+    });
+  });
+  expect(rest).toBe(0);
+  expect(glint).toBeGreaterThan(0);
+  expect(glint).toBeLessThanOrEqual(0.55);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect.poll(() => glass('::after')).toMatchObject({ animation: 'none', opacity: 0 });
+  expect((await glass('::before')).mask).toContain('startup-glass-wide.svg');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  // Exercise CSS quality and failure transitions without waiting on the renderer.
+  for (const [motion, animation] of [['medium', 'startup-glass-reflection'], ['low', 'none'], ['off', 'none']]) {
+    await startup.evaluate((element, tier) => { element.dataset.motion = tier; }, motion);
+    await expect.poll(() => glass('::after').then(style => style.animation)).toBe(animation);
+  }
+  await startup.evaluate(element => {
+    element.dataset.motion = 'high';
+    element.dataset.stage = 'failed';
+  });
+  await expect.poll(() => glass('::after')).toMatchObject({ animation: 'none', opacity: 0 });
+});
+
 test('a context loss during entry keeps the retry screen visible and the lobby inert', async ({ page }) => {
   await page.goto('/');
   await expect(enter(page)).toBeVisible();
