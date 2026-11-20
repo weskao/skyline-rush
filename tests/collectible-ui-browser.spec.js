@@ -6,7 +6,7 @@ import { openGarage } from './helpers/test.js';
 const artwork = new URL('../public/feature-assets/collectible-ui/', import.meta.url);
 const icons = readdirSync(artwork).filter(file => file.endsWith('.webp'))
   .map(file => 'collectible-ui/' + file);
-icons.push('wave3-demo/raster/wallet-coin@3x.webp');
+icons.push('wave3-demo/raster/wallet-coin@3x.webp', 'wave3-demo/raster/wallet-diamond@3x.webp');
 test.use({ reducedMotion: 'reduce', keepAcquisitionOpen: true });
 
 test('collectible controls have complete transparent artwork at native three times size', async ({ page, gameplayURL }) => {
@@ -36,7 +36,8 @@ test('collectible controls have complete transparent artwork at native three tim
   })), icons);
   expect(checked.length).toBeGreaterThan(35);
   for (const icon of checked) {
-    const specialSize = { 'cart-panel@3x.webp': 156, 'mission-panel@3x.webp': 120, 'wallet-coin@3x.webp': 144 };
+    const specialSize = { 'cart-panel@3x.webp': 156, 'mission-panel@3x.webp': 120,
+      'wallet-coin@3x.webp': 144, 'wallet-diamond@3x.webp': 144 };
     const expected = specialSize[icon.name] ?? (icon.name.endsWith('-panel@3x.webp') ? 216 : 72);
     expect(icon.size, icon.name).toBe(expected);
     expect(icon.height, icon.name).toBe(expected);
@@ -63,6 +64,9 @@ test('reward tabs distinguish demo coins, points and diamonds with their own ico
     await expect(reward).toHaveAttribute('aria-pressed', 'true');
     await expect(reward.locator('img')).toHaveAttribute('data-collectible-icon', name);
   }
+  const diamondArt = /\/feature-assets\/wave3-demo\/raster\/wallet-diamond@3x\.webp$/;
+  await expect(reveal.getByRole('button', { name: 'Demo diamonds' }).locator('img')).toHaveAttribute('src', diamondArt);
+  await expect(reveal.locator('.acquisition-art')).toHaveAttribute('src', diamondArt);
 });
 
 test('Garage and Store icons fit their controls and change with the selected tab', async ({ gameplayPage: page }) => {
@@ -77,6 +81,8 @@ test('Garage and Store icons fit their controls and change with the selected tab
   await expect(cars).toHaveAttribute('aria-pressed', 'true');
   const before = await cars.locator('.collectible-icon').evaluate(icon => getComputedStyle(icon).filter);
   await store.click();
+  await expect(garage.locator('[data-demo-balance="diamonds"] img'))
+    .toHaveAttribute('src', /\/feature-assets\/wave3-demo\/raster\/wallet-diamond@3x\.webp$/);
   await expect(cars).toHaveAttribute('aria-pressed', 'false');
   await expect.poll(() => cars.locator('.collectible-icon').evaluate(icon => getComputedStyle(icon).filter)).not.toBe(before);
   const filter = garage.locator('.demo-filters button').first();
