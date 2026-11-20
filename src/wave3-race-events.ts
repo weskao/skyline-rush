@@ -49,11 +49,13 @@ function withMissionReady(receipt: ExperienceResult, before: ExperienceSnapshot)
 export function createWave3RaceEventBridge<T extends ReturnType<Wave3ExperiencePort['settleCompletion']>>(
   experience: Pick<Wave3ExperiencePort, 'getOperationScope' | 'getSnapshot'> & {
     settleCompletion: (completion: Parameters<Wave3ExperiencePort['settleCompletion']>[0]) => T;
+    ready?: () => Promise<void> | null;
   },
   idFactory: () => string = id,
   now: () => number = Date.now,
 ) {
   const known = new WeakMap<object, RaceMemory>();
+  let waiting = false;
   const seriesScopes = new WeakMap<object, DemoOperationScope>();
   const seriesKey = (race: ObservedRace, series?: RaceSeries): object | undefined => {
     if (race.mode === 'cup') return series?.cup?.results[0];
@@ -70,6 +72,15 @@ export function createWave3RaceEventBridge<T extends ReturnType<Wave3ExperienceP
     return item;
   };
   return {
+    /** True when `start` waits for the wallet restore; it then runs once, so the race scope is post-restore. */
+    deferStart(start: () => void): boolean {
+      if (waiting) return true;
+      const pending = experience.ready?.();
+      if (!pending) return false;
+      waiting = true;
+      void pending.then(() => { waiting = false; start(); });
+      return true;
+    },
     capture(race: ObservedRace): void {
       if (race.phase !== 'countdown' && race.phase !== 'racing' && race.phase !== 'finished') return;
       const state = memory(race);
@@ -116,6 +127,8 @@ export function createWave3RaceEventBridge<T extends ReturnType<Wave3ExperienceP
 
 const bridge = createWave3RaceEventBridge(wave3DemoExperience);
 export const captureWave3RaceTelemetry = bridge.capture;
+export const deferWave3RaceStart = bridge.deferStart;
+export const forgetWave3DemoAccount = (uid: string): void => { wave3DemoExperience.forgetAccount(uid); };
 type PendingReceipt = { scope: DemoOperationScope; value: Promise<ExperienceResult | null> };
 const receipts = new WeakMap<object, PendingReceipt>();
 /** The first receipt is held by race identity, so rendering never settles again. */

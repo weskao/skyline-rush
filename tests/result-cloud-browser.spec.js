@@ -1,3 +1,4 @@
+import { clickLobbyOption } from './helpers/home-lobby.js';
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
@@ -192,11 +193,11 @@ test('a failed clean time trial offers a visible retry without claiming a cloud 
 });
 
 test.describe('mobile results navigation dock', () => {
-  test.use({ viewport: { width: 402, height: 874 }, hasTouch: true, reducedMotion: 'reduce', keepAcquisitionOpen: true });
+  test.use({ viewport: { width: 402, height: 874 }, hasTouch: true, reducedMotion: 'reduce',
+    locale: 'zh-TW', keepAcquisitionOpen: true });
 
   test('the race actions are tappable on first paint and while scrolling the receipt', async ({ gameplayPage }) => {
     const page = await cloudPage(gameplayPage);
-    await selectLocale(page, 'zh-TW');
     await finishRace(page);
     const reveal = page.locator('#acquisition-reveal');
     await expect(reveal).toBeVisible();

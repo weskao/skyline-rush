@@ -43,7 +43,8 @@ export const COAST_ENV_VARIANTS: Readonly<Record<CoastEnvName, CoastEnvVariant>>
     sky: { sunDirection: [0.5544, 0.7417, 0.3776], range: 2.5, gain: 0.55, disc: 0.7 } },
   dusk: { file: 'qwantani_sunset_puresky_1k.hdr', credit: cc0('qwantani_sunset_puresky', 'Greg Zaal, Jarod Guest'),
     intensity: 0.8, exposure: 1.1, grade: { saturation: 1.12, contrast: 1.08, tint: [1.04, 0.98, 0.93] },
-    bloom: { strength: 0.55, threshold: 0.95 }, radianceCap: 4, sun: { color: '#ffad72', intensity: 2.1 },
+    // The horizon and wet asphalt approach 1.0 radiance here. Keep their glow local while the sun disc still blooms.
+    bloom: { strength: 0.44, threshold: 1.1 }, radianceCap: 4, sun: { color: '#ffad72', intensity: 2.1 },
     sky: { sunDirection: [0.8042, 0.106, 0.5848], range: 4, gain: 0.28, disc: 1 } },
   rain: { file: 'belfast_sunset_puresky_1k.hdr', credit: cc0('belfast_sunset_puresky', 'Dimitrios Savva, Greg Zaal, Jarod Guest'),
     intensity: 0.85, exposure: 1.04, grade: { saturation: 1.05, contrast: 1.1, tint: [1.02, 0.98, 0.97] },

@@ -70,6 +70,7 @@ test('old guide and completed-practice records both bypass first-start choice', 
         localStorage.setItem('skyline-rush-whats-new-seen-v1', '999.0.0');
       }, key);
       await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await page.locator('#startup-enter').click();
       await page.locator('#start-button').click();
       await expect(page.locator('body')).toHaveAttribute('data-phase', /countdown|racing/);
       await expect(page.locator('#guide-screen')).toBeHidden();

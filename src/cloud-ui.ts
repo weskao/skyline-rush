@@ -1,4 +1,5 @@
 import { t, formatDate } from './i18n.ts';
+import { confirmDialog } from './confirm-dialog.ts';
 import { updateCloudView, updateCloudProfile } from './cloud-view-state.ts';
 import { claimCloudOwner, saveLocalProgress, clearLocalProgress, cloudFailureStatus, switchCloudAccount, readCloudSyncStatus,
   writeCloudSyncStatus, readLocalModeBests, saveLocalModeBests, mergeProgress, mergeModeBests, parseProgressExport } from './cloud-progress.ts';
@@ -204,8 +205,9 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
     services.signOutOfCloud().catch(() => announceCloud('cloud.failed'));
   });
   $('#cloud-switch').addEventListener('click', async () => {
-    if (!cloudUser || cloudOwner === cloudUser.uid || !confirm(t('cloud.switchConfirm'))) return;
+    if (!cloudUser || cloudOwner === cloudUser.uid) return;
     const uid = cloudUser.uid;
+    if (!await confirmDialog({ title: t('cloud.switch'), body: t('cloud.switchConfirm'), confirm: t('cloud.switch'), cancel: t('confirm.cancel') })) return;
     await cloudSync.catch(() => {});
     if (cloudUser?.uid !== uid || cloudOwner === uid ||
         !saveLocalProgress({ ...getProgress(), localChallengeMedals: getLocalChallengeMedals() }) ||
@@ -232,11 +234,17 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
-    if (cloudDeleting || (cloudUser && cloudOwner !== cloudUser.uid)) {
+    const otherAccount = (): boolean => cloudDeleting || !!(cloudUser && cloudOwner !== cloudUser.uid);
+    if (otherAccount()) {
       announceCloud('cloud.otherAccount');
       return;
     }
-    if (!confirm(t('cloud.importConfirm'))) return;
+    if (!await confirmDialog({ title: t('cloud.import'), body: t('cloud.importConfirm'), confirm: t('cloud.import'), cancel: t('confirm.cancel') })) return;
+    // The account can change while the dialog is open.
+    if (otherAccount()) {
+      announceCloud('cloud.otherAccount');
+      return;
+    }
     try {
       if (file.size > 1024 * 1024) throw new Error('Backup file is too large');
       const imported = parseProgressExport(await file.text());
@@ -260,8 +268,10 @@ export function setupCloudUI({ services, getProgress, applyProgress, getLocalCha
     }
   });
   $('#cloud-delete').addEventListener('click', async () => {
-    if (!cloudUser || !confirm(t('cloud.deleteConfirm'))) return;
+    if (!cloudUser) return;
     const uid = cloudUser.uid;
+    if (!await confirmDialog({ title: t('cloud.delete'), body: t('cloud.deleteConfirm'), confirm: t('cloud.delete'), cancel: t('confirm.cancel') })) return;
+    if (cloudUser?.uid !== uid || cloudDeleting) return;
     updateCloudView({ deleteDisabled: true });
     cloudDeleting = true;
     try {

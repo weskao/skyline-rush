@@ -87,8 +87,9 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
     instance.userData.garageModel = id;
     if (dressesRaceCar(id)) fitToRoadsterSize(instance); // before the airflow fit and the rig, which measure the shown size
     const carMap = carMapOf(host.car); // without it the GLB mirrors the full scene HDRI: washed white in Coast rain
-    if (carMap) applyCarReflections(instance, carMap); // before compiling, so no program changes after GO
-    const rig = bindGarageRig(host.car, instance); // rig.update() only after compiling: compileAsync skips hidden parts (lift fans)
+    const outdoor = host.name === 'home'; // the same car drives the Home showcase and every race
+    const rig = bindGarageRig(host.car, instance, outdoor && !!carMap); // clone before adjusting the finish; pose only after compiling
+    if (carMap) applyCarReflections(instance, carMap, outdoor ? 'outdoor' : 'studio');
     try { await compile(instance, host.scene); } catch { rig.dispose(); return; } finally { pending.delete(host); } // keeps the Roadster
     warmups++;
     if (handle !== from || !open || held || !wanted.has(host)) { rig.dispose(); return; } // closed, swapped, released or GO while compiling
@@ -172,7 +173,7 @@ export function createGarageModel({ id, cache, compile, dataset }: GarageModelDe
   };
 }
 
-interface Ktx2Like { setTranscoderPath(path: string): Ktx2Like; detectSupport(renderer: never): Ktx2Like }
+interface Ktx2Like { dispose?(): void; setTranscoderPath(path: string): Ktx2Like; detectSupport(renderer: never): Ktx2Like }
 type Ktx2Class = new () => Ktx2Like;
 const importKtx2 = async (): Promise<Ktx2Class> => (await import('three/examples/jsm/loaders/KTX2Loader.js')).KTX2Loader as unknown as Ktx2Class;
 

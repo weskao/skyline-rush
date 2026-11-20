@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TUTORIAL_COPY } from '../src/locales/tutorial-copy.ts';
-import { tutorialHintKey, tutorialHighlight, tutorialTouchTarget, tutorialCueView, tutorialInstructionKey } from '../src/tutorial-ui.ts';
+import { tutorialHintKey, tutorialHighlight, tutorialTouchTarget, tutorialCueView, tutorialInstructionKey, tutorialTouchControls } from '../src/tutorial-ui.ts';
 import { DEFAULT_KEY_MAP } from '../src/key-map.ts';
 
 test('touch guide distinguishes slider, tilt and toggle-to-land variants', () => {
@@ -97,4 +97,27 @@ test('the ready NITRO cue names the action thumb opposite the steering hand', ()
     assert.match(tutorialCueView(cue, true, 'hold', DEFAULT_KEY_MAP, mode, 'right').cue, /left thumb/);
     assert.match(tutorialCueView(cue, true, 'hold', DEFAULT_KEY_MAP, mode, 'left').cue, /right thumb/);
   }
+});
+
+test('drift exit and retry cues name the bound brake key or the pad release without pulsing BRAKE', () => {
+  const keyMap = { ...DEFAULT_KEY_MAP, brake: ['KeyB'] };
+  for (const [name, result] of [['driftExit', /boost/i], ['driftReset', /retry/i]]) {
+    const key = 'tutorial.cue.' + name;
+    const cue = { key, actions: ['brake'] };
+    const desktop = tutorialCueView(cue, false, 'hold', keyMap);
+    assert.deepEqual(desktop.cueKeys, ['B']);
+    assert.match(desktop.cue, /release BRAKE/i);
+    assert.match(desktop.cue, result);
+    if (name === 'driftExit') assert.match(desktop.cue, /hold to slow down/i);
+    assert.match(tutorialCueView(cue, true, 'hold', keyMap, 'buttons').cue, /release BRAKE/i);
+    for (const mode of ['slide', 'tilt']) {
+      const view = tutorialCueView(cue, true, 'hold', keyMap, mode);
+      assert.equal(view.cueId, key + 'Slide');
+      assert.match(view.cue, /lift your thumb/i);
+      assert.match(view.cue, result);
+    }
+    assert.deepEqual(tutorialTouchControls('drift', cue, 'drift'), []);
+  }
+  assert.deepEqual(tutorialTouchControls('drift', null, 'drift'), []);
+  assert.deepEqual(tutorialTouchControls('drift', { key: 'tutorial.cue.driftStart', actions: ['brake', 'left', 'right'] }, 'drift'), ['drift']);
 });

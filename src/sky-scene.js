@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { roadRibbon } from './geometry.ts';
+import { roadRibbon, ROAD_UV_METRES, ROAD_UV_PERIOD } from './geometry.ts';
 import { skyFrame, skyPoint, skyGapAt, skyTowerOrigin, SKY_JUMPS, SKY_LENGTH, SKY_SPIRAL } from './sky-track.ts';
 
 // A bounded 3D road renderer for the helix, sweepers and jump decks.
@@ -8,7 +8,10 @@ const STEP = 10;
 const WIDTH = 12;
 const boundaries = new Map(SKY_JUMPS.flatMap(jump =>
   [jump.rampFrom, jump.gapFrom, jump.gapTo].map(at => [Math.round(at / STEP) * STEP, at])));
-const rowDistance = (distance, endless) => endless ? distance : Math.min(SKY_LENGTH, boundaries.get(distance) ?? distance);
+const rowDistance = (distance, endless) => endless ? distance : boundaries.get(distance) ?? distance;
+// Past the finish the ribbon follows the route's Endless continuation, so the road runs on ahead of a parked car
+// instead of ending in the air under it (.claude/rules/road-runout.md).
+const rowFrame = (s, endless) => skyFrame(s, endless || s > SKY_LENGTH);
 const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
 
 export function createSkyScene(scene) {
@@ -18,6 +21,7 @@ export function createSkyScene(scene) {
 
   const geometry = roadRibbon(ROWS);
   const [positions, normals, indices] = [geometry.attributes.position.array, geometry.attributes.normal.array, geometry.index.array];
+  const uvs = geometry.attributes.uv.array; // for the KTX2 road set of the detailed look (spiral-look.ts)
   const road = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
     color: '#202b42', metalness: 0.13, roughness: 0.70, side: THREE.DoubleSide,
   }));
@@ -86,7 +90,8 @@ export function createSkyScene(scene) {
   const towerGeo = new THREE.BoxGeometry(1, 1, 1);
   const skylineMesh = new THREE.InstancedMesh(towerGeo,
     new THREE.MeshStandardMaterial({ color: '#202e56', metalness: 0.55, roughness: 0.48 }), 86);
-  const skylineLights = new THREE.InstancedMesh(towerGeo, magenta, 86);
+  // Its own material: the detailed look hides the skyline through it, and the rail beacons keep theirs.
+  const skylineLights = new THREE.InstancedMesh(towerGeo, magenta.clone(), 86);
   skyline.add(skylineMesh, skylineLights);
   for (let i = 0; i < 86; i++) {
     const angle = i * 2.399963;
@@ -149,8 +154,16 @@ export function createSkyScene(scene) {
   const roadInstances = [borders, rails, beacons, laneLines];
 
   const landmarks = [landmark];
+  /** What the detailed look (spiral-look.ts) dresses on Medium and above; Low never touches these. `replaced` are
+   *  the materials of the procedural tower, skyline and fog banks its kit stands in for, `stream` its per-frame hook. */
+  const parts = {
+    group, road, backdrop, landmark, stream: undefined,
+    replaced: [...heroMaterials, skylineMesh.material, skylineLights.material, cloudMat],
+    trim: { accent: cyan, beacons: magenta, rails: concrete, lanes: stripes },
+  };
   return {
     landmarks: () => landmarks,
+    parts,
     update(distance, quality = 'high', endless = false) {
       group.visible = true;
       backdrop.material.uniforms.time.value = distance * 0.0015;
@@ -171,9 +184,12 @@ export function createSkyScene(scene) {
       road.position.set(-origin.x, -origin.y, -origin.z);
       for (const mesh of roadInstances) mesh.position.copy(road.position);
       if (start !== lastRoadStart || endless !== lastEndless) {
+        // v restarts by whole repeats only, so it stays small for float32 on endless and the texture never jumps.
+        const uvBase = Math.floor(start / ROAD_UV_PERIOD) * ROAD_UV_PERIOD;
         for (let i = 0; i <= ROWS; i++) {
           const s = rowDistance(start + i * STEP, endless);
-          const frame = skyFrame(s, endless);
+          const frame = rowFrame(s, endless), v = (s - uvBase) / ROAD_UV_METRES;
+          uvs.set([0, v, 1, v], i * 4);
           for (let side = 0; side < 2; side++) {
             const lateral = side ? WIDTH : -WIDTH, offset = (i * 2 + side) * 3;
             const { point, right } = frame;
@@ -185,7 +201,7 @@ export function createSkyScene(scene) {
           const gap = length === 0 || skyGapAt(s + length / 2, endless);
           const a = i * 2, k = i * 6;
           indices.set(gap ? [a, a, a, a, a, a] : [a, a + 1, a + 2, a + 1, a + 3, a + 2], k);
-          const mid = skyFrame(s + length / 2, endless), hide = gap ? -1000 : 0;
+          const mid = rowFrame(s + length / 2, endless), hide = gap ? -1000 : 0;
           for (let side = 0; side < 2; side++) {
             pose(borders, i * 2 + side, mid, side ? 12.1 : -12.1, 0.17 + hide, 0.16, 0.12, length || STEP);
             pose(rails, i * 2 + side, mid, side ? 12.9 : -12.9, 0.60 + hide, 0.38, 1.1, length || STEP);
@@ -195,11 +211,12 @@ export function createSkyScene(scene) {
             pose(laneLines, i * 3 + lane, mid, (lane - 1) * 5, 0.025 + hide, 0.14, 0.03, 4.0);
           }
         }
-        for (const attribute of [geometry.attributes.position, geometry.attributes.normal, geometry.index]) attribute.needsUpdate = true;
+        for (const attribute of [geometry.attributes.position, geometry.attributes.normal, geometry.attributes.uv, geometry.index]) attribute.needsUpdate = true;
         for (const mesh of roadInstances) mesh.instanceMatrix.needsUpdate = true;
         lastRoadStart = start;
         lastEndless = endless;
       }
+      parts.stream?.(distance, endless);
     },
     hide() { group.visible = false; },
     dispose() {
@@ -212,6 +229,7 @@ export function createSkyScene(scene) {
       backdrop.geometry.dispose();
       for (const mesh of [borders, rails, beacons, laneLines]) mesh.dispose();
       skylineMesh.dispose();
+      skylineLights.material.dispose();
       skylineLights.dispose();
       towerGeo.dispose();
       cloudGeometry.dispose();

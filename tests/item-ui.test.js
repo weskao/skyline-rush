@@ -8,6 +8,7 @@ test('item HUD announces pickup/cooldown once, keeps activation paused-safe and 
   const listeners = new Map();
   const nodes = {
     'item-slot': { hidden: true, dataset: {} },
+    'player-hit-screen': { hidden: true, dataset: {} },
     'item-status': { textContent: '' },
     'ghost-phase-status': { hidden: true },
     'ghost-phase-time': { textContent: '' },
@@ -21,7 +22,8 @@ test('item HUD announces pickup/cooldown once, keeps activation paused-safe and 
       heldItem: null, itemCooldown: 0, effects: { shield: 0, magnet: 0, ghost: 0, freeze: 0 },
     } };
     const cues = [];
-    const ui = setupItemUI({ getRace: () => race, cue: name => cues.push(name) });
+    let calm = false;
+    const ui = setupItemUI({ getRace: () => race, cue: name => cues.push(name), calm: () => calm });
     ui.update(race);
     bankItem(race.player, 'shield');
     ui.update(race); ui.update(race);
@@ -66,5 +68,33 @@ test('item HUD announces pickup/cooldown once, keeps activation paused-safe and 
     assert.equal(cues.length, count + 1);
     race.elapsed = 3; race.rings = [];
     ui.update(race); assert.equal(nodes['bonus-status'].hidden, true);
+    race.config.activeItems = false;
+    race.player.freezeUntil = 5;
+    race.player.empUntil = 4.5;
+    ui.update(race);
+    assert.equal(nodes['bonus-status'].hidden, false);
+    const screen = nodes['player-hit-screen'];
+    assert.equal(screen.hidden, false);
+    assert.deepEqual(screen.dataset, { hit: 'emp', calm: 'false' });
+    assert.equal(nodes['bonus-status'].textContent, 'EMP HIT · 2s');
+    calm = true;
+    ui.update(race);
+    assert.equal(screen.dataset.calm, 'true');
+    race.phase = 'paused';
+    ui.update(race);
+    assert.equal(screen.hidden, true, 'hide the screen effect behind pause');
+    race.phase = 'racing';
+    ui.update(race);
+    assert.equal(screen.hidden, false);
+
+    race.elapsed = 4.5;
+    ui.update(race);
+    assert.equal(nodes['bonus-status'].textContent, 'FROZEN · 1s');
+    assert.equal(screen.dataset.hit, 'freeze');
+    race.elapsed = 5;
+    ui.update(race);
+    assert.equal(screen.hidden, true);
+    assert.equal(screen.dataset.hit, '');
+    assert.equal(nodes['bonus-status'].hidden, true);
   } finally { globalThis.document = previousDocument; }
 });

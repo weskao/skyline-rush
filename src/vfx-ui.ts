@@ -1,6 +1,9 @@
 import { t } from './i18n.ts';
 import { vfxSettings, VFX_PRESETS, SHOWCASE_VIEWS, type VfxSettings, type ShowcaseView, type VfxPreset } from './vfx-settings.ts';
-import { initialDeviceVisuals, QUALITY_STORAGE_KEY } from './device-quality.ts';
+import { readInitialDeviceVisuals, QUALITY_STORAGE_KEY } from './device-quality.ts';
+import { showSettingToast } from './toast-view-state.ts';
+import { confirmDialog } from './confirm-dialog.ts';
+import { icons } from './icons.ts';
 
 interface VfxWorld { configureVFX(settings: VfxSettings): void }
 interface VfxOptions {
@@ -18,15 +21,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
   const vfxControls = [...document.querySelectorAll<HTMLInputElement>('[data-vfx]')];
   const airflowHud = $('#airflow-hud');
   const airflowToggles = document.querySelectorAll<HTMLButtonElement>('#airflow-toggle, #home-airflow-toggle');
-  // Initial quality selection is performed once; manual/previous settings win.
-  let storedVisuals: unknown = null;
-  try { const raw = localStorage.getItem(QUALITY_STORAGE_KEY); if (raw) storedVisuals = JSON.parse(raw); }
-  catch { /* Storage is optional; use device-aware in-memory defaults. */ }
-  const deviceSelection = initialDeviceVisuals({
-    storedSettings: storedVisuals,
-    device: { cores: navigator.hardwareConcurrency, memoryGiB: (navigator as Navigator & { deviceMemory?: number }).deviceMemory,
-      width: innerWidth, height: innerHeight, pixelRatio: devicePixelRatio },
-  });
+  const deviceSelection = readInitialDeviceVisuals();
   let visual = deviceSelection.settings;
   const calm = (): boolean => visual.comfortable || reducedMotion.matches;
   function stopMotionIfCalm(): void {
@@ -56,6 +51,7 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
     }
     document.body.classList.toggle('airflow-active', visual.airflow && visual.enabled);
     document.body.classList.toggle('vfx-comfort', visual.comfortable);
+    document.body.dataset.vfxComfort = String(visual.comfortable);
     document.body.dataset.vfxQuality = visual.ultra ? 'ultra' : visual.quality;
     document.body.dataset.vfxEnabled = String(visual.enabled);
     stopMotionIfCalm();
@@ -67,13 +63,30 @@ export function setupVfxUI({ getWorld, onAirflowShown, reducedMotion }: VfxOptio
     if (!visual.enabled) return;
     visual.airflow = !visual.airflow;
     showVFX();
+    showSettingToast('airflow', visual.airflow, icons.airflow);
     if (visual.airflow) onAirflowShown();
   }
-  for (const control of vfxControls) control.addEventListener('input', () => {
+  function applyControl(control: HTMLInputElement): void {
     const key = control.dataset.vfx!;
     const value = control.type === 'checkbox' ? control.checked : control.type === 'range' ? Number(control.value) : control.value;
     visual = vfxSettings({ ...visual, ...(key === 'preset' ? VFX_PRESETS[value as VfxPreset] : {}), ...(key === 'quality' ? { ultra: false } : {}), [key]: value });
     showVFX();
+    if (key === 'enabled') showSettingToast('vfx', !!value, icons.star);
+  }
+  // Every switch-off asks in game (.claude/rules/no-native-ui.md); the box stays on until the player confirms, and turning effects on never asks.
+  async function confirmVfxOff(control: HTMLInputElement): Promise<void> {
+    control.checked = true;
+    const ok = await confirmDialog({
+      title: t('vfxOff.title'), body: '', points: [t('vfxOff.hidden'), t('vfxOff.same'), t('vfxOff.later')],
+      confirm: t('vfxOff.confirm'), cancel: t('vfxOff.keep'),
+    });
+    if (!ok || !visual.enabled) return;
+    control.checked = false;
+    applyControl(control);
+  }
+  for (const control of vfxControls) control.addEventListener('input', () => {
+    if (control.dataset.vfx === 'enabled' && !control.checked) void confirmVfxOff(control);
+    else applyControl(control);
   });
   function stepShowcaseView(delta: number): void {
     visual = vfxSettings({ ...visual, view: stepView(visual.view, delta) });

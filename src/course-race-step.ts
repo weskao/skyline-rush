@@ -5,9 +5,10 @@ import { chooseCourseNextEdge } from './course-ai-standings.ts';
 import { routeLength, sampleRoute } from './course-route-frame.ts';
 import { COURSE_RUNTIMES, isCourseRuntime } from './course-runtimes.ts';
 import { chooseBranchByLateral, courseCarGap, courseNoRoadAt, courseRemaining, createCourseRuntime, placeCourseCar,
-  rankCourseRuntime, recoverCourseCar, setCourseContact, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
+  moveFinishedCourseCar, rankCourseRuntime, recoverCourseCar, setCourseContact, stepCourseCar, type CourseHazard, type CourseRuntime, type CourseStepEvent } from './course-race.ts';
 import { dropCar, type FallingCar } from './road-falls.ts';
 import { knock } from './car-collisions.js';
+import { isParkedRival, parkFinishedRival } from './finished-rival.js';
 import { attachCourseItems, groundAt, groundOffset, projectCourseItems, type CourseItem } from './course-items.ts';
 import { placeSectionBurst } from './shortcut-rewards.ts';
 import { raceTrack } from './race-tracks.ts';
@@ -23,7 +24,7 @@ interface CourseRef { course?: CourseRuntime; player: object }
 interface CourseHost extends CourseRef {
   trackId: string; seed: number; elapsed: number; length: number; player: Player; rivals: Rival[]; result: { time: number } | null;
   rings: CourseItem[]; pickups: CourseItem[]; traffic: (RaceCar & { speed: number })[]; hazards: unknown[]; sections: unknown[];
-  mode: string; endless?: object; config: { difficulty?: string };
+  mode: string; endless?: object; config: { difficulty?: string; itemRules?: string };
 }
 type Contact = (race: CourseHost, kind: 'barrier', obstacleX: number, intensity: number, retention: number) => void;
 
@@ -38,7 +39,9 @@ const travelOf = (rt: CourseRuntime, id: string) => {
 };
 
 export function syncCourseContact(race: CourseRef, car: RaceCar): void {
-  setCourseContact(race.course!, idOf(race, car), car.x, car.distance);
+  const id = idOf(race, car);
+  if (isParkedRival(car)) moveFinishedCourseCar(race.course!, id, car);
+  else setCourseContact(race.course!, id, car.x, car.distance);
 }
 
 /** H1: graph courses get a runtime; rings, pickups and traffic move onto its edges (Q3 follow-up), hazards and sections
@@ -137,7 +140,11 @@ export function stepCourseCars(race: CourseHost, dt: number): void {
       if (hazard) knock(race, rival, Math.sign(rival.x - hazard.lateral) || -1, 0.7, 0.6); // aiImpacts' block response
     }
     if (event !== 'rejected' && event !== 'finished') rivalSweepsItems(race, rt, id, rival, prevEdge, prevS);
-    if (event === 'finished' && rival.finishTime === null) rival.finishTime = race.elapsed - dt + dt * rt.cars.get(id)!.finishFraction!;
+    if (event === 'finished' && rival.finishTime === null) {
+      rival.finishTime = race.elapsed - dt + dt * rt.cars.get(id)!.finishFraction!;
+      parkFinishedRival(rival);
+      syncCourseContact(race, rival);
+    }
     if (rival.finishTime != null) finishTimes[id] = rival.finishTime;
   });
   for (const car of race.traffic) { // ground route only; the bound is this frame's odometer move (no 1D respawns)
@@ -221,12 +228,13 @@ export function courseGapWarning(race: CourseHost): { from: number; need: number
   return here !== undefined ? here : gapWarning(race, next, routeLength(graph, travel.currentEdgeId), travel.localS) ?? null;
 }
 
-/** H3: signed metres from `a` to `b`; null = no interaction (another branch, or a car already past FINISH). */
-export function carGap(race: CourseRef & { trackId: string }, a: Car, b: Car): number | null {
+/** H3: signed metres from `a` to `b`; null = no interaction (another branch, or traffic that has left at FINISH). */
+export function carGap(race: CourseRef & { trackId: string }, a: Car & { finishTime?: number | null }, b: Car & { finishTime?: number | null }): number | null {
   const rt = race.course;
   if (!rt) return physicalGap(race.trackId, a.distance, b.distance);
   const from = idOf(race, a), to = idOf(race, b);
-  if (travelOf(rt, from).finished || travelOf(rt, to).finished) return null;
+  if (travelOf(rt, from).finished && !isParkedRival(a) && !(a === race.player && isParkedRival(b))) return null;
+  if (travelOf(rt, to).finished && !isParkedRival(b) && !(b === race.player && isParkedRival(a))) return null;
   return courseCarGap(rt, from, to);
 }
 

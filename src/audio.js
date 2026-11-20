@@ -1,4 +1,6 @@
-import { FEEDBACK_SOUNDS, STINGERS } from './feedback-sounds.ts';
+import { acquisitionAudioBuffer } from './acquisition-audio.ts';
+import { createLoopingNoiseGain } from './audio-noise.ts';
+import { FEEDBACK_SOUNDS, ITEM_HIT_TEXTURES, STINGERS } from './feedback-sounds.ts';
 import { musicForMode } from './mode-audio.ts'; import { driftTier } from './drive-rules.ts';
 import { createRaceAudioEvents } from './race-audio-events.ts';
 import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
@@ -7,10 +9,13 @@ import { TRACKS, LOOP_STEPS, sprintFactor, pitch } from './music-tracks.ts';
 export function createSound(gapWarning = () => null) {
   let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
   let music, warm, hats, snares, song = null, step = 0, nextStep = 0, madeAt = -Infinity;
+  let opening = false;
   let enabled = false, musicOn = false, hidden = false, current = null, resumedAt = -Infinity;
   // Slider levels map to gain on a squared curve so the lower half of the slider stays audibly useful.
-  let effectsLevel = 1, musicLevel = 1, duckUntil = 0, duckFrom = 0;
+  let effectsLevel = 1, musicLevel = 1, duckUntil = 0, duckFrom = 0, duckRatio = .43, acquisitionDuck = false;
   const voices = new Set();
+  const acquisitionVoices = new Map();
+  const acquisitionBuffers = new Map();
   const notes = new Map(); // queued music sources → start time, so a song change or mute can drop the ones not yet heard
   const ignore = () => {};
   // Loading stalls the main thread (shader warm-up ≈ 0.6 s desktop, 1.5 s at 6× CPU) but not the audio thread, so the
@@ -22,13 +27,15 @@ export function createSound(gapWarning = () => null) {
 
   function track(source, nodes, end, cue = true, at = 0) {
     if (cue) voices.add(source); else notes.set(source, at);
-    source.onended = () => { voices.delete(source); notes.delete(source); source.disconnect(); nodes.forEach(node => node.disconnect()); };
+    source.onended = () => { voices.delete(source); acquisitionVoices.delete(source); notes.delete(source); source.disconnect(); nodes.forEach(node => node.disconnect()); };
     source.stop(end);
   }
   function silenceCues() {
     for (const voice of voices) voice.stop();
     voices.clear();
+    acquisitionVoices.clear();
     duckUntil = 0;
+    acquisitionDuck = false;
   }
   function voice(type, frequency, endFrequency, time, duration, volume, attack, destination, cue = true) {
     const source = context.createOscillator();
@@ -42,10 +49,11 @@ export function createSound(gapWarning = () => null) {
     source.connect(envelope).connect(destination);
     source.start(time);
     track(source, [envelope], time + duration + 0.02, cue, time);
+    return source;
   }
-  function tone(frequency, endFrequency, duration, delay = 0, volume = 0.045) {
+  function tone(frequency, endFrequency, duration, delay = 0, volume = 0.045, type = 'sine') {
     if (!enabled || voices.size >= 24) return;
-    voice('sine', frequency, endFrequency, context.currentTime + delay, duration, volume, 0.008, master);
+    return voice(type, frequency, endFrequency, context.currentTime + delay, duration, volume, 0.008, master);
   }
   function hit(destination, time, duration, volume) {
     const source = context.createBufferSource();
@@ -58,9 +66,11 @@ export function createSound(gapWarning = () => null) {
     track(source, [envelope], time + duration + 0.02, false, time);
   }
   // Drops queued notes not yet started (a stale prelude or the old song) so the next one starts now; sounding ones ring out.
-  function cutMusic() {
+  function cutMusic(replaceSong = false) {
     const now = context.currentTime;
-    for (const [note, at] of notes) if (at > now) { note.stop(); notes.delete(note); }
+    for (const [note, at] of notes) {
+      if (at > now || replaceSong) { note.stop(at > now ? undefined : now + .035); notes.delete(note); }
+    }
     nextStep = 0;
   }
   // Queues the current song `ahead` seconds; after a stalled frame it resumes from now instead of bursting.
@@ -68,11 +78,12 @@ export function createSound(gapWarning = () => null) {
     const now = context.currentTime, tune = TRACKS[song];
     for (nextStep = Math.max(nextStep, now + 0.03); nextStep < now + ahead; nextStep += 15 / (tune.bpm * sprint), step = (step + 1) % LOOP_STEPS) playStep(tune, step, nextStep);
   }
-  // Only the intro is queued ahead: a race song follows sprint tempo and its mode, so it stays with the frame loop.
+  // Opening and lobby music can play through a shader-loading stall.
   function prelude() {
-    if (!musicOn || (current && musicForMode(current) !== 'intro')) return;
-    if (song !== 'intro') { song = 'intro'; step = 0; cutMusic(); }
-    music.gain.setTargetAtTime(musicLevel * 0.65, context.currentTime, 0.1); // the home-screen mix update() keeps
+    if (!musicOn || (!opening && current && musicForMode(current) !== 'intro')) return;
+    const name = opening ? 'opening' : 'intro';
+    if (song !== name) { song = name; step = 0; cutMusic(); }
+    music.gain.setTargetAtTime(musicLevel * (opening ? .32 : .65), context.currentTime, 0.1);
     schedule(PRELUDE);
   }
   function playStep(tune, index, time) {
@@ -116,28 +127,68 @@ export function createSound(gapWarning = () => null) {
     const now = context.currentTime;
     voice(type, from, to, now, duration, volume, .006, master);
     tone(from / 4, from / 8, duration * .55, 0, .035);
+    filteredBurst(to, from, duration, .025, now);
+  }
+  function filteredBurst(from, to, duration, volume, now) {
     const source = context.createBufferSource(), band = context.createBiquadFilter(), envelope = context.createGain();
     source.buffer = noiseBuffer;
     band.type = 'bandpass'; band.Q.value = .8;
-    band.frequency.setValueAtTime(to, now);
-    band.frequency.exponentialRampToValueAtTime(from, now + duration);
+    band.frequency.setValueAtTime(from, now);
+    band.frequency.exponentialRampToValueAtTime(to, now + duration);
     envelope.gain.setValueAtTime(0, now);
-    envelope.gain.linearRampToValueAtTime(.025, now + .012);
+    envelope.gain.linearRampToValueAtTime(volume, now + .012);
     envelope.gain.exponentialRampToValueAtTime(.0001, now + duration);
     source.connect(band).connect(envelope).connect(master);
     source.start(now);
     track(source, [band, envelope], now + duration + .02);
   }
+  function playAcquisitionLayer(buffer, at) {
+    const source = context.createBufferSource(), envelope = context.createGain();
+    source.buffer = buffer;
+    source.connect(envelope).connect(master);
+    source.start(at);
+    acquisitionVoices.set(source, envelope);
+    const end = buffer.length / buffer.sampleRate;
+    track(source, [envelope], at + end);
+    return end;
+  }
   function cue(name, startAfter = 0) {
+    if (name === 'acquisition-stop') {
+      for (const [source, envelope] of acquisitionVoices) {
+        const now = context.currentTime;
+        if (envelope) envelope.gain.setTargetAtTime(0, now, .009);
+        source.stop(envelope ? now + .045 : undefined);
+        voices.delete(source);
+      }
+      acquisitionVoices.clear();
+      if (acquisitionDuck) duckUntil = 0;
+      acquisitionDuck = false;
+      return;
+    }
     if (!enabled || hidden || !context || context.state !== 'running') return;
-    const notes = FEEDBACK_SOUNDS[name];
-    if (notes) {
-      if (voices.size + notes.length > 24) return;
-      for (const [from, to, duration, delay, volume] of notes) tone(from, to, duration, startAfter + delay, volume);
+    const acquisition = name.startsWith('acquisition-');
+    const carPremiere = name === 'acquisition-car' || name.startsWith('acquisition-car-');
+    const notes = FEEDBACK_SOUNDS[name.startsWith('acquisition-equipment-') ? 'acquisition-equipment' : name];
+    let buffer = acquisitionBuffers.get(name);
+    if (acquisition && !buffer) {
+      buffer = acquisitionAudioBuffer(context, name);
+      if (buffer) acquisitionBuffers.set(name, buffer);
+    }
+    if (notes || buffer) {
+      const texture = ITEM_HIT_TEXTURES[name];
+      if (voices.size + (notes?.length ?? 0) + Number(!!buffer) + Number(!!texture) > 24) return;
+      const end = buffer ? playAcquisitionLayer(buffer, context.currentTime + startAfter) : 0;
+      for (const [from, to, duration, delay, volume, type] of notes ?? []) {
+        const source = tone(from, to, duration, startAfter + delay, volume, type);
+        if (acquisition && source) acquisitionVoices.set(source, null);
+      }
+      if (texture) filteredBurst(...texture, context.currentTime + startAfter);
       if (STINGERS.has(name)) {
-        const end = Math.max(...notes.map(([, , duration, delay]) => duration + delay));
+        acquisitionDuck = acquisition;
+        duckRatio = carPremiere ? .15 : .43;
         duckFrom = context.currentTime + Math.max(0, startAfter - .05);
-        duckUntil = context.currentTime + startAfter + end;
+        const noteEnd = Math.max(0, ...(notes ?? []).map(([, , duration, delay]) => duration + delay));
+        duckUntil = context.currentTime + startAfter + Math.max(end, noteEnd);
       }
       return;
     }
@@ -203,20 +254,6 @@ export function createSound(gapWarning = () => null) {
     track(source, [lowpass, envelope], now + 0.38);
     tone(landing ? 75 : 130, 38, 0.22, 0, intensity * 0.07);
   }
-  function noise(frequency, type) {
-    const source = context.createBufferSource();
-    source.buffer = noiseBuffer;
-    source.loop = true;
-    const band = context.createBiquadFilter();
-    band.type = type;
-    band.frequency.value = frequency;
-    band.Q.value = 0.6;
-    const level = context.createGain();
-    level.gain.value = 0;
-    source.connect(band).connect(level).connect(master);
-    source.start();
-    return level;
-  }
   function filtered(type, frequency) {
     const node = context.createBiquadFilter();
     node.type = type;
@@ -260,9 +297,9 @@ export function createSound(gapWarning = () => null) {
       noiseBuffer = context.createBuffer(1, context.sampleRate, context.sampleRate);
       const data = noiseBuffer.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-      thrustGain = noise(950, 'bandpass');
-      windGain = noise(400, 'lowpass');
-      skidGain = noise(2300, 'bandpass');
+      thrustGain = createLoopingNoiseGain(context, noiseBuffer, master, 950, 'bandpass');
+      windGain = createLoopingNoiseGain(context, noiseBuffer, master, 400, 'lowpass');
+      skidGain = createLoopingNoiseGain(context, noiseBuffer, master, 2300, 'bandpass');
       warm = filtered('lowpass', 1800);
       hats = filtered('highpass', 7000);
       snares = filtered('bandpass', 1800);
@@ -307,6 +344,15 @@ export function createSound(gapWarning = () => null) {
   }
   return {
     cue,
+    setGapWarning(next) { gapWarning = next; },
+    setOpening(next) {
+      if (opening === next) return;
+      opening = next;
+      if (context && musicOn) { cutMusic(true); song = null; prelude(); }
+    },
+    refreshOpeningMusic() {
+      if (opening && !hidden && context?.state === 'running') prelude();
+    },
     setEnabled,
     setMusic,
     setHidden,
@@ -337,9 +383,9 @@ export function createSound(gapWarning = () => null) {
         windGain.gain.setTargetAtTime(active ? (car.speed / 102) ** 2 * 0.07 : 0, now, 0.1);
         const skid = car.drift ? 0.035 + driftTier(car.drift.time) * 0.012 : car.braking ? 0.035 : 0;
         skidGain.gain.setTargetAtTime(active && car.altitude < 0.2 && car.speed > 15 ? skid : 0, now, 0.06);
-        const musicMix = race.phase === 'paused' ? 0.25 : active ? 0.5 : 0.65;
-        music.gain.setTargetAtTime(musicOn ? musicLevel * musicMix * (now >= duckFrom && now < duckUntil ? .43 : 1) : 0, now, 0.1);
-        const name = !musicOn ? null : musicForMode(race);
+        const musicMix = opening ? .32 : race.phase === 'paused' ? .25 : active ? .5 : .65;
+        music.gain.setTargetAtTime(musicOn ? musicLevel * musicMix * (now >= duckFrom && now < duckUntil ? duckRatio : 1) : 0, now, 0.1);
+        const name = !musicOn ? null : opening ? 'opening' : musicForMode(race);
         if (name !== song) { song = name; step = 0; cutMusic(); }
         const urgency = race.mode === 'checkpoint' && race.checkpoint?.timeLeft < 10 ? 1.1 :
           race.mode === 'stunt' && race.stuntLimit - race.elapsed < 20 ? 1.08 : 1;

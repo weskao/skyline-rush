@@ -1,4 +1,4 @@
-import { test, expect, settled } from './helpers/test.js';
+import { test, expect, settled, gotoHome } from './helpers/test.js';
 import { test as gameplayTest } from './helpers/gameplay-browser.js';
 import { ciTimeout } from './helpers/ci.js';
 import { selectLocale } from './helpers/locale-browser.js';
@@ -105,7 +105,7 @@ for (const { hasTouch, sizes } of AIRFLOW_START_CLASSES) {
 
     test('airflow showcase keeps Start clear of the car and the panels', async ({ page }) => {
       test.setTimeout(ciTimeout(60000));
-      await page.goto('/');
+      await gotoHome(page);
       await page.evaluate(() => document.fonts.ready);
       await page.keyboard.press('v');
       await expect(page.locator('#airflow-hud')).toHaveAttribute('aria-hidden', 'false');

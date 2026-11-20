@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { setupCloudUI, cloudStatusState, safeAvatarUrl } from '../src/cloud-ui.ts';
+import { confirmView, answerConfirm } from '../src/confirm-dialog.ts';
 
 const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 const controller = readFileSync(new URL('../src/cloud-ui.ts', import.meta.url), 'utf8');
@@ -40,7 +41,7 @@ test('account switch snapshots session-only personal medals before the page relo
   const handlers = new Map();
   let onUser, reloads = 0;
   const mocks = {
-    localStorage: storage, confirm: () => true, location: { reload: () => { reloads++; } },
+    localStorage: storage, location: { reload: () => { reloads++; } },
     window: { addEventListener() {} },
     document: { querySelector: selector => ({ addEventListener: (event, handler) => handlers.set(`${selector}:${event}`, handler) }) },
   };
@@ -54,7 +55,10 @@ test('account switch snapshots session-only personal medals before the page relo
     cloud.subscribeAccount(uid => accounts.push(uid));
     onUser({ uid: 'bob' });
     assert.deepEqual(accounts, [null, 'bob'], 'Garage observes the same auth stream without creating a second Firebase watcher');
-    await handlers.get('#cloud-switch:click')();
+    const switching = handlers.get('#cloud-switch:click')();
+    assert.equal(confirmView.open, true, 'the switch asks with the in-game confirm, not the native confirm()');
+    answerConfirm(true);
+    await switching;
     assert.equal(reloads, 1);
     assert.deepEqual(JSON.parse(values.get('skyline-rush-cloud-account:alice')).localChallengeMedals, personal);
     assert.deepEqual(JSON.parse(values.get('skyline-rush-challenge-medals-v1')).awards, {}, 'Bob must still start empty');

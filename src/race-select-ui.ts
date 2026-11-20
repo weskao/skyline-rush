@@ -300,23 +300,31 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
     raceRules.itemRules = entry.config.itemRules; raceRules.activeItems = entry.config.activeItems ?? false;
     showRuleInputs();
     setRace(selectedRace(entry.trackId));
+    rememberLastHomeTrack(entry.trackId);
     options.clearDaily(); showTracks(); options.refreshPhase(); options.cueUi();
   });
   for (const input of ruleInputs()) input.addEventListener('change', () => {
     raceRules[input.dataset.raceRule as RuleKey] = input.type === 'checkbox' ? input.checked : ['rivals', 'stages'].includes(input.dataset.raceRule!) ? Number(input.value) : input.value;
     changeRaceSelection();
   });
-  // The tab remembers the last raced mode. The last picker course stays in memory for this page load.
-  // Back to home is a new document: the raced course is a one-shot query, then removed so a later reload stays on Coast.
+  function restoreTrack(id: string | null): void {
+    const canSelect = (id: string): boolean => isUpcomingTrack(id) ? playable(id) : Object.hasOwn(RACE_TRACKS, id);
+    const choice = restoreHomeTrack(id, getRace().trackId, canSelect, isUpcomingTrack);
+    upcomingSelection = choice.upcoming as PreviewTrackId | null;
+    setRace(selectedRace(choice.trackId));
+  }
+
+  // The tab remembers the last raced mode. The Home track preference survives across tabs.
+  // The Back to home link can override the saved track for one navigation.
   try {
     const mode = sessionStorage.getItem(LAST_MODE_KEY);
     if (mode && mode !== 'eventlab' && document.querySelector(`button[data-race-mode="${CSS.escape(mode)}"]`)) selectedMode = mode;
   } catch { /* Classic stays the default without storage. */ }
   const search = location.search;
-  setRace(selectedRace(bootHomeTrack(search, getRace().trackId, playable)));
+  restoreTrack(bootHomeTrack(search, lastHomeTrack(), playable));
   const cleaned = withoutRacedQuery(search);
   if (cleaned !== search) history.replaceState(history.state, '', `${location.pathname}${cleaned}${location.hash}`);
-  upcomingSelection = stage2PreviewRequest(search)?.id ?? null;
+  upcomingSelection = stage2PreviewRequest(search)?.id ?? upcomingSelection;
   if (upcomingSelection) requestAnimationFrame(showTracks); // the shared WebGL world exists only after bootstrap
 
   // Card previews animate only while scrolled into view.
@@ -360,13 +368,9 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale);
       refreshCopiedRouteMaps();
     },
-    restoreLastTrack(): void {
-      const choice = restoreHomeTrack(lastHomeTrack(), getRace().trackId, playable, isUpcomingTrack);
-      upcomingSelection = choice.upcoming as PreviewTrackId | null;
-      setRace(selectedRace(choice.trackId));
-    },
+    restoreLastTrack: (): void => restoreTrack(lastHomeTrack()),
     rememberTrack(_trackId: string): void {
-      try { sessionStorage.setItem(LAST_MODE_KEY, selectedMode); } catch { /* The intro falls back to Classic on Coast after a reload. */ }
+      try { sessionStorage.setItem(LAST_MODE_KEY, selectedMode); } catch { /* Classic stays the default after a reload. */ }
     },
   };
 }

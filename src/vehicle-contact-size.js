@@ -16,6 +16,3 @@ export const vehicleContactSize = (race, car) => car === race.player ? PLAYER :
   RIVALS[car.name] ?? TRAFFIC[trafficBodyIndex(Math.max(0, race.traffic.indexOf(car)))];
 
 export const bodiesShareHeight = (a, b) => Math.abs((a.altitude || 0) - (b.altitude || 0)) < 1.8;
-
-// Circuit finishers are parked at the timing line for standings, outside live traffic.
-export const isCircuitFinisher = (race, car) => !!race.circuit && car.finishTime != null;

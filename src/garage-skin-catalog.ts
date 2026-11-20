@@ -38,6 +38,20 @@ export const GARAGE_SKINS = [
   ...DRIFT_TRAIL_SKINS,
 ] as const satisfies readonly SkinDefinition[];
 export type SkinId = (typeof GARAGE_SKINS)[number]['id'];
+
+// Match the dominant artwork colour so the Garage carries each equipment identity across views.
+const SKIN_ACCENT_HUES: Readonly<Record<SkinId, number>> = {
+  'drift-trail-basic': 207, 'drift-trail-flame': 23, 'drift-trail-rainbow': 322,
+  'drift-trail-ice': 193, 'drift-trail-arc': 263, 'drift-trail-stardust': 294,
+  'thruster-basic': 196, 'thruster-ion': 178, 'thruster-plasma': 26, 'thruster-void': 272,
+  'airflow-basic': 192, 'airflow-slipstream': 210, 'airflow-vortex': 280, 'airflow-prism': 312,
+  'nitro-trail-basic': 46, 'nitro-trail-cyan': 185, 'nitro-trail-gold': 37,
+  'nitro-trail-red': 352, 'nitro-trail-purple': 274,
+  'launch-flare-basic': 42, 'launch-flare-blue': 212, 'launch-flare-ring': 288,
+  'launch-flare-pulse': 261, 'launch-flare-gold': 33, 'launch-flare-red': 354,
+  'launch-flare-cyan': 185, 'launch-flare-magenta': 318, 'launch-flare-white': 226,
+};
+export const skinAccentHue = (id: SkinId): number => SKIN_ACCENT_HUES[id];
 export type SkinState = 'locked' | 'trial' | 'owned' | 'equipped';
 export type SkinProfile = {
   version: typeof SKIN_SCHEMA_VERSION;

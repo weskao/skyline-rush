@@ -272,7 +272,7 @@ export function createRaceHud(options: HudOptions) {
     setHudText(ui['race-status']!, status);
     const gapWarning = race.phase === 'racing' ? gapChargeWarning(race) : null;
     const message = race.phase !== 'racing' || impactAge < 1.1 ? '' : input.fly && car.speed < 18 ? L['hud.reachLiftOff']! : car.exhausted && input.fly ? L['hud.releaseRecharge']!
-      : gapWarning ? interpolate(L['hud.gapCharge']!, { n: Math.ceil(gapWarning.need) }) : '';
+      : gapWarning ? interpolate(L['hud.gapCharge']!, { n: Math.ceil(gapWarning.need) }) : car.driftHold?.reward ? L['hud.driftRelease']! : '';
     setHudText(ui['driving-message']!, message);
     if (gapWarning) ui['driving-message']!.dataset.tone = 'warning'; else delete ui['driving-message']!.dataset.tone;
     if (message !== lastDrivingMessage) { lastDrivingMessage = message; feedbackPlacement.refresh(); }

@@ -128,7 +128,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
   magnetRing.visible = false;
   magnetRing.scale.setScalar(MAGNET_RANGE);
   scene.add(magnetRing);
-  const statusTint = createRivalStatusTint(RACE_DRIVER_IDS.length - 1); // Freeze / EMP on the rivals they slow
+  const statusTint = createRivalStatusTint(RACE_DRIVER_IDS.length); // Shared pool for the player and rivals
   scene.add(statusTint.object);
   return {
     setDriftTrail(id) { skids?.setSkin(id); },
@@ -361,7 +361,7 @@ export function createEffects(scene, roadCenter, { camera, renderer, pickupEnvir
         // Fades over the final second; a gentle pulse unless motion is reduced.
         magnetRing.material.opacity = Math.min(1, magnet) * (reducedMotion ? .3 : .3 + Math.sin(flowTime * 5) * .08);
       }
-      statusTint.update(race, vehicles, dt, { quality: options.quality, reducedMotion, preview, emit: active ? statusEmit : null });
+      statusTint.update(race, vehicles, dt, { quality: options.quality, reducedMotion, preview, playerEnabled: enabled, emit: active ? statusEmit : null });
       if (race.phase === 'countdown' || race.phase === 'ready') {
         lastImpact = null; lastLanding = null; lastShieldBlock = null;
       }

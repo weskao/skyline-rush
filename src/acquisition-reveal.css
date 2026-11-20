@@ -1,9 +1,10 @@
 .acquisition-reveal {
   --reveal-cyan: #72e4ff;
+  --reveal-width: 780px;
   box-sizing: border-box;
   inset: max(12px, var(--safe-top, 0px)) max(12px, var(--safe-right, 0px))
     max(12px, var(--safe-bottom, 0px)) max(12px, var(--safe-left, 0px));
-  width: min(780px, calc(100vw - max(12px, var(--safe-left, 0px)) - max(12px, var(--safe-right, 0px))));
+  width: min(var(--reveal-width), calc(100vw - max(12px, var(--safe-left, 0px)) - max(12px, var(--safe-right, 0px))));
   max-height: calc(100dvh - max(12px, var(--safe-top, 0px)) - max(12px, var(--safe-bottom, 0px)));
   padding: 0;
   border: 1px solid #40637b;
@@ -14,6 +15,7 @@
   box-shadow: 0 28px 100px #000c, 0 0 56px #59b5f01c;
   overscroll-behavior: contain;
   color-scheme: dark;
+  container-type: inline-size;
 }
 .acquisition-reveal[open] { animation: acquisition-enter 260ms cubic-bezier(.2,.75,.3,1) both; }
 .acquisition-reveal::backdrop { background: rgb(2 6 15 / .78); animation: acquisition-backdrop 240ms ease-out both; }
@@ -98,7 +100,6 @@
 }
 .acquisition-hero[data-art-style="cutout"] .acquisition-art { width: min(74%, 440px); max-height: 72%; margin-bottom: 11%; }
 .acquisition-hero[data-art-style="icon"] .acquisition-art { width: 96px; height: 96px; margin-bottom: 12%; }
-.acquisition-hero[data-kind="equipment"] .acquisition-art { animation-name: acquisition-gear; }
 .acquisition-hero[data-art-style="cover"] .acquisition-art {
   position: absolute;
   inset: 0;
@@ -219,10 +220,74 @@
   .acquisition-footer { display: flex; padding: 7px 12px; }
   .acquisition-rewards { display: flex; max-height: none; }
 }
-body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) .acquisition-reveal {
+
+/* Equipment is a product view. Keep the art, name, and action in separate regions. */
+.acquisition-reveal[open]:has(.acquisition-hero[data-kind="equipment"]) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.acquisition-hero[data-kind="equipment"] {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  min-height: 0;
+  overflow: auto;
+  background: linear-gradient(145deg, #171e39, #0a1423 80%);
+}
+.acquisition-hero[data-kind="equipment"] .acquisition-stage {
+  position: relative;
+  z-index: 0;
+  inset: auto;
+  min-height: clamp(195px, 39dvh, 350px);
+  background: radial-gradient(ellipse at 50% 44%, #354877, #1d2447 47%, #11192e 78%);
+}
+.acquisition-hero[data-kind="equipment"] .acquisition-stage::after {
+  z-index: 0;
+  background: linear-gradient(0deg, #151c33, transparent 28%);
+}
+.acquisition-hero[data-kind="equipment"] .acquisition-art {
+  position: relative;
+  inset: auto;
+  width: min(88%, clamp(176px, 34dvh, 304px));
+  height: auto;
+  max-height: none;
+  aspect-ratio: 1;
+  margin: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 28px #070a1db0);
+  animation-name: acquisition-gear;
+}
+.acquisition-hero[data-kind="equipment"] .acquisition-emblem { margin: 0; }
+.acquisition-hero[data-kind="equipment"] .acquisition-copy {
+  grid-column: auto;
+  padding: clamp(14px, 4vw, 28px);
+}
+.acquisition-hero[data-kind="equipment"] .acquisition-copy h2 {
+  font-size: clamp(1.55rem, 4vw, 2.85rem);
+  line-height: 1.12;
+}
+.acquisition-hero[data-kind="equipment"] + .acquisition-footer { flex: none; }
+@container (min-width: 640px) {
+  .acquisition-hero[data-kind="equipment"] {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: center;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  @container (min-width: 470px) {
+    .acquisition-hero[data-kind="equipment"] {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      align-items: center;
+    }
+    .acquisition-hero[data-kind="equipment"] .acquisition-stage { min-height: clamp(164px, 66dvh, 272px); }
+    .acquisition-hero[data-kind="equipment"] .acquisition-art { width: min(86%, clamp(156px, 59dvh, 252px)); }
+  }
+}
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]):has(#garage-screen[open] [data-demo-catalog]) #acquisition-reveal {
   inset: calc(var(--fold-home-top) + var(--fold-gap-top)) calc(var(--fold-home-right) + var(--fold-gap-right))
     calc(var(--fold-home-bottom) + var(--fold-gap-bottom)) calc(var(--fold-home-left) + var(--fold-gap-left));
-  width: min(780px, calc(var(--fold-home-width) - var(--fold-gap-left) - var(--fold-gap-right)));
+  width: min(var(--reveal-width), calc(var(--fold-home-width) - var(--fold-gap-left) - var(--fold-gap-right)));
+  max-width: calc(var(--fold-home-width) - var(--fold-gap-left) - var(--fold-gap-right));
   max-height: calc(var(--fold-home-height) - var(--fold-gap-top) - var(--fold-gap-bottom));
 }
 body:is(.vfx-comfort, [data-vfx-enabled="false"]) .acquisition-reveal,

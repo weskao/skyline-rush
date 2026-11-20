@@ -2,6 +2,8 @@ export const ITEM_SETTINGS_COPY = {
   en: {
     'mode.itemPhase': 'GHOST PHASE · {sec}s',
     'mode.item.emp': 'EMP',
+    'mode.itemHit.emp': 'EMP HIT · {sec}s',
+    'mode.itemHit.freeze': 'FROZEN · {sec}s',
     'mode.bonusGates': 'Bonus gates · temporary boosts and double style score',
     'mode.bonus.speed-pad': 'SPEED', 'mode.bonus.air-pad': 'AIR +25', 'mode.bonus.recovery-pad': 'RECOVERY',
     'mode.bonus.score-pad': 'STYLE ×2', 'mode.bonus.emp': 'EMP',
@@ -18,6 +20,8 @@ export const ITEM_SETTINGS_COPY = {
   'zh-TW': {
     'mode.itemPhase': '幽靈穿透・{sec} 秒',
     'mode.item.emp': '電磁脈衝',
+    'mode.itemHit.emp': '電擊減速・{sec} 秒',
+    'mode.itemHit.freeze': '冰凍減速・{sec} 秒',
     'mode.bonusGates': '獎勵圓環・短暫增益與特技雙倍分數',
     'mode.bonus.speed-pad': '加速', 'mode.bonus.air-pad': '補氣 +25', 'mode.bonus.recovery-pad': '碰撞恢復',
     'mode.bonus.score-pad': '特技 ×2', 'mode.bonus.emp': '電磁脈衝',

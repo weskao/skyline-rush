@@ -2,6 +2,8 @@ import { updateAudioView, type AudioChannelView } from './audio-view-state.ts';
 import { t } from './i18n.ts';
 import { AUDIO_KEYS, setVolume } from './audio-settings.ts';
 import { onUserActivation } from './user-activation.ts';
+import { showSettingToast } from './toast-view-state.ts';
+import { icons } from './icons.ts';
 
 type Channel = 'music' | 'sfx';
 type AudioSettings = Record<Channel, boolean>;
@@ -55,6 +57,7 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
     setAudio('music', on);
     setAudio('sfx', on);
     sound.cue('ui');
+    showSettingToast('sound', on, on ? icons.sound : icons.mute);
   }
   function unlockAudio(): void {
     if (!sound.running() && (audio.music || audio.sfx)) {
@@ -91,6 +94,8 @@ export function setupAudioUI({ audio, volume, sound }: AudioDependencies) {
   // A page can come back (bfcache, app switch) without a visibilitychange; resync the engine from the live flag.
   for (const type of ['pageshow', 'focus']) window.addEventListener(type, () => sound.setHidden(document.hidden));
   showAudio();
-  unlockAudio(); // plays at once where the browser allows autoplay
+  // Opening music can already be playing on the shared context before the lobby mounts.
+  if (sound.running()) setAudio('sfx', audio.sfx, volume.sfx, false);
+  else unlockAudio(); // plays at once where the browser allows autoplay
   return { showAudio, toggleSound };
 }

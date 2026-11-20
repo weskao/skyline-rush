@@ -41,8 +41,8 @@ test('the drift keeps 90% of the steering slide and survives 0.2 s of neutral st
   assert.equal(DRIFT_FLIP_GRACE, 0.2);
 });
 
-// A flip passes through neutral; holding neutral past the grace (or letting go of BRAKE) ends the drift as before.
-test('neutral steer past DRIFT_FLIP_GRACE, or a brake release in it, ends the drift and pays the reached tier', () => {
+// A flip passes through neutral. Past the grace, the drift ends while BRAKE may still be held.
+test('neutral past the grace ends the drift and holding BRAKE waits to pay its boost', () => {
   for (const neutral of [{ brake: true }, {}]) {
     const race = cruising(80);
     for (let t = 0; t < TIER_TIMES[0] + .05; t += DT) stepRace(race, { brake: true, steer: 1 }, DT);
@@ -51,10 +51,14 @@ test('neutral steer past DRIFT_FLIP_GRACE, or a brake release in it, ends the dr
     while (race.player.drift && frames < 60) { stepRace(race, neutral, DT); frames++; }
     assert.equal(race.player.drift, null);
     assert.equal(race.player.nitro, nitro, 'grace earns no NITRO');
-    assert.ok(race.player.miniBoost > 0, 'the release still pays the mini boost');
     if (neutral.brake) {
       assert.equal(frames, Math.floor(DRIFT_FLIP_GRACE / DT + 1e-6) + 1, `held ${held.toFixed(2)} s, ended after ${frames} neutral frames`);
+      assert.equal(race.player.miniBoost, 0, 'neutral exit has not released BRAKE yet');
+      stepRace(race, DRIFT, DT);
+      assert.equal(race.player.drift, null, 'another steering input during the same hold does not restart drift');
+      stepRace(race, {}, DT);
     } else assert.equal(frames, 1, 'releasing BRAKE ends the drift at once');
+    assert.ok(race.player.miniBoost > 0, 'releasing BRAKE pays the mini boost');
   }
 });
 
@@ -114,4 +118,56 @@ test('a drift that slows below DRIFT_MIN_SPEED pays the tier it reached', () => 
   for (let t = 0; t < 1; t += DT) stepRace(race, DRIFT, DT);
   assert.equal(race.player.drift, null);
   assert.equal(race.player.nitro, DRIFT_REWARDS.at(-1).nitro);
+});
+
+test('a held drift blends into braking and can stop the car without another press', () => {
+  for (const hz of [30, 60, 120]) {
+    const dt = 1 / hz;
+    const race = cruising(DRIFT_MIN_SPEED + 1);
+    const car = race.player;
+    stepRace(race, DRIFT, dt);
+    assert.ok(car.drift);
+    let before = car.speed;
+    for (let frame = 0; car.drift && frame < hz; frame++) {
+      before = car.speed;
+      stepRace(race, DRIFT, dt);
+    }
+
+    assert.equal(car.drift, null);
+    const exitDecel = (before - car.speed) / dt;
+    assert.ok(exitDecel > 4 && exitDecel < 8, `${hz} Hz exit deceleration: ${exitDecel.toFixed(2)} m/s²`);
+    for (let frame = 0; frame < Math.ceil(hz * 0.55); frame++) stepRace(race, DRIFT, dt);
+    before = car.speed;
+    stepRace(race, DRIFT, dt);
+    assert.ok(Math.abs((before - car.speed) / dt - 39) < 1e-9, `${hz} Hz reaches full braking`);
+    for (let frame = 0; frame < hz; frame++) stepRace(race, DRIFT, dt);
+    assert.equal(car.speed, 0, `${hz} Hz stops during the same hold`);
+  }
+});
+
+test('straight-line braking immediately reaches full strength without a preceding drift', () => {
+  const race = cruising(46);
+  stepRace(race, { brake: true }, DT);
+  assert.ok(Math.abs(race.player.speed - (46 - 39 * DT)) < 1e-9);
+});
+
+test('an earned low-speed exit boost waits through the whole hold and fires once on release', () => {
+  const race = cruising(DRIFT_MIN_SPEED + 1);
+  const car = race.player;
+  const reward = DRIFT_REWARDS.at(-1);
+
+  for (let frame = 0; frame < 60; frame++) stepRace(race, DRIFT, DT);
+  assert.equal(car.drift, null);
+  assert.equal(car.miniBoost, 0, 'no boost countdown while the drift key remains held');
+  assert.equal(car.miniBoostEvent, null);
+  assert.equal(car.nitro, reward.nitro);
+
+  for (let frame = 0; frame < 60; frame++) stepRace(race, DRIFT, DT);
+  stepRace(race, { throttle: true }, DT);
+  assert.ok(Math.abs(car.miniBoost - (reward.boost - DT)) < 1e-9, 'release starts the full earned duration');
+  const event = car.miniBoostEvent;
+  assert.equal(event.tier, 1);
+  stepRace(race, { throttle: true }, DT);
+  assert.equal(car.miniBoostEvent, event, 'subsequent frames do not pay again');
+  assert.equal(car.nitro, reward.nitro, 'release does not duplicate earned NITRO');
 });

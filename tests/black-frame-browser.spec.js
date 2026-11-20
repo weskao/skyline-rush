@@ -6,6 +6,7 @@ import { expectClean, watch } from './helpers/black-frames.js';
 
 // The NaN scan (helpers/black-frames.js) through the moments that first show each effect: the home showcase with
 // airflow toggled, countdown, racing, nitro and its fade-out. Neon's kits: tests/neon-look-browser.spec.js.
+// Sky Spiral's kit, day sky and helix road: tests/spiral-look-browser.spec.js (which also holds its no-compile-after-GO check).
 
 const noNaN = async ({ gameplayPage: page }) => {
   await page.evaluate(() => document.fonts.ready);

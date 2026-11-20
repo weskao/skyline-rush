@@ -5,33 +5,48 @@ import { backHomeHref, bootHomeTrack, lastHomeTrack, rememberLastHomeTrack, rest
 const playable = id => ['coast', 'neon', 'canyon'].includes(id);
 const upcoming = id => id === 'dune-tempest' || id === 'frostbite-canyon';
 
-test('remembering a home course keeps it in memory and never writes storage', () => {
-  const storage = { local: 0, session: 0 };
-  const local = globalThis.localStorage, session = globalThis.sessionStorage;
-  globalThis.localStorage = { getItem() { return null; }, setItem() { storage.local++; } };
-  globalThis.sessionStorage = { getItem() { return null; }, setItem() { storage.session++; } };
+test('the last confirmed course survives a fresh page and ignores empty choices', async () => {
+  const stored = new Map();
+  const original = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: key => stored.get(key) ?? null,
+    setItem: (key, value) => stored.set(key, value),
+  };
   try {
     rememberLastHomeTrack('neon');
-    assert.equal(lastHomeTrack(), 'neon');
     rememberLastHomeTrack('canyon');
-    assert.equal(lastHomeTrack(), 'canyon');
     rememberLastHomeTrack('');
-    assert.equal(lastHomeTrack(), 'canyon');
-    assert.equal(storage.local, 0);
-    assert.equal(storage.session, 0);
+    const freshPage = await import('../src/last-home-track.ts?fresh-page');
+    assert.equal(freshPage.lastHomeTrack(), 'canyon');
   } finally {
-    if (local === undefined) delete globalThis.localStorage; else globalThis.localStorage = local;
-    if (session === undefined) delete globalThis.sessionStorage; else globalThis.sessionStorage = session;
+    if (original === undefined) delete globalThis.localStorage; else globalThis.localStorage = original;
   }
 });
 
-test('Back to home reloads onto the raced course, and a bare reload stays on the fallback', () => {
-  const playable = id => id === 'taipei' || id === 'coast';
+test('blocked storage still allows selecting and restoring a course during the same visit', async () => {
+  const original = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem() { throw new Error('storage blocked'); },
+    setItem() { throw new Error('storage blocked'); },
+  };
+  try {
+    const freshPage = await import('../src/last-home-track.ts?blocked-storage');
+    assert.equal(freshPage.lastHomeTrack(), null);
+    freshPage.rememberLastHomeTrack('neon');
+    assert.equal(freshPage.lastHomeTrack(), 'neon');
+  } finally {
+    if (original === undefined) delete globalThis.localStorage; else globalThis.localStorage = original;
+  }
+});
+
+test('Back to home opens the raced course once before subsequent visits use the saved course', () => {
+  const playable = id => id === 'taipei' || id === 'neon';
   assert.equal(backHomeHref('taipei'), './?raced=taipei');
-  assert.equal(bootHomeTrack('?raced=taipei', 'coast', playable), 'taipei');
-  assert.equal(bootHomeTrack('', 'coast', playable), 'coast');
-  assert.equal(bootHomeTrack('?raced=locked', 'coast', playable), 'coast');
-  assert.equal(bootHomeTrack('?stage2-preview=frostbite-canyon', 'coast', playable), 'coast');
+  assert.equal(bootHomeTrack('?raced=taipei', 'neon', playable), 'taipei');
+  assert.equal(bootHomeTrack('', 'neon', playable), 'neon');
+  assert.equal(bootHomeTrack('', null, playable), null);
+  assert.equal(bootHomeTrack('?raced=locked', 'neon', playable), 'neon');
+  assert.equal(bootHomeTrack('?stage2-preview=frostbite-canyon', 'neon', playable), 'neon');
   assert.equal(withoutRacedQuery('?raced=taipei'), '');
   assert.equal(withoutRacedQuery('?raced=taipei&shot=p02'), '?shot=p02');
 });

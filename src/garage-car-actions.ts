@@ -1,4 +1,4 @@
-import { equippedCar, equipCar, gtAccess, gtTrialEndsAt, isCar, savedGtTrial, setGaragePreviewCar, startGtTrial, type CarId } from './car-catalog.ts';
+import { carAccess, equippedCar, equipCar, gtTrialEndsAt, isCar, savedGtTrial, setGaragePreviewCar, startGtTrial, type CarId } from './car-catalog.ts';
 import { garageCars } from './garage-view-state.ts';
 
 interface CarActions {
@@ -15,7 +15,7 @@ export function setupGarageCarActions(panel: HTMLDialogElement, actions: CarActi
   function refresh(): void {
     clearTimeout(expiry);
     const stars = actions.getStars(), startedAt = savedGtTrial();
-    const now = Date.now(), access = gtAccess(stars, startedAt, now);
+    const now = Date.now(), access = carAccess('crimson-gt', stars, startedAt, now);
     Object.assign(garageCars, { stars, trialStartedAt: startedAt, access });
     if (access === 'trial' && startedAt !== undefined)
       expiry = setTimeout(actions.onTrialExpired, gtTrialEndsAt(startedAt) - now);

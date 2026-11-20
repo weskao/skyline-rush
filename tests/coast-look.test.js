@@ -137,3 +137,31 @@ test('switching from HDRI to Low on the same track restores the procedural expos
   look.update('neon', 'track', 'low');
   assert.equal(renderer.toneMappingExposure, 1.12);
 });
+
+
+test('Coast dusk keeps the bright horizon band below bloom while HDR lights can still bloom', async () => {
+  const { look } = rig();
+  look.update('coast', 'dusk', 'high');
+  await settle();
+  const threshold = look.bloomThreshold(1.1);
+  assert.ok(threshold > 1.05, 'the bright sky and reflected horizon do not bloom across the road');
+  assert.ok(threshold < 1.3 && look.bloomStrength(0) > 0.36, 'brighter race lights still glow');
+});
+
+test('a track that shares the sky of the track before it still gets that sky\'s sun and exposure', async () => {
+  const room = { id: 'room' }, textures = {};
+  const envs = { get: n => textures[n], preload: names => { for (const n of names) textures[n] = { id: n }; return Promise.resolve(); } };
+  const scene = { environment: room, environmentIntensity: 0.42 }, renderer = { toneMappingExposure: 1.12 };
+  const lens = { uniforms: { saturation: { value: 1 }, contrast: { value: 1 }, tint: { value: new Color(1, 1, 1) } } };
+  const sun = { color: new Color('#ffb88a'), intensity: 1.8 };
+  const look = createCoastLook({ scene, renderer, lens, room, roomIntensity: 0.42, envs, sun });
+  look.update('coast', 'day', 'high'); await settle();
+  // world.js track block on the way to Sky Spiral: its violet palette sun and procedural exposure, before coastLook.update
+  sun.color.set('#a855f7'); sun.intensity = 2.3; renderer.toneMappingExposure = 1.12;
+  look.update('spiral', 'track', 'high'); await settle();
+  const v = COAST_ENV_VARIANTS.day;
+  assert.deepEqual([sun.color.getHexString(), sun.intensity, renderer.toneMappingExposure], [new Color(v.sun.color).getHexString(), v.sun.intensity, v.exposure],
+    'the day sky of Coast is also Sky Spiral\'s: the violet sun must not stay under it');
+  look.update('spiral', 'track', 'low');
+  assert.deepEqual([sun.color.getHexString(), sun.intensity, renderer.toneMappingExposure], ['a855f7', 2.3, 1.12], 'Low gets the track\'s own sun back');
+});

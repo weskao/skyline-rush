@@ -5,9 +5,10 @@ import { ciTimeout } from './helpers/ci.js';
 
 test.use({ unlockedAccess: true, hasTouch: true, isMobile: true });
 
-for (const { track, viewport, asset, quality } of [
-  { track: 'neon', viewport: { width: 390, height: 844 }, asset: 'neon-landmarks', quality: 'high' },
-  { track: 'coast', viewport: { width: 844, height: 390 }, asset: 'coast-scenery', quality: 'medium' },
+for (const { track, viewport, asset, quality, layer, piece = '' } of [
+  { track: 'neon', viewport: { width: 390, height: 844 }, asset: 'neon-landmarks', quality: 'high', layer: 'Neon Downtown kit' },
+  { track: 'coast', viewport: { width: 844, height: 390 }, asset: 'coast-scenery', quality: 'medium', layer: 'Coast scenic details', piece: 'cliff_' },
+  { track: 'spiral', viewport: { width: 390, height: 844 }, asset: 'spiral-landmarks', quality: 'medium', layer: 'Sky Spiral kit' },
 ]) {
   test(`${track} on the unlocked phone server warms its selected scenery before GO`, async ({ page, gameplayURL }, info) => {
     test.setTimeout(ciTimeout(90000));
@@ -50,11 +51,10 @@ for (const { track, viewport, asset, quality } of [
 
     await expect(world).toHaveAttribute(`data-${asset}`, 'attached', { timeout: ciTimeout(40000) });
     await expect(page.locator('#race-status')).toHaveText('RACING', { timeout: ciTimeout(20000) });
-    await expect.poll(() => page.evaluate(track => {
-      const layer = window.gameScene.scene.getObjectByName(track === 'neon' ? 'Neon Downtown kit' : 'Coast scenic details');
-      return layer.visible && layer.children.some(node => node.isInstancedMesh && node.visible && node.count > 0 &&
-        (track === 'neon' || node.name.startsWith('cliff_')));
-    }, track)).toBe(true);
+    await expect.poll(() => page.evaluate(([name, piece]) => {
+      const layer = window.gameScene.scene.getObjectByName(name);
+      return layer.visible && layer.children.some(node => node.isInstancedMesh && node.visible && node.count > 0 && node.name.startsWith(piece));
+    }, [layer, piece])).toBe(true);
     await page.screenshot({ path: info.outputPath(`${track}-${quality}-phone-race.png`) });
     expect(errors).toEqual([]);
   });

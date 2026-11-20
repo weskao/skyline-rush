@@ -18,7 +18,7 @@ export const RING_FUEL = 20; // charge ring
 export const SLIPSTREAM_BOOST = 3; // seconds, burns no fuel (shares the mini-boost)
 export { RISK_SCORE } from './risk-lines.ts';
 export const PERFECT_LINE_NITRO = 1;
-export const MYSTERY_EFFECTS = ['shield', 'magnet', 'ghost', 'freeze'];
+export const MYSTERY_EFFECTS = ['shield', 'magnet', 'ghost', 'freeze'] as const;
 export const EFFECT_TIMES = { shield: 10, magnet: 5, ghost: 3, freeze: 2 }; // seconds; shield also ends on the first absorbed hit
 
 export interface RaceRing {

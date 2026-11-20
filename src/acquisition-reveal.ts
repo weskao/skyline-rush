@@ -1,4 +1,5 @@
 import type { Locale } from './i18n.ts';
+import type { SkinCategory } from './garage-skin-catalog.ts';
 
 export const ACQUISITION_KIND = {
   CAR: 'car',
@@ -21,6 +22,7 @@ export type AcquisitionItem = Readonly<{
   artwork?: Readonly<{ src: string; style: 'cover' | 'cutout' | 'icon' }>;
   quantity?: number;
   scope?: 'demo';
+  equipmentCategory?: SkinCategory;
 }>;
 export type AcquisitionBatch = Readonly<{ id: string; items: readonly AcquisitionItem[] }>;
 

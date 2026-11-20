@@ -1,7 +1,8 @@
 import { carGap, courseHazardBlockers } from './course-race-step.ts';
+import { FINISH_IMPACT_RETENTION, isParkedRival, pushFinishedRival } from './finished-rival.js';
 import { ROAD_LIMIT } from './game.js';
 import { hazardReach, hazardTouch, nudge } from './hazard-race.ts';
-import { bodiesShareHeight, isCircuitFinisher, vehicleContactSize } from './vehicle-contact-size.js';
+import { bodiesShareHeight, vehicleContactSize } from './vehicle-contact-size.js';
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 // Index of the first scenery part (sorted by `from`, each under 20 m deep) that can still reach distance d.
@@ -45,7 +46,6 @@ function laneFree(x) {
 }
 // A car alongside, or one ahead this car closes on within ~3 s, blocks its own width.
 function carBlocker(race, other, pace, car, carPace, look) {
-  if (isCircuitFinisher(race, car)) return;
   const gap = carGap(race, other, car) ?? -Infinity; // cars on different graph branches never block
   if (!bodiesShareHeight(other, car)) return;
   const player = car === race.player;
@@ -117,8 +117,11 @@ export function aiImpacts(race, other, before, pace) {
     nudge(other, effect, hazard); // gusts and rough terrain treat every car alike
   }
 }
-export function bumpCars(race, a, b) {
-  if (isCircuitFinisher(race, a) || isCircuitFinisher(race, b)) return;
+export function bumpCars(race, a, b, dt = 0) {
+  if (isParkedRival(a) || isParkedRival(b)) {
+    bumpFinishedRival(race, a, b, dt);
+    return;
+  }
   if ((a.cooldown > 0 && b.cooldown > 0) || Math.abs(carGap(race, a, b) ?? Infinity) >= 4.4 || Math.abs(a.x - b.x) >= 1.7 ||
     Math.abs((a.altitude || 0) - (b.altitude || 0)) >= 1.8) return;
   const side = Math.sign(a.x - b.x) || -1, intensity = clamp(Math.abs(a.speed - b.speed) / 70, 0.25, 1);
@@ -126,3 +129,15 @@ export function bumpCars(race, a, b) {
   if (!(b.cooldown > 0)) knock(race, b, -side, intensity, aiRetention(b));
 }
 
+function bumpFinishedRival(race, a, b, dt) {
+  const gap = carGap(race, a, b);
+  if (gap === null) return;
+  const aReceives = isParkedRival(a) && (!isParkedRival(b) || gap < 0);
+  const parked = aReceives ? a : b;
+  const mover = aReceives ? b : a;
+  const intensity = pushFinishedRival(race, mover, parked, mover.distance - (mover.pace ?? mover.speed) * dt);
+  if (intensity && !(mover.cooldown > 0)) {
+    knock(race, mover, 0, intensity, FINISH_IMPACT_RETENTION);
+    if (typeof mover.pace === 'number') mover.pace = Math.min(mover.pace, mover.speed);
+  }
+}

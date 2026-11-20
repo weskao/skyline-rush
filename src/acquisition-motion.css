@@ -1,0 +1,195 @@
+.acquisition-reveal:has([data-car-showcase]) {
+  --reveal-width: 960px;
+  border-color: #51617c;
+  border-radius: 9px;
+  background: #080e18;
+}
+.acquisition-hero[data-car-showcase] {
+  grid-template: "stage" minmax(0, 1fr) "copy" auto / minmax(0, 1fr);
+  min-height: 0;
+  background: #080e18;
+}
+[data-car-showcase] .acquisition-stage {
+  grid-area: stage;
+  position: relative;
+  inset: auto;
+  z-index: 0;
+  min-width: 0;
+  height: clamp(225px, min(48vw, 52dvh), 489px);
+  background: radial-gradient(ellipse at 50% 45%, #364358, #172135 48%, #0b1321 80%);
+}
+[data-car-showcase] .acquisition-stage::after {
+  background: radial-gradient(ellipse at 50% 50%, transparent 42%, #02050e6b 100%);
+  box-shadow: inset 0 -9px 26px #060a1450;
+}
+[data-car-showcase] .acquisition-grid { opacity: .5; }
+[data-car-showcase] :is(.acquisition-orbit, .acquisition-beam, .acquisition-scan) { display: none; }
+[data-car-showcase][data-art-style="cutout"] .acquisition-art { width: min(85%, 605px); margin: 0; }
+.acquisition-car-cinematic {
+  visibility: hidden;
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+}
+.acquisition-car-cinematic canvas { display: block; width: 100%; height: 100%; }
+.acquisition-car-cinematic:is([data-cinematic="playing"], [data-cinematic="still"]) { visibility: visible; }
+.acquisition-car-cinematic:is([data-cinematic="playing"], [data-cinematic="still"]) ~ :is(.acquisition-art, .acquisition-emblem) {
+  visibility: hidden;
+}
+.acquisition-cut {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  background: #020610;
+  animation: acquisition-shutter 300ms ease-out both;
+}
+[data-reveal-shot="signature"] .acquisition-cut { animation-duration: 680ms; }
+[data-reveal-shot="thrusters"] .acquisition-cut { background: linear-gradient(90deg, #170607bd, #531a1570, #160611b8); }
+[data-reveal-shot="hero"] .acquisition-cut {
+  background: linear-gradient(102deg, #101f3bce 6%, #6aaafa80 35%, transparent 72%);
+  animation: acquisition-premiere 570ms cubic-bezier(.22,.65,.3,1) both;
+}
+@keyframes acquisition-shutter { from { opacity: .72; } to { opacity: 0; } }
+@keyframes acquisition-premiere {
+  from { transform: translateX(-40%); opacity: .63; }
+  to { transform: translateX(105%); opacity: 0; }
+}
+
+[data-car-showcase] .acquisition-copy {
+  grid-area: copy;
+  z-index: 3;
+  min-width: 0;
+  position: relative;
+  padding: 17px clamp(20px, 4vw, 46px) 24px;
+  border-top: 1px solid #344659;
+  background: linear-gradient(105deg, #16283b, #0b1727 62%, #0b1422);
+}
+[data-car-showcase] .acquisition-copy::before {
+  content: "";
+  position: absolute;
+  inset: -2px auto auto clamp(20px, 4vw, 46px);
+  width: 66px;
+  height: 3px;
+  background: linear-gradient(90deg, #ff8f56, var(--reveal-accent));
+  box-shadow: 0 0 14px #ff974b76;
+}
+[data-car-showcase] .acquisition-status {
+  margin-bottom: 6px;
+  font-size: .76rem;
+  white-space: nowrap;
+}
+[data-car-showcase] .acquisition-copy h2 {
+  font: 700 clamp(2.35rem, 7vw, 5.6rem)/.92 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+  letter-spacing: .012em;
+  text-transform: uppercase;
+}
+[data-car-showcase]:is([data-reveal-shot="signature"], [data-reveal-shot="profile"], [data-reveal-shot="thrusters"], :has([data-cinematic="loading"])) .acquisition-copy {
+  opacity: 0;
+}
+[data-reveal-shot="hero"] .acquisition-copy { animation: acquisition-lockup 590ms 80ms cubic-bezier(.18,.75,.23,1) both; }
+[data-reveal-shot="hero"] .acquisition-copy h2 { animation: acquisition-set-type 550ms 140ms cubic-bezier(.16,.79,.25,1) both; }
+@keyframes acquisition-lockup { from { opacity: 0; transform: translateY(11px); } }
+@keyframes acquisition-set-type { from { opacity: 0; transform: translateX(18px); } }
+
+@media (min-width: 561px) and (min-height: 501px) {
+  .acquisition-hero[data-car-showcase] { grid-template: "stage" minmax(0, 1fr) / minmax(0, 1fr); }
+  [data-car-showcase] .acquisition-stage { height: clamp(300px, min(52vw, 67dvh), 525px); }
+  [data-car-showcase] .acquisition-copy {
+    grid-area: stage;
+    align-self: end;
+    padding-top: 36px;
+    border-top: 0;
+    background: linear-gradient(0deg, #080e18f5, #080e18b8 48%, #080e1800);
+  }
+  [data-car-showcase] .acquisition-copy::before { top: 26px; }
+}
+@media (max-width: 560px) and (orientation: portrait) {
+  [data-car-showcase] .acquisition-stage { height: clamp(198px, 67vw, 332px); }
+  [data-car-showcase] .acquisition-copy h2 { font-size: clamp(2.2rem, 10vw, 3.55rem); }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .acquisition-hero[data-car-showcase] {
+    grid-template: "stage copy" minmax(0, 1fr) / minmax(0, 1.9fr) minmax(145px, 1fr);
+  }
+  [data-car-showcase] .acquisition-stage { height: clamp(135px, 59dvh, 300px); }
+  [data-car-showcase] .acquisition-copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 13px 16px;
+    border-top: 0;
+    border-inline-start: 1px solid #344659;
+  }
+  [data-car-showcase] .acquisition-copy::before { position: static; width: 32px; margin-bottom: 10px; }
+  [data-car-showcase] .acquisition-copy h2 { font-size: clamp(1.8rem, 9dvh, 3.5rem); }
+}
+
+.acquisition-accents {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+}
+[data-kind="track"] .acquisition-accents {
+  inset: 36% -15% -2%;
+  background: repeating-linear-gradient(90deg, transparent 0 12%, #8df5ff74 12.1% 12.35%, transparent 12.45% 17%);
+  transform: rotateX(64deg);
+  mask-image: linear-gradient(transparent, #000);
+  animation: acquisition-lanes 820ms ease-out both;
+}
+[data-kind="paint"] .acquisition-accents {
+  inset: -35% -20%;
+  background: linear-gradient(107deg, transparent 32%, #9258ea44 41%, #fceaff9c 49%, #7ddcff50 56%, transparent 65%);
+  animation: acquisition-polish 680ms 80ms ease-out both;
+}
+[data-kind="equipment"] .acquisition-accents {
+  inset: 19% max(24%, calc((100% - 220px) / 2)) 32%;
+  border: 1px solid #b5c8ffb0;
+  background: linear-gradient(0deg, transparent 49%, #a9b7ff52 50%, transparent 51%);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 72%, 94% 72%, 94% 27%, 0 27%);
+  animation: acquisition-lock 630ms ease-out both;
+}
+[data-kind="clothing"] .acquisition-accents {
+  background: linear-gradient(116deg, #ffb0d23d 0 45%, transparent 45% 55%, #ad99ff59 55% 100%);
+  animation: acquisition-tailor 720ms ease-out both;
+}
+[data-kind="item"] .acquisition-accents {
+  inset: 13% 24% 25%;
+  background: radial-gradient(ellipse, #9dffff43, transparent 59%);
+  border-block: 1px solid #9dffff89;
+  animation: acquisition-lock 640ms ease-out both;
+}
+[data-kind="medal"] .acquisition-accents {
+  inset: 9% 18% 21%;
+  background: radial-gradient(ellipse, #ffcc7666, transparent 49%), repeating-conic-gradient(from 9deg, transparent 0deg 18deg, #ffc87764 19deg, transparent 20deg 30deg);
+  mask-image: radial-gradient(ellipse, transparent 8%, #000 36%, transparent 66%);
+  animation: acquisition-crown 990ms ease-out both;
+}
+[data-kind="currency"] .acquisition-accents {
+  inset: 16% 25% 27%;
+  background: repeating-linear-gradient(0deg, transparent 0 13px, #9af5ceb8 15px, transparent 16px 24px);
+  mask-image: radial-gradient(ellipse, #000 5%, transparent 69%);
+  animation: acquisition-credit 710ms ease-out both;
+}
+.acquisition-hero:not([data-car-showcase], [data-revisit]) .acquisition-copy { animation: acquisition-lockup 440ms 130ms ease-out both; }
+[data-kind="clothing"] :is(.acquisition-art, .acquisition-emblem) { animation-name: acquisition-tailor-art; }
+
+@keyframes acquisition-lanes { 22% { opacity: .8; } to { transform: rotateX(64deg) translateY(22%) scaleX(1.35); opacity: 0; } }
+@keyframes acquisition-polish { from { transform: translateX(-68%); opacity: .95; } to { transform: translateX(64%); opacity: 0; } }
+@keyframes acquisition-lock { from { transform: scale(1.45); } 33% { transform: scale(1); opacity: .83; } to { opacity: 0; } }
+@keyframes acquisition-tailor { from { transform: scaleX(.25); opacity: .76; } to { transform: scaleX(1.45); opacity: 0; } }
+@keyframes acquisition-tailor-art { from { transform: scaleX(.72) translateY(14px); opacity: .24; } }
+@keyframes acquisition-crown { from { transform: scale(.6) rotate(-14deg); } 35% { opacity: .83; } to { transform: scale(1.32) rotate(0); opacity: 0; } }
+@keyframes acquisition-credit { from { transform: translateY(28%); } 28% { opacity: .85; } to { transform: translateY(-27%); opacity: 0; } }
+
+[data-revisit] * { animation: none !important; }
+body:is(.vfx-comfort, [data-vfx-enabled="false"]) [data-car-showcase] .acquisition-copy { opacity: 1; }
+body:is(.vfx-comfort, [data-vfx-enabled="false"]) :is(.acquisition-accents, .acquisition-cut) { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  [data-car-showcase] .acquisition-copy { opacity: 1 !important; }
+  .acquisition-accents, .acquisition-cut { display: none; }
+}

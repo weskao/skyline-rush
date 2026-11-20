@@ -3,6 +3,7 @@ paths:
   - "src/garage-launch-flare.js"
   - "src/garage-launch-flare-shaders.js"
   - "tests/garage-launch-flare.test.js"
+  - "tests/garage-launch-flare-3d.test.js"
 ---
 
 # Launch-flare layering: car depth, road plane, pool reach
@@ -12,5 +13,6 @@ paths:
   - **Lean.** The car banks and pitches about its wheels. The pool takes its orientation from the `ground` plane (the contact shadow `world.js` hands to `createAeroVFX`), never from the car body, or the side the car leans towards sinks under the road.
   - **Reach.** The quad must outreach the ripple (`POOL_SPREAD` >= 1.5) with the glow under one 8-bit step at its edge, and the shader rescales by the same constant. A smaller quad ends in a straight line beside the lane marking.
 - `pool.renderOrder > 0` only orders the pool after shadows and transparent road markings; `renderOrder` cannot repair a failed depth test.
+- Countdown shows a static ground charge. GO fires one short burst. Keep travelling wave fronts local to the effect and cap additive output per style. The countdown and launch regression checks both phases independently.
 - Material flags prove nothing here. Check real WebGL frames: countdown, then GO while steering, on a flat start (Coast) and a sloped one (Alpine).
 - Preserve the VFX Off / Reduced Motion / Low modes. Re-run `node --test tests/garage-launch-flare.test.js`, module-size, full unit and build after renderer changes.

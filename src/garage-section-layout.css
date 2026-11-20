@@ -169,3 +169,60 @@
 @media (max-height: 500px) and (orientation: landscape) {
   #garage-screen[data-page] .garage-layout { grid-template-columns: minmax(0, 1fr) minmax(220px, 33%); }
 }
+
+@media (min-width: 980px) {
+  #garage-screen .garage-layout[data-demo-store] {
+    grid-template-columns: minmax(0, 1fr) clamp(580px, 67vw, 1050px);
+  }
+  #garage-screen .garage-layout[data-demo-store] .garage-section-nav {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+@media (min-width: 700px) and (max-width: 979px) and (min-height: 501px) {
+  #garage-screen .garage-layout[data-demo-store] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 70%);
+  }
+}
+#garage-screen .garage-layout[data-demo-store] .garage-section-nav button {
+  background: #172039;
+  border-color: #39486a;
+}
+#garage-screen .garage-layout[data-demo-store] .garage-section-nav button[aria-pressed="true"] {
+  color: #f2f9ff;
+  border-color: #85dfed;
+  background: #233e58;
+  box-shadow: inset 0 -3px #85dfed;
+}
+@media (max-width: 979px) and (max-height: 500px) and (orientation: landscape) {
+  #garage-screen .garage-layout[data-demo-store] {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 65%);
+  }
+}
+@media (max-width: 650px) and (orientation: portrait) {
+  #garage-screen .garage-layout[data-demo-store] .garage-visual { flex: 0 0 clamp(78px, 11dvh, 118px); }
+  #garage-screen .garage-layout[data-demo-store] .garage-preview { min-height: 0; }
+  #garage-screen .garage-layout[data-demo-store] .garage-collection { flex: 1 1 0; }
+}
+
+body:is([data-fold-axis="vertical"], [data-fold-axis="horizontal"]) #garage-screen.garage-screen:has([data-demo-catalog]) {
+  inset: calc(var(--fold-home-top) + var(--fold-gap-top)) calc(var(--fold-home-right) + var(--fold-gap-right))
+    calc(var(--fold-home-bottom) + var(--fold-gap-bottom)) calc(var(--fold-home-left) + var(--fold-gap-left));
+  width: calc(var(--fold-home-width) - var(--fold-gap-left) - var(--fold-gap-right));
+  height: calc(var(--fold-home-height) - var(--fold-gap-top) - var(--fold-gap-bottom));
+  border-radius: 12px;
+}
+body[data-fold-axis="vertical"] #garage-screen .garage-layout[data-demo-catalog] {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+body[data-fold-axis="vertical"] #garage-screen:has([data-demo-catalog]) .garage-heading { width: auto; }
+body[data-fold-axis="vertical"] #garage-screen:has([data-demo-catalog]) #garage-close { position: static; flex-shrink: 0; }
+body[data-fold-axis="vertical"] #garage-screen .garage-layout[data-demo-catalog] .garage-visual { flex: 0 0 78px; }
+body[data-fold-axis="vertical"] #garage-screen .garage-layout[data-demo-catalog] .garage-preview { min-height: 0; }
+body[data-fold-axis="vertical"] #garage-screen .garage-layout[data-demo-catalog] .garage-collection { flex: 1 1 0; }
+body[data-fold-axis="horizontal"] #garage-screen .garage-layout[data-demo-catalog] {
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr) minmax(0, 65%);
+  gap: 8px;
+}

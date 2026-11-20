@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import GarageArtworkTile from './GarageArtworkTile.vue';
+import StoreActionButton from './StoreActionButton.vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import { storeReadiness, storeReadinessText } from './garage-store-readiness.ts';
 import { getLocale, onLocaleChange } from './i18n.ts';
@@ -112,9 +113,9 @@ onUnmounted(() => stopListening?.());
       </div>
       <div v-if="category === 'garage-store-readiness'" class="garage-store-detail-footer">
         <span role="status">{{ storeStatusLabel(current.id) }} · {{ locale === 'zh-TW' ? '純展示' : 'Display only' }}</span>
-        <button type="button" disabled aria-disabled="true" data-store-purchase-disabled>
+        <StoreActionButton kind="purchase" :locale="locale" disabled aria-disabled="true" data-store-purchase-disabled>
           {{ locale === 'zh-TW' ? '尚未開放' : 'Unavailable' }}
-        </button>
+        </StoreActionButton>
       </div>
     </section>
   </details>
@@ -192,9 +193,6 @@ onUnmounted(() => stopListening?.());
 .garage-store-detail-footer { margin-top: 12px; display: flex; flex-wrap: wrap;
   align-items: center; justify-content: space-between; gap: 10px; }
 .garage-store-detail-footer span { color: #e6c4f7; font-size: 12px; }
-.garage-store-detail-footer button { min-height: 44px; padding: 9px 16px;
-  border: 1px solid #715672; border-radius: 10px; color: #bcb0c8;
-  background: #272639; cursor: not-allowed; opacity: .85; }
 @media (hover: hover) and (pointer: fine) {
   .garage-source-choice:hover { transform: translateY(-3px); box-shadow: 0 0 17px #3ec0f355; }
   .garage-source-filters button:hover { border-color: #7adcf7; }
