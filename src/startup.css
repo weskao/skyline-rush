@@ -8,9 +8,6 @@
 .startup {
   --camera-travel: -1.7vw;
   --camera-scale: 1.092;
-  --camera-motion: startup-camera 6.5s cubic-bezier(.18,.68,.35,1) both;
-  --glass-reflection-motion: startup-glass-reflection 8.6s ease-in-out infinite;
-  --glass-mask: url('/feature-assets/startup/startup-glass-wide.svg');
   position: fixed;
   z-index: 100;
   inset: 0;
@@ -26,24 +23,8 @@
 .startup-copy[lang='zh-TW'], html[lang='zh-TW'] .startup-copy[lang='en'] { display: none; }
 html[lang='zh-TW'] .startup-copy[lang='zh-TW'] { display: inline; }
 .startup-art, .startup-art img, .startup-motes { position: absolute; inset: 0; width: 100%; height: 100%; }
-.startup-art { isolation: isolate; }
 .startup-art img { object-fit: cover; color: transparent; }
-.startup-art, .startup-art img, .startup-art::before, .startup-art::after { transform-origin: 54% 58%; }
-.startup-art::before, .startup-art::after {
-  content: '';
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  pointer-events: none;
-  mask: var(--glass-mask) center / cover no-repeat;
-}
-/* Tint the baked highlights toward charcoal, then reflect passing light on the same glass surface. */
-.startup-art::before { background: #28232954; }
-.startup-art::after {
-  background: linear-gradient(146deg, transparent 44%, #e5b58a0d 48%, #ffddbd3c 51%, #eed5bb1b 54%, transparent 58%)
-    0 50% / 190% 100% no-repeat;
-  opacity: 0;
-}
+.startup-art, .startup-art img { transform-origin: 54% 58%; }
 .startup-motes { pointer-events: none; overflow: hidden; }
 .startup-layout {
   --pad-x: clamp(18px, 6vw, 112px);
@@ -277,17 +258,9 @@ html[lang='zh-TW'] .startup-copy[lang='zh-TW'] { display: inline; }
 }
 .startup:is([data-motion='off'], [data-stage='complete']) #startup-fill::after { display: none; }
 .startup[data-stage='failed'] :is(.startup-motes, .startup-road) { display: none; }
-.startup[data-stage='failed'] .startup-art img, .startup[data-stage='failed'] .startup-art::before {
-  animation-play-state: paused;
-}
+.startup[data-stage='failed'] .startup-art img { animation-play-state: paused; }
 @media (prefers-reduced-motion: no-preference) {
-  .startup[data-motion='high'] .startup-art img, .startup[data-motion='high'] .startup-art::before {
-    animation: var(--camera-motion);
-  }
-  .startup[data-motion='medium']:not([data-stage='failed']) .startup-art::after { animation: var(--glass-reflection-motion); }
-  .startup[data-motion='high']:not([data-stage='failed']) .startup-art::after {
-    animation: var(--camera-motion), var(--glass-reflection-motion);
-  }
+  .startup[data-motion='high'] .startup-art img { animation: startup-camera 6.5s cubic-bezier(.18,.68,.35,1) both; }
   .startup:not([data-motion='off'])[data-stage='3'] #startup-enter {
     animation: startup-enter-reveal .36s ease-out both;
   }
@@ -303,14 +276,6 @@ html[lang='zh-TW'] .startup-copy[lang='zh-TW'] { display: inline; }
 @keyframes startup-camera {
   from { transform: scale(1.012); }
   to { transform: translateX(var(--camera-travel)) scale(var(--camera-scale)); }
-}
-@keyframes startup-glass-reflection {
-  0%, 8% { background-position: 10% 50%; opacity: 0; }
-  16% { opacity: .53; }
-  28% { background-position: 76% 50%; opacity: 0; }
-  52% { background-position: 15% 50%; opacity: 0; }
-  60% { opacity: .32; }
-  72%, 100% { background-position: 80% 50%; opacity: 0; }
 }
 @keyframes startup-ready {
   0% { transform: translateX(-100%); opacity: 0; }
@@ -339,17 +304,12 @@ html[lang='zh-TW'] .startup-copy[lang='zh-TW'] { display: inline; }
   #startup-fill::after { display: none; }
 }
 @media (max-aspect-ratio: 3/2) and (min-height: 500px) {
-  .startup { --glass-mask: url('/feature-assets/startup/startup-glass-square.svg'); }
   .startup-layout { justify-items: center; text-align: center; --pad-y: clamp(22px, 9svh, 90px); }
   .startup-brand::before, .startup #startup-title { margin-inline: auto; }
   .startup #startup-title { font-size: clamp(48px, 10vw, 100px); }
 }
 @media (max-aspect-ratio: 3/5) {
-  .startup {
-    --camera-travel: -1vw;
-    --camera-scale: 1.052;
-    --glass-mask: url('/feature-assets/startup/startup-glass-portrait.svg');
-  }
+  .startup { --camera-travel: -1vw; --camera-scale: 1.052; }
   .startup-road { top: 68%; }
   .startup #startup-title { font-size: clamp(42px, 12.8vw, 67px); }
   .startup-layout { --pad-y: clamp(24px, 9svh, 95px); }
