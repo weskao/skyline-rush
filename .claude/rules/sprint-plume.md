@@ -96,7 +96,8 @@ its `SprintTierId`. Colour stays in `src/garage-skin-palette.ts` and the `:root`
 | Airborne, or not racing (Garage, Home) | on | on | off |
 | Void pulse skin | off (its beams) | on | as above |
 | Reduced Motion / Comfortable (`calm`) | on, both clocks frozen (the flame holds one still shape) | x0.6, no flicker | off for NITRO, x0.6 for BOOST |
-| Showroom demo (Garage, Home) | BOOST tier, or NITRO while a trail skin previews | on | off |
+| Parked showroom (Garage Home, phase `ready`) | BOOST tier, or NITRO while a trail skin previews | on | off |
+| Showroom that drives a racing car (Garage Inspect, Coming Soon; phase `racing`) | the driver's tier, as in a race | on | off |
 | NITRO with a trail skin (not calm) | thick fades to the old cone | on | fades to 0 |
 
 - **Trail-skin cross-fade.** While a trail skin's streaks show, the jets' thickness and the road glow
@@ -107,6 +108,11 @@ its `SprintTierId`. Colour stays in `src/garage-skin-palette.ts` and the `:root`
   `SHOWROOM`): from `idle` (a quarter) up to the length the Studio's `SHOWROOM.speed` driver gets, and back; brightness
   follows from `idlePower` to 1. Reduced Motion / Comfortable: no pulse (Studio holds the full length). Races never
   pulse. Guards: `tests/sprint-plume.test.js` (*showroom plume* x2).
+- **A showroom with a driver burns the driver's tier (2026-11-21).** The Garage tier control chose NITRO + BOOST
+  and the Inspect jets drew NITRO: the showroom branch named the tier from `jet.nitroMix` alone, which can never
+  be `nitro-boost`. `jet.tier` now reads the driver whenever the race is `racing`, showroom or not; only a parked
+  showroom keeps the fixed burn. Guard: `tests/sprint-plume-flame.test.js` (*a showroom that drives a racing
+  car*), RED on the old line (`6.5,0.85,0,1.5 vs 5,1,1,1.35`).
 - **NITRO trail glare (2026-11-18).** Additive exhaust, the reflection and post-process bloom overlap.
   Gold moves bands through a steady nozzle and reflection. Red uses soft envelopes on both meshes.
   Keep the NITRO bloom contribution bounded and fed by `frame.lightPower` before chain scaling, including

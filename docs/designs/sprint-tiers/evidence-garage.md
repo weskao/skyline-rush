@@ -1,5 +1,5 @@
 # Sprint tiers: Garage session evidence
-Status: blocked on one line in `src/aero-vfx.js` (outside this session's files): with motion on, the Inspect jets burn NITRO + BOOST with NITRO's look, so the combined tier cannot be told from NITRO in the Garage
+Status: done at integration: the `jet.tier` line below was changed by the coordinating session with its guard (`tests/sprint-plume-flame.test.js`, *a showroom that drives a racing car*); no browser test, capture or recording was run. Side effect to look at: the Coming Soon showcase drives with BOOST and NITRO held, so its jets now burn the NITRO + BOOST look
 
 Branch `feature/garage-thruster-ui`. Commits: `38186116` (cards, tier control, guards, UX contract),
 `df62e108` (merge of `feature/nitro-realistic-flame`), then the commit that adds this file. Not pushed, not
