@@ -13,8 +13,8 @@ paths:
 Trees, shrubs, rocks, lamps, railings, signs and filler buildings are built once per species and varied by
 parameters, so a new course is dressed mostly from what exists. Hero landmarks stay one-off (task-8 reuse table).
 
-1. **Look before modelling.** Check the existing species first: `cherry_tree` (`assets-src/neon-city/build/props.py`,
-   blossom cut-out `src/neon-blossom.ts`), the `coast-greenery` shrubs, the `coast-scenery` cliff/rock scans, the Neon
+1. **Look before modelling.** Check the existing species first: `cherry_tree` (`assets-src/props/cherry_tree.py`, the first
+   shared species; blossom cut-out `src/neon-blossom.ts`), the `coast-greenery` shrubs, the `coast-scenery` cliff/rock scans, the Neon
    street furniture. An existing species gets a variant, never a second model of the same thing.
 2. **A prop is a builder function with knobs**, like `cherry_tree(k, lod)`: size and proportion (height, fork height,
    crown radius), cluster counts (bough, blossom/leaf puffs), material cell, `seed`, `lod`. The defaults rebuild the

@@ -4,6 +4,11 @@ Every builder takes (kit, lod). The street is toward -y; anything read while dri
 lenses) faces along x. Wall-mounted pieces hang over their pivot at the height they are meant to be mounted.
 """
 import math
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "props"))
+from cherry_tree import cherry_tree  # noqa: E402,F401  shared prop (.claude/rules/prop-reuse.md), found here by build.py
 
 
 def blade(k, lod, cell, neon, z0=6.0, wall=0.75):
@@ -117,51 +122,6 @@ def railing(k, lod):
     if lod == 0:
         k.box((-0.08, 0.16, 0.4), (0.08, 0.19, 1.15), "neon_cyan", skip="f")
         k.box((-0.19, -0.18, 1.3), (0.19, 0.18, 1.36), "steel_light")
-
-
-# Blossom groups (centre, radii) over the boughs: LOD 1 draws each as one mass, LOD 0 breaks it into three clusters
-# with gaps between them, so the crown reads as sprays on branches rather than one opaque cloud (the kit has no alpha).
-BLOSSOM = (((2.15, -0.95, 4.65), (1.0, 0.85, 0.62)), ((-2.1, 1.0, 4.55), (1.0, 0.85, 0.62)),
-           ((0.5, -1.5, 5.1), (0.95, 0.8, 0.6)), ((-0.3, 1.45, 5.2), (0.95, 0.8, 0.6)),
-           ((0.2, 0.0, 5.65), (1.15, 1.05, 0.65)), ((1.5, -1.45, 4.2), (0.75, 0.65, 0.5)),
-           ((-1.45, 1.5, 4.2), (0.75, 0.65, 0.5)), ((1.35, 0.65, 5.0), (0.9, 0.8, 0.58)),
-           ((-1.3, -0.7, 5.05), (0.9, 0.8, 0.58)))
-FORK = (0.16, 0.05, 2.3)
-BOUGHS = (((1.0, -0.35, 3.2), (1.9, -0.8, 4.0), (2.35, -1.05, 4.5)), ((-0.8, 0.45, 3.15), (-1.8, 0.85, 3.95), (-2.25, 1.05, 4.4)),
-          ((0.35, -0.6, 3.4), (0.5, -1.2, 4.4), (0.5, -1.5, 4.9)), ((-0.05, 0.6, 3.5), (-0.2, 1.15, 4.5), (-0.3, 1.45, 5.0)),
-          ((0.2, 0.0, 3.6), (0.25, 0.05, 4.7), (0.2, 0.0, 5.4)))
-TWIGS = (((1.0, -0.35, 3.2), (1.5, -1.4, 4.0)), ((-0.8, 0.45, 3.15), (-1.4, 1.45, 4.0)), ((0.2, 0.0, 3.6), (1.25, 0.6, 4.8)),
-         ((0.2, 0.0, 3.6), (-1.2, -0.65, 4.85)), ((1.9, -0.8, 4.0), (2.55, -0.35, 4.3)), ((-1.8, 0.85, 3.95), (-2.5, 0.45, 4.2)))
-SPRAYS = (((2.65, -0.35, 4.3), (0.45, 0.4, 0.32)), ((-2.6, 0.45, 4.2), (0.45, 0.4, 0.32)), ((0.9, 1.65, 4.55), (0.5, 0.42, 0.34)),
-          ((-0.85, -1.7, 4.6), (0.5, 0.42, 0.34)), ((2.0, 0.35, 5.35), (0.5, 0.45, 0.34)), ((-2.0, -0.25, 5.2), (0.5, 0.45, 0.34)))
-
-
-def cherry_tree(k, lod):
-    """Blossoming street tree, about 6.4 m: a dark wet trunk forking at 2.3 m into five boughs, blossom in sprays.
-    LOD 0: 33 clusters with gaps the boughs show through; LOD 1: one mass per spray group; LOD 2: a two-lump cap."""
-    sides = (7, 5, 4)[lod]
-    trunk = [(0, 0, 0), (0.04, 0.02, 0.9), (0.1, 0.03, 1.7), FORK] if lod < 2 else [(0, 0, 0), (0.1, 0.03, 2.2), (0.2, 0.05, 4.5)]
-    k.tube(trunk, [0.24, 0.19, 0.16, 0.14][:len(trunk)], sides, "bark", caps=(False, False))
-    if lod == 2:
-        for i, (centre, radii) in enumerate((((0.15, 0.0, 5.0), (2.7, 2.2, 1.15)), ((0.3, 0.2, 5.6), (1.5, 1.4, 0.75)))):
-            k.puff(centre, radii, 1, "blossom", seed=3.0 + i * 1.7)
-        return
-    for path in BOUGHS:
-        k.tube([FORK, *path][:4 if lod == 0 else 3], [0.11, 0.075, 0.05, 0.03], 5 if lod == 0 else 3, "bark", caps=(False, False))
-    if lod == 1:
-        for i, (centre, radii) in enumerate(BLOSSOM):
-            k.puff(centre, radii, 2, "blossom", seed=3.0 + i * 1.7)
-        return
-    k.prism(7, 0.4, 0.25, 0, 0.3, "bark")  # root flare
-    for path in TWIGS:
-        k.tube(path, [0.05, 0.025], 3, "bark", caps=(False, False))
-    for g, (centre, radii) in enumerate(BLOSSOM):
-        for j in range(3):  # three clusters 0.6 r out from the group centre, 0.55 r across: gaps between them
-            a = g * 1.9 + j * 2.094
-            c = (centre[0] + math.cos(a) * 0.6 * radii[0], centre[1] + math.sin(a) * 0.6 * radii[1], centre[2] + (j - 1) * 0.25 * radii[2])
-            k.puff(c, (radii[0] * 0.58, radii[1] * 0.58, radii[2] * 0.7), 2, "blossom", seed=3.0 + g * 1.7 + j * 0.9)
-    for i, (centre, radii) in enumerate(SPRAYS):
-        k.puff(centre, radii, 2, "blossom", seed=11.0 + i * 1.3)
 
 
 def kerb_redwhite(k, lod):
