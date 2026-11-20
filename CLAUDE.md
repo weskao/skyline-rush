@@ -29,7 +29,7 @@ exactly. Topics whose work often starts before a scoped file is open:
 | Animated Garage/HUD/Store/VFX art (GIF, sprite sheet) | `.claude/rules/animated-image-production.md`, `.claude/rules/raster-artwork.md` |
 | Garage/Store access in `make *unlocked` | `.claude/rules/unlock-separation.md` |
 | Track teaser JPEGs under `public/track-teasers/` | `.claude/rules/track-teaser-artwork.md` |
-| Dressing a map with trees, rocks, lamps or other props; a prop another course already has | `.claude/rules/prop-reuse.md` (one parametric master per species, vary per instance first) |
+| Dressing a map with trees, rocks, lamps or other props; building, changing or moving any procedurally built 3D model, existing or new | `.claude/rules/prop-reuse.md` (one parametric builder per species, vary per instance first, prove defaults with `scripts/assets/glb_ab.py`) |
 | Blender, GLB/PBR, 3D asset, new car model, rendering quality, a Three.js upgrade | `docs/designs/3d-pipeline/phases/README.md` (phase index; new car = `task-7-concept-hero-car.md`), then `.claude/rules/3d-asset-pipeline.md` |
 | Choosing a camera angle, lens, shot timing or light direction for a car or prop (reveal, showroom, title shot); checking a new GLB's silhouette and scale; a turntable or draft MP4 | `.claude/rules/crucible-mcp.md` (study it in Crucible MCP, ship the numbers as data) |
 | Vehicle glare, exterior paint and glass, track lighting or bloom | `.claude/rules/vehicle-lighting.md` |
