@@ -1,3 +1,10 @@
+:root {
+  --freeze-hit-color: #99e4ff;
+  --emp-hit-color: #c2b1ff;
+  --emp-iris-rgb: 120 90 255;
+  --emp-cobalt-rgb: 63 123 255;
+}
+
 /* Incoming attacks tint the view around the driving line, beneath all interactive HUD. */
 #player-hit-screen {
   position: fixed;
@@ -10,7 +17,13 @@
   box-shadow: inset 0 0 0 2px rgb(var(--hit-rgb) / .45);
 }
 #player-hit-screen[data-hit="freeze"] { --hit-rgb: 107 210 255; }
-#player-hit-screen[data-hit="emp"] { --hit-rgb: 203 245 72; }
+#player-hit-screen[data-hit="emp"] {
+  --hit-rgb: var(--emp-iris-rgb);
+  background:
+    radial-gradient(ellipse at 0 40%, rgb(var(--emp-iris-rgb) / .54), transparent 33%),
+    radial-gradient(ellipse at 100% 58%, rgb(var(--emp-cobalt-rgb) / .49), transparent 33%),
+    linear-gradient(0deg, rgb(var(--emp-iris-rgb) / .37), transparent 21% 82%, rgb(var(--emp-cobalt-rgb) / .38));
+}
 #player-hit-screen::before {
   content: "";
   position: absolute;
@@ -25,7 +38,8 @@
 }
 #player-hit-screen[data-hit="emp"]::before {
   --hit-edge-detail:
-    repeating-linear-gradient(132deg, transparent 0 24px, rgb(233 255 162 / .28) 25px 27px, transparent 28px 63px);
+    repeating-linear-gradient(130deg, transparent 0 36px, rgb(223 224 255 / .28) 37px 38px, transparent 40px 86px),
+    repeating-linear-gradient(156deg, transparent 0 55px, rgb(139 171 255 / .22) 59px 60px, transparent 62px 103px);
 }
 @media (prefers-reduced-motion: no-preference) {
   #player-hit-screen[data-calm="false"]:not([hidden]) { animation: hit-screen-settle .24s ease-out both; }

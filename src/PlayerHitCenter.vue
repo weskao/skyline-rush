@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { computed, onUnmounted, shallowRef } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, shallowRef } from 'vue';
 import { getLocale, onLocaleChange, t } from './i18n.ts';
 import { itemAttackPaths } from './icons.ts';
 import { playerHitView } from './item-ui.ts';
 import type { ItemAttack } from './item-attacks.ts';
 
 const attacks = ['emp', 'freeze'] as const satisfies readonly ItemAttack[];
+const iconUrl = (attack: ItemAttack) => `${import.meta.env.BASE_URL}feature-assets/player-debuff/${attack}@3x.webp`;
+const unavailable = reactive({ emp: false, freeze: false });
+onMounted(() => {
+  for (const attack of attacks) new Image().src = iconUrl(attack);
+});
 const active = computed(() => attacks.filter(attack => playerHitView[attack] > 0));
 const locale = shallowRef(getLocale());
 onUnmounted(onLocaleChange(next => { locale.value = next; }));
@@ -15,7 +20,8 @@ onUnmounted(onLocaleChange(next => { locale.value = next; }));
   <div v-if="active.length" id="race-player-hit-center" class="player-hit-center" :data-calm="playerHitView.calm">
     <div v-for="attack in active" :key="attack" class="player-hit-card" :data-debuff="attack">
       <span class="player-hit-icon" aria-hidden="true">
-        <svg viewBox="0 0 48 48"><path :d="itemAttackPaths[attack]" /></svg>
+        <img v-if="!unavailable[attack]" :src="iconUrl(attack)" width="40" height="40" alt="" draggable="false" @error="unavailable[attack] = true">
+        <svg v-else viewBox="0 0 48 48"><path :d="itemAttackPaths[attack]" /></svg>
       </span>
       <div class="player-hit-label">
         <strong>{{ t(`mode.playerHit.${attack}`, undefined, locale) }}</strong>
@@ -34,7 +40,7 @@ onUnmounted(onLocaleChange(next => { locale.value = next; }));
   width: min(90%, clamp(206px, 29vw, 292px));
 }
 .player-hit-card {
-  --hit-accent: #c5f180;
+  --hit-accent: var(--emp-hit-color);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -46,16 +52,18 @@ onUnmounted(onLocaleChange(next => { locale.value = next; }));
   box-shadow: 0 3px 12px rgb(0 0 0 / .32);
   color: #f4f9ff;
 }
-.player-hit-card[data-debuff="freeze"] { --hit-accent: #99e4ff; }
+.player-hit-card[data-debuff="freeze"] { --hit-accent: var(--freeze-hit-color); }
 .player-hit-icon {
   display: grid;
   place-items: center;
-  width: clamp(31px, 5dvh, 40px);
-  aspect-ratio: 1;
+  width: 40px;
+  height: 40px;
   border-radius: 6px;
-  color: #101e25;
-  background: var(--hit-accent);
+  color: var(--hit-accent);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--hit-accent) 23%, #10192b), #0a1323 78%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hit-accent) 32%, transparent);
 }
+.player-hit-icon img { display: block; object-fit: contain; }
 .player-hit-icon svg {
   width: 66%;
   fill: none;

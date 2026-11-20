@@ -1,6 +1,33 @@
 import { expect } from '@playwright/test';
 import { test } from './helpers/gameplay-browser.js';
 
+async function expectArtwork(card, attack) {
+  const image = card.locator('img');
+  await expect(image).toHaveAttribute('src', new RegExp(`/${attack}@3x\\.webp$`));
+  await expect(image).toHaveJSProperty('naturalWidth', 120);
+  expect(await image.evaluate(img => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const margin = 8;
+    let visiblePixels = 0;
+    let clipped = false;
+    for (let y = 0; y < canvas.height; y++) {
+      for (let x = 0; x < canvas.width; x++) {
+        if (data[(y * canvas.width + x) * 4 + 3] <= 16) continue;
+        visiblePixels++;
+        if (x < margin || x >= canvas.width - margin || y < margin || y >= canvas.height - margin) clipped = true;
+      }
+    }
+    const { width, height } = img.getBoundingClientRect();
+    return { width, height, pixels: canvas.height, clipped, visible: visiblePixels >= 1000 };
+  })).toEqual({ width: 40, height: 40, pixels: 120, clipped: false, visible: true });
+}
+
+
 for (const [name, width, height, hasTouch, locale] of [
   ['desktop', 1440, 900, false, 'zh-TW'],
   ['portrait', 390, 844, true, 'zh-TW'],
@@ -30,6 +57,7 @@ for (const [name, width, height, hasTouch, locale] of [
     const detail = locale === 'en' ? 'SPEED REDUCED' : '速度受限';
     await expect(freeze).toContainText(locale === 'en' ? 'FROZEN' : '車輛冰凍');
     await expect(freeze).toContainText(detail);
+    await expectArtwork(freeze, 'freeze');
     await expect(freeze.locator('time')).toHaveText(locale === 'en' ? '2s' : '2 秒');
     await expect(freeze).toHaveCSS('pointer-events', 'none');
     await expect(freeze).toHaveCSS('animation-name', ['desktop', 'foldable'].includes(name) ? /^player-hit-in/ : 'none');
@@ -48,6 +76,7 @@ for (const [name, width, height, hasTouch, locale] of [
     });
     await expect(emp).toContainText(locale === 'en' ? 'EMP HIT' : '遭受電擊');
     await expect(emp).toContainText(detail);
+    await expectArtwork(emp, 'emp');
     await expect(freeze).toBeVisible();
     const separation = await (await page.waitForFunction(() => {
       const halfway = document.querySelector('#race-halfway-card');
@@ -81,4 +110,59 @@ for (const [name, width, height, hasTouch, locale] of [
     });
     await expect(freeze).toBeHidden();
   });
+});
+
+test('a failed debuff image restores the matching outline without losing the label', async ({ page, gameplayURL }) => {
+  await page.route('**/freeze@3x.webp', route => route.abort());
+  await page.goto(`${gameplayURL}tests/fixtures/player-debuff.html?locale=en`);
+  await page.waitForFunction(() => !!window.debuffHud);
+  await page.evaluate(() => window.debuffHud.hit('freeze', 220));
+  const freeze = page.locator('#race-player-hit-center [data-debuff="freeze"]');
+  await expect(freeze.locator('img')).toHaveCount(0);
+  await expect(freeze.locator('svg')).toBeVisible();
+  await expect(freeze).toContainText('FROZEN');
+});
+
+test('speed feedback follows the active debuff and keeps a steady tint with reduced motion', async ({ page, gameplayURL }) => {
+  await page.goto(`${gameplayURL}tests/fixtures/player-debuff.html?locale=en`);
+  await page.waitForFunction(() => !!window.debuffHud);
+  const speedometer = page.locator('.speedometer');
+  const speed = page.locator('#speed');
+  const motion = () => page.locator('.speed-number').evaluate(node => {
+    const name = getComputedStyle(node, '::after').animationName;
+    return node.getAnimations({ subtree: true }).some(animation => animation.animationName === name) ? name : 'none';
+  });
+  const reading = await speed.textContent();
+  const normal = await speed.evaluate(node => getComputedStyle(node).color);
+
+  await page.evaluate(() => window.debuffHud.hit('freeze', 220));
+  await expect(speedometer).toHaveAttribute('data-debuff', 'freeze');
+  await expect(speed).toHaveCSS('color', 'rgb(153, 228, 255)');
+  expect(await motion()).toMatch(/^speed-frost/);
+  await page.evaluate(() => window.debuffHud.hit('emp', 230));
+  await expect(speedometer).toHaveAttribute('data-debuff', 'emp');
+  await expect(speed).toHaveCSS('color', 'rgb(194, 177, 255)');
+  expect(await motion()).toMatch(/^speed-surge/);
+  expect(await page.locator('#player-hit-screen').evaluate(node => getComputedStyle(node).backgroundImage)).toContain('120, 90, 255');
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await motion()).toBe('none');
+  await expect(speed).toHaveCSS('color', 'rgb(194, 177, 255)');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.evaluate(() => { document.body.dataset.vfxEnabled = 'false'; });
+  expect(await motion()).toBe('none');
+  await page.evaluate(() => {
+    const { race, update } = window.debuffHud;
+    race.elapsed = race.player.empUntil;
+    update();
+  });
+  await expect(speedometer).toHaveAttribute('data-debuff', 'freeze');
+  await page.evaluate(() => {
+    const { race, update } = window.debuffHud;
+    race.elapsed = race.player.freezeUntil;
+    update();
+  });
+  await expect(speedometer).not.toHaveAttribute('data-debuff');
+  await expect(speed).toHaveCSS('color', normal);
+  await expect(speed).toHaveText(reading);
 });
