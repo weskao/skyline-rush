@@ -50,10 +50,16 @@ export const test = base.extend({
 });
 
 // page.goto resolves before the dynamic main.js import attaches the key listener, so a key pressed at once is lost.
-// vfx-ui stamps data-vfx-quality on body while main.js evaluates, after createControls has subscribed.
+// vfx-ui stamps data-vfx-quality on body while main.js evaluates, after createControls has subscribed; data-phase=ready
+// marks Home's scene and controls. Wait for both before reading or sending input.
+export const waitForHome = async page => {
+  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', /./);
+  await expect(page.locator('body')).toHaveAttribute('data-phase', 'ready');
+};
+
 export const gotoHome = async (page, url = '/') => {
   await page.goto(url);
-  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', /./);
+  await waitForHome(page);
 };
 
 // Overlays enter with a transform (Garage/history `history-in` translateX 22px; pause and results `.overlay-content`

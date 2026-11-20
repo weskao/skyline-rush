@@ -1,3 +1,15 @@
+# Finish-line branch full CI repair (2026-11-20)
+
+- [x] Trace the browser failures in [run 44587777984](https://github.com/weskao/skyline-rush/actions/runs/44587777984). The three finish-line impact cases passed. Repair Home readiness, drift-preview material ownership, stale catalog/control assertions, the halfway-card sample and the disabled Store shortfall assertion. The focused Node gate passed 74 tests.
+- [ ] Check the full quality gate on the repair commit. Other cases from the original run still need verification, including Wave 3 checkout and daily/cup scenarios. Local Playwright could not open Chromium because the runner denies its socket operation.
+
+# 完賽對手終點碰撞
+
+- [x] RED：直線與分岔賽道的對手完賽後仍在加速，環道每幀把車放回終點。已有延伸道路的實測長度賽道也會把渲染位置卡在終點。
+- [x] GREEN：以 16 條點對點賽道和港灣環道驗證停車、追撞讓位、續滑減速、玩家完成比賽與完賽時間保留。
+- [ ] 桌面與手機橫直向的瀏覽器實際畫面，以及實機檢查。當前環境拒絕 Chromium 啟動所需的本機 UNIX socket。
+- [ ] 驗證功能分支 HEAD 的 GitHub CI。
+
 # Local verification preview port
 
 - [x] Reproduced the port 5178 collision on isolated `370bdfc9`. The Make target regression failed before the fix and now verifies that both browser stages use one free port and honor an explicit `PLAYWRIGHT_PORT`.
@@ -468,7 +480,7 @@ on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, 
 - [x] Coast, about 300 m: the Roadster could visually intersect a flanking traffic car during contact protection. The old 1.7 m lateral test ignored the rendered hull and tire clearance. Use measured neutral envelopes for player contacts with traffic and rivals, including separate front and rear extents. Use the same clearance when traffic steers around the player or when Ghost Phase ends.
 - [x] Regression coverage: measured procedural models and fitted player GLBs in both LODs, a short hatch versus a commuter, braking five-car packs at 30/60/120 Hz with and without lane assist, rear pressure, solid separation by a rail and Ghost Phase exit/re-entry.
 - [x] Shallow flank contact keeps a lighter penalty while separating the full visible bodies. This restored the existing 24-layout Frostbite pace checks without changing rival tuning.
-- [x] Circuit finishers remain in the standings and leave the active race scene and collision roster. The direct finish-line regression and the existing five-lap and eighth-place tests pass.
+- [x] Historical Circuit fix: finishers stopped blocking the final timing line. The finish-line rival contact change supersedes the original visibility and contact behavior. The direct finish-line regression and the existing five-lap and eighth-place tests pass.
 - [ ] Exact-head GitHub quality gate and physical-device driving checks.
 
 # 2026-11-15 — Collision recovery and Ghost Phase

@@ -16,7 +16,7 @@ export interface CourseRaceSpec {
 }
 export interface CoursePose { readonly point: number[]; readonly forward: number[]; readonly right: number[]; readonly up: number[] } // length 3, overwritten in place
 export interface CourseKinematics { readonly distance: number; readonly x: number; readonly altitude: number }
-export interface CourseCar { travel: CourseTravel; edgeStart: number; readonly last: { distance: number; x: number; altitude: number };
+export interface CourseCar { travel: CourseTravel; edgeStart: number; runout: number; readonly last: { distance: number; x: number; altitude: number };
   readonly pose: CoursePose; finishFraction: number | null }
 export interface CourseRuntime { readonly spec: CourseRaceSpec; readonly cars: Map<string, CourseCar>;
   rejections: number; standings: CourseStanding[] }
@@ -51,7 +51,8 @@ function placeOnFrame(out: number[], f: CourseRouteFrame, ahead: number, x: numb
 }
 function writePose(graph: CourseGraph, car: CourseCar): void {
   const t = car.travel, f = sampleRoute(graph, t.currentEdgeId, t.localS), pose = car.pose;
-  placeOnFrame(pose.point, f, 0, t.lateral, t.altitude);
+  const x = t.finished ? car.last.x : t.lateral, altitude = t.finished ? car.last.altitude : t.altitude;
+  placeOnFrame(pose.point, f, car.runout, x, altitude);
   for (let i = 0; i < 3; i++) { pose.forward[i] = f.forward[i]; pose.right[i] = f.right[i]; pose.up[i] = f.up[i]; }
 }
 /** Correct a contact within the measured edge without changing its checkpoint state. */
@@ -64,6 +65,16 @@ export function setCourseContact(rt: CourseRuntime, id: string, x: number, dista
   car.travel = { ...travel, localS, lateral: x };
   car.last.x = x;
   car.last.distance = distance;
+  writePose(rt.spec.graph, car);
+}
+
+/** Roll on the continuation of the last edge, keeping the verified gate and time intact. */
+export function moveFinishedCourseCar(rt: CourseRuntime, id: string, now: CourseKinematics): void {
+  const car = carOf(rt, id), travel = car.travel;
+  if (!travel.finished) return;
+  const end = routeLength(rt.spec.graph, travel.currentEdgeId);
+  car.runout = Math.max(0, now.distance - car.edgeStart - end);
+  copyLast(car, now);
   writePose(rt.spec.graph, car);
 }
 
@@ -83,7 +94,7 @@ export function addCourseCar(rt: Pick<CourseRuntime, 'spec' | 'cars'>, slot: { i
   if (rt.cars.has(slot.id)) throw new Error(`Duplicate course car: ${slot.id}`);
   const car: CourseCar = {
     travel: { ...createCourseTravel(rt.spec.graph), localS: slot.distance, lateral: slot.x },
-    edgeStart: 0, last: { distance: slot.distance, x: slot.x, altitude: 0 }, finishFraction: null,
+    edgeStart: 0, runout: 0, last: { distance: slot.distance, x: slot.x, altitude: 0 }, finishFraction: null,
     pose: { point: [0, 0, 0], forward: [0, 0, 0], right: [0, 0, 0], up: [0, 0, 0] },
   };
   writePose(rt.spec.graph, car);
@@ -103,6 +114,7 @@ export function placeCourseCar(rt: CourseRuntime, id: string, edgeId: string, lo
   car.travel = { currentEdgeId: edgeId, localS: Math.min(localS, routeLength(graph, edgeId) - NODE_CLEARANCE),
     lateral: kinematics.x, altitude: kinematics.altitude, nextCheckpoint: checkpointsBefore(graph, edge.to), finished: false };
   car.edgeStart = kinematics.distance - localS;
+  car.runout = 0;
   copyLast(car, kinematics);
   car.finishFraction = null;
   writePose(graph, car);
@@ -193,11 +205,13 @@ export function courseNoRoadAt(rt: CourseRuntime, id: string): boolean {
 
 /** Signed metres from `from` to `to` along the path; null when they are not on the same or adjacent edges. */
 export function courseCarGap(rt: CourseRuntime, from: string, to: string): number | null {
-  const a = carOf(rt, from).travel, b = carOf(rt, to).travel, graph = rt.spec.graph;
-  if (a.currentEdgeId === b.currentEdgeId) return b.localS - a.localS;
+  const start = carOf(rt, from), end = carOf(rt, to), graph = rt.spec.graph;
+  const a = start.travel, b = end.travel;
+  const sa = a.localS + start.runout, sb = b.localS + end.runout;
+  if (a.currentEdgeId === b.currentEdgeId) return sb - sa;
   const ea = edgeById(graph, a.currentEdgeId), eb = edgeById(graph, b.currentEdgeId);
-  if (ea.to === eb.from) return routeLength(graph, ea.id) - a.localS + b.localS;
-  if (eb.to === ea.from) return -(routeLength(graph, eb.id) - b.localS + a.localS);
+  if (ea.to === eb.from) return routeLength(graph, ea.id) - sa + sb;
+  if (eb.to === ea.from) return -(routeLength(graph, eb.id) - sb + sa);
   return null;
 }
 

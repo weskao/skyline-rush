@@ -81,7 +81,7 @@ for (const [label, url] of [['plain', '/'], ['legacy', '/?3d=1&look=3d&model=roa
     const quality = page.locator('select[data-vfx="quality"]');
     await expect(quality.locator('option')).toHaveText(['Low', 'Medium', 'High', 'Ultra']);
     await expect(quality).toHaveValue('ultra');
-    await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'high');
+    await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'ultra');
   });
 }
 
@@ -92,11 +92,12 @@ test('Ultra is selectable, saved across reloads, and switching back to High clea
   await quality.selectOption('ultra', { force: true });
   await expect(quality).toHaveValue('ultra');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx')))).toMatchObject({ quality: 'high', ultra: true });
-  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'high');
+  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'ultra');
   await page.reload();
   await expect(page.locator('select[data-vfx="quality"]')).toHaveValue('ultra');
   await page.locator('select[data-vfx="quality"]').selectOption('high', { force: true });
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('skyline-rush-vfx')).ultra)).toBe(false);
+  await expect(page.locator('body')).toHaveAttribute('data-vfx-quality', 'high');
 });
 
 test('automatic graphics choice is a short disclosure with keyboard-accessible details', async ({ page }) => {

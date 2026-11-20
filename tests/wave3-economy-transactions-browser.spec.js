@@ -99,8 +99,9 @@ test('14-step browser ledger follows real controls, profile reloads and an offli
   await confirm(page);
   await check(9, [195, 280, 5]);
   await choose(page, 'thruster-void');
-  await request(page);
-  await expect(store(page).locator('.demo-message')).toContainText('Not enough demo diamonds');
+  const voidRedeem = store(page).getByRole('button', { name: buttons.redeem, exact: true });
+  await expect(voidRedeem).toBeDisabled();
+  await expect(voidRedeem).toHaveAccessibleDescription(/Need 10 Demo diamonds more/);
   await choose(page, 'thruster-plasma');
   await request(page);
   await store(page).getByRole('button', { name: 'Cancel', exact: true }).click();

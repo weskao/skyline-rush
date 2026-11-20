@@ -13,6 +13,10 @@ paths:
   - "src/*-race-scene.ts"
   - "src/course-race-scene.ts"
   - "src/road-runout.ts"
+  - "src/finished-rival.js"
+  - "src/race-rivals.js"
+  - "src/track-paths.ts"
+  - "tests/finish-line-rival-contact.test.js"
   - "tests/road-runout.test.js"
 ---
 
@@ -25,8 +29,15 @@ of the centreline, a course edge that simply stops), existing and new.
   the drawn road, its rails, lane marks and shoulders continue past the finish for at least the track's draw
   range (the distance its road stream normally shows ahead of the car). A deck that stops at the finish line with
   sky behind it is a bug.
-- The run-out is drawing only. Race length, checkpoints, the finish gate, the minimap route, records and Ghost
-  data keep the shipped length; no car is simulated on the run-out.
+- The run-out continues the road for parked finishers. Race length, checkpoints, the finish gate, the minimap
+  route, records and Ghost data keep the shipped length.
+- Once a rival crosses FINISH, record its time once, stop its AI and keep the same vehicle visible. A rear
+  impact moves the parked body forward and gives it rolling speed, even during collision grace. Never
+  run the ordinary follow response against a parked rival: capping the trailing driver at the parked speed
+  can keep it short of the line. Periodic Circuit frames wrap the pose, while CourseGraph uses a separate
+  run-out offset to keep the signed gate and leaderboard state at the end of the edge.
+- Guard the shared behavior with `tests/finish-line-rival-contact.test.js` and check the model is still visible
+  during the shove with `tests/finish-line-rival-browser.spec.js`.
 - Take the run-out from the route's own continuation (its Endless or next-lap extension, or the centreline
   extrapolated along its last heading and grade), joined with the same position and tangent as the finish. Never a
   second hand-drawn stub with its own width or material. Where the map's chunk builder cannot sample past its last
