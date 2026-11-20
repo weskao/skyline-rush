@@ -1,3 +1,10 @@
+# 獲得彈窗立即套用（2026-11-21）
+
+- [x] RED：商城成功兌換和賽後賽道解鎖的既有批次缺少可執行操作。
+- [x] GREEN：共用彈窗串接車庫換車／車漆、商城試裝與賽道準備頁。單元測試驗證裝備、餘額及重設後的舊收據失效。
+- [x] Playwright 驗證賽後換車、套用車漆、手機橫向選賽道及焦點還原，並擷取手機直向商城兌換與試裝畫面。保留手機單一「繼續」按鈕的原有寬度。
+- [ ] 完整瀏覽器與 World Tour 套件、實機確認及最終提交的 GitHub CI。
+
 # Garage showcase camera selection (2026-11-20)
 
 - [x] RED → GREEN: DOM integration reproduced Paints changing `right` to `left` and Effects changing `right` to `rear`. Chromium reproduced the Paints failure in the running game. All three showcase Playwright cases now pass at 1440×900, 390×844 and 844×390, including category and preview actions, the inspect-mode round trip, and both arrows saving the new value. Desktop screenshots of Paints and Effects showed the same Right label, with zero page errors.

@@ -42,17 +42,18 @@ test('only claims counted by the existing mission board reveal the next trophy t
   assert.equal(missionTrophy('daily-race', snapshot), undefined);
 });
 
-test('only a newly redeemed store item produces an account-scoped equipment reveal', () => {
+test('only a newly redeemed store item produces an account-scoped equipment reveal', async () => {
   const port = createWave3LocalDemo();
   const scope = port.getOperationScope();
-  const batch = receipt => storeAcquisitionBatch('thruster-ion', scope, receipt);
+  const batch = receipt => storeAcquisitionBatch('thruster-ion', scope, receipt, port);
 
   assert.equal(batch(port.redeemPreview('thruster-ion')), undefined);
   port.settleCompletion({ schemaVersion: 1, completionId: 'acquisition-test-race', trackId: 'coast',
     mode: 'classic', eligible: true, occurredAt: Date.now(), accountId: scope.accountId });
   const successful = port.redeemPreview('thruster-ion');
   const reveal = batch(successful);
-  assert.deepEqual(reveal, {
+  const [{ action, ...reward }] = reveal.items;
+  assert.deepEqual({ ...reveal, items: [reward] }, {
     id: demoAcquisitionId('store', scope, successful.operationId),
     items: [{
       id: 'thruster-ion', kind: 'equipment', status: 'unlocked', scope: 'demo',
@@ -63,11 +64,19 @@ test('only a newly redeemed store item produces an account-scoped equipment reve
   assert.equal(batch(port.redeemPreview('thruster-ion')), undefined);
   assert.equal(batch({ ...successful, operationId: undefined }), undefined);
   assert.equal(batch({ ...successful, snapshot: { ...successful.snapshot, demoInventory: [] } }), undefined);
-  assert.notEqual(storeAcquisitionBatch('thruster-ion', { ...scope, generation: 'new' }, successful).id, reveal.id);
-  assert.notEqual(storeAcquisitionBatch('thruster-ion', { ...scope, accountId: 'other' }, successful).id, reveal.id);
+  assert.notEqual(storeAcquisitionBatch('thruster-ion', { ...scope, generation: 'new' }, successful, port).id, reveal.id);
+  assert.notEqual(storeAcquisitionBatch('thruster-ion', { ...scope, accountId: 'other' }, successful, port).id, reveal.id);
   const queue = createAcquisitionQueue();
   assert.equal(queue.present(reveal), true);
   assert.equal(queue.present(batch(successful)), false);
+  assert.equal(action?.kind, 'equip');
+  assert.equal(port.getSnapshot().equippedPreview, null);
+  assert.equal(await action.apply(), true);
+  assert.equal(port.getSnapshot().equippedPreview, 'thruster-ion');
+  assert.equal(port.getSnapshot().demoCoins, successful.snapshot.demoCoins);
+  port.resetDemo();
+  assert.equal(await action.apply(), false);
+  assert.equal(port.getSnapshot().equippedPreview, null);
 });
 
 test('the newly unlocked GT leads a single shared race reward batch', async () => {
@@ -75,7 +84,8 @@ test('the newly unlocked GT leads a single shared race reward batch', async () =
   const cues = [];
   const cue = (name, delay) => cues.push([name, delay]);
   const result = { unlockedCars: ['crimson-gt'], unlockedTrack: true, next: 'neon', unlockedPaints: [], medals: [], challengeMedals: [] };
-  await presentRaceAcquisitions(race, result, cue, true);
+  const visited = [];
+  await presentRaceAcquisitions(race, result, cue, true, id => visited.push(id));
   const batch = acquisitionReveal.current();
   assert.ok(batch);
   try {
@@ -85,6 +95,10 @@ test('the newly unlocked GT leads a single shared race reward batch', async () =
       artwork: { src: 'feature-assets/garage-public/car-picker/crimson-gt@3x.webp', style: 'cutout' },
     });
     assert.deepEqual(batch.items.map(item => item.id), ['crimson-gt', 'neon']);
+    assert.equal(batch.items[1].action?.kind, 'track');
+    assert.deepEqual(visited, []);
+    batch.items[1].action.open();
+    assert.deepEqual(visited, ['neon']);
     await presentRaceAcquisitions(race, result, cue, true);
   } finally {
     acquisitionReveal.dismiss(batch.id);

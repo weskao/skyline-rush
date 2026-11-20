@@ -368,7 +368,10 @@ export function setupRaceSelectUI(options: RaceSelectOptions) {
       for (const map of [...trackRouteMaps.values(), raceRouteMap]) map?.relabel(locale);
       refreshCopiedRouteMaps();
     },
-    restoreLastTrack: (): void => restoreTrack(lastHomeTrack()),
+    restoreLastTrack(id?: string): void {
+      if (id && playable(id)) rememberLastHomeTrack(id);
+      restoreTrack(lastHomeTrack());
+    },
     rememberTrack(_trackId: string): void {
       try { sessionStorage.setItem(LAST_MODE_KEY, selectedMode); } catch { /* Classic stays the default after a reload. */ }
     },
