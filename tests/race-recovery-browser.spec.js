@@ -62,3 +62,50 @@ for (const quality of ['low', 'high']) {
     });
   });
 }
+
+for (const [orientation, viewport, mode, locale] of [
+  ['compact portrait', { width: 320, height: 640 }, 'slide', 'zh-TW'],
+  ['phone portrait', { width: 390, height: 844 }, 'tilt', 'en-US'],
+  ['short landscape', { width: 844, height: 390 }, 'buttons', 'en-US'],
+]) test.describe(orientation, () => {
+  test.use({ hasTouch: true, isMobile: true, viewport, locale });
+  test('tap Reset vehicle beside Pause without changing the race or steering layout', async ({ gameplayPage: page }) => {
+    await page.addInitScript(steering => localStorage.setItem('skyline-rush-controls', JSON.stringify({ version: 1, mode: steering })), mode);
+    await page.reload();
+    const button = page.getByRole('button', { name: locale === 'zh-TW' ? '重置車輛' : 'Reset vehicle', exact: true });
+    await expect(button).toBeHidden();
+    if (await page.locator('#music-prompt').isVisible()) await page.locator('#music-no').tap();
+    await page.locator('#start-button').tap();
+    await page.evaluate(() => { window.gameplay.race.countdown = .01; });
+    await expect(page.locator('body')).toHaveAttribute('data-phase', 'racing', { timeout: ciTimeout(18000) });
+    await expect(page.locator('#touch-controls')).toHaveAttribute('data-steer-mode', mode);
+    await expect(button).toBeEnabled();
+    const bounds = await button.boundingBox();
+    const pause = await page.locator('#pause-button').boundingBox();
+    expect(bounds.width).toBeGreaterThanOrEqual(44);
+    expect(bounds.height).toBeGreaterThanOrEqual(44);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(pause.x);
+    expect(await button.evaluate(element => {
+      const rect = element.getBoundingClientRect();
+      return element.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+    })).toBe(true);
+    const initial = await page.evaluate(() => {
+      const race = window.gameplay.race;
+      Object.assign(race.player, { distance: 500, speed: 0, altitude: 0 });
+      return { track: race.trackId, elapsed: race.elapsed };
+    });
+    await button.tap();
+    await expect(button).toBeDisabled();
+    await expect(button).toBeEnabled({ timeout: ciTimeout(12000) });
+    const after = await page.evaluate(() => {
+      const race = window.gameplay.race;
+      return { track: race.trackId, elapsed: race.elapsed, distance: race.player.distance, falls: race.player.falls };
+    });
+    expect(after.track).toBe(initial.track);
+    expect(after.elapsed).toBeGreaterThan(initial.elapsed);
+    expect(after.distance).toBeLessThan(495);
+    expect(after.falls).toBe(0);
+    await page.locator('#pause-button').tap();
+    await expect(button).toBeHidden();
+  });
+});

@@ -17,6 +17,7 @@ export interface RecoverySeat {
 }
 
 export interface RoadRecovery {
+  reason: 'fall' | 'reset';
   falling: boolean;
   seat: RecoverySeat;
   elapsed: number;
@@ -43,9 +44,9 @@ const GRAVITY = 24;
 const LAND_HEIGHT = 2.2;
 export const RESET_BACKTRACK = 28; // m, before searching for a safer approach
 
-export function startRoadRecovery(car: FallingCar, seat: RecoverySeat, from: number, time: number, slowdown: number, reason: 'fall' | 'reset' = 'fall', falling = reason === 'fall'): void {
+export function startRoadRecovery(car: FallingCar, seat: RecoverySeat, from: number, time: number, slowdown: number, reason: RoadRecovery['reason'] = 'fall', falling = reason === 'fall'): void {
   car.recovery = {
-    falling, seat, elapsed: 0, transferAt: falling ? FALL_TIME : RESET_FADE_TIME, reseated: false,
+    reason, falling, seat, elapsed: 0, transferAt: falling ? FALL_TIME : RESET_FADE_TIME, reseated: false,
     speed: car.speed, startAltitude: car.altitude, startVerticalSpeed: Math.min(0, car.verticalSpeed),
     roll: Math.sign(car.steering || car.x) || 1,
   };

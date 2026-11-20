@@ -120,6 +120,9 @@ const LOGO_PATH = 'M4 27 18 5h13L17 27H4Zm9 6h16'; // shared by the top-bar bran
       </SettingsPanel>
       <button class="icon-button" id="camera-button" aria-label="Change camera" data-i18n-aria-label="camera.aria" aria-pressed="false" title="Camera · C" data-i18n-title="camera.title" aria-keyshortcuts="C"><svg v-bind="ICON_ATTRS" v-html="icons.camera"></svg><kbd class="key-badge" aria-hidden="true">C</kbd></button>
       <button class="icon-button" id="restart-button" aria-label="Restart race" data-i18n-aria-label="restart.aria" title="Restart · Backspace" data-i18n-title="restart.title" aria-keyshortcuts="Backspace" hidden><svg v-bind="ICON_ATTRS" v-html="icons.restart"></svg><kbd class="key-badge" aria-hidden="true">⌫</kbd></button>
+      <button type="button" class="icon-button" id="vehicle-reset-button" aria-label="Reset vehicle" data-i18n-aria-label="controls.vehicleReset" data-i18n-title="controls.vehicleResetTitle" title="Reset vehicle · R" aria-keyshortcuts="R">
+        <svg v-bind="ICON_ATTRS" v-html="icons.vehicleReset"></svg><span aria-hidden="true" data-i18n="controls.vehicleResetShort">Reset</span><kbd class="key-badge" aria-hidden="true">R</kbd>
+      </button>
       <button class="icon-button" id="pause-button" aria-label="Pause race" data-i18n-aria-label="pause.aria" title="Pause · Esc" data-i18n-title="pause.title" aria-keyshortcuts="Escape" disabled><svg v-bind="ICON_ATTRS" v-html="icons.pause"></svg><kbd class="key-badge" aria-hidden="true">Esc</kbd></button>
     </nav>
   </header>

@@ -108,7 +108,7 @@ const keymap = setupKeyMapUI({ clearControls: () => controls.clear(), say });
 // Its action callback only runs on input, so the handlers declared further down are ready by then.
 const controls = createControls(window, action => {
   if (!startup.entered || document.querySelector('dialog[open]')) { controls.clear(); return; }
-  ({ start, restart, pause, item: itemUI.activate, reset: () => !tutorial && requestRaceReset(race), sound: toggleSound, camera: changeCamera, assist: autoAssist.toggle, airflow: vfx.toggleAirflow })[action]?.();
+  ({ start, restart, pause, item: itemUI.activate, reset: resetVehicle, sound: toggleSound, camera: changeCamera, assist: autoAssist.toggle, airflow: vfx.toggleAirflow })[action]?.();
 }, { getSettings: () => touchUI.inputPrefs(), getKeyMap: () => keymap.getKeyMap(), onTilt: () => touchUI.onTilt() });
 const touchUI = setupTouchControlsUI({
   controls,
@@ -280,7 +280,7 @@ const { showSwipeHint, cancelSwipe } = setupTrackSwipeUI({
   isEditingLayout: () => touchUI.isEditing(),
   touchMatches: () => touchPreference.matches,
 });
-setupRaceNavigation({ phase: () => race.phase, pause, clearControls: () => controls.clear(), chooseTrack, isPracticing: () => !!tutorial });
+const { resetVehicle } = setupRaceNavigation({ phase: () => race.phase, pause, clearControls: () => controls.clear(), chooseTrack, isPracticing: () => !!tutorial, requestVehicleReset: () => requestRaceReset(race) });
 
 const { showAudio, toggleSound } = setupAudioUI({ audio, volume, sound });
 

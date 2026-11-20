@@ -3,11 +3,13 @@ import { roadFallInProgress, roadFallPose, roadRecoveryFade, type RoadRecovery }
 
 export function createRoadRecoveryView(canvas: HTMLCanvasElement) {
   const overlay = canvas.parentElement?.querySelector<HTMLElement>('#race-recovery');
+  const resetButton = canvas.parentElement?.querySelector<HTMLButtonElement>('#vehicle-reset-button');
   let seenSeat: RoadRecovery | undefined;
   return {
     cut: false,
     update(phase: string, recovery: RoadRecovery | undefined): RoadRecovery | undefined {
       const active = phase === 'racing' || phase === 'paused' ? recovery : undefined;
+      if (resetButton && resetButton.disabled !== !!active) resetButton.disabled = !!active;
       const seat = active?.reseated ? active : undefined;
       this.cut = !!seat && seat !== seenSeat;
       seenSeat = seat;

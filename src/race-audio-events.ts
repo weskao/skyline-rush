@@ -1,5 +1,6 @@
 import { createModeAudioState, modeAudioCues, type ModeAudioRace } from './mode-audio.ts';
 import { createRivalCues, type RivalCueRace } from './rival-cues.ts';
+import type { RoadRecovery } from './road-falls.ts';
 import { skipsCountdown } from './frame-pacing.ts';
 import { itemHit, type ItemAttack, type ItemHits } from './item-attacks.ts';
 
@@ -10,7 +11,7 @@ interface AudioCar extends ItemHits {
   impact?: { time: number; intensity: number; kind?: string } | null;
   landing?: { time: number; speed: number; chain?: boolean } | null;
   nearMiss?: unknown; trick?: unknown; shieldBlock?: unknown;
-  fall?: unknown; driftPayout?: unknown; boostTunnelEvent?: unknown;
+  recovery?: RoadRecovery; driftPayout?: unknown; boostTunnelEvent?: unknown;
   inShortcut?: boolean; perfectLines?: number; slipstream?: { paid: boolean };
 }
 export interface AudioRace extends ModeAudioRace {
@@ -42,7 +43,8 @@ export interface RaceAudioFrame {
 export function createRaceAudioEvents() {
   const modeAudioState = createModeAudioState(), rivalCues = createRivalCues();
   const warnings = new Set<number>(), shortcuts = new Set<string | number>();
-  let lastFall: unknown, lastDrift: unknown, lastTunnel: unknown, lastEdge: string | undefined;
+  let priorRecovery: RoadRecovery | undefined, priorReseated = false;
+  let lastDrift: unknown, lastTunnel: unknown, lastEdge: string | undefined;
   let lastNitro = 0, lastPerfect = 0, draftPaid = false, wasShortcut = false;
   let previousRace: AudioRace | undefined, previousPhase: string | null = null, previousCount: number | null = null;
   let lastImpact: AudioCar['impact'] = null, lastLanding: AudioCar['landing'] = null;
@@ -58,6 +60,7 @@ export function createRaceAudioEvents() {
     update(race: AudioRace, enabled: boolean, gap: number | null = null, halfwayStarted = false, waitingForScenery = false): RaceAudioFrame {
       const car = race.player;
       const active = race.phase === 'racing';
+      const recovery = car.recovery, reseated = recovery?.reseated === true;
       const item = active || race.phase === 'paused' ? itemHit(race, car) : null;
       const empUntil = car.empUntil ?? 0, freezeUntil = car.freezeUntil ?? 0;
       const boosting = !!car.boosting || car.nitroTime > 0 || car.miniBoost > 0;
@@ -119,7 +122,11 @@ export function createRaceAudioEvents() {
           else if (boosting && !wasBoosting) sounds.push('boost');
           if (!freshRace && car.slipstream?.paid && !draftPaid) sounds.push('draft-reward');
           if (!freshRace && newShortcut) sounds.push('shortcut-entry');
-          if (!freshRace && car.fall && car.fall !== lastFall) sounds.push('fall-recovery');
+          if (!freshRace && recovery) {
+            const started = recovery !== priorRecovery;
+            if (started) sounds.push(recovery.falling ? 'recovery-fall' : recovery.reason === 'reset' ? 'recovery-reset' : 'recovery-rescue');
+            if (reseated && (started || !priorReseated)) sounds.push('recovery-return');
+          } else if (!freshRace && priorReseated) sounds.push('recovery-touchdown');
           else if (newGap) sounds.push('gap-warning');
           else if (car.fuel < 20 && !lowCharge) sounds.push('low');
           if (halfwayStarted) sounds.push('halfway');
@@ -138,7 +145,8 @@ export function createRaceAudioEvents() {
         }
       }
       if (perfect && finalRing >= 0) sounds[finalRing] = 'perfect-line';
-      lastFall = car.fall; lastDrift = car.driftPayout; lastTunnel = car.boostTunnelEvent;
+      priorRecovery = recovery; priorReseated = reseated;
+      lastDrift = car.driftPayout; lastTunnel = car.boostTunnelEvent;
       lastNitro = car.nitroTime; lastPerfect = car.perfectLines ?? 0;
       draftPaid = car.slipstream?.paid === true;
       wasShortcut = car.inShortcut === true; lastEdge = edge;

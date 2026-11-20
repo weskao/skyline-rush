@@ -20,6 +20,7 @@ export const icons = {
   airflow: '<path d="M3 8h13a2 2 0 1 0-2-2M3 12h17a2 2 0 1 1-2 2M3 16h9a2 2 0 1 1-2 2"/>',
   camera: '<rect x="3" y="6" width="18" height="14" rx="3"/><path d="m8 6 2-3h4l2 3"/><circle cx="12" cy="13" r="4"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
+  vehicleReset: '<path d="m8 3-4 4 4 4M4 7h12a4 4 0 0 1 4 4m-15 7 1.7-4h10.6l1.7 4v3h-2v-2H7v2H5zM7 17h2m6 0h2"/>',
   restart: '<path d="M3 10a9 9 0 1 1 2 9M3 4v6h6"/>',
   lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
   fly: '<path d="m4 14 8-9 8 9M4 20l8-9 8 9"/>',

@@ -181,6 +181,10 @@ reuse or transpose another course's loop.
   Skip pickup, hazard and checkpoint sweeps during the relocation. Verify a
   successful jump, a failed jump, and a keyboard reset before releasing a
   course with a gap.
+- Keep the same vehicle reset beside Pause on touch devices. Give each recovery
+  cause its own SFX cue, then cue return and touchdown from the simulation.
+  Never queue all three sounds from a button click. Keep the keyboard and touch
+  instructions in the Driving Guide and Controls.
 
 ## Regression matrix and evidence
 

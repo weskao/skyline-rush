@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createSound } from '../src/audio.js';
-import { createRace } from '../src/game.js';
+import { createRace, requestRaceReset, stepRace } from '../src/game.js';
 
 const midiHz = note => 440 * 2 ** ((note - 69) / 12);
 
@@ -163,6 +163,34 @@ test('collected pickups produce one cue and never replay while muted, paused or 
   const next = createRace(); next.phase = 'racing'; next.pickups[0].taken = true;
   sound.update(next);
   assert.equal(tones(), collected, 'new race does not replay preexisting collection state');
+});
+
+test('vehicle reset creates a confirmation, return air sweep and tyre touchdown on Web Audio', t => {
+  const { sound, race, nodes } = audioScene(t);
+  let index = nodes.length;
+  const read = () => {
+    sound.update(race);
+    const added = nodes.slice(index);
+    index = nodes.length;
+    return {
+      tones: added.filter(node => node.kind === 'oscillator').map(node => node.frequency.value),
+      bursts: added.filter(node => node.kind === 'buffer' && !node.loop).length,
+    };
+  };
+  assert.equal(requestRaceReset(race), true);
+  assert.deepEqual(read(), { tones: [540, 1120], bursts: 0 });
+  assert.deepEqual(read(), { tones: [], bursts: 0 });
+  const stages = [];
+  while (race.player.recovery) {
+    stepRace(race, {}, 1 / 60);
+    const added = read();
+    if (added.tones.length || added.bursts) stages.push(added);
+  }
+  assert.deepEqual(stages, [
+    { tones: [345, 1010], bursts: 1 },
+    { tones: [54, 167], bursts: 1 },
+  ]);
+  assert.deepEqual(read(), { tones: [], bursts: 0 });
 });
 
 test('NITRO reuses boost ignition once per activation and sustains the thrust sound', t => {

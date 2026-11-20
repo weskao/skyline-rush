@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { icons, ICON_ATTRS } from './icons.ts';
 import { MOBILE_GUIDE_COPY } from './mobile-guide-copy.ts';
 
-type Topic = 'slide' | 'buttons' | 'auto' | 'fly' | 'boost' | 'nitro' | 'settings';
-const topics: Topic[] = ['slide', 'buttons', 'auto', 'fly', 'boost', 'nitro', 'settings'];
+type Topic = 'slide' | 'buttons' | 'auto' | 'fly' | 'boost' | 'nitro' | 'reset' | 'settings';
+const topics: Topic[] = ['slide', 'buttons', 'auto', 'fly', 'boost', 'nitro', 'reset', 'settings'];
 const symbols = { auto: 'A', fly: '↑', boost: '»', nitro: 'ϟ', settings: 'Ⅱ' };
 </script>
 
@@ -18,6 +19,7 @@ const symbols = { auto: 'A', fly: '↑', boost: '»', nitro: 'ϟ', settings: '�
             <circle cx="80" cy="24" r="7" class="mobile-guide-finger" />
           </svg>
           <div v-else-if="topic === 'buttons'" class="mobile-guide-keys"><span>←</span><span>→</span><span class="mobile-guide-brake">↓</span></div>
+          <span v-else-if="topic === 'reset'" class="mobile-guide-key mobile-guide-reset"><svg v-bind="ICON_ATTRS" v-html="icons.vehicleReset"></svg></span>
           <span v-else class="mobile-guide-key">{{ symbols[topic] }}</span>
         </div>
         <div class="mobile-guide-copy">
@@ -40,6 +42,7 @@ const symbols = { auto: 'A', fly: '↑', boost: '»', nitro: 'ϟ', settings: '�
 .mobile-guide-finger { fill: #8ee8ef; stroke: #101e2d; }
 .mobile-guide-keys { display: flex; gap: 8px; }
 .mobile-guide-key, .mobile-guide-keys span { display: grid; place-items: center; box-sizing: border-box; min-width: 44px; min-height: 44px; border: 1px solid #53768e; border-radius: 10px; background: #172d40; font-size: 24px; font-weight: 700; line-height: 1; }
+.mobile-guide-reset svg { width: 24px; height: 24px; }
 .mobile-guide-keys .mobile-guide-brake { margin-inline-start: 16px; color: #ffb3a3; border-color: #e88777; }
 .mobile-guide-copy h3 { margin: 0 0 8px; font-size: 16px; line-height: 1.4; color: #edf5ff; letter-spacing: normal; overflow-wrap: anywhere; }
 .mobile-guide-copy p { margin: 0; font-size: 14px; line-height: 1.65; color: #c4d3e2; overflow-wrap: anywhere; }

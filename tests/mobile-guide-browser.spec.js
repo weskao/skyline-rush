@@ -41,6 +41,8 @@ for (const viewport of [{ width: 320, height: 640 }, { width: 390, height: 844 }
         }
         await expect(guide).toContainText(locale === 'zh-TW' ? '下拉煞車' : 'drag down to brake');
         await expect(guide).toContainText(locale === 'zh-TW' ? '暫停' : 'Pause');
+        await expect(guide.locator('.mobile-guide-card:has(.mobile-guide-reset)'))
+          .toContainText(locale === 'zh-TW' ? '安全路段' : 'safe road');
         await expect(guide.locator('button, input, [data-control]')).toHaveCount(0);
         expect(await guide.evaluate(el => {
           const bounds = el.getBoundingClientRect();
