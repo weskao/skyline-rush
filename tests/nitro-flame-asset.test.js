@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
 
-const FILE = new URL('../public/feature-assets/garage-vfx-skins/nitro-flame/flame-noise.png', import.meta.url);
+const FILE = new URL('../public/feature-assets/nitro-flame/flame-noise.png', import.meta.url);
 const SIZE = 512;
 const MAX_BYTES = 300_000;
 

@@ -3,7 +3,7 @@
 
   "$BLENDER_BIN" --background --factory-startup --python assets-src/nitro-flame/bake.py [-- <sheet-dir>]
 
-Writes public/feature-assets/garage-vfx-skins/nitro-flame/flame-noise.png and, outside the repo, a contact sheet
+Writes public/feature-assets/nitro-flame/flame-noise.png and, outside the repo, a contact sheet
 (<sheet-dir>/contact-sheet.png, default: the OS temp dir): R, G, B and RGB, each tiled 2 x 2.
 
 How the shapes are made: hot gas rising through cold gas, solved as a 2D Boussinesq flow (vorticity and temperature,
@@ -29,7 +29,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
-OUT = os.path.join(REPO, "public", "feature-assets", "garage-vfx-skins", "nitro-flame", "flame-noise.png")
+OUT = os.path.join(REPO, "public", "feature-assets", "nitro-flame", "flame-noise.png")
 ARGV = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 SHEET_DIR = ARGV[0] if ARGV else os.path.join(tempfile.gettempdir(), "skyline-rush-nitro-flame")
 
