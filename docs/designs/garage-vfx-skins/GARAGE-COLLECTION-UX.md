@@ -12,6 +12,15 @@
 - Paint swatch cards use matching gradient, state chips, high contrast titles, 44+ CSS-pixel primary actions, focus outlines and touch-friendly spacing. Do not change the paint stars/Cloud Save source of truth.
 - Native 3× imagery remains displayed at **1× CSS size**, with 8px safe visual framing and a common image fallback `GarageArtworkImage.vue`.
 
+## Card states and sprint preview — 2026-11-21
+
+- **One row per skin.** A skin is one row of `GARAGE_SKINS` in `src/garage-skin-catalog.ts` (id, category, names, `hue`, art id) plus its art. `skinAccentHue()` reads the row; a drift row keeps its hue in `DRIFT_TRAIL_STYLES`. No SFC names a skin id. Guard: `tests/garage-preview-tier.test.js`.
+- **A state is said once.** The action button says Try free, Equip, Equipped or Locked. The pill only adds what the button cannot: `Owned` and `Trial active`, or `Previewing` while a card is previewed without being equipped. An empty pill keeps its row, so a preview never moves the cards below.
+- **Equipped and locked look different.** Equipped is a teal button with a tick. Locked is a grey button with the shared padlock icon (`icons.lock`), and its art sits back (desaturated) until the card is previewed.
+- **Four cards are a 2×2 block**, like the loadout strip, never three and an orphan.
+- **Sprint preview control.** `src/GaragePreviewTier.vue` sits under the Thruster heading in Garage Home and Inspect: one button per row of `SPRINT_TIERS` (`src/sprint-tier.ts`) above idle, in ladder order, labelled BOOST, NITRO and NITRO + BOOST in both locales. It defaults to the top tier, keeps the choice between Home and Inspect, hides with the effects toggle and never equips or unlocks anything. `src/garage-preview-tier.ts` holds the choice; `src/garage-stage.ts` reads it every frame for the Inspect car. A new ladder row appears in the control once it has a label.
+- **Known limit.** Garage Home's car idles on the home scene, whose showroom burn is fixed in `src/aero-vfx.js`; the control says so on Home ("Open Inspect to see the chosen tier on the car."). Guard: `tests/garage-preview-tier-browser.spec.js`.
+
 ## Four source Airflow icon designs
 
 The original 59-item ZIP had no individual Airflow thumbnails; previously all four skins used a single category SVG. Four distinct, **intrinsically 288×288 vector SVG artwork sources** now live at:

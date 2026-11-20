@@ -6,7 +6,8 @@ import { GARAGE_SKINS, SKIN_CATEGORIES, skinAccentHue, skinArtwork } from './gar
 import GarageSkinCardFace from './GarageSkinCardFace.vue';
 import { garageSkinState, garageSkinEntry, selectGarageSkin, equipGarageSkin, selectedGarageSkins, currentGarageSkins } from './garage-skin-runtime.ts';
 import GarageDriftPreview from './GarageDriftPreview.vue';
-import { DRIFT_TRAIL_STYLES, driftTrailIndex } from './garage-drift-styles.ts';
+import GaragePreviewTier from './GaragePreviewTier.vue';
+import { ICON_ATTRS, icons } from './icons.ts';
 import type { SkinCategory, SkinId } from './garage-skin-catalog.ts';
 import { garageStudioView } from './garage-view-state.ts';
 import { GARAGE_RELEASE_MODE } from '#garage-release-config';
@@ -84,12 +85,11 @@ const isPreviewActive = (id: SkinId, category: SkinCategory) => {
 };
 const isPreviewOnly = (id: SkinId, category: SkinCategory) =>
   isPreviewActive(id, category) && view(id)?.state !== 'equipped';
+// The action button already says trial, equipped and locked: the pill only adds what the button cannot.
 const statusText = (id: SkinId, locale: string) => {
-  const entry = view(id);
-  if (entry?.state === 'equipped' && !entry.owned) return locale === 'zh-TW' ? '試用中' : 'Trial active';
-  const state = entry?.state ?? 'locked';
-  return ({ en: { trial: 'Free trial', equipped: 'Equipped', owned: 'Owned', locked: 'Locked' },
-    'zh-TW': { trial: '免費試用', equipped: '已裝備', owned: '已擁有', locked: '未解鎖' } } as const)[locale === 'zh-TW' ? 'zh-TW' : 'en'][state];
+  const entry = view(id), zh = locale === 'zh-TW';
+  if (entry?.state === 'equipped' && !entry.owned) return zh ? '試用中' : 'Trial active';
+  return entry?.state === 'owned' ? (zh ? '已擁有' : 'Owned') : '';
 };
 
 </script>
@@ -99,7 +99,7 @@ const statusText = (id: SkinId, locale: string) => {
   <section id="garage-vfx-catalog" class="garage-vfx-catalog" data-preview-contract="live-shared-aero" :data-release-mode="GARAGE_RELEASE_MODE"
     aria-labelledby="garage-vfx-catalog-heading">
     <h3 id="garage-vfx-catalog-heading">{{ locale === 'zh-TW' ? '外觀特效收藏' : 'VFX collection' }}</h3>
-    <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '點選卡片可預覽，按「試用」暫時裝備。重新載入後仍會記住你在此帳號最後的選擇，但這不是擁有權；試用結束後會還原為預設。' : 'Select a card to preview, then Try to equip temporarily. Your last pick is remembered on reload for this account, but it is not ownership; it returns to default when the trial ends.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
+    <p class="garage-vfx-message">{{ GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '點選卡片即可在車上預覽。免費試用期間可暫時裝備，這不是擁有權；試用結束後會還原為預設。' : 'Tap a card to preview it on the car. Free trial: equip it for now. This is not ownership; it returns to default when the trial ends.') : (locale === 'zh-TW' ? '預覽不會解鎖外觀。裝備需要有效擁有權。' : 'Preview does not unlock skins. Equip requires ownership.') }}</p>
     <section v-show="garageStudioView.effectsVisible" id="garage-vfx-live-loadout" class="garage-vfx-live-loadout" :aria-label="locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance'">
       <h4>{{ locale === 'zh-TW' ? '目前外觀特效' : 'Current VFX appearance' }}</h4>
       <ul class="garage-vfx-loadout-grid">
@@ -127,6 +127,7 @@ const statusText = (id: SkinId, locale: string) => {
     </section>
     <div v-for="category in displayCategories" :key="category" class="garage-vfx-category" :data-vfx-category="category">
       <h4>{{ categoryNames[category][locale === 'zh-TW' ? 'zh-TW' : 'en'] }}</h4>
+      <GaragePreviewTier v-if="category === 'thruster'" :locale="locale" />
       <div v-if="category === 'drift-trail' && showingDrift && garageStudioView.effectsVisible" :ref="el => driftPreview = el as HTMLElement | undefined">
         <GarageDriftPreview :key="garageStudioView.car" :skin="activeDrift.id" :locale="locale"
           :label="skinLabel(activeDrift.id, locale)" :poster="activeDrift.artwork.src" />
@@ -149,6 +150,7 @@ const statusText = (id: SkinId, locale: string) => {
           <div class="garage-vfx-actions">
             <button class="garage-skin-action" type="button" :disabled="!view(skin.id)?.canEquip"
               @click.stop="equipGarageSkin(skin.id) && cue('equip-confirmed')">
+              <svg v-if="view(skin.id)?.state === 'locked'" v-bind="ICON_ATTRS" v-html="icons.lock"></svg>
               {{ view(skin.id)?.state === 'equipped' ? (locale === 'zh-TW' ? '已裝備' : 'Equipped') : view(skin.id)?.owned ? (locale === 'zh-TW' ? '裝備' : 'Equip') : GARAGE_RELEASE_MODE === 'trial' ? (locale === 'zh-TW' ? '免費試用' : 'Try free') : (locale === 'zh-TW' ? '未解鎖' : 'Locked') }}
             </button>
           </div>
@@ -204,11 +206,13 @@ const statusText = (id: SkinId, locale: string) => {
 .garage-vfx-category { margin: 12px 0; }
 .garage-vfx-category h4 { font-size: 13px; margin: 0 0 7px; display: flex; gap: 8px; align-items: center; }
 .garage-vfx-category h4::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, #456078, transparent); }
-/* 114px = 112px art frame + borders: three cards fit the 358px list of a 390px phone, art stays native 96px. */
+/* 114px = 112px art frame + borders, so the art stays native 96px. */
 .garage-vfx-category ul {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 114px), 1fr));
   gap: 6px; padding: 0; margin: 0; list-style: none;
 }
+/* Exactly four cards are one 2x2 block, like the loadout strip: never three and an orphan. */
+.garage-vfx-category ul:has(> li:nth-child(4):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .garage-vfx-category li.garage-skin-card {
   box-sizing: border-box; position: relative; isolation: isolate;
   min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -244,6 +248,8 @@ const statusText = (id: SkinId, locale: string) => {
   color: hsl(var(--card-hue) 91% 80%); border: 1px solid hsl(var(--card-hue) 60% 61% / .28);
   pointer-events: none;
 }
+/* An empty pill keeps its row, so starting a preview never moves the cards below. */
+.garage-skin-status:empty { visibility: hidden; }
 .garage-skin-preview-label { display: none; font-weight: 750; color: #bdefff; }
 .garage-skin-card[data-preview-only="true"] .garage-skin-preview-label { display: block; }
 .garage-skin-card[data-preview-only="true"] .garage-skin-status { display: none; }
@@ -262,7 +268,12 @@ const statusText = (id: SkinId, locale: string) => {
 }
 .garage-vfx-actions .garage-skin-action:focus-visible { outline: 3px solid #74ebff; outline-offset: 2px; }
 .garage-skin-card[data-state="equipped"] .garage-skin-status { color: #70f3d6; border-color: #37bca286; }
-.garage-skin-card[data-state="locked"] .garage-skin-status { color: #b5c1d3; border-color: #8093ad66; }
+/* Equipped and locked are both disabled buttons: a teal tick and a grey padlock tell them apart at a glance. */
+.garage-skin-card[data-state="equipped"] .garage-skin-action:disabled { background: #0f2b2c; border-color: #37bca2; color: #70f3d6; }
+.garage-skin-card[data-state="equipped"] .garage-skin-action::before { content: '✓ '; }
+.garage-skin-action svg { width: 13px; height: 13px; margin-right: 3px; vertical-align: -2px; }
+/* Locked art sits back until the player previews it. */
+.garage-skin-card[data-state="locked"][data-preview-active="false"] :deep(.garage-vfx-art) { filter: saturate(.3) brightness(.72); }
 /* The category colour stays local to the active card. */
 #garage-vfx-catalog .garage-vfx-category li.garage-skin-card[data-preview-active="true"] {
   border-color: hsl(var(--card-hue) 94% 77%);

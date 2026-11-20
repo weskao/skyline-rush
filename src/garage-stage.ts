@@ -10,6 +10,7 @@ import { garageFramedDistance } from './garage-camera.ts';
 import type { PaintPreset } from './appearance.ts';
 import { createGaragePaintSweep } from './garage-paint-shader.ts';
 import { applyCarReflections } from './car-reflections.ts';
+import { previewTierInputs } from './garage-preview-tier.ts';
 
 /** Garage/Studio sun (bright) and moon (dim) lighting: a pre-tone-mapping gain on the whole preview. */
 export const GARAGE_LIGHTING = Object.freeze({ bright: 1, dim: 0.6 });
@@ -60,7 +61,8 @@ export function createGarageStage(environment: THREE.Texture, carEnvironment: TH
   const aero = createAeroVFX(scene, car);
   const origin = new THREE.Vector3();
   const towardsCamera = new THREE.Vector3();
-  const previewDriver = { speed: SHOWROOM.speed, boosting: true, nitroTime: 1, miniBoost: 0,
+  // boosting and nitroTime follow the tier control every frame (garage-preview-tier.ts).
+  const previewDriver = { speed: SHOWROOM.speed, boosting: false, nitroTime: 0, miniBoost: 0,
     impact: null, altitude: 0, trick: null };
   const previewRace = { phase: 'racing', player: previewDriver };
   let previewSettings: VfxSettings = vfxSettings({ airflow: true });
@@ -125,6 +127,9 @@ export function createGarageStage(environment: THREE.Texture, carEnvironment: TH
     car.rotation.z = flying && !reducedMotion ? Math.sin(time * .9) * .035 : 0;
     poseCar(flying, wingTilt);
     previewDriver.altitude = flying ? 2 : 0;
+    const sprint = previewTierInputs();
+    previewDriver.boosting = sprint.boost;
+    previewDriver.nitroTime = sprint.nitro ? 1 : 0;
     look.copy(flying ? flightCenter : carCenter);
     look.y += hover;
     const distance = garageFramedDistance(camera.aspect, state.zoom, flying ? flightHalf : carHalf, yaw, state.pitch);
