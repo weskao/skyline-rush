@@ -59,6 +59,14 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         }
       },
       {
+        id: 'drift-trail-styles', kind: 'new', image: 'whats-new/drift-trail-styles/garage-drift-trails.webp',
+        title: { en: 'Five new drift trail styles', 'zh-TW': '五款全新甩尾痕跡' },
+        description: {
+          en: 'Preview and try Embercut, Prism Ribbon, Glacier Fracture, Voltage Arc and Nebula Dust for free in Garage Effects. Equip one to leave its trail on the road.',
+          'zh-TW': '到車庫「特效」即時預覽並免費試用熾焰、虹光流帶、裂冰晶痕、霓電弧與星雲微塵。裝備後，甩尾時就會在路面留下你選的痕跡。'
+        }
+      },
+      {
         id: 'rival-items', kind: 'new', image: null,
         title: { en: 'Rivals fight back with Freeze and EMP', 'zh-TW': '對手也會用冰凍與 EMP' },
         description: {
