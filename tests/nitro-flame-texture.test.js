@@ -59,5 +59,5 @@ test('one home for the texture: only the loader names its path, and the path shi
   for (const tree of removed) assert.ok(!NITRO_FLAME_PATH.startsWith(tree), `${tree} is deleted from the locked build`);
   assert.ok(fs.existsSync(`public/${NITRO_FLAME_PATH}`), 'the image is where the loader asks for it');
   assert.deepEqual(holding(/nitro-flame\/|flame-noise/), ['nitro-flame-texture.ts']);
-  assert.deepEqual(holding(/nitro-flame-texture/), ['garage-nitro-trail.js']);
+  assert.deepEqual(holding(/nitro-flame-texture/), ['garage-nitro-trail.js', 'sprint-plume.ts'], 'the NITRO trail and the sprint exhaust, through the loader');
 });

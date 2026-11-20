@@ -8,6 +8,7 @@ import { plumeLook, thrusterGlow } from './board-effects.ts';
 import { createThrusterGlow } from './thruster-glow.ts';
 import { createAeroWakeMeshes } from './aero-wake-meshes.js';
 import { createSprintPlume, SHOWROOM, showroomPulse } from './sprint-plume.ts';
+import { sprintTier } from './sprint-tier.ts';
 import { SKIN_MOTION, airflowFrame, measureAirflowProfile, streamGeometry } from './airflow-geometry.ts';
 
 export const REAR_PORTS = [-0.62, -0.22, 0.22, 0.62].map(x => ({ position: [x, 0.64, 2.39], direction: [0, 0, 1], size: 0.065 }));
@@ -125,7 +126,7 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
   const previousRotation = new THREE.Quaternion(), sampleRotation = new THREE.Quaternion();
   const shockColor = new THREE.Color('#bdeeff'), nitroShockColor = new THREE.Color('#ffd166'); // --nitro (style.css)
   let hadPosition = false, wasBoosting = false, wasNitro = false, time = 0, reveal = 0, strength = 0, rollStrength = 0, wakeStrength = 0, shockAge = 1, cursor = 0, ghostCursor = 0, emission = 0, ghostDistance = 0, lastImpact = null;
-  const plumeFrame = { time: 0, power: 0, nitroMix: 0, reach: 0, brightness: 1, diamonds: 0, extreme: 0, tail: 0, quality: 1, enabled: false, calm: false, voidPulse: false, racing: false, grounded: true, showroom: false }; // reused: no object per frame
+  const plumeFrame = { time: 0, power: 0, nitroMix: 0, reach: 0, brightness: 1, diamonds: 0, extreme: 0, tail: 0, quality: 1, enabled: false, calm: false, voidPulse: false, racing: false, grounded: true, showroom: false, tier: 'idle', chain: 0 }; // reused: no object per frame
   let quality = 1, settings, delta, launchSkinActive = false, launchPattern = 0, voidPulse = false, lastPhase = 'ready', demoPulseClock = 2.2;
   function emitAt(t) {
     sample.lerpVectors(previous, current, t);
@@ -290,6 +291,8 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       jet.brightness = Math.min(settings.coreBrightness, calm ? (jet.nitroMix > 0 ? 0.65 : 0.9) : 3) * (nitroTrail.streaks.visible ? 1 - 0.8 * Math.min(1, jet.nitroMix) : 1); // under a trail skin's flame the cone stays faint: its flat fill hid the tongues
       jet.diamonds = settings.machDiamonds; jet.extreme = settings.preset === 'extreme' ? 1 : 0;
       jet.quality = quality; jet.calm = calm; jet.showroom = studioDemo; jet.racing = active; jet.grounded = grounded;
+      const boostHeld = boost && (car.boosting || car.miniBoost > 0); // a showroom demo burns as BOOST, or as NITRO when it previews a trail skin
+      jet.tier = sprintTier(pulse < 0 ? nitroActive : jet.nitroMix > 0, pulse < 0 ? boostHeld : jet.nitroMix <= 0); jet.chain = calm ? 0 : chainMotion;
       plume.update(jet);
       delta = car.speed;
       if (wakeStrength > 0.01 && enabled && dt > 0) {

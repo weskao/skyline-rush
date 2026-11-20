@@ -3,11 +3,16 @@
 // garage-model.ts keeps placing it on each car's nozzles, and sits in the scene (hidden) from creation so the world
 // warm-up compiles it. Per frame: uniforms only, from the one PlumeFrame aero-vfx.js reuses.
 import * as THREE from 'three';
+import { nitroFlame } from './nitro-flame-texture.ts';
+import { CHAIN_FLOW, THRUSTER_LOOKS, THRUSTER_SHAPE, TIER_LOOKS } from './sprint-plume-looks.ts';
+import type { SprintTierId } from './sprint-tier.ts';
 
 interface Port { position: readonly number[]; direction: readonly number[]; size: number }
-/** `reach`: jet length (m). `quality`: 0.25 Low, 0.5 Medium, 1 High. `calm`: Reduced Motion or Comfortable. */
+/** `reach`: jet length (m). `quality`: 0.25 Low, 0.5 Medium, 1 High. `calm`: Reduced Motion or Comfortable.
+ *  `tier`: the sprint tier the caller is in (never derived here). `chain`: NITRO chain motion, 0 to 0.4: flow speed only. */
 export interface PlumeFrame { time: number; power: number; nitroMix: number; reach: number; brightness: number; diamonds: number;
-  extreme: number; tail: number; quality: number; enabled: boolean; calm: boolean; voidPulse: boolean; racing: boolean; grounded: boolean; showroom?: boolean }
+  extreme: number; tail: number; quality: number; enabled: boolean; calm: boolean; voidPulse: boolean; racing: boolean; grounded: boolean; showroom?: boolean;
+  tier?: SprintTierId; chain?: number }
 
 /** The flame in metres behind the nozzle. Fixed: as fat and as bright on Low + Realistic as on High + Extreme, whatever the tail length. */
 export const PLUME = { nozzle: 0.065, fat: 0.3, half: 0.12, flare: 0.45, glowWidth: 2.4, glowLength: 7 } as const;
@@ -49,36 +54,51 @@ export function createSprintRoadPlacement(parent: THREE.Object3D, vehicle?: THRE
 /** `ground`: the car's contact-shadow plane (+z is the road's up), so the road glow stays on the road while `vehicle` leans. */
 export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[], vehicle?: THREE.Object3D, ground?: THREE.Object3D) {
   const jetGeometry = tube(20, 24);
+  const rowOf = (row: (typeof THRUSTER_LOOKS)[number], into: THREE.Vector4) => into.set(row.tear, row.hair, row.tiles, row.stretch);
+  const tierOf = (id: SprintTierId, into: THREE.Vector4) => into.set(TIER_LOOKS[id].core, TIER_LOOKS[id].tongues, TIER_LOOKS[id].sheath, TIER_LOOKS[id].taper);
+  const look = { value: rowOf(THRUSTER_LOOKS[0]!, new THREE.Vector4()) }, tier = { value: tierOf('idle', new THREE.Vector4()) }, tierGoal = new THREE.Vector4();
+  let clock = 0, last = Infinity; // the flame clock: frame time, slowed per tier
   const jetMaterial = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-    uniforms: { time: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 }, tail: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) }, reach: { value: 1 }, thick: { value: 1 }, glare: { value: 1 } },
+    uniforms: { time: { value: 0 }, clock: { value: 0 }, power: { value: 0 }, brightness: { value: 1 }, diamonds: { value: 0.5 }, extreme: { value: 0 }, nitroMix: { value: 0 }, tail: { value: 0 }, skinTint: { value: new THREE.Vector3(1, 1, 1) }, skinPattern: { value: 0 }, trailAccent: { value: new THREE.Vector4(1, 1, 1, 0) }, reach: { value: 1 }, thick: { value: 1 }, glare: { value: 1 },
+      flame: nitroFlame.uniform, look, tier }, // shared objects: put back on every clone below
     // `thick` 0 is the old cone (nozzle radius widening 4.8x over the whole length); 1 never draws thinner than plumeRadius.
     vertexShader: `varying vec2 vUv;varying float vD,vSpread;uniform float reach,thick;
       void main(){vUv=uv;float d=position.z*reach;vD=d;float cone=${NOZZLE}*(1.+3.8*position.z);
         float radius=mix(cone,max(cone,${NOZZLE}+(${glsl(PLUME.fat)}-${NOZZLE})*d/(d+${glsl(PLUME.half)})),thick);
         vSpread=cone*cone/(radius*radius); // the chase camera sees the jet end-on: the thin cone's light spread over the fat disc
         gl_Position=projectionMatrix*modelViewMatrix*vec4(position.xy*radius,position.z,1.);}`,
-    fragmentShader: `varying vec2 vUv;varying float vD,vSpread;uniform float time,power,brightness,diamonds,extreme,nitroMix,skinPattern,tail,thick,glare;uniform vec3 skinTint;uniform vec4 trailAccent;
-      void main(){float t=clamp(1.-vUv.y,0.,1.); // MSAA slivers extrapolate vUv far past the rim; unclamped, the core overflows to Inf and a zero fade makes NaN
+    // `flame` (src/nitro-flame-texture.ts): R tongues, G turbulence, B filaments, read in metres (the chase camera sees
+    // the first 3 m) and scrolled by `clock`. On its neutral texel: lick 1, hair 0, tip = t, the smooth whole flame.
+    // `look` = the skin's row (tear, hair, tiles, stretch), `tier` = the tier's row (core, tongues, sheath, taper).
+    fragmentShader: `varying vec2 vUv;varying float vD,vSpread;uniform float time,clock,power,brightness,diamonds,extreme,nitroMix,skinPattern,tail,thick,glare;uniform vec3 skinTint;uniform vec4 trailAccent,look,tier;uniform sampler2D flame;
+      float flow(float x){return 1.+.18*sin(x);}
+      void main(){float t=clamp(1.-vUv.y,0.,1.),d=clamp(vD,0.,40.); // MSAA slivers extrapolate vUv far past the rim; unclamped, the core overflows to Inf and a zero fade makes NaN
+        float tongue=texture2D(flame,vec2(vUv.x*look.z,d*look.w-clock*1.4)).r;
+        vec2 fine=texture2D(flame,vec2(vUv.x*2.+tongue*.1,d*.3-clock*.36)).gb;
+        float tear=look.x*tier.y*smoothstep(0.,.3,t); // the nozzle stays whole and steady: a small white-hot point
+        float lick=mix(1.,.25+1.5*smoothstep(.2,.8,tongue),tear);
+        float hair=smoothstep(.55,.9,fine.y)*look.y*tier.y*flow(d*9.-clock*60.); // thin filaments race back: speed without glow
+        float tip=clamp(t+(.5-tongue)*tear*.5,0.,1.); // tongues reach further back than the gaps between them
         float cells=pow(max(0.,.5+.5*cos(t*48.)),5.)*diamonds;
-        float breakup=.75+.25*sin(vUv.x*52.+t*31.-time*16.);
-        float core=exp(-t*7.);float fade=pow(max(0.,1.-t),1.7)*smoothstep(0.,.025,t);
-        vec3 color=mix(vec3(.62,.84,1.),vec3(1.),core+cells*.5);
+        float heat=clamp(t*tier.x,0.,40.),core=exp(-heat);
+        float fade=pow(max(0.,1.-tip),tier.w)*smoothstep(0.,.025,t);
+        vec3 color=mix(vec3(.62,.84,1.),vec3(1.),core*core+cells*.5); // white only at the nozzle: the body keeps the skin's colour
         color=mix(color,vec3(.6,.38,1.),extreme*t*.25);
         color=mix(color,vec3(1.,.38,.78),tail*smoothstep(.2,1.,t)); // board plume (Medium+): the blue-white core fades to magenta
         color=mix(color*skinTint,${NITRO_TINT}); // skin tints the base
+        color=mix(color,vec3(1.,.5,.25),tier.z*.85*smoothstep(.08,.4,tip+(fine.x-.5)*.25)); // NITRO with BOOST held: a --boost sheath around the gold core
         float body=thick*(1.-smoothstep(0.,3.,clamp(vD,0.,3.))); // the first 3 m stay dense whatever the tail length
-        float shape=.91+.09*cos(vUv.x*12.566+t*25.-time*7.);
-        if(skinPattern>.5) shape=.6+.4*abs(sin(vUv.x*10.+t*18.-time*6.));
-        if(skinPattern>1.5) shape=.58+.42*pow(max(0.,.5+.5*sin(vUv.x*6.28*3.+t*28.-time*8.)),2.);
-        if(skinPattern>2.5) shape=.63+.28*sin(t*13.-time*5.+vUv.x*6.283);
+        ${THRUSTER_SHAPE}
         // glare 1 (bloom, Medium/High): under the bloom threshold, the fat flame emits half (two faces, overlapping neighbours).
         // 0 (Low, no bloom): full light and a denser tail, the jet's own halo. No channel above 1, hue kept.
         vec3 light=color*brightness*(1.+core+cells)*mix(1.,vSpread*(1.-.5*thick),glare);
-        gl_FragColor=vec4(light/max(1.,max(light.r,max(light.g,light.b))),fade*(mix(.3,.15,glare)+core*.55+cells*.35+body*.45)*breakup*power*shape);}`,
+        gl_FragColor=vec4(light/max(1.,max(light.r,max(light.g,light.b))),fade*(mix(.3,.15,glare)+core*.55+cells*.35+body*.45+hair*.4)*(.5+.5*fine.x)*lick*power*shape);}`,
   });
+  nitroFlame.request(); // once per page, 293 KB; until it arrives the jets draw on the neutral texel
   const jets = ports.map((port, i) => {
     const jet = new THREE.Mesh(jetGeometry, jetMaterial.clone());
+    Object.assign(jet.material.uniforms, { flame: nitroFlame.uniform, look, tier }); // clone() copied them: the image swap and the rows must reach every jet
     jet.name = `Cold gas nozzle ${i + 1}`;
     jet.position.fromArray(port.position);
     jet.quaternion.setFromUnitVectors(FORWARD, new THREE.Vector3(...port.direction));
@@ -126,14 +146,20 @@ export function createSprintPlume(parent: THREE.Object3D, ports: readonly Port[]
         u.skinTint!.value.fromArray(tint); u.skinPattern!.value = pattern; u.trailAccent!.value.copy(accent);
       }
       shared.skinTint.value.fromArray(tint); shared.trailAccent.value.copy(accent); trail = trailStyle;
+      rowOf(THRUSTER_LOOKS[pattern] ?? THRUSTER_LOOKS[0]!, look.value); // a skin with no row yet burns as the first
     },
     update(frame: PlumeFrame): void {
       const lit = frame.enabled && frame.power > 0.005, on = lit && !frame.voidPulse, power = Math.min(1, frame.power), dim = frame.calm ? 0.6 : 1; // a x3 chain is no bigger
       const skinFade = trail > 0 && !frame.calm ? THREE.MathUtils.clamp(frame.nitroMix, 0, 1) : 0; // a trail skin draws its own NITRO flame
+      const step = THREE.MathUtils.clamp(frame.time - last, 0, 0.1), id = frame.tier ?? 'idle'; // 0 on the first frame and while `time` is frozen (calm)
+      last = frame.time;
+      clock += step * Math.min(1, TIER_LOOKS[id].flow + CHAIN_FLOW * (frame.chain ?? 0)); // never faster than real time: the scroll is a flicker frequency
+      tier.value.lerp(tierOf(id, tierGoal), step > 0 ? 1 - Math.exp(-step * 18) : 1); // a tier change eases in over ~0.15 s; a frozen clock snaps
       jets.forEach((jet, i) => {
         jet.visible = on;
         jet.scale.z = frame.reach;
         const u = jet.material.uniforms;
+        u.clock!.value = clock + i * 0.37; // each jet reads its own stretch of the texture
         u.reach!.value = frame.reach; u.thick!.value = 1 - skinFade;
         u.glare!.value = Number(frame.quality > 0.25 || frame.showroom === true); // the dark showroom also needs the overlap cap on Low
         u.time!.value = frame.time + i * 0.13; u.tail!.value = frame.tail;
