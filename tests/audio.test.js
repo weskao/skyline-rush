@@ -556,7 +556,7 @@ for (const state of ['running', 'interrupted']) {
 
     made[0].state = state;
     now += 1000;
-    assert.equal(sound.running(), false, 'a visible but stalled context needs a gesture to recover');
+    assert.equal(sound.running(), false, 'a visible but stalled context needs recovery');
     const start = nodes.length;
     sound.setMusic(true, .5);
     sound.setEnabled(true, .5);
@@ -598,6 +598,82 @@ test('update retries a stuck resume at most once a second while sound should pla
   frames(3);
   assert.equal(resumes, silent, 'no retry while both channels are off');
 });
+
+test('a frozen running clock can recover when an overlay goes away without any lifecycle event or new tap', async t => {
+  let now = 0;
+  t.mock.method(performance, 'now', () => now);
+  const { sound, made } = installTracked(t);
+  sound.setMusic(true);
+  const ctx = made[0];
+  const race = createRace('spiral');
+  race.phase = 'racing';
+  t.mock.method(ctx, 'resume', () => {
+    if (ctx.state === 'suspended') {
+      ctx.state = 'running';
+      ctx.currentTime += .01;
+    }
+    return Promise.resolve();
+  });
+  now = 600;
+  sound.update(race);
+  await Promise.resolve();
+  assert.equal(sound.running(), true, 'suspending and resuming restarts the stalled clock');
+  assert.equal(made.length, 1);
+});
+
+test('an audio focus interruption waits for the OS to release the session before retrying', t => {
+  const session = { type: 'auto', state: 'active' };
+  Object.defineProperty(navigator, 'audioSession', { value: session, configurable: true });
+  t.after(() => { delete navigator.audioSession; });
+  let now = 0;
+  t.mock.method(performance, 'now', () => now);
+  const { sound, made } = installTracked(t);
+  sound.setMusic(true);
+  const ctx = made[0];
+  const race = createRace();
+  const resume = t.mock.method(ctx, 'resume', () => {
+    ctx.state = 'running';
+    ctx.currentTime += .01;
+    return Promise.resolve();
+  });
+  session.state = 'interrupted';
+  ctx.state = 'interrupted';
+  now = 2000;
+  sound.setHidden(false); // Some systems send focus before the call or other app gives audio back.
+  sound.update(race);
+  assert.equal(resume.mock.callCount(), 0);
+  session.state = 'inactive';
+  sound.update(race);
+  assert.equal(resume.mock.callCount(), 1, 'the first visible frame after release retries playback');
+  assert.equal(sound.running(), true);
+});
+
+for (const cause of ['page hides', 'player mutes', 'context changes', 'context is disposed']) {
+  test(`a pending audio recovery does not resume the old output when the ${cause}`, async t => {
+    let now = 0;
+    t.mock.method(performance, 'now', () => now);
+    const { sound, made } = installTracked(t);
+    sound.setMusic(true);
+    const [ctx] = made;
+    const race = createRace();
+    const resume = t.mock.method(ctx, 'resume');
+    const suspended = Promise.withResolvers();
+    const suspend = t.mock.method(ctx, 'suspend', () => suspended.promise);
+    now = 2000;
+    sound.update(race);
+    assert.equal(suspend.mock.callCount(), 1, 'the clock recovery has started');
+    now = 3300;
+    sound.update(race);
+    assert.equal(suspend.mock.callCount(), 1, 'only one suspend/resume cycle can be pending');
+    if (cause === 'page hides') sound.setHidden(true);
+    else if (cause === 'player mutes') sound.setMusic(false);
+    else if (cause === 'context is disposed') sound.dispose();
+    else { sound.setMusic(true); assert.equal(made.length, 2); }
+    suspended.resolve();
+    await Promise.resolve();
+    assert.equal(resume.mock.callCount(), 0);
+  });
+}
 
 test('diagnostic builds can read the live audio state', t => {
   const { sound } = installAudio(t);

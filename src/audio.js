@@ -1,6 +1,6 @@
 import { acquisitionAudioBuffer } from './acquisition-audio.ts';
 import { createLoopingNoiseGain } from './audio-noise.ts';
-import { createAudioContextHealth } from './audio-context-health.ts';
+import { audioSessionInterrupted, createAudioContextHealth } from './audio-context-health.ts';
 import { FEEDBACK_SOUNDS, ITEM_HIT_TEXTURES, STINGERS } from './feedback-sounds.ts';
 import { musicForMode } from './mode-audio.ts'; import { driftTier } from './drive-rules.ts';
 import { createRaceAudioEvents } from './race-audio-events.ts';
@@ -11,7 +11,7 @@ export function createSound(gapWarning = () => null) {
   let context, oscillator, gain, filter, master, noiseBuffer, thrustGain, windGain, skidGain;
   let music, warm, hats, snares, song = null, step = 0, nextStep = 0;
   let opening = false;
-  let enabled = false, musicOn = false, hidden = false, current = null, resumedAt = -Infinity;
+  let enabled = false, musicOn = false, hidden = false, current = null;
   // Slider levels map to gain on a squared curve so the lower half of the slider stays audibly useful.
   let effectsLevel = 1, musicLevel = 1, duckUntil = 0, duckFrom = 0, duckRatio = .43, acquisitionDuck = false;
   const voices = new Set();
@@ -25,6 +25,9 @@ export function createSound(gapWarning = () => null) {
   const PRELUDE = 8;
   // Node tests have no document; a browser can show the page again without firing visibilitychange.
   const pageHidden = () => typeof document === 'undefined' ? hidden : document.hidden;
+  const foreground = () => !hidden && !pageHidden() && !audioSessionInterrupted();
+  const canResume = candidate => context === candidate && (enabled || musicOn) && foreground();
+  const running = () => foreground() && contextHealth.isRunning(context);
   const raceEvents = createRaceAudioEvents();
 
   function track(source, nodes, end, cue = true, at = 0) {
@@ -167,7 +170,7 @@ export function createSound(gapWarning = () => null) {
       acquisitionDuck = false;
       return;
     }
-    if (!enabled || hidden || !contextHealth.isRunning(context)) return;
+    if (!enabled || !running()) return;
     const acquisition = name.startsWith('acquisition-');
     const carPremiere = name === 'acquisition-car' || name.startsWith('acquisition-car-');
     const notes = FEEDBACK_SOUNDS[name.startsWith('acquisition-equipment-') ? 'acquisition-equipment' : name];
@@ -305,15 +308,15 @@ export function createSound(gapWarning = () => null) {
       hats = filtered('highpass', 7000);
       snares = filtered('bandpass', 1800);
     }
-    setHidden(pageHidden());
+    setHidden(pageHidden(), tap);
   }
   // A 'playback' session keeps iOS playing after the tab or app goes to the background, so stop the clock there.
-  function setHidden(next) {
+  function setHidden(next, inGesture = false) {
     hidden = next;
-    if (!context) return;
+    if (!context || context.state === 'closed') return;
     // Not awaited: before the first user gesture resume() can stay pending; a later gesture retries it.
-    if (hidden) { silenceCues(); context.suspend().catch(() => {}); }
-    else context.resume().catch(() => {});
+    if (hidden) { silenceCues(); context.suspend().catch(ignore); }
+    else if (!pageHidden() && (inGesture || !audioSessionInterrupted())) context.resume().catch(ignore);
   }
   function fail() {
     enabled = musicOn = false;
@@ -352,22 +355,20 @@ export function createSound(gapWarning = () => null) {
       if (context && musicOn) { cutMusic(true); song = null; prelude(); }
     },
     refreshOpeningMusic() {
-      if (opening && !hidden && contextHealth.isRunning(context)) prelude();
+      if (!opening) return;
+      contextHealth.retry(context, canResume);
+      if (running()) prelude();
     },
     setEnabled,
     setMusic,
     setHidden,
-    running: () => contextHealth.isRunning(context),
+    running,
     diagnostics: () => ({ state: context?.state ?? 'none', hidden, documentHidden: pageHidden(), musicOn, currentTime: context?.currentTime ?? null }),
     update(race, halfwayStarted = false, waitingForScenery = false) {
       const car = race.player;
       current = race;
-      // A single resume() on return can fail; retry once a second (allocation-free per frame) after the first gesture.
-      if (context && (enabled || musicOn) && !hidden && context.state !== 'running' && navigator.userActivation?.hasBeenActive !== false) {
-        const time = performance.now();
-        if (time - resumedAt >= 1000) { resumedAt = time; context.resume().catch(ignore); }
-      }
-      const audible = !hidden && contextHealth.isRunning(context) && enabled;
+      contextHealth.retry(context, canResume);
+      const audible = enabled && running();
       const { silence, sounds, active, boosting } = raceEvents.update(race, audible,
         race.phase === 'racing' ? gapWarning(race) : null, halfwayStarted, waitingForScenery);
       if (silence) silenceCues();
@@ -394,6 +395,6 @@ export function createSound(gapWarning = () => null) {
         if (song) schedule(0.2, sprint);
       }
     },
-    dispose() { silenceCues(); context?.close().catch(() => {}); },
+    dispose() { silenceCues(); context?.close().catch(ignore); context = null; },
   };
 }
