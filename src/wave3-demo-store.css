@@ -110,14 +110,17 @@ button:not(.store-action-button):disabled { cursor: not-allowed; opacity: .55; }
   .demo-detail-copy p { display: none; }
   .demo-actions button:not(.store-action-button) { padding-inline: 6px; font-size: 11px; }
   .demo-wallet-cell { gap: 4px; }
+  /* The img carries an inline 26 px height (GarageArtworkImage size); cap it with the box or it squashes. */
   .demo-wallet-cell :deep(.wave3-demo-art) { width: 21px; min-width: 21px; height: 21px; }
+  .demo-wallet-cell :deep(.artwork-img) { max-height: 21px; }
 }
 @media (max-width: 360px) and (orientation: portrait) {
   .demo-header { gap: 6px; }
   .demo-wallet-cell { padding-block: 5px; }
   .demo-showroom { gap: 7px; margin-block-start: 5px; }
   .demo-detail { padding: 0; border: 0; background: transparent; }
-  .demo-detail-copy { display: none; }
+  /* Each card shows its own shortfall; the hidden copy still describes the redeem button. */
+  .demo-detail-copy, .demo-action-reason { display: none; }
   .demo-item { gap: 5px; }
   .demo-item-preview :deep(.garage-skin-card-name) { min-block-size: 2.4em; font-size: 12px; }
 }

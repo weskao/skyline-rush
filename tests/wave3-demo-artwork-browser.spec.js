@@ -241,7 +241,9 @@ for (const viewport of screens) {
     await page.locator('#garage-button').click();
     await page.locator('[data-wave3-open-store]').click();
     const store = page.locator('[data-wave3-demo-store]');
-    await checkImage(store.locator('[data-wave3-demo-art="demo-points"] img'), 216, 72);
+    // The store wallet row (2a98ebde) shows each balance beside a 26 px icon, 21 px at 600 px wide or less
+    // (wave3-demo-store.css); the square box proves the icon is not squashed (it drew 21x26 on phones).
+    await checkImage(store.locator('[data-wave3-demo-art="demo-points"] img'), 216, viewport.width <= 600 ? 21 : 26);
     await expect(store.locator('.demo-wallet strong')).toHaveText('20');
     await test.info().attach('wave3-a03-wallet-' + viewport.width + 'x' + viewport.height + '.png', {
       body: await store.screenshot(), contentType: 'image/png',

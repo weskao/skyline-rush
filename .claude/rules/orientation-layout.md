@@ -112,3 +112,7 @@ same phone looked fine, so neither proves anything about landscape (fix: `65b73d
   including the concept-image fallback. Any contrast treatment belongs to the controls that need it.
   Animate the Start highlight inside the button's own bounds so moving to or from the landscape rail cannot
   move the highlight outside the button. Both behaviors are covered in `tests/lobby-polish-browser.spec.js`.
+- **A block above the Wave 3 store catalog joins the ≤360 px portrait compaction.** At narrow portrait the
+  checkout sits above the catalog; `25ba5f90`'s `.demo-action-reason` box pushed the first offer below the fold
+  (ratio 0.20 at 320×720). Hide it with `.demo-detail-copy` in that block. Guard:
+  `tests/wave3-early-access-browser.spec.js` (first offer in view at 320×720).
