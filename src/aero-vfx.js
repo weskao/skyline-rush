@@ -263,10 +263,11 @@ export function createAeroVFX(scene, vehicle, ground) { // ground: the car's con
       shock.material.color.copy(nitroActive && !studioDemo ? nitroShockColor : shockColor);
       shockAge += dt;
       const fu = flow.material.uniforms;
-      fu.time.value = time; fu.speed.value = settings.airflowSpeed * (0.45 + car.speed / 90 + strength * 0.6);
+      const lines = Math.max(strength, sprintFrame?.lines ?? sprintPower); // the sprint ladder's speed lines: travel and density, never light
+      fu.time.value = time; fu.speed.value = settings.airflowSpeed * (0.45 + car.speed / 90 + lines * 0.6);
       fu.nitroMix.value = nitroMix; fu.edgeDetail.value = detail;
       fu.power.value = calm ? reveal * settings.airflowOpacity * 0.15 : Math.max(reveal * settings.airflowOpacity * (1 + strength * 0.35), lightPower * settings.speedLines * 0.65);
-      fu.density.value = Math.max(settings.airflowDensity * (0.5 + quality * 0.5), sprintPower * settings.speedLines * (0.5 + quality * 0.5));
+      fu.density.value = Math.max(settings.airflowDensity * (0.5 + quality * 0.5), lines * settings.speedLines * (0.5 + quality * 0.5));
       fu.length.value = Math.min(0.85, settings.streamlineLength + car.speed / 600);
       fu.suction.value = settings.suction / (1 + Math.max(0, vehicle.position.y) * 2);
       fu.turbulence.value = settings.turbulence * (calm ? 0.3 : 1);
