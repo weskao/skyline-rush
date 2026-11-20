@@ -6419,6 +6419,13 @@ Repro: on Home, open What's New, tap a picture or clip, close the enlarged view.
 - [ ] `tests/close-button-browser.spec.js` at 390x844 fails on this branch before and after the fix: `button[data-race-mode="eventlab"]` is not visible on phones. Not caused by this change; needs its own fix.
 - [ ] Not yet done: full `make verify`, a real iPhone (Safari and Home Screen app) in both orientations, exact-HEAD `quality-gate`.
 
+## 2026-11-21 — Sky Spiral daylight across graphics tiers
+
+- [x] Match Sky Spiral's default procedural sky, cloud sea, lighting and landmarks to the detailed daytime look in the showcase and during a race. Low stays asset-free, and an explicit weather preset keeps its original atmosphere.
+- [x] RED: five procedural daylight, lighting and trim assertions failed on the previous scene. GREEN: `npm test` 3,642 passed, 4 skipped, 0 failed; module-size, typecheck and production build passed.
+- [ ] Review desktop and phone WebGL captures in both orientations. Local Chromium could not launch in the verification environment. The browser spec covers the Low showcase, the helix in a race, and failed detailed-kit loading.
+- [ ] Verify the exact feature-branch HEAD in GitHub Actions.
+
 ## 2026-11-19 — Sky Spiral detailed 3D look, Task 8c (`feature/sky-spiral-3d-look`)
 
 Base `origin/develop` `f9735e4c`. Plan and checklist: `docs/designs/3d-pipeline/phases/task-8c-sky-spiral.md`. Merged into the local `develop` at `32893aa7` (`feature/road-runout` at `565221d2`); not on `origin/develop` when checked (`git merge-base --is-ancestor 09903f56 origin/develop` fails).

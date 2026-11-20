@@ -1,8 +1,7 @@
 // Task 8c: draws the Sky Spiral kit (spiral-landmarks.glb) on the course sky-scene.js builds. One InstancedMesh per
 // GLB node on the kit's one atlas material: twelve draws whatever the plan holds. The plan (spiral-scenery-plan.ts)
 // says where each piece stands in track space; this layer only turns the placements near the car into matrices.
-// While it is shown it stands in for the procedural tower, skyline and fog banks, and gives the rail trim the day
-// palette; hidden (Low, a failed load) the course is exactly the procedural one.
+// While it is shown it stands in for the procedural tower, skyline and fog banks. The course owns both palettes.
 import * as THREE from 'three';
 import { SKY_LENGTH, skyPoint } from './sky-track.ts';
 import { SPIRAL_NODES, SPIRAL_NODE_RADIUS, spiralSceneryPlan, type SpiralNode, type SpiralPlacement } from './spiral-scenery-plan.ts';
@@ -15,10 +14,6 @@ const TOWER_NEAR = 1400;
  *  (assets-src/spiral-landmarks/contract.json): the blue strip, chevrons and beacons land just over the bloom, and
  *  within a fifth of it, because the tower's strip is a large lit surface beside the car (rule item 22). */
 export const SPIRAL_EMISSIVE = 3.4;
-/** The day trim: grey barriers and white lane dashes; the beacons take the border's blue (the look brief). */
-export const SPIRAL_TRIM = Object.freeze({ rails: '#b4bcc6', lanes: '#ffffff' });
-
-type Tinted = { color: THREE.Color };
 /** The course's pieces the kit hangs on and stands in for (sky-scene.js `parts`). */
 export interface SpiralKitHost {
   /** Holds the road in track space: the kit's pieces ride under it. */
@@ -26,10 +21,9 @@ export interface SpiralKitHost {
   /** Follows the tower's axis at road level of the helix entry. */
   landmark: THREE.Object3D;
   replaced: readonly { visible: boolean }[];
-  trim: { accent: Tinted; beacons: Tinted; rails: Tinted; lanes: Tinted };
 }
 
-export function createSpiralKit(source: THREE.Object3D, { road, landmark, replaced, trim }: SpiralKitHost) {
+export function createSpiralKit(source: THREE.Object3D, { road, landmark, replaced }: SpiralKitHost) {
   source.updateMatrixWorld(true);
   const rootInverse = source.matrixWorld.clone().invert(), meshes: THREE.InstancedMesh[] = [];
   const root = new THREE.Group(), hero = new THREE.Group();
@@ -54,7 +48,6 @@ export function createSpiralKit(source: THREE.Object3D, { road, landmark, replac
   for (const { material } of meshes) (material as THREE.MeshStandardMaterial).emissiveIntensity = SPIRAL_EMISSIVE;
   const mounds = SPIRAL_NODES.filter(node => node.startsWith('cloud_')).map(node => pools.get(node)!);
   road.add(root); landmark.add(hero);
-  const procedural = { beacons: trim.beacons.color.clone(), rails: trim.rails.color.clone(), lanes: trim.lanes.color.clone() };
 
   const at = new THREE.Object3D(), matrix = new THREE.Matrix4();
   /** The placements within reach of the car at (x, z), written from index 0; the rest are not drawn. */
@@ -74,9 +67,6 @@ export function createSpiralKit(source: THREE.Object3D, { road, landmark, replac
     root.visible = hero.visible = on;
     // sky-scene.js writes .visible on these every frame, so they are hidden through their materials (rule item 28).
     for (const material of replaced) material.visible = !on;
-    trim.beacons.color.copy(on ? trim.accent.color : procedural.beacons);
-    if (on) { trim.rails.color.set(SPIRAL_TRIM.rails); trim.lanes.color.set(SPIRAL_TRIM.lanes); }
-    else { trim.rails.color.copy(procedural.rails); trim.lanes.color.copy(procedural.lanes); }
   }
 
   return {

@@ -7,7 +7,7 @@
 // sky on High and Ultra the cloud sea and its wisps (spiral-clouds.ts) stand in for the kit's cloud mounds.
 import { Color, DoubleSide, type FogExp2, type Material, type Object3D, type Scene } from 'three';
 import { createSpiralClouds, type SpiralClouds } from './spiral-clouds.ts';
-import { coastEnvPlan } from './coast-lighting.ts';
+import { spiralDay } from './track-look.ts';
 import { createSpiralKit, type SpiralKit, type SpiralKitHost } from './spiral-scenery.ts';
 import { createSpiralSkyLife, type SpiralSkyLife } from './spiral-sky-life.ts';
 import { TRACK_PALETTES } from './track-palettes.ts';
@@ -22,6 +22,7 @@ export const SPIRAL_DAY = Object.freeze({ background: '#94b7c9', fog: '#a3bdc8',
 /** The course's own pieces (sky-scene.js `parts`). */
 export interface SpiralParts extends SpiralKitHost {
   group: Object3D; road: Object3D & { material: Material | Material[] }; backdrop: { visible: boolean };
+  setDay(day: boolean, detailed: boolean): void;
   /** Called by the course each frame it is drawn, after it has moved its road: the kit's streaming while shown. */
   stream?: SpiralKit['stream'];
 }
@@ -39,7 +40,7 @@ export function createSpiralLook({ parts, dome, home, scene, clock }: Deps) {
   const night = new Color(TRACK_PALETTES.spiral.fog), shared = fog.density; // what world.js sets on this track
   const dayBackground = new Color(SPIRAL_DAY.background), dayFog = new Color(SPIRAL_DAY.fog);
   let hung = false, kit: SpiralKit | null = null, dressed = false, clouds: SpiralClouds | null = null, billowed = false;
-  let life: SpiralSkyLife | null = null;
+  let life: SpiralSkyLife | null = null, day = false;
   const stream: SpiralKit['stream'] = (distance, endless) => { kit?.stream(distance, endless); life?.stream(distance, endless); if (billowed) clouds?.stream(distance, endless); };
 
   /** The dome under the course while it shows the course's sky; the backdrop only without it. */
@@ -59,22 +60,27 @@ export function createSpiralLook({ parts, dome, home, scene, clock }: Deps) {
     clouds?.show(on, ultra);
     if (on !== billowed) kit?.clouds(!(billowed = on));
   }
-  function strip(): void { billow(false, false); dress(false); clouds?.dispose(); life?.dispose(); kit?.dispose(); clouds = life = kit = null; }
+  function strip(): void {
+    billow(false, false); dress(false); parts.setDay(day, false);
+    clouds?.dispose(); life?.dispose(); kit?.dispose(); clouds = life = kit = null;
+  }
 
   return {
     /** Per frame, after coast-sky.ts and race-visuals.ts: both write first, this corrects for the course. `kitted`:
      *  the look wants the landmark kit and it is in the scene. */
     update(trackId: string, preset: string, quality: VfxQuality, kitted = false, ultra = false): void {
       dress(kitted && !!kit);
-      const mine = trackId === TRACK, day = mine && coastEnvPlan(trackId, preset, quality).kind === 'hdri';
-      hang(day && dome.visible);
+      const mine = trackId === TRACK;
+      day = spiralDay(trackId, preset);
+      parts.setDay(day, dressed);
+      hang(day && quality !== 'low' && dome.visible);
       billow(dressed && hung && quality === 'high', ultra);
       if (day) {
         // From the track's violet or the day preset's haze only: a photo style keeps its own.
         if (fog.density !== SPIRAL_DAY.density && (background.equals(night) || background.equals(dayBackground))) {
           background.copy(dayBackground); fog.color.copy(dayFog); fog.density = SPIRAL_DAY.density;
         }
-      } else if (fog.density === SPIRAL_DAY.density) { // Low, or the next track: world.js sets colours on a track change, never the density
+      } else if (fog.density === SPIRAL_DAY.density) { // On the next track world.js sets the colours, and this restores the density.
         fog.density = shared;
         if (mine) { background.copy(night); fog.color.copy(night); }
       }
@@ -95,6 +101,7 @@ export function createSpiralLook({ parts, dome, home, scene, clock }: Deps) {
     },
     detachKit: strip,
     dispose(): void {
+      day = false;
       strip();
       hang(false);
       parts.road.material = procedural;

@@ -6,6 +6,11 @@ paths:
   - "src/upcoming-tracks.ts"
   - "src/upcoming-scenes/index.ts"
   - "src/track-preview.ts"
+  - "src/track-look.ts"
+  - "src/sky-scene.js"
+  - "src/spiral-look.ts"
+  - "src/coast-look.ts"
+  - "src/race-visuals.ts"
   - "src/track-swipe.ts"
   - "src/track-swipe-ui.ts"
   - "src/world.js"
@@ -44,6 +49,23 @@ Before touching a course, read `AGENTS.md`, `CLAUDE.md`,
 `docs/superpowers/specs/2026-11-03-playable-coursegraph-contract.md`,
 `.claude/rules/track-showcase.md`, `.claude/rules/vehicle-road-stability.md`,
 and the map's source handoff/plan. Honor stricter scoped rules as well.
+
+## Atmosphere across graphics tiers
+
+- Give each course one source of truth for its default atmosphere and supported race
+  presets. Resolve time of day and weather from course and preset before choosing the
+  graphics tier. A given preset keeps the same daylight, dusk, night, fog, rain or snow
+  identity in the showcase and in the race from Low through Ultra, including failed or
+  loading detailed assets. Keep the sky, key light, haze and landmark palette coherent.
+- Graphics tiers may simplify geometry, textures, reflections and atmospheric effects.
+  Use a lightweight approximation for defining scenery such as a cloud sea, and keep
+  Low independent of detailed GLB, HDRI and KTX2 requests. For Sky Spiral, the default and
+  Day both show a bright sky over clouds with pale architecture and blue rail lights.
+- When creating or changing a course look, compare Low and the detailed tier for the
+  default and supported explicit presets, plus a missing-asset fallback. Check the
+  showcase and in-race WebGL at matching camera poses on desktop, phone portrait and
+  phone landscape. Sky Spiral's guards are `tests/spiral-look.test.js`,
+  `tests/coast-look.test.js` and `tests/spiral-look-browser.spec.js`.
 
 ## Exclusive in-race music
 

@@ -163,5 +163,27 @@ test('a track that shares the sky of the track before it still gets that sky\'s 
   assert.deepEqual([sun.color.getHexString(), sun.intensity, renderer.toneMappingExposure], [new Color(v.sun.color).getHexString(), v.sun.intensity, v.exposure],
     'the day sky of Coast is also Sky Spiral\'s: the violet sun must not stay under it');
   look.update('spiral', 'track', 'low');
-  assert.deepEqual([sun.color.getHexString(), sun.intensity, renderer.toneMappingExposure], ['a855f7', 2.3, 1.12], 'Low gets the track\'s own sun back');
+  assert.deepEqual([sun.color.getHexString(), sun.intensity, renderer.toneMappingExposure], [new Color(v.sun.color).getHexString(), v.sun.intensity, 1.12],
+    'Low keeps the daytime sun with the procedural exposure');
+  look.update('spiral', 'night', 'low');
+  assert.deepEqual([sun.color.getHexString(), sun.intensity], ['a855f7', 2.3], 'explicit night restores the palette sun');
+});
+
+test('Sky Spiral matches the detailed sun without loading an HDRI on Low', async () => {
+  const room = {}, loads = [], scene = { environment: room, environmentIntensity: .42 };
+  const envs = { get: () => undefined, preload: names => { loads.push(...names); return Promise.resolve(); } };
+  const lens = { uniforms: { saturation: { value: 1 }, contrast: { value: 1 }, tint: { value: new Color() } } };
+  const sun = { color: new Color('#a855f7'), intensity: 2.3, position: new Vector3(-170, 100, -190) };
+  const look = createCoastLook({ scene, renderer: { toneMappingExposure: 1.12 }, lens, room, roomIntensity: .42, envs, sun });
+  look.update('spiral', 'track', 'low');
+  assert.deepEqual(loads, []);
+  assert.equal(scene.environment, room);
+  assert.ok(sun.color.equals(new Color(COAST_ENV_VARIANTS.day.sun.color)));
+  assert.ok(sun.position.clone().normalize().distanceTo(coastSunDirection('day')) < 1e-6);
+  look.update('spiral', 'track', 'high');
+  await settle();
+  assert.ok(sun.color.equals(new Color(COAST_ENV_VARIANTS.day.sun.color)), 'a failed HDRI keeps the daytime sun');
+  look.update('spiral', 'fog', 'high');
+  assert.ok(sun.color.equals(new Color('#a855f7')));
+  assert.deepEqual(sun.position.toArray(), [-170, 100, -190]);
 });

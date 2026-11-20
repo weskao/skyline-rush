@@ -34,11 +34,13 @@ const look = page => page.evaluate(() => {
     if (o.geometry?.type === 'CylinderGeometry' && o.material?.visible && o.visible) procedural = true; // the tower shell
     if (o.material?.name === 'spiral_asphalt') ktx2 = !!o.material.map?.isCompressedTexture;
   });
-  return { kit: drawn(kit) > 0, tower: drawn(tower), procedural, dome: !!dome?.visible, backdrop: scene.getObjectByName('Sky Spiral backdrop').visible, ktx2 };
+  const backdrop = scene.getObjectByName('Sky Spiral backdrop');
+  return { kit: drawn(kit) > 0, tower: drawn(tower), procedural, dome: !!dome?.visible, backdrop: backdrop.visible,
+    daylight: backdrop.material.uniforms.daylight?.value === 1, ktx2 };
 });
 const status = page => page.evaluate(() => { const { spiralLandmarks, spiralRoad, coastSky } = document.querySelector('#world').dataset; return { spiralLandmarks, spiralRoad, coastSky }; });
-const DETAILED = { kit: true, tower: 1, procedural: false, dome: true, backdrop: false, ktx2: true };
-const PROCEDURAL = { kit: false, tower: 0, procedural: true, dome: false, backdrop: true, ktx2: false };
+const DETAILED = { kit: true, tower: 1, procedural: false, dome: true, backdrop: false, daylight: true, ktx2: true };
+const PROCEDURAL = { kit: false, tower: 0, procedural: true, dome: false, backdrop: true, daylight: true, ktx2: false };
 const ready = page => expect.poll(() => status(page), { timeout: ciTimeout(60000) }).toEqual({ spiralLandmarks: 'attached', spiralRoad: 'high', coastSky: 'day:4096' });
 /** This document's fetches of the look's own files: the kit, a KTX2 set, an HDRI. */
 const lookAssets = page => page.evaluate(() => performance.getEntriesByType('resource').map(e => e.name).filter(n => /\.ktx2|environments\/.*\.hdr|models\/spiral-/.test(n)));
@@ -85,13 +87,37 @@ test('Sky Spiral High compiles nothing after GO, through the approach, the helix
   expect(errors).toEqual([]);
 });
 
-test('Sky Spiral Low keeps the procedural scene and fetches no look asset', async ({ gameplayPage: page }) => {
-  await spiral(page, 'low');
-  await page.waitForTimeout(ciTimeout(1500));
-  expect(await look(page)).toEqual(PROCEDURAL);
-  expect((await status(page)).spiralLandmarks).not.toBe('attached');
-  expect(await lookAssets(page)).toEqual([]);
-});
+for (const [device, width, height, touch] of [
+  ['desktop', 1440, 900, false], ['phone portrait', 390, 844, true], ['phone landscape', 844, 390, true],
+]) {
+  test.describe(`Sky Spiral Low on ${device}`, () => {
+    test.use({ viewport: { width, height }, isMobile: touch, hasTouch: touch });
+    test('draws the procedural daylight in the showcase and race without fetching detailed assets', async ({ gameplayPage: page }, info) => {
+      test.setTimeout(ciTimeout(90000));
+      const shaderErrors = [];
+      page.on('console', message => {
+        if (message.type() === 'error' && /WebGLProgram: Shader Error|VALIDATE_STATUS/.test(message.text())) shaderErrors.push(message.text());
+      });
+      await spiral(page, 'low');
+      await expect.poll(() => look(page)).toEqual(PROCEDURAL);
+      expect((await status(page)).spiralLandmarks).not.toBe('attached');
+      expect(await lookAssets(page)).toEqual([]);
+      await page.screenshot({ path: info.outputPath('showcase.png') });
+
+      await page.locator('#start-button').click();
+      await racing(page);
+      await seek(page, 2550);
+      await expect.poll(() => look(page)).toEqual(PROCEDURAL);
+      await expect.poll(() => page.evaluate(() => {
+        const course = window.gameScene.scene.getObjectByName('Sky Spiral 3D course');
+        return course.children[0].position.length();
+      })).toBeGreaterThan(500);
+      await page.screenshot({ path: info.outputPath('helix.png') });
+      expect(await lookAssets(page)).toEqual([]);
+      expect(shaderErrors).toEqual([]);
+    });
+  });
+}
 
 test('Sky Spiral High keeps the procedural tower and starts the race when its kit cannot load', async ({ gameplayPage: page }) => {
   test.setTimeout(ciTimeout(120000));
@@ -100,10 +126,10 @@ test('Sky Spiral High keeps the procedural tower and starts the race when its ki
   await page.route('**/models/spiral-landmarks/**', route => route.abort());
   await spiral(page, 'high');
   await expect.poll(async () => (await status(page)).spiralLandmarks, { timeout: ciTimeout(60000) }).toMatch(/^fallback/);
-  await expect.poll(async () => { const { kit, procedural } = await look(page); return { kit, procedural }; }).toEqual({ kit: false, procedural: true });
+  await expect.poll(async () => { const { kit, procedural, daylight } = await look(page); return { kit, procedural, daylight }; }).toEqual({ kit: false, procedural: true, daylight: true });
   await page.locator('#start-button').click();
   await racing(page);
-  await expect.poll(async () => { const { kit, procedural } = await look(page); return { kit, procedural }; }).toEqual({ kit: false, procedural: true });
+  await expect.poll(async () => { const { kit, procedural, daylight } = await look(page); return { kit, procedural, daylight }; }).toEqual({ kit: false, procedural: true, daylight: true });
   expect(errors).toEqual([]);
 });
 

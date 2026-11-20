@@ -1,6 +1,6 @@
 // Task 8c: Sky Spiral draws its own scene (sky-scene.js), so the shared sky dome and the KTX2 road swap never reached
 // it: world.js hides the sky mesh the dome hangs under, and the classic road mesh that wears the road set.
-// spiral-look.ts is their target on the helix course. Low, a failed load and every other track keep what they had.
+// spiral-look.ts is their target on the helix course. The procedural fallback shares the same time of day.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -74,7 +74,9 @@ test('the day look clears the violet haze, and only its own', () => {
   look.update('spiral', 'track', 'high');
   assert.deepEqual(state(), day);
   look.update('spiral', 'track', 'low');
-  assert.deepEqual(state(), night, 'Low keeps the dark procedural scene');
+  assert.deepEqual(state(), day, 'Low keeps the same clear air');
+  look.update('spiral', 'night', 'low');
+  assert.deepEqual(state(), night, 'an explicit night restores the procedural atmosphere');
   look.update('spiral', 'track', 'medium');
   // race-visuals.ts writes its own haze on a preset change, before this runs.
   scene.background.set('#ec9478'); scene.fog.color.set('#bb7f89'); scene.fog.density = .001;
@@ -96,6 +98,29 @@ test('the day look clears the violet haze, and only its own', () => {
   scene.fog.density = .0024;
   look.update('canyon', 'rain', 'medium');
   assert.equal(scene.fog.density, .0024, 'never another haze');
+});
+
+test('the procedural sky, road and tower share daylight on Low and when the detailed sky is unavailable', () => {
+  const { course, parts, look } = rig();
+  const { backdrop, landmark, road, trim } = parts;
+  const tower = landmark.children[0].material;
+  const before = [hex(road.material.color), hex(tower.color), hex(trim.beacons.color)];
+  for (const [preset, quality] of [['track', 'low'], ['day', 'low'], ['track', 'high']]) {
+    look.update('spiral', preset, quality);
+    course.update(1850, quality);
+    assert.equal(backdrop.visible, true);
+    assert.equal(backdrop.material.uniforms.daylight?.value, 1, 'the cloud sea and daylight use the procedural shader');
+    assert.notEqual(hex(road.material.color), before[0], 'the procedural road uses its daylight palette');
+    assert.ok(tower.color.g > .5, 'the procedural tower is white');
+    assert.equal(hex(trim.beacons.color), hex(trim.accent.color), 'blue beacons match the detailed look');
+  }
+  for (const preset of ['night', 'fog', 'rain']) {
+    for (const quality of ['low', 'high']) {
+      look.update('spiral', preset, quality);
+      assert.equal(backdrop.material.uniforms.daylight.value, 0, preset);
+      assert.deepEqual([hex(road.material.color), hex(tower.color), hex(trim.beacons.color)], before);
+    }
+  }
 });
 
 test("the day sky is Coast's, dome gain and bloom threshold included (rule item 15: no new sky to measure)", () => {

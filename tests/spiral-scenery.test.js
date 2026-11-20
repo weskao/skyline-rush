@@ -4,10 +4,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BoxGeometry, Color, FogExp2, Group, Matrix4, Mesh, MeshStandardMaterial, Object3D, Scene, Vector3 } from 'three';
-import { createSkyScene } from '../src/sky-scene.js';
+import { createSkyScene, SPIRAL_TRIM } from '../src/sky-scene.js';
 import { createSpiralLook } from '../src/spiral-look.ts';
 import { readFileSync } from 'node:fs';
-import { SPIRAL_EMISSIVE, SPIRAL_TRIM } from '../src/spiral-scenery.ts';
+import { SPIRAL_EMISSIVE } from '../src/spiral-scenery.ts';
 import { SPIRAL_NODES, SPIRAL_NODE_RADIUS, spiralSceneryPlan } from '../src/spiral-scenery-plan.ts';
 import { SKY_LIFE_NODES } from '../src/spiral-sky-life.ts';
 import { createCoastAssets } from '../src/coast-assets.ts';
@@ -78,7 +78,7 @@ test('the procedural tower, skyline and fog banks leave only while the kit is dr
   assert.deepEqual(trim(), { beacons: hex(parts.trim.accent.color), rails: SPIRAL_TRIM.rails, lanes: SPIRAL_TRIM.lanes });
   look.update('spiral', 'track', 'low', false); // Low: the host no longer wants the kit
   assert.ok(parts.replaced.every(material => material.visible), 'Low keeps the procedural scene');
-  assert.deepEqual(trim(), before);
+  assert.deepEqual(trim(), { beacons: hex(parts.trim.accent.color), rails: SPIRAL_TRIM.rails, lanes: SPIRAL_TRIM.lanes });
   assert.equal(parts.stream, undefined, 'no streaming work while hidden');
   look.update('spiral', 'night', 'medium', true);
   assert.ok(parts.replaced.every(material => !material.visible), 'the kit is drawn on every preset of Medium and above');
