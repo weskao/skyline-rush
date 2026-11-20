@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { setupItemUI } from '../src/item-ui.ts';
+import * as itemUI from '../src/item-ui.ts';
+const { setupItemUI } = itemUI;
 import { bankItem, tickItemCooldown } from '../src/active-items.ts';
 
 test('item HUD announces pickup/cooldown once, keeps activation paused-safe and displays the active effect', () => {
@@ -77,12 +78,16 @@ test('item HUD announces pickup/cooldown once, keeps activation paused-safe and 
     assert.equal(screen.hidden, false);
     assert.deepEqual(screen.dataset, { hit: 'emp', calm: 'false' });
     assert.equal(nodes['bonus-status'].textContent, 'EMP HIT · 2s');
+    assert.deepEqual(itemUI.playerHitView, { emp: 2, freeze: 2, calm: false });
     calm = true;
     ui.update(race);
     assert.equal(screen.dataset.calm, 'true');
+    assert.equal(itemUI.playerHitView.calm, true);
     race.phase = 'paused';
     ui.update(race);
     assert.equal(screen.hidden, true, 'hide the screen effect behind pause');
+    assert.equal(itemUI.playerHitView.emp, 0);
+    assert.equal(itemUI.playerHitView.freeze, 0);
     race.phase = 'racing';
     ui.update(race);
     assert.equal(screen.hidden, false);
@@ -91,10 +96,15 @@ test('item HUD announces pickup/cooldown once, keeps activation paused-safe and 
     ui.update(race);
     assert.equal(nodes['bonus-status'].textContent, 'FROZEN · 1s');
     assert.equal(screen.dataset.hit, 'freeze');
+    assert.deepEqual(itemUI.playerHitView, { emp: 0, freeze: 1, calm: true });
     race.elapsed = 5;
     ui.update(race);
     assert.equal(screen.hidden, true);
     assert.equal(screen.dataset.hit, '');
+    assert.equal(itemUI.playerHitView.freeze, 0);
+    race.player.effects.freeze = 2;
+    ui.update(race);
+    assert.equal(itemUI.playerHitView.freeze, 0, 'an outgoing attack must not light the incoming alert');
     assert.equal(nodes['bonus-status'].hidden, true);
   } finally { globalThis.document = previousDocument; }
 });

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { ACTIVE_ITEMS } from '../src/active-items.ts';
+import { itemAttackPaths } from '../src/icons.ts';
 
 // ITEM-12 unique item outlines: every active item the slot can hold has its own silhouette, and the
 // slot shows exactly that one when item-ui.ts sets data-item.
@@ -11,9 +12,12 @@ const slot = read('../src/ItemSlot.vue');
 test('every active item kind has its own distinct outline in the item slot', () => {
   assert.ok(ACTIVE_ITEMS.length >= 5, `item kinds: ${ACTIVE_ITEMS}`);
   const shapes = ACTIVE_ITEMS.map(kind => {
-    const svg = slot.match(new RegExp(`<svg class="item-${kind}"[^>]*>\\s*<path d="([^"]+)"`));
+    const svg = slot.match(new RegExp(`<svg class="item-${kind}"[^>]*>\\s*<path (?:d="([^"]+)"|:d="itemAttackPaths\\.(\\w+)")`));
     assert.ok(svg, `${kind} has an outline`);
-    return svg[1].replace(/\s+/g, ' ').trim();
+    if (svg[2]) assert.equal(svg[2], kind, `${kind} uses its own shared outline`);
+    const path = svg[1] ?? itemAttackPaths[svg[2]];
+    assert.ok(path, `${kind} has a path`);
+    return path.replace(/\s+/g, ' ').trim();
   });
   assert.equal(new Set(shapes).size, ACTIVE_ITEMS.length, 'no two items share an outline');
 });

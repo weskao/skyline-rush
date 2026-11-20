@@ -12,6 +12,11 @@ export const ACQUISITION_KIND = {
   CURRENCY: 'currency',
 } as const;
 export type AcquisitionKind = typeof ACQUISITION_KIND[keyof typeof ACQUISITION_KIND];
+export type AcquisitionAction = Readonly<
+  | { kind: 'drive' | 'paint' | 'equip' | 'wear' | 'use'; apply(): boolean | Promise<boolean>; isApplied?(): boolean }
+  | { kind: 'track'; open(): void }
+>;
+export type AcquisitionActionFor = (item: AcquisitionItem) => AcquisitionAction | undefined;
 export type AcquisitionText = Readonly<Record<Locale, string>>;
 export type AcquisitionItem = Readonly<{
   id: string;
@@ -23,6 +28,7 @@ export type AcquisitionItem = Readonly<{
   quantity?: number;
   scope?: 'demo';
   equipmentCategory?: SkinCategory;
+  action?: AcquisitionAction;
 }>;
 export type AcquisitionBatch = Readonly<{ id: string; items: readonly AcquisitionItem[] }>;
 

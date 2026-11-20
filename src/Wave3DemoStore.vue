@@ -136,7 +136,7 @@ function inspectPreview(item: Wave3DemoItem): void {
 }
 function feedback(status: DemoRedeemState | Wave3Status): string {
   switch (status) {
-    case 'completed': return tr('Demo unlocked. Open Demo Collection to equip.', '試玩取得成功，請前往試玩收藏裝備。');
+    case 'completed': return tr('Added to Demo Collection.', '已加入試玩收藏。');
     case 'insufficient-demo-points': return tr('Not enough demo points. Finish a race or claim a demo mission.', '試玩點數不足，請完成比賽或領取試玩任務。');
     case 'insufficient-demo-coins': return tr('Not enough demo coins. Finish races or claim the daily race mission.', '試玩金幣不足，請完成競速或領取每日競速任務。');
     case 'insufficient-demo-diamonds': return tr('Not enough demo diamonds. Claim the weekly race mission.', '試玩鑽石不足，請領取每週競速任務。');
@@ -243,7 +243,7 @@ async function confirmRedemption(): Promise<void> {
   message.value = result.status === 'completed' && used
     ? `${feedback(result.status)} −${Math.abs(used).toLocaleString(props.locale)} ${currencyLabel(request.currency)}`
     : feedback(result.status);
-  const batch = storeAcquisitionBatch(id, request.scope, result);
+  const batch = storeAcquisitionBatch(id, request.scope, result, port);
   if (result.status !== 'completed') cue('action-unavailable');
   await nextTick();
   if (quote.value || !props.active || !store.value || port !== props.port ||
