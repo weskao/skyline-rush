@@ -67,11 +67,12 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         }
       },
       {
-        id: 'rival-items', kind: 'new', image: null,
+        id: 'rival-items', kind: 'new',
+        image: { en: 'whats-new/rival-items/debuffs.en.webp', 'zh-TW': 'whats-new/rival-items/debuffs.zh-TW.webp' },
         title: { en: 'Rivals fight back with Freeze and EMP', 'zh-TW': '對手也會用冰凍與 EMP' },
         description: {
-          en: 'Rivals now pick up Freeze and EMP and use them on you. Hit rivals frost over or spark out.',
-          'zh-TW': '對手現在會撿冰凍與 EMP 來攻擊你；被擊中的對手會結冰或冒出電弧。'
+          en: 'Rivals can hit you with Freeze or EMP. A center countdown shows how long it lasts, while your speedometer lights up icy blue or gold.',
+          'zh-TW': '對手會用冰凍與 EMP 攻擊。中招時，畫面中央會顯示倒數，時速表也會亮起冰藍或金黃，直到效果解除。'
         }
       },
       {
