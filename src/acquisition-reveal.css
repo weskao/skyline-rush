@@ -188,7 +188,7 @@
 .acquisition-continue:hover { filter: brightness(1.1); }
 .acquisition-controls { flex: none; max-width: 100%; }
 .acquisition-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.acquisition-actions > button { flex: 1 1 auto; }
+.acquisition-reveal .acquisition-actions > button { flex: 1 1 auto; }
 .acquisition-actions:has(.acquisition-apply) .acquisition-continue {
   min-width: 0;
   color: #d4e3f4;
