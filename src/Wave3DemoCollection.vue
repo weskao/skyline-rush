@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CollectibleIcon from './CollectibleIcon.vue';
 import { computed, nextTick, ref, watch } from 'vue';
 import GarageArtworkImage from './GarageArtworkImage.vue';
 import GarageSkinCardFace from './GarageSkinCardFace.vue';
@@ -28,6 +29,7 @@ const tr = (en: string, zh: string) => props.locale === 'zh-TW' ? zh : en;
 const snapshot = ref<ExperienceSnapshot>(props.port.getSnapshot());
 const filter = ref<'all' | DemoItemStatus>('all');
 const filters = ['all', 'demo-unlocked', 'trial', 'locked', 'preview-only'] as const;
+const filterIcon = { all: 'collection', 'demo-unlocked': 'unlocked', trial: 'pending', locked: 'locked', 'preview-only': 'inspect' };
 const selectedId = ref<SkinId | null>(null);
 const collection = ref<HTMLElement | null>(null);
 const message = ref('');
@@ -127,13 +129,13 @@ function closePreview(): void {
       </span>
       <span>{{ tr('Your Demo Collection is empty. Browse cosmetics and earn demo points in races to try an unlock.',
         '目前沒有試玩收藏。可瀏覽外觀，並透過比賽取得試玩點數後兌換。') }}</span>
-      <button type="button" @click="emit('open-store')">{{ tr('Open Demo Store', '開啟試玩商城') }}</button>
+      <button type="button" @click="emit('open-store')"><CollectibleIcon name="cart" />{{ tr('Open Demo Store', '開啟試玩商城') }}</button>
     </p>
 
     <nav class="collection-filters" :aria-label="tr('Filter collection statuses', '篩選收藏狀態')">
       <button v-for="state in filters" :key="state" type="button"
         :aria-pressed="filter === state" @click="filter = state; closePreview()">
-        {{ filterLabel(state) }}
+        <CollectibleIcon :name="filterIcon[state]" />{{ filterLabel(state) }}
       </button>
     </nav>
 
@@ -158,17 +160,17 @@ function closePreview(): void {
           '試用資格由車庫管理；此處僅預覽，不會額外發放試用權限。') }}
       </p>
       <div class="collection-actions">
-        <button type="button" @click="emit('preview', selected.id)">{{ tr('Inspect preview', '檢視預覽') }}</button>
+        <button type="button" @click="emit('preview', selected.id)"><CollectibleIcon name="inspect" />{{ tr('Inspect preview', '檢視預覽') }}</button>
         <button type="button" :disabled="!canEquipDemoPreview(selected.id, snapshot) || equipped === selected.id"
-          @click="equipSelected">{{ equipped === selected.id ? tr('Demo equipped', '試玩已裝備') : tr('Equip demo preview', '裝備試玩外觀') }}</button>
-        <button type="button" @click="closePreview">{{ tr('Close preview', '關閉預覽') }}</button>
+          @click="equipSelected"><CollectibleIcon :name="equipped === selected.id ? 'check' : 'tools'" />{{ equipped === selected.id ? tr('Demo equipped', '試玩已裝備') : tr('Equip demo preview', '裝備試玩外觀') }}</button>
+        <button type="button" @click="closePreview"><CollectibleIcon name="close" />{{ tr('Close preview', '關閉預覽') }}</button>
       </div>
       <p class="collection-message" role="status" aria-live="polite">{{ message }}</p>
     </section>
 
     <div class="collection-actions collection-footer">
-      <button type="button" @click="emit('open-store')">{{ tr('Browse Demo Store', '瀏覽試玩商城') }}</button>
-      <button type="button" @click="emit('return-to-race')">{{ tr('Return to racing', '返回比賽') }}</button>
+      <button type="button" @click="emit('open-store')"><CollectibleIcon name="cart" />{{ tr('Browse Demo Store', '瀏覽試玩商城') }}</button>
+      <button type="button" @click="emit('return-to-race')"><CollectibleIcon name="track" />{{ tr('Return to racing', '返回比賽') }}</button>
     </div>
     <p class="collection-disclaimer">{{ tr('Only this device · No payment · No Cloud Save grants · Guest-friendly',
       '僅限此裝置 · 無付款 · 不授予雲端收藏 · 訪客可用') }}</p>

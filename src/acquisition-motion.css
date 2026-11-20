@@ -43,15 +43,15 @@
   inset: 0;
   pointer-events: none;
   background: #020610;
-  animation: acquisition-shutter 300ms ease-out both;
+  animation: acquisition-shutter 180ms ease-out both;
 }
-[data-reveal-shot="signature"] .acquisition-cut { animation-duration: 680ms; }
+[data-reveal-shot="signature"] .acquisition-cut { animation-duration: 250ms; }
 [data-reveal-shot="thrusters"] .acquisition-cut { background: linear-gradient(90deg, #170607bd, #531a1570, #160611b8); }
 [data-reveal-shot="hero"] .acquisition-cut {
   background: linear-gradient(102deg, #101f3bce 6%, #6aaafa80 35%, transparent 72%);
-  animation: acquisition-premiere 570ms cubic-bezier(.22,.65,.3,1) both;
+  animation: acquisition-premiere 360ms cubic-bezier(.22,.65,.3,1) both;
 }
-@keyframes acquisition-shutter { from { opacity: .72; } to { opacity: 0; } }
+@keyframes acquisition-shutter { from { opacity: .48; } to { opacity: 0; } }
 @keyframes acquisition-premiere {
   from { transform: translateX(-40%); opacity: .63; }
   to { transform: translateX(105%); opacity: 0; }
@@ -85,11 +85,11 @@
   letter-spacing: .012em;
   text-transform: uppercase;
 }
-[data-car-showcase]:is([data-reveal-shot="signature"], [data-reveal-shot="profile"], [data-reveal-shot="thrusters"], :has([data-cinematic="loading"])) .acquisition-copy {
+[data-car-showcase]:is([data-reveal-shot="signature"], [data-reveal-shot="profile"], [data-reveal-shot="thrusters"]) .acquisition-copy {
   opacity: 0;
 }
-[data-reveal-shot="hero"] .acquisition-copy { animation: acquisition-lockup 590ms 80ms cubic-bezier(.18,.75,.23,1) both; }
-[data-reveal-shot="hero"] .acquisition-copy h2 { animation: acquisition-set-type 550ms 140ms cubic-bezier(.16,.79,.25,1) both; }
+[data-reveal-shot="hero"] .acquisition-copy { animation: acquisition-lockup 420ms 100ms cubic-bezier(.18,.75,.23,1) both; }
+[data-reveal-shot="hero"] .acquisition-copy h2 { animation: acquisition-set-type 430ms 140ms cubic-bezier(.16,.79,.25,1) both; }
 @keyframes acquisition-lockup { from { opacity: 0; transform: translateY(11px); } }
 @keyframes acquisition-set-type { from { opacity: 0; transform: translateX(18px); } }
 

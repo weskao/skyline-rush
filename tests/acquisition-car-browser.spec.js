@@ -17,8 +17,8 @@ test('the shared reveal plays the actual vehicle and holds the final angle', asy
   await expect(stage).toHaveAttribute('data-shot', 'hero', { timeout: ciTimeout(26000) });
   await expect(dialog.locator('.acquisition-hero')).toHaveAttribute('data-reveal-shot', 'hero');
   await expect.poll(() => page.evaluate(() => window.revealCues.map(([name]) => name))).toEqual([
-    'acquisition-car', 'acquisition-car-signature', 'acquisition-car-profile',
-    'acquisition-car-thrusters', 'acquisition-car-hero',
+    'acquisition-car', 'acquisition-car-signature', 'acquisition-car-thrusters',
+    'acquisition-car-profile', 'acquisition-car-hero',
   ]);
   await expect(stage).toHaveAttribute('data-cinematic', 'still');
   await expect(dialog.getByRole('button', { name: 'Continue' })).toBeInViewport();

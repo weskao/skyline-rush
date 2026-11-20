@@ -81,7 +81,9 @@ test('rendered assets use the approved Demo Points metallic spectral treatment',
 test('Garage and Demo Store actually mount source WebP instead of requesting removed PNG', () => {
   const garage = source('src/GaragePanel.vue');
   const store = source('src/Wave3DemoStore.vue');
-  assert.match(garage, /store-cart@3x\.webp/);
+  assert.match(garage, /const storeIcon = collectibleIconUrl\('cart-panel'\)/);
+  assert.match(garage, /<GarageArtworkImage :src="storeIcon"/);
+  assert.match(source('src/collectible-icons.ts'), /feature-assets\/collectible-ui\/\$\{name\}@3x\.webp/);
   assert.doesNotMatch(garage, /storeIconFallback|store-cart@3x\.png/);
   assert.match(source('src/App.vue'), /<Wave3CurrencyStrip/);
   assert.doesNotMatch(garage, /<Wave3CurrencyStrip/);

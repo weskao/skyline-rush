@@ -15,7 +15,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844
     await expect(entryIcon).toBeVisible();
     await expect(entryIcon).toHaveJSProperty('naturalWidth', 216);
     await expect(entryIcon).toHaveJSProperty('naturalHeight', 216);
-    await expect(entryIcon).toHaveAttribute('src', /store-collection@3x\.webp$/);
+    await expect(entryIcon).toHaveAttribute('src', /collectible-ui\/collection-panel@3x\.webp$/);
     await expect(gallery.locator('[data-store-phase="coming-soon"]')).toHaveText('Shop · Coming soon — preview only');
     const cards=gallery.locator('button[data-wave3-asset]');
     await expect(cards).toHaveCount(6);
@@ -141,12 +141,12 @@ test('Store entrance icon loads native WebP without any PNG fallback', async ({ 
   await page.locator('#garage-button').click();
   await openGarageSection(page, 'store');
   const entryIcon = page.locator('#garage-art-source-garage-store-readiness summary [data-wave3-entry-icon] img');
-  await expect(entryIcon).toHaveAttribute('src', /store-collection@3x\.webp$/);
+  await expect(entryIcon).toHaveAttribute('src', /collectible-ui\/collection-panel@3x\.webp$/);
   await expect(entryIcon).toHaveJSProperty('naturalWidth', 216);
 });
 
 test('Store preview keeps readable Coming Soon when the real 3x entrance icon fails', async ({ page }) => {
-  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.webp', route => route.abort());
+  await page.route('**/feature-assets/collectible-ui/collection-panel@3x.webp', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
   await openGarageSection(page, 'store');
@@ -214,7 +214,7 @@ test('the actual Garage Store entrance directly renders native WebP, without rem
   await page.goto('/');
   await page.locator('#garage-button').click();
   const image = page.locator('[data-garage-store-entry] img.artwork-img');
-  await expect(image).toHaveAttribute('src', /store-cart@3x\.webp$/);
-  await expect(image).toHaveJSProperty('naturalWidth', 216);
+  await expect(image).toHaveAttribute('src', /collectible-ui\/cart-panel@3x\.webp$/);
+  await expect(image).toHaveJSProperty('naturalWidth', 156);
   expect(pngRequests).toEqual([]);
 });

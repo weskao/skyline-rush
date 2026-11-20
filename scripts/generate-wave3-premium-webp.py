@@ -15,13 +15,14 @@ STYLE_REFERENCE = ASSETS / "wave3-demo/raster/demo-points@3x.webp"
 WALLET_ORIGINAL = "438a22a7876bfbfb9d4ffcb851d06c438c849523"
 REWARDS = ("mission-race", "mission-time", "mission-drift", "mission-combo",
            "trophy-bronze", "trophy-silver", "trophy-gold", "trophy-platinum")
-WALLET = ("wallet-coin", "wallet-diamond")
+# The active wallet coin is exported from the shared Skyline S artwork master.
+WALLET = ("wallet-diamond",)
 ACCENTS = {
     "mission-race": (80, 207, 255), "mission-time": (91, 216, 255),
     "mission-drift": (146, 123, 255), "mission-combo": (67, 239, 255),
     "trophy-bronze": (255, 162, 100), "trophy-silver": (153, 210, 255),
     "trophy-gold": (255, 216, 88), "trophy-platinum": (167, 98, 255),
-    "wallet-coin": (255, 190, 47), "wallet-diamond": (69, 237, 255),
+    "wallet-diamond": (69, 237, 255),
 }
 VIOLET = (157, 89, 255)
 CYAN = (75, 245, 255)
@@ -42,11 +43,8 @@ def source_art(name: str) -> Image.Image:
     assert art.size == (144, 144), name
     matte = Image.new("L", art.size)
     paint = ImageDraw.Draw(matte)
-    if name == "wallet-coin":
-        paint.ellipse((15, 15, 129, 130), fill=255)
-    else:
-        paint.polygon([(26, 62), (42, 32), (70, 21), (102, 34),
-                       (118, 62), (72, 118)], fill=255)
+    paint.polygon([(26, 62), (42, 32), (70, 21), (102, 34),
+                   (118, 62), (72, 118)], fill=255)
     art.putalpha(matte.filter(ImageFilter.GaussianBlur(0.7)))
     return art
 
@@ -142,7 +140,7 @@ def gloss_reflection(canvas: Image.Image, src_alpha: Image.Image,
                 stripe = max(0.0, 1 - abs(u - 0.5 + (v - 0.5) * 0.38) / 0.16)
                 pix[x, y] = round(stripe * 116)
         overlay(canvas, ImageChops.multiply(refraction, src_alpha), CYAN, 0.37)
-    elif name in ("wallet-coin", "trophy-gold", "trophy-bronze"):
+    elif name in ("trophy-gold", "trophy-bronze"):
         overlay(canvas, ImageChops.multiply(sheen, src_alpha), (255, 218, 103), 0.34)
     else:
         overlay(canvas, ImageChops.multiply(sheen, src_alpha), color, 0.23)
@@ -162,7 +160,7 @@ def preserve_original_silhouette(output: Image.Image, alpha: Image.Image) -> Ima
     return output
 
 def polish(src: Image.Image, name: str) -> Image.Image:
-    """Refine the ORIGINAL checker flag, watch, drift, arrow, cup, coin or gem."""
+    """Refine the ORIGINAL checker flag, watch, drift, arrow, cup or gem."""
     if not STYLE_REFERENCE.is_file():
         raise FileNotFoundError("Required style reference: demo-points@3x.webp")
     with Image.open(STYLE_REFERENCE) as sample:

@@ -1,3 +1,5 @@
+import { CAR_REVEAL_CUE_SECONDS } from './acquisition-car-camera.ts';
+
 // Original reveal score and Foley, rendered in short stereo sections keyed to the visual cuts.
 const SAMPLE_RATE = 24000;
 const TAU = 2 * Math.PI;
@@ -101,8 +103,9 @@ const SCORES: Readonly<Record<string, Score>> = {
   ] },
 };
 
-function mixLayer(left: Float32Array, right: Float32Array, layer: CueLayer): void {
-  const [timbre, at, duration, from, to, level, attack, panFrom = 0, panTo = panFrom] = layer;
+function mixLayer(left: Float32Array, right: Float32Array, layer: CueLayer, timeScale: number): void {
+  const [timbre, offset, seconds, from, to, level, attackSeconds, panFrom = 0, panTo = panFrom] = layer;
+  const at = offset * timeScale, duration = seconds * timeScale, attack = attackSeconds * timeScale;
   const start = Math.round(at * SAMPLE_RATE);
   const count = Math.min(left.length - start, Math.floor(duration * SAMPLE_RATE));
   const pitchStep = (to / from) ** (1 / (duration * SAMPLE_RATE));
@@ -146,10 +149,11 @@ function mixLayer(left: Float32Array, right: Float32Array, layer: CueLayer): voi
 export function acquisitionAudioBuffer(context: BaseAudioContext, name: string): AudioBuffer | undefined {
   const score = Object.hasOwn(SCORES, name) ? SCORES[name] : undefined;
   if (!score) return;
-  const length = Math.ceil(score.length * SAMPLE_RATE);
+  const seconds = CAR_REVEAL_CUE_SECONDS[name] ?? score.length;
+  const length = Math.ceil(seconds * SAMPLE_RATE);
   const stereo = context.createBuffer(2, length, SAMPLE_RATE);
   const left = stereo.getChannelData(0), right = stereo.getChannelData(1);
-  for (const layer of score.layers) mixLayer(left, right, layer);
+  for (const layer of score.layers) mixLayer(left, right, layer, seconds / score.length);
   // Short cross-feed reflections give the showroom depth without starting another audio voice.
   for (let i = length - 1; i >= 0; i--) {
     const wetLeft = .23 * (right[i - 1056] ?? 0) + .09 * (left[i - 2771] ?? 0);

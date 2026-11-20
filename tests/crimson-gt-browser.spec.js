@@ -476,12 +476,12 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       await openGarage(page);
       for (const id of ['roadster', 'crimson-gt']) {
         const button = carButton(page, id);
-        const image = button.locator('img');
+        const image = button.locator('img[src*="/car-picker/"]');
         await expect(image).toHaveAttribute('src', new RegExp(`/car-picker/${id}@3x\\.webp$`));
         await expect(image).toHaveJSProperty('naturalWidth', 432);
         await expect(image).toHaveJSProperty('naturalHeight', 198);
         const bounds = await button.evaluate(card => {
-          const img = card.querySelector('img');
+          const img = card.querySelector('img[src*="/car-picker/"]');
           const image = img.getBoundingClientRect();
           const name = card.querySelector('.garage-car-name').getBoundingClientRect();
           const { left, right, height } = card.getBoundingClientRect();
