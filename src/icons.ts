@@ -2,6 +2,8 @@ import type { SVGAttributes } from 'vue';
 
 export const icons = {
   settings: '<circle cx="12" cy="12" r="4"/><path d="M9 3h6l1 3 3 1 2 4-2 2v4l-3 1-1 3H9l-1-3-3-1v-4l-2-2 2-4 3-1Z"/>',
+  display: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M12 17v4m-4 0h8m-9-8 3-3 3 2 4-4"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c4 4 4 14 0 18m0-18c-4 4-4 14 0 18"/>',
   garage: '<path d="m2 9 10-6 10 6v12H2zm4 12v-9h12v9M6 16h12"/>',
   trophy: '<path d="M8 3h8v8a4 4 0 0 1-8 0ZM8 6H4v2a5 5 0 0 0 5 5m7-7h4v2a5 5 0 0 1-5 5m-3 2v5m-4 1h8"/>',
   practice: '<path d="m4 20 8-16 8 16M2 20h20M8 13h8m-10 4h12"/>',

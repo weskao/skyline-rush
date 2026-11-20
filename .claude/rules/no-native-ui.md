@@ -16,6 +16,9 @@ differently on iOS, Android and desktop.
   cancel. Never `confirm()`, `alert()`, `prompt()`, nor their `window.` forms.
 - **Dropdowns** → leave `<select>` to `customSelect()` (`src/custom-select.ts`, mounted for every
   select in `src/main.js`). Never opt one out with `data-native-select`.
+  Shared lists open above clipped Home and dialog scrollers and stay within a visible viewport
+  segment. A short viewport can use two columns; longer lists scroll inside the listbox.
+  Keyboard highlighting scrolls that list alone. Guard: `tests/dropdown-viewport-browser.spec.js`.
 - **Search / suggestions** → a styled text input and a page listbox; never `type="search"` or
   `<datalist>`.
 - **File pickers** stay a hidden `<input type="file">` opened by a game button
