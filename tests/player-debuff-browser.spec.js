@@ -5,7 +5,7 @@ async function expectArtwork(card, attack) {
   const image = card.locator('img');
   await expect(image).toHaveAttribute('src', new RegExp(`/${attack}@3x\\.webp$`));
   await expect(image).toHaveJSProperty('naturalWidth', 120);
-  expect(await image.evaluate(img => {
+  expect(await image.evaluate((img, effect) => {
     const canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
@@ -14,17 +14,21 @@ async function expectArtwork(card, attack) {
     const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const margin = 8;
     let visiblePixels = 0;
+    let yellowPixels = 0;
     let clipped = false;
     for (let y = 0; y < canvas.height; y++) {
       for (let x = 0; x < canvas.width; x++) {
-        if (data[(y * canvas.width + x) * 4 + 3] <= 16) continue;
+        const offset = (y * canvas.width + x) * 4;
+        if (data[offset + 3] <= 16) continue;
         visiblePixels++;
+        const [r, g, b] = data.subarray(offset, offset + 3);
+        if (r > 175 && g > 115 && r >= g && g > b + 42) yellowPixels++;
         if (x < margin || x >= canvas.width - margin || y < margin || y >= canvas.height - margin) clipped = true;
       }
     }
     const { width, height } = img.getBoundingClientRect();
-    return { width, height, pixels: canvas.height, clipped, visible: visiblePixels >= 1000 };
-  })).toEqual({ width: 40, height: 40, pixels: 120, clipped: false, visible: true });
+    return { width, height, pixels: canvas.height, clipped, visible: visiblePixels >= 1000, palette: effect !== 'emp' || yellowPixels > visiblePixels / 3 };
+  }, attack)).toEqual({ width: 40, height: 40, pixels: 120, clipped: false, visible: true, palette: true });
 }
 
 
@@ -141,13 +145,13 @@ test('speed feedback follows the active debuff and keeps a steady tint with redu
   expect(await motion()).toMatch(/^speed-frost/);
   await page.evaluate(() => window.debuffHud.hit('emp', 230));
   await expect(speedometer).toHaveAttribute('data-debuff', 'emp');
-  await expect(speed).toHaveCSS('color', 'rgb(194, 177, 255)');
+  await expect(speed).toHaveCSS('color', 'rgb(255, 227, 122)');
   expect(await motion()).toMatch(/^speed-surge/);
-  expect(await page.locator('#player-hit-screen').evaluate(node => getComputedStyle(node).backgroundImage)).toContain('120, 90, 255');
+  expect(await page.locator('#player-hit-screen').evaluate(node => getComputedStyle(node).backgroundImage)).toContain('252, 214, 80');
 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   expect(await motion()).toBe('none');
-  await expect(speed).toHaveCSS('color', 'rgb(194, 177, 255)');
+  await expect(speed).toHaveCSS('color', 'rgb(255, 227, 122)');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.evaluate(() => { document.body.dataset.vfxEnabled = 'false'; });
   expect(await motion()).toBe('none');
@@ -165,4 +169,28 @@ test('speed feedback follows the active debuff and keeps a steady tint with redu
   await expect(speedometer).not.toHaveAttribute('data-debuff');
   await expect(speed).toHaveCSS('color', normal);
   await expect(speed).toHaveText(reading);
+});
+
+test('the notice stays narrow and translucent while the affected status remains legible', async ({ page, gameplayURL }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${gameplayURL}tests/fixtures/player-debuff.html?locale=zh-TW`);
+  await page.waitForFunction(() => !!window.debuffHud);
+  for (const [effect, color] of [['emp', 'rgb(255, 227, 122)'], ['freeze', 'rgb(153, 228, 255)']]) {
+    await page.evaluate(kind => window.debuffHud.hit(kind, 220), effect);
+    const card = page.locator(`#race-player-hit-center [data-debuff="${effect}"]`);
+    await expect(card).toBeVisible();
+    const appearance = await card.evaluate(node => ({
+      width: node.getBoundingClientRect().width,
+      height: node.getBoundingClientRect().height,
+      stops: [...getComputedStyle(node).backgroundImage.matchAll(/rgba\([^)]+, ([\d.]+)\)/g)].map(match => Number(match[1])),
+      title: getComputedStyle(node.querySelector('strong')).color,
+      timer: getComputedStyle(node.querySelector('time')).color,
+    }));
+    expect(appearance.width).toBeLessThanOrEqual(190);
+    expect(appearance.height).toBeLessThanOrEqual(48);
+    expect(appearance.stops.length).toBeGreaterThanOrEqual(2);
+    expect(Math.max(...appearance.stops)).toBeLessThanOrEqual(.78);
+    expect(appearance.title).toBe(color);
+    expect(appearance.timer).toBe(color);
+  }
 });

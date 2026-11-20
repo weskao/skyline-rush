@@ -232,8 +232,8 @@ export const RELEASE_NOTES: readonly ReleaseEntry[] = Object.freeze([
         },
         title: { en: 'See what your rivals are up to', 'zh-TW': '對手狀態一眼看穿' },
         description: {
-          en: 'Rival tail lights flare when they fire NITRO or BOOST. Rivals slowed by FREEZE glow icy blue, and EMP sends arcs across their bodywork.',
-          'zh-TW': '對手啟動 NITRO 或 BOOST 時尾燈會亮起；被凍結減速的對手泛著冰藍光，被電磁脈衝擊中則在車身冒出電弧。'
+          en: 'Rival tail lights flare when they fire NITRO or BOOST. Rivals slowed by FREEZE glow icy blue, and EMP lights them up yellow-green.',
+          'zh-TW': '對手啟動 NITRO 或 BOOST 時尾燈會亮起；被凍結減速的對手泛著冰藍光，被電磁脈衝擊中則泛出黃綠色電光。'
         }
       },
       {

@@ -19,7 +19,7 @@ const SHARDS = 10, LOW_PLAYER_SHARDS = 4; // crystals per car
 const GROW = 0.22, STAGGER = 0.025, SHATTER = 0.65; // s
 const WAVE = 0.45; // s a shockwave ring lives
 const FROST: Rgb = [0.75, 1.5, 2.6], ICE_WHITE: Rgb = [1.6, 1.9, 2.3], VAPOR: Rgb = [0.7, 0.85, 1];
-const SPARK_WHITE: Rgb = [2.4, 2.5, 2.8];
+const SPARK_WHITE: Rgb = [2.8, 2.65, 2.3];
 const UP = new THREE.Vector3(0, 1, 0);
 const parked = new THREE.Matrix4().makeTranslation(0, -1e4, 0); // never scale 0: lit instances would light NaN
 

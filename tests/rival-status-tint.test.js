@@ -57,7 +57,7 @@ test('an EMP flickers a rival in a distinct colour; reduced motion keeps it stea
   const samples = [];
   for (let i = 0; i < 20; i++) { frame(0.016); samples.push(lit(tint, 1)); }
   const c = colorOf(tint, 1);
-  assert.ok(c.b > c.r && c.r > c.g, `rival EMP reads blue-violet (${c.toArray()})`);
+  assert.ok(c.r > c.g && c.g > c.b * 3, `rival EMP reads warm yellow (${c.toArray()})`);
   assert.equal(lit(tint, 0), 0, 'only the EMP-hit rival');
   assert.ok(Math.max(...samples.slice(10)) - Math.min(...samples.slice(10)) > 0.3, 'flickers');
   const calm = setup(t);
@@ -176,12 +176,12 @@ test('the incoming status shell tracks the player pose and clears on finish', t 
   frame(.05, { quality: 'low' }, true);
   const empColor = colorOf(tint, playerIndex);
   const rivalEMP = colorOf(tint, 0);
-  assert.ok(empColor.b > empColor.r && empColor.r > empColor.g, 'player EMP is blue-violet at Low quality');
+  assert.ok(empColor.r > empColor.g && empColor.g > empColor.b * 3, 'player EMP is warm yellow at Low quality');
   assert.ok(Math.abs(empColor.r / empColor.b - rivalEMP.r / rivalEMP.b) < 1e-6, 'player and rival shell share the same hue');
   const waves = vehicles[0].parent.getObjectByName('Rival status shockwave');
   for (const index of [0, playerIndex]) {
     const wave = colorOf(waves, index);
-    assert.ok(wave.b > wave.r && wave.r > wave.g, 'player and rival shockwaves share the blue-violet hue');
+    assert.ok(wave.r > wave.g && wave.g > wave.b * 3, 'player and rival shockwaves share the warm yellow hue');
   }
   race.phase = 'finished';
   frame();

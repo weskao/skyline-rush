@@ -23,7 +23,7 @@ const hit = computed(() => playerHitView.emp > 0 ? 'emp' : playerHitView.freeze 
 }
 .speedometer[data-debuff="emp"] {
   --speed-color: var(--emp-hit-color);
-  --speed-line: linear-gradient(110deg, #526cf5, #a88aff 34%, #efedff 56%, transparent 88%);
+  --speed-line: linear-gradient(110deg, #d98124, var(--emp-hit-color) 34%, #fff7d6 56%, transparent 88%);
 }
 .speedometer[data-debuff] .speed-number { position: relative; }
 .speedometer[data-debuff] .speed-number > strong,
