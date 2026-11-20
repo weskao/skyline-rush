@@ -679,7 +679,14 @@ on every tier. Low / VFX Off = tail light + flash; Reduced Motion = no flicker, 
 - [x] RED: `tests/nitro-trail-comfort.test.js` 3/3 failed on `c8c2b208`; GREEN after. `npm test` 3,364 pass / 0 fail / 3 skipped; `npm run build` passed.
 - [x] Prevention: `.claude/rules/nitro-trail-vfx.md`.
 - [x] Real WebGL before/after (Chromium 1280×720, High, Coast race with NITRO + Preview Studio), four skins, Roadster: colour reads as distinct jets instead of a white wash. Crimson in race is the most subdued; the owner judges whether it needs more body.
-- [ ] Not run: Crimson GT, phone portrait/landscape, physical phone, full `npm run test:browser`, exact-HEAD `quality-gate`.
+- [x] Crimson body: edge .08 → .18 so the dashes ride a visible red jet in a race.
+- [x] Layers instead of brightness (owner: trails read flat after the glare fix): hot core cooling to a deeper hue down the tail (ice → deep blue, gold → ember, crimson → wine), three fixed shock diamonds, a wide dim halo tube (`NITRO trail halo`, +1 instanced draw, hidden on Low like the road glow) with embers drifting at 1.2 Hz, one 0.45 s ignition swell per NITRO start, road glow wider/brighter and starting under the bumper. Body reflection on the car itself skipped: it needs a real light on every lit material.
+- [x] RED: halo/ignition tests in `tests/nitro-trail-comfort.test.js` failed (no halo); GREEN after. `npm test` 3,366 pass / 0 fail / 3 skipped; build, typecheck; `shader-warmup`, `black-frame`, `hero-roadster-equipment` browser specs 10/10.
+- [x] Real WebGL race recording (Chromium 1280×720, High, Coast, Roadster), all five trails, no console/shader errors; before/after close-ups show the halo and gradient. Shock diamonds sit mostly under the bumper from the chase camera.
+- [x] Speed feel (owner: the layered trails looked slow). Thin core streaks now flow back at ~9.5 Hz through `flow()` at ±18%, only on the core axis; the whole plume, halo and road glow stay ≤ 3 Hz. The trail stretches with car speed, from 3 m to 17 m at `MAX_SPEED` (was 6–14 m on NITRO power alone); Studio previews it fully stretched. The halo shell went from 1.9× to 1.3×: faint while cruising, bright only during the ignition swell. The core is thinner (`pow` 3 → 5) and brighter over a darker rim. Rule revised: only the thin streak may pass 3 Hz.
+- [x] RED: 3 new tests in `tests/nitro-trail-comfort.test.js` failed on `ea831dc0` (fast flow, speed stretch, halo shell); GREEN after. `npm test` 3,375 pass / 0 fail / 3 skipped; typecheck, build, module-size; `shader-warmup` and `black-frame` browser specs pass.
+- [ ] `hero-roadster-equipment-browser.spec.js:73` fails before this change too: Studio programs drop by 1 after the skin sweep, at `ea831dc0` (142 → 141) and on `develop` `7b067644` (140 → 139). Root cause not traced.
+- [ ] Not run: Crimson GT, phone portrait/landscape, physical phone, full `npm run test:browser`, exact-HEAD `quality-gate`, frame-time measurement of the halo overdraw.
 
 ## Final tutorial NITRO cue (2026-11-15)
 
