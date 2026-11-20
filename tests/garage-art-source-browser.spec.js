@@ -82,8 +82,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
 }
 
 test('Store preview summary has bilingual art fallback without granting an Economy entitlement', async ({ page }) => {
-  // Both the primary 3x PNG and its WebP fallback fail, so only the text fallback remains.
-  await page.route('**/feature-assets/garage-store-readiness/raster/store-collection@3x.{png,webp}', route => route.abort());
+  // When the current 3x summary image fails, the localized text fallback remains.
+  await page.route('**/feature-assets/collectible-ui/collection-panel@3x.webp', route => route.abort());
   await page.goto('/');
   await page.locator('#garage-button').click();
   await openGarageSection(page, 'store');
